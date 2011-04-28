@@ -1,0 +1,4 @@
+name = Exchange Rates
+description = Downloads exchange rates and converts currencies.
+core = 6.x
+version = 2.x-dev

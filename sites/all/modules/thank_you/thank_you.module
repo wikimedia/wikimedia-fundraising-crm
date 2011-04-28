@@ -1,0 +1,298 @@
+<?php
+
+function thank_you_menu() {
+  $items = array();
+  
+  $items['admin/settings/thank_you'] = array(
+    'title' => t('Thank you settings'),
+    'description' => t('Configure thank you note options.'),
+    'access arguments' => array('administer thank you'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('thank_you_settings_form'),
+  );
+  
+  $items['thank_you/%'] = array(
+    'access arguments' => array('administer thank you'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('thank_you_preview_form', 1),
+    'type' => MENU_CALLBACK,
+  );
+  
+  return $items;
+}
+
+function thank_you_perm() {
+  return array('administer thank you');
+}
+
+function thank_you_preview_form($form_state, $contribution_id) {
+  $form = array();
+  
+  $rendered = thank_you_render($contribution_id);
+  
+  $form['contribution_id'] = array(
+    '#type' => 'hidden',
+    '#value' => $contribution_id,
+  );
+  
+  $form['from'] = array(
+    '#value' => '<div>From: &quot;' . $rendered['from_name'] . '&quot; &lt;' . $rendered['from_address'] . '&gt;</div>',
+  );
+
+  $form['to'] = array(
+    '#value' => '<div>To: &quot;' . $rendered['to_name'] . '&quot; &lt;' . $rendered['to_address'] . '&gt;</div>',
+  );
+
+  $form['subject'] = array(
+    '#value' => '<div>Subject: ' . $rendered['subject'] . '</div>',
+  );
+
+  $form['body'] = array(
+    '#value' => '<div>Body:</div><div><pre>' . $rendered['body'] . '</pre></div>',
+  );
+  
+  $form['send'] = array(
+    '#type' => 'submit',
+    '#value' => t('Send'),
+  );
+  
+  return $form;
+}
+
+function thank_you_preview_form_submit($form, $form_state) {
+  $form_values = $form_state['values'];
+
+  $status = thank_you_send($form_values['contribution_id']);
+  if ($status === TRUE) {
+    drupal_set_message('Thank you note sent.');
+  }
+  else {
+    if ($status == -1) {
+      drupal_set_message('Thank you note sending failed: donation is too old.', 'error');
+    }
+    else if ($status == -2) {
+      drupal_set_message('Thank you note sending failed: donation has already been thanked.', 'error');      
+    }
+    else if ($status == -3) {
+      drupal_set_message('Thank you note sending failed: sending the email failed.', 'error');      
+    }
+  }
+}
+
+function thank_you_replace_tokens($contribution_id, $text) {
+	civicrm_initialize(true);
+	require_once 'api/v2/Contact.php';
+	require_once 'api/v2/Contribute.php';
+	$params = array( 'contribution_id' => $contribution_id );
+	$contribution = &civicrm_contribution_get( $params );
+	$params = array( 'contact_id' => $contribution['contact_id'] );
+	$contact_result = &civicrm_contact_get( $params );
+	if (is_array($contact_result)) {
+		$contact = $contact_result[$contribution['contact_id']];
+	}
+	$email = $contact['email'];
+	
+	$contribution['date'] = date('F j, Y', strtotime($contribution['receive_date']));
+	$contribution['source'] = $contribution['contribution_source'];
+	
+	foreach ($contribution as $key => $value) {
+		$text = str_replace('{contribution.' . $key . '}', $value, $text);
+	}
+	
+	if (is_array($contact)) {
+		foreach ($contact as $key => $value) {
+			$text = str_replace('{contact.' . $key . '}', $value, $text);
+		}
+	}
+	
+	$text = str_replace('{contact.email}', $email, $text);
+	
+	return $text;
+}
+
+function thank_you_render($contribution_id) {
+  $rendering = array();
+  
+  $rendering['from_name'] = thank_you_replace_tokens($contribution_id, variable_get('thank_you_from_name', ''));
+  $rendering['to_name'] = thank_you_replace_tokens($contribution_id, variable_get('thank_you_to_name', '{contact.display_name}'));
+  
+  if (!$rendering['to_name']) {
+    $rendering['to_name'] = thank_you_replace_tokens($contribution_id, variable_get('thank_you_to_name_secondary', ''));
+  }
+  
+  $rendering['from_address'] = thank_you_replace_tokens($contribution_id, variable_get('thank_you_from_address', ''));
+  $rendering['to_address'] = thank_you_replace_tokens($contribution_id, '{contact.email}');
+  $rendering['subject'] = thank_you_replace_tokens($contribution_id, variable_get('thank_you_subject', ''));
+  $rendering['body'] = thank_you_replace_tokens($contribution_id, variable_get('thank_you_body', ''));
+
+  return $rendering;
+}
+
+function thank_you_send( $contribution_id ) {
+	civicrm_initialize(true);
+	require_once 'api/v2/Contribute.php';
+	$params = array( 'contribution_id' => $contribution_id );
+	$contribution = &civicrm_contribution_get( $params );
+
+	if (strtotime($contribution['receive_date']) < time() - 86400 * variable_get('thank_you_days', 14)) {
+		return -1;
+	}
+	
+	if ($contribution['thankyou_date']) {
+		return -2;
+	}
+	
+	$rendered = thank_you_render( $contribution_id );	
+	
+	$from = '"' . $rendered['from_name'] . '" <' . $rendered['from_address'] . '>';
+	$to = '"' . $rendered['to_name'] . '" <' . $rendered['to_address'] . '>';
+	$subject = $rendered['subject'];
+	$body = $rendered['body'];
+	
+	$headers = array(
+		'Sender' => $from,
+		);
+	
+	$message_debug = array(
+		'From' => $from,
+		'To' => $to,
+		'Subject' => $subject,
+		'Body' => $body,
+		);
+	
+	if ( thank_you_mail_send( 'thank_you', $to, $subject, $body, $from, $headers ) ) {
+		$params = array(
+			'id' => $contribution_id,
+ 			'thankyou_date' => date( 'Y-m-d H:i:s' )
+			);
+		$contribution_result = &civicrm_contribution_add( $params );
+		watchdog('thank_you', 'Sending thank you message succeeded for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($message_debug, TRUE)) . '</pre>');
+		return TRUE;
+	}
+	else {
+		watchdog('thank_you', 'Sending thank you message failed for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($message_debug, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+	}
+	
+	return -3;
+}
+
+function thank_you_settings_form() {
+  $form = array();
+  
+  $form['thank_you_from_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('From name'),
+    '#default_value' => variable_get('thank_you_from_name', ''),
+    '#required' => TRUE,
+  );
+
+  $form['thank_you_from_address'] = array(
+    '#type' => 'textfield',
+    '#title' => t('From address'),
+    '#default_value' => variable_get('thank_you_from_address', ''),
+    '#required' => TRUE,
+  );
+
+  $form['thank_you_to_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('To name'),
+    '#default_value' => variable_get('thank_you_to_name', '{contact.display_name}'),
+    '#required' => TRUE,
+  );
+
+  $form['thank_you_to_name_secondary'] = array(
+    '#type' => 'textfield',
+    '#title' => t('To name (if the name above is blank)'),
+    '#default_value' => variable_get('thank_you_to_name_secondary', ''),
+    '#required' => TRUE,
+  );
+
+  $form['thank_you_subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject'),
+    '#default_value' => variable_get('thank_you_subject', ''),
+    '#required' => TRUE,
+  );
+
+  $form['thank_you_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Body'),
+    '#default_value' => variable_get('thank_you_body', ''),
+    '#required' => TRUE,
+  );
+  
+  $form['thank_you_days'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Days before considering transaction too old to automatically thank'),
+    '#default_value' => variable_get('thank_you_days', 14),
+    '#required' => TRUE,
+  );
+  
+  return system_settings_form($form);
+}
+
+function thank_you_queue2civicrm_import( $contribution_info ) {
+  $contribution_id = $contribution_info[ 'contribution_id' ];
+  watchdog('thank_you', 'Calling thank you function for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($message_debug, TRUE)) . '</pre>');
+  thank_you_send( $contribution_id );
+}
+
+function thank_you_mail_send($mailkey, $to, $subject, $body, $from = NULL, $headers = array()) {
+  $defaults = array(
+    'MIME-Version' => '1.0',
+    'Content-Type' => 'text/plain; charset=UTF-8; format=flowed',
+    'Content-Transfer-Encoding' => '8Bit',
+    'X-Mailer' => 'Drupal'
+  );
+  // To prevent e-mail from looking like spam, the addresses in the Sender and
+  // Return-Path headers should have a domain authorized to use the originating
+  // SMTP server.  Errors-To is redundant, but shouldn't hurt.
+  $default_from = variable_get('site_mail', ini_get('sendmail_from'));
+  if ($default_from) {
+    $defaults['From'] = $defaults['Reply-To'] = $defaults['Sender'] = $defaults['Return-Path'] = $defaults['Errors-To'] = $default_from;
+  }
+  if ($from) {
+    $defaults['From'] = $defaults['Reply-To'] = $from;
+  }
+  $headers = array_merge($defaults, $headers);
+  // Custom hook traversal to allow pass by reference
+  foreach (module_implements('mail_alter') AS $module) {
+    $function = $module .'_mail_alter';
+    $function($mailkey, $to, $subject, $body, $from, $headers);
+  }
+  // Allow for custom mail backend
+  if (variable_get('smtp_library', '') && file_exists(variable_get('smtp_library', ''))) {
+    include_once './' . variable_get('smtp_library', '');
+    return drupal_mail_wrapper($mailkey, $to, $subject, $body, $from, $headers);
+  }
+  else {
+    // Note: if you are having problems with sending mail, or mails look wrong
+    // when they are received you may have to modify the str_replace to suit
+    // your systems.
+    //  - \r\n will work under dos and windows.
+    //  - \n will work for linux, unix and BSDs.
+    //  - \r will work for macs.
+    //
+    // According to RFC 2646, it's quite rude to not wrap your e-mails:
+    //
+    // "The Text/Plain media type is the lowest common denominator of
+    // Internet e-mail, with lines of no more than 997 characters (by
+    // convention usually no more than 80), and where the CRLF sequence
+    // represents a line break [MIME-IMT]."
+    //
+    // CRLF === \r\n
+    //
+    // http://www.rfc-editor.org/rfc/rfc2646.txt
+
+    $mimeheaders = array();
+    foreach ($headers as $name => $value) {
+      $mimeheaders[] = $name .': '. mime_header_encode($value);
+    }
+    return mail(
+      $to,
+      mime_header_encode($subject),
+      str_replace("\n", "\r\n", str_replace("\r", '', $body)),
+      join("\r\n", $mimeheaders)
+    );
+  }
+}

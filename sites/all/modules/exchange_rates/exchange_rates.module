@@ -1,0 +1,153 @@
+<?php
+
+function exchange_rates_menu() {
+  $items = array();
+  
+  $items['exchange_rates'] = array(
+    'title' => t('Exchange rates'),
+    'page callback' => 'exchange_rates_listing',
+    'access arguments' => array('administer site configuration'),
+  );
+  $items['exchange_rates/update'] = array(
+    'title' => t('Update exchange rates'),
+    'page callback' => 'exchange_rates_manual_update',
+    'access arguments' => array('administer site configuration'),
+  );
+  
+  return $items;
+}
+
+function exchange_rates_get_currencies() {
+  static $currencies = array();
+  if (empty($currencies)) {
+    $currencies = array();
+    $res = db_query('SELECT currency FROM {exchange_rates} GROUP BY currency ORDER BY currency');
+    while ($row = db_fetch_object($res)) {
+      $currencies[$row->currency] = $row->currency;
+    }
+  }
+  return $currencies;
+}
+
+function exchange_rates_manual_update() {
+  exchange_rates_cron();
+  drupal_set_message(t('Exchange rates updated'));
+  drupal_goto('exchange_rates');
+}
+
+function exchange_rates_listing() {
+  $cols = array(
+    t('Currency'),
+    t('Value in USD'),
+  );
+  $rows = array();
+
+  $currencies = db_query('SELECT currency FROM {exchange_rates} GROUP BY currency ORDER BY currency');
+  while ($currency = db_fetch_object($currencies)) {
+    $rows[] = array(
+      $currency->currency,
+      exchange_rate_convert($currency->currency),
+    );
+  }
+  
+  $content[] = t('Last updated: %updated', array('%updated' => format_date(variable_get('exchange_rates_bank_update', 0))));
+  $content[] = theme('table', $cols, $rows);
+  
+  return implode("\n", $content);
+}
+
+function exchange_rate_convert($from_currency, $amount = 1, $timestamp = NULL) {
+  if (!$timestamp) {
+    $timestamp = time();
+  }
+
+  $amount = str_replace(',', '', $amount);
+  $rate = db_result(db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = "%s" AND bank_update <= %d ORDER BY bank_update DESC', $from_currency, $timestamp, 0, 1));
+
+  // If a rate can't be found, use the oldest one on file.
+  if (!$rate) {
+    $rate = db_result(db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = "%s" ORDER BY bank_update', $from_currency, 0, 1));
+  }
+  
+  // As a fail-safe, use a rate of one.
+  if (!$rate) {
+    $rate = 1;
+  }
+
+  return $amount * $rate;  
+}
+
+function exchange_rates_cron() {
+  $url = variable_get('exchange_rates_url', 'http://www.ecb.int/stats/eurofxref/eurofxref-daily.xml');
+
+  $result = drupal_http_request($url);
+  $xml = $result->data;
+  
+  $p = xml_parser_create();
+  xml_parse_into_struct($p, $xml, $vals, $index);
+  xml_parser_free($p);
+  
+  // Get data and base USD rate
+  $usd_base = 0;
+  $date = '';
+  foreach ($index['CUBE'] as $val_index)
+  {
+    $current = $vals[$val_index];
+    if ($current['attributes']['CURRENCY'] == 'USD' && isset($current['attributes']['RATE']))
+    {
+      $usd_base = $current['attributes']['RATE'];
+    }
+    if (isset($current['attributes']['TIME']))
+    {
+      $date = $current['attributes']['TIME'];
+      $bank_update = strtotime($date . ' 00:00:00 GMT');
+    }
+  }
+  
+  variable_set('exchange_rates_bank_update', $bank_update);
+  
+  // Table is based on EUR, so must insert manually
+  exchange_rates_update_rate('EUR', $usd_base, $bank_update);
+  
+  // Calculate remaining rates
+  foreach ($index['CUBE'] as $val_index) {
+    $current = $vals[$val_index];
+    if (isset($current['attributes']['CURRENCY']) && isset($current['attributes']['RATE'])) {
+      exchange_rates_update_rate($current['attributes']['CURRENCY'], $usd_base / $current['attributes']['RATE'], $bank_update);
+    }
+  }
+  
+  // Secondary lookup for ILS currency
+  $url_ils = variable_get('exchange_rates_url_ils', 'http://www.bankisrael.gov.il/currency.xml');
+  
+  $result = drupal_http_request($url_ils);
+  $xml = $result->data;
+  
+  $doc = new DOMDocument();
+  $success = $doc->loadXML($xml);
+  
+  // Only load the ILS rate if XML parsing was successful
+  if ($success) {
+    $date = $doc->getElementsByTagName('LAST_UPDATE')->item(0)->nodeValue;
+    $bank_update = strtotime($date . ' 00:00:00 GMT');
+    
+    $currencies = $doc->getElementsByTagName('CURRENCY');
+    
+    foreach($currencies as $currency) { 
+      $currency_name = $currency->getElementsByTagName('NAME')->item(0)->nodeValue;
+      
+      // Only pull US Dollar conversion as we already have the rest.
+      if ($currency_name == 'Dollar') {
+        $exchange_rate = (1.0 / $currency->getElementsByTagName('RATE')->item(0)->nodeValue);
+        if ($date && $exchange_rate) {
+          exchange_rates_update_rate('ILS', $exchange_rate, $bank_update); 
+          break;
+        }   
+      }
+    }
+  }
+}
+
+function exchange_rates_update_rate($currency, $value_in_usd, $bank_update) {
+  @db_query('INSERT INTO {exchange_rates} (currency, value_in_usd, bank_update, local_update) VALUES ("%s", %f, %d, %d)', $currency, $value_in_usd, $bank_update, time());
+}
