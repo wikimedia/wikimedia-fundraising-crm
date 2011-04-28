@@ -1,0 +1,4 @@
+name = CiviAudit
+description = Auditing framework for contacts and contributions
+core = 6.x
+package = CiviAudit

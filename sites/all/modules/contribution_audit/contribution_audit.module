@@ -1,0 +1,94 @@
+<?php 
+/**
+ * include common queue2civicrm functions
+ */
+require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_common.inc' );
+
+/**
+ * Implementation of hook_perm().
+ */
+function contribution_audit_perm() {
+  return array('administer contribution_audit');
+}
+
+/**
+ * Implementation of hook_menu()
+ */
+function contribution_audit_menu() {
+  $items = array();
+  
+  $items['admin/settings/contribution_audit'] = array(
+    'title' => 'Contribution Audit Configuration',
+    'description' => t('Configure contribution audit settings.'),
+    'access arguments' => array('administer contribution_audit'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'contribution_audit_settings' ),
+  );
+
+  $items['admin/settings/contribution_audit/configure'] = array(
+    'title' => 'Configure',
+    'access arguments' => array('administer contribution_audit'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  
+  return $items;
+}
+
+/**
+ * Callback for menu path "admin/settings/wmf_owa".
+ */
+function contribution_audit_settings() {
+  $form[ 'contribution_audit_fieldset' ] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Contribution audit settings'),
+    '#description' => t( 'A placeholder form for Contribution Audit settings.' ),
+    ); 
+  return system_settings_form( $form );
+}
+
+function contribution_audit_allocate_unallocated_contribs( $start_date, $end_date ) {
+  watchdog( 'contribution_audit', 'Running contribution_audit_allocate_unallocated_contribs for time period from @start_date until @end_date', array( '@start_date' => $start_date, '@end_date' => $end_date ), WATCHDOG_DEBUG );
+  $allocated = array(); // country => $
+  // find the info from missing trxns
+  $missing_trxns = contribution_audit_find_missing_trxns( $start_date, $end_date );
+  watchdog( 'contribution_audit', 'Total missing transactions: @num', array('@num' => count( $missing_trxns )), WATCHDOG_DEBUG );
+  foreach ( $missing_trxns as $missing_trxn ) {
+    // what happens if we still dont have country data?
+    if ( !strlen($missing_trxn[ 'country' ])) {
+      $missing_trxn[ 'country' ] = 'unknown';
+    }
+    _contribution_audit_aggregate_country_amounts( $allocated, $missing_trxn );
+  }
+  return $allocated;
+}
+
+function _contribution_audit_aggregate_country_amounts( &$allocated, $trxn ) {
+  // handle currency conversion, etc
+  $trxn = _queue2civicrm_normalize_contrib_amnts( $trxn );
+  if ( !in_array( $trxn[ 'country' ], array_keys( $allocated ))) {
+    $allocated[ $trxn[ 'country' ]][ 'amnt' ] = $trxn[ 'gross' ];
+    $allocated[ $trxn[ 'country' ]][ 'count' ] = 1;
+  } else {
+    $allocated[ $trxn[ 'country' ]][ 'amnt' ] += $trxn[ 'gross' ];
+    $allocated[ $trxn[ 'country' ]][ 'count' ] += 1;
+  }
+}
+
+/**
+ * Hook to find missing transactions
+ * @return array containing the missing transactions
+ */
+function contribution_audit_find_missing_trxns( $start_date, $end_date ) {
+  $missing_trxns = module_invoke_all( 'contribution_audit_find_missing_trxns', $start_date, $end_date );
+  return $missing_trxns;
+}
+
+/**
+ * Hook to find transactions missing country info
+ * @return array contaning transactions missing country info
+ */
+function contribution_audit_find_trxns_missing_country_info() {
+  $trxns_missing_country_info = array();
+  module_invoke_all( 'contribution_audit_find_missing_trxns', $trxns_missing_country_info );
+  return $trxns_missing_country_info;
+}
