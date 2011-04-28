@@ -1,0 +1,33 @@
+<?php 
+
+define( 'CONTRIBUTION_AUDIT_LOG_AUDIT_DIR', '/usr/local/src/log_audit/' );
+
+/**
+ * Implementation of hook_menu()
+ */
+function log_audit_menu() {
+  $items = array();
+  
+  $items['admin/settings/contribution_audit/log_audit'] = array(
+    'title' => 'Log Audit Configuration',
+    'description' => t('Configure log audit settings.'),
+    'access arguments' => array('administer contribution_audit'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'log_audit_settings' ),
+  );
+  
+  return $items;
+}
+
+/**
+ * Callback for menu path "admin/settings/wmf_owa".
+ */
+function log_audit_settings() {
+  $form[ 'log_audit_dir' ] = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Path to directory containing log audit scripts' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'log_audit_dir', CONTRIBUTION_AUDIT_LOG_AUDIT_DIR ),
+  );
+  return system_settings_form( $form );
+}

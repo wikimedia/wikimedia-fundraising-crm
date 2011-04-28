@@ -1,0 +1,4 @@
+name = PayPal Audit
+description = Auditing framework for contacts and contributions in PayPal services
+core = 6.x
+package = CiviAudit

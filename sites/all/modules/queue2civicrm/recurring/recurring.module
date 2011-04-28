@@ -1,0 +1,728 @@
+<?php
+/**
+ * An extension of the queue2civicrm module to handle processing recurring payment
+ * related messages from a queue.
+ * 
+ * You may notice the use of the words 'recurring' and 'subscription' - they are 
+ * essentially interchangable.  They have slightly different meanings in the 
+ * PayPal land of subscription/recurring payments, but essentially they function
+ * the same.  'Recurring' more clearly captures the idea behind how the WMF uses
+ * PayPal's subscription payments and is how the fundraising team colloquially refers  
+ * to the 'subscription' service, so 'recurring' is used here in attempt to promote  
+ * greater clarity.  'Subscription' or its derivations are used in places where PayPal 
+ * uses the word in its field/variable names (eg subscr_payment). 
+ */
+
+// include common functions
+require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_common.inc' );
+
+/**
+ * Implementation of hook_menu_alter
+ * 
+ * Used to inject recurring menu item to Queue2civicrm configuration
+ */
+function recurring_menu_alter( &$items ) {
+  $items['admin/settings/queue2civicrm/recurring'] = array(
+	'title' => 'Recurring payments',
+	'description' => t( 'Configure recurring payments-related settings' ),
+	'access arguments' => array( 'administer queue2civicrm' ),
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array( 'recurring_settings' ),
+	'type' => MENU_LOCAL_TASK
+  );
+  return $items;
+}
+
+/**
+ * Settings form for recurring payments configuration
+ */
+function recurring_settings() {
+  $form = array();
+ 
+  $form[ 'recurring' ][ 'description' ] = array(
+    '#type' => 'fieldset',
+    '#title' => t( 'Recurring payments' ),
+	'#description' => t( 'Use the form below to configure settings pertinent to recurring contributions.' ),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  
+  $form[ 'recurring' ][ 'recurring_subscription' ] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subscription path'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('recurring_subscription', '/queue/recurring_test'),
+    '#description' => t( 'The path to the queue for recurring payments.' ),
+  );
+  
+  $form[ 'recurring' ][ 'recurring_batch' ] = array(
+    '#type' => 'select',
+    '#title' => t('Cron batch size'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('recurring_batch', 0),
+    '#options' => array(
+      0 => '0 (Disable)',
+      1 => 1,
+      5 => 5,
+      10 => 10,
+      20 => 20,
+      30 => 30,
+      40 => 40,
+      50 => 50,
+      75 => 75,
+      100 => 100,
+      120 => 120,
+      150 => 150,
+    ),
+  );
+  
+  return system_settings_form( $form );
+}
+
+/**
+ * Implementation of hook queue2civicrm_batch_process
+ * 
+ * @param $processed
+ */
+function recurring_queue2civicrm_batch_process( &$processed=0 ) {
+  $recurring_processed = 0;
+  watchdog('recurring', 'Attempting to process up to ' . variable_get('recurring_batch', 0) . ' contribution(s).');
+
+  // Attempt to dequeue items for the batch
+  for ($i = 0; $i < variable_get('recurring_batch', 0); ++$i) {
+    $success = recurring_process_msg();
+    if ($success) {
+      ++$recurring_processed;
+    } else {
+      break;
+    }
+  }
+  
+  if ($recurring_processed > 0) {
+    watchdog('recurring', 'Successfully processed ' . $recurring_processed . ' subscription messages.');
+  }
+  else {
+    watchdog('recurring', 'No contributions processed.');
+  }
+  
+  $processed += $recurring_processed;
+}
+
+/**
+ * Process one item from the queue.
+ * 
+ * This is verry similar to queue2civicrm_dequeue, but it is more clearly named ;)
+ * and supports option dequeueing depending on return status of import function.
+ * 
+ * @see recurring_import for status code information 
+ */
+function recurring_process_msg() {
+  $con = _queue2civicrm_stomp_connection();
+  $subscription_queue = variable_get( 'recurring_subscription', '/queue/test_recurring' );
+  if ( $con ) {
+    $con->subscribe( $subscription_queue );
+    $msg = $con->readFrame();
+    
+    // Skip processing if no message to process.
+    if ( $msg !== FALSE ) {
+      watchdog( 'recurring', 'Read frame:<pre>' . check_plain(print_r( $msg, TRUE ) ) . '</pre>' );      
+      set_time_limit( 60 );
+      try {
+        $msg_status = recurring_import( $msg );
+        
+        if ( $msg_status == 1 ) {
+          $con->ack($msg);
+          watchdog( 'recurring', 'Frame from queue succesfully processed.' );
+          return TRUE;
+        } elseif ( $msg_status == 2 ) {
+          watchdog( 'recurring', 'Frame from queue currently not processable, leaving in queue.' );
+          return TRUE;
+        } else {
+          watchdog( 'recurring', 'Could not process frame from queue.', array(), WATCHDOG_ERROR );
+          return FALSE;
+        }
+      }
+      catch (Exception $e) {
+        watchdog('recurring', 'Could not process frame from queue.', array(), WATCHDOG_ERROR );
+      }  
+    }
+    else {
+      watchdog('recurring', 'Nothing to process.');
+    }
+    $con->unsubscribe( $subscription_queue );
+  }
+  
+  return FALSE;
+}
+
+/**
+ * Import queued message contents to CiviCRM
+ * 
+ * Return status codes:
+ *  0 = processing error
+ * 	1 = fully processed, ready for removal
+ * 	2 = not currently processable, return to queue
+ * 
+ * @param $msg
+ * @return unknown_type
+ */
+function recurring_import( $msg ) {
+  global $txn_subscr_payment, $txn_subscr_acct;
+  civicrm_initialize(true);
+  
+  // store the original message for logging later
+  $msg_orig = $msg;
+  
+  $msg = recurring_normalize_msg( $msg );
+  
+  /**
+   * prepare data for logging
+   * 
+   * if we don't have a gateway_txn_id, we'll store the transaction type + the subscriber id instead - 
+   * this should happen for all non-payment transactions.
+   */
+  $log = array(
+    'gateway' => 'recurring_paypal',
+    'gateway_txn_id' => ( strlen( $msg[ 'gateway_txn_id_orig' ] ) ? $msg[ 'gateway_txn_id_orig' ] : $msg[ 'txn_type' ] . ":" . $msg[ 'subscr_id' ] ),
+    'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ), 
+    'timestamp' => time(),
+    'verified' => 0,
+  );
+  $cid = _queue2civicrm_log( $log );
+  
+  // log the message
+  watchdog('recurring', 'Recurring msg:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');  
+  
+  // define the subscription txn type for an actual 'payment'
+  $txn_subscr_payment = array( 'subscr_payment' );
+  
+  // define the subscription txn types that affect the subscription account
+  $txn_subscr_acct = array(
+    'subscr_cancel', // subscription canceled
+    'subscr_eot', // subscription expired
+    'subscr_failed', // failed signup
+    //'subscr_modify', // subscription modification
+    'subscr_signup', // subscription account creation
+  );
+  
+  // route the message to the appropriate handler depending on transaction type
+  if ( isset( $msg[ 'txn_type' ] ) && in_array( $msg[ 'txn_type' ], $txn_subscr_payment ) ) {
+    $ret_val = recurring_import_subscr_payment( $msg );
+  } elseif ( isset( $msg[ 'txn_type' ] ) && in_array( $msg[ 'txn_type' ], $txn_subscr_acct ) ) {
+    $ret_val = recurring_import_subscr_acct( $msg );
+  } else {
+    watchdog( 'recurring', 'Msg not recognized as a recurring payment related message.' );
+    $ret_val = 0;
+  }
+  
+  // update the log
+  if ( $ret_val && $cid ) {
+    $log[ 'cid' ] = $cid;
+    $log[ 'timestamp' ] = time();
+    $log[ 'verified' ] = 1;
+    _queue2civicrm_log( $log );
+  }
+  
+  return $ret_val;
+}
+
+/**
+ * Import a recurring payment
+ * 
+ * @param array $msg
+ * @return int
+ */
+function recurring_import_subscr_payment( $msg ) {
+  /**
+   * if the subscr_id is not set, we can't process it due to an error in the message.
+   *  
+   * otherwise, check for the parent record in civicrm_contribution_recur.
+   * if one does not exist, the message is not ready for reprocessing, so requeue it.
+   * 
+   * otherwise, process the payment.
+   */
+  if ( !isset( $msg[ 'subscr_id' ] ) ) {
+    watchdog( 'recurring', 'Msg missing the subscr_id; cannot process.');
+    return 0;
+  } elseif ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) { // check for parent record in civicrm_contribution_recur and fetch its id
+    watchdog( 'recurring', 'Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.' );
+    return 2;
+  }
+
+  civicrm_initialize(true);
+
+  // set the correct amount fields/data and do exchange rate conversions.
+  $msg = _queue2civicrm_normalize_contrib_amnts( $msg );
+  
+  //dsm($contribution);
+  watchdog('queue2civicrm', 'Contribution:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');  
+
+  $contact[ 'contact_id' ] = $recur_record->contact_id;
+
+  //insert the contribution
+  $contribution = _queue2civicrm_contribution_insert( $msg, $contact, $recur_record->id );
+  
+  /**
+   *  Insert the contribution record.
+   *  
+   *  PayPal only sends us full address information for the user in payment messages,
+   *  but we only want to insert this data once unless we're modifying the record.
+   *  We know that this should be the first time we're processing a contribution 
+   *  for this given user if we are also updating the contribution_tracking table
+   *  for this contribution.
+   */
+  if ( $msg[ 'contribution_tracking_update' ] ) {
+    
+    // Map the tracking record to the CiviCRM contribution
+    _queue2civicrm_update_contribution_tracking( $msg, $contribution );
+    
+    // update the contact
+    $contact = _queue2civicrm_contact_update( $msg, $contact[ 'contact_id' ] );
+  
+    // Insert the location record
+    $location = _queue2civicrm_location_insert( $msg, $contact );
+  
+    // Tag contact for review
+    $tag = _queue2civicrm_tag_insert( $contact );
+  }
+
+  // update subscription record with next payment date
+  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs->use_civicrm();
+  $query = "UPDATE {civicrm_contribution_recur} SET next_sched_contribution='%s'";
+  db_query( $query, date('Y-m-d H:i:s', strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'payment_date' ] )));
+  $queue2civicrm_dbs->use_default();
+  
+  // construct an array of useful info to invocations of queue2civicrm_import
+  $contribution_info = array(
+    'contribution_id' => $contribution['id'],
+    'contact_id' => $contact[ 'contact_id' ],
+    'msg' => $msg,
+  );
+  
+  // Send thank you email, other post-import things
+  module_invoke_all( 'queue2civicrm_import', $contribution_info );
+  
+  return 1;  
+}
+
+/**
+ * Import subscription account
+ * 
+ * Routes different subscription message types to an appropriate handling
+ * function.
+ * 
+ * @param $msg
+ * @return int
+ */
+function recurring_import_subscr_acct( $msg ) {
+  switch ( $msg[ 'txn_type' ] ) {
+    case 'subscr_signup':
+      $ret_val = recurring_import_subscr_signup( $msg );
+      break;
+      
+    case 'subscr_cancel':
+      $ret_val = recurring_import_subscr_cancel( $msg );
+      break;
+      
+    case 'subscr_eot':
+      $ret_val = recurring_import_subscr_eot( $msg );
+      break;
+      
+    case 'subscr_modify':
+      $ret_val = recurring_import_subscr_modify( $msg );
+      break;
+      
+    case 'subscr_failed':
+      $ret_val = recurring_import_subscr_failed( $msg );
+      break;
+     
+    default:
+      watchdog( 'recurring', 'Invalid subscription message type: %msg', array( '%msg' => print_r( $msg, true )), WATCHDOG_NOTICE );
+      $ret_val = 0;
+      break;
+  }  
+  
+  return $ret_val;
+}
+
+/**
+ * Import a subscription signup message
+ * 
+ * @param $msg
+ * @return int
+ */
+function recurring_import_subscr_signup( $msg ) {
+  // ensure there is not already a record of this account - if so, mark the message as succesfuly processed
+  if ( $recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
+    watchdog( 'recurring', 'Subscription account already exists: %msg', array( '%msg' => print_r( $msg, true )), WATCHDOG_NOTICE );
+    return 1;
+  }
+  
+  // create contact record
+  $contact = _queue2civicrm_contact_insert( $msg );
+  
+  // Insert the location record
+  //$location = _queue2civicrm_location_insert( $msg, $contact );
+  
+  // Tag contact for review
+  //$tag = _queue2civicrm_tag_insert( $contact );
+  
+  // prepare query for inserting data to civicrm_contribution_recur
+  $query = "INSERT INTO {civicrm_contribution_recur} (
+  		contact_id,
+  		amount,
+  		frequency_unit,
+  		frequency_interval,
+  		installments,
+  		start_date,
+  		create_date,
+  		trxn_id ) 
+  	VALUES ( %d, %d, '%s', %d, '%s', '%s', '%s', '%s' )";
+
+  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs->use_civicrm();
+  $result = db_query( $query, 
+    $contact[ 'contact_id' ], 
+    $msg[ 'amount' ],
+    $msg[ 'frequency_unit' ],
+    $msg[ 'frequency_interval' ],
+    $msg[ 'installments' ],
+    date( 'Y-m-d H:i:s', $msg[ 'start_date' ] ),
+    date( 'Y-m-d H:i:s', $msg[ 'create_date' ] ),
+    $msg[ 'subscr_id' ]
+  );
+  $queue2civicrm_dbs->use_default(); 
+   
+  if ( !$result ) {
+    watchdog( 'recurring', 'Failed inserting subscriber signup for subscriber id: %subscr_id', array( '%subscr_id' => print_r( $msg['subscr_id'], true )), WATCHDOG_NOTICE );
+    return 0;
+  } else {
+    watchdog( 'recurring', 'Succesfully inserted subscription signup for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+    return 1;
+  }
+}
+
+/**
+ * Process a subscriber cancelation
+ * 
+ * @param array $msg
+ * @return int
+ */
+function recurring_import_subscr_cancel( $msg ) {
+  // ensure we have a record of the subscription
+  if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
+    watchdog( 'recurring', 'Subscription account does not exist: %msg', array( '%msg' => print_r( $msg, true )), WATCHDOG_NOTICE );
+    return 2;
+  }
+  
+  $query = "UPDATE {civicrm_contribution_recur} SET cancel_date='%s', end_date='%s' WHERE trxn_id='%s'";
+  
+  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs->use_civicrm();
+  $result = db_query( 
+    $query, 
+    date( 'Y-m-d H:i:s', $msg[ 'cancel_date' ] ), 
+    date( 'Y-m-d H:i:s', $msg[ 'cancel_date' ] ), 
+    $msg[ 'subscr_id' ] );
+  $queue2civicrm_dbs->use_default();
+  
+  if ( !$result ) {
+    watchdog( 'recurring', 'There was a problem updating the subscription for cancelation for subscriber id: %subscr_id', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+    return 0;
+  } else {
+    watchdog( 'recurring', 'Succesfuly cacneled subscription for subscriber id %subscr_id', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+    return 1;
+  }
+}
+
+/**
+ * Process an expired subscription
+ * 
+ * @param array $msg
+ * @return int
+ */
+function recurring_import_subscr_eot( $msg ) {
+  // ensure we have a record of the subscription
+  if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
+    watchdog( 'recurring', 'Subscription account does not exist: %msg', array( '%msg' => print_r( $msg, true )), WATCHDOG_NOTICE );
+    return 2;
+  }
+  
+  $query = "UPDATE {civicrm_contribution_recur} SET end_date='%s', next_sched_contribution=NULL WHERE trxn_id='%s'";
+  
+  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs->use_civicrm();
+  $result = db_query( $query, date( 'Y-m-d H:i:s' ), $msg[ 'subscr_id' ] );
+  $queue2civicrm_dbs->use_default();
+  
+  if ( !$result ) {
+    watchdog( 'recurring', 'There was a problem updating the subscription for EOT for subscription id: %subscr_id', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+    return 0;
+  } else {
+    watchdog( 'recurring', 'Succesfuly ended subscription for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+    return 1;
+  }
+}
+
+/**
+ * Process a subscription modification
+ * 
+ * NOTE: at the moment, we are not acceptiong modification messages, so this is currently
+ * unused.
+ * 
+ * @param array $msg
+ * @return int
+ */
+function recurring_import_subscr_modify( $msg ) {
+  // ensure we have a record of the subscription
+  if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
+    watchdog( 'recurring', 'Subscription account does not exist for subscription id: %subscr_id', array( '%subscr_id' => print_r( $msg, true )), WATCHDOG_NOTICE );
+    return 2;
+  }
+  
+  // prepare query for updating data to civicrm_contribution_recur
+  $query = "UPDATE {civicrm_contribution_recur} SET
+  	SET
+  		amount=%d, 
+  		frequency_unit='%s', 
+  		frequency_interval=%d, 
+  		modified_date='%s',
+  		next_sched_contribution='%s'
+  	WHERE
+  		trxn_id='%s'";
+  
+  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs->use_civicrm();
+  $result = db_query( $query, 
+    $msg[ 'amount' ],
+    $msg[ 'frequency_unit' ],
+    $msg[ 'frequency_interval' ],
+    date( 'Y-m-d H:i:s', $msg[ 'modified_date' ] ),
+    date( 'Y-m-d H:i:s', strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'start_date' ] )),
+    $msg[ 'subscr_id' ]
+  );
+  $queue2civicrm_dbs->use_default();
+
+  if ( !$result ) {
+    watchdog( 'recurring', 'There was a problem updating the subscription record for subscription id ', print_r( $msg['subscr_id'], true), WATCHDOG_NOTICE );
+    return 0;
+  }
+   
+  // update the contact
+  $contact = _queue2civicrm_contact_update( $msg, $recur_record->contact_id );
+  
+  // Insert the location record
+  $location = _queue2civicrm_location_update( $msg, $contact );
+  
+  // Tag contact for review
+  $tag = _queue2civicrm_tag_insert( $contact );
+
+  watchdog( 'recurring', 'Subscription succesfully modified for subscription id: %subscr_id', array( '%subscr_id' => print_r( $msg['subscr_id'], true )), WATCHDOG_NOTICE );
+  return 1;
+}
+
+/**
+ * Process failed subscription payment
+ * @param $msg
+ * @return unknown_type
+ */
+function recurring_import_subscr_failed( $msg ) {
+  // ensure we have a record of the subscription
+  if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
+    watchdog( 'recurring', 'Subscription account does not exist for subscription: %subscription', array( "%subscription" => print_r( $msg, true )), WATCHDOG_NOTICE );
+    return 2;
+  }
+  
+  $query = "UPDATE {civicrm_contribution_recur} SET failure_count=%d, failure_retry_date='%s' WHERE trxn_id='%s'";
+  
+  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs->use_civicrm();
+  $result = db_query( $query, $msg[ 'failure_count' ], date( 'Y-m-d H:i:s', $msg[ 'failure_retry_date' ] ), $msg[ 'subscr_id' ] );
+  $queue2civicrm_dbs->use_default();
+  
+  if ( !$result ) {
+    watchdog( 'recurring', 'There was a problem updating the subscription for failed payment for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+    return 0;
+  } else {
+    watchdog( 'recurring', 'Succesfuly cacneled subscription for failed payment for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+    return 1;
+  }
+}
+
+/**
+ * Get recurring record in CiviCRM for the given subscriber id
+ * @param int $subscr_id
+ * @return object
+ */
+function recurring_get_recur_record( $subscr_id ) {
+  $query = "SELECT * FROM civicrm_contribution_recur WHERE trxn_id = '%s'";
+
+  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs->use_civicrm();
+  $recur_record = db_fetch_object( db_query( $query, $subscr_id ) );
+  $queue2civicrm_dbs->use_default();
+  
+  watchdog( 'recurring', 'Recurring record: %recur_record', array( '%recur_record' => print_r( $recur_record, true )), WATCHDOG_DEBUG );
+  return $recur_record;
+}
+
+/**
+ * Convert queued message to a standardized format
+ * 
+ * This is mostly wrapper to ensure that all necessary normalization occurs
+ * on the message.
+ * 
+ * @param array $msgnginx syslog
+ * @return array
+ */
+function recurring_normalize_msg( $msg  ) {
+  // Decode the message body.
+  if ( !is_array( $msg ) ) {
+    $msg = json_decode($msg->body, true);
+  }
+  
+  // we can safely assume we have a raw msg from paypal if contribution_tracking_id isn't set
+  if ( !isset( $msg[ 'contribution_tracking_id' ]) ) {
+    $msg = recurring_normalize_paypal_msg( $msg );
+  }
+  
+  $msg = _queue2civicrm_normalize_msg( $msg );
+  return $msg;
+}
+
+/**
+ * Normalize raw PayPal message
+ * 
+ * It is possible that we'll get a raw message from PayPal.  If that is the 
+ * case, this will convert the raw PayPal message to our normalized format.
+ * 
+ * This is large and unwieldly.
+ * 
+ * @param $msg
+ * @return array
+ */
+function recurring_normalize_paypal_msg( $msg ) {
+  $msg_normalized = array();
+
+  $timestamp = ( !isset( $msg[ 'payment_date' ] ) || !strlen( $msg[ 'payment_date' ] )) ? strtotime( "now" ) : strtotime( $msg[ 'payment_date' ] );
+
+  
+  // the subscription id
+  $msg_normalized[ 'subscr_id' ] = $msg[ 'subscr_id' ];
+  $msg_normalized[ 'txn_type' ] = $msg[ 'txn_type' ];
+  $msg_normalized[ 'contribution_tracking_id' ] = $msg[ 'custom' ];
+  $msg_normalized[ 'email' ] = $msg[ 'payer_email' ];
+
+  // Premium info
+  if ( isset( $msg[ 'option_selection1' ] ) && !is_numeric( $msg[ 'option_selection1' ] ) ) {
+    $msg_normalized[ 'size' ] = $msg[ 'option_selection1' ];
+    $msg_normalized[ 'premium_language' ] = $msg[ 'option_selection2' ];
+  }
+
+  // Contact info
+  if ( $msg[ 'txn_type' ] == 'subscr_signup' || $msg[ 'txn_type' ] == 'subscr_payment' || $msg[ 'txn_type' ] == 'subscr_modify' ) {
+	  $msg_normalized[ 'first_name' ] = $msg[ 'first_name' ];
+	  $msg_normalized[ 'last_name' ] = $msg[ 'last_name' ];
+	  $split = split("\n", str_replace("\r", '', $msg[ 'address_street' ]));
+	  $msg_normalized[ 'street_address' ] = $split[0];
+	  $msg_normalized[ 'supplemental_address_1' ] = $split[1];
+	  $msg_normalized[ 'city' ] = $msg[ 'address_city' ];
+	  $msg_normalized[ 'state_province' ] = $msg[ 'address_state' ];
+	  $msg_normalized[ 'country' ] = $msg[ 'address_country_code' ];
+	  $msg_normalized[ 'postal_code' ] = $msg[ 'address_zip' ];
+	
+	  // Shipping info (address same as above since PayPal only passes 1 address)
+	  $split = split(" ", $msg[ 'address_name' ]);
+	  $msg_normalized[ 'last_name_2' ] = array_pop($split);
+	  $msg_normalized[ 'first_name_2' ] = implode(" ", $split);
+	  $split = split("\n", str_replace("\r", '', $msg[ 'address_street' ]));
+	  $msg_normalized[ 'street_address_2' ] = $split[0];
+	  $msg_normalized[ 'supplemental_address_2' ] = $split[1];
+	  $msg_normalized[ 'city_2' ] = $msg[ 'address_city' ];
+	  $msg_normalized[ 'state_province_2' ] = $msg[ 'address_state' ];
+	  $msg_normalized[ 'country_2' ] = $msg[ 'address_country_code' ];
+	  $msg_normalized[ 'postal_code_2' ] = $msg[ 'address_zip' ];
+  }
+  
+  // payment-specific message handling
+  if ( $msg[ 'txn_type' ] == 'subscr_payment' ) {
+    // default to not update contribution tracking data
+    $msg_normalized[ 'contribution_tracking_update' ] = false;
+    
+    // get the database connection to the tracking table
+    $query = "SELECT * FROM {contribution_tracking} WHERE id=%d";
+    $result = db_query( $query, $msg[ 'custom' ] );
+    if ( $tracking_data = db_fetch_array( $result ) ) {
+	  // if we don't have a contribution id in the tracking data, we need to update
+      if ( !$tracking_data[ 'contribution_id' ] || !is_numeric( $tracking_data[ 'contribution_id' ] ) ) {
+	      $msg_normalized[ 'contribution_tracking_update' ] = true;
+	      $msg_normalized[ 'optout' ] = $tracking_data[ 'optout' ];
+	      $msg_normalized[ 'anonymous' ] = $tracking_data[ 'anonymous' ];
+	      $msg_normalized[ 'comment' ] = $tracking_data[ 'note' ];
+	  }
+    } else {
+      watchdog( 'recurring', "There is no contribution tracking id associated with this message.", array(), WATCHDOG_NOTICE );
+    }
+
+    $msg_normalized[ 'gateway' ] = ( strlen( $msg[ 'gateway' ] )) ? $msg[ 'gateway' ] : 'paypal';
+	$msg_normalized[ 'gateway_txn_id' ] = $msg[ 'txn_id' ];
+	$msg_normalized[ 'original_currency' ] = $msg[ 'mc_currency' ];
+	$msg_normalized[ 'original_gross' ] = $msg[ 'mc_gross' ];
+	$msg_normalized[ 'fee' ] = $msg[ 'mc_fee' ];  
+	$msg_normalized[ 'gross' ] = $msg[ 'mc_gross' ]; 
+	$msg_normalized[ 'net' ] = $msg_normalized[ 'gross' ] - $msg_normalized[ 'fee' ];
+	$msg_normalized[ 'payment_date' ] = strtotime( $msg[ 'payment_date' ] ); 
+  } else {
+    
+    // break the period out for civicrm
+    if( isset( $msg[ 'period3' ] ) ) {
+      // map paypal period unit to civicrm period units
+      $period_map = array(
+        'm' => 'month',
+        'd' => 'day',
+        'w' => 'week',
+        'y' => 'year',
+      );
+      
+      $period = explode( " ", $msg[ 'period3' ] );
+      $msg_normalized[ 'frequency_interval' ] = $period[0];
+      $msg_normalized[ 'frequency_unit' ] = $period_map[ strtolower( $period[1] ) ];
+    }
+    
+    if ( isset( $msg[ 'recur_times' ] ) ) {
+      $msg_normalized[ 'installments' ] = $msg[ 'recur_times' ];
+    }
+    
+    if ( isset( $msg[ 'amount3' ] ) ) {
+      $msg_normalized[ 'amount' ] = $msg[ 'amount3' ];
+    }
+    
+    if ( isset( $msg[ 'subscr_date' ] ) ) {
+      if ( $msg[ 'txn_type' ] == 'subscr_signup' ) {
+        $msg_normalized[ 'create_date' ] = strtotime( $msg[ 'subscr_date' ] );
+        $msg_normalized[ 'start_date' ] = strtotime( $msg[ 'subscr_date' ] );
+      } elseif( $msg[ 'txn_type' ] == 'subscr_cancel' ) {
+        $msg_normalized[ 'cancel_date' ] = strtotime( $msg[ 'subscr_date' ] );
+      }
+    }
+    
+    if ( $msg[ 'txn_type' ] == 'subscr_modify' ) {
+      $msg_normalized[ 'modified_date' ] = $msg[ 'subscr_effective' ];
+    }
+
+    if ( $msg[ 'txn_type' ] == 'subscr_failed' ) {
+      $recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] );
+      $msg_normalized[ 'failure_count' ] = $recur_record->failure_count + 1;
+      if ( isset( $msg[ 'retry_at' ] )) {
+        $msg_normalized[ 'failure_retry_date' ] = strtotime( $msg[ 'retry_at' ] );
+      } elseif( isset( $msg[ 'failure_retry_date' ] )) {
+        $msg_normalized[ 'failure_retry_date' ] = strtotime( $msg[ 'failure_retry_date' ] );
+      }
+    }
+  }
+  
+  $msg_normalized[ 'date' ] = $timestamp;
+  
+  return $msg_normalized;
+}

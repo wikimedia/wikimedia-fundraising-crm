@@ -1,0 +1,5 @@
+name = Queue to CiviCRM
+description = Imports contributions from a STOMP-compliant message queue.
+core = 6.x
+dependencies[] = exchange_rates
+package = queue2civicrm

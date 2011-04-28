@@ -1,0 +1,343 @@
+<?php
+// include common functions
+require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_common.inc' );
+
+/**
+ * Implementation of hook_menu().
+ */
+function queue2civicrm_menu() {
+  $items = array();
+  
+  $items['admin/settings/queue2civicrm'] = array(
+    'title' => 'Queue to CiviCRM',
+    'description' => t('Configure message queue interface.'),
+    'access arguments' => array('administer queue2civicrm'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('queue2civicrm_settings'),
+  );
+
+  $items['admin/settings/queue2civicrm/configure'] = array(
+    'title' => 'Configure',
+    'access arguments' => array('administer queue2civicrm'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['admin/settings/queue2civicrm/test'] = array(
+    'title' => 'Test',
+    'access arguments' => array('administer queue2civicrm'),
+    'page callback' => 'queue2civicrm_test',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/settings/queue2civicrm/insert'] = array(
+    'title' => 'Insert item',
+    'access arguments' => array('administer queue2civicrm'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('queue2civicrm_insertmq_form'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+  
+  $items['queue2civicrm'] = array(
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'page callback' => 'queue2civicrm_batch_process',
+  );
+  
+  return $items;
+}
+
+function queue2civicrm_test() {
+  require_once drupal_get_path('module', 'queue2civicrm') . '/Stomp.php';
+  $content = array();
+  
+  $content[] = '<p>Attempting connection to ' . variable_get('queue2civicrm_url', 'tcp://localhost:61613') . '... ';  
+  $con = new Stomp(variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
+  try {
+    $con->connect();
+    $content[] = '[SUCCESS]</p>';
+  }
+  catch (Exception $e) {
+    $content[] = '[FAILED]</p>' . "<p>$e</p>";
+  }
+  
+  return implode("\n", $content);
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function queue2civicrm_perm() {
+  return array('administer queue2civicrm');
+}
+
+/**
+ * Callback for menu path "admin/settings/queue2civicrm".
+ */
+function queue2civicrm_settings() {
+  $form = array();
+  
+  $form['queue2civicrm_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Connection URL'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('queue2civicrm_url', 'tcp://localhost:61613'),
+  );
+
+  $form['queue2civicrm_subscription'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subscription path'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('queue2civicrm_subscription', '/queue/test'),
+  );
+
+  $form['queue2civicrm_batch'] = array(
+    '#type' => 'select',
+    '#title' => t('Cron batch size'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('queue2civicrm_batch', 0),
+    '#options' => array(
+      0 => '0 (Disable)',
+      1 => 1,
+      5 => 5,
+      10 => 10,
+      20 => 20,
+      30 => 30,
+      40 => 40,
+      50 => 50,
+      75 => 75,
+      100 => 100,
+      120 => 120,
+      150 => 150,
+    ),
+  );
+  
+  return system_settings_form($form);
+}
+
+function queue2civicrm_batch_process() {
+  set_time_limit(10);
+
+  $processed = 0;
+  
+  watchdog('queue2civicrm', 'Attempting to process up to ' . variable_get('queue2civicrm_batch', 0) . ' contribution(s).');
+
+  // Attempt to dequeue items for the batch
+  for ($i = 0; $i < variable_get('queue2civicrm_batch', 0); ++$i) {
+    $success = queue2civicrm_dequeue();
+    if ($success) {
+      ++$processed;
+    } else {
+      break;
+    }
+  }
+  
+  // allow for other modules to handle their own related batch processing
+  module_invoke_all( 'queue2civicrm_batch_process', $processed );
+  
+  if ($processed > 0) {
+    watchdog('queue2civicrm', 'Successfully processed ' . $processed . ' contribution(s).');
+  }
+  else {
+    watchdog('queue2civicrm', 'No contributions processed.');
+  }
+}
+
+/**
+ * Remove one item from the queue and process it.
+ */
+function queue2civicrm_dequeue() {
+  $con = _queue2civicrm_stomp_connection();
+  $subscription_queue = variable_get('queue2civicrm_subscription', '/queue/test');
+  if ($con) {
+    $con->subscribe($subscription_queue);
+
+    $msg = $con->readFrame();
+    
+    // Skip processing if no message to process.
+    if ($msg !== FALSE) {
+      watchdog('queue2civicrm', 'Read frame:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');      
+      set_time_limit(60);
+      try {
+        queue2civicrm_import($msg);
+        $con->ack($msg);
+        return TRUE;
+      }
+      catch (Exception $e) {
+        watchdog('queue2civicrm', 'Could not process frame from queue.', array(), WATCHDOG_ERROR);
+      }  
+    }
+    else {
+      watchdog('queue2civicrm', 'Nothing to process.');
+    }
+    $con->unsubscribe( $subscription_queue ); 
+  }
+  return FALSE;
+}
+
+/**
+ * Process one contribution from the queue to CiviCRM.
+ */
+function queue2civicrm_import( $msg ) {
+  // save the original message for logging
+  $msg_orig = $msg;
+  
+  civicrm_initialize(true);
+
+  $msg = _queue2civicrm_normalize_msg( $msg );
+
+  /**
+   * prepare data for logging
+   * 
+   * if we don't have a gateway_txn_id, we'll store the transaction type + the subscriber id instead - 
+   * this should happen for all non-payment transactions.
+   */
+  $log = array(
+    'gateway' => $msg[ 'gateway' ],
+    'gateway_txn_id' => $msg[ 'gateway_txn_id' ],
+    'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ), 
+    'timestamp' => time(),
+    'verified' => 0,
+  );
+  $cid = _queue2civicrm_log( $log );
+  
+  // set the correct amount fields/data and do exchange rate conversions.
+  $msg = _queue2civicrm_normalize_contrib_amnts( $msg );
+  
+  //dsm($contribution);
+  watchdog('queue2civicrm', 'Contribution:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');  
+
+  // insert the contact information
+  $contact = _queue2civicrm_contact_insert( $msg );
+
+  // Insert the location record
+  $location = _queue2civicrm_location_insert( $msg, $contact );
+  
+  // Insert the contribution record.
+  $contribution = _queue2civicrm_contribution_insert( $msg, $contact );
+
+  // Tag contact for review
+  $tag = _queue2civicrm_tag_insert( $contact );
+  
+  // Map the tracking record to the CiviCRM contribution
+  _queue2civicrm_update_contribution_tracking( $msg, $contribution );
+
+  // construct an array of useful info to invocations of queue2civicrm_import
+  $contribution_info = array(
+    'contribution_id' => $contribution['id'],
+    'contact_id' => $contact['contact_id'],
+    'msg' => $msg,
+  );
+  
+  // update the log if things went well
+  if ( $cid && !$contribution[ 'is_error' ] ) {
+    $log[ 'cid' ] = $cid;
+    $log[ 'verrified' ] = 1;
+    $log[ 'timestamp' ] = time();
+    _queue2civicrm_log( $log );
+  }
+  
+  // Send thank you email, other post-import things
+  module_invoke_all( 'queue2civicrm_import', $contribution_info );
+  
+  return TRUE;
+}
+
+/**
+ * Make the form to insert a test message into the queue
+ */ 
+function queue2civicrm_insertmq_form() {
+  $message = queue2civicrm_generate_message();
+
+  $form['submit1'] = array(
+    '#value' => 'Insert into queue',
+    '#type' => 'submit'
+  );
+  
+  $form['queue'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Queue to submit to',
+    '#default_value' => '/queue/test_donations',
+    '#required' => TRUE
+  );
+  
+  foreach ( $message as $key => $value ) {
+    $form[$key] = array(
+      '#type' => 'textfield',
+      '#title' => $key,
+      '#default_value' => $value
+    );
+  }
+
+  $form['submit2'] = array(
+    '#value' => 'Insert into queue',
+    '#type' => 'submit'
+  );
+
+  return $form;
+}
+
+/** 
+ * Implementation of hook_form_submit
+ *
+ * Submits a test message to the queue
+ */
+function queue2civicrm_insertmq_form_submit($form, &$form_state) {
+  $con = _queue2civicrm_stomp_connection();
+  $result = $con->send( $form_state['values']['queue'], drupal_to_js($form_state['values']), array('persistent' => true));
+  $con->disconnect();
+  if (!$result) {
+    watchdog('queue2civicrm','Send to queue failed for this message: <pre>' . check_plain(print_r($form_state['values'], TRUE)) . '</pre>');
+    $content = 'Failed to add item to the queue.';
+    drupal_set_message($content, 'error');
+  }
+  $content = 'Success adding item to the queue!';
+  watchdog('queue2civicrm','Successfully added the following to the queue: <pre>' . check_plain(print_r($form_state['values'], TRUE)) . '</pre>');
+  drupal_set_message($content);
+}
+
+/**
+ * Generates random data for queue and donation insertion testing
+ */
+function queue2civicrm_generate_message() {
+  //language codes
+  $lang = array('EN','DE','FR');
+
+  $currency_codes = array('USD', 'GBP', 'EUR', 'ILS');
+  shuffle($currency_codes);
+  $currency = (mt_rand(0,1)) ? 'USD' : $currency_codes[0];
+  
+  $message = array(
+	'contribution_tracking_id' => '',
+	'optout'                 => mt_rand(0,1),
+	'anonymous'              => mt_rand(0,1),
+	'comment'                => mt_rand(),
+	'utm_source'             => mt_rand(),
+	'utm_medium'             => mt_rand(),
+	'utm_campaign'           => mt_rand(),
+	'language'               => array_rand($lang),
+	'referrer'               => 'http://example.com/'.mt_rand(),
+	'email'                  => mt_rand() . '@example.com',
+	'first_name'             => mt_rand(),
+	'middle_name'            => mt_rand(),
+	'last_name'              => mt_rand(),
+	'street_address'         => mt_rand(),
+	'supplemental_address_1' => '',
+	'city'                   => 'San Francisco',
+	'state_province'         => 'CA',
+	'country'                => 'USA',
+	'countryID'              => 'US',
+	'postal_code'            => mt_rand(02801,99999),
+	'gateway'                => 'insert_test',
+	'gateway_txn_id'         => mt_rand(),
+	'response'               => mt_rand(),
+	'currency'               => $currency,
+	'original_currency'      => $currency_codes[0],
+	'original_gross'         => mt_rand()/100,
+	'fee'                    => '0',
+	'gross'                  => mt_rand()/100,
+	'net'                    => mt_rand(),
+	'date'                   => date('r'), //time(),
+  );
+  return $message;
+}
