@@ -56,10 +56,15 @@ function _queue2civicrm_normalize_msg( $msg ) {
     $msg = json_decode($msg->body, true);
   }
 
-  // hack to ignore msgs in the queue w/o a contribution tracking id
+  // if we're missing a contrib id, insert new record to the table
+  // this can happen if a user somehow makes a trxn from outside the normal workflow
   if ( !isset( $msg[ 'contribution_tracking_id' ] )) {
-    watchdog( 'queue2civicrm', 'Contribution missing contribution_tracking_id' );
-    return FALSE;
+    watchdog( 'queue2civicrm', 'Contribution missing contribution_tracking_id', array(), WATCHDOG_DEBUG );
+    $anonymous = ( $msg[ 'anonymous' ] ) ? 1 : 0;
+    $optout = ( $msg[ 'optout' ] ) ? 1 : 0;
+    $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( 'civicrm', date('YmdHis', $msg[ 'date' ] ), $optout, $anonymous );
+    watchdog( 'queue2civicrm', 'Newly inserted contribution tracking id: @id', array('@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
+    $msg[ 'contribution_tracking_id' ] = $contribution_tracking_id;
   }
 
   // Convert times to Unix timestamps.
@@ -73,6 +78,25 @@ function _queue2civicrm_normalize_msg( $msg ) {
   $msg['gateway_txn_id'] .= ' ' . time();
   
   return $msg;
+}
+
+/**
+ * Insert a record into contribution_tracking table
+ * 
+ * Primarily used when a record does not already exist in the table for a
+ * particular transaction.  Rare, but inserting some data for a trxn when
+ * absent helps facilitate better analytics.
+ * 
+ * @return the contribution_tarcking id 
+ */
+function _queue2civicrm_insert_contribution_tracking( $utm_medium, $ts, $optout=null, $anonymous=null ) {
+  // make sure we're using the default (drupal) db
+  $dbs = _queue2civicrm_get_dbs();
+  $dbs->use_default();
+  
+  $query = "INSERT INTO {contribution_tracking} ( utm_medium, optout, anonymous, ts ) VALUES ( '%s', '%d', '%d', '%d' )";
+  db_query( $query, array( 'utm_medium', 'optout', 'anonymous', 'ts' ));
+  return db_last_insert_id( 'contribution_tracking', 'id' );
 }
 
 /**
@@ -316,7 +340,7 @@ function _queue2civicrm_update_contribution_tracking( $msg, $contribution ) {
   if (array_key_exists( 'contribution_tracking_id', $msg )) {
     $result = db_query('UPDATE {contribution_tracking} SET contribution_id=%d WHERE id=%d', $contribution['id'], $msg['contribution_tracking_id']);
     if ( !$result ) {
-      watchdog( 'queue2civicrm', "There was a probme updating contribution_tracking for message: %msg", array( '%msg' => print_r( $msg, true )), WATCHDOG_ERROR );
+      watchdog( 'queue2civicrm', "There was a problem updating contribution_tracking for message: %msg", array( '%msg' => print_r( $msg, true )), WATCHDOG_ERROR );
       return FALSE;
     } else {
       watchdog( 'queue2civicrm', 'Successfuly updated contribution_tracking for message: %msg', array( '%msg' => print_r( $msg, true)));
