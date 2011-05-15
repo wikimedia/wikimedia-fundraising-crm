@@ -1,33 +1,111 @@
 <?php 
 
 define( 'CONTRIBUTION_AUDIT_LOG_AUDIT_DIR', '/usr/local/src/log_audit/' );
+$global_query_home = "./";
 
 /**
- * Implementation of hook_menu()
+ * Executes query that finds missing transactions and return in an array containing them
  */
-function log_audit_menu() {
-  $items = array();
-  
-  $items['admin/settings/contribution_audit/log_audit'] = array(
-    'title' => 'Log Audit Configuration',
-    'description' => t('Configure log audit settings.'),
-    'access arguments' => array('administer contribution_audit'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array( 'log_audit_settings' ),
-  );
-  
-  return $items;
+function get_trxn_info($trxn_query_name, $params) {
+	
+	
+
+	// Establish a connection to the database server
+	$dbs = _queue2civicrm_get_dbs();
+	$dbs->use_civicrm();
+	
+	// Read the SQL query
+	// $sql_file="transaction_contact_audit_unformatted.sql";
+	
+	$query = file_get_contents($global_query_home . $trxn_query_name . ".sql");	
+	$query_parts = explode('\\',  $query);
+	$query = '';
+	
+	for ( $counter = 0; $counter < count($query_parts); $counter += 1)
+	{ $query=$query.$query_parts[$counter]; }
+	
+	// Format and execute
+	$query = format_trxn_query_params($trxn_query_name,  $query, $params);
+	$result  = CRM_Core_DAO::executeQuery( $query );
+	
+	// Parse the results
+	// <id, amount> 
+	$trxns = array(); 
+	if (mysql_num_rows($result) > 0){ while ( $result->fetch() )  { $trxns[] = array($result->'id', $result>'amount'); }}
+	
+	return $trxns;
 }
 
-/**
- * Callback for menu path "admin/settings/wmf_owa".
- */
-function log_audit_settings() {
-  $form[ 'log_audit_dir' ] = array(
-    '#type' => 'textfield',
-    '#title' => t( 'Path to directory containing log audit scripts' ),
-    '#required' => TRUE,
-    '#default_value' => variable_get( 'log_audit_dir', CONTRIBUTION_AUDIT_LOG_AUDIT_DIR ),
-  );
-  return system_settings_form( $form );
+/* --
+	Format the query conditioned on the name 
+-- */
+function format_trxn_query_params($trxn_query_name,  $query, $params) {
+
+	// __transaction_contact_audit_unformatted.sql__ searches for missing transaction ids 
+	if($trxn_query_name == 'transaction_contact_audit_unformatted') {
+		$start_time = $params['start_time'];
+		$end_time = $params['end_time'];
+		
+		$formatted_query = sprintf($query, "%", "%", "%", "%", "%", "%", $start_time, "%", "%", "%", "%", "%", "%", $end_time);  // 6
+	}	
+	
+	return $formatted_query;
 }
+
+/* --
+	Grep the ipn logs for encoded json
+-- */
+function search_logs($log_filename, $pattern)  {
+
+	// $log_filename = ""
+	// $pattern = ""
+	$cmd = 'grep -a "\"txn_id\":\"%s\"" %s';
+	$cmd = sprintf($cmd, $pattern, $log_filename);  // 6
+	// $cmd = sprintf($cmd, '4GK44759MY214030Y', $log_filename);  
+	
+	$exec = exec($cmd);
+	
+	return $exec;
+}
+
+/* --
+	Produce array containing json data of missing transactions
+	
+	@FIXME - format transaction json in a different way before returning
+-- */
+function get_JSON_from_ipn_logs($log_filename, $params) {
+	
+	$trxn_query_name = 'transaction_contact_audit_unformatted';
+	$trxn_info_collection = get_trxn_info($trxn_query_name, $params);
+	
+	$trxns_processed_count = 0;
+	$not_processed = array();
+	$trxn_array = array() ;
+	
+	foreach ($trxn_info_collection as $trxn_info) {
+		// print $trxn_info[0] . "\n";
+		// print $trxn_info[1] . "\n";
+		$trxn_id = $trxn_info[0];
+		$trxn_amount = $trxn_info[1];
+		$out = search_logs($log_filename, $trxn_id);
+		
+		if (strlen($out) != 0)  {			# if command exit status == 0
+			
+			$trxn_json = trim(strstr($out, "{"));
+			
+			$trxn_json_array[$trxn_id] = json_decode($trxn_json, true);
+			// var_dump($trxn_array[$trxn_id]);
+			$trxns_processed_count += 1;
+		}
+		else { $not_processed[$trxn_id] = $trxn_info; }
+	}
+	
+	// return array( "trxn_array" => $trxn_array, "not_processed" => $not_processed, "trxns_processed_count" => $trxns_processed_count);
+	return $trxn_json_array;
+}
+
+
+// $params = array("start_time" => '20100701000000', "end_time" => '20110701000000');
+// get_JSON_from_ipn_logs("recurring_out.20110430_121654", $params);
+
+?>
