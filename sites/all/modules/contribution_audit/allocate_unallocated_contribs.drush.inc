@@ -48,7 +48,8 @@ function drush_allocate_unallocated_contribs() {
   
   // for memory purposes, we don't want startdate/enddate to be more than 7 days apart, this should be configurable.
   while ( strtotime( $start_date . " 00:00:00" ) < strtotime( $end_date . " 23:59:59" )) {
-    $this_end_date = date( 'Y-m-d', strtotime( '+7 days', strtotime( $start_date )));
+    //@FIXME make this configuable - this exists so that we can prevent memory problems when dealing with large data sets
+  	$this_end_date = date( 'Y-m-d', strtotime( '+7 days', strtotime( $start_date )));
     // if our increment goes beyond the original end date, reset it back to the original end date
     if ( strtotime( $this_end_date ) > strtotime( $end_date )) {
       $this_end_date = $end_date;
