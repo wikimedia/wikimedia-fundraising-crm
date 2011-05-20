@@ -35,7 +35,6 @@ function log_audit_settings() {
 
 /**
  * Executes query that finds missing transactions and return in an array containing them
- * @FIXME don't use the query in the query file
  */
 function log_audit_get_trxn_info($trxn_query_name, $params) {
   // Establish a connection to the database server
@@ -86,10 +85,6 @@ function log_audit_search_logs($log_filename, $pattern)  {
 
 /* --
 	Produce array containing json data of missing transactions
-	
-	@FIXME -
-	abstract out relying on query to get transaction info 
-	format transaction json in a different way before returning
 -- */
 function log_audit_trxns_search( $log_filename, $trxns ) {
 	
