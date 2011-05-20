@@ -217,10 +217,6 @@ function paypal_audit_format_trxns( $trxns, $report_obj, $gateway='PayflowPro' )
     $formatted_trxn['date'] = strtotime( $trxn[ $columns[ 'Time' ]] );
     
     array_push( $trxns_formatted, $formatted_trxn );
-    // this is a hack to output data in a format for the log parser not currently integrated.  ugly.
-    if ( $gateway != 'PayflowPro' && !strlen($formatted_trxn['country']) ){
-      print $formatted_trxn['gateway_txn_id'] . '\t' . $formatted_trxn['gross'] . "\n";
-    } 
   }
   
   return $trxns_formatted;
