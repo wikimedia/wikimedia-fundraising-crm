@@ -1,7 +1,38 @@
 <?php 
-
-define( 'CONTRIBUTION_AUDIT_LOG_AUDIT_DIR', '/usr/local/src/log_audit/' );
+define( 'LOG_AUDIT_LOG_PATH', '/tmp/ipn_logs/*' );
 $global_query_home = "./";
+
+/**
+ * Implementation of hook_menu()
+ */
+function log_audit_menu() {
+  $items = array();
+  
+  $items['admin/settings/contribution_audit/log_audit'] = array(
+    'title' => 'Log Audit Configuration',
+    'description' => t('Configure log audit settings.'),
+    'access arguments' => array('administer contribution_audit'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'log_audit_settings' ),
+    'type' => MENU_LOCAL_TASK
+  );
+  
+  return $items;
+}
+
+/**
+ * Callback for menu path "admin/settings/contribution_audit/log_audit".
+ */
+function log_audit_settings() {
+  $form[ 'log_audit_file' ] = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Path to logs to audit' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'log_audit_file', LOG_AUDIT_LOG_PATH ),
+    '#description' => t( 'The path to the file of log(s) to audit.  Can contain wild cards.' ),
+  );
+  return system_settings_form( $form );
+}
 
 /**
  * Executes query that finds missing transactions and return in an array containing them
@@ -71,7 +102,7 @@ function log_audit_search_logs($log_filename, $pattern)  {
 	abstract out relying on query to get transaction info 
 	format transaction json in a different way before returning
 -- */
-function log_audit_get_json_from_ipn_logs( $log_filename, $trxns ) {
+function log_audit_trxns_search( $log_filename, $trxns ) {
 	
 	//$trxn_query_name = 'transaction_contact_audit_unformatted';
 	//$trxn_info_collection = log_audit_get_trxn_info($trxn_query_name, $params);
@@ -80,24 +111,105 @@ function log_audit_get_json_from_ipn_logs( $log_filename, $trxns ) {
 	$not_processed = array();
 	$trxn_array = array() ;
 	
-	foreach ( $trxns as $trxn_id ) {
-		$out = log_audit_search_logs( $log_filename, $trxn_id );
-		
-		if (strlen($out) != 0)  {			# if command exit status == 0
-			
-			$trxn_json = trim(strstr($out, "{"));
-			
-			$trxn_json_array[$trxn_id] = json_decode($trxn_json, true);
-			// var_dump($trxn_array[$trxn_id]);
-			$trxns_processed_count += 1;
-		}
-		else { $not_processed[$trxn_id] = $trxn_info; }
-	}
+    foreach ( $trxns as $trxn_id ) {
+      $trxn = log_audit_trxn_search( $trxn_id );
+      if ( !$trxn ) {
+        $not_processed[ $trxn_id ] = $trxn_info;
+      }
+      $trxn_json_array[ $trxn_id ] = $trxn;
+      $trxns_processed_count += 1;
+    }
 	
 	// return array( "trxn_array" => $trxn_array, "not_processed" => $not_processed, "trxns_processed_count" => $trxns_processed_count);
 	return $trxn_json_array;
 }
 
+/**
+ * Search for a single transaction in the logs
+ * @param int $trxn_id
+ * @return array Formatted trxn info if found, false if not found
+ */
+function log_audit_trxn_search( $trxn_id ) {
+  $result = log_audit_search_logs( $log_filename, $trxn_id );
+  if ( !strlen( $result )) {
+    return false;
+  }
+  $trxn_json = trim( strstr( $out, "{" ));
+  $trxn = log_audit_format_trxn( json_decode( $trxn_json, true ));
+  return $trxn;
+}
+
+function log_audit_format_trxn( $trxn ) {
+  $formatted_trxn = array();
+  
+  // handle country
+  if ( $trxn[ 'country' ] ) {
+    $formatted_trxn[ 'country' ] = $trxn[ 'country' ];
+  } elseif( $trxn[ 'country_2' ] ) {
+    $formatted_trxn[ 'country' ] = $trxn[ 'country_2' ];
+  } elseif( $trxn[ 'residence_country' ] ) {
+    $formatted_trxn[ 'country' ] = $trxn[ 'residence_country' ] ;
+  }
+  
+  // handle gateway
+  if ( $trxn[ 'gateway' ] ) {
+    $formatted_trxn[ 'gateway' ] = $trxn[ 'gateway' ];
+  } else {
+    $formatted_trxn[ 'gateway' ] = 'paypal_recurring';
+  }
+  
+  // trxn id
+  if ( $formatted_trxn[ 'gateway' ] == 'paypal' ) {
+    $formatted_trxn['gateway_txn_id'] = $trxn[ 'gateway_txn_id' ];
+  } elseif( $formatted_trxn[ 'gateway' ] == 'paypal_recurring' ) {
+    $formatted_trxn[ 'gateway_txn_id' ] = $trxn[ 'txn_id' ];
+  }
+  
+  // currency
+  if( $trxn[ 'mc_currency' ] ) {
+    $formatted_trxn[ 'original_currency' ] = $trxn[ 'mc_currency' ];
+  } elseif( $trxn[ 'original_currency' ] ) {
+    $formatted_trxn[ 'currency' ] = $trxn[ 'original_currency' ];
+  }
+  
+  // gross
+  if ( $trxn[ 'gross' ] ) {
+    $formatted_trxn[ 'gross' ] = $trxn[ 'gross' ];
+  } elseif ( $trxn[ 'mc_gross' ] ) {
+    $formatted_trxn[ 'gross' ] = $trxn[ 'mc_gross' ];
+  } elseif( $trxn[ 'payment_gross' ] ) {
+    $formatted_trxn[ 'gross' ] = $trxn[ 'payment_gross' ];
+  }
+
+  // date
+  if ( $trxn[ 'date' ] ) {
+    $formatted_trxn[ 'date' ] = $trxn[ 'date' ];
+  } elseif ( $trxn[ 'payment_date' ] ) {
+    $formatted_trxn[ 'date' ] = strtotime( $trxn[ 'payment_date' ] );
+  }
+  return $formatted_trxn;
+}
+
+/**
+ * Invocation of hook_contribution_audit_secondary_trxn_search
+ *
+ * Performs a secondary serach for missing transactions.
+ * @param array $missing_trxn
+ */
+function log_audit_contribution_audit_secondary_trxn_search( &$missing_trxn ) {
+  // check if the contribution is still unalloacted
+  if ( strlen( $missing_trxn[ 'country' ] ) && $missing_trxn[ 'country' ] != 'unknown' ) {
+    return;
+  }
+  
+  // execute the search
+  $trxn = log_audit_trxn_search( $missing_trxn[ 'gateway_txn_id' ] );
+  
+  // if it was found, set missing_trxn to the found trxn info
+  if ( $trxn ) {
+    $missing_trxn = $trxn;
+  }
+}
 
 // $params = array("start_time" => '20100701000000', "end_time" => '20110701000000');
 // log_audit_get_json_from_ipn_logs("recurring_out.20110430_121654", $params);
