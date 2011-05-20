@@ -1,6 +1,5 @@
 <?php 
 define( 'LOG_AUDIT_LOG_PATH', '/tmp/ipn_logs/*' );
-$global_query_home = dirname( __FILE__ );
 
 /**
  * Implementation of hook_menu()
@@ -39,22 +38,18 @@ function log_audit_settings() {
  * @FIXME don't use the query in the query file
  */
 function log_audit_get_trxn_info($trxn_query_name, $params) {
-	// Establish a connection to the database server
+  // Establish a connection to the database server
 	$dbs = _queue2civicrm_get_dbs();
 	$dbs->use_civicrm();
 	
 	// Read the SQL query
-	$query = file_get_contents($global_query_home . "/" . $trxn_query_name . ".sql");	
-	$query_parts = explode('\\',  $query);
-	
-	for ( $counter = 0; $counter < count($query_parts); $counter += 1) { 
-	  $query = $query . $query_parts[$counter]; 
-	}
-	
-	// Format and execute
-	$query = log_audit_format_trxn_query_params($trxn_query_name,  $query, $params);
-    $result = db_query( $query );
-    	
+	$query = file_get_contents( dirname( __FILE__ ) . "/" . $trxn_query_name . ".sql");	
+  var_dump( $query );
+  
+  // Format and execute
+  $result = db_query( $query, $params[ 'start_time' ], $params[ 'end_time' ] );
+  var_dump( $result );
+exit;  
 	// Parse the results
 	$trxns = array(); 
 	while ( $trxn = db_fetch_object( $result ))  { 
@@ -73,7 +68,9 @@ function log_audit_format_trxn_query_params($trxn_query_name,  $query, $params) 
 	if($trxn_query_name == 'transaction_contact_audit_unformatted') {
 		$start_time = $params['start_time'];
 		$end_time = $params['end_time'];
-		
+	  var_dump( $query );
+    var_dump( $start_time );
+    var_dump( $end_time );  
 		$formatted_query = sprintf($query, "%", "%", "%", "%", "%", "%", $start_time, "%", "%", "%", "%", "%", "%", $end_time);  // 6
 	}	
 	
@@ -219,7 +216,7 @@ function log_audit_contribution_audit_find_missing_trxns( $start_date, $end_date
   $params = array( 'start_time' => date( 'Ymd', strtotime( $start_date)) . "000000", 'end_time' => date( "Ymd", strtotime( $end_date )) . "235959" );
   $unallocated_trxns = log_audit_get_trxn_info( $trxn_query_name, $params );
   $trxns = array();
-  foreach( $unallocated_trxn as $unallocated_trxn_id ) {
+  foreach( $unallocated_trxns as $unallocated_trxn_id ) {
     $trxn = log_audit_trxn_search( $unallocated_trxn_id );
     $trxns[ $unalloacted_trxn_id ] = $trxn;
   }
