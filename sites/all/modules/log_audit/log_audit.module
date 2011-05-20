@@ -67,23 +67,21 @@ function log_audit_search_logs($log_filename, $pattern)  {
 /* --
 	Produce array containing json data of missing transactions
 	
-	@FIXME - format transaction json in a different way before returning
+	@FIXME -
+	abstract out relying on query to get transaction info 
+	format transaction json in a different way before returning
 -- */
-function log_audit_get_json_from_ipn_logs($log_filename, $params) {
+function log_audit_get_json_from_ipn_logs( $log_filename, $trxns ) {
 	
-	$trxn_query_name = 'transaction_contact_audit_unformatted';
-	$trxn_info_collection = log_audit_get_trxn_info($trxn_query_name, $params);
+	//$trxn_query_name = 'transaction_contact_audit_unformatted';
+	//$trxn_info_collection = log_audit_get_trxn_info($trxn_query_name, $params);
 	
 	$trxns_processed_count = 0;
 	$not_processed = array();
 	$trxn_array = array() ;
 	
-	foreach ($trxn_info_collection as $trxn_info) {
-		// print $trxn_info[0] . "\n";
-		// print $trxn_info[1] . "\n";
-		$trxn_id = $trxn_info[0];
-		$trxn_amount = $trxn_info[1];
-		$out = log_audit_search_logs($log_filename, $trxn_id);
+	foreach ( $trxns as $trxn_id ) {
+		$out = log_audit_search_logs( $log_filename, $trxn_id );
 		
 		if (strlen($out) != 0)  {			# if command exit status == 0
 			
