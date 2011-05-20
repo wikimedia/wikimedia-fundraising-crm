@@ -70,24 +70,6 @@ function log_audit_get_trxn_info($trxn_query_name, $params) {
 }
 
 /* --
-	Format the query conditioned on the name 
--- */
-function log_audit_format_trxn_query_params($trxn_query_name,  $query, $params) {
-
-	// __transaction_contact_audit_unformatted.sql__ searches for missing transaction ids 
-	if($trxn_query_name == 'transaction_contact_audit_unformatted') {
-		$start_time = $params['start_time'];
-		$end_time = $params['end_time'];
-	  var_dump( $query );
-    var_dump( $start_time );
-    var_dump( $end_time );  
-		$formatted_query = sprintf($query, "%", "%", "%", "%", "%", "%", $start_time, "%", "%", "%", "%", "%", "%", $end_time);  // 6
-	}	
-	
-	return $formatted_query;
-}
-
-/* --
 	Grep the ipn logs for encoded json
 -- */
 function log_audit_search_logs($log_filename, $pattern)  {
@@ -138,14 +120,13 @@ function log_audit_trxn_search( $trxn_id ) {
   if ( !strlen( $result )) {
     return false;
   }
-  $trxn_json = trim( strstr( $out, "{" ));
+  $trxn_json = trim( strstr( $result, "{" ));
   $trxn = log_audit_format_trxn( json_decode( $trxn_json, true ));
   return $trxn;
 }
 
 function log_audit_format_trxn( $trxn ) {
   $formatted_trxn = array();
-  
   // handle country
   if ( $trxn[ 'country' ] ) {
     $formatted_trxn[ 'country' ] = $trxn[ 'country' ];
@@ -228,7 +209,7 @@ function log_audit_contribution_audit_find_missing_trxns( $start_date, $end_date
   $trxns = array();
   foreach( $unallocated_trxns as $unallocated_trxn_id ) {
     $trxn = log_audit_trxn_search( $unallocated_trxn_id );
-    $trxns[ $unalloacted_trxn_id ] = $trxn;
+    $trxns[ $unallocated_trxn_id ] = $trxn;
   }
   return $trxns;
 }

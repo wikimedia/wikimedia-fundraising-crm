@@ -56,10 +56,8 @@ function contribution_audit_allocate_unallocated_contribs( $start_date, $end_dat
     // what happens if we still dont have country data?
     if ( !strlen($missing_trxn[ 'country' ])) {
       $missing_trxn[ 'country' ] = 'unknown';
-      var_dump( $missing_trxn );
       // try secondary searches
       module_invoke_all( 'contribution_audit_secondary_trxn_search', $missing_trxn );
-      var_dump( $missing_trxn );
     }
     _contribution_audit_aggregate_country_amounts( $allocated, $missing_trxn );
   }
