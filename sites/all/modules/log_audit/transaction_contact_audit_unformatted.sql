@@ -2,9 +2,7 @@
 
 select 
 
-substring(contribution_address.trxn_id,18,17) as id,
-contribution_address.total_amount as amount
-
+substring(contribution_address.trxn_id,18,17) as trxn_id,
 
 from
 
