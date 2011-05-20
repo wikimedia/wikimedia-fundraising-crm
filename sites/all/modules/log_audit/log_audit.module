@@ -51,9 +51,9 @@ function log_audit_get_trxn_info($trxn_query_name, $params) {
   					civicrm_address.country_id as country_id
   				FROM civicrm_contribution LEFT JOIN civicrm_address ON civicrm_contribution.contact_id = civicrm_address.contact_id
   				WHERE DATE_FORMAT( receive_date, '%%Y%%m%%d%%H%%i%%s' ) >= %d
-  					AND DATE_FORMAT( receive_date, '%%Y%%m%%d%%H%%i%%s' <= %d
+  					AND DATE_FORMAT( receive_date, '%%Y%%m%%d%%H%%i%%s' ) <= %d
   					AND civicrm_contribution.trxn_id REGEXP 'RECURRING PAYPAL'
-  				) AS missing_contribs
+  			) AS missing_contribs
   			WHERE country_id IS NULL";
   
   // Format and execute
