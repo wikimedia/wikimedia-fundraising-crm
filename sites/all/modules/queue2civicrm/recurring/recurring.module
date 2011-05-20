@@ -581,7 +581,7 @@ function recurring_normalize_msg( $msg  ) {
   if ( !is_array( $msg ) ) {
     $msg = json_decode($msg->body, true);
   }
-  
+
   // we can safely assume we have a raw msg from paypal if contribution_tracking_id isn't set
   if ( !isset( $msg[ 'contribution_tracking_id' ]) ) {
     $msg = recurring_normalize_paypal_msg( $msg );
@@ -611,8 +611,7 @@ function recurring_normalize_paypal_msg( $msg ) {
   // the subscription id
   $msg_normalized[ 'subscr_id' ] = $msg[ 'subscr_id' ];
   $msg_normalized[ 'txn_type' ] = $msg[ 'txn_type' ];
-  // @FIXME make sure we actually have a contribution id
-  $msg_normalized[ 'contribution_tracking_id' ] = $msg[ 'custom' ];
+  $msg_normalized[ 'contribution_tracking_id' ] = recurring_get_contribution_tracking_id( $msg[ 'custom' ] );
   $msg_normalized[ 'email' ] = $msg[ 'payer_email' ];
 
   // Premium info
@@ -726,4 +725,59 @@ function recurring_normalize_paypal_msg( $msg ) {
   $msg_normalized[ 'date' ] = $timestamp;
   
   return $msg_normalized;
+}
+
+/**
+ * Get the contribution tracking id for a given a recurring trxn
+ * 
+ * If the 'custom' field is not set (from paypal, which would normally carry the tracking id),
+ * we look and see if any related recurring transactions have had a contrib tracking id set.
+ * 
+ * If they do, we'll use that contrib tracking id, otherwise we'll generate a new row in the
+ * contrib tracking table.
+ * @param array $msg
+ * @return int contribution tracking id
+ */
+function recurring_get_contribution_tracking_id( $msg ) {
+  if ( strlen( $msg[ 'custom' ] )) {
+    return $msg[ 'custom' ];
+  } elseif ( $msg[ 'txn_type' ] == 'subscr_payment' ) {
+    $contribution_tracking_id = null;
+    $contrib_ids = array(); // for holding related contribtion ids
+    
+    $dbs = _queue2civicrm_get_dbs();
+    $dbs->use_civicrm();
+    // determine if we already have a contrib tracking id for related contribs, working backwards from recur record
+    $query = "SELECT id FROM {civicrm_contribution_recur} WHERE trxn_id='%s'";
+    $recur_id = db_result( db_query( $query, $msg[ 'subscr_id' ] ));
+    
+    if ( $recur_id ) { // we potentially have related contributions
+      // find related contribution ids
+      $query = "SELECT id FROM {civicrm_contribution} WHERE contribution_recur_id=%d";
+      $result = db_query( $query, $recur_id );
+      while( db_fetch_object( $result )) {
+        array_push( $contrib_ids, $result->id );
+      }
+      
+      if ( count( $contrib_ids )) { // if we've got any related contributions
+        // see if a record already exists
+        $dbs = _queue2civicrm_get_dbs();
+        $dbs->use_default();
+        $query = "SELECT id FROM {contribution_tracking} WHERE contribution_id IN ( '%s' )";
+        // we can use this related contribution tracking id
+        return db_result( db_query( $query, implode( ",", $contrib_ids )));
+      }
+    }
+    
+    // if we still don't have a contribution tracking id, we're gonna have to make one
+    if ( !$contribution_tracking_id ) {
+      // if we already have previous contributions, we should create a contrib id connected with the first contrib
+      sort( $contrib_ids, SORT_NUMERIC );
+      $contrib_id = array_shift( $contrib_ids ); // this should return null if $contrib_ids is empty
+      $date = date( 'YmdHis', strtotime( $msg[ 'payment_date' ] ));
+      return _queue2civicrm_insert_contribution_tracking( '..rpp', 'civicrm', $date, $contrib_id );
+    }
+  } else {
+    return null;
+  }
 }
