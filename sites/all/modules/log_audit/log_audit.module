@@ -1,6 +1,6 @@
 <?php 
 define( 'LOG_AUDIT_LOG_PATH', '/tmp/ipn_logs/*' );
-$global_query_home = "./";
+$global_query_home = dirname( __FILE__ );
 
 /**
  * Implementation of hook_menu()
@@ -44,7 +44,7 @@ function log_audit_get_trxn_info($trxn_query_name, $params) {
 	$dbs->use_civicrm();
 	
 	// Read the SQL query
-	$query = file_get_contents($global_query_home . $trxn_query_name . ".sql");	
+	$query = file_get_contents($global_query_home . "/" . $trxn_query_name . ".sql");	
 	$query_parts = explode('\\',  $query);
 	
 	for ( $counter = 0; $counter < count($query_parts); $counter += 1) { 
