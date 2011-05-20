@@ -130,7 +130,7 @@ function log_audit_trxns_search( $log_filename, $trxns ) {
  * @return array Formatted trxn info if found, false if not found
  */
 function log_audit_trxn_search( $trxn_id ) {
-  $result = log_audit_search_logs( $log_filename, $trxn_id );
+  $result = log_audit_search_logs( variable_get( 'log_audit_file', LOG_AUDIT_LOG_PATH ), $trxn_id );
   if ( !strlen( $result )) {
     return false;
   }
