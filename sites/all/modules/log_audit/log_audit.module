@@ -43,9 +43,9 @@ function log_audit_get_trxn_info($trxn_query_name, $params) {
   $dbs->use_civicrm();
 	
   // Read the SQL query
-  $query = "SELECT substring(missing_contribs.trxn_id, 18, 17) as trxn_id
+  $query = "SELECT substring(missing_trxn_id, 18, 17) as trxn_id
   			FROM (
-  				SELECT civicrm_contribution.trxn_id as trxn_id,
+  				SELECT civicrm_contribution.trxn_id as missing_trxn_id,
   					civicrm_contribution.contact_id as contribution_contact_id,
   					civicrm_address.contact_id as address_contact_id,
   					civicrm_address.country_id as country_id
@@ -54,7 +54,7 @@ function log_audit_get_trxn_info($trxn_query_name, $params) {
   					AND DATE_FORMAT( receive_date, '%%Y%%m%%d%%H%%i%%s' <= %d
   					AND civicrm_contribution.trxn_id REGEXP 'RECURRING PAYPAL'
   				) AS missing_contribs
-  			WHERE missing_contribs.country_id IS NULL";
+  			WHERE country_id IS NULL";
   
   // Format and execute
   $result = db_query( $query, $params[ 'start_time' ], $params[ 'end_time' ] );
