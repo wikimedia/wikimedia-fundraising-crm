@@ -5,33 +5,30 @@ $global_query_home = "./";
 
 /**
  * Executes query that finds missing transactions and return in an array containing them
+ * @FIXME don't use the query in the query file
  */
-function get_trxn_info($trxn_query_name, $params) {
-	
-	
-
+function log_audit_get_trxn_info($trxn_query_name, $params) {
 	// Establish a connection to the database server
 	$dbs = _queue2civicrm_get_dbs();
 	$dbs->use_civicrm();
 	
 	// Read the SQL query
-	// $sql_file="transaction_contact_audit_unformatted.sql";
-	
 	$query = file_get_contents($global_query_home . $trxn_query_name . ".sql");	
 	$query_parts = explode('\\',  $query);
-	$query = '';
 	
-	for ( $counter = 0; $counter < count($query_parts); $counter += 1)
-	{ $query=$query.$query_parts[$counter]; }
+	for ( $counter = 0; $counter < count($query_parts); $counter += 1) { 
+	  $query = $query . $query_parts[$counter]; 
+	}
 	
 	// Format and execute
-	$query = format_trxn_query_params($trxn_query_name,  $query, $params);
-	$result  = CRM_Core_DAO::executeQuery( $query );
-	
+	$query = log_audit_format_trxn_query_params($trxn_query_name,  $query, $params);
+    $result = db_query( $query );
+    	
 	// Parse the results
-	// <id, amount> 
 	$trxns = array(); 
-	if (mysql_num_rows($result) > 0){ while ( $result->fetch() )  { $trxns[] = array($result->'id', $result>'amount'); }}
+	while ( $trxn = db_fetch_array( $result ))  { 
+      array_push( $trxns, $trxn );
+	}
 	
 	return $trxns;
 }
@@ -39,7 +36,7 @@ function get_trxn_info($trxn_query_name, $params) {
 /* --
 	Format the query conditioned on the name 
 -- */
-function format_trxn_query_params($trxn_query_name,  $query, $params) {
+function log_audit_format_trxn_query_params($trxn_query_name,  $query, $params) {
 
 	// __transaction_contact_audit_unformatted.sql__ searches for missing transaction ids 
 	if($trxn_query_name == 'transaction_contact_audit_unformatted') {
@@ -55,13 +52,12 @@ function format_trxn_query_params($trxn_query_name,  $query, $params) {
 /* --
 	Grep the ipn logs for encoded json
 -- */
-function search_logs($log_filename, $pattern)  {
+function log_audit_search_logs($log_filename, $pattern)  {
 
 	// $log_filename = ""
 	// $pattern = ""
 	$cmd = 'grep -a "\"txn_id\":\"%s\"" %s';
 	$cmd = sprintf($cmd, $pattern, $log_filename);  // 6
-	// $cmd = sprintf($cmd, '4GK44759MY214030Y', $log_filename);  
 	
 	$exec = exec($cmd);
 	
@@ -73,10 +69,10 @@ function search_logs($log_filename, $pattern)  {
 	
 	@FIXME - format transaction json in a different way before returning
 -- */
-function get_JSON_from_ipn_logs($log_filename, $params) {
+function log_audit_get_json_from_ipn_logs($log_filename, $params) {
 	
 	$trxn_query_name = 'transaction_contact_audit_unformatted';
-	$trxn_info_collection = get_trxn_info($trxn_query_name, $params);
+	$trxn_info_collection = log_audit_get_trxn_info($trxn_query_name, $params);
 	
 	$trxns_processed_count = 0;
 	$not_processed = array();
@@ -87,7 +83,7 @@ function get_JSON_from_ipn_logs($log_filename, $params) {
 		// print $trxn_info[1] . "\n";
 		$trxn_id = $trxn_info[0];
 		$trxn_amount = $trxn_info[1];
-		$out = search_logs($log_filename, $trxn_id);
+		$out = log_audit_search_logs($log_filename, $trxn_id);
 		
 		if (strlen($out) != 0)  {			# if command exit status == 0
 			
@@ -106,6 +102,6 @@ function get_JSON_from_ipn_logs($log_filename, $params) {
 
 
 // $params = array("start_time" => '20100701000000', "end_time" => '20110701000000');
-// get_JSON_from_ipn_logs("recurring_out.20110430_121654", $params);
+// log_audit_get_json_from_ipn_logs("recurring_out.20110430_121654", $params);
 
 ?>

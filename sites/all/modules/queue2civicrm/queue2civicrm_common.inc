@@ -62,7 +62,7 @@ function _queue2civicrm_normalize_msg( $msg ) {
     watchdog( 'queue2civicrm', 'Contribution missing contribution_tracking_id', array(), WATCHDOG_DEBUG );
     $anonymous = ( $msg[ 'anonymous' ] ) ? 1 : 0;
     $optout = ( $msg[ 'optout' ] ) ? 1 : 0;
-    $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( 'civicrm', date('YmdHis', $msg[ 'date' ] ), $optout, $anonymous );
+    $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( '..pp', 'civicrm', date('YmdHis', $msg[ 'date' ] ), null, $optout, $anonymous );
     watchdog( 'queue2civicrm', 'Newly inserted contribution tracking id: @id', array('@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
     $msg[ 'contribution_tracking_id' ] = $contribution_tracking_id;
   }
@@ -89,13 +89,13 @@ function _queue2civicrm_normalize_msg( $msg ) {
  * 
  * @return the contribution_tarcking id 
  */
-function _queue2civicrm_insert_contribution_tracking( $utm_medium, $ts, $optout=null, $anonymous=null ) {
+function _queue2civicrm_insert_contribution_tracking( $utm_source, $utm_medium, $ts, $contrib_id=null, $optout=null, $anonymous=null ) {
   // make sure we're using the default (drupal) db
   $dbs = _queue2civicrm_get_dbs();
   $dbs->use_default();
   
-  $query = "INSERT INTO {contribution_tracking} ( utm_medium, optout, anonymous, ts ) VALUES ( '%s', '%d', '%d', '%d' )";
-  db_query( $query, array( 'utm_medium', 'optout', 'anonymous', 'ts' ));
+  $query = "INSERT INTO {contribution_tracking} ( utm_source, utm_medium, optout, anonymous, ts, contribution_id ) VALUES ( '%s', %s', '%d', '%d', '%d', '%d' )";
+  db_query( $query, $utm_source, $utm_medium, $optout, $anonymous, $ts, $contrib_id );
   return db_last_insert_id( 'contribution_tracking', 'id' );
 }
 
