@@ -58,15 +58,15 @@ function log_audit_get_trxn_info($trxn_query_name, $params) {
   
   // Format and execute
   $result = db_query( $query, $params[ 'start_time' ], $params[ 'end_time' ] );
-  var_dump( $result );
-exit;  
-	// Parse the results
-	$trxns = array(); 
-	while ( $trxn = db_fetch_object( $result ))  { 
-      array_push( $trxns, $trxn->trxn_id );
-	}
-	
-	return $trxns;
+  
+  // Parse the results
+  $trxns = array(); 
+  while ( $trxn = db_fetch_object( $result ))  { 
+    array_push( $trxns, $trxn->trxn_id );
+  }
+  
+  $dbs->use_default();
+  return $trxns;
 }
 
 /* --
