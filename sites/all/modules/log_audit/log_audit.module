@@ -43,7 +43,7 @@ function log_audit_get_trxn_info($trxn_query_name, $params) {
   $dbs->use_civicrm();
 	
   // Read the SQL query
-  $query = "SELECT substring(missing_contribs.trxn_id, 18, 17) as trxn_id,
+  $query = "SELECT substring(missing_contribs.trxn_id, 18, 17) as trxn_id
   			FROM (
   				SELECT civicrm_contribution.trxn_id,
   					civicrm_contribution.contact_id as contribution_contact_id,
