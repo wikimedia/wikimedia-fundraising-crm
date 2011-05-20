@@ -57,8 +57,8 @@ function log_audit_get_trxn_info($trxn_query_name, $params) {
     	
 	// Parse the results
 	$trxns = array(); 
-	while ( $trxn = db_fetch_array( $result ))  { 
-      array_push( $trxns, $trxn );
+	while ( $trxn = db_fetch_object( $result ))  { 
+      array_push( $trxns, $trxn->trxn_id );
 	}
 	
 	return $trxns;
@@ -103,9 +103,6 @@ function log_audit_search_logs($log_filename, $pattern)  {
 	format transaction json in a different way before returning
 -- */
 function log_audit_trxns_search( $log_filename, $trxns ) {
-	
-	//$trxn_query_name = 'transaction_contact_audit_unformatted';
-	//$trxn_info_collection = log_audit_get_trxn_info($trxn_query_name, $params);
 	
 	$trxns_processed_count = 0;
 	$not_processed = array();
@@ -211,7 +208,22 @@ function log_audit_contribution_audit_secondary_trxn_search( &$missing_trxn ) {
   }
 }
 
-// $params = array("start_time" => '20100701000000', "end_time" => '20110701000000');
-// log_audit_get_json_from_ipn_logs("recurring_out.20110430_121654", $params);
+/**
+ * Look for already existing contribs that are unallocated and attempt to allocate them
+ * @param string $start_date
+ * @param string $end_date
+ * @return array
+ */
+function log_audit_contribution_audit_find_missing_trxns( $start_date, $end_date ) {
+  $trxn_query_name = 'transaction_contact_audit_unformatted';
+  $params = array( 'start_time' => date( 'Ymd', strtotime( $start_date)) . "000000", 'end_time' => date( "Ymd", strtotime( $end_date )) . "235959" );
+  $unallocated_trxns = log_audit_get_trxn_info( $trxn_query_name, $params );
+  $trxns = array();
+  foreach( $unallocated_trxn as $unallocated_trxn_id ) {
+    $trxn = log_audit_trxn_search( $unallocated_trxn_id );
+    $trxns[ $unalloacted_trxn_id ] = $trxn;
+  }
+  return $trxns;
+}
 
 ?>
