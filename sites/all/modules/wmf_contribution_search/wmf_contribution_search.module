@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * Add a separate email field to the contribution search form
+ * 
+ * In conjunction with the custom search template, this makes it possible
+ * to leave searcy by email AND name off (speeding search performance) but 
+ * also making it possible to still search by email address.
+ * 
+ * @param unknown_type $formName
+ * @param unknown_type $form
+ */
+function wmf_contribution_search_civicrm_buildForm( $formName, &$form ) {
+  if ( $formName != 'CRM_Contribute_Form_Search' ) {
+    return;
+  }
+  
+  $form->addElement('text', 'email', 'email' );
+}
