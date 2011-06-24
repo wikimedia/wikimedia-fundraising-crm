@@ -68,7 +68,7 @@ function drush_allocate_unallocated_contribs() {
     print "All contributions present and allocated.\n";
   } else {
     foreach( $allocated as $key => $val ) {
-      print "'$key','" . $val['amnt'] . "','" . $val['count'] . "'\n";
+      print "\"$key\",\"" . $val['amnt'] . "\",\"" . $val['count'] . "\"\n";
     }
   }
 }
