@@ -4,6 +4,12 @@
  */
 
 class queue2civicrm_db_switcher {
+
+  /**
+   * Holds name of currently active db
+   * @var string
+   */
+  protected $cur_db = 'default';
   
   public function __construct() {
     global $db_url;
@@ -32,12 +38,38 @@ class queue2civicrm_db_switcher {
   }
 
   public function use_civicrm() {
+    $this->set_cur_db( 'civicrm' );
     return db_set_active( 'civicrm' );
   }
 
   public function use_default() {
+    $this->set_cur_db( 'default' );
     return db_set_active();
   }
+  
+  /**
+   * Set the name of the currently active db.
+   * 
+   * @param string $cur_db
+   * @throws Exception
+   */
+  protected function set_cur_db( $cur_db ) {
+    global $db_url;
+    
+    if ( !$db_url[ $cur_db ] ) {
+      throw new Exception( $cur_db . ' is not supported by queue2civicrm_db_switcher.' );
+    }
+    
+    $this->cur_db = $cur_db;
+  }
+  
+  /**
+   * Fetch the name of the currently active db
+   * @return string
+   */
+  public function get_cur_db() {
+    return $this->cur_db;
+  }  
   
   public function __destruct() {
     $this->use_default();
