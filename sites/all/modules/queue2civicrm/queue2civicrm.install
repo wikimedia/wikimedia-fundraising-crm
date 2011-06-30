@@ -1,0 +1,64 @@
+<?php
+
+function queue2civicrm_schema() {
+	$schema['queue2civicrm_log'] = array(
+		'description' => t('Log for queue2civicrm transactions'),
+		'fields' => array(
+			'cid' => array(
+				//'description' => t('The primary identifier for a node.'),
+				'type' => 'serial',
+				'size' => 'normal',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => NULL),
+			'gateway' => array(
+				'type' => 'varchar',
+				'length' => 32,
+				'not null' => TRUE,
+				'default' => NULL),
+			'gateway_txn_id' => array(
+				'type' => 'varchar',
+				'length' => 64,
+				'not null' => TRUE,
+				'default' => NULL),
+			'data' => array(
+				'type' => 'text',
+				'size' => 'normal',
+				'not null' => TRUE,
+				'default' => NULL),
+			'timestamp' => array(
+				'type' => 'int',
+				'size' => 'normal',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => NULL),
+			'verified' => array(
+				'type' => 'int',
+				'size' => 'tiny',
+				'unsigned' => TRUE,
+				'default' => NULL),
+		),
+//		'indexes' => array(
+//			'example_changed' => array('changed'),
+//			'example_created' => array('created'),
+//		),
+		'unique keys' => array(
+			'gateway_ts' => array('gateway', 'timestamp'), //this is just a guess here. 
+		),
+		'primary key' => array('cid'),
+
+	);
+//  $schema['mytable2'] = array(
+//     // specification for mytable2
+//  );
+	return $schema;
+}
+
+function queue2civicrm_install() {
+	drupal_install_schema('queue2civicrm');
+}
+
+function queue2civicrm_uninstall() {
+	drupal_uninstall_schema('queue2civicrm');
+}
+?>
