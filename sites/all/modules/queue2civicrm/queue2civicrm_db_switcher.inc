@@ -56,7 +56,7 @@ class queue2civicrm_db_switcher {
   protected function set_cur_db( $cur_db ) {
     global $db_url;
     
-    if ( !$db_url[ $cur_db ] ) {
+    if ( !isset( $db_url[ $cur_db ] )) {
       throw new Exception( $cur_db . ' is not supported by queue2civicrm_db_switcher.' );
     }
     
