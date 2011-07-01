@@ -150,7 +150,7 @@ function queue2civicrm_dequeue() {
   $con = _queue2civicrm_stomp_connection();
   $subscription_queue = variable_get('queue2civicrm_subscription', '/queue/test');
   if ($con) {
-    $con->subscribe($subscription_queue);
+    $con->subscribe($subscription_queue, array('ack' => 'client'));
 
     $msg = $con->readFrame();
     
@@ -159,9 +159,14 @@ function queue2civicrm_dequeue() {
       watchdog('queue2civicrm', 'Read frame:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');      
       set_time_limit(60);
       try {
-        queue2civicrm_import($msg);
-        $con->ack($msg);
-        return TRUE;
+        if (queue2civicrm_import($msg)){
+			$con->ack($msg);
+		} else {
+			//@fixme: process the drush_error types thrown in import, to
+			//determine if we want to ack it here or not.
+			//if we don't ack it, it will stay in the queue.
+		}
+		return TRUE;
       }
       catch (Exception $e) {
         watchdog('queue2civicrm', 'Could not process frame from queue.', array(), WATCHDOG_ERROR);
@@ -210,37 +215,56 @@ function queue2civicrm_import( $msg ) {
   // insert the contact information
   $contact = _queue2civicrm_contact_insert( $msg );
 
-  // Insert the location record
-  $location = _queue2civicrm_location_insert( $msg, $contact );
-  
-  // Insert the contribution record.
-  $contribution = _queue2civicrm_contribution_insert( $msg, $contact );
+  if($contact !== false){
+	// Insert the location record
+	$location = _queue2civicrm_location_insert( $msg, $contact );
 
-  // Tag contact for review
-  $tag = _queue2civicrm_tag_insert( $contact );
-  
-  // Map the tracking record to the CiviCRM contribution
-  _queue2civicrm_update_contribution_tracking( $msg, $contribution );
+	// Insert the contribution record.
+	$contribution = _queue2civicrm_contribution_insert( $msg, $contact );
+	if($contribution !== false){
 
-  // construct an array of useful info to invocations of queue2civicrm_import
-  $contribution_info = array(
-    'contribution_id' => $contribution['id'],
-    'contact_id' => $contact['contact_id'],
-    'msg' => $msg,
-  );
-  
-  // update the log if things went well
-  if ( $cid && !$contribution[ 'is_error' ] ) {
-    $log[ 'cid' ] = $cid;
-    $log[ 'verrified' ] = 1;
-    $log[ 'timestamp' ] = time();
-    _queue2civicrm_log( $log );
+		// Tag contact for review
+		$tag = _queue2civicrm_tag_insert( $contact );
+		if ($tag !== false){
+			//@fixme: Roll back any importing we've already done...?
+			//@fixme: Include a reasonable transaction id in the error message
+			drush_set_error("IMPORT_TAG", "Review tag could not be added to the contact.");
+		}
+
+		// Map the tracking record to the CiviCRM contribution
+		_queue2civicrm_update_contribution_tracking( $msg, $contribution );
+
+		// construct an array of useful info to invocations of queue2civicrm_import
+		$contribution_info = array(
+			'contribution_id' => $contribution['id'],
+			'contact_id' => $contact['contact_id'],
+			'msg' => $msg,
+		);
+
+		// update the log if things went well
+		if ( $cid && !$contribution[ 'is_error' ] ) {
+			$log[ 'cid' ] = $cid;
+			$log[ 'verrified' ] = 1;
+			$log[ 'timestamp' ] = time();
+			_queue2civicrm_log( $log );
+		}
+
+		// Send thank you email, other post-import things
+		module_invoke_all( 'queue2civicrm_import', $contribution_info );
+
+		return TRUE;
+	} else {
+		//@fixme: Roll back any importing we've already done.
+		//@fixme: Include a reasonable transaction id in the error message
+		drush_set_error("IMPORT_CONTRIB", "Contribution could not be added. Aborting import.");
+		return false;
+	}
+  } else {
+	  //@fixme: Roll back any importing we've already done.
+	  //@fixme: Include a reasonable transaction id in the error message
+	  drush_set_error("IMPORT_CONTACT", "Contact could not be added. Aborting import.");
+	  return false;
   }
-  
-  // Send thank you email, other post-import things
-  module_invoke_all( 'queue2civicrm_import', $contribution_info );
-  
-  return TRUE;
 }
 
 /**
@@ -284,16 +308,18 @@ function queue2civicrm_insertmq_form() {
  */
 function queue2civicrm_insertmq_form_submit($form, &$form_state) {
   $con = _queue2civicrm_stomp_connection();
-  $result = $con->send( $form_state['values']['queue'], drupal_to_js($form_state['values']), array('persistent' => true));
-  $con->disconnect();
-  if (!$result) {
-    watchdog('queue2civicrm','Send to queue failed for this message: <pre>' . check_plain(print_r($form_state['values'], TRUE)) . '</pre>');
-    $content = 'Failed to add item to the queue.';
-    drupal_set_message($content, 'error');
+  if($con){
+	  $result = $con->send( $form_state['values']['queue'], drupal_to_js($form_state['values']), array('persistent' => true));
+	  $con->disconnect();
+	  if (!$result) {
+		watchdog('queue2civicrm','Send to queue failed for this message: <pre>' . check_plain(print_r($form_state['values'], TRUE)) . '</pre>');
+		$content = 'Failed to add item to the queue.';
+		drupal_set_message($content, 'error');
+	  }
+	  $content = 'Success adding item to the queue!';
+	  watchdog('queue2civicrm','Successfully added the following to the queue: <pre>' . check_plain(print_r($form_state['values'], TRUE)) . '</pre>');
+	  drupal_set_message($content);
   }
-  $content = 'Success adding item to the queue!';
-  watchdog('queue2civicrm','Successfully added the following to the queue: <pre>' . check_plain(print_r($form_state['values'], TRUE)) . '</pre>');
-  drupal_set_message($content);
 }
 
 /**

@@ -40,4 +40,16 @@ function queue_consume_drush_help( $section ) {
  */
 function drush_queue_consume() {
   module_invoke( 'queue2civicrm', 'batch_process' );
+  $errors = drush_get_error_log();
+  if (!empty($errors)){
+	  echo "\n***ERRORS***";
+	  foreach($errors as $error=>$msgarray){
+		  echo "\n$error: ";
+		  foreach ($msgarray as $count=>$message){
+			  echo "\n    $message";
+		  }
+	  }
+	  echo "\n\n";
+	  exit(drush_get_error());
+  }
 }

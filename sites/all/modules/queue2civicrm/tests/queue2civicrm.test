@@ -1,0 +1,155 @@
+<?php
+
+class Queue2CiviCRMTest extends DrupalUnitTestCase {
+
+	public static function getInfo() {
+		return array(
+			'name' => 'Queue 2 CiviCRM tests',
+			'description' => 'Tests for the queue2civicrm module.',
+			'group' => 'Pipeline',
+		);
+	}
+
+	function setUp(){
+		variable_set('queue2civicrm_subscription', '/queue/civiCRM_test');
+		variable_set('queue2civicrm_url', 'tcp://localhost:61613');
+	}
+
+	//determine that we are in fact able to read and write to activeMQ
+	function testStompPushPop() {
+		$this->emptyQueue();
+		//queue2civicrm_insertmq_form_submit($form, &$form_state) $form_state['values'] appears to be where all the $key=>$value form pairs live.
+		////Just fake it out. :p queue2civicrm_generate_message() will do nicely.
+		$message = queue2civicrm_generate_message();
+		//I think we want gateway_txn_id and contribution_tracking_id to match much the same way we did before.
+		$message['gateway_txn_id'] = "civiTest";
+		$message['contribution_tracking_id'] = $message['gateway_txn_id'];
+		$message['queue'] = variable_get('queue2civicrm_subscription', '/queue/oopsie');
+		$message = array('values' => $message);
+
+		$ret = queue2civicrm_insertmq_form_submit(array(), $message);
+		$message_return = $this->getItemFromQueue();
+		$this->assertTrue(is_object($message_return), "No message was returned");
+		$body = json_decode($message_return->body, true);
+		foreach($message['values'] as $key=>$value){
+			$this->assertTrue($body[$key] == $value, $body[$key] . " != $value");
+		}
+	}
+
+	function testConnect(){
+		$this->assertDrushLogEmpty(true);
+		variable_set('queue2civicrm_url', 'CompleteNonsense');
+		$con = _queue2civicrm_stomp_connection(true);
+		$this->assertTrue($con === false, "Connection did not fail appropriately.");
+		//check for the drush errors...
+		$this->assertDrushLogEmpty(false);
+		$this->assertCheckDrushLog('STOMP_BAD_CONNECTION', true, "Appropriate Drush error was not thrown.");
+
+		//put everything back to normal
+		$this->assertDeleteDrushLog();
+		variable_set('queue2civicrm_url', 'tcp://localhost:61613'); //@fixme: This should be grabbing from an ini or something.
+		$con = _queue2civicrm_stomp_connection(true);
+
+		$this->assertTrue($con !== false, "Connection failed, and should have worked the second time 'round.");
+	}
+
+	function testRequiredFields(){
+		$this->assertDeleteDrushLog();
+
+		//@fixme: Actually do this test to determine that the proper fields are
+		//being required.
+		//notes: The next commented-out block is what I have determined will
+		//currently make the code angry if it's missing, and roughly where.
+	/*	$msg = array(
+			'gateway' => 'blargh',
+			'data' => 'really'
+		);
+		$contact_required = array(
+			'first_name' => 'Testfirst',
+			'middle_name' => 'Testmiddle',
+			'last_name' => 'Testlast',
+			'anonymous' => '1'
+		);
+		$msg = array_merge($msg, $contact_required);
+		$contribution_required = array(
+			'gross' => '5.50',
+			'fee' => '0.00',
+			'net' => '5.50',
+			'original_currency' => 'USD',
+			'original_gross' => '5.50',
+		);
+	 *
+	 */
+		//Should be required:
+		//first, last, email, amount, currency, payment type, gateway transaction ID
+		$msg = array(
+			'first_name' => 'Testfirst',
+			'last_name' => 'Testlast',
+			'email' => 'testing@test.com',	//verify field name
+			'amount' => '7.77',				//verify field name
+			'original_currency' => 'USD',
+			'gateway' => 'something',		//verify that this is what I think it is.
+			'gateway_txn_id' => '11235'
+		);
+
+		$msg = array_merge($msg, $contribution_required);
+		queue2civicrm_import( $msg );
+		$this->assertDrushLogEmpty(true);
+	}
+
+	function getItemFromQueue(){
+	  $con = _queue2civicrm_stomp_connection();
+	  $this->assertTrue(is_object($con), "Could not establish stomp connection");
+	  $subscription_queue = variable_get('queue2civicrm_subscription', '/queue/test');
+	  if ($con) {
+		$con->subscribe($subscription_queue, array('ack' => 'client'));
+
+		$msg = $con->readFrame();
+
+		// Skip processing if no message to process.
+		if ($msg !== FALSE) {
+		  watchdog('queue2civicrm', 'Read frame:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');
+		  set_time_limit(60);
+		  try {
+			$con->ack($msg);
+			return $msg;
+		  }
+		  catch (Exception $e) {
+			watchdog('queue2civicrm', 'Could not process frame from queue.', array(), WATCHDOG_ERROR);
+		  }
+		}
+		else {
+		  watchdog('queue2civicrm', 'Nothing to process.');
+		}
+		$con->unsubscribe( $subscription_queue );
+	  }
+	  return FALSE;
+	}
+
+	function emptyQueue(){
+		while (is_object($this->getItemFromQueue())){
+			//uh. Yeah. That. Weirdest while loop EVAR.
+		}
+	}
+
+	function assertDeleteDrushLog(){
+		$error_log =& drush_get_context('DRUSH_ERROR_LOG', array());
+		$error_log = array();  //gwa ha ha ha
+		$error = drush_get_error_log();
+		$this->assertTrue(empty($error), "Drush error log should now be empty" . print_r($error, true));
+	}
+
+	function assertCheckDrushLog($drush_error_type, $exists, $assertFailMessage){
+		$error = drush_get_error_log();
+		$this->assertTrue(array_key_exists($drush_error_type, $error) === $exists, $assertFailMessage . "\nLooking for $drush_error_type\n" . print_r($error, true));
+	}
+
+	function assertDrushLogEmpty($state){
+		$error = drush_get_error_log();
+		$message = "Drush log should " . (($state)?"":"not ") . "be empty\n" . print_r($error, true);
+		$this->assertTrue(empty($error) === $state, $message);
+	}
+
+}
+
+?>
