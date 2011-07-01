@@ -9,25 +9,36 @@ require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_
 /**
  * Connect using the Stomp library.
  */
-function _queue2civicrm_stomp_connection() {
+function _queue2civicrm_stomp_connection($renew = false) {
   static $con = NULL;
   
-  if (!isset($con)) {
+  if (!isset($con) || $renew == true) {
     require_once drupal_get_path('module', 'queue2civicrm') . '/Stomp.php';
     watchdog('queue2civicrm', 'Attempting connection to queue server: ' . variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
     
     $con = new Stomp(variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
-    
-    try {
-      $con->connect();
-      register_shutdown_function('_queue2civicrm_stomp_disconnect');
-    }
-    catch (Stomp_Exception $e) {
-      $con = FALSE;
-      watchdog('queue2civicrm', 'Queue connection failed: ' . $e->getMessage(), array(), WATCHDOG_ERROR);
-    }
-  }
-  
+  } 
+
+	$attempt = 0;
+	while((!is_object($con) || !$con->isConnected()) && $attempt < 2){
+		try {
+		  ++$attempt;
+		  $con = new Stomp(variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
+		  $con->connect();
+		  register_shutdown_function('_queue2civicrm_stomp_disconnect');
+		}
+		catch (Stomp_Exception $e) {
+		  $con = FALSE;
+		  watchdog('queue2civicrm', "Queue connection failure #$attempt: " . $e->getMessage(), array(), WATCHDOG_ERROR);
+		}
+	}
+	
+	if(!is_object($con) || !$con->isConnected()){
+		watchdog('queue2civicrm', "Giving up connecting to the queue.", array(), WATCHDOG_ERROR);
+		drush_set_error("STOMP_BAD_CONNECTION", "Gave up connecting to the queue.");
+		return false;
+	}
+
   return $con;
 }
 
@@ -36,7 +47,9 @@ function _queue2civicrm_stomp_connection() {
  */
 function _queue2civicrm_stomp_disconnect() {
   $con = _queue2civicrm_stomp_connection();
-  $con->disconnect();
+  if($con){
+	$con->disconnect();
+  }
 }
 
 /**
@@ -58,6 +71,7 @@ function _queue2civicrm_normalize_msg( $msg ) {
 
   // if we're missing a contrib id, insert new record to the table
   // this can happen if a user somehow makes a trxn from outside the normal workflow
+  // @fixme: Properly determine payment method
   if ( !isset( $msg[ 'contribution_tracking_id' ] )) {
     watchdog( 'queue2civicrm', 'Contribution missing contribution_tracking_id', array(), WATCHDOG_DEBUG );
     $anonymous = ( $msg[ 'anonymous' ] ) ? 1 : 0;
@@ -149,7 +163,10 @@ function _queue2civicrm_contact_insert( $msg ) {
   $contact_result = &civicrm_contact_add( $contact );
   
   watchdog( 'queue2civicrm', 'Result for adding contact: %contact', array( '%contact' => print_r( $contact_result, true )), WATCHDOG_DEBUG );
-  
+
+  if (array_key_exists('is_error', $contact_result) && $contact_result['is_error'] != 0){
+	  return false;
+  }
   return $contact_result;
 }
 
@@ -281,11 +298,19 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
   }
   
   // Insert the contribution record
+  $cash_id = _queue2civicrm_get_civi_id('contribution_type_id', 'cash');
+  $gateway_id = _queue2civicrm_get_civi_id('payment_instrument_id', 'Gateway');
+
+  if (($cash_id == false) || ($gateway_id == false)){
+	  //the errors have already been thrown in _queue2civicrm_get_civi_id. Just leave.
+	  return false;
+  }
+
   $contribution = array(
 	'contact_id' => $contact[ 'contact_id' ],
 	'total_amount' => $msg['gross'],
-	'contribution_type_id' => 9, // cash donation @fixme this needs to be pulled from a variable that was available with fundcore, but no longer exists
-	'payment_instrument_id' => 6, // contribution @fixme see above
+	'contribution_type_id' => $cash_id,
+	'payment_instrument_id' => $gateway_id,
 	'fee_amount' => $msg['fee'],
 	'net_amount' => $msg['net'],
 	'trxn_id' => $trxn_id,
@@ -326,7 +351,9 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
     }
   }
   $dbs->use_default();
-  
+  if (array_key_exists('is_error', $contribution_result) && $contribution_result['is_error'] != 0){
+	  return false;
+  }
   return $contribution_result;
 }
 
@@ -360,9 +387,15 @@ function _queue2civicrm_update_contribution_tracking( $msg, $contribution ) {
  */
 function _queue2civicrm_tag_insert( $contact ) {
   require_once 'api/v2/EntityTag.php';
+
+  $review_tag_id = _queue2civicrm_get_civi_id('tag_id', 'Review');
+  //$review_tag_id = civicrm_tag_get($parameters);
+  if ($review_tag_id == false){
+	  return false;
+  }
   
   $tag = array(
-	'tag_id' => 7, // review tag @fixme should this also be variable?
+	'tag_id' => $review_tag_id,
 	'contact_id' => $contact[ 'contact_id' ]
   );
   $tag_result = &civicrm_entity_tag_add( $tag );
@@ -444,4 +477,69 @@ function _queue2civicrm_log( $log=array() ) {
     watchdog( 'queue2civicrm', 'Failed logging the transaction: %log', array( "%log" => print_r( $log, true )), WATCHDOG_ERROR );
   }
   return $result;
+}
+
+function _queue2civicrm_get_civi_id($type, $name) {
+	static $civi_ids = array();
+	$params = array('name' => $name);
+	$dummy = array();
+	
+	if(array_key_exists($type, $civi_ids) && array_key_exists($name, $civi_ids[$type])) {
+		watchdog('queue2civicrm', "Already looked up $type - $name. Returning id " . $civi_ids[$type][$name]);
+		return $civi_ids[$type][$name];
+	}
+
+	switch ($type) {
+		case 'contribution_type_id':
+			//fixme: This is probably the upside-down way to do it. Really ought to go through the API.
+			//
+			require_once( drupal_get_path( 'module', 'civicrm' ) . '/../CRM/Contribute/BAO/ContributionType.php' );
+			$result = CRM_Contribute_BAO_ContributionType::retrieve($params, $dummy);
+			if (!is_null($result)){
+				$civi_ids[$type][$name] = $result->id;
+				watchdog('queue2civicrm', "Found id for contribution_type $name: " . $civi_ids[$type][$name]);
+				return $civi_ids[$type][$name];
+			} else {
+				//make it. Or, throw an error here. Either way.
+				watchdog('queue2civicrm', "Id for contribution_type $name not found. Creating...");
+				$params['description'] = '';
+				$params['accounting_code'] = strtoupper($name);
+				$params['is_deductible'] = 1;
+				$params['is_active'] = 1;
+				$result = CRM_Contribute_BAO_ContributionType::add($params, $dummy);
+				$civi_ids[$type][$name] = $result->id;
+				watchdog('queue2civicrm', "New id for contribution_type $name :" . $civi_ids[$type][$name]);
+				return $civi_ids[$type][$name];
+			}
+			break;
+		case 'payment_instrument_id':
+			require_once 'api/v3/OptionValue.php';
+			$group_id = civicrm_api3_option_value_get(array('option_group_name' => 'payment_instrument', 'label'=> $name, 'version' => '3'));
+
+			if($group_id['count'] == 1){
+				$civi_ids[$type][$name] = $group_id['id'];
+				watchdog('queue2civicrm', "Found id for payment_instrument $name :" . $civi_ids[$type][$name]);
+				return $civi_ids[$type][$name];
+			} else {
+				watchdog('queue2civicrm', "Payment Instrument '$name' not found! :", WATCHDOG_ERROR);
+				drush_set_error("CIVI_CONFIG", "Payment Instrument '$name' not found! Please add it and retry.");
+				return false;
+			}
+			break;
+		case 'tag_id':
+			require_once 'api/v3/Tag.php';
+			$tag_id = civicrm_api3_tag_get(array('name'=> $name, 'version' => '3'));
+			if (is_array($tag_id) && array_key_exists('id', $tag_id)){
+				$civi_ids[$type][$name] = $tag_id['id'];
+				watchdog('queue2civicrm', "Found id for Entity Tag $name :" . $civi_ids[$type][$name]);
+				return $civi_ids[$type][$name];
+			} else {
+				echo print_r($tag_id, true);
+				watchdog('queue2civicrm', "Entity Tag '$name' not found! :", WATCHDOG_ERROR);
+				drush_set_error("CIVI_CONFIG", "Entity Tag '$name' not found! Please add it and retry.");
+				return false;
+			}
+		default:
+			return false;
+	}
 }

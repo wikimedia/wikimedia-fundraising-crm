@@ -2,4 +2,6 @@ name = Queue to CiviCRM
 description = Imports contributions from a STOMP-compliant message queue.
 core = 6.x
 dependencies[] = exchange_rates
+dependencies[] = civicrm
 package = queue2civicrm
+files[] = tests/queue2civicrm.test
