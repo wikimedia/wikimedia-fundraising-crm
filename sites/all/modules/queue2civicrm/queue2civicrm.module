@@ -202,26 +202,18 @@ function queue2civicrm_import( $msg ) {
 	  return false;
   }
 
-  $msg = _queue2civicrm_normalize_msg( $msg );
-
-  /**
-   * prepare data for logging
-   * 
-   * if we don't have a gateway_txn_id, we'll store the transaction type + the subscriber id instead - 
-   * this should happen for all non-payment transactions.
-   */
-  $log = array(
-    'gateway' => $msg[ 'gateway' ],
-    'gateway_txn_id' => $msg[ 'gateway_txn_id' ],
-    'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ), 
-    'timestamp' => time(),
-    'verified' => 0,
-  );
-  $cid = _queue2civicrm_log( $log );
-  
-  // set the correct amount fields/data and do exchange rate conversions.
-  $msg = _queue2civicrm_normalize_contrib_amnts( $msg );
-  
+	/**
+	* prepare data for logging
+	*/
+	$log = array(
+		'gateway' => $msg[ 'gateway' ],
+		'gateway_txn_id' => $msg[ 'gateway_txn_id' ],
+		'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ),
+		'timestamp' => time(),
+		'verified' => 0,
+	);
+	$cid = _queue2civicrm_log( $log );
+	
   //dsm($contribution);
   watchdog('queue2civicrm', 'Contribution:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');  
 
@@ -257,7 +249,7 @@ function queue2civicrm_import( $msg ) {
 		// update the log if things went well
 		if ( $cid && !array_key_exists('is_error', $contribution)) {
 			$log[ 'cid' ] = $cid;
-			$log[ 'verrified' ] = 1;
+			$log[ 'verified' ] = 1;
 			$log[ 'timestamp' ] = time();
 			_queue2civicrm_log( $log );
 		} 
@@ -426,9 +418,10 @@ function queue2civicrm_verify_and_stage($msg){
 		'original_gross' => $msg['gross'],
 	);
 
-	$msg = array_merge($defaults, $msg);
+	$msg = _queue2civicrm_normalize_msg( array_merge($defaults, $msg) );
+
+	// set the correct amount fields/data and do exchange rate conversions.
+	$msg = _queue2civicrm_normalize_contrib_amnts( $msg );
 
 	return $msg;
-
-
 }
