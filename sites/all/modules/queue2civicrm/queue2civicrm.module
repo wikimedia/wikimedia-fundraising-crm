@@ -48,7 +48,7 @@ function queue2civicrm_menu() {
 }
 
 function queue2civicrm_test() {
-  require_once drupal_get_path('module', 'queue2civicrm') . '/Stomp.php';
+  require_once variable_get('queue2civicrm_stomp_path', drupal_get_path('module', 'queue2civicrm') . '/Stomp.php');
   $content = array();
   
   $content[] = '<p>Attempting connection to ' . variable_get('queue2civicrm_url', 'tcp://localhost:61613') . '... ';  
@@ -76,7 +76,15 @@ function queue2civicrm_perm() {
  */
 function queue2civicrm_settings() {
   $form = array();
-  
+
+  $form['queue2civicrm_stomp_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Stomp Path'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('queue2civicrm_stomp_path', drupal_get_path('module', 'queue2civicrm') . '/Stomp.php'),
+	'#description' => t('Link: ') . l(t('Current version of the Stomp library'), "http://svn.wikimedia.org/viewvc/wikimedia/vendors/stomp_php/current/"),
+  );
+
   $form['queue2civicrm_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Connection URL'),
@@ -189,6 +197,11 @@ function queue2civicrm_import( $msg ) {
   
   civicrm_initialize(true);
 
+  $msg = queue2civicrm_verify_and_stage($msg);
+  if ($msg == false){
+	  return false;
+  }
+
   $msg = _queue2civicrm_normalize_msg( $msg );
 
   /**
@@ -225,10 +238,10 @@ function queue2civicrm_import( $msg ) {
 
 		// Tag contact for review
 		$tag = _queue2civicrm_tag_insert( $contact );
-		if ($tag !== false){
+		if ($tag === false){
 			//@fixme: Roll back any importing we've already done...?
 			//@fixme: Include a reasonable transaction id in the error message
-			drush_set_error("IMPORT_TAG", "Review tag could not be added to the contact.");
+			drush_set_error("IMPORT_TAG", "Review tag could not be added to the contact. Please make sure it's defined in your CiviCRM install.");
 		}
 
 		// Map the tracking record to the CiviCRM contribution
@@ -366,4 +379,45 @@ function queue2civicrm_generate_message() {
 	'date'                   => date('r'), //time(),
   );
   return $message;
+}
+
+function queue2civicrm_verify_and_stage($msg){
+	$required = array(
+		'email' => '',
+		'gross' => '',
+		'original_currency' => '',
+		'gateway' => '',
+		'gateway_txn_id' => ''
+	);
+
+	foreach ($required as $key=>$value){
+		if (!isset($msg[$key])){
+			watchdog('queue2civicrm', "Required Field '$key' not found in message:" . print_r($msg, true), WATCHDOG_ERROR);
+			drush_set_error("CIVI_REQ_FIELD", "Required Field '$key' not found in message:" . print_r($msg, true));
+			return false;
+		}
+	}
+
+	if(!array_key_exists('fee', $msg) && !array_key_exists('net', $msg)){
+		$msg['fee'] = '0.00';
+		$msg['net'] = $msg['gross'];
+	} elseif(!array_key_exists('fee', $msg) && array_key_exists('net', $msg)){
+		$msg['fee'] = $msg['gross'] - $msg['net'];
+	} elseif(array_key_exists('fee', $msg) && !array_key_exists('net', $msg)){
+		$msg['net'] = $msg['gross'] - $msg['fee'];
+	}
+
+	$defaults = array(
+		'date' => time(), //defaulting to now. @fixme: if you can think of a better thing to do in the name of historical exchange rates.
+		'first_name' => 'Chester',
+		'middle_name' => '',
+		'last_name' => 'McDefault',
+		//'original_gross' => ''
+	);
+
+	$msg = array_merge($defaults, $msg);
+
+	return $msg;
+
+
 }

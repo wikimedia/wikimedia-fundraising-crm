@@ -54,6 +54,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 	}
 
 	function testRequiredFields(){
+		error_reporting(E_ALL);
 		$this->assertDeleteDrushLog();
 
 		//@fixme: Actually do this test to determine that the proper fields are
@@ -83,16 +84,14 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		//Should be required:
 		//first, last, email, amount, currency, payment type, gateway transaction ID
 		$msg = array(
-			'first_name' => 'Testfirst',
-			'last_name' => 'Testlast',
-			'email' => 'testing@test.com',	//verify field name
-			'amount' => '7.77',				//verify field name
+			'email' => 'testing@test.com',
+			'gross' => '7.77',
 			'original_currency' => 'USD',
-			'gateway' => 'something',		//verify that this is what I think it is.
+			'gateway' => 'something',
 			'gateway_txn_id' => '11235'
 		);
 
-		$msg = array_merge($msg, $contribution_required);
+		//$msg = array_merge($msg, $contribution_required);
 		queue2civicrm_import( $msg );
 		$this->assertDrushLogEmpty(true);
 	}

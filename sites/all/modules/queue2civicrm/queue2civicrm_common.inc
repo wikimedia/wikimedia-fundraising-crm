@@ -13,7 +13,7 @@ function _queue2civicrm_stomp_connection($renew = false) {
   static $con = NULL;
   
   if (!isset($con) || $renew == true) {
-    require_once drupal_get_path('module', 'queue2civicrm') . '/Stomp.php';
+    require_once variable_get('queue2civicrm_stomp_path', drupal_get_path('module', 'queue2civicrm') . '/Stomp.php');
     watchdog('queue2civicrm', 'Attempting connection to queue server: ' . variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
     
     $con = new Stomp(variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
@@ -74,8 +74,8 @@ function _queue2civicrm_normalize_msg( $msg ) {
   // @fixme: Properly determine payment method
   if ( !isset( $msg[ 'contribution_tracking_id' ] )) {
     watchdog( 'queue2civicrm', 'Contribution missing contribution_tracking_id', array(), WATCHDOG_DEBUG );
-    $anonymous = ( $msg[ 'anonymous' ] ) ? 1 : 0;
-    $optout = ( $msg[ 'optout' ] ) ? 1 : 0;
+    $anonymous = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
+    $optout = (array_key_exists('optout', $msg) && $msg['optout'] == true && strtoupper($msg['optout']) != "FALSE") ? 1 : 0;
     $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( '..pp', 'civicrm', date('YmdHis', $msg[ 'date' ] ), null, $optout, $anonymous );
     watchdog( 'queue2civicrm', 'Newly inserted contribution tracking id: @id', array('@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
     $msg[ 'contribution_tracking_id' ] = $contribution_tracking_id;
@@ -108,7 +108,7 @@ function _queue2civicrm_insert_contribution_tracking( $utm_source, $utm_medium, 
   $dbs = _queue2civicrm_get_dbs();
   $dbs->use_default();
   
-  $query = "INSERT INTO {contribution_tracking} ( utm_source, utm_medium, optout, anonymous, ts, contribution_id ) VALUES ( '%s', %s', '%d', '%d', '%d', '%d' )";
+  $query = "INSERT INTO {contribution_tracking} ( utm_source, utm_medium, optout, anonymous, ts, contribution_id ) VALUES ( '%s', '%s', '%d', '%d', '%d', '%d' )";
   db_query( $query, $utm_source, $utm_medium, $optout, $anonymous, $ts, $contrib_id );
   return db_last_insert_id( 'contribution_tracking', 'id' );
 }
