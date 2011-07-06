@@ -78,6 +78,36 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 			$this->assertDeleteDrushLog();
 		}
 
+		$test_name = array(
+			'first_name' => 'Testy',
+			'middle_name' => 'T.',
+			'last_name' => 'Testaberger',
+			'gross' => '8.88',
+			'gateway_txn_id' => '12358'
+		);
+
+		$msg = array_merge($required, $test_name);
+		queue2civicrm_import( $msg );
+		$this->assertDrushLogEmpty(true);
+
+	}
+
+	function testCurrencyConversion(){
+		$test_currency_conversion = array(
+			'email' => 'testing@test.com',
+			'gross' => '7.77',
+			'original_currency' => 'EUR',
+			'gateway' => 'something',
+			'gateway_txn_id' => '11235'
+		);
+		$msg = queue2civicrm_verify_and_stage($test_currency_conversion);
+		$this->assertTrue($test_currency_conversion['gross'] == $msg['original_gross'], "Original Gross in converted message does not match actual original gross.");
+		$this->assertTrue($test_currency_conversion['gross'] != $msg['gross'], "Gross is identical: No conversion was done (unless " . $test_currency_conversion['original_currency'] . " = USD for a minute");
+
+		$test_currency_conversion['original_currency'] = 'USD';
+		$msg = queue2civicrm_verify_and_stage($test_currency_conversion);
+		$this->assertTrue($test_currency_conversion['gross'] == $msg['original_gross'], "Original Gross in converted message does not match actual original gross.");
+		$this->assertTrue($test_currency_conversion['gross'] == $msg['gross'], "USD to USD Gross is not identical!");
 	}
 
 	function getItemFromQueue(){
