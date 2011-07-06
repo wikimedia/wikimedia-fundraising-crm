@@ -255,12 +255,12 @@ function queue2civicrm_import( $msg ) {
 		);
 
 		// update the log if things went well
-		if ( $cid && !$contribution[ 'is_error' ] ) {
+		if ( $cid && !array_key_exists('is_error', $contribution)) {
 			$log[ 'cid' ] = $cid;
 			$log[ 'verrified' ] = 1;
 			$log[ 'timestamp' ] = time();
 			_queue2civicrm_log( $log );
-		}
+		} 
 
 		// Send thank you email, other post-import things
 		module_invoke_all( 'queue2civicrm_import', $contribution_info );
@@ -407,12 +407,23 @@ function queue2civicrm_verify_and_stage($msg){
 		$msg['net'] = $msg['gross'] - $msg['fee'];
 	}
 
+    $msg['anonymous'] = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
+    $msg['optout'] = (array_key_exists('optout', $msg) && $msg['optout'] == true && strtoupper($msg['optout']) != "FALSE") ? 1 : 0;
+
+	//defaults: Keys that aren't actually required, but which will cause some portion of the code to complain
+	//if they don't exist (even if they're blank).
 	$defaults = array(
 		'date' => time(), //defaulting to now. @fixme: if you can think of a better thing to do in the name of historical exchange rates.
 		'first_name' => 'Chester',
 		'middle_name' => '',
 		'last_name' => 'McDefault',
-		//'original_gross' => ''
+		'street_address' => '',
+		'supplemental_address_1' => '',
+		'city' => '',
+		'country' => '',
+		'state_province' => '',
+		'postal_code' => '',
+		'original_gross' => $msg['gross'],
 	);
 
 	$msg = array_merge($defaults, $msg);
