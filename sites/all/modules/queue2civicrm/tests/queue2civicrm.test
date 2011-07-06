@@ -57,43 +57,27 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		error_reporting(E_ALL);
 		$this->assertDeleteDrushLog();
 
-		//@fixme: Actually do this test to determine that the proper fields are
-		//being required.
-		//notes: The next commented-out block is what I have determined will
-		//currently make the code angry if it's missing, and roughly where.
-	/*	$msg = array(
-			'gateway' => 'blargh',
-			'data' => 'really'
-		);
-		$contact_required = array(
-			'first_name' => 'Testfirst',
-			'middle_name' => 'Testmiddle',
-			'last_name' => 'Testlast',
-			'anonymous' => '1'
-		);
-		$msg = array_merge($msg, $contact_required);
-		$contribution_required = array(
-			'gross' => '5.50',
-			'fee' => '0.00',
-			'net' => '5.50',
-			'original_currency' => 'USD',
-			'original_gross' => '5.50',
-		);
-	 *
-	 */
 		//Should be required:
 		//first, last, email, amount, currency, payment type, gateway transaction ID
-		$msg = array(
+		$required = array(
 			'email' => 'testing@test.com',
 			'gross' => '7.77',
 			'original_currency' => 'USD',
 			'gateway' => 'something',
 			'gateway_txn_id' => '11235'
 		);
-
-		//$msg = array_merge($msg, $contribution_required);
-		queue2civicrm_import( $msg );
+		queue2civicrm_import( $required );
 		$this->assertDrushLogEmpty(true);
+
+		foreach ($required as $key=>$value){
+			$msg = $required;
+			unset($msg[$key]);
+			queue2civicrm_import( $msg );
+			$this->assertDrushLogEmpty(false);
+			$this->assertCheckDrushLog('CIVI_REQ_FIELD', true, "Missing required $key does not trigger an error.");
+			$this->assertDeleteDrushLog();
+		}
+
 	}
 
 	function getItemFromQueue(){

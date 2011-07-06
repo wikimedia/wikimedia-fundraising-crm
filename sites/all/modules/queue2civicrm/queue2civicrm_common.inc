@@ -74,6 +74,7 @@ function _queue2civicrm_normalize_msg( $msg ) {
   // @fixme: Properly determine payment method
   if ( !isset( $msg[ 'contribution_tracking_id' ] )) {
     watchdog( 'queue2civicrm', 'Contribution missing contribution_tracking_id', array(), WATCHDOG_DEBUG );
+	//@fixme: For the regular transactions, this has been moved to the staging function. This needs to happen in recurring also. 
     $anonymous = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
     $optout = (array_key_exists('optout', $msg) && $msg['optout'] == true && strtoupper($msg['optout']) != "FALSE") ? 1 : 0;
     $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( '..pp', 'civicrm', date('YmdHis', $msg[ 'date' ] ), null, $optout, $anonymous );
@@ -150,7 +151,7 @@ function _queue2civicrm_contact_insert( $msg ) {
 	'first_name' => $msg['first_name'],
 	'middle_name' => $msg['middle_name'],
 	'last_name' => $msg['last_name'],
-	'do_not_trade' => ($msg['anonymous'] ? 1 : 0 ),
+	'do_not_trade' => $msg['anonymous'],
 	'contact_source' => 'online donation'
   );
   
@@ -461,7 +462,7 @@ function _queue2civicrm_log( $log=array() ) {
   $dbs->use_default();
   
   // if cid is set in the log array, we need to update
-  if ( $log[ 'cid' ] ) {
+  if ( array_key_exists('cid', $log)) {
     $query = "UPDATE {queue2civicrm_log} SET gateway='%s', gateway_txn_id='%s', data='%s', timestamp=%d, verified=%d WHERE cid=%d";
     $result = db_query( $query, $log[ 'gateway' ], $log[ 'gateway_txn_id' ], $log[ 'data' ], $log[ 'timestamp' ], $log[ 'verified' ], $log[ 'cid' ] );
     if ( $result ) $result = true;

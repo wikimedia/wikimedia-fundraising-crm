@@ -138,7 +138,7 @@ function thank_you_send( $contribution_id ) {
 		return -1;
 	}
 	
-	if ($contribution['thankyou_date']) {
+	if (array_key_exists('thankyou_date', $contribution)) {
 		return -2;
 	}
 	
@@ -233,7 +233,7 @@ function thank_you_settings_form() {
 
 function thank_you_queue2civicrm_import( $contribution_info ) {
   $contribution_id = $contribution_info[ 'contribution_id' ];
-  watchdog('thank_you', 'Calling thank you function for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($message_debug, TRUE)) . '</pre>');
+  watchdog('thank_you', 'Calling thank you function for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution_info, TRUE)) . '</pre>');
   thank_you_send( $contribution_id );
 }
 
