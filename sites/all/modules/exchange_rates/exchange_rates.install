@@ -29,18 +29,24 @@ function exchange_rates_schema() {
       'bank_update' => array(
         'description' => t('The timestamp of the last update on the bank side.'),
         'type' => 'int',
+        'size' => 'normal',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'default' => 0
+        'default' => NULL
       ),
-      'bank_update' => array(
-        'description' => t('The timestamp of the last update on the local side.'),
+      'local_update' => array(
+        'description' => t('Timestamp of the last update on the local side'),
         'type' => 'int',
+        'size' => 'normal',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'default' => 0
+        'default' => NULL
       ),
     ),
     'primary key' => array('bank_update', 'currency'),
+    'indexes' => array(
+			'currency' => array('currency')),
   );
+
+	return $schema;
 }
