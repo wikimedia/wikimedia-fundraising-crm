@@ -119,6 +119,13 @@ function queue2civicrm_settings() {
       150 => 150,
     ),
   );
+
+  $form['queue2civicrm_failmail'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email Notification Address'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('queue2civicrm_failmail', ''),
+  );
   
   return system_settings_form($form);
 }
@@ -208,8 +215,8 @@ function queue2civicrm_dequeue() {
 				if ($failAck === true){
 					$watchdogMe .= "\nRemoving failed message from the queue: \n" . print_r($msg, true);
 					//and log to wherever else we want failed removals to go.
-
 				}
+				queue2civicrm_failmail(array('error' => $top_error), $msg, $failAck);
 				watchdog('queue2civicrm', $watchdogMe, array(), WATCHDOG_ERROR);
 
 			} else {
@@ -469,4 +476,36 @@ function queue2civicrm_verify_and_stage($msg){
 	$msg = _queue2civicrm_normalize_contrib_amnts( $msg );
 
 	return $msg;
+}
+
+function queue2civicrm_failmail($error, $message, $removed){
+	$to = variable_get('queue2civicrm_failmail', '');
+	if ($to != ''){
+		$params['error'] = $error;
+		$params['message'] = $message;
+		$params['removed'] = $removed;
+		drupal_mail('queue2civicrm', 'fail', $to, language_default(), $params);
+	} else {
+		watchdog('queue2civicrm', 'Failmail recipient address not set up!');
+	}
+}
+
+function queue2civicrm_mail($key, &$message, $params) {
+	$language = $message['language'];
+	switch($key) {
+		case 'fail':
+			if ($params['removed'] === true){
+				$message['subject'] = t('queue2civicrm Fail Mail : REMOVAL');
+				$message['body'][] = t("A message was removed from ActiveMQ due to the following error(s):");
+			} else {
+				$message['subject'] = t('queue2civicrm Fail Mail');
+				$message['body'][] = t("A message generated the following error(s) while being processed in queue2civicrm:");
+			}
+			$message['body'][] = t("Error Code: ") . $params['error']['err_code'];
+			$message['body'][] = $params['error']['err_text'];
+			$message['body'][] = "---" . t("Message") . "---";
+			$message['body'][] = print_r($params['message'], true);
+			$message['body'][] = "---" . t("End") . "---";
+			break;
+	}
 }

@@ -60,7 +60,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		//Should be required:
 		//first, last, email, amount, currency, payment type, gateway transaction ID
 		$required = array(
-			'email' => 'testing@test.com',
+			'email' => 'khorn@wikimedia.org',
 			'gross' => '7.77',
 			'original_currency' => 'USD',
 			'gateway' => 'something',
@@ -94,7 +94,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 
 	function testCurrencyConversion(){
 		$test_currency_conversion = array(
-			'email' => 'testing@test.com',
+			'email' => 'khorn@wikimedia.org',
 			'gross' => '7.77',
 			'original_currency' => 'EUR',
 			'gateway' => 'something',
@@ -135,6 +135,8 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		$this->assertTrue($error['err_code'] === 'IMPORT_CONTACT', "New top error should be IMPORT_CONTACT; returned " . $error['err_code']);
 		$this->assertTrue($error['err_text'] === "Messages:\n  Test Error Message #4\n  Test Error Message #5\n  Test Error Message #6", "Expected message not returned: " . $error['err_text']);
 
+		queue2civicrm_failmail($error, "This is a test message!", true);
+		queue2civicrm_failmail($error, "This is another test message!", false);
 	}
 
 	function getItemFromQueue(){
