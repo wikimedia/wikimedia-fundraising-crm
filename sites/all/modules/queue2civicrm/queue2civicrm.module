@@ -167,12 +167,57 @@ function queue2civicrm_dequeue() {
       watchdog('queue2civicrm', 'Read frame:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');      
       set_time_limit(60);
       try {
+		_queue2civicrm_get_new_drush_errors(); //redefine "new" before we move on.
         if (queue2civicrm_import($msg)){
 			$con->ack($msg);
 		} else {
-			//@fixme: process the drush_error types thrown in import, to
-			//determine if we want to ack it here or not.
-			//if we don't ack it, it will stay in the queue.
+			/* @fixme: Wow, this error handling is probably a mess. This should shake out more sensibly as:
+			 * - tests are written for dequeue fail cases
+			 * - we get to the cards that deal more specifically with error emails and database rollback conditions.
+			 */
+			$top_error = _queue2civicrm_get_seriousest_new_drush_error();
+			if ($top_error !== false && array_key_exists('err_code', $top_error)){
+				$watchdogMe = $top_error['err_code'] . " : " . $top_error['err_text'];
+				$failAck = false;
+				switch ($top_error['err_code']){
+					case 'CIVI_CONFIG': //missing a necessary civicrm value. Probably the Entity Tag, or Payment Instrument
+						$watchdogMe .= "\nHalting Process.";
+						watchdog('queue2civicrm', $watchdogMe, array(), WATCHDOG_ERROR);
+						//in this case, it makes sense to just leave with no ack: It's not the message's fault.
+						return false;
+						break;
+
+					/* @fixme: Break out the following cases to generate the failure emails,
+					*   and/or database rollback (though that might be better inside queue2civicrm_import.
+					*   On the other hand, here the behavior is all in one place)
+					*/
+					case 'IMPORT_CONTRIB': //Contribution could not be added by the import function, but contact made it.
+					case 'IMPORT CONTACT': //Contact could not be added by the import function.
+					case 'CIVI_REQ_FIELD': //message missing a hard requirement
+						$failAck = true;
+						break;
+					case 'IMPORT_TAG': //Tag could not be added by the import function, but contact and contrib made it.
+						//if this is actually a hard failure, this should be structured like the other two IMPORT_ errors,
+						//both here and inside the import function. 
+						$con->ack($msg);
+						break;
+					default: //apparently we don't know what happened to get us here. Log the heck out of it.
+						$watchdogMe .= "\nUNHANDLED ERROR CODE. Please debug and handle it.";
+						$failAck = true;
+				}
+				if ($failAck === true){
+					$watchdogMe .= "\nRemoving failed message from the queue: \n" . print_r($msg, true);
+					//and log to wherever else we want failed removals to go.
+
+				}
+				watchdog('queue2civicrm', $watchdogMe, array(), WATCHDOG_ERROR);
+
+			} else {
+				//Case was not properly dealt with.
+				watchdog('queue2civicrm', "Fessage failed to import, but threw no errors! Please debug and handle this failure case.\nRemoving message from the queue: \n" . print_r($msg, true), array(), WATCHDOG_ERROR);
+				$con->ack($msg);
+			}
+
 		}
 		return TRUE;
       }

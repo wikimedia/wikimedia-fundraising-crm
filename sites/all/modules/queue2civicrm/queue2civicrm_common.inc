@@ -74,7 +74,7 @@ function _queue2civicrm_normalize_msg( $msg ) {
   // @fixme: Properly determine payment method
   if ( !isset( $msg[ 'contribution_tracking_id' ] )) {
     watchdog( 'queue2civicrm', 'Contribution missing contribution_tracking_id', array(), WATCHDOG_DEBUG );
-	//@fixme: For the regular transactions, this has been moved to the staging function. This needs to happen in recurring also. 
+	//@fixme: For the regular transactions, this has been moved to the staging function. This needs to happen in recurring also, and then it can be removed here.
     $anonymous = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
     $optout = (array_key_exists('optout', $msg) && $msg['optout'] == true && strtoupper($msg['optout']) != "FALSE") ? 1 : 0;
     $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( '..pp', 'civicrm', date('YmdHis', $msg[ 'date' ] ), null, $optout, $anonymous );
@@ -543,4 +543,72 @@ function _queue2civicrm_get_civi_id($type, $name) {
 		default:
 			return false;
 	}
+}
+
+/* Will return all the new drush errors since the last time you asked.
+ *
+ */
+function _queue2civicrm_get_new_drush_errors(){
+	static $oldErrors = array();
+	$errors = drush_get_error_log();
+	$ret = array();
+
+	foreach ($errors as $err_code=>$lines){
+		if (array_key_exists($err_code, $oldErrors)){
+			$tmp = array_diff($errors[$err_code], $oldErrors[$err_code]);
+			if (is_array($tmp) && !empty($tmp)){
+				$ret[$err_code] = $tmp;
+			}
+		} else {
+			$ret[$err_code] = $errors[$err_code];
+		}
+	}
+	$oldErrors = $errors;
+	return $ret;
+}
+
+/* Will return the most serious of all the new drush errors since the last time you asked,
+ * with all its new lines intact.
+ *
+ */
+function _queue2civicrm_get_seriousest_new_drush_error(){ //totally a word.
+	$error = _queue2civicrm_get_new_drush_errors();
+
+	$top_error = false;
+	if (!empty($error)){ //pull the Top of Bad.
+		$severity = array(
+			'CIVI_CONFIG',
+			'STOMP_BAD_CONNECTION',
+			'CIVI_REQ_FIELD',
+			'IMPORT_CONTACT',
+			'IMPORT_CONTRIB',
+			'IMPORT_TAG',
+		);
+		$top_code = false;
+
+		foreach($severity as $rank=>$code){
+			if(array_key_exists($code, $error)){
+				$top_code = $code;
+				break;
+			}
+		}
+		if ($top_code === false){ //unknown code in the log there. Just pull #1.
+			foreach($error as $err_code=>$lines){
+				$top_code = $err_code;
+				break;
+			}
+		}
+
+		$text = "Messages:";
+		foreach ($error[$err_code] as $key=>$errormessage){
+			$text .= "\n  $errormessage";
+		}
+
+		$top_error = array(
+			'err_code' => $top_code,
+			'err_text' => $text
+		);
+
+	}
+	return $top_error;
 }
