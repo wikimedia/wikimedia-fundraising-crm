@@ -175,7 +175,7 @@ function queue2civicrm_dequeue() {
 			 * - tests are written for dequeue fail cases
 			 * - we get to the cards that deal more specifically with error emails and database rollback conditions.
 			 */
-			$top_error = _queue2civicrm_get_seriousest_new_drush_error();
+			$top_error = _queue2civicrm_get_top_new_drush_error();
 			if ($top_error !== false && array_key_exists('err_code', $top_error)){
 				$watchdogMe = $top_error['err_code'] . " : " . $top_error['err_text'];
 				$failAck = false;

@@ -110,6 +110,33 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		$this->assertTrue($test_currency_conversion['gross'] == $msg['gross'], "USD to USD Gross is not identical!");
 	}
 
+	function testGetTopError(){
+		$this->assertDeleteDrushLog();
+		$error = _queue2civicrm_get_top_new_drush_error();
+		//should return false
+		$this->assertFalse($error, "There are no drush errors to return, but we got '$error'");
+
+		//now throw three errors, and make sure the most severe is returned.
+		drush_set_error("IMPORT_TAG", "Test Error Message #1");
+		drush_set_error("CIVI_CONFIG", "Test Error Message #2");
+		drush_set_error("IMPORT_CONTACT", "Test Error Message #3");
+		$error = _queue2civicrm_get_top_new_drush_error();
+
+		//looking for the CIVI_CONFIG error
+		$this->assertTrue($error['err_code'] === 'CIVI_CONFIG', "New top error should be CIVI_CONFIG; returned " . $error['err_code']);
+		$this->assertTrue($error['err_text'] === "Messages:\n  Test Error Message #2", "Expected message not returned: " . $error['err_text']);
+
+		//now stack some slightly less important errors and see if we get exactly the new ones.
+		drush_set_error("IMPORT_CONTACT", "Test Error Message #4");
+		drush_set_error("IMPORT_CONTACT", "Test Error Message #5");
+		drush_set_error("IMPORT_CONTACT", "Test Error Message #6");
+		$error = _queue2civicrm_get_top_new_drush_error();
+
+		$this->assertTrue($error['err_code'] === 'IMPORT_CONTACT', "New top error should be IMPORT_CONTACT; returned " . $error['err_code']);
+		$this->assertTrue($error['err_text'] === "Messages:\n  Test Error Message #4\n  Test Error Message #5\n  Test Error Message #6", "Expected message not returned: " . $error['err_text']);
+
+	}
+
 	function getItemFromQueue(){
 	  $con = _queue2civicrm_stomp_connection();
 	  $this->assertTrue(is_object($con), "Could not establish stomp connection");

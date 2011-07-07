@@ -571,7 +571,7 @@ function _queue2civicrm_get_new_drush_errors(){
  * with all its new lines intact.
  *
  */
-function _queue2civicrm_get_seriousest_new_drush_error(){ //totally a word.
+function _queue2civicrm_get_top_new_drush_error(){
 	$error = _queue2civicrm_get_new_drush_errors();
 
 	$top_error = false;
@@ -599,16 +599,18 @@ function _queue2civicrm_get_seriousest_new_drush_error(){ //totally a word.
 			}
 		}
 
-		$text = "Messages:";
-		foreach ($error[$err_code] as $key=>$errormessage){
-			$text .= "\n  $errormessage";
+		if ($top_code !== false){
+			$text = "Messages:";
+			foreach ($error[$top_code] as $key=>$errormessage){
+				$text .= "\n  $errormessage";
+			}
+
+			$top_error = array(
+				'err_code' => $top_code,
+				'err_text' => $text
+			);
 		}
 
-		$top_error = array(
-			'err_code' => $top_code,
-			'err_text' => $text
-		);
-
-	}
+	} 
 	return $top_error;
 }
