@@ -10,10 +10,19 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		);
 	}
 
+	function run(){
+		$this->recip_email = variable_get('wmf_test_settings_email', '');
+		if (!$this->assertEmailIsSet()){
+			return;
+		}
+		return parent::run();
+	}
+
 	function setUp(){
 		error_reporting(E_ALL);
 		variable_set('queue2civicrm_subscription', '/queue/civiCRM_test');
 		variable_set('queue2civicrm_url', 'tcp://localhost:61613');
+		variable_set('queue2civicrm_failmail', $this->recip_email);
 	}
 
 	function tearDown(){
@@ -63,7 +72,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		//Should be required:
 		//first, last, email, amount, currency, payment type, gateway transaction ID
 		$required = array(
-			'email' => 'khorn@wikimedia.org',
+			'email' => $this->recip_email,
 			'gross' => '7.77',
 			'original_currency' => 'USD',
 			'gateway' => 'something',
@@ -97,7 +106,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 
 	function testCurrencyConversion(){
 		$test_currency_conversion = array(
-			'email' => 'khorn@wikimedia.org',
+			'email' => $this->recip_email,
 			'gross' => '7.77',
 			'original_currency' => 'EUR',
 			'gateway' => 'something',
@@ -223,6 +232,15 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		$error = drush_get_error_log();
 		$message = "Drush log should " . (($state)?"":"not ") . "be empty\n" . print_r($error, true);
 		$this->assertTrue(empty($error) === $state, $message);
+	}
+
+	function assertEmailIsSet(){
+		if ($this->recip_email == ''){
+			$this->fail("Recipient email for testing is not configured. Please configure this value in the wmf_test_settings module.");
+			return false;
+		} else {
+			return true;
+		}
 	}
 
 }
