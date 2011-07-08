@@ -139,6 +139,36 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		queue2civicrm_failmail($error, "This is another test message!", false);
 	}
 
+	function testBatchProcess(){
+		//clear and add test messages to the testing queue.
+		$this->emptyQueue();
+
+		$messages_in = array();
+		for ($i=0; $i<10; ++$i){
+			$message = queue2civicrm_generate_message();
+			//I think we want gateway_txn_id and contribution_tracking_id to match much the same way we did before.
+			$message['gateway_txn_id'] = "civiTest";
+			$message['contribution_tracking_id'] = $message['gateway_txn_id'];
+			$message['queue'] = variable_get('queue2civicrm_subscription', '/queue/oopsie');
+			//create some havoc
+			if($i == 3){
+				unset($message['email']); //this should throw a nice error and email and things.
+			}
+			$messages_in[] = $message;
+			$message = array('values' => $message);
+			$ret = queue2civicrm_insertmq_form_submit(array(), $message);
+		}
+
+		$this->assertDeleteDrushLog();
+
+		queue2civicrm_batch_process();
+
+		//check the final drush log for all the relevant entries
+		$this->assertDrushLogEmpty(false);
+		$this->assertCheckDrushLog('CIVI_REQ_FIELD', true, "There should be an error regarding the missing email address.");
+
+	}
+
 	function getItemFromQueue(){
 	  $con = _queue2civicrm_stomp_connection();
 	  $this->assertTrue(is_object($con), "Could not establish stomp connection");

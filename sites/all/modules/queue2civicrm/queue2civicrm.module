@@ -146,6 +146,11 @@ function queue2civicrm_batch_process() {
       break;
     }
   }
+
+	$con = _queue2civicrm_stomp_connection();
+	$subscription_queue = variable_get('queue2civicrm_subscription', '/queue/test');
+	$con->unsubscribe($subscription_queue);
+	$con->disconnect();
   
   // allow for other modules to handle their own related batch processing
   module_invoke_all( 'queue2civicrm_batch_process', $processed );
@@ -190,23 +195,24 @@ function queue2civicrm_dequeue() {
 					case 'CIVI_CONFIG': //missing a necessary civicrm value. Probably the Entity Tag, or Payment Instrument
 						$watchdogMe .= "\nHalting Process.";
 						watchdog('queue2civicrm', $watchdogMe, array(), WATCHDOG_ERROR);
+						queue2civicrm_failmail($top_error, array(), $failAck);
 						//in this case, it makes sense to just leave with no ack: It's not the message's fault.
+						$con->unsubscribe( $subscription_queue );
 						return false;
 						break;
-
-					/* @fixme: Break out the following cases to generate the failure emails,
-					*   and/or database rollback (though that might be better inside queue2civicrm_import.
-					*   On the other hand, here the behavior is all in one place)
-					*/
+					case 'IMPORT_TAG':
+						//@fixme: Roll back contrib, and...
 					case 'IMPORT_CONTRIB': //Contribution could not be added by the import function, but contact made it.
+						//@fixme: Roll back contact, and...
 					case 'IMPORT CONTACT': //Contact could not be added by the import function.
+						$watchdogMe .= "\nHalting Process.";
+						watchdog('queue2civicrm', $watchdogMe, array(), WATCHDOG_ERROR);
+						queue2civicrm_failmail($top_error, $msg, $failAck);
+						$con->unsubscribe( $subscription_queue );
+						return false;
+						break;
 					case 'CIVI_REQ_FIELD': //message missing a hard requirement
 						$failAck = true;
-						break;
-					case 'IMPORT_TAG': //Tag could not be added by the import function, but contact and contrib made it.
-						//if this is actually a hard failure, this should be structured like the other two IMPORT_ errors,
-						//both here and inside the import function. 
-						$con->ack($msg);
 						break;
 					default: //apparently we don't know what happened to get us here. Log the heck out of it.
 						$watchdogMe .= "\nUNHANDLED ERROR CODE. Please debug and handle it.";
@@ -214,14 +220,15 @@ function queue2civicrm_dequeue() {
 				}
 				if ($failAck === true){
 					$watchdogMe .= "\nRemoving failed message from the queue: \n" . print_r($msg, true);
-					//and log to wherever else we want failed removals to go.
+					$con->ack($msg);
 				}
-				queue2civicrm_failmail(array('error' => $top_error), $msg, $failAck);
+				queue2civicrm_failmail($top_error, $msg, $failAck);
 				watchdog('queue2civicrm', $watchdogMe, array(), WATCHDOG_ERROR);
 
 			} else {
 				//Case was not properly dealt with.
-				watchdog('queue2civicrm', "Fessage failed to import, but threw no errors! Please debug and handle this failure case.\nRemoving message from the queue: \n" . print_r($msg, true), array(), WATCHDOG_ERROR);
+				queue2civicrm_failmail(array(), $msg, true);
+				watchdog('queue2civicrm', "Message failed to import, but threw no errors! Please debug and handle this failure case.\nRemoving message from the queue: \n" . print_r($msg, true), array(), WATCHDOG_ERROR);
 				$con->ack($msg);
 			}
 
@@ -286,6 +293,8 @@ function queue2civicrm_import( $msg ) {
 			//@fixme: Roll back any importing we've already done...?
 			//@fixme: Include a reasonable transaction id in the error message
 			drush_set_error("IMPORT_TAG", "Review tag could not be added to the contact. Please make sure it's defined in your CiviCRM install.");
+			//Note: If having the import tag turns out to be extremely important and something we should die over, uncomment the next line.
+			//return false;
 		}
 
 		// Map the tracking record to the CiviCRM contribution
@@ -426,6 +435,10 @@ function queue2civicrm_generate_message() {
 }
 
 function queue2civicrm_verify_and_stage($msg){
+	if ( !is_array( $msg ) ) {
+		$msg = json_decode($msg->body, true);
+	}
+
 	$required = array(
 		'email' => '',
 		'gross' => '',
@@ -497,15 +510,25 @@ function queue2civicrm_mail($key, &$message, $params) {
 			if ($params['removed'] === true){
 				$message['subject'] = t('queue2civicrm Fail Mail : REMOVAL');
 				$message['body'][] = t("A message was removed from ActiveMQ due to the following error(s):");
+			} elseif(empty($params['error'])){
+				$message['subject'] = t('queue2civicrm Fail Mail : UNKNOWN ERROR');
+				$message['body'][] = t("A message failed for reasons unknown, while being processed in queue2civicrm:");
 			} else {
 				$message['subject'] = t('queue2civicrm Fail Mail');
 				$message['body'][] = t("A message generated the following error(s) while being processed in queue2civicrm:");
 			}
-			$message['body'][] = t("Error Code: ") . $params['error']['err_code'];
-			$message['body'][] = $params['error']['err_text'];
-			$message['body'][] = "---" . t("Message") . "---";
-			$message['body'][] = print_r($params['message'], true);
-			$message['body'][] = "---" . t("End") . "---";
+
+			if(!empty($params['error'])){
+				$message['body'][] = t("Error Code: ") . $params['error']['err_code'];
+				$message['body'][] = $params['error']['err_text'];
+			}
+			if(!empty($params['message'])){
+				$message['body'][] = "---" . t("Message") . "---";
+				$message['body'][] = print_r($params['message'], true);
+				$message['body'][] = "---" . t("End") . "---";
+			} else {
+				$message['body'][] = t("The exact message was deemed irrelevant.");
+			}
 			break;
 	}
 }
