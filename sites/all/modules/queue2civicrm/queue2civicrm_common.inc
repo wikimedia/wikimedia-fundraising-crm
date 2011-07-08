@@ -574,8 +574,10 @@ function _queue2civicrm_get_new_drush_errors(){
 function _queue2civicrm_get_top_new_drush_error(){
 	$error = _queue2civicrm_get_new_drush_errors();
 
-	$top_error = false;
-	if (!empty($error)){ //pull the Top of Bad.
+	if (empty($error)){
+		return false;
+	} else {	//pull the Top of Bad.
+		$top_error = false;
 		$severity = array(
 			'CIVI_CONFIG',
 			'STOMP_BAD_CONNECTION',
@@ -586,7 +588,7 @@ function _queue2civicrm_get_top_new_drush_error(){
 		);
 		$top_code = false;
 
-		foreach($severity as $rank=>$code){
+		foreach($severity as $code){
 			if(array_key_exists($code, $error)){
 				$top_code = $code;
 				break;
@@ -610,7 +612,6 @@ function _queue2civicrm_get_top_new_drush_error(){
 				'err_text' => $text
 			);
 		}
-
+		return $top_error;
 	} 
-	return $top_error;
 }
