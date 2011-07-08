@@ -11,8 +11,12 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 	}
 
 	function setUp(){
+		error_reporting(E_ALL);
 		variable_set('queue2civicrm_subscription', '/queue/civiCRM_test');
 		variable_set('queue2civicrm_url', 'tcp://localhost:61613');
+	}
+
+	function tearDown(){
 	}
 
 	//determine that we are in fact able to read and write to activeMQ
@@ -54,7 +58,6 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 	}
 
 	function testRequiredFields(){
-		error_reporting(E_ALL);
 		$this->assertDeleteDrushLog();
 
 		//Should be required:
