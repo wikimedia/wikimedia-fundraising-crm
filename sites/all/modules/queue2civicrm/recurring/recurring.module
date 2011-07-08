@@ -82,9 +82,8 @@ function recurring_settings() {
 /**
  * Implementation of hook queue2civicrm_batch_process
  * 
- * @param $processed
  */
-function recurring_queue2civicrm_batch_process( &$processed=0 ) {
+function recurring_queue2civicrm_batch_process() {
   $recurring_processed = 0;
   watchdog('recurring', 'Attempting to process up to ' . variable_get('recurring_batch', 0) . ' contribution(s).');
 
@@ -105,7 +104,7 @@ function recurring_queue2civicrm_batch_process( &$processed=0 ) {
     watchdog('recurring', 'No contributions processed.');
   }
   
-  $processed += $recurring_processed;
+  return $recurring_processed;
 }
 
 /**

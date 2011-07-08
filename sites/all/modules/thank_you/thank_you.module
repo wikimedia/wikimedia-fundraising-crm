@@ -142,7 +142,7 @@ function thank_you_send( $contribution_id ) {
 		return -2;
 	}
 	
-	$rendered = thank_you_render( $contribution_id );	
+	$rendered = thank_you_render( $contribution_id );
 	
 	$from = '"' . $rendered['from_name'] . '" <' . $rendered['from_address'] . '>';
 	$to = '"' . $rendered['to_name'] . '" <' . $rendered['to_address'] . '>';
@@ -163,7 +163,8 @@ function thank_you_send( $contribution_id ) {
 	if ( thank_you_mail_send( 'thank_you', $to, $subject, $body, $from, $headers ) ) {
 		$params = array(
 			'id' => $contribution_id,
- 			'thankyou_date' => date( 'Y-m-d H:i:s' )
+ 			'thankyou_date' => date( 'Y-m-d H:i:s' ),
+			'contact_id' => $contribution['contact_id']
 			);
 		$contribution_result = &civicrm_contribution_add( $params );
 		watchdog('thank_you', 'Sending thank you message succeeded for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($message_debug, TRUE)) . '</pre>');
