@@ -77,7 +77,7 @@ function _queue2civicrm_normalize_msg( $msg ) {
 	//@fixme: For the regular transactions, this has been moved to the staging function. This needs to happen in recurring also, and then it can be removed here.
     $anonymous = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
     $optout = (array_key_exists('optout', $msg) && $msg['optout'] == true && strtoupper($msg['optout']) != "FALSE") ? 1 : 0;
-    $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( '..pp', 'civicrm', date('YmdHis', $msg[ 'date' ] ), null, $optout, $anonymous );
+    $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( '..pp', 'civicrm', date('YmdHis', $msg[ 'date' ] ), null, $optout, $anonymous ); //ACK! this should not be handled this way! should be dynamic!
     watchdog( 'queue2civicrm', 'Newly inserted contribution tracking id: @id', array('@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
     $msg[ 'contribution_tracking_id' ] = $contribution_tracking_id;
   }
