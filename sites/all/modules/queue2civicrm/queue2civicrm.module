@@ -399,6 +399,7 @@ function queue2civicrm_generate_message() {
   $currency_codes = array('USD', 'GBP', 'EUR', 'ILS');
   shuffle($currency_codes);
   $currency = (mt_rand(0,1)) ? 'USD' : $currency_codes[0];
+  date_default_timezone_set( 'America/Los_Angeles' );
   
   $message = array(
 	'contribution_tracking_id' => '',
