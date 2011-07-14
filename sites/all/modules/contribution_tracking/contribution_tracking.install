@@ -1,0 +1,98 @@
+<?php 
+
+function contribution_tracking_schema() {
+  $schema[ 'contribution_tracking' ] = array(
+    'description' => t( 'Tracks user experience through donation pipeline.' ),
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'size' => 'normal',
+        'unsigned' => true,
+        'not null' => true
+      ),
+      'contribution_id' => array(
+        'type' => 'int',
+        'size' => 'normal',
+        'unsigned' => true,
+        'not null' => false
+      ),
+      'note' => array(
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => false
+      ),
+      'referrer' => array(
+        'type' => 'varchar',
+        'length' => 4096,
+        'not null' => false
+      ),
+      'anonymous' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'unsigned' => true,
+        'not null' => true
+      ),
+      'utm_source' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => false,
+      ),
+      'utm_medium' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => false,
+      ),
+      'utm_campaign' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => false,
+      ),
+      'optout' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+      	'unsigned' => true,
+        'not null' => true,
+      ),
+      'language' => array(
+        'type' => 'varchar',
+        'length' => 8,
+        'not null' => false,
+      ),
+      'ts' => array(
+        'type' => 'varchar',
+        'length' => 14,
+        'not null' => false
+      ),
+      'owa_session' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => false,
+      ),
+      'owa_ref' => array(
+        'type' => 'int',
+        'size' => 'normal',
+        'not null' => false,
+      ),
+    ),
+    'indexes' => array(
+      'ts' => array( 'ts' ),
+      'utm_source_id' => array( 'utm_source' ),
+      'utm_medium_id' => array( 'utm_medium' ),
+      'utm_campaign_id' => array( 'utm_campaign' )
+    ),
+    'unique keys' => array(
+    	'contribution_id' => array( 'contribution_id' ),
+    ),
+    'primary key' => array( 'id' ),
+  );
+  return $schema;
+}
+
+function contribution_tracking_install() {
+  drupal_install_schema( 'contribution_tracking' );
+}
+
+function contribution_tracking_uninstall() {
+  drupal_uninstall_schema( 'contribution_tracking' ); 
+}
+
