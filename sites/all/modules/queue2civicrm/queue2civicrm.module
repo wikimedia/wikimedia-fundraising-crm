@@ -427,10 +427,10 @@ function queue2civicrm_generate_message() {
 	'response'               => mt_rand(),
 	'currency'               => $currency,
 	'original_currency'      => $currency_codes[0],
-	'original_gross'         => mt_rand()/100,
+	'original_gross'         => mt_rand(0,10000)/100,
 	'fee'                    => '0',
-	'gross'                  => mt_rand()/100,
-	'net'                    => mt_rand(),
+	'gross'                  => mt_rand(0,10000)/100,
+	'net'                    => mt_rand(0,10000)/100,
 	'date'                   => date('r'), //time(),
   );
   return $message;
