@@ -416,10 +416,11 @@ function _queue2civicrm_get_state( $country, $state ) {
   } else {
     $query = "SELECT s.name AS state_name FROM civicrm_country c, civicrm_state_province s WHERE s.country_id=c.id AND c.name='" . addslashes( $country ) . "' AND s.abbreviation='" . addslashes( $state ) . "'";
   }
-  $dao = CRM_Core_DAO::executeQuery( $query );
-  while ( $dao->fetch() ) {
-    $state = ( !is_null( $dao->state_name ) ) ? $dao->state_name : $state;
-  }
+  $dbs = _queue2civicrm_get_dbs();
+  $dbs->use_civicrm();
+  $result = db_query( $query );
+  $state = ( !is_null( $result->state_name ) ) ? $result->state_name : $state;
+  $dbs->use_default();
   
   return $state;
 }
