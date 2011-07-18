@@ -299,6 +299,7 @@ function queue2civicrm_import( $msg ) {
 		}
 
 		// Map the tracking record to the CiviCRM contribution
+		// @FIXME what do we do if this returns false?  nothing at the moment...
 		_queue2civicrm_update_contribution_tracking( $msg, $contribution );
 
 		// construct an array of useful info to invocations of queue2civicrm_import
