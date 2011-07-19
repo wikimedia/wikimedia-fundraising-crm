@@ -19,7 +19,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 	}
 
 	function setUp(){
-		error_reporting(E_ALL);
+		error_reporting('E_NONE');
 		variable_set('queue2civicrm_subscription', '/queue/civiCRM_test');
 		variable_set('queue2civicrm_url', 'tcp://localhost:61613');
 		variable_set('queue2civicrm_failmail', $this->recip_email);
@@ -76,7 +76,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 			'gross' => '7.77',
 			'original_currency' => 'USD',
 			'gateway' => 'something',
-			'gateway_txn_id' => '11235'
+			'gateway_txn_id' => '11235' . time()
 		);
 		queue2civicrm_import( $required );
 		$this->assertDrushLogEmpty(true);
@@ -95,7 +95,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 			'middle_name' => 'T.',
 			'last_name' => 'Testaberger',
 			'gross' => '8.88',
-			'gateway_txn_id' => '12358'
+			'gateway_txn_id' => '12358' . time()
 		);
 
 		$msg = array_merge($required, $test_name);
@@ -110,7 +110,8 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 			'gross' => '7.77',
 			'original_currency' => 'EUR',
 			'gateway' => 'something',
-			'gateway_txn_id' => '11235'
+			'gateway_txn_id' => '11235',
+			'contribution_tracking_id' => '' //don't actually need these in the DB, as we're just testing the currency conversions.
 		);
 		$msg = queue2civicrm_verify_and_stage($test_currency_conversion);
 		$this->assertTrue($test_currency_conversion['gross'] == $msg['original_gross'], "Original Gross in converted message does not match actual original gross.");
@@ -158,9 +159,9 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		$messages_in = array();
 		for ($i=0; $i<10; ++$i){
 			$message = queue2civicrm_generate_message();
-			//I think we want gateway_txn_id and contribution_tracking_id to match much the same way we did before.
-			$message['gateway_txn_id'] = "civiTest";
-			$message['contribution_tracking_id'] = $message['gateway_txn_id'];
+			unset($message['contribution_tracking_id']);
+			$message['gateway'] = 'CiviTest' . $i;
+			$message['gateway_txn_id'] = time();
 			$message['queue'] = variable_get('queue2civicrm_subscription', '/queue/oopsie');
 			//create some havoc
 			if($i == 3){

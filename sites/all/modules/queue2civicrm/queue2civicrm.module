@@ -149,8 +149,10 @@ function queue2civicrm_batch_process() {
 
 	$con = _queue2civicrm_stomp_connection();
 	$subscription_queue = variable_get('queue2civicrm_subscription', '/queue/test');
-	$con->unsubscribe($subscription_queue);
-	$con->disconnect();
+	if ($con->isConnected()){
+		$con->unsubscribe($subscription_queue);
+		$con->disconnect();
+	}
 
   // allow for other modules to handle their own related batch processing
   $batchprocessed = module_invoke_all( 'queue2civicrm_batch_process');
@@ -315,7 +317,7 @@ function queue2civicrm_import( $msg ) {
 			$log[ 'verified' ] = 1;
 			$log[ 'timestamp' ] = time();
 			_queue2civicrm_log( $log );
-		} 
+		}
 
 		// Send thank you email, other post-import things
 		module_invoke_all( 'queue2civicrm_import', $contribution_info );

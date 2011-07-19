@@ -72,12 +72,13 @@ function _queue2civicrm_normalize_msg( $msg ) {
   // if we're missing a contrib id, insert new record to the table
   // this can happen if a user somehow makes a trxn from outside the normal workflow
   // @fixme: Properly determine payment method
+  // @fixme: This entire if-block is under suspicion. First off, we probably shouldn't be inserting contribution info in the normalize function anyway...
   if ( !isset( $msg[ 'contribution_tracking_id' ] )) {
     watchdog( 'queue2civicrm', 'Contribution missing contribution_tracking_id', array(), WATCHDOG_DEBUG );
 	//@fixme: For the regular transactions, this has been moved to the staging function. This needs to happen in recurring also, and then it can be removed here.
     $anonymous = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
     $optout = (array_key_exists('optout', $msg) && $msg['optout'] == true && strtoupper($msg['optout']) != "FALSE") ? 1 : 0;
-    $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( '..pp', 'civicrm', date('YmdHis', $msg[ 'date' ] ), null, $optout, $anonymous ); //ACK! this should not be handled this way! should be dynamic!
+    $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( '..pp', 'civicrm', date('YmdHis', (int) $msg[ 'date' ] ), null, $optout, $anonymous ); //ACK! this should not be handled this way! should be dynamic!
     watchdog( 'queue2civicrm', 'Newly inserted contribution tracking id: @id', array('@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
     $msg[ 'contribution_tracking_id' ] = $contribution_tracking_id;
   }
@@ -108,8 +109,12 @@ function _queue2civicrm_insert_contribution_tracking( $utm_source, $utm_medium, 
   // make sure we're using the default (drupal) db
   $dbs = _queue2civicrm_get_dbs();
   $dbs->use_default();
-  
-  $query = "INSERT INTO {contribution_tracking} ( utm_source, utm_medium, optout, anonymous, ts, contribution_id ) VALUES ( '%s', '%s', '%d', '%d', '%d', '%d' )";
+
+  if ($contrib_id === null){
+	$query = "INSERT INTO {contribution_tracking} ( utm_source, utm_medium, optout, anonymous, ts ) VALUES ( '%s', '%s', '%d', '%d', '%d' )";
+  } else {
+	$query = "INSERT INTO {contribution_tracking} ( utm_source, utm_medium, optout, anonymous, ts, contribution_id ) VALUES ( '%s', '%s', '%d', '%d', '%d', '%d' )";
+  }
   db_query( $query, $utm_source, $utm_medium, $optout, $anonymous, $ts, $contrib_id );
   return db_last_insert_id( 'contribution_tracking', 'id' );
 }
