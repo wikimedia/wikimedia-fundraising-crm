@@ -138,7 +138,7 @@ function thank_you_send( $contribution_id ) {
 		return -1;
 	}
 	
-	if (array_key_exists('thankyou_date', $contribution)) {
+	if (array_key_exists('thankyou_date', $contribution) && is_numeric($contribution['receive_date']) && $contribution['receive_date'] > 0 ) {
 		return -2;
 	}
 	
