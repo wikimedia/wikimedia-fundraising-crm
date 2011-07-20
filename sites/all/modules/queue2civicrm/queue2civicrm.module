@@ -451,12 +451,16 @@ function queue2civicrm_verify_and_stage($msg){
 		'gateway_txn_id' => ''
 	);
 
+	$failflag = false;
 	foreach ($required as $key=>$value){
 		if (!isset($msg[$key])){
 			watchdog('queue2civicrm', "Required Field '$key' not found in message:" . print_r($msg, true), WATCHDOG_ERROR);
 			drush_set_error("CIVI_REQ_FIELD", "Required Field '$key' not found in message:" . print_r($msg, true));
-			return false;
+			$failflag = true;
 		}
+	}
+	if ($failflag === true){
+			return false;
 	}
 
 	if(!array_key_exists('fee', $msg) && !array_key_exists('net', $msg)){
