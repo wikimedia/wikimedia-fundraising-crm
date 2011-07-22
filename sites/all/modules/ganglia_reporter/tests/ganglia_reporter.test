@@ -1,0 +1,58 @@
+<?php 
+
+class GangliaReporterTest extends DrupalUnitTestCase {
+  /**
+   * GangliaReporter object
+   * @var object
+   */
+  public $gr_obj;
+  
+  public static function getInfo() {
+    return array(
+      'name' => 'Ganglia Reporter Tests',
+      'descriptpion' => 'Tests for Ganglia Reporter module',
+    );
+  }
+  
+  function setUp() {
+    $this->gr_obj = new GangliaReporter();
+    parent::setUp();
+  }
+  
+  function tearDown() {
+    parent::tearDown();
+  }
+  
+  function testGetGmetricPath() {
+    $set_path = 'foo';
+    $this->gr_obj->setGmetricPath( $set_path );
+    $get_path = $this->gr_obj->getGmetricPath();
+    $this->assertEqual( $set_path, $get_path, 'Gmetric paths do not match.  Expected ' . $set_path . ', got ' . $get_path . '.' );
+  }
+  
+  function testLocateGmetricPath() {
+    $path = exec( 'which gmetric' );
+    $located_path = GangliaReporter::locateGmetricPath();
+    $this->assertEqual( $path, $located_path, "Incorrect gmetric path located.  Expected " . $path .", got " . $located_path );
+  }
+  
+  function testSetGmetricPathException() {
+    $exception = false;
+    try {
+      $this->gr_obj->setGmetricPath( false );
+    } catch ( Exception $e ){
+      $exception = true;
+    }
+    $this->assertTrue( $exception, "Expected exception to be thrown in setGmetricPath." );
+  }
+  
+  function testSendMetric() {
+    $retval = $this->gr_obj->sendMetric( 'test', mt_rand(0,100) );
+    $this->assertEqual( 0, $retval, 'Gmetric not succesfully executed.' );
+  }
+  
+  function testGangliaReporterSendMetric() {
+    $retval = ganglia_reporter_send_metric( 'test2', mt_rand(0,100) );
+    $this->assertTrue( $retval, 'Gmetric not succesfully executed' );
+  }
+}
