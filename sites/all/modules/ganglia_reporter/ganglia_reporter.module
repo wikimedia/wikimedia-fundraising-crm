@@ -1,8 +1,12 @@
 <?php 
 
+/**
+ * Invocation of hook_menu
+ */
 function ganglia_reporter_menu() {
   $items = array();
   
+  // displays settings form
   $items[ 'admin/settings/ganglia_reporter' ] = array(
     'title' => 'Ganglia Reporter',
     'description' => t( 'Configure Ganglia Reporter.' ),
@@ -11,6 +15,7 @@ function ganglia_reporter_menu() {
     'page arguments' => array( 'ganglia_reporter_settings' ),
   );
 
+  // forces 'Ganglia Reporter' to appear on the config page
   $items[ 'admin/settings/ganglia_reporter/configure' ] = array(
     'title' => 'Configure',
     'access arguments' => array( 'asminister ganglia reporter' ),
@@ -20,10 +25,16 @@ function ganglia_reporter_menu() {
   return $items;
 }
 
+/**
+ * Invocation of hook_perm
+ */
 function ganglia_reporter_perm() {
   return array( 'administer ganglia reporter' );
 }
 
+/**
+ * Generate settings form
+ */
 function ganglia_reporter_settings() {
   $form = array();
   
@@ -38,14 +49,20 @@ function ganglia_reporter_settings() {
   return system_settings_form( $form );
 }
 
-function ganglia_reporter_obj() {
+/**
+ * Get a GangliaReporter object
+ * 
+ * Sets a static variable to the GangliaReporter object and returns the object
+ * @return object GangliaReporter
+ */
+function ganglia_reporter_get_obj() {
   static $gr_obj;
   
   if ( !$gr_obj ) {
     try {
-      $gr_obj = new GangliaReporter();
+      $gr_obj = new GangliaReporter( variable_get( 'ganglia_reporter_gmetric_path', null ));
     } catch ( Exception $e ) {
-      drupal_set_error( 'Ganglia reporter does not appear to be configured correctly.' );
+      drupal_set_message( 'Ganglia reporter encountered a problem: ' . $e, 'error' );
       $gr_obj = false;
     }
   }
@@ -53,28 +70,59 @@ function ganglia_reporter_obj() {
   return $gr_obj;
 }
 
+/**
+ * Wrapper for GangliaReporter->send_metric
+ * 
+ * Params are the same as those for the gmetric binary.  Run gmetric --help 
+ * for more details.
+ * 
+ * @param string $name
+ * @param string $value
+ * @param string $type
+ * @param string $units
+ * @param string $slope
+ * @param int $tmax
+ * @param int $dmax
+ * @return bool Success or failure of executing gmetric
+ */
 function ganglia_reporter_send_metric( $name, $value, $type = 'int8', $units = '', $slope = 'both', $tmax = 60, $dmax = 0 ) {
-  $gr = ganglia_reporter_obj();
-  $ret = $gr->sendMetric( $name, $value, $type, $units, $slope, $tmax, $dmax );
-  if ( $ret === 0 ) {
-    return true;
-  } else {
-    return false;
-  }
+  $gr = ganglia_reporter_get_obj();
+  return $gr->sendMetric( $name, $value, $type, $units, $slope, $tmax, $dmax );
 }
 
+/**
+ * A programmatic interface for gmetric
+ */
 class GangliaReporter { 
-  
-  protected $gmetric_path;
 
-  function __construct() {
-    if ( !$gmetric_path = variable_get( 'ganglia_reporter_gmetric_path', false )){
-      watchdog( 'ganglia_reporter', 'Gmetric path not configured, attempting to auto-locate...' );
+  /**
+   * Path to gmetric executable
+   * @var string
+   */
+  protected $gmetric_path = null;
+
+  /**
+   * Constructor
+   * 
+   * Initializes by setting gmetric path.
+   * @param $gmetric_path
+   */
+  function __construct( $gmetric_path=null ) {
+    // if the gmetric path hasn't been explicitly set, try to auto-locate it.    
+    if ( !$gmetric_path ) {
       $gmetric_path = self::locateGmetricPath(); 
     }
     $this->setGmetricPath( $gmetric_path );
   }
   
+  /**
+   * Get gmetric path
+   * 
+   * In the event that gmetric path is not set in scope, attempt to auto-locate
+   * and set it.
+   * 
+   * @return string
+   */
   function getGmetricPath() {
     if ( !$this->gmetric_path ) {
       $this->setGmetricPath( self::locateGmetricPath() );
@@ -82,36 +130,87 @@ class GangliaReporter {
     return $this->gmetric_path;
   }
   
+  /**
+   * Set gmetric path
+   * 
+   * Throws an exception in the event that the path to the gmetric binary does
+   * not exist.
+   * 
+   * @param $path
+   */
   function setGmetricPath( $path ) {
     if ( !file_exists( $path )) {
-      throw new Exception( 'Gmetric path does not exist.' );
+      throw new Exception( 'Gmetric path "' . $path . '" does not exist.' );
     }
     $this->gmetric_path = $path;
   }
   
+  /**
+   * Executes gmetric call
+   * 
+   * Sends arbitrary data to Ganglia using gmetric.
+   * 
+   * Params the same as arguments for gmetric.  Run gmetric --help for more
+   * info.
+   * 
+   * @param $name
+   * @param $value
+   * @param $type
+   * @param $units
+   * @param $slope
+   * @param $tmax
+   * @param $dmax
+   * @return bool
+   */
   function sendMetric( $name, $value, $type = 'int8', $units = '', $slope = 'both', $tmax = 60, $dmax = 0 ) {
-    $args = array();
+    // pack the params and their values into an array so we can more easily build our string of options
     $opts = array(
-      'name',
-      'value',
-      'type',
-      'units',
-      'slope',
-      'tmax',
-      'dmax'
+      'name' => $name,
+      'value' => $value,
+      'type' => $type,
+      'units' => $units,
+      'slope' => $slope,
+      'tmax' => $tmax,
+      'dmax' => $dmax,
     );
-    foreach( $opts as $opt ) {
-      $args[] = "--" . $opt . "=" . escapeshellarg( ${$opt} );
-    }
-    $cmd = escapeshellcmd( $this->getGmetricPath() . ' ' . implode( " ", $args ));
+    
+    // construct our command to execute, along with our string of options
+    $cmd = escapeshellcmd( $this->getGmetricPath() . ' ' . $this->prepareOptions( $opts ));
+    
+    // execute the gmetric command...
     exec( $cmd, $output, $retval );
-    return $retval;
+    
+    // return true/false depending on success.
+    if( $retval === 0 ) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * Returns a formatted string of options to be passed to executable
+   * 
+   * Takes an associative array of $option_name => $option_value.
+   * 
+   * @param $opts
+   * @return string
+   */
+  function prepareOptions( array $opts ) {
+    foreach( $opts as $opt => $val ) {
+      $opts[ $opt ] = "--" . $opt . "=" . escapeshellarg( $val );
+    }
+    return implode( " ", $opts );
   }
   
+  /**
+   * Attempt to auto-determine location of gmetric
+   * @return string Gmetric path (or null)
+   */
   static function locateGmetricPath() {
     $path = exec( 'which gmetric' );
     if ( !strlen( $path )) {
-      return false;
+      return null;
     }
     return $path;
   }

@@ -23,6 +23,9 @@ class GangliaReporterTest extends DrupalUnitTestCase {
     parent::tearDown();
   }
   
+  /**
+   * Tests GangliaReporter->getGmetricPath()
+   */
   function testGetGmetricPath() {
     $set_path = 'foo';
     $this->gr_obj->setGmetricPath( $set_path );
@@ -30,12 +33,18 @@ class GangliaReporterTest extends DrupalUnitTestCase {
     $this->assertEqual( $set_path, $get_path, 'Gmetric paths do not match.  Expected ' . $set_path . ', got ' . $get_path . '.' );
   }
   
+  /**
+   * Tests GangliaReporter::locateGmetricPath()
+   */
   function testLocateGmetricPath() {
     $path = exec( 'which gmetric' );
     $located_path = GangliaReporter::locateGmetricPath();
     $this->assertEqual( $path, $located_path, "Incorrect gmetric path located.  Expected " . $path .", got " . $located_path );
   }
   
+  /**
+   * Tests GangliaReporter->setGmetricPath's exception case (when path doesn't exist)
+   */
   function testSetGmetricPathException() {
     $exception = false;
     try {
@@ -46,13 +55,32 @@ class GangliaReporterTest extends DrupalUnitTestCase {
     $this->assertTrue( $exception, "Expected exception to be thrown in setGmetricPath." );
   }
   
+  /**
+   * Tests GangliaReporter->sendMetric()
+   */
   function testSendMetric() {
     $retval = $this->gr_obj->sendMetric( 'test', mt_rand(0,100) );
-    $this->assertEqual( 0, $retval, 'Gmetric not succesfully executed.' );
+    $this->assertTrue( $retval, 'Gmetric not succesfully executed.' );
   }
   
+  /**
+   * Tests wrapper function ganglia_reporter_send_metric()
+   */
   function testGangliaReporterSendMetric() {
     $retval = ganglia_reporter_send_metric( 'test2', mt_rand(0,100) );
     $this->assertTrue( $retval, 'Gmetric not succesfully executed' );
+  }
+
+  /**
+   * Tests GangliaReporter->prepareOptions()
+   */
+  function testPrepareOptions() {
+    $opts = array(
+      'foo' => 'bar',
+      'baz' => 'blort',
+    );
+    $expected = "--foo='bar' --baz='blort'"; //make sure the values are escaped by escapeshellarg()
+    $prepared_options = $this->gr_obj->prepareOptions( $opts );
+    $this->assertEqual( $prepared_options, $expected, "Prepared options ($prepared_options) different from expected ($expected)." );
   }
 }
