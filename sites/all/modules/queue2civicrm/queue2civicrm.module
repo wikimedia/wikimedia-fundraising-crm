@@ -158,6 +158,8 @@ function queue2civicrm_batch_process() {
   $batchprocessed = module_invoke_all( 'queue2civicrm_batch_process');
   $processed += array_sum($batchprocessed);
   
+  module_invoke( 'ganglia_reporter', 'send_metric', 'Total processed messages', $processed, 'int8', '# of messages procesed from the queue.' );
+  
   if ($processed > 0) {
     watchdog('queue2civicrm', 'Successfully processed ' . $processed . ' contribution(s).');
   }
