@@ -149,7 +149,7 @@ function queue2civicrm_batch_process() {
 
 	$con = _queue2civicrm_stomp_connection();
 	$subscription_queue = variable_get('queue2civicrm_subscription', '/queue/test');
-	if ($con->isConnected()){
+	if (is_object( $con ) && $con->isConnected()){
 		$con->unsubscribe($subscription_queue);
 		$con->disconnect();
 	}
@@ -158,7 +158,24 @@ function queue2civicrm_batch_process() {
   $batchprocessed = module_invoke_all( 'queue2civicrm_batch_process');
   $processed += array_sum($batchprocessed);
   
-  module_invoke( 'ganglia_reporter', 'send_metric', 'Total processed messages', $processed, 'int8', '# of messages procesed from the queue.' );
+  /**
+   * this may some day supercede the process counts handled above...
+   * 
+   * Note that this might be a little whack.  At least, it feels a little sloppy.
+   * The tmax/dmax fields should probably be configurable
+   * through the UI rather than hardcoded here. Furthermore, we might consider specifying the names
+   * of gateways to keep track of, rather than auto-generate the gateways to keep track of during 
+   * queue consumption.  With the latter (current) method, we'll only report to gmetric when there
+   * are > 0 msgs consumed from the queue - meaning if there are no msgs for a particular gateway, 
+   * that fact will not get reported to gmetric.  But I've hardcoded the dmax param here to be the
+   * same as the frequency of queue consumption, so if there are no messages in the queue for
+   * a particular gateway, the gateway will report as having consumed 0 messages in ganglia anyway.
+   */
+  $counter = _queue2civicrm_counter_get();
+  foreach ( $counter->get_things_counted() as $thing_counted => $count ) {
+    module_invoke( 'ganglia_reporter', 'send_metric', $thing_counted . ' donations', $count, 'int8', 'donations', 5, 300 );
+  }
+  module_invoke( 'ganglia_reporter', 'send_metric', 'Total donations', $counter->get_count_total(), 'int8', 'donations', 5, 300 );
   
   if ($processed > 0) {
     watchdog('queue2civicrm', 'Successfully processed ' . $processed . ' contribution(s).');
@@ -323,6 +340,9 @@ function queue2civicrm_import( $msg ) {
 
 		// Send thank you email, other post-import things
 		module_invoke_all( 'queue2civicrm_import', $contribution_info );
+		
+		// keep count of the transactions
+		_queue2civicrm_counter_add( $msg[ 'gateway' ] );
 
 		return TRUE;
 	} else {

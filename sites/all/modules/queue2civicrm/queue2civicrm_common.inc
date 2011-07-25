@@ -621,3 +621,37 @@ function _queue2civicrm_get_top_new_drush_error(){
 		return $top_error;
 	} 
 }
+
+function _queue2civicrm_counter_get() {
+  static $counter;
+  if ( !$counter ) {
+    $counter = new Queue2civicrmCounter();
+  }
+  return $counter;
+}
+
+function _queue2civicrm_counter_add( $thing_to_count, $count=1 ) {
+  $counter = _queue2civicrm_counter_get();
+  $counter->add( $thing_to_count, $count );
+}
+
+class Queue2civicrmCounter {
+  protected $things_counted = array();
+  
+  public function add( $thing_to_count, $count ) {
+    $this->things_counted[ $thing_to_count ] += $count;
+  }
+  
+  public function get_count_total( $thing_to_count = null ) {
+    if ( $thing_to_count ) {
+      return $this->things_counted[ $thing_to_count ];
+    } else {
+      return array_sum( $this->things_counted );
+    }
+  }
+  
+  public function get_things_counted() {
+    return $this->things_counted;
+  }
+}
+
