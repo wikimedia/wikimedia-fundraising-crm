@@ -246,6 +246,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 			return true;
 		}
 	}
+	
 
 }
 

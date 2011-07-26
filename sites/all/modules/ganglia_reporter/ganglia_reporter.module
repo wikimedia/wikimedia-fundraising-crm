@@ -176,7 +176,6 @@ class GangliaReporter {
     
     // construct our command to execute, along with our string of options
     $cmd = escapeshellcmd( $this->getGmetricPath() . ' ' . $this->prepareOptions( $opts ));
-    
     // execute the gmetric command...
     exec( $cmd, $output, $retval );
     
