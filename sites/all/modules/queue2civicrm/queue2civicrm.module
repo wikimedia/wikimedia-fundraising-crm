@@ -181,9 +181,9 @@ function queue2civicrm_batch_process() {
    */
   $counter = _queue2civicrm_trxn_counter_get();
   foreach ( $counter->get_trxn_counts() as $gateway => $count ) {
-    module_invoke( 'ganglia_reporter', 'send_metric', $gateway . ' donations', $count, 'int8', 'donations', 5, 300 );
+    module_invoke( 'ganglia_reporter', 'send_metric', $gateway . ' donations', $count, 'int8', 'donations', 'both', 5, 300 );
   }
-  module_invoke( 'ganglia_reporter', 'send_metric', 'Total donations', $counter->get_count_total(), 'int8', 'donations', 5, 300 );
+  module_invoke( 'ganglia_reporter', 'send_metric', 'Total donations', $counter->get_count_total(), 'int8', 'donations', 'both', 5, 300 );
   
   if ($processed > 0) {
     watchdog('queue2civicrm', 'Successfully processed ' . $processed . ' contribution(s).');
