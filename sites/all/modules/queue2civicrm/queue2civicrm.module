@@ -127,6 +127,14 @@ function queue2civicrm_settings() {
     '#default_value' => variable_get('queue2civicrm_failmail', ''),
   );
   
+  $form[ 'queue2civicrm_gateways_to_monitor' ] = array(
+    '#type' => 'textfield',
+    '#title' => t('Gateways to monitor'),
+    '#required' => false,
+    '#default_value' => variable_get( 'queue2civicrm_gateways_to_monitor', 'payflowpro, paypal' ),
+    '#description' => t( 'A CSV of gateway-strings that you wish to monitor in Ganglia.  The gateway string should match the name of the gateway as defined in the "gateway" field of transaction messages.')
+  );
+  
   return system_settings_form($form);
 }
 
@@ -171,9 +179,9 @@ function queue2civicrm_batch_process() {
    * same as the frequency of queue consumption, so if there are no messages in the queue for
    * a particular gateway, the gateway will report as having consumed 0 messages in ganglia anyway.
    */
-  $counter = _queue2civicrm_counter_get();
-  foreach ( $counter->get_things_counted() as $thing_counted => $count ) {
-    module_invoke( 'ganglia_reporter', 'send_metric', $thing_counted . ' donations', $count, 'int8', 'donations', 5, 300 );
+  $counter = _queue2civicrm_trxn_counter_get();
+  foreach ( $counter->get_trxn_counts() as $gateway => $count ) {
+    module_invoke( 'ganglia_reporter', 'send_metric', $gateway . ' donations', $count, 'int8', 'donations', 5, 300 );
   }
   module_invoke( 'ganglia_reporter', 'send_metric', 'Total donations', $counter->get_count_total(), 'int8', 'donations', 5, 300 );
   
@@ -342,7 +350,7 @@ function queue2civicrm_import( $msg ) {
 		module_invoke_all( 'queue2civicrm_import', $contribution_info );
 		
 		// keep count of the transactions
-		_queue2civicrm_counter_add( $msg[ 'gateway' ] );
+		_queue2civicrm_trxn_counter_add( $msg[ 'gateway' ] );
 
 		return TRUE;
 	} else {
