@@ -19,6 +19,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 	}
 
 	function setUp(){
+	    parent::setUp();
 		error_reporting('E_NONE');
 		variable_set('queue2civicrm_subscription', '/queue/civiCRM_test');
 		variable_set('queue2civicrm_url', 'tcp://localhost:61613');
@@ -26,6 +27,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 	}
 
 	function tearDown(){
+	  parent::tearDown();
 	}
 
 	//determine that we are in fact able to read and write to activeMQ
@@ -51,14 +53,14 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 
 	function testConnect(){
 		$this->assertDrushLogEmpty(true);
-		variable_set('queue2civicrm_url', 'CompleteNonsense');
+		variable_set('queue2civicrm_url', 'tcp://bananas:123');
 		$con = _queue2civicrm_stomp_connection(true);
 		$this->assertTrue($con === false, "Connection did not fail appropriately.");
 		//check for the drush errors...
 		$this->assertDrushLogEmpty(false);
 		$this->assertCheckDrushLog('STOMP_BAD_CONNECTION', true, "Appropriate Drush error was not thrown.");
 
-		//put everything back to normal
+		//put everything back to normaltestCurrencyConversion
 		$this->assertDeleteDrushLog();
 		variable_set('queue2civicrm_url', 'tcp://localhost:61613'); //@fixme: This should be grabbing from an ini or something.
 		$con = _queue2civicrm_stomp_connection(true);
@@ -115,7 +117,8 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		);
 		$msg = queue2civicrm_verify_and_stage($test_currency_conversion);
 		$this->assertTrue($test_currency_conversion['gross'] == $msg['original_gross'], "Original Gross in converted message does not match actual original gross.");
-		$this->assertTrue($test_currency_conversion['gross'] != $msg['gross'], "Gross is identical: No conversion was done (unless " . $test_currency_conversion['original_currency'] . " = USD for a minute");
+		// commenting out below assertion - not a foolproof assertion ~awjrichards
+		//$this->assertTrue($test_currency_conversion['gross'] != $msg['gross'], "Gross is identical: No conversion was done (unless " . $test_currency_conversion['original_currency'] . " = USD for a minute");
 
 		$test_currency_conversion['original_currency'] = 'USD';
 		$msg = queue2civicrm_verify_and_stage($test_currency_conversion);

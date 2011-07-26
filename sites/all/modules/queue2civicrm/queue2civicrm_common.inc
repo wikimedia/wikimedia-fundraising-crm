@@ -622,36 +622,52 @@ function _queue2civicrm_get_top_new_drush_error(){
 	} 
 }
 
-function _queue2civicrm_counter_get() {
-  static $counter;
-  if ( !$counter ) {
-    $counter = new Queue2civicrmCounter();
+function _queue2civicrm_trxn_counter_get() {
+  static $trxn_counter;
+  if ( !$trxn_counter ) {
+    $gateways = explode( ",", variable_get( 'queue2civicrm_gateways_to_monitor', '' ));
+    $gateways = array_map( 'trim', $gateways );
+    $trxn_counter = new Queue2civicrmTrxnCounter( $gateways );
   }
-  return $counter;
+  return $trxn_counter;
 }
 
-function _queue2civicrm_counter_add( $thing_to_count, $count=1 ) {
-  $counter = _queue2civicrm_counter_get();
-  $counter->add( $thing_to_count, $count );
+function _queue2civicrm_trxn_counter_add( $gateway, $count=1 ) {
+  $counter = _queue2civicrm_trxn_counter_get();
+  $counter->add( $gateway, $count );
 }
 
-class Queue2civicrmCounter {
-  protected $things_counted = array();
+class Queue2civicrmTrxnCounter {
+  protected $gateways = array();
+  protected $trxn_counts = array();
   
-  public function add( $thing_to_count, $count ) {
-    $this->things_counted[ $thing_to_count ] += $count;
-  }
-  
-  public function get_count_total( $thing_to_count = null ) {
-    if ( $thing_to_count ) {
-      return $this->things_counted[ $thing_to_count ];
-    } else {
-      return array_sum( $this->things_counted );
+  public function __construct( array $gateways ) {
+    $this->gateways = $gateways;
+    foreach ( $gateways as $gateway ) {
+      $this->trxn_counts[ $gateway ] = 0;
     }
   }
   
-  public function get_things_counted() {
-    return $this->things_counted;
+  public function add( $gateway, $count ) {
+    if ( !in_array( $gateway, $this->trxn_counts )) {
+      return false;
+    }
+    $this->trxn_counts[ $gateway ] += $count;
+  }
+  
+  public function get_count_total( $gateway = null ) {
+    if ( $gateway ) {
+      if ( !in_array( $gateway, $this->trxn_counts )) {
+        return false;
+      }
+      return $this->trxn_counts[ $gateway ];
+    } else {
+      return array_sum( $this->trxn_counts );
+    }
+  }
+  
+  public function get_trxn_counts() {
+    return $this->trxn_counts;
   }
 }
 
