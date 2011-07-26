@@ -176,19 +176,15 @@ function log_audit_format_trxn( $trxn ) {
  * Performs a secondary serach for missing transactions.
  * @param array $missing_trxn
  */
-function log_audit_contribution_audit_secondary_trxn_search( &$missing_trxn ) {
-  // check if the contribution is still unalloacted
-  if ( strlen( $missing_trxn[ 'country' ] ) && $missing_trxn[ 'country' ] != 'unknown' ) {
-    return;
+function log_audit_contribution_audit_secondary_trxn_search( $missing_trxn ) {
+  // check if the contribution is still unalloacted..
+  if ( !strlen( $missing_trxn[ 'country' ] ) || $missing_trxn[ 'country' ] == 'unknown' ) {
+    // try to find the missing contrib from the logs
+    if ( $trxn = log_audit_trxn_search( $missing_trxn[ 'gateway_txn_id' ] )) {
+      $missing_trxn = $trxn;
+    }
   }
-  
-  // execute the search
-  $trxn = log_audit_trxn_search( $missing_trxn[ 'gateway_txn_id' ] );
-  
-  // if it was found, set missing_trxn to the found trxn info
-  if ( $trxn ) {
-    $missing_trxn = $trxn;
-  }
+  return $missing_trxn;
 }
 
 /**
