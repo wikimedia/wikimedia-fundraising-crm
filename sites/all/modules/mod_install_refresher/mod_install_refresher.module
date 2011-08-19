@@ -10,7 +10,7 @@ function mod_install_refresher_menu() {
   $items['admin/settings/mod_install_refresher'] = array(
     'title' => t('Module Install Refresher'),
     'description' => t('Uninstalls and re-installs the selected module'),
-    'access arguments' => array('Uninstalls and re-installs the selected module'),
+    'access arguments' => array('administer wmf test settings'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('mod_install_refresher_form'),
   );
