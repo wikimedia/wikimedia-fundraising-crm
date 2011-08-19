@@ -1,0 +1,103 @@
+<?php
+
+function public_reporting_schema() {
+	$schema['public_reporting'] = array(
+		'description' => t('Public reporting tables'),
+		'fields' => array(
+			'contribution_id' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'contact_id' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'name' => array(
+				'type' => 'varchar',
+				'length' => 128,
+				'default' => NULL),
+			'converted_amount' => array(
+				'type' => 'numeric',
+				'precision' => 20,
+				'scale' => 2,
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'original_currency' => array(
+				'type' => 'varchar',
+				'length' => 3,
+//	nullable in db
+//				'not null' => TRUE
+				),
+			'original_amount' => array(
+				'type' => 'numeric',
+				'precision' => 20,
+				'scale' => 2,
+				'unsigned' => TRUE,
+//	nullable in db
+//				'not null' => TRUE
+				),
+			'note' => array(
+				'type' => 'text',
+//	nullable in db	
+//				'not null' => TRUE
+				),
+			'received' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE
+			)
+		),
+    	'indexes' => array(
+			'contact_id' => array('contact_id'),
+			'received' => array('received'),
+			'with_notes' => array(array('note',1), 'received'),
+			'with_currency' => array('original_currency', 'received'),
+			//next line was not in files
+			'converted_amount_id' => array('converted_amount'),
+		),
+		'primary key' => array('contribution_id'),
+		'mysql_suffix' => 'ENGINE=InnoDB DEFAULT CHARSET=utf8'
+
+	);
+
+	return $schema;
+}
+
+function public_reporting_install() {
+	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
+	$dbs = new queue2civicrm_db_switcher();
+	$dbs->use_civicrm();
+	drupal_install_schema('public_reporting');
+	$queryResult =  db_query(public_reporting_get_FK_command());
+
+	watchdog("public_reporting.install", "FK command result: " . print_r($queryResult, true) );
+
+//	$sqlfile = public_reporting_get_triggers_sql();
+//	$queryResult = db_query($sqlfile);
+//	watchdog("public_reporting.install", "Triggers SQL result: " . print_r($queryResult, true) . "\n$sqlfile" );
+}
+
+function public_reporting_uninstall() {
+	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
+	$dbs = new queue2civicrm_db_switcher();
+	$dbs->use_civicrm();
+	drupal_uninstall_schema('public_reporting');
+}
+
+function public_reporting_get_FK_command(){
+	return "ALTER TABLE `public_reporting`
+		ADD CONSTRAINT `public_reporting_ibfk_1` FOREIGN KEY (`contribution_id`) REFERENCES `civicrm_contribution` (`id`) ON DELETE CASCADE,
+		ADD CONSTRAINT `public_reporting_ibfk_2` FOREIGN KEY (`contact_id`) REFERENCES `civicrm_contact` (`id`) ON DELETE CASCADE;";
+}
+
+function public_reporting_get_triggers_sql(){
+	$filename = drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/triggers.sql';
+	$handle = fopen($filename, "r");
+	//$contents = fread($handle, filesize($filename));
+	$contents = "";
+	while(!feof($handle)){
+		$contents = fgets($handle) . "\r\n";
+	}
+	fclose($handle);
+	return $contents;
+}

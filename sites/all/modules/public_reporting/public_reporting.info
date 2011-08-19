@@ -1,0 +1,6 @@
+name = Public Reporting
+description = Make all the Public Reporting schema changes on install
+core = 6.x
+dependencies[] = queue2civicrm
+dependencies[] = civicrm
+package = Wikimedia
