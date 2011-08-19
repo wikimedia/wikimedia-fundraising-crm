@@ -43,7 +43,7 @@ function exchange_rates_schema() {
         'default' => NULL
       ),
     ),
-    'primary key' => array('bank_update', 'currency'),
+    'primary key' => array('currency', 'bank_update'),
     'indexes' => array(
 			'currency' => array('currency')),
   );
