@@ -3,3 +3,108 @@
 function public_reporting_perm() {
 	return array( 'Perform the Public Reporting schema changes.' );
 }
+
+function public_reporting_menu() {
+  $items = array();
+
+  $items['admin/settings/public_reporting'] = array(
+    'title' => t('Public Reporting'),
+    'description' => t('Public reporting table'), 
+    'access arguments' => array('administer wmf test settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('public_reporting_form'),
+  );
+
+  return $items;
+}
+
+function public_reporting_form() {
+  $form = array();
+
+  $form['submit1'] = array(
+    '#value' => 'Synchronize',
+    '#type' => 'submit'
+  );
+
+  return $form;
+}
+
+function public_reporting_form_submit($form, &$form_state) {
+	$result = public_reporting_execute_synchronize_sql();
+
+	if ($result === true){
+		$message = "Synchronize SQL Executed successfully.";
+		$severity = WATCHDOG_NOTICE;
+		$status = 'status';
+	} else {
+		$message = "Synchronize SQL failed!";
+		$severity = WATCHDOG_ERROR;
+		$status = 'error';
+	}
+
+	watchdog("public_reporting", $message, array(), $severity);
+	drupal_set_message($message, $status);
+	//TODO: Does the drupal_set_message function get all the way back to the
+	//original page? Or do I have to send a success message back a third way?
+	//(probably)
+}
+
+function public_reporting_execute_synchronize_sql(){
+	//switch the database
+	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
+	$dbs = new queue2civicrm_db_switcher();
+	$dbs->use_civicrm();
+
+	$filename = drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/synchronize.sql';
+	$handle = fopen($filename, "r");
+	$results = "";
+	$query = "";
+	$count = 0;
+	$ok = true; //turn this false for the rest of the process if anything goes wrong.
+	$commentblock = false;
+
+	while(!feof($handle)){
+		$query .= fgets($handle);
+		//drupal_set_message($query, 'status');
+
+		if (strpos($query, "/*") !== false){
+			//TODO: This should probably check that it's at the start of the
+			//line, and split the string up or whatever, but it seems like the
+			//opening of a rabbit-hole to me. Seems more efficient to just not
+			//do those sorts of things in the sql script for now.
+			//TODO: Also, this should handle the case where the comment start
+			//and end are on the same line.
+			$commentblock = true;
+		}
+
+		if (strpos($query, "*/") !== false){
+			//TODO: This should set $query to whatever is left after the comment
+			//end. Probably. For now, let's just not do that in the .sql file.
+			$commentblock = false;
+			$query = '';
+		}
+
+		if (strpos($query, ";") !== false && !$commentblock){ //actually do something.
+			++$count;
+			$queryResult =  db_query($query);
+			if (!$queryResult){
+				$ok = false;
+			} else {
+				$results .= "\n$query\nResult: " . print_r($queryResult, true);
+			}
+			$query = '';
+		}
+
+	}
+	fclose($handle);
+
+	//switch the database back
+	$dbs->use_default();
+
+	watchdog("public_reporting_get_synchronize_sql", "DB Queries Completed: $count");
+	watchdog("public_reporting_get_synchronize_sql", "Results: $results");
+	if (trim($query) !== ''){
+		watchdog("public_reporting_get_synchronize_sql", "Un-executed Query Bits! Bits: '$query'", array(), WATCHDOG_ERROR);
+	}
+	return $ok;
+}
