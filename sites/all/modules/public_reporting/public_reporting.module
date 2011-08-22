@@ -1,5 +1,9 @@
 <?php
 
+function public_reporting_perm() {
+	return array( 'administer wmf public reporting' );
+}
+
 function public_reporting_menu() {
   $items = array();
 
