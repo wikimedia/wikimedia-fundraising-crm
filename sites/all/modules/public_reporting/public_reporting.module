@@ -30,7 +30,14 @@ function public_reporting_form() {
 }
 
 function public_reporting_form_submit($form, &$form_state) {
-	$result = public_reporting_execute_synchronize_sql();
+
+	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
+	$dbs = new queue2civicrm_db_switcher();
+	$dbs->use_civicrm();
+
+	$result = public_reporting_execute_sql_file(drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/synchronize.sql');
+
+	$dbs->use_default();
 
 	if ($result === true){
 		$message = "Synchronize SQL Executed successfully.";
@@ -49,19 +56,16 @@ function public_reporting_form_submit($form, &$form_state) {
 	//(probably)
 }
 
-function public_reporting_execute_synchronize_sql(){
-	//switch the database
-	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
-	$dbs = new queue2civicrm_db_switcher();
-	$dbs->use_civicrm();
+function public_reporting_sql_file_to_array($file){
 
-	$filename = drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/synchronize.sql';
-	$handle = fopen($filename, "r");
-	$results = "";
+	$discrete_queries = array();
+
+	$handle = fopen($file, "r");
 	$query = "";
-	$count = 0;
 	$ok = true; //turn this false for the rest of the process if anything goes wrong.
 	$commentblock = false;
+	$group = false;
+	$delimiter = false;
 
 	while(!feof($handle)){
 		$query .= fgets($handle);
@@ -84,27 +88,64 @@ function public_reporting_execute_synchronize_sql(){
 			$query = '';
 		}
 
-		if (strpos($query, ";") !== false && !$commentblock){ //actually do something.
-			++$count;
-			$queryResult =  db_query($query);
-			if (!$queryResult){
-				$ok = false;
+		if (strpos($query, "--") !== false){
+			$query = trim(substr($query, 0, strpos($query, "--")));
+			//DO NOT continue here: There may have been useful bits added on
+			//this line before the comment part. Handle as usual.
+		}
+
+		if (strpos($query, "DELIMITER") !== false){
+			$delimiter = trim(substr($query, strpos($query, "DELIMITER")+9));
+			if ($delimiter == ';' || $delimiter == ''){
+				$delimiter = false;
+				$group = false;
 			} else {
-				$results .= "\n$query\nResult: " . print_r($queryResult, true);
+				$group = true;
 			}
+			$query = '';
+			continue;
+		}
+
+		if($group && (strpos($query, $delimiter) !== false)){
+			//We're in a block, and we've hit a delimiter. Complete Query.
+			$query = str_replace($delimiter, '', $query);
+			$discrete_queries[] = $query;
+			$query = '';
+			continue;
+		}
+
+		if (!$group && strpos($query, ";") !== false && !$commentblock){
+			//We've got a complete query.
+			$discrete_queries[] = $query;
 			$query = '';
 		}
 
 	}
 	fclose($handle);
-
-	//switch the database back
-	$dbs->use_default();
-
-	watchdog("public_reporting_get_synchronize_sql", "DB Queries Completed: $count");
-	watchdog("public_reporting_get_synchronize_sql", "Results: $results");
 	if (trim($query) !== ''){
-		watchdog("public_reporting_get_synchronize_sql", "Un-executed Query Bits! Bits: '$query'", array(), WATCHDOG_ERROR);
+		watchdog("public_reporting_sql_file_to_array", "Un-executed Query Bits! Bits: '$query'", array(), WATCHDOG_ERROR);
 	}
+	return $discrete_queries;
+}
+
+function public_reporting_execute_sql_file($file){
+	$queries = public_reporting_sql_file_to_array($file);
+	$results = "";
+	$expected = count($queries);
+	$actual = 0;
+	$ok = true;
+
+	foreach($queries as $query){
+		$queryResult =  db_query($query);
+		if (!$queryResult){
+			$ok = false;
+		} else {
+			$results .= "\n$query\nResult: " . print_r($queryResult, true);
+		}
+		++$actual;
+	}
+
+	watchdog("public_reporting_execute_sql_file", "DB Queries Completed: $actual / $expected (File: $file)");
+	watchdog("public_reporting_execute_sql_file", "Results: $results");
 	return $ok;
 }
