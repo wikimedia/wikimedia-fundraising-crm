@@ -71,11 +71,11 @@ function public_reporting_install() {
 	$queryResult =  db_query(public_reporting_get_FK_command());
 
 	watchdog("public_reporting.install", "FK command result: " . print_r($queryResult, true) );
-	$dbs->use_default();
 
-//	$sqlfile = public_reporting_get_triggers_sql();
-//	$queryResult = db_query($sqlfile);
-//	watchdog("public_reporting.install", "Triggers SQL result: " . print_r($queryResult, true) . "\n$sqlfile" );
+	$sqlResult = public_reporting_execute_sql_file(drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/triggers.sql');
+	watchdog("public_reporting.install", "Trigger Creation Result: " . print_r($sqlResult, true) );
+
+	$dbs->use_default();
 }
 
 function public_reporting_uninstall() {
@@ -89,16 +89,4 @@ function public_reporting_get_FK_command(){
 	return "ALTER TABLE `public_reporting`
 		ADD CONSTRAINT `public_reporting_ibfk_1` FOREIGN KEY (`contribution_id`) REFERENCES `civicrm_contribution` (`id`) ON DELETE CASCADE,
 		ADD CONSTRAINT `public_reporting_ibfk_2` FOREIGN KEY (`contact_id`) REFERENCES `civicrm_contact` (`id`) ON DELETE CASCADE;";
-}
-
-function public_reporting_get_triggers_sql(){
-	$filename = drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/triggers.sql';
-	$handle = fopen($filename, "r");
-	//$contents = fread($handle, filesize($filename));
-	$contents = "";
-	while(!feof($handle)){
-		$contents .= fgets($handle) . "\r\n";
-	}
-	fclose($handle);
-	return $contents;
 }
