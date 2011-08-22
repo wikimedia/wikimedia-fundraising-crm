@@ -1,9 +1,5 @@
 <?php
 
-function public_reporting_perm() {
-	return array( 'Perform the Public Reporting schema changes.' );
-}
-
 function public_reporting_menu() {
   $items = array();
 

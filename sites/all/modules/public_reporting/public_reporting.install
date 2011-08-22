@@ -71,6 +71,7 @@ function public_reporting_install() {
 	$queryResult =  db_query(public_reporting_get_FK_command());
 
 	watchdog("public_reporting.install", "FK command result: " . print_r($queryResult, true) );
+	$dbs->use_default();
 
 //	$sqlfile = public_reporting_get_triggers_sql();
 //	$queryResult = db_query($sqlfile);
@@ -96,7 +97,7 @@ function public_reporting_get_triggers_sql(){
 	//$contents = fread($handle, filesize($filename));
 	$contents = "";
 	while(!feof($handle)){
-		$contents = fgets($handle) . "\r\n";
+		$contents .= fgets($handle) . "\r\n";
 	}
 	fclose($handle);
 	return $contents;
