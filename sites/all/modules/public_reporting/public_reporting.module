@@ -96,7 +96,7 @@ function public_reporting_sql_file_to_array($file){
 		}
 
 		if (strpos($query, "--") !== false){
-			$query = trim(substr($query, 0, strpos($query, "--")));
+			$query = trim(substr($query, 0, strpos($query, "--"))) . "\n";
 			//DO NOT continue here: There may have been useful bits added on
 			//this line before the comment part. Handle as usual.
 		}
@@ -116,14 +116,14 @@ function public_reporting_sql_file_to_array($file){
 		if($group && (strpos($query, $delimiter) !== false)){
 			//We're in a block, and we've hit a delimiter. Complete Query.
 			$query = str_replace($delimiter, '', $query);
-			$discrete_queries[] = $query;
+			$discrete_queries[] = trim($query);
 			$query = '';
 			continue;
 		}
 
 		if (!$group && strpos($query, ";") !== false && !$commentblock){
 			//We've got a complete query.
-			$discrete_queries[] = $query;
+			$discrete_queries[] = trim($query);
 			$query = '';
 		}
 
