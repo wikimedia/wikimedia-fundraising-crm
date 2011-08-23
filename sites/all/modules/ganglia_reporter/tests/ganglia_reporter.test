@@ -10,7 +10,8 @@ class GangliaReporterTest extends DrupalUnitTestCase {
   public static function getInfo() {
     return array(
       'name' => 'Ganglia Reporter Tests',
-      'descriptpion' => 'Tests for Ganglia Reporter module',
+      'description' => 'Tests for Ganglia Reporter module',
+      'group' => 'Pipeline',
     );
   }
   
