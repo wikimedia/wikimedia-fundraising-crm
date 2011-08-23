@@ -56,6 +56,13 @@ function public_reporting_form_submit($form, &$form_state) {
 	//(probably)
 }
 
+/**
+ * Takes a .sql source file, and turns it into an array of discrete SQL
+ * statements that Drupal is capable of handling individually.
+ * @param string $file Full path to the .sql source file.
+ * @return array The contents of the .sql source file, all pulled apart into
+ * queries that drupal may execute discretely.
+ */
 function public_reporting_sql_file_to_array($file){
 
 	$discrete_queries = array();
@@ -128,6 +135,11 @@ function public_reporting_sql_file_to_array($file){
 	return $discrete_queries;
 }
 
+/**
+ * A mechanism for executing sql files through Drupal's db_query function
+ * @param string $file Full path to the .sql source file.
+ * @return boolean true if everything returned OK, otherwise false.
+ */
 function public_reporting_execute_sql_file($file){
 	$queries = public_reporting_sql_file_to_array($file);
 	$results = "";
