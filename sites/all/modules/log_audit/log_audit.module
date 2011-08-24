@@ -68,19 +68,108 @@ function log_audit_get_trxn_info($trxn_query_name, $params) {
   return $trxns;
 }
 
-/* --
-	Grep the ipn logs for encoded json
--- */
-function log_audit_search_logs($log_filename, $pattern)  {
+/**
+ * Search IPN logs
+ * 
+ * You can optionall search the logs by looking for mathinc trxn ids in a JSON
+ * object, or use the default method of reconstructing contrib arrays from
+ * print_r output.
+ * 
+ * @TODO refactor 
+ * @param string $log_filename
+ * @param string $pattern
+ * @param string $method
+ * @return string JSON object of contribution
+ */
+function log_audit_search_logs($log_filename, $pattern, $method = null )  {
+  if ( $method == 'grep_for_json' ) {
+    return log_audit_grep_log_for_json( $log_filename, $pattern );
+  }
+  
+  // holds resulting json object of a found transaction
+  $contrib_json = null;
+  
+  // prepare list of files to search through by finding files that contain the trxn id
+  $files = array();
+  $cmd = "grep -a -l \"%s\" %s";
+  $cmd = sprintf($cmd, $pattern, $log_filename);
+  exec( $cmd, $files );
+  
+  // search for contrib in the collection of log files that contain the transaction id
+  foreach ( $files as $file ) {
+    $fh = fopen( $log_dir . '/' . $file, 'r' );                                                                                        
+    $contrib_arr = null; // holds string represntation of trxn array                                                                   
+    $end_contrib_arr = false; // flag to determine when end of string rep of trxn array is reached                                     
+    $contrib_match = false; // flag to determine if the txn id in the array matches a given txn id                                                
+    while ( $line = fgets( $fh )) { // read line by line (log files can be quite large, loading into memory != good idea                                                                                                    
+      // look for the start of the array if we haven't already started tracking a particular contrib array                       
+      if ( !preg_match( "/Attempting to parse: Array/", $line ) && !$contrib_arr ) {                                             
+        continue;                                                                                                          
+      } else {                                                                                                                   
+        $contrib_arr .= $line;                                                                                             
+        // if we've hit the end of the array, flag it                                                                      
+        if( preg_match( "/^\)/", $line )) {                                                                                
+          $end_contrib_arr = true;                                                                                   
+        }                                                                                                                  
+      }                                                                                                                          
 
-	// $log_filename = ""
+      // look for matching trxn id strings if current line holds a txn_id                                                        
+      if ( preg_match( "/\[txn_id\] => $pattern/", $line )) {                                                     
+        // we found a match!                                                                                       
+        $contrib_match = true;                                                                                     
+      }                                                                                                              
+                                                                                                                                           
+      if ( $contrib_match && $end_contrib_arr ) {  //we have a contrib match AND a full array str                                
+        // turn the contrib array string into an actual array                                                              
+        $arr_matches = array(); // reset matching array for preg_match_all 
+        $contrib = array(); // reset array to hold array representation of contribution                                    
+        preg_match_all( "/\[(.*)\]\s\=>\s(.*[^\s])/", $contrib_arr, $arr_matches );                                        
+        foreach ( $arr_matches[1] as $key => $value ) {                                                                    
+          $contrib[ $value ] = $arr_matches[ 2 ][ $key ];                                                            
+        }                                                                                                                  
+
+        // dbl check that this is a legitimate payment                                                                     
+        // payment_status = Completed                                                                                      
+        // txn_type = subscr_payment OR web_accept                                                                         
+        if ( in_array( $contrib[ 'txn_type' ], array( 'web_accept', 'subscr_payment' ))                                    
+            && $contrib[ 'payment_status' ] == 'Completed' ) {                                                 
+          // turn array into json                                                                                    
+          $contrib_json = json_encode( $contrib );
+          fclose( $fh );                                                                   
+          break 2; // our work here is done.                                                                      
+        }                                                                                                                  
+        $end_contrib_arr = false;                                                                                          
+        $contrib_arr = null;                                                                                               
+      } elseif( !$contrib_match && $end_contrib_arr ) { //we have a full array str but no contrib match                          
+        // reset array end flag                                                                                            
+        $end_contrib_arr = false;                                                                                          
+        // reset contrib arr tracker                                                                                       
+        $contrib_arr = null;
+      }                                                                                                                          
+    }                                                                                                                                  
+    fclose( $fh );
+  }
+  return $contrib_json;	
+}
+
+/**
+ * Greps given log file for a json object containing "txn_id": <txn id>
+ * 
+ * Uses actual 'grep' tool via exec()
+ * 
+ * @param string $log_filename
+ * @param string $pattern
+ * @return string 
+ */
+function log_audit_grep_log_for_json( $log_filename, $pattern ) {
+    // $log_filename = ""
 	// $pattern = ""
 	$cmd = 'grep -a "\"txn_id\":\"%s\"" %s';
 	$cmd = sprintf($cmd, $pattern, $log_filename);  // 6
 	
 	$exec = exec($cmd);
-	
-	return $exec;
+	$trxn_json = trim( strstr( $exec, "{" ));
+	return $trxn_json;
 }
 
 /* --
@@ -115,8 +204,8 @@ function log_audit_trxn_search( $trxn_id ) {
   if ( !strlen( $result )) {
     return false;
   }
-  $trxn_json = trim( strstr( $result, "{" ));
-  $trxn = log_audit_format_trxn( json_decode( $trxn_json, true ));
+  
+  $trxn = log_audit_format_trxn( json_decode( $result, true ));
   return $trxn;
 }
 
