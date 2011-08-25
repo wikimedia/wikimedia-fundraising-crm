@@ -64,10 +64,18 @@ function contribution_audit_allocate_unallocated_contribs( $start_date, $end_dat
   return $allocated;
 }  
 
+/**
+ * @TODO some of this might be better off in normalization functions, but just trying to get this done for deadline
+ * @param unknown_type $allocated
+ * @param unknown_type $trxn
+ */
 function _contribution_audit_aggregate_country_amounts( &$allocated, $trxn ) {
   // handle currency conversion, etc
-  foreach ( array( 'fee','net', 'gross', 'date', 'original_currency', 'country'  ) as $amount_key ) { // ensure that valuse are set for fee/net
+  foreach ( array( 'fee','net', 'gross' ) as $amount_key ) { // ensure that valuse are set for fee/net/gross
     if ( !isset( $trxn[ $amount_key ] )) $trxn[ $amount_key ] = 0;
+  }
+  foreach ( array( 'date', 'original_currency', 'country'  ) as $amount_key ) { // ensure that values are set for date, original currency, country
+    if ( !isset( $trxn[ $amount_key ] )) $trxn[ $amount_key ] = '';
   }
   $trxn = _queue2civicrm_normalize_contrib_amnts( $trxn );
   if ( !in_array( $trxn[ 'country' ], array_keys( $allocated ))) {
