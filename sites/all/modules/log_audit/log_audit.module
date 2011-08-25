@@ -95,6 +95,9 @@ function log_audit_search_logs($log_filename, $pattern, $method = null )  {
   $cmd = sprintf($cmd, $pattern, $log_filename);
   exec( $cmd, $files );
   
+  // determine dir of $log_filename
+  $log_dir = dirname( $log_filename );
+  
   // search for contrib in the collection of log files that contain the transaction id
   foreach ( $files as $file ) {
     $fh = fopen( $log_dir . '/' . $file, 'r' );                                                                                        
@@ -115,7 +118,8 @@ function log_audit_search_logs($log_filename, $pattern, $method = null )  {
 
       // look for matching trxn id strings if current line holds a txn_id                                                        
       if ( preg_match( "/\[txn_id\] => $pattern/", $line )) {                                                     
-        // we found a match!                                                                                       
+        // we found a match!
+        watchdog( 'log_audit', 'Txn_id @txn_id found in @file', array( '@txn_id' => $pattern, '@file' => $file ));                                                                                       
         $contrib_match = true;                                                                                     
       }                                                                                                              
                                                                                                                                            
