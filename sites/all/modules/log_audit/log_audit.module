@@ -95,12 +95,9 @@ function log_audit_search_logs($log_filename, $pattern, $method = null )  {
   $cmd = sprintf($cmd, $pattern, $log_filename);
   exec( $cmd, $files );
   
-  // determine dir of $log_filename
-  $log_dir = dirname( $log_filename );
-  
   // search for contrib in the collection of log files that contain the transaction id
   foreach ( $files as $file ) {
-    $fh = fopen( $log_dir . '/' . $file, 'r' );                                                                                        
+    $fh = fopen( $file, 'r' );                                                                                        
     $contrib_arr = null; // holds string represntation of trxn array                                                                   
     $end_contrib_arr = false; // flag to determine when end of string rep of trxn array is reached                                     
     $contrib_match = false; // flag to determine if the txn id in the array matches a given txn id                                                
@@ -120,7 +117,7 @@ function log_audit_search_logs($log_filename, $pattern, $method = null )  {
       if ( preg_match( "/\[txn_id\] => $pattern/", $line )) {                                                     
         // we found a match!
         watchdog( 'log_audit', 'Txn_id @txn_id found in @file', array( '@txn_id' => $pattern, '@file' => $file ));                                                                                       
-        $contrib_match = true;                                                                                     
+	$contrib_match = true;                                                                                     
       }                                                                                                              
                                                                                                                                            
       if ( $contrib_match && $end_contrib_arr ) {  //we have a contrib match AND a full array str                                
@@ -138,7 +135,8 @@ function log_audit_search_logs($log_filename, $pattern, $method = null )  {
         if ( in_array( $contrib[ 'txn_type' ], array( 'web_accept', 'subscr_payment' ))                                    
             && $contrib[ 'payment_status' ] == 'Completed' ) {                                                 
           // turn array into json                                                                                    
-          $contrib_json = json_encode( $contrib );
+		    $contrib_json = json_encode( $contrib );
+		    watchdog( 'log_audit', 'Missing txn json for @txn_id: @txn_json', array( '@txn_id' => $pattern, '@txn_json' => $contrib_json ));
           fclose( $fh );                                                                   
           break 2; // our work here is done.                                                                      
         }                                                                                                                  
@@ -213,51 +211,61 @@ function log_audit_trxn_search( $trxn_id ) {
   return $trxn;
 }
 
+function log_audit_check_arr_val( $arr, $key ) {
+	if ( isset( $arr[ $key ] ) && strlen( $arr[ $key ] )) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 function log_audit_format_trxn( $trxn ) {
   $formatted_trxn = array();
   // handle country
-  if ( $trxn[ 'country' ] ) {
+  if ( log_audit_check_arr_val( $trxn, 'country' )) {
     $formatted_trxn[ 'country' ] = $trxn[ 'country' ];
-  } elseif( $trxn[ 'country_2' ] ) {
+  } elseif( log_audit_check_arr_val( $trxn, 'country_2' )) {
     $formatted_trxn[ 'country' ] = $trxn[ 'country_2' ];
-  } elseif( $trxn[ 'residence_country' ] ) {
+  } elseif( log_audit_check_arr_val( $trxn, 'residence_country' )) {
     $formatted_trxn[ 'country' ] = $trxn[ 'residence_country' ] ;
   }
-  
+
   // handle gateway
-  if ( $trxn[ 'gateway' ] ) {
+  if ( log_audit_check_arr_val( $trxn, 'gateway' )) {
     $formatted_trxn[ 'gateway' ] = $trxn[ 'gateway' ];
   } else {
     $formatted_trxn[ 'gateway' ] = 'paypal_recurring';
   }
   
   // trxn id
-  if ( $formatted_trxn[ 'gateway' ] == 'paypal' ) {
-    $formatted_trxn['gateway_txn_id'] = $trxn[ 'gateway_txn_id' ];
-  } elseif( $formatted_trxn[ 'gateway' ] == 'paypal_recurring' ) {
-    $formatted_trxn[ 'gateway_txn_id' ] = $trxn[ 'txn_id' ];
+  if( log_audit_Check_arr_val( $formatted_trxn, 'gateway' )) {
+    if ( $formatted_trxn[ 'gateway' ] == 'paypal' ) {
+      $formatted_trxn['gateway_txn_id'] = $trxn[ 'gateway_txn_id' ];
+    } elseif( $formatted_trxn[ 'gateway' ] == 'paypal_recurring' ) {
+      $formatted_trxn[ 'gateway_txn_id' ] = $trxn[ 'txn_id' ];
+    }
   }
   
   // currency
-  if( $trxn[ 'mc_currency' ] ) {
+  if( log_audit_check_arr_val( $trxn, 'mc_currency' )) {
     $formatted_trxn[ 'original_currency' ] = $trxn[ 'mc_currency' ];
-  } elseif( $trxn[ 'original_currency' ] ) {
+  } elseif( log_audit_check_arr_val( $trxn, 'original_currency' )) {
     $formatted_trxn[ 'currency' ] = $trxn[ 'original_currency' ];
   }
   
   // gross
-  if ( $trxn[ 'gross' ] ) {
+  if ( log_audit_check_arr_val( $trxn, 'gross' )) {
     $formatted_trxn[ 'gross' ] = $trxn[ 'gross' ];
-  } elseif ( $trxn[ 'mc_gross' ] ) {
+  } elseif ( log_audit_check_arr_val( $trxn, 'mc_gross' )) {
     $formatted_trxn[ 'gross' ] = $trxn[ 'mc_gross' ];
-  } elseif( $trxn[ 'payment_gross' ] ) {
+  } elseif( log_audit_check_arr_val( $trxn, 'payment_gross' )) {
     $formatted_trxn[ 'gross' ] = $trxn[ 'payment_gross' ];
   }
 
   // date
-  if ( $trxn[ 'date' ] ) {
+  if ( log_audit_check_arr_val( $trxn, 'date' )) {
     $formatted_trxn[ 'date' ] = $trxn[ 'date' ];
-  } elseif ( $trxn[ 'payment_date' ] ) {
+  } elseif ( log_audit_check_arr_val( $trxn, 'payment_date' )) {
     $formatted_trxn[ 'date' ] = strtotime( $trxn[ 'payment_date' ] );
   }
   return $formatted_trxn;
