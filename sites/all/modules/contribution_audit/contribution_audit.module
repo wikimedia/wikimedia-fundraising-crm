@@ -66,7 +66,7 @@ function contribution_audit_allocate_unallocated_contribs( $start_date, $end_dat
 
 function _contribution_audit_aggregate_country_amounts( &$allocated, $trxn ) {
   // handle currency conversion, etc
-  foreach ( array( 'fee','net' ) as $amount_key ) { // ensure that valuse are set for fee/net
+  foreach ( array( 'fee','net', 'gross', 'date', 'original_currency', 'country'  ) as $amount_key ) { // ensure that valuse are set for fee/net
     if ( !isset( $trxn[ $amount_key ] )) $trxn[ $amount_key ] = 0;
   }
   $trxn = _queue2civicrm_normalize_contrib_amnts( $trxn );
