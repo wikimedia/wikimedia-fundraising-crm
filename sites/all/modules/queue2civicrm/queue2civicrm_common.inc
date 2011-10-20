@@ -158,7 +158,7 @@ function _queue2civicrm_contact_insert( $msg ) {
 	'last_name' => $msg['last_name'],
 	'do_not_trade' => $msg['anonymous'],
 	'contact_source' => 'online donation',
-	'preferred_language' => $msg['language'] . '_' . $msg['country']
+	'preferred_language' => strtolower(substr($msg['language'], 0, 2)) . '_' . strtoupper(substr($msg['country'], 0, 2))
   );
   // Honor the opt-out checkbox, if present
   if (array_key_exists('optout', $msg)) {
@@ -195,7 +195,7 @@ function _queue2civicrm_contact_update( $msg, $contact_id ) {
 	'first_name' => $msg['first_name'],
 	'middle_name' => $msg['middle_name'],
 	'last_name' => $msg['last_name'],
-	'preferred_language' => $msg['language'] . '_' . $msg['country']
+	'preferred_language' => strtolower(substr($msg['language'], 0, 2)) . '_' . strtoupper(substr($msg['country'], 0, 2))
   );
   
   // Honor the opt-out checkbox, if present
