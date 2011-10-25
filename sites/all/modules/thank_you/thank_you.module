@@ -79,61 +79,87 @@ function thank_you_preview_form_submit($form, $form_state) {
   }
 }
 
-function thank_you_replace_tokens($contribution_id, $text) {
-	civicrm_initialize(true);
-	require_once 'api/v2/Contact.php';
-	require_once 'api/v2/Contribute.php';
-	$params = array( 'contribution_id' => $contribution_id );
-	$contribution = &civicrm_contribution_get( $params );
-	$params = array( 'contact_id' => $contribution['contact_id'] );
-	$contact_result = &civicrm_contact_get( $params );
-	if (is_array($contact_result)) {
-		$contact = $contact_result[$contribution['contact_id']];
+function thank_you_render( $contribution_id ) {
+	require_once dirname( __FILE__ ) . '/' . 'i18n/thank_you.i18n.php';
+	civicrm_initialize( true );
+	$contribution = civicrm_api("Contribution","get", array (
+		'version' =>'3',
+		'contribution_id' => $contribution_id
+	));
+	# TODO: check is_error and/or count
+	if ( is_array( $contribution ) ) {
+		$contribution = $contribution[ 'values' ][ $contribution_id ];
 	}
-	$email = $contact['email'];
-	
-	$contribution['date'] = date('F j, Y', strtotime($contribution['receive_date']));
-	$contribution['source'] = $contribution['contribution_source'];
-	
-	foreach ($contribution as $key => $value) {
-		$text = str_replace('{contribution.' . $key . '}', $value, $text);
+	$contact = civicrm_api("Contact","get", array (
+		'version' =>'3',
+		'contact_id' => $contribution[ 'contact_id' ],
+		'return' => "display_name,first_name,last_name,email,preferred_language"
+	));
+	# TODO: check is_error and/or count
+	if ( is_array( $contact ) ) {
+		$contact = $contact[ 'values' ][ $contribution[ 'contact_id' ] ];
 	}
-	
-	if (is_array($contact)) {
-		foreach ($contact as $key => $value) {
-			$text = str_replace('{contact.' . $key . '}', $value, $text);
+
+	# load the default values
+	$rendering = array();
+	$rendering[ 'from_name' ] = variable_get( 'thank_you_from_name', '' );
+	$rendering[ 'to_name' ] = variable_get( 'thank_you_to_name', '{contact.display_name}' );
+	if ( !$rendering[ 'to_name' ] ) {
+		$rendering[ 'to_name' ] = variable_get( 'thank_you_to_name_secondary', '' );
+	}
+	$rendering[ 'from_address' ] = variable_get( 'thank_you_from_address', '' );
+	$rendering[ 'subject' ] = variable_get( 'thank_you_subject', '' );
+	$rendering[ 'body' ] = variable_get( 'thank_you_body', '' );
+	$rendering[ 'to_address' ] = '{contact.email}';
+
+	# attempt to get localizations
+	$locale = $contact['preferred_language'];
+	$lang = substr($locale, 0, 2);
+	if ( !isset( $lang ) or $lang == '') {
+		$lang = "en";
+	}
+	# check to see if a matching localization was found
+	if ( isset( $messages ) and array_key_exists( $lang, $messages ) ) {
+		# loop through the localizations and replace the defaults
+		foreach ( $rendering as $key => $value ){
+			# check if the current key has a localized value
+			if ( array_key_exists( 'thank_you_' . $key, $messages[ $lang ] ) ){
+				$rendering[ $key ] = $messages[ $lang ][ 'thank_you_' . $key ];
+			}
 		}
 	}
-	
-	$text = str_replace('{contact.email}', $email, $text);
-	
-	return $text;
-}
+	else{
+		# do nothing, default to en
+	}
+	# replace the tokens with the contact/contribution data
+	$contribution['date'] = date('F j, Y', strtotime($contribution['receive_date']));
+	$contribution['source'] = $contribution['contribution_source'];
 
-function thank_you_render($contribution_id) {
-  $rendering = array();
-  
-  $rendering['from_name'] = thank_you_replace_tokens($contribution_id, variable_get('thank_you_from_name', ''));
-  $rendering['to_name'] = thank_you_replace_tokens($contribution_id, variable_get('thank_you_to_name', '{contact.display_name}'));
-  
-  if (!$rendering['to_name']) {
-    $rendering['to_name'] = thank_you_replace_tokens($contribution_id, variable_get('thank_you_to_name_secondary', ''));
-  }
-  
-  $rendering['from_address'] = thank_you_replace_tokens($contribution_id, variable_get('thank_you_from_address', ''));
-  $rendering['to_address'] = thank_you_replace_tokens($contribution_id, '{contact.email}');
-  $rendering['subject'] = thank_you_replace_tokens($contribution_id, variable_get('thank_you_subject', ''));
-  $rendering['body'] = thank_you_replace_tokens($contribution_id, variable_get('thank_you_body', ''));
+	foreach ( $contribution as $c_key => $c_value ) {
+		foreach ( $rendering as $r_key => $r_value ){
+			$rendering[ $r_key ] = str_replace( '{contribution.' . $c_key . '}', $c_value, $rendering[ $r_key ] );
+		}
+	}
+	foreach ( $contact as $c_key => $c_value ) {
+		foreach ( $rendering as $r_key => $r_value ){
+			$rendering[ $r_key ] = str_replace( '{contact.' . $c_key . '}', $c_value, $rendering[ $r_key ] );
+		}
+	}
+	$rendering[ 'to_address' ] = str_replace( '{contact.email}', $contact['email'], $rendering[ 'to_address' ] );
 
-  return $rendering;
+	return $rendering;
 }
 
 function thank_you_send( $contribution_id ) {
 	civicrm_initialize(true);
-	require_once 'api/v2/Contribute.php';
-	$params = array( 'contribution_id' => $contribution_id );
-	$contribution = &civicrm_contribution_get( $params );
-
+	$contribution = civicrm_api("Contribution","get", array (
+		'version' =>'3',
+		'contribution_id' => $contribution_id
+	));
+	# TODO: check is_error and/or count
+	if ( is_array( $contribution ) ) {
+		$contribution = $contribution[ 'values' ][ $contribution_id ];
+	}
 	if (strtotime($contribution['receive_date']) < time() - 86400 * variable_get('thank_you_days', 14)) {
 		return -1;
 	}
@@ -161,12 +187,12 @@ function thank_you_send( $contribution_id ) {
 		);
 	
 	if ( thank_you_mail_send( 'thank_you', $to, $subject, $body, $from, $headers ) ) {
-		$params = array(
-			'id' => $contribution_id,
- 			'thankyou_date' => date( 'Y-m-d H:i:s' ),
-			'contact_id' => $contribution['contact_id']
-			);
-		$contribution_result = &civicrm_contribution_add( $params );
+		$contribution_result = civicrm_api("Contribution","update", array (
+			'version' =>'3',
+			'contribution_id' => $contribution_id,
+		  	'contact_id' => $contribution['contact_id'],
+			'thankyou_date' => date( 'Y-m-d H:i:s' ),
+		));
 		watchdog('thank_you', 'Sending thank you message succeeded for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($message_debug, TRUE)) . '</pre>');
 		return TRUE;
 	}
