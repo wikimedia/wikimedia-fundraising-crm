@@ -17,12 +17,19 @@ function thank_you_menu() {
     'page arguments' => array('thank_you_preview_form', 1),
     'type' => MENU_CALLBACK,
   );
+
+  $items['thank_you/unsubscribe'] = array(
+    'title' => 'Wikimedia Foundation Unsubscribe',
+    'access arguments' => array('unsubscribe via thank you'),
+    'page callback' => 'unsubscribe_page',
+    'type' => MENU_CALLBACK
+  );
   
   return $items;
 }
 
 function thank_you_perm() {
-  return array('administer thank you');
+  return array('administer thank you', 'unsubscribe via thank you');
 }
 
 function thank_you_preview_form($form_state, $contribution_id) {
@@ -48,7 +55,7 @@ function thank_you_preview_form($form_state, $contribution_id) {
   );
 
   $form['body'] = array(
-    '#value' => '<div>Body:</div><div><pre>' . $rendered['body'] . '</pre></div>',
+    '#value' => '<div>Body:</div><div><pre>' . $rendered['body_plaintext'] . '</pre></div>',
   );
   
   $form['send'] = array(
@@ -109,7 +116,8 @@ function thank_you_render( $contribution_id ) {
 	}
 	$rendering[ 'from_address' ] = variable_get( 'thank_you_from_address', '' );
 	$rendering[ 'subject' ] = variable_get( 'thank_you_subject', '' );
-	$rendering[ 'body' ] = variable_get( 'thank_you_body', '' );
+	$rendering[ 'body_plaintext' ] = variable_get( 'thank_you_body_plaintext', '' );
+	$rendering[ 'body_html' ] = variable_get( 'thank_you_body_html', '' );
 	$rendering[ 'to_address' ] = '{contact.email}';
 
 	# attempt to get localizations
@@ -132,7 +140,7 @@ function thank_you_render( $contribution_id ) {
 		# do nothing, default to en
 	}
 	# replace the tokens with the contact/contribution data
-	$contribution['date'] = date('F j, Y', strtotime($contribution['receive_date']));
+	$contribution['date'] = date('Y-m-d', strtotime($contribution['receive_date']));
 	$contribution['source'] = $contribution['contribution_source'];
 
 	foreach ( $contribution as $c_key => $c_value ) {
@@ -146,6 +154,13 @@ function thank_you_render( $contribution_id ) {
 		}
 	}
 	$rendering[ 'to_address' ] = str_replace( '{contact.email}', $contact['email'], $rendering[ 'to_address' ] );
+
+	# generate and add the unsubscription link
+	$hash = sha1( $contribution_id . $contribution[ 'contact_id' ] . $contribution[ 'trxn_id' ] );
+	global $base_url;
+	$unsub_url = "$base_url/thank_you/unsubscribe?c=$contribution_id&h=$hash";
+	$rendering['body_plaintext'] = str_replace( '{unsubscribe_link}', $unsub_url, $rendering['body_plaintext'] );
+	$rendering['body_html'] = str_replace( '{unsubscribe_link}', $unsub_url, $rendering['body_html'] );
 
 	return $rendering;
 }
@@ -173,7 +188,8 @@ function thank_you_send( $contribution_id ) {
 	$from = '"' . $rendered['from_name'] . '" <' . $rendered['from_address'] . '>';
 	$to = '"' . $rendered['to_name'] . '" <' . $rendered['to_address'] . '>';
 	$subject = $rendered['subject'];
-	$body = $rendered['body'];
+	$body_plaintext = $rendered['body_plaintext'];
+	$body_html = $rendered['body_html'];
 	
 	$headers = array(
 		'Sender' => $from,
@@ -183,10 +199,10 @@ function thank_you_send( $contribution_id ) {
 		'From' => $from,
 		'To' => $to,
 		'Subject' => $subject,
-		'Body' => $body,
+		'Body' => $body_plaintext,
 		);
 	
-	if ( thank_you_mail_send( 'thank_you', $to, $subject, $body, $from, $headers ) ) {
+	if ( thank_you_mail_send( 'thank_you', $to, $subject, $body_plaintext, $body_html, $from, $headers ) ) {
 		$contribution_result = civicrm_api("Contribution","update", array (
 			'version' =>'3',
 			'contribution_id' => $contribution_id,
@@ -208,9 +224,10 @@ function thank_you_settings_form() {
   
   $form['thank_you_from_name'] = array(
     '#type' => 'textfield',
-    '#title' => t('From name'),
+    '#title' => t('From name (default)'),
     '#default_value' => variable_get('thank_you_from_name', ''),
     '#required' => TRUE,
+    '#description' => t('*** This is overwritten by any translations that may exist ***')
   );
 
   $form['thank_you_from_address'] = array(
@@ -222,30 +239,42 @@ function thank_you_settings_form() {
 
   $form['thank_you_to_name'] = array(
     '#type' => 'textfield',
-    '#title' => t('To name'),
+    '#title' => t('To name (default)'),
     '#default_value' => variable_get('thank_you_to_name', '{contact.display_name}'),
     '#required' => TRUE,
+    '#description' => t('*** This is overwritten by any translations that may exist ***')
   );
 
   $form['thank_you_to_name_secondary'] = array(
     '#type' => 'textfield',
-    '#title' => t('To name (if the name above is blank)'),
+    '#title' => t('To name (if the name above is blank, default)'),
     '#default_value' => variable_get('thank_you_to_name_secondary', ''),
     '#required' => TRUE,
+    '#description' => t('*** This is overwritten by any translations that may exist ***')
   );
 
   $form['thank_you_subject'] = array(
     '#type' => 'textfield',
-    '#title' => t('Subject'),
+    '#title' => t('Subject (default)'),
     '#default_value' => variable_get('thank_you_subject', ''),
     '#required' => TRUE,
+    '#description' => t('*** This is overwritten by any translations that may exist ***')
   );
 
-  $form['thank_you_body'] = array(
+  $form['thank_you_body_plaintext'] = array(
     '#type' => 'textarea',
-    '#title' => t('Body'),
-    '#default_value' => variable_get('thank_you_body', ''),
+    '#title' => t('Body Plaintext(default)'),
+    '#default_value' => variable_get('thank_you_body_plaintext', ''),
     '#required' => TRUE,
+    '#description' => t('*** This is overwritten by any translations that may exist ***')
+  );
+
+  $form['thank_you_body_html'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Body HTML(default)'),
+    '#default_value' => variable_get('thank_you_body_html', ''),
+    '#required' => TRUE,
+    '#description' => t('*** This is overwritten by any translations that may exist ***')
   );
   
   $form['thank_you_days'] = array(
@@ -253,6 +282,12 @@ function thank_you_settings_form() {
     '#title' => t('Days before considering transaction too old to automatically thank'),
     '#default_value' => variable_get('thank_you_days', 14),
     '#required' => TRUE,
+  );
+  $form['thank_you_failmail'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email Notification Address'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('thank_you_failmail', ''),
   );
   
   return system_settings_form($form);
@@ -264,10 +299,14 @@ function thank_you_queue2civicrm_import( $contribution_info ) {
   thank_you_send( $contribution_id );
 }
 
-function thank_you_mail_send($mailkey, $to, $subject, $body, $from = NULL, $headers = array()) {
+function thank_you_mail_send($mailkey, $to, $subject, $body_plaintext, $body_html, $from = NULL, $headers = array()) {
+  $semi_rand = md5(time());
+  $mime_boundary = "==MULTIPART_BOUNDARY_$semi_rand";
+  $mime_boundary_header = chr(34) . $mime_boundary . chr(34);
+	
   $defaults = array(
     'MIME-Version' => '1.0',
-    'Content-Type' => 'text/plain; charset=UTF-8; format=flowed',
+    'Content-Type' => "multipart/alternative; boundary=$mime_boundary_header; charset=UTF-8; format=flowed",
     'Content-Transfer-Encoding' => '8Bit',
     'X-Mailer' => 'Drupal'
   );
@@ -281,6 +320,22 @@ function thank_you_mail_send($mailkey, $to, $subject, $body, $from = NULL, $head
   if ($from) {
     $defaults['From'] = $defaults['Reply-To'] = $from;
   }
+
+  $body = "
+--$mime_boundary
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7Bit
+
+$body_plaintext
+
+--$mime_boundary
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 7Bit
+
+$body_html
+
+--$mime_boundary--";
+
   $headers = array_merge($defaults, $headers);
   // Custom hook traversal to allow pass by reference
   foreach (module_implements('mail_alter') AS $module) {
@@ -323,3 +378,103 @@ function thank_you_mail_send($mailkey, $to, $subject, $body, $from = NULL, $head
     );
   }
 }
+function unsubscribe_page(){
+	require_once dirname( __FILE__ ) . '/' . 'i18n/thank_you.i18n.php';
+	drupal_add_css( drupal_get_path('module', 'thank_you') . '/unsubscribe.css' );
+	$matches = array();
+	$contrib_id = ( preg_match( '([a-zA-Z0-9]+)', $_REQUEST['c'], $matches ) == 1 ) ? $matches[0] : "";
+	$hash_get = ( preg_match( '([a-zA-Z0-9]+)', $_REQUEST['h'], $matches ) == 1 ) ? $matches[0] : "";
+
+	civicrm_initialize(true);
+	$contribution = civicrm_api("Contribution","get", array (
+		'version' =>'3',
+		'contribution_id' => $contrib_id
+	));
+
+	if( is_array( $contribution ) ){
+		$contribution = $contribution[ 'values' ][ $contrib_id ];
+	}
+	$contact = civicrm_api("Contact","get", array (
+		'version' =>'3',
+		'contact_id' => $contribution[ 'contact_id' ],
+		'return' => "display_name,first_name,last_name,email,preferred_language"
+	));
+	if( is_array( $contact ) ){
+		$contact = $contact[ 'values' ][ $contribution[ 'contact_id' ] ];
+	}
+	
+	# attempt to get localizations
+	$locale = $contact['preferred_language'];
+	$lang = substr($locale, 0, 2);
+	if ( !isset( $lang ) or $lang == '') {
+		$lang = "en";
+	}
+
+	# set the default page text to failed
+	$page = <<<EOT
+<h2 class="visible">{{thank_you_unsubscribe_title}}</h2>
+<div id="logo"></div>
+<div id="unsub-body">
+	<p id="unsub-text">{{thank_you_unsubscribe_fail}}</p>
+</div>
+EOT;
+
+	# check the hash to confirm this is a valid unsubscription
+	$hash_match = sha1( $contribution_id . $contribution[ 'contact_id' ] . $contribution[ 'trxn_id' ] ) == $hash_get;
+	# check to see if the user submitted the form
+	if( isset( $_POST ) and !empty( $_POST ) ){
+		$success = false;
+		if( $hash_match ){
+			# process the unsubscription
+			$contact = civicrm_api("Contact","update", array (
+				'version' =>'3',
+				'id' => $contribution[ 'contact_id' ],
+				'is_opt_out' => 1,
+			));
+			$success = $contact[ 'is_error' ] == 0 and $contact[ 'values' ][ 'is_opt_out' ] == 1;
+		}
+		if( $success ){
+			$page = <<<EOT
+<h2 class="visible">{{thank_you_unsubscribe_title}}</h2>
+<div id="logo"></div>
+<div id="unsub-body">
+	<p id="unsub-text">{{thank_you_unsubscribe_success}}</p>
+	<p id="unsub-warning">{{thank_you_unsubscribe_delay}}</p>
+</div>
+EOT;
+		}
+	} else if( $hash_match ){ # display the opt-out form
+		$page = <<<EOT
+<h2 class="visible">{{thank_you_unsubscribe_title}}</h2>
+<div id="logo"></div>
+<div id="unsub-body">
+	<p id="unsub-text">{{thank_you_unsubscribe_confirm}}</p>
+	<p id="unsub-warning">{{thank_you_unsubscribe_warning}}</p>
+	<br />
+	<form id="unsub" method="post">
+		<input type="hidden" name="h" value="$hash_get">
+		<input type="hidden" name="c" value="$contrib_id">
+		<input type="submit" value="{{thank_you_unsubscribe_button}}">
+	</form>
+</div>
+EOT;
+	} else {
+		# do nothing, show the fail page
+	}
+	# check to see if a matching localization was found
+	if ( isset( $messages ) and array_key_exists( $lang, $messages ) ) {
+		# loop through the localizations and replace the defaults
+		foreach ( $messages[ $lang ] as $key => $value ){
+			$page = str_replace( "{{" . $key . "}}", "$value", $page );
+		}
+	}
+	else{
+		# do nothing, default to en
+	}
+	# replace any contact tokens
+	foreach ( $contact as $key => $value ) {
+		$page = str_replace( '{contact.' . $key . '}', $value, $page );
+	}
+	return $page;
+}
+
