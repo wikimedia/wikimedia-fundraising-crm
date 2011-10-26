@@ -1,0 +1,46 @@
+#header-region,
+#wrapper,
+#wrapper #container,
+#wrapper #container #center,
+#wrapper #container #center #squeeze,
+.left-corner,
+.right-corner{
+    background: none !important;
+    background-image: none !important;
+    background-color: transparent !important;
+}
+
+#block-system-0,
+#header,
+#sidebar-left,
+.breadcrumb,
+.messages.error,
+.messages.status,
+h2{
+    display: none !important;
+}
+
+body{
+    background-color: #f3f3f3 !important;
+}
+
+#logo{
+    position: absolute;
+    top: 13px;
+    left: 15px;
+    width: 135px;
+    height: 135px;
+    background-image: url(//upload.wikimedia.org/wikipedia/foundation/9/9a/Wikimediafoundation-logo.png);
+}
+
+h2{
+    margin: 0 0 0 150px !important;
+}
+
+#unsub-body{
+    margin: 50px 0 0 175px !important;
+}
+
+.visible{
+    display: block !important;
+}
