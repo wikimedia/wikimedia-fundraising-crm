@@ -289,7 +289,16 @@ function thank_you_settings_form() {
     '#required' => FALSE,
     '#default_value' => variable_get('thank_you_failmail', ''),
   );
-  
+  $form['thank_you_onestep_unsubscribe'] = array(
+    '#type' => 'radios',
+    '#title' => t('Unsubscription Confirmation'),
+    '#required' => TRUE,
+	'#options' => array(
+	   "false" => t('Require confirmation'),
+	   "true" => t('Do not require confirmation'),
+	),
+    '#default_value' => variable_get('thank_you_onestep_unsubscribe', ''),
+  );
   return system_settings_form($form);
 }
 
@@ -418,11 +427,10 @@ function unsubscribe_page(){
 	<p id="unsub-text">{{thank_you_unsubscribe_fail}}</p>
 </div>
 EOT;
-
 	# check the hash to confirm this is a valid unsubscription
 	$hash_match = sha1( $contribution_id . $contribution[ 'contact_id' ] . $contribution[ 'trxn_id' ] ) == $hash_get;
 	# check to see if the user submitted the form
-	if( isset( $_POST ) and !empty( $_POST ) ){
+	if( variable_get('thank_you_onestep_unsubscribe', 'false' ) == "true" or ( isset( $_POST ) and !empty( $_POST ) ) ){
 		$success = false;
 		if( $hash_match ){
 			# process the unsubscription
@@ -443,7 +451,8 @@ EOT;
 </div>
 EOT;
 		}
-	} else if( $hash_match ){ # display the opt-out form
+	} else if( $hash_match and variable_get('thank_you_onestep_unsubscribe', 'false' ) == "false" ){
+		# display the opt-out form
 		$page = <<<EOT
 <h2 class="visible">{{thank_you_unsubscribe_title}}</h2>
 <div id="logo"></div>
