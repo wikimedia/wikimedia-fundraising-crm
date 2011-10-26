@@ -1,6 +1,6 @@
 <?php
 
-# intialize the messages variable, if needed
+# initialize the messages variable, if needed
 if ( !isset( $messages ) ){
 	$messages = array();
 }
