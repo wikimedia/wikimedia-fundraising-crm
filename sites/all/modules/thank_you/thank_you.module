@@ -93,20 +93,28 @@ function thank_you_render( $contribution_id ) {
 		'version' =>'3',
 		'contribution_id' => $contribution_id
 	));
-	# TODO: check is_error and/or count
-	if ( is_array( $contribution ) ) {
+	# check for errors in the API result
+	if( is_array( $contribution ) && array_key_exists( 'is_error', $contribution ) && $contribution['is_error'] == "0" ){
 		$contribution = $contribution[ 'values' ][ $contribution_id ];
+	} else {
+		watchdog('thank_you', 'Rendering thank you message failed for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+		return false; # we cannot continue
 	}
-	$contact = civicrm_api("Contact","get", array (
-		'version' =>'3',
-		'contact_id' => $contribution[ 'contact_id' ],
-		'return' => "display_name,first_name,last_name,email,preferred_language"
-	));
-	# TODO: check is_error and/or count
-	if ( is_array( $contact ) ) {
+	# get the information for the associated contact
+	if( is_array( $contribution ) ){
+		$contact = civicrm_api("Contact","get", array (
+			'version' =>'3',
+			'contact_id' => $contribution[ 'contact_id' ],
+			'return' => "display_name,first_name,last_name,email,preferred_language"
+		));
+	}
+	# check for errors in the API result
+	if( is_array( $contact ) && array_key_exists( 'is_error', $contact ) && $contact['is_error'] == "0" ){
 		$contact = $contact[ 'values' ][ $contribution[ 'contact_id' ] ];
+	} else {
+		watchdog('thank_you', 'Rendering thank you message failed for contact: ' . $contribution[ 'contact_id' ] . '<pre>' . check_plain(print_r($contact, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+		return false; # we cannot continue
 	}
-
 	# load the default values
 	$rendering = array();
 	$rendering[ 'from_name' ] = variable_get( 'thank_you_from_name', '' );
@@ -171,10 +179,14 @@ function thank_you_send( $contribution_id ) {
 		'version' =>'3',
 		'contribution_id' => $contribution_id
 	));
-	# TODO: check is_error and/or count
-	if ( is_array( $contribution ) ) {
+	# check for errors in the API result
+	if( is_array( $contribution ) && array_key_exists( 'is_error', $contribution ) && $contribution['is_error'] == "0" ){
 		$contribution = $contribution[ 'values' ][ $contribution_id ];
+	} else {
+		watchdog('thank_you', 'Sending thank you message failed for contribution (1): ' . $contribution_id . '<pre>' . check_plain(print_r($contribution, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+		return -3;; # we cannot continue
 	}
+	
 	if (strtotime($contribution['receive_date']) < time() - 86400 * variable_get('thank_you_days', 14)) {
 		return -1;
 	}
@@ -184,6 +196,11 @@ function thank_you_send( $contribution_id ) {
 	}
 	
 	$rendered = thank_you_render( $contribution_id );
+
+	if( $rendered == false ){
+		# the render failed, we cannot continue
+		return -3;
+	}
 	
 	$from = '"' . $rendered['from_name'] . '" <' . $rendered['from_address'] . '>';
 	$to = '"' . $rendered['to_name'] . '" <' . $rendered['to_address'] . '>';
@@ -209,11 +226,14 @@ function thank_you_send( $contribution_id ) {
 		  	'contact_id' => $contribution['contact_id'],
 			'thankyou_date' => date( 'Y-m-d H:i:s' ),
 		));
-		watchdog('thank_you', 'Sending thank you message succeeded for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($message_debug, TRUE)) . '</pre>');
-		return TRUE;
-	}
-	else {
-		watchdog('thank_you', 'Sending thank you message failed for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($message_debug, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+		if( is_array( $contribution_result ) && array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] == "0" ){
+			# no need to log this success
+			return true;
+		} else {
+			watchdog('thank_you', 'Updating successful TY send failed: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution_result, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+		}
+	} else {
+		watchdog('thank_you', 'Sending thank you message failed for contribution: ' . $contribution_id . '<pre></pre>', array(), WATCHDOG_ERROR);
 	}
 	
 	return -3;
@@ -387,36 +407,57 @@ $body_html
     );
   }
 }
+
 function unsubscribe_page(){
 	require_once dirname( __FILE__ ) . '/' . 'i18n/thank_you.i18n.php';
 	drupal_add_css( drupal_get_path('module', 'thank_you') . '/unsubscribe.css' );
 	$matches = array();
-	$contrib_id = ( preg_match( '([a-zA-Z0-9]+)', $_REQUEST['c'], $matches ) == 1 ) ? $matches[0] : "";
-	$hash_get = ( preg_match( '([a-zA-Z0-9]+)', $_REQUEST['h'], $matches ) == 1 ) ? $matches[0] : "";
+	$contribution_id = "-1";
+	if( array_key_exists('c', $_REQUEST ) ){
+		$contribution_id = ( preg_match( '([a-zA-Z0-9]+)', $_REQUEST['c'], $matches ) == 1 ) ? $matches[0] : "";
+	}
+	$hash_get = "-1";
+	if( array_key_exists( 'h', $_REQUEST ) ){
+		$hash_get = ( preg_match( '([a-zA-Z0-9]+)', $_REQUEST['h'], $matches ) == 1 ) ? $matches[0] : "";
+	}
 
 	civicrm_initialize(true);
 	$contribution = civicrm_api("Contribution","get", array (
 		'version' =>'3',
-		'contribution_id' => $contrib_id
+		'contribution_id' => $contribution_id
 	));
-
+	# check for errors in the API result
+	if( is_array( $contribution ) && array_key_exists( 'is_error', $contribution ) ){
+		if( $contribution['is_error'] == "0" && array_key_exists( 'values', $contribution ) && array_key_exists( $contribution_id, $contribution[ 'values' ] ) ){
+			$contribution = $contribution[ 'values' ][ $contribution_id ];
+		} else {
+			# do not spam the logs with "contribution not found" DoS
+		}
+	} else {
+		watchdog('thank_you', 'Contribution API failed on unsubscribe request: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+	}
+	$contact = null;
+	# get the information for the associated contact
 	if( is_array( $contribution ) ){
-		$contribution = $contribution[ 'values' ][ $contrib_id ];
+		if( array_key_exists( 'contact_id', $contribution ) ){
+			$contact = civicrm_api("Contact","get", array (
+				'version' =>'3',
+				'contact_id' => $contribution[ 'contact_id' ],
+				'return' => "display_name,first_name,last_name,email,preferred_language"
+			));
+		} else {
+			$contribution[ 'contact_id' ] = null; # set a default for later
+		}
 	}
-	$contact = civicrm_api("Contact","get", array (
-		'version' =>'3',
-		'contact_id' => $contribution[ 'contact_id' ],
-		'return' => "display_name,first_name,last_name,email,preferred_language"
-	));
-	if( is_array( $contact ) ){
-		$contact = $contact[ 'values' ][ $contribution[ 'contact_id' ] ];
-	}
-	
-	# attempt to get localizations
-	$locale = $contact['preferred_language'];
-	$lang = substr($locale, 0, 2);
-	if ( !isset( $lang ) || $lang == '') {
-		$lang = "en";
+	# check for errors in the Contact API result
+	if( is_array( $contact ) && array_key_exists( 'is_error', $contact ) && $contact['is_error'] == "0" ){
+		if( array_key_exists( 'values', $contact ) && array_key_exists( $contribution[ 'contact_id' ], $contact[ 'values' ] ) ){
+			$contact = $contact[ 'values' ][ $contribution[ 'contact_id' ] ];
+		} else {
+			# do not spam the logs with "contact not found" DoS
+		}
+	} else {
+		watchdog('thank_you', 'Contact API failed on unsubscribe request: ' . $contribution[ 'contact_id' ] . '<pre>' . check_plain(print_r($contact, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
 	}
 
 	# set the default page text to failed
@@ -427,10 +468,15 @@ function unsubscribe_page(){
 	<p id="unsub-text">{{thank_you_unsubscribe_fail}}</p>
 </div>
 EOT;
+	$hash_match = false;
 	# check the hash to confirm this is a valid unsubscription
-	$hash_match = sha1( $contribution_id . $contribution[ 'contact_id' ] . $contribution[ 'trxn_id' ] ) == $hash_get;
+	if( is_array( $contribution ) ){
+		if( array_key_exists( 'trxn_id', $contribution ) ){
+			$hash_match = sha1( $contribution_id . $contribution[ 'contact_id' ] . $contribution[ 'trxn_id' ] ) == $hash_get;
+		}
+	}
 	# check to see if the user submitted the form
-	if( variable_get('thank_you_onestep_unsubscribe', 'false' ) == "true" || ( isset( $_POST ) && !empty( $_POST ) ) ){
+	if( variable_get('thank_you_onestep_unsubscribe', 'false' ) == "true" || ( isset( $_POST ) && !empty( $_POST ) ) ) {
 		$success = false;
 		if( $hash_match ){
 			# process the unsubscription
@@ -439,9 +485,15 @@ EOT;
 				'id' => $contribution[ 'contact_id' ],
 				'is_opt_out' => 1,
 			));
-			if ( $contact[ 'is_error' ] == 0 && $contact[ 'values' ][ 'is_opt_out' ] == 1 ) {
+			# check for errors in the API result
+			if( is_array( $contact ) && array_key_exists( 'is_error', $contact ) && $contact['is_error'] == "0" ){
 				$success = true;
+				watchdog('thank_you', 'Unsubscribe success for contact: ' . $contribution[ 'contact_id' ] . '<' . $contact['email'] . '>', array(), WATCHDOG_ERROR);
+			} else {
+				watchdog('thank_you', 'Unsubscribe FAILURE for contact (1): ' . $contribution[ 'contact_id' ] . '<' . $contact['email'] . '>', array(), WATCHDOG_ERROR);
 			}
+		} else {
+			watchdog('thank_you', 'Unsubscribe FAILURE for contact (2): ' . $contribution[ 'contact_id' ] . '<' . $contact['email'] . '>', array(), WATCHDOG_ERROR);
 		}
 		if( $success ){
 			$page = <<<EOT
@@ -472,6 +524,14 @@ EOT;
 	} else {
 		# do nothing, show the fail page
 	}
+	# attempt to get localizations
+	if( is_array( $contact ) && array_key_exists( 'preferred_language', $contact ) ){
+		$locale = $contact['preferred_language'];
+		$lang = substr($locale, 0, 2);
+	}
+	if ( !isset( $lang ) or $lang == '') {
+		$lang = "en";
+	}
 	# check to see if a matching localization was found
 	if ( isset( $messages ) && array_key_exists( $lang, $messages ) ) {
 		# loop through the localizations and replace the defaults
@@ -483,8 +543,10 @@ EOT;
 		# do nothing, default to en
 	}
 	# replace any contact tokens
-	foreach ( $contact as $key => $value ) {
-		$page = str_replace( '{contact.' . $key . '}', $value, $page );
+	if( is_array( $contact ) ){
+		foreach ( $contact as $key => $value ) {
+			$page = str_replace( '{contact.' . $key . '}', $value, $page );
+		}
 	}
 	return $page;
 }
