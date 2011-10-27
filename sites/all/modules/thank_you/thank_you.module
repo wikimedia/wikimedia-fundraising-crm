@@ -127,7 +127,7 @@ function thank_you_render( $contribution_id ) {
 		$lang = "en";
 	}
 	# check to see if a matching localization was found
-	if ( isset( $messages ) and array_key_exists( $lang, $messages ) ) {
+	if ( isset( $messages ) && array_key_exists( $lang, $messages ) ) {
 		# loop through the localizations and replace the defaults
 		foreach ( $rendering as $key => $value ){
 			# check if the current key has a localized value
@@ -415,7 +415,7 @@ function unsubscribe_page(){
 	# attempt to get localizations
 	$locale = $contact['preferred_language'];
 	$lang = substr($locale, 0, 2);
-	if ( !isset( $lang ) or $lang == '') {
+	if ( !isset( $lang ) || $lang == '') {
 		$lang = "en";
 	}
 
@@ -430,7 +430,7 @@ EOT;
 	# check the hash to confirm this is a valid unsubscription
 	$hash_match = sha1( $contribution_id . $contribution[ 'contact_id' ] . $contribution[ 'trxn_id' ] ) == $hash_get;
 	# check to see if the user submitted the form
-	if( variable_get('thank_you_onestep_unsubscribe', 'false' ) == "true" or ( isset( $_POST ) and !empty( $_POST ) ) ){
+	if( variable_get('thank_you_onestep_unsubscribe', 'false' ) == "true" || ( isset( $_POST ) && !empty( $_POST ) ) ){
 		$success = false;
 		if( $hash_match ){
 			# process the unsubscription
@@ -439,7 +439,9 @@ EOT;
 				'id' => $contribution[ 'contact_id' ],
 				'is_opt_out' => 1,
 			));
-			$success = $contact[ 'is_error' ] == 0 and $contact[ 'values' ][ 'is_opt_out' ] == 1;
+			if ( $contact[ 'is_error' ] == 0 && $contact[ 'values' ][ 'is_opt_out' ] == 1 ) {
+				$success = true;
+			}
 		}
 		if( $success ){
 			$page = <<<EOT
@@ -451,7 +453,7 @@ EOT;
 </div>
 EOT;
 		}
-	} else if( $hash_match and variable_get('thank_you_onestep_unsubscribe', 'false' ) == "false" ){
+	} else if( $hash_match && variable_get('thank_you_onestep_unsubscribe', 'false' ) == "false" ){
 		# display the opt-out form
 		$page = <<<EOT
 <h2 class="visible">{{thank_you_unsubscribe_title}}</h2>
@@ -471,7 +473,7 @@ EOT;
 		# do nothing, show the fail page
 	}
 	# check to see if a matching localization was found
-	if ( isset( $messages ) and array_key_exists( $lang, $messages ) ) {
+	if ( isset( $messages ) && array_key_exists( $lang, $messages ) ) {
 		# loop through the localizations and replace the defaults
 		foreach ( $messages[ $lang ] as $key => $value ){
 			$page = str_replace( "{{" . $key . "}}", "$value", $page );
