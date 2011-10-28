@@ -104,7 +104,7 @@ function thank_you_render( $contribution_id ) {
 	if( is_array( $contribution ) ){
 		$contact = civicrm_api("Contact","get", array (
 			'version' =>'3',
-			'contact_id' => $contribution[ 'contact_id' ],
+			'id' => $contribution[ 'contact_id' ],
 			'return' => "display_name,first_name,last_name,email,preferred_language"
 		));
 	}
@@ -220,12 +220,14 @@ function thank_you_send( $contribution_id ) {
 		);
 	
 	if ( thank_you_mail_send( 'thank_you', $to, $subject, $body_plaintext, $body_html, $from, $headers ) ) {
-		$contribution_result = civicrm_api("Contribution","update", array (
-			'version' =>'3',
-			'contribution_id' => $contribution_id,
-		  	'contact_id' => $contribution['contact_id'],
+		# despite there being an "update" api function, it does not seem to work for Contributions
+		$params = array(
+			'version' => '3',
+			'id' => $contribution[ 'contribution_id' ],
+			'contribution_id' => $contribution[ 'contribution_id' ],
 			'thankyou_date' => date( 'Y-m-d H:i:s' ),
-		));
+		);
+		$contribution_result = civicrm_api( "Contribution", "create", array_merge( $contribution, $params ) );
 		if( is_array( $contribution_result ) && array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] == "0" ){
 			# no need to log this success
 			return true;
@@ -233,7 +235,7 @@ function thank_you_send( $contribution_id ) {
 			watchdog('thank_you', 'Updating successful TY send failed: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution_result, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
 		}
 	} else {
-		watchdog('thank_you', 'Sending thank you message failed for contribution: ' . $contribution_id . '<pre></pre>', array(), WATCHDOG_ERROR);
+		watchdog('thank_you', 'Sending thank you message failed for contribution (2): ' . $contribution_id . '<pre></pre>', array(), WATCHDOG_ERROR);
 	}
 	
 	return -3;
@@ -442,8 +444,7 @@ function unsubscribe_page(){
 		if( array_key_exists( 'contact_id', $contribution ) ){
 			$contact = civicrm_api("Contact","get", array (
 				'version' =>'3',
-				'contact_id' => $contribution[ 'contact_id' ],
-				'return' => "display_name,first_name,last_name,email,preferred_language"
+				'id' => $contribution[ 'contact_id' ],
 			));
 		} else {
 			$contribution[ 'contact_id' ] = null; # set a default for later
