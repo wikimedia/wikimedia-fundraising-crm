@@ -165,8 +165,7 @@ function thank_you_render( $contribution_id ) {
 
 	# generate and add the unsubscription link
 	$hash = sha1( $contribution_id . $contribution[ 'contact_id' ] . $contribution[ 'trxn_id' ] );
-	global $base_url;
-	$unsub_url = "$base_url/thank_you/unsubscribe?c=$contribution_id&h=$hash";
+	$unsub_url = CIVICRM_UF_BASEURL . "thank_you/unsubscribe?c=$contribution_id&h=$hash";
 	$rendering['body_plaintext'] = str_replace( '{unsubscribe_link}', $unsub_url, $rendering['body_plaintext'] );
 	$rendering['body_html'] = str_replace( '{unsubscribe_link}', $unsub_url, $rendering['body_html'] );
 
