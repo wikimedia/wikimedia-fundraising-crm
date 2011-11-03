@@ -16,73 +16,52 @@ $messages['en'] = array(
 $messages['en']['thank_you_body_plaintext'] =<<<'EOD'
 Dear {contact.first_name},
 
-Thank you for your gift of {contribution.source} to the Wikimedia Foundation, received on {contribution.date}. I’m very grateful for your support.
+You are amazing, thank you so much for donating to the Wikimedia Foundation!
 
-Your donation celebrates everything Wikipedia and its sister sites stand for: the power of information to help people live better lives, and the importance of sharing, freedom, learning and discovery. Thank you so much for helping to keep these projects freely available for their more than 400 million monthly readers around the world.
+This is how we pay our bills -- it's people like you, giving five dollars, twenty dollars, a hundred dollars. My favourite donation last year was five pounds from a little girl in England, who had persuaded her parents to let her donate her allowance. It's people like you, joining with that girl, who make it possible for Wikipedia to continue providing free, easy access to unbiased information, for everyone around the world. For everyone who helps pay for it, and for those who can't afford to help. Thank you so much.
 
-Your money supports technology and people. The Wikimedia Foundation develops and improves the technology behind Wikipedia and nine other projects, and sustains the infrastructure that keeps them up and running. The Foundation has a staff of about fifty, which provides technical, administrative, legal and outreach support for the global community of volunteers who write and edit Wikipedia.
+I know it's easy to ignore our appeals, and I'm glad that you didn't. From me, and from the tens of thousands of volunteers who write Wikipedia: thank you for helping us make the world a better place. We will use your money carefully, and I thank you for your trust in us.
 
-Many people love Wikipedia, but a surprising number don't know it's run by a non-profit. Please help us spread the word by telling a few of your friends.
-
-And again, thank you for supporting free knowledge.
-
-Sincerely Yours,
-
-
+Thanks,
 Sue Gardner
-Executive Director
+Wikimedia Foundation Executive Director
 
-* To donate: http://donate.wikimedia.org
-* To visit our Blog: http://blog.wikimedia.org
-* To follow us on Twitter: http://twitter.com/wikimedia
-* To follow us on Facebook: http://www.facebook.com/wikipedia
 
-We'll remind you by email next year around this time to renew your donation.  If you'd rather not receive an email reminder from us, please click below and we'll take you off the list:
+Opt out option:
+We'd like to keep you as a donor informed of our community activities and fundraisers.  If you prefer however not to receive such emails from us, please click below and we'll take you off the list:
+
 {unsubscribe_link}
 
-This letter can serve as a record for tax purposes. No goods or
-services were provided, in whole or in part, for this contribution.
-The Wikimedia Foundation, Inc. is a non-profit charitable corporation
-with 501(c)(3) tax exempt status in the United States.
-Our address is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105.
-Tax-exempt number: 20-0049703
+
+For your records: Your donation on {contribution.date} was {contribution.source}
+
+This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit charitable corporation with 501(c)(3) tax exempt status in the United States. Our address is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703
 EOD;
 
 $messages['en']['thank_you_body_html'] =<<<'EOD'
 <p>Dear {contact.first_name},</p>
 
-<p>Thank you for your gift of {contribution.source} to the Wikimedia Foundation, received on {contribution.date}. I’m very grateful for your support.</p>
+<p>You are amazing, thank you so much for donating to the Wikimedia Foundation!</p>
 
-<p>Your donation celebrates everything Wikipedia and its sister sites stand for: the power of information to help people live better lives, and the importance of sharing, freedom, learning and discovery. Thank you so much for helping to keep these projects freely available for their more than 400 million monthly readers around the world.</p>
+<p>This is how we pay our bills -- it's people like you, giving five dollars, twenty dollars, a hundred dollars. My favourite donation last year was five pounds from a little girl in England, who had persuaded her parents to let her donate her allowance. It's people like you, joining with that girl, who make it possible for Wikipedia to continue providing free, easy access to unbiased information, for everyone around the world. For everyone who helps pay for it, and for those who can't afford to help. Thank you so much.</p>
 
-<p>Your money supports technology and people. The Wikimedia Foundation develops and improves the technology behind Wikipedia and nine other projects, and sustains the infrastructure that keeps them up and running. The Foundation has a staff of about fifty, which provides technical, administrative, legal and outreach support for the global community of volunteers who write and edit Wikipedia.</p>
+<p>I know it's easy to ignore our appeals, and I'm glad that you didn't. From me, and from the tens of thousands of volunteers who write Wikipedia: thank you for helping us make the world a better place. We will use your money carefully, and I thank you for your trust in us.</p>
 
-<p>Many people love Wikipedia, but a surprising number don't know it's run by a non-profit. Please help us spread the word by telling a few of your friends.</p>
+<p>Thanks,<br />
+<b>Sue Gardner</b><br />
+Wikimedia Foundation Executive Director</p>
 
-<p>And again, thank you for supporting free knowledge.</p>
+<div style="border:1px solid black;">
+<p>Opt out option:</p>
+<p>We'd like to keep you as a donor informed of our community activities and fundraisers.  If you prefer however not to receive such emails from us, please click below and we'll take you off the list:</p>
 
-<p>Sincerely Yours,</p>
+<a href="{unsubscribe_link}">Opt out</a>
+</div>
 
+<p>For your records: Your donation on {contribution.date} was {contribution.source}.</p>
 
-<p><b>Sue Gardner</b><br />
-Executive Director</p>
+<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit charitable corporation with 501(c)(3) tax exempt status in the United States. Our address is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703</p>
 
-<ul>
-<li>To donate: <a href="http://donate.wikimedia.org">http://donate.wikimedia.org</a></li>
-<li>To visit our Blog: <a href="http://blog.wikimedia.org">http://blog.wikimedia.org</a></li>
-<li>To follow us on Twitter: <a href="http://twitter.com/wikimedia">http://twitter.com/wikimedia</a></li>
-<li>To follow us on Facebook: <a href="http://www.facebook.com/wikipedia">http://www.facebook.com/wikipedia</a></li>
-</ul>
-
-<p>We'll remind you by email next year around this time to renew your donation.  If you'd rather not receive an email reminder from us, please click below and we'll take you off the list:</p>
-<p><a href="{unsubscribe_link}">{unsubscribe_link}</a></p>
-
-<p>This letter can serve as a record for tax purposes. No goods or
-services were provided, in whole or in part, for this contribution.
-The Wikimedia Foundation, Inc. is a non-profit charitable corporation
-with 501(c)(3) tax exempt status in the United States.
-Our address is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105.
-Tax-exempt number: 20-0049703</p>
 EOD;
 
 
