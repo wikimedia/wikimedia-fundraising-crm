@@ -194,7 +194,7 @@ function exchange_rates_cron() {
 		// For each currency, get the values from the XML and update the table
 		for ( $x = 0; $x < $currencyCount; $x++ ) {
 			$currency = $results[$index['EXCH'][$x]]['value']; // the currency code
-			$valueInUsd = $results[$index['ASK'][$x]]['value']; // the value of 1 $currency in US dollars
+			$valueInUsd = $results[$index['BID'][$x]]['value']; // the value of 1 $currency in US dollars
 			exchange_rates_update_rate( $currency, $valueInUsd, $bankUpdateTimestamp ); // update the table
 		}
 	} else {
