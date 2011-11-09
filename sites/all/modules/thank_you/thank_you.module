@@ -1,5 +1,7 @@
 <?php
 
+require_once 'i18n/thank_you.i18n.php';
+
 function thank_you_menu() {
   $items = array();
   
@@ -9,6 +11,7 @@ function thank_you_menu() {
     'access arguments' => array('administer thank you'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('thank_you_settings_form'),
+	'type' => MENU_CALLBACK,
   );
   
   $items['thank_you/%'] = array(
@@ -24,8 +27,153 @@ function thank_you_menu() {
     'page callback' => 'unsubscribe_page',
     'type' => MENU_CALLBACK
   );
-  
+
+   $items['admin/settings/thank_you/configure'] = array(
+     'title' => t('Configure thank you module'),
+     'access arguments' => array('administer thank you'),
+     'type' => MENU_DEFAULT_LOCAL_TASK,
+   );
+
+   $items['admin/settings/thank_you/test_email'] = array(
+     'title' => t('Test thank you emails'),
+     'description' => t(''),
+     'access arguments' => array('administer thank you'),
+     'page callback' => 'drupal_get_form',
+     'page arguments' => array('thank_you_send_test'),
+     'type' => MENU_LOCAL_TASK,
+   );
+
   return $items;
+}
+
+/**
+ * Make the form to insert a test message into the queue
+ */
+function thank_you_send_test() {
+	global $TYmsgs;
+
+	// allow the user to specify the email address to which to send the test email
+	$form['thank_you_test_email'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Send test email to:'),
+		'#default_value' => 'pgehres@wikimedia.org',
+		'#required' => TRUE
+	);
+
+	// load the available languages to test
+	// TODO: add a staging list so that one can test before enabling
+	$langs = array();
+	foreach ( $TYmsgs as $key => $value ){
+		$langs[ $key ] = $key;
+	}
+
+	// allow the user to select the language to test
+	$form['thank_you_test_language'] = array(
+		'#type' => 'select',
+		'#title' => t('Thank you message language'),
+		'#required' => TRUE,
+		'#default_value' => 'en',
+		'#options' => $langs,
+	);
+
+
+	$form['submit'] = array(
+		'#value' => 'Send test email',
+		'#type' => 'submit'
+	);
+
+	return $form;
+}
+
+function thank_you_send_test_submit( $form_id, $form_values ) {
+	if ( !is_array( $form_values ) ){
+		# well, something here is broken
+		drupal_set_message("Test thank you email failed.", 'error');
+		return false;
+	}
+	elseif ( ! ( array_key_exists( 'values', $form_values ) &&
+				 array_key_exists( 'thank_you_test_email', $form_values[ 'values' ] ) &&
+				 array_key_exists( 'thank_you_test_language', $form_values[ 'values' ] ) ) ){
+		# we need something to test
+		drupal_set_message("Test thank you email missing required settings.", 'error');
+	}
+
+	civicrm_initialize( true );
+	$contact = civicrm_api("Contact","Get", array (
+		'version' =>'3',
+		'email' => 'pgehres@wikimedia.org', # TODO: this should first search for the email specified
+		'sequential' => 1
+	));
+	# check for errors in the API result
+	if ( !is_array( $contact ) ){
+		drupal_set_message("Test thank you email failed on contact lookup.", 'error');
+		return false; # massive fail
+	}
+	if( array_key_exists( 'is_error', $contact ) && $contact['is_error'] == "0" ){
+		$contact = $contact[ 'values' ][ 0 ];
+	} elseif ( array_key_exists( 'thank_you_test_prev_err', $form_values['values'] )
+			   && $form_values['values'][ 'thank_you_test_prev_error' ] ){
+		# we've error'd out before, no need to create an infinite loop
+		drupal_set_message("Test thank you email failed on contact lookup, including defaults.", 'error');
+		# TODO: is there some way to select a random contribution? That could be fun :-)
+		return false;
+
+	} else {
+		# hmm, the email address is not associated with a contact
+		# in this CiviCRM instance, try me
+		$form_values['thank_you_test_email'] = "pgehres@wikimedia.org";
+		# lets avoid an infinite loop
+		$form_values['thank_you_test_prev_err'] = TRUE;
+		# try once more
+		# TODO: why do we not see this message
+		drupal_set_message("Contact not found for email address.  Trying default.", 'error');
+		return thank_you_send_test_submit( $form_id, $form_values );
+	}
+
+	$contribution = civicrm_api("Contribution","get", array (
+		'version' =>'3',
+		'contact_id' => $contact[ 'contact_id' ],
+		'sequential' => 1
+	));
+
+	# check for errors in the API result
+	if ( !is_array( $contribution ) ){
+		drupal_set_message("Test thank you email failed on contribution lookup.", 'error');
+		return false; # massive fail
+	}
+	if( array_key_exists( 'is_error', $contribution ) && $contribution['is_error'] == "0" ){
+		$contribution = $contribution[ 'values' ][ 0 ];
+	} elseif ( array_key_exists( 'thank_you_test_prev_err', $form_values['values'] )
+			   && $form_values['values'][ 'thank_you_test_prev_error' ] ){
+		# we've error'd out before, no need to create an infinite loop
+		drupal_set_message("Test thank you email failed on contribution lookup, including defaults.", 'error');
+		# TODO: is there some way to select a random contribution? That could be fun :-)
+		return false;
+
+	} else {
+		# hmm, the email address is not associated with a contact
+		# in this CiviCRM instance, try me
+		# TODO: this makes it such that the specified email doesn't get the email, I do
+		$form_values['values']['thank_you_test_email'] = "pgehres@wikimedia.org";
+		# lets avoid an infinite loop
+		$form_values['values']['thank_you_test_prev_err'] = TRUE;
+		# try once more
+		# TODO: why do we not see this message
+		drupal_set_message("Contact not found for email address.  Trying default.", 'error');
+		return thank_you_send_test_submit( $form_id, $form_values );
+	}
+
+	if ( thank_you_send( $contribution[ 'contribution_id' ],
+						 array(
+							  "language" => $form_values['values']['thank_you_test_language'],
+							  "email" => $form_values['values']['thank_you_test_email']
+						 ) ) ){
+		drupal_set_message("Test thank you email sent to " . $contact['email'] . " in " .
+						   $form_values['values']['thank_you_test_language'], 'info');
+	} else {
+		drupal_set_message("Test thank you email FAILED to " . $contact['email'] . " in " .
+						   $form_values['values']['thank_you_test_language'], 'error');
+	}
 }
 
 function thank_you_perm() {
@@ -86,8 +234,9 @@ function thank_you_preview_form_submit($form, $form_state) {
   }
 }
 
-function thank_you_render( $contribution_id ) {
-	require_once dirname( __FILE__ ) . '/' . 'i18n/thank_you.i18n.php';
+function thank_you_render( $contribution_id, $test=null ) {
+	global $TYmsgs;
+	
 	civicrm_initialize( true );
 	$contribution = civicrm_api("Contribution","get", array (
 		'version' =>'3',
@@ -128,24 +277,40 @@ function thank_you_render( $contribution_id ) {
 	$rendering[ 'body_html' ] = variable_get( 'thank_you_body_html', '' );
 	$rendering[ 'to_address' ] = '{contact.email}';
 
+	# TODO: add country variants
 	# attempt to get localizations
 	$locale = $contact['preferred_language'];
 	$lang = substr($locale, 0, 2);
 	if ( !isset( $lang ) or $lang == '') {
 		$lang = "en";
+		drupal_set_message('Language not set, defaulting to en', 'info');
+	}
+	if ( !is_null( $test ) ){
+		if ( array_key_exists( 'language', $test ) ){
+			$lang = $test[ 'language' ];
+			drupal_set_message('Test email, overriding language to ' . $lang, 'info');
+		}
 	}
 	# check to see if a matching localization was found
-	if ( isset( $messages ) && array_key_exists( $lang, $messages ) ) {
+	if ( isset( $TYmsgs ) && array_key_exists( $lang, $TYmsgs ) ) {
+		drupal_set_message("Messages intialized and $lang found", 'info');
 		# loop through the localizations and replace the defaults
 		foreach ( $rendering as $key => $value ){
 			# check if the current key has a localized value
-			if ( array_key_exists( 'thank_you_' . $key, $messages[ $lang ] ) ){
-				$rendering[ $key ] = $messages[ $lang ][ 'thank_you_' . $key ];
+			if ( array_key_exists( 'thank_you_' . $key, $TYmsgs[ $lang ] ) ){
+				$rendering[ $key ] = $TYmsgs[ $lang ][ 'thank_you_' . $key ];
 			}
 		}
 	}
 	else{
 		# do nothing, default to en
+		drupal_set_message('Messages not initialized', 'error');
+		if ( !isset( $TYmsgs ) ){
+			drupal_set_message('not isset', 'error');
+		}
+		if ( !array_key_exists( $lang, $TYmsgs ) ){
+			drupal_set_message('not ake', 'error');
+		}
 	}
 	# replace the tokens with the contact/contribution data
 	$contribution['date'] = date('Y-m-d', strtotime($contribution['receive_date']));
@@ -172,7 +337,7 @@ function thank_you_render( $contribution_id ) {
 	return $rendering;
 }
 
-function thank_you_send( $contribution_id ) {
+function thank_you_send( $contribution_id, $test=null ) {
 	civicrm_initialize(true);
 	$contribution = civicrm_api("Contribution","get", array (
 		'version' =>'3',
@@ -185,16 +350,18 @@ function thank_you_send( $contribution_id ) {
 		watchdog('thank_you', 'Sending thank you message failed for contribution (1): ' . $contribution_id . '<pre>' . check_plain(print_r($contribution, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
 		return -3;; # we cannot continue
 	}
-	
-	if (strtotime($contribution['receive_date']) < time() - 86400 * variable_get('thank_you_days', 14)) {
-		return -1;
+	# only check the following if this is not a test
+	if ( is_null( $test ) ){
+		if (strtotime($contribution['receive_date']) < time() - 86400 * variable_get('thank_you_days', 14)) {
+			return -1;
+		}
+
+		if (array_key_exists('thankyou_date', $contribution) && is_numeric($contribution['receive_date']) && $contribution['receive_date'] > 0 ) {
+			return -2;
+		}
 	}
 	
-	if (array_key_exists('thankyou_date', $contribution) && is_numeric($contribution['receive_date']) && $contribution['receive_date'] > 0 ) {
-		return -2;
-	}
-	
-	$rendered = thank_you_render( $contribution_id );
+	$rendered = thank_you_render( $contribution_id, $test );
 
 	if( $rendered == false ){
 		# the render failed, we cannot continue
@@ -206,7 +373,7 @@ function thank_you_send( $contribution_id ) {
 	$subject = $rendered['subject'];
 	$body_plaintext = $rendered['body_plaintext'];
 	$body_html = $rendered['body_html'];
-	
+
 	$headers = array(
 		'Sender' => $from,
 		);
@@ -226,13 +393,20 @@ function thank_you_send( $contribution_id ) {
 
 	try {
 		$mail->set('Charset','utf-8');
-		$mail->AddAddress( $rendered['to_address'], $rendered['to_name'] );
+		if ( !is_null( $test ) ){
+			$mail->AddAddress( $test['email'], "Test User" );
+		} else {
+			$mail->AddAddress( $rendered['to_address'], $rendered['to_name'] );
+		}
 
 		$mail->AddReplyTo( $rendered['from_address'], $rendered['from_name'] );
 		$mail->SetFrom( $rendered['from_address'], $rendered['from_name'] );
 		$mail->AddReplyTo( $rendered['from_address'], $rendered['from_name'] );
 
 		$mail->Subject = $rendered['subject'];
+		if ( !is_null( $test ) ){
+			$mail->Subject = "[Test TY - " . $test['language'] . "] " . $rendered['subject'];
+		}
 		$mail->AltBody = $rendered['body_plaintext'];
 		$mail->MsgHTML( $rendered['body_html'] );
 		$mail->Send();
@@ -439,7 +613,8 @@ $body_html
 }
 
 function unsubscribe_page(){
-	require_once dirname( __FILE__ ) . '/' . 'i18n/thank_you.i18n.php';
+	global $TYmsgs;
+
 	drupal_add_css( drupal_get_path('module', 'thank_you') . '/unsubscribe.css' );
 	$matches = array();
 	$contribution_id = "-1";
@@ -562,9 +737,9 @@ EOT;
 		$lang = "en";
 	}
 	# check to see if a matching localization was found
-	if ( isset( $messages ) && array_key_exists( $lang, $messages ) ) {
+	if ( isset( $TYmsgs ) && array_key_exists( $lang, $TYmsgs ) ) {
 		# loop through the localizations and replace the defaults
-		foreach ( $messages[ $lang ] as $key => $value ){
+		foreach ( $TYmsgs[ $lang ] as $key => $value ){
 			$page = str_replace( "{{" . $key . "}}", "$value", $page );
 		}
 	}

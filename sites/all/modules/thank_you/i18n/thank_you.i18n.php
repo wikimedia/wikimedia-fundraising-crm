@@ -11,7 +11,7 @@ if ( !isset( $TYmsgs ) ){
 $languages_enabled = array(
 //	'az' => 'thank_you.az.php',
 //	'bg' => 'thank_you.bg.php',
-//	'da' => 'thank_you.da.php',
+	'da' => 'thank_you.da.php',
 	'de' => 'thank_you.de.php',
 	'en' => 'thank_you.en.php',
 //	'es' => 'thank_you.es.php',
