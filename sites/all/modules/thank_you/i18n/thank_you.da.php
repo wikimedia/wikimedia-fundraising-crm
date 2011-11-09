@@ -1,6 +1,6 @@
 <?php
 
-$TYmsgs[''] = array(
+$TYmsgs['da'] = array(
 	"thank_you_from_name" => "Sue Gardner",
 	"thank_you_to_name" => "{contact.display_name}",
 	"thank_you_to_name_secondary" => "ven af Wikimedia Foundation",
