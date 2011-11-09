@@ -3,15 +3,15 @@
 $TYmsgs['de'] = array(
 	"thank_you_from_name" => "Sue Gardner",
 	"thank_you_to_name" => "{contact.display_name}",
-	"thank_you_to_name_secondary" => "",
-	"thank_you_subject" => "",
-	"thank_you_unsubscribe_title" => "",
-	"thank_you_unsubscribe_button" => "",
-	"thank_you_unsubscribe_confirm" => "",
-	"thank_you_unsubscribe_warning" => "",
-	"thank_you_unsubscribe_success" => "",
-	"thank_you_unsubscribe_delay" => "",
-	"thank_you_unsubscribe_fail" => "",
+	"thank_you_to_name_secondary" => "Freund der Wikimedia Foundation",
+	"thank_you_subject" => "Die Wikimedia Foundation sagt Danke",
+	"thank_you_unsubscribe_title" => "Wikimedia Foundation Abbestellung",
+	"thank_you_unsubscribe_button" => "Abbestellen",
+//	"thank_you_unsubscribe_confirm" => "",
+//	"thank_you_unsubscribe_warning" => "",
+	"thank_you_unsubscribe_success" => "Sie wurden erfolgreich aus unserer Mailinglist entfernt",
+	"thank_you_unsubscribe_delay" => "Bitte lassen Sie uns für die Änderungen vier (4) Tage Zeit. Wir bitten um Verständnis für die E-Mails, die Sie während dieser Zeit erhalten. Wenn Sie irgendwelche Fragen haben, kontaktieren Sie bitte <a href='mailto:donations@wikimedia.org'>donations@wikimedia.org</a>",
+	"thank_you_unsubscribe_fail" => "Es gab einen Fehler bei der Verarbeitung Ihrer Anfrage, bitte <a href='mailto:donations@wikimedia.org'>donations@wikimedia.org</a> kontaktieren.",
 );
 $TYmsgs['de']['thank_you_body_plaintext'] =<<<'EOD'
 Liebe(r) {contact.first_name},
@@ -57,7 +57,7 @@ Wikimedia-Geschäftsführerin</p>
 <div style="padding:0 10px 5px 10px; border:1px solid black;">
 <p><i>Abmeldung vom Newsletter:</i></p>
 <p>Wir möchten dich als Spender gerne über unsere Aktivitäten und Spendenaktionen auf dem Laufenden halten. Wenn du diesbezüglich jedoch lieber keine E-Mails von uns erhalten willst, dann klicke bitte auf den folgenden Link, um aus der Liste entfernt zu werden:</p>
-<p><a href="{unsubscribe_link}">{unsubscribe_link}</a></p>
+<p><a href="{unsubscribe_link}">Abbestellen</a></p>
 </div>
 EOD;
 

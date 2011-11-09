@@ -7,11 +7,11 @@ $TYmsgs[''] = array(
 	"thank_you_subject" => "Tak fra Wikimedia Foundation",
 	"thank_you_unsubscribe_title" => "Udmeldelse fra Wikimedia Foundation",
 	"thank_you_unsubscribe_button" => "Afmeld",
-	"thank_you_unsubscribe_confirm" => "",
-	"thank_you_unsubscribe_warning" => "",
+//	"thank_you_unsubscribe_confirm" => "",
+//	"thank_you_unsubscribe_warning" => "",
 	"thank_you_unsubscribe_success" => "Du er ikke længere på mailinglisten",
-	"thank_you_unsubscribe_delay" => "Der kan gå op til fire dage før ændringerne slår igennem Vi undskylder eventuelle e-breve, du måtte modtage i mellemtiden. Hvis du har spørgsmål, kan du kontakte <donations@wikimedia.org>",
-	"thank_you_unsubscribe_fail" => "Der skete en fejl under behandling af forespørgslen. Kontakt venligst <donations@wikimedia.org>.",
+	"thank_you_unsubscribe_delay" => "Der kan gå op til fire dage før ændringerne slår igennem Vi undskylder eventuelle e-breve, du måtte modtage i mellemtiden. Hvis du har spørgsmål, kan du kontakte <a href='mailto:donations@wikimedia.org'>donations@wikimedia.org</a>",
+	"thank_you_unsubscribe_fail" => "Der skete en fejl under behandling af forespørgslen. Kontakt venligst <a href='mailto:donations@wikimedia.org'>donations@wikimedia.org</a>.",
 );
 $TYmsgs['da']['thank_you_body_plaintext'] =<<<'EOD'
 Kære {contact.first_name},
@@ -57,10 +57,10 @@ Wikimedia Foundation Executive Director</p>
 <p>Til regnskabet: Dit bidrag d. {contribution.date} var på {contribution.source}.</p>
 <p>Denne henvendelse gælder som kvittering for dit bidrag. Ingen varer eller serviceydelser blev modregnet dette bidrag. Wikimedia Foundation, Inc. er en non-profit organisation med 501(c)(3) skattefritagelsesstatus i USA. Vores adresse er 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703</p>
 
-<div style="padding:5px 10px; border:1px solid black;">
+<div style="padding:0 10px 5px 10px; border:1px solid black;">
 <p><i>Mulighed for fravalg:</i></p>
 <p>Som bidragsyder vil vi gerne kunne gerne sende dig nyheder om brugeraktiviteter og indsamlinger. Hvis du ikke ønsker at modtage sådanne email fra os, så klik venligst herunder for at blive taget af listen:</p>
-<a style="padding-left: 25px;" href="{unsubscribe_link}">Opt out</a>
+<a style="padding-left: 25px;" href="{unsubscribe_link}">Afmeld</a>
 </div>
 
 
