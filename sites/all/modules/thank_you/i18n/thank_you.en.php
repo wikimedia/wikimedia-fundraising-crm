@@ -11,7 +11,7 @@ $TYmsgs['en'] = array(
 //	"thank_you_unsubscribe_warning" => "This will opt you out of emails from the Wikimedia Foundation sent to you as a donor. You may still receive emails to this email address if it is associated with an account on one of our projects. If you have any questions, please contact <a href=\"mailto:donations@wikimedia.org\">donations@wikimedia.org</a>.",
 	"thank_you_unsubscribe_success" => "You have successfully been removed from our mailing list",
 	"thank_you_unsubscribe_delay" => "Please allow up to four (4) days for the changes to take effect. We apologize for any emails you receive during this time. If you have any questions, please contact <a href='donations@wikimedia.org'>donations@wikimedia.org</a>.",
-	"thank_you_unsubscribe_fail" => "There was an error processing your request, please contact <donations@wikimedia.org>.",
+	"thank_you_unsubscribe_fail" => "There was an error processing your request, please contact <a href='mailto:donations@wikimedia.org'>donations@wikimedia.org</a>.",
 );
 $TYmsgs['en']['thank_you_body_plaintext'] =<<<'EOD'
 Dear {contact.first_name},
