@@ -1,13 +1,20 @@
 <?php
 
+global $TYmsgs;
+
 # initialize the messages variable, if needed
-if ( !isset( $messages ) ){
-	$messages = array();
+if ( !isset( $TYmsgs ) ){
+	$TYmsgs = array();
 }
 
 # whitelist of enabled language translations for emails
 $languages_enabled = array(
-	'en' => 'thank_you.EN.php',
+//	'az' => 'thank_you.az.php',
+//	'bg' => 'thank_you.bg.php',
+//	'da' => 'thank_you.da.php',
+	'de' => 'thank_you.de.php',
+	'en' => 'thank_you.en.php',
+//	'es' => 'thank_you.es.php',
 );
 
 /*
