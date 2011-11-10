@@ -13,8 +13,13 @@ $languages_enabled = array(
 //	'bg' => 'thank_you.bg.php',
 	'da' => 'thank_you.da.php',
 	'de' => 'thank_you.de.php',
+	'el' => 'thank_you.el.php',
 	'en' => 'thank_you.en.php',
 //	'es' => 'thank_you.es.php',
+	'fr' => 'thank_you.fr.php',
+	'gl' => 'thank_you.gl.php',
+	'id' => 'thank_you.id.php',
+	'it' => 'thank_you.it.php',
 );
 
 /*
