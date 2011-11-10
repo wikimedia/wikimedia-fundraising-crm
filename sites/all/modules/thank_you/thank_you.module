@@ -126,7 +126,7 @@ function thank_you_send_test_submit( $form_id, $form_values ) {
 		$form_values['thank_you_test_prev_err'] = TRUE;
 		# try once more
 		# TODO: why do we not see this message
-		drupal_set_message("Contact not found for email address.  Trying default.", 'error');
+//		drupal_set_message("Contact not found for email address.  Trying default.", 'error');
 		return thank_you_send_test_submit( $form_id, $form_values );
 	}
 
@@ -304,13 +304,6 @@ function thank_you_render( $contribution_id, $test=null ) {
 	}
 	else{
 		# do nothing, default to en
-		drupal_set_message('Messages not initialized', 'error');
-		if ( !isset( $TYmsgs ) ){
-			drupal_set_message('not isset', 'error');
-		}
-		if ( !array_key_exists( $lang, $TYmsgs ) ){
-			drupal_set_message('not ake', 'error');
-		}
 	}
 	# replace the tokens with the contact/contribution data
 	$contribution['date'] = date('Y-m-d', strtotime($contribution['receive_date']));
