@@ -126,7 +126,6 @@ function thank_you_send_test_submit( $form_id, $form_values ) {
 		$form_values['thank_you_test_prev_err'] = TRUE;
 		# try once more
 		# TODO: why do we not see this message
-//		drupal_set_message("Contact not found for email address.  Trying default.", 'error');
 		return thank_you_send_test_submit( $form_id, $form_values );
 	}
 
@@ -293,7 +292,7 @@ function thank_you_render( $contribution_id, $test=null ) {
 	}
 	# check to see if a matching localization was found
 	if ( isset( $TYmsgs ) && array_key_exists( $lang, $TYmsgs ) ) {
-		drupal_set_message("Messages intialized and $lang found", 'info');
+        watchdog('thank_you', "Messages intialized and $lang found", WATCHDOG_INFO);
 		# loop through the localizations and replace the defaults
 		foreach ( $rendering as $key => $value ){
 			# check if the current key has a localized value
@@ -303,7 +302,20 @@ function thank_you_render( $contribution_id, $test=null ) {
 		}
 	}
 	else{
-		# do nothing, default to en
+        # look for default messages (en) in i18n
+        if ( isset( $TYmsgs ) && array_key_exists( 'en', $TYmsgs ) ) {
+            watchdog('thank_you', "$lang not found - defaulting to en", WATCHDOG_INFO);
+            # loop through the localizations and replace the defaults
+            foreach ( $rendering as $key => $value ){
+                # check if the current key has a localized value
+                if ( array_key_exists( 'thank_you_' . $key, $TYmsgs[ 'en' ] ) ){
+                    $rendering[ $key ] = $TYmsgs[ 'en' ][ 'thank_you_' . $key ];
+                }
+            }
+        }
+		else {
+            watchdog('thank_you', "$lang not found, en not found, using interface defaults", WATCHDOG_INFO);
+        }
 	}
 	# replace the tokens with the contact/contribution data
 	$contribution['date'] = date('Y-m-d', strtotime($contribution['receive_date']));
@@ -685,7 +697,7 @@ EOT;
 			# check for errors in the API result
 			if( is_array( $contact ) && array_key_exists( 'is_error', $contact ) && $contact['is_error'] == "0" ){
 				$success = true;
-				watchdog('thank_you', 'Unsubscribe success for contact: ' . $contribution[ 'contact_id' ] . '<' . $contact['email'] . '>', array(), WATCHDOG_ERROR);
+				watchdog('thank_you', 'Unsubscribe success for contact: ' . $contribution[ 'contact_id' ] . '<' . $contact['email'] . '>', array(), WATCHDOG_INFO);
 			} else {
 				watchdog('thank_you', 'Unsubscribe FAILURE for contact (1): ' . $contribution[ 'contact_id' ] . '<' . $contact['email'] . '>', array(), WATCHDOG_ERROR);
 			}
