@@ -7,10 +7,10 @@ $TYmsgs['fr'] = array(
 	"thank_you_subject" => "Merci à vous de la part de la Wikimedia Foundation",
 	"thank_you_unsubscribe_title" => "Se désabonner de la Fondation Wikimedia",
 	"thank_you_unsubscribe_button" => "Se désabonner",
-	"thank_you_unsubscribe_confirm" => "",
-	"thank_you_unsubscribe_warning" => "Veuillez nous accorder quatre (4) jours pour que les modifications deviennent effectives. Nous nous excusons pour tous les courriels que vous pourriez encore recevoir durant ce temps. Si vous avez des questions, veuillez contacter <a href='mailto:donations@wikimedia.org'>donations@wikimedia.org</a>.",
+//	"thank_you_unsubscribe_confirm" => "",
+//	"thank_you_unsubscribe_warning" => "",
 	"thank_you_unsubscribe_success" => "Vous avez bien été retiré de notre liste de diffusion",
-	"thank_you_unsubscribe_delay" => "",
+	"thank_you_unsubscribe_delay" => "Veuillez nous accorder quatre (4) jours pour que les modifications deviennent effectives. Nous nous excusons pour tous les courriels que vous pourriez encore recevoir durant ce temps. Si vous avez des questions, veuillez contacter <a href='mailto:donations@wikimedia.org'>donations@wikimedia.org</a>.",
 	"thank_you_unsubscribe_fail" => "Une erreur est survenue lors du traitement de votre requête, merci de contacter <a href='mailto:donations@wikimedia.org'>donations@wikimedia.org</a>.",
 );
 $TYmsgs['fr']['thank_you_body_plaintext'] =<<<'EOD'

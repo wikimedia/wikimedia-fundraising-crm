@@ -37,8 +37,6 @@ Mulighed for fravalg:
 Som bidragsyder vil vi gerne kunne gerne sende dig nyheder om brugeraktiviteter og indsamlinger. Hvis du ikke ønsker at modtage sådanne email fra os, så klik venligst herunder for at blive taget af listen:
 
 {unsubscribe_link}
-
-
 EOD;
 
 $TYmsgs['da']['thank_you_body_html'] =<<<'EOD'
@@ -62,8 +60,6 @@ Wikimedia Foundation Executive Director</p>
 <p>Som bidragsyder vil vi gerne kunne gerne sende dig nyheder om brugeraktiviteter og indsamlinger. Hvis du ikke ønsker at modtage sådanne email fra os, så klik venligst herunder for at blive taget af listen:</p>
 <a style="padding-left: 25px;" href="{unsubscribe_link}">Afmeld</a>
 </div>
-
-
 EOD;
 
 

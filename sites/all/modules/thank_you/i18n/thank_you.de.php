@@ -27,14 +27,18 @@ Vielen Dank
 Sue Gardner
 Wikimedia-Geschäftsführerin
 
-Abmeldung vom Newsletter:
-Wir möchten dich als Spender gerne über unsere Aktivitäten und Spendenaktionen auf dem Laufenden halten. Wenn du diesbezüglich jedoch lieber keine E-Mails von uns erhalten willst, dann klicke bitte auf den folgenden Link, um aus der Liste entfernt zu werden:
-
-{unsubscribe_link}
+---
 
 Für deine Unterlagen: Deine Spende vom {contribution.date} betrug {contribution.source}.
 
 Dieser Brief kann als Nachweis für deine Spende dienen. Für diesen finanziellen Beitrag wurden keine Waren oder Dienstleistungen bereitgestellt, weder ganz noch teilweise. Wikimedia ist eine gemeinnützige Organisation mit Steuerbefreiungsstatus in den USA gemäß 501(c)(3). Unsere Anschrift lautet 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. US-Steuerbefreiungsnummer: 20-0049703.
+
+---
+
+Abmeldung vom Newsletter:
+Wir möchten dich als Spender gerne über unsere Aktivitäten und Spendenaktionen auf dem Laufenden halten. Wenn du diesbezüglich jedoch lieber keine E-Mails von uns erhalten willst, dann klicke bitte auf den folgenden Link, um aus der Liste entfernt zu werden:
+
+{unsubscribe_link}
 EOD;
 
 $TYmsgs['de']['thank_you_body_html'] =<<<'EOD'
