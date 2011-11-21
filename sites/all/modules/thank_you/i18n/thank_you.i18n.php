@@ -16,6 +16,7 @@ $languages_enabled = array(
 	'el' => 'thank_you.el.php',
 	'en' => 'thank_you.en.php',
 //	'es' => 'thank_you.es.php',
+	'es_ES' => 'thank_you.es_ES.php',
 	'fr' => 'thank_you.fr.php',
 	'gl' => 'thank_you.gl.php',
 	'id' => 'thank_you.id.php',
@@ -26,9 +27,6 @@ $languages_enabled = array(
     'ru' => 'thank_you.ru.php',
 );
 
-# whitelist some of the defaults that have variants
-$languages_enabled['es'] = 'thank_you.es_ES.php';
-$languages_enabled['zh'] = 'thank_you.zh-hans.php';
 /*
  * Work through each of the enabled languages and include if
  * the i18n file exists
@@ -37,4 +35,12 @@ foreach ( $languages_enabled as $lang => $file ) {
 	if ( file_exists( dirname(__FILE__) . '/' . $file ) ) {
 		require_once dirname(__FILE__) . '/' . $file;
 	}
+}
+
+# whitelist some of the defaults that have variants
+if( array_key_exists( 'es_ES', $TYmsgs ) ){
+    $TYmsgs['es'] = $TYmsgs['es_ES'];
+}
+if( array_key_exists( 'zh-hans', $TYmsgs ) ){
+    $TYmsgs['zh'] = $TYmsgs['zh-hans'];
 }
