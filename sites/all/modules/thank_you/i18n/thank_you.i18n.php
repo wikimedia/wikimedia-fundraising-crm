@@ -20,8 +20,15 @@ $languages_enabled = array(
 	'gl' => 'thank_you.gl.php',
 	'id' => 'thank_you.id.php',
 	'it' => 'thank_you.it.php',
+	'ja' => 'thank_you.ja.php',
+    'nl' => 'thank_you.nl.php',
+    'pt' => 'thank_you.pt.php',
+    'ru' => 'thank_you.ru.php',
 );
 
+# whitelist some of the defaults that have variants
+$languages_enabled['es'] = 'thank_you.es_ES.php';
+$languages_enabled['zh'] = 'thank_you.zh-hans.php';
 /*
  * Work through each of the enabled languages and include if
  * the i18n file exists
