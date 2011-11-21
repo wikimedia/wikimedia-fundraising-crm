@@ -17,6 +17,28 @@ $TYmsgs['']['thank_you_body_plaintext'] =<<<'EOD'
 EOD;
 
 $TYmsgs['']['thank_you_body_html'] =<<<'EOD'
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p><br />
+<br />
+<b></b><br />
+</p>
+
+<p></p>
+
+<p></p>
+
+<div style="padding:0 10px 5px 10px; border:1px solid black;">
+<p><i></i></p>
+<p></p>
+<a style="padding-left: 25px;" href="{unsubscribe_link}">Opt out</a>
+</div>
 EOD;
 
 

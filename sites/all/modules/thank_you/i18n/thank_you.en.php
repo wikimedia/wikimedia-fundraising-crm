@@ -26,16 +26,18 @@ Thanks,
 Sue Gardner
 Wikimedia Foundation Executive Director
 
+---
+
+For your records: Your donation on {contribution.date} was {contribution.source}
+
+This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit charitable corporation with 501(c)(3) tax exempt status in the United States. Our address is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703
+
+---
 
 Opt out option:
 We'd like to keep you as a donor informed of our community activities and fundraisers.  If you prefer however not to receive such emails from us, please click below and we'll take you off the list:
 
 {unsubscribe_link}
-
-
-For your records: Your donation on {contribution.date} was {contribution.source}
-
-This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit charitable corporation with 501(c)(3) tax exempt status in the United States. Our address is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703
 EOD;
 
 $TYmsgs['en']['thank_you_body_html'] =<<<'EOD'
