@@ -31,7 +31,7 @@ Directeur van de Wikimedia Foundation
 ---
 
 Voor uw administratie: Uw donatie op {contribution.date} bedroeg {contribution.source} .
-Deze e-mail dient als bewijs van uw donatie. Er zijn, geheel of gedeeltelijk, geen goederen of diensten geleverd voor deze bijdrage. De Wikimedia Foundation is een non-profit organisatie, afhankelijk van giften, en heeft een 201(c)(3) belastingvrijstelling in de Verenigde Staten. Ons adres is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Belastingvrijstellingsnummer in de Verenigde Staten: 20-0049703
+Deze e-mail dient als bewijs van uw donatie. Er zijn, geheel of gedeeltelijk, geen goederen of diensten geleverd voor deze bijdrage. De Wikimedia Foundation is een non-profit organisatie, afhankelijk van giften, en heeft een 501(c)(3) belastingvrijstelling in de Verenigde Staten. Ons adres is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Belastingvrijstellingsnummer in de Verenigde Staten: 20-0049703
 
 ---
 
@@ -58,7 +58,7 @@ Directeur van de Wikimedia Foundation</p>
 
 <p>Voor uw administratie: Uw donatie op {contribution.date} bedroeg {contribution.source}.</p>
 
-<p>Deze e-mail dient als bewijs van uw donatie. Er zijn, geheel of gedeeltelijk, geen goederen of diensten geleverd voor deze bijdrage. De Wikimedia Foundation is een non-profit organisatie, afhankelijk van giften, en heeft een 201(c)(3) belastingvrijstelling in de Verenigde Staten. Ons adres is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Belastingvrijstellingsnummer in de Verenigde Staten: 20-0049703</p>
+<p>Deze e-mail dient als bewijs van uw donatie. Er zijn, geheel of gedeeltelijk, geen goederen of diensten geleverd voor deze bijdrage. De Wikimedia Foundation is een non-profit organisatie, afhankelijk van giften, en heeft een 501(c)(3) belastingvrijstelling in de Verenigde Staten. Ons adres is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Belastingvrijstellingsnummer in de Verenigde Staten: 20-0049703</p>
 
 <div style="padding:0 10px 5px 10px; border:1px solid black;">
 <p><i>Uitvinkoptie:</i></p>
