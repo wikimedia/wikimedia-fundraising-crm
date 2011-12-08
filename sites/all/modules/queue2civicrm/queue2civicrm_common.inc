@@ -577,14 +577,12 @@ function _queue2civicrm_get_new_drush_errors(){
 /* Will return the most serious of all the new drush errors since the last time you asked,
  * with all its new lines intact.
  *
+ * @param array $severity The severity levels for the errors.
  */
-function _queue2civicrm_get_top_new_drush_error(){
+function _queue2civicrm_get_top_new_drush_error($severity=array()){
 	$error = _queue2civicrm_get_new_drush_errors();
 
-	if (empty($error)){
-		return false;
-	} else {	//pull the Top of Bad.
-		$top_error = false;
+	if (empty($severity) || !is_array($severity)){
 		$severity = array(
 			'CIVI_CONFIG',
 			'STOMP_BAD_CONNECTION',
@@ -593,6 +591,12 @@ function _queue2civicrm_get_top_new_drush_error(){
 			'IMPORT_CONTRIB',
 			'IMPORT_TAG',
 		);
+	}
+	
+	if (empty($error)){
+		return false;
+	} else {	//pull the Top of Bad.
+		$top_error = false;
 		$top_code = false;
 
 		foreach($severity as $code){
