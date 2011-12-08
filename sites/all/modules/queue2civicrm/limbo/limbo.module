@@ -1,0 +1,244 @@
+<?php
+/**
+ * An extension of the queue2civicrm module to handle the PSC and limbo queue
+ * 
+ */
+
+// include common functions
+require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_common.inc' );
+require_once( drupal_get_path( 'module', 'limbo' ) . '/limbo_common.inc' );
+
+/**
+ * Implementation of hook_menu_alter
+ * 
+ * Used to inject recurring menu item to Queue2civicrm configuration
+ */
+function limbo_menu_alter( &$items ) {
+  $items['admin/settings/queue2civicrm/limbo'] = array(
+  'title' => 'Limbo queue manager',
+  'description' => t( 'Configure limbo queue settings' ),
+  'access arguments' => array( 'administer queue2civicrm' ),
+  'page callback' => 'drupal_get_form',
+  'page arguments' => array( 'limbo_settings' ),
+  'type' => MENU_LOCAL_TASK
+  );
+  return $items;
+}
+
+/**
+ * Settings form for limbo queue configuration
+ */
+function limbo_settings() {
+  $form = array();
+ 
+  $form[ 'limbo' ][ 'description' ] = array(
+    '#type' => 'fieldset',
+    '#title' => t( 'Limbo queue settings' ),
+    '#description' => t( 'Use the form below to configure settings for the limbo queue.' ),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+
+  $form[ 'limbo' ][ 'limbo_subscription' ] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subscription path'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('limbo_subscription', '/queue/limbo_test'),
+    '#description' => t( 'The path to the limbo queue.' ),
+  );
+
+  $form['limbo_batch'] = array(
+    '#type' => 'select',
+    '#title' => t('Cron batch size'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('limbo_batch', 0),
+    '#options' => array(
+      0 => '0 (Disable)',
+      1 => 1,
+      5 => 5,
+      10 => 10,
+      20 => 20,
+      30 => 30,
+      40 => 40,
+      50 => 50,
+      75 => 75,
+      100 => 100,
+      120 => 120,
+      150 => 150,
+    ),
+  );
+  
+  return system_settings_form( $form );
+}
+
+
+function limbo_batch_process() {
+  watchdog('limbo', 'Executing: limbo_batch_process');
+  set_time_limit(10);
+
+  watchdog('limbo', 'No contributions processed.');
+
+  $processed = 0;
+  
+  watchdog('limbo', 'Attempting to process up to ' . variable_get('limbo_batch', 0) . ' contribution(s).');
+
+  // Attempt to dequeue items for the batch
+  for ($i = 0; $i < variable_get('limbo_batch', 0); ++$i) {
+    $success = limbo_dequeue();
+    if ($success) {
+      ++$processed;
+    } else {
+      break;
+    }
+  }
+
+  $con = _queue2civicrm_stomp_connection();
+  $subscription_queue = variable_get('limbo_subscription', '/queue/limbo_test');
+  if (is_object( $con ) && $con->isConnected()){
+    $con->unsubscribe($subscription_queue);
+    $con->disconnect();
+  }
+  
+  if ($processed > 0) {
+    watchdog('limbo', 'Successfully processed ' . $processed . ' contribution(s).');
+  }
+  else {
+    watchdog('limbo', 'No contributions processed.');
+  }
+}
+
+
+/**
+ * Remove one item from the queue and process it.
+ */
+function limbo_dequeue() {
+  watchdog('limbo', 'Executing: limbo_dequeue');
+  $con = _queue2civicrm_stomp_connection();
+  $subscription_queue = variable_get('limbo_subscription', '/queue/limbo_test');
+  $severity = array(
+    'CIVI_CONFIG',
+    'STOMP_BAD_CONNECTION',
+    'CIVI_REQ_FIELD',
+  );
+  if ($con) {
+    $con->subscribe($subscription_queue, array('ack' => 'client'));
+
+    $msg = $con->readFrame();
+    
+    // Skip processing if no message to process.
+    if ($msg !== FALSE) {
+      watchdog('limbo', 'Read frame:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');        
+      set_time_limit(60);
+      try {
+        _queue2civicrm_get_new_drush_errors(); //redefine "new" before we move on.
+    if (limbo_import($msg)){
+      $con->ack($msg);
+    } else {
+      /* @fixme: Wow, this error handling is probably a mess. This should shake out more sensibly as:
+       * - tests are written for dequeue fail cases
+       * - we get to the cards that deal more specifically with error emails and database rollback conditions.
+       */
+      $top_error = _queue2civicrm_get_top_new_drush_error($severity);
+      if ($top_error !== false && array_key_exists('err_code', $top_error)){
+        $watchdogMe = $top_error['err_code'] . " : " . $top_error['err_text'];
+        $failAck = false;
+        switch ($top_error['err_code']){
+          case 'CIVI_CONFIG': //missing a necessary civicrm value. Probably the Entity Tag, or Payment Instrument
+            $watchdogMe .= "\nHalting Process.";
+            watchdog('limbo', $watchdogMe, array(), WATCHDOG_ERROR);
+            queue2civicrm_failmail($top_error, array(), $failAck);
+            //in this case, it makes sense to just leave with no ack: It's not the message's fault.
+            $con->unsubscribe( $subscription_queue );
+            return false;
+            break;
+          case 'CIVI_REQ_FIELD': //message missing a hard requirement
+            $failAck = true;
+            break;
+          default: //apparently we don't know what happened to get us here. Log the heck out of it.
+            $watchdogMe .= "\nUNHANDLED ERROR CODE. Please debug and handle it.";
+            $failAck = true;
+        }
+        if ($failAck === true){
+          $watchdogMe .= "\nRemoving failed message from the queue: \n" . print_r($msg, true);
+          $con->ack($msg);
+        }
+        queue2civicrm_failmail($top_error, $msg, $failAck);
+        watchdog('limbo', $watchdogMe, array(), WATCHDOG_ERROR);
+
+      } else {
+        //Case was not properly dealt with.
+        queue2civicrm_failmail(array(), $msg, true);
+        watchdog('limbo', "Message failed to import, but threw no errors! Please debug and handle this failure case.\nRemoving message from the queue: \n" . print_r($msg, true), array(), WATCHDOG_ERROR);
+        $con->ack($msg);
+      }
+
+    }
+    return TRUE;
+      }
+      catch (Exception $e) {
+        watchdog('limbo', 'Could not process frame from queue.', array(), WATCHDOG_ERROR);
+      }     
+    }
+    else {
+      watchdog('limbo', 'Nothing to process.');
+    }
+    $con->unsubscribe( $subscription_queue ); 
+  }
+  return FALSE;
+}
+
+/**
+ * Process one order from the limbo queue to `queue2civicrm_limbo`.
+ */
+function limbo_import( $msg ) {
+  // save the original message for logging
+  $msg_orig = $msg;
+  
+  $msg = limbo_verify_and_stage($msg);
+  if ($msg == false){
+    return false;
+  }
+  
+  $msg['data'] = ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body );
+  $msg['timestamp'] = $msg['date'];
+  //dsm($contribution);
+  watchdog('limbo', 'Limbo:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');  
+  $queue2civicrm_limbo_id = _limbo_insert_queue2civicrm_limbo($msg);
+
+  return true;
+}
+
+function limbo_verify_and_stage($msg){
+  if ( !is_array( $msg ) ) {
+    $msg = json_decode($msg->body, true);
+  }
+
+  if (!isset($msg['order_id']) && isset($msg['gateway_txn_id'])){
+  	  $msg['order_id'] = $msg['gateway_txn_id'];
+  }
+
+  $required = array(
+    'contribution_tracking_id' => '',
+    'gateway' => '',
+    'order_id' => '',
+    'payment_method' => '',
+    'payment_submethod' => '',
+  );
+
+  $failflag = false;
+  foreach ($required as $key=>$value){
+    if (!isset($msg[$key])){
+      watchdog('limbo', "Required Field '$key' not found in message:" . print_r($msg, true), WATCHDOG_ERROR);
+      drush_set_error("CIVI_REQ_FIELD", "Required Field '$key' not found in message:" . print_r($msg, true));
+      $failflag = true;
+    }
+  }
+  if ($failflag === true){
+      return false;
+  }
+
+  $msg = _limbo_normalize_msg( $msg );
+
+  return $msg;
+}
+
