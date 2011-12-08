@@ -15,7 +15,7 @@ function queue_consume_drush_command() {
   $items['queue-consume'] = array(
     'description' => 
       'Consumes items from a specified ActiveMQ queue and processes them into CiviCRM',
-    'examples' => array( 'drush queue-consume' ), 
+    'examples' => array( 'drush queue-consume' => '# Consume the queue' ), 
     'aliases' => array( 'qc' ),
   );
 
