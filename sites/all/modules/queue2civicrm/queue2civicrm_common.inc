@@ -103,7 +103,7 @@ function _queue2civicrm_normalize_msg( $msg ) {
  * particular transaction.  Rare, but inserting some data for a trxn when
  * absent helps facilitate better analytics.
  * 
- * @return the contribution_tarcking id 
+ * @return the contribution_tracking id 
  */
 function _queue2civicrm_insert_contribution_tracking( $utm_source, $utm_medium, $ts, $contrib_id=null, $optout=null, $anonymous=null ) {
   // make sure we're using the default (drupal) db
