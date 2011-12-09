@@ -84,8 +84,12 @@ function _queue2civicrm_normalize_msg( $msg ) {
   }
 
   // Convert times to Unix timestamps.
-  if (!is_integer($msg['date'])) {
+  if (!is_numeric($msg['date'])) {
     $msg['date'] = strtotime($msg['date']);
+  }
+  // if all else fails, fall back to now.
+  if ( empty( $msg['date'] )) {
+  	$msg['date'] = time();
   }
 	
   watchdog('queue2civicrm', 'Contribution (pre-conversion):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');
