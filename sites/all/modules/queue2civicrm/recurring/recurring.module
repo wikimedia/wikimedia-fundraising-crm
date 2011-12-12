@@ -741,6 +741,7 @@ function recurring_normalize_paypal_msg( $msg ) {
  */
 function recurring_get_contribution_tracking_id( $msg ) {
   if ( strlen( $msg[ 'custom' ] )) {
+  	watchdog( 'recurring', 'recurring_get_contribution_tracking_id: Using $msg["custom"], %cti', array( '%cti' => $msg['custom']), WATCHDOG_DEBUG );
     return $msg[ 'custom' ];
   } elseif ( $msg[ 'txn_type' ] == 'subscr_payment' ) {
     $contribution_tracking_id = null;
@@ -766,7 +767,9 @@ function recurring_get_contribution_tracking_id( $msg ) {
         $dbs->use_default();
         $query = "SELECT id FROM {contribution_tracking} WHERE contribution_id IN ( '%s' )";
         // we can use this related contribution tracking id
-        return db_result( db_query( $query, implode( ",", $contrib_ids )));
+        $contribution_tracking_id = db_result( db_query( $query, implode( ",", $contrib_ids )));
+        watchdog( 'recurring', 'recurring_get_contribution_tracking_id: Selected contrib tracking id from past contributions, %cti', array( '%cti' => $contribution_tracking_id ), WATCHDOG_DEBUG );
+        return $contribution_tracking_id;
       }
     }
     
@@ -776,9 +779,12 @@ function recurring_get_contribution_tracking_id( $msg ) {
       sort( $contrib_ids, SORT_NUMERIC );
       $contrib_id = array_shift( $contrib_ids ); // this should return null if $contrib_ids is empty
       $date = date( 'YmdHis', strtotime( $msg[ 'payment_date' ] ));
-      return _queue2civicrm_insert_contribution_tracking( '..rpp', 'civicrm', $date, $contrib_id );
+      $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( '..rpp', 'civicrm', $date, $contrib_id );
+      watchdog( 'recurring', 'recurring_get_contribution_tracking_id: Inserted contrib tracking id, %cti', array( '%cti' => $contribution_tracking_id ), WATCHDOG_DEBUG );
+      return $contribution_tracking_id;
     }
   } else {
+  	watchdog( 'recurring', 'recurring_get_contribution_tracking_id: No contribution_tracking_id returned.', array(), WATCHDOG_DEBUG );
     return null;
   }
 }
