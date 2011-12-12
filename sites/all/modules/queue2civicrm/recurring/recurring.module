@@ -612,7 +612,7 @@ function recurring_normalize_paypal_msg( $msg ) {
   // the subscription id
   $msg_normalized[ 'subscr_id' ] = $msg[ 'subscr_id' ];
   $msg_normalized[ 'txn_type' ] = $msg[ 'txn_type' ];
-  $msg_normalized[ 'contribution_tracking_id' ] = recurring_get_contribution_tracking_id( $msg[ 'custom' ] );
+  $msg_normalized[ 'contribution_tracking_id' ] = recurring_get_contribution_tracking_id( $msg );
   $msg_normalized[ 'email' ] = $msg[ 'payer_email' ];
 
   // Premium info
