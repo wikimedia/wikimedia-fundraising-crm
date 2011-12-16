@@ -21,7 +21,7 @@ function _limbo_normalize_msg( $msg ) {
   }
 
   // Convert times to Unix timestamps.
-  if (!is_integer($msg['date'])) {
+  if (!is_numeric($msg['date'])) {
     $msg['date'] = strtotime($msg['date']);
   }
 	
