@@ -27,7 +27,7 @@ function limbo_queue_consume_drush_command() {
  */
 function limbo_queue_consume_drush_help( $section ) {
 
-  watchdog('limbo', 'Someone needs help with limbo \0/');
+  //watchdog('limbo', 'Someone needs help with limbo \0/');
 
   switch ( $section ) {
 	case 'drush:limbo-queue-consume':
