@@ -131,49 +131,49 @@ function limbo_dequeue() {
       set_time_limit(60);
       try {
         _queue2civicrm_get_new_drush_errors(); //redefine "new" before we move on.
-    if (limbo_import($msg)){
-      $con->ack($msg);
-    } else {
-      /* @fixme: Wow, this error handling is probably a mess. This should shake out more sensibly as:
-       * - tests are written for dequeue fail cases
-       * - we get to the cards that deal more specifically with error emails and database rollback conditions.
-       */
-      $top_error = _queue2civicrm_get_top_new_drush_error($severity);
-      if ($top_error !== false && array_key_exists('err_code', $top_error)){
-        $watchdogMe = $top_error['err_code'] . " : " . $top_error['err_text'];
-        $failAck = false;
-        switch ($top_error['err_code']){
-          case 'CIVI_CONFIG': //missing a necessary civicrm value. Probably the Entity Tag, or Payment Instrument
-            $watchdogMe .= "\nHalting Process.";
-            watchdog('limbo', $watchdogMe, array(), WATCHDOG_ERROR);
-            queue2civicrm_failmail($top_error, array(), $failAck);
-            //in this case, it makes sense to just leave with no ack: It's not the message's fault.
-            $con->unsubscribe( $subscription_queue );
-            return false;
-            break;
-          case 'CIVI_REQ_FIELD': //message missing a hard requirement
-            $failAck = true;
-            break;
-          default: //apparently we don't know what happened to get us here. Log the heck out of it.
-            $watchdogMe .= "\nUNHANDLED ERROR CODE. Please debug and handle it.";
-            $failAck = true;
-        }
-        if ($failAck === true){
-          $watchdogMe .= "\nRemoving failed message from the queue: \n" . print_r($msg, true);
+        if (limbo_import($msg)){
           $con->ack($msg);
+        } else {
+          /* @fixme: Wow, this error handling is probably a mess. This should shake out more sensibly as:
+           * - tests are written for dequeue fail cases
+           * - we get to the cards that deal more specifically with error emails and database rollback conditions.
+           */
+          $top_error = _queue2civicrm_get_top_new_drush_error($severity);
+          if ($top_error !== false && array_key_exists('err_code', $top_error)){
+            $watchdogMe = $top_error['err_code'] . " : " . $top_error['err_text'];
+            $failAck = false;
+            switch ($top_error['err_code']){
+              case 'CIVI_CONFIG': //missing a necessary civicrm value. Probably the Entity Tag, or Payment Instrument
+                $watchdogMe .= "\nHalting Process.";
+                watchdog('limbo', $watchdogMe, array(), WATCHDOG_ERROR);
+                queue2civicrm_failmail($top_error, array(), $failAck);
+                //in this case, it makes sense to just leave with no ack: It's not the message's fault.
+                $con->unsubscribe( $subscription_queue );
+                return false;
+                break;
+              case 'CIVI_REQ_FIELD': //message missing a hard requirement
+                $failAck = true;
+                break;
+              default: //apparently we don't know what happened to get us here. Log the heck out of it.
+                $watchdogMe .= "\nUNHANDLED ERROR CODE. Please debug and handle it.";
+                $failAck = true;
+            }
+            if ($failAck === true){
+              $watchdogMe .= "\nRemoving failed message from the queue: \n" . print_r($msg, true);
+              $con->ack($msg);
+            }
+            queue2civicrm_failmail($top_error, $msg, $failAck);
+            watchdog('limbo', $watchdogMe, array(), WATCHDOG_ERROR);
+    
+          } else {
+            //Case was not properly dealt with.
+            queue2civicrm_failmail(array(), $msg, true);
+            watchdog('limbo', "Message failed to import, but threw no errors! Please debug and handle this failure case.\nRemoving message from the queue: \n" . print_r($msg, true), array(), WATCHDOG_ERROR);
+            $con->ack($msg);
+          }
+    
         }
-        queue2civicrm_failmail($top_error, $msg, $failAck);
-        watchdog('limbo', $watchdogMe, array(), WATCHDOG_ERROR);
-
-      } else {
-        //Case was not properly dealt with.
-        queue2civicrm_failmail(array(), $msg, true);
-        watchdog('limbo', "Message failed to import, but threw no errors! Please debug and handle this failure case.\nRemoving message from the queue: \n" . print_r($msg, true), array(), WATCHDOG_ERROR);
-        $con->ack($msg);
-      }
-
-    }
-    return TRUE;
+        return TRUE;
       }
       catch (Exception $e) {
         watchdog('limbo', 'Could not process frame from queue.', array(), WATCHDOG_ERROR);
