@@ -304,7 +304,7 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
   require_once 'api/v2/Contribute.php';
   
   $trxn_id = strtoupper( $msg[ 'gateway' ] . ' ' . $msg[ 'gateway_txn_id' ] );
-  if ( $recur_id ) {
+  if ( $recur_id || $msg['recurring'] ) {
     $trxn_id = 'RECURRING ' . $trxn_id; 
   }
   
