@@ -214,7 +214,7 @@ function limbo_verify_and_stage($msg){
   }
 
   if (!isset($msg['order_id']) && isset($msg['gateway_txn_id'])){
-  	  $msg['order_id'] = $msg['gateway_txn_id'];
+      $msg['order_id'] = $msg['gateway_txn_id'];
   }
 
   $required = array(
