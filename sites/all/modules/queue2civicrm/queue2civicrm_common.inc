@@ -151,46 +151,62 @@ function _queue2civicrm_normalize_contrib_amnts( $msg ) {
 /**
  * Insert the contact record
  * 
- * Serves as a standard way for message porcessors to handle contact
+ * Serves as a standard way for message processors to handle contact
  * insertion.
  * 
  * @param array $msg
  * @return array
  */
 function _queue2civicrm_contact_insert( $msg ) {
-  require_once 'api/v2/Contact.php';
-  
-  // Insert the contact record
-  $contact = array(
-	'id' => NULL,
-	'contact_type' => 'Individual',
-	'first_name' => $msg['first_name'],
-	'middle_name' => $msg['middle_name'],
-	'last_name' => $msg['last_name'],
-	'do_not_trade' => $msg['anonymous'],
-	'contact_source' => 'online donation',
-	'preferred_language' => strtolower(substr($msg['language'], 0, 2)) . '_' . strtoupper(substr($msg['country'], 0, 2))
-  );
-  // Honor the opt-out checkbox, if present
-  if (array_key_exists('optout', $msg)) {
-    $contact['is_opt_out'] = $msg['optout'];
-  }
-  $contact['sort_name'] = trim($contact['last_name'] . ', ' . $contact['first_name'], ' ,');
-  $contact['display_name'] = trim($contact['first_name'] . ' ' . $contact['last_name']);
-  $contact_result = &civicrm_contact_add( $contact );
-  
-  watchdog( 'queue2civicrm', 'Result for adding contact: %contact', array( '%contact' => print_r( $contact_result, true )), WATCHDOG_DEBUG );
+	// Set defaults for optional fields in the message
+	if ( !array_key_exists( 'contact_type', $msg ) ) {
+		$msg['contact_type'] = "Individual";
+	} elseif ( $msg['contact_type'] != "Individual" && $msg['contact_type'] != "Organization" ) {
+		// looks like an unsupported type was sent, revert to default
+		$msg['contact_type'] = "Individual";
+	}
 
-  if (array_key_exists('is_error', $contact_result) && $contact_result['is_error'] != 0){
-	  return false;
-  }
-  return $contact_result;
+	if ( !array_key_exists( 'contact_source', $msg ) ) {
+		$msg['contact_source'] = "online donation";
+	}
+
+	// Honor the opt-out checkbox, if present, else, set default
+	if ( !array_key_exists( 'optout', $msg ) ) {
+		$msg['optout'] = 0;
+	}
+  
+	// Create the contact record
+	$contact = array(
+		'contact_type' => $msg['contact_type'],
+		'first_name' => $msg['first_name'],
+		'middle_name' => $msg['middle_name'],
+		'last_name' => $msg['last_name'],
+		'sort_name' => trim( $msg['last_name'] . ', ' . $msg['first_name'], ' ,' ),
+		'display_name' => trim( $msg['first_name'] . ' ' . $msg['last_name'] ),
+		'do_not_trade' => $msg['anonymous'],
+		'is_opt_out' => $msg['optout'],
+		'contact_source' => $msg['contact_source'],
+		'preferred_language' => strtolower(substr($msg['language'], 0, 2)) . '_' . strtoupper(substr($msg['country'], 0, 2)),
+
+		// API required fields
+		'version' => '3'
+	);
+
+	// Attempt to insert the contact
+	$contact_result = civicrm_api( "Contact", "Create", $contact );
+
+	watchdog( 'queue2civicrm', 'Result for adding contact: %contact', array( '%contact' => print_r( $contact_result, true )), WATCHDOG_DEBUG );
+
+  	if ( array_key_exists( 'is_error', $contact_result ) && $contact_result['is_error'] != 0 ){
+		return false;
+	}
+	return $contact_result;
 }
 
 /**
  * Update the contact record
  * 
- * Serves as a standard way for message porcessors to handle contact
+ * Serves as a standard way for message processors to handle contact
  * updates.
  * 
  * @param array $msg
@@ -225,7 +241,7 @@ function _queue2civicrm_contact_update( $msg, $contact_id ) {
 /**
  * Insert the location record
  * 
- * Serves as a standard way for message porcessors to handle location
+ * Serves as a standard way for message processors to handle location
  * insertion.
  * 
  * @param array $msg
@@ -243,7 +259,7 @@ function _queue2civicrm_location_insert( $msg, $contact ) {
 /**
  * Update the location record
  * 
- * Serves as a standard way for message porcessors to handle location
+ * Serves as a standard way for message processors to handle location
  * updates.
  * 
  * @param array $msg
@@ -300,7 +316,7 @@ function _queue2civicrm_location_prepare_params( $msg, $contact ) {
 /**
  * Insert the contribution record
  * 
- * Serves as a standard way for message porcessors to handle contribution
+ * Serves as a standard way for message processors to handle contribution
  * insertion.
  * 
  * @param array $msg
@@ -397,7 +413,7 @@ function _queue2civicrm_update_contribution_tracking( $msg, $contribution ) {
 /**
  * Insert the tag record
  * 
- * Serves as a standard way for message porcessors to handle tag
+ * Serves as a standard way for message processors to handle tag
  * insertion.
  * 
  * @param array $contact
