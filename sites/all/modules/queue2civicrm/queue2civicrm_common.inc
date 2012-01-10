@@ -56,7 +56,7 @@ function _queue2civicrm_stomp_disconnect() {
  * Normalize the queued message
  * 
  * Decodes the message and updates some of the message fields in ways 
- * that are consistent with how we need to insert data into Civi.  
+ * that are consistent with how we need to insert data into CiviCRM.
  * This should be useful by other modules processing contribution messages 
  * out of the queue.
  * 
@@ -64,40 +64,47 @@ function _queue2civicrm_stomp_disconnect() {
  * @return array
  */
 function _queue2civicrm_normalize_msg( $msg ) {
-  // Decode the message body.
-  if ( !is_array( $msg ) ) {
-    $msg = json_decode($msg->body, true);
-  }
+	// Decode the message body.
+	if ( !is_array( $msg ) ) {
+		$msg = json_decode( $msg->body, true );
+	}
 
-  // if we're missing a contrib id, insert new record to the table
-  // this can happen if a user somehow makes a trxn from outside the normal workflow
-  // @fixme: Properly determine payment method
-  // @fixme: This entire if-block is under suspicion. First off, we probably shouldn't be inserting contribution info in the normalize function anyway...
-  if ( !isset( $msg[ 'contribution_tracking_id' ] )) {
-    watchdog( 'queue2civicrm', 'Contribution missing contribution_tracking_id', array(), WATCHDOG_DEBUG );
-	//@fixme: For the regular transactions, this has been moved to the staging function. This needs to happen in recurring also, and then it can be removed here.
-    $anonymous = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
-    $optout = (array_key_exists('optout', $msg) && $msg['optout'] == true && strtoupper($msg['optout']) != "FALSE") ? 1 : 0;
-    $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( '..pp', 'civicrm', date('YmdHis', (int) $msg[ 'date' ] ), null, $optout, $anonymous ); //ACK! this should not be handled this way! should be dynamic!
-    watchdog( 'queue2civicrm', 'Newly inserted contribution tracking id: @id', array('@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
-    $msg[ 'contribution_tracking_id' ] = $contribution_tracking_id;
-  }
+	// if we're missing a contrib id, insert new record to the table
+	// this can happen if a user somehow makes a trxn from outside the normal workflow
+	// checks are ignored as they were completely offline
+	if ( !isset( $msg[ 'contribution_tracking_id' ] ) ) {
+		if ( !array_key_exists( 'payment_method', $msg ) || strtoupper( $msg['payment_method'] ) != "CHECK" ) {
+			if ( !array_key_exists( 'payment_method', $msg ) ){
+				$msg['payment_method'] = "OMGWTFBBQ";
+			}
 
-  // Convert times to Unix timestamps.
-  if (!is_numeric($msg['date'])) {
-    $msg['date'] = strtotime($msg['date']);
-  }
-  // if all else fails, fall back to now.
-  if ( empty( $msg['date'] )) {
-  	$msg['date'] = time();
-  }
-	
-  watchdog('queue2civicrm', 'Contribution (pre-conversion):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');
-  
-  $msg[ 'gateway_txn_id_orig' ] = $msg[ 'gateway_txn_id' ];
-  $msg['gateway_txn_id'] .= ' ' . time();
-  
-  return $msg;
+			watchdog( 'queue2civicrm', 'Contribution missing contribution_tracking_id', array(), WATCHDOG_DEBUG );
+			//@fixme: For the regular transactions, this has been moved to the staging function. This needs to happen in recurring also, and then it can be removed here.
+			$anonymous = ( array_key_exists( 'anonymous', $msg) && $msg['anonymous'] == true && strtoupper( $msg['anonymous'] ) != "FALSE" ) ? 1 : 0;
+			$optout = ( array_key_exists( 'optout', $msg ) && $msg['optout'] == true && strtoupper( $msg['optout'] ) != "FALSE" ) ? 1 : 0;
+
+
+			$contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( $msg['payment_method'], 'civicrm', date('YmdHis', (int) $msg[ 'date' ] ), null, $optout, $anonymous ); //ACK! this should not be handled this way! should be dynamic!
+			watchdog( 'queue2civicrm', 'Newly inserted contribution tracking id: @id', array( '@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
+			$msg['contribution_tracking_id'] = $contribution_tracking_id;
+		}
+	}
+
+	// Convert times to Unix timestamps.
+	if ( !is_numeric( $msg['date'] ) ) {
+		$msg['date'] = strtotime($msg['date']);
+	}
+	// if all else fails, fall back to now.
+	if ( empty( $msg['date'] ) ) {
+		$msg['date'] = time();
+	}
+
+	watchdog( 'queue2civicrm', 'Contribution (pre-conversion):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>' );
+
+	$msg[ 'gateway_txn_id_orig' ] = $msg[ 'gateway_txn_id' ];
+	$msg['gateway_txn_id'] .= ' ' . time();
+
+	return $msg;
 }
 
 /**
