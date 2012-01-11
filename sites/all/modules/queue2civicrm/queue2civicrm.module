@@ -360,7 +360,7 @@ function queue2civicrm_import( $msg ) {
 		// construct an array of useful info to invocations of queue2civicrm_import
 		$contribution_info = array(
 			'contribution_id' => $contribution['id'],
-			'contact_id' => $contact['contact_id'],
+			'contact_id' => $contact['id'],
 			'msg' => $msg,
 		);
 

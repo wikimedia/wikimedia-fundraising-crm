@@ -252,6 +252,7 @@ function _queue2civicrm_location_insert( $msg, $contact ) {
  * @param array $msg
  * @param array $contact
  * @return array
+ * @fixme upgrade to API v3, Location is deprecated, use Address, Email, etc
  */
 function _queue2civicrm_location_update( $msg, $contact ) {
   require_once 'api/v2/Location.php';
@@ -311,71 +312,82 @@ function _queue2civicrm_location_prepare_params( $msg, $contact ) {
  * @return array
  */
 function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
-  require_once 'api/v2/Contribute.php';
-  
-  $trxn_id = strtoupper( $msg[ 'gateway' ] . ' ' . $msg[ 'gateway_txn_id' ] );
-  if ( $recur_id || $msg['recurring'] ) {
-    $trxn_id = 'RECURRING ' . $trxn_id; 
-  }
-  
-  // Insert the contribution record
-  $cash_id = _queue2civicrm_get_civi_id('contribution_type_id', 'cash');
-  $gateway_id = _queue2civicrm_get_civi_id('payment_instrument_id', 'Gateway');
+	require_once 'api/v2/Contribute.php';
 
-  if (($cash_id == false) || ($gateway_id == false)){
-	  //the errors have already been thrown in _queue2civicrm_get_civi_id. Just leave.
-	  return false;
-  }
+	$trxn_id = strtoupper( $msg[ 'gateway' ] . ' ' . $msg[ 'gateway_txn_id' ] );
+	if ( $recur_id || $msg['recurring'] ) {
+		$trxn_id = 'RECURRING ' . $trxn_id;
+	}
 
-  $contribution = array(
-	'contact_id' => $contact[ 'id' ],
-	'total_amount' => $msg['gross'],
-	'contribution_type_id' => $cash_id,
-	'payment_instrument_id' => $gateway_id,
-	'fee_amount' => $msg['fee'],
-	'net_amount' => $msg['net'],
-	'trxn_id' => $trxn_id,
-	'receive_date' => date('Y-m-d H:i:s', $msg['date']),
-	'currency' => 'USD',
-	'source' => $msg['original_currency'] . ' ' . $msg['original_gross'],
-    'contribution_recur_id' => $recur_id
-  );
+	// Insert the contribution record
+	$contribution_id = _queue2civicrm_get_civi_id( 'contribution_type_id', 'cash' );
 
-  watchdog( 'queue2civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE));
+	if ( !array_key_exists( "payment_method", $msg ) ){
+		// default to the old, hard-coded, value
+		$msg['payment_method'] = 'Gateway';
+	}
+	$payment_instrument_id = _queue2civicrm_get_civi_id( 'payment_instrument_id', 'Gateway' );
+
+	if ( ( $contribution_id == false ) || ( $payment_instrument_id == false ) ){
+		//the errors have already been thrown in _queue2civicrm_get_civi_id. Just leave.
+		return false;
+	}
+	if ( !array_key_exists( 'check_number', $msg ) ){
+		$msg['check_number'] = NULL;
+	}
+
+	$contribution = array(
+		'contact_id' => $contact[ 'id' ],
+		'total_amount' => $msg['gross'],
+		'contribution_type_id' => $contribution_id,
+		'payment_instrument_id' => $payment_instrument_id,
+		'fee_amount' => $msg['fee'],
+		'net_amount' => $msg['net'],
+		'trxn_id' => $trxn_id,
+		'receive_date' => date( 'Y-m-d H:i:s', $msg['date'] ),
+		'currency' => 'USD',
+		'source' => $msg['original_currency'] . ' ' . $msg['original_gross'],
+		'contribution_recur_id' => $recur_id,
+		'check_number' => $msg['check_number']
+	);
+
+	watchdog( 'queue2civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE));
+
+	$contribution_result = civicrm_contribution_add( $contribution );
+
+	watchdog( 'queue2civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE));
   
-  $contribution_result = civicrm_contribution_add( $contribution );
-  
-  watchdog( 'queue2civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE));
-  
-  /**
-   *  Apply custom field defaults.
-   *
-   * Civicrm API v2 does NOT provide methods for custom groups/fields beyond creation and deleition,
-   * so we hack this cusotm.  Hopefully this won't be forever...
-   *
-   * At least we can use the CiviCRM DAO stuff to stuff necessary custom data in to the contribution object.
-   * 
-   * At the moment, all custom fields get default values for online contribution EXCEPT for 'Donor Comment'.
-   */
-  $dbs = _queue2civicrm_get_dbs();
-  $dbs->use_civicrm();
-  $query = "SELECT id, table_name FROM civicrm_custom_group WHERE extends='Contribution' && is_active='1';";
-  $dao = CRM_Core_DAO::executeQuery( $query ); // Execute's query using CiviCRM data object stuff
-  while ( $dao->fetch() ) {
-    if ( $dao->name == 'Contribution_Comments' ) {
-      $comment = ( $msg[ 'comment' ] ) ? $msg[ 'comment'] : '';
-      $query = "INSERT INTO {" . $dao->table_name . "} (entity_id, donor_comment) VALUES ( %d, '%s' )";
-      db_query( $query, $contribution_result[ 'id' ], $comment );
-    } else { // if we dont make sure $dao->default_value has some value, Civi breaks when we try to insert
-      $query = "INSERT INTO {" . $dao->table_name . "} (entity_id) VALUES (%d)";
-      db_query( $query, $contribution_result[ 'id' ] );
-    }
-  }
-  $dbs->use_default();
-  if (array_key_exists('is_error', $contribution_result) && $contribution_result['is_error'] != 0){
-	  return false;
-  }
-  return $contribution_result;
+	/**
+	*  Apply custom field defaults.
+	*
+	* Civicrm API v2 does NOT provide methods for custom groups/fields beyond creation and deleition,
+	* so we hack this custom.  Hopefully this won't be forever...
+	*
+	* At least we can use the CiviCRM DAO stuff to stuff necessary custom data in to the contribution object.
+	*
+	* At the moment, all custom fields get default values for online contribution EXCEPT for 'Donor Comment'.
+	*
+	* NOTE: the custom field for "Gift_Information" indicates that check number is stored here.  It is not.
+	*/
+	$dbs = _queue2civicrm_get_dbs();
+	$dbs->use_civicrm();
+	$query = "SELECT id, table_name FROM civicrm_custom_group WHERE extends='Contribution' && is_active='1';";
+	$dao = CRM_Core_DAO::executeQuery( $query ); // Execute's query using CiviCRM data object stuff
+	while ( $dao->fetch() ) {
+		if ( $dao->name == 'Contribution_Comments' ) {
+			$comment = ( $msg[ 'comment' ] ) ? $msg[ 'comment'] : '';
+			$query = "INSERT INTO {" . $dao->table_name . "} (entity_id, donor_comment) VALUES ( %d, '%s' )";
+			db_query( $query, $contribution_result[ 'id' ], $comment );
+		} else { // if we dont make sure $dao->default_value has some value, Civi breaks when we try to insert
+			$query = "INSERT INTO {" . $dao->table_name . "} (entity_id) VALUES (%d)";
+			db_query( $query, $contribution_result[ 'id' ] );
+		}
+	}
+	$dbs->use_default();
+	if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
+		return false;
+	}
+	return $contribution_result;
 }
 
 /**
@@ -501,6 +513,13 @@ function _queue2civicrm_log( $log=array() ) {
   return $result;
 }
 
+/**
+ * @fixme TODO: make the v3 API calls use the wrapper function
+ *
+ * @param $type
+ * @param $name
+ * @return bool
+ */
 function _queue2civicrm_get_civi_id($type, $name) {
 	static $civi_ids = array();
 	$params = array('name' => $name);
