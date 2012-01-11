@@ -305,7 +305,7 @@ function _queue2civicrm_location_prepare_params( $msg, $contact ) {
   
   $params = array(
     'version' => '3.0',
-    'contact_id' => $contact[ 'contact_id' ],
+    'contact_id' => $contact[ 'id' ],
     'address' => $address,
     'email' => $emails
   );
@@ -341,7 +341,7 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
   }
 
   $contribution = array(
-	'contact_id' => $contact[ 'contact_id' ],
+	'contact_id' => $contact[ 'id' ],
 	'total_amount' => $msg['gross'],
 	'contribution_type_id' => $cash_id,
 	'payment_instrument_id' => $gateway_id,
@@ -430,7 +430,7 @@ function _queue2civicrm_tag_insert( $contact ) {
   
   $tag = array(
 	'tag_id' => $review_tag_id,
-	'contact_id' => $contact[ 'contact_id' ]
+	'contact_id' => $contact[ 'id' ]
   );
   $tag_result = &civicrm_entity_tag_add( $tag );
   return $tag_result;
