@@ -152,12 +152,13 @@ function _queue2civicrm_normalize_contrib_amnts( $msg ) {
  * Insert the contact record
  * 
  * Serves as a standard way for message processors to handle contact
- * insertion.
+ * insertion.  By passing a contact id, a contact can be updated.
  * 
  * @param array $msg
+ * @param int $contact_id
  * @return array
  */
-function _queue2civicrm_contact_insert( $msg ) {
+function _queue2civicrm_contact_insert( $msg, $contact_id=NULL ) {
 	// Set defaults for optional fields in the message
 	if ( !array_key_exists( 'contact_type', $msg ) ) {
 		$msg['contact_type'] = "Individual";
@@ -177,6 +178,7 @@ function _queue2civicrm_contact_insert( $msg ) {
   
 	// Create the contact record
 	$contact = array(
+		'id' => $contact_id,
 		'contact_type' => $msg['contact_type'],
 		'first_name' => $msg['first_name'],
 		'middle_name' => $msg['middle_name'],
@@ -195,7 +197,11 @@ function _queue2civicrm_contact_insert( $msg ) {
 	// Attempt to insert the contact
 	$contact_result = civicrm_api( "Contact", "Create", $contact );
 
-	watchdog( 'queue2civicrm', 'Result for adding contact: %contact', array( '%contact' => print_r( $contact_result, true )), WATCHDOG_DEBUG );
+	if ( $contact_id == NULL ){
+		watchdog( 'queue2civicrm', 'Result for adding contact: %contact', array( '%contact' => print_r( $contact_result, true )), WATCHDOG_DEBUG );
+	} else {
+		watchdog( 'queue2civicrm', 'Result for updating contact: %contact', array( '%contact' => print_r( $contact_result, true )), WATCHDOG_DEBUG );
+	}
 
   	if ( array_key_exists( 'is_error', $contact_result ) && $contact_result['is_error'] != 0 ){
 		return false;
@@ -210,32 +216,13 @@ function _queue2civicrm_contact_insert( $msg ) {
  * updates.
  * 
  * @param array $msg
+ * @param int $contact_id
  * @return array
  */
 function _queue2civicrm_contact_update( $msg, $contact_id ) {
-  require_once 'api/v2/Contact.php';
-  
-  // Insert the contact record
-  $contact = array(
-	'contact_id' => $contact_id,
-    'contact_type' => 'Individual',
-	'first_name' => $msg['first_name'],
-	'middle_name' => $msg['middle_name'],
-	'last_name' => $msg['last_name'],
-	'preferred_language' => strtolower(substr($msg['language'], 0, 2)) . '_' . strtoupper(substr($msg['country'], 0, 2))
-  );
-  
-  // Honor the opt-out checkbox, if present
-  if (array_key_exists('optout', $msg)) {
-    $contact['is_opt_out'] = $msg['optout'];
-  }
-  $contact['sort_name'] = trim($contact['last_name'] . ', ' . $contact['first_name'], ' ,');
-  $contact['display_name'] = trim($contact['first_name'] . ' ' . $contact['last_name']);
-  $contact_result = &civicrm_contact_update( $contact );
-  
-  watchdog( 'queue2civicrm', 'Result for updating contact: %contact', array( '%contact' => print_r( $contact_result, true )), WATCHDOG_DEBUG );
-  
-  return $contact_result;
+
+  	return _queue2civicrm_contact_insert( $msg, $contact_id );
+
 }
 
 /**
