@@ -372,6 +372,25 @@ function thank_you_send( $contribution_id, $test=null ) {
 		# the render failed, we cannot continue
 		return -3;
 	}
+
+	// this is an anonymous donation or we don't have an email address, do not send TY
+	if( $rendered['to_address'] == 'nobody@wikimedia.org' ){
+		# despite there being an "update" api function, it does not seem to work for Contributions
+		$params = array(
+			'version' => '3',
+			'id' => $contribution[ 'contribution_id' ],
+			'contribution_id' => $contribution[ 'contribution_id' ],
+			'thankyou_date' => "1970-01-01 00:00:00",
+		);
+		$contribution_result = civicrm_api( "Contribution", "create", array_merge( $contribution, $params ) );
+		if( is_array( $contribution_result ) && array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] == "0" ){
+			# no need to log this success
+			return true;
+		} else {
+			// hmm, well, we really didn't want to send one anyway, so just let it go
+			return true;
+		}
+	}
 	
 	$from = '"' . $rendered['from_name'] . '" <' . $rendered['from_address'] . '>';
 	$to = '"' . $rendered['to_name'] . '" <' . $rendered['to_address'] . '>';
