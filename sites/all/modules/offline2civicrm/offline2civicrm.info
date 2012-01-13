@@ -1,0 +1,6 @@
+name = Offline Contribution to CiviCRM
+description = Imports offline contributions from a CSV
+core = 6.x
+dependencies[] = queue2civicrm
+dependencies[] = civicrm
+package = offline2civicrm

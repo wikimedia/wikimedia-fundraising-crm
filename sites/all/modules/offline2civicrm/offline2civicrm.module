@@ -1,0 +1,42 @@
+<?php
+
+require_once 'offline2civicrm.common.inc';
+
+/**
+ * Implementation of hook_menu().
+ */
+function offline2civicrm_menu() {
+  $items = array();
+  
+  $items['admin/settings/offline2civicrm'] = array(
+    'title' => 'Offline to CiviCRM',
+    'description' => t('Configure offline import interface.'),
+    'access arguments' => array('administer offline2civicrm'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('offline2civicrm_settings'),
+  );
+
+  $items['admin/settings/offline2civicrm/configure'] = array(
+    'title' => 'Configure',
+    'access arguments' => array('administer offline2civicrm'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function offline2civicrm_perm() {
+  return array('administer offline2civicrm');
+}
+
+/**
+ * Callback for menu path "admin/settings/offline2civicrm".
+ */
+function offline2civicrm_settings() {
+  $form = array();
+  
+  return system_settings_form($form);
+}
