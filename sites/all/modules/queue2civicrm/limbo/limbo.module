@@ -76,8 +76,6 @@ function limbo_batch_process() {
   watchdog('limbo', 'Executing: limbo_batch_process');
   set_time_limit(10);
 
-  watchdog('limbo', 'No contributions processed.');
-
   $processed = 0;
   
   watchdog('limbo', 'Attempting to process up to ' . variable_get('limbo_batch', 0) . ' contribution(s).');
