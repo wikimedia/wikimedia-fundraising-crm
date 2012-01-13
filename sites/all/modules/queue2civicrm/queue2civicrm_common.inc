@@ -193,6 +193,14 @@ function _queue2civicrm_contact_insert( $msg, $contact_id=NULL ) {
 		// API required fields
 		'version' => '3'
 	);
+	if ( strtolower( $msg['contact_type'] ) == "organization" ){
+		unset( $contact['first_name'] );
+		unset( $contact['middle_name'] );
+		unset( $contact['last_name'] );
+
+		$contact['sort_name'] = $msg['organization_name'];
+		$contact['display_name'] = $msg['organization_name'];
+	}
 
 	// Attempt to insert the contact
 	$contact_result = civicrm_api( "Contact", "Create", $contact );
@@ -312,10 +320,8 @@ function _queue2civicrm_location_prepare_params( $msg, $contact ) {
  * @return array
  */
 function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
-	require_once 'api/v2/Contribute.php';
-
 	$trxn_id = strtoupper( $msg[ 'gateway' ] . ' ' . $msg[ 'gateway_txn_id' ] );
-	if ( $recur_id || $msg['recurring'] ) {
+	if ( $recur_id || ( array_key_exists( "recurring", $msg ) && $msg['recurring'] ) ) {
 		$trxn_id = 'RECURRING ' . $trxn_id;
 	}
 
@@ -326,7 +332,7 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
 		// default to the old, hard-coded, value
 		$msg['payment_method'] = 'Gateway';
 	}
-	$payment_instrument_id = _queue2civicrm_get_civi_id( 'payment_instrument_id', 'Gateway' );
+	$payment_instrument_id = _queue2civicrm_get_civi_id( 'payment_instrument_id', $msg['payment_method'] );
 
 	if ( ( $contribution_id == false ) || ( $payment_instrument_id == false ) ){
 		//the errors have already been thrown in _queue2civicrm_get_civi_id. Just leave.
@@ -334,6 +340,9 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
 	}
 	if ( !array_key_exists( 'check_number', $msg ) ){
 		$msg['check_number'] = NULL;
+	}
+	if ( !array_key_exists( 'letter_code', $msg ) ){
+		$msg['letter_code'] = NULL;
 	}
 
 	$contribution = array(
@@ -348,12 +357,16 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
 		'currency' => 'USD',
 		'source' => $msg['original_currency'] . ' ' . $msg['original_gross'],
 		'contribution_recur_id' => $recur_id,
-		'check_number' => $msg['check_number']
+		'check_number' => $msg['check_number'],
+		'letter_code' => $msg['letter_code'],
+
+		// API required fields
+		'version' => '3'
 	);
 
 	watchdog( 'queue2civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE));
 
-	$contribution_result = civicrm_contribution_add( $contribution );
+	$contribution_result = civicrm_api( "Contribution", "Create", $contribution );
 
 	watchdog( 'queue2civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE));
   
@@ -371,13 +384,17 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
 	*/
 	$dbs = _queue2civicrm_get_dbs();
 	$dbs->use_civicrm();
-	$query = "SELECT id, table_name FROM civicrm_custom_group WHERE extends='Contribution' && is_active='1';";
+	$query = "SELECT id, name, table_name FROM civicrm_custom_group WHERE extends='Contribution' && is_active='1';";
 	$dao = CRM_Core_DAO::executeQuery( $query ); // Execute's query using CiviCRM data object stuff
 	while ( $dao->fetch() ) {
 		if ( $dao->name == 'Contribution_Comments' ) {
 			$comment = ( $msg[ 'comment' ] ) ? $msg[ 'comment'] : '';
 			$query = "INSERT INTO {" . $dao->table_name . "} (entity_id, donor_comment) VALUES ( %d, '%s' )";
 			db_query( $query, $contribution_result[ 'id' ], $comment );
+		} elseif ( $dao->name == 'Gift_Data' ) {
+			$lettercode = ( $msg[ 'letter_code' ] ) ? $msg[ 'letter_code'] : NULL;
+			$query = "INSERT INTO {" . $dao->table_name . "} (entity_id, letter_code) VALUES ( %d, '%s' )";
+			db_query( $query, $contribution_result[ 'id' ], $lettercode );
 		} else { // if we dont make sure $dao->default_value has some value, Civi breaks when we try to insert
 			$query = "INSERT INTO {" . $dao->table_name . "} (entity_id) VALUES (%d)";
 			db_query( $query, $contribution_result[ 'id' ] );
@@ -555,11 +572,13 @@ function _queue2civicrm_get_civi_id($type, $name) {
 			break;
 		case 'payment_instrument_id':
 			require_once 'api/v3/OptionValue.php';
-			$group_id = civicrm_api3_option_value_get(array('option_group_name' => 'payment_instrument', 'label'=> $name, 'version' => '3'));
+			$group_id = civicrm_api3_option_value_get(
+				array('option_group_name' => 'payment_instrument', 'label'=> $name, 'version' => '3'));
 
+			print_r($group_id);
 			if($group_id['count'] == 1){
-				$civi_ids[$type][$name] = $group_id['id'];
-				watchdog('queue2civicrm', "Found id for payment_instrument $name :" . $civi_ids[$type][$name]);
+				$civi_ids[$type][$name] = $group_id['values'][strval($group_id['id'])]['value'];
+				watchdog('queue2civicrm', "Found value for payment_instrument $name :" . $civi_ids[$type][$name]);
 				return $civi_ids[$type][$name];
 			} else {
 				watchdog('queue2civicrm', "Payment Instrument '$name' not found! :", WATCHDOG_ERROR);
