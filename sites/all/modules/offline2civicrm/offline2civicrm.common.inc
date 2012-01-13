@@ -23,7 +23,7 @@ function get_payment_instrument( $name ){
 			throw new Exception();
 		}
 	} else {
-		watchdog( 'offline2civicrm', "API Error while retrieving payment instrument: " . print_r( $payment_instrument ), array(), WATCHDOG_ERROR );
+		watchdog( 'offline2civicrm', "API Error while retrieving payment instrument: " . print_r( $payment_instrument, true ), array(), WATCHDOG_ERROR );
 		throw new Exception();
 	}
 

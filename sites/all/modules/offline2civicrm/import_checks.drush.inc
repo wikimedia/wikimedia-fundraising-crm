@@ -134,13 +134,13 @@ function drush_import_checks() {
 			}
 
 			if ( sendSTOMP( $msg ) ){
-				watchdog('offline2civicrm', 'Import checks: Message sent to stomp successfully: ' . print_r( $msg ), array(), WATCHDOG_INFO);
+				watchdog('offline2civicrm', 'Import checks: Message sent to stomp successfully: ' . print_r( $msg, true ), array(), WATCHDOG_INFO);
 			} else {
-				watchdog('offline2civicrm', 'Import checks: Sending message to stomp failed: ' . print_r( $msg ), array(), WATCHDOG_ERROR);
+				watchdog('offline2civicrm', 'Import checks: Sending message to stomp failed: ' . print_r( $msg, true ), array(), WATCHDOG_ERROR);
 			}
 		}
 	} catch ( Exception $e ){
-		watchdog('offline2civicrm', 'Import checks: Exception thrown during check processing: ' . print_r( $e ), array(), WATCHDOG_ERROR);
+		watchdog('offline2civicrm', 'Import checks: Exception thrown during check processing: ' . print_r( $e, true ), array(), WATCHDOG_ERROR);
 	}
 }
 
