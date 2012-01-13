@@ -55,7 +55,7 @@ function drush_import_checks() {
 		$filename = $args[1];
 
 		if( ( $file = fopen( $filename, 'r' )) === FALSE ){
-			watchdog('queue2civicrm', 'Import checks: Could not open file for reading: ' . $filename, array(), WATCHDOG_ERROR);
+			watchdog('offline2civicrm', 'Import checks: Could not open file for reading: ' . $filename, array(), WATCHDOG_ERROR);
 		}
 
 		$headers = _load_headers( fgetcsv( $file, 0, ',', '"', '\\') );
@@ -126,21 +126,21 @@ function drush_import_checks() {
 			$msg['gateway_txn_id'] = md5( $msg['check_number'] . $name_salt );
 
 			// check to see if we have already processed this check
-			if ( _check_existing( $msg ) ){
+			if ( $existing = _check_existing( $msg ) ){
 				// if so, move on
+				watchdog('offline2civicrm', 'Contribution matches existing contribution (id: ' . $existing['id'] .
+					') Skipping', array(), WATCHDOG_INFO);
 				continue;
 			}
 
 			if ( sendSTOMP( $msg ) ){
-				watchdog('queue2civicrm', 'Import checks: Message sent to stomp successfully', array(), WATCHDOG_INFO);
+				watchdog('offline2civicrm', 'Import checks: Message sent to stomp successfully: ' . print_r( $msg ), array(), WATCHDOG_INFO);
 			} else {
-				watchdog('queue2civicrm', 'Import checks: Sending message to stomp failed', array(), WATCHDOG_ERROR);
+				watchdog('offline2civicrm', 'Import checks: Sending message to stomp failed: ' . print_r( $msg ), array(), WATCHDOG_ERROR);
 			}
-
-			return;
 		}
 	} catch ( Exception $e ){
-		watchdog('queue2civicrm', 'Import checks: Exception thrown during check processing: ' . print_r( $e ), array(), WATCHDOG_ERROR);
+		watchdog('offline2civicrm', 'Import checks: Exception thrown during check processing: ' . print_r( $e ), array(), WATCHDOG_ERROR);
 	}
 }
 
@@ -158,7 +158,7 @@ function _load_headers( $row ){
 	foreach( $row as $i => $k ) {
 		$header_keys[trim( $k, '"' )] = $i;
 	}
-	watchdog('queue2civicrm', 'Import checks: Column headers loaded from file', array(), WATCHDOG_INFO);
+	watchdog('offline2civicrm', 'Import checks: Column headers loaded from file', array(), WATCHDOG_INFO);
 
 	return $header_keys;
 }
@@ -186,7 +186,6 @@ function _check_existing( $msg ){
 		);
 		$dbs->use_default();
 
-		print "EXISTING FOUND";
 		return $contribution;
 	}
 	$dbs->use_default();
