@@ -574,8 +574,6 @@ function _queue2civicrm_get_civi_id($type, $name) {
 			require_once 'api/v3/OptionValue.php';
 			$group_id = civicrm_api3_option_value_get(
 				array('option_group_name' => 'payment_instrument', 'label'=> $name, 'version' => '3'));
-
-			print_r($group_id);
 			if($group_id['count'] == 1){
 				$civi_ids[$type][$name] = $group_id['values'][strval($group_id['id'])]['value'];
 				watchdog('queue2civicrm', "Found value for payment_instrument $name :" . $civi_ids[$type][$name]);
@@ -594,7 +592,6 @@ function _queue2civicrm_get_civi_id($type, $name) {
 				watchdog('queue2civicrm', "Found id for Entity Tag $name :" . $civi_ids[$type][$name]);
 				return $civi_ids[$type][$name];
 			} else {
-				echo print_r($tag_id, true);
 				watchdog('queue2civicrm', "Entity Tag '$name' not found! :", WATCHDOG_ERROR);
 				drush_set_error("CIVI_CONFIG", "Entity Tag '$name' not found! Please add it and retry.");
 				return false;
