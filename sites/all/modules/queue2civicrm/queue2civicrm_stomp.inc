@@ -16,9 +16,6 @@ function sendSTOMP( $transaction ) {
 	$stompServer = variable_get('queue2civicrm_url', 'tcp://localhost:61613');
 	$stompQueue = variable_get('queue2civicrm_subscription', '/queue/test');
 
-	print $stompServer . "\n";
-	print $stompQueue . "\n";
-
 	$message = json_encode( createQueueMessage( $transaction ) );
 
 	// make a connection
