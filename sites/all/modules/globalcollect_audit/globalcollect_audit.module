@@ -1,0 +1,490 @@
+<?php 
+
+define( 'CONTRIBUTION_AUDIT_WR1_PARSER_DIR', '/usr/local/src/Wr1Parser/' );
+define( 'CONTRIBUTION_AUDIT_WR1_FILES_DIR', '/usr/local/src/Wr1_files/' );
+//require_once( 'somelibrary.php' );
+
+/**
+ * Implementation of hook_menu()
+ */
+function globalcollect_audit_menu() {
+  $items = array();
+  
+  $items['admin/settings/contribution_audit/globalcollect_audit'] = array(
+    'title' => 'Globalcollect Audit Configuration',
+    'description' => t('Configure globalcollect audit settings.'),
+    'access arguments' => array('administer contribution_audit'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'globalcollect_audit_settings' ),
+    'type' => MENU_LOCAL_TASK
+  );
+  
+  return $items;
+}
+
+/**
+ * Callback for menu path "admin/settings/wmf_owa".
+ */
+function globalcollect_audit_settings() {
+  $form['globalcollect_audit_wr1_parser_dir']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Path to directory containing WR1 parser classes' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'globalcollect_audit_wr1_parser_dir', CONTRIBUTION_AUDIT_WR1_PARSER_DIR ),
+  );
+  $form['globalcollect_audit_wr1_files_dir']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Path to directory containing WR1 files' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR ),
+  );
+  return system_settings_form( $form );
+}
+
+
+/**
+ * Find Globalcollect tranactions not recorded in civicrm_contribution
+ * Yes, this is real.
+ */
+function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
+  $missing_trxns = array();
+  
+  $dbs = _queue2civicrm_get_dbs();
+  $dbs->use_civicrm();
+
+  // check for matching ids - if it doesnt match, it's missing
+  foreach ( array_keys( $transactions ) as $order_id ) {
+    $query = "SELECT {trxn_id} FROM civicrm_contribution WHERE trxn_id LIKE 'GLOBALCOLLECT %s'";
+    $result = db_query( $query, $order_id . "%", $order_id . "%" );
+    if ( !$result->num_rows ) {
+      $missing_trxns[$order_id]  = $transactions[$order_id];
+      watchdog( 'globalcollect_audit', 'Missing Globalcollect: @tx_id @pm, @pc', array( 
+        "@tx_id" => $order_id,
+        "@pm" => $transactions[$order_id]['Payment-method'],
+        "@pc" => $transactions[$order_id]['Payment-currency'] ), WATCHDOG_DEBUG );  
+    } else {
+      watchdog( 'globalcollect_audit', 'Found Payflow: @id', array( '@id' => $order_id ), WATCHDOG_DEBUG );
+    } 
+  }
+
+  $dbs->use_default();
+  return $missing_trxns;
+}
+
+
+
+function globalcollect_audit_parse_all_wr1(){
+	
+	//look at the wr1 files dir, and load in everything that's a "*.wr?". 
+	//and by that I mean, fire off the parser at everything that's in that format. 
+	$parser_directory = variable_get( 'globalcollect_audit_wr1_parser_dir', CONTRIBUTION_AUDIT_WR1_PARSER_DIR );
+	$files_directory = variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR );
+	require_once( $parser_directory . 'Wr1DataRecord.php' );
+	
+	$wr1_files = globalcollect_audit_get_all_wr1_files();
+	$wr1_data = array();
+	
+	//do we really want to batch these things? Memory...
+	//and if we don't, how do we handle going some distance through a file and stopping? 
+	//Maybe small batches. 
+	
+	foreach ( $wr1_files as $fullpath ){
+		$wr1_parser = new Wr1DataFileParser( $fullpath );
+		foreach( $wr1_parser->getRecordIterator() as $record ) {
+			switch ( $record['Payment-method'] ){
+				case 'CC':
+					$wr1_data[$record['Order-number']]  = $record;
+					break;
+				case 'BA':
+				case 'OB':
+					$wr1_data[$record['Additional-reference']]  = $record;
+					break;
+				default:
+					echo "\nNo recognized order id. Please rectify in " . __FUNCTION__ .  print_r( $record, true );
+					die();
+			}
+			
+		} 
+	}
+	
+	$missing = globalcollect_audit_find_missing_gc_trxns( $wr1_data );
+	
+	echo count( $missing ) . " missing records from a possible " . count( $wr1_data ) . " total records found.\n";
+	
+	//now grep in the log... for the spot checking, yeah? This is only temporary. 
+	$found = 0;
+	$failed = 0;
+	$found_info = array();
+	$failed_info = array();
+	foreach ( $missing as $order_id => $data ){
+		switch ( $data['Payment-method'] ){
+			case 'CC':
+				$date = $data['Date-authorised'];
+				break;
+			case 'BA':
+			case 'OB':
+				$date = $data['Date-due'];
+				break;
+			default:
+				echo "\nNo recognized date field. for payment method " . $data['Payment-method'] . ". Please rectify in " . __FUNCTION__ .  print_r( $data, true );
+				die();
+		}
+		
+		$cmd = "grep '<ORDERID>$order_id</ORDERID>' /home/khorn/logs/globalcollect/20111221_iop.log";
+		
+		echo $cmd . "\n";
+		$ret = array();
+		exec( $cmd, $ret, $errorlevel );
+		$proof = array();
+		
+		
+		
+		if ( count( $ret ) > 0 ){
+			echo "Found $order_id. Date: $date\n";
+			echo print_r( $ret, true );
+			++$found;
+			
+			if ( ! array_key_exists($data['Payment-method'], $found_info) || !array_key_exists( $date, $found_info[$data['Payment-method']] )){
+				$found_info[$data['Payment-method']][$date] = 0;
+			}
+			++$found_info[$data['Payment-method']][$date];
+			
+			//make sure $ret has both the raw XML line with the contribution tracking id, and the nice XML bizness we can parse. 
+			print_r( $ret, true );
+			
+			$xml = null;
+			$contribution_id = null;
+			foreach ( $ret as $line ){
+				if ( is_null( $xml ) ){
+					//look for the raw xml. 
+					if ( strpos( $line, 'RETURNED FROM CURL' ) ){
+						$xmlstart = strpos( $line, '<XML>' );
+						$xmlend = strpos( $line, '</XML>' ) + 6;
+						$xml = substr($line, $xmlstart, $xmlend - $xmlstart);
+					}
+				}
+				if ( is_null( $contribution_id ) ){
+					//get the contribution tracking id. 
+					$ctid_end = strpos( $line, 'Raw XML Response' );
+					if ( $ctid_end > 0 ){
+						$ctid_start = strpos( $line, '_gateway:' ) + 9;
+						$ctid = substr($line, $ctid_start, $ctid_end - $ctid_start);
+						$contribution_id = trim( $ctid, ' :' );
+					}
+				}
+			}
+			
+			if ( is_null( $contribution_id ) || is_null( $xml ) ){
+				echo "OH NOES. Couldn't find enough info in this log! Skip me for now?" . print_r( $data, true );
+			} else {
+				//go on with your bad self
+				echo "$order_id: '$contribution_id'. XML: \n$xml\n";
+				//now parse the xml...
+				$xmlobj = new DomDocument;
+				$xmlobj->loadXML($xml);
+				
+				$parent_nodes = array(
+					'ORDER',
+					'PAYMENT'
+				);
+				
+				$donor_data = array();
+				
+				foreach ( $parent_nodes as $parent_node ){
+					foreach ( $xmlobj->getElementsByTagName( $parent_node ) as $node ) {
+						foreach ( $node->childNodes as $childnode ) {
+							if ( trim( $childnode->nodeValue ) != '' ) {
+								$donor_data[$childnode->nodeName] = $childnode->nodeValue;
+							}
+						}
+					}
+				}
+
+				echo print_r( $donor_data, true );
+				globalcollect_audit_format_data_for_stomp( '1', $data, $donor_data );
+			}
+			
+		} else {
+			echo "Did not find $order_id. Shoo. Date: $date\n";
+			++$failed;
+			
+			if ( ! array_key_exists($data['Payment-method'], $failed_info) || !array_key_exists( $date, $failed_info[$data['Payment-method']] )){
+				$failed_info[$data['Payment-method']][$date] = 0;
+			}
+			++$failed_info[$data['Payment-method']][$date];
+		}
+	}
+	echo "Found $found, failed on $failed.\n";
+	echo "\nFound Stats:" . print_r( $found_info, true );
+	echo "\nFailed Stats:" . print_r( $failed_info, true );
+	
+}
+
+
+function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $wr1, $donor_data ){
+	
+	//you should probably make sure the data between the two sources match up before we do anything else
+	$unstaged_amount = 0;
+	if ( (int)$wr1['Payment-amount'] !== (int)$donor_data['AMOUNT']  ){
+		watchdog( 'globalcollect_audit', "$contribution_tracking_id Payment amount mismatch! Aborting. ", WATCHDOG_ERROR );
+		return null;
+	} else {
+		$unstaged_amount = (int)$wr1['Payment-amount']/100; //it's a GC thing.
+	}
+	
+	if ( $wr1['Transaction-currency'] !== $donor_data['CURRENCYCODE']  ){
+		watchdog( 'globalcollect_audit', "$contribution_tracking_id Currency code mismatch! Aborting. ", WATCHDOG_ERROR );
+		return null;
+	}
+	
+	$recurring = false;
+	if ( array_key_exists( 'ORDERTYPE', $donor_data ) && $donor_data['ORDERTYPE'] = '4' ){
+		$recurring = true;
+	}
+	
+	//getting the payment type according to us. Sneaky.
+	$contribution_tracking = globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id );
+	$payment_method = explode( '.', $contribution_tracking['utm_source'] );
+	$payment_method = $payment_method[2];
+
+	$payment_submethod = false;
+	if ( array_key_exists( 'PAYMENTPRODUCTID', $donor_data ) ){
+		$payment_submethod = globalcollect_audit_get_payment_submethod($donor_data['PAYMENTPRODUCTID']);
+	}
+	
+	//start it off with the stuff that's always there...
+	$stomp_data = array(
+		'contribution_tracking_id' => $contribution_tracking_id,
+		'gateway' => 'globalcollect',
+		'amount' => $unstaged_amount,
+		'payment_method' => $payment_method,
+	);
+	
+	if ( $payment_submethod ){
+		$stomp_data['payment_submethod'] = 1;
+	}
+	
+	if( $recurring ){
+		$stomp_data['recurring'] = 1;
+	}
+	
+	
+	//now, we have three sources for this mess: $wr1, $donor_data, and $contribution_tracking. Map 'em.
+	$stomp_field_map = array(
+		'optout' => array( 'contribution_tracking', 'optout' ),
+		'anonymous' => array( 'contribution_tracking', 'anonymous' ),
+		'comment' => array( 'contribution_tracking', 'note' ), //I think.
+		'size',
+		'premium_language',
+		'utm_source' => array( 'contribution_tracking', 'utm_source' ),
+		'utm_medium' => array( 'contribution_tracking', 'utm_medium' ),
+		'utm_campaign' => array( 'contribution_tracking', 'utm_campaign' ),
+		'language' => array( 'contribution_tracking', 'language' ), //probably the best one to use. 
+		'referrer' => array( 'contribution_tracking', 'referrer' ),
+		'email' => array( 'donor_data', 'EMAIL' ),
+		'fname' => array( 'donor_data', 'FIRSTNAME' ),
+		'mname',
+		'lname' => array( 'donor_data', 'SURNAME' ),
+		'street' => array( 'donor_data', 'STREET' ),
+		'city' => array( 'donor_data', 'CITY' ),
+		'state' => array( 'donor_data', 'STATE' ),
+		'country' => array( 'donor_data', 'COUNTRYCODE' ),
+		'zip' => array( 'donor_data', 'ZIP' ),
+		'fname2' => array( 'donor_data', 'FIRSTNAME' ),
+		'lname2' => array( 'donor_data', 'SURNAME' ),
+		'street2' => array( 'donor_data', 'STREET' ),
+		'city2' => array( 'donor_data', 'CITY' ),
+		'state2' => array( 'donor_data', 'STATE' ),
+		'country2' => array( 'donor_data', 'COUNTRYCODE' ),
+		'zip2' => array( 'donor_data', 'ZIP' ),
+		'gateway_txn_id' => array( 'donor_data', 'ORDERID' ),
+		'response', //? Maybe some dummy value for "found it in the audit phase"
+		'currency_code' => array( 'wr1', 'Transaction-currency' ),
+		'date' => array( 'contribution_tracking', 'ts' ), //double-check how the dates work
+	);
+	
+	foreach ( $stomp_field_map as $key => $location ){
+		if( is_array( $location ) ){
+			$source = $location[0];
+			$source_key = $location[1];
+			if ( array_key_exists( $source_key, ${$source} ) ){
+				$stomp_data[$key] = ${$source}[$source_key];
+			} else {
+				$stomp_data[$key] = '';
+			}
+		} else {
+			$stomp_data[$location] = '';
+		}
+	}
+	
+	echo print_r($stomp_data, true);
+	die();
+
+
+}
+
+function globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id ){  
+	$dbs = _queue2civicrm_get_dbs();
+	$dbs->use_default();
+
+	$query = "SELECT * FROM contribution_tracking WHERE id = %d";
+	$result = db_query( $query, $contribution_tracking_id );
+	if ( !$result->num_rows ) {
+		//OH NOES! Couldn't find the contribution_tracking_id! Weird. 
+		watchdog( 'globalcollect_audit', 'Missing Contribution Tracking data: @id ', array( 
+		"@id" => $contribution_tracking_id ), WATCHDOG_DEBUG );  
+	} else {
+		watchdog( 'globalcollect_audit', 'Found Contribution: @id', array( '@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
+	} 
+	
+	$result = db_fetch_array( $result );
+	
+	return $result;
+}
+
+
+
+function globalcollect_audit_get_all_wr1_files(){
+	$files_directory = variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR );
+	//foreach file in the directory, if it's a '*.wr?', add it to the list of files we could open.
+	$files = array();
+	if ( $handle = opendir( $files_directory ) ){
+		while ( ( $file = readdir( $handle ) ) !== false ){
+			if ( strpos( $file, '.wr' ) ){ //these can also be '.wr2', '.wr3', etc. 
+				$files[] = $files_directory . $file;
+			}
+		}
+	}
+	closedir($handle);
+	return $files;
+	
+}
+
+function globalcollect_audit_get_payment_submethod( $payment_product ){
+	//get the payment product as a number. Then, look it up. 
+	$map = array(
+		11 => array(
+			'code' => 'bt',
+			'group' => 'bt',
+		),
+		1 => array(
+			'code' => 'visa',
+			'group' => 'cc',
+		),
+		3 => array(
+			'code' => 'mc',
+			'group' => 'cc',
+		),
+		2 => array(
+			'code' => 'amex',
+			'group' => 'cc',
+		),
+		117 => array(
+			'code' => 'maestro',
+			'group' => 'cc',
+		),
+		118 => array(
+			'code' => 'solo',
+			'group' => 'cc',
+		),
+		124 => array(
+			'code' => 'laser',
+			'group' => 'cc',
+		),
+		125 => array(
+			'code' => 'jcb',
+			'group' => 'cc',
+		),
+		128 => array(
+			'code' => 'discover',
+			'group' => 'cc',
+		),
+		130 => array(
+			'code' => 'cb',
+			'group' => 'cc',
+		),
+		713 => array(
+			'code' => 'dd_at',
+			'group' => 'dd',
+		),
+		716 => array(
+			'code' => 'dd_be',
+			'group' => 'dd',
+		),
+		717 => array(
+			'code' => 'dd_ch',
+			'group' => 'dd',
+		),
+		712 => array(
+			'code' => 'dd_de',
+			'group' => 'dd',
+		),
+		719 => array(
+			'code' => 'dd_es',
+			'group' => 'dd',
+		),
+		714 => array(
+			'code' => 'dd_fr',
+			'group' => 'dd',
+		),
+		715 => array(
+			'code' => 'dd_gb',
+			'group' => 'dd',
+		),
+		718 => array(
+			'code' => 'dd_it',
+			'group' => 'dd',
+		),
+		711 => array(
+			'code' => 'dd_nl',
+			'group' => 'dd',
+		),
+		840 => array(
+			'code' => 'ew_paypal',
+			'group' => 'ew',
+		),
+		841 => array(
+			'code' => 'ew_webmoney',
+			'group' => 'ew',
+		),
+		843 => array(
+			'code' => 'ew_moneybookers',
+			'group' => 'ew',
+		),
+		845 => array(
+			'code' => 'ew_cashu',
+			'group' => 'ew',
+		),
+		500 => array(
+			'code' => 'bpay',
+			'group' => 'obt',
+		),
+		805 => array(
+			'code' => 'rtbt_nordea_sweden',
+			'group' => 'rtbt',
+		),
+		809 => array(
+			'code' => 'rtbt_ideal',
+			'group' => 'rtbt',
+		),
+		810 => array(
+			'code' => 'rtbt_enets',
+			'group' => 'rtbt',
+		),
+		836 => array(
+			'code' => 'rtbt_sofortuberweisung',
+			'group' => 'rtbt',
+		),
+		856 => array(
+			'code' => 'rtbt_eps',
+			'group' => 'rtbt',
+		),
+		1503 => array(
+			'code' => 'cash_boleto',
+			'group' => 'cash',
+		),
+	);
+	
+	return $map[$payment_product]['code'];
+
+}
