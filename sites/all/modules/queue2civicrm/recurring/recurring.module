@@ -258,7 +258,7 @@ function recurring_import_subscr_payment( $msg ) {
   //dsm($contribution);
   watchdog('queue2civicrm', 'Contribution:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');  
 
-  $contact[ 'contact_id' ] = $recur_record->contact_id;
+  $contact[ 'id' ] = $recur_record->contact_id;
 
   //insert the contribution
   $contribution = _queue2civicrm_contribution_insert( $msg, $contact, $recur_record->id );
@@ -278,7 +278,7 @@ function recurring_import_subscr_payment( $msg ) {
     _queue2civicrm_update_contribution_tracking( $msg, $contribution );
     
     // update the contact
-    $contact = _queue2civicrm_contact_update( $msg, $contact[ 'contact_id' ] );
+    $contact = _queue2civicrm_contact_update( $msg, $contact[ 'id' ] );
   
     // Insert the location record
     $location = _queue2civicrm_location_insert( $msg, $contact );
@@ -384,7 +384,7 @@ function recurring_import_subscr_signup( $msg ) {
   $queue2civicrm_dbs = _queue2civicrm_get_dbs();
   $queue2civicrm_dbs->use_civicrm();
   $result = db_query( $query, 
-    $contact[ 'contact_id' ], 
+    $contact[ 'id' ],
     $msg[ 'amount' ],
     $msg[ 'frequency_unit' ],
     $msg[ 'frequency_interval' ],
@@ -405,7 +405,7 @@ function recurring_import_subscr_signup( $msg ) {
 }
 
 /**
- * Process a subscriber cancelation
+ * Process a subscriber cancellation
  * 
  * @param array $msg
  * @return int
@@ -469,7 +469,7 @@ function recurring_import_subscr_eot( $msg ) {
 /**
  * Process a subscription modification
  * 
- * NOTE: at the moment, we are not acceptiong modification messages, so this is currently
+ * NOTE: at the moment, we are not accepting modification messages, so this is currently
  * unused.
  * 
  * @param array $msg
