@@ -164,6 +164,7 @@ function _queue2civicrm_contact_insert( $msg, $contact_id=NULL ) {
 		$msg['contact_type'] = "Individual";
 	} elseif ( $msg['contact_type'] != "Individual" && $msg['contact_type'] != "Organization" ) {
 		// looks like an unsupported type was sent, revert to default
+		watchdog( 'queue2civicrm', 'Non-supported contact_type received: %msg', array( '%msg' => print_r( $msg, true )), WATCHDOG_INFO );
 		$msg['contact_type'] = "Individual";
 	}
 
