@@ -111,8 +111,14 @@ function createQueueMessage( $msg ) {
 	$msg['country_2'] = $msg['country'];
 	$msg['postal_code_2'] = $msg['postal_code'];
 
-	$msg['gross'] = $msg['original_gross'];
-	$msg['net'] = $msg['original_gross'];
+	//if these two are the unfilled default value, assign them the value of the required 'gross' field.
+	if ( $msg['original_gross'] === $message_defaults['original_gross'] ){
+		$msg['original_gross'] = $msg['gross'];
+	}
+	
+	if ( $msg['net'] === $message_defaults['net'] ){
+		$msg['net'] = $msg['gross'];
+	}
 
 	// optional key, but one that can cause issues if not set properly
 	if ( !$msg['recurring'] ) {
