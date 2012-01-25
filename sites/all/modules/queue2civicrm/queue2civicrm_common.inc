@@ -69,20 +69,22 @@ function _queue2civicrm_normalize_msg( $msg ) {
 		$msg = json_decode( $msg->body, true );
 	}
 
+	// check for payment method and add a default for legacy support if missing
+	// messages will still fail if payment_method exists but is not supported
+	if ( !array_key_exists( 'payment_method', $msg ) ){
+		$msg['payment_method'] = "Gateway";
+	}
+
 	// if we're missing a contrib id, insert new record to the table
 	// this can happen if a user somehow makes a trxn from outside the normal workflow
 	// checks are ignored as they were completely offline
 	if ( !isset( $msg[ 'contribution_tracking_id' ] ) ) {
-		if ( !array_key_exists( 'payment_method', $msg ) || strtoupper( $msg['payment_method'] ) != "CHECK" ) {
-			if ( !array_key_exists( 'payment_method', $msg ) ){
-				$msg['payment_method'] = "OMGWTFBBQ";
-			}
+		if ( array_key_exists( 'payment_method', $msg ) && strtoupper( $msg['payment_method'] ) != "CHECK" ) {
 
 			watchdog( 'queue2civicrm', 'Contribution missing contribution_tracking_id', array(), WATCHDOG_DEBUG );
 			//@fixme: For the regular transactions, this has been moved to the staging function. This needs to happen in recurring also, and then it can be removed here.
 			$anonymous = ( array_key_exists( 'anonymous', $msg) && $msg['anonymous'] == true && strtoupper( $msg['anonymous'] ) != "FALSE" ) ? 1 : 0;
 			$optout = ( array_key_exists( 'optout', $msg ) && $msg['optout'] == true && strtoupper( $msg['optout'] ) != "FALSE" ) ? 1 : 0;
-
 
 			$contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( '..' . $msg['payment_method'], 'civicrm', date('YmdHis', (int) $msg[ 'date' ] ), null, $optout, $anonymous ); //ACK! this should not be handled this way! should be dynamic!
 			watchdog( 'queue2civicrm', 'Newly inserted contribution tracking id: @id', array( '@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
@@ -581,7 +583,7 @@ function _queue2civicrm_get_civi_id($type, $name) {
 				return $civi_ids[$type][$name];
 			} else {
 				watchdog('queue2civicrm', "Payment Instrument '$name' not found! :", WATCHDOG_ERROR);
-				drush_set_error("CIVI_CONFIG", "Payment Instrument '$name' not found! Please add it and retry.");
+				drush_set_error("CIVI_CONFIG", "Payment Instrument (from payment_method in msg) '$name' not found in CiviCRM! Please add it and retry.");
 				return false;
 			}
 			break;
