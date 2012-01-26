@@ -68,12 +68,10 @@ function _queue2civicrm_normalize_msg( $msg ) {
 	if ( !is_array( $msg ) ) {
 		$msg = json_decode( $msg->body, true );
 	}
-
-	// check for payment method and add a default for legacy support if missing
-	// messages will still fail if payment_method exists but is not supported
-	if ( !array_key_exists( 'payment_method', $msg ) ){
-		$msg['payment_method'] = "Gateway";
-	}
+	
+	//handle the payment instrument without altering the original message
+	//(just in case any downstream logic needs to switch on the raw data)
+	$msg['payment_instrument'] = _queue2civicrm_get_payment_instrument( $msg );
 
 	// if we're missing a contrib id, insert new record to the table
 	// this can happen if a user somehow makes a trxn from outside the normal workflow
@@ -331,11 +329,10 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
 	// Insert the contribution record
 	$contribution_id = _queue2civicrm_get_civi_id( 'contribution_type_id', 'cash' );
 
-	if ( !array_key_exists( "payment_method", $msg ) ){
-		// default to the old, hard-coded, value
-		$msg['payment_method'] = 'Gateway';
+	if ( !array_key_exists( "payment_instrument", $msg ) ){
+		$msg['payment_instrument'] = _queue2civicrm_get_payment_instrument( $msg );
 	}
-	$payment_instrument_id = _queue2civicrm_get_civi_id( 'payment_instrument_id', $msg['payment_method'] );
+	$payment_instrument_id = _queue2civicrm_get_civi_id( 'payment_instrument_id', $msg['payment_instrument'] );
 
 	if ( ( $contribution_id == false ) || ( $payment_instrument_id == false ) ){
 		//the errors have already been thrown in _queue2civicrm_get_civi_id. Just leave.
@@ -456,6 +453,141 @@ function _queue2civicrm_tag_insert( $contact ) {
 }
 
 /**
+ * _queue2civicrm_normalize_msg helper function
+ * Determines which civi-only payment instrument is appropriate for the current 
+ * message, and resturns the civi payment instrument's human-readable display 
+ * string (if it exists).   
+ */
+function _queue2civicrm_get_payment_instrument( $msg ){
+	//default
+	$default_payment_instrument = 'Gateway';
+	$payment_instrument = $default_payment_instrument;
+	
+	if ( array_key_exists( 'payment_method', $msg ) && trim( $msg['payment_method'] ) != '' ){
+	
+		switch( strtolower( $msg[ 'payment_method' ] ) ){
+			case 'check':
+				$payment_instrument = 'Check';
+				break;
+			case 'bt':
+				$payment_instrument = 'Bank Transfer';
+				break;
+			case 'cc':
+				$payment_instrument = 'Credit Card';	
+				switch ( strtolower( $msg['payment_submethod'] ) ){
+					case 'visa':
+						$payment_instrument .= ': Visa';
+						break;
+					case 'mc':
+						$payment_instrument .= ': MasterCard';
+						break;
+					case 'amex':
+						$payment_instrument .= ': American Express';
+						break;
+					case 'maestro':
+						$payment_instrument .= ': Masetro';
+						break;
+					case 'solo':
+						$payment_instrument .= ': Solo';
+						break;
+					case 'laser':
+						$payment_instrument .= ': Laser';
+						break;
+					case 'jcb':
+						$payment_instrument .= ': JCB';
+						break;
+					case 'discover':
+						$payment_instrument .= ': Discover';
+						break;
+					case 'cb':
+						$payment_instrument .= ': Carte Bleue';
+						break;
+				}
+				break;
+			case 'dd':
+				$payment_instrument = 'Direct Debit';
+				break;
+			case 'ew':
+				switch( strtolower( $msg['payment_submethod'] ) ){
+					case 'ew_paypal':
+						$payment_instrument = 'Paypal';
+						break;
+					case 'ew_webmoney':
+						$payment_instrument = 'Webmoney';
+						break;
+					case 'ew_moneybookers':
+						$payment_instrument = 'Moneybookers';
+						break;
+					case 'ew_cashu':
+						$payment_instrument = 'Cashu';
+						break;
+				}
+				break;
+			case 'bpay':
+				$payment_instrument = 'Bpay';
+				break;
+			case 'rtbt':
+				switch( strtolower( $msg['payment_submethod'] ) ){
+					case 'rtbt_nordea_sweden':
+						$payment_instrument = 'Nordea';
+						break;
+					case 'rtbt_ideal':
+						$payment_instrument = 'iDeal';
+						break;
+					case 'rtbt_enets':
+						$payment_instrument = 'Enets';
+						break;
+					case 'rtbt_sofortuberweisung':
+						$payment_instrument = 'Sofort';
+						break;
+					case 'rtbt_eps':
+						$payment_instrument = 'EPS';
+						break;
+				}
+				break;
+			case 'cash':
+				//'cash_boleto' - Only one right now. I assume there might be more later? 
+				switch ( strtolower( $msg['payment_submethod'] ) ){
+					case 'cash_boleto': 
+						$payment_instrument = 'Boleto';
+						break;
+				}
+				break;	
+			case 'payflowpro':
+				if ( strtolower( $msg['gateway'] ) === 'payflowpro' ){
+					$payment_instrument = 'Credit Card';
+				}
+		}
+		
+		//if it's still the default after all that, and it's set (or we wouldn't be here) we have a problem. 
+		if ( $payment_instrument === $default_payment_instrument ){
+			_queue2civicrm_failmail_instrument( $msg );
+		}
+		
+	} else {
+		//payment_method is not even in the message. Assume it's legacy... but we can tell some things about these, too...
+		if ( array_key_exists( 'gateway', $msg ) && strtolower($msg['gateway']) === 'paypal' ){
+			$payment_instrument = 'Paypal';
+		}
+	}
+	
+	//I was going to check to make sure the target gateway was a real thing, but: Hello, overhead. No.
+	return $payment_instrument;
+}
+
+
+function _queue2civicrm_failmail_instrument( $message ){
+	$to = variable_get('queue2civicrm_failmail', '');
+	if ($to != ''){
+		$params['message'] = $message;
+		drupal_mail('queue2civicrm', 'payment_instrument_unmapped', $to, language_default(), $params);
+	} else {
+		watchdog('queue2civicrm', 'Failmail recipient address not set up!');
+	}
+}
+
+
+/**
  * Find correct state for insertion
  * 
  * When passing CiviCRM a state abbreviation, odd things can happen - like getting the right abbreviation, but the wrong state
@@ -538,9 +670,11 @@ function _queue2civicrm_log( $log=array() ) {
  *
  * @param $type
  * @param $name
+ * @param $fatal boolean Set this to false if you don't want to fatally end execution if the lookup fails. 
+ * //TODO: Make nonfatal queries work with things other than the payment instrument.
  * @return bool
  */
-function _queue2civicrm_get_civi_id($type, $name) {
+function _queue2civicrm_get_civi_id($type, $name, $fatal = true) {
 	static $civi_ids = array();
 	$params = array('name' => $name);
 	$dummy = array();
@@ -583,7 +717,9 @@ function _queue2civicrm_get_civi_id($type, $name) {
 				return $civi_ids[$type][$name];
 			} else {
 				watchdog('queue2civicrm', "Payment Instrument '$name' not found! :", WATCHDOG_ERROR);
-				drush_set_error("CIVI_CONFIG", "Payment Instrument (from payment_method in msg) '$name' not found in CiviCRM! Please add it and retry.");
+				if ($fatal){
+					drush_set_error("CIVI_CONFIG", "Payment Instrument '$name' not found in CiviCRM! Please add it and retry.");
+				} 
 				return false;
 			}
 			break;

@@ -594,5 +594,28 @@ function queue2civicrm_mail($key, &$message, $params) {
 				$message['body'][] = t("The exact message was deemed irrelevant.");
 			}
 			break;
+		case 'payment_instrument_unmapped':
+				
+			$message['subject'] = t('queue2civicrm : No Payment Instrument Mapped');
+			$message['body'][] = t('No payment instrument mapped for the following:');
+
+			if ( is_array( $params['message'] ) ){
+				if ( array_key_exists( 'payment_method', $params['message'] ) && trim($params['message']['payment_method']) != '' ){
+					$message['body'][] = t(" * payment_method = ") . $params['message']['payment_method'];
+				} else {
+					$message['body'][] = t(" * payment_method undefined or empty" );
+				}
+				if ( array_key_exists( 'payment_submethod', $params['message'] ) && trim($params['message']['payment_submethod']) != '' ){
+					$message['body'][] = t(" * payment_submethod = ") . $params['message']['payment_submethod'];
+				} else {
+					$message['body'][] = t(" * payment_submethod undefined or empty" );
+				}
+			}
+			$message['body'][] = t("Please add to the cases in the function _queue2civicrm_get_payment_instrument()");
+
+			$message['body'][] = "---" . t("Full Message") . "---";
+			$message['body'][] = print_r($params['message'], true);
+			$message['body'][] = "---" . t("End") . "---";
+			break;	
 	}
 }
