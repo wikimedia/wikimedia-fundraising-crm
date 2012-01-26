@@ -17,24 +17,34 @@ function sendSTOMP( $transaction ) {
 	$stompQueue = variable_get('queue2civicrm_subscription', '/queue/test');
 
 	$message = json_encode( createQueueMessage( $transaction ) );
+	
+	if ( $message ){
 
-	// make a connection
-	$con = new Stomp( $stompServer );
+		// make a connection
+		$con = new Stomp( $stompServer );
 
-	// connect
-	$con->connect();
+		// connect
+		$con->connect();
 
-	// send a message to the queue
-	$result = $con->send( "$stompQueue", $message, array( 'persistent' => 'true' ) );
+		// send a message to the queue
+		$result = $con->send( "$stompQueue", $message, array( 'persistent' => 'true' ) );
 
-	if ( !$result ) {
-		watchdog('queue2civicrm', 'Send to Q failed for this message: ' . $message, array(), WATCHDOG_ERROR);
-		drush_set_error("STOMP_BAD_CONNECTION", 'Send to Q failed for this message: ' . $message);
+		$ret = null;
+		if ( !$result ) {
+			watchdog('queue2civicrm', 'Send to Q failed for this message: ' . $message, array(), WATCHDOG_ERROR);
+			drush_set_error("STOMP_BAD_CONNECTION", 'Send to Q failed for this message: ' . $message);
+			$ret = false;
+		} else {
+			$ret = true;
+		}
+
+		$con->disconnect();
+	} else {
+		watchdog('queue2civicrm', 'createQueueMessage failed for : ' . $message, array(), WATCHDOG_ERROR);
+		$ret = false;
 	}
-
-	$con->disconnect();
-
-	return true;
+	
+	return $ret;
 }
 
 /**
@@ -47,6 +57,11 @@ function sendSTOMP( $transaction ) {
  * @return array
  */
 function createQueueMessage( $msg ) {
+	
+	//do normalization first, if necessary.
+	if ( !array_key_exists( 'gross', $msg ) && array_key_exists( 'amount', $msg ) && is_numeric( $msg['amount'] ) ){
+		$msg = stageStompMessageFromDIKeys($msg);
+	}
 
 	// check for the required fields
 	$required = array(
@@ -59,8 +74,8 @@ function createQueueMessage( $msg ) {
 
 	foreach ( $required as $r ){
 		if ( !array_key_exists( $r, $msg ) || $msg[$r] == '' ){
-			watchdog('queue2civicrm', "Required Field '$key' not found in message:" . print_r($msg, true), WATCHDOG_ERROR);
-			drush_set_error("CIVI_REQ_FIELD", "Required Field '$key' not found in message:" . print_r($msg, true));
+			watchdog('queue2civicrm', "Required Field '$r' not found in message:" . print_r($msg, true), WATCHDOG_ERROR);
+			drush_set_error("CIVI_REQ_FIELD", "Required Field '$r' not found in message:" . print_r($msg, true));
 			return false;
 		}
 	}
@@ -93,9 +108,7 @@ function createQueueMessage( $msg ) {
 		'original_currency' => "",
 		'original_gross' => "",
 		'fee' => '0',
-		// the following int casting fixes an issue that is more in Drupal/CiviCRM than here.
-		// The code there should also be fixed.
-		'date' => ( int ) time(),
+		'date' => time(),
 	);
 
 	// override all defaults with actual values, if they exist
@@ -116,7 +129,7 @@ function createQueueMessage( $msg ) {
 		$msg['original_gross'] = $msg['gross'];
 	}
 	
-	if ( $msg['net'] === $message_defaults['net'] ){
+	if ( !array_key_exists( 'net', $msg ) || $msg['net'] === $message_defaults['net'] ){
 		$msg['net'] = $msg['gross'];
 	}
 
@@ -124,6 +137,38 @@ function createQueueMessage( $msg ) {
 	if ( !$msg['recurring'] ) {
 		unset( $msg['recurring'] );
 	}
+	
+	$msg['date'] = (int) $msg['date'];
 
+	return $msg;
+}
+
+/**
+ * Arghargharghargh.
+ */
+function stageStompMessageFromDIKeys( $msg ){
+//	foreach ( $msg as $key => $value ){
+//		echo "\n'$key' => '',";
+//		die();
+//	}
+	
+	$map = array(
+		'amount' => 'gross',
+		'fname' => 'first_name',
+		'mname' => 'middle_name',
+		'lname' => 'last_name',
+		'street' => 'street_address',
+		'state' => 'state_province',
+		'zip' => 'postal_code',
+		'currency_code' => 'original_currency',
+	);
+	
+	foreach ( $map as $di_key => $stomp_key ){
+		if ( array_key_exists( $di_key, $msg ) ){
+			$msg[$stomp_key] = $msg[$di_key];
+			unset ( $msg[$di_key] );
+		}
+	}
+	
 	return $msg;
 }
