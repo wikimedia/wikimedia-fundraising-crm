@@ -2,5 +2,6 @@ name = GlobalCollect Audit
 description = Auditing framework for contacts and contributions in GlobalCollect
 core = 6.x
 dependencies[] = contribution_audit
+dependencies[] = queue2civicrm
 dependencies[] = civicrm
 package = CiviAudit
