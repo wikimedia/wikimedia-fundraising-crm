@@ -263,6 +263,12 @@ function thank_you_render( $contribution_id, $test=null ) {
 		watchdog('thank_you', 'Rendering thank you message failed for contact: ' . $contribution[ 'contact_id' ] . '<pre>' . check_plain(print_r($contact, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
 		return false; # we cannot continue
 	}
+	# check for contacts without an email address
+	if ( !array_key_exists( 'email', $contact ) ){
+		# set the email to a valid, default email address that will get ignored later
+		$contact['email'] = "nobody@wikimedia.org";
+	}
+
 	# load the default values
 	$rendering = array();
 	$rendering[ 'from_name' ] = variable_get( 'thank_you_from_name', '' );
