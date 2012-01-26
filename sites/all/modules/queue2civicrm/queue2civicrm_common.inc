@@ -279,6 +279,12 @@ function _queue2civicrm_location_update( $msg, $contact ) {
  * @return array
  */
 function _queue2civicrm_location_prepare_params( $msg, $contact ) {
+  // unset the email address if the default is used
+  // this enables us to properly dedupe contacts later on
+  if( $msg[ 'email' ] == 'nobody@wikimedia.org' ){
+    $msg[ 'email' ] = null;
+  }
+
   $emails = array( 
     array(
       'email' => $msg[ 'email' ],
