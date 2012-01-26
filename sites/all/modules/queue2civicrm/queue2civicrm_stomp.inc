@@ -107,6 +107,7 @@ function createQueueMessage( $msg ) {
 		'currency' => "",
 		'original_currency' => "",
 		'original_gross' => "",
+		'net' => "",
 		'fee' => '0',
 		'date' => time(),
 	);
