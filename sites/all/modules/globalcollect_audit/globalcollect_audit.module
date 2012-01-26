@@ -2,7 +2,10 @@
 
 define( 'CONTRIBUTION_AUDIT_WR1_PARSER_DIR', '/usr/local/src/Wr1Parser/' );
 define( 'CONTRIBUTION_AUDIT_WR1_FILES_DIR', '/usr/local/src/Wr1_files/' );
-//require_once( 'somelibrary.php' );
+
+if ( function_exists( 'drupal_get_path' ) ) {
+	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_stomp.inc' );
+}
 
 /**
  * Implementation of hook_menu()
@@ -100,7 +103,7 @@ function globalcollect_audit_parse_all_wr1(){
 					$wr1_data[$record['Additional-reference']]  = $record;
 					break;
 				default:
-					echo "\nNo recognized order id. Please rectify in " . __FUNCTION__ .  print_r( $record, true );
+					echo "\nPayment method '" . $record['Payment-method'] . "' not recognized. Please rectify in " . __FUNCTION__ .  print_r( $record, true );
 					die();
 			}
 			
@@ -200,8 +203,16 @@ function globalcollect_audit_parse_all_wr1(){
 					}
 				}
 
-				echo print_r( $donor_data, true );
-				globalcollect_audit_format_data_for_stomp( '1', $data, $donor_data );
+				//This isn't going to work unless you're connecting to a database that has the row you're looking for. 
+				$missing_txn_message = globalcollect_audit_format_data_for_stomp( $contribution_id, $data, $donor_data );
+				echo print_r( $missing_txn_message, true );
+				if ( sendStomp( $missing_txn_message ) ){
+					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
+				} else {
+					watchdog('globalcollect_audit', __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_ERROR);
+					drush_set_error("STOMP_BAD_SEND", "Failed sending STOMP message to queue.");
+				}
+				
 			}
 			
 		} else {
@@ -261,7 +272,7 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 	);
 	
 	if ( $payment_submethod ){
-		$stomp_data['payment_submethod'] = 1;
+		$stomp_data['payment_submethod'] = $payment_submethod;
 	}
 	
 	if( $recurring ){
@@ -317,8 +328,7 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 		}
 	}
 	
-	echo print_r($stomp_data, true);
-	die();
+	return $stomp_data;
 
 
 }
@@ -364,9 +374,12 @@ function globalcollect_audit_get_payment_submethod( $payment_product ){
 	//get the payment product as a number. Then, look it up. 
 	$map = array(
 		11 => array(
+			//GC Bank Transfer (new)
 			'code' => 'bt',
 			'group' => 'bt',
 		),
+			//Credit Cards: If the card is specified, land it in the right specific bucket.
+			//otherwise: cc
 		1 => array(
 			'code' => 'visa',
 			'group' => 'cc',
@@ -404,6 +417,7 @@ function globalcollect_audit_get_payment_submethod( $payment_product ){
 			'group' => 'cc',
 		),
 		713 => array(
+			//Direct Debit - all 'dd'
 			'code' => 'dd_at',
 			'group' => 'dd',
 		),
@@ -440,46 +454,57 @@ function globalcollect_audit_get_payment_submethod( $payment_product ){
 			'group' => 'dd',
 		),
 		840 => array(
+			//paypal
 			'code' => 'ew_paypal',
 			'group' => 'ew',
 		),
 		841 => array(
+			//webmoney
 			'code' => 'ew_webmoney',
 			'group' => 'ew',
 		),
 		843 => array(
+			//moneybookers
 			'code' => 'ew_moneybookers',
 			'group' => 'ew',
 		),
 		845 => array(
+			//cashu  :)
 			'code' => 'ew_cashu',
 			'group' => 'ew',
 		),
 		500 => array(
+			//bpay
 			'code' => 'bpay',
 			'group' => 'obt',
 		),
 		805 => array(
+			//nordea
 			'code' => 'rtbt_nordea_sweden',
 			'group' => 'rtbt',
 		),
 		809 => array(
+			//iDeal (exists)
 			'code' => 'rtbt_ideal',
 			'group' => 'rtbt',
 		),
 		810 => array(
+			//enets
 			'code' => 'rtbt_enets',
 			'group' => 'rtbt',
 		),
 		836 => array(
+			//sofort (exists!)
 			'code' => 'rtbt_sofortuberweisung',
 			'group' => 'rtbt',
 		),
 		856 => array(
+			//EPS
 			'code' => 'rtbt_eps',
 			'group' => 'rtbt',
 		),
 		1503 => array(
+			//Boleto
 			'code' => 'cash_boleto',
 			'group' => 'cash',
 		),
