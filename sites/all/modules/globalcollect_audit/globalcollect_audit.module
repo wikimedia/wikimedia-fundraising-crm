@@ -71,6 +71,8 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
   }
 
   $dbs->use_default();
+  
+  echo count( $missing_trxns ) . " missing records from a possible " . count( $transactions ) . " total records found.\n";
   return $missing_trxns;
 }
 
@@ -85,34 +87,83 @@ function globalcollect_audit_parse_all_wr1(){
 	require_once( $parser_directory . 'Wr1DataRecord.php' );
 	
 	$wr1_files = globalcollect_audit_get_all_wr1_files();
-	$wr1_data = array();
+	$missing = array();
 	
-	//do we really want to batch these things? Memory...
-	//and if we don't, how do we handle going some distance through a file and stopping? 
-	//Maybe small batches. 
-	
-	foreach ( $wr1_files as $fullpath ){
-		$wr1_parser = new Wr1DataFileParser( $fullpath );
+	while ( !count( $missing ) && count( $wr1_files ) ){
+		$wr1_data = array();
+		$file = array_shift( $wr1_files );
+		echo "Parsing $file\n";
+		
+		$wr1_parser = new Wr1DataFileParser( $file );
 		foreach( $wr1_parser->getRecordIterator() as $record ) {
 			switch ( $record['Payment-method'] ){
 				case 'CC':
 					$wr1_data[$record['Order-number']]  = $record;
+					echo 'c';
 					break;
 				case 'BA':
 				case 'OB':
 					$wr1_data[$record['Additional-reference']]  = $record;
+					echo 'b';
 					break;
 				default:
 					echo "\nPayment method '" . $record['Payment-method'] . "' not recognized. Please rectify in " . __FUNCTION__ .  print_r( $record, true );
 					die();
 			}
-			
 		} 
+		echo "\n";
+		if ( count( $wr1_data ) ){
+			$missing = globalcollect_audit_find_missing_gc_trxns( $wr1_data );
+		}
+		
+		if ( !count( $missing ) ){
+			globalcollect_audit_move_completed_wr1( $file );
+		}
 	}
 	
-	$missing = globalcollect_audit_find_missing_gc_trxns( $wr1_data );
+	if ( !count($missing) ){
+		echo "No missing transactions found. Done!\n";
+		return;
+	}
 	
-	echo count( $missing ) . " missing records from a possible " . count( $wr1_data ) . " total records found.\n";
+	echo print_r($missing, true);
+	
+	
+	
+	//New plan: 
+	//	Rearrange the missing transactions by date
+	//	Determine the most likely log to have the greatest number of missing transactions in it, by counting the date hits. 
+	//	Try to match it up with that log. 
+	//		Make a note that you tried that one, so you don't try it again.
+	//		If it's not the grep output yet, make that (even though we probably want to do this by hand)
+	
+	//Basically EVERYTHING BELOW HERE is old code that will be functionalized under the new plan. 
+	
+	die();
+	//do we really want to batch these things? Memory...
+	//and if we don't, how do we handle going some distance through a file and stopping? 
+	//Maybe small batches. 
+	
+//	foreach ( $wr1_files as $fullpath ){
+//		$wr1_parser = new Wr1DataFileParser( $fullpath );
+//		foreach( $wr1_parser->getRecordIterator() as $record ) {
+//			switch ( $record['Payment-method'] ){
+//				case 'CC':
+//					$wr1_data[$record['Order-number']]  = $record;
+//					break;
+//				case 'BA':
+//				case 'OB':
+//					$wr1_data[$record['Additional-reference']]  = $record;
+//					break;
+//				default:
+//					echo "\nPayment method '" . $record['Payment-method'] . "' not recognized. Please rectify in " . __FUNCTION__ .  print_r( $record, true );
+//					die();
+//			}
+//			
+//		} 
+//	}
+//	
+//	$missing = globalcollect_audit_find_missing_gc_trxns( $wr1_data );
 	
 	//now grep in the log... for the spot checking, yeah? This is only temporary. 
 	$found = 0;
@@ -124,8 +175,8 @@ function globalcollect_audit_parse_all_wr1(){
 			case 'CC':
 				$date = $data['Date-authorised'];
 				break;
-			case 'BA':
-			case 'OB':
+			case 'BA': //Bank Payment
+			case 'OB': //Real-time Bank
 				$date = $data['Date-due'];
 				break;
 			default:
@@ -133,6 +184,7 @@ function globalcollect_audit_parse_all_wr1(){
 				die();
 		}
 		
+		//TODO: Stop it with the hard-coded filename here. Nerd. 
 		$cmd = "grep '<ORDERID>$order_id</ORDERID>' /home/khorn/logs/globalcollect/20111221_iop.log";
 		
 		echo $cmd . "\n";
@@ -205,12 +257,16 @@ function globalcollect_audit_parse_all_wr1(){
 
 				//This isn't going to work unless you're connecting to a database that has the row you're looking for. 
 				$missing_txn_message = globalcollect_audit_format_data_for_stomp( $contribution_id, $data, $donor_data );
-				echo print_r( $missing_txn_message, true );
-				if ( sendStomp( $missing_txn_message ) ){
-					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
+				if ( $missing_txn_message['payment_method'] != 'cc' ){
+					echo print_r( $missing_txn_message, true );
+					if ( sendStomp( $missing_txn_message ) ){
+						watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
+					} else {
+						watchdog('globalcollect_audit', __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_ERROR);
+						drush_set_error("STOMP_BAD_SEND", "Failed sending STOMP message to queue.");
+					}
 				} else {
-					watchdog('globalcollect_audit', __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_ERROR);
-					drush_set_error("STOMP_BAD_SEND", "Failed sending STOMP message to queue.");
+					echo "\nJust another cc...";
 				}
 				
 			}
@@ -243,6 +299,11 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 		$unstaged_amount = (int)$wr1['Payment-amount']/100; //it's a GC thing.
 	}
 	
+	if ( !array_key_exists( 'Transaction-currency', $wr1 ) ){
+		echo "/nOh Snap! No 'Transaction-currency'!" . print_r($wr1, true );
+		$wr1['Transaction-currency'] = $wr1['payment-currency'];
+	}
+	
 	if ( $wr1['Transaction-currency'] !== $donor_data['CURRENCYCODE']  ){
 		watchdog( 'globalcollect_audit', "$contribution_tracking_id Currency code mismatch! Aborting. ", WATCHDOG_ERROR );
 		return null;
@@ -255,12 +316,22 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 	
 	//getting the payment type according to us. Sneaky.
 	$contribution_tracking = globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id );
-	$payment_method = explode( '.', $contribution_tracking['utm_source'] );
-	$payment_method = $payment_method[2];
+	if ( $contribution_tracking ){
+		$payment_method_utm = explode( '.', $contribution_tracking['utm_source'] );
+		$payment_method_utm = $payment_method_utm[2];
+	} else {
+		$payment_method_utm = null;
+	}
 
 	$payment_submethod = false;
 	if ( array_key_exists( 'PAYMENTPRODUCTID', $donor_data ) ){
-		$payment_submethod = globalcollect_audit_get_payment_submethod($donor_data['PAYMENTPRODUCTID']);
+		$payment_info = globalcollect_audit_get_payment_submethod($donor_data['PAYMENTPRODUCTID']);
+		$payment_method = $payment_info['group'];
+		$payment_submethod = $payment_info['code'];
+		if ( $payment_method != $payment_method_utm ){
+			$messgae = "Payment Method Mismatch on $contribution_tracking_id. UTM indicates '$payment_method_utm', but xml was sent for '$payment_method'. Using xml value.";
+			watchdog( 'globalcollect_audit', $messgae, WATCHDOG_ERROR );
+		}
 	}
 	
 	//start it off with the stuff that's always there...
@@ -310,7 +381,7 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 		'zip2' => array( 'donor_data', 'ZIP' ),
 		'gateway_txn_id' => array( 'donor_data', 'ORDERID' ),
 		'response', //? Maybe some dummy value for "found it in the audit phase"
-		'currency_code' => array( 'wr1', 'Transaction-currency' ),
+		'currency_code' => array( 'donor_data', 'CURRENCYCODE' ),
 		'date' => array( 'contribution_tracking', 'ts' ), //double-check how the dates work
 	);
 	
@@ -318,7 +389,7 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 		if( is_array( $location ) ){
 			$source = $location[0];
 			$source_key = $location[1];
-			if ( array_key_exists( $source_key, ${$source} ) ){
+			if ( is_array( ${$source} ) && array_key_exists( $source_key, ${$source} ) ){
 				$stomp_data[$key] = ${$source}[$source_key];
 			} else {
 				$stomp_data[$key] = '';
@@ -366,9 +437,46 @@ function globalcollect_audit_get_all_wr1_files(){
 		}
 	}
 	closedir($handle);
+	
+	//This simple sort will work on the GC file naming convention until the year 
+	//2020, when January will come up before anything else in the previous year. 
+	//By that time, they will hopefully have changed their dumb 8-char filename 
+	//standard anyway. 
+	sort($files); 
+	
 	return $files;
 	
+
+	
 }
+
+function globalcollect_audit_move_completed_wr1( $file ){
+	$subdir = 'completed';
+	$files_directory = variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR );
+	$completed_dir = $files_directory . '/' . $subdir;
+	if ( !is_dir( $completed_dir ) ){
+		if ( !mkdir ( $completed_dir, 0700 )){
+			$message = "Could not make $completed_dir";
+			watchdog('globalcollect_audit', $message);
+			return false;
+		}	
+	}
+	
+	$newfile = explode( '/', $file );
+	$just_name = $newfile[ count($newfile)-1 ];
+	$newfile[ count($newfile)-1 ] = $subdir;
+	$newfile[] = $just_name;
+	$newfile = implode( '/', $newfile );
+	
+	if (!rename( $file, $newfile )){
+		$message = "Unable to move $file to $newfile";
+		watchdog('globalcollect_audit', $message);
+		return false;
+	}
+	echo "Moved $file to $newfile\n";
+	return true;
+}
+
 
 function globalcollect_audit_get_payment_submethod( $payment_product ){
 	//get the payment product as a number. Then, look it up. 
@@ -510,6 +618,6 @@ function globalcollect_audit_get_payment_submethod( $payment_product ){
 		),
 	);
 	
-	return $map[$payment_product]['code'];
+	return $map[$payment_product];
 
 }
