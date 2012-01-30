@@ -126,12 +126,10 @@ function globalcollect_audit_parse_all_wr1(){
 		return;
 	}
 	
-	echo print_r($missing, true);
-	
+	$log = globalcollect_audit_get_next_log($missing);
 	
 	
 	//New plan: 
-	//	Rearrange the missing transactions by date
 	//	Determine the most likely log to have the greatest number of missing transactions in it, by counting the date hits. 
 	//	Try to match it up with that log. 
 	//		Make a note that you tried that one, so you don't try it again.
@@ -171,18 +169,7 @@ function globalcollect_audit_parse_all_wr1(){
 	$found_info = array();
 	$failed_info = array();
 	foreach ( $missing as $order_id => $data ){
-		switch ( $data['Payment-method'] ){
-			case 'CC':
-				$date = $data['Date-authorised'];
-				break;
-			case 'BA': //Bank Payment
-			case 'OB': //Real-time Bank
-				$date = $data['Date-due'];
-				break;
-			default:
-				echo "\nNo recognized date field. for payment method " . $data['Payment-method'] . ". Please rectify in " . __FUNCTION__ .  print_r( $data, true );
-				die();
-		}
+		$date = globalcollect_audit_get_wr1_date( $transaction );
 		
 		//TODO: Stop it with the hard-coded filename here. Nerd. 
 		$cmd = "grep '<ORDERID>$order_id</ORDERID>' /home/khorn/logs/globalcollect/20111221_iop.log";
@@ -475,6 +462,81 @@ function globalcollect_audit_move_completed_wr1( $file ){
 	}
 	echo "Moved $file to $newfile\n";
 	return true;
+}
+
+function globalcollect_audit_get_wr1_date( $data ){
+	$date = '';
+	switch ( $data['Payment-method'] ){
+		case 'CC':
+			$date = $data['Date-authorised'];
+			break;
+		case 'BA': //Bank Payment
+		case 'OB': //Real-time Bank
+			$date = $data['Date-due'];
+			break;
+		default:
+			echo "\nNo recognized date field. for payment method " . $data['Payment-method'] . ". Please rectify in " . __FUNCTION__ .  print_r( $data, true );
+			die();
+	}
+	return $date;
+}
+
+function globalcollect_audit_get_next_log( $missing ){
+	static $tried = array();
+	$plusminus = 3; //this should probably come from a config setting
+	
+	$dates = array();
+	foreach ( $missing as $transaction ){
+		$date = globalcollect_audit_get_wr1_date( $transaction );
+		if ( array_key_exists( $date, $dates ) ){
+			$dates[$date] += 1;
+		} else {
+			$dates[$date] = 1;
+		}
+	}
+	
+	//now turn the array inside out and sort it by most popular date
+	array_flip($dates);
+	arsort($dates);
+	//echo print_r($dates);
+	
+	$tryme = false;
+	foreach ( $dates as $date => $count ){
+		if ( !in_array($date, $tried) ){
+			$tryme = $date;
+			break;
+		}
+	}
+	
+	if ( !$tryme ){
+		//we've tried all the log dates explicitly present in the wr1. Now try more.
+		$more_tries = array();
+		for($i=1; $i < ($plusminus + 1); ++$i ){
+			$more_tries[] = $i;
+			$more_tries[] = $i * -1;
+		}
+		
+		foreach ( $dates as $date => $count ){
+			foreach( $more_tries as $add ){
+				$newdate = $date + $add;
+				if ( !in_array($newdate, $tried) ){
+					$tryme = $newdate;
+					break 2;
+				}
+			}
+		}
+	}
+	
+	if ( !$tryme ){
+		$message = "No 'next' log identified. Dates checked: " . print_r( $tried, true ) . "\nCurrent Missing: " . print_r( $dates, true ) . "\n";
+		watchdog('globalcollect_audit', $message);
+		die();
+	}
+	
+	echo "Tryme = $tryme\n";
+	die();
+	//TODO: This needs to return a handle to a log, in which we will search for missing transactions.
+	
 }
 
 
