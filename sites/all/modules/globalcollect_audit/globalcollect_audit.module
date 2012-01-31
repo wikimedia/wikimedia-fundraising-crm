@@ -3,6 +3,8 @@
 define( 'CONTRIBUTION_AUDIT_WR1_PARSER_DIR', '/usr/local/src/Wr1Parser/' );
 define( 'CONTRIBUTION_AUDIT_WR1_FILES_DIR', '/usr/local/src/Wr1_files/' );
 define( 'CONTRIBUTION_AUDIT_LOG_FILES_DIR', '/usr/local/src/logs/' );
+define( 'CONTRIBUTION_AUDIT_TEST_MODE', true );
+define( 'CONTRIBUTION_AUDIT_FAKE_DB', false );
 
 if ( function_exists( 'drupal_get_path' ) ) {
 	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_stomp.inc' );
@@ -47,6 +49,12 @@ function globalcollect_audit_settings() {
     '#title' => t( 'Path to directory containing WMF GlobalCollect log files' ),
     '#required' => TRUE,
     '#default_value' => variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR ),
+  );
+  $form['globalcollect_audit_test_mode']  = array(
+    '#type' => 'checkbox',
+    '#title' => t( 'When this box is checked, no stomp messages will be sent.' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'globalcollect_audit_test_mode', CONTRIBUTION_AUDIT_TEST_MODE ),
   );
   return system_settings_form( $form );
 }
@@ -95,10 +103,13 @@ function globalcollect_audit_parse_all_wr1(){
 	//and by that I mean, fire off the parser at everything that's in that format. 
 	$parser_directory = variable_get( 'globalcollect_audit_wr1_parser_dir', CONTRIBUTION_AUDIT_WR1_PARSER_DIR );
 	$files_directory = variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR );
+	$test_mode = variable_get( 'globalcollect_audit_test_mode', CONTRIBUTION_AUDIT_TEST_MODE );
 	require_once( $parser_directory . 'Wr1DataRecord.php' );
 	
 	$wr1_files = globalcollect_audit_get_all_wr1_files();
 	$missing = array();
+	
+	$errorful_transactions = array();
 	
 	while ( !count( $missing ) && count( $wr1_files ) ){
 		$wr1_data = array();
@@ -118,8 +129,9 @@ function globalcollect_audit_parse_all_wr1(){
 					echo 'b';
 					break;
 				default:
-					echo "\nPayment method '" . $record['Payment-method'] . "' not recognized. Please rectify in " . __FUNCTION__ .  print_r( $record, true );
-					die();
+					$message = "Payment method '" . $record['Payment-method'] . "' not recognized. Please rectify in " . __FUNCTION__ .  print_r( $record, true );
+					globalcollect_audit_log_error( $message, "WR1_PAYMENT_METHOD" );
+					return;
 			}
 		} 
 		echo "\n";
@@ -138,66 +150,96 @@ function globalcollect_audit_parse_all_wr1(){
 	}
 	
 	//TODO: Re-do ALL the output stats in a way that is... I don't know. Actually helpful?
-	while ( count( $missing ) ) {
+	while ( count( $missing && globalcollect_audit_can_continue() ) ) {
 		$local_found_ids = array();
-		$log = globalcollect_audit_get_next_log($missing);
+		$log = globalcollect_audit_get_next_log( $missing );
+		if ( is_null( $log ) ){
+			break;
+		}
 
 		echo "Trying log $log\n";
 		$tried_count = 0;
 		foreach ( $missing as $order_id => $data ){
 			++$tried_count;
 			$date = globalcollect_audit_get_wr1_date( $data );
+			if ( is_null($date) ){
+				echo "X";
+				continue;
+			}
 			$logdata = globalcollect_audit_get_log_data_by_order_id( $order_id, $log );
 			if ($logdata === false){
 				echo ".";
 				continue;
 			}
-			echo "!";
 
 			//This isn't going to work unless you're connecting to a database that has the row you're looking for. 
 			$missing_txn_message = globalcollect_audit_format_data_for_stomp( $logdata['contribution_id'], $data, $logdata['donor_data'] );
+			if ( is_null( $missing_txn_message ) ){
+				//log this out in a list of troubled transactions. 
+				$info = array(
+					'contribution_id' => $logdata['contribution_id'],
+					'log' => $log,
+					'data' => $data,
+					'logdata' => $logdata,
+				);
+				$errorful_transactions[] = $info;
+				echo "X";
+				continue;
+			}
 
-			if ( sendStomp( $missing_txn_message ) ){
-				watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
+			if ( $test_mode ){
 				$local_found_ids[] = $order_id;
+				echo "!";
 			} else {
-				watchdog('globalcollect_audit', __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_ERROR);
-				drush_set_error("STOMP_BAD_SEND", "Failed sending STOMP message to queue.");
+				if ( sendStomp( $missing_txn_message ) ){
+					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
+					$local_found_ids[] = $order_id;
+					echo "!";
+				} else {
+					$wd_message = __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true );
+					$drush_message = "Failed sending STOMP message to queue.";
+					globalcollect_audit_log_error( $wd_message, "STOMP_BAD_SEND", $drush_message );
+					return;
+				}
 			}
 
 		}
 		echo "/n";
 		
 		//TODO: Output some pretty stats here. 
+		echo count( $local_found_ids ) . " records found in $log\n";
 		
 		//now, we unset the array keys we found, so as not to corrupt the foreach we were in.
 		foreach ($local_found_ids as $id) {
 			unset($missing[$id]);
 		}
+		
 	}
 	//And loop. 
+	echo "Errorful Transactions: " . print_r( $errorful_transactions, true );
 	echo "Still Missing: " . count($missing) . " Good luck with that.\n";
 }
 
 
 function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $wr1, $donor_data ){
-	
+	$fake_db = variable_get( 'globalcollect_audit_fake_db', CONTRIBUTION_AUDIT_FAKE_DB );
 	//you should probably make sure the data between the two sources match up before we do anything else
 	$unstaged_amount = 0;
 	if ( (int)$wr1['Payment-amount'] !== (int)$donor_data['AMOUNT']  ){
-		watchdog( 'globalcollect_audit', "$contribution_tracking_id Payment amount mismatch! Aborting. ", WATCHDOG_ERROR );
+		$message = __FUNCTION__ . " $contribution_tracking_id Payment amount mismatch! Aborting.";
+		globalcollect_audit_log_error( $message, "WR1_DATA_FORMAT" );
 		return null;
 	} else {
 		$unstaged_amount = (int)$wr1['Payment-amount']/100; //it's a GC thing.
 	}
 	
 	if ( !array_key_exists( 'Transaction-currency', $wr1 ) ){
-		echo "/nOh Snap! No 'Transaction-currency'!" . print_r($wr1, true );
-		$wr1['Transaction-currency'] = $wr1['payment-currency'];
+		$wr1['Transaction-currency'] = $wr1['Payment-currency'];
 	}
 	
 	if ( $wr1['Transaction-currency'] !== $donor_data['CURRENCYCODE']  ){
-		watchdog( 'globalcollect_audit', "$contribution_tracking_id Currency code mismatch! Aborting. ", WATCHDOG_ERROR );
+		$message = __FUNCTION__ . " $contribution_tracking_id Currency code mismatch! Aborting. ";
+		globalcollect_audit_log_error( $message, "WR1_DATA_FORMAT" );
 		return null;
 	}
 	
@@ -220,9 +262,10 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 		$payment_info = globalcollect_audit_get_payment_submethod($donor_data['PAYMENTPRODUCTID']);
 		$payment_method = $payment_info['group'];
 		$payment_submethod = $payment_info['code'];
-		if ( $payment_method != $payment_method_utm ){
-			$messgae = "Payment Method Mismatch on $contribution_tracking_id. UTM indicates '$payment_method_utm', but xml was sent for '$payment_method'. Using xml value.";
-			watchdog( 'globalcollect_audit', $messgae, WATCHDOG_ERROR );
+		if ( !$fake_db && $payment_method != $payment_method_utm ){
+			$message = __FUNCTION__ . " Payment Method Mismatch on $contribution_tracking_id. UTM indicates '$payment_method_utm', but xml was sent for '$payment_method'. Using xml value.";
+			globalcollect_audit_log_error( $message, "WR1_DATA_FORMAT" );
+			//this is not fatal, so don't return here. 
 		}
 	}
 	
@@ -379,8 +422,9 @@ function globalcollect_audit_get_wr1_date( $data ){
 			$date = $data['Date-due'];
 			break;
 		default:
-			echo "\nNo recognized date field. for payment method " . $data['Payment-method'] . ". Please rectify in " . __FUNCTION__ .  print_r( $data, true );
-			die();
+			$message = __FUNCTION__ . "No recognized date field. for payment method " . $data['Payment-method'] . ". Please rectify in " . __FUNCTION__ .  print_r( $data, true );
+			globalcollect_audit_log_error( $message, "WR1_DATE" );
+			return null;
 	}
 	return $date;
 }
@@ -392,6 +436,9 @@ function globalcollect_audit_get_next_log( $missing ){
 	$dates = array();
 	foreach ( $missing as $transaction ){
 		$date = globalcollect_audit_get_wr1_date( $transaction );
+		if (is_null($date)){
+			return null;
+		}
 		if ( array_key_exists( $date, $dates ) ){
 			$dates[$date] += 1;
 		} else {
@@ -432,9 +479,9 @@ function globalcollect_audit_get_next_log( $missing ){
 	}
 	
 	if ( !$tryme ){
-		$message = "No 'next' log identified. Dates checked: " . print_r( $tried, true ) . "\nCurrent Missing: " . print_r( $dates, true ) . "\n";
-		watchdog('globalcollect_audit', $message);
-		die($message);
+		$message = __FUNCTION__  . "No 'next' log identified. Dates checked: " . print_r( $tried, true ) . "\nCurrent Missing: " . print_r( $dates, true ) . "\n";
+		globalcollect_audit_log_error( $message, "WR1_LOG" );
+		return null;
 	}
 	
 	$tried[] = $tryme;
@@ -463,15 +510,15 @@ function globalcollect_audit_get_log_file_by_date( $date ){
 			if ( file_exists( $file ) ) {
 				return $file;
 			} else {
-				$message = "$file could not be created. Something went wrong with the grep in " . __FUNCTION__;
-				watchdog('globalcollect_audit', $message, WATCHDOG_ERROR);
-				die($message);
+				$message = __FUNCTION__ . " $file could not be created. Something went wrong with the grep (permissions?)";
+				globalcollect_audit_log_error( $message, "WR1_LOG" );
+				return null;
 			}
 			
 		} else {
-			$message = "$original_file not found. Please copy that file to the specified directory and re-run.";
-			watchdog('globalcollect_audit', $message, WATCHDOG_ERROR);
-			die($message);
+			$message = __FUNCTION__ . " $original_file not found. Please copy that file to the specified directory and re-run.";
+			globalcollect_audit_log_error( $message, "WR1_LOG" );
+			return null;
 		}
 	}
 	
@@ -545,6 +592,30 @@ function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
 		}
 	}
 	return false;
+}
+
+function globalcollect_audit_log_error( $watchdog_message, $drush_code, $drush_message = null ){
+	if ( is_null( $drush_message ) ){
+		$drush_message = $watchdog_message;
+	}
+	watchdog('globalcollect_audit', $watchdog_message, WATCHDOG_ERROR);
+	drush_set_error($drush_code, $drush_message);
+}
+
+function globalcollect_audit_can_continue(){
+	//check for drush errors
+	$errors = drush_get_error_log();
+	if ( count( $errors ) ){
+		//nonfatal errors: 
+		//"WR1_DATA_FORMAT" 
+		foreach ( $errors as $code => $thing){
+			if ( $code != 'WR1_DATA_FORMAT' ){
+				echo print_r( $errors, true );
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 function globalcollect_audit_get_payment_submethod( $payment_product ){
