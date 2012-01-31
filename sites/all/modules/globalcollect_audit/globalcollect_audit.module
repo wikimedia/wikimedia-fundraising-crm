@@ -63,19 +63,23 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
   $dbs->use_civicrm();
 
   // check for matching ids - if it doesnt match, it's missing
+  echo "Checking for missing transactions\n";
   foreach ( array_keys( $transactions ) as $order_id ) {
     $query = "SELECT {trxn_id} FROM civicrm_contribution WHERE trxn_id LIKE 'GLOBALCOLLECT %s'";
     $result = db_query( $query, $order_id . "%", $order_id . "%" );
     if ( !$result->num_rows ) {
+	  echo "!";
       $missing_trxns[$order_id]  = $transactions[$order_id];
       watchdog( 'globalcollect_audit', 'Missing Globalcollect: @tx_id @pm, @pc', array( 
         "@tx_id" => $order_id,
         "@pm" => $transactions[$order_id]['Payment-method'],
         "@pc" => $transactions[$order_id]['Payment-currency'] ), WATCHDOG_DEBUG );  
     } else {
+	  echo ".";
       watchdog( 'globalcollect_audit', 'Found Payflow: @id', array( '@id' => $order_id ), WATCHDOG_DEBUG );
     } 
   }
+  echo "\n";
 
   $dbs->use_default();
   
@@ -133,117 +137,46 @@ function globalcollect_audit_parse_all_wr1(){
 		return;
 	}
 	
-	$found = 0;
-	$failed = 0;
-	$found_info = array();
-	$failed_info = array();
-	
-	//TODO: While there are still missing transactions...
-	$log = globalcollect_audit_get_next_log($missing);
-	
-	echo "Trying log $log\n";
-	
-	foreach ( $missing as $order_id => $data ){
-		$date = globalcollect_audit_get_wr1_date( $data );
-		
-		$cmd = "grep '<ORDERID>$order_id</ORDERID>' $log";
-		
-		echo $cmd . "\n";
-		$ret = array();
-		exec( $cmd, $ret, $errorlevel );
-		
-		if ( count( $ret ) > 0 ){
-			echo "Found $order_id. Date: $date\n";
-			//echo print_r( $ret, true );
-			++$found;
-			
-			//adds one to the date found counter
-			if ( ! array_key_exists($data['Payment-method'], $found_info) || !array_key_exists( $date, $found_info[$data['Payment-method']] )){
-				$found_info[$data['Payment-method']][$date] = 0;
-			}
-			++$found_info[$data['Payment-method']][$date];
-			
-			
-			//get the xml, and the contribution_id... and while we're at it, parse the xml. 
-			$xml = null;
-			$contribution_id = null;
-			foreach ( $ret as $line ){
-				if ( is_null( $xml ) ){
-					//look for the raw xml. 
-					if ( strpos( $line, 'RETURNED FROM CURL' ) ){
-						$xmlstart = strpos( $line, '<XML>' );
-						$xmlend = strpos( $line, '</XML>' ) + 6;
-						$xml = substr($line, $xmlstart, $xmlend - $xmlstart);
-					}
-				}
-				if ( is_null( $contribution_id ) ){
-					//get the contribution tracking id. 
-					$ctid_end = strpos( $line, 'Raw XML Response' );
-					if ( $ctid_end > 0 ){
-						$ctid_start = strpos( $line, '_gateway:' ) + 9;
-						$ctid = substr($line, $ctid_start, $ctid_end - $ctid_start);
-						$contribution_id = trim( $ctid, ' :' );
-					}
-				}
-			}
-			
-			if ( is_null( $contribution_id ) || is_null( $xml ) ){
-				echo "OH NOES. Couldn't find enough info in this log! Skip me for now?" . print_r( $data, true );
-			} else {
-				//go on with your bad self
-				echo "$order_id: '$contribution_id'. XML: \n$xml\n";
-				//now parse the xml...
-				$xmlobj = new DomDocument;
-				$xmlobj->loadXML($xml);
-				
-				$parent_nodes = array(
-					'ORDER',
-					'PAYMENT'
-				);
-				
-				$donor_data = array();
-				
-				foreach ( $parent_nodes as $parent_node ){
-					foreach ( $xmlobj->getElementsByTagName( $parent_node ) as $node ) {
-						foreach ( $node->childNodes as $childnode ) {
-							if ( trim( $childnode->nodeValue ) != '' ) {
-								$donor_data[$childnode->nodeName] = $childnode->nodeValue;
-							}
-						}
-					}
-				}
-				
-				echo "$contribution_id\n";
-				echo print_r( $donor_data, true );
-				die();
+	//TODO: Re-do ALL the output stats in a way that is... I don't know. Actually helpful?
+	while ( count( $missing ) ) {
+		$local_found_ids = array();
+		$log = globalcollect_audit_get_next_log($missing);
 
-				//This isn't going to work unless you're connecting to a database that has the row you're looking for. 
-				$missing_txn_message = globalcollect_audit_format_data_for_stomp( $contribution_id, $data, $donor_data );
-				
-				if ( sendStomp( $missing_txn_message ) ){
-					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
-				} else {
-					watchdog('globalcollect_audit', __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_ERROR);
-					drush_set_error("STOMP_BAD_SEND", "Failed sending STOMP message to queue.");
-				}
-				
+		echo "Trying log $log\n";
+		$tried_count = 0;
+		foreach ( $missing as $order_id => $data ){
+			++$tried_count;
+			$date = globalcollect_audit_get_wr1_date( $data );
+			$logdata = globalcollect_audit_get_log_data_by_order_id( $order_id, $log );
+			if ($logdata === false){
+				echo ".";
+				continue;
 			}
-			
-		} else {
-			echo "Did not find $order_id. Shoo. Date: $date\n";
-			++$failed;
-			
-			if ( ! array_key_exists($data['Payment-method'], $failed_info) || !array_key_exists( $date, $failed_info[$data['Payment-method']] )){
-				$failed_info[$data['Payment-method']][$date] = 0;
+			echo "!";
+
+			//This isn't going to work unless you're connecting to a database that has the row you're looking for. 
+			$missing_txn_message = globalcollect_audit_format_data_for_stomp( $logdata['contribution_id'], $data, $logdata['donor_data'] );
+
+			if ( sendStomp( $missing_txn_message ) ){
+				watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
+				$local_found_ids[] = $order_id;
+			} else {
+				watchdog('globalcollect_audit', __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_ERROR);
+				drush_set_error("STOMP_BAD_SEND", "Failed sending STOMP message to queue.");
 			}
-			++$failed_info[$data['Payment-method']][$date];
+
+		}
+		echo "/n";
+		
+		//TODO: Output some pretty stats here. 
+		
+		//now, we unset the array keys we found, so as not to corrupt the foreach we were in.
+		foreach ($local_found_ids as $id) {
+			unset($missing[$id]);
 		}
 	}
-	echo "Found $found, failed on $failed.\n";
-	echo "\nFound Stats:" . print_r( $found_info, true );
-	echo "\nFailed Stats:" . print_r( $failed_info, true );
 	//And loop. 
-	
+	echo "Still Missing: " . count($missing) . " Good luck with that.\n";
 }
 
 
@@ -363,14 +296,13 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 
 }
 
-function globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id ){  
+function globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id ){ 
 	$dbs = _queue2civicrm_get_dbs();
 	$dbs->use_default();
 
 	$query = "SELECT * FROM contribution_tracking WHERE id = %d";
 	$result = db_query( $query, $contribution_tracking_id );
 	if ( !$result->num_rows ) {
-		//OH NOES! Couldn't find the contribution_tracking_id! Weird. 
 		watchdog( 'globalcollect_audit', 'Missing Contribution Tracking data: @id ', array( 
 		"@id" => $contribution_tracking_id ), WATCHDOG_DEBUG );  
 	} else {
@@ -505,6 +437,7 @@ function globalcollect_audit_get_next_log( $missing ){
 		die($message);
 	}
 	
+	$tried[] = $tryme;
 	return globalcollect_audit_get_log_file_by_date( $tryme );
 	
 }
@@ -545,8 +478,73 @@ function globalcollect_audit_get_log_file_by_date( $date ){
 }
 
 
-function globalcollect_audit_get_log_data_by_order_id( $order_id ){
+function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
 	
+	$cmd = "grep '<ORDERID>$order_id</ORDERID>' $log";
+
+	//echo $cmd . "\n";
+	$ret = array();
+	exec( $cmd, $ret, $errorlevel );
+	
+	if ( count( $ret ) > 0 ){
+		
+		//get the xml, and the contribution_id... and while we're at it, parse the xml. 
+		$xml = null;
+		$contribution_id = null;
+		foreach ( $ret as $line ){
+			if ( is_null( $xml ) ){
+				//look for the raw xml. 
+				if ( strpos( $line, 'RETURNED FROM CURL' ) ){
+					$xmlstart = strpos( $line, '<XML>' );
+					$xmlend = strpos( $line, '</XML>' ) + 6;
+					$xml = substr($line, $xmlstart, $xmlend - $xmlstart);
+				}
+			}
+			if ( is_null( $contribution_id ) ){
+				//get the contribution tracking id. 
+				$ctid_end = strpos( $line, 'Raw XML Response' );
+				if ( $ctid_end > 0 ){
+					$ctid_start = strpos( $line, '_gateway:' ) + 9;
+					$ctid = substr($line, $ctid_start, $ctid_end - $ctid_start);
+					$contribution_id = trim( $ctid, ' :' );
+				}
+			}
+		}
+
+		if ( is_null( $contribution_id ) || is_null( $xml ) ){
+			//TODO: This needs more love. We can't go on without both parts, but we should log that we found some of it.
+			echo "OH NOES. Couldn't find enough info in this log! Skipping!" . print_r( $data, true );
+			return false;
+		} else {
+			//go on with your bad self
+			//echo "$order_id: '$contribution_id'. XML: \n$xml\n";
+			//now parse the xml...
+			$xmlobj = new DomDocument;
+			$xmlobj->loadXML($xml);
+
+			$parent_nodes = array(
+				'ORDER',
+				'PAYMENT'
+			);
+
+			$donor_data = array();
+
+			foreach ( $parent_nodes as $parent_node ){
+				foreach ( $xmlobj->getElementsByTagName( $parent_node ) as $node ) {
+					foreach ( $node->childNodes as $childnode ) {
+						if ( trim( $childnode->nodeValue ) != '' ) {
+							$donor_data[$childnode->nodeName] = $childnode->nodeValue;
+						}
+					}
+				}
+			}
+			
+			$return['contribution_id'] = $contribution_id;
+			$return['donor_data'] = $donor_data;
+			return $return;
+		}
+	}
+	return false;
 }
 
 function globalcollect_audit_get_payment_submethod( $payment_product ){
