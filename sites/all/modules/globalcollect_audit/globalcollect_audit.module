@@ -2,6 +2,7 @@
 
 define( 'CONTRIBUTION_AUDIT_WR1_PARSER_DIR', '/usr/local/src/Wr1Parser/' );
 define( 'CONTRIBUTION_AUDIT_WR1_FILES_DIR', '/usr/local/src/Wr1_files/' );
+define( 'CONTRIBUTION_AUDIT_LOG_FILES_DIR', '/usr/local/src/logs/' );
 
 if ( function_exists( 'drupal_get_path' ) ) {
 	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_stomp.inc' );
@@ -40,6 +41,12 @@ function globalcollect_audit_settings() {
     '#title' => t( 'Path to directory containing WR1 files' ),
     '#required' => TRUE,
     '#default_value' => variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR ),
+  );
+  $form['globalcollect_audit_log_files_dir']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Path to directory containing WMF GlobalCollect log files' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR ),
   );
   return system_settings_form( $form );
 }
@@ -126,74 +133,38 @@ function globalcollect_audit_parse_all_wr1(){
 		return;
 	}
 	
-	$log = globalcollect_audit_get_next_log($missing);
-	
-	
-	//New plan: 
-	//	Determine the most likely log to have the greatest number of missing transactions in it, by counting the date hits. 
-	//	Try to match it up with that log. 
-	//		Make a note that you tried that one, so you don't try it again.
-	//		If it's not the grep output yet, make that (even though we probably want to do this by hand)
-	
-	//Basically EVERYTHING BELOW HERE is old code that will be functionalized under the new plan. 
-	
-	die();
-	//do we really want to batch these things? Memory...
-	//and if we don't, how do we handle going some distance through a file and stopping? 
-	//Maybe small batches. 
-	
-//	foreach ( $wr1_files as $fullpath ){
-//		$wr1_parser = new Wr1DataFileParser( $fullpath );
-//		foreach( $wr1_parser->getRecordIterator() as $record ) {
-//			switch ( $record['Payment-method'] ){
-//				case 'CC':
-//					$wr1_data[$record['Order-number']]  = $record;
-//					break;
-//				case 'BA':
-//				case 'OB':
-//					$wr1_data[$record['Additional-reference']]  = $record;
-//					break;
-//				default:
-//					echo "\nPayment method '" . $record['Payment-method'] . "' not recognized. Please rectify in " . __FUNCTION__ .  print_r( $record, true );
-//					die();
-//			}
-//			
-//		} 
-//	}
-//	
-//	$missing = globalcollect_audit_find_missing_gc_trxns( $wr1_data );
-	
-	//now grep in the log... for the spot checking, yeah? This is only temporary. 
 	$found = 0;
 	$failed = 0;
 	$found_info = array();
 	$failed_info = array();
+	
+	//TODO: While there are still missing transactions...
+	$log = globalcollect_audit_get_next_log($missing);
+	
+	echo "Trying log $log\n";
+	
 	foreach ( $missing as $order_id => $data ){
-		$date = globalcollect_audit_get_wr1_date( $transaction );
+		$date = globalcollect_audit_get_wr1_date( $data );
 		
-		//TODO: Stop it with the hard-coded filename here. Nerd. 
-		$cmd = "grep '<ORDERID>$order_id</ORDERID>' /home/khorn/logs/globalcollect/20111221_iop.log";
+		$cmd = "grep '<ORDERID>$order_id</ORDERID>' $log";
 		
 		echo $cmd . "\n";
 		$ret = array();
 		exec( $cmd, $ret, $errorlevel );
-		$proof = array();
-		
-		
 		
 		if ( count( $ret ) > 0 ){
 			echo "Found $order_id. Date: $date\n";
-			echo print_r( $ret, true );
+			//echo print_r( $ret, true );
 			++$found;
 			
+			//adds one to the date found counter
 			if ( ! array_key_exists($data['Payment-method'], $found_info) || !array_key_exists( $date, $found_info[$data['Payment-method']] )){
 				$found_info[$data['Payment-method']][$date] = 0;
 			}
 			++$found_info[$data['Payment-method']][$date];
 			
-			//make sure $ret has both the raw XML line with the contribution tracking id, and the nice XML bizness we can parse. 
-			print_r( $ret, true );
 			
+			//get the xml, and the contribution_id... and while we're at it, parse the xml. 
 			$xml = null;
 			$contribution_id = null;
 			foreach ( $ret as $line ){
@@ -241,19 +212,19 @@ function globalcollect_audit_parse_all_wr1(){
 						}
 					}
 				}
+				
+				echo "$contribution_id\n";
+				echo print_r( $donor_data, true );
+				die();
 
 				//This isn't going to work unless you're connecting to a database that has the row you're looking for. 
 				$missing_txn_message = globalcollect_audit_format_data_for_stomp( $contribution_id, $data, $donor_data );
-				if ( $missing_txn_message['payment_method'] != 'cc' ){
-					echo print_r( $missing_txn_message, true );
-					if ( sendStomp( $missing_txn_message ) ){
-						watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
-					} else {
-						watchdog('globalcollect_audit', __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_ERROR);
-						drush_set_error("STOMP_BAD_SEND", "Failed sending STOMP message to queue.");
-					}
+				
+				if ( sendStomp( $missing_txn_message ) ){
+					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
 				} else {
-					echo "\nJust another cc...";
+					watchdog('globalcollect_audit', __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_ERROR);
+					drush_set_error("STOMP_BAD_SEND", "Failed sending STOMP message to queue.");
 				}
 				
 			}
@@ -271,6 +242,7 @@ function globalcollect_audit_parse_all_wr1(){
 	echo "Found $found, failed on $failed.\n";
 	echo "\nFound Stats:" . print_r( $found_info, true );
 	echo "\nFailed Stats:" . print_r( $failed_info, true );
+	//And loop. 
 	
 }
 
@@ -530,15 +502,52 @@ function globalcollect_audit_get_next_log( $missing ){
 	if ( !$tryme ){
 		$message = "No 'next' log identified. Dates checked: " . print_r( $tried, true ) . "\nCurrent Missing: " . print_r( $dates, true ) . "\n";
 		watchdog('globalcollect_audit', $message);
-		die();
+		die($message);
 	}
 	
-	echo "Tryme = $tryme\n";
-	die();
-	//TODO: This needs to return a handle to a log, in which we will search for missing transactions.
+	return globalcollect_audit_get_log_file_by_date( $tryme );
 	
 }
 
+
+function globalcollect_audit_get_log_file_by_date( $date ){
+	//CONTRIBUTION_AUDIT_LOG_FILES_DIR
+	$log_directory = variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
+	$file = $log_directory . $date . '_iop.log';
+	if ( file_exists( $file ) ){
+		return $file;
+	} else {
+		//try to make it.
+		$original_file = $log_directory . 'globalcollect_' . $date . '.log';
+		if ( file_exists( $original_file ) ){
+		
+			$cmd = "grep 'INSERT_ORDERWITHPAYMENT' $original_file > $file";
+
+			echo $cmd . "\n";
+			$ret = array();
+			exec( $cmd, $ret, $errorlevel );
+			
+			if ( file_exists( $file ) ) {
+				return $file;
+			} else {
+				$message = "$file could not be created. Something went wrong with the grep in " . __FUNCTION__;
+				watchdog('globalcollect_audit', $message, WATCHDOG_ERROR);
+				die($message);
+			}
+			
+		} else {
+			$message = "$original_file not found. Please copy that file to the specified directory and re-run.";
+			watchdog('globalcollect_audit', $message, WATCHDOG_ERROR);
+			die($message);
+		}
+	}
+	
+}
+
+
+function globalcollect_audit_get_log_data_by_order_id( $order_id ){
+	
+}
 
 function globalcollect_audit_get_payment_submethod( $payment_product ){
 	//get the payment product as a number. Then, look it up. 
