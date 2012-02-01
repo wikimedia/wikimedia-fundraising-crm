@@ -468,11 +468,12 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 		foreach ( $counts as $date => $hits ){
 			if ( $hits > 0 ){
 				for ( $i = 1; $i <= $plusminus && !$tryme; ++$i ){
-					if ( !array_key_exists( $date-$i, $counts ) ){
-						$tryme = $date - $i;
+					$check_date = globalcollect_audit_add_to_date( $date, -1*$i );
+					if ( !array_key_exists( $check_date, $counts ) ){
+						$tryme = $check_date;
 					}
 				}
-			}
+			} 
 			if ( $tryme ){
 				break;
 			}
@@ -516,7 +517,7 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 		
 		foreach ( $dates as $date => $count ){
 			foreach( $more_tries as $add ){
-				$newdate = $date + $add;
+				$newdate = globalcollect_audit_add_to_date( $date, $add );
 				if ( !in_array($newdate, $tried) ){
 					$tryme = $newdate;
 					break 2;
@@ -589,11 +590,7 @@ function globalcollect_audit_get_log_date_by_file( $file ){
 
 function globalcollect_audit_add_to_date( $date, $add ){
 	$date = date_create( $date );
-	if ( $add > 0 ){
-		date_add($date, date_interval_create_from_date_string("$add days"));
-	} else {
-		date_sub($date, date_interval_create_from_date_string("$add days"));
-	}
+	date_add($date, date_interval_create_from_date_string("$add days"));
 	
 	return date_format($date, 'Ymd');
 }
