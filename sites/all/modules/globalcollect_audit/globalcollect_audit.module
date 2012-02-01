@@ -543,7 +543,7 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 
 function globalcollect_audit_get_log_file_by_date( $date ){
 	//I know somebody is going to try to come back in time just to punch me for this one, but...
-	++$date;
+	$date = globalcollect_audit_add_to_date( $date, 1 );
 	//I swear it makes sense. Most of the data in any given log are actually from the previous day. 
 	
 	$log_directory = variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
@@ -555,7 +555,7 @@ function globalcollect_audit_get_log_file_by_date( $date ){
 		$original_file = $log_directory . 'globalcollect_' . $date . '.log';
 		if ( file_exists( $original_file ) ){
 		
-			$cmd = "grep 'INSERT_ORDERWITHPAYMENT' $original_file > $file";
+			$cmd = escapeshellcmd("grep 'INSERT_ORDERWITHPAYMENT' $original_file") . " > " . escapeshellcmd($file);
 
 			echo $cmd . "\n";
 			$ret = array();
@@ -584,20 +584,31 @@ function globalcollect_audit_get_log_date_by_file( $file ){
 	$date = str_replace( $log_directory, '', $file);
 	$date = substr( $date, 0, strpos( $date, '_' ) );
 	if ( !is_numeric( $date ) ){
-		die( "Your date function is faulty. $file's date is not $date" );
+		die( __FUNCTION__ . " is faulty. $file's date is not $date" );
 	}
-	$date -= 1;
+	$date = globalcollect_audit_add_to_date( $date, -1 );
 	return $date;
+}
+
+function globalcollect_audit_add_to_date( $date, $add ){
+	$date = date_create( $date );
+	if ( $add > 0 ){
+		date_add($date, date_interval_create_from_date_string("$add days"));
+	} else {
+		date_sub($date, date_interval_create_from_date_string("$add days"));
+	}
+	
+	return date_format($date, 'Ymd');
 }
 
 
 function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
 	
-	$cmd = "grep '<ORDERID>$order_id</ORDERID>' $log";
+	$cmd = "grep <ORDERID>$order_id</ORDERID> $log";
 
 	//echo $cmd . "\n";
 	$ret = array();
-	exec( $cmd, $ret, $errorlevel );
+	exec( escapeshellcmd($cmd), $ret, $errorlevel );
 	
 	if ( count( $ret ) > 0 ){
 		
