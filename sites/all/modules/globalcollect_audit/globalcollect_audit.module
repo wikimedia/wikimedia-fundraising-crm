@@ -98,6 +98,7 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 
 
 function globalcollect_audit_parse_all_wr1(){
+	$actual_start_time = microtime(true);
 	
 	//look at the wr1 files dir, and load in everything that's a "*.wr?". 
 	//and by that I mean, fire off the parser at everything that's in that format. 
@@ -117,6 +118,7 @@ function globalcollect_audit_parse_all_wr1(){
 		echo "Parsing $file\n";
 		
 		$wr1_parser = new Wr1DataFileParser( $file );
+		$local_start_time = microtime(true);
 		foreach( $wr1_parser->getRecordIterator() as $record ) {
 			switch ( $record['Payment-method'] ){
 				case 'CC':
@@ -135,6 +137,8 @@ function globalcollect_audit_parse_all_wr1(){
 			}
 		} 
 		echo "\n";
+		$time = microtime(true) - $local_start_time;
+		echo "$file parsed in $time\n";
 		if ( count( $wr1_data ) ){
 			$missing = globalcollect_audit_find_missing_gc_trxns( $wr1_data );
 		}
@@ -149,10 +153,11 @@ function globalcollect_audit_parse_all_wr1(){
 		return;
 	}
 	
-	//TODO: Re-do ALL the output stats in a way that is... I don't know. Actually helpful?
+	$counts = array();
+	
 	while ( count( $missing && globalcollect_audit_can_continue() ) ) {
 		$local_found_ids = array();
-		$log = globalcollect_audit_get_next_log( $missing );
+		$log = globalcollect_audit_get_next_log( $missing, $counts );
 		if ( is_null( $log ) ){
 			break;
 		}
@@ -204,10 +209,12 @@ function globalcollect_audit_parse_all_wr1(){
 			}
 
 		}
-		echo "/n";
+		echo "\n";
 		
 		//TODO: Output some pretty stats here. 
-		echo count( $local_found_ids ) . " records found in $log\n";
+		$logdate = globalcollect_audit_get_log_date_by_file($log);
+		$counts[$logdate] = count( $local_found_ids );
+		echo $counts[$logdate] . " records found in $log\n";
 		
 		//now, we unset the array keys we found, so as not to corrupt the foreach we were in.
 		foreach ($local_found_ids as $id) {
@@ -216,8 +223,18 @@ function globalcollect_audit_parse_all_wr1(){
 		
 	}
 	//And loop. 
-	echo "Errorful Transactions: " . print_r( $errorful_transactions, true );
-	echo "Still Missing: " . count($missing) . " Good luck with that.\n";
+	if ( count( $errorful_transactions ) ){
+		echo "Errorful Transactions: " . print_r( $errorful_transactions, true );
+	}
+	echo "Transactions found by log:" . print_r( $counts, true );
+	echo "Still Missing: " . count($missing) . ".";
+	if ( count($missing) ){
+		echo " Good luck with that.";
+	}	
+	echo "\n";
+	
+	$time = microtime(true) - $actual_start_time;
+	echo "Total Runtime: $time\n";
 }
 
 
@@ -226,9 +243,21 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 	//you should probably make sure the data between the two sources match up before we do anything else
 	$unstaged_amount = 0;
 	if ( (int)$wr1['Payment-amount'] !== (int)$donor_data['AMOUNT']  ){
-		$message = __FUNCTION__ . " $contribution_tracking_id Payment amount mismatch! Aborting.";
-		globalcollect_audit_log_error( $message, "WR1_DATA_FORMAT" );
-		return null;
+		$amount_problem = true;
+		if ( array_key_exists( 'Over-under-amount-local', $wr1 ) && (int)$wr1['Over-under-amount-local'] > 0 ){
+			//then the mismatch is expected, and with a little more checking...
+			// Invoice-amount-deliv = what we think it is.
+			// Payment-amount = what actually happened.
+			if ( (int)$wr1['Invoice-amount-deliv'] === (int)$donor_data['AMOUNT']  ){
+				$unstaged_amount = (int)$wr1['Payment-amount']/100; //it's a GC thing.
+				$amount_problem = false;
+			}
+		} 
+		if ( $amount_problem ) {
+			$message = __FUNCTION__ . " $contribution_tracking_id Payment amount mismatch! Aborting.";
+			globalcollect_audit_log_error( $message, "WR1_DATA_FORMAT" );
+			return null;
+		}
 	} else {
 		$unstaged_amount = (int)$wr1['Payment-amount']/100; //it's a GC thing.
 	}
@@ -429,33 +458,54 @@ function globalcollect_audit_get_wr1_date( $data ){
 	return $date;
 }
 
-function globalcollect_audit_get_next_log( $missing ){
+function globalcollect_audit_get_next_log( $missing, $counts ){
 	static $tried = array();
-	$plusminus = 3; //this should probably come from a config setting
+	$plusminus = 7; //this should probably come from a config setting
 	
-	$dates = array();
-	foreach ( $missing as $transaction ){
-		$date = globalcollect_audit_get_wr1_date( $transaction );
-		if (is_null($date)){
-			return null;
-		}
-		if ( array_key_exists( $date, $dates ) ){
-			$dates[$date] += 1;
-		} else {
-			$dates[$date] = 1;
+	$tryme = false;
+	
+	if ( count( $counts ) ){
+		arsort( $counts );
+		$zerocounter = 0;
+		//step back to plusminus and see if they've all been tried. 
+		foreach ( $counts as $date => $hits ){
+			if ( $hits > 0 ){
+				for ( $i = 1; $i <= $plusminus && !$tryme; ++$i ){
+					if ( !array_key_exists( $date-$i, $counts ) ){
+						$tryme = $date - $i;
+					}
+				}
+			}
+			if ( $tryme ){
+				break;
+			}
 		}
 	}
 	
-	//now turn the array inside out and sort it by most popular date
-	array_flip($dates);
-	arsort($dates);
-	//echo print_r($dates);
-	
-	$tryme = false;
-	foreach ( $dates as $date => $count ){
-		if ( !in_array($date, $tried) ){
-			$tryme = $date;
-			break;
+	if ( !$tryme ){
+		$dates = array();
+		foreach ( $missing as $transaction ){
+			$date = globalcollect_audit_get_wr1_date( $transaction );
+			if (is_null($date)){
+				return null;
+			}
+			if ( array_key_exists( $date, $dates ) ){
+				$dates[$date] += 1;
+			} else {
+				$dates[$date] = 1;
+			}
+		}
+
+		//now turn the array inside out and sort it by most popular date
+		array_flip($dates);
+		arsort($dates);
+		//echo print_r($dates);
+
+		foreach ( $dates as $date => $count ){
+			if ( !in_array($date, $tried) ){
+				$tryme = $date;
+				break;
+			}
 		}
 	}
 	
@@ -478,8 +528,9 @@ function globalcollect_audit_get_next_log( $missing ){
 		}
 	}
 	
+	
 	if ( !$tryme ){
-		$message = __FUNCTION__  . "No 'next' log identified. Dates checked: " . print_r( $tried, true ) . "\nCurrent Missing: " . print_r( $dates, true ) . "\n";
+		$message = __FUNCTION__  . " No 'next' log identified. Dates checked: " . print_r( $tried, true ) . "\nCurrent Missing: " . print_r( $dates, true ) . "\n";
 		globalcollect_audit_log_error( $message, "WR1_LOG" );
 		return null;
 	}
@@ -491,7 +542,10 @@ function globalcollect_audit_get_next_log( $missing ){
 
 
 function globalcollect_audit_get_log_file_by_date( $date ){
-	//CONTRIBUTION_AUDIT_LOG_FILES_DIR
+	//I know somebody is going to try to come back in time just to punch me for this one, but...
+	++$date;
+	//I swear it makes sense. Most of the data in any given log are actually from the previous day. 
+	
 	$log_directory = variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
 	$file = $log_directory . $date . '_iop.log';
 	if ( file_exists( $file ) ){
@@ -522,6 +576,18 @@ function globalcollect_audit_get_log_file_by_date( $date ){
 		}
 	}
 	
+}
+
+
+function globalcollect_audit_get_log_date_by_file( $file ){
+	$log_directory = variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
+	$date = str_replace( $log_directory, '', $file);
+	$date = substr( $date, 0, strpos( $date, '_' ) );
+	if ( !is_numeric( $date ) ){
+		die( "Your date function is faulty. $file's date is not $date" );
+	}
+	$date -= 1;
+	return $date;
 }
 
 
