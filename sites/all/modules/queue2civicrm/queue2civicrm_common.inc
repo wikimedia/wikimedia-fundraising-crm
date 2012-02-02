@@ -373,7 +373,7 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
 	watchdog( 'queue2civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE));
 
 	$contribution_result = civicrm_api( "Contribution", "Create", $contribution );
-
+	
 	watchdog( 'queue2civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE));
   
 	/**
@@ -609,7 +609,10 @@ function _queue2civicrm_get_state( $country, $state ) {
   $dbs = _queue2civicrm_get_dbs();
   $dbs->use_civicrm();
   $result = db_query( $query );
-  $state = ( !is_null( $result->state_name ) ) ? $result->state_name : $state;
+  if ( $result->num_rows === 1 ){
+	  $row = db_fetch_object( $result );
+	  $state = $row->state_name;
+  } 
   $dbs->use_default();
   
   return $state;
