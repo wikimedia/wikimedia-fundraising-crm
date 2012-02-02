@@ -73,7 +73,7 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
   // check for matching ids - if it doesnt match, it's missing
   echo "Checking for missing transactions\n";
   foreach ( array_keys( $transactions ) as $order_id ) {
-    $query = "SELECT {trxn_id} FROM civicrm_contribution WHERE trxn_id LIKE '%GLOBALCOLLECT %s'";
+    $query = "SELECT {trxn_id} FROM civicrm_contribution WHERE trxn_id LIKE 'GLOBALCOLLECT %s' OR trxn_id LIKE 'RECURRING GLOBALCOLLECT %s'";
     $result = db_query( $query, $order_id . "%", $order_id . "%" );
     if ( !$result->num_rows ) {
 	  echo "!";
