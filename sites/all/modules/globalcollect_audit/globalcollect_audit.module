@@ -73,7 +73,7 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
   // check for matching ids - if it doesnt match, it's missing
   echo "Checking for missing transactions\n";
   foreach ( array_keys( $transactions ) as $order_id ) {
-    $query = "SELECT {trxn_id} FROM civicrm_contribution WHERE trxn_id LIKE 'GLOBALCOLLECT %s'";
+    $query = "SELECT {trxn_id} FROM civicrm_contribution WHERE trxn_id LIKE '%GLOBALCOLLECT %s'";
     $result = db_query( $query, $order_id . "%", $order_id . "%" );
     if ( !$result->num_rows ) {
 	  echo "!";
@@ -278,10 +278,28 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 	}
 	
 	//getting the payment type according to us. Sneaky.
-	$contribution_tracking = globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id );
+	if ( !$fake_db ) {
+		$contribution_tracking = globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id );
+	} else {
+		$contribution_tracking = globalcollect_audit_get_contribution_tracking_data( 1 );
+	}
 	if ( $contribution_tracking ){
 		$payment_method_utm = explode( '.', $contribution_tracking['utm_source'] );
 		$payment_method_utm = $payment_method_utm[2];
+		
+		$idiotic_date_format = $contribution_tracking['ts'];
+		$real_timestamp = date_parse( $idiotic_date_format );
+
+		$contribution_tracking['ts'] = mktime( 
+			$real_timestamp['hour'], 
+			$real_timestamp['minute'], 
+			$real_timestamp['second'], 
+			$real_timestamp['month'], 
+			$real_timestamp['day'], 
+			$real_timestamp['year']
+		);
+		//echo " $idiotic_date_format = $real_timestamp \n";
+		
 	} else {
 		$payment_method_utm = null;
 	}
