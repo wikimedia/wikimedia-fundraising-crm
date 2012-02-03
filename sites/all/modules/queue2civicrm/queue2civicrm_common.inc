@@ -529,8 +529,10 @@ function _queue2civicrm_get_payment_instrument( $msg ){
 						break;
 				}
 				break;
-			case 'bpay':
-				$payment_instrument = 'Bpay';
+			case 'obt':
+				if ( strtolower( $msg['payment_submethod'] === 'bpay' ) ){
+					$payment_instrument = 'Bpay';
+				}
 				break;
 			case 'rtbt':
 				switch( strtolower( $msg['payment_submethod'] ) ){
