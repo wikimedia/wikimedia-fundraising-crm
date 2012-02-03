@@ -3,6 +3,7 @@
 define( 'CONTRIBUTION_AUDIT_WR1_PARSER_DIR', '/usr/local/src/Wr1Parser/' );
 define( 'CONTRIBUTION_AUDIT_WR1_FILES_DIR', '/usr/local/src/Wr1_files/' );
 define( 'CONTRIBUTION_AUDIT_LOG_FILES_DIR', '/usr/local/src/logs/' );
+define( 'CONTRIBUTION_AUDIT_PLUSMINUS', 7 );
 define( 'CONTRIBUTION_AUDIT_TEST_MODE', true );
 define( 'CONTRIBUTION_AUDIT_FAKE_DB', false );
 
@@ -55,6 +56,12 @@ function globalcollect_audit_settings() {
     '#title' => t( 'When this box is checked, no stomp messages will be sent.' ),
     '#required' => TRUE,
     '#default_value' => variable_get( 'globalcollect_audit_test_mode', CONTRIBUTION_AUDIT_TEST_MODE ),
+  );
+  $form['globalcollect_audit_plusminus']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Plus or minus search (in days)' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'globalcollect_audit_plusminus', CONTRIBUTION_AUDIT_PLUSMINUS ),
   );
   return system_settings_form( $form );
 }
@@ -155,7 +162,7 @@ function globalcollect_audit_parse_all_wr1(){
 	
 	$counts = array();
 	
-	while ( count( $missing && globalcollect_audit_can_continue() ) ) {
+	while ( count( $missing ) && globalcollect_audit_can_continue() ) {
 		$local_found_ids = array();
 		$log = globalcollect_audit_get_next_log( $missing, $counts );
 		if ( is_null( $log ) ){
@@ -172,6 +179,10 @@ function globalcollect_audit_parse_all_wr1(){
 				continue;
 			}
 			$logdata = globalcollect_audit_get_log_data_by_order_id( $order_id, $log );
+			if ( is_null( $logdata ) ){
+				echo "X";
+				continue;
+			}
 			if ($logdata === false){
 				echo ".";
 				continue;
@@ -475,7 +486,7 @@ function globalcollect_audit_get_wr1_date( $data ){
 
 function globalcollect_audit_get_next_log( $missing, $counts ){
 	static $tried = array();
-	$plusminus = 7; //this should probably come from a config setting
+	$plusminus = variable_get( 'globalcollect_audit_plusminus', CONTRIBUTION_AUDIT_PLUSMINUS );
 	
 	$tryme = false;
 	
@@ -626,14 +637,23 @@ function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
 		
 		//get the xml, and the contribution_id... and while we're at it, parse the xml. 
 		$xml = null;
+		$full_xml = false;
 		$contribution_id = null;
 		foreach ( $ret as $line ){
 			if ( is_null( $xml ) ){
 				//look for the raw xml. 
 				if ( strpos( $line, 'RETURNED FROM CURL' ) ){
 					$xmlstart = strpos( $line, '<XML>' );
-					$xmlend = strpos( $line, '</XML>' ) + 6;
-					$xml = substr($line, $xmlstart, $xmlend - $xmlstart);
+					//$xmlend = strpos( $line, '</XML>' ) + 6;
+					$xmlend = strpos( $line, '</XML>' );
+					if ( $xmlend ){
+						$full_xml = true;
+						$xmlend += 6;
+						$xml = substr($line, $xmlstart, $xmlend - $xmlstart);
+					} else {
+						//this is a broken line, and it won't load... but we can still parse what's left of the thing, the slow way.
+						$xml = substr($line, $xmlstart);
+					}
 				}
 			}
 			if ( is_null( $contribution_id ) ){
@@ -650,26 +670,61 @@ function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
 		if ( is_null( $contribution_id ) || is_null( $xml ) ){
 			//TODO: This needs more love. We can't go on without both parts, but we should log that we found some of it.
 			echo "OH NOES. Couldn't find enough info in this log! Skipping!" . print_r( $data, true );
-			return false;
+			return null;
 		} else {
 			//go on with your bad self
 			//echo "$order_id: '$contribution_id'. XML: \n$xml\n";
 			//now parse the xml...
-			$xmlobj = new DomDocument;
-			$xmlobj->loadXML($xml);
-
-			$parent_nodes = array(
-				'ORDER',
-				'PAYMENT'
-			);
-
+			
 			$donor_data = array();
+				
+			if ( $full_xml ){
+				$xmlobj = new DomDocument;
+				$xmlobj->loadXML($xml);
 
-			foreach ( $parent_nodes as $parent_node ){
-				foreach ( $xmlobj->getElementsByTagName( $parent_node ) as $node ) {
-					foreach ( $node->childNodes as $childnode ) {
-						if ( trim( $childnode->nodeValue ) != '' ) {
-							$donor_data[$childnode->nodeName] = $childnode->nodeValue;
+				$parent_nodes = array(
+					'ORDER',
+					'PAYMENT'
+				);
+
+				foreach ( $parent_nodes as $parent_node ){
+					foreach ( $xmlobj->getElementsByTagName( $parent_node ) as $node ) {
+						foreach ( $node->childNodes as $childnode ) {
+							if ( trim( $childnode->nodeValue ) != '' ) {
+								$donor_data[$childnode->nodeName] = $childnode->nodeValue;
+							}
+						}
+					}
+				}
+			} else {
+				
+				$search_for_nodes = array(
+					'ORDERID' => true,
+					'AMOUNT' => true,
+					'CURRENCYCODE' => true,
+					'PAYMENTPRODUCTID' => true,
+					'ORDERTYPE' => true,
+					'EMAIL' => true,
+					'FIRSTNAME' => false,
+					'SURNAME' => false,
+					'STREET' => false,
+					'CITY' => false,
+					'STATE' => false,
+					'COUNTRYCODE' => true,
+					'ZIP' => false,
+				);
+				
+				foreach ( $search_for_nodes as $node => $mandatory ){
+					$tmp = globalcollect_audit_get_partial_xml_node_value( $node, $xml );
+					if ( !is_null( $tmp ) ){
+						$donor_data[$node] = $tmp;
+					} else {
+						if ( $mandatory ){
+							$wd_message = __FUNCTION__ . ": Mandatory field $node missing for $contribution_id. Aborting.";
+							globalcollect_audit_log_error( $wd_message, 'MISSING_MANDATORY_DATA' );
+							return null;
+						} else {
+							$donor_data[$node] = '';
 						}
 					}
 				}
@@ -698,13 +753,36 @@ function globalcollect_audit_can_continue(){
 		//nonfatal errors: 
 		//"WR1_DATA_FORMAT" 
 		foreach ( $errors as $code => $thing){
-			if ( $code != 'WR1_DATA_FORMAT' ){
+			if ( $code != 'WR1_DATA_FORMAT' && $code != 'MISSING_MANDATORY_DATA' ){
 				echo print_r( $errors, true );
 				return false;
 			}
 		}
 	}
 	return true;
+}
+
+function globalcollect_audit_get_partial_xml_node_value( $node, $xml ){
+	$node1 = "<$node>";
+	$node2 = "</$node>";
+
+	$valstart = strpos( $xml, $node1 ) + strlen( $node1 );
+	if ( !$valstart ){
+		return null;
+	}
+	
+	$valend = strpos( $xml, $node2 );
+	if ( !$valend ){ //it cut off in that node. This next thing is therefore safe(ish). 
+		$valend = strpos( $xml, '</' );
+	}
+	
+	if ( !$valend ){
+		return null;
+	}
+	
+	$value = substr( $xml, $valstart, $valend - $valstart );
+	return $value;
+
 }
 
 function globalcollect_audit_get_payment_submethod( $payment_product ){
