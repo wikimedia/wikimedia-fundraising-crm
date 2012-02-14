@@ -68,8 +68,7 @@ function globalcollect_audit_settings() {
 
 
 /**
- * Find Globalcollect tranactions not recorded in civicrm_contribution
- * Yes, this is real.
+ * Find Globalcollect transactions not recorded in civicrm_contribution
  */
 function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
   $missing_trxns = array();
@@ -112,6 +111,7 @@ function globalcollect_audit_parse_all_wr1(){
 	$parser_directory = variable_get( 'globalcollect_audit_wr1_parser_dir', CONTRIBUTION_AUDIT_WR1_PARSER_DIR );
 	$files_directory = variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR );
 	$test_mode = variable_get( 'globalcollect_audit_test_mode', CONTRIBUTION_AUDIT_TEST_MODE );
+	$run_all_wr1 = variable_get( 'globalcollect_audit_run_all_wr1', false );
 	require_once( $parser_directory . 'Wr1DataRecord.php' );
 	
 	$wr1_files = globalcollect_audit_get_all_wr1_files();
@@ -119,7 +119,8 @@ function globalcollect_audit_parse_all_wr1(){
 	
 	$errorful_transactions = array();
 	
-	while ( !count( $missing ) && count( $wr1_files ) ){
+	while ( ( $run_all_wr1 || !count( $missing ) ) && count( $wr1_files ) ){
+		$local_missing = array();
 		$wr1_data = array();
 		$file = array_shift( $wr1_files );
 		echo "Parsing $file\n";
@@ -147,12 +148,13 @@ function globalcollect_audit_parse_all_wr1(){
 		$time = microtime(true) - $local_start_time;
 		echo "$file parsed in $time\n";
 		if ( count( $wr1_data ) ){
-			$missing = globalcollect_audit_find_missing_gc_trxns( $wr1_data );
+			$local_missing = globalcollect_audit_find_missing_gc_trxns( $wr1_data );
+			$missing = array_merge( $missing, $local_missing );
 		}
 		
-		if ( !count( $missing ) ){
+		if ( !count( $local_missing ) ){
 			globalcollect_audit_move_completed_wr1( $file );
-		}
+		} 
 	}
 	
 	if ( !count($missing) ){
@@ -166,7 +168,7 @@ function globalcollect_audit_parse_all_wr1(){
 		$local_found_ids = array();
 		$log = globalcollect_audit_get_next_log( $missing, $counts );
 		if ( is_null( $log ) ){
-			break;
+			continue;
 		}
 
 		echo "Trying log $log\n";
@@ -189,7 +191,7 @@ function globalcollect_audit_parse_all_wr1(){
 			}
 
 			//This isn't going to work unless you're connecting to a database that has the row you're looking for. 
-			$missing_txn_message = globalcollect_audit_format_data_for_stomp( $logdata['contribution_id'], $data, $logdata['donor_data'] );
+			$missing_txn_message = globalcollect_audit_format_data_for_stomp( $data, $logdata['donor_data'], $logdata['contribution_id'] );
 			if ( is_null( $missing_txn_message ) ){
 				//log this out in a list of troubled transactions. 
 				$info = array(
@@ -234,6 +236,16 @@ function globalcollect_audit_parse_all_wr1(){
 		
 	}
 	//And loop. 
+		
+	//if we're running in make_missing mode (explicit param required), do that.
+	$make_missing = variable_get( 'globalcollect_audit_make_missing', false );
+	if ( $make_missing && count( $missing ) ){
+		//make all the remaining missing transactions with data defaults. 
+		foreach ( $missing as $missing_txn ) {
+			$missing_txn_message = globalcollect_audit_format_data_for_stomp( $data );
+		}
+	}
+	
 	if ( count( $errorful_transactions ) ){
 		echo "Errorful Transactions: " . print_r( $errorful_transactions, true );
 	}
@@ -249,10 +261,17 @@ function globalcollect_audit_parse_all_wr1(){
 }
 
 
-function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $wr1, $donor_data ){
+function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $contribution_tracking_id = null ){
 	$fake_db = variable_get( 'globalcollect_audit_fake_db', CONTRIBUTION_AUDIT_FAKE_DB );
+	$make_missing = variable_get( 'globalcollect_audit_make_missing', false );
 	//you should probably make sure the data between the two sources match up before we do anything else
 	$unstaged_amount = 0;
+	
+	if ( is_null( $donor_data ) && $make_missing ) {
+		$donor_data = globalcollect_audit_make_default_donor_data( $wr1 );
+	}
+	
+	//if we have $donor_data, make sure it's rational
 	if ( (int)$wr1['Payment-amount'] !== (int)$donor_data['AMOUNT']  ){
 		$amount_problem = true;
 		if ( array_key_exists( 'Over-under-amount-local', $wr1 ) && (int)$wr1['Over-under-amount-local'] > 0 ){
@@ -289,34 +308,38 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 	}
 	
 	//getting the payment type according to us. Sneaky.
-	if ( !$fake_db ) {
-		$contribution_tracking = globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id );
+	if ( $make_missing ){
+		$contribution_tracking = globalcollect_audit_make_contribution_tracking_data( $wr1 );
 	} else {
-		$contribution_tracking = globalcollect_audit_get_contribution_tracking_data( 1 );
-	}
-	if ( $contribution_tracking ){
-		$payment_method_utm = explode( '.', $contribution_tracking['utm_source'] );
-		$payment_method_utm = $payment_method_utm[2];
-		
-		$idiotic_date_format = $contribution_tracking['ts'];
-		$real_timestamp = date_parse( $idiotic_date_format );
+		if ( !$fake_db ) {
+			$contribution_tracking = globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id );
+		} else {
+			$contribution_tracking = globalcollect_audit_get_contribution_tracking_data( 1 );
+		}
+		if ( $contribution_tracking ){
+			$payment_method_utm = explode( '.', $contribution_tracking['utm_source'] );
+			$payment_method_utm = $payment_method_utm[2];
 
-		$contribution_tracking['ts'] = mktime( 
-			$real_timestamp['hour'], 
-			$real_timestamp['minute'], 
-			$real_timestamp['second'], 
-			$real_timestamp['month'], 
-			$real_timestamp['day'], 
-			$real_timestamp['year']
-		);
-		//echo " $idiotic_date_format = $real_timestamp \n";
-		
-	} else {
-		$payment_method_utm = null;
+			$idiotic_date_format = $contribution_tracking['ts'];
+			$real_timestamp = date_parse( $idiotic_date_format );
+
+			$contribution_tracking['ts'] = mktime( 
+				$real_timestamp['hour'], 
+				$real_timestamp['minute'], 
+				$real_timestamp['second'], 
+				$real_timestamp['month'], 
+				$real_timestamp['day'], 
+				$real_timestamp['year']
+			);
+			//echo " $idiotic_date_format = $real_timestamp \n";
+
+		} else {
+			$payment_method_utm = null;
+		}
 	}
 
 	$payment_submethod = false;
-	if ( array_key_exists( 'PAYMENTPRODUCTID', $donor_data ) ){
+	if ( !$make_missing && array_key_exists( 'PAYMENTPRODUCTID', $donor_data ) ){
 		$payment_info = globalcollect_audit_get_payment_submethod($donor_data['PAYMENTPRODUCTID']);
 		$payment_method = $payment_info['group'];
 		$payment_submethod = $payment_info['code'];
@@ -324,6 +347,20 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 			$message = __FUNCTION__ . " Payment Method Mismatch on $contribution_tracking_id. UTM indicates '$payment_method_utm', but xml was sent for '$payment_method'. Using xml value.";
 			globalcollect_audit_log_error( $message, "WR1_DATA_FORMAT" );
 			//this is not fatal, so don't return here. 
+		}
+	}
+	
+	if ( $make_missing ){
+		$payment_info = globalcollect_audit_make_payment_method_info( $wr1 );
+		if ( array_key_exists( 'payment_method', $payment_info ) ){
+			$payment_method = $payment_info['payment_method'];
+		} else {
+			$message = __FUNCTION__ . " Making missing records: Failed to find a payment method for " . $wr1['Payment-method'];
+			globalcollect_audit_log_error( $message, "WR1_DATA_FORMAT" );
+			return null;
+		}
+		if ( array_key_exists( 'payment_submethod', $payment_info ) ){
+			$payment_submethod = $payment_info['payment_submethod'];
 		}
 	}
 	
@@ -341,6 +378,10 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 	
 	if( $recurring ){
 		$stomp_data['recurring'] = 1;
+	}
+	
+	if ( $make_missing ){
+		$stomp_data['audit_hole'] = true;
 	}
 	
 	
@@ -396,6 +437,55 @@ function globalcollect_audit_format_data_for_stomp( $contribution_tracking_id, $
 
 
 }
+
+function globalcollect_audit_make_default_donor_data( $wr1 ){
+	
+	$donor_data = array(
+		'AMOUNT' => (int)$wr1['Payment-amount'],
+		'CURRENCYCODE' => $wr1['Transaction-currency'],
+		'EMAIL' => 'nobody@wikimedia.org', //this guy gets around.
+		'FIRSTNAME' => 'Audit',
+		'SURNAME' => 'Donor',
+		'STREET' => '123 Fake Street',
+		'CITY' => 'Springfield',
+		'ORDERID' => 'Order-number'
+	);
+	
+//	In the future: Deal with recurring by doing this, on recurring txn's
+//	$donor_data['ORDERTYPE'] = '4'
+	
+	return $donor_data();
+}
+
+function globalcollect_audit_make_contribution_tracking_data( $wr1 ){
+	
+//			$payment_method_utm = explode( '.', $contribution_tracking['utm_source'] );
+//			$payment_method_utm = $payment_method_utm[2];
+//
+//			$idiotic_date_format = $contribution_tracking['ts'];
+//			$real_timestamp = date_parse( $idiotic_date_format );
+//
+//			$contribution_tracking['ts'] = mktime( 
+//				$real_timestamp['hour'], 
+//				$real_timestamp['minute'], 
+//				$real_timestamp['second'], 
+//				$real_timestamp['month'], 
+//				$real_timestamp['day'], 
+//				$real_timestamp['year']
+//			);
+//			//echo " $idiotic_date_format = $real_timestamp \n";
+			
+			
+}
+
+function globalcollect_audit_make_payment_method_info( $wr1 ){
+	if ( $wr1['Payment-method'] === 'CC' ){
+		//[Creditcard-company] = 'ECMC'
+		//Gee, it would be swell if they had an index of these things so I could map them
+		return array( 'payment_method' => 'cc' );
+	}
+}
+
 
 function globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id ){ 
 	$dbs = _queue2civicrm_get_dbs();
@@ -558,7 +648,7 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 	
 	if ( !$tryme ){
 		$message = __FUNCTION__  . " No 'next' log identified. Dates checked: " . print_r( $tried, true ) . "\nCurrent Missing: " . print_r( $dates, true ) . "\n";
-		globalcollect_audit_log_error( $message, "WR1_LOG" );
+		globalcollect_audit_log_error( $message, "WR1_LOG_FATAL" );
 		return null;
 	}
 	
@@ -592,7 +682,7 @@ function globalcollect_audit_get_log_file_by_date( $date ){
 				return $file;
 			} else {
 				$message = __FUNCTION__ . " $file could not be created. Something went wrong with the grep (permissions?)";
-				globalcollect_audit_log_error( $message, "WR1_LOG" );
+				globalcollect_audit_log_error( $message, "WR1_LOG_FATAL" );
 				return null;
 			}
 			
@@ -752,8 +842,13 @@ function globalcollect_audit_can_continue(){
 	if ( count( $errors ) ){
 		//nonfatal errors: 
 		//"WR1_DATA_FORMAT" 
+		$nonfatal = array(
+			'WR1_DATA_FORMAT',
+			'MISSING_MANDATORY_DATA',
+			'WR1_LOG'
+		);
 		foreach ( $errors as $code => $thing){
-			if ( $code != 'WR1_DATA_FORMAT' && $code != 'MISSING_MANDATORY_DATA' ){
+			if ( !in_array( $code, $nonfatal) ){
 				echo print_r( $errors, true );
 				return false;
 			}
