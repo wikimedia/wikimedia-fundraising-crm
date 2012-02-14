@@ -324,13 +324,19 @@ function _queue2civicrm_location_prepare_params( $msg, $contact ) {
  * 
  * @param array $msg
  * @param array $contact
+ * @param integer $recur_id   See `civicrm_contribution`.`contribution_recur_id`
+ * @param integer $effort_id  The effort id - the number of successful payments for recurring payments
  * @return array
  */
-function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL ) {
+function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL, $effort_id=NULL ) {
 	$trxn_id = strtoupper( $msg[ 'gateway' ] . ' ' . $msg[ 'gateway_txn_id' ] );
 	if ( $recur_id || ( array_key_exists( "recurring", $msg ) && $msg['recurring'] ) ) {
 		$trxn_id = 'RECURRING ' . $trxn_id;
 	}
+  
+  if ( !empty($effort_id)) {
+		$trxn_id .= ' - ' . (integer) $effort_id;
+  }
 
 	// Insert the contribution record
 	$contribution_id = _queue2civicrm_get_civi_id( 'contribution_type_id', 'cash' );
