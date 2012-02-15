@@ -380,11 +380,11 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL, $ef
 
 	$contribution_result = civicrm_api( "Contribution", "Create", $contribution );
 	
+	watchdog( 'queue2civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE));
+	
 	if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
 		return false;
 	}
-	
-	watchdog( 'queue2civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE));
   
 	/**
 	*  Apply custom field defaults.
