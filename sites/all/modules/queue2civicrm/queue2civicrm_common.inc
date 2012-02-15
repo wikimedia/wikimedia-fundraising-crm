@@ -380,6 +380,10 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL, $ef
 
 	$contribution_result = civicrm_api( "Contribution", "Create", $contribution );
 	
+	if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
+		return false;
+	}
+	
 	watchdog( 'queue2civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE));
   
 	/**
@@ -413,9 +417,6 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL, $ef
 		}
 	}
 	$dbs->use_default();
-	if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
-		return false;
-	}
 	return $contribution_result;
 }
 
