@@ -329,14 +329,26 @@ function _queue2civicrm_location_prepare_params( $msg, $contact ) {
  * @return array
  */
 function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL, $effort_id=NULL ) {
-	$trxn_id = strtoupper( $msg[ 'gateway' ] . ' ' . $msg[ 'gateway_txn_id' ] );
-	if ( $recur_id || ( array_key_exists( "recurring", $msg ) && $msg['recurring'] ) ) {
-		$trxn_id = 'RECURRING ' . $trxn_id;
+	
+	// Do not prepend to the id if the values already exist in $msg['gateway_txn_id'] 
+	$prepend_check = 'RECURRING GLOBALCOLLECT';
+
+	if ( strpos( $msg['gateway_txn_id'], $prepend_check ) !== 0 ) {
+
+		$trxn_id = strtoupper( $msg['gateway'] . ' ' . $msg['gateway_txn_id'] );
+
+		if ( $recur_id || ( array_key_exists( "recurring", $msg ) && $msg['recurring'] ) ) {
+			$trxn_id = 'RECURRING ' . $trxn_id;
+		}
 	}
-  
-  if ( !empty($effort_id)) {
+	else {
+		$trxn_id = $msg['gateway_txn_id'];
+	}
+	
+	// Append effort id
+	if ( !empty($effort_id)) {
 		$trxn_id .= ' - ' . (integer) $effort_id;
-  }
+	}
 
 	// Insert the contribution record
 	$contribution_id = _queue2civicrm_get_civi_id( 'contribution_type_id', 'cash' );
