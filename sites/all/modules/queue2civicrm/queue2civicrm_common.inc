@@ -330,26 +330,81 @@ function _queue2civicrm_location_prepare_params( $msg, $contact ) {
  */
 function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL, $effort_id=NULL ) {
 	
-	// Do not prepend to the id if the values already exist in $msg['gateway_txn_id'] 
-	$prepend_check = 'RECURRING GLOBALCOLLECT';
+	//TODO: After we upgrade civi, refactor this whole thing so the data staging 
+	//is all done in... y'know: The staging function, which should itself get 
+	//moved into common for its universal usefulness. 
+	//And another thing: There should be a set/get style pair of functions for 
+	//parsing our stupid transaction IDs at this point, because: Yeesh. 
+	
+	$parts = explode( ' ', $msg['gateway_txn_id'] );
+	
+	$transaction_id = '';
+	$timestamp = '';
+	
+	switch ( count( $parts ) ){
+		case 0:
+			watchdog( 'queue2civicrm', 'Cannot add contribution: No gateway_txn_id:' . print_r($msg, TRUE));
+			return false;
+			break;
+		case 1: 
+			//unusual, but let's just assume it's a lonely transaction id and assign a timestamp.
+			$transaction_id = $parts[0];
+			$timestamp = time();
+			break;
+		case 2: 
+			//regular old style: Transaction ID followed by a timestamp. 
+			//we can be reasonably sure this was just generated. 
+			$transaction_id = $parts[0];
+			$timestamp = $parts[1];
+			break;
+		case 4:
+			//the only way we have four parts in one of these things would be if...
+			if (array_shift($parts) != 'RECURRING'){
+				watchdog( 'queue2civicrm', 'Cannot add contribution: Malformed gateway_txn_id (4 parts, does not start with "RECURRING"):' . print_r($msg, TRUE));
+				return false;
+			}
+			//and now we're down to three. DO NOT BREAK HERE, OR REORDER THE CASE BLOCKS. 
+		case 3:
+			//coming in from somewhere that... is probably old and stale. 
+			//Pull out the parts and regen the timestamp.
+			if (array_shift($parts) != strtoupper( $msg['gateway'])){
+				watchdog( 'queue2civicrm', 'Cannot add contribution: Malformed gateway_txn_id (3 parts, does not start with ucase gateway):' . print_r($msg, TRUE));
+				return false;
+			}
+			
+			$transaction_id = $parts[0];
+			$timestamp = time();
 
-	if ( strpos( $msg['gateway_txn_id'], $prepend_check ) !== 0 ) {
-
-		$trxn_id = strtoupper( $msg['gateway'] . ' ' . $msg['gateway_txn_id'] );
-
-		if ( $recur_id || ( array_key_exists( "recurring", $msg ) && $msg['recurring'] ) ) {
-			$trxn_id = 'RECURRING ' . $trxn_id;
-		}
-	}
-	else {
-		$trxn_id = $msg['gateway_txn_id'];
+			break;
+		default: 
+			//error state. Way too many dataz. 
 	}
 	
-	// Append effort id
-	if ( !empty($effort_id)) {
-		$trxn_id .= ' - ' . (integer) $effort_id;
+	//one last typey-checky thing before we just assume we're all good.
+	if ( !is_numeric( $timestamp ) ){
+		watchdog( 'queue2civicrm', 'Cannot add contribution: Malformed gateway_txn_id (timestamp does not appear to be numeric):' . print_r($msg, TRUE));
+		return false;
 	}
+	
+	//kill off any pre-existing effort ID in the transaction id. Leaving it as 
+	//an explode, though, because we might need to error check on that second 
+	//part later. (It should, for instance, be <= the passed-in $effort_id...) 
+	$transaction_id = explode( '-', $transaction_id );
+	$transaction_id = $transaction_id[0];
+	
+	if (!is_null($effort_id)){
+		$transaction_id .= '-' . $effort_id;
+	}
+	
+	$prefix = $msg['gateway'];
 
+	if ( $recur_id || ( array_key_exists( "recurring", $msg ) && $msg['recurring'] ) ) {
+		$prefix = 'RECURRING ' . $prefix;
+	}
+	
+	$trxn_id = strtoupper( $prefix . ' ' . $transaction_id . ' ' . $timestamp );
+	
+	
 	// Insert the contribution record
 	$contribution_id = _queue2civicrm_get_civi_id( 'contribution_type_id', 'cash' );
 
