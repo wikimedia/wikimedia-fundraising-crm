@@ -557,7 +557,7 @@ function thank_you_queue2civicrm_import( $contribution_info ) {
 }
 
 function thank_you_civicrm_recurring_globalcollect( $contribution_info ) {
-  $contribution_id = $contribution_info[ 'id' ];
+  $contribution_id = $contribution_info[ 'contribution_id' ];
   watchdog('thank_you', 'Calling thank you function for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution_info, TRUE)) . '</pre>');
   thank_you_send( $contribution_id );
 }
