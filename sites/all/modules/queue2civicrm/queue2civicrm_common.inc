@@ -376,8 +376,10 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL, $ef
 			$timestamp = time();
 
 			break;
-		default: 
+		default: 				
 			//error state. Way too many dataz. 
+			watchdog( 'queue2civicrm', 'Cannot add contribution: Malformed gateway_txn_id (too many parts):' . print_r($msg, TRUE));
+			return false;
 	}
 	
 	//one last typey-checky thing before we just assume we're all good.
