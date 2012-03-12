@@ -502,7 +502,7 @@ function _queue2civicrm_update_contribution_tracking( $msg, $contribution ) {
       watchdog( 'queue2civicrm', "There was a problem updating contribution_tracking for message: %msg", array( '%msg' => print_r( $msg, true )), WATCHDOG_ERROR );
       return FALSE;
     } else {
-      watchdog( 'queue2civicrm', 'Successfuly updated contribution_tracking for message: %msg', array( '%msg' => print_r( $msg, true)));
+      watchdog( 'queue2civicrm', 'Successfully updated contribution_tracking for message: %msg', array( '%msg' => print_r( $msg, true)));
       return TRUE;
     }
   }
