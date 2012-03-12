@@ -571,10 +571,12 @@ function recurring_get_recur_record( $subscr_id ) {
 /**
  * Convert queued message to a standardized format
  * 
- * This is mostly wrapper to ensure that all necessary normalization occurs
- * on the message.
+ * This is a wrapper to ensure that all necessary normalization occurs on the 
+ * message.
  * 
- * @param array $msgnginx syslog
+ * If message is in json format, it will be converted into an array.
+ *
+ * @param array|string $msg
  * @return array
  */
 function recurring_normalize_msg( $msg  ) {
