@@ -5,6 +5,7 @@
 
 // include the database switching class
 require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
+require_once( drupal_get_path( 'module', 'civicrm_recurring_globalcollect' ) . '/civicrm_recurring_globalcollect_common.inc' );
 
 /**
  * Connect using the Stomp library.
@@ -505,6 +506,158 @@ function _queue2civicrm_update_contribution_tracking( $msg, $contribution ) {
       watchdog( 'queue2civicrm', 'Successfully updated contribution_tracking for message: %msg', array( '%msg' => print_r( $msg, true)));
       return TRUE;
     }
+  }
+}
+
+/**
+ * Insert the recurring contribution record
+ * 
+ * @todo Determine the watchdog level for errors.
+ * @todo Are the dates being set with the correct value?
+ * 
+ * @param array $msg
+ * @param integer $contact_id
+ * @param array $contribution   The contribution record
+ * @return boolean	Returns true on success
+ */
+function _queue2civicrm_contribution_recur_insert( $msg, $contact_id, $contribution ) {
+  
+  // Get the contribution record
+  if ( isset( $contribution['values'] ) && is_array( $contribution['values'] ) ) {
+    $contribution_record = $contribution['values'][ $contribution['id'] ];
+  }
+  else {
+  	  $contribution_record = $contribution;
+  }
+	
+  $msg[ 'frequency_unit' ] = isset( $msg[ 'frequency_unit' ] ) ? $msg[ 'frequency_unit' ] : 'month';
+  $msg[ 'frequency_interval' ] = isset( $msg[ 'frequency_interval' ] ) ? (integer) $msg[ 'frequency_interval' ] : 1;
+  $msg[ 'installments' ] = isset( $msg[ 'installments' ] ) ? (integer) $msg[ 'installments' ] : 0;
+
+  if ( !isset( $msg[ 'recurring' ] ) && $msg[ 'recurring' ] != 1 ) {
+  	watchdog( 'queue2civicrm', 'Payment is not marked as recurring.', null, WATCHDOG_ERROR );
+  	return false;
+  }
+  
+  // Allowed frequency_units
+  $frequency_units = array( 'month' );
+  if ( !in_array( $msg[ 'frequency_unit' ], $frequency_units ) ) {
+  	watchdog( 'queue2civicrm', 'Invalid `frequency_unit` specified [' . $msg[ 'frequency_unit' ] . ']. Supported frequency_units: %frequency_units', array( '%frequency_units' => implode( ', ', $frequency_units ) ), WATCHDOG_ERROR );
+  	return false;
+  }
+
+  // Frequency interval is only allowed to be 1.
+  if ( $msg[ 'frequency_interval' ] !== 1 ) {
+  	watchdog( 'queue2civicrm', '`frequency_interval` is only allowed to be set to 1.', null, WATCHDOG_ERROR );
+  	return false;
+  }
+
+  // installments is only allowed to be 0.
+  if ( $msg[ 'installments' ] !== 0 ) {
+  	watchdog( 'queue2civicrm', '`installments` must be set to 0.', null, WATCHDOG_ERROR );
+  	return false;
+  }
+  
+  if ( empty( $contribution_record ) ) {
+  	drush_set_error('CONTRIBUTION', 'The contribution_record, with the contact_id [' . $contact_id . '] is empty: ' . print_r( $msg, true ));
+  	return false;
+  }
+
+  // trxn_id must be set.
+  if ( empty( $contribution_record[ 'trxn_id' ] ) ) {
+  	watchdog( 'queue2civicrm', '`trxn_id` must be set and not empty: ' . print_r( $contribution_record, true ), null, WATCHDOG_ERROR );
+  	return false;
+  }
+  
+  $msg[ 'cycle_day' ] = (integer) date( 'j', $msg[ 'date' ] );
+  
+  $next_sched_contribution = _civicrm_recurring_globalcollect_get_next_sched_contribution_date_for_month( $msg );
+  
+  $query = "INSERT INTO {civicrm_contribution_recur}
+    (
+  		contact_id,
+  		amount,
+  		currency,
+  		frequency_unit,
+  		frequency_interval,
+  		installments,
+  		start_date,
+  		create_date,
+  		processor_id,
+  		cycle_day,
+  		next_sched_contribution,
+  		trxn_id
+  	) 
+  	VALUES ( %d, %f, '%s', '%s', %d, %d, '%s', '%s', %d, '%s', '%s', '%s' )";
+  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs->use_civicrm();
+  $result = db_query( $query, 
+    // contact
+  	$contact_id,
+  	//amount
+    $msg[ 'net' ],
+    //currency
+    $msg[ 'currency' ],
+    //frequency_unit
+    $msg[ 'frequency_unit' ],
+    //frequency_interval
+    $msg[ 'frequency_interval' ],
+    //installments
+    $msg[ 'installments' ],
+    //start_date
+    date( 'Y-m-d H:i:s', $msg[ 'date' ] ),
+    //create_date
+    date( 'Y-m-d H:i:s', $msg[ 'date' ] ),
+    //processor_id
+    1,
+    //cycle_day
+    $msg[ 'cycle_day' ],
+    //next_sched_contribution
+    $next_sched_contribution,
+    //trxn_id
+    $contribution_record[ 'trxn_id' ]
+  );
+
+  $contribution_recur_id = ( $result ) ? db_last_insert_id( 'civicrm_contribution_recur', 'id' ) : null;
+
+  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$contribution_recur_id" . print_r($contribution_recur_id, true) . "\n" );
+  
+  // Link the contribution to the recurring payment
+  $link_contribution_status = _queue2civicrm_update_contribution_for_recurring( $contribution['id'], $contribution_recur_id );
+  
+  $queue2civicrm_dbs->use_default(); 
+	
+  return $link_contribution_status;
+}
+
+/**
+ * Link a recurring payment to the contribution record
+ * 
+ * @param integer $contribution_id
+ * @param integer $contribution_recur_id
+ */
+function _queue2civicrm_update_contribution_for_recurring( $contribution_id, $contribution_recur_id ) {
+  
+  // contribution_id must be set and not null or zero
+  if ( empty( $contribution_id ) ) {
+  	watchdog( 'queue2civicrm', '`contribution_id` must be set and not empty.', null, WATCHDOG_ERROR );
+  	return false;
+  }
+  
+  // contribution_recur_id must be set and not null or zero
+  if ( empty( $contribution_recur_id ) ) {
+  	watchdog( 'queue2civicrm', '`contribution_recur_id` must be set and not empty.', null, WATCHDOG_ERROR );
+  	return false;
+  }
+
+  $result = db_query('UPDATE {civicrm_contribution} SET contribution_recur_id=%d WHERE id=%d', (integer) $contribution_recur_id, (integer) $contribution_id);
+
+  if ( !$result ) {
+    watchdog( 'queue2civicrm', 'There was a problem linking the contribution [%contribution_id] to the recurring contribution [%contribution_recur_id]', array( '%contribution_id' => $contribution_id, '%contribution_recur_id' => $contribution_recur_id ), WATCHDOG_ERROR );
+    return false;
+  } else {
+    watchdog( 'queue2civicrm', 'Successfully linked the contribution  [%contribution_id] to the recurring contribution [%contribution_recur_id]', array( '%contribution_id' => $contribution_id, '%contribution_recur_id' => $contribution_recur_id ) );
+    return true;
   }
 }
 
