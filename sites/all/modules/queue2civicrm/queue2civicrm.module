@@ -353,6 +353,12 @@ function queue2civicrm_import( $msg ) {
 			//return false;
 		}
 
+		// Update 
+        if ( isset( $msg[ 'recurring' ] ) && $msg[ 'recurring' ] == 1 ) {
+          watchdog( 'queue2civicrm_import', 'Attempting to insert recurring record.');
+          _queue2civicrm_contribution_recur_insert( $msg, $contact['id'], $contribution );
+        }
+        
 		// Map the tracking record to the CiviCRM contribution
 		// @FIXME what do we do if this returns false?  nothing at the moment...
 		_queue2civicrm_update_contribution_tracking( $msg, $contribution );
