@@ -1,9 +1,8 @@
 <?php
 
-civicrm_initialize();
-
 function get_payment_instrument( $name ){
-
+	civicrm_initialize();
+	
 	$payment_instrument = civicrm_api( "OptionValue", "Get", array(
 		"version" => '3',
 		"option_group_name" => 'payment_instrument',
@@ -40,6 +39,8 @@ function get_payment_instrument( $name ){
  * @return CRM_Contribute_BAO_ContributionType|object
  */
 function get_contribution_type( $type ){
+	civicrm_initialize();
+	
 	# ContributionType is not implemented in the API
 	require_once( DRUPAL_ROOT . '/sites/all/modules/civicrm/CRM/Contribute/BAO/ContributionType.php' );
 
