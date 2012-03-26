@@ -121,6 +121,14 @@ function recurring_globalcollect_settings() {
     '#description' => t('Enter the number of days in the past to start batching payments that were missed in the past X days.'),
   );
 
+  $form['recurring_globalcollect_batch_max'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Maximum number of payments to batch'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('recurring_globalcollect_batch_max', 0),
+    '#description' => t('The maximum batch size cannot be overridden from drush.'),
+  );
+
   $form['recurring_globalcollect_batch'] = array(
     '#type' => 'select',
     '#title' => t('Cron batch size'),
@@ -128,7 +136,7 @@ function recurring_globalcollect_settings() {
     '#default_value' => variable_get('recurring_globalcollect_batch', 0),
     '#description' => t('This may be overridden with: `drush crg --batch=10`'),
     '#options' => array(
-      0 => '0 (Disable)',
+      0 => 0,
       1 => 1,
       5 => 5,
       10 => 10,
@@ -161,11 +169,22 @@ function recurring_globalcollect_batch_process($options = array()) {
 
   // The number of contributions to process
   $batch = (integer) variable_get('recurring_globalcollect_batch', 0);
+  $batch_max = (integer) variable_get('recurring_globalcollect_batch_max', 0);
   
   // Make sure batch is an integer.
   if (isset($options['batch'])) {
   	$batch = (integer) $options['batch'];
   	unset($options['batch']);
+  }
+
+  if ($batch > $batch_max) {
+  	
+  	$message = 'You are attempting to batch ' . $batch .' payments, which is'
+  	           . ' more than the maximum allowed: ' . $batch_max .'. Either'
+  	           . ' batch less payments or increase the maximum.';
+  	$link = l('Edit recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
+    watchdog('BATCHING', $message, array(), WATCHDOG_ERROR, $link);
+  	return false;         
   }
   
   $processed = 0;
@@ -308,6 +327,19 @@ function recurring_globalcollect_process_error() {
   
   // Decide what to do with error.
   switch ($err_code){
+    
+    /**
+     * BATCHING
+     *
+     * There was a problem with the batch size you are attempting.
+     *
+     * You can alter these settings in the admin panel:
+     * @link /?q=admin/settings/recurring_globalcollect
+     *
+     * This should not mark the payment as a failure
+     */
+    case 'BATCHING':
+      break;
     
     /**
      * CIVI_CONFIG
