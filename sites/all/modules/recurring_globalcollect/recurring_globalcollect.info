@@ -1,0 +1,6 @@
+name = Recurring GlobalCollect Processor
+description = Processes recurring payments for GlobalCollect
+core = 6.x
+dependencies[] = civicrm
+dependencies[] = queue2civicrm
+package = GlobalCollect
