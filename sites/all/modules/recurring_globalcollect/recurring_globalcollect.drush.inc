@@ -140,7 +140,7 @@ function drush_recurring_globalcollect_validate() {
   	  if (!is_numeric($batch)) {
 		  $message = 'You did not specify a number. You must specify either'
 		             . ' zero or a postive integer less than ' . $batch_max
-		             . ' You specifed [' . (string) $batch . '].';
+		             . '. You specifed [' . (string) $batch . '].';
 		  return drush_set_error('BATCHING', dt($message));
   	  }
   	  
