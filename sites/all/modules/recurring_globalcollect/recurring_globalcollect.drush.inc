@@ -114,12 +114,17 @@ function drush_recurring_globalcollect() {
  * - Make sure process is either next_sched_contribution | failure_retry_date
  */
 function drush_recurring_globalcollect_validate() {
+  	  	  
+
+  $link_to_settings = url('admin/settings/recurring_globalcollect', array('absolute'=>true));
 
   $batch = drush_get_option('batch', 0);
   $date = drush_get_option('date');
   $process = drush_get_option('process');
+  
+  $batch_max = (integer) variable_get('recurring_globalcollect_batch_max', 0);
+  //echo( eval('return	__FILE__ . date(\'r\') . "\n";') . '$batch_max - ' .  print_r($batch_max, true) . "\n" );
 
-  $batch_max = 100;
   $process_allowed_options = array(
   	  'next_sched_contribution',
   	  'failure_retry_date',
@@ -133,8 +138,10 @@ function drush_recurring_globalcollect_validate() {
   	  }
   	  
   	  if (!is_numeric($batch)) {
-		  $message = '1 - You must specify either zero or a postive integer less than ' . $batch_max . ' You specifed [' . (string) $batch . '].';
-		  return drush_set_error('INVALID_BATCH_SIZE', dt($message));
+		  $message = 'You did not specify a number. You must specify either'
+		             . ' zero or a postive integer less than ' . $batch_max
+		             . ' You specifed [' . (string) $batch . '].';
+		  return drush_set_error('BATCHING', dt($message));
   	  }
   	  
   	  // $batch is numeric, convert it to an integer.
@@ -142,13 +149,18 @@ function drush_recurring_globalcollect_validate() {
   	  
   	  
   	  if ($batch < 0) {
-		  $message = '2 - You must specify either zero or a postive integer less than ' . $batch_max . '. You specifed [' . $batch . '].';
-		  return drush_set_error('INVALID_BATCH_SIZE', dt($message));
+
+		  $message = 'You specified a negative number. You must specify either'
+		  . ' zero or a postive integer less than ' . $batch_max . '. You'
+		  . ' specifed [' . $batch . '].';
+		  return drush_set_error('BATCHING', dt($message));
   	  }
   	  
   	  if ($batch > $batch_max) {
-		  $message = '3 - You must specify either zero or a postive integer less than ' . $batch_max . '. You specifed [' . $batch . '].';
-		  return drush_set_error('INVALID_BATCH_SIZE', dt($message));
+          $message = 'You are attempting to batch ' . $batch .' payments, which'
+          . ' is more than the maximum allowed: ' . $batch_max .'. Either batch'
+          . ' less payments or increase the maximum. You may change settings here: ' . $link_to_settings;
+		  return drush_set_error('BATCHING', dt($message));
   	  }
   	  
   }
