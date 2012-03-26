@@ -311,6 +311,11 @@ function recurring_globalcollect_process_error() {
   $err_text = isset($top_error['err_text']) ? $top_error['err_text'] : 'An error occured, but no error was generated at the incident.';
   
   /**
+   * @var string $watchdog_link The watchdog operations link
+   */
+  $watchdog_link = '';
+  
+  /**
    * @var string $watchdog_message The watchdog error message
    */
   $watchdog_message = $err_code . ': ' . $err_text;
@@ -339,6 +344,7 @@ function recurring_globalcollect_process_error() {
      * This should not mark the payment as a failure
      */
     case 'BATCHING':
+   	  $watchdog_link = l('Edit recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
       break;
     
     /**
@@ -402,7 +408,7 @@ function recurring_globalcollect_process_error() {
       throw new Exception($watchdog_message);
   }
 
-  watchdog($watchdog_type, $watchdog_message, array(), $watchdog_severity);
+  watchdog($watchdog_type, $watchdog_message, array(), $watchdog_severity, $watchdog_link);
   recurring_globalcollect_failmail($top_error, array());
 }
 
