@@ -1,0 +1,688 @@
+<?php
+// include common functions
+require_once( drupal_get_path( 'module', 'recurring_globalcollect' ) . '/recurring_globalcollect_common.inc' );
+
+/**
+ * Implementation of hook_menu().
+ */
+function recurring_globalcollect_menu() {
+  $items = array();
+  
+  $items['admin/settings/recurring_globalcollect'] = array(
+    'title' => 'CiviCRM Recurring GlobalCollect Processor',
+    'description' => t('Configure message queue interface.'),
+    'access arguments' => array('administer recurring_globalcollect'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recurring_globalcollect_settings'),
+  );
+
+  $items['admin/settings/recurring_globalcollect/configure'] = array(
+    'title' => 'Configure',
+    'access arguments' => array('administer recurring_globalcollect'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['admin/settings/recurring_globalcollect/test'] = array(
+    'title' => 'Test',
+    'access arguments' => array('administer recurring_globalcollect'),
+    'page callback' => 'recurring_globalcollect_test',
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['recurring_globalcollect'] = array(
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'page callback' => 'recurring_globalcollect_batch_process',
+  );
+  
+  return $items;
+}
+
+function recurring_globalcollect_test() {
+
+  $return = 'No testing available at this time.';
+  return $return;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function recurring_globalcollect_perm() {
+  return array('administer recurring_globalcollect');
+}
+
+/**
+ * Callback for menu path "admin/settings/recurring_globalcollect".
+ */
+function recurring_globalcollect_settings() {
+  $form = array();
+
+  $defaultTestUrl = buildDefaultTestUrl();
+  
+  $form[ 'recurring_globalcollect' ][ 'globalcollect_url' ] = array(
+    '#maxlength' => 255,
+    '#type' => 'textfield',
+    '#title' => t('Global Collect Url'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('globalcollect_url', $defaultTestUrl),
+    '#description' => t( 'The url to the Global Collect Gateway.' ),
+  );
+
+  $form[ 'recurring_globalcollect' ][ 'localhost_test_url' ] = array(
+    '#maxlength' => 255,
+    '#type' => 'textfield',
+    '#title' => t('Default Testing Url'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('localhost_test_url', $defaultTestUrl),
+    '#description' => t( 'The url to the local server to test the connection. This should point to your CiviCRM host.' ),
+  );
+  
+  // Get the path of the file to make sure it is installed.
+  $standalone_globalcollect_adapter_path = variable_get('standalone_globalcollect_adapter_path', drupal_get_path('module', 'recurring_globalcollect') . '/library/StandaloneGlobalCollectAdapter.php');
+
+  // Flag to tell the user to install the library
+  $standalone_globalcollect_adapter_installed = is_file( $standalone_globalcollect_adapter_path ) ? '<span style="color:green;">Installed</span>' : '<span style="color:red;">Please install</span>';
+
+  $form['standalone_globalcollect_adapter_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('StandaloneGlobalCollectAdapter Path'),
+    '#required' => TRUE,
+    '#default_value' => $standalone_globalcollect_adapter_path,
+    '#description' => t($standalone_globalcollect_adapter_installed . ' Link: ') . l(t('Current version of the StandaloneGlobalCollectAdapter library' ), "http://svn.wikimedia.org/viewvc/wikimedia/trunk/fundraising-misc/standalone/StandaloneGlobalCollectAdapter/StandaloneGlobalCollectAdapter.php?view=markup"),
+  );
+
+  $form['recurring_globalcollect_failmail'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email Notification Address'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('recurring_globalcollect_failmail', ''),
+  );
+
+  $form['recurring_globalcollect_merchant_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Global Collect Merchant ID'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('recurring_globalcollect_merchant_id', 0),
+  );
+
+  $form['recurring_globalcollect_failure_retry_rate'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Failure retry rate'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('recurring_globalcollect_failure_retry_rate', 1),
+    '#description' => t('Enter the number of days to wait until retry.'),
+  );
+
+  $form['recurring_globalcollect_run_missed_days'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Catch up missed days'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('recurring_globalcollect_run_missed_days', 3),
+    '#description' => t('Enter the number of days in the past to start batching payments that were missed in the past X days.'),
+  );
+
+  $form['recurring_globalcollect_batch'] = array(
+    '#type' => 'select',
+    '#title' => t('Cron batch size'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('recurring_globalcollect_batch', 0),
+    '#description' => t('This may be overridden with: `drush crg --batch=10`'),
+    '#options' => array(
+      0 => '0 (Disable)',
+      1 => 1,
+      5 => 5,
+      10 => 10,
+      20 => 20,
+      30 => 30,
+      40 => 40,
+      50 => 50,
+      75 => 75,
+      100 => 100,
+    ),
+  );
+  
+  return system_settings_form($form);
+}
+
+/**
+ * recurring_globalcollect_batch_process
+ * 
+ * @param array $options 
+ * - $options['batch'] The number of contributions to process. If empty, this defaults to recurring_globalcollect_batch.
+ * - $options['date'] @uses strtotime()
+ * - $options['process'] next_sched_contribution | failure_retry_date
+ * - $options['url'] Used for testing and overriding the url
+ */
+function recurring_globalcollect_batch_process($options = array()) {
+
+  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . print_r($options, true) . "\n" );
+
+  //set_time_limit(60);
+
+  // The number of contributions to process
+  $batch = (integer) variable_get('recurring_globalcollect_batch', 0);
+  
+  // Make sure batch is an integer.
+  if (isset($options['batch'])) {
+  	$batch = (integer) $options['batch'];
+  	unset($options['batch']);
+  }
+  
+  $processed = 0;
+  
+  watchdog('crg', 'Attempting to process up to ' . $batch . ' recurring contribution(s).');
+
+  // Attempt to process items for the batch
+  for ($i = 0; $i < $batch; ++$i) {
+    $success = recurring_globalcollect_process($options);
+    if ($success) {
+      ++$processed;
+    } else {
+      break;
+    }
+  }
+
+  // allow for other modules to handle their own related batch processing
+  //$batchprocessed = module_invoke_all( 'recurring_globalcollect_batch_process');
+  //$processed += array_sum($batchprocessed);
+  
+  if ($processed > 0) {
+    watchdog('crg', 'Successfully processed ' . $processed . ' contribution(s).');
+  }
+  else {
+    watchdog('crg', 'No contributions processed.');
+  }
+}
+
+/**
+ * Remove one item from the queue and process it.
+ *
+ * @param  array  $options
+ *
+ * $options:
+ * - string  $date The date to process.
+ * - string $process There are two types of payments to process: next_sched_contribution and failure_retry_date.
+ *
+ * You are not allowed to process future dates. This generates an error
+ *
+ * $options['date'] @uses strtotime()
+ *
+ * The default date to process is today.
+ *
+ * The default process is next_sched_contribution.
+ *
+ * If you pick an incorrect process, an error will be generated.
+ *
+ * @uses recurring_globalcollect_process_error()
+ * @uses recurring_globalcollect_process_validate_options()
+ *
+ * @return  boolean  Returns false on error. Returns true if contributions were processed. Returns false if no contributions are ready to be processed.
+ */
+function recurring_globalcollect_process($options = array()) {
+  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . print_r($options, true) . "\n" );
+  
+  /**
+   * @var boolean $return The return value
+   */
+  $return = false;
+
+  /**
+   * @var array $query_options Options to pass to the query
+   */
+  $query_options = recurring_globalcollect_process_get_query_options($options);
+  
+  // Check to see if there were any problems with options
+  if (!is_array($query_options)) {
+    return false;
+  }
+  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . print_r($result, true) );
+  
+  try {
+
+    $result = recurring_globalcollect_get($query_options);
+  
+    // Check to see if any contributions were found
+    if (empty($result)) {
+      watchdog('crg', 'No contributions are ready to be processed.');
+      $return = false;
+    }
+    else {
+  
+      $status = recurring_globalcollect_connect($result, $options);
+
+      // If $status is false, see what went wrong
+      if ($status) {
+        $return = true;
+      }
+      else {
+      	// There was a problem, process the error.
+	    recurring_globalcollect_process_error();
+      }
+	}
+  }
+  catch (Exception $e) {
+  	$message = 'Unable to process payment: ' . $e->getMessage();
+    watchdog('crg', $message, array(), WATCHDOG_ERROR);
+    return drush_set_error('UNKNOWN', dt($message));
+  }  
+
+  return $return;
+}
+
+/**
+ * Process the error
+ *
+ * @todo Any errors found in this method should not mark the contribution as a failure.
+ */
+function recurring_globalcollect_process_error() {
+  
+  /**
+   * @var array $top_error The top error in the stack
+   */
+  $top_error = _recurring_globalcollect_get_top_new_drush_error();
+  
+  /**
+   * @var string $err_code The error code
+   */
+  $err_code = isset($top_error['err_code']) ? $top_error['err_code'] : 'UNKNOWN';
+  
+  /**
+   * @var string $err_text The error message
+   */
+  $err_text = isset($top_error['err_text']) ? $top_error['err_text'] : 'An error occured, but no error was generated at the incident.';
+  
+  /**
+   * @var string $watchdog_message The watchdog error message
+   */
+  $watchdog_message = $err_code . ': ' . $err_text;
+  
+  /**
+   * @var integer $watchdog_severity The watchdog error severity
+   */
+  $watchdog_severity = WATCHDOG_ERROR;
+  
+  /**
+   * @var string $watchdog_type The watchdog error type
+   */
+  $watchdog_type = 'crg';
+  
+  // Decide what to do with error.
+  switch ($err_code){
+    
+    /**
+     * CIVI_CONFIG
+     *
+     * Check your CiviCRM configuration
+     */
+    case 'CIVI_CONFIG':
+      break;
+    
+    /**
+     * CRG
+     *
+     * There is a problem with recurring_globalcollect
+     */
+    case 'CRG':
+      break;
+    
+    /**
+     * FUTURE_DATE
+     *
+     * Dates must not be in the future
+     */
+    case 'FUTURE_DATE':
+      break;
+    
+    /**
+     * GLOBALCOLLECT
+     *
+     * Something went wrong with the payment gateway.
+     *
+     * At this point, it is unknown what happended with the current transaction
+     *
+     * @todo This should not mark the payment as a failure
+     */
+    case 'GLOBALCOLLECT':
+      break;
+    
+    /**
+     * CIVI_INSERT
+     *
+     * Something went wrong inserting a record of the completed contribution 
+	 * into civi
+     *
+     * @todo This should not mark the payment as a failure, as it has 
+	 * successfully gone through once already. Precautions should be taken to 
+	 * make sure the transaction is marked as such, so the donor is not 
+	 * overcharged.
+     */
+    case 'CIVI_INSERT':
+		break;
+    
+    /**
+     * UNKNOWN
+     *
+     * Unhandled error
+     *
+     * @todo This should not mark the payment as a failure
+     */
+    default:
+      throw new Exception($watchdog_message);
+  }
+
+  watchdog($watchdog_type, $watchdog_message, array(), $watchdog_severity);
+  recurring_globalcollect_failmail($top_error, array());
+}
+
+/**
+ * Get the query options for @see recurring_globalcollect_process()
+ *
+ * @return  array  Returns an array of options for @see _recurring_globalcollect_get_next_sched_contribution() and @see _recurring_globalcollect_get_failure_retry_date()
+ */
+function recurring_globalcollect_process_get_query_options($options = array()) {
+  
+  /**
+   *  @var  array  $query_options  Options to pass to the query
+   */
+  $query_options = array();
+   
+  $date = isset( $options['date'] ) ? $options['date'] : '';
+  $query_options['process'] = isset( $options['process'] ) ? $options['process'] : 'next_sched_contribution';
+  
+  if (!empty($date)) {
+    $now_stamp = time();
+    $now = date('Y-m-d', $now_stamp);
+    $date_stamp = strtotime($date);
+    
+    // Reparse date
+    $date_reparsed = date('Y-m-d', $date_stamp);
+    
+    if ($date_stamp > $now_stamp) {
+      $message = 'The date you entered [' . $date . '] is being parsed as [' . $date_reparsed . ']. The current date is: [' . $now . ']. You are not allowed to specify dates in the future.';
+      return drush_set_error('FUTURE_DATE', dt($message));
+    }
+    
+    $query_options['date'] = $date_reparsed;
+  }
+  
+  // $allowed_processes is used for dumping available processes if an invalid
+  // process is specified.
+  
+  return $query_options;
+}
+
+/**
+ * @param object|array $result 
+ */
+function recurring_globalcollect_connect($result, $options = array()){
+  if (is_object($result)) {
+    $result = (array) $result;
+  }
+  //echo "\n" . 'result: ' . __FILE__ . __LINE__ . print_r($result, true) . "\n";
+  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . print_r($options, true) );
+
+  $adapterOptions = array();
+  
+  // Set the merchant ID
+  $adapterOptions['merchantId'] = variable_get('recurring_globalcollect_merchant_id', 0);
+  
+  $IPADDRESS = isset($result['IPADDRESS']) ? $result['IPADDRESS'] : '';
+  
+  $IPADDRESS = (empty($IPADDRESS) && isset($_SERVER['SERVER_ADDR'])) ? $_SERVER['SERVER_ADDR'] : ''; 
+  
+  if (empty($IPADDRESS)) {
+    $IPADDRESS = '127.0.0.1';
+    $message = 'You must specify a valid IPA.';
+    //throw new Exception($message);
+  }
+   
+  // Increment the EFFORTID
+  $values = array(
+      'EFFORTID' => $result['processor_id'] + 1,
+      'ORDERID' => $result['trxn_id'],
+      'IPADDRESS' => $IPADDRESS,
+  );
+
+  // Set the URL for the adapter
+  if (isset($options['url'])) {
+    $adapterOptions['url'] = $options['url'];
+  }
+  else {
+    $adapterOptions['url'] = variable_get('globalcollect_url', '');
+  }
+
+  // $values and $options are used for testing.
+  $adapterOptions['url'] = recurring_globalcollect_build_url($values, $adapterOptions);
+   
+  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$adapterOptions['url'] - " . print_r($adapterOptions['url'], true) . "\n" );
+  
+  $instance = StandaloneGlobalCollectAdapter::getInstance( $adapterOptions );
+
+  watchdog('crg', 'Processing payment: <pre>' . print_r($result, true) . '</pre>');
+
+  $instance->setValues( $values );
+  
+  try {
+    $status = $instance->curlTransaction();
+
+    watchdog('crg', 'Sending [successful] request: <pre>' . htmlentities($instance->getRequestDoPayment()) . '</pre>');
+    
+    if ($status) {
+      watchdog('crg', 'Receiving response [successful]: <pre>' . htmlentities($instance->getResponse()) . '</pre>');
+    }
+    else {
+      watchdog('crg', 'Receiving response [failure]: <pre>' . htmlentities($instance->getResponse()) . '</pre>', null, WATCHDOG_ERROR);
+    }
+
+    $errors = $instance->getResponseErrors();
+    
+    // If success, add a record to the contribution table and send a thank you email.
+    if ($status && empty($errors)) {
+      
+      $contact = array(
+          'id' => $result['contact_id'],
+      );
+      //echo "\n" . '$contact: ' . __FILE__ . __LINE__ . print_r($contact, true) . "\n";
+      
+      $msg = array();
+      
+      $msg['gateway'] = 'globalcollect';
+      $msg['gross'] = $result['amount'];
+      //$msg['contribution_id'] = $result['contribution_id'];
+      $msg['gateway_txn_id'] = $result['trxn_id'];
+      $msg['payment_method'] = 'cc';
+      $msg['date'] = time();
+      //echo "\n" . '$msg: ' . __FILE__ . __LINE__ . print_r($msg, true) . "\n";
+      /*
+       * This array needs to be rekeyed to be consistent with:
+       *
+       * @see thank_you_queue2civicrm_import
+       *
+       * id -> contribution_id
+       *
+       * @var array $contribution
+       */
+      $contribution = _queue2civicrm_contribution_insert($msg, $contact, $result['id'], $values['EFFORTID']);
+      $contribution['contribution_id'] = $contribution['id'];
+      unset( $contribution['id'] );
+      
+      //echo "\n" . '$contribution: ' . __FILE__ . __LINE__ . print_r($contribution, true) . "\n";
+      // Send thank you email, other post-import things
+	  if ( $contribution ){
+	      module_invoke_all( 'recurring_globalcollect', $contribution );
+	  } else {
+		  $message = "Contribution could not be added to civicrm, for the following message: " . print_r( $msg, true);
+		  watchdog('crg', $message, null, WATCHDOG_ERROR);
+		  drush_set_error("CIVI_INSERT", $message, true);
+	  }
+   
+	  $affected_rows = _recurring_globalcollect_update_record_success($result['id']);
+    }
+    else {
+     
+      $affected_rows = _recurring_globalcollect_update_record_failure($result['id']);
+      watchdog('crg', 'Update row for failure: rows updated [' . $affected_rows . ']. Errors: ' . print_r($errors, true), null, WATCHDOG_WARNING);
+   }
+    
+    if (empty( $affected_rows)) {
+      watchdog('crg', 'Rows updated [' . $affected_rows . '].', null, WATCHDOG_ERROR);
+    }
+    elseif ($affected_rows == 1) {
+      watchdog('crg', 'Rows updated [' . $affected_rows . '].');
+    }
+    else {
+      watchdog('crg', 'Rows updated [' . $affected_rows . ']. Only one row should be updated at a time.', null, WATCHDOG_ERROR);
+    }
+    
+    return $status;
+  }
+  catch (StandaloneGlobalCollectAdapter_Exception $e) {
+
+    watchdog('crg', $e->getMessage(), null, WATCHDOG_ERROR);
+    drush_set_error("GLOBALCOLLECT", "Global Collect error:" . print_r($e->getMessage(), true));
+
+    return false;
+  }  
+  catch (Exception $e) {
+
+    watchdog('crg', $e->getMessage(), null, WATCHDOG_ERROR);
+    drush_set_error("GLOBALCOLLECT", "Global Collect error:" . print_r($e->getMessage(), true));
+    
+    $affected_rows = _recurring_globalcollect_update_record_failure($result['id']);
+    watchdog('crg', 'Update row for failure: rows updated [' . $affected_rows . '].');
+
+    return false;
+  }  
+}
+
+/**
+ * recurring_globalcollect_build_url
+ *
+ *
+ * @param type $options
+ * @return string; 
+ */
+function recurring_globalcollect_build_url($values, $options) {
+    
+  $url = isset($options['url']) ? $options['url'] : '';
+
+  // Fix case where boolean values are strings
+  if ( $url == 'true') {
+      $url = true;
+  }
+  elseif ( $url == 'false') {
+      $url = false;
+  }
+  
+  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . '$url - ' . print_r($url, true) . "\n" );
+  //echo "\n" . __FILE__ . __LINE__ . "\n \$url: " . $url . "\n";
+  //echo "\n" . __FILE__ . __LINE__ . "\n \$url type: " . gettype( $url ) . "\n";
+ 
+  //$url = false;
+  $returnUrl = variable_get('globalcollect_url', '');
+
+  //echo "\n" . __FILE__ . __LINE__ . "\n \$returnUrl: " . $returnUrl . "\n";
+  
+  if (is_bool($url)) {
+
+    $returnUrl  = variable_get('localhost_test_url', '');
+    $returnUrl .= (substr($returnUrl, -1) == '/') ? '' : '/';
+    $returnUrl .= 'sites/all/modules/recurring_globalcollect/tests/resources/responses/';
+    // Fail should go to a global collect example failure. A 404 will do for now.
+
+    //echo "\n" . __FILE__ . __LINE__ . "\n \$returnUrl: " . $returnUrl . "\n";
+
+    if ($url) {
+      $returnUrl .=  'curlTransaction.valid.response.php?';
+      $returnUrl .=  '&ORDERID=' . $values['ORDERID'];
+      $returnUrl .=  '&EFFORTID=' . $values['EFFORTID'];
+      $returnUrl .=  '&IPADDRESS=' . $values['IPADDRESS'];
+    }
+    else {
+      $returnUrl .= '404.php';
+    }
+    //echo "\n" . __FILE__ . __LINE__ . "\n \$returnUrl: " . $returnUrl . "\n";
+  }
+  elseif (is_numeric($url)) {
+
+    $returnUrl  = variable_get('localhost_test_url', '');
+    $returnUrl .= (substr($returnUrl, -1) == '/') ? '' : '/';
+    $returnUrl .= 'sites/all/modules/recurring_globalcollect/tests/resources/responses/';
+
+    $returnUrl .= $url . '.php';
+    //echo "\n" . __FILE__ . __LINE__ . "\n \$returnUrl: " . $returnUrl . "\n";
+  }
+  elseif (!empty($url)) {
+
+    if (substr($url, 0, 4) == 'http') {
+      
+      // Setting a full url
+      $returnUrl = $url;
+      //echo "\n" . __FILE__ . __LINE__ . "\n \$returnUrl: " . $returnUrl . "\n";
+    }
+    else {
+      $returnUrl  = variable_get('localhost_test_url', '');
+      $returnUrl .= $url;
+    }
+      
+  }
+
+  //echo "\n" . __FILE__ . __LINE__ . "\n \$returnUrl: " . $returnUrl . "\n";
+
+  return $returnUrl;
+}
+
+/**
+ * recurring_globalcollect_failmail
+ *
+ * @param type $error
+ * @param type $message
+ */
+function recurring_globalcollect_failmail($error, $message){
+  $to = variable_get('recurring_globalcollect_failmail', '');
+  if ($to != ''){
+    $params['error'] = $error;
+    $params['message'] = $message;
+    
+    //$params['removed'] = $removed;
+    drupal_mail('recurring_globalcollect', 'fail', $to, language_default(), $params);
+  } else {
+    watchdog('crg', 'Failmail recipient address not set up!');
+  }
+}
+
+/**
+ * recurring_globalcollect_mail
+ * 
+ * Is this being called somewhere? Is it a hook?
+ * 
+ * @param type $key
+ * @param type $message
+ * @param type $params 
+ */
+function recurring_globalcollect_mail($key, &$message, $params) {
+  $language = $message['language'];
+  switch($key) {
+    case 'fail':
+      if(empty($params['error'])){
+        $message['subject'] = t('recurring_globalcollect Fail Mail : UNKNOWN ERROR');
+        $message['body'][] = t("A payment failed for reasons unknown, while being processed in recurring_globalcollect:");
+      } else {
+        $message['subject'] = t('recurring_globalcollect Fail Mail');
+        $message['body'][] = t("A payment generated the following error(s) while being processed in recurring_globalcollect:");
+      }
+
+      if(!empty($params['error'])){
+        $message['body'][] = t("Error Code: ") . $params['error']['err_code'];
+        $message['body'][] = $params['error']['err_text'];
+      }
+      if(!empty($params['message'])){
+        $message['body'][] = "---" . t("Message") . "---";
+        $message['body'][] = print_r($params['message'], true);
+        $message['body'][] = "---" . t("End") . "---";
+      } else {
+        $message['body'][] = t("The exact message was deemed irrelevant.");
+      }
+      break;
+  }
+}

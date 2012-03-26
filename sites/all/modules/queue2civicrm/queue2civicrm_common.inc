@@ -5,7 +5,7 @@
 
 // include the database switching class
 require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
-require_once( drupal_get_path( 'module', 'civicrm_recurring_globalcollect' ) . '/civicrm_recurring_globalcollect_common.inc' );
+require_once( drupal_get_path( 'module', 'recurring_globalcollect' ) . '/recurring_globalcollect_common.inc' );
 
 /**
  * Connect using the Stomp library.
