@@ -134,7 +134,7 @@ function recurring_globalcollect_settings() {
     '#title' => t('Cron batch size'),
     '#required' => TRUE,
     '#default_value' => variable_get('recurring_globalcollect_batch', 0),
-    '#description' => t('This may be overridden with: `drush crg --batch=10`'),
+    '#description' => t('This may be overridden with: `drush rg --batch=10`'),
     '#options' => array(
       0 => 0,
       1 => 1,
@@ -163,10 +163,6 @@ function recurring_globalcollect_settings() {
  */
 function recurring_globalcollect_batch_process($options = array()) {
 
-  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . print_r($options, true) . "\n" );
-
-  //set_time_limit(60);
-
   // The number of contributions to process
   $batch = (integer) variable_get('recurring_globalcollect_batch', 0);
   $batch_max = (integer) variable_get('recurring_globalcollect_batch_max', 0);
@@ -176,6 +172,8 @@ function recurring_globalcollect_batch_process($options = array()) {
   	$batch = (integer) $options['batch'];
   	unset($options['batch']);
   }
+  //echo( eval('return	__FILE__ . date(\'r\') . "\n";') . '$batch - ' .  print_r($batch, true) . "\n" );
+  //echo( eval('return	__FILE__ . date(\'r\') . "\n";') . '$batch_max - ' .  print_r($batch_max, true) . "\n" );
 
   if ($batch > $batch_max) {
   	
@@ -183,13 +181,14 @@ function recurring_globalcollect_batch_process($options = array()) {
   	           . ' more than the maximum allowed: ' . $batch_max .'. Either'
   	           . ' batch less payments or increase the maximum.';
   	$link = l('Edit recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
-    watchdog('BATCHING', $message, array(), WATCHDOG_ERROR, $link);
+    watchdog('recurring_globalcollect', $message, array(), WATCHDOG_ERROR, $link);
+    drush_set_error('BATCHING', dt($message));
   	return false;         
   }
   
   $processed = 0;
   
-  watchdog('crg', 'Attempting to process up to ' . $batch . ' recurring contribution(s).');
+  watchdog('recurring_globalcollect', 'Attempting to process up to ' . $batch . ' recurring contribution(s).');
 
   // Attempt to process items for the batch
   for ($i = 0; $i < $batch; ++$i) {
@@ -206,10 +205,10 @@ function recurring_globalcollect_batch_process($options = array()) {
   //$processed += array_sum($batchprocessed);
   
   if ($processed > 0) {
-    watchdog('crg', 'Successfully processed ' . $processed . ' contribution(s).');
+    watchdog('recurring_globalcollect', 'Successfully processed ' . $processed . ' contribution(s).');
   }
   else {
-    watchdog('crg', 'No contributions processed.');
+    watchdog('recurring_globalcollect', 'No contributions processed.');
   }
 }
 
@@ -262,7 +261,7 @@ function recurring_globalcollect_process($options = array()) {
   
     // Check to see if any contributions were found
     if (empty($result)) {
-      watchdog('crg', 'No contributions are ready to be processed.');
+      watchdog('recurring_globalcollect', 'No contributions are ready to be processed.');
       $return = false;
     }
     else {
@@ -281,7 +280,7 @@ function recurring_globalcollect_process($options = array()) {
   }
   catch (Exception $e) {
   	$message = 'Unable to process payment: ' . $e->getMessage();
-    watchdog('crg', $message, array(), WATCHDOG_ERROR);
+    watchdog('recurring_globalcollect', $message, array(), WATCHDOG_ERROR);
     return drush_set_error('UNKNOWN', dt($message));
   }  
 
@@ -328,7 +327,7 @@ function recurring_globalcollect_process_error() {
   /**
    * @var string $watchdog_type The watchdog error type
    */
-  $watchdog_type = 'crg';
+  $watchdog_type = 'rg';
   
   // Decide what to do with error.
   switch ($err_code){
@@ -496,20 +495,20 @@ function recurring_globalcollect_connect($result, $options = array()){
   
   $instance = StandaloneGlobalCollectAdapter::getInstance( $adapterOptions );
 
-  watchdog('crg', 'Processing payment: <pre>' . print_r($result, true) . '</pre>');
+  watchdog('recurring_globalcollect', 'Processing payment: <pre>' . print_r($result, true) . '</pre>');
 
   $instance->setValues( $values );
   
   try {
     $status = $instance->curlTransaction();
 
-    watchdog('crg', 'Sending [successful] request: <pre>' . htmlentities($instance->getRequestDoPayment()) . '</pre>');
+    watchdog('recurring_globalcollect', 'Sending [successful] request: <pre>' . htmlentities($instance->getRequestDoPayment()) . '</pre>');
     
     if ($status) {
-      watchdog('crg', 'Receiving response [successful]: <pre>' . htmlentities($instance->getResponse()) . '</pre>');
+      watchdog('recurring_globalcollect', 'Receiving response [successful]: <pre>' . htmlentities($instance->getResponse()) . '</pre>');
     }
     else {
-      watchdog('crg', 'Receiving response [failure]: <pre>' . htmlentities($instance->getResponse()) . '</pre>', null, WATCHDOG_ERROR);
+      watchdog('recurring_globalcollect', 'Receiving response [failure]: <pre>' . htmlentities($instance->getResponse()) . '</pre>', null, WATCHDOG_ERROR);
     }
 
     $errors = $instance->getResponseErrors();
@@ -550,7 +549,7 @@ function recurring_globalcollect_connect($result, $options = array()){
 	      module_invoke_all( 'recurring_globalcollect', $contribution );
 	  } else {
 		  $message = "Contribution could not be added to civicrm, for the following message: " . print_r( $msg, true);
-		  watchdog('crg', $message, null, WATCHDOG_ERROR);
+		  watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
 		  drush_set_error("CIVI_INSERT", $message, true);
 	  }
    
@@ -559,35 +558,35 @@ function recurring_globalcollect_connect($result, $options = array()){
     else {
      
       $affected_rows = _recurring_globalcollect_update_record_failure($result['id']);
-      watchdog('crg', 'Update row for failure: rows updated [' . $affected_rows . ']. Errors: ' . print_r($errors, true));
+      watchdog('recurring_globalcollect', 'Update row for failure: rows updated [' . $affected_rows . ']. Errors: ' . print_r($errors, true));
    }
     
     if (empty( $affected_rows)) {
-      watchdog('crg', 'Rows updated [' . $affected_rows . '].', null, WATCHDOG_ERROR);
+      watchdog('recurring_globalcollect', 'Rows updated [' . $affected_rows . '].', null, WATCHDOG_ERROR);
     }
     elseif ($affected_rows == 1) {
-      watchdog('crg', 'Rows updated [' . $affected_rows . '].');
+      watchdog('recurring_globalcollect', 'Rows updated [' . $affected_rows . '].');
     }
     else {
-      watchdog('crg', 'Rows updated [' . $affected_rows . ']. Only one row should be updated at a time.', null, WATCHDOG_ERROR);
+      watchdog('recurring_globalcollect', 'Rows updated [' . $affected_rows . ']. Only one row should be updated at a time.', null, WATCHDOG_ERROR);
     }
     
     return $status;
   }
   catch (StandaloneGlobalCollectAdapter_Exception $e) {
 
-    watchdog('crg', $e->getMessage(), null, WATCHDOG_ERROR);
+    watchdog('recurring_globalcollect', $e->getMessage(), null, WATCHDOG_ERROR);
     drush_set_error("GLOBALCOLLECT", "Global Collect error:" . print_r($e->getMessage(), true));
 
     return false;
   }  
   catch (Exception $e) {
 
-    watchdog('crg', $e->getMessage(), null, WATCHDOG_ERROR);
+    watchdog('recurring_globalcollect', $e->getMessage(), null, WATCHDOG_ERROR);
     drush_set_error("GLOBALCOLLECT", "Global Collect error:" . print_r($e->getMessage(), true));
     
     $affected_rows = _recurring_globalcollect_update_record_failure($result['id']);
-    watchdog('crg', 'Update row for failure: rows updated [' . $affected_rows . '].');
+    watchdog('recurring_globalcollect', 'Update row for failure: rows updated [' . $affected_rows . '].');
 
     return false;
   }  
@@ -685,7 +684,7 @@ function recurring_globalcollect_failmail($error, $message){
     //$params['removed'] = $removed;
     drupal_mail('recurring_globalcollect', 'fail', $to, language_default(), $params);
   } else {
-    watchdog('crg', 'Failmail recipient address not set up!');
+    watchdog('recurring_globalcollect', 'Failmail recipient address not set up!');
   }
 }
 
