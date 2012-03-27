@@ -108,6 +108,15 @@ function drush_recurring_globalcollect() {
  * Numeric values for batch will be converted to an integer:
  * - --batch=3.14 => --batch=3
  *
+ * Options are not required to run `drush rg`
+ * Settings will be picked up in the module.
+ *
+ * If --batch is not set it will go to the default settings: variable_get('recurring_globalcollect_batch', 0)
+ *
+ * If --date is not set it will go to the default settings: date('Y-m-d')
+ *
+ * If --process is not set it will go to the default settings: next_sched_contribution
+ *
  * validate:
  * - Make sure the date is not in the future
  * - Make sure batch is a postive integer
