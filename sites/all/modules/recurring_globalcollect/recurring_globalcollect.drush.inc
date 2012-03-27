@@ -32,7 +32,7 @@ function recurring_globalcollect_drush_command() {
 	'options' => array(
 		'batch' => 'Allowed parameters: 0 <= $batch <= 100 | A value of zero disables batch processing. 100 is the maximum allowed for processing.',
 		'date' => 'Expected format: YYYY-MM-DD | Specify a date, that is not in the future. The date will be parsed with strtotime().',
-		'process' => 'Allowed parameters: next_sched_contribution | failure_retry_date',
+		'process' => 'Defaults to next_sched_contribution. Allowed parameters: next_sched_contribution | failure_retry_date',
 		'url' => 'Allowed parameters: true | false | 404 | 504 | some-relative-url | https://example.org',
 	),
     'aliases' => array( 'rg' ),
