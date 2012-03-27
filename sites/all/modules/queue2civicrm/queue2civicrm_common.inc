@@ -5,7 +5,6 @@
 
 // include the database switching class
 require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
-require_once( drupal_get_path( 'module', 'recurring_globalcollect' ) . '/recurring_globalcollect_common.inc' );
 
 /**
  * Connect using the Stomp library.
@@ -521,6 +520,21 @@ function _queue2civicrm_update_contribution_tracking( $msg, $contribution ) {
  * @return boolean	Returns true on success
  */
 function _queue2civicrm_contribution_recur_insert( $msg, $contact_id, $contribution ) {
+	
+  //try to include files that may or may not be in installed modules. 
+  //TODO: This should really be a hook that only fires if something knows how to 
+  //interpret it.
+  //That way, we remove the hard dependency and the chances of whitescreening 
+  //entire instances on code update, and a potential circular dependency that 
+  //would effectively prevent installation (or un-installation) of either module. 
+  $file = drupal_get_path( 'module', 'recurring_globalcollect' ) . '/recurring_globalcollect_common.inc';
+  if ( file_exists( $file ) ){
+	require_once( $file );
+  } else {
+	watchdog( 'queue2civicrm', 'Recurring Globalcollect module is not installed. Cannot insert recurring subscription.', null, WATCHDOG_ERROR );
+  	return false;
+  }
+
   
   // Get the contribution record
   if ( isset( $contribution['values'] ) && is_array( $contribution['values'] ) ) {
@@ -571,7 +585,11 @@ function _queue2civicrm_contribution_recur_insert( $msg, $contact_id, $contribut
   
   $msg[ 'cycle_day' ] = (integer) date( 'j', $msg[ 'date' ] );
   
-  $next_sched_contribution = _civicrm_recurring_globalcollect_get_next_sched_contribution_date_for_month( $msg );
+  //TODO: This should probably be in a more universal library. What we're 
+  //looking up here is not technically GC-specific. 
+  //Moving it somewhere that looks more generic would remove the weird looking 
+  //dependency on GC recurring. 
+  $next_sched_contribution = _recurring_globalcollect_get_next_sched_contribution_date_for_month( $msg );
   
   $query = "INSERT INTO {civicrm_contribution_recur}
     (
