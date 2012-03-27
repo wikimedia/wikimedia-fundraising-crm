@@ -150,7 +150,8 @@ function drush_recurring_globalcollect_validate() {
 		  $message = 'You did not specify a number. You must specify either'
 		             . ' zero or a postive integer less than ' . $batch_max
 		             . '. You specifed [' . (string) $batch . '].';
-		  return drush_set_error('BATCHING', dt($message));
+		  drush_set_error('BATCHING', dt($message));
+		  return false;
   	  }
   	  
   	  // $batch is numeric, convert it to an integer.
@@ -162,14 +163,16 @@ function drush_recurring_globalcollect_validate() {
 		  $message = 'You specified a negative number. You must specify either'
 		  . ' zero or a postive integer less than ' . $batch_max . '. You'
 		  . ' specifed [' . $batch . '].';
-		  return drush_set_error('BATCHING', dt($message));
+		  drush_set_error('BATCHING', dt($message));
+		  return false;
   	  }
   	  
   	  if ($batch > $batch_max) {
           $message = 'You are attempting to batch ' . $batch .' payments, which'
           . ' is more than the maximum allowed: ' . $batch_max .'. Either batch'
           . ' less payments or increase the maximum. You may change settings here: ' . $link_to_settings;
-		  return drush_set_error('BATCHING', dt($message));
+		  drush_set_error('BATCHING', dt($message));
+		  return false;
   	  }
   	  
   }
@@ -185,7 +188,8 @@ function drush_recurring_globalcollect_validate() {
     
     if ($date_stamp > $now_stamp) {
       $message = 'The date you entered [' . $date . '] is being parsed as [' . $date_reparsed . ']. The current date is: [' . $now . ']. You are not allowed to specify dates in the future.';
-      return drush_set_error('INVALID_DATE', dt($message));
+      drush_set_error('INVALID_DATE', dt($message));
+	  return false;
     }
   }
   
@@ -194,7 +198,8 @@ function drush_recurring_globalcollect_validate() {
   	  
   	  if (!in_array($process, $process_allowed_options)) {
 		  $message = 'You must specify a valid process option. You specifed [' . $process . ']. The acceptable process options are as listed: [' . implode(', ', $process_allowed_options) . '].';
-		  return drush_set_error('INVALID_PROCESS', dt($message));
+		  drush_set_error('INVALID_PROCESS', dt($message));
+		  return false;
   	  }
   }
   
