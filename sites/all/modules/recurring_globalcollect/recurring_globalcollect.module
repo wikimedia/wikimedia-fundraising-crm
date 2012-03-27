@@ -281,7 +281,8 @@ function recurring_globalcollect_process($options = array()) {
   catch (Exception $e) {
   	$message = 'Unable to process payment: ' . $e->getMessage();
     watchdog('recurring_globalcollect', $message, array(), WATCHDOG_ERROR);
-    return drush_set_error('UNKNOWN', dt($message));
+    drush_set_error('UNKNOWN', dt($message));
+    return false;
   }  
 
   return $return;
@@ -436,7 +437,8 @@ function recurring_globalcollect_process_get_query_options($options = array()) {
     
     if ($date_stamp > $now_stamp) {
       $message = 'The date you entered [' . $date . '] is being parsed as [' . $date_reparsed . ']. The current date is: [' . $now . ']. You are not allowed to specify dates in the future.';
-      return drush_set_error('FUTURE_DATE', dt($message));
+      drush_set_error('FUTURE_DATE', dt($message));
+      return false;
     }
     
     $query_options['date'] = $date_reparsed;
