@@ -223,6 +223,7 @@ function queue2civicrm_dequeue() {
     'CIVI_REQ_FIELD',
     'IMPORT_CONTACT',
     'IMPORT_CONTRIB',
+    'IMPORT_SUBSCRIPTION',
     'IMPORT_TAG',
   );
   if ($con) {
@@ -257,6 +258,9 @@ function queue2civicrm_dequeue() {
 						return false;
 						break;
 					case 'IMPORT_TAG':
+						//@fixme: Roll back contrib, and...
+					case 'IMPORT_SUBSCRIPTION':
+						//There was an error importing the subscription
 						//@fixme: Roll back contrib, and...
 					case 'IMPORT_CONTRIB': //Contribution could not be added by the import function, but contact made it.
 						//@fixme: Roll back contact, and...
