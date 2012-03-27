@@ -531,7 +531,9 @@ function _queue2civicrm_contribution_recur_insert( $msg, $contact_id, $contribut
   if ( file_exists( $file ) ){
 	require_once( $file );
   } else {
-	watchdog( 'queue2civicrm', 'Recurring Globalcollect module is not installed. Cannot insert recurring subscription.', null, WATCHDOG_ERROR );
+  	$watchdog_message = 'Recurring Globalcollect module is not installed. Cannot insert recurring subscription.';
+  	watchdog( 'queue2civicrm', $watchdog_message, null, WATCHDOG_ERROR );
+  	drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
   	return false;
   }
 
@@ -549,37 +551,49 @@ function _queue2civicrm_contribution_recur_insert( $msg, $contact_id, $contribut
   $msg[ 'installments' ] = isset( $msg[ 'installments' ] ) ? (integer) $msg[ 'installments' ] : 0;
 
   if ( !isset( $msg[ 'recurring' ] ) && $msg[ 'recurring' ] != 1 ) {
-  	watchdog( 'queue2civicrm', 'Payment is not marked as recurring.', null, WATCHDOG_ERROR );
+  	$watchdog_message = 'Payment is not marked as recurring, with the contact_id [' . $contact_id . '] $msg: ' . print_r( $msg, true );
+  	watchdog( 'queue2civicrm', $watchdog_message, null, WATCHDOG_ERROR );
+  	drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
   	return false;
   }
   
   // Allowed frequency_units
   $frequency_units = array( 'month' );
   if ( !in_array( $msg[ 'frequency_unit' ], $frequency_units ) ) {
-  	watchdog( 'queue2civicrm', 'Invalid `frequency_unit` specified [' . $msg[ 'frequency_unit' ] . ']. Supported frequency_units: %frequency_units', array( '%frequency_units' => implode( ', ', $frequency_units ) ), WATCHDOG_ERROR );
+  	$watchdog_message = 'Invalid `frequency_unit` specified [' . $msg[ 'frequency_unit' ] . ']. Supported frequency_units: %frequency_units, with the contact_id [' . $contact_id . '] $msg: ' . print_r( $msg, true );
+  	watchdog( 'queue2civicrm', $watchdog_message, array( '%frequency_units' => implode( ', ', $frequency_units ) ), WATCHDOG_ERROR );
+  	drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
   	return false;
   }
 
   // Frequency interval is only allowed to be 1.
   if ( $msg[ 'frequency_interval' ] !== 1 ) {
-  	watchdog( 'queue2civicrm', '`frequency_interval` is only allowed to be set to 1.', null, WATCHDOG_ERROR );
+  	$watchdog_message = '`frequency_interval` is only allowed to be set to 1, with the contact_id [' . $contact_id . '] $msg: ' . print_r( $msg, true );
+  	watchdog( 'queue2civicrm', $watchdog_message, null, WATCHDOG_ERROR );
+  	drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
   	return false;
   }
 
   // installments is only allowed to be 0.
   if ( $msg[ 'installments' ] !== 0 ) {
-  	watchdog( 'queue2civicrm', '`installments` must be set to 0.', null, WATCHDOG_ERROR );
+  	$watchdog_message = '`installments` must be set to 0, with the contact_id [' . $contact_id . '] $msg: ' . print_r( $msg, true );
+  	watchdog( 'queue2civicrm', $watchdog_message, null, WATCHDOG_ERROR );
+  	drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
   	return false;
   }
   
   if ( empty( $contribution_record ) ) {
-  	drush_set_error('CONTRIBUTION', 'The contribution_record, with the contact_id [' . $contact_id . '] is empty: ' . print_r( $msg, true ));
+  	$watchdog_message = 'The contribution_record is empty, with the contact_id [' . $contact_id . '] $msg: ' . print_r( $msg, true );
+  	watchdog( 'queue2civicrm', $watchdog_message, null, WATCHDOG_ERROR );
+  	drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
   	return false;
   }
 
   // trxn_id must be set.
   if ( empty( $contribution_record[ 'trxn_id' ] ) ) {
-  	watchdog( 'queue2civicrm', '`trxn_id` must be set and not empty: ' . print_r( $contribution_record, true ), null, WATCHDOG_ERROR );
+  	$watchdog_message = '`trxn_id` must be set and not empty, with the contact_id [' . $contact_id . '] $msg: ' . print_r( $msg, true ) . ' and $contribution_record:'  . print_r( $contribution_record, true );
+  	watchdog( 'queue2civicrm', $watchdog_message, null, WATCHDOG_ERROR );
+  	drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
   	return false;
   }
   
@@ -658,13 +672,17 @@ function _queue2civicrm_update_contribution_for_recurring( $contribution_id, $co
   
   // contribution_id must be set and not null or zero
   if ( empty( $contribution_id ) ) {
-  	watchdog( 'queue2civicrm', '`contribution_id` must be set and not empty.', null, WATCHDOG_ERROR );
+  	$watchdog_message = '`contribution_id` must be set and not empty.';
+  	watchdog( 'queue2civicrm', $watchdog_message, null, WATCHDOG_ERROR );
+  	drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
   	return false;
   }
   
   // contribution_recur_id must be set and not null or zero
   if ( empty( $contribution_recur_id ) ) {
-  	watchdog( 'queue2civicrm', '`contribution_recur_id` must be set and not empty.', null, WATCHDOG_ERROR );
+  	$watchdog_message = '`contribution_recur_id` must be set and not empty.';
+  	watchdog( 'queue2civicrm', $watchdog_message, null, WATCHDOG_ERROR );
+  	drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
   	return false;
   }
 
@@ -672,6 +690,7 @@ function _queue2civicrm_update_contribution_for_recurring( $contribution_id, $co
 
   if ( !$result ) {
     watchdog( 'queue2civicrm', 'There was a problem linking the contribution [%contribution_id] to the recurring contribution [%contribution_recur_id]', array( '%contribution_id' => $contribution_id, '%contribution_recur_id' => $contribution_recur_id ), WATCHDOG_ERROR );
+  	drush_set_error('IMPORT_SUBSCRIPTION', 'There was a problem linking the contribution [' . $contribution_id . '] to the recurring contribution [' . $contribution_recur_id . ']');
     return false;
   } else {
     watchdog( 'queue2civicrm', 'Successfully linked the contribution  [%contribution_id] to the recurring contribution [%contribution_recur_id]', array( '%contribution_id' => $contribution_id, '%contribution_recur_id' => $contribution_recur_id ) );
