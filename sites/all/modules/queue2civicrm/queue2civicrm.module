@@ -343,6 +343,12 @@ function queue2civicrm_import( $msg ) {
 	$contribution = _queue2civicrm_contribution_insert( $msg, $contact );
 	if($contribution !== false){
 
+		// Update 
+        if ( isset( $msg[ 'recurring' ] ) && $msg[ 'recurring' ] == 1 ) {
+          watchdog( 'queue2civicrm_import', 'Attempting to insert recurring record.');
+          _queue2civicrm_contribution_recur_insert( $msg, $contact['id'], $contribution );
+        }
+
 		// Tag contact for review
 		$tag = _queue2civicrm_tag_insert( $contact );
 		if ($tag === false){
@@ -352,12 +358,6 @@ function queue2civicrm_import( $msg ) {
 			//Note: If having the import tag turns out to be extremely important and something we should die over, uncomment the next line.
 			//return false;
 		}
-
-		// Update 
-        if ( isset( $msg[ 'recurring' ] ) && $msg[ 'recurring' ] == 1 ) {
-          watchdog( 'queue2civicrm_import', 'Attempting to insert recurring record.');
-          _queue2civicrm_contribution_recur_insert( $msg, $contact['id'], $contribution );
-        }
         
 		// Map the tracking record to the CiviCRM contribution
 		// @FIXME what do we do if this returns false?  nothing at the moment...
