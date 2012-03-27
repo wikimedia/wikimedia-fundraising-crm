@@ -60,7 +60,7 @@ function drush_recurring_globalcollect() {
   $date = drush_get_option('date');
   $process = drush_get_option('process');
   $url = drush_get_option('url');
-  $batch = drush_get_option('batch', 0);
+  $batch = drush_get_option('batch', null);
   
   //echo "\n \$date: \n" . print_r($date, true) . "\n";
   //echo "\n \$process: \n" . print_r($process, true) . "\n";
