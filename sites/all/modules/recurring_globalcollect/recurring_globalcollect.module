@@ -9,7 +9,7 @@ function recurring_globalcollect_menu() {
   $items = array();
   
   $items['admin/settings/recurring_globalcollect'] = array(
-    'title' => 'CiviCRM Recurring GlobalCollect Processor',
+    'title' => 'Recurring GlobalCollect Processor',
     'description' => t('Configure message queue interface.'),
     'access arguments' => array('administer recurring_globalcollect'),
     'page callback' => 'drupal_get_form',
