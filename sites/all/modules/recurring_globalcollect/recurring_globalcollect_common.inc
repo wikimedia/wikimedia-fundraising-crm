@@ -308,6 +308,14 @@ function _recurring_globalcollect_get_failure_retry_date($options = array()) {
  * - payments need to be marked as failure
  * - payments need to be marked as cancelled if there have been two prior failures for this EFFORTID (`processor_id`)
  *
+ * These are the possible values for `contribution_status_id`:
+ * - [1] => Completed
+ * - [2] => Pending
+ * - [3] => Cancelled
+ * - [4] => Failed
+ * - [5] => In Progress
+ * - [6] => Overdue
+ *
  * @param integer $id     The primary key of the record.
  * 
  * @return integer  Returns the number of affected rows.
@@ -333,6 +341,7 @@ function _recurring_globalcollect_update_record_failure($id) {
 
   // Flag which db_query() to use
   $cancel = false;
+  $contribution_status_id = 4;
   
   // If there have been too many failures, cancel this payment permanently.
   if ( $record['failure_count'] >= 2 ) {
@@ -359,11 +368,12 @@ function _recurring_globalcollect_update_record_failure($id) {
   else {
   	// The payment failed and is being marked as a failure.
     $query .= 'UPDATE {civicrm_contribution_recur} SET';
+    $query .= ' `contribution_status_id` = %d,';
     $query .= ' `failure_count` = `failure_count` + 1,';
     $query .= ' `failure_retry_date` = NOW() + INTERVAL %d DAY';
     $query .= ' WHERE id = %d';
     //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$query" . print_r($query, true) . "\n" );
-    db_query($query, $recurring_globalcollect_failure_retry_rate, $id);
+    db_query($query, $contribution_status_id, $recurring_globalcollect_failure_retry_rate, $id);
   }
 
   $affected_rows = (integer) db_affected_rows();
