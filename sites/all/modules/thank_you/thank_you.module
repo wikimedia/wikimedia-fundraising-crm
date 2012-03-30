@@ -540,7 +540,7 @@ function thank_you_settings_form() {
   $form['thank_you_onestep_unsubscribe'] = array(
     '#type' => 'radios',
     '#title' => t('Unsubscription Confirmation'),
-    '#required' => TRUE,
+    '#required' => FALSE,
 	'#options' => array(
 	   "false" => t('Require confirmation'),
 	   "true" => t('Do not require confirmation'),
@@ -560,92 +560,6 @@ function thank_you_recurring_globalcollect( $contribution_info ) {
   $contribution_id = $contribution_info[ 'contribution_id' ];
   watchdog('thank_you', 'Calling thank you function for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution_info, TRUE)) . '</pre>');
   thank_you_send( $contribution_id );
-}
-
-function thank_you_mail_send($mailkey, $to, $subject, $body_plaintext, $body_html, $from = NULL, $headers = array()) {
-  ###########################################
-  ## THIS FUNCTION IS NO LONGER BEING USED ##
-  ###########################################
-
-  return;
-	
-  $semi_rand = md5(time());
-  $mime_boundary = "==MULTIPART_BOUNDARY_$semi_rand";
-  $mime_boundary_header = chr(34) . $mime_boundary . chr(34);
-	
-  $defaults = array(
-    'MIME-Version' => '1.0',
-    'Content-Type' => "multipart/alternative; boundary=$mime_boundary_header; charset=UTF-8; format=flowed",
-    'Content-Transfer-Encoding' => '8Bit',
-    'X-Mailer' => 'Drupal'
-  );
-  // To prevent e-mail from looking like spam, the addresses in the Sender and
-  // Return-Path headers should have a domain authorized to use the originating
-  // SMTP server.  Errors-To is redundant, but shouldn't hurt.
-  $default_from = variable_get('site_mail', ini_get('sendmail_from'));
-  if ($default_from) {
-    $defaults['From'] = $defaults['Reply-To'] = $defaults['Sender'] = $defaults['Return-Path'] = $defaults['Errors-To'] = $default_from;
-  }
-  if ($from) {
-    $defaults['From'] = $defaults['Reply-To'] = $from;
-  }
-
-  $body = "
---$mime_boundary
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7Bit
-
-$body_plaintext
-
---$mime_boundary
-Content-Type: text/html; charset=UTF-8
-Content-Transfer-Encoding: 7Bit
-
-$body_html
-
---$mime_boundary--";
-
-  $headers = array_merge($defaults, $headers);
-  // Custom hook traversal to allow pass by reference
-  foreach (module_implements('mail_alter') AS $module) {
-    $function = $module .'_mail_alter';
-    $function($mailkey, $to, $subject, $body, $from, $headers);
-  }
-  // Allow for custom mail backend
-  if (variable_get('smtp_library', '') && file_exists(variable_get('smtp_library', ''))) {
-    include_once './' . variable_get('smtp_library', '');
-    return drupal_mail_wrapper($mailkey, $to, $subject, $body, $from, $headers);
-  }
-  else {
-    // Note: if you are having problems with sending mail, or mails look wrong
-    // when they are received you may have to modify the str_replace to suit
-    // your systems.
-    //  - \r\n will work under dos and windows.
-    //  - \n will work for linux, unix and BSDs.
-    //  - \r will work for macs.
-    //
-    // According to RFC 2646, it's quite rude to not wrap your e-mails:
-    //
-    // "The Text/Plain media type is the lowest common denominator of
-    // Internet e-mail, with lines of no more than 997 characters (by
-    // convention usually no more than 80), and where the CRLF sequence
-    // represents a line break [MIME-IMT]."
-    //
-    // CRLF === \r\n
-    //
-    // http://www.rfc-editor.org/rfc/rfc2646.txt
-
-    $mimeheaders = array();
-    foreach ($headers as $name => $value) {
-      $mimeheaders[] = $name .': '. mime_header_encode($value);
-    }
-    return mail(
-      $to,
-      mime_header_encode($subject),
-      str_replace("\n", "\r\n", str_replace("\r", '', $body)),
-      join("\r\n", $mimeheaders)
-    );
-  }
 }
 
 function unsubscribe_page(){
