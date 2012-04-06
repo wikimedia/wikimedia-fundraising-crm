@@ -22,6 +22,14 @@ function recurring_globalcollect_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
+  $items['admin/settings/recurring_globalcollect/search'] = array(
+    'title' => 'Search',
+    'access arguments' => array('administer recurring_globalcollect'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recurring_globalcollect_search_by_order_id_form'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
   $items['admin/settings/recurring_globalcollect/test'] = array(
     'title' => 'Test',
     'access arguments' => array('administer recurring_globalcollect'),
@@ -43,7 +51,6 @@ function recurring_globalcollect_test() {
   $return = 'No testing available at this time.';
   return $return;
 }
-
 /**
  * Implementation of hook_perm().
  */
@@ -721,4 +728,52 @@ function recurring_globalcollect_mail($key, &$message, $params) {
       }
       break;
   }
+}
+
+/**
+ * Create the form to search for subscriptions by order id.
+ */ 
+function recurring_globalcollect_search_by_order_id_form() {
+
+  $form['submit'] = array(
+    '#value' => 'Search by order id',
+    '#type' => 'submit'
+  );
+  
+  $form['order_id'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Order id',
+    '#default_value' => '',
+    '#required' => TRUE
+  );
+  
+  return $form;
+}
+
+/** 
+ * Implementation of hook_form_submit
+ *
+ * Submits a form to search for subscriptions by order id.
+ */
+function recurring_globalcollect_search_by_order_id_form_submit($form, &$form_state) {
+	
+  $order_id = isset( $form_state['values']['order_id'] ) ? (integer) $form_state['values']['order_id'] : 0;
+  
+  $record = _recurring_globalcollect_get_subscription_by_order_id($order_id);
+  
+  if ( $record === false ) {
+  
+    $message = 'No results found.';
+    
+  } else {
+    $display_name = isset( $record['display_name'] ) ? $record['display_name'] : 'Unknown donor';
+    $trxn_id = isset( $record['trxn_id'] ) ? $record['trxn_id'] : '';
+    $cid = isset( $record['contact_id'] ) ? $record['contact_id'] : '';
+    
+    // Create a link to the recurring contribution for the donor.
+    $link = '<a href="?q=civicrm/contact/view&reset=1&selectedChild=contribute&cid=' . $cid . '#Contributions">' . $display_name . '</a>';
+    $message = 'Found the contact [' . $link . '] for the order id [ ' . $order_id . ' ] and with the transaction id [ ' . $trxn_id . ' ]';
+  }
+  
+  drupal_set_message($message);
 }
