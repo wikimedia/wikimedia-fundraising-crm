@@ -540,12 +540,12 @@ function thank_you_settings_form() {
   $form['thank_you_onestep_unsubscribe'] = array(
     '#type' => 'radios',
     '#title' => t('Unsubscription Confirmation'),
-    '#required' => FALSE,
+    '#required' => TRUE,
 	'#options' => array(
 	   "false" => t('Require confirmation'),
 	   "true" => t('Do not require confirmation'),
 	),
-    '#default_value' => variable_get('thank_you_onestep_unsubscribe', ''),
+    '#default_value' => variable_get('thank_you_onestep_unsubscribe', 'false'),
   );
   return system_settings_form($form);
 }
