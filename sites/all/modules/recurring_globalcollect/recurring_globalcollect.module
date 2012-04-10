@@ -335,7 +335,7 @@ function recurring_globalcollect_process_error() {
   /**
    * @var string $watchdog_type The watchdog error type
    */
-  $watchdog_type = 'rg';
+  $watchdog_type = 'recurring_globalcollect';
   
   // Decide what to do with error.
   switch ($err_code){
