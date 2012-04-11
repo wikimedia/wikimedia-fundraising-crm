@@ -363,11 +363,11 @@ function recurring_globalcollect_process_error() {
       break;
     
     /**
-     * CRG
+     * RG
      *
      * There is a problem with recurring_globalcollect
      */
-    case 'CRG':
+    case 'RG':
       break;
     
     /**
