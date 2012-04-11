@@ -458,6 +458,8 @@ function recurring_globalcollect_process_get_query_options($options = array()) {
 }
 
 /**
+ * Connect to GlobalCollect with the StandaloneGlobalCollectAdapter
+ *
  * @param object|array $result 
  */
 function recurring_globalcollect_connect($result, $options = array()){
@@ -481,11 +483,23 @@ function recurring_globalcollect_connect($result, $options = array()){
     $message = 'You must specify a valid IPA.';
     //throw new Exception($message);
   }
+  
+  // Parse ORDERID
+  if ( preg_match('/RECURRING GLOBALCOLLECT (?P<ORDERID>\w+) (?P<timestamp>\d+)/', $result['trxn_id'], $matches) ) {
+  	
+  	$ORDERID = $matches['ORDERID'];
+  }
+  else {
+    $message = 'ORDERID was not found in the trxn_id: ' . print_r($result, true);
+    watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
+    drush_set_error('RG', $message);
+    return false;
+  }
    
   // Increment the EFFORTID
   $values = array(
       'EFFORTID' => $result['processor_id'] + 1,
-      'ORDERID' => $result['trxn_id'],
+      'ORDERID' => $ORDERID,
       'IPADDRESS' => $IPADDRESS,
   );
 
