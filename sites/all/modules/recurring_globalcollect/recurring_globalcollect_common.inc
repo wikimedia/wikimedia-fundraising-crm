@@ -161,6 +161,7 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
   
   //echo "\n" . $query . "\n";
   $result = db_fetch_object( $res );
+  //echo "\n \$result: \n" . print_r($result, true) . "\n";
 
   // If nothing found, return false.
   if (empty($result)) {
@@ -367,7 +368,6 @@ function _recurring_globalcollect_update_record_failure($id) {
 
   // make sure we're using the default (civicrm) db
   $dbs = _queue2civicrm_get_dbs();
-  $dbs->use_civicrm();
  
   $result = _recurring_globalcollect_get_payment_by_id($id);
   $record = is_object($result) ? (array) $result : false;
@@ -394,6 +394,8 @@ function _recurring_globalcollect_update_record_failure($id) {
     $next_sched_contribution = 'NULL';
     $cancel = true;
   }
+
+  $dbs->use_civicrm();
 
   $query = '';
   if ($cancel) {
@@ -440,7 +442,6 @@ function _recurring_globalcollect_update_record_success($id) {
 
   // make sure we're using the default (civicrm) db
   $dbs = _queue2civicrm_get_dbs();
-  $dbs->use_civicrm();
  
   $result = _recurring_globalcollect_get_payment_by_id($id);
   $record = is_object($result) ? (array) $result : false;
@@ -465,6 +466,7 @@ function _recurring_globalcollect_update_record_success($id) {
   $query .= " `next_sched_contribution` = '%s'";
   $query .= ' WHERE id = %d';
   //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$query" . print_r($query, true) . "\n" );
+  $dbs->use_civicrm();
   db_query($query, $next_sched_contribution, $id);
 
   $affected_rows = (integer) db_affected_rows();
