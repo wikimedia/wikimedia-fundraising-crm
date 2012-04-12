@@ -545,14 +545,19 @@ function recurring_globalcollect_connect($result, $options = array()){
       //echo "\n" . '$contact: ' . __FILE__ . __LINE__ . print_r($contact, true) . "\n";
       
       $msg = array();
+      $msg['fee'] = 0.00;
       
       $msg['gateway'] = 'globalcollect';
       $msg['gross'] = $result['amount'];
+      $msg['net'] = $msg['gross'] - $msg['fee'];
       //$msg['contribution_id'] = $result['contribution_id'];
       $msg['gateway_txn_id'] = $result['trxn_id'];
       $msg['payment_method'] = 'cc';
+      $msg['payment_submethod'] = '';
       $msg['date'] = time();
-      //echo "\n" . '$msg: ' . __FILE__ . __LINE__ . print_r($msg, true) . "\n";
+      $msg['original_currency'] = $result['currency'];
+      $msg['original_gross'] = $msg['gross'];
+      //die( "\n" . '$msg: ' . __FILE__ . __LINE__ . print_r($msg, true) . "\n");
       /*
        * This array needs to be rekeyed to be consistent with:
        *
