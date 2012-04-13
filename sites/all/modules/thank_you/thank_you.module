@@ -1,6 +1,7 @@
 <?php
 
 require_once 'i18n/thank_you.i18n.php';
+require_once 'i18n_recurring/thank_you.i18n.php';
 
 function thank_you_menu() {
   $items = array();
@@ -467,6 +468,240 @@ function thank_you_send( $contribution_id, $test=null ) {
 	return -3;
 }
 
+function thank_you_render_recurring( $contribution_id, $test=null ) {
+    global $TYmsgs_recur;
+
+    civicrm_initialize( true );
+    $contribution = civicrm_api("Contribution","get", array (
+        'version' =>'3',
+        'contribution_id' => $contribution_id
+    ));
+    # check for errors in the API result
+    if( is_array( $contribution ) && array_key_exists( 'is_error', $contribution ) && $contribution['is_error'] == "0" ){
+        $contribution = $contribution[ 'values' ][ $contribution_id ];
+    } else {
+        watchdog('thank_you', 'Rendering thank you message failed for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+        return false; # we cannot continue
+    }
+    # get the information for the associated contact
+    if( is_array( $contribution ) ){
+        $contact = civicrm_api("Contact","get", array (
+            'version' =>'3',
+            'id' => $contribution[ 'contact_id' ],
+            'return' => "display_name,first_name,last_name,email,preferred_language"
+        ));
+    }
+    # check for errors in the API result
+    if( is_array( $contact ) && array_key_exists( 'is_error', $contact ) && $contact['is_error'] == "0" ){
+        $contact = $contact[ 'values' ][ $contribution[ 'contact_id' ] ];
+    } else {
+        watchdog('thank_you', 'Rendering thank you message failed for contact: ' . $contribution[ 'contact_id' ] . '<pre>' . check_plain(print_r($contact, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+        return false; # we cannot continue
+    }
+    # check for contacts without an email address
+    if ( !array_key_exists( 'email', $contact ) ){
+        # set the email to a valid, default email address that will get ignored later
+        $contact['email'] = "nobody@wikimedia.org";
+    }
+
+    # load the default values
+    $rendering = array();
+    $rendering[ 'from_name' ] = variable_get( 'thank_you_from_name', '' );
+    $rendering[ 'to_name' ] = variable_get( 'thank_you_to_name', '{contact.display_name}' );
+    if ( !$rendering[ 'to_name' ] ) {
+        $rendering[ 'to_name' ] = variable_get( 'thank_you_to_name_secondary', '' );
+    }
+    $rendering[ 'from_address' ] = variable_get( 'thank_you_from_address', '' );
+    $rendering[ 'subject' ] = variable_get( 'thank_you_subject', '' );
+    $rendering[ 'body_plaintext' ] = variable_get( 'thank_you_body_plaintext', '' );
+    $rendering[ 'body_html' ] = variable_get( 'thank_you_body_html', '' );
+    $rendering[ 'to_address' ] = '{contact.email}';
+
+    # TODO: add country variants
+    # attempt to get localizations
+    $locale = $contact['preferred_language'];
+    $lang = substr($locale, 0, 2);
+    if ( !isset( $lang ) or $lang == '') {
+        $lang = "en";
+        drupal_set_message('Language not set, defaulting to en', 'info');
+    }
+    if ( !is_null( $test ) ){
+        if ( array_key_exists( 'language', $test ) ){
+            $lang = $test[ 'language' ];
+            drupal_set_message('Test email, overriding language to ' . $lang, 'info');
+        }
+    }
+    # check to see if a matching localization was found
+    if ( isset( $TYmsgs_recur ) && array_key_exists( $lang, $TYmsgs_recur ) ) {
+        watchdog('thank_you', "Messages intialized and $lang found", WATCHDOG_INFO);
+        # loop through the localizations and replace the defaults
+        foreach ( $rendering as $key => $value ){
+            # check if the current key has a localized value
+            if ( array_key_exists( 'thank_you_' . $key, $TYmsgs_recur[ $lang ] ) ){
+                $rendering[ $key ] = $TYmsgs_recur[ $lang ][ 'thank_you_' . $key ];
+            }
+        }
+    }
+    else{
+        # look for default messages (en) in i18n
+        if ( isset( $TYmsgs_recur ) && array_key_exists( 'en', $TYmsgs_recur ) ) {
+            watchdog('thank_you', "$lang not found - defaulting to en", WATCHDOG_INFO);
+            # loop through the localizations and replace the defaults
+            foreach ( $rendering as $key => $value ){
+                # check if the current key has a localized value
+                if ( array_key_exists( 'thank_you_' . $key, $TYmsgs_recur[ 'en' ] ) ){
+                    $rendering[ $key ] = $TYmsgs_recur[ 'en' ][ 'thank_you_' . $key ];
+                }
+            }
+        }
+        else {
+            watchdog('thank_you', "$lang not found, en not found, using interface defaults", WATCHDOG_INFO);
+        }
+    }
+    # replace the tokens with the contact/contribution data
+    $contribution['date'] = date('Y-m-d', strtotime($contribution['receive_date']));
+    $contribution['source'] = $contribution['contribution_source'];
+
+    foreach ( $contribution as $c_key => $c_value ) {
+        foreach ( $rendering as $r_key => $r_value ){
+            $rendering[ $r_key ] = str_replace( '{contribution.' . $c_key . '}', $c_value, $rendering[ $r_key ] );
+        }
+    }
+    foreach ( $contact as $c_key => $c_value ) {
+        foreach ( $rendering as $r_key => $r_value ){
+            $rendering[ $r_key ] = str_replace( '{contact.' . $c_key . '}', $c_value, $rendering[ $r_key ] );
+        }
+    }
+    $rendering[ 'to_address' ] = str_replace( '{contact.email}', $contact['email'], $rendering[ 'to_address' ] );
+
+    # generate and add the unsubscription link
+    $hash = sha1( $contribution_id . $contribution[ 'contact_id' ] . $contribution[ 'trxn_id' ] );
+    $unsub_url = CIVICRM_UF_BASEURL . "thank_you/unsubscribe?c=$contribution_id&h=$hash";
+    $rendering['body_plaintext'] = str_replace( '{unsubscribe_link}', $unsub_url, $rendering['body_plaintext'] );
+    $rendering['body_html'] = str_replace( '{unsubscribe_link}', $unsub_url, $rendering['body_html'] );
+
+    return $rendering;
+}
+
+function thank_you_send_recurring( $contribution_id, $test=null ) {
+    civicrm_initialize(true);
+    $contribution = civicrm_api("Contribution","get", array (
+        'version' =>'3',
+        'contribution_id' => $contribution_id
+    ));
+    # check for errors in the API result
+    if( is_array( $contribution ) && array_key_exists( 'is_error', $contribution ) && $contribution['is_error'] == "0" ){
+        $contribution = $contribution[ 'values' ][ $contribution_id ];
+    } else {
+        watchdog('thank_you', 'Sending thank you message failed for contribution (1): ' . $contribution_id . '<pre>' . check_plain(print_r($contribution, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+        return -3;; # we cannot continue
+    }
+    # only check the following if this is not a test
+    if ( is_null( $test ) ){
+        if (strtotime($contribution['receive_date']) < time() - 86400 * variable_get('thank_you_days', 14)) {
+            return -1;
+        }
+
+        if (array_key_exists('thankyou_date', $contribution) && is_numeric($contribution['receive_date']) && $contribution['receive_date'] > 0 ) {
+            return -2;
+        }
+    }
+
+    $rendered = thank_you_render_recurring( $contribution_id, $test );
+
+    if( $rendered == false ){
+        # the render failed, we cannot continue
+        return -3;
+    }
+
+    // this is an anonymous donation or we don't have an email address, do not send TY
+    if( $rendered['to_address'] == 'nobody@wikimedia.org' ){
+        # despite there being an "update" api function, it does not seem to work for Contributions
+        $params = array(
+            'version' => '3',
+            'id' => $contribution[ 'contribution_id' ],
+            'contribution_id' => $contribution[ 'contribution_id' ],
+            'thankyou_date' => "1970-01-01 00:00:00",
+        );
+        $contribution_result = civicrm_api( "Contribution", "create", array_merge( $contribution, $params ) );
+        if( is_array( $contribution_result ) && array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] == "0" ){
+            # no need to log this success
+            return true;
+        } else {
+            // hmm, well, we really didn't want to send one anyway, so just let it go
+            return true;
+        }
+    }
+
+    $from = '"' . $rendered['from_name'] . '" <' . $rendered['from_address'] . '>';
+    $to = '"' . $rendered['to_name'] . '" <' . $rendered['to_address'] . '>';
+    $subject = $rendered['subject'];
+    $body_plaintext = $rendered['body_plaintext'];
+    $body_html = $rendered['body_html'];
+
+    $headers = array(
+        'Sender' => $from,
+    );
+
+    $message_debug = array(
+        'From' => $from,
+        'To' => $to,
+        'Subject' => $subject,
+        'Body' => $body_plaintext,
+    );
+
+    $email_success = false;
+
+    require_once 'class.phpmailer.php';
+
+    $mail = new PHPMailer( true );
+
+    try {
+        $mail->set('Charset','utf-8');
+        if ( !is_null( $test ) ){
+            $mail->AddAddress( $test['email'], "Test User" );
+        } else {
+            $mail->AddAddress( $rendered['to_address'], $rendered['to_name'] );
+        }
+
+        $mail->AddReplyTo( $rendered['from_address'], $rendered['from_name'] );
+        $mail->SetFrom( $rendered['from_address'], $rendered['from_name'] );
+        $mail->AddReplyTo( $rendered['from_address'], $rendered['from_name'] );
+
+        $mail->Subject = $rendered['subject'];
+        if ( !is_null( $test ) ){
+            $mail->Subject = "[Test TY - " . $test['language'] . "] " . $rendered['subject'];
+        }
+        $mail->AltBody = $rendered['body_plaintext'];
+        $mail->MsgHTML( $rendered['body_html'] );
+        $mail->Send();
+
+        $email_success = true;
+    } catch (phpmailerException $e) {
+        watchdog('thank_you', 'Sending thank you message failed for contribution (2): ' . $contribution_id . '<pre>' . check_plain(print_r($contribution_result, TRUE)) . "\n\n" . $e->errorMessage() . '</pre>', array(), WATCHDOG_ERROR);
+    } catch (Exception $e) {
+        watchdog('thank_you', 'Sending thank you message failed for contribution (3): ' . $contribution_id . '<pre>' . check_plain(print_r($contribution_result, TRUE)) . "\n\n" . $e->getMessage() . '</pre>', array(), WATCHDOG_ERROR);
+    }
+    if ( $email_success ) {
+        # despite there being an "update" api function, it does not seem to work for Contributions
+        $params = array(
+            'version' => '3',
+            'id' => $contribution[ 'contribution_id' ],
+            'contribution_id' => $contribution[ 'contribution_id' ],
+            'thankyou_date' => date( 'Y-m-d H:i:s' ),
+        );
+        $contribution_result = civicrm_api( "Contribution", "create", array_merge( $contribution, $params ) );
+        if( is_array( $contribution_result ) && array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] == "0" ){
+            # no need to log this success
+            return true;
+        } else {
+            watchdog('thank_you', 'Updating successful TY send failed: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution_result, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+        }
+    }
+
+    return -3;
+}
+
 function thank_you_settings_form() {
   $form = array();
   
@@ -559,7 +794,7 @@ function thank_you_queue2civicrm_import( $contribution_info ) {
 function thank_you_recurring_globalcollect( $contribution_info ) {
   $contribution_id = $contribution_info[ 'contribution_id' ];
   watchdog('thank_you', 'Calling thank you function for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution_info, TRUE)) . '</pre>');
-  thank_you_send( $contribution_id );
+  thank_you_send_recurring( $contribution_id );
 }
 
 function unsubscribe_page(){
