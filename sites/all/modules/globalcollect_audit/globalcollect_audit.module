@@ -303,7 +303,7 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 	}
 	
 	$recurring = false;
-	if ( array_key_exists( 'ORDERTYPE', $donor_data ) && $donor_data['ORDERTYPE'] = '4' ){
+	if ( array_key_exists( 'ORDERTYPE', $donor_data ) && $donor_data['ORDERTYPE'] == '4' ){
 		$recurring = true;
 	}
 	
