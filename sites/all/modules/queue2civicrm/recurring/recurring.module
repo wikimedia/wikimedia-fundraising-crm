@@ -290,8 +290,8 @@ function recurring_import_subscr_payment( $msg ) {
   // update subscription record with next payment date
   $queue2civicrm_dbs = _queue2civicrm_get_dbs();
   $queue2civicrm_dbs->use_civicrm();
-  $query = "UPDATE {civicrm_contribution_recur} SET next_sched_contribution='%s'";
-  db_query( $query, date('Y-m-d H:i:s', strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'payment_date' ] )));
+  $query = "UPDATE {civicrm_contribution_recur} SET next_sched_contribution='%s' WHERE id = %d";
+  db_query( $query, date('Y-m-d H:i:s', strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'payment_date' ] )), $recur_record->id);
   $queue2civicrm_dbs->use_default();
   
   // construct an array of useful info to invocations of queue2civicrm_import
