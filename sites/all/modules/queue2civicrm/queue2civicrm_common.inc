@@ -605,6 +605,15 @@ function _queue2civicrm_contribution_recur_insert( $msg, $contact_id, $contribut
   //dependency on GC recurring. 
   $next_sched_contribution = _recurring_globalcollect_get_next_sched_contribution_date_for_month( $msg );
   
+  // Remove by exploding and trimming.
+  $trxn_id_exploded = explode( ' ', $contribution_record[ 'trxn_id' ] );
+  array_pop( $trxn_id_exploded );
+  $trxn_id = implode( ' ', $trxn_id_exploded );
+  
+  // Remove by last space
+  //$trxn_id = substr( $contribution_record[ 'trxn_id' ], 0 , strrpos($contribution_record[ 'trxn_id' ], ' ' ) );
+  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$trxn_id: [" . $trxn_id . "]\n" );
+  
   $query = "INSERT INTO {civicrm_contribution_recur}
     (
   		contact_id,
