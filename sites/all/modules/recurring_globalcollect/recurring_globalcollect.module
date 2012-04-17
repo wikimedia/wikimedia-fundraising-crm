@@ -485,7 +485,7 @@ function recurring_globalcollect_connect($result, $options = array()){
   }
   
   // Parse ORDERID
-  if ( preg_match('/RECURRING GLOBALCOLLECT (?P<ORDERID>\w+) (?P<timestamp>\d+)/', $result['trxn_id'], $matches) ) {
+  if ( preg_match('/RECURRING GLOBALCOLLECT (?P<ORDERID>\w+)/', $result['trxn_id'], $matches) ) {
   	
   	$ORDERID = $matches['ORDERID'];
   }
