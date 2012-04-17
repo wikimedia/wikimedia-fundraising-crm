@@ -333,7 +333,7 @@ function _recurring_globalcollect_get_subscription_by_order_id($order_id) {
   $query  = 'SELECT `civicrm_contribution_recur`.*, `civicrm_contact`.`display_name` FROM `civicrm_contribution_recur`';
   $query .= ' LEFT JOIN `civicrm_contact` ON (`civicrm_contribution_recur`.`contact_id` = `civicrm_contact`.`id`)';
   $query .= ' WHERE `civicrm_contribution_recur`.`trxn_id` LIKE ';
-  $query .="'RECURRING GLOBALCOLLECT %d %' LIMIT 1";
+  $query .="'RECURRING GLOBALCOLLECT %d%' LIMIT 1";
   
   $result = db_fetch_object( db_query( $query, $order_id ) );
 
