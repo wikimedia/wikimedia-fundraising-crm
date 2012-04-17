@@ -365,9 +365,17 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL, $ef
 			}
 			//and now we're down to three. DO NOT BREAK HERE, OR REORDER THE CASE BLOCKS. 
 		case 3:
-			//coming in from somewhere that... is probably old and stale. 
+			//this is either coming in from somewhere totally old and stale, or it's coming in from a GC Recurring subscription
 			//Pull out the parts and regen the timestamp.
-			if (array_shift($parts) != strtoupper( $msg['gateway'])){
+			$part1 = array_shift($parts);
+			
+			if ( $part1 == 'RECURRING' ){
+				//we have a subscription. 
+				if ( array_shift( $parts ) != strtoupper( $msg['gateway']) ){
+					watchdog( 'queue2civicrm', 'Cannot add contribution: Malformed gateway_txn_id (3 parts, recurring, second part is not ucase gateway):' . print_r($msg, TRUE));
+					return false;
+				}
+			} elseif ( $part1 != strtoupper( $msg['gateway']) ) {
 				watchdog( 'queue2civicrm', 'Cannot add contribution: Malformed gateway_txn_id (3 parts, does not start with ucase gateway):' . print_r($msg, TRUE));
 				return false;
 			}
