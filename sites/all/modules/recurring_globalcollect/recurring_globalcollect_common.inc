@@ -141,8 +141,8 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
   $query .= 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` ';
   
   $where  = '';
-  $where .= " WHERE ( `civicrm_contribution_recur`.`end_date` = '0000-00-00 00:00:00' OR `civicrm_contribution_recur`.`end_date` IS NULL )";
-  $where .= " AND ( `civicrm_contribution_recur`.`failure_retry_date` = '0000-00-00 00:00:00' OR `civicrm_contribution_recur`.`failure_retry_date` IS NULL )";
+  $where .= " WHERE ( `civicrm_contribution_recur`.`end_date` IS NULL )";
+  $where .= " AND ( `civicrm_contribution_recur`.`failure_retry_date` IS NULL )";
   $where .= " AND `civicrm_contribution_recur`.`failure_count` = 0 ";
   $where .= " AND `civicrm_contribution_recur`.`next_sched_contribution` BETWEEN '%s' AND '%s'";
   $where .= " AND `civicrm_contribution_recur`.`trxn_id` LIKE 'RECURRING GLOBALCOLLECT%'";
@@ -159,7 +159,9 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
 	$res = db_query( $query, $start_day, $end_day );
   }
   
-  //echo "\n" . $query . "\n";
+  //echo "\n \$query: \n" . $query . "\n";
+  //echo "\n \$start_day: \n" . print_r($start_day, true) . "\n";
+  //echo "\n \$end_day: \n" . print_r($end_day, true) . "\n";
   $result = db_fetch_object( $res );
   //echo "\n \$result: \n" . print_r($result, true) . "\n";
 
