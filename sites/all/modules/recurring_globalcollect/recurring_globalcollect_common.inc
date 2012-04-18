@@ -268,20 +268,24 @@ function _recurring_globalcollect_increment_date_to_target_day( $date, $interval
  * 
  * NOTE: `end_date` should only be set if the end has passed.
  * 
- * SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur`  
- * LEFT JOIN `civicrm_payment_processor` ON ( `civicrm_payment_processor`.`id` = `civicrm_contribution_recur`.`payment_processor_id` ) 
- * WHERE ( `civicrm_contribution_recur`.`end_date` = '0000-00-00 00:00:00' OR `civicrm_contribution_recur`.`end_date` IS NULL ) 
- * AND `civicrm_contribution_recur`.`failure_retry_date` LIKE '2012-02-10%' AND `civicrm_contribution_recur`.`failure_count` < 3 
- * AND `civicrm_payment_processor`.`payment_processor_type`  = 'GlobalCollect' LIMIT 1
+ * Example query called with standard options and the date set to: 2012-01-01
+ * 
+ * SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur`
+ *  WHERE `civicrm_contribution_recur`.`next_sched_contribution`
+ *   BETWEEN '2012-01-01 00:00:00' AND '2012-04-01 23:59:59'
+ *  AND `civicrm_contribution_recur`.`trxn_id` LIKE 'RECURRING GLOBALCOLLECT%'
+ *  AND ( `civicrm_contribution_recur`.`end_date` IS NULL )
+ *  AND `civicrm_contribution_recur`.`contribution_status_id` = 4
+ * LIMIT 1
  * 
  * @param array   $options   Options
  * 
  * $options
- * - date           string    Uses strtotime() to parse the date
- * - failure_count  integer   Number of failures to allow before we stop processing. Default is 3.
+ * - $date          string    Uses strtotime() to parse the date
  * - $limit         integer   Number of records to pull. Default is 1.
  * 
- * @todo `civicrm_payment_processor`.`payment_processor_type` might need to be specified in settings.
+ * @todo The field `civicrm_payment_processor`.`payment_processor_type` should be set.
+ * @todo Implement $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
  * 
  * @return false|object
  */
@@ -298,17 +302,19 @@ function _recurring_globalcollect_get_failure_retry_date($options = array()) {
   $date = date('Y-m-d', strtotime($date));
 
   $limit = isset($options['limit']) ? (integer) abs($options['limit']) : 1;
-  $failure_count = isset($options['failure_count']) ? (integer) abs($options['failure_count']) : 3;
+
+  // [4] => Failed
+  $contribution_status_id = 4;
   
   $query  = '';
   $query .= 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` ';
   
   $where  = '';
-  $where .= " WHERE ( `civicrm_contribution_recur`.`end_date` = '0000-00-00 00:00:00' OR `civicrm_contribution_recur`.`end_date` IS NULL )";
-  $where .= " AND `civicrm_contribution_recur`.`failure_retry_date` BETWEEN '%s 00:00:00' AND  '%s 23:59:59'";
-  $where .= " AND `civicrm_contribution_recur`.`failure_count` < %d";
+  $where .= " WHERE `civicrm_contribution_recur`.`next_sched_contribution` BETWEEN '%s 00:00:00' AND '%s 23:59:59'";
+  $where .= " AND `civicrm_contribution_recur`.`contribution_status_id` = %d";
   $where .= " AND `civicrm_contribution_recur`.`trxn_id` LIKE 'RECURRING GLOBALCOLLECT%'";
-  
+  $where .= " AND ( `civicrm_contribution_recur`.`end_date` IS NULL )";
+
   // Add on the WHERE statement
   $query .= $where;
   
@@ -317,8 +323,9 @@ function _recurring_globalcollect_get_failure_retry_date($options = array()) {
     $query .= " LIMIT " . $limit;
   }
   
-  //echo "\n" . $query . "\n";
-  $result = db_fetch_object( db_query( $query, $date, $date, $failure_count ));
+  //echo "\n \$date: \n" . $date . "\n";
+  //echo "\n \$query: \n" . $query . "\n";
+  $result = db_fetch_object( db_query( $query, $date, $date, $contribution_status_id ));
 
   // If nothing found, return false.
   if (empty($result)) {
