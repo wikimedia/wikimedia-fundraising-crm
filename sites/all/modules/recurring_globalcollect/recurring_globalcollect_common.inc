@@ -97,9 +97,8 @@ function _recurring_globalcollect_get_payment_by_id($id) {
  * - date           string    Uses strtotime() to parse the date
  * - $limit         integer   Number of records to pull. Default is 1.
  * 
- * @todo `civicrm_payment_processor`.`payment_processor_type` might need to be specified in settings.
- * 
- * @todo Should query use LIKE on date searches? `civicrm_contribution_recur`.`next_sched_contribution` LIKE '2012-01-01%' - There could be a lot of records in this table. This would require a bench mark test.
+ * @todo The field `civicrm_payment_processor`.`payment_processor_type` should be set.
+ * @todo Implement $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
  * 
  * @return false|object
  */
@@ -137,6 +136,32 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
   
   $limit = isset($options['limit']) ? (integer) abs($options['limit']) : 1;
   
+  /** This code is an attempt to pull the contribution status.
+   *
+   * It currently throws the error:
+   *
+   * DB_DataObject Error: No database name / dsn found anywhere
+   *
+   * The reason why we need to look this up is because this is editable from the
+   * database.
+   *
+   * @todo We need to make sure that the status is: [1] => Completed
+   *
+   * @todo Right before we send a transaction, it will be marked: [5] => In Progress
+   * @todo When the transaction successfully completes, it will be marked: [1] => Completed
+   * @todo I think it might be helpful to add a few custom status codes.
+   * @todo contribution_status_id: [7] => Thank you mail failed
+   * @todo contribution_status_id: [8] => Some other code
+   */
+  //require_once 'CRM/Core/DAO.php';
+  //require_once 'CRM/Utils/Cache.php';
+  //require_once 'CRM/Contribute/PseudoConstant.php';
+  //$contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
+  
+  $contribution_status_id = 1;
+  //echo "\n \$contribution_status_id: \n" . print_r($contribution_status_id, true) . "\n";
+  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$contributionStatus" . print_r($contributionStatus, true) . "\n" );
+  
   $query  = '';
   $query .= 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` ';
   
@@ -145,8 +170,8 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
   $where .= " AND `civicrm_contribution_recur`.`trxn_id` LIKE 'RECURRING GLOBALCOLLECT%'";
   $where .= " AND ( `civicrm_contribution_recur`.`end_date` IS NULL )";
   $where .= " AND ( `civicrm_contribution_recur`.`failure_retry_date` IS NULL )";
-  $where .= " AND `civicrm_contribution_recur`.`failure_count` = 0 ";
-
+  $where .= " AND `civicrm_contribution_recur`.`failure_count` = 0";
+  $where .= " AND `civicrm_contribution_recur`.`contribution_status_id` = %d";
   
   // Add on the WHERE statement
   $query .= $where;
@@ -154,9 +179,9 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
   // Add a limit.
   if (!empty($limit)) {
     $query .= " LIMIT %d";
-	$res = db_query( $query, $start_day, $end_day, $limit );
+	$res = db_query( $query, $start_day, $end_day, $contribution_status_id, $limit );
   } else {
-	$res = db_query( $query, $start_day, $end_day );
+	$res = db_query( $query, $start_day, $end_day, $contribution_status_id );
   }
   
   //echo "\n \$query: \n" . $query . "\n";
