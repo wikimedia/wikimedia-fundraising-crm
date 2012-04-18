@@ -174,8 +174,6 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
   $where .= " WHERE `civicrm_contribution_recur`.`next_sched_contribution` BETWEEN '%s' AND '%s'";
   $where .= " AND `civicrm_contribution_recur`.`trxn_id` LIKE 'RECURRING GLOBALCOLLECT%'";
   $where .= " AND ( `civicrm_contribution_recur`.`end_date` IS NULL )";
-  $where .= " AND ( `civicrm_contribution_recur`.`failure_retry_date` IS NULL )";
-  $where .= " AND `civicrm_contribution_recur`.`failure_count` = 0";
   $where .= " AND `civicrm_contribution_recur`.`contribution_status_id` = %d";
   
   // Add on the WHERE statement
