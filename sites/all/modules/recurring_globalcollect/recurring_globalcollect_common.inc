@@ -83,13 +83,18 @@ function _recurring_globalcollect_get_payment_by_id($id) {
 
 /**
  * Select one recurring payment by `next_sched_contribution`, that needs to be processed for the current day.
- * 
+ *
+ * Example query called with standard options and the date set to: 2012-01-01
+ *
  * SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur`
- * WHERE ( `civicrm_contribution_recur`.`end_date` = '0000-00-00 00:00:00' OR `civicrm_contribution_recur`.`end_date` IS NULL )
- * AND ( `civicrm_contribution_recur`.`failure_retry_date` = '0000-00-00 00:00:00' OR `civicrm_contribution_recur`.`failure_retry_date` IS NULL )
- * AND `civicrm_contribution_recur`.`failure_count` = 0
- * AND `civicrm_contribution_recur`.`next_sched_contribution` BETWEEN '2011-12-28 00:00:00' AND  '2011-12-31 23:59:59'
- * AND `civicrm_contribution_recur`.`trxn_id` LIKE 'RECURRING GLOBALCOLLECT%'
+ *  WHERE `civicrm_contribution_recur`.`next_sched_contribution`
+ *   BETWEEN '2012-01-01 00:00:00' AND '2012-01-01 23:59:59'
+ *  AND `civicrm_contribution_recur`.`trxn_id` LIKE 'RECURRING GLOBALCOLLECT%'
+ *  AND ( `civicrm_contribution_recur`.`end_date` IS NULL )
+ *  AND ( `civicrm_contribution_recur`.`failure_retry_date` IS NULL )
+ *  AND `civicrm_contribution_recur`.`failure_count` = 0
+ *  AND `civicrm_contribution_recur`.`contribution_status_id` = 1
+ * LIMIT 1
  * 
  * @param array   $options   Options
  * 
