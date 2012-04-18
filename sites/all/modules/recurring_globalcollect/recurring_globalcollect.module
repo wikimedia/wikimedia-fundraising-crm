@@ -540,6 +540,8 @@ function recurring_globalcollect_connect($result, $options = array()){
   $instance->setValues( $values );
   
   try {
+  	_recurring_globalcollect_update_record_in_progress($result['id']);
+  	
     $status = $instance->curlTransaction();
 
     watchdog('recurring_globalcollect', 'Sending [successful] request: <pre>' . htmlentities($instance->getRequestDoPayment()) . '</pre>');
