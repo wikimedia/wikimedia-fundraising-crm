@@ -32,7 +32,7 @@ For your records: Your donation on {contribution.date} was {contribution.source}
 
 https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={$country}language={$language}{/if}
 
-Due to technical issues, we were unable to process recurring donations during the months of January, February and March.  We will not process the missed donations and apologize for any confusion this may have caused. If you have any questions, please contact giving@wikimedia.org
+Recurring monthly donations scheduled for the months of January, February, and March were not processed. Your scheduled donation subscription will resume recurring monthly as of this notification. We apologize for any confusion this may have caused. If you have any questions, please contact giving@wikimedia.org
 
 This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit charitable corporation with 501(c)(3) tax exempt status in the United States. Our address is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703
 
