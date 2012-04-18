@@ -100,6 +100,20 @@ function drush_recurring_globalcollect() {
   
   //die( eval('return	__FILE__ . date(\'r\') . "\n";') . '$options - ' .  print_r($options, true) . "\n" );
   module_invoke( 'recurring_globalcollect', 'batch_process', $options );
+
+  // Outputting errors again so they can be picked up by Jenkins.
+  $errors = drush_get_error_log();
+  if (!empty($errors)){
+	  echo "\n***ERRORS***";
+	  foreach($errors as $error=>$msgarray){
+		  echo "\n$error: ";
+		  foreach ($msgarray as $count=>$message){
+			  echo "\n    $message";
+		  }
+	  }
+	  echo "\n\n";
+	  exit(drush_get_error());
+  }
 }
 
 /**
