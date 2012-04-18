@@ -476,6 +476,59 @@ function _recurring_globalcollect_update_record_failure($id) {
 }
 
 /**
+ * Update recurring payment as in progress.
+ *
+ * @todo Implement $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
+ *
+ * @param integer $id     The primary key of the record.
+ * 
+ * @return integer  Returns the number of affected rows.
+ */
+function _recurring_globalcollect_update_record_in_progress($id) {
+
+  // make sure we're using the default (civicrm) db
+  $dbs = _queue2civicrm_get_dbs();
+ 
+  $result = _recurring_globalcollect_get_payment_by_id($id);
+  $record = is_object($result) ? (array) $result : false;
+  
+  if (empty($record)) {
+    $message = 'No record was found with the id: [' . $id . '].';
+    throw new Exception($message);
+  }
+  
+  if ($record['contribution_status_id'] != 1) {
+    $message = 'The subscription is supposed to be in a completed state before it can be processed: ' . print_r( $record, true );
+    watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
+    drush_set_error('RG', $message);
+    return false;
+  }
+
+  $query = '';
+  // The payment is being marked as in progress.
+  $query .= 'UPDATE {civicrm_contribution_recur} SET';
+  $query .= ' `contribution_status_id` = 5';
+  $query .= ' WHERE id = %d';
+  $query .= ' AND `contribution_status_id` = 1';
+  $dbs->use_civicrm();
+  db_query($query, $id);
+
+  $affected_rows = (integer) db_affected_rows();
+
+  if ($affected_rows == 0) {
+    $message = 'The subscription was not marked as in progress: ' . print_r( $record, true );
+    watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
+    drush_set_error('RG', $message);
+    return false;
+  }
+  
+  // Restore the database connection.
+  $dbs->use_default();
+  
+  return $affected_rows;
+}
+
+/**
  * Update recurring payment for success.
  *
  * Payments will be rescheduled for the following month.
