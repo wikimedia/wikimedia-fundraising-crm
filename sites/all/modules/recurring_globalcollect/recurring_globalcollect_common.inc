@@ -422,9 +422,18 @@ function _recurring_globalcollect_update_record_failure($id) {
   // Flag which db_query() to use
   $cancel = false;
   $contribution_status_id = 4;
-  
+  $failures_before_cancellation = (integer) variable_get('recurring_globalcollect_failures_before_cancellation', 0);
+
+  if ( $failures_before_cancellation == 0 ) {
+    $watchdog_link = l('Edit Recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
+    $message = 'Please check your setting for: Failures before subscription is cancelled. The value must be at least one. The default is 3.';
+    watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR, $watchdog_link);
+    drush_set_error('RG_SETTINGS', $message);
+    return false;
+  }
+
   // If there have been too many failures, cancel this payment permanently.
-  if ( $record['failure_count'] >= 2 ) {
+  if ( $record['failure_count'] >= ( $failures_before_cancellation - 1 ) ) {
     $contribution_status_id = 3;
     $end_date = 'NULL';
     $failure_retry_date = 'NULL';
@@ -608,6 +617,7 @@ function _recurring_globalcollect_get_top_new_drush_error(){
   $severity = array(
     'CIVI_CONFIG',
     'RG',
+    'RG_SETTINGS',
     'GLOBALCOLLECT',
     'FUTURE_DATE',
 	'CIVI_INSERT',
