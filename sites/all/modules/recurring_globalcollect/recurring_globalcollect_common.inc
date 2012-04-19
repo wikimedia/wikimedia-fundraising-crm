@@ -134,7 +134,7 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
   
   $limit = isset($options['limit']) ? (integer) abs($options['limit']) : 1;
   
-  $contribution_status_id = 1;
+  $contribution_status_id = get_contribution_status_key('Completed');
   
   $query  = '';
   $query .= 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` ';
@@ -265,8 +265,7 @@ function _recurring_globalcollect_get_failure_retry_date($options = array()) {
 
   $limit = isset($options['limit']) ? (integer) abs($options['limit']) : 1;
 
-  // [4] => Failed
-  $contribution_status_id = 4;
+  $contribution_status_id = get_contribution_status_key('Failed');
   
   $query  = '';
   $query .= 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` ';
@@ -381,7 +380,7 @@ function _recurring_globalcollect_update_record_failure($id) {
 
   // Flag which db_query() to use
   $cancel = false;
-  $contribution_status_id = 4;
+  $contribution_status_id = get_contribution_status_key('Failed');
   $failures_before_cancellation = (integer) variable_get('recurring_globalcollect_failures_before_cancellation', 0);
 
   if ( $failures_before_cancellation == 0 ) {
@@ -394,7 +393,7 @@ function _recurring_globalcollect_update_record_failure($id) {
 
   // If there have been too many failures, cancel this payment permanently.
   if ( $record['failure_count'] >= ( $failures_before_cancellation - 1 ) ) {
-    $contribution_status_id = 3;
+    $contribution_status_id = get_contribution_status_key('Cancelled');
     $end_date = 'NULL';
     $failure_retry_date = 'NULL';
     $next_sched_contribution = 'NULL';
@@ -465,11 +464,13 @@ function _recurring_globalcollect_update_record_in_progress($id) {
   $query = '';
   // The payment is being marked as in progress.
   $query .= 'UPDATE {civicrm_contribution_recur} SET';
-  $query .= ' `contribution_status_id` = 5';
+  // Set the status to In Progress
+  $query .= ' `contribution_status_id` = %d';
   $query .= ' WHERE id = %d';
-  $query .= ' AND `contribution_status_id` = 1';
+  // Only update if status is Completed
+  $query .= ' AND `contribution_status_id` = %d';
   $dbs->use_civicrm();
-  db_query($query, $id);
+  db_query($query, get_contribution_status_key('In Progress'), $id, get_contribution_status_key('Completed'));
 
   $affected_rows = (integer) db_affected_rows();
 
@@ -519,11 +520,11 @@ function _recurring_globalcollect_update_record_success($id) {
   $query .= ' `failure_count` = 0,';
   $query .= ' `failure_retry_date` = NULL,';
   $query .= ' `processor_id` = `processor_id` + 1,';
-  $query .= ' `contribution_status_id` = 1,';
+  $query .= ' `contribution_status_id` = %d,';
   $query .= " `next_sched_contribution` = '%s'";
   $query .= ' WHERE id = %d';
   $dbs->use_civicrm();
-  db_query($query, $next_sched_contribution, $id);
+  db_query($query, get_contribution_status_key('Completed'), $next_sched_contribution, $id);
 
   $affected_rows = (integer) db_affected_rows();
   
@@ -704,17 +705,23 @@ function get_contribution_status( $reset = false ) {
 
     // make sure we're using the default (civicrm) db
     $dbs = _queue2civicrm_get_dbs();
+    $cur_db = $dbs->get_cur_db();
     $dbs->use_default();
 
     $params = array( 
-      'name' => 'contributionStatus',
       'version' => 3,
+      'columnName' => 'name',  
     );
   
     require_once 'api/api.php';
-    $result = civicrm_api( 'contribution','status', $params );
+    $result = civicrm_api( 'contribution','constant_status', $params );
   
     $values = ( isset( $result['values'] ) && is_array( $result['values'] ) ) ? $result['values'] : array();
+  }
+  
+  // Return to previous database
+  if ( $cur_db == 'civicrm' ) {
+    $dbs->use_civicrm();
   }
   
   return $values;
