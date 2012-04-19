@@ -717,11 +717,11 @@ function get_contribution_status( $reset = false ) {
     $result = civicrm_api( 'contribution','constant_status', $params );
   
     $values = ( isset( $result['values'] ) && is_array( $result['values'] ) ) ? $result['values'] : array();
-  }
   
-  // Return to previous database
-  if ( $cur_db == 'civicrm' ) {
-    $dbs->use_civicrm();
+    // Return to previous database
+    if ( $cur_db == 'civicrm' ) {
+      $dbs->use_civicrm();
+    }
   }
   
   return $values;
