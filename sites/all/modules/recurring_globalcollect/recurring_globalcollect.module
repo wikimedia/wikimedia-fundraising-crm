@@ -185,19 +185,19 @@ function recurring_globalcollect_batch_process($options = array()) {
   
   // Make sure batch is an integer.
   if (isset($options['batch'])) {
-  	$batch = (integer) $options['batch'];
-  	unset($options['batch']);
+    $batch = (integer) $options['batch'];
+    unset($options['batch']);
   }
 
   if ($batch > $batch_max) {
-  	
-  	$message = 'You are attempting to batch ' . $batch .' payments, which is'
-  	           . ' more than the maximum allowed: ' . $batch_max .'. Either'
-  	           . ' batch less payments or increase the maximum.';
-  	$link = l('Edit recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
+    
+    $message = 'You are attempting to batch ' . $batch .' payments, which is'
+               . ' more than the maximum allowed: ' . $batch_max .'. Either'
+               . ' batch less payments or increase the maximum.';
+    $link = l('Edit recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
     watchdog('recurring_globalcollect', $message, array(), WATCHDOG_ERROR, $link);
     drush_set_error('BATCHING', dt($message));
-  	return false;         
+    return false;         
   }
   
   $processed = 0;
@@ -285,13 +285,13 @@ function recurring_globalcollect_process($options = array()) {
         $return = true;
       }
       else {
-      	// There was a problem, process the error.
-	    recurring_globalcollect_process_error();
+        // There was a problem, process the error.
+        recurring_globalcollect_process_error();
       }
-	}
+    }
   }
   catch (Exception $e) {
-  	$message = 'Unable to process payment: ' . $e->getMessage();
+    $message = 'Unable to process payment: ' . $e->getMessage();
     watchdog('recurring_globalcollect', $message, array(), WATCHDOG_ERROR);
     drush_set_error('UNKNOWN', dt($message));
     return false;
@@ -356,7 +356,7 @@ function recurring_globalcollect_process_error() {
      * This should not mark the payment as a failure
      */
     case 'BATCHING':
-   	  $watchdog_link = l('Edit recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
+      $watchdog_link = l('Edit recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
       break;
     
     /**
@@ -407,15 +407,15 @@ function recurring_globalcollect_process_error() {
      * CIVI_INSERT
      *
      * Something went wrong inserting a record of the completed contribution 
-	 * into civi
+     * into civi
      *
      * @todo This should not mark the payment as a failure, as it has 
-	 * successfully gone through once already. Precautions should be taken to 
-	 * make sure the transaction is marked as such, so the donor is not 
-	 * overcharged.
+     * successfully gone through once already. Precautions should be taken to 
+     * make sure the transaction is marked as such, so the donor is not 
+     * overcharged.
      */
     case 'CIVI_INSERT':
-		break;
+      break;
     
     /**
      * UNKNOWN
@@ -497,8 +497,8 @@ function recurring_globalcollect_connect($result, $options = array()){
   
   // Parse ORDERID
   if ( preg_match('/RECURRING GLOBALCOLLECT (?P<ORDERID>\w+)/', $result['trxn_id'], $matches) ) {
-  	
-  	$ORDERID = $matches['ORDERID'];
+    
+    $ORDERID = $matches['ORDERID'];
   }
   else {
     $message = 'ORDERID was not found in the trxn_id: ' . print_r($result, true);
@@ -532,8 +532,8 @@ function recurring_globalcollect_connect($result, $options = array()){
   $instance->setValues( $values );
   
   try {
-  	_recurring_globalcollect_update_record_in_progress($result['id']);
-  	
+    _recurring_globalcollect_update_record_in_progress($result['id']);
+    
     $status = $instance->curlTransaction();
 
     watchdog('recurring_globalcollect', 'Sending [successful] request: <pre>' . htmlentities($instance->getRequestDoPayment()) . '</pre>');
@@ -581,15 +581,15 @@ function recurring_globalcollect_connect($result, $options = array()){
       unset( $contribution['id'] );
       
       // Send thank you email, other post-import things
-	  if ( $contribution ){
-	      module_invoke_all( 'recurring_globalcollect', $contribution );
-	  } else {
-		  $message = "Contribution could not be added to civicrm, for the following message: " . print_r( $msg, true);
-		  watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
-		  drush_set_error("CIVI_INSERT", $message, true);
-	  }
+      if ( $contribution ){
+        module_invoke_all( 'recurring_globalcollect', $contribution );
+      } else {
+        $message = "Contribution could not be added to civicrm, for the following message: " . print_r( $msg, true);
+        watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
+        drush_set_error("CIVI_INSERT", $message, true);
+      }
    
-	  $affected_rows = _recurring_globalcollect_update_record_success($result['id']);
+      $affected_rows = _recurring_globalcollect_update_record_success($result['id']);
     }
     else {
      
@@ -770,7 +770,7 @@ function recurring_globalcollect_search_by_order_id_form() {
  * Submits a form to search for subscriptions by order id.
  */
 function recurring_globalcollect_search_by_order_id_form_submit($form, &$form_state) {
-	
+  
   $order_id = isset( $form_state['values']['order_id'] ) ? (integer) $form_state['values']['order_id'] : 0;
   
   $record = _recurring_globalcollect_get_subscription_by_order_id($order_id);
