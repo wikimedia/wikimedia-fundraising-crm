@@ -66,7 +66,6 @@ function _recurring_globalcollect_get_payment_by_id($id) {
 
   $query = 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` WHERE `civicrm_contribution_recur`.`id` = %d LIMIT 1';
   
-  //echo "\n" . $query . "\n";
   $result = db_fetch_object( db_query( $query, $id ));
 
   // If nothing found, return false.
@@ -114,55 +113,28 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
   $dbs->use_civicrm();
 
   $date = isset( $options['date'] ) ? $options['date'] : 'now';
-  //echo "\n \$date: \n" . print_r($date, true) . "\n";
 
   // Get the date
   $date = date('Y-m-d', strtotime($date));
   
   $start_day = $date . ' 00:00:00';
-  //echo "\n \$start_day: \n" . print_r($start_day, true) . "\n";
   $end_day = $date . ' 23:59:59';
-  //echo "\n \$end_day: \n" . print_r($end_day, true) . "\n";
   
   $start_day_stamp = strtotime($start_day);
   $end_day_stamp = strtotime($end_day);
 
   $recurring_globalcollect_run_missed_days = (integer) variable_get('recurring_globalcollect_run_missed_days', 0);
-  //echo "\n \$recurring_globalcollect_run_missed_days: \n" . print_r($recurring_globalcollect_run_missed_days, true) . "\n";
   
   if ($recurring_globalcollect_run_missed_days > 0) {
 
       $decrement_date = '-' . $recurring_globalcollect_run_missed_days . ' day';
-      //echo "\n \$decrement_date: \n" . print_r($decrement_date, true) . "\n";
       
       $start_day = date('Y-m-d 00:00:00', strtotime($decrement_date, $start_day_stamp));
-      //echo "\n \$start_day: \n" . print_r($start_day, true) . "\n";
   }
   
   $limit = isset($options['limit']) ? (integer) abs($options['limit']) : 1;
   
-  /** This code is an attempt to pull the contribution status.
-   *
-   * It currently throws the error:
-   *
-   * DB_DataObject Error: No database name / dsn found anywhere
-   *
-   * The reason why we need to look this up is because this is editable from the
-   * database.
-   *
-   * @todo We need to make sure that the status is: [1] => Completed
-   *
-   * @todo Right before we send a transaction, it will be marked: [5] => In Progress
-   * @todo When the transaction successfully completes, it will be marked: [1] => Completed
-   */
-  //require_once 'CRM/Core/DAO.php';
-  //require_once 'CRM/Utils/Cache.php';
-  //require_once 'CRM/Contribute/PseudoConstant.php';
-  //$contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
-  
   $contribution_status_id = 1;
-  //echo "\n \$contribution_status_id: \n" . print_r($contribution_status_id, true) . "\n";
-  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$contributionStatus" . print_r($contributionStatus, true) . "\n" );
   
   $query  = '';
   $query .= 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` ';
@@ -184,11 +156,7 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
 	$res = db_query( $query, $start_day, $end_day, $contribution_status_id );
   }
   
-  //echo "\n \$query: \n" . $query . "\n";
-  //echo "\n \$start_day: \n" . print_r($start_day, true) . "\n";
-  //echo "\n \$end_day: \n" . print_r($end_day, true) . "\n";
   $result = db_fetch_object( $res );
-  //echo "\n \$result: \n" . print_r($result, true) . "\n";
 
   // If nothing found, return false.
   if (empty($result)) {
@@ -209,7 +177,6 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
  */
 function _recurring_globalcollect_get_next_sched_contribution_date_for_month(&$record) {
 
-  //echo "\$record" . print_r($record, true) . "\n";
   $now_stamp = time();
   //$frequency_interval and $cycle_day will, at this point, have been found in $record. 
   $frequency_interval = (integer) $record['frequency_interval'];
@@ -255,7 +222,6 @@ function _recurring_globalcollect_increment_date_to_target_day( $date, $interval
 			}
 
 			$next_date = mktime(0, 0, 0, $month, $cycle_day, $year);
-			//echo "$month/$cycle_day/$year = $next_date\n";
 			return $next_date;
 	}
 }
@@ -293,7 +259,6 @@ function _recurring_globalcollect_get_failure_retry_date($options = array()) {
   $dbs->use_civicrm();
 
   $date = isset( $options['date'] ) ? $options['date'] : 'now';
-  //echo "\n \$date: \n" . print_r($date, true) . "\n";
 
   // Search for dates with LIKE
   $date = date('Y-m-d', strtotime($date));
@@ -320,8 +285,6 @@ function _recurring_globalcollect_get_failure_retry_date($options = array()) {
     $query .= " LIMIT " . $limit;
   }
   
-  //echo "\n \$date: \n" . $date . "\n";
-  //echo "\n \$query: \n" . $query . "\n";
   $result = db_fetch_object( db_query( $query, $date, $date, $contribution_status_id ));
 
   // If nothing found, return false.
@@ -450,7 +413,6 @@ function _recurring_globalcollect_update_record_failure($id) {
     $query .= ' `contribution_status_id` = %d,';
     $query .= ' `next_sched_contribution` = NULL';
     $query .= ' WHERE id = %d';
-    //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$query" . print_r($query, true) . "\n" );
     db_query($query, $recurring_globalcollect_failure_retry_rate, $contribution_status_id, $id);
   }
   else {
@@ -460,7 +422,6 @@ function _recurring_globalcollect_update_record_failure($id) {
     $query .= ' `failure_count` = `failure_count` + 1,';
     $query .= ' `failure_retry_date` = NOW() + INTERVAL %d DAY';
     $query .= ' WHERE id = %d';
-    //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$query" . print_r($query, true) . "\n" );
     db_query($query, $contribution_status_id, $recurring_globalcollect_failure_retry_rate, $id);
   }
 
@@ -561,7 +522,6 @@ function _recurring_globalcollect_update_record_success($id) {
   $query .= ' `contribution_status_id` = 1,';
   $query .= " `next_sched_contribution` = '%s'";
   $query .= ' WHERE id = %d';
-  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$query" . print_r($query, true) . "\n" );
   $dbs->use_civicrm();
   db_query($query, $next_sched_contribution, $id);
 
