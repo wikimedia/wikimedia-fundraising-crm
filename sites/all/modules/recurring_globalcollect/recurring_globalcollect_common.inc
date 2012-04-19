@@ -725,3 +725,75 @@ function buildDefaultTestUrl() {
 
   return $defaultTestUrl;
 }
+
+/**
+ * Get the contribution status from the API
+ *
+ * @param boolean $reset If true, an API call will be made. If false, a cached value will be used, if present.
+ *
+ * @todo the code to make this API call needs to get pushed to svn.civicrm.org: sites/all/modules/civicrm/api/v3/Contribution.php
+ *
+ * @todo Move this to the wikimedia common module
+ *
+ * @return array Returns an array of values
+ */
+function get_contribution_status( $reset = false ) {
+  
+  $reset = (boolean) $reset;
+  
+  static $values = array();
+  
+  if ( empty( $values ) || $reset ) {
+
+    // make sure we're using the default (civicrm) db
+    $dbs = _queue2civicrm_get_dbs();
+    $dbs->use_default();
+
+    $params = array( 
+      'name' => 'contributionStatus',
+      'version' => 3,
+    );
+  
+    require_once 'api/api.php';
+    $result = civicrm_api( 'contribution','status', $params );
+  
+    $values = ( isset( $result['values'] ) && is_array( $result['values'] ) ) ? $result['values'] : array();
+  }
+  
+  return $values;
+}
+
+/**
+ * Get the contribution status name
+ *
+ * @param string $name The name of the key.
+ *
+ * The available names from `civicrm_option_value`.`name` for the option_group Contribution:
+ * - [1] => Completed
+ * - [2] => Pending
+ * - [3] => Cancelled
+ * - [4] => Failed
+ * - [5] => In Progress
+ * - [6] => Overdue
+ *
+ * Do not confuse name with the label in the database. The label may be changed.
+ *
+ * @uses get_contribution_status()
+ *
+ * @todo Move this to the wikimedia common module
+ *
+ * @return integer Returns the associated key for the $name
+ */
+function get_contribution_status_key( $name ) {
+  
+  $status_pairs = get_contribution_status();
+  
+  $key = array_search( $name, $status_pairs );
+  
+  if ( $key === false ) {
+  	$message = 'The key [' . $name . '] was not found.';
+  	throw new Exception($message);
+  }
+  
+  return $key;
+}
