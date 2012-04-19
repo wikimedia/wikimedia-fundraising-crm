@@ -188,8 +188,6 @@ function recurring_globalcollect_batch_process($options = array()) {
   	$batch = (integer) $options['batch'];
   	unset($options['batch']);
   }
-  //echo( eval('return	__FILE__ . date(\'r\') . "\n";') . '$batch - ' .  print_r($batch, true) . "\n" );
-  //echo( eval('return	__FILE__ . date(\'r\') . "\n";') . '$batch_max - ' .  print_r($batch_max, true) . "\n" );
 
   if ($batch > $batch_max) {
   	
@@ -253,7 +251,6 @@ function recurring_globalcollect_batch_process($options = array()) {
  * @return  boolean  Returns false on error. Returns true if contributions were processed. Returns false if no contributions are ready to be processed.
  */
 function recurring_globalcollect_process($options = array()) {
-  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . print_r($options, true) . "\n" );
   
   /**
    * @var boolean $return The return value
@@ -269,7 +266,6 @@ function recurring_globalcollect_process($options = array()) {
   if (!is_array($query_options)) {
     return false;
   }
-  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . print_r($result, true) );
   
   try {
 
@@ -483,8 +479,6 @@ function recurring_globalcollect_connect($result, $options = array()){
   if (is_object($result)) {
     $result = (array) $result;
   }
-  //echo "\n" . 'result: ' . __FILE__ . __LINE__ . print_r($result, true) . "\n";
-  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . print_r($options, true) );
 
   $adapterOptions = array();
   
@@ -531,8 +525,6 @@ function recurring_globalcollect_connect($result, $options = array()){
   // $values and $options are used for testing.
   $adapterOptions['url'] = recurring_globalcollect_build_url($values, $adapterOptions);
    
-  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$adapterOptions['url'] - " . print_r($adapterOptions['url'], true) . "\n" );
-  
   $instance = StandaloneGlobalCollectAdapter::getInstance( $adapterOptions );
 
   watchdog('recurring_globalcollect', 'Processing payment: <pre>' . print_r($result, true) . '</pre>');
@@ -561,7 +553,6 @@ function recurring_globalcollect_connect($result, $options = array()){
       $contact = array(
           'id' => $result['contact_id'],
       );
-      //echo "\n" . '$contact: ' . __FILE__ . __LINE__ . print_r($contact, true) . "\n";
       
       $msg = array();
       $msg['fee'] = 0.00;
@@ -576,7 +567,6 @@ function recurring_globalcollect_connect($result, $options = array()){
       $msg['date'] = time();
       $msg['original_currency'] = $result['currency'];
       $msg['original_gross'] = $msg['gross'];
-      //die( "\n" . '$msg: ' . __FILE__ . __LINE__ . print_r($msg, true) . "\n");
       /*
        * This array needs to be rekeyed to be consistent with:
        *
@@ -590,7 +580,6 @@ function recurring_globalcollect_connect($result, $options = array()){
       $contribution['contribution_id'] = $contribution['id'];
       unset( $contribution['id'] );
       
-      //echo "\n" . '$contribution: ' . __FILE__ . __LINE__ . print_r($contribution, true) . "\n";
       // Send thank you email, other post-import things
 	  if ( $contribution ){
 	      module_invoke_all( 'recurring_globalcollect', $contribution );
@@ -655,23 +644,15 @@ function recurring_globalcollect_build_url($values, $options) {
       $url = false;
   }
   
-  //die( eval('return  __FILE__ . date(\'r\') . "\n";') . '$url - ' . print_r($url, true) . "\n" );
-  //echo "\n" . __FILE__ . __LINE__ . "\n \$url: " . $url . "\n";
-  //echo "\n" . __FILE__ . __LINE__ . "\n \$url type: " . gettype( $url ) . "\n";
- 
   //$url = false;
   $returnUrl = variable_get('globalcollect_url', '');
 
-  //echo "\n" . __FILE__ . __LINE__ . "\n \$returnUrl: " . $returnUrl . "\n";
-  
   if (is_bool($url)) {
 
     $returnUrl  = variable_get('localhost_test_url', '');
     $returnUrl .= (substr($returnUrl, -1) == '/') ? '' : '/';
     $returnUrl .= 'sites/all/modules/recurring_globalcollect/tests/resources/responses/';
     // Fail should go to a global collect example failure. A 404 will do for now.
-
-    //echo "\n" . __FILE__ . __LINE__ . "\n \$returnUrl: " . $returnUrl . "\n";
 
     if ($url) {
       $returnUrl .=  'curlTransaction.valid.response.php?';
@@ -682,7 +663,6 @@ function recurring_globalcollect_build_url($values, $options) {
     else {
       $returnUrl .= '404.php';
     }
-    //echo "\n" . __FILE__ . __LINE__ . "\n \$returnUrl: " . $returnUrl . "\n";
   }
   elseif (is_numeric($url)) {
 
@@ -691,7 +671,6 @@ function recurring_globalcollect_build_url($values, $options) {
     $returnUrl .= 'sites/all/modules/recurring_globalcollect/tests/resources/responses/';
 
     $returnUrl .= $url . '.php';
-    //echo "\n" . __FILE__ . __LINE__ . "\n \$returnUrl: " . $returnUrl . "\n";
   }
   elseif (!empty($url)) {
 
@@ -699,7 +678,6 @@ function recurring_globalcollect_build_url($values, $options) {
       
       // Setting a full url
       $returnUrl = $url;
-      //echo "\n" . __FILE__ . __LINE__ . "\n \$returnUrl: " . $returnUrl . "\n";
     }
     else {
       $returnUrl  = variable_get('localhost_test_url', '');
@@ -707,8 +685,6 @@ function recurring_globalcollect_build_url($values, $options) {
     }
       
   }
-
-  //echo "\n" . __FILE__ . __LINE__ . "\n \$returnUrl: " . $returnUrl . "\n";
 
   return $returnUrl;
 }
