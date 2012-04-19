@@ -62,13 +62,6 @@ function drush_recurring_globalcollect() {
   $url = drush_get_option('url');
   $batch = drush_get_option('batch', null);
   
-  //echo "\n \$date: \n" . print_r($date, true) . "\n";
-  //echo "\n \$process: \n" . print_r($process, true) . "\n";
-  //echo "\n \$url: \n" . print_r($url, true) . "\n";
-  //die( eval('return	__FILE__ . date(\'r\') . "\n";') . '$args - ' .  print_r($args, true) . "\n" );
-  //die( eval('return	__FILE__ . date(\'r\') . "\n";') . '$url - ' .  print_r($url, true) . "\n" );
-  //die( eval('return	__FILE__ . date(\'r\') . "\n";') . print_r($url, true) . "\n" );
-  
   $options = array();
  
   // Set the date
@@ -98,7 +91,6 @@ function drush_recurring_globalcollect() {
     $options['batch'] = $batch;
   }
   
-  //die( eval('return	__FILE__ . date(\'r\') . "\n";') . '$options - ' .  print_r($options, true) . "\n" );
   module_invoke( 'recurring_globalcollect', 'batch_process', $options );
 
   // Outputting errors again so they can be picked up by Jenkins.
@@ -146,7 +138,6 @@ function drush_recurring_globalcollect_validate() {
   $process = drush_get_option('process');
   
   $batch_max = (integer) variable_get('recurring_globalcollect_batch_max', 0);
-  //echo( eval('return	__FILE__ . date(\'r\') . "\n";') . '$batch_max - ' .  print_r($batch_max, true) . "\n" );
 
   $process_allowed_options = array(
   	  'next_sched_contribution',
