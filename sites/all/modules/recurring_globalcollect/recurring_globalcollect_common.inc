@@ -154,9 +154,6 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
    *
    * @todo Right before we send a transaction, it will be marked: [5] => In Progress
    * @todo When the transaction successfully completes, it will be marked: [1] => Completed
-   * @todo I think it might be helpful to add a few custom status codes.
-   * @todo contribution_status_id: [7] => Thank you mail failed
-   * @todo contribution_status_id: [8] => Some other code
    */
   //require_once 'CRM/Core/DAO.php';
   //require_once 'CRM/Utils/Cache.php';
@@ -775,6 +772,10 @@ function get_contribution_status( $reset = false ) {
  * - [4] => Failed
  * - [5] => In Progress
  * - [6] => Overdue
+ *
+ * @todo I think it might be helpful to add a few custom status codes.
+ * @todo contribution_status_id: [7] => Thank you mail failed
+ * @todo contribution_status_id: [8] => Ended
  *
  * Do not confuse name with the label in the database. The label may be changed.
  *
