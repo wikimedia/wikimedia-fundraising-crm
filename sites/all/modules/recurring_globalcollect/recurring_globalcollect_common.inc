@@ -46,10 +46,10 @@ function recurring_globalcollect_get($options = array()) {
     return _recurring_globalcollect_get_failure_retry_date($options);
   }
   else {
-  	$message = 'What are you trying process? $options: <pre>' . print_r($options, true) . '</pre>';
+    $message = 'What are you trying process? $options: <pre>' . print_r($options, true) . '</pre>';
     watchdog('rg', $message, null, WATCHDOG_ERROR);
     drush_set_error('RG', $message);
- 	return false;
+    return false;
   }
 }
 
@@ -151,9 +151,9 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
   // Add a limit.
   if (!empty($limit)) {
     $query .= " LIMIT %d";
-	$res = db_query( $query, $start_day, $end_day, $contribution_status_id, $limit );
+    $res = db_query( $query, $start_day, $end_day, $contribution_status_id, $limit );
   } else {
-	$res = db_query( $query, $start_day, $end_day, $contribution_status_id );
+    $res = db_query( $query, $start_day, $end_day, $contribution_status_id );
   }
   
   $result = db_fetch_object( $res );
@@ -185,9 +185,9 @@ function _recurring_globalcollect_get_next_sched_contribution_date_for_month(&$r
   $scheduled_date_stamp = $now_stamp;
   $added = 0;
   while ( date('Y-m-d', $now_stamp) >= date('Y-m-d', $scheduled_date_stamp) && ( $added < $frequency_interval ) ){
-	  //this will happen at least once.
-	  $scheduled_date_stamp = _recurring_globalcollect_increment_date_to_target_day( $scheduled_date_stamp, 'month', $cycle_day );
-	  $added += 1;
+    //this will happen at least once.
+    $scheduled_date_stamp = _recurring_globalcollect_increment_date_to_target_day( $scheduled_date_stamp, 'month', $cycle_day );
+    $added += 1;
   }
   
   return date('Y-m-d H:i:s', $scheduled_date_stamp);
@@ -197,33 +197,33 @@ function _recurring_globalcollect_get_next_sched_contribution_date_for_month(&$r
 //Increment the $date by one $interval, landing as close as possible to $cycle_day.
 //have only implemented the $interval of 'month' at this point. Might wire up more later as-needed. 
 function _recurring_globalcollect_increment_date_to_target_day( $date, $interval = 'month', $cycle_day = null ){
-	
-	switch ($interval){ //just making it slightly nicer in here for the next guy
-		case 'month':
-		default:
-			if ( is_null( $cycle_day ) ){
-				$cycle_day = (int) date('j', $date);
-			}
-			$month = (int) date('n', $date);
-			$year = (int) date('Y', $date);
 
-			$month += 1;
-			//if we wanted to edit this to handle adding more than one month at 
-			//a time, we could do some fun stuff with modulo here. 
-			if ( $month > 12 ){
-				$month = 1;
-				$year += 1;
-			}
+  switch ($interval){ //just making it slightly nicer in here for the next guy
+    case 'month':
+    default:
+      if ( is_null( $cycle_day ) ){
+        $cycle_day = (int) date('j', $date);
+      }
+      $month = (int) date('n', $date);
+      $year = (int) date('Y', $date);
 
-			$last_day = cal_days_in_month( CAL_GREGORIAN, $month, $year );
+      $month += 1;
+      //if we wanted to edit this to handle adding more than one month at 
+      //a time, we could do some fun stuff with modulo here. 
+      if ( $month > 12 ){
+        $month = 1;
+        $year += 1;
+      }
 
-			if ( $cycle_day > $last_day ){
-				$cycle_day = $last_day;
-			}
+      $last_day = cal_days_in_month( CAL_GREGORIAN, $month, $year );
 
-			$next_date = mktime(0, 0, 0, $month, $cycle_day, $year);
-			return $next_date;
-	}
+      if ( $cycle_day > $last_day ){
+        $cycle_day = $last_day;
+      }
+
+      $next_date = mktime(0, 0, 0, $month, $cycle_day, $year);
+      return $next_date;
+  }
 }
 
 /**
@@ -405,7 +405,7 @@ function _recurring_globalcollect_update_record_failure($id) {
 
   $query = '';
   if ($cancel) {
-  	// The payment is being cancelled
+    // The payment is being cancelled
     $query .= 'UPDATE {civicrm_contribution_recur} SET';
     $query .= ' `failure_count` = `failure_count` + 1,';
     $query .= ' `failure_retry_date` = NULL,';
@@ -416,7 +416,7 @@ function _recurring_globalcollect_update_record_failure($id) {
     db_query($query, $recurring_globalcollect_failure_retry_rate, $contribution_status_id, $id);
   }
   else {
-  	// The payment failed and is being marked as a failure.
+    // The payment failed and is being marked as a failure.
     $query .= 'UPDATE {civicrm_contribution_recur} SET';
     $query .= ' `contribution_status_id` = %d,';
     $query .= ' `failure_count` = `failure_count` + 1,';
@@ -630,7 +630,7 @@ function _recurring_globalcollect_get_top_new_drush_error(){
     'RG_SETTINGS',
     'GLOBALCOLLECT',
     'FUTURE_DATE',
-	'CIVI_INSERT',
+    'CIVI_INSERT',
     'UNKNOWN',
   );
   
@@ -752,8 +752,8 @@ function get_contribution_status_key( $name ) {
   $key = array_search( $name, $status_pairs );
   
   if ( $key === false ) {
-  	$message = 'The key [' . $name . '] was not found.';
-  	throw new Exception($message);
+    $message = 'The key [' . $name . '] was not found.';
+    throw new Exception($message);
   }
   
   return $key;
