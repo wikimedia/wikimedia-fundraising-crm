@@ -1,9 +1,9 @@
 <?php
 
 function recurring_globalcollect_install() {
-	// Nothing to install
+  // Nothing to install
 }
 
 function recurring_globalcollect_uninstall() {
-	// Nothing to uninstall
+  // Nothing to uninstall
 }
