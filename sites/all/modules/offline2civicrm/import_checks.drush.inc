@@ -177,12 +177,12 @@ function _check_existing( $msg ){
 
 	$trxn_id = $msg['payment_method'] . ' ' . $msg['gateway_txn_id'];
 	$dbs->use_civicrm();
-	$query = "SELECT id, trxn_id FROM civicrm_contribution WHERE trxn_id LIKE '" . $trxn_id . "%' LIMIT 1;";
-	$dao = CRM_Core_DAO::executeQuery( $query ); // Execute's query using CiviCRM data object stuff
-	while( $dao->fetch() ) {
+	$query = "SELECT id, trxn_id FROM civicrm_contribution WHERE trxn_id LIKE '%s%' LIMIT 1;";
+	$result = db_query($query, $trxn_id);
+	while( $row = db_fetch_array($result) ) {
 		$contribution = array(
-			'id' => $dao->id,
-			'trxn_id' => $dao->trxn_id,
+			'id' => $row['id'],
+			'trxn_id' => $row['trxn_id']
 		);
 		$dbs->use_default();
 
