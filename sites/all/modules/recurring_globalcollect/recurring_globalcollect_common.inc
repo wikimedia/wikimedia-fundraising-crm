@@ -685,44 +685,20 @@ function buildDefaultTestUrl() {
 }
 
 /**
- * Get the contribution status from the API
- *
- * @param boolean $reset If true, an API call will be made. If false, a cached value will be used, if present.
- *
- * @todo the code to make this API call needs to get pushed to svn.civicrm.org: sites/all/modules/civicrm/api/v3/Contribution.php
- *
- * @todo Move this to the wikimedia common module
+ * Get the contribution status
  *
  * @return array Returns an array of values
  */
-function get_contribution_status( $reset = false ) {
+function get_contribution_status() {
   
-  $reset = (boolean) $reset;
-  
-  static $values = array();
-  
-  if ( empty( $values ) || $reset ) {
-
-    // make sure we're using the default (civicrm) db
-    $dbs = _queue2civicrm_get_dbs();
-    $cur_db = $dbs->get_cur_db();
-    $dbs->use_default();
-
-    $params = array( 
-      'version' => 3,
-      'columnName' => 'name',  
-    );
-  
-    require_once 'api/api.php';
-    $result = civicrm_api( 'contribution','constant_status', $params );
-  
-    $values = ( isset( $result['values'] ) && is_array( $result['values'] ) ) ? $result['values'] : array();
-  
-    // Return to previous database
-    if ( $cur_db == 'civicrm' ) {
-      $dbs->use_civicrm();
-    }
-  }
+  $values = array(
+    1 => 'Completed',
+    2 => 'Pending',
+    3 => 'Cancelled',
+    4 => 'Failed',
+    5 => 'In Progress',
+    6 => 'Overdue',
+  );
   
   return $values;
 }
