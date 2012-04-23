@@ -481,7 +481,7 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL, $ef
 	$dao = CRM_Core_DAO::executeQuery( $query ); // Execute's query using CiviCRM data object stuff
 	while ( $dao->fetch() ) {
 		if ( $dao->name == 'Contribution_Comments' ) {
-			$comment = ( $msg[ 'comment' ] ) ? $msg[ 'comment'] : '';
+			$comment = ( isset( $msg[ 'comment' ] ) ) ? $msg[ 'comment'] : '';
 			$query = "INSERT INTO {" . $dao->table_name . "} (entity_id, donor_comment) VALUES ( %d, '%s' )";
 			db_query( $query, $contribution_result[ 'id' ], $comment );
 		} elseif ( $dao->name == 'Gift_Data' ) {
