@@ -68,14 +68,14 @@ function _recurring_globalcollect_get_payment_by_id($id) {
   
   $result = db_fetch_object( db_query( $query, $id ));
 
+  // Restore the default connection.
+  $dbs->use_default();
+
   // If nothing found, return false.
   if (empty($result)) {
     
     $result = false;
   }
-
-  // Restore the database connection.
-  $dbs->use_default();
  
   return $result;
 }
@@ -158,14 +158,14 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
   
   $result = db_fetch_object( $res );
 
+  // Restore the default connection.
+  $dbs->use_default();
+
   // If nothing found, return false.
   if (empty($result)) {
     
     $result = false;
   }
-
-  // Restore the database connection.
-  $dbs->use_default();
  
   return $result;
 }
@@ -286,15 +286,15 @@ function _recurring_globalcollect_get_failure_retry_date($options = array()) {
   
   $result = db_fetch_object( db_query( $query, $date, $date, $contribution_status_id ));
 
+  // Restore the default connection.
+  $dbs->use_default();
+
   // If nothing found, return false.
   if (empty($result)) {
     
     $result = false;
   }
 
-  // Restore the database connection.
-  $dbs->use_default();
- 
   return $result;
 }
 
@@ -333,11 +333,11 @@ function _recurring_globalcollect_get_subscription_by_order_id($order_id) {
   
   $result = db_fetch_object( db_query( $query, $order_id ) );
 
+  // Restore the default connection.
+  $dbs->use_default();
+
   $record = is_object( $result ) ? (array) $result : false;
   
-  // Restore the database connection.
-  $dbs->use_default();
- 
   return $record;
 }
 
@@ -378,12 +378,15 @@ function _recurring_globalcollect_update_record_failure($id) {
   
   $recurring_globalcollect_failure_retry_rate = (integer) abs(variable_get('recurring_globalcollect_failure_retry_rate', 1));
 
-  // Flag which db_query() to use
   $cancel = false;
   $contribution_status_id = get_contribution_status_key('Failed');
   $failures_before_cancellation = (integer) variable_get('recurring_globalcollect_failures_before_cancellation', 0);
 
   if ( $failures_before_cancellation == 0 ) {
+
+    // Restore the default connection.
+    $dbs->use_default();
+    
     $watchdog_link = l('Edit Recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
     $message = 'Please check your setting for: Failures before subscription is cancelled. The value must be at least one. The default is 3.';
     watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR, $watchdog_link);
@@ -426,7 +429,7 @@ function _recurring_globalcollect_update_record_failure($id) {
 
   $affected_rows = (integer) db_affected_rows();
   
-  // Restore the database connection.
+  // Restore the default connection.
   $dbs->use_default();
   
   return $affected_rows;
@@ -473,6 +476,9 @@ function _recurring_globalcollect_update_record_in_progress($id) {
   db_query($query, get_contribution_status_key('In Progress'), $id, get_contribution_status_key('Completed'));
 
   $affected_rows = (integer) db_affected_rows();
+  
+  // Restore the default connection.
+  $dbs->use_default();
 
   if ($affected_rows == 0) {
     $message = 'The subscription was not marked as in progress: ' . print_r( $record, true );
@@ -480,9 +486,6 @@ function _recurring_globalcollect_update_record_in_progress($id) {
     drush_set_error('RG', $message);
     return false;
   }
-  
-  // Restore the database connection.
-  $dbs->use_default();
   
   return $affected_rows;
 }
@@ -528,7 +531,7 @@ function _recurring_globalcollect_update_record_success($id) {
 
   $affected_rows = (integer) db_affected_rows();
   
-  // Restore the database connection.
+  // Restore the default connection.
   $dbs->use_default();
   
   return $affected_rows;
