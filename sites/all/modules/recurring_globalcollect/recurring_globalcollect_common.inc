@@ -47,7 +47,7 @@ function recurring_globalcollect_get($options = array()) {
   }
   else {
     $message = 'What are you trying process? $options: <pre>' . print_r($options, true) . '</pre>';
-    watchdog('rg', $message, null, WATCHDOG_ERROR);
+    watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
     drush_set_error('RG', $message);
     return false;
   }
