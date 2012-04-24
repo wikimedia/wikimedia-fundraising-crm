@@ -471,9 +471,9 @@ function _recurring_globalcollect_update_record_in_progress($id) {
   $query .= ' `contribution_status_id` = %d';
   $query .= ' WHERE id = %d';
   // Only update if status is Completed
-  $query .= ' AND `contribution_status_id` = %d';
+  $query .= ' AND `contribution_status_id` != %d';
   $dbs->use_civicrm();
-  db_query($query, get_contribution_status_key('In Progress'), $id, get_contribution_status_key('Completed'));
+  db_query($query, get_contribution_status_key('In Progress'), $id, get_contribution_status_key('In Progress'));
 
   $affected_rows = (integer) db_affected_rows();
   
