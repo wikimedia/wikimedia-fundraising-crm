@@ -369,14 +369,6 @@ function recurring_globalcollect_process_error() {
       break;
     
     /**
-     * FUTURE_DATE
-     *
-     * Dates must not be in the future
-     */
-    case 'FUTURE_DATE':
-      break;
-    
-    /**
      * GLOBALCOLLECT
      *
      * Something went wrong with the payment gateway.
