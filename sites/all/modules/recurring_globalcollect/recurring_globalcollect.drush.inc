@@ -63,18 +63,9 @@ function drush_recurring_globalcollect() {
   $batch = (integer) drush_get_option('batch', variable_get('recurring_globalcollect_batch', 0));
   
   $options = array();
- 
+
   // Set the date
-  if ( !is_null($date)) {
-    
-    // Sanitize the date
-    $date_stamp = strtotime($date);
-    
-    // Reparse date
-    $date_reparsed = date('Y-m-d', $date_stamp);
-    
-    $options['date'] = $date_reparsed;
-  }
+  $options['date'] = drush_recurring_globalcollect_parse_date($date);
   
   // Set the process
   if ( !is_null($process)) {
@@ -122,7 +113,7 @@ function drush_recurring_globalcollect() {
  * If --process is not set it will go to the default settings: next_sched_contribution
  *
  * validate:
- * - Make sure the date is not in the future
+ * - Make sure the date is not in the future is done in drush_recurring_globalcollect_parse_date()
  * - Make sure batch is a postive integer
  * - Make sure process is either next_sched_contribution | failure_retry_date
  * - Make sure settings have been saved:
@@ -187,22 +178,6 @@ function drush_recurring_globalcollect_validate() {
     drush_set_error('BATCHING', dt($message));
     return false;
   }
-
-  // Validate date
-  if (!empty($date)) {
-    $now_stamp = time();
-    $now = date('Y-m-d', $now_stamp);
-    $date_stamp = strtotime($date);
-    
-    // Reparse date
-    $date_reparsed = date('Y-m-d', $date_stamp);
-    
-    if ($date_stamp > $now_stamp) {
-      $message = 'The date you entered [' . $date . '] is being parsed as [' . $date_reparsed . ']. The current date is: [' . $now . ']. You are not allowed to specify dates in the future.';
-      drush_set_error('INVALID_DATE', dt($message));
-      return false;
-    }
-  }
   
   // Validate process
   if (!is_null($process)) {
@@ -231,3 +206,34 @@ function drush_recurring_globalcollect_validate() {
   // Nothing else to validate at this point
   return true;
 }
+
+/**
+ * Parses the date for processing
+ *
+ * @param string	$date	The date will be parsed with strtotime($date).
+ *
+ * The default date is today.
+ *
+ * @return			Returns the date with the format: 'Y-m-d'
+ */
+function drush_recurring_globalcollect_parse_date($date) {
+  
+  if (!empty($date)) {
+    $now_stamp = time();
+    $now = date('Y-m-d', $now_stamp);
+    $date_stamp = strtotime($date);
+    
+    // Set date from stamp so we have the proper format expected by the module.
+    $date = date('Y-m-d', $date_stamp);
+    
+    if ($date_stamp > $now_stamp) {
+      $message = 'The date you entered [' . $date . '] is being parsed as [' . $date . ']. The current date is: [' . $now . ']. You are not allowed to specify dates in the future.';
+      drush_set_error('FUTURE_DATE', dt($message));
+      return false;
+    }
+  }
+  
+  return $date;
+	
+}
+
