@@ -338,20 +338,6 @@ function recurring_globalcollect_process_error() {
   switch ($err_code){
     
     /**
-     * BATCHING
-     *
-     * There was a problem with the batch size you are attempting.
-     *
-     * You can alter these settings in the admin panel:
-     * @link /?q=admin/settings/recurring_globalcollect
-     *
-     * This should not mark the payment as a failure
-     */
-    case 'BATCHING':
-      $watchdog_link = l('Edit recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
-      break;
-    
-    /**
      * CIVI_CONFIG
      *
      * Check your CiviCRM configuration
