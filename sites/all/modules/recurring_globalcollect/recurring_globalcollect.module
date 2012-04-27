@@ -376,14 +376,6 @@ function recurring_globalcollect_process_error() {
       break;
     
     /**
-     * RG_SETTINGS
-     *
-     * There is a problem with recurring_globalcollect settings
-     */
-    case 'RG_SETTINGS':
-      break;
-    
-    /**
      * FUTURE_DATE
      *
      * Dates must not be in the future
