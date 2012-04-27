@@ -575,6 +575,7 @@ function _recurring_globalcollect_validate_record_for_update($record) {
 /**
  * Will return all the new drush errors since the last time you asked.
  *
+ * @todo Move this to the wikimedia common module
  */
 function _recurring_globalcollect_get_new_drush_errors(){
   static $oldErrors = array();
@@ -599,6 +600,7 @@ function _recurring_globalcollect_get_new_drush_errors(){
  * Will return the most serious of all the new drush errors since the last time you asked,
  * with all its new lines intact.
  *
+ * @todo Move this to the wikimedia common module
  * @uses _recurring_globalcollect_get_new_drush_errors()
  */
 function _recurring_globalcollect_get_top_new_drush_error(){
@@ -675,6 +677,7 @@ function buildDefaultTestUrl() {
 /**
  * Get the contribution status
  *
+ * @todo Move this to the wikimedia common module
  * @return array Returns an array of values
  */
 function get_contribution_status() {
