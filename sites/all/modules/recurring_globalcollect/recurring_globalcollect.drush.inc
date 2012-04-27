@@ -127,6 +127,8 @@ function drush_recurring_globalcollect() {
  * - Make sure the date is not in the future
  * - Make sure batch is a postive integer
  * - Make sure process is either next_sched_contribution | failure_retry_date
+ * - Make sure settings have been saved:
+ *   - failures_before_cancellation
  */
 function drush_recurring_globalcollect_validate() {
           
@@ -207,7 +209,21 @@ function drush_recurring_globalcollect_validate() {
         return false;
       }
   }
+
+  /**
+   * Validate settings:
+   * - failures_before_cancellation
+   */
+  $failures_before_cancellation = (integer) variable_get('recurring_globalcollect_failures_before_cancellation', 0);
   
+  if ( $failures_before_cancellation < 1 ) {
+    $message = 'The value in settings, "Failures before subscription is'
+             . ' cancelled" must be a postive integer. You specifed ['
+             . (string) $failures_before_cancellation . '].';
+    drush_set_error('RG_SETTINGS', dt($message));
+    return false;
+  }
+
   // Nothing else to validate at this point
   return true;
 }
