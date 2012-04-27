@@ -171,7 +171,12 @@ function recurring_globalcollect_settings() {
 /**
  * recurring_globalcollect_batch_process
  *
- * Validation is performed here:
+ * This is the entry function for this module.
+ *
+ * This function is invoked here: drush_recurring_globalcollect() 
+ * @see drush_recurring_globalcollect() 
+ *
+ * Validation is performed here: drush_recurring_globalcollect_validate()
  * @see drush_recurring_globalcollect_validate()
  *
  * @param array $options 
@@ -247,18 +252,16 @@ function recurring_globalcollect_process($options = array()) {
   $return = false;
 
   /**
-   * @var array $query_options Options to pass to the query
+   * @var array $options_get Options to pass to recurring_globalcollect_get()
    */
-  $query_options = recurring_globalcollect_process_get_query_options($options);
-  
-  // Check to see if there were any problems with options
-  if (!is_array($query_options)) {
-    return false;
-  }
+  $options_get = array(
+  	  'date' => $options['date'],
+  	  'process' => isset( $options['process'] ) ? $options['process'] : 'next_sched_contribution',
+  );
   
   try {
 
-    $result = recurring_globalcollect_get($query_options);
+    $result = recurring_globalcollect_get($options_get);
   
     // Check to see if any contributions were found
     if (empty($result)) {
@@ -412,44 +415,6 @@ function recurring_globalcollect_process_error() {
 
   watchdog($watchdog_type, $watchdog_message, array(), $watchdog_severity, $watchdog_link);
   recurring_globalcollect_failmail($top_error, array());
-}
-
-/**
- * Get the query options for @see recurring_globalcollect_process()
- *
- * @return  array  Returns an array of options for @see _recurring_globalcollect_get_next_sched_contribution() and @see _recurring_globalcollect_get_failure_retry_date()
- */
-function recurring_globalcollect_process_get_query_options($options = array()) {
-  
-  /**
-   *  @var  array  $query_options  Options to pass to the query
-   */
-  $query_options = array();
-   
-  $date = isset( $options['date'] ) ? $options['date'] : '';
-  $query_options['process'] = isset( $options['process'] ) ? $options['process'] : 'next_sched_contribution';
-  
-  if (!empty($date)) {
-    $now_stamp = time();
-    $now = date('Y-m-d', $now_stamp);
-    $date_stamp = strtotime($date);
-    
-    // Reparse date
-    $date_reparsed = date('Y-m-d', $date_stamp);
-    
-    if ($date_stamp > $now_stamp) {
-      $message = 'The date you entered [' . $date . '] is being parsed as [' . $date_reparsed . ']. The current date is: [' . $now . ']. You are not allowed to specify dates in the future.';
-      drush_set_error('FUTURE_DATE', dt($message));
-      return false;
-    }
-    
-    $query_options['date'] = $date_reparsed;
-  }
-  
-  // $allowed_processes is used for dumping available processes if an invalid
-  // process is specified.
-  
-  return $query_options;
 }
 
 /**
