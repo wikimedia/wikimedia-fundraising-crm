@@ -60,7 +60,7 @@ function drush_recurring_globalcollect() {
   $date = drush_get_option('date');
   $process = drush_get_option('process');
   $url = drush_get_option('url');
-  $batch = drush_get_option('batch', null);
+  $batch = (integer) drush_get_option('batch', variable_get('recurring_globalcollect_batch', 0));
   
   $options = array();
  
@@ -87,9 +87,7 @@ function drush_recurring_globalcollect() {
   }
  
   // Set the number of contributions to batch
-  if ( !is_null($batch)) {
-    $options['batch'] = $batch;
-  }
+  $options['batch'] = $batch;
   
   module_invoke( 'recurring_globalcollect', 'batch_process', $options );
 
@@ -135,7 +133,7 @@ function drush_recurring_globalcollect_validate() {
 
   $link_to_settings = url('admin/settings/recurring_globalcollect', array('absolute'=>true));
 
-  $batch = drush_get_option('batch', 0);
+  $batch = drush_get_option('batch', variable_get('recurring_globalcollect_batch', 0));
   $date = drush_get_option('date');
   $process = drush_get_option('process');
   
@@ -146,42 +144,48 @@ function drush_recurring_globalcollect_validate() {
       'failure_retry_date',
   );
   
-  // Validate batch
-  if (!is_null($batch)) {
-      
-    if (is_bool($batch)) {
-        $batch = (integer) $batch;
-    }
+  /**
+   * Validate batch:
+   * - must be numeric
+   * - if zero, exit
+   * - must be positive
+   * - must be less than batch_max
+   */
+  if (!is_numeric($batch)) {
+    $message = 'You did not specify a number. You must specify either'
+         . ' zero or a postive integer less than ' . $batch_max
+         . '. You specifed [' . (string) $batch . '].';
+    drush_set_error('BATCHING', dt($message));
+    return false;
+  }
+  
+  // $batch is numeric, convert it to an integer for further testing.
+  $batch = (integer) $batch;
+  
+  if ($batch < 1) {
     
-    if (!is_numeric($batch)) {
-      $message = 'You did not specify a number. You must specify either'
-               . ' zero or a postive integer less than ' . $batch_max
-               . '. You specifed [' . (string) $batch . '].';
-      drush_set_error('BATCHING', dt($message));
-      return false;
-    }
-    
-    // $batch is numeric, convert it to an integer.
-    $batch = (integer) $batch;
-    
-    
-    if ($batch < 0) {
+    $message = 'Batching is disabled: $batch = "' . $batch . '"';
+    $link = l('Edit recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
+    watchdog('recurring_globalcollect', $message, array(), WATCHDOG_NOTICE, $link);
+    return false;         
+  }
+  
+  if ($batch < 0) {
 
-      $message = 'You specified a negative number. You must specify either'
-        . ' zero or a postive integer less than ' . $batch_max . '. You'
-        . ' specifed [' . $batch . '].';
-      drush_set_error('BATCHING', dt($message));
-      return false;
-    }
-    
-    if ($batch > $batch_max) {
-      $message = 'You are attempting to batch ' . $batch .' payments, which'
-        . ' is more than the maximum allowed: ' . $batch_max .'. Either batch'
-        . ' less payments or increase the maximum. You may change settings here: ' . $link_to_settings;
-      drush_set_error('BATCHING', dt($message));
-      return false;
-    }
-      
+    $message = 'You specified a negative number. You must specify either'
+      . ' zero or a postive integer less than ' . $batch_max . '. You'
+      . ' specifed [' . $batch . '].';
+    drush_set_error('BATCHING', dt($message));
+    return false;
+  }
+  
+  if ($batch > $batch_max) {
+    $message = 'You are attempting to batch ' . $batch .' payments, which'
+      . ' is more than the maximum allowed: ' . $batch_max .'. Either batch'
+      . ' less payments or increase the maximum. You may change settings here: '
+      . $link_to_settings;
+    drush_set_error('BATCHING', dt($message));
+    return false;
   }
 
   // Validate date
