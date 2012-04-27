@@ -207,10 +207,6 @@ function recurring_globalcollect_batch_process($options = array()) {
     }
   }
 
-  // allow for other modules to handle their own related batch processing
-  //$batchprocessed = module_invoke_all( 'recurring_globalcollect_batch_process');
-  //$processed += array_sum($batchprocessed);
-  
   if ($processed > 0) {
     watchdog('recurring_globalcollect', 'Successfully processed ' . $processed . ' contribution(s).');
   }
