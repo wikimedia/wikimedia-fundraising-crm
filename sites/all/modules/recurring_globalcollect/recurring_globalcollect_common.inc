@@ -611,7 +611,6 @@ function _recurring_globalcollect_get_top_new_drush_error(){
    * $severity
    * - CIVI_CONFIG: A problem with CiviCRM
    * - RG: A problem with recurring_globalcollect
-   * - FUTURE_DATE: A future date was set.
    * - GLOBALCOLLECT: A problem with GLOBALCOLLECT
    * - CIVI_INSERT: Failed inserting a completed contribution into civi. 
    * - UNKNOWN: A unknown problem
@@ -620,7 +619,6 @@ function _recurring_globalcollect_get_top_new_drush_error(){
     'CIVI_CONFIG',
     'RG',
     'GLOBALCOLLECT',
-    'FUTURE_DATE',
     'CIVI_INSERT',
     'UNKNOWN',
   );
