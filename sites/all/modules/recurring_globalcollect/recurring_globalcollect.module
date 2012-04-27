@@ -170,9 +170,12 @@ function recurring_globalcollect_settings() {
 
 /**
  * recurring_globalcollect_batch_process
- * 
+ *
+ * Validation is performed here:
+ * @see drush_recurring_globalcollect_validate()
+ *
  * @param array $options 
- * - $options['batch'] The number of contributions to process. If empty, this defaults to recurring_globalcollect_batch.
+ * - $options['batch'] The number of contributions to process. If empty or not set then batching is disabled.
  * - $options['date'] @uses strtotime()
  * - $options['process'] next_sched_contribution | failure_retry_date
  * - $options['url'] Used for testing and overriding the url
@@ -181,23 +184,13 @@ function recurring_globalcollect_batch_process($options = array()) {
 
   // The number of contributions to process
   $batch = (integer) variable_get('recurring_globalcollect_batch', 0);
-  $batch_max = (integer) variable_get('recurring_globalcollect_batch_max', 0);
   
   // Make sure batch is an integer.
   if (isset($options['batch'])) {
     $batch = (integer) $options['batch'];
-    unset($options['batch']);
-  }
-
-  if ($batch > $batch_max) {
     
-    $message = 'You are attempting to batch ' . $batch .' payments, which is'
-               . ' more than the maximum allowed: ' . $batch_max .'. Either'
-               . ' batch less payments or increase the maximum.';
-    $link = l('Edit recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
-    watchdog('recurring_globalcollect', $message, array(), WATCHDOG_ERROR, $link);
-    drush_set_error('BATCHING', dt($message));
-    return false;         
+    // Remove batch from options
+    unset($options['batch']);
   }
   
   $processed = 0;
@@ -370,7 +363,8 @@ function recurring_globalcollect_process_error() {
     /**
      * RG
      *
-     * There is a problem with recurring_globalcollect
+     * There is a problem with recurring_globalcollect:
+     * - ORDERID was not found in the trxn_id
      */
     case 'RG':
       break;
