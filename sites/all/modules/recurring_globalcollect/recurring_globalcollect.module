@@ -385,7 +385,8 @@ function recurring_globalcollect_process_error() {
      *
      * Unhandled error
      *
-     * @todo This should not mark the payment as a failure
+     * Errors marked with UNKNOWN will need to be examined to make sure they 
+     * were left in the proper status.
      */
     default:
       throw new Exception($watchdog_message);
@@ -544,7 +545,7 @@ function recurring_globalcollect_connect($result, $options = array()){
   catch (Exception $e) {
 
     watchdog('recurring_globalcollect', $e->getMessage(), null, WATCHDOG_ERROR);
-    drush_set_error("GLOBALCOLLECT", "Global Collect error:" . print_r($e->getMessage(), true));
+    drush_set_error("UNKNOWN", "Unknown error:" . print_r($e->getMessage(), true));
     
     return false;
   }  
