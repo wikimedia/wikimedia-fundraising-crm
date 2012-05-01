@@ -177,14 +177,14 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
  */
 function _recurring_globalcollect_get_next_sched_contribution_date_for_month(&$record) {
 
-  $now_stamp = time();
+  $triggered_for_date = _recurring_globalcollect_get_last_trigger_date($record);
   //$frequency_interval and $cycle_day will, at this point, have been found in $record. 
   $frequency_interval = (integer) $record['frequency_interval'];
   $cycle_day = $record['cycle_day'];
 
-  $scheduled_date_stamp = $now_stamp;
+  $scheduled_date_stamp = $triggered_for_date;
   $added = 0;
-  while ( date('Y-m-d', $now_stamp) >= date('Y-m-d', $scheduled_date_stamp) && ( $added < $frequency_interval ) ){
+  while ( date('Y-m-d', $triggered_for_date) >= date('Y-m-d', $scheduled_date_stamp) && ( $added < $frequency_interval ) ){
     //this will happen at least once.
     $scheduled_date_stamp = _recurring_globalcollect_increment_date_to_target_day( $scheduled_date_stamp, 'month', $cycle_day );
     $added += 1;
@@ -193,9 +193,58 @@ function _recurring_globalcollect_get_next_sched_contribution_date_for_month(&$r
   return date('Y-m-d H:i:s', $scheduled_date_stamp);
 }
 
+/**
+ * Calculates the last date this payment should have been triggered for, 
+ * regardless of the actual date, or the last recorded date in the schedule. 
+ * @param array $record An array that contains, at least, the cycle day. Passing 
+ * this around in record format because that's what the rest of the module does. 
+ * @TODO: Stop passing around the whole record. 
+ * @return timestamp A midnight timestamp for the day that should have triggered 
+ * this recurring transaction. 
+ */
+function _recurring_globalcollect_get_last_trigger_date($record){
+	//Instead of adding to now, we have to look for the last time the cycle date 
+	//should have been triggered, regardless of when the transaction actually went through.
+	
+	//TODO: This needs to implement more frequency intervals. For now, though, we only use monthly, so...
+	if ( !array_key_exists( 'cycle_day', $record ) || !is_numeric( $record['cycle_day'] ) ){
+		return time();
+	} else {
+		$cycle_day = (integer) $record['cycle_day'];
+	}
+	
+	$nowstamp = time();
+	
+	$month = (int) date('n', $nowstamp);
+	$year = (int) date('Y', $nowstamp);
+	
+	$last_trigger = mktime(0, 0, 0, $month, _recurring_globalcollect_get_cycle_day_for_month( $cycle_day, $month, $year ), $year);
+	
+	//please note that the majority of the time, this while loop will not even fire once.  
+	//If you doubt that, see me after class. 
+	while ( $last_trigger > $nowstamp ){
+		//decrement the month until it was in the past. 
+		--$month;
+		if ( $month < 1 ){
+			$month = 12;
+			--$year;
+		}
+		$last_trigger = mktime(0, 0, 0, $month, _recurring_globalcollect_get_cycle_day_for_month( $cycle_day, $month, $year ), $year);
+	}
+	return $last_trigger;
+}
 
-//Increment the $date by one $interval, landing as close as possible to $cycle_day.
-//have only implemented the $interval of 'month' at this point. Might wire up more later as-needed. 
+
+
+/**
+ * Increment the $date by one $interval, landing as close as possible to 
+ * $cycle_day. Have only implemented the $interval of 'month' at this point. 
+ * Might wire up more later as-needed. 
+ * @param timestamp $date Timestamp to increment by the interval
+ * @param string $interval A name for the interval that we're incrementing. 
+ * @param int $cycle_day The target day of the month for this payment
+ * @return timestamp The $date parameter incremented by one calendar interval. 
+ */
 function _recurring_globalcollect_increment_date_to_target_day( $date, $interval = 'month', $cycle_day = null ){
 
   switch ($interval){ //just making it slightly nicer in here for the next guy
@@ -215,15 +264,27 @@ function _recurring_globalcollect_increment_date_to_target_day( $date, $interval
         $year += 1;
       }
 
-      $last_day = cal_days_in_month( CAL_GREGORIAN, $month, $year );
+	  $target_day = _recurring_globalcollect_get_cycle_day_for_month($cycle_day, $month, $year);
 
-      if ( $cycle_day > $last_day ){
-        $cycle_day = $last_day;
-      }
-
-      $next_date = mktime(0, 0, 0, $month, $cycle_day, $year);
+      $next_date = mktime(0, 0, 0, $month, $target_day, $year);
       return $next_date;
   }
+}
+
+/**
+ * Tired of doing this everywhere. 
+ * @param int $cycle_day - target day of the month for this subscription
+ * @param int $month - target month
+ * @param int $year - target year. 
+ * @return int The day of the specified month and year most appropriate for the 
+ * target cycle day. This will only change if the target day doesn't exist in certain months. 
+ */
+function _recurring_globalcollect_get_cycle_day_for_month($cycle_day, $month, $year){
+	$last_day = cal_days_in_month( CAL_GREGORIAN, $month, $year );
+	if ( $cycle_day > $last_day ){
+		return $last_day;
+	}
+	return $cycle_day;
 }
 
 /**
