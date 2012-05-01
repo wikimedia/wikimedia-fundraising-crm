@@ -157,7 +157,7 @@ function drush_recurring_globalcollect_validate() {
     
     $message = 'Batching is disabled: $batch = "' . $batch . '"';
     $link = l('Edit recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
-    watchdog('recurring_globalcollect', $message, array(), WATCHDOG_NOTICE, $link);
+    watchdog('recurring_globalcollect', $message, array(), WATCHDOG_WARNING, $link);
     return false;         
   }
   
