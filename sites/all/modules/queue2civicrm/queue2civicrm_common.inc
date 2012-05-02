@@ -837,6 +837,7 @@ function _queue2civicrm_get_payment_instrument( $msg ){
 				}
 				break;
 			case 'cash':
+				$payment_instrument = 'Cash';
 				//'cash_boleto' - Only one right now. I assume there might be more later? 
 				switch ( strtolower( $msg['payment_submethod'] ) ){
 					case 'cash_boleto': 
