@@ -1,0 +1,4 @@
+name = WMF Common
+description = Module for common files, functions and resources for WMF modules
+core = 6.x
+package = Wikimedia
