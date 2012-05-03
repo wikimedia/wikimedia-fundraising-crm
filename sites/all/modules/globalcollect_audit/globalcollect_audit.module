@@ -101,6 +101,74 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
   return $missing_trxns;
 }
 
+/**
+ * So, that happened. My bad. 
+ * I'm keeping this function around, because it can currently (in only one way, 
+ * but we may need to expand on this in the future) to track fuckups.
+ * Not used anywhere. 
+ */
+function globalcollect_audit_track_fuckup(){
+	$directory = '/home/khorn/recurring_extra/';
+	$csv = $directory . 'recurring.csv';
+	$testme = file($csv, FILE_SKIP_EMPTY_LINES);
+	$ids = array();
+	foreach( $testme as $line ){
+		$temp = explode(',', $line);
+		$ids[$temp[0]][] = $temp[1];
+	}
+	echo print_r($ids, true);
+	
+	
+	$processed_id_count = 0;
+	$processed_days_count = 0;
+	$found_ids_count = 0;
+	$recurring_count = 0;
+	$not_recurring_count = 0;
+	$unfound = array();
+	$fuckups = array();
+	
+	
+	foreach ( $ids as $date => $id_array ){
+		$logname = $directory . $date . '_iop.log';
+		$logname2 = $directory . globalcollect_audit_add_to_date( $date, 1 ) . '_iop.log';
+		foreach ( $id_array as $grepforme ){
+			echo ".";
+			$processed_id_count += 1;
+			$cmd = "grep <ORDERID>" . trim($grepforme) . "</ORDERID> $logname";
+
+			$ret = array();
+			exec( escapeshellcmd($cmd), $ret, $errorlevel );
+			//echo $cmd . "\n";
+			
+			if ( !count( $ret ) ){
+				$cmd = "grep <ORDERID>" . trim($grepforme) . "</ORDERID> $logname2";
+
+				$ret = array();
+				exec( escapeshellcmd($cmd), $ret, $errorlevel );
+			}
+	
+			if ( count( $ret ) > 0 ){
+				$found_ids_count += 1;
+				if ( strstr( $ret[0], "<ORDERTYPE>4" ) ){
+					$recurring_count += 1;
+				} else {
+					$not_recurring_count += 1;
+				}
+			} else {
+				$unfound[$date][] = trim($grepforme);
+			}
+		}
+		
+	}
+	
+	echo "Processed $processed_id_count \n";
+	echo "Found $found_ids_count \n";
+	echo "Unfound ids: " . print_r( $unfound, true ) . "\n";
+	echo "Recurring Count $recurring_count \n";
+	echo "Not Recurring Count $not_recurring_count \n";
+	die();
+	
+}
 
 
 function globalcollect_audit_parse_all_wr1(){
