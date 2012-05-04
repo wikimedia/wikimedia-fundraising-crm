@@ -183,6 +183,7 @@ function globalcollect_audit_parse_all_wr1(){
 	require_once( $parser_directory . 'Wr1DataRecord.php' );
 	
 	$wr1_files = globalcollect_audit_get_all_wr1_files();
+	globalcollect_audit_groom_logs();
 	$missing = array();
 	
 	$errorful_transactions = array();
@@ -594,11 +595,103 @@ function globalcollect_audit_get_all_wr1_files(){
 	//standard anyway. 
 	sort($files); 
 	
-	return $files;
-	
-
-	
+	return $files;	
 }
+
+function globalcollect_audit_groom_logs(){
+	$files_directory = variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
+
+	$files = array(
+		'gz' => array(),
+		'rename' => array(),
+		'log' => array(),
+		'iop' => array()
+	);
+	echo "Grooming log files\n";
+	if ( $handle = opendir( $files_directory ) ){
+		while ( ( $file = readdir( $handle ) ) !== false ){
+			$full_path = $files_directory . $file;
+			if ( strpos( $file, '.gz' ) ){
+				$files['gz'][] = $full_path;
+				continue;
+			}
+			if ( preg_match( '/globalcollect.\d{8}_\d{6}/', $file ) ){
+				$files['rename'][] = $full_path;
+				continue;
+			}
+			if ( preg_match( '/\d{8}_iop\.log/', $file ) ){
+				$files['iop'][] = $full_path;
+				//rekey
+				continue;
+			}
+			if ( preg_match( '/globalcollect_\d{8}\.log/', $file ) ){
+				$files['log'][] = $full_path;
+				//rekey
+				continue;
+			}
+		}
+	}
+	closedir($handle);
+	
+	//handle the gz files first
+	foreach ($files['gz'] as $key => $gzfile){
+		echo "Gunzipping $gzfile\n";
+		$cmd = "gunzip $gzfile";
+		exec( escapeshellcmd($cmd), $ret, $errorlevel );
+		//now check to make sure the file you expect exists
+		$newfile = substr( $gzfile, 0, strlen($gzfile) - 3 );
+		if (!file_exists($newfile)){
+			//Didn't work. Track the error.
+		} else {
+			//add it to the other array. 
+			$files['rename'][] = $newfile;
+			if (file_exists($gzfile)){ //still? 
+				file_delete($gzfile);
+			}
+			unset($files['gz'][$key]);
+		}
+	}
+	
+	//handle the renames
+	foreach ($files['rename'] as $key => $rename_me){
+		echo "Renaming $rename_me\n";
+		//'/globalcollect.\d{8}_\d{6}/'
+		//becomes 
+		//'/globalcollect_\d{8}\.log/'
+		$new_name = explode('/', $rename_me);
+		//and the file name should be the last array key. 
+		$just_file = array_pop($new_name);
+		$just_file = preg_replace(
+			array( '/_\d{6}/', '/globalcollect./' ),
+			array( '.log', 'globalcollect_'),
+			$just_file );
+		echo " $just_file \n";
+		$new_name = implode( '/', $new_name ) . '/' . $just_file;
+		rename( $rename_me, $new_name );
+		$files['log'][] = $new_name;
+		unset($files['rename'][$key]);
+	}
+	
+	//delete redundant data
+	foreach ( $files['log'] as $key => $big_log ){
+		//'/\d{8}_iop\.log/'
+		//is a distilled version of
+		//'/globalcollect_\d{8}\.log/'
+		$smallened_log = preg_replace(
+			array('/globalcollect_/', '/.log/'),
+			array('', '_iop.log'),
+			$big_log );
+		if ( in_array($smallened_log, $files['iop']) ){
+			echo "Deleting $big_log\n";
+			file_delete( $big_log );
+			unset($files['log'][$key]);
+		}
+	}	
+	
+	echo print_r($files, true);
+	return $files;
+}
+
 
 function globalcollect_audit_move_completed_wr1( $file ){
 	$subdir = 'completed';
