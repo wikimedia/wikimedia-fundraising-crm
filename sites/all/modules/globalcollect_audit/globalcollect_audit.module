@@ -720,7 +720,7 @@ function globalcollect_audit_groom_logs(){
 		//is a distilled version of
 		//'/globalcollect_\d{8}\.log/'
 		$smallened_log = preg_replace(
-			array('/globalcollect_/', '/.log/'),
+			array('/globalcollect_/', '/\.log/'),
 			array('', '_iop.log'),
 			$big_log );
 		if ( in_array($smallened_log, $files['iop']) ){
