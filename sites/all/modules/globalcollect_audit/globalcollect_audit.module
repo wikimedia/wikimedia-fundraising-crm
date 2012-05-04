@@ -173,60 +173,17 @@ function globalcollect_audit_track_fuckup(){
 
 function globalcollect_audit_parse_all_wr1(){
 	$actual_start_time = microtime(true);
-	
-	//look at the wr1 files dir, and load in everything that's a "*.wr?". 
-	//and by that I mean, fire off the parser at everything that's in that format. 
-	$parser_directory = variable_get( 'globalcollect_audit_wr1_parser_dir', CONTRIBUTION_AUDIT_WR1_PARSER_DIR );
-	$files_directory = variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR );
 	$test_mode = variable_get( 'globalcollect_audit_test_mode', CONTRIBUTION_AUDIT_TEST_MODE );
 	$run_all_wr1 = variable_get( 'globalcollect_audit_run_all_wr1', false );
-	require_once( $parser_directory . 'Wr1DataRecord.php' );
 	
 	$wr1_files = globalcollect_audit_get_all_wr1_files();
 	globalcollect_audit_groom_logs();
-	$missing = array();
 	
+	$missing = array();
 	$errorful_transactions = array();
 	
-	while ( ( $run_all_wr1 || !count( $missing ) ) && count( $wr1_files ) ){
-		$local_missing = array();
-		$wr1_data = array();
-		$file = array_shift( $wr1_files );
-		echo "Parsing $file\n";
-		
-		$wr1_parser = new Wr1DataFileParser( $file );
-		$local_start_time = microtime(true);
-		foreach( $wr1_parser->getRecordIterator() as $record ) {
-			switch ( $record['Payment-method'] ){
-				case 'CC':
-					$wr1_data[$record['Order-number']]  = $record;
-					echo 'c';
-					break;
-				case 'BA':
-				case 'OB':
-					$wr1_data[$record['Additional-reference']]  = $record;
-					echo 'b';
-					break;
-				default:
-					$message = "Payment method '" . $record['Payment-method'] . "' not recognized. Please rectify in " . __FUNCTION__ .  print_r( $record, true );
-					globalcollect_audit_log_error( $message, "WR1_PAYMENT_METHOD" );
-					return;
-			}
-		} 
-		echo "\n";
-		$time = microtime(true) - $local_start_time;
-		echo "$file parsed in $time\n";
-		if ( count( $wr1_data ) ){
-			$local_missing = globalcollect_audit_find_missing_gc_trxns( $wr1_data );
-			$missing = array_merge( $missing, $local_missing );
-		}
-		
-		if ( !count( $local_missing ) ){
-			globalcollect_audit_move_completed_wr1( $file );
-		} 
-	}
-	
-	if ( !count($missing) ){
+	$missing = globalcollect_audit_find_more_missing($wr1_files);
+	if ( !$missing ){
 		echo "No missing transactions found. Done!\n";
 		return;
 	}
@@ -306,7 +263,7 @@ function globalcollect_audit_parse_all_wr1(){
 	}
 	//And loop. 
 		
-	//if we're running in make_missing mode (explicit param required), do that.
+	//if we're running in make_missing mode, do that.
 	$make_missing = variable_get( 'globalcollect_audit_make_missing', false );
 	if ( $make_missing && count( $missing ) ){
 		//make all the remaining missing transactions with data defaults. 
@@ -327,6 +284,92 @@ function globalcollect_audit_parse_all_wr1(){
 	
 	$time = microtime(true) - $actual_start_time;
 	echo "Total Runtime: $time\n";
+}
+
+/**
+ * Finds more missing transactions to rebuild, in the remaining wr1 files. 
+ * @staticvar bool $run_all_wr1 Whether or not we're configured to operate in 
+ * Run All mode.  
+ * @param array $wr1_files An array of full paths to wr1 files
+ * @return mixed an array of entries in the wr1 files that are not present in 
+ * civicrm
+ */
+function globalcollect_audit_find_more_missing(&$wr1_files){
+	static $run_all_wr1 = null;
+	
+	if (is_null($run_all_wr1)){
+		$run_all_wr1 = variable_get( 'globalcollect_audit_run_all_wr1', false );
+	}
+	
+	$missing = array();
+	
+	$errorful_transactions = array();
+	
+	while ( ( $run_all_wr1 || !count( $missing ) ) && count( $wr1_files ) ){
+		$local_missing = array();
+		$file = array_shift( $wr1_files );
+		$wr1_data = globalcollect_audit_parse_wr1_file($file);
+		
+		if ( $wr1_data ){
+			$local_missing = globalcollect_audit_find_missing_gc_trxns( $wr1_data );
+			$missing = array_merge( $missing, $local_missing );
+		}
+		
+		if ( !count( $local_missing ) ){
+			globalcollect_audit_move_completed_wr1( $file );
+		} 
+	}
+	
+	if ( !count($missing) ){
+		return false;
+	} else {
+		return $missing;
+	}
+}
+
+/**
+ * Just parse one wr1 file. 
+ * @staticvar string $parser_directory The directory where the parser lives.
+ * @param string $file Absolute location of the wr1 you want to parse
+ * @return mixed An array of wr1 data, or false
+ */
+function globalcollect_audit_parse_wr1_file( $file ){
+	static $parser_directory = null;
+	if (is_null($parser_directory)){
+		$parser_directory = variable_get( 'globalcollect_audit_wr1_parser_dir', CONTRIBUTION_AUDIT_WR1_PARSER_DIR );
+	}
+	require_once( $parser_directory . 'Wr1DataRecord.php' );
+	
+	$missing = array();
+	$wr1_data = array();
+	echo "Parsing $file\n";
+
+	$wr1_parser = new Wr1DataFileParser( $file );
+	$start_time = microtime(true);
+	foreach( $wr1_parser->getRecordIterator() as $record ) {
+		switch ( $record['Payment-method'] ){
+			case 'CC':
+				$wr1_data[$record['Order-number']]  = $record;
+				echo 'c';
+				break;
+			case 'BA':
+			case 'OB':
+				$wr1_data[$record['Additional-reference']]  = $record;
+				echo 'b';
+				break;
+			default:
+				$message = "Payment method '" . $record['Payment-method'] . "' not recognized. Please rectify in " . __FUNCTION__ .  print_r( $record, true );
+				globalcollect_audit_log_error( $message, "WR1_PAYMENT_METHOD" );
+				return;
+		}
+	} 
+	echo "\n";
+	$time = microtime(true) - $start_time;
+	echo "$file parsed in $time\n";
+	if ( count( $wr1_data ) ){
+		return $wr1_data;
+	}
+	return false;
 }
 
 
@@ -665,7 +708,6 @@ function globalcollect_audit_groom_logs(){
 			array( '/_\d{6}/', '/globalcollect./' ),
 			array( '.log', 'globalcollect_'),
 			$just_file );
-		echo " $just_file \n";
 		$new_name = implode( '/', $new_name ) . '/' . $just_file;
 		rename( $rename_me, $new_name );
 		$files['log'][] = $new_name;
