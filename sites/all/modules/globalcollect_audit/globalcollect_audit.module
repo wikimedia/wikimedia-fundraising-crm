@@ -278,8 +278,8 @@ function globalcollect_audit_parse_all_wr1(){
 	echo "Transactions found by log:" . print_r( $counts, true );
 	echo "Still Missing: " . count($missing) . ".";
 	if ( count($missing) ){
-		echo " Good luck with that.";
-	}	
+		echo " Good luck with that.";		
+	}
 	echo "\n";
 	
 	$time = microtime(true) - $actual_start_time;
@@ -312,7 +312,7 @@ function globalcollect_audit_find_more_missing(&$wr1_files){
 		
 		if ( $wr1_data ){
 			$local_missing = globalcollect_audit_find_missing_gc_trxns( $wr1_data );
-			$missing = array_merge( $missing, $local_missing );
+			$missing += $local_missing;
 		}
 		
 		if ( !count( $local_missing ) ){
@@ -618,7 +618,11 @@ function globalcollect_audit_get_contribution_tracking_data( $contribution_track
 }
 
 
-
+/**
+ * Returns an array of the full paths to all all valid .wr? files in the wr1 
+ * directory. 
+ * @return array full paths to all wr1-type files
+ */
 function globalcollect_audit_get_all_wr1_files(){
 	$files_directory = variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR );
 	//foreach file in the directory, if it's a '*.wr?', add it to the list of files we could open.
@@ -641,6 +645,13 @@ function globalcollect_audit_get_all_wr1_files(){
 	return $files;	
 }
 
+/**
+ * Goes through the log file directory, and does a few things: 
+ * * gunzips the .gz files
+ * * Renames the raw unzips to something we're expecting
+ * * Kills off log data that has been distilled already into .iop files
+ * @return array A list of full paths to the files in their buckets 
+ */
 function globalcollect_audit_groom_logs(){
 	$files_directory = variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
 
@@ -730,13 +741,15 @@ function globalcollect_audit_groom_logs(){
 		}
 	}	
 	
-	echo print_r($files, true);
 	return $files;
 }
 
 
-function globalcollect_audit_move_completed_wr1( $file ){
+function globalcollect_audit_move_completed_wr1( $file, $nearly = false ){
 	$subdir = 'completed';
+	if ($nearly){
+		$subdir .= '-nearly-' . date('Y-m-d', time());
+	}
 	$files_directory = variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR );
 	$completed_dir = $files_directory . '/' . $subdir;
 	if ( !is_dir( $completed_dir ) ){
