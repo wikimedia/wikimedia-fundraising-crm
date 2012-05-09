@@ -174,10 +174,8 @@ function globalcollect_audit_track_fuckup(){
 function globalcollect_audit_parse_all_wr1(){
 	$actual_start_time = microtime(true);
 	$test_mode = variable_get( 'globalcollect_audit_test_mode', CONTRIBUTION_AUDIT_TEST_MODE );
-	$run_all_wr1 = variable_get( 'globalcollect_audit_run_all_wr1', false );
 	
 	$wr1_files = globalcollect_audit_get_all_wr1_files();
-	globalcollect_audit_groom_logs();
 	
 	$missing = array();
 	$errorful_transactions = array();
@@ -674,12 +672,12 @@ function globalcollect_audit_groom_logs(){
 				continue;
 			}
 			if ( preg_match( '/\d{8}_iop\.log/', $file ) ){
-				$files['iop'][] = $full_path;
+				$files['iop'][globalcollect_audit_get_log_date_by_file($full_path)] = $full_path;
 				//rekey
 				continue;
 			}
 			if ( preg_match( '/globalcollect_\d{8}\.log/', $file ) ){
-				$files['log'][] = $full_path;
+				$files['log'][globalcollect_audit_get_log_date_by_file($full_path)] = $full_path;
 				//rekey
 				continue;
 			}
@@ -739,7 +737,11 @@ function globalcollect_audit_groom_logs(){
 			file_delete( $big_log );
 			unset($files['log'][$key]);
 		}
-	}	
+	}
+	
+	foreach ($files as $type => $dontrekeyme){
+		ksort($files[$type]);
+	}
 	
 	return $files;
 }
@@ -790,90 +792,141 @@ function globalcollect_audit_get_wr1_date( $data ){
 	return $date;
 }
 
+/**
+ * Tries to intelligently select the next most likely log to knock off the 
+ * majority of the remaining missing transactions, which drastically cuts down 
+ * on runtime. 
+ * @staticvar array $tried The dates we have tried
+ * @staticvar string $available The groomed files that are currently available 
+ * in the logs directory. 
+ * @param array $missing Parsed missing transaction data form the wr1 files
+ * @param array $counts Array of log data we have found, indexed by the actual 
+ * date it was initiated (logdate - 1)
+ * @return type 
+ */
 function globalcollect_audit_get_next_log( $missing, $counts ){
 	static $tried = array();
+	static $available = null;
+	if ( is_null( $available ) ){
+		$available = globalcollect_audit_groom_logs();
+		//$available['iop'] and $available['log'] are the ones we want.
+		//don't really care about the order: All we want at this point are the keys. 
+		$available = array_merge( $available['log'], $available['iop'] );
+		$available = array_flip($avaiable);
+		rsort( $available );
+	}
+	
+	//this is the var that tells us how far to cluster around the dates we're 
+	//missing, before we simply slide backwards into history.
 	$plusminus = variable_get( 'globalcollect_audit_plusminus', CONTRIBUTION_AUDIT_PLUSMINUS );
 	
-	$tryme = false;
+	//haven't found anything yet. 
+	$file = null;
 	
-	if ( count( $counts ) ){
-		arsort( $counts );
-		$zerocounter = 0;
-		//step back to plusminus and see if they've all been tried. 
-		foreach ( $counts as $date => $hits ){
-			if ( $hits > 0 ){
-				for ( $i = 1; $i <= $plusminus && !$tryme; ++$i ){
-					$check_date = globalcollect_audit_add_to_date( $date, -1*$i );
-					if ( !array_key_exists( $check_date, $counts ) ){
-						$tryme = $check_date;
+	//look for the next file until we either find something, or hit a fatal error. 
+	while ( globalcollect_audit_can_continue() && is_null( $file ) ){
+		$tryme = false;
+	
+		//If we've found anything, step straight backwards from the most abundant 
+		//hit day looking for more we have not tried.
+		if ( count( $counts ) ){
+			arsort( $counts );
+			$zerocounter = 0;
+			//step back to plusminus and see if they've all been tried. 
+			foreach ( $counts as $date => $hits ){
+				if ( $hits > 0 && !in_array($date, $tried) ){
+					for ( $i = 1; $i <= $plusminus && !$tryme; ++$i ){
+						$check_date = globalcollect_audit_add_to_date( $date, -1*$i );
+						if ( !array_key_exists( $check_date, $counts ) ){
+							$tryme = $check_date;
+						}
+					}
+				} 
+				if ( $tryme ){
+					break;
+				}
+			}
+		}
+
+		//Find the most popular date in the missing transactions that has not been 
+		//tried yet, and look there. 
+		if ( !$tryme ){
+			$dates = array();
+			foreach ( $missing as $transaction ){
+				$date = globalcollect_audit_get_wr1_date( $transaction );
+				if (is_null($date)){
+					return null;
+				}
+				if ( array_key_exists( $date, $dates ) ){
+					$dates[$date] += 1;
+				} else {
+					$dates[$date] = 1;
+				}
+			}
+
+			//now turn the array inside out and sort it by most popular date
+			array_flip($dates);
+			arsort($dates);
+			//echo print_r($dates);
+
+			foreach ( $dates as $date => $count ){
+				if ( !in_array($date, $tried) ){
+					$tryme = $date;
+					break;
+				}
+			}
+		}
+
+		//Buffer out both directions from all the dates we've found something on.
+		if ( !$tryme ){
+			//we've tried all the log dates explicitly present in the wr1. Now try more.
+			$more_tries = array();
+			for($i=1; $i < ($plusminus + 1); ++$i ){
+				$more_tries[] = $i;
+				$more_tries[] = $i * -1;
+			}
+
+			foreach ( $dates as $date => $count ){
+				foreach( $more_tries as $add ){
+					$newdate = globalcollect_audit_add_to_date( $date, $add );
+					if ( !in_array($newdate, $tried) ){
+						$tryme = $newdate;
+						break 2;
 					}
 				}
-			} 
-			if ( $tryme ){
-				break;
-			}
-		}
-	}
-	
-	if ( !$tryme ){
-		$dates = array();
-		foreach ( $missing as $transaction ){
-			$date = globalcollect_audit_get_wr1_date( $transaction );
-			if (is_null($date)){
-				return null;
-			}
-			if ( array_key_exists( $date, $dates ) ){
-				$dates[$date] += 1;
-			} else {
-				$dates[$date] = 1;
 			}
 		}
 
-		//now turn the array inside out and sort it by most popular date
-		array_flip($dates);
-		arsort($dates);
-		//echo print_r($dates);
-
-		foreach ( $dates as $date => $count ){
-			if ( !in_array($date, $tried) ){
-				$tryme = $date;
-				break;
-			}
-		}
-	}
-	
-	if ( !$tryme ){
-		//we've tried all the log dates explicitly present in the wr1. Now try more.
-		$more_tries = array();
-		for($i=1; $i < ($plusminus + 1); ++$i ){
-			$more_tries[] = $i;
-			$more_tries[] = $i * -1;
-		}
-		
-		foreach ( $dates as $date => $count ){
-			foreach( $more_tries as $add ){
-				$newdate = globalcollect_audit_add_to_date( $date, $add );
-				if ( !in_array($newdate, $tried) ){
-					$tryme = $newdate;
-					break 2;
+		//Check everything else we have, that we haven't tried yet.
+		if ( !$tryme ){
+			foreach ( $available as $date ){
+				if ( !in_array( $date, $tried ) ){
+					$tryme = $date;
+					break;
 				}
 			}
 		}
+
+		//We have now tried everything. Kick out of the loop with a fatal.  
+		if ( !$tryme ){
+			$message = __FUNCTION__  . " No 'next' log identified. Dates checked: " . print_r( $tried, true ) . "\nCurrent Missing: " . print_r( $dates, true ) . "\n";
+			globalcollect_audit_log_error( $message, "WR1_LOG_FATAL" );
+			return null;
+		}
+
+		$tried[] = $tryme;
+		//now see if the file actually exists. 
+		$file = globalcollect_audit_get_log_file_by_date( $tryme );
 	}
-	
-	
-	if ( !$tryme ){
-		$message = __FUNCTION__  . " No 'next' log identified. Dates checked: " . print_r( $tried, true ) . "\nCurrent Missing: " . print_r( $dates, true ) . "\n";
-		globalcollect_audit_log_error( $message, "WR1_LOG_FATAL" );
-		return null;
-	}
-	
-	$tried[] = $tryme;
-	return globalcollect_audit_get_log_file_by_date( $tryme );
+	return $file;
 	
 }
 
-
+/**
+ * Returns the log file that will contain transactions from the date passed in. 
+ * @param string $date The target date of the actual log entry
+ * @return string The full path to the reduced iop file
+ */
 function globalcollect_audit_get_log_file_by_date( $date ){
 	//I know somebody is going to try to come back in time just to punch me for this one, but...
 	$date = globalcollect_audit_add_to_date( $date, 1 );
@@ -903,7 +956,7 @@ function globalcollect_audit_get_log_file_by_date( $date ){
 			}
 			
 		} else {
-			$message = __FUNCTION__ . " $original_file not found. Please copy that file to the specified directory and re-run.";
+			$message = "$original_file not found. Please copy that file to the specified directory and re-run.";
 			globalcollect_audit_log_error( $message, "WR1_LOG" );
 			return null;
 		}
@@ -911,18 +964,39 @@ function globalcollect_audit_get_log_file_by_date( $date ){
 	
 }
 
-
+/**
+ * Given a file name, should return the Ymd date portion of the filename.
+ * This should work on both .log files, and .iop files generated by this script.
+ * @param string $file Name of the file. Either a full path, or not. 
+ * @return string The file's date in the format Ymd
+ */
 function globalcollect_audit_get_log_date_by_file( $file ){
-	$log_directory = variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
-	$date = str_replace( $log_directory, '', $file);
-	$date = substr( $date, 0, strpos( $date, '_' ) );
+	$file = explode('/', $file);
+	$file = $file[count($file) - 1];
+	
+	if ( preg_match( '/\d{8}_iop\.log/', $file ) ){
+		$date = str_replace('_iop.log', '', $file);
+	}
+	if ( preg_match( '/globalcollect_\d{8}\.log/', $file ) ){
+		$date = str_replace(array('globalcollect_', '.log'), array('',''), $file);
+	}
+	
 	if ( !is_numeric( $date ) ){
 		die( __FUNCTION__ . " is faulty. $file's date is not $date" );
 	}
+	
+	//Subtract one from the date, because the logs rotate at midnight, so all 
+	//the actual transactions are from the previous day. 
 	$date = globalcollect_audit_add_to_date( $date, -1 );
 	return $date;
 }
 
+/**
+ * Adds a number of days to a specified date
+ * @param string $date Date in format Ymd
+ * @param int $add Number of days to add
+ * @return string Date in format Ymd
+ */
 function globalcollect_audit_add_to_date( $date, $add ){
 	$date = date_create( $date );
 	date_add($date, date_interval_create_from_date_string("$add days"));
@@ -974,8 +1048,15 @@ function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
 		}
 
 		if ( is_null( $contribution_id ) || is_null( $xml ) ){
+			echo "OH NOES. Couldn't find enough info in this log for order id $order_id!\n";
+			if ( !is_null( $contribution_id ) ){
+				echo "$contribution_id\n";
+			}
+			if ( !is_null( $xml ) ){
+				echo "...but we also have xml, so that's odd. \n";
+			}
 			//TODO: This needs more love. We can't go on without both parts, but we should log that we found some of it.
-			echo "OH NOES. Couldn't find enough info in this log! Skipping!" . print_r( $data, true );
+
 			return null;
 		} else {
 			//go on with your bad self
@@ -1052,6 +1133,12 @@ function globalcollect_audit_log_error( $watchdog_message, $drush_code, $drush_m
 	drush_set_error($drush_code, $drush_message);
 }
 
+/**
+ * Function determines if the audit can continue. 
+ * Will return false if we've thrown an error that is of a type that should be 
+ * fatal.
+ * @return bool True if the audit can soldier on, else false 
+ */
 function globalcollect_audit_can_continue(){
 	//check for drush errors
 	$errors = drush_get_error_log();
