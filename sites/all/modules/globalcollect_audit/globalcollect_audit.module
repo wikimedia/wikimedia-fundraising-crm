@@ -248,10 +248,11 @@ function globalcollect_audit_parse_all_wr1(){
 		}
 		echo "\n";
 		
-		//TODO: Output some pretty stats here. 
+		//Output here, and add these stats to the data ball. 
 		$logdate = globalcollect_audit_get_log_date_by_file($log);
 		$counts[$logdate] = count( $local_found_ids );
 		echo $counts[$logdate] . " records found in $log\n";
+		globalcollect_audit_results_ball( array('Transactions Found', $log), $counts[$logdate] );
 		
 		//now, we unset the array keys we found, so as not to corrupt the foreach we were in.
 		foreach ($local_found_ids as $id) {
@@ -272,16 +273,19 @@ function globalcollect_audit_parse_all_wr1(){
 	
 	if ( count( $errorful_transactions ) ){
 		echo "Errorful Transactions: " . print_r( $errorful_transactions, true );
+		globalcollect_audit_results_ball( array('Final', 'Errors'), count($errorful_transactions) );
 	}
 	echo "Transactions found by log:" . print_r( $counts, true );
 	echo "Still Missing: " . count($missing) . ".";
 	if ( count($missing) ){
-		echo " Good luck with that.";		
+		echo " Good luck with that.";
+		globalcollect_audit_results_ball( array('Final', 'Missing'), count($missing) );
 	}
 	echo "\n";
 	
 	$time = microtime(true) - $actual_start_time;
 	echo "Total Runtime: $time\n";
+	globalcollect_audit_results_ball( array('Final', 'Runtime'), $time );
 }
 
 /**
@@ -311,6 +315,7 @@ function globalcollect_audit_find_more_missing(&$wr1_files){
 		if ( $wr1_data ){
 			$local_missing = globalcollect_audit_find_missing_gc_trxns( $wr1_data );
 			$missing += $local_missing;
+			globalcollect_audit_results_ball(array('Missing at Start', $file), count($local_missing));
 		}
 		
 		if ( !count( $local_missing ) ){
@@ -810,9 +815,10 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 	if ( is_null( $available ) ){
 		$available = globalcollect_audit_groom_logs();
 		//$available['iop'] and $available['log'] are the ones we want.
-		//don't really care about the order: All we want at this point are the keys. 
-		$available = array_merge( $available['log'], $available['iop'] );
-		$available = array_flip($avaiable);
+		//don't really care about the order: All we want at this point are the 
+		//keys, so we have to flip first or array_merge will think they're 
+		//numeric and rekey. I hate php.  
+		$available = array_merge( array_flip($available['log']), array_flip($available['iop']) );
 		rsort( $available );
 	}
 	
@@ -867,7 +873,6 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 			//now turn the array inside out and sort it by most popular date
 			array_flip($dates);
 			arsort($dates);
-			//echo print_r($dates);
 
 			foreach ( $dates as $date => $count ){
 				if ( !in_array($date, $tried) ){
@@ -909,7 +914,7 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 
 		//We have now tried everything. Kick out of the loop with a fatal.  
 		if ( !$tryme ){
-			$message = __FUNCTION__  . " No 'next' log identified. Dates checked: " . print_r( $tried, true ) . "\nCurrent Missing: " . print_r( $dates, true ) . "\n";
+			$message = __FUNCTION__  . " No 'next' log identified. Current Missing: " . print_r( $dates, true ) . "\n";
 			globalcollect_audit_log_error( $message, "WR1_LOG_FATAL" );
 			return null;
 		}
@@ -1125,12 +1130,73 @@ function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
 	return false;
 }
 
+/**
+ * Logs the errors we get in a consistent way
+ * @param type $watchdog_message
+ * @param type $drush_code
+ * @param type $drush_message 
+ */
 function globalcollect_audit_log_error( $watchdog_message, $drush_code, $drush_message = null ){
+	//hijacking this for missing logs. These are clogging the errors, and I'd rather have the ball at the end anyway. 
+	if ( $drush_code === 'WR1_LOG' ){
+		$watchdog_message = explode(' ', $watchdog_message);
+		$watchdog_message = explode('/', $watchdog_message[0]);
+		globalcollect_audit_results_ball('Missing Logs', $watchdog_message[count($watchdog_message) - 1]);
+		return;
+	}
+	
 	if ( is_null( $drush_message ) ){
 		$drush_message = $watchdog_message;
 	}
 	watchdog('globalcollect_audit', $watchdog_message, WATCHDOG_ERROR);
 	drush_set_error($drush_code, $drush_message);
+}
+
+/**
+ * Gather output info in a static, because that's... less bad than a global
+ * @param mixed $key Key denoting the type of data we are storing. Could be a 
+ * string, or an array with two values (key and subkey) 
+ * @param string $value The value we want to add to that key. Default null
+ * @param bool $reset Set to true, if you want to wipe all values in $key (and 
+ * set $reset to true and $key to false if you want to wipe everything). 
+ * Default false.
+ * @return array The entire ball of final results so far.  
+ */
+function globalcollect_audit_results_ball($key = null, $value = null, $reset = false){
+	static $data_ball = array();
+	$subkey = null;
+	if ($key && is_array($key)){
+		$subkey = $key[1];
+		$key = $key[0];
+	}
+	
+	//reset first
+	if ( $reset ){
+		if ( $key && array_key_exists( $key, $data_ball ) ){
+			if ( $subkey && array_key_exists( $subkey, $data_ball[$key] ) ){
+				unset($data_ball[$key][$subkey]);
+			}
+			if ( !$subkey ) {
+				unset($data_ball[$key]);
+			}
+		}
+		if ( !$key ){
+			$data_ball = array();
+		}
+	}
+	
+	//then add the value
+	if ( $key && !is_null( $value ) ){
+		if ( $subkey ){
+			//direct assignment
+			$data_ball[$key][$subkey] = $value;
+		} else {
+			//add a value to the array
+			$data_ball[$key][] = $value;
+		}
+	}
+	
+	return $data_ball;
 }
 
 /**
@@ -1152,7 +1218,7 @@ function globalcollect_audit_can_continue(){
 		);
 		foreach ( $errors as $code => $thing){
 			if ( !in_array( $code, $nonfatal) ){
-				echo print_r( $errors, true );
+				//echo print_r( $errors, true );
 				return false;
 			}
 		}
