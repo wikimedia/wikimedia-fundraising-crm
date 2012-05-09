@@ -88,6 +88,10 @@ function drush_globalcollect_audit() {
 	//Be Kind: Rewind (your run settings).
 	globalcollect_audit_reset_drush_vars();
 	
+	echo "\n***RESULTS***";
+	$results = globalcollect_audit_results_ball();
+	echo "\n" . print_r($results, true);
+	
 	$errors = drush_get_error_log();
 	if (!empty($errors)){
 	  echo "\n***ERRORS***";
