@@ -220,9 +220,12 @@ function _recurring_globalcollect_get_last_trigger_date($record){
 	
 	$last_trigger = mktime(0, 0, 0, $month, _recurring_globalcollect_get_cycle_day_for_month( $cycle_day, $month, $year ), $year);
 	
-	//please note that the majority of the time, this while loop will not even fire once.  
-	//If you doubt that, see me after class. 
-	while ( $last_trigger > $nowstamp ){
+	//please note that the majority of the time, this while loop will not even 
+	//fire once.  
+	//The 60*60*24*7 represents a week in seconds: If what should have been the 
+	//next trigger date is up to a week in the future, it will NOT try to rebill 
+	//this month. 
+	while ( $last_trigger > $nowstamp && ( $last_trigger - $nowstamp ) > 60*60*24*7 ){
 		//decrement the month until it was in the past. 
 		--$month;
 		if ( $month < 1 ){
