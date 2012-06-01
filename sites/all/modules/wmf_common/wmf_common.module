@@ -1,3 +1,38 @@
 <?php
 
-// empty file for now
+// include the only files for this module
+require_once 'civicrm_api_check.php';
+
+
+function replace_messages( $string, $message_file, $language='en' ){
+
+    if( $message_file instanceof MessageFile ){
+        // go ahead and use the provided instance
+        $messages = $message_file;
+    } else {
+        $messages = new MessageFile( $message_file );
+    }
+
+    // search for messages in the source file like %message_token% and, optionally,
+    // like %message_token|param1|param2%
+    $matches = array();
+    preg_match_all( "/%([a-zA-Z0-9_-]+)(|(?:(?!%).)*)%/", $string, $matches );
+
+    // loop through the found tokens and replace with messages, if they exist
+    foreach( $matches[ 1 ] as $i => $msg_key ){
+        // look for parameters passed to the message
+        if( isset($matches[ 2 ][ $i ] ) && $matches[ 2 ][ $i ] != ''){
+            $m = $messages->getMsg( $matches[ 1 ][ $i ], $language );
+            $params = explode( '|', trim( $matches[ 2 ][ $i ], '|' ) );
+            foreach( $params as $k => $value ){
+                $k++; // params are 1-indexed
+                $m = str_replace( "\$$k", $value, $m );
+            }
+            $string = str_replace( $matches[ 0 ][ $i ], $m, $string );
+        } else {
+            $string = str_replace( $matches[ 0 ][ $i ], $messages->getMsg( $matches[ 1 ][ $i ], $language ), $string );
+        }
+    }
+
+    return $string;
+}
