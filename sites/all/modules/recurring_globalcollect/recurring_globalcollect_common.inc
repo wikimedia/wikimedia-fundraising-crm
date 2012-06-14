@@ -739,37 +739,9 @@ function buildDefaultTestUrl() {
 }
 
 /**
- * Get the contribution status
- *
- * @todo Move this to the wikimedia common module
- * @return array Returns an array of values
- */
-function get_contribution_status() {
-  
-  $values = array(
-    1 => 'Completed',
-    2 => 'Pending',
-    3 => 'Cancelled',
-    4 => 'Failed',
-    5 => 'In Progress',
-    6 => 'Overdue',
-  );
-  
-  return $values;
-}
-
-/**
  * Get the contribution status name
  *
  * @param string $name The name of the key.
- *
- * The available names from `civicrm_option_value`.`name` for the option_group Contribution:
- * - [1] => Completed
- * - [2] => Pending
- * - [3] => Cancelled
- * - [4] => Failed
- * - [5] => In Progress
- * - [6] => Overdue
  *
  * @todo I think it might be helpful to add a few custom status codes.
  * @todo contribution_status_id: [7] => Thank you mail failed
@@ -785,7 +757,7 @@ function get_contribution_status() {
  */
 function get_contribution_status_key( $name ) {
   
-  $status_pairs = get_contribution_status();
+  $status_pairs = civicrm_api_contribution_status();
   
   $key = array_search( $name, $status_pairs );
   
