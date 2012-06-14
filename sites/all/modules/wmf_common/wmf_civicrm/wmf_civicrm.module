@@ -1,0 +1,39 @@
+<?php
+
+/*
+ * return a map from option value id => option value name
+ */
+function civicrm_api_option_group($group_name)
+{
+	static $cached_group = null;
+	if (!$cached_group)
+	{
+		$api = civicrm_api_classapi();
+		$api->OptionValue->Get(array(
+			'option_group_name' => $group_name,
+		));
+		$filter = function($row) {
+			return $row->name;
+		};
+		$cached_group = array_map($filter, $api->values());
+	}
+	return $cached_group;
+}
+
+function civicrm_api_contribution_status()
+{
+	return civicrm_api_option_group('contribution_status');
+}
+
+function civicrm_api_classapi()
+{
+	civicrm_initialize();
+	if (module_load_include('php', 'civicrm', '../api/class.api') === FALSE)
+	{
+		watchdog('civicrm_api', t('Failed to load civicrm api classes'), array(), WATCHDOG_ERROR);
+	}
+	else
+	{
+		return new civicrm_api3();
+	}
+}
