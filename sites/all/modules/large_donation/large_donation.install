@@ -1,0 +1,9 @@
+<?php
+
+function large_donation_install() {
+  // Nothing to install
+}
+
+function large_donation_uninstall() {
+  // Nothing to uninstall
+}

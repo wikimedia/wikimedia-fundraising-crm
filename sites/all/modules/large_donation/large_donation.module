@@ -1,0 +1,188 @@
+<?php
+
+/**
+ * Implementation of hook_menu().
+ */
+function large_donation_menu() {
+
+  $items = array();
+
+  $items['admin/settings/large_donation'] = array(
+    'title' => 'Large Donation Processor',
+    'description' => t('Configure large donation settings.'),
+    'access arguments' => array('administer large_donation'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('large_donation_settings'),
+  );
+
+  $items['admin/settings/large_donation/configure'] = array(
+    'title' => 'Configure',
+    'access arguments' => array('administer large_donation'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function large_donation_perm() {
+  return array('administer large_donation');
+}
+
+/**
+ * Callback for menu path "admin/settings/large_donation".
+ */
+function large_donation_settings() {
+  $form = array();
+
+  $form['large_donation_notifymail'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email Notification Address'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('large_donation_notifymail', ''),
+    '#description' => t('Enter the notification email contact address.'),
+  );
+
+  $form['large_donation_amount'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Large donation value'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('large_donation_amount', 1000),
+    '#description' => t('Donations over this amount will trigger an email.'),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * This hook is called from the module queue2civicrm in the function:
+ * queue2civicrm_import().
+ */
+function large_donation_queue2civicrm_import( $contribution_info ) {
+
+  $contribution_id = $contribution_info[ 'contribution_id' ];
+
+  $large_donation_amount = (float) variable_get('large_donation_amount', 0.00);
+
+  $gross = isset( $contribution_info['msg']['gross'] ) ?  (float) $contribution_info['msg']['gross'] : 0.00;
+
+  $currency = isset( $contribution_info['msg']['currency'] ) ? $contribution_info['msg']['currency'] : '';
+
+  if ( empty( $contribution_id ) ) {
+
+    watchdog('large_donation', 'Contribution id is empty!');
+
+  } elseif ( empty( $large_donation_amount ) ) {
+
+    watchdog('large_donation', 'Large donation threshold amount is not set up!');
+
+  } elseif ( $gross >= $large_donation_amount ) {
+
+    watchdog('large_donation', 'Calling large donation function for contribution: ' . $contribution_info['contribution_id'] . '<pre>' . check_plain(print_r($contribution_info, TRUE)) . '</pre>');
+
+    large_donation_notification_send( $contribution_info );
+
+  } else {
+
+    watchdog('large_donation', 'Donation amount [ ' . $gross . ' ' . $currency . ' ] was not above the threshold [ ' . $large_donation_amount . ' ]');
+
+  }
+}
+
+/**
+ * large_donation_notification
+ *
+ * The email should include the total amount, source amount, contact and
+ * contribution ids, and a link to the contact/contribution.
+ *
+ * No personally identifiable information should be included.
+ *
+ * @param array $contribution_info
+ */
+function large_donation_notification_send( $contribution_info ){
+
+  global $base_url;
+
+  $site_url = $base_url . base_path();
+
+  $to = variable_get('large_donation_notifymail', '');
+
+  $large_donation_amount = (float) variable_get('large_donation_amount', 0.00);
+
+  $contact_id = isset( $contribution_info['contact_id'] ) ? $contribution_info['contact_id'] : '';
+
+  $link = $site_url . '?q=civicrm/contact/view&reset=1&selectedChild=contribute&cid=' . $contact_id . '#Contributions';
+
+  $contribution_id = isset( $contribution_info['contribution_id'] ) ? $contribution_info['contribution_id'] : '';
+
+  $gross = isset( $contribution_info['msg']['gross'] ) ?  (float) $contribution_info['msg']['gross'] : 0.00;
+
+  $currency = isset( $contribution_info['msg']['currency'] ) ? $contribution_info['msg']['currency'] : '';
+
+  $payment_method = isset( $contribution_info['msg']['payment_method'] ) ? $contribution_info['msg']['payment_method'] : '';
+
+  if ($to != ''){
+
+    $message = '';
+
+    $message .= 'To whom it may concern:';
+    $message .= PHP_EOL;
+    $message .= PHP_EOL;
+    $message .= 'A large donation was made >= ' . $large_donation_amount . ' ' . $currency;
+    $message .= PHP_EOL;
+    $message .= PHP_EOL;
+    $message .= 'contact_id: ' . $contact_id;
+    $message .= PHP_EOL;
+    $message .= 'contribution_id: ' . $contribution_id;
+    $message .= PHP_EOL;
+    $message .= 'currency: ' . $currency;
+    $message .= PHP_EOL;
+    $message .= 'gross: ' . $gross;
+    $message .= PHP_EOL;
+    $message .= 'payment_method: ' . $payment_method;
+
+    $message .= PHP_EOL;
+    $message .= PHP_EOL;
+    $message .= 'Contact contribution in CiviCRM:';
+    $message .= PHP_EOL;
+    $message .= PHP_EOL;
+    $message .= $link;
+    $message .= PHP_EOL;
+    $message .= PHP_EOL;
+
+    $message .= 'You may need to examine this donation.';
+
+    require_once( drupal_get_path( 'module', 'thank_you' ) . '/class.phpmailer.php' );
+
+    $mail = new PHPMailer( true );
+
+    try {
+        $mail->set('Charset','utf-8');
+
+        $mail->AddAddress( $to, 'Wikimedia fundraising' );
+
+        $mail->SetFrom( 'nobody@wikimedia.org', 'The Wikimedia Foundation' );
+
+        $mail->Subject = 'WMF - large donation: ' . $gross . ' ' . $currency;
+
+        $mail->AltBody = $message;
+        $mail->MsgHTML( nl2br( $message ) );
+        $mail->Send();
+
+        $email_success = true;
+    } catch (phpmailerException $e) {
+        watchdog('large_donation', 'Sending large donation message failed for contribution (2): ' . $contribution_id . '<pre>' . check_plain(print_r($contribution_info, TRUE)) . "\n\n" . $e->errorMessage() . '</pre>', array(), WATCHDOG_ERROR);
+    } catch (Exception $e) {
+        watchdog('large_donation', 'Sending large donation message failed for contribution (3): ' . $contribution_id . '<pre>' . check_plain(print_r($contribution_info, TRUE)) . "\n\n" . $e->getMessage() . '</pre>', array(), WATCHDOG_ERROR);
+    }
+  } else {
+    watchdog('large_donation', 'Notification recipient address is not set up!');
+  }
+
+  if ( $email_success ) {
+    watchdog('large_donation', 'A large donation notification was sent to: ' . $to);
+  }
+}
+
