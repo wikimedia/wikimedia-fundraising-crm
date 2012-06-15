@@ -1,0 +1,7 @@
+name = Large Donation
+description = Check large donations and notify staff in the event this is a fraudulent or a major donation.
+core = 6.x
+dependencies[] = civicrm
+dependencies[] = queue2civicrm
+dependencies[] = thank_you
+package = Wikimedia
