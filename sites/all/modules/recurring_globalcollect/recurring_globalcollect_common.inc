@@ -13,11 +13,11 @@ require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_com
  *
  * @var string $standalone_globalcollect_adapter_path
  */
-$standalone_globalcollect_adapter_path = variable_get('standalone_globalcollect_adapter_path', drupal_get_path('module', 'recurring_globalcollect') . '/library/StandaloneGlobalCollectAdapter.php');
+$standalone_globalcollect_adapter_path = variable_get('standalone_globalcollect_adapter_path', drupal_get_path('module', 'recurring_globalcollect') . '/wmf-payment-adapter');
 
 // If $standalone_globalcollect_adapter_path is a valid file, require the class.
-if ( is_file( $standalone_globalcollect_adapter_path ) ) {
-  require_once $standalone_globalcollect_adapter_path;
+if ( is_dir( $standalone_globalcollect_adapter_path ) ) {
+  require_once implode(DIRECTORY_SEPARATOR, array($standalone_globalcollect_adapter_path, 'globalcollect.adapter.php'));
 }
 
 /**

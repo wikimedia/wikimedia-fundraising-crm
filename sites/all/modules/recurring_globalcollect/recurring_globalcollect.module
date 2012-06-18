@@ -85,17 +85,17 @@ function recurring_globalcollect_settings() {
   );
   
   // Get the path of the file to make sure it is installed.
-  $standalone_globalcollect_adapter_path = variable_get('standalone_globalcollect_adapter_path', drupal_get_path('module', 'recurring_globalcollect') . '/library/StandaloneGlobalCollectAdapter.php');
+  $standalone_globalcollect_adapter_path = variable_get('standalone_globalcollect_adapter_path', drupal_get_path('module', 'recurring_globalcollect') . '/wmf-payment-adapter');
 
   // Flag to tell the user to install the library
-  $standalone_globalcollect_adapter_installed = is_file( $standalone_globalcollect_adapter_path ) ? '<span style="color:green;">Installed</span>' : '<span style="color:red;">Please install</span>';
+  $standalone_globalcollect_adapter_installed = is_dir( $standalone_globalcollect_adapter_path ) ? '<span style="color:green;">Installed</span>' : '<span style="color:red;">Please install</span>';
 
   $form['standalone_globalcollect_adapter_path'] = array(
     '#type' => 'textfield',
     '#title' => t('StandaloneGlobalCollectAdapter Path'),
     '#required' => TRUE,
     '#default_value' => $standalone_globalcollect_adapter_path,
-    '#description' => t($standalone_globalcollect_adapter_installed . ' Link: ') . l(t('Current version of the StandaloneGlobalCollectAdapter library' ), "http://svn.wikimedia.org/viewvc/wikimedia/trunk/fundraising-misc/standalone/StandaloneGlobalCollectAdapter/StandaloneGlobalCollectAdapter.php?view=markup"),
+    '#description' => t($standalone_globalcollect_adapter_installed . ' Link: ') . t('Current version of the wmf-payment-adapter library' ),
   );
 
   $form['recurring_globalcollect_failmail'] = array(
@@ -409,8 +409,9 @@ function recurring_globalcollect_connect($result, $options = array()){
   $adapterOptions = array();
   
   // Set the merchant ID
-  $adapterOptions['merchantId'] = variable_get('recurring_globalcollect_merchant_id', 0);
-  
+  global $wgGlobalCollectGatewayMerchantID;
+  $wgGlobalCollectGatewayMerchantID = variable_get('recurring_globalcollect_merchant_id', 0);
+
   $IPADDRESS = isset($result['IPADDRESS']) ? $result['IPADDRESS'] : '';
   
   $IPADDRESS = (empty($IPADDRESS) && isset($_SERVER['SERVER_ADDR'])) ? $_SERVER['SERVER_ADDR'] : ''; 
@@ -435,9 +436,12 @@ function recurring_globalcollect_connect($result, $options = array()){
    
   // Increment the EFFORTID
   $values = array(
-      'EFFORTID' => $result['processor_id'] + 1,
-      'ORDERID' => $ORDERID,
-      'IPADDRESS' => $IPADDRESS,
+      'amount' => $result['amount'],
+      'effort_id' => $result['processor_id'] + 1,
+      'order_id' => $ORDERID,
+      'server_ip' => $IPADDRESS,
+      'currency_code' => $result['currency'],
+      'payment_product' => '',
   );
 
   // Set the URL for the adapter
@@ -449,32 +453,37 @@ function recurring_globalcollect_connect($result, $options = array()){
   }
 
   // $values and $options are used for testing.
-  $adapterOptions['url'] = recurring_globalcollect_build_url($values, $adapterOptions);
-   
-  $instance = StandaloneGlobalCollectAdapter::getInstance( $adapterOptions );
+  global $wgGlobalCollectGatewayURL;
+  $wgGlobalCollectGatewayURL = recurring_globalcollect_build_url($values, $adapterOptions['url']);
+
+  $instance = new GlobalCollectAdapter( $adapterOptions );
 
   watchdog('recurring_globalcollect', 'Processing payment: <pre>' . print_r($result, true) . '</pre>');
 
-  $instance->setValues( $values );
+  $instance->load_request_data( $values );
   
   try {
     _recurring_globalcollect_update_record_in_progress($result['id']);
     
-    $status = $instance->curlTransaction();
-
-    watchdog('recurring_globalcollect', 'Sending [successful] request: <pre>' . htmlentities($instance->getRequestDoPayment()) . '</pre>');
-    
-    if ($status) {
-      watchdog('recurring_globalcollect', 'Receiving response [successful]: <pre>' . htmlentities($instance->getResponse()) . '</pre>');
-    }
-    else {
-      watchdog('recurring_globalcollect', 'Receiving response [failure]: <pre>' . htmlentities($instance->getResponse()) . '</pre>', null, WATCHDOG_ERROR);
-    }
-
-    $errors = $instance->getResponseErrors();
+    $result = $instance->do_transaction('DO_PAYMENT');
+	if (!$result['status'])
+	{
+		watchdog('recurring_globalcollect', 'Failed DO_PAYMENT: <pre>' . htmlentities(print_r($result, true)) . '</pre>', null, WATCHDOG_ERROR);
+	}
+	else
+	{
+		$result = $instance->do_transaction('SET_PAYMENT');
+		if (!$result['status'])
+		{
+			watchdog('recurring_globalcollect', 'Failed SET_PAYMENT: <pre>' . htmlentities(print_r($result, true)) . '</pre>', null, WATCHDOG_ERROR);
+		}
+else {
+error_log("OK: ".print_r($result, true));
+}
+	}
     
     // If success, add a record to the contribution table and send a thank you email.
-    if ($status && empty($errors)) {
+    if ($result['status'] && empty($result['errors'])) {
       
       $contact = array(
           'id' => $result['contact_id'],
@@ -502,7 +511,7 @@ function recurring_globalcollect_connect($result, $options = array()){
        *
        * @var array $contribution
        */
-      $contribution = _queue2civicrm_contribution_insert($msg, $contact, $result['id'], $values['EFFORTID']);
+      $contribution = _queue2civicrm_contribution_insert($msg, $contact, $result['id'], $values['effort_id']);
       $contribution['contribution_id'] = $contribution['id'];
       unset( $contribution['id'] );
       
@@ -520,7 +529,7 @@ function recurring_globalcollect_connect($result, $options = array()){
     else {
      
       $affected_rows = _recurring_globalcollect_update_record_failure($result['id']);
-      watchdog('recurring_globalcollect', 'Update row for failure: rows updated [' . $affected_rows . ']. Errors: ' . print_r($errors, true));
+      watchdog('recurring_globalcollect', 'Update row for failure: rows updated [' . $affected_rows . ']. Errors: ' . print_r($result['errors'], true));
    }
     
     if (empty( $affected_rows)) {
@@ -533,7 +542,7 @@ function recurring_globalcollect_connect($result, $options = array()){
       watchdog('recurring_globalcollect', 'Rows updated [' . $affected_rows . ']. Only one row should be updated at a time.', null, WATCHDOG_ERROR);
     }
     
-    return $status;
+    return $result['status'];
   }
   catch (StandaloneGlobalCollectAdapter_Exception $e) {
 
@@ -558,9 +567,9 @@ function recurring_globalcollect_connect($result, $options = array()){
  * @param type $options
  * @return string; 
  */
-function recurring_globalcollect_build_url($values, $options) {
+function recurring_globalcollect_build_url($values, $gateway_url) {
     
-  $url = isset($options['url']) ? $options['url'] : '';
+  $url = isset($gateway_url) ? $gateway_url : '';
 
   // Fix case where boolean values are strings
   if ( $url == 'true') {
@@ -582,9 +591,9 @@ function recurring_globalcollect_build_url($values, $options) {
 
     if ($url) {
       $returnUrl .=  'curlTransaction.valid.response.php?';
-      $returnUrl .=  '&ORDERID=' . $values['ORDERID'];
-      $returnUrl .=  '&EFFORTID=' . $values['EFFORTID'];
-      $returnUrl .=  '&IPADDRESS=' . $values['IPADDRESS'];
+      $returnUrl .=  '&ORDERID=' . $values['order_id'];
+      $returnUrl .=  '&EFFORTID=' . $values['effort_id'];
+      $returnUrl .=  '&IPADDRESS=' . $values['server_ip'];
     }
     else {
       $returnUrl .= '404.php';
