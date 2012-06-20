@@ -164,7 +164,7 @@ function large_donation_notification_send( $contribution_info ){
 	        $mail->AddAddress( trim( $addx ) );
 		}
 
-        $mail->SetFrom( 'nobody@wikimedia.org', 'The Wikimedia Foundation' );
+        $mail->SetFrom( 'fr-tech@wikimedia.org', 'WMF CiviCRM-Bot' );
 
         $mail->Subject = 'WMF - large donation: ' . $gross . ' ' . $currency;
 
