@@ -163,7 +163,7 @@ function large_donation_notification_send( $contribution_info ){
 
 		$to = explode(',', $to);
 		foreach ( $to as $addx ){
-	        $mail->AddAddress( trim( $to ) );
+	        $mail->AddAddress( trim( $addx ) );
 		}
 
         $mail->SetFrom( 'nobody@wikimedia.org', 'The Wikimedia Foundation' );
