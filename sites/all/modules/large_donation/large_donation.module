@@ -103,9 +103,7 @@ function large_donation_queue2civicrm_import( $contribution_info ) {
  */
 function large_donation_notification_send( $contribution_info ){
 
-  global $base_url;
-
-  $site_url = $base_url . base_path();
+  $site_url = CIVICRM_UF_BASEURL . base_path();
 
   $to = variable_get('large_donation_notifymail', '');
 
