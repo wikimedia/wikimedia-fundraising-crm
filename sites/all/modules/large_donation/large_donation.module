@@ -42,7 +42,7 @@ function large_donation_settings() {
     '#title' => t('Email Notification Address'),
     '#required' => FALSE,
     '#default_value' => variable_get('large_donation_notifymail', ''),
-    '#description' => t('Enter the notification email contact address.'),
+    '#description' => t('Enter the notification email contact address, or multiple addresses seperated by commas.'),
   );
 
   $form['large_donation_amount'] = array(
@@ -50,7 +50,7 @@ function large_donation_settings() {
     '#title' => t('Large donation value'),
     '#required' => TRUE,
     '#default_value' => variable_get('large_donation_amount', 1000),
-    '#description' => t('Donations over this amount will trigger an email.'),
+    '#description' => t('Donations over this amount (USD) will trigger an email.'),
   );
 
   return system_settings_form($form);
@@ -161,7 +161,10 @@ function large_donation_notification_send( $contribution_info ){
     try {
         $mail->set('Charset','utf-8');
 
-        $mail->AddAddress( $to, 'Wikimedia fundraising' );
+		$to = explode(',', $to);
+		foreach ( $to as $addx ){
+	        $mail->AddAddress( trim( $to ) );
+		}
 
         $mail->SetFrom( 'nobody@wikimedia.org', 'The Wikimedia Foundation' );
 
