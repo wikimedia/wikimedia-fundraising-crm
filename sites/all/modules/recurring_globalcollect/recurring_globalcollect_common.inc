@@ -19,44 +19,11 @@ if ( is_dir( $standalone_globalcollect_adapter_path ) ) {
 }
 
 /**
- * Wrapper for getting contributions
- *
- * @return  array  Returns an array of options for @see _recurring_globalcollect_get_next_sched_contribution() and @see _recurring_globalcollect_get_failure_retry_date()
- */
-function recurring_globalcollect_get($options = array()) {
-
-  /**
-   * @var array $allowed_processes These are the allowed process to run.
-   */
-  $allowed_processes = array(
-      'next_sched_contribution',
-      'failure_retry_date',
-  );
-
-  if (isset($options['id'])) {
-    // fetch by id
-    return _recurring_globalcollect_get_payment_by_id($options['id']);
-  }
-  elseif ( isset($options['process']) && $options['process'] == 'next_sched_contribution' ) {
-    return _recurring_globalcollect_get_next_sched_contribution($options);
-  }
-  elseif ( isset($options['process']) && $options['process'] == 'failure_retry_date' ) {
-    return _recurring_globalcollect_get_failure_retry_date($options);
-  }
-  else {
-    $message = 'What are you trying process? $options: <pre>' . print_r($options, true) . '</pre>';
-    watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
-    drush_set_error('RG', $message);
-    return false;
-  }
-}
-
-/**
  * Select one payment by the primary key.
  * 
  * @return false|object
  */
-function _recurring_globalcollect_get_payment_by_id($id) {
+function recurring_globalcollect_get_payment_by_id($id) {
 
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
@@ -104,15 +71,12 @@ function _recurring_globalcollect_get_payment_by_id($id) {
  * 
  * @return false|object
  */
-function _recurring_globalcollect_get_next_sched_contribution($options = array()) {
-
+function recurring_globalcollect_get_next_sched_contribution($limit = 1, $date = 'now')
+{
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
   $dbs->use_civicrm();
 
-  $date = isset( $options['date'] ) ? $options['date'] : 'now';
-
-  // Get the date
   $date = date('Y-m-d', strtotime($date));
   
   $start_day = $date . ' 00:00:00';
@@ -143,27 +107,24 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
   
   // Add on the WHERE statement
   $query .= $where;
+  $query .= " LIMIT %d";
+
+  $res = db_query( $query, $start_day, $end_day, $contribution_status_id, $limit );
   
-  // Add a limit.
-  if (!empty($limit)) {
-    $query .= " LIMIT %d";
-    $res = db_query( $query, $start_day, $end_day, $contribution_status_id, $limit );
+  if ($limit > 1) {
+    $out = array();
+    while ($recur = db_fetch_object( $res ))
+    {
+      $out[] = $recur;
+    }
   } else {
-    $res = db_query( $query, $start_day, $end_day, $contribution_status_id );
+    $out = db_fetch_object( $res );
   }
-  
-  $result = db_fetch_object( $res );
 
   // Restore the default connection.
   $dbs->use_default();
 
-  // If nothing found, return false.
-  if (empty($result)) {
-    
-    $result = false;
-  }
- 
-  return $result;
+  return $out;
 }
 
 /**
@@ -312,7 +273,7 @@ function _recurring_globalcollect_get_cycle_day_for_month($cycle_day, $month, $y
  * 
  * @return false|object
  */
-function _recurring_globalcollect_get_failure_retry_date($options = array()) {
+function recurring_globalcollect_get_failure_retry_date($options = array()) {
 
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
@@ -425,12 +386,12 @@ function _recurring_globalcollect_update_record_failure($id) {
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
  
-  $result = _recurring_globalcollect_get_payment_by_id($id);
+  $result = recurring_globalcollect_get_payment_by_id($id);
   $record = is_object($result) ? (array) $result : false;
   
   if (empty($record)) {
     $message = 'No record was found with the id: [' . $id . '].';
-    throw new Exception($message);
+    throw new RecurringGlobalcollectInternalException($message);
   }
 
   // Make sure all of the proper fields are set to sane values.
@@ -497,12 +458,12 @@ function _recurring_globalcollect_update_record_in_progress($id) {
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
  
-  $result = _recurring_globalcollect_get_payment_by_id($id);
+  $result = recurring_globalcollect_get_payment_by_id($id);
   $record = is_object($result) ? (array) $result : false;
   
   if (empty($record)) {
     $message = 'No record was found with the id: [' . $id . '].';
-    throw new Exception($message);
+    throw new RecurringGlobalcollectInternalException($message);
   }
   
   if ($record['contribution_status_id'] != 1) {
@@ -552,12 +513,12 @@ function _recurring_globalcollect_update_record_success($id) {
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
  
-  $result = _recurring_globalcollect_get_payment_by_id($id);
+  $result = recurring_globalcollect_get_payment_by_id($id);
   $record = is_object($result) ? (array) $result : false;
   
   if (empty($record)) {
     $message = 'No record was found with the id: [' . $id . '].';
-    throw new Exception($message);
+    throw new RecurringGlobalcollectInternalException($message);
   }
 
   // Make sure all of the proper fields are set to sane values.
@@ -610,25 +571,25 @@ function _recurring_globalcollect_validate_record_for_update($record) {
   // Make sure $cycle_day is not empty
   if (empty($cycle_day)) {
     $message = 'cycle_day cannot be empty';
-    throw new Exception( $message );
+    throw new RecurringGlobalcollectInternalException( $message );
   }
 
   // Make sure $frequency_interval is not empty
   if (empty($frequency_interval)) {
     $message = 'frequency_interval cannot be empty';
-    throw new Exception( $message );
+    throw new RecurringGlobalcollectInternalException( $message );
   }
 
   // Make sure a valid interval is assigned
   if (!in_array($frequency_unit, $allowed_intervals)) {
     $message = 'Invalid frequency_unit [' . $frequency_unit . '] for recurring_globalcollect. Allowed intervals: [ ' . implode(', ', $allowed_intervals) . ' ]';
-    throw new Exception( $message );
+    throw new RecurringGlobalcollectInternalException( $message );
   }
 
   // Make sure $next_sched_contribution is assigned
   if (empty($next_sched_contribution)) {
     $message = 'next_sched_contribution cannot be empty';
-    throw new Exception( $message );
+    throw new RecurringGlobalcollectInternalException( $message );
   }
 }
 
@@ -654,69 +615,6 @@ function _recurring_globalcollect_get_new_drush_errors(){
   }
   $oldErrors = $errors;
   return $ret;
-}
-
-/**
- * Will return the most serious of all the new drush errors since the last time you asked,
- * with all its new lines intact.
- *
- * @todo Move this to the wikimedia common module
- * @uses _recurring_globalcollect_get_new_drush_errors()
- */
-function _recurring_globalcollect_get_top_new_drush_error(){
-
-  $error = _recurring_globalcollect_get_new_drush_errors();
-
-  /**
-   *  @var  array  $severity  The severity error levels 
-   *
-   * $severity
-   * - CIVI_CONFIG: A problem with CiviCRM
-   * - RG: A problem with recurring_globalcollect
-   * - GLOBALCOLLECT: A problem with GLOBALCOLLECT
-   * - CIVI_INSERT: Failed inserting a completed contribution into civi. 
-   * - UNKNOWN: A unknown problem
-   */
-  $severity = array(
-    'CIVI_CONFIG',
-    'RG',
-    'GLOBALCOLLECT',
-    'CIVI_INSERT',
-    'UNKNOWN',
-  );
-  
-  if (empty($error)){
-    return false;
-  } else {  //pull the Top of Bad.
-    $top_error = false;
-    $top_code = false;
-
-    foreach($severity as $code){
-      if(array_key_exists($code, $error)){
-        $top_code = $code;
-        break;
-      }
-    }
-    if ($top_code === false){ //unknown code in the log there. Just pull #1.
-      foreach($error as $err_code=>$lines){
-        $top_code = $err_code;
-        break;
-      }
-    }
-
-    if ($top_code !== false){
-      $text = "Messages:";
-      foreach ($error[$top_code] as $key=>$errormessage){
-        $text .= "\n  $errormessage";
-      }
-
-      $top_error = array(
-        'err_code' => $top_code,
-        'err_text' => $text
-      );
-    }
-    return $top_error;
-  } 
 }
 
 /**

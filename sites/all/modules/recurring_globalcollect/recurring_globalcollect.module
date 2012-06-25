@@ -185,35 +185,25 @@ function recurring_globalcollect_settings() {
  * - $options['process'] next_sched_contribution | failure_retry_date
  * - $options['url'] Used for testing and overriding the url
  */
-function recurring_globalcollect_batch_process($options = array()) {
+function recurring_globalcollect_batch_process() {
 
   // The number of contributions to process
   $batch = (integer) variable_get('recurring_globalcollect_batch', 0);
   
-  // Make sure batch is an integer.
-  if (isset($options['batch'])) {
-    $batch = (integer) $options['batch'];
-    
-    // Remove batch from options
-    unset($options['batch']);
-  }
-  
-  $processed = 0;
-  
   watchdog('recurring_globalcollect', 'Attempting to process up to ' . $batch . ' recurring contribution(s).');
 
-  // Attempt to process items for the batch
-  for ($i = 0; $i < $batch; ++$i) {
-    $success = recurring_globalcollect_process($options);
-    if ($success) {
-      ++$processed;
-    } else {
-      break;
-    }
+  $contribution_batch = recurring_globalcollect_get_next_sched_contribution($batch);
+  if ($contribution_batch)
+  {
+      $result = recurring_globalcollect_process($contribution_batch, $options);
   }
 
-  if ($processed > 0) {
-    watchdog('recurring_globalcollect', 'Successfully processed ' . $processed . ' contribution(s).');
+  if (count($result['succeeded']) > 0) {
+    $processed = count($result['succeeded']) + count($result['failed']);
+    $message = "Processed $processed contribution(s).";
+    if (!empty($result['failed']))
+        $message .= " Encountered ".count($result['failed'])." failures.";
+    watchdog('recurring_globalcollect', $message);
   }
   else {
     watchdog('recurring_globalcollect', 'No contributions processed.');
@@ -244,164 +234,58 @@ function recurring_globalcollect_batch_process($options = array()) {
  *
  * @return  boolean  Returns false on error. Returns true if contributions were processed. Returns false if no contributions are ready to be processed.
  */
-function recurring_globalcollect_process($options = array()) {
-  
-  /**
-   * @var boolean $return The return value
-   */
-  $return = false;
+function recurring_globalcollect_process($contribution_batch, $options = array())
+{
+  $succeeded = array();
+  $failed = array();
+  foreach ($contribution_batch as $contribution_recur)
+  {
+      try {
+          $status = FALSE;
+          try {
+              $status = recurring_globalcollect_charge($contribution_recur, $options);
+          }
+          catch (WmfPaymentAdapterException $e)
+          {
+              throw new RecurringGlobalcollectGatewayException('gateway error', $contribution_recur, $e);
+          }
 
-  /**
-   * @var array $options_get Options to pass to recurring_globalcollect_get()
-   */
-  $options_get = array(
-  	  'date' => $options['date'],
-  	  'process' => isset( $options['process'] ) ? $options['process'] : 'next_sched_contribution',
+          if ($status)
+              $succeeded[] = $contribution_recur;
+          else
+              $failed[] = $contribution_recur;
+      }
+      catch (RecurringGlobalcollectException $e)
+      {
+          recurring_globalcollect_error($e);
+          $failed[] = $contribution_recur;
+      }
+      catch (Exception $e) {
+          $message = 'Batch processing aborted';
+          $e = new RecurringGlobalcollectException($message, $contribution_recur, $e);
+          recurring_globalcollect_error($e);
+          $failed[] = $contribution_recur;
+      }
+          /*
+           * catch (RecurringGlobalcollectCiviInsertException $e)
+           * {
+           * TODO This should not mark the payment as a failure, as it has 
+           * successfully gone through once already. Precautions should be taken to 
+           * make sure the transaction is marked as such, so the donor is not 
+           * overcharged.
+           */
+  }
+
+  return array(
+      'succeeded' => $succeeded,
+      'failed' => $failed,
   );
-  
-  try {
-
-    $contribution_recur = recurring_globalcollect_get($options_get);
-  
-    // Check to see if any contributions were found
-    if (empty($contribution_recur)) {
-      watchdog('recurring_globalcollect', 'No contributions are ready to be processed.');
-      $return = false;
-    }
-    else {
-  
-      $status = recurring_globalcollect_connect($contribution_recur, $options);
-
-      // If $status is false, see what went wrong
-      if ($status) {
-        $return = true;
-      }
-      else {
-        // There was a problem, process the error.
-        recurring_globalcollect_process_error();
-      }
-    }
-  }
-  catch (Exception $e) {
-    $message = 'Unable to process payment: ' . $e->getMessage();
-    watchdog('recurring_globalcollect', $message, array(), WATCHDOG_ERROR);
-    drush_set_error('UNKNOWN', dt($message));
-    return false;
-  }  
-
-  return $return;
 }
 
 /**
- * Process the error
- *
- * @todo Any errors found in this method should not mark the contribution as a failure.
+ * Connect to GlobalCollect and process recurring charge
  */
-function recurring_globalcollect_process_error() {
-  
-  /**
-   * @var array $top_error The top error in the stack
-   */
-  $top_error = _recurring_globalcollect_get_top_new_drush_error();
-  
-  /**
-   * @var string $err_code The error code
-   */
-  $err_code = isset($top_error['err_code']) ? $top_error['err_code'] : 'UNKNOWN';
-  
-  /**
-   * @var string $err_text The error message
-   */
-  $err_text = isset($top_error['err_text']) ? $top_error['err_text'] : 'An error occured, but no error was generated at the incident.';
-  
-  /**
-   * @var string $watchdog_link The watchdog operations link
-   */
-  $watchdog_link = '';
-  
-  /**
-   * @var string $watchdog_message The watchdog error message
-   */
-  $watchdog_message = $err_code . ': ' . $err_text;
-  
-  /**
-   * @var integer $watchdog_severity The watchdog error severity
-   */
-  $watchdog_severity = WATCHDOG_ERROR;
-  
-  /**
-   * @var string $watchdog_type The watchdog error type
-   */
-  $watchdog_type = 'recurring_globalcollect';
-  
-  // Decide what to do with error.
-  switch ($err_code){
-    
-    /**
-     * CIVI_CONFIG
-     *
-     * Check your CiviCRM configuration
-     */
-    case 'CIVI_CONFIG':
-      break;
-    
-    /**
-     * RG
-     *
-     * There is a problem with recurring_globalcollect:
-     * - ORDERID was not found in the trxn_id
-     */
-    case 'RG':
-      break;
-    
-    /**
-     * GLOBALCOLLECT
-     *
-     * Something went wrong with the payment gateway.
-     *
-     * At this point, it is unknown what happended with the current transaction
-     *
-     * @todo This should not mark the payment as a failure
-     */
-    case 'GLOBALCOLLECT':
-      break;
-    
-    /**
-     * CIVI_INSERT
-     *
-     * Something went wrong inserting a record of the completed contribution 
-     * into civi
-     *
-     * @todo This should not mark the payment as a failure, as it has 
-     * successfully gone through once already. Precautions should be taken to 
-     * make sure the transaction is marked as such, so the donor is not 
-     * overcharged.
-     */
-    case 'CIVI_INSERT':
-      break;
-    
-    /**
-     * UNKNOWN
-     *
-     * Unhandled error
-     *
-     * Errors marked with UNKNOWN will need to be examined to make sure they 
-     * were left in the proper status.
-     */
-    default:
-      throw new Exception($watchdog_message);
-  }
-
-  watchdog($watchdog_type, $watchdog_message, array(), $watchdog_severity, $watchdog_link);
-  recurring_globalcollect_failmail($top_error, array());
-}
-
-/**
- * Connect to GlobalCollect with the StandaloneGlobalCollectAdapter
- *
- * @param object|array $result 
- */
-function recurring_globalcollect_connect($contribution_recur, $options = array()){
+function recurring_globalcollect_charge($contribution_recur, $options = array()){
   if (is_object($contribution_recur)) {
     $contribution_recur = (array) $contribution_recur;
   }
@@ -428,10 +312,8 @@ function recurring_globalcollect_connect($contribution_recur, $options = array()
     $ORDERID = $matches['ORDERID'];
   }
   else {
-    $message = 'ORDERID was not found in the trxn_id: ' . print_r($contribution_recur['trxn_id'], true);
-    watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
-    drush_set_error('RG', $message);
-    return false;
+    $message = t('ORDERID was not found in the trxn_id');
+    throw new RecurringGlobalcollectInternalException($message, $contribution_recur);
   }
    
   // Increment the EFFORTID
@@ -462,87 +344,59 @@ function recurring_globalcollect_connect($contribution_recur, $options = array()
 
   $instance->load_request_data( $values );
   
-  try {
-    _recurring_globalcollect_update_record_in_progress($contribution_recur['id']);
+  _recurring_globalcollect_update_record_in_progress($contribution_recur['id']);
+  
+  $result = $instance->do_transaction('Recurring_Charge');
+  
+  // If success, add a record to the contribution table and send a thank you email.
+  if ($result['status'] && empty($result['errors'])) {
     
-	$result = $instance->do_transaction('Recurring_Charge');
+    $contact = array(
+        'id' => $contribution_recur['contact_id'],
+    );
     
-    // If success, add a record to the contribution table and send a thank you email.
-    if ($result['status'] && empty($result['errors'])) {
-      
-      $contact = array(
-          'id' => $contribution_recur['contact_id'],
-      );
-      
-      $msg = array();
-      $msg['fee'] = 0.00;
-      
-      $msg['gateway'] = 'globalcollect';
-      $msg['gross'] = $contribution_recur['amount'];
-      $msg['net'] = $msg['gross'] - $msg['fee'];
-      //$msg['contribution_id'] = $contribution_recur['contribution_id'];
-      $msg['gateway_txn_id'] = $contribution_recur['trxn_id'];
-      $msg['payment_method'] = 'cc';
-      $msg['payment_submethod'] = '';
-      $msg['date'] = time();
-      $msg['original_currency'] = $contribution_recur['currency'];
-      $msg['original_gross'] = $msg['gross'];
-      /*
-       * This array needs to be rekeyed to be consistent with:
-       *
-       * @see thank_you_queue2civicrm_import
-       *
-       * id -> contribution_id
-       *
-       * @var array $contribution
-       */
-      $contribution = _queue2civicrm_contribution_insert($msg, $contact, $contribution_recur['id'], $values['effort_id']);
-      $contribution['contribution_id'] = $contribution['id'];
-      unset( $contribution['id'] );
-      
-      // Send thank you email, other post-import things
-      if ( $contribution ){
-        module_invoke_all( 'recurring_globalcollect', $contribution );
-      } else {
-        $message = "Contribution could not be added to civicrm, for the following message: " . print_r( $msg, true);
-        watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
-        drush_set_error("CIVI_INSERT", $message, true);
-      }
-   
-      $affected_rows = _recurring_globalcollect_update_record_success($contribution_recur['id']);
-    }
-    else {
-     
-      $affected_rows = _recurring_globalcollect_update_record_failure($contribution_recur['id']);
-      watchdog('recurring_globalcollect', 'Update row for failure: rows updated [' . $affected_rows . ']. Errors: ' . print_r($result['errors'], true));
-   }
+    $msg = array();
+    $msg['fee'] = 0.00;
     
-    if (empty( $affected_rows)) {
-      watchdog('recurring_globalcollect', 'Rows updated [' . $affected_rows . '].', null, WATCHDOG_ERROR);
-    }
-    elseif ($affected_rows == 1) {
-      watchdog('recurring_globalcollect', 'Rows updated [' . $affected_rows . '].');
-    }
-    else {
-      watchdog('recurring_globalcollect', 'Rows updated [' . $affected_rows . ']. Only one row should be updated at a time.', null, WATCHDOG_ERROR);
-    }
+    $msg['gateway'] = 'globalcollect';
+    $msg['gross'] = $contribution_recur['amount'];
+    $msg['net'] = $msg['gross'] - $msg['fee'];
+    //$msg['contribution_id'] = $contribution_recur['contribution_id'];
+    $msg['gateway_txn_id'] = $contribution_recur['trxn_id'];
+    $msg['payment_method'] = 'cc';
+    $msg['payment_submethod'] = '';
+    $msg['date'] = time();
+    $msg['original_currency'] = $contribution_recur['currency'];
+    $msg['original_gross'] = $msg['gross'];
+    /*
+     * This array needs to be rekeyed to be consistent with:
+     *
+     * @see thank_you_queue2civicrm_import
+     *
+     * id -> contribution_id
+     *
+     * @var array $contribution
+     */
+    $contribution = _queue2civicrm_contribution_insert($msg, $contact, $contribution_recur['id'], $values['effort_id']);
+    $contribution['contribution_id'] = $contribution['id'];
+    unset( $contribution['id'] );
     
-    return $result['status'];
+    if ( !$contribution ){
+        throw new RecurringGlobalcollectCiviInsertException($message);
+    }
+
+    // Send thank you email, other post-import things
+    module_invoke_all( 'recurring_globalcollect', $contribution );
+ 
+    _recurring_globalcollect_update_record_success($contribution_recur['id']);
   }
-  catch (StandaloneGlobalCollectAdapter_Exception $e) {
-
-    watchdog('recurring_globalcollect', $e->getMessage(), null, WATCHDOG_ERROR);
-    drush_set_error("GLOBALCOLLECT", "Global Collect error:" . print_r($e->getMessage(), true));
-
-    return false;
-  }  
-  catch (Exception $e) {
-
-    watchdog('recurring_globalcollect', $e->getMessage(), null, WATCHDOG_ERROR);
-    drush_set_error("UNKNOWN", "Unknown error:" . print_r($e->getMessage(), true));
-    
-    return false;
-  }  
+  else
+  {
+    _recurring_globalcollect_update_record_failure($contribution_recur['id']);
+    throw new RecurringGlobalcollectGatewayException('recurring charge failed', $result);
+  }
+  
+  return $result;
 }
 
 /**
