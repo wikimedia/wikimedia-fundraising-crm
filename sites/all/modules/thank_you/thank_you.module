@@ -12,7 +12,7 @@ function thank_you_menu() {
     'access arguments' => array('administer thank you'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('thank_you_settings_form'),
-	'type' => MENU_CALLBACK,
+	'type' => MENU_NORMAL_ITEM,
   );
   
   $items['thank_you/%'] = array(
@@ -56,8 +56,7 @@ function thank_you_send_test() {
 	// allow the user to specify the email address to which to send the test email
 	$form['thank_you_test_email'] = array(
 		'#type' => 'textfield',
-		'#title' => t('Send test email to:'),
-		'#default_value' => 'pgehres@wikimedia.org',
+		'#title' => t('Send test email to'),
 		'#required' => TRUE
 	);
 
@@ -86,7 +85,7 @@ function thank_you_send_test() {
 	return $form;
 }
 
-function thank_you_send_test_submit( $form_id, $form_values ) {
+function thank_you_send_test_submit( $form_id, &$form_values ) {
 	if ( !is_array( $form_values ) ){
 		# well, something here is broken
 		drupal_set_message("Test thank you email failed.", 'error');
@@ -99,10 +98,11 @@ function thank_you_send_test_submit( $form_id, $form_values ) {
 		drupal_set_message("Test thank you email missing required settings.", 'error');
 	}
 
+	$email = $form_values['values']['thank_you_test_email'];
 	civicrm_initialize( true );
 	$contact = civicrm_api("Contact","Get", array (
 		'version' =>'3',
-		'email' => 'pgehres@wikimedia.org', # TODO: this should first search for the email specified
+		'email' => $email,
 		'sequential' => 1
 	));
 	# check for errors in the API result
@@ -122,7 +122,7 @@ function thank_you_send_test_submit( $form_id, $form_values ) {
 	} else {
 		# hmm, the email address is not associated with a contact
 		# in this CiviCRM instance, try me
-		$form_values['thank_you_test_email'] = "pgehres@wikimedia.org";
+		$form_values['thank_you_test_email'] = $email;
 		# lets avoid an infinite loop
 		$form_values['thank_you_test_prev_err'] = TRUE;
 		# try once more
@@ -149,21 +149,9 @@ function thank_you_send_test_submit( $form_id, $form_values ) {
 		drupal_set_message("Test thank you email failed on contribution lookup, including defaults.", 'error');
 		# TODO: is there some way to select a random contribution? That could be fun :-)
 		return false;
-
-	} else {
-		# hmm, the email address is not associated with a contact
-		# in this CiviCRM instance, try me
-		# TODO: this makes it such that the specified email doesn't get the email, I do
-		$form_values['values']['thank_you_test_email'] = "pgehres@wikimedia.org";
-		# lets avoid an infinite loop
-		$form_values['values']['thank_you_test_prev_err'] = TRUE;
-		# try once more
-		# TODO: why do we not see this message
-		drupal_set_message("Contact not found for email address.  Trying default.", 'error');
-		return thank_you_send_test_submit( $form_id, $form_values );
 	}
 
-	if ( thank_you_send( $contribution[ 'contribution_id' ],
+	if ( TRUE === thank_you_send( $contribution[ 'contribution_id' ],
 						 array(
 							  "language" => $form_values['values']['thank_you_test_language'],
 							  "email" => $form_values['values']['thank_you_test_email']
