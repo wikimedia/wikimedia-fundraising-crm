@@ -3,7 +3,7 @@
 /*
  * return a map from option value id => option value name
  */
-function civicrm_api_option_group($group_name)
+function civicrm_api_option_group($group_name, $key = null)
 {
 	static $cached_group = null;
 	if (!$cached_group)
@@ -17,12 +17,17 @@ function civicrm_api_option_group($group_name)
 		};
 		$cached_group = array_map($filter, $api->values());
 	}
+	if ($key)
+	{
+		$forwards = array_flip($cached_group);
+		return $forwards[$key];
+	}
 	return $cached_group;
 }
 
-function civicrm_api_contribution_status()
+function civicrm_api_contribution_status($key = null)
 {
-	return civicrm_api_option_group('contribution_status');
+	return civicrm_api_option_group('contribution_status', $key);
 }
 
 function civicrm_api_classapi()

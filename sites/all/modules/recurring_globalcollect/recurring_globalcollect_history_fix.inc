@@ -71,7 +71,7 @@ function recurring_globalcollect_get_all_recorded_failures(){
 	 */
 	
 	$sql = "SELECT id, trxn_id, contact_id, amount, currency from civicrm_contribution_recur WHERE trxn_id LIKE 'RECURRING GLOBALCOLLECT%' AND failure_count > 0";
-	$dbs = _queue2civicrm_get_dbs();
+	$dbs = wmf_civicrm_get_dbs();
 	$dbs->use_civicrm();
 	$ret = db_query( $sql );
 	$result = array();
@@ -87,7 +87,7 @@ function recurring_globalcollect_get_all_recorded_failures(){
 
 function recurring_globalcollect_check_xml_in_watchdog( $gc_id ){
 	$sql = "select message from watchdog where type='recurring_global' AND message LIKE '%&lt;ORDERID&gt;%d&lt;/ORDERID&gt;%'";
-	$dbs = _queue2civicrm_get_dbs();
+	$dbs = wmf_civicrm_get_dbs();
 	$dbs->use_default();	
 	$ret = db_query( $sql, $gc_id );
 	$result = array();
@@ -113,7 +113,7 @@ function recurring_globalcollect_check_xml_in_watchdog( $gc_id ){
 }
 
 function recurring_globalcollect_undo_failure($civi_recur_id){
-	$dbs = _queue2civicrm_get_dbs();
+	$dbs = wmf_civicrm_get_dbs();
 	$dbs->use_civicrm();	
 	//undo everything we did before. 
 	$contribution_status_id = 1; //1 is for "Good". 
