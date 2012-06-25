@@ -3,10 +3,8 @@
  * Common functions for recurring_globalcollect modules 
  */
 
-/**
- * @see _queue2civicrm_get_dbs
- */
-require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_common.inc' );
+require_once( drupal_get_path( 'module', 'wmf_civicrm' ) . '/db_switcher.inc' );
+require_once 'errors.inc';
 
 /**
  * Get the path of the file to make sure it is installed.
@@ -61,7 +59,7 @@ function recurring_globalcollect_get($options = array()) {
 function _recurring_globalcollect_get_payment_by_id($id) {
 
   // make sure we're using the default (civicrm) db
-  $dbs = _queue2civicrm_get_dbs();
+  $dbs = wmf_civicrm_get_dbs();
   $dbs->use_civicrm();
 
   $query = 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` WHERE `civicrm_contribution_recur`.`id` = %d LIMIT 1';
@@ -109,7 +107,7 @@ function _recurring_globalcollect_get_payment_by_id($id) {
 function _recurring_globalcollect_get_next_sched_contribution($options = array()) {
 
   // make sure we're using the default (civicrm) db
-  $dbs = _queue2civicrm_get_dbs();
+  $dbs = wmf_civicrm_get_dbs();
   $dbs->use_civicrm();
 
   $date = isset( $options['date'] ) ? $options['date'] : 'now';
@@ -132,9 +130,7 @@ function _recurring_globalcollect_get_next_sched_contribution($options = array()
       $start_day = date('Y-m-d 00:00:00', strtotime($decrement_date, $start_day_stamp));
   }
   
-  $limit = isset($options['limit']) ? (integer) abs($options['limit']) : 1;
-  
-  $contribution_status_id = get_contribution_status_key('Completed');
+  $contribution_status_id = civicrm_api_contribution_status('Completed');
   
   $query  = '';
   $query .= 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` ';
@@ -319,7 +315,7 @@ function _recurring_globalcollect_get_cycle_day_for_month($cycle_day, $month, $y
 function _recurring_globalcollect_get_failure_retry_date($options = array()) {
 
   // make sure we're using the default (civicrm) db
-  $dbs = _queue2civicrm_get_dbs();
+  $dbs = wmf_civicrm_get_dbs();
   $dbs->use_civicrm();
 
   $date = isset( $options['date'] ) ? $options['date'] : 'now';
@@ -329,7 +325,7 @@ function _recurring_globalcollect_get_failure_retry_date($options = array()) {
 
   $limit = isset($options['limit']) ? (integer) abs($options['limit']) : 1;
 
-  $contribution_status_id = get_contribution_status_key('Failed');
+  $contribution_status_id = civicrm_api_contribution_status('Failed');
   
   $query  = '';
   $query .= 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` ';
@@ -387,7 +383,7 @@ function _recurring_globalcollect_get_subscription_by_order_id($order_id) {
   }
   
   // make sure we're using the default (civicrm) db
-  $dbs = _queue2civicrm_get_dbs();
+  $dbs = wmf_civicrm_get_dbs();
   $dbs->use_civicrm();
 
   $query  = 'SELECT `civicrm_contribution_recur`.*, `civicrm_contact`.`display_name` FROM `civicrm_contribution_recur`';
@@ -427,7 +423,7 @@ function _recurring_globalcollect_get_subscription_by_order_id($order_id) {
 function _recurring_globalcollect_update_record_failure($id) {
 
   // make sure we're using the default (civicrm) db
-  $dbs = _queue2civicrm_get_dbs();
+  $dbs = wmf_civicrm_get_dbs();
  
   $result = _recurring_globalcollect_get_payment_by_id($id);
   $record = is_object($result) ? (array) $result : false;
@@ -443,12 +439,12 @@ function _recurring_globalcollect_update_record_failure($id) {
   $recurring_globalcollect_failure_retry_rate = (integer) abs(variable_get('recurring_globalcollect_failure_retry_rate', 1));
 
   $cancel = false;
-  $contribution_status_id = get_contribution_status_key('Failed');
+  $contribution_status_id = civicrm_api_contribution_status('Failed');
   $failures_before_cancellation = (integer) variable_get('recurring_globalcollect_failures_before_cancellation', 0);
 
   // If there have been too many failures, cancel this payment permanently.
   if ( $record['failure_count'] >= ( $failures_before_cancellation - 1 ) ) {
-    $contribution_status_id = get_contribution_status_key('Cancelled');
+    $contribution_status_id = civicrm_api_contribution_status('Cancelled');
     $end_date = 'NULL';
     $failure_retry_date = 'NULL';
     $next_sched_contribution = 'NULL';
@@ -499,7 +495,7 @@ function _recurring_globalcollect_update_record_failure($id) {
 function _recurring_globalcollect_update_record_in_progress($id) {
 
   // make sure we're using the default (civicrm) db
-  $dbs = _queue2civicrm_get_dbs();
+  $dbs = wmf_civicrm_get_dbs();
  
   $result = _recurring_globalcollect_get_payment_by_id($id);
   $record = is_object($result) ? (array) $result : false;
@@ -525,7 +521,7 @@ function _recurring_globalcollect_update_record_in_progress($id) {
   // Only update if status is Completed
   $query .= ' AND `contribution_status_id` != %d';
   $dbs->use_civicrm();
-  db_query($query, get_contribution_status_key('In Progress'), $id, get_contribution_status_key('In Progress'));
+  db_query($query, civicrm_api_contribution_status('In Progress'), $id, civicrm_api_contribution_status('In Progress'));
 
   $affected_rows = (integer) db_affected_rows();
   
@@ -554,7 +550,7 @@ function _recurring_globalcollect_update_record_in_progress($id) {
 function _recurring_globalcollect_update_record_success($id) {
 
   // make sure we're using the default (civicrm) db
-  $dbs = _queue2civicrm_get_dbs();
+  $dbs = wmf_civicrm_get_dbs();
  
   $result = _recurring_globalcollect_get_payment_by_id($id);
   $record = is_object($result) ? (array) $result : false;
@@ -579,7 +575,7 @@ function _recurring_globalcollect_update_record_success($id) {
   $query .= " `next_sched_contribution` = '%s'";
   $query .= ' WHERE id = %d';
   $dbs->use_civicrm();
-  db_query($query, get_contribution_status_key('Completed'), $next_sched_contribution, $id);
+  db_query($query, civicrm_api_contribution_status('Completed'), $next_sched_contribution, $id);
 
   $affected_rows = (integer) db_affected_rows();
   
@@ -736,35 +732,4 @@ function buildDefaultTestUrl() {
   $defaultTestUrl = $protocol . '://' . $host . '/';
 
   return $defaultTestUrl;
-}
-
-/**
- * Get the contribution status name
- *
- * @param string $name The name of the key.
- *
- * @todo I think it might be helpful to add a few custom status codes.
- * @todo contribution_status_id: [7] => Thank you mail failed
- * @todo contribution_status_id: [8] => Ended
- *
- * Do not confuse name with the label in the database. The label may be changed.
- *
- * @uses get_contribution_status()
- *
- * @todo Move this to the wikimedia common module
- *
- * @return integer Returns the associated key for the $name
- */
-function get_contribution_status_key( $name ) {
-  
-  $status_pairs = civicrm_api_contribution_status();
-  
-  $key = array_search( $name, $status_pairs );
-  
-  if ( $key === false ) {
-    $message = 'The key [' . $name . '] was not found.';
-    throw new Exception($message);
-  }
-  
-  return $key;
 }

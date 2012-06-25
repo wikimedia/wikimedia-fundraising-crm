@@ -610,61 +610,6 @@ function recurring_globalcollect_build_url($values, $gateway_url) {
 }
 
 /**
- * recurring_globalcollect_failmail
- *
- * @param type $error
- * @param type $message
- */
-function recurring_globalcollect_failmail($error, $message){
-  $to = variable_get('recurring_globalcollect_failmail', '');
-  if ($to != ''){
-    $params['error'] = $error;
-    $params['message'] = $message;
-    
-    //$params['removed'] = $removed;
-    drupal_mail('recurring_globalcollect', 'fail', $to, language_default(), $params);
-  } else {
-    watchdog('recurring_globalcollect', 'Failmail recipient address not set up!');
-  }
-}
-
-/**
- * recurring_globalcollect_mail
- * 
- * Is this being called somewhere? Is it a hook?
- * 
- * @param type $key
- * @param type $message
- * @param type $params 
- */
-function recurring_globalcollect_mail($key, &$message, $params) {
-  $language = $message['language'];
-  switch($key) {
-    case 'fail':
-      if(empty($params['error'])){
-        $message['subject'] = t('recurring_globalcollect Fail Mail : UNKNOWN ERROR');
-        $message['body'][] = t("A payment failed for reasons unknown, while being processed in recurring_globalcollect:");
-      } else {
-        $message['subject'] = t('recurring_globalcollect Fail Mail');
-        $message['body'][] = t("A payment generated the following error(s) while being processed in recurring_globalcollect:");
-      }
-
-      if(!empty($params['error'])){
-        $message['body'][] = t("Error Code: ") . $params['error']['err_code'];
-        $message['body'][] = $params['error']['err_text'];
-      }
-      if(!empty($params['message'])){
-        $message['body'][] = "---" . t("Message") . "---";
-        $message['body'][] = print_r($params['message'], true);
-        $message['body'][] = "---" . t("End") . "---";
-      } else {
-        $message['body'][] = t("The exact message was deemed irrelevant.");
-      }
-      break;
-  }
-}
-
-/**
  * Create the form to search for subscriptions by order id.
  */ 
 function recurring_globalcollect_search_by_order_id_form() {

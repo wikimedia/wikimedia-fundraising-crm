@@ -2,6 +2,7 @@
 
 // include the only files for this module
 require_once 'civicrm_api_check.php';
+require_once 'failmail.php';
 
 
 function replace_messages( $string, $message_file, $language='en' ){
