@@ -6,17 +6,6 @@
 require_once( drupal_get_path( 'module', 'wmf_civicrm' ) . '/db_switcher.inc' );
 require_once 'errors.inc';
 
-/**
- * Get the path of the file to make sure it is installed.
- *
- * @var string $standalone_globalcollect_adapter_path
- */
-$standalone_globalcollect_adapter_path = variable_get('standalone_globalcollect_adapter_path', drupal_get_path('module', 'recurring_globalcollect') . '/wmf-payment-adapter');
-
-// If $standalone_globalcollect_adapter_path is a valid file, require the class.
-if ( is_dir( $standalone_globalcollect_adapter_path ) ) {
-  require_once implode(DIRECTORY_SEPARATOR, array($standalone_globalcollect_adapter_path, 'globalcollect.adapter.php'));
-}
 
 /**
  * Select one payment by the primary key.

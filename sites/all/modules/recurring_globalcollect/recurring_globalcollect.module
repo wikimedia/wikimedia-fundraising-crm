@@ -85,7 +85,7 @@ function recurring_globalcollect_settings() {
   );
   
   // Get the path of the file to make sure it is installed.
-  $standalone_globalcollect_adapter_path = variable_get('standalone_globalcollect_adapter_path', drupal_get_path('module', 'recurring_globalcollect') . '/wmf-payment-adapter');
+  $standalone_globalcollect_adapter_path = variable_get('standalone_globalcollect_adapter_path', null);
 
   // Flag to tell the user to install the library
   $standalone_globalcollect_adapter_installed = is_dir( $standalone_globalcollect_adapter_path ) ? '<span style="color:green;">Installed</span>' : '<span style="color:red;">Please install</span>';
@@ -95,7 +95,7 @@ function recurring_globalcollect_settings() {
     '#title' => t('StandaloneGlobalCollectAdapter Path'),
     '#required' => TRUE,
     '#default_value' => $standalone_globalcollect_adapter_path,
-    '#description' => t($standalone_globalcollect_adapter_installed . ' Link: ') . t('Current version of the wmf-payment-adapter library' ),
+    '#description' => t($standalone_globalcollect_adapter_installed . ' Link: ') . l(t('Current version of payment_library'), "https://svn.wikimedia.org/viewvc/wikimedia/trunk/fundraising-misc/payment_library/"),
   );
 
   $form['recurring_globalcollect_failmail'] = array(
@@ -337,6 +337,9 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
   // $values and $options are used for testing.
   global $wgGlobalCollectGatewayURL;
   $wgGlobalCollectGatewayURL = recurring_globalcollect_build_url($values, $adapterOptions['url']);
+
+  $standalone_globalcollect_adapter_path = variable_get('standalone_globalcollect_adapter_path', null);
+  require_once implode(DIRECTORY_SEPARATOR, array($standalone_globalcollect_adapter_path, 'globalcollect.adapter.php'));
 
   $instance = new GlobalCollectAdapter( $adapterOptions );
 
