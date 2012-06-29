@@ -371,6 +371,8 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     $msg['date'] = time();
     $msg['original_currency'] = $contribution_recur['currency'];
     $msg['original_gross'] = $msg['gross'];
+
+    $msg = _queue2civicrm_normalize_contrib_amnts($msg);
     /*
      * This array needs to be rekeyed to be consistent with:
      *
