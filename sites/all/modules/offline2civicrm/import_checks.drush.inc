@@ -8,8 +8,7 @@
  */
 
 if ( function_exists( 'drupal_get_path' ) ) {
-	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
-	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_stomp.inc' );
+  require_once( drupal_get_path( 'module', 'offline2civicrm' ) . '/offline2civicrm.common.inc' );
 }
 
 /**
@@ -76,7 +75,7 @@ function drush_import_checks() {
 				"city" => _get_value( "City", $row, $headers ),
 				"state_province" => _get_value( "State", $row, $headers ),
 				"postal_code" => _get_value( "Postal Code", $row, $headers ),
-				"gateway" => "check",
+				"gateway" => "merkle",
 				"payment_method" => _get_value( "Payment Instrument", $row, $headers ),
 				"payment_submethod" => "",
 				"check_number" => _get_value( "Check Number", $row, $headers ),
@@ -142,52 +141,4 @@ function drush_import_checks() {
 	} catch ( Exception $e ){
 		watchdog('offline2civicrm', 'Import checks: Exception thrown during check processing: ' . print_r( $e, true ), array(), WATCHDOG_ERROR);
 	}
-}
-
-/**
- * Loads the column headers into an array so that they can be used independent
- * of the column order when generating messages
- *
- * @param $row Array containing the column headers for the csv
- * @return Array mapping the header keys to the column index
- */
-function _load_headers( $row ){
-	$header_keys = array();
-
-	# trimming the " from each side
-	foreach( $row as $i => $k ) {
-		$header_keys[trim( $k, '"' )] = $i;
-	}
-	watchdog('offline2civicrm', 'Import checks: Column headers loaded from file', array(), WATCHDOG_INFO);
-
-	return $header_keys;
-}
-
-function _get_value( $column, $row, $headers, $default='' ){
-
-	if( !array_key_exists( $column, $headers ) ){
-		return $default;
-	} else {
-		return $row[ $headers[ $column ] ];
-	}
-}
-
-function _check_existing( $msg ){
-	global $dbs;
-
-	$trxn_id = $msg['payment_method'] . ' ' . $msg['gateway_txn_id'];
-	$dbs->use_civicrm();
-	$query = "SELECT id, trxn_id FROM civicrm_contribution WHERE trxn_id LIKE '%s%' LIMIT 1;";
-	$result = db_query($query, $trxn_id);
-	while( $row = db_fetch_array($result) ) {
-		$contribution = array(
-			'id' => $row['id'],
-			'trxn_id' => $row['trxn_id']
-		);
-		$dbs->use_default();
-
-		return $contribution;
-	}
-	$dbs->use_default();
-	return false;
 }
