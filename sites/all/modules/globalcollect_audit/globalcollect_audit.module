@@ -672,10 +672,6 @@ function globalcollect_audit_groom_logs(){
 				$files['gz'][] = $full_path;
 				continue;
 			}
-			if ( preg_match( '/globalcollect.\d{8}_\d{6}/', $file ) ){
-				$files['rename'][] = $full_path;
-				continue;
-			}
 			if ( preg_match( '/\d{8}_iop\.log/', $file ) ){
 				$files['iop'][globalcollect_audit_get_log_date_by_file($full_path)] = $full_path;
 				//rekey
@@ -684,6 +680,10 @@ function globalcollect_audit_groom_logs(){
 			if ( preg_match( '/globalcollect_\d{8}\.log/', $file ) ){
 				$files['log'][globalcollect_audit_get_log_date_by_file($full_path)] = $full_path;
 				//rekey
+				continue;
+			}
+			if ( preg_match( '/globalcollect.\d{8}/', $file ) ){
+				$files['rename'][] = $full_path;
 				continue;
 			}
 		}
@@ -719,10 +719,10 @@ function globalcollect_audit_groom_logs(){
 		//and the file name should be the last array key. 
 		$just_file = array_pop($new_name);
 		$just_file = preg_replace(
-			array( '/_\d{6}/', '/globalcollect./' ),
-			array( '.log', 'globalcollect_'),
+			array( '/(payments.)?globalcollect./' ),
+			array( 'globalcollect_' ),
 			$just_file );
-		$new_name = implode( '/', $new_name ) . '/' . $just_file;
+		$new_name = implode( '/', $new_name ) . '/' . $just_file . '.log';
 		rename( $rename_me, $new_name );
 		$files['log'][] = $new_name;
 		unset($files['rename'][$key]);
