@@ -453,11 +453,11 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL, $ef
 		'version' => '3'
 	);
 
-	watchdog( 'queue2civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE));
+	watchdog( 'queue2civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), WATCHDOG_DEBUG);
 
 	$contribution_result = civicrm_api( "Contribution", "Create", $contribution );
 	
-	watchdog( 'queue2civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE));
+	watchdog( 'queue2civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), WATCHDOG_DEBUG);
 	
 	if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
 		return false;
@@ -539,6 +539,7 @@ function _queue2civicrm_contribution_recur_insert( $msg, $contact_id, $contribut
   if ( file_exists( $file ) ){
 	require_once( $file );
   } else {
+  //XXX this is a terrible thing to do.
   	$watchdog_message = 'Recurring Globalcollect module is not installed. Cannot insert recurring subscription.';
   	watchdog( 'queue2civicrm', $watchdog_message, null, WATCHDOG_ERROR );
   	drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
