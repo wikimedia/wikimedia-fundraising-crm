@@ -510,23 +510,19 @@ function queue2civicrm_verify_and_stage($msg){
 	}
 
 	$required = array(
-		'email' => '',
-		'gross' => '',
-		'original_currency' => '',
-		'gateway' => '',
-		'gateway_txn_id' => ''
+		'email',
+		'gross',
+		'original_currency',
+		'gateway',
+		'gateway_txn_id',
 	);
 
 	$failflag = false;
-	foreach ($required as $key=>$value){
-		if (!isset($msg[$key])){
-			watchdog('queue2civicrm', "Required Field '$key' not found in message:" . print_r($msg, true), WATCHDOG_ERROR);
-			drush_set_error("CIVI_REQ_FIELD", "Required Field '$key' not found in message:" . print_r($msg, true));
+	foreach ($required as $key){
+		if (!empty($msg[$key])){
+			$err = "Required Field '$key' not found in message";
 			$failflag = true;
 		}
-	}
-	if ($failflag === true){
-			return false;
 	}
 
 	if(!array_key_exists('fee', $msg) && !array_key_exists('net', $msg)){
@@ -536,6 +532,19 @@ function queue2civicrm_verify_and_stage($msg){
 		$msg['fee'] = $msg['gross'] - $msg['net'];
 	} elseif(array_key_exists('fee', $msg) && !array_key_exists('net', $msg)){
 		$msg['net'] = $msg['gross'] - $msg['fee'];
+	}
+
+	if (floatval($msg['net']) <= 0)
+	{
+		$err = "Positive amount required";
+		$failflag = true;
+	}
+
+	if ($failflag === true){
+		$err .= ":\n" . print_r($msg, true);
+		watchdog('queue2civicrm', $err, WATCHDOG_ERROR);
+		drush_set_error("CIVI_REQ_FIELD", $err);
+		return false;
 	}
 
     $msg['anonymous'] = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
