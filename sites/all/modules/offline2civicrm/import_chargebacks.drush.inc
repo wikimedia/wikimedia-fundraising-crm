@@ -57,8 +57,6 @@ function drush_import_chargebacks($processor=NULL, $filename=NULL){
       watchdog('offline2civicrm', 'Import chargebacks: Unsupported processor' . $processor, array(), WATCHDOG_ERROR);
       return;
   }
-
-  civicrm_initialize();
 }
 
 function _offline2civicrm_import_chargebacks_chargeback_trxn($contribution_id){
@@ -140,6 +138,7 @@ function _offline2civicrm_import_chargebacks_globalcollect($filename){
       if(!array_key_exists('id', $contribution)){
         watchdog('offline2civicrm', "Contribution ID not found for trxn_id: " .
           print_r($row, TRUE) . print_r($contribution, TRUE), WATCHDOG_ERROR);
+        continue;
       }
 
       // execute the chargeback
