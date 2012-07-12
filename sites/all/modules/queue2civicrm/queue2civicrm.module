@@ -519,7 +519,7 @@ function queue2civicrm_verify_and_stage($msg){
 
 	$failflag = false;
 	foreach ($required as $key){
-		if (!empty($msg[$key])){
+		if (empty($msg[$key])){
 			$err = "Required Field '$key' not found in message";
 			$failflag = true;
 		}
