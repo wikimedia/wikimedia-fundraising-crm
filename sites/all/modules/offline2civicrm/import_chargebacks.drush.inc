@@ -85,6 +85,11 @@ function _offline2civicrm_import_chargebacks_chargeback_trxn($contribution_id){
 
   $contribution = $contribution_flat;
 
+  if(substr($contribution["contribution_source"], 0, 3) == "RFD"){
+      // the contribution has already been charged back or refunded
+      return true;
+  }
+
   $contribution["total_amount"] = "0.00";
   $contribution["net_amount"] = "0.00";
   $contribution["contribution_source"] = "RFD CHARGEDBACK (" . $contribution["contribution_source"] . ")";
