@@ -51,6 +51,7 @@ function drush_import_chargebacks($processor=NULL, $filename=NULL){
 
   switch(strtoupper($processor)){
     case 'GLOBALCOLLECT':
+      civicrm_initialize();
       _offline2civicrm_import_chargebacks_globalcollect($filename);
       break;
     default:
