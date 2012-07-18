@@ -775,7 +775,7 @@ function _queue2civicrm_get_payment_instrument( $msg ){
 						$payment_instrument .= ': American Express';
 						break;
 					case 'maestro':
-						$payment_instrument .= ': Masetro';
+						$payment_instrument .= ': Maestro';
 						break;
 					case 'solo':
 						$payment_instrument .= ': Solo';
@@ -850,6 +850,10 @@ function _queue2civicrm_get_payment_instrument( $msg ){
 				if ( strtolower( $msg['gateway'] ) === 'payflowpro' ){
 					$payment_instrument = 'Credit Card';
 				}
+				break;
+			case 'amazon':
+				$payment_instrument = 'Amazon';
+				break;
 		}
 		
 		//if it's still the default after all that, and it's set (or we wouldn't be here) we have a problem. 

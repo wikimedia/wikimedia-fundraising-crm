@@ -1,0 +1,117 @@
+<?php
+
+/**
+ * Add contribution types and payment instruments
+ */
+function wmf_civicrm_update_6000()
+{
+    $contribution_types = array(
+        'Cash',
+    );
+    $payment_instruments = array(
+        'Amazon',
+        'Bank Transfer',
+        'Boleto',
+        'Bpay',
+        'Cash',
+        'Cashu',
+        'Check',
+        'Credit Card',
+        'Credit Card: American Express',
+        'Credit Card: Carte Bleue',
+        'Credit Card: Discover',
+        'Credit Card: JCB',
+        'Credit Card: Laser',
+        'Credit Card: Maestro',
+        'Credit Card: MasterCard',
+        'Credit Card: Solo',
+        'Credit Card: Visa',
+        'Direct Debit',
+        'Enets',
+        'EPS',
+        'iDeal',
+        'Moneybookers',
+        'Nordea',
+        'Paypal',
+        'Sofort',
+        'Webmoney',
+    );
+
+    wmf_civicrm_bootstrap_civi();
+    wmf_civicrm_create_contribution_types($contribution_types);
+    wmf_civicrm_create_payment_instruments($payment_instruments);
+
+    return array();
+}
+
+/**
+ * Load civi api, only for use from within .install code
+ */
+function wmf_civicrm_bootstrap_civi()
+{
+    //XXX XXX REALLY?
+    $civi_base = implode(DIRECTORY_SEPARATOR, array(drupal_get_path('module', 'civicrm'), '..'));
+    set_include_path(
+        implode(
+            PATH_SEPARATOR,
+            array(
+                get_include_path(),
+                $civi_base,
+                $civi_base.DIRECTORY_SEPARATOR.'packages',
+            )
+        )
+    );
+    require_once "api/class.api.php";
+    return new civicrm_api3(array('conf_path' => conf_path()));
+}
+
+function wmf_civicrm_create_contribution_types($contribution_types)
+{
+    require_once "CRM/Contribute/PseudoConstant.php";
+    require_once "CRM/Contribute/BAO/ContributionType.php";
+    foreach ($contribution_types as $type)
+    {
+        $contribution_type_id = CRM_Utils_Array::key(
+            $type,
+            CRM_Contribute_PseudoConstant::contributionType()
+        );
+
+        if (!$contribution_type_id)
+        {
+            $params = array(
+                'is_active' => 1,
+                'name' => $type,
+            );
+            $ids = array();
+            CRM_Contribute_BAO_ContributionType::add($params, $ids);
+        }
+    }
+}
+
+function wmf_civicrm_create_payment_instruments($payment_instruments)
+{
+    $api = wmf_civicrm_bootstrap_civi();
+
+    $api->OptionGroup->Get(array(
+        'name' => 'payment_instrument',
+    ));
+    $option_group = array_pop($api->values());
+    foreach ($payment_instruments as $instrument)
+    {
+        $api->OptionValue->Get(array(
+            'option_group_id' => $option_group->id,
+            'name' => $instrument,
+        ));
+
+        $result = $api->values();
+        if (empty($result))
+        {
+            $api->OptionValue->Create(array(
+                'option_group_id' => $option_group->id,
+                'name' => $instrument,
+                'label' => $instrument,
+                'is_active' => 1,
+            ));
+        }
+    }
+}
