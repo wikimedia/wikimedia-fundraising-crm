@@ -305,8 +305,21 @@ function globalcollect_audit_parse_all_wr1(){
 			$missing_txn_message = globalcollect_audit_format_data_for_stomp( $data );
 			
 			//but then we have to send the transaction...
-			
-			
+			if ( $test_mode ){
+				$local_built_ids[] = $order_id;
+				echo "!";
+			} else {
+				if ( sendStomp( $missing_txn_message ) ){
+					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
+					$local_built_ids[] = $order_id;
+					echo "!";
+				} else {
+					$wd_message = __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true );
+					$drush_message = "Failed sending STOMP message to queue.";
+					globalcollect_audit_log_error( $wd_message, "STOMP_BAD_SEND", $drush_message );
+					return;
+				}
+			}
 		}
 	}
 	
@@ -427,18 +440,16 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 		//set this as true down the page a bit when ctid is missing. We could be 
 		//running in some kind of half-missing mode.
 		$this_transaction_is_missing = true;
-//		echo print_r($wr1, true);
-//		die();
 	}
 	
 	$unstaged_amount = 0;
 	
 	if ( $this_transaction_is_missing && $make_missing ) {
 		$donor_data = globalcollect_audit_make_default_donor_data( $wr1 );
-	}
+	} 
 	
 	//if we have $donor_data, make sure it's rational
-	if ( (int)$wr1['Payment-amount'] !== (int)$donor_data['AMOUNT']  ){
+	if ( !$this_transaction_is_missing && ( (int)$wr1['Payment-amount'] !== (int)$donor_data['AMOUNT'] ) ){
 		$amount_problem = true;
 		if ( array_key_exists( 'Over-under-amount-local', $wr1 ) && (int)$wr1['Over-under-amount-local'] > 0 ){
 			//then the mismatch is expected, and with a little more checking...
@@ -454,15 +465,15 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 			globalcollect_audit_log_error( $message, "WR1_DATA_FORMAT" );
 			return null;
 		}
-	} else {
-		$unstaged_amount = (int)$wr1['Payment-amount']/100; //it's a GC thing.
-	}
+	} 
+
+	$unstaged_amount = (int)$wr1['Payment-amount']/100; //it's a GC thing.
 	
 	if ( !array_key_exists( 'Transaction-currency', $wr1 ) ){
 		$wr1['Transaction-currency'] = $wr1['Payment-currency'];
 	}
 	
-	if ( $wr1['Transaction-currency'] !== $donor_data['CURRENCYCODE']  ){
+	if ( !$this_transaction_is_missing && ( $wr1['Transaction-currency'] !== $donor_data['CURRENCYCODE'] )  ){
 		$message = __FUNCTION__ . " $contribution_tracking_id Currency code mismatch! Aborting. ";
 		globalcollect_audit_log_error( $message, "WR1_DATA_FORMAT" );
 		return null;
@@ -610,56 +621,137 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 
 }
 
+/**
+ * Makes default donor data according to current run config, if the message 
+ * cannot be rebuilt from logs. 
+ * @param array $wr1 Transaction parsed into an array
+ * @return array Donor data with appropriate keys
+ */
 function globalcollect_audit_make_default_donor_data( $wr1 ){
 	
 	$donor_data = array(
 		'AMOUNT' => (int)$wr1['Payment-amount'],
-		'CURRENCYCODE' => $wr1['Transaction-currency'],
 		'EMAIL' => variable_get( 'globalcollect_audit_make_email', GC_AUDIT_MAKE_EMAIL ),
 		'FIRSTNAME' => variable_get( 'globalcollect_audit_make_fname', GC_AUDIT_MAKE_FNAME ),
 		'SURNAME' => variable_get( 'globalcollect_audit_make_lname', GC_AUDIT_MAKE_LNAME ),
 		'STREET' => variable_get( 'globalcollect_audit_make_street', GC_AUDIT_MAKE_STREET ),
 		'CITY' => variable_get( 'globalcollect_audit_make_city', GC_AUDIT_MAKE_CITY ),
-		'ORDERID' => $wr1['Order-number']
 	);
 	
-//	In the future: Deal with recurring by doing this, on recurring txn's
+	if (array_key_exists('Order-number', $wr1)){
+		$donor_data['ORDERID'] = $wr1['Order-number'];
+	} elseif (array_key_exists('Additional-reference', $wr1)){
+		$donor_data['ORDERID'] = $wr1['Additional-reference'];
+	}
+	
+	//deal with the complete insanity that is the way currency codes are dealt with in the wr1 files...
+	//cc always comes in as...
+	if (array_key_exists('Transaction-currency', $wr1)){
+		$donor_data['CURRENCYCODE'] = $wr1['Transaction-currency'];
+	} else {
+		//absolute madness. But I'm curious. So... here we go.
+		$currency_code_fields = array(
+			'Invoice-currency-deliv',
+			'Invoice-currency-local',
+			'Payment-currency',
+			'Currency-due',
+			'Over-under-currency-local', //the heck you say.
+		);
+		
+		$currency = null;
+		foreach ( $currency_code_fields as $field ){
+			if (array_key_exists( $field, $wr1 )){
+				if ( is_null($currency) ){
+					$currency = trim($wr1[$field]);
+				} else {
+					if ( trim($wr1[$field]) != '' && trim($currency) != trim($wr1[$field]) ){
+						//Alert the press: It's in five different fields for a reason!
+						//I want this to email me, but for right now...
+						echo print_r($wr1, true);
+						echo "\nCheck it: The currencies are all messed up!";
+						die();
+					}
+				}
+			}
+		}
+		$donor_data['CURRENCYCODE'] = $currency;
+	}
+	
+	
+//	TODO: Figure out if/how WR1 files mark recurring and set:
 //	$donor_data['ORDERTYPE'] = '4'
 	
-	return $donor_data();
+	return $donor_data;
 }
 
-//TODO: The output from this should match 
-// globalcollect_audit_get_contribution_tracking_data
+/**
+ * Makes everything we need to fake contribution tracking data. 
+ * So: Mostly the timestamp. 
+ * @param array $wr1 Transaction parsed into an array
+ * @return array 
+ */
 function globalcollect_audit_make_contribution_tracking_data( $wr1 ){
+
+	$return = array(
+		//don't care about the actual values here: They're not saved downstream. 
+		//It's just so we can eyeball where the stomp message came from, really.
+		'utm_source' => 'gc_wr1',
+		'utm_medium' => 'gc_wr1',
+		'utm_campaign' => 'gc_wr1',
+	);
 	
-//			$payment_method_utm = explode( '.', $contribution_tracking['utm_source'] );
-//			$payment_method_utm = $payment_method_utm[2];
-//
-//			$idiotic_date_format = $contribution_tracking['ts'];
-//			$real_timestamp = date_parse( $idiotic_date_format );
-//
-//			$contribution_tracking['ts'] = mktime( 
-//				$real_timestamp['hour'], 
-//				$real_timestamp['minute'], 
-//				$real_timestamp['second'], 
-//				$real_timestamp['month'], 
-//				$real_timestamp['day'], 
-//				$real_timestamp['year']
-//			);
-//			//echo " $idiotic_date_format = $real_timestamp \n";
-			
+	$parsed = null;
+	if ( array_key_exists( 'Date-authorised', $wr1 ) ){
+		$parsed = date_parse( $wr1['Date-authorised'] );
+	} elseif ( array_key_exists('Date-due', $wr1) ) {
+		$parsed = date_parse( $wr1['Date-due'] );
+	} 
+	
+	if ( is_null( $parsed ) ){
+		//die in a fire for dramatic effect
+		echo(print_r( $wr1, true ));
+		echo "\nCouldn't find the date in the wr1. Fixit.";
+		die();
+	}
+	
+	$return['ts'] = mktime( 
+		'0',
+		'0',
+		'0',
+		$parsed['month'],
+		$parsed['day'],
+		$parsed['year']
+	);
+	
+	return $return;
 			
 }
 
-//TODO: Make the output on this bad boy match the out from 
-// globalcollect_audit_get_payment_submethod
+/**
+ * Returns just the payment method and submethod codes from data contained in 
+ * the $wr1 line.
+ * @param array $wr1 Transaction parsed into an array
+ * @return array
+ */
 function globalcollect_audit_make_payment_method_info( $wr1 ){
+	$return = array();
 	if ( $wr1['Payment-method'] === 'CC' ){
-		//[Creditcard-company] = 'ECMC'
-		//Gee, it would be swell if they had an index of these things so I could map them
-		return array( 'payment_method' => 'cc' );
+		$return['payment_method'] = 'cc';
+		$return['payment_submethod'] = globalcollect_audit_cc_company_to_submethod( $wr1['Creditcard-company'] );
+	} else {
+		if (array_key_exists( 'WbC Payment product ID', $wr1 )){
+			$subm = globalcollect_audit_get_payment_submethod( $wr1['WbC Payment product ID'] );
+			$return['payment_method'] = $subm['group'];
+			$return['payment_submethod'] = $subm['code'];
+		} else {
+			//dying here so I can run it against reality
+			echo print_r($wr1, true);
+			echo "\nNeed to handle this payment method and submethod.";
+			die();
+		}
 	}
+	
+	return $return;
 }
 
 
@@ -1308,6 +1400,26 @@ function globalcollect_audit_get_partial_xml_node_value( $node, $xml ){
 	$value = substr( $xml, $valstart, $valend - $valstart );
 	return $value;
 
+}
+
+
+function globalcollect_audit_cc_company_to_submethod( $cc_company ){
+	$cc_array = array(
+		'AMEX' => 'amex',
+		'ECMC' => 'mc',
+		'VISA' => 'visa',
+		'DISC' => 'discover',
+	);
+	
+	if ( array_key_exists( $cc_company, $cc_array ) ){
+		return $cc_array[$cc_company];
+	} else {
+		//I am dying here, because if you're running in make_missing mode 
+		//(which is currently the only way to get here) 
+		//you dang well better be doing it manually.
+		echo "\n$cc_company is not a known Credit Card Company code! Fixit.";
+		die();
+	}
 }
 
 function globalcollect_audit_get_payment_submethod( $payment_product ){
