@@ -6,6 +6,11 @@ define( 'CONTRIBUTION_AUDIT_LOG_FILES_DIR', '/usr/local/src/logs/' );
 define( 'CONTRIBUTION_AUDIT_PLUSMINUS', 7 );
 define( 'CONTRIBUTION_AUDIT_TEST_MODE', true );
 define( 'CONTRIBUTION_AUDIT_FAKE_DB', false );
+define( 'GC_AUDIT_MAKE_FNAME', 'John' );
+define( 'GC_AUDIT_MAKE_LNAME', 'Doe' );
+define( 'GC_AUDIT_MAKE_EMAIL', 'nobody@wikimedia.org' );
+define( 'GC_AUDIT_MAKE_STREET', '123 Fake Street' );
+define( 'GC_AUDIT_MAKE_CITY', 'Springfield' );
 
 if ( function_exists( 'drupal_get_path' ) ) {
 	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_stomp.inc' );
@@ -62,6 +67,36 @@ function globalcollect_audit_settings() {
     '#title' => t( 'Plus or minus search (in days)' ),
     '#required' => TRUE,
     '#default_value' => variable_get( 'globalcollect_audit_plusminus', CONTRIBUTION_AUDIT_PLUSMINUS ),
+  );
+  $form['globalcollect_audit_make_fname']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Missing Transactions: First Name' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'globalcollect_audit_make_fname', GC_AUDIT_MAKE_FNAME ),
+  );
+  $form['globalcollect_audit_make_lname']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Missing Transactions: Last Name' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'globalcollect_audit_make_lname', GC_AUDIT_MAKE_LNAME ),
+  );
+  $form['globalcollect_audit_make_email']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Missing Transactions: Email' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'globalcollect_audit_make_email', GC_AUDIT_MAKE_EMAIL ),
+  );
+  $form['globalcollect_audit_make_street']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Missing Transactions: Street' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'globalcollect_audit_make_street', GC_AUDIT_MAKE_STREET ),
+  );
+  $form['globalcollect_audit_make_city']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Missing Transactions: City' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'globalcollect_audit_make_city', GC_AUDIT_MAKE_CITY ),
   );
   return system_settings_form( $form );
 }
@@ -266,8 +301,12 @@ function globalcollect_audit_parse_all_wr1(){
 	$make_missing = variable_get( 'globalcollect_audit_make_missing', false );
 	if ( $make_missing && count( $missing ) ){
 		//make all the remaining missing transactions with data defaults. 
-		foreach ( $missing as $missing_txn ) {
+		foreach ( $missing as $order_id => $data ) {
 			$missing_txn_message = globalcollect_audit_format_data_for_stomp( $data );
+			
+			//but then we have to send the transaction...
+			
+			
 		}
 	}
 	
@@ -380,9 +419,21 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 	$fake_db = variable_get( 'globalcollect_audit_fake_db', CONTRIBUTION_AUDIT_FAKE_DB );
 	$make_missing = variable_get( 'globalcollect_audit_make_missing', false );
 	//you should probably make sure the data between the two sources match up before we do anything else
+	
+	//just knowing we _can_ make missing transactions isn't enough. We need to 
+	//know if this particular one is still missing.
+	$this_transaction_is_missing = false;
+	if ( is_null($donor_data) ){
+		//set this as true down the page a bit when ctid is missing. We could be 
+		//running in some kind of half-missing mode.
+		$this_transaction_is_missing = true;
+//		echo print_r($wr1, true);
+//		die();
+	}
+	
 	$unstaged_amount = 0;
 	
-	if ( is_null( $donor_data ) && $make_missing ) {
+	if ( $this_transaction_is_missing && $make_missing ) {
 		$donor_data = globalcollect_audit_make_default_donor_data( $wr1 );
 	}
 	
@@ -422,10 +473,16 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 		$recurring = true;
 	}
 	
-	//getting the payment type according to us. Sneaky.
-	if ( $make_missing ){
+	//in case only our second half is missing...
+	if ( is_null( $contribution_tracking_id ) ){
+		$this_transaction_is_missing = true;
+	}
+	
+	if ( $this_transaction_is_missing && $make_missing ){
 		$contribution_tracking = globalcollect_audit_make_contribution_tracking_data( $wr1 );
-	} else {
+	} 
+	
+	if ( !$this_transaction_is_missing ) {
 		if ( !$fake_db ) {
 			$contribution_tracking = globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id );
 		} else {
@@ -454,7 +511,7 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 	}
 
 	$payment_submethod = false;
-	if ( !$make_missing && array_key_exists( 'PAYMENTPRODUCTID', $donor_data ) ){
+	if ( !$this_transaction_is_missing && array_key_exists( 'PAYMENTPRODUCTID', $donor_data ) ){
 		$payment_info = globalcollect_audit_get_payment_submethod($donor_data['PAYMENTPRODUCTID']);
 		$payment_method = $payment_info['group'];
 		$payment_submethod = $payment_info['code'];
@@ -465,7 +522,7 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 		}
 	}
 	
-	if ( $make_missing ){
+	if ( $this_transaction_is_missing ){
 		$payment_info = globalcollect_audit_make_payment_method_info( $wr1 );
 		if ( array_key_exists( 'payment_method', $payment_info ) ){
 			$payment_method = $payment_info['payment_method'];
@@ -558,12 +615,12 @@ function globalcollect_audit_make_default_donor_data( $wr1 ){
 	$donor_data = array(
 		'AMOUNT' => (int)$wr1['Payment-amount'],
 		'CURRENCYCODE' => $wr1['Transaction-currency'],
-		'EMAIL' => 'nobody@wikimedia.org', //this guy gets around.
-		'FIRSTNAME' => 'Audit',
-		'SURNAME' => 'Donor',
-		'STREET' => '123 Fake Street',
-		'CITY' => 'Springfield',
-		'ORDERID' => 'Order-number'
+		'EMAIL' => variable_get( 'globalcollect_audit_make_email', GC_AUDIT_MAKE_EMAIL ),
+		'FIRSTNAME' => variable_get( 'globalcollect_audit_make_fname', GC_AUDIT_MAKE_FNAME ),
+		'SURNAME' => variable_get( 'globalcollect_audit_make_lname', GC_AUDIT_MAKE_LNAME ),
+		'STREET' => variable_get( 'globalcollect_audit_make_street', GC_AUDIT_MAKE_STREET ),
+		'CITY' => variable_get( 'globalcollect_audit_make_city', GC_AUDIT_MAKE_CITY ),
+		'ORDERID' => $wr1['Order-number']
 	);
 	
 //	In the future: Deal with recurring by doing this, on recurring txn's
@@ -572,6 +629,8 @@ function globalcollect_audit_make_default_donor_data( $wr1 ){
 	return $donor_data();
 }
 
+//TODO: The output from this should match 
+// globalcollect_audit_get_contribution_tracking_data
 function globalcollect_audit_make_contribution_tracking_data( $wr1 ){
 	
 //			$payment_method_utm = explode( '.', $contribution_tracking['utm_source'] );
@@ -593,6 +652,8 @@ function globalcollect_audit_make_contribution_tracking_data( $wr1 ){
 			
 }
 
+//TODO: Make the output on this bad boy match the out from 
+// globalcollect_audit_get_payment_submethod
 function globalcollect_audit_make_payment_method_info( $wr1 ){
 	if ( $wr1['Payment-method'] === 'CC' ){
 		//[Creditcard-company] = 'ECMC'
