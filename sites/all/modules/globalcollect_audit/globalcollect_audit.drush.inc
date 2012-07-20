@@ -20,7 +20,7 @@ function globalcollect_audit_drush_command() {
 		'drush globalcollect-audit' => '# Parse the wr1 file',
 		'drush gc_wr1 --test' => '# Test the audit scripts, but do not generate stomp messages. No data will be changed.',
 		'drush gc_wr1 --fakedb' => '# Fake the database information. This will cause the script to avoid looking up the actual contribution id.',
-		'drush gc_wr1 --makemissing' => '# Absolutely nothing special at the moment.',
+		'drush gc_wr1 --makemissing' => '# Will reconstruct the un-rebuildable transactions found in the wr1, with default values. USE WITH CAUTION.',
 		'drush gc_wr1 --run_all' => '# Batch search for all missing transactions across all wr1 files.',
 		), 
     'aliases' => array( 'gc_wr1' ),
@@ -75,8 +75,8 @@ function drush_globalcollect_audit() {
 		variable_set( 'globalcollect_audit_fake_db', true  );
 	}
 	if (drush_get_option('makemissing')){
-//		echo "Making missing transactions---\n";
-//		variable_set( 'globalcollect_audit_make_missing', true  );
+		echo "Making missing transactions---\n";
+		variable_set( 'globalcollect_audit_make_missing', true  );
 	}
 	if (drush_get_option('run_all')){ 
 		echo "Running all WR1 Files! This might take a while...\n";
