@@ -47,6 +47,7 @@ function globalcollect_audit_reset_drush_vars(){
 			'globalcollect_audit_fake_db' => false,
 			'globalcollect_audit_make_missing' => false,
 			'globalcollect_audit_run_all_wr1' => false,
+			'globalcollect_audit_charlimit' => 0,
 		);
 	}
 	
@@ -81,6 +82,10 @@ function drush_globalcollect_audit() {
 	if (drush_get_option('run_all')){ 
 		echo "Running all WR1 Files! This might take a while...\n";
 		variable_set( 'globalcollect_audit_run_all_wr1', true );
+	}
+	if (drush_get_option('charlimit')){ 
+		echo "Char limit of " . drush_get_option('charlimit') . " is in effect.\n";
+		variable_set( 'globalcollect_audit_charlimit', drush_get_option('charlimit') );
 	}
 	
 	module_invoke( 'globalcollect_audit', 'parse_all_wr1' );

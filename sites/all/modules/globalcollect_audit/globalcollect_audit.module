@@ -1565,3 +1565,21 @@ function globalcollect_audit_get_payment_submethod( $payment_product ){
 	return $map[$payment_product];
 
 }
+
+function globalcollect_audit_charecho( $char ){
+	static $chars = 0;
+	static $limit = null;
+	if (is_null($limit)){
+		$limit = variable_get( 'globalcollect_audit_charlimit', 0);
+	}
+	
+	echo $char;
+	
+	if ( $limit > 0 ){
+		++$chars;
+		if ($chars > $limit){
+			echo "\n";
+			$chars = 0;
+		}
+	}
+}
