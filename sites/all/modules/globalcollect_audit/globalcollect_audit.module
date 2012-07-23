@@ -980,6 +980,14 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 	//haven't found anything yet. 
 	$file = null;
 	
+	//If this is the first time around, kill the future.
+	if ( empty($tried) ){
+		$today = date_format( date_create(), 'Ymd' );
+		for ( $i=0; $i<$plusminus + 1; ++$i ){
+			$tried[] = globalcollect_audit_add_to_date( $today, $i );
+		}
+	}
+	
 	//look for the next file until we either find something, or hit a fatal error. 
 	while ( globalcollect_audit_can_continue() && is_null( $file ) ){
 		$tryme = false;
