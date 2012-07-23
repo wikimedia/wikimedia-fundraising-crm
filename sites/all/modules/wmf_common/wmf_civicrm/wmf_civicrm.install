@@ -45,6 +45,50 @@ function wmf_civicrm_update_6000()
 }
 
 /**
+ * Add settlement date field
+ */
+function wmf_civicrm_update_6001()
+{
+    $api = wmf_civicrm_bootstrap_civi();
+    $api->CustomGroup->get(array(
+        'name' => 'payment_extra',
+    ));
+    $result = $api->values();
+    if (empty($result))
+    {
+        $success = $api->CustomGroup->create(array(
+            'extends' => 'Contribution',
+            'name' => 'payment_extra',
+            'title' => ts('Payment Extra'),
+            'is_active' => 1,
+        ));
+        if (!$success) {
+            throw new Exception($api->errorMsg());
+        }
+        $result = $api->values();
+    }
+    $custom_group = array_pop($api->values());
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'settlement_date',
+        'label' => ts('Settlement Date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+
+    return array();
+}
+
+/**
  * Load civi api, only for use from within .install code
  */
 function wmf_civicrm_bootstrap_civi()
