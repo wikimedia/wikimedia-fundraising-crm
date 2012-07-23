@@ -1,0 +1,218 @@
+<?php
+
+function wmf_unsubscribe_menu() {
+    $items = array();
+
+    $items['admin/settings/wmf_unsubscribe'] = array(
+        'title' => t('WMF Unsubscribe Settings'),
+        'description' => t('Configure thank you note options.'),
+        'access arguments' => array('administer wmf modules'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('thank_you_settings_form'),
+        'type' => MENU_CALLBACK,
+    );
+
+    // this link should be left in place so that old links are
+    // still valid for some time, remove in 2013
+    $items['thank_you/unsubscribe'] = array(
+        'title' => 'Wikimedia Foundation Unsubscribe',
+        'access arguments' => array('unsubscribe'),
+        'page callback' => 'unsubscribe_page',
+        'type' => MENU_CALLBACK
+    );
+
+    $items['wmf_unsubscribe/preview'] = array(
+        'title' => 'WMF Unsubscribe',
+        'access arguments' => array('unsubscribe'),
+        'page callback' => 'wmf_unsubscribe_preview',
+        'type' => MENU_CALLBACK
+    );
+
+    $items['admin/settings/wmf_unsubscribe/configure'] = array(
+        'title' => t('Configure WMF unsubscribe module'),
+        'access arguments' => array('administer wmf modules'),
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+    );
+
+    return $items;
+}
+
+function wmf_unsubscribe_perm() {
+    return array('administer wmf modules', 'unsubscribe');
+}
+
+/**
+ * Renders the unsubscription process, checking to ensure that the request is valid.
+ *
+ * @return string the rendered output
+ */
+function unsubscribe_page(){
+    require_once drupal_get_path( 'module', 'wmf_common' ) . '/civicrm_check_api.php';
+
+    drupal_add_css( drupal_get_path('module', 'wmf_unsubscribe') . '/resources/unsubscribe.css' );
+
+    $matches = array();
+    $contribution_id = "-1";
+    if( array_key_exists('c', $_REQUEST ) ){
+        $contribution_id = ( preg_match( '([a-zA-Z0-9]+)', $_REQUEST['c'], $matches ) == 1 ) ? $matches[0] : "";
+    }
+    $hash_get = "-1";
+    if( array_key_exists( 'h', $_REQUEST ) ){
+        $hash_get = ( preg_match( '([a-zA-Z0-9]+)', $_REQUEST['h'], $matches ) == 1 ) ? $matches[0] : "";
+    }
+    // set language to null, we will override this later based on preferred_language later
+    // if there is no language in the querystring
+    $language = NULL;
+    if( array_key_exists( 'uselang', $_REQUEST ) ){
+        $language = ( preg_match( '([a-zA-Z-]+)', $_REQUEST['uselang'], $matches ) == 1 ) ? $matches[0] : "en";
+    }
+
+    civicrm_initialize(TRUE);
+
+    $contribution = civicrm_api("Contribution","get", array (
+        'version' =>'3',
+        'contribution_id' => $contribution_id
+    ));
+
+    if( !WMFCiviAPICheck::check_api_result( $contribution, TRUE ) ){
+        watchdog('wmf_unsubscribe', 'Contribution API failed on unsubscribe request: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+    }
+    if( !WMFCiviAPICheck::check_api_contribution( $contribution, $contribution_id, TRUE ) ){
+        // do not spam the logs with "contribution not found" DoS
+        return render_page( "unsubscribe-fail", $language );
+
+    }
+    $contribution = WMFCiviAPICheck::check_api_simplify( $contribution, $contribution_id );
+
+    $contact = civicrm_api("Contact","get", array (
+        'version' =>'3',
+        'id' => $contribution[ 'contact_id' ],
+    ));
+
+    if( !WMFCiviAPICheck::check_api_result( $contact, TRUE ) ){
+        watchdog('wmf_unsubscribe', 'Contact API failed on unsubscribe request: ' . $contribution[ 'contact_id' ] . '<pre>' . check_plain(print_r($contact, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
+    }
+    if( !WMFCiviAPICheck::check_api_contact( $contact, $contribution[ 'contact_id' ], TRUE ) ){
+        // do not spam the logs with "contact not found" DoS
+        return render_page( "unsubscribe-fail", $language );
+    }
+    $contact = WMFCiviAPICheck::check_api_simplify( $contact, $contribution[ 'contact_id' ] );
+
+    // check to see if the language was not set in the querystring
+    if( $language == NULL ){
+        // check to see if the contact record has a preferred language
+        if( array_key_exists( 'preferred_language', $contact ) ){
+            $locale = $contact['preferred_language'];
+            $language = substr($locale, 0, 2);
+        }
+        // if not, default back to english
+        else{
+            $language = "en";
+        }
+    }
+
+    // check to make sure that the hash for this unsubscribe attempt is valid
+    if( get_unsubscribe_hash( $contribution ) != $hash_get ){
+        // do not spam the logs with "invalid hash" messages
+        return render_page( "unsubscribe-fail", $language );
+    }
+
+    // check to see if the user submitted the form
+    if( variable_get( 'thank_you_onestep_unsubscribe', 'false' ) == "true" || ( isset( $_POST ) && !empty( $_POST ) ) ) {
+        // process the unsubscription
+        $contact = civicrm_api("Contact","update", array (
+            'version' =>'3',
+            'id' => $contribution[ 'contact_id' ],
+            'is_opt_out' => 1,
+        ));
+
+        if( WMFCiviAPICheck::check_api_contact( $contact ) ){
+            watchdog('wmf_unsubscribe', 'Unsubscribe success for contact: ' . $contribution[ 'contact_id' ] . '<' . $contact['email'] . '>', array(), WATCHDOG_INFO);
+            return render_page( "unsubscribe-success", $language );
+        } else {
+            watchdog('wmf_unsubscribe', 'Unsubscribe FAILURE for contact (1): ' . $contribution[ 'contact_id' ] . '<' . $contact['email'] . '>', array(), WATCHDOG_ERROR);
+            return render_page( "unsubscribe-fail", $language );
+        }
+    } else {
+        // display the opt-out form
+        return render_page( "unsubscribe-confirm", $language );
+    }
+}
+
+/**
+ * Renders the specified page in the specified language, falling back
+ * to English if a version of the page does not exist in the specified
+ * language.
+ *
+ * @param string $page the name of the page to render
+ * @param array $params any parameters needed to render the page
+ * @param string $language the langauge in which to render the page
+ * @return string the rendered page
+ */
+function render_page( $page, $params=array(), $language='en' ){
+
+    require_once drupal_get_path( 'module', 'wmf_common' ) . '/Twig/lib/Twig/Autoloader.php';
+
+    Twig_Autoloader::register();
+
+    $loader = new Twig_Loader_Filesystem( drupal_get_path( 'module', 'wmf_unsubscribe' ) . '/templates/i18n/' );
+    $twig = new Twig_Environment( $loader, array(
+        'cache' => '/tmp/twig/cache/wmf_unsubscribe',
+        'auto_reload' => TRUE,
+        'charset' => 'utf-8',
+    ));
+
+    try{
+        $template = $twig->loadTemplate( "unsubscribe-$page.$language.html" );
+    } catch ( Twig_Error_Loader $e ) {
+        try{
+            $template = $twig->loadTemplate( "unsubscribe-$page.en.html" );
+        } catch ( Exception $e ){
+            // TODO: notify fr-tech that we have a problem
+            return "There was an error processing your request.  Please contact giving@wikimedia.org.\n" . $e->getRawMessage();
+        }
+    }
+    return $template->render( $params );
+}
+
+/**
+ * Returns a hash used to confirm that the user had a valid unsubscription
+ * link and thus prevent brute force unsubscriptions
+ *
+ * @param $contribution array A CiviCRM Contribution API result
+ */
+function get_unsubscribe_hash( $contribution ){
+    if( array_key_exists( 'id', $contribution ) &&
+        array_key_exists( 'contact_id', $contribution ) &&
+        array_key_exists( 'trxn_id', $contribution ) ){
+
+        return sha1( $contribution[ 'id' ] . $contribution[ 'contact_id' ] .
+            $contribution[ 'trxn_id' ] );
+    }
+
+    return FALSE;
+}
+
+/**
+ * Displays a preview of the unsubscription page for a given language
+ *
+ * @return string html representing the rendered page
+ */
+function wmf_unsubscribe_preview(){
+    drupal_add_css( drupal_get_path('module', 'wmf_unsubscribe') . '/resources/unsubscribe.css' );
+
+    $contribution_id = NULL;
+    $page = "unsubscribe-fail";
+    $language = "en";
+    if( array_key_exists('c', $_REQUEST ) ){
+        $contribution_id = ( preg_match( '([a-zA-Z0-9]+)', $_REQUEST['c'], $matches ) == 1 ) ? $matches[0] : NULL;
+    }
+    if( array_key_exists('page', $_REQUEST ) ){
+        $page = ( preg_match( '([a-zA-Z0-9-]+)', $_REQUEST['page'], $matches ) == 1 ) ? $matches[0] : "";
+    }
+    if( array_key_exists('uselang', $_REQUEST ) ){
+        $language = ( preg_match( '([a-zA-Z0-9]+)', $_REQUEST['uselang'], $matches ) == 1 ) ? $matches[0] : "en";
+    }
+
+    return render_page( $page, array(), $language );
+}
