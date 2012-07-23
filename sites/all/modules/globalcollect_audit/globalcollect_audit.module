@@ -112,27 +112,26 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
   $dbs->use_civicrm();
 
   // check for matching ids - if it doesnt match, it's missing
-  echo "Checking for missing transactions\n";
+  globalcollect_audit_echo("Checking for missing transactions");
   foreach ( array_keys( $transactions ) as $order_id ) {
     $query = "SELECT {trxn_id} FROM civicrm_contribution WHERE trxn_id LIKE 'GLOBALCOLLECT %s' OR trxn_id LIKE 'RECURRING GLOBALCOLLECT %s'";
     $result = db_query( $query, $order_id . "%", $order_id . "%" );
     if ( !$result->num_rows ) {
-	  echo "!";
+	  globalcollect_audit_echo('!');
       $missing_trxns[$order_id]  = $transactions[$order_id];
       watchdog( 'globalcollect_audit', 'Missing Globalcollect: @tx_id @pm, @pc', array( 
         "@tx_id" => $order_id,
         "@pm" => $transactions[$order_id]['Payment-method'],
         "@pc" => $transactions[$order_id]['Payment-currency'] ), WATCHDOG_DEBUG );  
     } else {
-	  echo ".";
+      globalcollect_audit_echo('.');
       watchdog( 'globalcollect_audit', 'Found Payflow: @id', array( '@id' => $order_id ), WATCHDOG_DEBUG );
     } 
   }
-  echo "\n";
 
   $dbs->use_default();
   
-  echo count( $missing_trxns ) . " missing records from a possible " . count( $transactions ) . " total records found.\n";
+  globalcollect_audit_echo( count( $missing_trxns ) . " missing records from a possible " . count( $transactions ) . " total records found.");
   return $missing_trxns;
 }
 
@@ -151,8 +150,7 @@ function globalcollect_audit_track_fuckup(){
 		$temp = explode(',', $line);
 		$ids[$temp[0]][] = $temp[1];
 	}
-	echo print_r($ids, true);
-	
+	globalcollect_audit_echo( print_r($ids, true) );
 	
 	$processed_id_count = 0;
 	$processed_days_count = 0;
@@ -167,7 +165,7 @@ function globalcollect_audit_track_fuckup(){
 		$logname = $directory . $date . '_iop.log';
 		$logname2 = $directory . globalcollect_audit_add_to_date( $date, 1 ) . '_iop.log';
 		foreach ( $id_array as $grepforme ){
-			echo ".";
+			globalcollect_audit_echo('.');
 			$processed_id_count += 1;
 			$cmd = "grep <ORDERID>" . trim($grepforme) . "</ORDERID> $logname";
 
@@ -196,11 +194,11 @@ function globalcollect_audit_track_fuckup(){
 		
 	}
 	
-	echo "Processed $processed_id_count \n";
-	echo "Found $found_ids_count \n";
-	echo "Unfound ids: " . print_r( $unfound, true ) . "\n";
-	echo "Recurring Count $recurring_count \n";
-	echo "Not Recurring Count $not_recurring_count \n";
+	globalcollect_audit_echo("Processed $processed_id_count");
+	globalcollect_audit_echo("Found $found_ids_count");
+	globalcollect_audit_echo("Unfound ids: " . print_r( $unfound, true ));
+	globalcollect_audit_echo("Recurring Count $recurring_count");
+	globalcollect_audit_echo("Not Recurring Count $not_recurring_count");
 	die();
 	
 }
@@ -217,7 +215,7 @@ function globalcollect_audit_parse_all_wr1(){
 	
 	$missing = globalcollect_audit_find_more_missing($wr1_files);
 	if ( !$missing ){
-		echo "No missing transactions found. Done!\n";
+		globalcollect_audit_echo("No missing transactions found. Done!");
 		return;
 	}
 	
@@ -230,22 +228,22 @@ function globalcollect_audit_parse_all_wr1(){
 			continue;
 		}
 
-		echo "Trying log $log\n";
+		globalcollect_audit_echo("Trying log $log");
 		$tried_count = 0;
 		foreach ( $missing as $order_id => $data ){
 			++$tried_count;
 			$date = globalcollect_audit_get_wr1_date( $data );
 			if ( is_null($date) ){
-				echo "X";
+				globalcollect_audit_echo('X');
 				continue;
 			}
 			$logdata = globalcollect_audit_get_log_data_by_order_id( $order_id, $log );
 			if ( is_null( $logdata ) ){
-				echo "X";
+				globalcollect_audit_echo('X');
 				continue;
 			}
 			if ($logdata === false){
-				echo ".";
+				globalcollect_audit_echo('.');;
 				continue;
 			}
 
@@ -260,18 +258,18 @@ function globalcollect_audit_parse_all_wr1(){
 					'logdata' => $logdata,
 				);
 				$errorful_transactions[] = $info;
-				echo "X";
+				globalcollect_audit_echo('X');
 				continue;
 			}
 
 			if ( $test_mode ){
 				$local_found_ids[] = $order_id;
-				echo "!";
+				globalcollect_audit_echo('!');
 			} else {
 				if ( sendStomp( $missing_txn_message ) ){
 					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
 					$local_found_ids[] = $order_id;
-					echo "!";
+					globalcollect_audit_echo('!');
 				} else {
 					$wd_message = __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true );
 					$drush_message = "Failed sending STOMP message to queue.";
@@ -281,12 +279,12 @@ function globalcollect_audit_parse_all_wr1(){
 			}
 
 		}
-		echo "\n";
+		globalcollect_audit_echo("\n");
 		
 		//Output here, and add these stats to the data ball. 
 		$logdate = globalcollect_audit_get_log_date_by_file($log);
 		$counts[$logdate] = count( $local_found_ids );
-		echo $counts[$logdate] . " records found in $log\n";
+		globalcollect_audit_echo($counts[$logdate] . " records found in $log");
 		globalcollect_audit_results_ball( array('Transactions Found', $log), $counts[$logdate] );
 		
 		//now, we unset the array keys we found, so as not to corrupt the foreach we were in.
@@ -307,12 +305,12 @@ function globalcollect_audit_parse_all_wr1(){
 			//but then we have to send the transaction...
 			if ( $test_mode ){
 				$local_built_ids[] = $order_id;
-				echo "!";
+				globalcollect_audit_echo('!');
 			} else {
 				if ( sendStomp( $missing_txn_message ) ){
 					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
 					$local_built_ids[] = $order_id;
-					echo "!";
+					globalcollect_audit_echo('!');
 				} else {
 					$wd_message = __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true );
 					$drush_message = "Failed sending STOMP message to queue.";
@@ -324,19 +322,19 @@ function globalcollect_audit_parse_all_wr1(){
 	}
 	
 	if ( count( $errorful_transactions ) ){
-		echo "Errorful Transactions: " . print_r( $errorful_transactions, true );
+		globalcollect_audit_echo("Errorful Transactions: " . print_r( $errorful_transactions, true ));
 		globalcollect_audit_results_ball( array('Final', 'Errors'), count($errorful_transactions) );
 	}
-	echo "Transactions found by log:" . print_r( $counts, true );
-	echo "Still Missing: " . count($missing) . ".";
+	globalcollect_audit_echo("Transactions found by log:" . print_r( $counts, true ));
+	globalcollect_audit_echo("Still Missing: " . count($missing) . ".");
 	if ( count($missing) ){
-		echo " Good luck with that.";
+		globalcollect_audit_echo(" Good luck with that.");
 		globalcollect_audit_results_ball( array('Final', 'Missing'), count($missing) );
 	}
-	echo "\n";
+	globalcollect_audit_echo("\n");
 	
 	$time = microtime(true) - $actual_start_time;
-	echo "Total Runtime: $time\n";
+	globalcollect_audit_echo("Total Runtime: $time");
 	globalcollect_audit_results_ball( array('Final', 'Runtime'), $time );
 }
 
@@ -397,7 +395,7 @@ function globalcollect_audit_parse_wr1_file( $file ){
 	
 	$missing = array();
 	$wr1_data = array();
-	echo "Parsing $file\n";
+	globalcollect_audit_echo("Parsing $file");
 
 	$wr1_parser = new Wr1DataFileParser( $file );
 	$start_time = microtime(true);
@@ -405,12 +403,12 @@ function globalcollect_audit_parse_wr1_file( $file ){
 		switch ( $record['Payment-method'] ){
 			case 'CC':
 				$wr1_data[$record['Order-number']]  = $record;
-				echo 'c';
+				globalcollect_audit_echo('c');
 				break;
 			case 'BA':
 			case 'OB':
 				$wr1_data[$record['Additional-reference']]  = $record;
-				echo 'b';
+				globalcollect_audit_echo('b');
 				break;
 			default:
 				$message = "Payment method '" . $record['Payment-method'] . "' not recognized. Please rectify in " . __FUNCTION__ .  print_r( $record, true );
@@ -418,9 +416,9 @@ function globalcollect_audit_parse_wr1_file( $file ){
 				return;
 		}
 	} 
-	echo "\n";
+	globalcollect_audit_echo("\n");
 	$time = microtime(true) - $start_time;
-	echo "$file parsed in $time\n";
+	globalcollect_audit_echo("$file parsed in $time");
 	if ( count( $wr1_data ) ){
 		return $wr1_data;
 	}
@@ -667,8 +665,8 @@ function globalcollect_audit_make_default_donor_data( $wr1 ){
 					if ( trim($wr1[$field]) != '' && trim($currency) != trim($wr1[$field]) ){
 						//Alert the press: It's in five different fields for a reason!
 						//I want this to email me, but for right now...
-						echo print_r($wr1, true);
-						echo "\nCheck it: The currencies are all messed up!";
+						globalcollect_audit_echo(print_r($wr1, true));
+						globalcollect_audit_echo("Check it: The currencies are all messed up!");
 						die();
 					}
 				}
@@ -709,8 +707,8 @@ function globalcollect_audit_make_contribution_tracking_data( $wr1 ){
 	
 	if ( is_null( $parsed ) ){
 		//die in a fire for dramatic effect
-		echo(print_r( $wr1, true ));
-		echo "\nCouldn't find the date in the wr1. Fixit.";
+		globalcollect_audit_echo(print_r( $wr1, true ));
+		globalcollect_audit_echo("Couldn't find the date in the wr1. Fixit.");
 		die();
 	}
 	
@@ -745,8 +743,8 @@ function globalcollect_audit_make_payment_method_info( $wr1 ){
 			$return['payment_submethod'] = $subm['code'];
 		} else {
 			//dying here so I can run it against reality
-			echo print_r($wr1, true);
-			echo "\nNeed to handle this payment method and submethod.";
+			globalcollect_audit_echo(print_r($wr1, true));
+			globalcollect_audit_echo("Need to handle this payment method and submethod.");
 			die();
 		}
 	}
@@ -817,7 +815,7 @@ function globalcollect_audit_groom_logs(){
 		'log' => array(),
 		'iop' => array()
 	);
-	echo "Grooming log files\n";
+	globalcollect_audit_echo("Grooming log files");
 	if ( $handle = opendir( $files_directory ) ){
 		while ( ( $file = readdir( $handle ) ) !== false ){
 			$full_path = $files_directory . $file;
@@ -845,7 +843,7 @@ function globalcollect_audit_groom_logs(){
 	
 	//handle the gz files first
 	foreach ($files['gz'] as $key => $gzfile){
-		echo "Gunzipping $gzfile\n";
+		globalcollect_audit_echo("Gunzipping $gzfile");
 		$cmd = "gunzip $gzfile";
 		exec( escapeshellcmd($cmd), $ret, $errorlevel );
 		//now check to make sure the file you expect exists
@@ -864,7 +862,7 @@ function globalcollect_audit_groom_logs(){
 	
 	//handle the renames
 	foreach ($files['rename'] as $key => $rename_me){
-		echo "Renaming $rename_me\n";
+		globalcollect_audit_echo("Renaming $rename_me");
 		//'/globalcollect.\d{8}_\d{6}/'
 		//becomes 
 		//'/globalcollect_\d{8}\.log/'
@@ -891,7 +889,7 @@ function globalcollect_audit_groom_logs(){
 			array('', '_iop.log'),
 			$big_log );
 		if ( in_array($smallened_log, $files['iop']) ){
-			echo "Deleting $big_log\n";
+			globalcollect_audit_echo("Deleting $big_log");
 			file_delete( $big_log );
 			unset($files['log'][$key]);
 		}
@@ -928,7 +926,7 @@ function globalcollect_audit_move_completed_wr1( $file, $nearly = false ){
 		watchdog('globalcollect_audit', $message);
 		return false;
 	}
-	echo "Moved $file to $newfile\n";
+	globalcollect_audit_echo("Moved $file to $newfile");
 	return true;
 }
 
@@ -1067,7 +1065,7 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 
 		//We have now tried everything. Kick out of the loop with a fatal.  
 		if ( !$tryme ){
-			$message = __FUNCTION__  . " No 'next' log identified. Current Missing: " . print_r( $dates, true ) . "\n";
+			$message = __FUNCTION__  . " No 'next' log identified. Current Missing: " . print_r( $dates, true );
 			globalcollect_audit_log_error( $message, "WR1_LOG_FATAL" );
 			return null;
 		}
@@ -1101,7 +1099,7 @@ function globalcollect_audit_get_log_file_by_date( $date ){
 		
 			$cmd = escapeshellcmd("grep 'INSERT_ORDERWITHPAYMENT' $original_file") . " > " . escapeshellcmd($file);
 
-			echo $cmd . "\n";
+			globalcollect_audit_echo( $cmd );
 			$ret = array();
 			exec( $cmd, $ret, $errorlevel );
 			
@@ -1206,12 +1204,12 @@ function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
 		}
 
 		if ( is_null( $contribution_id ) || is_null( $xml ) ){
-			echo "OH NOES. Couldn't find enough info in this log for order id $order_id!\n";
+			globalcollect_audit_echo("OH NOES. Couldn't find enough info in this log for order id $order_id!");
 			if ( !is_null( $contribution_id ) ){
-				echo "$contribution_id\n";
+				globalcollect_audit_echo( $contribution_id );
 			}
 			if ( !is_null( $xml ) ){
-				echo "...but we also have xml, so that's odd. \n";
+				globalcollect_audit_echo("...but we also have xml, so that's odd.");
 			}
 			//TODO: This needs more love. We can't go on without both parts, but we should log that we found some of it.
 
@@ -1417,7 +1415,7 @@ function globalcollect_audit_cc_company_to_submethod( $cc_company ){
 		//I am dying here, because if you're running in make_missing mode 
 		//(which is currently the only way to get here) 
 		//you dang well better be doing it manually.
-		echo "\n$cc_company is not a known Credit Card Company code! Fixit.";
+		globalcollect_audit_echo("$cc_company is not a known Credit Card Company code! Fixit.");
 		die();
 	}
 }
@@ -1566,20 +1564,26 @@ function globalcollect_audit_get_payment_submethod( $payment_product ){
 
 }
 
-function globalcollect_audit_charecho( $char ){
+function globalcollect_audit_echo( $echo ){
 	static $chars = 0;
 	static $limit = null;
 	if (is_null($limit)){
 		$limit = variable_get( 'globalcollect_audit_charlimit', 0);
 	}
 	
-	echo $char;
-	
-	if ( $limit > 0 ){
+	if ( strlen( $echo ) === 1 ){
+		echo $echo;
 		++$chars;
-		if ($chars > $limit){
+		if ($limit > 0 && $chars > $limit){
 			echo "\n";
 			$chars = 0;
 		}
+	} else {
+		//echo a whole line. Gets a little tricky.
+		if ( $chars != 0 ){
+			echo "\n";
+		}
+		echo "$echo\n";
+		$chars = 0;		
 	}
 }
