@@ -407,6 +407,7 @@ function globalcollect_audit_parse_wr1_file( $file ){
 				break;
 			case 'BA':
 			case 'OB':
+			case 'PP':
 				$wr1_data[$record['Additional-reference']]  = $record;
 				globalcollect_audit_echo('b');
 				break;
@@ -938,6 +939,7 @@ function globalcollect_audit_get_wr1_date( $data ){
 			break;
 		case 'BA': //Bank Payment
 		case 'OB': //Real-time Bank
+		case 'PP': //E-wallets. Clearly.
 			$date = $data['Date-due'];
 			break;
 		default:
@@ -1529,6 +1531,11 @@ function globalcollect_audit_get_payment_submethod( $payment_product ){
 		845 => array(
 			//cashu  :)
 			'code' => 'ew_cashu',
+			'group' => 'ew',
+		),
+		849 => array(
+			//yandex
+			'code' => 'ew_yandex',
 			'group' => 'ew',
 		),
 		500 => array(
