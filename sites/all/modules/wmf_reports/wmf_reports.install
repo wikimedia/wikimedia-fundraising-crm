@@ -1,0 +1,101 @@
+<?php
+
+/**
+ * Add a default mapping to support Contacts and Contributions export
+ */
+function wmf_reports_update_6000()
+{
+    $api = wmf_civicrm_bootstrap_civi();
+
+    $success = $api->OptionValue->Get(array(
+        'option_group_name' => 'mapping_type',
+        'name' => 'Export Contribution',
+    ));
+    if (!$success)
+    {
+        throw new Exception($api->errorMsg());
+    }
+    $mapping_type = array_pop($api->values());
+
+    $mapping = array(
+        'name' => 'Contacts and Contributions',
+        'description' => '',
+        'mapping_type_id' => $mapping_type->value,
+    );
+    require_once 'CRM/Core/BAO/Mapping.php';
+    $mapping = CRM_Core_BAO_Mapping::add($mapping);
+
+    $contact_fields = array(
+        'sort_name',
+        'id',
+    );
+    $location_fields = array(
+        'street_address',
+        'supplemental_address_1',
+        'supplemental_address_2',
+        'city',
+        'state_province',
+        'country',
+        'postal_code',
+        'postal_code_suffix',
+        'geo_code_1',
+        'geo_code_2',
+    );
+    $contribution_fields = array(
+        'contribution_id',
+        'total_amount',
+        'receive_date',
+    );
+
+    foreach ($contact_fields as $field)
+    {
+        $mapping_fields[] = array('0' => 'Individual', '1' => $field);
+    }
+
+    require_once 'CRM/Core/BAO/LocationType.php';
+    $location_type = new CRM_Core_BAO_LocationType();
+    $location_type->is_active = 1;
+    $location_type->find();
+    while ($location_type->fetch())
+    {
+        foreach ($location_fields as $field)
+        {
+            $mapping_fields[] = array(
+                '0' => 'Individual', '1' => $field, '2' => $location_type->id,
+            );
+        }
+    }
+    foreach ($contribution_fields as $field)
+    {
+        $mapping_fields[] = array('0' => 'Contribution', '1' => $field);
+    }
+    $mapping_description = array(
+        'mapper' => array(
+            1 => $mapping_fields,
+        ),
+    );
+    CRM_Core_BAO_Mapping::saveMappingFields($mapping_description, $mapping->id);
+
+    return array();
+}
+
+/**
+ * Load civi api, only for use from within .install code
+ */
+function wmf_civicrm_bootstrap_civi()
+{
+    //XXX XXX REALLY?
+    $civi_base = implode(DIRECTORY_SEPARATOR, array(drupal_get_path('module', 'civicrm'), '..'));
+    set_include_path(
+        implode(
+            PATH_SEPARATOR,
+            array(
+                get_include_path(),
+                $civi_base,
+                $civi_base.DIRECTORY_SEPARATOR.'packages',
+            )
+        )
+    );
+    require_once "api/class.api.php";
+    return new civicrm_api3(array('conf_path' => conf_path()));
+}

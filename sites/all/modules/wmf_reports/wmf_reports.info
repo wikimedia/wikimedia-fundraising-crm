@@ -1,0 +1,5 @@
+name = WMF CiviCRM Reports
+description = Custom reports and additional advanced search results displays
+core = 6.x
+package = Wikimedia
+dependencies[] = civicrm
