@@ -811,6 +811,9 @@ function _queue2civicrm_get_payment_instrument( $msg ){
 					case 'ew_cashu':
 						$payment_instrument = 'Cashu';
 						break;
+					case 'ew_yandex':
+						$payment_instrument = 'Yandex';
+						break;
 				}
 				break;
 			case 'obt':
