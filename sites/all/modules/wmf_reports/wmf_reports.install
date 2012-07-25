@@ -5,7 +5,7 @@
  */
 function wmf_reports_update_6000()
 {
-    $api = wmf_civicrm_bootstrap_civi();
+    $api = wmf_reports_bootstrap_civi();
 
     $success = $api->OptionValue->Get(array(
         'option_group_name' => 'mapping_type',
@@ -104,7 +104,7 @@ function wmf_reports_update_6000()
 /**
  * Load civi api, only for use from within .install code
  */
-function wmf_civicrm_bootstrap_civi()
+function wmf_reports_bootstrap_civi()
 {
     //XXX XXX REALLY?
     $civi_base = implode(DIRECTORY_SEPARATOR, array(drupal_get_path('module', 'civicrm'), '..'));
