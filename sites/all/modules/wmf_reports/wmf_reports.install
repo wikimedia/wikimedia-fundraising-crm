@@ -28,6 +28,13 @@ function wmf_reports_update_6000()
     $contact_fields = array(
         'sort_name',
         'id',
+
+        'do_not_email',
+        'do_not_phone',
+        'do_not_mail',
+        'do_not_sms',
+        'do_not_trade',
+        'is_opt_out',
     );
     $location_fields = array(
         'street_address',
@@ -40,6 +47,8 @@ function wmf_reports_update_6000()
         'postal_code_suffix',
         'geo_code_1',
         'geo_code_2',
+
+        'email',
     );
     $contribution_fields = array(
         'contribution_id',
@@ -64,6 +73,19 @@ function wmf_reports_update_6000()
                 '0' => 'Individual', '1' => $field, '2' => $location_type->id,
             );
         }
+
+        require_once 'CRM/Core/PseudoConstant.php';
+        $phone_types = array_keys(CRM_Core_PseudoConstant::phoneType());
+        foreach ($phone_types as $phone_type)
+        {
+            $mapping_fields[] = array(
+                '0' => 'Individual', '1' => 'phone', '2' => $location_type->id, '3' => $phone_type,
+            );
+        }
+        //XXX weird, this field is not selected by phone_type:
+        $mapping_fields[] = array(
+            '0' => 'Individual', '1' => 'phone_ext', '2' => $location_type->id,
+        );
     }
     foreach ($contribution_fields as $field)
     {
