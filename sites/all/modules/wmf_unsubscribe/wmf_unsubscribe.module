@@ -66,12 +66,14 @@ function unsubscribe_page(){
         'contribution_id' => $contribution_id
     ));
 
+    $params = array();
+
     if( !WMFCiviAPICheck::check_api_result( $contribution, TRUE ) ){
         watchdog('wmf_unsubscribe', 'Contribution API failed on unsubscribe request: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution, TRUE)) . '</pre>', array(), WATCHDOG_ERROR);
     }
     if( !WMFCiviAPICheck::check_api_contribution( $contribution, $contribution_id, TRUE ) ){
         // do not spam the logs with "contribution not found" DoS
-        return render_page( "unsubscribe-fail", $language );
+        return render_page( "unsubscribe-fail", $params, $language );
 
     }
     $contribution = WMFCiviAPICheck::check_api_simplify( $contribution, $contribution_id );
@@ -106,7 +108,7 @@ function unsubscribe_page(){
     // check to make sure that the hash for this unsubscribe attempt is valid
     if( get_unsubscribe_hash( $contribution ) != $hash_get ){
         // do not spam the logs with "invalid hash" messages
-        return render_page( "unsubscribe-fail", $language );
+        return render_page( "unsubscribe-fail", $params, $language );
     }
 
     // check to see if the user submitted the form
@@ -120,14 +122,14 @@ function unsubscribe_page(){
 
         if( WMFCiviAPICheck::check_api_contact( $contact ) ){
             watchdog('wmf_unsubscribe', 'Unsubscribe success for contact: ' . $contribution[ 'contact_id' ] . '<' . $contact['email'] . '>', array(), WATCHDOG_INFO);
-            return render_page( "unsubscribe-success", $language );
+            return render_page( "unsubscribe-success", $params, $language );
         } else {
             watchdog('wmf_unsubscribe', 'Unsubscribe FAILURE for contact (1): ' . $contribution[ 'contact_id' ] . '<' . $contact['email'] . '>', array(), WATCHDOG_ERROR);
-            return render_page( "unsubscribe-fail", $language );
+            return render_page( "unsubscribe-fail", $params, $language );
         }
     } else {
         // display the opt-out form
-        return render_page( "unsubscribe-confirm", $language );
+        return render_page( "unsubscribe-confirm", $params, $language );
     }
 }
 
@@ -160,10 +162,10 @@ function render_page( $page, $params=array(), $language='en' ){
     ));
 
     try{
-        $template = $twig->loadTemplate( "unsubscribe-$page.$language.html" );
+        $template = $twig->loadTemplate( "$page.$language.html" );
     } catch ( Twig_Error_Loader $e ) {
         try{
-            $template = $twig->loadTemplate( "unsubscribe-$page.en.html" );
+            $template = $twig->loadTemplate( "$page.en.html" );
         } catch ( Exception $e ){
             // TODO: notify fr-tech that we have a problem
             return "There was an error processing your request.  Please contact giving@wikimedia.org.\n" . $e->getRawMessage();
@@ -201,6 +203,7 @@ function wmf_unsubscribe_preview(){
     $contribution_id = NULL;
     $page = "unsubscribe-fail";
     $language = "en";
+
     if( array_key_exists('c', $_REQUEST ) ){
         $contribution_id = ( preg_match( '([a-zA-Z0-9]+)', $_REQUEST['c'], $matches ) == 1 ) ? $matches[0] : NULL;
     }
@@ -208,7 +211,7 @@ function wmf_unsubscribe_preview(){
         $page = ( preg_match( '([a-zA-Z0-9-]+)', $_REQUEST['page'], $matches ) == 1 ) ? $matches[0] : "";
     }
     if( array_key_exists('uselang', $_REQUEST ) ){
-        $language = ( preg_match( '([a-zA-Z0-9]+)', $_REQUEST['uselang'], $matches ) == 1 ) ? $matches[0] : "en";
+        $language = ( preg_match( '([a-zA-Z0-9-]+)', $_REQUEST['uselang'], $matches ) == 1 ) ? $matches[0] : "en";
     }
 
     return render_page( $page, array(), $language );
