@@ -122,10 +122,10 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
       watchdog( 'globalcollect_audit', 'Missing Globalcollect: @tx_id @pm, @pc', array( 
         "@tx_id" => $order_id,
         "@pm" => $transactions[$order_id]['Payment-method'],
-        "@pc" => $transactions[$order_id]['Payment-currency'] ), WATCHDOG_DEBUG );  
+        "@pc" => wr1_currency( $transactions[$order_id] ) ), WATCHDOG_DEBUG );  
     } else {
       globalcollect_audit_echo('.');
-      watchdog( 'globalcollect_audit', 'Found Payflow: @id', array( '@id' => $order_id ), WATCHDOG_DEBUG );
+      watchdog( 'globalcollect_audit', 'Found Globalcollect: @id', array( '@id' => $order_id ), WATCHDOG_DEBUG );
     } 
   }
 
@@ -232,7 +232,7 @@ function globalcollect_audit_parse_all_wr1(){
 		$tried_count = 0;
 		foreach ( $missing as $order_id => $data ){
 			++$tried_count;
-			$date = globalcollect_audit_get_wr1_date( $data );
+			$date = wr1_date( $data );
 			if ( is_null($date) ){
 				globalcollect_audit_echo('X');
 				continue;
@@ -399,22 +399,12 @@ function globalcollect_audit_parse_wr1_file( $file ){
 
 	$wr1_parser = new Wr1DataFileParser( $file );
 	$start_time = microtime(true);
-	foreach( $wr1_parser->getRecordIterator() as $record ) {
-		switch ( $record['Payment-method'] ){
-			case 'CC':
-				$wr1_data[$record['Order-number']]  = $record;
-				globalcollect_audit_echo('c');
-				break;
-			case 'BA':
-			case 'OB':
-			case 'PP':
-				$wr1_data[$record['Additional-reference']]  = $record;
-				globalcollect_audit_echo('b');
-				break;
-			default:
-				$message = "Payment method '" . $record['Payment-method'] . "' not recognized. Please rectify in " . __FUNCTION__ .  print_r( $record, true );
-				globalcollect_audit_log_error( $message, "WR1_PAYMENT_METHOD" );
-				return;
+	foreach( $wr1_parser->getRecordIterator() as $record ) {	
+		globalcollect_audit_echo( wr1_echochar( $record ) );
+		//because we can't actually manipulate the db in an appropriate way for 
+		//the negative transactions yet...
+		if ( $record['Record-category'] !== '-' ){
+			$wr1_data[wr1_order_id( $record )] = $record;
 		}
 	} 
 	globalcollect_audit_echo("\n");
@@ -448,14 +438,14 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 	} 
 	
 	//if we have $donor_data, make sure it's rational
-	if ( !$this_transaction_is_missing && ( (int)$wr1['Payment-amount'] !== (int)$donor_data['AMOUNT'] ) ){
+	if ( !$this_transaction_is_missing && ( (int)wr1_amount($wr1) !== (int)$donor_data['AMOUNT'] ) ){
 		$amount_problem = true;
 		if ( array_key_exists( 'Over-under-amount-local', $wr1 ) && (int)$wr1['Over-under-amount-local'] > 0 ){
 			//then the mismatch is expected, and with a little more checking...
 			// Invoice-amount-deliv = what we think it is.
 			// Payment-amount = what actually happened.
 			if ( (int)$wr1['Invoice-amount-deliv'] === (int)$donor_data['AMOUNT']  ){
-				$unstaged_amount = (int)$wr1['Payment-amount']/100; //it's a GC thing.
+				$unstaged_amount = (int)wr1_amount($wr1)/100; //it's a GC thing.
 				$amount_problem = false;
 			}
 		} 
@@ -466,13 +456,9 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 		}
 	} 
 
-	$unstaged_amount = (int)$wr1['Payment-amount']/100; //it's a GC thing.
+	$unstaged_amount = (int)wr1_amount($wr1)/100; //it's a GC thing.
 	
-	if ( !array_key_exists( 'Transaction-currency', $wr1 ) ){
-		$wr1['Transaction-currency'] = $wr1['Payment-currency'];
-	}
-	
-	if ( !$this_transaction_is_missing && ( $wr1['Transaction-currency'] !== $donor_data['CURRENCYCODE'] )  ){
+	if ( !$this_transaction_is_missing && ( wr1_currency( $wr1 ) !== $donor_data['CURRENCYCODE'] )  ){
 		$message = __FUNCTION__ . " $contribution_tracking_id Currency code mismatch! Aborting. ";
 		globalcollect_audit_log_error( $message, "WR1_DATA_FORMAT" );
 		return null;
@@ -629,7 +615,7 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 function globalcollect_audit_make_default_donor_data( $wr1 ){
 	
 	$donor_data = array(
-		'AMOUNT' => (int)$wr1['Payment-amount'],
+		'AMOUNT' => (int)wr1_amount($wr1),
 		'EMAIL' => variable_get( 'globalcollect_audit_make_email', GC_AUDIT_MAKE_EMAIL ),
 		'FIRSTNAME' => variable_get( 'globalcollect_audit_make_fname', GC_AUDIT_MAKE_FNAME ),
 		'SURNAME' => variable_get( 'globalcollect_audit_make_lname', GC_AUDIT_MAKE_LNAME ),
@@ -637,11 +623,7 @@ function globalcollect_audit_make_default_donor_data( $wr1 ){
 		'CITY' => variable_get( 'globalcollect_audit_make_city', GC_AUDIT_MAKE_CITY ),
 	);
 	
-	if (array_key_exists('Order-number', $wr1)){
-		$donor_data['ORDERID'] = $wr1['Order-number'];
-	} elseif (array_key_exists('Additional-reference', $wr1)){
-		$donor_data['ORDERID'] = $wr1['Additional-reference'];
-	}
+	$donor_data['ORDERID'] = wr1_order_id($wr1);
 	
 	//deal with the complete insanity that is the way currency codes are dealt with in the wr1 files...
 	//cc always comes in as...
@@ -699,19 +681,7 @@ function globalcollect_audit_make_contribution_tracking_data( $wr1 ){
 		'utm_campaign' => 'gc_wr1',
 	);
 	
-	$parsed = null;
-	if ( array_key_exists( 'Date-authorised', $wr1 ) ){
-		$parsed = date_parse( $wr1['Date-authorised'] );
-	} elseif ( array_key_exists('Date-due', $wr1) ) {
-		$parsed = date_parse( $wr1['Date-due'] );
-	} 
-	
-	if ( is_null( $parsed ) ){
-		//die in a fire for dramatic effect
-		globalcollect_audit_echo(print_r( $wr1, true ));
-		globalcollect_audit_echo("Couldn't find the date in the wr1. Fixit.");
-		die();
-	}
+	$parsed = date_parse( wr1_date($wr1) );
 	
 	$return['ts'] = mktime( 
 		'0',
@@ -931,24 +901,6 @@ function globalcollect_audit_move_completed_wr1( $file, $nearly = false ){
 	return true;
 }
 
-function globalcollect_audit_get_wr1_date( $data ){
-	$date = '';
-	switch ( $data['Payment-method'] ){
-		case 'CC':
-			$date = $data['Date-authorised'];
-			break;
-		case 'BA': //Bank Payment
-		case 'OB': //Real-time Bank
-		case 'PP': //E-wallets. Clearly.
-			$date = $data['Date-due'];
-			break;
-		default:
-			$message = __FUNCTION__ . "No recognized date field. for payment method " . $data['Payment-method'] . ". Please rectify in " . __FUNCTION__ .  print_r( $data, true );
-			globalcollect_audit_log_error( $message, "WR1_DATE" );
-			return null;
-	}
-	return $date;
-}
 
 /**
  * Tries to intelligently select the next most likely log to knock off the 
@@ -1020,7 +972,7 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 		if ( !$tryme ){
 			$dates = array();
 			foreach ( $missing as $transaction ){
-				$date = globalcollect_audit_get_wr1_date( $transaction );
+				$date = wr1_date( $transaction );
 				if (is_null($date)){
 					return null;
 				}
@@ -1600,5 +1552,116 @@ function globalcollect_audit_echo( $echo ){
 		}
 		echo "$echo\n";
 		$chars = 0;		
+	}
+}
+
+/**
+ * *** Normalization Helpers ***
+ * Everything from here down is a function meant to simplify the way we 
+ * reference values returned in the wr1 record. 
+ * PLEASE NOTE: I haven't decided if I hate this approach or not yet. 
+ * If it turns out I hate it, I'll just write a normalization function for 
+ * everything and run 'em all through the seive. 
+ */
+
+
+
+function wr1_echochar( $record ){
+	if ($record['Record-category'] === '-'){
+		switch ( $record['Record-type'] ){
+			case 'CR':
+				return 'r';
+				break;
+			case 'CB':
+				return 'k';
+				break;
+			default:
+				return '-';
+		}
+	} else {
+		switch ( $record['Payment-method'] ){
+			case 'CC':
+				return 'c';
+				break;
+			case 'BA':
+			case 'OB':
+				return 'b';
+				break;
+			case 'PP': //this actually means "ewallets" to us
+				return 'e';
+				break;
+			default:
+				return '+';
+		}
+	}
+}
+
+
+function wr1_order_id( $record ){
+	$ordered_keys = array(
+		'Order-number',
+		'Additional-reference',
+		'Reference-original-payment',
+	);
+	return gca_wr1_key_grinder($record, $ordered_keys, 'order ID');
+}
+
+function wr1_currency( $record ){
+	$ordered_keys = array(
+		'Transaction-currency',
+		'Payment-currency',
+		'Invoice-currency-deliv',
+		'Invoice-currency-local',
+		'Currency-due',
+		'Over-under-currency-local',
+	);
+	return gca_wr1_key_grinder($record, $ordered_keys, 'currency', true);
+}
+
+function wr1_date( $record ){
+	$ordered_keys = array(
+		'Date-authorised',
+		'Date-due',
+	);
+	return gca_wr1_key_grinder($record, $ordered_keys, 'date');
+}
+
+function wr1_amount( $record ){
+	$ordered_keys = array(
+		'Payment-amount',
+	);
+	return gca_wr1_key_grinder($record, $ordered_keys, 'amount');
+}
+
+function gca_wr1_key_grinder( $record, $keys, $name, $error_on_mismatch = false ){
+
+	if ( $error_on_mismatch ){
+		$ret = null;
+		$first = '';
+		foreach ( $keys as $key ){
+			if (array_key_exists( $key, $record )){
+				if ( is_null($ret) ){
+					$ret = trim($record[$key]);
+					$first = $key;
+				} else {
+					if ( trim($record[$key]) != '' && $ret != trim($record[$key]) ){
+						globalcollect_audit_echo(print_r($record, true));
+						globalcollect_audit_echo("Check it: The $name is all f'd. $first does not match $key (at least).");
+						die();
+					}
+				}
+			}
+		}
+		return $ret;
+		
+	} else {
+		foreach ( $keys as $key ){
+			if ( array_key_exists( $key, $record ) ){
+				return $record[$key];
+			}
+		}
+		//implicit else
+		globalcollect_audit_echo("No $name found for the following record: " . print_r( $record, true ));
+		die(); //should really skip this record instead of dying, but for now it's actually helpful
 	}
 }
