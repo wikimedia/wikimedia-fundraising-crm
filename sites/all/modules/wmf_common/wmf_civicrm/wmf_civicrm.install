@@ -1,5 +1,11 @@
 <?php
 
+function wmf_civicrm_install()
+{
+    wmf_civicrm_update_6000();
+    wmf_civicrm_update_6001();
+}
+
 /**
  * Add contribution types and payment instruments
  */
