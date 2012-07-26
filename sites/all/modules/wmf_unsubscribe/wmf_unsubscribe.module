@@ -9,7 +9,6 @@ function wmf_unsubscribe_menu() {
         'access arguments' => array('administer wmf modules'),
         'page callback' => 'drupal_get_form',
         'page arguments' => array('thank_you_settings_form'),
-        'type' => MENU_CALLBACK,
     );
 
     // this link should be left in place so that old links are
@@ -25,13 +24,6 @@ function wmf_unsubscribe_menu() {
         'title' => 'WMF Unsubscribe',
         'access arguments' => array('unsubscribe'),
         'page callback' => 'wmf_unsubscribe_preview',
-        'type' => MENU_CALLBACK
-    );
-
-    $items['admin/settings/wmf_unsubscribe/configure'] = array(
-        'title' => t('Configure WMF unsubscribe module'),
-        'access arguments' => array('administer wmf modules'),
-        'type' => MENU_DEFAULT_LOCAL_TASK,
     );
 
     return $items;
@@ -47,7 +39,7 @@ function wmf_unsubscribe_perm() {
  * @return string the rendered output
  */
 function unsubscribe_page(){
-    require_once drupal_get_path( 'module', 'wmf_common' ) . '/civicrm_check_api.php';
+    require_once drupal_get_path( 'module', 'wmf_common' ) . '/civicrm_api_check.php';
 
     drupal_add_css( drupal_get_path('module', 'wmf_unsubscribe') . '/resources/unsubscribe.css' );
 
