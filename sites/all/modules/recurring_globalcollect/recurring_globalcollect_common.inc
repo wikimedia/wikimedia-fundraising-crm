@@ -3,7 +3,6 @@
  * Common functions for recurring_globalcollect modules 
  */
 
-require_once( drupal_get_path( 'module', 'wmf_civicrm' ) . '/db_switcher.inc' );
 require_once 'errors.inc';
 
 
@@ -12,7 +11,9 @@ require_once 'errors.inc';
  * 
  * @return false|object
  */
-function recurring_globalcollect_get_payment_by_id($id) {
+function recurring_globalcollect_get_payment_by_id($id)
+{
+  require_once( drupal_get_path( 'module', 'wmf_civicrm' ) . '/db_switcher.inc' );
 
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
