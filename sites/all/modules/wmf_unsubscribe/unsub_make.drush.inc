@@ -49,6 +49,7 @@ function unsub_make_drush_help( $section ) {
  */
 function drush_unsub_make() {
     require_once drupal_get_path( 'module', 'wmf_common' ) . '/wmf_common.module';
+    require_once drupal_get_path( 'module', 'wmf_common' ) . '/MessageFile.php';
 
     $partial = drush_get_option( 'partial', false );
 
@@ -74,6 +75,10 @@ function drush_unsub_make() {
     $DImsgs = new MessageFile( drupal_get_path( 'module', 'wmf_common' ) . '/DonationInterface/gateway_common/interface.i18n.php' );
 
     foreach( $DImsgs->languageList() as $lang ){
+        if( $lang === "qqq" ){
+            continue;
+        }
+        echo "$lang -> ";
         $msgCount = 0;
         foreach( $messages as $m ){
             if( $DImsgs->msgExists( $m, $lang ) ){
@@ -81,18 +86,24 @@ function drush_unsub_make() {
             }
         }
         if( $msgCount == count( $messages ) || ( $msgCount > 0 && $partial ) ){
+            echo " fully translated\n";
             foreach( $pages as $p ){
+                echo "\t writing $p ... ";
                 $page_str = file_get_contents( $template_path . "$p.html" );
                 $replaced = replace_messages( $page_str, $DImsgs, $lang );
 
-                // the following is required to fix errors in the submision of
+                // the following is required to fix errors in the submission of
                 // messages for translation
                 $replaced = str_replace( "<donations@wikimedia.org>", "<a href=\"mailto:donations@wikimedia.org\">donations@wikimedia.org</a>", $replaced );
 
                 $outfile = fopen( $output_path . "$p.$lang.html", 'w' );
                 fwrite( $outfile, $replaced );
                 fclose( $outfile );
+                echo "done\n";
             }
+        }
+        else{
+            echo " partial translation ... skipping\n";
         }
     }
     $errors = drush_get_error_log();
