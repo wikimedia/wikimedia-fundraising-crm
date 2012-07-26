@@ -88,7 +88,7 @@ function unsubscribe_page(){
     }
     if( !WMFCiviAPICheck::check_api_contact( $contact, $contribution[ 'contact_id' ], TRUE ) ){
         // do not spam the logs with "contact not found" DoS
-        return render_page( "unsubscribe-fail", $language );
+        return render_page( "unsubscribe-fail", $params, $language );
     }
     $contact = WMFCiviAPICheck::check_api_simplify( $contact, $contribution[ 'contact_id' ] );
 
@@ -110,6 +110,10 @@ function unsubscribe_page(){
         // do not spam the logs with "invalid hash" messages
         return render_page( "unsubscribe-fail", $params, $language );
     }
+
+    $params["contribution_id"] = $contribution['id'];
+    $params["hash"] = $hash_get;
+    $params["contact"] = $contact;
 
     // check to see if the user submitted the form
     if( variable_get( 'thank_you_onestep_unsubscribe', 'false' ) == "true" || ( isset( $_POST ) && !empty( $_POST ) ) ) {
