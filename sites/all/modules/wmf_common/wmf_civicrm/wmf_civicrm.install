@@ -51,15 +51,16 @@ function wmf_civicrm_update_6001()
 {
     $api = wmf_civicrm_bootstrap_civi();
     $api->CustomGroup->get(array(
-        'name' => 'payment_extra',
+        'name' => 'contribution_extra',
     ));
     $result = $api->values();
     if (empty($result))
     {
         $success = $api->CustomGroup->create(array(
             'extends' => 'Contribution',
-            'name' => 'payment_extra',
-            'title' => ts('Payment Extra'),
+            'name' => 'contribution_extra',
+            'table_name' => 'civicrm_contribution_wmf',
+            'title' => ts('Contribution Extra'),
             'is_active' => 1,
         ));
         if (!$success) {
@@ -72,6 +73,7 @@ function wmf_civicrm_update_6001()
     $success = $api->CustomField->create(array(
         'custom_group_id' => $custom_group->id,
         'name' => 'settlement_date',
+        'column_name' => 'settlement_date',
         'label' => ts('Settlement Date'),
         'data_type' => 'Date',
         'html_type' => 'Select Date',
