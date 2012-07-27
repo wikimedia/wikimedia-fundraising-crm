@@ -172,8 +172,8 @@ function wmf_common_watchdog($entry) {
  */
 function wmf_common_format_message($entry) {
 
-  $message = $entry['timestamp'];
-  $message .= '|'. $entry['type'];
+  $message = $entry['type'];
+  $message .= '|'. $entry['timestamp'];
   $message .= '|'. $entry['ip'];
   $message .= '|'. $entry['request_uri'];
   $message .= '|'. $entry['referer'];
