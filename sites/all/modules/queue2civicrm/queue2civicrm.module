@@ -518,9 +518,11 @@ function queue2civicrm_verify_and_stage($msg){
 	);
 
 	$failflag = false;
+    $err = array();
+
 	foreach ($required as $key){
 		if (empty($msg[$key])){
-			$err = "Required Field '$key' not found in message";
+			$err[] = "Required Field '$key' not found in message.";
 			$failflag = true;
 		}
 	}
@@ -536,14 +538,20 @@ function queue2civicrm_verify_and_stage($msg){
 
 	if (floatval($msg['net']) <= 0)
 	{
-		$err = "Positive amount required";
+		$err[] = "Positive amount required.";
 		$failflag = true;
 	}
 
 	if ($failflag === true){
-		$err .= ":\n" . print_r($msg, true);
-		watchdog('queue2civicrm', $err, WATCHDOG_ERROR);
-		drush_set_error("CIVI_REQ_FIELD", $err);
+        $errmsgstr = '';
+        foreach ($err as $errmsg) {
+            $errmsgstr .= $errmsg;
+            $errmsgstr .= ' ';
+        }
+
+		$errmsgstr .= ": " . print_r($msg, true);
+		watchdog('queue2civicrm', $errmsgstr, WATCHDOG_ERROR);
+		drush_set_error("CIVI_REQ_FIELD", $errmsgstr);
 		return false;
 	}
 
