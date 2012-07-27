@@ -50,9 +50,7 @@ function recurring_globalcollect_get_payment_by_id($id)
  *  AND `civicrm_contribution_recur`.`contribution_status_id` = 1
  * LIMIT 1
  * 
- * @param array   $options   Options
- * 
- * $options
+ * options:
  * - date           string    Uses strtotime() to parse the date
  * - $limit         integer   Number of records to pull. Default is 1.
  * 
