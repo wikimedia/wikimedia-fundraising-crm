@@ -98,14 +98,6 @@ function recurring_globalcollect_settings() {
     '#description' => t($standalone_globalcollect_adapter_installed . ' Link: ') . l(t('Current version of payment_library'), "https://svn.wikimedia.org/viewvc/wikimedia/trunk/fundraising-misc/payment_library/"),
   );
 
-  $form['recurring_globalcollect_failmail'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Email Notification Address'),
-    '#required' => FALSE,
-    '#default_value' => variable_get('recurring_globalcollect_failmail', ''),
-    '#description' => t('Enter the fail mail contact address.'),
-  );
-
   $form['recurring_globalcollect_merchant_id'] = array(
     '#type' => 'textfield',
     '#title' => t('Global Collect Merchant ID'),

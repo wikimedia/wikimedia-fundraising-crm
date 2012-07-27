@@ -57,16 +57,42 @@ function replace_messages( $string, $message_file, $language='en' ){
 function wmf_common_menu() {
   $items = array();
 
+  $items['admin/settings/wmf_common'] = array(
+    'title' => 'WMF Common Settings',
+    'access arguments' => array('administer wmf_common'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('wmf_common_settings'),
+  );
 
   $items['admin/settings/logging/wmf_syslog'] = array(
     'title'          => 'WMF Syslog',
     'description'    => 'Settings for the Watchdog hook provided by the WMF Common module.',
     'page callback'  => 'drupal_get_form',
-    'page arguments' => array('wmf_common_settings'),
+    'page arguments' => array('wmf_syslog_settings'),
     'access arguments' => array('administer site configuration'),
   );
 
   return $items;
+}
+
+function wmf_common_perm()
+{
+    return array('administer wmf_common');
+}
+
+function wmf_common_settings()
+{
+    $form = array();
+
+    $form['wmf_common_failmail'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Failmail Recipient Address'),
+      '#required' => TRUE,
+      '#default_value' => variable_get('wmf_common_failmail', 'fr-tech@wikimedia.org'),
+      '#description' => t('Enter the failmail contact address.'),
+    );
+
+    return system_settings_form($form);
 }
 
 /**
@@ -74,7 +100,7 @@ function wmf_common_menu() {
  *
  * @return array Settings form
  */
-function wmf_common_settings() {
+function wmf_syslog_settings() {
   $form = array();
 
   $form['wmf_common_syslog_identity'] = array(
