@@ -1,5 +1,10 @@
 <?php
 
+function wmf_reports_install()
+{
+    wmf_reports_update_6000();
+}
+
 /**
  * Add a default mapping to support Contacts and Contributions export
  */
