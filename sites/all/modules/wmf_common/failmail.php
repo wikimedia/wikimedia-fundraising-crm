@@ -3,18 +3,16 @@
 function wmf_common_failmail($error, $source = null, $removed = FALSE)
 {
     $to = variable_get('wmf_common_failmail', '');
-    if (!empty($to))
-    {
-        $params['error'] = $error;
-        if ($source)
-            $params['source'][] = $source;
-        elseif (property_exists($error, 'source'))
-            $params['source'][] = $error->source;
-        $params['removed'] = $removed;
-        drupal_mail('wmf_common', 'fail', $to, language_default(), $params);
-    } else {
-        watchdog('wmf_common', 'Failmail recipient address not set up!');
+    if (empty($to)) {
+        $to = 'fr-tech@wikimedia.org';
     }
+    $params['error'] = $error;
+    if ($source)
+        $params['source'][] = $source;
+    elseif (property_exists($error, 'source'))
+        $params['source'][] = $error->source;
+    $params['removed'] = $removed;
+    drupal_mail('wmf_common', 'fail', $to, language_default(), $params);
 }
 
 /*
