@@ -3,14 +3,6 @@
 function wmf_unsubscribe_menu() {
     $items = array();
 
-    $items['admin/settings/wmf_unsubscribe'] = array(
-        'title' => t('WMF Unsubscribe Settings'),
-        'description' => t('Configure thank you note options.'),
-        'access arguments' => array('administer wmf modules'),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('thank_you_settings_form'),
-    );
-
     // this link should be left in place so that old links are
     // still valid for some time, remove in 2013
     $items['thank_you/unsubscribe'] = array(
