@@ -1,28 +1,31 @@
 <?php
 
-/*
- * return a map from option value id => option value name
+/**
+ * return a map of option value (id) => option name
  */
 function civicrm_api_option_group($group_name, $key = null)
 {
-	static $cached_group = null;
-	if (!$cached_group)
+	static $cached_group = array();
+	if (!array_key_exists($group_name, $cached_group))
 	{
 		$api = civicrm_api_classapi();
 		$api->OptionValue->Get(array(
 			'option_group_name' => $group_name,
 		));
-		$filter = function($row) {
-			return $row->name;
-		};
-		$cached_group = array_map($filter, $api->values());
+		$cached_group[$group_name] = array();
+		$option_values = $api->values();
+		foreach ($option_values as $row)
+		{
+			$cached_group[$group_name][$row->value] = $row->name;
+		}
 	}
 	if ($key)
 	{
-		$forwards = array_flip($cached_group);
+		// In this case, just lookup name and return the option value
+		$forwards = array_flip($cached_group[$group_name]);
 		return $forwards[$key];
 	}
-	return $cached_group;
+	return $cached_group[$group_name];
 }
 
 function civicrm_api_contribution_status($key = null)
