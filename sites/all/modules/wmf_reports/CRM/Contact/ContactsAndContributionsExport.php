@@ -112,12 +112,15 @@ EOS;
             CRM_Core_DAO::executeQuery($sql, $params);
         }
 
-        $delete_ids_clause = implode(", ", $delete_ids);
-        $sql = <<<EOS
+        if (!empty($delete_ids))
+        {
+            $delete_ids_clause = implode(", ", $delete_ids);
+            $sql = <<<EOS
 DELETE FROM {$table}
     WHERE contribution_id IN ({$delete_ids_clause})
 EOS;
-        CRM_Core_DAO::executeQuery($sql);
+            CRM_Core_DAO::executeQuery($sql);
+        }
 
         $sql = <<<EOS
 UPDATE {$table}
