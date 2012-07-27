@@ -262,8 +262,6 @@ class CRM_Contact_Form_ContactAndContributionsSelector extends CRM_Contribute_Se
             ), 
             array( 
                 'name'      => ts('Name'), 
-                'sort'      => 'sort_name', 
-                'direction' => CRM_Utils_Sort::DONTCARE, 
             ),
             array(
                 'name'      => ts('Amount'),
