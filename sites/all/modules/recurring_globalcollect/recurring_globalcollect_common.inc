@@ -289,7 +289,7 @@ function recurring_globalcollect_get_failure_retry_date($options = array()) {
   $query .= $where;
   
   // Add a limit.
-  if (!empty($limit)) {
+  if ($limit > 0) {
     $query .= " LIMIT " . $limit;
   }
   
