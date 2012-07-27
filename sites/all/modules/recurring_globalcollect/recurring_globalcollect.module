@@ -185,7 +185,7 @@ function recurring_globalcollect_settings() {
  * - $options['process'] next_sched_contribution | failure_retry_date
  * - $options['url'] Used for testing and overriding the url
  */
-function recurring_globalcollect_batch_process() {
+function recurring_globalcollect_batch_process($options = array()) {
 
   // The number of contributions to process
   $batch = (integer) variable_get('recurring_globalcollect_batch', 0);
@@ -267,6 +267,7 @@ function recurring_globalcollect_process($contribution_batch, $options = array()
           $failed[] = $contribution_recur;
       }
           /*
+           * FR #560:
            * catch (RecurringGlobalcollectCiviInsertException $e)
            * {
            * TODO This should not mark the payment as a failure, as it has 
