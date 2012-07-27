@@ -86,6 +86,7 @@ function wmf_civicrm_update_6001()
         'is_active' => 1,
         'is_searchable' => 1,
         'is_search_range' => 1,
+        'is_view' => 1,
         'date_format' => 'M d, yy',
         'time_format' => 2,
     ));
