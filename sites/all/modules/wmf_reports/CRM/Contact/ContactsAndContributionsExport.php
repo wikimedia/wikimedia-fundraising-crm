@@ -34,12 +34,15 @@ EOS;
         $max_contribution_count = CRM_Core_DAO::singleValueQuery($sql);
 
         $alter_columns = array();
-        foreach (range(2, $max_contribution_count) as $index)
+        if ($max_contribution_count > 1)
         {
-            $alter_columns += array(
-                "total_amount_{$index}" => array('type' => "DECIMAL(20,2)"),
-                "receive_date_{$index}" => array('label' => "Received {$index}", 'type' => "DATETIME"),
-            );
+            foreach (range(2, $max_contribution_count) as $index)
+            {
+                $alter_columns += array(
+                    "total_amount_{$index}" => array('type' => "DECIMAL(20,2)"),
+                    "receive_date_{$index}" => array('label' => "Received {$index}", 'type' => "DATETIME"),
+                );
+            }
         }
 
         $alter_columns += array(
@@ -87,20 +90,18 @@ EOS;
             $set_clauses[] = "sybunt = {$sybunt}";
 
             $master_row_contribution = array_shift($contributions);
-            if (empty($contributions)) {
-                continue;
-            }
-
-            $row_index = 2;
-            $params_index = 1;
-            foreach ($contributions as $contribution)
-            {
-                $delete_ids[] = $contribution[0];
-                $set_clauses[] = "total_amount_{$row_index} = %{$params_index}";
-                $params[$params_index++] = array($contribution[1], 'String');
-                $set_clauses[] = "receive_date_{$row_index} = %{$params_index}";
-                $params[$params_index++] = array($contribution[2], 'String');
-                $row_index++;
+            if (!empty($contributions)) {
+                $row_index = 2;
+                $params_index = 1;
+                foreach ($contributions as $contribution)
+                {
+                    $delete_ids[] = $contribution[0];
+                    $set_clauses[] = "total_amount_{$row_index} = %{$params_index}";
+                    $params[$params_index++] = array($contribution[1], 'String');
+                    $set_clauses[] = "receive_date_{$row_index} = %{$params_index}";
+                    $params[$params_index++] = array($contribution[2], 'String');
+                    $row_index++;
+                }
             }
 
             $set_clause = implode(", ", $set_clauses);
