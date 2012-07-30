@@ -60,10 +60,10 @@ function wmf_logging_settings() {
     '#description'   => t('The process identifier can be used to differentiate different requests.'),
   );
 
-  $form[ 'wmf_logging_syslog_persistant' ] = array(
+  $form[ 'wmf_logging_syslog_persistent' ] = array(
     '#type'          => 'checkbox',
     '#title'         => t('Use persistent Syslog connection'),
-    '#default_value' => variable_get('wmf_logging_syslog_persistant', DEFAULT_WMF_LOGGING_PERSISTENT),
+    '#default_value' => variable_get('wmf_logging_syslog_persistent', DEFAULT_WMF_LOGGING_PERSISTENT),
     '#description'   => t('Some webserver configurations may require the Syslog connection to be closed after a log message is written to avoid logging webserver errors as Drupal errors. <a href="http://www.php.net/manual/en/function.syslog.php#97843">Details.</a>'),
   );
 
@@ -121,8 +121,9 @@ function wmf_logging_watchdog($entry) {
 
   syslog($entry[ 'severity' ], wmf_logging_format_message($entry));
 
-  if (!variable_get('wmf_logging_syslog_persistant', DEFAULT_WMF_LOGGING_PERSISTENT)) {
+  if (!variable_get('wmf_logging_syslog_persistent', DEFAULT_WMF_LOGGING_PERSISTENT)) {
     closelog();
+    $log_init = FALSE;
   }
 }
 
@@ -138,7 +139,7 @@ function wmf_logging_format_message($entry) {
   $message .= '|' . $entry[ 'referer' ];
   $message .= '|' . $entry[ 'user' ]->uid;
   $message .= '|' . $entry[ 'link' ];
-  $message .= '|' . is_null($entry[ 'variables' ]) ? $entry[ 'message' ] : strtr($entry[ 'message' ], $entry[ 'variables' ]);
+  $message .= '|' . empty($entry[ 'variables' ]) ? $entry[ 'message' ] : strtr($entry[ 'message' ], $entry[ 'variables' ]);
 
   return $message;
 }
