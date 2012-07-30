@@ -22,6 +22,7 @@ INSERT INTO {$table}_rollup (
         GROUP_CONCAT(CONCAT(contribution_id,',',total_amount,',',COALESCE(receive_date, '')) SEPARATOR ';') AS rollup,
         COUNT(*) AS count
     FROM {$table}
+    WHERE COALESCE(contribution_id, '') <> ''
     GROUP BY civicrm_primary_id
     ORDER BY civicrm_primary_id, receive_date DESC
 )
@@ -84,10 +85,14 @@ EOS;
             }
 
             $set_clauses = array();
+            $params = array();
 
-            list ($lybunt, $sybunt) = self::calc_bunts($contributions);
-            $set_clauses[] = "lybunt = {$lybunt}";
-            $set_clauses[] = "sybunt = {$sybunt}";
+            if (!empty($contributions))
+            {
+                list ($lybunt, $sybunt) = self::calc_bunts($contributions);
+                $set_clauses[] = "lybunt = {$lybunt}";
+                $set_clauses[] = "sybunt = {$sybunt}";
+            }
 
             $master_row_contribution = array_shift($contributions);
             if (!empty($contributions)) {
@@ -104,13 +109,16 @@ EOS;
                 }
             }
 
-            $set_clause = implode(", ", $set_clauses);
-            $sql = <<<EOS
+            if (!empty($set_clauses))
+            {
+                $set_clause = implode(", ", $set_clauses);
+                $sql = <<<EOS
 UPDATE {$table}
     SET {$set_clause}
     WHERE contribution_id = {$master_row_contribution[0]}
 EOS;
-            CRM_Core_DAO::executeQuery($sql, $params);
+                CRM_Core_DAO::executeQuery($sql, $params);
+            }
         }
 
         if (!empty($delete_ids))
