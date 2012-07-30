@@ -74,7 +74,7 @@ function createQueueMessage( $msg ) {
 
 	foreach ( $required as $r ){
 		if ( !array_key_exists( $r, $msg ) || $msg[$r] == '' ){
-			watchdog('queue2civicrm', "Required Field '$r' not found in message:" . print_r($msg, true), WATCHDOG_ERROR);
+			watchdog('queue2civicrm', "Required Field '$r' not found in message:" . print_r($msg, true), NULL, WATCHDOG_ERROR);
 			drush_set_error("CIVI_REQ_FIELD", "Required Field '$r' not found in message:" . print_r($msg, true));
 			return false;
 		}

@@ -71,7 +71,7 @@ function _offline2civicrm_import_chargebacks_chargeback_trxn($contribution_id){
 
   if(!WMFCiviAPICheck::check_api_contribution($contribution, $contribution_id)){
     watchdog('offline2civicrm', "Contribution (id: $contribution_id) could not be loaded via CiviCRM API: " .
-      print_r($contribution, TRUE), WATCHDOG_ERROR);
+      print_r($contribution, TRUE), NULL, WATCHDOG_ERROR);
     return false;
   }
 
@@ -79,7 +79,7 @@ function _offline2civicrm_import_chargebacks_chargeback_trxn($contribution_id){
 
   if($contribution_flat === false){
     watchdog('offline2civicrm', "Contribution could not be extracted from API response: " .
-      print_r($contribution, TRUE), WATCHDOG_ERROR);
+      print_r($contribution, TRUE), NULL, WATCHDOG_ERROR);
     return false;
   }
 
@@ -96,7 +96,7 @@ function _offline2civicrm_import_chargebacks_chargeback_trxn($contribution_id){
 
   $updated = civicrm_api("Contribution", "Update", array_merge($contribution, array('version' => '3',)));
 
-  watchdog('offline2civicrm', "Updated contribution: " . print_r($updated, true), WATCHDOG_INFO);
+  watchdog('offline2civicrm', "Updated contribution: " . print_r($updated, true), NULL, WATCHDOG_INFO);
 
   return true;
 
@@ -119,7 +119,7 @@ function _offline2civicrm_import_chargebacks_globalcollect($filename){
       $effortid = _get_value('Effort ID', $row, $headers);
 
       if($orderid == ''){
-        watchdog('offline2civicrm', "Invalid OrderID for chargeback on row", WATCHDOG_INFO);
+        watchdog('offline2civicrm', "Invalid OrderID for chargeback on row", NULL, WATCHDOG_INFO);
         continue;
       }
       $trxn_id .= $orderid;
@@ -137,13 +137,13 @@ function _offline2civicrm_import_chargebacks_globalcollect($filename){
         if($contribution === false){
           // still nothing, I'm outta guesses, lets break and give a human a try
           watchdog('offline2civicrm', "Could not find transaction matching trxn_id: " .
-            print_r($row, TRUE), WATCHDOG_ERROR);
+            print_r($row, TRUE), NULL, WATCHDOG_ERROR);
           continue;
         }
       }
       if(!array_key_exists('id', $contribution)){
         watchdog('offline2civicrm', "Contribution ID not found for trxn_id: " .
-          print_r($row, TRUE) . print_r($contribution, TRUE), WATCHDOG_ERROR);
+          print_r($row, TRUE) . print_r($contribution, TRUE), NULL, WATCHDOG_ERROR);
         continue;
       }
 
