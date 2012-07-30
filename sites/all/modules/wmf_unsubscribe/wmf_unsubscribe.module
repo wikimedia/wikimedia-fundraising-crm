@@ -141,7 +141,7 @@ function unsubscribe_page(){
  */
 function render_page( $page, $params=array(), $language='en' ){
 
-    if( !file_exists( drupal_get_path( 'module', 'wmf_common' ) . '/Twig/lib/Twig/Autoloader.php' ) ){
+    if( !file_exists( variable_get('wmf_common_twig_location', DEFAULT_WMF_TWIG_LOCATION) . '/lib/Twig/Autoloader.php' ) ){
         watchdog("wmf_unsubscribe", "Twig libraries not found", array(), "WATCHDOG_ERROR");
         return "";
 
