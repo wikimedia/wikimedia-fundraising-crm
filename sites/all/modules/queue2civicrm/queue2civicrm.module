@@ -541,7 +541,7 @@ function queue2civicrm_verify_and_stage($msg){
 	if (!empty($err))
 	{
 		$err[] = print_r($msg, true);
-		watchdog('queue2civicrm', $err, WATCHDOG_ERROR);
+		watchdog('queue2civicrm', $err, NULL, WATCHDOG_ERROR);
 		drush_set_error("CIVI_REQ_FIELD", implode("\n", $err));
 		return false;
 	}

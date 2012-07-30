@@ -226,7 +226,7 @@ function limbo_verify_and_stage($msg){
   $failflag = false;
   foreach ($required as $key=>$value){
     if (!isset($msg[$key])){
-      watchdog('limbo', "Required Field '$key' not found in message:" . print_r($msg, true), WATCHDOG_ERROR);
+      watchdog('limbo', "Required Field '$key' not found in message:" . print_r($msg, true), NULL, WATCHDOG_ERROR);
       drush_set_error("CIVI_REQ_FIELD", "Required Field '$key' not found in message:" . print_r($msg, true));
       $failflag = true;
     }

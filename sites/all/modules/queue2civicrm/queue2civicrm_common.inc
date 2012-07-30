@@ -453,11 +453,11 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL, $ef
 		'version' => '3'
 	);
 
-	watchdog( 'queue2civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), WATCHDOG_DEBUG);
+	watchdog( 'queue2civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), NULL, WATCHDOG_DEBUG);
 
 	$contribution_result = civicrm_api( "Contribution", "Create", $contribution );
 	
-	watchdog( 'queue2civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), WATCHDOG_DEBUG);
+	watchdog( 'queue2civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
 	
 	if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
 		return false;
@@ -1019,7 +1019,7 @@ function _queue2civicrm_get_civi_id($type, $name, $fatal = true) {
 				watchdog('queue2civicrm', "Found value for payment_instrument $name :" . $civi_ids[$type][$name]);
 				return $civi_ids[$type][$name];
 			} else {
-				watchdog('queue2civicrm', "Payment Instrument '$name' not found! :", WATCHDOG_ERROR);
+				watchdog('queue2civicrm', "Payment Instrument '$name' not found! :", NULL, WATCHDOG_ERROR);
 				if ($fatal){
 					drush_set_error("CIVI_CONFIG", "Payment Instrument '$name' not found in CiviCRM! Please add it and retry.");
 				} 
@@ -1034,7 +1034,7 @@ function _queue2civicrm_get_civi_id($type, $name, $fatal = true) {
 				watchdog('queue2civicrm', "Found id for Entity Tag $name :" . $civi_ids[$type][$name]);
 				return $civi_ids[$type][$name];
 			} else {
-				watchdog('queue2civicrm', "Entity Tag '$name' not found! :", WATCHDOG_ERROR);
+				watchdog('queue2civicrm', "Entity Tag '$name' not found! :", NULL, WATCHDOG_ERROR);
 				drush_set_error("CIVI_CONFIG", "Entity Tag '$name' not found! Please add it and retry.");
 				return false;
 			}

@@ -292,7 +292,7 @@ function thank_you_render( $contribution_id, $test=null ) {
 	}
 	# check to see if a matching localization was found
 	if ( isset( $TYmsgs ) && array_key_exists( $lang, $TYmsgs ) ) {
-        watchdog('thank_you', "Messages intialized and $lang found", WATCHDOG_INFO);
+        watchdog('thank_you', "Messages intialized and $lang found", NULL, WATCHDOG_INFO);
 		# loop through the localizations and replace the defaults
 		foreach ( $rendering as $key => $value ){
 			# check if the current key has a localized value
@@ -304,7 +304,7 @@ function thank_you_render( $contribution_id, $test=null ) {
 	else{
         # look for default messages (en) in i18n
         if ( isset( $TYmsgs ) && array_key_exists( 'en', $TYmsgs ) ) {
-            watchdog('thank_you', "$lang not found - defaulting to en", WATCHDOG_INFO);
+            watchdog('thank_you', "$lang not found - defaulting to en", NULL, WATCHDOG_INFO);
             # loop through the localizations and replace the defaults
             foreach ( $rendering as $key => $value ){
                 # check if the current key has a localized value
@@ -526,7 +526,7 @@ function thank_you_render_recurring( $contribution_id, $test=null ) {
     }
     # check to see if a matching localization was found
     if ( isset( $TYmsgs_recur ) && array_key_exists( $lang, $TYmsgs_recur ) ) {
-        watchdog('thank_you', "Messages intialized and $lang found", WATCHDOG_INFO);
+        watchdog('thank_you', "Messages intialized and $lang found", NULL, WATCHDOG_INFO);
         # loop through the localizations and replace the defaults
         foreach ( $rendering as $key => $value ){
             # check if the current key has a localized value
@@ -538,7 +538,7 @@ function thank_you_render_recurring( $contribution_id, $test=null ) {
     else{
         # look for default messages (en) in i18n
         if ( isset( $TYmsgs_recur ) && array_key_exists( 'en', $TYmsgs_recur ) ) {
-            watchdog('thank_you', "$lang not found - defaulting to en", WATCHDOG_INFO);
+            watchdog('thank_you', "$lang not found - defaulting to en", NULL, WATCHDOG_INFO);
             # loop through the localizations and replace the defaults
             foreach ( $rendering as $key => $value ){
                 # check if the current key has a localized value
@@ -548,7 +548,7 @@ function thank_you_render_recurring( $contribution_id, $test=null ) {
             }
         }
         else {
-            watchdog('thank_you', "$lang not found, en not found, using interface defaults", WATCHDOG_INFO);
+            watchdog('thank_you', "$lang not found, en not found, using interface defaults", NULL, WATCHDOG_INFO);
         }
     }
     # replace the tokens with the contact/contribution data
