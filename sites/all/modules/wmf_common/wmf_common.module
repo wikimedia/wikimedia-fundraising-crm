@@ -4,8 +4,6 @@
 require_once 'civicrm_api_check.php';
 require_once 'failmail.php';
 
-define(DEFAULT_WMF_TWIG_LOCATION, "Twig");
-
 /**
  * Replaces tokens in a string with entries from a @class MessageFile.
  *
@@ -95,11 +93,17 @@ function wmf_common_settings() {
     '#description'   => t('Enter the failmail contact address.'),
   );
 
+  $twig_path = variable_get('wmf_common_twig_location', drupal_get_path('module', 'wmf_common') . DIRECTORY_SEPARATOR . "Twig");
+  @include_once implode(DIRECTORY_SEPARATOR, array($twig_path, 'lib', 'Twig', 'Autoloader.php'));
+  $twig_installed = class_exists("Twig_Autoloader");
+  $twig_msg = $twig_installed ? '<span style="color:green;">Installed Correctly</span>' : '<span style="color:red;">Please install</span>';
+
   $form['wmf_common_twig_location'] = array(
     '#type'          => 'textfield',
     '#title'         => t('Twig location'),
-    '#default_value' => variable_get('wmf_common_twig_location', DEFAULT_WMF_TWIG_LOCATION),
-    '#description'   => t('The location of the Twig checkout from the vendor branch'),
+    '#default_value' => $twig_path,
+    '#required'      => TRUE,
+    '#description'   => "{$twig_msg} " . t('Filesystem path of the Twig library.  Try: <code>svn co http://svn.wikimedia.org/svnroot/wikimedia/vendors/twig</code>'),
   );
 
   return system_settings_form($form);
