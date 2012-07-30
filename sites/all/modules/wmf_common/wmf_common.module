@@ -1,52 +1,51 @@
 <?php
 
-if (defined('LOG_LOCAL0')) {
-  define('DEFAULT_WMF_SYSLOG_FACILITY', LOG_LOCAL0);
-}
-else {
-  define('DEFAULT_WMF_SYSLOG_FACILITY', LOG_USER);
-}
-
-define('DEFAULT_WMF_SYSLOG_PID', FALSE);
-define('DEFAULT_WMF_SYSLOG_PERSISTENT', TRUE);
-define('DEFAULT_WMF_SYSLOG_IDENTITY', 'drupal');
-
 // include the only files for this module
 require_once 'civicrm_api_check.php';
 require_once 'failmail.php';
 
+/**
+ * Replaces tokens in a string with entries from a @class MessageFile.
+ *
+ * @param        $string        The string to replace tokens in
+ * @param        $message_file  The file to obtain natural language messages from
+ * @param string $language      The ISO-2 language code
+ *
+ * @return mixed                The resultant natural language string
+ */
+function replace_messages($string, $message_file, $language = 'en') {
 
-function replace_messages( $string, $message_file, $language='en' ){
+  if ($message_file instanceof MessageFile) {
+    // go ahead and use the provided instance
+    $messages = $message_file;
+  }
+  else {
+    $messages = new MessageFile( $message_file );
+  }
 
-    if( $message_file instanceof MessageFile ){
-        // go ahead and use the provided instance
-        $messages = $message_file;
-    } else {
-        $messages = new MessageFile( $message_file );
+  // search for messages in the source file like %message_token% and, optionally,
+  // like %message_token|param1|param2%
+  $matches = array();
+  preg_match_all("/%([a-zA-Z0-9_-]+)(|(?:(?!%).)*)%/", $string, $matches);
+
+  // loop through the found tokens and replace with messages, if they exist
+  foreach ($matches[ 1 ] as $i => $msg_key) {
+    // look for parameters passed to the message
+    if (isset( $matches[ 2 ][ $i ] ) && $matches[ 2 ][ $i ] != '') {
+      $m = $messages->getMsg($matches[ 1 ][ $i ], $language);
+      $params = explode('|', trim($matches[ 2 ][ $i ], '|'));
+      foreach ($params as $k => $value) {
+        $k++; // params are 1-indexed
+        $m = str_replace("\$$k", $value, $m);
+      }
+      $string = str_replace($matches[ 0 ][ $i ], $m, $string);
     }
-
-    // search for messages in the source file like %message_token% and, optionally,
-    // like %message_token|param1|param2%
-    $matches = array();
-    preg_match_all( "/%([a-zA-Z0-9_-]+)(|(?:(?!%).)*)%/", $string, $matches );
-
-    // loop through the found tokens and replace with messages, if they exist
-    foreach( $matches[ 1 ] as $i => $msg_key ){
-        // look for parameters passed to the message
-        if( isset($matches[ 2 ][ $i ] ) && $matches[ 2 ][ $i ] != ''){
-            $m = $messages->getMsg( $matches[ 1 ][ $i ], $language );
-            $params = explode( '|', trim( $matches[ 2 ][ $i ], '|' ) );
-            foreach( $params as $k => $value ){
-                $k++; // params are 1-indexed
-                $m = str_replace( "\$$k", $value, $m );
-            }
-            $string = str_replace( $matches[ 0 ][ $i ], $m, $string );
-        } else {
-            $string = str_replace( $matches[ 0 ][ $i ], $messages->getMsg( $matches[ 1 ][ $i ], $language ), $string );
-        }
+    else {
+      $string = str_replace($matches[ 0 ][ $i ], $messages->getMsg($matches[ 1 ][ $i ], $language), $string);
     }
+  }
 
-    return $string;
+  return $string;
 }
 
 /**
@@ -57,155 +56,42 @@ function replace_messages( $string, $message_file, $language='en' ){
 function wmf_common_menu() {
   $items = array();
 
-  $items['admin/settings/wmf_common'] = array(
-    'title' => 'WMF Common Settings',
-    'access arguments' => array('administer wmf_common'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('wmf_common_settings'),
-  );
-
-  $items['admin/settings/logging/wmf_syslog'] = array(
-    'title'          => 'WMF Syslog',
-    'description'    => 'Settings for the Watchdog hook provided by the WMF Common module.',
-    'page callback'  => 'drupal_get_form',
-    'page arguments' => array('wmf_syslog_settings'),
-    'access arguments' => array('administer site configuration'),
+  $items[ 'admin/settings/wmf_common' ] = array(
+    'title'            => 'WMF Common Settings',
+    'access arguments' => array( 'administer wmf_common' ),
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array( 'wmf_common_settings' ),
   );
 
   return $items;
 }
 
-function wmf_common_perm()
-{
-    return array('administer wmf_common');
-}
-
-function wmf_common_settings()
-{
-    $form = array();
-
-    $form['wmf_common_failmail'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Failmail Recipient Address'),
-      '#required' => TRUE,
-      '#default_value' => variable_get('wmf_common_failmail', 'fr-tech@wikimedia.org'),
-      '#description' => t('Enter the failmail contact address.'),
-    );
-
-    return system_settings_form($form);
+/**
+ * Drupal hook for defining exported permissions for this module. Exported
+ * permissions are:
+ *  - 'administer wmf_common'
+ *
+ * @return array of exported permissions.
+ */
+function wmf_common_perm() {
+  return array( 'administer wmf_common' );
 }
 
 /**
- * Settings form linked to from @see wmf_common_menu
+ * Constructs the settings page for this module. See @ref wmf_common_menu.
  *
- * @return array Settings form
+ * @return array Of form components.
  */
-function wmf_syslog_settings() {
+function wmf_common_settings() {
   $form = array();
 
-  $form['wmf_common_syslog_identity'] = array(
+  $form[ 'wmf_common_failmail' ] = array(
     '#type'          => 'textfield',
-    '#title'         => t('Syslog identity'),
-    '#default_value' => variable_get('wmf_common_syslog_identity', DEFAULT_WMF_SYSLOG_IDENTITY),
-    '#description'   => t('String that will be prepended to the Syslog output'),
-  );
-
-  $form['wmf_common_syslog_facility'] = array(
-    '#type'          => 'select',
-    '#title'         => t('Send events to this syslog facility'),
-    '#default_value' => variable_get('wmf_common_syslog_facility', DEFAULT_WMF_SYSLOG_FACILITY),
-    '#options'       => wmf_common_syslog_facility_list(),
-    '#description'   => t('Select the syslog facility code under which Drupal\'s messages should be sent. On UNIX/Linux systems, Drupal can flag its messages with the code LOG_LOCAL0 through LOG_LOCAL7; for Microsoft Windows, all messages are flagged with the code LOG_USER.'),
-  );
-
-  $form['wmf_common_syslog_pid'] = array(
-    '#type'          => 'checkbox',
-    '#title'         => t('Add process ID to log message string'),
-    '#default_value' => variable_get('wmf_common_syslog_pid', DEFAULT_WMF_SYSLOG_PID),
-    '#description'   => t('The process identifier can be used to differentiate different requests.'),
-  );
-
-  $form['wmf_common_syslog_persistant'] = array(
-    '#type'          => 'checkbox',
-    '#title'         => t('Use persistent Syslog connection'),
-    '#default_value' => variable_get('wmf_common_syslog_persistant', DEFAULT_WMF_SYSLOG_PERSISTENT),
-    '#description'   => t('Some webserver configurations may require the Syslog connection to be closed after a log message is written to avoid logging webserver errors as Drupal errors. <a href="http://www.php.net/manual/en/function.syslog.php#97843">Details.</a>'),
+    '#title'         => t('Failmail Recipient Address'),
+    '#required'      => TRUE,
+    '#default_value' => variable_get('wmf_common_failmail', 'fr-tech@wikimedia.org'),
+    '#description'   => t('Enter the failmail contact address.'),
   );
 
   return system_settings_form($form);
-}
-
-/**
- * Provides the list of available Syslog facilities
- *
- * @return array of facilities
- */
-function wmf_common_syslog_facility_list() {
-  $facility_list = array(
-    LOG_USER   => t('LOG_USER - User level messages. Use this for Windows.'),
-  );
-  if (defined('LOG_LOCAL0')) {
-    $facility_list += array(
-      LOG_LOCAL0 => t('LOG_LOCAL0 - Local 0'),
-      LOG_LOCAL1 => t('LOG_LOCAL1 - Local 1'),
-      LOG_LOCAL2 => t('LOG_LOCAL2 - Local 2'),
-      LOG_LOCAL3 => t('LOG_LOCAL3 - Local 3'),
-      LOG_LOCAL4 => t('LOG_LOCAL4 - Local 4'),
-      LOG_LOCAL5 => t('LOG_LOCAL5 - Local 5'),
-      LOG_LOCAL6 => t('LOG_LOCAL6 - Local 6'),
-      LOG_LOCAL7 => t('LOG_LOCAL7 - Local 7'),
-    );
-  }
-  return $facility_list;
-}
-
-/**
- * Hook into the drupal watchdog dispatcher. Implements the custom log handler.
- *
- * @param $entry
- */
-function wmf_common_watchdog($entry) {
-  global $base_url;
-
-  static $log_init = FALSE;
-
-  if (!$log_init) {
-    $log_init = TRUE;
-
-    $options = LOG_NDELAY;
-    if (variable_get('wmf_common_syslog_pid', DEFAULT_WMF_SYSLOG_PID)) {
-      $options |= LOG_PID;
-    }
-
-    openlog(
-      variable_get('syslog_identity', DEFAULT_WMF_SYSLOG_IDENTITY),
-      $options,
-      variable_get('syslog_facility', DEFAULT_WMF_SYSLOG_FACILITY)
-    );
-  }
-
-  syslog($entry['severity'], wmf_common_format_message($entry));
-
-  if (!variable_get('wmf_common_syslog_persistant', DEFAULT_WMF_SYSLOG_PERSISTENT)) {
-    closelog();
-  }
-}
-
-/**
- * Format a system log entry.
- *
- * @ingroup themeable
- */
-function wmf_common_format_message($entry) {
-
-  $message = $entry['type'];
-  $message .= '|'. $entry['timestamp'];
-  $message .= '|'. $entry['ip'];
-  $message .= '|'. $entry['request_uri'];
-  $message .= '|'. $entry['referer'];
-  $message .= '|'. $entry['user']->uid;
-  $message .= '|'. $entry['link'];
-  $message .= '|'. is_null($entry['variables']) ? $entry['message'] : strtr($entry['message'], $entry['variables']);
-
-  return $message;
 }

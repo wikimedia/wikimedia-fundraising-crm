@@ -1,0 +1,4 @@
+name = WMF Logging
+description = WMF specific log framework. Hooks into Watchdog.
+core = 6.x
+package = Wikimedia
