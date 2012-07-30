@@ -1,0 +1,144 @@
+<?php
+
+if (defined('LOG_LOCAL0')) {
+  define( 'DEFAULT_WMF_LOGGING_FACILITY', LOG_LOCAL0 );
+}
+else {
+  define( 'DEFAULT_WMF_LOGGING_FACILITY', LOG_USER );
+}
+
+define( 'DEFAULT_WMF_LOGGING_PID', FALSE );
+define( 'DEFAULT_WMF_LOGGING_PERSISTENT', TRUE );
+define( 'DEFAULT_WMF_LOGGING_IDENTITY', 'drupal' );
+
+/**
+ * Drupal hook function setting up the configuration page.
+ *
+ * @return array Menu entries
+ */
+function wmf_logging_menu() {
+  $items = array();
+
+  $items[ 'admin/settings/logging/wmf_logging' ] = array(
+    'title'            => 'WMF Logging',
+    'description'      => 'Settings for the WMF logging module.',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array( 'wmf_logging_settings' ),
+    'access arguments' => array( 'administer site configuration' ),
+  );
+
+  return $items;
+}
+
+/**
+ * Settings form linked to from @see wmf_logging_menu
+ *
+ * @return array Settings form
+ */
+function wmf_logging_settings() {
+  $form = array();
+
+  $form[ 'wmf_logging_syslog_identity' ] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Syslog identity'),
+    '#default_value' => variable_get('wmf_logging_syslog_identity', DEFAULT_WMF_LOGGING_IDENTITY),
+    '#description'   => t('String that will be prepended to the Syslog output'),
+  );
+
+  $form[ 'wmf_logging_syslog_facility' ] = array(
+    '#type'          => 'select',
+    '#title'         => t('Send events to this syslog facility'),
+    '#default_value' => variable_get('wmf_logging_syslog_facility', DEFAULT_WMF_LOGGING_FACILITY),
+    '#options'       => wmf_logging_syslog_facility_list(),
+    '#description'   => t('Select the syslog facility code under which Drupal\'s messages should be sent. On UNIX/Linux systems, Drupal can flag its messages with the code LOG_LOCAL0 through LOG_LOCAL7; for Microsoft Windows, all messages are flagged with the code LOG_USER.'),
+  );
+
+  $form[ 'wmf_logging_syslog_pid' ] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t('Add process ID to log message string'),
+    '#default_value' => variable_get('wmf_logging_syslog_pid', DEFAULT_WMF_LOGGING_PID),
+    '#description'   => t('The process identifier can be used to differentiate different requests.'),
+  );
+
+  $form[ 'wmf_logging_syslog_persistant' ] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t('Use persistent Syslog connection'),
+    '#default_value' => variable_get('wmf_logging_syslog_persistant', DEFAULT_WMF_LOGGING_PERSISTENT),
+    '#description'   => t('Some webserver configurations may require the Syslog connection to be closed after a log message is written to avoid logging webserver errors as Drupal errors. <a href="http://www.php.net/manual/en/function.syslog.php#97843">Details.</a>'),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Provides the list of available Syslog facilities
+ *
+ * @return array of facilities
+ */
+function wmf_logging_syslog_facility_list() {
+  $facility_list = array(
+    LOG_USER   => t('LOG_USER - User level messages. Use this for Windows.'),
+  );
+  if (defined('LOG_LOCAL0')) {
+    $facility_list += array(
+      LOG_LOCAL0 => t('LOG_LOCAL0 - Local 0'),
+      LOG_LOCAL1 => t('LOG_LOCAL1 - Local 1'),
+      LOG_LOCAL2 => t('LOG_LOCAL2 - Local 2'),
+      LOG_LOCAL3 => t('LOG_LOCAL3 - Local 3'),
+      LOG_LOCAL4 => t('LOG_LOCAL4 - Local 4'),
+      LOG_LOCAL5 => t('LOG_LOCAL5 - Local 5'),
+      LOG_LOCAL6 => t('LOG_LOCAL6 - Local 6'),
+      LOG_LOCAL7 => t('LOG_LOCAL7 - Local 7'),
+    );
+  }
+  return $facility_list;
+}
+
+/**
+ * Hook into the drupal watchdog dispatcher. Implements the custom log handler.
+ *
+ * @param $entry
+ */
+function wmf_logging_watchdog($entry) {
+  global $base_url;
+
+  static $log_init = FALSE;
+
+  if (!$log_init) {
+    $log_init = TRUE;
+
+    $options = LOG_NDELAY;
+    if (variable_get('wmf_logging_syslog_pid', DEFAULT_WMF_LOGGING_PID)) {
+      $options |= LOG_PID;
+    }
+
+    openlog(
+      variable_get('syslog_identity', DEFAULT_WMF_LOGGING_IDENTITY),
+      $options,
+      variable_get('syslog_facility', DEFAULT_WMF_LOGGING_FACILITY)
+    );
+  }
+
+  syslog($entry[ 'severity' ], wmf_logging_format_message($entry));
+
+  if (!variable_get('wmf_logging_syslog_persistant', DEFAULT_WMF_LOGGING_PERSISTENT)) {
+    closelog();
+  }
+}
+
+/**
+ * Format a system log entry.
+ */
+function wmf_logging_format_message($entry) {
+
+  $message = $entry[ 'type' ];
+  $message .= '|' . $entry[ 'timestamp' ];
+  $message .= '|' . $entry[ 'ip' ];
+  $message .= '|' . $entry[ 'request_uri' ];
+  $message .= '|' . $entry[ 'referer' ];
+  $message .= '|' . $entry[ 'user' ]->uid;
+  $message .= '|' . $entry[ 'link' ];
+  $message .= '|' . is_null($entry[ 'variables' ]) ? $entry[ 'message' ] : strtr($entry[ 'message' ], $entry[ 'variables' ]);
+
+  return $message;
+}
