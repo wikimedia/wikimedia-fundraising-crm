@@ -94,7 +94,7 @@ function wmf_common_settings() {
   );
 
   $twig_path = variable_get('wmf_common_twig_location', drupal_get_path('module', 'wmf_common') . DIRECTORY_SEPARATOR . "Twig");
-  @include_once implode(DIRECTORY_SEPARATOR, array($twig_path, 'lib', 'Twig', 'Autoloader.php'));
+  include_once implode(DIRECTORY_SEPARATOR, array($twig_path, 'lib', 'Twig', 'Autoloader.php'));
   $twig_installed = class_exists("Twig_Autoloader");
   $twig_msg = $twig_installed ? '<span style="color:green;">Installed Correctly</span>' : '<span style="color:red;">Please install</span>';
 
