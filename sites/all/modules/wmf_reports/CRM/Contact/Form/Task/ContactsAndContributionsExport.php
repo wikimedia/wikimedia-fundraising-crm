@@ -29,12 +29,12 @@ class CRM_Contact_Form_Task_ContactsAndContributionsExport extends CRM_Export_Fo
         require_once 'CRM/Export/Form/Select.php';
         $this->set( 'exportMode' , CRM_Export_Form_Select::CONTRIBUTE_EXPORT );
         $this->assign( 'matchingContacts', TRUE );
-        $this->set( 'componentIds', $this->componentIds );
+        $this->set( 'componentIds', $this->_componentIds );
         $this->set( 'selectAll' , FALSE  );
 
         parent::preProcess();
 
-        $this->set( 'componentClause', $thi->_componentClause );
+        $this->set( 'componentClause', $this->_componentClause );
         $this->set( 'componentTable', $this->_componentTable );
         #$this->_exportParams = $this->controller->exportValues( $this->_name );
     }
