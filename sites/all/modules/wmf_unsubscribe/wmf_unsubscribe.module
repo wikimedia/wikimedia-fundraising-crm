@@ -117,10 +117,10 @@ function unsubscribe_page(){
         ));
 
         if( WMFCiviAPICheck::check_api_contact( $contact ) ){
-            watchdog('wmf_unsubscribe', 'Unsubscribe success for contact: ' . $contribution[ 'contact_id' ] . '<' . $contact['email'] . '>', array(), WATCHDOG_INFO);
+            watchdog('wmf_unsubscribe', "Unsubscribe success for contact: %id, %display_name <%email>", array( "%id" => $params['contact']['id'], "%display_name" => $params['contact']['display_name'], "%email" => $params['contact']['email'] ), WATCHDOG_INFO);
             return render_page( "unsubscribe-success", $params, $language );
         } else {
-            watchdog('wmf_unsubscribe', 'Unsubscribe FAILURE for contact (1): ' . $contribution[ 'contact_id' ] . '<' . $contact['email'] . '>', array(), WATCHDOG_ERROR);
+            watchdog('wmf_unsubscribe', "Unsubscribe FAILURE for contact (1): %id <%email>", array( "%id" => $params['contact']['id'], "%email" => $params['contact']['email'] ), WATCHDOG_INFO);
             return render_page( "unsubscribe-fail", $params, $language );
         }
     } else {
