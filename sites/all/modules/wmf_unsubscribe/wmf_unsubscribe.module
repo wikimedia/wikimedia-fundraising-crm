@@ -141,13 +141,14 @@ function unsubscribe_page(){
  */
 function render_page( $page, $params=array(), $language='en' ){
 
-    include_once variable_get('wmf_common_twig_location', '') . '/lib/Twig/Autoloader.php';
-    if (!class_exists("Twig_Autoloader"))
+    $twig_include = implode(DIRECTORY_SEPARATOR, array(variable_get('wmf_common_twig_location', ''), 'lib', 'Twig', 'Autoloader.php'));
+    if (!file_exists($twig_include))
     {
         watchdog("wmf_unsubscribe", "Twig libraries not found", array(), WATCHDOG_ERROR);
         return "";
 
     }
+    require_once $twig_include;
 
     Twig_Autoloader::register();
 
