@@ -139,7 +139,7 @@ function wmf_logging_format_message($entry) {
   $message .= '|' . $entry[ 'referer' ];
   $message .= '|' . $entry[ 'user' ]->uid;
   $message .= '|' . $entry[ 'link' ];
-  $message .= '|' . empty($entry[ 'variables' ]) ? $entry[ 'message' ] : strtr($entry[ 'message' ], $entry[ 'variables' ]);
+  $message .= '|' . (empty($entry[ 'variables' ]) ? $entry[ 'message' ] : strtr($entry[ 'message' ], $entry[ 'variables' ]));
 
   return $message;
 }
