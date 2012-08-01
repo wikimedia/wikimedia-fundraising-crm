@@ -45,3 +45,12 @@ function civicrm_api_classapi()
 		return new civicrm_api3();
 	}
 }
+
+/**
+ * Determines the settlement currency for a given donation.
+ * Argument is a queue message or a civicrm contribution array.
+ */
+function wmf_civicrm_get_settlement_currency($transaction)
+{
+	return 'USD';
+}
