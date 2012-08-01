@@ -54,3 +54,35 @@ function wmf_civicrm_get_settlement_currency($transaction)
 {
 	return 'USD';
 }
+
+function wmf_civicrm_settle($contribution, $settled_timestamp)
+{
+	civicrm_initialize();
+
+	require_once 'CRM/Core/BAO/CustomValueTable.php';
+	static $custom_field_key = array();
+	if (empty($custom_field_key))
+	{
+		require_once 'CRM/Core/BAO/CustomField.php';
+		foreach (array('total_usd', 'settlement_date') as $name)
+		{
+			$id = CRM_Core_BAO_CustomField::getCustomFieldID($name, 'contribution_extra');
+			$custom_field_key[$name] = "custom_{$id}";
+		}
+	}
+
+	list($original_currency, $original_amount) = explode(" ", $contribution['source']);
+	$total_usd = round(exchange_rate_convert($original_currency, $original_amount, $settled_timestamp), 2);
+	$settlement_date = date( 'YmdHis', $settled_timestamp );
+
+	$params = array(
+		'entityID' => $contribution['id'],
+		$custom_field_key['total_usd'] => $total_usd,
+		$custom_field_key['settlement_date'] => $settlement_date,
+	);
+	$result = CRM_Core_BAO_CustomValueTable::setValues($params);
+	if (!empty($result['is_error']))
+	{
+		watchdog('wmf_civicrm', 'Failed to settle contribution %id: %err', array("%id" => $contribution['id'], "%err" => $result['error_message']), WATCHDOG_ERROR);
+	}
+}
