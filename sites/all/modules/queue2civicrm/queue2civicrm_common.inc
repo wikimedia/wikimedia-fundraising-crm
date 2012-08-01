@@ -140,10 +140,14 @@ function _queue2civicrm_insert_contribution_tracking( $utm_source, $utm_medium, 
  * @return array
  */
 function _queue2civicrm_normalize_contrib_amnts( $msg ) {
+  $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
+  $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
+
   // round the amounts and do exchange rate conversion
-  $msg['fee'] = round( exchange_rate_convert($msg['original_currency'], $msg['fee'], $msg['date']), 2 );
-  $msg['gross'] = round( exchange_rate_convert($msg['original_currency'], $msg['gross'], $msg['date']), 2 );
-  $msg['net'] = round( exchange_rate_convert($msg['original_currency'], $msg['net'], $msg['date']), 2 );
+  $msg['fee'] = round( $msg['fee'] * $settlement_convert, 2 );
+  $msg['gross'] = round( $msg['gross'] * $settlement_convert, 2 );
+  $msg['net'] = round( $msg['net'] * $settlement_convert, 2 );
+  $msg['currency'] = $settlement_currency;
   
   return $msg;
 }
@@ -443,7 +447,7 @@ function _queue2civicrm_contribution_insert( $msg, $contact, $recur_id=NULL, $ef
 		'net_amount' => $msg['net'],
 		'trxn_id' => $trxn_id,
 		'receive_date' => date( 'Y-m-d H:i:s', $msg['date'] ),
-		'currency' => 'USD',
+		'currency' => $msg['currency'],
 		'source' => $msg['original_currency'] . ' ' . $msg['original_gross'],
 		'contribution_recur_id' => $recur_id,
 		'check_number' => $msg['check_number'],

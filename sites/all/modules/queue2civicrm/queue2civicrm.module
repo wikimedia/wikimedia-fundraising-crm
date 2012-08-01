@@ -220,6 +220,7 @@ function queue2civicrm_dequeue() {
   $severity = array(
     'CIVI_CONFIG',
     'STOMP_BAD_CONNECTION',
+    'INVALID_MESSAGE',
     'CIVI_REQ_FIELD',
     'IMPORT_CONTACT',
     'IMPORT_CONTRIB',
@@ -256,6 +257,9 @@ function queue2civicrm_dequeue() {
 						//in this case, it makes sense to just leave with no ack: It's not the message's fault.
 						$con->unsubscribe( $subscription_queue );
 						return false;
+						break;
+					case 'INVALID_MESSAGE':
+						$failAck = TRUE;
 						break;
 					case 'IMPORT_TAG':
 						//@fixme: Roll back contrib, and...
@@ -316,10 +320,16 @@ function queue2civicrm_import( $msg ) {
   
   civicrm_initialize(true);
 
-  $msg = queue2civicrm_verify_and_stage($msg);
-  if ($msg == false){
-	  return false;
-  }
+	try {
+		$msg = queue2civicrm_verify_and_stage($msg);
+	} catch (Exception $e) {
+		drush_set_error("INVALID_MESSAGE", 'Failed to verify message: ' . $e->getMessage());
+		return FALSE;
+	}
+	if ($msg == false){
+		drush_set_error("INVALID_MESSAGE", 'Failed to verify message, unknown cause.');
+		return false;
+	}
 
 	/**
 	* prepare data for logging

@@ -69,9 +69,8 @@ function exchange_rate_convert($from_currency, $amount = 1, $timestamp = NULL) {
     $rate = db_result(db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = "%s" ORDER BY bank_update', $from_currency, 0, 1));
   }
   
-  // As a fail-safe, use a rate of one.
   if (!$rate) {
-    $rate = 1;
+    throw new Exception(t("No conversion available for currency !cur", array("!cur" => $from_currency)));
   }
 
   return $amount * $rate;  
