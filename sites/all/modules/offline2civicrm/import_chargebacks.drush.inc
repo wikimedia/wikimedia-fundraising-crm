@@ -7,10 +7,6 @@
  * @author Peter Gehres <pgehres@wikimedia.org>
  */
 
-if ( function_exists( 'drupal_get_path' ) ) {
-  require_once( drupal_get_path( 'module', 'offline2civicrm' ) . '/offline2civicrm.common.inc' );
-}
-
 /**
  * Implementation of hook_drush_command()
  */
@@ -44,6 +40,7 @@ function import_chargebacks_drush_help( $section ) {
  *
  */
 function drush_import_chargebacks($processor=NULL, $filename=NULL){
+  require_once 'offline2civicrm.common.inc';
 
   if(!file_exists($filename)){
     watchdog('offline2civicrm', 'Import chargebacks: File does not exist: ' . $filename, array(), WATCHDOG_ERROR);
