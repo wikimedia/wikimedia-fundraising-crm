@@ -7,10 +7,6 @@
  * @author Peter Gehres <pgehres@wikimedia.org>
  */
 
-if ( function_exists( 'drupal_get_path' ) ) {
-  require_once( drupal_get_path( 'module', 'offline2civicrm' ) . '/offline2civicrm.common.inc' );
-}
-
 /**
  * Implementation of hook_drush_command()
  */
@@ -45,6 +41,8 @@ function import_checks_drush_help( $section ) {
  * Fires the 'batch_process' method in the queue2civicrm module.
  */
 function drush_import_checks() {
+	require_once 'offline2civicrm.common.inc';
+
 	global $dbs;
 
 	try{
