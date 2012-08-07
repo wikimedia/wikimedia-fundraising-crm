@@ -66,7 +66,7 @@ function _limbo_insert_queue2civicrm_limbo($data) {
   }
   
   // make sure we're using the default (drupal) db
-  $dbs = _queue2civicrm_get_dbs();
+  $dbs = wmf_civicrm_get_dbs();
   $dbs->use_default();
 
   if ($data['queue2civicrm_limbo_id'] === null){

@@ -108,7 +108,7 @@ function globalcollect_audit_settings() {
 function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
   $missing_trxns = array();
   
-  $dbs = _queue2civicrm_get_dbs();
+  $dbs = wmf_civicrm_get_dbs();
   $dbs->use_civicrm();
 
   // check for matching ids - if it doesnt match, it's missing
@@ -725,7 +725,7 @@ function globalcollect_audit_make_payment_method_info( $wr1 ){
 
 
 function globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id ){ 
-	$dbs = _queue2civicrm_get_dbs();
+	$dbs = wmf_civicrm_get_dbs();
 	$dbs->use_default();
 
 	$query = "SELECT * FROM contribution_tracking WHERE id = %d";
