@@ -284,7 +284,7 @@ function _queue2civicrm_location_prepare_params( $msg, $contact ) {
 	  'street_address' => $msg['street_address'],
 	  'supplemental_address_1' => $msg['supplemental_address_1'],
 	  'city' => $msg['city'],
-	  'state_province' => _queue2civicrm_get_state( $msg[ 'country' ], $msg['state_province'] ),
+	  'state_province' => wmf_civicrm_get_state( $msg[ 'country' ], $msg['state_province'] ),
 	  'postal_code' => $msg['postal_code'],
 	  'country' => $msg['country'],
 	  'is_billing' => 1,
@@ -564,7 +564,7 @@ function _queue2civicrm_failmail_instrument( $message ){
  * When passing CiviCRM a state abbreviation, odd things can happen - like getting the right abbreviation, but the wrong state
  * So we'll pull back the correct state/province name based off of a user's country/state abbreviation
  */
-function _queue2civicrm_get_state( $country, $state ) {
+function wmf_civicrm_get_state( $country, $state ) {
   
   if ( strlen( $country ) == 2 ) {
     $query = "SELECT s.name AS state_name FROM civicrm_country c, civicrm_state_province s WHERE s.country_id=c.id AND c.iso_code='" . addslashes( $country ) . "' AND s.abbreviation='" . addslashes( $state ) . "'";
