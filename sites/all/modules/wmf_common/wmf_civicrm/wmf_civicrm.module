@@ -86,3 +86,387 @@ function wmf_civicrm_settle($contribution, $settled_timestamp)
 		watchdog('wmf_civicrm', 'Failed to settle contribution %id: %err', array("%id" => $contribution['id'], "%err" => $result['error_message']), WATCHDOG_ERROR);
 	}
 }
+
+/**
+ * Insert the contribution record
+ * 
+ * Serves as a standard way for message processors to handle contribution
+ * insertion.
+ * 
+ * @param array $msg
+ * @param array $contact
+ * @param integer $recur_id   See `civicrm_contribution`.`contribution_recur_id`
+ * @param integer $effort_id  The effort id - the number of successful payments for recurring payments
+ * @return array
+ */
+function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL, $effort_id=NULL ) {
+    
+    //TODO: After we upgrade civi, refactor this whole thing so the data staging 
+    //is all done in... y'know: The staging function, which should itself get 
+    //moved into common for its universal usefulness. 
+    //And another thing: There should be a set/get style pair of functions for 
+    //parsing our stupid transaction IDs at this point, because: Yeesh. 
+    
+    $parts = explode( ' ', $msg['gateway_txn_id'] );
+    
+    $transaction_id = '';
+    $timestamp = '';
+    
+    switch ( count( $parts ) ){
+        case 0:
+            watchdog( 'wmf_civicrm', 'Cannot add contribution: No gateway_txn_id:' . print_r($msg, TRUE));
+            return false;
+            break;
+        case 1: 
+            //unusual, but let's just assume it's a lonely transaction id and assign a timestamp.
+            $transaction_id = $parts[0];
+            $timestamp = time();
+            break;
+        case 2: 
+            //regular old style: Transaction ID followed by a timestamp. 
+            //we can be reasonably sure this was just generated. 
+            $transaction_id = $parts[0];
+            $timestamp = $parts[1];
+            break;
+        case 4:
+            //the only way we have four parts in one of these things would be if...
+            if (array_shift($parts) != 'RECURRING'){
+                watchdog( 'wmf_civicrm', 'Cannot add contribution: Malformed gateway_txn_id (4 parts, does not start with "RECURRING"):' . print_r($msg, TRUE));
+                return false;
+            }
+            //and now we're down to three. DO NOT BREAK HERE, OR REORDER THE CASE BLOCKS. 
+        case 3:
+            //this is either coming in from somewhere totally old and stale, or it's coming in from a GC Recurring subscription
+            //Pull out the parts and regen the timestamp.
+            $part1 = array_shift($parts);
+            
+            if ( $part1 == 'RECURRING' ){
+                //we have a subscription. 
+                if ( array_shift( $parts ) != strtoupper( $msg['gateway']) ){
+                    watchdog( 'wmf_civicrm', 'Cannot add contribution: Malformed gateway_txn_id (3 parts, recurring, second part is not ucase gateway):' . print_r($msg, TRUE));
+                    return false;
+                }
+            } elseif ( $part1 != strtoupper( $msg['gateway']) ) {
+                watchdog( 'wmf_civicrm', 'Cannot add contribution: Malformed gateway_txn_id (3 parts, does not start with ucase gateway):' . print_r($msg, TRUE));
+                return false;
+            }
+            
+            $transaction_id = $parts[0];
+            $timestamp = time();
+
+            break;
+        default: 				
+            //error state. Way too many dataz. 
+            watchdog( 'wmf_civicrm', 'Cannot add contribution: Malformed gateway_txn_id (too many parts):' . print_r($msg, TRUE));
+            return false;
+    }
+    
+    //one last typey-checky thing before we just assume we're all good.
+    if ( !is_numeric( $timestamp ) ){
+        watchdog( 'wmf_civicrm', 'Cannot add contribution: Malformed gateway_txn_id (timestamp does not appear to be numeric):' . print_r($msg, TRUE));
+        return false;
+    }
+    
+    //kill off any pre-existing effort ID in the transaction id. Leaving it as 
+    //an explode, though, because we might need to error check on that second 
+    //part later. (It should, for instance, be <= the passed-in $effort_id...) 
+    $transaction_id = explode( '-', $transaction_id );
+    $transaction_id = $transaction_id[0];
+    
+    if (!is_null($effort_id)){
+        $transaction_id .= '-' . $effort_id;
+    }
+    
+    $prefix = $msg['gateway'];
+
+    if ( $recur_id || ( array_key_exists( "recurring", $msg ) && $msg['recurring'] ) ) {
+        $prefix = 'RECURRING ' . $prefix;
+    }
+    
+    $trxn_id = strtoupper( $prefix . ' ' . $transaction_id . ' ' . $timestamp );
+    
+    
+    // Insert the contribution record
+    $contribution_id = wmf_civicrm_get_civi_id( 'contribution_type_id', 'cash' );
+
+    if ( !array_key_exists( "payment_instrument", $msg ) ){
+        $msg['payment_instrument'] = wmf_civicrm_get_message_payment_instrument( $msg );
+    }
+    $payment_instrument_id = wmf_civicrm_get_civi_id( 'payment_instrument_id', $msg['payment_instrument'] );
+
+    if ( ( $contribution_id == false ) || ( $payment_instrument_id == false ) ){
+        //the errors have already been thrown in wmf_civicrm_get_civi_id. Just leave.
+        return false;
+    }
+    if ( !array_key_exists( 'check_number', $msg ) ){
+        $msg['check_number'] = NULL;
+    }
+    if ( !array_key_exists( 'letter_code', $msg ) ){
+        $msg['letter_code'] = NULL;
+    }
+
+    $contribution = array(
+        'contact_id' => $contact[ 'id' ],
+        'total_amount' => $msg['gross'],
+        'contribution_type_id' => $contribution_id,
+        'payment_instrument_id' => $payment_instrument_id,
+        'fee_amount' => $msg['fee'],
+        'net_amount' => $msg['net'],
+        'trxn_id' => $trxn_id,
+        'receive_date' => date( 'Y-m-d H:i:s', $msg['date'] ),
+        'currency' => $msg['currency'],
+        'source' => $msg['original_currency'] . ' ' . $msg['original_gross'],
+        'contribution_recur_id' => $recur_id,
+        'check_number' => $msg['check_number'],
+        'letter_code' => $msg['letter_code'],
+
+        // API required fields
+        'version' => '3'
+    );
+
+    watchdog( 'wmf_civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), NULL, WATCHDOG_DEBUG);
+
+    $contribution_result = civicrm_api( "Contribution", "Create", $contribution );
+    
+    watchdog( 'wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
+    
+    if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
+        return false;
+    }
+  
+    /**
+    *  Apply custom field defaults.
+    *
+    * Civicrm API v2 does NOT provide methods for custom groups/fields beyond creation and deleition,
+    * so we hack this custom.  Hopefully this won't be forever...
+    *
+    * At least we can use the CiviCRM DAO stuff to stuff necessary custom data in to the contribution object.
+    *
+    * At the moment, all custom fields get default values for online contribution EXCEPT for 'Donor Comment'.
+    *
+    * NOTE: the custom field for "Gift_Information" indicates that check number is stored here.  It is not.
+    */
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->use_civicrm();
+    $query = "SELECT id, name, table_name FROM civicrm_custom_group WHERE extends='Contribution' && is_active='1';";
+    $dao = CRM_Core_DAO::executeQuery( $query ); // Execute's query using CiviCRM data object stuff
+    while ( $dao->fetch() ) {
+        if ( $dao->name == 'Contribution_Comments' ) {
+            $comment = ( isset( $msg[ 'comment' ] ) ) ? $msg[ 'comment'] : '';
+            $query = "INSERT INTO {" . $dao->table_name . "} (entity_id, donor_comment) VALUES ( %d, '%s' )";
+            db_query( $query, $contribution_result[ 'id' ], $comment );
+        } elseif ( $dao->name == 'Gift_Data' ) {
+            $lettercode = ( $msg[ 'letter_code' ] ) ? $msg[ 'letter_code'] : NULL;
+            $query = "INSERT INTO {" . $dao->table_name . "} (entity_id, letter_code) VALUES ( %d, '%s' )";
+            db_query( $query, $contribution_result[ 'id' ], $lettercode );
+        } else { // if we dont make sure $dao->default_value has some value, Civi breaks when we try to insert
+            $query = "INSERT INTO {" . $dao->table_name . "} (entity_id) VALUES (%d)";
+            db_query( $query, $contribution_result[ 'id' ] );
+        }
+    }
+    $dbs->use_default();
+    return $contribution_result;
+}
+
+/**
+ * @fixme TODO: make the v3 API calls use the wrapper function
+ *
+ * @param $type
+ * @param $name
+ * @param $fatal boolean Set this to false if you don't want to fatally end execution if the lookup fails. 
+ * //TODO: Make nonfatal queries work with things other than the payment instrument.
+ * @return bool
+ */
+function wmf_civicrm_get_civi_id($type, $name, $fatal = true) {
+    static $civi_ids = array();
+    $params = array('name' => $name);
+    $dummy = array();
+    
+    if(array_key_exists($type, $civi_ids) && array_key_exists($name, $civi_ids[$type])) {
+        watchdog('wmf_civicrm', "Already looked up $type - $name. Returning id " . $civi_ids[$type][$name]);
+        return $civi_ids[$type][$name];
+    }
+
+    switch ($type) {
+        case 'contribution_type_id':
+            //fixme: This is probably the upside-down way to do it. Really ought to go through the API.
+            //
+            require_once( drupal_get_path( 'module', 'civicrm' ) . '/../CRM/Contribute/BAO/ContributionType.php' );
+            $result = CRM_Contribute_BAO_ContributionType::retrieve($params, $dummy);
+            if (!is_null($result)){
+                $civi_ids[$type][$name] = $result->id;
+                watchdog('wmf_civicrm', "Found id for contribution_type $name: " . $civi_ids[$type][$name]);
+                return $civi_ids[$type][$name];
+            } else {
+                //make it. Or, throw an error here. Either way.
+                watchdog('wmf_civicrm', "Id for contribution_type $name not found. Creating...");
+                $params['description'] = '';
+                $params['accounting_code'] = strtoupper($name);
+                $params['is_deductible'] = 1;
+                $params['is_active'] = 1;
+                $result = CRM_Contribute_BAO_ContributionType::add($params, $dummy);
+                $civi_ids[$type][$name] = $result->id;
+                watchdog('wmf_civicrm', "New id for contribution_type $name :" . $civi_ids[$type][$name]);
+                return $civi_ids[$type][$name];
+            }
+            break;
+        case 'payment_instrument_id':
+            require_once 'api/v3/OptionValue.php';
+            $group_id = civicrm_api3_option_value_get(
+                array('option_group_name' => 'payment_instrument', 'label'=> $name, 'version' => '3'));
+            if($group_id['count'] == 1){
+                $civi_ids[$type][$name] = $group_id['values'][strval($group_id['id'])]['value'];
+                watchdog('wmf_civicrm', "Found value for payment_instrument $name :" . $civi_ids[$type][$name]);
+                return $civi_ids[$type][$name];
+            } else {
+                watchdog('wmf_civicrm', "Payment Instrument '$name' not found! :", NULL, WATCHDOG_ERROR);
+                if ($fatal){
+                    drush_set_error("CIVI_CONFIG", "Payment Instrument '$name' not found in CiviCRM! Please add it and retry.");
+                } 
+                return false;
+            }
+            break;
+        case 'tag_id':
+            require_once 'api/v3/Tag.php';
+            $tag_id = civicrm_api3_tag_get(array('name'=> $name, 'version' => '3'));
+            if (is_array($tag_id) && array_key_exists('id', $tag_id)){
+                $civi_ids[$type][$name] = $tag_id['id'];
+                watchdog('wmf_civicrm', "Found id for Entity Tag $name :" . $civi_ids[$type][$name]);
+                return $civi_ids[$type][$name];
+            } else {
+                watchdog('wmf_civicrm', "Entity Tag '$name' not found! :", NULL, WATCHDOG_ERROR);
+                drush_set_error("CIVI_CONFIG", "Entity Tag '$name' not found! Please add it and retry.");
+                return false;
+            }
+        default:
+            return false;
+    }
+}
+
+/**
+ * Determines which civi-only payment instrument is appropriate for the current 
+ * message, and resturns the civi payment instrument's human-readable display 
+ * string (if it exists).   
+ */
+function wmf_civicrm_get_message_payment_instrument( $msg ){
+    $payment_instrument = null;
+    
+    if ( array_key_exists( 'payment_method', $msg ) && trim( $msg['payment_method'] ) != '' ){
+    
+        switch( strtolower( $msg[ 'payment_method' ] ) ){
+            case 'check':
+                $payment_instrument = 'Check';
+                break;
+            case 'bt':
+                $payment_instrument = 'Bank Transfer';
+                break;
+            case 'cc':
+                $payment_instrument = 'Credit Card';	
+                switch ( strtolower( $msg['payment_submethod'] ) ){
+                    case 'visa':
+                        $payment_instrument .= ': Visa';
+                        break;
+                    case 'mc':
+                        $payment_instrument .= ': MasterCard';
+                        break;
+                    case 'amex':
+                        $payment_instrument .= ': American Express';
+                        break;
+                    case 'maestro':
+                        $payment_instrument .= ': Maestro';
+                        break;
+                    case 'solo':
+                        $payment_instrument .= ': Solo';
+                        break;
+                    case 'laser':
+                        $payment_instrument .= ': Laser';
+                        break;
+                    case 'jcb':
+                        $payment_instrument .= ': JCB';
+                        break;
+                    case 'discover':
+                        $payment_instrument .= ': Discover';
+                        break;
+                    case 'cb':
+                        $payment_instrument .= ': Carte Bleue';
+                        break;
+                }
+                break;
+            case 'dd':
+                $payment_instrument = 'Direct Debit';
+                break;
+            case 'ew':
+                switch( strtolower( $msg['payment_submethod'] ) ){
+                    case 'ew_paypal':
+                        $payment_instrument = 'Paypal';
+                        break;
+                    case 'ew_webmoney':
+                        $payment_instrument = 'Webmoney';
+                        break;
+                    case 'ew_moneybookers':
+                        $payment_instrument = 'Moneybookers';
+                        break;
+                    case 'ew_cashu':
+                        $payment_instrument = 'Cashu';
+                        break;
+                    case 'ew_yandex':
+                        $payment_instrument = 'Yandex';
+                        break;
+                }
+                break;
+            case 'obt':
+                if ( strtolower( $msg['payment_submethod'] === 'bpay' ) ){
+                    $payment_instrument = 'Bpay';
+                }
+                break;
+            case 'rtbt':
+                switch( strtolower( $msg['payment_submethod'] ) ){
+                    case 'rtbt_nordea_sweden':
+                        $payment_instrument = 'Nordea';
+                        break;
+                    case 'rtbt_ideal':
+                        $payment_instrument = 'iDeal';
+                        break;
+                    case 'rtbt_enets':
+                        $payment_instrument = 'Enets';
+                        break;
+                    case 'rtbt_sofortuberweisung':
+                        $payment_instrument = 'Sofort';
+                        break;
+                    case 'rtbt_eps':
+                        $payment_instrument = 'EPS';
+                        break;
+                }
+                break;
+            case 'cash':
+                $payment_instrument = 'Cash';
+                //'cash_boleto' - Only one right now. I assume there might be more later? 
+                switch ( strtolower( $msg['payment_submethod'] ) ){
+                    case 'cash_boleto': 
+                        $payment_instrument = 'Boleto';
+                        break;
+                }
+                break;	
+            case 'payflowpro':
+                if ( strtolower( $msg['gateway'] ) === 'payflowpro' ){
+                    $payment_instrument = 'Credit Card';
+                }
+                break;
+            case 'amazon':
+                $payment_instrument = 'Amazon';
+                break;
+            default:
+                //if it's still the default after all that, and it's set (or we wouldn't be here) we have a problem. 
+                return false;
+        }
+        
+    } else {
+        //payment_method is not even in the message. Assume it's legacy... but we can tell some things about these, too...
+        if ( array_key_exists( 'gateway', $msg ) && strtolower($msg['gateway']) === 'paypal' ){
+            $payment_instrument = 'Paypal';
+        }
+    }
+    
+    //I was going to check to make sure the target gateway was a real thing, but: Hello, overhead. No.
+    return $payment_instrument;
+}

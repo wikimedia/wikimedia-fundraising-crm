@@ -21,7 +21,7 @@ function wmf_common_failmail($error, $source = null, $removed = FALSE)
 function wmf_common_mail($key, &$message, $params)
 {
     switch($key) {
-    case 'queue2civicrm-fail':
+    case 'fail':
         if ($params['removed'] === true){
             $message['subject'] = t('queue2civicrm Fail Mail : REMOVAL');
             $message['body'][] = t("A message was removed from ActiveMQ due to the following error(s):");
