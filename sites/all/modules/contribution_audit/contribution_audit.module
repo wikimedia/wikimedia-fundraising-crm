@@ -77,7 +77,7 @@ function _contribution_audit_aggregate_country_amounts( &$allocated, $trxn ) {
   foreach ( array( 'date', 'original_currency', 'country'  ) as $amount_key ) { // ensure that values are set for date, original currency, country
     if ( !isset( $trxn[ $amount_key ] )) $trxn[ $amount_key ] = '';
   }
-  $trxn = _queue2civicrm_normalize_contrib_amnts( $trxn );
+  $trxn = wmf_civicrm_normalize_contribution_amounts( $trxn );
   if ( !in_array( $trxn[ 'country' ], array_keys( $allocated ))) {
     $allocated[ $trxn[ 'country' ]][ 'amnt' ] = $trxn[ 'gross' ];
     $allocated[ $trxn[ 'country' ]][ 'count' ] = 1;

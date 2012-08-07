@@ -578,7 +578,7 @@ function queue2civicrm_verify_and_stage($msg){
 	$msg = _queue2civicrm_normalize_msg( array_merge($defaults, $msg) );
 
 	// set the correct amount fields/data and do exchange rate conversions.
-	$msg = _queue2civicrm_normalize_contrib_amnts( $msg );
+	$msg = wmf_civicrm_normalize_contribution_amounts( $msg );
 
 	return $msg;
 }

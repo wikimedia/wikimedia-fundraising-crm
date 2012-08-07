@@ -1,5 +1,6 @@
 name = Recurring Payments
 description = Adds support for recurring payments to queue2civicrm
 dependencies[] = queue2civicrm
+dependencies[] = wmf_civicrm
 package = queue2civicrm
 core = 6.x
