@@ -38,7 +38,7 @@ function log_audit_settings() {
  */
 function log_audit_get_trxn_info($trxn_query_name, $params) {
   // Establish a connection to the database server
-  $dbs = _queue2civicrm_get_dbs();
+  $dbs = wmf_civicrm_get_dbs();
   $dbs->use_civicrm();
 	
   // Read the SQL query

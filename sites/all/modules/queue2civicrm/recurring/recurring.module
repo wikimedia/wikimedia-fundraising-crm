@@ -261,7 +261,7 @@ function recurring_import_subscr_payment( $msg ) {
   $contact[ 'id' ] = $recur_record->contact_id;
 
   //insert the contribution
-  $contribution = _queue2civicrm_contribution_insert( $msg, $contact, $recur_record->id );
+  $contribution = wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_record->id );
   
   /**
    *  Insert the contribution record.
@@ -288,7 +288,7 @@ function recurring_import_subscr_payment( $msg ) {
   }
 
   // update subscription record with next payment date
-  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs = wmf_civicrm_get_dbs();
   $queue2civicrm_dbs->use_civicrm();
   $query = "UPDATE {civicrm_contribution_recur} SET next_sched_contribution='%s' WHERE id = %d";
   db_query( $query, date('Y-m-d H:i:s', strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'payment_date' ] )), $recur_record->id);
@@ -381,7 +381,7 @@ function recurring_import_subscr_signup( $msg ) {
   		trxn_id ) 
   	VALUES ( %d, %d, '%s', %d, '%s', '%s', '%s', '%s' )";
 
-  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs = wmf_civicrm_get_dbs();
   $queue2civicrm_dbs->use_civicrm();
   $result = db_query( $query, 
     $contact[ 'id' ],
@@ -419,7 +419,7 @@ function recurring_import_subscr_cancel( $msg ) {
   
   $query = "UPDATE {civicrm_contribution_recur} SET cancel_date='%s', end_date='%s' WHERE trxn_id='%s'";
   
-  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs = wmf_civicrm_get_dbs();
   $queue2civicrm_dbs->use_civicrm();
   $result = db_query( 
     $query, 
@@ -452,7 +452,7 @@ function recurring_import_subscr_eot( $msg ) {
   
   $query = "UPDATE {civicrm_contribution_recur} SET end_date='%s', next_sched_contribution=NULL WHERE trxn_id='%s'";
   
-  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs = wmf_civicrm_get_dbs();
   $queue2civicrm_dbs->use_civicrm();
   $result = db_query( $query, date( 'Y-m-d H:i:s' ), $msg[ 'subscr_id' ] );
   $queue2civicrm_dbs->use_default();
@@ -493,7 +493,7 @@ function recurring_import_subscr_modify( $msg ) {
   	WHERE
   		trxn_id='%s'";
   
-  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs = wmf_civicrm_get_dbs();
   $queue2civicrm_dbs->use_civicrm();
   $result = db_query( $query, 
     $msg[ 'amount' ],
@@ -537,7 +537,7 @@ function recurring_import_subscr_failed( $msg ) {
   
   $query = "UPDATE {civicrm_contribution_recur} SET failure_count=%d, failure_retry_date='%s' WHERE trxn_id='%s'";
   
-  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs = wmf_civicrm_get_dbs();
   $queue2civicrm_dbs->use_civicrm();
   $result = db_query( $query, $msg[ 'failure_count' ], date( 'Y-m-d H:i:s', $msg[ 'failure_retry_date' ] ), $msg[ 'subscr_id' ] );
   $queue2civicrm_dbs->use_default();
@@ -559,7 +559,7 @@ function recurring_import_subscr_failed( $msg ) {
 function recurring_get_recur_record( $subscr_id ) {
   $query = "SELECT * FROM civicrm_contribution_recur WHERE trxn_id = '%s'";
 
-  $queue2civicrm_dbs = _queue2civicrm_get_dbs();
+  $queue2civicrm_dbs = wmf_civicrm_get_dbs();
   $queue2civicrm_dbs->use_civicrm();
   $recur_record = db_fetch_object( db_query( $query, $subscr_id ) );
   $queue2civicrm_dbs->use_default();
@@ -749,7 +749,7 @@ function recurring_get_contribution_tracking_id( $msg ) {
     $contribution_tracking_id = null;
     $contrib_ids = array(); // for holding related contribtion ids
     
-    $dbs = _queue2civicrm_get_dbs();
+    $dbs = wmf_civicrm_get_dbs();
     $dbs->use_civicrm();
     // determine if we already have a contrib tracking id for related contribs, working backwards from recur record
     $query = "SELECT id FROM {civicrm_contribution_recur} WHERE trxn_id='%s'";
@@ -765,7 +765,7 @@ function recurring_get_contribution_tracking_id( $msg ) {
       
       if ( count( $contrib_ids )) { // if we've got any related contributions
         // see if a record already exists
-        $dbs = _queue2civicrm_get_dbs();
+        $dbs = wmf_civicrm_get_dbs();
         $dbs->use_default();
         $query = "SELECT id FROM {contribution_tracking} WHERE contribution_id IN ( '%s' )";
         // we can use this related contribution tracking id

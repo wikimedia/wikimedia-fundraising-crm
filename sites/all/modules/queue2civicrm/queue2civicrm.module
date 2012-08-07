@@ -354,7 +354,7 @@ function queue2civicrm_import( $msg ) {
 	$location = _queue2civicrm_location_insert( $msg, $contact );
 
 	// Insert the contribution record.
-	$contribution = _queue2civicrm_contribution_insert( $msg, $contact );
+	$contribution = wmf_civicrm_message_contribution_insert( $msg, $contact );
 	if($contribution !== false){
 
 		// Update 

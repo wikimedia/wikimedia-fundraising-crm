@@ -171,7 +171,7 @@ function recurring_globalcollect_record_old_success( $subscription, $effort_id )
        *
        * @var array $contribution
        */
-      $contribution = _queue2civicrm_contribution_insert($msg, $contact, $subscription['id'], $effort_id);
+      $contribution = wmf_civicrm_message_contribution_insert($msg, $contact, $subscription['id'], $effort_id);
       $contribution['contribution_id'] = $contribution['id'];
       unset( $contribution['id'] );
       
