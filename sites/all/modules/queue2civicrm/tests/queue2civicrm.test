@@ -117,13 +117,13 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 			'gateway_txn_id' => '11235',
 			'contribution_tracking_id' => '' //don't actually need these in the DB, as we're just testing the currency conversions.
 		);
-		$msg = queue2civicrm_verify_and_stage($test_currency_conversion);
+		$msg = wmf_civicrm_verify_message_and_stage($test_currency_conversion);
 		$this->assertTrue($test_currency_conversion['gross'] == $msg['original_gross'], "Original Gross in converted message does not match actual original gross.");
 		// commenting out below assertion - not a foolproof assertion ~awjrichards
 		//$this->assertTrue($test_currency_conversion['gross'] != $msg['gross'], "Gross is identical: No conversion was done (unless " . $test_currency_conversion['original_currency'] . " = USD for a minute");
 
 		$test_currency_conversion['original_currency'] = 'USD';
-		$msg = queue2civicrm_verify_and_stage($test_currency_conversion);
+		$msg = wmf_civicrm_verify_message_and_stage($test_currency_conversion);
 		$this->assertTrue($test_currency_conversion['gross'] == $msg['original_gross'], "Original Gross in converted message does not match actual original gross.");
 		$this->assertTrue($test_currency_conversion['gross'] == $msg['gross'], "USD to USD Gross is not identical!");
 	}

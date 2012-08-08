@@ -321,7 +321,7 @@ function queue2civicrm_import( $msg ) {
   civicrm_initialize(true);
 
 	try {
-		$msg = queue2civicrm_verify_and_stage($msg);
+		$msg = wmf_civicrm_verify_message_and_stage($msg);
 	} catch (Exception $e) {
 		drush_set_error("INVALID_MESSAGE", 'Failed to verify message: ' . $e->getMessage());
 		return FALSE;
@@ -347,11 +347,11 @@ function queue2civicrm_import( $msg ) {
   watchdog('queue2civicrm', 'Contribution:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');  
 
   // insert the contact information
-  $contact = _queue2civicrm_contact_insert( $msg );
+  $contact = wmf_civicrm_message_contact_insert( $msg );
 
   if($contact !== false){
 	// Insert the location record
-	$location = _queue2civicrm_location_insert( $msg, $contact );
+	$location = wmf_civicrm_message_location_insert( $msg, $contact );
 
 	// Insert the contribution record.
 	$contribution = wmf_civicrm_message_contribution_insert( $msg, $contact );
@@ -360,11 +360,11 @@ function queue2civicrm_import( $msg ) {
 		// Update 
         if ( isset( $msg[ 'recurring' ] ) && $msg[ 'recurring' ] == 1 ) {
           watchdog( 'queue2civicrm_import', 'Attempting to insert recurring record.');
-          _queue2civicrm_contribution_recur_insert( $msg, $contact['id'], $contribution );
+          wmf_civicrm_message_contribution_recur_insert( $msg, $contact['id'], $contribution );
         }
 
 		// Tag contact for review
-		$tag = _queue2civicrm_tag_insert( $contact );
+		$tag = wmf_civicrm_tag_contact_for_review( $contact );
 		if ($tag === false){
 			//@fixme: Roll back any importing we've already done...?
 			//@fixme: Include a reasonable transaction id in the error message
@@ -375,7 +375,7 @@ function queue2civicrm_import( $msg ) {
         
 		// Map the tracking record to the CiviCRM contribution
 		// @FIXME what do we do if this returns false?  nothing at the moment...
-		_queue2civicrm_update_contribution_tracking( $msg, $contribution );
+		wmf_civicrm_message_update_contribution_tracking( $msg, $contribution );
 
 		// construct an array of useful info to invocations of queue2civicrm_import
 		$contribution_info = array(
@@ -512,75 +512,6 @@ function queue2civicrm_generate_message() {
 	'date'                   => date('r'), //time(),
   );
   return $message;
-}
-
-function queue2civicrm_verify_and_stage($msg){
-	if ( !is_array( $msg ) ) {
-		$msg = json_decode($msg->body, true);
-	}
-
-	$required = array(
-		'email',
-		'gross',
-		'original_currency',
-		'gateway',
-		'gateway_txn_id',
-	);
-
-	$err = array();
-	foreach ($required as $key){
-		if (empty($msg[$key])){
-			$err[] = "Required Field '$key' not found in message.";
-		}
-	}
-
-	if(!array_key_exists('fee', $msg) && !array_key_exists('net', $msg)){
-		$msg['fee'] = '0.00';
-		$msg['net'] = $msg['gross'];
-	} elseif(!array_key_exists('fee', $msg) && array_key_exists('net', $msg)){
-		$msg['fee'] = $msg['gross'] - $msg['net'];
-	} elseif(array_key_exists('fee', $msg) && !array_key_exists('net', $msg)){
-		$msg['net'] = $msg['gross'] - $msg['fee'];
-	}
-
-	if (floatval($msg['net']) <= 0)
-	{
-		$err[] = "Positive amount required.";
-	}
-
-	if (!empty($err))
-	{
-		$err[] = print_r($msg, true);
-		watchdog('queue2civicrm', $err, NULL, WATCHDOG_ERROR);
-		drush_set_error("CIVI_REQ_FIELD", implode("\n", $err));
-		return false;
-	}
-
-    $msg['anonymous'] = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
-    $msg['optout'] = (array_key_exists('optout', $msg) && $msg['optout'] == true && strtoupper($msg['optout']) != "FALSE") ? 1 : 0;
-
-	//defaults: Keys that aren't actually required, but which will cause some portion of the code to complain
-	//if they don't exist (even if they're blank).
-	$defaults = array(
-		'date' => time(), //defaulting to now. @fixme: if you can think of a better thing to do in the name of historical exchange rates.
-		'first_name' => 'Chester',
-		'middle_name' => '',
-		'last_name' => 'McDefault',
-		'street_address' => '',
-		'supplemental_address_1' => '',
-		'city' => '',
-		'country' => '',
-		'state_province' => '',
-		'postal_code' => '',
-		'original_gross' => $msg['gross'],
-	);
-
-	$msg = _queue2civicrm_normalize_msg( array_merge($defaults, $msg) );
-
-	// set the correct amount fields/data and do exchange rate conversions.
-	$msg = wmf_civicrm_normalize_contribution_amounts( $msg );
-
-	return $msg;
 }
 
 function queue2civicrm_failmail($error, $message, $removed){
