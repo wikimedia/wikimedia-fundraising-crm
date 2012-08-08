@@ -317,65 +317,25 @@ function queue2civicrm_dequeue() {
 function queue2civicrm_import( $msg ) {
   // save the original message for logging
   $msg_orig = $msg;
-  
-  civicrm_initialize(true);
 
 	try {
-		$msg = wmf_civicrm_verify_message_and_stage($msg);
-	} catch (Exception $e) {
-		drush_set_error("INVALID_MESSAGE", 'Failed to verify message: ' . $e->getMessage());
-		return FALSE;
-	}
-	if ($msg == false){
-		drush_set_error("INVALID_MESSAGE", 'Failed to verify message, unknown cause.');
-		return false;
-	}
-
-	/**
-	* prepare data for logging
-	*/
-	$log = array(
-		'gateway' => $msg[ 'gateway' ],
-		'gateway_txn_id' => $msg[ 'gateway_txn_id' ],
-		'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ),
-		'timestamp' => time(),
-		'verified' => 0,
-	);
-	$cid = _queue2civicrm_log( $log );
-	
-  //dsm($contribution);
-  watchdog('queue2civicrm', 'Contribution:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');  
-
-  // insert the contact information
-  $contact = wmf_civicrm_message_contact_insert( $msg );
-
-  if($contact !== false){
-	// Insert the location record
-	$location = wmf_civicrm_message_location_insert( $msg, $contact );
-
-	// Insert the contribution record.
-	$contribution = wmf_civicrm_message_contribution_insert( $msg, $contact );
-	if($contribution !== false){
-
-		// Update 
-        if ( isset( $msg[ 'recurring' ] ) && $msg[ 'recurring' ] == 1 ) {
-          watchdog( 'queue2civicrm_import', 'Attempting to insert recurring record.');
-          wmf_civicrm_message_contribution_recur_insert( $msg, $contact['id'], $contribution );
-        }
-
-		// Tag contact for review
-		$tag = wmf_civicrm_tag_contact_for_review( $contact );
-		if ($tag === false){
-			//@fixme: Roll back any importing we've already done...?
-			//@fixme: Include a reasonable transaction id in the error message
-			drush_set_error("IMPORT_TAG", "Review tag could not be added to the contact. Please make sure it's defined in your CiviCRM install.");
-			//Note: If having the import tag turns out to be extremely important and something we should die over, uncomment the next line.
-			//return false;
+		if (!is_array($msg)) {
+			$msg = json_decode($msg->body, true);
 		}
-        
-		// Map the tracking record to the CiviCRM contribution
-		// @FIXME what do we do if this returns false?  nothing at the moment...
-		wmf_civicrm_message_update_contribution_tracking( $msg, $contribution );
+
+		/**
+		* prepare data for logging
+		*/
+		$log = array(
+			'gateway' => $msg[ 'gateway' ],
+			'gateway_txn_id' => $msg[ 'gateway_txn_id' ],
+			'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ),
+			'timestamp' => time(),
+			'verified' => 0,
+		);
+		$cid = _queue2civicrm_log( $log );
+
+		$contribution = wmf_civicrm_contribution_message_import($msg);
 
 		// construct an array of useful info to invocations of queue2civicrm_import
 		$contribution_info = array(
@@ -399,18 +359,15 @@ function queue2civicrm_import( $msg ) {
 		_queue2civicrm_trxn_counter_add( $msg[ 'gateway' ] );
 
 		return TRUE;
-	} else {
-		//@fixme: Roll back any importing we've already done.
-		//@fixme: Include a reasonable transaction id in the error message
-		drush_set_error("IMPORT_CONTRIB", "Contribution could not be added. Aborting import.");
-		return false;
 	}
-  } else {
-	  //@fixme: Roll back any importing we've already done.
-	  //@fixme: Include a reasonable transaction id in the error message
-	  drush_set_error("IMPORT_CONTACT", "Contact could not be added. Aborting import.");
-	  return false;
-  }
+	catch (WmfException $ex) {
+		// Redundancy for comfort
+		watchdog('queue2civicrm', 'something went wrong: '.$ex->getMessage(), WATCHDOG_ERROR);
+	}
+	catch (Exception $ex) {
+		watchdog('queue2civicrm', 'something went REALLY oddly wrong: '.$ex->getMessage(), WATCHDOG_ERROR);
+	}
+	return FALSE;
 }
 
 /**
