@@ -275,16 +275,16 @@ function recurring_import_subscr_payment( $msg ) {
   if ( $msg[ 'contribution_tracking_update' ] ) {
     
     // Map the tracking record to the CiviCRM contribution
-    _queue2civicrm_update_contribution_tracking( $msg, $contribution );
+    wmf_civicrm_message_update_contribution_tracking( $msg, $contribution );
     
     // update the contact
-    $contact = _queue2civicrm_contact_update( $msg, $contact[ 'id' ] );
+    $contact = wmf_civicrm_message_contact_update( $msg, $contact[ 'id' ] );
   
     // Insert the location record
-    $location = _queue2civicrm_location_insert( $msg, $contact );
+    $location = wmf_civicrm_message_location_insert( $msg, $contact );
   
     // Tag contact for review
-    $tag = _queue2civicrm_tag_insert( $contact );
+    $tag = wmf_civicrm_tag_contact_for_review( $contact );
   }
 
   // update subscription record with next payment date
@@ -361,13 +361,13 @@ function recurring_import_subscr_signup( $msg ) {
   }
   
   // create contact record
-  $contact = _queue2civicrm_contact_insert( $msg );
+  $contact = wmf_civicrm_message_contact_insert( $msg );
   
   // Insert the location record
-  //$location = _queue2civicrm_location_insert( $msg, $contact );
+  //$location = wmf_civicrm_message_location_insert( $msg, $contact );
   
   // Tag contact for review
-  //$tag = _queue2civicrm_tag_insert( $contact );
+  //$tag = wmf_civicrm_tag_contact_for_review( $contact );
   
   // prepare query for inserting data to civicrm_contribution_recur
   $query = "INSERT INTO {civicrm_contribution_recur} (
@@ -511,13 +511,13 @@ function recurring_import_subscr_modify( $msg ) {
   }
    
   // update the contact
-  $contact = _queue2civicrm_contact_update( $msg, $recur_record->contact_id );
+  $contact = wmf_civicrm_message_contact_update( $msg, $recur_record->contact_id );
   
   // Insert the location record
-  $location = _queue2civicrm_location_update( $msg, $contact );
+  $location = wmf_civicrm_message_location_update( $msg, $contact );
   
   // Tag contact for review
-  $tag = _queue2civicrm_tag_insert( $contact );
+  $tag = wmf_civicrm_tag_contact_for_review( $contact );
 
   watchdog( 'recurring', 'Subscription succesfully modified for subscription id: %subscr_id', array( '%subscr_id' => print_r( $msg['subscr_id'], true )), WATCHDOG_NOTICE );
   return 1;
@@ -590,7 +590,7 @@ function recurring_normalize_msg( $msg  ) {
     $msg = recurring_normalize_paypal_msg( $msg );
   }
   
-  $msg = _queue2civicrm_normalize_msg( $msg );
+  $msg = wmf_civicrm_normalize_msg( $msg );
   return $msg;
 }
 
@@ -781,7 +781,7 @@ function recurring_get_contribution_tracking_id( $msg ) {
       sort( $contrib_ids, SORT_NUMERIC );
       $contrib_id = array_shift( $contrib_ids ); // this should return null if $contrib_ids is empty
       $date = date( 'YmdHis', strtotime( $msg[ 'payment_date' ] ));
-      $contribution_tracking_id = _queue2civicrm_insert_contribution_tracking( '..rpp', 'civicrm', $date, $contrib_id );
+      $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking( '..rpp', 'civicrm', $date, $contrib_id );
       watchdog( 'recurring', 'recurring_get_contribution_tracking_id: Inserted contrib tracking id, %cti', array( '%cti' => $contribution_tracking_id ), WATCHDOG_DEBUG );
       return $contribution_tracking_id;
     }
