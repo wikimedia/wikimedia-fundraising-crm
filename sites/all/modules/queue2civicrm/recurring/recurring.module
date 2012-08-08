@@ -174,7 +174,12 @@ function recurring_import( $msg ) {
   // store the original message for logging later
   $msg_orig = $msg;
   
-  $msg = recurring_normalize_msg( $msg );
+  try {
+    $msg = recurring_normalize_msg( $msg );
+  }
+  catch (Exception $ex) {
+    return 0;
+  }
   
   /**
    * prepare data for logging
@@ -210,7 +215,7 @@ function recurring_import( $msg ) {
   if ( isset( $msg[ 'txn_type' ] ) && in_array( $msg[ 'txn_type' ], $txn_subscr_payment ) ) {
     $ret_val = recurring_import_subscr_payment( $msg );
   } elseif ( isset( $msg[ 'txn_type' ] ) && in_array( $msg[ 'txn_type' ], $txn_subscr_acct ) ) {
-    $ret_val = recurring_import_subscr_acct( $msg );
+      $ret_val = recurring_import_subscr_acct( $msg );
   } else {
     watchdog( 'recurring', 'Msg not recognized as a recurring payment related message.' );
     $ret_val = 0;

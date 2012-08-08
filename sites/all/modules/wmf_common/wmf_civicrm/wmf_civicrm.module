@@ -3,6 +3,7 @@
 require_once 'db_switcher.inc';
 require_once 'recurring.inc';
 require_once 'tracking.inc';
+require_once 'errors.inc';
 
 /**
  * return a map of option value (id) => option name
@@ -92,6 +93,45 @@ function wmf_civicrm_settle($contribution, $settled_timestamp)
 }
 
 /**
+ * Try to import a transaction message into CiviCRM, otherwise
+ * throw an exception.
+ */
+function wmf_civicrm_contribution_message_import($msg)
+{
+    $msg = wmf_civicrm_verify_message_and_stage($msg);
+
+    //XXX should be debug level, or does this have a magic purpose?
+    watchdog('queue2civicrm', 'Contribution:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');
+
+    // insert the contact information
+    $contact = wmf_civicrm_message_contact_insert( $msg );
+
+    // Insert the location record
+    $location = wmf_civicrm_message_location_insert( $msg, $contact );
+
+    // Insert the contribution record.
+    $contribution = wmf_civicrm_message_contribution_insert( $msg, $contact );
+
+    if ( isset( $msg[ 'recurring' ] ) && $msg[ 'recurring' ] == 1 ) {
+        watchdog( 'queue2civicrm_import', 'Attempting to insert recurring record.'); //BLAH
+        wmf_civicrm_message_contribution_recur_insert( $msg, $contact['id'], $contribution );
+    }
+
+    // Tag contact for review
+    try {
+        $tag = wmf_civicrm_tag_contact_for_review( $contact );
+    } catch (WmfException $ex) {
+        // XXX copying old logic, continues without a review tag
+    }
+
+    // Map the tracking record to the CiviCRM contribution
+    // @FIXME what do we do if this returns false?  nothing at the moment...
+    wmf_civicrm_message_update_contribution_tracking( $msg, $contribution );
+
+    return $contribution;
+}
+
+/**
  * Insert the contribution record
  * 
  * Serves as a standard way for message processors to handle contribution
@@ -103,8 +143,10 @@ function wmf_civicrm_settle($contribution, $settled_timestamp)
  * @param integer $effort_id  The effort id - the number of successful payments for recurring payments
  * @return array
  */
-function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL, $effort_id=NULL ) {
-    
+function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL, $effort_id=NULL )
+{
+    civicrm_initialize();
+
     //TODO: After we upgrade civi, refactor this whole thing so the data staging 
     //is all done in... y'know: The staging function, which should itself get 
     //moved into common for its universal usefulness. 
@@ -118,9 +160,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     
     switch ( count( $parts ) ){
         case 0:
-            watchdog( 'wmf_civicrm', 'Cannot add contribution: No gateway_txn_id:' . print_r($msg, TRUE));
-            return false;
-            break;
+            throw new WmfException("IMPORT_CONTRIB", "Contribution could not be added. Aborting import.", $msg);
         case 1: 
             //unusual, but let's just assume it's a lonely transaction id and assign a timestamp.
             $transaction_id = $parts[0];
@@ -135,8 +175,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
         case 4:
             //the only way we have four parts in one of these things would be if...
             if (array_shift($parts) != 'RECURRING'){
-                watchdog( 'wmf_civicrm', 'Cannot add contribution: Malformed gateway_txn_id (4 parts, does not start with "RECURRING"):' . print_r($msg, TRUE));
-                return false;
+                throw new WmfException("IMPORT_CONTRIB", 'Cannot add contribution: Malformed gateway_txn_id (4 parts, does not start with "RECURRING")', $msg);
             }
             //and now we're down to three. DO NOT BREAK HERE, OR REORDER THE CASE BLOCKS. 
         case 3:
@@ -147,12 +186,10 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
             if ( $part1 == 'RECURRING' ){
                 //we have a subscription. 
                 if ( array_shift( $parts ) != strtoupper( $msg['gateway']) ){
-                    watchdog( 'wmf_civicrm', 'Cannot add contribution: Malformed gateway_txn_id (3 parts, recurring, second part is not ucase gateway):' . print_r($msg, TRUE));
-                    return false;
+                    throw new WmfException("IMPORT_CONTRIB", 'Cannot add contribution: Malformed gateway_txn_id (3 parts, recurring, second part is not ucase gateway):', $msg);
                 }
             } elseif ( $part1 != strtoupper( $msg['gateway']) ) {
-                watchdog( 'wmf_civicrm', 'Cannot add contribution: Malformed gateway_txn_id (3 parts, does not start with ucase gateway):' . print_r($msg, TRUE));
-                return false;
+                throw new WmfException("IMPORT_CONTRIB", 'Cannot add contribution: Malformed gateway_txn_id (3 parts, does not start with ucase gateway):', $msg);
             }
             
             $transaction_id = $parts[0];
@@ -161,14 +198,12 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
             break;
         default: 				
             //error state. Way too many dataz. 
-            watchdog( 'wmf_civicrm', 'Cannot add contribution: Malformed gateway_txn_id (too many parts):' . print_r($msg, TRUE));
-            return false;
+            throw new WmfException("IMPORT_CONTRIB", 'Cannot add contribution: Malformed gateway_txn_id (too many parts):', $msg);
     }
     
     //one last typey-checky thing before we just assume we're all good.
     if ( !is_numeric( $timestamp ) ){
-        watchdog( 'wmf_civicrm', 'Cannot add contribution: Malformed gateway_txn_id (timestamp does not appear to be numeric):' . print_r($msg, TRUE));
-        return false;
+        throw new WmfException("IMPORT_CONTRIB", 'Cannot add contribution: Malformed gateway_txn_id (timestamp does not appear to be numeric):', $msg);
     }
     
     //kill off any pre-existing effort ID in the transaction id. Leaving it as 
@@ -189,19 +224,15 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     
     $trxn_id = strtoupper( $prefix . ' ' . $transaction_id . ' ' . $timestamp );
     
-    
     // Insert the contribution record
-    $contribution_id = wmf_civicrm_get_civi_id( 'contribution_type_id', 'cash' );
+    $contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', 'cash' );
 
+    //XXX always redundant?
     if ( !array_key_exists( "payment_instrument", $msg ) ){
         $msg['payment_instrument'] = wmf_civicrm_get_message_payment_instrument( $msg );
     }
     $payment_instrument_id = wmf_civicrm_get_civi_id( 'payment_instrument_id', $msg['payment_instrument'] );
 
-    if ( ( $contribution_id == false ) || ( $payment_instrument_id == false ) ){
-        //the errors have already been thrown in wmf_civicrm_get_civi_id. Just leave.
-        return false;
-    }
     if ( !array_key_exists( 'check_number', $msg ) ){
         $msg['check_number'] = NULL;
     }
@@ -212,7 +243,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     $contribution = array(
         'contact_id' => $contact[ 'id' ],
         'total_amount' => $msg['gross'],
-        'contribution_type_id' => $contribution_id,
+        'contribution_type_id' => $contribution_type_id,
         'payment_instrument_id' => $payment_instrument_id,
         'fee_amount' => $msg['fee'],
         'net_amount' => $msg['net'],
@@ -235,7 +266,11 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     watchdog( 'wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
     
     if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
-        return false;
+        throw new WmfException(
+            'INVALID_MESSAGE',
+            'Cannot create contribution: ' . $contribution_result['error_message'],
+            array('failed_contribution' => $contribution, 'msg' => $msg)
+        );
     }
   
     /**
@@ -277,11 +312,10 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
  *
  * @param $type
  * @param $name
- * @param $fatal boolean Set this to false if you don't want to fatally end execution if the lookup fails. 
- * //TODO: Make nonfatal queries work with things other than the payment instrument.
  * @return bool
  */
-function wmf_civicrm_get_civi_id($type, $name, $fatal = true) {
+function wmf_civicrm_get_civi_id($type, $name)
+{
     static $civi_ids = array();
     $params = array('name' => $name);
     $dummy = array();
@@ -300,9 +334,9 @@ function wmf_civicrm_get_civi_id($type, $name, $fatal = true) {
             if (!is_null($result)){
                 $civi_ids[$type][$name] = $result->id;
                 watchdog('wmf_civicrm', "Found id for contribution_type $name: " . $civi_ids[$type][$name]);
-                return $civi_ids[$type][$name];
             } else {
                 //make it. Or, throw an error here. Either way.
+                //XXX nonono
                 watchdog('wmf_civicrm', "Id for contribution_type $name not found. Creating...");
                 $params['description'] = '';
                 $params['accounting_code'] = strtoupper($name);
@@ -311,9 +345,12 @@ function wmf_civicrm_get_civi_id($type, $name, $fatal = true) {
                 $result = CRM_Contribute_BAO_ContributionType::add($params, $dummy);
                 $civi_ids[$type][$name] = $result->id;
                 watchdog('wmf_civicrm', "New id for contribution_type $name :" . $civi_ids[$type][$name]);
-                return $civi_ids[$type][$name];
             }
-            break;
+            $id = $civi_ids[$type][$name];
+            if (empty($id)) {
+                throw new WmfException("CIVI_CONFIG", t("Contribution Type '%name' not found!", array("%name" => $name)));
+            }
+            return $id;
         case 'payment_instrument_id':
             require_once 'api/v3/OptionValue.php';
             $group_id = civicrm_api3_option_value_get(
@@ -323,11 +360,7 @@ function wmf_civicrm_get_civi_id($type, $name, $fatal = true) {
                 watchdog('wmf_civicrm', "Found value for payment_instrument $name :" . $civi_ids[$type][$name]);
                 return $civi_ids[$type][$name];
             } else {
-                watchdog('wmf_civicrm', "Payment Instrument '$name' not found! :", NULL, WATCHDOG_ERROR);
-                if ($fatal){
-                    drush_set_error("CIVI_CONFIG", "Payment Instrument '$name' not found in CiviCRM! Please add it and retry.");
-                } 
-                return false;
+                throw new WmfException("CIVI_CONFIG", t("Payment Instrument '%name' not found!", array("%name" => $name)));
             }
             break;
         case 'tag_id':
@@ -338,12 +371,10 @@ function wmf_civicrm_get_civi_id($type, $name, $fatal = true) {
                 watchdog('wmf_civicrm', "Found id for Entity Tag $name :" . $civi_ids[$type][$name]);
                 return $civi_ids[$type][$name];
             } else {
-                watchdog('wmf_civicrm', "Entity Tag '$name' not found! :", NULL, WATCHDOG_ERROR);
-                drush_set_error("CIVI_CONFIG", "Entity Tag '$name' not found! Please add it and retry.");
-                return false;
+                throw new WmfException("CIVI_CONFIG", t("Entity Tag '%name' not found!", array("%name" => $name)));
             }
         default:
-            return false;
+            throw new WmfException("CIVI_CONFIG", t("Civi lookup for type '%type' not implemented", array("%type" => $type)));
     }
 }
 
@@ -354,7 +385,10 @@ function wmf_civicrm_get_civi_id($type, $name, $fatal = true) {
  *
  * TODO lookup table
  */
-function wmf_civicrm_get_message_payment_instrument( $msg ){
+function wmf_civicrm_get_message_payment_instrument( $msg )
+{
+    civicrm_initialize();
+
     $payment_instrument = null;
     
     if ( array_key_exists( 'payment_method', $msg ) && trim( $msg['payment_method'] ) != '' ){
@@ -461,9 +495,6 @@ function wmf_civicrm_get_message_payment_instrument( $msg ){
             case 'amazon':
                 $payment_instrument = 'Amazon';
                 break;
-            default:
-                //if it's still the default after all that, and it's set (or we wouldn't be here) we have a problem. 
-                return false;
         }
         
     } else {
@@ -473,6 +504,11 @@ function wmf_civicrm_get_message_payment_instrument( $msg ){
         }
     }
     
+    if ($payment_instrument === null)
+    {
+        throw new WmfException("INVALID_MESSAGE", "No payment type found for message.", $msg);
+    }
+
     //I was going to check to make sure the target gateway was a real thing, but: Hello, overhead. No.
     return $payment_instrument;
 }
@@ -515,7 +551,7 @@ function wmf_civicrm_verify_message_and_stage($msg)
 
     $err = array();
     foreach ($required as $key){
-        if (empty($msg[$key])){
+        if (!isset($msg[$key]) || $msg[$key] === ''){
             $err[] = "Required Field '$key' not found in message.";
         }
     }
@@ -529,17 +565,13 @@ function wmf_civicrm_verify_message_and_stage($msg)
         $msg['net'] = $msg['gross'] - $msg['fee'];
     }
 
-    if (floatval($msg['net']) <= 0)
+    if (floatval($msg['net']) <= 0 || floatval($msg['gross']) <= 0)
     {
         $err[] = "Positive amount required.";
     }
 
-    if (!empty($err))
-    {
-        $err[] = print_r($msg, true);
-        watchdog('wmf_civicrm', $err, NULL, WATCHDOG_ERROR);
-        drush_set_error("CIVI_REQ_FIELD", implode("\n", $err));
-        return false;
+    if (!empty($err)) {
+        throw new WmfException('CIVI_REQ_FIELD', $err, $msg);
     }
 
     $msg['anonymous'] = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
@@ -634,7 +666,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     if ( array_key_exists( 'is_error', $contact_result ) && $contact_result['is_error'] != 0 ){
-        return false;
+        throw new WmfException("IMPORT_CONTACT", "Contact could not be added. Aborting import.");
     }
     return $contact_result;
 }
@@ -783,12 +815,6 @@ function wmf_civicrm_normalize_msg( $msg ) {
     //handle the payment instrument without altering the original message
     //(just in case any downstream logic needs to switch on the raw data)
     $msg['payment_instrument'] = wmf_civicrm_get_message_payment_instrument( $msg );
-    if (!$msg['payment_instrument']) {
-        $watchdog_message = 'Payment instrument is unknown, $msg: ' . print_r( $msg, true );
-        watchdog( 'wmf_civicrm', $watchdog_message, null, WATCHDOG_ERROR );
-        drush_set_error('INVALID_MESSAGE', $watchdog_message);
-        return false;
-    }
 
     // if we're missing a contrib id, insert new record to the table
     // this can happen if a user somehow makes a trxn from outside the normal workflow
@@ -838,11 +864,7 @@ function wmf_civicrm_tag_contact_for_review( $contact )
     require_once 'api/v2/EntityTag.php';
 
     $review_tag_id = wmf_civicrm_get_civi_id('tag_id', 'Review');
-    //$review_tag_id = civicrm_tag_get($parameters);
-    if ($review_tag_id == false){
-        return false;
-    }
-    
+
     $tag = array(
         'tag_id' => $review_tag_id,
         'contact_id' => $contact[ 'id' ]

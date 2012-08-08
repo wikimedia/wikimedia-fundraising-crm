@@ -26,50 +26,60 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
     $msg[ 'installments' ] = isset( $msg[ 'installments' ] ) ? (integer) $msg[ 'installments' ] : 0;
 
     if ( !isset( $msg[ 'recurring' ] ) && $msg[ 'recurring' ] != 1 ) {
-        $watchdog_message = 'Payment is not marked as recurring, with the contact_id [' . $contact_id . '] $msg: ' . print_r( $msg, true );
-        watchdog( 'wmf_civicrm', $watchdog_message, null, WATCHDOG_ERROR );
-        drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
-        return false;
+        $watchdog_message = t(
+            'Payment is not marked as recurring, with the contact_id [%contact_id]',
+            array("%contact_id" => $contact_id)
+        );
+        throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message, $msg);
       }
     
     // Allowed frequency_units
     $frequency_units = array( 'month' );
     if ( !in_array( $msg[ 'frequency_unit' ], $frequency_units ) ) {
-        $watchdog_message = 'Invalid `frequency_unit` specified [' . $msg[ 'frequency_unit' ] . ']. Supported frequency_units: %frequency_units, with the contact_id [' . $contact_id . '] $msg: ' . print_r( $msg, true );
-        watchdog( 'wmf_civicrm', $watchdog_message, array( '%frequency_units' => implode( ', ', $frequency_units ) ), WATCHDOG_ERROR );
-        drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
-        return false;
+        $watchdog_message = t(
+            'Invalid `frequency_unit` specified [%frequency_unit]. Supported frequency_units: %frequency_units, with the contact_id [%contact_id]',
+            array(
+                "%frequency_unit" => $msg[ 'frequency_unit' ],
+                "%frequency_units" => implode( ', ', $frequency_units ),
+                "%contact_id" => $contact_id,
+            )
+        );
+        throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message, $msg);
     }
 
     // Frequency interval is only allowed to be 1.
     if ( $msg[ 'frequency_interval' ] !== 1 ) {
-        $watchdog_message = '`frequency_interval` is only allowed to be set to 1, with the contact_id [' . $contact_id . '] $msg: ' . print_r( $msg, true );
-        watchdog( 'wmf_civicrm', $watchdog_message, null, WATCHDOG_ERROR );
-        drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
-        return false;
+        $watchdog_message = t(
+            '`frequency_interval` is only allowed to be set to 1, with the contact_id [%contact_id]',
+            array("%contact_id" => $contact_id)
+        );
+        throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message, $msg);
     }
 
     // installments is only allowed to be 0.
     if ( $msg[ 'installments' ] !== 0 ) {
-        $watchdog_message = '`installments` must be set to 0, with the contact_id [' . $contact_id . '] $msg: ' . print_r( $msg, true );
-        watchdog( 'wmf_civicrm', $watchdog_message, null, WATCHDOG_ERROR );
-        drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
-        return false;
+        $watchdog_message = t(
+            '`installments` must be set to 0, with the contact_id [%contact_id]',
+            array("%contact_id" => $contact_id)
+        );
+        throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message, $msg);
     }
     
     if ( empty( $contribution_record ) ) {
-        $watchdog_message = 'The contribution_record is empty, with the contact_id [' . $contact_id . '] $msg: ' . print_r( $msg, true );
-        watchdog( 'wmf_civicrm', $watchdog_message, null, WATCHDOG_ERROR );
-        drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
-        return false;
+        $watchdog_message = t(
+            'The contribution_record is empty, with the contact_id [%contact_id]',
+            array("%contact_id" => $contact_id)
+        );
+        throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message, $msg);
     }
 
     // trxn_id must be set.
     if ( empty( $contribution_record[ 'trxn_id' ] ) ) {
-        $watchdog_message = '`trxn_id` must be set and not empty, with the contact_id [' . $contact_id . '] $msg: ' . print_r( $msg, true ) . ' and $contribution_record:'  . print_r( $contribution_record, true );
-        watchdog( 'wmf_civicrm', $watchdog_message, null, WATCHDOG_ERROR );
-        drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
-        return false;
+        $watchdog_message = t(
+            '`trxn_id` must be set and not empty, with the contact_id [%contact_id]',
+            array("%contact_id" => $contact_id)
+        );
+        throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message, array($msg, $contribution_record));
     }
     
     $msg[ 'cycle_day' ] = (integer) date( 'j', $msg[ 'date' ] );
@@ -135,6 +145,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
     //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$contribution_recur_id" . print_r($contribution_recur_id, true) . "\n" );
     
     // Link the contribution to the recurring payment
+    //TODO catch error and print message
     $link_contribution_status = wmf_civicrm_update_contribution_for_recurring( $contribution['id'], $contribution_recur_id );
     
     $queue2civicrm_dbs->use_default(); 
@@ -152,26 +163,27 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
 {
     // contribution_id must be set and not null or zero
     if ( empty( $contribution_id ) ) {
-        $watchdog_message = '`contribution_id` must be set and not empty.';
-        watchdog( 'wmf_civicrm', $watchdog_message, null, WATCHDOG_ERROR );
-        drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
-        return false;
+        $watchdog_message = t('`contribution_id` must be set and not empty.');
+        throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message);
     }
     
     // contribution_recur_id must be set and not null or zero
     if ( empty( $contribution_recur_id ) ) {
-        $watchdog_message = '`contribution_recur_id` must be set and not empty.';
-        watchdog( 'wmf_civicrm', $watchdog_message, null, WATCHDOG_ERROR );
-        drush_set_error('IMPORT_SUBSCRIPTION', $watchdog_message);
-        return false;
+        $watchdog_message = t('`contribution_recur_id` must be set and not empty.');
+        throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message);
     }
 
     $result = db_query('UPDATE {civicrm_contribution} SET contribution_recur_id=%d WHERE id=%d', (integer) $contribution_recur_id, (integer) $contribution_id);
 
     if ( !$result ) {
-        watchdog( 'wmf_civicrm', 'There was a problem linking the contribution [%contribution_id] to the recurring contribution [%contribution_recur_id]', array( '%contribution_id' => $contribution_id, '%contribution_recur_id' => $contribution_recur_id ), WATCHDOG_ERROR );
-        drush_set_error('IMPORT_SUBSCRIPTION', 'There was a problem linking the contribution [' . $contribution_id . '] to the recurring contribution [' . $contribution_recur_id . ']');
-        return false;
+        $watchdog_message = t(
+            'There was a problem linking the contribution [%contribution_id] to the recurring contribution [%contribution_recur_id]',
+            array(
+                '%contribution_id' => $contribution_id,
+                '%contribution_recur_id' => $contribution_recur_id
+            )
+        );
+        throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message);
     } else {
         watchdog( 'wmf_civicrm', 'Successfully linked the contribution  [%contribution_id] to the recurring contribution [%contribution_recur_id]', array( '%contribution_id' => $contribution_id, '%contribution_recur_id' => $contribution_recur_id ) );
         return true;
