@@ -62,34 +62,53 @@ function wmf_civicrm_get_settlement_currency($transaction)
 
 function wmf_civicrm_settle($contribution, $settled_timestamp)
 {
-	civicrm_initialize();
+    civicrm_initialize();
 
-	require_once 'CRM/Core/BAO/CustomValueTable.php';
-	static $custom_field_key = array();
-	if (empty($custom_field_key))
-	{
-		require_once 'CRM/Core/BAO/CustomField.php';
-		foreach (array('total_usd', 'settlement_date') as $name)
-		{
-			$id = CRM_Core_BAO_CustomField::getCustomFieldID($name, 'contribution_extra');
-			$custom_field_key[$name] = "custom_{$id}";
-		}
-	}
+    list($original_currency, $original_amount) = explode(" ", $contribution['source']);
+    $total_usd = round(exchange_rate_convert($original_currency, $original_amount, $settled_timestamp), 2);
+    $settlement_date = date( 'YmdHis', $settled_timestamp );
 
-	list($original_currency, $original_amount) = explode(" ", $contribution['source']);
-	$total_usd = round(exchange_rate_convert($original_currency, $original_amount, $settled_timestamp), 2);
-	$settlement_date = date( 'YmdHis', $settled_timestamp );
+    $custom_values = array(
+        'total_usd' => $total_usd,
+        'settlement_date' => $settlement_date,
+    );
+    wmf_civicrm_set_custom_field_values($contribution['id'], $custom_values);
+}
 
-	$params = array(
-		'entityID' => $contribution['id'],
-		$custom_field_key['total_usd'] => $total_usd,
-		$custom_field_key['settlement_date'] => $settlement_date,
-	);
-	$result = CRM_Core_BAO_CustomValueTable::setValues($params);
-	if (!empty($result['is_error']))
-	{
-		watchdog('wmf_civicrm', 'Failed to settle contribution %id: %err', array("%id" => $contribution['id'], "%err" => $result['error_message']), WATCHDOG_ERROR);
-	}
+function wmf_civicrm_set_custom_field_values($entity_id, $map)
+{
+    require_once 'CRM/Core/BAO/CustomValueTable.php';
+
+    $params = array(
+        'entityID' => $entity_id,
+    );
+    $custom_fields = wmf_civicrm_get_custom_field_map(array_keys($map));
+    foreach ($map as $field_name => $value)
+    {
+        $params[$custom_fields[$field_name]] = $value;
+    }
+    $result = CRM_Core_BAO_CustomValueTable::setValues($params);
+    if (!empty($result['is_error']))
+    {
+        throw new Exception(t('Failed to set custom values: id %id, error: %err', array("%id" => $entity_id, "%err" => $result['error_message'])));
+    }
+}
+
+function wmf_civicrm_get_custom_field_map($field_names)
+{
+    require_once 'CRM/Core/BAO/CustomField.php';
+
+    static $custom_fields = array();
+    foreach ($field_names as $name)
+    {
+        if (empty($custom_fields[$name]))
+        {
+            $id = CRM_Core_BAO_CustomField::getCustomFieldID($name, 'contribution_extra');
+            $custom_fields[$name] = "custom_{$id}";
+        }
+    }
+
+    return $custom_fields;
 }
 
 /**
