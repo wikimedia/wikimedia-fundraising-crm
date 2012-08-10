@@ -8,7 +8,7 @@ class WmfException extends Exception
             'fatal' => TRUE,
         ),
         'STOMP_BAD_CONNECTION' => array(
-            'rollback' => TRUE,
+            'fatal' => TRUE,
         ),
         'INVALID_MESSAGE' => array(
             'rollback' => TRUE,
