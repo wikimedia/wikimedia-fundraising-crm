@@ -1,17 +1,18 @@
 <?php
 
-function wmf_common_failmail($error, $source = null, $removed = FALSE)
+function wmf_common_failmail($error, $source = null)
 {
     $to = variable_get('wmf_common_failmail', '');
     if (empty($to)) {
         $to = 'fr-tech@wikimedia.org';
     }
     $params['error'] = $error;
-    if ($source)
+    if ($source) {
         $params['source'][] = $source;
-    elseif (property_exists($error, 'source'))
+    } elseif (property_exists($error, 'source')) {
         $params['source'][] = $error->source;
-    $params['removed'] = $removed;
+    }
+    $params['removed'] = (is_callable(array($error, 'isRejectMessage'))) ? $error->isRejectMessage() : FALSE;
     drupal_mail('wmf_common', 'fail', $to, language_default(), $params);
 }
 
@@ -34,8 +35,10 @@ function wmf_common_mail($key, &$message, $params)
         }
     }
 
-    if(!empty($params['error'])){
+    if (is_callable(array($params['error'], 'getMessage'))) {
         $message['body'][] = t("Error: ") . $params['error']->getMessage();
+    } elseif (!empty($params['error'])) {
+        $message['body'][] = t("Error: ") . $params['error'];
     }
     if(!empty($params['source'])){
         $message['body'][] = "---" . t("Source") . "---";

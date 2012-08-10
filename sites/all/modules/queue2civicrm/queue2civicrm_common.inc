@@ -34,12 +34,17 @@ function _queue2civicrm_stomp_connection($renew = false) {
 	}
 	
 	if(!is_object($con) || !$con->isConnected()){
-		watchdog('queue2civicrm', "Giving up connecting to the queue.", array(), WATCHDOG_ERROR);
-		drush_set_error("STOMP_BAD_CONNECTION", "Gave up connecting to the queue.");
-		return false;
+		throw new WmfException("STOMP_BAD_CONNECTION", "Gave up connecting to the queue.");
 	}
 
   return $con;
+}
+
+function _queue2civicrm_stomp_ack_frame($msg) {
+    $con = _queue2civicrm_stomp_connection();
+    if($con){
+        $con->ack($msg);
+    }
 }
 
 /**
@@ -92,81 +97,6 @@ function _queue2civicrm_log( $log=array() ) {
     watchdog( 'queue2civicrm', 'Failed logging the transaction: %log', array( "%log" => print_r( $log, true )), WATCHDOG_ERROR );
   }
   return $result;
-}
-
-/* Will return all the new drush errors since the last time you asked.
- *
- */
-function _queue2civicrm_get_new_drush_errors(){
-	static $oldErrors = array();
-	$errors = drush_get_error_log();
-	$ret = array();
-
-	foreach ($errors as $err_code=>$lines){
-		if (array_key_exists($err_code, $oldErrors)){
-			$tmp = array_diff($errors[$err_code], $oldErrors[$err_code]);
-			if (is_array($tmp) && !empty($tmp)){
-				$ret[$err_code] = $tmp;
-			}
-		} else {
-			$ret[$err_code] = $errors[$err_code];
-		}
-	}
-	$oldErrors = $errors;
-	return $ret;
-}
-
-/* Will return the most serious of all the new drush errors since the last time you asked,
- * with all its new lines intact.
- *
- * @param array $severity The severity levels for the errors.
- */
-function _queue2civicrm_get_top_new_drush_error($severity=array()){
-	$error = _queue2civicrm_get_new_drush_errors();
-
-	if (empty($severity) || !is_array($severity)){
-		$severity = array(
-			'CIVI_CONFIG',
-			'STOMP_BAD_CONNECTION',
-			'CIVI_REQ_FIELD',
-			'IMPORT_CONTACT',
-			'IMPORT_CONTRIB',
-			'IMPORT_TAG',
-		);
-	}
-	
-	if (empty($error)){
-		return false;
-	} else {	//pull the Top of Bad.
-		$top_error = false;
-		$top_code = false;
-
-		foreach($severity as $code){
-			if(array_key_exists($code, $error)){
-				$top_code = $code;
-				break;
-			}
-		}
-		if ($top_code === false){ //unknown code in the log there. Just pull #1.
-			foreach($error as $err_code=>$lines){
-				$top_code = $err_code;
-				break;
-			}
-		}
-
-		if ($top_code !== false){
-			$text = "Messages:";
-			foreach ($error[$top_code] as $key=>$errormessage){
-				$text .= "\n  $errormessage";
-			}
-
-			$top_error = array(
-				'err_code' => $top_code,
-				'err_text' => $text
-			);
-		}
-		return $top_error;
-	} 
 }
 
 /**
