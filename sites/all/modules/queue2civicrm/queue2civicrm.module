@@ -120,13 +120,6 @@ function queue2civicrm_settings() {
     ),
   );
 
-  $form['queue2civicrm_failmail'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Email Notification Address'),
-    '#required' => FALSE,
-    '#default_value' => variable_get('queue2civicrm_failmail', ''),
-  );
-  
   $form[ 'queue2civicrm_gateways_to_monitor' ] = array(
     '#type' => 'textfield',
     '#title' => t('Gateways to monitor'),
@@ -161,22 +154,42 @@ function queue2civicrm_batch_process() {
   
   watchdog('queue2civicrm', 'Attempting to process up to ' . variable_get('queue2civicrm_batch', 0) . ' contribution(s).');
 
+  try {
+      $con = _queue2civicrm_stomp_connection();
+  }
+  catch (Exception $ex) {
+      wmf_common_failmail('STOMP_BAD_CONNECTION totally lacking a stomp server');
+      return;
+  }
+  $subscription_queue = variable_get('queue2civicrm_subscription', '/queue/test');
+  $con->subscribe($subscription_queue, array('ack' => 'client'));
+  set_time_limit(60);
+
   // Attempt to dequeue items for the batch
   for ($i = 0; $i < variable_get('queue2civicrm_batch', 0); ++$i) {
-    $success = queue2civicrm_dequeue();
-    if ($success) {
+    $msg = $con->readFrame();
+    if ($msg === FALSE) {
+        watchdog('queue2civicrm', 'Nothing to process.');
+        break;
+    }
+    if (!$msg->body) {
+        // TODO it would be smart to keep track of RECEIPT frames as they are an ack-of-ack
+        watchdog('queue2civicrm', 'Popped a sweet nothing off the queue: ' . print_r($msg, TRUE));
+        $i--;
+        continue;
+    }
+    watchdog('queue2civicrm', 'Read frame:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');      
+
+    $success = queue2civicrm_process_message($msg);
+    if ($success == 1) {
       ++$processed;
     } else {
       break;
     }
   }
 
-	$con = _queue2civicrm_stomp_connection();
-	$subscription_queue = variable_get('queue2civicrm_subscription', '/queue/test');
-	if (is_object( $con ) && $con->isConnected()){
-		$con->unsubscribe($subscription_queue);
-		$con->disconnect();
-	}
+  $con->unsubscribe( $subscription_queue ); 
+  $con->disconnect();
 
   // allow for other modules to handle their own related batch processing
   $batchprocessed = module_invoke_all( 'queue2civicrm_batch_process');
@@ -194,6 +207,8 @@ function queue2civicrm_batch_process() {
    * that fact will not get reported to gmetric.  But I've hardcoded the dmax param here to be the
    * same as the frequency of queue consumption, so if there are no messages in the queue for
    * a particular gateway, the gateway will report as having consumed 0 messages in ganglia anyway.
+   *
+   * TODO: the ganglia stuff should be a hook
    */
   $gmetric_tmax = variable_get( 'queue2civicrm_gmetric_tmax', 60 );
   $gmetric_dmax = variable_get( 'queue2civicrm_gmetric_dmax', 360 );
@@ -214,160 +229,83 @@ function queue2civicrm_batch_process() {
 /**
  * Remove one item from the queue and process it.
  */
-function queue2civicrm_dequeue() {
-  $con = _queue2civicrm_stomp_connection();
-  $subscription_queue = variable_get('queue2civicrm_subscription', '/queue/test');
-  $severity = array(
-    'CIVI_CONFIG',
-    'STOMP_BAD_CONNECTION',
-    'INVALID_MESSAGE',
-    'CIVI_REQ_FIELD',
-    'IMPORT_CONTACT',
-    'IMPORT_CONTRIB',
-    'IMPORT_SUBSCRIPTION',
-    'IMPORT_TAG',
-  );
-  if ($con) {
-    $con->subscribe($subscription_queue, array('ack' => 'client'));
-
-    $msg = $con->readFrame();
+function queue2civicrm_process_message($msg) {
     
-    // Skip processing if no message to process.
-    if ($msg !== FALSE) {
-      watchdog('queue2civicrm', 'Read frame:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');      
-      set_time_limit(60);
-      try {
-		_queue2civicrm_get_new_drush_errors(); //redefine "new" before we move on.
-        if (queue2civicrm_import($msg)){
-			$con->ack($msg);
-		} else {
-			/* @fixme: Wow, this error handling is probably a mess. This should shake out more sensibly as:
-			 * - tests are written for dequeue fail cases
-			 * - we get to the cards that deal more specifically with error emails and database rollback conditions.
-			 */
-			$top_error = _queue2civicrm_get_top_new_drush_error($severity);
-			if ($top_error !== false && array_key_exists('err_code', $top_error)){
-				$watchdogMe = $top_error['err_code'] . " : " . $top_error['err_text'];
-				$failAck = false;
-				switch ($top_error['err_code']){
-					case 'CIVI_CONFIG': //missing a necessary civicrm value. Probably the Entity Tag, or Payment Instrument
-						$watchdogMe .= "\nHalting Process.";
-						watchdog('queue2civicrm', $watchdogMe, array(), WATCHDOG_ERROR);
-						queue2civicrm_failmail($top_error, array(), $failAck);
-						//in this case, it makes sense to just leave with no ack: It's not the message's fault.
-						$con->unsubscribe( $subscription_queue );
-						return false;
-						break;
-					case 'INVALID_MESSAGE':
-						$failAck = TRUE;
-						break;
-					case 'IMPORT_TAG':
-						//@fixme: Roll back contrib, and...
-					case 'IMPORT_SUBSCRIPTION':
-						//There was an error importing the subscription
-						//@fixme: Roll back contrib, and...
-					case 'IMPORT_CONTRIB': //Contribution could not be added by the import function, but contact made it.
-						//@fixme: Roll back contact, and...
-					case 'IMPORT CONTACT': //Contact could not be added by the import function.
-						$watchdogMe .= "\nHalting Process.";
-						watchdog('queue2civicrm', $watchdogMe, array(), WATCHDOG_ERROR);
-						queue2civicrm_failmail($top_error, $msg, $failAck);
-						$con->unsubscribe( $subscription_queue );
-						return false;
-						break;
-					case 'CIVI_REQ_FIELD': //message missing a hard requirement
-						$failAck = true;
-						break;
-					default: //apparently we don't know what happened to get us here. Log the heck out of it.
-						$watchdogMe .= "\nUNHANDLED ERROR CODE. Please debug and handle it.";
-						$failAck = true;
-				}
-				if ($failAck === true){
-					$watchdogMe .= "\nRemoving failed message from the queue: \n" . print_r($msg, true);
-					$con->ack($msg);
-				}
-				queue2civicrm_failmail($top_error, $msg, $failAck);
-				watchdog('queue2civicrm', $watchdogMe, array(), WATCHDOG_ERROR);
-
-			} else {
-				//Case was not properly dealt with.
-				queue2civicrm_failmail(array(), $msg, true);
-				watchdog('queue2civicrm', "Message failed to import, but threw no errors! Please debug and handle this failure case.\nRemoving message from the queue: \n" . print_r($msg, true), array(), WATCHDOG_ERROR);
-				$con->ack($msg);
-			}
-
-		}
-		return TRUE;
-      }
-      catch (Exception $e) {
-        watchdog('queue2civicrm', 'Could not process frame from queue.', array(), WATCHDOG_ERROR);
-      }  
+    try {
+        $msg_orig = $msg;
+        queue2civicrm_import($msg);
+        _queue2civicrm_stomp_ack_frame($msg_orig);
     }
-    else {
-      watchdog('queue2civicrm', 'Nothing to process.');
+    catch (WmfException $ex) {
+        watchdog('queue2civicrm', 'something went wrong during import: '.$ex->getMessage(), WATCHDOG_ERROR);
+
+        if ($ex->isRejectMessage()) {
+            $error = "\nRemoving failed message from the queue: \n" . print_r($msg, true);
+            _queue2civicrm_stomp_ack_frame($msg_orig);
+            watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
+        }
+
+        wmf_common_failmail($ex, $msg);
+
+        if ($ex->isFatal()) {
+            $error = "Halting Process.";
+            watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
+            return FALSE;
+        }
     }
-    $con->unsubscribe( $subscription_queue ); 
-  }
-  return FALSE;
+    catch (Exception $ex) {
+        $error = 'UNHANDLED ERROR CODE. exception: ' . $ex->getMessage();
+        watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
+        wmf_common_failmail($error, $msg);
+    }
+    return TRUE;
 }
 
 /**
  * Process one contribution from the queue to CiviCRM.
  */
 function queue2civicrm_import( $msg ) {
-  // save the original message for logging
-  $msg_orig = $msg;
+    // save the original message for logging
+    $msg_orig = $msg;
 
-	try {
-		if (!is_array($msg)) {
-			$msg = json_decode($msg->body, true);
-		}
+    if (!is_array($msg)) {
+        $msg = json_decode($msg->body, true);
+    }
 
-		/**
-		* prepare data for logging
-		*/
-		$log = array(
-			'gateway' => $msg[ 'gateway' ],
-			'gateway_txn_id' => $msg[ 'gateway_txn_id' ],
-			'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ),
-			'timestamp' => time(),
-			'verified' => 0,
-		);
-		$cid = _queue2civicrm_log( $log );
+    /**
+    * prepare data for logging
+    */
+    $log = array(
+        'gateway' => $msg[ 'gateway' ],
+        'gateway_txn_id' => $msg[ 'gateway_txn_id' ],
+        'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ),
+        'timestamp' => time(),
+        'verified' => 0,
+    );
+    $cid = _queue2civicrm_log( $log );
 
-		$contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = wmf_civicrm_contribution_message_import($msg);
 
-		// construct an array of useful info to invocations of queue2civicrm_import
-		$contribution_info = array(
-			'contribution_id' => $contribution['id'],
-			'contact_id' => $contact['id'],
-			'msg' => $msg,
-		);
+    // construct an array of useful info to invocations of queue2civicrm_import
+    $contribution_info = array(
+        'contribution_id' => $contribution['id'],
+        'contact_id' => $contact['id'],
+        'msg' => $msg,
+    );
 
-		// update the log if things went well
-		if ( $cid && !array_key_exists('is_error', $contribution)) {
-			$log[ 'cid' ] = $cid;
-			$log[ 'verified' ] = 1;
-			$log[ 'timestamp' ] = time();
-			_queue2civicrm_log( $log );
-		}
+    // update the log if things went well
+    if ( $cid && !array_key_exists('is_error', $contribution)) {
+        $log[ 'cid' ] = $cid;
+        $log[ 'verified' ] = 1;
+        $log[ 'timestamp' ] = time();
+        _queue2civicrm_log( $log );
+    }
 
-		// Send thank you email, other post-import things
-		module_invoke_all( 'queue2civicrm_import', $contribution_info );
-		
-		// keep count of the transactions
-		_queue2civicrm_trxn_counter_add( $msg[ 'gateway' ] );
-
-		return TRUE;
-	}
-	catch (WmfException $ex) {
-		// Redundancy for comfort
-		watchdog('queue2civicrm', 'something went wrong: '.$ex->getMessage(), WATCHDOG_ERROR);
-	}
-	catch (Exception $ex) {
-		watchdog('queue2civicrm', 'something went REALLY oddly wrong: '.$ex->getMessage(), WATCHDOG_ERROR);
-	}
-	return FALSE;
+    // Send thank you email, other post-import things
+    module_invoke_all( 'queue2civicrm_import', $contribution_info );
+    
+    // keep count of the transactions
+    _queue2civicrm_trxn_counter_add( $msg[ 'gateway' ] );
 }
 
 /**
@@ -469,69 +407,4 @@ function queue2civicrm_generate_message() {
 	'date'                   => date('r'), //time(),
   );
   return $message;
-}
-
-function queue2civicrm_failmail($error, $message, $removed){
-	$to = variable_get('queue2civicrm_failmail', '');
-	if ($to != ''){
-		$params['error'] = $error;
-		$params['message'] = $message;
-		$params['removed'] = $removed;
-		drupal_mail('queue2civicrm', 'fail', $to, language_default(), $params);
-	} else {
-		watchdog('queue2civicrm', 'Failmail recipient address not set up!');
-	}
-}
-
-function queue2civicrm_mail($key, &$message, $params) {
-	$language = $message['language'];
-	switch($key) {
-		case 'fail':
-			if ($params['removed'] === true){
-				$message['subject'] = t('queue2civicrm Fail Mail : REMOVAL');
-				$message['body'][] = t("A message was removed from ActiveMQ due to the following error(s):");
-			} elseif(empty($params['error'])){
-				$message['subject'] = t('queue2civicrm Fail Mail : UNKNOWN ERROR');
-				$message['body'][] = t("A message failed for reasons unknown, while being processed in queue2civicrm:");
-			} else {
-				$message['subject'] = t('queue2civicrm Fail Mail');
-				$message['body'][] = t("A message generated the following error(s) while being processed in queue2civicrm:");
-			}
-
-			if(!empty($params['error'])){
-				$message['body'][] = t("Error Code: ") . $params['error']['err_code'];
-				$message['body'][] = $params['error']['err_text'];
-			}
-			if(!empty($params['message'])){
-				$message['body'][] = "---" . t("Message") . "---";
-				$message['body'][] = print_r($params['message'], true);
-				$message['body'][] = "---" . t("End") . "---";
-			} else {
-				$message['body'][] = t("The exact message was deemed irrelevant.");
-			}
-			break;
-		case 'payment_instrument_unmapped':
-				
-			$message['subject'] = t('queue2civicrm : No Payment Instrument Mapped');
-			$message['body'][] = t('No payment instrument mapped for the following:');
-
-			if ( is_array( $params['message'] ) ){
-				if ( array_key_exists( 'payment_method', $params['message'] ) && trim($params['message']['payment_method']) != '' ){
-					$message['body'][] = t(" * payment_method = ") . $params['message']['payment_method'];
-				} else {
-					$message['body'][] = t(" * payment_method undefined or empty" );
-				}
-				if ( array_key_exists( 'payment_submethod', $params['message'] ) && trim($params['message']['payment_submethod']) != '' ){
-					$message['body'][] = t(" * payment_submethod = ") . $params['message']['payment_submethod'];
-				} else {
-					$message['body'][] = t(" * payment_submethod undefined or empty" );
-				}
-			}
-			$message['body'][] = t("Please add to the cases in the function _queue2civicrm_get_payment_instrument()");
-
-			$message['body'][] = "---" . t("Full Message") . "---";
-			$message['body'][] = print_r($params['message'], true);
-			$message['body'][] = "---" . t("End") . "---";
-			break;	
-	}
 }
