@@ -139,7 +139,15 @@ function wmf_logging_format_message($entry) {
   $message .= '|' . $entry[ 'referer' ];
   $message .= '|' . $entry[ 'user' ]->uid;
   $message .= '|' . $entry[ 'link' ];
-  $message .= '|' . (empty($entry[ 'variables' ]) ? $entry[ 'message' ] : strtr($entry[ 'message' ], $entry[ 'variables' ]));
+
+  if (empty($entry[ 'variables' ])) {
+    $message .= '|' . $entry[ 'message' ];
+  } elseif (is_array($entry[ 'variables' ])) {
+    $message .= '|' . strtr($entry[ 'message' ], $entry[ 'variables' ]);
+  } else {
+    // This really shouldn't ever happen. But it does...
+    $message .= "|BAD WATCHDOG CALL; " . $entry[ 'message' ] . " : " . $entry[ 'variables' ];
+  }
 
   return $message;
 }
