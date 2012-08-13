@@ -124,7 +124,7 @@ function drush_import_checks() {
 			$msg['gateway_txn_id'] = md5( $msg['check_number'] . $name_salt );
 
 			// check to see if we have already processed this check
-			if ( $existing = _check_existing( $msg ) ){
+			if ( $existing = _check_existing( "MERKLE {$msg['gateway_txn_id']}" ) ){
 				// if so, move on
 				watchdog('offline2civicrm', 'Contribution matches existing contribution (id: ' . $existing['id'] .
 					') Skipping', array(), WATCHDOG_INFO);
