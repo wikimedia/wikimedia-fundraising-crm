@@ -871,7 +871,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
     watchdog( 'wmf_civicrm', 'Contribution (pre-conversion):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>' );
 
     $msg[ 'gateway_txn_id_orig' ] = $msg[ 'gateway_txn_id' ];
-    $msg['gateway_txn_id'] .= ' ' . time();
+    $msg[ 'gateway_txn_id' ] .= ' ' . $msg[ 'date' ];
 
     return $msg;
 }
