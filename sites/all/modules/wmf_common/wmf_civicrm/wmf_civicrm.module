@@ -243,8 +243,8 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     
     $trxn_id = strtoupper( $prefix . ' ' . $transaction_id . ' ' . $timestamp );
     
-    // Insert the contribution record
-    $contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', 'cash' );
+    $msg['contribution_type'] = wmf_civicrm_get_message_contribution_type($msg);
+    $contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', $msg['contribution_type'] );
 
     //XXX always redundant?
     if ( !array_key_exists( "payment_instrument", $msg ) ){
@@ -395,6 +395,13 @@ function wmf_civicrm_get_civi_id($type, $name)
         default:
             throw new WmfException("CIVI_CONFIG", t("Civi lookup for type '%type' not implemented", array("%type" => $type)));
     }
+}
+
+function wmf_civicrm_get_message_contribution_type( $msg ) {
+    if ($msg['gateway'] == 'merkle') {
+        return 'merkle';
+    }
+    return 'cash';
 }
 
 /**

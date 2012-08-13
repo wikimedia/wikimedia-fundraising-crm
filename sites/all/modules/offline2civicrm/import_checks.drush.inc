@@ -38,7 +38,7 @@ function import_checks_drush_help( $section ) {
 }
 
 /**
- * Fires the 'batch_process' method in the queue2civicrm module.
+ * Loads lines from a file and imports into CiviCRM
  */
 function drush_import_checks() {
 	require_once 'offline2civicrm.common.inc';
@@ -46,13 +46,14 @@ function drush_import_checks() {
 	global $dbs;
 
 	try{
-		$dbs = new queue2civicrm_db_switcher();
+		$dbs = wmf_civicrm_get_dbs();
 
 		$args = drush_get_arguments();
 		$filename = $args[1];
 
 		if( ( $file = fopen( $filename, 'r' )) === FALSE ){
 			watchdog('offline2civicrm', 'Import checks: Could not open file for reading: ' . $filename, array(), WATCHDOG_ERROR);
+			return;
 		}
 
 		$headers = _load_headers( fgetcsv( $file, 0, ',', '"', '\\') );
@@ -130,11 +131,18 @@ function drush_import_checks() {
 				continue;
 			}
 
-			if ( sendSTOMP( $msg ) ){
-				watchdog('offline2civicrm', 'Import checks: Message sent to stomp successfully: ' . print_r( $msg, true ), array(), WATCHDOG_INFO);
-			} else {
-				watchdog('offline2civicrm', 'Import checks: Sending message to stomp failed: ' . print_r( $msg, true ), array(), WATCHDOG_ERROR);
+			try {
+				$contribution = wmf_civicrm_contribution_message_import( $msg );
 			}
+			catch (WmfException $ex) {
+				watchdog('offline2civicrm', 'Import checks: error during import ' + $ex->getMessage(), NULL, WATCHDOG_ERROR);
+				if ($ex->isFatal()) {
+					watchdog('offline2civicrm', 'Import checks: fatal error, aborting process', NULL, WATCHDOG_ERROR);
+					return;
+				}
+			}
+
+			watchdog('offline2civicrm', 'Import checks: Contribution imported successfully (%id): %msg', array('%id' => $contribution['id'], '%msg' => print_r( $msg, true )), WATCHDOG_INFO);
 		}
 	} catch ( Exception $e ){
 		watchdog('offline2civicrm', 'Import checks: Exception thrown during check processing: ' . print_r( $e, true ), array(), WATCHDOG_ERROR);
