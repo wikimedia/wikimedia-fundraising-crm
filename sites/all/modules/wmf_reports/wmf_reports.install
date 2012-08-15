@@ -107,6 +107,96 @@ function wmf_reports_update_6000()
 }
 
 /**
+ * Remove some of the mapping fields thanks to a hard mysql limit of
+ * 61 join tables.
+ */
+function wmf_reports_update_6001()
+{
+    wmf_reports_bootstrap_civi();
+    require_once 'CRM/Core/BAO/Mapping.php';
+
+    $params = array(
+        'name' => 'Contacts and Contributions',
+    );
+    $defaults = array();
+    $mapping = CRM_Core_BAO_Mapping::retrieve($params, $defaults);
+    if (!$mapping)
+    {
+        throw new Exception("No mapping yet, try running the db updates in order.");
+    }
+
+    $drop_phone_types = array(
+        'Pager',
+        'Voicemail',
+    );
+    $all_phone_types = CRM_Core_PseudoConstant::phoneType();
+    foreach ($drop_phone_types as $name)
+    {
+        $id = array_search($name, $all_phone_types);
+        $params = array(
+            'name' => 'phone',
+            'phone_type_id' => $id,
+            'mapping_id' => $mapping->id,
+        );
+        wmf_report_drop_mapping_fields($params);
+    }
+
+    $drop_fields = array(
+        'geo_code_1',
+        'geo_code_2',
+    );
+    foreach ($drop_fields as $name) {
+        $params = array(
+            'name' => $name,
+            'mapping_id' => $mapping->id,
+        );
+        wmf_report_drop_mapping_fields($params);
+    }
+
+    wmf_report_compact_mapping_fields($mapping->id);
+}
+
+function wmf_report_drop_mapping_fields($criteria)
+{
+    require_once 'CRM/Core/DAO/MappingField.php';
+    $mapping_field = new CRM_Core_DAO_MappingField();
+    $mapping_field->copyValues($criteria);
+    $mapping_field->find();
+    while ($mapping_field->fetch())
+    {
+        $mapping_field->delete();
+    }
+}
+
+/**
+ * Annoying workaround for broken mapping field :: delete.
+ * The 'column_number' field must be made sequential again.
+ */
+function wmf_report_compact_mapping_fields($mapping_id)
+{
+    require_once 'CRM/Core/DAO/MappingField.php';
+    $field = new CRM_Core_DAO_MappingField();
+    $field->mapping_id = $mapping_id;
+    $field->orderBy('column_number');
+    $field->find();
+
+    $sequence = 0;
+    while ($field->fetch())
+    {
+        $gap = $field->column_number - $sequence;
+        if ($gap > 0)
+        {
+            $modify = new CRM_Core_DAO_MappingField();
+            $modify->id = $field->id;
+            $modify->find(TRUE);
+            $modify->column_number -= $gap;
+            $modify->save();
+        }
+        $sequence++;
+    }
+}
+
+/**
  * Load civi api, only for use from within .install code
  */
 function wmf_reports_bootstrap_civi()
