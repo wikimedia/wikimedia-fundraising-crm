@@ -14,6 +14,7 @@ define( 'GC_AUDIT_MAKE_CITY', 'Springfield' );
 
 if ( function_exists( 'drupal_get_path' ) ) {
 	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_stomp.inc' );
+	require_once( drupal_get_path( 'module', 'wmf_common' ) . '/wmf_dates.php' );
 }
 
 /**
@@ -55,6 +56,12 @@ function globalcollect_audit_settings() {
     '#title' => t( 'Path to directory containing WMF GlobalCollect log files' ),
     '#required' => TRUE,
     '#default_value' => variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR ),
+  );
+  $form['globalcollect_audit_log_files_dir_secondary']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Alternate path to directory containing WMF GlobalCollect log files' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'globalcollect_audit_log_files_dir_secondary', CONTRIBUTION_AUDIT_LOG_FILES_DIR ),
   );
   $form['globalcollect_audit_test_mode']  = array(
     '#type' => 'checkbox',
@@ -163,7 +170,7 @@ function globalcollect_audit_track_fuckup(){
 	
 	foreach ( $ids as $date => $id_array ){
 		$logname = $directory . $date . '_iop.log';
-		$logname2 = $directory . globalcollect_audit_add_to_date( $date, 1 ) . '_iop.log';
+		$logname2 = $directory . wmf_common_date_add_days( $date, 1 ) . '_iop.log';
 		foreach ( $id_array as $grepforme ){
 			globalcollect_audit_echo('.');
 			$processed_id_count += 1;
@@ -779,6 +786,7 @@ function globalcollect_audit_get_all_wr1_files(){
  */
 function globalcollect_audit_groom_logs(){
 	$files_directory = variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
+	$files_directory_alt = variable_get( 'globalcollect_audit_log_files_dir_secondary', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
 
 	$files = array(
 		'gz' => array(),
@@ -787,20 +795,26 @@ function globalcollect_audit_groom_logs(){
 		'iop' => array()
 	);
 	globalcollect_audit_echo("Grooming log files");
+	$dates = array();
 	if ( $handle = opendir( $files_directory ) ){
 		while ( ( $file = readdir( $handle ) ) !== false ){
 			$full_path = $files_directory . $file;
+			$date = globalcollect_audit_get_log_date_by_file($full_path);
+			if ( !$date ){
+				continue;
+			}
+			$dates[] = $date;
 			if ( strpos( $file, '.gz' ) ){
 				$files['gz'][] = $full_path;
 				continue;
 			}
 			if ( preg_match( '/\d{8}_iop\.log/', $file ) ){
-				$files['iop'][globalcollect_audit_get_log_date_by_file($full_path)] = $full_path;
+				$files['iop'][$date] = $full_path;
 				//rekey
 				continue;
 			}
 			if ( preg_match( '/globalcollect_\d{8}\.log/', $file ) ){
-				$files['log'][globalcollect_audit_get_log_date_by_file($full_path)] = $full_path;
+				$files['log'][$date] = $full_path;
 				//rekey
 				continue;
 			}
@@ -811,6 +825,33 @@ function globalcollect_audit_groom_logs(){
 		}
 	}
 	closedir($handle);
+	
+	if ( $files_directory_alt != $files_directory ){
+		//and if we're missing any files from between what's in that dir, and NOW,
+		//go get them at the alt and add them to the .gz list.
+		sort($dates, SORT_NUMERIC);
+		//we have to add one to the next date, because the dates in the audit script are all -1.
+		$earliest_log_date = wmf_common_date_add_days( $dates[0], 1);
+		$today_date = wmf_common_date_get_today_string();
+		
+		$copy_us = wmf_common_date_get_date_gap( $earliest_log_date, $today_date );
+		$copy_us = array_diff( $copy_us, $dates ); //get all date holes.
+
+		foreach ( $copy_us as $missing_date ){
+			$copy_me = 'payments-globalcollect-' . $missing_date . '.gz';
+			if ( file_exists( $files_directory_alt . $copy_me ) ){
+				$cmd = "cp $files_directory_alt$copy_me $files_directory";
+				exec( escapeshellcmd($cmd), $ret, $errorlevel );
+				if ( !file_exists( $files_directory . $copy_me ) ){
+					//problems.
+				} else {
+					$files['gz'][] = $files_directory . $copy_me;
+				}
+			} else {
+				echo "Missing log file $files_directory_alt$copy_me does not exist!\n";
+			}
+		}
+	}
 	
 	//handle the gz files first
 	foreach ($files['gz'] as $key => $gzfile){
@@ -936,9 +977,9 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 	
 	//If this is the first time around, kill the future.
 	if ( empty($tried) ){
-		$today = date_format( date_create(), 'Ymd' );
+		$today = wmf_common_date_get_today_string();
 		for ( $i=0; $i<$plusminus + 1; ++$i ){
-			$tried[] = globalcollect_audit_add_to_date( $today, $i );
+			$tried[] = wmf_common_date_add_days( $today, $i );
 		}
 	}
 	
@@ -955,7 +996,7 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 			foreach ( $counts as $date => $hits ){
 				if ( $hits > 0 && !in_array($date, $tried) ){
 					for ( $i = 1; $i <= $plusminus && !$tryme; ++$i ){
-						$check_date = globalcollect_audit_add_to_date( $date, -1*$i );
+						$check_date = wmf_common_date_add_days( $date, -1*$i );
 						if ( !array_key_exists( $check_date, $counts ) ){
 							$tryme = $check_date;
 						}
@@ -1006,7 +1047,7 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 
 			foreach ( $dates as $date => $count ){
 				foreach( $more_tries as $add ){
-					$newdate = globalcollect_audit_add_to_date( $date, $add );
+					$newdate = wmf_common_date_add_days( $date, $add );
 					if ( !in_array($newdate, $tried) ){
 						$tryme = $newdate;
 						break 2;
@@ -1047,7 +1088,7 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
  */
 function globalcollect_audit_get_log_file_by_date( $date ){
 	//I know somebody is going to try to come back in time just to punch me for this one, but...
-	$date = globalcollect_audit_add_to_date( $date, 1 );
+	$date = wmf_common_date_add_days( $date, 1 );
 	//I swear it makes sense. Most of the data in any given log are actually from the previous day. 
 	
 	$log_directory = variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
@@ -1092,34 +1133,29 @@ function globalcollect_audit_get_log_date_by_file( $file ){
 	$file = explode('/', $file);
 	$file = $file[count($file) - 1];
 	
+	$date = false;
 	if ( preg_match( '/\d{8}_iop\.log/', $file ) ){
 		$date = str_replace('_iop.log', '', $file);
 	}
 	if ( preg_match( '/globalcollect_\d{8}\.log/', $file ) ){
 		$date = str_replace(array('globalcollect_', '.log'), array('',''), $file);
 	}
-	
+	if ( preg_match( '/payments-globalcollect-\d{8}\.gz/', $file ) ){
+		$date = str_replace(array('payments-globalcollect-', '.gz'), array('',''), $file);
+	}
+	if ( preg_match( '/globalcollect.\d{8}_\d{6}/', $file ) ){ //this happens sometimes
+		$date = str_replace('globalcollect.', '', $file);
+		$date = substr($date, 8);
+	}
+
 	if ( !is_numeric( $date ) ){
-		die( __FUNCTION__ . " is faulty. $file's date is not $date" );
+		return false;
 	}
 	
 	//Subtract one from the date, because the logs rotate at midnight, so all 
 	//the actual transactions are from the previous day. 
-	$date = globalcollect_audit_add_to_date( $date, -1 );
+	$date = wmf_common_date_add_days( $date, -1 );
 	return $date;
-}
-
-/**
- * Adds a number of days to a specified date
- * @param string $date Date in format Ymd
- * @param int $add Number of days to add
- * @return string Date in format Ymd
- */
-function globalcollect_audit_add_to_date( $date, $add ){
-	$date = date_create( $date );
-	date_add($date, date_interval_create_from_date_string("$add days"));
-	
-	return date_format($date, 'Ymd');
 }
 
 
@@ -1563,7 +1599,6 @@ function globalcollect_audit_echo( $echo ){
  * If it turns out I hate it, I'll just write a normalization function for 
  * everything and run 'em all through the seive. 
  */
-
 
 
 function wr1_echochar( $record ){

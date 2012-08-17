@@ -4,4 +4,5 @@ core = 6.x
 dependencies[] = contribution_audit
 dependencies[] = queue2civicrm
 dependencies[] = civicrm
+dependencies[] = wmf_common
 package = CiviAudit
