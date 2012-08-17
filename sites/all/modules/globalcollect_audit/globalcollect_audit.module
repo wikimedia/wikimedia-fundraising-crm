@@ -851,12 +851,12 @@ function globalcollect_audit_groom_logs(){
 				$cmd = "cp $files_directory_alt$copy_me $files_directory";
 				exec( escapeshellcmd($cmd), $ret, $errorlevel );
 				if ( !file_exists( $files_directory . $copy_me ) ){
-					//problems.
+					globalcollect_audit_echo("FILE PROBLEM: Something went wrong with $cmd");
 				} else {
 					$files['gz'][] = $files_directory . $copy_me;
 				}
 			} else {
-				echo "Missing log file $files_directory_alt$copy_me does not exist!\n";
+				globalcollect_audit_echo("Missing log file $files_directory_alt$copy_me does not exist!");
 			}
 		}
 	}
@@ -869,7 +869,7 @@ function globalcollect_audit_groom_logs(){
 		//now check to make sure the file you expect exists
 		$newfile = substr( $gzfile, 0, strlen($gzfile) - 3 );
 		if (!file_exists($newfile)){
-			//Didn't work. Track the error.
+			globalcollect_audit_echo("FILE PROBLEM: Something went wrong with $cmd : $newfile doesn't exist.");
 		} else {
 			//add it to the other array. 
 			$files['rename'][] = $newfile;
