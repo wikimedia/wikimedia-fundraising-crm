@@ -144,9 +144,17 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 
 /**
  * So, that happened. My bad. 
- * I'm keeping this function around, because it can currently (in only one way, 
- * but we may need to expand on this in the future) to track fuckups.
- * Not used anywhere. 
+ * I'm keeping this function around, because it can currently be used (in only 
+ * one very specific way, inspired to track one incident, but we may need to 
+ * very rapidly expand on this in the future) to track fuckups.
+ * Nothing is referencing this function: You'd only use it in a realtime 
+ * emergency, and then in a very live-hackey kind of way. 
+ * 
+ * Once again: NOTHING COMMITTED SHOULD EVER REFERENCE THIS FUNCTION.
+ * 
+ * The particular fuckup this was written to track, was how many transactions 
+ * were added to civi as "recurring", when the server XML used to create the
+ * transaction (contained in the log files) clearly said that was never the case.
  */
 function globalcollect_audit_track_fuckup(){
 	$directory = '/home/khorn/recurring_extra/';
