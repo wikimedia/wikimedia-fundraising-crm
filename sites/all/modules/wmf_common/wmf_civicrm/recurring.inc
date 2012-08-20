@@ -11,16 +11,8 @@
  * @param array $contribution   The contribution record
  * @return boolean	Returns true on success
  */
-function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $contribution )
+function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $contribution_record )
 {
-    // Get the contribution record
-    if ( isset( $contribution['values'] ) && is_array( $contribution['values'] ) ) {
-        $contribution_record = $contribution['values'][ $contribution['id'] ];
-    }
-    else {
-        $contribution_record = $contribution;
-    }
-    
     $msg[ 'frequency_unit' ] = isset( $msg[ 'frequency_unit' ] ) ? $msg[ 'frequency_unit' ] : 'month';
     $msg[ 'frequency_interval' ] = isset( $msg[ 'frequency_interval' ] ) ? (integer) $msg[ 'frequency_interval' ] : 1;
     $msg[ 'installments' ] = isset( $msg[ 'installments' ] ) ? (integer) $msg[ 'installments' ] : 0;
@@ -146,7 +138,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
     
     // Link the contribution to the recurring payment
     //TODO catch error and print message
-    $link_contribution_status = wmf_civicrm_update_contribution_for_recurring( $contribution['id'], $contribution_recur_id );
+    $link_contribution_status = wmf_civicrm_update_contribution_for_recurring( $contribution_record['id'], $contribution_recur_id );
     
     $queue2civicrm_dbs->use_default(); 
     
