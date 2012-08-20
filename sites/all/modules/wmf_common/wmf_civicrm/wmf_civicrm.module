@@ -323,7 +323,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
         }
     }
     $dbs->use_default();
-    return $contribution_result;
+    return $contribution_result[ 'values' ][ $contribution_result[ 'id' ] ];
 }
 
 /**
