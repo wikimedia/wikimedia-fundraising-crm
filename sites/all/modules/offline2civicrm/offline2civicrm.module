@@ -1,4 +1,4 @@
-i<?php
+<?php
 
 require_once 'offline2civicrm.common.inc';
 
