@@ -3,6 +3,7 @@
 // include the only files for this module
 require_once 'civicrm_api_check.php';
 require_once 'failmail.php';
+require_once 'queue.php';
 
 /**
  * Replaces tokens in a string with entries from a @class MessageFile.

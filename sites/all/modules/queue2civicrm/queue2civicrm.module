@@ -148,48 +148,13 @@ function queue2civicrm_settings() {
 }
 
 function queue2civicrm_batch_process() {
-  set_time_limit(10);
-
-  $processed = 0;
-  
-  watchdog('queue2civicrm', 'Attempting to process up to ' . variable_get('queue2civicrm_batch', 0) . ' contribution(s).');
-
-  try {
-      $con = _queue2civicrm_stomp_connection();
-  }
-  catch (Exception $ex) {
-      wmf_common_failmail('STOMP_BAD_CONNECTION totally lacking a stomp server');
-      return;
-  }
-  $subscription_queue = variable_get('queue2civicrm_subscription', '/queue/test');
-  $con->subscribe($subscription_queue, array('ack' => 'client'));
   set_time_limit(60);
 
-  // Attempt to dequeue items for the batch
-  for ($i = 0; $i < variable_get('queue2civicrm_batch', 0); ++$i) {
-    $msg = $con->readFrame();
-    if ($msg === FALSE) {
-        watchdog('queue2civicrm', 'Nothing to process.');
-        break;
-    }
-    if (!$msg->body) {
-        // TODO it would be smart to keep track of RECEIPT frames as they are an ack-of-ack
-        watchdog('queue2civicrm', 'Popped a sweet nothing off the queue: ' . print_r($msg, TRUE));
-        $i--;
-        continue;
-    }
-    watchdog('queue2civicrm', 'Read frame:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');      
-
-    $success = queue2civicrm_process_message($msg);
-    if ($success == 1) {
-      ++$processed;
-    } else {
-      break;
-    }
-  }
-
-  $con->unsubscribe( $subscription_queue ); 
-  $con->disconnect();
+  $processed = wmf_common_dequeue_loop(
+      variable_get('queue2civicrm_subscription', '/queue/test'),
+      variable_get( 'queue2civicrm_batch', 0 ),
+      'queue2civicrm_process_message'
+  );
 
   // allow for other modules to handle their own related batch processing
   $batchprocessed = module_invoke_all( 'queue2civicrm_batch_process');
@@ -234,14 +199,14 @@ function queue2civicrm_process_message($msg) {
     try {
         $msg_orig = $msg;
         queue2civicrm_import($msg);
-        _queue2civicrm_stomp_ack_frame($msg_orig);
+        wmf_common_stomp_ack_frame($msg_orig);
     }
     catch (WmfException $ex) {
-        watchdog('queue2civicrm', 'something went wrong during import: '.$ex->getMessage(), WATCHDOG_ERROR);
+        watchdog('queue2civicrm', 'something went wrong during import: '.$ex->getMessage(), NULL, WATCHDOG_ERROR);
 
         if ($ex->isRejectMessage()) {
             $error = "\nRemoving failed message from the queue: \n" . print_r($msg, true);
-            _queue2civicrm_stomp_ack_frame($msg_orig);
+            wmf_common_stomp_ack_frame($msg_orig);
             watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
         }
 
@@ -348,7 +313,7 @@ function queue2civicrm_insertmq_form() {
  * Submits a test message to the queue
  */
 function queue2civicrm_insertmq_form_submit($form, &$form_state) {
-  $con = _queue2civicrm_stomp_connection();
+  $con = wmf_common_stomp_connection();
   if($con){
 	  $result = $con->send( $form_state['values']['queue'], drupal_to_js($form_state['values']), array('persistent' => true));
 	  $con->disconnect();
