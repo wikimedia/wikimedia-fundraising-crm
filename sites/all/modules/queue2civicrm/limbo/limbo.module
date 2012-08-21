@@ -73,116 +73,59 @@ function limbo_settings() {
 
 
 function limbo_batch_process() {
-  watchdog('limbo', 'Executing: limbo_batch_process');
-  set_time_limit(10);
+    set_time_limit( 60 );
 
-  $processed = 0;
-  
-  watchdog('limbo', 'Attempting to process up to ' . variable_get('limbo_batch', 0) . ' contribution(s).');
+    watchdog('limbo', 'Executing: limbo_batch_process');
 
-  // Attempt to dequeue items for the batch
-  for ($i = 0; $i < variable_get('limbo_batch', 0); ++$i) {
-    $success = limbo_dequeue();
-    if ($success) {
-      ++$processed;
-    } else {
-      break;
-    }
-  }
-
-  $con = _queue2civicrm_stomp_connection();
-  $subscription_queue = variable_get('limbo_subscription', '/queue/limbo_test');
-  if (is_object( $con ) && $con->isConnected()){
-    $con->unsubscribe($subscription_queue);
-    $con->disconnect();
-  }
-  
-  if ($processed > 0) {
-    watchdog('limbo', 'Successfully processed ' . $processed . ' contribution(s).');
-  }
-  else {
-    watchdog('limbo', 'No contributions processed.');
-  }
-}
-
-
-/**
- * Remove one item from the queue and process it.
- */
-function limbo_dequeue() {
-  watchdog('limbo', 'Executing: limbo_dequeue');
-  $con = _queue2civicrm_stomp_connection();
-  $subscription_queue = variable_get('limbo_subscription', '/queue/limbo_test');
-  $severity = array(
-    'CIVI_CONFIG',
-    'STOMP_BAD_CONNECTION',
-    'CIVI_REQ_FIELD',
-  );
-  if ($con) {
-    $con->subscribe($subscription_queue, array('ack' => 'client'));
-
-    $msg = $con->readFrame();
+    $processed = wmf_common_dequeue_loop(
+        variable_get( 'limbo_subscription', '/queue/limbo_test' ),
+        variable_get( 'limbo_batch', 0 ),
+        'limbo_process_message'
+    );
     
-    // Skip processing if no message to process.
-    if ($msg !== FALSE) {
-      watchdog('limbo', 'Read frame:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');        
-      set_time_limit(60);
-      try {
-        _queue2civicrm_get_new_drush_errors(); //redefine "new" before we move on.
-        if (limbo_import($msg)){
-          $con->ack($msg);
-        } else {
-          /* @fixme: Wow, this error handling is probably a mess. This should shake out more sensibly as:
-           * - tests are written for dequeue fail cases
-           * - we get to the cards that deal more specifically with error emails and database rollback conditions.
-           */
-          $top_error = _queue2civicrm_get_top_new_drush_error($severity);
-          if ($top_error !== false && array_key_exists('err_code', $top_error)){
-            $watchdogMe = $top_error['err_code'] . " : " . $top_error['err_text'];
-            $failAck = false;
-            switch ($top_error['err_code']){
-              case 'CIVI_CONFIG': //missing a necessary civicrm value. Probably the Entity Tag, or Payment Instrument
-                $watchdogMe .= "\nHalting Process.";
-                watchdog('limbo', $watchdogMe, array(), WATCHDOG_ERROR);
-                queue2civicrm_failmail($top_error, array(), $failAck);
-                //in this case, it makes sense to just leave with no ack: It's not the message's fault.
-                $con->unsubscribe( $subscription_queue );
-                return false;
-                break;
-              case 'CIVI_REQ_FIELD': //message missing a hard requirement
-                $failAck = true;
-                break;
-              default: //apparently we don't know what happened to get us here. Log the heck out of it.
-                $watchdogMe .= "\nUNHANDLED ERROR CODE. Please debug and handle it.";
-                $failAck = true;
-            }
-            if ($failAck === true){
-              $watchdogMe .= "\nRemoving failed message from the queue: \n" . print_r($msg, true);
-              $con->ack($msg);
-            }
-            queue2civicrm_failmail($top_error, $msg, $failAck);
-            watchdog('limbo', $watchdogMe, array(), WATCHDOG_ERROR);
-    
-          } else {
-            //Case was not properly dealt with.
-            queue2civicrm_failmail(array(), $msg, true);
-            watchdog('limbo', "Message failed to import, but threw no errors! Please debug and handle this failure case.\nRemoving message from the queue: \n" . print_r($msg, true), array(), WATCHDOG_ERROR);
-            $con->ack($msg);
-          }
-    
-        }
-        return TRUE;
-      }
-      catch (Exception $e) {
-        watchdog('limbo', 'Could not process frame from queue.', array(), WATCHDOG_ERROR);
-      }     
+    if ( $processed > 0 ) {
+        watchdog('limbo', 'Successfully processed ' . $processed . ' contribution(s).');
     }
     else {
-      watchdog('limbo', 'Nothing to process.');
+        watchdog('limbo', 'No contributions processed.');
     }
-    $con->unsubscribe( $subscription_queue ); 
-  }
-  return FALSE;
+}
+
+function limbo_process_message( $msg ) {
+    if ( empty( $msg->body ) ) {
+        watchdog('limbo', 'Throwing out antimessage: ' . check_plain(print_r($msg, TRUE)));
+        wmf_common_stomp_ack_frame( $msg );
+        return TRUE; //XXX unfortunate
+    }
+
+    watchdog('limbo', 'Read frame:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');        
+    try {
+        $msg_orig = $msg;
+        limbo_import($msg);
+        wmf_common_stomp_ack_frame( $msg_orig );
+        return TRUE;
+    }
+    catch ( WmfException $ex ) {
+        watchdog('limbo', 'problem during limbo import: ' . $ex->getMessage(), array(), WATCHDOG_ERROR);
+
+        if ( $ex->isRejectMessage() ) {
+            $error = "\nRemoving failed message from the queue: \n" . print_r($msg, true);
+            wmf_common_stomp_ack_frame( $msg_orig );
+            watchdog('limbo', $error, NULL, WATCHDOG_ERROR);
+        }
+        wmf_common_failmail($ex, $msg);
+
+        if ( $ex->isFatal() ) {
+            watchdog('limbo', t("Halting Processing."), NULL, WATCHDOG_ERROR);
+            return FALSE;
+        }
+    }
+    catch ( Exception $e ) {
+        $error = 'Could not process frame from queue, unknown error: ' . $ex->getMessage();
+        watchdog('limbo', $error, array(), WATCHDOG_ERROR );
+        wmf_common_failmail( $error, $msg );
+    }
+    return FALSE;
 }
 
 /**
@@ -191,19 +134,14 @@ function limbo_dequeue() {
 function limbo_import( $msg ) {
   // save the original message for logging
   $msg_orig = $msg;
-  
+
   $msg = limbo_verify_and_stage($msg);
-  if ($msg == false){
-    return false;
-  }
-  
+
   $msg['data'] = ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body );
   $msg['timestamp'] = $msg['date'];
-  //dsm($contribution);
+
   watchdog('limbo', 'Limbo:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');  
   $queue2civicrm_limbo_id = _limbo_insert_queue2civicrm_limbo($msg);
-
-  return true;
 }
 
 function limbo_verify_and_stage($msg){
@@ -223,16 +161,13 @@ function limbo_verify_and_stage($msg){
     'payment_submethod' => '',
   );
 
-  $failflag = false;
   foreach ($required as $key=>$value){
     if (!isset($msg[$key])){
-      watchdog('limbo', "Required Field '$key' not found in message:" . print_r($msg, true), NULL, WATCHDOG_ERROR);
-      drush_set_error("CIVI_REQ_FIELD", "Required Field '$key' not found in message:" . print_r($msg, true));
-      $failflag = true;
+      throw new WmfException( "CIVI_REQ_FIELD",
+        t( 'Required Field "%key" not found in message:', array( '%key' => $key ) ),
+        $msg
+      );
     }
-  }
-  if ($failflag === true){
-      return false;
   }
 
   $msg = _limbo_normalize_msg( $msg );

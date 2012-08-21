@@ -7,57 +7,6 @@
 require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
 
 /**
- * Connect using the Stomp library.
- */
-function _queue2civicrm_stomp_connection($renew = false) {
-  static $con = NULL;
-  
-  if (!isset($con) || $renew == true) {
-    require_once variable_get('queue2civicrm_stomp_path', drupal_get_path('module', 'queue2civicrm') . '/Stomp.php');
-    watchdog('queue2civicrm', 'Attempting connection to queue server: ' . variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
-    
-    $con = new Stomp(variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
-  } 
-
-	$attempt = 0;
-	while((!is_object($con) || !$con->isConnected()) && $attempt < 2){
-		try {
-		  ++$attempt;
-		  $con = new Stomp(variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
-		  $con->connect();
-		  register_shutdown_function('_queue2civicrm_stomp_disconnect');
-		}
-		catch (Stomp_Exception $e) {
-		  $con = FALSE;
-		  watchdog('queue2civicrm', "Queue connection failure #$attempt: " . $e->getMessage(), array(), WATCHDOG_ERROR);
-		}
-	}
-	
-	if(!is_object($con) || !$con->isConnected()){
-		throw new WmfException("STOMP_BAD_CONNECTION", "Gave up connecting to the queue.");
-	}
-
-  return $con;
-}
-
-function _queue2civicrm_stomp_ack_frame($msg) {
-    $con = _queue2civicrm_stomp_connection();
-    if($con){
-        $con->ack($msg);
-    }
-}
-
-/**
- * Disconnect. Only used as a shutdown function.
- */
-function _queue2civicrm_stomp_disconnect() {
-  $con = _queue2civicrm_stomp_connection();
-  if($con){
-	$con->disconnect();
-  }
-}
-
-/**
  * Log a transaction to queue2civicrm_log in the database
  * 
  * The array needs to contain the following keys:

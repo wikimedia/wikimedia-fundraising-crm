@@ -84,19 +84,15 @@ function recurring_settings() {
  * 
  */
 function recurring_queue2civicrm_batch_process() {
-  $recurring_processed = 0;
-  watchdog('recurring', 'Attempting to process up to ' . variable_get('recurring_batch', 0) . ' contribution(s).');
 
-  // Attempt to dequeue items for the batch
-  for ($i = 0; $i < variable_get('recurring_batch', 0); ++$i) {
-    $success = recurring_process_msg();
-    if ($success) {
-      ++$recurring_processed;
-    } else {
-      break;
-    }
-  }
-  
+  set_time_limit( 60 );
+
+  $recurring_processed = wmf_common_dequeue_loop(
+      variable_get( 'recurring_subscription', '/queue/test_recurring' ),
+      variable_get( 'recurring_batch', 0 ),
+      'recurring_process_msg'
+  );
+
   if ($recurring_processed > 0) {
     watchdog('recurring', 'Successfully processed ' . $recurring_processed . ' subscription messages.');
   }
@@ -115,45 +111,23 @@ function recurring_queue2civicrm_batch_process() {
  * 
  * @see recurring_import for status code information 
  */
-function recurring_process_msg() {
-  $con = _queue2civicrm_stomp_connection();
-  if($con){
-	  $subscription_queue = variable_get( 'recurring_subscription', '/queue/test_recurring' );
-	  if ( $con ) {
-		$con->subscribe( $subscription_queue, array('ack' => 'client'));
-		$msg = $con->readFrame();
+function recurring_process_msg( $msg ) {
+    try {
+        recurring_import( $msg );
+        $con->ack($msg);
+    }
+    catch (WmfException $ex) {
+        //XXX looks like lazy error handling. review!
+        // workaround by causing processing to halt.
+        watchdog( 'recurring', 'Frame from queue currently not processable, leaving in queue and aborting processing. error:' . $ex->getMessage() . " message: " . check_plain(print_r($msg, TRUE)) );
+        return FALSE;
+    }
+    catch (Exception $ex) {
+        watchdog('recurring', 'Could not process frame from queue, unknown error:' . $ex->getMessage() . " message: " . check_plain(print_r($msg, TRUE)), array(), WATCHDOG_ERROR );
+        return FALSE;
+    }
 
-		// Skip processing if no message to process.
-		if ( $msg !== FALSE ) {
-		  watchdog( 'recurring', 'Read frame:<pre>' . check_plain(print_r( $msg, TRUE ) ) . '</pre>' );
-		  set_time_limit( 60 );
-		  try {
-			$msg_status = recurring_import( $msg );
-
-			if ( $msg_status == 1 ) {
-			  $con->ack($msg);
-			  watchdog( 'recurring', 'Frame from queue succesfully processed.' );
-			  return TRUE;
-			} elseif ( $msg_status == 2 ) {
-			  watchdog( 'recurring', 'Frame from queue currently not processable, leaving in queue.' );
-			  return TRUE;
-			} else {
-			  watchdog( 'recurring', 'Could not process frame from queue.', array(), WATCHDOG_ERROR );
-			  return FALSE;
-			}
-		  }
-		  catch (Exception $e) {
-			watchdog('recurring', 'Could not process frame from queue.', array(), WATCHDOG_ERROR );
-		  }
-		}
-		else {
-		  watchdog('recurring', 'Nothing to process.');
-		}
-		$con->unsubscribe( $subscription_queue );
-	  }
-  }
-  
-  return FALSE;
+    return TRUE;
 }
 
 /**

@@ -56,7 +56,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 	function testConnect(){
 		$this->assertDrushLogEmpty(true);
 		variable_set('queue2civicrm_url', 'tcp://bananas:123');
-		$con = _queue2civicrm_stomp_connection(true);
+		$con = wmf_common_stomp_connection(true);
 		$this->assertTrue($con === false, "Connection did not fail appropriately.");
 		//check for the drush errors...
 		$this->assertDrushLogEmpty(false);
@@ -65,7 +65,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		//put everything back to normaltestCurrencyConversion
 		$this->assertDeleteDrushLog();
 		variable_set('queue2civicrm_url', 'tcp://localhost:61613'); //@fixme: This should be grabbing from an ini or something.
-		$con = _queue2civicrm_stomp_connection(true);
+		$con = wmf_common_stomp_connection(true);
 
 		$this->assertTrue($con !== false, "Connection failed, and should have worked the second time 'round.");
 	}
@@ -188,7 +188,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 	}
 
 	function getItemFromQueue(){
-	  $con = _queue2civicrm_stomp_connection();
+	  $con = wmf_common_stomp_connection();
 	  $this->assertTrue(is_object($con), "Could not establish stomp connection");
 	  $subscription_queue = variable_get('queue2civicrm_subscription', '/queue/test');
 	  if ($con) {
