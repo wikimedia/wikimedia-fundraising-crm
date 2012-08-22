@@ -25,6 +25,8 @@ function wmf_common_dequeue_loop( $queue, $batch_size, $callback ) {
 
     $processed = 0;
     for ( $i = 0; $i < $batch_size; $i++ ) {
+        // we could alternatively set a time limit on the stomp readframe
+        set_time_limit( 10 );
         $msg = $con->readFrame();
         if ( empty($msg) ) {
             return FALSE;
