@@ -145,14 +145,9 @@ function recurring_import( $msg ) {
   
   // store the original message for logging later
   $msg_orig = $msg;
-  
-  try {
-    $msg = recurring_normalize_msg( $msg );
-  }
-  catch (Exception $ex) {
-    return 0;
-  }
-  
+
+  $msg = recurring_normalize_msg( $msg );
+
   /**
    * prepare data for logging
    * 
