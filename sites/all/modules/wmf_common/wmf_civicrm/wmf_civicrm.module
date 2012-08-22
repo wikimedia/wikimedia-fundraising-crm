@@ -548,7 +548,13 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
  */
 function wmf_civicrm_normalize_contribution_amounts( $msg ) {
   $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
-  $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
+  try {
+      $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
+  }
+  catch (Exception $ex) {
+      wmf_common_failmail( "UNKNOWN_CURRENCY: exchange rate will be fudged as '1': " . $ex->getMessage(), $msg );
+      $settlement_convert = 1;
+  }
 
   // round the amounts and do exchange rate conversion
   $msg['fee'] = round( $msg['fee'] * $settlement_convert, 2 );
