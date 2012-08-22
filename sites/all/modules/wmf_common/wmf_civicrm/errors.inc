@@ -2,6 +2,8 @@
 
 class WmfException extends Exception
 {
+    //XXX shit we aren't using the 'rollback' attribute
+    // and it's not correct in most of these cases
     static $error_types = array(
         'CIVI_CONFIG' => array(
             'rollback' => TRUE,
