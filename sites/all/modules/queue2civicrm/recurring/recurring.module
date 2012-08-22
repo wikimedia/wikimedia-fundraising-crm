@@ -110,8 +110,9 @@ function recurring_queue2civicrm_batch_process() {
  */
 function recurring_process_msg( $msg ) {
     try {
+        $msg_orig = $msg;
         recurring_import( $msg );
-        $con->ack($msg);
+        wmf_common_stomp_ack_frame( $msg_orig );
     }
     catch (WmfException $ex) {
         //XXX looks like lazy error handling. review!
