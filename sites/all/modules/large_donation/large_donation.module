@@ -70,6 +70,8 @@ function large_donation_queue2civicrm_import( $contribution_info ) {
 
   $currency = isset( $contribution_info['msg']['currency'] ) ? $contribution_info['msg']['currency'] : '';
 
+  $date = isset( $contribution_info['msg']['date'] ) ? $contribution_info['msg']['date'] : NULL;
+
   if ( empty( $contribution_id ) ) {
 
     watchdog('large_donation', 'Contribution id is empty!');
@@ -78,7 +80,7 @@ function large_donation_queue2civicrm_import( $contribution_info ) {
 
     watchdog('large_donation', 'Large donation threshold amount is not set up!');
 
-  } elseif ( $gross >= $large_donation_amount ) {
+  } elseif ( exchange_rate_convert( $currency, $gross, $date ) >= $large_donation_amount ) {
 
     watchdog('large_donation', 'Calling large donation function for contribution: ' . $contribution_info['contribution_id'] . '<pre>' . check_plain(print_r($contribution_info, TRUE)) . '</pre>');
 
