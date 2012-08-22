@@ -148,8 +148,6 @@ function queue2civicrm_settings() {
 }
 
 function queue2civicrm_batch_process() {
-  set_time_limit(60);
-
   $processed = wmf_common_dequeue_loop(
       variable_get('queue2civicrm_subscription', '/queue/test'),
       variable_get( 'queue2civicrm_batch', 0 ),
