@@ -251,6 +251,10 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
         $msg['payment_instrument'] = wmf_civicrm_get_message_payment_instrument( $msg );
     }
     $payment_instrument_id = wmf_civicrm_get_civi_id( 'payment_instrument_id', $msg['payment_instrument'] );
+    if ( !$payment_instrument_id )
+    {
+        throw new WmfException("INVALID_MESSAGE", "No payment type found for message.", $msg);
+    }
 
     if ( !array_key_exists( 'check_number', $msg ) ){
         $msg['check_number'] = NULL;
@@ -528,11 +532,6 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
         if ( array_key_exists( 'gateway', $msg ) && strtolower($msg['gateway']) === 'paypal' ){
             $payment_instrument = 'Paypal';
         }
-    }
-    
-    if ($payment_instrument === null)
-    {
-        throw new WmfException("INVALID_MESSAGE", "No payment type found for message.", $msg);
     }
 
     //I was going to check to make sure the target gateway was a real thing, but: Hello, overhead. No.
