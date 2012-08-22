@@ -115,8 +115,7 @@ function wmf_civicrm_get_custom_field_map($field_names)
  * Try to import a transaction message into CiviCRM, otherwise
  * throw an exception.
  */
-function wmf_civicrm_contribution_message_import($msg)
-{
+function wmf_civicrm_contribution_message_import( &$msg ) {
     $msg = wmf_civicrm_verify_message_and_stage($msg);
 
     //XXX should be debug level, or does this have a magic purpose?
