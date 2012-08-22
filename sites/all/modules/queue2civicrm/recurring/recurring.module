@@ -84,9 +84,6 @@ function recurring_settings() {
  * 
  */
 function recurring_queue2civicrm_batch_process() {
-
-  set_time_limit( 60 );
-
   $recurring_processed = wmf_common_dequeue_loop(
       variable_get( 'recurring_subscription', '/queue/test_recurring' ),
       variable_get( 'recurring_batch', 0 ),

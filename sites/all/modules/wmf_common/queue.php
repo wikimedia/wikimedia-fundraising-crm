@@ -35,6 +35,7 @@ function wmf_common_dequeue_loop( $queue, $batch_size, $callback ) {
             $i--;
             continue;
         }
+        set_time_limit( 60 );
         $success = $callback( $msg );
 
         if ($success === TRUE) {

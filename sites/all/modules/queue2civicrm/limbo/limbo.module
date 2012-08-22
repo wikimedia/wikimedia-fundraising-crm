@@ -73,8 +73,6 @@ function limbo_settings() {
 
 
 function limbo_batch_process() {
-    set_time_limit( 60 );
-
     watchdog('limbo', 'Executing: limbo_batch_process');
 
     $processed = wmf_common_dequeue_loop(
