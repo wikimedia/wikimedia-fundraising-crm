@@ -51,7 +51,7 @@ class WmfException extends Exception
         }
         $this->message = "$type $message";
         watchdog('wmf_civicrm', explode("\n", $this->message), NULL, WATCHDOG_ERROR);
-        if (function_exists('drush_set_error')) {
+        if (function_exists('drush_set_error') && $this->isFatal() ) {
             drush_set_error($type, $this->message);
         }
     }
