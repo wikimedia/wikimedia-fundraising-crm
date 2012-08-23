@@ -132,6 +132,7 @@ function exchange_rates_cron() {
 		'MVR', // Maldives rufiyaa
 		'MXN', // Mexican peso
 		'MYR', // Malaysian ringgit
+		'NIO', // Nicaraguan córdoba
 		'NOK', // Norwegian krone
 		'NZD', // New Zealand dollar
 		'OMR', // Omani rial
