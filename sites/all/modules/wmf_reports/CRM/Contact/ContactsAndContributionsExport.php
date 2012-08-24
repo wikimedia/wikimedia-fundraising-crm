@@ -7,7 +7,7 @@ class CRM_Contact_ContactsAndContributionsExport
         require_once 'CRM/Core/DAO.php';
 
         $sql = <<<EOS
-CREATE TEMPORARY TABLE {$table}_rollup (
+CREATE /*TEMPORARY*/ TABLE {$table}_rollup (
     contact_id INT UNSIGNED,
     rollup TEXT,
     count INT UNSIGNED
@@ -19,7 +19,14 @@ EOS;
 INSERT INTO {$table}_rollup (
     SELECT
         civicrm_primary_id AS contact_id,
-        GROUP_CONCAT(CONCAT(contribution_id,',',total_amount,',',COALESCE(receive_date, '')) SEPARATOR ';') AS rollup,
+        GROUP_CONCAT(
+            CONCAT(
+                contribution_id,',',
+                total_amount,',',
+                UNIX_TIMESTAMP( COALESCE( receive_date, '' ) )
+            )
+            SEPARATOR ';'
+        ) AS rollup,
         COUNT(*) AS count
     FROM {$table}
     WHERE COALESCE(contribution_id, '') <> ''
@@ -103,7 +110,7 @@ EOS;
                     $delete_ids[] = $contribution[0];
                     $set_clauses[] = "total_amount_{$row_index} = %{$params_index}";
                     $params[$params_index++] = array($contribution[1], 'String');
-                    $set_clauses[] = "receive_date_{$row_index} = %{$params_index}";
+                    $set_clauses[] = "receive_date_{$row_index} = FROM_UNIXTIME( %{$params_index} )";
                     $params[$params_index++] = array($contribution[2], 'String');
                     $row_index++;
                 }
@@ -250,7 +257,8 @@ EOS;
 
         foreach ($contributions as $row)
         {
-            $date = new DateTime("{$row[2]} -{$fy_month} month {$fy_day} day");
+            $date = DateTime::createFromFormat("U", "{$row[2]}");
+            $date->modify("-{$fy_month} month {$fy_day} day");
             $year = $date->format("Y");
             if ($year == $current_year) {
                 $is_this_year = TRUE;
