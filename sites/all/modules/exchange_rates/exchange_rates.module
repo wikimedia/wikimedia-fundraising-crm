@@ -44,10 +44,15 @@ function exchange_rates_listing() {
 
   $currencies = db_query('SELECT currency FROM {exchange_rates} GROUP BY currency ORDER BY currency');
   while ($currency = db_fetch_object($currencies)) {
-    $rows[] = array(
-      $currency->currency,
-      exchange_rate_convert($currency->currency),
-    );
+	try {
+      $rows[] = array(
+        $currency->currency,
+        exchange_rate_convert($currency->currency),
+      );
+	}
+	catch (Exception $ex) {
+	  drupal_set_message($ex->getMessage());
+	}
   }
   
   $content[] = t('Last updated: %updated', array('%updated' => format_date(variable_get('exchange_rates_bank_update', 0))));
@@ -278,7 +283,6 @@ function exchange_rates_cron() {
 		'ZMK', // Zambian Kwacha
 		'ZWD', // Zimbabwe Dollar
 	);
-	$currencyCount = count( $currencies );
 	
 	// Construct the URL for the API call
 	$currencyList = implode( '_', $currencies );
@@ -305,6 +309,7 @@ function exchange_rates_cron() {
 		variable_set( 'exchange_rates_bank_update', $bankUpdateTimestamp ); // set as persistent drupal var
 		
 		// For each currency, get the values from the XML and update the table
+		$currencyCount = count( $index['EXCH'] );
 		for ( $x = 0; $x < $currencyCount; $x++ ) {
 			$currency = $results[$index['EXCH'][$x]]['value']; // the currency code
 			$valueInUsd = $results[$index['BID'][$x]]['value']; // the value of 1 $currency in US dollars
