@@ -208,7 +208,9 @@ function queue2civicrm_process_message($msg) {
             watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
         }
 
-        wmf_common_failmail($ex, $msg);
+		if ( !$ex->isNoEmail() ){
+	        wmf_common_failmail($ex, $msg);
+		}
 
         if ($ex->isFatal()) {
             $error = "Halting Process.";

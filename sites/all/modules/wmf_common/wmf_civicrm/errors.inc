@@ -36,6 +36,15 @@ class WmfException extends Exception
             'rollback' => TRUE,
             'fatal' => TRUE,
         ),
+        'DUPLICATE_CONTRIBUTION' => array(
+            'rollback' => TRUE,
+            'reject' => TRUE,
+			'no-email' => TRUE,
+        ),
+        'GET_CONTRIBUTION' => array(
+            'rollback' => TRUE,
+            'reject' => TRUE,
+        ),
     );
 
     var $type;
@@ -74,6 +83,11 @@ class WmfException extends Exception
     function isFatal()
     {
         return $this->getErrorCharacteristic('fatal', FALSE);
+    }
+
+    function isNoEmail()
+    {
+        return $this->getErrorCharacteristic('no-email', FALSE);
     }
 
     protected function getErrorCharacteristic($property, $default)
