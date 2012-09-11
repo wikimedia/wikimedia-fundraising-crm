@@ -585,6 +585,13 @@ function wmf_civicrm_verify_message_and_stage($msg)
             $err[] = "Required Field '$key' not found in message.";
         }
     }
+	
+	//Now check to make sure this isn't going to be a duplicate message for this gateway.
+	if ( wmf_civicrm_get_contribution( $msg ) !== false ){
+		throw new WmfException('DUPLICATE_CONTRIBUTION', 
+		"Contribution already exists. Ignoring message.", 
+		$msg);
+	}
 
     if(!array_key_exists('fee', $msg) && !array_key_exists('net', $msg)){
         $msg['fee'] = '0.00';
@@ -901,4 +908,44 @@ function wmf_civicrm_tag_contact_for_review( $contact )
     );
     $tag_result = civicrm_entity_tag_add( $tag );
     return $tag_result;
+}
+
+/**
+ * Returns a contribution in civi if it exists, false if none present. 
+ * @param type $msg 
+ */
+function wmf_civicrm_get_contribution( $msg ){
+	$search = strtoupper( $msg['gateway']) . ' ';
+	if ( array_key_exists( 'recurring', $msg ) && $msg['recurring'] ){
+		$search = 'RECURRING ' . $search;
+	}
+
+	//if it's been through the normalize function, the orig key is the one we want.
+	if ( array_key_exists( 'gateway_txn_id_orig', $msg ) ){
+		$txn = $msg[ 'gateway_txn_id_orig' ];
+	} else if ( array_key_exists( 'gateway_txn_id', $msg ) ) {
+		$txn = $msg[ 'gateway_txn_id' ];
+	} else {
+		throw new WmfException('GET_CONTRIBUTION', 
+			"Couldn't identify the gateway transaction ID. Aborting.", 
+			$msg);
+	}
+	
+	$search .= $txn . '%';
+	$query = "SELECT * FROM civicrm_contribution WHERE trxn_id LIKE '%s';";
+
+	$row = false;
+	$dbs = wmf_civicrm_get_dbs();
+	$dbs->use_civicrm();
+	$result = db_query( $query, $search );
+	if ( $result->num_rows === 1 ) {
+		$row = db_fetch_array( $result );
+	} elseif ( $result->num_rows > 1 ){
+		throw new WmfException('GET_CONTRIBUTION', 
+		"More than one contribution (" . $result->num_rows . ") returned for the following query: \n$query\n", 
+		$msg);
+	}
+	$dbs->use_default();
+	
+	return $row;
 }
