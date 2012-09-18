@@ -115,13 +115,28 @@ function recurring_process_msg( $msg ) {
         wmf_common_stomp_ack_frame( $msg_orig );
     }
     catch (WmfException $ex) {
-        //XXX looks like lazy error handling. review!
-        // workaround by causing processing to halt.
-        watchdog( 'recurring', 'Frame from queue currently not processable, leaving in queue and aborting processing. error:' . $ex->getMessage() . " message: " . check_plain(print_r($msg, TRUE)) );
-        return FALSE;
+        watchdog('recurring', 'something went wrong during import: '.$ex->getMessage(), NULL, WATCHDOG_ERROR);
+
+        if ($ex->isRejectMessage()) {
+            $error = "\nRemoving failed message from the queue: \n" . print_r($msg, true);
+            wmf_common_stomp_ack_frame($msg_orig);
+            watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
+        }
+
+		if ( !$ex->isNoEmail() ){
+	        wmf_common_failmail($ex, $msg);
+		}
+
+        if ($ex->isFatal()) {
+            $error = "Halting Process.";
+            watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
+            return FALSE;
+        }
     }
     catch (Exception $ex) {
-        watchdog('recurring', 'Could not process frame from queue, unknown error:' . $ex->getMessage() . " message: " . check_plain(print_r($msg, TRUE)), array(), WATCHDOG_ERROR );
+        $error = 'UNHANDLED ERROR CODE. Halting Process. exception: ' . $ex->getMessage();
+        watchdog('recurring', $error, NULL, WATCHDOG_ERROR);
+        wmf_common_failmail($error, $msg);
         return FALSE;
     }
 
@@ -560,6 +575,15 @@ function recurring_normalize_msg( $msg  ) {
   // we can safely assume we have a raw msg from paypal if contribution_tracking_id isn't set
   if ( !isset( $msg[ 'contribution_tracking_id' ]) ) {
     $msg = recurring_normalize_paypal_msg( $msg );
+  }
+
+  //Seeing as we're in the recurring module...
+  $msg[ 'recurring' ] = true;
+  
+  if ( wmf_civicrm_get_contribution( $msg ) !== false ){
+    throw new WmfException('DUPLICATE_CONTRIBUTION', 
+    "Contribution already exists. Ignoring message.", 
+    $msg);
   }
   
   $msg = wmf_civicrm_normalize_msg( $msg );
