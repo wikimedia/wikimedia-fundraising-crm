@@ -339,7 +339,11 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
 
   $instance->load_request_data( $values );
   
-  _recurring_globalcollect_update_record_in_progress($contribution_recur['id']);
+  $gotLock = _recurring_globalcollect_update_record_in_progress($contribution_recur['id']);
+  if ( !$gotLock ) {
+    $message = t('Failed to mark record as in progress');
+    throw new RecurringGlobalcollectCouldNotLockException($message, $contribution_recur);
+  }
   
   $result = $instance->do_transaction('Recurring_Charge');
   

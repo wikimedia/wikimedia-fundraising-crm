@@ -49,3 +49,8 @@ class RecurringGlobalcollectInternalException extends RecurringGlobalcollectExce
 {
     var $err_code = 'RG';
 }
+
+class RecurringGlobalcollectCouldNotLockException extends RecurringGlobalcollectException
+{
+    var $err_code = 'RG_COULDNOTLOCK';
+}
