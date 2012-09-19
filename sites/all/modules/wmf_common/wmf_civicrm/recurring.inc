@@ -318,7 +318,10 @@ function wmf_civicrm_get_last_trigger_date($record)
     // the last trigger date actually was, which means $last_trigger will be in the future and will
     // therefore be wrong (instead, it'll be the *next* trigger date). In this case, we move
     // $last_trigger back a month. The 60*60*24*7 represents a week in seconds: if the next payment
-    // is due in less than a week, do NOT rebill this one but just skip it.
+    // is due in less than a week, do NOT execute it but skip to the next month instead.
+    // TODO this is incredibly confusing, mostly because this logic is in the wrong place. It
+    // should be checked when computing the next payment date, not here where we're computing the
+    // previous (scheduled) payment date.
     while ( $last_trigger > $nowstamp && ( $last_trigger - $nowstamp ) > 60*60*24*7 ){
         //decrement the month until it was in the past. 
         --$month;
