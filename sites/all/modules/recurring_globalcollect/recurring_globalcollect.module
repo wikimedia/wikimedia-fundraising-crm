@@ -189,8 +189,8 @@ function recurring_globalcollect_batch_process($options = array()) {
       $result = recurring_globalcollect_process($contribution_batch, $options);
   }
 
-  if (count($result['succeeded']) > 0) {
-    $processed = count($result['succeeded']) + count($result['failed']);
+  $processed = count($result['succeeded']) + count($result['failed']);
+  if ($processed > 0) {
     $message = "Processed $processed contribution(s).";
     if (!empty($result['failed']))
         $message .= " Encountered ".count($result['failed'])." failures.";
