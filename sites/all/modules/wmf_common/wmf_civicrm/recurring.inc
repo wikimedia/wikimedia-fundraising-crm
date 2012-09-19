@@ -133,8 +133,6 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
     );
 
     $contribution_recur_id = ( $result ) ? db_last_insert_id( 'civicrm_contribution_recur', 'id' ) : null;
-
-    //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$contribution_recur_id" . print_r($contribution_recur_id, true) . "\n" );
     
     // Link the contribution to the recurring payment
     //TODO catch error and print message
