@@ -9,6 +9,7 @@
  * Implementation of hook_drush_command()
  */
 function recurring_globalcollect_drush_command() {
+  $batch_max = (integer) variable_get('recurring_globalcollect_batch_max', 100);
   $items = array();
 
   $items['recurring-globalcollect'] = array(
@@ -26,7 +27,7 @@ function recurring_globalcollect_drush_command() {
       "drush rg --url='https://example.org/'"     => '# TESTING: Send the request to a full url.',
     ),
     'options' => array(
-      'batch' => "Number of contributions to process. Maximum is 100. If set to zero, nothing will be done.",
+      'batch' => "Number of contributions to process. Maximum is $batch_max. If set to zero, nothing will be done.",
       'date' => 'Date to process payments for, defaults to today. Must not be in the future. The date will be parsed with strtotime().', // TODO mention sliding window logic
       'url' => 'URL to send GlobalCollect API requests to. Defaults to the globalcollect_url setting. Allowed values: true | false | 404 | 504 | some-relative-url | https://example.org',
     ),
@@ -117,7 +118,7 @@ function drush_recurring_globalcollect_validate() {
   $batch = drush_get_option('batch', variable_get('recurring_globalcollect_batch', 0));
   $date = drush_get_option('date');
   
-  $batch_max = (integer) variable_get('recurring_globalcollect_batch_max', 0);
+  $batch_max = (integer) variable_get('recurring_globalcollect_batch_max', 100);
 
   /**
    * Validate batch:
