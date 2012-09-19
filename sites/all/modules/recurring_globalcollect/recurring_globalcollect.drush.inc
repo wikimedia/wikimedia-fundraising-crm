@@ -12,12 +12,10 @@ function recurring_globalcollect_drush_command() {
   $items = array();
 
   $items['recurring-globalcollect'] = array(
-    'description' => 'Process recurring payments to GlobalCollect. '
-                      . 'There is only parameter for this command, url. '
-                      . 'This is primarily for testing only.',
+    'description' => 'Process recurring payments through GlobalCollect. ',
     'examples' => array( 
       'drush recurring-globalcollect'       => '# Process recurring payments',
-      'drush rg --batch=10'                        => '# Batch process up to 10 contributions.',
+      'drush rg --batch=10'                        => '# Process up to 10 contributions.',
       'drush rg --date=2011-12-31'                 => '# Specify a date to process. By default, today will be processed.',
       'drush rg --date=yesterday'                  => '# Run will all payments that were due yesterday, but were not processed.',
       'drush rg --url=true'        => '# TESTING: Always return a successful response from Global Collect',
@@ -28,9 +26,9 @@ function recurring_globalcollect_drush_command() {
       "drush rg --url='https://example.org/'"     => '# TESTING: Send the request to a full url.',
     ),
     'options' => array(
-      'batch' => 'Allowed parameters: 0 <= $batch <= 100 | A value of zero disables batch processing. 100 is the maximum allowed for processing.',
-      'date' => 'Expected format: YYYY-MM-DD | Specify a date, that is not in the future. The date will be parsed with strtotime().',
-      'url' => 'Allowed parameters: true | false | 404 | 504 | some-relative-url | https://example.org',
+      'batch' => "Number of contributions to process. Maximum is 100. If set to zero, nothing will be done.",
+      'date' => 'Date to process payments for, defaults to today. Must not be in the future. The date will be parsed with strtotime().', // TODO mention sliding window logic
+      'url' => 'URL to send GlobalCollect API requests to. Defaults to the globalcollect_url setting. Allowed values: true | false | 404 | 504 | some-relative-url | https://example.org',
     ),
     'aliases' => array( 'rg' ),
   );
@@ -91,6 +89,8 @@ function drush_recurring_globalcollect() {
 /**
  * drush_recurring_globalcollect_validate
  * 
+ * This function is called magically from within Drush
+ *
  * Numeric values for batch will be converted to an integer:
  * - --batch=3.14 => --batch=3
  *
@@ -99,19 +99,18 @@ function drush_recurring_globalcollect() {
  *
  * If --batch is not set it will go to the default settings: variable_get('recurring_globalcollect_batch', 0)
  *
- * If --date is not set it will go to the default settings: date('Y-m-d')
+ * If --date is not set it will use today: date('Y-m-d')
  *
- * If --process is not set it will go to the default settings: next_sched_contribution
+ * If --process is not set it will use next_sched_contribution
  *
  * validate:
- * - Make sure the date is not in the future is done in drush_recurring_globalcollect_parse_date()
+ * - Making sure the date is not in the future is done in drush_recurring_globalcollect_parse_date()
  * - Make sure batch is a postive integer
  * - Make sure process is either next_sched_contribution | failure_retry_date
  * - Make sure settings have been saved:
  *   - failures_before_cancellation
  */
 function drush_recurring_globalcollect_validate() {
-          
 
   $link_to_settings = url('admin/settings/recurring_globalcollect', array('absolute'=>true));
 
