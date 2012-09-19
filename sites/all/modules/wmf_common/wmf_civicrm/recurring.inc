@@ -265,7 +265,7 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now')
  * 
  * @return  string  Returns a date stamp in the format 'Y-m-d H:i:s' => 2011-12-31 00:00:00
  */
-function wmf_civicrm_get_next_sched_contribution_date_for_month(&$record)
+function wmf_civicrm_get_next_sched_contribution_date_for_month($record)
 {
     $triggered_for_date = wmf_civicrm_get_last_trigger_date($record);
     //$frequency_interval and $cycle_day will, at this point, have been found in $record. 
