@@ -199,6 +199,24 @@ function recurring_globalcollect_batch_process($options = array()) {
   else {
     watchdog('recurring_globalcollect', 'No contributions processed.');
   }
+
+  // Process retries
+  watchdog('recurring_globalcollect', 'Attempting to retry up to ' . $batch . ' previously failed contribution(s).');
+  $retry_batch = recurring_globalcollect_get_failure_retry_batch($batch);
+  if ($retry_batch)
+  {
+      $result = recurring_globalcollect_process($retry_batch, $options);
+  }
+
+  $processed = count($result['succeeded']) + count($result['failed']);
+  if ($processed > 0) {
+    $message = "Retried $processed contribution(s).";
+    if (!empty($result['failed']))
+        $message .= " Encountered ".count($result['failed'])." failures.";
+    watchdog('recurring_globalcollect', $message);
+  } else {
+    watchdog('recurring_globalcollect', 'No retries processed.');
+  }
 }
 
 /**
