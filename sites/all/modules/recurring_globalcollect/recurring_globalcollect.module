@@ -501,8 +501,8 @@ function recurring_globalcollect_search_by_order_id_form_submit($form, &$form_st
     $cid = isset( $record['contact_id'] ) ? $record['contact_id'] : '';
     
     // Create a link to the recurring contribution for the donor.
-    $link = '<a href="?q=civicrm/contact/view&reset=1&selectedChild=contribute&cid=' . $cid . '#Contributions">' . $display_name . '</a>';
-    $message = 'Found the contact [' . $link . '] for the order id [ ' . $order_id . ' ] and with the transaction id [ ' . $trxn_id . ' ]';
+    $link = '<a href="?q=civicrm/contact/view&reset=1&selectedChild=contribute&cid=' . urlencode($cid) . '#Contributions">' . htmlspecialchars($display_name) . '</a>';
+    $message = 'Found the contact [' . $link . '] for the order id [ ' . $order_id . ' ] and with the transaction id [ ' . htmlspecialchars($trxn_id) . ' ]';
   }
   
   drupal_set_message($message);
