@@ -195,6 +195,11 @@ function recurring_import( $msg ) {
   
   // route the message to the appropriate handler depending on transaction type
   if ( isset( $msg[ 'txn_type' ] ) && in_array( $msg[ 'txn_type' ], $txn_subscr_payment ) ) {
+    if ( wmf_civicrm_get_contribution( $msg ) !== false ){
+      throw new WmfException('DUPLICATE_CONTRIBUTION', 
+      "Contribution already exists. Ignoring message.", 
+      $msg);
+    }  
     $ret_val = recurring_import_subscr_payment( $msg );
   } elseif ( isset( $msg[ 'txn_type' ] ) && in_array( $msg[ 'txn_type' ], $txn_subscr_acct ) ) {
       $ret_val = recurring_import_subscr_acct( $msg );
@@ -579,12 +584,6 @@ function recurring_normalize_msg( $msg  ) {
 
   //Seeing as we're in the recurring module...
   $msg[ 'recurring' ] = true;
-  
-  if ( wmf_civicrm_get_contribution( $msg ) !== false ){
-    throw new WmfException('DUPLICATE_CONTRIBUTION', 
-    "Contribution already exists. Ignoring message.", 
-    $msg);
-  }
   
   $msg = wmf_civicrm_normalize_msg( $msg );
   return $msg;
