@@ -140,6 +140,38 @@ function wmf_civicrm_update_6003()
 }
 
 /**
+ * Add gateway_account name field
+ */
+function wmf_civicrm_update_6004()
+{
+    $api = wmf_civicrm_bootstrap_civi();
+    $success = $api->CustomGroup->get(array(
+        'name' => 'contribution_extra',
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+    $custom_group = array_pop($api->values());
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'gateway_account',
+        'column_name' => 'gateway_account',
+        'label' => ts('Gateway Account Name'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+
+    return array();
+}
+
+/**
  * Load civi api, only for use from within .install code
  */
 function wmf_civicrm_bootstrap_civi()
