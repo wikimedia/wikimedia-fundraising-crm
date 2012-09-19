@@ -50,29 +50,21 @@ function recurring_globalcollect_get_payment_by_id($id)
  *  AND `civicrm_contribution_recur`.`contribution_status_id` = 4
  * LIMIT 1
  * 
- * @param array   $options   Options
- * 
- * $options
- * - $date          string    Uses strtotime() to parse the date
- * - $limit         integer   Number of records to pull. Default is 1.
- * 
+ * @param int $limit Number of records to pull. Default is 1.
+ * @param string $date Uses strtotime() to parse the date
+ *
  * @todo The field `civicrm_payment_processor`.`payment_processor_type` should be set.
  * @todo Implement $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
  * 
  * @return false|object
  */
-function recurring_globalcollect_get_failure_retry_date($options = array()) {
+function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'now') {
 
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
   $dbs->use_civicrm();
 
-  $date = isset( $options['date'] ) ? $options['date'] : 'now';
-
-  // Search for dates with LIKE
   $date = date('Y-m-d', strtotime($date));
-
-  $limit = isset($options['limit']) ? (integer) abs($options['limit']) : 1;
 
   $contribution_status_id = civicrm_api_contribution_status('Failed');
   
