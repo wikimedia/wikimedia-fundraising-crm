@@ -20,8 +20,6 @@ function recurring_globalcollect_drush_command() {
       'drush rg --batch=10'                        => '# Batch process up to 10 contributions.',
       'drush rg --date=2011-12-31'                 => '# Specify a date to process. By default, today will be processed.',
       'drush rg --date=yesterday'                  => '# Run will all payments that were due yesterday, but were not processed.',
-      'drush rg --process=next_sched_contribution' => '# By default next_sched_contribution will be processed.',
-      'drush rg --process=failure_retry_date'      => '# Retry all of the failed payments',
       'drush rg --url=true'        => '# TESTING: Always return a successful response from Global Collect',
       'drush rg --url=false'       => '# TESTING: Always return a failed response from Global Collect (404)',
       'drush rg --url=404'         => '# TESTING: Always return a 404 response from Global Collect',
@@ -32,7 +30,6 @@ function recurring_globalcollect_drush_command() {
     'options' => array(
       'batch' => 'Allowed parameters: 0 <= $batch <= 100 | A value of zero disables batch processing. 100 is the maximum allowed for processing.',
       'date' => 'Expected format: YYYY-MM-DD | Specify a date, that is not in the future. The date will be parsed with strtotime().',
-      'process' => 'Defaults to next_sched_contribution. Allowed parameters: next_sched_contribution | failure_retry_date',
       'url' => 'Allowed parameters: true | false | 404 | 504 | some-relative-url | https://example.org',
     ),
     'aliases' => array( 'rg' ),
@@ -58,7 +55,6 @@ function recurring_globalcollect_drush_help( $section ) {
 function drush_recurring_globalcollect() {
 
   $date = drush_get_option('date');
-  $process = drush_get_option('process');
   $url = drush_get_option('url');
   $batch = (integer) drush_get_option('batch', variable_get('recurring_globalcollect_batch', 0));
   
@@ -66,11 +62,6 @@ function drush_recurring_globalcollect() {
 
   // Set the date
   $options['date'] = drush_recurring_globalcollect_parse_date($date);
-  
-  // Set the process
-  if ( !is_null($process)) {
-    $options['process'] = $process;
-  }
  
   // Set the url
   if ( !is_null($url)) {
@@ -126,15 +117,9 @@ function drush_recurring_globalcollect_validate() {
 
   $batch = drush_get_option('batch', variable_get('recurring_globalcollect_batch', 0));
   $date = drush_get_option('date');
-  $process = drush_get_option('process');
   
   $batch_max = (integer) variable_get('recurring_globalcollect_batch_max', 0);
 
-  $process_allowed_options = array(
-      'next_sched_contribution',
-      'failure_retry_date',
-  );
-  
   /**
    * Validate batch:
    * - must be numeric
@@ -177,16 +162,6 @@ function drush_recurring_globalcollect_validate() {
       . $link_to_settings;
     drush_set_error('BATCHING', dt($message));
     return false;
-  }
-  
-  // Validate process
-  if (!is_null($process)) {
-      
-      if (!in_array($process, $process_allowed_options)) {
-        $message = 'You must specify a valid process option. You specifed [' . $process . ']. The acceptable process options are as listed: [' . implode(', ', $process_allowed_options) . '].';
-        drush_set_error('INVALID_PROCESS', dt($message));
-        return false;
-      }
   }
 
   /**

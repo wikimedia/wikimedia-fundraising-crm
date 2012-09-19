@@ -174,7 +174,6 @@ function recurring_globalcollect_settings() {
  * @param array $options 
  * - $options['batch'] The number of contributions to process. If empty or not set then batching is disabled.
  * - $options['date'] @uses strtotime()
- * - $options['process'] next_sched_contribution | failure_retry_date
  * - $options['url'] Used for testing and overriding the url
  */
 function recurring_globalcollect_batch_process($options = array()) {
@@ -209,7 +208,6 @@ function recurring_globalcollect_batch_process($options = array()) {
  *
  * $options:
  * - string  $date The date to process.
- * - string $process There are two types of payments to process: next_sched_contribution and failure_retry_date.
  *
  * You are not allowed to process future dates. This generates an error
  *
