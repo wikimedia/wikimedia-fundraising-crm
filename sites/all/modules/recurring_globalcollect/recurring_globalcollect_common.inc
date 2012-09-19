@@ -36,14 +36,14 @@ function recurring_globalcollect_get_payment_by_id($id)
 }
 
 /**
- * Select one recurring payment by `failure_retry_date`, that needs to be processed for the current day.
+ * Select a set of recurring payments that need to be retried today
  * 
  * NOTE: `end_date` should only be set if the end has passed.
  * 
  * Example query called with standard options and the date set to: 2012-01-01
  * 
  * SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur`
- *  WHERE `civicrm_contribution_recur`.`next_sched_contribution`
+ *  WHERE `civicrm_contribution_recur`.`failure_retry_date`
  *   BETWEEN '2012-01-01 00:00:00' AND '2012-04-01 23:59:59'
  *  AND `civicrm_contribution_recur`.`trxn_id` LIKE 'RECURRING GLOBALCOLLECT%'
  *  AND ( `civicrm_contribution_recur`.`end_date` IS NULL )
@@ -72,7 +72,7 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
   $query .= 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` ';
   
   $where  = '';
-  $where .= " WHERE `civicrm_contribution_recur`.`next_sched_contribution` BETWEEN '%s 00:00:00' AND '%s 23:59:59'";
+  $where .= " WHERE `civicrm_contribution_recur`.`failure_retry_date` BETWEEN '%s 00:00:00' AND '%s 23:59:59'";
   $where .= " AND `civicrm_contribution_recur`.`contribution_status_id` = %d";
   $where .= " AND `civicrm_contribution_recur`.`trxn_id` LIKE 'RECURRING GLOBALCOLLECT%'";
   $where .= " AND ( `civicrm_contribution_recur`.`end_date` IS NULL )";
