@@ -94,7 +94,7 @@ function wmf_civicrm_set_custom_field_values($entity_id, $map)
     }
 }
 
-function wmf_civicrm_get_custom_field_map($field_names)
+function wmf_civicrm_get_custom_field_map( $field_names, $group_name = null )
 {
     require_once 'CRM/Core/BAO/CustomField.php';
 
@@ -103,12 +103,17 @@ function wmf_civicrm_get_custom_field_map($field_names)
     {
         if (empty($custom_fields[$name]))
         {
-            $id = CRM_Core_BAO_CustomField::getCustomFieldID($name, 'contribution_extra');
+            $id = CRM_Core_BAO_CustomField::getCustomFieldID( $name, $group_name );
             $custom_fields[$name] = "custom_{$id}";
         }
     }
 
     return $custom_fields;
+}
+
+function wmf_civicrm_get_custom_field_name( $field_name ) {
+    $custom_fields = wmf_civicrm_get_custom_field_map( array( $field_name ) );
+    return $custom_fields[ $field_name ];
 }
 
 /**
@@ -298,34 +303,23 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     /**
     *  Apply custom field defaults.
     *
-    * Civicrm API v2 does NOT provide methods for custom groups/fields beyond creation and deleition,
-    * so we hack this custom.  Hopefully this won't be forever...
-    *
-    * At least we can use the CiviCRM DAO stuff to stuff necessary custom data in to the contribution object.
+    *  Hopefully the Civi API will eventually handle custom fields in the
+    *  above "Create" call.
     *
     * At the moment, all custom fields get default values for online contribution EXCEPT for 'Donor Comment'.
     *
     * NOTE: the custom field for "Gift_Information" indicates that check number is stored here.  It is not.
     */
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->use_civicrm();
-    $query = "SELECT id, name, table_name FROM civicrm_custom_group WHERE extends='Contribution' && is_active='1';";
-    $dao = CRM_Core_DAO::executeQuery( $query ); // Execute's query using CiviCRM data object stuff
-    while ( $dao->fetch() ) {
-        if ( $dao->name == 'Contribution_Comments' ) {
-            $comment = ( isset( $msg[ 'comment' ] ) ) ? $msg[ 'comment'] : '';
-            $query = "INSERT INTO {" . $dao->table_name . "} (entity_id, donor_comment) VALUES ( %d, '%s' )";
-            db_query( $query, $contribution_result[ 'id' ], $comment );
-        } elseif ( $dao->name == 'Gift_Data' ) {
-            $lettercode = ( $msg[ 'letter_code' ] ) ? $msg[ 'letter_code'] : NULL;
-            $query = "INSERT INTO {" . $dao->table_name . "} (entity_id, letter_code) VALUES ( %d, '%s' )";
-            db_query( $query, $contribution_result[ 'id' ], $lettercode );
-        } else { // if we dont make sure $dao->default_value has some value, Civi breaks when we try to insert
-            $query = "INSERT INTO {" . $dao->table_name . "} (entity_id) VALUES (%d)";
-            db_query( $query, $contribution_result[ 'id' ] );
-        }
-    }
-    $dbs->use_default();
+    $comment = ( isset( $msg[ 'comment' ] ) ) ? $msg[ 'comment'] : '';
+    $lettercode = ( $msg[ 'letter_code' ] ) ? $msg[ 'letter_code'] : NULL;
+
+    $custom_vars = array(
+        'Contribution_Comments' => $comment,
+        'Gift_Data' => $lettercode,
+        'gateway_account' => $msg[ 'gateway_account' ],
+    );
+    wmf_civicrm_set_custom_field_values( $contribution_result[ 'id' ], $custom_vars );
+
     return $contribution_result[ 'values' ][ $contribution_result[ 'id' ] ];
 }
 
