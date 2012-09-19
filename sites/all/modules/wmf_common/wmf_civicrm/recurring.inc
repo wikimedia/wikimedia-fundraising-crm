@@ -183,7 +183,7 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
 }
 
 /**
- * Select one recurring payment by `next_sched_contribution`, that needs to be processed for the current day.
+ * Select a set of recurring payments by `next_sched_contribution`, that need to be processed for the current day.
  *
  * Example query called with standard options and the date set to: 2012-01-01
  *
@@ -311,13 +311,16 @@ function wmf_civicrm_get_last_trigger_date($record)
     $month = (int) date('n', $nowstamp);
     $year = (int) date('Y', $nowstamp);
     
+    // Build a timestamp for the cycle day in this month
+    // If we are still in the same month, this will be the correct value. If we're in the next month,
+    // it'll be the wrong value and it'll be in the future; we fix that up below.
     $last_trigger = mktime(0, 0, 0, $month, wmf_civicrm_get_cycle_day_for_month( $cycle_day, $month, $year ), $year);
     
-    //please note that the majority of the time, this while loop will not even 
-    //fire once.  
-    //The 60*60*24*7 represents a week in seconds: If what should have been the 
-    //next trigger date is up to a week in the future, it will NOT try to rebill 
-    //this month. 
+    // This loop fixes up $last_trigger in the case where we're running in a later month than when
+    // the last trigger date actually was, which means $last_trigger will be in the future and will
+    // therefore be wrong (instead, it'll be the *next* trigger date). In this case, we move
+    // $last_trigger back a month. The 60*60*24*7 represents a week in seconds: if the next payment
+    // is due in less than a week, do NOT rebill this one but just skip it.
     while ( $last_trigger > $nowstamp && ( $last_trigger - $nowstamp ) > 60*60*24*7 ){
         //decrement the month until it was in the past. 
         --$month;

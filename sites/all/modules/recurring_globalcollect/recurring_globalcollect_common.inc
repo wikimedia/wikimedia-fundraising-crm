@@ -158,12 +158,12 @@ function _recurring_globalcollect_get_subscription_by_order_id($order_id) {
  * - payments need to be marked as cancelled if there have been two prior failures for this EFFORTID (`processor_id`)
  *
  * These are the possible values for `contribution_status_id`:
- * - [1] => Completed
- * - [2] => Pending
- * - [3] => Cancelled
- * - [4] => Failed
- * - [5] => In Progress
- * - [6] => Overdue
+ * - [1] => Completed (previous donation succeeded, or new donation that has never been recurred before)
+ * - [2] => Pending (not used by this module)
+ * - [3] => Cancelled (too many failures in the past, don't try to process this any more)
+ * - [4] => Failed (previous donation attempt failed, retry later)
+ * - [5] => In Progress (there is a process actively trying to process this donation right now; used to avoid race conditions, if a contribution is stuck in this state it'll need manual intervention and reconciliation)
+ * - [6] => Overdue (not used by this module)
  *
  * @param integer $id     The primary key of the record.
  * 
@@ -198,6 +198,7 @@ function _recurring_globalcollect_update_record_failure($id) {
     $failure_retry_date = 'NULL';
     $next_sched_contribution = 'NULL';
     $cancel = true;
+    // TODO should we report the fact that we're cancelling this payment forever ("marking it as dead")?
   }
 
   $dbs->use_civicrm();
@@ -219,7 +220,7 @@ function _recurring_globalcollect_update_record_failure($id) {
     $query .= 'UPDATE {civicrm_contribution_recur} SET';
     $query .= ' `contribution_status_id` = %d,';
     $query .= ' `failure_count` = `failure_count` + 1,';
-    $query .= ' `failure_retry_date` = NOW() + INTERVAL %d DAY';
+    $query .= ' `failure_retry_date` = NOW() + INTERVAL %d DAY'; // Schedule retry for tomorrow
     $query .= ' WHERE id = %d';
     db_query($query, $contribution_status_id, $recurring_globalcollect_failure_retry_rate, $id);
   }
@@ -267,7 +268,7 @@ function _recurring_globalcollect_update_record_in_progress($id) {
   // Set the status to In Progress
   $query .= ' `contribution_status_id` = %d';
   $query .= ' WHERE id = %d';
-  // Only update if status is Completed
+  // Only update if status is not already In Progress
   $query .= ' AND `contribution_status_id` != %d';
   $dbs->use_civicrm();
   db_query($query, civicrm_api_contribution_status('In Progress'), $id, civicrm_api_contribution_status('In Progress'));
