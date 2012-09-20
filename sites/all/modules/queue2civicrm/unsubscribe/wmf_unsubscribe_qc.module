@@ -1,0 +1,158 @@
+<?php
+
+/**
+ * Drupal hook function setting up the configuration page.
+ *
+ * @return array Menu entries
+ */
+function wmf_unsubscribe_qc_menu_alter( &$items ) {
+	$items[ 'admin/settings/queue2civicrm/unsubscribe_qc' ] = array(
+		'title'            => 'Unsubscribe',
+		'description' => t( 'Configure unsubscribe queue settings' ),
+		'access arguments' => array( 'administer queue2civicrm' ),
+		'page callback' => 'drupal_get_form',
+		'page arguments'   => array( 'unsubscribe_qc_settings' ),
+		'type' => MENU_LOCAL_TASK,
+	);
+}
+
+/**
+ * Constructs the settings page for this module. See @ref wmf_common_menu.
+ *
+ * @return array Of form components.
+ */
+function unsubscribe_qc_settings() {
+	$form = array();
+
+	$form[ 'unsubscribe_qc' ][ 'description' ] = array(
+		'#type' => 'fieldset',
+		'#title' => t( 'Unsubscribe queue' ),
+		'#description' => t( 'The unsubscribe queue sets the opt-out flag for contacts in Civi.' ),
+		'#collapsible' => FALSE,
+		'#collapsed' => FALSE,
+	);
+
+	$form[ 'unsubscribe_qc' ][ 'unsubscribe_queue' ] = array(
+		'#type' => 'textfield',
+		'#title' => t('Subscription path'),
+		'#required' => TRUE,
+		'#default_value' => variable_get('unsubscribe_queue', '/queue/unsubscribe_test'),
+		'#description' => t( 'The path to the unsubscribe queue.' ),
+	);
+
+	$form['unsubscribe_qc']['unsubscribe_batch'] = array(
+		'#type' => 'select',
+		'#title' => t('Cron batch size'),
+		'#required' => TRUE,
+		'#default_value' => variable_get('unsubscribe_batch', 0),
+		'#options' => array(
+			0 => '0 (Disable)',
+			1 => 1,
+			5 => 5,
+			10 => 10,
+			20 => 20,
+			30 => 30,
+			40 => 40,
+			50 => 50,
+			75 => 75,
+			100 => 100,
+			120 => 120,
+			150 => 150,
+		),
+	);
+
+	return system_settings_form($form);
+}
+
+function unsubscribe_batch_process() {
+	watchdog('unsubscribe', 'Executing: unsubscribe_batch_process');
+
+	$processed = wmf_common_dequeue_loop(
+		variable_get( 'unsubscribe_queue', '/queue/limbo_test' ),
+		variable_get( 'unsubscribe_batch', 0 ),
+		'unsubscribe_process_message'
+	);
+
+	if ( $processed > 0 ) {
+		watchdog('unsubscribe', 'Successfully processed ' . $processed . ' unsubscribe(s).');
+	}
+	else {
+		watchdog('unsubscribe', 'No unsubscribes processed.');
+	}
+}
+
+function unsubscribe_process_message( $msg ) {
+
+	// No matter what we're removing this from the queue
+	wmf_common_stomp_ack_frame( $msg );
+
+	// Sanity checking :)
+	$body = json_decode( $msg->body, true );
+	if ( !array_key_exists( 'email', $body ) ) {
+		$error = "Required field 'email' not present in message: " . json_encode( $msg );
+		watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
+		wmf_common_failmail( $error );
+		return false;
+	}
+
+	$email = $body['email'];
+
+	civicrm_initialize();
+
+	// OK! Initialized: Find all emails! :)
+	$emails = civicrm_api( 'Email', 'get', array(
+			'version' => '3',
+			'email' => $email,
+		));
+
+	$emailEncoded = json_encode( $email );
+	if ( $emails['is_error'] == true ) {
+		$error = "API search failed for email address: $emailEncoded " . json_encode( $emails );
+		watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
+		wmf_common_failmail( $error );
+
+		wmf_common_stomp_ack_frame( $msg );
+		return false;
+	}
+
+	$number = $emails['count'];
+	watchdog( 'unsubscribe', "Updating $number contacts for email $emailEncoded", array(), WATCHDOG_INFO );
+
+	// We have a pile of contacts, whoo
+	foreach ( $emails['values'] as $id => $emailEntry ) {
+		$contactId = $emailEntry['contact_id'];
+
+		// Update the contact
+		$contact = civicrm_api( 'Contact', 'update', array(
+				'version' => '3',
+				'id' => $contactId,
+				'is_opt_out' => '1',
+			));
+
+		if ( $contact['is_error'] == true ) {
+			$error = "Could not update civi contact ID $contactId " . json_encode( $contact);
+			watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
+			wmf_common_failmail( $error );
+		}
+	}
+
+	return true;
+}
+
+/**
+ * Returns a hash used to confirm that the user had a valid unsubscription
+ * link and thus prevent brute force unsubscriptions
+ *
+ * @param $contribution array A CiviCRM Contribution API result
+ */
+function get_unsubscribe_email_hash( $contribution ){
+	if( array_key_exists( 'id', $contribution ) &&
+		array_key_exists( 'contact_id', $contribution ) &&
+		array_key_exists( 'trxn_id', $contribution ) ){
+
+		return sha1( $contribution[ 'id' ] . $contribution[ 'contact_id' ] .
+				$contribution[ 'trxn_id' ] );
+	}
+
+	return FALSE;
+}
