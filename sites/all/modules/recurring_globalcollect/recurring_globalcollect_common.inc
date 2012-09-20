@@ -162,9 +162,6 @@ function _recurring_globalcollect_get_subscription_by_order_id($order_id) {
  */
 function _recurring_globalcollect_update_record_failure($id) {
 
-  // make sure we're using the default (civicrm) db
-  $dbs = wmf_civicrm_get_dbs();
- 
   $result = recurring_globalcollect_get_payment_by_id($id);
   $record = is_object($result) ? (array) $result : false;
   
@@ -176,11 +173,15 @@ function _recurring_globalcollect_update_record_failure($id) {
   // Make sure all of the proper fields are set to sane values.
   _recurring_globalcollect_validate_record_for_update($record);
   
+  $failures_before_cancellation = (integer) variable_get( 'recurring_globalcollect_failures_before_cancellation', 0 );
   $recurring_globalcollect_failure_retry_rate = (integer) abs(variable_get('recurring_globalcollect_failure_retry_rate', 1));
+
+  // make sure we're using the default (civicrm) db
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->use_civicrm();
 
   $cancel = false;
   $contribution_status_id = civicrm_api_contribution_status('Failed');
-  $failures_before_cancellation = (integer) variable_get('recurring_globalcollect_failures_before_cancellation', 0);
 
   // If there have been too many failures, cancel this payment permanently.
   if ( $record['failure_count'] >= ( $failures_before_cancellation - 1 ) ) {
@@ -191,8 +192,6 @@ function _recurring_globalcollect_update_record_failure($id) {
     $cancel = true;
     // TODO should we report the fact that we're cancelling this payment forever ("marking it as dead")?
   }
-
-  $dbs->use_civicrm();
 
   $query = '';
   if ($cancel) {
@@ -217,10 +216,10 @@ function _recurring_globalcollect_update_record_failure($id) {
   }
 
   $affected_rows = (integer) db_affected_rows();
-  
+
   // Restore the default connection.
   $dbs->use_default();
-  
+
   return $affected_rows;
 }
 
@@ -234,9 +233,6 @@ function _recurring_globalcollect_update_record_failure($id) {
  * @return integer  Returns the number of affected rows.
  */
 function _recurring_globalcollect_update_record_in_progress($id) {
-
-  // make sure we're using the default (civicrm) db
-  $dbs = wmf_civicrm_get_dbs();
  
   $result = recurring_globalcollect_get_payment_by_id($id);
   $record = is_object($result) ? (array) $result : false;
@@ -261,7 +257,11 @@ function _recurring_globalcollect_update_record_in_progress($id) {
   $query .= ' WHERE id = %d';
   // Only update if status is not already In Progress
   $query .= ' AND `contribution_status_id` != %d';
+
+  // make sure we're using the default (civicrm) db
+  $dbs = wmf_civicrm_get_dbs();
   $dbs->use_civicrm();
+
   db_query($query, civicrm_api_contribution_status('In Progress'), $id, civicrm_api_contribution_status('In Progress'));
 
   $affected_rows = (integer) db_affected_rows();
@@ -289,9 +289,6 @@ function _recurring_globalcollect_update_record_in_progress($id) {
  * @return integer  Returns the number of affected rows.
  */
 function _recurring_globalcollect_update_record_success($id) {
-
-  // make sure we're using the default (civicrm) db
-  $dbs = wmf_civicrm_get_dbs();
  
   $result = recurring_globalcollect_get_payment_by_id($id);
   $record = is_object($result) ? (array) $result : false;
@@ -315,7 +312,11 @@ function _recurring_globalcollect_update_record_success($id) {
   $query .= ' `contribution_status_id` = %d,';
   $query .= " `next_sched_contribution` = '%s'";
   $query .= ' WHERE id = %d';
+
+  // make sure we're using the default (civicrm) db
+  $dbs = wmf_civicrm_get_dbs();
   $dbs->use_civicrm();
+
   db_query($query, civicrm_api_contribution_status('Completed'), $next_sched_contribution, $id);
 
   $affected_rows = (integer) db_affected_rows();
