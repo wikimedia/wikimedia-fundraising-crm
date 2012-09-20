@@ -1,0 +1,5 @@
+name = WMF Unsubscribe Queue Consumer
+description = Raids a queue (dedicated to unsubscribes) for new messages. It will opt-out any contacts in Civi with the requested emails.
+core = 6.x
+package = queue2civicrm
+dependencies[] = queue2civicrm
