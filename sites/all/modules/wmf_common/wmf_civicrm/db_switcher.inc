@@ -1,5 +1,8 @@
 <?php 
 
+# TODO first: much better is to push our db name onto a LIFO queue,
+# and pop back to the previous db, rather than assuming "default"
+
 # TODO if we're in control of all db calls during "switched" contexts, we can use a better db library, such as PDO
 
 /**
