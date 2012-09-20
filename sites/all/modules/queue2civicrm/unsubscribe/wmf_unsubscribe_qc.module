@@ -3,6 +3,8 @@
 /**
  * Drupal hook function setting up the configuration page.
  *
+ * @param array $items Currently configured menu items to modify
+ *
  * @return array Menu entries
  */
 function wmf_unsubscribe_qc_menu_alter( &$items ) {
@@ -17,7 +19,7 @@ function wmf_unsubscribe_qc_menu_alter( &$items ) {
 }
 
 /**
- * Constructs the settings page for this module. See @ref wmf_common_menu.
+ * Constructs the settings page for this module.
  *
  * @return array Of form components.
  */
@@ -64,6 +66,11 @@ function unsubscribe_qc_settings() {
 	return system_settings_form($form);
 }
 
+/**
+ * Callback from Drush that actually executes the loop for processing messages in the queue.
+ * @ref unsubscribe_process_message
+ * @ref drush_unsubscribe_queue_consume
+ */
 function unsubscribe_batch_process() {
 	watchdog('unsubscribe', 'Executing: unsubscribe_batch_process');
 
@@ -81,78 +88,137 @@ function unsubscribe_batch_process() {
 	}
 }
 
+/**
+ * Processes an individual unsubscribe message. The message must contain the email address and
+ * the contribution ID. The contribution ID is required because, as a protection mechanism, we want
+ * unsubscribe emails to be single shot. Therefore we obtain the contact ID from the contribution ID
+ * (in case someone has gone through and de-duped contacts since the email was sent) and check its
+ * unsubscribe status taking one of two actions after:
+ *
+ * - If an contact has already opted out we abort and do no further action.
+ * - Otherwise, we opt out that contact and then do a Civi search for all matching emails - opting
+ *   out those contacts as well.
+ *
+ * @param $msg A STOMP message class.
+ *
+ * @return bool True if the contact was processed without errors. False if errors occured; the msg
+ *              will still have been removed from the queue though.
+ */
 function unsubscribe_process_message( $msg ) {
 
+	$txnid = $msg->headers['correlation-id'];
+	watchdog( "Beginning processing of message $txnid: " . json_encode( $msg ), array(), WATCHDOG_INFO );
+
 	// No matter what we're removing this from the queue
-	wmf_common_stomp_ack_frame( $msg );
+	//wmf_common_stomp_ack_frame( $msg );
 
 	// Sanity checking :)
 	$body = json_decode( $msg->body, true );
-	if ( !array_key_exists( 'email', $body ) ) {
-		$error = "Required field 'email' not present in message: " . json_encode( $msg );
+	if ( ( !array_key_exists( 'email', $body ) ) || ( !array_key_exists( 'contribution-id', $body ) ) ) {
+		$error = "$txnid: Required field not present! Dropping message on floor.";
 		watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
 		wmf_common_failmail( $error );
 		return false;
 	}
 
 	$email = $body['email'];
+	$contribId = $body['contribution-id'];
+	watchdog( 'unsubscribe', "$txnid: Acting on contribution ID '$contribId'", array(), WATCHDOG_INFO );
 
 	civicrm_initialize();
 
-	// OK! Initialized: Find all emails! :)
+	// Find the contact from the contribution ID and check opt out status
+	$contact = unsubscribe_get_contact_from_contribution( $txnid, $contribId );
+	if ( $contact === false ) { return false; }
+	elseif ( $contact['is_opt_out'] == '1' ) {
+		watchdog( 'unsubscribe', "$txnid: Contact already opted out with this contribution ID.", array(), WATCHDOG_INFO );
+		return false;
+	}
+
+	// Unsubscribe the contact by ID directly
+	unsubscribe_opt_out_contact( $txnid, $contact['id'] );
+
+	// Now do the by email search
 	$emails = civicrm_api( 'Email', 'get', array(
 			'version' => '3',
 			'email' => $email,
-		));
+		) );
 
 	$emailEncoded = json_encode( $email );
 	if ( $emails['is_error'] == true ) {
-		$error = "API search failed for email address: $emailEncoded " . json_encode( $emails );
+		$error = "$txnid: API search failed for email address: $emailEncoded " . json_encode( $emails );
 		watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
 		wmf_common_failmail( $error );
-
-		wmf_common_stomp_ack_frame( $msg );
 		return false;
 	}
 
 	$number = $emails['count'];
-	watchdog( 'unsubscribe', "Updating $number contacts for email $emailEncoded", array(), WATCHDOG_INFO );
+	watchdog( 'unsubscribe', "$txnid: Updating $number contacts for email $emailEncoded", array(), WATCHDOG_INFO );
 
 	// We have a pile of contacts, whoo
 	foreach ( $emails['values'] as $id => $emailEntry ) {
-		$contactId = $emailEntry['contact_id'];
-
-		// Update the contact
-		$contact = civicrm_api( 'Contact', 'update', array(
-				'version' => '3',
-				'id' => $contactId,
-				'is_opt_out' => '1',
-			));
-
-		if ( $contact['is_error'] == true ) {
-			$error = "Could not update civi contact ID $contactId " . json_encode( $contact);
-			watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
-			wmf_common_failmail( $error );
-		}
+		unsubscribe_opt_out_contact( $txnid, $emailEntry['contact_id'] );
 	}
 
 	return true;
 }
 
 /**
- * Returns a hash used to confirm that the user had a valid unsubscription
- * link and thus prevent brute force unsubscriptions
+ * Obtains a 'Contact' entity from Civi by the contribution ID
  *
- * @param $contribution array A CiviCRM Contribution API result
+ * @param $txnid The transaction ID for logging purposes
+ * @param $ctid  The Civi contribution ID
+ *
+ * @return false|array If false the contact could not be retrieved.
  */
-function get_unsubscribe_email_hash( $contribution ){
-	if( array_key_exists( 'id', $contribution ) &&
-		array_key_exists( 'contact_id', $contribution ) &&
-		array_key_exists( 'trxn_id', $contribution ) ){
+function unsubscribe_get_contact_from_contribution( $txnid, $ctid ) {
+	$contribution = civicrm_api( 'Contribution', 'get', array(
+			'version' => '3',
+			'id' => $ctid,
+		) );
 
-		return sha1( $contribution[ 'id' ] . $contribution[ 'contact_id' ] .
-				$contribution[ 'trxn_id' ] );
+	// Check if the query failed
+	if ( ( $contribution['is_error'] == true ) || ( $contribution['count'] != 1 ) ) {
+		$error = "$txnid: API search failed for contribution ID: $ctid " . json_encode( $contribution );
+		watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
+		wmf_common_failmail( $error );
+		return false;
 	}
 
-	return FALSE;
+	// Retrieve the contact
+	$contactId = $contribution['values'][$ctid]['contact_id'];
+	$contact = civicrm_api( 'Contact', 'get', array(
+			'version' => '3',
+			'id' => $contactId,
+		) );
+
+	if ( ( $contact['is_error'] == true ) || ( $contact['count'] != '1' ) ){
+		$error = "$txnid: API search failed for contact with ID: $contactId " . json_encode( $contact );
+		watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
+		wmf_common_failmail( $error );
+		return false;
+	}
+
+	return $contact['values']["$contactId"];
+}
+
+/**
+ * Updates the Civi database with an opt out record for specified contact.
+ *
+ * @param $txnid     Transaction ID for logging purposes
+ * @param $contactId Civi contact entity ID
+ */
+function unsubscribe_opt_out_contact( $txnid, $contactId ) {
+	// Update the contact
+	$contact = civicrm_api( 'Contact', 'update', array(
+			'version' => '3',
+			'id' => $contactId,
+			'is_opt_out' => '1',
+		));
+
+	if ( $contact['is_error'] == true ) {
+		$error = "$txnid: Could not update civi contact ID $contactId " . json_encode( $contact);
+		watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
+		wmf_common_failmail( $error );
+	}
 }
