@@ -3,12 +3,12 @@
 function exchange_rates_menu() {
   $items = array();
   
-  $items['exchange_rates'] = array(
+  $items['admin/settings/exchange_rates'] = array(
     'title' => t('Exchange rates'),
     'page callback' => 'exchange_rates_listing',
     'access arguments' => array('administer site configuration'),
   );
-  $items['exchange_rates/update'] = array(
+  $items['admin/settings/exchange_rates/update'] = array(
     'title' => t('Update exchange rates'),
     'page callback' => 'exchange_rates_manual_update',
     'access arguments' => array('administer site configuration'),
@@ -32,7 +32,7 @@ function exchange_rates_get_currencies() {
 function exchange_rates_manual_update() {
   exchange_rates_cron();
   drupal_set_message(t('Exchange rates updated'));
-  drupal_goto('exchange_rates');
+  drupal_goto('admin/settings/exchange_rates');
 }
 
 function exchange_rates_listing() {
