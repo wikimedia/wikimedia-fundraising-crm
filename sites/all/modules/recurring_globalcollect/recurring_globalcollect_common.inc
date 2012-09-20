@@ -85,18 +85,17 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
     $query .= " LIMIT " . $limit;
   }
   
-  $result = db_fetch_object( db_query( $query, $date, $date, $contribution_status_id ));
+  $result = db_query( $query, $date, $date, $contribution_status_id );
+
+  $out = array();
+  while ( $row = db_fetch_object( $result ) ) {
+      $out[] = $row;
+  }
 
   // Restore the default connection.
   $dbs->use_default();
 
-  // If nothing found, return false.
-  if (empty($result)) {
-    
-    $result = false;
-  }
-
-  return $result;
+  return $out;
 }
 
 /**

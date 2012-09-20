@@ -202,7 +202,7 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
  * @todo The field `civicrm_payment_processor`.`payment_processor_type` should be set.
  * @todo Implement $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
  * 
- * @return false|object
+ * @return array of contribution_recur objects
  */
 function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now')
 {
@@ -244,14 +244,10 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now')
 
     $res = db_query( $query, $start_day, $end_day, $contribution_status_id, $limit );
     
-    if ($limit > 1) {
-        $out = array();
-        while ($recur = db_fetch_object( $res ))
-        {
-          $out[] = $recur;
-        }
-    } else {
-        $out = db_fetch_object( $res );
+    $out = array();
+    while ($recur = db_fetch_object( $res ))
+    {
+        $out[] = $recur;
     }
 
     // Restore the default connection.
