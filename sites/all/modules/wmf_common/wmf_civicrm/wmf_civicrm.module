@@ -354,11 +354,12 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     */
     $comment = ( isset( $msg[ 'comment' ] ) ) ? $msg[ 'comment'] : '';
     $lettercode = ( $msg[ 'letter_code' ] ) ? $msg[ 'letter_code'] : NULL;
+    $gateway_account = array_key_exists( 'gateway_account', $msg ) ? $msg[ 'gateway_account' ] : '';
 
     $custom_vars = array(
         'Contribution_Comments' => $comment,
         'Gift_Data' => $lettercode,
-        'gateway_account' => $msg[ 'gateway_account' ],
+        'gateway_account' => $gateway_account,
     );
     wmf_civicrm_set_custom_field_values( $contribution_result[ 'id' ], $custom_vars );
 
