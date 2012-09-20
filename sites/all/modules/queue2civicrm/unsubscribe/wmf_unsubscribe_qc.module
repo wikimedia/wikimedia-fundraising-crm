@@ -110,7 +110,7 @@ function unsubscribe_process_message( $msg ) {
 	watchdog( "Beginning processing of message $txnid: " . json_encode( $msg ), array(), WATCHDOG_INFO );
 
 	// No matter what we're removing this from the queue
-	//wmf_common_stomp_ack_frame( $msg );
+	wmf_common_stomp_ack_frame( $msg );
 
 	// Sanity checking :)
 	$body = json_decode( $msg->body, true );
