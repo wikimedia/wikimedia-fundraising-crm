@@ -131,7 +131,9 @@ function wmf_civicrm_set_custom_field_values($entity_id, $map)
     $result = CRM_Core_BAO_CustomValueTable::setValues($params);
     if (!empty($result['is_error']))
     {
-        throw new Exception(t('Failed to set custom values: id %id, error: %err', array("%id" => $entity_id, "%err" => $result['error_message'])));
+        throw new WmfException( 'CIVI_CONFIG',
+            t( 'Failed to set custom values: id !id, error: !err', array( '!id' => $entity_id, '!err' => $result['error_message'] ) )
+        );
     }
 }
 
@@ -334,10 +336,9 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     watchdog( 'wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
     
     if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
-        throw new WmfException(
-            'INVALID_MESSAGE',
-            'Cannot create contribution: ' . $contribution_result['error_message'],
-            array('failed_contribution' => $contribution, 'msg' => $msg)
+        throw new WmfException( 'INVALID_MESSAGE',
+            t( 'Cannot create contribution: !error.', array( '!error' => $contribution_result['error_message'] ) ),
+            array( 'contribution' => $contribution, 'source' => $msg )
         );
     }
   
@@ -406,7 +407,9 @@ function wmf_civicrm_get_civi_id($type, $name)
             }
             $id = $civi_ids[$type][$name];
             if (empty($id)) {
-                throw new WmfException("CIVI_CONFIG", t("Contribution Type '%name' not found!", array("%name" => $name)));
+                throw new WmfException( "CIVI_CONFIG",
+                    t( 'Contribution Type "!name" not found!', array( '!name' => $name ) )
+                );
             }
             return $id;
         case 'payment_instrument_id':
@@ -418,7 +421,7 @@ function wmf_civicrm_get_civi_id($type, $name)
                 watchdog('wmf_civicrm', "Found value for payment_instrument $name :" . $civi_ids[$type][$name]);
                 return $civi_ids[$type][$name];
             } else {
-                throw new WmfException("CIVI_CONFIG", t("Payment Instrument '%name' not found!", array("%name" => $name)));
+                throw new WmfException("CIVI_CONFIG", t("Payment Instrument '!name' not found!", array("!name" => $name)));
             }
             break;
         case 'tag_id':
@@ -429,10 +432,10 @@ function wmf_civicrm_get_civi_id($type, $name)
                 watchdog('wmf_civicrm', "Found id for Entity Tag $name :" . $civi_ids[$type][$name]);
                 return $civi_ids[$type][$name];
             } else {
-                throw new WmfException("CIVI_CONFIG", t("Entity Tag '%name' not found!", array("%name" => $name)));
+                throw new WmfException("CIVI_CONFIG", t("Entity Tag '!name' not found!", array("!name" => $name)));
             }
         default:
-            throw new WmfException("CIVI_CONFIG", t("Civi lookup for type '%type' not implemented", array("%type" => $type)));
+            throw new WmfException("CIVI_CONFIG", t("Civi lookup for type '!type' not implemented", array("!type" => $type)));
     }
 }
 
@@ -739,7 +742,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     if ( array_key_exists( 'is_error', $contact_result ) && $contact_result['is_error'] != 0 ){
-        throw new WmfException("IMPORT_CONTACT", "Contact could not be added. Aborting import.");
+        throw new WmfException("IMPORT_CONTACT", "Contact could not be added. Aborting import.", $msg);
     }
     return $contact_result;
 }
@@ -976,9 +979,10 @@ function wmf_civicrm_get_contribution( $msg ){
 	if ( $result->num_rows === 1 ) {
 		$row = db_fetch_array( $result );
 	} elseif ( $result->num_rows > 1 ){
-		throw new WmfException('GET_CONTRIBUTION', 
-		"More than one contribution (" . $result->num_rows . ") returned for the following query: \n$query\n", 
-		$msg);
+		throw new WmfException( 'GET_CONTRIBUTION', 
+			t( "More than one contribution (!num) returned for the following query: [!query]", array( '!num' => $result->num_rows, '!query' => $query ) ),
+			$msg
+		);
 	}
 
 	return $row;

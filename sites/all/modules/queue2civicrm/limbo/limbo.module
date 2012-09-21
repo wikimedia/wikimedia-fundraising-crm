@@ -162,7 +162,7 @@ function limbo_verify_and_stage($msg){
   foreach ($required as $key=>$value){
     if (!isset($msg[$key])){
       throw new WmfException( "CIVI_REQ_FIELD",
-        t( 'Required Field "%key" not found in message:', array( '%key' => $key ) ),
+        t( 'Required Field "!key" not found in message:', array( '!key' => $key ) ),
         $msg
       );
     }
