@@ -857,14 +857,13 @@ function wmf_civicrm_get_state( $country, $state )
         $query = "SELECT s.name AS state_name FROM civicrm_country c, civicrm_state_province s WHERE s.country_id=c.id AND c.name='" . addslashes( $country ) . "' AND s.abbreviation='" . addslashes( $state ) . "'";
     }
     $dbs = wmf_civicrm_get_dbs();
-    $dbs->use_civicrm();
+    $dbs->push( 'civicrm' );
     $result = db_query( $query );
     if ( $result->num_rows === 1 ){
       $row = db_fetch_object( $result );
       $state = $row->state_name;
-    } 
-    $dbs->use_default();
-    
+    }
+
     return $state;
 }
 
@@ -973,7 +972,7 @@ function wmf_civicrm_get_contribution( $msg ){
 
 	$row = false;
 	$dbs = wmf_civicrm_get_dbs();
-	$dbs->use_civicrm();
+	$dbs->push( 'civicrm' );
 	$result = db_query( $query, $search );
 	if ( $result->num_rows === 1 ) {
 		$row = db_fetch_array( $result );
@@ -982,7 +981,6 @@ function wmf_civicrm_get_contribution( $msg ){
 		"More than one contribution (" . $result->num_rows . ") returned for the following query: \n$query\n", 
 		$msg);
 	}
-	$dbs->use_default();
-	
+
 	return $row;
 }

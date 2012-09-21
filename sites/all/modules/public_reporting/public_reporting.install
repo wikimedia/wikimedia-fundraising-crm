@@ -64,24 +64,20 @@ function public_reporting_schema() {
 }
 
 function public_reporting_install() {
-	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
-	$dbs = new queue2civicrm_db_switcher();
-	$dbs->use_civicrm();
+	$dbs = wmf_civicrm_get_dbs();
+	$dbs->push( 'civicrm' );
 	drupal_install_schema('public_reporting');
 	$queryResult =  db_query(public_reporting_get_FK_command());
 
 	watchdog("public_reporting.install", "FK command result: " . print_r($queryResult, true) );
 
-	$sqlResult = public_reporting_execute_sql_file(drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/triggers.sql');
+	$sqlResult = module_invoke( 'public_reporting', 'execute_sql_file', drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/triggers.sql' );
 	watchdog("public_reporting.install", "Trigger Creation Result: " . print_r($sqlResult, true) );
-
-	$dbs->use_default();
 }
 
 function public_reporting_uninstall() {
-	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
-	$dbs = new queue2civicrm_db_switcher();
-	$dbs->use_civicrm();
+	$dbs = wmf_civicrm_get_dbs();
+	$dbs->push( 'civicrm' );
 	drupal_uninstall_schema('public_reporting');
 }
 

@@ -31,13 +31,7 @@ function public_reporting_form() {
 
 function public_reporting_form_submit($form, &$form_state) {
 
-	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
-	$dbs = new queue2civicrm_db_switcher();
-	$dbs->use_civicrm();
-
 	$result = public_reporting_execute_sql_file(drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/synchronize.sql');
-
-	$dbs->use_default();
 
 	if ($result === true){
 		$message = "Synchronize SQL Executed successfully.";
@@ -147,6 +141,9 @@ function public_reporting_execute_sql_file($file){
 	$actual = 0;
 	$ok = true;
 
+	$dbs = wmf_civicrm_get_dbs();
+	$dbs->push( 'civicrm' );
+
 	foreach($queries as $query){
 		$queryResult =  db_query($query);
 		if (!$queryResult){
@@ -156,6 +153,8 @@ function public_reporting_execute_sql_file($file){
 		}
 		++$actual;
 	}
+
+	$dbs->pop();
 
 	watchdog("public_reporting_execute_sql_file", "DB Queries Completed: $actual / $expected (File: $file)");
 	watchdog("public_reporting_execute_sql_file", "Results: $results");

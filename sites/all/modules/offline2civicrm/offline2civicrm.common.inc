@@ -29,12 +29,6 @@ function _get_value( $column, $row, $headers, $default='' ){
 }
 
 function _check_existing( $msg ){
-  global $dbs;
-
-  if($dbs===null){
-    $dbs = wmf_civicrm_get_dbs();
-  }
-
   if(is_array($msg)){
     $trxn_id = $msg['payment_method'] . ' ' . $msg['gateway_txn_id'];
   }
@@ -42,7 +36,9 @@ function _check_existing( $msg ){
     $trxn_id = $msg;
   }
 
-  $dbs->use_civicrm();
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push( 'civicrm' );
+
   $query = "SELECT id, trxn_id FROM civicrm_contribution WHERE trxn_id LIKE '%s%' LIMIT 1;";
   $result = db_query($query, $trxn_id);
   while( $row = db_fetch_array($result) ) {
@@ -50,11 +46,9 @@ function _check_existing( $msg ){
       'id' => $row['id'],
       'trxn_id' => $row['trxn_id']
     );
-    $dbs->use_default();
 
     return $contribution;
   }
-  $dbs->use_default();
 
   return false;
 }

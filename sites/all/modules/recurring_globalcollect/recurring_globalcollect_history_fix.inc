@@ -72,7 +72,8 @@ function recurring_globalcollect_get_all_recorded_failures(){
 	
 	$sql = "SELECT id, trxn_id, contact_id, amount, currency from civicrm_contribution_recur WHERE trxn_id LIKE 'RECURRING GLOBALCOLLECT%' AND failure_count > 0";
 	$dbs = wmf_civicrm_get_dbs();
-	$dbs->use_civicrm();
+	$dbs->push( 'civicrm' );
+
 	$ret = db_query( $sql );
 	$result = array();
 	while ( $tmp = db_fetch_array( $ret ) )  {
@@ -80,15 +81,13 @@ function recurring_globalcollect_get_all_recorded_failures(){
 			$result[] = $tmp;
 		}
 	}
-	// Restore the default connection.
-	$dbs->use_default();
 	return $result;
 }
 
 function recurring_globalcollect_check_xml_in_watchdog( $gc_id ){
 	$sql = "select message from watchdog where type='recurring_global' AND message LIKE '%&lt;ORDERID&gt;%d&lt;/ORDERID&gt;%'";
 	$dbs = wmf_civicrm_get_dbs();
-	$dbs->use_default();	
+	$dbs->push( 'default' );
 	$ret = db_query( $sql, $gc_id );
 	$result = array();
 	while ( $tmp = db_fetch_array( $ret ) )  { 
@@ -114,12 +113,12 @@ function recurring_globalcollect_check_xml_in_watchdog( $gc_id ){
 
 function recurring_globalcollect_undo_failure($civi_recur_id){
 	$dbs = wmf_civicrm_get_dbs();
-	$dbs->use_civicrm();	
+	$dbs->push( 'civicrm' );
 	//undo everything we did before. 
 	$contribution_status_id = 1; //1 is for "Good". 
 	
     // The payment failed and is being marked as a failure.
-    $query = 'UPDATE {civicrm_contribution_recur} SET';
+    $query = 'UPDATE civicrm_contribution_recur SET';
     $query .= ' `contribution_status_id` = %d,';
     $query .= ' `failure_count` = `failure_count` - 1,';
     $query .= ' `failure_retry_date` = NULL';
@@ -127,10 +126,7 @@ function recurring_globalcollect_undo_failure($civi_recur_id){
     db_query($query, $contribution_status_id, $civi_recur_id);
 
   $affected_rows = (integer) db_affected_rows();
-  
-  // Restore the default connection.
-  $dbs->use_default();
-  
+
   return $affected_rows;
 }
 

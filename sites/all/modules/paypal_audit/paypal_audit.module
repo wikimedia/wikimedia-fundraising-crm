@@ -132,11 +132,11 @@ function paypal_audit_find_missing_pp_trxns( $pp_trxns, $columns ) {
   $missing_trxns = array();
 
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->use_civicrm();
+  $dbs->push( 'civicrm' );
 
   // check for matching ids - if no match, it's missing
   foreach ( array_keys( $pp_trxns ) as $pp_trxn_id ) {
-    $query = "SELECT {trxn_id} 
+    $query = "SELECT trxn_id 
     	FROM civicrm_contribution 
     	WHERE trxn_id LIKE 'PAYPAL %s' OR trxn_id LIKE 'RECURRING PAYPAL %s'";
     $result = db_query( $query, $pp_trxn_id . "%", $pp_trxn_id . "%" );
@@ -152,7 +152,6 @@ function paypal_audit_find_missing_pp_trxns( $pp_trxns, $columns ) {
     }
   }
 
-  $dbs->use_default();
   return $missing_trxns;
 }
 
@@ -168,11 +167,11 @@ function paypal_audit_find_missing_pf_trxns( $pf_trxns, $columns ) {
   $missing_trxns = array();
   
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->use_civicrm();
+  $dbs->push( 'civicrm' );
 
   // check for matching ids - if it doesnt match, it's missing
   foreach ( array_keys( $pf_trxns ) as $pf_trxn_id ) {
-    $query = "SELECT {trxn_id} FROM civicrm_contribution WHERE trxn_id LIKE 'PAYFLOWPRO %s'";
+    $query = "SELECT trxn_id FROM civicrm_contribution WHERE trxn_id LIKE 'PAYFLOWPRO %s'";
     $result = db_query( $query, $pf_trxn_id . "%", $pf_trxn_id . "%" );
     if ( !$result->num_rows ) {
       array_push( $missing_trxns, $pf_trxns[ $pf_trxn_id ] );
@@ -186,7 +185,6 @@ function paypal_audit_find_missing_pf_trxns( $pf_trxns, $columns ) {
     } 
   }
 
-  $dbs->use_default();
   return $missing_trxns;
 }
 

@@ -17,14 +17,11 @@ function recurring_globalcollect_get_payment_by_id($id)
 
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->use_civicrm();
+  $dbs->push( 'civicrm' );
 
   $query = 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` WHERE `civicrm_contribution_recur`.`id` = %d LIMIT 1';
   
   $result = db_fetch_object( db_query( $query, $id ));
-
-  // Restore the default connection.
-  $dbs->use_default();
 
   // If nothing found, return false.
   if (empty($result)) {
@@ -62,7 +59,7 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
 
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->use_civicrm();
+  $dbs->push( 'civicrm' );
 
   $date = date('Y-m-d', strtotime($date));
 
@@ -91,9 +88,6 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
   while ( $row = db_fetch_object( $result ) ) {
       $out[] = $row;
   }
-
-  // Restore the default connection.
-  $dbs->use_default();
 
   return $out;
 }
@@ -124,7 +118,7 @@ function _recurring_globalcollect_get_subscription_by_order_id($order_id) {
   
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->use_civicrm();
+  $dbs->push( 'civicrm' );
 
   $query  = 'SELECT `civicrm_contribution_recur`.*, `civicrm_contact`.`display_name` FROM `civicrm_contribution_recur`';
   $query .= ' LEFT JOIN `civicrm_contact` ON (`civicrm_contribution_recur`.`contact_id` = `civicrm_contact`.`id`)';
@@ -132,9 +126,6 @@ function _recurring_globalcollect_get_subscription_by_order_id($order_id) {
   $query .="'RECURRING GLOBALCOLLECT %d%' LIMIT 1";
   
   $result = db_fetch_object( db_query( $query, $order_id ) );
-
-  // Restore the default connection.
-  $dbs->use_default();
 
   $record = is_object( $result ) ? (array) $result : false;
   
@@ -178,7 +169,7 @@ function _recurring_globalcollect_update_record_failure($id) {
 
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->use_civicrm();
+  $dbs->push( 'civicrm' );
 
   $cancel = false;
   $contribution_status_id = civicrm_api_contribution_status('Failed');
@@ -196,7 +187,7 @@ function _recurring_globalcollect_update_record_failure($id) {
   $query = '';
   if ($cancel) {
     // The payment is being cancelled
-    $query .= 'UPDATE {civicrm_contribution_recur} SET';
+    $query .= 'UPDATE civicrm_contribution_recur SET';
     $query .= ' `failure_count` = `failure_count` + 1,';
     $query .= ' `failure_retry_date` = NULL,';
     $query .= ' `cancel_date` = NOW(),';
@@ -207,7 +198,7 @@ function _recurring_globalcollect_update_record_failure($id) {
   }
   else {
     // The payment failed and is being marked as a failure.
-    $query .= 'UPDATE {civicrm_contribution_recur} SET';
+    $query .= 'UPDATE civicrm_contribution_recur SET';
     $query .= ' `contribution_status_id` = %d,';
     $query .= ' `failure_count` = `failure_count` + 1,';
     $query .= ' `failure_retry_date` = NOW() + INTERVAL %d DAY'; // Schedule retry for tomorrow
@@ -216,9 +207,6 @@ function _recurring_globalcollect_update_record_failure($id) {
   }
 
   $affected_rows = (integer) db_affected_rows();
-
-  // Restore the default connection.
-  $dbs->use_default();
 
   return $affected_rows;
 }
@@ -251,7 +239,7 @@ function _recurring_globalcollect_update_record_in_progress($id) {
 
   $query = '';
   // The payment is being marked as in progress.
-  $query .= 'UPDATE {civicrm_contribution_recur} SET';
+  $query .= 'UPDATE civicrm_contribution_recur SET';
   // Set the status to In Progress
   $query .= ' `contribution_status_id` = %d';
   $query .= ' WHERE id = %d';
@@ -260,15 +248,12 @@ function _recurring_globalcollect_update_record_in_progress($id) {
 
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->use_civicrm();
+  $dbs->push( 'civicrm' );
 
   db_query($query, civicrm_api_contribution_status('In Progress'), $id, civicrm_api_contribution_status('In Progress'));
 
   $affected_rows = (integer) db_affected_rows();
   
-  // Restore the default connection.
-  $dbs->use_default();
-
   if ($affected_rows == 0) {
     $message = 'The subscription was not marked as in progress: ' . print_r( $record, true );
     watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
@@ -305,7 +290,7 @@ function _recurring_globalcollect_update_record_success($id) {
 
   $query = '';
   // The payment is being scheduled for the next date.
-  $query .= 'UPDATE {civicrm_contribution_recur} SET';
+  $query .= 'UPDATE civicrm_contribution_recur SET';
   $query .= ' `failure_count` = 0,';
   $query .= ' `failure_retry_date` = NULL,';
   $query .= ' `processor_id` = `processor_id` + 1,';
@@ -315,15 +300,12 @@ function _recurring_globalcollect_update_record_success($id) {
 
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->use_civicrm();
+  $dbs->push( 'civicrm' );
 
   db_query($query, civicrm_api_contribution_status('Completed'), $next_sched_contribution, $id);
 
   $affected_rows = (integer) db_affected_rows();
-  
-  // Restore the default connection.
-  $dbs->use_default();
-  
+
   return $affected_rows;
 }
 
