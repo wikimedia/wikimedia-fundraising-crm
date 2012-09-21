@@ -132,14 +132,15 @@ function paypal_audit_find_missing_pp_trxns( $pp_trxns, $columns ) {
   $missing_trxns = array();
 
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->push( 'civicrm' );
 
   // check for matching ids - if no match, it's missing
   foreach ( array_keys( $pp_trxns ) as $pp_trxn_id ) {
     $query = "SELECT trxn_id 
     	FROM civicrm_contribution 
     	WHERE trxn_id LIKE 'PAYPAL %s' OR trxn_id LIKE 'RECURRING PAYPAL %s'";
+    $dbs->push( 'civicrm' );
     $result = db_query( $query, $pp_trxn_id . "%", $pp_trxn_id . "%" );
+    $dbs->pop();
     if ( !$result->num_rows ) {
       array_push( $missing_trxns, $pp_trxns[ $pp_trxn_id ] );
       watchdog( 'paypal_audit', 'Missing PayPal: @tx_id, @pp_tx_id, @t, @tt', array( 
@@ -167,12 +168,13 @@ function paypal_audit_find_missing_pf_trxns( $pf_trxns, $columns ) {
   $missing_trxns = array();
   
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->push( 'civicrm' );
 
   // check for matching ids - if it doesnt match, it's missing
   foreach ( array_keys( $pf_trxns ) as $pf_trxn_id ) {
     $query = "SELECT trxn_id FROM civicrm_contribution WHERE trxn_id LIKE 'PAYFLOWPRO %s'";
+    $dbs->push( 'civicrm' );
     $result = db_query( $query, $pf_trxn_id . "%", $pf_trxn_id . "%" );
+    $dbs->pop();
     if ( !$result->num_rows ) {
       array_push( $missing_trxns, $pf_trxns[ $pf_trxn_id ] );
       watchdog( 'paypal_audit', 'Missing PayflowPro: @tx_id, @pp_tx_id, @t, @tt', array( 
