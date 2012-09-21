@@ -149,5 +149,5 @@ function wmf_logging_format_message($entry) {
     $message .= "|BAD WATCHDOG CALL; " . $entry[ 'message' ] . " : " . $entry[ 'variables' ];
   }
 
-  return $message;
+  return htmlspecialchars( $message, ENT_COMPAT, 'UTF-8', false );
 }

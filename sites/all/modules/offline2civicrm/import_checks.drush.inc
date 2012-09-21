@@ -138,7 +138,7 @@ function drush_import_checks() {
 				}
 			}
 
-			watchdog('offline2civicrm', 'Import checks: Contribution imported successfully (%id): %msg', array('%id' => $contribution['id'], '%msg' => print_r( $msg, true )), WATCHDOG_INFO);
+			watchdog('offline2civicrm', 'Import checks: Contribution imported successfully (!id): !msg', array('!id' => $contribution['id'], '!msg' => print_r( $msg, true )), WATCHDOG_INFO);
 		}
 	} catch ( Exception $e ){
 		watchdog('offline2civicrm', 'Import checks: Exception thrown during check processing: ' . print_r( $e, true ), array(), WATCHDOG_ERROR);
