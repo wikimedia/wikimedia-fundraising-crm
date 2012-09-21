@@ -769,6 +769,7 @@ function recurring_get_contribution_tracking_id( $msg ) {
       }
     }
     
+    $dbs->push( 'default' );
     // if we still don't have a contribution tracking id, we're gonna have to make one
     if ( !$contribution_tracking_id ) {
       // if we already have previous contributions, we should create a contrib id connected with the first contrib

@@ -253,6 +253,7 @@ function _recurring_globalcollect_update_record_in_progress($id) {
   db_query($query, civicrm_api_contribution_status('In Progress'), $id, civicrm_api_contribution_status('In Progress'));
 
   $affected_rows = (integer) db_affected_rows();
+  $dbs->pop();
   
   if ($affected_rows == 0) {
     $message = 'The subscription was not marked as in progress: ' . print_r( $record, true );

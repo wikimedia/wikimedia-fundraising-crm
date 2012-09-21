@@ -133,6 +133,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
     );
 
     $contribution_recur_id = ( $result ) ? db_last_insert_id( 'civicrm_contribution_recur', 'id' ) : null;
+    $dbs->pop();
     
     // Link the contribution to the recurring payment
     //TODO catch error and print message
@@ -161,7 +162,10 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
         throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message);
     }
 
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push( 'civicrm' );
     $result = db_query('UPDATE civicrm_contribution SET contribution_recur_id=%d WHERE id=%d', (integer) $contribution_recur_id, (integer) $contribution_id);
+    $dbs->pop();
 
     if ( !$result ) {
         $watchdog_message = t(
