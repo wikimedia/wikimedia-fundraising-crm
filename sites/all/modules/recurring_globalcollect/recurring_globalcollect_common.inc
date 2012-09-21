@@ -3,8 +3,6 @@
  * Common functions for recurring_globalcollect modules 
  */
 
-require_once 'errors.inc';
-
 
 /**
  * Select one payment by the primary key.

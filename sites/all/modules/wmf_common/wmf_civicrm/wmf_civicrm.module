@@ -3,7 +3,6 @@
 require_once 'db_switcher.inc';
 require_once 'recurring.inc';
 require_once 'tracking.inc';
-require_once 'errors.inc';
 
 /**
  * return a map of option value (id) => option name
