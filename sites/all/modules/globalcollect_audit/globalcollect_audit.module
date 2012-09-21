@@ -116,13 +116,15 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
   $missing_trxns = array();
   
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->use_civicrm();
 
   // check for matching ids - if it doesnt match, it's missing
   globalcollect_audit_echo("Checking for missing transactions");
   foreach ( array_keys( $transactions ) as $order_id ) {
-    $query = "SELECT {trxn_id} FROM civicrm_contribution WHERE trxn_id LIKE 'GLOBALCOLLECT %s' OR trxn_id LIKE 'RECURRING GLOBALCOLLECT %s'";
+    $dbs->push( 'civicrm' );
+    $query = "SELECT trxn_id FROM civicrm_contribution WHERE trxn_id LIKE 'GLOBALCOLLECT %s' OR trxn_id LIKE 'RECURRING GLOBALCOLLECT %s'";
     $result = db_query( $query, $order_id . "%", $order_id . "%" );
+    $dbs->pop();
+
     if ( !$result->num_rows ) {
 	  globalcollect_audit_echo('!');
       $missing_trxns[$order_id]  = $transactions[$order_id];
@@ -136,8 +138,6 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
     } 
   }
 
-  $dbs->use_default();
-  
   globalcollect_audit_echo( count( $missing_trxns ) . " missing records from a possible " . count( $transactions ) . " total records found.");
   return $missing_trxns;
 }
@@ -741,7 +741,7 @@ function globalcollect_audit_make_payment_method_info( $wr1 ){
 
 function globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id ){ 
 	$dbs = wmf_civicrm_get_dbs();
-	$dbs->use_default();
+	$dbs->push( 'default' );
 
 	$query = "SELECT * FROM contribution_tracking WHERE id = %d";
 	$result = db_query( $query, $contribution_tracking_id );

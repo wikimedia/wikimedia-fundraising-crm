@@ -87,7 +87,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
     //$trxn_id = substr( $contribution_record[ 'trxn_id' ], 0 , strrpos($contribution_record[ 'trxn_id' ], ' ' ) );
     //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$trxn_id: [" . $trxn_id . "]\n" );
     
-    $query = "INSERT INTO {civicrm_contribution_recur}
+    $query = "INSERT INTO civicrm_contribution_recur
       (
         contact_id,
         amount,
@@ -103,8 +103,8 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
         trxn_id
       ) 
       VALUES ( %d, %f, '%s', '%s', %d, %d, '%s', '%s', %d, '%s', '%s', '%s' )";
-    $queue2civicrm_dbs = wmf_civicrm_get_dbs();
-    $queue2civicrm_dbs->use_civicrm();
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push( 'civicrm' );
     $result = db_query( $query, 
         // contact
         $contact_id,
@@ -138,8 +138,6 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
     //TODO catch error and print message
     $link_contribution_status = wmf_civicrm_update_contribution_for_recurring( $contribution_record['id'], $contribution_recur_id );
     
-    $queue2civicrm_dbs->use_default(); 
-    
     return $link_contribution_status;
 }
 
@@ -163,7 +161,7 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
         throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message);
     }
 
-    $result = db_query('UPDATE {civicrm_contribution} SET contribution_recur_id=%d WHERE id=%d', (integer) $contribution_recur_id, (integer) $contribution_id);
+    $result = db_query('UPDATE civicrm_contribution SET contribution_recur_id=%d WHERE id=%d', (integer) $contribution_recur_id, (integer) $contribution_id);
 
     if ( !$result ) {
         $watchdog_message = t(
@@ -206,10 +204,6 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
  */
 function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now')
 {
-    // make sure we're using the default (civicrm) db
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->use_civicrm();
-
     $date = date('Y-m-d', strtotime($date));
     
     $start_day = $date . ' 00:00:00';
@@ -242,6 +236,9 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now')
     $query .= $where;
     $query .= " LIMIT %d";
 
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push( 'civicrm' );
+
     $res = db_query( $query, $start_day, $end_day, $contribution_status_id, $limit );
     
     $out = array();
@@ -249,9 +246,6 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now')
     {
         $out[] = $recur;
     }
-
-    // Restore the default connection.
-    $dbs->use_default();
 
     return $out;
 }

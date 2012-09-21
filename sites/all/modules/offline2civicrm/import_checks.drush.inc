@@ -43,11 +43,7 @@ function import_checks_drush_help( $section ) {
 function drush_import_checks() {
 	require_once 'offline2civicrm.common.inc';
 
-	global $dbs;
-
 	try{
-		$dbs = wmf_civicrm_get_dbs();
-
 		$args = drush_get_arguments();
 		$filename = $args[1];
 

@@ -39,7 +39,7 @@ function log_audit_settings() {
 function log_audit_get_trxn_info($trxn_query_name, $params) {
   // Establish a connection to the database server
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->use_civicrm();
+  $dbs->push( 'civicrm' );
 	
   // Read the SQL query
   $query = "SELECT substring(missing_trxn_id, 18, 17) as trxn_id
@@ -63,8 +63,7 @@ function log_audit_get_trxn_info($trxn_query_name, $params) {
   while ( $trxn = db_fetch_object( $result ))  { 
     array_push( $trxns, $trxn->trxn_id );
   }
-  
-  $dbs->use_default();
+
   return $trxns;
 }
 

@@ -1,24 +1,18 @@
 <?php 
 
-# TODO first: much better is to push our db name onto a LIFO queue,
-# and pop back to the previous db, rather than assuming "default"
-
 # TODO if we're in control of all db calls during "switched" contexts, we can use a better db library, such as PDO
 
 /**
  * Manage the database switching object
  */
 function wmf_civicrm_get_dbs() {
-  static $dbs = NULL;
-  if ( !$dbs ) {
-    $dbs = new db_switcher();
-  }
-  return $dbs;
+    return new db_switcher();
 }
 
 
 /**
- * Class to facilitate switching of db access between CiviCRM and Drupal 
+ * Class to facilitate switching of db access between CiviCRM, Drupal,
+ * and other dbs.
  */
 class db_switcher {
 
@@ -26,70 +20,79 @@ class db_switcher {
    * Holds name of currently active db
    * @var string
    */
-  protected $cur_db = 'default';
-  
+  static protected $cur_db;
+  protected $db_stack = array();
+
   public function __construct() {
     global $db_url;
-      
+
     /**
-     * Dynamically configure the CiviCRM database
-     * 
-     * Borrowed from old civicrm_api module
+     * Dynamically configure the CiviCRM database url
      */
-    if (!is_array($db_url) || !array_key_exists('civicrm', $db_url)) {    
-      require_once conf_path() . '/civicrm.settings.php';
-    
-      $dsn = str_replace( '?new_link=true', '', CIVICRM_DSN );
-      # TODO: can't instantiate mysql and mysqli drivers in the same instance, so I've commented out the following line.  If we're relying on the improved driver's cleanup or something, let's enforce that CIVICRM_DSN is already connected through mysqli.
-      #$dsn = str_replace( 'mysql:', 'mysqli:', CIVICRM_DSN );
-      
-      if (is_array($db_url)) {
-        $db_url[ 'civicrm' ] = $dsn;
-      }
-      else {
+    if ( !is_array( $db_url ) ) {
         $db_url = array(
-          'default' => $db_url,
-          'civicrm' => $dsn,
+            'default' => $db_url,
         );
-      }
+    }
+
+    if ( !array_key_exists( 'civicrm', $db_url ) ) {
+        require_once conf_path() . '/civicrm.settings.php';
+        $db_url[ 'civicrm' ] = str_replace( '?new_link=true', '', CIVICRM_DSN );
     }
   }
 
-  public function use_civicrm() {
-    $this->set_cur_db( 'civicrm' );
-    return db_set_active( 'civicrm' );
-  }
-
-  public function use_default() {
-    $this->set_cur_db( 'default' );
-    return db_set_active();
-  }
-  
   /**
-   * Set the name of the currently active db.
+   * Set the currently active db and push the previous db to a stack.
    * 
    * @param string $cur_db
    * @throws Exception
    */
-  protected function set_cur_db( $cur_db ) {
-    global $db_url;
-    
-    if ( !isset( $db_url[ $cur_db ] )) {
-      throw new Exception( $cur_db . ' is not supported by queue2civicrm_db_switcher.' );
-    }
-    
-    $this->cur_db = $cur_db;
+  public function push( $db_name ) {
+      $previous_db = $this->set_db( $db_name );
+
+      $this->db_stack[] = $previous_db;
   }
-  
+
   /**
-   * Fetch the name of the currently active db
-   * @return string
+   * Restore the previously active db connection.
    */
-  public function get_cur_db() {
-    return $this->cur_db;
-  }  
-  
+  public function pop() {
+      if ( !$this->db_stack ) {
+          throw new Exception( "No db context to pop!" );
+      }
+
+      $this->set_db( array_pop( $this->db_stack ) );
+  }
+
+  /**
+   * Set the current db by name.  Do some sanity checking.
+   *
+   * @return previous db name
+   */
+  protected function set_db( $db_name ) {
+      if ( $db_name === self::$cur_db ) {
+          return $db_name;
+      }
+
+      global $db_url;
+      if ( !array_key_exists( $db_name, $db_url ) ) {
+          throw new Exception( $db_name . ' is not defined in global $db_url.' );
+      }
+
+      $previous_db = db_set_active( $db_name );
+
+      if ( self::$cur_db && $previous_db !== self::$cur_db ) {
+          throw new Exception( "DB switcher got very confused!" );
+      }
+      self::$cur_db = $db_name;
+
+      return $previous_db;
+  }
+
   public function __destruct() {
-    $this->use_default();
+      if ( $this->db_stack ) {
+          // this time, grab the *original* db connection
+          $this->set_db( array_shift( $this->db_stack ) );
+      }
   }
 }

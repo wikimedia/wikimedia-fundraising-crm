@@ -67,7 +67,7 @@ function _limbo_insert_queue2civicrm_limbo($data) {
   
   // make sure we're using the default (drupal) db
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->use_default();
+  $dbs->push( 'default' );
 
   if ($data['queue2civicrm_limbo_id'] === null){
 	$query = "INSERT INTO {queue2civicrm_limbo} ( contribution_tracking_id, order_id, gateway, payment_method, payment_submethod, timestamp, data ) VALUES ( '%d', '%s', '%s', '%s', '%s', '%d', '%s' )";

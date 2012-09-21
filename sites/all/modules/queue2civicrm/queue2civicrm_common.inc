@@ -3,9 +3,6 @@
  * Common functions for queue2civicrm modules 
  */
 
-// include the database switching class
-require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_db_switcher.inc' );
-
 /**
  * Log a transaction to queue2civicrm_log in the database
  * 
@@ -27,7 +24,7 @@ function _queue2civicrm_log( $log=array() ) {
   
   // make sure we're using the default db
   $dbs = wmf_civicrm_get_dbs();
-  $dbs->use_default();
+  $dbs->push( 'default' );
   
   // if cid is set in the log array, we need to update
   if ( array_key_exists('cid', $log)) {
