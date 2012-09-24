@@ -41,6 +41,10 @@ class WmfException extends Exception {
         'UNKNOWN' => array(
             'fatal' => TRUE,
         ),
+        'UNSUBSCRIBE' => array(),
+        'UNSUBSCRIBE_WARN' => array(
+          'no-email' => TRUE,
+        ),
     );
 
     var $type;

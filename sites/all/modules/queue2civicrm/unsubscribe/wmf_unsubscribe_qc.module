@@ -75,7 +75,7 @@ function unsubscribe_batch_process() {
 	watchdog('unsubscribe', 'Executing: unsubscribe_batch_process');
 
 	$processed = wmf_common_dequeue_loop(
-		variable_get( 'unsubscribe_queue', '/queue/limbo_test' ),
+		variable_get( 'unsubscribe_queue', '/queue/unsubscribe-test' ),
 		variable_get( 'unsubscribe_batch', 0 ),
 		'unsubscribe_process_message'
 	);
@@ -116,9 +116,7 @@ function unsubscribe_process_message( $msg ) {
 	$body = json_decode( $msg->body, true );
 	if ( ( !array_key_exists( 'email', $body ) ) || ( !array_key_exists( 'contribution-id', $body ) ) ) {
 		$error = "$txnid: Required field not present! Dropping message on floor.";
-		watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
-		wmf_common_failmail( $error );
-		return false;
+        throw new WmfException( 'UNSUBSCRIBE', $error );
 	}
 
 	$email = $body['email'];
@@ -131,8 +129,8 @@ function unsubscribe_process_message( $msg ) {
 	$contact = unsubscribe_get_contact_from_contribution( $txnid, $contribId );
 	if ( $contact === false ) { return false; }
 	elseif ( $contact['is_opt_out'] == '1' ) {
-		watchdog( 'unsubscribe', "$txnid: Contact already opted out with this contribution ID.", array(), WATCHDOG_INFO );
-		return false;
+		$error = "$txnid: Contact already opted out with this contribution ID.";
+        throw new WmfException( 'UNSUBSCRIBE_WARN', $error );
 	}
 
 	// Unsubscribe the contact by ID directly
@@ -147,9 +145,7 @@ function unsubscribe_process_message( $msg ) {
 	$emailEncoded = json_encode( $email );
 	if ( $emails['is_error'] == true ) {
 		$error = "$txnid: API search failed for email address: $emailEncoded " . json_encode( $emails );
-		watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
-		wmf_common_failmail( $error );
-		return false;
+        throw new WmfException( 'UNSUBSCRIBE', $error );
 	}
 
 	$number = $emails['count'];
@@ -180,9 +176,7 @@ function unsubscribe_get_contact_from_contribution( $txnid, $ctid ) {
 	// Check if the query failed
 	if ( ( $contribution['is_error'] == true ) || ( $contribution['count'] != 1 ) ) {
 		$error = "$txnid: API search failed for contribution ID: $ctid " . json_encode( $contribution );
-		watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
-		wmf_common_failmail( $error );
-		return false;
+        throw new WmfException( 'UNSUBSCRIBE', $error );
 	}
 
 	// Retrieve the contact
@@ -194,9 +188,7 @@ function unsubscribe_get_contact_from_contribution( $txnid, $ctid ) {
 
 	if ( ( $contact['is_error'] == true ) || ( $contact['count'] != '1' ) ){
 		$error = "$txnid: API search failed for contact with ID: $contactId " . json_encode( $contact );
-		watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
-		wmf_common_failmail( $error );
-		return false;
+        throw new WmfException( 'UNSUBSCRIBE', $error );
 	}
 
 	return $contact['values']["$contactId"];
@@ -218,7 +210,6 @@ function unsubscribe_opt_out_contact( $txnid, $contactId ) {
 
 	if ( $contact['is_error'] == true ) {
 		$error = "$txnid: Could not update civi contact ID $contactId " . json_encode( $contact);
-		watchdog( 'unsubscribe', $error, array(), WATCHDOG_ERROR );
-		wmf_common_failmail( $error );
+        throw new WmfException( 'UNSUBSCRIBE', $error );
 	}
 }
