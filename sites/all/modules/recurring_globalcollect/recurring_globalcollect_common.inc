@@ -136,6 +136,7 @@ function _recurring_globalcollect_get_subscription_by_order_id($order_id) {
  * - payments need to be marked as cancelled if there have been two prior failures for this EFFORTID (`processor_id`)
  *
  * These are the possible values for `contribution_status_id`:
+ * XXX actually the ids are determined by querying the db
  * - [1] => Completed (previous donation succeeded, or new donation that has never been recurred before)
  * - [2] => Pending (not used by this module)
  * - [3] => Cancelled (too many failures in the past, don't try to process this any more)
@@ -175,25 +176,28 @@ function _recurring_globalcollect_update_record_failure($id) {
     // TODO should we report the fact that we're cancelling this payment forever ("marking it as dead")?
   }
 
-  $query = '';
   if ($cancel) {
     // The payment is being cancelled
-    $query .= 'UPDATE civicrm_contribution_recur SET';
-    $query .= ' `failure_count` = `failure_count` + 1,';
-    $query .= ' `failure_retry_date` = NULL,';
-    $query .= ' `cancel_date` = NOW(),';
-    $query .= ' `contribution_status_id` = %d,';
-    $query .= ' `next_sched_contribution` = NULL';
-    $query .= ' WHERE id = %d';
-    db_query($query, $recurring_globalcollect_failure_retry_rate, $contribution_status_id, $id);
+    $query = <<<EOS
+UPDATE civicrm_contribution_recur SET
+    failure_count = failure_count + 1,
+    failure_retry_date = NULL,
+    cancel_date = NOW(),
+    contribution_status_id = %d,
+    next_sched_contribution = NULL
+WHERE id = %d
+EOS;
+    db_query($query, $contribution_status_id, $id);
   }
   else {
     // The payment failed and is being marked as a failure.
-    $query .= 'UPDATE civicrm_contribution_recur SET';
-    $query .= ' `contribution_status_id` = %d,';
-    $query .= ' `failure_count` = `failure_count` + 1,';
-    $query .= ' `failure_retry_date` = NOW() + INTERVAL %d DAY'; // Schedule retry for tomorrow
-    $query .= ' WHERE id = %d';
+    $query = <<<EOS
+UPDATE civicrm_contribution_recur SET
+    contribution_status_id = %d,
+    failure_count = failure_count + 1,
+    failure_retry_date = NOW() + INTERVAL %d DAY
+WHERE id = %d
+EOS;
     db_query($query, $contribution_status_id, $recurring_globalcollect_failure_retry_rate, $id);
   }
 
@@ -216,9 +220,12 @@ function _recurring_globalcollect_update_record_in_progress($id) {
   $result = recurring_globalcollect_get_payment_by_id($id);
   $record = (array) $result;
   
-  //XXX fetch 'Completed' constribution status id from the db
-  if ( $record['contribution_status_id'] != 1 ) {
-    throw new WmfException( 'INVALID_MESSAGE', t( 'The subscription is supposed to be in a completed state before it can be processed.' ), $record );
+  $working_statuses = array(
+      civicrm_api_contribution_status( 'Completed' ),
+      civicrm_api_contribution_status( 'Failed' ),
+  );
+  if ( !in_array( $record['contribution_status_id'], $working_statuses ) ) {
+    throw new WmfException( 'INVALID_MESSAGE', t( 'The subscription is supposed to be in a completed or failed state before it can be processed.' ), $record );
   }
 
   $query = '';
