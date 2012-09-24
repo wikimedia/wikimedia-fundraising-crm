@@ -21,10 +21,8 @@ function recurring_globalcollect_get_payment_by_id($id)
   
   $result = db_fetch_object( db_query( $query, $id ));
 
-  // If nothing found, return false.
-  if (empty($result)) {
-    
-    $result = false;
+  if ( empty( $result ) ) {
+    throw new WmfException( 'INVALID_MESSAGE', t( 'No record was found with the id: [!id].', array( '!id' => $id ) ) );
   }
  
   return $result;
@@ -152,12 +150,7 @@ function _recurring_globalcollect_get_subscription_by_order_id($order_id) {
 function _recurring_globalcollect_update_record_failure($id) {
 
   $result = recurring_globalcollect_get_payment_by_id($id);
-  $record = is_object($result) ? (array) $result : false;
-  
-  if (empty($record)) {
-    $message = 'No record was found with the id: [' . $id . '].';
-    throw new RecurringGlobalcollectInternalException($message);
-  }
+  $record = (array) $result;
 
   // Make sure all of the proper fields are set to sane values.
   _recurring_globalcollect_validate_record_for_update($record);
@@ -221,18 +214,11 @@ function _recurring_globalcollect_update_record_failure($id) {
 function _recurring_globalcollect_update_record_in_progress($id) {
  
   $result = recurring_globalcollect_get_payment_by_id($id);
-  $record = is_object($result) ? (array) $result : false;
+  $record = (array) $result;
   
-  if (empty($record)) {
-    $message = 'No record was found with the id: [' . $id . '].';
-    throw new RecurringGlobalcollectInternalException($message);
-  }
-  
-  if ($record['contribution_status_id'] != 1) {
-    $message = 'The subscription is supposed to be in a completed state before it can be processed: ' . print_r( $record, true );
-    watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
-    drush_set_error('RG', $message);
-    return false;
+  //XXX fetch 'Completed' constribution status id from the db
+  if ( $record['contribution_status_id'] != 1 ) {
+    throw new WmfException( 'INVALID_MESSAGE', t( 'The subscription is supposed to be in a completed state before it can be processed.' ), $record );
   }
 
   $query = '';
@@ -254,10 +240,7 @@ function _recurring_globalcollect_update_record_in_progress($id) {
   $dbs->pop();
   
   if ($affected_rows == 0) {
-    $message = 'The subscription was not marked as in progress: ' . print_r( $record, true );
-    watchdog('recurring_globalcollect', $message, null, WATCHDOG_ERROR);
-    drush_set_error('RG', $message);
-    return false;
+    throw new WmfException( 'INVALID_MESSAGE', t( 'The subscription was not marked as in progress.' ), $record );
   }
   
   return $affected_rows;
@@ -275,13 +258,8 @@ function _recurring_globalcollect_update_record_in_progress($id) {
 function _recurring_globalcollect_update_record_success($id) {
  
   $result = recurring_globalcollect_get_payment_by_id($id);
-  $record = is_object($result) ? (array) $result : false;
+  $record = (array) $result;
   
-  if (empty($record)) {
-    $message = 'No record was found with the id: [' . $id . '].';
-    throw new RecurringGlobalcollectInternalException($message);
-  }
-
   // Make sure all of the proper fields are set to sane values.
   _recurring_globalcollect_validate_record_for_update($record);
   
@@ -333,50 +311,26 @@ function _recurring_globalcollect_validate_record_for_update($record) {
   // Make sure $cycle_day is not empty
   if (empty($cycle_day)) {
     $message = 'cycle_day cannot be empty';
-    throw new RecurringGlobalcollectInternalException( $message );
+    throw new WmfException( 'INVALID_MESSAGE', $message, $record );
   }
 
   // Make sure $frequency_interval is not empty
   if (empty($frequency_interval)) {
     $message = 'frequency_interval cannot be empty';
-    throw new RecurringGlobalcollectInternalException( $message );
+    throw new WmfException( 'INVALID_MESSAGE', $message, $record );
   }
 
   // Make sure a valid interval is assigned
   if (!in_array($frequency_unit, $allowed_intervals)) {
     $message = 'Invalid frequency_unit [' . $frequency_unit . '] for recurring_globalcollect. Allowed intervals: [ ' . implode(', ', $allowed_intervals) . ' ]';
-    throw new RecurringGlobalcollectInternalException( $message );
+    throw new WmfException( 'INVALID_MESSAGE', $message, $record );
   }
 
   // Make sure $next_sched_contribution is assigned
   if (empty($next_sched_contribution)) {
     $message = 'next_sched_contribution cannot be empty';
-    throw new RecurringGlobalcollectInternalException( $message );
+    throw new WmfException( 'INVALID_MESSAGE', $message, $record );
   }
-}
-
-/**
- * Will return all the new drush errors since the last time you asked.
- *
- * @todo Move this to the wikimedia common module
- */
-function _recurring_globalcollect_get_new_drush_errors(){
-  static $oldErrors = array();
-  $errors = drush_get_error_log();
-  $ret = array();
-
-  foreach ($errors as $err_code=>$lines){
-    if (array_key_exists($err_code, $oldErrors)){
-      $tmp = array_diff($errors[$err_code], $oldErrors[$err_code]);
-      if (is_array($tmp) && !empty($tmp)){
-        $ret[$err_code] = $tmp;
-      }
-    } else {
-      $ret[$err_code] = $errors[$err_code];
-    }
-  }
-  $oldErrors = $errors;
-  return $ret;
 }
 
 /**

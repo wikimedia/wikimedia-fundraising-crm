@@ -192,8 +192,9 @@ function recurring_globalcollect_batch_process($options = array()) {
   $processed = count($result['succeeded']) + count($result['failed']);
   if ($processed > 0) {
     $message = "Processed $processed contribution(s).";
-    if (!empty($result['failed']))
+    if ( $result['failed'] ) {
         $message .= " Encountered ".count($result['failed'])." failures.";
+    }
     watchdog('recurring_globalcollect', $message);
   }
   else {
@@ -211,8 +212,9 @@ function recurring_globalcollect_batch_process($options = array()) {
   $processed = count($result['succeeded']) + count($result['failed']);
   if ($processed > 0) {
     $message = "Retried $processed contribution(s).";
-    if (!empty($result['failed']))
+    if ( $result['failed'] ) {
         $message .= " Encountered ".count($result['failed'])." failures.";
+    }
     watchdog('recurring_globalcollect', $message);
   } else {
     watchdog('recurring_globalcollect', 'No retries processed.');
@@ -250,30 +252,31 @@ function recurring_globalcollect_process($contribution_batch, $options = array()
   {
       // TODO refactor this nested try-catch mess
       try {
-          $status = FALSE;
-          try {
-              $status = recurring_globalcollect_charge($contribution_recur, $options);
-          }
-          catch (WmfPaymentAdapterException $e)
-          {
-              throw new RecurringGlobalcollectGatewayException('gateway error', $contribution_recur, $e);
-          }
+          $status = recurring_globalcollect_charge($contribution_recur, $options);
 
-          if ($status)
+          if ($status) {
               $succeeded[] = $contribution_recur;
-          else
+          } else {
               $failed[] = $contribution_recur;
+          }
       }
-      catch (RecurringGlobalcollectException $e)
+      catch ( WmfPaymentAdapterException $e ) {
+      }
+      catch ( WmfException $e )
       {
-          recurring_globalcollect_error($e);
           $failed[] = $contribution_recur;
+          if ( !$e->isNoEmail() ) {
+              wmf_common_failmail( $e, $contribution_recur );
+          }
+          if ( $e->isFatal() ) {
+              break;
+          }
       }
       catch (Exception $e) {
-          $message = 'Batch processing aborted';
-          $e = new RecurringGlobalcollectException($message, $contribution_recur, $e);
-          recurring_globalcollect_error($e);
+          $message = 'Batch processing aborted: ' . $e->getMessage();
+          $e = new WmfException( 'UNKNOWN', $message, $contribution_recur);
           $failed[] = $contribution_recur;
+          break;
       }
   }
 
@@ -314,7 +317,7 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
   }
   else {
     $message = t('ORDERID was not found in the trxn_id');
-    throw new RecurringGlobalcollectInternalException($message, $contribution_recur);
+    throw new WmfException( 'INVALID_MESSAGE', $message, $contribution_recur );
   }
    
   // Increment the EFFORTID
@@ -351,7 +354,7 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
   $gotLock = _recurring_globalcollect_update_record_in_progress($contribution_recur['id']);
   if ( !$gotLock ) {
     $message = t('Failed to mark record as in progress');
-    throw new RecurringGlobalcollectCouldNotLockException($message, $contribution_recur);
+    throw new WmfException( 'CIVI_CONFIG', $message, $contribution_recur);
   }
   
   $result = $instance->do_transaction('Recurring_Charge');
@@ -397,17 +400,13 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     $contribution['contribution_id'] = $contribution['id'];
     unset( $contribution['id'] );
     
-    if ( !$contribution ){
-        throw new RecurringGlobalcollectCiviInsertException($message); // FIXME $message not set
-    }
-
     // Send thank you email, other post-import things
     module_invoke_all( 'recurring_globalcollect', $contribution );
   }
   else
   {
     _recurring_globalcollect_update_record_failure($contribution_recur['id']);
-    throw new RecurringGlobalcollectGatewayException('recurring charge failed', $result);
+    throw new WmfException( 'PAYMENT_FAILED', 'recurring charge failed', $result);
   }
   
   return $result;
