@@ -5,44 +5,38 @@ class WmfException extends Exception {
     // and it's not correct in most of these cases
     static $error_types = array(
         'CIVI_CONFIG' => array(
-            'rollback' => TRUE,
             'fatal' => TRUE,
         ),
         'STOMP_BAD_CONNECTION' => array(
             'fatal' => TRUE,
         ),
         'INVALID_MESSAGE' => array(
-            'rollback' => TRUE,
             'reject' => TRUE,
         ),
         'CIVI_REQ_FIELD' => array(
-            'rollback' => TRUE,
             'reject' => TRUE,
         ),
         'IMPORT_CONTACT' => array(
-            'rollback' => TRUE,
             'fatal' => TRUE,
         ),
         'IMPORT_CONTRIB' => array(
-            'rollback' => TRUE,
             'fatal' => TRUE,
         ),
         'IMPORT_SUBSCRIPTION' => array(
-            'rollback' => TRUE,
             'fatal' => TRUE,
         ),
         'IMPORT_TAG' => array(
-            'rollback' => TRUE,
             'fatal' => TRUE,
         ),
         'DUPLICATE_CONTRIBUTION' => array(
-            'rollback' => TRUE,
             'reject' => TRUE,
             'no-email' => TRUE,
         ),
         'GET_CONTRIBUTION' => array(
-            'rollback' => TRUE,
             'reject' => TRUE,
+        ),
+        'PAYMENT_FAILED' => array(
+            'no-email' => TRUE,
         ),
         'UNKNOWN' => array(
             'fatal' => TRUE,
