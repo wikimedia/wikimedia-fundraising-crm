@@ -105,9 +105,9 @@ function unsubscribe_batch_process() {
  *              will still have been removed from the queue though.
  */
 function unsubscribe_process_message( $msg ) {
-
+  try {
 	$txnid = $msg->headers['correlation-id'];
-	watchdog( "Beginning processing of message $txnid: " . json_encode( $msg ), array(), WATCHDOG_INFO );
+	watchdog( 'unsubscribe', "Beginning processing of message $txnid: " . json_encode( $msg ), array(), WATCHDOG_INFO );
 
 	// No matter what we're removing this from the queue
 	wmf_common_stomp_ack_frame( $msg );
@@ -155,6 +155,17 @@ function unsubscribe_process_message( $msg ) {
 	foreach ( $emails['values'] as $id => $emailEntry ) {
 		unsubscribe_opt_out_contact( $txnid, $emailEntry['contact_id'] );
 	}
+  } catch ( WmfException $ex ) {
+    watchdog( 'unsubscribe', $ex->getMessage(), array(), WATCHDOG_ERROR );
+    
+    if ( !$ex->isNoEmail() ) {
+      wmf_common_failmail( $ex->getMessage() );
+    }
+
+    if ( $ex->isFatal() ) {
+      return false;
+    }
+  }
 
 	return true;
 }
