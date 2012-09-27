@@ -109,9 +109,6 @@ function unsubscribe_process_message($msg) {
     $txnid = $msg->headers[ 'correlation-id' ];
     watchdog('unsubscribe', "Beginning processing of message $txnid: " . json_encode($msg), array(), WATCHDOG_INFO);
 
-    // No matter what we're removing this from the queue
-    wmf_common_stomp_ack_frame($msg);
-
     // Sanity checking :)
     $body = json_decode($msg->body, TRUE);
     if (( !array_key_exists('email', $body) ) || ( !array_key_exists('contribution-id', $body) )) {
@@ -128,6 +125,7 @@ function unsubscribe_process_message($msg) {
     // Find the contact from the contribution ID and check opt out status
     $contact = unsubscribe_get_contact_from_contribution($txnid, $contribId);
     if ($contact === FALSE) {
+      wmf_common_stomp_ack_frame($msg);
       return FALSE;
     }
     elseif ($contact[ 'is_opt_out' ] == '1') {
@@ -169,10 +167,11 @@ function unsubscribe_process_message($msg) {
     }
 
     if ($ex->isFatal()) {
+      wmf_common_stomp_ack_frame($msg);
       return FALSE;
     }
   }
-
+  wmf_common_stomp_ack_frame($msg);
   return TRUE;
 }
 
