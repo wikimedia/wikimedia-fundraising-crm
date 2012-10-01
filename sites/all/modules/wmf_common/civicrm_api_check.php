@@ -37,10 +37,12 @@ class WMFCiviAPICheck{
    * @static
    * @param array $result the API result to simplify
    * @param integer $id the id of the desired record
+   * @param boolean $multiple_okay FALSE if only one record should hav been returned.
+   * 	true if we multiple results are okay and we should just pick one.
    * @return mixed the simplified array or false if the simplification failed
    * @throws Exception
    */
-  static function check_api_simplify($result, $id = NULL) {
+  static function check_api_simplify($result, $id=NULL, $multiple_okay=FALSE) {
     if (!self::check_api_result($result, TRUE)) {
       // invalid API response
       return FALSE;
@@ -57,8 +59,26 @@ class WMFCiviAPICheck{
         }
       }
       else {
-        // if so, return that, else, return [0]
-        throw new Exception("Returning default value not yet implemented");
+		if(array_key_exists("count", $result) && $result['count'] == 1){
+			if(array_key_exists('id', $result)){
+				if( array_key_exists( $result['id'], $result['values'] ) ){
+					return $result['values'][strval($result['id'])];
+				}
+				// @todo There is a bug in the CiviCRM Contribution API where the results
+				// array is not keyed properly when only a single result is returned
+				if( array_key_exists( 'contribution_id', $result['values'][0] ) ){
+					return $result['values'][0];
+				}
+			}
+		}
+	    if(array_key_exists("count", $result) && $result['count'] > 1){
+			if(!$multiple_okay){
+				throw new Exception("Multiple results found. Cannot simplify.");
+			}
+			// i'm feeling special, return the last element
+			end($result['values']);
+			return $result['values'][key($result['values'])];
+		}
       }
     }
     // malformed contact result
