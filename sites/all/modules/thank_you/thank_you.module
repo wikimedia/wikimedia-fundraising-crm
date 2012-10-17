@@ -285,7 +285,7 @@ function thank_you_send( $contribution_id, $test=null ) {
 		return false;
 	}
 
-	$di_i18n = new MessageFile( drupal_get_path( 'module', 'wmf_common' ) . '/DonationInterface/gateway_common/interface.i18n.php' );
+	$di_i18n = new MessageFile( $di_include );
 
 	$subj_msg = "donate_interface-email-subject";
 
@@ -480,7 +480,7 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
 		"p" => "thankyou",
 		"c" => $contribution['id'],
 		"e" => $contact['email'],
-		"hash" => sha1( $contribution['id'] . $contact['email'] . WMF_UNSUB_SALT ),
+		"h" => sha1( $contribution['id'] . $contact['email'] . WMF_UNSUB_SALT ),
 	);
 
     $rendered = $template->render( array(
