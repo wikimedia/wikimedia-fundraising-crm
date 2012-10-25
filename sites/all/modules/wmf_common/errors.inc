@@ -56,23 +56,19 @@ class WmfException extends Exception {
         }
         $this->type = $type;
 
+        $message = $this->type . " ";
         if ( is_array( $message ) ) {
-            $message = implode( "\n", $message );
+            $message .= implode( "\n", $message );
         }
         if ( $extra ) {
             $message .= "\nSource: " . var_export( $extra, true );
         }
-        $this->message = htmlspecialchars(
-            "{$this->type} {$message}",
-            ENT_COMPAT,
-            'UTF-8',
-            false
-        );
 
         if ( function_exists( 'watchdog' ) ) {
             // It seems that dblog_watchdog will pass through XSS, so
             // rely on our own escaping above, rather than pass $vars.
-            watchdog( 'wmf_common', $this->message, NULL, WATCHDOG_ERROR );
+            $escaped = htmlspecialchars( $this->message, ENT_COMPAT, 'UTF-8', false );
+            watchdog( 'wmf_common', $escaped, NULL, WATCHDOG_ERROR );
         }
         if ( function_exists('drush_set_error') && $this->isFatal() ) {
             drush_set_error( $this->type, $this->message );
