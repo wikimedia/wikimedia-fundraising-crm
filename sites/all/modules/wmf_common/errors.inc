@@ -13,6 +13,9 @@ class WmfException extends Exception {
         'INVALID_MESSAGE' => array(
             'reject' => TRUE,
         ),
+        'INVALID_RECURRING' => array(
+            'reject' => TRUE,
+        ),
         'CIVI_REQ_FIELD' => array(
             'reject' => TRUE,
         ),

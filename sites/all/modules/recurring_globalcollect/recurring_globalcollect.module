@@ -308,7 +308,7 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
   }
   else {
     $message = t('ORDERID was not found in the trxn_id');
-    throw new WmfException( 'INVALID_MESSAGE', $message, $contribution_recur );
+    throw new WmfException( 'INVALID_RECURRING', $message, $contribution_recur );
   }
    
   // Increment the EFFORTID
