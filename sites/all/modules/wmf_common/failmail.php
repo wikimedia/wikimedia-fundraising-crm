@@ -24,14 +24,17 @@ function wmf_common_mail($key, &$message, $params)
     switch($key) {
     case 'fail':
         if ($params['removed'] === true){
-            $message['subject'] = t('queue2civicrm Fail Mail : REMOVAL');
+            $message['subject'] = t('Fail Mail : REMOVAL');
             $message['body'][] = t("A message was removed from ActiveMQ due to the following error(s):");
         } elseif(empty($params['error'])){
-            $message['subject'] = t('queue2civicrm Fail Mail : UNKNOWN ERROR');
-            $message['body'][] = t("A message failed for reasons unknown, while being processed in queue2civicrm:");
+            $message['subject'] = t('Fail Mail : UNKNOWN ERROR');
+            $message['body'][] = t("A message failed for reasons unknown, while being processed:");
         } else {
-            $message['subject'] = t('queue2civicrm Fail Mail');
-            $message['body'][] = t("A message generated the following error(s) while being processed in queue2civicrm:");
+            $message['subject'] = t('Fail Mail');
+            if ( property_exists( $params['error'], 'type' ) ) {
+                $message['subject'] .= ' : ' . $params['error']->type;
+            }
+            $message['body'][] = t("A message generated the following error(s) while being processed:");
         }
     }
 

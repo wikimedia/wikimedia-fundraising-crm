@@ -22,7 +22,7 @@ function recurring_globalcollect_get_payment_by_id($id)
   $result = db_fetch_object( db_query( $query, $id ));
 
   if ( empty( $result ) ) {
-    throw new WmfException( 'INVALID_MESSAGE', t( 'No record was found with the id: [!id].', array( '!id' => $id ) ) );
+    throw new WmfException( 'INVALID_RECURRING', t( 'No record was found with the id: [!id].', array( '!id' => $id ) ) );
   }
  
   return $result;
@@ -225,7 +225,7 @@ function _recurring_globalcollect_update_record_in_progress($id) {
       civicrm_api_contribution_status( 'Failed' ),
   );
   if ( !in_array( $record['contribution_status_id'], $working_statuses ) ) {
-    throw new WmfException( 'INVALID_MESSAGE', t( 'The subscription is supposed to be in a completed or failed state before it can be processed.' ), $record );
+    throw new WmfException( 'INVALID_RECURRING', t( 'The subscription is supposed to be in a completed or failed state before it can be processed.' ), $record );
   }
 
   $query = '';
@@ -247,7 +247,7 @@ function _recurring_globalcollect_update_record_in_progress($id) {
   $dbs->pop();
   
   if ($affected_rows == 0) {
-    throw new WmfException( 'INVALID_MESSAGE', t( 'The subscription was not marked as in progress.' ), $record );
+    throw new WmfException( 'INVALID_RECURRING', t( 'The subscription was not marked as in progress.' ), $record );
   }
   
   return $affected_rows;
@@ -318,25 +318,25 @@ function _recurring_globalcollect_validate_record_for_update($record) {
   // Make sure $cycle_day is not empty
   if (empty($cycle_day)) {
     $message = 'cycle_day cannot be empty';
-    throw new WmfException( 'INVALID_MESSAGE', $message, $record );
+    throw new WmfException( 'INVALID_RECURRING', $message, $record );
   }
 
   // Make sure $frequency_interval is not empty
   if (empty($frequency_interval)) {
     $message = 'frequency_interval cannot be empty';
-    throw new WmfException( 'INVALID_MESSAGE', $message, $record );
+    throw new WmfException( 'INVALID_RECURRING', $message, $record );
   }
 
   // Make sure a valid interval is assigned
   if (!in_array($frequency_unit, $allowed_intervals)) {
     $message = 'Invalid frequency_unit [' . $frequency_unit . '] for recurring_globalcollect. Allowed intervals: [ ' . implode(', ', $allowed_intervals) . ' ]';
-    throw new WmfException( 'INVALID_MESSAGE', $message, $record );
+    throw new WmfException( 'INVALID_RECURRING', $message, $record );
   }
 
   // Make sure $next_sched_contribution is assigned
   if (empty($next_sched_contribution)) {
     $message = 'next_sched_contribution cannot be empty';
-    throw new WmfException( 'INVALID_MESSAGE', $message, $record );
+    throw new WmfException( 'INVALID_RECURRING', $message, $record );
   }
 }
 
