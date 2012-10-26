@@ -179,7 +179,11 @@ function recurring_globalcollect_settings() {
 function recurring_globalcollect_batch_process($options = array()) {
 
   // The number of contributions to process
-  $batch = (integer) variable_get('recurring_globalcollect_batch', 0);
+  if ( array_key_exists( 'batch', $options ) ) {
+    $batch = intval( $options['batch'] );
+  } else {
+    $batch = intval( variable_get('recurring_globalcollect_batch', 0) );
+  }
   
   watchdog('recurring_globalcollect', 'Attempting to process up to ' . $batch . ' recurring contribution(s).');
 

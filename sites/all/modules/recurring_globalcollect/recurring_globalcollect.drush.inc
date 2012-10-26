@@ -55,7 +55,7 @@ function drush_recurring_globalcollect() {
 
   $date = drush_get_option('date');
   $url = drush_get_option('url');
-  $batch = (integer) drush_get_option('batch', variable_get('recurring_globalcollect_batch', 0));
+  $batch = drush_get_option('batch');
   
   $options = array();
 
