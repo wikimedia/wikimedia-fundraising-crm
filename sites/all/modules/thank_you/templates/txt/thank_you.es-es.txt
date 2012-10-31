@@ -1,0 +1,46 @@
+Estimado/a {{contact.first_name}}
+
+¡Muchísimas gracias por tu donación a la Fundación Wikimedia!
+
+Es así como pagamos nuestras cuentas, con gente como tú donando cinco, veinte o cien
+dólares. Mi donación favorita del año pasado fue de cinco libras de una niña en
+Inglaterra, que había persuadido a sus padres para que le dejasen donar su paga mensual.
+Es gente como tú, junto con esa chica, que hacen posible que Wikipedia continúe
+proporcionando un acceso gratuito y fácil a información imparcial para todo el mundo.
+Para todos aquellos que ayudan a pagar por eso y para aquellos que no pueden permitirse el
+lujo de ayudar. Muchas gracias.
+
+Sé que es fácil pasar por alto nuestras peticiones, y me alegro de que tú no lo
+hicieras. De mi parte y de todas las decenas de miles de voluntarios que escriben la
+Wikipedia: gracias por ayudarnos a hacer del mundo un lugar mejor. Vamos a utilizar tu
+dinero con cuidado, y te doy las gracias por tu confianza en nosotros.
+
+Gracias,
+Sue Gardner
+Directora Ejecutiva de la Fundación Wikimedia
+
+Para tus registros: tu donación en {{contribution.receive_date}} fue de {{contribution.contribution_source}}.
+
+{% if recurring %}
+
+{% include 'recurring/es-es.html' ignore missing %}
+
+{% endif %}
+
+Esta carta puede servir como constancia de tu donación. Ningún producto o servicio
+fue proporcionado, en todo o en parte, por esta contribución. Wikimedia Foundation, Inc.
+es una corporación benéfica sin fines de lucro con régimen fiscal exento 501(c)(3) de
+los Estados Unidos. Nuestra dirección es 149 New Montgomery, 3rd Floor, San Francisco,
+CA, 94105. Número de la exención fiscal en los EE.UU.: 20-0049703
+
+
+
+Elija una opción:
+
+Nos gustaría mantenerte informado de nuestras actividades comunitarias y de
+recaudación de fondos. Sin embargo, si prefieres no recibir nuestros correos
+electrónicos, por favor haz click abajo y te retiraremos de la lista:
+
+{{unsubscribe_link}}
+
+

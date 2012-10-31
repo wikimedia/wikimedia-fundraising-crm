@@ -1,46 +1,46 @@
 Dear {{contact.first_name}},
 
-You are amazing, thank you so much for donating to the Wikimedia 
-Foundation! 
+You are amazing, thank you so much for donating to the Wikimedia Foundation!
 
-This is how we pay our bills -- it's people like you, giving five 
-dollars, twenty dollars, a hundred dollars. My favourite donation last 
-year was five pounds from a little girl in England, who had persuaded 
-her parents to let her donate her allowance. It's people like you, 
-joining with that girl, who make it possible for Wikipedia to continue 
-providing free, easy access to unbiased information, for everyone 
-around the world. For everyone who helps pay for it, and for those who 
-can't afford to help. Thank you so much.
+This is how we pay our bills -- it's people like you, giving five dollars, twenty
+dollars, a hundred dollars. My favourite donation last year was five pounds from a little
+girl in England, who had persuaded her parents to let her donate her allowance. It's
+people like you, joining with that girl, who make it possible for Wikipedia to continue
+providing free, easy access to unbiased information, for everyone around the world. For
+everyone who helps pay for it, and for those who can't afford to help. Thank you so
+much.
 
-I know it's easy to ignore our appeals, and I'm glad that you didn't. 
-From me, and from the tens of thousands of volunteers who write 
-Wikipedia: thank you for helping us make the world a better place. We 
-will use your money carefully, and I thank you for your trust in us.
+I know it's easy to ignore our appeals, and I'm glad that you didn't. From me, and from
+the tens of thousands of volunteers who write Wikipedia: thank you for helping us make the
+world a better place. We will use your money carefully, and I thank you for your trust in
+us.
 
 Thanks,
-
 Sue Gardner
-
 Wikimedia Foundation Executive Director
 
-For your records: Your donation on {{contribution.receive_date}} was 
-{{contribution.contribution_source}}. 
+For your records: Your donation on {{contribution.receive_date}} was {{contribution.contribution_source}}.
+
 {% if recurring %}
-{% include 'txt/recurring/en.txt' %}
+
+{% include 'recurring/en.html' ignore missing %}
+
 {% endif %}
 
-This letter may serve as a record of your donation. No goods or 
-services were provided, in whole or in part, for this contribution. 
-The Wikimedia Foundation, Inc. is a non-profit charitable corporation 
-with 501(c)(3) tax exempt status in the United States. Our address is 
-149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. 
-tax-exempt number: 20-0049703
+This letter may serve as a record of your donation. No goods or services were provided,
+in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit
+charitable corporation with 501(c)(3) tax exempt status in the United States. Our address
+is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number:
+20-0049703
+
 
 
 Opt out option:
 
-We'd like to keep you as a donor informed of our community activities 
-and fundraisers.  If you prefer however not to receive such emails 
-from us, please click below and we'll take you off the list:
+We'd like to keep you as a donor informed of our community activities and fundraisers.
+If you prefer however not to receive such emails from us, please click below and we'll
+take you off the list:
 
 {{unsubscribe_link}}
+
+

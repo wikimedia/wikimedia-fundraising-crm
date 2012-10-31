@@ -1,0 +1,45 @@
+Kære {{contact.first_name}}
+
+Du er en knag! Mange tak for din donation til Wikimedia Foundation.
+
+Det er sådan vi kan betale vores regninger - med hjælp fra folk som dig, der giver
+25, 100 eller måske 500 kroner. Mit yndlingsbidrag sidste år var fem pund fra en lille
+pige i England, der havde overtalt sine forældre til at lade hende donere sine
+lommepenge. Det er folk som dig og den pige, der gør det muligt for Wikipedia at
+fortsætte med at udbyde fri og let adgang til objektiv viden for alle i verden. Til alle
+der hjælper med at betale for det, og til dem der ikke har råd til at bidrage. Mange tak
+skal i have.
+
+Jeg ved godt at det er nemt at ignorere vores støtteopfordringer, og jeg er glad for
+at du ikke gjorde det. Fra mig, og de titusindvis af frivillige, der skriver på
+Wikipedia, skal du have en tak for at hjælpe os med at gøre verden til et bedre sted. Vi
+vil bruge dine penge med omhu og jeg takker dig for at du har vist os den tillid.
+
+Mange tak,
+Sue Gardner
+Wikimedia Foundation Executive Director
+
+Til regnskabet: Dit bidrag d. {{contribution.receive_date}} var på {{contribution.contribution_source}}.
+
+{% if recurring %}
+
+{% include 'recurring/da.html' ignore missing %}
+
+{% endif %}
+
+Denne henvendelse gælder som kvittering for dit bidrag. Ingen varer eller
+serviceydelser blev modregnet dette bidrag. Wikimedia Foundation, Inc. er en non-profit
+organisation med 501(c)(3) skattefritagelsesstatus i USA. Vores adresse er 149 New
+Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703
+
+
+
+Mulighed for fravalg:
+
+Som bidragsyder vil vi gerne kunne gerne sende dig nyheder om brugeraktiviteter og
+indsamlinger. Hvis du ikke ønsker at modtage sådanne email fra os, så klik venligst
+herunder for at blive taget af listen:
+
+{{unsubscribe_link}}
+
+
