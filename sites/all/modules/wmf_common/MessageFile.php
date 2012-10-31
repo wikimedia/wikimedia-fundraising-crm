@@ -49,6 +49,11 @@ class MessageFile {
     if ($this->msgExists($key, $language)) {
       return $this->messages[$language][$key];
     }
+	// try a fallback
+	elseif( strpos( $language, '-' ) !== false &&
+		$this->msgExists( $key, substr( $language, 0, strpos( $language, '-' ) ) ) ){
+			return $this->messages[substr( $language, 0, strpos( $language, '-' ) )][$key];
+	}
     // if not, but an english version exists, return that
     elseif ($this->msgExists($key, 'en')) {
       return $this->messages['en'][$key];
