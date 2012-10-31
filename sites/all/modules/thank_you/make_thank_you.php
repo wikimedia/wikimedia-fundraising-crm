@@ -1,5 +1,19 @@
 <?php
 
+/**********************************************************************
+ * NOTE: THIS FILE SHOULD NOT BE RUN IN PRODUCTION					  *
+ * 																	  *
+ * To generate templates, run "php make_thank_you.php" on your local  *
+ * machine.  Version control will let you know what changes, if any,  *
+ * were made to existing templates and what templates are new.  After *
+ * review, commit the templates to the repository and then pull those *
+ * into production.													  *
+ * 																	  *
+ * It is HIGHLY recommended that you send test Thank You emails for a *
+ * translation before commit them to the repository.				  *
+ * 																	  *
+ **********************************************************************/
+
 /**
  * Convert the wikitext from a saved file into a .html template file for
  * thank you emails.
