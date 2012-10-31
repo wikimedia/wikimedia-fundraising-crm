@@ -1,0 +1,53 @@
+Kính gửi {{contact.first_name}}
+
+Bạn là một người thật tuyệt vời, xin chân thành cảm ơn đã quyên
+góp cho Wikimedia Foundation!
+
+Chúng tôi trang trải chi phí bằng cách này đây -- nhờ vào những
+người như bạn, những người đóng góp 5$, 20$, hay 100$. Khoản đóng góp
+ý nghĩa nhất mà tôi nhận năm ngoái là từ một bé gái ở Anh, em đã
+thuyết phục bố mẹ để đóng góp tiền tiêu vặt của mình. Chỉ có
+thể nhờ những người như bạn, cùng với cô gái nhỏ đấy, mà Wikipedia
+có thể tiếp tục cung cấp đường truyền miễn phí và tiện lợi những
+thông tin trung lập, đến mọi người trên khắp thế giới, cho cả những
+người đóng góp và những người chưa có cơ hội đóng góp. Xin thật sự
+cảm ơn.
+
+Tôi biết là để bỏ qua lời kêu gọi quyên góp của chúng tôi rất
+dễ, nhưng tôi mừng rằng bạn đã không làm thế. Xin gửi lời từ tôi
+và từ hàng chục ngàn tình nguyện viên: cảm ơn bạn đã giúp chúng tôi
+biến thế giới trở nên tốt đẹp hơn. Chúng tôi sẽ sử dụng thận
+trọng khoản tiền của bạn và cám ơn đã đặt niềm tin vào chúng
+tôi.
+
+Thân,
+Sue Gardner
+Giám đốc Điều hành Wikimedia Foundation
+
+Xin chứng nhận: Bạn quyên góp vào {{contribution.receive_date}} với {{contribution.contribution_source}}.
+
+{% if recurring %}
+
+{% include 'recurring/vi.html' ignore missing %}
+
+{% endif %}
+
+Bức thư này là để chứng nhận cho khoản quyên góp của bạn. Không
+sản phẩm hay dịch vụ nào được giao dịch, toàn bộ hoặc một phần,
+đối với khoản tiền này. Wikimedia Foundation, Inc. là tổ chức phi lợi
+nhuận từ thiện được miễn thuế theo điều khoản 501(c)(3) tại Hoa Kỳ.
+Địa chỉ của chúng tôi là 149 New Montgomery, 3rd Floor, San Francisco, CA,
+94105. U.S. Mã số miễn thuế: 20-0049703
+
+
+
+Từ chối tiếp tục quyên góp:
+
+Chúng tôi muốn xem bạn như là một nhà tài trợ và sẽ thông báo cho
+bạn về các hoạt động cộng đồng và gây quỹ của chúng tôi. Tuy vậy
+nếu bạn không thích nhận thư điện tử thông báo, xin hãy nhấn vào
+đường dẫn bên dưới để chúng tôi đưa tên bạn khỏi danh sách:
+
+{{unsubscribe_link}}
+
+

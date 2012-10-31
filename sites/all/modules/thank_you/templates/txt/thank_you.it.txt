@@ -1,0 +1,47 @@
+Gentile {{contact.first_name}}
+
+Grazie di cuore per il tuo contributo alla Wikimedia Foundation!
+
+I contributi dei sostenitori sono preziosissimi per noi, che si tratti di cinque,
+venti, cento euro o più. È grazie a persone come te che riusciamo a coprire i costi
+fissi e portare avanti il progetto di Wikipedia.
+
+Mi piace ricordare una bambina inglese, che l’anno scorso ha convinto i genitori a
+permetterle di donare la propria paghetta di cinque sterline.  Persone come te e come
+quella bambina permettono a Wikipedia di continuare a essere accessibile a tutti, in modo
+semplice e libero, ovunque nel mondo. Un profondo ringraziamento!
+
+So bene che è facile ignorare i nostri appelli: sono lieta che tu abbia scelto di non
+farlo. A nome mio e delle decine di migliaia di volontari che scrivono Wikipedia, ti
+assicuro che useremo il tuo denaro con serietà, saremo meritevoli della tua fiducia.
+
+A presto,
+Sue Gardner
+Direttore Esecutivo della Wikimedia Foundation
+
+Per tua archiviazione: la tua donazione del {{contribution.receive_date}} è stata di {{contribution.contribution_source}}.
+
+{% if recurring %}
+
+{% include 'recurring/it.html' ignore missing %}
+
+{% endif %}
+
+Questa lettera può servire come prova della donazione. Né beni né servizi sono stati
+forniti, in tutto o in parte, per questo contributo. La Wikimedia Foundation, Inc. è un
+ente di beneficenza non lucrativo che gode quindi, nei soli Stati uniti d'America, dello
+stato di 501(c)(3) che dà diritto all'esenzione fiscale della donazione per i residenti
+negli Stati uniti d'America. Il nostro indirizzo è 149 New Montgomery, 3rd Floor, San
+Francisco, CA, 94105. U.S. Numero per l'esenzione fiscale: 20-0049703
+
+
+
+Opzione di esclusione:
+
+Ti ricordiamo che ti invieremo un'email in questo periodo dell'anno prossimo per
+rinnovare la tua donazione. Se preferisci non ricevere da noi un promemoria tramite posta
+elettronica, clicca qui sotto e ti toglieremo dalla lista.
+
+{{unsubscribe_link}}
+
+
