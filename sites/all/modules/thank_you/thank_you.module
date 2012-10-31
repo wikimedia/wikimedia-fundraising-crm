@@ -286,17 +286,8 @@ function thank_you_send( $contribution_id, $test=null ) {
 	}
 
 	$di_i18n = new MessageFile( $di_include );
-
 	$subj_msg = "donate_interface-email-subject";
-
-	// start with 'en' from the i18n file
-	if( $di_i18n->msgExists( $subj_msg, 'en' ) ){
-		$email['subject'] = $di_i18n->getMsg( $subj_msg, 'en' );
-	}
-	// overwrite with the best match that we have
-	if( $di_i18n->msgExists( $subj_msg, $language ) ){
-		$email['subject'] = $di_i18n->getMsg( $subj_msg, $language );
-	}
+	$email['subject'] = $di_i18n->getMsg( $subj_msg, $language );
 
 	require_once 'class.phpmailer.php';
 
