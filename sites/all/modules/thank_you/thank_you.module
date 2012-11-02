@@ -162,14 +162,14 @@ function thank_you_send( $contribution_id, $test=null ) {
 	// check that the API result is a valid contribution result
 	if( !WMFCiviAPICheck::check_api_contribution( $contribution, $contribution_id ) ){
 		// the API result is bad
-		watchdog('thank_you', 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . $contribution . '</pre>', WATCHDOG_ERROR);
+		watchdog('thank_you', 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true ) . '</pre>', WATCHDOG_ERROR);
 		return false;
 	}
 	// go ahead and remove the extra layer of indirection to make it easier to use
 	$simplified = WMFCiviAPICheck::check_api_simplify( $contribution, $contribution_id );
 	if( !$simplified ){
 		// simplification failed
-		watchdog('thank_you', 'Could not simplify contribution record for: ' . $contribution_id . '<pre>' . $contribution . '</pre>', WATCHDOG_ERROR);
+		watchdog('thank_you', 'Could not simplify contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true )  . '</pre>', WATCHDOG_ERROR);
 		return false;
 	}
 	$contribution = $simplified;
@@ -185,14 +185,14 @@ function thank_you_send( $contribution_id, $test=null ) {
 	// check that the API result is a valid contact result
 	if( !WMFCiviAPICheck::check_api_contact( $contact, $contribution[ 'contact_id' ] ) ){
 		// the API result is bad
-		watchdog('thank_you', 'Could not retrieve contact record for: ' . $contribution['contact_id'] . '<pre>' . $contact . '</pre>', WATCHDOG_ERROR);
+		watchdog('thank_you', 'Could not retrieve contact record for: ' . $contribution['contact_id'] . '<pre>' . print_r( $contact, true )  . '</pre>', WATCHDOG_ERROR);
 		return false;
 	}
 	// go ahead and remove the extra layer of indirection to make it easier to use
 	$simplified = WMFCiviAPICheck::check_api_simplify( $contact, $contribution[ 'contact_id' ] );
 	if( !$simplified ){
 		// simplification failed
-		watchdog('thank_you', 'Could not simplify contact record for: ' . $contribution['contact_id']. '<pre>' . $contact. '</pre>', WATCHDOG_ERROR);
+		watchdog('thank_you', 'Could not simplify contact record for: ' . $contribution['contact_id']. '<pre>' . print_r( $contact, true ). '</pre>', WATCHDOG_ERROR);
 	}
 	$contact = $simplified;
 
@@ -409,7 +409,7 @@ function thank_you_settings_form() {
 
 function thank_you_queue2civicrm_import( $contribution_info ) {
   $contribution_id = $contribution_info[ 'contribution_id' ];
-  watchdog('thank_you', 'Calling thank you function for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution_info, TRUE)) . '</pre>');
+  watchdog('thank_you', 'Calling thank you function for contribution: ' . $contribution_id, WATCHDOG_INFO );
   thank_you_send( $contribution_id );
 }
 
