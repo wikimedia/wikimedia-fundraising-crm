@@ -41,6 +41,6 @@ We'd like to keep you as a donor informed of our community activities and fundra
 If you prefer however not to receive such emails from us, please click below and we'll
 take you off the list:
 
-{{unsubscribe_link}}
+{{unsubscribe_link|raw}}
 
 

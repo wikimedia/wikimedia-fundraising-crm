@@ -42,6 +42,6 @@ Ti ricordiamo che ti invieremo un'email in questo periodo dell'anno prossimo per
 rinnovare la tua donazione. Se preferisci non ricevere da noi un promemoria tramite posta
 elettronica, clicca qui sotto e ti toglieremo dalla lista.
 
-{{unsubscribe_link}}
+{{unsubscribe_link|raw}}
 
 

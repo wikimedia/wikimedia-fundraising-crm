@@ -48,6 +48,6 @@ bạn về các hoạt động cộng đồng và gây quỹ của chúng tôi. 
 nếu bạn không thích nhận thư điện tử thông báo, xin hãy nhấn vào
 đường dẫn bên dưới để chúng tôi đưa tên bạn khỏi danh sách:
 
-{{unsubscribe_link}}
+{{unsubscribe_link|raw}}
 
 

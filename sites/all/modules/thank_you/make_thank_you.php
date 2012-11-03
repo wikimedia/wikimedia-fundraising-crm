@@ -77,8 +77,8 @@ function html2text( $source, $out, $lang ){
  */
 function prep_text( &$file ){
 	for( $i=0; $i < count( $file ); $i++ ){
-		if( preg_match( '/{{unsubscribe_link}}/', $file[$i] ) ){
-			$file[$i] = "{{unsubscribe_link}}";
+		if( preg_match( '/{{unsubscribe_link|raw}}/', $file[$i] ) ){
+			$file[$i] = "{{unsubscribe_link|raw}}";
 		}
 		while( preg_match( '/\'\'\'/', $file[$i] ) ){
 			$file[$i] = preg_replace( '/\'\'\'/', '<b>', $file[ $i ], 1 );
@@ -136,7 +136,7 @@ function linewrap( &$file, $col=70 ){
 				$newlines[] = $line;
 				continue;
 			}
-			if( preg_match( '/{{unsubscribe_link}}/', $line ) ){
+			if( preg_match( '/{{unsubscribe_link|raw}}/', $line ) ){
 				// skip this line, the variables made it too long and it looks funny
 				$newlines[] = $line;
 				continue;
@@ -226,7 +226,7 @@ function replace_tokens( &$file, $lang ){
         '{{contact.first_name}}',
         '{{contribution.receive_date}}',
         '{{contribution.contribution_source}}',
-        '<a style="padding-left: 25px;" href="{{unsubscribe_link}}">' . $di_i18n->getMsg( 'donate_interface-email-unsub-button', $lang ) . '</a>'
+        '<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">' . $di_i18n->getMsg( 'donate_interface-email-unsub-button', $lang ) . '</a>'
     );
 
     for( $i=0; $i < count( $file ); $i++ ){

@@ -41,6 +41,6 @@ Gustaríanos informarte das nosas actividades comunitarias e campañas de recada
 Se prefires non recibir ese tipo de correos, preme na ligazón que hai a continuación e
 eliminaremos o teu enderezo da lista:
 
-{{unsubscribe_link}}
+{{unsubscribe_link|raw}}
 
 
