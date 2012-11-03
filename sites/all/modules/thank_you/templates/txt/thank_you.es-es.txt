@@ -41,6 +41,6 @@ Nos gustaría mantenerte informado de nuestras actividades comunitarias y de
 recaudación de fondos. Sin embargo, si prefieres no recibir nuestros correos
 electrónicos, por favor haz click abajo y te retiraremos de la lista:
 
-{{unsubscribe_link}}
+{{unsubscribe_link|raw}}
 
 

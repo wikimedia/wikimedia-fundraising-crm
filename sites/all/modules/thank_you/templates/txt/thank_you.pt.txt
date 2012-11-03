@@ -43,6 +43,6 @@ Como doador, gostaríamos de mantê-lo informado das nossas atividades comunitá
 angariações de fundos. No entanto, se preferir não receber tais e-mails, por favor
 clique abaixo e será removido da lista:
 
-{{unsubscribe_link}}
+{{unsubscribe_link|raw}}
 
 

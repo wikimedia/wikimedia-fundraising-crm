@@ -46,6 +46,6 @@ communauté, ainsi que des levées de fond. Néanmoins, si vous préférez de ne
 recevoir ce type de courriel de notre part, veuillez cliquer ci-dessous et nous vous
 enlèverons de notre liste :
 
-{{unsubscribe_link}}
+{{unsubscribe_link|raw}}
 
 

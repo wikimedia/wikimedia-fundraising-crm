@@ -46,6 +46,6 @@ Wij willen u als donateur graag op de hoogte te houden van de activiteiten van d
 Wikipediagemeenschap en de fondsenwerving. Als u dergelijke e-mails niet op prijs stelt,
 klik dan hieronder en we verwijderen uw e-mailadres van de maillijst.
 
-{{unsubscribe_link}}
+{{unsubscribe_link|raw}}
 
 

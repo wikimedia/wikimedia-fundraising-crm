@@ -57,6 +57,6 @@ Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049
 παρακαλούμε πατήστε παρακάτω και θα σας
 αφαιρέσουμε από την λίστα:
 
-{{unsubscribe_link}}
+{{unsubscribe_link|raw}}
 
 
