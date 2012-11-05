@@ -57,6 +57,7 @@ function thank_you_send_test() {
 		$lang = substr( $lang, 0, strpos( $lang, '.' ) );
 		$langs[$lang] = $lang;
 	}
+	$langs["all"] = "- ALL -";
 	ksort($langs);
 
 	// allow the user to select the language to test
@@ -132,6 +133,32 @@ function thank_you_send_test_submit( $form_id, $form_values ) {
 	if( !( $contribution = WMFCiviAPICheck::check_api_simplify( $contribution, null, true ) ) ){
 		drupal_set_message("Test thank you email failed on contribution simplification for that email address.", 'error');
 		return false; // massive fail
+	}
+
+	if ( $form_values["values"]["thank_you_test_language"] == "all" ){
+		$langs = array();
+		foreach( glob( __DIR__ . "/templates/html/thank_you.*.html") as $lang ){
+			$lang = substr( $lang, strrpos( $lang, '/' ) + 1 );
+			$lang = substr( $lang, strpos( $lang, '.' ) + 1 );
+			$lang = substr( $lang, 0, strpos( $lang, '.' ) );
+			$langs[$lang] = $lang;
+		}
+
+		foreach ( $langs as $l ){
+			if ( true === thank_you_send( $contribution[ 'contribution_id' ],
+				array(
+					 "language" => $l,
+					 "email" => $form_values['values']['thank_you_test_email'],
+					 "recurring" => $form_values['values']['thank_you_test_recurring']
+				) ) ){
+				drupal_set_message("Test thank you email sent to " . $contact['email'] . " in " .
+					$l, 'info');
+			} else {
+				drupal_set_message("Test thank you email FAILED to " . $contact['email'] . " in " .
+					$l, 'error');
+			}
+		}
+		return true;
 	}
 
 	if ( true === thank_you_send( $contribution[ 'contribution_id' ],
