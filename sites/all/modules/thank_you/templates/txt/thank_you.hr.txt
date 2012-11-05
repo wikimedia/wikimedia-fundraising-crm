@@ -1,0 +1,46 @@
+Dragi/a {{contact.first_name}}
+
+Hvala Vam najljepše što ste darovali Zakladu Wikimedije!
+
+Ovo je način kako plaćamo naše račune - tako što ljudi poput vas daju pet,
+dvadeset ili sto dolara. Moj omiljeni prilog prošle godine bio je pet funti od
+djevojčice u Engleskoj, koja je uvjerila roditelje da nam može darovati svoj džeparac.
+Ljudi nam poput vas, zajedno s tom djevojčicom, omogućuju nastavljanje besplatnog
+pružanja informacija na Wikipediji, lakog i jednostavnog pristupa nepristranim
+informacijama, za svakoga širom svijeta. Za sve one koji pomažu platiti za to, i za one
+koji si ne mogu to priuštiti. Hvala Vam puno.
+
+Znam da je lako ignorirati naše molbe, i drago mi je što to niste učinili. Od mene i
+od nekoliko desetaka tisuća dragovoljaca koji pišu Wikipediju: Hvala Vam što ste nam
+pomogli da učinimo svijet boljim mjestom. Rabit ćemo Vaš ​​novac pažljivo, hvala
+vam na Vašem povjerenju u nas.
+
+Hvala,
+Sue Gardner
+izvršna direktorica Zaklade Wikimedije
+
+Za Vas: Vaš prilog dana {{contribution.receive_date}} iznosio je {{contribution.contribution_source}}.
+
+{% if recurring %}
+
+{% include 'recurring/hr.html' ignore missing %}
+
+{% endif %}
+
+Ovo pismo može poslužiti kao potvrda Vašega priloga. Nikakva roba ili protuusluga
+nije dana, u cijelosti ili dijelomično, za ovaj doprinos. Zaklada Wikimedije (Wikimedia
+Foundation, Inc) neprofitna je dobrotvorna korporacija s 501(c)(3) neoporezivim statusom u
+Sjedinjenim Državama. Naša adresa je 149 New Montgomery, 3rd Floor, San Francisco, CA,
+94105. Broj za oslobađanje od poreza (u SAD-u): 20-0049703
+
+
+
+Neprimanje daljih poruka:
+
+Željeli bismo Vas informirati o našim aktivnostima i skupljanjima priloga. Ako ne
+želite primati takvu e-poštu od nas, molimo kliknite ispod i ne ćete biti dodani na
+popis:
+
+{{unsubscribe_link|raw}}
+
+

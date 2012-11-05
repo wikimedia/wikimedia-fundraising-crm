@@ -1,0 +1,43 @@
+<p>Kära {{contact.first_name}}</p>
+
+<p>Du är underbar – tack så mycket för din gåva till Wikimediastiftelsen!</p>
+
+<p>Det är så här vi betalar våra räkningar – det är människor som du som ger
+gåvor om 50:-, 100:-, 500:-. Min favoritgåva i fjol var 5 pund från en liten flicka i
+England. Hon hade övertalat sina föräldrar att låta henne donera sin veckopeng. Det
+är människor som du, tillsammans med den lilla flickan, som gör det möjligt för
+Wikipedia att fortsätta tillhandahålla fri, lättillgänglig åtkomst till objektiv
+information för alla, världen runt. För alla som hjälper till att betala för det, och
+för alla de som inte har råd. Tack så mycket.</p>
+
+<p>Jag vet att det är lätt att strunta i vår vädjan och jag är mycket glad att du
+valde att inte göra det. Från mig och från de tiotusentals volontärer som skriver
+Wikipedia: tack för att du hjälper till att göra världen bättre. Vi kommer att
+använda din gåva med varsamhet, och tack för att du litar på oss.</p>
+
+<p>Tack,<br />
+Sue Gardner<br />
+Verkställande direktör, Wikimediastiftelsen</p>
+
+<p>För din egen bokföring: Din gåva {{contribution.receive_date}} var {{contribution.contribution_source}}.
+{% if recurring %}
+{% include 'recurring/sv.html' ignore missing %}
+{% endif %}</p>
+
+<p>Detta brev kan användas som kvitto för din gåva, som inte var betalning för varor
+eller tjänster, helt eller delvis. Wikimediastiftelsen är en ideell organisation som
+skattebefriats enligt sektion 501(c)(3) i den amerikanska skattelagstiftningen. Vår
+adress är 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Skattefrihetsnummer i
+Amerika: 20-0049703</p>
+
+<div style="padding:0 10px 5px 10px; border:1px solid black;">
+
+<p><i>Påminnelseval:</i></p>
+
+<p>Vi skulle vilja skicka dig som donator nyheter om aktiviteter och
+välgörenhetskampanjer. Om du inte vill få sådana email från oss, klicka då på
+länken nedan så att vi kan ta bort dig från listan:</p>
+
+<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Avsluta abonnemang</a>
+
+</div>

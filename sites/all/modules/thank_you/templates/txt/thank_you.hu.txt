@@ -1,0 +1,48 @@
+Kedves {{contact.first_name}}
+
+Fantasztikus vagy, hálásan köszönöm, hogy támogatod a Wikimédia
+Alapítványt!
+
+Így tudjuk kifizetni a számláinkat – a hozzád hasonló adományozók ezer,
+ötezer, húszezer forintjaiból. A legkedvesebb tavalyi adomány számomra annak az angol
+kislánynak az öt fontja volt, aki rábeszélte a szüleit, hogy engedjék meg, hogy
+adományul adja a zsebpénzét. Az olyan embereknek köszönhető, mint Te és az a
+kislány, hogy a Wikipédia továbbra is szolgáltatni tudja az elfogulatlan
+információkat, ingyenes és könnyen elérhető formában, a világon bárkinek. Azoknak
+is, akik segítenek összeadni a költségeket, és azoknak is, akiknek nem áll
+módjukban segíteni. Nagyon köszönjük!
+
+Tudom, hogy könnyű figyelmen kívül hagyni a kérésünket, és örülök, hogy Te
+nem tetted. A magam és a Wikipédiát író több tízezer önkéntes nevében:
+köszönöm, hogy segítesz jobb hellyé tenni a világot. A pénzt felelősségteljesen
+fogjuk felhasználni, és köszönjük, hogy megbízol bennünk.
+
+Köszönöm,
+Sue Gardner
+a Wikimédia Alapítvány vezérigazgatója
+
+A jegyzőkönyv kedvéért: a {{contribution.receive_date}}-i adományod összege {{contribution.contribution_source}} volt.
+
+{% if recurring %}
+
+{% include 'recurring/hu.html' ignore missing %}
+
+{% endif %}
+
+Ez a levél egyben az adományod igazolásaként is szolgál. A Wikimedia Foundation,
+Inc. egy non-profit jótékony szervezet, az Amerikai Egyesült Államokban 501(c)(3)-as
+adómentességi státusszal. Az adományodért semmilyen ellenszolgáltatást nem
+kínáltunk. A címünk 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. Az
+adójóváírási számunk: 20-0049703
+
+
+
+Értesítések tiltása:
+
+Mint támogatónkat, szeretnénk értesíteni téged a közösségi eseményeinkről
+és gyűjtőkampányainkról. Ha nem szeretnél ilyen leveleket kapni, kattints az alábbi
+linkre, és leveszünk az értesítési listánkról:
+
+{{unsubscribe_link|raw}}
+
+

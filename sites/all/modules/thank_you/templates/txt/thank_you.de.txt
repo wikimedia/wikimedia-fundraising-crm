@@ -1,0 +1,52 @@
+Liebe(r) {{contact.first_name}}!
+
+Sie sind wunderbar, herzlichen Dank für Ihre Spende an die Wikimedia Foundation!
+
+Auf diese Art bezahlen wir unsere Rechnungen – mit Hilfe von Menschen wie Ihnen, die
+fünf, zwanzig oder hundert Euro spenden. Die schönste Spende letztes Jahr waren für
+mich fünf Pfund eines kleinen Mädchens aus England, das ihre Eltern überredet hatte,
+ihr Taschengeld spenden zu dürfen. Leute wie Sie, die es diesem Mädchen gleichtun,
+ermöglichen es Wikipedia, weiterhin einen kostenlosen und einfachen Zugang zu
+unparteiischem Wissen für alle Menschen der Welt anzubieten. Für Menschen, die sich an
+den Kosten beteiligen, genauso wie für solche, die sich das nicht leisten können.
+Herzlichen Dank.
+
+Ich weiß, dass man unsere Spendenaufrufe auch einfach ignorieren kann, daher freue ich
+mich, dass Sie sich anders entschieden haben. Von mir und den zehntausenden freiwilligen
+Wikipedia-Autoren deshalb ein großes Dankeschön für Ihre Hilfe bei unserem Vorhaben,
+die Welt ein wenig zu verbessern. Wir werden Ihr Geld umsichtig einsetzen. Ich danke Ihnen
+für Ihr Vertrauen.
+
+Vielen Dank
+
+Sue Gardner
+Wikimedia-Geschäftsführerin
+
+Für Ihre Unterlagen: Ihre Spende vom {{contribution.receive_date}} betrug {{contribution.contribution_source}}.
+
+{% if recurring %}
+
+{% include 'recurring/de.html' ignore missing %}
+
+{% endif %}
+
+
+Dieser Brief kann als Nachweis für Ihre Spende dienen. Für diesen finanziellen
+Beitrag wurden keine Waren oder Dienstleistungen bereitgestellt, weder ganz noch
+teilweise. Die Wikimedia Foundation ist eine gemeinnützige Organisation mit
+Steuerbefreiungsstatus in den USA gemäß 501(c)(3). Unsere Anschrift lautet 149 New
+Montgomery, 3rd Floor, San Francisco, CA, 94105. US-Steuerbefreiungsnummer:
+20-0049703.
+
+
+
+Abmeldung vom Newsletter:
+
+Wir möchten Sie als Spender gerne über unsere Aktivitäten und Spendenaktionen auf
+dem Laufenden halten. Wenn Sie diesbezüglich jedoch lieber keine E-Mails von uns erhalten
+wollen, dann klicken Sie bitte auf den folgenden Link, um aus der Liste entfernt zu
+werden:
+
+{{unsubscribe_link|raw}}
+
+

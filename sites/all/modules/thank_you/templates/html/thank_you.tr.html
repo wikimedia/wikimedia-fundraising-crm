@@ -1,0 +1,43 @@
+<p>Sayın {{contact.first_name}}</p>
+
+<p>Harikasın, Wikimedia Vakfı'na yaptığın bağış için çok teşekkürler!</p>
+
+<p>Bu sayede faturalarımızı ödüyoruz -- sizin gibi, beş dolar, yirmi dolar, yüz
+dolar bağışta bulunanlar sayesinde. Benim en hoşuma giden bağış, geçen sene
+harçlıklarından arttırdığı beş paundu bize vermeyi ailesine ikna eden İngiliz
+küçük kızdı. Sizin gibi insanlar, o küçük kıza katılarak, tüm dünyadaki
+insanlara ücretsiz, kolayca erişilebilen, tarafsız bilgiyi Vikipedi'nin sağlamasına
+olanak sağlıyor. Bunun gerçekleşmesine yardım eden herkes ve yardım edemeyenler
+için. Çok teşekkürler.</p>
+
+<p>Yardım kampanyalarımızı gözardı etmenin kolay olduğunu biliyorum ama
+etmediğiniz için çok mutluyum. Bana ve dünyayı daha iyi bir yer haline getirmeye
+çalışanlar on binlerce Vikipedi yazarı adına: "Yardımınızı dikkatli
+harcayacağız ve bize güvendiğiniz için teşekkür ederim."</p>
+
+<p>Teşekkürler,<br />
+Sue Gardner<br />
+Wikimedia Vakfı İcra Müdürü</p>
+
+<p>Kayıt etmeniz için: Şu tarihte yardımda bulundunuz  {{contribution.receive_date}}. Miktar: {{contribution.contribution_source}}.
+{% if recurring %}
+{% include 'recurring/tr.html' ignore missing %}
+{% endif %}</p>
+
+<p>Bu mektup bağışınızın kaydı olarak değerlendirilebilir. Hiç bir mal veya
+hizmet bu yardım için sağlanmamıştır. Wikimedia Vakfı, Amerika Birleşik
+Devletleri'nde 501 (c) (3) vergiden muaf durumu ile kâr amacı gütmeyen bir hayırsever
+kuruluştur. Adresimiz 149, 3. Floor New Montgomery, San Francisco, CA, 94105. ABD
+vergiden muaf numarası: 20-0049703.</p>
+
+<div style="padding:0 10px 5px 10px; border:1px solid black;">
+
+<p><i>Çıkış seçeneği:</i></p>
+
+<p>Vakıf işleri ve bağış toplama kampanyalarından haberdar etmek üzere sizi
+bilgilendirilecek yardımseverler arasında tutmak isteriz. Eğer bu tür e-postalar almak
+istemiyorsanız lütfen alttaki kısmı tıklayınız ve sizi listeden çıkaralım: </p>
+
+<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Abonelikten çık</a>
+
+</div>

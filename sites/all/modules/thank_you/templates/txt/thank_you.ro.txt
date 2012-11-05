@@ -1,0 +1,49 @@
+Dragă {{contact.first_name}}
+
+Sunteți într-adevăr minunat, vă mulțumesc foarte mult pentru donația făcută
+Fundației Wikimedia!
+
+Așa ne plătim facturile — sunt oameni ca dumneavoastră, care dau cinci dolari,
+douăzeci de dolari, o sută de dolari. Donația mea favorită de anul trecut a fost cea
+de cinci lire de la o fetiță din Anglia, care și-a convins părinții să o lase să ne
+doneze banii de buzunar. Oameni ca dumneavoastră, la fel ca și acea fetiță, dau
+posibilitate Wikipediei să continue să ofere acces gratuit și facil la informații
+obiective celor din întreaga lume. Și celor care ne ajută făcând o donație, și
+celor care nu au posibilitatea să o facă. Vă mulțumesc foarte mult.
+
+Știu că ar fi fost ușor să ne ignorați apelul, dar sunt fericită că
+dumneavoastră nu ați făcut-o. Din partea mea și a zecilor de mii de voluntari care
+scriu Wikipedia: vă mulțumesc pentru că ne ajutați să facem lumea un loc mai bun. Vom
+folosi banii cu grijă și vă mulțumesc pentru încrederea pe care ne-o arătați.
+
+Mulțumesc,
+Sue Gardner
+Director executiv al Fundației Wikimedia
+
+Pentru evidența dumneavoastră: donația din data de {{contribution.receive_date}} a fost de {{contribution.contribution_source}}.
+
+{% if recurring %}
+
+{% include 'recurring/ro.html' ignore missing %}
+
+{% endif %}
+
+Această scrisoare poate servi ca o înregistrare a donației dumneavoastră. Nu au
+fost furnizate bunuri sau servicii, integral sau parțial, pentru această contribuție.
+Fundația Wikimedia Foundation este o organizație non-profit de interes general, cu
+statutul 501(c)(3) scutit de impozite în Statele Unite ale Americii. Adresa noastră
+este: 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105, SUA. Numărul nostru de
+scutire fiscală în SUA: 20-0049703.
+
+
+
+Opțiune de dezabonare:
+
+În calitate de donator, ne-ar plăcea să vă informăm cu privire la strângerile de
+fonduri și activitățile comunității noastre. Dacă preferați, totuși, să nu
+primiți asemenea mesaje de la noi, vă rugăm să faceți clic mai jos și vă vom
+înlătura din listă:
+
+{{unsubscribe_link|raw}}
+
+
