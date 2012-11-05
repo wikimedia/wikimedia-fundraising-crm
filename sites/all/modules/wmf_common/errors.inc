@@ -59,12 +59,13 @@ class WmfException extends Exception {
         }
         $this->type = $type;
 
-        $message = $this->type . " ";
         if ( is_array( $message ) ) {
-            $message .= implode( "\n", $message );
+            $message = implode( "\n", $message );
         }
+        $this->message = "{$this->type} {$message}";
+
         if ( $extra ) {
-            $message .= "\nSource: " . var_export( $extra, true );
+            $this->message .= "\nSource: " . var_export( $extra, true );
         }
 
         if ( function_exists( 'watchdog' ) ) {
