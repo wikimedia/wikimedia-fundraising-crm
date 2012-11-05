@@ -111,7 +111,7 @@ function limbo_process_message( $msg ) {
             wmf_common_stomp_ack_frame( $msg_orig );
             watchdog('limbo', $error, NULL, WATCHDOG_ERROR);
         }
-        wmf_common_failmail($ex, $msg);
+        wmf_common_failmail( 'limbo', $ex, $msg );
 
         if ( $ex->isFatal() ) {
             watchdog('limbo', t("Halting Processing."), NULL, WATCHDOG_ERROR);
@@ -121,7 +121,7 @@ function limbo_process_message( $msg ) {
     catch ( Exception $e ) {
         $error = 'Could not process frame from queue, unknown error: ' . $ex->getMessage();
         watchdog('limbo', $error, array(), WATCHDOG_ERROR );
-        wmf_common_failmail( $error, $msg );
+        wmf_common_failmail( 'limbo', $error, $msg );
     }
     return FALSE;
 }

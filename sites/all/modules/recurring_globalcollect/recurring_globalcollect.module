@@ -261,7 +261,7 @@ function recurring_globalcollect_process($contribution_batch, $options = array()
       {
           $failed[] = $contribution_recur;
           if ( !$e->isNoEmail() ) {
-              wmf_common_failmail( $e, $contribution_recur );
+              wmf_common_failmail( 'recurring_globalcollect', $e, $contribution_recur );
           }
           if ( $e->isFatal() ) {
               break;

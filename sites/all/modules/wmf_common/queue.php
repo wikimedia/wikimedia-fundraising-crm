@@ -18,7 +18,7 @@ function wmf_common_dequeue_loop( $queue, $batch_size, $callback ) {
         $con = wmf_common_stomp_connection();
     }
     catch ( Exception $ex ) {
-        wmf_common_failmail( 'STOMP_BAD_CONNECTION totally lacking a stomp server: ' . $ex->getMessage() );
+        wmf_common_failmail( 'wmf_common', 'STOMP_BAD_CONNECTION totally lacking a stomp server: ' . $ex->getMessage() );
         return;
     }
     $con->subscribe( $queue, array('ack' => 'client') );
