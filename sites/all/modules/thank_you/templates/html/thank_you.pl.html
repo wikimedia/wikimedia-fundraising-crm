@@ -1,0 +1,47 @@
+<p>Szanowny {{contact.first_name}}</p>
+
+<p>Jesteś dobrym człowiekiem! Serdecznie dziękuję Ci za wsparcie Wikimedia
+Foundation.</p>
+
+<p>Dzięki ludziom Takim jak Ty, przekazującym czy to 5, czy 500 złotych, jesteśmy w
+stanie pokryć nasze wydatki. W zeszłym roku największe wrażenie zrobił na mnie datek
+przekazany przez pewną małą dziewczynkę z Anglii, która przekonała swoich rodziców,
+by pozwolili jej wpłacić kieszonkowe. To ludzie tacy jak Ty i ta dziewczynka
+umożliwiają Wikipedii kontynuowanie jej misji – zapewnienia bezpłatnego, łatwego
+dostępu do obiektywnych informacji każdej osobie na świecie. Zarówno tym, którzy
+pomagają w jej utrzymaniu, jak i tym, których na to nie stać. Serdecznie
+dziękuję.</p>
+
+<p>Zdaję sobie sprawę, że najłatwiej jest po prostu zignorować nasze apele. Cieszę
+się, że nie stało się tak w Twoim przypadku. Dziękuję w imieniu swoim i dziesiątek
+tysięcy wolontariuszy tworzących Wikipedię – dzięki Tobie możemy zmieniać świat
+na lepsze. Będziemy rozsądnie korzystać z Twoich pieniędzy, dziękuję Ci za
+zaufanie.</p>
+
+<p>Z wyrazami szacunku,<br />
+Sue Gardner<br />
+dyrektor generalny Wikimedia Foundation</p>
+
+<p>Potwierdzenie wpłaty: w dniu {{contribution.receive_date}} otrzymaliśmy {{contribution.contribution_source}}.
+{% if recurring %}
+{% include 'recurring/pl.html' ignore missing %}
+{% endif %}</p>
+
+<p>Ten list może służyć jako potwierdzenie dokonanej przez Ciebie darowizny. Wikimedia
+Foundation, Inc. zarejestrowana jest w Stanach Zjednoczonych jako organizacja pożytku
+publicznego. Wszelkie darowizny wykonane przez obywateli USA, mogą być przez nich
+odpisane od podatku na podstawie rozdziału 501(c)(3) amerykańskiego kodeksu podatkowego.
+Nasz adres: 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt
+number: 20-0049703.</p>
+
+<div style="padding:0 10px 5px 10px; border:1px solid black;">
+
+<p><i>Nie chcę otrzymywać więcej informacji.</i></p>
+
+<p>Chcielibyśmy, jako darczyńcę, informować Cię o naszej działalności i zbiórkach
+funduszy. Jeśli wolisz jednak nie otrzymywać od nas tego typu wiadomości, kliknij
+proszę poniżej w celu usunięcia Twojego adresu z listy:</p>
+
+<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Zrezygnuj z subskrypcji</a>
+
+</div>

@@ -1,0 +1,48 @@
+Salam sejahtera, {{contact.first_name}}
+
+Anda begitu hebat! Terima kasih banyak karena telah menyumbang untuk Yayasan
+Wikimedia!
+
+Beginilah cara kami membayar tagihan kami -- mereka seperti Anda, menyumbangkan lima
+dolar, dua puluh dolar, seratus dolar. Sumbangan favorit saya tahun lalu adalah lima pound
+dari seorang gadis kecil di Inggris, yang telah membujuk orang tuanya untuk mengizinkannya
+menyumbangkan uang jajannya. Orang-orang seperti Anda, dan juga gadis tersebut, yang
+memungkinkan Wikipedia untuk terus memberikan akses bebas dan mudah terhadap informasi
+netral untuk semua orang di seluruh dunia. Untuk semua orang yang membantu menyumbang, dan
+semua orang yang belum mampu membantu. Terima kasih banyak.
+
+Mudah saja untuk mengabaikan permohonan kami, dan saya senang Anda tidak melakukannya.
+Dari saya, dan puluhan ribu relawan yang menulis untuk Wikipedia mengucapkan: "Terima
+kasih karena telah membantu kami menjadikan dunia ini lebih baik." Kami akan menggunakan
+sumbangan Anda secara hati-hati, dan saya berterima kasih atas kepercayaan Anda terhadap
+kami.
+
+Terima kasih,
+Sue Gardner
+Direktur Eksekutif Yayasan Wikimedia
+
+Untuk catatan: Sumbangan Anda pada tanggal {{contribution.receive_date}} sebesar {{contribution.contribution_source}}.
+
+{% if recurring %}
+
+{% include 'recurring/id.html' ignore missing %}
+
+{% endif %}
+
+Surat ini digunakan sebagai catatan sumbangan Anda. Tidak ada barang atau jasa yang
+disediakan, secara keseluruhan atau sebagian, untuk kontribusi ini. Wikimedia Foundation,
+Inc. adalah sebuah perusahaan amal nirlaba dengan status bebas pajak 501(c)(3) di Amerika
+Serikat. Kami beralamat di 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Nomor
+bebas pajak A.S.: 20-0049703
+
+
+
+Opsi unsub/opt-out:
+
+Kami ingin Anda, selaku penyumbang, terus diberitahu mengenai aktivitas komunitas dan
+penggalangan dana kami. Jika Anda tidak ingin menerima surel seperti itu dari kami, klik
+tautan di bawah dan kami akan menghapus Anda dari daftar kontak:
+
+{{unsubscribe_link|raw}}
+
+
