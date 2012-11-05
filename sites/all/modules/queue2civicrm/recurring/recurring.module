@@ -126,7 +126,7 @@ function recurring_process_msg( $msg ) {
         }
 
 		if ( !$ex->isNoEmail() ){
-	        wmf_common_failmail($ex, $msg);
+	        wmf_common_failmail( 'recurring', $ex, $msg );
 		}
 
         if ($ex->isFatal()) {
@@ -138,7 +138,7 @@ function recurring_process_msg( $msg ) {
     catch (Exception $ex) {
         $error = 'UNHANDLED ERROR CODE. Halting Process. exception: ' . $ex->getMessage();
         watchdog('recurring', $error, NULL, WATCHDOG_ERROR);
-        wmf_common_failmail($error, $msg);
+        wmf_common_failmail( 'recurring', $error, $msg );
         return FALSE;
     }
 

@@ -209,7 +209,7 @@ function queue2civicrm_process_message($msg) {
         }
 
 		if ( !$ex->isNoEmail() ){
-	        wmf_common_failmail($ex, $msg);
+	        wmf_common_failmail( 'queue2civicrm', $ex, $msg );
 		}
 
         if ($ex->isFatal()) {
@@ -221,7 +221,7 @@ function queue2civicrm_process_message($msg) {
     catch (Exception $ex) {
         $error = 'UNHANDLED ERROR CODE. Halting Process. exception: ' . $ex->getMessage();
         watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
-        wmf_common_failmail($error, $msg);
+        wmf_common_failmail( 'queue2civicrm', $error, $msg );
         return FALSE;
     }
     return TRUE;

@@ -1,6 +1,6 @@
 <?php
 
-function wmf_common_failmail($error, $source = null)
+function wmf_common_failmail( $module, $error, $source = null )
 {
     $to = variable_get('wmf_common_failmail', '');
     if (empty($to)) {
@@ -12,6 +12,7 @@ function wmf_common_failmail($error, $source = null)
     } elseif (property_exists($error, 'source')) {
         $params['source'][] = $error->source;
     }
+    $params['module'] = $module;
     $params['removed'] = (is_callable(array($error, 'isRejectMessage'))) ? $error->isRejectMessage() : FALSE;
     drupal_mail('wmf_common', 'fail', $to, language_default(), $params);
 }
@@ -35,6 +36,9 @@ function wmf_common_mail($key, &$message, $params)
                 $message['subject'] .= ' : ' . $params['error']->type;
             }
             $message['body'][] = t("A message generated the following error(s) while being processed:");
+        }
+        if ( !empty($params['module']) ) {
+            $message['subject'] .= " ({$params['module']})";
         }
     }
 

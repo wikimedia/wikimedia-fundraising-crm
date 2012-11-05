@@ -163,7 +163,7 @@ function unsubscribe_process_message($msg) {
     watchdog('unsubscribe', $ex->getMessage(), array(), WATCHDOG_ERROR);
 
     if (!$ex->isNoEmail()) {
-      wmf_common_failmail($ex->getMessage());
+      wmf_common_failmail( 'unsubscribe', $ex->getMessage() );
     }
 
     if ($ex->isFatal()) {
