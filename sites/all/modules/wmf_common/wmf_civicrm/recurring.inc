@@ -109,9 +109,9 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
         // contact
         $contact_id,
         //amount
-        $msg[ 'net' ],
+        $msg[ 'original_gross' ],
         //currency
-        $msg[ 'currency' ],
+        $msg[ 'original_currency' ],
         //frequency_unit
         $msg[ 'frequency_unit' ],
         //frequency_interval
