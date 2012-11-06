@@ -219,7 +219,7 @@ function queue2civicrm_process_message($msg) {
         }
     }
     catch (Exception $ex) {
-        $error = 'UNHANDLED ERROR CODE. Halting Process. exception: ' . $ex->getMessage();
+        $error = 'UNHANDLED ERROR CODE. Halting Process. exception: ' . $ex->getMessage() . "\nStack Trace: " . $ex->getTrace();
         watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
         wmf_common_failmail( 'queue2civicrm', $error, $msg );
         return FALSE;
