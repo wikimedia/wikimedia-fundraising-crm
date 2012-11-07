@@ -497,7 +497,7 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
 	$unsub_params = array(
 		"p" => "thankyou",
 		"c" => $contribution['id'],
-		"e" => $contact['email'],
+		"e" => urlencode( $contact['email']),
 		"h" => sha1( $contribution['id'] . $contact['email'] . WMF_UNSUB_SALT ),
 		"uselang" => $language,
 	);
