@@ -1,0 +1,100 @@
+<?php
+
+/*
+ * TODO:
+ * - undo STUPID boilerplate
+ * - stream data (unbuffered query using a new db connection)
+ */
+
+function wmf_eoy_receipt_run($options = array())
+{
+    require_once 'EoySummary.php';
+    $donors = new wmf_eoy_receipt\EoySummary($options);
+
+    $donors->calculate_year_totals();
+    $donors->send_letters();
+}
+
+function wmf_eoy_receipt_calculate_summaries($options = array())
+{
+    require_once 'EoySummary.php';
+    $donors = new wmf_eoy_receipt\EoySummary($options);
+
+    $donors->calculate_year_totals();
+}
+
+function wmf_eoy_receipt_send_letters($options = array())
+{
+    require_once 'EoySummary.php';
+    $donors = new wmf_eoy_receipt\EoySummary($options);
+
+    $donors->send_letters();
+}
+
+function wmf_eoy_receipt_menu()
+{
+    $items = array();
+
+    $items['admin/settings/wmf_eoy_receipt'] = array(
+      'title' => 'End-of-year Receipt',
+      'description' => t('Configure.'),
+      'access arguments' => array('access CiviContribute'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('wmf_eoy_receipt_settings'),
+    );
+
+    return $items;
+}
+
+function wmf_eoy_receipt_enable()
+{
+    variable_set('wmf_eoy_target_year',
+        variable_get('wmf_eoy_target_year', intval(date('Y')) - 1));
+/*
+    variable_set('wmf_eoy_threshold',
+        variable_get('wmf_eoy_threshold', 1000));
+*/
+
+    variable_set('wmf_eoy_test',
+        variable_get('wmf_eoy_test', TRUE));
+}
+
+function wmf_eoy_receipt_settings()
+{
+    $form = array(
+        'wmf_eoy_target_year' => array(
+            '#title' => t('Year to process'),
+            '#type' => 'textfield',
+            '#size' => 10,
+            '#default_value' => variable_get('wmf_eoy_target_year', null),
+        ),
+/*
+        'wmf_eoy_threshold' => array(
+            '#title' => t('Threshold total donations (USD)'),
+            '#type' => 'textfield',
+            '#size' => 10,
+            '#default_value' => variable_get('wmf_eoy_threshold', null),
+            '#description' => t('Minimum amount given this year which will trigger a letter'),
+        ),
+*/
+        'wmf_eoy_batch_max' => array(
+            '#title' => t('Email batch size'),
+            '#type' => 'textfield',
+            '#size' => 10,
+            '#default_value' => variable_get( 'wmf_eoy_batch_max', 100 ),
+            '#description' => t('Maximum emails sent per batch run'),
+        ),
+        'wmf_eoy_test_email' => array(
+            '#title' => t('Test email destination'),
+            '#type' => 'textfield',
+            '#size' => 30,
+            '#default_value' => variable_get( 'wmf_eoy_test_email', null ),
+        ),
+        'wmf_eoy_test' => array(
+            '#title' => t('Test mode'),
+            '#type' => 'checkbox',
+            '#default_value' => variable_get('wmf_eoy_test', null),
+        ),
+    );
+    return system_settings_form($form);
+}

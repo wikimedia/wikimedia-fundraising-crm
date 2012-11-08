@@ -1,0 +1,36 @@
+<p>
+Dear {{name}},
+</p>
+
+<p>
+Thank you for your donations during {{year}}.
+</p>
+
+<p>
+For your records, your contributions were as follows:
+</p>
+
+<p>
+<table>
+<thead>
+<tr>
+<th>Date</th><th>Amount</th>
+</tr>
+</thead>
+{#
+<tfoot>
+<tr>
+<td>&nbsp;</td>
+<td>Total: {{total}}</td>
+</tr>
+</tfoot>
+#}
+<tbody>
+{% for contribution in contributions %}
+<tr>
+<td>{{contribution.date}}</td><td width="100%">{{contribution.amount}} {{contribution.currency}}</td>
+</tr>
+{% endfor %}
+<tbody>
+</table>
+</p>

@@ -1,0 +1,13 @@
+Dear {{name}},
+Thank you for your donations during {{year}}.
+
+For your records, your contributions were as follows:
+
+Date        Amount
+{% for contribution in contributions %}
+{{contribution.date}}  {{contribution.amount}} {{contribution.currency}}
+{% endfor %}
+
+{#
+Total: {{total}}
+#}
