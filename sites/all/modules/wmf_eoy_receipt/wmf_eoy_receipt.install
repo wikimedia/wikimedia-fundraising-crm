@@ -1,0 +1,40 @@
+<?php
+
+function wmf_eoy_receipt_install()
+{
+    wmf_eoy_receipt_update_6000();
+}
+
+function wmf_eoy_receipt_update_6000()
+{
+    $result = array();
+
+    $sql = <<<EOS
+CREATE TABLE {wmf_eoy_receipt_job} (
+    job_id INT UNSIGNED AUTO_INCREMENT,
+    start_time VARCHAR(255),
+    year INT,
+
+    PRIMARY KEY (job_id)
+);
+EOS;
+    $result[] = update_sql( $sql );
+
+    $sql = <<<EOS
+CREATE TABLE {wmf_eoy_receipt_donor} (
+    job_id INT UNSIGNED,
+    email VARCHAR(255),
+    preferred_language VARCHAR(16),
+    name VARCHAR(255),
+    status VARCHAR(255),
+    contributions_rollup TEXT,
+
+    KEY (job_id),
+    KEY (email),
+    KEY (status)
+)
+EOS;
+    $result[] = update_sql( $sql );
+
+    return $result;
+}
