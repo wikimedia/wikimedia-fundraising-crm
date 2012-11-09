@@ -366,8 +366,12 @@ function thank_you_send( $contribution_id, $test=null ) {
 		else {
 			watchdog('thank_you', 'Updating successful TY send failed: ' . $contribution_id, array(), WATCHDOG_ERROR);
 		}
+	} elseif ( !$email_success ){
+		watchdog('thank_you', "Thank you mail failed for contribution id: $contribution_id to " . $email['to_address'], array(), WATCHDOG_ERROR);
+		thank_you_update_ty_date( $contribution, true );
+		watchdog('thank_you', "Thank you date set to epoch for contribution id: $contribution_id to " . $email['to_address'], array(), WATCHDOG_INFO);
 	}
-	
+
 	return true;
 }
 
