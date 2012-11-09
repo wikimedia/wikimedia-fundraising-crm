@@ -176,7 +176,6 @@ function thank_you_send_test_submit( $form_id, $form_values ) {
 	return true;
 }
 
-
 // This function should encompass the entire process
 function thank_you_send( $contribution_id, $test=null ) {
 	civicrm_initialize( true );
@@ -306,13 +305,18 @@ function thank_you_send( $contribution_id, $test=null ) {
 		return false;
 	}
 
-	$di_include = implode( DIRECTORY_SEPARATOR, array( variable_get( 'wmf_common_di_location', '' ), 'gateway_common', 'interface.i18n.php' ) );
-	if( !file_exists( $di_include ) ){
-		watchdog("thank_you", "DonationInterface i18n libraries not found.  Path checked: " . $di_include, array(), WATCHDOG_ERROR);
-		return false;
+	static $di_i18n;
+
+	if( !isset( $di_i18n ) ){
+		$di_include = implode( DIRECTORY_SEPARATOR, array( variable_get( 'wmf_common_di_location', '' ), 'gateway_common', 'interface.i18n.php' ) );
+		if( !file_exists( $di_include ) ){
+			watchdog("thank_you", "DonationInterface i18n libraries not found.  Path checked: " . $di_include, array(), WATCHDOG_ERROR);
+			return false;
+		}
+
+		$di_i18n = new MessageFile( $di_include );
 	}
 
-	$di_i18n = new MessageFile( $di_include );
 	$subj_msg = "donate_interface-email-subject";
 	$email['subject'] = $di_i18n->getMsg( $subj_msg, $language );
 
@@ -386,8 +390,6 @@ function thank_you_update_ty_date( $contribution, $anonymous=false ){
 	return WMFCiviAPICheck::check_api_contribution( $result, $contribution['contribution_id'] );
 }
 
-
-
 function thank_you_settings_form() {
   $form = array();
 
@@ -420,6 +422,27 @@ function thank_you_settings_form() {
     '#required' => TRUE,
   );
 
+	$form['thank_you_batch'] = array(
+		'#type' => 'select',
+		'#title' => t('Cron batch size'),
+		'#required' => TRUE,
+		'#default_value' => variable_get('thank_you_batch', 0),
+		'#options' => array(
+			0 => '0 (Disable)',
+			1 => 1,
+			5 => 5,
+			10 => 10,
+			20 => 20,
+			30 => 30,
+			40 => 40,
+			50 => 50,
+			75 => 75,
+			100 => 100,
+			120 => 120,
+			150 => 150,
+		),
+	);
+
 	// this is still in use
   $form['thank_you_onestep_unsubscribe'] = array(
     '#type' => 'radios',
@@ -431,10 +454,31 @@ function thank_you_settings_form() {
 	),
     '#default_value' => variable_get('thank_you_onestep_unsubscribe', 'false'),
   );
+
+	$form['thank_you_async_send'] = array(
+		'#type' => 'radios',
+		'#title' => t('Unsubscription Confirmation'),
+		'#required' => TRUE,
+		'#options' => array(
+			false => t('Send TY email on queue consumption'),
+			true => t('Send TY email asynchronously'),
+		),
+		'#default_value' => variable_get('thank_you_async_send', false),
+	);
+
   return system_settings_form($form);
 }
 
 function thank_you_queue2civicrm_import( $contribution_info ) {
+
+  static $async;
+  if( !isset( $async ) ){
+    $async = variable_get( "thank_you_async_send", false );
+  }
+  if( $async ){
+    return;
+  }
+
   $contribution_id = $contribution_info[ 'contribution_id' ];
   watchdog('thank_you', 'Calling thank you function for contribution: ' . $contribution_id, WATCHDOG_INFO );
   thank_you_send( $contribution_id );
@@ -442,6 +486,30 @@ function thank_you_queue2civicrm_import( $contribution_info ) {
 
 function thank_you_recurring_globalcollect( $contribution_info ) {
 	thank_you_queue2civicrm_import( $contribution_info );
+}
+
+function thank_you_batch_process(){
+	// the following variables should be set in the module settings, not here
+	$days = variable_get( 'thank_you_days', false );
+	$batch = variable_get( 'thank_you_batch', false );
+
+	if( $days === false ){
+		// throw a configuration error
+	}
+	if( $batch === false ){
+		// throw a configuration error
+	}
+
+	$dbs = wmf_civicrm_get_dbs();
+	$dbs->push( 'civicrm' );
+
+	$ty_query = "SELECT id FROM {civicrm_contribution} WHERE receive_date > DATE_SUB( CURDATE(), INTERVAL %d DAY ) AND thankyou_date IS NULL ORDER BY id ASC LIMIT %d";
+
+	$result = db_query( $ty_query, $days, $batch );
+
+	while( $contribution = db_fetch_object( $result ) ){
+		thank_you_send( $contribution->id );
+	}
 }
 
 
@@ -469,22 +537,26 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
     $misseddonations = strpos( $contribution['trxn_id'], "RECURRING GLOBALCOLLECT"
                                 ) !== false && time() < mktime( 0, 0, 0, 5, 17, 2012);
 
+	static $loader, $twig;
 
-	$twig_include = implode( DIRECTORY_SEPARATOR, array( variable_get( 'wmf_common_twig_location', '' ), 'lib', 'Twig', 'Autoloader.php' ) );
-	if( !file_exists( $twig_include ) ){
-		watchdog("thank_you", "Twig libraries not found.  Path checked: " . $twig_include, array(), WATCHDOG_ERROR);
-		return false;
+	if( !isset( $loader ) || !isset( $twig ) ){
+
+		$twig_include = implode( DIRECTORY_SEPARATOR, array( variable_get( 'wmf_common_twig_location', '' ), 'lib', 'Twig', 'Autoloader.php' ) );
+		if( !file_exists( $twig_include ) ){
+			watchdog("thank_you", "Twig libraries not found.  Path checked: " . $twig_include, array(), WATCHDOG_ERROR);
+			return false;
+		}
+		require_once $twig_include;
+
+		Twig_Autoloader::register();
+
+		$loader = new Twig_Loader_Filesystem( drupal_get_path( 'module', 'thank_you' ) . DIRECTORY_SEPARATOR . 'templates' );
+		$twig = new Twig_Environment( $loader, array(
+			'cache' => '/tmp/twig/cache',
+			'auto_reload' => true,
+			'charset' => 'utf-8',
+		));
 	}
-	require_once $twig_include;
-
-    Twig_Autoloader::register();
-
-    $loader = new Twig_Loader_Filesystem( drupal_get_path( 'module', 'thank_you' ) . DIRECTORY_SEPARATOR . 'templates' );
-    $twig = new Twig_Environment( $loader, array(
-        'cache' => '/tmp/twig/cache',
-        'auto_reload' => true,
-        'charset' => 'utf-8',
-    ));
 
 	$template = $twig->loadTemplate( $format . DIRECTORY_SEPARATOR . "thank_you.en.$format" );
 	try{
