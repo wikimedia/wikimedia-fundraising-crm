@@ -1,4 +1,4 @@
-Kjære {{contact.first_name}}
+Kjære {{ contact.first_name }}
 
 Tusen takk skal du ha! Tusen takk for at du har donert penger til Wikimedia
 Foundation!
@@ -19,7 +19,8 @@ Takk,
 Sue Gardner
 Wikimedia Foundations daglige leder
 
-Til senere bruk: Din gave {{contribution.receive_date}} var på {{contribution.contribution_source}}.
+Til senere bruk: Din gave {{ contribution.receive_date|date("Y-d-m") }} var på {{
+contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -41,6 +42,6 @@ Vi ønsker å holde deg som donor oppdatert om aktiviteter og innsamlingsaksjone
 du ikke ønsker å motta slike e-poster fra oss, klikk på lenka under, så fjerner vi deg
 fra lista:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 

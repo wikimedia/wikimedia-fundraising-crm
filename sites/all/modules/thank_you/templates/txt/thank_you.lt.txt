@@ -1,4 +1,4 @@
-Gerb. {{contact.first_name}},
+Gerb. {{ contact.first_name }},
 
 Esate nuostabus žmogus. Ačiū, kad paaukojote Wikimedia Foundation!
 
@@ -19,7 +19,8 @@ Ačiū,
 Sue Gardner
 Wikimedia Foundation direktorė
 
-Jūsų įrašams: Jūsų {{contribution.receive_date}} paaukota suma buvo {{contribution.contribution_source}}.
+Jūsų įrašams: Jūsų {{ contribution.receive_date|date("Y-d-m") }} paaukota suma
+buvo {{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -41,6 +42,7 @@ Norime Jus informuoti apie mūsų bendruomenės veiklą bei aukų rinkimo akcija
 Tačiau jei nebenorite gauti panašių laiškų nuo mūsų, paspauskite nuorodą,
 esančią žemiau, ir mes pašalinsime Jus iš gavėjų sąrašo:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Nutraukti
+prenumeratą</a>
 
 

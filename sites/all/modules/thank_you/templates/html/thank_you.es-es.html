@@ -1,4 +1,4 @@
-<p>Estimado/a {{contact.first_name}}</p>
+<p>Estimado/a {{ contact.first_name }}</p>
 
 <p>¡Muchísimas gracias por tu donación a la Fundación Wikimedia! </p>
 
@@ -19,7 +19,8 @@ dinero con cuidado, y te doy las gracias por tu confianza en nosotros.</p>
 Sue Gardner<br />
 Directora Ejecutiva de la Fundación Wikimedia</p>
 
-<p>Para tus registros: tu donación en {{contribution.receive_date}} fue de {{contribution.contribution_source}}.
+<p>Para tus registros: tu donación en {{ contribution.receive_date|date("Y-d-m") }} fue
+de {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/es-es.html' ignore missing %}
 {% endif %}</p>
@@ -38,6 +39,7 @@ CA, 94105. Número de la exención fiscal en los EE.UU.: 20-0049703</p>
 recaudación de fondos. Sin embargo, si prefieres no recibir nuestros correos
 electrónicos, por favor haz click abajo y te retiraremos de la lista:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Cancelar la suscripción</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Cancelar la
+suscripción</a>
 
 </div>

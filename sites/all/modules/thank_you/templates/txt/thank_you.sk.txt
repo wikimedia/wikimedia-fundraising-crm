@@ -1,4 +1,4 @@
-Vážený pán/vážená pani {{contact.first_name}},
+Vážený pán/vážená pani {{ contact.first_name }},
 
 ste úžasný/á, ďakujem Vám za Váš dar pre Nadáciu Wikimedia.
 
@@ -19,7 +19,8 @@ rozvahou. Ďakujem Vám, že nám veríte.
 Sue Gardner
 Výkonná riaditeľka Nadácie Wikimedia
 
-Pre Vašu informáciu: Váš dar {{contribution.contribution_source}} bol zaznamenaný dňa {{contribution.receive_date}}.
+Pre Vašu informáciu: Váš dar {{ contribution.contribution_source }} bol
+zaznamenaný dňa {{ contribution.receive_date|date("Y-d-m") }}.
 
 {% if recurring %}
 
@@ -41,6 +42,6 @@ Chceli by sme Vás ako darcu aj naďalej informovať o aktivitách našej komuni
 dobročinných akciách. Ak si neprajete prijímať od nás takéto e-maily, kliknite na
 prepojenie nižšie a my Vás zo zoznamu odstránime .
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 

@@ -1,4 +1,4 @@
-Здравствуйте, {{contact.first_name}}!
+Здравствуйте, {{ contact.first_name }}!
 
 Хочу выразить вам своё восхищение и огромную
 благодарность за пожертвование в Фонд
@@ -29,7 +29,9 @@
 Сью Гарднер,
 исполнительный директор Фонда Викимедиа
 
-Для вашего архива: ваш взнос от {{contribution.receive_date}} составил {{contribution.contribution_source}}.
+Для вашего архива: ваш взнос от {{
+contribution.receive_date|date("Y-d-m") }} составил {{
+contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -59,6 +61,6 @@
 пожалуйста, нажмите на ссылку ниже, и мы исключим
 вас из списка.
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Отписаться</a>
 
 

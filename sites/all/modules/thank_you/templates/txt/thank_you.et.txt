@@ -1,4 +1,4 @@
-Hea {{contact.first_name}}
+Hea {{ contact.first_name }}
 
 Oled üks tore inimene. Suur tänu, et Wikimedia Foundationile annetuse tegid!
 
@@ -19,7 +19,8 @@ Aitäh veel kord!
 Sue Gardner
 Wikimedia Foundationi tegevdirektor
 
-Meelespidamiseks: sinu annetuskuupäev oli {{contribution.receive_date}} ja annetussumma {{contribution.contribution_source}}.
+Meelespidamiseks: sinu annetuskuupäev oli {{ contribution.receive_date|date("Y-d-m")
+}} ja annetussumma {{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -41,6 +42,6 @@ Meile meeldiks, kui saaksime sinule kui annetajale saata teateid meie kogukonna
 tegemiste ja rahakogumiskampaaniate kohta. Kui sa siiski ei taha sedasorti kirju saada,
 klõpsa palun allpool ja me tõmbame sind nimekirjast maha:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Lõpeta tellimus</a>
 
 

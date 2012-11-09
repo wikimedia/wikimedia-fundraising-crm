@@ -1,4 +1,4 @@
-<p>সুধী {{contact.first_name}}</p>
+<p>সুধী {{ contact.first_name }}</p>
 
 <p>আপনি অসাধারণ একজন মানুষ,
 উইকিমিডিয়া ফাউন্ডেশনে দান করার
@@ -39,7 +39,9 @@
 উইকিমিডিয়া ফাউন্ডেশনের
 নির্বাহী পরিচালক</p>
 
-<p>আপনার রেকর্ডের জন্য: {{contribution.receive_date}} তারিখে আপনার দান ছিল {{contribution.contribution_source}}.
+<p>আপনার রেকর্ডের জন্য: {{
+contribution.receive_date|date("Y-d-m") }} তারিখে আপনার দান
+ছিল {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/bn.html' ignore missing %}
 {% endif %}</p>
@@ -68,6 +70,6 @@ Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049
 করুন এবং আমারা আপনাকে তালিকা থেকে
 বাদ রাখব:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Unsubscribe</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 </div>

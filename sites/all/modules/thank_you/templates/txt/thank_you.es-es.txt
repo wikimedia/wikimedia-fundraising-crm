@@ -1,4 +1,4 @@
-Estimado/a {{contact.first_name}}
+Estimado/a {{ contact.first_name }}
 
 ¡Muchísimas gracias por tu donación a la Fundación Wikimedia!
 
@@ -19,7 +19,8 @@ Gracias,
 Sue Gardner
 Directora Ejecutiva de la Fundación Wikimedia
 
-Para tus registros: tu donación en {{contribution.receive_date}} fue de {{contribution.contribution_source}}.
+Para tus registros: tu donación en {{ contribution.receive_date|date("Y-d-m") }} fue
+de {{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -41,6 +42,7 @@ Nos gustaría mantenerte informado de nuestras actividades comunitarias y de
 recaudación de fondos. Sin embargo, si prefieres no recibir nuestros correos
 electrónicos, por favor haz click abajo y te retiraremos de la lista:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Cancelar la
+suscripción</a>
 
 

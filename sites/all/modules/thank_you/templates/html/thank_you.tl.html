@@ -1,4 +1,4 @@
-<p>Minamahal na {{contact.first_name}}</p>
+<p>Minamahal na {{ contact.first_name }}</p>
 
 <p>Isa kang kamangha-manghang tao at maraming salamat po sa inyong pagkakaloob sa
 Pundasyong Wikimedia!</p>
@@ -23,7 +23,9 @@ sa ibinigay ninyong pagtitiwala sa amin.</p>
 Sue Gardner<br />
 Direktora ng Tagapagpaganap, Pundasyong Wikimedia</p>
 
-<p>Para sa inyong kabatiran: ang inyong kaloob na ginawa noong {{contribution.receive_date}} ay may halaga na {{contribution.contribution_source}}.
+<p>Para sa inyong kabatiran: ang inyong kaloob na ginawa noong {{
+contribution.receive_date|date("Y-d-m") }} ay may halaga na {{
+contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/tl.html' ignore missing %}
 {% endif %}</p>
@@ -44,6 +46,6 @@ gawaing pampamayanan at paglalagom-puhunan (<i>fundraiser</i>). Kung ayaw niyong
 makatanggap ng ganitong uri ng e-liham mula sa amin, i-klik lamang ang buton sa ibaba
 upang matanggal kayo sa aming talaan:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Unsubscribe</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 </div>

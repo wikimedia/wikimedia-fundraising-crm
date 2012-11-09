@@ -1,4 +1,4 @@
-ପ୍ରିୟ {{contact.first_name}}
+ପ୍ରିୟ {{ contact.first_name }}
 
 ଆପଣ ମହାନ, ଉଇକିମିଡ଼ିଆ
 ଫାଉଣ୍ଡେସନକୁ ଦାନ କରିଥିବାରୁ ଅନେକ
@@ -38,7 +38,9 @@
 ଉଇକିମେଡିଆ ସଂସ୍ଥାର ମୁଖ୍ୟ
 ନିର୍ଦେଶକ
 
-ଆପଣଙ୍କ ମନେରଖିବା ପାଇଁ: ଆପଣଙ୍କ ଦାନ ତାରିଖ {{contribution.receive_date}} ପରିମାଣ {{contribution.contribution_source}} ।
+ଆପଣଙ୍କ ମନେରଖିବା ପାଇଁ: ଆପଣଙ୍କ ଦାନ
+ତାରିଖ {{ contribution.receive_date|date("Y-d-m") }} ପରିମାଣ {{
+contribution.contribution_source }} ।
 
 {% if recurring %}
 
@@ -70,6 +72,7 @@
 ଚାହୁଁଥିବେ ତାହେଲେ ତଳ ଲିଙ୍କରେ
 କ୍ଲିକ କରନ୍ତୁ :
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw
+}}">ଯୋଗାଯୋଗରୁ ବାହାରିବା</a>
 
 

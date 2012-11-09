@@ -1,4 +1,4 @@
-പ്രിയപ്പെട്ട {{contact.first_name}}
+പ്രിയപ്പെട്ട {{ contact.first_name }}
 
 താങ്കൾ വിസ്മയിപ്പിക്കുന്നു,
 വിക്കിമീഡിയ ഫൗണ്ടേഷന് താങ്കള്‍
@@ -47,7 +47,9 @@
 എക്സിക്യുട്ടീവ് ഡയറക്ടർ,
 വിക്കിമീഡിയ ഫൗണ്ടേഷൻ.
 
-നിങ്ങളുടെ രേഖകൾക്ക്:  നിങ്ങളുടെ സംഭാവന {{contribution.receive_date}}  തിയതിയിൽ   {{contribution.contribution_source}} തുക ആണ്.
+നിങ്ങളുടെ രേഖകൾക്ക്:  നിങ്ങളുടെ
+സംഭാവന {{ contribution.receive_date|date("Y-d-m") }}  തിയതിയിൽ
+{{ contribution.contribution_source }} തുക ആണ്.
 
 {% if recurring %}
 
@@ -85,6 +87,7 @@
 അയക്കുന്നവരുടെ പട്ടികയിൽ നിന്ന്
 നിങ്ങളെ ഒഴിവക്കുന്നതാണ്.
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw
+}}">വരിക്കാരനല്ലാതാക്കുക</a>
 
 

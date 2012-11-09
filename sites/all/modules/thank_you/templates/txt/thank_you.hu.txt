@@ -1,4 +1,4 @@
-Kedves {{contact.first_name}}
+Kedves {{ contact.first_name }}
 
 Fantasztikus vagy, hálásan köszönöm, hogy támogatod a Wikimédia
 Alapítványt!
@@ -21,7 +21,8 @@ Köszönöm,
 Sue Gardner
 a Wikimédia Alapítvány vezérigazgatója
 
-A jegyzőkönyv kedvéért: a {{contribution.receive_date}}-i adományod összege {{contribution.contribution_source}} volt.
+A jegyzőkönyv kedvéért: a {{ contribution.receive_date|date("Y-d-m") }}-i
+adományod összege {{ contribution.contribution_source }} volt.
 
 {% if recurring %}
 
@@ -43,6 +44,6 @@ Mint támogatónkat, szeretnénk értesíteni téged a közösségi eseményeink
 és gyűjtőkampányainkról. Ha nem szeretnél ilyen leveleket kapni, kattints az alábbi
 linkre, és leveszünk az értesítési listánkról:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Leiratkozás</a>
 
 

@@ -1,4 +1,4 @@
-<p>Здравствуйте, {{contact.first_name}}!</p>
+<p>Здравствуйте, {{ contact.first_name }}!</p>
 
 <p>Хочу выразить вам своё восхищение и огромную
 благодарность за пожертвование в Фонд
@@ -29,7 +29,9 @@
 Сью Гарднер,<br />
 исполнительный директор Фонда Викимедиа</p>
 
-<p>Для вашего архива: ваш взнос от {{contribution.receive_date}} составил {{contribution.contribution_source}}.
+<p>Для вашего архива: ваш взнос от {{
+contribution.receive_date|date("Y-d-m") }} составил {{
+contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/ru.html' ignore missing %}
 {% endif %}</p>
@@ -56,6 +58,6 @@
 пожалуйста, нажмите на ссылку ниже, и мы исключим
 вас из списка.</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Отписаться</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Отписаться</a>
 
 </div>

@@ -1,4 +1,4 @@
-尊敬的{{contact.first_name}}
+尊敬的{{ contact.first_name }}
 
 您实在太棒了，十分感谢您为维基媒体基金会捐款！
 
@@ -10,7 +10,8 @@
 Sue Gardner
 维基媒体基金会执行主席
 
-您的捐赠信息：您于{{contribution.receive_date}}进行捐款，总计{{contribution.contribution_source}}。
+您的捐赠信息：您于{{ contribution.receive_date|date("Y-d-m")
+}}进行捐款，总计{{ contribution.contribution_source }}。
 
 {% if recurring %}
 
@@ -28,6 +29,6 @@ New Montgomery, 3rd Floor, San Francisco, CA,
 
 作为捐赠者，我们希望能够持续告知您我们的社群活动和筹款信息。如果您不想收到来自我们的这些邮件，请点击下方链接，我们将把您从邮件名单中移除：
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">取消订阅</a>
 
 

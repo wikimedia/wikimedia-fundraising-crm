@@ -1,4 +1,4 @@
-<p>Dear {{contact.first_name}},</p>
+<p>Dear {{ contact.first_name }},</p>
 
 <p>You are amazing, thank you so much for donating to the Wikimedia Foundation! </p>
 
@@ -19,7 +19,8 @@ us.</p>
 Sue Gardner<br />
 Wikimedia Foundation Executive Director</p>
 
-<p>For your records: Your donation on {{contribution.receive_date}} was {{contribution.contribution_source}}.
+<p>For your records: Your donation on {{ contribution.receive_date|date("Y-d-m") }} was {{
+contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/en.html' ignore missing %}
 {% endif %}</p>
@@ -38,6 +39,6 @@ is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt numb
 If you prefer however not to receive such emails from us, please click below and we'll
 take you off the list:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Unsubscribe</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 </div>

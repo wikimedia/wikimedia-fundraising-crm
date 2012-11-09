@@ -1,4 +1,4 @@
-<p>Liebe(r) {{contact.first_name}}!</p>
+<p>Liebe(r) {{ contact.first_name }}!</p>
 
 <p>Sie sind wunderbar, herzlichen Dank für Ihre Spende an die Wikimedia Foundation!</p>
 
@@ -22,7 +22,8 @@ für Ihr Vertrauen.</p>
 Sue Gardner<br />
 Wikimedia-Geschäftsführerin</p>
 
-<p>Für Ihre Unterlagen: Ihre Spende vom {{contribution.receive_date}} betrug {{contribution.contribution_source}}.
+<p>Für Ihre Unterlagen: Ihre Spende vom {{ contribution.receive_date|date("Y-d-m") }}
+betrug {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/de.html' ignore missing %}
 {% endif %}</p>
@@ -48,6 +49,6 @@ dem Laufenden halten. Wenn Sie diesbezüglich jedoch lieber keine E-Mails von un
 wollen, dann klicken Sie bitte auf den folgenden Link, um aus der Liste entfernt zu
 werden:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Abbestellen</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Abbestellen</a>
 
 </div>

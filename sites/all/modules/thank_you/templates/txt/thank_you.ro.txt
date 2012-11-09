@@ -1,4 +1,4 @@
-Dragă {{contact.first_name}}
+Dragă {{ contact.first_name }}
 
 Sunteți într-adevăr minunat, vă mulțumesc foarte mult pentru donația făcută
 Fundației Wikimedia!
@@ -20,7 +20,9 @@ Mulțumesc,
 Sue Gardner
 Director executiv al Fundației Wikimedia
 
-Pentru evidența dumneavoastră: donația din data de {{contribution.receive_date}} a fost de {{contribution.contribution_source}}.
+Pentru evidența dumneavoastră: donația din data de {{
+contribution.receive_date|date("Y-d-m") }} a fost de {{ contribution.contribution_source
+}}.
 
 {% if recurring %}
 
@@ -44,6 +46,6 @@ fonduri și activitățile comunității noastre. Dacă preferați, totuși, să
 primiți asemenea mesaje de la noi, vă rugăm să faceți clic mai jos și vă vom
 înlătura din listă:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Dezabonare</a>
 
 

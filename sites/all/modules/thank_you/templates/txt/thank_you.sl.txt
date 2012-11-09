@@ -1,4 +1,4 @@
-Spoštovani/a {{contact.first_name}},
+Spoštovani/a {{ contact.first_name }},
 
 neverjetni ste! Resnično se Vam zahvaljujem za Vaš prispevek k projektu Fundacije
 Wikimedija!
@@ -20,7 +20,8 @@ Hvala,
 Sue Gardner,
 izvršna direktorica Fundacije Wikimedija
 
-Za Vašo evidenco: Vaša donacija dne {{contribution.receive_date}} je bila {{contribution.contribution_source}}.
+Za Vašo evidenco: Vaša donacija dne {{ contribution.receive_date|date("Y-d-m") }} je
+bila {{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -42,6 +43,6 @@ Kot donatorja vas lahko obveščamo o aktivnostih naše skupnosti ter nabirkah. 
 želite prejemati takšnih e-sporočil z naše strani, kliknite spodaj, da se odjavite s
 seznama.
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Odjava</a>
 
 

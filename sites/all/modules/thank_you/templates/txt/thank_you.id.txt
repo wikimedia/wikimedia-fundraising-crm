@@ -1,4 +1,4 @@
-Salam sejahtera, {{contact.first_name}}
+Salam sejahtera, {{ contact.first_name }}
 
 Anda begitu hebat! Terima kasih banyak karena telah menyumbang untuk Yayasan
 Wikimedia!
@@ -21,7 +21,8 @@ Terima kasih,
 Sue Gardner
 Direktur Eksekutif Yayasan Wikimedia
 
-Untuk catatan: Sumbangan Anda pada tanggal {{contribution.receive_date}} sebesar {{contribution.contribution_source}}.
+Untuk catatan: Sumbangan Anda pada tanggal {{ contribution.receive_date|date("Y-d-m")
+}} sebesar {{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -43,6 +44,6 @@ Kami ingin Anda, selaku penyumbang, terus diberitahu mengenai aktivitas komunita
 penggalangan dana kami. Jika Anda tidak ingin menerima surel seperti itu dari kami, klik
 tautan di bawah dan kami akan menghapus Anda dari daftar kontak:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Berhenti berlangganan</a>
 
 

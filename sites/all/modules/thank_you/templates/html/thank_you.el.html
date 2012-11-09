@@ -1,4 +1,4 @@
-<p>Αγαπητέ {{contact.first_name}}</p>
+<p>Αγαπητέ {{ contact.first_name }}</p>
 
 <p>Είστε καταπληκτικός, ευχαριστούμε πάρα πολύ
 για τη δωρεά σας στο Ίδρυμα Wikimedia!</p>
@@ -30,7 +30,9 @@
 Sue Gardner<br />
 Εκτελεστική Διευθύντρια του Ιδρύματος Wikimedia</p>
 
-<p>Για το αρχείο σας: Η δωρεά σας στις {{contribution.receive_date}} ήταν {{contribution.contribution_source}}.
+<p>Για το αρχείο σας: Η δωρεά σας στις {{
+contribution.receive_date|date("Y-d-m") }} ήταν {{ contribution.contribution_source
+}}.
 {% if recurring %}
 {% include 'recurring/el.html' ignore missing %}
 {% endif %}</p>
@@ -54,6 +56,7 @@ Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049
 παρακαλούμε πατήστε παρακάτω και θα σας
 αφαιρέσουμε από την λίστα:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Κατάργηση εγγραφής</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Κατάργηση
+εγγραφής</a>
 
 </div>

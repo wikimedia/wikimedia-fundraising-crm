@@ -1,4 +1,4 @@
-<p>{{contact.first_name}} 님께,</p>
+<p>{{ contact.first_name }} 님께,</p>
 
 <p>위키미디어 재단에 기부해 주시어 대단히 감사드립니다.</p>
 
@@ -23,7 +23,8 @@
 <p>수 가드너<br />
 위키미디어 재단 상임이사(Exectuive Director)</p>
 
-<p>확인을 위해 알려드립니다: {{contribution.receive_date}}에 기부하신 금액은 {{contribution.contribution_source}}입니다.
+<p>확인을 위해 알려드립니다: {{ contribution.receive_date|date("Y-d-m") }}에
+기부하신 금액은 {{ contribution.contribution_source }}입니다.
 {% if recurring %}
 {% include 'recurring/ko.html' ignore missing %}
 {% endif %}</p>
@@ -43,6 +44,6 @@
 않으신다면, 아래의 링크를 클릭해 주십시오. 메일 명단에서 제외해
 드리겠습니다.:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">구독 취소</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">구독 취소</a>
 
 </div>

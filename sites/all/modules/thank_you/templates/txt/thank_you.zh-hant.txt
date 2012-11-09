@@ -1,4 +1,4 @@
-尊敬的{{contact.first_name}}
+尊敬的{{ contact.first_name }}
 
 您實在太棒了，十分感謝您爲維基媒體基金會捐款！
 
@@ -10,7 +10,8 @@
 Sue Gardner
 維基媒體基金會執行董事
 
-您的捐贈訊息：您於{{contribution.receive_date}}進行捐款，總計{{contribution.contribution_source}}。
+您的捐贈訊息：您於{{ contribution.receive_date|date("Y-d-m")
+}}進行捐款，總計{{ contribution.contribution_source }}。
 
 {% if recurring %}
 
@@ -29,6 +30,6 @@ New Montgomery, 3rd Floor, San Francisco, CA, 94105。美國免稅編號：20-00
 
 作爲捐贈者，我們希望能夠持續告知您我們的社群活動和籌款訊息。如果您不想收到這些來自我們的郵件，請點擊下方連結，我們將把您從郵件名單中移除：
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">取消訂閱</a>
 
 

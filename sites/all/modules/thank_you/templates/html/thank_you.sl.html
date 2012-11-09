@@ -1,4 +1,4 @@
-<p>Spoštovani/a {{contact.first_name}},</p>
+<p>Spoštovani/a {{ contact.first_name }},</p>
 
 <p>neverjetni ste! Resnično se Vam zahvaljujem za Vaš prispevek k projektu Fundacije
 Wikimedija!</p>
@@ -20,7 +20,8 @@ porabili. Zahvaljujem se Vam za vaše zaupanje.</p>
 Sue Gardner,<br />
 izvršna direktorica Fundacije Wikimedija</p>
 
-<p>Za Vašo evidenco: Vaša donacija dne {{contribution.receive_date}} je bila {{contribution.contribution_source}}.
+<p>Za Vašo evidenco: Vaša donacija dne {{ contribution.receive_date|date("Y-d-m") }} je
+bila {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/sl.html' ignore missing %}
 {% endif %}</p>
@@ -39,6 +40,6 @@ Kalifornija, 94105. Številka odločbe o statusu davčne oprostitve v ZDA: 20-00
 želite prejemati takšnih e-sporočil z naše strani, kliknite spodaj, da se odjavite s
 seznama.</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Odjava</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Odjava</a>
 
 </div>

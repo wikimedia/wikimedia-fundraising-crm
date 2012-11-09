@@ -1,4 +1,4 @@
-{{contact.first_name}} عزیز
+{{ contact.first_name }} عزیز
 
 تو بی‌نظیری! سپاس فراوان بابت کمک به بنیاد
 ویکی‌مدیا.
@@ -26,7 +26,9 @@
 سو گاردنر
 رئیس انحصاری بنیاد ویکی‌مدیا
 
-برای ثبت شخصی: کمک تو در تاریخ {{contribution.receive_date}} و به مقدار{{contribution.contribution_source}} بود.
+برای ثبت شخصی: کمک تو در تاریخ {{
+contribution.receive_date|date("Y-d-m") }} و به مقدار{{
+contribution.contribution_source }} بود.
 
 {% if recurring %}
 
@@ -54,6 +56,6 @@ Opt out option:
 نمی‌خواهی چنین ایمیل‌هایی را دریافت کنی، لطفا
 بر روی علامت زیر کلیک کن تا از فهرست حذف شوی.
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">لغو اشتراک</a>
 
 

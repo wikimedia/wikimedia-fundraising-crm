@@ -1,4 +1,4 @@
-Milý/á {{contact.first_name}}
+Milý/á {{ contact.first_name }}
 
 Jste úžasný/á, velice vám děkujeme za darování nadaci Wikimedia Foundation!
 
@@ -19,7 +19,8 @@ Děkuji,
 Sue Gardner
 Výkonná ředitelka Wikimedia Foundation
 
-Pro vaše záznamy: Přispěl/a jste {{contribution.receive_date}} částkou {{contribution.contribution_source}}.
+Pro vaše záznamy: Přispěl/a jste {{ contribution.receive_date|date("Y-d-m") }}
+částkou {{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -41,6 +42,6 @@ Rádi bychom vás, jakožto dárce, dále informovali o našich komunitních
 aktivitách a sbírkách. Pokud si však takové e-maily od nás nepřejete dostávat,
 klikněte prosím níže a vyškrteme vás ze seznamu:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 

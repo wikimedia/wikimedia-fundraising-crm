@@ -1,4 +1,4 @@
-<p>Gerb. {{contact.first_name}},</p>
+<p>Gerb. {{ contact.first_name }},</p>
 
 <p>Esate nuostabus žmogus. Ačiū, kad paaukojote Wikimedia Foundation! </p>
 
@@ -19,7 +19,8 @@ atsakingai, ir dėkoju, kad mumis pasitikite. </p>
 Sue Gardner<br />
 Wikimedia Foundation direktorė</p>
 
-<p>Jūsų įrašams: Jūsų {{contribution.receive_date}} paaukota suma buvo {{contribution.contribution_source}}.
+<p>Jūsų įrašams: Jūsų {{ contribution.receive_date|date("Y-d-m") }} paaukota suma
+buvo {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/lt.html' ignore missing %}
 {% endif %}</p>
@@ -38,6 +39,7 @@ išimties statusą Jungtinėse Amerikos Valstijose. Mūsų adresas yra 149 New M
 Tačiau jei nebenorite gauti panašių laiškų nuo mūsų, paspauskite nuorodą,
 esančią žemiau, ir mes pašalinsime Jus iš gavėjų sąrašo:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Nutraukti prenumeratą</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Nutraukti
+prenumeratą</a>
 
 </div>

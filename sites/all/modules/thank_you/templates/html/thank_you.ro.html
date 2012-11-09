@@ -1,4 +1,4 @@
-<p>Dragă {{contact.first_name}}</p>
+<p>Dragă {{ contact.first_name }}</p>
 
 <p>Sunteți într-adevăr minunat, vă mulțumesc foarte mult pentru donația făcută
 Fundației Wikimedia!</p>
@@ -20,7 +20,9 @@ folosi banii cu grijă și vă mulțumesc pentru încrederea pe care ne-o arăta
 Sue Gardner<br />
 Director executiv al Fundației Wikimedia</p>
 
-<p>Pentru evidența dumneavoastră: donația din data de {{contribution.receive_date}} a fost de {{contribution.contribution_source}}.
+<p>Pentru evidența dumneavoastră: donația din data de {{
+contribution.receive_date|date("Y-d-m") }} a fost de {{ contribution.contribution_source
+}}.
 {% if recurring %}
 {% include 'recurring/ro.html' ignore missing %}
 {% endif %}</p>
@@ -41,6 +43,6 @@ fonduri și activitățile comunității noastre. Dacă preferați, totuși, să
 primiți asemenea mesaje de la noi, vă rugăm să faceți clic mai jos și vă vom
 înlătura din listă:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Dezabonare</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Dezabonare</a>
 
 </div>

@@ -1,4 +1,4 @@
-<p>Chèr(e) {{contact.first_name}},</p>
+<p>Chèr(e) {{ contact.first_name }},</p>
 
 <p>Vous êtes vraiment formidable, un grand merci pour votre don à la <i>Wikimedia
 Foundation</i> !</p>
@@ -22,7 +22,8 @@ confiance.</p>
 Sue Gardner<br />
 Directrice exécutive de la <i>Wikimedia Foundation</i></p>
 
-<p>Pour information : votre don à la date de {{contribution.receive_date}} était d’un montant de {{contribution.contribution_source}}.
+<p>Pour information : votre don à la date de {{ contribution.receive_date|date("Y-d-m")
+}} était d’un montant de {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/fr.html' ignore missing %}
 {% endif %}</p>
@@ -43,6 +44,6 @@ communauté, ainsi que des levées de fond. Néanmoins, si vous préférez de ne
 recevoir ce type de courriel de notre part, veuillez cliquer ci-dessous et nous vous
 enlèverons de notre liste :</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Se désabonner</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Se désabonner</a>
 
 </div>

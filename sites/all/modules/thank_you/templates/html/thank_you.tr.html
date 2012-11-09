@@ -1,4 +1,4 @@
-<p>Sayın {{contact.first_name}}</p>
+<p>Sayın {{ contact.first_name }}</p>
 
 <p>Harikasın, Wikimedia Vakfı'na yaptığın bağış için çok teşekkürler!</p>
 
@@ -19,7 +19,9 @@ harcayacağız ve bize güvendiğiniz için teşekkür ederim."</p>
 Sue Gardner<br />
 Wikimedia Vakfı İcra Müdürü</p>
 
-<p>Kayıt etmeniz için: Şu tarihte yardımda bulundunuz  {{contribution.receive_date}}. Miktar: {{contribution.contribution_source}}.
+<p>Kayıt etmeniz için: Şu tarihte yardımda bulundunuz  {{
+contribution.receive_date|date("Y-d-m") }}. Miktar: {{ contribution.contribution_source
+}}.
 {% if recurring %}
 {% include 'recurring/tr.html' ignore missing %}
 {% endif %}</p>
@@ -38,6 +40,6 @@ vergiden muaf numarası: 20-0049703.</p>
 bilgilendirilecek yardımseverler arasında tutmak isteriz. Eğer bu tür e-postalar almak
 istemiyorsanız lütfen alttaki kısmı tıklayınız ve sizi listeden çıkaralım: </p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Abonelikten çık</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Abonelikten çık</a>
 
 </div>

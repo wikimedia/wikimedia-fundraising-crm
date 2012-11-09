@@ -1,4 +1,4 @@
-<p>عزيزي {{contact.first_name}}</p>
+<p>عزيزي {{ contact.first_name }}</p>
 
 <p>أنت شخص عظيم، شكرا جزيلا على التبرع لمؤسسة
 ويكيميديا​​!</p>
@@ -25,7 +25,8 @@
 سو غاردنر<br />
 المديرة التنفيذية لمؤسسة ويكيميديا</p>
 
-<p>لسجلاتك: تبرعك في {{contribution.receive_date}} كان {{contribution.contribution_source}}.
+<p>لسجلاتك: تبرعك في {{ contribution.receive_date|date("Y-d-m") }} كان {{
+contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/ar.html' ignore missing %}
 {% endif %}</p>
@@ -46,6 +47,7 @@
 مثل هذه الرسائل الإلكترونية منا. الرجاء الضغط
 أدناه وسنزيلك من القائمة</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">ألغِ الاشتراك</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">ألغِ
+الاشتراك</a>
 
 </div>

@@ -1,4 +1,4 @@
-Sayın {{contact.first_name}}
+Sayın {{ contact.first_name }}
 
 Harikasın, Wikimedia Vakfı'na yaptığın bağış için çok teşekkürler!
 
@@ -19,7 +19,9 @@ Teşekkürler,
 Sue Gardner
 Wikimedia Vakfı İcra Müdürü
 
-Kayıt etmeniz için: Şu tarihte yardımda bulundunuz  {{contribution.receive_date}}. Miktar: {{contribution.contribution_source}}.
+Kayıt etmeniz için: Şu tarihte yardımda bulundunuz  {{
+contribution.receive_date|date("Y-d-m") }}. Miktar: {{ contribution.contribution_source
+}}.
 
 {% if recurring %}
 
@@ -41,6 +43,6 @@ Vakıf işleri ve bağış toplama kampanyalarından haberdar etmek üzere sizi
 bilgilendirilecek yardımseverler arasında tutmak isteriz. Eğer bu tür e-postalar almak
 istemiyorsanız lütfen alttaki kısmı tıklayınız ve sizi listeden çıkaralım:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Abonelikten çık</a>
 
 
