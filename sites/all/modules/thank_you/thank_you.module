@@ -348,20 +348,23 @@ function thank_you_send( $contribution_id, $test=null ) {
 		watchdog('thank_you', 'Sending thank you message failed for contribution (2): ' .
 			$contribution_id . '<pre>' . check_plain(print_r($email, TRUE)) . "\n\n" .
 			$e->errorMessage() . '</pre>', array(), WATCHDOG_ERROR);
+
 		return false;
 	} catch (Exception $e) {
 		watchdog('thank_you', 'Sending thank you message failed for contribution (3): ' .
 			$contribution_id . '<pre>' . check_plain(print_r($email, TRUE)) . "\n\n" .
 			$e->getMessage() . '</pre>', array(), WATCHDOG_ERROR);
+
 		return false;
 	}
 	if ( $email_success && is_null( $test ) ) {
+		watchdog('thank_you', "Thank you mail sent successfully for contribution id: $contribution_id to " . $email['to_address'], array(), WATCHDOG_INFO);
+
 		if( thank_you_update_ty_date( $contribution ) ){
-			// no need to log the success unless we are debugging things
+			watchdog('thank_you', 'Thank you date successfully updated for contribution id: ' . $contribution_id, array(), WATCHDOG_INFO);
 		}
 		else {
-			watchdog('thank_you', 'Updating successful TY send failed: ' .
-				$contribution_id, array(), WATCHDOG_ERROR);
+			watchdog('thank_you', 'Updating successful TY send failed: ' . $contribution_id, array(), WATCHDOG_ERROR);
 		}
 	}
 	
@@ -385,7 +388,7 @@ function thank_you_update_ty_date( $contribution, $anonymous=false ){
 
 	// the update function seems to not work for Contribution and the insert
 	// updates when a contribution_id is passed
-	$result = civicrm_api( "Contribution", "create", array_merge( $contribution, $params ) );
+	$result = civicrm_api( "Contribution", "create", $params );
 
 	return WMFCiviAPICheck::check_api_contribution( $result, $contribution['contribution_id'] );
 }
@@ -457,7 +460,7 @@ function thank_you_settings_form() {
 
 	$form['thank_you_async_send'] = array(
 		'#type' => 'radios',
-		'#title' => t('Unsubscription Confirmation'),
+		'#title' => t('Thank you mail sending'),
 		'#required' => TRUE,
 		'#options' => array(
 			false => t('Send TY email on queue consumption'),
@@ -494,11 +497,13 @@ function thank_you_batch_process(){
 	$batch = variable_get( 'thank_you_batch', false );
 
 	if( $days === false ){
-		// throw a configuration error
+		watchdog( "thank_you", "Number of days to send thank you mails not configured", array(), WATCHDOG_ERROR );
 	}
 	if( $batch === false ){
-		// throw a configuration error
+		watchdog( "thank_you", "Thank you mail batch size not configured", array(), WATCHDOG_ERROR );
 	}
+
+	watchdog( "thank_you", "Attempting to send $batch thank you mails for contributions from the last $days days.", array(), WATCHDOG_INFO );
 
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
@@ -507,9 +512,17 @@ function thank_you_batch_process(){
 
 	$result = db_query( $ty_query, $days, $batch );
 
+	$count = 0;
+
 	while( $contribution = db_fetch_object( $result ) ){
+		watchdog( "thank_you", "Attempting to send thank you mail for contribution id: " . $contribution->id, array(), WATCHDOG_INFO );
+
 		thank_you_send( $contribution->id );
+
+		++$count;
 	}
+
+	watchdog( "thank_you", "Sent $count thank you emails ", array(), WATCHDOG_INFO );
 }
 
 
