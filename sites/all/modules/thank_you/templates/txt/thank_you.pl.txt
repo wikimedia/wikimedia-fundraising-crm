@@ -1,4 +1,4 @@
-Szanowny {{contact.first_name}}
+Szanowny {{ contact.first_name }}
 
 Jesteś dobrym człowiekiem! Serdecznie dziękuję Ci za wsparcie Wikimedia
 Foundation.
@@ -22,7 +22,8 @@ Z wyrazami szacunku,
 Sue Gardner
 dyrektor generalny Wikimedia Foundation
 
-Potwierdzenie wpłaty: w dniu {{contribution.receive_date}} otrzymaliśmy {{contribution.contribution_source}}.
+Potwierdzenie wpłaty: w dniu {{ contribution.receive_date|date("Y-d-m") }}
+otrzymaliśmy {{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -45,6 +46,7 @@ Chcielibyśmy, jako darczyńcę, informować Cię o naszej działalności i zbi�
 funduszy. Jeśli wolisz jednak nie otrzymywać od nas tego typu wiadomości, kliknij
 proszę poniżej w celu usunięcia Twojego adresu z listy:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Zrezygnuj z
+subskrypcji</a>
 
 

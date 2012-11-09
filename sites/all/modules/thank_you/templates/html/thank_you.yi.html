@@ -1,4 +1,4 @@
-<p>טייערער {{contact.first_name}}</p>
+<p>טייערער {{ contact.first_name }}</p>
 
 <p>איר זענט וואונדערבאר, א גרויסן ייש"כ פארן מנדב
 זײַן צו דער וויקימעדיע פונדאציע! </p>
@@ -27,7 +27,9 @@
 סו גארדנער<br />
 וויקימעדיע פונדאציע עקסעקיוטיוו דירעקטאר</p>
 
-<p>פאר אייערע אקטן: אייער נדבה פון {{contribution.receive_date}} איז געווען {{contribution.contribution_source}}.
+<p>פאר אייערע אקטן: אייער נדבה פון {{
+contribution.receive_date|date("Y-d-m") }} איז געווען {{
+contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/yi.html' ignore missing %}
 {% endif %}</p>
@@ -55,6 +57,6 @@
 באקומען אזא בליצבריוו פון אונז, קליקט אונטן און
 מיר וועלן אראפנעמען אייך פון דער רשימה:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Unsubscribe</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 </div>

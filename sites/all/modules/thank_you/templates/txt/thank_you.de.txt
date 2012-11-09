@@ -1,4 +1,4 @@
-Liebe(r) {{contact.first_name}}!
+Liebe(r) {{ contact.first_name }}!
 
 Sie sind wunderbar, herzlichen Dank für Ihre Spende an die Wikimedia Foundation!
 
@@ -22,7 +22,8 @@ Vielen Dank
 Sue Gardner
 Wikimedia-Geschäftsführerin
 
-Für Ihre Unterlagen: Ihre Spende vom {{contribution.receive_date}} betrug {{contribution.contribution_source}}.
+Für Ihre Unterlagen: Ihre Spende vom {{ contribution.receive_date|date("Y-d-m") }}
+betrug {{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -30,6 +31,13 @@ Für Ihre Unterlagen: Ihre Spende vom {{contribution.receive_date}} betrug {{con
 
 {% endif %}
 
+
+
+{% if recurring %}
+
+{% include 'recurring/de.html' ignore missing %}
+
+{% endif %}
 
 Dieser Brief kann als Nachweis für Ihre Spende dienen. Für diesen finanziellen
 Beitrag wurden keine Waren oder Dienstleistungen bereitgestellt, weder ganz noch
@@ -47,6 +55,6 @@ dem Laufenden halten. Wenn Sie diesbezüglich jedoch lieber keine E-Mails von un
 wollen, dann klicken Sie bitte auf den folgenden Link, um aus der Liste entfernt zu
 werden:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Abbestellen</a>
 
 

@@ -1,4 +1,4 @@
-<p>Здравей, {{contact.first_name}}</p>
+<p>Здравей, {{ contact.first_name }}</p>
 
 <p>Благодаря ти, сърдечно ти благодаря за
 дарението ти за Фондация Уикимедия! </p>
@@ -31,7 +31,9 @@
 Сю Гарднър<br />
 Изпълнителен директор на Фондация Уикимедия</p>
 
-<p>За Ваша информация: Вашето дарение от {{contribution.receive_date}} е в размер на {{contribution.contribution_source}}.
+<p>За Ваша информация: Вашето дарение от {{
+contribution.receive_date|date("Y-d-m") }} е в размер на {{
+contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/bg.html' ignore missing %}
 {% endif %}</p>
@@ -56,6 +58,6 @@ tax-exempt number: 20-0049703</p>
 нас, моля, щракнете на връзката по-долу, за да се
 отпишете от пощенския ни списък:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Отписване</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Отписване</a>
 
 </div>

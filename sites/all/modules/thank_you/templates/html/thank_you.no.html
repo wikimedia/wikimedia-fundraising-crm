@@ -1,4 +1,4 @@
-<p>Kjære {{contact.first_name}}</p>
+<p>Kjære {{ contact.first_name }}</p>
 
 <p>Tusen takk skal du ha! Tusen takk for at du har donert penger til Wikimedia
 Foundation!</p>
@@ -19,7 +19,8 @@ takker for at du stoler på oss.</p>
 Sue Gardner<br />
 Wikimedia Foundations daglige leder</p>
 
-<p>Til senere bruk: Din gave {{contribution.receive_date}} var på {{contribution.contribution_source}}.
+<p>Til senere bruk: Din gave {{ contribution.receive_date|date("Y-d-m") }} var på {{
+contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/no.html' ignore missing %}
 {% endif %}</p>
@@ -38,6 +39,6 @@ Montgomery, 3rd Floor, San Francisco, CA, 94105. Skattefradragsnummer i USA:
 du ikke ønsker å motta slike e-poster fra oss, klikk på lenka under, så fjerner vi deg
 fra lista:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Unsubscribe</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 </div>

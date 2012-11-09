@@ -1,4 +1,4 @@
-Драги/а {{contact.first_name}}
+Драги/а {{ contact.first_name }}
 
 Много вам хвала што сте дали прилог Задужбини
 Викимедија!
@@ -26,7 +26,8 @@
 Су Гарднер
 Извршна директорка Задужбине Викимедија
 
-За вас: ваш прилог {{contribution.receive_date}} је {{contribution.contribution_source}}.
+За вас: ваш прилог {{ contribution.receive_date|date("Y-d-m") }} је {{
+contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -53,6 +54,6 @@ Francisco, CA, 94105. U.S. пореска олакшица: 20-0049703
 такве поруке, кликните на везу испод а ми ћемо вас
 обрисати са списка:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 

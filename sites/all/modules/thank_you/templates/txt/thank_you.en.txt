@@ -1,4 +1,4 @@
-Dear {{contact.first_name}},
+Dear {{ contact.first_name }},
 
 You are amazing, thank you so much for donating to the Wikimedia Foundation!
 
@@ -19,7 +19,8 @@ Thanks,
 Sue Gardner
 Wikimedia Foundation Executive Director
 
-For your records: Your donation on {{contribution.receive_date}} was {{contribution.contribution_source}}.
+For your records: Your donation on {{ contribution.receive_date|date("Y-d-m") }} was {{
+contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -41,6 +42,6 @@ We'd like to keep you as a donor informed of our community activities and fundra
 If you prefer however not to receive such emails from us, please click below and we'll
 take you off the list:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 

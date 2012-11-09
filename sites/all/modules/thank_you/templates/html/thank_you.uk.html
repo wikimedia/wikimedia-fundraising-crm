@@ -1,4 +1,4 @@
-<p>{{contact.first_name}},</p>
+<p>{{ contact.first_name }},</p>
 
 <p>ви надзвичайна людина, дякуємо за благодійний
 внесок до Фонду Вікімедіа!</p>
@@ -27,7 +27,8 @@
 Сью Гарднер,<br />
 виконавчий директор Фонду Вікімедіа</p>
 
-<p>Про всяк випадок: {{contribution.receive_date}} ви зробили пожертву у розмірі {{contribution.contribution_source}}.
+<p>Про всяк випадок: {{ contribution.receive_date|date("Y-d-m") }} ви
+зробили пожертву у розмірі {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/uk.html' ignore missing %}
 {% endif %}</p>
@@ -51,6 +52,7 @@ Francisco, CA, 94105. Номер звільнення від податків у
 повідомлення, будь ласка, натисніть нижче, і ми
 виключимо вас зі списку розсилки:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Відписатися</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw
+}}">Відписатися</a>
 
 </div>

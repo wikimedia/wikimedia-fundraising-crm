@@ -1,4 +1,4 @@
-{{contact.first_name}} היקר/ה,
+{{ contact.first_name }} היקר/ה,
 
 את/ה מדהימ/ה. תודה רבה לך על תרומתך לקרן
 ויקימדיה!
@@ -24,7 +24,9 @@
 
 מנכ"לית קרן ויקימדיה
 
-לרשומותיך: תרומתך בתאריך {{contribution.receive_date}} הייתה {{contribution.contribution_source}}.
+לרשומותיך: תרומתך בתאריך {{
+contribution.receive_date|date("Y-d-m") }} הייתה {{ contribution.contribution_source
+}}.
 
 {% if recurring %}
 
@@ -48,6 +50,6 @@ Francisco, CA, 94105. מספר הפטור ממס בארה"ב: 20-0049703
 מעוניין לקבל מאתנו דוא"ל כזה,לחץ על הקישור למטה
 ואנחנו נסיר אותך מהרשימה:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">ביטול מינוי</a>
 
 

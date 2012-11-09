@@ -1,4 +1,4 @@
-<p>{{contact.first_name}} عزیز</p>
+<p>{{ contact.first_name }} عزیز</p>
 
 <p>تو بی‌نظیری! سپاس فراوان بابت کمک به بنیاد
 ویکی‌مدیا.</p>
@@ -26,7 +26,9 @@
 سو گاردنر<br />
 رئیس انحصاری بنیاد ویکی‌مدیا</p>
 
-<p>برای ثبت شخصی: کمک تو در تاریخ {{contribution.receive_date}} و به مقدار{{contribution.contribution_source}} بود.
+<p>برای ثبت شخصی: کمک تو در تاریخ {{
+contribution.receive_date|date("Y-d-m") }} و به مقدار{{
+contribution.contribution_source }} بود.
 {% if recurring %}
 {% include 'recurring/fa.html' ignore missing %}
 {% endif %}</p>
@@ -51,6 +53,6 @@
 نمی‌خواهی چنین ایمیل‌هایی را دریافت کنی، لطفا
 بر روی علامت زیر کلیک کن تا از فهرست حذف شوی.</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">لغو اشتراک</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">لغو اشتراک</a>
 
 </div>

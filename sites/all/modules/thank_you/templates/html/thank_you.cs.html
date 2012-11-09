@@ -1,4 +1,4 @@
-<p>Milý/á {{contact.first_name}}</p>
+<p>Milý/á {{ contact.first_name }}</p>
 
 <p>Jste úžasný/á, velice vám děkujeme za darování nadaci Wikimedia Foundation!</p>
 
@@ -19,7 +19,8 @@ rozvahou, a děkuji vám za vaši důvěru v nás.</p>
 Sue Gardner<br />
 Výkonná ředitelka Wikimedia Foundation</p>
 
-<p>Pro vaše záznamy: Přispěl/a jste {{contribution.receive_date}} částkou {{contribution.contribution_source}}.
+<p>Pro vaše záznamy: Přispěl/a jste {{ contribution.receive_date|date("Y-d-m") }}
+částkou {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/cs.html' ignore missing %}
 {% endif %}</p>
@@ -38,6 +39,6 @@ Spojených státech. Naše adresa je 149 New Montgomery, třetí patro, San Fran
 aktivitách a sbírkách. Pokud si však takové e-maily od nás nepřejete dostávat,
 klikněte prosím níže a vyškrteme vás ze seznamu:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Unsubscribe</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 </div>

@@ -1,4 +1,4 @@
-Kära {{contact.first_name}}
+Kära {{ contact.first_name }}
 
 Du är underbar – tack så mycket för din gåva till Wikimediastiftelsen!
 
@@ -19,7 +19,8 @@ Tack,
 Sue Gardner
 Verkställande direktör, Wikimediastiftelsen
 
-För din egen bokföring: Din gåva {{contribution.receive_date}} var {{contribution.contribution_source}}.
+För din egen bokföring: Din gåva {{ contribution.receive_date|date("Y-d-m") }} var
+{{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -41,6 +42,6 @@ Vi skulle vilja skicka dig som donator nyheter om aktiviteter och
 välgörenhetskampanjer. Om du inte vill få sådana email från oss, klicka då på
 länken nedan så att vi kan ta bort dig från listan:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Avsluta abonnemang</a>
 
 

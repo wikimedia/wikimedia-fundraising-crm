@@ -1,4 +1,4 @@
-<p>Dragi/a {{contact.first_name}}</p>
+<p>Dragi/a {{ contact.first_name }}</p>
 
 <p>Hvala Vam najljepše što ste darovali Zakladu Wikimedije!</p>
 
@@ -19,7 +19,8 @@ vam na Vašem povjerenju u nas.</p>
 Sue Gardner<br />
 izvršna direktorica Zaklade Wikimedije</p>
 
-<p>Za Vas: Vaš prilog dana {{contribution.receive_date}} iznosio je {{contribution.contribution_source}}.
+<p>Za Vas: Vaš prilog dana {{ contribution.receive_date|date("Y-d-m") }} iznosio je {{
+contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/hr.html' ignore missing %}
 {% endif %}</p>
@@ -38,6 +39,6 @@ Sjedinjenim Državama. Naša adresa je 149 New Montgomery, 3rd Floor, San Franci
 želite primati takvu e-poštu od nas, molimo kliknite ispod i ne ćete biti dodani na
 popis:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Otkaži pretplatu</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Otkaži pretplatu</a>
 
 </div>

@@ -1,4 +1,4 @@
-<p>Vážený pán/vážená pani {{contact.first_name}},</p>
+<p>Vážený pán/vážená pani {{ contact.first_name }},</p>
 
 <p>ste úžasný/á, ďakujem Vám za Váš dar pre Nadáciu Wikimedia.</p>
 
@@ -19,7 +19,8 @@ rozvahou. Ďakujem Vám, že nám veríte.</p>
 Sue Gardner<br />
 Výkonná riaditeľka Nadácie Wikimedia</p>
 
-<p>Pre Vašu informáciu: Váš dar {{contribution.contribution_source}} bol zaznamenaný dňa {{contribution.receive_date}}.
+<p>Pre Vašu informáciu: Váš dar {{ contribution.contribution_source }} bol
+zaznamenaný dňa {{ contribution.receive_date|date("Y-d-m") }}.
 {% if recurring %}
 {% include 'recurring/sk.html' ignore missing %}
 {% endif %}</p>
@@ -38,6 +39,6 @@ Spojených štátoch. Naša adresa je 149 New Montgomery, 3rd Floor, San Francis
 dobročinných akciách. Ak si neprajete prijímať od nás takéto e-maily, kliknite na
 prepojenie nižšie a my Vás zo zoznamu odstránime .</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Unsubscribe</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 </div>

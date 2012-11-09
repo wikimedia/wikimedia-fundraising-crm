@@ -1,4 +1,4 @@
-Kepada {{contact.first_name}}
+Kepada {{ contact.first_name }}
 
 Anda sememangnya hebat, setinggi-tinggi terima kasih kerana menderma kepada Yayasan
 Wikimedia!
@@ -21,7 +21,8 @@ Terima kasih,
 Sue Gardner
 Pengarah Eksekutif Yayasan Wikimedia
 
-Untuk rekod anda: Derma anda pada {{contribution.receive_date}} ialah {{contribution.contribution_source}}.
+Untuk rekod anda: Derma anda pada {{ contribution.receive_date|date("Y-d-m") }} ialah
+{{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -45,6 +46,6 @@ emel-emel tersebut daripada kami, sila klik pautan di bawah dan kami akan menyah
 anda: you prefer however not to receive such emails from us, please click below and we'll
 take you off the list:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Berhenti melanggan</a>
 
 

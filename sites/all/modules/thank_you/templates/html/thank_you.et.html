@@ -1,4 +1,4 @@
-<p>Hea {{contact.first_name}}</p>
+<p>Hea {{ contact.first_name }}</p>
 
 <p>Oled üks tore inimene. Suur tänu, et Wikimedia Foundationile annetuse tegid! </p>
 
@@ -19,7 +19,8 @@ meid usaldad.</p>
 Sue Gardner<br />
 Wikimedia Foundationi tegevdirektor</p>
 
-<p>Meelespidamiseks: sinu annetuskuupäev oli {{contribution.receive_date}} ja annetussumma {{contribution.contribution_source}}.
+<p>Meelespidamiseks: sinu annetuskuupäev oli {{ contribution.receive_date|date("Y-d-m")
+}} ja annetussumma {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/et.html' ignore missing %}
 {% endif %}</p>
@@ -38,6 +39,6 @@ Francisco, CA, 94105. Meie USA maksuvabastusnumber on 20-0049703.</p>
 tegemiste ja rahakogumiskampaaniate kohta. Kui sa siiski ei taha sedasorti kirju saada,
 klõpsa palun allpool ja me tõmbame sind nimekirjast maha:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Lõpeta tellimus</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Lõpeta tellimus</a>
 
 </div>

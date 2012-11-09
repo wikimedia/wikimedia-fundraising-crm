@@ -1,4 +1,4 @@
-<p>Caro(a) {{contact.first_name}}</p>
+<p>Caro(a) {{ contact.first_name }}</p>
 
 <p>Você é maravilhoso(a). Muito obrigado pelo seu donativo para a Fundação
 Wikimedia!</p>
@@ -20,7 +20,8 @@ usado cuidadosamente, e quero agradecer-lhe a confiança que deposita em nós.</
 Sue Gardner<br />
 Diretora Executiva da Fundação Wikimedia</p>
 
-<p>Para os seus registos: O seu donativo de {{contribution.receive_date}} foi {{contribution.contribution_source}}.
+<p>Para os seus registos: O seu donativo de {{ contribution.receive_date|date("Y-d-m") }}
+foi {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/pt.html' ignore missing %}
 {% endif %}</p>
@@ -40,6 +41,7 @@ isenção fiscal 501(c)(3) nos Estados Unidos. O nosso endereço é 149 New Mont
 angariações de fundos. No entanto, se preferir não receber tais e-mails, por favor
 clique abaixo e será removido da lista:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Cancelar a subscrição</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Cancelar a
+subscrição</a>
 
 </div>

@@ -1,4 +1,4 @@
-เรียน คุณ {{contact.first_name}}
+เรียน คุณ {{ contact.first_name }}
 
 คุณเป็นบุคคลที่น่าประทับใจ
 ขอบคุณอย่างสูงสำหรับการบริจาคให้กับมูลนิธิวิกิมีเดีย
@@ -25,7 +25,10 @@
 ซู การ์ดเนอร์
 กรรมการบริหารมูลนิธิวิกิมีเดีย
 
-สำหรับการบันทึกของคุณ: การบริจาคของคุณในวันที่ {{contribution.receive_date}} คือ {{contribution.contribution_source}}
+สำหรับการบันทึกของคุณ:
+การบริจาคของคุณในวันที่ {{
+contribution.receive_date|date("Y-d-m") }} คือ {{ contribution.contribution_source
+}}
 
 {% if recurring %}
 
@@ -51,6 +54,6 @@
 หากไม่ต้องการรับอีเมล์ดังกล่าวจากเรา
 กรุณาคลิกที่นี่:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 

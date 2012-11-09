@@ -1,4 +1,4 @@
-Estimado(a) {{contact.first_name}}
+Estimado(a) {{ contact.first_name }}
 
 Você é maravilhoso(a). Muito obrigado pelo sua doação para a Fundação
 Wikimedia!
@@ -20,7 +20,8 @@ Obrigada,
 Sue Gardner
 Diretora Executiva da Fundação Wikimedia
 
-Para os seus registros: O seu donativo de {{contribution.receive_date}} foi {{contribution.contribution_source}}.
+Para os seus registros: O seu donativo de {{ contribution.receive_date|date("Y-d-m") }}
+foi {{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -43,6 +44,7 @@ Como doador, gostaríamos de mantê-lo informado das nossas atividades comunitá
 angariações de fundos. No entanto, se preferir não receber tais e-mails, por favor
 clique abaixo e será removido da lista:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Cancelar a
+subscrição</a>
 
 

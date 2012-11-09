@@ -1,4 +1,4 @@
-Kính gửi {{contact.first_name}}
+Kính gửi {{ contact.first_name }}
 
 Bạn là một người thật tuyệt vời, xin chân thành cảm ơn đã quyên
 góp cho Wikimedia Foundation!
@@ -24,7 +24,8 @@ Thân,
 Sue Gardner
 Giám đốc Điều hành Wikimedia Foundation
 
-Xin chứng nhận: Bạn quyên góp vào {{contribution.receive_date}} với {{contribution.contribution_source}}.
+Xin chứng nhận: Bạn quyên góp vào {{ contribution.receive_date|date("Y-d-m")
+}} với {{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -48,6 +49,6 @@ bạn về các hoạt động cộng đồng và gây quỹ của chúng tôi. 
 nếu bạn không thích nhận thư điện tử thông báo, xin hãy nhấn vào
 đường dẫn bên dưới để chúng tôi đưa tên bạn khỏi danh sách:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Không theo dõi</a>
 
 

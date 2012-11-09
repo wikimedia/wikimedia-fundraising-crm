@@ -1,4 +1,4 @@
-Dragi/a {{contact.first_name}}
+Dragi/a {{ contact.first_name }}
 
 Hvala Vam najljepše što ste darovali Zakladu Wikimedije!
 
@@ -19,7 +19,8 @@ Hvala,
 Sue Gardner
 izvršna direktorica Zaklade Wikimedije
 
-Za Vas: Vaš prilog dana {{contribution.receive_date}} iznosio je {{contribution.contribution_source}}.
+Za Vas: Vaš prilog dana {{ contribution.receive_date|date("Y-d-m") }} iznosio je {{
+contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -41,6 +42,6 @@ Neprimanje daljih poruka:
 želite primati takvu e-poštu od nas, molimo kliknite ispod i ne ćete biti dodani na
 popis:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Otkaži pretplatu</a>
 
 

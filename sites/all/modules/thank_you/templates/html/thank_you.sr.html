@@ -1,4 +1,4 @@
-<p>Драги/а {{contact.first_name}}</p>
+<p>Драги/а {{ contact.first_name }}</p>
 
 <p>Много вам хвала што сте дали прилог Задужбини
 Викимедија!</p>
@@ -26,7 +26,8 @@
 Су Гарднер<br />
 Извршна директорка Задужбине Викимедија</p>
 
-<p>За вас: ваш прилог {{contribution.receive_date}} је {{contribution.contribution_source}}.
+<p>За вас: ваш прилог {{ contribution.receive_date|date("Y-d-m") }} је {{
+contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/sr.html' ignore missing %}
 {% endif %}</p>
@@ -50,6 +51,6 @@ Francisco, CA, 94105. U.S. пореска олакшица: 20-0049703</p>
 такве поруке, кликните на везу испод а ми ћемо вас
 обрисати са списка:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Unsubscribe</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 </div>

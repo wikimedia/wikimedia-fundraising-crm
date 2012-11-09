@@ -1,4 +1,4 @@
-<p>I/E dashur {{contact.first_name}}</p>
+<p>I/E dashur {{ contact.first_name }}</p>
 
 <p>Ju jeni një njeri i shkëlqyer, faleminderit shumë për kontributin tuaj në ndihmë
 të Fondacionit Wikimedia. </p>
@@ -22,7 +22,8 @@ falënderoj për faktin që keni besim tek ne.</p>
 Sue Gardner<br />
 Drejtoresha ekzekutive e Fondacionit Wikimedia</p>
 
-<p>Për të qene në dijeni: Kontributi juaj më datë {{contribution.receive_date}} ishte {{contribution.contribution_source}}.
+<p>Për të qene në dijeni: Kontributi juaj më datë {{
+contribution.receive_date|date("Y-d-m") }} ishte {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/sq.html' ignore missing %}
 {% endif %}</p>
@@ -44,6 +45,6 @@ fushatave për thithjen e fondeve të komunitetit tonë. Por, nëse dëshironi q
 t’iu dërgojmë lajme me postë elektronike, atëherë ju lutem klikoni më poshtë dhe
 ne do t’iu përjashtojmë nga lista:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Çregjistrohuni</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Çregjistrohuni</a>
 
 </div>

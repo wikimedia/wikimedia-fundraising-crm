@@ -1,4 +1,4 @@
-<p>ପ୍ରିୟ {{contact.first_name}}</p>
+<p>ପ୍ରିୟ {{ contact.first_name }}</p>
 
 <p>ଆପଣ ମହାନ, ଉଇକିମିଡ଼ିଆ
 ଫାଉଣ୍ଡେସନକୁ ଦାନ କରିଥିବାରୁ ଅନେକ
@@ -38,7 +38,9 @@
 ଉଇକିମେଡିଆ ସଂସ୍ଥାର ମୁଖ୍ୟ
 ନିର୍ଦେଶକ</p>
 
-<p>ଆପଣଙ୍କ ମନେରଖିବା ପାଇଁ: ଆପଣଙ୍କ ଦାନ ତାରିଖ {{contribution.receive_date}} ପରିମାଣ {{contribution.contribution_source}} ।
+<p>ଆପଣଙ୍କ ମନେରଖିବା ପାଇଁ: ଆପଣଙ୍କ ଦାନ
+ତାରିଖ {{ contribution.receive_date|date("Y-d-m") }} ପରିମାଣ {{
+contribution.contribution_source }} ।
 {% if recurring %}
 {% include 'recurring/or.html' ignore missing %}
 {% endif %}</p>
@@ -67,6 +69,7 @@
 ଚାହୁଁଥିବେ ତାହେଲେ ତଳ ଲିଙ୍କରେ
 କ୍ଲିକ କରନ୍ତୁ :</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">ଯୋଗାଯୋଗରୁ ବାହାରିବା</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw
+}}">ଯୋଗାଯୋଗରୁ ବାହାରିବା</a>
 
 </div>

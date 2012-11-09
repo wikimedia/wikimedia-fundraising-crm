@@ -1,4 +1,4 @@
-<p>Szanowny {{contact.first_name}}</p>
+<p>Szanowny {{ contact.first_name }}</p>
 
 <p>Jesteś dobrym człowiekiem! Serdecznie dziękuję Ci za wsparcie Wikimedia
 Foundation.</p>
@@ -22,7 +22,8 @@ zaufanie.</p>
 Sue Gardner<br />
 dyrektor generalny Wikimedia Foundation</p>
 
-<p>Potwierdzenie wpłaty: w dniu {{contribution.receive_date}} otrzymaliśmy {{contribution.contribution_source}}.
+<p>Potwierdzenie wpłaty: w dniu {{ contribution.receive_date|date("Y-d-m") }}
+otrzymaliśmy {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/pl.html' ignore missing %}
 {% endif %}</p>
@@ -42,6 +43,7 @@ number: 20-0049703.</p>
 funduszy. Jeśli wolisz jednak nie otrzymywać od nas tego typu wiadomości, kliknij
 proszę poniżej w celu usunięcia Twojego adresu z listy:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Zrezygnuj z subskrypcji</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Zrezygnuj z
+subskrypcji</a>
 
 </div>

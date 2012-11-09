@@ -1,4 +1,4 @@
-<p>Kära {{contact.first_name}}</p>
+<p>Kära {{ contact.first_name }}</p>
 
 <p>Du är underbar – tack så mycket för din gåva till Wikimediastiftelsen!</p>
 
@@ -19,7 +19,8 @@ använda din gåva med varsamhet, och tack för att du litar på oss.</p>
 Sue Gardner<br />
 Verkställande direktör, Wikimediastiftelsen</p>
 
-<p>För din egen bokföring: Din gåva {{contribution.receive_date}} var {{contribution.contribution_source}}.
+<p>För din egen bokföring: Din gåva {{ contribution.receive_date|date("Y-d-m") }} var
+{{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/sv.html' ignore missing %}
 {% endif %}</p>
@@ -38,6 +39,6 @@ Amerika: 20-0049703</p>
 välgörenhetskampanjer. Om du inte vill få sådana email från oss, klicka då på
 länken nedan så att vi kan ta bort dig från listan:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Avsluta abonnemang</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Avsluta abonnemang</a>
 
 </div>

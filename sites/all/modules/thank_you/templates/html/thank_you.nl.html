@@ -1,4 +1,4 @@
-<p>Beste {{contact.first_name}}, </p>
+<p>Beste {{ contact.first_name }}, </p>
 
 <p>Hartelijk dank voor uw donatie aan de Wikimedia Foundation!</p>
 
@@ -23,7 +23,8 @@ de wereld een beetje beter te maken. We zullen uw geld zorgvuldig gebruiken.</p>
 Sue Gardner<br />
 Directeur van de Wikimedia Foundation</p>
 
-<p>Voor uw administratie: Uw donatie op {{contribution.receive_date}}  bedroeg {{contribution.contribution_source}} .
+<p>Voor uw administratie: Uw donatie op {{ contribution.receive_date|date("Y-d-m") }} 
+bedroeg {{ contribution.contribution_source }} .
 {% if recurring %}
 {% include 'recurring/nl.html' ignore missing %}
 {% endif %}</p>
@@ -43,6 +44,6 @@ San Francisco, CA, 94105. Belastingvrijstellingsnummer in de Verenigde Staten:
 Wikipediagemeenschap en de fondsenwerving. Als u dergelijke e-mails niet op prijs stelt,
 klik dan hieronder en we verwijderen uw e-mailadres van de maillijst.</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Uitschrijven</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Uitschrijven</a>
 
 </div>

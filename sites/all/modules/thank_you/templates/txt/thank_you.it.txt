@@ -1,4 +1,4 @@
-Gentile {{contact.first_name}}
+Gentile {{ contact.first_name }}
 
 Grazie di cuore per il tuo contributo alla Wikimedia Foundation!
 
@@ -19,7 +19,8 @@ A presto,
 Sue Gardner
 Direttore Esecutivo della Wikimedia Foundation
 
-Per tua archiviazione: la tua donazione del {{contribution.receive_date}} è stata di {{contribution.contribution_source}}.
+Per tua archiviazione: la tua donazione del {{ contribution.receive_date|date("Y-d-m")
+}} è stata di {{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -42,6 +43,6 @@ Ti ricordiamo che ti invieremo un'email in questo periodo dell'anno prossimo per
 rinnovare la tua donazione. Se preferisci non ricevere da noi un promemoria tramite posta
 elettronica, clicca qui sotto e ti toglieremo dalla lista.
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Annulla l'iscrizione</a>
 
 

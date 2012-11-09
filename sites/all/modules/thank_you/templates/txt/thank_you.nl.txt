@@ -1,4 +1,4 @@
-Beste {{contact.first_name}},
+Beste {{ contact.first_name }},
 
 Hartelijk dank voor uw donatie aan de Wikimedia Foundation!
 
@@ -23,7 +23,8 @@ Bedankt,
 Sue Gardner
 Directeur van de Wikimedia Foundation
 
-Voor uw administratie: Uw donatie op {{contribution.receive_date}}  bedroeg {{contribution.contribution_source}} .
+Voor uw administratie: Uw donatie op {{ contribution.receive_date|date("Y-d-m") }}
+bedroeg {{ contribution.contribution_source }} .
 
 {% if recurring %}
 
@@ -46,6 +47,6 @@ Wij willen u als donateur graag op de hoogte te houden van de activiteiten van d
 Wikipediagemeenschap en de fondsenwerving. Als u dergelijke e-mails niet op prijs stelt,
 klik dan hieronder en we verwijderen uw e-mailadres van de maillijst.
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Uitschrijven</a>
 
 

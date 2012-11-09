@@ -1,4 +1,4 @@
-Hörmətli {{contact.first_name}},
+Hörmətli {{ contact.first_name }},
 
 Vikimedia Fonduna ianə bağışladığınız üçün sizə dərin təşəkkürümüzü
 bildiririk!
@@ -22,7 +22,8 @@ Hörmətlə,
 Syu Qardner
 Vikimedia Fondunun icraçı direktoru
 
-Sizin üçün qeydlər: Sizin ianəniz {{contribution.receive_date}} tarixində edilmiş və {{contribution.contribution_source}} olmuşdur.
+Sizin üçün qeydlər: Sizin ianəniz {{ contribution.receive_date|date("Y-d-m") }}
+tarixində edilmiş və {{ contribution.contribution_source }} olmuşdur.
 
 {% if recurring %}
 
@@ -45,6 +46,6 @@ xəbərdar olan ianəçi kimi saxlamaq istəyirik. Əgər siz bizdən bu cür el
 məktublar almaq istəmirsinizsə, onda aşağını tıqlayın və biz sizi siyahıdan
 çıxaracayıq.
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 

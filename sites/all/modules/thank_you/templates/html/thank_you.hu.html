@@ -1,4 +1,4 @@
-<p>Kedves {{contact.first_name}}</p>
+<p>Kedves {{ contact.first_name }}</p>
 
 <p>Fantasztikus vagy, hálásan köszönöm, hogy támogatod a Wikimédia
 Alapítványt!</p>
@@ -21,7 +21,8 @@ fogjuk felhasználni, és köszönjük, hogy megbízol bennünk.</p>
 Sue Gardner<br />
 a Wikimédia Alapítvány vezérigazgatója</p>
 
-<p>A jegyzőkönyv kedvéért: a {{contribution.receive_date}}-i adományod összege {{contribution.contribution_source}} volt.
+<p>A jegyzőkönyv kedvéért: a {{ contribution.receive_date|date("Y-d-m") }}-i
+adományod összege {{ contribution.contribution_source }} volt.
 {% if recurring %}
 {% include 'recurring/hu.html' ignore missing %}
 {% endif %}</p>
@@ -40,6 +41,6 @@ adójóváírási számunk: 20-0049703</p>
 és gyűjtőkampányainkról. Ha nem szeretnél ilyen leveleket kapni, kattints az alábbi
 linkre, és leveszünk az értesítési listánkról:</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Leiratkozás</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Leiratkozás</a>
 
 </div>

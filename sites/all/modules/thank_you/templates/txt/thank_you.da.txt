@@ -1,4 +1,4 @@
-Kære {{contact.first_name}}
+Kære {{ contact.first_name }}
 
 Du er en knag! Mange tak for din donation til Wikimedia Foundation.
 
@@ -19,7 +19,8 @@ Mange tak,
 Sue Gardner
 Wikimedia Foundation Executive Director
 
-Til regnskabet: Dit bidrag d. {{contribution.receive_date}} var på {{contribution.contribution_source}}.
+Til regnskabet: Dit bidrag d. {{ contribution.receive_date|date("Y-d-m") }} var på {{
+contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -40,6 +41,6 @@ Som bidragsyder vil vi gerne kunne gerne sende dig nyheder om brugeraktiviteter 
 indsamlinger. Hvis du ikke ønsker at modtage sådanne email fra os, så klik venligst
 herunder for at blive taget af listen:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Afmeld</a>
 
 

@@ -1,4 +1,4 @@
-טייערער {{contact.first_name}}
+טייערער {{ contact.first_name }}
 
 איר זענט וואונדערבאר, א גרויסן ייש"כ פארן מנדב
 זײַן צו דער וויקימעדיע פונדאציע!
@@ -27,7 +27,9 @@
 סו גארדנער
 וויקימעדיע פונדאציע עקסעקיוטיוו דירעקטאר
 
-פאר אייערע אקטן: אייער נדבה פון {{contribution.receive_date}} איז געווען {{contribution.contribution_source}}.
+פאר אייערע אקטן: אייער נדבה פון {{
+contribution.receive_date|date("Y-d-m") }} איז געווען {{
+contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -58,6 +60,6 @@ U.S. שטייער־פריי נומער: 20-0049703
 באקומען אזא בליצבריוו פון אונז, קליקט אונטן און
 מיר וועלן אראפנעמען אייך פון דער רשימה:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
 
 

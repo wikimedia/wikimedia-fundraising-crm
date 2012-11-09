@@ -1,4 +1,4 @@
-{{contact.first_name}},
+{{ contact.first_name }},
 
 ви надзвичайна людина, дякуємо за благодійний
 внесок до Фонду Вікімедіа!
@@ -27,7 +27,8 @@
 Сью Гарднер,
 виконавчий директор Фонду Вікімедіа
 
-Про всяк випадок: {{contribution.receive_date}} ви зробили пожертву у розмірі {{contribution.contribution_source}}.
+Про всяк випадок: {{ contribution.receive_date|date("Y-d-m") }} ви
+зробили пожертву у розмірі {{ contribution.contribution_source }}.
 
 {% if recurring %}
 
@@ -54,6 +55,7 @@ Francisco, CA, 94105. Номер звільнення від податків у
 повідомлення, будь ласка, натисніть нижче, і ми
 виключимо вас зі списку розсилки:
 
-{{unsubscribe_link|raw}}
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw
+}}">Відписатися</a>
 
 

@@ -1,4 +1,4 @@
-<p>{{contact.first_name}}さま、</p>
+<p>{{ contact.first_name }}さま、</p>
 
 <p>実に素晴らしいことです。ウィキメディア財団にご寄付いただきまして本当にありがとうございました。</p>
 
@@ -9,7 +9,8 @@
 <p>ありがとうございました。<br />
 ウィキメディア財団事務長、スー・ガードナーより</p>
 
-<p>お控え用： {{contribution.receive_date}}にあなたがなさった寄付は{{contribution.contribution_source}}でした。
+<p>お控え用： {{ contribution.receive_date|date("Y-d-m")
+}}にあなたがなさった寄付は{{ contribution.contribution_source }}でした。
 {% if recurring %}
 {% include 'recurring/ja.html' ignore missing %}
 {% endif %}</p>
@@ -31,6 +32,7 @@
 
 <p>そのような電子メールを受けとりたくない場合は、下記をクリックしてください。後ほどリストから除外させていただきます。</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">購読解除します。</a>
+<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw
+}}">購読解除します。</a>
 
 </div>
