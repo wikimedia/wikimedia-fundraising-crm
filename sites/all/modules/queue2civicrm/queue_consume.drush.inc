@@ -39,6 +39,8 @@ function queue_consume_drush_help( $section ) {
  * a queue.  All configurations happen in the module.
  */
 function drush_queue_consume() {
+  wmf_common_override_drush_error_handler();
+
   module_invoke( 'queue2civicrm', 'batch_process' );
   $errors = drush_get_error_log();
   if (!empty($errors)){
