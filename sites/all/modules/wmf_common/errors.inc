@@ -113,39 +113,3 @@ class WmfException extends Exception {
         return $default;
     }
 }
-
-function wmf_common_override_drush_error_handler() {
-    set_error_handler( "wmf_common_drush_error_handler" );
-}
-
-function wmf_common_drush_error_handler( $errno, $message, $filename, $line, $context ) {
-  // E_DEPRECATED was added in PHP 5.3. Drupal 6 will not fix all the
-  // deprecated errors, but suppresses them. So we suppress them as well.
-  if (defined('E_DEPRECATED')) {
-    $errno = $errno & ~E_DEPRECATED;
-  }
-
-  // "error_reporting" is usually set in php.ini, but may be changed by
-  // drush_errors_on() and drush_errors_off().
-  if ($errno & error_reporting()) {
-    // NOTE: this next line is the only change we make to the standard drush error handler:
-    // INCREDIBLY SLOW: $type = drush_get_option('php-notices', 'notice');
-    $type = 'notice';
-
-    // Bitmask value that constitutes an error needing to be logged.
-    $error = E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR;
-    if ($errno & $error) {
-      $type = 'error';
-    }
-
-    // Bitmask value that constitutes a warning being logged.
-    $warning = E_WARNING | E_CORE_WARNING | E_COMPILE_WARNING | E_USER_WARNING;
-    if ($errno & $warning) {
-      $type = 'warning';
-    }
-
-    drush_log($message . ' ' . basename($filename) . ':' . $line, $type);
-
-    return TRUE;
-  }
-}
