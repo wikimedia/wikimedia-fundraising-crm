@@ -108,41 +108,40 @@ function recurring_queue2civicrm_batch_process() {
  * 
  * @see recurring_import for status code information 
  */
-function recurring_process_msg( $msg ) {
-    try {
-        $msg_orig = $msg;
-        if( recurring_import( $msg ) === 1 ){
-			// only ack and remove from queue on explicit success
-			wmf_common_stomp_ack_frame( $msg_orig );
-		}
+function recurring_process_msg($msg) {
+  try {
+    $msg_orig = $msg;
+    if (recurring_import($msg) === 1) {
+      // only ack and remove from queue on explicit success
+      wmf_common_stomp_ack_frame($msg_orig);
     }
-    catch (WmfException $ex) {
-        watchdog('recurring', 'something went wrong during import: '.$ex->getMessage(), NULL, WATCHDOG_ERROR);
+  } catch (WmfException $ex) {
+    watchdog('recurring', 'something went wrong during import: ' . $ex->getMessage(), NULL, WATCHDOG_ERROR);
 
-        if ($ex->isRejectMessage()) {
-            $error = "\nRemoving failed message from the queue: \n" . print_r($msg, true);
-            wmf_common_stomp_ack_frame($msg_orig);
-            watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
-        }
-
-		if ( !$ex->isNoEmail() ){
-	        wmf_common_failmail( 'recurring', $ex, $msg );
-		}
-
-        if ($ex->isFatal()) {
-            $error = "Halting Process.";
-            watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
-            return FALSE;
-        }
-    }
-    catch (Exception $ex) {
-        $error = 'UNHANDLED ERROR CODE. Halting Process. exception: ' . $ex->getMessage();
-        watchdog('recurring', $error, NULL, WATCHDOG_ERROR);
-        wmf_common_failmail( 'recurring', $error, $msg );
-        return FALSE;
+    if ($ex->isRejectMessage()) {
+      $error = "\nRemoving failed message from the queue: \n" . print_r($msg, TRUE);
+      wmf_common_stomp_ack_frame($msg_orig);
+      watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
     }
 
-    return TRUE;
+    if (!$ex->isNoEmail()) {
+      wmf_common_failmail('recurring', $ex, $msg);
+    }
+
+    if ($ex->isFatal()) {
+      $error = "Halting Process.";
+      watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
+      return FALSE;
+    }
+  }
+  catch (Exception $ex) {
+    $error = 'UNHANDLED ERROR CODE. Halting Process. exception: ' . $ex->getMessage();
+    watchdog('recurring', $error, NULL, WATCHDOG_ERROR);
+    wmf_common_failmail('recurring', $error, $msg);
+    return FALSE;
+  }
+
+  return TRUE;
 }
 
 /**
