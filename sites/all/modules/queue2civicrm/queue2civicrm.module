@@ -148,6 +148,8 @@ function queue2civicrm_settings() {
 }
 
 function queue2civicrm_batch_process() {
+  wmf_civicrm_boost_performance();
+
   $processed = wmf_common_dequeue_loop(
       variable_get('queue2civicrm_subscription', '/queue/test'),
       variable_get( 'queue2civicrm_batch', 0 ),
