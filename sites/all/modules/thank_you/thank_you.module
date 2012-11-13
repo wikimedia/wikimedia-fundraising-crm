@@ -394,7 +394,13 @@ function thank_you_update_ty_date( $contribution, $anonymous=false ){
 	// updates when a contribution_id is passed
 	$result = civicrm_api( "Contribution", "create", $params );
 
-	return WMFCiviAPICheck::check_api_contribution( $result, $contribution['contribution_id'] );
+	if( WMFCiviAPICheck::check_api_contribution( $result, $contribution['contribution_id'] ) ){
+		return true;
+	}
+
+	watchdog('thank_you', 'Updating successful TY send failed with details: ' . print_r( $result, true ), array(), WATCHDOG_ERROR);
+
+	return false;
 }
 
 function thank_you_settings_form() {
