@@ -759,6 +759,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
  */
 function wmf_civicrm_message_contact_update( $msg, $contact_id )
 {
+    //FIXME: reverse the way these functions delegate.  Or eliminate -_insert.
     return wmf_civicrm_message_contact_insert( $msg, $contact_id );
 }
 
@@ -770,14 +771,9 @@ function wmf_civicrm_message_contact_update( $msg, $contact_id )
  * 
  * @param array $msg
  * @param array $contact
- * @return array
  */
 function wmf_civicrm_message_location_insert( $msg, $contact ) {
-    require_once 'api/v2/Location.php';
-    $params = wmf_civicrm_message_location_prepare_params( $msg, $contact );
-    $location_result = &civicrm_location_add( $params );
-    watchdog( 'wmf_civicrm', 'Result for adding location: %location', array( '%location' => print_r( $location_result, true )), WATCHDOG_DEBUG );
-    return $location_result;  
+    wmf_civicrm_message_location_update( $msg, $contact );
 }
 
 /**
@@ -788,61 +784,63 @@ function wmf_civicrm_message_location_insert( $msg, $contact ) {
  * 
  * @param array $msg
  * @param array $contact
- * @return array
- * @fixme upgrade to API v3, Location is deprecated, use Address, Email, etc
  */
 function wmf_civicrm_message_location_update( $msg, $contact ) {
-      require_once 'api/v2/Location.php';
-      $params = wmf_civicrm_message_location_prepare_params( $msg, $contact );
-      $location_result = &civicrm_location_update( $params );
-      watchdog( 'wmf_civicrm', 'Result for updating location: %location', array( '%location' => print_r( $location_result, true )), WATCHDOG_DEBUG );
-      return $location_result;  
+    wmf_civicrm_message_email_update( $msg, $contact[ 'id' ] );
+    wmf_civicrm_message_address_update( $msg, $contact[ 'id' ] );
 }
 
-/**
- * Prepare the parameters for location adding/updating
- * 
- * @param $msg
- * @param $contact
- * @return array
- */
-function wmf_civicrm_message_location_prepare_params( $msg, $contact ) {
+function wmf_civicrm_message_email_update( $msg, $contact_id ) {
     // unset the email address if the default is used
     // this enables us to properly dedupe contacts later on
     if( $msg[ 'email' ] == 'nobody@wikimedia.org' ){
+        // NOTE: this is copy-on-writing for no reason?
         $msg[ 'email' ] = null;
     }
 
-    //TODO lookup location_type
-    $emails = array( 
-        array(
-            'email' => $msg[ 'email' ],
-            'location_type_id' => 1,
-        ) 
+    $loc_type_id = wmf_civicrm_get_default_location_type_id();
+
+    $email_params = array(
+        'contact_id' => $contact_id,
+        'email' => $msg[ 'email' ],
+        'is_primary' => 1,
+        'is_billing' => 1,
+        'location_type_id' => $loc_type_id,
+        'version' => 3,
     );
-    
-    $address = array(
-        1 => array(
-            'location_type_id' => 1, //Home
-            'is_primary' => 1,
-            'street_address' => $msg['street_address'],
-            'supplemental_address_1' => $msg['supplemental_address_1'],
-            'city' => $msg['city'],
-            'state_province' => wmf_civicrm_get_state( $msg[ 'country' ], $msg['state_province'] ),
-            'postal_code' => $msg['postal_code'],
-            'country' => $msg['country'],
-            'is_billing' => 1,
-        )
+
+    $result = civicrm_api( "Email", "Create", $email_params );
+    if ( array_key_exists( 'is_error', $result ) && $result['is_error'] != 0 ) {
+        throw new WmfException( 'IMPORT_CONTACT', "Couldn't store email for the contact.", $result );
+    }
+}
+
+function wmf_civicrm_message_address_update( $msg, $contact_id ) {
+    $loc_type_id = wmf_civicrm_get_default_location_type_id();
+
+    $address_params = array(
+        'contact_id' => $contact_id,
+        'location_type_id' => $loc_type_id,
+        'is_primary' => 1,
+        'street_address' => $msg['street_address'],
+        'supplemental_address_1' => $msg['supplemental_address_1'],
+        'city' => $msg['city'],
+        'state_province' => wmf_civicrm_get_state( $msg[ 'country' ], $msg['state_province'] ),
+        'postal_code' => $msg['postal_code'],
+        'country' => $msg['country'],
+        'is_billing' => 1,
+        'version' => 3,
     );
-    
-    $params = array(
-        'version' => '3.0',
-        'contact_id' => $contact[ 'id' ],
-        'address' => $address,
-        'email' => $emails
-    );
-    
-    return $params;
+
+    $result = civicrm_api( "Address", "Create", $address_params );
+    if ( array_key_exists( 'is_error', $result ) && $result['is_error'] != 0 ) {
+        throw new WmfException( 'IMPORT_CONTACT', "Couldn't store address for the contact.", $result );
+    }
+}
+
+function wmf_civicrm_get_default_location_type_id() {
+    require_once 'CRM/Core/BAO/LocationType.php';
+    return CRM_Core_BAO_LocationType::getDefault();
 }
 
 /**
