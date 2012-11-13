@@ -388,6 +388,8 @@ function thank_you_update_ty_date( $contribution, $anonymous=false ){
 		// we can't send a TY if it was an anonymous donation or we don't have an email
 		// address, but we want to mark it as such
 		$params['thankyou_date'] = "1970-01-01 00:00:00";
+
+		return wmf_civicrm_set_thankyou_date_to_epoch( $contribution[ 'contribution_id' ] );
 	}
 
 	// the update function seems to not work for Contribution and the insert

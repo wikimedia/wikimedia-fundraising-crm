@@ -993,3 +993,19 @@ function wmf_civicrm_boost_performance() {
     $config = CRM_Core_Config::singleton();
     $config->doNotResetCache = 1;
 }
+
+function wmf_civicrm_set_thankyou_date_to_epoch( $contribution_id ){
+	$dbs = wmf_civicrm_get_dbs();
+	$dbs->push( 'civicrm' );
+
+	$query = "UPDATE civicrm_contribution SET thankyou_date = \"1970-01-01 00:00:00\" WHERE id=%d";
+
+	$result = db_query( $query, $contribution_id );
+	if ( !$result ) {
+		watchdog('thank_you', 'Updating TY date to epoch failed ', array(), WATCHDOG_ERROR);
+		return false;
+	} else {
+		watchdog('thank_you', 'TY date set to epoch sucessfully', array(), WATCHDOG_INFO);
+		return true;
+	}
+}
