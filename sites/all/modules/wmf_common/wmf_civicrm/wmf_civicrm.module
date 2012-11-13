@@ -989,6 +989,7 @@ function wmf_civicrm_get_contribution( $msg ){
 }
 
 function wmf_civicrm_boost_performance() {
+    civicrm_initialize();
     require_once 'CRM/Core/Config.php';
     $config = CRM_Core_Config::singleton();
     $config->doNotResetCache = 1;
