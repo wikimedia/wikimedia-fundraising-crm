@@ -106,17 +106,33 @@ function wmf_common_settings() {
     '#description'   => "{$twig_msg} " . t('Filesystem path of the Twig library.  Try: <code>svn co http://svn.wikimedia.org/svnroot/wikimedia/vendors/twig</code>'),
   );
 
-	$di_path = variable_get('wmf_common_di_location', drupal_get_path('module', 'wmf_common') . DIRECTORY_SEPARATOR);
-	$di_installed = file_exists(implode(DIRECTORY_SEPARATOR, array($di_path, 'gateway_common', 'interface.i18n.php')));
-	$di_msg = $di_installed ? '<span style="color:green;">Installed Correctly</span>' : '<span style="color:red;">Please install</span>';
+  $di_path = variable_get('wmf_common_di_location', drupal_get_path('module', 'wmf_common') . DIRECTORY_SEPARATOR);
+  $di_installed = file_exists(implode(DIRECTORY_SEPARATOR, array($di_path, 'gateway_common', 'interface.i18n.php')));
+  $di_msg = $di_installed ? '<span style="color:green;">Installed Correctly</span>' : '<span style="color:red;">Please install</span>';
 
-	$form['wmf_common_di_location'] = array(
-		'#type'          => 'textfield',
-		'#title'         => t('Donation Interface location'),
-		'#default_value' => $di_path,
-		'#required'      => TRUE,
-		'#description'   => "{$di_msg} " . t('Filesystem path to a checkout of Donation Interface.  Try: <code>git clone https://gerrit.wikimedia.org/r/p/mediawiki/extensions/DonationInterface.git</code>'),
-	);
+  $form['wmf_common_di_location'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Donation Interface location'),
+    '#default_value' => $di_path,
+    '#required'      => TRUE,
+    '#description'   => "{$di_msg} " . t('Filesystem path to a checkout of Donation Interface.  Try: <code>git clone https://gerrit.wikimedia.org/r/p/mediawiki/extensions/DonationInterface.git</code>'),
+  );
+
+  $form['wmf_common_requeue_delay'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Requeue Delay Time'),
+    '#default_value' => 20 * 60,
+    '#required'      => TRUE,
+    '#description'   => t('Seconds to wait before retrying a failed queue message.'),
+  );
+
+  $form['wmf_common_requeue_max'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Maximum Requeue Attempts'),
+    '#default_value' => 10,
+    '#required'      => TRUE,
+    '#description'   => t('Number of allowed message requeue attempts before the message is moved to the "badmsg" queue.'),
+  );
 
   return system_settings_form($form);
 }
