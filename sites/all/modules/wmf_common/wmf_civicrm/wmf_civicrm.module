@@ -818,6 +818,10 @@ function wmf_civicrm_message_email_update( $msg, $contact_id ) {
 function wmf_civicrm_message_address_update( $msg, $contact_id ) {
     $loc_type_id = wmf_civicrm_get_default_location_type_id();
 
+    // We can do these lookups a bit more efficiently than Civi
+    $country_id = wmf_civicrm_get_country_id( $msg[ 'country' ] );
+    $state_province_id = wmf_civicrm_get_state_id( $country_id, $msg['state_province'] );
+
     $address_params = array(
         'contact_id' => $contact_id,
         'location_type_id' => $loc_type_id,
@@ -825,15 +829,22 @@ function wmf_civicrm_message_address_update( $msg, $contact_id ) {
         'street_address' => $msg['street_address'],
         'supplemental_address_1' => $msg['supplemental_address_1'],
         'city' => $msg['city'],
-        'state_province' => wmf_civicrm_get_state( $msg[ 'country' ], $msg['state_province'] ),
+        'state_province_id' => $state_province_id,
+        'state_province' => $msg['state_province'],
         'postal_code' => $msg['postal_code'],
-        'country' => $msg['country'],
+        'country_id' => $country_id,
+        'country' => $msg[ 'country' ],
         'is_billing' => 1,
         'version' => 3,
     );
 
-    $result = civicrm_api( "Address", "Create", $address_params );
-    if ( array_key_exists( 'is_error', $result ) && $result['is_error'] != 0 ) {
+    // FIXME: api does not offer control over fixAddress flag
+    //$result = civicrm_api( "Address", "Create", $address_params );
+    //if ( array_key_exists( 'is_error', $result ) && $result['is_error'] != 0 ) {
+
+    require_once 'CRM/Core/BAO/Address.php';
+    $result = CRM_Core_BAO_Address::add( $address_params, false );
+    if ( !$result ) {
         throw new WmfException( 'IMPORT_CONTACT', "Couldn't store address for the contact.", $result );
     }
 }
@@ -841,6 +852,17 @@ function wmf_civicrm_message_address_update( $msg, $contact_id ) {
 function wmf_civicrm_get_default_location_type_id() {
     require_once 'CRM/Core/BAO/LocationType.php';
     return CRM_Core_BAO_LocationType::getDefault();
+}
+
+function wmf_civicrm_get_country_id( $code ) {
+    // iso code
+    if ( strlen( $code ) == 2 ) {
+        $iso_cache = CRM_Core_PseudoConstant::countryIsoCode();
+        $id = array_search( $code, $iso_cache );
+        if ( $id !== FALSE ) {
+            return $id;
+        }
+    }
 }
 
 /**
@@ -866,6 +888,25 @@ function wmf_civicrm_get_state( $country, $state )
 
     return $state;
 }
+
+function wmf_civicrm_get_state_id( $country_id, $state )
+{
+    $query = <<<EOS
+SELECT id
+FROM civicrm_state_province s
+WHERE
+    s.country_id = %d
+    AND ( s.abbreviation = '%s' OR s.name = '%s' )
+EOS;
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push( 'civicrm' );
+    $result = db_query( $query, array( $country_id, $state, $state ) );
+    if ( $result->num_rows === 1 ){
+        $row = db_fetch_object( $result );
+        return $row->id;
+    }
+}
+
 
 
 /**
