@@ -1,47 +1,91 @@
 Dear {{ contact.first_name }},
 
-You are amazing, thank you so much for donating to the Wikimedia Foundation!
+Thank you for donating to the Wikimedia Foundation. You are wonderful!
 
-This is how we pay our bills -- it's people like you, giving five dollars, twenty
-dollars, a hundred dollars. My favourite donation last year was five pounds from a little
-girl in England, who had persuaded her parents to let her donate her allowance. It's
-people like you, joining with that girl, who make it possible for Wikipedia to continue
-providing free, easy access to unbiased information, for everyone around the world. For
-everyone who helps pay for it, and for those who can't afford to help. Thank you so
-much.
+It's easy to ignore our fundraising banners, and I'm really glad you
+didn't. This is how Wikipedia pays its bills --- people like you giving
+us money, so we can keep the site freely available for everyone around
+the world.
 
-I know it's easy to ignore our appeals, and I'm glad that you didn't. From me, and from
-the tens of thousands of volunteers who write Wikipedia: thank you for helping us make the
-world a better place. We will use your money carefully, and I thank you for your trust in
-us.
+People tell me they donate to Wikipedia because they find it useful,
+and they trust it because even though it's not perfect, they know it's
+written for them. Wikipedia isn’t meant to advance somebody's PR agenda
+or push a particular ideology, or to persuade you to believe something
+that's not true. We aim to tell the truth, and we can do that because
+of you. The fact that you fund the site keeps us independent and able
+to deliver what you need and want from Wikipedia. Exactly as it should
+be.
+
+You should know: your donation isn’t just covering your own costs. The
+average donor is paying for his or her own use of Wikipedia, plus the
+costs of hundreds of other people. Your donation keeps Wikipedia
+available for an ambitious kid in Bangalore who’s teaching herself
+computer programming. A middle-aged homemaker in Vienna who’s just been
+diagnosed with Parkinson’s disease. A novelist researching 1850s
+Britain. A 10-year-old in San Salvador who’s just discovered Carl
+Sagan.
+
+On behalf of those people, and the half-billion other readers of
+Wikipedia and its sister sites and projects, I thank you for joining us
+in our effort to make the sum of all human knowledge available for
+everyone. Your donation makes the world a better place. Thank you.
+
+Most people don't know Wikipedia's run by a non-profit. Please consider
+sharing this e-mail with a few of your friends to encourage them to
+donate too. And if you're interested, you should try adding some new
+information to Wikipedia. If you see a typo or other small mistake,
+please fix it, and if you find something missing, please add it. There
+are resources [1]here that can help you get started. Don't worry about
+making a mistake: that's normal when people first start editing and if
+it happens, other Wikipedians will be happy to fix it for you.
+
+  Links:
+    1. http://en.wikipedia.org/wiki/Wikipedia:Introduction
+
+I appreciate your trust in us, and I promise you we'll use your money
+well.
 
 Thanks,
+Sue
+
 Sue Gardner
-Wikimedia Foundation Executive Director
+Executive Director,
+Wikimedia Foundation
+https://donate.wikimedia.org
 
-For your records: Your donation on {{ contribution.receive_date|date("Y-d-m") }} was {{
-contribution.contribution_source }}.
+You can follow us on [3]Twitter, [4]identi.ca or [5]Google+, like us on
+[6]Facebook and read [7]our blog. Here is the [8]Wikimedia Foundation
+annual report for 2010-11, the [9]Wikimedia Foundation annual plan for
+2012-13 and the [10]Wikimedia Foundation’s five-year strategic plan.
+You can also now buy Wikipedia merchandise at [11]shop.wikimedia.org.
 
-{% if recurring %}
+  Links:
+    3. http://twitter.com/Wikipedia
+    4. http://identi.ca/wikipedia
+    5. https://plus.google.com/+Wikipedia/posts
+    6. http://www.facebook.com/wikipedia
+    7. http://blog.wikimedia.org
+    8. https://wikimediafoundation.org/wiki/Annual_Report
+    9. http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf
+    10. https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary
+    11. https://shop.wikimedia.org
 
-{% include 'recurring/en.html' ignore missing %}
+For your records: Your donation on {{ contribution.receive_date|date("Y-d-m") }} was {{ contribution.contribution_source }}.
+{% if recurring %} {% include 'recurring/en.html' ignore missing %} {% endif %}
 
-{% endif %}
-
-This letter may serve as a record of your donation. No goods or services were provided,
-in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit
-charitable corporation with 501(c)(3) tax exempt status in the United States. Our address
-is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number:
-20-0049703
-
-
+This letter may serve as a record of your donation. No goods or
+services were provided, in whole or in part, for this contribution. The
+Wikimedia Foundation, Inc. is a non-profit charitable corporation with
+501(c)(3) tax exempt status in the United States. Our address is 149
+New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt
+number: 20-0049703
 
 Opt out option:
 
-We'd like to keep you as a donor informed of our community activities and fundraisers.
-If you prefer however not to receive such emails from us, please click below and we'll
-take you off the list:
+We'd like to keep you as a donor informed of our community activities
+and fundraisers. If you prefer however not to receive such emails from
+us, please click below and we'll take you off the list:
+[12]Unsubscribe
 
-<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
-
-
+  Links:
+    12. {{ unsubscribe_link|raw }}
