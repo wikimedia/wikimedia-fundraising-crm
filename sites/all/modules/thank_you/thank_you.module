@@ -345,15 +345,39 @@ function thank_you_send( $contribution_id, $test=null ) {
 		$email_success = $mail->Send();
 
 	} catch (phpmailerException $e) {
+		$debug = array_merge( $email, array( "html" => '', "plaintext" => '' ) );
 		watchdog('thank_you', 'Sending thank you message failed for contribution (2): ' .
-			$contribution_id . '<pre>' . check_plain(print_r($email, TRUE)) . "\n\n" .
+			$contribution_id . '<pre>' . check_plain(print_r($debug, TRUE)) . "\n\n" .
 			$e->errorMessage() . '</pre>', array(), WATCHDOG_ERROR);
 
-		return false;
+		if( strpos( $e->errorMessage(), "Invalid address:" ) === false ){
+			wmf_common_failmail( 'thank_you', $e->errorMessage(), $debug );
+
+			if( variable_get( "thank_you_async_send", false ) ){
+				// we are not sending as part of q2c, so abort abort abort
+				watchdog( "thank_you", "HALTING the processing of thank you emails", array(), WATCHDOG_ERROR );
+				exit( 1 );
+			}
+
+			return false;
+		}
+
+		$email_success = false;
+		// fall through and set thankyou_date to epoch
+
 	} catch (Exception $e) {
+		$debug = array_merge( $email, array( "html" => '', "plaintext" => '' ) );
 		watchdog('thank_you', 'Sending thank you message failed for contribution (3): ' .
-			$contribution_id . '<pre>' . check_plain(print_r($email, TRUE)) . "\n\n" .
+			$contribution_id . '<pre>' . check_plain(print_r($debug, TRUE)) . "\n\n" .
 			$e->getMessage() . '</pre>', array(), WATCHDOG_ERROR);
+
+		wmf_common_failmail( 'thank_you', $e->getMessage() . "\n\n" . $e->getTraceAsString(), $debug );
+
+		if( variable_get( "thank_you_async_send", false ) ){
+			// we are not sending as part of q2c, so abort abort abort
+			watchdog( "thank_you", "HALTING the processing of thank you emails", array(), WATCHDOG_ERROR );
+			exit( 1 );
+		}
 
 		return false;
 	}
