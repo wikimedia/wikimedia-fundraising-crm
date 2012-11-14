@@ -114,6 +114,17 @@ function recurring_process_msg($msg) {
     if (recurring_import($msg) === 1) {
       // only ack and remove from queue on explicit success
       wmf_common_stomp_ack_frame($msg_orig);
+    } else {
+      // We failed to process the message for some reason or another
+      // So... we queue a new message (the original plus a time delay and count header)
+      // and ACK the original
+      $ret = wmf_common_stomp_requeue_with_delay($msg_orig);
+
+      if ($ret) {
+        wmf_common_stomp_ack_frame($msg_orig);
+      } else {
+        throw new WmfException("Failed to requeue a recurring message: " . json_encode($msg_orig));
+      }
     }
   } catch (WmfException $ex) {
     watchdog('recurring', 'something went wrong during import: ' . $ex->getMessage(), NULL, WATCHDOG_ERROR);
