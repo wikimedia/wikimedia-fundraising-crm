@@ -67,7 +67,12 @@ function exchange_rate_convert($from_currency, $amount = 1, $timestamp = NULL) {
   }
 
   $amount = str_replace(',', '', $amount);
-  $rate = db_result(db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = "%s" AND bank_update <= %d ORDER BY bank_update DESC', $from_currency, $timestamp, 0, 1));
+
+  $rate = exchange_rate_cache_get($from_currency, $timestamp);
+  if (!$rate) {
+    $rate = db_result(db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = "%s" AND bank_update <= %d ORDER BY bank_update DESC', $from_currency, $timestamp, 0, 1));
+    exchange_rate_cache_set($from_currency, $timestamp, $rate);
+  }
 
   // If a rate can't be found, use the oldest one on file.
   if (!$rate) {
@@ -79,6 +84,26 @@ function exchange_rate_convert($from_currency, $amount = 1, $timestamp = NULL) {
   }
 
   return $amount * $rate;  
+}
+
+function exchange_rate_cache_key($currency, $timestamp) {
+    return "$currency-$timestamp";
+}
+
+function exchange_rate_cache_get($currency, $timestamp) {
+    global $_exchange_rate_cache;
+
+    $key = exchange_rate_cache_key($currency, $timestamp);
+    if (!empty($_exchange_rate_cache) && array_key_exists($key, $_exchange_rate_cache)) {
+        return $_exchange_rate_cache[$key];
+    }
+}
+
+function exchange_rate_cache_set($currency, $timestamp, $rate) {
+    global $_exchange_rate_cache;
+
+    $key = exchange_rate_cache_key($currency, $timestamp);
+    $_exchange_rate_cache[$key] = $rate;
 }
 
 function exchange_rates_cron() {
