@@ -21,7 +21,15 @@ function wmf_common_dequeue_loop( $queue, $batch_size, $callback ) {
         wmf_common_failmail( 'wmf_common', 'STOMP_BAD_CONNECTION totally lacking a stomp server: ' . $ex->getMessage() );
         return;
     }
-    $con->subscribe( $queue, array('ack' => 'client') );
+
+    // Create the subscription -- to handle requeues we will only select things that either have no delay_till header
+    // or a delay_till that is less than now. Because ActiveMQ is stupid, numeric selects auto compare to null.
+    $ctime = time();
+    $con->subscribe( $queue, array(
+        'ack' => 'client',
+        'selector' => "delay_till < $ctime or delay_till = NONE",
+      )
+    );
 
     $processed = 0;
     for ( $i = 0; $i < $batch_size; $i++ ) {
@@ -53,10 +61,10 @@ function wmf_common_dequeue_loop( $queue, $batch_size, $callback ) {
     return $processed;
 }
 
-function wmf_common_stomp_connection( $renew = false ) {
+function wmf_common_stomp_connection( $renew = FALSE ) {
     global $_wmf_common_stomp_con;
     
-    if ( empty( $_wmf_common_stomp_con ) || $renew == true ) {
+    if ( empty( $_wmf_common_stomp_con ) || $renew == TRUE ) {
         //TODO these variables should be owned by wmf_common
         require_once variable_get('queue2civicrm_stomp_path', drupal_get_path('module', 'queue2civicrm') . '/Stomp.php');
         watchdog( 'wmf_common', 'Attempting connection to queue server: ' . variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
@@ -109,9 +117,50 @@ function wmf_common_stomp_is_connected() {
     return ( is_object($_wmf_common_stomp_con) && $_wmf_common_stomp_con->isConnected() );
 }
 
+/**
+ * Acknowledge a STOMP message and remove it from the queue
+ * @param $msg Message to acknowledge
+ */
 function wmf_common_stomp_ack_frame( $msg ) {
     $con = wmf_common_stomp_connection();
     if( $con ) {
         $con->ack( $msg );
     }
+}
+
+/**
+ * Enqueue a STOMP message
+ *
+ * @param $msg    Message to queue
+ * @param $queue  Queue to queue to; should start with /queue/
+ * @return bool   True if STOMP claims it worked
+ */
+function wmf_common_stomp_queue( $msg, $properties, $queue ) {
+  $con = wmf_common_stomp_connection();
+
+  $properties['persistent'] = 'true';
+
+  if ($con && $con->send($queue, $msg, $properties)) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+/**
+ * Requeues a STOMP message with a time delay.
+ *
+ * Note: orig_timestamp is in ms
+ *
+ * @param StompFrame $msg_orig
+ * @return bool True if it all went successfully
+ */
+function wmf_common_stomp_requeue_with_delay( $msg_orig ) {
+  $msg = $msg_orig->body;
+  $headers = array(
+    'orig_timestamp' => array_key_exists( 'orig_timestamp', $msg_orig->headers ) ? $msg_orig->headers['orig_timestamp'] : $msg_orig->headers['timestamp'],
+    'delay_till' => time() + (10 * 60),
+    'delay_count' => array_key_exists( 'delay_count', $msg_orig->headers ) ? $msg_orig->headers['delay_count'] + 1 : 1,
+  );
+  return wmf_common_stomp_queue( $msg, $headers, variable_get('recurring_subscription', '/queue/test_recurring'));
 }
