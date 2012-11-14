@@ -155,12 +155,19 @@ function wmf_common_stomp_queue( $msg, $properties, $queue ) {
  * @param StompFrame $msg_orig
  * @return bool True if it all went successfully
  */
-function wmf_common_stomp_requeue_with_delay( $msg_orig ) {
+function wmf_common_stomp_requeue_with_delay( $msg_orig, $queue ) {
   $msg = $msg_orig->body;
   $headers = array(
     'orig_timestamp' => array_key_exists( 'orig_timestamp', $msg_orig->headers ) ? $msg_orig->headers['orig_timestamp'] : $msg_orig->headers['timestamp'],
-    'delay_till' => time() + (10 * 60),
+    'delay_till' => intval(variable_get('wmf_common_requeue_delay', 60 * 20)),
     'delay_count' => array_key_exists( 'delay_count', $msg_orig->headers ) ? $msg_orig->headers['delay_count'] + 1 : 1,
   );
-  return wmf_common_stomp_queue( $msg, $headers, variable_get('recurring_subscription', '/queue/test_recurring'));
+
+  $max_count = intval(variable_get('wmf_common_requeue_max', 10));
+  if (($max_count > 0) && ($headers['delay_count'] > $max_count)) {
+    // Bad message! Move to bad message queue
+    $queue .= 'badmsg';
+  }
+
+  return wmf_common_stomp_queue( $msg, $headers, $queue );
 }
