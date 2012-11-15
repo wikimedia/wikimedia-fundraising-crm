@@ -25,11 +25,7 @@ function wmf_common_dequeue_loop( $queue, $batch_size, $callback ) {
     // Create the subscription -- to handle requeues we will only select things that either have no delay_till header
     // or a delay_till that is less than now. Because ActiveMQ is stupid, numeric selects auto compare to null.
     $ctime = time();
-    $con->subscribe( $queue, array(
-        'ack' => 'client',
-        'selector' => "delay_till < $ctime or delay_till = NONE",
-      )
-    );
+    $con->subscribe( $queue, array( 'ack' => 'client', ) );
 
     $processed = 0;
     for ( $i = 0; $i < $batch_size; $i++ ) {
@@ -43,6 +39,17 @@ function wmf_common_dequeue_loop( $queue, $batch_size, $callback ) {
             // TODO it would be smart to keep track of RECEIPT frames as they are an ack-of-ack
             watchdog( 'wmf_common', t('Popped a sweet nothing off the queue:') . check_plain( print_r($msg, TRUE) ));
             $i--;
+            continue;
+        } elseif (($msg->command == 'MESSAGE') &&
+                  array_key_exists('delay_till', $msg->headers) &&
+                  (intval($msg->headers['delay_till']) > time())
+        ) {
+            // We have a message that we are not supposed to process yet, So requeue and ack
+            if( wmf_common_stomp_requeue($msg) ) {
+                wmf_common_stomp_ack_frame($msg);
+            } else {
+                throw new WmfException("Failed to requeue a delayed message");
+            }
             continue;
         }
         set_time_limit( 60 );
@@ -148,26 +155,63 @@ function wmf_common_stomp_queue( $msg, $properties, $queue ) {
 }
 
 /**
- * Requeues a STOMP message with a time delay.
+ * Places a STOMP message back onto the queue moving it's original timestamp to another
+ * property and maintaining a count of previous moves. After wmf_common_requeue_max
+ * moves it will move the message to $queue . '_badmsg'
  *
  * Note: orig_timestamp is in ms
  *
  * @param StompFrame $msg_orig
  * @return bool True if it all went successfully
  */
-function wmf_common_stomp_requeue_with_delay( $msg_orig, $queue ) {
+function wmf_common_stomp_requeue_with_delay( $msg_orig ) {
   $msg = $msg_orig->body;
   $headers = array(
     'orig_timestamp' => array_key_exists( 'orig_timestamp', $msg_orig->headers ) ? $msg_orig->headers['orig_timestamp'] : $msg_orig->headers['timestamp'],
-    'delay_till' => intval(variable_get('wmf_common_requeue_delay', 60 * 20)),
+    'delay_till' => time() + intval(variable_get('wmf_common_requeue_delay', 20 * 60)),
     'delay_count' => array_key_exists( 'delay_count', $msg_orig->headers ) ? $msg_orig->headers['delay_count'] + 1 : 1,
   );
 
+  $queue = $msg_orig->headers['destination'];
   $max_count = intval(variable_get('wmf_common_requeue_max', 10));
   if (($max_count > 0) && ($headers['delay_count'] > $max_count)) {
     // Bad message! Move to bad message queue
-    $queue .= 'badmsg';
+    $queue .= '_badmsg';
   }
 
-  return wmf_common_stomp_queue( $msg, $headers, $queue );
+  $retval = false;
+  try {
+    $retval = wmf_common_stomp_queue( $msg, $headers, $queue );
+  } catch (Stomp_Exception $ex) {
+    $exMsg = "Failed to requeue message with {$ex->getMessage()}. Contents: " . json_encode($msg_orig);
+    watchdog('recurring', $exMsg, NULL, WATCHDOG_ERROR);
+    wmf_common_failmail('recurring', $exMsg);
+  }
+  return $retval;
+}
+
+/**
+ * Places a STOMP message back onto the queue. Does not increment delay_count.
+ *
+ * @param $msg_orig
+ * @return bool
+ */
+function wmf_common_stomp_requeue( $msg_orig ) {
+  $msg = $msg_orig->body;
+  $headers = array(
+    'orig_timestamp' => array_key_exists( 'orig_timestamp', $msg_orig->headers ) ? $msg_orig->headers['orig_timestamp'] : $msg_orig->headers['timestamp'],
+    'delay_till' => array_key_exists( 'delay_till', $msg_orig->headers ) ? $msg_orig->headers['delay_till'] : 0,
+    'delay_count' => array_key_exists( 'delay_count', $msg_orig->headers ) ? $msg_orig->headers['delay_count'] : 0,
+  );
+  $queue = $msg_orig->headers['destination'];
+
+  $retval = false;
+  try {
+    $retval = wmf_common_stomp_queue( $msg, $headers, $queue );
+  } catch (Stomp_Exception $ex) {
+    $exMsg = "Failed to requeue message with {$ex->getMessage()}. Contents: " . json_encode($msg_orig);
+    watchdog('recurring', $exMsg, NULL, WATCHDOG_ERROR);
+    wmf_common_failmail('recurring', $exMsg);
+  }
+  return $retval;
 }

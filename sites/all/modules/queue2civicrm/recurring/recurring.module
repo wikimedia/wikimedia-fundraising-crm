@@ -118,12 +118,12 @@ function recurring_process_msg($msg) {
       // We failed to process the message for some reason or another
       // So... we queue a new message (the original plus a time delay and count header)
       // and ACK the original
-      $ret = wmf_common_stomp_requeue_with_delay($msg_orig, variable_get('recurring_subscription', '/queue/test_recurring'));
+      $ret = wmf_common_stomp_requeue_with_delay($msg_orig);
 
       if ($ret) {
         wmf_common_stomp_ack_frame($msg_orig);
       } else {
-        throw new WmfException("Failed to requeue a recurring message: " . json_encode($msg_orig));
+        throw new WmfException("Failed to requeue a recurring message");
       }
     }
   } catch (WmfException $ex) {
@@ -144,13 +144,6 @@ function recurring_process_msg($msg) {
       watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
       return FALSE;
     }
-
-  } catch (Stomp_Exception $ex) {
-    $exMsg = "Failed to requeue message with {$ex->getMessage()} -- left on queue. Contents: " . json_encode($msg_orig);
-    watchdog('recurring', $exMsg, NULL, WATCHDOG_ERROR);
-    wmf_common_failmail('recurring', $exMsg);
-    return FALSE;
-
   } catch (Exception $ex) {
     $error = 'UNHANDLED ERROR CODE. Halting Process. exception: ' . $ex->getMessage();
     watchdog('recurring', $error, NULL, WATCHDOG_ERROR);

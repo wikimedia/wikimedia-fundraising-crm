@@ -121,7 +121,7 @@ function wmf_common_settings() {
   $form['wmf_common_requeue_delay'] = array(
     '#type'          => 'textfield',
     '#title'         => t('Requeue Delay Time'),
-    '#default_value' => 20 * 60,
+    '#default_value' => variable_get( 'wmf_common_requeue_delay', 20 * 60 ),
     '#required'      => TRUE,
     '#description'   => t('Seconds to wait before retrying a failed queue message.'),
   );
@@ -129,7 +129,7 @@ function wmf_common_settings() {
   $form['wmf_common_requeue_max'] = array(
     '#type'          => 'textfield',
     '#title'         => t('Maximum Requeue Attempts'),
-    '#default_value' => 10,
+    '#default_value' => variable_get( 'wmf_common_requeue_max', 10 ),
     '#required'      => TRUE,
     '#description'   => t('Number of allowed message requeue attempts before the message is moved to the "badmsg" queue.'),
   );
