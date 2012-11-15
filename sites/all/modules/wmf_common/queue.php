@@ -50,7 +50,14 @@ function wmf_common_dequeue_loop( $queue, $batch_size, $callback ) {
             } else {
                 throw new WmfException("Failed to requeue a delayed message");
             }
-            continue;
+
+            // If we're seeing messages with the current transaction ID in it we've started to eat our own
+            // tail. So... we should bounce out.
+            if (strpos($msg->headers['message-id'], wmf_common_stomp_get_session_id()) === 0) {
+                break;
+            } else {
+              continue;
+            }
         }
         set_time_limit( 60 );
         $success = $callback( $msg );
@@ -179,7 +186,7 @@ function wmf_common_stomp_requeue_with_delay( $msg_orig ) {
     $queue .= '_badmsg';
   }
 
-  $retval = false;
+  $retval = FALSE;
   try {
     $retval = wmf_common_stomp_queue( $msg, $headers, $queue );
   } catch (Stomp_Exception $ex) {
@@ -205,7 +212,7 @@ function wmf_common_stomp_requeue( $msg_orig ) {
   );
   $queue = $msg_orig->headers['destination'];
 
-  $retval = false;
+  $retval = FALSE;
   try {
     $retval = wmf_common_stomp_queue( $msg, $headers, $queue );
   } catch (Stomp_Exception $ex) {
@@ -214,4 +221,14 @@ function wmf_common_stomp_requeue( $msg_orig ) {
     wmf_common_failmail('recurring', $exMsg);
   }
   return $retval;
+}
+
+/**
+ * Obtain the current stomp session id prefix
+ *
+ * @return mixed
+ */
+function wmf_common_stomp_get_session_id() {
+  $con = wmf_common_stomp_connection();
+  return $con->getSessionId();
 }
