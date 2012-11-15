@@ -27,7 +27,7 @@
 
 สำหรับการบันทึกของคุณ:
 การบริจาคของคุณในวันที่ {{
-contribution.receive_date|date("Y-d-m") }} คือ {{ contribution.contribution_source
+contribution.receive_date|date("Y-m-d") }} คือ {{ contribution.contribution_source
 }}
 
 {% if recurring %}

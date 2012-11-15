@@ -18,7 +18,7 @@ Grazas,
 Sue Gardner
 Directora executiva da Fundación Wikimedia
 
-Para o teu rexistro: A túa doazón o {{ contribution.receive_date|date("Y-d-m") }} foi
+Para o teu rexistro: A túa doazón o {{ contribution.receive_date|date("Y-m-d") }} foi
 de {{ contribution.contribution_source }}.
 
 {% if recurring %}

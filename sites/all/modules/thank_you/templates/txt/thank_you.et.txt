@@ -19,7 +19,7 @@ Aitäh veel kord!
 Sue Gardner
 Wikimedia Foundationi tegevdirektor
 
-Meelespidamiseks: sinu annetuskuupäev oli {{ contribution.receive_date|date("Y-d-m")
+Meelespidamiseks: sinu annetuskuupäev oli {{ contribution.receive_date|date("Y-m-d")
 }} ja annetussumma {{ contribution.contribution_source }}.
 
 {% if recurring %}

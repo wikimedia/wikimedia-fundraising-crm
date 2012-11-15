@@ -20,7 +20,7 @@ Hvala,
 Sue Gardner,
 izvršna direktorica Fundacije Wikimedija
 
-Za Vašo evidenco: Vaša donacija dne {{ contribution.receive_date|date("Y-d-m") }} je
+Za Vašo evidenco: Vaša donacija dne {{ contribution.receive_date|date("Y-m-d") }} je
 bila {{ contribution.contribution_source }}.
 
 {% if recurring %}

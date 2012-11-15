@@ -27,7 +27,7 @@
 رئیس انحصاری بنیاد ویکی‌مدیا
 
 برای ثبت شخصی: کمک تو در تاریخ {{
-contribution.receive_date|date("Y-d-m") }} و به مقدار{{
+contribution.receive_date|date("Y-m-d") }} و به مقدار{{
 contribution.contribution_source }} بود.
 
 {% if recurring %}

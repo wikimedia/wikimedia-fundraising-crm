@@ -19,7 +19,7 @@ Ačiū,
 Sue Gardner
 Wikimedia Foundation direktorė
 
-Jūsų įrašams: Jūsų {{ contribution.receive_date|date("Y-d-m") }} paaukota suma
+Jūsų įrašams: Jūsų {{ contribution.receive_date|date("Y-m-d") }} paaukota suma
 buvo {{ contribution.contribution_source }}.
 
 {% if recurring %}

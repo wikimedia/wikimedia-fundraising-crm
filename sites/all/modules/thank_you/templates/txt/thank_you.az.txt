@@ -22,7 +22,7 @@ Hörmətlə,
 Syu Qardner
 Vikimedia Fondunun icraçı direktoru
 
-Sizin üçün qeydlər: Sizin ianəniz {{ contribution.receive_date|date("Y-d-m") }}
+Sizin üçün qeydlər: Sizin ianəniz {{ contribution.receive_date|date("Y-m-d") }}
 tarixində edilmiş və {{ contribution.contribution_source }} olmuşdur.
 
 {% if recurring %}

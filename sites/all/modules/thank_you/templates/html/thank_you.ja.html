@@ -9,7 +9,7 @@
 <p>ありがとうございました。<br />
 ウィキメディア財団事務長、スー・ガードナーより</p>
 
-<p>お控え用： {{ contribution.receive_date|date("Y-d-m")
+<p>お控え用： {{ contribution.receive_date|date("Y-m-d")
 }}にあなたがなさった寄付は{{ contribution.contribution_source }}でした。
 {% if recurring %}
 {% include 'recurring/ja.html' ignore missing %}

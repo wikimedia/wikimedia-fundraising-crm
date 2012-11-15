@@ -31,7 +31,7 @@ Sue Gardner
 Εκτελεστική Διευθύντρια του Ιδρύματος Wikimedia
 
 Για το αρχείο σας: Η δωρεά σας στις {{
-contribution.receive_date|date("Y-d-m") }} ήταν {{ contribution.contribution_source
+contribution.receive_date|date("Y-m-d") }} ήταν {{ contribution.contribution_source
 }}.
 
 {% if recurring %}

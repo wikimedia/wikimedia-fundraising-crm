@@ -21,7 +21,7 @@ Köszönöm,
 Sue Gardner
 a Wikimédia Alapítvány vezérigazgatója
 
-A jegyzőkönyv kedvéért: a {{ contribution.receive_date|date("Y-d-m") }}-i
+A jegyzőkönyv kedvéért: a {{ contribution.receive_date|date("Y-m-d") }}-i
 adományod összege {{ contribution.contribution_source }} volt.
 
 {% if recurring %}

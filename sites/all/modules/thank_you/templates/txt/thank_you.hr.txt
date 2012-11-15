@@ -19,7 +19,7 @@ Hvala,
 Sue Gardner
 izvršna direktorica Zaklade Wikimedije
 
-Za Vas: Vaš prilog dana {{ contribution.receive_date|date("Y-d-m") }} iznosio je {{
+Za Vas: Vaš prilog dana {{ contribution.receive_date|date("Y-m-d") }} iznosio je {{
 contribution.contribution_source }}.
 
 {% if recurring %}

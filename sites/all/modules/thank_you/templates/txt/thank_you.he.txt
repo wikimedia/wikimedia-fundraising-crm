@@ -25,7 +25,7 @@
 מנכ"לית קרן ויקימדיה
 
 לרשומותיך: תרומתך בתאריך {{
-contribution.receive_date|date("Y-d-m") }} הייתה {{ contribution.contribution_source
+contribution.receive_date|date("Y-m-d") }} הייתה {{ contribution.contribution_source
 }}.
 
 {% if recurring %}

@@ -25,7 +25,7 @@
 سو غاردنر
 المديرة التنفيذية لمؤسسة ويكيميديا
 
-لسجلاتك: تبرعك في {{ contribution.receive_date|date("Y-d-m") }} كان {{
+لسجلاتك: تبرعك في {{ contribution.receive_date|date("Y-m-d") }} كان {{
 contribution.contribution_source }}.
 
 {% if recurring %}

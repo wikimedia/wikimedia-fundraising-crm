@@ -26,7 +26,7 @@
 Су Гарднер
 Извршна директорка Задужбине Викимедија
 
-За вас: ваш прилог {{ contribution.receive_date|date("Y-d-m") }} је {{
+За вас: ваш прилог {{ contribution.receive_date|date("Y-m-d") }} је {{
 contribution.contribution_source }}.
 
 {% if recurring %}

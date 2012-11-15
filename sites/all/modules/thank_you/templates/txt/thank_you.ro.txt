@@ -21,7 +21,7 @@ Sue Gardner
 Director executiv al Fundației Wikimedia
 
 Pentru evidența dumneavoastră: donația din data de {{
-contribution.receive_date|date("Y-d-m") }} a fost de {{ contribution.contribution_source
+contribution.receive_date|date("Y-m-d") }} a fost de {{ contribution.contribution_source
 }}.
 
 {% if recurring %}

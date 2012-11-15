@@ -28,7 +28,7 @@
 וויקימעדיע פונדאציע עקסעקיוטיוו דירעקטאר
 
 פאר אייערע אקטן: אייער נדבה פון {{
-contribution.receive_date|date("Y-d-m") }} איז געווען {{
+contribution.receive_date|date("Y-m-d") }} איז געווען {{
 contribution.contribution_source }}.
 
 {% if recurring %}

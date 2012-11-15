@@ -22,7 +22,7 @@ Merci,
 Sue Gardner
 Directrice exécutive de la Wikimedia Foundation
 
-Pour information : votre don à la date de {{ contribution.receive_date|date("Y-d-m")
+Pour information : votre don à la date de {{ contribution.receive_date|date("Y-m-d")
 }} était d’un montant de {{ contribution.contribution_source }}.
 
 {% if recurring %}
