@@ -15,7 +15,7 @@ Gracias,
 Sue Gardner
 Directora Ejecutiva de la Fundación Wikimedia
 
-Para tus registros: tu donación en {{ contribution.receive_date|date("Y-d-m") }} fue
+Para tus registros: tu donación en {{ contribution.receive_date|date("Y-m-d") }} fue
 de {{ contribution.contribution_source }}.
 
 {% if recurring %}

@@ -21,7 +21,7 @@ Terima kasih,
 Sue Gardner
 Pengarah Eksekutif Yayasan Wikimedia
 
-Untuk rekod anda: Derma anda pada {{ contribution.receive_date|date("Y-d-m") }} ialah
+Untuk rekod anda: Derma anda pada {{ contribution.receive_date|date("Y-m-d") }} ialah
 {{ contribution.contribution_source }}.
 
 {% if recurring %}

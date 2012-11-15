@@ -22,7 +22,7 @@ Z wyrazami szacunku,
 Sue Gardner
 dyrektor generalny Wikimedia Foundation
 
-Potwierdzenie wpłaty: w dniu {{ contribution.receive_date|date("Y-d-m") }}
+Potwierdzenie wpłaty: w dniu {{ contribution.receive_date|date("Y-m-d") }}
 otrzymaliśmy {{ contribution.contribution_source }}.
 
 {% if recurring %}

@@ -19,7 +19,7 @@ Tack,
 Sue Gardner
 Verkställande direktör, Wikimediastiftelsen
 
-För din egen bokföring: Din gåva {{ contribution.receive_date|date("Y-d-m") }} var
+För din egen bokföring: Din gåva {{ contribution.receive_date|date("Y-m-d") }} var
 {{ contribution.contribution_source }}.
 
 {% if recurring %}

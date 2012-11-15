@@ -19,7 +19,7 @@ Kiittäen,
 Sue Gardner
 Wikimedia-säätiön toimitusjohtaja
 
-Tiedoksesi: lahjoituksesi {{ contribution.receive_date|date("Y-d-m") }} oli {{
+Tiedoksesi: lahjoituksesi {{ contribution.receive_date|date("Y-m-d") }} oli {{
 contribution.contribution_source }}.
 
 {% if recurring %}

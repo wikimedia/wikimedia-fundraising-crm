@@ -10,7 +10,7 @@
 Sue Gardner
 維基媒體基金會執行董事
 
-您的捐贈訊息：您於{{ contribution.receive_date|date("Y-d-m")
+您的捐贈訊息：您於{{ contribution.receive_date|date("Y-m-d")
 }}進行捐款，總計{{ contribution.contribution_source }}。
 
 {% if recurring %}

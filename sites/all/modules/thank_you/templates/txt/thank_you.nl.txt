@@ -23,7 +23,7 @@ Bedankt,
 Sue Gardner
 Directeur van de Wikimedia Foundation
 
-Voor uw administratie: Uw donatie op {{ contribution.receive_date|date("Y-d-m") }}
+Voor uw administratie: Uw donatie op {{ contribution.receive_date|date("Y-m-d") }}
 bedroeg {{ contribution.contribution_source }} .
 
 {% if recurring %}

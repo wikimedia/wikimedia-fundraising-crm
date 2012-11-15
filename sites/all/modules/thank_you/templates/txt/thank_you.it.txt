@@ -19,7 +19,7 @@ A presto,
 Sue Gardner
 Direttore Esecutivo della Wikimedia Foundation
 
-Per tua archiviazione: la tua donazione del {{ contribution.receive_date|date("Y-d-m")
+Per tua archiviazione: la tua donazione del {{ contribution.receive_date|date("Y-m-d")
 }} è stata di {{ contribution.contribution_source }}.
 
 {% if recurring %}

@@ -20,7 +20,7 @@ Sue Gardner
 Wikimedia Vakfı İcra Müdürü
 
 Kayıt etmeniz için: Şu tarihte yardımda bulundunuz  {{
-contribution.receive_date|date("Y-d-m") }}. Miktar: {{ contribution.contribution_source
+contribution.receive_date|date("Y-m-d") }}. Miktar: {{ contribution.contribution_source
 }}.
 
 {% if recurring %}

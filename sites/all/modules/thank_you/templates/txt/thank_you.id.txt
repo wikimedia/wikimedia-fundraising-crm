@@ -21,7 +21,7 @@ Terima kasih,
 Sue Gardner
 Direktur Eksekutif Yayasan Wikimedia
 
-Untuk catatan: Sumbangan Anda pada tanggal {{ contribution.receive_date|date("Y-d-m")
+Untuk catatan: Sumbangan Anda pada tanggal {{ contribution.receive_date|date("Y-m-d")
 }} sebesar {{ contribution.contribution_source }}.
 
 {% if recurring %}

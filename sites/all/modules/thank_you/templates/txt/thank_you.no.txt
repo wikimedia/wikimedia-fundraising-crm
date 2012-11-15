@@ -19,7 +19,7 @@ Takk,
 Sue Gardner
 Wikimedia Foundations daglige leder
 
-Til senere bruk: Din gave {{ contribution.receive_date|date("Y-d-m") }} var på {{
+Til senere bruk: Din gave {{ contribution.receive_date|date("Y-m-d") }} var på {{
 contribution.contribution_source }}.
 
 {% if recurring %}

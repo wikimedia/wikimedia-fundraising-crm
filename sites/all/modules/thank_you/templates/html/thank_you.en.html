@@ -55,7 +55,7 @@ Wikimedia Foundation<br />
         Wikimedia Foundation’s five-year strategic plan</a>. You can also now buy Wikipedia
     merchandise at <a href="https://shop.wikimedia.org/">shop.wikimedia.org</a>.</p>
 
-<p>For your records: Your donation on {{ contribution.receive_date|date("Y-d-m") }} was {{ contribution.contribution_source }}.
+<p>For your records: Your donation on {{ contribution.receive_date|date("Y-m-d") }} was {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/en.html' ignore missing %}
 {% endif %}</p>

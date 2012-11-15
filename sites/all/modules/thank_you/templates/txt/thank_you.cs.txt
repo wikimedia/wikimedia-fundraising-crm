@@ -19,7 +19,7 @@ Děkuji,
 Sue Gardner
 Výkonná ředitelka Wikimedia Foundation
 
-Pro vaše záznamy: Přispěl/a jste {{ contribution.receive_date|date("Y-d-m") }}
+Pro vaše záznamy: Přispěl/a jste {{ contribution.receive_date|date("Y-m-d") }}
 částkou {{ contribution.contribution_source }}.
 
 {% if recurring %}

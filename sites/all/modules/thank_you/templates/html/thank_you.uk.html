@@ -27,7 +27,7 @@
 Сью Гарднер,<br />
 виконавчий директор Фонду Вікімедіа</p>
 
-<p>Про всяк випадок: {{ contribution.receive_date|date("Y-d-m") }} ви
+<p>Про всяк випадок: {{ contribution.receive_date|date("Y-m-d") }} ви
 зробили пожертву у розмірі {{ contribution.contribution_source }}.
 {% if recurring %}
 {% include 'recurring/uk.html' ignore missing %}

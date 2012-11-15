@@ -22,7 +22,7 @@ Vielen Dank
 Sue Gardner
 Wikimedia-Geschäftsführerin
 
-Für Ihre Unterlagen: Ihre Spende vom {{ contribution.receive_date|date("Y-d-m") }}
+Für Ihre Unterlagen: Ihre Spende vom {{ contribution.receive_date|date("Y-m-d") }}
 betrug {{ contribution.contribution_source }}.
 
 {% if recurring %}

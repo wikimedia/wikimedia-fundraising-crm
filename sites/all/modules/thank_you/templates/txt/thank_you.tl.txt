@@ -24,7 +24,7 @@ Sue Gardner
 Direktora ng Tagapagpaganap, Pundasyong Wikimedia
 
 Para sa inyong kabatiran: ang inyong kaloob na ginawa noong {{
-contribution.receive_date|date("Y-d-m") }} ay may halaga na {{
+contribution.receive_date|date("Y-m-d") }} ay may halaga na {{
 contribution.contribution_source }}.
 
 {% if recurring %}

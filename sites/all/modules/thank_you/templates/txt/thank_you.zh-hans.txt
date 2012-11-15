@@ -10,7 +10,7 @@
 Sue Gardner
 维基媒体基金会执行主席
 
-您的捐赠信息：您于{{ contribution.receive_date|date("Y-d-m")
+您的捐赠信息：您于{{ contribution.receive_date|date("Y-m-d")
 }}进行捐款，总计{{ contribution.contribution_source }}。
 
 {% if recurring %}

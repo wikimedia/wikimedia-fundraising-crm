@@ -19,7 +19,7 @@ Sue Gardner
 Cyfarwyddwr Gweithredol Sefydliad Wicifryngau
 
 Er gwybodaeth: Derbyniwyd rhodd o {{ contribution.contribution_source }} gennych ar {{
-contribution.receive_date|date("Y-d-m") }}.
+contribution.receive_date|date("Y-m-d") }}.
 
 {% if recurring %}
 

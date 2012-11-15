@@ -24,7 +24,7 @@ Thân,
 Sue Gardner
 Giám đốc Điều hành Wikimedia Foundation
 
-Xin chứng nhận: Bạn quyên góp vào {{ contribution.receive_date|date("Y-d-m")
+Xin chứng nhận: Bạn quyên góp vào {{ contribution.receive_date|date("Y-m-d")
 }} với {{ contribution.contribution_source }}.
 
 {% if recurring %}
