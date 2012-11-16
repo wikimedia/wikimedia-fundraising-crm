@@ -851,7 +851,8 @@ function wmf_civicrm_message_address_update( $msg, $contact_id ) {
 
 function wmf_civicrm_get_default_location_type_id() {
     require_once 'CRM/Core/BAO/LocationType.php';
-    return CRM_Core_BAO_LocationType::getDefault();
+    $default_location_type = CRM_Core_BAO_LocationType::getDefault();
+    return $default_location_type->id;
 }
 
 function wmf_civicrm_get_country_id( $code ) {
