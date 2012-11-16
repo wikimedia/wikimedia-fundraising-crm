@@ -6,7 +6,7 @@ class Message {
     protected $data;
     protected $headers;
 
-    function __construct( $values = null ) {
+    function __construct( $values = array() ) {
         $this->data = static::$defaults;
         $this->set( $values );
         $this->headers = array();
@@ -16,6 +16,8 @@ class Message {
         if ( is_array( $values ) ) {
             $this->data = array_merge( $this->data, $values );
         }
+
+        $this->body = json_encode( $this->data );
     }
 
     function setHeaders( $values ) {
@@ -35,6 +37,11 @@ class Message {
 
 class TransactionMessage extends Message {
     function __construct( $values = array() ) {
+        if ( !self::$defaults ) {
+            require_once __DIR__ . '/data-default_transaction.inc';
+            self::$defaults = $default_message;
+        }
+
         parent::__construct();
 
         $override['gateway_txn_id'] = rand();
