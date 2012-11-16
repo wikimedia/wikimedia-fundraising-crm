@@ -1016,16 +1016,24 @@ function wmf_civicrm_get_contribution( $msg ){
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
 	$result = db_query( $query, $search );
-	if ( $result->num_rows === 1 ) {
-		$row = db_fetch_array( $result );
-	} elseif ( $result->num_rows > 1 ){
+	$matching = array();
+	while ( $row = db_fetch_array( $result ) ) {
+		if ( preg_match( "/{$txn}\b/", $row[ 'trxn_id' ] ) ) {
+			$matching[] = $row;
+		}
+	}
+
+	if ( count( $matching ) == 0 ) {
+        return false;
+    }
+	if ( count( $matching ) > 1 ) {
 		throw new WmfException( 'GET_CONTRIBUTION', 
-			t( "More than one contribution (!num) returned for the following query: [!query]", array( '!num' => $result->num_rows, '!query' => $query ) ),
+			t( "More than one contribution (!num) returned for the following query: [!query]", array( '!num' => count( $matching ), '!query' => $query ) ),
 			$msg
 		);
 	}
 
-	return $row;
+	return $matching[0];
 }
 
 function wmf_civicrm_boost_performance() {
