@@ -1690,7 +1690,24 @@ function gca_wr1_key_grinder( $record, $keys, $name, $error_on_mismatch = false 
 					if ( trim($record[$key]) != '' && $ret != trim($record[$key]) ){
 						globalcollect_audit_echo(print_r($record, true));
 						globalcollect_audit_echo("Check it: The $name is all f'd. $first does not match $key (at least).");
-						die();
+						
+						//insert special "don't die" rules here.
+						//On occasion, these are predictable and we can cope with them going in "wrong"...
+						$die = true;
+						if ( $name === 'currency' 
+							&& $record['WbC Payment method ID'] === '8' 
+							&& $record['WbC Payment product ID'] === '841' ){
+							$ret = $record['Payment-currency'];
+							globalcollect_audit_echo("...but we're (sort of) fine with the Webmoney mismatch. Setting $name to $ret");
+							$die = false;
+						}
+
+						if ( $die ){
+							die();
+						} else {
+							//short-circuit the rest of this generalized business. We know what's up.
+							return $ret;
+						}
 					}
 				}
 			}
