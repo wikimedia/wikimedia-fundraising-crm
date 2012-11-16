@@ -224,6 +224,8 @@ function thank_you_send( $contribution_id, $test=null ) {
 
 	// check for contacts without an email address
 	if ( !array_key_exists( 'email', $contact ) ){
+		watchdog('thank_you', 'No email address found. Processing as anonymous.', array(), WATCHDOG_INFO);
+
 		// update the field with the anonymous flag and set the TY date to the epoch
 		if( thank_you_update_ty_date( $contribution, true ) ){
 			// GTFO so we can keep processing donations
@@ -242,10 +244,12 @@ function thank_you_send( $contribution_id, $test=null ) {
 	if ( is_null( $test ) ){
 		// don't send a Thank You email if one has already been sent
 		if (array_key_exists('thankyou_date', $contribution) && is_numeric($contribution['receive_date']) && $contribution['receive_date'] > 0 ) {
+			watchdog('thank_you', 'Thank you email already sent for this transaction.', array(), WATCHDOG_INFO);
 			return false;
 		}
 		// only send a Thank You email if we are within the specified window
 		if (strtotime($contribution['receive_date']) < time() - 86400 * variable_get('thank_you_days', 14)) {
+			watchdog('thank_you', 'Contribution is older than limit, ignoring.', array(), WATCHDOG_INFO);
 			return false;
 		}
 	}
@@ -300,8 +304,12 @@ function thank_you_send( $contribution_id, $test=null ) {
 	$email['plaintext'] = thank_you_render( $contribution, $contact, $language, $country, "txt" );
 
 	if( $email['html'] == false ){
-		// the render failed, we cannot continue
-		// @todo do we fallback to plaintext?
+		wmf_common_failmail( 'thank_you', "FAILED TO RENDER HTML EMAIL\n" . __FUNCTION__ . "\n\n" . print_r($contribution, true) . print_r($contact, true), array() );
+		return false;
+	}
+
+	if( $email['plaintext'] == false ){
+		wmf_common_failmail( 'thank_you', "FAILED TO RENDER PLAINTEXT EMAIL\n" . __FUNCTION__ . "\n\n" . print_r($contribution, true) . print_r($contact, true), array() );
 		return false;
 	}
 
@@ -327,8 +335,10 @@ function thank_you_send( $contribution_id, $test=null ) {
 	try {
 		$mail->set('Charset','utf-8');
 		if ( !is_null( $test ) ){
+			watchdog("thank_you", "Sending ty email to: " . $test['email'], array(), WATCHDOG_INFO);
 			$mail->AddAddress( $test['email'], "Test User" );
 		} else {
+			watchdog("thank_you", "Sending ty email to: " . $email['to_address'], array(), WATCHDOG_INFO);
 			$mail->AddAddress( $email['to_address'], $email['to_name'] );
 		}
 
@@ -413,8 +423,12 @@ function thank_you_update_ty_date( $contribution, $anonymous=false ){
 		// address, but we want to mark it as such
 		$params['thankyou_date'] = "1970-01-01 00:00:00";
 
+		watchdog('thank_you', 'Updating TY send date to: ' . $params['thankyou_date'], array(), WATCHDOG_INFO);
+
 		return wmf_civicrm_set_thankyou_date_to_epoch( $contribution[ 'contribution_id' ] );
 	}
+
+	watchdog('thank_you', 'Updating TY send date to: ' . $params['thankyou_date'], array(), WATCHDOG_INFO);
 
 	// the update function seems to not work for Contribution and the insert
 	// updates when a contribution_id is passed
@@ -544,14 +558,14 @@ function thank_you_batch_process(){
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
 
-	$ty_query = "SELECT id FROM {civicrm_contribution} WHERE receive_date > DATE_SUB( CURDATE(), INTERVAL %d DAY ) AND thankyou_date IS NULL ORDER BY id ASC LIMIT %d";
+	$ty_query = "SELECT id, trxn_id FROM {civicrm_contribution} WHERE receive_date > DATE_SUB( CURDATE(), INTERVAL %d DAY ) AND thankyou_date IS NULL ORDER BY id ASC LIMIT %d";
 
 	$result = db_query( $ty_query, $days, $batch );
 
 	$count = 0;
 
 	while( $contribution = db_fetch_object( $result ) ){
-		watchdog( "thank_you", "Attempting to send thank you mail for contribution id: " . $contribution->id, array(), WATCHDOG_INFO );
+		watchdog( "thank_you", "Attempting to send thank you mail for contribution " . $contribution->id . ", " . $contribution->trxn_id, array(), WATCHDOG_INFO );
 
 		thank_you_send( $contribution->id );
 
@@ -610,9 +624,11 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
 	$template = $twig->loadTemplate( $format . DIRECTORY_SEPARATOR . "thank_you.en.$format" );
 	try{
 		$template = $twig->loadTemplate( $format . DIRECTORY_SEPARATOR . "thank_you.$language.$format" );
+		watchdog("thank_you", "Language found: $language for $format", array(), WATCHDOG_INFO);
 	} catch ( Twig_Error_Loader $e ) {
 		// the template did not exist
 		// do nothing, we will stick with English
+		watchdog("thank_you", "Language not supported for $format: $language, defaulting to en", array(), WATCHDOG_INFO);
 	}
 
 	$unsub_params = array(
