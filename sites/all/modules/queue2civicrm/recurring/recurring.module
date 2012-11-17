@@ -46,6 +46,17 @@ function recurring_settings() {
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
   );
+
+  $form['recurring_process'] = array(
+    '#type' => 'radios',
+    '#title' => t('Process recurring transactions during queue consumption'),
+    '#required' => TRUE,
+    '#options' => array(
+      FALSE => t('No'),
+      TRUE => t('Yes'),
+    ),
+    '#default_value' => variable_get('recurring_process', FALSE),
+  );
   
   $form[ 'recurring' ][ 'recurring_subscription' ] = array(
     '#type' => 'textfield',
@@ -84,6 +95,11 @@ function recurring_settings() {
  * 
  */
 function recurring_queue2civicrm_batch_process() {
+  if (!variable_get( "recurring_process", false )){
+    watchdog('recurring', 'Recurring is disabled. No contributions processed.');
+    return 0;
+  }
+
   $recurring_processed = wmf_common_dequeue_loop(
       variable_get( 'recurring_subscription', '/queue/test_recurring' ),
       variable_get( 'recurring_batch', 0 ),
