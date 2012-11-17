@@ -133,6 +133,8 @@ function public_reporting_sql_file_to_array($file){
  * A mechanism for executing sql files through Drupal's db_query function
  * @param string $file Full path to the .sql source file.
  * @return boolean true if everything returned OK, otherwise false.
+ *
+ * TODO: make the return value compatible with update_sql
  */
 function public_reporting_execute_sql_file($file){
 	$queries = public_reporting_sql_file_to_array($file);

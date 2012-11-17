@@ -1,5 +1,7 @@
 <?php
 
+// TODO: schema is out of sync with requirements.
+
 function public_reporting_schema() {
 	$schema['public_reporting'] = array(
 		'description' => t('Public reporting tables'),
@@ -71,8 +73,7 @@ function public_reporting_install() {
 
 	watchdog("public_reporting.install", "FK command result: " . print_r($queryResult, true) );
 
-	$sqlResult = module_invoke( 'public_reporting', 'execute_sql_file', drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/triggers.sql' );
-	watchdog("public_reporting.install", "Trigger Creation Result: " . print_r($sqlResult, true) );
+	public_reporting_update_6000();
 }
 
 function public_reporting_uninstall() {
@@ -82,7 +83,26 @@ function public_reporting_uninstall() {
 }
 
 function public_reporting_get_FK_command(){
-	return "ALTER TABLE `public_reporting`
+	return "ALTER TABLE {public_reporting}
 		ADD CONSTRAINT `public_reporting_ibfk_1` FOREIGN KEY (`contribution_id`) REFERENCES `civicrm_contribution` (`id`) ON DELETE CASCADE,
 		ADD CONSTRAINT `public_reporting_ibfk_2` FOREIGN KEY (`contact_id`) REFERENCES `civicrm_contact` (`id`) ON DELETE CASCADE;";
+}
+
+function public_reporting_update_6000() {
+	$ret = array();
+
+	$dbs = wmf_civicrm_get_dbs();
+	$dbs->push( 'civicrm' );
+
+	$sqlResult = module_invoke( 'public_reporting', 'execute_sql_file', drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/triggers.sql' );
+	watchdog("public_reporting.install", "Trigger Creation Result: " . print_r($sqlResult, true) );
+
+	$ret[] = array( 'success' => $sqlResult, 'query' => "... create triggers" );
+	$sql = <<<EOS
+ALTER TABLE {public_reporting}
+	DROP FOREIGN KEY public_reporting_ibfk_2;
+EOS;
+	$ret[] = update_sql( $sql );
+
+	return $ret;
 }
