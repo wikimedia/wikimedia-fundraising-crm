@@ -18,6 +18,12 @@ function wmf_unsubscribe_menu() {
         'page callback' => 'wmf_unsubscribe_preview',
     );
 
+    $items['wmf_unsubscribe/manual'] = array(
+        'title' => 'WMF Manual Unsubscribe',
+        'access arguments' => array('unsubscribe'),
+        'page callback' => 'wmf_unsubscribe_manual',
+    );
+
     return $items;
 }
 
@@ -213,4 +219,107 @@ function wmf_unsubscribe_preview(){
     }
 
     return render_page( $page, array(), $language );
+}
+
+/* --- Manual Unsubscribe Functions --- */
+/**
+ * Main form for manual unsubscribe -- wmf_unsubscribe/manual
+ * @return Page content
+ */
+function wmf_unsubscribe_manual() {
+  return drupal_get_form('wmf_unsubscribe_manual_form');
+}
+
+/**
+ * Creates the form that wmf_unsubscribe_manual() uses. Allows unsubscribe of a contact manually. Callback
+ * for drupal_get_form().
+ */
+function wmf_unsubscribe_manual_form() {
+  $form = array();
+  $form['email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email Address'),
+    '#size' => 50,
+    '#maxlength' => 128,
+    '#description' => t('Email address of the contact to unsubscribe.'),
+  );
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Unsubscribe'));
+  return $form;
+}
+
+/**
+ * Processing callback for wmf_unsubscribe_manual_form. Will unsubscribe a contact manually.
+ * @param $form
+ * @param $form_state
+ * @return bool
+ */
+function wmf_unsubscribe_manual_form_submit($form, &$form_state) {
+  civicrm_initialize();
+  $email = $form_state['values']['email'];
+
+  // Search for the email contact
+  $emails = civicrm_api(
+    'Email', 'get',
+    array(
+      'version' => '3',
+      'email'   => $email,
+    )
+  );
+
+  $emailEncoded = json_encode($email);
+  if ($emails[ 'is_error' ] == TRUE) {
+    form_set_error("API search failed for email address: $emailEncoded " . json_encode($emails));
+  }
+
+  $tc = $emails[ 'count' ];
+  if ($tc === 0) {
+    drupal_set_message("No contacts in Civi for email $email");
+    return TRUE;
+  }
+
+  // We have a pile of contacts, whoo. Attempt injection into queue.
+  $count = 0;
+  try {
+    foreach ($emails[ 'values' ] as $id => $emailEntry) {
+      // Get the contribution ID
+      $contactId = $emailEntry['contact_id'];
+      $contribution = civicrm_api(
+        'Contribution', 'get',
+        array(
+          'version' => '3',
+          'contact_id' => $contactId,
+        )
+      );
+
+      // Check if the query failed
+      if (( $contribution[ 'is_error' ] == TRUE ) || ( $contribution[ 'count' ] != 1 )) {
+        drupal_set_message("API contribution search failed for contact ID: $contactId " . json_encode($contribution));
+        continue;
+      }
+
+      // Retrieve the contribution id from the first array element
+      $ctid = $contribution[ 'id' ];
+
+      // Contruct the STOMP message
+      $time = time();
+      $headers = array( 'correlation-id' => "manual-removal-{$time}-{$count}");
+      $body = array(
+        'process' => 'wmf-manual',
+        'contribution-id' => $ctid,
+        'email' => $email,
+      );
+
+      // Queue the message
+      if (!wmf_common_stomp_queue( json_encode($body), $headers, "/queue/unsubscribe" )) {
+        drupal_set_message("Failed to queue unsubscribe message for contribution ID $ctid");
+        continue;
+      }
+
+      $count += 1;
+    }
+  } catch ( WmfException $ex ) {
+    drupal_set_message("API unsubscribe failed with " . $ex-getMessage());
+  }
+
+  drupal_set_message("Unsubscribed $email. ($count successful of $tc)");
 }
