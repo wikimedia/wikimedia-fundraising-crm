@@ -259,25 +259,15 @@ function thank_you_send( $contribution_id, $test=null ) {
 
 	$locale = explode('_', $contact['preferred_language']);
 	if( count( $locale ) == 2 ){
-		if( count( trim( $locale[1] ) ) == 2 ){
-			if( count( trim( $locale[0] ) ) > 0 ){
-				$language = $locale[0];
-				$country = $locale[1];
-			}
-		}
+		$language = trim( $locale[0] );
+		$country = trim( $locale[1] );
 	}
 	elseif( count( $locale ) == 1 ){
-		if( stripos( trim( $contact['preferred_language'] ), '_' ) == 0  ){
-			// what we have here folks is a country
-			$country = $locale[0];
-		}
-		else{
-			// this be a language
-			$language = $locale[0];
-		}
+		// this be a language
+		$language = $locale[0];
 	}
 
-	if( $test ){
+	if( isset( $test ) ){
 		$language = $test['language'];
 
 		if( $test['recurring'] ){
@@ -623,8 +613,17 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
 
 	$template = $twig->loadTemplate( $format . DIRECTORY_SEPARATOR . "thank_you.en.$format" );
 	try{
-		$template = $twig->loadTemplate( $format . DIRECTORY_SEPARATOR . "thank_you.$language.$format" );
-		watchdog("thank_you", "Language found: $language for $format", array(), WATCHDOG_INFO);
+		try{
+			// look for a country-specific translation (use lowercase per this convention)
+			$l_country = strtolower( $country );
+			$template = $twig->loadTemplate( $format . DIRECTORY_SEPARATOR . "thank_you.$language-$l_country.$format" );
+			watchdog("thank_you", "Language found: $language-$l_country for $format", array(), WATCHDOG_INFO);
+		} catch ( Twig_Error_Loader $e ) {
+			// the template did not exist
+			// do nothing, try language only
+			$template = $twig->loadTemplate( $format . DIRECTORY_SEPARATOR . "thank_you.$language.$format" );
+			watchdog("thank_you", "Language found: $language for $format", array(), WATCHDOG_INFO);
+		}
 	} catch ( Twig_Error_Loader $e ) {
 		// the template did not exist
 		// do nothing, we will stick with English
