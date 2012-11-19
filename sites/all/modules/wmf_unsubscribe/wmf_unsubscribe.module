@@ -12,15 +12,17 @@ function wmf_unsubscribe_menu() {
         'type' => MENU_CALLBACK
     );
 
+  /* Old code that should be removed but I dont want to excise it in case it breaks something
     $items['wmf_unsubscribe/preview'] = array(
         'title' => 'WMF Unsubscribe',
         'access arguments' => array('unsubscribe'),
         'page callback' => 'wmf_unsubscribe_preview',
     );
+  */
 
     $items['wmf_unsubscribe/manual'] = array(
         'title' => 'WMF Manual Unsubscribe',
-        'access arguments' => array('unsubscribe'),
+        'access arguments' => array('manual unsubscribe'),
         'page callback' => 'wmf_unsubscribe_manual',
     );
 
@@ -28,7 +30,7 @@ function wmf_unsubscribe_menu() {
 }
 
 function wmf_unsubscribe_perm() {
-    return array('administer wmf modules', 'unsubscribe');
+    return array('administer wmf modules', 'unsubscribe', 'manual unsubscribe');
 }
 
 /**
