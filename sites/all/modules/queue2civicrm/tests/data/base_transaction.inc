@@ -1,6 +1,6 @@
 <?php
 
-$default_message = array(
+$message = array(
     "contribution_tracking_id" => "441",
     "optout" => "1",
     "anonymous" => "1",
@@ -19,8 +19,8 @@ $default_message = array(
     "street_address" => "ss",
     "supplemental_address_1" => "",
     "city" => "cc",
-    "state_province" => "AL",
-    "country" => "US",
+    "state_province" => "Haifa",
+    "country" => "IL",
     "postal_code" => "11122",
     "first_name_2" => "b",
     "last_name_2" => "w",
@@ -28,7 +28,7 @@ $default_message = array(
     "supplemental_address_2" => "",
     "city_2" => "cc",
     "state_province_2" => "AL",
-    "country_2" => "US",
+    "country_2" => "DE",
     "postal_code_2" => "11122",
     "gateway" => "globalcollect",
     //"gateway_txn_id" => "3611204184",

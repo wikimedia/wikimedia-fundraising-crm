@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/Message.php';
+require_once __DIR__ . '/../includes/Message.php';
 
 class TxnIdTest extends DrupalTestCase {
     public function setUp() {
