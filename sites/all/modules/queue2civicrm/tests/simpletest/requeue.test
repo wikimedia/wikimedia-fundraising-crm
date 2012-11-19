@@ -1,0 +1,42 @@
+<?php
+
+require_once __DIR__ . '/../includes/MessageSource.php';
+
+class RequeueTest extends DrupalTestCase {
+    public function setUp() {
+        parent::setUp();
+
+        $this->generator = new MessageSource();
+
+        $this->subscription_message = new TransactionMessage( array(
+            'txn_type' => 'subscr_signup',
+            'subscr_id' => $subscr_id,
+        ) );
+
+        $this->payment_message = new TransactionMessage( array(
+            'txn_type' => 'subscr_payment',
+            'subscr_id' => $subscr_id,
+        ) );
+    }
+
+    public function tearDown() {
+    }
+
+    public static function getInfo() {
+        return array(
+            'name' => 'Requeued message',
+            'group' => 'Pipeline',
+            'description' => 'Enqueue a recurring message with no subscription',
+        );
+    }
+
+    public function testRequeue() {
+        do {
+            //$un_unique = 
+        } while ( $un_unique );
+
+        $this->generator->inject();
+
+        module_invoke( 'recurring', 'import', $this->message );
+    }
+}

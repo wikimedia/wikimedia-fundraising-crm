@@ -38,8 +38,8 @@ class Message {
 class TransactionMessage extends Message {
     function __construct( $values = array() ) {
         if ( !self::$defaults ) {
-            require_once __DIR__ . '/data-default_transaction.inc';
-            self::$defaults = $default_message;
+            require_once __DIR__ . '/../data/base_transaction.inc';
+            self::$defaults = $message;
         }
 
         parent::__construct();

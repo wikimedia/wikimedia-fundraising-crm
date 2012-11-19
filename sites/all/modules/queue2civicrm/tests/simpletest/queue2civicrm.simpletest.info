@@ -1,0 +1,8 @@
+name = Queue to CiviCRM Tests
+description = Tests
+core = 6.x
+dependencies[] = queue2civicrm
+dependencies[] = recurring
+package = queue2civicrm.simpletest
+files[] = requeue.test
+files[] = txnid.test

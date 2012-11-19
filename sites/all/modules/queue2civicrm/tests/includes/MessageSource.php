@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../../Stomp.php';
+
 require_once __DIR__ . '/Message.php';
 
 class MessageSource {
@@ -8,14 +10,9 @@ class MessageSource {
     protected $queue = "/queue/test-donations";
 
     function __construct( $stomp_url = null ) {
-        require_once __DIR__ . '/data-default_transaction.inc';
-        // $message_type::$defaults = $default_message;
-        TransactionMessage::$defaults = $default_message;
-
         if ( $stomp_url ) {
             $this->stomp_url = $stomp_url;
         }
-        require_once __DIR__ . '/../Stomp.php';
         $this->stomp = new Stomp( $this->stomp_url );
 
         if (method_exists($this->stomp, 'connect'))
