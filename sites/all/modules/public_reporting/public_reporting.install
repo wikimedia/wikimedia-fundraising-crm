@@ -94,15 +94,15 @@ function public_reporting_update_6000() {
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
 
-	$sqlResult = module_invoke( 'public_reporting', 'execute_sql_file', drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/triggers.sql' );
-	watchdog("public_reporting.install", "Trigger Creation Result: " . print_r($sqlResult, true) );
-
-	$ret[] = array( 'success' => $sqlResult, 'query' => "... create triggers" );
 	$sql = <<<EOS
 ALTER TABLE {public_reporting}
 	DROP FOREIGN KEY public_reporting_ibfk_2;
 EOS;
 	$ret[] = update_sql( $sql );
+
+	$sqlResult = module_invoke( 'public_reporting', 'execute_sql_file', drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/triggers.sql' );
+	watchdog("public_reporting.install", "Trigger Creation Result: " . print_r($sqlResult, true) );
+	$ret[] = array( 'success' => $sqlResult, 'query' => "... create triggers" );
 
 	return $ret;
 }
