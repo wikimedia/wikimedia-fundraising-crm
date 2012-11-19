@@ -6,8 +6,8 @@ INSERT INTO {public_reporting}
         id,
         total_amount,
         SUBSTRING( source, 1, 3 ),
-        SUBSTRING( source, 5 ),
+        CONVERT( SUBSTRING( source, 5 ), DECIMAL( 20, 2 ) ),
         UNIX_TIMESTAMP( receive_date )
     FROM civicrm_contribution
-    WHERE total_amount >= 1;
+    WHERE total_amount > 0;
 COMMIT;

@@ -7,14 +7,14 @@ DROP TRIGGER IF EXISTS public_reporting_note_update;
 DELIMITER //
 CREATE TRIGGER public_reporting_insert AFTER INSERT ON civicrm_contribution FOR EACH ROW
 BEGIN
-    IF SUBSTRING( NEW.source, 1, 3 ) != 'RFD' THEN -- don't trigger for refunds
+    IF SUBSTRING( NEW.source, 1, 3 ) != 'RFD' AND NEW.total_amount > 0 THEN -- don't trigger for refunds
         INSERT INTO {public_reporting}
             ( contribution_id, converted_amount, original_currency, original_amount, received )
             VALUES (
                 NEW.id,
                 NEW.total_amount,
                 SUBSTRING( NEW.source, 1, 3 ),
-                SUBSTRING( NEW.source, 5 ),
+                CONVERT( SUBSTRING( NEW.source, 5 ), DECIMAL( 20, 2 ) ),
                 UNIX_TIMESTAMP( NEW.receive_date )
             );
     END IF;
@@ -22,7 +22,7 @@ END
 //
 CREATE TRIGGER public_reporting_update AFTER UPDATE ON civicrm_contribution FOR EACH ROW
 BEGIN
-    IF SUBSTRING(NEW.source, 1, 3) = 'RFD' THEN -- trigger for refunds
+    IF SUBSTRING(NEW.source, 1, 3) = 'RFD' OR NEW.total_amount <= 0 THEN -- trigger for refunds
         DELETE from {public_reporting}
             WHERE {public_reporting}.contribution_id = NEW.id;
     ELSE
@@ -30,7 +30,7 @@ BEGIN
             SET
                 pr.converted_amount = NEW.total_amount,
                 pr.original_currency = SUBSTRING( NEW.source, 1, 3 ),
-                pr.original_amount = SUBSTRING( NEW.source, 5 ),
+                pr.original_amount = CONVERT( SUBSTRING( NEW.source, 5 ), DECIMAL( 20, 2 ) ),
                 pr.received = UNIX_TIMESTAMP( NEW.receive_date )
         WHERE pr.contribution_id = NEW.id;
   END IF;
