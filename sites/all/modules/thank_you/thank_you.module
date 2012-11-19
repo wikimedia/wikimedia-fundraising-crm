@@ -548,7 +548,7 @@ function thank_you_batch_process(){
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
 
-	$ty_query = "SELECT id, trxn_id FROM {civicrm_contribution} WHERE receive_date > DATE_SUB( CURDATE(), INTERVAL %d DAY ) AND thankyou_date IS NULL ORDER BY id ASC LIMIT %d";
+	$ty_query = "SELECT id, trxn_id FROM {civicrm_contribution} WHERE receive_date > DATE_SUB( NOW(), INTERVAL %d DAY ) AND thankyou_date IS NULL ORDER BY id ASC LIMIT %d";
 
 	$result = db_query( $ty_query, $days, $batch );
 
