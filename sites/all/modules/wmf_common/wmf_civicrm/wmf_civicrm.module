@@ -132,7 +132,7 @@ function wmf_civicrm_set_custom_field_values($entity_id, $map)
     if (!empty($result['is_error']))
     {
         throw new WmfException( 'CIVI_CONFIG',
-            t( 'Failed to set custom values (!vals): entity id !id, error: !err', array( '!vals' => print_r($map, TRUE), '!id' => $entity_id, '!err' => $result['error_message'] ) )
+            t( 'Failed to set custom values: id !id, error: !err', array( '!id' => $entity_id, '!err' => $result['error_message'] ) )
         );
     }
 }
