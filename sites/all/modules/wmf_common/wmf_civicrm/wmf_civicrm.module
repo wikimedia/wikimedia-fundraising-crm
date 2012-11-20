@@ -855,14 +855,25 @@ function wmf_civicrm_get_default_location_type_id() {
 }
 
 function wmf_civicrm_get_country_id( $code ) {
-    // iso code
+    // Outside chance this could be a lang_COUNTRY pair
+    $locality = explode( '_', $code );
+    if ( count( $locality ) > 1 ) {
+        $code = $locality[ 1 ];
+    }
+
+    // Assume this is an iso code
     if ( strlen( $code ) == 2 ) {
         $iso_cache = CRM_Core_PseudoConstant::countryIsoCode();
-        $id = array_search( $code, $iso_cache );
+        $id = array_search( strtoupper( $code ), $iso_cache );
         if ( $id !== FALSE ) {
             return $id;
         }
     }
+    watchdog( 'wmf_civicrm',
+        "Cannot find country: [%code] %msg",
+        array( '%code' => $code, '%msg' => print_r( $msg, true ) ),
+        WATCHDOG_NOTICE
+    );
 }
 
 /**
@@ -905,6 +916,11 @@ EOS;
         $row = db_fetch_object( $result );
         return $row->id;
     }
+    watchdog( 'wmf_civicrm',
+        "Cannot find state: [%state] (country %country) %msg",
+        array( '%state' => $state, '%country' => $country_id, '%msg' => print_r( $msg, true ) ),
+        WATCHDOG_NOTICE
+    );
 }
 
 
