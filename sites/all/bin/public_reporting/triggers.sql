@@ -8,7 +8,7 @@ DELIMITER //
 CREATE TRIGGER public_reporting_insert AFTER INSERT ON civicrm_contribution FOR EACH ROW
 BEGIN
     IF SUBSTRING( NEW.source, 1, 3 ) != 'RFD' AND NEW.total_amount > 0 THEN -- don't trigger for refunds
-        INSERT INTO {public_reporting}
+        INSERT INTO {pr_db}{public_reporting}
             ( contribution_id, converted_amount, original_currency, original_amount, received )
             VALUES (
                 NEW.id,
@@ -23,10 +23,10 @@ END
 CREATE TRIGGER public_reporting_update AFTER UPDATE ON civicrm_contribution FOR EACH ROW
 BEGIN
     IF SUBSTRING(NEW.source, 1, 3) = 'RFD' OR NEW.total_amount <= 0 THEN -- trigger for refunds
-        DELETE from {public_reporting}
-            WHERE {public_reporting}.contribution_id = NEW.id;
+        DELETE from {pr_db}{public_reporting}
+            WHERE {pr_db}{public_reporting}.contribution_id = NEW.id;
     ELSE
-        UPDATE {public_reporting} pr
+        UPDATE {pr_db}{public_reporting} pr
             SET
                 pr.converted_amount = NEW.total_amount,
                 pr.original_currency = SUBSTRING( NEW.source, 1, 3 ),

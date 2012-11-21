@@ -1,6 +1,6 @@
 BEGIN;
-DELETE FROM {public_reporting};
-INSERT INTO {public_reporting}
+DELETE FROM {pr_db}{public_reporting};
+INSERT INTO {pr_db}{public_reporting}
     ( contribution_id, converted_amount, original_currency, original_amount, received )
     SELECT
         id,

@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `public_reporting` (
+CREATE TABLE IF NOT EXISTS {pr_db}`public_reporting` (
   `contribution_id` int(10) unsigned NOT NULL,
   `contact_id` int(10) unsigned NOT NULL,
   `name` varchar(128) default NULL,
@@ -14,6 +14,6 @@ CREATE TABLE IF NOT EXISTS `public_reporting` (
   KEY `with_currency` (`original_currency`,`received`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `public_reporting`
+ALTER TABLE {pr_db}`public_reporting`
   ADD CONSTRAINT `public_reporting_ibfk_1` FOREIGN KEY (`contribution_id`) REFERENCES `civicrm_contribution` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `public_reporting_ibfk_2` FOREIGN KEY (`contact_id`) REFERENCES `civicrm_contact` (`id`) ON DELETE CASCADE;
