@@ -1,7 +1,7 @@
 <?php
 
 function public_reporting_perm() {
-	return array( 'administer wmf public reporting' );
+    return array( 'administer wmf public reporting' );
 }
 
 function public_reporting_menu() {
@@ -10,9 +10,17 @@ function public_reporting_menu() {
   $items['admin/settings/public_reporting'] = array(
     'title' => t('Public Reporting'),
     'description' => t('Public reporting table'), 
-    'access arguments' => array('administer wmf test settings'),
+    'access arguments' => array('administer wmf public reporting'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('public_reporting_form'),
+  );
+
+  $items['admin/settings/public_reporting/settings'] = array(
+    'title' => t('Configuration'),
+    'description' => t('Public reporting settings'), 
+    'access arguments' => array('administer wmf public reporting'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('public_reporting_settings_form'),
   );
 
   return $items;
@@ -25,8 +33,45 @@ function public_reporting_form() {
     '#value' => 'Synchronize',
     '#type' => 'submit'
   );
+}
+
+function public_reporting_settings_form() {
+  $form = array();
+
+  $db_name = public_reporting_get_default_database_name();
+
+  $form['public_reporting_database'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Reporting database'),
+    '#required' => TRUE,
+    '#default_value' => $db_name,
+    '#description' => t('Name of the database where public_reporting tables will live.  Blank will default to the same as CiviCRM.'),
+  );
+
+  $form = system_settings_form( $form );
+  $form['#submit'][] = 'public_reporting_settings_form_submit';
 
   return $form;
+}
+
+function public_reporting_settings_form_submit( $form, &$form_state ) {
+    //FIXME: would be really nice to sanity check the db name -- if the triggers are broken,
+    // civi no sirve por nada.
+    $path = drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/triggers.sql';
+    public_reporting_execute_sql_file( $path );
+}
+
+function public_reporting_get_default_database_name() {
+    // FIXME: relies on a side-effect
+    $dbs = wmf_civicrm_get_dbs();
+    global $db_url;
+
+    civicrm_initialize();
+    require_once 'DB.php';
+    $dsn = DB::parseDSN( $db_url[ 'civicrm' ] );
+
+    $name = variable_get( 'public_reporting_database', $dsn[ 'database' ] );
+    return $name;
 }
 
 function public_reporting_form_submit($form, &$form_state) {
@@ -142,14 +187,22 @@ function public_reporting_execute_sql_file($file){
 	$expected = count($queries);
 	$actual = 0;
 	$ok = true;
+	$pr_db_name = variable_get( 'public_reporting_database', '' );
+	if ( $pr_db_name && FALSE === strpos( $pr_db_name, '.' ) ) {
+		$pr_db_name .= '.';
+	}
 
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
 
 	foreach($queries as $query){
+		$query = db_prefix_tables( strtr( $query, array(
+			'{pr_db}' => $pr_db_name,
+		) ) );
 		$queryResult =  db_query($query);
 		if (!$queryResult){
 			$ok = false;
+			drupal_set_message( t( "Query failed.  Please attempt manually: \n%sql", array( '%sql' => $query ) ) );
 		} else {
 			$results .= "\n$query\nResult: " . print_r($queryResult, true);
 		}
