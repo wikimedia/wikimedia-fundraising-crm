@@ -74,6 +74,7 @@ function public_reporting_install() {
 	watchdog("public_reporting.install", "FK command result: " . print_r($queryResult, true) );
 
 	public_reporting_update_6000();
+	public_reporting_update_6001();
 }
 
 function public_reporting_uninstall() {
@@ -100,9 +101,24 @@ ALTER TABLE {public_reporting}
 EOS;
 	$ret[] = update_sql( $sql );
 
-	$sqlResult = module_invoke( 'public_reporting', 'execute_sql_file', drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/triggers.sql' );
+	$sqlResult = module_invoke( 'public_reporting', 'execute_sql_file', 'triggers.sql' );
 	watchdog("public_reporting.install", "Trigger Creation Result: " . print_r($sqlResult, true) );
 	$ret[] = array( 'success' => $sqlResult, 'query' => "... create triggers" );
+
+	return $ret;
+}
+
+/**
+ * Aggregate data, donations per country per hour
+ */
+function public_reporting_update_6001() {
+	$ret = array();
+
+	$dbs = wmf_civicrm_get_dbs();
+	$dbs->push( 'civicrm' );
+
+	$sqlResult = module_invoke( 'public_reporting', 'execute_sql_file', 'public-reporting-hours.sql' );
+	$ret[] = array( 'success' => $sqlResult, 'query' => "... create table public_reporting_country_hours" );
 
 	return $ret;
 }
