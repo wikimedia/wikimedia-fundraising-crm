@@ -57,8 +57,7 @@ function public_reporting_settings_form() {
 function public_reporting_settings_form_submit( $form, &$form_state ) {
     //FIXME: would be really nice to sanity check the db name -- if the triggers are broken,
     // civi no sirve por nada.
-    $path = drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/triggers.sql';
-    public_reporting_execute_sql_file( $path );
+    public_reporting_execute_sql_file( 'triggers.sql' );
 }
 
 function public_reporting_get_default_database_name() {
@@ -76,7 +75,7 @@ function public_reporting_get_default_database_name() {
 
 function public_reporting_form_submit($form, &$form_state) {
 
-	$result = public_reporting_execute_sql_file(drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting/synchronize.sql');
+	$result = public_reporting_execute_sql_file( 'synchronize.sql' );
 
 	if ($result === true){
 		$message = "Synchronize SQL Executed successfully.";
@@ -176,12 +175,15 @@ function public_reporting_sql_file_to_array($file){
 
 /**
  * A mechanism for executing sql files through Drupal's db_query function
- * @param string $file Full path to the .sql source file.
+ * @param string $file Name of the .sql source file.
  * @return boolean true if everything returned OK, otherwise false.
  *
  * TODO: make the return value compatible with update_sql
  */
 function public_reporting_execute_sql_file($file){
+	$path = drupal_get_path( 'module', 'public_reporting' ) . '/../../bin/public_reporting';
+	$file = "$path/$file";
+
 	$queries = public_reporting_sql_file_to_array($file);
 	$results = "";
 	$expected = count($queries);
@@ -214,4 +216,12 @@ function public_reporting_execute_sql_file($file){
 	watchdog("public_reporting_execute_sql_file", "DB Queries Completed: $actual / $expected (File: $file)");
 	watchdog("public_reporting_execute_sql_file", "Results: $results");
 	return $ok;
+}
+
+function public_reporting_rebuild_aggregations( $options ) {
+    public_reporting_execute_sql_file( 'rebuild-aggregations.sql' );
+}
+
+function public_reporting_update_aggregations( $options ) {
+    public_reporting_execute_sql_file( 'update-aggregations.sql' );
 }
