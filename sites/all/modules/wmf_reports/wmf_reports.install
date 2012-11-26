@@ -156,6 +156,31 @@ function wmf_reports_update_6001()
     wmf_report_compact_mapping_fields($mapping->id);
 }
 
+/**
+ * Install custom report templates
+ */
+function wmf_reports_update_6002()
+{
+    wmf_reports_bootstrap_civi();
+
+    require_once 'CRM/Core/OptionValue.php';
+    require_once 'CRM/Core/Component.php';
+    $groupParams = array( 'name' => ('report_template') );
+    $params = array(
+        'label' => 'Contribution Trends',
+        'name' => 'CRM_Report_Form_Contribute_Trends',
+        'value' => 'contribute/trends',
+        'description' => 'Contribution Trends',
+        'component_id' => CRM_Core_Component::getComponentID( 'CiviContribute' ),
+        'is_active' => true,
+    );
+    $action = null;
+    $id = null;
+    CRM_Core_OptionValue::addOptionValue( $params, $groupParams, $action, $id );
+
+    return array();
+}
+
 function wmf_report_drop_mapping_fields($criteria)
 {
     require_once 'CRM/Core/DAO/MappingField.php';
