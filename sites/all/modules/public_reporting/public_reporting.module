@@ -201,6 +201,7 @@ function public_reporting_execute_sql_file($file){
 		$query = db_prefix_tables( strtr( $query, array(
 			'{pr_db}' => $pr_db_name,
 		) ) );
+		$query = str_replace( '%', '%%', $query );
 		$queryResult =  db_query($query);
 		if (!$queryResult){
 			$ok = false;
