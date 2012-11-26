@@ -1,7 +1,7 @@
 REPLACE INTO {pr_db}{public_reporting_hours}
     ( datehour, country, total, count, average, maximum, insert_timestamp )
     SELECT
-        DATE_FORMAT( FROM_UNIXTIME( received ), '%Y-%m-%d %H:00:00' ),
+        DATE_FORMAT( FROM_UNIXTIME( pr.received ), '%Y-%m-%d %H:00:00' ),
         civicrm_country.iso_code,
         SUM( pr.converted_amount ),
         COUNT( pr.converted_amount ),
@@ -18,5 +18,5 @@ REPLACE INTO {pr_db}{public_reporting_hours}
     WHERE
         civicrm_address.is_primary = 1
     GROUP BY
-        DATE_FORMAT( FROM_UNIXTIME( received ), '%Y-%m-%d %H:00:00' ),
+        DATE_FORMAT( FROM_UNIXTIME( pr.received ), '%Y-%m-%d %H:00:00' ),
         civicrm_country.id;
