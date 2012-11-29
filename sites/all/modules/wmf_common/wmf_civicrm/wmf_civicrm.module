@@ -716,7 +716,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         'sort_name' => trim( $msg['last_name'] . ', ' . $msg['first_name'], ' ,' ),
         'display_name' => trim( $msg['first_name'] . ' ' . $msg['last_name'] ),
         'do_not_trade' => $msg['anonymous'],
-        'is_opt_out' => $msg['optout'],
+        'is_opt_out' => '0', // $msg['optout'], // we don't offer an option to unsub on contrib, eliminate bugs
         'contact_source' => $msg['contact_source'],
         'preferred_language' => strtolower(substr($msg['language'], 0, 2)) . '_' . strtoupper(substr($msg['country'], 0, 2)),
 
