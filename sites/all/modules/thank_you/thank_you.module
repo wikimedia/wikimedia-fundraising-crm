@@ -653,7 +653,7 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
         "contribution" => $contribution,
         "recurring" => $recurring,
         "misseddonations" => $misseddonations,
-        "unsubscribe_link" => variable_get( 'thank_you_unsubscribe_url', '' ) . '?' . http_build_query( $unsub_params ),
+        "unsubscribe_link" => variable_get( 'thank_you_unsubscribe_url', '' ) . '?' . http_build_query( $unsub_params, '', '&' ),
 		"language" => $language,
 		"country" => $country,
     ) );
