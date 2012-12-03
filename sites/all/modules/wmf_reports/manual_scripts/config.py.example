@@ -1,0 +1,13 @@
+import os
+
+db_params = {
+    'host': '',
+    'db': '',
+    'user': '',
+    'passwd': '',
+    'debug': True,
+}
+
+# if any tables are not in the civicrm database, specify the db name and prefix here.
+scratch_db_prefix = 'test.%s_' % os.environ['LOGNAME']
+contribution_tracking_prefix = 'drupal.'
