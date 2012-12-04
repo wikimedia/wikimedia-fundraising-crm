@@ -9,42 +9,43 @@ DROP TABLE IF EXISTS %(scratch)s_condition2;
 CREATE table %(scratch)s_condition1
 (
     SELECT
-        email
+        contact_id AS civi_id
     FROM civicrm_contribution
-    JOIN civicrm_email
-        ON civicrm_email.contact_id = civicrm_contribution.contact_id
     WHERE
         receive_date BETWEEN "2011-07-01" AND "2012-04-01"
     GROUP BY
-        email
+        civi_id
     HAVING
         SUM(total_amount) > 1000
 );
 
-ALTER TABLE %(scratch)s_condition1 ADD UNIQUE INDEX UI_email (email);
+ALTER TABLE %(scratch)s_condition1 ADD UNIQUE INDEX UI_civi_id (civi_id);
 
 CREATE TABLE %(scratch)s_condition2
 (
     SELECT
-        civicrm_email.email,
+        civi_id,
         receive_date AS last_donation_date,
         total_amount AS last_donation_amount
     FROM %(scratch)s_condition1
-    JOIN civicrm_email
-        ON civicrm_email.email = %(scratch)s_condition1.email
     JOIN civicrm_contribution
-        ON civicrm_email.contact_id = civicrm_contribution.contact_id
+        ON contact_id = civi_id
+    WHERE civicrm_contribution.receive_date IN (
+        SELECT MAX(receive_date)
+        FROM civicrm_contribution
+        WHERE contact_id = civi_id
+    )
     GROUP BY
-        %(scratch)s_condition1.email
+        civi_id
     HAVING
-        MAX(receive_date) <= "2012-04-01"
-        AND receive_date = MAX(receive_date)
+        receive_date <= "2012-04-01"
 );
 
-ALTER TABLE %(scratch)s_condition2 ADD UNIQUE INDEX UI_email (email);
+ALTER TABLE %(scratch)s_condition2 ADD UNIQUE INDEX UI_civi_id (civi_id);
+ALTER TABLE %(scratch)s_condition2 ADD INDEX KI_last_donation_date (last_donation_date);
 
 SELECT
-    civicrm_contact.id AS civi_id,
+    civi_id,
     civicrm_email.email,
     COALESCE( civicrm_contact.display_name ) AS name,
     COALESCE( civicrm_address.street_address ) AS address,
@@ -64,21 +65,18 @@ SELECT
     last_donation_amount
 FROM %(scratch)s_condition2
 JOIN civicrm_email
-    ON %(scratch)s_condition2.email = civicrm_email.email
+    ON civi_id = civicrm_email.contact_id
 JOIN civicrm_contact
-    ON civicrm_contact.id = civicrm_email.contact_id
+    ON civicrm_contact.id = civi_id
 JOIN civicrm_contribution
-    ON civicrm_contribution.contact_id = civicrm_email.contact_id
+    ON civicrm_contribution.contact_id = civi_id
 LEFT JOIN civicrm_address
-    ON civicrm_address.contact_id = civicrm_contribution.contact_id
+    ON civicrm_address.contact_id = civi_id
 LEFT JOIN civicrm_phone
-    ON civicrm_phone.contact_id = civicrm_contribution.contact_id
+    ON civicrm_phone.contact_id = civi_id
 LEFT JOIN civicrm_state_province
     ON civicrm_state_province.id = civicrm_address.state_province_id
 LEFT JOIN civicrm_country
     ON civicrm_country.id = civicrm_address.country_id
-WHERE
-    COALESCE( civicrm_address.is_primary, 1)
-    AND COALESCE( civicrm_phone.is_primary, 1)
-HAVING
-   last_donation_date <= "2012-04-01";
+GROUP BY
+    civi_id
