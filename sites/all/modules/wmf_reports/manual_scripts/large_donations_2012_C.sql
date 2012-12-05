@@ -47,7 +47,9 @@ ALTER TABLE %(scratch)s_condition2 ADD INDEX KI_last_donation_date (last_donatio
 SELECT
     civi_id,
     civicrm_email.email,
-    COALESCE( civicrm_contact.display_name ) AS name,
+    COALESCE( civicrm_contact.first_name ) AS first_name,
+    COALESCE( civicrm_contact.last_name ) AS last_name,
+    COALESCE( civicrm_contact.organization_name, org.organization_name ) AS organization_name,
     COALESCE( civicrm_address.street_address ) AS address,
     CONCAT(
         COALESCE( supplemental_address_1, "" ),
@@ -57,7 +59,7 @@ SELECT
         COALESCE( supplemental_address_3, "" )
     ) AS supplemental_address,
     COALESCE( civicrm_address.city ) AS city,
-    COALESCE( civicrm_state_province.name ) AS state,
+    COALESCE( civicrm_state_province.abbreviation ) AS state,
     COALESCE( civicrm_country.name ) AS country,
     COALESCE( civicrm_address.postal_code ) AS zip,
     COALESCE( civicrm_phone.phone ) AS phone,
@@ -78,5 +80,9 @@ LEFT JOIN civicrm_state_province
     ON civicrm_state_province.id = civicrm_address.state_province_id
 LEFT JOIN civicrm_country
     ON civicrm_country.id = civicrm_address.country_id
+LEFT JOIN civicrm_relationship
+    ON civicrm_relationship.contact_id_a = civi_id
+LEFT JOIN civicrm_contact org
+    ON org.id = civicrm_relationship.contact_id_b
 GROUP BY
     civi_id
