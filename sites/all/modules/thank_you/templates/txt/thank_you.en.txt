@@ -40,7 +40,7 @@ making a mistake: that's normal when people first start editing and if
 it happens, other Wikipedians will be happy to fix it for you.
 
   Links:
-    1. https://en.wikipedia.org/w/index.php?title=Special:UserLogin&type=signup
+    1. https://en.wikipedia.org/w/index.php?title=Special:UserLogin&returnto=Wikipedia:Introduction&type=signup&campaign=fr12a
 
 I appreciate your trust in us, and I promise you we'll use your money
 well.
