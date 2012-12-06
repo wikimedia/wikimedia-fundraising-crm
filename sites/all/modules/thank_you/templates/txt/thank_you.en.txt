@@ -35,12 +35,12 @@ sharing this e-mail with a few of your friends to encourage them to
 donate too. And if you're interested, you should try adding some new
 information to Wikipedia. If you see a typo or other small mistake,
 please fix it, and if you find something missing, please add it. There
-are resources [1]here that can help you get started. Don't worry about
+are resources that can help you [1]get started. Don't worry about
 making a mistake: that's normal when people first start editing and if
 it happens, other Wikipedians will be happy to fix it for you.
 
   Links:
-    1. http://en.wikipedia.org/wiki/Wikipedia:Introduction
+    1. https://en.wikipedia.org/w/index.php?title=Special:UserLogin&type=signup
 
 I appreciate your trust in us, and I promise you we'll use your money
 well.
@@ -52,6 +52,9 @@ Sue Gardner
 Executive Director,
 Wikimedia Foundation
 https://donate.wikimedia.org
+
+For your records: Your donation on {{ contribution.receive_date|date("Y-d-m") }} was {{ contribution.contribution_source }}.
+{% if recurring %} {% include 'recurring/en.html' ignore missing %} {% endif %}
 
 You can follow us on [3]Twitter, [4]identi.ca or [5]Google+, like us on
 [6]Facebook and read [7]our blog. Here is the [8]Wikimedia Foundation
@@ -70,8 +73,7 @@ You can also now buy Wikipedia merchandise at [11]shop.wikimedia.org.
     10. https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary
     11. https://shop.wikimedia.org
 
-For your records: Your donation on {{ contribution.receive_date|date("Y-d-m") }} was {{ contribution.contribution_source }}.
-{% if recurring %} {% include 'recurring/en.html' ignore missing %} {% endif %}
+
 
 This letter may serve as a record of your donation. No goods or
 services were provided, in whole or in part, for this contribution. The

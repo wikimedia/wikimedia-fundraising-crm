@@ -29,10 +29,9 @@
     e-mail with a few of your friends to encourage them to donate too. And if you're
     interested, you should try adding some new information to Wikipedia. If you see a typo
     or other small mistake, please fix it, and if you find something missing, please add
-    it. There are resources <a href="http://en.wikipedia.org/wiki/Wikipedia:Introduction">
-        here</a> that can help you get started. Don't worry about making a mistake: that's
-    normal when people first start editing and if it happens, other Wikipedians will be
-    happy to fix it for you.</p>
+    it. There are resources that can help you <a href="https://en.wikipedia.org/w/index.php?title=Special:UserLogin&type=signup">get started</a>.
+    Don't worry about making a mistake: that's normal when people first start editing and
+    if it happens, other Wikipedians will be happy to fix it for you.</p>
 
 <p>I appreciate your trust in us, and I promise you we'll use your money well.</p>
 
@@ -45,6 +44,10 @@ Executive Director,<br />
 Wikimedia Foundation<br />
 <a href="https://donate.wikimedia.org">https://donate.wikimedia.org</a></p>
 
+<p>For your records: Your donation on {{ contribution.receive_date|date("Y-m-d") }} was {{ contribution.contribution_source }}.
+    {% if recurring %}
+    {% include 'recurring/en.html' ignore missing %}
+    {% endif %}</p>
 
 <p>You can follow us on <a href="http://twitter.com/Wikipedia">Twitter</a>, <a href="http://identi.ca/wikipedia">identi.ca</a>
     or <a href="https://plus.google.com/+Wikipedia/posts">Google+</a>, like us on
@@ -54,11 +57,6 @@ Wikimedia Foundation<br />
         Wikimedia Foundation annual plan for 2012-13</a> and the <a href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">
         Wikimedia Foundation's five-year strategic plan</a>. You can also now buy Wikipedia
     merchandise at <a href="https://shop.wikimedia.org/">shop.wikimedia.org</a>.</p>
-
-<p>For your records: Your donation on {{ contribution.receive_date|date("Y-m-d") }} was {{ contribution.contribution_source }}.
-{% if recurring %}
-{% include 'recurring/en.html' ignore missing %}
-{% endif %}</p>
 
 <p>This letter may serve as a record of your donation. No goods or services were provided,
 in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit
