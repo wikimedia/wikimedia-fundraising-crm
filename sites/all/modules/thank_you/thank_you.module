@@ -652,7 +652,7 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
 	// use HST for tax reasons
 	if( $country == "US" ){
 		if( strftime("%m-%d", strtotime( $contribution['receive_date'] ) == "01-01" ) ){
-			$contribution['receive_date'] = strtotime( $contribution['receive_date'] ) - ( 60 * 60 * 10 );
+			$contribution['receive_date'] = strftime("%Y-%m-%d %H:%M:%S", strtotime( $contribution['receive_date'] ) - ( 60 * 60 * 10 ) );
 		}
 	}
 
