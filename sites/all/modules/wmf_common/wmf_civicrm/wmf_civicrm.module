@@ -870,8 +870,8 @@ function wmf_civicrm_get_country_id( $code ) {
         }
     }
     watchdog( 'wmf_civicrm',
-        "Cannot find country: [%code] %msg",
-        array( '%code' => $code, '%msg' => print_r( $msg, true ) ),
+        "Cannot find country: [%code]",
+        array( '%code' => $code ),
         WATCHDOG_NOTICE
     );
 }
@@ -917,8 +917,8 @@ EOS;
         return $row->id;
     }
     watchdog( 'wmf_civicrm',
-        "Cannot find state: [%state] (country %country) %msg",
-        array( '%state' => $state, '%country' => $country_id, '%msg' => print_r( $msg, true ) ),
+        "Cannot find state: [%state] (country %country)",
+        array( '%state' => $state, '%country' => $country_id ),
         WATCHDOG_NOTICE
     );
 }
