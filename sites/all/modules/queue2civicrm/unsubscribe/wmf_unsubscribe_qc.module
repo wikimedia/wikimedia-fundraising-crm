@@ -123,7 +123,7 @@ function unsubscribe_process_message($msg) {
     watchdog('unsubscribe', "$txnid: Acting on contribution ID '$contribId'", array(), WATCHDOG_INFO);
 
     // Find the contact from the contribution ID and check opt out status
-    $contacts = unsubscribe_get_contact_from_contribution($contribId);
+    $contacts = unsubscribe_get_emails_from_contribution($contribId);
 
     if (count($contacts) === 0) {
       watchdog('unsubscribe', "$txnid: No contacts returned for contribution ID $contribId. Acking frame and returning.", WATCHDOG_NOTICE);
@@ -143,7 +143,7 @@ function unsubscribe_process_message($msg) {
       }
 
       // And opt them out
-      $count = unsubscribe_opt_out_contact($emails);
+      $count = unsubscribe_opt_out_emails($emails);
       watchdog('unsubscribe', "$txnid: Successfully updated $count rows.");
       $retval = TRUE;
     }
@@ -171,7 +171,7 @@ function unsubscribe_process_message($msg) {
  *
  * @return array
  */
-function unsubscribe_get_contact_from_contribution($ctid) {
+function unsubscribe_get_emails_from_contribution($ctid) {
   $query = 'SELECT con.id, con.is_opt_out, e.email';
   $query .= ' FROM civicrm_contribution ct, civicrm_contact con';
   $query .= ' LEFT JOIN civicrm_email e';
@@ -195,13 +195,13 @@ function unsubscribe_get_contact_from_contribution($ctid) {
 }
 
 /**
- * Updates the Civi database with an opt out record for specified contact.
+ * Updates the Civi database with an opt out record for the specified email address
  *
  * @param array   $emails   Email addresses to unsubscribe
  *
  * @returns Number of effected rows
  */
-function unsubscribe_opt_out_contact($emails) {
+function unsubscribe_opt_out_emails($emails) {
   $query = 'UPDATE civicrm_contact con, civicrm_email e';
   $query .= ' SET con.is_opt_out=1';
   $query .= ' WHERE con.id=e.contact_id AND ';
