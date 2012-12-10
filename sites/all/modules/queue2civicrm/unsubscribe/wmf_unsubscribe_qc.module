@@ -127,11 +127,11 @@ function unsubscribe_process_message($msg) {
 
     if (count($contacts) === 0) {
       watchdog('unsubscribe', "$txnid: No contacts returned for contribution ID $contribId. Acking frame and returning.", WATCHDOG_NOTICE);
-      $retval = FALSE;
+      $retval = TRUE;
 
     } elseif ($contacts[0]['is_opt_out'] == TRUE) {
       watchdog('unsubscribe', "$txnid: Contact already opted out with this contribution ID.", WATCHDOG_NOTICE);
-      $retval = FALSE;
+      $retval = TRUE;
 
     } else {
       // Excellent -- we have a collection of emails to unsubscribe now! :) Add them to the array
