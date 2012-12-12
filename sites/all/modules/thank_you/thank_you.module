@@ -323,7 +323,9 @@ function thank_you_send( $contribution_id, $test=null ) {
 	$mail = new PHPMailer( true ); // @todo any performance gain making this static?
 
 	try {
-		$mail->set('Charset','utf-8');
+		$mail->set( 'Charset', 'utf-8' );
+		$mail->set( 'Sender', 'bounce-' . str_replace( '@', '=', $email['to_address'] ) . '@donate.wikimedia.org' );
+
 		if ( !is_null( $test ) ){
 			watchdog("thank_you", "Sending ty email to: " . $test['email'], array(), WATCHDOG_INFO);
 			$mail->AddAddress( $test['email'], "Test User" );
