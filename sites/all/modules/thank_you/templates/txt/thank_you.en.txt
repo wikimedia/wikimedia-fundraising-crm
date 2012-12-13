@@ -54,7 +54,7 @@ Wikimedia Foundation
 https://donate.wikimedia.org
 
 For your records: Your donation on {{ contribution.receive_date|date("Y-d-m") }} was {{ contribution.contribution_source }}.
-{% if recurring %} {% include 'recurring/en.html' ignore missing %} {% endif %}
+{% if recurring %} {% include 'txt/recurring/en.html' ignore missing %} {% endif %}
 
 You can follow us on [3]Twitter, [4]identi.ca or [5]Google+, like us on
 [6]Facebook and read [7]our blog. Here is the [8]Wikimedia Foundation
