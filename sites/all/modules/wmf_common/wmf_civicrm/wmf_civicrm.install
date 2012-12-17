@@ -253,6 +253,8 @@ function wmf_civicrm_create_payment_instruments($payment_instruments)
  */
 function wmf_civicrm_update_6005()
 {
+	$ret = array();
+
     $api = wmf_civicrm_bootstrap_civi();
     $success = $api->CustomGroup->get(array(
         'name' => 'contribution_extra',
@@ -274,7 +276,7 @@ function wmf_civicrm_update_6005()
         'is_view' => 1,
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -289,7 +291,7 @@ function wmf_civicrm_update_6005()
         'is_view' => 1,
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -305,7 +307,7 @@ function wmf_civicrm_update_6005()
         'is_view' => 1,
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -320,7 +322,7 @@ function wmf_civicrm_update_6005()
         'is_view' => 1,
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -336,7 +338,7 @@ function wmf_civicrm_update_6005()
         'is_view' => 1,
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -351,7 +353,7 @@ function wmf_civicrm_update_6005()
         'is_view' => 1,
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -369,7 +371,7 @@ function wmf_civicrm_update_6005()
         'time_format' => 2,
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -385,7 +387,7 @@ function wmf_civicrm_update_6005()
         'is_view' => 1,
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -400,7 +402,7 @@ function wmf_civicrm_update_6005()
         'is_view' => 1,
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -415,8 +417,8 @@ function wmf_civicrm_update_6005()
         'is_view' => 1,
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
     }
 
-    return array();
+    return $ret;
 }
