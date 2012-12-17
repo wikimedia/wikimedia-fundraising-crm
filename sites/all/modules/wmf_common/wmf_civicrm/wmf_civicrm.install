@@ -5,6 +5,9 @@ function wmf_civicrm_install()
     wmf_civicrm_update_6000();
     wmf_civicrm_update_6001();
     wmf_civicrm_update_6002();
+    wmf_civicrm_update_6003();
+    wmf_civicrm_update_6004();
+    wmf_civicrm_update_6005();
 }
 
 /**
@@ -243,4 +246,131 @@ function wmf_civicrm_create_payment_instruments($payment_instruments)
             ));
         }
     }
+}
+
+/**
+ * More complete gateway and settlement recording. Adding a field to mark auditing-only transactions.
+ */
+function wmf_civicrm_update_6005()
+{
+    $api = wmf_civicrm_bootstrap_civi();
+    $success = $api->CustomGroup->get(array(
+        'name' => 'contribution_extra',
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+    $custom_group = array_pop($api->values());
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'gateway',
+        'column_name' => 'gateway',
+        'label' => ts('Gateway'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'settlement_usd',
+        'column_name' => 'settlement_usd',
+        'label' => ts('Settlement Total (USD)'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'settlement_currency',
+        'column_name' => 'settlement_currency',
+        'label' => ts('Settlement Currency'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'deposit_date',
+        'column_name' => 'deposit_date',
+        'label' => ts('Deposit Received Date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'deposit_usd',
+        'column_name' => 'deposit_usd',
+        'label' => ts('Deposit Total (USD)'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'deposit_currency',
+        'column_name' => 'deposit_currency',
+        'label' => ts('Deposit Currency'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'finance_only',
+        'column_name' => 'finance_only',
+        'label' => ts('Finance Auditing Only'),
+        'data_type' => 'Boolean',
+        'html_type' => 'Radio',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+
+    return array();
 }
