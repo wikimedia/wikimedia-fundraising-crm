@@ -359,7 +359,11 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     $custom_vars = array(
         'Contribution_Comments' => $comment,
         'Gift_Data' => $lettercode,
+        'gateway' => $msg['gateway'],
         'gateway_account' => $gateway_account,
+        'gateway_txn_id' => $msg['gateway_txn_id_orig'],
+        'original_amount' => $msg['original_gross'],
+        'original_currency' => $msg['original_currency'],
     );
     wmf_civicrm_set_custom_field_values( $contribution_result[ 'id' ], $custom_vars );
 
