@@ -279,6 +279,52 @@ function wmf_civicrm_update_6005()
 
     $success = $api->CustomField->create(array(
         'custom_group_id' => $custom_group->id,
+        'name' => 'gateway_txn_id',
+        'column_name' => 'gateway_txn_id',
+        'label' => ts('Gateway Transaction ID'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'original_amount',
+        'column_name' => 'original_amount',
+        'label' => ts('Original Amount Received'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'original_currency',
+        'column_name' => 'original_currency',
+        'label' => ts('Original Currency Received'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
         'name' => 'settlement_usd',
         'column_name' => 'settlement_usd',
         'label' => ts('Settlement Total (USD)'),
