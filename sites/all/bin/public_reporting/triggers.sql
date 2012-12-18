@@ -9,7 +9,9 @@ DROP TRIGGER IF EXISTS public_reporting_custom_update;
 DELIMITER //
 CREATE TRIGGER public_reporting_update AFTER UPDATE ON civicrm_contribution FOR EACH ROW
 BEGIN
+    -- Skip any contributions marked as "finance_only"
     IF NOT (SELECT finance_only = 1 FROM wmf_contribution_extra WHERE entity_id = NEW.id) THEN
+        -- Since the public_reporting row may have been deleted, we always replace into.
         REPLACE INTO {pr_db}{public_reporting}
             SET
                 contribution_id = NEW.id,
@@ -20,6 +22,8 @@ BEGIN
     END IF;
 END
 //
+-- We can (currently) assume that CiviCRM will insert a custom table entry
+-- for every contribution.
 CREATE TRIGGER public_reporting_custom_insert AFTER INSERT ON wmf_contribution_extra FOR EACH ROW
 BEGIN
     IF NEW.finance_only = 1 THEN
@@ -28,11 +32,12 @@ BEGIN
     ELSE
         REPLACE INTO {pr_db}{public_reporting}
             (contribution_id, converted_amount, original_currency, original_amount, received)
+            -- Assume that we are running new code and we do not have to parse "source".
             (SELECT
                     id,
                     total_amount,
-                    SUBSTRING( source, 1, 3 ),
-                    CONVERT( SUBSTRING( source, 5 ), DECIMAL( 20, 2 ) ),
+                    NEW.original_currency,
+                    NEW.original_amount,
                     UNIX_TIMESTAMP( receive_date )
                 FROM civicrm_contribution
                 WHERE id = NEW.entity_id
@@ -48,6 +53,8 @@ BEGIN
     ELSE
         REPLACE INTO {pr_db}{public_reporting}
             (contribution_id, converted_amount, original_currency, original_amount, received)
+            -- Leave the update code unchanged until all "source" rows
+            -- have been synced to the original_* columns
             (SELECT
                     id,
                     total_amount,
