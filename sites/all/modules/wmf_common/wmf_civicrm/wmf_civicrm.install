@@ -249,11 +249,11 @@ function wmf_civicrm_create_payment_instruments($payment_instruments)
 }
 
 /**
- * More complete gateway and settlement recording. Adding a field to mark auditing-only transactions.
+ * More complete gateway and settlement recording. Adding a field to mark auditing-only transactions, and a hack to link contributions.
  */
 function wmf_civicrm_update_6005()
 {
-	$ret = array();
+    $ret = array();
 
     $api = wmf_civicrm_bootstrap_civi();
     $success = $api->CustomGroup->get(array(
@@ -296,9 +296,57 @@ function wmf_civicrm_update_6005()
 
     $success = $api->CustomField->create(array(
         'custom_group_id' => $custom_group->id,
+        'name' => 'gateway_status_raw',
+        'column_name' => 'gateway_status_raw',
+        'label' => ts('Gateway Status (raw)'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'gateway_status',
+        'column_name' => 'gateway_status',
+        'label' => ts('Gateway Status (normalized)'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'gateway_date',
+        'column_name' => 'gateway_date',
+        'label' => ts('Gateway Timestamp'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+    ));
+    if (!$success) {
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
         'name' => 'original_amount',
         'column_name' => 'original_amount',
-        'label' => ts('Original Amount Received'),
+        'label' => ts('Original Amount Received (unconverted)'),
         'data_type' => 'Money',
         'html_type' => 'Text',
         'is_active' => 1,
@@ -395,6 +443,21 @@ function wmf_civicrm_update_6005()
         'name' => 'deposit_currency',
         'column_name' => 'deposit_currency',
         'label' => ts('Deposit Currency'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'parent_contribution_id',
+        'column_name' => 'parent_contribution_id',
+        'label' => ts('Parent Contribution ID'),
         'data_type' => 'String',
         'html_type' => 'Text',
         'is_active' => 1,
