@@ -458,7 +458,7 @@ function wmf_civicrm_update_6005()
         'name' => 'parent_contribution_id',
         'column_name' => 'parent_contribution_id',
         'label' => ts('Parent Contribution ID'),
-        'data_type' => 'String',
+        'data_type' => 'Int',
         'html_type' => 'Text',
         'is_active' => 1,
         'is_searchable' => 1,
