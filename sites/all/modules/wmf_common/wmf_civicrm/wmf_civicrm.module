@@ -1106,17 +1106,20 @@ function wmf_civicrm_mark_refund(
     if ( !$success || !$api->values ) {
         throw new Exception("No such contribution: $contribution_id, " . $api->errorMsg());
     }
-    $contribution = array_pop($api->values);
+    $result = $api->values;
+    $contribution = array_pop($result);
 
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'civicrm' );
 
     $query = <<<"EOS"
 SELECT COUNT(*) FROM wmf_contribution_extra
-WHERE parent_contribution_id = %d
+WHERE
+    parent_contribution_id = %d
+    OR (entity_id = %d AND COALESCE(parent_contribution_id, ''))
 EOS;
-    if ( db_result(db_query($query, array($contribution_id))) ) {
-        throw new Exception("Contribution is already linked to a refund: $contribution_id");
+    if ( db_result(db_query($query, array($contribution_id, $contribution_id))) ) {
+        throw new Exception("Contribution is already linked to a refund, or is itself a refund: $contribution_id");
     }
 
     list($actual_currency, $actual_amount) = explode(" ", $contribution->contribution_source);
@@ -1141,7 +1144,8 @@ EOS;
     if ( !$api->Contribution->Create($refund_params) ) {
         throw new Exception("Failed to create refund contribution for: $contribution_id, " . $api->errorMsg());
     }
-    $refund = array_pop($api->values);
+    $result = $api->values;
+    $refund = array_pop($result);
 
     $custom_values = array(
         'parent_contribution_id' => $contribution->id,
@@ -1154,13 +1158,13 @@ EOS;
     );
     wmf_civicrm_set_custom_field_values($contribution->id, $custom_values);
 
-    $contribution_alter_params = array(
-        'id' => $contribution->id,
-        'contribution_status_id' => civicrm_api_contribution_status( 'Cancelled' ),
-    );
-    if ( !$api->Contribution->Create($contribution_alter_params) ) {
-        throw new Exception("Failed to cancel original contribution: $contribution_id, " . $api->errorMsg());
-    }
+    // FIXME: Contribution api cannot do a simple update
+    $query = <<<"EOS"
+UPDATE civicrm_contribution
+SET contribution_status_id = %d
+WHERE id = %d
+EOS;
+    db_query( $query, array( $contribution->id, civicrm_api_contribution_status( 'Cancelled' ) ) );
 
     return $refund->id;
 }
