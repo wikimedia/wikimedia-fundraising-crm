@@ -1164,7 +1164,9 @@ UPDATE civicrm_contribution
 SET contribution_status_id = %d
 WHERE id = %d
 EOS;
-    db_query( $query, array( $contribution->id, civicrm_api_contribution_status( 'Cancelled' ) ) );
+    if ( !db_query( $query, array( civicrm_api_contribution_status( 'Cancelled' ), $contribution->id ) ) ) {
+        throw new Exception("Could not cancel original contribution: $contribution_id, " . db_error());
+    }
 
     return $refund->id;
 }
