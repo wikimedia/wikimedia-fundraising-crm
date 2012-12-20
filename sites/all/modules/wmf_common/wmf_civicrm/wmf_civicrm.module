@@ -1119,6 +1119,7 @@ function wmf_civicrm_mark_refund(
     $contribution_id,
     $refund_type = 'refund',
     $refund_completed = false,
+    $refund_date = null,
     $original_currency = null,
     $original_amount = null
 ) {
@@ -1151,12 +1152,15 @@ EOS;
         throw new Exception("Payment amount specified did not match original contribution: $contribution_id");
     }
 
+    if ( $refund_date === null ) {
+        $refund_date = time();
+    }
     $refund_status = ( $refund_completed ? 'Completed' : 'Pending' );
     $refund_params = array(
         'contact_id' => $contribution->contact_id,
         'total_amount' => 0 - $contribution->total_amount,
         'contribution_type_id' => wmf_civicrm_get_civi_id( 'contribution_type_id', 'cash' ),
-        'receive_date' => gmdate( 'Y-m-d H:i:s' ),
+        'receive_date' => gmdate( 'Y-m-d H:i:s', $refund_date ),
         'contribution_status_id' => civicrm_api_contribution_status( $refund_status ),
         'contribution_source' => $refund_type,
 
