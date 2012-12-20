@@ -1223,12 +1223,18 @@ function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_statu
 
     // this is sort of audit-specific logic
     if ( $normalized_status === 'Refunded' ) {
+        // We restore the old status id in case this refund action was less recent
+        // than current info in the db.  If the data conditional below succeeds, we
+        // set the status to 'refunded' again.
+        $old_status_id = $contribution->contribution_status_id;
         try {
             wmf_civicrm_mark_refund( $contribution_id, 'chargeback', true );
         } catch (Exception $e) {
             watchdog('wmf_civicrm', "Cannot create a refund for: {$contribution_id}", array(), WATCHDOG_ERROR);
         }
         $contribution->find( true );
+        $contribution->contribution_status_id = $old_status_id;
+        $contribution->save();
     }
 
     if ( $timestamp === null ) {
