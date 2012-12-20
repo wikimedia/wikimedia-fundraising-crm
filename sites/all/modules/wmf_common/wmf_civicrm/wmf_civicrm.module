@@ -71,6 +71,8 @@ function wmf_civicrm_get_settlement_currency($transaction)
 function wmf_civicrm_settle( $contribution, $settled_timestamp = null )
 {
     if ( $settled_timestamp === null ) {
+        // Get the stored date
+        // FIXME wmf_civicrm_contribution_get_custom_values('settlement_date');
         $field = wmf_civicrm_get_custom_field_name( 'settlement_date' );
         $params = array(
             'entityID' => $contribution['id'],
@@ -107,7 +109,6 @@ function wmf_civicrm_settle( $contribution, $settled_timestamp = null )
         $contribution['version'] = 3; //WTF
 
         $contribution_result = civicrm_api( "Contribution", "Create", $contribution );
-error_log(print_r($contribution_result, TRUE));
         if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
             throw new Exception( "Couldn't update contribution with new settlement info. txn_id: {$contribution['trxn_id']}" );
         }
@@ -116,6 +117,27 @@ error_log(print_r($contribution_result, TRUE));
     return array_merge( $contribution, $custom_values );
 }
 
+// FIXME all of these custom field helpers share flaws: they do not consider entity type, or custom group name
+function wmf_civicrm_contribution_get_custom_values( $contribution_id, $names )
+{
+    $names = (array)$names;
+    $params[ 'entityID' ] = $contribution_id;
+    foreach ( $names as $name ) {
+        $field = wmf_civicrm_get_custom_field_name( $name );
+        $params[ $field ] = 1;
+        $field_map[ $field ] = $name;
+    }
+    require_once 'CRM/Core/BAO/CustomValueTable.php';
+    $result = CRM_Core_BAO_CustomValueTable::getValues( $params );
+    foreach ( $result as $field => $value ) {
+        if ( array_key_exists( $field, $field_map ) ) {
+            $ret[ $field_map[ $field ] ] = $value;
+        }
+    }
+    return $ret;
+}
+
+// FIXME: contribution_set_custom_values
 function wmf_civicrm_set_custom_field_values($entity_id, $map)
 {
     require_once 'CRM/Core/BAO/CustomValueTable.php';
@@ -1164,9 +1186,74 @@ UPDATE civicrm_contribution
 SET contribution_status_id = %d
 WHERE id = %d
 EOS;
-    if ( !db_query( $query, array( civicrm_api_contribution_status( 'Cancelled' ), $contribution->id ) ) ) {
-        throw new Exception("Could not cancel original contribution: $contribution_id, " . db_error());
+    if ( !db_query( $query, array( civicrm_api_contribution_status( 'Refunded' ), $contribution->id ) ) ) {
+        throw new Exception("Cannot mark original contribution as refunded: $contribution_id, " . db_error());
     }
 
     return $refund->id;
+}
+
+/**
+ * Update civi records to track gateway status change events.
+ *
+ * If more recent information is in the database, ignore the event
+ * unless it is a Refund.
+ *
+ * For refund events, mark the refund using our helper function.
+ *
+ * Raw gateway status is stored in a custom field.
+ */
+function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_status, string $normalized_status = null, int $timestamp = null )
+{
+    civicrm_initialize();
+
+    if ( $normalized_status !== null ) {
+        require_once 'CRM/Contribute/BAO/Contribution.php';
+        $contribution = new CRM_Contribute_BAO_Contribution();
+        $contribution->id = $contribution_id;
+        if ( !$contribution->find( true ) ) {
+            throw new Exception( "Contribution not found: $contribution_id" );
+        }
+
+        $status_id = civicrm_api_contribution_status( $normalized_status );
+        if ( $status_id === null ) {
+            watchdog('wmf_civicrm', "Normalized status does not exist: {$normalized_status}", array(), WATCHDOG_ERROR);
+        }
+    }
+
+    // this is sort of audit-specific logic
+    if ( $normalized_status === 'Refunded' ) {
+        try {
+            wmf_civicrm_mark_refund( $contribution_id, 'chargeback', true );
+        } catch (Exception $e) {
+            watchdog('wmf_civicrm', "Cannot create a refund for: {$contribution_id}", array(), WATCHDOG_ERROR);
+        }
+        $contribution->find( true );
+    }
+
+    if ( $timestamp === null ) {
+        $gateway_date = gmdate( 'YmdHis' );
+    } else {
+        $gateway_date = gmdate( 'YmdHis', $timestamp );
+    }
+
+    $original_custom_values = wmf_civicrm_contribution_get_custom_values( $contribution_id, array(
+        'gateway_date',
+    ) );
+    $last_timestamp = strtotime( $original_custom_values['gateway_date'] );
+    $last_gateway_date = date( 'YmdHis', $last_timestamp );
+
+    if ( $last_gateway_date >= $gateway_date ) {
+        watchdog('wmf_civicrm', "Not updating contribution, because a more recent gateway status change has been recorded: {$contribution_id}", array(), WATCHDOG_INFO);
+        return;
+    }
+
+    $custom_values['gateway_date'] = $gateway_date;
+    $custom_values['gateway_status_raw'] = $raw_status;
+    wmf_civicrm_set_custom_field_values($contribution_id, $custom_values);
+
+    if ( $normalized_status !== null ) {
+        $contribution->contribution_status_id = $status_id;
+    }
+    $contribution->save();
 }
