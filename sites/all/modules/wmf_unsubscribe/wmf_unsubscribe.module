@@ -294,7 +294,7 @@ function wmf_unsubscribe_manual_form_submit($form, &$form_state) {
       );
 
       // Check if the query failed
-      if (( $contribution[ 'is_error' ] == TRUE ) || ( $contribution[ 'count' ] != 1 )) {
+      if (( $contribution[ 'is_error' ] == TRUE ) || ( $contribution[ 'count' ] < 1 )) {
         drupal_set_message("API contribution search failed for contact ID: $contactId " . json_encode($contribution));
         continue;
       }
