@@ -8,6 +8,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_6003();
     wmf_civicrm_update_6004();
     wmf_civicrm_update_6005();
+    wmf_civicrm_update_6006();
 }
 
 /**
@@ -49,7 +50,7 @@ function wmf_civicrm_update_6000()
 
     wmf_civicrm_bootstrap_civi();
     wmf_civicrm_create_contribution_types($contribution_types);
-    wmf_civicrm_create_payment_instruments($payment_instruments);
+    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
 
     return array();
 }
@@ -220,19 +221,19 @@ function wmf_civicrm_create_contribution_types($contribution_types)
     }
 }
 
-function wmf_civicrm_create_payment_instruments($payment_instruments)
+function wmf_civicrm_create_option_values( $group_name, $values )
 {
     $api = wmf_civicrm_bootstrap_civi();
 
     $api->OptionGroup->Get(array(
-        'name' => 'payment_instrument',
+        'name' => $group_name,
     ));
     $option_group = array_pop($api->values());
-    foreach ($payment_instruments as $instrument)
+    foreach ($values as $value)
     {
         $api->OptionValue->Get(array(
             'option_group_id' => $option_group->id,
-            'name' => $instrument,
+            'name' => $value,
         ));
 
         $result = $api->values();
@@ -240,8 +241,8 @@ function wmf_civicrm_create_payment_instruments($payment_instruments)
         {
             $api->OptionValue->Create(array(
                 'option_group_id' => $option_group->id,
-                'name' => $instrument,
-                'label' => $instrument,
+                'name' => $value,
+                'label' => $value,
                 'is_active' => 1,
             ));
         }
@@ -328,7 +329,7 @@ function wmf_civicrm_update_6005()
         'custom_group_id' => $custom_group->id,
         'name' => 'gateway_date',
         'column_name' => 'gateway_date',
-        'label' => ts('Gateway Timestamp'),
+        'label' => ts('Gateway Last Update Timestamp'),
         'data_type' => 'Date',
         'html_type' => 'Select Date',
         'is_active' => 1,
@@ -481,6 +482,43 @@ function wmf_civicrm_update_6005()
     ));
     if (!$success) {
         $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
+
+    return $ret;
+}
+
+/**
+ * Additional, gateway-related contribution statuses
+ */
+function wmf_civicrm_update_6006()
+{
+    wmf_civicrm_create_option_values('contribution_status', array(
+        'Settled',
+        'Paid',
+        'Refunded',
+    ));
+
+    $api = wmf_civicrm_bootstrap_civi();
+
+    $success = $api->CustomGroup->get(array(
+        'name' => 'contribution_extra',
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+    $custom_group = array_pop($api->values);
+    $success = $api->CustomField->get(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'gateway_status',
+    ));
+    if ($success && $api->values) {
+        $field = array_pop($api->values);
+        $success = $api->CustomField->delete(array(
+            'id' => $field->id,
+        ));
+        if (!$success) {
+            $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        }
     }
 
     return $ret;
