@@ -3,6 +3,9 @@
 function wmf_reports_install()
 {
     wmf_reports_update_6000();
+    wmf_reports_update_6001();
+    wmf_reports_update_6002();
+    wmf_reports_update_6003();
 }
 
 /**
@@ -241,3 +244,27 @@ function wmf_reports_bootstrap_civi()
     require_once "api/class.api.php";
     return new civicrm_api3(array('conf_path' => conf_path()));
 }
+
+/**
+ * Install gateway reconciliation report template
+ */
+function wmf_reports_update_6003()
+{
+    wmf_reports_bootstrap_civi();
+
+    require_once 'CRM/Core/OptionValue.php';
+    require_once 'CRM/Core/Component.php';
+    $groupParams = array( 'name' => ('report_template') );
+    $params = array(
+        'label' => 'Gateway Reconciliation',
+        'name' => 'CRM_Report_Form_Contribute_GatewayReconciliation',
+        'value' => 'contribute/reconciliation',
+        'description' => 'Gateway Reconciliation',
+        'component_id' => CRM_Core_Component::getComponentID( 'CiviContribute' ),
+        'is_active' => true,
+    );
+    CRM_Core_OptionValue::addOptionValue( $params, $groupParams, $nullAction, $nullId );
+
+    return array();
+}
+
