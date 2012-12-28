@@ -139,4 +139,22 @@ class db_switcher {
           $this->set_db( array_shift( $this->db_stack ) );
       }
   }
+
+  /**
+   * Utility to make a db prefix string of the form "SCHEMA.TABLEPREFIX"
+   */
+  function get_prefix($name) {
+      global $db_url, $db_prefix;
+
+      $prefix = "";
+
+      $url = $db_url[$name];
+      if (preg_match( "/^(?:[^:]+):\/\/(?:[^:]+):(?:[^@]+)@(?:[^\/]+)\/(?P<schema>.+)$/", $url, $matches )) {
+          $prefix = $matches['schema'] . ".";
+      }
+      if ( $name === 'default' ) {
+          $prefix .= $db_prefix;
+      }
+      return $prefix;
+  }
 }
