@@ -143,7 +143,7 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
                 'group_bys' => array(
                     'country' => array(
                         'title' => ts( 'Country' ),
-                        'default' => true,
+                        'default' => false,
                     ),
                 ),
             ),
