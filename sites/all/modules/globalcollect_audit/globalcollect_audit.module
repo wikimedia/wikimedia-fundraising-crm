@@ -1294,19 +1294,27 @@ function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
  * @param type $drush_message 
  */
 function globalcollect_audit_log_error( $watchdog_message, $drush_code, $drush_message = null ){
+	if ( is_null( $drush_message ) ){
+		$drush_message = $watchdog_message;
+	}
+
 	//hijacking this for missing logs. These are clogging the errors, and I'd rather have the ball at the end anyway. 
 	if ( $drush_code === 'WR1_LOG' ){
 		$watchdog_message = explode(' ', $watchdog_message);
 		$watchdog_message = explode('/', $watchdog_message[0]);
 		globalcollect_audit_results_ball('Missing Logs', $watchdog_message[count($watchdog_message) - 1]);
 		return;
+	} else {
+		//ball it up anyway. 
+		globalcollect_audit_results_ball( $drush_code, $drush_message );
 	}
 	
-	if ( is_null( $drush_message ) ){
-		$drush_message = $watchdog_message;
-	}
 	watchdog('globalcollect_audit', $watchdog_message, NULL, WATCHDOG_ERROR);
-	drush_set_error($drush_code, $drush_message);
+	
+	//STOP EXPLODING.
+	if (globalcollect_audit_error_isfatal( $drush_code )) {
+		drush_set_error($drush_code, $drush_message);
+	}
 }
 
 /**
@@ -1368,19 +1376,31 @@ function globalcollect_audit_can_continue(){
 	if ( count( $errors ) ){
 		//nonfatal errors: 
 		//"WR1_DATA_FORMAT" 
-		$nonfatal = array(
-			'WR1_DATA_FORMAT',
-			'MISSING_MANDATORY_DATA',
-			'WR1_LOG'
-		);
 		foreach ( $errors as $code => $thing){
-			if ( !in_array( $code, $nonfatal) ){
-				//echo print_r( $errors, true );
+			if (globalcollect_audit_error_isfatal( $code )) {
 				return false;
 			}
 		}
 	}
 	return true;
+}
+
+/**
+ * Returns an array of errors that should not cause the script to blow up.
+ * @return type
+ */
+function globalcollect_audit_error_isfatal( $error ){
+	$nonfatal =  array(
+		'WR1_DATA_FORMAT',
+		'MISSING_MANDATORY_DATA',
+		'WR1_LOG'
+	);
+	
+	if ( in_array( $error, $nonfatal) ){
+		return false;
+	} else {
+		return true;
+	}
 }
 
 function globalcollect_audit_get_partial_xml_node_value( $node, $xml ){
