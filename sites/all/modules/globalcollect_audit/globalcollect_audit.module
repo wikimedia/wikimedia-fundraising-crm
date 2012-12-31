@@ -999,26 +999,6 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 	//look for the next file until we either find something, or hit a fatal error. 
 	while ( globalcollect_audit_can_continue() && is_null( $file ) ){
 		$tryme = false;
-	
-		//If we've found anything, step straight backwards from the most abundant 
-		//hit day looking for more we have not tried.
-		if ( count( $counts ) ){
-			arsort( $counts );
-			//step back to plusminus and see if they've all been tried. 
-			foreach ( $counts as $date => $hits ){
-				if ( $hits > 0 && !in_array($date, $tried) ){
-					for ( $i = 1; $i <= $plusminus && !$tryme; ++$i ){
-						$check_date = wmf_common_date_add_days( $date, -1*$i );
-						if ( !array_key_exists( $check_date, $counts ) ){
-							$tryme = $check_date;
-						}
-					}
-				} 
-				if ( $tryme ){
-					break;
-				}
-			}
-		}
 
 		//Find the most popular date in the missing transactions that has not been 
 		//tried yet, and look there. 
@@ -1078,10 +1058,10 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 			}
 		}
 
-		//We have now tried everything. Kick out of the loop with a fatal.  
+		//We have now tried everything. Kick out of the loop with an error code that will cause can_continue to say "no".  
 		if ( !$tryme ){
 			$message = __FUNCTION__  . " No 'next' log identified. Current Missing: " . print_r( $dates, true );
-			globalcollect_audit_log_error( $message, "WR1_LOG_FATAL" );
+			globalcollect_audit_log_error( $message, "WR1_LOG_STOP" );
 			return null;
 		}
 
@@ -1380,6 +1360,17 @@ function globalcollect_audit_can_continue(){
 	if ( count( $errors ) ){
 		//nonfatal errors: 
 		//"WR1_DATA_FORMAT" 
+		
+		if ( array_key_exists( 'WR1_LOG_STOP', $errors ) ){
+			//If the only thing in the errors is a log stop, 
+			//halt gracefully by clearing out the error log and returning false.
+			//If there's other stuff, we should blow up with all of it. 
+			if ( count( $errors ) === 1 ){
+				drush_clear_error();
+			}
+			return false;
+		}
+		
 		foreach ( $errors as $code => $thing){
 			if (globalcollect_audit_error_isfatal( $code )) {
 				return false;
@@ -1397,7 +1388,8 @@ function globalcollect_audit_error_isfatal( $error ){
 	$nonfatal =  array(
 		'WR1_DATA_FORMAT',
 		'MISSING_MANDATORY_DATA',
-		'WR1_LOG'
+		'WR1_LOG',
+		'WR1_LOG_STOP',
 	);
 	
 	if ( in_array( $error, $nonfatal) ){
