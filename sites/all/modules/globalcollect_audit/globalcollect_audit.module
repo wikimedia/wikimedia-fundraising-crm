@@ -168,12 +168,10 @@ function globalcollect_audit_track_fuckup(){
 	globalcollect_audit_echo( print_r($ids, true) );
 	
 	$processed_id_count = 0;
-	$processed_days_count = 0;
 	$found_ids_count = 0;
 	$recurring_count = 0;
 	$not_recurring_count = 0;
 	$unfound = array();
-	$fuckups = array();
 	
 	
 	foreach ( $ids as $date => $id_array ){
@@ -300,7 +298,9 @@ function globalcollect_audit_parse_all_wr1(){
 		$logdate = globalcollect_audit_get_log_date_by_file($log);
 		$counts[$logdate] = count( $local_found_ids );
 		globalcollect_audit_echo($counts[$logdate] . " records found in $log");
-		globalcollect_audit_results_ball( array('Transactions Found', $log), $counts[$logdate] );
+		if ( $counts[$logdate] > 0 ){ //stop the log noise...
+			globalcollect_audit_results_ball( array('Transactions Found', $log), $counts[$logdate] );
+		}
 		
 		//now, we unset the array keys we found, so as not to corrupt the foreach we were in.
 		foreach ($local_found_ids as $id) {
@@ -340,6 +340,14 @@ function globalcollect_audit_parse_all_wr1(){
 		globalcollect_audit_echo("Errorful Transactions: " . print_r( $errorful_transactions, true ));
 		globalcollect_audit_results_ball( array('Final', 'Errors'), count($errorful_transactions) );
 	}
+	
+	//more log noise killing
+	foreach ( $counts as $log => $count ){
+		if ( $count === 0 ){
+			unset( $counts[$log] );
+		}
+	}
+	
 	globalcollect_audit_echo("Transactions found by log:" . print_r( $counts, true ));
 	globalcollect_audit_echo("Still Missing: " . count($missing) . ".");
 	if ( count($missing) ){
@@ -369,8 +377,6 @@ function globalcollect_audit_find_more_missing(&$wr1_files){
 	}
 	
 	$missing = array();
-	
-	$errorful_transactions = array();
 	
 	while ( ( $run_all_wr1 || !count( $missing ) ) && count( $wr1_files ) ){
 		$local_missing = array();
@@ -408,7 +414,6 @@ function globalcollect_audit_parse_wr1_file( $file ){
 	}
 	require_once( $parser_directory . 'Wr1DataRecord.php' );
 	
-	$missing = array();
 	$wr1_data = array();
 	globalcollect_audit_echo("Parsing $file");
 
@@ -999,7 +1004,6 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 		//hit day looking for more we have not tried.
 		if ( count( $counts ) ){
 			arsort( $counts );
-			$zerocounter = 0;
 			//step back to plusminus and see if they've all been tried. 
 			foreach ( $counts as $date => $hits ){
 				if ( $hits > 0 && !in_array($date, $tried) ){
