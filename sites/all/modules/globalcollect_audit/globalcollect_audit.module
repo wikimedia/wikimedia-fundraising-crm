@@ -1366,7 +1366,7 @@ function globalcollect_audit_can_continue(){
 			//halt gracefully by clearing out the error log and returning false.
 			//If there's other stuff, we should blow up with all of it. 
 			if ( count( $errors ) === 1 ){
-				drush_clear_error();
+				drush_set_context('DRUSH_ERROR_CODE', DRUSH_SUCCESS);
 			}
 			return false;
 		}
@@ -1389,7 +1389,6 @@ function globalcollect_audit_error_isfatal( $error ){
 		'WR1_DATA_FORMAT',
 		'MISSING_MANDATORY_DATA',
 		'WR1_LOG',
-		'WR1_LOG_STOP',
 	);
 	
 	if ( in_array( $error, $nonfatal) ){
