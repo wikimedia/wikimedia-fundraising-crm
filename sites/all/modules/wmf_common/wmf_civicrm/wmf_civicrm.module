@@ -1103,7 +1103,7 @@ function wmf_civicrm_set_thankyou_date_to_epoch( $contribution_id ){
 /**
  * Sets the civi records to reflect a contribution refund.
  *
- * The original contribution is marked "cancelled", and a negative and
+ * The original contribution is set to status "Refunded", and a negative and
  * equal refund contribution is created.  This contribution will be linked
  * to the original through the parent_contribution_id field, and will have
  * status "Pending" unless the $refund_completed argument is true.
