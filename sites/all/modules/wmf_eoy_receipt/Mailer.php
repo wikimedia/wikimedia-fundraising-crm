@@ -4,7 +4,7 @@ namespace wmf_eoy_receipt;
 
 class Mailer {
     function __construct() {
-        require_once 'class.phpmailer.php';
+        require_once implode(DIRECTORY_SEPARATOR, array(variable_get('wmf_common_phpmailer_location', ''), 'class.phpmailer.php'));
     }
 
     function send( $email ) {
