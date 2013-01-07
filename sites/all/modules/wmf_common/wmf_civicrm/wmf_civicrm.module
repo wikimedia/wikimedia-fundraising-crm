@@ -1107,11 +1107,15 @@ function wmf_civicrm_set_thankyou_date_to_epoch( $contribution_id ){
  * equal refund contribution is created.  This contribution will be linked
  * to the original through the parent_contribution_id field, and will have
  * status "Pending" unless the $refund_completed argument is true.
- * $refund_type should be 'refund' or 'chargeback', and for now we dump this
- * string into the "source" field.
+ *
+ * $refund_type should be 'refund' or 'chargeback', for now we simply dump
+ * this string into the "source" field of the negative contribution.
+ *
  * If $original_amount and $original_currency are provided, they will be
  * checked against the original contribution and an exception thrown on a
- * mismatch.
+ * mismatch, unless $restore_source is true.  In that case, we assume that
+ * the amounts may have been zeroed already, and we reconstruct using the
+ * function arguments.
  *
  * returns the refund contribution id.
  */
@@ -1121,7 +1125,8 @@ function wmf_civicrm_mark_refund(
     $refund_completed = false,
     $refund_date = null,
     $original_currency = null,
-    $original_amount = null
+    $original_amount = null,
+    $restore_source = false
 ) {
     $api = civicrm_api_classapi();
 
@@ -1145,11 +1150,29 @@ EOS;
         throw new Exception("Contribution is already linked to a refund, or is itself a refund: $contribution_id");
     }
 
-    list($actual_currency, $actual_amount) = explode(" ", $contribution->contribution_source);
-    if ( ($original_currency && $original_currency != $actual_currency)
-        || ($original_amount && $original_amount != $actual_amount) )
-    {
-        throw new Exception("Payment amount specified did not match original contribution: $contribution_id");
+    if ( $restore_source ) {
+        $dbs->pop();
+        $contribution->total_amount = round( exchange_rate_convert(
+            $original_currency, $original_amount,
+            strtotime( $contribution->receive_date )
+        ), 2 );
+        $dbs->push( 'civicrm' );
+
+        $sql = <<<EOS
+UPDATE civicrm_contribution
+SET
+    source = "%s",
+    total_amount = %s
+WHERE id = %d
+EOS;
+        db_query( $sql, array( "$original_currency $original_amount", (string) $contribution->total_amount, $contribution_id ) );
+    } else {
+        list($actual_currency, $actual_amount) = explode(" ", $contribution->contribution_source);
+        if ( ($original_currency && $original_currency != $actual_currency)
+            || ($original_amount && $original_amount != $actual_amount) )
+        {
+            throw new Exception("Payment amount specified did not match original contribution: $contribution_id");
+        }
     }
 
     if ( $refund_date === null ) {
