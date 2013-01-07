@@ -1117,6 +1117,8 @@ function wmf_civicrm_set_thankyou_date_to_epoch( $contribution_id ){
  * the amounts may have been zeroed already, and we reconstruct using the
  * function arguments.
  *
+ * Note that refund_trxn_id is not constructed for you, but used literally.
+ *
  * returns the refund contribution id.
  */
 function wmf_civicrm_mark_refund(
@@ -1124,6 +1126,7 @@ function wmf_civicrm_mark_refund(
     $refund_type = 'refund',
     $refund_completed = false,
     $refund_date = null,
+    $refund_trxn_id = null,
     $original_currency = null,
     $original_amount = null,
     $restore_source = false
@@ -1187,6 +1190,7 @@ EOS;
         'contribution_status_id' => civicrm_api_contribution_status( $refund_status ),
         'contribution_source' => $refund_type,
         'thankyou_date' => '1970-01-01 00:00:00',
+        'trxn_id' => $refund_trxn_id,
 
         // API required fields
         'version' => '3'
