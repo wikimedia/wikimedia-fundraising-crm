@@ -1278,6 +1278,7 @@ function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
  * @param type $drush_message 
  */
 function globalcollect_audit_log_error( $watchdog_message, $drush_code, $drush_message = null ){
+	global $gc_audit_errors;
 	if ( is_null( $drush_message ) ){
 		$drush_message = $watchdog_message;
 	}
@@ -1297,7 +1298,7 @@ function globalcollect_audit_log_error( $watchdog_message, $drush_code, $drush_m
 	
 	//STOP EXPLODING.
 	if (globalcollect_audit_error_isfatal( $drush_code )) {
-		drush_set_error($drush_code, $drush_message);
+		$gc_audit_errors[$drush_code] = $drush_message;
 	}
 }
 
@@ -1355,23 +1356,24 @@ function globalcollect_audit_results_ball($key = null, $value = null, $reset = f
  * @return bool True if the audit can soldier on, else false 
  */
 function globalcollect_audit_can_continue(){
-	//check for drush errors
-	$errors = drush_get_error_log();
-	if ( count( $errors ) ){
+	//check for errors
+	global $gc_audit_errors;
+	if ( count( $gc_audit_errors ) ){
 		//nonfatal errors: 
 		//"WR1_DATA_FORMAT" 
 		
-		if ( array_key_exists( 'WR1_LOG_STOP', $errors ) ){
-			//If the only thing in the errors is a log stop, 
-			//halt gracefully by clearing out the error log and returning false.
+		if ( array_key_exists( 'WR1_LOG_STOP', $gc_audit_errors ) ){
+			//If the only thing in the errors is a log stop, don't blow up.
 			//If there's other stuff, we should blow up with all of it. 
-			if ( count( $errors ) === 1 ){
-				drush_set_context('DRUSH_ERROR_CODE', DRUSH_SUCCESS);
+			if ( count( $gc_audit_errors ) !== 1 ){
+				foreach ( $gc_audit_errors as $code => $thing ){
+					drush_set_error($code, $thing);
+				}
 			}
 			return false;
 		}
 		
-		foreach ( $errors as $code => $thing){
+		foreach ( $gc_audit_errors as $code => $thing){
 			if (globalcollect_audit_error_isfatal( $code )) {
 				return false;
 			}
