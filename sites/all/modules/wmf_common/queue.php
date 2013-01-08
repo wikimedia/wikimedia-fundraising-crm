@@ -48,7 +48,7 @@ function wmf_common_dequeue_loop( $queue, $batch_size, $callback ) {
             if( wmf_common_stomp_requeue($msg) ) {
                 wmf_common_stomp_ack_frame($msg);
             } else {
-                throw new WmfException("Failed to requeue a delayed message");
+                throw new WmfException("STOMP_BAD_CONNECTION", "Failed to requeue a delayed message");
             }
 
             // If we're seeing messages with the current transaction ID in it we've started to eat our own
