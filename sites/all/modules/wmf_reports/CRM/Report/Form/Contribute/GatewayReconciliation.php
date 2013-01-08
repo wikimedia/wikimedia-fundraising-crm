@@ -187,24 +187,9 @@ EOS;
     }
 
     function selectClause( $tableName, $type, $fieldName, &$field ) {
-        // until the base class takes care of it:
-        $self = $this;
-        $register_field_alias = function( &$field ) use ( $tableName, $fieldName, $self ) {
-            //if ( !CRM_Utils_Array::value( 'dbAlias', $field ) ) {
-            $field['dbAlias'] = "{$tableName}_{$fieldName}";
-            if ( array_key_exists('group_bys', $self->_columns[$tableName])
-                and array_key_exists($fieldName, $self->_columns[$tableName]['group_bys']) )
-            {
-                $self->_columns[$tableName]['group_bys'][$fieldName]['dbAlias'] = $field['dbAlias'];
-            }
-            $self->_columnHeaders[$field['dbAlias']]['title'] = CRM_Utils_Array::value( 'title', $field );
-            $self->_columnHeaders[$field['dbAlias']]['type'] = CRM_Utils_Array::value( 'type', $field );
-            $self->_selectAliases[] = $field['dbAlias'];
-        };
-
         switch ( $fieldName ) {
         case 'is_negative':
-            $register_field_alias( $field );
+            $this->register_field_alias( $tableName, $fieldName, $field );
             $sql = "IF( {$this->_aliases['civicrm_contribution']}.total_amount < 0, '-', '+' )";
             if ( $type === 'fields' ) {
                 $sql .= " AS {$field['dbAlias']}";
@@ -212,5 +197,19 @@ EOS;
             return $sql;
         }
         return parent::selectClause( $tableName, $type, $fieldName, $field );
+    }
+
+    function register_field_alias( $tableName, $fieldName, &$field ) {
+        // until the base class takes care of it:
+        //if ( !CRM_Utils_Array::value( 'dbAlias', $field ) ) {
+        $field['dbAlias'] = "{$tableName}_{$fieldName}";
+        if ( array_key_exists('group_bys', $this->_columns[$tableName])
+            and array_key_exists($fieldName, $this->_columns[$tableName]['group_bys']) )
+        {
+            $this->_columns[$tableName]['group_bys'][$fieldName]['dbAlias'] = $field['dbAlias'];
+        }
+        $this->_columnHeaders[$field['dbAlias']]['title'] = CRM_Utils_Array::value( 'title', $field );
+        $this->_columnHeaders[$field['dbAlias']]['type'] = CRM_Utils_Array::value( 'type', $field );
+        $this->_selectAliases[] = $field['dbAlias'];
     }
 }
