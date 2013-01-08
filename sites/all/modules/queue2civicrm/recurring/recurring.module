@@ -139,7 +139,7 @@ function recurring_process_msg($msg) {
       if ($ret) {
         wmf_common_stomp_ack_frame($msg_orig);
       } else {
-        throw new WmfException("Failed to requeue a recurring message");
+        throw new WmfException("STOMP_BAD_CONNECTION", "Failed to requeue a recurring message");
       }
     }
   } catch (WmfException $ex) {

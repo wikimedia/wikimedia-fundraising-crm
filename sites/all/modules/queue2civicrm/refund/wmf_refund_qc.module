@@ -1,0 +1,209 @@
+<?php
+
+/**
+ * Drupal hook function setting up the configuration page.
+ *
+ * @param array $items Currently configured menu items to modify
+ *
+ * @return array Menu entries
+ */
+function wmf_refund_qc_menu_alter(&$items) {
+  $items[ 'admin/settings/queue2civicrm/refund_qc' ] = array(
+    'title'            => 'Refund',
+    'description'      => t('Configure refund queue settings'),
+    'access arguments' => array( 'administer queue2civicrm' ),
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array( 'refund_qc_settings' ),
+    'type'             => MENU_LOCAL_TASK,
+  );
+}
+
+/**
+ * Constructs the settings page for this module.
+ *
+ * @return array Of form components.
+ */
+function refund_qc_settings() {
+  $form = array();
+
+  $form[ 'refund_qc' ][ 'description' ] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Refund queue'),
+    '#description' => t('The refund queue contains refund messages. These allow Civi to create refund contributions associated with the original contribution.'),
+    '#collapsible' => FALSE,
+    '#collapsed'   => FALSE,
+  );
+
+  $form[ 'refund_qc' ][ 'refund_queue' ] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Subscription path'),
+    '#required'      => TRUE,
+    '#default_value' => variable_get('refund_queue', '/queue/refund-notifications_test'),
+    '#description'   => t('The path to the refund queue.'),
+  );
+
+  $form[ 'refund_qc' ][ 'refund_batch' ] = array(
+    '#type'          => 'select',
+    '#title'         => t('Cron batch size'),
+    '#required'      => TRUE,
+    '#default_value' => variable_get('refund_batch', 0),
+    '#options'       => array(
+      0   => '0 (Disable)',
+      1   => 1,
+      5   => 5,
+      10  => 10,
+      25  => 25,
+      50  => 50,
+      75  => 75,
+      100 => 100,
+      125 => 125,
+      150 => 150,
+      200 => 200,
+      250 => 250,
+      300 => 300,
+      500 => 500,
+      750 => 750,
+      1000 => 1000
+    ),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Callback from Drush that actually executes the loop for processing messages in the queue.
+ * @ref refund_process_message
+ * @ref drush_refund_queue_consume
+ */
+function refund_batch_process() {
+  watchdog('refund', 'Executing: refund_batch_process');
+
+  $processed = wmf_common_dequeue_loop(
+    variable_get('refund_queue', '/queue/refund-notifications_test'),
+    variable_get('refund_batch', 0),
+    'refund_process_message'
+  );
+
+  if ($processed > 0) {
+    watchdog('refund', 'Successfully processed ' . $processed . ' refund(s).');
+  }
+  else {
+    watchdog('refund', 'No refunds processed.');
+  }
+}
+
+/**
+ * Requeue on failure wrapper for @ref refund_import()
+ *
+ * @param $msg A STOMP message class.
+ *
+ * @return bool True if the refund was processed without errors. False if errors occured; the msg
+ *              will still have been removed from the queue though.
+ */
+function refund_process_message($msg) {
+  $msg_orig = $msg;
+  try {
+    if (refund_import($msg) === true) {
+      // only ack and remove from queue on explicit success
+      wmf_common_stomp_ack_frame($msg_orig);
+    } else {
+      // We failed to process the message for some reason or another
+      // So... we queue a new message (the original plus a time delay and count header)
+      // and ACK the original
+      $ret = wmf_common_stomp_requeue_with_delay($msg_orig);
+
+      if ($ret) {
+        wmf_common_stomp_ack_frame($msg_orig);
+      } else {
+        throw new WmfException("STOMP_BAD_CONNECTION", "Failed to requeue a recurring message");
+      }
+    }
+  } catch (WmfException $ex) {
+    watchdog('recurring', 'something went wrong during import: ' . $ex->getMessage(), NULL, WATCHDOG_ERROR);
+
+    if ($ex->isRejectMessage()) {
+      $error = "\nRemoving failed message from the queue: \n" . print_r($msg, TRUE);
+      wmf_common_stomp_ack_frame($msg_orig);
+      watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
+    }
+
+    if (!$ex->isNoEmail()) {
+      wmf_common_failmail('refund', $ex, $msg);
+    }
+
+    if ($ex->isFatal()) {
+      $error = "Halting Process.";
+      watchdog('refund', $error, NULL, WATCHDOG_ERROR);
+      return FALSE;
+    }
+  } catch (Exception $ex) {
+    $error = 'UNHANDLED ERROR CODE. Halting Process. exception: ' . $ex->getMessage();
+    watchdog('refund', $error, NULL, WATCHDOG_ERROR);
+    wmf_common_failmail('recurring', $error, $msg);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
+ * @param $msg A STOMP message class.
+ *
+ * @return bool True if the refund was processed without errors. False if a non critical
+ * error occurred (IE: the parent transaction not yet in Civi).
+ */
+function refund_import($msg) {
+  $retval = FALSE;
+
+  $txnid = $msg->headers['correlation-id'];
+  watchdog('refund', "Beginning processing of message $txnid: " . json_encode($msg), array(), WATCHDOG_INFO);
+
+  // Sanity checking :)
+  $required_fields = array( "gateway_refund_id", "gateway_parent_id", "gross_currency", "gross", "date", "gateway",
+    "gateway_account", "payment_method", "payment_submethod",
+  );
+  $body = json_decode($msg->body, TRUE);
+  foreach( $required_fields as $field_name ) {
+    if ( !array_key_exists( $field_name, $body ) ) {
+      $error = "$txnid: Required field '$field_name' not present! Dropping message on floor.";
+      throw new WmfException( 'CIVI_REQ_FIELD', $error );
+    }
+  }
+
+  $gateway = strtoupper($body['gateway']);
+  $parentTxn = $body['gateway_parent_id'];
+  $refundTxn = $body['gateway_refund_id'];
+
+  // Get the source contribution ID and determine if we need to restore it
+  watchdog( 'refund', "$txnid: Obtaining contribution ID for $gateway $parentTxn (refund $refundTxn)", WATCHDOG_INFO );
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push( 'civicrm' );
+  $query = "SELECT id, total_amount FROM civicrm_contribution WHERE trxn_id LIKE '%s%%'";
+  $result = db_fetch_array( db_query($query, array("$gateway $parentTxn") ) );
+  $dbs->pop();
+
+  if ($result) {
+    $ctid = $result['id'];
+    $restore = (floatval($result['total_amount']) == 0);
+
+    watchdog( 'refund', "$txnid: Found contribution $ctid; Will restore?: $restore", WATCHDOG_INFO );
+
+    // Perform the refund!
+    try {
+      wmf_civicrm_mark_refund($ctid, 'refund', true, $body['date'],
+        "$gateway $refundTxn " . time(),
+        $body['gross_currency'],
+        $body['gross'],
+        $restore
+      );
+    } catch (Exception $ex) {
+      watchdog('refund', "$txnid: Could not refund due to internal error " . $ex->getMessage(), WATCHDOG_ERROR);
+    }
+
+    $retval = true;
+  } else {
+    watchdog( 'refund', "$txnid: Contribution not found for this transaction!", WATCHDOG_ERROR );
+  }
+
+  return $retval;
+}
