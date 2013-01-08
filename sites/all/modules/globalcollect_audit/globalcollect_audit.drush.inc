@@ -110,6 +110,4 @@ function drush_globalcollect_audit() {
 	  echo "\n\n";
 	  exit(drush_get_error());
 	}
-	
-	exit(drush_get_error());
 }
