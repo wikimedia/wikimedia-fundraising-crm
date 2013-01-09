@@ -1205,7 +1205,7 @@ EOS;
     $parts = explode( ' ', $refund_trxn_id );
 
     $custom_values = array(
-        'gateway' => $parts[0],
+        'gateway' => strtolower($parts[0]),
         'gateway_txn_id' => $parts[1],
         'parent_contribution_id' => $contribution->id,
         'finance_only' => 1,
