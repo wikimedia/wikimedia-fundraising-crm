@@ -32,6 +32,16 @@ function civicrm_api_option_group($group_name, $key = null)
 	return $cached_group[$group_name];
 }
 
+function civicrm_option_group_id( $group_name ) {
+    $api = civicrm_api_classapi();
+    $success = $api->OptionGroup->Get(array(
+        'name' => $group_name,
+    ));
+    if ( $success && $api->values ) {
+        return $api->values[0]->id;
+    }
+}
+
 function civicrm_api_contribution_status($key = null)
 {
 	return civicrm_api_option_group('contribution_status', $key);
