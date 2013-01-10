@@ -61,6 +61,29 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
                     ),
                 ),
             ),
+            'payment_instrument' => array(
+                'dao' => 'CRM_Core_DAO_OptionValue',
+                'fields' => array(
+                    'payment_instrument' => array(
+                        'name' => 'label',
+                        'title' => ts( 'Payment Method' ),
+                    ),
+                ),
+                'filters' => array(
+                    'payment_instrument' => array(
+                        'title' => ts( 'Payment Method' ),
+                        'name' => 'label',
+                        'type' => CRM_Utils_Type::T_STRING,
+                        'operatorType' => CRM_Report_Form::OP_STRING,
+                    ),
+                ),
+                'group_bys' => array(
+                    'payment_instrument' => array(
+                        'title' => ts( 'Payment Method' ),
+                        'name' => 'label',
+                    ),
+                ),
+            ),
             'wmf_contribution_extra' => array(
                 'bao' => 'CRM_BAO_WmfContributionExtra',
                 'fields' => array(
@@ -166,6 +189,17 @@ EOS;
     ON civicrm_address.contact_id = {$this->_aliases['civicrm_contribution']}.contact_id
 LEFT JOIN civicrm_country {$this->_aliases['civicrm_country']} 
     ON {$this->_aliases['civicrm_country']}.id = civicrm_address.country_id
+EOS;
+        }
+
+        if ( $this->_submitValues['payment_instrument_value']
+            or array_key_exists( 'payment_instrument', $this->_submitValues['group_bys'] ) )
+        {
+            $option_group_id = civicrm_option_group_id( 'payment_instrument' );
+            $this->_from .= <<<EOS
+\nLEFT JOIN civicrm_option_value {$this->_aliases['payment_instrument']}
+    ON {$this->_aliases['payment_instrument']}.value = {$this->_aliases['civicrm_contribution']}.payment_instrument_id
+        AND {$this->_aliases['payment_instrument']}.option_group_id = {$option_group_id}
 EOS;
         }
     }
