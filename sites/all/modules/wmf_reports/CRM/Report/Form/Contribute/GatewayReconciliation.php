@@ -125,23 +125,23 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
                     ),
                 ),
             ),
-            'contribution_tracking' => array(
-                'bao' => 'CRM_BAO_ContributionTracking',
+            'civicrm_country' => array(
+                'dao' => 'CRM_Core_DAO_Country',
                 'fields' => array(
-                    'country' => array(
+                    'iso_code' => array(
                         'title' => ts( 'Country' ),
                         'default' => false,
                     ),
                 ),
                 'filters' => array(
-                    'country' => array(
+                    'iso_code' => array(
                         'title' => ts( 'Country' ),
                         'type' => CRM_Utils_Type::T_STRING,
                         'operatorType' => CRM_Report_Form::OP_STRING,
                     ),
                 ),
                 'group_bys' => array(
-                    'country' => array(
+                    'iso_code' => array(
                         'title' => ts( 'Country' ),
                         'default' => false,
                     ),
@@ -153,20 +153,19 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
     }
 
     function from( ) {
-        $dbs = new db_switcher();
-        $drupalprefix = $dbs->get_prefix( "default" );
-
         $this->_from = <<<EOS
 FROM civicrm_contribution {$this->_aliases['civicrm_contribution']}
 LEFT JOIN wmf_contribution_extra {$this->_aliases['wmf_contribution_extra']}
     ON {$this->_aliases['wmf_contribution_extra']}.entity_id = {$this->_aliases['civicrm_contribution']}.id
 EOS;
-        if ( $this->_submitValues['country_value']
-            or array_key_exists( 'country', $this->_submitValues['group_bys'] ) )
+        if ( $this->_submitValues['iso_code_value']
+            or array_key_exists( 'iso_code', $this->_submitValues['group_bys'] ) )
         {
             $this->_from .= <<<EOS
-\nLEFT JOIN {$drupalprefix}contribution_tracking {$this->_aliases['contribution_tracking']} 
-    ON {$this->_aliases['contribution_tracking']}.contribution_id = {$this->_aliases['civicrm_contribution']}.id
+\nLEFT JOIN civicrm_address
+    ON civicrm_address.contact_id = {$this->_aliases['civicrm_contribution']}.contact_id
+LEFT JOIN civicrm_country {$this->_aliases['civicrm_country']} 
+    ON {$this->_aliases['civicrm_country']}.id = civicrm_address.country_id
 EOS;
         }
     }
