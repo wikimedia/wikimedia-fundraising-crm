@@ -9,6 +9,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_6004();
     wmf_civicrm_update_6005();
     wmf_civicrm_update_6006();
+    wmf_civicrm_update_6007();
 }
 
 /**
@@ -492,6 +493,8 @@ function wmf_civicrm_update_6005()
  */
 function wmf_civicrm_update_6006()
 {
+    $ret = array();
+
     wmf_civicrm_create_option_values('contribution_status', array(
         'Settled',
         'Paid',
@@ -522,4 +525,25 @@ function wmf_civicrm_update_6006()
     }
 
     return $ret;
+}
+
+/**
+ * New contribution types to distinguish refunds from chargebacks. Create old "Review" tag.
+ */
+function wmf_civicrm_update_6007()
+{
+    $api = wmf_civicrm_bootstrap_civi();
+
+    wmf_civicrm_create_contribution_types(array(
+        'Refund',
+        'Chargeback',
+    ));
+
+    $api->Tag->create(array(
+        'name' => 'Review',
+        'description' => 'Review',
+    ));
+    if (!$success) {
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
 }

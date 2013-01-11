@@ -1186,6 +1186,9 @@ EOS;
         {
             throw new Exception("Payment amount specified did not match original contribution: $contribution_id");
         }
+
+        $original_currency = $actual_currency;
+        $original_amount = $actual_amount;
     }
 
     if ( $refund_date === null ) {
@@ -1195,10 +1198,10 @@ EOS;
     $refund_params = array(
         'contact_id' => $contribution->contact_id,
         'total_amount' => 0 - $contribution->total_amount,
-        'contribution_type_id' => wmf_civicrm_get_civi_id( 'contribution_type_id', 'cash' ),
+        'contribution_type_id' => wmf_civicrm_get_civi_id( 'contribution_type_id', $refund_type ),
         'receive_date' => gmdate( 'Y-m-d H:i:s', $refund_date ),
         'contribution_status_id' => civicrm_api_contribution_status( $refund_status ),
-        'contribution_source' => $refund_type,
+        'contribution_source' => "$original_currency -{$original_amount}",
         'thankyou_date' => '1970-01-01 00:00:00',
         'trxn_id' => $refund_trxn_id,
 
