@@ -1215,12 +1215,22 @@ EOS;
     $refund = array_pop($result);
 
     // Break apart the transaction ID into parts for the custom fields
-    $parts = explode( ' ', $refund_trxn_id );
+    if ( $refund_trxn_id ) {
+        list( $gateway, $gateway_txn_id ) = explode( ' ', $refund_trxn_id );
+    } else {
+        list( $gateway ) = explode( ' ', $contribution->trxn_id );
+        $gateway_txn_id = null;
+    }
+
+    $account_field_name = wmf_civicrm_get_custom_field_name( 'gateway_account' );
 
     $custom_values = array(
-        'gateway' => strtolower($parts[0]),
-        'gateway_txn_id' => $parts[1],
+        'gateway' => strtolower( $gateway ),
+        'gateway_account' => $contribution->$account_field_name,
+        'gateway_txn_id' => $gateway_txn_id,
         'parent_contribution_id' => $contribution->id,
+        'original_currency' => $original_currency,
+        'original_amount' => 0 - $original_amount,
         'finance_only' => 1,
     );
     wmf_civicrm_set_custom_field_values($refund->id, $custom_values);
