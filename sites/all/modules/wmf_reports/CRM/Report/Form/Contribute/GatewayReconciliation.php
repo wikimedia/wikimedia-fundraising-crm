@@ -66,7 +66,6 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
                 'fields' => array(
                     'simplified_payment_instrument' => array(
                         'title' => ts( 'Payment Method' ),
-                        'required' => true,
                     ),
                 ),
                 'filters' => array(
@@ -234,14 +233,14 @@ EOS;
             if ( $type === 'fields' ) {
                 return $sql . " AS {$field['dbAlias']}";
             }
-            return FALSE;
+            return false;
         case 'simplified_payment_instrument':
             $this->register_field_alias( $tableName, $fieldName, $field );
             $sql = "IF( {$this->_aliases['payment_instrument']}.label LIKE 'Credit Card%', 'Credit Card', {$this->_aliases['payment_instrument']}.label )";
             if ( $type === 'fields' ) {
                 return $sql . " AS {$field['dbAlias']}";
             }
-            return FALSE;
+            return false;
         }
         return parent::selectClause( $tableName, $type, $fieldName, $field );
     }
