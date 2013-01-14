@@ -198,6 +198,43 @@ EOS;
         }
     }
 
+    function groupBy() {
+        parent::groupBy();
+
+        if ( $this->_groupBy ) {
+            $this->_rollup = "WITH ROLLUP";
+            $this->_groupBy .= " {$this->_rollup}";
+        }
+    }
+
+    function alterDisplay( &$rows ) {
+        // delete any intermediate roll-up rows, preserving only the grand totals
+        $eliminate_rollups = array();
+        if ( is_array( $rows ) and array_key_exists( 'group_bys', $this->_submitValues ) ) {
+            $group_bys = array();
+            foreach ( $this->_columns as $table_name => $table ) {
+                foreach ( $table['group_bys'] as $field_name => $field ) {
+                    if ( array_key_exists( $field_name, $this->_submitValues['group_bys'] ) ) {
+                        $group_bys[] = "{$table_name}_{$field_name}";
+                    }
+                }
+            }
+
+            foreach ( $rows as $rowNum => $row ) {
+                foreach ( $group_bys as $i => $field_alias ) {
+                    if ( $row[$field_alias] === null ) {
+                        $eliminate_rollups[] = $rowNum;
+                        break;
+                    }
+                }
+            }
+        }
+        $indexes = array_reverse( $eliminate_rollups );
+        foreach ( $indexes as $index ) {
+            unset( $rows[$index] );
+        }
+    }
+
     function modifyColumnHeaders() {
         // We hide any non-aggregate fields which are not being grouped, since these
         // will have an indeterminate value
