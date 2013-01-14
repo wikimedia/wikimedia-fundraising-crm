@@ -12,8 +12,8 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
         $gateway_options = array(
             '' => '--any--',
             'AMAZON' => 'Amazon',
-            'GLOBALCOLLECT' => 'Globalcollect',
-            'PAYPAL' => 'Paypal',
+            'GLOBALCOLLECT' => 'GlobalCollect',
+            'PAYPAL' => 'PayPal',
         );
 
         $this->_columns = array(
@@ -64,23 +64,22 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
             'payment_instrument' => array(
                 'dao' => 'CRM_Core_DAO_OptionValue',
                 'fields' => array(
-                    'payment_instrument' => array(
-                        'name' => 'label',
+                    'simplified_payment_instrument' => array(
                         'title' => ts( 'Payment Method' ),
+                        'required' => true,
                     ),
                 ),
                 'filters' => array(
-                    'payment_instrument' => array(
+                    'simplified_payment_instrument' => array(
                         'title' => ts( 'Payment Method' ),
-                        'name' => 'label',
                         'type' => CRM_Utils_Type::T_STRING,
                         'operatorType' => CRM_Report_Form::OP_STRING,
+                        'having' => true,
                     ),
                 ),
                 'group_bys' => array(
-                    'payment_instrument' => array(
+                    'simplified_payment_instrument' => array(
                         'title' => ts( 'Payment Method' ),
-                        'name' => 'label',
                     ),
                 ),
             ),
@@ -181,9 +180,7 @@ FROM civicrm_contribution {$this->_aliases['civicrm_contribution']}
 LEFT JOIN wmf_contribution_extra {$this->_aliases['wmf_contribution_extra']}
     ON {$this->_aliases['wmf_contribution_extra']}.entity_id = {$this->_aliases['civicrm_contribution']}.id
 EOS;
-        if ( $this->_submitValues['iso_code_value']
-            or array_key_exists( 'iso_code', $this->_submitValues['group_bys'] ) )
-        {
+        if ( $this->is_active( 'iso_code' ) ) {
             $this->_from .= <<<EOS
 \nLEFT JOIN civicrm_address
     ON civicrm_address.contact_id = {$this->_aliases['civicrm_contribution']}.contact_id
@@ -192,9 +189,7 @@ LEFT JOIN civicrm_country {$this->_aliases['civicrm_country']}
 EOS;
         }
 
-        if ( $this->_submitValues['payment_instrument_value']
-            or array_key_exists( 'payment_instrument', $this->_submitValues['group_bys'] ) )
-        {
+        if ( $this->is_active( 'simplified_payment_instrument' ) ) {
             $option_group_id = civicrm_option_group_id( 'payment_instrument' );
             $this->_from .= <<<EOS
 \nLEFT JOIN civicrm_option_value {$this->_aliases['payment_instrument']}
@@ -205,12 +200,24 @@ EOS;
     }
 
     function modifyColumnHeaders() {
-        if ( !array_key_exists( 'is_negative', $this->_submitValues['group_bys'] ) ) {
-            unset( $this->_columnHeaders['civicrm_contribution_is_negative'] );
+        // We hide any non-aggregate fields which are not being grouped, since these
+        // will have an indeterminate value
+        foreach ( $this->_columns as $tableName => $table ) {
+            foreach ( $table['group_bys'] as $fieldName => $field ) {
+                if ( !array_key_exists( 'group_bys', $this->_submitValues )
+                    or !array_key_exists( $fieldName, $this->_submitValues['group_bys'] ) )
+                {
+                    unset( $this->_columnHeaders["{$tableName}_{$fieldName}"] );
+                }
+            }
         }
-        if ( !array_key_exists( 'gateway_account', $this->_submitValues['group_bys'] ) ) {
-            unset( $this->_columnHeaders['wmf_contribution_extra_gateway_account'] );
-        }
+    }
+
+    function is_active( $field_name ) {
+        return ( array_key_exists( "{$field_name}_value", $this->_submitValues )
+                and $this->_submitValues["{$field_name}_value"] )
+            or ( array_key_exists( 'group_bys', $this->_submitValues )
+                and array_key_exists( $field_name, $this->_submitValues['group_bys'] ) );
     }
 
     // hack taken from http://issues.civicrm.org/jira/browse/CRM-9505
@@ -225,9 +232,16 @@ EOS;
             $this->register_field_alias( $tableName, $fieldName, $field );
             $sql = "IF( {$this->_aliases['civicrm_contribution']}.total_amount < 0, '-', '+' )";
             if ( $type === 'fields' ) {
-                $sql .= " AS {$field['dbAlias']}";
+                return $sql . " AS {$field['dbAlias']}";
             }
-            return $sql;
+            return FALSE;
+        case 'simplified_payment_instrument':
+            $this->register_field_alias( $tableName, $fieldName, $field );
+            $sql = "IF( {$this->_aliases['payment_instrument']}.label LIKE 'Credit Card%', 'Credit Card', {$this->_aliases['payment_instrument']}.label )";
+            if ( $type === 'fields' ) {
+                return $sql . " AS {$field['dbAlias']}";
+            }
+            return FALSE;
         }
         return parent::selectClause( $tableName, $type, $fieldName, $field );
     }
@@ -241,6 +255,9 @@ EOS;
         {
             $this->_columns[$tableName]['group_bys'][$fieldName]['dbAlias'] = $field['dbAlias'];
         }
+        $this->_columns[$tableName]['fields'][$fieldName]['dbAlias'] = $field['dbAlias'];
+        $this->_columns[$tableName]['filters'][$fieldName]['dbAlias'] = $field['dbAlias'];
+
         $this->_columnHeaders[$field['dbAlias']]['title'] = CRM_Utils_Array::value( 'title', $field );
         $this->_columnHeaders[$field['dbAlias']]['type'] = CRM_Utils_Array::value( 'type', $field );
         $this->_selectAliases[] = $field['dbAlias'];
