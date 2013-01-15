@@ -173,6 +173,14 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
         parent::__construct( );
     }
 
+    function select() {
+        if ( $this->is_active('simplified_payment_instrument') ) {
+            $this->_columns['payment_instrument']['fields']['simplified_payment_instrument']['required'] = true;
+        }
+
+        parent::select();
+    }
+
     function from( ) {
         $this->_from = <<<EOS
 FROM civicrm_contribution {$this->_aliases['civicrm_contribution']}
