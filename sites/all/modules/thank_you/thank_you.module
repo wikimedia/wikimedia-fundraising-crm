@@ -594,6 +594,12 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
     if( !is_array( $contribution ) || !is_array( $contact ) ) {
         return false;
     }
+	if( is_null( $language ) || $language == "" ){
+		$language = "en";
+	}
+	if( is_null( $country ) || $country == "" ){
+		$country = "XX";
+	}
 
     $recurring = strpos( $contribution['trxn_id'], "RECURRING" ) !== false;
 
