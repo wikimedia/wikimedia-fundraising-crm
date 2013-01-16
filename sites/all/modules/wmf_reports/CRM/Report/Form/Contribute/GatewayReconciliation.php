@@ -65,11 +65,13 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
                 'dao' => 'CRM_Core_DAO_OptionValue',
                 'fields' => array(
                     'simplified_payment_instrument' => array(
+                        'name' => 'label',
                         'title' => ts( 'Payment Method' ),
                     ),
                 ),
                 'filters' => array(
                     'simplified_payment_instrument' => array(
+                        'name' => 'label',
                         'title' => ts( 'Payment Method' ),
                         'type' => CRM_Utils_Type::T_STRING,
                         'operatorType' => CRM_Report_Form::OP_STRING,
@@ -78,6 +80,7 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
                 ),
                 'group_bys' => array(
                     'simplified_payment_instrument' => array(
+                        'name' => 'label',
                         'title' => ts( 'Payment Method' ),
                     ),
                 ),
@@ -279,6 +282,7 @@ EOS;
                 return $sql . " AS {$field['dbAlias']}";
             }
             return false;
+        /*
         case 'simplified_payment_instrument':
             $this->register_field_alias( $tableName, $fieldName, $field );
             $sql = "IF( {$this->_aliases['payment_instrument']}.label LIKE 'Credit Card%', 'Credit Card', {$this->_aliases['payment_instrument']}.label )";
@@ -286,6 +290,7 @@ EOS;
                 return $sql . " AS {$field['dbAlias']}";
             }
             return false;
+        */
         }
         return parent::selectClause( $tableName, $type, $fieldName, $field );
     }
