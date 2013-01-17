@@ -59,6 +59,11 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
 
   $date = date('Y-m-d', strtotime($date));
 
+  $past_days = variable_get('recurring_globalcollect_run_missed_days', 0);
+  $start_date = new DateTime($date);
+  $start_date = $start_date->sub(date_interval_create_from_date_string("$past_days days"));
+  $start_date = $start_date->format('Y-m-d');
+
   $contribution_status_id = civicrm_api_contribution_status('Failed');
   
   $query  = '';
@@ -78,7 +83,7 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
     $query .= " LIMIT " . $limit;
   }
   
-  $result = db_query( $query, $date, $date, $contribution_status_id );
+  $result = db_query( $query, $start_date, $date, $contribution_status_id );
 
   $out = array();
   while ( $row = db_fetch_object( $result ) ) {
