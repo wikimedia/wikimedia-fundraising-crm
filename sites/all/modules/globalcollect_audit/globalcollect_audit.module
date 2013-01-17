@@ -113,33 +113,101 @@ function globalcollect_audit_settings() {
  * Find Globalcollect transactions not recorded in civicrm_contribution
  */
 function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
-  $missing_trxns = array();
-  
-  $dbs = wmf_civicrm_get_dbs();
+	$missing_trxns = array( );
 
-  // check for matching ids - if it doesnt match, it's missing
-  globalcollect_audit_echo("Checking for missing transactions");
-  foreach ( array_keys( $transactions ) as $order_id ) {
-    $dbs->push( 'civicrm' );
-    $query = "SELECT trxn_id FROM civicrm_contribution WHERE trxn_id LIKE 'GLOBALCOLLECT %s' OR trxn_id LIKE 'RECURRING GLOBALCOLLECT %s'";
-    $result = db_query( $query, $order_id . "%", $order_id . "%" );
-    $dbs->pop();
+	$dbs = wmf_civicrm_get_dbs();
 
-    if ( !$result->num_rows ) {
-	  globalcollect_audit_echo('!');
-      $missing_trxns[$order_id]  = $transactions[$order_id];
-      watchdog( 'globalcollect_audit', 'Missing Globalcollect: @tx_id @pm, @pc', array( 
-        "@tx_id" => $order_id,
-        "@pm" => $transactions[$order_id]['Payment-method'],
-        "@pc" => wr1_currency( $transactions[$order_id] ) ), WATCHDOG_DEBUG );  
-    } else {
-      globalcollect_audit_echo('.');
-      watchdog( 'globalcollect_audit', 'Found Globalcollect: @id', array( '@id' => $order_id ), WATCHDOG_DEBUG );
-    } 
-  }
+	// check for matching ids - if it doesnt match, it's missing
+	globalcollect_audit_echo( "Checking for missing transactions" );
+	foreach ( array_keys( $transactions ) as $order_id ) {
+		$error = false;
+		$found = false;
+		if ( wr1_is_negative_txn( $transactions[$order_id] ) ) {
+			//look for this transaction's positive counterpart before we go 
+			//looking for the refund, becuase we need the whole civi transaction ID.
+			//Remember to regrind the order_id, though. At this point, it's got a negative in front of it. 
+			$matches = wmf_civicrm_get_contributions_from_gateway_id( 'globalcollect', wr1_order_id( $transactions[$order_id] ) );
+			if ( !$matches ) {
+				globalcollect_audit_log_error( "Could not find parent transaction for refund/chargeback $order_id", 'MISSING_PARENT' );
+				$error = true;
+			} else {
+				//Make sure the match we have is a base transaction. 
+				$parent = null;
+				foreach ( $matches as $index => $match ) {
+					if ( trim( $match['parent_contribution_id'] ) === '' ) {
+						if ( !is_null( $parent ) ) {
+							globalcollect_audit_log_error( "Too many parents for refund/chargeback $order_id", 'PARENT_OVERFLOW' );
+							$error = true;
+						} else {
+							$parent = $match;
+							$copy_fields = array(
+								'entity_id', //for the parent!
+								'contribution_type_id',
+								'payment_instrument_id',
+								'gateway_account',
+							);
+							foreach ( $copy_fields as $field ){
+								$transactions[$order_id][$field] = trim( $match[$field] );
+							}
+						}
+					}
+				}
 
-  globalcollect_audit_echo( count( $missing_trxns ) . " missing records from a possible " . count( $transactions ) . " total records found.");
-  return $missing_trxns;
+				$matches = wmf_civicrm_get_child_contributions_from_gateway_id( 'globalcollect', wr1_order_id( $transactions[$order_id] ) );
+				if ( !$error && count( $matches ) ) {
+					$im_a = wmf_civicrm_get_civi_id( 'contribution_type_id', wr1_get_negative_type( $transactions[$order_id] ) );
+					foreach ( $matches as $match ) {
+						//None of these are themselves parents. 
+						//check to make sure they're not the same type of thing we are.
+						if ( $im_a === $match['contribution_type_id'] ) {
+							$found = true; //already went there.
+						} else {
+							//TODO: Seems like some kind of alert should happen 
+							//here if there's a sibling transaction, but at this
+							//point in time for all we know, this is totally normal...
+						}
+					}
+				}
+			}
+		} else {
+			//Probably should rewrite this whole thing to use the wmf_common 
+			//functions... 
+			//but we can't really do that now, because the common functions expect
+			//that we know at this point if it's recurring or not, which we don't. 
+			$dbs->push( 'civicrm' );
+			$query = "SELECT trxn_id FROM civicrm_contribution WHERE trxn_id LIKE 'GLOBALCOLLECT %s' OR trxn_id LIKE 'RECURRING GLOBALCOLLECT %s'";
+			$result = db_query( $query, $order_id . "%", $order_id . "%" );
+			$dbs->pop();
+
+			if ( $result->num_rows ) {
+				$found = true;
+			}
+		}
+		
+		if ( $found && !$error ){
+			globalcollect_audit_echo( '.' );
+			watchdog( 'globalcollect_audit', 'Found Globalcollect: @id', array( '@id' => $order_id ), WATCHDOG_DEBUG );
+		}
+		if ( $error && !$found ){
+			globalcollect_audit_echo( 'X' );
+			//the exact thing that happened should already have been logged up the page a bit.
+		}
+		if ( !$found && !$error ) {
+			globalcollect_audit_echo( '!' );
+			$missing_trxns[$order_id] = $transactions[$order_id];
+			watchdog( 'globalcollect_audit', 'Missing Globalcollect: @tx_id @pm, @pc', array(
+				"@tx_id" => $order_id,
+				"@pm" => $transactions[$order_id]['Payment-method'],
+				"@pc" => wr1_currency( $transactions[$order_id] ) ), WATCHDOG_DEBUG );
+		}
+		if ( $found && $error ){
+			globalcollect_audit_echo( 'Hit the programmer with a rolled-up newspaper. This shouldn\'t be possible.' );
+			die();
+		}
+	}
+
+	globalcollect_audit_echo( count( $missing_trxns ) . " missing records from a possible " . count( $transactions ) . " total records found." );
+	return $missing_trxns;
 }
 
 /**
@@ -233,6 +301,9 @@ function globalcollect_audit_parse_all_wr1(){
 	}
 	
 	$counts = array();
+	
+	//Here is the place where we should take care of all the negatives.
+	$missing = globalcollect_audit_mark_rfd_cbk( $missing );
 	
 	while ( count( $missing ) && globalcollect_audit_can_continue() ) {
 		$local_found_ids = array();
@@ -421,11 +492,12 @@ function globalcollect_audit_parse_wr1_file( $file ){
 	$start_time = microtime(true);
 	foreach( $wr1_parser->getRecordIterator() as $record ) {	
 		globalcollect_audit_echo( wr1_echochar( $record ) );
-		//because we can't actually manipulate the db in an appropriate way for 
-		//the negative transactions yet...
-		if ( $record['Record-category'] !== '-' ){
-			$wr1_data[wr1_order_id( $record )] = $record;
-		}
+		$order_id = wr1_order_id( $record );
+		if ( wr1_is_negative_txn( $record ) ){
+			//have to do this to avoid collisions between the original and the chargeback / refund / whatever
+			$order_id = '-' . $order_id;
+		} 
+		$wr1_data[ $order_id ] = $record;
 	} 
 	globalcollect_audit_echo("\n");
 	$time = microtime(true) - $start_time;
@@ -701,17 +773,7 @@ function globalcollect_audit_make_contribution_tracking_data( $wr1 ){
 		'utm_campaign' => 'gc_wr1',
 	);
 	
-	$parsed = date_parse( wr1_date($wr1) );
-	
-	$return['ts'] = mktime( 
-		'0',
-		'0',
-		'0',
-		$parsed['month'],
-		$parsed['day'],
-		$parsed['year']
-	);
-	
+	$return['ts'] = wr1_date_to_timestamp( $wr1 );
 	return $return;
 			
 }
@@ -955,6 +1017,35 @@ function globalcollect_audit_move_completed_wr1( $file, $nearly = false ){
 	return true;
 }
 
+
+function globalcollect_audit_mark_rfd_cbk( $missing ){
+	globalcollect_audit_echo('Marking refunds and chargebacks');
+	$count = 0;
+	foreach ( $missing as $index => $wr1 ){
+		if ( wr1_is_negative_txn( $wr1 ) ){
+			$send_message = array(
+				'gateway_refund_id' => 'RFD' . wr1_order_id( $wr1 ), //after intense deliberation, we don't actually care what this is at all.
+				'gateway_parent_id' => wr1_order_id( $wr1 ), //gateway transaction ID
+				'gross_currency' => wr1_currency( $wr1 ), //currency code
+				'gross' => wr1_amount( $wr1 ) / 100, //amount
+				'date' => wr1_date_to_timestamp( $wr1 ), //timestamp
+				'gateway' => 'globalcollect', //lcase
+				'gateway_account' => $wr1['gateway_account'], //from DI. ?
+				'payment_method' => '', //Argh. Not telling you. 
+				'payment_submethod' => '', //Still not telling you.
+				'type' => wr1_get_negative_type( $wr1 ), //refund or chargeback
+			);
+			echo print_r( $send_message, true );
+			sendSTOMP( $send_message );
+			$count += 1;
+			globalcollect_audit_echo('.');
+			
+			unset( $missing[$index] );
+		}
+	}
+	globalcollect_audit_results_ball( 'refunds/chargebacks', $count );
+	return $missing;
+}
 
 /**
  * Tries to intelligently select the next most likely log to knock off the 
@@ -1391,6 +1482,8 @@ function globalcollect_audit_error_isfatal( $error ){
 		'WR1_DATA_FORMAT',
 		'MISSING_MANDATORY_DATA',
 		'WR1_LOG',
+		'MISSING_PARENT',
+		'PARENT_OVERFLOW',
 	);
 	
 	if ( in_array( $error, $nonfatal) ){
@@ -1663,6 +1756,15 @@ function wr1_order_id( $record ){
 		'Additional-reference',
 		'Reference-original-payment',
 	);
+	
+	if ( wr1_is_negative_txn( $record ) ){
+		$ordered_keys = array(
+			'Reference-original-payment',
+			'Order-number-original',
+			'Order-number',
+		);
+	}
+	
 	return gca_wr1_key_grinder($record, $ordered_keys, 'order ID');
 }
 
@@ -1686,11 +1788,53 @@ function wr1_date( $record ){
 	return gca_wr1_key_grinder($record, $ordered_keys, 'date');
 }
 
+function wr1_date_to_timestamp( $record ){
+	$parsed = date_parse( wr1_date($record) );
+	
+	return mktime( 
+		'0',
+		'0',
+		'0',
+		$parsed['month'],
+		$parsed['day'],
+		$parsed['year']
+	);
+}
+
 function wr1_amount( $record ){
 	$ordered_keys = array(
 		'Payment-amount',
+		'Amount-due',
 	);
 	return gca_wr1_key_grinder($record, $ordered_keys, 'amount');
+}
+
+function wr1_is_negative_txn( $record ){
+	$ordered_keys = array(
+		'Amount-sign_payment',
+		'Amount-sign_amount',
+	);
+	$sign = gca_wr1_key_grinder($record, $ordered_keys, 'sign');
+	if ( $sign === '-' ) {
+		return true;
+	}
+	return false;
+}
+
+function wr1_get_negative_type( $record ){
+	$refund_type = false;
+	if ($record['Record-category'] === '-'){
+		switch ( $record['Record-type'] ){
+			case 'CR':
+				$refund_type = 'refund';
+				break;
+			case 'CB':
+				$refund_type = 'chargeback';
+				break;
+		}
+	}
+	
+	return $refund_type;
 }
 
 function gca_wr1_key_grinder( $record, $keys, $name, $error_on_mismatch = false ){
@@ -1733,12 +1877,19 @@ function gca_wr1_key_grinder( $record, $keys, $name, $error_on_mismatch = false 
 		
 	} else {
 		foreach ( $keys as $key ){
-			if ( array_key_exists( $key, $record ) ){
+			if ( array_key_exists( $key, $record ) && trim($record[$key]) !== '' ){
 				return $record[$key];
 			}
 		}
 		//implicit else
-		globalcollect_audit_echo("No $name found for the following record: " . print_r( $record, true ));
-		die(); //should really skip this record instead of dying, but for now it's actually helpful
+		//TODO: Remove this mess when you know it's not going to... fail to kill things. 
+		$checked = array(
+			'sign',
+		);
+		if ( !in_array( $name, $checked ) ){
+			globalcollect_audit_echo("No $name found for the following record: " . print_r( $record, true ));
+			die();
+		}
+		return null;
 	}
 }

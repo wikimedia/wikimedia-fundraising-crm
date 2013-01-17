@@ -1087,6 +1087,58 @@ function wmf_civicrm_get_contribution( $msg ){
 	return $matching[0];
 }
 
+/**
+ * Pulls all records in the wmf_contribution_extras table that match the gateway
+ * and gateway transaction id.
+ * @param string $gateway
+ * @param string $gateway_txn_id
+ * @return mixed array of result rows, or false if none present.
+ * @throws WmfException
+ */
+function wmf_civicrm_get_contributions_from_gateway_id( $gateway, $gateway_txn_id ){
+	$gateway = strtolower( $gateway );
+	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc 
+		ON cc.id = cx.entity_id 
+		WHERE gateway LIKE '%s' AND gateway_txn_id LIKE '%s';";
+
+	$row = false;
+	$dbs = wmf_civicrm_get_dbs();
+	$dbs->push( 'civicrm' );
+	$result = db_query( $query, $gateway, $gateway_txn_id );
+	$matching = array();
+	while ( $row = db_fetch_array( $result ) ) {
+		$matching[] = $row;
+	}
+
+	if ( count( $matching ) == 0 ) {
+        return false;
+    }
+	return $matching;
+}
+
+function wmf_civicrm_get_child_contributions_from_gateway_id( $gateway, $gateway_txn_id ){
+	$gateway = strtolower( $gateway );
+	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp 
+		LEFT JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id 
+		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id 
+		WHERE cxp.gateway LIKE '%s' AND cxp.gateway_txn_id LIKE '%s';";
+
+	$row = false;
+	$dbs = wmf_civicrm_get_dbs();
+	$dbs->push( 'civicrm' );
+	$result = db_query( $query, $gateway, $gateway_txn_id );
+	$matching = array();
+	while ( $row = db_fetch_array( $result ) ) {
+		$matching[] = $row;
+	}
+
+	if ( count( $matching ) == 0 ) {
+        return false;
+    }
+	return $matching;
+}
+
+
 function wmf_civicrm_boost_performance() {
     civicrm_initialize();
     require_once 'CRM/Core/Config.php';
