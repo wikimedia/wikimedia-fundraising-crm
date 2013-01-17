@@ -12,10 +12,19 @@
 function sendSTOMP( $transaction ) {
 	// include a library
 	require_once( "Stomp.php" );
+	
+	$initial_msg = true;
+	if ( array_key_exists( 'gateway_refund_id', $transaction ) ){
+		$initial_msg = false;
+	}
 
 	$stompServer = variable_get('queue2civicrm_url', 'tcp://localhost:61613');
-	$stompQueue = variable_get('queue2civicrm_subscription', '/queue/test');
-
+	if ( $initial_msg ){
+		$stompQueue = variable_get('queue2civicrm_subscription', '/queue/test');
+	} else {
+		$stompQueue = variable_get('refund_queue', '/queue/refund-notifications_test');
+	}
+	
 	$message = json_encode( createQueueMessage( $transaction ) );
 	
 	if ( $message ){
@@ -57,6 +66,10 @@ function sendSTOMP( $transaction ) {
  * @return array
  */
 function createQueueMessage( $msg ) {
+	
+	if ( array_key_exists( 'gateway_refund_id', $msg ) ){
+		return $msg; //just don't.
+	}
 	
 	//do normalization first, if necessary.
 	if ( !array_key_exists( 'gross', $msg ) && array_key_exists( 'amount', $msg ) && is_numeric( $msg['amount'] ) ){
