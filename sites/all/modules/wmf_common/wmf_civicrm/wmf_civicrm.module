@@ -1343,3 +1343,30 @@ function wmf_civicrm_merge_contacts( $main_contact_id, $other_contact_id ) {
         'version' => 3
     ) );
 }
+
+/**
+ * Implementation of hook_civicrm_merge, adds our custom tables.
+ */
+function wmf_civicrm_civicrm_merge( $type, &$refs ) {
+    switch ( $type ) {
+    case 'cidRefs':
+        require_once 'CRM/Contact/BAO/ContactType.php';
+        $contact_types = array( "Contact" );
+        $contact_types = array_merge( CRM_Contact_BAO_ContactType::basicTypes(), $contact_types );
+        foreach ( $contact_types as &$type ) {
+            $type = "'" . $type . "'";
+        }
+        $contact_types = implode( ", ", $contact_types );
+
+        $sql = <<<EOS
+SELECT table_name
+FROM civicrm_custom_group
+WHERE extends IN ( $contact_types )
+EOS;
+        $dao = CRM_Core_DAO::executeQuery( $sql );
+        while ( $dao->fetch() ) {
+            $refs[ $dao->table_name ][] = 'entity_id';
+        }
+        break;
+    }
+}
