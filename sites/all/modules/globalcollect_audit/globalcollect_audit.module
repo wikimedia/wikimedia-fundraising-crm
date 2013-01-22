@@ -1863,7 +1863,7 @@ function gca_wr1_key_grinder( $record, $keys, $name, $error_on_mismatch = false 
 							$die = false;
 						}
 
-						if ( $die ){
+						if ( $die && !( variable_get( 'globalcollect_audit_mismatch_override', false ) ) ){
 							die();
 						} else {
 							//short-circuit the rest of this generalized business. We know what's up.
