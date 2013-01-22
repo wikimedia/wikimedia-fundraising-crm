@@ -23,6 +23,7 @@ function globalcollect_audit_drush_command() {
 		'drush gc_wr1 --makemissing' => '# Will reconstruct the un-rebuildable transactions found in the wr1, with default values. USE WITH CAUTION.',
 		'drush gc_wr1 --run_all' => '# Batch search for all missing transactions across all wr1 files.',
 		'drush gc_wr1 --charlimit=50' => '# Will cause echoing to line break after 50 characters',
+		'drush gc_wr1 --mismatch_override' => 'Won\'t die on a keygrind mismatch',
 		), 
     'aliases' => array( 'gc_wr1' ),
   );
@@ -49,6 +50,7 @@ function globalcollect_audit_reset_drush_vars(){
 			'globalcollect_audit_make_missing' => false,
 			'globalcollect_audit_run_all_wr1' => false,
 			'globalcollect_audit_charlimit' => 0,
+			'globalcollect_audit_mismatch_override' => false,
 		);
 	}
 	
@@ -87,6 +89,10 @@ function drush_globalcollect_audit() {
 	if (drush_get_option('charlimit')){ 
 		echo "Char limit of " . drush_get_option('charlimit') . " is in effect.\n";
 		variable_set( 'globalcollect_audit_charlimit', drush_get_option('charlimit') );
+	}
+	if (drush_get_option('mismatch_override')){ 
+		echo "Overriding keygrind mismatches. Problem records will not be fatal, but they will still be logged.\n";
+		variable_set( 'globalcollect_audit_mismatch_override', true );
 	}
 	
 	module_invoke( 'globalcollect_audit', 'parse_all_wr1' );
