@@ -128,7 +128,7 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 			//Remember to regrind the order_id, though. At this point, it's got a negative in front of it. 
 			$matches = wmf_civicrm_get_contributions_from_gateway_id( 'globalcollect', wr1_order_id( $transactions[$order_id] ) );
 			if ( !$matches ) {
-				globalcollect_audit_log_error( "Could not find parent transaction for refund/chargeback $order_id", 'MISSING_PARENT' );
+				globalcollect_audit_log_error( "Could not find parent (or any related) transaction for refund/chargeback " . wr1_order_id( $transactions[$order_id] ) . print_r( $transactions[$order_id], true ) , 'MISSING_PARENT' );
 				$error = true;
 			} else {
 				//Make sure the match we have is a base transaction. 
@@ -151,6 +151,17 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 							}
 						}
 					}
+				}
+				
+				if ( !$error && is_null( $parent ) ){
+					globalcollect_audit_log_error( "Could not find parent transaction for refund/chargeback " . wr1_order_id( $transactions[$order_id] ) . print_r( $transactions[$order_id], true ), 'MISSING_PARENT' );
+					$error = true;
+				}
+				
+				if ( !$error && !is_null( $parent['contribution_recur_id'] ) ){
+					//this is a recurring transaction, and we're not cool enough to handle that yet. Defer to later.
+					globalcollect_audit_log_error( "Not cool enough to handle recurring refunds/chargebacks yet for " . wr1_order_id( $transactions[$order_id] ) . print_r( $transactions[$order_id], true ), 'RECURRING_CBK' );
+					$error = true; //well, not really an "error", per se, but we do want to ignore this for now.
 				}
 
 				$matches = wmf_civicrm_get_child_contributions_from_gateway_id( 'globalcollect', wr1_order_id( $transactions[$order_id] ) );
@@ -1484,6 +1495,7 @@ function globalcollect_audit_error_isfatal( $error ){
 		'WR1_LOG',
 		'MISSING_PARENT',
 		'PARENT_OVERFLOW',
+		'RECURRING_CBK',
 	);
 	
 	if ( in_array( $error, $nonfatal) ){
