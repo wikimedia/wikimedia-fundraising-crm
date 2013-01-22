@@ -176,6 +176,10 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
         parent::__construct( );
     }
 
+    function buildQuery() {
+        return "/* timeout=600 */ " . parent::buildQuery();
+    }
+
     function select() {
         if ( $this->is_active('simplified_payment_instrument') ) {
             $this->_columns['payment_instrument']['fields']['simplified_payment_instrument']['required'] = true;
