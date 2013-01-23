@@ -173,6 +173,8 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 						if ( $im_a === $match['contribution_type_id'] ) {
 							$found = true; //already went there.
 						} else {
+							globalcollect_audit_log_error( "Refund/Chargeback Collision on order id " . wr1_order_id( $transactions[$order_id] ), 'CBK+RFD' );
+							$error = true;
 							//TODO: Seems like some kind of alert should happen 
 							//here if there's a sibling transaction, but at this
 							//point in time for all we know, this is totally normal...
@@ -1496,6 +1498,7 @@ function globalcollect_audit_error_isfatal( $error ){
 		'MISSING_PARENT',
 		'PARENT_OVERFLOW',
 		'RECURRING_CBK',
+		'CBK+RFD',
 	);
 	
 	if ( in_array( $error, $nonfatal) ){
