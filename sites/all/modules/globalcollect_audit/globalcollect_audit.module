@@ -1775,6 +1775,9 @@ function wr1_order_id( $record ){
 			'Order-number-original',
 			'Order-number',
 		);
+		if ( $record['Record-type'] === 'CR' ){
+			unset ( $ordered_keys[0] );
+		}
 	}
 	
 	return gca_wr1_key_grinder($record, $ordered_keys, 'order ID');
