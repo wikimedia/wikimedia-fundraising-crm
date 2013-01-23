@@ -391,11 +391,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     $custom_vars = array(
         'Contribution_Comments' => $comment,
         'Gift_Data' => $lettercode,
-        'gateway' => $msg['gateway'],
         'gateway_account' => $gateway_account,
-        'gateway_txn_id' => $msg['gateway_txn_id_orig'],
-        'original_amount' => $msg['original_gross'],
-        'original_currency' => $msg['original_currency'],
     );
     wmf_civicrm_set_custom_field_values( $contribution_result[ 'id' ], $custom_vars );
 
@@ -1266,23 +1262,11 @@ EOS;
     $result = $api->values;
     $refund = array_pop($result);
 
-    // Break apart the transaction ID into parts for the custom fields
-    if ( $refund_trxn_id ) {
-        list( $gateway, $gateway_txn_id ) = explode( ' ', $refund_trxn_id );
-    } else {
-        list( $gateway ) = explode( ' ', $contribution->trxn_id );
-        $gateway_txn_id = null;
-    }
-
     $account_field_name = wmf_civicrm_get_custom_field_name( 'gateway_account' );
 
     $custom_values = array(
-        'gateway' => strtolower( $gateway ),
         'gateway_account' => $contribution->$account_field_name,
-        'gateway_txn_id' => $gateway_txn_id,
         'parent_contribution_id' => $contribution->id,
-        'original_currency' => $original_currency,
-        'original_amount' => 0 - $original_amount,
         'finance_only' => 1,
     );
     wmf_civicrm_set_custom_field_values($refund->id, $custom_values);
@@ -1418,6 +1402,37 @@ EOS;
         $dao = CRM_Core_DAO::executeQuery( $sql );
         while ( $dao->fetch() ) {
             $refs[ $dao->table_name ][] = 'entity_id';
+        }
+        break;
+    }
+}
+
+/**
+ * Implementation of hook_civicrm_post, used to update contribution_extra fields
+ */
+function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
+    switch ( $op ) {
+    case 'create':
+    case 'edit':
+        if ( $type === 'Contribution' ) {
+            $extra = array();
+
+            if ( $contribution->trxn_id ) {
+                $trxn_id = preg_replace( "/^(RFD|RECURRING) /", "", $contribution->trxn_id );
+                list( $gateway, $gateway_txn_id ) = explode( ' ', $trxn_id );
+                $extra['gateway'] = strtolower( $gateway );
+                $extra['gateway_txn_id'] = $gateway_txn_id;
+            }
+
+            if ( $contribution->source ) {
+                list( $original_currency, $original_amount ) = explode( " ", $contribution->source );
+                $extra['original_currency'] = $original_currency;
+                $extra['original_amount'] = $original_amount;
+            }
+
+            if ( $extra ) {
+                wmf_civicrm_set_custom_field_values( $id, $extra );
+            }
         }
         break;
     }
