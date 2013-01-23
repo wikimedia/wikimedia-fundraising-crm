@@ -178,13 +178,13 @@ function refund_import($msg) {
   watchdog( 'refund', "$txnid: Obtaining contribution ID for $gateway $parentTxn (refund $refundTxn)", WATCHDOG_INFO );
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
-  $query = "SELECT id, total_amount FROM civicrm_contribution WHERE trxn_id LIKE '%s%%'";
+  $query = "SELECT id, total_amount, source FROM civicrm_contribution WHERE trxn_id LIKE '%s%%'";
   $result = db_fetch_array( db_query($query, array("$gateway $parentTxn") ) );
   $dbs->pop();
 
   if ($result) {
     $ctid = $result['id'];
-    $restore = (floatval($result['total_amount']) == 0);
+    $restore = (floatval($result['total_amount']) == 0 || $result['source'] == "RFD");
 
     watchdog( 'refund', "$txnid: Found contribution $ctid; Will restore?: " . ( $restore ? 'yes' : 'no' ), WATCHDOG_INFO );
 
