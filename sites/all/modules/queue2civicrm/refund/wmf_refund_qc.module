@@ -160,7 +160,7 @@ function refund_import($msg) {
 
   // Sanity checking :)
   $required_fields = array( "gateway_refund_id", "gateway_parent_id", "gross_currency", "gross", "date", "gateway",
-    "gateway_account", "payment_method", "payment_submethod", "type",
+    "type",
   );
   $body = json_decode($msg->body, TRUE);
   foreach( $required_fields as $field_name ) {
