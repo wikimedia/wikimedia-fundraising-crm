@@ -231,8 +231,8 @@ EOS;
         // will have an indeterminate value
         foreach ( $this->_columns as $tableName => $table ) {
             foreach ( $table['group_bys'] as $fieldName => $field ) {
-                if ( !array_key_exists( 'group_bys', $this->_submitValues )
-                    or !array_key_exists( $fieldName, $this->_submitValues['group_bys'] ) )
+                if ( !array_key_exists( 'group_bys', $this->_params )
+                    or !array_key_exists( $fieldName, $this->_params['group_bys'] ) )
                 {
                     unset( $this->_columnHeaders["{$tableName}_{$fieldName}"] );
                 }
@@ -241,10 +241,10 @@ EOS;
     }
 
     function is_active( $field_name ) {
-        return ( array_key_exists( "{$field_name}_value", $this->_submitValues )
-                and $this->_submitValues["{$field_name}_value"] )
-            or ( array_key_exists( 'group_bys', $this->_submitValues )
-                and array_key_exists( $field_name, $this->_submitValues['group_bys'] ) );
+        return ( array_key_exists( "{$field_name}_value", $this->_params )
+                and $this->_params["{$field_name}_value"] )
+            or ( array_key_exists( 'group_bys', $this->_params )
+                and array_key_exists( $field_name, $this->_params['group_bys'] ) );
     }
 
     // hack taken from http://issues.civicrm.org/jira/browse/CRM-9505
