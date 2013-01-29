@@ -1,5 +1,0 @@
-name = Limbo queue manager
-description = Adds support for moving messages from the limbo queue to `queue2civicrm_limbo`
-dependencies[] = queue2civicrm
-package = queue2civicrm
-core = 6.x
