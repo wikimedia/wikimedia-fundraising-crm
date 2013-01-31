@@ -24,9 +24,9 @@ function recurring_globalcollect_fix_false_failures(){
 	$fixed = array();
 	
 	foreach ($questionable as $subscription){
-		$trxn_id = explode(' ', $subscription['trxn_id']);
+		$transaction = WmfTransaction::parse( $subscription );
 		$civi_recur_id = $subscription['id'];
-		$gc_id = $trxn_id[2];
+		$gc_id = $transaction->gateway_txn_id;
 		$actual_result = recurring_globalcollect_check_xml_in_watchdog($gc_id);
 		if ($actual_result){ //we found xml that contains no errors, and it's already sitting in $actual_result.
 			--$hard_stop;
@@ -144,6 +144,8 @@ function recurring_globalcollect_record_old_success( $subscription, $effort_id )
       $contact = array(
           'id' => $subscription['contact_id'],
       );
+
+      $transaction = WmfTransaction::parse( $subscription );
       
       $msg = array();
       $msg['fee'] = 0.00;
@@ -152,7 +154,7 @@ function recurring_globalcollect_record_old_success( $subscription, $effort_id )
       $msg['gross'] = $subscription['amount'];
       $msg['net'] = $msg['gross'] - $msg['fee'];
       //$msg['contribution_id'] = $result['contribution_id'];
-      $msg['gateway_txn_id'] = $subscription['trxn_id'];
+      $msg['gateway_txn_id'] = $transaction->gateway_txn_id;
       $msg['payment_method'] = 'cc';
       $msg['payment_submethod'] = '';
       $msg['date'] = time();

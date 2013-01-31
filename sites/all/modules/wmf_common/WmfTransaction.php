@@ -30,6 +30,9 @@ class WmfTransaction {
         elseif ( array_key_exists( 'trxn_id', $mixed ) ) {
             $transaction = static::from_unique_id( $mixed['trxn_id'] );
         }
+        elseif ( property_exists( $mixed, 'trxn_id' ) ) {
+            $transaction = static::from_unique_id( $mixed->trxn_id );
+        }
         // stomp message, does not have a unique id yet
         elseif ( array_key_exists( 'gateway_txn_id', $mixed ) ) {
             $transaction = new WmfTransaction();
@@ -109,7 +112,7 @@ class WmfTransaction {
             }
             // pass
         case 2:
-            $transaction->gateway = array_shift( $parts );
+            $transaction->gateway = strtolower( array_shift( $parts ) );
             // pass
         case 1:
             $transaction->gateway_txn_id = array_shift( $parts );

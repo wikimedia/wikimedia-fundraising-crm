@@ -601,12 +601,14 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
 		$country = "XX";
 	}
 
-    $recurring = strpos( $contribution['trxn_id'], "RECURRING" ) !== false;
+    $transaction = WmfTransaction::parse( $contribution );
+    $recurring = $transaction->is_recurring;
 
     // go ahead and include the missed donations text until 17 May 2012
     // for Recurring GlobalCollect transactions
-    $misseddonations = strpos( $contribution['trxn_id'], "RECURRING GLOBALCOLLECT"
-                                ) !== false && time() < mktime( 0, 0, 0, 5, 17, 2012);
+    $misseddonations = $transaction->gateway === "globalcollect"
+            and $transaction->is_recurring
+            and time() < mktime( 0, 0, 0, 5, 17, 2012);
 
 	static $loader, $twig;
 

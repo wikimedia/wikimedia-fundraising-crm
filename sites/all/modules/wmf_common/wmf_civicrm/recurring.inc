@@ -39,7 +39,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
         throw new WmfException( 'IMPORT_SUBSCRIPTION', $error_message, $msg );
     }
 
-    // Frequency interval is only allowed to be 1.
+    // Frequency interval is only allowed to be 1. FIXME
     if ( $msg[ 'frequency_interval' ] !== 1 ) {
         $error_message = t(
             '`frequency_interval` is only allowed to be set to 1, with the contact_id [!contact_id]',
@@ -77,15 +77,6 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
     $msg[ 'cycle_day' ] = (integer) date( 'j', $msg[ 'date' ] );
     
     $next_sched_contribution = wmf_civicrm_get_next_sched_contribution_date_for_month( $msg );
-    
-    // Remove by exploding and trimming.
-    $trxn_id_exploded = explode( ' ', $contribution_record[ 'trxn_id' ] );
-    array_pop( $trxn_id_exploded );
-    $trxn_id = implode( ' ', $trxn_id_exploded );
-    
-    // Remove by last space
-    //$trxn_id = substr( $contribution_record[ 'trxn_id' ], 0 , strrpos($contribution_record[ 'trxn_id' ], ' ' ) );
-    //die( eval('return  __FILE__ . date(\'r\') . "\n";') . "\$trxn_id: [" . $trxn_id . "]\n" );
     
     $query = "INSERT INTO civicrm_contribution_recur
       (
@@ -129,7 +120,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
         //next_sched_contribution
         $next_sched_contribution,
         //trxn_id
-        $trxn_id
+        $contribution_record['trxn_id'],
     );
 
     $contribution_recur_id = ( $result ) ? db_last_insert_id( 'civicrm_contribution_recur', 'id' ) : null;

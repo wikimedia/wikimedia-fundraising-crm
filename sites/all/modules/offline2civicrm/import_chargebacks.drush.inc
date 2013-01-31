@@ -110,8 +110,6 @@ function _offline2civicrm_import_chargebacks_globalcollect($filename){
 
     while( ( $row = fgetcsv( $file, 0, ';')) !== FALSE) {
 
-      $trxn_id = "GLOBALCOLLECT ";
-
       $orderid = _get_value('Order ID', $row, $headers);
       $effortid = _get_value('Effort ID', $row, $headers);
 
@@ -119,28 +117,17 @@ function _offline2civicrm_import_chargebacks_globalcollect($filename){
         watchdog('offline2civicrm', "Invalid OrderID for chargeback on row", NULL, WATCHDOG_INFO);
         continue;
       }
-      $trxn_id .= $orderid;
       if(intval($effortid) > 1){
         // we only use the Effort ID on recurring transactions, and then only the subsequent ones
-        $trxn_id = "RECURRING " . $trxn_id . "-" . $effortid;
+        $orderid .= "-{$effortid}";
       }
 
-      $contribution = _check_existing( $trxn_id );
-
-      if($contribution === false){
-        // the cheap query failed, go big or go home
-        $contribution = _check_existing( "%GLOBALCOLLECT $orderid" );
-
-        if($contribution === false){
-          // still nothing, I'm outta guesses, lets break and give a human a try
-          watchdog('offline2civicrm', "Could not find transaction matching trxn_id: " .
-            print_r($row, TRUE), NULL, WATCHDOG_ERROR);
-          continue;
-        }
-      }
-      if(!array_key_exists('id', $contribution)){
-        watchdog('offline2civicrm', "Contribution ID not found for trxn_id: " .
-          print_r($row, TRUE) . print_r($contribution, TRUE), NULL, WATCHDOG_ERROR);
+      if ( $contributions = wmf_civicrm_get_contributions_from_gateway_id( 'globalcollect', $orderid ) ) {
+        $contribution = array_shift( $contributions );
+      } else {
+        // still nothing, I'm outta guesses, lets break and give a human a try
+        watchdog('offline2civicrm', "Could not find transaction matching trxn_id: " .
+          print_r($row, TRUE), NULL, WATCHDOG_ERROR);
         continue;
       }
 

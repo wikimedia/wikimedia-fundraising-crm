@@ -197,7 +197,7 @@ function recurring_import( $msg ) {
    * this should happen for all non-payment transactions.
    */
   $log = array(
-    'gateway' => 'recurring_paypal',
+    'gateway' => 'recurring_' . $msg['gateway'],
     'gateway_txn_id' => ( strlen( $msg[ 'gateway_txn_id_orig' ] ) ? $msg[ 'gateway_txn_id_orig' ] : $msg[ 'txn_type' ] . ":" . $msg[ 'subscr_id' ] ),
     'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ), 
     'timestamp' => time(),
@@ -222,7 +222,7 @@ function recurring_import( $msg ) {
   
   // route the message to the appropriate handler depending on transaction type
   if ( isset( $msg[ 'txn_type' ] ) && in_array( $msg[ 'txn_type' ], $txn_subscr_payment ) ) {
-    if ( wmf_civicrm_get_contribution( $msg ) !== false ){
+    if ( wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) !== false ){
       throw new WmfException('DUPLICATE_CONTRIBUTION', 
       "Contribution already exists. Ignoring message.", 
       $msg);
