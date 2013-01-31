@@ -27,32 +27,3 @@ function _get_value( $column, $row, $headers, $default='' ){
     return $row[ $headers[ $column ] ];
   }
 }
-
-function _check_existing( $msg ){
-  if(is_array($msg)){
-    $trxn_id = $msg['payment_method'] . ' ' . $msg['gateway_txn_id'];
-  }
-  else{
-    $trxn_id = $msg;
-  }
-
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push( 'civicrm' );
-
-  $query = "SELECT id, trxn_id FROM civicrm_contribution WHERE trxn_id LIKE '%s%' LIMIT 1;";
-  $result = db_query($query, $trxn_id);
-  while( $row = db_fetch_array($result) ) {
-    $contribution = array(
-      'id' => $row['id'],
-      'trxn_id' => $row['trxn_id']
-    );
-
-    return $contribution;
-  }
-
-  return false;
-}
-
-
-
-

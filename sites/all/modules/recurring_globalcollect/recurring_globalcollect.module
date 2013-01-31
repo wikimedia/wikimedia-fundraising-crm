@@ -305,14 +305,11 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     //throw new Exception($message);
   }
   
-  // Parse ORDERID
-  if ( preg_match('/RECURRING GLOBALCOLLECT (?P<ORDERID>\w+)/', $contribution_recur['trxn_id'], $matches) ) {
-    
-    $ORDERID = $matches['ORDERID'];
-  }
-  else {
-    $message = t('ORDERID was not found in the trxn_id');
-    throw new WmfException( 'INVALID_RECURRING', $message, $contribution_recur );
+  try {
+    $transaction = WmfTransaction::parse( $contribution_recur );
+    $ORDERID = $transaction->gateway_txn_id;
+  } catch ( Exception $ex ) {
+    throw new WmfException( 'INVALID_RECURRING', $ex->getMessage(), $contribution_recur );
   }
    
   // Increment the EFFORTID
@@ -363,6 +360,8 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     // by reconciling the data we get from the payment processor.
     _recurring_globalcollect_update_record_success($contribution_recur['id']);
     
+    $transaction = WmfTransaction::parse( $contribution_recur );
+
     $contact = array(
         'id' => $contribution_recur['contact_id'],
     );
@@ -374,7 +373,7 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     $msg['gross'] = $contribution_recur['amount'];
     $msg['net'] = $msg['gross'] - $msg['fee'];
     //$msg['contribution_id'] = $contribution_recur['contribution_id'];
-    $msg['gateway_txn_id'] = $contribution_recur['trxn_id'];
+    $msg['gateway_txn_id'] = $transaction->gateway_txn_id;
     $msg['payment_method'] = 'cc';
     $msg['payment_submethod'] = '';
     $msg['date'] = time();

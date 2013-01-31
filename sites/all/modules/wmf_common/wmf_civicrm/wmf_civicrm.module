@@ -245,83 +245,14 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
 {
     civicrm_initialize();
 
-    //TODO: After we upgrade civi, refactor this whole thing so the data staging 
-    //is all done in... y'know: The staging function, which should itself get 
-    //moved into common for its universal usefulness. 
-    //And another thing: There should be a set/get style pair of functions for 
-    //parsing our stupid transaction IDs at this point, because: Yeesh. 
-    
-    $parts = explode( ' ', $msg['gateway_txn_id'] );
-    
-    $transaction_id = '';
-    $timestamp = '';
-    
-    switch ( count( $parts ) ){
-        case 0:
-            throw new WmfException("IMPORT_CONTRIB", "Contribution could not be added. Aborting import.", $msg);
-        case 1: 
-            //unusual, but let's just assume it's a lonely transaction id and assign a timestamp.
-            $transaction_id = $parts[0];
-            $timestamp = time();
-            break;
-        case 2: 
-            //regular old style: Transaction ID followed by a timestamp. 
-            //we can be reasonably sure this was just generated. 
-            $transaction_id = $parts[0];
-            $timestamp = $parts[1];
-            break;
-        case 4:
-            //the only way we have four parts in one of these things would be if...
-            if (array_shift($parts) != 'RECURRING'){
-                throw new WmfException("IMPORT_CONTRIB", 'Cannot add contribution: Malformed gateway_txn_id (4 parts, does not start with "RECURRING")', $msg);
-            }
-            //and now we're down to three. DO NOT BREAK HERE, OR REORDER THE CASE BLOCKS. 
-        case 3:
-            //this is either coming in from somewhere totally old and stale, or it's coming in from a GC Recurring subscription
-            //Pull out the parts and regen the timestamp.
-            $part1 = array_shift($parts);
-            
-            if ( $part1 == 'RECURRING' ){
-                //we have a subscription. 
-                if ( array_shift( $parts ) != strtoupper( $msg['gateway']) ){
-                    throw new WmfException("IMPORT_CONTRIB", 'Cannot add contribution: Malformed gateway_txn_id (3 parts, recurring, second part is not ucase gateway):', $msg);
-                }
-            } elseif ( $part1 != strtoupper( $msg['gateway']) ) {
-                throw new WmfException("IMPORT_CONTRIB", 'Cannot add contribution: Malformed gateway_txn_id (3 parts, does not start with ucase gateway):', $msg);
-            }
-            
-            $transaction_id = $parts[0];
-            $timestamp = time();
+    try {
+        $transaction = WmfTransaction::parse( $msg );
+        $transaction->recur_sequence = $effort_id;
+        $trxn_id = $transaction->get_unique_id();
+    } catch ( Exception $ex ) {
+        throw new WmfException("INVALID_MESSAGE", "Could not add contribution: " . $ex->getMessage(), $msg );
+    }
 
-            break;
-        default: 				
-            //error state. Way too many dataz. 
-            throw new WmfException("IMPORT_CONTRIB", 'Cannot add contribution: Malformed gateway_txn_id (too many parts):', $msg);
-    }
-    
-    //one last typey-checky thing before we just assume we're all good.
-    if ( !is_numeric( $timestamp ) ){
-        throw new WmfException("IMPORT_CONTRIB", 'Cannot add contribution: Malformed gateway_txn_id (timestamp does not appear to be numeric):', $msg);
-    }
-    
-    //kill off any pre-existing effort ID in the transaction id. Leaving it as 
-    //an explode, though, because we might need to error check on that second 
-    //part later. (It should, for instance, be <= the passed-in $effort_id...) 
-    $transaction_id = explode( '-', $transaction_id );
-    $transaction_id = $transaction_id[0];
-    
-    if (!is_null($effort_id)){
-        $transaction_id .= '-' . $effort_id;
-    }
-    
-    $prefix = $msg['gateway'];
-
-    if ( $recur_id || ( array_key_exists( "recurring", $msg ) && $msg['recurring'] ) ) {
-        $prefix = 'RECURRING ' . $prefix;
-    }
-    
-    $trxn_id = strtoupper( $prefix . ' ' . $transaction_id . ' ' . $timestamp );
-    
     $msg['contribution_type'] = wmf_civicrm_get_message_contribution_type($msg);
     $contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', $msg['contribution_type'] );
 
@@ -656,13 +587,6 @@ function wmf_civicrm_verify_message_and_stage($msg)
             $err[] = "Required Field '$key' not found in message.";
         }
     }
-	
-	//Now check to make sure this isn't going to be a duplicate message for this gateway.
-	if ( wmf_civicrm_get_contribution( $msg ) !== false ){
-		throw new WmfException('DUPLICATE_CONTRIBUTION', 
-		"Contribution already exists. Ignoring message.", 
-		$msg);
-	}
 
     if(!array_key_exists('fee', $msg) && !array_key_exists('net', $msg)){
         $msg['fee'] = '0.00';
@@ -680,6 +604,13 @@ function wmf_civicrm_verify_message_and_stage($msg)
 
     if (!empty($err)) {
         throw new WmfException('CIVI_REQ_FIELD', $err, $msg);
+    }
+
+    //Now check to make sure this isn't going to be a duplicate message for this gateway.
+    if ( wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ) {
+        throw new WmfException('DUPLICATE_CONTRIBUTION', 
+        "Contribution already exists. Ignoring message.", 
+        $msg);
     }
 
     $msg['anonymous'] = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
@@ -1006,6 +937,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
 
     watchdog( 'wmf_civicrm', 'Contribution (pre-conversion):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>' );
 
+    //FIXME
     $msg[ 'gateway_txn_id_orig' ] = $msg[ 'gateway_txn_id' ];
     $msg[ 'gateway_txn_id' ] .= ' ' . $msg[ 'date' ];
 
@@ -1033,54 +965,6 @@ function wmf_civicrm_tag_contact_for_review( $contact )
     );
     $tag_result = civicrm_entity_tag_add( $tag );
     return $tag_result;
-}
-
-/**
- * Returns a contribution in civi if it exists, false if none present. 
- * @param type $msg 
- */
-function wmf_civicrm_get_contribution( $msg ){
-	$search = strtoupper( $msg['gateway']) . ' ';
-	if ( array_key_exists( 'recurring', $msg ) && $msg['recurring'] ){
-		$search = 'RECURRING ' . $search;
-	}
-
-	//if it's been through the normalize function, the orig key is the one we want.
-	if ( array_key_exists( 'gateway_txn_id_orig', $msg ) ){
-		$txn = $msg[ 'gateway_txn_id_orig' ];
-	} else if ( array_key_exists( 'gateway_txn_id', $msg ) ) {
-		$txn = $msg[ 'gateway_txn_id' ];
-	} else {
-		throw new WmfException('GET_CONTRIBUTION', 
-			"Couldn't identify the gateway transaction ID. Aborting.", 
-			$msg);
-	}
-	
-	$search .= $txn . '%';
-	$query = "SELECT * FROM civicrm_contribution WHERE trxn_id LIKE '%s';";
-
-	$row = false;
-	$dbs = wmf_civicrm_get_dbs();
-	$dbs->push( 'civicrm' );
-	$result = db_query( $query, $search );
-	$matching = array();
-	while ( $row = db_fetch_array( $result ) ) {
-		if ( preg_match( "/{$txn}\b/", $row[ 'trxn_id' ] ) ) {
-			$matching[] = $row;
-		}
-	}
-
-	if ( count( $matching ) == 0 ) {
-        return false;
-    }
-	if ( count( $matching ) > 1 ) {
-		throw new WmfException( 'GET_CONTRIBUTION', 
-			t( "More than one contribution (!num) returned for the following query: [!query]", array( '!num' => count( $matching ), '!query' => $query ) ),
-			$msg
-		);
-	}
-
-	return $matching[0];
 }
 
 /**
@@ -1175,8 +1059,6 @@ function wmf_civicrm_set_thankyou_date_to_epoch( $contribution_id ){
  * the amounts may have been zeroed already, and we reconstruct using the
  * function arguments.
  *
- * Note that refund_trxn_id is not constructed for you, but used literally.
- *
  * returns the refund contribution id.
  */
 function wmf_civicrm_mark_refund(
@@ -1184,10 +1066,9 @@ function wmf_civicrm_mark_refund(
     $refund_type = 'refund',
     $refund_completed = false,
     $refund_date = null,
-    $refund_trxn_id = null,
+    $refund_gateway_txn_id = null,
     $original_currency = null,
-    $original_amount = null,
-    $restore_source = false
+    $original_amount = null
 ) {
     $api = civicrm_api_classapi();
 
@@ -1211,13 +1092,13 @@ EOS;
         throw new Exception("Contribution is already linked to a refund, or is itself a refund: $contribution_id");
     }
 
-    if ( $restore_source ) {
-        $dbs->pop();
+    if ( floatval( $contribution['total_amount'] ) == 0
+            || $result['source'] == "RFD"
+    ) {
         $contribution->total_amount = round( exchange_rate_convert(
             $original_currency, $original_amount,
             strtotime( $contribution->receive_date )
         ), 2 );
-        $dbs->push( 'civicrm' );
 
         $sql = <<<EOS
 UPDATE civicrm_contribution
@@ -1239,6 +1120,13 @@ EOS;
         $original_amount = $actual_amount;
     }
 
+    $transaction = WmfTransaction::parse( $contribution );
+    if ( $refund_gateway_txn_id ) {
+        $transaction->gateway_txn_id = $refund_gateway_txn_id;
+    }
+    $transaction->is_refund = true;
+    $refund_unique_id = $transaction->get_unique_id();
+
     if ( $refund_date === null ) {
         $refund_date = time();
     }
@@ -1251,7 +1139,7 @@ EOS;
         'contribution_status_id' => civicrm_api_contribution_status( $refund_status ),
         'contribution_source' => "$original_currency -{$original_amount}",
         'thankyou_date' => '1970-01-01 00:00:00',
-        'trxn_id' => $refund_trxn_id,
+        'trxn_id' => $refund_unique_id,
 
         // API required fields
         'version' => '3'
@@ -1418,10 +1306,13 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
             $extra = array();
 
             if ( $contribution->trxn_id ) {
-                $trxn_id = preg_replace( "/^(RFD|RECURRING) /", "", $contribution->trxn_id );
-                list( $gateway, $gateway_txn_id ) = explode( ' ', $trxn_id );
-                $extra['gateway'] = strtolower( $gateway );
-                $extra['gateway_txn_id'] = $gateway_txn_id;
+                try {
+                    $transaction = WmfTransaction::parse( $contribution );
+                    $extra['gateway'] = strtolower( $transaction->gateway );
+                    $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
+                } catch ( Exception $ex ) {
+                    watchdog( 'wmf_civicrm', "Failed to parse trxn_id: {$contribution->trxn_id}, " . $ex->getMessage() );
+                }
             }
 
             if ( $contribution->source ) {

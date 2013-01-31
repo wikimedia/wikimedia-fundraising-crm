@@ -182,19 +182,8 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 					}
 				}
 			}
-		} else {
-			//Probably should rewrite this whole thing to use the wmf_common 
-			//functions... 
-			//but we can't really do that now, because the common functions expect
-			//that we know at this point if it's recurring or not, which we don't. 
-			$dbs->push( 'civicrm' );
-			$query = "SELECT trxn_id FROM civicrm_contribution WHERE trxn_id LIKE 'GLOBALCOLLECT %s' OR trxn_id LIKE 'RECURRING GLOBALCOLLECT %s'";
-			$result = db_query( $query, $order_id . "%", $order_id . "%" );
-			$dbs->pop();
-
-			if ( $result->num_rows ) {
-				$found = true;
-			}
+		} elseif ( wmf_civicrm_get_contributions_from_gateway_id( "globalcollect", $order_id ) ) {
+			$found = true;
 		}
 		
 		if ( $found && !$error ){
