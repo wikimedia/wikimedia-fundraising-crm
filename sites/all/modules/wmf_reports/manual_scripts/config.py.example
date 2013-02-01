@@ -5,7 +5,7 @@ db_params = {
     'db': '',
     'user': '',
     'passwd': '',
-    'debug': True,
+    'debug': False,
 }
 
 # if any tables are not in the civicrm database, specify the db name and prefix here.
