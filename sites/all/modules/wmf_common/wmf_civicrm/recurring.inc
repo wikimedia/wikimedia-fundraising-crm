@@ -120,7 +120,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
         //next_sched_contribution
         $next_sched_contribution,
         //trxn_id
-        $contribution_record['trxn_id'],
+        $contribution_record['trxn_id']
     );
 
     $contribution_recur_id = ( $result ) ? db_last_insert_id( 'civicrm_contribution_recur', 'id' ) : null;
