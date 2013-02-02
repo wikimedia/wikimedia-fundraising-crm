@@ -1055,9 +1055,8 @@ function wmf_civicrm_set_thankyou_date_to_epoch( $contribution_id ){
  *
  * If $original_amount and $original_currency are provided, they will be
  * checked against the original contribution and an exception thrown on a
- * mismatch, unless $restore_source is true.  In that case, we assume that
- * the amounts may have been zeroed already, and we reconstruct using the
- * function arguments.
+ * mismatch.  If the original amount has been zeroed we reconstruct the
+ * contribution using the currency and amount from function parameters.
  *
  * returns the refund contribution id.
  */
@@ -1082,19 +1081,23 @@ function wmf_civicrm_mark_refund(
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'civicrm' );
 
+    // Look for existing refunds
     $query = <<<"EOS"
 SELECT COUNT(*) FROM wmf_contribution_extra
 WHERE
     parent_contribution_id = %d
-    OR (entity_id = %d AND COALESCE(parent_contribution_id, ''))
+    OR (entity_id = %d AND COALESCE(parent_contribution_id, 0))
 EOS;
     if ( db_result(db_query($query, array($contribution_id, $contribution_id))) ) {
         throw new Exception("Contribution is already linked to a refund, or is itself a refund: $contribution_id");
     }
 
-    if ( floatval( $contribution['total_amount'] ) == 0
-            || $result['source'] == "RFD"
+    // Should we restore?
+    if ( (floatval( $contribution['total_amount'] ) == 0
+            or $result['source'] == "RFD")
+        and $original_currency and $original_amount > 0
     ) {
+        //FIXME: call this from the contribution save hook. $round parameter. 
         $contribution->total_amount = round( exchange_rate_convert(
             $original_currency, $original_amount,
             strtotime( $contribution->receive_date )
