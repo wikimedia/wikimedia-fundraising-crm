@@ -59,3 +59,19 @@ class TransactionMessage extends Message {
         return parent::getHeaders();
     }
 }
+
+class RefundMessage extends TransactionMessage {
+    function __construct( $values = array() ) {
+        require_once __DIR__ . '/../data/refund_transaction.inc';
+        self::$defaults = $message;
+
+        parent::__construct( $values + array(
+                'gateway_refund_id' => rand(),
+                'gateway_parent_id' => rand(),
+        ) );
+
+        // FIXME
+        unset( $values['gateway_txn_id'] );
+        unset( $values['order_id'] );
+    }
+}

@@ -1,8 +1,8 @@
 <?php
 
-require_once __DIR__ . '/../includes/MessageSource.php';
+if ( !class_exists( "PHPUnit_Framework_TestCase" ) ) return;
 
-if ( !class_exists( "PHPUnit_Framework_TestCase" ) ) exit();
+require_once __DIR__ . '/../includes/MessageSource.php';
 
 class PerformanceTest extends PHPUnit_Framework_TestCase {
     public static function getInfo() {

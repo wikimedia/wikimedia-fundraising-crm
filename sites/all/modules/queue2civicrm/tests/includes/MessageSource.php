@@ -9,7 +9,7 @@ class MessageSource {
     //protected $message_type = "TransactionMessage";
     protected $queue = "/queue/test-donations";
 
-    function __construct( $stomp_url = null ) {
+    function __construct( $stomp_url = null, $queue = null ) {
         if ( $stomp_url ) {
             $this->stomp_url = $stomp_url;
         }
@@ -17,6 +17,10 @@ class MessageSource {
 
         if (method_exists($this->stomp, 'connect'))
                 $this->stomp->connect();
+
+        if ( $queue ) {
+            $this->queue = $queue;
+        }
     }
 
     function setQueue( $queue ) {
@@ -25,7 +29,11 @@ class MessageSource {
 
     function inject( $values = array() ) {
         //$message = new $message_type( $values );
-        $message = new TransactionMessage( $values );
+        if ( is_array( $values ) ) {
+            $message = new TransactionMessage( $values );
+        } elseif ( is_object( $values ) ) {
+            $message = $values;
+        }
 
         $this->stomp->send(
             $this->queue,
