@@ -509,13 +509,13 @@ function wmf_civicrm_update_6006()
     if (!$success) {
         throw new Exception($api->errorMsg());
     }
-    $custom_group = array_pop($api->values);
+    $custom_group = $api->values[0];
     $success = $api->CustomField->get(array(
         'custom_group_id' => $custom_group->id,
         'name' => 'gateway_status',
     ));
     if ($success && $api->values) {
-        $field = array_pop($api->values);
+        $field = $api->values[0];
         $success = $api->CustomField->delete(array(
             'id' => $field->id,
         ));
@@ -539,7 +539,7 @@ function wmf_civicrm_update_6007()
         'Chargeback',
     ));
 
-    $api->Tag->create(array(
+    $success = $api->Tag->create(array(
         'name' => 'Review',
         'description' => 'Review',
     ));
