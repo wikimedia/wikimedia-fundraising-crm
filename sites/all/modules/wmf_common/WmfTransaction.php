@@ -23,26 +23,26 @@ class WmfTransaction {
 
     static function parse( $mixed ) {
         // must be a unique-ish id
-        if ( is_string( $mixed ) ) {
-            $transaction = static::from_unique_id( $mixed );
+        if ( is_string( $mixed ) or is_numeric( $mixed ) ) {
+            $transaction = static::from_unique_id( (string) $mixed );
         }
         // civi contribution
-        elseif ( array_key_exists( 'trxn_id', $mixed ) ) {
-            $transaction = static::from_unique_id( $mixed['trxn_id'] );
-        }
-        elseif ( property_exists( $mixed, 'trxn_id' ) ) {
+        elseif ( is_object( $mixed ) and property_exists( $mixed, 'trxn_id' ) ) {
             $transaction = static::from_unique_id( $mixed->trxn_id );
         }
+        elseif ( is_array( $mixed ) and array_key_exists( 'trxn_id', $mixed ) ) {
+            $transaction = static::from_unique_id( $mixed['trxn_id'] );
+        }
         // stomp message, does not have a unique id yet
-        elseif ( array_key_exists( 'gateway_txn_id', $mixed ) ) {
+        elseif ( is_array( $mixed ) and array_key_exists( 'gateway_txn_id', $mixed ) ) {
             $transaction = new WmfTransaction();
             $transaction->gateway_txn_id = $mixed['gateway_txn_id'];
             $transaction->gateway = $mixed['gateway'];
             if ( array_key_exists( 'recurring', $mixed ) && $mixed['recurring'] ) {
                 $transaction->is_recurring = true;
             }
-            if ( strcasecmp( $transaction->gateway, $msg['gateway'] ) ) {
-                throw new Exception( "Malformed unique id (gateway does not match)" );
+            if ( strcasecmp( $transaction->gateway, $mixed['gateway'] ) ) {
+                throw new Exception( "Malformed unique id (msg but gateway does not match)" );
             }
         } else {
             throw new Exception( "Unknown input type: " . print_r( $mixed, true ) );
@@ -92,12 +92,12 @@ class WmfTransaction {
             throw new Exception( "Missing ID." );
         }
 
-        if ( $parts[0] === "RFD" or $parts[0] === "REFUND" ) {
+        while ( $parts[0] === "RFD" or $parts[0] === "REFUND" ) {
             $transaction->is_refund = true;
             array_shift( $parts );
         }
 
-        if ( $parts[0] === "RECURRING" ) {
+        while ( $parts[0] === "RECURRING" ) {
             $transaction->is_recurring = true;
             array_shift( $parts );
         }
