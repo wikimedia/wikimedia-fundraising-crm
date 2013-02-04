@@ -12,7 +12,7 @@
 function wmf_civicrm_insert_contribution_tracking( $utm_source, $utm_medium, $ts, $contrib_id=null, $optout=null, $anonymous=null ) {
     // make sure we're using the default (drupal) db
     $dbs = wmf_civicrm_get_dbs();
-    $dbs->push( 'default' );
+    $dbs->push( 'donations' );
 
     if ($contrib_id === null){
         $query = "INSERT INTO {contribution_tracking} ( utm_source, utm_medium, optout, anonymous, ts ) VALUES ( '%s', '%s', '%d', '%d', '%d' )";
@@ -31,7 +31,7 @@ function wmf_civicrm_insert_contribution_tracking( $utm_source, $utm_medium, $ts
  */
 function wmf_civicrm_message_update_contribution_tracking( $msg, $contribution ) {
     $dbs = wmf_civicrm_get_dbs();
-    $dbs->push( 'default' );
+    $dbs->push( 'donations' );
 
     if (array_key_exists( 'contribution_tracking_id', $msg )) {
         $result = db_query('UPDATE {contribution_tracking} SET contribution_id=%d WHERE id=%d', $contribution['id'], $msg['contribution_tracking_id']);
