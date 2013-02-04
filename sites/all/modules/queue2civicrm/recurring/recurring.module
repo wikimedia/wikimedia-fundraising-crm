@@ -676,6 +676,8 @@ function recurring_normalize_paypal_msg( $msg ) {
     $msg_normalized[ 'contribution_tracking_update' ] = false;
     
     // get the database connection to the tracking table
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push( 'donations' );
     $query = "SELECT * FROM {contribution_tracking} WHERE id=%d";
     $result = db_query( $query, $msg[ 'custom' ] );
     if ( $tracking_data = db_fetch_array( $result ) ) {
@@ -787,7 +789,7 @@ function recurring_get_contribution_tracking_id( $msg ) {
       
       if ( count( $contrib_ids )) { // if we've got any related contributions
         // see if a record already exists
-        $dbs->push( 'default' );
+        $dbs->push( 'donations' );
         $query = "SELECT id FROM {contribution_tracking} WHERE contribution_id IN ( '%s' )";
         // we can use this related contribution tracking id
         $contribution_tracking_id = db_result( db_query( $query, implode( ",", $contrib_ids )));
