@@ -10,43 +10,50 @@ class RefundTest extends BaseTestCase {
         $this->payment_message = new TransactionMessage();
         $this->parent_txn_id = WmfTransaction::parse( $this->payment_message->getBody() )->gateway_txn_id;
 
+        $payment_data = $this->payment_message->getBody();
         $this->refund_message = new RefundMessage( array(
             'gateway_parent_id' => $this->parent_txn_id,
+            'gross' => $payment_data['gross'],
+            'gross_currency' => $payment_data['currency'],
         ) );
     }
 
     public static function getInfo() {
         return array(
             'name' => 'Refund message',
-            'group' => 'Pipeline',
+            'group' => 'Donations Pipeline',
             'description' => 'Process a refund message',
         );
     }
 
     public function testImportRefund() {
-        module_invoke( 'queue2civicrm', 'import', $this->payment_message );
-        module_invoke( 'refund', 'import', $this->refund_message );
-
-#$data = $this->payment_message->getBody();
-#error_log( "parent: " . WmfTransaction::parse( $data )->get_unique_id() );
-
         $refund_data = $this->refund_message->getBody();
-#error_log( "refund: " . WmfTransaction::parse( $refund_data['gateway_refund_id'] )->get_unique_id() );
+
+// FIXME 2: and yeah, decouple this as well
+        queue2civicrm_import( $this->payment_message );
+// FIXME 1: decouple refund_qc test from mark_refund test
+        refund_import( $this->refund_message );
+
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $refund_data['gateway'], $this->parent_txn_id );
-#error_log( print_r( $contributions[0], true ) );
-        $this->assertTrue( $contributions && count( $contributions ),
-            "found parent transaction" );
-        $this->assertEqual( true, $contributions[0]['finance_only'],
-            "parent's finance_only flag was set" );
+        $this->assertTrue( $contributions,
+            "Found parent contribution." );
+        $this->assertSuperset( $contributions, array(
+            array(
+                'gateway' => $refund_data['gateway'],
+                'gateway_txn_id' => (string) $refund_data['gateway_parent_id'],
+                'finance_only' => "1",
+            ),
+        ) );
 
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $refund_data['gateway'], $refund_data['gateway_refund_id'] );
-        $this->assertTrue( $contributions && count( $contributions ),
-            "found refund transaction" );
-        $this->assertEqual( $refund_data['gateway_refund_id'], $contributions[0]['gateway_txn_id'],
-            "child txn id was set" );
-        $this->assertEqual( true, $contributions[0]['finance_only'],
-            "refund's finance_only flag was set" );
-        $this->assertEqual( $refund_data['gateway'], $contributions[0]['gateway'],
-            "refund's gateway is correct" );
+        $this->assertTrue( $contributions,
+            "Found refund contribution." );
+        $this->assertSuperset( $contributions, array(
+            array(
+                'gateway' => $refund_data['gateway'],
+                'gateway_txn_id' => (string) $refund_data['gateway_refund_id'],
+                'finance_only' => "1",
+            ),
+        ) );
     }
 }

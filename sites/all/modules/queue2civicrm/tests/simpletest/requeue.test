@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/../includes/MessageSource.php';
 
-class RequeueTest extends DrupalTestCase {
+class RequeueTest extends DrupalWebTestCase {
     public function setUp() {
         parent::setUp();
 
@@ -25,7 +25,7 @@ class RequeueTest extends DrupalTestCase {
     public static function getInfo() {
         return array(
             'name' => 'Requeued message',
-            'group' => 'Pipeline',
+            'group' => 'Donations Pipeline',
             'description' => 'Enqueue a recurring message with no subscription',
         );
     }
