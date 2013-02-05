@@ -1090,7 +1090,7 @@ EOS;
 
     // Should we restore?
     if ( (floatval( $contribution->total_amount ) == 0
-            or $result['source'] == "RFD")
+            or $contribution->contribution_source === "RFD")
         and $original_currency and $original_amount > 0
     ) {
         //FIXME: call this from the contribution save hook. $round parameter. 
