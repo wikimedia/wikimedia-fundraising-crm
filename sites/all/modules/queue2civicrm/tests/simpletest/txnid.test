@@ -21,7 +21,7 @@ class TxnIdTest extends DrupalTestCase {
     public static function getInfo() {
         return array(
             'name' => 'Transaction ID tests',
-            'group' => 'Pipeline',
+            'group' => 'Donations Pipeline',
             'description' => 'Enqueue similar transaction numbers',
         );
     }

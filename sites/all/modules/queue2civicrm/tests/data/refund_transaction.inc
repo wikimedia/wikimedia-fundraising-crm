@@ -5,12 +5,7 @@ $message = array(
     "date" => time(),
     //"gateway_refund_id" => "",
     //"gateway_parent_id" => "",
-    "gross_currency" => "RUR",
-    "gross" => "50",
+    //"gross_currency" => "BAA",
+    //"gross" => "50",
     "type" => "chargeback",
 );
-
-/*
-$parent_message = array(
-    "
-*/

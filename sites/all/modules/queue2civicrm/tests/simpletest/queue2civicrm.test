@@ -7,7 +7,7 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 		return array(
 			'name' => 'Queue 2 CiviCRM tests',
 			'description' => 'Tests for the queue2civicrm module.',
-			'group' => 'Pipeline',
+			'group' => 'Donations Pipeline',
 		);
 	}
 

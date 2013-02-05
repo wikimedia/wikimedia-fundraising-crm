@@ -3,13 +3,15 @@
 class Message {
     static $defaults;
 
+    public $body;
+    public $headers;
+
     protected $data;
-    protected $headers;
 
     function __construct( $values = array() ) {
         $this->data = static::$defaults;
-        $this->set( $values );
         $this->headers = array();
+        $this->set( $values );
     }
 
     function set( $values ) {
@@ -33,45 +35,42 @@ class Message {
     function getHeaders() {
         return $this->headers;
     }
+
+    function loadDefaults( $name ) {
+        // FIXME: how to check if ( !self::$defaults ), but ignoring static::$defaults?
+        // should just cache message contents by name.
+        global $message;
+        require_once __DIR__ . "/../data/{$name}.inc";
+        static::$defaults = $message;
+    }
 }
 
 class TransactionMessage extends Message {
+    protected $txn_id_key = 'gateway_txn_id';
+
     function __construct( $values = array() ) {
-        if ( !self::$defaults ) {
-            require_once __DIR__ . '/../data/base_transaction.inc';
-            self::$defaults = $message;
-        }
+        $this->loadDefaults( "base_transaction" );
 
-        parent::__construct();
+        parent::__construct( $values + array(
+            $this->txn_id_key => rand(),
+            'order_id' => rand(),
+        ) );
 
-        $override['gateway_txn_id'] = rand();
-        $override['order_id'] = rand();
-
-        $this->set( $override );
-        $this->set( $values );
-    }
-
-    function getHeaders() {
         $this->setHeaders( array(
                 "persistent" => 'true',
-                "JMSCorrelationID" => "{$this->data['gateway']}-{$this->data['gateway_txn_id']}",
+                // FIXME: this might indicate a key error in our application code.
+                "correlation-id" => "{$this->data['gateway']}-{$this->data[$this->txn_id_key]}",
+                "JMSCorrelationID" => "{$this->data['gateway']}-{$this->data[$this->txn_id_key]}",
         ) );
-        return parent::getHeaders();
     }
 }
 
 class RefundMessage extends TransactionMessage {
     function __construct( $values = array() ) {
-        require_once __DIR__ . '/../data/refund_transaction.inc';
-        self::$defaults = $message;
+        $this->loadDefaults( "refund_transaction" );
 
-        parent::__construct( $values + array(
-                'gateway_refund_id' => rand(),
-                'gateway_parent_id' => rand(),
-        ) );
+        $this->txn_id_key = 'gateway_refund_id';
 
-        // FIXME
-        unset( $values['gateway_txn_id'] );
-        unset( $values['order_id'] );
+        parent::__construct( $values );
     }
 }
