@@ -19,7 +19,9 @@ class WmfTransaction {
     var $is_refund;
     var $is_recurring;
     var $recur_sequence;
-    var $unique_id;
+
+    //FIXME: we can't actually cache without wrapping set accessors
+    //var $unique_id;
 
     static function parse( $mixed ) {
         // must be a unique-ish id
@@ -51,36 +53,33 @@ class WmfTransaction {
     }
 
     function get_unique_id() {
-        if ( !$this->unique_id ) {
-            $parts = array();
+        $parts = array();
 
-            if ( $this->is_refund ) {
-                $parts[] = "RFD";
-            }
-
-            if ( $this->is_recurring ) {
-                $parts[] = "RECURRING";
-            }
-
-            //FIXME: validate that a gateway has been set.
-            $parts[] = $this->gateway;
-
-            $txn_id = $this->gateway_txn_id;
-            if ( $this->recur_sequence ) {
-                // TODO push this down into GC recur
-                $txn_id .= "-" . $this->recur_sequence;
-            }
-            $parts[] = $txn_id;
-
-            // FIXME: deprecate the timestamp term
-            if ( !$this->timestamp ) {
-                $this->timestamp = time();
-            }
-            $parts[] = $this->timestamp;
-
-            $this->unique_id = strtoupper( implode( " ", $parts ) );
+        if ( $this->is_refund ) {
+            $parts[] = "RFD";
         }
-        return $this->unique_id;
+
+        if ( $this->is_recurring ) {
+            $parts[] = "RECURRING";
+        }
+
+        //FIXME: validate that a gateway has been set.
+        $parts[] = $this->gateway;
+
+        $txn_id = $this->gateway_txn_id;
+        if ( $this->recur_sequence ) {
+            // TODO push this down into GC recur
+            $txn_id .= "-" . $this->recur_sequence;
+        }
+        $parts[] = $txn_id;
+
+        // FIXME: deprecate the timestamp term
+        if ( !$this->timestamp ) {
+            $this->timestamp = time();
+        }
+        $parts[] = $this->timestamp;
+
+        return strtoupper( implode( " ", $parts ) );
     }
 
     static function from_unique_id( $unique_id ) {
