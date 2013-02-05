@@ -34,10 +34,10 @@ class RefundTest extends BaseTestCase {
 // FIXME 1: decouple refund_qc test from mark_refund test
         refund_import( $this->refund_message );
 
-        $contributions = wmf_civicrm_get_contributions_from_gateway_id( $refund_data['gateway'], $this->parent_txn_id );
-        $this->assertTrue( $contributions,
+        $parent_contributions = wmf_civicrm_get_contributions_from_gateway_id( $refund_data['gateway'], $this->parent_txn_id );
+        $this->assertTrue( $parent_contributions,
             "Found parent contribution." );
-        $this->assertSuperset( $contributions, array(
+        $this->assertSuperset( $parent_contributions, array(
             array(
                 'gateway' => $refund_data['gateway'],
                 'gateway_txn_id' => (string) $refund_data['gateway_parent_id'],
@@ -53,6 +53,8 @@ class RefundTest extends BaseTestCase {
                 'gateway' => $refund_data['gateway'],
                 'gateway_txn_id' => (string) $refund_data['gateway_refund_id'],
                 'finance_only' => "1",
+                'total_amount' => (string)(0 - $parent_contributions[0]['total_amount']),
+                'thankyou_date' => "1970-01-01 00:00:00",
             ),
         ) );
     }
