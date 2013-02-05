@@ -8,8 +8,8 @@ class BaseTestCase extends DrupalWebTestCase {
         // civicrm database configured in civicrm.settings.php, and avoid the
         // overhead of creating a new test db by protecting with a transaction.
         // It probably subtly breaks all kinds of simpletest things.
-        //db_query( "START TRANSACTION" );
-        //db_query( "SET autocommit = 0" );
+        db_query( "START TRANSACTION" );
+        db_query( "SET autocommit = 0" );
 
         // FIXME: pass module names from subclass setUp
         parent::setUp(
@@ -30,7 +30,7 @@ class BaseTestCase extends DrupalWebTestCase {
         $mails = $this->drupalGetMails();
         parent::tearDown();
 
-        //db_query( "ROLLBACK" );
+        db_query( "ROLLBACK" );
     }
 
     // TODO: d7 does this natively
