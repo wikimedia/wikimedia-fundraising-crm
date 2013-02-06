@@ -74,13 +74,3 @@ class RefundMessage extends TransactionMessage {
         parent::__construct( $values );
     }
 }
-
-class RecurringMessage extends TransactionMessage {
-    function __construct( $message_name, $values = array() ) {
-        global $$message_name;
-        require_once __DIR__ . "/../data/recurring_transactions.inc";
-        static::$defaults = $$message_name;
-
-        parent::__construct( $values );
-    }
-}
