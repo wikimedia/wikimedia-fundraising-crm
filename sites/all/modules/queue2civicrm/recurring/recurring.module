@@ -576,7 +576,7 @@ function recurring_import_subscr_failed( $msg ) {
  * @return object
  */
 function recurring_get_recur_record( $subscr_id ) {
-  $query = "SELECT * FROM civicrm_contribution_recur WHERE trxn_id LIKE '%s%%'";
+  $query = "SELECT * FROM civicrm_contribution_recur WHERE trxn_id = '%s'";
 
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );

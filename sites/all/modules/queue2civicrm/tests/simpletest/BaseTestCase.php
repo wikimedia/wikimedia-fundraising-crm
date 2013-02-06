@@ -13,7 +13,7 @@ class BaseTestCase extends DrupalWebTestCase {
 
         // FIXME: pass module names from subclass setUp
         parent::setUp(
-            'dblog', 'exchange_rates', 'queue2civicrm', 'wmf_common', 'wmf_civicrm', 'contribution_tracking', 'wmf_refund_qc', 'recurring',
+            'dblog', 'exchange_rates', 'queue2civicrm', 'wmf_common', 'wmf_civicrm', 'contribution_tracking', 'wmf_refund_qc',
             // civi schema is not installed here,
             'civicrm'
         );
