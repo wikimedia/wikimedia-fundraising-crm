@@ -6,6 +6,10 @@ class CRM_Contact_ContactsAndContributionsExport
     {
         require_once 'CRM/Core/DAO.php';
 
+        // Allows rolling up to c. 2,000 contributions per donor.  Clearly
+        // unsustainable, 'cos the spreadsheet has two columns for each contribution.
+        CRM_Core_DAO::executeQuery("SET SESSION group_concat_max_len = 60000");
+
         $sql = <<<EOS
 CREATE /*TEMPORARY*/ TABLE {$table}_rollup (
     contact_id INT UNSIGNED,
@@ -258,6 +262,9 @@ EOS;
         foreach ($contributions as $row)
         {
             $date = DateTime::createFromFormat("U", "{$row[2]}");
+            if ( $date === false ) {
+                return array( "Error collecting contribution dates.", "" );
+            }
             $date->modify("-{$fy_month} month {$fy_day} day");
             $year = $date->format("Y");
             if ($year == $current_year) {
