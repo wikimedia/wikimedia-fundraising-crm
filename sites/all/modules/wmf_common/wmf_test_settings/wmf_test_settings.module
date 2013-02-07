@@ -1,0 +1,32 @@
+<?php
+
+function wmf_test_settings_perm() {
+	return array( 'administer wmf test settings' );
+}
+
+function wmf_test_settings_menu() {
+  $items = array();
+  
+  $items['admin/settings/wmf_test_settings'] = array(
+    'title' => t('WMF Test Settings'),
+    'description' => t('Configure wmf testing variables.'),
+    'access arguments' => array('administer wmf test settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('wmf_test_settings_settings_form'),
+  );
+  
+  return $items;
+}
+
+function wmf_test_settings_settings_form() {
+  $form = array();
+  
+  $form['wmf_test_settings_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Test Email Recipient'),
+    '#default_value' => variable_get('wmf_test_settings_email', ''),
+    '#required' => FALSE,
+  );
+
+  return system_settings_form($form);
+}

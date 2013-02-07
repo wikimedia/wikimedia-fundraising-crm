@@ -1,0 +1,4 @@
+name = WMF Test Settings
+description = An interface for setting test-specific variables
+core = 6.x
+package = Wikimedia
