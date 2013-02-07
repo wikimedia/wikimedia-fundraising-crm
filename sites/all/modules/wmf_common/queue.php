@@ -75,39 +75,25 @@ function wmf_common_dequeue_loop( $queue, $batch_size, $callback ) {
     return $processed;
 }
 
-/**
- * Returns an active Stomp connection
- * @param bool $renew If false, the connection will not be renewed if an active 
- * stomp connection exits. If true, the renewal is forced. Default false.
- * @param mixed $server If false, the Stomp object will connect to the server 
- * specified in 'queue2civicrm_url'. Otherwise, it will try to connect to the 
- * specified server. Default false.
- * @return active Stomp connection, or false if unsuccesful
- * @throws WmfException
- */
-function wmf_common_stomp_connection( $renew = FALSE, $server = FALSE ) {
+function wmf_common_stomp_connection( $renew = FALSE ) {
     global $_wmf_common_stomp_con;
-	
-	if ( !$server ){
-		$server = variable_get('queue2civicrm_url', 'tcp://localhost:61613');
-	}
     
     if ( empty( $_wmf_common_stomp_con ) || $renew == TRUE ) {
         //TODO these variables should be owned by wmf_common
         require_once variable_get('queue2civicrm_stomp_path', drupal_get_path('module', 'queue2civicrm') . '/Stomp.php');
-        watchdog( 'wmf_common', "Attempting connection to queue server: $server" );
+        watchdog( 'wmf_common', 'Attempting connection to queue server: ' . variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
         if ( !empty( $_wmf_common_stomp_con ) && $_wmf_common_stomp_con->isConnected() ) {
             $_wmf_common_stomp_con->disconnect();
         }
 
-        $_wmf_common_stomp_con = new Stomp( $server );
+        $_wmf_common_stomp_con = new Stomp(variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
     } 
 
     $attempt = 0;
     while ( !wmf_common_stomp_is_connected() && $attempt < 2 ) {
         try {
             ++$attempt;
-            $_wmf_common_stomp_con = new Stomp( $server );
+            $_wmf_common_stomp_con = new Stomp(variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
             $_wmf_common_stomp_con->connect();
             register_shutdown_function( 'wmf_common_stomp_disconnect' );
         }
