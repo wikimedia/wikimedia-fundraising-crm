@@ -53,6 +53,7 @@ class WmfException extends Exception {
     );
 
     var $type;
+	var $extra;
 
     function __construct( $type, $message, $extra = null ) {
         if ( !array_key_exists( $type, self::$error_types ) ) {
@@ -60,6 +61,7 @@ class WmfException extends Exception {
             $type = 'UNKNOWN';
         }
         $this->type = $type;
+		$this->extra = $extra;
 
         if ( is_array( $message ) ) {
             $message = implode( "\n", $message );
@@ -103,6 +105,15 @@ class WmfException extends Exception {
 
     function isNoEmail()
     {
+		//start hack
+		if ( is_array( $this->extra ) && array_key_exists( 'email', $this->extra ) ){
+			$no_failmail = explode( ',', variable_get('wmf_common_no_failmail', '') );
+			if ( in_array( $this->extra['email'], $no_failmail ) ){
+				echo "Failmail suppressed - email on suppression list";
+				return true;
+			}
+		}
+		//end hack
         return $this->getErrorCharacteristic('no-email', FALSE);
     }
 
