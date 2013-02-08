@@ -94,6 +94,14 @@ function wmf_common_settings() {
     '#default_value' => variable_get('wmf_common_failmail', 'fr-tech@wikimedia.org'),
     '#description'   => t('Enter the failmail contact address.'),
   );
+  
+  $form[ 'wmf_common_no_failmail' ] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Failmail Message Exceptions for Email'),
+    '#required'      => TRUE,
+    '#default_value' => variable_get('wmf_common_no_failmail', ''),
+    '#description'   => t('Comma-delimited (no spaces) list of donor email addresses that will never trigger failmail'),
+  );
 
   $twig_path = variable_get('wmf_common_twig_location', drupal_get_path('module', 'wmf_common') . DIRECTORY_SEPARATOR . "Twig");
   $twig_installed = file_exists(implode(DIRECTORY_SEPARATOR, array($twig_path, 'lib', 'Twig', 'Autoloader.php')));
