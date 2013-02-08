@@ -7,16 +7,7 @@ function wmf_common_failmail( $module, $error, $source = null )
         $to = 'fr-tech@wikimedia.org';
     }
     $params['error'] = $error;
-    if ($source) {
-		//insert hack here
-		if ( is_array( $source ) && array_key_exists( 'email', $source ) ) {
-			$no_failmail = explode( ',', variable_get('wmf_common_no_failmail', '') );
-			if(  in_array( $source['email'], $no_failmail ) ){
-				return;
-			}
-		}
-		//end hack
-		
+    if ($source) {		
         $params['source'][] = $source;
     } elseif (property_exists($error, 'source')) {
         $params['source'][] = $error->source;
