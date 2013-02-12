@@ -8,7 +8,7 @@ class RefundTest extends BaseTestCase {
         parent::setUp();
 
         $this->payment_message = new TransactionMessage();
-        $this->parent_txn_id = WmfTransaction::parse( $this->payment_message->getBody() )->gateway_txn_id;
+        $this->parent_txn_id = WmfTransaction::from_message( $this->payment_message->getBody() )->gateway_txn_id;
 
         $payment_data = $this->payment_message->getBody();
         $this->refund_message = new RefundMessage( array(

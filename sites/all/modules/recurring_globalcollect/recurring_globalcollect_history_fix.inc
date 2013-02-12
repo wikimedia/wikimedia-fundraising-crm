@@ -24,7 +24,7 @@ function recurring_globalcollect_fix_false_failures(){
 	$fixed = array();
 	
 	foreach ($questionable as $subscription){
-		$transaction = WmfTransaction::parse( $subscription );
+		$transaction = WmfTransaction::from_unique_id( $subscription['trxn_id'] );
 		$civi_recur_id = $subscription['id'];
 		$gc_id = $transaction->gateway_txn_id;
 		$actual_result = recurring_globalcollect_check_xml_in_watchdog($gc_id);
@@ -145,7 +145,7 @@ function recurring_globalcollect_record_old_success( $subscription, $effort_id )
           'id' => $subscription['contact_id'],
       );
 
-      $transaction = WmfTransaction::parse( $subscription );
+      $transaction = WmfTransaction::from_unique_id( $subscription['trxn_id'] );
       
       $msg = array();
       $msg['fee'] = 0.00;

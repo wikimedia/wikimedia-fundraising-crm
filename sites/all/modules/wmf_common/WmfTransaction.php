@@ -8,7 +8,7 @@
  * temporary helper variable.
  * 
  * For example,
- *   $trxn_id = WmfTransaction::parse( $msg )->get_unique_id();
+ *   $trxn_id = WmfTransaction::from_message( $msg )->get_unique_id();
  *
  * This wraps our unique ID generator / parser, and...
  */
@@ -22,35 +22,6 @@ class WmfTransaction {
 
     //FIXME: we can't actually cache without wrapping set accessors
     //var $unique_id;
-
-    static function parse( $mixed ) {
-        // must be a unique-ish id
-        if ( is_string( $mixed ) or is_numeric( $mixed ) ) {
-            $transaction = static::from_unique_id( (string) $mixed );
-        }
-        // civi contribution
-        elseif ( is_object( $mixed ) and property_exists( $mixed, 'trxn_id' ) ) {
-            $transaction = static::from_unique_id( $mixed->trxn_id );
-        }
-        elseif ( is_array( $mixed ) and array_key_exists( 'trxn_id', $mixed ) ) {
-            $transaction = static::from_unique_id( $mixed['trxn_id'] );
-        }
-        // stomp message, does not have a unique id yet
-        elseif ( is_array( $mixed ) and array_key_exists( 'gateway_txn_id', $mixed ) ) {
-            $transaction = new WmfTransaction();
-            $transaction->gateway_txn_id = $mixed['gateway_txn_id'];
-            $transaction->gateway = $mixed['gateway'];
-            if ( array_key_exists( 'recurring', $mixed ) && $mixed['recurring'] ) {
-                $transaction->is_recurring = true;
-            }
-            if ( strcasecmp( $transaction->gateway, $mixed['gateway'] ) ) {
-                throw new Exception( "Malformed unique id (msg but gateway does not match)" );
-            }
-        } else {
-            throw new Exception( "Unknown input type: " . print_r( $mixed, true ) );
-        }
-        return $transaction;
-    }
 
     function get_unique_id() {
         $parts = array();
@@ -80,6 +51,17 @@ class WmfTransaction {
         $parts[] = $this->timestamp;
 
         return strtoupper( implode( " ", $parts ) );
+    }
+
+    static function from_message( $msg ) {
+        // stomp message, does not have a unique id yet
+        $transaction = new WmfTransaction();
+        $transaction->gateway_txn_id = $msg['gateway_txn_id'];
+        $transaction->gateway = $msg['gateway'];
+        if ( array_key_exists( 'recurring', $msg ) && $msg['recurring'] ) {
+            $transaction->is_recurring = true;
+        }
+        return $transaction;
     }
 
     static function from_unique_id( $unique_id ) {
