@@ -10,7 +10,7 @@ class WmfTransactionTestCase extends DrupalUnitTestCase {
     }
 
     public function testParseUniqueId() {
-        $transaction = WmfTransaction::parse( "RFD RECURRING GLOBALCOLLECT 1234 432" );
+        $transaction = WmfTransaction::from_unique_id( "RFD RECURRING GLOBALCOLLECT 1234 432" );
         $this->assertEqual(
             $transaction->gateway_txn_id, "1234",
             "5-argument form gateway_txn_id is parsed correctly." );
@@ -30,7 +30,7 @@ class WmfTransactionTestCase extends DrupalUnitTestCase {
             $transaction->get_unique_id(), "RFD RECURRING GLOBALCOLLECT 1234 432",
             "5-argument form is not mangled" );
 
-        $transaction = WmfTransaction::parse( "RFD GLOBALCOLLECT 1234 432" );
+        $transaction = WmfTransaction::from_unique_id( "RFD GLOBALCOLLECT 1234 432" );
         $this->assertEqual(
             $transaction->gateway_txn_id, "1234",
             "4-argument form gateway_txn_id is parsed correctly." );
@@ -41,7 +41,7 @@ class WmfTransactionTestCase extends DrupalUnitTestCase {
             $transaction->get_unique_id(), "RFD GLOBALCOLLECT 1234 432",
             "4-argument form is not mangled" );
 
-        $transaction = WmfTransaction::parse( "GLOBALCOLLECT 1234x 432" );
+        $transaction = WmfTransaction::from_unique_id( "GLOBALCOLLECT 1234x 432" );
         $this->assertEqual(
             $transaction->gateway_txn_id, "1234x",
             "3-argument form gateway_txn_id is parsed correctly." );
@@ -49,7 +49,7 @@ class WmfTransactionTestCase extends DrupalUnitTestCase {
             $transaction->get_unique_id(), strtoupper( "GLOBALCOLLECT 1234x 432" ),
             "3-argument form is not mangled" );
 
-        $transaction = WmfTransaction::parse( "GLOBALCOLLECT 1234" );
+        $transaction = WmfTransaction::from_unique_id( "GLOBALCOLLECT 1234" );
         $this->assertEqual(
             $transaction->gateway_txn_id, "1234",
             "2-argument form gateway_txn_id is parsed correctly." );
@@ -63,7 +63,7 @@ class WmfTransactionTestCase extends DrupalUnitTestCase {
             'gateway' => "globalcollect",
             'gateway_txn_id' => "1234",
         );
-        $transaction = WmfTransaction::parse( $msg );
+        $transaction = WmfTransaction::from_message( $msg );
         $this->assertEqual(
             "1234", $transaction->gateway_txn_id,
             "parsed message gateway_txn_id is correct" );

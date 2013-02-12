@@ -246,7 +246,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     civicrm_initialize();
 
     try {
-        $transaction = WmfTransaction::parse( $msg );
+        $transaction = WmfTransaction::from_message( $msg );
         $transaction->recur_sequence = $effort_id;
         $trxn_id = $transaction->get_unique_id();
     } catch ( Exception $ex ) {
@@ -1119,7 +1119,7 @@ EOS;
         $original_amount = $actual_amount;
     }
 
-    $transaction = WmfTransaction::parse( $contribution );
+    $transaction = WmfTransaction::from_unique_id( $contribution->trxn_id );
     if ( $refund_gateway_txn_id ) {
         $transaction->gateway_txn_id = $refund_gateway_txn_id;
     }
@@ -1306,7 +1306,7 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
 
             if ( $contribution->trxn_id ) {
                 try {
-                    $transaction = WmfTransaction::parse( $contribution );
+                    $transaction = WmfTransaction::from_unique_id( $contribution->trxn_id );
                     $extra['gateway'] = strtolower( $transaction->gateway );
                     $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
                 } catch ( Exception $ex ) {

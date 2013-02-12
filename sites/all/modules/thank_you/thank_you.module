@@ -601,7 +601,7 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
 		$country = "XX";
 	}
 
-    $transaction = WmfTransaction::parse( $contribution );
+    $transaction = WmfTransaction::from_unique_id( $contribution['trxn_id'] );
     $recurring = $transaction->is_recurring;
 
     // go ahead and include the missed donations text until 17 May 2012

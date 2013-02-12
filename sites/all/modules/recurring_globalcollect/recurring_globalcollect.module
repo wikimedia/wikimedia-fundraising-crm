@@ -306,7 +306,7 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
   }
   
   try {
-    $transaction = WmfTransaction::parse( $contribution_recur );
+    $transaction = WmfTransaction::from_unique_id( $contribution_recur['trxn_id'] );
     $ORDERID = $transaction->gateway_txn_id;
   } catch ( Exception $ex ) {
     throw new WmfException( 'INVALID_RECURRING', $ex->getMessage(), $contribution_recur );
@@ -360,7 +360,7 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     // by reconciling the data we get from the payment processor.
     _recurring_globalcollect_update_record_success($contribution_recur['id']);
     
-    $transaction = WmfTransaction::parse( $contribution_recur );
+    $transaction = WmfTransaction::from_unique_id( $contribution_recur['trxn_id'] );
 
     $contact = array(
         'id' => $contribution_recur['contact_id'],
