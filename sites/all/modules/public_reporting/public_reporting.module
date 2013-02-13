@@ -15,14 +15,6 @@ function public_reporting_menu() {
     'page arguments' => array('public_reporting_form'),
   );
 
-  $items['admin/settings/public_reporting/settings'] = array(
-    'title' => t('Configuration'),
-    'description' => t('Public reporting settings'), 
-    'access arguments' => array('administer wmf public reporting'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('public_reporting_settings_form'),
-  );
-
   return $items;
 }
 
@@ -33,44 +25,8 @@ function public_reporting_form() {
     '#value' => 'Synchronize',
     '#type' => 'submit'
   );
-}
-
-function public_reporting_settings_form() {
-  $form = array();
-
-  $db_name = public_reporting_get_default_database_name();
-
-  $form['public_reporting_database'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Reporting database'),
-    '#required' => TRUE,
-    '#default_value' => $db_name,
-    '#description' => t('Name of the database where public_reporting tables will live.  Blank will default to the same as CiviCRM.'),
-  );
-
-  $form = system_settings_form( $form );
-  $form['#submit'][] = 'public_reporting_settings_form_submit';
 
   return $form;
-}
-
-function public_reporting_settings_form_submit( $form, &$form_state ) {
-    //FIXME: would be really nice to sanity check the db name -- if the triggers are broken,
-    // civi no sirve por nada.
-    public_reporting_execute_sql_file( 'triggers.sql' );
-}
-
-function public_reporting_get_default_database_name() {
-    // FIXME: relies on a side-effect
-    $dbs = wmf_civicrm_get_dbs();
-    global $db_url;
-
-    civicrm_initialize();
-    require_once 'DB.php';
-    $dsn = DB::parseDSN( $db_url[ 'civicrm' ] );
-
-    $name = variable_get( 'public_reporting_database', $dsn[ 'database' ] );
-    return $name;
 }
 
 function public_reporting_form_submit($form, &$form_state) {
@@ -189,19 +145,11 @@ function public_reporting_execute_sql_file($file){
 	$expected = count($queries);
 	$actual = 0;
 	$ok = true;
-	$pr_db_name = variable_get( 'public_reporting_database', '' );
-	if ( $pr_db_name && FALSE === strpos( $pr_db_name, '.' ) ) {
-		$pr_db_name .= '.';
-	}
 
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
 
 	foreach($queries as $query){
-		$query = db_prefix_tables( strtr( $query, array(
-			'{pr_db}' => $pr_db_name,
-		) ) );
-		$query = str_replace( '%', '%%', $query );
 		$queryResult =  db_query($query);
 		if (!$queryResult){
 			$ok = false;
