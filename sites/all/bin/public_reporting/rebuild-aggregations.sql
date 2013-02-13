@@ -1,4 +1,4 @@
-REPLACE INTO {pr_db}{public_reporting_hours}
+REPLACE INTO {public_reporting_hours}
     ( datehour, country, total, count, average, maximum, insert_timestamp )
     SELECT
         DATE_FORMAT( FROM_UNIXTIME( pr.received ), '%Y-%m-%d %H:00:00' ),
@@ -8,7 +8,7 @@ REPLACE INTO {pr_db}{public_reporting_hours}
         AVG( pr.converted_amount ),
         MAX( pr.converted_amount ),
         NOW()
-    FROM {pr_db}{public_reporting} pr
+    FROM {public_reporting} pr
     JOIN civicrm_contribution
         ON civicrm_contribution.id = pr.contribution_id
     LEFT JOIN civicrm_address
