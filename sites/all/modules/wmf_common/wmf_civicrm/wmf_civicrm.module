@@ -1025,7 +1025,6 @@ function wmf_civicrm_boost_performance() {
 function wmf_civicrm_set_thankyou_date_to_epoch( $contribution_id ){
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
-
 	$query = "UPDATE civicrm_contribution SET thankyou_date = \"1970-01-01 00:00:00\" WHERE id=%d";
 
 	$result = db_query( $query, $contribution_id );
