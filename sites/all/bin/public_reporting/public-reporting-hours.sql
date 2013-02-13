@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {pr_db}{public_reporting_hours} (
+CREATE TABLE IF NOT EXISTS {public_reporting_hours} (
     datehour datetime NOT NULL,
     country char(2),
     total decimal(14,2) unsigned NOT NULL DEFAULT '0.00',
