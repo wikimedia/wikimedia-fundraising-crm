@@ -1092,11 +1092,15 @@ EOS;
             or $contribution->contribution_source === "RFD")
         and $original_currency and $original_amount > 0
     ) {
+        $dbs->pop();
+
         //FIXME: call this from the contribution save hook. $round parameter. 
         $contribution->total_amount = round( exchange_rate_convert(
             $original_currency, $original_amount,
             strtotime( $contribution->receive_date )
         ), 2 );
+
+        $dbs->push( 'civicrm' );
 
         $sql = <<<EOS
 UPDATE civicrm_contribution
@@ -1108,8 +1112,8 @@ EOS;
         db_query( $sql, array( "$original_currency $original_amount", (string) $contribution->total_amount, $contribution_id ) );
     } else {
         list($actual_currency, $actual_amount) = explode(" ", $contribution->contribution_source);
-        if ( ($original_currency && $original_currency != $actual_currency)
-            || ($original_amount && $original_amount != $actual_amount) )
+        if ( ($original_currency && round($original_currency, 2) != round($actual_currency, 2))
+            || ($original_amount && round($original_amount, 2) != round($actual_amount, 2)) )
         {
             throw new Exception("Payment amount specified did not match original contribution: $contribution_id");
         }

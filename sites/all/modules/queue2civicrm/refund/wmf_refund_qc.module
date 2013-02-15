@@ -183,8 +183,10 @@ function refund_import($msg) {
         $body['gross_currency'],
         $body['gross']
       );
+
+      watchdog('refund', "$txnid: Successfully marked as refunded", WATCHDOG_INFO);
     } catch (Exception $ex) {
-      watchdog('refund', "$txnid: Could not refund due to internal error " . $ex->getMessage(), WATCHDOG_ERROR);
+      watchdog('refund', "$txnid: Could not refund due to internal error: " . $ex->getMessage(), WATCHDOG_ERROR);
     }
 
     $retval = true;
