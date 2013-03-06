@@ -47,6 +47,7 @@ function drush_import_checks() {
 		$args = drush_get_arguments();
 		$filename = $args[1];
 
+		ini_set( 'auto_detect_line_endings', true );
 		if( ( $file = fopen( $filename, 'r' )) === FALSE ){
 			watchdog('offline2civicrm', 'Import checks: Could not open file for reading: ' . $filename, array(), WATCHDOG_ERROR);
 			return;
@@ -109,10 +110,16 @@ function drush_import_checks() {
 			// CiviCRM gets all weird when there is no country set
 			// Making the assumption that none = US
 			if( _get_value( 'Country', $row, $headers ) == ''){
-				// set to the default, no TY will be sent
 				$msg['country'] = "US";
 			} else {
 				$msg['country'] = _get_value( 'Country', $row, $headers );
+			}
+
+			if ( $msg['country'] === "US" ) {
+				// left-pad the zipcode
+				if ( preg_match( '/^(\d{1,4})(-\d+)?$/', $msg['postal_code'], $matches ) ) {
+					$msg['postal_code'] = str_pad( $matches[1], 5, "0", STR_PAD_LEFT ) . $matches[2];
+				}
 			}
 
 			// Generating a transaction id so that we don't import the same rows multiple times
@@ -127,6 +134,7 @@ function drush_import_checks() {
 				continue;
 			}
 
+			//TODO un-nest
 			try {
 				$contribution = wmf_civicrm_contribution_message_import( $msg );
 			}
