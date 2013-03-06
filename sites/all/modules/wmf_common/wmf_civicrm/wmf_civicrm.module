@@ -817,26 +817,29 @@ function wmf_civicrm_get_default_location_type_id() {
     return $default_location_type->id;
 }
 
-function wmf_civicrm_get_country_id( $code ) {
-    // Outside chance this could be a lang_COUNTRY pair
-    $locality = explode( '_', $code );
-    if ( count( $locality ) > 1 ) {
-        $code = $locality[ 1 ];
-    }
+function wmf_civicrm_get_country_id( $raw ) {
+	// ISO code, or outside chance this could be a lang_COUNTRY pair
+	if ( preg_match( '/^([a-z]+_)?([A-Z]{2})$/', $raw, $matches ) ) {
+		$code = $matches[2];
 
-    // Assume this is an iso code
-    if ( strlen( $code ) == 2 ) {
-        $iso_cache = CRM_Core_PseudoConstant::countryIsoCode();
-        $id = array_search( strtoupper( $code ), $iso_cache );
-        if ( $id !== FALSE ) {
-            return $id;
-        }
-    }
-    watchdog( 'wmf_civicrm',
-        "Cannot find country: [%code]",
-        array( '%code' => $code ),
-        WATCHDOG_NOTICE
-    );
+		$iso_cache = CRM_Core_PseudoConstant::countryIsoCode();
+		$id = array_search( strtoupper( $code ), $iso_cache );
+		if ( $id !== FALSE ) {
+			return $id;
+		}
+	} else {
+		$country_cache = CRM_Core_PseudoConstant::country( false, false );
+		$id = array_search( $raw, $country_cache );
+		if ( $id !== false ) {
+			return $id;
+		}
+	}
+
+	watchdog( 'wmf_civicrm',
+		"Cannot find country: [%txt]",
+		array( '%txt' => $raw ),
+		WATCHDOG_NOTICE
+	);
 }
 
 /**
