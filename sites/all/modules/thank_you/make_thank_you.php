@@ -14,6 +14,8 @@
  *                                                                    *
  **********************************************************************/
 
+require_once 'html2text.php';
+
 $valid_translation_states = array(
 	'ready',
 	'proofread',
@@ -280,6 +282,19 @@ function linewrap( $filename, $col=70 ){
 
 /**
  *
+ * @param $htmlfilename
+ * @param $outfilename
+ */
+function generate_txt_2012( $htmlfilename, $outfilename ) {
+
+	$html = new html2text( $htmlfilename, true );
+	$outfile = fopen( $outfilename, 'w' );
+	fwrite( $outfile, $html->get_text() );
+	fclose( $outfile );
+}
+
+/**
+ *
  */
 
 $titles = array(
@@ -302,6 +317,7 @@ foreach( $titles as $t => $langs ){
 		if ( check_translation( $json ) ){
 			add_helper_keys( $json );
 			generate_html_2012( $l, $json, "templates/html/thank_you.$l.html" );
+			generate_txt_2012( "templates/html/thank_you.$l.html", "templates/txt/thank_you.$l.txt" );
 			linewrap( "templates/html/thank_you.$l.html", 90 );
 		}
 	}
