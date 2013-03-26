@@ -532,9 +532,15 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
         switch ( strtolower( $msg['gateway'] ) ) {
         case 'amazon':
             $payment_instrument = 'Amazon';
+            if ( strtolower( $msg['payment_method'] ) !== 'paypal' ) {
+                watchdog( 'wmf_civicrm', 'payment_method constraint violated: gateway Amazon, but method=@method ; gateway_txn_id=@id', array( '@method' => $msg['payment_method'], '@id' => $msg['gateway_txn_id'] ), WATCHDOG_DEBUG );
+            }
             break;
         case 'paypal':
             $payment_instrument = 'Paypal';
+            if ( strtolower( $msg['payment_method'] ) !== 'paypal' ) {
+                watchdog( 'wmf_civicrm', 'payment_method constraint violated: gateway Paypal, but method=@method ; gateway_txn_id=@id', array( '@method' => $msg['payment_method'], '@id' => $msg['gateway_txn_id'] ), WATCHDOG_DEBUG );
+            }
             break;
         }
     }
