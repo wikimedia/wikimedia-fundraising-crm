@@ -526,6 +526,9 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
             case 'amazon':
                 $payment_instrument = 'Amazon';
                 break;
+            case 'paypal':
+                $payment_instrument = 'Paypal';
+                break;
         }
         
     } else {
