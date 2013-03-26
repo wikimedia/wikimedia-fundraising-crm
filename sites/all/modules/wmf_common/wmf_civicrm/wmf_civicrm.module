@@ -523,18 +523,19 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                     $payment_instrument = 'Credit Card';
                 }
                 break;
-            case 'amazon':
-                $payment_instrument = 'Amazon';
-                break;
-            case 'paypal':
-                $payment_instrument = 'Paypal';
-                break;
         }
         
-    } else {
-        //payment_method is not even in the message. Assume it's legacy... but we can tell some things about these, too...
-        if ( array_key_exists( 'gateway', $msg ) && strtolower($msg['gateway']) === 'paypal' ){
+    }
+    if ( !$payment_instrument
+            and array_key_exists( 'gateway', $msg )
+    ) {
+        switch ( strtolower( $msg['gateway'] ) ) {
+        case 'amazon':
+            $payment_instrument = 'Amazon';
+            break;
+        case 'paypal':
             $payment_instrument = 'Paypal';
+            break;
         }
     }
 
