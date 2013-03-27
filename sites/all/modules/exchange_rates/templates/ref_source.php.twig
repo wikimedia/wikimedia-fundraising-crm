@@ -1,0 +1,35 @@
+<?php
+/**
+ * Automatically generated from {{ generated_by }}
+ * -- do not edit! --
+ * Rates retrieved on {{ last_updated|date }}, are specified in value USD.
+ *
+ * Currency conversion is pulled from dynamic sources if available,
+ * otherwise the lookup is performed on inline reference data.
+ */
+class ExchangeRates {
+    static function getConversionRate( $currency ) {
+        if ( is_callable( 'exchange_rate_convert' ) ) {
+            return exchange_rate_convert( $currency );
+        }
+        return self::getReferenceRate( $currency );
+    }
+
+    /**
+     * Serve approximate exchange rates which might be out-of-date.
+     */
+    static protected function getReferenceRate( $currency ) {
+        $referenceRates = self::getReferenceData();
+        if ( array_key_exists( $currency, $referenceRates ) ) {
+            return $referenceRates[$currency];
+        }
+    }
+
+    static protected function getReferenceData() {
+        return array(
+{% for conversion in currency_rates %}
+            '{{ conversion[0] }}' => {{ conversion[1] }},
+{% endfor %}
+        );
+    }
+}
