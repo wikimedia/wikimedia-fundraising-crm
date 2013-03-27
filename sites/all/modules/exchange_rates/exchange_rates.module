@@ -41,25 +41,44 @@ function exchange_rates_listing() {
     t('Currency'),
     t('Value in USD'),
   );
-  $rows = array();
 
-  $currencies = db_query('SELECT currency FROM {exchange_rates} GROUP BY currency ORDER BY currency');
-  while ($currency = db_fetch_object($currencies)) {
-	try {
-      $rows[] = array(
-        $currency->currency,
-        exchange_rate_convert($currency->currency),
-      );
-	}
-	catch (Exception $ex) {
-	  drupal_set_message($ex->getMessage());
-	}
-  }
+  $rates = exchange_rates_get_conversions();
   
   $content[] = t('Last updated: %updated', array('%updated' => format_date(variable_get('exchange_rates_bank_update', 0))));
-  $content[] = theme('table', $cols, $rows);
+  $content[] = theme('table', $cols, $rates);
   
   return implode("\n", $content);
+}
+
+/**
+ * Return a map from (currency, rate), where the rate is given as USD equivalent.
+ */
+function exchange_rates_get_conversions() {
+  $sql = <<<EOS
+SELECT
+    currency,
+    (
+        SELECT value_in_usd
+        FROM {exchange_rates} unter
+        WHERE unter.currency = oder.currency
+        ORDER BY bank_update DESC
+        LIMIT 1
+    ) AS latest_value
+
+FROM {exchange_rates} oder
+GROUP BY currency
+ORDER BY currency ASC
+EOS;
+
+  $rates = db_query($sql);
+  $rows = array();
+  while ( $conversion = db_fetch_object( $rates ) ) {
+    $rows[] = array(
+      $conversion->currency,
+      $conversion->latest_value,
+    );
+  }
+  return $rows;
 }
 
 function exchange_rate_convert($from_currency, $amount = 1, $timestamp = NULL) {
