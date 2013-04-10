@@ -260,13 +260,6 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
         throw new WmfException("INVALID_MESSAGE", "No payment type found for message.", $msg);
     }
 
-    if ( !array_key_exists( 'check_number', $msg ) ){
-        $msg['check_number'] = NULL;
-    }
-    if ( !array_key_exists( 'letter_code', $msg ) ){
-        $msg['letter_code'] = NULL;
-    }
-
     $contribution = array(
         'contact_id' => $contact[ 'id' ],
         'total_amount' => $msg['gross'],
@@ -281,6 +274,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
         'contribution_recur_id' => $recur_id,
         'check_number' => $msg['check_number'],
         'letter_code' => $msg['letter_code'],
+        'thankyou_date' => date( 'Y-m-d H:i:s', $msg['thankyou_date'] ),
 
         // API required fields
         'version' => '3'
@@ -313,11 +307,22 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     $lettercode = ( $msg[ 'letter_code' ] ) ? $msg[ 'letter_code'] : NULL;
     $gateway_account = array_key_exists( 'gateway_account', $msg ) ? $msg[ 'gateway_account' ] : '';
 
+    // n.b. Data field names are legacy, and do not necessarily match the labels.
     $custom_vars = array(
         'Contribution_Comments' => $comment,
         'Gift_Data' => $lettercode,
         'gateway_account' => $gateway_account,
     );
+    if ( array_key_exists( 'gift_source', $msg ) ) {
+        $custom_vars['Campaign'] = $msg['gift_source'];
+    }
+    if ( array_key_exists( 'direct_mail_appeal', $msg ) ) {
+        $custom_vars['Appeal'] = $msg['direct_mail_appeal'];
+    }
+    if ( array_key_exists( 'restrictions', $msg ) ) {
+        $custom_vars['Fund'] = $msg['restrictions'];
+    }
+
     wmf_civicrm_set_custom_field_values( $contribution_result[ 'id' ], $custom_vars );
 
     return $contribution_result[ 'values' ][ $contribution_result[ 'id' ] ];
@@ -633,6 +638,9 @@ function wmf_civicrm_verify_message_and_stage($msg)
         'state_province' => '',
         'postal_code' => '',
         'original_gross' => $msg['gross'],
+        'check_number' => null,
+        'letter_code' => null,
+        'thankyou_date' => null,
     );
 
     $msg = wmf_civicrm_normalize_msg( array_merge($defaults, $msg) );
@@ -937,6 +945,18 @@ function wmf_civicrm_normalize_msg( $msg ) {
     // if all else fails, fall back to now.
     if ( empty( $msg['date'] ) ) {
         $msg['date'] = time();
+    }
+
+    if ( !empty( $msg['thankyou_date'] ) ) {
+        if ( !is_numeric( $msg['thankyou_date'] ) ) {
+            $unix_time = strtotime( $msg['thankyou_date'] );
+            if ( $unix_time !== false ) {
+                $msg['thankyou_date'] = date( 'Y-m-d H:i:s', $unix_time );
+            } else {
+                watchdog( 'wmf_civicrm', 'Could not parse thankyou date: @date from @id', array( '@date' => $msg['thankyou_date'], '@id' => $msg['contribution_tracking_id'] ), WATCHDOG_DEBUG );
+                unset( $msg['thankyou_date'] );
+            }
+        }
     }
 
     watchdog( 'wmf_civicrm', 'Contribution (pre-conversion):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>' );
