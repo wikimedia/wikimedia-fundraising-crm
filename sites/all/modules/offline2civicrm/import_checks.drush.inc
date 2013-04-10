@@ -87,7 +87,11 @@ function drush_import_checks() {
 				"fee" => "0",
 				"gross" => _get_value( "Total Amount", $row, $headers ),
 				"net" => _get_value( "Total Amount", $row, $headers ),
-				"date" => strtotime( _get_value( "Received Date", $row, $headers ) )
+				"date" => strtotime( _get_value( "Received Date", $row, $headers ) ),
+				"thankyou_date" => strtotime( _get_value( "Thank You Date", $row, $headers ) ),
+				"restrictions" => _get_value( "Restrictions", $row, $headers ),
+				"gift_source" => _get_value( "Gift Source", $row, $headers ),
+				"direct_mail_appeal" => _get_value( "Direct Mail Appeal", $row, $headers ),
 			);
 
 			if( _get_value( 'Organization Name', $row, $headers, FALSE ) === FALSE ){
