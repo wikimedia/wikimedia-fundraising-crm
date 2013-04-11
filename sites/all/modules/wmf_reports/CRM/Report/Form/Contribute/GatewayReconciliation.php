@@ -3,12 +3,8 @@
  * See https://mingle.corp.wikimedia.org/projects/fundraiser_2012/cards/529
  */
 
-require_once 'CRM/Report/Form.php';
-
 class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
     function __construct( ) {
-        require_once 'CRM/Core/PseudoConstant.php';
-
         $gateway_options = array(
             '' => '--any--',
             'AMAZON' => 'Amazon',

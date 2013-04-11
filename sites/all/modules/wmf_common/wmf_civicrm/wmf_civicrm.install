@@ -199,8 +199,6 @@ function wmf_civicrm_bootstrap_civi()
 
 function wmf_civicrm_create_contribution_types($contribution_types)
 {
-    require_once "CRM/Contribute/PseudoConstant.php";
-    require_once "CRM/Contribute/BAO/ContributionType.php";
     foreach ($contribution_types as $type)
     {
         $contribution_type_id = CRM_Utils_Array::key(

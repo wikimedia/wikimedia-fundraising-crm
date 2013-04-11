@@ -30,7 +30,6 @@ function wmf_reports_update_6000()
         'description' => '',
         'mapping_type_id' => $mapping_type->value,
     );
-    require_once 'CRM/Core/BAO/Mapping.php';
     $mapping = CRM_Core_BAO_Mapping::add($mapping);
 
     $contact_fields = array(
@@ -69,7 +68,6 @@ function wmf_reports_update_6000()
         $mapping_fields[] = array('0' => 'Individual', '1' => $field);
     }
 
-    require_once 'CRM/Core/BAO/LocationType.php';
     $location_type = new CRM_Core_BAO_LocationType();
     $location_type->is_active = 1;
     $location_type->find();
@@ -82,7 +80,6 @@ function wmf_reports_update_6000()
             );
         }
 
-        require_once 'CRM/Core/PseudoConstant.php';
         $phone_types = array_keys(CRM_Core_PseudoConstant::phoneType());
         foreach ($phone_types as $phone_type)
         {
@@ -116,7 +113,6 @@ function wmf_reports_update_6000()
 function wmf_reports_update_6001()
 {
     wmf_reports_bootstrap_civi();
-    require_once 'CRM/Core/BAO/Mapping.php';
 
     $params = array(
         'name' => 'Contacts and Contributions',
@@ -166,8 +162,6 @@ function wmf_reports_update_6002()
 {
     wmf_reports_bootstrap_civi();
 
-    require_once 'CRM/Core/OptionValue.php';
-    require_once 'CRM/Core/Component.php';
     $groupParams = array( 'name' => ('report_template') );
     $params = array(
         'label' => 'Contribution Trends',
@@ -186,7 +180,6 @@ function wmf_reports_update_6002()
 
 function wmf_report_drop_mapping_fields($criteria)
 {
-    require_once 'CRM/Core/DAO/MappingField.php';
     $mapping_field = new CRM_Core_DAO_MappingField();
     $mapping_field->copyValues($criteria);
     $mapping_field->find();
@@ -202,7 +195,6 @@ function wmf_report_drop_mapping_fields($criteria)
  */
 function wmf_report_compact_mapping_fields($mapping_id)
 {
-    require_once 'CRM/Core/DAO/MappingField.php';
     $field = new CRM_Core_DAO_MappingField();
     $field->mapping_id = $mapping_id;
     $field->orderBy('column_number');
@@ -252,8 +244,6 @@ function wmf_reports_update_6003()
 {
     wmf_reports_bootstrap_civi();
 
-    require_once 'CRM/Core/OptionValue.php';
-    require_once 'CRM/Core/Component.php';
     $groupParams = array( 'name' => ('report_template') );
     $params = array(
         'label' => 'Gateway Reconciliation',

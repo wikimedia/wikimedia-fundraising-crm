@@ -88,7 +88,6 @@ function wmf_civicrm_settle( $contribution, $settled_timestamp = null )
             'entityID' => $contribution['id'],
             $field => 1
         );
-        require_once 'CRM/Core/BAO/CustomValueTable.php';
         $result = CRM_Core_BAO_CustomValueTable::getValues( $params );
         $settlement_db_date = $result[$field];
         $settled_timestamp = strtotime( $settlement_db_date );
@@ -137,7 +136,6 @@ function wmf_civicrm_contribution_get_custom_values( $contribution_id, $names )
         $params[ $field ] = 1;
         $field_map[ $field ] = $name;
     }
-    require_once 'CRM/Core/BAO/CustomValueTable.php';
     $result = CRM_Core_BAO_CustomValueTable::getValues( $params );
     foreach ( $result as $field => $value ) {
         if ( array_key_exists( $field, $field_map ) ) {
@@ -150,8 +148,6 @@ function wmf_civicrm_contribution_get_custom_values( $contribution_id, $names )
 // FIXME: contribution_set_custom_values
 function wmf_civicrm_set_custom_field_values($entity_id, $map)
 {
-    require_once 'CRM/Core/BAO/CustomValueTable.php';
-
     $params = array(
         'entityID' => $entity_id,
     );
@@ -171,8 +167,6 @@ function wmf_civicrm_set_custom_field_values($entity_id, $map)
 
 function wmf_civicrm_get_custom_field_map( $field_names, $group_name = null )
 {
-    require_once 'CRM/Core/BAO/CustomField.php';
-
     static $custom_fields = array();
     foreach ($field_names as $name)
     {
@@ -351,7 +345,6 @@ function wmf_civicrm_get_civi_id($type, $name)
         case 'contribution_type_id':
             //fixme: This is probably the upside-down way to do it. Really ought to go through the API.
             //
-            require_once( drupal_get_path( 'module', 'civicrm' ) . '/../CRM/Contribute/BAO/ContributionType.php' );
             $result = CRM_Contribute_BAO_ContributionType::retrieve($params, $dummy);
             if (!is_null($result)){
                 $civi_ids[$type][$name] = $result->id;
@@ -814,7 +807,6 @@ function wmf_civicrm_message_address_update( $msg, $contact_id ) {
     //$result = civicrm_api( "Address", "Create", $address_params );
     //if ( array_key_exists( 'is_error', $result ) && $result['is_error'] != 0 ) {
 
-    require_once 'CRM/Core/BAO/Address.php';
     $result = CRM_Core_BAO_Address::add( $address_params, false );
     if ( !$result ) {
         throw new WmfException( 'IMPORT_CONTACT', "Couldn't store address for the contact.", $result );
@@ -822,7 +814,6 @@ function wmf_civicrm_message_address_update( $msg, $contact_id ) {
 }
 
 function wmf_civicrm_get_default_location_type_id() {
-    require_once 'CRM/Core/BAO/LocationType.php';
     $default_location_type = CRM_Core_BAO_LocationType::getDefault();
     return $default_location_type->id;
 }
@@ -1030,7 +1021,6 @@ function wmf_civicrm_get_child_contributions_from_gateway_id( $gateway, $gateway
 
 function wmf_civicrm_boost_performance() {
     civicrm_initialize();
-    require_once 'CRM/Core/Config.php';
     $config = CRM_Core_Config::singleton();
     $config->doNotResetCache = 1;
 }
@@ -1207,7 +1197,6 @@ function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_statu
     civicrm_initialize();
 
     if ( $normalized_status !== null ) {
-        require_once 'CRM/Contribute/BAO/Contribution.php';
         $contribution = new CRM_Contribute_BAO_Contribution();
         $contribution->id = $contribution_id;
         if ( !$contribution->find( true ) ) {
@@ -1269,8 +1258,6 @@ function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_statu
 function wmf_civicrm_merge_contacts( $main_contact_id, $other_contact_id ) {
     $api = civicrm_api_classapi();
 
-    require_once "CRM/Dedupe/Merger.php";
-
     $cidRefs = CRM_Dedupe_Merger::cidRefs();
     $eidRefs = CRM_Dedupe_Merger::eidRefs();
     $moveTables = array_merge( array_keys( $cidRefs ), array_keys( $eidRefs ) );
@@ -1289,7 +1276,6 @@ function wmf_civicrm_merge_contacts( $main_contact_id, $other_contact_id ) {
 function wmf_civicrm_civicrm_merge( $type, &$refs ) {
     switch ( $type ) {
     case 'cidRefs':
-        require_once 'CRM/Contact/BAO/ContactType.php';
         $contact_types = array( "Contact" );
         $contact_types = array_merge( CRM_Contact_BAO_ContactType::basicTypes(), $contact_types );
         foreach ( $contact_types as &$type ) {

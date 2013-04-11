@@ -1,11 +1,7 @@
 <?php
 
-require_once 'CRM/Report/Form.php';
-
 class CRM_Report_Form_Contribute_Trends extends CRM_Report_Form {
     function __construct( ) {
-        require_once 'CRM/Core/PseudoConstant.php';
-
         $this->_columns = array(
             'public_reporting_hours' => array(
                 'bao' => 'CRM_BAO_PublicReportingHours',
