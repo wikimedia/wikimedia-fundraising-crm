@@ -13,7 +13,7 @@ define( 'GC_AUDIT_MAKE_STREET', '123 Fake Street' );
 define( 'GC_AUDIT_MAKE_CITY', 'Springfield' );
 
 if ( function_exists( 'drupal_get_path' ) ) {
-	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_stomp.inc' );
+	require_once( drupal_get_path( 'module', 'wmf_civicrm' ) . '/wmf_civicrm.module' );
 	require_once( drupal_get_path( 'module', 'wmf_common' ) . '/wmf_dates.php' );
 }
 
@@ -288,6 +288,8 @@ function globalcollect_audit_track_fuckup(){
 
 
 function globalcollect_audit_parse_all_wr1(){
+	civicrm_initialize();
+
 	$actual_start_time = microtime(true);
 	$test_mode = variable_get( 'globalcollect_audit_test_mode', CONTRIBUTION_AUDIT_TEST_MODE );
 	
