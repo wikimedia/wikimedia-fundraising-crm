@@ -1,7 +1,5 @@
 <?php
 
-require_once 'CRM/Contribute/Selector/Search.php';
-
 class CRM_Contact_Form_ContactAndContributionsSelector extends CRM_Contribute_Selector_Search
 {
     static $contact_properties = array(
@@ -62,9 +60,6 @@ class CRM_Contact_Form_ContactAndContributionsSelector extends CRM_Contribute_Se
                          $context = 'search',
                          $compContext = null ) 
     {
-        require_once 'CRM/Contact/BAO/Query.php';
-        require_once 'CRM/Contribute/BAO/Query.php';
-        
         // submitted form values
         $this->_queryParams =& $queryParams;
 
@@ -114,9 +109,6 @@ class CRM_Contact_Form_ContactAndContributionsSelector extends CRM_Contribute_Se
                                               $this->_contributionClause );
         // process the result of the query
         $rows = array( );
-        require_once 'CRM/Event/BAO/Participant.php';
-        require_once 'CRM/Contact/BAO/Contact/Utils.php';
-        require_once 'CRM/Utils/Address.php';
 
         //CRM-4418 check for view/edit/delete
         $permissions = array( CRM_Core_Permission::VIEW );
@@ -148,7 +140,6 @@ class CRM_Contact_Form_ContactAndContributionsSelector extends CRM_Contribute_Se
                                                               false, false, false, null, 'name', false );
         
         //get all campaigns.
-        require_once 'CRM/Campaign/BAO/Campaign.php';
         $allCampaigns = CRM_Campaign_BAO_Campaign::getCampaigns( null, null, false, false, false, true );
 
 
@@ -254,8 +245,6 @@ class CRM_Contact_Form_ContactAndContributionsSelector extends CRM_Contribute_Se
     
     public function &getColumnHeaders( $action = null, $output = null ) 
     {
-        require_once 'CRM/Utils/Sort.php';
-
         self::$_columnHeaders = array(
             array(
                 'desc' => ts('Contact Type')

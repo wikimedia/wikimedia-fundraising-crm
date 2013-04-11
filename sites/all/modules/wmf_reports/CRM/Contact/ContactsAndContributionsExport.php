@@ -4,8 +4,6 @@ class CRM_Contact_ContactsAndContributionsExport
 {
     static function alterExport(&$table, &$headerRows, &$sqlColumns, &$exportMode)
     {
-        require_once 'CRM/Core/DAO.php';
-
         // Allows rolling up to c. 2,000 contributions per donor.  Clearly
         // unsustainable, 'cos the spreadsheet has two columns for each contribution.
         CRM_Core_DAO::executeQuery("SET SESSION group_concat_max_len = 60000");
