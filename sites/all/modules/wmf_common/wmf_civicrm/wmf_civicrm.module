@@ -1338,17 +1338,35 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
  */
 function wmf_civicrm_civicrm_contactListQuery( &$query, $name, $context, $id ) {
 	$query = <<<EOS
-SELECT
-	civicrm_contact.id,
-	CONCAT_WS( ' :: ', sort_name, email ) AS data,
-	sort_name,
-	email
-FROM civicrm_contact
-LEFT JOIN civicrm_email
-	ON civicrm_email.contact_id = civicrm_contact.id
-WHERE
-	( sort_name LIKE '{$name}%' OR email LIKE '{$name}%' )
-	AND civicrm_contact.is_deleted = 0
-	AND ( civicrm_email.is_primary = 1 OR civicrm_email.id IS NULL )
+SELECT DISTINCT(id), data, sort_name, email
+FROM
+(
+    (
+        SELECT
+            civicrm_contact.id,
+            CONCAT_WS( ' :: ', sort_name, email ) AS data,
+            sort_name,
+            email
+        FROM civicrm_contact
+        LEFT JOIN civicrm_email
+			ON ( civicrm_email.contact_id = civicrm_contact.id AND civicrm_email.is_primary = 1 )
+        WHERE
+            civicrm_contact.sort_name LIKE '{$name}%'
+            AND civicrm_contact.is_deleted = 0
+    ) UNION (
+        SELECT
+            civicrm_contact.id,
+            CONCAT_WS( ' :: ', sort_name, email ) AS data,
+            sort_name,
+            email
+        FROM civicrm_email
+        JOIN civicrm_contact
+            ON civicrm_email.contact_id = civicrm_contact.id
+        WHERE
+            civicrm_email.email LIKE '{$name}%'
+            AND civicrm_contact.is_deleted = 0
+            AND civicrm_email.is_primary = 1
+    )
+) AS t
 EOS;
 }
