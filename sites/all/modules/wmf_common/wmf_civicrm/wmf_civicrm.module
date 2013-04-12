@@ -1368,5 +1368,6 @@ FROM
             AND civicrm_email.is_primary = 1
     )
 ) AS t
+LIMIT 0, 10
 EOS;
 }
