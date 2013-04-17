@@ -89,12 +89,7 @@ EOS;
     ':failed_status' => $contribution_status_id,
   ) );
 
-  $out = array();
-  foreach ( $result as $row ) {
-      $out[] = $row;
-  }
-
-  return $out;
+  return $result->fetchAll();
 }
 
 /**

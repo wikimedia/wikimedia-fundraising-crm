@@ -61,13 +61,7 @@ function log_audit_get_trxn_info($trxn_query_name, $params) {
     ':end' => $params[ 'end_time' ],
   ) );
   
-  // Parse the results
-  $trxns = array(); 
-  foreach ( $result as $trxn ) {
-    array_push( $trxns, $trxn->trxn_id );
-  }
-
-  return $trxns;
+  return $result->fetchCol();
 }
 
 /**

@@ -212,13 +212,7 @@ EOS;
         ':status_id' => $contribution_status_id,
     ) );
     
-    $out = array();
-    while ($recur = db_fetch_object( $res ))
-    {
-        $out[] = $recur;
-    }
-
-    return $out;
+    return $res->fetchAll();
 }
 
 /**
