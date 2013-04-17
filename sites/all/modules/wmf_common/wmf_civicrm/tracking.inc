@@ -14,13 +14,17 @@ function wmf_civicrm_insert_contribution_tracking( $utm_source, $utm_medium, $ts
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'donations' );
 
-    if ($contrib_id === null){
-        $query = "INSERT INTO {contribution_tracking} ( utm_source, utm_medium, optout, anonymous, ts ) VALUES ( '%s', '%s', '%d', '%d', '%d' )";
-    } else {
-        $query = "INSERT INTO {contribution_tracking} ( utm_source, utm_medium, optout, anonymous, ts, contribution_id ) VALUES ( '%s', '%s', '%d', '%d', '%d', '%d' )";
+    $values = array(
+        'utm_source' => $utm_source,
+        'utm_medium' => $utm_medium,
+        'optout' => $optout,
+        'anonymous' => $anonymous,
+        'ts' => $ts,
+    );
+    if ($contrib_id !== null){
+        $values['contribution_id'] = $contrib_id;
     }
-    db_query( $query, $utm_source, $utm_medium, $optout, $anonymous, $ts, $contrib_id );
-    return db_last_insert_id( 'contribution_tracking', 'id' );
+    return db_insert( 'contribution_tracking' )->fields( $values )->execute();
 }
 
 /**
@@ -34,7 +38,9 @@ function wmf_civicrm_message_update_contribution_tracking( $msg, $contribution )
     $dbs->push( 'donations' );
 
     if (array_key_exists( 'contribution_tracking_id', $msg )) {
-        $result = db_query('UPDATE {contribution_tracking} SET contribution_id=%d WHERE id=%d', $contribution['id'], $msg['contribution_tracking_id']);
+        $result = db_update( 'contribution_tracking' )->fields( array(
+            'contribution_id' => $contribution['id'],
+        ) )->condition( 'id', $msg['contribution_tracking_id'] )->execute();
         if ( !$result ) {
             watchdog( 'wmf_civicrm', "There was a problem updating contribution_tracking for message: %msg", array( '%msg' => print_r( $msg, true )), WATCHDOG_ERROR );
             return FALSE;

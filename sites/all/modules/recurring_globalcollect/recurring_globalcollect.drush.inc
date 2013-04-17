@@ -115,7 +115,7 @@ function drush_recurring_globalcollect() {
  */
 function drush_recurring_globalcollect_validate() {
 
-  $link_to_settings = url('admin/settings/recurring_globalcollect', array('absolute'=>true));
+  $link_to_settings = url('admin/config/recurring_globalcollect', array('absolute'=>true));
 
   $batch = drush_get_option('batch');
   $date = drush_get_option('date');
@@ -144,7 +144,7 @@ function drush_recurring_globalcollect_validate() {
     if ($batch < 1) {
       
       $message = 'Batching is disabled: $batch = "' . $batch . '"';
-      $link = l('Edit recurring GlobalCollect settings', 'admin/settings/recurring_globalcollect');
+      $link = l('Edit recurring GlobalCollect settings', 'admin/config/recurring_globalcollect');
       watchdog('recurring_globalcollect', $message, array(), WATCHDOG_WARNING, $link);
       return false;         
     }

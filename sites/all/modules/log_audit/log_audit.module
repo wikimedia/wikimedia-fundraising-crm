@@ -7,7 +7,7 @@ define( 'LOG_AUDIT_LOG_PATH', '/tmp/ipn_logs/*' );
 function log_audit_menu() {
   $items = array();
   
-  $items['admin/settings/contribution_audit/log_audit'] = array(
+  $items['admin/config/contribution_audit/log_audit'] = array(
     'title' => 'Log Audit Configuration',
     'description' => t('Configure log audit settings.'),
     'access arguments' => array('administer contribution_audit'),
@@ -20,7 +20,7 @@ function log_audit_menu() {
 }
 
 /**
- * Callback for menu path "admin/settings/contribution_audit/log_audit".
+ * Callback for menu path "admin/config/contribution_audit/log_audit".
  */
 function log_audit_settings() {
   $form[ 'log_audit_file' ] = array(

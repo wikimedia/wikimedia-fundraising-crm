@@ -1,6 +1,6 @@
 name = End-of-year tax receipts
 description = Summarizes donations made during the previous year
-core = 6.x
+core = 7.x
 package = Wikimedia
 dependencies[] = wmf_common
 dependencies[] = civicrm

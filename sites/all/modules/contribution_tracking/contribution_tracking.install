@@ -92,12 +92,3 @@ function contribution_tracking_schema() {
   );
   return $schema;
 }
-
-function contribution_tracking_install() {
-  drupal_install_schema( 'contribution_tracking' );
-}
-
-function contribution_tracking_uninstall() {
-  drupal_uninstall_schema( 'contribution_tracking' ); 
-}
-

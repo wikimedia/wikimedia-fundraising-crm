@@ -34,7 +34,7 @@ class EoySummary
         $this->from_address = variable_get( 'thank_you_from_address', null );
         $this->from_name = variable_get( 'thank_you_from_name', null );
         if ( !$this->from_address || !$this->from_name ) {
-            throw new Exception( "Must configure a valid return address in the Thank-you module" );
+            throw new \Exception( "Must configure a valid return address in the Thank-you module" );
         }
 
         // FIXME: this is not required on the production configuration.
@@ -131,7 +131,7 @@ EOS;
         $succeeded = 0;
         $failed = 0;
 
-        while ( $row = db_fetch_array( $result ) )
+        foreach ( $result as $row )
         {
             $email = $this->render_letter( $row );
 
@@ -150,7 +150,7 @@ EOS;
             }
 
             $sql = "UPDATE {wmf_eoy_receipt_donor} SET status='%s' WHERE email='%s'";
-            db_query( $sql, $status, $row[ 'email' ] );
+            db_query( $sql, $status, $row->email );
         }
 
         watchdog( 'wmf_eoy_receipt',
@@ -164,7 +164,7 @@ EOS;
     }
 
     function render_letter( $row ) {
-        $language = Translation::normalize_language_code( $row[ 'preferred_language' ] );
+        $language = Translation::normalize_language_code( $row->preferred_language );
         $subject = Translation::get_translated_message( 'donate_interface-email-subject', $language );
         $contributions = array_map(
             function( $contribution ) {
@@ -175,7 +175,7 @@ EOS;
                     'currency' => $terms[2],
                 );
             },
-            explode( ',', $row[ 'contributions_rollup' ] )
+            explode( ',', $row->contributions_rollup )
         );
         $total = array_reduce( $contributions,
             function( $sum, $contribution ) {
@@ -193,8 +193,8 @@ EOS;
         $email = array(
             'from_name' => $this->from_name,
             'from_address' => $this->from_address,
-            'to_name' => $row[ 'name' ],
-            'to_address' => $row[ 'email' ],
+            'to_name' => $row->name,
+            'to_address' => $row->email,
             'subject' => $subject,
             'plaintext' => $template->render( 'txt' ),
             'html' => $template->render( 'html' ),

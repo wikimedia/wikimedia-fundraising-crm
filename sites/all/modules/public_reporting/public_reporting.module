@@ -7,7 +7,7 @@ function public_reporting_perm() {
 function public_reporting_menu() {
   $items = array();
 
-  $items['admin/settings/public_reporting'] = array(
+  $items['admin/config/public_reporting'] = array(
     'title' => t('Public Reporting'),
     'description' => t('Public reporting table'), 
     'access arguments' => array('administer wmf public reporting'),

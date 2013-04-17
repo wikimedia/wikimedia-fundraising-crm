@@ -1,5 +1,6 @@
 name = Thank You
 description = Automatically emails thank you notes to contributors.
-core = 6.x
+core = 7.x
 dependencies[] = wmf_common
 package = Wikimedia
+configure = admin/config/thank_you

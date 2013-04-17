@@ -1,3 +1,3 @@
 name = Contribution tracking
 description = Installs contribution_tracking table in Drupal db
-core = 6.x
+core = 7.x

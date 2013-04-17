@@ -23,7 +23,8 @@ function wmf_reports_update_6000()
     {
         throw new Exception($api->errorMsg());
     }
-    $mapping_type = array_pop($api->values());
+    $values = $api->values();
+    $mapping_type = array_pop($values);
 
     $mapping = array(
         'name' => 'Contacts and Contributions',
@@ -99,6 +100,12 @@ function wmf_reports_update_6000()
     $mapping_description = array(
         'mapper' => array(
             1 => $mapping_fields,
+        ),
+        'operator' => array(
+            1 => null,
+        ),
+        'value' => array(
+            1 => null,
         ),
     );
     CRM_Core_BAO_Mapping::saveMappingFields($mapping_description, $mapping->id);

@@ -8,7 +8,7 @@
  * @return array Menu entries
  */
 function wmf_unsubscribe_qc_menu_alter(&$items) {
-  $items[ 'admin/settings/queue2civicrm/unsubscribe_qc' ] = array(
+  $items[ 'admin/config/queue2civicrm/unsubscribe_qc' ] = array(
     'title'            => 'Unsubscribe',
     'description'      => t('Configure unsubscribe queue settings'),
     'access arguments' => array( 'administer queue2civicrm' ),

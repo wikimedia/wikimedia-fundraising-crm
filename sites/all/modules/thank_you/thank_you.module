@@ -10,7 +10,7 @@ function thank_you_perm() {
 function thank_you_menu() {
   $items = array();
   
-  $items['admin/settings/thank_you'] = array(
+  $items['admin/config/thank_you'] = array(
     'title' => t('Thank you settings'),
     'description' => t('Configure thank you note options.'),
     'access arguments' => array('administer thank you'),
@@ -19,13 +19,13 @@ function thank_you_menu() {
 	'type' => MENU_NORMAL_ITEM,
   );
 
-   $items['admin/settings/thank_you/configure'] = array(
+   $items['admin/config/thank_you/configure'] = array(
      'title' => t('Configure thank you module'),
      'access arguments' => array('administer thank you'),
      'type' => MENU_DEFAULT_LOCAL_TASK,
    );
 
-   $items['admin/settings/thank_you/test_email'] = array(
+   $items['admin/config/thank_you/test_email'] = array(
      'title' => t('Test thank you emails'),
      'description' => t(''),
      'access arguments' => array('administer thank you'),
@@ -548,11 +548,13 @@ function thank_you_batch_process(){
 	$days = variable_get( 'thank_you_days', false );
 	$batch = variable_get( 'thank_you_batch', false );
 
-	if( $days === false ){
+	if ( !$days ) {
 		watchdog( "thank_you", "Number of days to send thank you mails not configured", array(), WATCHDOG_ERROR );
+        return;
 	}
-	if( $batch === false ){
+	if ( !is_numeric( $batch ) ) {
 		watchdog( "thank_you", "Thank you mail batch size not configured", array(), WATCHDOG_ERROR );
+        return;
 	}
 
 	watchdog( "thank_you", "Attempting to send $batch thank you mails for contributions from the last $days days.", array(), WATCHDOG_INFO );
@@ -560,13 +562,13 @@ function thank_you_batch_process(){
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
 
-	$ty_query = "SELECT id, trxn_id FROM {civicrm_contribution} WHERE receive_date > DATE_SUB( NOW(), INTERVAL %d DAY ) AND thankyou_date IS NULL ORDER BY id ASC LIMIT %d";
+	$ty_query = "SELECT id, trxn_id FROM {civicrm_contribution} WHERE receive_date > DATE_SUB( NOW(), INTERVAL :interval DAY ) AND thankyou_date IS NULL ORDER BY id ASC LIMIT {$batch}";
 
-	$result = db_query( $ty_query, $days, $batch );
+	$result = db_query( $ty_query, array( ':interval' => $days ) );
 
 	$count = 0;
 
-	while( $contribution = db_fetch_object( $result ) ){
+	foreach( $result as $contribution ) {
 		watchdog( "thank_you", "Attempting to send thank you mail for contribution " . $contribution->id . ", " . $contribution->trxn_id, array(), WATCHDOG_INFO );
 
 		thank_you_send( $contribution->id );

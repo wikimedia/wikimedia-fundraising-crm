@@ -38,7 +38,7 @@ EOS;
     $result = db_query( $sql );
 
     $count = 0;
-    while ( $row = db_fetch_array( $result ) ) {
+    while ( $row = $result->fetchAssoc() ) {
         drush_print( "{$row['id']},{$row['trxn_id']}" );
         $count++;
     }

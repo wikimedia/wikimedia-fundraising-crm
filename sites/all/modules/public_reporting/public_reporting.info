@@ -1,6 +1,6 @@
 name = Public Reporting
 description = Make all the Public Reporting schema changes on install
-core = 6.x
+core = 7.x
 dependencies[] = queue2civicrm
 dependencies[] = civicrm
 dependencies[] = wmf_civicrm

@@ -1,13 +1,5 @@
 <?php
 
-function exchange_rates_install() {
-  drupal_install_schema('exchange_rates');
-}
-
-function exchange_rates_uninstall() {
-  drupal_uninstall_schema('exchange_rates');
-}
-
 function exchange_rates_schema() {
   $schema['exchange_rates'] = array(
     'description' => t('Exchange rates, both current and historical.'),
@@ -32,7 +24,6 @@ function exchange_rates_schema() {
         'size' => 'normal',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'default' => NULL
       ),
       'local_update' => array(
         'description' => t('Timestamp of the last update on the local side'),
@@ -40,13 +31,12 @@ function exchange_rates_schema() {
         'size' => 'normal',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'default' => NULL
       ),
     ),
     'primary key' => array('currency', 'bank_update'),
     'indexes' => array(
 			'currency' => array('currency')),
-  );
+    );
 
 	return $schema;
 }

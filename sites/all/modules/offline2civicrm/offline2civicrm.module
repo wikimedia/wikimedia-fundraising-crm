@@ -8,7 +8,7 @@ require_once 'offline2civicrm.common.inc';
 function offline2civicrm_menu() {
   $items = array();
   
-  $items['admin/settings/offline2civicrm'] = array(
+  $items['admin/config/offline2civicrm'] = array(
     'title' => 'Offline to CiviCRM',
     'description' => t('Configure offline import interface.'),
     'access arguments' => array('administer offline2civicrm'),
@@ -16,7 +16,7 @@ function offline2civicrm_menu() {
     'page arguments' => array('offline2civicrm_settings'),
   );
 
-  $items['admin/settings/offline2civicrm/configure'] = array(
+  $items['admin/config/offline2civicrm/configure'] = array(
     'title' => 'Configure',
     'access arguments' => array('administer offline2civicrm'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -32,7 +32,7 @@ function offline2civicrm_perm() {
 }
 
 /**
- * Callback for menu path "admin/settings/offline2civicrm".
+ * Callback for menu path "admin/config/offline2civicrm".
  */
 function offline2civicrm_settings() {
   $form = array();

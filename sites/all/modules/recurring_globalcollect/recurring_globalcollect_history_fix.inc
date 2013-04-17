@@ -76,7 +76,7 @@ function recurring_globalcollect_get_all_recorded_failures(){
 
 	$ret = db_query( $sql );
 	$result = array();
-	while ( $tmp = db_fetch_array( $ret ) )  {
+	while ( $tmp = $ret->fetchAssoc() )  {
 		if ( $tmp ){
 			$result[] = $tmp;
 		}
@@ -90,7 +90,7 @@ function recurring_globalcollect_check_xml_in_watchdog( $gc_id ){
 	$dbs->push( 'default' );
 	$ret = db_query( $sql, $gc_id );
 	$result = array();
-	while ( $tmp = db_fetch_array( $ret ) )  { 
+	while ( $tmp = $ret->fetchAssoc() )  { 
 		if ( $tmp ){
 			$result[] = $tmp;
 		}

@@ -4,12 +4,12 @@
 function exchange_rates_menu() {
   $items = array();
   
-  $items['admin/settings/exchange_rates'] = array(
+  $items['admin/config/exchange_rates'] = array(
     'title' => t('Exchange rates'),
     'page callback' => 'exchange_rates_listing',
     'access arguments' => array('administer site configuration'),
   );
-  $items['admin/settings/exchange_rates/update'] = array(
+  $items['admin/config/exchange_rates/update'] = array(
     'title' => t('Update exchange rates'),
     'page callback' => 'exchange_rates_manual_update',
     'access arguments' => array('administer site configuration'),
@@ -23,7 +23,7 @@ function exchange_rates_get_currencies() {
   if (empty($currencies)) {
     $currencies = array();
     $res = db_query('SELECT currency FROM {exchange_rates} GROUP BY currency ORDER BY currency');
-    while ($row = db_fetch_object($res)) {
+    foreach ( $res as $row ) {
       $currencies[$row->currency] = $row->currency;
     }
   }
@@ -33,7 +33,7 @@ function exchange_rates_get_currencies() {
 function exchange_rates_manual_update() {
   exchange_rates_cron();
   drupal_set_message(t('Exchange rates updated'));
-  drupal_goto('admin/settings/exchange_rates');
+  drupal_goto('admin/config/exchange_rates');
 }
 
 function exchange_rates_listing() {
@@ -45,7 +45,7 @@ function exchange_rates_listing() {
   $rates = exchange_rates_get_conversions();
   
   $content[] = t('Last updated: %updated', array('%updated' => format_date(variable_get('exchange_rates_bank_update', 0))));
-  $content[] = theme('table', $cols, $rates);
+  $content[] = theme( 'table', array( 'header' => $cols, 'rows' => $rates ) );
   
   return implode("\n", $content);
 }
@@ -72,7 +72,7 @@ EOS;
 
   $rates = db_query($sql);
   $rows = array();
-  while ( $conversion = db_fetch_object( $rates ) ) {
+  foreach ( $rates as $conversion ) {
     $rows[] = array(
       $conversion->currency,
       $conversion->latest_value,
@@ -90,13 +90,13 @@ function exchange_rate_convert($from_currency, $amount = 1, $timestamp = NULL) {
 
   $rate = exchange_rate_cache_get($from_currency, $timestamp);
   if (!$rate) {
-    $rate = db_result(db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = "%s" AND bank_update <= %d ORDER BY bank_update DESC', $from_currency, $timestamp, 0, 1));
+    $rate = db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = :currency AND bank_update <= :date ORDER BY bank_update DESC', 0, 1, array( ':currency' => $from_currency, ':date' => $timestamp ))->fetchField();
     exchange_rate_cache_set($from_currency, $timestamp, $rate);
   }
 
   // If a rate can't be found, use the oldest one on file.
   if (!$rate) {
-    $rate = db_result(db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = "%s" ORDER BY bank_update', $from_currency, 0, 1));
+    $rate = db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = :currency ORDER BY bank_update', 0, 1, array( ':currency' => $from_currency ))->fetchField();
   }
   
   if (!$rate) {
@@ -406,5 +406,11 @@ function exchange_rates_cron() {
 }
 
 function exchange_rates_update_rate($currency, $value_in_usd, $bank_update) {
-  @db_query('INSERT INTO {exchange_rates} (currency, value_in_usd, bank_update, local_update) VALUES ("%s", %f, %d, %d)', $currency, $value_in_usd, $bank_update, time());
+  db_merge( 'exchange_rates' )->key( array(
+      'currency' => $currency,
+      'bank_update' => $bank_update,
+  ) )->fields( array(
+      'value_in_usd' => $value_in_usd,
+      'local_update' => time(),
+  ) )->execute();
 }

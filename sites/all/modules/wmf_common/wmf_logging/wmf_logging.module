@@ -19,7 +19,7 @@ define( 'DEFAULT_WMF_LOGGING_IDENTITY', 'drupal' );
 function wmf_logging_menu() {
   $items = array();
 
-  $items[ 'admin/settings/logging/wmf_logging' ] = array(
+  $items[ 'admin/config/logging/wmf_logging' ] = array(
     'title'            => 'WMF Logging',
     'description'      => 'Settings for the WMF logging module.',
     'page callback'    => 'drupal_get_form',

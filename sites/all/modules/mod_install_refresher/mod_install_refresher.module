@@ -7,7 +7,7 @@ function mod_install_refresher_perm() {
 function mod_install_refresher_menu() {
   $items = array();
   
-  $items['admin/settings/mod_install_refresher'] = array(
+  $items['admin/config/mod_install_refresher'] = array(
     'title' => t('Module Install Refresher'),
     'description' => t('Uninstalls and re-installs the selected module'),
     'access arguments' => array('administer wmf test settings'),

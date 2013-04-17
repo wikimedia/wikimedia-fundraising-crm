@@ -860,16 +860,15 @@ function wmf_civicrm_get_country_id( $raw ) {
 function wmf_civicrm_get_state( $country, $state )
 {
     if ( strlen( $country ) == 2 ) {
-        $query = "SELECT s.name AS state_name FROM civicrm_country c, civicrm_state_province s WHERE s.country_id=c.id AND c.iso_code='" . addslashes( $country ) . "' AND s.abbreviation='" . addslashes( $state ) . "'";
+        $query = "SELECT s.name AS state_name FROM civicrm_country c, civicrm_state_province s WHERE s.country_id=c.id AND c.iso_code = :country AND s.abbreviation = :state";
     } else {
-        $query = "SELECT s.name AS state_name FROM civicrm_country c, civicrm_state_province s WHERE s.country_id=c.id AND c.name='" . addslashes( $country ) . "' AND s.abbreviation='" . addslashes( $state ) . "'";
+        $query = "SELECT s.name AS state_name FROM civicrm_country c, civicrm_state_province s WHERE s.country_id=c.id AND c.name = :country AND s.abbreviation = :state";
     }
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'civicrm' );
-    $result = db_query( $query );
-    if ( $result->num_rows === 1 ){
-      $row = db_fetch_object( $result );
-      $state = $row->state_name;
+    $result = db_query( $query, array( ':country' => $country, ':state' => $state ) );
+    if ( $result->rowCount() === 1 ){
+        $state = $result->fetch()->state_name;
     }
 
     return $state;
@@ -881,15 +880,14 @@ function wmf_civicrm_get_state_id( $country_id, $state )
 SELECT id
 FROM civicrm_state_province s
 WHERE
-    s.country_id = %d
-    AND ( s.abbreviation = '%s' OR s.name = '%s' )
+    s.country_id = :country_id
+    AND ( s.abbreviation = :state OR s.name = :state )
 EOS;
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'civicrm' );
-    $result = db_query( $query, array( $country_id, $state, $state ) );
-    if ( $result->num_rows === 1 ){
-        $row = db_fetch_object( $result );
-        return $row->id;
+    $result = db_query( $query, array( ':country_id' => $country_id, ':state' => $state ) );
+    if ( $result->rowCount() === 1 ){
+        return $result->fetch()->id;
     }
     watchdog( 'wmf_civicrm',
         "Cannot find state: [%state] (country %country)",
@@ -999,14 +997,15 @@ function wmf_civicrm_get_contributions_from_gateway_id( $gateway, $gateway_txn_i
 	$gateway = strtolower( $gateway );
 	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc 
 		ON cc.id = cx.entity_id 
-		WHERE gateway LIKE '%s' AND gateway_txn_id LIKE '%s';";
+		WHERE gateway LIKE :gateway AND gateway_txn_id LIKE :gateway_txn_id";
+	//FIXME: review whether we still need LIKE
 
 	$row = false;
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
-	$result = db_query( $query, $gateway, $gateway_txn_id );
+	$result = db_query( $query, array( ':gateway' => $gateway, ':gateway_txn_id' => $gateway_txn_id ) );
 	$matching = array();
-	while ( $row = db_fetch_array( $result ) ) {
+	while ( $row = $result->fetchAssoc() ) {
 		$matching[] = $row;
 	}
 
@@ -1021,14 +1020,14 @@ function wmf_civicrm_get_child_contributions_from_gateway_id( $gateway, $gateway
 	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp 
 		LEFT JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id 
 		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id 
-		WHERE cxp.gateway LIKE '%s' AND cxp.gateway_txn_id LIKE '%s';";
+		WHERE cxp.gateway LIKE :gateway AND cxp.gateway_txn_id LIKE :gateway_txn_id";
 
 	$row = false;
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
-	$result = db_query( $query, $gateway, $gateway_txn_id );
+	$result = db_query( $query, array( ':gateway' => $gateway, ':gateway_txn_id' => $gateway_txn_id ) );
 	$matching = array();
-	while ( $row = db_fetch_array( $result ) ) {
+	while ( $row = $result->fetchAssoc() ) {
 		$matching[] = $row;
 	}
 
@@ -1048,9 +1047,9 @@ function wmf_civicrm_boost_performance() {
 function wmf_civicrm_set_thankyou_date_to_epoch( $contribution_id ){
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
-	$query = "UPDATE civicrm_contribution SET thankyou_date = \"1970-01-01 00:00:00\" WHERE id=%d";
+	$query = "UPDATE civicrm_contribution SET thankyou_date = '1970-01-01 00:00:00' WHERE id = :id";
 
-	$result = db_query( $query, $contribution_id );
+	$result = db_query( $query, array( ':id' => $contribution_id ) );
 	if ( !$result ) {
 		watchdog('thank_you', 'Updating TY date to epoch failed ', array(), WATCHDOG_ERROR);
 		return false;
@@ -1103,10 +1102,10 @@ function wmf_civicrm_mark_refund(
     $query = <<<"EOS"
 SELECT COUNT(*) FROM wmf_contribution_extra
 WHERE
-    parent_contribution_id = %d
-    OR (entity_id = %d AND COALESCE(parent_contribution_id, 0))
+    parent_contribution_id = :id
+    OR (entity_id = :id AND COALESCE(parent_contribution_id, 0))
 EOS;
-    if ( db_result(db_query($query, array($contribution_id, $contribution_id))) ) {
+    if ( db_query($query, array( ':id' => $contribution_id ))->rowCount() ) {
         throw new Exception("Contribution is already linked to a refund, or is itself a refund: $contribution_id");
     }
 
@@ -1128,11 +1127,11 @@ EOS;
         $sql = <<<EOS
 UPDATE civicrm_contribution
 SET
-    source = "%s",
-    total_amount = %s
-WHERE id = %d
+    source = :source,
+    total_amount = :total
+WHERE id = :id
 EOS;
-        db_query( $sql, array( "$original_currency $original_amount", (string) $contribution->total_amount, $contribution_id ) );
+        db_query( $sql, array( ':source' => "$original_currency $original_amount", ':total' => $contribution->total_amount, ':id' => $contribution_id ) );
     } else {
         list($actual_currency, $actual_amount) = explode(" ", $contribution->contribution_source);
         if ( ($original_currency && round($original_currency, 2) != round($actual_currency, 2))
@@ -1190,12 +1189,10 @@ EOS;
     wmf_civicrm_set_custom_field_values($contribution->id, $custom_values);
 
     // FIXME: Contribution api cannot do a simple update
-    $query = <<<"EOS"
-UPDATE civicrm_contribution
-SET contribution_status_id = %d
-WHERE id = %d
-EOS;
-    if ( !db_query( $query, array( civicrm_api_contribution_status( 'Refunded' ), $contribution->id ) ) ) {
+    $affected_rows = db_update( 'civicrm_contribution' )->fields( array(
+        'contribution_status_id' => civicrm_api_contribution_status( 'Refunded' ),
+    ) )->condition( 'id', $contribution->id )->execute();
+    if ( !$affected_rows ) {
         throw new Exception("Cannot mark original contribution as refunded: $contribution_id, " . db_error());
     }
 

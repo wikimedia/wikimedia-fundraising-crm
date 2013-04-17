@@ -8,7 +8,7 @@
  * as many times as needed, and pop() is only necessary if you want to
  * exlicitly return to the last context, without knowing what that was.
  * The argument to push() is a database connection name as specified
- * in settings.php :: $db_url.  If you haven't specified the 'civicrm'
+ * in settings.php :: $databases.  If you haven't specified the 'civicrm'
  * there, it is automatically determined by loading civicrm.settings.php.
  *
  * Remember that most Drupal functions require the 'default' db
@@ -50,28 +50,36 @@ class db_switcher {
   protected $db_stack = array();
 
   /**
-   * Make sure that global $db_url is in the modern array( name -> url )
-   * form we're expecting, modify it if not.  Add the 'civicrm' url if
-   * necessary.
+   * Configure drupal with the civicrm database settings if necessary.
    */
   public function __construct() {
-    global $db_url;
+    global $databases;
 
     /**
      * Dynamically configure the CiviCRM database url
      */
-    if ( !is_array( $db_url ) ) {
-        $db_url = array(
-            'default' => $db_url,
-        );
-    }
-
-    if ( !array_key_exists( 'civicrm', $db_url ) ) {
+    if ( !Database::getConnectionInfo( 'civicrm' ) ) {
         require_once conf_path() . '/civicrm.settings.php';
-        $db_url[ 'civicrm' ] = str_replace( '?new_link=true', '', CIVICRM_DSN );
+        $databases[ 'civicrm' ][ 'default' ] = static::parse_dbi_url( str_replace( '?new_link=true', '', CIVICRM_DSN ) );
+
+        Database::parseConnectionInfo();
     }
   }
 
+  static function parse_dbi_url( $url ) {
+    if (!preg_match( '/^([a-z]+):\/\/([^:]+):([^@]+)@([^\/]+)\/(.+)$/', $url, $matches )) {
+        throw new Exception("Failed to parse dbi url: $url");
+    }
+
+    return array(
+        'driver' => str_replace( 'mysqli', 'mysql', $matches[1] ),
+        'username' => $matches[2],
+        'password' => $matches[3],
+        'host' => $matches[4],
+        'database' => $matches[5],
+    );
+  }
+    
   /**
    * Set the currently active db and push the previous db to a stack.
    * Not necessary to pop(), that will happen by default when this object
@@ -101,7 +109,7 @@ class db_switcher {
 
   /**
    * Set the current db by name.  Does some sanity checking:
-   * - The database connection name exists in $db_url
+   * - The database connection name exists in $databases
    * - Nobody messed with the active connection behind our back
    *
    * @return string
@@ -113,15 +121,14 @@ class db_switcher {
           return $db_name;
       }
 
-      global $db_url;
-      if ( !array_key_exists( $db_name, $db_url ) ) {
-          throw new Exception( $db_name . ' is not defined in global $db_url.' );
+      if ( !Database::getConnectionInfo( $db_name ) ) {
+          throw new Exception( $db_name . ' database is not defined.' );
       }
 
       $previous_db = db_set_active( $db_name );
 
       if ( self::$cur_db && $previous_db !== self::$cur_db ) {
-          throw new Exception( "DB switcher got very confused!" );
+          throw new Exception( "DB switcher got very confused! Surprised to be connected to db $previous_db, expected " . self::$cur_db );
       }
       self::$cur_db = $db_name;
 

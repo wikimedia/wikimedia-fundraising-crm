@@ -8,7 +8,7 @@ require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_com
 function queue2civicrm_menu() {
   $items = array();
   
-  $items['admin/settings/queue2civicrm'] = array(
+  $items['admin/config/queue2civicrm'] = array(
     'title' => 'Queue to CiviCRM',
     'description' => t('Configure message queue interface.'),
     'access arguments' => array('administer queue2civicrm'),
@@ -16,20 +16,20 @@ function queue2civicrm_menu() {
     'page arguments' => array('queue2civicrm_settings'),
   );
 
-  $items['admin/settings/queue2civicrm/configure'] = array(
+  $items['admin/config/queue2civicrm/configure'] = array(
     'title' => 'Configure',
     'access arguments' => array('administer queue2civicrm'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
-  $items['admin/settings/queue2civicrm/test'] = array(
+  $items['admin/config/queue2civicrm/test'] = array(
     'title' => 'Test',
     'access arguments' => array('administer queue2civicrm'),
     'page callback' => 'queue2civicrm_test',
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/settings/queue2civicrm/insert'] = array(
+  $items['admin/config/queue2civicrm/insert'] = array(
     'title' => 'Insert item',
     'access arguments' => array('administer queue2civicrm'),
     'page callback' => 'drupal_get_form',
@@ -72,7 +72,7 @@ function queue2civicrm_perm() {
 }
 
 /**
- * Callback for menu path "admin/settings/queue2civicrm".
+ * Callback for menu path "admin/config/queue2civicrm".
  */
 function queue2civicrm_settings() {
   $form = array();

@@ -35,7 +35,7 @@ function wmf_eoy_receipt_menu()
 {
     $items = array();
 
-    $items['admin/settings/wmf_eoy_receipt'] = array(
+    $items['admin/config/wmf_eoy_receipt'] = array(
       'title' => 'End-of-year Receipt',
       'description' => t('Configure.'),
       'access arguments' => array('access CiviContribute'),

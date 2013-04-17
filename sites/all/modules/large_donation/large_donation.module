@@ -7,7 +7,7 @@ function large_donation_menu() {
 
   $items = array();
 
-  $items['admin/settings/large_donation'] = array(
+  $items['admin/config/large_donation'] = array(
     'title' => 'Large Donation Processor',
     'description' => t('Configure large donation settings.'),
     'access arguments' => array('administer large_donation'),
@@ -15,7 +15,7 @@ function large_donation_menu() {
     'page arguments' => array('large_donation_settings'),
   );
 
-  $items['admin/settings/large_donation/configure'] = array(
+  $items['admin/config/large_donation/configure'] = array(
     'title' => 'Configure',
     'access arguments' => array('administer large_donation'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -32,7 +32,7 @@ function large_donation_perm() {
 }
 
 /**
- * Callback for menu path "admin/settings/large_donation".
+ * Callback for menu path "admin/config/large_donation".
  */
 function large_donation_settings() {
   $form = array();
