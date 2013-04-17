@@ -129,7 +129,10 @@ function drush_import_checks() {
 			if ( $msg['country'] === "US" ) {
 				// left-pad the zipcode
 				if ( preg_match( '/^(\d{1,4})(-\d+)?$/', $msg['postal_code'], $matches ) ) {
-					$msg['postal_code'] = str_pad( $matches[1], 5, "0", STR_PAD_LEFT ) . $matches[2];
+					$msg['postal_code'] = str_pad( $matches[1], 5, "0", STR_PAD_LEFT );
+					if ( !empty( $matches[2] ) ) {
+						$msg['postal_code'] .= $matches[2];
+					}
 				}
 			}
 
