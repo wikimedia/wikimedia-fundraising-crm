@@ -945,7 +945,7 @@ function globalcollect_audit_groom_logs(){
 			//add it to the other array. 
 			$files['rename'][] = $newfile;
 			if (file_exists($gzfile)){ //still? 
-				file_delete($gzfile);
+				unlink($gzfile);
 			}
 			unset($files['gz'][$key]);
 		}
@@ -981,7 +981,7 @@ function globalcollect_audit_groom_logs(){
 			$big_log );
 		if ( in_array($smallened_log, $files['iop']) ){
 			globalcollect_audit_echo("Deleting $big_log");
-			file_delete( $big_log );
+			unlink( $big_log );
 			unset($files['log'][$key]);
 		}
 	}
