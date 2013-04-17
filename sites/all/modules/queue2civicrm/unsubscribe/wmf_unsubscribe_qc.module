@@ -202,22 +202,21 @@ function unsubscribe_get_emails_from_contribution($ctid) {
  * @returns Number of effected rows
  */
 function unsubscribe_opt_out_emails($emails) {
-  $query = 'UPDATE civicrm_contact con, civicrm_email e';
-  $query .= ' SET con.is_opt_out=1';
-  $query .= ' WHERE con.id=e.contact_id AND ';
-
   $escaped = array();
   foreach ($emails as $email) {
     $escaped[] = "'" . addslashes( $email ) . "'";
   }
   $email_condition = 'e.email IN (' . implode(', ', $escaped) . ')';
 
+  $query = <<<EOS
+UPDATE civicrm_contact con, civicrm_email e
+    SET con.is_opt_out = 1
+    WHERE con.id = e.contact_id AND {$email_condition}
+EOS;
+
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
 
-  $affected_rows = db_update( 'civicrm_contact' )
-    ->join( 'civicrm_email', 'e', "civicrm_contact.id = e.contact_id AND {$email_condition}" )
-    ->fields( array( 'is_opt_out' => 1 ) )
-    ->execute();
-  return $affected_rows;
+  $result = db_query( $query );
+  return $result->rowCount();
 }
