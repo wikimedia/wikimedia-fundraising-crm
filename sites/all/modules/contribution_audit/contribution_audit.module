@@ -17,7 +17,7 @@ function contribution_audit_perm() {
 function contribution_audit_menu() {
   $items = array();
   
-  $items['admin/settings/contribution_audit'] = array(
+  $items['admin/config/contribution_audit'] = array(
     'title' => 'Contribution Audit Configuration',
     'description' => t('Configure contribution audit settings.'),
     'access arguments' => array('administer contribution_audit'),
@@ -25,7 +25,7 @@ function contribution_audit_menu() {
     'page arguments' => array( 'contribution_audit_settings' ),
   );
 
-  $items['admin/settings/contribution_audit/configure'] = array(
+  $items['admin/config/contribution_audit/configure'] = array(
     'title' => 'Configure',
     'access arguments' => array('administer contribution_audit'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -35,7 +35,7 @@ function contribution_audit_menu() {
 }
 
 /**
- * Callback for menu path "admin/settings/wmf_owa".
+ * Callback for menu
  */
 function contribution_audit_settings() {
   $form[ 'contribution_audit_fieldset' ] = array(

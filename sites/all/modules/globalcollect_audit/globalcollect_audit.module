@@ -23,7 +23,7 @@ if ( function_exists( 'drupal_get_path' ) ) {
 function globalcollect_audit_menu() {
   $items = array();
   
-  $items['admin/settings/contribution_audit/globalcollect_audit'] = array(
+  $items['admin/config/contribution_audit/globalcollect_audit'] = array(
     'title' => 'Globalcollect Audit Configuration',
     'description' => t('Configure globalcollect audit settings.'),
     'access arguments' => array('administer contribution_audit'),
@@ -36,7 +36,7 @@ function globalcollect_audit_menu() {
 }
 
 /**
- * Callback for menu path "admin/settings/wmf_owa".
+ * Callback for menu
  */
 function globalcollect_audit_settings() {
   $form['globalcollect_audit_wr1_parser_dir']  = array(
@@ -823,7 +823,7 @@ function globalcollect_audit_get_contribution_tracking_data( $contribution_track
 		watchdog( 'globalcollect_audit', 'Found Contribution: @id', array( '@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
 	} 
 	
-	$result = db_fetch_array( $result );
+	$result = $result->fetchAssoc();
 	
 	return $result;
 }

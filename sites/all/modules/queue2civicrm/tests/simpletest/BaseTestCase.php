@@ -13,7 +13,7 @@ class BaseTestCase extends DrupalWebTestCase {
 
         // FIXME: pass module names from subclass setUp
         parent::setUp(
-            'dblog', 'exchange_rates', 'queue2civicrm', 'wmf_common', 'wmf_civicrm', 'contribution_tracking', 'wmf_refund_qc',
+            'dblog', 'exchange_rates', 'queue2civicrm', 'wmf_common', 'wmf_civicrm', 'contribution_tracking', 'wmf_refund_qc', 'recurring', 'recurring_globalcollect',
             // civi schema is not installed here,
             'civicrm'
         );
@@ -31,20 +31,6 @@ class BaseTestCase extends DrupalWebTestCase {
         parent::tearDown();
 
         db_query( "ROLLBACK" );
-    }
-
-    // TODO: d7 does this natively
-    function verboseEmail() {
-        if ( count( $mails ) ) {
-            $this->assert( false,
-                "Looks like failmail was sent.  See the 'verbose' directory for message contents." );
-
-            for ($i = count($mails) - 1; $i >= 0; $i--) {
-                $mail = $mails[$i];
-                $this->verbose(t('Email:') . '<pre>' . print_r($mail, TRUE) . '</pre>');
-            }
-        }
-
     }
 
     /**

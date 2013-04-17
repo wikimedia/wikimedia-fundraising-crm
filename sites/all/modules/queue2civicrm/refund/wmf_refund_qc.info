@@ -1,6 +1,7 @@
 name = WMF Refund Queue Consumer
 description = Polls a queue (dedicated to refunds) for new messages. It then marks contributions as refunded.
-core = 6.x
+core = 7.x
 package = queue2civicrm
+configure = admin/config/queue2civicrm/refund_qc
 dependencies[] = queue2civicrm
 dependencies[] = civicrm

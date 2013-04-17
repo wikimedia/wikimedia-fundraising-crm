@@ -7,7 +7,7 @@ function ganglia_reporter_menu() {
   $items = array();
   
   // displays settings form
-  $items[ 'admin/settings/ganglia_reporter' ] = array(
+  $items[ 'admin/config/ganglia_reporter' ] = array(
     'title' => 'Ganglia Reporter',
     'description' => t( 'Configure Ganglia Reporter.' ),
     'access arguments' => array( 'administer ganglia reporter' ),
@@ -16,7 +16,7 @@ function ganglia_reporter_menu() {
   );
 
   // forces 'Ganglia Reporter' to appear on the config page
-  $items[ 'admin/settings/ganglia_reporter/configure' ] = array(
+  $items[ 'admin/config/ganglia_reporter/configure' ] = array(
     'title' => 'Configure',
     'access arguments' => array( 'asminister ganglia reporter' ),
     'type' => MENU_DEFAULT_LOCAL_TASK

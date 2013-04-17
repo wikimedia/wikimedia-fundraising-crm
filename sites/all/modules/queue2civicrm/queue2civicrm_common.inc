@@ -28,17 +28,23 @@ function _queue2civicrm_log( $log=array() ) {
   
   // if cid is set in the log array, we need to update
   if ( array_key_exists('cid', $log)) {
-    $query = "UPDATE {queue2civicrm_log} SET gateway='%s', gateway_txn_id='%s', data='%s', timestamp=%d, verified=%d WHERE cid=%d";
-    $result = db_query( $query, $log[ 'gateway' ], $log[ 'gateway_txn_id' ], $log[ 'data' ], $log[ 'timestamp' ], $log[ 'verified' ], $log[ 'cid' ] );
-    if ( $result ) $result = true;
+    $result = db_update( 'queue2civicrm_log' )->fields( array(
+        'gateway' => $log[ 'gateway' ],
+        'gateway_txn_id' => $log[ 'gateway_txn_id' ],
+        'data' => $log[ 'data' ],
+        'timestamp' => $log[ 'timestamp' ],
+        'verified' => $log[ 'verified' ],
+    ) )->condition( 'cid', $log[ 'cid' ] )->execute();
   } else {  
-    $query = "INSERT INTO {queue2civicrm_log} ( gateway, gateway_txn_id, data, timestamp, verified ) VALUES ( '%s', '%s', '%s', %d, %d )";
-    $result = db_query( $query, $log[ 'gateway' ], $log[ 'gateway_txn_id' ], $log[ 'data' ], $log[ 'timestamp' ], $log[ 'verified' ] );
-    if ( $result ) {
-      $result = db_last_insert_id( 'queue2civicrm_log', 'cid' );
-    }
+    $result = db_insert('queue2civicrm_log')->fields( array(
+        'gateway' => $log[ 'gateway' ],
+        'gateway_txn_id' => $log[ 'gateway_txn_id' ],
+        'data' => $log[ 'data' ],
+        'timestamp' => $log[ 'timestamp' ],
+        'verified' => $log[ 'verified' ],
+    ) )->execute();
   }
-  
+
   if ( !$result ) {
     watchdog( 'queue2civicrm', 'Failed logging the transaction: %log', array( "%log" => print_r( $log, true )), WATCHDOG_ERROR );
   }

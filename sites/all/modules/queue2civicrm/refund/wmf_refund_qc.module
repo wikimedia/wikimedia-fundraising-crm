@@ -8,7 +8,7 @@
  * @return array Menu entries
  */
 function wmf_refund_qc_menu_alter(&$items) {
-  $items[ 'admin/settings/queue2civicrm/refund_qc' ] = array(
+  $items[ 'admin/config/queue2civicrm/refund_qc' ] = array(
     'title'            => 'Refund',
     'description'      => t('Configure refund queue settings'),
     'access arguments' => array( 'administer queue2civicrm' ),

@@ -8,7 +8,7 @@ require_once( drupal_get_path( 'module', 'recurring_globalcollect' ) . '/recurri
 function recurring_globalcollect_menu() {
   $items = array();
   
-  $items['admin/settings/recurring_globalcollect'] = array(
+  $items['admin/config/recurring_globalcollect'] = array(
     'title' => 'Recurring GlobalCollect Processor',
     'description' => t('Configure message queue interface.'),
     'access arguments' => array('administer recurring_globalcollect'),
@@ -16,13 +16,13 @@ function recurring_globalcollect_menu() {
     'page arguments' => array('recurring_globalcollect_settings'),
   );
 
-  $items['admin/settings/recurring_globalcollect/configure'] = array(
+  $items['admin/config/recurring_globalcollect/configure'] = array(
     'title' => 'Configure',
     'access arguments' => array('administer recurring_globalcollect'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
-  $items['admin/settings/recurring_globalcollect/search'] = array(
+  $items['admin/config/recurring_globalcollect/search'] = array(
     'title' => 'Search',
     'access arguments' => array('administer recurring_globalcollect'),
     'page callback' => 'drupal_get_form',
@@ -30,7 +30,7 @@ function recurring_globalcollect_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/settings/recurring_globalcollect/test'] = array(
+  $items['admin/config/recurring_globalcollect/test'] = array(
     'title' => 'Test',
     'access arguments' => array('administer recurring_globalcollect'),
     'page callback' => 'recurring_globalcollect_test',
@@ -59,7 +59,7 @@ function recurring_globalcollect_perm() {
 }
 
 /**
- * Callback for menu path "admin/settings/recurring_globalcollect".
+ * Callback for menu path "admin/config/recurring_globalcollect".
  */
 function recurring_globalcollect_settings() {
   $form = array();
@@ -188,7 +188,7 @@ function recurring_globalcollect_batch_process($options = array()) {
   watchdog('recurring_globalcollect', 'Attempting to process up to ' . $batch . ' recurring contribution(s).');
 
   $contribution_batch = wmf_civicrm_get_next_sched_contribution($batch);
-  $result = recurring_globalcollect_process($contribution_batch, $options);
+  $result = recurring_globalcollect_batch_charge($contribution_batch, $options);
 
   $processed = count($result['succeeded']) + count($result['failed']);
   if ($processed > 0) {
@@ -205,7 +205,7 @@ function recurring_globalcollect_batch_process($options = array()) {
   // Process retries
   watchdog('recurring_globalcollect', 'Attempting to retry up to ' . $batch . ' previously failed contribution(s).');
   $retry_batch = recurring_globalcollect_get_failure_retry_batch($batch);
-  $result = recurring_globalcollect_process($retry_batch, $options);
+  $result = recurring_globalcollect_batch_charge($retry_batch, $options);
 
   $processed = count($result['succeeded']) + count($result['failed']);
   if ($processed > 0) {
@@ -242,7 +242,7 @@ function recurring_globalcollect_batch_process($options = array()) {
  *
  * @return  boolean  Returns false on error. Returns true if contributions were processed. Returns false if no contributions are ready to be processed.
  */
-function recurring_globalcollect_process($contribution_batch, $options = array())
+function recurring_globalcollect_batch_charge($contribution_batch, $options = array())
 {
   $succeeded = array();
   $failed = array();

@@ -1,8 +1,9 @@
 name = GlobalCollect Audit
 description = Auditing framework for contacts and contributions in GlobalCollect
-core = 6.x
+core = 7.x
 dependencies[] = contribution_audit
 dependencies[] = queue2civicrm
 dependencies[] = civicrm
 dependencies[] = wmf_common
 package = CiviAudit
+configure = admin/config/contribution_audit/globalcollect_audit

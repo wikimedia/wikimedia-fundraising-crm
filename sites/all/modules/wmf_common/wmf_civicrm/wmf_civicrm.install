@@ -80,7 +80,8 @@ function wmf_civicrm_update_6001()
         }
         $result = $api->values();
     }
-    $custom_group = array_pop($api->values());
+    $values = $api->values();
+    $custom_group = array_pop($values);
 
     $success = $api->CustomField->create(array(
         'custom_group_id' => $custom_group->id,
@@ -115,7 +116,8 @@ function wmf_civicrm_update_6002()
     if (!$success) {
         throw new Exception($api->errorMsg());
     }
-    $custom_group = array_pop($api->values());
+    $values = $api->values();
+    $custom_group = array_pop($values);
 
     $success = $api->CustomField->create(array(
         'custom_group_id' => $custom_group->id,
@@ -156,7 +158,8 @@ function wmf_civicrm_update_6004()
     if (!$success) {
         throw new Exception($api->errorMsg());
     }
-    $custom_group = array_pop($api->values());
+    $values = $api->values();
+    $custom_group = array_pop($values);
 
     $success = $api->CustomField->create(array(
         'custom_group_id' => $custom_group->id,
@@ -181,6 +184,12 @@ function wmf_civicrm_update_6004()
  */
 function wmf_civicrm_bootstrap_civi()
 {
+    static $api = null;
+
+    if ( $api ) {
+        return $api;
+    }
+
     //XXX XXX REALLY?
     $civi_base = implode(DIRECTORY_SEPARATOR, array(drupal_get_path('module', 'civicrm'), '..'));
     set_include_path(
@@ -194,7 +203,8 @@ function wmf_civicrm_bootstrap_civi()
         )
     );
     require_once "api/class.api.php";
-    return new civicrm_api3(array('conf_path' => conf_path()));
+    $api = new civicrm_api3(array('conf_path' => conf_path()));
+    return $api;
 }
 
 function wmf_civicrm_create_contribution_types($contribution_types)
@@ -227,7 +237,8 @@ function wmf_civicrm_create_option_values( $group_name, $values )
     $api->OptionGroup->Get(array(
         'name' => $group_name,
     ));
-    $option_group = array_pop($api->values());
+    $values = $api->values();
+    $option_group = array_pop($values);
     foreach ($values as $value)
     {
         $api->OptionValue->Get(array(
@@ -262,7 +273,8 @@ function wmf_civicrm_update_6005()
     if (!$success) {
         throw new Exception($api->errorMsg());
     }
-    $custom_group = array_pop($api->values());
+    $values = $api->values();
+    $custom_group = array_pop($values);
 
     $success = $api->CustomField->create(array(
         'custom_group_id' => $custom_group->id,

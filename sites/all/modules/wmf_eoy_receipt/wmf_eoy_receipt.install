@@ -18,7 +18,7 @@ CREATE TABLE {wmf_eoy_receipt_job} (
     PRIMARY KEY (job_id)
 );
 EOS;
-    $result[] = update_sql( $sql );
+    db_query( $sql );
 
     $sql = <<<EOS
 CREATE TABLE {wmf_eoy_receipt_donor} (
@@ -34,7 +34,7 @@ CREATE TABLE {wmf_eoy_receipt_donor} (
     KEY (status)
 )
 EOS;
-    $result[] = update_sql( $sql );
+    db_query( $sql );
 
     return $result;
 }

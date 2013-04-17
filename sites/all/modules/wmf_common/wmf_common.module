@@ -58,7 +58,7 @@ function replace_messages($string, $message_file, $language = 'en') {
 function wmf_common_menu() {
   $items = array();
 
-  $items[ 'admin/settings/wmf_common' ] = array(
+  $items[ 'admin/config/wmf_common' ] = array(
     'title'            => 'WMF Common Settings',
     'access arguments' => array( 'administer wmf_common' ),
     'page callback'    => 'drupal_get_form',

@@ -22,7 +22,7 @@ require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_com
  * Used to inject recurring menu item to Queue2civicrm configuration
  */
 function recurring_menu_alter( &$items ) {
-  $items['admin/settings/queue2civicrm/recurring'] = array(
+  $items['admin/config/queue2civicrm/recurring'] = array(
 	'title' => 'Recurring payments',
 	'description' => t( 'Configure recurring payments-related settings' ),
 	'access arguments' => array( 'administer queue2civicrm' ),
@@ -198,7 +198,7 @@ function recurring_import( $msg ) {
    */
   $log = array(
     'gateway' => 'recurring_' . $msg['gateway'],
-    'gateway_txn_id' => ( strlen( $msg[ 'gateway_txn_id_orig' ] ) ? $msg[ 'gateway_txn_id_orig' ] : $msg[ 'txn_type' ] . ":" . $msg[ 'subscr_id' ] ),
+    'gateway_txn_id' => ( !empty( $msg[ 'gateway_txn_id_orig' ] ) ? $msg[ 'gateway_txn_id_orig' ] : $msg[ 'txn_type' ] . ":" . $msg[ 'subscr_id' ] ),
     'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ), 
     'timestamp' => time(),
     'verified' => 0,
@@ -309,8 +309,9 @@ function recurring_import_subscr_payment( $msg ) {
   // update subscription record with next payment date
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
-  $query = "UPDATE civicrm_contribution_recur SET next_sched_contribution='%s' WHERE id = %d";
-  db_query( $query, date('Y-m-d H:i:s', strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'payment_date' ] )), $recur_record->id);
+  db_update( 'civicrm_contribution_recur' )->fields( array(
+    'next_sched_contribution' => date('Y-m-d H:i:s', strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'payment_date' ] ))
+  ) )->condition( 'id', $recur_record->id )->execute();
   $dbs->pop();
   
   // construct an array of useful info to invocations of queue2civicrm_import
@@ -388,30 +389,18 @@ function recurring_import_subscr_signup( $msg ) {
   // Tag contact for review
   //$tag = wmf_civicrm_tag_contact_for_review( $contact );
   
-  // prepare query for inserting data to civicrm_contribution_recur
-  $query = "INSERT INTO civicrm_contribution_recur (
-  		contact_id,
-  		amount,
-  		frequency_unit,
-  		frequency_interval,
-  		installments,
-  		start_date,
-  		create_date,
-  		trxn_id ) 
-  	VALUES ( %d, %d, '%s', %d, '%s', '%s', '%s', '%s' )";
-
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
-  $result = db_query( $query, 
-    $contact[ 'id' ],
-    $msg[ 'amount' ],
-    $msg[ 'frequency_unit' ],
-    $msg[ 'frequency_interval' ],
-    $msg[ 'installments' ],
-    date( 'Y-m-d H:i:s', $msg[ 'start_date' ] ),
-    date( 'Y-m-d H:i:s', $msg[ 'create_date' ] ),
-    $msg[ 'subscr_id' ]
-  );
+  $result = db_insert( 'civicrm_contribution_recur' )->fields( array(
+    'contact_id' => $contact[ 'id' ],
+    'amount' => $msg[ 'amount' ],
+    'frequency_unit' => $msg[ 'frequency_unit' ],
+    'frequency_interval' => $msg[ 'frequency_interval' ],
+    'installments' => $msg[ 'installments' ],
+    'start_date' => date( 'Y-m-d H:i:s', $msg[ 'start_date' ] ),
+    'create_date' => date( 'Y-m-d H:i:s', $msg[ 'create_date' ] ),
+    'trxn_id' => $msg[ 'subscr_id' ],
+  ) )->execute();
   $dbs->pop(); 
    
   if ( !$result ) {
@@ -436,15 +425,12 @@ function recurring_import_subscr_cancel( $msg ) {
     return 2;
   }
   
-  $query = "UPDATE civicrm_contribution_recur SET cancel_date='%s', end_date='%s' WHERE trxn_id='%s'";
-  
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
-  $result = db_query( 
-    $query, 
-    date( 'Y-m-d H:i:s', $msg[ 'cancel_date' ] ), 
-    date( 'Y-m-d H:i:s', $msg[ 'cancel_date' ] ), 
-    $msg[ 'subscr_id' ] );
+  $result = db_update( 'civicrm_contribution_recur' )->fields( array(
+    'cancel_date' => date( 'Y-m-d H:i:s', $msg[ 'cancel_date' ] ), 
+    'end_date' => date( 'Y-m-d H:i:s', $msg[ 'cancel_date' ] ), 
+  ) )->condition( 'trxn_id', $msg[ 'subscr_id' ] )->execute();
   $dbs->pop();
   
   if ( !$result ) {
@@ -468,12 +454,12 @@ function recurring_import_subscr_eot( $msg ) {
     watchdog( 'recurring', 'Subscription account does not exist: %msg', array( '%msg' => print_r( $msg, true )), WATCHDOG_NOTICE );
     return 2;
   }
-  
-  $query = "UPDATE civicrm_contribution_recur SET end_date='%s', next_sched_contribution=NULL WHERE trxn_id='%s'";
-  
+
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
-  $result = db_query( $query, date( 'Y-m-d H:i:s' ), $msg[ 'subscr_id' ] );
+  $result = db_update( 'civicrm_contribution_recur' )->fields( array(
+    'end_date' => date( 'Y-m-d H:i:s' ),
+  ) )->condition( 'trxn_id', $msg[ 'subscr_id' ] )->execute();
   $dbs->pop();
   
   if ( !$result ) {
@@ -500,28 +486,17 @@ function recurring_import_subscr_modify( $msg ) {
     watchdog( 'recurring', 'Subscription account does not exist for subscription id: %subscr_id', array( '%subscr_id' => print_r( $msg, true )), WATCHDOG_NOTICE );
     return 2;
   }
-  
-  // prepare query for updating data to civicrm_contribution_recur
-  $query = "UPDATE civicrm_contribution_recur SET
-  	SET
-  		amount=%d, 
-  		frequency_unit='%s', 
-  		frequency_interval=%d, 
-  		modified_date='%s',
-  		next_sched_contribution='%s'
-  	WHERE
-  		trxn_id='%s'";
-  
+
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
-  $result = db_query( $query, 
-    $msg[ 'amount' ],
-    $msg[ 'frequency_unit' ],
-    $msg[ 'frequency_interval' ],
-    date( 'Y-m-d H:i:s', $msg[ 'modified_date' ] ),
-    date( 'Y-m-d H:i:s', strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'start_date' ] )),
-    $msg[ 'subscr_id' ]
-  );
+  $result = db_update( 'civicrm_contribution_recur' )->fields( array(
+    'amount' => $msg[ 'amount' ],
+    'frequency_unit' => $msg[ 'frequency_unit' ],
+    'frequency_interval' => $msg[ 'frequency_interval' ],
+    'modified_date' => date( 'Y-m-d H:i:s', $msg[ 'modified_date' ] ),
+    //FIXME: looks wrong to base off of start_date
+    'next_sched_contribution' => date( 'Y-m-d H:i:s', strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'start_date' ] )),
+  ) )->condition( 'trxn_id', $msg[ 'subscr_id' ] )->execute();
   $dbs->pop();
 
   if ( !$result ) {
@@ -554,11 +529,12 @@ function recurring_import_subscr_failed( $msg ) {
     return 2;
   }
   
-  $query = "UPDATE civicrm_contribution_recur SET failure_count=%d, failure_retry_date='%s' WHERE trxn_id='%s'";
-  
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
-  $result = db_query( $query, $msg[ 'failure_count' ], date( 'Y-m-d H:i:s', $msg[ 'failure_retry_date' ] ), $msg[ 'subscr_id' ] );
+  $result = db_update( 'civicrm_contribution_recur' )->fields( array(
+    'failure_count' => $msg[ 'failure_count' ],
+    'failure_retry_date' => date( 'Y-m-d H:i:s', $msg[ 'failure_retry_date' ] ),
+  ) )->condition( 'trxn_id', $msg[ 'subscr_id' ] )->execute();
   $dbs->pop();
   
   if ( !$result ) {
@@ -576,11 +552,11 @@ function recurring_import_subscr_failed( $msg ) {
  * @return object
  */
 function recurring_get_recur_record( $subscr_id ) {
-  $query = "SELECT * FROM civicrm_contribution_recur WHERE trxn_id = '%s'";
+  $query = "SELECT * FROM civicrm_contribution_recur WHERE trxn_id = :id";
 
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
-  $recur_record = db_fetch_object( db_query( $query, $subscr_id ) );
+  $recur_record = db_query( $query, array( ':id' => $subscr_id ) )->fetch();
   $dbs->pop();
   
   watchdog( 'recurring', 'Recurring record: %recur_record', array( '%recur_record' => print_r( $recur_record, true )), WATCHDOG_DEBUG );
@@ -607,6 +583,14 @@ function recurring_normalize_msg( $msg  ) {
   // we can safely assume we have a raw msg from paypal if contribution_tracking_id isn't set
   if ( !isset( $msg[ 'contribution_tracking_id' ]) ) {
     $msg = recurring_normalize_paypal_msg( $msg );
+  } else {
+    $msg['contribution_tracking_update'] = false;
+  }
+
+  if ( isset( $msg['frequency_unit'] ) ) {
+    if ( !in_array( $msg['frequency_unit'], array( 'day', 'week', 'month', 'year' ) ) ) {
+      throw new WmfException("INVALID_MESSAGE", "Bad frequency unit: {$msg['frequency_unit']}");
+    }
   }
 
   //Seeing as we're in the recurring module...
@@ -678,9 +662,9 @@ function recurring_normalize_paypal_msg( $msg ) {
     // get the database connection to the tracking table
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'donations' );
-    $query = "SELECT * FROM {contribution_tracking} WHERE id=%d";
-    $result = db_query( $query, $msg[ 'custom' ] );
-    if ( $tracking_data = db_fetch_array( $result ) ) {
+    $query = "SELECT * FROM {contribution_tracking} WHERE id = :id";
+    $tracking_data = db_query( $query, array( ':id' => $msg[ 'custom' ] ) )->fetchAssoc();
+    if ( $tracking_data ) {
 	  // if we don't have a contribution id in the tracking data, we need to update
       if ( !$tracking_data[ 'contribution_id' ] || !is_numeric( $tracking_data[ 'contribution_id' ] ) ) {
 	      $msg_normalized[ 'contribution_tracking_update' ] = true;
@@ -776,23 +760,24 @@ function recurring_get_contribution_tracking_id( $msg ) {
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'civicrm' );
     // determine if we already have a contrib tracking id for related contribs, working backwards from recur record
-    $query = "SELECT id FROM civicrm_contribution_recur WHERE trxn_id='%s'";
-    $recur_id = db_result( db_query( $query, $msg[ 'subscr_id' ] ));
+    $query = "SELECT id FROM civicrm_contribution_recur WHERE trxn_id = :id";
+    $recur_id = db_query( $query, array( ':id' => $msg[ 'subscr_id' ] ) )->fetch();
     
     if ( $recur_id ) { // we potentially have related contributions
       // find related contribution ids
-      $query = "SELECT id FROM civicrm_contribution WHERE contribution_recur_id=%d";
-      $result = db_query( $query, $recur_id );
-      while( db_fetch_object( $result )) {
-        array_push( $contrib_ids, $result->id );
+      $query = "SELECT id FROM civicrm_contribution WHERE contribution_recur_id = :id";
+      $result = db_query( $query, array( ':id' => $recur_id ) );
+      foreach ( $result as $row ) {
+        array_push( $contrib_ids, $row->id );
       }
       
       if ( count( $contrib_ids )) { // if we've got any related contributions
         // see if a record already exists
         $dbs->push( 'donations' );
-        $query = "SELECT id FROM {contribution_tracking} WHERE contribution_id IN ( '%s' )";
+        $id_list = implode( ",", $contrib_ids );
+        $query = "SELECT id FROM {contribution_tracking} WHERE contribution_id IN ( {$id_list} )";
         // we can use this related contribution tracking id
-        $contribution_tracking_id = db_result( db_query( $query, implode( ",", $contrib_ids )));
+        $contribution_tracking_id = db_query( $query )->fetchField();
         watchdog( 'recurring', 'recurring_get_contribution_tracking_id: Selected contrib tracking id from past contributions, %cti', array( '%cti' => $contribution_tracking_id ), WATCHDOG_DEBUG );
         return $contribution_tracking_id;
       }

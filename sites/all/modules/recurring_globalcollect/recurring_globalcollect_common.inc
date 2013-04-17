@@ -17,9 +17,9 @@ function recurring_globalcollect_get_payment_by_id($id)
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
 
-  $query = 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` WHERE `civicrm_contribution_recur`.`id` = %d LIMIT 1';
+  $query = 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` WHERE `civicrm_contribution_recur`.`id` = :id LIMIT 1';
   
-  $result = db_fetch_object( db_query( $query, $id ));
+  $result = db_query( $query, array( ':id' => $id ) )->fetch();
 
   if ( empty( $result ) ) {
     throw new WmfException( 'INVALID_RECURRING', t( 'No record was found with the id: [!id].', array( '!id' => $id ) ) );
@@ -66,14 +66,14 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
 
   $contribution_status_id = civicrm_api_contribution_status('Failed');
   
-  $query  = '';
-  $query .= 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` ';
-  
-  $where  = '';
-  $where .= " WHERE `civicrm_contribution_recur`.`failure_retry_date` BETWEEN '%s 00:00:00' AND '%s 23:59:59'";
-  $where .= " AND `civicrm_contribution_recur`.`contribution_status_id` = %d";
-  $where .= " AND `civicrm_contribution_recur`.`trxn_id` LIKE 'RECURRING GLOBALCOLLECT%'";
-  $where .= " AND ( `civicrm_contribution_recur`.`end_date` IS NULL )";
+  $query = <<<EOS
+SELECT civicrm_contribution_recur.* FROM civicrm_contribution_recur
+WHERE
+    civicrm_contribution_recur.failure_retry_date BETWEEN :start AND :now
+    AND civicrm_contribution_recur.contribution_status_id = :failed_status
+    AND civicrm_contribution_recur.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
+    AND ( civicrm_contribution_recur.end_date IS NULL )
+EOS;
 
   // Add on the WHERE statement
   $query .= $where;
@@ -82,11 +82,15 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
   if ($limit > 0) {
     $query .= " LIMIT " . $limit;
   }
-  
-  $result = db_query( $query, $start_date, $date, $contribution_status_id );
+
+  $result = db_query( $query, array(
+    ':start' => "{$start_date} 00:00:00",
+    ':now' => "{$date} 23:59:59",
+    ':failed_status' => $contribution_status_id,
+  ) );
 
   $out = array();
-  while ( $row = db_fetch_object( $result ) ) {
+  foreach ( $result as $row ) {
       $out[] = $row;
   }
 
@@ -116,17 +120,22 @@ function _recurring_globalcollect_get_subscription_by_order_id($order_id) {
   if ( empty( $order_id ) ) {
     return false;
   }
+  $order_id = intval( $order_id );
   
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
 
-  $query  = 'SELECT `civicrm_contribution_recur`.*, `civicrm_contact`.`display_name` FROM `civicrm_contribution_recur`';
-  $query .= ' LEFT JOIN `civicrm_contact` ON (`civicrm_contribution_recur`.`contact_id` = `civicrm_contact`.`id`)';
-  $query .= ' WHERE `civicrm_contribution_recur`.`trxn_id` LIKE ';
-  $query .="'RECURRING GLOBALCOLLECT %d%' LIMIT 1";
+  $query = <<<EOS
+SELECT
+    civicrm_contribution_recur.*, civicrm_contact.display_name
+FROM civicrm_contribution_recur
+LEFT JOIN civicrm_contact ON
+    civicrm_contribution_recur.contact_id = civicrm_contact.id
+WHERE civicrm_contribution_recur.trxn_id LIKE 'RECURRING GLOBALCOLLECT :order_id %' LIMIT 1
+EOS;
   
-  $result = db_fetch_object( db_query( $query, $order_id ) );
+  $result = db_query( $query, array( ':order_id' => $order_id ) )->fetch();
 
   $record = is_object( $result ) ? (array) $result : false;
   
@@ -183,30 +192,24 @@ function _recurring_globalcollect_update_record_failure($id) {
 
   if ($cancel) {
     // The payment is being cancelled
-    $query = <<<EOS
-UPDATE civicrm_contribution_recur SET
-    failure_count = failure_count + 1,
-    failure_retry_date = NULL,
-    cancel_date = NOW(),
-    contribution_status_id = %d,
-    next_sched_contribution = NULL
-WHERE id = %d
-EOS;
-    db_query($query, $contribution_status_id, $id);
+    $affected_rows = db_update( 'civicrm_contribution_recur' )
+        ->expression( 'failure_count', "failure_count + 1" )
+        ->expression( 'cancel_date', "NOW()" )
+        ->fields( array(
+            'failure_retry_date' => null,
+            'contribution_status_id' => $contribution_status_id,
+            'next_sched_contribution' => null,
+        ) )->condition( 'id', $id )->execute();
   }
   else {
     // The payment failed and is being marked as a failure.
-    $query = <<<EOS
-UPDATE civicrm_contribution_recur SET
-    contribution_status_id = %d,
-    failure_count = failure_count + 1,
-    failure_retry_date = NOW() + INTERVAL %d DAY
-WHERE id = %d
-EOS;
-    db_query($query, $contribution_status_id, $recurring_globalcollect_failure_retry_rate, $id);
+    $affected_rows = db_update( 'civicrm_contribution_recur' )
+        ->expression( 'failure_count', "failure_count + 1" )
+        ->expression( 'failure_retry_date', "NOW() + INTERVAL {$recurring_globalcollect_failure_retry_rate} DAY" )
+        ->fields( array(
+            'contribution_status_id' => $contribution_status_id,
+        ) )->condition( 'id', $id )->execute();
   }
-
-  $affected_rows = (integer) db_affected_rows();
 
   return $affected_rows;
 }
@@ -233,25 +236,20 @@ function _recurring_globalcollect_update_record_in_progress($id) {
     throw new WmfException( 'INVALID_RECURRING', t( 'The subscription is supposed to be in a completed or failed state before it can be processed.' ), $record );
   }
 
-  $query = '';
-  // The payment is being marked as in progress.
-  $query .= 'UPDATE civicrm_contribution_recur SET';
-  // Set the status to In Progress
-  $query .= ' `contribution_status_id` = %d';
-  $query .= ' WHERE id = %d';
-  // Only update if status is not already In Progress
-  $query .= ' AND `contribution_status_id` != %d';
-
-  // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
 
-  db_query($query, civicrm_api_contribution_status('In Progress'), $id, civicrm_api_contribution_status('In Progress'));
+  $in_progress_id = civicrm_api_contribution_status('In Progress');
+  $affected_rows = db_update( 'civicrm_contribution_recur' )
+      ->fields( array(
+          'contribution_status_id' => $in_progress_id,
+      ) )
+      ->condition( 'id', $id )
+      ->execute();
 
-  $affected_rows = (integer) db_affected_rows();
   $dbs->pop();
   
-  if ($affected_rows == 0) {
+  if ( !$affected_rows ) {
     throw new WmfException( 'INVALID_RECURRING', t( 'The subscription was not marked as in progress.' ), $record );
   }
   
@@ -277,23 +275,19 @@ function _recurring_globalcollect_update_record_success($id) {
   
   $next_sched_contribution = wmf_civicrm_get_next_sched_contribution_date_for_month($record);
 
-  $query = '';
-  // The payment is being scheduled for the next date.
-  $query .= 'UPDATE civicrm_contribution_recur SET';
-  $query .= ' `failure_count` = 0,';
-  $query .= ' `failure_retry_date` = NULL,';
-  $query .= ' `processor_id` = `processor_id` + 1,';
-  $query .= ' `contribution_status_id` = %d,';
-  $query .= " `next_sched_contribution` = '%s'";
-  $query .= ' WHERE id = %d';
-
-  // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
 
-  db_query($query, civicrm_api_contribution_status('Completed'), $next_sched_contribution, $id);
-
-  $affected_rows = (integer) db_affected_rows();
+  $affected_rows = db_update( 'civicrm_contribution_recur' )
+      ->fields( array(
+          'failure_count' => 0,
+          'failure_retry_date' => null,
+          'contribution_status_id' => civicrm_api_contribution_status('Completed'),
+          'next_sched_contribution' => $next_sched_contribution,
+      ) )
+      ->expression( 'processor_id', "processor_id + 1" )
+      ->condition( 'id', $id )
+      ->execute();
 
   return $affected_rows;
 }

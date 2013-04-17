@@ -90,8 +90,6 @@ function public_reporting_get_FK_command(){
 }
 
 function public_reporting_update_6000() {
-	$ret = array();
-
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
 
@@ -99,13 +97,10 @@ function public_reporting_update_6000() {
 ALTER TABLE {public_reporting}
 	DROP FOREIGN KEY public_reporting_ibfk_2;
 EOS;
-	$ret[] = update_sql( $sql );
+	db_query( $sql );
 
 	$sqlResult = module_invoke( 'public_reporting', 'execute_sql_file', 'triggers.sql' );
 	watchdog("public_reporting.install", "Trigger Creation Result: " . print_r($sqlResult, true) );
-	$ret[] = array( 'success' => $sqlResult, 'query' => "... create triggers" );
-
-	return $ret;
 }
 
 /**

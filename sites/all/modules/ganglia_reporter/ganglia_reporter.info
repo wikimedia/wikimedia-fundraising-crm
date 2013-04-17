@@ -1,4 +1,4 @@
 name = Ganglia Reporter
 description = Reports metrics to Ganglia 
-core = 6.x
+core = 7.x
 files[] = tests/ganglia_reporter.test

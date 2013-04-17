@@ -7,7 +7,7 @@ function wmf_test_settings_perm() {
 function wmf_test_settings_menu() {
   $items = array();
   
-  $items['admin/settings/wmf_test_settings'] = array(
+  $items['admin/config/wmf_test_settings'] = array(
     'title' => t('WMF Test Settings'),
     'description' => t('Configure wmf testing variables.'),
     'access arguments' => array('administer wmf test settings'),

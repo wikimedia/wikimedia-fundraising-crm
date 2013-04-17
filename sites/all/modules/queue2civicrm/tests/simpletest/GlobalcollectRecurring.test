@@ -1,0 +1,101 @@
+<?php
+
+require_once __DIR__ . '/BaseTestCase.php';
+require_once __DIR__ . '/../includes/Message.php';
+
+class GlobalcollectRecurringTest extends BaseTestCase {
+    public static function getInfo() {
+        return array(
+            'name' => 'Globalcollect recurring',
+            'group' => 'Donations Pipeline',
+            'description' => 'Process recurring messages',
+        );
+    }
+
+    public function setUp() {
+        parent::setUp();
+
+        $this->subscr_id = mt_rand();
+        $this->amount = '2.01';
+
+        $this->subscription_message = new TransactionMessage( array(
+            'txn_type' => 'subscr_signup',
+            'subscr_id' => $this->subscr_id,
+            'original_gross' => $this->amount,
+            'gross' => $this->amount,
+            'amount' => $this->amount,
+            'frequency_unit' => 'month',
+            'frequency_interval' => '1',
+            'installments' => '10',
+            'create_date' => strtotime( '2000-01-01 00:01:02' ),
+            'start_date' => strtotime( '2000-01-01 01:02:03' ),
+        ) );
+
+        $this->payment_message = new TransactionMessage( array(
+            'txn_type' => 'subscr_payment',
+            'subscr_id' => $this->subscr_id,
+            'original_gross' => $this->amount,
+            'gross' => $this->amount,
+            'payment_date' => strtotime( "2000-02-01 01:02:03" ),
+        ) );
+
+        recurring_import( $this->subscription_message );
+        recurring_import( $this->payment_message );
+    }
+
+    public function testUpdateSuccess() {
+        $recur_record = recurring_get_recur_record( $this->subscr_id );
+
+        _recurring_globalcollect_update_record_success( $recur_record->id );
+
+        $updated_record = recurring_get_recur_record( $this->subscr_id );
+        $this->verbose(json_encode($updated_record));
+        $this->assertSuperset( get_object_vars( $updated_record ), array(
+            'failure_count' => '0',
+            'failure_retry_date' => null,
+            'contribution_status_id' => (string)civicrm_api_contribution_status('Completed'),
+        ) );
+    }
+
+    public function testUpdateInProgress() {
+        $recur_record = recurring_get_recur_record( $this->subscr_id );
+
+        _recurring_globalcollect_update_record_in_progress( $recur_record->id );
+
+        $updated_record = recurring_get_recur_record( $this->subscr_id );
+        $this->verbose(json_encode($updated_record));
+        $this->assertSuperset( get_object_vars( $updated_record ), array(
+            'contribution_status_id' => (string)civicrm_api_contribution_status('In Progress'),
+        ) );
+    }
+
+    public function testUpdateFailure() {
+        $recur_record = recurring_get_recur_record( $this->subscr_id );
+
+        variable_set( 'recurring_globalcollect_failures_before_cancellation', 2 );
+
+        _recurring_globalcollect_update_record_failure( $recur_record->id );
+
+        $updated_record = recurring_get_recur_record( $this->subscr_id );
+        $this->verbose(json_encode($updated_record));
+        $this->assertSuperset( get_object_vars( $updated_record ), array(
+            'failure_count' => '1',
+            'contribution_status_id' => (string)civicrm_api_contribution_status('Failed'),
+        ) );
+        $retry_date = new DateTime( $updated_record->failure_retry_date );
+        $now = new DateTime( "now - 1 hour" );
+        // Yes, this diff function is backwards
+        $diff = date_diff( $now, $retry_date );
+        $this->assertTrue( $diff->days >= 1 && $diff->invert == 0,
+            "Retry date was set to a day in the future" );
+
+        _recurring_globalcollect_update_record_failure( $recur_record->id );
+        $cancelled_record = recurring_get_recur_record( $this->subscr_id );
+        $this->verbose(json_encode($cancelled_record));
+        $this->assertSuperset( get_object_vars( $cancelled_record ), array(
+            'failure_count' => '2',
+            'contribution_status_id' => (string)civicrm_api_contribution_status('Cancelled'),
+            'next_sched_contribution' => null,
+        ) );
+    }
+}

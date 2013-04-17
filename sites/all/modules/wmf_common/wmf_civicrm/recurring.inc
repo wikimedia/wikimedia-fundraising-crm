@@ -78,52 +78,25 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
     
     $next_sched_contribution = wmf_civicrm_get_next_sched_contribution_date_for_month( $msg );
     
-    $query = "INSERT INTO civicrm_contribution_recur
-      (
-        contact_id,
-        amount,
-        currency,
-        frequency_unit,
-        frequency_interval,
-        installments,
-        start_date,
-        create_date,
-        processor_id,
-        cycle_day,
-        next_sched_contribution,
-        trxn_id
-      ) 
-      VALUES ( %d, %f, '%s', '%s', %d, %d, '%s', '%s', %d, '%s', '%s', '%s' )";
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'civicrm' );
-    $result = db_query( $query, 
-        // contact
-        $contact_id,
-        //amount
-        $msg[ 'original_gross' ],
-        //currency
-        $msg[ 'original_currency' ],
-        //frequency_unit
-        $msg[ 'frequency_unit' ],
-        //frequency_interval
-        $msg[ 'frequency_interval' ],
-        //installments
-        $msg[ 'installments' ],
-        //start_date
-        date( 'Y-m-d H:i:s', $msg[ 'date' ] ),
-        //create_date
-        date( 'Y-m-d H:i:s', $msg[ 'date' ] ),
-        //processor_id
-        1,
-        //cycle_day
-        $msg[ 'cycle_day' ],
-        //next_sched_contribution
-        $next_sched_contribution,
-        //trxn_id
-        $contribution_record['trxn_id']
-    );
 
-    $contribution_recur_id = ( $result ) ? db_last_insert_id( 'civicrm_contribution_recur', 'id' ) : null;
+    $contribution_recur_id = db_insert( 'civicrm_contribution_recur' )->fields( array(
+        'contact_id' => $contact_id,
+        'amount' => $msg[ 'original_gross' ],
+        'currency' => $msg[ 'original_currency' ],
+        'frequency_unit' => $msg[ 'frequency_unit' ],
+        'frequency_interval' => $msg[ 'frequency_interval' ],
+        'installments' => $msg[ 'installments' ],
+        'start_date' => date( 'Y-m-d H:i:s', $msg[ 'date' ] ),
+        'create_date' => date( 'Y-m-d H:i:s', $msg[ 'date' ] ),
+        #FIXME:
+        'processor_id' => 1,
+        'cycle_day' => $msg[ 'cycle_day' ],
+        'next_sched_contribution' => $next_sched_contribution,
+        'trxn_id' => $contribution_record['trxn_id'],
+    ) )->execute();
+
     $dbs->pop();
     
     // Link the contribution to the recurring payment
@@ -155,7 +128,9 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
 
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'civicrm' );
-    $result = db_query('UPDATE civicrm_contribution SET contribution_recur_id=%d WHERE id=%d', (integer) $contribution_recur_id, (integer) $contribution_id);
+    $result = db_update( 'civicrm_contribution' )->fields( array(
+        'contribution_recur_id' => $contribution_recur_id,
+    ) )->condition( 'id', $contribution_id )->execute();
     $dbs->pop();
 
     if ( !$result ) {
@@ -218,23 +193,25 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now')
     
     $contribution_status_id = civicrm_api_contribution_status('Completed');
     
-    $query  = '';
-    $query .= 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` ';
-    
-    $where  = '';
-    $where .= " WHERE `civicrm_contribution_recur`.`next_sched_contribution` BETWEEN '%s' AND '%s'";
-    $where .= " AND `civicrm_contribution_recur`.`trxn_id` LIKE 'RECURRING GLOBALCOLLECT%'";
-    $where .= " AND ( `civicrm_contribution_recur`.`end_date` IS NULL )";
-    $where .= " AND `civicrm_contribution_recur`.`contribution_status_id` = %d";
-    
-    // Add on the WHERE statement
-    $query .= $where;
-    $query .= " LIMIT %d";
+    $query = <<<EOS
+SELECT * FROM civicrm_contribution_recur
+WHERE
+    civicrm_contribution_recur.next_sched_contribution BETWEEN :start AND :end
+    AND civicrm_contribution_recur.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
+    AND ( civicrm_contribution_recur.end_date IS NULL )
+    AND civicrm_contribution_recur.contribution_status_id = :status_id
+LIMIT :limit
+EOS;
 
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'civicrm' );
 
-    $res = db_query( $query, $start_day, $end_day, $contribution_status_id, $limit );
+    $res = db_query( $query, array(
+        ':start' => $start_day,
+        ':end' => $end_day,
+        ':status_id' => $contribution_status_id,
+        ':limit' => $limit
+    ) );
     
     $out = array();
     while ($recur = db_fetch_object( $res ))

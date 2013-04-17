@@ -41,11 +41,3 @@ function queue2civicrm_schema() {
 
 	return $schema;
 }
-
-function queue2civicrm_install() {
-	drupal_install_schema('queue2civicrm');
-}
-
-function queue2civicrm_uninstall() {
-	drupal_uninstall_schema('queue2civicrm');
-}
