@@ -15,6 +15,7 @@ define( 'GC_AUDIT_MAKE_CITY', 'Springfield' );
 if ( function_exists( 'drupal_get_path' ) ) {
 	require_once( drupal_get_path( 'module', 'wmf_civicrm' ) . '/wmf_civicrm.module' );
 	require_once( drupal_get_path( 'module', 'wmf_common' ) . '/wmf_dates.php' );
+	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_stomp.inc' );
 }
 
 /**
@@ -354,7 +355,7 @@ function globalcollect_audit_parse_all_wr1(){
 				$local_found_ids[] = $order_id;
 				globalcollect_audit_echo('!');
 			} else {
-				if ( sendStomp( $missing_txn_message ) ){
+				if ( sendSTOMP( $missing_txn_message ) ){
 					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
 					$local_found_ids[] = $order_id;
 					globalcollect_audit_echo('!');
@@ -397,7 +398,7 @@ function globalcollect_audit_parse_all_wr1(){
 				$local_built_ids[] = $order_id;
 				globalcollect_audit_echo('!');
 			} else {
-				if ( sendStomp( $missing_txn_message ) ){
+				if ( sendSTOMP( $missing_txn_message ) ){
 					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
 					$local_built_ids[] = $order_id;
 					globalcollect_audit_echo('!');
