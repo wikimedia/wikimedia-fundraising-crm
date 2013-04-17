@@ -814,9 +814,9 @@ function globalcollect_audit_get_contribution_tracking_data( $contribution_track
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'donations' );
 
-	$query = "SELECT * FROM contribution_tracking WHERE id = %d";
-	$result = db_query( $query, $contribution_tracking_id );
-	if ( !$result->num_rows ) {
+	$query = "SELECT * FROM contribution_tracking WHERE id = :id";
+	$result = db_query( $query, array( ':id' => $contribution_tracking_id ) );
+	if ( !$result->rowCount() ) {
 		watchdog( 'globalcollect_audit', 'Missing Contribution Tracking data: @id ', array( 
 		"@id" => $contribution_tracking_id ), WATCHDOG_DEBUG );  
 	} else {
