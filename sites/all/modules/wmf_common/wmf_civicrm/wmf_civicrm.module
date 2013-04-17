@@ -119,7 +119,7 @@ function wmf_civicrm_settle( $contribution, $settled_timestamp = null )
 
         $contribution_result = civicrm_api( "Contribution", "Create", $contribution );
         if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
-            throw new Exception( "Couldn't update contribution with new settlement info. txn_id: {$contribution['trxn_id']}" );
+            throw new WmfException( "IMPORT_CONTRIB", "Couldn't update contribution with new settlement info. Original error: {$contribution_result['error_message']}. txn_id: {$contribution['trxn_id']}" );
         }
     }
 
@@ -628,9 +628,10 @@ function wmf_civicrm_verify_message_and_stage($msg)
     //if they don't exist (even if they're blank).
     $defaults = array(
         'date' => time(), //defaulting to now. @fixme: if you can think of a better thing to do in the name of historical exchange rates.
-        'first_name' => 'Chester',
+        'first_name' => '',
         'middle_name' => '',
-        'last_name' => 'McDefault',
+        'last_name' => '',
+        'email' => '',
         'street_address' => '',
         'supplemental_address_1' => '',
         'city' => '',
@@ -704,6 +705,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
 
         $contact['sort_name'] = $msg['organization_name'];
         $contact['display_name'] = $msg['organization_name'];
+        $contact['organization_name'] = $msg['organization_name'];
     }
 
     // Attempt to insert the contact
@@ -767,7 +769,7 @@ function wmf_civicrm_message_location_update( $msg, $contact ) {
 function wmf_civicrm_message_email_update( $msg, $contact_id ) {
     // unset the email address if the default is used
     // this enables us to properly dedupe contacts later on
-    if( $msg[ 'email' ] == 'nobody@wikimedia.org' ){
+    if( empty( $msg['email'] ) or $msg[ 'email' ] === 'nobody@wikimedia.org' ){
         return;
     }
 
@@ -955,6 +957,11 @@ function wmf_civicrm_normalize_msg( $msg ) {
                 unset( $msg['thankyou_date'] );
             }
         }
+    }
+
+    if ( empty( $msg['first_name'] ) and empty( $msg['last_name'] ) ) {
+        $msg['first_name'] = 'Chester';
+        $msg['last_name'] = 'McDefault';
     }
 
     watchdog( 'wmf_civicrm', 'Contribution (pre-conversion):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>' );
