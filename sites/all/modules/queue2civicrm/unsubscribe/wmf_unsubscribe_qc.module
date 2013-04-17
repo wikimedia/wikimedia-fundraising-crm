@@ -176,15 +176,15 @@ function unsubscribe_get_emails_from_contribution($ctid) {
   $query .= ' FROM civicrm_contribution ct, civicrm_contact con';
   $query .= ' LEFT JOIN civicrm_email e';
   $query .= '  ON con.id=e.contact_id';
-  $query .= ' WHERE ct.id=%d AND ct.contact_id=con.id';
+  $query .= ' WHERE ct.id = :id AND ct.contact_id=con.id';
 
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
 
-  $res = db_query( $query, $ctid );
+  $res = db_query( $query, array( ':id' => $ctid ) );
 
   $out = array();
-  while ($contact = db_fetch_object( $res )) {
+  foreach ( $res as $contact ) {
     $out[] = array(
       'contact_id' => (int)$contact->id,
       'is_opt_out' => (bool)$contact->is_opt_out,
@@ -206,16 +206,18 @@ function unsubscribe_opt_out_emails($emails) {
   $query .= ' SET con.is_opt_out=1';
   $query .= ' WHERE con.id=e.contact_id AND ';
 
-  $equery = array();
+  $escaped = array();
   foreach ($emails as $email) {
-    $equery[] = "e.email='%s'";
+    $escaped[] = "'" . addslashes( $email ) . "'";
   }
-  $query .= '(' . implode(' OR ', $equery) . ')';
+  $email_condition = 'e.email IN (' . implode(', ', $escaped) . ')';
 
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
 
-  $args = array_merge(array($query), $emails);
-  call_user_func_array('db_query', $args);
-  return db_affected_rows();
+  $affected_rows = db_update( 'civicrm_contact' )
+    ->join( 'civicrm_email', 'e', "civicrm_contact.id = e.contact_id AND {$email_condition}" )
+    ->fields( array( 'is_opt_out' => 1 ) )
+    ->execute();
+  return $affected_rows;
 }

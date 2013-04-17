@@ -56,7 +56,7 @@ class EoySummary
 
         $select_query = <<<EOS
 SELECT
-    %d AS job_id,
+    {$this->job_id} AS job_id,
     COALESCE( billing_email.email, primary_email.email ) AS email,
     contact.first_name,
     contact.preferred_language,
@@ -76,25 +76,22 @@ LEFT JOIN {$this->civi_prefix}civicrm_email primary_email
 JOIN {$this->civi_prefix}civicrm_contact contact
     ON contribution.contact_id = contact.id
 WHERE
-    UNIX_TIMESTAMP( receive_date ) BETWEEN %d AND %d
+    UNIX_TIMESTAMP( receive_date ) BETWEEN '{$year_start}' AND '{$year_end}'
 GROUP BY
     email
 EOS;
 
-        $sql = <<<EOS
-INSERT INTO {wmf_eoy_receipt_job}
-    ( start_time, year )
-VALUES
-    ( '%s', %d )
-EOS;
-        db_query( $sql, $job_timestamp, $this->year );
+        db_insert( 'wmf_eoy_receipt_job' )->fields( array(
+            'start_time' => $job_timestamp,
+            'year' => $this->year,
+        ) )->execute();
 
         $sql = <<<EOS
 SELECT job_id FROM {wmf_eoy_receipt_job}
-    WHERE start_time = '%s'
+    WHERE start_time = :start
 EOS;
-        $result = db_query( $sql, $job_timestamp );
-        $row = db_fetch_object( $result );
+        $result = db_query( $sql, array( ':start' => $job_timestamp ) );
+        $row = $result->fetch();
         $this->job_id = $row->job_id;
 
         $sql = <<<EOS
@@ -102,9 +99,9 @@ INSERT INTO {wmf_eoy_receipt_donor}
   ( job_id, email, name, preferred_language, status, contributions_rollup )
   {$select_query}
 EOS;
-        db_query( $sql, $this->job_id, $year_start, $year_end );
+        $result = db_query( $sql );
 
-        $num_rows = db_affected_rows();
+        $num_rows = $result->rowCount();
         watchdog( 'wmf_eoy_receipt',
             t( "Compiled summaries for !num donors giving during !year",
                 array(
@@ -124,10 +121,10 @@ SELECT *
 FROM {wmf_eoy_receipt_donor}
 WHERE
     status = 'queued'
-    AND job_id = %d
-LIMIT %d
+    AND job_id = :id
+LIMIT {$this->batch_max}
 EOS;
-        $result = db_query( $sql, $this->job_id, $this->batch_max );
+        $result = db_query( $sql, array( ':id' => $this->job_id ) );
         $succeeded = 0;
         $failed = 0;
 
@@ -149,8 +146,9 @@ EOS;
                 $failed += 1;
             }
 
-            $sql = "UPDATE {wmf_eoy_receipt_donor} SET status='%s' WHERE email='%s'";
-            db_query( $sql, $status, $row->email );
+            db_update( 'wmf_eoy_receipt_donor' )->fields( array(
+                'status' => $status,
+            ) )->condition( 'email', $row->email )->execute();
         }
 
         watchdog( 'wmf_eoy_receipt',

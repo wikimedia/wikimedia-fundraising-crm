@@ -200,7 +200,7 @@ WHERE
     AND civicrm_contribution_recur.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
     AND ( civicrm_contribution_recur.end_date IS NULL )
     AND civicrm_contribution_recur.contribution_status_id = :status_id
-LIMIT :limit
+LIMIT {$limit}
 EOS;
 
     $dbs = wmf_civicrm_get_dbs();
@@ -210,7 +210,6 @@ EOS;
         ':start' => $start_day,
         ':end' => $end_day,
         ':status_id' => $contribution_status_id,
-        ':limit' => $limit
     ) );
     
     $out = array();
