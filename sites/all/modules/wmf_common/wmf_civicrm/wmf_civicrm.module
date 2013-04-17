@@ -716,7 +716,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     if ( array_key_exists( 'is_error', $contact_result ) && $contact_result['is_error'] != 0 ){
-        throw new WmfException("IMPORT_CONTACT", "Contact could not be added. Aborting import.", $msg);
+        throw new WmfException("IMPORT_CONTACT", "Contact could not be added. Aborting import. Original error: " . $contact_result['error_message'], $msg);
     }
     return $contact_result;
 }

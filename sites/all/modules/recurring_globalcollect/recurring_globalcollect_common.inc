@@ -75,9 +75,6 @@ WHERE
     AND ( civicrm_contribution_recur.end_date IS NULL )
 EOS;
 
-  // Add on the WHERE statement
-  $query .= $where;
-  
   // Add a limit.
   if ($limit > 0) {
     $query .= " LIMIT " . $limit;
