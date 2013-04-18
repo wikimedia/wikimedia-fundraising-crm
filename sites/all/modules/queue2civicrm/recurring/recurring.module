@@ -635,7 +635,9 @@ function recurring_normalize_paypal_msg( $msg ) {
 	  $msg_normalized[ 'last_name' ] = $msg[ 'last_name' ];
 	  $split = split("\n", str_replace("\r", '', $msg[ 'address_street' ]));
 	  $msg_normalized[ 'street_address' ] = $split[0];
-	  $msg_normalized[ 'supplemental_address_1' ] = $split[1];
+	  if ( count( $split ) > 1 ) {
+	    $msg_normalized[ 'supplemental_address_1' ] = $split[1];
+	  }
 	  $msg_normalized[ 'city' ] = $msg[ 'address_city' ];
 	  $msg_normalized[ 'state_province' ] = $msg[ 'address_state' ];
 	  $msg_normalized[ 'country' ] = $msg[ 'address_country_code' ];
@@ -647,7 +649,9 @@ function recurring_normalize_paypal_msg( $msg ) {
 	  $msg_normalized[ 'first_name_2' ] = implode(" ", $split);
 	  $split = split("\n", str_replace("\r", '', $msg[ 'address_street' ]));
 	  $msg_normalized[ 'street_address_2' ] = $split[0];
-	  $msg_normalized[ 'supplemental_address_2' ] = $split[1];
+	  if ( count( $split ) > 1 ) {
+	    $msg_normalized[ 'supplemental_address_2' ] = $split[1];
+	  }
 	  $msg_normalized[ 'city_2' ] = $msg[ 'address_city' ];
 	  $msg_normalized[ 'state_province_2' ] = $msg[ 'address_state' ];
 	  $msg_normalized[ 'country_2' ] = $msg[ 'address_country_code' ];
@@ -676,7 +680,6 @@ function recurring_normalize_paypal_msg( $msg ) {
       watchdog( 'recurring', "There is no contribution tracking id associated with this message.", array(), WATCHDOG_NOTICE );
     }
 
-    $msg_normalized[ 'gateway' ] = ( strlen( $msg[ 'gateway' ] )) ? $msg[ 'gateway' ] : 'paypal';
 	$msg_normalized[ 'gateway_txn_id' ] = $msg[ 'txn_id' ];
 	$msg_normalized[ 'original_currency' ] = $msg[ 'mc_currency' ];
 	$msg_normalized[ 'original_gross' ] = $msg[ 'mc_gross' ];
@@ -707,6 +710,8 @@ function recurring_normalize_paypal_msg( $msg ) {
     
     if ( isset( $msg[ 'amount3' ] ) ) {
       $msg_normalized[ 'amount' ] = $msg[ 'amount3' ];
+    } elseif ( isset( $msg[ 'mc_amount3' ] ) ) {
+      $msg_normalized[ 'amount' ] = $msg[ 'mc_amount3' ];
     }
     
     if ( isset( $msg[ 'subscr_date' ] ) ) {
@@ -732,7 +737,9 @@ function recurring_normalize_paypal_msg( $msg ) {
       }
     }
   }
-  
+
+  $msg_normalized[ 'gateway' ] = ( strlen( $msg[ 'gateway' ] )) ? $msg[ 'gateway' ] : 'paypal';
+
   $msg_normalized[ 'date' ] = $timestamp;
   
   return $msg_normalized;
