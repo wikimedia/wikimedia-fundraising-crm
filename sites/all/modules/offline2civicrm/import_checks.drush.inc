@@ -92,6 +92,7 @@ function drush_import_checks() {
 				"restrictions" => _get_value( "Restrictions", $row, $headers ),
 				"gift_source" => _get_value( "Gift Source", $row, $headers ),
 				"direct_mail_appeal" => _get_value( "Direct Mail Appeal", $row, $headers ),
+				"import_batch_number" => _get_value( "Batch", $row, $headers ),
 			);
 
 			if( _get_value( 'Organization Name', $row, $headers, FALSE ) === FALSE ){
