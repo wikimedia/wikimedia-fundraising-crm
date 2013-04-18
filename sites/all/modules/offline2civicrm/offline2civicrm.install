@@ -1,0 +1,40 @@
+<?php
+
+if ( function_exists( "module_load_include" ) and module_exists( "wmf_civicrm" ) ) {
+    module_load_include( "inc", "wmf_civicrm", "bootstrap" );
+}
+
+function offline2civicrm_install() {
+    offline2civicrm_update_7000();
+}
+
+/**
+ * Create the Batch Number field
+ */
+function offline2civicrm_update_7000() {
+    $api = wmf_civicrm_bootstrap_civi();
+
+    $success = $api->CustomGroup->get(array(
+        'name' => 'Gift_Information',
+    ));
+    $values = $api->values();
+    $custom_group = array_pop($values);
+    if (!$success || !$custom_group->id) {
+        throw new Exception("Missing custom group 'Gift Information', " . $api->errorMsg());
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'import_batch_number',
+        'column_name' => 'import_batch_number',
+        'label' => ts('Batch Number'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
+}

@@ -322,6 +322,9 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     if ( array_key_exists( 'restrictions', $msg ) ) {
         $custom_vars['Fund'] = $msg['restrictions'];
     }
+    if ( array_key_exists( 'import_batch_number', $msg ) ) {
+        $custom_vars['import_batch_number'] = $msg['import_batch_number'];
+    }
 
     wmf_civicrm_set_custom_field_values( $contribution_result[ 'id' ], $custom_vars );
 
