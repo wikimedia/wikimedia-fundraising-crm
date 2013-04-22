@@ -1,6 +1,6 @@
 <?php
 
-require_once drupal_get_path( 'module', 'wmf_common' ) . '/civicrm_api_check.php';
+require_once drupal_get_path( 'module', 'wmf_civicrm' ) . '/civicrm_api_check.inc';
 require_once drupal_get_path( 'module', 'wmf_common' ) . '/MessageFile.php';
 
 function thank_you_perm() {
