@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Export Contacts and Contributions: a new action that can be taken on
+ * Advanced Search results.
+ */
 class CRM_Contact_ContactsAndContributionsExport
 {
     static function alterExport(&$table, &$headerRows, &$sqlColumns, &$exportMode)
@@ -256,6 +260,9 @@ EOS;
         $previous_year = date("Y", strtotime("-1 year"));
         $lybunt = 0;
         $sybunt = 0;
+        $is_this_year = false;
+        $is_previous_year = false;
+        $is_any_other_year = false;
 
         foreach ($contributions as $row)
         {
