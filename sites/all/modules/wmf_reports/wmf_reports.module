@@ -11,6 +11,19 @@ function wmf_reports_civicrm_config(&$config)
     set_include_path(get_include_path().PATH_SEPARATOR.dirname(__FILE__));
 }
 
+function wmf_reports_civicrm_advancedSearchModes(&$search_modes)
+{
+    $search_modes[] = array(
+        'selectorName'  => 'CRM_Contact_Form_ContactAndContributionsSelector',
+        'selectorLabel' => ts( 'Contacts and Contributions' ),
+        'taskFile'      => 'CRM/common/searchResultTasks.tpl',
+        'taskClassName' => 'CRM_Contact_Task',
+        'taskContext'   => 'Contribution',
+        'resultFile'    => 'CRM/Contact/Form/ContactAndContributionsSelector.tpl',
+        'resultContext' => 'Search',
+    );
+}
+
 function wmf_reports_civicrm_searchTasks($type, &$tasks)
 {
     if ($type == 'contact')
