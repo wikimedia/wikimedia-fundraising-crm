@@ -275,11 +275,15 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
         'contribution_recur_id' => $recur_id,
         'check_number' => $msg['check_number'],
         'letter_code' => $msg['letter_code'],
-        'thankyou_date' => date( 'Y-m-d H:i:s', $msg['thankyou_date'] ),
 
         // API required fields
         'version' => '3'
     );
+
+    // Add the thank you date when it exists and is not null (e.g.: we're importing from a check)
+    if ( array_key_exists( 'thankyou_date', $msg ) && $msg[ 'thankyou_date' ] ) {
+        $contribution[ 'thankyou_date' ] = date( 'Y-m-d H:i:s', $msg['thankyou_date'] );
+    }
 
     watchdog( 'wmf_civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), NULL, WATCHDOG_DEBUG);
 
