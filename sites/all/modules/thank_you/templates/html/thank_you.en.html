@@ -1,37 +1,38 @@
-<p>Dear {{ contact.first_name }},</p>
+<p>Dear {{contact.first_name}},</p>
 
 <p>Thank you for donating to the Wikimedia Foundation. You are wonderful!</p>
 
 <p>It's easy to ignore our fundraising banners, and I'm really glad you didn't. This is
-    how Wikipedia pays its bills --- people like you giving us money, so we can keep the
-    site freely available for everyone around the world.</p>
+how Wikipedia pays its bills --- people like you giving us money, so we can keep the site
+freely available for everyone around the world.</p>
 
 <p>People tell me they donate to Wikipedia because they find it useful, and they trust it
-    because even though it's not perfect, they know it's written for them. Wikipedia isn't
-    meant to advance somebody's PR agenda or push a particular ideology, or to persuade
-    you to believe something that's not true. We aim to tell the truth, and we can do that
-    because of you. The fact that you fund the site keeps us independent and able to
-    deliver what you need and want from Wikipedia. Exactly as it should be.</p>
+because even though it's not perfect, they know it's written for them. Wikipedia isn’t
+meant to advance somebody's PR agenda or push a particular ideology, or to persuade you to
+believe something that's not true. We aim to tell the truth, and we can do that because of
+you. The fact that you fund the site keeps us independent and able to deliver what you
+need and want from Wikipedia. Exactly as it should be.</p>
 
-<p>You should know: your donation isn't just covering your own costs. The average donor is
-    paying for his or her own use of Wikipedia, plus the costs of hundreds of other
-    people. Your donation keeps Wikipedia available for an ambitious kid in Bangalore
-    who's teaching herself computer programming. A middle-aged homemaker in Vienna who's
-    just been diagnosed with Parkinson's disease. A novelist researching 1850s Britain.
-    A 10-year-old in San Salvador who's just discovered Carl Sagan.</p>
+<p>You should know: your donation isn’t just covering your own costs. The average donor
+is paying for his or her own use of Wikipedia, plus the costs of hundreds of other people.
+Your donation keeps Wikipedia available for an ambitious kid in Bangalore who’s teaching
+herself computer programming. A middle-aged homemaker in Vienna who’s just been
+diagnosed with Parkinson’s disease. A novelist researching 1850s Britain. A 10-year-old
+in San Salvador who’s just discovered Carl Sagan.</p>
 
 <p>On behalf of those people, and the half-billion other readers of Wikipedia and its
-    sister sites and projects, I thank you for joining us in our effort to make the sum of
-    all human knowledge available for everyone. Your donation makes the world a better
-    place. Thank you.</p>
+sister sites and projects, I thank you for joining us in our effort to make the sum of all
+human knowledge available for everyone. Your donation makes the world a better place.
+Thank you.</p>
 
 <p>Most people don't know Wikipedia's run by a non-profit. Please consider sharing this
-    e-mail with a few of your friends to encourage them to donate too. And if you're
-    interested, you should try adding some new information to Wikipedia. If you see a typo
-    or other small mistake, please fix it, and if you find something missing, please add
-    it. There are resources that can help you <a href="https://en.wikipedia.org/w/index.php?title=Special:UserLogin&returnto=Wikipedia:Introduction&type=signup&campaign=fr12a">get started</a>.
-    Don't worry about making a mistake: that's normal when people first start editing and
-    if it happens, other Wikipedians will be happy to fix it for you.</p>
+e-mail with a few of your friends to encourage them to donate too. And if you're
+interested, you should try adding some new information to Wikipedia. If you see a typo or
+other small mistake, please fix it, and if you find something missing, please add it.
+There are resources <a
+href="https://en.wikipedia.org/wiki/Wikipedia:Introduction">here</a> that can help you get
+started. Don't worry about making a mistake: that's normal when people first start editing
+and if it happens, other Wikipedians will be happy to fix it for you.</p>
 
 <p>I appreciate your trust in us, and I promise you we'll use your money well.</p>
 
@@ -41,22 +42,11 @@ Sue</p>
 <br />
 <p>Sue Gardner<br />
 Executive Director,<br />
-Wikimedia Foundation<br />
-<a href="https://donate.wikimedia.org">https://donate.wikimedia.org</a></p>
+Wikimedia Foundation</p>
 
-<p>For your records: Your donation on {{ contribution.receive_date|date("Y-m-d") }} was {{ contribution.contribution_source }}.
-    {% if recurring %}
-    {% include 'html/recurring/en.html' ignore missing %}
-    {% endif %}</p>
-
-<p>You can follow us on <a href="http://twitter.com/Wikipedia">Twitter</a>, <a href="http://identi.ca/wikipedia">identi.ca</a>
-    or <a href="https://plus.google.com/+Wikipedia/posts">Google+</a>, like us on
-    <a href="http://www.facebook.com/wikipedia">Facebook</a> and read <a href="http://blog.wikimedia.org/">our blog</a>.
-    Here is the <a href="https://wikimediafoundation.org/wiki/Annual_Report">Wikimedia Foundation annual report for 2010-11</a>,
-    the <a href="http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf">
-        Wikimedia Foundation annual plan for 2012-13</a> and the <a href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">
-        Wikimedia Foundation's five-year strategic plan</a>. You can also now buy Wikipedia
-    merchandise at <a href="https://shop.wikimedia.org/">shop.wikimedia.org</a>.</p>
+<p>For your records: Your donation on {{contribution.receive_date}} was
+{{contribution.source}}.{% if recurring %}{% include 'recurring/de.html' ignore missing
+%}{% endif %}</p>
 
 <p>This letter may serve as a record of your donation. No goods or services were provided,
 in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit
@@ -64,14 +54,28 @@ charitable corporation with 501(c)(3) tax exempt status in the United States. Ou
 is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number:
 20-0049703</p>
 
+<p>You can follow us on <a href="https://twitter.com/Wikipedia">Twitter</a>, <a
+href="https://identi.ca/wikipedia">identi.ca</a> or <a
+href="https://plus.google.com/+Wikipedia/posts">Google+</a>, like us on <a
+href="https://www.facebook.com/wikipedia">Facebook</a> and <a
+href="https://blog.wikimedia.org">read our blog</a>. Here is the <a
+href="https://wikimediafoundation.org/wiki/Annual_Report">Wikimedia Foundation annual
+report for 2010-11</a>, the <a
+href="http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf">Wikimedia
+Foundation annual plan for 2012-13</a> and the <a
+href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">Wikimedia
+Foundation’s five-year strategic plan</a>. You can also now buy Wikipedia merchandise at
+<a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
+
 <div style="padding:0 10px 5px 10px; border:1px solid black;">
 
-<p><i>Opt out option:</i></p>
+<p><i>Opt out option</i></p>
 
-<p>We'd like to keep you as a donor informed of our community activities and fundraisers. 
+<p>We'd like to keep you as a donor informed of our community activities and fundraisers.
 If you prefer however not to receive such emails from us, please click below and we'll
-take you off the list:</p>
+take you off the list</p>
 
-<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
+<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Unsubscribe</a>
 
 </div>
+

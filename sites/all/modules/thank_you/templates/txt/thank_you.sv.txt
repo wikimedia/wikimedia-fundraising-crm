@@ -1,47 +1,83 @@
-Kära {{ contact.first_name }}
-
-Du är underbar – tack så mycket för din gåva till Wikimediastiftelsen!
-
-Det är så här vi betalar våra räkningar – det är människor som du som ger
-gåvor om 50:-, 100:-, 500:-. Min favoritgåva i fjol var 5 pund från en liten flicka i
-England. Hon hade övertalat sina föräldrar att låta henne donera sin veckopeng. Det
-är människor som du, tillsammans med den lilla flickan, som gör det möjligt för
-Wikipedia att fortsätta tillhandahålla fri, lättillgänglig åtkomst till objektiv
-information för alla, världen runt. För alla som hjälper till att betala för det, och
-för alla de som inte har råd. Tack så mycket.
-
-Jag vet att det är lätt att strunta i vår vädjan och jag är mycket glad att du
-valde att inte göra det. Från mig och från de tiotusentals volontärer som skriver
-Wikipedia: tack för att du hjälper till att göra världen bättre. Vi kommer att
-använda din gåva med varsamhet, och tack för att du litar på oss.
-
-Tack,
-Sue Gardner
-Verkställande direktör, Wikimediastiftelsen
-
-För din egen bokföring: Din gåva {{ contribution.receive_date|date("Y-m-d") }} var
-{{ contribution.contribution_source }}.
-
-{% if recurring %}
-
-{% include 'recurring/sv.html' ignore missing %}
-
-{% endif %}
-
-Detta brev kan användas som kvitto för din gåva, som inte var betalning för varor
-eller tjänster, helt eller delvis. Wikimediastiftelsen är en ideell organisation som
-skattebefriats enligt sektion 501(c)(3) i den amerikanska skattelagstiftningen. Vår
-adress är 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Skattefrihetsnummer i
-Amerika: 20-0049703
 
 
+	Kära {{contact.first_name}}, 
 
-Påminnelseval:
+	Tack för att du donerar till Wikimedia stiftelsen. Du är underbar! 
 
-Vi skulle vilja skicka dig som donator nyheter om aktiviteter och
-välgörenhetskampanjer. Om du inte vill få sådana email från oss, klicka då på
-länken nedan så att vi kan ta bort dig från listan:
+	Det är lätt att ignorera våra insamlingbanners och jag är glad att du
+inte gjorde det. Det är så här Wikipedia betalar sina räkningar ---
+människor som du ger oss pengar så att vi kan hålla webbplatsen fritt
+tillgänglig till alla i hela världen. 
 
-<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Avsluta abonnemang</a>
+	Folk berättar för mig att de donerar till Wikipedia för att de finner
+de användbart, och de litar på det eftersom även om det inte är perfekt,
+vet de att det är skrivet för dem. Wikipedia är inte avsett att främja
+någons PR-agenda eller driva en viss ideologi, eller att övertala dig att
+tro på något som inte är sant. Vi strävar efter att tala sanning, och vi
+kan göra det tack vare dig. Det faktum att du finansiera webbplatsen
+håller oss oberoende och kunna leverera vad du behöver och vill ha från
+Wikipedia. Precis som det ska vara. 
+
+	Du borde veta: din donation täcker inte bara din egen kostnad. Den
+genomsnittliga donatorn betalar för hans eller hennes användning av Wikipedia, plus
+kostnaden för hundratals andra människor. Din donation håller Wikipedia
+tillgänglig för ett ambitiöst barn i Bangladore som lär sig själv
+datorprogrammering. En medelålders hemmafru i Wien som just fått diagnosen Parkinson. En
+romanförfattare som forskar om 1850-talets Storbritannien. En 10-åring ​​i San
+Salvador som just upptäckt Carl Sagan. 
+
+	Av dessa personers vägnar, och de halv miljard andra läsare på
+Wikipedia och dess syster sidor och projekt, vill jag tacka dig för att gå med
+oss i vår strävan att göra all mänsklig kunskap tillgänglig för alla. Din
+donation gör världen till ett bättre ställe. Tack. 
+
+	De flesta människor vet inte att Wikipedia drivs ideellt. Överväg
+gärna att dela med dig av det här e-brevet till några av dina vänner för
+att uppmuntra dem att också donera. Och om du är intresserad borde du
+prova att lägga till lite ny information på Wikipedia. Om du ser ett
+stavfel eller annat lite misstag, fixa det gärna, och om du ser att något
+saknas, lägg gärna till det. 
+
+	Jag uppskattar ditt förtroende för oss och jag lovar att vi kommer
+att använda dina pengar väl. 
+
+	Tack,
+ Sue 
+
+	Sue Gardner
+ Verkställande direktör,
+ Wikimedia stiftelsen 
+
+	För din bokföring: Din donation den {{contribution.receive_date}} var
+{{contribution.source}}.{% if recurring %}{% include 'recurring/de.html' ignore missing %}{%
+endif %} 
+
+	Detta brev är ett kvitto för din donation. Inget gods och ingen
+service tillhandahölls, helt eller delvis, som gengäld för denna gåva.
+Wikimedia Foundation, Inc. är en ideellt organisation med 503(c)(3)
+skattebefrielse i USA. Vår address är 149 New Montgomery, 3rd Floor, San Francisco,
+CA, 94105. U.S. skattebefrielsenummer: 20-0049703 
+
+	Du kan följa oss på Twitter [1], identi.ca [2] eller Google+ [3],
+gilla oss på Facebook [4] och läsa vår blogg [5]. Här är Wikimedia
+stiftelsens årsredovisning för 2010-11 [6], Wikimedia stiftelsens verksamhetsplan
+för 2012-13 [7] och Wikimedia stiftelsens femårs strategiska plan [8]. Du
+kan nu också köpa Wikipediasaker på shop.wikimedia.org [9].  
+
+	_Bortval_ 
+
+	Som donator vill vi gärna hålla dig ajour med information om våra
+gemenskapsaktiviteter och insamlingar. Om du föredrar att inte motta sådana e-brev från
+oss, klicka nedan och vi tar bort dig från listan. Avregistrera [10] 
 
 
+[1] https://twitter.com/Wikipedia
+[2] https://identi.ca/wikipedia
+[3] https://plus.google.com/+Wikipedia/posts
+[4] https://www.facebook.com/wikipedia
+[5] https://blog.wikimedia.org
+[6] https://wikimediafoundation.org/wiki/Annual_Report
+[7] http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf
+[8] https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary
+[9] https://shop.wikimedia.org
+[10] {{unsubscribe_link|raw}}

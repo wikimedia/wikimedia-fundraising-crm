@@ -1,54 +1,86 @@
-<p>Liebe(r) {{ contact.first_name }}!</p>
+<p>Liebe(r) {{contact.first_name}},</p>
 
-<p>Sie sind wunderbar, herzlichen Dank für Ihre Spende an die Wikimedia Foundation!</p>
+<p>danke, dass Sie an die Wikimedia Foundation gespendet haben. Sie sind großartig!</p>
 
-<p>Auf diese Art bezahlen wir unsere Rechnungen – mit Hilfe von Menschen wie Ihnen, die
-fünf, zwanzig oder hundert Euro spenden. Die schönste Spende letztes Jahr waren für
-mich fünf Pfund eines kleinen Mädchens aus England, das ihre Eltern überredet hatte,
-ihr Taschengeld spenden zu dürfen. Leute wie Sie, die es diesem Mädchen gleichtun,
-ermöglichen es Wikipedia, weiterhin einen kostenlosen und einfachen Zugang zu
-unparteiischem Wissen für alle Menschen der Welt anzubieten. Für Menschen, die sich an
-den Kosten beteiligen, genauso wie für solche, die sich das nicht leisten können.
-Herzlichen Dank.</p>
+<p>Es ist leicht, unsere Spendenbanner nicht zu beachten, und ich bin wirklich froh, dass
+Sie das nicht getan haben. So zahlt Wikipedia ihre Rechnungen --- durch Menschen wie Sie,
+die uns Geld spenden, so dass wir die Seite für jeden überall auf der Welt weiterhin
+kostenlos zugänglich machen können.</p>
 
-<p>Ich weiß, dass man unsere Spendenaufrufe auch einfach ignorieren kann, daher freue ich
-mich, dass Sie sich anders entschieden haben. Von mir und den zehntausenden freiwilligen
-Wikipedia-Autoren deshalb ein großes Dankeschön für Ihre Hilfe bei unserem Vorhaben,
-die Welt ein wenig zu verbessern. Wir werden Ihr Geld umsichtig einsetzen. Ich danke Ihnen
-für Ihr Vertrauen.</p>
+<p>Viele Menschen sagen mir, sie spenden für Wikipedia, weil sie sie nützlich finden.
+Sie vertrauen auf Wikipedia, auch wenn sie nicht perfekt ist, denn sie wissen, dass sie
+für sie geschrieben ist. Wikipedia ist nicht dafür gedacht, jemandes PR-Plan zu nützen
+oder eine spezielle Ideologie zu stärken oder Sie von irgendetwas überzeugen, das nicht
+wahr ist. Unser Ziel ist es, die Wahrheit zu sagen, und wir können dies dank Ihnen. Weil
+Sie diese Site finanziell unterstützen, bleiben wir unabhängig und in der Lage, das zu
+liefern, was Sie von Wikipedia brauchen und wollen. Genauso, wie es sein sollte.</p>
 
-<p>Vielen Dank<br />
+<p>Sie sollten wissen: Ihre Spende deckt nicht nur unsere eigenen Kosten. Der
+durchschnittliche Spender zahlt für seine Benutzung der Wikipedia und zudem für die
+Kosten Hunderter anderer Leute. Ihre Spende sorgt dafür, dass Wikipedia für ein
+ehrgeiziges Mädchen in Bangalore zugänglich ist, das sich selbst das Programmieren
+beibringt. Für einen Heimarbeiter mittleren Alters aus Wien, bei dem gerade das
+Parkinson-Syndrom diagnostiziert worden ist. Für einen Schriftsteller, der das England
+der 1850er-Jahre erforscht. Für einen Zehnjährigen in San Salvador, der gerade Carl
+Sagan für sich entdeckt hat.</p>
+
+<p>Im Namen dieser Menschen und der halben Milliarde anderer Leser der Wikipedia und ihrer
+Schwesterseiten und -projekte danke ich Ihnen dafür, dass Sie sich mit uns darum
+bemühen, das gesamte Wissen der Menschheit für jeden verfügbar zu machen. Ihre Spende
+macht die Welt zu einem besseren Ort. Vielen Dank.</p>
+
+<p>Die meisten Menschen wissen nicht, dass Wikipedia nicht profitorientiert ist. Bitte
+leiten Sie diese E-Mail an einige Ihrer Freunde weiter, um auch sie zu einer Spende zu
+ermutigen. Und wenn Sie Interesse haben, sollten sie versuchen, neue Informationen in die
+Wikipedia einzutragen. Falls Sie einen Schreibfehler oder einen anderen kleinen Fehler
+entdecken, bitte verbessern sie ihn, und wenn Sie den Eindruck haben, dass etwas fehlt,
+bitte ergänzen Sie es.</p>
+
+<p>Ich schätze Ihr Vertrauen in uns und verspreche Ihnen, dass wir Ihr Geld sinnvoll
+verwenden werden.</p>
+
+<p>Danke,<br />
+Sue</p>
+
 <br />
-Sue Gardner<br />
-Wikimedia-Geschäftsführerin</p>
+<p>Sue Gardner<br />
+Geschäftsführerin,<br />
+Wikimedia Foundation</p>
 
-<p>Für Ihre Unterlagen: Ihre Spende vom {{ contribution.receive_date|date("Y-m-d") }}
-betrug {{ contribution.contribution_source }}.
-{% if recurring %}
-{% include 'recurring/de.html' ignore missing %}
-{% endif %}</p>
+<p>Für Ihre Unterlagen: Ihre Spende am {{contribution.receive_date}} betrug
+{{contribution.source}}.{% if recurring %}{% include 'recurring/de.html' ignore missing
+%}{% endif %}</p>
 
-<p>
-{% if recurring %}
-{% include 'recurring/de.html' ignore missing %}
-{% endif %}</p>
+<p>Dieser Brief kann als Bestätigung Ihrer Spende angesehen werden. Es wurden keine Waren
+oder Dienste, weder als Ganzes noch in Teilen, als Gegenleistung für diesen Beitrag zur
+Verfügung gestellt. Die Wikimedia Foundation Inc. ist eine nicht auf Gewinn
+ausgerichtete, gemeinnützige Gesellschaft mit 501(c)(3)-Steuerbefreiungsstatus in den
+Vereinigten Staaten. Unsere Adresse ist 149 New Montgomery, 3rd Floor, San Francisco, CA,
+94105. U.S. Steuerbefreiungsnummer: 20-0049703</p>
 
-<p>Dieser Brief kann als Nachweis für Ihre Spende dienen. Für diesen finanziellen
-Beitrag wurden keine Waren oder Dienstleistungen bereitgestellt, weder ganz noch
-teilweise. Die Wikimedia Foundation ist eine gemeinnützige Organisation mit
-Steuerbefreiungsstatus in den USA gemäß 501(c)(3). Unsere Anschrift lautet 149 New
-Montgomery, 3rd Floor, San Francisco, CA, 94105. US-Steuerbefreiungsnummer:
-20-0049703.</p>
+<p>Sie können uns auf <a href="https://twitter.com/Wikipedia">Twitter</a>, <a
+href="https://identi.ca/wikipedia">identi.ca</a> oder <a
+href="https://plus.google.com/+Wikipedia/posts">Google+</a> folgen, uns auf <a
+href="https://www.facebook.com/wikipedia">Facebook</a> empfehlen und <a
+href="https://blog.wikimedia.org">unser Blog lesen</a>. Hier sind der <a
+href="https://wikimediafoundation.org/wiki/Annual_Report">Jahresbericht der Wikimedia
+Foundation für 2010-2011</a>, der <a
+href="http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf">Jahresbericht
+der Wikimedia Foundation für 2012-2013</a> und der <a
+href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">strategische
+Fünfjahresplan der Wikimedia Foundation</a>. Sie können auch Wikipedia-Fanartikel auf <a
+href="https://shop.wikimedia.org">shop.wikimedia.org</a> erwerben.</p>
 
 <div style="padding:0 10px 5px 10px; border:1px solid black;">
 
-<p><i>Abmeldung vom Newsletter:</i></p>
+<p><i>Abmeldungsoption</i></p>
 
-<p>Wir möchten Sie als Spender gerne über unsere Aktivitäten und Spendenaktionen auf
-dem Laufenden halten. Wenn Sie diesbezüglich jedoch lieber keine E-Mails von uns erhalten
-wollen, dann klicken Sie bitte auf den folgenden Link, um aus der Liste entfernt zu
-werden:</p>
+<p>Wir würden Sie als Spender gerne über unsere Gemeinschafts-Aktivitäten und
+Spendenaktionen informiert halten. Wenn Sie  es bevorzugen, keine derartigen E-Mails von
+uns zu erhalten, klicken Sie bitte auf die unten stehende Schaltfläche, um sich aus dem
+Verteiler auszutragen</p>
 
-<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Abbestellen</a>
+<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Unsubscribe</a>
 
 </div>
+
