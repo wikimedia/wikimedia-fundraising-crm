@@ -1,51 +1,91 @@
-Kepada {{ contact.first_name }}
-
-Anda sememangnya hebat, setinggi-tinggi terima kasih kerana menderma kepada Yayasan
-Wikimedia!
-
-Begini caranya kami membayar bil-bil kami -- ianya insan seperti anda, yang memberi
-lima dollar, dua puluh dollar, seratus dollar. Derma yang paling saya gemari ialah pada
-tahun lepas iaitu sebanyak lima pound daripada seorang kanak-kanak perempuan di England,
-yang memujuk ibubapanya supaya menderma menggunakan duit belanja beliau. Ianya insan
-seperti anda, bersama kanak-kanak perempuan tersebut, yang membuatkan ianya tidak mustahil
-untuk Wikipedia terus menyediakan informasi yang percuma dan mudah diakses yang seimbang,
-untuk semua manusia di seluruh dunia. Kepada semua yang membantu membiayainya, dan kepada
-siapa yang tidak mampu membantu. Terima kasih banyak.
-
-Kami tahu ianya mudah untuk mengabaikan rayuan kami, dan kami berharap anda tidak. Dari
-kami, dan beribu-ribu sukaraleawan yang menulis Wikipedia: terima kasih kerana membantu
-kami menjadikan dunia tempat yang lebih baik. Kami akan menggunakan wang anda sebaiknya,
-dan terima kasih kerana mempercayai kami.
-
-Terima kasih,
-Sue Gardner
-Pengarah Eksekutif Yayasan Wikimedia
-
-Untuk rekod anda: Derma anda pada {{ contribution.receive_date|date("Y-m-d") }} ialah
-{{ contribution.contribution_source }}.
-
-{% if recurring %}
-
-{% include 'recurring/ms.html' ignore missing %}
-
-{% endif %}
-
-Surat ini merupakan rekod kepada derma anda. Tiada barang atau perkhidmatan disediakan,
-dalam bentuk penuh atau sebahagian, untuk sumbangan ini. Yayasan Wikipedia, Inc. ialah
-syarikat korporat berkebajikan bukan berasas keuntungan dengan status pengecualian cukai
-501(c)(3) di Amerika Syarikat. Alamat kami ialah 149 New Montgomery, 3rd Floor, San
-Francisco, CA, 94105. Nombor pengecualian cukai Amerika Syarikat: 20-0049703
 
 
+	Salam sejahtera {{contact.first_name}}, 
 
-Pilihan opt keluar:
+	Terima kasih kerana sudi menderma kepada Yayasan Wikimedia. 
 
-Kami ingin memastikan anda sebagai penderma untuk sentiasa mendapat maklumat tentang
-aktiviti-aktiviti komuniti dan kutipan derma. Sekiranya anda memilih untuk tidak menerima
-emel-emel tersebut daripada kami, sila klik pautan di bawah dan kami akan menyahsenaraikan
-anda: you prefer however not to receive such emails from us, please click below and we'll
-take you off the list:
+	Memang senang untuk tidak mengendahkan sepanduk mengumpul derma kami,
+dan saya benar-benar gembira kerana anda tidak endahkannya. Inilah
+caranya Wikipedia membayar bil-bilnya --- orang-orang seperti anda memberikan
+kami wang supaya kami boleh memastikan lama ini terus boleh dicapai secara
+percuma untuk semua orang di serata dunia. 
 
-<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Berhenti melanggan</a>
+	Ada yang beritahu saya yang mereka menderma kepada Wikipedia kerana
+mereka rasa ia berguna, dan mereka percayakannya sebab walaupun ia tidak
+sempurna, mereka tahu ia ditulis untuk mereka. Wikipedia bukan ditulis untuk
+memajukan agenda hubungan awamnya, ataupun untuk memajukan ideologi tertentu,
+ataupun untuk mendesak anda untuk mempercayai yang sesuatu itu tidak benar.
+Kami bertujuan untuk memberitahu anda kebenaran, dan kami boleh
+melakukannya kerana anda. Anda yang membiayai laman ini dan menjadikan kami terus
+bebas dan boleh memberikan apa yang anda perlukan dan mahukan daripada
+Wikipedia. Seperti mana yang sepatutnya. 
+
+	Anda patut tahu: dermaan anda bukan sahaja merangkumi kos-kos anda.
+Penderma-penderma biasa biasanya membayar untuk dia menggunakan Wikipedia, dan juga
+untuk kos-kos beratus-ratus orang yang lain. Dermaan anda membolehkan
+Wikipedia ada untuk seorang kanak-kanak yang bercita-cita tinggi di Bangalore
+yang cuba belajar pemprograman komputer. Seorang pembuat rumah pertengahan
+umur di Vienna yang baru sahaja didiagnos dengan penyakit Parkinson.
+Seorang penulis novel yang mengkaji Britain zaman 1850-an. Seorang
+kanak-kanak 10 tahun di San Salvador yang baru sahaja tahu tentang Carl Sagan. 
+
+	Bagi pihak mereka ini, dan juga separuh bilion pembaca Wikipedia dan
+projek-projek saudaranya yang lain, saya berterima kasih kepada anda kerana
+menyertai kami dalam usaha untuk membolehkan kesemua pengetahuan manusia boleh
+didapati oleh semua orang. Sumbangan anda menjadikan dunia ini tempat yang
+lebih baik. Terima kasih. 
+
+	Kebanyakan orang tidak tahu yang Wikipedia dijalankan oleh pertubuhan
+yang tidak berasaskan keuntungan. Jika boleh, kongsilah e-mel ini dengan
+beberapa orang rakan-rakan anda untuk menggalakkan mereka untuk menderma juga.
+Dan, jika anda berminat, anda patut cuba menambahkan maklumat-maklumat
+baru ke Wikipedia. Jika anda terlihat kesilapan-kesilapan ejaan atau
+sebarang kesilapan kecil, silalah baikinya, dan jika anda mendapati ada
+apa-apa yang tidak cukup, silalah tambahkannya. 
+
+	Saya hargai kepercayaan anda pada kami, dan saya berjanji yang kami
+akan menggunakan wang anda degnan baik. 
+
+	Terima kasih,
+ Sue 
+
+	Sue Gardner
+ Pengarah Eksekutif,
+ Yayasan Wikimedia 
+
+	Untuk makluman anda: Derma anda pada {{contribution.receive_date}}
+ialah {{contribution.source}}.{% if recurring %}{% include
+'recurring/de.html' ignore missing %}{% endif %} 
+
+	Surat ini boleh menjadi rekod pendermaan anda. Tiada barangan atau
+perkhidmatan yang disediakan, secara penuh atau separa, untuk sumbangan ini.
+Yayasan Wikimedia, Inc. ialah satu perbadanan amal tanpa keuntungan dengan
+status pengecualian cukai 501(c)(3) di Amerika Syarikat. Alamat kami adalah
+di 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. nombor
+pengecualian cukai: 20-0049703 
+
+	Anda boleh mengikuti kami di Twitter [1], identi.ca [2] atau Google+
+[3], ''like'' kami di Facebook [4] dan baca blog kami [5]. Di sini adalah
+laporan tahunan Yayasan Wikimedia untuk tahun 2010-2011 [6], rancangan
+tahunan Yayasan Wikimedia untuk tahun 2012-2013 [7] dan juga rancangan
+strategik lima tahun Yayasan Wikimedia [8]. Anda juga boleh membeli
+cenderamata-cenderamata Wikipedia di shop.wikimedia.org [9].  
+
+	_Pilihan tidak sertai (''opt out'')_ 
+
+	Kami inginkan anda sebagai penderma untuk terus dimaklumkan tentang
+aktiviti-aktiviti komuniti dan pengumpulan derma kami. Tetapi, jika anda tidak mahu
+menerima e-mel sebegitu daripada kami, sila klik di bawah dan kami akan
+keluarkan anda daripada senarai Hentikan langganan [10] 
 
 
+[1] https://twitter.com/Wikipedia
+[2] https://identi.ca/wikipedia
+[3] https://plus.google.com/+Wikipedia/posts
+[4] https://www.facebook.com/wikipedia
+[5] https://blog.wikimedia.org
+[6] https://wikimediafoundation.org/wiki/Annual_Report
+[7] http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf
+[8] https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary
+[9] https://shop.wikimedia.org
+[10] {{unsubscribe_link|raw}}

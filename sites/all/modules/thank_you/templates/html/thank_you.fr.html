@@ -1,49 +1,88 @@
-<p>Chèr(e) {{ contact.first_name }},</p>
+<p>Cher/Chère {{contact.first_name}},</p>
 
-<p>Vous êtes vraiment formidable, un grand merci pour votre don à la <i>Wikimedia
-Foundation</i> !</p>
+<p>Merci pour votre don à la Fondation Wikimédia. Vous êtes formidable !</p>
 
-<p>C’est comme cela que nous payons nos factures&nbsp;— des gens comme vous qui
-donnent cinq, vingt ou cent dollars. Mon don préféré l’année dernière était celui
-de cinq livres sterling par une petite fille du Royaume-Uni qui avait persuadé ses
-parents de la laisser nous donner son argent de poche. Ce sont des gens comme vous, à
-l’image de cette fille, qui permettent à <i>Wikipédia</i> de continuer à fournir un
-accès gratuit et facile à des informations objectives, partout à travers le monde. Pour
-tout ceux qui nous aident en faisant un don et pour ceux qui ne peuvent se permettre
-d’aider. Merci beaucoup.</p>
+<p>Il est facile d’ignorer nos bannières d’appel aux dons et je suis très heureux
+que vous ne l’ayez pas fait. C’est comme ça que Wikipédia paie ses factures. Grâce
+au soutien financier de personnes telles que vous, nous pouvons garder le site librement
+accessible à tous, à travers le monde.</p>
 
-<p>Je sais qu’il est facile d’ignorer nos sollicitations et je suis heureuse que vous
-ne l’ayez pas fait. De ma part et de celle de dizaine de milliers de volontaires qui
-contribuent à <i>Wikipédia</i> : merci de nous aider à faire du monde un endroit
-meilleur. Nous utiliserons votre argent avec soin et je vous remercie de nous faire
-confiance.</p>
+<p>Les gens me disent qu’ils donnent pour Wikipédia parce qu’ils trouvent cette
+encyclopédie utile et digne de leur confiance, car même si elle n’est pas parfaite,
+elle est écrite pour eux. Wikipédia ne sert pas à promouvoir le programme de relations
+publiques de quelqu’un ou une idéologie en particulier, ni à vous persuader de croire
+en quelque chose de faux. Notre objectif est de dire la vérité et nous pouvons le faire
+grâce à vous. Vos dons pour le site nous permettent de rester indépendants et capables
+de vous fournir ce que vous attendez de Wikipédia. Exactement comme cela devrait
+être.</p>
+
+<p>Il faut que vous sachiez que votre don ne couvre pas seulement vos propres coûts. Le
+donateur moyen paie pour sa propre utilisation de Wikipédia, ainsi que celle de centaines
+d’autres personnes. Votre don permet à Wikipédia d’être accessible à un enfant
+ambitieux qui apprend la programmation à Bangalore. À une femme au foyer
+quinquagénaire à Vienne, qui vient d’apprendre qu’elle a la maladie de Parkinson. À
+un romancier qui fait des recherches sur la Grande-Bretagne des années 1850. À un enfant
+de 10 ans à San Salvador qui vient de découvrir Carl Sagan.</p>
+
+<p>Au nom de ces personnes et du demi-milliard d’autres lecteurs de Wikipédia, de ses
+sites et projets frères, je vous remercie de vous joindre à nous dans nos efforts pour
+rendre l’ensemble des connaissances humaines accessibles à tous. Votre don fait du
+monde un endroit meilleur. Merci à vous.</p>
+
+<p>La plupart des gens ne savent pas que Wikipédia est une organisation à but
+non-lucratif. Merci de partager ce courrier à quelques-uns de vos amis pour les
+encourager à donner eux aussi. Et si cela vous intéresse, essayez d’ajouter de
+nouvelles informations à Wikipédia. Si vous voyez une faute d’orthographe ou une autre
+petite erreur, merci de la corriger , et si vous trouvez que quelque chose manque, merci
+de l’ajouter.</p>
+
+<p>Je vous remercie de votre confiance en nous et je vous promets que nous utiliserons
+votre don efficacement.</p>
 
 <p>Merci,<br />
-Sue Gardner<br />
-Directrice exécutive de la <i>Wikimedia Foundation</i></p>
+Sue</p>
 
-<p>Pour information : votre don à la date de {{ contribution.receive_date|date("Y-m-d")
-}} était d’un montant de {{ contribution.contribution_source }}.
-{% if recurring %}
-{% include 'recurring/fr.html' ignore missing %}
-{% endif %}</p>
+<br />
+<p>Sue Gardner<br />
+Directeur exécutif,<br />
+Fondation Wikimédia</p>
 
-<p>Cette lettre peut servir de preuve de votre don. Aucun bien ni aucun service n’a
-été délivré, en entier ni en partie, pour cette contribution. La <i>Wikimedia
-Foundation, Inc.</i> est une organisation à but non lucratif qui dispose du statut
-501(c)(3) d’exemption fiscale aux États-Unis. Notre adresse est : 149 New Montgomery,
-3rd Floor, San Francisco, CA, 94105, USA. Notre numéro d’exemption fiscale aux
-États-Unis : 20-0049703.</p>
+<p>Pour mémoire : votre don au {{contribution.receive_date}} s'élevait à
+{{contribution.source}}.{% if recurring %}{% include 'recurring/de.html' ignore missing
+%}{% endif %}</p>
+
+<p>Ce message peut servir de preuve de votre contribution. Aucun bien ni service, quel
+qu'il soit, n'a été fourni en contrepartie de cette contribution. La Wikimedia
+Foundation, Inc. est une association à but non-lucratif profitant du statut 501(c)(3)
+d'exemption de taxes aux États-Unis. Notre siège social est domicilié au 149 New
+Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S.
+
+Numéro d'exemption de taxe: 20-0049703</p>
+
+<p>Suivez-nous sur <a href="https://twitter.com/Wikipedia">Twitter|$url2 Twitter</a>, <a
+href="https://identi.ca/wikipedia">identi.ca|$url3 identi.ca</a> et sur <a
+href="https://plus.google.com/+Wikipedia/posts">Google+|$url4 Google+</a>, rejoignez-nous
+sur <a href="https://www.facebook.com/wikipedia">Facebook|$url5 Facebook</a> et <a
+href="https://blog.wikimedia.org">read our blog|$url6 consultez notre blog</a>. Voici le
+<a href="https://wikimediafoundation.org/wiki/Annual_Report">rapport annuel de la
+Fondation Wikimédia pour 2010–2011</a>, le <a
+href="http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf">plan
+annuel de la Fondation Wikimédia pour 2012–2013</a> et le <a
+href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">plan
+stratégique quinquennal</a>. Vous pouvez désormais acheter des produits marqués
+Wikipédia à l’adresse suivante : <a
+href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
 <div style="padding:0 10px 5px 10px; border:1px solid black;">
 
-<p><i>Option de désabonnement :</i></p>
+<p><i>Retirer de la liste</i></p>
 
-<p>En tant que donateur, nous aimerions vous tenir informé des activités de notre
-communauté, ainsi que des levées de fond. Néanmoins, si vous préférez de ne pas
-recevoir ce type de courriel de notre part, veuillez cliquer ci-dessous et nous vous
-enlèverons de notre liste :</p>
+<p>En tant que donateur, nous aimerions vous tenir au courant de nos activités
+communautaires et de nos collectes de fonds. Si vous préférez cependant ne pas recevoir
+de tels courriels de notre part, veuillez cliquer sur le lien ci-dessous pour que nous
+vous retirions de la liste.</p>
 
-<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Se désabonner</a>
+<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Se désinscrire</a>
 
 </div>
+

@@ -1,46 +1,83 @@
-<p>Salam sejahtera, {{ contact.first_name }}</p>
+<p>Halo {{contact.first_name}},</p>
 
-<p>Anda begitu hebat! Terima kasih banyak karena telah menyumbang untuk Yayasan
-Wikimedia!</p>
+<p>Terima kasih telah menyumbang ke Yayasan Wikimedia. Anda hebat!</p>
 
-<p>Beginilah cara kami membayar tagihan kami -- mereka seperti Anda, menyumbangkan lima
-dolar, dua puluh dolar, seratus dolar. Sumbangan favorit saya tahun lalu adalah lima pound
-dari seorang gadis kecil di Inggris, yang telah membujuk orang tuanya untuk mengizinkannya
-menyumbangkan uang jajannya. Orang-orang seperti Anda, dan juga gadis tersebut, yang
-memungkinkan Wikipedia untuk terus memberikan akses bebas dan mudah terhadap informasi
-netral untuk semua orang di seluruh dunia. Untuk semua orang yang membantu menyumbang, dan
-semua orang yang belum mampu membantu. Terima kasih banyak.</p>
+<p>Mudah sekali mengabaikan iklan penggalangan dana kami, dan saya senang Anda tidak
+melakukannya. Seperti inilah Wikipedia membayar segala tagihannya --- orang-orang seperti
+Anda mendanai kami, sehingga kami mampu membuat situs ini tetap gratis bagi semua orang di
+seluruh dunia.</p>
 
-<p>Mudah saja untuk mengabaikan permohonan kami, dan saya senang Anda tidak melakukannya.
-Dari saya, dan puluhan ribu relawan yang menulis untuk Wikipedia mengucapkan: "Terima
-kasih karena telah membantu kami menjadikan dunia ini lebih baik." Kami akan menggunakan
-sumbangan Anda secara hati-hati, dan saya berterima kasih atas kepercayaan Anda terhadap
-kami.</p>
+<p>Orang-orang memberitahu saya bahwa mereka menyumbang ke Wikipedia karena merasa
+Wikipedia begitu bermanfaat, dan mereka masih memercayainya meski tidak sempurna, mereka
+tahu Wikipedia ditulis untuk mereka. Wikipedia tidak dimaksudkan untuk meningkatkan agenda
+hubungan masyarakat seseorang atau memaksakan suatu ideologi tertentu, atau memaksa Anda
+meyakini sesuatu yang tidak benar. Kami berupaya memberitahu yang sebenarnya, dan kami
+bisa melakukannya karena Anda. Fakta bahwa Anda mendanai situs ini membuat kami independen
+dan mampu menyampaikan apa yang Anda butuhkan dan inginkan dari Wikipedia. Tepat seperti
+yang seharusnya.</p>
+
+<p>Anda harus tahu: sumbangan Anda tidak hanya menutupi biaya Anda sendiri. Penyumbang
+rata-rata membayar jasa memakai Wikipedianya sendiri, plus biaya ratusan orang lain.
+Sumbangan Anda membuat Wikipedia tersedia bagi seorang anak yang ambisius di Bangalore
+yang mengajari dirinya sendiri pemrograman komputer. Seorang pembangun rumah berusia
+separuh abad di Vienna yang baru saja didiagnosis terserang penyakit Parkinson. Seorang
+novelis yang meneliti Britania Raya pada tahun 1850-an. Seorang anak berusia 10 tahun di
+San Salvador yang baru saja tahu tentang Carl Sagan.</p>
+
+<p>Atas nama mereka, dan setengah miliar pembaca Wikipedia dan situs-situs dan proyek
+saudaranya, saya berterima kasih karena Anda telah ikut serta membuat sebagian dari semua
+pengetahuan manusia tersedia untuk semua orang. Sumbangan Anda membuat dunia tempat yang
+lebih baik. Terima kasih.</p>
+
+<p>Kebanyakan orang tidak tahu bahwa Wikipedia dijalankan oleh lembaga nirlaba. Mohon
+bagikan surel ini dengan sejumlah teman Anda agar mereka juga ikut menyumbang. Jika Anda
+tertarik, silakan tambah sedikit informasi baru ke Wikipedia. Jika Anda melihat salah
+ketik atau kesalahan kecil, perbaiki, dan jika Anda menemukan sesuatu yang hilang,
+tambahkan.</p>
+
+<p>Saya hargai kepercayaan Anda terhadap kami, dan saya berjanji sumbangan Anda tepat
+sasaran.</p>
 
 <p>Terima kasih,<br />
-Sue Gardner<br />
-Direktur Eksekutif Yayasan Wikimedia</p>
+Sue</p>
 
-<p>Untuk catatan: Sumbangan Anda pada tanggal {{ contribution.receive_date|date("Y-m-d")
-}} sebesar {{ contribution.contribution_source }}.
-{% if recurring %}
-{% include 'recurring/id.html' ignore missing %}
-{% endif %}</p>
+<br />
+<p>Sue Gardner<br />
+Direktur Eksekutif,<br />
+Yayasan Wikimedia</p>
 
-<p>Surat ini digunakan sebagai catatan sumbangan Anda. Tidak ada barang atau jasa yang
-disediakan, secara keseluruhan atau sebagian, untuk kontribusi ini. Wikimedia Foundation,
-Inc. adalah sebuah perusahaan amal nirlaba dengan status bebas pajak 501(c)(3) di Amerika
-Serikat. Kami beralamat di 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Nomor
-bebas pajak A.S.: 20-0049703</p>
+<p>Untuk sekadar catatan: Sumbangan Anda pada {{contribution.receive_date}} berjumlah
+{{contribution.source}}.{% if recurring %}{% include 'recurring/de.html' ignore missing
+%}{% endif %}</p>
+
+<p>Surat ini bisa dijadikan catatan donasi Anda. Tidak ada barang dan jasa yang diikutkan
+secara keseluruhan atau sebagian untuk kontribusi ini. Wikimedia Foundation, Inc. adalah
+badan amal nirlaba dengan status pengecualian pajak 501(c)(3) di Amerika Serikat. Alamat
+kami adalah 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Nomor pengecualian
+pajak A.S.: 20-0049703</p>
+
+<p>Anda bisa mengikuti kami di <a href="https://twitter.com/Wikipedia">Twitter</a>, <a
+href="https://identi.ca/wikipedia">identi.ca</a>, atau <a
+href="https://plus.google.com/+Wikipedia/posts">Google+</a>, sukai kami di <a
+href="https://www.facebook.com/wikipedia">Facebook</a>, dan <a
+href="https://blog.wikimedia.org">baca blog kami</a>. Berikut adalah <a
+href="https://wikimediafoundation.org/wiki/Annual_Report">laporan tahunan Yayasan
+Wikimedia tahun 2010-11</a>, <a
+href="http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf">rencana
+tahunan Yayasan Wikimedia tahun 2012-13</a>, dan <a
+href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">rencana
+strategis lima tahun Yayasan Wikimedia</a>. Sekarang Anda bisa membeli pernak-pernik
+Wikipedia di <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
 <div style="padding:0 10px 5px 10px; border:1px solid black;">
 
-<p><i>Opsi <i>unsub</i>/<i>opt-out</i>:</i></p>
+<p><i>Pilihan keluar</i></p>
 
-<p>Kami ingin Anda, selaku penyumbang, terus diberitahu mengenai aktivitas komunitas dan
-penggalangan dana kami. Jika Anda tidak ingin menerima surel seperti itu dari kami, klik
-tautan di bawah dan kami akan menghapus Anda dari daftar kontak:</p>
+<p>Kami ingin Anda selaku donor terus terinformasikan mengenai aktivitas komunitas kami
+dan penggalangan dana. Jika Anda ingin tidak menerima surel seperti itu dari kami, silakan
+klik di bawah dan kami akan mencoret Anda dari daftar</p>
 
-<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Berhenti berlangganan</a>
+<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Hapus langganan</a>
 
 </div>
+

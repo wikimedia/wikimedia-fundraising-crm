@@ -1,44 +1,81 @@
-<p>Milý/á {{ contact.first_name }}</p>
+<p>Milá/Milý {{contact.first_name}},</p>
 
-<p>Jste úžasný/á, velice vám děkujeme za darování nadaci Wikimedia Foundation!</p>
+<p>Děkuji vám za dar Nadaci Wikimedia. Jste skvělý/skvělá!</p>
 
-<p>Takto platíme naše účty -- jsou to lidé jako vy, kteří nám dají 100 Kč, 500
-Kč, 1000 Kč... Za poslední rok se mi nejvíc líbil příspěvek od malé holčičky z
-Anglie, která přemluvila své rodiče, aby mohla darovat své kapesné. Jsou to lidé
-jako vy, spolu s tou holčičkou, díky kterým může Wikipedia nadále poskytovat zdarma
-snadný přístup k nestranným informacím, a to pro všechny na světě. Pro ty, kdo ji
-pomáhají zaplatit, i pro ty, kteří si nemohou dovolit pomoct. Velice vám
-děkujeme.</p>
+<p>Je lehké nevšímat si našich pobídek k darování, ale jsem velmi ráda, že jste
+tak neučinil/a. Díky vám může Wikipedia pokrýt své náklady – lidé jako vy nám
+darují peníze, takže je stránka nadále zdarma pro kohokoliv na světě.</p>
 
-<p>Vím, že je snadné ignorovat naše prosby, a jsem ráda, že jste tak neučinil/a.
-Ode mne a desítek tisíc dobrovolníků, kteří píší Wikipedii: Děkujeme, že nám
-pomáháte udělat svět lepším místem. Použijeme vaše peníze zodpovědně a s
-rozvahou, a děkuji vám za vaši důvěru v nás.</p>
+<p>Lidé mi říkají, že přispívají Wikipedii, protože věří, že to má smysl, a
+důvěřují jí, protože i když není dokonalá, vědí, že je psaná pro ně. Smyslem
+Wikipedie není nikomu poskytovat prostor pro reklamu nebo stranit jakékoliv ideologii a
+ani vás nutit, abyste věřili něčemu, co není pravda. Chceme říkat pravdu, a díky
+vám můžeme. Díky tomu, že nám přispívate, může být Wikipedia nezávislá a
+schopná poskytnout vám to, co od ní potřebujete a chcete. Může být přesně
+taková, jaká by měla být.</p>
 
-<p>Děkuji,<br />
-Sue Gardner<br />
-Výkonná ředitelka Wikimedia Foundation</p>
+<p>Nezapomeňte: váš příspěvek nepokrývá jen náklady, které Wikipedii vznikají
+vaším vlastním užíváním. Průměrný dárce platí za sebe i za stovky jiných
+lidí. Váš dar tak umožňuje přístup k článkům pilnému dítěti v Bengalúru,
+které se samo učí programování, vídeňské hospodyni ve středních letech, u které
+byla nedávno zjištěna Parkinsonova choroba, spisovateli, který zkoumá Británii 50.
+let 19. století, či desetiletému školákovi ze San Salvadoru, který právě zjistil,
+kdo je Carl Sagan.</p>
 
-<p>Pro vaše záznamy: Přispěl/a jste {{ contribution.receive_date|date("Y-m-d") }}
-částkou {{ contribution.contribution_source }}.
-{% if recurring %}
-{% include 'recurring/cs.html' ignore missing %}
-{% endif %}</p>
+<p>Jménem těchto lidí a půl miliardy dalších uživatelů Wikipedie a jejích
+sesterských portálů a projektů, děkuji vám, že jste nás podpořil/a ve snaze
+zpřístupnit sumu vědomostí celého lidstva všem. Váš dar činí svět lepším
+místem – děkuji vám.</p>
 
-<p>Tento dopis může posloužit jako záznam vašeho příspěvku. Výměnou za tento
-příspěvek nebyly poskytnuty žádné produkty ani služby. Nadace Wikimedia Foundation,
-Inc. je neziskové dobročinné sdružení se statusem 501(c)(3) zproštění daně ve
-Spojených státech. Naše adresa je 149 New Montgomery, třetí patro, San Francisco, CA,
-94105. U.S. číslo zproštění daně: 20-0049703</p>
+<p>Většina lidí neví, že je Wikipedia neziskový projekt. Zvažte prosím, zda byste
+tuto zprávu nepřeposlal/a e-mailem několika vašim přátelům, abyste je inspiroval/a
+k tomu, aby také přispěli. A jestli máte zájem, zkuste Wikipedii vylepšit. Pokud
+najdete překlep nebo jinou malou chybu, opravte ji, prosím, a pokud si všimnete, že
+něco chybí, doplňte to.</p>
+
+<p>Vážím si toho, že nám věříte, a slibuji, že vaše peníze využijeme
+smysluplně.</p>
+
+<p>Děkuji vám,<br />
+Sue</p>
+
+<br />
+<p>Sue Gardner<br />
+Výkonná ředitelka,<br />
+Nadace Wikimedia</p>
+
+<p>Pro vaše záznamy: {{contribution.receive_date}} jste přispěl/a částkou
+{{contribution.source}}.{% if recurring %}{% include 'recurring/de.html' ignore missing
+%}{% endif %}</p>
+
+<p>Tento dopis slouží jako záznam o daru. Žádné zboží ani služby, ať celé či
+částečné, nebyly poskytnuty výměnou za tento dar. Nadace Wikimedia je nezisková
+charitativní organizace, s daňovou výjimkou (č. 20-0049703) ve Spojených státech
+amerických, dle paragrafu 501(c)(3). Naše adresa je 149 New Montgomery, 3rd Floor, San
+Francisco, CA, 94105. U.S.</p>
+
+<p>Můžete nás sledovat na <a href="https://twitter.com/Wikipedia">Twitteru</a>, <a
+href="https://identi.ca/wikipedia">identi.ca</a> nebo <a
+href="https://plus.google.com/+Wikipedia/posts">Google+</a>, likovat na <a
+href="https://www.facebook.com/wikipedia">Facebooku</a> a <a
+href="https://blog.wikimedia.org">přečíst si náš blog</a>. Zde si můžete přečíst
+<a href="https://wikimediafoundation.org/wiki/Annual_Report">Výroční zprávu Nadace
+Wikimedia za rok 2010-2011</a>, <a
+href="http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf">Roční
+plán Nadace Wikimedia na rok 2012-2013</a> a <a
+href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">Pětiletý
+strategický plán Nadace Wikimedia</a>. Také si můžete koupit propagační předměty
+Wikipedie na stránce <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
 <div style="padding:0 10px 5px 10px; border:1px solid black;">
 
-<p><i>Volitelné:</i></p>
+<p><i>Odhlášení newsletteru</i></p>
 
-<p>Rádi bychom vás, jakožto dárce, dále informovali o našich komunitních
-aktivitách a sbírkách. Pokud si však takové e-maily od nás nepřejete dostávat,
-klikněte prosím níže a vyškrteme vás ze seznamu:</p>
+<p>Rádi bychom vás jakožto dárce informovali o činnostech naší komunity a dalších
+sbírkách. Pokud si ale takové zprávy nepřejete dostávat, klikněte, prosím, na
+odkaz níže a my vás ze seznamu příjemců vymažeme</p>
 
-<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Unsubscribe</a>
+<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Odhlásit</a>
 
 </div>
+

@@ -1,49 +1,85 @@
-Kedves {{ contact.first_name }}
-
-Fantasztikus vagy, hálásan köszönöm, hogy támogatod a Wikimédia
-Alapítványt!
-
-Így tudjuk kifizetni a számláinkat – a hozzád hasonló adományozók ezer,
-ötezer, húszezer forintjaiból. A legkedvesebb tavalyi adomány számomra annak az angol
-kislánynak az öt fontja volt, aki rábeszélte a szüleit, hogy engedjék meg, hogy
-adományul adja a zsebpénzét. Az olyan embereknek köszönhető, mint Te és az a
-kislány, hogy a Wikipédia továbbra is szolgáltatni tudja az elfogulatlan
-információkat, ingyenes és könnyen elérhető formában, a világon bárkinek. Azoknak
-is, akik segítenek összeadni a költségeket, és azoknak is, akiknek nem áll
-módjukban segíteni. Nagyon köszönjük!
-
-Tudom, hogy könnyű figyelmen kívül hagyni a kérésünket, és örülök, hogy Te
-nem tetted. A magam és a Wikipédiát író több tízezer önkéntes nevében:
-köszönöm, hogy segítesz jobb hellyé tenni a világot. A pénzt felelősségteljesen
-fogjuk felhasználni, és köszönjük, hogy megbízol bennünk.
-
-Köszönöm,
-Sue Gardner
-a Wikimédia Alapítvány vezérigazgatója
-
-A jegyzőkönyv kedvéért: a {{ contribution.receive_date|date("Y-m-d") }}-i
-adományod összege {{ contribution.contribution_source }} volt.
-
-{% if recurring %}
-
-{% include 'recurring/hu.html' ignore missing %}
-
-{% endif %}
-
-Ez a levél egyben az adományod igazolásaként is szolgál. A Wikimedia Foundation,
-Inc. egy non-profit jótékony szervezet, az Amerikai Egyesült Államokban 501(c)(3)-as
-adómentességi státusszal. Az adományodért semmilyen ellenszolgáltatást nem
-kínáltunk. A címünk 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. Az
-adójóváírási számunk: 20-0049703
 
 
+	Kedves {{contact.first_name}}, 
 
-Értesítések tiltása:
+	Köszönjük, hogy adományoztál a Wikipédia Alapítványnak. Csodálatos
+vagy! 
 
-Mint támogatónkat, szeretnénk értesíteni téged a közösségi eseményeinkről
-és gyűjtőkampányainkról. Ha nem szeretnél ilyen leveleket kapni, kattints az alábbi
-linkre, és leveszünk az értesítési listánkról:
+	Könnyű figyelmen kívül hagyni az adománygyűjtő felhívásainkat,
+örülök, hogy te nem tetted. Így fizeti be a Wikipédia a számláit --- hozzád
+hasonló emberek pénzt adnak nekünk, így az oldalt szabadon elérhetővé
+tehetjük bárki számára a világon. 
 
-<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Leiratkozás</a>
+	Az emberek azt mondják nekem, hogy azért adományoznak a Wikipédiának,
+mert hasznosnak találják és megbíznak benne, annak ellenére, hogy nem
+tökéletes, mert tudják, hogy nekik íródott. A Wikipédia nem azért van, hogy
+valakinek a propagandáját közvetítse, vagy egy bizonyos ideológiát erőltessen
+rád, vagy elhitessen veled valamit, ami nem igaz. Azt tűztük ki célul,
+hogy igazat szóljunk, és ezt miattad tudjuk megtenni. Az adományod miatt
+tudunk függetlenek maradni, és emiatt tudjuk azt nyújtani, amire szükséged
+van, és amit vársz a Wikipédiától. Pontosan úgy, ahogy annak lennie kell. 
+
+	Jó, ha tudod: az adományod nem csak a saját Wikipédia-használatod
+költségeit fedezi. Egy átlagos méretű adomány a Wikipédia több száz olvasója
+után egyenlíti ki a költségeket. Az adományod elérhetővé teszi a
+Wikipédiát az ambíciózus bangalore-i gyereknek, aki programozóvá próbálja
+kiképezni magát; a középkorú bécsi háztartásbelinek, akinél most
+diagnosztizálták a Parkinson-kórt; az 1850-es évek Angliáját kutató regényírónak; a
+tízévesnek San Salvadorban, aki éppen felfedezte Carl Sagant. 
+
+	Mindezen emberek, és a Wikipédia és testvéroldalai többi félmilliárd
+olvasója nevében köszönöm Neked, hogy csatlakoztál a célunkhoz, hogy az
+emberiség összes tudása szabadon eljuthasson mindenkihez. Az adományod jobb
+hellyé teszi a világot. Köszönjük. 
+
+	A legtöbben nem tudják, hogy a Wikipédiát egy nonprofit szervezet
+üzemelteti. Kérlek, ha teheted, oszd meg ezt a levelet néhány barátoddal, és
+biztasd őket is adakozásra. És ha van hozzá kedved, próbáld meg te is
+bővíteni a Wikipédiát. Ha egy elgépelést vagy más apró hibát látsz, javítsd
+ki, és ha valami hiányzik, írd bele. 
+
+	Nagyra értékeljük a bizalmadat, és ígérem, hogy jól fogjuk használni
+a pénzedet. 
+
+	Köszönjük,
+ Sue 
+
+	Sue Gardner
+ vezérigazgató
+ Wikimédia Alapítvány 
+
+	Tájékoztatásul: {{contribution.receive_date}} időpontban
+{{contribution.source}} összeget adományoztál.{% if recurring %}{% include
+'recurring/de.html' ignore missing %}{% endif %} 
+
+	Ez a levél bizonylatként szolgál az adományozásodról. A
+hozzájárulásod ellentételezéseként semmilyen áru vagy szolgáltatás - legyen az egész
+vagy rész - nem került átadásra. A Wikipédia Alapítvány egy nonprofit
+közhasznú szervezet az USA-ban 501(c)(3)-as adómentes állapottal. Címünk: 149
+New Montgomery, 3. emelet, San Francisco, CA, 94105. USA adómentességi
+szám: 20-0049703. 
+
+	Kövess minket a Twitteren [1], az identi.ca-n [2] vagy a Google+-on
+[3], lájkolj a Facebookon [4] vagy olvasd a blogunkat [5]. Ha jobban meg
+akarsz minket ismerni, olvasd el a Wikimédia Alapítvány 2010–11-es éves
+jelentését [6], a 2012–13-as éves tervét [7] vagy az ötéves stratégiai tervét
+[8]. Wikipédiás pólókat és egyéb ajándéktárgyakat is vásárolhatsz, a
+shop.wikimedia.org [9] címen.  
+
+	_Leiratkozás_ 
+
+	Adományozóként szívesen értesítenénk a közösségi eseményeinkről és
+gyűjtőkampányainkról. Ha mégsem szeretnél levelet kapni tőlünk, kattints az alábbi linkre,
+és nem küldünk több levelet. Leiratkozás [10] 
 
 
+[1] https://twitter.com/Wikipedia
+[2] https://identi.ca/wikipedia
+[3] https://plus.google.com/+Wikipedia/posts
+[4] https://www.facebook.com/wikipedia
+[5] https://blog.wikimedia.org
+[6] https://wikimediafoundation.org/wiki/Annual_Report
+[7] http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf
+[8] https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary
+[9] https://shop.wikimedia.org
+[10] {{unsubscribe_link|raw}}
