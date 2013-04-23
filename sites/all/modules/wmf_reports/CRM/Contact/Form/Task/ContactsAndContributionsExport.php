@@ -21,7 +21,7 @@ class CRM_Contact_Form_Task_ContactsAndContributionsExport extends CRM_Export_Fo
             $this->set('mappingId', $mapping->id);
         }
 
-        $this->set( 'exportMode' , CRM_Export_Form_Select::CONTRIBUTE_EXPORT );
+        $this->set( 'exportMode' , CRM_Export_Form_Select::CONTACT_EXPORT );
         $this->assign( 'matchingContacts', TRUE );
         $this->set( 'componentIds', $this->_componentIds );
         $this->set( 'selectAll' , FALSE  );
