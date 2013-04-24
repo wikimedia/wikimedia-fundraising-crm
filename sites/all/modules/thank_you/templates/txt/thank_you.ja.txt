@@ -23,7 +23,7 @@
  最高責任者,
  ウィキメディア財団 
 
-	あなたが{{contribution.receive_date}}に行った寄付の金額は{{contribution.source}}でした。{% if recurring %}{% include 'recurring/de.html' ignore missing %}{%
+	あなたが{{contribution.receive_date}}に行った寄付の金額は{{contribution.source}}でした。{% if recurring %}{% include 'recurring/ja.html' ignore missing %}{%
 endif %} 
 
 	このレターはご寄付の控えとしてお使いいただけます。今回のご貢献につきましては、いかなる物品やサービスの、全部または一部も、提供されません。ウィキメディア財団はアメリカ合衆国における内国歳入庁501条(c)項(3)号に定める非営利慈善団体で、税免除の適用を受けています。財団の住所は 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105.

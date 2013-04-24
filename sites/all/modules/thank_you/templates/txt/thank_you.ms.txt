@@ -55,7 +55,7 @@ akan menggunakan wang anda degnan baik.
 
 	Untuk makluman anda: Derma anda pada {{contribution.receive_date}}
 ialah {{contribution.source}}.{% if recurring %}{% include
-'recurring/de.html' ignore missing %}{% endif %} 
+'recurring/ms.html' ignore missing %}{% endif %} 
 
 	Surat ini boleh menjadi rekod pendermaan anda. Tiada barangan atau
 perkhidmatan yang disediakan, secara penuh atau separa, untuk sumbangan ini.

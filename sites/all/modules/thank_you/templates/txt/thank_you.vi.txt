@@ -56,7 +56,7 @@ tôi xin hứa với bạn rằng chúng tôi sẽ sử dụng số tiền của
 
 	Thông tin để bạn lưu giữ: Bạn đã đóng góp {{contribution.source}} vào
 ngày {{contribution.receive_date}}.{% if recurring %}{% include
-'recurring/de.html' ignore missing %}{% endif %} 
+'recurring/vi.html' ignore missing %}{% endif %} 
 
 	Bức thư này có thể làm bằng chứng cho việc quyên góp của bạn. Chúng
 tôi không cung cấp hàng hóa hay dịch vụ nào, dù toàn phần hay một phần,

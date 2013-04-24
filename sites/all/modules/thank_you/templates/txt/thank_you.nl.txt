@@ -52,7 +52,7 @@ geld goed gaan gebruiken.
 
 	Voor uw boeken: uw heeft een donatie gemaakt op
 {{contribution.receive_date}} voor {{contribution.source}}.{% if recurring %}{% include
-'recurring/de.html' ignore missing %}{% endif %} 
+'recurring/nl.html' ignore missing %}{% endif %} 
 
 	Deze brief dient als bewijsstuk voor uw donatie. Er zijn geen
 goederen of diensten aangeboden, in het geheel of als deel van deze bijdrage.

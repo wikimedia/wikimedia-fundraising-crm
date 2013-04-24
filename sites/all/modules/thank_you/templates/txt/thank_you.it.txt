@@ -54,7 +54,7 @@ utilizzeremo il tuo denaro al meglio.
 
 	Per le tue registrazioni: La tua donazione il
 {{contribution.receive_date}} è stata {{contribution.source}}.{% if recurring %}{% include
-'recurring/de.html' ignore missing %}{% endif %} 
+'recurring/it.html' ignore missing %}{% endif %} 
 
 	Questa lettera può servire come prova della tua donazione. Nessun
 bene o servizio è stato fornito, in tutto o in parte, per questo

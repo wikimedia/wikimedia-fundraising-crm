@@ -40,7 +40,7 @@
  קרן ויקימדיה 
 
 	לידיעתך: תרומתך בתאריך {{contribution.receive_date}} היתה
-{{contribution.source}}.{% if recurring %}{% include 'recurring/de.html' ignore missing %}{%
+{{contribution.source}}.{% if recurring %}{% include 'recurring/he.html' ignore missing %}{%
 endif %} 
 
 	מכתב זה יכול לשמש כהוכחה לתרומתך. לא סופקו טובין או שירותים עבור חלק
