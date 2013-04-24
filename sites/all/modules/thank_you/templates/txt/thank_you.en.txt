@@ -51,7 +51,7 @@ well.
  Wikimedia Foundation 
 
 	For your records: Your donation on {{contribution.receive_date}} was
-{{contribution.source}}.{% if recurring %}{% include 'recurring/de.html' ignore missing %}{%
+{{contribution.source}}.{% if recurring %}{% include 'recurring/en.html' ignore missing %}{%
 endif %} 
 
 	This letter may serve as a record of your donation. No goods or

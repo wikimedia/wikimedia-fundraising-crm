@@ -48,7 +48,7 @@ smysluplně.
 
 	Pro vaše záznamy: {{contribution.receive_date}} jste přispěl/a
 částkou {{contribution.source}}.{% if recurring %}{% include
-'recurring/de.html' ignore missing %}{% endif %} 
+'recurring/cs.html' ignore missing %}{% endif %} 
 
 	Tento dopis slouží jako záznam o daru. Žádné zboží ani služby, ať
 celé či částečné, nebyly poskytnuty výměnou za tento dar. Nadace Wikimedia

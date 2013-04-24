@@ -48,7 +48,7 @@ gwneud defnydd da o'ch rhodd.
  Sefydliad Wicifryngau, 
 
 	Cofnod: Derbyniwyd rhodd o {{contribution.source}} gennych ar
-{{contribution.receive_date}}.{% if recurring %}{% include 'recurring/de.html' ignore missing %}{%
+{{contribution.receive_date}}.{% if recurring %}{% include 'recurring/cy.html' ignore missing %}{%
 endif %} 
 
 	Mae'r llythyr hwn yn gofnod o'ch rhodd. Ni gyflenwyd unrhyw nwyddau

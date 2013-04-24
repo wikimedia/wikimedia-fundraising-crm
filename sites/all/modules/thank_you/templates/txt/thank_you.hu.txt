@@ -50,7 +50,7 @@ a pénzedet.
 
 	Tájékoztatásul: {{contribution.receive_date}} időpontban
 {{contribution.source}} összeget adományoztál.{% if recurring %}{% include
-'recurring/de.html' ignore missing %}{% endif %} 
+'recurring/hu.html' ignore missing %}{% endif %} 
 
 	Ez a levél bizonylatként szolgál az adományozásodról. A
 hozzájárulásod ellentételezéseként semmilyen áru vagy szolgáltatás - legyen az egész

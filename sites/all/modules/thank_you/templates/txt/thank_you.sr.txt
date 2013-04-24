@@ -49,7 +49,7 @@
 
 	Све ваше донације: Ваша донација на {{contribution.receive_date}}
 износила је {{contribution.source}}.{% if recurring %}{% include
-'recurring/de.html' ignore missing %}{% endif %} 
+'recurring/sr.html' ignore missing %}{% endif %} 
 
 	Ово писмо може послужити као доказ ваше донације. Никаква добра или
 услуге су пружене у целини или делом за овај допринос. Задужбина Викимедија

@@ -53,7 +53,7 @@ nous utiliserons votre don efficacement.
  Fondation Wikimédia 
 
 	Pour mémoire : votre don au {{contribution.receive_date}} s'élevait à
-{{contribution.source}}.{% if recurring %}{% include 'recurring/de.html' ignore missing %}{%
+{{contribution.source}}.{% if recurring %}{% include 'recurring/fr.html' ignore missing %}{%
 endif %} 
 
 	Ce message peut servir de preuve de votre contribution. Aucun bien ni
@@ -63,13 +63,12 @@ profitant du statut 501(c)(3) d'exemption de taxes aux États-Unis. Notre siège
 social est domicilié au 149 New Montgomery, 3rd Floor, San Francisco, CA,
 94105. U.S. Numéro d'exemption de taxe: 20-0049703 
 
-	Suivez-nous sur Twitter| Twitter [1], identi.ca| identi.ca [2] et sur
-Google+| Google+ [3], rejoignez-nous sur Facebook| Facebook [4] et read our
-blog| consultez notre blog [5]. Voici le rapport annuel de la Fondation
-Wikimédia pour 2010–2011 [6], le plan annuel de la Fondation Wikimédia pour
-2012–2013 [7] et le plan stratégique quinquennal [8]. Vous pouvez désormais
-acheter des produits marqués Wikipédia à l’adresse suivante :
-shop.wikimedia.org [9].  
+	Suivez-nous sur Twitter [1], identi.ca [2] et sur Google+ [3],
+rejoignez-nous sur Facebook [4] et consultez notre blog [5]. Voici le rapport annuel
+de la Fondation Wikimédia pour 2010–2011 [6], le plan annuel de la
+Fondation Wikimédia pour 2012–2013 [7] et le plan stratégique quinquennal [8].
+Vous pouvez désormais acheter des produits marqués Wikipédia à l’adresse
+suivante : shop.wikimedia.org [9].  
 
 	_Retirer de la liste_ 
 

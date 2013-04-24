@@ -54,7 +54,7 @@ biz sizin pulunuzu düzgün istifadə edəcəyik.
 
 	Məlumat üçün: Sizin {{contribution.receive_date}} tarixli ianənizin
 məbləği {{contribution.source}} təşkil etmişdir.{% if recurring %}{% include
-'recurring/de.html' ignore missing %}{% endif %} 
+'recurring/az.html' ignore missing %}{% endif %} 
 
 	Bu məktub sizin ianənizin təsdiqi kimi çıxış edə bilər. Bu ianə
 müqabilində tam və ya qismən heç bir mal və ya xidmət təqdim edilməmişdir.
