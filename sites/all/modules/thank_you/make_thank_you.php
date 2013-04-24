@@ -212,7 +212,7 @@ function generate_html_2012( $lang, $json, $outfilename ){
 
 	// receipt
 	fwrite( $outfile, "<p>" . replace_variables_html( get_message( $json, 21 ) ) . "" );
-	fwrite( $outfile, "{% if recurring %}{% include 'recurring/de.html' ignore missing %}{% endif %}</p>\n" );
+	fwrite( $outfile, "{% if recurring %}{% include 'recurring/$lang.html' ignore missing %}{% endif %}</p>\n" );
 
 	// 501(c)(3)
 	fwrite( $outfile, "<p>" . replace_variables_html( get_message( $json, 23 ) ) . "</p>\n" );
