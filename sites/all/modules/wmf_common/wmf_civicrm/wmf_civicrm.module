@@ -538,13 +538,13 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
         switch ( strtolower( $msg['gateway'] ) ) {
         case 'amazon':
             $payment_instrument = 'Amazon';
-            if ( strtolower( $msg['payment_method'] ) !== 'paypal' ) {
+            if ( array_key_exists( 'payment_method', $msg ) and strtolower( $msg['payment_method'] ) !== 'amazon' ) {
                 watchdog( 'wmf_civicrm', 'payment_method constraint violated: gateway Amazon, but method=@method ; gateway_txn_id=@id', array( '@method' => $msg['payment_method'], '@id' => $msg['gateway_txn_id'] ), WATCHDOG_DEBUG );
             }
             break;
         case 'paypal':
             $payment_instrument = 'Paypal';
-            if ( strtolower( $msg['payment_method'] ) !== 'paypal' ) {
+            if ( array_key_exists( 'payment_method', $msg ) and strtolower( $msg['payment_method'] ) !== 'paypal' ) {
                 watchdog( 'wmf_civicrm', 'payment_method constraint violated: gateway Paypal, but method=@method ; gateway_txn_id=@id', array( '@method' => $msg['payment_method'], '@id' => $msg['gateway_txn_id'] ), WATCHDOG_DEBUG );
             }
             break;
@@ -803,7 +803,6 @@ function wmf_civicrm_message_address_update( $msg, $contact_id ) {
 
     // We can do these lookups a bit more efficiently than Civi
     $country_id = wmf_civicrm_get_country_id( $msg[ 'country' ] );
-    $state_province_id = wmf_civicrm_get_state_id( $country_id, $msg['state_province'] );
 
     $address_params = array(
         'contact_id' => $contact_id,
@@ -812,14 +811,17 @@ function wmf_civicrm_message_address_update( $msg, $contact_id ) {
         'street_address' => $msg['street_address'],
         'supplemental_address_1' => $msg['supplemental_address_1'],
         'city' => $msg['city'],
-        'state_province_id' => $state_province_id,
-        'state_province' => $msg['state_province'],
         'postal_code' => $msg['postal_code'],
         'country_id' => $country_id,
         'country' => $msg[ 'country' ],
         'is_billing' => 1,
         'version' => 3,
     );
+
+    if ( !empty( $msg['state_province'] ) ) {
+        $address_params['state_province'] = $msg['state_province'];
+        $address_params['state_province_id'] = wmf_civicrm_get_state_id( $country_id, $msg['state_province'] );
+    }
 
     // FIXME: api does not offer control over fixAddress flag
     //$result = civicrm_api( "Address", "Create", $address_params );
