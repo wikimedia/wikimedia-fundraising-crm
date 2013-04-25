@@ -59,8 +59,8 @@ function wmf_civicrm_create_option_values( $group_name, $values )
     $api->OptionGroup->Get(array(
         'name' => $group_name,
     ));
-    $values = $api->values();
-    $option_group = array_pop($values);
+    $result = $api->values();
+    $option_group = array_pop($result);
     foreach ($values as $value)
     {
         $api->OptionValue->Get(array(
