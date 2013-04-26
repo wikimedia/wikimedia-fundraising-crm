@@ -49,7 +49,7 @@ att använda dina pengar väl.
  Wikimedia stiftelsen 
 
 	För din bokföring: Din donation den {{contribution.receive_date}} var
-{{contribution.source}}.{% if recurring %}{% include 'recurring/sv.html' ignore missing %}{%
+{{contribution.contribution_source}}.{% if recurring %}{% include 'recurring/sv.html' ignore missing %}{%
 endif %} 
 
 	Detta brev är ett kvitto för din donation. Inget gods och ingen

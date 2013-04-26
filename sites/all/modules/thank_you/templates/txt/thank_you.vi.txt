@@ -54,8 +54,8 @@ tôi xin hứa với bạn rằng chúng tôi sẽ sử dụng số tiền của
  Giám đốc điều hành,
  Quỹ Wikimedia [Wikimedia Foundation] 
 
-	Thông tin để bạn lưu giữ: Bạn đã đóng góp {{contribution.source}} vào
-ngày {{contribution.receive_date}}.{% if recurring %}{% include
+	Thông tin để bạn lưu giữ: Bạn đã đóng góp
+{{contribution.contribution_source}} vào ngày {{contribution.receive_date}}.{% if recurring %}{% include
 'recurring/vi.html' ignore missing %}{% endif %} 
 
 	Bức thư này có thể làm bằng chứng cho việc quyên góp của bạn. Chúng

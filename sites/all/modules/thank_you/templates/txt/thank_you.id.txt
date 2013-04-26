@@ -50,8 +50,8 @@ sumbangan Anda tepat sasaran.
  Yayasan Wikimedia 
 
 	Untuk sekadar catatan: Sumbangan Anda pada
-{{contribution.receive_date}} berjumlah {{contribution.source}}.{% if recurring %}{% include
-'recurring/id.html' ignore missing %}{% endif %} 
+{{contribution.receive_date}} berjumlah {{contribution.contribution_source}}.{% if recurring %}{%
+include 'recurring/id.html' ignore missing %}{% endif %} 
 
 	Surat ini bisa dijadikan catatan donasi Anda. Tidak ada barang dan
 jasa yang diikutkan secara keseluruhan atau sebagian untuk kontribusi ini.

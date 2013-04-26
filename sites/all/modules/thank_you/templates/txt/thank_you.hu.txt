@@ -49,7 +49,7 @@ a pénzedet.
  Wikimédia Alapítvány 
 
 	Tájékoztatásul: {{contribution.receive_date}} időpontban
-{{contribution.source}} összeget adományoztál.{% if recurring %}{% include
+{{contribution.contribution_source}} összeget adományoztál.{% if recurring %}{% include
 'recurring/hu.html' ignore missing %}{% endif %} 
 
 	Ez a levél bizonylatként szolgál az adományozásodról. A

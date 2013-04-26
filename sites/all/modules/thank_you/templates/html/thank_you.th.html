@@ -55,10 +55,7 @@
 กรรมการผู้จัดการ<br />
 มูลนิธิวิกิมีเดีย</p>
 
-<p>เพื่อเก็บเป็นหลักฐาน:
-คุณบริจาคเมื่อวันที่ {{contribution.receive_date}}
-เป็นจำนวนเงิน {{contribution.source}}{% if recurring %}{%
-include 'recurring/th.html' ignore missing %}{% endif %}</p>
+<p>เพื่อเก็บเป็นหลักฐาน: คุณบริจาคเมื่อวันที่ {{contribution.receive_date}} เป็นจำนวนเงิน {{contribution.contribution_source}}{% if recurring %}{% include 'recurring/th.html' ignore missing %}{% endif %}</p>
 
 <p>จดหมายฉบับนี้ส่งมาเพราะว่าเป็นบันทึกของการบริจาคของคุณ
  ไม่มีสินค้าหรือบริการถูกจัดหา,

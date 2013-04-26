@@ -47,7 +47,7 @@ smysluplně.
  Nadace Wikimedia 
 
 	Pro vaše záznamy: {{contribution.receive_date}} jste přispěl/a
-částkou {{contribution.source}}.{% if recurring %}{% include
+částkou {{contribution.contribution_source}}.{% if recurring %}{% include
 'recurring/cs.html' ignore missing %}{% endif %} 
 
 	Tento dopis slouží jako záznam o daru. Žádné zboží ani služby, ať

@@ -562,14 +562,26 @@ function thank_you_batch_process(){
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
 
-	$ty_query = "SELECT id, trxn_id FROM {civicrm_contribution} WHERE receive_date > DATE_SUB( NOW(), INTERVAL :interval DAY ) AND thankyou_date IS NULL ORDER BY id ASC LIMIT {$batch}";
+	$ty_query = <<<EOT
+		SELECT id, trxn_id
+		FROM {civicrm_contribution}
+		WHERE
+			receive_date > DATE_SUB( NOW(), INTERVAL :interval DAY ) AND
+			thankyou_date IS NULL
+		ORDER BY id ASC LIMIT {$batch}";
+EOT;
 
 	$result = db_query( $ty_query, array( ':interval' => $days ) );
 
 	$count = 0;
 
 	foreach( $result as $contribution ) {
-		watchdog( "thank_you", "Attempting to send thank you mail for contribution " . $contribution->id . ", " . $contribution->trxn_id, array(), WATCHDOG_INFO );
+		watchdog(
+			"thank_you",
+			"Attempting to send thank you mail for contribution {$contribution->id}, {$contribution->trxn_id}",
+			array(),
+			WATCHDOG_INFO
+		);
 
 		thank_you_send( $contribution->id );
 
