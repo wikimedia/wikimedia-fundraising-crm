@@ -51,7 +51,7 @@ con xeito os teus cartos.
  Fundación Wikimedia 
 
 	Para a túa información: A túa doazón o {{contribution.receive_date}}
-foi de {{contribution.source}}.{% if recurring %}{% include
+foi de {{contribution.contribution_source}}.{% if recurring %}{% include
 'recurring/gl.html' ignore missing %}{% endif %} 
 
 	Escta carta serve como proba da túa doazón. Non se proporcionaron

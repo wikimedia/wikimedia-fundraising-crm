@@ -54,7 +54,7 @@ akan menggunakan wang anda degnan baik.
  Yayasan Wikimedia 
 
 	Untuk makluman anda: Derma anda pada {{contribution.receive_date}}
-ialah {{contribution.source}}.{% if recurring %}{% include
+ialah {{contribution.contribution_source}}.{% if recurring %}{% include
 'recurring/ms.html' ignore missing %}{% endif %} 
 
 	Surat ini boleh menjadi rekod pendermaan anda. Tiada barangan atau

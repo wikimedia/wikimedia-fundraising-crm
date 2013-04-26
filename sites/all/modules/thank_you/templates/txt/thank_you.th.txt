@@ -37,8 +37,8 @@
  มูลนิธิวิกิมีเดีย 
 
 	เพื่อเก็บเป็นหลักฐาน: คุณบริจาคเมื่อวันที่
-{{contribution.receive_date}} เป็นจำนวนเงิน {{contribution.source}}{% if recurring %}{% include
-'recurring/th.html' ignore missing %}{% endif %} 
+{{contribution.receive_date}} เป็นจำนวนเงิน {{contribution.contribution_source}}{% if recurring
+%}{% include 'recurring/th.html' ignore missing %}{% endif %} 
 
 	จดหมายฉบับนี้ส่งมาเพราะว่าเป็นบันทึกของการบริจาคของคุณ
 ไม่มีสินค้าหรือบริการถูกจัดหา, ในทั้งหมดหรือบางส่วน, สำหรับการบริจาคนี้ มูลนิธิวิกิพีเดีย,

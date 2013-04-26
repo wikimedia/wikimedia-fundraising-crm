@@ -52,7 +52,7 @@
  Фонд Викимедиа 
 
 	Для справки: ваше пожертвование от {{contribution.receive_date}}
-составило {{contribution.source}}.{% if recurring %}{% include
+составило {{contribution.contribution_source}}.{% if recurring %}{% include
 'recurring/ru.html' ignore missing %}{% endif %} 
 
 	Это письмо может служить подтверждением вашего пожертвования. За этот

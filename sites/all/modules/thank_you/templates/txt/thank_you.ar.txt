@@ -43,9 +43,9 @@
  المديرة التنفيذية
  مؤسسة ويكيميديا 
 
-	من أجل سجلاتك: كانت قيمة تبرعك {{contribution.source}} بتاريخ
-{{contribution.receive_date}}.{% if recurring %}{% include 'recurring/ar.html' ignore missing %}{%
-endif %} 
+	من أجل سجلاتك: كانت قيمة تبرعك {{contribution.contribution_source}}
+بتاريخ {{contribution.receive_date}}.{% if recurring %}{% include
+'recurring/ar.html' ignore missing %}{% endif %} 
 
 	يمكن لهذه الرسالة أن تشكل سجلا لتبرعك. لم تقدم أي سلع أو خدمات، كليا
 أو جزئيا، لهذه المساهمة. تعتبر شركة مؤسسة ويكيميديا، شركة خيرية غير

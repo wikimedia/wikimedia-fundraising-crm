@@ -56,7 +56,7 @@ Geld sinnvoll verwenden werden.
  Wikimedia Foundation 
 
 	Für Ihre Unterlagen: Ihre Spende am {{contribution.receive_date}}
-betrug {{contribution.source}}.{% if recurring %}{% include
+betrug {{contribution.contribution_source}}.{% if recurring %}{% include
 'recurring/de.html' ignore missing %}{% endif %} 
 
 	Dieser Brief kann als Bestätigung Ihrer Spende angesehen werden. Es
