@@ -757,7 +757,7 @@ function recurring_normalize_paypal_msg( $msg ) {
  * @return int contribution tracking id
  */
 function recurring_get_contribution_tracking_id( $msg ) {
-  if ( strlen( $msg[ 'custom' ] )) {
+  if ( array_key_exists( 'custom', $msg ) && strlen( $msg[ 'custom' ] )) {
   	watchdog( 'recurring', 'recurring_get_contribution_tracking_id: Using $msg["custom"], %cti', array( '%cti' => $msg['custom']), WATCHDOG_DEBUG );
     return $msg[ 'custom' ];
   } elseif ( $msg[ 'txn_type' ] == 'subscr_payment' ) {
@@ -768,8 +768,8 @@ function recurring_get_contribution_tracking_id( $msg ) {
     $dbs->push( 'civicrm' );
     // determine if we already have a contrib tracking id for related contribs, working backwards from recur record
     $query = "SELECT id FROM civicrm_contribution_recur WHERE trxn_id = :id";
-    $recur_id = db_query( $query, array( ':id' => $msg[ 'subscr_id' ] ) )->fetch();
-    
+    $recur_id = db_query( $query, array( ':id' => $msg[ 'subscr_id' ] ) )->fetchField();
+
     if ( $recur_id ) { // we potentially have related contributions
       // find related contribution ids
       $query = "SELECT id FROM civicrm_contribution WHERE contribution_recur_id = :id";
