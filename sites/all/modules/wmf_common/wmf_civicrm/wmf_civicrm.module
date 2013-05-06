@@ -593,6 +593,15 @@ function wmf_civicrm_verify_message_and_stage($msg)
         $msg = json_decode($msg->body, true);
     }
 
+    //FIXME: normalize *before* validation
+    if ( empty( $msg['original_currency'] ) and !empty( $msg['currency'] ) ) {
+        $msg['original_currency'] = $msg['currency'];
+    }
+
+    if ( empty( $msg['original_gross'] ) and !empty( $msg['gross'] ) ) {
+        $msg['original_gross'] = $msg['gross'];
+    }
+
     $required = array(
         'email',
         'gross',
@@ -962,6 +971,11 @@ function wmf_civicrm_normalize_msg( $msg ) {
     // if all else fails, fall back to now.
     if ( empty( $msg['date'] ) ) {
         $msg['date'] = time();
+    }
+
+    if ( $msg['recurring'] and !isset( $msg['start_date'] ) ) {
+        $msg['start_date'] = $msg['date'];
+        $msg['create_date'] = $msg['date'];
     }
 
     if ( !empty( $msg['thankyou_date'] ) ) {

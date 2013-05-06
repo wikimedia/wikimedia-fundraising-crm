@@ -393,6 +393,7 @@ function recurring_import_subscr_signup( $msg ) {
   $dbs->push( 'civicrm' );
   $result = db_insert( 'civicrm_contribution_recur' )->fields( array(
     'contact_id' => $contact[ 'id' ],
+    'currency' => $msg[ 'currency' ],
     'amount' => $msg[ 'amount' ],
     'frequency_unit' => $msg[ 'frequency_unit' ],
     'frequency_interval' => $msg[ 'frequency_interval' ],
@@ -580,8 +581,10 @@ function recurring_normalize_msg( $msg  ) {
     $msg = json_decode($msg->body, true);
   }
 
-  // we can safely assume we have a raw msg from paypal if contribution_tracking_id isn't set
-  if ( !isset( $msg[ 'contribution_tracking_id' ]) ) {
+  if ( $msg['gateway'] === 'amazon' ) {
+    // should not require special normalization
+  } else if ( !isset( $msg[ 'contribution_tracking_id' ]) ) {
+    // we can safely assume we have a raw msg from paypal if contribution_tracking_id isn't set
     $msg = recurring_normalize_paypal_msg( $msg );
   } else {
     $msg['contribution_tracking_update'] = false;
@@ -607,6 +610,8 @@ function recurring_normalize_msg( $msg  ) {
  * case, this will convert the raw PayPal message to our normalized format.
  * 
  * This is large and unwieldly.
+ *
+ * FIXME: move this normalization into the paypal listener
  * 
  * @param $msg
  * @return array
@@ -738,7 +743,7 @@ function recurring_normalize_paypal_msg( $msg ) {
     }
   }
 
-  $msg_normalized[ 'gateway' ] = ( strlen( $msg[ 'gateway' ] )) ? $msg[ 'gateway' ] : 'paypal';
+  $msg_normalized[ 'gateway' ] = ( !empty( $msg['gateway'] ) ? $msg['gateway'] : 'paypal' );
 
   $msg_normalized[ 'date' ] = $timestamp;
   
