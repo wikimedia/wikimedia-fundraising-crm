@@ -50,8 +50,8 @@ penge ordentligt.
  Wikimedia fonden 
 
 	Til dit regnskab: Din donation den {{contribution.receive_date}} var
-på {{contribution.contribution_source}}.{% if recurring %}{% include
-'recurring/da.html' ignore missing %}{% endif %} 
+på {{contribution.contribution_source|l10n_currency(locale)}}.{% if
+recurring %}{% include 'recurring/da.html' ignore missing %}{% endif %} 
 
 	Dette brev er en kvittering for din donation. Ingen varer eller
 serviceydelser blev byttet, helt eller delvist, for dette bidrag. Wikimedia

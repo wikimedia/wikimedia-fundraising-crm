@@ -24,7 +24,7 @@
  維基媒體基金會 
 
 	供記錄：您於 {{contribution.receive_date}} 捐出
-{{contribution.contribution_source}}。{% if recurring %}{% include 'recurring/zh-hant.html' ignore missing
+{{contribution.contribution_source|l10n_currency(locale)}}。{% if recurring %}{% include 'recurring/zh-hant.html' ignore missing
 %}{% endif %} 
 
 	此函件為您的捐款的記錄。此捐獻不提供任何完整或部鈼的商品或服務。維基媒體基金會是在美國登記的501(c)(3)免稅、非牟利、慈善機構。地址：149 New Montgomery, 3rd Floor, San Francisco, CA, 94105。美國免稅號：20-0049703 

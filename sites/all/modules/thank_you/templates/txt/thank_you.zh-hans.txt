@@ -23,7 +23,7 @@
  执行理事，
  维基媒体基金会 
 
-	根据您的记录：您在{{contribution.receive_date}}捐赠了{{contribution.contribution_source}}。{% if recurring %}{% include 'recurring/zh-hans.html' ignore missing
+	根据您的记录：您在{{contribution.receive_date}}捐赠了{{contribution.contribution_source|l10n_currency(locale)}}。{% if recurring %}{% include 'recurring/zh-hans.html' ignore missing
 %}{% endif %} 
 
 	这封信可以作为您捐款的记录。该贡献不会提供任何的商品或服务。维基媒体基金会是一个非营利501(c)(3)免税的美国慈善机构。我们的地址是149 New Montgomery, 3rd Floor, San Francisco, CA,

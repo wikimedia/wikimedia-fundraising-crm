@@ -47,7 +47,9 @@ Sue</p>
 Directeur exécutif,<br />
 Fondation Wikimédia</p>
 
-<p>Pour mémoire : votre don au {{contribution.receive_date}} s'élevait à {{contribution.contribution_source}}.{% if recurring %}{% include 'recurring/fr.html' ignore missing %}{% endif %}</p>
+<p>Pour mémoire : votre don au {{contribution.receive_date}} s'élevait à
+{{contribution.contribution_source|l10n_currency(locale)}}.{% if recurring %}{% include
+'recurring/fr.html' ignore missing %}{% endif %}</p>
 
 <p>Ce message peut servir de preuve de votre contribution. Aucun bien ni service, quel
 qu'il soit, n'a été fourni en contrepartie de cette contribution. La Wikimedia

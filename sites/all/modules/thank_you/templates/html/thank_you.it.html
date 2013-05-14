@@ -46,7 +46,9 @@ Sue</p>
 Direttore esecutivo,<br />
 Fondazione Wikimedia</p>
 
-<p>Per le tue registrazioni: La tua donazione il {{contribution.receive_date}} è stata {{contribution.contribution_source}}.{% if recurring %}{% include 'recurring/it.html' ignore missing %}{% endif %}</p>
+<p>Per le tue registrazioni: La tua donazione il {{contribution.receive_date}} è stata
+{{contribution.contribution_source|l10n_currency(locale)}}.{% if recurring %}{% include
+'recurring/it.html' ignore missing %}{% endif %}</p>
 
 <p>Questa lettera può servire come prova della tua donazione. Nessun bene o servizio è
 stato fornito, in tutto o in parte, per questo contributo. La Wikimedia Foundation, Inc.

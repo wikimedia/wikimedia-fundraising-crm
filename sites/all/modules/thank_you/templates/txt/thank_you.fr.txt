@@ -53,7 +53,7 @@ nous utiliserons votre don efficacement.
  Fondation Wikimédia 
 
 	Pour mémoire : votre don au {{contribution.receive_date}} s'élevait à
-{{contribution.contribution_source}}.{% if recurring %}{% include 'recurring/fr.html' ignore missing %}{%
+{{contribution.contribution_source|l10n_currency(locale)}}.{% if recurring %}{% include 'recurring/fr.html' ignore missing %}{%
 endif %} 
 
 	Ce message peut servir de preuve de votre contribution. Aucun bien ni

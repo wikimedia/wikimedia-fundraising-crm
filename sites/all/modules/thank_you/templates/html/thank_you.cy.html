@@ -42,7 +42,9 @@ Sue</p>
 Cyfarwyddwr Gweithredol,<br />
 Sefydliad Wicifryngau,</p>
 
-<p>Cofnod: Derbyniwyd rhodd o {{contribution.contribution_source}} gennych ar {{contribution.receive_date}}.{% if recurring %}{% include 'recurring/cy.html' ignore missing %}{% endif %}</p>
+<p>Cofnod: Derbyniwyd rhodd o {{contribution.contribution_source|l10n_currency(locale)}}
+gennych ar {{contribution.receive_date}}.{% if recurring %}{% include 'recurring/cy.html'
+ignore missing %}{% endif %}</p>
 
 <p>Mae'r llythyr hwn yn gofnod o'ch rhodd. Ni gyflenwyd unrhyw nwyddau na gwasanaethau, yn
 rhannol nac yn gyflawn, yn dâl am y cyfraniad hwn. Mae Wikimedia Foundation, Inc. yn
