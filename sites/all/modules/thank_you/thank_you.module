@@ -145,6 +145,12 @@ function thank_you_send_test_submit( $form_id, $form_values ) {
 		}
 
 		foreach ( $langs as $l ){
+			watchdog(
+				'thank_you',
+				"Starting thank_you test send to {$form_values['values']['thank_you_test_email']} in $l",
+				array(),
+				WATCHDOG_INFO
+			);
 			if ( true === thank_you_send( $contribution[ 'contribution_id' ],
 				array(
 					 "language" => $l,
@@ -188,14 +194,14 @@ function thank_you_send( $contribution_id, $test=null ) {
 	// check that the API result is a valid contribution result
 	if( !WMFCiviAPICheck::check_api_contribution( $contribution, $contribution_id ) ){
 		// the API result is bad
-		watchdog('thank_you', 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true ) . '</pre>', WATCHDOG_ERROR);
+		watchdog('thank_you', 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true ) . '</pre>', array(), WATCHDOG_ERROR);
 		return false;
 	}
 	// go ahead and remove the extra layer of indirection to make it easier to use
 	$simplified = WMFCiviAPICheck::check_api_simplify( $contribution, $contribution_id );
 	if( !$simplified ){
 		// simplification failed
-		watchdog('thank_you', 'Could not simplify contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true )  . '</pre>', WATCHDOG_ERROR);
+		watchdog('thank_you', 'Could not simplify contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true )  . '</pre>', array(), WATCHDOG_ERROR);
 		return false;
 	}
 	$contribution = $simplified;
@@ -211,14 +217,14 @@ function thank_you_send( $contribution_id, $test=null ) {
 	// check that the API result is a valid contact result
 	if( !WMFCiviAPICheck::check_api_contact( $contact, $contribution[ 'contact_id' ] ) ){
 		// the API result is bad
-		watchdog('thank_you', 'Could not retrieve contact record for: ' . $contribution['contact_id'] . '<pre>' . print_r( $contact, true )  . '</pre>', WATCHDOG_ERROR);
+		watchdog('thank_you', 'Could not retrieve contact record for: ' . $contribution['contact_id'] . '<pre>' . print_r( $contact, true )  . '</pre>', array(), WATCHDOG_ERROR);
 		return false;
 	}
 	// go ahead and remove the extra layer of indirection to make it easier to use
 	$simplified = WMFCiviAPICheck::check_api_simplify( $contact, $contribution[ 'contact_id' ] );
 	if( !$simplified ){
 		// simplification failed
-		watchdog('thank_you', 'Could not simplify contact record for: ' . $contribution['contact_id']. '<pre>' . print_r( $contact, true ). '</pre>', WATCHDOG_ERROR);
+		watchdog('thank_you', 'Could not simplify contact record for: ' . $contribution['contact_id']. '<pre>' . print_r( $contact, true ). '</pre>', array(), WATCHDOG_ERROR);
 	}
 	$contact = $simplified;
 
@@ -233,7 +239,7 @@ function thank_you_send( $contribution_id, $test=null ) {
 		}
 		else{
 			watchdog('thank_you', 'Updating contribution record for no-op TY msg send FAILED for: !contribution_id',
-				array( 'contribution_id' => $contribution_id ), WATCHDOG_INFO
+				array( '!contribution_id' => $contribution_id ), WATCHDOG_INFO
 			);
 			// we didn't want to send one anyway, so in the current workflow, this is fine
 			return true;
@@ -294,13 +300,13 @@ function thank_you_send( $contribution_id, $test=null ) {
 	$email['plaintext'] = thank_you_render( $contribution, $contact, $language, $country, "txt" );
 
 	if( $email['html'] == false ){
-		watchdog( 'thank_you', "HTML rendering of template failed in $language_$country.", LOG_ERR );
+		watchdog( 'thank_you', "HTML rendering of template failed in $language_$country.", array(), WATCHDOG_ERROR );
 		wmf_common_failmail( 'thank_you', "FAILED TO RENDER HTML EMAIL\n" . __FUNCTION__ . "\n\n" . print_r($contribution, true) . print_r($contact, true), array() );
 		return false;
 	}
 
 	if( $email['plaintext'] == false ){
-		watchdog( 'thank_you', "Text rendering of template failed in $language_$country.", LOG_ERR );
+		watchdog( 'thank_you', "Text rendering of template failed in $language_$country.", array(), WATCHDOG_ERROR );
 		wmf_common_failmail( 'thank_you', "FAILED TO RENDER PLAINTEXT EMAIL\n" . __FUNCTION__ . "\n\n" . print_r($contribution, true) . print_r($contact, true), array() );
 		return false;
 	}
@@ -355,7 +361,7 @@ function thank_you_send( $contribution_id, $test=null ) {
 			$e->errorMessage() . '</pre>', array(), WATCHDOG_ERROR);
 
 		if( strpos( $e->errorMessage(), "Invalid address:" ) === false ){
-			watchdog( 'thank_you', "PhpMailer died unexpectedly: {$e->errorMessage()} at {$e->getTraceAsString()}", LOG_ERR );
+			watchdog( 'thank_you', "PhpMailer died unexpectedly: {$e->errorMessage()} at {$e->getTraceAsString()}", array(), WATCHDOG_ERROR );
 			wmf_common_failmail( 'thank_you', "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n" . $e->getTraceAsString(), $debug );
 
 			if( variable_get( "thank_you_async_send", false ) ){
