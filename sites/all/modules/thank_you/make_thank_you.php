@@ -156,7 +156,7 @@ function replace_variables_html( $message ){
 	$replacements = array(
 		'/\$givenname/' => '{{contact.first_name}}',
 		'/\$date/' => '{{contribution.receive_date}}',
-		'/\$amount/' => '{{contribution.contribution_source}}',
+		'/\$amount/' => '{{contribution.contribution_source|l10n_currency(locale)}}',
 		'/\[\$url1 ((?:(?!\]).)*)\]/' => '<a href="https://en.wikipedia.org/wiki/Wikipedia:Introduction">$1</a>',
 		'/\[\$url2 ((?:(?!\]).)*)\]/' => '<a href="https://twitter.com/Wikipedia">$1</a>',
 		'/\[\$url3 ((?:(?!\]).)*)\]/' => '<a href="https://identi.ca/wikipedia">$1</a>',
