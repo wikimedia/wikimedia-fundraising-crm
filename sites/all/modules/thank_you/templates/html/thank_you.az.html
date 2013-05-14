@@ -51,7 +51,9 @@ Syu</p>
 İcraçı direktor,<br />
 Vikimedia Fondu</p>
 
-<p>Məlumat üçün: Sizin {{contribution.receive_date}} tarixli ianənizin məbləği {{contribution.contribution_source}} təşkil etmişdir.{% if recurring %}{% include 'recurring/az.html' ignore missing %}{% endif %}</p>
+<p>Məlumat üçün: Sizin {{contribution.receive_date}} tarixli ianənizin məbləği
+{{contribution.contribution_source|l10n_currency(locale)}} təşkil etmişdir.{% if
+recurring %}{% include 'recurring/az.html' ignore missing %}{% endif %}</p>
 
 <p>Bu məktub sizin ianənizin təsdiqi kimi çıxış edə bilər. Bu ianə müqabilində
 tam və ya qismən heç bir mal və ya xidmət təqdim edilməmişdir. Vikimedia Fondu

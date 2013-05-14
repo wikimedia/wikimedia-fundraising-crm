@@ -1,51 +1,87 @@
-Dragă {{ contact.first_name }}
-
-Sunteți într-adevăr minunat, vă mulțumesc foarte mult pentru donația făcută
-Fundației Wikimedia!
-
-Așa ne plătim facturile — sunt oameni ca dumneavoastră, care dau cinci dolari,
-douăzeci de dolari, o sută de dolari. Donația mea favorită de anul trecut a fost cea
-de cinci lire de la o fetiță din Anglia, care și-a convins părinții să o lase să ne
-doneze banii de buzunar. Oameni ca dumneavoastră, la fel ca și acea fetiță, dau
-posibilitate Wikipediei să continue să ofere acces gratuit și facil la informații
-obiective celor din întreaga lume. Și celor care ne ajută făcând o donație, și
-celor care nu au posibilitatea să o facă. Vă mulțumesc foarte mult.
-
-Știu că ar fi fost ușor să ne ignorați apelul, dar sunt fericită că
-dumneavoastră nu ați făcut-o. Din partea mea și a zecilor de mii de voluntari care
-scriu Wikipedia: vă mulțumesc pentru că ne ajutați să facem lumea un loc mai bun. Vom
-folosi banii cu grijă și vă mulțumesc pentru încrederea pe care ne-o arătați.
-
-Mulțumesc,
-Sue Gardner
-Director executiv al Fundației Wikimedia
-
-Pentru evidența dumneavoastră: donația din data de {{
-contribution.receive_date|date("Y-m-d") }} a fost de {{ contribution.contribution_source
-}}.
-
-{% if recurring %}
-
-{% include 'recurring/ro.html' ignore missing %}
-
-{% endif %}
-
-Această scrisoare poate servi ca o înregistrare a donației dumneavoastră. Nu au
-fost furnizate bunuri sau servicii, integral sau parțial, pentru această contribuție.
-Fundația Wikimedia Foundation este o organizație non-profit de interes general, cu
-statutul 501(c)(3) scutit de impozite în Statele Unite ale Americii. Adresa noastră
-este: 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105, SUA. Numărul nostru de
-scutire fiscală în SUA: 20-0049703.
 
 
+	Dragă {{contact.first_name}}, 
 
-Opțiune de dezabonare:
+	Mulțumim pentru donația făcută Fundației Wikimedia. Sunteți minunat! 
 
-În calitate de donator, ne-ar plăcea să vă informăm cu privire la strângerile de
-fonduri și activitățile comunității noastre. Dacă preferați, totuși, să nu
-primiți asemenea mesaje de la noi, vă rugăm să faceți clic mai jos și vă vom
-înlătura din listă:
+	Este ușor să ignori bannerele destinate strângerii de fonduri, așa că
+mă bucur că nu ai făcut-o. Așa își plătește Wikipedia facturile ---
+oameni ca tine care ne dau bani, ca să putem ține site-ul disponibil tuturor
+oamenilor. 
 
-<a style="padding-left: 25px;" href="{{ unsubscribe_link|raw }}">Dezabonare</a>
+	Oamenii îmi spun că donează pentru Wikipedia deoarece le este utilă,
+și au încredere în ea, chiar dacă nu este perfectă. Ei știu că este
+scrisă pentru ei. Wikipedia nu este destinată promovării unui produs sau a
+unei ideologii anume, sau pentru a te convinge să crezi în ceva ce nu este
+adevărat. Scopul nostru este cel de a spune adevărul, și cu ajutorul tău putem
+face asta. Faptul că ne ajuți cu fonduri ține site-ul independent și îți
+poate furniza ceea ce îți trebuie și vrei de pe Wikipedia. Așa cum ar
+trebui să fie. 
+
+	Ar trebui să știi: donația ta nu acoperă costurile doar pentru o
+persoană, ci pentru sute. Donața ta ține Wikipedia disponibilă pentru un copil
+ambițios de la sate care încearcă să învețe singur programare. Un șomer din
+Viena recent diagnosticat cu Parkinson. Un scriitor căutând date despre
+operele anilor 1850 din Marea Britanie. Un băiat de zece ani din San Salvador
+care tocmai l-a descoperit pe Carl Sagan. 
+
+	Din partea acestor oameni, și restul 500 de milioane de persoane care
+accesează zilnic Wikipedia și site-urile conexe, îți mulțumesc pentru că te-ai
+alăturat efortului de a aduna toate cunoștințele omenirii. Donația ta face
+lumea un loc mai bun. Vă mulțumesc. 
+
+	Mulți oameni nu știu că Wikipedia este condusă de o organizație
+non-profit. Vă rugăm să luaţi în considerare trimiterea acestui e-mail la mai
+mulți prieteni pentru a-i încuraja să doneze și ei. Și dacă sunteţi
+interesat(ă), ar trebui să încercaţi să adăugaţi informaţii noi pe Wikipedia. Dacă
+găsiţi o mică greșeală de ortografie, vă rugăm să o corectaţi, iar dacă
+observaţi că ceva lipseşte, vă rugăm să adăugaţi. 
+
+	Apreciez faptul că aveți încredere în noi, și vă promit că voi folosi
+banii cu atenție. 
+
+	Mulțumesc,
+ Sue 
+
+	Sue Gardner
+ Director executiv,
+ Fundația Wikimedia 
+
+	Pentru informarea dumneavoastră: donația dumneavoastră din
+{{contribution.receive_date}} a fost de
+{{contribution.contribution_source|l10n_currency(locale)}}.{% if recurring %}{% include 'recurring/ro.html' ignore missing %}{%
+endif %} 
+
+	Această scrisoare poate servi ca dovadă a donaţiei dumneavoastră. Nu
+au fost oferite bunuri sau servicii de orice fel în schimbul acestei
+contribuţii. Fundaţia Wikimedia, Inc. este o corporație non-profit de caritate
+fiind scutită de taxe în Statele Unite ale Americii conform 501(c) (3).
+Adresa noastră este 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105.
+Numărul scutirii de taxe în SUA: 20-0049703 
+
+	Ne puteți urmări pe Twitter [1], identi.ca [2] sau Google+ [3], ne
+puteți aprecia pagina de Facebook [4] sau puteți citi pe mai multe pe blogul
+nostru [5]. Aici se află raportul anual al Fundației Wikimedia pentru
+perioada 2010–2011 [6], planul anual al Fundației Wikimedia pentru perioada
+2012–2013 [7] și planul strategic al Fundației Wikimedia pe cinci ani [8].
+Puteți cumpăra și obiecte personalizate de Wikipedia de la
+shop.wikimedia.org [9].  
+
+	_Dezabonare_ 
+
+	Ne-ar plăcea să vă ținem la curent, ca donator, cu activitatea
+comunității noastre și cu strângerile de fonduri. Dacă totuși preferați să nu
+primiți astfel de e-mailuri, dați click mai jos și vă vom scoate din listă.
+Dezabonare [10] 
 
 
+[1] https://twitter.com/Wikipedia
+[2] https://identi.ca/wikipedia
+[3] https://plus.google.com/+Wikipedia/posts
+[4] https://www.facebook.com/wikipedia
+[5] https://blog.wikimedia.org
+[6] https://wikimediafoundation.org/wiki/Annual_Report
+[7] http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf
+[8] https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary
+[9] https://shop.wikimedia.org
+[10] {{unsubscribe_link|raw}}

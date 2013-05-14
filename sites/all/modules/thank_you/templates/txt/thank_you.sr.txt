@@ -48,8 +48,8 @@
  Задужбине Викимедије 
 
 	Све ваше донације: Ваша донација на {{contribution.receive_date}}
-износила је {{contribution.contribution_source}}.{% if recurring %}{% include
-'recurring/sr.html' ignore missing %}{% endif %} 
+износила је {{contribution.contribution_source|l10n_currency(locale)}}.{% if
+recurring %}{% include 'recurring/sr.html' ignore missing %}{% endif %} 
 
 	Ово писмо може послужити као доказ ваше донације. Никаква добра или
 услуге су пружене у целини или делом за овај допринос. Задужбина Викимедија

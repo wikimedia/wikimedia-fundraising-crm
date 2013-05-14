@@ -44,7 +44,9 @@ Sue</p>
 Executive Director,<br />
 Wikimedia Foundation</p>
 
-<p>For your records: Your donation on {{contribution.receive_date}} was {{contribution.contribution_source}}.{% if recurring %}{% include 'recurring/en.html' ignore missing %}{% endif %}</p>
+<p>For your records: Your donation on {{contribution.receive_date}} was
+{{contribution.contribution_source|l10n_currency(locale)}}.{% if recurring %}{% include
+'recurring/en.html' ignore missing %}{% endif %}</p>
 
 <p>This letter may serve as a record of your donation. No goods or services were provided,
 in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit
