@@ -643,6 +643,9 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
 			'auto_reload' => true,
 			'charset' => 'utf-8',
 		));
+
+		require_once( __DIR__ . '/../wmf_common/twigext_l10n/TwigLocalization.php' );
+		$twig->addExtension( new TwigLocalization() );
 	}
 
 	$template = $twig->loadTemplate( $format . DIRECTORY_SEPARATOR . "thank_you.en.$format" );
@@ -688,6 +691,7 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
         "unsubscribe_link" => variable_get( 'thank_you_unsubscribe_url', '' ) . '?' . http_build_query( $unsub_params, '', '&' ),
 		"language" => $language,
 		"country" => $country,
+		"locale" => "{$language}_{$country}",
     ) );
 
     return $rendered;
