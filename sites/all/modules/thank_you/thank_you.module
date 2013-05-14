@@ -294,11 +294,13 @@ function thank_you_send( $contribution_id, $test=null ) {
 	$email['plaintext'] = thank_you_render( $contribution, $contact, $language, $country, "txt" );
 
 	if( $email['html'] == false ){
+		watchdog( 'thank_you', "HTML rendering of template failed in $language_$country.", LOG_ERR );
 		wmf_common_failmail( 'thank_you', "FAILED TO RENDER HTML EMAIL\n" . __FUNCTION__ . "\n\n" . print_r($contribution, true) . print_r($contact, true), array() );
 		return false;
 	}
 
 	if( $email['plaintext'] == false ){
+		watchdog( 'thank_you', "Text rendering of template failed in $language_$country.", LOG_ERR );
 		wmf_common_failmail( 'thank_you', "FAILED TO RENDER PLAINTEXT EMAIL\n" . __FUNCTION__ . "\n\n" . print_r($contribution, true) . print_r($contact, true), array() );
 		return false;
 	}
@@ -353,6 +355,7 @@ function thank_you_send( $contribution_id, $test=null ) {
 			$e->errorMessage() . '</pre>', array(), WATCHDOG_ERROR);
 
 		if( strpos( $e->errorMessage(), "Invalid address:" ) === false ){
+			watchdog( 'thank_you', "PhpMailer died unexpectedly: {$e->errorMessage()} at {$e->getTraceAsString()}", LOG_ERR );
 			wmf_common_failmail( 'thank_you', "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n" . $e->getTraceAsString(), $debug );
 
 			if( variable_get( "thank_you_async_send", false ) ){
