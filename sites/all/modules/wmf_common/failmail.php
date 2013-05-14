@@ -12,6 +12,14 @@ function wmf_common_failmail( $module, $error, $source = null )
     } elseif (property_exists($error, 'source')) {
         $params['source'][] = $error->source;
     }
+
+	watchdog(
+		'failmail',
+		"What's that? Something wrong: $error",
+		array(),
+		WATCHDOG_ERROR
+	);
+
     $params['module'] = $module;
     $params['removed'] = (is_callable(array($error, 'isRejectMessage'))) ? $error->isRejectMessage() : FALSE;
     drupal_mail('wmf_common', 'fail', $to, language_default(), $params);
