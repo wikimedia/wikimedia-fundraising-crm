@@ -479,3 +479,14 @@ function wmf_civicrm_update_6007()
         $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
     }
 }
+
+/**
+ * Add new check processor!
+ */
+function wmf_civicrm_update_6008()
+{
+	wmf_civicrm_bootstrap_civi();
+	wmf_civicrm_create_contribution_types(array(
+		'Arizona Lockbox',
+	));
+}

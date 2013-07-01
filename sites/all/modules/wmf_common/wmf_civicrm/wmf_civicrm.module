@@ -409,10 +409,14 @@ function wmf_civicrm_get_civi_id($type, $name)
 }
 
 function wmf_civicrm_get_message_contribution_type( $msg ) {
-    if ($msg['gateway'] == 'merkle') {
-        return 'merkle';
-    }
-    return 'cash';
+	$gateway = strtolower( $msg['gateway'] );
+    if ( $gateway === 'merkle' ) {
+		return 'merkle';
+	} elseif ( $gateway === 'arizonalockbox' ) {
+        return 'Arizona Lockbox';
+    } else {
+		return 'cash';
+	}
 }
 
 /**
