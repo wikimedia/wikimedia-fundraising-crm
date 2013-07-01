@@ -77,7 +77,6 @@ function drush_import_checks() {
 				"city" => _get_value( "City", $row, $headers ),
 				"state_province" => _get_value( "State", $row, $headers ),
 				"postal_code" => _get_value( "Postal Code", $row, $headers ),
-				"gateway" => "merkle",
 				"payment_method" => _get_value( "Payment Instrument", $row, $headers ),
 				"payment_submethod" => "",
 				"check_number" => _get_value( "Check Number", $row, $headers ),
@@ -95,14 +94,37 @@ function drush_import_checks() {
 				"import_batch_number" => _get_value( "Batch", $row, $headers ),
 			);
 
-			if( _get_value( 'Organization Name', $row, $headers, FALSE ) === FALSE ){
+			$contype = _get_value( 'Contribution Type', $row, $headers );
+			switch ( $contype ) {
+				case "Merkle":
+					$msg['gateway'] = "merkle";
+					break;
+
+				case "Arizona Lockbox":
+					$msg['gateway'] = "arizonalockbox";
+					break;
+
+				default:
+					throw new WmfException( 'CIVI_REQ_FIELD', "Contribution Type '$contype' is unknown whilst importing checks!" );
+					break;
+			}
+
+			// Attempt to get the organization name if it exists...
+			// Merkle used the "Organization Name" column header where AZL uses "Company"
+			$orgname = _get_value( 'Organization Name', $row, $headers, FALSE );
+			if ( $orgname === FALSE ) {
+				$orgname = _get_value( 'Company', $row, $headers, FALSE );
+			}
+
+			if( $orgname === FALSE ) {
+				// If it's still false let's just assume it's an individual
 				$msg['contact_type'] = "Individual";
 				$msg["first_name"] = _get_value( "First Name", $row, $headers );
 				$msg["middle_name"] = _get_value( "Middle Name", $row, $headers );
 				$msg["last_name"] = _get_value( "Last Name", $row, $headers );
 			} else {
 				$msg['contact_type'] = "Organization";
-				$msg['organization_name'] = _get_value( "Organization Name", $row, $headers );
+				$msg['organization_name'] = $orgname;
 			}
 
 			// check for additional address information
@@ -141,7 +163,7 @@ function drush_import_checks() {
 			$msg['gateway_txn_id'] = md5( $msg['check_number'] . $name_salt );
 
 			// check to see if we have already processed this check
-			if ( $existing = wmf_civicrm_get_contributions_from_gateway_id( "merkle", $msg['gateway_txn_id'] ) ){
+			if ( $existing = wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ){
 				// if so, move on
 				watchdog('offline2civicrm', 'Contribution matches existing contribution (id: ' . $existing[0]['id'] .
 					') Skipping', array(), WATCHDOG_INFO);
