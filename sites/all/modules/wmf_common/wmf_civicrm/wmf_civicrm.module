@@ -694,14 +694,17 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
   
     // Create the contact record
+	$fname = substr( trim( $msg['first_name'] ), 0, 64 );
+	$mname = substr( trim( $msg['middle_name'] ), 0, 64 );
+	$lname = substr( trim( $msg['last_name'] ), 0, 64 );
     $contact = array(
         'id' => $contact_id,
         'contact_type' => $msg['contact_type'],
-        'first_name' => $msg['first_name'],
-        'middle_name' => $msg['middle_name'],
-        'last_name' => $msg['last_name'],
-        'sort_name' => trim( $msg['last_name'] . ', ' . $msg['first_name'], ' ,' ),
-        'display_name' => trim( $msg['first_name'] . ' ' . $msg['last_name'] ),
+        'first_name' => $fname,
+        'middle_name' => $mname,
+        'last_name' => $lname,
+        'sort_name' => substr( trim( $lname . ', ' . $fname, ' ,' ), 0, 128 ),
+        'display_name' => substr( $fname . ' ' . $lname, 0, 128 ),
         'do_not_trade' => $msg['anonymous'],
         'is_opt_out' => '0', // $msg['optout'], // we don't offer an option to unsub on contrib, eliminate bugs
         'contact_source' => $msg['contact_source'],
