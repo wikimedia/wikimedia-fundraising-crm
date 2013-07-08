@@ -50,6 +50,9 @@ class WmfException extends Exception {
         'UNSUBSCRIBE_WARN' => array(
           'no-email' => TRUE,
         ),
+        'INVALID_FILE_FORMAT' => array(
+            'fatal' => TRUE,
+        ),
     );
 
     var $type;
