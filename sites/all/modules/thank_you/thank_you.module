@@ -684,14 +684,16 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
 		"uselang" => $language,
 	);
 
-	// for donations made in the US on Jan 1 UTC, do not send the TY email in UTC,
-	// use HST for tax reasons
-	if( $country == "US" ){
-		if( strftime("%m-%d", strtotime( $contribution['receive_date'] ) == "01-01" ) ){
-			$contribution['receive_date'] = strftime("%Y-%m-%d %H:%M:%S", strtotime( $contribution['receive_date'] ) - ( 60 * 60 * 10 ) );
-		}
+	// Format the datestamp
+	$date = strtotime( $contribution['receive_date'] );
+	if ( $country === 'US' && strftime( "%m-%d" ) === '01-01' ) {
+		// For tax reasons, any donation made in the US on Jan 1 UTC should have a timestring in HST
+		$contribution['receive_date'] = strftime( "%Y-%m-%d", $date - ( 60 * 60 * 10 ) );
+	} else {
+		$contribution['receive_date'] = strftime( "%Y-%m-%d", $date);
 	}
 
+	// Render it! :)
     $rendered = $template->render( array(
         "contact" => $contact,
         "contribution" => $contribution,
