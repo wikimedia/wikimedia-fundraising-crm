@@ -43,6 +43,15 @@ function import_checks_drush_help( $section ) {
 function drush_import_checks() {
 	require_once 'offline2civicrm.common.inc';
 
+	$required_fields = array(
+		'date',
+		'gross',
+		'gift_source',
+		'import_batch_number',
+		'check_number',
+		'restrictions',
+	);
+
 	$args = drush_get_arguments();
 	$filename = $args[1];
 
@@ -87,7 +96,7 @@ function drush_import_checks() {
 				"gross" => _get_value( "Total Amount", $row, $headers ),
 				"net" => _get_value( "Total Amount", $row, $headers ),
 				"date" => strtotime( _get_value( "Received Date", $row, $headers ) ),
-				"thankyou_date" => strtotime( _get_value( "Thank You Date", $row, $headers ) ),
+				"thankyou_date" => strtotime( _get_value( "Thank You Letter Date", $row, $headers ) ),
 				"restrictions" => _get_value( "Restrictions", $row, $headers ),
 				"gift_source" => _get_value( "Gift Source", $row, $headers ),
 				"direct_mail_appeal" => _get_value( "Direct Mail Appeal", $row, $headers ),
@@ -106,7 +115,6 @@ function drush_import_checks() {
 
 				default:
 					throw new WmfException( 'CIVI_REQ_FIELD', "Contribution Type '$contype' is unknown whilst importing checks!" );
-					break;
 			}
 
 			// Attempt to get the organization name if it exists...
@@ -170,7 +178,19 @@ function drush_import_checks() {
 				continue;
 			}
 
+			$failed = array();
+			foreach ( $required_fields as $key ) {
+				if ( !array_key_exists( $key, $msg ) or empty( $msg[$key] ) ) {
+					$failed[] = $key;
+				}
+			}
+			if ( $failed ) {
+				throw new WmfException( 'CIVI_REQ_FIELD', t( "Missing required fields :keys during check import", array( ":keys" => implode( ", ", $failed ) ) ) );
+			}
+
 			$contribution = wmf_civicrm_contribution_message_import( $msg );
+
+			watchdog('offline2civicrm', 'Import checks: Contribution imported successfully (!id): !msg', array('!id' => $contribution['id'], '!msg' => print_r( $msg, true )), WATCHDOG_INFO);
 		}
 		catch (WmfException $ex) {
 			watchdog('offline2civicrm', 'Import checks: error during import ' + $ex->getMessage(), NULL, WATCHDOG_ERROR);
@@ -185,8 +205,6 @@ function drush_import_checks() {
 		} catch ( Exception $e ){
 			watchdog('offline2civicrm', 'Import checks: Unknown exception thrown during check processing: ' . print_r( $e, true ), array(), WATCHDOG_ERROR);
 		}
-
-		watchdog('offline2civicrm', 'Import checks: Contribution imported successfully (!id): !msg', array('!id' => $contribution['id'], '!msg' => print_r( $msg, true )), WATCHDOG_INFO);
 	}
 
 	watchdog( 'offline2civicrm', 'Import checks: finished', null, WATCHDOG_INFO );
