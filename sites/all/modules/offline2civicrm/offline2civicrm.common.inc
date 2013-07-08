@@ -24,6 +24,10 @@ function _get_value( $column, $row, $headers, $default='' ){
   if( !array_key_exists( $column, $headers ) ){
     return $default;
   } else {
-    return trim( $row[ $headers[ $column ] ] );
+    $value = trim( $row[ $headers[ $column ] ] );
+    if ( empty( $value ) ) {
+      return $default;
+    }
+    return $value;
   }
 }

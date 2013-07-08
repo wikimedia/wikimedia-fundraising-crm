@@ -63,6 +63,36 @@ function drush_import_checks() {
 
 	$headers = _load_headers( fgetcsv( $file, 0, ',', '"', '\\') );
 
+	$required_columns = array(
+		'Batch',
+		'Check Number',
+		'City',
+		'Contribution Type',
+		'Country',
+		'Direct Mail Appeal',
+		'Email',
+		'Gift Source',
+		'Payment Instrument',
+		'Postal Code',
+		'Received Date',
+		'Restrictions',
+		'Source',
+		'State',
+		'Street Address',
+		'Thank You Letter Date',
+		'Total Amount',
+	);
+
+	$failed = array();
+	foreach ( $required_columns as $name ) {
+		if ( !array_key_exists( $name, $headers ) ) {
+			$failed[] = $name;
+		}
+	}
+	if ( $failed ) {
+		throw new WmfException( 'INVALID_FILE_FORMAT', "This file is missing headers: " . implode( ", ", $failed ) );
+	}
+
 	while( ( $row = fgetcsv( $file, 0, ',', '"', '\\')) !== FALSE) {
 		try {
 			list($currency, $source_amount) = explode( " ", _get_value( "Source", $row, $headers ) );
@@ -76,8 +106,6 @@ function drush_import_checks() {
 			$msg = array(
 				"optout" => "1",
 				"anonymous" => "0",
-				"utm_source" =>  _get_value( "Payment Instrument", $row, $headers ),
-				"utm_medium" => str_replace(' ', '', _get_value( "Appeal", $row, $headers ) ),
 				"letter_code" => _get_value( "Letter Code", $row, $headers ),
 				"contact_source" => "check",
 				"language" => "en",
