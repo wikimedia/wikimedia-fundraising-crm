@@ -1,19 +1,19 @@
 <?php
 
-namespace wmf_eoy_receipt;
+namespace wmf_communication;
 
 class Templating {
-    static protected $twig;
+    protected $twig;
 
     protected $template_name;
     protected $language;
     protected $template_params;
 
     function __construct( $templates_dir, $template_name, $language, $template_params ) {
-        if ( !self::$twig ) {
+        if ( !function_exists( 'wmf_common_get_twig' ) ) {
             module_load_include( 'inc', 'wmf_common', 'twig' );
-            self::$twig = wmf_common_get_twig( $templates_dir );
         }
+        $this->twig = wmf_common_get_twig( $templates_dir );
 
         $this->template_name = $template_name;
         $this->language = $language;
@@ -25,11 +25,13 @@ class Templating {
         $language = $this->language;
         do {
             try {
-                $template = self::$twig->loadTemplate( "{$format}/{$this->template_name}.{$language}.{$format}" );
+                $template = $this->twig->loadTemplate( "{$format}/{$this->template_name}.{$language}.{$format}" );
+                break;
             } catch ( \Twig_Error_Loader $ex ) {
-                $language = Translation::next_fallback( $language );
+                // pass
             }
-        } while ( $language && !$template );
+            $language = Translation::next_fallback( $language );
+        } while ( $language );
 
         return $template->render( $this->template_params );
     }

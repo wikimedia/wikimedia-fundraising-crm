@@ -1,12 +1,26 @@
 <?php
+/**
+ * TODO: really decouple from implementation
+ */
 
-namespace wmf_eoy_receipt;
+namespace wmf_communication;
 
 class Mailer {
     function __construct() {
         require_once implode(DIRECTORY_SEPARATOR, array(variable_get('wmf_common_phpmailer_location', ''), 'class.phpmailer.php'));
     }
 
+    /**
+     * @param array $email  All keys are required:
+     *    from_address
+     *    from_name
+     *    html
+     *    plaintext
+     *    reply_to
+     *    subject
+     *    to_address
+     *    to_name
+     */
     function send( $email ) {
         $mailer = new \PHPMailer( true );
 
@@ -14,6 +28,7 @@ class Mailer {
 
         $mailer->AddReplyTo( $email[ 'from_address' ], $email[ 'from_name' ] );
         $mailer->SetFrom( $email[ 'from_address' ], $email[ 'from_name' ] );
+        $mailer->set( 'Sender', $email[ 'reply_to' ] );
 
         $mailer->AddAddress( $email[ 'to_address' ], $email[ 'to_name' ] );
 
@@ -22,5 +37,7 @@ class Mailer {
         $mailer->MsgHTML( $email[ 'html' ] );
 
         $success = $mailer->Send();
+
+        return $success;
     }
 }

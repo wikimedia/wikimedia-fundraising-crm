@@ -1,0 +1,5 @@
+<?php
+
+require_once 'Mailer.php';
+require_once 'Templating.php';
+require_once 'Translation.php';
