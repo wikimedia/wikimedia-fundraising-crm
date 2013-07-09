@@ -1,0 +1,5 @@
+name = WMF Communication
+description = Render, translate and send email
+core = 7.x
+package = Wikimedia
+dependencies[] = wmf_common

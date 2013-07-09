@@ -1,10 +1,14 @@
 <?php
 
-namespace wmf_eoy_receipt;
+namespace wmf_communication;
 
 class Translation {
-    //TODO:
+    //TODO: get from MediaWiki
     static function next_fallback( $language ) {
+        $parts = preg_split( '/-_/', $language );
+        if ( count( $parts ) > 1 ) {
+            return $parts[0];
+        }
         if ( $language === 'en' ) {
             return null;
         }

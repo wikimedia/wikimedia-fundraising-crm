@@ -1,5 +1,9 @@
 <?php
 
+use wmf_communication\Mailer;
+use wmf_communication\Templating;
+use wmf_communication\Translation;
+
 require_once drupal_get_path( 'module', 'wmf_civicrm' ) . '/civicrm_api_check.inc';
 require_once drupal_get_path( 'module', 'wmf_common' ) . '/MessageFile.php';
 
@@ -296,8 +300,7 @@ function thank_you_send( $contribution_id, $test=null ) {
 		'subject' => variable_get( 'thank_you_subject', 'Thank you from the Wikimedia Foundation' ),
 	);
 
-	$email['html'] = thank_you_render( $contribution, $contact, $language, $country, "html" );
-	$email['plaintext'] = thank_you_render( $contribution, $contact, $language, $country, "txt" );
+	list( $email['html'], $email['plaintext'] ) = thank_you_render( $contribution, $contact, $language, $country );
 
 	if( $email['html'] == false ){
 		watchdog( 'thank_you', "HTML rendering of template failed in $language_$country.", array(), WATCHDOG_ERROR );
@@ -311,52 +314,26 @@ function thank_you_send( $contribution_id, $test=null ) {
 		return false;
 	}
 
-	static $di_i18n;
-
-	if( !isset( $di_i18n ) ){
-		$di_include = implode( DIRECTORY_SEPARATOR, array( variable_get( 'wmf_common_di_location', '' ), 'gateway_common', 'interface.i18n.php' ) );
-		if( !file_exists( $di_include ) ){
-			watchdog("thank_you", "DonationInterface i18n libraries not found.  Path checked: " . $di_include, array(), WATCHDOG_ERROR);
-			return false;
-		}
-
-		$di_i18n = new MessageFile( $di_include );
-	}
-
 	$subj_msg = "donate_interface-email-subject";
-	$email['subject'] = $di_i18n->getMsg( $subj_msg, $language );
+	$email['subject'] = Translation::get_translated_message( $subj_msg, $language );
 
-	require_once 'class.phpmailer.php';
+	$mailer = new Mailer();
 
-	$mail = new PHPMailer( true ); // @todo any performance gain making this static?
+	$email['reply_to'] = 'bounce-' . str_replace( '@', '=', $email['to_address'] ) . '@donate.wikimedia.org';
 
 	try {
-		$mail->set( 'Charset', 'utf-8' );
-		$mail->set( 'Sender', 'bounce-' . str_replace( '@', '=', $email['to_address'] ) . '@donate.wikimedia.org' );
 
-		if ( !is_null( $test ) ){
-			watchdog("thank_you", "Sending ty email to: " . $test['email'], array(), WATCHDOG_INFO);
-			$mail->AddAddress( $test['email'], "Test User" );
-		} else {
-			watchdog("thank_you", "Sending ty email to: " . $email['to_address'], array(), WATCHDOG_INFO);
-			$mail->AddAddress( $email['to_address'], $email['to_name'] );
+		if ( $test ) {
+			$email['to_address'] = $test['email'];
+			$email['subject'] = "[Test TY - {$test['language']}] {$email['subject']}";
 		}
+		watchdog("thank_you", "Sending ty email to: " . $email['to_address'], array(), WATCHDOG_INFO);
 
-		$mail->AddReplyTo( $email['from_address'], $email['from_name'] );
-		$mail->SetFrom( $email['from_address'], $email['from_name'] );
-
-		$mail->Subject = $email['subject'];
-		if ( !is_null( $test ) ){
-			$mail->Subject = "[Test TY - " . $test['language'] . "] " . $email['subject'];
-		}
-		$mail->AltBody = $email['plaintext'];
-		$mail->MsgHTML( $email['html'] );
-
-		$email_success = $mail->Send();
+		$email_success = $mailer->send( $email );
 
 	} catch (phpmailerException $e) {
 		$debug = array_merge( $email, array( "html" => '', "plaintext" => '' ) );
-		watchdog('thank_you', 'Sending thank you message failed for contribution (2): ' .
+		watchdog('thank_you', 'Sending thank you message failed in phpmailer for contribution: ' .
 			$contribution_id . '<pre>' . check_plain(print_r($debug, TRUE)) . "\n\n" .
 			$e->errorMessage() . '</pre>', array(), WATCHDOG_ERROR);
 
@@ -378,7 +355,7 @@ function thank_you_send( $contribution_id, $test=null ) {
 
 	} catch (Exception $e) {
 		$debug = array_merge( $email, array( "html" => '', "plaintext" => '' ) );
-		watchdog('thank_you', 'Sending thank you message failed for contribution (3): ' .
+		watchdog('thank_you', 'Sending thank you message failed with generic exception for contribution: ' .
 			$contribution_id . '<pre>' . check_plain(print_r($debug, TRUE)) . "\n\n" .
 			$e->getMessage() . '</pre>', array(), WATCHDOG_ERROR);
 
@@ -608,21 +585,11 @@ EOT;
  * @param $contact array simplified result of a CiviCRM Contribution API lookup
  * @param $language
  */
-function thank_you_render( $contribution, $contact, $language='en', $country='XX', $format="html" ) {
+function thank_you_render( $contribution, $contact, $language='en', $country='XX' ) {
 
-	if( $format != "html" && $format != "txt" ){
-		watchdog( "thank_you", "Unsupported render format: " . $format, array(), WATCHDOG_ERROR );
-		return false;
-	}
     if( !is_array( $contribution ) || !is_array( $contact ) ) {
         return false;
     }
-	if( is_null( $language ) || $language == "" ){
-		$language = "en";
-	}
-	if( is_null( $country ) || $country == "" ){
-		$country = "XX";
-	}
 
     $transaction = WmfTransaction::from_unique_id( $contribution['trxn_id'] );
     $recurring = $transaction->is_recurring;
@@ -632,49 +599,6 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
     $misseddonations = $transaction->gateway === "globalcollect"
             and $transaction->is_recurring
             and time() < mktime( 0, 0, 0, 5, 17, 2012);
-
-	static $loader, $twig;
-
-	if( !isset( $loader ) || !isset( $twig ) ){
-
-		$twig_include = implode( DIRECTORY_SEPARATOR, array( variable_get( 'wmf_common_twig_location', '' ), 'lib', 'Twig', 'Autoloader.php' ) );
-		if( !file_exists( $twig_include ) ){
-			watchdog("thank_you", "Twig libraries not found.  Path checked: " . $twig_include, array(), WATCHDOG_ERROR);
-			return false;
-		}
-		require_once $twig_include;
-
-		Twig_Autoloader::register();
-
-		$loader = new Twig_Loader_Filesystem( drupal_get_path( 'module', 'thank_you' ) . DIRECTORY_SEPARATOR . 'templates' );
-		$twig = new Twig_Environment( $loader, array(
-			'cache' => '/tmp/twig/cache',
-			'auto_reload' => true,
-			'charset' => 'utf-8',
-		));
-
-		require_once( __DIR__ . '/../wmf_common/twigext_l10n/TwigLocalization.php' );
-		$twig->addExtension( new TwigLocalization() );
-	}
-
-	$template = $twig->loadTemplate( $format . DIRECTORY_SEPARATOR . "thank_you.en.$format" );
-	try{
-		try{
-			// look for a country-specific translation (use lowercase per this convention)
-			$l_country = strtolower( $country );
-			$template = $twig->loadTemplate( $format . DIRECTORY_SEPARATOR . "thank_you.$language-$l_country.$format" );
-			watchdog("thank_you", "Language found: $language-$l_country for $format", array(), WATCHDOG_INFO);
-		} catch ( Twig_Error_Loader $e ) {
-			// the template did not exist
-			// do nothing, try language only
-			$template = $twig->loadTemplate( $format . DIRECTORY_SEPARATOR . "thank_you.$language.$format" );
-			watchdog("thank_you", "Language found: $language for $format", array(), WATCHDOG_INFO);
-		}
-	} catch ( Twig_Error_Loader $e ) {
-		// the template did not exist
-		// do nothing, we will stick with English
-		watchdog("thank_you", "Language not supported for $format: $language, defaulting to en", array(), WATCHDOG_INFO);
-	}
 
 	$unsub_params = array(
 		"p" => "thankyou",
@@ -693,8 +617,7 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
 		$contribution['receive_date'] = strftime( "%Y-%m-%d", $date);
 	}
 
-	// Render it! :)
-    $rendered = $template->render( array(
+    $params = array(
         "contact" => $contact,
         "contribution" => $contribution,
         "recurring" => $recurring,
@@ -703,8 +626,18 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
 		"language" => $language,
 		"country" => $country,
 		"locale" => "{$language}_{$country}",
-    ) );
+    );
 
-    return $rendered;
+    $template = new Templating(
+        drupal_get_path( 'module', 'thank_you' ) . DIRECTORY_SEPARATOR . 'templates',
+        "thank_you",
+        $language,
+        $params
+    );
+
+    return array(
+        $template->render( 'html' ),
+        $template->render( 'txt' ),
+    );
 }
 

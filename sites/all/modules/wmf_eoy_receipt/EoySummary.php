@@ -2,9 +2,9 @@
 
 namespace wmf_eoy_receipt;
 
-require_once 'Mailer.php';
-require_once 'Templating.php';
-require_once 'Translation.php';
+use wmf_communication\Mailer;
+use wmf_communication\Templating;
+use wmf_communication\Translation;
 
 class EoySummary
 {
