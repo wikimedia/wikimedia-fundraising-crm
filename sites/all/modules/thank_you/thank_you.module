@@ -395,7 +395,7 @@ function thank_you_update_ty_date( $contribution, $anonymous=false ){
 		'version' => '3',
 		'id' => $contribution[ 'contribution_id' ],
 		'contribution_id' => $contribution[ 'contribution_id' ],
-		'thankyou_date' => date( 'Y-m-d H:i:s' ),
+		'thankyou_date' => wmf_common_date_unix_to_civicrm( time() ),
 	);
 
 	if( $anonymous ){

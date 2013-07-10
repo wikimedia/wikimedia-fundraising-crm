@@ -198,12 +198,17 @@ function drush_recurring_globalcollect_validate() {
 function drush_recurring_globalcollect_parse_date($date) {
   
   if (!empty($date)) {
+    $oldTimezone = date_default_timezone_get();
+    date_default_timezone_set( "UTC" );
+
     $now_stamp = time();
     $now = date('Y-m-d', $now_stamp);
     $date_stamp = strtotime($date);
     
     // Set date from stamp so we have the proper format expected by the module.
     $date = date('Y-m-d', $date_stamp);
+
+    date_default_timezone_set( $oldTimezone );
     
     if ($date_stamp > $now_stamp) {
       $message = 'The date you entered [' . $date . '] is being parsed as [' . $date . ']. The current date is: [' . $now . ']. You are not allowed to specify dates in the future.';
