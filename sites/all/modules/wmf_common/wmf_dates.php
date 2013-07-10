@@ -57,3 +57,43 @@ function wmf_common_date_add_days( $date, $add ){
 	return date_format($date, WMF_DATEFORMAT);
 }
 
+/**
+ * Convert a unix timestamp to formatted date, in UTC.
+ *
+ * Ordinarily, you will want to use the pre-formatted functions below to ensure standardized behavior.
+ * 
+ * @param string $format format appropriate for the php date() function
+ * @param integer $unixtime timestamp, seconds since epoch
+ */
+function wmf_common_date_format_using_utc( $format, $unixtime ) {
+    $oldTimezone = date_default_timezone_get();
+    date_default_timezone_set( "UTC" );
+
+    try {
+        $formatted = date( $format, $unixtime );
+    } catch ( Exception $ex ) {
+        watchdog( 'wmf_common', t( "Caught 'impossible' exception from date(): " ) . $ex->getMessage(), WATCHDOG_ERROR );
+    }
+
+    date_default_timezone_set( $oldTimezone );
+
+    return $formatted;
+}
+
+/**
+ * Used to format dates for the CiviCRM API.
+ *
+ * @param string $unixtime unix timestamp in seconds since epoch
+ */
+function wmf_common_date_unix_to_civicrm( $unixtime ) {
+    return wmf_common_date_format_using_utc( "Y-m-d H:i:s", $unixtime );
+}
+
+/**
+ * Used to format dates for MySQL datetime columns.
+ *
+ * @param string $unixtime unix timestamp in seconds since epoch
+ */
+function wmf_common_date_unix_to_sql( $unixtime ) {
+    return wmf_common_date_format_using_utc( "YmdHis", $unixtime );
+}

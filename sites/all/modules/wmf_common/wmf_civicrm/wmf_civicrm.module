@@ -92,9 +92,9 @@ function wmf_civicrm_settle( $contribution, $settled_timestamp = null )
         $result = CRM_Core_BAO_CustomValueTable::getValues( $params );
         $settlement_db_date = $result[$field];
         $settled_timestamp = strtotime( $settlement_db_date );
-        $settlement_db_date = date( 'YmdHis', $settled_timestamp );
+        $settlement_db_date = wmf_common_date_unix_to_sql( $settled_timestamp );
     } else {
-        $settlement_db_date = date( 'YmdHis', $settled_timestamp );
+        $settlement_db_date = wmf_common_date_unix_to_sql( $settled_timestamp );
     }
 
     list($original_currency, $original_amount) = explode(" ", $contribution['source']);
@@ -269,7 +269,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
         'fee_amount' => $msg['fee'],
         'net_amount' => $msg['net'],
         'trxn_id' => $trxn_id,
-        'receive_date' => date( 'Y-m-d H:i:s', $msg['date'] ),
+        'receive_date' => wmf_common_date_unix_to_civicrm( $msg['date'] ),
         'currency' => $msg['currency'],
         'source' => $msg['original_currency'] . ' ' . $msg['original_gross'],
         'contribution_recur_id' => $recur_id,
@@ -282,7 +282,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
 
     // Add the thank you date when it exists and is not null (e.g.: we're importing from a check)
     if ( array_key_exists( 'thankyou_date', $msg ) && $msg[ 'thankyou_date' ] ) {
-        $contribution[ 'thankyou_date' ] = date( 'Y-m-d H:i:s', $msg['thankyou_date'] );
+        $contribution[ 'thankyou_date' ] = wmf_common_date_unix_to_civicrm( $msg['thankyou_date'] );
     }
 
     watchdog( 'wmf_civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), NULL, WATCHDOG_DEBUG);
@@ -958,7 +958,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
             $anonymous = ( array_key_exists( 'anonymous', $msg) && $msg['anonymous'] == true && strtoupper( $msg['anonymous'] ) != "FALSE" ) ? 1 : 0;
             $optout = ( array_key_exists( 'optout', $msg ) && $msg['optout'] == true && strtoupper( $msg['optout'] ) != "FALSE" ) ? 1 : 0;
 
-            $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking( '..' . $msg['payment_method'], 'civicrm', date('YmdHis', (int) $msg[ 'date' ] ), null, $optout, $anonymous ); //ACK! this should not be handled this way! should be dynamic!
+            $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking( '..' . $msg['payment_method'], 'civicrm', wmf_common_date_unix_to_sql( $msg['date'] ), null, $optout, $anonymous ); //ACK! this should not be handled this way! should be dynamic!
             watchdog( 'wmf_civicrm', 'Newly inserted contribution tracking id: @id', array( '@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
             $msg['contribution_tracking_id'] = $contribution_tracking_id;
         }
@@ -982,7 +982,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
         if ( !is_numeric( $msg['thankyou_date'] ) ) {
             $unix_time = strtotime( $msg['thankyou_date'] );
             if ( $unix_time !== false ) {
-                $msg['thankyou_date'] = date( 'Y-m-d H:i:s', $unix_time );
+                $msg['thankyou_date'] = $unix_time;
             } else {
                 watchdog( 'wmf_civicrm', 'Could not parse thankyou date: @date from @id', array( '@date' => $msg['thankyou_date'], '@id' => $msg['contribution_tracking_id'] ), WATCHDOG_DEBUG );
                 unset( $msg['thankyou_date'] );
@@ -1290,7 +1290,7 @@ function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_statu
         'gateway_date',
     ) );
     $last_timestamp = strtotime( $original_custom_values['gateway_date'] );
-    $last_gateway_date = date( 'YmdHis', $last_timestamp );
+    $last_gateway_date = wmf_common_date_unix_to_sql( $last_timestamp );
 
     if ( $last_gateway_date >= $gateway_date ) {
         watchdog('wmf_civicrm', "Not updating contribution, because a more recent gateway status change has been recorded: {$contribution_id}", array(), WATCHDOG_INFO);

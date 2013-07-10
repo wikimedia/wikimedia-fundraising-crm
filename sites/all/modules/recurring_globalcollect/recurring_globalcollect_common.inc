@@ -57,12 +57,17 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
 
+  $oldTimezone = date_default_timezone_get();
+  date_default_timezone_set( "UTC" );
+
   $date = date('Y-m-d', strtotime($date));
 
   $past_days = variable_get('recurring_globalcollect_run_missed_days', 0);
   $start_date = new DateTime($date);
   $start_date = $start_date->sub(date_interval_create_from_date_string("$past_days days"));
   $start_date = $start_date->format('Y-m-d');
+
+  date_default_timezone_set( $oldTimezone );
 
   $contribution_status_id = civicrm_api_contribution_status('Failed');
   
