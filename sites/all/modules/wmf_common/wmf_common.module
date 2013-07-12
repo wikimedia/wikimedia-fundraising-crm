@@ -97,7 +97,7 @@ function wmf_common_settings() {
   $form[ 'wmf_common_no_failmail' ] = array(
     '#type'          => 'textfield',
     '#title'         => t('Failmail Message Exceptions for Email'),
-    '#required'      => TRUE,
+    '#required'      => FALSE,
     '#default_value' => variable_get('wmf_common_no_failmail', ''),
     '#description'   => t('Comma-delimited (no spaces) list of donor email addresses that will never trigger failmail'),
   );
