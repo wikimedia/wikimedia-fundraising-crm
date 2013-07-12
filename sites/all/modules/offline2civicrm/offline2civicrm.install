@@ -19,7 +19,7 @@ function offline2civicrm_update_7000() {
     ));
     $values = $api->values();
     $custom_group = array_pop($values);
-    if (!$success || !$custom_group->id) {
+    if (!$success || !$custom_group) {
         throw new Exception("Missing custom group 'Gift Information', " . $api->errorMsg());
     }
 
