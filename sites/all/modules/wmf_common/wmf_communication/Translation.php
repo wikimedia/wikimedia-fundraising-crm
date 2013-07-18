@@ -1,6 +1,6 @@
-<?php
+<?php namespace wmf_communication;
 
-namespace wmf_communication;
+use \Exception;
 
 class Translation {
     //TODO: get from MediaWiki

@@ -1,5 +1,15 @@
 <?php
 
+# oh well, Drupal's registry won't do namespaces until d8.
+require_once 'Job.php';
 require_once 'Mailer.php';
+require_once 'MailingTemplate.php';
+require_once 'Recipient.php';
 require_once 'Templating.php';
 require_once 'Translation.php';
+
+use wmf_communication\Job;
+
+function wmf_communication_send_letters( $jobId ) {
+    Job::getJob( $jobId )->run();
+}

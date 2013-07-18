@@ -1,0 +1,68 @@
+<?php
+
+function wmf_communication_schema() {
+    $schema['wmf_communication_job'] = array(
+        'description' => 'Specification of mail job',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'template_class' => array(
+                'description' => 'Template provider, instance of AbstractMailingClass',
+                'type' => 'varchar',
+                'length' => 128,
+                'not null' => true,
+            ),
+        ),
+        'primary key' => array('id'),
+        'indexes' => array(
+            'job_template' => array('template_class'),
+        ),
+    );
+
+    $schema['wmf_communication_recipient'] = array(
+        'description' => 'Record linking contact and mail job',
+        'fields' => array(
+            'contact_id' => array(
+                'description' => 'Foreign key to civicrm.civicrm_contact',
+                'type' => 'int',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'job_id' => array(
+                'type' => 'int',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'status' => array(
+                'type' => 'varchar',
+                'length' => 32,
+            ),
+            'vars' => array(
+                'description' => 'Extra parameters to pass during template rendering, specific to this contact.  Stored as JSON.',
+                'type' => 'text',
+            ),
+        ),
+        'indexes' => array(
+            'recipient_status' => array('status'),
+            'recipient_job' => array('job_id'),
+        ),
+        'unique keys' => array(
+            'recipient_contact_job' => array('contact_id', 'job_id'),
+        ),
+        'foreign keys' => array(
+            'recipient_job' => array(
+                'table' => 'wmf_communication_job',
+                'columns' => array('job_id' => 'id'),
+            ),
+            'recipient_contact' => array(
+                'table' => 'civicrm.civicrm_contact',
+                'columns' => array('contact_id' => 'id'),
+            ),
+        ),
+    );
+
+    return $schema;
+}
