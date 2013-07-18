@@ -1,0 +1,84 @@
+<?php
+
+use wmf_communication\Job;
+use wmf_communication\Mailer;
+use wmf_communication\Recipient;
+
+require_once 'TestThankyouTemplate.php';
+
+class JobTest extends DrupalWebTestCase {
+    protected $profile = 'minimal';
+
+    public static function getInfo() {
+        return array(
+            'name' => 'Mailing Job',
+            'group' => 'Wikimedia',
+            'description' => 'Create and run a mailing job',
+        );
+    }
+
+    public function setUp() {
+        // FIXME: cheat by taking some variables from the live db
+        $phpmailerDir = variable_get( 'wmf_common_phpmailer_location', '' );
+        $twigDir = variable_get( 'wmf_common_twig_location', '' );
+        $diDir = variable_get( 'wmf_common_di_location', '' );
+
+        parent::setUp( 'wmf_communication', 'wmf_common' );
+
+        variable_set( 'wmf_common_phpmailer_location', $phpmailerDir );
+        variable_set( 'wmf_common_twig_location', $twigDir );
+        variable_set( 'wmf_common_di_location', $diDir );
+
+        variable_set( 'thank_you_from_address', 'test@localhost.net' );
+        variable_set( 'thank_you_from_name', 'Testus' );
+
+        Mailer::$defaultSystem = 'drupal';
+
+        $api = civicrm_api_classapi();
+        $success = $api->Contact->create( array(
+            'contact_type' => 'Individual',
+            'email' => 'test@example.com',
+            'first_name' => 'Foo',
+            'last_name' => 'Beer',
+            'preferred_language' => 'it',
+            'version' => 3,
+        ) );
+        if ( !$success ) {
+            $this->fail( $api->errorMsg() );
+        }
+        $result = $api->values();
+        $contact = array_pop( $result );
+        $this->contactId = $contact->id;
+
+        $this->jobId = db_insert( 'wmf_communication_job' )
+            ->fields( array(
+                'template_class' => 'TestThankyouTemplate',
+            ) )
+            ->execute();
+
+        Recipient::create(
+            $this->jobId,
+            $this->contactId,
+            array(
+                'contribution' => array(
+                    'receive_date' => date( DateTime::ISO8601 ),
+                    'contribution_source' => 'EUR 22.11',
+                ),
+            )
+        );
+    }
+
+    public function testRun() {
+        $job = Job::getJob( $this->jobId );
+        $this->assertNotNull( $job, "Got the job" );
+        $job->run();
+
+        $mails = $this->drupalGetMails();
+        $this->verbose(json_encode($mails));
+        //...
+    }
+
+    public function tearDown() {
+        parent::tearDown();
+    }
+}

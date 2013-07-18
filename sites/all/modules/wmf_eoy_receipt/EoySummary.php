@@ -114,7 +114,7 @@ EOS;
 
     function send_letters()
     {
-        $mailer = new Mailer();
+        $mailer = Mailer::getDefault();
 
         $sql = <<<EOS
 SELECT *

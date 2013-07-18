@@ -317,7 +317,7 @@ function thank_you_send( $contribution_id, $test=null ) {
 	$subj_msg = "donate_interface-email-subject";
 	$email['subject'] = Translation::get_translated_message( $subj_msg, $language );
 
-	$mailer = new Mailer();
+	$mailer = Mailer::getDefault();
 
 	$email['reply_to'] = 'bounce-' . str_replace( '@', '=', $email['to_address'] ) . '@donate.wikimedia.org';
 
@@ -332,6 +332,8 @@ function thank_you_send( $contribution_id, $test=null ) {
 		$email_success = $mailer->send( $email );
 
 	} catch (phpmailerException $e) {
+        //TODO: don't assume phpmailer
+
 		$debug = array_merge( $email, array( "html" => '', "plaintext" => '' ) );
 		watchdog('thank_you', 'Sending thank you message failed in phpmailer for contribution: ' .
 			$contribution_id . '<pre>' . check_plain(print_r($debug, TRUE)) . "\n\n" .
