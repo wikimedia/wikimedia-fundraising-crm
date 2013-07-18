@@ -25,6 +25,11 @@ function wmf_communication_schema() {
     $schema['wmf_communication_recipient'] = array(
         'description' => 'Record linking contact and mail job',
         'fields' => array(
+            'queued_id' => array(
+                'type' => 'serial',
+                'unsigned' => true,
+                'not null' => true,
+            ),
             'contact_id' => array(
                 'description' => 'Foreign key to civicrm.civicrm_contact',
                 'type' => 'int',
@@ -45,6 +50,7 @@ function wmf_communication_schema() {
                 'type' => 'text',
             ),
         ),
+        'primary key' => array('queued_id'),
         'indexes' => array(
             'recipient_status' => array('status'),
             'recipient_job' => array('job_id'),

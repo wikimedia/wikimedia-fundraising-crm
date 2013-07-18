@@ -26,6 +26,7 @@ class Recipient {
             ->fields( 'wmf_communication_recipient' )
             ->condition( 'job_id', $jobId )
             ->condition( 'status', 'queued' )
+            ->orderBy( 'queued_id' )
             ->range( 0, $batchSize )
             ->execute();
 
