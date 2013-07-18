@@ -60,10 +60,8 @@ class JobTest extends DrupalWebTestCase {
             $this->jobId,
             $this->contactId,
             array(
-                'contribution' => array(
-                    'receive_date' => date( DateTime::ISO8601 ),
-                    'contribution_source' => 'EUR 22.11',
-                ),
+                'amount' => 'EUR 22.11',
+                'receive_date' => '1999-12-31T23:59:59+0000',
             )
         );
     }
@@ -74,8 +72,31 @@ class JobTest extends DrupalWebTestCase {
         $job->run();
 
         $mails = $this->drupalGetMails();
-        $this->verbose(json_encode($mails));
-        //...
+        $this->assertEqual( count( $mails ), 1,
+            "One and only one message was sent." );
+
+        $expected = '[{
+            "id":"wmf_communication_generic",
+            "to":"Foo Beer <test@example.com>",
+            "subject":"Grazie dalla Wikimedia Foundation",
+            "body":"\nThis is a MIME-encoded message.\n--BOUNDARY\nContent-type: text\/plain;charset=utf-8\n\n\tCaro Foo Beer, \n\n\tGrazie per la tua donazione alla Wikimedia Foundation. \u00c8 stata\ndavvero apprezzata di cuore! \n\n\tPer le tue registrazioni: La tua donazione il\n1999-12-31T23:59:59+0000 \u00e8 stata \u20ac 22.11.\n\n\n--BOUNDARY\nContent-type: text\/html;charset=utf-8\n\n<p>Caro Foo Beer,<\/p>\n\n<p>Grazie per la tua donazione alla Wikimedia Foundation. \u00c8 stata davvero apprezzata di\ncuore!<\/p>\n\n<p>Per le tue registrazioni: La tua donazione il 1999-12-31T23:59:59+0000 \u00e8 stata\n\u20ac 22.11.<\/p>\n\n\n--BOUNDARY--",
+            "headers": {
+                "From":"Testus <test@localhost.net>",
+                "Sender":"test@localhost.net",
+                "Return-Path":"Testus <test@localhost.net>",
+                "MIME-Version":"1.0",
+                "Content-Type":"multipart\/alternative;boundary=BOUNDARY"
+            }
+        }]';
+        if ( preg_match( '/boundary=(.*)$/', $mails[0]['headers']['Content-Type'], $matches ) ) {
+            $boundary = $matches[1];
+            $expected = str_replace( 'BOUNDARY', $boundary, $expected );
+        } else {
+            $this->fail( "Could not parse multi-part email" );
+        }
+        $expected = json_decode( $expected, true );
+        $this->assertEqual( $mails, $expected,
+            "Email headers and content are correct" );
     }
 
     public function tearDown() {
