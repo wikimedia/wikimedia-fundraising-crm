@@ -308,6 +308,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     *
     * NOTE: the custom field for "Gift_Information" indicates that check number is stored here.  It is not.
     */
+
     $comment = ( isset( $msg[ 'comment' ] ) ) ? $msg[ 'comment'] : '';
     $lettercode = ( $msg[ 'letter_code' ] ) ? $msg[ 'letter_code'] : NULL;
     $gateway_account = array_key_exists( 'gateway_account', $msg ) ? $msg[ 'gateway_account' ] : '';
@@ -993,6 +994,22 @@ function wmf_civicrm_normalize_msg( $msg ) {
     if ( empty( $msg['first_name'] ) and empty( $msg['last_name'] ) ) {
         $msg['first_name'] = 'Chester';
         $msg['last_name'] = 'McDefault';
+    }
+
+    // Check for special flags
+    switch ( $msg['utm_campaign'] ) {
+    case 'NY2013':
+        $msg['direct_mail_appeal'] = "New York Event 2013";
+        break;
+    case 'NYCShaku2013':
+        $msg['direct_mail_appeal'] = "Shaku - NYC Event 2013";
+        break;
+    case 'SF2013':
+        $msg['direct_mail_appeal'] = "San Francisco Event 2013";
+        break;
+    default:
+        // pass
+        break;
     }
 
     watchdog( 'wmf_civicrm', 'Contribution (pre-conversion):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>' );
