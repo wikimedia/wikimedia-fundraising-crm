@@ -1,0 +1,6 @@
+name = WMF One-offs
+description = Single-use scripts which need to run in the Drupal scope
+core = 7.x
+package = Wikimedia
+dependencies[] = wmf_communication
+files[] = 201305_paypal_recurring/SorryRecurringTemplate.php
