@@ -38,6 +38,16 @@ class Job {
         return $job;
     }
 
+    static function create( $templateClass ) {
+        $jobId = db_insert( 'wmf_communication_job' )
+            ->fields( array(
+                'template_class' => $templateClass,
+            ) )
+            ->execute();
+
+        return Job::getJob( $jobId );
+    }
+
     /**
      * Find all queued recipients and send letters.
      */
@@ -82,5 +92,9 @@ class Job {
                 ),
                 WATCHDOG_INFO );
         }
+    }
+
+    function getId() {
+        return $this->id;
     }
 }
