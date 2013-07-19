@@ -50,14 +50,10 @@ class JobTest extends DrupalWebTestCase {
         $contact = array_pop( $result );
         $this->contactId = $contact->id;
 
-        $this->jobId = db_insert( 'wmf_communication_job' )
-            ->fields( array(
-                'template_class' => 'TestThankyouTemplate',
-            ) )
-            ->execute();
+        $this->job = Job::create( 'TestThankyouTemplate' );
 
         Recipient::create(
-            $this->jobId,
+            $this->job->getId(),
             $this->contactId,
             array(
                 'amount' => 'EUR 22.11',
@@ -67,9 +63,7 @@ class JobTest extends DrupalWebTestCase {
     }
 
     public function testRun() {
-        $job = Job::getJob( $this->jobId );
-        $this->assertNotNull( $job, "Got the job" );
-        $job->run();
+        $this->job->run();
 
         $mails = $this->drupalGetMails();
         $this->assertEqual( count( $mails ), 1,
