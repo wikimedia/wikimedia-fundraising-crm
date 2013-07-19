@@ -66,16 +66,13 @@ function wmf_common_date_add_days( $date, $add ){
  * @param integer $unixtime timestamp, seconds since epoch
  */
 function wmf_common_date_format_using_utc( $format, $unixtime ) {
-    $oldTimezone = date_default_timezone_get();
-    date_default_timezone_set( "UTC" );
-
     try {
-        $formatted = date( $format, $unixtime );
+        $obj = new DateTime( '@' . $unixtime, new DateTimeZone( 'UTC' ) );
+        $formatted = $obj->format( $format );
     } catch ( Exception $ex ) {
-        watchdog( 'wmf_common', t( "Caught 'impossible' exception from date(): " ) . $ex->getMessage(), WATCHDOG_ERROR );
+        watchdog( 'wmf_common', t( "Caught date exception: " ) . $ex->getMessage(), WATCHDOG_ERROR );
+        return '';
     }
-
-    date_default_timezone_set( $oldTimezone );
 
     return $formatted;
 }
