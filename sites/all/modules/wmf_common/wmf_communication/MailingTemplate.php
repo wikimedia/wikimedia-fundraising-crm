@@ -22,11 +22,6 @@ interface IMailingTemplate {
  * class or in your derivative.
  */
 abstract class AbstractMailingTemplate implements IMailingTemplate {
-    /**
-     * @return string key into the DonationInterface i18n messages
-     */
-    abstract function getSubjectKey();
-
     abstract function getTemplateDir();
 
     abstract function getTemplateName();
@@ -40,7 +35,7 @@ abstract class AbstractMailingTemplate implements IMailingTemplate {
     }
 
     function getSubject( $recipient ) {
-        return Translation::get_translated_message( $this->getSubjectKey(), $recipient->getLanguage() );
+        return trim( $this->getBodyTemplate( $recipient )->render( 'subject' ) );
     }
 
     function getBodyTemplate( $recipient ) {
