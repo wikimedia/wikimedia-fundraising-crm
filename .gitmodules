@@ -4,3 +4,6 @@
 [submodule "drupal"]
 	path = drupal
 	url = https://gerrit.wikimedia.org/r/wikimedia/fundraising/crm/drupal
+[submodule "sites/all/modules/wmf_common/cldr"]
+	path = sites/all/modules/wmf_common/cldr
+	url = https://gerrit.wikimedia.org/r/p/mediawiki/extensions/cldr
