@@ -154,7 +154,8 @@ function large_donation_notification_send( $contribution_info ){
 
     $message .= 'You may need to examine this donation.';
 
-    require_once( drupal_get_path( 'module', 'thank_you' ) . '/class.phpmailer.php' );
+	$path = variable_get('wmf_common_phpmailer_location', '');
+    require_once(implode(DIRECTORY_SEPARATOR, array($path, 'class.phpmailer.php')));
 
     $mail = new PHPMailer( true );
 
