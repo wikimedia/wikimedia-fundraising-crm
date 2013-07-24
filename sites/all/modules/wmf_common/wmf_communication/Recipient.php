@@ -116,8 +116,10 @@ class Recipient {
      */
     function setStatus( $status ) {
         db_update( 'wmf_communication_recipient' )
+            ->condition( 'contact_id', $this->contactId )
+            ->condition( 'job_id', $this->jobId )
             ->fields( array(
-                'status' => $status
+                'status' => $status,
             ) )
             ->execute();
     }

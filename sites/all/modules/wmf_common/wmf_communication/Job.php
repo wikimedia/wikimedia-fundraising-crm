@@ -76,8 +76,10 @@ class Job {
                 $success = $mailer->send( $email );
 
                 if ( $success ) {
+                    $successful++;
                     $recipient->setSuccessful();
                 } else {
+                    $failed++;
                     $recipient->setFailed();
                 }
             }

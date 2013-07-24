@@ -42,7 +42,7 @@ class MailerPHPMailer implements IMailer {
 
         $mailer = new \PHPMailer( true );
 
-        $mailer->set( 'Charset', 'utf-8' );
+        $mailer->set( 'CharSet', 'utf-8' );
 
         $mailer->AddReplyTo( $email['from_address'], $email['from_name'] );
         $mailer->SetFrom( $email['from_address'], $email['from_name'] );
