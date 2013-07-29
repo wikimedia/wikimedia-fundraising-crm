@@ -41,7 +41,10 @@ abstract class AbstractMailingTemplate implements IMailingTemplate {
     function getBodyTemplate( $recipient ) {
         $templateParams = array(
             'name' => $recipient->getName(),
+            'first_name' => $recipient->getFirstName(),
+            'last_name' => $recipient->getLastName(),
             'email' => $recipient->getEmail(),
+            'locale' => $recipient->getLanguage(),
         );
         $templateParams = array_merge( $templateParams, $recipient->getVars() );
 

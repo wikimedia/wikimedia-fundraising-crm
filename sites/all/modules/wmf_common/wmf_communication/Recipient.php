@@ -71,7 +71,7 @@ class Recipient {
         $api = civicrm_api_classapi();
         $success = $api->Contact->get( array(
             'id' => $recipient->contactId,
-            'return' => 'email,display_name,preferred_language',
+            'return' => 'email,display_name,first_name,last_name,preferred_language',
             'version' => 3,
         ) );
         if ( !$success ) {
@@ -93,6 +93,14 @@ class Recipient {
 
     function getName() {
         return $this->contact->display_name;
+    }
+
+    function getFirstName() {
+        return $this->contact->first_name;
+    }
+
+    function getLastName() {
+        return $this->contact->last_name;
     }
 
     function getLanguage() {
