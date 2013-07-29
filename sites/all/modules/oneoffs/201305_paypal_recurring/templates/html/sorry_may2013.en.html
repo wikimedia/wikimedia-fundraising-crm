@@ -1,0 +1,31 @@
+<p>Dear {{ first_name }},</p>
+
+<p>Thank you for donating to the Wikimedia Foundation. You are wonderful!</p>
+ 
+<p>It's easy to ignore our fundraising banners, and I'm really glad you didn't. This is how Wikipedia pays its bills &mdash; people like you giving us money, so we can keep the site freely available for everyone around the world.</p>
+ 
+<p>People tell me they donate to Wikipedia because they find it useful, and they trust it because even though it's not perfect, they know it's written for them. Wikipedia isn't meant to advance somebody's PR agenda or push a particular ideology, or to persuade you to believe something that's not true. We aim to tell the truth, and we can do that because of you. The fact that you fund the site keeps us independent and able to deliver what you need and want from Wikipedia. Exactly as it should be.</p>
+ 
+<p>You should know: your donation isn't just covering your own costs. The average donor is paying for his or her own use of Wikipedia, plus the costs of hundreds of other people. Your donation keeps Wikipedia available for an ambitious kid in Bangalore who's teaching herself computer programming. A middle-aged homemaker in Vienna who's just been diagnosed with Parkinson's disease. A novelist researching 1850s Britain. A 10-year-old in San Salvador who's just discovered Carl Sagan.</p>
+ 
+<p>On behalf of those people, and the half-billion other readers of Wikipedia and its sister sites and projects, I thank you for joining us in our effort to make the sum of all human knowledge available for everyone. Your donation makes the world a better place. Thank you.</p>
+
+<p><em>Please note that this email will act as a tax receipt for several of your recurring donations to the Wikimedia Foundation. While your donation was still processed monthly via PayPal, the system that generates a tax receipt experienced a glitch that stopped these receipts. If you have any questions about this, please feel free to email the fundraising team via <a href="mailto:donate@wikimedia.org">donate@wikimedia</a>.</em></p>
+
+<p>Thanks,<br />
+Sue</p>
+
+<br />
+<p>Sue Gardner<br />
+Executive Director,<br />
+Wikimedia Foundation<br />
+<a href="https://donate.wikimedia.org/">https://donate.wikimedia.org</a></p>
+
+<p>For your records:<br />
+{% for donation in contributions %}
+Your donation on {{ donation.date }} was {{ donation.amount | l10n_currency(locale) }}.<br />
+{% endfor %}</p>
+
+<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit charitable corporation with 501(c)(3) tax exempt status in the United States. Our address is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703</p>
+
+<p>You can follow us on Twitter, identi.ca or Google+, like us on Facebook and read our blog. Here is the Wikimedia Foundation annual report for 2010-11, the Wikimedia Foundation annual plan for 2012-13 and the Wikimedia Foundation's five-year strategic plan. You can also now buy Wikipedia merchandise at shop.wikimedia.org.</p>

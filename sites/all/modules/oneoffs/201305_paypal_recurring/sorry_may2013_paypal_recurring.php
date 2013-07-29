@@ -15,8 +15,8 @@ function sorry_may2013_paypal_recurring_build_job() {
     $result = db_query( "
 SELECT
     cc.id AS contribution_id,
-    cc.total_amount AS amount,
-    cc.receive_date,
+    cc.source AS amount,
+    cc.receive_date AS date,
     cc.contact_id,
     ce.email
 FROM civicrm_contribution cc
@@ -31,6 +31,8 @@ WHERE
     AND ce.is_primary
 GROUP BY
     cc.id
+ORDER BY
+    cc.receive_date ASC
 ;
 " );
     $contributions = $result->fetchAllAssoc( 'contribution_id', PDO::FETCH_ASSOC );
@@ -52,12 +54,12 @@ GROUP BY
     foreach ( $byContact as $contactId => $contributions ) {
         Recipient::create(
             $job->getId(),
-            $contactId,
+            $contributions[0]['contact_id'],
             array(
                 'contributions' => $contributions,
             )
         );
     }
 
-    drush_print( "Built mailing job. Run using 'drush mail-job {$job->getId()}'" );
+    drush_print( "Built mailing job. Run using 'drush wmf-send-letters {$job->getId()}'" );
 }
