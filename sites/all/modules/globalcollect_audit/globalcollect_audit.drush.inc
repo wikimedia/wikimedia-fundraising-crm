@@ -24,6 +24,7 @@ function globalcollect_audit_drush_command() {
 		'drush gc_wr1 --run_all' => '# Batch search for all missing transactions across all wr1 files.',
 		'drush gc_wr1 --charlimit=50' => '# Will cause echoing to line break after 50 characters',
 		'drush gc_wr1 --mismatch_override' => 'Won\'t die on a keygrind mismatch',
+			'drush gc_wr1 --verbose' => 'Verbose output',
 		), 
     'aliases' => array( 'gc_wr1' ),
   );
@@ -51,6 +52,7 @@ function globalcollect_audit_reset_drush_vars(){
 			'globalcollect_audit_run_all_wr1' => false,
 			'globalcollect_audit_charlimit' => 0,
 			'globalcollect_audit_mismatch_override' => false,
+			'globalcollect_audit_verbose' => false,
 		);
 	}
 	
@@ -94,7 +96,11 @@ function drush_globalcollect_audit() {
 		echo "Overriding keygrind mismatches. Problem records will not be fatal, but they will still be logged.\n";
 		variable_set( 'globalcollect_audit_mismatch_override', true );
 	}
-	
+	if ( drush_get_option( 'verbose' ) ) {
+		echo "Outputting verbose.\n";
+		variable_set( 'globalcollect_audit_verbose', true );
+	}
+
 	module_invoke( 'globalcollect_audit', 'parse_all_wr1' );
 	
 	//Be Kind: Rewind (your run settings).

@@ -253,6 +253,7 @@ function globalcollect_audit_track_fuckup(){
 			$processed_id_count += 1;
 			$cmd = "grep <ORDERID>" . trim($grepforme) . "</ORDERID> $logname";
 
+			globalcollect_audit_echo( __FUNCTION__ . ' ' . $cmd, true );
 			$ret = array();
 			exec( escapeshellcmd($cmd), $ret, $errorlevel );
 			//echo $cmd . "\n";
@@ -260,6 +261,7 @@ function globalcollect_audit_track_fuckup(){
 			if ( !count( $ret ) ){
 				$cmd = "grep <ORDERID>" . trim($grepforme) . "</ORDERID> $logname2";
 
+				globalcollect_audit_echo( __FUNCTION__ . ' ' . $cmd, true );
 				$ret = array();
 				exec( escapeshellcmd($cmd), $ret, $errorlevel );
 			}
@@ -1250,6 +1252,7 @@ function globalcollect_audit_get_log_date_by_file( $file ){
 function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
 	
 	$cmd = "grep <ORDERID>$order_id</ORDERID> $log";
+	globalcollect_audit_echo( __FUNCTION__ . ' ' . $cmd, true );
 
 	//echo $cmd . "\n";
 	$ret = array();
@@ -1692,7 +1695,10 @@ function globalcollect_audit_get_payment_submethod( $payment_product ){
 
 }
 
-function globalcollect_audit_echo( $echo ){
+function globalcollect_audit_echo( $echo, $verbose = false ) {
+	if ( $verbose && variable_get( 'globalcollect_audit_verbose', false ) === false ) {
+		return;
+	}
 	static $chars = 0;
 	static $limit = null;
 	if (is_null($limit)){
