@@ -293,6 +293,9 @@ function globalcollect_audit_track_fuckup(){
 function globalcollect_audit_parse_all_wr1(){
 	civicrm_initialize();
 
+	//output data about the current user if we're running verbose
+	globalcollect_audit_echo( print_r( posix_getpwuid( posix_getuid() ), true ), true );
+
 	$actual_start_time = microtime(true);
 	$test_mode = variable_get( 'globalcollect_audit_test_mode', CONTRIBUTION_AUDIT_TEST_MODE );
 	

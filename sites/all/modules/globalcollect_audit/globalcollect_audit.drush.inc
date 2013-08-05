@@ -24,7 +24,7 @@ function globalcollect_audit_drush_command() {
 		'drush gc_wr1 --run_all' => '# Batch search for all missing transactions across all wr1 files.',
 		'drush gc_wr1 --charlimit=50' => '# Will cause echoing to line break after 50 characters',
 		'drush gc_wr1 --mismatch_override' => 'Won\'t die on a keygrind mismatch',
-			'drush gc_wr1 --verbose' => 'Verbose output',
+		'drush gc_wr1 --verbose' => 'Verbose output',
 		), 
     'aliases' => array( 'gc_wr1' ),
   );
