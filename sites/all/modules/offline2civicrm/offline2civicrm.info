@@ -5,3 +5,4 @@ dependencies[] = queue2civicrm
 dependencies[] = wmf_civicrm
 dependencies[] = civicrm
 package = offline2civicrm
+files[] = ChecksFile.php
