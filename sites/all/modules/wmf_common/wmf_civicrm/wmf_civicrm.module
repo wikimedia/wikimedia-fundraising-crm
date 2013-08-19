@@ -664,6 +664,8 @@ function wmf_civicrm_verify_message_and_stage($msg)
         'check_number' => null,
         'letter_code' => null,
         'thankyou_date' => null,
+        'recurring' => null,
+        'utm_campaign' => null,
     );
 
     $msg = wmf_civicrm_normalize_msg( array_merge($defaults, $msg) );
