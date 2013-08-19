@@ -2,6 +2,8 @@
 
 require_once 'offline2civicrm.common.inc';
 
+use wmf_communication\Templating;
+
 /**
  * Implementation of hook_menu().
  */
@@ -16,11 +18,14 @@ function offline2civicrm_menu() {
     'page arguments' => array('offline2civicrm_settings'),
   );
 
-  $items['admin/config/offline2civicrm/configure'] = array(
-    'title' => 'Configure',
+  $items['admin/import_checks'] = array(
+    'title' => 'Import Checks',
     'access arguments' => array('administer offline2civicrm'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'type' => MENU_CALLBACK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('offline2civicrm_import_checks_form'),
   );
+
   return $items;
 }
 
@@ -40,10 +45,84 @@ function offline2civicrm_settings() {
   return system_settings_form($form);
 }
 
+function offline2civicrm_import_checks_form() {
+  $log_events = ChecksImportLog::recentEvents();
+  $headers = array( 'Time', 'Who', 'Done' );
+  $rows = array();
+  foreach ( $log_events as $event ) {
+    $rows[] = array(
+      $event->time,
+      $event->who,
+      $event->done,
+    );
+  }
+  $log_html = theme_table( array(
+    'header' => $headers,
+    'rows' => $rows,
+    'empty' => "No events yet.",
+    'attributes' => array(),
+    'caption' => t( 'Latest import events' ),
+    'colgroups' => array(),
+    'sticky' => true,
+  ) ).theme('pager');
+
+  $form['import_upload_file'] = array(
+    '#title' => t( 'Upload checks file' ),
+    '#type' => 'file',
+  );
+  $form['import_upload_submit'] = array(
+    '#type' => 'submit',
+    '#value' => t( 'Upload' ),
+  );
+  $form['log'] = array(
+    '#markup' => $log_html,
+  );
+
+  $form['#attributes'] = array( 'enctype' => "multipart/form-data" );
+
+  return $form;
+}
+
+function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
+  if ( !empty( $form_state['values']['import_upload_submit'] ) ) {
+    try {
+      $validators = array(
+        'file_validate_extensions' => array('csv'),
+      );
+      $file = file_save_upload( 'import_upload_file', $validators );
+      if ( !$file ) {
+        throw new Exception( t( "Form upload failed!" ) );
+      }
+
+      // This workaround... does not always work.  Will be deprecated in Civi 4.3
+      civicrm_initialize();
+      $smellyTmp = CRM_Core_TemporaryErrorScope::useException();
+
+      ChecksFile::import( $file->uri );
+      drupal_set_message( "Successful import!" );
+    }
+    catch ( WmfException $ex ) {
+      $message = t( "Import error: !err", array( '!err' => $ex->getMessage() ) );
+      form_set_error( 'import_upload_file', $message );
+      ChecksImportLog::record( $message );
+    }
+    catch ( Exception $ex ) {
+      $message = t( "Unknown import error: !err", array( '!err' => $ex->getMessage() ) );
+      form_set_error( 'import_upload_file', $message );
+      ChecksImportLog::record( $message );
+    }
+    if ( $file ) {
+      file_delete( $file, true );
+    }
+  }
+}
+
 /**
- * This hook gets called "magically" after a contribution is added via the queue consumer.
+ * This hook gets called after a contribution is added via the queue consumer.
  * If the contribution was a check, it adds the check to a "Review" group for manual review
  * by the Development/Major Gifts team.
+ *
+ * Implementation of hook_queue2civicrm_import
  *
  * @param $contribution_info
  */
@@ -60,6 +139,7 @@ function offline2civicrm_queue2civicrm_import( $contribution_info ){
     return;
   }
 
+  //FIXME: we are not using any such gateway.  Instead, look for non-null custom 'check number' field.  QA this code path before enabling.
   if( strtoupper( $contribution_info['msg']['gateway'] ) == "CHECK"  ){
     // add the transactions to the check import group for review
     watchdog( 'offline2civicrm', "Adding CHECK to group $group_name" );
