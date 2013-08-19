@@ -1,4 +1,7 @@
 <?php
+/**
+ * Low-level interface to Symfony Twig.  Please use the wmf_communication::Templating class instead.
+ */
 
 function wmf_common_get_twig_path()
 {

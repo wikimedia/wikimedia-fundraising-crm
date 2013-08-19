@@ -3,9 +3,7 @@
 use \Exception;
 
 /**
- * Single-use template, currently wraps the Twig implementation.
- * Once this object has been instantiated, you can render in multiple formats,
- * but template parameters are constant and can no longer be modified.
+ * Single-use template.
  */
 class Templating {
     protected $twig;

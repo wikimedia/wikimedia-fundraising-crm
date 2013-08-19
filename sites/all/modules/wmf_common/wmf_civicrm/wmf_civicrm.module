@@ -745,7 +745,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     if ( array_key_exists( 'is_error', $contact_result ) && $contact_result['is_error'] != 0 ){
-        throw new WmfException("IMPORT_CONTACT", "Contact could not be added. Aborting import. Original error: " . $contact_result['error_message'], $msg);
+        throw new WmfException("IMPORT_CONTACT", "Contact could not be added. Aborting import. Contact data was " . print_r($contact, true) . " Original error: " . $contact_result['error_message'], $msg);
     }
     return $contact_result;
 }
@@ -1001,6 +1001,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
     // Check for special flags
     switch ( $msg['utm_campaign'] ) {
     case 'NY2013':
+        //TODO: expose direct_mail_appeal custom field in the UI
         $msg['direct_mail_appeal'] = "New York Event 2013";
         break;
     case 'NYCShaku2013':
