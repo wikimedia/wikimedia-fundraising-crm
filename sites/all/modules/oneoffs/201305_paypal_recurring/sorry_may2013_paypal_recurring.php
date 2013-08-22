@@ -63,3 +63,30 @@ ORDER BY
 
     drush_print( "Built mailing job. Run using 'drush wmf-send-letters {$job->getId()}'" );
 }
+
+function sorry_may2013_paypal_recurring_mark_thanked() {
+    $job_ran_date = '2013-08-14 00:00:00';
+
+    $query = db_select( 'wmf_communication_recipient', 'r' );
+    $query->join( 'wmf_communication_job', 'j', 'r.job_id = j.id' );
+    $query->addField( 'r', 'vars' );
+    $query->condition( 'j.template_class', 'SorryRecurringTemplate' )
+        ->condition( 'r.status', 'successful' );
+    $result = $query->execute();
+
+    $civi = civicrm_api_classapi();
+
+    while ( $vars = json_decode( $result->fetchField() ) ) {
+        foreach ( $vars->contributions as $contribution ) {
+            $success = $civi->Contribution->Create( array(
+                'id' => $contribution->contribution_id,
+                'thankyou_date' => $job_ran_date,
+
+                'version' => '3',
+            ) );
+            if ( !$success ) {
+                throw new Exception( "Failed to update contribution: " . $civi->errorMsg() );
+            }
+        }
+    }
+}

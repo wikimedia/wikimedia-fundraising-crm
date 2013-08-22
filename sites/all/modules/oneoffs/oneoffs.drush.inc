@@ -10,6 +10,9 @@ function oneoffs_drush_command() {
         'oneoffs-sorry-may2013-build-job' => array(
             'description' => 'Compile a list of people affected',
         ),
+        'oneoffs-sorry-may2013-mark-thanked' => array(
+            'description' => 'Mark all email recipients as thank-you\'ed',
+        ),
     );
 
     return $items;
@@ -18,4 +21,9 @@ function oneoffs_drush_command() {
 function drush_oneoffs_sorry_may2013_build_job() {
     require_once '201305_paypal_recurring/sorry_may2013_paypal_recurring.php';
     sorry_may2013_paypal_recurring_build_job();
+}
+
+function drush_oneoffs_sorry_may2013_mark_thanked() {
+    require_once '201305_paypal_recurring/sorry_may2013_paypal_recurring.php';
+    sorry_may2013_paypal_recurring_mark_thanked();
 }
