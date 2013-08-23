@@ -20,7 +20,7 @@ function offline2civicrm_menu() {
 
   $items['admin/import_checks'] = array(
     'title' => 'Import Checks',
-    'access arguments' => array('administer offline2civicrm'),
+    'access arguments' => array('offline2civicrm bulk import'),
     'type' => MENU_CALLBACK,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('offline2civicrm_import_checks_form'),
@@ -30,10 +30,17 @@ function offline2civicrm_menu() {
 }
 
 /**
- * Implementation of hook_perm().
+ * Implementation of hook_permission().
  */
-function offline2civicrm_perm() {
-  return array('administer offline2civicrm');
+function offline2civicrm_permission() {
+  return array(
+    'administer offline2civicrm' => array(
+      'title' => t("Administer offline2civicrm"),
+    ),
+    'offline2civicrm bulk import' => array(
+      'title' => t("Import batch files with offline2civicrm"),
+    ),
+  );
 }
 
 /**
