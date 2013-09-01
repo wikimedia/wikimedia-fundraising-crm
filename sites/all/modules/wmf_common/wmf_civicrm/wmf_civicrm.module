@@ -595,13 +595,30 @@ function wmf_civicrm_verify_message_and_stage($msg)
     }
 
     //FIXME: normalize *before* validation
-    if ( empty( $msg['original_currency'] ) and !empty( $msg['currency'] ) ) {
-        $msg['original_currency'] = $msg['currency'];
-    }
 
-    if ( empty( $msg['original_gross'] ) and !empty( $msg['gross'] ) ) {
-        $msg['original_gross'] = $msg['gross'];
-    }
+    //defaults: Keys that aren't actually required, but which will cause some portion of the code to complain
+    //if they don't exist (even if they're blank).
+    $defaults = array(
+        'date' => time(), //defaulting to now. @fixme: if you can think of a better thing to do in the name of historical exchange rates.
+        'first_name' => '',
+        'middle_name' => '',
+        'last_name' => '',
+        'email' => '',
+        'street_address' => '',
+        'supplemental_address_1' => '',
+        'city' => '',
+        'country' => '',
+        'state_province' => '',
+        'postal_code' => '',
+        'original_gross' => $msg['gross'],
+        'original_currency' => $msg['currency'],
+        'check_number' => null,
+        'letter_code' => null,
+        'thankyou_date' => null,
+        'recurring' => null,
+        'utm_campaign' => null,
+    );
+    $msg = $msg + $defaults;
 
     $required = array(
         'email',
@@ -613,7 +630,7 @@ function wmf_civicrm_verify_message_and_stage($msg)
 
     $err = array();
     foreach ($required as $key){
-        if (!isset($msg[$key]) || $msg[$key] === ''){
+        if ( empty( $msg[$key] ) ) {
             $err[] = "Required Field '$key' not found in message.";
         }
     }
@@ -636,6 +653,25 @@ function wmf_civicrm_verify_message_and_stage($msg)
         throw new WmfException('CIVI_REQ_FIELD', $err, $msg);
     }
 
+    $max_lengths = array(
+        'check_number' => 255,
+        'city' => 64,
+        'email' => 254,
+        'first_name' => 64,
+        'last_name' => 64,
+        'middle_name' => 64,
+        'organization_name' => 128,
+        'postal_code' => 12,
+        'street_address' => 96,
+        'supplemental_address_1' => 96,
+        'supplemental_address_2' => 96,
+    );
+    foreach ( $max_lengths as $key => $limit ) {
+        if ( strlen( $msg[$key] ) > $limit ) {
+            throw new WmfException( 'INVALID_MESSAGE', "Field '{$key}' is too long.", $msg );
+        }
+    }
+
     //Now check to make sure this isn't going to be a duplicate message for this gateway.
     if ( wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ) {
         throw new WmfException('DUPLICATE_CONTRIBUTION', 
@@ -643,32 +679,10 @@ function wmf_civicrm_verify_message_and_stage($msg)
         $msg);
     }
 
-    $msg['anonymous'] = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
-    $msg['optout'] = (array_key_exists('optout', $msg) && ($msg['optout'] === 0 || $msg['optout'] === '0' || strtoupper($msg['optout']) === "FALSE")) ? 0 : 1;
+    $msg['anonymous'] = ($msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
+    $msg['optout'] = (($msg['optout'] === 0 || $msg['optout'] === '0' || strtoupper($msg['optout']) === "FALSE")) ? 0 : 1;
 
-    //defaults: Keys that aren't actually required, but which will cause some portion of the code to complain
-    //if they don't exist (even if they're blank).
-    $defaults = array(
-        'date' => time(), //defaulting to now. @fixme: if you can think of a better thing to do in the name of historical exchange rates.
-        'first_name' => '',
-        'middle_name' => '',
-        'last_name' => '',
-        'email' => '',
-        'street_address' => '',
-        'supplemental_address_1' => '',
-        'city' => '',
-        'country' => '',
-        'state_province' => '',
-        'postal_code' => '',
-        'original_gross' => $msg['gross'],
-        'check_number' => null,
-        'letter_code' => null,
-        'thankyou_date' => null,
-        'recurring' => null,
-        'utm_campaign' => null,
-    );
-
-    $msg = wmf_civicrm_normalize_msg( array_merge($defaults, $msg) );
+    $msg = wmf_civicrm_normalize_msg( $msg );
 
     // set the correct amount fields/data and do exchange rate conversions.
     $msg = wmf_civicrm_normalize_contribution_amounts( $msg );
