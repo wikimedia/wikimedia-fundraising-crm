@@ -1,0 +1,6 @@
+name = Donor Review
+description = Manual dedupe and review queue
+core = 7.x
+package = Wikimedia
+files[] = DedupeDiff.php
+files[] = ReviewQueue.php
