@@ -61,7 +61,7 @@ class WmfException extends Exception {
     );
 
     var $type;
-	var $extra;
+    var $extra;
 
     function __construct( $type, $message, $extra = null ) {
         if ( !array_key_exists( $type, self::$error_types ) ) {
@@ -69,7 +69,7 @@ class WmfException extends Exception {
             $type = 'UNKNOWN';
         }
         $this->type = $type;
-		$this->extra = $extra;
+        $this->extra = $extra;
 
         if ( is_array( $message ) ) {
             $message = implode( "\n", $message );

@@ -1,5 +1,6 @@
 <?php
 
+# FIXME: merge with Queue.php
 
 /**
  * Hook to send complete transaction information to ActiveMQ server
@@ -10,9 +11,6 @@
  * nothing exploded big enough to kill the whole thing.
  */
 function sendSTOMP( $transaction ) {
-	// include a library
-	require_once( "Stomp.php" );
-	
 	$initial_msg = true;
 	if ( array_key_exists( 'gateway_refund_id', $transaction ) ){
 		$initial_msg = false;
