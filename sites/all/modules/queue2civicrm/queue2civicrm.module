@@ -78,10 +78,14 @@ function queue2civicrm_test() {
 }
 
 /**
- * Implementation of hook_perm().
+ * Implements hook_permission().
  */
-function queue2civicrm_perm() {
-  return array('administer queue2civicrm');
+function queue2civicrm_permission() {
+  return array(
+    'administer queue2civicrm' => array(
+      'title' => 'Administer queue2civicrm',
+    ),
+  );
 }
 
 /**
@@ -210,24 +214,27 @@ function queue2civicrm_batch_process() {
  * Remove one item from the queue and process it.
  */
 function queue2civicrm_process_message($msg) {
-    
+    $q = queue2civicrm_stomp();
     try {
         $msg_orig = $msg;
         queue2civicrm_import($msg);
-        queue2civicrm_stomp()->ack($msg_orig);
+        $q->ack($msg_orig);
     }
     catch (WmfException $ex) {
         watchdog('queue2civicrm', 'something went wrong during import: '.$ex->getMessage(), NULL, WATCHDOG_ERROR);
 
         if ($ex->isRejectMessage()) {
-            $error = "\nRemoving failed message from the queue: \n" . print_r($msg, true);
-            queue2civicrm_stomp()->ack($msg_orig);
+            $error = "\nRemoving failed message from the queue: \n" . print_r($msg_orig, true);
+            $q->reject($msg_orig, $ex);
             watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
         }
 
-		if ( !$ex->isNoEmail() ){
-	        wmf_common_failmail( 'queue2civicrm', $ex, $msg );
-		}
+        if ( !$ex->isNoEmail() ){
+            if ( $ex->isRejectMessage() ) {
+                $msg = $q->item_url( $msg );
+            }
+            wmf_common_failmail( 'queue2civicrm', $ex, $msg );
+        }
 
         if ($ex->isFatal()) {
             $error = "Halting Process.";

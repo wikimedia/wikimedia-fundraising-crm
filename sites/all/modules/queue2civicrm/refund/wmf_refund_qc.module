@@ -123,12 +123,15 @@ function refund_process_message($msg) {
     watchdog('recurring', 'something went wrong during import: ' . $ex->getMessage(), NULL, WATCHDOG_ERROR);
 
     if ($ex->isRejectMessage()) {
-      $error = "\nRemoving failed message from the queue: \n" . print_r($msg, TRUE);
-      $q->ack($msg_orig);
+      $error = "\nRemoving failed message from the queue: \n" . print_r($msg_orig, TRUE);
+      $q->reject($msg_orig);
       watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
     }
 
     if (!$ex->isNoEmail()) {
+      if ( $ex->isRejectMessage() ) {
+        $msg = $q->item_url( $msg );
+      }
       wmf_common_failmail('refund', $ex, $msg);
     }
 
