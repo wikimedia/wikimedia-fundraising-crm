@@ -5,3 +5,4 @@ configure = admin/config/queue2civicrm
 dependencies[] = exchange_rates
 dependencies[] = civicrm
 package = queue2civicrm
+files[] = Stomp.php

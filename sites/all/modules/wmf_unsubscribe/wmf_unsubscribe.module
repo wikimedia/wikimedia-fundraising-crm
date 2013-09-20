@@ -312,7 +312,7 @@ function wmf_unsubscribe_manual_form_submit($form, &$form_state) {
       );
 
       // Queue the message
-      if (!wmf_common_stomp_queue( json_encode($body), $headers, "/queue/unsubscribe" )) {
+      if (!queue2civicrm_stomp()->enqueue( json_encode($body), $headers, "/queue/unsubscribe" )) {
         drupal_set_message("Failed to queue unsubscribe message for contribution ID $ctid");
         continue;
       }

@@ -13,12 +13,12 @@ function wmf_common_failmail( $module, $error, $source = null )
         $params['source'][] = $error->source;
     }
 
-	watchdog(
-		'failmail',
-		"What's that? Something wrong: $error",
-		array(),
-		WATCHDOG_ERROR
-	);
+    watchdog(
+        'failmail',
+        "What's that? Something wrong: $error",
+        array(),
+        WATCHDOG_ERROR
+    );
 
     $params['module'] = $module;
     $params['removed'] = (is_callable(array($error, 'isRejectMessage'))) ? $error->isRejectMessage() : FALSE;
