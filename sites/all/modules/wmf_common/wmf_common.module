@@ -55,25 +55,39 @@ function replace_messages($string, $message_file, $language = 'en') {
 function wmf_common_menu() {
   $items = array();
 
-  $items[ 'admin/config/wmf_common' ] = array(
+  $items['admin/config/wmf_common'] = array(
     'title'            => 'WMF Common Settings',
     'access arguments' => array( 'administer wmf_common' ),
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array( 'wmf_common_settings' ),
+  );
+  $items['queue/%/%'] = array(
+    'access arguments' => array( 'manipulate queues' ),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'wmf_common_queue_item_form', 1, 2 ),
   );
 
   return $items;
 }
 
 /**
- * Drupal hook for defining exported permissions for this module. Exported
- * permissions are:
- *  - 'administer wmf_common'
+ * Implements hook_permission.
+ *
+ * Exported permissions are:
+ *    administer wmf_common
+ *    manipulate queues
  *
  * @return array of exported permissions.
  */
-function wmf_common_perm() {
-  return array( 'administer wmf_common' );
+function wmf_common_permission() {
+  return array(
+    'administer wmf_common' => array(
+        'title' => 'Configure the wmf_common module',
+    ),
+    'manipulate queues' => array(
+        'title' => 'Edit and resend queue items',
+    ),
+  );
 }
 
 /**
@@ -153,4 +167,15 @@ function wmf_common_settings() {
   );
 
   return system_settings_form($form);
+}
+
+function wmf_common_queue_item_form( $queue, $correlationId ) {
+  $q = new Queue();
+  $msg = $q->getBySelector( $queue, $correlationId );
+  if ( !empty( $msg->headers['error'] ) ) {
+    $form['error'] = array(
+      '#type' => 'markup',
+      '#value' => check_plain( $msg->headers['error'] ),
+    );
+  }
 }

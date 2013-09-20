@@ -245,7 +245,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
         $transaction->recur_sequence = $effort_id;
         $trxn_id = $transaction->get_unique_id();
     } catch ( Exception $ex ) {
-        throw new WmfException("INVALID_MESSAGE", "Could not add contribution: " . $ex->getMessage(), $msg );
+        throw new WmfException("INVALID_MESSAGE", "Could not add contribution: " . $ex->getMessage() );
     }
 
     $msg['contribution_type'] = wmf_civicrm_get_message_contribution_type($msg);
@@ -258,7 +258,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     $payment_instrument_id = wmf_civicrm_get_civi_id( 'payment_instrument_id', $msg['payment_instrument'] );
     if ( !$payment_instrument_id )
     {
-        throw new WmfException("INVALID_MESSAGE", "No payment type found for message.", $msg);
+        throw new WmfException("INVALID_MESSAGE", "No payment type found for message." );
     }
 
     $contribution = array(
@@ -293,8 +293,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     
     if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
         throw new WmfException( 'INVALID_MESSAGE',
-            t( 'Cannot create contribution: !error.', array( '!error' => $contribution_result['error_message'] ) ),
-            array( 'contribution' => $contribution, 'source' => $msg )
+            t( 'Cannot create contribution: !error.', array( '!error' => $contribution_result['error_message'] ) )
         );
     }
   
@@ -652,7 +651,7 @@ function wmf_civicrm_verify_message_and_stage($msg)
     }
 
     if (!empty($err)) {
-        throw new WmfException('CIVI_REQ_FIELD', $err, $msg);
+        throw new WmfException( 'CIVI_REQ_FIELD', $err );
     }
 
     $max_lengths = array(
@@ -670,15 +669,13 @@ function wmf_civicrm_verify_message_and_stage($msg)
     );
     foreach ( $max_lengths as $key => $limit ) {
         if ( strlen( $msg[$key] ) > $limit ) {
-            throw new WmfException( 'INVALID_MESSAGE', "Field '{$key}' is too long.", $msg );
+            throw new WmfException( 'INVALID_MESSAGE', "Field '{$key}' is too long." );
         }
     }
 
     //Now check to make sure this isn't going to be a duplicate message for this gateway.
     if ( wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ) {
-        throw new WmfException('DUPLICATE_CONTRIBUTION', 
-        "Contribution already exists. Ignoring message.", 
-        $msg);
+        throw new WmfException( 'DUPLICATE_CONTRIBUTION', "Contribution already exists. Ignoring message." );
     }
 
     $msg['anonymous'] = ($msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
@@ -761,7 +758,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     if ( array_key_exists( 'is_error', $contact_result ) && $contact_result['is_error'] != 0 ){
-        throw new WmfException("IMPORT_CONTACT", "Contact could not be added. Aborting import. Contact data was " . print_r($contact, true) . " Original error: " . $contact_result['error_message'], $msg);
+        throw new WmfException( "IMPORT_CONTACT", "Contact could not be added. Aborting import. Contact data was " . print_r($contact, true) . " Original error: " . $contact_result['error_message'] );
     }
     return $contact_result;
 }
