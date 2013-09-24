@@ -32,7 +32,7 @@ function thank_you_menu() {
    $items['admin/config/thank_you/test_email'] = array(
      'title' => t('Test thank you emails'),
      'description' => t(''),
-     'access arguments' => array('administer thank you'),
+     'access callback' => true,
      'page callback' => 'drupal_get_form',
      'page arguments' => array('thank_you_send_test'),
      'type' => MENU_LOCAL_TASK,
