@@ -6,4 +6,5 @@ configure = admin/config/wmf_common
 files[] = Queue.php
 files[] = WmfException.php
 files[] = WmfTransaction.php
-files[] = tests/WmfTransaction.test
+files[] = twigext_l10n/CldrData.php
+files[] = twigext_l10n/TwigLocalization.php

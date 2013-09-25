@@ -1,14 +1,32 @@
 <?php
 
-function public_reporting_perm() {
-    return array( 'administer wmf public reporting' );
+/**
+ * Implements hook_permission
+ */
+function public_reporting_permission() {
+    return array(
+      'administer wmf public reporting' => array(
+        'title' => t('Administer WMF public reporting'),
+      ),
+    );
 }
 
+/**
+ * Implements hook_menu
+ */
 function public_reporting_menu() {
   $items = array();
 
   $items['admin/config/public_reporting'] = array(
     'title' => t('Public Reporting'),
+    'access arguments' => array('administer wmf public reporting'),
+    'page callback' => 'system_admin_menu_block_page',
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+  $items['admin/config/public_reporting/settings'] = array(
+    'title' => t('Configure'),
     'description' => t('Public reporting table'), 
     'access arguments' => array('administer wmf public reporting'),
     'page callback' => 'drupal_get_form',

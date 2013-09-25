@@ -1,15 +1,32 @@
 <?php
 
-function wmf_test_settings_perm() {
-	return array( 'administer wmf test settings' );
+/**
+ * Implements hook_permission
+ */
+function wmf_test_settings_permission() {
+  return array(
+    'administer wmf test settings' => array(
+      'title' => t('Administer WMF test settings'),
+    ),
+  );
 }
 
+/**
+ * Implements hook_menu
+ */
 function wmf_test_settings_menu() {
   $items = array();
   
   $items['admin/config/wmf_test_settings'] = array(
     'title' => t('WMF Test Settings'),
-    'description' => t('Configure wmf testing variables.'),
+    'access arguments' => array('administer wmf test settings'),
+    'page callback' => 'system_admin_menu_block_page',
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+  $items['admin/config/wmf_test_settings/configure'] = array(
+    'title' => t('Configure WMF Test Settings'),
     'access arguments' => array('administer wmf test settings'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('wmf_test_settings_settings_form'),

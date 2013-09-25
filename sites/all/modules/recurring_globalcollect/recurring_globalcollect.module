@@ -10,16 +10,18 @@ function recurring_globalcollect_menu() {
   
   $items['admin/config/recurring_globalcollect'] = array(
     'title' => 'Recurring GlobalCollect Processor',
-    'description' => t('Configure message queue interface.'),
     'access arguments' => array('administer recurring_globalcollect'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('recurring_globalcollect_settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'access arguments' => array('administer contribution_audit'),
   );
 
   $items['admin/config/recurring_globalcollect/configure'] = array(
     'title' => 'Configure',
     'access arguments' => array('administer recurring_globalcollect'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'description' => 'Configure message queue interface.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recurring_globalcollect_settings'),
   );
 
   $items['admin/config/recurring_globalcollect/search'] = array(
@@ -27,14 +29,12 @@ function recurring_globalcollect_menu() {
     'access arguments' => array('administer recurring_globalcollect'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('recurring_globalcollect_search_by_order_id_form'),
-    'type' => MENU_LOCAL_TASK,
   );
 
   $items['admin/config/recurring_globalcollect/test'] = array(
     'title' => 'Test',
     'access arguments' => array('administer recurring_globalcollect'),
     'page callback' => 'recurring_globalcollect_test',
-    'type' => MENU_LOCAL_TASK,
   );
   
   $items['recurring_globalcollect'] = array(
@@ -51,11 +51,16 @@ function recurring_globalcollect_test() {
   $return = 'No testing available at this time.';
   return $return;
 }
+
 /**
- * Implementation of hook_perm().
+ * Implementation of hook_permission().
  */
-function recurring_globalcollect_perm() {
-  return array('administer recurring_globalcollect');
+function recurring_globalcollect_permission() {
+  return array(
+    'administer recurring_globalcollect' => array(
+      'title' => t('Administer Recurring GlobalCollect'),
+    ),
+  );
 }
 
 /**

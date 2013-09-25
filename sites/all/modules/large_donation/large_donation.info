@@ -5,4 +5,4 @@ dependencies[] = civicrm
 dependencies[] = queue2civicrm
 dependencies[] = thank_you
 package = Wikimedia
-configure = admin/config/large_donation
+configure = admin/config/large_donation/configure

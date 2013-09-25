@@ -6,3 +6,4 @@ dependencies[] = wmf_civicrm
 dependencies[] = wmf_communication
 package = Wikimedia
 configure = admin/config/thank_you
+files[] = html2text.php

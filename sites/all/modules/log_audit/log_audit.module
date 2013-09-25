@@ -13,7 +13,6 @@ function log_audit_menu() {
     'access arguments' => array('administer contribution_audit'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array( 'log_audit_settings' ),
-    'type' => MENU_LOCAL_TASK
   );
   
   return $items;
@@ -301,5 +300,3 @@ function log_audit_contribution_audit_find_missing_trxns( $start_date, $end_date
   }
   return $trxns;
 }
-
-?>

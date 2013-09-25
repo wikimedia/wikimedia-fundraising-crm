@@ -56,7 +56,15 @@ function wmf_common_menu() {
   $items = array();
 
   $items['admin/config/wmf_common'] = array(
-    'title'            => 'WMF Common Settings',
+    'title'            => 'WMF Common',
+    'access arguments' => array( 'administer wmf_common' ),
+    'page callback' => 'system_admin_menu_block_page',
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+  $items[ 'admin/config/wmf_common/configure' ] = array(
+    'title'            => 'Common Settings',
     'access arguments' => array( 'administer wmf_common' ),
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array( 'wmf_common_settings' ),
@@ -90,11 +98,6 @@ function wmf_common_permission() {
   );
 }
 
-/**
- * Constructs the settings page for this module. See @ref wmf_common_menu.
- *
- * @return array Of form components.
- */
 function wmf_common_settings() {
   $form = array();
 

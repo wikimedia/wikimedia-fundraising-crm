@@ -1,4 +1,0 @@
-name = Install Refresher
-description = Runs the uninstall and install functions for a given installed module
-core = 7.x
-package = Testing

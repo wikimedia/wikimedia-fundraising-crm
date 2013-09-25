@@ -14,8 +14,6 @@
  *                                                                    *
  **********************************************************************/
 
-require_once 'html2text.php';
-
 $valid_translation_states = array(
 	'ready',
 	'proofread',
