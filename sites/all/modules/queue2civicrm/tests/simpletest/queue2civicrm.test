@@ -55,19 +55,25 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 
 	function testConnect(){
 		$this->assertDrushLogEmpty(true);
-		variable_set('queue2civicrm_url', 'tcp://bananas:123');
-		$con = wmf_common_stomp_connection(true);
-		$this->assertTrue($con === false, "Connection did not fail appropriately.");
+		$url = 'tcp://bananas:123';
+		$con = new Queue($url);
+                try {
+                    $this->assertTrue($con->getConnection());
+                    $this->assertFalse($con->isConnected(), "Connection did not fail appropriately.");
+                } catch (WmfException $ex) {
+                    $this->assertEqual( 'STOMP_BAD_CONNECTION', $ex->getErrorName(),
+                        "Appropriate Drush error was not thrown.");
+                }
 		//check for the drush errors...
 		$this->assertDrushLogEmpty(false);
-		$this->assertCheckDrushLog('STOMP_BAD_CONNECTION', true, "Appropriate Drush error was not thrown.");
+		$this->assertCheckDrushLog('STOMP_BAD_CONNECTION', true, "Appropriate Drush error was not logged.");
 
-		//put everything back to normaltestCurrencyConversion
+		//put everything back to normaltestCurrencyConversion // FIXME should not matter
 		$this->assertDeleteDrushLog();
-		variable_set('queue2civicrm_url', 'tcp://localhost:61613'); //@fixme: This should be grabbing from an ini or something.
-		$con = wmf_common_stomp_connection(true);
-
-		$this->assertTrue($con !== false, "Connection failed, and should have worked the second time 'round.");
+		//@fixme: This should be grabbing from an ini or something.
+		$con = new Queue(queue2civicrm_stomp_url());
+                $con->getConnection();
+		$this->assertTrue($con->isConnected(), "Connection failed, and should have worked the second time 'round.");
 	}
 
 	function testRequiredFields(){
@@ -188,8 +194,9 @@ class Queue2CiviCRMTest extends DrupalUnitTestCase {
 	}
 
 	function getItemFromQueue(){
-	  $con = wmf_common_stomp_connection();
-	  $this->assertTrue(is_object($con), "Could not establish stomp connection");
+          #FIXME this is testing Stomp.php and not Queue or queue2civicrm
+	  $con = queue2civicrm_stomp()->getConnection();
+	  $this->assertTrue($con->isConnected(), "Could not establish stomp connection");
 	  $subscription_queue = variable_get('queue2civicrm_subscription', '/queue/test');
 	  if ($con) {
 		$con->subscribe($subscription_queue, array('ack' => 'client'));

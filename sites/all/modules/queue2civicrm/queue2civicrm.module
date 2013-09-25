@@ -47,18 +47,31 @@ function queue2civicrm_menu() {
   return $items;
 }
 
+function queue2civicrm_stomp_url() {
+  return variable_get( 'queue2civicrm_url', 'tcp://localhost:61613' );
+}
+
+function queue2civicrm_stomp() {
+  static $q = null;
+
+  if ( !$q ) {
+    $q = new Queue( queue2civicrm_stomp_url() );
+  }
+
+  return $q;
+}
+
 function queue2civicrm_test() {
-  require_once variable_get('queue2civicrm_stomp_path', drupal_get_path('module', 'queue2civicrm') . '/Stomp.php');
   $content = array();
   
-  $content[] = '<p>Attempting connection to ' . variable_get('queue2civicrm_url', 'tcp://localhost:61613') . '... ';  
-  $con = new Stomp(variable_get('queue2civicrm_url', 'tcp://localhost:61613'));
+  $content[] = '<p>Attempting connection to ' . queue2civicrm_stomp_url() . '... ';  
+  $q = queue2civicrm_stomp();
   try {
-    $con->connect();
+    $q->getConnection();
     $content[] = '[SUCCESS]</p>';
   }
   catch (Exception $e) {
-    $content[] = '[FAILED]</p>' . "<p>$e</p>";
+    $content[] = '[FAILURE], error: ' . $e . '</p>';
   }
   
   return implode("\n", $content);
@@ -77,19 +90,11 @@ function queue2civicrm_perm() {
 function queue2civicrm_settings() {
   $form = array();
 
-  $form['queue2civicrm_stomp_path'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Stomp Path'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('queue2civicrm_stomp_path', drupal_get_path('module', 'queue2civicrm') . '/Stomp.php'),
-	'#description' => t('Link: ') . l(t('Current version of the Stomp library'), "http://svn.wikimedia.org/viewvc/wikimedia/vendors/stomp_php/current/"),
-  );
-
   $form['queue2civicrm_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Connection URL'),
     '#required' => TRUE,
-    '#default_value' => variable_get('queue2civicrm_url', 'tcp://localhost:61613'),
+    '#default_value' => queue2civicrm_stomp_url(),
   );
 
   $form['queue2civicrm_subscription'] = array(
@@ -160,7 +165,7 @@ function queue2civicrm_settings() {
 function queue2civicrm_batch_process() {
   wmf_civicrm_boost_performance();
 
-  $processed = wmf_common_dequeue_loop(
+  $processed = queue2civicrm_stomp()->dequeue_loop(
       variable_get('queue2civicrm_subscription', '/queue/test'),
       variable_get( 'queue2civicrm_batch', 0 ),
       'queue2civicrm_process_message'
@@ -209,14 +214,14 @@ function queue2civicrm_process_message($msg) {
     try {
         $msg_orig = $msg;
         queue2civicrm_import($msg);
-        wmf_common_stomp_ack_frame($msg_orig);
+        queue2civicrm_stomp()->ack($msg_orig);
     }
     catch (WmfException $ex) {
         watchdog('queue2civicrm', 'something went wrong during import: '.$ex->getMessage(), NULL, WATCHDOG_ERROR);
 
         if ($ex->isRejectMessage()) {
             $error = "\nRemoving failed message from the queue: \n" . print_r($msg, true);
-            wmf_common_stomp_ack_frame($msg_orig);
+            queue2civicrm_stomp()->ack($msg_orig);
             watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
         }
 
@@ -326,19 +331,17 @@ function queue2civicrm_insertmq_form() {
  * Submits a test message to the queue
  */
 function queue2civicrm_insertmq_form_submit($form, &$form_state) {
-  $con = wmf_common_stomp_connection();
-  if($con){
-	  $result = $con->send( $form_state['values']['queue'], drupal_to_js($form_state['values']), array('persistent' => true));
-	  $con->disconnect();
+    $q = queue2civicrm_stomp();
+	  $result = $q->enqueue( drupal_to_js($form_state['values']), array('persistent' => true), $form_state['values']['queue'] );
+	  $q->disconnect();
 	  if (!$result) {
-		watchdog('queue2civicrm','Send to queue failed for this message: <pre>' . check_plain(print_r($form_state['values'], TRUE)) . '</pre>');
-		$content = 'Failed to add item to the queue.';
-		drupal_set_message($content, 'error');
-	  }
+      watchdog('queue2civicrm','Send to queue failed for this message: <pre>' . check_plain(print_r($form_state['values'], TRUE)) . '</pre>');
+      $content = 'Failed to add item to the queue.';
+      drupal_set_message($content, 'error');
+    }
 	  $content = 'Success adding item to the queue!';
 	  watchdog('queue2civicrm','Successfully added the following to the queue: <pre>' . check_plain(print_r($form_state['values'], TRUE)) . '</pre>');
 	  drupal_set_message($content);
-  }
 }
 
 /**

@@ -1,9 +1,6 @@
 <?php
 
-require_once 'errors.inc';
 require_once 'failmail.php';
-require_once 'queue.php';
-require_once 'WmfTransaction.php';
 require_once 'wmf_dates.php';
 
 /**
