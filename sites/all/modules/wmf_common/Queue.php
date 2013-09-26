@@ -86,6 +86,17 @@ class Queue {
         return $processed;
     }
 
+    function getByCorrelationId( $queue, $correlationId ) {
+        $con = $this->getFreshConnection();
+        $properties = array(
+            'ack' => 'client',
+            'correlation-id' => $correlationId,
+        );
+        $con->subscribe( $queue, $properties );
+
+        return $con->readFrame();
+    }
+
     function isConnected() {
         return $this->connection !== null and $this->connection->isConnected();
     }

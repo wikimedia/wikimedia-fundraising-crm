@@ -169,13 +169,36 @@ function wmf_common_settings() {
   return system_settings_form($form);
 }
 
-function wmf_common_queue_item_form( $queue, $correlationId ) {
-  $q = new Queue();
-  $msg = $q->getBySelector( $queue, $correlationId );
-  if ( !empty( $msg->headers['error'] ) ) {
+function wmf_common_queue_item_form( $form, &$form_state, $queue, $correlationId ) {
+  $q = queue2civicrm_stomp();
+
+  $msg = $q->getByCorrelationId( $queue, $correlationId );
+  $msg = json_decode( $msg->body, TRUE );
+
+  if ( !empty( $msg['error'] ) ) {
     $form['error'] = array(
-      '#type' => 'markup',
-      '#value' => check_plain( $msg->headers['error'] ),
+      '#title' => 'Error',
+      '#markup' => "<div>Failure reason:<br>" . check_plain( $msg['error'] ) . "</div>",
     );
   }
+  if ( !empty( $msg['original'] ) ) {
+    $body = json_decode( $msg['original'], TRUE );
+  } else {
+    $body = $msg;
+  }
+  $form['msg_fields'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Message',
+  );
+  foreach ( $body as $key => $value ) {
+    $form['msg_fields'][$key] = array(
+        '#type' => 'textfield',
+        '#title' => $key,
+        '#default_value' => $value,
+    );
+  }
+
+  //TODO: submit actions
+
+  return $form;
 }
