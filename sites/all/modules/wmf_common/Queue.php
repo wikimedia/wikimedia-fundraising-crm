@@ -120,7 +120,7 @@ class Queue {
                 $this->connection->connect();
             }
             catch ( Stomp_Exception $e ) {
-                $this->connection = false;
+                $this->connection = null;
                 watchdog( 'wmf_common', "Queue connection failure #$attempt: " . $e->getMessage(), array(), WATCHDOG_ERROR );
             }
         }
