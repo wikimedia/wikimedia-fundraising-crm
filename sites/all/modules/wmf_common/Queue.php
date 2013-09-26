@@ -20,10 +20,11 @@ class Queue {
      * @param $callback: must have the signature ($msg) -> bool
      */
     function dequeue_loop( $queue, $batch_size, $callback ) {
+        $queue = $this->normalizeQueueName( $queue );
         watchdog( 'wmf_common',
             t( 'Attempting to process at most %size contribution(s) from "%queue" queue.',
                 array( '%size' => $batch_size, '%queue' => $queue )
-            )
+            ), NULL, WATCHDOG_INFO
         );
 
         $con = $this->getFreshConnection();
@@ -41,11 +42,12 @@ class Queue {
             set_time_limit( 10 );
             $msg = $con->readFrame();
             if ( empty($msg) ) {
+                watchdog( 'wmf_common', t('Ran out of messages.'), NULL, WATCHDOG_INFO );
                 return FALSE;
             }
             if ($msg->command === 'RECEIPT') {
                 // TODO it would be smart to keep track of RECEIPT frames as they are an ack-of-ack
-                watchdog( 'wmf_common', t('Popped a sweet nothing off the queue:') . check_plain( print_r($msg, TRUE) ));
+                watchdog( 'wmf_common', t('Popped a sweet nothing off the queue:') . check_plain( print_r($msg, TRUE) ), NULL, WATCHDOG_INFO );
                 $i--;
                 continue;
             } elseif (($msg->command === 'MESSAGE') &&
@@ -53,6 +55,7 @@ class Queue {
                       (intval($msg->headers['delay_till']) > time())
             ) {
                 // We have a message that we are not supposed to process yet, So requeue and ack
+                watchdog( 'wmf_common', t('Requeueing delay_till message.'), NULL, WATCHDOG_DEBUG );
                 if( $this->requeue( $msg ) ) {
                     $this->ack( $msg );
                 } else {
@@ -125,6 +128,7 @@ class Queue {
     function disconnect() {
         try {
             if ( $this->isConnected() ) {
+                watchdog( 'wmf_common', t('Attempting to disconnect from the queue server'), NULL, WATCHDOG_INFO );
                 $this->connection->disconnect();
             }
         }
@@ -151,6 +155,8 @@ class Queue {
     function enqueue( $msg, $properties, $queue ) {
       $properties['persistent'] = 'true';
 
+      $queue = $this->normalizeQueueName( $queue );
+      watchdog( 'wmf_common', 'Enqueueing a message on ' . $queue, NULL, WATCHDOG_DEBUG );
       return $this->getConnection()->send( $queue, $msg, $properties );
     }
 
@@ -224,22 +230,30 @@ class Queue {
     function reject( $msg, $error = null ) {
         $suffix = "-damaged";
         //if ( strstr( $msg->headers['destination'], $suffix ) ) { ERROR
-        $msg->headers['destination'] = $this->queue . $suffix;
-        $msg->headers['error'] = $error;
+        $msg->headers['destination'] .= $suffix;
 
-        $queue = $msg->headers['destination'];
-
-        if ( !$this->enqueue( $msg->body, $msg->headers, $queue ) ) {
-            $exMsg = 'Failed to inject rejected message into $queue! ' . json_encode( $msg );
-            watchdog( 'wmf_common', $exMsg );
-            # TODO do not deliver by mail
-            wmf_common_failmail( 'wmf_common', $exMsg );
+        $new_body = array(
+            'original' => json_decode( $msg->body ),
+        );
+        if ( $error ) {
+            $msg->headers['error'] = $error->getErrorName();
+            $new_body['error'] = $error->getMessage();
         }
+
+        $queue = $this->normalizeQueueName( $msg->headers['destination'] );
+
+        watchdog( 'wmf_common', 'Attempting to move a message to ' . $queue, NULL, WATCHDOG_INFO );
+        if ( !$this->enqueue( json_encode( $new_body ), $msg->headers, $queue ) ) {
+            $exMsg = 'Failed to inject rejected message into $queue! ' . json_encode( $msg );
+            watchdog( 'wmf_common', $exMsg, NULL, WATCHDOG_ERROR );
+            throw new WmfException( 'STOMP_BAD_CONNECTION', 'Could not reinject damaged message' );
+        }
+        $this->ack($msg);
     }
 
     function item_url( $msg ) {
         global $base_url;
-        $queue = $msg->headers['destination'];
+        $queue = str_replace('/queue/', '', $msg->headers['destination'] );
         $correlationId = $msg->headers['correlation-id'];
         return "{$base_url}/queue/{$queue}/{$correlationId}";
     }
@@ -251,5 +265,10 @@ class Queue {
      */
     protected function getSessionId() {
         return $this->getConnection()->getSessionId();
+    }
+
+    protected function normalizeQueueName( $queue ) {
+        $queue = str_replace( '/queue/', '', $queue );
+        return '/queue/' . $queue;
     }
 }

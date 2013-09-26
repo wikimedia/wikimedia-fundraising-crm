@@ -68,7 +68,8 @@ class ChecksFile {
 
             if ( abs( $source_amount - $total_amount ) > .01 ) {
                 $pretty_msg = json_encode( array_combine( array_keys( $headers ), $row ) );
-                throw new WmfException( 'INVALID_MESSAGE', "Amount mismatch: " . $pretty_msg );
+                watchdog( 'offline2civicrm', "Amount mismatch in row: " . $pretty_msg, NULL, WATCHDOG_ERROR );
+                throw new WmfException( 'INVALID_MESSAGE', "Amount mismatch during checks import" );
             }
 
             $msg = array(

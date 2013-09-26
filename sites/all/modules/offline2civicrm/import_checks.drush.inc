@@ -50,7 +50,7 @@ function drush_import_checks() {
 	catch ( WmfException $ex ) {
 		watchdog( 'offline2civicrm', 'Import checks: error during import ' + $ex->getMessage(), NULL, WATCHDOG_ERROR );
 		if ( $ex->isRejectMessage() && !$ex->isNoEmail() ) {
-			wmf_common_failmail( 'offline2civicrm', $ex );
+			watchdog( 'offline2civicrm', 'Suppressing failmail.', NULL, WATCHDOG_WARNING );
 		}
 
 		if ( $ex->isFatal() ) {

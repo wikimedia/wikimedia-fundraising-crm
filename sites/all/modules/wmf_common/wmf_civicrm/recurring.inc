@@ -22,7 +22,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
             'Payment is not marked as recurring, with the contact_id [!contact_id]',
             array( "!contact_id" => $contact_id )
         );
-        throw new WmfException( 'IMPORT_SUBSCRIPTION', $error_message, $msg );
+        throw new WmfException( 'IMPORT_SUBSCRIPTION', $error_message );
       }
     
     // Allowed frequency_units
@@ -36,7 +36,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
                 "!contact_id" => $contact_id,
             )
         );
-        throw new WmfException( 'IMPORT_SUBSCRIPTION', $error_message, $msg );
+        throw new WmfException( 'IMPORT_SUBSCRIPTION', $error_message );
     }
 
     // Frequency interval is only allowed to be 1. FIXME
@@ -45,7 +45,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
             '`frequency_interval` is only allowed to be set to 1, with the contact_id [!contact_id]',
             array("!contact_id" => $contact_id)
         );
-        throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message, $msg);
+        throw new WmfException('IMPORT_SUBSCRIPTION', $watchdog_message );
     }
 
     // installments is only allowed to be 0.
@@ -54,7 +54,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
             '`installments` must be set to 0, with the contact_id [!contact_id]',
             array("!contact_id" => $contact_id)
         );
-        throw new WmfException('IMPORT_SUBSCRIPTION', $error_message, $msg);
+        throw new WmfException('IMPORT_SUBSCRIPTION', $error_message );
     }
     
     if ( empty( $contribution_record ) ) {
@@ -62,7 +62,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
             'The contribution_record is empty, with the contact_id [!contact_id]',
             array("!contact_id" => $contact_id)
         );
-        throw new WmfException('IMPORT_SUBSCRIPTION', $error_message, $msg);
+        throw new WmfException('IMPORT_SUBSCRIPTION', $error_message );
     }
 
     // trxn_id must be set.
@@ -71,7 +71,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
             '`trxn_id` must be set and not empty, with the contact_id [!contact_id]',
             array("!contact_id" => $contact_id)
         );
-        throw new WmfException('IMPORT_SUBSCRIPTION', $error_message, array($msg, $contribution_record));
+        throw new WmfException('IMPORT_SUBSCRIPTION', $error_message );
     }
     
     $msg[ 'cycle_day' ] = (integer) date( 'j', $msg[ 'date' ] );
