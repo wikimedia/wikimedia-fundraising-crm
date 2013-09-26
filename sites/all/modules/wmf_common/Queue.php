@@ -225,7 +225,8 @@ class Queue {
       $queue = $headers['destination'];
 
       try {
-        $this->enqueue( $msg, $headers, $queue );
+        $retval = $this->enqueue( $msg, $headers, $queue );
+        return $retval;
       } catch (Stomp_Exception $ex) {
         $exMsg = "Failed to requeue message with {$ex->getMessage()}. Contents: " . json_encode($msg_orig);
         watchdog('wmf_common', $exMsg, NULL, WATCHDOG_ERROR);
