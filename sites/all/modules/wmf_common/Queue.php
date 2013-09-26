@@ -199,7 +199,7 @@ class Queue {
 
       $retval = FALSE;
       try {
-        $this->enqueue( $msg, $headers, $queue );
+        $retval = $this->enqueue( $msg, $headers, $queue );
       } catch (Stomp_Exception $ex) {
         $exMsg = "Failed to requeue message with {$ex->getMessage()}. Contents: " . json_encode($msg_orig);
         watchdog('recurring', $exMsg, NULL, WATCHDOG_ERROR);
