@@ -78,7 +78,8 @@ function refund_qc_settings() {
 function refund_batch_process() {
   watchdog('refund', 'Executing: refund_batch_process');
 
-  $processed = wmf_common_dequeue_loop(
+  $q = queue2civicrm_stomp();
+  $processed = $q->dequeue_loop(
     variable_get('refund_queue', '/queue/refund-notifications_test'),
     variable_get('refund_batch', 0),
     'refund_process_message'
