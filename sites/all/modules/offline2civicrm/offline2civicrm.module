@@ -32,7 +32,6 @@ function offline2civicrm_menu() {
   $items['admin/import_checks'] = array(
     'title' => 'Import Checks',
     'access arguments' => array('offline2civicrm bulk import'),
-    'type' => MENU_CALLBACK,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('offline2civicrm_import_checks_form'),
   );
