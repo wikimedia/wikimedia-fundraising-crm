@@ -307,16 +307,19 @@ function thank_you_send( $contribution_id, $test=null ) {
 		'subject' => variable_get( 'thank_you_subject', 'Thank you from the Wikimedia Foundation' ),
 	);
 
-	list( $email['html'], $email['plaintext'] ) = thank_you_render( $contribution, $contact, $language, $country );
+	$email['html'] = thank_you_render( $contribution, $contact, $language, $country );
 
 	if( $email['html'] == false ){
-		watchdog( 'thank_you', "HTML rendering of template failed in $language_$country.", array(), WATCHDOG_ERROR );
+		watchdog( 'thank_you', "HTML rendering of template failed in {$language}_{$country}.", array(), WATCHDOG_ERROR );
 		wmf_common_failmail( 'thank_you', "FAILED TO RENDER HTML EMAIL\n" . __FUNCTION__ . "\n\n" . print_r($contribution, true) . print_r($contact, true), array() );
 		return false;
 	}
 
+	$converter = new html2text( $email['html'] );
+	$email['plaintext'] = $converter->get_text();
+
 	if( $email['plaintext'] == false ){
-		watchdog( 'thank_you', "Text rendering of template failed in $language_$country.", array(), WATCHDOG_ERROR );
+		watchdog( 'thank_you', "Text rendering of template failed in {$language}_{$country}.", array(), WATCHDOG_ERROR );
 		wmf_common_failmail( 'thank_you', "FAILED TO RENDER PLAINTEXT EMAIL\n" . __FUNCTION__ . "\n\n" . print_r($contribution, true) . print_r($contact, true), array() );
 		return false;
 	}
@@ -644,9 +647,5 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
         $params
     );
 
-    return array(
-        $template->render( 'html' ),
-        $template->render( 'txt' ),
-    );
+    return $template->render( 'html' );
 }
-
