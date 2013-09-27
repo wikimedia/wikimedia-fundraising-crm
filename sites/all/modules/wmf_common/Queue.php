@@ -90,7 +90,7 @@ class Queue {
         $con = $this->getFreshConnection();
         $properties = array(
             'ack' => 'client',
-            'correlation-id' => $correlationId,
+            'selector' => "JMSCorrelationID='{$correlationId}'",
         );
         $con->subscribe( $queue, $properties );
 

@@ -175,6 +175,9 @@ function wmf_common_settings() {
 function wmf_common_queue_item_form( $form, &$form_state, $queue, $correlationId ) {
   $q = queue2civicrm_stomp();
 
+  $queue = preg_replace( '/[^-a-z]/', '', $queue );
+  $correlationId = preg_replace( '/[^-a-z0-9]/', '', $correlationId );
+
   $msg = $q->getByCorrelationId( $queue, $correlationId );
   $msg = json_decode( $msg->body, TRUE );
 
@@ -185,7 +188,7 @@ function wmf_common_queue_item_form( $form, &$form_state, $queue, $correlationId
     );
   }
   if ( !empty( $msg['original'] ) ) {
-    $body = json_decode( $msg['original'], TRUE );
+    $body = $msg['original'];
   } else {
     $body = $msg;
   }
