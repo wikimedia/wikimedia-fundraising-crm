@@ -179,6 +179,12 @@ function wmf_common_queue_item_form( $form, &$form_state, $queue, $correlationId
   $correlationId = preg_replace( '/[^-a-z0-9]/', '', $correlationId );
 
   $msg = $q->getByCorrelationId( $queue, $correlationId );
+
+  if ( !$msg ) {
+    drupal_set_message( t( 'Message not found.' ) );
+    return $form;
+  }
+
   $msg = json_decode( $msg->body, TRUE );
 
   if ( !empty( $msg['error'] ) ) {
@@ -197,14 +203,65 @@ function wmf_common_queue_item_form( $form, &$form_state, $queue, $correlationId
     '#title' => 'Message',
   );
   foreach ( $body as $key => $value ) {
-    $form['msg_fields'][$key] = array(
+    $form['msg_fields']['field-' . $key] = array(
         '#type' => 'textfield',
         '#title' => $key,
         '#default_value' => $value,
+        '#maxlength' => 1024,
     );
   }
 
-  //TODO: submit actions
+  if ( preg_match( '/-damaged$/', $queue ) ) {
+    $form['resend'] = array(
+      '#type' => 'submit',
+      '#value' => t( 'Resend' ),
+    );
+  # TODO
+  #  $form['download'] = array(
+  #    '#type' => 'submit',
+  #    '#value' => t( 'Download' ),
+  #  );
+    $form['delete'] = array(
+      '#type' => 'submit',
+      '#value' => t( 'Delete' ),
+    );
+    $form['#submit'] = array( 'wmf_common_queue_item_submit' );
+  }
 
   return $form;
+}
+
+function wmf_common_queue_item_submit( $form, &$form_state ) {
+  $queue = preg_replace( '/[^-a-z]|-damaged$/', '', $form_state['build_info']['args'][0] );
+  $correlationId = preg_replace( '/[^-a-z0-9]/', '', $form_state['build_info']['args'][1] );
+
+  $headers = array(
+    'correlation-id' => $correlationId,
+  );
+  $body = array();
+  foreach ( $form_state['values'] as $key => $value ) {
+    if ( preg_match( '/field-(.*)/', $key, $matches ) ) {
+      $body[$matches[1]] = $value;
+    }
+  }
+
+  $q = queue2civicrm_stomp();
+
+  switch ( $form_state['values']['op'] ) {
+  case $form_state['values']['resend']:
+    $q->enqueue( json_encode( $body ), $headers, $queue );
+
+    $msg = $q->getByCorrelationId( "{$queue}-damaged", $correlationId );
+    $q->ack( $msg );
+
+    drupal_set_message( t( 'Message resent for processing.' ) );
+    $form_state['redirect'] = "queue/{$queue}/{$correlationId}";
+    break;
+  case $form_state['values']['delete']:
+    $msg = $q->getByCorrelationId( "{$queue}-damaged", $correlationId );
+    $q->ack( $msg );
+    drupal_set_message( t( 'Successfully removed message.' ) );
+    $form_state['redirect'] = "queue/{$queue}-damaged/";
+    break;
+  }
 }

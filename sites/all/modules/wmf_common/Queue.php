@@ -260,6 +260,7 @@ class Queue {
             watchdog( 'wmf_common', $exMsg, NULL, WATCHDOG_ERROR );
             throw new WmfException( 'STOMP_BAD_CONNECTION', 'Could not reinject damaged message' );
         }
+        // FIXME: this works but should not
         $this->ack($msg);
     }
 
