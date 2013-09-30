@@ -1,7 +1,5 @@
 <?php
 
-require_once( 'CldrData.php' );
-
 /**
  * Implements various localization filters:
  *  - Number format (1234.43 -> 1 234,43 .. 1,234.43)

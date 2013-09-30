@@ -13,22 +13,16 @@
  * uses the word in its field/variable names (eg subscr_payment). 
  */
 
-// include common functions
-require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_common.inc' );
-
 /**
- * Implementation of hook_menu_alter
- * 
- * Used to inject recurring menu item to Queue2civicrm configuration
+ * Implementation of hook_menu
  */
-function recurring_menu_alter( &$items ) {
+function recurring_menu() {
   $items['admin/config/queue2civicrm/recurring'] = array(
 	'title' => 'Recurring payments',
-	'description' => t( 'Configure recurring payments-related settings' ),
+       'description' => t( 'Configure the recurring payments queue' ),
 	'access arguments' => array( 'administer queue2civicrm' ),
 	'page callback' => 'drupal_get_form',
 	'page arguments' => array( 'recurring_settings' ),
-	'type' => MENU_LOCAL_TASK
   );
   return $items;
 }
@@ -41,8 +35,8 @@ function recurring_settings() {
  
   $form[ 'recurring' ][ 'description' ] = array(
     '#type' => 'fieldset',
-    '#title' => t( 'Recurring payments' ),
-	'#description' => t( 'Use the form below to configure settings pertinent to recurring contributions.' ),
+    '#title' => t('Recurring payments'),
+    '#description' => t('The recurring queue contains notifications pertaining to subscription donations, such as monthly payments, cancellation,and expiration.'),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
   );
@@ -50,6 +44,7 @@ function recurring_settings() {
   $form['recurring_process'] = array(
     '#type' => 'radios',
     '#title' => t('Process recurring transactions during queue consumption'),
+    '#description' => t('If enabled, recurring processing will take place at the end of the regular queue2civicrm job.  If disabled, recurring notifications must be processed by a dedicated job.'),
     '#required' => TRUE,
     '#options' => array(
       FALSE => t('No'),
@@ -63,12 +58,13 @@ function recurring_settings() {
     '#title' => t('Subscription path'),
     '#required' => TRUE,
     '#default_value' => variable_get('recurring_subscription', '/queue/test_recurring'),
-    '#description' => t( 'The path to the queue for recurring payments.' ),
+    '#description' => t( 'Queue to watch for recurring notifications' ),
   );
   
   $form[ 'recurring' ][ 'recurring_batch' ] = array(
     '#type' => 'select',
     '#title' => t('Cron batch size'),
+    '#description' => t('Maximum number of items processed by the recurring job'),
     '#required' => TRUE,
     '#default_value' => variable_get('recurring_batch', 0),
     '#options' => array(

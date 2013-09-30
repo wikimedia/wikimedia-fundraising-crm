@@ -10,40 +10,36 @@ function queue2civicrm_menu() {
   
   $items['admin/config/queue2civicrm'] = array(
     'title' => 'Queue to CiviCRM',
-    'description' => t('Configure message queue interface.'),
+    'access arguments' => array('administer queue2civicrm'),
+    'page callback' => 'system_admin_menu_block_page',
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+  $items['admin/config/queue2civicrm/configure'] = array(
+    'title' => 'Configure',
+    'description' => 'Configure message queue interface.',
     'access arguments' => array('administer queue2civicrm'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('queue2civicrm_settings'),
   );
 
-  $items['admin/config/queue2civicrm/configure'] = array(
-    'title' => 'Configure',
-    'access arguments' => array('administer queue2civicrm'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-  );
-
   $items['admin/config/queue2civicrm/test'] = array(
     'title' => 'Test',
+    'description' => 'Run a test message through the queue.',
     'access arguments' => array('administer queue2civicrm'),
     'page callback' => 'queue2civicrm_test',
-    'type' => MENU_LOCAL_TASK,
   );
 
   $items['admin/config/queue2civicrm/insert'] = array(
     'title' => 'Insert item',
+    'description' => 'Insert a message into the queue.',
     'access arguments' => array('administer queue2civicrm'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('queue2civicrm_insertmq_form'),
-    'type' => MENU_LOCAL_TASK,
     'weight' => 10,
   );
-  
-  $items['queue2civicrm'] = array(
-    'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
-    'page callback' => 'queue2civicrm_batch_process',
-  );
-  
+
   return $items;
 }
 
@@ -97,6 +93,7 @@ function queue2civicrm_settings() {
   $form['queue2civicrm_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Connection URL'),
+    '#description' => t('Include the port number, like so for a typical development environment: !example_url', array( '!example_url' => 'http://localhost:61613')),
     '#required' => TRUE,
     '#default_value' => queue2civicrm_stomp_url(),
   );
@@ -104,6 +101,7 @@ function queue2civicrm_settings() {
   $form['queue2civicrm_subscription'] = array(
     '#type' => 'textfield',
     '#title' => t('Subscription path'),
+    '#description' => t('The queue holding normal, incoming donations waiting to be processed.'),
     '#required' => TRUE,
     '#default_value' => variable_get('queue2civicrm_subscription', '/queue/test'),
   );
@@ -111,6 +109,7 @@ function queue2civicrm_settings() {
   $form['queue2civicrm_batch'] = array(
     '#type' => 'select',
     '#title' => t('Cron batch size'),
+    '#description' => t('Maximum number of donations processed by a queue2civicrm job.'),
     '#required' => TRUE,
     '#default_value' => variable_get('queue2civicrm_batch', 0),
     '#options' => array(

@@ -19,6 +19,14 @@ define( 'DEFAULT_WMF_LOGGING_IDENTITY', 'drupal' );
 function wmf_logging_menu() {
   $items = array();
 
+  $items[ 'admin/config/logging' ] = array(
+    'title'            => 'Logging',
+    'page callback' => 'system_admin_menu_block_page',
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'access arguments' => array( 'administer site configuration' ),
+  );
+
   $items[ 'admin/config/logging/wmf_logging' ] = array(
     'title'            => 'WMF Logging',
     'description'      => 'Settings for the WMF logging module.',

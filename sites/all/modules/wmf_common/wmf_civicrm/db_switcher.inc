@@ -1,7 +1,8 @@
 <?php 
 
 /**
- * Get a grip on multiple database connections.
+ * Class to facilitate switching of db access between CiviCRM, Drupal,
+ * and other dbs.
  *
  * The db_switcher maintains a stack, beginning with the db connection
  * set previous to your first call to ->push().  You can call push()
@@ -21,17 +22,6 @@
  * It's perfectly safe to nest db_switcher contexts, but never safe
  * to have more than one instance of a switcher in the same function
  * scope.
- *
- * @return db_switcher
- */
-function wmf_civicrm_get_dbs() {
-    return new db_switcher();
-}
-
-
-/**
- * Class to facilitate switching of db access between CiviCRM, Drupal,
- * and other dbs.
  */
 class db_switcher {
 

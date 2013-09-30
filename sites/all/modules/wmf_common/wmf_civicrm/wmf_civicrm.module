@@ -1,6 +1,5 @@
 <?php
 
-require_once 'db_switcher.inc';
 require_once 'recurring.inc';
 require_once 'tracking.inc';
 require_once 'civicrm_api_check.inc';
@@ -1458,4 +1457,13 @@ FROM
 ) AS t
 LIMIT 0, 10
 EOS;
+}
+
+/**
+ * Get a grip on multiple database connections.
+ *
+ * @return db_switcher
+ */
+function wmf_civicrm_get_dbs() {
+    return new db_switcher();
 }

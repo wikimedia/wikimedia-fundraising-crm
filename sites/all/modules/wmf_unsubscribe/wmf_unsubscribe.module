@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Implements hook_menu
+ */
 function wmf_unsubscribe_menu() {
     $items = array();
 
@@ -29,8 +32,21 @@ function wmf_unsubscribe_menu() {
     return $items;
 }
 
-function wmf_unsubscribe_perm() {
-    return array('administer wmf modules', 'unsubscribe', 'manual unsubscribe');
+/**
+ * Implements hook_permission
+ */
+function wmf_unsubscribe_permission() {
+    return array(
+        'administer wmf modules' => array(
+            'title' => t('Administer WMF modules'),
+        ),
+        'unsubscribe' => array(
+            'title' => t('Unsubscribe self'),
+        ),
+        'manual unsubscribe' => array(
+            'title' => t('Unsubscribe donors'),
+        ),
+    );
 }
 
 /**

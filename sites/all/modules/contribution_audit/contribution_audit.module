@@ -1,14 +1,14 @@
 <?php 
-/**
- * include common queue2civicrm functions
- */
-require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_common.inc' );
 
 /**
- * Implementation of hook_perm().
+ * Implementation of hook_permission().
  */
-function contribution_audit_perm() {
-  return array('administer contribution_audit');
+function contribution_audit_permission() {
+  return array(
+    'administer contribution_audit' => array(
+      'title' => t('Administer Contribution Auditing'),
+    ),
+  );
 }
 
 /**
@@ -18,18 +18,23 @@ function contribution_audit_menu() {
   $items = array();
   
   $items['admin/config/contribution_audit'] = array(
-    'title' => 'Contribution Audit Configuration',
-    'description' => t('Configure contribution audit settings.'),
+    'title' => 'Contribution Auditing',
+    'page callback' => 'system_admin_menu_block_page',
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'access arguments' => array('administer contribution_audit'),
+  );
+
+  /*
+  TODO: there are no knobs yet.
+  $items['admin/config/contribution_audit/configure'] = array(
+    'title' => 'Configure',
+    'description' => 'Configure contribution audit settings.',
     'access arguments' => array('administer contribution_audit'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array( 'contribution_audit_settings' ),
   );
-
-  $items['admin/config/contribution_audit/configure'] = array(
-    'title' => 'Configure',
-    'access arguments' => array('administer contribution_audit'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-  );
+  */
   
   return $items;
 }

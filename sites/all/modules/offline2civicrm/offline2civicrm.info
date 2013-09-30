@@ -1,10 +1,11 @@
 name = Offline Contribution to CiviCRM
 description = Imports offline contributions from a CSV
+package = offline2civicrm
 core = 7.x
 dependencies[] = queue2civicrm
 dependencies[] = wmf_civicrm
 dependencies[] = wmf_communication
 dependencies[] = civicrm
-package = offline2civicrm
+# configure = admin/config/offline2civicrm/settings
 files[] = ChecksFile.php
 files[] = ChecksImportLog.php

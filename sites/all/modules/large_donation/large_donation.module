@@ -9,26 +9,32 @@ function large_donation_menu() {
 
   $items['admin/config/large_donation'] = array(
     'title' => 'Large Donation Processor',
-    'description' => t('Configure large donation settings.'),
     'access arguments' => array('administer large_donation'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('large_donation_settings'),
+    'page callback' => 'system_admin_menu_block_page',
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
   );
 
   $items['admin/config/large_donation/configure'] = array(
     'title' => 'Configure',
+    'description' => 'Configure large donation settings.',
     'access arguments' => array('administer large_donation'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('large_donation_settings'),
   );
 
   return $items;
 }
 
 /**
- * Implementation of hook_perm().
+ * Implementation of hook_permission().
  */
-function large_donation_perm() {
-  return array('administer large_donation');
+function large_donation_permission() {
+  return array(
+    'administer large_donation' => array(
+      'title' => t('Administer Large Donations'),
+    ),
+  );
 }
 
 /**

@@ -1,4 +1,6 @@
 name = Ganglia Reporter
 description = Reports metrics to Ganglia 
 core = 7.x
+configure = admin/config/ganglia_reporter/configure
 files[] = tests/ganglia_reporter.test
+files[] = GangliaReporter.php

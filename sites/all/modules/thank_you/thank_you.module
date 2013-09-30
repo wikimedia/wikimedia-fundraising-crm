@@ -7,35 +7,42 @@ use wmf_communication\Translation;
 require_once drupal_get_path( 'module', 'wmf_civicrm' ) . '/civicrm_api_check.inc';
 require_once drupal_get_path( 'module', 'wmf_common' ) . '/MessageFile.php';
 
-function thank_you_perm() {
-	return array('administer thank you', );
+/**
+ * Implements hook_permission
+ */
+function thank_you_permission() {
+  return array(
+    'administer thank you' => array(
+      'title' => t('Administer Thank-You'),
+    ),
+  );
 }
 
 function thank_you_menu() {
   $items = array();
   
   $items['admin/config/thank_you'] = array(
-    'title' => t('Thank you settings'),
-    'description' => t('Configure thank you note options.'),
+    'title' => 'Thank you settings',
+    'access arguments' => array('administer thank you'),
+    'page callback' => 'system_admin_menu_block_page',
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+  $items['admin/config/thank_you/configure'] = array(
+    'title' => 'Configure thank you module',
+    'description' => 'Configure thank you note options.',
     'access arguments' => array('administer thank you'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('thank_you_settings_form'),
-	'type' => MENU_NORMAL_ITEM,
   );
 
-   $items['admin/config/thank_you/configure'] = array(
-     'title' => t('Configure thank you module'),
-     'access arguments' => array('administer thank you'),
-     'type' => MENU_DEFAULT_LOCAL_TASK,
-   );
-
    $items['admin/config/thank_you/test_email'] = array(
-     'title' => t('Test thank you emails'),
-     'description' => t(''),
+     'title' => 'Test thank you emails',
+     'description' => 'Send a test letter',
      'access callback' => true,
      'page callback' => 'drupal_get_form',
      'page arguments' => array('thank_you_send_test'),
-     'type' => MENU_LOCAL_TASK,
    );
 
   return $items;

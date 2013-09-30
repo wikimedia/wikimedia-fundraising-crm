@@ -90,7 +90,7 @@ class Queue {
         $con = $this->getFreshConnection();
         $properties = array(
             'ack' => 'client',
-            'correlation-id' => $correlationId,
+            'selector' => "JMSCorrelationID='{$correlationId}'",
         );
         $con->subscribe( $queue, $properties );
 
@@ -260,6 +260,7 @@ class Queue {
             watchdog( 'wmf_common', $exMsg, NULL, WATCHDOG_ERROR );
             throw new WmfException( 'STOMP_BAD_CONNECTION', 'Could not reinject damaged message' );
         }
+        // FIXME: this works but should not
         $this->ack($msg);
     }
 

@@ -12,16 +12,26 @@ function offline2civicrm_menu() {
   
   $items['admin/config/offline2civicrm'] = array(
     'title' => 'Offline to CiviCRM',
+    'access arguments' => array('administer offline2civicrm'),
+    'page callback' => 'system_admin_menu_block_page',
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+  /*
+  TODO
+  $items['admin/config/offline2civicrm/settings'] = array(
+    'title' => 'Offline to CiviCRM',
     'description' => t('Configure offline import interface.'),
     'access arguments' => array('administer offline2civicrm'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('offline2civicrm_settings'),
   );
+  */
 
   $items['admin/import_checks'] = array(
     'title' => 'Import Checks',
     'access arguments' => array('offline2civicrm bulk import'),
-    'type' => MENU_CALLBACK,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('offline2civicrm_import_checks_form'),
   );

@@ -1,21 +1,17 @@
 <?php
 
 /**
- * Drupal hook function setting up the configuration page.
- *
- * @param array $items Currently configured menu items to modify
- *
- * @return array Menu entries
+ * Implements hook_menu
  */
-function wmf_unsubscribe_qc_menu_alter(&$items) {
+function wmf_unsubscribe_qc_menu() {
   $items[ 'admin/config/queue2civicrm/unsubscribe_qc' ] = array(
     'title'            => 'Unsubscribe',
-    'description'      => t('Configure unsubscribe queue settings'),
+    'description'      => t('Configure unsubscribe queue'),
     'access arguments' => array( 'administer queue2civicrm' ),
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array( 'unsubscribe_qc_settings' ),
-    'type'             => MENU_LOCAL_TASK,
   );
+  return $items;
 }
 
 /**
@@ -29,7 +25,7 @@ function unsubscribe_qc_settings() {
   $form[ 'unsubscribe_qc' ][ 'description' ] = array(
     '#type'        => 'fieldset',
     '#title'       => t('Unsubscribe queue'),
-    '#description' => t('The unsubscribe queue sets the opt-out flag for contacts in Civi.'),
+    '#description' => t('Contacts in the unsubscribe queue are processed by marking them as opt-out in the CRM.'),
     '#collapsible' => FALSE,
     '#collapsed'   => FALSE,
   );
@@ -39,12 +35,13 @@ function unsubscribe_qc_settings() {
     '#title'         => t('Subscription path'),
     '#required'      => TRUE,
     '#default_value' => variable_get('unsubscribe_queue', '/queue/unsubscribe_test'),
-    '#description'   => t('The path to the unsubscribe queue.'),
+    '#description'   => t('Queue for unsubscribe items'),
   );
 
   $form[ 'unsubscribe_qc' ][ 'unsubscribe_batch' ] = array(
     '#type'          => 'select',
     '#title'         => t('Cron batch size'),
+    '#description'   => t('Maximum number of items processed by an unsubscribe job'),
     '#required'      => TRUE,
     '#default_value' => variable_get('unsubscribe_batch', 0),
     '#options'       => array(

@@ -1,21 +1,17 @@
 <?php
 
 /**
- * Drupal hook function setting up the configuration page.
- *
- * @param array $items Currently configured menu items to modify
- *
- * @return array Menu entries
+ * Implements hook_menu
  */
-function wmf_refund_qc_menu_alter(&$items) {
+function wmf_refund_qc_menu() {
   $items[ 'admin/config/queue2civicrm/refund_qc' ] = array(
     'title'            => 'Refund',
-    'description'      => t('Configure refund queue settings'),
+    'description'      => 'Configure refund queue settings',
     'access arguments' => array( 'administer queue2civicrm' ),
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array( 'refund_qc_settings' ),
-    'type'             => MENU_LOCAL_TASK,
   );
+  return $items;
 }
 
 /**
@@ -29,7 +25,7 @@ function refund_qc_settings() {
   $form[ 'refund_qc' ][ 'description' ] = array(
     '#type'        => 'fieldset',
     '#title'       => t('Refund queue'),
-    '#description' => t('The refund queue contains refund messages. These allow Civi to create refund contributions associated with the original contribution.'),
+    '#description' => t('This queue contains refund notifications, usually sent by the gateway to our IPN listener, or a nightly audit manifest.  We honor these notifications by refunding the associated contributions in our CRM.'),
     '#collapsible' => FALSE,
     '#collapsed'   => FALSE,
   );
@@ -39,12 +35,13 @@ function refund_qc_settings() {
     '#title'         => t('Subscription path'),
     '#required'      => TRUE,
     '#default_value' => variable_get('refund_queue', '/queue/refund-notifications_test'),
-    '#description'   => t('The path to the refund queue.'),
+    '#description'   => t('Queue for refund notifications'),
   );
 
   $form[ 'refund_qc' ][ 'refund_batch' ] = array(
     '#type'          => 'select',
     '#title'         => t('Cron batch size'),
+    '#description'   => t('Maximum number of donations processed by a refund job'),
     '#required'      => TRUE,
     '#default_value' => variable_get('refund_batch', 0),
     '#options'       => array(

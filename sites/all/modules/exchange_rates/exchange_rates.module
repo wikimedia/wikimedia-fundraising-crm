@@ -5,12 +5,21 @@ function exchange_rates_menu() {
   $items = array();
   
   $items['admin/config/exchange_rates'] = array(
-    'title' => t('Exchange rates'),
-    'page callback' => 'exchange_rates_listing',
+    'title' => 'Exchange rates',
+    'page callback' => 'system_admin_menu_block_page',
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
     'access arguments' => array('administer site configuration'),
+  );
+  $items['admin/config/exchange_rates/show'] = array(
+    'title' => 'Display exchange rates',
+    'description' => 'List the current exchange rates for every country, and date retrieved.',
+    'page callback' => 'exchange_rates_listing',
+    'access callback' => TRUE,
   );
   $items['admin/config/exchange_rates/update'] = array(
     'title' => t('Update exchange rates'),
+    'description' => 'Force an update of the cached exchange rates.  This should only be necessary during development.',
     'page callback' => 'exchange_rates_manual_update',
     'access arguments' => array('administer site configuration'),
   );

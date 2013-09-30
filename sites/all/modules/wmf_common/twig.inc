@@ -25,7 +25,6 @@ function wmf_common_get_twig( $template_dir )
         'charset' => 'utf-8',
     ) );
 
-    require_once( drupal_get_path( 'module', 'wmf_common' ) . '/twigext_l10n/TwigLocalization.php' );
     $twig->addExtension( new TwigLocalization() );
 
     return $twig;

@@ -25,12 +25,11 @@ function globalcollect_audit_menu() {
   $items = array();
   
   $items['admin/config/contribution_audit/globalcollect_audit'] = array(
-    'title' => 'Globalcollect Audit Configuration',
+    'title' => 'Globalcollect Audit',
     'description' => t('Configure globalcollect audit settings.'),
     'access arguments' => array('administer contribution_audit'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array( 'globalcollect_audit_settings' ),
-    'type' => MENU_LOCAL_TASK
   );
   
   return $items;

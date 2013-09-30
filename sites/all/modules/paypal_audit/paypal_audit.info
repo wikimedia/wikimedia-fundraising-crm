@@ -3,3 +3,4 @@ description = Auditing framework for contacts and contributions in PayPal servic
 core = 7.x
 package = CiviAudit
 configure = admin/config/contribution_audit/paypal_audit
+files[] = paypal_audit.php
