@@ -30,7 +30,7 @@
 <p>Про всяк випадок: {{ contribution.receive_date|date("Y-m-d") }} ви
 зробили пожертву у розмірі {{ contribution.contribution_source }}.
 {% if recurring %}
-{% include 'recurring/uk.html' ignore missing %}
+{% include 'html/recurring/uk.html' ignore missing %}
 {% endif %}</p>
 
 <p>Цей лист може слугувати підтвердженням вашої
