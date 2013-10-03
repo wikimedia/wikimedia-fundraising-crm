@@ -150,7 +150,7 @@ function recurring_process_msg($msg) {
 
     if (!$ex->isNoEmail()) {
       if ( $ex->isRejectMessage() ) {
-        $msg = $q->item_url( $msg );
+        $msg = $q->item_url( $msg_orig );
       }
       wmf_common_failmail('recurring', $ex, $msg);
     }

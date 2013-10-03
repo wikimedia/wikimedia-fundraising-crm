@@ -230,8 +230,9 @@ function queue2civicrm_process_message($msg) {
 
         if ( !$ex->isNoEmail() ){
             if ( $ex->isRejectMessage() ) {
-                $msg = $q->item_url( $msg );
+                $msg = $q->item_url( $msg_orig );
             }
+            // TODO: else protect PII in some other way
             wmf_common_failmail( 'queue2civicrm', $ex, $msg );
         }
 
