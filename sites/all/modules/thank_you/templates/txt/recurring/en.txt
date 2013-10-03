@@ -1,6 +1,0 @@
-This donation is part of a recurring subscription. Monthly payments
-will be debited by the Wikimedia Foundation until you notify us to
-stop. If you’d like to cancel the payments please see our easy
-cancellation instructions at:
-
-https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{ country }}&language={{ language }}

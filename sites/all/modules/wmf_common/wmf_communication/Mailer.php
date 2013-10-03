@@ -51,8 +51,9 @@ class MailerPHPMailer implements IMailer {
         $mailer->AddAddress( $email['to_address'], $email['to_name'] );
 
         $mailer->Subject = $email['subject'];
-        $mailer->AltBody = $email['plaintext'];
+        # n.b. - must set AltBody after MsgHTML(), or the text will be overwritten.
         $mailer->MsgHTML( $email['html'] );
+        $mailer->AltBody = $email['plaintext'];
 
         $success = $mailer->Send();
 

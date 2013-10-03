@@ -97,6 +97,19 @@ class Queue {
         return $con->readFrame();
     }
 
+    static function getCorrelationId( $msg ) {
+        if ( !empty( $msg->headers['correlation-id'] ) ) {
+            return $msg->headers['correlation-id'];
+        }
+        $body = json_decode( $msg->body );
+        if ( !empty( $body['gateway'] ) && !empty( $body['gateway_txn_id'] ) ) {
+            return "{$body['gateway']}-{$body['gateway_txn_id']}";
+        }
+
+        watchdog( 'wmf_common', 'Could not create a correlation-id for message: ' . $msg->body, NULL, WATCHDOG_WARNING );
+        return '';
+    }
+
     function isConnected() {
         return $this->connection !== null and $this->connection->isConnected();
     }
@@ -251,6 +264,7 @@ class Queue {
             $msg->headers['error'] = $error->getErrorName();
             $new_body['error'] = $error->getMessage();
         }
+        $msg->headers['correlation-id'] = Queue::getCorrelationId( $msg );
 
         $queue = $this->normalizeQueueName( $msg->headers['destination'] );
 

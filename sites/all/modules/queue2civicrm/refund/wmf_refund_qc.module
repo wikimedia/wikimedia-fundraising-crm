@@ -128,9 +128,9 @@ function refund_process_message($msg) {
 
     if (!$ex->isNoEmail()) {
       if ( $ex->isRejectMessage() ) {
-        $msg = $q->item_url( $msg );
+        $msg = $q->item_url( $msg_orig );
       }
-      wmf_common_failmail('refund', $ex, $msg);
+      wmf_common_failmail( 'refund', $ex, $msg );
     }
 
     if ($ex->isFatal()) {

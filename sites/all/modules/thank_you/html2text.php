@@ -203,7 +203,7 @@ class html2text
 		//'',                                     // Comments -- which strip_tags might have problem a with
 		"strtoupper(\"\n\n\\1\n\n\")",          // H1 - H3
 		"ucwords(\"\n\n\\1\n\n\")",             // H4 - H6
-		"\n\n\t",                               // <P>
+		"\n\n",                               // <P>
 		"\n",                                   // <br>
 		'strtoupper("\\1")',                    // <b>
 		'strtoupper("\\1")',                    // <strong>

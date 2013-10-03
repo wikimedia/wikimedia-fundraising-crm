@@ -18,9 +18,11 @@ function wmf_common_get_twig( $template_dir )
 
     Twig_Autoloader::register();
 
+    $cache_dir = drupal_realpath( file_default_scheme() . '://' ) . '/twig/cache';
+
     $loader = new Twig_Loader_Filesystem( $template_dir );
     $twig = new Twig_Environment( $loader, array(
-        'cache' => '/tmp/twig/cache',
+        'cache' => $cache_dir,
         'auto_reload' => true,
         'charset' => 'utf-8',
     ) );
