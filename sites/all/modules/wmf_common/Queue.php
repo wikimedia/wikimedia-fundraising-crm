@@ -101,7 +101,7 @@ class Queue {
         if ( !empty( $msg->headers['correlation-id'] ) ) {
             return $msg->headers['correlation-id'];
         }
-        $body = json_decode( $msg->body );
+        $body = json_decode( $msg->body, TRUE );
         if ( !empty( $body['gateway'] ) && !empty( $body['gateway_txn_id'] ) ) {
             return "{$body['gateway']}-{$body['gateway_txn_id']}";
         }
