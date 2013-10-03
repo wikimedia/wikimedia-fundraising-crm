@@ -92,7 +92,7 @@ class Queue {
             'ack' => 'client',
             'selector' => "JMSCorrelationID='{$correlationId}'",
         );
-        $con->subscribe( $queue, $properties );
+        $con->subscribe( $this->normalizeQueueName( $queue ), $properties );
 
         return $con->readFrame();
     }
