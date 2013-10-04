@@ -176,12 +176,12 @@ function wmf_common_queue_item_form( $form, &$form_state, $queue, $correlationId
   $q = queue2civicrm_stomp();
 
   $queue = preg_replace( '/[^-a-z]/', '', $queue );
-  $correlationId = preg_replace( '/[^-a-z0-9]/', '', $correlationId );
+  $correlationId = preg_replace( '/[^-a-zA-Z0-9]/', '', $correlationId );
 
   $msg = $q->getByCorrelationId( $queue, $correlationId );
 
   if ( !$msg ) {
-    drupal_set_message( t( 'Message not found.' ) );
+    drupal_set_message( t( 'Message %id not found.', array( '%id' => $correlationId ) ) );
     return $form;
   }
 
@@ -254,13 +254,13 @@ function wmf_common_queue_item_submit( $form, &$form_state ) {
     $msg = $q->getByCorrelationId( "{$queue}-damaged", $correlationId );
     $q->ack( $msg );
 
-    drupal_set_message( t( 'Message resent for processing.' ) );
+    drupal_set_message( t( 'Message %id resent for processing.', array( '%id' => $correlationId ) ) );
     $form_state['redirect'] = "queue/{$queue}/{$correlationId}";
     break;
   case $form_state['values']['delete']:
     $msg = $q->getByCorrelationId( "{$queue}-damaged", $correlationId );
     $q->ack( $msg );
-    drupal_set_message( t( 'Successfully removed message.' ) );
+    drupal_set_message( t( 'Successfully removed message %id.', array( '%id' => $correlationId ) ) );
     $form_state['redirect'] = "queue/{$queue}-damaged/";
     break;
   }
