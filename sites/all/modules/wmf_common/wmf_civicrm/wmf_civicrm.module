@@ -1022,8 +1022,11 @@ function wmf_civicrm_normalize_msg( $msg ) {
     case 'SF2013':
         $msg['direct_mail_appeal'] = "San Francisco Event 2013";
         break;
+    case 'Mossman':
+        $msg['direct_mail_appeal'] = "Sheila Mossman";
+        break;
     default:
-        // pass
+            // pass
         break;
     }
 

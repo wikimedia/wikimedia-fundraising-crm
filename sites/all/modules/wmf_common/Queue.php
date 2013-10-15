@@ -111,7 +111,7 @@ class Queue {
     }
 
     function isConnected() {
-        return $this->connection !== null and $this->connection->isConnected();
+        return $this->connection and $this->connection->isConnected();
     }
 
     function getFreshConnection() {
