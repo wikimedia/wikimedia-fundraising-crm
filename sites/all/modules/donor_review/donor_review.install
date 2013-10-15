@@ -1,0 +1,197 @@
+<?php
+
+function donor_review_schema() {
+    $schema['donor_autoreview_job'] = array(
+        'description' => 'Record of all donor autoreview jobs run against this database',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'name' => array(
+                'type' => 'text',
+                'not null' => true,
+            ),
+        ),
+        'primary key' => array( 'id' ),
+    );
+
+    #TODO: commented-out lines are not ready
+/*
+    $schema['donor_autoreview_reactions'] = array(
+        'description' => 'Lookup table from match criteria to action',
+        'fields' => array(
+            'match_name' => array(
+                'description' => 'Name matches to degree',
+                'type' => 'char',
+                'not null' => true,
+            ),
+            'match_email' => array(
+                'description' => 'Email matches to degree',
+                'type' => 'char',
+                'not null' => true,
+            ),
+            'match_address' => array(
+                'description' => 'Address matches to degree',
+                'type' => 'char',
+                'not null' => true,
+            ),
+            'action_id' => array(
+                'description' => 'Auto-recommendation',
+                'type' => 'int',
+                'unsigned' => true,
+                'default' => null,
+            ),
+        ),
+        'unique keys' => array(
+            'match' => array( 'match_name', 'match_email', 'match_address' ),
+        ),
+    );
+    $schema['donor_review_action_log'] = array(
+        'description' => 'Dedupe activity log, used to refine forward searching, and revert history',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'user_id' => array(
+                'description' => 'Manual review operator, if available',
+                'type' => 'int',
+                'unsigned' => true,
+                'default' => null,
+            ),
+            'action_id' => array(
+                'description' => 'Action taken',
+                'type' => 'int',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'timestamp' => array(
+                'type' => 'datetime',
+                'not null' => true,
+            ),
+        ),
+    ),
+*/
+    $schema['donor_review_action'] = array(
+        'description' => 'Specifications for actions that may be taken on a contact',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'name' => array(
+                'type' => 'text',
+            ),
+        ),
+        'primary key' => array( 'id' ),
+    );
+    $schema['donor_review_queue'] = array(
+        'description' => 'Donor dedupe and review queue',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'job_id' => array(
+                'description' => 'Autoreview job sequence number',
+                'type' => 'int',
+                'unsigned' => true,
+                'default' => null,
+            ),
+            'old_id' => array(
+                'description' => 'Suspected original matching record. Foreign key to civicrm_contact.id',
+                'type' => 'int',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'new_id' => array(
+                'description' => 'Suspected related record. Foreign key to civicrm_contact.id',
+                'type' => 'int',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'match_description' => array(
+                'description' => 'Description of match (JSON)',
+                'type' => 'text',
+                'not null' => true,
+            ),
+            'action_id' => array(
+                'description' => 'Auto-recommended action',
+                'type' => 'int',
+                'unsigned' => true,
+                'default' => null,
+            ),
+        ),
+        'primary key' => array( 'id' ),
+        'indexes' => array(
+            'old_id' => array( 'old_id' ),
+            'new_id' => array( 'new_id' ),
+            'action_id' => array( 'action_id' ),
+        ),
+        'foreign keys' => array(
+            'action_id' => array(
+                'table' => 'donor_review_action',
+                'columns' => array('action_id', 'id'),
+            ),
+            'job_id' => array(
+                'table' => 'donor_autoreview_job',
+                'columns' => array('job_id', 'id'),
+            ),
+        ),
+    );
+    return $schema;
+}
+
+function donor_review_install() {
+    $api = civicrm_api_classapi();
+
+    $actions = array(
+        'Autoreview - Recommend keep',
+        'Autoreview - Recommend spamblock',
+        'Autoreview - Recommend is duplicate',
+        'Autoreview - Act on is duplicate',
+        'Autoreview - Recommend update contact',
+        'Autoreview - Recommend conflict resolution',
+    );
+
+    $tags = array(
+        'Autoreviewed - Unique',
+        'Quick autoreviewed',
+    );
+
+    foreach ( $actions as $action ) {
+        db_merge('donor_review_action')
+            ->key(array(
+                'name' => $action,
+            ))
+            ->insertFields(array(
+                'name' => $action,
+            ))
+            ->execute();
+    }
+
+    foreach ( $tags as $tag ) {
+        $success = $api->Tag->get( array(
+            'name' => $tag,
+            'used_for' => 'civicrm_contact',
+        ) );
+        if ( $api->values ) {
+            continue;
+        }
+        $success = $api->Tag->create( array(
+            'name' => $tag,
+            'used_for' => 'civicrm_contact',
+        ) );
+        if ( !$success ) {
+            throw new Exception( "Could not add tag '$tag':" . $api->errorMsg() );
+        }
+    }
+
+    // Action defaults
+
+}

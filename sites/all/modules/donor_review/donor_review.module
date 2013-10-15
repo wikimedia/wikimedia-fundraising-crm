@@ -1,0 +1,35 @@
+<?php
+
+/*
+TODO
+
+function donor_review_menu() {
+    $items['admin/donor_review'] = array(
+        'title' => 'Donor Review',
+        'access arguments' => array('administer civicrm'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('donor_review_queue_form'),
+        'type' => MENU_CALLBACK,
+    );
+    return $items;
+}
+
+function donor_review_queue_form() {
+    $rows = ReviewQueue::fetch();
+    $headers = array( 'Old', 'New', 'Recommended action', 'Diff' );
+    $queue_html = theme_table( array(
+      'header' => $headers,
+      'rows' => $rows,
+      'empty' => "No donors to review!  Be very afraid.",
+      'attributes' => array(),
+      'caption' => t( 'Donor review' ),
+      'colgroups' => array(),
+      'sticky' => true,
+    ) ).theme( 'pager' );
+
+    $form['queue'] = array(
+        '#markup' => $queue_html,
+    );
+    return $form;
+}
+*/
