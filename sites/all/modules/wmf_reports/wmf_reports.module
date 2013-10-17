@@ -11,40 +11,42 @@ function wmf_reports_civicrm_config(&$config)
     set_include_path(get_include_path().PATH_SEPARATOR.dirname(__FILE__));
 }
 
-function wmf_reports_civicrm_advancedSearchModes(&$search_modes)
-{
-    $search_modes[] = array(
-        'selectorName'  => 'CRM_Contact_Form_ContactAndContributionsSelector',
-        'selectorLabel' => ts( 'Contacts and Contributions' ),
-        'taskFile'      => 'CRM/common/searchResultTasks.tpl',
-        'taskClassName' => 'CRM_Contact_Task',
-        'taskContext'   => 'Contribution',
-        'resultFile'    => 'CRM/Contact/Form/ContactAndContributionsSelector.tpl',
-        'resultContext' => 'Search',
-    );
-}
-
-function wmf_reports_civicrm_searchTasks($type, &$tasks)
-{
-    if ($type == 'contact')
-    {
-        $tasks[] = array(
-            'title' => ts('Export Contact and Contributions'),
-            'class' => array(
-                'CRM_Contact_Form_Task_ContactsAndContributionsExport',
-            ),
-        );
-    }
-}
-
-function wmf_reports_civicrm_export(&$table, &$headerRows, &$sqlColumns, &$exportMode)
-{
-    //XXX this will break all other exports if our export dies
-    $export_type = variable_get('wmf_reports_export_inprogress', null);
-    variable_del('wmf_reports_export_inprogress');
-
-    if ($export_type == 'Contacts and Contributions') {
-        require_once 'CRM/Contact/ContactsAndContributionsExport.php';
-        CRM_Contact_ContactsAndContributionsExport::alterExport($table, $headerRows, $sqlColumns, $exportMode);
-    }
-}
+/*
+ * function wmf_reports_civicrm_advancedSearchModes(&$search_modes)
+ * {
+ *     $search_modes[] = array(
+ *         'selectorName'  => 'CRM_Contact_Form_ContactAndContributionsSelector',
+ *         'selectorLabel' => ts( 'Contacts and Contributions' ),
+ *         'taskFile'      => 'CRM/common/searchResultTasks.tpl',
+ *         'taskClassName' => 'CRM_Contact_Task',
+ *         'taskContext'   => 'Contribution',
+ *         'resultFile'    => 'CRM/Contact/Form/ContactAndContributionsSelector.tpl',
+ *         'resultContext' => 'Search',
+ *     );
+ * }
+ * 
+ * function wmf_reports_civicrm_searchTasks($type, &$tasks)
+ * {
+ *     if ($type == 'contact')
+ *     {
+ *         $tasks[] = array(
+ *             'title' => ts('Export Contact and Contributions'),
+ *             'class' => array(
+ *                 'CRM_Contact_Form_Task_ContactsAndContributionsExport',
+ *             ),
+ *         );
+ *     }
+ * }
+ * 
+ * function wmf_reports_civicrm_export(&$table, &$headerRows, &$sqlColumns, &$exportMode)
+ * {
+ *     //XXX this will break all other exports if our export dies
+ *     $export_type = variable_get('wmf_reports_export_inprogress', null);
+ *     variable_del('wmf_reports_export_inprogress');
+ * 
+ *     if ($export_type == 'Contacts and Contributions') {
+ *         require_once 'CRM/Contact/ContactsAndContributionsExport.php';
+ *         CRM_Contact_ContactsAndContributionsExport::alterExport($table, $headerRows, $sqlColumns, $exportMode);
+ *     }
+ * }
+ */
