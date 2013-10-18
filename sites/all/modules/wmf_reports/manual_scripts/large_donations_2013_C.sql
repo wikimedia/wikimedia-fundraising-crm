@@ -1,5 +1,5 @@
--- Individuals and Companies
--- Gave $1000+ from April 2, 2012- Current date
+-- UK billing address
+-- Gave $500+ in one donation
 
 DROP TABLE IF EXISTS %(scratch)s_condition1;
 
@@ -9,18 +9,34 @@ CREATE table %(scratch)s_condition1
         contact_id AS civi_id
     FROM civicrm_contribution
     WHERE
-        receive_date > "2012-04-02"
+        total_amount >= 500
     GROUP BY
         civi_id
-    HAVING
-        SUM(total_amount) >= 1000
 );
 
 ALTER TABLE %(scratch)s_condition1 ADD UNIQUE INDEX UI_civi_id (civi_id);
 
+DROP TABLE IF EXISTS %(scratch)s_condition2;
+CREATE table %(scratch)s_condition2
+(
+    SELECT
+        contact_id AS civi_id
+    FROM civicrm_address
+    JOIN %(scratch)s_condition1 prev
+        ON civicrm_address.contact_id = prev.civi_id
+    JOIN civicrm_country
+        ON civicrm_address.country_id = civicrm_country.id
+    WHERE
+        civicrm_country.iso_code = 'GB'
+    GROUP BY
+        civi_id
+);
+
 SELECT
     civi_id,
+    civicrm_contact.contact_type AS contact_type,
     civicrm_email.email AS email,
+    COALESCE( civicrm_contact.display_name ) AS display_name,
     COALESCE( civicrm_contact.first_name ) AS first_name,
     COALESCE( civicrm_contact.last_name ) AS last_name,
     COALESCE( civicrm_contact.organization_name, org.organization_name ) AS organization_name,
@@ -46,14 +62,18 @@ SELECT
         FROM civicrm_contribution
         WHERE contact_id = civi_id
     ) AS contributions,
-    GROUP_CONCAT( civicrm_note.note SEPARATOR '|' ) AS note,
+    ( SELECT
+        SUM( total_amount )
+        FROM civicrm_contribution
+        WHERE contact_id = civi_id
+    ) AS total,
     SUM( COALESCE( civicrm_contact.do_not_email, 0 ) ) > 0 AS do_not_email,
     SUM( COALESCE( civicrm_contact.do_not_phone, 0 ) ) > 0 AS do_not_phone
-FROM %(scratch)s_condition1
-JOIN civicrm_email
-    ON civi_id = civicrm_email.contact_id
+FROM %(scratch)s_condition2
 JOIN civicrm_contact
     ON civicrm_contact.id = civi_id
+LEFT JOIN civicrm_email
+    ON civi_id = civicrm_email.contact_id
 LEFT JOIN civicrm_address
     ON civicrm_address.contact_id = civi_id
 LEFT JOIN civicrm_phone
@@ -66,8 +86,6 @@ LEFT JOIN civicrm_relationship
     ON civicrm_relationship.contact_id_a = civi_id
 LEFT JOIN civicrm_contact org
     ON org.id = civicrm_relationship.contact_id_b
-LEFT JOIN civicrm_note
-    ON civicrm_note.entity_id = civi_id AND civicrm_note.entity_table = 'civcrm_contact'
 GROUP BY
     civi_id
 ORDER BY
