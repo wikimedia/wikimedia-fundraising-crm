@@ -13,6 +13,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_6006();
     wmf_civicrm_update_6007();
     wmf_civicrm_update_6008();
+    wmf_civicrm_update_6009();
 }
 
 /**
@@ -490,4 +491,19 @@ function wmf_civicrm_update_6008()
 	wmf_civicrm_create_contribution_types(array(
 		'Arizona Lockbox',
 	));
+}
+
+/**
+ * Extend some CiviCRM column maximum lengths
+ */
+function wmf_civicrm_update_6009()
+{
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push('civicrm');
+
+    db_query("ALTER TABLE civicrm_email
+            MODIFY email varchar(254) DEFAULT NULL");
+
+    db_query("ALTER TABLE civicrm_address
+            MODIFY postal_code varchar(64) DEFAULT NULL");
 }
