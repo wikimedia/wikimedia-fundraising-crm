@@ -14,6 +14,8 @@ function wmf_civicrm_install()
     wmf_civicrm_update_6007();
     wmf_civicrm_update_6008();
     wmf_civicrm_update_6009();
+    wmf_civicrm_update_6010();
+    wmf_civicrm_update_6011();
 }
 
 /**
@@ -506,4 +508,28 @@ function wmf_civicrm_update_6009()
 
     db_query("ALTER TABLE civicrm_address
             MODIFY postal_code varchar(64) DEFAULT NULL");
+}
+
+/**
+ * Improve civicrm_entity_tag indexing--DO NOT RUN ON PRODUCTION
+ */
+function wmf_civicrm_update_6010()
+{
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push('civicrm');
+
+    db_query("ALTER TABLE civicrm_entity_tag
+		ADD KEY entity_id (entity_id)");
+}
+
+/**
+ * Improve civicrm_entity_tag indexing
+ */
+function wmf_civicrm_update_6011()
+{
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push('civicrm');
+
+    db_query("ALTER TABLE civicrm_entity_tag
+		ADD KEY entity_table (entity_table)");
 }
