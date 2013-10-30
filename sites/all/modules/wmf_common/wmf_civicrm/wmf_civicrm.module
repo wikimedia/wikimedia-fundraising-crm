@@ -1173,7 +1173,7 @@ function wmf_civicrm_mark_refund(
 
     // Look for existing refunds
     $query = <<<"EOS"
-SELECT COUNT(*) FROM wmf_contribution_extra
+SELECT id FROM wmf_contribution_extra
 WHERE
     parent_contribution_id = :id
     OR (entity_id = :id AND COALESCE(parent_contribution_id, 0))
