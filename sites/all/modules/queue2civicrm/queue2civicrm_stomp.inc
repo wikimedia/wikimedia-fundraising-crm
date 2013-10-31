@@ -16,7 +16,6 @@ function sendSTOMP( $transaction ) {
 		$initial_msg = false;
 	}
 
-	$stompServer = variable_get('queue2civicrm_url', 'tcp://localhost:61613');
 	if ( $initial_msg ){
 		$stompQueue = variable_get('queue2civicrm_subscription', '/queue/test');
 	} else {
@@ -26,13 +25,7 @@ function sendSTOMP( $transaction ) {
 	$message = json_encode( createQueueMessage( $transaction ) );
 	
 	if ( $message ){
-
-		// make a connection
-		$con = new Stomp( $stompServer );
-
-		// connect
-		$con->connect();
-
+        $con = getStompConnection();
 		// send a message to the queue
 		$result = $con->send( "$stompQueue", $message, array( 'persistent' => 'true' ) );
 
@@ -45,13 +38,51 @@ function sendSTOMP( $transaction ) {
 			$ret = true;
 		}
 
-		$con->disconnect();
 	} else {
 		watchdog('queue2civicrm', 'createQueueMessage failed for : ' . $message, array(), WATCHDOG_ERROR);
 		$ret = false;
 	}
 	
 	return $ret;
+}
+
+/**
+ * getStompConnection gets (or closes) a reusable connection to the queue server.
+ * Doing it this way because a static var feels much nicer than a global.
+ * @staticvar Stomp|NULL $con The reusable queue server connection, or null
+ * @param bool $connect If we're after a connected connection, or a disconnected one.
+ * @return \Stomp|NULL The active connection, or NULL if it's closed
+ */
+function getStompConnection( $connect = true ){
+    static $con = NULL;
+    if ( $connect ){
+        if ( is_null( $con ) ){
+            //no open connection to reuse. Make a new one.
+            $stompServer = variable_get('queue2civicrm_url', 'tcp://localhost:61613');
+
+            $con = new Stomp( $stompServer );
+        }
+
+        if ( !$con->isConnected() ){
+            $con->connect();
+        }
+        
+    } else { //disconnect
+        if ( !is_null( $con ) ){
+            $con->disconnect();
+            $con = NULL;
+        }
+    }
+    
+    return $con;
+}
+
+/**
+ * Purely for readibility.
+ * Uses getStompConnection( false ) to close the reusable queue server connection.
+ */
+function closeStompConnection(){
+    getStompConnection( false );
 }
 
 /**

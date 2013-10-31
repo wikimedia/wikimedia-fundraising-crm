@@ -415,6 +415,9 @@ function globalcollect_audit_parse_all_wr1(){
 			}
 		}
 	}
+    
+    //done with the quere server, so...
+    closeStompConnection();
 	
 	if ( count( $errorful_transactions ) ){
 		globalcollect_audit_echo("Errorful Transactions: " . print_r( $errorful_transactions, true ));
