@@ -226,7 +226,7 @@ function recurring_import( $msg ) {
   }
   
   // update the log
-  if ( $ret_val && $cid ) {
+  if ( $cid ) {
     $log[ 'cid' ] = $cid;
     $log[ 'timestamp' ] = time();
     $log[ 'verified' ] = 1;
@@ -537,7 +537,7 @@ function recurring_normalize_msg( $msg  ) {
     $msg = json_decode($msg->body, true);
   }
 
-  if ( $msg['gateway'] === 'amazon' ) {
+  if ( isset( $msg['gateway'] ) && $msg['gateway'] === 'amazon' ) {
     // should not require special normalization
   } else if ( !isset( $msg[ 'contribution_tracking_id' ]) ) {
     // we can safely assume we have a raw msg from paypal if contribution_tracking_id isn't set
@@ -593,6 +593,7 @@ function recurring_normalize_paypal_msg( $msg ) {
   // Contact info
   if ( $msg[ 'txn_type' ] == 'subscr_signup' || $msg[ 'txn_type' ] == 'subscr_payment' || $msg[ 'txn_type' ] == 'subscr_modify' ) {
 	  $msg_normalized[ 'first_name' ] = $msg[ 'first_name' ];
+	  $msg_normalized[ 'middle_name' ] = '';
 	  $msg_normalized[ 'last_name' ] = $msg[ 'last_name' ];
 	  $split = split("\n", str_replace("\r", '', $msg[ 'address_street' ]));
 	  $msg_normalized[ 'street_address' ] = $split[0];

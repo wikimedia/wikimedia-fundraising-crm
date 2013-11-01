@@ -1010,23 +1010,25 @@ function wmf_civicrm_normalize_msg( $msg ) {
     }
 
     // Check for special flags
-    switch ( $msg['utm_campaign'] ) {
-    case 'NY2013':
-        //TODO: expose direct_mail_appeal custom field in the UI
-        $msg['direct_mail_appeal'] = "New York Event 2013";
-        break;
-    case 'NYCShaku2013':
-        $msg['direct_mail_appeal'] = "Shaku - NYC Event 2013";
-        break;
-    case 'SF2013':
-        $msg['direct_mail_appeal'] = "San Francisco Event 2013";
-        break;
-    case 'Mossman':
-        $msg['direct_mail_appeal'] = "Sheila Mossman";
-        break;
-    default:
-            // pass
-        break;
+    if ( !empty( $msg['utm_campaign'] ) ) {
+        switch ( $msg['utm_campaign'] ) {
+        case 'NY2013':
+            //TODO: expose direct_mail_appeal custom field in the UI
+            $msg['direct_mail_appeal'] = "New York Event 2013";
+            break;
+        case 'NYCShaku2013':
+            $msg['direct_mail_appeal'] = "Shaku - NYC Event 2013";
+            break;
+        case 'SF2013':
+            $msg['direct_mail_appeal'] = "San Francisco Event 2013";
+            break;
+        case 'Mossman':
+            $msg['direct_mail_appeal'] = "Sheila Mossman";
+            break;
+        default:
+                // pass
+            break;
+        }
     }
 
     watchdog( 'wmf_civicrm', 'Contribution (pre-conversion):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>' );
