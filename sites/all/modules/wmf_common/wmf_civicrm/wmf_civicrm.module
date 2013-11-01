@@ -568,10 +568,10 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
  */
 function wmf_civicrm_normalize_contribution_amounts( $msg ) {
     
-    if ( !isset( $msg['original_gross'] ) ) {
+    if ( empty( $msg['original_gross'] ) ) {
         $msg['original_gross'] = $msg['gross'];
     }
-    if ( !isset( $msg['original_currency'] ) ) {
+    if ( empty( $msg['original_currency'] ) ) {
         $msg['original_currency'] = $msg['currency'];
     }
 
@@ -609,7 +609,7 @@ function wmf_civicrm_verify_message_and_stage($msg)
     $required = array(
         'email',
         'gross',
-        'original_currency',
+        'currency',
         'gateway',
         'gateway_txn_id',
     );
