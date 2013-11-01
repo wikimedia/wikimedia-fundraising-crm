@@ -367,8 +367,8 @@ function recurring_import_subscr_signup( $msg ) {
   $dbs->push( 'civicrm' );
   $result = db_insert( 'civicrm_contribution_recur' )->fields( array(
     'contact_id' => $contact[ 'id' ],
-    'currency' => $msg[ 'currency' ],
-    'amount' => $msg[ 'amount' ],
+    'currency' => $msg[ 'original_currency' ],
+    'amount' => $msg[ 'original_gross' ],
     'frequency_unit' => $msg[ 'frequency_unit' ],
     'frequency_interval' => $msg[ 'frequency_interval' ],
     'installments' => $msg[ 'installments' ],
@@ -451,7 +451,7 @@ function recurring_import_subscr_modify( $msg ) {
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
   $result = db_update( 'civicrm_contribution_recur' )->fields( array(
-    'amount' => $msg[ 'amount' ],
+    'amount' => $msg[ 'original_gross' ],
     'frequency_unit' => $msg[ 'frequency_unit' ],
     'frequency_interval' => $msg[ 'frequency_interval' ],
     'modified_date' => wmf_common_date_unix_to_civicrm( $msg[ 'modified_date' ] ),
@@ -640,8 +640,8 @@ function recurring_normalize_paypal_msg( $msg ) {
     }
 
 	$msg_normalized[ 'gateway_txn_id' ] = $msg[ 'txn_id' ];
-	$msg_normalized[ 'original_currency' ] = $msg[ 'mc_currency' ];
-	$msg_normalized[ 'original_gross' ] = $msg[ 'mc_gross' ];
+	$msg_normalized[ 'currency' ] = $msg[ 'mc_currency' ];
+	$msg_normalized[ 'gross' ] = $msg[ 'mc_gross' ];
 	$msg_normalized[ 'fee' ] = $msg[ 'mc_fee' ];  
 	$msg_normalized[ 'gross' ] = $msg[ 'mc_gross' ]; 
 	$msg_normalized[ 'net' ] = $msg_normalized[ 'gross' ] - $msg_normalized[ 'fee' ];
@@ -668,11 +668,15 @@ function recurring_normalize_paypal_msg( $msg ) {
     }
     
     if ( isset( $msg[ 'amount3' ] ) ) {
-      $msg_normalized[ 'amount' ] = $msg[ 'amount3' ];
+      $msg_normalized[ 'gross' ] = $msg[ 'amount3' ];
     } elseif ( isset( $msg[ 'mc_amount3' ] ) ) {
-      $msg_normalized[ 'amount' ] = $msg[ 'mc_amount3' ];
+      $msg_normalized[ 'gross' ] = $msg[ 'mc_amount3' ];
     }
-    
+
+    if ( isset( $msg['mc_currency'] ) ) {
+	  $msg_normalized[ 'currency' ] = $msg[ 'mc_currency' ];
+    }
+
     if ( isset( $msg[ 'subscr_date' ] ) ) {
       if ( $msg[ 'txn_type' ] == 'subscr_signup' ) {
         $msg_normalized[ 'create_date' ] = strtotime( $msg[ 'subscr_date' ] );
