@@ -257,9 +257,6 @@ function recurring_import_subscr_payment( $msg ) {
 
   civicrm_initialize(true);
 
-  // set the correct amount fields/data and do exchange rate conversions.
-  $msg = wmf_civicrm_normalize_contribution_amounts( $msg );
-  
   //dsm($contribution);
   watchdog('queue2civicrm', 'Contribution:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');  
 
