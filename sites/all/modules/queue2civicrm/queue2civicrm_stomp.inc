@@ -9,6 +9,8 @@
  * @param array $transaction Key-value array of staged and ready donation data.
  * @return bool Just returns true all the time. Presumably an indication that
  * nothing exploded big enough to kill the whole thing.
+ *
+ * @deprecated
  */
 function sendSTOMP( $transaction ) {
 	$initial_msg = true;
@@ -25,9 +27,10 @@ function sendSTOMP( $transaction ) {
 	$message = json_encode( createQueueMessage( $transaction ) );
 	
 	if ( $message ){
-        $con = getStompConnection();
+		$q = queue2civicrm_stomp();
+
 		// send a message to the queue
-		$result = $con->send( "$stompQueue", $message, array( 'persistent' => 'true' ) );
+		$result = $q->enqueue( $message, array( 'persistent' => 'true' ), $stompQueue );
 
 		$ret = null;
 		if ( !$result ) {
@@ -47,45 +50,6 @@ function sendSTOMP( $transaction ) {
 }
 
 /**
- * getStompConnection gets (or closes) a reusable connection to the queue server.
- * Doing it this way because a static var feels much nicer than a global.
- * @staticvar Stomp|NULL $con The reusable queue server connection, or null
- * @param bool $connect If we're after a connected connection, or a disconnected one.
- * @return \Stomp|NULL The active connection, or NULL if it's closed
- */
-function getStompConnection( $connect = true ){
-    static $con = NULL;
-    if ( $connect ){
-        if ( is_null( $con ) ){
-            //no open connection to reuse. Make a new one.
-            $stompServer = variable_get('queue2civicrm_url', 'tcp://localhost:61613');
-
-            $con = new Stomp( $stompServer );
-        }
-
-        if ( !$con->isConnected() ){
-            $con->connect();
-        }
-        
-    } else { //disconnect
-        if ( !is_null( $con ) ){
-            $con->disconnect();
-            $con = NULL;
-        }
-    }
-    
-    return $con;
-}
-
-/**
- * Purely for readibility.
- * Uses getStompConnection( false ) to close the reusable queue server connection.
- */
-function closeStompConnection(){
-    getStompConnection( false );
-}
-
-/**
  * Confirms that all fields expected by queue2civicrm are present before
  * a message is allowed to be placed into the Stomp queue.  Sets all of the
  * fields sent by Extension:DonationInterface to an empty string if not
@@ -93,6 +57,8 @@ function closeStompConnection(){
  *
  * @param $transaction
  * @return array
+ *
+ * @deprecated
  */
 function createQueueMessage( $msg ) {
 	
@@ -188,6 +154,8 @@ function createQueueMessage( $msg ) {
 
 /**
  * Arghargharghargh.
+ *
+ * @deprecated
  */
 function stageStompMessageFromDIKeys( $msg ){
 //	foreach ( $msg as $key => $value ){

@@ -12,12 +12,6 @@ define( 'GC_AUDIT_MAKE_EMAIL', 'nobody@wikimedia.org' );
 define( 'GC_AUDIT_MAKE_STREET', '123 Fake Street' );
 define( 'GC_AUDIT_MAKE_CITY', 'Springfield' );
 
-if ( function_exists( 'drupal_get_path' ) ) {
-	require_once( drupal_get_path( 'module', 'wmf_civicrm' ) . '/wmf_civicrm.module' );
-	require_once( drupal_get_path( 'module', 'wmf_common' ) . '/wmf_dates.php' );
-	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_stomp.inc' );
-}
-
 /**
  * Implementation of hook_menu()
  */
@@ -415,10 +409,7 @@ function globalcollect_audit_parse_all_wr1(){
 			}
 		}
 	}
-    
-    //done with the quere server, so...
-    closeStompConnection();
-	
+
 	if ( count( $errorful_transactions ) ){
 		globalcollect_audit_echo("Errorful Transactions: " . print_r( $errorful_transactions, true ));
 		globalcollect_audit_results_ball( array('Final', 'Errors'), count($errorful_transactions) );
