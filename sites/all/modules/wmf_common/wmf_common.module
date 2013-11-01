@@ -126,12 +126,12 @@ function wmf_common_settings() {
     '#title'         => t('Twig location'),
     '#default_value' => $twig_path,
     '#required'      => TRUE,
-    '#description'   => "{$twig_msg} " . t('Filesystem path of the Twig library.  Try: <code>svn co http://svn.wikimedia.org/svnroot/wikimedia/vendors/twig</code>'),
+    '#description'   => "{$twig_msg} " . t('Filesystem path of the Twig library.  Try: <code>git clone https://gerrit.wikimedia.org/r/wikimedia/fundraising/twig</code>'),
   );
 
   $phpmailer_path = variable_get('wmf_common_phpmailer_location', drupal_get_path('module', 'wmf_common') . DIRECTORY_SEPARATOR . "PHPMailer");
   $phpmailer_installed = file_exists(implode(DIRECTORY_SEPARATOR, array($phpmailer_path, 'class.phpmailer.php')));
-  $phpmailer_msg = $phpmailer_installed ? '<span style="color:green;">Installed Correctly</span>' : '<span style="color:red;">Please install.  Try: <code>https://code.google.com/a/apache-extras.org/p/phpmailer/downloads/detail?name=PHPMailer_5.2.2.tgz</code></span>';
+  $phpmailer_msg = $phpmailer_installed ? '<span style="color:green;">Installed Correctly</span>' : '<span style="color:red;">Please install.  Try: <code>git clone https://gerrit.wikimedia.org/r/wikimedia/fundraising/phpmailer</code></span>';
 
   $form['wmf_common_phpmailer_location'] = array(
     '#type'          => 'textfield',
@@ -175,10 +175,14 @@ function wmf_common_settings() {
 function wmf_common_queue_item_form( $form, &$form_state, $queue, $correlationId ) {
   $q = queue2civicrm_stomp();
 
-  $queue = preg_replace( '/[^-a-z]/', '', $queue );
-  $correlationId = preg_replace( '/[^-a-zA-Z0-9]/', '', $correlationId );
+  $queue = preg_replace( '/[^-_a-z]/', '', $queue );
+  $correlationId = preg_replace( '/[^-a-zA-Z0-9:]/', '', $correlationId );
 
   $msg = $q->getByCorrelationId( $queue, $correlationId );
+
+  if ( !$msg ) {
+	$msg = $q->getByAnyId( $queue, $correlationId );
+  }
 
   if ( !$msg ) {
     drupal_set_message( t( 'Message %id not found.', array( '%id' => $correlationId ) ) );
@@ -232,8 +236,8 @@ function wmf_common_queue_item_form( $form, &$form_state, $queue, $correlationId
 }
 
 function wmf_common_queue_item_submit( $form, &$form_state ) {
-  $queue = preg_replace( '/[^-a-z]|-damaged$/', '', $form_state['build_info']['args'][0] );
-  $correlationId = preg_replace( '/[^-a-z0-9]/', '', $form_state['build_info']['args'][1] );
+  $queue = preg_replace( '/[^-_a-z]|-damaged$/', '', $form_state['build_info']['args'][0] );
+  $correlationId = preg_replace( '/[^-a-zA-Z0-9:]/', '', $form_state['build_info']['args'][1] );
 
   $headers = array(
     'correlation-id' => $correlationId,
@@ -251,14 +255,14 @@ function wmf_common_queue_item_submit( $form, &$form_state ) {
   case $form_state['values']['resend']:
     $q->enqueue( json_encode( $body ), $headers, $queue );
 
-    $msg = $q->getByCorrelationId( "{$queue}-damaged", $correlationId );
+    $msg = $q->getByAnyId( "{$queue}-damaged", $correlationId );
     $q->ack( $msg );
 
     drupal_set_message( t( 'Message %id resent for processing.', array( '%id' => $correlationId ) ) );
     $form_state['redirect'] = "queue/{$queue}/{$correlationId}";
     break;
   case $form_state['values']['delete']:
-    $msg = $q->getByCorrelationId( "{$queue}-damaged", $correlationId );
+    $msg = $q->getByAnyId( "{$queue}-damaged", $correlationId );
     $q->ack( $msg );
     drupal_set_message( t( 'Successfully removed message %id.', array( '%id' => $correlationId ) ) );
     $form_state['redirect'] = "queue/{$queue}-damaged/";

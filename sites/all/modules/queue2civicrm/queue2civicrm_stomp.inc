@@ -9,6 +9,8 @@
  * @param array $transaction Key-value array of staged and ready donation data.
  * @return bool Just returns true all the time. Presumably an indication that
  * nothing exploded big enough to kill the whole thing.
+ *
+ * @deprecated
  */
 function sendSTOMP( $transaction ) {
 	$initial_msg = true;
@@ -16,7 +18,6 @@ function sendSTOMP( $transaction ) {
 		$initial_msg = false;
 	}
 
-	$stompServer = variable_get('queue2civicrm_url', 'tcp://localhost:61613');
 	if ( $initial_msg ){
 		$stompQueue = variable_get('queue2civicrm_subscription', '/queue/test');
 	} else {
@@ -26,15 +27,10 @@ function sendSTOMP( $transaction ) {
 	$message = json_encode( createQueueMessage( $transaction ) );
 	
 	if ( $message ){
-
-		// make a connection
-		$con = new Stomp( $stompServer );
-
-		// connect
-		$con->connect();
+		$q = queue2civicrm_stomp();
 
 		// send a message to the queue
-		$result = $con->send( "$stompQueue", $message, array( 'persistent' => 'true' ) );
+		$result = $q->enqueue( $message, array( 'persistent' => 'true' ), $stompQueue );
 
 		$ret = null;
 		if ( !$result ) {
@@ -45,7 +41,6 @@ function sendSTOMP( $transaction ) {
 			$ret = true;
 		}
 
-		$con->disconnect();
 	} else {
 		watchdog('queue2civicrm', 'createQueueMessage failed for : ' . $message, array(), WATCHDOG_ERROR);
 		$ret = false;
@@ -62,6 +57,8 @@ function sendSTOMP( $transaction ) {
  *
  * @param $transaction
  * @return array
+ *
+ * @deprecated
  */
 function createQueueMessage( $msg ) {
 	
@@ -157,6 +154,8 @@ function createQueueMessage( $msg ) {
 
 /**
  * Arghargharghargh.
+ *
+ * @deprecated
  */
 function stageStompMessageFromDIKeys( $msg ){
 //	foreach ( $msg as $key => $value ){

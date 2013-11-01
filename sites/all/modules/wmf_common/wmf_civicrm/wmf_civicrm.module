@@ -349,7 +349,6 @@ function wmf_civicrm_get_civi_id($type, $name)
     $dummy = array();
     
     if(array_key_exists($type, $civi_ids) && array_key_exists($name, $civi_ids[$type])) {
-        watchdog('wmf_civicrm', "Already looked up $type - $name. Returning id " . $civi_ids[$type][$name]);
         return $civi_ids[$type][$name];
     }
 

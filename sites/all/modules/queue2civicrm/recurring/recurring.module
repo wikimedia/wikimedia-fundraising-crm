@@ -103,7 +103,7 @@ function recurring_queue2civicrm_batch_process() {
   );
 
   if ($recurring_processed > 0) {
-    watchdog('recurring', 'Successfully processed ' . $recurring_processed . ' subscription messages.');
+    watchdog('recurring', 'Processed ' . $recurring_processed . ' subscription messages.');
   }
   else {
     watchdog('recurring', 'No contributions processed.');
@@ -124,22 +124,20 @@ function recurring_process_msg($msg) {
   $msg_orig = $msg;
   $q = queue2civicrm_stomp();
   try {
-    if (recurring_import($msg) === 1) {
-      // only ack and remove from queue on explicit success
+    recurring_import($msg);
+    $q->ack($msg_orig);
+  } catch ( RequeueError $ex ) {
+    // We failed to process the message for some reason or another
+    // So... we queue a new message (the original plus a time delay and count header)
+    // and ACK the original
+    $ret = $q->requeueWithDelay($msg_orig);
+
+    if ($ret) {
       $q->ack($msg_orig);
     } else {
-      // We failed to process the message for some reason or another
-      // So... we queue a new message (the original plus a time delay and count header)
-      // and ACK the original
-      $ret = $q->requeueWithDelay($msg_orig);
-
-      if ($ret) {
-        $q->ack($msg_orig);
-      } else {
-        throw new WmfException("STOMP_BAD_CONNECTION", "Failed to requeue a recurring message");
-      }
+      throw new WmfException("STOMP_BAD_CONNECTION", "Failed to requeue a recurring message");
     }
-  } catch (WmfException $ex) {
+  } catch ( WmfException $ex ) {
     watchdog('recurring', 'something went wrong during import: ' . $ex->getMessage(), NULL, WATCHDOG_ERROR);
 
     if ($ex->isRejectMessage()) {
@@ -173,13 +171,7 @@ function recurring_process_msg($msg) {
 /**
  * Import queued message contents to CiviCRM
  * 
- * Return status codes:
- *  0 = processing error
- * 	1 = fully processed, ready for removal
- * 	2 = not currently processable, return to queue
- * 
  * @param $msg
- * @return unknown_type
  */
 function recurring_import( $msg ) {
   global $txn_subscr_payment, $txn_subscr_acct;
@@ -226,12 +218,11 @@ function recurring_import( $msg ) {
       watchdog( 'recurring', 'Duplicate contribution: ' . print_r( $msg, true ) );
       throw new WmfException( 'DUPLICATE_CONTRIBUTION', "Contribution already exists. Ignoring message." );
     }  
-    $ret_val = recurring_import_subscr_payment( $msg );
+    recurring_import_subscr_payment( $msg );
   } elseif ( isset( $msg[ 'txn_type' ] ) && in_array( $msg[ 'txn_type' ], $txn_subscr_acct ) ) {
-      $ret_val = recurring_import_subscr_acct( $msg );
+    recurring_import_subscr_acct( $msg );
   } else {
-    watchdog( 'recurring', 'Msg not recognized as a recurring payment related message.' );
-    $ret_val = 0;
+    throw new WmfException( 'INVALID_RECURRING', 'Msg not recognized as a recurring payment related message.' );
   }
   
   // update the log
@@ -241,15 +232,12 @@ function recurring_import( $msg ) {
     $log[ 'verified' ] = 1;
     _queue2civicrm_log( $log );
   }
-  
-  return $ret_val;
 }
 
 /**
  * Import a recurring payment
  * 
  * @param array $msg
- * @return int
  */
 function recurring_import_subscr_payment( $msg ) {
   /**
@@ -261,11 +249,10 @@ function recurring_import_subscr_payment( $msg ) {
    * otherwise, process the payment.
    */
   if ( !isset( $msg[ 'subscr_id' ] ) ) {
-    watchdog( 'recurring', 'Msg missing the subscr_id; cannot process.');
-    return 0;
+    throw new WmfException( 'INVALID_RECURRING', 'Msg missing the subscr_id; cannot process.' );
   } elseif ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) { // check for parent record in civicrm_contribution_recur and fetch its id
     watchdog( 'recurring', 'Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.' );
-    return 2;
+    throw new RequeueError();
   }
 
   civicrm_initialize(true);
@@ -322,8 +309,6 @@ function recurring_import_subscr_payment( $msg ) {
   
   // Send thank you email, other post-import things
   module_invoke_all( 'queue2civicrm_import', $contribution_info );
-  
-  return 1;  
 }
 
 /**
@@ -333,50 +318,43 @@ function recurring_import_subscr_payment( $msg ) {
  * function.
  * 
  * @param $msg
- * @return int
  */
 function recurring_import_subscr_acct( $msg ) {
   switch ( $msg[ 'txn_type' ] ) {
     case 'subscr_signup':
-      $ret_val = recurring_import_subscr_signup( $msg );
+      recurring_import_subscr_signup( $msg );
       break;
       
     case 'subscr_cancel':
-      $ret_val = recurring_import_subscr_cancel( $msg );
+      recurring_import_subscr_cancel( $msg );
       break;
       
     case 'subscr_eot':
-      $ret_val = recurring_import_subscr_eot( $msg );
+      recurring_import_subscr_eot( $msg );
       break;
       
     case 'subscr_modify':
-      $ret_val = recurring_import_subscr_modify( $msg );
+      recurring_import_subscr_modify( $msg );
       break;
       
     case 'subscr_failed':
-      $ret_val = recurring_import_subscr_failed( $msg );
+      recurring_import_subscr_failed( $msg );
       break;
      
     default:
-      watchdog( 'recurring', 'Invalid subscription message type: %msg', array( '%msg' => print_r( $msg, true )), WATCHDOG_NOTICE );
-      $ret_val = 0;
-      break;
-  }  
-  
-  return $ret_val;
+      throw new WmfException( 'INVALID_RECURRING', 'Invalid subscription message type' );
+  }
 }
 
 /**
  * Import a subscription signup message
  * 
  * @param $msg
- * @return int
  */
 function recurring_import_subscr_signup( $msg ) {
   // ensure there is not already a record of this account - if so, mark the message as succesfuly processed
   if ( $recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
-    watchdog( 'recurring', 'Subscription account already exists: %msg', array( '%msg' => print_r( $msg, true )), WATCHDOG_NOTICE );
-    return 1;
+    throw new WmfException( 'DUPLICATE_CONTRIBUTION', 'Subscription account already exists' );
   }
   
   // create contact record
@@ -401,14 +379,11 @@ function recurring_import_subscr_signup( $msg ) {
     'create_date' => wmf_common_date_unix_to_civicrm( $msg[ 'create_date' ] ),
     'trxn_id' => $msg[ 'subscr_id' ],
   ) )->execute();
-  $dbs->pop(); 
-   
+
   if ( !$result ) {
-    watchdog( 'recurring', 'Failed inserting subscriber signup for subscriber id: %subscr_id', array( '%subscr_id' => print_r( $msg['subscr_id'], true )), WATCHDOG_NOTICE );
-    return 0;
+    throw new WmfException( 'IMPORT_CONTRIB', 'Failed inserting subscriber signup for subscriber id: ' . print_r( $msg['subscr_id'], true ));
   } else {
     watchdog( 'recurring', 'Succesfully inserted subscription signup for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
-    return 1;
   }
 }
 
@@ -416,13 +391,11 @@ function recurring_import_subscr_signup( $msg ) {
  * Process a subscriber cancellation
  * 
  * @param array $msg
- * @return int
  */
 function recurring_import_subscr_cancel( $msg ) {
   // ensure we have a record of the subscription
   if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
-    watchdog( 'recurring', 'Subscription account does not exist: %msg', array( '%msg' => print_r( $msg, true )), WATCHDOG_NOTICE );
-    return 2;
+    throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist' );
   }
   
   $dbs = wmf_civicrm_get_dbs();
@@ -431,14 +404,11 @@ function recurring_import_subscr_cancel( $msg ) {
     'cancel_date' => wmf_common_date_unix_to_civicrm( $msg[ 'cancel_date' ] ), 
     'end_date' => wmf_common_date_unix_to_civicrm( $msg[ 'cancel_date' ] ), 
   ) )->condition( 'trxn_id', $msg[ 'subscr_id' ] )->execute();
-  $dbs->pop();
-  
+
   if ( !$result ) {
-    watchdog( 'recurring', 'There was a problem updating the subscription for cancelation for subscriber id: %subscr_id', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
-    return 0;
+    throw new WmfException( 'INVALID_RECURRING', 'There was a problem updating the subscription for cancelation for subscriber id: ' . print_r( $msg[ 'subscr_id' ], true ));
   } else {
-    watchdog( 'recurring', 'Succesfuly cacneled subscription for subscriber id %subscr_id', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
-    return 1;
+    watchdog( 'recurring', 'Succesfuly cancelled subscription for subscriber id %subscr_id', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
   }
 }
 
@@ -446,13 +416,11 @@ function recurring_import_subscr_cancel( $msg ) {
  * Process an expired subscription
  * 
  * @param array $msg
- * @return int
  */
 function recurring_import_subscr_eot( $msg ) {
   // ensure we have a record of the subscription
   if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
-    watchdog( 'recurring', 'Subscription account does not exist: %msg', array( '%msg' => print_r( $msg, true )), WATCHDOG_NOTICE );
-    return 2;
+    throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist' );
   }
 
   $dbs = wmf_civicrm_get_dbs();
@@ -463,11 +431,9 @@ function recurring_import_subscr_eot( $msg ) {
   $dbs->pop();
   
   if ( !$result ) {
-    watchdog( 'recurring', 'There was a problem updating the subscription for EOT for subscription id: %subscr_id', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
-    return 0;
+    throw new WmfException( 'INVALID_RECURRING', 'There was a problem updating the subscription for EOT for subscription id: %subscr_id' . print_r( $msg[ 'subscr_id' ], true ));
   } else {
     watchdog( 'recurring', 'Succesfuly ended subscription for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
-    return 1;
   }
 }
 
@@ -478,13 +444,11 @@ function recurring_import_subscr_eot( $msg ) {
  * unused.
  * 
  * @param array $msg
- * @return int
  */
 function recurring_import_subscr_modify( $msg ) {
   // ensure we have a record of the subscription
   if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
-    watchdog( 'recurring', 'Subscription account does not exist for subscription id: %subscr_id', array( '%subscr_id' => print_r( $msg, true )), WATCHDOG_NOTICE );
-    return 2;
+    throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist for subscription id: ' . print_r( $msg, true ));
   }
 
   $dbs = wmf_civicrm_get_dbs();
@@ -500,8 +464,7 @@ function recurring_import_subscr_modify( $msg ) {
   $dbs->pop();
 
   if ( !$result ) {
-    watchdog( 'recurring', 'There was a problem updating the subscription record for subscription id ', print_r( $msg['subscr_id'], true), WATCHDOG_NOTICE );
-    return 0;
+    throw new WmfException( 'INVALID_RECURRING', 'There was a problem updating the subscription record for subscription id ' . print_r( $msg['subscr_id'], true ) );
   }
    
   // update the contact
@@ -514,19 +477,16 @@ function recurring_import_subscr_modify( $msg ) {
   $tag = wmf_civicrm_tag_contact_for_review( $contact );
 
   watchdog( 'recurring', 'Subscription succesfully modified for subscription id: %subscr_id', array( '%subscr_id' => print_r( $msg['subscr_id'], true )), WATCHDOG_NOTICE );
-  return 1;
 }
 
 /**
  * Process failed subscription payment
  * @param $msg
- * @return unknown_type
  */
 function recurring_import_subscr_failed( $msg ) {
   // ensure we have a record of the subscription
   if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
-    watchdog( 'recurring', 'Subscription account does not exist for subscription: %subscription', array( "%subscription" => print_r( $msg, true )), WATCHDOG_NOTICE );
-    return 2;
+    throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist for subscription id: ' . print_r( $msg['subscr_id'], true ) );
   }
   
   $dbs = wmf_civicrm_get_dbs();
@@ -535,14 +495,11 @@ function recurring_import_subscr_failed( $msg ) {
     'failure_count' => $msg[ 'failure_count' ],
     'failure_retry_date' => wmf_common_date_unix_to_civicrm( $msg[ 'failure_retry_date' ] ),
   ) )->condition( 'trxn_id', $msg[ 'subscr_id' ] )->execute();
-  $dbs->pop();
-  
+
   if ( !$result ) {
-    watchdog( 'recurring', 'There was a problem updating the subscription for failed payment for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
-    return 0;
+    throw new WmfException( 'INVALID_RECURRING', 'There was a problem updating the subscription for failed payment for subscriber id: ' . print_r( $msg['subscr_id'], true ) );
   } else {
     watchdog( 'recurring', 'Succesfuly cacneled subscription for failed payment for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
-    return 1;
   }
 }
 
@@ -591,7 +548,7 @@ function recurring_normalize_msg( $msg  ) {
 
   if ( isset( $msg['frequency_unit'] ) ) {
     if ( !in_array( $msg['frequency_unit'], array( 'day', 'week', 'month', 'year' ) ) ) {
-      throw new WmfException("INVALID_MESSAGE", "Bad frequency unit: {$msg['frequency_unit']}");
+      throw new WmfException("INVALID_RECURRING", "Bad frequency unit: {$msg['frequency_unit']}");
     }
   }
 
@@ -809,4 +766,7 @@ function recurring_get_contribution_tracking_id( $msg ) {
   	watchdog( 'recurring', 'recurring_get_contribution_tracking_id: No contribution_tracking_id returned.', array(), WATCHDOG_DEBUG );
     return null;
   }
+}
+
+class RequeueError extends Exception {
 }

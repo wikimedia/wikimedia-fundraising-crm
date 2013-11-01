@@ -12,12 +12,6 @@ define( 'GC_AUDIT_MAKE_EMAIL', 'nobody@wikimedia.org' );
 define( 'GC_AUDIT_MAKE_STREET', '123 Fake Street' );
 define( 'GC_AUDIT_MAKE_CITY', 'Springfield' );
 
-if ( function_exists( 'drupal_get_path' ) ) {
-	require_once( drupal_get_path( 'module', 'wmf_civicrm' ) . '/wmf_civicrm.module' );
-	require_once( drupal_get_path( 'module', 'wmf_common' ) . '/wmf_dates.php' );
-	require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_stomp.inc' );
-}
-
 /**
  * Implementation of hook_menu()
  */
@@ -165,7 +159,7 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 				}
 
 				$matches = wmf_civicrm_get_child_contributions_from_gateway_id( 'globalcollect', wr1_order_id( $transactions[$order_id] ) );
-				if ( !$error && count( $matches ) ) {
+				if ( !$error && is_array( $matches ) && count( $matches ) ) {
 					$im_a = wmf_civicrm_get_civi_id( 'contribution_type_id', wr1_get_negative_type( $transactions[$order_id] ) );
 					foreach ( $matches as $match ) {
 						//None of these are themselves parents. 
@@ -415,7 +409,7 @@ function globalcollect_audit_parse_all_wr1(){
 			}
 		}
 	}
-	
+
 	if ( count( $errorful_transactions ) ){
 		globalcollect_audit_echo("Errorful Transactions: " . print_r( $errorful_transactions, true ));
 		globalcollect_audit_results_ball( array('Final', 'Errors'), count($errorful_transactions) );

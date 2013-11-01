@@ -97,6 +97,17 @@ class Queue {
         return $con->readFrame();
     }
 
+    function getByAnyId( $queue, $correlationId ) {
+        $con = $this->getFreshConnection();
+        $properties = array(
+            'ack' => 'client',
+            'selector' => "JMSCorrelationID='{$correlationId}' OR JMSMessageID='{$correlationId}'",
+        );
+        $con->subscribe( $this->normalizeQueueName( $queue ), $properties );
+
+        return $con->readFrame();
+    }
+
     static function getCorrelationId( $msg ) {
         if ( !empty( $msg->headers['correlation-id'] ) ) {
             return $msg->headers['correlation-id'];
@@ -104,6 +115,9 @@ class Queue {
         $body = json_decode( $msg->body, TRUE );
         if ( !empty( $body['gateway'] ) && !empty( $body['gateway_txn_id'] ) ) {
             return "{$body['gateway']}-{$body['gateway_txn_id']}";
+        }
+        if ( !empty( $msg->headers['message-id'] ) ) {
+            return $msg->headers['message-id'];
         }
 
         watchdog( 'wmf_common', 'Could not create a correlation-id for message: ' . $msg->body, NULL, WATCHDOG_WARNING );
@@ -269,6 +283,7 @@ class Queue {
         $queue = $this->normalizeQueueName( $msg->headers['destination'] );
 
         watchdog( 'wmf_common', 'Attempting to move a message to ' . $queue, NULL, WATCHDOG_INFO );
+        watchdog( 'wmf_common', "Requeuing under correlation-id {$msg->headers['correlation-id']}", NULL, WATCHDOG_INFO );
         if ( !$this->enqueue( json_encode( $new_body ), $msg->headers, $queue ) ) {
             $exMsg = 'Failed to inject rejected message into $queue! ' . json_encode( $msg );
             watchdog( 'wmf_common', $exMsg, NULL, WATCHDOG_ERROR );
