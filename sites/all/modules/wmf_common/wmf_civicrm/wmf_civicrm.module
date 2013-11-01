@@ -567,57 +567,44 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
  * @return array
  */
 function wmf_civicrm_normalize_contribution_amounts( $msg ) {
-  $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
-  try {
-      $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
-  }
-  catch (Exception $ex) {
-      wmf_common_failmail( 'wmf_civicrm', "UNKNOWN_CURRENCY: exchange rate will be fudged as '1': " . $ex->getMessage(), $msg );
-      $settlement_convert = 1;
-  }
+    
+    if ( !isset( $msg['original_gross'] ) ) {
+        $msg['original_gross'] = $msg['gross'];
+    }
+    if ( !isset( $msg['original_currency'] ) ) {
+        $msg['original_currency'] = $msg['currency'];
+    }
 
-  // round the amounts and do exchange rate conversion
-  $msg['fee'] = round( $msg['fee'] * $settlement_convert, 2 );
-  $msg['gross'] = round( $msg['gross'] * $settlement_convert, 2 );
-  $msg['net'] = round( $msg['net'] * $settlement_convert, 2 );
-  $msg['currency'] = $settlement_currency;
-  
-  return $msg;
+    if ( !array_key_exists('fee', $msg) && !array_key_exists('net', $msg) ) {
+        $msg['fee'] = '0.00';
+        $msg['net'] = $msg['gross'];
+    } elseif ( !array_key_exists('fee', $msg) && array_key_exists('net', $msg) ) {
+        $msg['fee'] = $msg['gross'] - $msg['net'];
+    } elseif ( array_key_exists('fee', $msg) && !array_key_exists('net', $msg) ) {
+        $msg['net'] = $msg['gross'] - $msg['fee'];
+    }
+
+    $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
+    try {
+        $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
+    }
+    catch (Exception $ex) {
+        wmf_common_failmail( 'wmf_civicrm', "UNKNOWN_CURRENCY: exchange rate will be fudged as '1': " . $ex->getMessage(), $msg );
+        $settlement_convert = 1;
+    }
+
+    // round the amounts and do exchange rate conversion
+    $msg['fee'] = round( $msg['fee'] * $settlement_convert, 2 );
+    $msg['gross'] = round( $msg['gross'] * $settlement_convert, 2 );
+    $msg['net'] = round( $msg['net'] * $settlement_convert, 2 );
+    $msg['currency'] = $settlement_currency;
+
+    return $msg;
 }
 
 function wmf_civicrm_verify_message_and_stage($msg)
 {
-    if ( !is_array( $msg ) ) {
-        $msg = json_decode($msg->body, true);
-    }
-
-    //FIXME: normalize *before* validation
-
-    //defaults: Keys that aren't actually required, but which will cause some portion of the code to complain
-    //if they don't exist (even if they're blank).
-    $defaults = array(
-        'date' => time(), //defaulting to now. @fixme: if you can think of a better thing to do in the name of historical exchange rates.
-        'first_name' => '',
-        'middle_name' => '',
-        'last_name' => '',
-        'organization_name' => '',
-        'email' => '',
-        'street_address' => '',
-        'supplemental_address_1' => '',
-        'supplemental_address_2' => '',
-        'city' => '',
-        'country' => '',
-        'state_province' => '',
-        'postal_code' => '',
-        'original_gross' => $msg['gross'],
-        'original_currency' => $msg['currency'],
-        'check_number' => null,
-        'letter_code' => null,
-        'thankyou_date' => null,
-        'recurring' => null,
-        'utm_campaign' => null,
-    );
-    $msg = $msg + $defaults;
+    $msg = wmf_civicrm_normalize_msg( $msg );
 
     $required = array(
         'email',
@@ -632,15 +619,6 @@ function wmf_civicrm_verify_message_and_stage($msg)
         if ( empty( $msg[$key] ) ) {
             $err[] = "Required Field '$key' not found in message.";
         }
-    }
-
-    if(!array_key_exists('fee', $msg) && !array_key_exists('net', $msg)){
-        $msg['fee'] = '0.00';
-        $msg['net'] = $msg['gross'];
-    } elseif(!array_key_exists('fee', $msg) && array_key_exists('net', $msg)){
-        $msg['fee'] = $msg['gross'] - $msg['net'];
-    } elseif(array_key_exists('fee', $msg) && !array_key_exists('net', $msg)){
-        $msg['net'] = $msg['gross'] - $msg['fee'];
     }
 
     if (floatval($msg['net']) <= 0 || floatval($msg['gross']) <= 0)
@@ -678,11 +656,6 @@ function wmf_civicrm_verify_message_and_stage($msg)
 
     $msg['anonymous'] = ($msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
     $msg['optout'] = (($msg['optout'] === 0 || $msg['optout'] === '0' || strtoupper($msg['optout']) === "FALSE")) ? 0 : 1;
-
-    $msg = wmf_civicrm_normalize_msg( $msg );
-
-    // set the correct amount fields/data and do exchange rate conversions.
-    $msg = wmf_civicrm_normalize_contribution_amounts( $msg );
 
     return $msg;
 }
@@ -956,6 +929,31 @@ function wmf_civicrm_normalize_msg( $msg ) {
     if ( !is_array( $msg ) ) {
         $msg = json_decode( $msg->body, true );
     }
+
+    //defaults: Keys that aren't actually required, but which will cause some portion of the code to complain
+    //if they don't exist (even if they're blank).
+    // FIXME: don't use defaults.  Access msg properties using a functional interface.
+    $defaults = array(
+        'date' => time(), //defaulting to now. @fixme: if you can think of a better thing to do in the name of historical exchange rates.
+        'first_name' => '',
+        'middle_name' => '',
+        'last_name' => '',
+        'organization_name' => '',
+        'email' => '',
+        'street_address' => '',
+        'supplemental_address_1' => '',
+        'supplemental_address_2' => '',
+        'city' => '',
+        'country' => '',
+        'state_province' => '',
+        'postal_code' => '',
+        'check_number' => null,
+        'letter_code' => null,
+        'thankyou_date' => null,
+        'recurring' => null,
+        'utm_campaign' => null,
+    );
+    $msg = $msg + $defaults;
     
     //handle the payment instrument without altering the original message
     //(just in case any downstream logic needs to switch on the raw data)
@@ -1010,26 +1008,31 @@ function wmf_civicrm_normalize_msg( $msg ) {
     }
 
     // Check for special flags
-    switch ( $msg['utm_campaign'] ) {
-    case 'NY2013':
-        //TODO: expose direct_mail_appeal custom field in the UI
-        $msg['direct_mail_appeal'] = "New York Event 2013";
-        break;
-    case 'NYCShaku2013':
-        $msg['direct_mail_appeal'] = "Shaku - NYC Event 2013";
-        break;
-    case 'SF2013':
-        $msg['direct_mail_appeal'] = "San Francisco Event 2013";
-        break;
-    case 'Mossman':
-        $msg['direct_mail_appeal'] = "Sheila Mossman";
-        break;
-    default:
-            // pass
-        break;
+    if ( !empty( $msg['utm_campaign'] ) ) {
+        switch ( $msg['utm_campaign'] ) {
+        case 'NY2013':
+            //TODO: expose direct_mail_appeal custom field in the UI
+            $msg['direct_mail_appeal'] = "New York Event 2013";
+            break;
+        case 'NYCShaku2013':
+            $msg['direct_mail_appeal'] = "Shaku - NYC Event 2013";
+            break;
+        case 'SF2013':
+            $msg['direct_mail_appeal'] = "San Francisco Event 2013";
+            break;
+        case 'Mossman':
+            $msg['direct_mail_appeal'] = "Sheila Mossman";
+            break;
+        default:
+                // pass
+            break;
+        }
     }
 
-    watchdog( 'wmf_civicrm', 'Contribution (pre-conversion):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>' );
+    // set the correct amount fields/data and do exchange rate conversions.
+    $msg = wmf_civicrm_normalize_contribution_amounts( $msg );
+
+    watchdog( 'wmf_civicrm', 'Contribution (normalized):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>', NULL, WATCHDOG_DEBUG );
 
     return $msg;
 }
