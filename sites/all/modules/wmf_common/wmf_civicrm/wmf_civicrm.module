@@ -654,9 +654,6 @@ function wmf_civicrm_verify_message_and_stage($msg)
         throw new WmfException( 'DUPLICATE_CONTRIBUTION', "Contribution already exists. Ignoring message." );
     }
 
-    $msg['anonymous'] = ($msg['anonymous'] == true && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
-    $msg['optout'] = (($msg['optout'] === 0 || $msg['optout'] === '0' || strtoupper($msg['optout']) === "FALSE")) ? 0 : 1;
-
     return $msg;
 }
 
@@ -704,7 +701,6 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         'do_not_trade' => $msg['anonymous'],
         'is_opt_out' => '0', // $msg['optout'], // we don't offer an option to unsub on contrib, eliminate bugs
         'contact_source' => $msg['contact_source'],
-        'preferred_language' => strtolower(substr($msg['language'], 0, 2)) . '_' . strtoupper(substr($msg['country'], 0, 2)),
 
         // API required fields
         'version' => '3'
@@ -717,6 +713,9 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['sort_name'] = $msg['organization_name'];
         $contact['display_name'] = $msg['organization_name'];
         $contact['organization_name'] = $msg['organization_name'];
+    }
+    if ( !empty($msg['language']) ) {
+        $contact['preferred_language'] = strtolower(substr($msg['language'], 0, 2)) . '_' . strtoupper(substr($msg['country'], 0, 2));
     }
 
     // Attempt to insert the contact
@@ -1028,6 +1027,9 @@ function wmf_civicrm_normalize_msg( $msg ) {
             break;
         }
     }
+
+    $msg['anonymous'] = ((!empty( $msg['anonymous'] ) && strtoupper($msg['anonymous'] ) !== "FALSE") ? 1 : 0);
+    $msg['optout'] = ((empty( $msg['optout'] ) || $msg['optout'] === 0 || $msg['optout'] === '0' || strtoupper( $msg['optout'] ) === "FALSE") ? 0 : 1);
 
     // set the correct amount fields/data and do exchange rate conversions.
     $msg = wmf_civicrm_normalize_contribution_amounts( $msg );
