@@ -665,6 +665,9 @@ function recurring_normalize_paypal_msg( $msg ) {
     
     if ( isset( $msg[ 'recur_times' ] ) ) {
       $msg_normalized[ 'installments' ] = $msg[ 'recur_times' ];
+    } else {
+      // forever
+      $msg_normalized[ 'installments' ] = 0;
     }
     
     if ( isset( $msg[ 'amount3' ] ) ) {
