@@ -567,7 +567,12 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
  * @return array
  */
 function wmf_civicrm_normalize_contribution_amounts( $msg ) {
-    
+
+    if ( empty( $msg['gross'] ) or empty( $msg['currency'] ) ) {
+        // just... don't
+        return $msg;
+    }
+
     if ( empty( $msg['original_gross'] ) ) {
         $msg['original_gross'] = $msg['gross'];
     }
@@ -589,7 +594,7 @@ function wmf_civicrm_normalize_contribution_amounts( $msg ) {
         $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
     }
     catch (Exception $ex) {
-        wmf_common_failmail( 'wmf_civicrm', "UNKNOWN_CURRENCY: exchange rate will be fudged as '1': " . $ex->getMessage(), $msg );
+        wmf_common_failmail( 'wmf_civicrm', "UNKNOWN_CURRENCY: exchange rate for '{$msg['original_currency']}' will be fudged as '1': " . $ex->getMessage(), $msg );
         $settlement_convert = 1;
     }
 
