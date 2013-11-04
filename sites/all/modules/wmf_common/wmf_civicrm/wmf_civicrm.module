@@ -562,13 +562,23 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
  * 
  * Do exchange rate conversions and set appropriate fields for CiviCRM
  * based on information contained in the message.
- * 
+ *
+ * Upon exiting this function, the message is guaranteed to have these fields:
+ *    currency - settlement currency
+ *    original_currency - currency remitted by the donor
+ *    gross - settled total amount
+ *    original_gross - remitted amount in original currency
+ *    fee - processor fees, when available
+ *    net - gross less fees
+ *
  * @param $msg
  * @return array
  */
 function wmf_civicrm_normalize_contribution_amounts( $msg ) {
 
-    if ( empty( $msg['gross'] ) or empty( $msg['currency'] ) ) {
+    if ( ( empty( $msg['gross'] ) or empty( $msg['currency'] ) )
+        and ( empty( $msg['original_gross'] ) or empty( $msg['original_currency'] ) )
+    ) {
         // just... don't
         return $msg;
     }
