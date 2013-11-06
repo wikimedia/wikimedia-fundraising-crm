@@ -3,6 +3,7 @@
 use wmf_communication\Mailer;
 use wmf_communication\Templating;
 use wmf_communication\Translation;
+use Html2Text\Html2Text;
 
 require_once drupal_get_path( 'module', 'wmf_civicrm' ) . '/civicrm_api_check.inc';
 require_once drupal_get_path( 'module', 'wmf_common' ) . '/MessageFile.php';
@@ -315,7 +316,7 @@ function thank_you_send( $contribution_id, $test=null ) {
 		return false;
 	}
 
-	$converter = new html2text( $email['html'] );
+	$converter = new Html2Text( $email['html'], false, array( 'do_links' => 'table' ) );
 	$email['plaintext'] = $converter->get_text();
 
 	if( $email['plaintext'] == false ){
@@ -649,3 +650,5 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
 
     return $template->render( 'html' );
 }
+
+class ThankYouException extends Exception{};
