@@ -70,7 +70,7 @@ class WmfTransaction {
         $parts = explode( ' ', $unique_id );
 
         if ( count( $parts ) === 0 ) {
-            throw new Exception( "Missing ID." );
+            throw new WmfException( 'INVALID_MESSAGE', "Missing ID." );
         }
 
         while ( $parts[0] === "RFD" or $parts[0] === "REFUND" ) {
@@ -85,11 +85,11 @@ class WmfTransaction {
 
         switch ( count( $parts ) ) {
         case 0:
-            throw new Exception( "Unique ID is missing terms." );
+            throw new WmfException( 'INVALID_MESSAGE', "Unique ID is missing terms." );
         case 3:
             $transaction->timestamp = array_pop( $parts );
             if ( !is_numeric( $transaction->timestamp ) ) {
-                throw new Exception( "Malformed unique id (timestamp does not appear to be numeric)" );
+                throw new WmfException( 'INVALID_MESSAGE', "Malformed unique id (timestamp does not appear to be numeric)" );
             }
             // pass
         case 2:
@@ -99,7 +99,7 @@ class WmfTransaction {
             $transaction->gateway_txn_id = array_shift( $parts );
             break;
         default:
-            throw new Exception( "Malformed unique id (too many terms)" );
+            throw new WmfException( 'INVALID_MESSAGE', "Malformed unique id (too many terms)" );
         }
 
         if ( !$transaction->timestamp ) {

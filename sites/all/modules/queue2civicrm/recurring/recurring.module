@@ -156,16 +156,15 @@ function recurring_process_msg($msg) {
     if ($ex->isFatal()) {
       $error = "Halting Process.";
       watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
-      return FALSE;
+      throw $ex;
     }
   } catch (Exception $ex) {
-    $error = 'UNHANDLED ERROR CODE. Halting Process. exception: ' . $ex->getMessage();
+    $error = 'UNHANDLED ERROR. Halting Process. exception: ' . $ex->getMessage();
     watchdog('recurring', $error, NULL, WATCHDOG_ERROR);
     wmf_common_failmail('recurring', $error, $msg);
-    return FALSE;
-  }
 
-  return TRUE;
+    throw $ex;
+  }
 }
 
 /**
