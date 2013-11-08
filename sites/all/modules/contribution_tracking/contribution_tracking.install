@@ -63,6 +63,11 @@ function contribution_tracking_schema() {
         'length' => 8,
         'not null' => false,
       ),
+      'country' => array(
+        'type' => 'varchar',
+        'length' => 2,
+        'not null' => false,
+      ),
       'ts' => array(
         'type' => 'varchar',
         'length' => 14,

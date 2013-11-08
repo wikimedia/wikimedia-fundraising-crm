@@ -724,8 +724,23 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['display_name'] = $msg['organization_name'];
         $contact['organization_name'] = $msg['organization_name'];
     }
-    if ( !empty($msg['language']) ) {
-        $contact['preferred_language'] = strtolower(substr($msg['language'], 0, 2)) . '_' . strtoupper(substr($msg['country'], 0, 2));
+    if ( empty($msg['language']) ) {
+        // guess from contribution_tracking data
+        $tracking = wmf_civicrm_get_contribution_tracking( $msg );
+        if ( $tracking and !empty($tracking['language']) ) {
+            $contact['preferred_language'] = $tracking['language'];
+            if ( !empty($tracking['country']) ) {
+                $contact['preferred_language'] .= '_' . $tracking['country'];
+            }
+        } else {
+            // FIXME: wish we had the contact_id here :(
+            watchdog( 'wmf_civicrm', 'Failed to guess donor\'s preferred language, falling back to some hideous default', NULL, WATCHDOG_INFO );
+        }
+    } else {
+        $contact['preferred_language'] = strtolower(substr($msg['language'], 0, 2));
+        if ( !empty( $msg['country'] ) ) {
+            $contact['preferred_language'] .= '_' . strtoupper(substr($msg['country'], 0, 2));
+        }
     }
 
     // Attempt to insert the contact
