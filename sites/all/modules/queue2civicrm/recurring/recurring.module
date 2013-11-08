@@ -591,29 +591,30 @@ function recurring_normalize_paypal_msg( $msg ) {
 	  $msg_normalized[ 'first_name' ] = $msg[ 'first_name' ];
 	  $msg_normalized[ 'middle_name' ] = '';
 	  $msg_normalized[ 'last_name' ] = $msg[ 'last_name' ];
-	  $split = split("\n", str_replace("\r", '', $msg[ 'address_street' ]));
-	  $msg_normalized[ 'street_address' ] = $split[0];
-	  if ( count( $split ) > 1 ) {
-	    $msg_normalized[ 'supplemental_address_1' ] = $split[1];
-	  }
-	  $msg_normalized[ 'city' ] = $msg[ 'address_city' ];
-	  $msg_normalized[ 'state_province' ] = $msg[ 'address_state' ];
-	  $msg_normalized[ 'country' ] = $msg[ 'address_country_code' ];
-	  $msg_normalized[ 'postal_code' ] = $msg[ 'address_zip' ];
-	
-	  // Shipping info (address same as above since PayPal only passes 1 address)
-	  $split = split(" ", $msg[ 'address_name' ]);
-	  $msg_normalized[ 'last_name_2' ] = array_pop($split);
-	  $msg_normalized[ 'first_name_2' ] = implode(" ", $split);
-	  $split = split("\n", str_replace("\r", '', $msg[ 'address_street' ]));
-	  $msg_normalized[ 'street_address_2' ] = $split[0];
-	  if ( count( $split ) > 1 ) {
-	    $msg_normalized[ 'supplemental_address_2' ] = $split[1];
-	  }
-	  $msg_normalized[ 'city_2' ] = $msg[ 'address_city' ];
-	  $msg_normalized[ 'state_province_2' ] = $msg[ 'address_state' ];
-	  $msg_normalized[ 'country_2' ] = $msg[ 'address_country_code' ];
-	  $msg_normalized[ 'postal_code_2' ] = $msg[ 'address_zip' ];
+
+      if ( isset( $msg['address_street'] ) ) {
+          $split = split("\n", str_replace("\r", '', $msg[ 'address_street' ]));
+          $msg_normalized[ 'street_address' ] = $split[0];
+          if ( count( $split ) > 1 ) {
+            $msg_normalized[ 'supplemental_address_1' ] = $split[1];
+          }
+          $msg_normalized[ 'city' ] = $msg[ 'address_city' ];
+          $msg_normalized[ 'state_province' ] = $msg[ 'address_state' ];
+          $msg_normalized[ 'country' ] = $msg[ 'address_country_code' ];
+          $msg_normalized[ 'postal_code' ] = $msg[ 'address_zip' ];
+
+          // Shipping info (address same as above since PayPal only passes 1 address)
+          $split = split(" ", $msg[ 'address_name' ]);
+          $msg_normalized[ 'last_name_2' ] = array_pop($split);
+          $msg_normalized[ 'first_name_2' ] = implode(" ", $split);
+          $split = split("\n", str_replace("\r", '', $msg[ 'address_street' ]));
+          $msg_normalized[ 'street_address_2' ] = $split[0];
+          if ( count( $split ) > 1 ) {
+            $msg_normalized[ 'supplemental_address_2' ] = $split[1];
+          }
+      } elseif ( isset( $msg['residence_country'] ) ) {
+        $msg_normalized['country'] = $msg['residence_country'];
+      }
   }
   
   // payment-specific message handling
