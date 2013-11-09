@@ -9,3 +9,5 @@ dependencies[] = civicrm
 # configure = admin/config/offline2civicrm/settings
 files[] = ChecksFile.php
 files[] = ChecksImportLog.php
+files[] = ContributionConversion.php
+files[] = CsvBatchFile.php
