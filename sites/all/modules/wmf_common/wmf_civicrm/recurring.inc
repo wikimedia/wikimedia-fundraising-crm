@@ -74,7 +74,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
         throw new WmfException('IMPORT_SUBSCRIPTION', $error_message );
     }
     
-    $msg[ 'cycle_day' ] = (integer) date( 'j', $msg[ 'date' ] );
+    $msg['cycle_day'] = wmf_civicrm_get_cycle_day( $msg['date'] );
     
     $next_sched_contribution = wmf_civicrm_get_next_sched_contribution_date_for_month( $msg );
     
@@ -88,8 +88,8 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
         'frequency_unit' => $msg[ 'frequency_unit' ],
         'frequency_interval' => $msg[ 'frequency_interval' ],
         'installments' => $msg[ 'installments' ],
-        'start_date' => date( 'Y-m-d H:i:s', $msg[ 'date' ] ),
-        'create_date' => date( 'Y-m-d H:i:s', $msg[ 'date' ] ),
+        'start_date' => wmf_common_date_unix_to_civicrm( $msg[ 'date' ] ),
+        'create_date' => wmf_common_date_unix_to_civicrm( $msg[ 'date' ] ),
         #FIXME:
         'processor_id' => 1,
         'cycle_day' => $msg[ 'cycle_day' ],
@@ -290,6 +290,14 @@ function wmf_civicrm_get_last_trigger_date($record)
 }
 
 /**
+ * @param timestamp $date as unix seconds
+ * @return day of the month for this date
+ */
+function wmf_civicrm_get_cycle_day( $date ) {
+    return intval( gmdate( 'j', $date ) );
+}
+
+/**
  * Increment the $date by one $interval, landing as close as possible to 
  * $cycle_day. Have only implemented the $interval of 'month' at this point. 
  * Might wire up more later as-needed. 
@@ -304,7 +312,7 @@ function wmf_civicrm_increment_date_to_target_day( $date, $interval = 'month', $
     case 'month':
     default:
         if ( is_null( $cycle_day ) ){
-          $cycle_day = (int) date('j', $date);
+          $cycle_day = wmf_civicrm_get_cycle_day( $date );
         }
         $month = (int) date('n', $date);
         $year = (int) date('Y', $date);
