@@ -111,4 +111,39 @@ class WmfTransaction {
 
         return $transaction;
     }
+
+    function exists() {
+        try {
+            $this->getContribution();
+            return true;
+        } catch ( WmfException $ex ) {
+            return false;
+        }
+    }
+
+    /**
+     * @return array of civicrm_contribution and wmf_contribution_extra db values
+     */
+    function getContribution() {
+        $contributions = wmf_civicrm_get_contributions_from_gateway_id( $this->gateway, $this->gateway_txn_id );
+        if ( !$contributions ) {
+            throw new NoTransactionExists( $this );
+        } elseif ( count( $contributions ) > 1 ) {
+            throw new NonUniqueTransaction( $this );
+        } else {
+            return array_shift( $contributions );
+        }
+    }
+}
+
+class NoTransactionExists extends WmfException {
+    function __construct( WmfTransaction $transaction ) {
+        parent::__construct( "GET_CONTRIBUTION", "No such transaction: {$transaction->get_unique_id()}" );
+    }
+}
+
+class NonUniqueTransaction extends WmfException {
+    function __construct( WmfTransaction $transaction ) {
+        parent::__construct( "GET_CONTRIBUTION", "Transaction does not resolve to a single contribution: {$transaction->get_unique_id()}" );
+    }
 }
