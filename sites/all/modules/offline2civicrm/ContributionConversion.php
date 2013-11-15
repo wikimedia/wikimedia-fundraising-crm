@@ -1,7 +1,7 @@
 <?php
 
 class ContributionConversion {
-    static function makeRecurring( WmfTransaction $transaction ) {
+    static function makeRecurring( WmfTransaction $transaction, $cancel = false ) {
         $contribution = WmfTransaction::from_unique_id( "{$transaction->gateway} {$transaction->gateway_txn_id}" )->getContribution();
         if ( $contribution['contribution_recur_id'] ) {
             throw new AlreadyRecurring( $transaction );
@@ -14,6 +14,7 @@ class ContributionConversion {
             'original_gross' => $contribution['original_amount'],
             'original_currency' => $contribution['original_currency'],
             'date' => wmf_common_date_civicrm_to_unix( $contribution['receive_date'] ),
+            'cancel' => $cancel,
         );
         wmf_civicrm_message_contribution_recur_insert( $synth_msg, $contribution['contact_id'], $contribution );
         $dbs = wmf_civicrm_get_dbs();

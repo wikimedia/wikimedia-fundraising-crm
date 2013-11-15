@@ -24,6 +24,11 @@ function make_recurring_drush_command() {
 
 /**
  * Loads lines from a file and imports into CiviCRM
+ *
+ * Required columns:
+ *   gateway
+ *   gateway_txn_id
+ *   cancel
  */
 function drush_make_recurring() {
     $args = drush_get_arguments();
@@ -44,7 +49,7 @@ function drush_make_recurring() {
     while ( $row = $batchfile->read_line() ) {
         try {
             $transaction = WmfTransaction::from_unique_id( "{$row['gateway']} {$row['gateway_txn_id']}" );
-            ContributionConversion::makeRecurring( $transaction );
+            ContributionConversion::makeRecurring( $transaction, $row['cancel'] );
             $processed++;
         }
         catch ( AlreadyRecurring $ex ) {

@@ -90,6 +90,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
         'installments' => $msg[ 'installments' ],
         'start_date' => wmf_common_date_unix_to_civicrm( $msg[ 'date' ] ),
         'create_date' => wmf_common_date_unix_to_civicrm( $msg[ 'date' ] ),
+        'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm( time() ) : null ),
         #FIXME:
         'processor_id' => 1,
         'cycle_day' => $msg[ 'cycle_day' ],
