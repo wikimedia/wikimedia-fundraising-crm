@@ -109,7 +109,7 @@ function exchange_rate_convert($from_currency, $amount = 1, $timestamp = NULL) {
   }
   
   if (!$rate) {
-    throw new Exception(t("No conversion available for currency !cur", array("!cur" => $from_currency)));
+    throw new ExchangeRatesException(t("No conversion available for currency !cur", array("!cur" => $from_currency)));
   }
 
   return $amount * $rate;  
@@ -422,4 +422,7 @@ function exchange_rates_update_rate($currency, $value_in_usd, $bank_update) {
       'value_in_usd' => $value_in_usd,
       'local_update' => time(),
   ) )->execute();
+}
+
+class ExchangeRatesException extends Exception {
 }

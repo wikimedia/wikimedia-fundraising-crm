@@ -74,12 +74,13 @@ class Queue {
             watchdog( 'wmf_common', t('Feeding raw queue message to %callback : %msg', array( '%callback' => print_r($callback, TRUE), '%msg' => print_r($msg, TRUE) ) ), NULL, WATCHDOG_INFO );
 
             set_time_limit( 60 );
-            $success = $callback( $msg );
-
-            if ($success === TRUE) {
+            try {
+                $callback( $msg );
                 $processed++;
-            } else {
-                break;
+            }
+            catch ( Exception $ex ) {
+                watchdog( 'wmf_common', "Aborting dequeue loop after successfully processing {$processed} messages.", NULL, WATCHDOG_INFO );
+                throw $ex;
             }
         }
 

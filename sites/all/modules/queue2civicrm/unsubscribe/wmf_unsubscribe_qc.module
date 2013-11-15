@@ -102,8 +102,6 @@ function unsubscribe_batch_process() {
  *              will still have been removed from the queue though.
  */
 function unsubscribe_process_message($msg) {
-  $retval = FALSE;
-
   try {
     $txnid = $msg->headers['correlation-id'];
     watchdog('unsubscribe', "Beginning processing of message $txnid: " . json_encode($msg), array(), WATCHDOG_INFO);
@@ -124,12 +122,8 @@ function unsubscribe_process_message($msg) {
 
     if (count($contacts) === 0) {
       watchdog('unsubscribe', "$txnid: No contacts returned for contribution ID $contribId. Acking frame and returning.", WATCHDOG_NOTICE);
-      $retval = TRUE;
-
     } elseif ($contacts[0]['is_opt_out'] == TRUE) {
       watchdog('unsubscribe', "$txnid: Contact already opted out with this contribution ID.", WATCHDOG_NOTICE);
-      $retval = TRUE;
-
     } else {
       // Excellent -- we have a collection of emails to unsubscribe now! :) Add them to the array
       foreach ($contacts as $contact) {
@@ -142,7 +136,6 @@ function unsubscribe_process_message($msg) {
       // And opt them out
       $count = unsubscribe_opt_out_emails($emails);
       watchdog('unsubscribe', "$txnid: Successfully updated $count rows.");
-      $retval = TRUE;
     }
 
   } catch ( WmfException $ex ) {
@@ -157,7 +150,6 @@ function unsubscribe_process_message($msg) {
     }
   }
   queue2civicrm_stomp()->ack($msg);
-  return $retval;
 }
 
 /**

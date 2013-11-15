@@ -239,13 +239,9 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
 {
     civicrm_initialize();
 
-    try {
-        $transaction = WmfTransaction::from_message( $msg );
-        $transaction->recur_sequence = $effort_id;
-        $trxn_id = $transaction->get_unique_id();
-    } catch ( Exception $ex ) {
-        throw new WmfException("INVALID_MESSAGE", "Could not add contribution: " . $ex->getMessage() );
-    }
+    $transaction = WmfTransaction::from_message( $msg );
+    $transaction->recur_sequence = $effort_id;
+    $trxn_id = $transaction->get_unique_id();
 
     $msg['contribution_type'] = wmf_civicrm_get_message_contribution_type($msg);
     $contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', $msg['contribution_type'] );
@@ -603,9 +599,8 @@ function wmf_civicrm_normalize_contribution_amounts( $msg ) {
     try {
         $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
     }
-    catch (Exception $ex) {
-        wmf_common_failmail( 'wmf_civicrm', "UNKNOWN_CURRENCY: exchange rate for '{$msg['original_currency']}' will be fudged as '1': " . $ex->getMessage(), $msg );
-        $settlement_convert = 1;
+    catch (ExchangeRatesException $ex) {
+        throw new WmfException( 'INVALID_MESSAGE', "UNKNOWN_CURRENCY: '{$msg['original_currency']}': " . $ex->getMessage() );
     }
 
     // round the amounts and do exchange rate conversion
@@ -729,8 +724,23 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['display_name'] = $msg['organization_name'];
         $contact['organization_name'] = $msg['organization_name'];
     }
-    if ( !empty($msg['language']) ) {
-        $contact['preferred_language'] = strtolower(substr($msg['language'], 0, 2)) . '_' . strtoupper(substr($msg['country'], 0, 2));
+    if ( empty($msg['language']) ) {
+        // guess from contribution_tracking data
+        $tracking = wmf_civicrm_get_contribution_tracking( $msg );
+        if ( $tracking and !empty($tracking['language']) ) {
+            $contact['preferred_language'] = $tracking['language'];
+            if ( !empty($tracking['country']) ) {
+                $contact['preferred_language'] .= '_' . $tracking['country'];
+            }
+        } else {
+            // FIXME: wish we had the contact_id here :(
+            watchdog( 'wmf_civicrm', 'Failed to guess donor\'s preferred language, falling back to some hideous default', NULL, WATCHDOG_INFO );
+        }
+    } else {
+        $contact['preferred_language'] = strtolower(substr($msg['language'], 0, 2));
+        if ( !empty( $msg['country'] ) ) {
+            $contact['preferred_language'] .= '_' . strtoupper(substr($msg['country'], 0, 2));
+        }
     }
 
     // Attempt to insert the contact
@@ -1182,7 +1192,7 @@ function wmf_civicrm_mark_refund(
 
     $success = $api->Contribution->Get(array('id' => $contribution_id));
     if ( !$success || !$api->values ) {
-        throw new Exception("No such contribution: $contribution_id, " . $api->errorMsg());
+        throw new WmfException( 'INVALID_MESSAGE', "No such contribution: $contribution_id, " . $api->errorMsg());
     }
     $result = $api->values;
     $contribution = array_pop($result);
@@ -1198,7 +1208,7 @@ WHERE
     OR (entity_id = :id AND COALESCE(parent_contribution_id, 0))
 EOS;
     if ( db_query($query, array( ':id' => $contribution_id ))->rowCount() ) {
-        throw new Exception("Contribution is already linked to a refund, or is itself a refund: $contribution_id");
+        throw new WmfException( 'INVALID_MESSAGE', "Contribution is already linked to a refund, or is itself a refund: $contribution_id" );
     }
 
     // Should we restore?
@@ -1229,7 +1239,7 @@ EOS;
         if ( ($original_currency && round($original_currency, 2) != round($actual_currency, 2))
             || ($original_amount && round($original_amount, 2) != round($actual_amount, 2)) )
         {
-            throw new Exception("Payment amount specified did not match original contribution: $contribution_id");
+            throw new WmfException( 'INVALID_MESSAGE', "Payment amount specified did not match original contribution: $contribution_id" );
         }
 
         $original_currency = $actual_currency;
@@ -1261,7 +1271,7 @@ EOS;
         'version' => '3'
     );
     if ( !$api->Contribution->Create($refund_params) ) {
-        throw new Exception("Failed to create refund contribution for: $contribution_id, " . $api->errorMsg());
+        throw new WmfException( 'IMPORT_CONTRIB', "Failed to create refund contribution for: $contribution_id, " . $api->errorMsg() );
     }
     $result = $api->values;
     $refund = array_pop($result);
@@ -1285,7 +1295,7 @@ EOS;
         'contribution_status_id' => civicrm_api_contribution_status( 'Refunded' ),
     ) )->condition( 'id', $contribution->id )->execute();
     if ( !$affected_rows ) {
-        throw new Exception("Cannot mark original contribution as refunded: $contribution_id, " . db_error());
+        throw new WmfException( 'IMPORT_CONTRIB', "Cannot mark original contribution as refunded: $contribution_id, " . db_error() );
     }
 
     return $refund->id;
@@ -1309,7 +1319,7 @@ function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_statu
         $contribution = new CRM_Contribute_BAO_Contribution();
         $contribution->id = $contribution_id;
         if ( !$contribution->find( true ) ) {
-            throw new Exception( "Contribution not found: $contribution_id" );
+            throw new WmfException( 'INVALID_MESSAGE', "Contribution not found: $contribution_id" );
         }
 
         $status_id = civicrm_api_contribution_status( $normalized_status );
@@ -1326,7 +1336,7 @@ function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_statu
         $old_status_id = $contribution->contribution_status_id;
         try {
             wmf_civicrm_mark_refund( $contribution_id, 'chargeback', true );
-        } catch (Exception $e) {
+        } catch ( WmfException $e ) {
             watchdog('wmf_civicrm', "Cannot create a refund for: {$contribution_id}", array(), WATCHDOG_ERROR);
         }
         $contribution->find( true );
@@ -1420,7 +1430,7 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
                     $transaction = WmfTransaction::from_unique_id( $contribution->trxn_id );
                     $extra['gateway'] = strtolower( $transaction->gateway );
                     $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
-                } catch ( Exception $ex ) {
+                } catch ( WmfException $ex ) {
                     watchdog( 'wmf_civicrm', "Failed to parse trxn_id: {$contribution->trxn_id}, " . $ex->getMessage() );
                 }
             }

@@ -50,3 +50,14 @@ function wmf_civicrm_message_update_contribution_tracking( $msg, $contribution )
         }
     }
 }
+
+function wmf_civicrm_get_contribution_tracking( $msg ) {
+    if ( array_key_exists( 'contribution_tracking_id', $msg ) ) {
+        return db_select( 'contribution_tracking', 'contribution_tracking' )
+            ->fields( 'contribution_tracking' )
+            ->execute()
+            ->fetchAssoc();
+    } else {
+        return FALSE;
+    }
+}

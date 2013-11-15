@@ -136,16 +136,15 @@ function refund_process_message($msg) {
     if ($ex->isFatal()) {
       $error = "Halting Process.";
       watchdog('refund', $error, NULL, WATCHDOG_ERROR);
-      return FALSE;
+      throw $ex;
     }
   } catch (Exception $ex) {
-    $error = 'UNHANDLED ERROR CODE. Halting Process. exception: ' . $ex->getMessage();
+    $error = 'UNHANDLED ERROR. Halting Process. exception: ' . $ex->getMessage();
     watchdog('refund', $error, NULL, WATCHDOG_ERROR);
     wmf_common_failmail('recurring', $error, $msg);
-    return FALSE;
-  }
 
-  return TRUE;
+    throw $ex;
+  }
 }
 
 /**
@@ -189,6 +188,7 @@ function refund_import($msg) {
       watchdog('refund', "$txnid: Successfully marked as refunded", WATCHDOG_INFO);
     } catch (Exception $ex) {
       watchdog('refund', "$txnid: Could not refund due to internal error: " . $ex->getMessage(), WATCHDOG_ERROR);
+      throw $ex;
     }
 
     $retval = true;

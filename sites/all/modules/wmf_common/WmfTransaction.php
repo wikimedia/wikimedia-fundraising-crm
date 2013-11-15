@@ -70,7 +70,7 @@ class WmfTransaction {
         $parts = explode( ' ', $unique_id );
 
         if ( count( $parts ) === 0 ) {
-            throw new Exception( "Missing ID." );
+            throw new WmfException( 'INVALID_MESSAGE', "Missing ID." );
         }
 
         while ( $parts[0] === "RFD" or $parts[0] === "REFUND" ) {
@@ -85,11 +85,11 @@ class WmfTransaction {
 
         switch ( count( $parts ) ) {
         case 0:
-            throw new Exception( "Unique ID is missing terms." );
+            throw new WmfException( 'INVALID_MESSAGE', "Unique ID is missing terms." );
         case 3:
             $transaction->timestamp = array_pop( $parts );
             if ( !is_numeric( $transaction->timestamp ) ) {
-                throw new Exception( "Malformed unique id (timestamp does not appear to be numeric)" );
+                throw new WmfException( 'INVALID_MESSAGE', "Malformed unique id (timestamp does not appear to be numeric)" );
             }
             // pass
         case 2:
@@ -99,7 +99,7 @@ class WmfTransaction {
             $transaction->gateway_txn_id = array_shift( $parts );
             break;
         default:
-            throw new Exception( "Malformed unique id (too many terms)" );
+            throw new WmfException( 'INVALID_MESSAGE', "Malformed unique id (too many terms)" );
         }
 
         if ( !$transaction->timestamp ) {
@@ -110,5 +110,40 @@ class WmfTransaction {
         $transaction->unique_id = $transaction->get_unique_id();
 
         return $transaction;
+    }
+
+    function exists() {
+        try {
+            $this->getContribution();
+            return true;
+        } catch ( WmfException $ex ) {
+            return false;
+        }
+    }
+
+    /**
+     * @return array of civicrm_contribution and wmf_contribution_extra db values
+     */
+    function getContribution() {
+        $contributions = wmf_civicrm_get_contributions_from_gateway_id( $this->gateway, $this->gateway_txn_id );
+        if ( !$contributions ) {
+            throw new NoTransactionExists( $this );
+        } elseif ( count( $contributions ) > 1 ) {
+            throw new NonUniqueTransaction( $this );
+        } else {
+            return array_shift( $contributions );
+        }
+    }
+}
+
+class NoTransactionExists extends WmfException {
+    function __construct( WmfTransaction $transaction ) {
+        parent::__construct( "GET_CONTRIBUTION", "No such transaction: {$transaction->get_unique_id()}" );
+    }
+}
+
+class NonUniqueTransaction extends WmfException {
+    function __construct( WmfTransaction $transaction ) {
+        parent::__construct( "GET_CONTRIBUTION", "Transaction does not resolve to a single contribution: {$transaction->get_unique_id()}" );
     }
 }

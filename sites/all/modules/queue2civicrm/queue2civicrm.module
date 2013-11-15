@@ -242,16 +242,17 @@ function queue2civicrm_process_message($msg) {
         if ($ex->isFatal()) {
             $error = "Halting Process.";
             watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
-            return FALSE;
+
+            throw $ex;
         }
     }
     catch (Exception $ex) {
-        $error = 'UNHANDLED ERROR CODE. Halting Process. exception: ' . $ex->getMessage() . "\nStack Trace: " . print_r( $ex->getTrace(), true);
+        $error = 'UNHANDLED ERROR. Halting Process. exception: ' . $ex->getMessage() . "\nStack Trace: " . print_r( $ex->getTrace(), true);
         watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
         wmf_common_failmail( 'queue2civicrm', $error, $msg );
-        return FALSE;
+
+        throw $ex;
     }
-    return TRUE;
 }
 
 /**
