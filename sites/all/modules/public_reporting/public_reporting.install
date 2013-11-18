@@ -2,6 +2,16 @@
 
 // TODO: schema is out of sync with requirements.
 
+/**
+ * @implements hook_update_dependencies
+ */
+function public_reporting_update_dependencies() {
+    $dependencies['public_reporting'][6000] = array(
+        'wmf_civicrm' => 6001,
+    );
+    return $dependencies;
+}
+
 function public_reporting_schema() {
 	$schema['public_reporting'] = array(
 		'description' => t('Public reporting tables'),
