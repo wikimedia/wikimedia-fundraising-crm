@@ -175,6 +175,10 @@ function refund_import($msg) {
   $parentTxn = $body['gateway_parent_id'];
   $refundTxn = $body['gateway_refund_id'];
 
+  if ( $body['gross'] < 0 ) {
+    $body['gross'] = abs( $body['gross'] );
+  }
+
   // FIXME: these WATCHDOG_ERROR's are not exceptions?
   if ( $contributions = wmf_civicrm_get_contributions_from_gateway_id( $gateway, $parentTxn ) ) {
     // Perform the refund!
