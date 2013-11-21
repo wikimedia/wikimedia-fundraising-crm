@@ -49,8 +49,20 @@ function offline2civicrm_update_7000() {
     $success = $api->CustomGroup->get(array(
         'name' => 'Gift_Information',
     ));
-    $values = $api->values();
-    $custom_group = array_pop($values);
+    $result = $api->values();
+    if (empty($result)) {
+        $success = $api->CustomGroup->create(array(
+            'extends' => 'Contribution',
+            'name' => 'Gift_Information',
+            'title' => ts('Gift Information'),
+            'is_active' => 1,
+        ));
+        if (!$success) {
+			throw new Exception($api->errorMsg());
+        }
+        $result = $api->values();
+    }
+    $custom_group = array_pop($result);
     if (!$success || !$custom_group) {
         throw new Exception("Missing custom group 'Gift Information', " . $api->errorMsg());
     }

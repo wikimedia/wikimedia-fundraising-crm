@@ -270,7 +270,7 @@ class Queue {
      *
      * @return string URL pointing to manual edit and requeuing of the newly archived msg
      */
-    function reject( $msg, $error = null ) {
+    function reject( $msg, WmfException $error ) {
         $suffix = "-damaged";
         //if ( strstr( $msg->headers['destination'], $suffix ) ) { ERROR
         $msg->headers['destination'] .= $suffix;
