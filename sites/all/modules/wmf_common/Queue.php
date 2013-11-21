@@ -115,6 +115,32 @@ class Queue {
         unset( $drupal_transaction );
     }
 
+    /**
+     * Preview several messages from the head of a queue, without ack'ing.
+     */
+    function peekMultiple( $queue, $count ) {
+        # TODO: prefetchPolicy, timeout as params?
+
+        $queue = $this->normalizeQueueName( $queue );
+        $con = $this->getFreshConnection();
+
+        $con->setReadTimeout( 1 );
+        # FIXME: probably the wrong value--does this buffer include msgs not
+        # specific to our subscription?
+        $con->prefetchSize = $count;
+
+        $con->subscribe( $queue, array( 'ack' => 'client' ) );
+        $messages = array();
+        while ( $con->hasFrameToRead() && $count-- >= 0 ) {
+            $msg = $con->readFrame();
+            if ( !$msg ) {
+                break;
+            }
+            $messages[] = $msg;
+        }
+        return $messages;
+    }
+
     function getByCorrelationId( $queue, $correlationId ) {
         $con = $this->getFreshConnection();
         $properties = array(
