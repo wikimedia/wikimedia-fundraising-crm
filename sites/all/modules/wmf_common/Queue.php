@@ -351,7 +351,11 @@ class Queue {
     function item_url( $msg ) {
         global $base_url;
         $queue = str_replace('/queue/', '', $msg->headers['destination'] );
-        $correlationId = $msg->headers['correlation-id'];
+        if ( !empty( $msg->headers['correlation-id'] ) ) {
+            $correlationId = $msg->headers['correlation-id'];
+        } else {
+            $correlationId = $msg->headers['message-id'];
+        }
         return "{$base_url}/queue/{$queue}/{$correlationId}";
     }
 
