@@ -122,7 +122,7 @@ function refund_process_message($msg) {
 
     if ($ex->isRejectMessage()) {
       $error = "\nRemoving failed message from the queue: \n" . print_r($msg_orig, TRUE);
-      $q->reject($msg_orig);
+      $q->reject( $msg_orig, $ex );
       watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
     }
 
