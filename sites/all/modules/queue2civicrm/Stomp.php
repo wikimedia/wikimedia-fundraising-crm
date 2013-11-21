@@ -64,7 +64,7 @@ class Stomp
     protected $_username = '';
     protected $_password = '';
     protected $_sessionId;
-    protected $_read_timeout_seconds = 60;
+    protected $_read_timeout_seconds = 5;
     protected $_read_timeout_milliseconds = 0;
     
     /**
@@ -515,7 +515,8 @@ class Stomp
             return false;
         }
         
-        stream_set_timeout($this->_socket, 5);
+        stream_set_timeout($this->_socket,
+            $this->_read_timeout_seconds + $this->_read_timeout_milliseconds / 1000.0);
         $rb = 1024;
         $data = '';
         do {
