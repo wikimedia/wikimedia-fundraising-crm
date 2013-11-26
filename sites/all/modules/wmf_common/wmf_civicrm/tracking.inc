@@ -55,6 +55,7 @@ function wmf_civicrm_get_contribution_tracking( $msg ) {
     if ( array_key_exists( 'contribution_tracking_id', $msg ) ) {
         return db_select( 'contribution_tracking', 'contribution_tracking' )
             ->fields( 'contribution_tracking' )
+            ->condition( 'id', $msg['contribution_tracking_id'] )
             ->execute()
             ->fetchAssoc();
     } else {
