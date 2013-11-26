@@ -74,45 +74,20 @@ class Queue {
             watchdog( 'wmf_common', t('Feeding raw queue message to %callback : %msg', array( '%callback' => print_r($callback, TRUE), '%msg' => print_r($msg, TRUE) ) ), NULL, WATCHDOG_INFO );
 
             set_time_limit( 60 );
-
-            $this->call_wrapped( $callback, $msg );
-
-            $processed++;
+            try {
+                $callback( $msg );
+                $processed++;
+            }
+            catch ( Exception $ex ) {
+                watchdog( 'wmf_common', "Aborting dequeue loop after successfully processing {$processed} messages.", NULL, WATCHDOG_INFO );
+                throw $ex;
+            }
         }
 
         $con->unsubscribe( $queue );
         $this->disconnect();
 
         return $processed;
-    }
-
-    /**
-     * Call the message processing callback and perform common error handling
-     *
-     * TODO: move the remaining error handling in here
-     */
-    protected function call_wrapped( $callback, $msg ) {
-        watchdog( 'wmf_common', "Beginning DB transaction", NULL, WATCHDOG_DEBUG );
-        $drupal_transaction = db_transaction( 'dequeue', array( 'target' => 'default' ) );
-        $ct_transaction = db_transaction( 'dequeue', array( 'target' => 'donations' ) );
-        $crm_transaction = new CRM_Core_Transaction();
-
-        try {
-            $callback( $msg );
-        }
-        catch ( Exception $ex ) {
-            watchdog( 'wmf_common', "Aborting DB transaction.", NULL, WATCHDOG_INFO );
-            $drupal_transaction->rollback();
-            $ct_transaction->rollback();
-            $crm_transaction->rollback();
-
-            throw $ex;
-        }
-
-        watchdog( 'wmf_common', "Committing DB transaction", NULL, WATCHDOG_DEBUG );
-        $crm_transaction->commit();
-        unset( $ct_transaction );
-        unset( $drupal_transaction );
     }
 
     /**
