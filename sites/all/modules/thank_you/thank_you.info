@@ -9,3 +9,4 @@ configure = admin/config/thank_you
 files[] = Html2Text.php
 files[] = generators/RenderTranslatedPage.php
 files[] = generators/ThankYou2012.php
+files[] = generators/ThankYou20131202.php
