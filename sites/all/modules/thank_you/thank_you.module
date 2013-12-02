@@ -340,7 +340,10 @@ function thank_you_send( $contribution_id, $test=null ) {
 		}
 		watchdog("thank_you", "Sending ty email to: " . $email['to_address'], array(), WATCHDOG_INFO);
 
-		$email_success = $mailer->send( $email );
+		$email_success = $mailer->send(
+			$email,
+			array( 'List-Unsubscribe' => build_unsub_link( $contribution_id, $email['to_address'], $language) )
+		);
 
 	} catch (phpmailerException $e) {
         //TODO: don't assume phpmailer
@@ -613,14 +616,6 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
             and $transaction->is_recurring
             and time() < mktime( 0, 0, 0, 5, 17, 2012);
 
-	$unsub_params = array(
-		"p" => "thankyou",
-		"c" => $contribution['id'],
-		"e" => $contact['email'],
-		"h" => sha1( $contribution['id'] . $contact['email'] . WMF_UNSUB_SALT ),
-		"uselang" => $language,
-	);
-
 	// Format the datestamp
 	$date = strtotime( $contribution['receive_date'] );
 	if ( $country === 'US' && strftime( "%m-%d" ) === '01-01' ) {
@@ -635,7 +630,7 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
         "contribution" => $contribution,
         "recurring" => $recurring,
         "misseddonations" => $misseddonations,
-        "unsubscribe_link" => variable_get( 'thank_you_unsubscribe_url', '' ) . '?' . http_build_query( $unsub_params, '', '&' ),
+        "unsubscribe_link" => build_unsub_link( $contribution['id'], $contact['email'], $language ),
 		"language" => $language,
 		"country" => $country,
 		"locale" => "{$language}_{$country}",
@@ -649,6 +644,18 @@ function thank_you_render( $contribution, $contact, $language='en', $country='XX
     );
 
     return $template->render( 'html' );
+}
+
+function build_unsub_link( $contributionId, $emailAddr, $language ) {
+	$unsub_params = array(
+		"p" => "thankyou",
+		"c" => $contributionId,
+		"e" => $emailAddr,
+		"h" => sha1( $contributionId . $emailAddr . WMF_UNSUB_SALT ),
+		"uselang" => $language,
+	);
+
+	return variable_get( 'thank_you_unsubscribe_url', '' ) . '?' . http_build_query( $unsub_params, '', '&' );
 }
 
 class ThankYouException extends Exception{};

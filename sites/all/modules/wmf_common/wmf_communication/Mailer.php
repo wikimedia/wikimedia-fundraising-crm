@@ -37,7 +37,7 @@ class MailerPHPMailer implements IMailer {
         require_once( $path );
     }
 
-    function send( $email ) {
+    function send( $email, $headers = array() ) {
         watchdog( 'wmf_communication', t( "Sending an email to :to_address, using PHPMailer", array( ':to_address' => $email['to_address'] ) ), WATCHDOG_DEBUG );
 
         $mailer = new \PHPMailer( true );
@@ -49,6 +49,10 @@ class MailerPHPMailer implements IMailer {
         $mailer->set( 'Sender', $email['reply_to'] );
 
         $mailer->AddAddress( $email['to_address'], $email['to_name'] );
+
+		foreach ($headers as $header => $value) {
+			$mailer->AddCustomHeader( "$header: $value" );
+		}
 
         $mailer->Subject = $email['subject'];
         # n.b. - must set AltBody after MsgHTML(), or the text will be overwritten.
