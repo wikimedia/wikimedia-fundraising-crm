@@ -343,7 +343,7 @@ function queue2civicrm_insertmq_form() {
  */
 function queue2civicrm_insertmq_form_submit($form, &$form_state) {
     $q = queue2civicrm_stomp();
-	  $result = $q->enqueue( drupal_to_js($form_state['values']), array('persistent' => true), $form_state['values']['queue'] );
+	  $result = $q->enqueue( drupal_json_encode($form_state['values']), array('persistent' => true), $form_state['values']['queue'] );
 	  $q->disconnect();
 	  if (!$result) {
       watchdog('queue2civicrm','Send to queue failed for this message: <pre>' . check_plain(print_r($form_state['values'], TRUE)) . '</pre>');
