@@ -47,6 +47,9 @@ class WmfException extends Exception {
         'UNSUBSCRIBE_WARN' => array(
             'no-email' => TRUE,
         ),
+        'MISSING_PREDECESSOR' => array(
+            'requeue' => TRUE,
+        ),
 
         // other errors
         'FILE_NOT_FOUND' => array(
@@ -101,6 +104,11 @@ class WmfException extends Exception {
     function isRejectMessage()
     {
         return $this->getErrorCharacteristic('reject', FALSE);
+    }
+
+    function isRequeue()
+    {
+        return $this->getErrorCharacteristic('requeue', FALSE);
     }
 
     function isFatal()

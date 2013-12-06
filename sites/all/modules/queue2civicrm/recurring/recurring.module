@@ -99,7 +99,7 @@ function recurring_queue2civicrm_batch_process() {
   $recurring_processed = queue2civicrm_stomp()->dequeue_loop(
       variable_get( 'recurring_subscription', '/queue/test_recurring' ),
       variable_get( 'recurring_batch', 0 ),
-      'recurring_process_msg'
+      'recurring_import'
   );
 
   if ($recurring_processed > 0) {
@@ -110,61 +110,6 @@ function recurring_queue2civicrm_batch_process() {
   }
   
   return $recurring_processed;
-}
-
-/**
- * Process one item from the queue.
- * 
- * This is verry similar to queue2civicrm_dequeue, but it is more clearly named ;)
- * and supports option dequeueing depending on return status of import function.
- * 
- * @see recurring_import for status code information 
- */
-function recurring_process_msg($msg) {
-  $msg_orig = $msg;
-  $q = queue2civicrm_stomp();
-  try {
-    recurring_import($msg);
-    $q->ack($msg_orig);
-  } catch ( RequeueError $ex ) {
-    // We failed to process the message for some reason or another
-    // So... we queue a new message (the original plus a time delay and count header)
-    // and ACK the original
-    $ret = $q->requeueWithDelay($msg_orig);
-
-    if ($ret) {
-      $q->ack($msg_orig);
-    } else {
-      throw new WmfException("STOMP_BAD_CONNECTION", "Failed to requeue a recurring message");
-    }
-  } catch ( WmfException $ex ) {
-    watchdog('recurring', 'something went wrong during import: ' . $ex->getMessage(), NULL, WATCHDOG_ERROR);
-
-    if ($ex->isRejectMessage()) {
-      $error = "\nRemoving failed message from the queue: \n" . print_r($msg_orig, TRUE);
-      $q->reject($msg_orig, $ex);
-      watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
-    }
-
-    if (!$ex->isNoEmail()) {
-      if ( $ex->isRejectMessage() ) {
-        $msg = $q->item_url( $msg_orig );
-      }
-      wmf_common_failmail('recurring', $ex, $msg);
-    }
-
-    if ($ex->isFatal()) {
-      $error = "Halting Process.";
-      watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
-      throw $ex;
-    }
-  } catch (Exception $ex) {
-    $error = 'UNHANDLED ERROR. Halting Process. exception: ' . $ex->getMessage();
-    watchdog('recurring', $error, NULL, WATCHDOG_ERROR);
-    wmf_common_failmail('recurring', $error, $msg);
-
-    throw $ex;
-  }
 }
 
 /**
@@ -251,7 +196,7 @@ function recurring_import_subscr_payment( $msg ) {
     throw new WmfException( 'INVALID_RECURRING', 'Msg missing the subscr_id; cannot process.' );
   } elseif ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) { // check for parent record in civicrm_contribution_recur and fetch its id
     watchdog( 'recurring', 'Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.' );
-    throw new RequeueError();
+    throw new WmfException( 'MISSING_PREDECESSOR', "Missing the initial recurring record for subscr_id {$msg['subscr_id']}" );
   }
 
   civicrm_initialize(true);
@@ -781,7 +726,4 @@ function recurring_get_contribution_tracking_id( $msg ) {
   	watchdog( 'recurring', 'recurring_get_contribution_tracking_id: No contribution_tracking_id returned.', array(), WATCHDOG_DEBUG );
     return null;
   }
-}
-
-class RequeueError extends Exception {
 }

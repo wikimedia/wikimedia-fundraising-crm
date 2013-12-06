@@ -104,7 +104,6 @@ function unsubscribe_batch_process() {
  *              will still have been removed from the queue though.
  */
 function unsubscribe_process_message($msg) {
-  try {
     $txnid = $msg->headers['correlation-id'];
     watchdog('unsubscribe', "Beginning processing of message $txnid: " . json_encode($msg), array(), WATCHDOG_INFO);
 
@@ -139,19 +138,6 @@ function unsubscribe_process_message($msg) {
       $count = unsubscribe_opt_out_emails($emails);
       watchdog('unsubscribe', "$txnid: Successfully updated $count rows.");
     }
-
-  } catch ( WmfException $ex ) {
-    watchdog('unsubscribe', $ex->getMessage(), array(), WATCHDOG_ERROR);
-
-    if (!$ex->isNoEmail()) {
-      wmf_common_failmail( 'unsubscribe', $ex->getMessage() );
-    }
-
-    if ($ex->isFatal()) {
-      throw $ex;
-    }
-  }
-  queue2civicrm_stomp()->ack($msg);
 }
 
 /**

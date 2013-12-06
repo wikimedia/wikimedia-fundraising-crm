@@ -81,7 +81,7 @@ function refund_batch_process() {
   $processed = $q->dequeue_loop(
     variable_get('refund_queue', '/queue/refund-notifications_test'),
     variable_get('refund_batch', 0),
-    'refund_process_message'
+    'refund_import'
   );
 
   if ($processed > 0) {
@@ -93,71 +93,9 @@ function refund_batch_process() {
 }
 
 /**
- * Requeue on failure wrapper for @ref refund_import()
- *
  * @param $msg A STOMP message class.
- *
- * @return bool True if the refund was processed without errors. False if errors occured; the msg
- *              will still have been removed from the queue though.
- */
-function refund_process_message($msg) {
-  $msg_orig = $msg;
-  $q = queue2civicrm_stomp();
-  try {
-    if (refund_import($msg) === true) {
-      // only ack and remove from queue on explicit success
-      $q->ack($msg_orig);
-    } else {
-      // We failed to process the message for some reason or another
-      // So... we queue a new message (the original plus a time delay and count header)
-      // and ACK the original
-      $ret = $q->requeueWithDelay($msg_orig);
-
-      if ($ret) {
-        $q->ack($msg_orig);
-      } else {
-        throw new WmfException("STOMP_BAD_CONNECTION", "Failed to requeue a recurring message");
-      }
-    }
-  } catch (WmfException $ex) {
-    watchdog('recurring', 'something went wrong during import: ' . $ex->getMessage(), NULL, WATCHDOG_ERROR);
-
-    if ($ex->isRejectMessage()) {
-      $error = "\nRemoving failed message from the queue: \n" . print_r($msg_orig, TRUE);
-      $q->reject( $msg_orig, $ex );
-      watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
-    }
-
-    if (!$ex->isNoEmail()) {
-      if ( $ex->isRejectMessage() ) {
-        $msg = $q->item_url( $msg_orig );
-      }
-      wmf_common_failmail( 'refund', $ex, $msg );
-    }
-
-    if ($ex->isFatal()) {
-      $error = "Halting Process.";
-      watchdog('refund', $error, NULL, WATCHDOG_ERROR);
-      throw $ex;
-    }
-  } catch (Exception $ex) {
-    $error = 'UNHANDLED ERROR. Halting Process. exception: ' . $ex->getMessage();
-    watchdog('refund', $error, NULL, WATCHDOG_ERROR);
-    wmf_common_failmail('recurring', $error, $msg);
-
-    throw $ex;
-  }
-}
-
-/**
- * @param $msg A STOMP message class.
- *
- * @return bool True if the refund was processed without errors. False if a non critical
- * error occurred (IE: the parent transaction not yet in Civi).
  */
 function refund_import($msg) {
-  $retval = FALSE;
-
   $txnid = $msg->headers['correlation-id'];
   watchdog('refund', "Beginning processing of message $txnid: " . json_encode($msg), array(), WATCHDOG_INFO);
 
@@ -196,11 +134,8 @@ function refund_import($msg) {
       watchdog('refund', "$txnid: Could not refund due to internal error: " . $ex->getMessage(), WATCHDOG_ERROR);
       throw $ex;
     }
-
-    $retval = true;
   } else {
     watchdog( 'refund', "$txnid: Contribution not found for this transaction!", WATCHDOG_ERROR );
+    throw new WmfException( 'MISSING_PREDECESSOR', "Parent not found: $parentTxn" );
   }
-
-  return $retval;
 }

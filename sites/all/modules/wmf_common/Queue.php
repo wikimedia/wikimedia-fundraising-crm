@@ -75,7 +75,48 @@ class Queue {
 
             set_time_limit( 60 );
 
-            $this->transactionalCall( $callback, $msg );
+            try {
+                $this->transactionalCall( $callback, $msg );
+                $this->ack( $msg );
+            } catch ( WmfException $ex ) {
+                watchdog( 'wmf_common', 'Failure while processing message: ' . $ex->getMessage(), NULL, WATCHDOG_ERROR );
+
+                if ( $ex->isRequeue() ) {
+                    $ret = $this->requeueWithDelay( $msg );
+
+                    if ( $ret ) {
+                      $this->ack( $msg );
+                    } else {
+                      throw new WmfException( "STOMP_BAD_CONNECTION", "Failed to requeue a message" );
+                    }
+                }
+
+                if ( $ex->isRejectMessage() ) {
+                    watchdog( 'wmf_common', "\nRemoving failed message from the queue: \n" . print_r($msg, TRUE), NULL, WATCHDOG_ERROR );
+                    $this->reject( $msg, $ex );
+
+                    $mailableDetails = $this->item_url( $msg );
+                } else {
+                    $mailableDetails = "Redacted contents of message ID: " . Queue::getCorrelationId( $msg );
+                }
+
+                if ( !$ex->isNoEmail() ) {
+                    wmf_common_failmail( 'wmf_common', $ex, $mailableDetails );
+                }
+
+                if ( $ex->isFatal() ) {
+                    $error = "Halting Process.";
+                    watchdog( 'wmf_common', $error, NULL, WATCHDOG_ERROR );
+
+                    throw $ex;
+                }
+            } catch (Exception $ex) {
+                $error = 'UNHANDLED ERROR. Halting dequeue loop. Exception: ' . $ex->getMessage() . "\nStack Trace: " . print_r( $ex->getTrace(), true );
+                watchdog( 'wmf_common', $error, NULL, WATCHDOG_ERROR );
+                wmf_common_failmail( 'wmf_common', $error, Queue::getCorrelationId( $msg ) );
+
+                throw $ex;
+            }
 
             $processed++;
         }
@@ -294,13 +335,19 @@ class Queue {
       }
 
       $retval = FALSE;
+      $errorMsg = "Bad connection?";
       try {
         $retval = $this->enqueue( $msg, $headers, $queue );
-      } catch (Stomp_Exception $ex) {
-        $exMsg = "Failed to requeue message with {$ex->getMessage()}. Contents: " . json_encode($msg_orig);
-        watchdog('recurring', $exMsg, NULL, WATCHDOG_ERROR);
-        wmf_common_failmail('recurring', $exMsg);
+      } catch ( Stomp_Exception $ex ) {
+        $errorMsg = $ex->getMessage();
       }
+
+      if ( !$retval ) {
+        $error = "Failed to requeue message: {$errorMsg}. Contents: " . json_encode( $msg_orig );
+        watchdog( 'wmf_common', $error, NULL, WATCHDOG_ERROR );
+        wmf_common_failmail( 'wmf_common', $exMsg );
+      }
+
       return $retval;
     }
 
@@ -365,11 +412,7 @@ class Queue {
     function item_url( $msg ) {
         global $base_url;
         $queue = str_replace('/queue/', '', $msg->headers['destination'] );
-        if ( !empty( $msg->headers['correlation-id'] ) ) {
-            $correlationId = $msg->headers['correlation-id'];
-        } else {
-            $correlationId = $msg->headers['message-id'];
-        }
+        $correlationId = Queue::getCorrelationId( $msg );
         return "{$base_url}/queue/{$queue}/{$correlationId}";
     }
 
