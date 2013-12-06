@@ -74,14 +74,10 @@ class Queue {
             watchdog( 'wmf_common', t('Feeding raw queue message to %callback : %msg', array( '%callback' => print_r($callback, TRUE), '%msg' => print_r($msg, TRUE) ) ), NULL, WATCHDOG_INFO );
 
             set_time_limit( 60 );
-            try {
-                $callback( $msg );
-                $processed++;
-            }
-            catch ( Exception $ex ) {
-                watchdog( 'wmf_common', "Aborting dequeue loop after successfully processing {$processed} messages.", NULL, WATCHDOG_INFO );
-                throw $ex;
-            }
+
+            $this->transactionalCall( $callback, $msg );
+
+            $processed++;
         }
 
         $con->unsubscribe( $queue );
@@ -114,6 +110,49 @@ class Queue {
             $messages[] = $msg;
         }
         return $messages;
+    }
+
+    /**
+     * Call the message processing callback and perform common error handling
+     *
+     * TODO: move the remaining error handling in here
+     */
+    protected function transactionalCall( $callback, $msg ) {
+        // FIXME: this will not be configurable in the future,
+        // we will want to use transactions all tha time.
+        $transactional = variable_get( 'wmf_common_transactional', FALSE );
+
+        if ( $transactional ) {
+            watchdog( 'wmf_common', "Beginning DB transaction", NULL, WATCHDOG_INFO );
+            $drupal_transaction = db_transaction( 'dequeue_default', array( 'target' => 'default' ) );
+            $ct_transaction = db_transaction( 'dequeue_donations', array( 'target' => 'donations' ) );
+            $crm_transaction = db_transaction( 'dequeue_civicrm', array( 'target' => 'civicrm' ) );
+            $native_civi_transaction = new CRM_Core_Transaction();
+        }
+
+        try {
+            // Do the right thing
+            $callback( $msg );
+        }
+        catch ( Exception $ex ) {
+            watchdog( 'wmf_common', "Aborting DB transaction.", NULL, WATCHDOG_INFO );
+            if ( $transactional ) {
+                $native_civi_transaction->rollback();
+                $crm_transaction->rollback();
+                $ct_transaction->rollback();
+                $drupal_transaction->rollback();
+            }
+
+            throw $ex;
+        }
+
+        if ( $transactional ) {
+            watchdog( 'wmf_common', "Committing DB transaction", NULL, WATCHDOG_INFO );
+            $native_civi_transaction->commit();
+            unset( $crm_transaction );
+            unset( $ct_transaction );
+            unset( $drupal_transaction );
+        }
     }
 
     function getByCorrelationId( $queue, $correlationId ) {
