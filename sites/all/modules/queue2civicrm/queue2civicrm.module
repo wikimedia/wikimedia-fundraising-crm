@@ -174,7 +174,7 @@ function queue2civicrm_batch_process() {
   $processed = queue2civicrm_stomp()->dequeue_loop(
       variable_get('queue2civicrm_subscription', '/queue/test'),
       variable_get( 'queue2civicrm_batch', 0 ),
-      'queue2civicrm_process_message'
+      'queue2civicrm_import'
   );
 
   // allow for other modules to handle their own related batch processing
@@ -210,49 +210,6 @@ function queue2civicrm_batch_process() {
   else {
     watchdog('queue2civicrm', 'No contributions processed.');
   }
-}
-
-/**
- * Remove one item from the queue and process it.
- */
-function queue2civicrm_process_message($msg) {
-    $q = queue2civicrm_stomp();
-    try {
-        $msg_orig = $msg;
-        queue2civicrm_import($msg);
-        $q->ack($msg_orig);
-    }
-    catch (WmfException $ex) {
-        watchdog('queue2civicrm', 'something went wrong during import: '.$ex->getMessage(), NULL, WATCHDOG_ERROR);
-
-        if ($ex->isRejectMessage()) {
-            $error = "\nRemoving failed message from the queue: \n" . print_r($msg_orig, true);
-            $q->reject($msg_orig, $ex);
-            watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
-        }
-
-        if ( !$ex->isNoEmail() ){
-            if ( $ex->isRejectMessage() ) {
-                $msg = $q->item_url( $msg_orig );
-            }
-            // TODO: else protect PII in some other way
-            wmf_common_failmail( 'queue2civicrm', $ex, $msg );
-        }
-
-        if ($ex->isFatal()) {
-            $error = "Halting Process.";
-            watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
-
-            throw $ex;
-        }
-    }
-    catch (Exception $ex) {
-        $error = 'UNHANDLED ERROR. Halting Process. exception: ' . $ex->getMessage() . "\nStack Trace: " . print_r( $ex->getTrace(), true);
-        watchdog('queue2civicrm', $error, NULL, WATCHDOG_ERROR);
-        wmf_common_failmail( 'queue2civicrm', $error, $msg );
-
-        throw $ex;
-    }
 }
 
 /**
