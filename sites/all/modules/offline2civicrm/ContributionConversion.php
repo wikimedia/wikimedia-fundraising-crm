@@ -17,11 +17,15 @@ class ContributionConversion {
             'cancel' => $cancel,
         );
         wmf_civicrm_message_contribution_recur_insert( $synth_msg, $contribution['contact_id'], $contribution );
-        $dbs = wmf_civicrm_get_dbs();
-        $dbs->push( 'civicrm' );
-        $result = db_update( 'civicrm_contribution' )->fields( array(
+        $api = civicrm_api_classapi();
+        $update_params = array(
+            'id' => $contribution['id'],
+
             'trxn_id' => $contribution['trxn_id'],
-        ) )->condition( 'id', $contribution['id'] )->execute();
+
+            'version' => 3,
+        );
+        $api->Contribution->Create( $update_params );
     }
 }
 

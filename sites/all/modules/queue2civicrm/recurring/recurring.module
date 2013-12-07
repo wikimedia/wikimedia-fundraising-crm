@@ -289,12 +289,14 @@ function recurring_import_subscr_payment( $msg ) {
   }
 
   // update subscription record with next payment date
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push( 'civicrm' );
-  db_update( 'civicrm_contribution_recur' )->fields( array(
-    'next_sched_contribution' => wmf_common_date_unix_to_civicrm( strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'payment_date' ] ))
-  ) )->condition( 'id', $recur_record->id )->execute();
-  $dbs->pop();
+  $api = civicrm_api_classapi();
+  $update_params = array(
+    'next_sched_contribution' => wmf_common_date_unix_to_civicrm( strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'payment_date' ] )),
+    'id' => $recur_record->id,
+
+    'version' => 3,
+  );
+  $api->ContributionRecur->Create( $update_params );
   
   // construct an array of useful info to invocations of queue2civicrm_import
   $contribution_info = array(
@@ -362,9 +364,8 @@ function recurring_import_subscr_signup( $msg ) {
   // Tag contact for review
   wmf_civicrm_tag_contact_for_review( $contact );
   
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push( 'civicrm' );
-  $result = db_insert( 'civicrm_contribution_recur' )->fields( array(
+  $api = civicrm_api_classapi();
+  $insert_params = array(
     'contact_id' => $contact[ 'id' ],
     'currency' => $msg[ 'original_currency' ],
     'amount' => $msg[ 'original_gross' ],
@@ -374,9 +375,11 @@ function recurring_import_subscr_signup( $msg ) {
     'start_date' => wmf_common_date_unix_to_civicrm( $msg[ 'start_date' ] ),
     'create_date' => wmf_common_date_unix_to_civicrm( $msg[ 'create_date' ] ),
     'trxn_id' => $msg[ 'subscr_id' ],
-  ) )->execute();
+    
+    'version' => 3,
+  );
 
-  if ( !$result ) {
+  if ( !$api->ContributionRecur->Create( $insert_params ) ) {
     throw new WmfException( 'IMPORT_CONTRIB', 'Failed inserting subscriber signup for subscriber id: ' . print_r( $msg['subscr_id'], true ));
   } else {
     watchdog( 'recurring', 'Succesfully inserted subscription signup for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
@@ -394,14 +397,20 @@ function recurring_import_subscr_cancel( $msg ) {
     throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist' );
   }
   
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push( 'civicrm' );
-  db_update( 'civicrm_contribution_recur' )->fields( array(
+  $api = civicrm_api_classapi();
+  $update_params = array(
+    'trxn_id' => $msg['subscr_id'],
+
     'cancel_date' => wmf_common_date_unix_to_civicrm( $msg[ 'cancel_date' ] ), 
     'end_date' => wmf_common_date_unix_to_civicrm( $msg[ 'cancel_date' ] ), 
-  ) )->condition( 'trxn_id', $msg[ 'subscr_id' ] )->execute();
 
-  watchdog( 'recurring', 'Succesfuly cancelled subscription for subscriber id %subscr_id', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+    'version' => 3,
+  );
+  if ( !$api->ContributionRecur->Create( $update_params ) ) {
+    throw new WmfException( 'INVALID_RECURRING', 'There was a problem updating the subscription for cancelation for subscriber id: ' . print_r( $msg[ 'subscr_id' ], true ));
+  } else {
+    watchdog( 'recurring', 'Succesfuly cancelled subscription for subscriber id %subscr_id', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+  }
 }
 
 /**
@@ -415,14 +424,19 @@ function recurring_import_subscr_eot( $msg ) {
     throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist' );
   }
 
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push( 'civicrm' );
-  db_update( 'civicrm_contribution_recur' )->fields( array(
+  $api = civicrm_api_classapi();
+  $update_params = array(
+    'trxn_id' => $msg['subscr_id'],
+
     'end_date' => wmf_common_date_unix_to_civicrm( time() ),
-  ) )->condition( 'trxn_id', $msg[ 'subscr_id' ] )->execute();
-  $dbs->pop();
-  
-  watchdog( 'recurring', 'Succesfuly ended subscription for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+
+    'version' => 3,
+  );
+  if ( !$api->ContributionRecur->Create( $update_params ) ) {
+    throw new WmfException( 'INVALID_RECURRING', 'There was a problem updating the subscription for EOT for subscription id: %subscr_id' . print_r( $msg[ 'subscr_id' ], true ));
+  } else {
+    watchdog( 'recurring', 'Succesfuly ended subscription for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+  }
 }
 
 /**
@@ -439,18 +453,23 @@ function recurring_import_subscr_modify( $msg ) {
     throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist for subscription id: ' . print_r( $msg, true ));
   }
 
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push( 'civicrm' );
-  db_update( 'civicrm_contribution_recur' )->fields( array(
+  $api = civicrm_api_classapi();
+  $update_params = array(
+    'trxn_id' => $msg['subscr_id'],
+
     'amount' => $msg[ 'original_gross' ],
     'frequency_unit' => $msg[ 'frequency_unit' ],
     'frequency_interval' => $msg[ 'frequency_interval' ],
     'modified_date' => wmf_common_date_unix_to_civicrm( $msg[ 'modified_date' ] ),
     //FIXME: looks wrong to base off of start_date
     'next_sched_contribution' => wmf_common_date_unix_to_civicrm( strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'start_date' ] )),
-  ) )->condition( 'trxn_id', $msg[ 'subscr_id' ] )->execute();
-  $dbs->pop();
 
+    'version' => 3,
+  );
+  if ( !$api->ContributionRecur->Create( $update_params ) ) {
+    throw new WmfException( 'INVALID_RECURRING', 'There was a problem updating the subscription record for subscription id ' . print_r( $msg['subscr_id'], true ) );
+  }
+   
   // update the contact
   $contact = wmf_civicrm_message_contact_update( $msg, $recur_record->contact_id );
   
@@ -473,14 +492,19 @@ function recurring_import_subscr_failed( $msg ) {
     throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist for subscription id: ' . print_r( $msg['subscr_id'], true ) );
   }
   
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push( 'civicrm' );
-  db_update( 'civicrm_contribution_recur' )->fields( array(
+  $api = civicrm_api_classapi();
+  $update_params = array(
+    'trxn_id' => $msg[ 'subscr_id' ],
     'failure_count' => $msg[ 'failure_count' ],
     'failure_retry_date' => wmf_common_date_unix_to_civicrm( $msg[ 'failure_retry_date' ] ),
-  ) )->condition( 'trxn_id', $msg[ 'subscr_id' ] )->execute();
 
-  watchdog( 'recurring', 'Succesfuly cacneled subscription for failed payment for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+    'version' => 3,
+  );
+  if ( !$api->ContributionRecur->Create( $update_params ) ) {
+    throw new WmfException( 'INVALID_RECURRING', 'There was a problem updating the subscription for failed payment for subscriber id: ' . print_r( $msg['subscr_id'], true ) );
+  } else {
+    watchdog( 'recurring', 'Succesfuly cacneled subscription for failed payment for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+  }
 }
 
 /**

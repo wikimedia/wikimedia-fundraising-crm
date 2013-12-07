@@ -78,10 +78,8 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
     
     $next_sched_contribution = wmf_civicrm_get_next_sched_contribution_date_for_month( $msg );
     
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push( 'civicrm' );
-
-    $contribution_recur_id = db_insert( 'civicrm_contribution_recur' )->fields( array(
+    $api = civicrm_api_classapi();
+    $insert_params = array(
         'contact_id' => $contact_id,
         'amount' => $msg[ 'original_gross' ],
         'currency' => $msg[ 'original_currency' ],
@@ -96,10 +94,12 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
         'cycle_day' => $msg[ 'cycle_day' ],
         'next_sched_contribution' => $next_sched_contribution,
         'trxn_id' => $contribution_record['trxn_id'],
-    ) )->execute();
 
-    $dbs->pop();
-    
+        'version' => 3,
+    );
+    $result = $api->ContributionRecur->Create( $insert_params );
+    $contribution_recur_id = $result['id'];
+
     // Link the contribution to the recurring payment
     //TODO catch error and print message
     $link_contribution_status = wmf_civicrm_update_contribution_for_recurring( $contribution_record['id'], $contribution_recur_id );
@@ -127,14 +127,14 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
         throw new WmfException('IMPORT_SUBSCRIPTION', $error_message);
     }
 
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push( 'civicrm' );
-    $result = db_update( 'civicrm_contribution' )->fields( array(
+    $api = civicrm_api_classapi();
+    $update_params = array(
+        'id' => $contribution_id,
         'contribution_recur_id' => $contribution_recur_id,
-    ) )->condition( 'id', $contribution_id )->execute();
-    $dbs->pop();
 
-    if ( !$result ) {
+        'version' => 3,
+    );
+    if ( !$api->Contribution->Create($update_params) ) {
         $error_message = t(
             'There was a problem linking the contribution [!contribution_id] to the recurring contribution [!contribution_recur_id]',
             array(
