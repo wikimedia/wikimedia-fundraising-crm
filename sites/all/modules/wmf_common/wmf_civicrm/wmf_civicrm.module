@@ -1290,11 +1290,13 @@ EOS;
     );
     wmf_civicrm_set_custom_field_values($contribution->id, $custom_values);
 
-    // FIXME: Contribution api cannot do a simple update
-    $affected_rows = db_update( 'civicrm_contribution' )->fields( array(
+    $update_params = array(
+        'id' => $contribution->id,
         'contribution_status_id' => civicrm_api_contribution_status( 'Refunded' ),
-    ) )->condition( 'id', $contribution->id )->execute();
-    if ( !$affected_rows ) {
+
+        'version' => 3,
+    );
+    if ( !$api->Contribution->Create($update_params) ) {
         throw new WmfException( 'IMPORT_CONTRIB', "Cannot mark original contribution as refunded: $contribution_id, " . db_error() );
     }
 
