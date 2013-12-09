@@ -80,6 +80,11 @@ function wmf_common_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array( 'wmf_common_queue_item_form', 1, 2 ),
   );
+  $items['queue/%/%/download'] = array(
+    'access arguments' => array( 'manipulate queues' ),
+    'page callback' => 'wmf_common_queue_item_download',
+    'page arguments' => array( 1, 2 ),
+  );
 
   return $items;
 }
@@ -285,11 +290,10 @@ function wmf_common_queue_item_form( $form, &$form_state, $queue, $correlationId
       '#type' => 'submit',
       '#value' => t( 'Resend' ),
     );
-  # TODO
-  #  $form['download'] = array(
-  #    '#type' => 'submit',
-  #    '#value' => t( 'Download' ),
-  #  );
+    $form['download'] = array(
+      '#type' => 'submit',
+      '#value' => t( 'Download' ),
+    );
     $form['delete'] = array(
       '#type' => 'submit',
       '#value' => t( 'Delete' ),
@@ -330,7 +334,23 @@ function wmf_common_queue_item_submit( $form, &$form_state ) {
     $msg = $q->getByAnyId( "{$queue}-damaged", $correlationId );
     $q->ack( $msg );
     drupal_set_message( t( 'Successfully removed message %id.', array( '%id' => $correlationId ) ) );
-    $form_state['redirect'] = "queue/{$queue}-damaged/";
+    $form_state['redirect'] = "queue/damaged";
+    break;
+  case $form_state['values']['download']:
+    $form_state['redirect'] = "queue/{$queue}-damaged/{$correlationId}/download";
     break;
   }
+}
+
+function wmf_common_queue_item_download( $queue, $correlationId ) {
+  $queue = preg_replace( '/[^-_a-z]/', '', $queue );
+  $correlationId = preg_replace( '/[^-a-zA-Z0-9:]/', '', $correlationId );
+
+  $q = queue2civicrm_stomp();
+  $msg = $q->getByAnyId( $queue, $correlationId );
+
+  $name = mime_header_encode( "{$correlationId}.json" );
+  drupal_add_http_header( 'Content-Type', 'application/json' );
+  drupal_add_http_header( 'Content-Disposition', "attachment; filename=\"{$name}\"" );
+  echo( $msg->body );
 }
