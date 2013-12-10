@@ -282,10 +282,10 @@ function recurring_import_subscr_payment( $msg ) {
     $contact = wmf_civicrm_message_contact_update( $msg, $contact[ 'id' ] );
   
     // Insert the location record
-    $location = wmf_civicrm_message_location_insert( $msg, $contact );
-  
-    // Tag contact for review
-    $tag = wmf_civicrm_tag_contact_for_review( $contact );
+    wmf_civicrm_message_location_insert( $msg, $contact );
+
+	// Tag contact for review
+	wmf_civicrm_tag_contact_for_review( $contact );
   }
 
   // update subscription record with next payment date
@@ -355,12 +355,12 @@ function recurring_import_subscr_signup( $msg ) {
   
   // create contact record
   $contact = wmf_civicrm_message_contact_insert( $msg );
-  
+
   // Insert the location record
-  //$location = wmf_civicrm_message_location_insert( $msg, $contact );
-  
+  wmf_civicrm_message_location_insert( $msg, $contact );
+
   // Tag contact for review
-  //$tag = wmf_civicrm_tag_contact_for_review( $contact );
+  wmf_civicrm_tag_contact_for_review( $contact );
   
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
