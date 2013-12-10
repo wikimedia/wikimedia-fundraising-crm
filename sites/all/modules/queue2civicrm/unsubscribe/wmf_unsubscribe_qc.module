@@ -161,23 +161,23 @@ function unsubscribe_process_message($msg) {
  * @return array
  */
 function unsubscribe_get_emails_from_contribution($ctid) {
-  $query = 'SELECT con.id, con.is_opt_out, e.email';
-  $query .= ' FROM civicrm_contribution ct, civicrm_contact con';
-  $query .= ' LEFT JOIN civicrm_email e';
-  $query .= '  ON con.id=e.contact_id';
-  $query .= ' WHERE ct.id = :id AND ct.contact_id=con.id';
+  $query = "
+SELECT con.id, con.is_opt_out, e.email
+FROM civicrm_contribution ct, civicrm_contact con
+LEFT JOIN civicrm_email e
+  ON con.id = e.contact_id
+WHERE ct.id = %1 AND ct.contact_id = con.id";
 
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push( 'civicrm' );
-
-  $res = db_query( $query, array( ':id' => $ctid ) );
+  $dao = CRM_Core_DAO::executeQuery( $query, array(
+    1 => array( $ctid, 'Integer' ),
+  ) );
 
   $out = array();
-  foreach ( $res as $contact ) {
+  while ( $dao->fetch() ) {
     $out[] = array(
-      'contact_id' => (int)$contact->id,
-      'is_opt_out' => (bool)$contact->is_opt_out,
-      'email' => $contact->email,
+      'contact_id' => (int)$dao->id,
+      'is_opt_out' => (bool)$dao->is_opt_out,
+      'email' => $dao->email,
     );
   }
   return $out;

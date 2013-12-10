@@ -1105,22 +1105,13 @@ function wmf_civicrm_get_contributions_from_gateway_id( $gateway, $gateway_txn_i
 	$gateway = strtolower( $gateway );
 	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc 
 		ON cc.id = cx.entity_id 
-		WHERE gateway LIKE :gateway AND gateway_txn_id LIKE :gateway_txn_id";
-	//FIXME: review whether we still need LIKE
+		WHERE gateway = %1 AND gateway_txn_id = %2";
 
-	$row = false;
-	$dbs = wmf_civicrm_get_dbs();
-	$dbs->push( 'civicrm' );
-	$result = db_query( $query, array( ':gateway' => $gateway, ':gateway_txn_id' => $gateway_txn_id ) );
-	$matching = array();
-	while ( $row = $result->fetchAssoc() ) {
-		$matching[] = $row;
-	}
-
-	if ( count( $matching ) == 0 ) {
-        return false;
-    }
-	return $matching;
+    $dao = CRM_Core_DAO::executeQuery( $query, array(
+        1 => array( $gateway, 'String' ),
+        2 => array( $gateway_txn_id, 'String' ),
+    ) );
+	return wmf_civicrm_dao_to_list( $dao );
 }
 
 function wmf_civicrm_get_child_contributions_from_gateway_id( $gateway, $gateway_txn_id ){
@@ -1128,21 +1119,13 @@ function wmf_civicrm_get_child_contributions_from_gateway_id( $gateway, $gateway
 	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp 
 		INNER JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id 
 		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id 
-		WHERE cxp.gateway LIKE :gateway AND cxp.gateway_txn_id LIKE :gateway_txn_id";
+		WHERE cxp.gateway = %1 AND cxp.gateway_txn_id = %2";
 
-	$row = false;
-	$dbs = wmf_civicrm_get_dbs();
-	$dbs->push( 'civicrm' );
-	$result = db_query( $query, array( ':gateway' => $gateway, ':gateway_txn_id' => $gateway_txn_id ) );
-	$matching = array();
-	while ( $row = $result->fetchAssoc() ) {
-		$matching[] = $row;
-	}
-
-	if ( count( $matching ) == 0 ) {
-        return false;
-    }
-	return $matching;
+    $dao = CRM_Core_DAO::executeQuery( $query, array(
+        1 => array( $gateway, 'String' ),
+        2 => array( $gateway_txn_id, 'String' ),
+    ) );
+	return wmf_civicrm_dao_to_list( $dao );
 }
 
 
@@ -1153,13 +1136,15 @@ function wmf_civicrm_boost_performance() {
 }
 
 function wmf_civicrm_set_thankyou_date_to_epoch( $contribution_id ){
-	$dbs = wmf_civicrm_get_dbs();
-	$dbs->push( 'civicrm' );
-	$query = "UPDATE civicrm_contribution SET thankyou_date = '1970-01-01 00:00:00' WHERE id = :id";
+    $api = civicrm_api_classapi();
+    $result = $api->Contribution->Create( array(
+        'id' => $contribution_id,
+        'thankyou_date' => '1970-01-01 00:00:00',
+        'version' => 3,
+    ) );
 
-	$result = db_query( $query, array( ':id' => $contribution_id ) );
 	if ( !$result ) {
-		watchdog('thank_you', 'Updating TY date to epoch failed ', array(), WATCHDOG_ERROR);
+		watchdog('thank_you', 'Updating TY date to epoch failed: ' . $api->errorMsg(), array(), WATCHDOG_ERROR);
 		return false;
 	} else {
 		watchdog('thank_you', 'TY date set to epoch sucessfully', array(), WATCHDOG_INFO);
@@ -1196,24 +1181,27 @@ function wmf_civicrm_mark_refund(
 ) {
     $api = civicrm_api_classapi();
 
-    $success = $api->Contribution->Get(array('id' => $contribution_id));
-    if ( !$success || !$api->values ) {
+    $success = $api->Contribution->Get( array(
+        'id' => $contribution_id,
+        'version' => 3,
+    ) );
+    if ( !$success || !$api->values() ) {
         throw new WmfException( 'INVALID_MESSAGE', "No such contribution: $contribution_id, " . $api->errorMsg());
     }
     $result = $api->values;
     $contribution = array_pop($result);
 
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push( 'civicrm' );
-
     // Look for existing refunds
-    $query = <<<"EOS"
+    $query = "
 SELECT id FROM wmf_contribution_extra
 WHERE
-    parent_contribution_id = :id
-    OR (entity_id = :id AND COALESCE(parent_contribution_id, 0))
-EOS;
-    if ( db_query($query, array( ':id' => $contribution_id ))->rowCount() ) {
+    parent_contribution_id = %1
+    OR (entity_id = %1 AND COALESCE(parent_contribution_id, 0))";
+
+    $dao = CRM_Core_DAO::executeQuery( $query, array(
+        1 => array( $contribution_id, 'Integer' ),
+    ) );
+    if ( $dao->fetch() ) {
         throw new WmfException( 'INVALID_MESSAGE', "Contribution is already linked to a refund, or is itself a refund: $contribution_id" );
     }
 
@@ -1222,24 +1210,20 @@ EOS;
             or $contribution->contribution_source === "RFD")
         and $original_currency and $original_amount > 0
     ) {
-        $dbs->pop();
-
-        //FIXME: call this from the contribution save hook. $round parameter. 
+        //FIXME!: call this from the contribution save hook. $round parameter. 
         $contribution->total_amount = round( exchange_rate_convert(
             $original_currency, $original_amount,
             strtotime( $contribution->receive_date )
         ), 2 );
 
-        $dbs->push( 'civicrm' );
+        $api->Contribution->Create( array(
+            'id' => $contribution_id,
 
-        $sql = <<<EOS
-UPDATE civicrm_contribution
-SET
-    source = :source,
-    total_amount = :total
-WHERE id = :id
-EOS;
-        db_query( $sql, array( ':source' => "$original_currency $original_amount", ':total' => $contribution->total_amount, ':id' => $contribution_id ) );
+            'source' => "{$original_currency} {$original_amount}",
+            'total_amount' => $contribution->total_amount,
+
+            'version' => 3,
+        ) );
     } else {
         list($actual_currency, $actual_amount) = explode(" ", $contribution->contribution_source);
         if ( ($original_currency && round($original_currency, 2) != round($actual_currency, 2))
@@ -1261,7 +1245,10 @@ EOS;
 
     if ( $refund_date === null ) {
         $refund_date = time();
+    } elseif ( !is_numeric( $refund_date ) ) {
+        $refund_date = strtotime( $refund_date );
     }
+
     $refund_status = ( $refund_completed ? 'Completed' : 'Pending' );
     $refund_params = array(
         'contact_id' => $contribution->contact_id,
@@ -1282,10 +1269,12 @@ EOS;
     $result = $api->values;
     $refund = array_pop($result);
 
-    $account_field_name = wmf_civicrm_get_custom_field_name( 'gateway_account' );
+    $parent_custom_values = wmf_civicrm_contribution_get_custom_values( $contribution_id, array(
+        'gateway_account',
+    ) );
 
     $custom_values = array(
-        'gateway_account' => $contribution->$account_field_name,
+        'gateway_account' => $parent_custom_values['gateway_account'],
         'parent_contribution_id' => $contribution->id,
         'finance_only' => 1,
     );
@@ -1506,4 +1495,12 @@ EOS;
  */
 function wmf_civicrm_get_dbs() {
     return new db_switcher();
+}
+
+function wmf_civicrm_dao_to_list( $dao ) {
+    $result = array();
+    while ( $dao->fetch() ) {
+        $result[] = $dao->toArray();
+    }
+    return $result;
 }
