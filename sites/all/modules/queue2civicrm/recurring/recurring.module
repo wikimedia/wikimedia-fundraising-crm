@@ -509,18 +509,20 @@ function recurring_import_subscr_failed( $msg ) {
 /**
  * Get recurring record in CiviCRM for the given subscriber id
  * @param int $subscr_id
- * @return object
+ * @return object|false
  */
 function recurring_get_recur_record( $subscr_id ) {
-  $query = "SELECT * FROM civicrm_contribution_recur WHERE trxn_id = :id";
+  $query = "SELECT * FROM civicrm_contribution_recur WHERE trxn_id = %1";
 
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push( 'civicrm' );
-  $recur_record = db_query( $query, array( ':id' => $subscr_id ) )->fetch();
-  $dbs->pop();
-  
-  watchdog( 'recurring', 'Recurring record: %recur_record', array( '%recur_record' => print_r( $recur_record, true )), WATCHDOG_DEBUG );
-  return $recur_record;
+  $dao = CRM_Core_DAO::executeQuery( $query, array(
+    1 => array( $subscr_id, 'String' ),
+  ) );
+
+  if ( !$dao->fetch() ) {
+    return false;
+  }
+
+  return $dao;
 }
 
 /**
@@ -735,24 +737,26 @@ function recurring_get_contribution_tracking_id( $msg ) {
     return $msg[ 'custom' ];
   } elseif ( $msg[ 'txn_type' ] == 'subscr_payment' ) {
     $contribution_tracking_id = null;
-    $contrib_ids = array(); // for holding related contribtion ids
-    
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push( 'civicrm' );
-    // determine if we already have a contrib tracking id for related contribs, working backwards from recur record
-    $query = "SELECT id FROM civicrm_contribution_recur WHERE trxn_id = :id";
-    $recur_id = db_query( $query, array( ':id' => $msg[ 'subscr_id' ] ) )->fetchField();
 
-    if ( $recur_id ) { // we potentially have related contributions
+    // determine if we already have a contrib tracking id for related contribs, working backwards from recur record
+    $recurring_record = recurring_get_recur_record( $msg['subscr_id'] );
+
+    if ( $recurring_record ) { // we potentially have related contributions
+      $recur_id = $recurring_record->id;
       // find related contribution ids
-      $query = "SELECT id FROM civicrm_contribution WHERE contribution_recur_id = :id";
-      $result = db_query( $query, array( ':id' => $recur_id ) );
-      foreach ( $result as $row ) {
-        array_push( $contrib_ids, $row->id );
+
+      $query = "SELECT id FROM civicrm_contribution WHERE contribution_recur_id = %1";
+      $dao = CRM_Core_DAO::executeQuery( $query, array(
+        '1' => array( $recur_id, 'Integer' ),
+      ) );
+      $contrib_ids = array();
+      while ( $dao->fetch() ) {
+        array_push( $contrib_ids, $dao->id );
       }
-      
+
       if ( count( $contrib_ids )) { // if we've got any related contributions
         // see if a record already exists
+        $dbs = wmf_civicrm_get_dbs();
         $dbs->push( 'donations' );
         $id_list = implode( ",", $contrib_ids );
         $query = "SELECT id FROM {contribution_tracking} WHERE contribution_id IN ( {$id_list} )";
@@ -763,7 +767,6 @@ function recurring_get_contribution_tracking_id( $msg ) {
       }
     }
     
-    $dbs->push( 'default' );
     // if we still don't have a contribution tracking id, we're gonna have to make one
     if ( !$contribution_tracking_id ) {
       // if we already have previous contributions, we should create a contrib id connected with the first contrib
