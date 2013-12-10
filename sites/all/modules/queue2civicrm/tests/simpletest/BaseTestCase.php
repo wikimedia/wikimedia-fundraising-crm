@@ -3,20 +3,21 @@
  * Set up schemas and constants.
  */
 class BaseTestCase extends DrupalWebTestCase {
-    public function setUp() {
-        // This is basically a terrible hack: we are using the "development"
-        // civicrm database configured in civicrm.settings.php, and avoid the
-        // overhead of creating a new test db by protecting with a transaction.
-        // It probably subtly breaks all kinds of simpletest things.
-        db_query( "START TRANSACTION" );
-        db_query( "SET autocommit = 0" );
+    protected $profile = 'minimal';
 
+    public function setUp() {
         // FIXME: pass module names from subclass setUp
         parent::setUp(
-            'dblog', 'exchange_rates', 'queue2civicrm', 'wmf_common', 'wmf_civicrm', 'contribution_tracking', 'wmf_refund_qc', 'recurring', 'recurring_globalcollect',
+            'dblog', 'exchange_rates', 'queue2civicrm', 'wmf_common', 'wmf_civicrm', 'contribution_tracking', 'wmf_refund_qc', 'recurring', 'recurring_globalcollect', 'offline2civicrm',
             // civi schema is not installed here,
             'civicrm'
         );
+
+        // This is a terrible hack: we are using the "development"
+        // civicrm database configured in civicrm.settings.php, and avoid the
+        // overhead of creating a new test db by protecting with a transaction.
+        // It probably subtly breaks all kinds of simpletest things.
+        $this->civicrm_transaction = new CRM_Core_Transaction();
 
         // FIXME: reference data is hardcoded
         $this->currency = "BAA";
@@ -28,9 +29,10 @@ class BaseTestCase extends DrupalWebTestCase {
 
     public function tearDown() {
         $mails = $this->drupalGetMails();
-        parent::tearDown();
 
-        db_query( "ROLLBACK" );
+        $this->civicrm_transaction->rollback();
+
+        parent::tearDown();
     }
 
     /**

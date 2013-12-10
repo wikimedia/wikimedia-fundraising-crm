@@ -11,3 +11,4 @@ files[] = ChecksFile.php
 files[] = ChecksImportLog.php
 files[] = ContributionConversion.php
 files[] = CsvBatchFile.php
+files[] = tests/ContributionConversion.test 
