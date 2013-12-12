@@ -20,16 +20,13 @@ class WmfException extends Exception {
             'reject' => TRUE,
         ),
         'IMPORT_CONTACT' => array(
-            'fatal' => TRUE,
+            'reject' => TRUE,
         ),
         'IMPORT_CONTRIB' => array(
-            'fatal' => TRUE,
+            'reject' => TRUE,
         ),
         'IMPORT_SUBSCRIPTION' => array(
-            'fatal' => TRUE,
-        ),
-        'IMPORT_TAG' => array(
-            'fatal' => TRUE,
+            'reject' => TRUE,
         ),
         'DUPLICATE_CONTRIBUTION' => array(
             'reject' => TRUE,
