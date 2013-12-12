@@ -728,9 +728,15 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         // guess from contribution_tracking data
         $tracking = wmf_civicrm_get_contribution_tracking( $msg );
         if ( $tracking and !empty($tracking['language']) ) {
-            $contact['preferred_language'] = $tracking['language'];
-            if ( !empty($tracking['country']) ) {
-                $contact['preferred_language'] .= '_' . $tracking['country'];
+            if ( strpos( $tracking['language'], '-' ) ) {
+                // If we are already tracking variant, use that
+                list( $language, $variant ) = explode( '-', $tracking['language'] );
+                $contact['preferred_language'] = $language . '_' . strtoupper( $variant );
+            } else {
+                $contact['preferred_language'] = $tracking['language'];
+                if ( !empty($tracking['country']) ) {
+                    $contact['preferred_language'] .= '_' . $tracking['country'];
+                }
             }
         } else {
             // FIXME: wish we had the contact_id here :(
