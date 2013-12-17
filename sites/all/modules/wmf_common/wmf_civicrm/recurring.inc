@@ -97,11 +97,13 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
 
         'version' => 3,
     );
-    $result = $api->ContributionRecur->Create( $insert_params );
-    $contribution_recur_id = $result['id'];
+    $api->ContributionRecur->Create( $insert_params );
+    $contribution_recur_id = $api->id;
+    if ( !$contribution_recur_id ) {
+        throw new WmfException( 'IMPORT_SUBSCRIPTION', $api->errorMsg() );
+    }
 
     // Link the contribution to the recurring payment
-    //TODO catch error and print message
     $link_contribution_status = wmf_civicrm_update_contribution_for_recurring( $contribution_record['id'], $contribution_recur_id );
     
     return $link_contribution_status;
@@ -136,10 +138,11 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
     );
     if ( !$api->Contribution->Create($update_params) ) {
         $error_message = t(
-            'There was a problem linking the contribution [!contribution_id] to the recurring contribution [!contribution_recur_id]',
+            'There was a problem linking the contribution [!contribution_id] to the recurring contribution [!contribution_recur_id]: !msg',
             array(
                 '!contribution_id' => $contribution_id,
-                '!contribution_recur_id' => $contribution_recur_id
+                '!contribution_recur_id' => $contribution_recur_id,
+                '!msg' => $api->errorMsg(),
             )
         );
         throw new WmfException('IMPORT_SUBSCRIPTION', $error_message);
