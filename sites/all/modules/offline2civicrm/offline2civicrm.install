@@ -67,18 +67,27 @@ function offline2civicrm_update_7000() {
         throw new Exception("Missing custom group 'Gift Information', " . $api->errorMsg());
     }
 
-    $success = $api->CustomField->create(array(
+    $api->CustomField->Get( array(
         'custom_group_id' => $custom_group->id,
         'name' => 'import_batch_number',
-        'column_name' => 'import_batch_number',
-        'label' => ts('Batch Number'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new Exception($api->errorMsg());
+        'version' => 3,
+    ) );
+    $result = $api->values();
+
+    if ( empty($result) ) {
+        $success = $api->CustomField->create(array(
+            'custom_group_id' => $custom_group->id,
+            'name' => 'import_batch_number',
+            'column_name' => 'import_batch_number',
+            'label' => ts('Batch Number'),
+            'data_type' => 'String',
+            'html_type' => 'Text',
+            'is_active' => 1,
+            'is_searchable' => 1,
+            'is_view' => 1,
+        ));
+        if (!$success) {
+            throw new Exception($api->errorMsg());
+        }
     }
 }
