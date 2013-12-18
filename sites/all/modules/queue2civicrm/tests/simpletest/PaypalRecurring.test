@@ -58,18 +58,69 @@ class PaypalRecurringTest extends BaseTestCase {
         ) );
 
         //TODO: modification messages are not processed currently
+
+        $this->existing_subscr_id = mt_rand();
+
+        $this->existing_contrib_message_body = array(
+            'subscr_id' => $this->existing_subscr_id,
+            'payment_date' => wmf_common_date_unix_to_civicrm( time() ),
+            'txn_type' => 'subscr_payment',
+        );
+
+        $api = civicrm_api_classapi();
+
+        $api->Contact->Create( array(
+            'contact_type' => 'Individual',
+            'email' => 'foo@example.com',
+            'version' => 3,
+        ) );
+        $this->contact_id = $api->id;
+
+        $api->ContributionRecur->Create( array(
+            'contact_id' => $this->contact_id,
+            'frequency_interval' => 1,
+            'trxn_id' => $this->existing_subscr_id,
+            'version' => 3,
+        ) );
+        $this->existing_recur_id = $api->id;
+
+        $api->Contribution->Create( array(
+            'contact_id' => $this->contact_id,
+            'contribution_type' => 'Cash',
+            'contribution_recur_id' => $this->existing_recur_id,
+            'total_amount' => '20.01',
+            'version' => 3,
+        ) );
+        $this->existing_contribution_id = $api->id;
+
+        $this->ctid = wmf_civicrm_insert_contribution_tracking( 'foo', 'web', time(), $this->existing_contribution_id, true, true );
+    }
+
+    public function tearDown() {
+        $api = civicrm_api_classapi();
+
+        $api->ContributionRecur->Delete( array(
+            'id' => $this->existing_recur_id,
+            'version' => 3,
+        ) );
+
+        $api->Contribution->Delete( array(
+            'id' => $this->existing_contribution_id,
+            'version' => 3,
+        ) );
+
+        parent::tearDown();
     }
 
     public function testNormalPayment() {
         recurring_import( $this->subscription_message );
-        $result = recurring_import( $this->payment_message );
-        $this->assertEqual( 1, $result,
-            "Normal recurring payment processed successfully" );
+        recurring_import( $this->payment_message );
 
         $payment_data = $this->payment_message->getBody();
 
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $payment_data['gateway'], $payment_data['gateway_txn_id'] );
         $recur_record = recurring_get_recur_record( $this->subscr_id );
+        //FIXME: convert to array
 
         $this->verbose( json_encode( $contributions ) );
         $this->assertSuperset( $contributions, array(
@@ -95,16 +146,17 @@ class PaypalRecurringTest extends BaseTestCase {
     }
 
     public function testNoSubscription() {
-        $result = recurring_import( $this->payment_message );
-        $this->assertEqual( 2, $result,
-            "Payment linking to an invalid subscription is rejected" );
+        try {
+            recurring_import( $this->payment_message );
+            $this->fail( "should have gotten a RequeueError." );
+        } catch ( RequeueError $ex ) {
+            // good.
+        }
     }
 
     public function testExpire() {
         recurring_import( $this->subscription_message );
-        $result = recurring_import( $this->expire_message );
-        $this->assertEqual( 1, $result,
-            "Expiry message processed" );
+        recurring_import( $this->expire_message );
 
         $recur_record = recurring_get_recur_record( $this->subscr_id );
         $this->assertNotNull( $recur_record->end_date );
@@ -112,9 +164,7 @@ class PaypalRecurringTest extends BaseTestCase {
 
     public function testCancel() {
         recurring_import( $this->subscription_message );
-        $result = recurring_import( $this->cancel_message );
-        $this->assertEqual( 1, $result,
-            "Cancellation message processed" );
+        recurring_import( $this->cancel_message );
 
         $recur_record = recurring_get_recur_record( $this->subscr_id );
         $this->assertSuperset( get_object_vars( $recur_record ), array(
@@ -125,14 +175,18 @@ class PaypalRecurringTest extends BaseTestCase {
 
     public function testFailed() {
         recurring_import( $this->subscription_message );
-        $result = recurring_import( $this->failed_message );
-        $this->assertEqual( 1, $result,
-            "Failure notification message processed" );
+        recurring_import( $this->failed_message );
 
         $recur_record = recurring_get_recur_record( $this->subscr_id );
         $this->assertSuperset( get_object_vars( $recur_record ), array(
             'failure_count' => '3',
             'failure_retry_date' => '2000-05-01 00:01:02',
         ) );
+    }
+
+    public function testRecurring_get_contribution_tracking_idFromPrevious() {
+        $ctid = recurring_get_contribution_tracking_id( $this->existing_contrib_message_body );
+        $this->assertEqual( $this->ctid, $ctid,
+            "Contribution tracking can be looked up from msg.subscr_id" );
     }
 }

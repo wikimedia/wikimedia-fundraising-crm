@@ -7,3 +7,4 @@ dependencies[] = exchange_rates
 dependencies[] = contribution_tracking
 dependencies[] = wmf_common
 files[] = db_switcher.inc
+files[] = tests/Refund.test
