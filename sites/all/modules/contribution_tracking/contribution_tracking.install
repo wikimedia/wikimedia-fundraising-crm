@@ -30,7 +30,7 @@ function contribution_tracking_schema() {
         'type' => 'int',
         'size' => 'tiny',
         'unsigned' => true,
-        'not null' => true
+        'not null' => false
       ),
       'utm_source' => array(
         'type' => 'varchar',
@@ -56,7 +56,7 @@ function contribution_tracking_schema() {
         'type' => 'int',
         'size' => 'tiny',
       	'unsigned' => true,
-        'not null' => true,
+        'not null' => false,
       ),
       'language' => array(
         'type' => 'varchar',
