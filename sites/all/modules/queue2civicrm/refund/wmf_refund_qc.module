@@ -73,6 +73,8 @@ function refund_qc_settings() {
  * @ref drush_refund_queue_consume
  */
 function refund_batch_process() {
+  civicrm_api_classapi(); # hah
+
   watchdog('refund', 'Executing: refund_batch_process');
 
   $q = queue2civicrm_stomp();
