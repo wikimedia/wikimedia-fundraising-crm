@@ -276,7 +276,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     );
 
     // Add the thank you date when it exists and is not null (e.g.: we're importing from a check)
-    if ( array_key_exists( 'thankyou_date', $msg ) && $msg[ 'thankyou_date' ] ) {
+    if ( array_key_exists( 'thankyou_date', $msg ) && is_numeric( $msg[ 'thankyou_date' ] ) ) {
         $contribution[ 'thankyou_date' ] = wmf_common_date_unix_to_civicrm( $msg['thankyou_date'] );
     }
 
