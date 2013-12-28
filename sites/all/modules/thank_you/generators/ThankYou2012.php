@@ -9,7 +9,7 @@ class ThankYou2012 extends RenderTranslatedPage {
 			'/\[given name\]/' => '{{contact.first_name}}',
 			'/\[date\]/' => '{{contribution.receive_date}}',
 			'/\[amount\]/' => '{{contribution.contribution_source|l10n_currency(locale)}}',
-			'/\[contributionId\]/' => '{{contribution.id}}',
+			'/\[contributionId\]/' => 'CNTCT-{{contribution.contact_id}}',
 
 			'/\[ifRecurring\]/' => '{% if recurring %}',
 			'/\[endifRecurring\]/' => '{% endif %}',

@@ -289,10 +289,11 @@ class RenderTranslatedPage {
 
 		// Save it, not outputting the freaking <xml> header and <chunk> tags
 		$result = array();
+		$dom->formatOutput = true;
 		foreach( $dom->firstChild->childNodes as $node ) {
 			$result[] = $dom->saveXML( $node );
 		}
-		return implode( "\n", $result );
+		return implode( "\n\n", $result );
 	}
 
 	/**
