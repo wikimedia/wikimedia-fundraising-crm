@@ -342,7 +342,7 @@ function thank_you_send( $contribution_id, $test=null ) {
 
 		$email_success = $mailer->send(
 			$email,
-			array( 'List-Unsubscribe' => build_unsub_link( $contribution_id, $email['to_address'], $language) )
+			array( 'List-Unsubscribe' => '<' . build_unsub_link( $contribution_id, $email['to_address'], $language) . '>' )
 		);
 
 	} catch (phpmailerException $e) {
