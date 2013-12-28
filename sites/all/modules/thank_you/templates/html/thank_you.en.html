@@ -1,38 +1,49 @@
 <p>Dear {{contact.first_name}},</p>
+
 <p>You are so fantastic. THANK YOU for supporting the Wikimedia Foundation, the non-profit that runs
 Wikipedia and its sister projects.</p>
+
 <p>Your donation covers not only your own costs of using Wikipedia, but also the costs of other
 Wikipedia readers.</p>
+
 <p>Like the retired farmer in upstate New York who's using Wikipedia to study the science of sludge,
 and the student in Kuala Lumpur who's researching organic chemistry. The British mechanic who, after
 he broke his back in an accident, used Wikipedia to retrain himself as a web developer. The civil
 servant in Finland who set up an offline version of Wikipedia for a small school in Ghana. And the
 father in Mexico City who takes his little daughters to the museum on weekends, and uses Wikipedia
 to help them understand everything they're seeing there.</p>
+
 <p>Wikipedia's job is to bring the sum total of all human knowledge to everyone around the world in
 their own language. That's a pretty audacious mission, but with 30 million articles and 287
 languages, I'd say that thanks to you and people like you, we are getting there.</p>
+
 <p>On behalf of the Wikimedia Foundation, and the half-a-billion other Wikipedia readers around the
 world: thank you. The fact that you are helping to pay the costs of running Wikipedia means it can
 stay ad-free and independent of bias, focused solely on helping its readers. Exactly as it should
 be.</p>
+
 <p>You may have noticed that for the first time this year we've tweaked our fundraising so that most
 people will only see the banners a handful of times, instead of for weeks. That's deliberate: we
 don't want people to get irritated by too many appeals. But it does mean that fewer people will
 figure out we're a non-profit, and that we want their help. So if you're willing, I'd appreciate if
 you'd help spread the word by forwarding this e-mail to a few of your friends.</p>
+
 <p>And I'd love if you'd try joining us in helping to write Wikipedia. Wikipedia's written entirely
 by volunteers -- tens of thousands of ordinary people around the world, exactly like us. If you see
 a typo or a small mistake on Wikipedia, please fix it. If you know anything worth adding, please add
 it. Some people find it remarkably satisfying, and maybe you will too.</p>
+
 <p>Thank you again. I very much appreciate your trust in us, and I promise you: we will use your
 money carefully and well.</p>
+
 <p>Thanks,<br/>
 Sue</p>
+
 <p>Sue Gardner<br/>
 Executive Director,<br/>
 Wikimedia Foundation<br/>
 <a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+
 <p>Many employers will match employee contributions which doubles your donation: please check with
 your company to see if they have a corporate matching gift program. You can follow us on <a
 href="https://twitter.com/Wikipedia">Twitter</a>, <a
@@ -46,23 +57,33 @@ Foundation annual plan for 2013-2014</a> and the <a
 href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">Wikimedia
 Foundation’s five-year strategic plan</a>. You can also now buy Wikipedia merchandise at <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
-<p>For your records: Your donation, number {{contribution.id}}, on {{contribution.receive_date}} was
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+
+<p>For your records: Your donation, number CNTCT-{{contribution.contact_id}}, on
+{{contribution.receive_date}} was {{contribution.contribution_source|l10n_currency(locale)}}.</p>
+
 <p>{% if recurring %} This donation is part of a recurring subscription. Monthly payments will be
 debited by the Wikimedia Foundation until you notify us to stop. If you’d like to cancel the
 payments please see our <a
 href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
 country }}&language={{ language }}">easy cancellation instructions</a>. {% endif %}</p>
+
 <p>This letter may serve as a record of your donation. No goods or services were provided, in whole
 or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit charitable
 corporation with 501(c)(3) tax exempt status in the United States. Our address is 149 New
 Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703</p>
-<div style="border: 1px solid black; padding:0 10px 5px 10px;"><p>Opt out option:</p><p>We'd like to
-keep you as a donor informed of our community activities and fundraisers. If you prefer however not
-to receive such emails from us, please click below and we'll take you off the list.</p><div
-style="margin: 0 25px"><p><a href="{{unsubscribe_link|raw}}">Unsubscribe</a></p></div></div>
-<p><br/></p>
+
+<div style="border: 1px solid black; padding:0 10px 5px 10px;">
+  <p>Opt out option:</p>
+  <p>We'd like to keep you as a donor informed of our community activities and fundraisers. If you
+prefer however not to receive such emails from us, please click below and we'll take you off the
+list.</p>
+  <div style="margin: 0 25px">
+    <p><a href="{{unsubscribe_link|raw}}">Unsubscribe</a></p>
+  </div>
+</div>
+
 <hr/>
+
 <p>Please help us to <a
 href="https://meta.wikimedia.org/w/index.php?title=Special:Translate&group=page-Fundraising%2FTranslation%2FThank_you_email_20131202">translate</a>
 this email.</p>
