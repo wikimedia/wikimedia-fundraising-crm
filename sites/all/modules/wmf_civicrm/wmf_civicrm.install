@@ -549,16 +549,20 @@ function wmf_civicrm_update_6011()
 function wmf_civicrm_update_6012()
 {
     $api = wmf_civicrm_bootstrap_civi();
-    $api->CustomGroup->get(array(
+
+    $success = $api->CustomGroup->get(array(
         'name' => 'contribution_extra',
     ));
+    if (!$success) {
+        throw new Exception($api->errorMsg());
+    }
     $values = $api->values();
     $custom_group = array_pop($values);
 
     $success = $api->CustomField->create(array(
         'custom_group_id' => $custom_group->id,
-        'name' => 'source_app',
-        'column_name' => 'source_app',
+        'name' => 'source_name',
+        'column_name' => 'source_name',
         'label' => ts('Source Name'),
         'data_type' => 'String',
         'html_type' => 'Text',
@@ -567,14 +571,14 @@ function wmf_civicrm_update_6012()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        $ret[] = $api->errorMsg();
     }
 
     $success = $api->CustomField->create(array(
         'custom_group_id' => $custom_group->id,
-        'name' => 'source_job',
-        'column_name' => 'source_job',
-        'label' => ts('Source Job ID'),
+        'name' => 'Source Type',
+        'column_name' => 'source_type',
+        'label' => ts('Source Type'),
         'data_type' => 'String',
         'html_type' => 'Text',
         'is_active' => 1,
@@ -582,8 +586,71 @@ function wmf_civicrm_update_6012()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        $ret[] = $api->errorMsg();
     }
 
-    return array();
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'source_host',
+        'column_name' => 'source_host',
+        'label' => ts('Source Host'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        $ret[] = $api->errorMsg();
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'source_run_id',
+        'column_name' => 'source_run_id',
+        'label' => ts('Source Run ID'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        $ret[] = $api->errorMsg();
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'source_version',
+        'column_name' => 'source_version',
+        'label' => ts('Source Version'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        $ret[] = $api->errorMsg();
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'source_enqueued_time',
+        'column_name' => 'source_enqueued_time',
+        'label' => ts('Enqueued At Timestamp'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+    ));
+    if (!$success) {
+        $ret[] = $api->errorMsg();
+    }
+
+    return implode("\n", $ret);
 }
