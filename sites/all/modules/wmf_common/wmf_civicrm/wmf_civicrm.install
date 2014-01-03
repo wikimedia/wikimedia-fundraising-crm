@@ -16,6 +16,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_6009();
     wmf_civicrm_update_6010();
     wmf_civicrm_update_6011();
+    wmf_civicrm_update_6012();
 }
 
 /**
@@ -540,4 +541,49 @@ function wmf_civicrm_update_6011()
     } catch (PDOException $ex) {
         drupal_set_message("Key already exists?: " + $ex->getMessage());
     }
+}
+
+/**
+ * Add source metadata fields
+ */
+function wmf_civicrm_update_6012()
+{
+    $api = wmf_civicrm_bootstrap_civi();
+    $api->CustomGroup->get(array(
+        'name' => 'contribution_extra',
+    ));
+    $values = $api->values();
+    $custom_group = array_pop($values);
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'source_app',
+        'column_name' => 'source_app',
+        'label' => ts('Source Name'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'source_job',
+        'column_name' => 'source_job',
+        'label' => ts('Source Job ID'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
+
+    return array();
 }
