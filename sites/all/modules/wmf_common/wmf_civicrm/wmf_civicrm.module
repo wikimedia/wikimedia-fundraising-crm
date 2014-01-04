@@ -1195,14 +1195,26 @@ function wmf_civicrm_mark_refund(
     $query = "
 SELECT id FROM wmf_contribution_extra
 WHERE
-    parent_contribution_id = %1
-    OR (entity_id = %1 AND COALESCE(parent_contribution_id, 0))";
+    parent_contribution_id = %1";
 
     $dao = CRM_Core_DAO::executeQuery( $query, array(
         1 => array( $contribution_id, 'Integer' ),
     ) );
     if ( $dao->fetch() ) {
-        throw new WmfException( 'INVALID_MESSAGE', "Contribution is already linked to a refund, or is itself a refund: $contribution_id" );
+        throw new WmfException( 'DUPLICATE_CONTRIBUTION', "Contribution is already refunded: $contribution_id" );
+    }
+
+    // Look for existing refunds
+    $query = "
+SELECT id FROM wmf_contribution_extra
+WHERE
+    entity_id = %1 AND COALESCE(parent_contribution_id, 0)";
+
+    $dao = CRM_Core_DAO::executeQuery( $query, array(
+        1 => array( $contribution_id, 'Integer' ),
+    ) );
+    if ( $dao->fetch() ) {
+        throw new WmfException( 'INVALID_MESSAGE', "Contribution to refund is itself a refund: $contribution_id" );
     }
 
     // Should we restore?
