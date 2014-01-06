@@ -49,6 +49,7 @@ class WmfException extends Exception {
         ),
         'MISSING_PREDECESSOR' => array(
             'requeue' => TRUE,
+            'no-email' => TRUE,
         ),
 
         // other errors
