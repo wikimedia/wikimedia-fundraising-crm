@@ -192,9 +192,6 @@ function wmf_civicrm_get_custom_field_name( $field_name ) {
 function wmf_civicrm_contribution_message_import( &$msg ) {
     $msg = wmf_civicrm_verify_message_and_stage($msg);
 
-    //XXX should be debug level, or does this have a magic purpose?
-    watchdog('queue2civicrm', 'Contribution:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');
-
     // insert the contact information
     $contact = wmf_civicrm_message_contact_insert( $msg );
 
@@ -683,7 +680,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $msg['contact_type'] = "Individual";
     } elseif ( $msg['contact_type'] != "Individual" && $msg['contact_type'] != "Organization" ) {
         // looks like an unsupported type was sent, revert to default
-        watchdog( 'wmf_civicrm', 'Non-supported contact_type received: %msg', array( '%msg' => print_r( $msg, true )), WATCHDOG_INFO );
+        watchdog( 'wmf_civicrm', 'Non-supported contact_type received: %type', array( '%type' => print_r( $msg['contact_type'], true )), WATCHDOG_INFO );
         $msg['contact_type'] = "Individual";
     }
 
@@ -1185,8 +1182,10 @@ function wmf_civicrm_mark_refund(
         'id' => $contribution_id,
         'version' => 3,
     ) );
-    if ( !$success || !$api->values() ) {
-        throw new WmfException( 'INVALID_MESSAGE', "No such contribution: $contribution_id, " . $api->errorMsg());
+    if ( !$success ) {
+        throw new WmfException( 'INVALID_MESSAGE', "Could not load contribution: $contribution_id, " . $api->errorMsg() );
+    } elseif ( !$api->values() ) {
+        throw new WmfException( 'INVALID_MESSAGE', "No such contribution: $contribution_id" );
     }
     $result = $api->values;
     $contribution = array_pop($result);
