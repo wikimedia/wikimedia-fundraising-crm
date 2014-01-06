@@ -24,7 +24,11 @@ function wmf_civicrm_insert_contribution_tracking( $utm_source, $utm_medium, $ts
     if ($contrib_id !== null){
         $values['contribution_id'] = $contrib_id;
     }
-    return db_insert( 'contribution_tracking' )->fields( $values )->execute();
+
+    $contribution_tracking_id = db_insert( 'contribution_tracking' )->fields( $values )->execute();
+    watchdog( 'wmf_civicrm', "Created new contribution_tracking entry %id", array( '%id' => $contribution_tracking_id ), WATCHDOG_INFO );
+
+    return $contribution_tracking_id;
 }
 
 /**
@@ -42,10 +46,10 @@ function wmf_civicrm_message_update_contribution_tracking( $msg, $contribution )
             'contribution_id' => $contribution['id'],
         ) )->condition( 'id', $msg['contribution_tracking_id'] )->execute();
         if ( !$result ) {
-            watchdog( 'wmf_civicrm', "There was a problem updating contribution_tracking for message: %msg", array( '%msg' => print_r( $msg, true )), WATCHDOG_ERROR );
+            watchdog( 'wmf_civicrm', "There was a problem updating contribution_tracking for %id", array( '%id' => $msg['contribution_tracking_id'] ), WATCHDOG_ERROR );
             return FALSE;
         } else {
-            watchdog( 'wmf_civicrm', 'Successfully updated contribution_tracking for message: %msg', array( '%msg' => print_r( $msg, true)));
+            watchdog( 'wmf_civicrm', 'Successfully updated contribution_tracking for %id', array( '%id' => $msg['contribution_tracking_id'] ), WATCHDOG_INFO );
             return TRUE;
         }
     }

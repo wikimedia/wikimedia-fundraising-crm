@@ -71,7 +71,7 @@ class Queue {
                 }
             }
 
-            watchdog( 'wmf_common', t('Feeding raw queue message to %callback : %msg', array( '%callback' => print_r($callback, TRUE), '%msg' => print_r($msg, TRUE) ) ), NULL, WATCHDOG_INFO );
+            watchdog( 'wmf_common', t( 'Feeding raw queue message to %callback : %msg', array( '%callback' => print_r($callback, TRUE), '%msg' => $this->debug_message( $msg ) ) ), NULL, WATCHDOG_INFO );
 
             set_time_limit( 60 );
 
@@ -430,5 +430,18 @@ class Queue {
     protected function normalizeQueueName( $queue ) {
         $queue = str_replace( '/queue/', '', $queue );
         return '/queue/' . $queue;
+    }
+
+    protected function debug_message( $msg ) {
+        $msg_copy = clone( $msg );
+        if ( is_string( $msg_copy->body ) ) {
+            $decoded = json_decode( $msg_copy->body, true );
+            if ( $decoded ) {
+                $msg_copy->body = $decoded;
+            }
+        }
+        # php 5.4 $msg_str = json_encode( $msg_copy, JSON_PRETTY_PRINT );
+        $msg_str = print_r( $msg_copy, true );
+        return $msg_str;
     }
 }

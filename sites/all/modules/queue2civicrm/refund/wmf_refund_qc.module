@@ -119,7 +119,6 @@ function refund_import($msg) {
     $body['gross'] = abs( $body['gross'] );
   }
 
-  // FIXME: these WATCHDOG_ERROR's are not exceptions?
   if ( $contributions = wmf_civicrm_get_contributions_from_gateway_id( $gateway, $parentTxn ) ) {
     // Perform the refund!
     try {
@@ -131,11 +130,11 @@ function refund_import($msg) {
 
       watchdog('refund', "$txnid: Successfully marked as refunded", WATCHDOG_INFO);
     } catch (Exception $ex) {
-      watchdog('refund', "$txnid: Could not refund due to internal error: " . $ex->getMessage(), WATCHDOG_ERROR);
+      watchdog('refund', "$txnid: Could not refund due to internal error: " . $ex->getMessage(), NULL, WATCHDOG_ERROR);
       throw $ex;
     }
   } else {
-    watchdog( 'refund', "$txnid: Contribution not found for this transaction!", WATCHDOG_ERROR );
+    watchdog( 'refund', "$txnid: Contribution not found for this transaction!", NULL, WATCHDOG_ERROR );
     throw new WmfException( 'MISSING_PREDECESSOR', "Parent not found: $parentTxn" );
   }
 }

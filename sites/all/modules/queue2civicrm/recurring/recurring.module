@@ -141,9 +141,6 @@ function recurring_import( $msg ) {
   );
   $cid = _queue2civicrm_log( $log );
   
-  // log the message
-  watchdog('recurring', 'Recurring msg:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');  
-  
   // define the subscription txn type for an actual 'payment'
   $txn_subscr_payment = array( 'subscr_payment' );
   
@@ -159,7 +156,7 @@ function recurring_import( $msg ) {
   // route the message to the appropriate handler depending on transaction type
   if ( isset( $msg[ 'txn_type' ] ) && in_array( $msg[ 'txn_type' ], $txn_subscr_payment ) ) {
     if ( wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ) {
-      watchdog( 'recurring', 'Duplicate contribution: ' . print_r( $msg, true ) );
+      watchdog( 'recurring', "Duplicate contribution: {$msg['gateway']}-{$msg['gateway_txn_id']}." );
       throw new WmfException( 'DUPLICATE_CONTRIBUTION', "Contribution already exists. Ignoring message." );
     }
     recurring_import_subscr_payment( $msg );
@@ -200,9 +197,6 @@ function recurring_import_subscr_payment( $msg ) {
   }
 
   civicrm_initialize(true);
-
-  //dsm($contribution);
-  watchdog('queue2civicrm', 'Contribution:<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>');  
 
   $contact[ 'id' ] = $recur_record->contact_id;
 
@@ -394,7 +388,7 @@ function recurring_import_subscr_eot( $msg ) {
 function recurring_import_subscr_modify( $msg ) {
   // ensure we have a record of the subscription
   if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
-    throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist for subscription id: ' . print_r( $msg, true ));
+    throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist for subscription id: ' . print_r( $msg['subscr_id'], true ));
   }
 
   $api = civicrm_api_classapi();
