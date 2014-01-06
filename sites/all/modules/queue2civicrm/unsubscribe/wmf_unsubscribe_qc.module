@@ -71,6 +71,8 @@ function unsubscribe_qc_settings() {
 function unsubscribe_batch_process() {
   watchdog('unsubscribe', 'Executing: unsubscribe_batch_process');
 
+  civicrm_initialize();
+
   $processed = queue2civicrm_stomp()->dequeue_loop(
     variable_get('unsubscribe_queue', '/queue/unsubscribe-test'),
     variable_get('unsubscribe_batch', 0),
