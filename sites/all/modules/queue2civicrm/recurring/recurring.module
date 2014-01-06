@@ -737,6 +737,7 @@ function recurring_get_contribution_tracking_id( $msg ) {
     return $msg[ 'custom' ];
   } elseif ( $msg[ 'txn_type' ] == 'subscr_payment' ) {
     $contribution_tracking_id = null;
+    $contrib_ids = array();
 
     // determine if we already have a contrib tracking id for related contribs, working backwards from recur record
     $recurring_record = recurring_get_recur_record( $msg['subscr_id'] );
@@ -749,7 +750,6 @@ function recurring_get_contribution_tracking_id( $msg ) {
       $dao = CRM_Core_DAO::executeQuery( $query, array(
         '1' => array( $recur_id, 'Integer' ),
       ) );
-      $contrib_ids = array();
       while ( $dao->fetch() ) {
         array_push( $contrib_ids, $dao->id );
       }
