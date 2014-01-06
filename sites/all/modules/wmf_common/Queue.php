@@ -334,6 +334,8 @@ class Queue {
         $queue .= '_badmsg';
       }
 
+      watchdog( 'wmf_common', "Requeueing message to $queue", NULL, WATCHDOG_INFO );
+
       $retval = FALSE;
       $errorMsg = "Bad connection?";
       try {
