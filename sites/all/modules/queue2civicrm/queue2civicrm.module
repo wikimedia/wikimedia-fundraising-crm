@@ -214,14 +214,24 @@ function queue2civicrm_batch_process() {
 
 /**
  * Process one contribution from the queue to CiviCRM.
+ *
+ * @param Stomp_Frame $msg
  */
-function queue2civicrm_import( $msg ) {
+function queue2civicrm_import( Stomp_Frame $msg ) {
     // save the original message for logging
     $msg_orig = $msg;
 
-    if (!is_array($msg)) {
-        $msg = json_decode($msg->body, true);
-    }
+    // Take valuable message headers and flatten them into the message body
+    $pull_headers = array(
+        'source_name',
+        'source_type',
+        'source_host',
+        'source_run_id',
+        'source_version',
+        'source_enqueued_time',
+    );
+    $msg = json_decode( $msg->body, true )
+        + array_intersect_key( $msg->headers, array_flip( $pull_headers ) );
 
     /**
     * prepare data for logging
@@ -229,7 +239,7 @@ function queue2civicrm_import( $msg ) {
     $log = array(
         'gateway' => $msg[ 'gateway' ],
         'gateway_txn_id' => $msg[ 'gateway_txn_id' ],
-        'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ),
+        'data' => $msg_orig->body,
         'timestamp' => time(),
         'verified' => 0,
     );
