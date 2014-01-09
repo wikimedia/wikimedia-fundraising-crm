@@ -29,7 +29,7 @@ class WmfException extends Exception {
             'reject' => TRUE,
         ),
         'DUPLICATE_CONTRIBUTION' => array(
-            'reject' => TRUE,
+            'drop' => TRUE,
             'no-email' => TRUE,
         ),
         'GET_CONTRIBUTION' => array(
@@ -105,6 +105,11 @@ class WmfException extends Exception {
     function isRejectMessage()
     {
         return $this->getErrorCharacteristic('reject', FALSE);
+    }
+
+    function isDropMessage()
+    {
+        return $this->getErrorCharacteristic('drop', FALSE);
     }
 
     function isRequeue()
