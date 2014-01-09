@@ -91,7 +91,10 @@ class Queue {
                     }
                 }
 
-                if ( $ex->isRejectMessage() ) {
+                if ( $ex->isDropMessage() ) {
+                    watchdog( 'wmf_common', "Dropping message altogether: " . Queue::getCorrelationId( $msg ), NULL, WATCHDOG_ERROR );
+                    $this->ack( $msg );
+                } elseif ( $ex->isRejectMessage() ) {
                     watchdog( 'wmf_common', "\nRemoving failed message from the queue: \n" . print_r($msg, TRUE), NULL, WATCHDOG_ERROR );
                     $this->reject( $msg, $ex );
 
