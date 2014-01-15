@@ -1515,3 +1515,54 @@ function wmf_civicrm_dao_to_list( $dao ) {
     }
     return $result;
 }
+
+/**
+ * Implements hook_civicrm_validate
+ *
+ * FIXME: temporary request, revert when RLewis no longer needs it
+ */
+function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
+    $errors = array();
+
+    switch ( $formName ) {
+    case 'CRM_Contribute_Form_Contribution':
+        $date = strptime( $fields['receive_date'], "%m/%d/%Y" );
+        $azl_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', "Arizona Lockbox" );
+        $custom_field_name = wmf_civicrm_evil_get_custom_field_in_form( 'postmark_date', $fields );
+        if ( !$custom_field_name ) {
+            return;
+        }
+
+        if (
+            // The receive_date is in Dec, 2013
+            $date['tm_year'] === (2013 - 1900) and $date['tm_mon'] == (12 - 1)
+            // And it came in through the Arizona Lockbox check imports
+            and $fields['contribution_type_id'] === $azl_type_id
+        ) {
+            // And the postmark date is missing
+            if ( !$fields[$custom_field_name] ) {
+                $errors[$custom_field_name] = t("You forgot the postmark date!");
+            }
+        }
+        break;
+    }
+
+    return ( empty($errors) ? true : $errors );
+}
+
+/**
+ * @param string $name custom field name
+ * @param array $fields k/v fields as they are passed to CiviCRM form hooks
+ *
+ * @return string evil mangled name, like "custom_21_123332"
+ */
+function wmf_civicrm_evil_get_custom_field_in_form( $name, $fields ) {
+    $custom_field_stump = wmf_civicrm_get_custom_field_name( $name ) . '_';
+    foreach ( $fields as $key => $value ) {
+        if ( 0 === strpos( $key, $custom_field_stump ) ) {
+            return $key;
+        }
+    }
+    watchdog( 'wmf_civicrm', 'Form is missing your precious custom field.', NULL, WATCHDOG_ERROR );
+    return null;
+}
