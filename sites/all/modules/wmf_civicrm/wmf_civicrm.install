@@ -17,6 +17,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_6010();
     wmf_civicrm_update_6011();
     wmf_civicrm_update_6012();
+    wmf_civicrm_update_6013();
 }
 
 /**
@@ -586,4 +587,34 @@ function wmf_civicrm_update_6012()
     }
 
     return array();
+}
+
+/**
+ * Add Postmark Date field
+ */
+function wmf_civicrm_update_6013()
+{
+    $api = wmf_civicrm_bootstrap_civi();
+    $api->CustomGroup->get(array(
+        'name' => 'contribution_extra',
+    ));
+    $values = $api->values();
+    $custom_group = array_pop($values);
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'Postmark_Date',
+        'column_name' => 'postmark_date',
+        'label' => ts('Postmark Date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 0,
+        'is_view' => 0,
+    ));
+    if (!$success) {
+        $ret[] = $api->errorMsg();
+    }
+
+    return $ret;
 }
