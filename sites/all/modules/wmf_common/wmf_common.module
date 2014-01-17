@@ -322,9 +322,9 @@ function wmf_common_queue_item_submit( $form, &$form_state ) {
 
   switch ( $form_state['values']['op'] ) {
   case $form_state['values']['resend']:
-    $q->enqueue( json_encode( $body ), $headers, $queue );
-
     $msg = $q->getByAnyId( "{$queue}-damaged", $correlationId );
+    $q->enqueue( json_encode( $body ), $headers + $msg->headers, $queue );
+
     $q->ack( $msg );
 
     drupal_set_message( t( 'Message %id resent for processing.', array( '%id' => $correlationId ) ) );
@@ -352,5 +352,9 @@ function wmf_common_queue_item_download( $queue, $correlationId ) {
   $name = mime_header_encode( "{$correlationId}.json" );
   drupal_add_http_header( 'Content-Type', 'application/json' );
   drupal_add_http_header( 'Content-Disposition', "attachment; filename=\"{$name}\"" );
-  echo( $msg->body );
+  $data = json_encode( array(
+    'headers' => $msg->headers,
+    'body' => json_decode( $msg->body, true ),
+  ) );
+  echo( $data );
 }
