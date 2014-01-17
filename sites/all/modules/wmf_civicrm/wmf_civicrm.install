@@ -18,6 +18,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_6011();
     wmf_civicrm_update_6012();
     wmf_civicrm_update_6013();
+    wmf_civicrm_update_7014();
 }
 
 /**
@@ -682,6 +683,48 @@ function wmf_civicrm_update_6013()
     if (!$success) {
         $ret[] = $api->errorMsg();
     }
+
+    return $ret;
+}
+
+/**
+ * Add no_thank_you field
+ */
+function wmf_civicrm_update_7014()
+{
+    $api = wmf_civicrm_bootstrap_civi();
+    $api->CustomGroup->get(array(
+        'name' => 'contribution_extra',
+    ));
+    $values = $api->values();
+    $custom_group = array_pop($values);
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'no_thank_you',
+        'column_name' => 'no_thank_you',
+        'label' => ts('No Thank-you Reason'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 0,
+    ));
+    if (!$success) {
+        $ret[] = $api->errorMsg();
+    }
+
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push('civicrm');
+
+    db_query( "
+UPDATE wmf_contribution_extra, civicrm_contribution
+SET
+    no_thank_you = 'legacy'
+WHERE
+    wmf_contribution_extra.entity_id = civicrm_contribution.id
+    AND thankyou_date = '1970-01-01 00:00:00'
+" );
 
     return $ret;
 }
