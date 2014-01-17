@@ -54,7 +54,7 @@ class RefundTest extends BaseTestCase {
                 'gateway_txn_id' => (string) $refund_data['gateway_refund_id'],
                 'finance_only' => "1",
                 'total_amount' => (string)(0 - $parent_contributions[0]['total_amount']),
-                'thankyou_date' => "1970-01-01 00:00:00",
+                'no_thank_you' => "refund",
             ),
         ) );
     }
