@@ -1254,6 +1254,9 @@ WHERE
     $transaction->is_refund = true;
     $refund_unique_id = $transaction->get_unique_id();
 
+    # FIXME: remove debug line,
+    watchdog( 'wmf_civicrm', "Refund date: " . var_export( $refund_date, true ), NULL, WATCHDOG_INFO );
+
     if ( $refund_date === null ) {
         $refund_date = time();
     } elseif ( !is_numeric( $refund_date ) ) {
