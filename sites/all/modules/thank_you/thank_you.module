@@ -243,25 +243,15 @@ function thank_you_send( $contribution_id, $test=null ) {
 	// check for contacts without an email address
 	if ( !array_key_exists( 'email', $contact ) ){
 		watchdog('thank_you', 'No email address found. Processing as anonymous.', array(), WATCHDOG_INFO);
+		wmf_civicrm_set_no_thank_you( $contribution['contribution_id'], 'anonymous' );
 
-		// update the field with the anonymous flag and set the TY date to the epoch
-		if( thank_you_update_ty_date( $contribution, true ) ){
-			// GTFO so we can keep processing donations
-			return true;
-		}
-		else{
-			watchdog('thank_you', 'Updating contribution record for no-op TY msg send FAILED for: !contribution_id',
-				array( '!contribution_id' => $contribution_id ), WATCHDOG_INFO
-			);
-			// we didn't want to send one anyway, so in the current workflow, this is fine
-			return true;
-		}
+		return true;
 	}
 
 	// only check the following if this is not a test
 	if ( is_null( $test ) ){
 		// don't send a Thank You email if one has already been sent
-		if (array_key_exists('thankyou_date', $contribution) && is_numeric($contribution['receive_date']) && $contribution['receive_date'] > 0 ) {
+		if ( !empty($contribution['thankyou_date']) ) {
 			watchdog('thank_you', 'Thank you email already sent for this transaction.', array(), WATCHDOG_INFO);
 			return false;
 		}
@@ -270,6 +260,14 @@ function thank_you_send( $contribution_id, $test=null ) {
 			watchdog('thank_you', 'Contribution is older than limit, ignoring.', array(), WATCHDOG_INFO);
 			return false;
 		}
+
+        $custom_values = wmf_civicrm_contribution_get_custom_values( $contribution_id, array(
+            'no_thank_you',
+        ) );
+        if ( $custom_values['no_thank_you'] ) {
+			watchdog('thank_you', "Contribution has been marked no_thank_you={$custom_values['no_thank_you']}, skipping.", array(), WATCHDOG_INFO);
+			return false;
+        }
 	}
 
 	$language = 'en';
@@ -367,7 +365,7 @@ function thank_you_send( $contribution_id, $test=null ) {
 		}
 
 		$email_success = false;
-		// fall through and set thankyou_date to epoch
+		// fall through and set no_thank_you
 
 	} catch (Exception $e) {
 		$debug = array_merge( $email, array( "html" => '', "plaintext" => '' ) );
@@ -396,14 +394,13 @@ function thank_you_send( $contribution_id, $test=null ) {
 		}
 	} elseif ( !$email_success ){
 		watchdog('thank_you', "Thank you mail failed for contribution id: $contribution_id to " . $email['to_address'], array(), WATCHDOG_ERROR);
-		thank_you_update_ty_date( $contribution, true );
-		watchdog('thank_you', "Thank you date set to epoch for contribution id: $contribution_id to " . $email['to_address'], array(), WATCHDOG_INFO);
+		wmf_civicrm_set_no_thank_you( $contribution_id, 'failed' );
 	}
 
 	return true;
 }
 
-function thank_you_update_ty_date( $contribution, $anonymous=false ){
+function thank_you_update_ty_date( $contribution ) {
 
 	$params = array(
 		'version' => '3',
@@ -411,16 +408,6 @@ function thank_you_update_ty_date( $contribution, $anonymous=false ){
 		'contribution_id' => $contribution[ 'contribution_id' ],
 		'thankyou_date' => wmf_common_date_unix_to_civicrm( time() ),
 	);
-
-	if( $anonymous ){
-		// we can't send a TY if it was an anonymous donation or we don't have an email
-		// address, but we want to mark it as such
-		$params['thankyou_date'] = "1970-01-01 00:00:00";
-
-		watchdog('thank_you', 'Updating TY send date to: ' . $params['thankyou_date'], array(), WATCHDOG_INFO);
-
-		return wmf_civicrm_set_thankyou_date_to_epoch( $contribution[ 'contribution_id' ] );
-	}
 
 	watchdog('thank_you', 'Updating TY send date to: ' . $params['thankyou_date'], array(), WATCHDOG_INFO);
 

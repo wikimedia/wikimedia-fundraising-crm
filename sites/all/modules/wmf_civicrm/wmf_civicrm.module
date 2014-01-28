@@ -1132,20 +1132,15 @@ function wmf_civicrm_boost_performance() {
     $config->doNotResetCache = 1;
 }
 
-function wmf_civicrm_set_thankyou_date_to_epoch( $contribution_id ){
-    $api = civicrm_api_classapi();
-    $result = $api->Contribution->Create( array(
-        'id' => $contribution_id,
-        'thankyou_date' => '1970-01-01 00:00:00',
-        'version' => 3,
-    ) );
+function wmf_civicrm_set_no_thank_you( $contribution_id, $reason ) {
+	watchdog( 'wmf_civicrm', "Preventing thank-you for contribution {$contribution_id} because: {$reason}", array(), WATCHDOG_INFO );
 
-	if ( !$result ) {
-		watchdog('thank_you', 'Updating TY date to epoch failed: ' . $api->errorMsg(), array(), WATCHDOG_ERROR);
-		return false;
-	} else {
-		watchdog('thank_you', 'TY date set to epoch sucessfully', array(), WATCHDOG_INFO);
-		return true;
+	try {
+		wmf_civicrm_set_custom_field_values( $contribution_id, array(
+			'no_thank_you' => $reason,
+		) );
+	} catch ( WmfException $ex ) {
+		watchdog( 'wmf_civicrm', "Updating with no-thank-you failed with details: {$ex->getMessage()}", array(), WATCHDOG_ERROR );
 	}
 }
 
@@ -1271,7 +1266,6 @@ WHERE
         'receive_date' => gmdate( 'Y-m-d H:i:s', $refund_date ),
         'contribution_status_id' => civicrm_api_contribution_status( $refund_status ),
         'contribution_source' => "$original_currency -{$original_amount}",
-        'thankyou_date' => '1970-01-01 00:00:00',
         'trxn_id' => $refund_unique_id,
 
         // API required fields
@@ -1287,10 +1281,12 @@ WHERE
         'gateway_account',
     ) );
 
+    // FIXME: race condition on no_thank_you
     $custom_values = array(
         'gateway_account' => $parent_custom_values['gateway_account'],
         'parent_contribution_id' => $contribution->id,
         'finance_only' => 1,
+        'no_thank_you' => 'refund',
     );
     wmf_civicrm_set_custom_field_values($refund->id, $custom_values);
 
