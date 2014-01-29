@@ -290,39 +290,48 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     }
   
     /**
-    *  Apply custom field defaults.
-    *
     *  Hopefully the Civi API will eventually handle custom fields in the
     *  above "Create" call.
     *
-    * At the moment, all custom fields get default values for online contribution EXCEPT for 'Donor Comment'.
-    *
     * NOTE: the custom field for "Gift_Information" indicates that check number is stored here.  It is not.
     */
-
-    $comment = ( isset( $msg[ 'comment' ] ) ) ? $msg[ 'comment'] : '';
-    $lettercode = ( $msg[ 'letter_code' ] ) ? $msg[ 'letter_code'] : NULL;
-    $gateway_account = array_key_exists( 'gateway_account', $msg ) ? $msg[ 'gateway_account' ] : '';
-
-    // n.b. Data field names are legacy, and do not necessarily match the labels.
-    $custom_vars = array(
-        'Contribution_Comments' => $comment,
-        'Gift_Data' => $lettercode,
-        'gateway_account' => $gateway_account,
+    $custom_field_defaults = array(
+        'Contribution_Comments' => '',
+        'Gift_Data' => NULL,
+        'gateway_account' => '',
     );
-    if ( array_key_exists( 'gift_source', $msg ) ) {
-        $custom_vars['Campaign'] = $msg['gift_source'];
-    }
-    if ( array_key_exists( 'direct_mail_appeal', $msg ) ) {
-        $custom_vars['Appeal'] = $msg['direct_mail_appeal'];
-    }
-    if ( array_key_exists( 'restrictions', $msg ) ) {
-        $custom_vars['Fund'] = $msg['restrictions'];
-    }
-    if ( array_key_exists( 'import_batch_number', $msg ) ) {
-        $custom_vars['import_batch_number'] = $msg['import_batch_number'];
+
+    // Legacy field names which do not match the message field names
+    $custom_name_mangle = array(
+        'comment' => 'Contribution_Comments',
+        'direct_mail_appeal' => 'Appeal',
+        'gift_source' => 'Campaign',
+        'letter_code' => 'Gift_Data',
+        'restrictions' => 'Fund',
+    );
+
+    // Custom fields with names that match the message fields
+    $custom_name_passthrough = array(
+        'gateway_account',
+        'import_batch_number',
+        'source_name',
+        'source_type',
+        'source_host',
+        'source_run_id',
+        'source_version',
+        'source_enqueued_time',
+    );
+
+    $custom_fields = $custom_name_mangle
+        + array_combine( $custom_name_passthrough, $custom_name_passthrough );
+
+    foreach ( $custom_fields as $msg_key => $custom_key ) {
+        if ( array_key_exists( $msg_key, $msg ) ) {
+            $custom_vars[$custom_key] = $msg[$msg_key];
+        }
     }
 
+    $custom_vars += $custom_field_defaults;
     wmf_civicrm_set_custom_field_values( $contribution_result[ 'id' ], $custom_vars );
 
     return $contribution_result[ 'values' ][ $contribution_result[ 'id' ] ];
