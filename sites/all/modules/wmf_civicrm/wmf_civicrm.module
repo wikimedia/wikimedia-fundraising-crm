@@ -325,6 +325,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     $custom_fields = $custom_name_mangle
         + array_combine( $custom_name_passthrough, $custom_name_passthrough );
 
+    $custom_vars = array();
     foreach ( $custom_fields as $msg_key => $custom_key ) {
         if ( array_key_exists( $msg_key, $msg ) ) {
             $custom_vars[$custom_key] = $msg[$msg_key];
