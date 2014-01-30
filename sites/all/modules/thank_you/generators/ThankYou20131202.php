@@ -7,6 +7,9 @@ class ThankYou20131202 extends RenderTranslatedPage {
 
 		$this->substitutions = array(
 			'/\[given name\]/' => '{{contact.first_name}}',
+			'/\[first name\]/' => '{{contact.first_name}}',
+			'/\[family name\]/' => '{{contact.last_name}}',
+			'/\[last name\]/' => '{{contact.last_name}}',
 			'/\[date\]/' => '{{contribution.receive_date}}',
 			'/\[amount\]/' => '{{contribution.contribution_source|l10n_currency(locale)}}',
 			'/\[contributionId\]/' => 'CNTCT-{{contribution.contact_id}}',
@@ -20,7 +23,7 @@ class ThankYou20131202 extends RenderTranslatedPage {
 			'/\[#facebook ((?:(?!\]).)*)\]/' => '<a href="https://www.facebook.com/wikipedia">$1</a>',
 			'/\[#blog ((?:(?!\]).)*)\]/' => '<a href="https://blog.wikimedia.org">$1</a>',
 			// TODO: DO WE HAVE TRANSLATIONS FOR THE ANNUAL REPORT
-			'/\[#annual ((?:(?!\]).)*)\]/' => '<a href="https://wikimediafoundation.org/wiki/Annual_Report">$1</a>',
+			'/\[#annual ((?:(?!\]).)*)\]/' => '<a href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Wikimedia_Foundation/Annual_Report/2012-2013/Front">$1</a>',
 			// TODO: DO WE HAVE TRANSLATIONS FOR THE ANNUAL PLAN
 			'/\[#plan ((?:(?!\]).)*)\]/' => '<a href="http://wikimediafoundation.org/wiki/2013-2014_Annual_Plan_Questions_and_Answers">$1</a>',
 			// TODO: DO WE HAVE TRANSLATIONS FOR THE 5-YEAR, STRATEGIC PLAN

@@ -20,7 +20,7 @@ class ThankYou2012 extends RenderTranslatedPage {
 			'/\[#facebook ((?:(?!\]).)*)\]/' => '<a href="https://www.facebook.com/wikipedia">$1</a>',
 			'/\[#blog ((?:(?!\]).)*)\]/' => '<a href="https://blog.wikimedia.org">$1</a>',
 			// TODO: DO WE HAVE TRANSLATIONS FOR THE ANNUAL REPORT
-			'/\[#annual ((?:(?!\]).)*)\]/' => '<a href="https://wikimediafoundation.org/wiki/Annual_Report">$1</a>',
+			'/\[#annual ((?:(?!\]).)*)\]/' => '<a href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Wikimedia_Foundation/Annual_Report/2012-2013/Front">$1</a>',
 			// TODO: DO WE HAVE TRANSLATIONS FOR THE ANNUAL PLAN
 			'/\[#plan ((?:(?!\]).)*)\]/' => '<a href="http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf">$1</a>',
 			// TODO: DO WE HAVE TRANSLATIONS FOR THE 5-YEAR, STRATEGIC PLAN
