@@ -1068,7 +1068,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
     if ( isset( $msg['source_enqueued_time'] )
         and is_numeric( $msg['source_enqueued_time'] )
     ) {
-        $msg['source_enqueued_time'] = wmf_common_date_unix_to_civicrm( $msg['source_enqueued_time'] );
+        $msg['source_enqueued_time'] = wmf_common_date_unix_to_sql( $msg['source_enqueued_time'] );
     }
 
     $msg['anonymous'] = ((!empty( $msg['anonymous'] ) && strtoupper($msg['anonymous'] ) !== "FALSE") ? 1 : 0);
