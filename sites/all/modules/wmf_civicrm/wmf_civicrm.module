@@ -308,6 +308,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
         'gift_source' => 'Campaign',
         'letter_code' => 'Gift_Data',
         'restrictions' => 'Fund',
+        'postmark_date' => 'Postmark_Date',
     );
 
     // Custom fields with names that match the message fields
@@ -1069,6 +1070,10 @@ function wmf_civicrm_normalize_msg( $msg ) {
         and is_numeric( $msg['source_enqueued_time'] )
     ) {
         $msg['source_enqueued_time'] = wmf_common_date_unix_to_sql( $msg['source_enqueued_time'] );
+    }
+
+    if ( isset( $msg['postmark_date'] ) ) {
+        $msg['postmark_date'] = wmf_common_date_unix_to_sql( $msg['postmark_date'] );
     }
 
     $msg['anonymous'] = ((!empty( $msg['anonymous'] ) && strtoupper($msg['anonymous'] ) !== "FALSE") ? 1 : 0);
