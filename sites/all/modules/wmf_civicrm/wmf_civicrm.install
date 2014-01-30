@@ -579,7 +579,7 @@ function wmf_civicrm_update_6012()
 
     $success = $api->CustomField->create(array(
         'custom_group_id' => $custom_group->id,
-        'name' => 'Source Type',
+        'name' => 'source_type',
         'column_name' => 'source_type',
         'label' => ts('Source Type'),
         'data_type' => 'String',
