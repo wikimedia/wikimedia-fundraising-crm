@@ -565,11 +565,14 @@ function thank_you_batch_process(){
 	$dbs->push( 'civicrm' );
 
 	$ty_query = <<<EOT
-		SELECT id, trxn_id
-		FROM {civicrm_contribution}
+		SELECT civicrm_contribution.id, trxn_id
+		FROM civicrm_contribution
+		JOIN wmf_contribution_extra
+			ON wmf_contribution_extra.entity_id = civicrm_contribution.id
 		WHERE
 			receive_date > DATE_SUB( NOW(), INTERVAL :interval DAY ) AND
-			thankyou_date IS NULL
+			thankyou_date IS NULL AND
+			no_thank_you IS NULL
 		ORDER BY id ASC LIMIT {$batch};
 EOT;
 
