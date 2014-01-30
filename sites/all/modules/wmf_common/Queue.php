@@ -162,17 +162,11 @@ class Queue {
      * TODO: move the remaining error handling in here
      */
     protected function transactionalCall( $callback, $msg ) {
-        // FIXME: this will not be configurable in the future,
-        // we will want to use transactions all tha time.
-        $transactional = variable_get( 'wmf_common_transactional', FALSE );
-
-        if ( $transactional ) {
-            watchdog( 'wmf_common', "Beginning DB transaction", NULL, WATCHDOG_INFO );
-            $drupal_transaction = db_transaction( 'dequeue_default', array( 'target' => 'default' ) );
-            $ct_transaction = db_transaction( 'dequeue_donations', array( 'target' => 'donations' ) );
-            $crm_transaction = db_transaction( 'dequeue_civicrm', array( 'target' => 'civicrm' ) );
-            $native_civi_transaction = new CRM_Core_Transaction();
-        }
+        watchdog( 'wmf_common', "Beginning DB transaction", NULL, WATCHDOG_INFO );
+        $drupal_transaction = db_transaction( 'dequeue_default', array( 'target' => 'default' ) );
+        $ct_transaction = db_transaction( 'dequeue_donations', array( 'target' => 'donations' ) );
+        $crm_transaction = db_transaction( 'dequeue_civicrm', array( 'target' => 'civicrm' ) );
+        $native_civi_transaction = new CRM_Core_Transaction();
 
         try {
             // Do the right thing
@@ -190,13 +184,11 @@ class Queue {
             throw $ex;
         }
 
-        if ( $transactional ) {
-            watchdog( 'wmf_common', "Committing DB transaction", NULL, WATCHDOG_INFO );
-            $native_civi_transaction->commit();
-            unset( $crm_transaction );
-            unset( $ct_transaction );
-            unset( $drupal_transaction );
-        }
+        watchdog( 'wmf_common', "Committing DB transaction", NULL, WATCHDOG_INFO );
+        $native_civi_transaction->commit();
+        unset( $crm_transaction );
+        unset( $ct_transaction );
+        unset( $drupal_transaction );
     }
 
     function getByCorrelationId( $queue, $correlationId ) {
