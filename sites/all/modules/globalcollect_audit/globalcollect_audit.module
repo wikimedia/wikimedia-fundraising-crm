@@ -353,7 +353,7 @@ function globalcollect_audit_parse_all_wr1(){
 				$local_found_ids[] = $order_id;
 				globalcollect_audit_echo('!');
 			} else {
-				if ( sendSTOMP( $missing_txn_message ) ){
+				if ( globalcollect_audit_send_stomp( 'donations', $missing_txn_message ) ){
 					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
 					$local_found_ids[] = $order_id;
 					globalcollect_audit_echo('!');
@@ -396,7 +396,7 @@ function globalcollect_audit_parse_all_wr1(){
 				$local_built_ids[] = $order_id;
 				globalcollect_audit_echo('!');
 			} else {
-				if ( sendSTOMP( $missing_txn_message ) ){
+				if ( globalcollect_audit_send_stomp( 'donations', $missing_txn_message ) ){
 					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
 					$local_built_ids[] = $order_id;
 					globalcollect_audit_echo('!');
@@ -631,7 +631,7 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 	$stomp_data = array(
 		'contribution_tracking_id' => $contribution_tracking_id,
 		'gateway' => 'globalcollect',
-		'amount' => $unstaged_amount,
+		'gross' => $unstaged_amount,
 		'payment_method' => $payment_method,
 	);
 	
@@ -661,24 +661,17 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 		'language' => array( 'contribution_tracking', 'language' ), //probably the best one to use. 
 		'referrer' => array( 'contribution_tracking', 'referrer' ),
 		'email' => array( 'donor_data', 'EMAIL' ),
-		'fname' => array( 'donor_data', 'FIRSTNAME' ),
-		'mname',
-		'lname' => array( 'donor_data', 'SURNAME' ),
-		'street' => array( 'donor_data', 'STREET' ),
+		'first_name' => array( 'donor_data', 'FIRSTNAME' ),
+		'middle_name',
+		'last_name' => array( 'donor_data', 'SURNAME' ),
+		'street_address' => array( 'donor_data', 'STREET' ),
 		'city' => array( 'donor_data', 'CITY' ),
 		'state' => array( 'donor_data', 'STATE' ),
 		'country' => array( 'donor_data', 'COUNTRYCODE' ),
-		'zip' => array( 'donor_data', 'ZIP' ),
-		'fname2' => array( 'donor_data', 'FIRSTNAME' ),
-		'lname2' => array( 'donor_data', 'SURNAME' ),
-		'street2' => array( 'donor_data', 'STREET' ),
-		'city2' => array( 'donor_data', 'CITY' ),
-		'state2' => array( 'donor_data', 'STATE' ),
-		'country2' => array( 'donor_data', 'COUNTRYCODE' ),
-		'zip2' => array( 'donor_data', 'ZIP' ),
+		'postal_code' => array( 'donor_data', 'ZIP' ),
 		'gateway_txn_id' => array( 'donor_data', 'ORDERID' ),
 		'response', //? Maybe some dummy value for "found it in the audit phase"
-		'currency_code' => array( 'donor_data', 'CURRENCYCODE' ),
+		'currency' => array( 'donor_data', 'CURRENCYCODE' ),
 		'date' => array( 'contribution_tracking', 'ts' ), //double-check how the dates work
 	);
 	
@@ -1039,7 +1032,7 @@ function globalcollect_audit_mark_rfd_cbk( $missing ){
 				'type' => wr1_get_negative_type( $wr1 ), //refund or chargeback
 			);
 			echo print_r( $send_message, true );
-			sendSTOMP( $send_message );
+			globalcollect_audit_send_stomp( 'refund', $send_message );
 			$count += 1;
 			globalcollect_audit_echo('.');
 			
@@ -1904,4 +1897,32 @@ function gca_wr1_key_grinder( $record, $keys, $name, $error_on_mismatch = false 
 		}
 		return null;
 	}
+}
+
+function globalcollect_audit_send_stomp( $queueId, $body ) {
+    static $q;
+
+    if ( !$q ) {
+        $q = new Queue( queue2civicrm_stomp_url() );
+    }
+
+    // FIXME: register the queue mapping somewhere sane
+    if ( $queueId === 'donations' ) {
+        $queuePath = variable_get( 'queue2civicrm_subscription', '/queue/test' );
+    } elseif ( $queueId === 'refund' ) {
+        $queuePath = variable_get( 'refund_queue', '/queue/refund-notifications_test' );
+    } else {
+        throw new Exception( "What kind of a queue is this??: {$queueId}" );
+    }
+
+    $headers = array(
+        'source_name' => "GlobalCollect WR1 Auditor",
+        'source_type' => 'audit',
+        'source_host' => gethostname(),
+        'source_run_id' => getmypid(),
+        'source_version' => wmf_common_get_my_revision(),
+        'source_enqueued_at' => time(),
+    );
+
+    return $q->enqueue( json_encode( $body ), $headers, $queuePath );
 }
