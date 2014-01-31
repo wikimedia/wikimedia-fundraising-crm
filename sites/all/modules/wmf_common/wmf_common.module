@@ -358,3 +358,17 @@ function wmf_common_queue_item_download( $queue, $correlationId ) {
   ) );
   echo( $data );
 }
+
+function wmf_common_get_my_revision() {
+    static $sourceRevision;
+
+    if ( !$sourceRevision ) {
+        $versionStampPath = DRUPAL_ROOT . "/.version-stamp";
+        $versionId = file_get_contents( $versionStampPath );
+        if ( $versionId !== false ) {
+            $sourceRevision = trim( $versionId );
+        }
+        $sourceRevision = 'unknown';
+    }
+    return $sourceRevision;
+}
