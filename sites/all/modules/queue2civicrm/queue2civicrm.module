@@ -2,9 +2,6 @@
 // include common functions
 require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_common.inc' );
 
-// @deprecated
-require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_stomp.inc' );
-
 /**
  * Implementation of hook_menu().
  */
