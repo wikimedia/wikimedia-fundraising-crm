@@ -109,7 +109,7 @@ function unsubscribe_process_message($msg) {
 
     // Sanity checking :)
     $body = json_decode($msg->body, TRUE);
-    if (( !array_key_exists('email', $body) ) || (!array_key_exists('contribution-id', $body) )) {
+    if ( empty($body['email']) or empty( $body['contribution-id'] ) ) {
       $error = "$txnid: Required field not present! Dropping message on floor.";
       throw new WmfException( 'UNSUBSCRIBE', $error );
     }
