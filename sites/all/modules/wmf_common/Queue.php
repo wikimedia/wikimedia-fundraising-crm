@@ -174,12 +174,10 @@ class Queue {
         }
         catch ( Exception $ex ) {
             watchdog( 'wmf_common', "Aborting DB transaction.", NULL, WATCHDOG_INFO );
-            if ( $transactional ) {
-                $native_civi_transaction->rollback();
-                $crm_transaction->rollback();
-                $ct_transaction->rollback();
-                $drupal_transaction->rollback();
-            }
+            $native_civi_transaction->rollback();
+            $crm_transaction->rollback();
+            $ct_transaction->rollback();
+            $drupal_transaction->rollback();
 
             throw $ex;
         }
