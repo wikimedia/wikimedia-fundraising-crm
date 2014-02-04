@@ -1,0 +1,20 @@
+--- a/vendor/cogpowered/finediff/src/cogpowered/FineDiff/Parser/Parser.php	2014-02-04 13:25:20.022308605 -0800
++++ b/vendor/cogpowered/finediff/src/cogpowered/FineDiff/Parser/Parser.php	2014-02-04 13:32:56.338302472 -0800
+@@ -379,7 +379,7 @@ class Parser implements ParserInterface
+ 
+                     while ($to_copy_start <= $to_copy_start_max) {
+ 
+-                        $from_copy_start = strpos(substr($from_text, $from_segment_start, $from_segment_len), substr($to_text, $to_copy_start, $copy_len));
++                        $from_copy_start = strpos(strtolower(substr($from_text, $from_segment_start, $from_segment_len)), strtolower(substr($to_text, $to_copy_start, $copy_len)));
+ 
+                         if ($from_copy_start !== false) {
+                             $from_copy_start += $from_segment_start;
+@@ -402,7 +402,7 @@
+ 
+                     while ($from_copy_start <= $from_copy_start_max) {
+ 
+-                        $to_copy_start = strpos(substr($to_text, $to_segment_start, $to_segment_len), substr($from_text, $from_copy_start, $copy_len));
++                        $to_copy_start = strpos(strtolower(substr($to_text, $to_segment_start, $to_segment_len)), strtolower(substr($from_text, $from_copy_start, $copy_len)));
+ 
+                         if ($to_copy_start !== false) {
+                             $to_copy_start += $to_segment_start;

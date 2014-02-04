@@ -1,0 +1,11 @@
+{
+    "name": "Wikimedia Foundation donor CRM",
+    "license": "GPL-2.0",
+    "type": "project",
+    "support": {
+        "irc": "irc://irc.freenode.org/wikimedia-fundraising"
+    },
+    "require": {
+        "cogpowered/finediff": "*"
+    }
+}
