@@ -5,7 +5,6 @@ use wmf_communication\Templating;
 use wmf_communication\Translation;
 use Html2Text\Html2Text;
 
-require_once drupal_get_path( 'module', 'wmf_civicrm' ) . '/civicrm_api_check.inc';
 require_once drupal_get_path( 'module', 'wmf_common' ) . '/MessageFile.php';
 
 /**
