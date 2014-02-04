@@ -89,6 +89,27 @@ function donor_review_schema() {
         ),
         'primary key' => array( 'id' ),
     );
+    $schema['donor_review_batch'] = array(
+        'description' => 'Batch of donors to be reviewed',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'assigned_to' => array(
+                'description' => 'Admin user assigned to this batch. Foreign key to user.uid',
+                'type' => 'int',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'title' => array(
+                'description' => 'Optional title for this batch',
+                'type' => 'text',
+            ),
+        ),
+        'primary key' => array( 'id' ),
+    );
     $schema['donor_review_queue'] = array(
         'description' => 'Donor dedupe and review queue',
         'fields' => array(
@@ -121,7 +142,13 @@ function donor_review_schema() {
                 'not null' => true,
             ),
             'action_id' => array(
-                'description' => 'Auto-recommended action',
+                'description' => 'Auto-recommended action. Foreign key to donor_review_action.id',
+                'type' => 'int',
+                'unsigned' => true,
+                'default' => null,
+            ),
+            'assigned_to_batch' => array(
+                'description' => 'Assigned to resolution batch. Foreign key to donor_review_batch.id',
                 'type' => 'int',
                 'unsigned' => true,
                 'default' => null,
@@ -148,8 +175,6 @@ function donor_review_schema() {
 }
 
 function donor_review_install() {
-    $api = civicrm_api_classapi();
-
     $actions = array(
         'Autoreview - Recommend keep',
         'Autoreview - Recommend spamblock',
@@ -158,12 +183,25 @@ function donor_review_install() {
         'Autoreview - Recommend update contact',
         'Autoreview - Recommend conflict resolution',
     );
+    donor_review_add_actions( $actions );
+
+    // TODO: Action defaults
 
     $tags = array(
         'Autoreviewed - Unique',
         'Quick autoreviewed',
+        'Manually reviewed - Perform action',
+        'Manually reviewed - Revert email',
+        'Manually reviewed - Revert name',
+        'Manually reviewed - Revert address',
+        'Manually reviewed - Revert language',
+        'Manually rejected action',
+        'Needs rereview',
     );
+    donor_review_add_tags( $tags );
+}
 
+function donor_review_add_actions( $actions ) {
     foreach ( $actions as $action ) {
         db_merge('donor_review_action')
             ->key(array(
@@ -174,6 +212,10 @@ function donor_review_install() {
             ))
             ->execute();
     }
+}
+
+function donor_review_add_tags( $tags ) {
+    $api = civicrm_api_classapi();
 
     foreach ( $tags as $tag ) {
         $success = $api->Tag->get( array(
@@ -191,7 +233,58 @@ function donor_review_install() {
             throw new Exception( "Could not add tag '$tag':" . $api->errorMsg() );
         }
     }
+}
 
-    // Action defaults
+/**
+ * Add batch schema
+ */
+function donor_review_update_7001() {
+    if ( !db_field_exists( 'donor_review_queue', 'assigned_to_batch' ) ) {
+        db_add_field( 'donor_review_queue', 'assigned_to_batch', array(
+            'description' => 'Assigned to resolution batch. Foreign key to donor_review_batch.id',
+            'type' => 'int',
+            'unsigned' => true,
+            'default' => null,
+        ) );
+    }
 
+    if ( !db_table_exists( 'donor_review_batch' ) ) {
+        db_create_table( 'donor_review_batch', array(
+            'description' => 'Batch of donors to be reviewed',
+            'fields' => array(
+                'id' => array(
+                    'type' => 'serial',
+                    'unsigned' => true,
+                    'not null' => true,
+                ),
+                'assigned_to' => array(
+                    'description' => 'Admin user assigned to this batch. Foreign key to user.uid',
+                    'type' => 'int',
+                    'unsigned' => true,
+                    'not null' => true,
+                ),
+                'title' => array(
+                    'description' => 'Optional title for this batch',
+                    'type' => 'text',
+                ),
+            ),
+            'primary key' => array( 'id' ),
+        ) );
+    }
+}
+
+/**
+ * More tags for manual review status
+ */
+function donor_review_update_7002() {
+    $tags = array(
+        'Manually reviewed - Perform action',
+        'Manually reviewed - Revert email',
+        'Manually reviewed - Revert name',
+        'Manually reviewed - Revert address',
+        'Manually reviewed - Revert language',
+        'Manually rejected action',
+        'Needs rereview',
+    );
+    donor_review_add_tags( $tags );
 }
