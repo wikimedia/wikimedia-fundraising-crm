@@ -70,7 +70,13 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
   date_default_timezone_set( $oldTimezone );
 
   $contribution_status_id = civicrm_api_contribution_status('Failed');
-  
+
+  watchdog(
+    'recurring_globalcollect',
+    'Looking for failed contributions in timeframe @min 00:00:00 -> @max 23:59:59',
+    array('@min' => $start_date, '@max' => $date)
+  );
+
   $query = <<<EOS
 SELECT civicrm_contribution_recur.* FROM civicrm_contribution_recur
 WHERE
