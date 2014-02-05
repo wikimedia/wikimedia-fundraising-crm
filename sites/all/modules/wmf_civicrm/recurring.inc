@@ -196,7 +196,13 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now')
     }
     
     $contribution_status_id = civicrm_api_contribution_status('Completed');
-    
+
+    watchdog(
+        'recurring_globalcollect',
+        'Looking for next scheduled contributions in timeframe @min -> @max',
+        array('@min' => $start_day, '@max' => $end_day)
+	);
+
     $query = <<<EOS
 SELECT * FROM civicrm_contribution_recur
 WHERE

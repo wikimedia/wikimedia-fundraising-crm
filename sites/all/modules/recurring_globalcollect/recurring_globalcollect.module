@@ -193,6 +193,11 @@ function recurring_globalcollect_batch_process($options = array()) {
   watchdog('recurring_globalcollect', 'Attempting to process up to ' . $batch . ' recurring contribution(s).');
 
   $contribution_batch = wmf_civicrm_get_next_sched_contribution($batch);
+  watchdog(
+    'recurring_globalcollect',
+    'Query returned @count messages to process',
+    array('@count' => count($contribution_batch))
+  );
   $result = recurring_globalcollect_batch_charge($contribution_batch, $options);
 
   $processed = count($result['succeeded']) + count($result['failed']);
@@ -210,6 +215,11 @@ function recurring_globalcollect_batch_process($options = array()) {
   // Process retries
   watchdog('recurring_globalcollect', 'Attempting to retry up to ' . $batch . ' previously failed contribution(s).');
   $retry_batch = recurring_globalcollect_get_failure_retry_batch($batch);
+  watchdog(
+    'recurring_globalcollect',
+    'Query returned @count messages to process',
+    array('@count' => count($contribution_batch))
+  );
   $result = recurring_globalcollect_batch_charge($retry_batch, $options);
 
   $processed = count($result['succeeded']) + count($result['failed']);
