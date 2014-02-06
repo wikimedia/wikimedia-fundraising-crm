@@ -60,7 +60,7 @@ function globalcollect_audit_settings() {
   $form['globalcollect_audit_test_mode']  = array(
     '#type' => 'checkbox',
     '#title' => t( 'When this box is checked, no stomp messages will be sent.' ),
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#default_value' => variable_get( 'globalcollect_audit_test_mode', CONTRIBUTION_AUDIT_TEST_MODE ),
   );
   $form['globalcollect_audit_plusminus']  = array(
