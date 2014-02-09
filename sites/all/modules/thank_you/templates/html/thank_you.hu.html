@@ -1,4 +1,4 @@
-<p>Kedves {{contact.first_name}},</p>
+<p>Kedves {{contact.first_name}}!</p>
 
 <p>Nagyszerű ember vagy. KÖSZÖNJÜK, hogy támogatod a Wikimedia Alapítványt, amely non-profit
 módon működteti a Wikipédiát és testvéreit.</p>
@@ -26,7 +26,7 @@ megsegítésére tud majd koncentrálni. Pontosan úgy, ahogy annak lennie kell.
 
 <p>Az idén az adománygyűjtésre való felhívást mindenki csak néhány alkalommal fogja látni
 a hirdetési szalagon, nem pedig heteken keresztül. Ez szándékos: nem akarjuk, hogy az embereket
-irritálja a túl sok megjelenés. De ez nem jelenti azt, hogy kevesebb ember fog rájébredni arra,
+irritálja a túl sok megjelenés. De ez nem jelenti azt, hogy kevesebb ember fog ráébredni arra,
 hogy mi egy non-profit szervezet vagyunk, és a segítségüket akarjuk. Tehát, ha hajlandó vagy
 rá, örülnék, ha segítenél terjeszteni a hírt azzal, hogy továbbítod ezt az e-mailt egy pár
 barátodnak.</p>
@@ -57,7 +57,7 @@ href="https://plus.google.com/+Wikipedia/posts">Google+-on</a>, lájkolj a <a
 href="https://www.facebook.com/wikipedia">Facebookon</a> vagy <a
 href="https://blog.wikimedia.org">olvasd a blogunkat</a>. Az aktuális jelentéseinket és
 terveinket itt találod: <a
-href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Wikimedia_Foundation/Annual_Report/2012-2013/Front">2011–12-es
+href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Wikimedia_Foundation/Annual_Report/2012-2013/Front">2012–13-as
 éves jelentés</a>, <a
 href="http://wikimediafoundation.org/wiki/2013-2014_Annual_Plan_Questions_and_Answers">2013–2014-es
 éves terv</a>, valamint <a
@@ -65,13 +65,15 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 stratégiai tervünk</a>. Wikipédia pólókat és egyéb termékeket a boltunkban vásárolhatsz:
 <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Tájékoztatásul: A $contribution azonosítójú adományod {{contribution.receive_date}}
-időpontban: {{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Tájékoztatásul: A CNTCT-{{contribution.contact_id}} azonosítójú adományod
+{{contribution.receive_date}} időpontban:
+{{contribution.contribution_source|l10n_currency(locale)}}.</p>
 
 <p>{% if recurring %} Ez az adomány egy ismétlődő adományozás része. Az adományt a
 Wikimédia Alapítvány minden hónapban levonja a számládról, amíg értesítést nem küldesz
-az adományozás lemondásáról. Ha le szeretnéd mondani az adományozást, kérlek kövesd
-[$recurring az egyszerű utasításokat a lemondáshoz]. {% endif %}</p>
+az adományozás lemondásáról. Ha le szeretnéd mondani az adományozást, kérlek kövesd <a
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
+country }}&language={{ language }}">az egyszerű utasításokat a lemondáshoz</a>. {% endif %}</p>
 
 <p>Ez a levél bizonylatként szolgál az adományozásodról. A hozzájárulásod
 ellentételezéseként semmilyen áru vagy szolgáltatás - legyen az egész vagy rész - nem
@@ -85,10 +87,8 @@ került átadásra. A Wikipédia Alapítvány egy nonprofit közhasznú szerveze
 gyűjtőkampányainkról. Ha mégsem szeretnél levelet kapni tőlünk, kattints az alábbi linkre,
 és nem küldünk több levelet.</p>
   <div style="margin: 0 25px">
-    <p>[$unsubscribe Leiratkozás]</p>
+    <p><a href="{{unsubscribe_link|raw}}">Leiratkozás</a></p>
   </div>
 </div>
 
 <hr/>
-
-<p>Kérlek segíts ezen e-mail [$translate lefordításában].</p>
