@@ -82,7 +82,7 @@ class Queue {
                 watchdog( 'wmf_common', 'Failure while processing message: ' . $ex->getMessage(), NULL, WATCHDOG_ERROR );
 
                 if ( $ex->isRequeue() ) {
-                    $ret = $this->requeueWithDelay( $msg );
+                    $ret = $this->requeueWithDelay( $msg, $ex );
 
                     if ( $ret ) {
                       $this->ack( $msg );
@@ -304,14 +304,17 @@ class Queue {
     /**
      * Places a STOMP message back onto the queue moving its original timestamp to another
      * property and maintaining a count of previous moves. After wmf_common_requeue_max
-     * moves it will move the message to $queue . '_badmsg'
+     * moves it will reject the message (place into a rejection queue with details of
+     * the underlying exception that has caused this requeue.)
      *
      * Note: orig_timestamp is in ms
      *
-     * @param StompFrame $msg_orig
+     * @param StompFrame $msg_orig The message as fetched from stomp
+     * @param WmfException $ex The exception which has caused this message to need to be requeued.
+     *
      * @return bool True if it all went successfully
      */
-    function requeueWithDelay( $msg_orig ) {
+    function requeueWithDelay( $msg_orig, WmfException $ex ) {
       $msg = $msg_orig->body;
       $headers = array(
         'orig_timestamp' => array_key_exists( 'orig_timestamp', $msg_orig->headers ) ? $msg_orig->headers['orig_timestamp'] : $msg_orig->headers['timestamp'],
@@ -323,8 +326,8 @@ class Queue {
       $queue = $msg_orig->headers['destination'];
       $max_count = intval(variable_get('wmf_common_requeue_max', 10));
       if (($max_count > 0) && ($headers['delay_count'] > $max_count)) {
-        // Bad message! Move to bad message queue
-        $queue .= '_badmsg';
+        $this->reject( $msg_orig, $ex );
+        return TRUE;
       }
 
       watchdog( 'wmf_common', "Requeueing message to $queue", NULL, WATCHDOG_INFO );
@@ -340,7 +343,7 @@ class Queue {
       if ( !$retval ) {
         $error = "Failed to requeue message: {$errorMsg}. Contents: " . json_encode( $msg_orig );
         watchdog( 'wmf_common', $error, NULL, WATCHDOG_ERROR );
-        wmf_common_failmail( 'wmf_common', $exMsg );
+        wmf_common_failmail( 'wmf_common', $error );
       }
 
       return $retval;
