@@ -301,7 +301,7 @@ function wmf_unsubscribe_manual_form_submit($form, &$form_state) {
     foreach ($emails[ 'values' ] as $id => $emailEntry) {
       // Get the contribution ID
       $contactId = $emailEntry['contact_id'];
-      $contribution = civicrm_api(
+      $contributions = civicrm_api(
         'Contribution', 'get',
         array(
           'version' => '3',
@@ -310,13 +310,14 @@ function wmf_unsubscribe_manual_form_submit($form, &$form_state) {
       );
 
       // Check if the query failed
-      if (( $contribution[ 'is_error' ] == TRUE ) || ( $contribution[ 'count' ] < 1 )) {
-        drupal_set_message("API contribution search failed for contact ID: $contactId " . json_encode($contribution));
+      if (( $contributions[ 'is_error' ] == TRUE ) || ( $contributions[ 'count' ] < 1 )) {
+        drupal_set_message("API contribution search failed for contact ID: $contactId " . json_encode($contributions));
         continue;
       }
 
       // Retrieve the contribution id from the first array element
-      $ctid = $contribution[ 'id' ];
+      $ctid = array_keys($contributions['values']);
+      $ctid = $ctid[0];
 
       // Contruct the STOMP message
       $time = time();
