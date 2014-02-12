@@ -97,6 +97,7 @@ class Queue {
                 } elseif ( $ex->isRejectMessage() ) {
                     watchdog( 'wmf_common', "\nRemoving failed message from the queue: \n" . print_r($msg, TRUE), NULL, WATCHDOG_ERROR );
                     $this->reject( $msg, $ex );
+                    $this->ack( $msg );
 
                     $mailableDetails = $this->item_url( $msg );
                 } else {
@@ -325,19 +326,23 @@ class Queue {
 
       $queue = $msg_orig->headers['destination'];
       $max_count = intval(variable_get('wmf_common_requeue_max', 10));
-      if (($max_count > 0) && ($headers['delay_count'] > $max_count)) {
-        $this->reject( $msg_orig, $ex );
-        return TRUE;
-      }
-
-      watchdog( 'wmf_common', "Requeueing message to $queue", NULL, WATCHDOG_INFO );
 
       $retval = FALSE;
-      $errorMsg = "Bad connection?";
-      try {
-        $retval = $this->enqueue( $msg, $headers, $queue );
-      } catch ( Stomp_Exception $ex ) {
-        $errorMsg = $ex->getMessage();
+      if (($max_count > 0) && ($headers['delay_count'] > $max_count)) {
+        try {
+            $this->reject( $msg_orig, $ex );
+            $retval = TRUE;
+        } catch ( WmfException $ex ) {
+            $errorMsg = $ex->getMessage();
+        }
+      } else {
+        watchdog( 'wmf_common', "Requeueing message to $queue", NULL, WATCHDOG_INFO );
+        $errorMsg = "Bad connection?";
+        try {
+          $retval = $this->enqueue( $msg, $headers, $queue );
+        } catch ( Stomp_Exception $ex ) {
+          $errorMsg = $ex->getMessage();
+        }
       }
 
       if ( !$retval ) {
@@ -372,6 +377,7 @@ class Queue {
         $exMsg = "Failed to requeue message with {$ex->getMessage()}. Contents: " . json_encode($msg_orig);
         watchdog('wmf_common', $exMsg, NULL, WATCHDOG_ERROR);
         wmf_common_failmail('wmf_common', $exMsg);
+        return false;
       }
     }
 
@@ -403,8 +409,6 @@ class Queue {
             watchdog( 'wmf_common', $exMsg, NULL, WATCHDOG_ERROR );
             throw new WmfException( 'STOMP_BAD_CONNECTION', 'Could not reinject damaged message' );
         }
-        // FIXME: this works but should not
-        $this->ack($msg);
     }
 
     function item_url( $msg ) {
