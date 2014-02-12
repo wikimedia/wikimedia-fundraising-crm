@@ -7,9 +7,11 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
     function __construct( ) {
         $gateway_options = array(
             '' => '--any--',
+            'ADYEN' => 'Adyen',
             'AMAZON' => 'Amazon',
             'GLOBALCOLLECT' => 'GlobalCollect',
             'PAYPAL' => 'PayPal',
+            'WORLDPAY' => 'WorldPay',
         );
 
         $this->_columns = array(
