@@ -194,6 +194,7 @@ EOS;
             $this->_from .= <<<EOS
 \nLEFT JOIN civicrm_address
     ON civicrm_address.contact_id = {$this->_aliases['civicrm_contribution']}.contact_id
+        AND civicrm_address.is_primary = 1
 LEFT JOIN civicrm_country {$this->_aliases['civicrm_country']} 
     ON {$this->_aliases['civicrm_country']}.id = civicrm_address.country_id
 EOS;
