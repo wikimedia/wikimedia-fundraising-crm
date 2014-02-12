@@ -44,11 +44,11 @@ function large_donation_settings() {
   $form = array();
 
   $form['large_donation_notifymail'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Email Notification Address'),
+    '#type' => 'textarea',
+    '#title' => t('Email Notification Addresses'),
     '#required' => FALSE,
     '#default_value' => variable_get('large_donation_notifymail', ''),
-    '#description' => t('Enter the notification email contact address, or multiple addresses seperated by commas.'),
+    '#description' => t('Addresses, separated by commas or newlines, to be notified on large contributions.'),
   );
 
   $form['large_donation_amount'] = array(
@@ -168,7 +168,7 @@ function large_donation_notification_send( $contribution_info ){
     try {
         $mail->set('Charset','utf-8');
 
-		$to = explode(',', $to);
+        $to = preg_split('/\\s*[,\\n]\\s*/', $to, -1, PREG_SPLIT_NO_EMPTY);
 		foreach ( $to as $addx ){
 	        $mail->AddAddress( trim( $addx ) );
 		}
