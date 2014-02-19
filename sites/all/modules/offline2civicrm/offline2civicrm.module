@@ -91,6 +91,15 @@ function offline2civicrm_import_checks_form() {
     '#type' => 'submit',
     '#value' => t( 'Upload' ),
   );
+  $form['import_upload_format'] = array(
+    '#title' => t( 'File format' ),
+    '#type' => 'radios',
+    '#default_value' => 'azl',
+    '#options' => array(
+        'azl' => t( 'AZ Lockbox' ),
+        'paypal' => t( 'PayPal special fund' ),
+    ),
+  );
   $form['log'] = array(
     '#markup' => $log_html,
   );
@@ -115,7 +124,17 @@ function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
       civicrm_initialize();
       $smellyTmp = CRM_Core_TemporaryErrorScope::useException();
 
-      ChecksFile::import( $file->uri );
+      switch ( $form_state['values']['import_upload_format'] ) {
+      case 'azl':
+        $importer = new AzlChecksFile( $file->uri );
+        break;
+      case 'paypal':
+        $importer = new PayPalChecksFile( $file->uri );
+        break;
+      default:
+        throw new Exception( 'Bad file format selection' );
+      }
+      $importer->import();
       drupal_set_message( "Successful import!" );
     }
     catch ( WmfException $ex ) {
