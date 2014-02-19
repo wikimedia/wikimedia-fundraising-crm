@@ -1,7 +1,7 @@
 <?php
 
 class ChecksImportLog {
-  function recentEvents( $pageLength = 20 ) {
+  static function recentEvents( $pageLength = 20 ) {
     $result = db_select( 'offline2civicrm_log' )
       ->fields( 'offline2civicrm_log' )
       ->orderBy( 'id', 'DESC' )
@@ -16,7 +16,7 @@ class ChecksImportLog {
     return $events;
   }
 
-  function record( $description ) {
+  static function record( $description ) {
     global $user;
     db_insert( 'offline2civicrm_log' )->fields( array(
       'who' => $user->name,

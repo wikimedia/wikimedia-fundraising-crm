@@ -243,7 +243,6 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     $msg['contribution_type'] = wmf_civicrm_get_message_contribution_type($msg);
     $contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', $msg['contribution_type'] );
 
-    //XXX always redundant?
     if ( !array_key_exists( "payment_instrument", $msg ) ){
         $msg['payment_instrument'] = wmf_civicrm_get_message_payment_instrument( $msg );
     }
@@ -315,6 +314,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     $custom_name_passthrough = array(
         'gateway_account',
         'import_batch_number',
+        'no_thank_you',
         'source_name',
         'source_type',
         'source_host',
@@ -477,6 +477,9 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                 break;
             case 'dd':
                 $payment_instrument = 'Direct Debit';
+                break;
+            case 'eft':
+                $payment_instrument = 'EFT';
                 break;
             case 'ew':
                 switch( strtolower( $msg['payment_submethod'] ) ){
