@@ -3,55 +3,30 @@
 /**
  * CSV batch format for manually-keyed donation checks
  */
-class ChecksFile {
+abstract class ChecksFile {
+    /**
+     * @param string $file_uri path to the file
+     */
+    function __construct( $file_uri ) {
+        $this->file_uri = $file_uri;
+    }
+
     /**
      * Read checks from a file and save to the database.
-     *
-     * @param string $filename path to the file
      */
-    function import( $filename ) {
-        ChecksImportLog::record( "Beginning import of checks file $filename..." );
+    function import() {
+        ChecksImportLog::record( "Beginning import of checks file {$this->file_uri}..." );
         //TODO: $db->begin();
 
-        $required_fields = array(
-            'date',
-            'gross',
-            'gift_source',
-            'import_batch_number',
-            'check_number',
-            'restrictions',
-        );
-
         ini_set( 'auto_detect_line_endings', true );
-        if( ( $file = fopen( $filename, 'r' )) === FALSE ){
-            throw new WmfException( 'FILE_NOT_FOUND', 'Import checks: Could not open file for reading: ' . $filename );
+        if( ( $file = fopen( $this->file_uri, 'r' )) === FALSE ){
+            throw new WmfException( 'FILE_NOT_FOUND', 'Import checks: Could not open file for reading: ' . $this->file_uri );
         }
 
         $headers = _load_headers( fgetcsv( $file, 0, ',', '"', '\\') );
 
-        $required_columns = array(
-            'Batch',
-            'Check Number',
-            'City',
-            'Contribution Type',
-            'Country',
-            'Direct Mail Appeal',
-            'Email',
-            'Gift Source',
-            'Payment Instrument',
-            'Postal Code',
-            'Postmark Date',
-            'Received Date',
-            'Restrictions',
-            'Source',
-            'State',
-            'Street Address',
-            'Thank You Letter Date',
-            'Total Amount',
-        );
-
         $failed = array();
-        foreach ( $required_columns as $name ) {
+        foreach ( $this->getRequiredColumns() as $name ) {
             if ( !array_key_exists( $name, $headers ) ) {
                 $failed[] = $name;
             }
@@ -62,10 +37,11 @@ class ChecksFile {
 
         $num_successful = 0;
         $num_duplicates = 0;
+        $row_index = 0;
 
         while( ( $row = fgetcsv( $file, 0, ',', '"', '\\')) !== FALSE) {
             list($currency, $source_amount) = explode( " ", _get_value( "Source", $row, $headers ) );
-            $total_amount = (float)_get_value( "Total Amount", $row, $headers );
+            $total_amount = floatval( trim( _get_value( "Total Amount", $row, $headers ), '$' ) );
 
             if ( abs( $source_amount - $total_amount ) > .01 ) {
                 $pretty_msg = json_encode( array_combine( array_keys( $headers ), $row ) );
@@ -89,11 +65,12 @@ class ChecksFile {
                 "check_number" => _get_value( "Check Number", $row, $headers ),
                 "currency" => $currency,
                 "original_currency" => $currency,
-                "original_gross" => _get_value( "Total Amount", $row, $headers ),
+                "original_gross" => $total_amount,
                 "fee" => "0",
-                "gross" => _get_value( "Total Amount", $row, $headers ),
-                "net" => _get_value( "Total Amount", $row, $headers ),
+                "gross" => $total_amount,
+                "net" => $total_amount,
                 "date" => strtotime( _get_value( "Received Date", $row, $headers ) ),
+                "no_thank_you" => _get_value( "No Thank You", $row, $headers ),
                 "thankyou_date" => strtotime( _get_value( "Thank You Letter Date", $row, $headers ) ),
                 "postmark_date" => strtotime( _get_value( "Postmark Date", $row, $headers ) ),
                 "restrictions" => _get_value( "Restrictions", $row, $headers ),
@@ -110,6 +87,10 @@ class ChecksFile {
 
                 case "Arizona Lockbox":
                     $msg['gateway'] = "arizonalockbox";
+                    break;
+
+                case "Cash":
+                    $msg['contribution_type'] = "cash";
                     break;
 
                 default:
@@ -167,7 +148,15 @@ class ChecksFile {
 
             // Generating a transaction id so that we don't import the same rows multiple times
             $name_salt = $msg['contact_type'] == "Individual" ? $msg["first_name"] . $msg["last_name"] : $msg["organization_name"];
-            $msg['gateway_txn_id'] = md5( $msg['check_number'] . $name_salt );
+            if ( !empty( $msg['check_number'] ) ) {
+                $msg['gateway_txn_id'] = md5( $msg['check_number'] . $name_salt );
+            } else {
+                $msg['gateway_txn_id'] = md5( $msg['date'] . $name_salt . $row_index );
+            }
+
+            $row_index++;
+
+            $this->mungeMessage( $msg );
 
             // check to see if we have already processed this check
             if ( $existing = wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ){
@@ -178,7 +167,7 @@ class ChecksFile {
             }
 
             $failed = array();
-            foreach ( $required_fields as $key ) {
+            foreach ( $this->getRequiredFields() as $key ) {
                 if ( !array_key_exists( $key, $msg ) or empty( $msg[$key] ) ) {
                     $failed[] = $key;
                 }
@@ -202,4 +191,9 @@ class ChecksFile {
         ChecksImportLog::record( $message );
         watchdog( 'offline2civicrm', $message, array(), WATCHDOG_INFO );
     }
+
+    protected function mungeMessage( &$msg ) { }
+
+    abstract protected function getRequiredFields();
+    abstract protected function getRequiredColumns();
 }

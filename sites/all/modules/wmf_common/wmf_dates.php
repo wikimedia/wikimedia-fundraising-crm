@@ -70,7 +70,7 @@ function wmf_common_date_format_using_utc( $format, $unixtime ) {
         $obj = new DateTime( '@' . $unixtime, new DateTimeZone( 'UTC' ) );
         $formatted = $obj->format( $format );
     } catch ( Exception $ex ) {
-        watchdog( 'wmf_common', t( "Caught date exception: " ) . $ex->getMessage(), WATCHDOG_ERROR );
+        watchdog( 'wmf_common', t( "Caught date exception: " ) . $ex->getMessage(), NULL, WATCHDOG_ERROR );
         return '';
     }
 
