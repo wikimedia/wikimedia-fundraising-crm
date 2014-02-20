@@ -1,98 +1,85 @@
-#toolbar .toolbar-menu .environment-indicator-name,
+/**
+ * @file
+ * Environment info css.
+ *
+ * @author Tom Kirkpatrick (mrfelton), www.systemseed.com
+ */
+
 #environment-indicator {
-  text-align: center;
-  white-space: nowrap;
-  color: white;
-  text-shadow: 0 -1px 1px #333333;
-  font-weight: bold;
-  z-index: 10;
-  left: 0;
-  right: 0;
-}
-
-#admin-menu #environment-indicator { float: right; left: auto; right: auto; }
-
-.fixed-yes { position: fixed; }
-.fixed-yes.position-bottom { bottom: 0; }
-.fixed-yes.position-top { top: 0; }
-
-div#toolbar div.toolbar-menu { padding: 5px 20px 5px 10px; }
-
-#toolbar .toolbar-menu .environment-indicator-name, #environment-indicator .environment-indicator-name { cursor: pointer; }
-#environment-indicator .environment-indicator-name { padding: 5px; }
-#toolbar .toolbar-menu .environment-indicator-name { padding: 0px 12px; }
-#admin-menu #environment-indicator .environment-indicator-name { padding: 3px 12px; }
-
-#environment-indicator .gradient-bar,
-#environment-indicator .environment-indicator-name,
-#toolbar .environment-indicator-name-wrapper .environment-indicator-name {
-  background-image: linear-gradient(bottom, rgba(207,207,207,0.3) 19%, rgba(250,250,250,0.3) 60%, rgba(255,255,255,0.3) 80%);
-  background-image: -o-linear-gradient(bottom, rgba(207,207,207,0.3) 19%, rgba(250,250,250,0.3) 60%, rgba(255,255,255,0.3) 80%);
-  background-image: -moz-linear-gradient(bottom, rgba(207,207,207,0.3) 19%, rgba(250,250,250,0.3) 60%, rgba(255,255,255,0.3) 80%);
-  background-image: -webkit-linear-gradient(bottom, rgba(207,207,207,0.3) 19%, rgba(250,250,250,0.3) 60%, rgba(255,255,255,0.3) 80%);
-  background-image: -ms-linear-gradient(bottom, rgba(207,207,207,0.3) 19%, rgba(250,250,250,0.3) 60%, rgba(255,255,255,0.3) 80%);
-
-  background-image: -webkit-gradient(
-  	linear,
-  	left bottom,
-  	left top,
-  	color-stop(0.19, rgba(207,207,207,0.3)),
-  	color-stop(0.6, rgba(250,250,250,0.3)),
-  	color-stop(0.8, rgba(255,255,255,0.3))
-  );
-}
-
-#toolbar .environment-indicator-name-wrapper { float: right; font-size: 0.85em; }
-
-#toolbar .toolbar-menu .environment-indicator-name,
-#admin-menu #environment-indicator .environment-indicator-name {
-  -webkit-border-radius: 10px;
-  -moz-border-radius: 10px;
-  -o-border-radius: 10px;
-  border-radius: 10px;
-}
-#environment-indicator .item-list ul, #toolbar .item-list ul { overflow: hidden; margin: 0; }
-
-#environment-indicator .item-list ul.environment-switcher-container li.environment-switcher,
-#toolbar .item-list ul.environment-switcher-container li.environment-switcher {
-  list-style: none;
-  float: left;
-  background-color: #333333;
-  margin: 0 3px;
-  padding: 3px 8px;
-  -moz-border-radius: 15px;
-  -webkit-border-radius: 15px;
-  -moz-border-radius: 15px;
-  border-radius: 15px;
-  font-size: 0.8em;
-  text-shadow: none;
-}
-
-#environment-indicator .item-list ul.environment-switcher-container li.environment-switcher:hover,
-#toolbar .item-list ul.environment-switcher-container li.environment-switcher:hover {
-  background-color: #dddddd;
-  -moz-box-shadow: inset 0 1px 5px #333333;
-  -webkit-box-shadow: inset 0 1px 5px #333333;
-  -o-box-shadow: inset 0 1px 5px #333333;
-  box-shadow: inset 0 1px 5px #333333;
-}
-#environment-indicator .item-list ul.environment-switcher-container li.environment-switcher a,
-#toolbar .item-list ul.environment-switcher-container li.environment-switcher a { color: #dddddd; text-decoration: none; background-color: transparent !important; }
-#environment-indicator .item-list ul.environment-switcher-container li.environment-switcher:hover a,
-#toolbar .item-list ul.environment-switcher-container li.environment-switcher:hover a { color: #333333; }
-
-#environment-indicator .item-list, #toolbar .item-list {
-  display: none;
-  padding: 10px;
-  -moz-box-shadow: inset 0 0 5px #333333;
-  -webkit-box-shadow: inset 0 0 5px #333333;
-  -o-box-shadow: inset 0 0 5px #333333;
-  box-shadow: inset 0 0 5px #333333;
-}
-
-#admin-menu #environment-indicator .item-list {
+  background: #d00c0c;
   position: absolute;
-  left: 0;
-  right: 0;
-  margin-top: 5px;
+  top: 0px;
+  bottom: 0px;
+  width: 30px;
+  color: #FFFFFF;
+  text-align: center;
+  font-weight: bold;
+  z-index: 1000;
+  padding-top: 5px;
+}
+body > #environment-indicator {
+  position: fixed;
+}
+
+body.environment-indicator-left #environment-indicator {
+  left: 0px;
+}
+
+body.environment-indicator-right #environment-indicator {
+  right: 0px;
+}
+
+html {
+  height: 100%;
+}
+
+body.environment-indicator {
+  min-height: 100%;
+}
+
+body.environment-indicator-adjust.environment-indicator-left {
+  margin-left: 30px;
+}
+
+body.environment-indicator-adjust.environment-indicator-right {
+  margin-right: 30px;
+}
+
+/* compatability with admin.module */
+body.environment-indicator-adjust.environment-indicator-left.admin-expanded.admin-vertical.admin-nw,
+body.environment-indicator-adjust.environment-indicator-left.admin-expanded.admin-vertical.admin-sw { margin-left:290px; }
+
+body.environment-indicator-adjust.environment-indicator-left div#admin-toolbar.nw,
+body.environment-indicator-adjust.environment-indicator-left div#admin-toolbar.sw { left:30px; }
+body.environment-indicator-adjust.environment-indicator-left div#admin-toolbar.sw .admin-toggle { left:30px; }
+body.environment-indicator-adjust.environment-indicator-left.admin-expanded div#admin-toolbar.sw .admin-toggle { left:0; }
+
+
+body.environment-indicator-adjust.environment-indicator-right.admin-expanded.admin-vertical.admin-ne,
+body.environment-indicator-adjust.environment-indicator-right.admin-expanded.admin-vertical.admin-se { margin-right:290px; }
+
+body.environment-indicator-adjust.environment-indicator-right div#admin-toolbar.ne,
+body.environment-indicator-adjust.environment-indicator-right div#admin-toolbar.se { right:30px; }
+body.environment-indicator-adjust.environment-indicator-right div#admin-toolbar.se .admin-toggle { right:30px; }
+body.environment-indicator-adjust.environment-indicator-right.admin-expanded div#admin-toolbar.se .admin-toggle { right:0; }
+
+/* compatability with admin_menu.module */
+body.environment-indicator-adjust.environment-indicator-left #admin-menu #admin-menu-wrapper {
+  margin-right: 0px;
+  padding-left: 30px;
+}
+
+/* compatability with admin_menu.module */
+body.environment-indicator-adjust.environment-indicator-right #admin-menu #admin-menu-wrapper {
+  padding-right: 30px;
+}
+
+/* Hide the menu on print output. */
+@media print {
+  #environment-indicator {
+    display: none !important;
+  }
+  body.environment-indicator {
+    margin-left: 0 !important;
+  }
 }
