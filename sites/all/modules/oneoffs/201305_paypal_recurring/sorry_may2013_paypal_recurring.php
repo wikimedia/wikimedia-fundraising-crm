@@ -11,6 +11,7 @@ use wmf_communication\Recipient;
 function sorry_may2013_paypal_recurring_build_job() {
     $dbs = module_invoke( 'wmf_civicrm', 'get_dbs' );
 
+    // Find all contributions affected by this screwup
     $dbs->push( 'civicrm' );
     $result = db_query( "
 SELECT
@@ -67,6 +68,7 @@ ORDER BY
 function sorry_may2013_paypal_recurring_mark_thanked() {
     $job_ran_date = '2013-08-14 00:00:00';
 
+    // TODO function Job::getAllRecipientsForStatus or Recipient:getQueued... to do exactly this
     $query = db_select( 'wmf_communication_recipient', 'r' );
     $query->join( 'wmf_communication_job', 'j', 'r.job_id = j.id' );
     $query->addField( 'r', 'vars' );

@@ -1,8 +1,9 @@
 <?php namespace wmf_communication;
 
 /**
- * An overridable template provider, which returns the subject string and body
- * template for a given recipient's preferred language.
+ * Template provider, responsible for the subject and body templates
+ *
+ * Ordinarily, you can extend the AbstractMailingTemplate.
  */
 interface IMailingTemplate {
     /**
@@ -17,27 +18,70 @@ interface IMailingTemplate {
 }
 
 /**
- * Most mailings will extend this class and simply define a subject key and template path.
+ * Base template provider for normal mailing jobs
+ *
+ * Most mailings will extend this class and simply define the two abstract methods,
+ * which return a subject message key and the base template name.
+ *
  * Anything which will be customized on a per-recipient basis should be controlled by this
- * class or in your derivative.
+ * class (or in your subclass).
  */
 abstract class AbstractMailingTemplate implements IMailingTemplate {
+
+    /**
+     * Get the root directory to search for templates
+     *
+     * @return string path
+     */
     abstract function getTemplateDir();
 
+    /**
+     * Get the base template name
+     *
+     * This name is transformed into a template file path by the Templating factory.
+     *
+     * @return string base name, such as 'thank_you'
+     */
     abstract function getTemplateName();
 
+    /**
+     * Job is sent from this email address
+     *
+     * @return string email address
+     */
     function getFromAddress() {
         return variable_get( 'thank_you_from_address', null );
     }
 
+    /**
+     * Job is sent as this name
+     *
+     * @return string full name for From string
+     */
     function getFromName() {
         return variable_get( 'thank_you_from_name', null );
     }
 
+    /**
+     * Get the rendered subject line
+     *
+     * @param Recipient $recipient the addressee
+     *
+     * @return string subject
+     */
     function getSubject( $recipient ) {
         return trim( $this->getBodyTemplate( $recipient )->render( 'subject' ) );
     }
 
+    /**
+     * Get a template appropriate for this recipient
+     *
+     * Merges contact information into the template variables.
+     *
+     * @param Recipient $recipient the addressee
+     *
+     * @return Templating prepared template
+     */
     function getBodyTemplate( $recipient ) {
         $templateParams = array(
             'name' => $recipient->getName(),
