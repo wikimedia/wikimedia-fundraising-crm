@@ -58,9 +58,7 @@ class WmfTransaction {
         $transaction = new WmfTransaction();
         $transaction->gateway_txn_id = $msg['gateway_txn_id'];
         $transaction->gateway = $msg['gateway'];
-        if ( array_key_exists( 'recurring', $msg ) && $msg['recurring'] ) {
-            $transaction->is_recurring = true;
-        }
+        $transaction->is_recurring = ( array_key_exists( 'recurring', $msg ) && $msg['recurring'] );
         return $transaction;
     }
 
@@ -73,11 +71,13 @@ class WmfTransaction {
             throw new WmfException( 'INVALID_MESSAGE', "Missing ID." );
         }
 
+        $transaction->is_refund = false;
         while ( $parts[0] === "RFD" or $parts[0] === "REFUND" ) {
             $transaction->is_refund = true;
             array_shift( $parts );
         }
 
+        $transaction->is_recurring = false;
         while ( $parts[0] === "RECURRING" ) {
             $transaction->is_recurring = true;
             array_shift( $parts );
