@@ -1,4 +1,4 @@
-<p>Αγαπητέ/ή {{contact.first_name}},</p>
+<p>Αγαπητέ/ή {{ first_name }},</p>
 
 <p>Είστε φανταστικός/ή. ΣΑΣ ΕΥΧΑΡΙΣΤΟΥΜΕ πού
 υποστηρίξατε το Wikimedia Foundation, την μη κερδοσκοπική
@@ -96,16 +96,15 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
 <p>Για τα αρχεία σας: η δωρεά σας, υπαρίθ.
-CNTCT-{{contribution.contact_id}}, την {{contribution.receive_date}} ήταν
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+{{ transaction_id }}, την {{ receive_date }} ήταν
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Αυτή η δωρεά είναι μέρος μιας τρέχουσας
 συνδρομής. Μηνιαίες πληρωμές χρεώνονται στο Wikimedia
 Foundation μέχρι να μας ειδοποιήσετε να σταματήσουν. Αν
 επιθυμείτε να ακυρώσετε τις πληρωμές, παρακαλώ
 συμβουλευθείτε τις <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">εύκολες εντολές ακύρωσης
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">εύκολες εντολές ακύρωσης
 πληρωμών</a>. {% endif %}</p>
 
 <p>Αυτό το γράμμα μπορεί να χρησιμοποιηθεί ως αρχείο

@@ -61,14 +61,13 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 strategický plán Wikimedia Foundation</a>. Také již můžete nakupovat v našem obchodě na <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Pro Vaše záznamy: Váš příspěvek číslo CNTCT-{{contribution.contact_id}} ze dne
-{{contribution.receive_date}} činil {{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Pro Vaše záznamy: Váš příspěvek číslo {{ transaction_id }} ze dne
+{{ receive_date }} činil {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Tento dar je součástí pravidelně opakovaných příspěvků. Měsíční
 platby budou inkasovány nadací Wikimedia tak dlouho, dokud nepožádáte o jejich zastavení.
 Nechcete-li už dále přispívat, přečtěte si <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">jednoduché instrukce pro zrušení</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">jednoduché instrukce pro zrušení</a>. {% endif %}</p>
 
 <p>Tento dopis slouží jako záznam o daru. Za tento příspěvek nebylo poskytnuto žádné
 zboží ani služby, ať úplné či částečné. Nadace Wikimedia je nezisková charitativní

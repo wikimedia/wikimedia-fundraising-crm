@@ -1,4 +1,4 @@
-<p>Boas, {{contact.first_name}}:</p>
+<p>Boas, {{ first_name }}:</p>
 
 <p>Grazas por faceres unha doazón á Fundación Wikimedia. Que cousa tan marabillosa!</p>
 
@@ -45,8 +45,8 @@ Sue</p>
 directora executiva,<br />
 Fundación Wikimedia</p>
 
-<p>Para a túa información: A túa doazón o {{contribution.receive_date}} foi de
-{{contribution.contribution_source|l10n_currency(locale)}}.{% if recurring %}{% include
+<p>Para a túa información: A túa doazón o {{ receive_date }} foi de
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.{% if recurring %}{% include
 'html/recurring/gl.html' ignore missing %}{% endif %}</p>
 
 <p>Escta carta serve como proba da túa doazón. Non se proporcionaron bens ou servizos,

@@ -1,4 +1,4 @@
-<p>Hörmətli {{contact.first_name}},</p>
+<p>Hörmətli {{ first_name }},</p>
 
 <p>Vikimedia Fonduna göstərdiyiniz yardım üçün təşəkkürlər. Bu gözəl bir
 işdir!</p>
@@ -51,8 +51,8 @@ Syu</p>
 İcraçı direktor,<br />
 Vikimedia Fondu</p>
 
-<p>Məlumat üçün: Sizin {{contribution.receive_date}} tarixli ianənizin məbləği
-{{contribution.contribution_source|l10n_currency(locale)}} təşkil etmişdir.{% if
+<p>Məlumat üçün: Sizin {{ receive_date }} tarixli ianənizin məbləği
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }} təşkil etmişdir.{% if
 recurring %}{% include 'html/recurring/az.html' ignore missing %}{% endif %}</p>
 
 <p>Bu məktub sizin ianənizin təsdiqi kimi çıxış edə bilər. Bu ianə müqabilində

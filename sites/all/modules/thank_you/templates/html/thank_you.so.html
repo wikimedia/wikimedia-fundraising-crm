@@ -1,4 +1,4 @@
-<p>Mudane {{contact.first_name}}</p>
+<p>Mudane {{ first_name }}</p>
 <p>Waad ku mahadsantahay kaalmada aad ugu deeqday Mu'asasada Wikimedia.
 waxaa tahay qof wanaagsan!</p>
 <p>Way kuu fududahay inaad iska iloowdo olo olaha uruurinta kaalmada, waan
@@ -59,8 +59,8 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 istaraatiijiyada Mu'asasada Wikimedia shantii sano</a>. Sidoo kale waxaad
 wikipedia ka iibsan kartaa wax yaabihii ay soo saartay <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
-<p>Heerkaada: Kaalmadaadu waa {{contribution.receive_date}}
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Heerkaada: Kaalmadaadu waa {{ receive_date }}
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 <p>Dooqada inaadan ka qayb gelin: Waxaan rajaynaynaa in ay sii joogaa
 maalgeliye yaasheena si loo tuso dhaqdhaqaaqa mujtamaceena iyo dhaqdhaqaaqa
 dhamaan deeq bixiyeyaasha. Hadii aad door bideysid in uusan kuu imaan wax

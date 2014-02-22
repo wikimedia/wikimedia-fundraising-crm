@@ -1,4 +1,4 @@
-<p>Leew {{contact.first_name}},</p>
+<p>Leew {{ first_name }},</p>
 
 <p>Dü beest gewaltag. FÖL SOONK för Dan bidrach tu't Wikimedia Foundation, diar Wikipedia an noch
 föl muar ööder projekten bedraft.</p>
@@ -52,14 +52,13 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 Foundation fiiw-juars-ploon</a>. Dü könst uk merchandise-artiikler kuupe üüb <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>För Din buken: Dan bidrach CNTCT-{{contribution.contact_id}}, di {{contribution.receive_date}}
-wiar {{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>För Din buken: Dan bidrach {{ transaction_id }}, di {{ receive_date }}
+wiar {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Detdiar sum as dial faan en wederkemenen bidrach. At Wikimedia Foundation
 beläästet Din konto arke muun so loong üs Dü det wel. Wan Dü det ei muar wel, wees so gud an
 lees, <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">hü Dü det kange</a> könst. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">hü Dü det kange</a> könst. {% endif %}</p>
 
 <p>Didiar briaf koon üs bewis för Din spende uunsen wurd. Dü heest för Dan bidrach nian waaren
 of siinsten füngen. Det Wikimedia Foundation Inc. as ei üüb't fersiinin ütj an as frei faan

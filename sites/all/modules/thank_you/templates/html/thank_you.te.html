@@ -1,4 +1,4 @@
-<p>ప్రియమైన {{contact.first_name}},</p>
+<p>ప్రియమైన {{ first_name }},</p>
 <p>వికీమీడియా ఫౌండేషన్‌కు
 విరాళమందించినందుకు
 కృతజ్ఞతలు. మీ ఔదార్యం
@@ -130,9 +130,9 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 వికీపీడియా వస్తువులను <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a> వద్ద
 కొనుక్కోవచ్చు.</p>
-<p>మీ సమాచారం కోసం: {{contribution.receive_date}}
+<p>మీ సమాచారం కోసం: {{ receive_date }}
 నాడు మీ విరాళం
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 <p>విరమించే ఎంపిక: మా దాతగా
 మీకు మా సామాజిక కార్యకలాపాల
 గురించి మరియు నిధుల సేకరణల

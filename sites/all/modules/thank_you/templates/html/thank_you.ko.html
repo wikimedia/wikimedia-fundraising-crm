@@ -1,4 +1,4 @@
-<p>{{contact.first_name}} 님께</p>
+<p>{{ first_name }} 님께</p>
 
 <p>당신은 최고입니다. 위키백과와 자매 프로젝트를 운영하는 위키미디어
 재단을 후원해주셔서 정말 감사합니다.</p>
@@ -62,14 +62,13 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 재단 5년 전략 계획</a>이 있습니다. 그리고 이제 위키백과 상점에서 물건도
 구매하실수 있습니다 <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>기부번호 CNTCT-{{contribution.contact_id}}: 당신은 {{contribution.receive_date}} 에
-{{contribution.contribution_source|l10n_currency(locale)}} 의 금액을 기부하셨습니다.</p>
+<p>기부번호 {{ transaction_id }}: 당신은 {{ receive_date }} 에
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }} 의 금액을 기부하셨습니다.</p>
 
 <p>{% if recurring %} 이번 기부는 매달 이뤄지는 기부의 일부입니다. 귀하가
 중단을 요청하기 전까지 매달 위키미디어 재단으로 송금이 될 것입니다.
 기부를 중단하고 싶으시면 <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">간단한 중단 방법</a>을 참조하십시오. {% endif
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">간단한 중단 방법</a>을 참조하십시오. {% endif
 %}</p>
 
 <p>이 편지는 귀하의 기부의 기록으로 사용될 수 있습니다. 귀하의 기부금은

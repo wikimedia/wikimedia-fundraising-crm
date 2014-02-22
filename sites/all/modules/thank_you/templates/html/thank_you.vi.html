@@ -1,4 +1,4 @@
-<p>Xin chào {{contact.first_name}},</p>
+<p>Xin chào {{ first_name }},</p>
 
 <p>Cảm ơn bạn đã quyên tiền cho Wikimedia Foundation. Bạn thật tuyệt vời!</p>
 
@@ -68,14 +68,13 @@ lược 5 năm của Wikimedia Foundation</a>. Bạn cũng có thể mua hàng h
 tại <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
 <p>Thông tin để bạn lưu giữ: Khoản đóng góp của bạn là số $contributionsId,
-vào ngày {{contribution.receive_date}}, với giá trị
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+vào ngày {{ receive_date }}, với giá trị
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Khoản đóng góp này là một phần của khoản quyên góp định
 kỳ. Quỹ Wikimedia sẽ ghi nợ tiền đóng góp hàng tháng cho đến khi bạn xin chúng
 tôi ngừng ghi nợ. Nếu bạn muốn ngừng các thanh toán này, xin vui lòng xem <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">hướng dẫn hủy bỏ dễ dàng</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">hướng dẫn hủy bỏ dễ dàng</a>. {% endif %}</p>
 
 <div style="border: 1px solid black; padding:0 10px 5px 10px;">
   <p>Ngừng nhận thông tin: Chúng tôi muốn thường xuyên thông báo với bạn về

@@ -1,4 +1,4 @@
-<p>亲爱的 {{contact.last_name}} {{contact.first_name}},</p>
+<p>亲爱的 {{ last_name }} {{ first_name }},</p>
 
 <p>您的行动是如此美妙。非常感谢您帮助负责运营维基百科及其姊妹项目的非营利性机构——维基媒体基金会。</p>
 
@@ -37,12 +37,11 @@ href="http://wikimediafoundation.org/wiki/2013-2014_Annual_Plan_Questions_and_An
 href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">维基媒体基金会五年战略规划</a>。您也可以在<a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>购买维基百科相关商品。</p>
 
-<p>供您记录：您的捐款CNTCT-{{contribution.contact_id}}金额是{{contribution.contribution_source|l10n_currency(locale)}}，于{{contribution.receive_date}}。</p>
+<p>供您记录：您的捐款{{ transaction_id }}金额是{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}，于{{ receive_date }}。</p>
 
 <p>{% if recurring %}
 这笔捐款是循环捐款的一部分。维基媒体基金会每月收到捐款直到您告知我们取消。如果您想取消捐款，请参见我们的<a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">简便取消捐款教程</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">简便取消捐款教程</a>. {% endif %}</p>
 
 <p>这封信是您捐款的记录。没有任何商品或是服务因为或是部分因为这笔捐款而被提供。维基百科基金会是一个非营利性的慈善组织，在美国持501(c)(3)免税身份。我们的地址是149
 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. 免税编号: 20-0049703</p>

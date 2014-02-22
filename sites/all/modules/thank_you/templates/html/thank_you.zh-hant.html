@@ -1,4 +1,4 @@
-<p>{{contact.last_name}} {{contact.first_name}} 先生／女士：</p>
+<p>{{ last_name }} {{ first_name }} 先生／女士：</p>
 
 <p>感謝您向維基媒體基金會捐款。您太棒了！</p>
 
@@ -24,8 +24,8 @@
 執行理事<br />
 維基媒體基金會</p>
 
-<p>供記錄：您於 {{contribution.receive_date}} 捐出
-{{contribution.contribution_source|l10n_currency(locale)}}。{% if recurring %}{% include
+<p>供記錄：您於 {{ receive_date }} 捐出
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}。{% if recurring %}{% include
 'html/recurring/zh-hant.html' ignore missing %}{% endif %}</p>
 
 <p>此函件為您的捐款的記錄。此捐獻不提供任何完整或部鈼的商品或服務。維基媒體基金會是在美國登記的501(c)(3)免稅、非牟利、慈善機構。地址：149

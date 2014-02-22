@@ -1,4 +1,4 @@
-<p>亲爱的{{contact.last_name}}{{contact.first_name}}，</p>
+<p>亲爱的{{ last_name }}{{ first_name }}，</p>
 
 <p>感谢您向维基媒体基金会捐款。您太棒了！</p>
 
@@ -22,7 +22,7 @@
 执行理事，<br />
 维基媒体基金会</p>
 
-<p>根据您的记录：您在{{contribution.receive_date}}捐赠了{{contribution.contribution_source|l10n_currency(locale)}}。{%
+<p>根据您的记录：您在{{ receive_date }}捐赠了{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}。{%
 if recurring %}{% include 'html/recurring/zh-hans.html' ignore missing %}{% endif %}</p>
 
 <p>这封信可以作为您捐款的记录。该贡献不会提供任何的商品或服务。维基媒体基金会是一个非营利501(c)(3)免税的美国慈善机构。我们的地址是149

@@ -1,4 +1,4 @@
-<p>Estimado(a) {{contact.first_name}},</p>
+<p>Estimado(a) {{ first_name }},</p>
 
 <p>Eres tan fantástico. GRACIAS por apoyar a la Fundación Wikimedia, la organización sin ánimo
 de lucro que opera Wikipedia y a sus proyectos hermanos.</p>
@@ -62,15 +62,14 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 Estratégico a 5 años de la Fundación Wikimedia</a>. También puedes comprar mercancía de
 Wikipedia en <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Para que quede constancia: Tu número de donación es CNTCT-{{contribution.contact_id}}, con
-fecha de {{contribution.receive_date}} por un total de
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Para que quede constancia: Tu número de donación es {{ transaction_id }}, con
+fecha de {{ receive_date }} por un total de
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Esta donación es parte de una suscripción. Cada mes la Fundación Wikimedia
 cargará la misma cantidad en su cuenta hasta que nos notifique que no lo hagamos. Si desea cancelar
 los pagos por favor lea estas <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">sencillas instrucciones</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">sencillas instrucciones</a>. {% endif %}</p>
 
 <p>Esta carta puede servir como prueba de tu donativo. No se proporcionaron bienes o servicios, en
 su conjunto o en parte, a cambio de esta contribución. La Fundación Wikimedia Inc. es una

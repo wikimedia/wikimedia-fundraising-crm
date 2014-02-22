@@ -1,4 +1,4 @@
-<p>Скъпи(а) {{contact.first_name}},</p>
+<p>Скъпи(а) {{ first_name }},</p>
 
 <p>Ти си изключителен(на). БЛАГОДАРЯ ТИ за подкрепата на
 Wikimedia Foundation, организацията с идеална цел, управляваща
@@ -85,17 +85,16 @@ Foundation’s five-year strategic plan</a>. Също така можеш да �
 търговските продукти на Уикипедия тук <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>За твое сведение: Твоето дарение CNTCT-{{contribution.contact_id}},
-на {{contribution.receive_date}} беше
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>За твое сведение: Твоето дарение {{ transaction_id }},
+на {{ receive_date }} беше
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Това дарение не е еднократно. Сумата на
 дарението ти ще бъде теглена от сметката ти всеки
 месец от фондация Уикимедия, докато не ни уведомиш, че
 не желаеш да даряваш повече. Ако искаш да прекратиш
 плащанията моля виж тук <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">easy cancellation instructions</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">easy cancellation instructions</a>. {% endif %}</p>
 
 <p>Това писмо може да послужи като запис за вашето
 дарение. За този принос нито изцяло, нито частично се

@@ -1,4 +1,4 @@
-<p>Caro/a {{contact.first_name}},</p>
+<p>Caro/a {{ first_name }},</p>
 
 <p>Sei davvero fantastico! GRAZIE per aver aiutato la Fondazione Wikimedia, l'organizzazione
 no-profit che gestisce Wikipedia e i progetti ad essa associati</p>
@@ -63,9 +63,9 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 strategico quinquennale della Fondazione Wikimedia</a>. È anche possibile acquistare oggettistica
 Wikipedia su <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Per la tua documentazione: donazione, numero CNTCT-{{contribution.contact_id}}, in data
-{{contribution.receive_date}}, è stata di
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Per la tua documentazione: donazione, numero {{ transaction_id }}, in data
+{{ receive_date }}, è stata di
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Questa donazione è parte di una sottoscrizione ricorrente. Pagamenti mensili
 possono essere accreditati alla Fondazione Wikipedia finché non ci notificherai la richiesta di
