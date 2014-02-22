@@ -1,4 +1,4 @@
-<p>Milý/á {{contact.first_name}},</p>
+<p>Milý/á {{ first_name }},</p>
 
 <p>Je to od Vás fantastické. DĚKUJI za podporu nadace Wikimedia, neziskové organizace, která
 provozuje Wikipedii a její sesterské projekty.</p>
@@ -62,8 +62,8 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 strategický plán Wikimedia Foundation</a>. Také již můžete nakupovat v našem obchodě na <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Pro Vaše záznamy: Váš příspěvek číslo CNTCT-{{contribution.contact_id}} ze dne
-{{contribution.receive_date}} činil {{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Pro Vaše záznamy: Váš příspěvek číslo {{ transaction_id }} ze dne
+{{ receive_date }} činil {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Tento dar je součástí pravidelně opakovaných příspěvků. Měsíční
 platby budou inkasovány nadací Wikimedia tak dlouho, dokud nepožádáte o jejich zastavení.

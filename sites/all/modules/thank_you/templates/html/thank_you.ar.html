@@ -1,4 +1,4 @@
-<p>عزيزي/عزيزتي {{contact.first_name}}،</p>
+<p>عزيزي/عزيزتي {{ first_name }}،</p>
 
 <p>أنت في غاية الروعة. نشكرك جزيل الشكر على مساندة مؤسسة
 ويكيميديا، المؤسسة غير الربحية التي تدير موقع
@@ -79,9 +79,9 @@ href="http://wikimediafoundation.org/wiki/2013-2014_Annual_Plan_Questions_and_An
 الآن أن تشتري بضائع ويكيبيديا من <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>من أجل سجلاتك: كان تبرعك، برقم CNTCT-{{contribution.contact_id}}، في
-تاريخ {{contribution.receive_date}} بمبلغ وقدره
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>من أجل سجلاتك: كان تبرعك، برقم {{ transaction_id }}، في
+تاريخ {{ receive_date }} بمبلغ وقدره
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} هذا التبرع جزء من اشتراك متكرر. وسوف تخصم
 دفعات شهرية من طرف مؤسسة ويكيميديا حتى تعلمنا بإيقاف

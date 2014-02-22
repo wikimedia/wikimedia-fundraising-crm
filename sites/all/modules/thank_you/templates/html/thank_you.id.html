@@ -1,4 +1,4 @@
-<p>Halo {{contact.first_name}},</p>
+<p>Halo {{ first_name }},</p>
 
 <p>Anda luar biasa. TERIMA KASIH telah mendukung Wikimedia Foundation, yayasan nirlaba yang
 menjalankan Wikipedia dan proyek lainnya.</p>
@@ -64,9 +64,9 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 strategis Wikimedia Foundation 5 tahun ke depan</a>. Sekarang, Anda juga bisa membeli barang-barang
 souvenir Wikimedia di <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Untuk sekadar catatan: Sumbangan Anda, bernomor CNTCT-{{contribution.contact_id}}, pada
-{{contribution.receive_date}} berjumlah
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Untuk sekadar catatan: Sumbangan Anda, bernomor {{ transaction_id }}, pada
+{{ receive_date }} berjumlah
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Sumbangan ini merupakan bagian dari langganan berkala. Pembayaran bulanan akan
 didebit oleh Wikimedia Foundation sampai Anda memberi tahu kami untuk menghentikannya. Jika Anda

@@ -1,4 +1,4 @@
-<p>Наші вітання, {{contact.first_name}},</p>
+<p>Наші вітання, {{ first_name }},</p>
 
 <p>Ви просто фантастичні! ДЯКУЄМО ВАМ за підтримку
 Фонду Вікімедіа, неприбуткової організації, що
@@ -87,8 +87,8 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
 <p>Для Вашої звітності: Ви зробили пожертву під номером
-CNTCT-{{contribution.contact_id}} від {{contribution.receive_date}} у розмірі
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+{{ transaction_id }} від {{ receive_date }} у розмірі
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Ця пожертва є частиною регулярної
 підписки. Щомісячні платежі будуть зніматись Фондом

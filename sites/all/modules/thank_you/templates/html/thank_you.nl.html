@@ -1,4 +1,4 @@
-<p>Beste {{contact.first_name}},</p>
+<p>Beste {{ first_name }},</p>
 
 <p>U bent ronduit fantastisch. HARTELIJK DANK voor het steunen van de Wikimedia Foundation, de
 non-profitorganisatie die Wikipedia en haar zusterprojecten beheert.</p>
@@ -61,9 +61,9 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 van de Wikimedia Foundation</a> vinden. U kunt ook de Wikipedia-merchandise kopen op <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Voor uw afschrift: uw gift, nummer CNTCT-{{contribution.contact_id}}, op
-{{contribution.receive_date}} bedraagt
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Voor uw afschrift: uw gift, nummer {{ transaction_id }}, op
+{{ receive_date }} bedraagt
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Deze gift maakt deel uit van een periodieke afschrijving. Maandelijkse
 betalingen worden gedebiteerd door de Wikimedia Foundation tot ontvangst van tegenbericht. Als u de

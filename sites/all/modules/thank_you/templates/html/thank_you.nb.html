@@ -1,4 +1,4 @@
-<p>Kjære {{contact.first_name}},</p>
+<p>Kjære {{ first_name }},</p>
 
 <p>Du er så fantastisk. TUSEN TAKK for din støtte til den profittløse Wikimediastiftelsen, som
 holder Wikipedia og liknende prosjekter igang.</p>
@@ -60,8 +60,8 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 femårs strategiplan</a>. Nå kan du også kjøpe Wikipedia-varer på <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>For din del: Din donasjon, nummer CNTCT-{{contribution.contact_id}}, den
-{{contribution.receive_date}} var {{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>For din del: Din donasjon, nummer {{ transaction_id }}, den
+{{ receive_date }} var {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Denne donasjonen er del av et repeterende abonnement. Månedlige betalinger
 vil bli innbetalt til Wikimediastiftelsen til du gir oss melding om at vi skal stoppe. Hvis du

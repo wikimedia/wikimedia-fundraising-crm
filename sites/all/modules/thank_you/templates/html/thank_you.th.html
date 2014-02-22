@@ -1,4 +1,4 @@
-<p>ถึง {{contact.first_name}}</p>
+<p>ถึง {{ first_name }}</p>
 
 <p>ขอบคุณที่บริจาคให้มูลนิธิวิกิมีเดีย
 คุณยอดมาก!</p>
@@ -56,9 +56,9 @@
 มูลนิธิวิกิมีเดีย</p>
 
 <p>เพื่อเก็บเป็นหลักฐาน:
-คุณบริจาคเมื่อวันที่ {{contribution.receive_date}}
+คุณบริจาคเมื่อวันที่ {{ receive_date }}
 เป็นจำนวนเงิน
-{{contribution.contribution_source|l10n_currency(locale)}}{% if recurring %}{% include
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}{% if recurring %}{% include
 'html/recurring/th.html' ignore missing %}{% endif %}</p>
 
 <p>จดหมายฉบับนี้ส่งมาเพราะว่าเป็นบันทึกของการบริจาคของคุณ

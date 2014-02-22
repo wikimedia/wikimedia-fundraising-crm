@@ -82,8 +82,8 @@ Foundation’s five-year strategic plan</a> را مطالعه کنید. همچن
 href="https://shop.wikimedia.org">shop.wikimedia.org</a> خریداری کنید.</p>
 
 <p>جهت اطلاع شما: کمک مالی شما به شماره
-CNTCT-{{contribution.contact_id}}، در تاریخ {{contribution.receive_date}} به مبلغ
-{{contribution.contribution_source|l10n_currency(locale)}} بوده است.</p>
+{{ transaction_id }}، در تاریخ {{ receive_date }} به مبلغ
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }} بوده است.</p>
 
 <p>{% if recurring %} این کمک مالی بخشی از هزینه اشتراک دوره‌ای
 است. پرداخت ماهیانه تا زمانی که شما برای متوقف کردن آن

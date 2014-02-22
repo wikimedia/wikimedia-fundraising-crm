@@ -1,4 +1,4 @@
-<p>Cher/chère {{contact.first_name}},</p>
+<p>Cher/chère {{ first_name }},</p>
 
 <p>Vous êtes tellement fantastique. Un grand MERCI pour votre soutien à la Fondation Wikimedia,
 l’organisation à but non lucratif qui fait fonctionner Wikipédia et ses projets frères.</p>
@@ -65,9 +65,9 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 stratégique sur cinq ans pour la Fondation Wikimedia</a>. Vous pouvez également acheter biens et
 accessoires griffés Wikipédia sur <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Pour référence: votre don, numéro CNTCT-{{contribution.contact_id}}, du
-{{contribution.receive_date}} était de
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Pour référence: votre don, numéro {{ transaction_id }}, du
+{{ receive_date }} était de
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Ce don fait partie d’un don régulier. Les dons mensualisés seront
 prélevés chaque mois par la Wikimedia Foundation jusqu’à ce que vous nous demandiez

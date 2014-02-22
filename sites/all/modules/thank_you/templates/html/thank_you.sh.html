@@ -1,4 +1,4 @@
-<p>Dragi/draga {{contact.first_name}},</p>
+<p>Dragi/draga {{ first_name }},</p>
 
 <p>Svaka Vam čast. HVALA VAM sto podržavate Vikimedija Fondaciju, bezprofitnu organizaciju koja
 održava Vikipediju i njene srodne projekte.</p>
@@ -61,8 +61,8 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 strateski plan Vikimedija Fondacije</a>. A ovde mozete kupiti i Vikipedija proizvode: <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Za Vašu evidenciju: Vaš doprinos broj CNTCT-{{contribution.contact_id}}, na dan
-{{contribution.receive_date}} je bio {{contribution.contribution_source|l10n_currency(locale)}}</p>
+<p>Za Vašu evidenciju: Vaš doprinos broj {{ transaction_id }}, na dan
+{{ receive_date }} je bio {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}</p>
 
 <p>{% if recurring %} Ova donacija je deo stalne pretplate. Mesečna rata će biti uplaćivana
 Vikimedija Fondaciji sve dok nam ne javite da prekinemo. Pogledajte <a

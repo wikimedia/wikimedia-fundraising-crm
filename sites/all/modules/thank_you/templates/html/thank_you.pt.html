@@ -1,4 +1,4 @@
-<p>Caro(a) {{contact.first_name}},</p>
+<p>Caro(a) {{ first_name }},</p>
 
 <p>Você é tão fantástico(a). OBRIGADO por apoiar a Fundação Wikimedia, a ONG que administra a
 Wikipedia e os seus projetos irmãos.</p>
@@ -63,8 +63,8 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 estratégico de cinco anos da Fundação Wikimedia</a>. Pode também comprar merchandising da
 Wikimedia em <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Para os seus registos: A sua doação, número CNTCT-{{contribution.contact_id}}, em
-{{contribution.receive_date}} foi de {{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Para os seus registos: A sua doação, número {{ transaction_id }}, em
+{{ receive_date }} foi de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Esta doação é parte de uma doação renovável. Pagamentos mensais serão
 debitados pela Wikimedia Foundation, até que nos notifique para parar. Se desejar cancelar os

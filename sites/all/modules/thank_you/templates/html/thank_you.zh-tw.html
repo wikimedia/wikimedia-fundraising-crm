@@ -39,9 +39,9 @@ href="http://wikimediafoundation.org/wiki/2013-2014_Annual_Plan_Questions_and_An
 href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">維基媒體基金會的五年計畫書</a>。您也可以在<a
 href="https://shop.wikimedia.org">shop.wikimedia.org 商店</a>購買維基百科商品。</p>
 
-<p>供您紀錄：您於 {{contribution.receive_date}} 捐出
-{{contribution.contribution_source|l10n_currency(locale)}}。 捐贈號碼
-CNTCT-{{contribution.contact_id}}</p>
+<p>供您紀錄：您於 {{ receive_date }} 捐出
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}。 捐贈號碼
+{{ transaction_id }}</p>
 
 <p>{% if recurring %}
 此捐款是一份重複性的訂閱捐款。維基媒體基金會每月將會持續收到您的捐款，直到您通知我們停止。如果您想要取消此訂閱捐款，請參閱我們的<a

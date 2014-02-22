@@ -1,4 +1,4 @@
-<p>尊敬的$familyname{{contact.first_name}}：</p>
+<p>尊敬的$familyname{{ first_name }}：</p>
 <p>感谢您资助维基媒体基金会。</p>
 <p>忽略页面上方的筹款广告是件很容易的事，不过我们很高兴您并没有这么做。只有像您这样的人向我们捐款，维基百科才能够运作，才能够让全球各地的人自由访问。</p>
 <p>人们告诉我，他们之所以支持维基百科，是因为他们认为它是有用的。同时，他们信任它，因为即使它不是完美的，但他们知道这是为他们而著的。维基百科并不是为了推进某人的公关议题、推动某种意识形态或是说服你相信某些虚假的东西。我们的目标是实事求是，而我们只有通过你的帮助才能做到。事实上，您的资助使得我们得以保持独立，并得以提供你想要的。事实的确如此。</p>
@@ -23,7 +23,7 @@ href="http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Fo
 href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">维基媒体基金会的五年战略计划</a>。
 您现在还可以在<a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>上购买维基百科的周边产品。</p>
-<p>在此提醒您：您于{{contribution.receive_date}}捐赠了{{contribution.contribution_source|l10n_currency(locale)}}。</p>
+<p>在此提醒您：您于{{ receive_date }}捐赠了{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}。</p>
 <p>退订选择:
 我们希望作为捐助者的您关注我们的社群活动与筹款活动。但是如果您不希望再收到我们发来的此类邮件。请点击下方，我们将把您从我们的发送列表中去除。:</p>
 <p><a style="padding-left: 25px;"

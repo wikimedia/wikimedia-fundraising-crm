@@ -1,4 +1,4 @@
-<p>Dragă {{contact.first_name}},</p>
+<p>Dragă {{ first_name }},</p>
 
 <p>Ești nemaipomenit(ă). MULȚUMIM pentru ajutorul acordat Fundației Wikimedia, organizația
 non-profit care întreține Wikipedia și proiectele ei anexe.</p>
@@ -63,9 +63,9 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 strategic pentru cinci ani</a>. De asemenea, acum puteți cumpăra produse Wikipedia la: <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Pentru evidența ta: Donația ta, număr CNTCT-{{contribution.contact_id}}, la data
-{{contribution.receive_date}}, a fost de
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Pentru evidența ta: Donația ta, număr {{ transaction_id }}, la data
+{{ receive_date }}, a fost de
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Această donație este parte a unei contribuții bănești recurente. Lunar,
 se va debita o plată către Fundația Wikimedia până când ne vei notifica să ne oprim. Dacă

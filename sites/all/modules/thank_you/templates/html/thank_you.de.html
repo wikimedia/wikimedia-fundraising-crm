@@ -1,4 +1,4 @@
-<p>Sehr geehrter {{contact.first_name}},</p>
+<p>Sehr geehrter {{ first_name }},</p>
 
 <p>Sie sind fantastisch. VIELEN DANK für die Unterstützung der Wikimedia Foundation, welche
 gemeinnützig die Wikipedia und ihre Schwesterprojekte unterhält.</p>
@@ -63,8 +63,8 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 Foundation’s Fünf-Jahres-Strategieplan</a>. Sie können auch Merchandise-Artikel kaufen auf <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Für Ihre Unterlagen: Ihre Spende, Nummer CNTCT-{{contribution.contact_id}}, am
-{{contribution.receive_date}} betrug {{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Für Ihre Unterlagen: Ihre Spende, Nummer {{ transaction_id }}, am
+{{ receive_date }} betrug {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Diese Spende ist Teil einer wiederkehrenden Zahlung. Die Wikimedia Foundation
 belastet Ihr Konto monatlich bis zu Ihrem Widerruf. Falls Sie die Zahlungen einstellen möchten,

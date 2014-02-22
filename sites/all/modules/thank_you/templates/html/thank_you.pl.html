@@ -1,4 +1,4 @@
-<p>Drogi/Droga {{contact.first_name}},</p>
+<p>Drogi/Droga {{ first_name }},</p>
 
 <p>Jesteś wspaniały/wspaniała. DZIĘKUJĘ za Twoje wsparcie dla Wikimedia Foundation, która jest
 organizacją non-profit utrzymującą Wikipedię i jej projekty siostrzane.</p>
@@ -65,9 +65,9 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 pięcioletnim planem strategicznym</a>. Możesz również zakupić gadżety Wikipedii na stronie <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Dla Twojego użytku: Twoja darowizna o numerze CNTCT-{{contribution.contact_id}} została
-złożona w dniu {{contribution.receive_date}} w wysokości
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Dla Twojego użytku: Twoja darowizna o numerze {{ transaction_id }} została
+złożona w dniu {{ receive_date }} w wysokości
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Ta wpłata jest częścią darowizny okresowej. Comiesięczne płatności
 będą pobierane z Twojego konta przez Wikimedia Foundation do momentu, gdy nie poinformujesz nas o

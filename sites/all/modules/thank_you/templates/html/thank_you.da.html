@@ -1,4 +1,4 @@
-<p>Kære {{contact.first_name}}</p>
+<p>Kære {{ first_name }}</p>
 
 <p>Tak for at du har givet penge til Wikipediafonden. Du er storsindet!</p>
 
@@ -45,8 +45,8 @@ Sue</p>
 Administrerende direktør<br />
 Wikimedia fonden</p>
 
-<p>Til dit regnskab: Din donation den {{contribution.receive_date}} var på
-{{contribution.contribution_source|l10n_currency(locale)}}.{% if recurring %}{% include
+<p>Til dit regnskab: Din donation den {{ receive_date }} var på
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.{% if recurring %}{% include
 'html/recurring/da.html' ignore missing %}{% endif %}</p>
 
 <p>Dette brev er en kvittering for din donation. Ingen varer eller serviceydelser blev

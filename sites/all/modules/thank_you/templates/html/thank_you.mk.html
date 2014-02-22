@@ -1,4 +1,4 @@
-<p>Почитуван(а) {{contact.first_name}},</p>
+<p>Почитуван(а) {{ first_name }},</p>
 
 <p>Фантастични сте. Би сакала да искажам ГОЛЕМА
 БЛАГОДАРНОСТ што ја поддржувате Фондацијата
@@ -88,9 +88,9 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 нашите обележја на <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
 <p>За Ваша евиденција: Донацијата со бр.
-CNTCT-{{contribution.contact_id}} што ја направивте на
-{{contribution.receive_date}} изнесуваше
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+{{ transaction_id }} што ја направивте на
+{{ receive_date }} изнесуваше
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Оваа донација е дел од повторлива уплата.
 Фондацијата секој месец ќе одбива средства сè додека

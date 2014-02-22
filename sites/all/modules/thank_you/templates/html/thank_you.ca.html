@@ -1,4 +1,4 @@
-<p>Benvolgut/da {{contact.first_name}},</p>
+<p>Benvolgut/da {{ first_name }},</p>
 <p>Gràcies per fer un donatiu a la Wikimedia Foundation. És
 meravellós!</p>
 <p>És fàcil ignorar els nostres anuncis per a la recaptació de fons, i
@@ -57,8 +57,8 @@ estratègic per cinc anys de la Fundació Wikimedia</a>. Ara també pots
 comprar productes de la Viquipèdia a <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 <p>Per a la teva informació: La teva donació amb data
-{{contribution.receive_date}} va ser de
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+{{ receive_date }} va ser de
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 <p>Dóna't de baixa: L'any que ve cap a aquestes dates et proposarem per
 correu electrònic que repeteixis la donació. Si prefereixes no rebre cap
 recordatori nostre per correu, si us plau prem a sota i et traurem de la

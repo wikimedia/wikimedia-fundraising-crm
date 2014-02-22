@@ -1,4 +1,4 @@
-<p>Dragi {{contact.first_name}},</p>
+<p>Dragi {{ first_name }},</p>
 
 <p>Fantastični ste. HVALA, ker podpirate Fundacijo Wikimedia, neprofitno organizacijo, ki poganja
 Wikipedijo in njene sestrske projekte.</p>
@@ -58,9 +58,9 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 strateški načrt</a>. Zdaj lahko tudi naročite uradne izdelke na <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Za vašo evidenco: vaša donacija, št. CNTCT-{{contribution.contact_id}} na dan
-{{contribution.receive_date}} je znašala
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Za vašo evidenco: vaša donacija, št. {{ transaction_id }} na dan
+{{ receive_date }} je znašala
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Ta donacija je del ponavljajoče naročnine. Fundacija Wikimedia vam bo do
 vašega preklica mesečno trgala znesek z vašega računa. Če bi radi prekinili plačila, si

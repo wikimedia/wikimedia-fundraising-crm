@@ -1,4 +1,4 @@
-<p>{{contact.first_name}},</p>
+<p>{{ first_name }},</p>
 
 <p>TERIMA KASIH kerana menyokong Yayasan Wikimedia, sebuah badan bukan bermotif keuntungan yang
 mengelolakan Wikipedia dan projek-projek saudaranya.</p>
@@ -62,8 +62,8 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 Strategik 5 tahun Yayasan Wikimedia</a>. Anda juga boleh membeli barangan cenderahati di <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a></p>
 
-<p>Untuk makluman anda: Derma anda pada {{contribution.receive_date}} ialah
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Untuk makluman anda: Derma anda pada {{ receive_date }} ialah
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Sumbangan ini merupakan sebahagian daripada sumbangan bulanan yang telah
 dilanggan. Yayasan Wikimedia akan mendebitkan sumbangan anda pada setiap bulan sehingga anda

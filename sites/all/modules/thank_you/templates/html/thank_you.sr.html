@@ -1,4 +1,4 @@
-<p>Драги {{contact.first_name}}</p>
+<p>Драги {{ first_name }}</p>
 
 <p>Хвала на донацији Задужбини Викимедије. Заиста
 сте дивни!</p>
@@ -65,8 +65,8 @@
 Задужбине Викимедије</p>
 
 <p>Све ваше донације: Ваша донација на
-{{contribution.receive_date}} износила је
-{{contribution.contribution_source|l10n_currency(locale)}}.{% if recurring %}{% include
+{{ receive_date }} износила је
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.{% if recurring %}{% include
 'html/recurring/sr.html' ignore missing %}{% endif %}</p>
 
 <p>Ово писмо може послужити као доказ ваше

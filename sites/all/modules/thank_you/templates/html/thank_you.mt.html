@@ -1,4 +1,4 @@
-<p>Għażiż/Għażiża {{contact.first_name}},</p>
+<p>Għażiż/Għażiża {{ first_name }},</p>
 <p>Grazzi għad-donazzjoni tiegħek lill-Fondazzjoni Wikimedja. M'hawnx
 għalik!</p>
 <p>Faċli li ma tagħtix kas tal-istrixxi fin-naħa ta' fuq tal-paġna dwar
@@ -59,8 +59,8 @@ strateġiku għal ħames snin tal-Fondazzjoni Wikimedja</a>. Barra minn
 hekk issa tista' tixtri oġġetti bl-isem tal-Wikipedia minn fuq <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 <p>Biex tista' żżomm kont: Id-donazzjoni tiegħek ta'
-{{contribution.receive_date}} kienet
-{{contribution.contribution_source|l10n_currency(locale)}}</p>
+{{ receive_date }} kienet
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}</p>
 <p>Diżiskrizzjoni: Bħala donatur nixtiequ nżommuk informat dwar
 l-attivitajiet tal-komunità u l-ġbir tal-fondi. Però jekk tippreferi li
 ma tirċivix minn għandna e-mails ta' dan it-tip, jekk jogħġbok

@@ -1,4 +1,4 @@
-<p>Kära {{contact.first_name}},</p>
+<p>Kära {{ first_name }},</p>
 
 <p>Tack för att du donerar till Wikimedia-stiftelsen. Du är fantastisk!</p>
 
@@ -45,8 +45,8 @@ Sue</p>
 Verkställande direktör,<br />
 Wikimedia-stiftelsen</p>
 
-<p>För din bokföring: Din gåva den {{contribution.receive_date}} var
-{{contribution.contribution_source|l10n_currency(locale)}}.{% if recurring %}{% include
+<p>För din bokföring: Din gåva den {{ receive_date }} var
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.{% if recurring %}{% include
 'html/recurring/sv.html' ignore missing %}{% endif %}</p>
 
 <p>Detta brev är ett kvitto för din gåva. Inga varor eller tjänster tillhandahölls,

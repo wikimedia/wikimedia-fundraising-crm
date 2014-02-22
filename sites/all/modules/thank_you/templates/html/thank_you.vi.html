@@ -1,4 +1,4 @@
-<p>Xin chào {{contact.first_name}},</p>
+<p>Xin chào {{ first_name }},</p>
 
 <p>Cảm ơn bạn đã quyên tiền cho Wikimedia Foundation. Bạn thật tuyệt vời!</p>
 
@@ -68,8 +68,8 @@ lược 5 năm của Wikimedia Foundation</a>. Bạn cũng có thể mua hàng h
 tại <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
 <p>Thông tin để bạn lưu giữ: Khoản đóng góp của bạn là số {{ transaction_id }},
-vào ngày {{contribution.receive_date}}, với giá trị
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+vào ngày {{ receive_date }}, với giá trị
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Khoản đóng góp này là một phần của khoản quyên góp định
 kỳ. Quỹ Wikimedia sẽ ghi nợ tiền đóng góp hàng tháng cho đến khi bạn xin chúng

@@ -1,4 +1,4 @@
-<p>Prezado(a) {{contact.first_name}},</p>
+<p>Prezado(a) {{ first_name }},</p>
 
 <p>Vocês são fantásticos. OBRIGADO pelo suporte à Wikimedia Foundation, organização sem fins
 lucrativos que administra a Wikipédia e seus projetos irmãos.</p>
@@ -64,8 +64,8 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 Foundation’s five-year strategic plan</a>. Você também pode comprar coisas com a marca Wikipedia
 no <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Para seu registro: Sua doação, número CNTCT-{{contribution.contact_id}}, em
-{{contribution.receive_date}} foi de {{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Para seu registro: Sua doação, número {{ transaction_id }}, em
+{{ receive_date }} foi de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Esta doação é parte de uma doação periódica. Pagamentos mensais serão
 debitados pela Wikimedia Foundation até que você nos notifique para parar. Se você desejar

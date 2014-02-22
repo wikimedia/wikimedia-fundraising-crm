@@ -1,4 +1,4 @@
-<p>שלום {{contact.first_name}},</p>
+<p>שלום {{ first_name }},</p>
 
 <p>עשייתך יוצאת מן הכלל. תודה רבה על תמיכתך בויקימדיה,
 ארגון ללא כוונות רווח המפעיל את אתר ויקיפדיה יחד עם
@@ -62,13 +62,13 @@
 מוצרי ויקיפדיה <a href="https://shop.wikimedia.org">shop</a></p>
 
 <p>עבור רישומך: תרומתך הינה מספר {{ transaction_id }}, בתאריך
-{{contribution.receive_date}} הינה
-{{contribution.contribution_source|l10n_currency(locale)}}</p>
+{{ receive_date }} הינה
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}</p>
 
 <p>{% if recurring %} תרומה זו הינה חלק מרשמה לתשלום חוזר. תשלום
 חודשי יגבה על ידי הארגון ויקימדיה עד אשר תודיע לנו
 להפסיק. אם ברצונך לבטל את המשך התשלומים תוכל
-לראות<a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">הוראות לביטול פשוט וקל</a> {% endif %}</p>
+לראות<a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{ country }}&language={{ language }}">הוראות לביטול פשוט וקל</a> {% endif %}</p>
 
 <p>מכתב זה יכול לשמש כהוכחה לתרומתך. לא סופקו טובין או
 שירותים עבור חלק או כל הסכום של תרומה זו. קרן ויקימדיה

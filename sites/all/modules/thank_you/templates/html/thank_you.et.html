@@ -1,4 +1,4 @@
-<p>Hea {{contact.first_name}}</p>
+<p>Hea {{ first_name }}</p>
 
 <p>Oled suurepärane. Aitäh, et toetasid Wikimedia Foundationit, mis kasumitaotluseta veab
 Vikipeediat ja ta sõsarprojekte.</p>
@@ -61,9 +61,9 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 Foundationi viie aasta strateegiline plaan</a>. Saad osta ka Vikipeedia meeneid asukohas <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Ülestähenduseks: sinu annetusnumber oli CNTCT-{{contribution.contact_id}}, annetuskuupäev
-{{contribution.receive_date}} ja annetussumma
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Ülestähenduseks: sinu annetusnumber oli {{ transaction_id }}, annetuskuupäev
+{{ receive_date }} ja annetussumma
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} See annetus on tehtud seoses sõlmitud püsikorraldusega. Raha kantakse
 Wikimedia Foundationile igakuiselt seni, kuni teatad meile soovist lõpetada. Kui soovid maksetest

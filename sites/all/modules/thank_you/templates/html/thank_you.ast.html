@@ -1,4 +1,4 @@
-<p>Estimáu/ada {{contact.first_name}},</p>
+<p>Estimáu/ada {{ first_name }},</p>
 <p>Gracies por facer un donativu a la Fundación Wikimedia. ¡Ye
 maraviyosu!</p>
 <p>Ye cenciello escaecese de los cartelos de collecha de fondos, y prestame
@@ -56,8 +56,8 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 estratéxicu pa cinco años de la Fundación Wikimedia</a>. Agora tamién
 pue mercar artículos de Wikipedia en <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
-<p>Pal so control: El donativu de {{contribution.receive_date}} foi
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Pal so control: El donativu de {{ receive_date }} foi
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 <p>Opción de baxa: Prestaríanos tene-y informáu como donante de les
 nueses actividaes comunitaries y colleches de fondos. Sicasí, si prefier
 nun recibir estos correos nuesos, faiga clic más abaxo y sacaremos-y de la
