@@ -285,6 +285,11 @@ function thank_you_send( $contribution_id, $test=null ) {
 		$language = $locale[0];
 	}
 
+    if ( !$language ) {
+        // FIXME: emulate existing broken behavior until we have a better fix
+        $language = 'en';
+    }
+
 	if( isset( $test ) ){
 		$language = $test['language'];
 
