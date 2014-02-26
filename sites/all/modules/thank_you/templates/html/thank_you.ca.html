@@ -8,6 +8,12 @@
 <p>Ets fantàstic. Gràcies per donar suport a la Fundació Wikimedia, l’organitzaciósenseànim
 de lucre que gestiona la Viquipèdia i els seus projectes germans.</p>
 
+{% if contribution_tags.RecurringDamaged %}<p> Recentment hem resolt un petit problema tècnic que
+ha pausat algunes donacions mensuals. Hem restablert la teva donació periòdica que seguirà el seu
+curs natural. No et carregarem els mesos que no se t'han cobrat. Moltes gràcies per la teva
+paciència i suport. Si us plau, no dubtes en contactar-nos a donate@wikimedia.org si tens qualsevol
+dubte. </p>{% endif %}
+
 <p>La teva donació no només cobreix les teves pròpies despeses d’ús de laViquipèdia,sinó
 també les d’altres lectors.</p>
 
@@ -68,11 +74,11 @@ Viquipèdia a <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 <p>Per a la teva informació: La donació (número {{ transaction_id }}) amb data {{ receive_date }}
 va ser de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-<p>{% if recurring %} Aquesta donació forma part d'una subscripció periòdica. Aquests pagaments
+{% if recurring %}<p> Aquesta donació forma part d'una subscripció periòdica. Aquests pagaments
 es cobraran per part de la Fundació Wikimedia fins que ens avises. Si volguesses cancel·lar la
 teva subscripció si us plau visita les nostres <a
 href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
-locale }}">instruccions de cancel·lació fàcil</a> {% endif %}</p>
+locale }}">instruccions de cancel·lació fàcil</a> </p>{% endif %}
 
 <p>Aquesta carta pot servir com a prova de la teva donació. No es proporcionaran ni béns ni
 serveis, en conjunt o en part, a canvi d'aquesta donació. La Wikimedia Foundation, Inc. és una

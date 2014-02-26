@@ -8,6 +8,12 @@
 <p>Eres genial. GRACIAS por apoyar a la Fundación Wikimedia, la organización sin ánimo de lucro
 que gestiona Wikipedia y sus proyectos hermanos.</p>
 
+{% if contribution_tags.RecurringDamaged %}<p> Hemos resuelto recientemente un pequeño problema
+técnico que hizo que algunas donaciones mensuales recurrentes no se efectuaran. Hemos restablecido
+tu donación periódica y de ahora en adelante se procesará normalmente. No realizaremos cargos
+adicionales por los meses que se saltaron. Agradecemos tu paciencia y apoyo. Escríbenos a
+donate@wikimedia.org si tienes alguna pregunta. </p>{% endif %}
+
 <p>Tu donación no solo cubre tus propios gastos por usar Wikipedia, sino también los costes de
 otros lectores de Wikipedia.</p>
 
@@ -68,11 +74,11 @@ Wikipedia en <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 <p>Para tus archivos: Tu número de donación es {{ transaction_id }}, con fecha de {{ receive_date
 }} por un total de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-<p>{% if recurring %} Esta donación forma parte de una suscripción. Mensualmente la Fundación
+{% if recurring %}<p> Esta donación forma parte de una suscripción. Mensualmente la Fundación
 Wikimedia debitará la misma cantidad, hasta que nos notifique que no lo hagamos. Si deseas cancelar
 tu aportación por favor lee estas <a
 href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
-locale }}">sencillas instrucciones</a>. {% endif %}</p>
+locale }}">sencillas instrucciones</a>. </p>{% endif %}
 
 <p>Esta carta puede servir como prueba de tu donativo. No se proporcionarán bienes o servicios, en
 su conjunto o en parte, a cambio de esta contribución. La Fundación Wikimedia, Inc. es una

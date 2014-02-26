@@ -19,8 +19,10 @@ class ThankYou20131202 extends RenderTranslatedPage {
 			'/\[amount\]/' => '{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}',
 			'/\[contributionId\]/' => '{{ transaction_id }}',
 
-			'/\[ifRecurring\]/' => '{% if recurring %}',
-			'/\[endifRecurring\]/' => '{% endif %}',
+            '/<p>\[ifRecurringProblem\]/' => '{% if contribution_tags.RecurringDamaged %}<p>',
+            '/\[endifRecurringProblem\]<\/p>/' => '</p>{% endif %}',
+			'/<p>\[ifRecurring\]/' => '{% if recurring %}<p>',
+			'/\[endifRecurring\]<\/p>/' => '</p>{% endif %}',
 
 			'/\[#twitter ((?:(?!\]).)*)\]/' => '<a href="https://twitter.com/Wikipedia">$1</a>',
 			'/\[#identica ((?:(?!\]).)*)\]/' => '<a href="https://identi.ca/wikipedia">$1</a>',

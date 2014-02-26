@@ -8,6 +8,13 @@
 <p>Du bist fantastisch. VIELEN DANK für die Unterstützung der Wikimedia Foundation, welche
 gemeinnützig die Wikipedia und ihre Schwesterprojekte unterhält.</p>
 
+{% if contribution_tags.RecurringDamaged %}<p> Wir haben vor Kurzem ein kleines technisches problem
+behoben, auf Grund dessen einige monatliche Spendenabbuchungen eingestellt wurden. Wir haben deine
+monatliche Spende wiedereingesetzt und werden wie gewohnt fortfahren. Wir werden die ausgesetzten
+monatlichen Spenden nicht nachträglich einziehen. Danke für deine Geduld und Unterstützung und
+zögere nicht dich per E-Mail mit donate@wikimedia.org in Verbindung zu setzen, wenn du Fragen hast.
+</p>{% endif %}
+
 <p>Deine Spende deckt nicht nur die Kosten, die bei Deiner Nutzung der Wikipedia entstehen, sondern
 auch die Kosten anderer Wikipedia-Nutzer.</p>
 
@@ -71,11 +78,11 @@ href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 <p>Für Deine Unterlagen: Deine Spende, Nummer {{ transaction_id }}, am {{ receive_date }} betrug {{
 (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-<p>{% if recurring %} Diese Spende ist Teil einer wiederkehrenden Zahlung. Die Wikimedia Foundation
+{% if recurring %}<p> Diese Spende ist Teil einer wiederkehrenden Zahlung. Die Wikimedia Foundation
 belastet dein Konto monatlich bis zu deinem Widerruf. Falls Du die Zahlungen einstellen möchten,
 lies bitte unsere <a
 href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
-locale }}">einfache Widerrufsanleitung</a>. {% endif %}</p>
+locale }}">einfache Widerrufsanleitung</a>. </p>{% endif %}
 
 <p>Dieser Brief kann als Bestätigung deiner Spende angesehen werden. Es wurden keine Waren oder
 Dienste, weder als Ganzes noch in Teilen, als Gegenleistung für diesen Beitrag zur Verfügung

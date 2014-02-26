@@ -32,7 +32,7 @@ class RenderTranslatedPage {
 		'translated', // what exactly is this state?
 	);
 
-	public function execute() {
+	public function execute($wantedLangs = array()) {
 		watchdog(
 			'make-thank-you',
 			"Obtaining translations for '{$this->title}' for placement into '{$this->proto_file}'",
@@ -41,6 +41,9 @@ class RenderTranslatedPage {
 		);
 
 		$languages = $this->get_translated_languages();
+        if (count($wantedLangs) > 0) {
+            $languages = array_intersect($wantedLangs, $languages);
+        }
 		foreach( $languages as $lang ) {
 			try {
 				$this->check_translation( $lang );
