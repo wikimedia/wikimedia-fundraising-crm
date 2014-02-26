@@ -8,4 +8,5 @@ dependencies[] = contribution_tracking
 dependencies[] = wmf_common
 files[] = db_switcher.inc
 files[] = WmfTransaction.php
+files[] = civicrm_api_check.inc
 files[] = tests/Refund.test

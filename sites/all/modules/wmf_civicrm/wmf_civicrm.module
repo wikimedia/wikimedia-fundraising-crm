@@ -2,7 +2,6 @@
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
-require_once 'civicrm_api_check.inc';
 
 /**
  * return a map of option value (id) => option name
