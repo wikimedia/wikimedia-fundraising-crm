@@ -288,6 +288,13 @@ function thank_you_for_contribution( $contribution_id, $test = false ) {
 
     $transaction = WmfTransaction::from_unique_id( $contribution['trxn_id'] );
 
+    $locale = $contact['preferred_language'];
+    if ( !$locale or substr( $locale, 0, 1 ) === '_' ) {
+        watchdog( 'thank_you', "Donor language unknown.  Defaulting to English...", NULL, WATCHDOG_INFO );
+        $locale = 'en';
+    }
+    $locale = wmf_common_locale_civi_to_mediawiki( $locale );
+
     $params = array(
         'amount' => $custom_values['original_amount'],
         'currency' => $custom_values['original_currency'],
@@ -295,13 +302,13 @@ function thank_you_for_contribution( $contribution_id, $test = false ) {
 		'from_name' => variable_get( 'thank_you_from_name', 'Wikimedia Foundation' ),
 		'from_address' => variable_get( 'thank_you_from_address', 'donate@wikimedia.org' ),
         'last_name' => $contact['last_name'],
-        'locale' => $contact['preferred_language'],
+        'locale' => $locale,
         'name' => $contact['display_name'],
         'receive_date' => $contribution['receive_date'],
         'recipient_address' => $contact['email'],
         'recurring' => $transaction->is_recurring,
         'transaction_id' => "CNTCT-{$contact['id']}",
-        'unsubscribe_link' => build_unsub_link( $contribution['id'], $contact['email'], $contact['preferred_language'] ),
+        'unsubscribe_link' => build_unsub_link( $contribution['id'], $contact['email'], $locale ),
         # TODO
         'specials' => array(),
     );
