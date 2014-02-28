@@ -280,7 +280,7 @@ function queue2civicrm_insertmq_form() {
   $form['queue'] = array(
     '#type' => 'textfield',
     '#title' => 'Queue to submit to',
-    '#default_value' => '/queue/test_donations',
+    '#default_value' => variable_get( 'queue2civicrm_subscription', '/queue/test_donations' ),
     '#required' => TRUE
   );
   
