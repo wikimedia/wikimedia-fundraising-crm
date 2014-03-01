@@ -255,7 +255,7 @@ function thank_you_for_contribution( $contribution_id, $test = false ) {
 	$contact = $simplified;
 
 	// check for contacts without an email address
-	if ( !array_key_exists( 'email', $contact ) ){
+	if ( empty( $contact['email'] ) or $contact['email'] === 'nobody@wikimedia.org' ) {
 		watchdog('thank_you', 'No email address found. Processing as anonymous.', array(), WATCHDOG_INFO);
 		wmf_civicrm_set_no_thank_you( $contribution['contribution_id'], 'anonymous' );
 
@@ -317,12 +317,12 @@ function thank_you_for_contribution( $contribution_id, $test = false ) {
     $success = thank_you_send_mail( $params );
 
     if ( $success ) {
-		watchdog('thank_you', "Thank you mail sent successfully for contribution id: $contribution_id to " . $email['to_address'], array(), WATCHDOG_INFO);
+		watchdog('thank_you', "Thank you mail sent successfully for contribution id: $contribution_id to " . $params['recipient_address'], array(), WATCHDOG_INFO);
         if ( !$test ) {
             thank_you_update_ty_date( $contribution );
 		}
     } else {
-		watchdog('thank_you', "Thank you mail failed for contribution id: $contribution_id to " . $email['to_address'], array(), WATCHDOG_ERROR);
+		watchdog('thank_you', "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'], array(), WATCHDOG_ERROR);
         if ( !$test ) {
             wmf_civicrm_set_no_thank_you( $contribution_id, 'failed' );
         }
