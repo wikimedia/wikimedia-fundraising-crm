@@ -67,14 +67,15 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 lược 5 năm của Wikimedia Foundation</a>. Bạn cũng có thể mua hàng hóa của Wikipedia
 tại <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Thông tin để bạn lưu giữ: Khoản đóng góp của bạn là số $contributionsId,
-vào ngày {{ receive_date }}, với giá trị
-{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Thông tin để bạn lưu giữ: Khoản đóng góp của bạn là số {{ transaction_id }},
+vào ngày {{ receive_date }}, với giá trị {{ (currency ~ " " ~ amount) | l10n_currency(locale)
+}}.</p>
 
 <p>{% if recurring %} Khoản đóng góp này là một phần của khoản quyên góp định
 kỳ. Quỹ Wikimedia sẽ ghi nợ tiền đóng góp hàng tháng cho đến khi bạn xin chúng
 tôi ngừng ghi nợ. Nếu bạn muốn ngừng các thanh toán này, xin vui lòng xem <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">hướng dẫn hủy bỏ dễ dàng</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">hướng dẫn hủy bỏ dễ dàng</a>. {% endif %}</p>
 
 <div style="border: 1px solid black; padding:0 10px 5px 10px;">
   <p>Ngừng nhận thông tin: Chúng tôi muốn thường xuyên thông báo với bạn về
@@ -82,7 +83,7 @@ các hoạt động của cộng đồng và việc quyên góp tiền. Tuy nhi�
 không muốn nhận những email như vậy, xin vui lòng nhấn vào liên kết phía dưới
 và chúng tôi sẽ đưa bạn ra khỏi danh sách:</p>
   <div style="margin: 0 25px">
-    <p><a href="{{unsubscribe_link|raw}}">Ngừng nhận tin</a></p>
+    <p><a href="{{ unsubscribe_link | raw }}">Ngừng nhận tin</a></p>
   </div>
 </div>
 
