@@ -324,7 +324,7 @@ function queue2civicrm_insertmq_form_submit($form, &$form_state) {
  */
 function queue2civicrm_generate_message() {
   //language codes
-  $lang = array('EN','DE','FR');
+  $lang = array('en','de','fr');
 
   $currency_codes = array('USD', 'GBP', 'EUR', 'ILS');
   shuffle($currency_codes);
@@ -338,7 +338,7 @@ function queue2civicrm_generate_message() {
 	'utm_source'             => mt_rand(),
 	'utm_medium'             => mt_rand(),
 	'utm_campaign'           => mt_rand(),
-	'language'               => array_rand($lang),
+	'language'               => $lang[array_rand($lang)],
 	'referrer'               => 'http://example.com/'.mt_rand(),
 	'email'                  => mt_rand() . '@example.com',
 	'first_name'             => mt_rand(),
