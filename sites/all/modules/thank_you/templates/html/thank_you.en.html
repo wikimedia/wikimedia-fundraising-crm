@@ -1,7 +1,13 @@
-<p>Dear {{contact.first_name}},</p>
+<p>Dear {{ first_name }},</p>
 
 <p>You are so fantastic. THANK YOU for supporting the Wikimedia Foundation, the non-profit that runs
 Wikipedia and its sister projects.</p>
+
+<p>[ifRecurringProblem] We recently resolved a small technical issue which paused some monthly
+recurring donations. We have reinstated your recurring donation, and it will process normally going
+forward. We will not charge you for the months that were skipped. Thank you for your patience and
+your support, and please feel free to email donate@wikimedia.org if you have any questions.
+[endifRecurringProblem]</p>
 
 <p>Your donation covers not only your own costs of using Wikipedia, but also the costs of other
 Wikipedia readers.</p>
@@ -59,14 +65,14 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 Foundation’s five-year strategic plan</a>. You can also now buy Wikipedia merchandise at <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>For your records: Your donation, number CNTCT-{{contribution.contact_id}}, on
-{{contribution.receive_date}} was {{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>For your records: Your donation, number {{ transaction_id }}, on {{ receive_date }} was {{
+(currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} This donation is part of a recurring subscription. Monthly payments will be
 debited by the Wikimedia Foundation until you notify us to stop. If you’d like to cancel the
 payments please see our <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">easy cancellation instructions</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">easy cancellation instructions</a>. {% endif %}</p>
 
 <p>This letter may serve as a record of your donation. No goods or services were provided, in whole
 or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit charitable
@@ -79,7 +85,7 @@ Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049
 prefer however not to receive such emails from us, please click below and we'll take you off the
 list.</p>
   <div style="margin: 0 25px">
-    <p><a href="{{unsubscribe_link|raw}}">Unsubscribe</a></p>
+    <p><a href="{{ unsubscribe_link | raw }}">Unsubscribe</a></p>
   </div>
 </div>
 

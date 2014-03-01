@@ -1,4 +1,4 @@
-<p>Prezado(a) {{contact.first_name}},</p>
+<p>Prezado(a) {{ first_name }},</p>
 
 <p>Vocês são fantásticos. OBRIGADO pelo suporte à Wikimedia Foundation, organização sem fins
 lucrativos que administra a Wikipédia e seus projetos irmãos.</p>
@@ -64,14 +64,13 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 Foundation’s five-year strategic plan</a>. Você também pode comprar coisas com a marca Wikipedia
 no <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Para seu registro: Sua doação, número CNTCT-{{contribution.contact_id}}, em
-{{contribution.receive_date}} foi de {{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Para seu registro: Sua doação, número {{ transaction_id }}, em
+{{ receive_date }} foi de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Esta doação é parte de uma doação periódica. Pagamentos mensais serão
 debitados pela Wikimedia Foundation até que você nos notifique para parar. Se você desejar
 cancelar os pagamentos, por favor <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">veja nossas instruções</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">veja nossas instruções</a>. {% endif %}</p>
 
 <p>Esta carta pode servir como um registro de sua doação. Nenhum produto ou serviço foi fornecido
 total ou parcialmente por essa contribuição. A Wikimedia Foundation, Inc. é uma organização sem

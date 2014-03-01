@@ -1,4 +1,4 @@
-<p>Annwyl {{contact.first_name}},</p>
+<p>Annwyl {{ first_name }},</p>
 
 <p>DIOLCH YN FAWR i chi am gefnogi Sefydliad Wikimedia, y sefydliad di-elw sy'n gyfrifol am
 Wicipedia a'i chwaer-brosiectau.</p>
@@ -61,14 +61,13 @@ strategol 5 mlynedd Sefydliad Wikimedia</a>. Gallwch brynu nwyddau Wicipedia yn 
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
 <p>Dyma gofnod o'ch cyfraniad: Derbyniwyd rhodd o
-{{contribution.contribution_source|l10n_currency(locale)}} gennych ar {{contribution.receive_date}}
-gyda'r cyfeirnod CNTCT-{{contribution.contact_id}}.</p>
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }} gennych ar {{ receive_date }}
+gyda'r cyfeirnod {{ transaction_id }}.</p>
 
 <p>{% if recurring %} Mae'r rhodd hon yn ran o danysgrifiad rheolaidd. Bydd taliadau misol yn cael
 eu codi gan Sefydliad Wikimedia tan eich bod yn ein hysbysu i ymatal. Os hoffech ddiddymu'r taliadau
 darllenwch ein <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">cyfarwyddiadau syml ar ddiddymu</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">cyfarwyddiadau syml ar ddiddymu</a>. {% endif %}</p>
 
 <p>Mae'r llythyr hwn yn gofnod o'ch rhodd. Ni gyflenwyd unrhyw nwyddau na gwasanaethau, yn rhannol
 nac yn gyflawn, yn dâl am y cyfraniad hwn. Mae Wikimedia Foundation, Inc. yn gorfforaeth di-elw

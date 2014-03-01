@@ -1,4 +1,4 @@
-<p>親愛的$firstname，</p>
+<p>親愛的 {{ first_name }}，</p>
 
 <p>維基有您真是太美好了。萬分感謝您願意支持：營運維基媒體與其他姊妹計畫的非營利組織，維基媒體基金會。</p>
 
@@ -39,14 +39,13 @@ href="http://wikimediafoundation.org/wiki/2013-2014_Annual_Plan_Questions_and_An
 href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">維基媒體基金會的五年計畫書</a>。您也可以在<a
 href="https://shop.wikimedia.org">shop.wikimedia.org 商店</a>購買維基百科商品。</p>
 
-<p>供您紀錄：您於 {{contribution.receive_date}} 捐出
-{{contribution.contribution_source|l10n_currency(locale)}}。 捐贈號碼
-CNTCT-{{contribution.contact_id}}</p>
+<p>供您紀錄：您於 {{ receive_date }} 捐出
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}。 捐贈號碼
+{{ transaction_id }}</p>
 
 <p>{% if recurring %}
 此捐款是一份重複性的訂閱捐款。維基媒體基金會每月將會持續收到您的捐款，直到您通知我們停止。如果您想要取消此訂閱捐款，請參閱我們的<a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">簡易取消訂閱捐款指南</a>。 {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">簡易取消訂閱捐款指南</a>。 {% endif %}</p>
 
 <p>這封信可以成為你捐款的一份紀錄。在這全部或一部份的建構中，沒有任何商品或服務被提供。維基媒體基金會，本公司在美國是一個免賦稅的非營利慈善團體。我們的地址位於美國94105加州舊金山新蒙哥馬利街149號3樓。免賦稅編號：20-0049703</p>
 

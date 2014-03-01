@@ -1,35 +1,40 @@
 <?php
 
-/*
-TODO
-
+/**
+ * @implements hook_menu
+ */
 function donor_review_menu() {
     $items['admin/donor_review'] = array(
-        'title' => 'Donor Review',
-        'access arguments' => array('administer civicrm'),
+        'title' => 'Donor Review Overview',
+        'access arguments' => array('administer CiviCRM'),
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('donor_review_queue_form'),
+        'page arguments' => array('DonorReview\OverviewPage::getForm'),
+    );
+    $items['admin/donor_review/assign/%'] = array(
+        'title' => 'Donor Review Batch Assignment',
+        'access arguments' => array('administer CiviCRM'),
+        'page callback' => 'DonorReview\OverviewPage::assignBatch',
+        'page arguments' => array(3),
         'type' => MENU_CALLBACK,
+    );
+    $items['admin/donor_review/ajax/%/%'] = array(
+        'access arguments' => array('administer CiviCRM'),
+        'page callback' => 'DonorReview\ReviewPage::ajaxController',
+        'page arguments' => array(3, 4),
+        'type' => MENU_CALLBACK,
+    );
+    $items['admin/donor_review/batch/%'] = array(
+        'title' => 'Donor Review Batch',
+        'access arguments' => array('administer CiviCRM'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('DonorReview\ReviewPage::getForm', 3),
+        'type' => MENU_CALLBACK,
+    );
+    $items['admin/donor_review/batches'] = array(
+        'title' => 'Donor Review Batch Index',
+        'access arguments' => array('administer CiviCRM'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('DonorReview\BatchesPage::getForm'),
     );
     return $items;
 }
-
-function donor_review_queue_form() {
-    $rows = ReviewQueue::fetch();
-    $headers = array( 'Old', 'New', 'Recommended action', 'Diff' );
-    $queue_html = theme_table( array(
-      'header' => $headers,
-      'rows' => $rows,
-      'empty' => "No donors to review!  Be very afraid.",
-      'attributes' => array(),
-      'caption' => t( 'Donor review' ),
-      'colgroups' => array(),
-      'sticky' => true,
-    ) ).theme( 'pager' );
-
-    $form['queue'] = array(
-        '#markup' => $queue_html,
-    );
-    return $form;
-}
-*/

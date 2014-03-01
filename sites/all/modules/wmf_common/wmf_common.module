@@ -372,3 +372,8 @@ function wmf_common_get_my_revision() {
     }
     return $sourceRevision;
 }
+
+function wmf_common_locale_civi_to_mediawiki( $locale ) {
+    // LOL
+    return strtolower( str_replace( '_', '-', $locale ) );
+}

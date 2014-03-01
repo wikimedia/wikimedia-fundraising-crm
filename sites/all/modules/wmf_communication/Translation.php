@@ -5,7 +5,7 @@ use \Exception;
 class Translation {
     //TODO: get from MediaWiki
     static function next_fallback( $language ) {
-        $parts = preg_split( '/-_/', $language );
+        $parts = preg_split( '/[-_]/', $language );
         if ( count( $parts ) > 1 ) {
             return $parts[0];
         }

@@ -1,4 +1,4 @@
-<p>Kara {{contact.first_name}},</p>
+<p>Kara {{ first_name }},</p>
 <p>Ni dankas vin pro donaco al la Vikimedia Fondaĵo. Vi estas brila!</p>
 <p>Estas facile ignori la monkolektajn reklamilojn, kaj mi tre ĝojas ke vi
 ne faris tion. Ĉar per tiu maniero Vikipedio pagas siajn kvitancojn ---
@@ -54,9 +54,9 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 strategia plano de Vikimedia Fondaĵo</a>. Vi povas nun ankaŭ aĉeti
 vikipediajn varbvarojn ĉe <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
-<p>Por via arĥivo: Via donaco farita je {{contribution.receive_date}}
+<p>Por via arĥivo: Via donaco farita je {{ receive_date }}
 estis la sumo de
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 <p>Permeso supozita: Ni ŝatus informadi vin, kiel donacinton, pri la
 aktivaĵoj kaj monkolektoj de nia komunumo. Se vi preferas ne ricevadi
 tiajn retmesaĝojn de ni, bonvolu klaki sube kaj ni forigos vin de la

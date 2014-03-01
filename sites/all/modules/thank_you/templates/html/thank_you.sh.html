@@ -1,4 +1,4 @@
-<p>Dragi/draga {{contact.first_name}},</p>
+<p>Dragi/draga {{ first_name }},</p>
 
 <p>Svaka Vam čast. HVALA VAM sto podržavate Vikimedija Fondaciju, bezprofitnu organizaciju koja
 održava Vikipediju i njene srodne projekte.</p>
@@ -61,13 +61,12 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 strateski plan Vikimedija Fondacije</a>. A ovde mozete kupiti i Vikipedija proizvode: <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Za Vašu evidenciju: Vaš doprinos broj CNTCT-{{contribution.contact_id}}, na dan
-{{contribution.receive_date}} je bio {{contribution.contribution_source|l10n_currency(locale)}}</p>
+<p>Za Vašu evidenciju: Vaš doprinos broj {{ transaction_id }}, na dan
+{{ receive_date }} je bio {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}</p>
 
 <p>{% if recurring %} Ova donacija je deo stalne pretplate. Mesečna rata će biti uplaćivana
 Vikimedija Fondaciji sve dok nam ne javite da prekinemo. Pogledajte <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">uputstva za prekidanje</a> ako želite da prekinete sa
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">uputstva za prekidanje</a> ako želite da prekinete sa
 plaćanjem. {% endif %}</p>
 
 <p>Ovo pismo može poslužiti kao dokument o vašoj donaciji. Nikakav fizički predmet (ili njegov
@@ -82,7 +81,7 @@ oslobadjanje od poreza u SAD je: 20-0049703.</p>
 donacijama. Medjutim, ako ne želite da primate takvu elektronsku postu od nas, molimo Vas da
 kliknete na link odmah ispod i bićete uklonjeni sa tog spiska.</p>
   <div style="margin: 0 25px">
-    <p>[$unsibscribeUrl Odjava]</p>
+    <p><a href="{{ unsubscribe_link | raw }}">Odjava</a></p>
   </div>
 </div>
 

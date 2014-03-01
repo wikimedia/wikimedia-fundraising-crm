@@ -1,0 +1,45 @@
+.touch-table td.revert ins {
+    text-decoration: line-through;
+    color: #e43d2b;
+}
+.touch-table td.revert del {
+    color: black !important;
+    text-decoration: none;
+}
+.touch-table td.revert {
+    /* red-green sadness */
+    background-color: #99ff99;
+}
+
+.touch-table tr.rereview {
+    background-color: #ff9999;
+}
+
+.touch-table tr.exclude td:not(.buttons) {
+    opacity: 0.25;
+}
+
+.touch-table tr.exclude input[name=exclude] {
+    display: none;
+}
+
+.touch-table tr:not(.exclude) input[name=confirm] {
+    display: none;
+}
+
+.touch-table td.buttons {
+    white-space: nowrap;
+}
+.touch-table td.buttons input {
+    margin: 2px;
+}
+
+.loading {
+    background-image: url("/sites/all/modules/civicrm/i/loading.gif");
+    background-repeat: no-repeat;
+    background-position: right top;
+}
+.loading td {
+    /* The tr style prevents a spinner, so provide alternative feedback. */
+    font-style: oblique;
+}

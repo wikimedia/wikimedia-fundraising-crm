@@ -1,4 +1,4 @@
-<p>Kedves {{contact.first_name}}!</p>
+<p>Kedves {{ first_name }}!</p>
 
 <p>Nagyszerű ember vagy. KÖSZÖNJÜK, hogy támogatod a Wikimedia Alapítványt, amely non-profit
 módon működteti a Wikipédiát és testvéreit.</p>
@@ -65,15 +65,14 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 stratégiai tervünk</a>. Wikipédia pólókat és egyéb termékeket a boltunkban vásárolhatsz:
 <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Tájékoztatásul: A CNTCT-{{contribution.contact_id}} azonosítójú adományod
-{{contribution.receive_date}} időpontban:
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Tájékoztatásul: A {{ transaction_id }} azonosítójú adományod
+{{ receive_date }} időpontban:
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Ez az adomány egy ismétlődő adományozás része. Az adományt a
 Wikimédia Alapítvány minden hónapban levonja a számládról, amíg értesítést nem küldesz
 az adományozás lemondásáról. Ha le szeretnéd mondani az adományozást, kérlek kövesd <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">az egyszerű utasításokat a lemondáshoz</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">az egyszerű utasításokat a lemondáshoz</a>. {% endif %}</p>
 
 <p>Ez a levél bizonylatként szolgál az adományozásodról. A hozzájárulásod
 ellentételezéseként semmilyen áru vagy szolgáltatás - legyen az egész vagy rész - nem

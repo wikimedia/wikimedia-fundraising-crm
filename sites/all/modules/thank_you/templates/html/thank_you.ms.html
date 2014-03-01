@@ -1,4 +1,4 @@
-<p>{{contact.first_name}},</p>
+<p>{{ first_name }},</p>
 
 <p>TERIMA KASIH kerana menyokong Yayasan Wikimedia, sebuah badan bukan bermotif keuntungan yang
 mengelolakan Wikipedia dan projek-projek saudaranya.</p>
@@ -62,15 +62,14 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 Strategik 5 tahun Yayasan Wikimedia</a>. Anda juga boleh membeli barangan cenderahati di <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a></p>
 
-<p>Untuk makluman anda: Derma anda pada {{contribution.receive_date}} ialah
-{{contribution.contribution_source|l10n_currency(locale)}}.</p>
+<p>Untuk makluman anda: Derma anda pada {{ receive_date }} ialah
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Sumbangan ini merupakan sebahagian daripada sumbangan bulanan yang telah
 dilanggan. Yayasan Wikimedia akan mendebitkan sumbangan anda pada setiap bulan sehingga anda
 menyatakan hasrat untuk kami memberhentikannya. Jika anda berhasrat untuk memberhentikan pembayaran,
 sila lihat <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&country={{
-country }}&language={{ language }}">langkah mudah</a> yang telah kami sediakan {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">langkah mudah</a> yang telah kami sediakan {% endif %}</p>
 
 <p>Surat ini boleh menjadi rekod pendermaan anda. Tiada barangan atau perkhidmatan yang disediakan,
 secara penuh atau separa, untuk sumbangan ini. Yayasan Wikimedia, Inc. ialah satu perbadanan amal

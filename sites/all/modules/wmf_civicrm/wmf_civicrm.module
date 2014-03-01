@@ -2,7 +2,6 @@
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
-require_once 'civicrm_api_check.inc';
 
 /**
  * return a map of option value (id) => option name
@@ -1287,7 +1286,7 @@ WHERE
         'contact_id' => $contribution->contact_id,
         'total_amount' => 0 - $contribution->total_amount,
         'contribution_type_id' => wmf_civicrm_get_civi_id( 'contribution_type_id', $refund_type ),
-        'receive_date' => gmdate( 'Y-m-d H:i:s', $refund_date ),
+        'receive_date' => wmf_common_date_unix_to_civicrm( $refund_date ),
         'contribution_status_id' => civicrm_api_contribution_status( $refund_status ),
         'contribution_source' => "$original_currency -{$original_amount}",
         'trxn_id' => $refund_unique_id,
