@@ -184,6 +184,7 @@ function thank_you_send_test_form_submit( $form_id, $form_values ) {
 		}
 
 		foreach ( $langs as $lc ) {
+            $params['locale'] = $lc;
             thank_you_send_test( $params );
 		}
 		return;
