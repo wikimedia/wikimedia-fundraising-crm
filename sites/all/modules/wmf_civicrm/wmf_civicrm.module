@@ -659,6 +659,9 @@ function wmf_civicrm_verify_message_and_stage($msg)
         'middle_name' => 64,
         'organization_name' => 128,
         'postal_code' => 64,
+        'street_address' => 96,
+        'supplemental_address_1' => 96,
+        'supplemental_address_2' => 96,
     );
     foreach ( $max_lengths as $key => $limit ) {
         if ( strlen( $msg[$key] ) > $limit ) {

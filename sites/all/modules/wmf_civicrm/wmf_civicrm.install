@@ -741,24 +741,3 @@ function wmf_civicrm_update_7015()
     db_query("ALTER TABLE civicrm_contact
             MODIFY preferred_language varchar(32) DEFAULT NULL");
 }
-
-/**
- * Address fields should be text fields
- */
-function wmf_civicrm_update_7016()
-{
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push('civicrm');
-
-    db_query("ALTER TABLE civicrm_address
-            MODIFY street_address TEXT DEFAULT NULL");
-
-    db_query("ALTER TABLE civicrm_address
-            MODIFY supplemental_address_1 TEXT DEFAULT NULL");
-
-    db_query("ALTER TABLE civicrm_address
-            MODIFY supplemental_address_2 TEXT DEFAULT NULL");
-
-    db_query("ALTER TABLE civicrm_address
-            MODIFY supplemental_address_3 TEXT DEFAULT NULL");
-}
