@@ -379,7 +379,7 @@ function thank_you_send_mail( $params ) {
     if ( $missing ) {
         $as_list = implode( ', ', $missing );
         watchdog( 'thank_you', "Missing stuff from the TY params: {$as_list} " . check_plain(print_r( $params, true )), array(), WATCHDOG_ERROR );
-        wmf_common_failmail( 'thank_you', "FAILED TO RENDER HTML EMAIL in " . __FUNCTION__, $params );
+        wmf_common_failmail( 'thank_you', "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__, $params );
         return false;
     }
 
