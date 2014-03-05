@@ -762,3 +762,23 @@ function wmf_civicrm_update_7016()
     }
     return $ret;
 }
+
+/**
+ * Create recurring restarted contribution tag
+ */
+function wmf_civicrm_update_7017()
+{
+    $ret = array();
+    $api = wmf_civicrm_bootstrap_civi();
+    $success = $api->CustomTag->create(array(
+            'name' => 'AddressTruncated',
+            'description' => 'Tag applied to a contact when the address was truncated on import.',
+            'is_selectable' => true,
+            'is_reserved' => true,
+            'used_for' => 'civicrm_contact'
+        ));
+    if (!$success) {
+        $ret[] = $api->errorMsg();
+    }
+    return $ret;
+}
