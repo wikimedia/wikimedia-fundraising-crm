@@ -6,10 +6,15 @@ class ThankYou20131202 extends RenderTranslatedPage {
 		$this->proto_file = __DIR__ . '/../templates/html/thank_you.$1.html';
 
 		$this->substitutions = array(
+            '/<p>\[ifFirstnameAndLastname\]\s*/' => "{% if first_name and last_name %}\n<p>",
+            '/<p>\[elseifFirstnameAndLastname\]\s*/' => "{% else %}\n<p>",
+            '/\s*\[endifFirstnameAndLastname\]<\/p>/' => "</p>\n{% endif %}",
+
 			'/\[given name\]/' => '{{ first_name }}',
 			'/\[first name\]/' => '{{ first_name }}',
 			'/\[family name\]/' => '{{ last_name }}',
 			'/\[last name\]/' => '{{ last_name }}',
+
 			'/\[date\]/' => '{{ receive_date }}',
 			'/\[amount\]/' => '{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}',
 			'/\[contributionId\]/' => '{{ transaction_id }}',

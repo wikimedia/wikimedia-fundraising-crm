@@ -1,4 +1,9 @@
+{% if first_name and last_name %}
 <p>{{ first_name }} היקר(ה),</p>
+
+{% else %}
+<p>תורם יקר, תורמת יקרה,</p>
+{% endif %}
 
 <p>אנחנו כל־כך אוהבים אותך. תודה רבה על תמיכתך בקרן
 ויקימדיה, מוסד ללא כוונת רווח המפעיל את אתר ויקיפדיה
@@ -71,14 +76,14 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 חומש של הקרן</a>. ביכולתך גם לקנות מוצרי ויקיפדיה ב<a
 href="https://shop.wikimedia.org">shop.wikimedia.org חנות</a>.</p>
 
-<p>עבור רישומך: תרומתך הינה מספר {{ transaction_id }},
-בתאריך {{ receive_date }} הינה
-{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}</p>
+<p>עבור רישומך: תרומתך הינה מספר {{ transaction_id }}, בתאריך {{
+receive_date }} הינה {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}</p>
 
 <p>{% if recurring %} תרומה זו הינה חלק מרשמה לתשלום חוזר. תשלום
 חודשי יגבה על ידי הארגון ויקימדיה עד אשר תודיע לנו
 להפסיק. אם ברצונך לבטל את המשך התשלומים תוכל לראות<a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">הוראות לביטול פשוט וקל</a> {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">הוראות לביטול פשוט וקל</a> {% endif %}</p>
 
 <p>מכתב זה יכול לשמש כהוכחה לתרומתך. לא סופקו טובין או
 שירותים עבור חלק או כל הסכום של תרומה זו. קרן ויקימדיה

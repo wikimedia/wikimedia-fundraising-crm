@@ -1,4 +1,9 @@
+{% if first_name and last_name %}
 <p>Dear {{ first_name }},</p>
+
+{% else %}
+<p>Dear donor,</p>
+{% endif %}
 
 <p>You are so fantastic. THANK YOU for supporting the Wikimedia Foundation, the non-profit that runs
 Wikipedia and its sister projects.</p>

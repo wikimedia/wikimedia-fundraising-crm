@@ -1,32 +1,37 @@
+{% if first_name and last_name %}
 <p>Kjære {{ first_name }},</p>
 
-<p>Du er så fantastisk. TUSEN TAKK for din støtte til den profittløse Wikimediastiftelsen, som
-holder Wikipedia og liknende prosjekter igang.</p>
+{% else %}
+<p>Kjære giver,</p>
+{% endif %}
+
+<p>Du er helt fantastisk. TUSEN TAKK for din støtte til Wikimediastiftelsen, den ideelle
+organisasjonen som holder Wikipedia og lignende prosjekter igang.</p>
 
 <p>Din donasjon dekker ikke bare dine egne kostnader for bruk av Wikipedia, men også kostnadene for
 andre Wikipedia-lesere.</p>
 
 <p>Som den pensjonerte bonden i delstaten New York som bruker Wikipedia til å studere vitenskapen
 bak slam, og studenten i Kuala Lumpur som forsker på organisk kjemi. Den britiske mekanikeren som,
-etter han brakk ryggen i en ulykke, brukte WIkipedia til å bygge seg opp som en web-designer.
+etter han brakk ryggen i en ulykke, brukte Wikipedia til å omskolere seg til web-designer.
 Embetsmannen i Finland som satt opp en offline-versjon av Wikipedia for en liten skole i Ghana. Og
 faren i Mexico By som tok sine små døtre til museet i helgene, og bruker Wikipedia til å hjelpe
 dem til å forstå alt de ser der.</p>
 
-<p>Wikipedias jobb er å tilgjengeliggjøre den totale menneskelige kunnskapen for alle i verden,
-på hver enkelts eget språk. Det er en enorm oppgave, men med 30 millioner artikler og 287 språk,
-vil jeg si at takket være deg og andre som deg, nærmer vi oss det målet.</p>
+<p>Wikipedias jobb er å tilgjengeliggjøre summen av den menneskelige kunnskapen for alle i Verden,
+på hver enkelts eget språk. Det er en enorm oppgave, men med 30 millioner artikler og 287 språk
+vil jeg si at takket være deg og andre som deg nærmer vi oss det målet.</p>
 
 <p>På vegne av Wikimediastiftelsen og den halve milliarden andre Wikipedia-lesere rundt om i hele
 verden: Tusen takk. At du hjelper til med å betale kostnadene ved å drive Wikipedia betyr at vi
 kan være uavhengige og i stand til å fokusere på våre lesere. Akkurat som det skal være.</p>
 
-<p>Du har kanskje også merket at for første gang dette året har vi trappet opp vår
+<p>Du har kanskje også merket at for første gang dette året har vi trappet ned vår
 innsamlingsaksjon, slik at folk flest bare vil se bannerne en håndfull ganger istedenfor i flere
-uker. Det er med vilje: Vi ønsker ikke at våre lesere skal bli irriterte over for mange
+uker. Det er gjort med vilje: Vi ønsker ikke at våre lesere skal bli irriterte over for mange
 henvendelser. Men det betyr også at færre mennesker vil oppdage at vi er en ideell organisasjon og
 at vi ønsker deres hjelp. Så hvis du er villig til det, hadde jeg satt pris på om du hadde
-hjulpet å spre ordet med å videresende denne e-posten til et par av dine venner.</p>
+hjulpet med å spre ordet med å videresende denne e-posten til et par av dine venner.</p>
 
 <p>Og jeg hadde satt stor pris på om du hadde prøvd å hjelpe oss å skrive Wikipedia. Wikipedia
 er skrevet utelukkende av frivillige - titusenvis av vanlige mennesker rundt om i verden, akkurat
@@ -60,13 +65,14 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 femårs strategiplan</a>. Nå kan du også kjøpe Wikipedia-varer på <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>For din del: Din donasjon, nummer {{ transaction_id }}, den
-{{ receive_date }} var {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>For din del: Din donasjon, nummer {{ transaction_id }}, den {{ receive_date }} var {{ (currency ~
+" " ~ amount) | l10n_currency(locale) }}.</p>
 
 <p>{% if recurring %} Denne donasjonen er del av et repeterende abonnement. Månedlige betalinger
 vil bli innbetalt til Wikimediastiftelsen til du gir oss melding om at vi skal stoppe. Hvis du
 ønsker å stanse betalingen, vennligst se vår <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">enkle avmeldingsinstruks</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">enkle avmeldingsinstruks</a>. {% endif %}</p>
 
 <p>Denne meldingen er din kvittering for donasjonen. Der er ikke gitt noen hel eller delvis form for
 gjenytelse for gaven. The Wikimedia Foundation, Inc. er en profittløs veldedig organisasjon med
@@ -79,7 +85,7 @@ skattefradragsstatus i USA. Vår adresse er: 149 New Montgomery, 3rd Floor, San 
 innsamlingsaksjoner. Hvis du foretrekker å ikke motta den slags e-poster fra oss, så klikk på
 lenken under, så fjerner vi deg fra listen.</p>
   <div style="margin: 0 25px">
-    <p><a href="{{unsubscribe_link|raw}}">Avslutt abonnement</a></p>
+    <p><a href="{{ unsubscribe_link | raw }}">Avslutt abonnement</a></p>
   </div>
 </div>
 

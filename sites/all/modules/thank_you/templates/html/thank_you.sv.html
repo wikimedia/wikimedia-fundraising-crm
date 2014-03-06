@@ -1,15 +1,20 @@
+{% if first_name and last_name %}
 <p>Kära {{ first_name }},</p>
+
+{% else %}
+<p>Kära donator,</p>
+{% endif %}
 
 <p>Du är så fantastisk. TACK för att du stöder Wikimedia Foundation, den ideella stiftelsen som
 driver Wikipedia och dess systerprojekt.</p>
 
 <p>Din donation täcker inte bara dina egna kostnader för att använda Wikipedia, utan även
-kostnader för andra Wikipedialäsare.</p>
+kostnader för andra Wikipediaanvändare.</p>
 
 <p>Liksom den pensionerade jordbrukaren i delstaten New Yorks glesbygd som använder Wikipedia för
 att studera vad vetenskapen har att säga om slam, och studenten i Kuala Lumpur som studerar
 organisk kemi. Eller den brittiske mekanikern som efter att ha skadat ryggen i en olycka använde
-Wikipedia för att omskolera sig till systemutvecklare. Den finske tjänstemannen som upprättade en
+Wikipedia för att omskola sig till webbutvecklare. Den finske tjänstemannen som upprättade en
 offlineversion av Wikipedia för en liten skola i Ghana. Och pappan i Mexico City som besöker
 muséer med sina små döttrar om helgerna, och använder Wikipedia för att hjälpa dem förstå
 vad de tittar på under besöken.</p>
