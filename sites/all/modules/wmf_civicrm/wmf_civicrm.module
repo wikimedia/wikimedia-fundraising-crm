@@ -1107,6 +1107,9 @@ function wmf_civicrm_normalize_msg( $msg ) {
         case 'Mossman':
             $msg['direct_mail_appeal'] = "Sheila Mossman";
             break;
+        case 'Mediander':
+            $msg['direct_mail_appeal'] = "Mediander";
+            break;
         default:
                 // pass
             break;
