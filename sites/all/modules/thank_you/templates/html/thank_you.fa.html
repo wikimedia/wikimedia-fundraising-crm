@@ -1,4 +1,9 @@
-<p>(نام شخص) عزیز</p>
+{% if first_name and last_name %}
+<p>{{ first_name }} عزیز،</p>
+
+{% else %}
+<p>اهدا كننده عزيز</p>
+{% endif %}
 
 <p>شما خیلی فوق العاده هستید. از شما بخاطر پشتیبانی از
 بنیاد ویکی مدیا که موسسه ای غیر انتفاعی بوده و ویکی
@@ -81,17 +86,17 @@ Foundation’s five-year strategic plan</a> را مطالعه کنید. همچن
 توانید ویکی پدیای تجاری را از اینجا <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a> خریداری کنید.</p>
 
-<p>جهت اطلاع شما: کمک مالی شما به شماره
-{{ transaction_id }}، در تاریخ {{ receive_date }} به مبلغ
-{{ (currency ~ " " ~ amount) | l10n_currency(locale) }} بوده است.</p>
+<p>جهت اطلاع شما: کمک مالی شما به شماره {{ transaction_id }}، در
+تاریخ {{ receive_date }} به مبلغ {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}
+بوده است.</p>
 
 <p>{% if recurring %} این کمک مالی بخشی از هزینه اشتراک دوره‌ای
 است. پرداخت ماهیانه تا زمانی که شما برای متوقف کردن آن
 به ما اطلاع ندهید توسط بنیاد ویکی‌پدیا برداشت می‌شود.
 در صورتی که مایل هستید پرداخت را لغو کنید لطفا
 دستورالعمل ابطال را در <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">easy cancellation instructions</a> مطالعه فرمائید.
-{% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">easy cancellation instructions</a> مطالعه فرمائید. {% endif %}</p>
 
 <pre>
 این نامه به عنوان رسید کمک ملی شما محسوب می‌گردد.
@@ -111,7 +116,7 @@ href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Can
 دریافت این گونه ایمیل ها از ما ندارید، می‌توانید گزینه
 زیر را انتخاب کنید تا شما را از فهرست خود حذف کنیم.</p>
   <div style="margin: 0 25px">
-    <p>لغو اشتراک <a href="{{unsubscribe_link|raw}}">Unsubscribe</a></p>
+    <p>لغو اشتراک <a href="{{ unsubscribe_link | raw }}">Unsubscribe</a></p>
   </div>
 </div>
 
