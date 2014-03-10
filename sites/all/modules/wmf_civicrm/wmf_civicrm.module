@@ -663,9 +663,26 @@ function wmf_civicrm_verify_message_and_stage($msg)
         'supplemental_address_1' => 96,
         'supplemental_address_2' => 96,
     );
+    $truncate_tags = array(
+        'postal_code' => 'AddressTruncated',
+        'street_address' => 'AddressTruncated',
+        'supplemental_address_1' => 'AddressTruncated',
+        'supplemental_address_2' => 'AddressTruncated',
+    );
     foreach ( $max_lengths as $key => $limit ) {
         if ( strlen( $msg[$key] ) > $limit ) {
-            throw new WmfException( 'INVALID_MESSAGE', "Field '{$key}' is too long." );
+            if ( array_key_exists( $key, $truncate_tags ) ) {
+                watchdog(
+                    'wmf_civicrm',
+                    'Truncating key !key to !len chars. Original: "!val". Applying tag !tag',
+                    array( '!key' => $key, '!len' => $limit, '!val' => $msg[$key], '!tag' => $truncate_tags[$key] ),
+                    WATCHDOG_WARNING
+                );
+                $msg[$key] = substr( $msg[$key], 0, $limit );
+                $msg['contact_tags'][] = $truncate_tags[$key];
+            } else {
+                throw new WmfException( 'INVALID_MESSAGE', "Field '{$key}' is too long." );
+            }
         }
     }
 
@@ -760,17 +777,44 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     // Attempt to insert the contact
-    $contact_result = civicrm_api( "Contact", "Create", $contact );
-
-    if ( $contact_id == NULL ){
-        watchdog( 'wmf_civicrm', 'Result for adding contact: %contact', array( '%contact' => print_r( $contact_result, true )), WATCHDOG_DEBUG );
-    } else {
-        watchdog( 'wmf_civicrm', 'Result for updating contact: %contact', array( '%contact' => print_r( $contact_result, true )), WATCHDOG_DEBUG );
+    try {
+        $contact_result = civicrm_api3( "Contact", "Create", $contact );
+        if ( $contact_id == NULL ){
+            watchdog( 'wmf_civicrm', 'Result for adding contact: %contact', array( '%contact' => print_r( $contact_result, true )), WATCHDOG_DEBUG );
+        } else {
+            watchdog( 'wmf_civicrm', 'Result for updating contact: %contact', array( '%contact' => print_r( $contact_result, true )), WATCHDOG_DEBUG );
+        }
+    } catch ( CiviCRM_API3_Exception $ex ) {
+        throw new WmfException(
+            "IMPORT_CONTACT",
+            "Contact could not be added. Aborting import. Contact data was " . print_r($contact, true) . " Original error: " . $ex->getMessage()
+        );
     }
 
-    if ( array_key_exists( 'is_error', $contact_result ) && $contact_result['is_error'] != 0 ){
-        throw new WmfException( "IMPORT_CONTACT", "Contact could not be added. Aborting import. Contact data was " . print_r($contact, true) . " Original error: " . $contact_result['error_message'] );
+    // Do we have any tags we need to add to this contact?
+    $contact_id = $contact_result['id'];
+    if ( !empty( $msg['contact_tags'] ) ) {
+        $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
+        $stacked_ex = array();
+        foreach ( array_unique( $msg['contact_tags'] ) as $tag ) {
+            try {
+                $tag_result = civicrm_api3( "EntityTag", "Create", array(
+                    'entity_table' => 'civicrm_contact',
+                    'entity_id' => $contact_id,
+                    'tag_id' => $supported_tags[$tag]
+                ));
+            } catch ( CiviCRM_API3_Exception $ex ) {
+                $stacked_ex[] = "Failed to add tag {$tag} to contact ID {$contact_id}. Error: " . $ex->getMessage();
+            }
+        }
+        if ( !empty( $stacked_ex ) ) {
+            throw new WmfException(
+                "IMPORT_CONTACT",
+                implode( "\n", $stacked_ex )
+            );
+        }
     }
+
     return $contact_result;
 }
 

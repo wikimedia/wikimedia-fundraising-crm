@@ -149,10 +149,10 @@ function thank_you_send_test_form() {
 		'#default_value' => false,
 	);
 
-	$form['specials'] = array(
+	$form['contribution_tags'] = array(
 		'#type' => 'textfield',
-		'#title' => t('List any special circumstances'),
-		'#description' => t('Comma or space-separated list of contingency tags, like "late_recurring, recurring_provider=globalcollect"'),
+		'#title' => t('Contribution Tags'),
+		'#description' => t('Comma or space-separated list of contribution tags, like "RecurringRestarted"'),
 		'#default_value' => '',
 	);
 
@@ -174,6 +174,11 @@ function thank_you_send_test_form_submit( $form_id, $form_values ) {
     list( $params['first_name'], $params['last_name'] ) = preg_split( '/ +/', $params['name'], 2, PREG_SPLIT_NO_EMPTY );
     $params['unsubscribe_link'] = build_unsub_link( -1, $params['recipient_address'], $params['locale'] );
 
+    // Turn a comma space separated list into an array
+    if ( array_key_exists( 'contribution_tags', $params ) ) {
+        $params['contribution_tags'] = preg_split('/[\s,]+/', $params['contribution_tags']);
+    }
+
 	if ( $params['locale'] === "all" ) {
 		$langs = array();
 		foreach( glob( __DIR__ . "/templates/html/thank_you.*.html") as $lang ){
@@ -187,7 +192,6 @@ function thank_you_send_test_form_submit( $form_id, $form_values ) {
             $params['locale'] = $lc;
             thank_you_send_test( $params );
 		}
-		return;
 	} else {
         thank_you_send_test( $params );
     }
@@ -209,7 +213,7 @@ function thank_you_send_test( $params ) {
  * Send a TY letter, and do bookkeeping on the Civi records
  * TODO: rewrite the civi api stuff to work like other code
  */
-function thank_you_for_contribution( $contribution_id, $test = false ) {
+function thank_you_for_contribution( $contribution_id ) {
 	civicrm_initialize( true );
 	$contribution = civicrm_api("Contribution","get",
 		array (
@@ -232,13 +236,25 @@ function thank_you_for_contribution( $contribution_id, $test = false ) {
 	}
 	$contribution = $simplified;
 
+    // don't send a Thank You email if one has already been sent
+    if ( !empty($contribution['thankyou_date']) ) {
+        watchdog('thank_you', 'Thank you email already sent for this transaction.', array(), WATCHDOG_INFO);
+        return false;
+    }
+    // only send a Thank You email if we are within the specified window
+    if (strtotime($contribution['receive_date']) < time() - 86400 * variable_get('thank_you_days', 14)) {
+        watchdog('thank_you', 'Contribution is older than limit, ignoring.', array(), WATCHDOG_INFO);
+        return false;
+    }
+
 	// get the information for the associated contact
 	$contact = civicrm_api("Contact","get",
 		array (
 			  'version' =>'3',
 			  'id' => $contribution[ 'contact_id' ],
 			  'return' => "display_name,first_name,last_name,email,preferred_language"
-		));
+		)
+    );
 
 	// check that the API result is a valid contact result
 	if( !WMFCiviAPICheck::check_api_contact( $contact, $contribution[ 'contact_id' ] ) ){
@@ -254,13 +270,12 @@ function thank_you_for_contribution( $contribution_id, $test = false ) {
 	}
 	$contact = $simplified;
 
-	// check for contacts without an email address
-	if ( empty( $contact['email'] ) or $contact['email'] === 'nobody@wikimedia.org' ) {
-		watchdog('thank_you', 'No email address found. Processing as anonymous.', array(), WATCHDOG_INFO);
-		wmf_civicrm_set_no_thank_you( $contribution['contribution_id'], 'anonymous' );
-
-		return true;
-	}
+    // check for contacts without an email address
+    if ( empty( $contact['email'] ) or $contact['email'] === 'nobody@wikimedia.org' ) {
+        watchdog('thank_you', 'No email address found. Processing as anonymous.', array(), WATCHDOG_INFO);
+        wmf_civicrm_set_no_thank_you( $contribution['contribution_id'], 'anonymous' );
+        return true;
+    }
 
     $custom_values = wmf_civicrm_contribution_get_custom_values( $contribution_id, array(
         'no_thank_you',
@@ -268,24 +283,21 @@ function thank_you_for_contribution( $contribution_id, $test = false ) {
         'original_currency',
     ) );
 
-	// only check the following if this is not a test
-	if ( !$test ){
-		// don't send a Thank You email if one has already been sent
-		if ( !empty($contribution['thankyou_date']) ) {
-			watchdog('thank_you', 'Thank you email already sent for this transaction.', array(), WATCHDOG_INFO);
-			return false;
-		}
-		// only send a Thank You email if we are within the specified window
-		if (strtotime($contribution['receive_date']) < time() - 86400 * variable_get('thank_you_days', 14)) {
-			watchdog('thank_you', 'Contribution is older than limit, ignoring.', array(), WATCHDOG_INFO);
-			return false;
-		}
+    if ( $custom_values['no_thank_you'] ) {
+        watchdog('thank_you', "Contribution has been marked no_thank_you={$custom_values['no_thank_you']}, skipping.", array(), WATCHDOG_INFO);
+        return false;
+    }
 
-        if ( $custom_values['no_thank_you'] ) {
-			watchdog('thank_you', "Contribution has been marked no_thank_you={$custom_values['no_thank_you']}, skipping.", array(), WATCHDOG_INFO);
-			return false;
-        }
-	}
+    $tags = civicrm_api3( 'EntityTag', 'getdetails', array(
+        'entity_table' => 'civicrm_contribution',
+        'entity_id' => $contribution_id
+    ));
+    $tag_names = array_values(
+        array_map(
+            function( $el ) { return $el['tag_name']; },
+            $tags['values']
+        )
+    );
 
     $transaction = WmfTransaction::from_unique_id( $contribution['trxn_id'] );
 
@@ -310,22 +322,17 @@ function thank_you_for_contribution( $contribution_id, $test = false ) {
         'recurring' => $transaction->is_recurring,
         'transaction_id' => "CNTCT-{$contact['id']}",
         'unsubscribe_link' => build_unsub_link( $contribution['id'], $contact['email'], $locale ),
-        # TODO
-        'specials' => array(),
+        'contribution_tags' => $tag_names,
     );
 
     $success = thank_you_send_mail( $params );
 
     if ( $success ) {
 		watchdog('thank_you', "Thank you mail sent successfully for contribution id: $contribution_id to " . $params['recipient_address'], array(), WATCHDOG_INFO);
-        if ( !$test ) {
-            thank_you_update_ty_date( $contribution );
-		}
+        thank_you_update_ty_date( $contribution );
     } else {
 		watchdog('thank_you', "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'], array(), WATCHDOG_ERROR);
-        if ( !$test ) {
-            wmf_civicrm_set_no_thank_you( $contribution_id, 'failed' );
-        }
+        wmf_civicrm_set_no_thank_you( $contribution_id, 'failed' );
     }
 }
 
@@ -379,7 +386,7 @@ function thank_you_send_mail( $params ) {
     if ( $missing ) {
         $as_list = implode( ', ', $missing );
         watchdog( 'thank_you', "Missing stuff from the TY params: {$as_list} " . check_plain(print_r( $params, true )), array(), WATCHDOG_ERROR );
-        wmf_common_failmail( 'thank_you', "FAILED TO RENDER HTML EMAIL in " . __FUNCTION__, $params );
+        wmf_common_failmail( 'thank_you', "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__, $params );
         return false;
     }
 
