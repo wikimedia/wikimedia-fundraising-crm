@@ -44,14 +44,16 @@ function recurring_globalcollect_get_payment_by_id($id)
  * LIMIT 1
  * 
  * @param int $limit Number of records to pull. Default is 1.
- * @param string $date Uses strtotime() to parse the date
+ * @param string $date End of period to look for failure retries. Start of
+ *      period is this minus recurring_globalcollect_run_missed_days. Uses
+ *      strtotime() to parse the date.
  *
  * @todo The field `civicrm_payment_processor`.`payment_processor_type` should be set.
  * @todo Implement $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
  * 
  * @return false|object
  */
-function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'now') {
+function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'now', $past_days = 0) {
 
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
@@ -61,8 +63,6 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
   date_default_timezone_set( "UTC" );
 
   $date = date('Y-m-d', strtotime($date));
-
-  $past_days = variable_get('recurring_globalcollect_run_missed_days', 0);
   $start_date = new DateTime($date);
   $start_date = $start_date->sub(date_interval_create_from_date_string("$past_days days"));
   $start_date = $start_date->format('Y-m-d');

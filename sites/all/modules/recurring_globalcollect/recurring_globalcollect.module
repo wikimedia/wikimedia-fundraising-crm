@@ -189,10 +189,12 @@ function recurring_globalcollect_batch_process($options = array()) {
   } else {
     $batch = intval( variable_get('recurring_globalcollect_batch', 0) );
   }
+
+  $run_missed_days = (integer) variable_get('recurring_globalcollect_run_missed_days', 0);
   
   watchdog('recurring_globalcollect', 'Attempting to process up to ' . $batch . ' recurring contribution(s).');
 
-  $contribution_batch = wmf_civicrm_get_next_sched_contribution($batch);
+  $contribution_batch = wmf_civicrm_get_next_sched_contribution($batch, 'now', $run_missed_days);
   watchdog(
     'recurring_globalcollect',
     'Query returned @count messages to process',
@@ -214,7 +216,7 @@ function recurring_globalcollect_batch_process($options = array()) {
 
   // Process retries
   watchdog('recurring_globalcollect', 'Attempting to retry up to ' . $batch . ' previously failed contribution(s).');
-  $retry_batch = recurring_globalcollect_get_failure_retry_batch($batch);
+  $retry_batch = recurring_globalcollect_get_failure_retry_batch($batch, 'now', $run_missed_days);
   watchdog(
     'recurring_globalcollect',
     'Query returned @count messages to process',
@@ -394,6 +396,8 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     $msg['date'] = time();
     $msg['original_currency'] = $contribution_recur['currency'];
     $msg['original_gross'] = $msg['gross'];
+
+    $msg['contribution_tags'] = isset( $options['contribution_tags'] ) ? $options['contribution_tags'] : array();
 
     $msg = wmf_civicrm_normalize_contribution_amounts($msg);
     /*

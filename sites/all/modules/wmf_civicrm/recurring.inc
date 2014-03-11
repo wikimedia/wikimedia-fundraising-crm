@@ -176,7 +176,7 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
  * 
  * @return array of contribution_recur objects
  */
-function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now')
+function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now', $run_missed_days = 0)
 {
     $date = date('Y-m-d', strtotime($date));
     
@@ -185,12 +185,10 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now')
     
     $start_day_stamp = strtotime($start_day);
     $end_day_stamp = strtotime($end_day);
-
-    $recurring_globalcollect_run_missed_days = (integer) variable_get('recurring_globalcollect_run_missed_days', 0);
     
-    if ($recurring_globalcollect_run_missed_days > 0) {
+    if ($run_missed_days > 0) {
 
-        $decrement_date = '-' . $recurring_globalcollect_run_missed_days . ' day';
+        $decrement_date = '-' . $run_missed_days . ' day';
         
         $start_day = date('Y-m-d 00:00:00', strtotime($decrement_date, $start_day_stamp));
     }
