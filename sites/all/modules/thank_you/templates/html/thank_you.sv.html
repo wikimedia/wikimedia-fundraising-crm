@@ -1,15 +1,27 @@
+{% if first_name and last_name %}
 <p>Kära {{ first_name }},</p>
+
+{% else %}
+<p>Kära donator,</p>
+{% endif %}
 
 <p>Du är så fantastisk. TACK för att du stöder Wikimedia Foundation, den ideella stiftelsen som
 driver Wikipedia och dess systerprojekt.</p>
 
+{% if contribution_tags.RecurringDamaged %}<p> Vi har upplevt ett mindre fel i vårt datorsystem som
+har kommit att påverka månadsvis återkommande donationer. Detta orsakade en tillfällig paus i
+din prenumeration, men vi har nu löst problemet och din prenumeration för att stödja Wikipedia
+är åter aktiv. Du kommer inte att debiteras för de månader som uteblev. Vi tackar dig hjärtligt
+för ditt tålamod och ditt stöd, om du har några frågor är du välkommen att kontakta oss via
+donate@wikimedia.org </p>{% endif %}
+
 <p>Din donation täcker inte bara dina egna kostnader för att använda Wikipedia, utan även
-kostnader för andra Wikipedialäsare.</p>
+kostnader för andra Wikipediaanvändare.</p>
 
 <p>Liksom den pensionerade jordbrukaren i delstaten New Yorks glesbygd som använder Wikipedia för
 att studera vad vetenskapen har att säga om slam, och studenten i Kuala Lumpur som studerar
 organisk kemi. Eller den brittiske mekanikern som efter att ha skadat ryggen i en olycka använde
-Wikipedia för att omskolera sig till systemutvecklare. Den finske tjänstemannen som upprättade en
+Wikipedia för att omskola sig till webbutvecklare. Den finske tjänstemannen som upprättade en
 offlineversion av Wikipedia för en liten skola i Ghana. Och pappan i Mexico City som besöker
 muséer med sina små döttrar om helgerna, och använder Wikipedia för att hjälpa dem förstå
 vad de tittar på under besöken.</p>
@@ -66,11 +78,11 @@ strategiplan för de kommande fem åren</a>. Nu kan du även köpa Wikipedia-pry
 <p>För din bokföring: Din gåva, nummer {{ transaction_id }}, den {{ receive_date }} var {{
 (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-<p>{% if recurring %} Du har valt att skänka pengar regelbundet. Månatliga summor kommer att
+{% if recurring %}<p> Du har valt att skänka pengar regelbundet. Månatliga summor kommer att
 skänkas till Wikimedia Foundation tills det att du meddelar oss att du vill sluta. Om du vill sluta
 skänka pengar regelbundet finns det <a
 href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
-locale }}">enkla instruktioner här</a>. {% endif %}</p>
+locale }}">enkla instruktioner här</a>. </p>{% endif %}
 
 <p>Detta brev är ett kvitto för din gåva. Inga varor eller tjänster tillhandahölls, helt eller
 delvis, i gengäld för denna gåva. Wikimedia Foundation, Inc. är en ideell organisation som är

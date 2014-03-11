@@ -65,7 +65,7 @@ function thank_you_send_test_form() {
 	$form['name'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Donor\'s name'),
-		'#required' => TRUE,
+		'#required' => FALSE,
 		'#default_value' => 'Testy McTestersen',
 	);
 
@@ -171,7 +171,13 @@ function thank_you_send_test_form_submit( $form_id, $form_values ) {
 	$params = $form_values['values'];
 
     # Massage the params a bit
-    list( $params['first_name'], $params['last_name'] ) = preg_split( '/ +/', $params['name'], 2, PREG_SPLIT_NO_EMPTY );
+    $names = preg_split( '/ +/', $params['name'], 2, PREG_SPLIT_NO_EMPTY );
+    if (count($names) == 2) {
+        list( $params['first_name'], $params['last_name'] ) = $names;
+    } else {
+        $params['first_name'] = $params['last_name'] = '';
+    }
+
     $params['unsubscribe_link'] = build_unsub_link( -1, $params['recipient_address'], $params['locale'] );
 
     // Turn a comma space separated list into an array

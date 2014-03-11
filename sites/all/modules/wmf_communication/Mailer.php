@@ -1,7 +1,12 @@
 <?php namespace wmf_communication;
 
+/**
+ * Must be implemented by every mailing engine
+ */
 interface IMailer {
     /**
+     * Enqueue an email into the external mailing system
+     *
      * @param array $email  All keys are required:
      *    from_address
      *    from_name
@@ -11,13 +16,23 @@ interface IMailer {
      *    subject
      *    to_address
      *    to_name
+     *
+     * @return boolean True if the mailing system accepted your message for delivery
      */
     function send( $email );
 }
 
+/**
+ * Weird factory to get the default concrete Mailer.
+ */
 class Mailer {
     static public $defaultSystem = 'phpmailer';
 
+    /**
+     * Get the default Mailer
+     *
+     * @return IMailer instantiated default Mailer
+     */
     static public function getDefault() {
         switch ( self::$defaultSystem ) {
         case 'phpmailer':
@@ -30,15 +45,26 @@ class Mailer {
     }
 }
 
+/**
+ * Use the PHPMailer engine
+ */
 class MailerPHPMailer implements IMailer {
     function __construct() {
         $path = implode(DIRECTORY_SEPARATOR, array(variable_get('wmf_common_phpmailer_location', ''), 'class.phpmailer.php'));
-        watchdog( 'wmf_communication', t( "Loading PHPMailer class from :path", array( ':path' => $path ) ), WATCHDOG_INFO );
+        watchdog( 'wmf_communication',
+            "Loading PHPMailer class from :path",
+            array( ':path' => $path ),
+            WATCHDOG_INFO
+        );
         require_once( $path );
     }
 
     function send( $email, $headers = array() ) {
-        watchdog( 'wmf_communication', t( "Sending an email to :to_address, using PHPMailer", array( ':to_address' => $email['to_address'] ) ), WATCHDOG_DEBUG );
+        watchdog( 'wmf_communication',
+            "Sending an email to :to_address, using PHPMailer",
+            array( ':to_address' => $email['to_address'] ),
+            WATCHDOG_DEBUG
+        );
 
         $mailer = new \PHPMailer( true );
 
@@ -65,6 +91,9 @@ class MailerPHPMailer implements IMailer {
     }
 }
 
+/**
+ * Use the Drupal mailing system
+ */
 class MailerDrupal implements IMailer {
     function send( $email ) {
         $from = "{$email['from_name']} <{$email['from_address']}>";

@@ -335,6 +335,29 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     $custom_vars += $custom_field_defaults;
     wmf_civicrm_set_custom_field_values( $contribution_result[ 'id' ], $custom_vars );
 
+    // Create any required tags on the contribution
+    if ( !empty( $msg['contribution_tags'] ) ) {
+        $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
+        $stacked_ex = array();
+        foreach ( array_unique( $msg['contribution_tags'] ) as $tag ) {
+            try {
+                $tag_result = civicrm_api3( "EntityTag", "Create", array(
+                    'entity_table' => 'civicrm_contribution',
+                    'entity_id' => $contribution_result['id'],
+                    'tag_id' => $supported_tags[$tag]
+                ));
+            } catch ( CiviCRM_API3_Exception $ex ) {
+                $stacked_ex[] = "Failed to add tag {$tag} to contact ID {$contribution_result['id']}. Error: " . $ex->getMessage();
+            }
+        }
+        if ( !empty( $stacked_ex ) ) {
+            throw new WmfException(
+                "IMPORT_CONTACT",
+                implode( "\n", $stacked_ex )
+            );
+        }
+    }
+
     return $contribution_result[ 'values' ][ $contribution_result[ 'id' ] ];
 }
 
@@ -1106,6 +1129,9 @@ function wmf_civicrm_normalize_msg( $msg ) {
             break;
         case 'Mossman':
             $msg['direct_mail_appeal'] = "Sheila Mossman";
+            break;
+        case 'Mediander':
+            $msg['direct_mail_appeal'] = "Mediander";
             break;
         default:
                 // pass

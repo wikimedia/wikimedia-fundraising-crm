@@ -1,23 +1,35 @@
+{% if first_name and last_name %}
 <p>Halo {{ first_name }},</p>
+
+{% else %}
+<p>Kepada Penyumbang yang terhormat,</p>
+{% endif %}
 
 <p>Anda luar biasa. TERIMA KASIH telah mendukung Wikimedia Foundation, yayasan nirlaba yang
 menjalankan Wikipedia dan proyek lainnya.</p>
 
+{% if contribution_tags.RecurringDamaged %}<p> Kami baru-baru ini telah membereskan sebuah
+permasalahan teknis kecil yang menghentikan sementara sumbangan berulang bulanan. Kami telah
+menjalankan kembali donasi berulang anda dan akan berjalan secara normal kedepannya. Kami tidak akan
+membebankan kepada anda tagihan pada bulan-bulan yang terlewat. Terima kasih atas kesabaran anda dan
+dukungan anda, silakan kirim surat elektronik ke donate@wikipedia.org jika anda memiliki pertanyaan
+apapun. </p>{% endif %}
+
 <p>Sumbangan Anda tidak hanya menutupi biaya penggunaan Wikipedia untuk Anda, namun juga biaya
 pembaca Wikipedia lainnya.</p>
 
-<p>Seperti seorang petani di New York yang telah pensiun yang menggunakan Wikipedia untuk
-mempelajari ilmu tentang lumpur, dan seorang pelajar di Kuala Lumpur yang meneliti tentang kimia
-organik. Montir Inggris yang setelah tulang belakangnya patah dalam sebuah kecelakaan menggunakan
-Wikipedia untuk menjadi seorang pengembang web. Pewagai negeri sipil di Finlandia yang mengadakan
+<p>Seperti seorang pensiunan petani di New York yang menggunakan Wikipedia untuk mempelajari ilmu
+tentang lumpur, dan seorang pelajar di Kuala Lumpur yang meneliti tentang kimia organik. Montir
+Inggris yang setelah tulang belakangnya patah dalam sebuah kecelakaan, menggunakan Wikipedia untuk
+melatih dirinya menjadi seorang pengembang web. Pegawai negeri sipil di Finlandia yang mengadakan
 versi luring Wikipedia untuk sebuah sekolah kecil di Ghana. Dan seorang ayah di Meksiko yang membawa
 anak-anaknya ke museum pada akhir pekan, dan menggunakan Wikipedia untuk membantu mereka mengerti
 semua yang mereka lihat di sana.</p>
 
 <p>Tugas Wikipedia adalah membawa seluruh pengetahuan manusia kepada semua orang di seluruh dunia
-dalam bahasanya masing-masing. Misi ini cukup berani, namun dengan 30 juta artikel dan 287 bahasa,
-saya akan berterima kasih kepada Anda dan orang-orang seperti Anda, kami sedang mewujudkan hal
-tersebut.</p>
+dalam bahasa mereka masing-masing. Misi ini cukup berani, namun dengan 30 juta artikel dan 287
+bahasa, saya akan berterima kasih kepada Anda dan orang-orang seperti Anda, kami sedang mewujudkan
+hal tersebut.</p>
 
 <p>Atas nama Wikimedia Foundation, dan setengah miliar pembaca Wikipedia lainnya di seluruh dunia:
 terima kasih. Kenyataan bahwa Anda telah membantu membayar biaya operasional Wikipedia berarti
@@ -25,11 +37,12 @@ Wikipedia dapat tetap bebas iklan dan tetap netral, terpusat hanya untuk membant
 sebagaimana mestinya.</p>
 
 <p>Anda dapat memerhatikan bahwa pada pertama kalinya tahun ini kami mengubah penggalangan dana agar
-kebanyakan orang hanya akan melihat panji beberapa kali alih-alih berminggu-minggu. Ini hal yang
-disengaja: kami tidak ingin orang-orang terganggu dengan permintaan yang terlalu banyak. Tetapi ini
-juga berarti bahwa makin sedikit orang yang akan mengetahui bahwa kami adalah organisasi nirlaba,
-dan bahwa kami ingin bantuan mereka. Jadi jika Anda kehendaki, saya sangat menghargai jika Anda
-membantu menyebarkan informasi ini dengan meneruskan surel ini ke beberapa teman-teman Anda.</p>
+kebanyakan orang hanya akan melihat Iklan Penggalangan Dana ini beberapa kali alih-alih
+berminggu-minggu. Ini hal yang disengaja: kami tidak ingin orang-orang terganggu dengan permintaan
+yang terlalu banyak. Tetapi ini juga berarti bahwa makin sedikit orang yang akan mengetahui bahwa
+kami adalah organisasi nirlaba, dan bahwa kami ingin bantuan mereka. Jadi jika Anda kehendaki, saya
+sangat menghargai jika Anda membantu menyebarkan informasi ini dengan meneruskan surel ini ke
+beberapa teman-teman Anda.</p>
 
 <p>Dan saya ingin Anda mencoba bergabung bersama kami untuk membantu menulis Wikipedia. Seluruh
 Wikipedia ditulis oleh sukarelawan - puluhan ribu orang-orang biasa di seluruh dunia, persis seperti
@@ -49,9 +62,9 @@ Direktur Eksekutif,<br/>
 Wikimedia Foundation<br/>
 <a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
-<p>Banyak pengusaha akan mencocokan kontribusi pekerja yang menggandakan sumbangan Anda: mohon
-periksa dengan perusahaan Anda jika mereka memiliki program pemberian perusahaan yang sesuai. Anda
-dapat mengikuti kami di <a href="https://twitter.com/Wikipedia">Twitter</a>, <a
+<p>Banyak pengusaha akan menggandakan sumbangan Anda (contribution matching). Mohon periksa dengan
+perusahaan Anda jika mereka memiliki program tersebut. Anda dapat mengikuti kami di <a
+href="https://twitter.com/Wikipedia">Twitter</a>, <a
 href="https://identi.ca/wikipedia">identi.ca</a>, atau <a
 href="https://plus.google.com/+Wikipedia/posts">Google+</a>, menyukai kami di <a
 href="https://www.facebook.com/wikipedia">Facebook</a>, dan <a
@@ -64,14 +77,14 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 strategis Wikimedia Foundation 5 tahun ke depan</a>. Sekarang, Anda juga bisa membeli barang-barang
 souvenir Wikimedia di <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Untuk sekadar catatan: Sumbangan Anda, bernomor {{ transaction_id }}, pada
-{{ receive_date }} berjumlah
-{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Untuk sekadar catatan: Sumbangan Anda, bernomor {{ transaction_id }}, pada {{ receive_date }}
+berjumlah {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-<p>{% if recurring %} Sumbangan ini merupakan bagian dari langganan berkala. Pembayaran bulanan akan
+{% if recurring %}<p> Sumbangan ini merupakan bagian dari langganan berkala. Pembayaran bulanan akan
 didebit oleh Wikimedia Foundation sampai Anda memberi tahu kami untuk menghentikannya. Jika Anda
 ingin membatalkan pembayaran, silakan lihat <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">petunjuk pembatalan kami</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">petunjuk pembatalan kami</a>. </p>{% endif %}
 
 <p>Surat ini bisa dijadikan catatan donasi Anda. Tidak ada barang dan jasa yang diikutkan secara
 keseluruhan atau sebagian untuk kontribusi ini. Wikimedia Foundation, Inc. adalah badan amal nirlaba
@@ -79,12 +92,12 @@ dengan status pengecualian pajak 501(c)(3) di Amerika Serikat. Alamat kami adala
 Montgomery, 3rd Floor, San Francisco, CA, 94105. Nomor pengecualian pajak A.S.: 20-0049703</p>
 
 <div style="border: 1px solid black; padding:0 10px 5px 10px;">
-  <p>Pilihan keluar:</p>
+  <p>Opsi berhenti berlangganan:</p>
   <p>Kami ingin Anda selaku penyumbang terus terinformasikan mengenai aktivitas komunitas kami dan
 penggalangan dana kami. Jika Anda ingin tidak menerima surel seperti itu dari kami, silakan klik di
-bawah dan kami akan mencoret Anda dari daftar.</p>
+bawah dan kami akan mengeluarkan nama Anda dari daftar.</p>
   <div style="margin: 0 25px">
-    <p><a href="{{unsubscribe_link|raw}}">Berhenti berlangganan</a></p>
+    <p><a href="{{ unsubscribe_link | raw }}">Berhenti berlangganan</a></p>
   </div>
 </div>
 

@@ -3,8 +3,11 @@
 use \Exception;
 
 /**
- * Record linking a job and CiviCRM contact, contains all information needed to
- * generate and send a letter, and current delivery status.
+ * Link metadata between a mailing job and a CiviCRM contact
+ *
+ * This object contains all the information needed to generate and send a
+ * letter, including template parameters. It can be queried for the current
+ * delivery status.
  */
 class Recipient {
     protected $contactId;
@@ -20,12 +23,18 @@ class Recipient {
      * Get recipients for this job, in the "queued" status, up to $batchSize.
      *
      * Call this repeatedly until empty set is returned.
+     *
+     * @param integer $jobId
+     * @param integer $batchSize maximum number to return
+     * @param integer $queuedState fetch recipients in the given state
+     *
+     * @return array of Recipient
      */
-    static function getQueuedBatch( $jobId, $batchSize = 100 ) {
+    static function getQueuedBatch( $jobId, $batchSize = 100, $queuedState = 'queued' ) {
         $result = db_select( 'wmf_communication_recipient' )
             ->fields( 'wmf_communication_recipient' )
             ->condition( 'job_id', $jobId )
-            ->condition( 'status', 'queued' )
+            ->condition( 'status', $queuedState )
             ->orderBy( 'queued_id' )
             ->range( 0, $batchSize )
             ->execute();
@@ -37,7 +46,23 @@ class Recipient {
         return $recipients;
     }
 
+    /**
+     * Add a CiviCRM contact to a mailing job
+     *
+     * @param integer $jobId
+     * @param integer $contactId CiviCRM contact id
+     * @param array $vars serializable template parameters
+     */
     static function create( $jobId, $contactId, $vars ) {
+        watchdog( 'wmf_communication',
+            "Adding contact :contact_id to job :job_id, with parameters :vars",
+            array(
+                'job_id' => $jobId,
+                'contact_id' => $contactId,
+                'vars' => json_encode( $vars, JSON_PRETTY_PRINT ),
+            ),
+            WATCHDOG_INFO
+        );
         db_insert( 'wmf_communication_recipient' )
             ->fields( array(
                 'job_id' => $jobId,
@@ -49,7 +74,11 @@ class Recipient {
     }
 
     /**
+     * Parse database record into a Recipient object
+     *
      * @param array $dbRow associative form of the db record for a single recipient
+     *
+     * @return Recipient
      */
     static protected function loadFromRow( $dbRow ) {
         $recipient = new Recipient();
@@ -121,6 +150,10 @@ class Recipient {
 
     /**
      * Usually, you will want to use a specific accessor like setFailed, above.
+     *
+     * If your job has custom recipient workflow states, set them using this method.
+     *
+     * @param string $status
      */
     function setStatus( $status ) {
         db_update( 'wmf_communication_recipient' )
