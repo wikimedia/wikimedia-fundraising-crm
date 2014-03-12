@@ -273,11 +273,8 @@ class RenderTranslatedPage {
 		// into UTF-8 (so that loadXML() doesn't throw a bitch fit and fail to load)
 		$dom = new \DOMDocument( '1.0', 'UTF-8' );
 		$dom->preserveWhiteSpace = false;
-		$dom->loadXML(
-			'<chunk>' .
-			mb_convert_encoding( html_entity_decode( $j['parse']['text']['*'] ), 'UTF-8' ) .
-			'</chunk>'
-		);
+		$dom->loadXML( '<chunk>' . $j['parse']['text']['*'] . '</chunk>' );
+		$dom->encoding = 'UTF-8';
 		$xpath = new \DOMXPath( $dom );
 
 		// Remove comments
