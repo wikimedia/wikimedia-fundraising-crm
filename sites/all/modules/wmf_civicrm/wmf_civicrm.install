@@ -20,6 +20,8 @@ function wmf_civicrm_install()
     wmf_civicrm_update_6013();
     wmf_civicrm_update_7014();
     wmf_civicrm_update_7015();
+    wmf_civicrm_update_7016();
+    wmf_civicrm_update_7017();
 }
 
 /**
@@ -750,7 +752,7 @@ function wmf_civicrm_update_7016()
 {
     $ret = array();
     $api = wmf_civicrm_bootstrap_civi();
-    $success = $api->CustomTag->create(array(
+    $success = $api->Tag->create(array(
         'name' => 'RecurringRestarted',
         'description' => 'For the first contribution of a restarted recurring subscription.',
         'is_selectable' => false,
@@ -758,19 +760,18 @@ function wmf_civicrm_update_7016()
         'used_for' => 'civicrm_contribution'
     ));
     if (!$success) {
-        $ret[] = $api->errorMsg();
+        throw new Exception( $api->errorMsg() );
     }
-    return $ret;
 }
 
 /**
- * Create recurring restarted contribution tag
+ * Create truncated address tag
  */
 function wmf_civicrm_update_7017()
 {
     $ret = array();
     $api = wmf_civicrm_bootstrap_civi();
-    $success = $api->CustomTag->create(array(
+    $success = $api->Tag->create(array(
             'name' => 'AddressTruncated',
             'description' => 'Tag applied to a contact when the address was truncated on import.',
             'is_selectable' => true,
@@ -778,7 +779,6 @@ function wmf_civicrm_update_7017()
             'used_for' => 'civicrm_contact'
         ));
     if (!$success) {
-        $ret[] = $api->errorMsg();
+        throw new Exception( $api->errorMsg() );
     }
-    return $ret;
 }
