@@ -1,81 +1,99 @@
-<p>Kære {{ first_name }}</p>
+{% if first_name and last_name %}
+<p>Kære {{ first_name }},</p>
 
-<p>Tak for at du har givet penge til Wikipediafonden. Du er storsindet!</p>
+{% else %}
+<p>Kære bidragyder,</p>
+{% endif %}
 
-<p>Det er let at se bort fra vore indsamlingsbannere, og jeg er virkelig glad for, at du
-ikke gjorde det. Det er det, der skal til, for at Wikipedia kan betale sine regninger ---
-at folk som du giver os penge, sådan at vi kan fastholde netstedet som frit tilgængeligt
-for enhver på kloden.</p>
+<p>Du er bare fantastisk. TAK fordi du støtter Wikimedia Foundation, nonprofitorganisationen, der
+driver Wikipedia og Wikipedias søsterprojekter.</p>
 
-<p>Folk fortæller mig, at de giver penge til Wikipedia, fordi de anser den for at være
-nyttig, og de har tillid til den, for selv om den ikke er perfekt, så ved de, at den er
-skrevet for dem. Wikipedia skal ikke fremme nogens PR-mål eller støtte en bestemt
-ideologi, og ej heller overtale dig til at tro på noget, som ikke er sandt. Vi sigter mod
-at sige sandheden, og det kan vi gøre på grund af dig. Den kendsgerning, at du
-finansierer netstedet, gør os uafhængige og i stand til at levere det, som du behøver
-og ønsker dig fra Wikipedia. Præcis som det bør være.</p>
+{% if contribution_tags.RecurringDamaged %}<p> Vi har for nylig løst et lille teknisk problem, der
+standsede nogle månedligt tilbagevendende donationer. Vi har genstartet din tilbagevendende
+donation, og den vil forløbe normalt herfra. Vi opkræver ikke for de måneder, der er blevet
+sprunget over. Tak for din tålmodighed og støtte. Skriv endelig til donate@wikimedia.org, hvis du
+har spørgsmål. </p>{% endif %}
 
-<p>Du skal vide: din gave dækker ikke bare dine egne udgifter. Den gennemsnitlige
-bidragyder betaler for sin egen brug af Wikipedia plus omkostningerne for hundredevis af
-andre. Din gave fastholder Wikipedias tilgængelighed for et stræbsomt barn i Bangalore,
-som er i gang med at lære sig computerprogrammering. En midaldrende hjemmegående i Wien,
-som netop har fået diagnosen Parkinsons syge. En romanforfatter, der undersøger
-1850'ernes Storbritannien. En 10-årig i San Salvador, som netop har opdaget Carl
-Sagan.</p>
+<p>Din donation bidrager til at dække omkostningerne for din og andres brug af Wikipedia.</p>
 
-<p>På disse menneskers vegne og for en halv milliard andre læsere af Wikipedia og dens
-søster-netsteder og projekter takker jeg dig for at have sluttet dig til os i vores
-anstrengelse for at stille summen af al menneskelig viden til rådighed for enhver. Din
-gave gør verden til et bedre sted. Tak.</p>
+<p>Så som den pensionerede landmand i den nordlige del af delstaten New York, der bruger Wikipedia
+til videnskabelige studier af slam, og den studerende i Kuala Lumpur, der forsker i organisk kemi.
+Den britiske mekaniker, som efter at have brækket ryggen ved en ulykke, anvendte Wikipedia til at
+uddanne sig til webudvikler. Embedsmanden i Finland, som oprettede en offlineudgave af Wikipedia til
+en lille skole i Ghana. Og den far i Mexico City, der tager sine små piger med på museum i
+weekenden, og bruger Wikipedia til at hjælpe dem med at forstå alt hvad de ser.</p>
 
-<p>De færreste ved, at Wikipedia drives af en ikke-kommerciel organisation. Overvej
-venligst at sende denne e-mail videre til nogle af dine venner for at få dem til også at
-give et bidrag. Og hvis det interesserer dig, skulle du prøve at føje nye informationer
-til Wikipedia. Hvis du ser en slåfejl eller en anden lille fejltagelse, så ret den
-venligst, og hvis du opdager, at noget mangler, så tilføj det.</p>
+<p>Wikipedias arbejde består i at bringe summen af al menneskelig viden ud til alle i hele verden
+på deres eget sprog. Det er en temmelig dristig målsætning, men med 30 millioner artikler og 287
+sprog er det, takket være dig og andre som dig, at vi nærmer os målet.</p>
 
-<p>Jeg påskønner din tillid til os, og jeg lover, at vi bruger dine penge
-ordentligt.</p>
+<p>På vegne af Wikimedia Foundation og en halv milliard andre Wikipedia-læsere i hele verden: Tak.
+Det faktum, at du hjælper med at dække omkostningerne til at drive Wikipedia, betyder at den kan
+forblive reklamefri og upartisk, udelukkende koncentreret om at hjælpe sine læsere. Præcis som
+det bør være.</p>
 
-<p>Tak,<br />
+<p>Du har måske bemærket, at vi i år for første gang har ændret vores indsamling på en sådan
+måde, at de fleste kun ser bannerne nogle få gange og ikke i ugevis. Det er bevidst: vi ønsker
+ikke, at folk bliver irriterede over for mange opfordringer. Men det betyder også, at færre
+personer opdager, at vi er en nonprofitorganisation, og at vi har brug for deres hjælp. Derfor vil
+jeg være taknemmelig, hvis du vil hjælpe med at sprede budskabet ved at sende denne email videre
+til et par af dine venner.</p>
+
+<p>I øvrigt ville det glæde mig, hvis du også prøver at hjælpe os med at skrive Wikipedia.
+Wikipedia skrives udelukkende af frivillige - titusindvis af almindelige mennesker over hele verden,
+præcis som os. Hvis du ser en slåfejl eller en lille fejltagelse i Wikipedia, så vær venlig at
+rette den. Hvis du véd noget, som er værd at tilføje, så vær venlig at tilføje det. Nogle
+finder det yderst tilfredsstillende, måske gælder det også dig.</p>
+
+<p>Endnu en gang, tak. Jeg påskønner din tillid til os, og jeg lover, at vi vil anvende dit bidrag
+på en god og fornuftig måde.</p>
+
+<p>Tusind tak,<br/>
 Sue</p>
 
-<br />
-<p>Sue Gardner<br />
-Administrerende direktør<br />
-Wikimedia fonden</p>
+<p>Sue Gardner Administrerende direktør,<br/>
+Wikimedia Foundation<br/>
+<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
-<p>Til dit regnskab: Din donation den {{ receive_date }} var på
-{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.{% if recurring %}{% include
-'html/recurring/da.html' ignore missing %}{% endif %}</p>
-
-<p>Dette brev er en kvittering for din donation. Ingen varer eller serviceydelser blev
-byttet, helt eller delvist, for dette bidrag. Wikimedia Foundation, Inc. er en almennyttig
-organisation med 501(c)(3) skattefrihedsstatus i USA. Vores adresse er 149 New Montgomery,
-3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703</p>
-
-<p>Du kan følge os på <a href="https://twitter.com/Wikipedia">Twitter</a>, <a
-href="https://identi.ca/wikipedia">identi.ca</a> eller <a
-href="https://plus.google.com/+Wikipedia/posts">Google+</a>, synes om os på <a
-href="https://www.facebook.com/wikipedia">Facebook</a> og <a
-href="https://blog.wikimedia.org">læs vores blog</a>. Her er <a
-href="https://wikimediafoundation.org/wiki/Annual_Report">Wikimediafondens årsopgørelse
-for 2010-11</a>, <a
-href="http://upload.wikimedia.org/wikipedia/foundation/4/4f/2012-13_Wikimedia_Foundation_Plan_FINAL_FOR_WEBSITE.pdf">Wikimediafondens
-budget for 2012-13</a> og <a
-href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">Wikimediafondens
-femårs strategiplan</a>. Nu kan du også købe Wikipedia-ting på <a
+<p>Mange arbejdsgivere matcher ansattes donationer, hvilket fordobler dit bidrag: undersøg om din
+arbejdsplads gør det samme. Du kan følge os på <a
+href="https://twitter.com/Wikipedia">Twitter</a>, <a
+href="https://identi.ca/wikipedia">identical.ca</a> og <a
+href="https://plus.google.com/+Wikipedia/posts">Google+</a>, synes godt om os på <a
+href="https://www.facebook.com/wikipedia">Facebook</a> og <a href="https://blog.wikimedia.org">læse
+vores blog</a>. Her finder man <a
+href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Wikimedia_Foundation/Annual_Report/2012-2013/Front">Wikimedia
+Foundations årsrapport for 2012-13</a>, <a
+href="http://wikimediafoundation.org/wiki/2013-2014_Annual_Plan_Questions_and_Answers">Wikimedia
+Foundations årsplan for 2013-14</a> og <a
+href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">Wikimedia
+Foundations strategiske femårsplan</a>. Man kan nu også købe Wikipedia-merchandise på <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<div style="padding:0 10px 5px 10px; border:1px solid black;">
+<p>Til dit regnskab: Din donation, med nummer {{ transaction_id }}, den {{ receive_date }}, var på
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-<p><i>Mulighed for fravalg</i></p>
+{% if recurring %}<p> Denne donation er en del af en månedlig betaling, som vil blive trukket af
+Wikimedia Foundation indtil du giver os besked om at den skal ophøre. Ønsker du at betalingerne
+skal ophøre, så se vores <a
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">vejledning i hvordan man let standser betalingerne</a>. </p>{% endif %}
 
-<p>Som bidragyder vil vi gerne holde dig informeret om vores fællesskabs aktiviteter og
-pengeindsamlinger. Hvis du foretrækker ikke at modtage den slags e-mails fra os, så klik
-venligst neden for, og vi fjerner dig fra listen.</p>
+<p>Dette brev kan anvendes som kvittering for din donation. Ingen varer eller tjenesteydelser blev
+helt eller delvist leveret i forbindelse med dette bidrag. Wikimedia Foundation, Inc., er en
+nonprofitorganisation med skattefritagelse i USA under 501(c)(3). Vores adresse er 149 New
+Montgomery, 3rd Floor, San Francisco, CA, 94105, USA. Skattefritagelsesnummer i USA: 20-0049703</p>
 
-<a style="padding-left: 25px;" href="{{unsubscribe_link|raw}}">Frameld</a>
-
+<div style="border: 1px solid black; padding:0 10px 5px 10px;">
+  <p>Mulighed for at melde fra:</p>
+  <p>Som bidragyder vil vi gerne holde dig informeret om vores fællesskabs aktiviteter og
+pengeindsamlinger. Hvis du foretrækker ikke at modtage den slags e-mails fra os, så klik venligst
+neden for, og vi fjerner dig fra listen.</p>
+  <div style="margin: 0 25px">
+    <p><a href="{{ unsubscribe_link | raw }}">Frameld</a></p>
+  </div>
 </div>
 
+<p>Hjælp os med at <a
+href="https://meta.wikimedia.org/w/index.php?title=Special:Translate&group=page-Fundraising%2FTranslation%2FThank_you_email_20131202">oversætte</a>
+denne mail.</p>
