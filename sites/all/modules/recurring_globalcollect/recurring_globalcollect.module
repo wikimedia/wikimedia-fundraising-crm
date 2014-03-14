@@ -400,6 +400,14 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     $msg['contribution_tags'] = isset( $options['contribution_tags'] ) ? $options['contribution_tags'] : array();
 
     $msg = wmf_civicrm_normalize_contribution_amounts($msg);
+
+    $msg['source_type'] = "direct";
+    $msg['source_name'] = "Recurring GlobalCollect";
+    $msg['source_host'] = gethostname();
+    $msg['source_version'] = wmf_common_get_my_revision();
+    $msg['source_run_id'] = getmypid();
+    $msg['source_enqueued_time'] = time();
+
     /*
      * This array needs to be rekeyed to be consistent with:
      *
