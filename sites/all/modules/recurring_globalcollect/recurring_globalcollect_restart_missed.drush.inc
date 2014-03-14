@@ -38,7 +38,7 @@ function drush_recurring_globalcollect_restart_missed() {
     );
     $result = recurring_globalcollect_batch_charge(
         $contribution_batch,
-        array( 'contribution_tags' => array( 'RecurringDamaged' ) )
+        array( 'contribution_tags' => array( 'RecurringRestarted' ) )
     );
     $processed = count($result['succeeded']) + count($result['failed']);
     watchdog(
@@ -63,7 +63,7 @@ function drush_recurring_globalcollect_restart_missed() {
     );
     $result = recurring_globalcollect_batch_charge(
         $contribution_batch,
-        array( 'contribution_tags' => array( 'RecurringDamaged' ) )
+        array( 'contribution_tags' => array( 'RecurringRestarted' ) )
     );
 
     $processed = count($result['succeeded']) + count($result['failed']);
