@@ -655,6 +655,13 @@ function recurring_normalize_paypal_msg( $msg ) {
   $msg_normalized[ 'gateway' ] = ( !empty( $msg['gateway'] ) ? $msg['gateway'] : 'paypal' );
 
   $msg_normalized[ 'date' ] = $timestamp;
+
+  // FIXME: so dirty.
+  foreach ( $msg as $key => $value ) {
+    if ( strpos( $key, "source_" ) === 0 ) {
+        $msg_normalized[$key] = $value;
+    }
+  }
   
   return $msg_normalized;
 }

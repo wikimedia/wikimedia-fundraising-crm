@@ -76,6 +76,7 @@ class Queue {
             set_time_limit( 60 );
 
             try {
+                $this->commonMessageNormalize( $msg );
                 $this->transactionalCall( $callback, $msg );
                 $this->ack( $msg );
             } catch ( WmfException $ex ) {
@@ -443,5 +444,21 @@ class Queue {
         # php 5.4 $msg_str = json_encode( $msg_copy, JSON_PRETTY_PRINT );
         $msg_str = print_r( $msg_copy, true );
         return $msg_str;
+    }
+
+    protected function commonMessageNormalize( &$msg ) {
+        // argh.  Collapse useful headers into the message, then do a stupid dance.
+        $pull_headers = array(
+            'source_name',
+            'source_type',
+            'source_host',
+            'source_run_id',
+            'source_version',
+            'source_enqueued_time',
+        );
+        $newBody = json_decode( $msg->body, true )
+            + array_intersect_key( $msg->headers, array_flip( $pull_headers ) );
+
+        $msg->body = json_encode( $newBody );
     }
 }
