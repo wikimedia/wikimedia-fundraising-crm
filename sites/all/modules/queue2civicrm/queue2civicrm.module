@@ -218,17 +218,7 @@ function queue2civicrm_import( Stomp_Frame $msg ) {
     // save the original message for logging
     $msg_orig = $msg;
 
-    // Take valuable message headers and flatten them into the message body
-    $pull_headers = array(
-        'source_name',
-        'source_type',
-        'source_host',
-        'source_run_id',
-        'source_version',
-        'source_enqueued_time',
-    );
-    $msg = json_decode( $msg->body, true )
-        + array_intersect_key( $msg->headers, array_flip( $pull_headers ) );
+    $msg = json_decode( $msg->body, true );
 
     /**
     * prepare data for logging
