@@ -406,7 +406,7 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     $msg['source_host'] = gethostname();
     $msg['source_version'] = wmf_common_get_my_revision();
     $msg['source_run_id'] = getmypid();
-    $msg['source_enqueued_time'] = time();
+    $msg['source_enqueued_time'] = wmf_common_date_unix_to_sql( time() ); // ARGH
 
     /*
      * This array needs to be rekeyed to be consistent with:
