@@ -18,14 +18,20 @@ function globalcollect_audit_drush_command() {
       'Globalcollect Audit tool: Parses .wr1 files from globalcollect and inserts any missing transactions into the regular stomp message queue.',
     'examples' => array( 
 		'drush globalcollect-audit' => '# Parse the wr1 file',
-		'drush gc_wr1 --test' => '# Test the audit scripts, but do not generate stomp messages. No data will be changed.',
-		'drush gc_wr1 --fakedb' => '# Fake the database information. This will cause the script to avoid looking up the actual contribution id.',
-		'drush gc_wr1 --makemissing' => '# Will reconstruct the un-rebuildable transactions found in the wr1, with default values. USE WITH CAUTION.',
-		'drush gc_wr1 --run_all' => '# Batch search for all missing transactions across all wr1 files.',
-		'drush gc_wr1 --charlimit=50' => '# Will cause echoing to line break after 50 characters',
-		'drush gc_wr1 --mismatch_override' => 'Won\'t die on a keygrind mismatch',
-		'drush gc_wr1 --verbose' => 'Verbose output',
 		), 
+    'options' => array(
+        'run_all' => 'Batch search for all missing transactions across all wr1 files.',
+        'test' => 'Test the audit scripts, but do not generate stomp messages. No data will be changed.',
+		'fakedb' => 'Fake the database information. This will cause the script to avoid looking up the actual contribution id.',
+		'makemissing' => 'Will reconstruct the un-rebuildable transactions found in the wr1, with default values. USE WITH CAUTION.',
+		'charlimit' => array(
+            'description' => 'Will cause echoing to line break after the given number of characters',
+            'value' => 'required',
+            'example_value' => '50',
+        ),
+		'mismatch_override' => 'Won\'t die on a keygrind mismatch',
+		'verbose' => 'Verbose output',
+    ),
     'aliases' => array( 'gc_wr1' ),
   );
 
