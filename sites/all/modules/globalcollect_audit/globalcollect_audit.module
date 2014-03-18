@@ -122,9 +122,9 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 			//Remember to regrind the order_id, though. At this point, it's got a negative in front of it. 
 			$matches = wmf_civicrm_get_contributions_from_gateway_id( 'globalcollect', wr1_order_id( $transactions[$order_id] ) );
 			if ( !$matches ) {
-				globalcollect_audit_log_error( "Could not find parent (or any related) transaction for refund/chargeback " . wr1_order_id( $transactions[$order_id] ) . print_r( $transactions[$order_id], true ) , 'MISSING_PARENT' );
-				$error = true;
-			} else {
+				globalcollect_audit_log_error("Could not find parent (or any related) transaction for refund/chargeback " . wr1_order_id($transactions[$order_id]) . print_r($transactions[$order_id], true), 'MISSING_PARENT');
+                $error = true;
+            } else {
 				//Make sure the match we have is a base transaction. 
 				$parent = null;
 				foreach ( $matches as $index => $match ) {
@@ -432,7 +432,7 @@ function globalcollect_audit_parse_all_wr1(){
 	
 	$time = microtime(true) - $actual_start_time;
 	globalcollect_audit_echo("Total Runtime: $time");
-	globalcollect_audit_results_ball( array('Final', 'Runtime'), $time );
+	globalcollect_audit_results_ball(array('Final', 'Runtime'), $time);
 }
 
 /**
@@ -1238,10 +1238,18 @@ function globalcollect_audit_get_log_date_by_file( $file ){
 }
 
 
-function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
-	
-	$cmd = "grep <ORDERID>$order_id</ORDERID> $log";
-	globalcollect_audit_echo( __FUNCTION__ . ' ' . $cmd, true );
+function globalcollect_audit_get_log_data_by_order_id($order_id, $log) {
+
+    //Funny story: This was never order_id. It was always MERCHANTREFERENCE...
+    //@TODO: Rename everything. :(
+    //Even funnier story: It doesn't seem to matter very much. This appears to
+    //be the only place that we take the non-logged XML order_id seriously. The
+    //donor data is rebuilt below in this function, from the original request.
+    if (!is_numeric($order_id)) {
+        throw new Exception("$order_id is not numeric; Tampering may have occurred.");
+    }
+    $cmd = "grep <MERCHANTREFERENCE>$order_id</MERCHANTREFERENCE> $log";
+    globalcollect_audit_echo( __FUNCTION__ . ' ' . $cmd, true );
 
 	//echo $cmd . "\n";
 	$ret = array();
@@ -1253,7 +1261,16 @@ function globalcollect_audit_get_log_data_by_order_id( $order_id, $log ){
 		$xml = null;
 		$full_xml = false;
 		$contribution_id = null;
-		foreach ( $ret as $line ){
+
+
+        //see if we have an old merchantreference (= order id ) or a new one.
+        //the new ones are contribution_tracking_id + . + random 4 digits.
+        if (strpos($order_id, '.') > 1) {
+            $contribution_id = explode('.', $order_id);
+            $contribution_id = $contribution_id[0];
+        }
+
+        foreach ( $ret as $line ){
 			if ( is_null( $xml ) ){
 				//look for the raw xml. 
 				if ( strpos( $line, 'RETURNED FROM CURL' ) ){
