@@ -1,7 +1,19 @@
+{% if first_name and last_name %}
 <p>{{ first_name }} 님께</p>
+
+{% else %}
+<p>기부자 귀하,</p>
+{% endif %}
 
 <p>당신은 최고입니다. 위키백과와 자매 프로젝트를 운영하는 위키미디어
 재단을 후원해주셔서 정말 감사합니다.</p>
+
+{% if "RecurringRestarted" in contribution_tags %}<p> 매월 정기 기부가 중단되는
+기술적인 문제를 최근에 해결하였습니다. 귀하의 정기 기부가
+재개되었으며 앞으로도 계속 정상적으로 처리될 것입니다. 누락된 기간에
+대해 재청구되지는 않을 것입니다. 귀하의 양해와 지원 감사드리며, 의문
+사항이 있으시면 언제든지 donate@wikimedia.org 로 이메일을 보내주십시오. </p>{%
+endif %}
 
 <p>귀하의 후원은 귀하의 위키백과 사용료 뿐만 아니라 다른 위키백과
 독자들의 사용료까지 충당합니다.</p>
@@ -62,14 +74,14 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 재단 5년 전략 계획</a>이 있습니다. 그리고 이제 위키백과 상점에서 물건도
 구매하실수 있습니다 <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>기부번호 {{ transaction_id }}: 당신은 {{ receive_date }} 에
-{{ (currency ~ " " ~ amount) | l10n_currency(locale) }} 의 금액을 기부하셨습니다.</p>
+<p>기부번호 {{ transaction_id }}: 당신은 {{ receive_date }} 에 {{ (currency ~ " " ~ amount)
+| l10n_currency(locale) }} 의 금액을 기부하셨습니다.</p>
 
-<p>{% if recurring %} 이번 기부는 매달 이뤄지는 기부의 일부입니다. 귀하가
+{% if recurring %}<p> 이번 기부는 매달 이뤄지는 기부의 일부입니다. 귀하가
 중단을 요청하기 전까지 매달 위키미디어 재단으로 송금이 될 것입니다.
 기부를 중단하고 싶으시면 <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">간단한 중단 방법</a>을 참조하십시오. {% endif
-%}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">간단한 중단 방법</a>을 참조하십시오. </p>{% endif %}
 
 <p>이 편지는 귀하의 기부의 기록으로 사용될 수 있습니다. 귀하의 기부금은
 어떠한 다른 상업적 목적으로도 사용되지 않았습니다. 위키미디어 재단은
@@ -83,7 +95,7 @@ href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Can
 바랍니다. 그럼에도 불구하고 더 이상 이와 같은 이메일을 받고 싶지
 않으시다면 하단의 링크를 클릭하시면 명단에서 제외됩니다.</p>
   <div style="margin: 0 25px">
-    <p><a href="{{unsubscribe_link|raw}}">수신 거부</a></p>
+    <p><a href="{{ unsubscribe_link | raw }}">수신 거부</a></p>
   </div>
 </div>
 

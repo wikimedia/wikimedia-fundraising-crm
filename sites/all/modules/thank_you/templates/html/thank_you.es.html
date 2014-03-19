@@ -2,17 +2,17 @@
 <p>Estimado(a) {{ first_name }},</p>
 
 {% else %}
-<p>Estimado/a donador:</p>
+<p>Estimado/a donante:</p>
 {% endif %}
 
 <p>Eres genial. GRACIAS por apoyar a la Fundación Wikimedia, la organización sin ánimo de lucro
 que gestiona Wikipedia y sus proyectos hermanos.</p>
 
-{% if contribution_tags.RecurringDamaged %}<p> Hemos resuelto recientemente un pequeño problema
-técnico que hizo que algunas donaciones mensuales recurrentes no se efectuaran. Hemos restablecido
-tu donación periódica y de ahora en adelante se procesará normalmente. No realizaremos cargos
-adicionales por los meses que se saltaron. Agradecemos tu paciencia y apoyo. Escríbenos a
-donate@wikimedia.org si tienes alguna pregunta. </p>{% endif %}
+{% if "RecurringRestarted" in contribution_tags %}<p> Hemos resuelto recientemente un pequeño
+problema técnico que hizo que algunas donaciones mensuales recurrentes no se efectuaran. Hemos
+restablecido tu donación periódica y de ahora en adelante se procesará normalmente. No
+realizaremos cargos adicionales por los meses que se saltaron. Agradecemos tu paciencia y apoyo.
+Escríbenos a donate@wikimedia.org si tienes alguna pregunta. </p>{% endif %}
 
 <p>Tu donación no solo cubre tus propios gastos por usar Wikipedia, sino también los costes de
 otros lectores de Wikipedia.</p>
