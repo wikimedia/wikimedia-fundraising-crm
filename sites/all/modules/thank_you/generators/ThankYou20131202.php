@@ -19,7 +19,7 @@ class ThankYou20131202 extends RenderTranslatedPage {
 			'/\[amount\]/' => '{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}',
 			'/\[contributionId\]/' => '{{ transaction_id }}',
 
-            '/<p>\[ifRecurringProblem\]/' => '{% if contribution_tags.RecurringDamaged %}<p>',
+            '/<p>\[ifRecurringProblem\]/' => '{% if "RecurringRestarted" in contribution_tags %}<p>',
             '/\[endifRecurringProblem\]<\/p>/' => '</p>{% endif %}',
 			'/<p>\[ifRecurring\]/' => '{% if recurring %}<p>',
 			'/\[endifRecurring\]<\/p>/' => '</p>{% endif %}',
