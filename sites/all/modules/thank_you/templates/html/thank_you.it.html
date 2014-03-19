@@ -8,44 +8,44 @@
 <p>Sei davvero fantastico! GRAZIE per aver aiutato la Fondazione Wikimedia, l'organizzazione
 no-profit che gestisce Wikipedia e i progetti ad essa associati</p>
 
-{% if contribution_tags.RecurringDamaged %}<p> Abbiamo recentemente risolto un piccolo inconveniente
-tecnico che ha messo in pausa alcune donazioni ricorrenti mensili. Abbiamo riavviato la tua
+{% if "RecurringRestarted" in contribution_tags %}<p> Abbiamo recentemente risolto un piccolo
+inconveniente tecnico che ha sospeso alcune donazioni ricorrenti mensili. Abbiamo riavviato la tua
 donazione ricorrente e d'ora in poi sarà processata come di consueto. Non ti addebiteremo le
 donazioni per i mesi saltati. Grazie per la tua pazienza e per il tuo supporto, sentiti libero di
 scrivere a donate@wikimedia.org per qualsiasi informazione. </p>{% endif %}
 
-<p>La tua donazione non copre solo i costi del TUO uso di Wikipedia, ma anche i costi degli altri
-lettori.</p>
+<p>La tua donazione non copre solo i costi del TUO utilizzo di Wikipedia, ma anche i costi degli
+altri lettori.</p>
 
 <p>Come l'agricoltore in pensione nello stato di New York, che usa Wikipedia per studiare la scienza
 dei fanghi, o lo studente a Kuala Lumpur che svolge ricerche di chimica organica. Il meccanico
 inglese che, dopo un incidente alla schiena, usa Wikipedia per imparare a diventare uno sviluppatore
 Web. L'impiegato in Finlandia che ha creato una versione offline di Wikipedia per una piccola scuola
-del Ghana. E quel padre che in Città del Messico porta le sue figlie al museo durante il fine
+del Ghana. E quel padre che a Città del Messico porta le sue bambine al museo durante il fine
 settimana e usa Wikipedia per aiutarle a capire ciò che osservano all'interno del museo.</p>
 
 <p>La missione di Wikipedia è portare l'intera conoscenza umana a chiunque, intorno al mondo, nella
 propria lingua. Effettivamente è un obiettivo piuttosto ambizioso, ma con 30 milioni di articoli e
-287 versioni linguistiche, direi che - grazie al tuo aiuto e di persone come te - ci stiamo
+287 versioni linguistiche, direi che - grazie al tuo aiuto e a quello di persone come te - ci stiamo
 avvicinando.</p>
 
 <p>A nome della Fondazione Wikimedia, e del mezzo miliardo di lettori di Wikipedia in tutto il
-mondo: grazie. Il fatto che aiuti a coprire i costi di gestione di Wikipedia ci permette di essere
+mondo: grazie. Il fatto che aiuti a coprire i costi di gestione di Wikipedia ci permette di rimanere
 liberi, indipendenti dalla pubblicità e dai suoi condizionamenti, concentrandoci solo sui lettori.
 Proprio come deve essere.</p>
 
 <p>Forse avrai notato che quest'anno, per la prima volta, abbiamo ridotto i nostri appelli per la
 raccolta fondi: i banner saranno visti solo per poche volte, anziché per settimane. Lo abbiamo
-fatto deliberatamente, perché non vogliamo che chi legga sia infastidito da troppi appelli.
-Dall'altra parte, ciò significa che meno persone ricorderanno che siamo un'organizzazione no-profit
-e che abbiamo bisogno del loro aiuto. Ti sarei grato dunque se potessi fare passaparola, inoltrando
-questa lettera a qualcuno dei tuoi amici.</p>
+fatto deliberatamente, perché non vogliamo che chi legge sia infastidito da troppi appelli. D'altra
+parte, ciò significa che meno persone ricorderanno che siamo un'organizzazione no-profit e che
+abbiamo bisogno del loro aiuto. Ti sarei grata dunque se potessi fare passaparola, inoltrando questa
+e-mail a qualcuno dei tuoi amici.</p>
 
-<p>E sarei contento se tu potessi unirti a noi aiutando a scrivere Wikipedia. E' scritta
-completamente da volontari: decine di migliaia di persone comuni in ogni parte del mondo, proprio
-come me e te. Se vedi un refuso o un piccolo errore su Wikipedia, per favore correggilo. Se conosci
-qualcosa che ti sembra valga la pena di essere aggiunto, aggiungila. Molti lo trovano gratificante,
-e forse lo sarà anche per te.</p>
+<p>E sarei lieta se volessi unirti a noi, aiutando a scrivere Wikipedia. E' scritta completamente da
+volontari: decine di migliaia di persone comuni in ogni parte del mondo, proprio come me e te. Se
+vedi un refuso o un piccolo errore su Wikipedia, per favore correggilo. Se conosci qualcosa che ti
+sembra valga la pena di essere aggiunto, aggiungila. Molti lo trovano gratificante, e forse lo sarà
+anche per te.</p>
 
 <p>Grazie ancora. Apprezziamo molto la tua fiducia in noi, e ti assicuro che useremo bene e con
 grande attenzione il tuo denaro.</p>
@@ -71,8 +71,8 @@ bilancio annuale per il 2012-13 della Fondazione Wikimedia</a>, <a
 href="http://wikimediafoundation.org/wiki/2013-2014_Annual_Plan_Questions_and_Answers">il piano
 annuale della Fondazione Wikimedia per il biennio 2013-2014</a> ed <a
 href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">il piano
-strategico quinquennale della Fondazione Wikimedia</a>. È anche possibile acquistare oggettistica
-Wikipedia su <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
+strategico quinquennale della Fondazione Wikimedia</a>. È anche possibile acquistare il merchandse
+di Wikipedia su <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
 <p>Per la tua documentazione: donazione, numero {{ transaction_id }}, in data {{ receive_date }}, è
 stata di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
@@ -90,15 +90,15 @@ indirizzo è New Montgomery,149 3° piano, San Francisco, CA, 94105. Numero di e
 (Stati Uniti): 20-0049703</p>
 
 <div style="border: 1px solid black; padding:0 10px 5px 10px;">
-  <p>Opzioni per la disiscrizione</p>
-  <p>In quanto donatore, saremmo felici di aggiornarti sulle attività della comunità e le raccolte
+  <p>Opzioni per la cancellazione</p>
+  <p>In quanto donatore, saremmo felici di aggiornarti sulle attività della community e le raccolte
 fondi. Se tuttavia preferisci non ricevere questo genere di email, clicca sul link sottostante e il
-tuo nominativo sarà subito cancellato dalla lista.</p>
+tuo nominativo sarà cancellato dalla lista.</p>
   <div style="margin: 0 25px">
     <p><a href="{{ unsubscribe_link | raw }}">Cancellami</a></p>
   </div>
 </div>
 
-<p>Per favore, aiutaci a <a
-href="https://meta.wikimedia.org/w/index.php?title=Special:Translate&group=page-Fundraising%2FTranslation%2FThank_you_email_20131202">tradurre</a>
-questa mail.</p>
+<hr/>
+
+<p>.</p>

@@ -6,14 +6,14 @@
 {% endif %}
 
 <p>Du bist fantastisch. VIELEN DANK für die Unterstützung der Wikimedia Foundation, welche
-gemeinnützig die Wikipedia und ihre Schwesterprojekte unterhält.</p>
+gemeinnützig Wikipedia und ihre Schwesterprojekte unterhält.</p>
 
-{% if contribution_tags.RecurringDamaged %}<p> Wir haben vor Kurzem ein kleines technisches problem
-behoben, auf Grund dessen einige monatliche Spendenabbuchungen eingestellt wurden. Wir haben deine
-monatliche Spende wiedereingesetzt und werden wie gewohnt fortfahren. Wir werden die ausgesetzten
-monatlichen Spenden nicht nachträglich einziehen. Danke für deine Geduld und Unterstützung und
-zögere nicht dich per E-Mail mit donate@wikimedia.org in Verbindung zu setzen, wenn du Fragen hast.
-</p>{% endif %}
+{% if "RecurringRestarted" in contribution_tags %}<p> Wir haben vor Kurzem ein kleines technisches
+problem behoben, auf Grund dessen einige monatliche Spendenabbuchungen eingestellt wurden. Wir haben
+deine monatliche Spende wiedereingesetzt und werden wie gewohnt fortfahren. Wir werden die
+ausgesetzten monatlichen Spenden nicht nachträglich einziehen. Danke für deine Geduld und
+Unterstützung und zögere nicht dich per E-Mail mit donate@wikimedia.org in Verbindung zu setzen,
+wenn du Fragen hast. </p>{% endif %}
 
 <p>Deine Spende deckt nicht nur die Kosten, die bei Deiner Nutzung der Wikipedia entstehen, sondern
 auch die Kosten anderer Wikipedia-Nutzer.</p>
