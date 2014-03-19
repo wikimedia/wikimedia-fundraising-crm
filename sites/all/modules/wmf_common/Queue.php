@@ -15,16 +15,30 @@ class Queue {
     }
 
     /**
-     * Pop up to $batch_size messages off $queue and execute $callback on each.
+     * Pop from a queue and execute a callback on each message
      *
-     * @param $callback: must have the signature ($msg) -> bool
+     * @param string $queue name of the queue we will read from
+     * @param integer|null $batch_size maximum number of messages to process, or falseish for unlimited
+     * @param integer|null $time_limit maximum time to spend looping, in seconds, or falseish for unlimited
+     * @param callable $callback: must have the signature function($msg) -> bool
+     *
+     * @return integer number of messages processed
      */
-    function dequeue_loop( $queue, $batch_size, $callback ) {
+    function dequeue_loop( $queue, $batch_size, $time_limit, $callback ) {
+        if ( !$batch_size and !$time_limit ) {
+            throw new Exception( "Bad configuration: need to give a count or time limit" );
+        }
+
         $queue = $this->normalizeQueueName( $queue );
+
         watchdog( 'wmf_common',
-            t( 'Attempting to process at most %size contribution(s) from "%queue" queue.',
-                array( '%size' => $batch_size, '%queue' => $queue )
-            ), NULL, WATCHDOG_INFO
+            'Attempting to process at most %size contribution(s) from "%queue" queue, spending at most %time seconds.',
+            array(
+                '%size' => ( $batch_size ? $batch_size : 'unlimited' ),
+                '%time' => ( $time_limit ? $time_limit : 'unlimited' ),
+                '%queue' => $queue,
+            ),
+            WATCHDOG_INFO
         );
 
         $con = $this->getFreshConnection();
@@ -33,13 +47,26 @@ class Queue {
         // things that either have no delay_till header or a delay_till that is
         // less than now. Because ActiveMQ is stupid, numeric selects auto
         // compare to null.
-        $ctime = time();
+        $start_time = time();
         $con->subscribe( $queue, array( 'ack' => 'client', ) );
+        $con->setReadTimeout( 4 );
 
         $processed = 0;
-        for ( $i = 0; $i < $batch_size; $i++ ) {
-            // we could alternatively set a time limit on the stomp readframe
-            set_time_limit( 10 );
+        while ( true ) {
+            if ( $batch_size
+                and $processed >= $batch_size
+            ) {
+                watchdog( 'wmf_common', t( 'Processed the maximum batch size, exiting dequeue loop.' ), NULL, WATCHDOG_INFO );
+                break;
+            }
+
+            if ( $time_limit
+                and time() >= ( $start_time + $time_limit )
+            ) {
+                watchdog( 'wmf_common', t( 'Time limit expired, exiting dequeue loop.' ), NULL, WATCHDOG_INFO );
+                break;
+            }
+
             $msg = $con->readFrame();
             if ( empty($msg) ) {
                 watchdog( 'wmf_common', t('Ran out of messages.'), NULL, WATCHDOG_INFO );

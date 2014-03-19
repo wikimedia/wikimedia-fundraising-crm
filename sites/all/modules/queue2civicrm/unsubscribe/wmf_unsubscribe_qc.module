@@ -22,15 +22,19 @@ function wmf_unsubscribe_qc_menu() {
 function unsubscribe_qc_settings() {
   $form = array();
 
-  $form[ 'unsubscribe_qc' ][ 'description' ] = array(
-    '#type'        => 'fieldset',
-    '#title'       => t('Unsubscribe queue'),
-    '#description' => t('Contacts in the unsubscribe queue are processed by marking them as opt-out in the CRM.'),
-    '#collapsible' => FALSE,
-    '#collapsed'   => FALSE,
+  $form['unsubscribe_qc_disable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable job'),
+    '#description' => t('If checked, no message processing will be performed.'),
+    '#default_value' => variable_get('unsubscribe_qc_disable', false),
   );
 
-  $form[ 'unsubscribe_qc' ][ 'unsubscribe_queue' ] = array(
+  $form['description'] = array(
+    '#type'        => 'markup',
+    '#description' => t('<p>Contacts in the unsubscribe queue are processed by marking them as opt-out in the CRM.</p>'),
+  );
+
+  $form['unsubscribe_queue'] = array(
     '#type'          => 'textfield',
     '#title'         => t('Subscription path'),
     '#required'      => TRUE,
@@ -38,14 +42,13 @@ function unsubscribe_qc_settings() {
     '#description'   => t('Queue for unsubscribe items'),
   );
 
-  $form[ 'unsubscribe_qc' ][ 'unsubscribe_batch' ] = array(
+  $form['unsubscribe_batch'] = array(
     '#type'          => 'select',
     '#title'         => t('Cron batch size'),
     '#description'   => t('Maximum number of items processed by an unsubscribe job'),
-    '#required'      => TRUE,
     '#default_value' => variable_get('unsubscribe_batch', 0),
     '#options'       => array(
-      0   => '0 (Disable)',
+      ''   => 'Unlimited',
       1   => 1,
       5   => 5,
       10  => 10,
@@ -58,6 +61,14 @@ function unsubscribe_qc_settings() {
       750 => 750,
       1000 => 1000
     ),
+  );
+
+  $form['unsubscribe_batch_time'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Job time limit (in seconds)'),
+    '#description' => t('Maximum elapsed duration of an unsubscribe job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  Either a time limit or batch size limit is required.'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('unsubscribe_batch_time', 90),
   );
 
   return system_settings_form($form);
@@ -76,6 +87,7 @@ function unsubscribe_batch_process() {
   $processed = queue2civicrm_stomp()->dequeue_loop(
     variable_get('unsubscribe_queue', '/queue/unsubscribe-test'),
     variable_get('unsubscribe_batch', 0),
+    variable_get('unsubscribe_batch_time', 0),
     'unsubscribe_process_message'
   );
 
