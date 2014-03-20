@@ -120,8 +120,11 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 			//look for this transaction's positive counterpart before we go 
 			//looking for the refund, becuase we need the whole civi transaction ID.
 			//Remember to regrind the order_id, though. At this point, it's got a negative in front of it. 
-			$matches = wmf_civicrm_get_contributions_from_gateway_id( 'globalcollect', wr1_order_id( $transactions[$order_id] ) );
-			if ( !$matches ) {
+
+//          $matches = wmf_civicrm_get_contributions_from_gateway_id('globalcollect', wr1_order_id($transactions[$order_id]));
+            $matches = globalcollect_audit_get_contributions_from_whatever_this_is(wr1_order_id($transactions[$order_id]));
+
+            if ( !$matches ) {
 				globalcollect_audit_log_error("Could not find parent (or any related) transaction for refund/chargeback " . wr1_order_id($transactions[$order_id]) . print_r($transactions[$order_id], true), 'MISSING_PARENT');
                 $error = true;
             } else {
@@ -158,8 +161,8 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 					$error = true; //well, not really an "error", per se, but we do want to ignore this for now.
 				}
 
-				$matches = wmf_civicrm_get_child_contributions_from_gateway_id( 'globalcollect', wr1_order_id( $transactions[$order_id] ) );
-				if ( !$error && is_array( $matches ) && count( $matches ) ) {
+				$matches = wmf_civicrm_get_child_contributions_from_whatever_this_is(wr1_order_id($transactions[$order_id]));
+                if ( !$error && is_array( $matches ) && count( $matches ) ) {
 					$im_a = wmf_civicrm_get_civi_id( 'contribution_type_id', wr1_get_negative_type( $transactions[$order_id] ) );
 					foreach ( $matches as $match ) {
 						//None of these are themselves parents. 
@@ -176,8 +179,8 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 					}
 				}
 			}
-		} elseif ( wmf_civicrm_get_contributions_from_gateway_id( "globalcollect", $order_id ) ) {
-			$found = true;
+		} elseif (globalcollect_audit_get_contributions_from_whatever_this_is($order_id)) {
+            $found = true;
 		}
 		
 		if ( $found && !$error ){
@@ -286,7 +289,7 @@ function globalcollect_audit_track_fuckup(){
 function globalcollect_audit_parse_all_wr1(){
 	civicrm_initialize();
 
-	//output data about the current user if we're running verbose
+    //output data about the current user if we're running verbose
 	globalcollect_audit_echo( print_r( posix_getpwuid( posix_getuid() ), true ), true );
 
 	$actual_start_time = microtime(true);
@@ -1265,9 +1268,9 @@ function globalcollect_audit_get_log_data_by_order_id($order_id, $log) {
 
         //see if we have an old merchantreference (= order id ) or a new one.
         //the new ones are contribution_tracking_id + . + random 4 digits.
-        if (strpos($order_id, '.') > 1) {
-            $contribution_id = explode('.', $order_id);
-            $contribution_id = $contribution_id[0];
+        $newstyle = gca_wr1_get_ctid_from_old_order_id($order_id);
+        if ($newstyle) {
+            $contribution_id = $newstyle;
         }
 
         foreach ( $ret as $line ){
@@ -1768,7 +1771,8 @@ function wr1_echochar( $record ){
 	}
 }
 
-
+//This is wrong. All of these things actually contain MerchantReference.
+//@TODO: Burn it all down. Maybe do something with the pieces. 
 function wr1_order_id( $record ){
 	$ordered_keys = array(
 		'Order-number',
@@ -1943,3 +1947,74 @@ function globalcollect_audit_send_stomp( $queueId, $body ) {
 
     return $q->enqueue( json_encode( $body ), $headers, $queuePath );
 }
+
+/**
+ * If the old "order id" is actually a newstyle merchantref
+ * ($contribution_tracking . ':' . $rando_whatever)
+ * return the contribution_tracking id portion. Otherwise, return false.
+ * @param string $order_id The thing we used to think was always order_id
+ * @return mixed The contribution_tracking ID | false
+ */
+function gca_wr1_get_ctid_from_old_order_id($order_id) {
+    if (strpos($order_id, '.') > 1) {
+        $contribution_id = explode('.', $order_id);
+        return $contribution_id[0];
+    } else {
+        return false;
+    }
+}
+
+/**
+ * Continuation of the exceedingly funny story in which the field we thought was
+ * order_id, turned out to be Merchant Reference.
+ * Please burn this entire script to the ground at your earliest convenience.
+ * kthnx.
+ * @param type $oid_or_ctid_iono
+ * @return The db matches if they exist, or false
+ */
+function globalcollect_audit_get_contributions_from_whatever_this_is($oid_or_ctid_iono) {
+    $ctid = gca_wr1_get_ctid_from_old_order_id($oid_or_ctid_iono);
+    if ($ctid) {
+        //get the contribution from contribution_tracking
+        $ct_row = globalcollect_audit_get_contribution_tracking_data($ctid);
+        if (!$ct_row) {
+            return false;
+        }
+        if (isset($ct_row['contribution_id'])) {
+            $order_id = $ct_row['contribution_id'];
+        }
+    } else {
+        //oldschool
+        $order_id = $oid_or_ctid_iono;
+    }
+
+    $things = wmf_civicrm_get_contributions_from_gateway_id('globalcollect', $order_id);
+    return $things;
+}
+
+/**
+ * ...I thought the last one was the punch line.
+ * @param type $oid_or_ctid_iono
+ * @return The db matches if they exist, or false
+ */
+function globalcollect_audit_get_child_contributions_from_whatever_this_is($oid_or_ctid_iono) {
+    $ctid = gca_wr1_get_ctid_from_old_order_id($oid_or_ctid_iono);
+    if ($ctid) {
+        //get the contribution from contribution_tracking
+        $ct_row = globalcollect_audit_get_contribution_tracking_data($ctid);
+        if (!$ct_row) {
+            return false;
+        }
+        if (isset($ct_row['contribution_id'])) {
+            //get the contribution, and from there, the order_id...
+            $order_id = $ct_row['contribution_id'];
+        }
+    } else {
+        //oldschool
+        $order_id = $oid_or_ctid_iono;
+    }
+
+    $things = wmf_civicrm_get_child_contributions_from_gateway_id('globalcollect', $order_id);
+    return $things;
+}
+

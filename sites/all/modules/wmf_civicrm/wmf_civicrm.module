@@ -1191,8 +1191,8 @@ function wmf_civicrm_tag_contact_for_review( $contact )
  * @return mixed array of result rows, or false if none present.
  * @throws WmfException
  */
-function wmf_civicrm_get_contributions_from_gateway_id( $gateway, $gateway_txn_id ){
-	$gateway = strtolower( $gateway );
+function wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id) {
+    $gateway = strtolower( $gateway );
 	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc 
 		ON cc.id = cx.entity_id 
 		WHERE gateway = %1 AND gateway_txn_id = %2";
@@ -1204,8 +1204,36 @@ function wmf_civicrm_get_contributions_from_gateway_id( $gateway, $gateway_txn_i
 	return wmf_civicrm_dao_to_list( $dao );
 }
 
-function wmf_civicrm_get_child_contributions_from_gateway_id( $gateway, $gateway_txn_id ){
-	$gateway = strtolower( $gateway );
+/**
+ * Pulls all records in the wmf_contribution_extras table that match the civicrm
+ * contribution id.
+ * @param string $contribution_id
+ * @return mixed array of result rows, or false if none present.
+ * @throws WmfException
+ */
+function wmf_civicrm_get_contributions_from_contribution_id($contribution_id) {
+    $gateway = strtolower($gateway);
+    $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc
+		ON cc.id = cx.entity_id
+		WHERE cc.id = %1";
+
+    $dao = CRM_Core_DAO::executeQuery($query, array(
+                1 => array($contribution_id, 'Integer'),
+            ));
+    return wmf_civicrm_dao_to_list($dao);
+}
+
+/**
+ * Pulls all child contributions in the wmf_contribution_extras table that match
+ * the gateway
+ * and gateway transaction id.
+ * @param string $gateway
+ * @param string $gateway_txn_id
+ * @return mixed array of result rows, or false if none present.
+ * @throws WmfException
+ */
+function wmf_civicrm_get_child_contributions_from_gateway_id($gateway, $gateway_txn_id) {
+    $gateway = strtolower( $gateway );
 	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp 
 		INNER JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id 
 		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id 
@@ -1218,6 +1246,30 @@ function wmf_civicrm_get_child_contributions_from_gateway_id( $gateway, $gateway
 	return wmf_civicrm_dao_to_list( $dao );
 }
 
+
+/**
+ * Pulls all child contributions in the wmf_contribution_extras table that match
+ * the civicrm contribution id.
+ * @param string $contribution_id
+ * @return mixed array of result rows, or false if none present.
+ * @throws WmfException
+ */
+function wmf_civicrm_get_child_contributions_from_contribution_id($contribution_id) {
+//    $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp
+//		INNER JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id
+//		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id
+//		WHERE cc.id = %1";
+
+    $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp
+		INNER JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id
+		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id
+		WHERE cxp.entity_id = %1";
+
+    $dao = CRM_Core_DAO::executeQuery($query, array(
+                1 => array($contribution_id, 'Integer'),
+    ));
+    return wmf_civicrm_dao_to_list($dao);
+}
 
 function wmf_civicrm_boost_performance() {
     civicrm_initialize();
@@ -1646,8 +1698,11 @@ function wmf_civicrm_get_dbs() {
 
 function wmf_civicrm_dao_to_list( $dao ) {
     $result = array();
-    while ( $dao->fetch() ) {
+    while ($dao->fetch()) {
         $result[] = $dao->toArray();
+    }
+    if (empty($result)) {
+        return false;
     }
     return $result;
 }
