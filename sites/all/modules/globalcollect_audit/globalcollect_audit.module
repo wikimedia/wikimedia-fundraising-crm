@@ -161,7 +161,7 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 					$error = true; //well, not really an "error", per se, but we do want to ignore this for now.
 				}
 
-				$matches = wmf_civicrm_get_child_contributions_from_whatever_this_is(wr1_order_id($transactions[$order_id]));
+				$matches = globalcollect_audit_get_child_contributions_from_whatever_this_is(wr1_order_id($transactions[$order_id]));
                 if ( !$error && is_array( $matches ) && count( $matches ) ) {
 					$im_a = wmf_civicrm_get_civi_id( 'contribution_type_id', wr1_get_negative_type( $transactions[$order_id] ) );
 					foreach ( $matches as $match ) {
