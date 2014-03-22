@@ -1974,6 +1974,7 @@ function gca_wr1_get_ctid_from_old_order_id($order_id) {
  */
 function globalcollect_audit_get_contributions_from_whatever_this_is($oid_or_ctid_iono) {
     $ctid = gca_wr1_get_ctid_from_old_order_id($oid_or_ctid_iono);
+    $things = false;
     if ($ctid) {
         //get the contribution from contribution_tracking
         $ct_row = globalcollect_audit_get_contribution_tracking_data($ctid);
@@ -1981,14 +1982,15 @@ function globalcollect_audit_get_contributions_from_whatever_this_is($oid_or_cti
             return false;
         }
         if (isset($ct_row['contribution_id'])) {
-            $order_id = $ct_row['contribution_id'];
+            $cc_id = trim($ct_row['contribution_id']);
+            $things = wmf_civicrm_get_contributions_from_contribution_id($cc_id);
         }
     } else {
         //oldschool
         $order_id = $oid_or_ctid_iono;
+        $things = wmf_civicrm_get_contributions_from_gateway_id('globalcollect', $order_id);
     }
 
-    $things = wmf_civicrm_get_contributions_from_gateway_id('globalcollect', $order_id);
     return $things;
 }
 
@@ -1999,6 +2001,7 @@ function globalcollect_audit_get_contributions_from_whatever_this_is($oid_or_cti
  */
 function globalcollect_audit_get_child_contributions_from_whatever_this_is($oid_or_ctid_iono) {
     $ctid = gca_wr1_get_ctid_from_old_order_id($oid_or_ctid_iono);
+    $things = false;
     if ($ctid) {
         //get the contribution from contribution_tracking
         $ct_row = globalcollect_audit_get_contribution_tracking_data($ctid);
@@ -2007,14 +2010,15 @@ function globalcollect_audit_get_child_contributions_from_whatever_this_is($oid_
         }
         if (isset($ct_row['contribution_id'])) {
             //get the contribution, and from there, the order_id...
-            $order_id = $ct_row['contribution_id'];
+            $cc_id = $ct_row['contribution_id'];
+            $things = wmf_civicrm_get_child_contributions_from_contribution_id($cc_id);
         }
     } else {
         //oldschool
         $order_id = $oid_or_ctid_iono;
+        $things = wmf_civicrm_get_child_contributions_from_gateway_id('globalcollect', $order_id);
     }
 
-    $things = wmf_civicrm_get_child_contributions_from_gateway_id('globalcollect', $order_id);
     return $things;
 }
 
