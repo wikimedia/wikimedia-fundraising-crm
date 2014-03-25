@@ -43,7 +43,7 @@ class Queue {
             $msg = $con->readFrame();
             if ( empty($msg) ) {
                 watchdog( 'wmf_common', t('Ran out of messages.'), NULL, WATCHDOG_INFO );
-                return FALSE;
+                break;
             }
             if ($msg->command === 'RECEIPT') {
                 // TODO it would be smart to keep track of RECEIPT frames as they are an ack-of-ack
