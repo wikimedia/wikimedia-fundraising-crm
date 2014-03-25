@@ -7,3 +7,4 @@ files[] = Queue.php
 files[] = WmfException.php
 files[] = twigext_l10n/CldrData.php
 files[] = twigext_l10n/TwigLocalization.php
+files[] = tests/include/BaseWmfDrupalPhpUnitTestCase.php
