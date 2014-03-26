@@ -32,28 +32,20 @@ function recurring_menu() {
  */
 function recurring_settings() {
   $form = array();
- 
-  $form[ 'recurring' ][ 'description' ] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Recurring payments'),
-    '#description' => t('The recurring queue contains notifications pertaining to subscription donations, such as monthly payments, cancellation,and expiration.'),
-    '#collapsible' => FALSE,
-    '#collapsed' => FALSE,
-  );
 
-  $form['recurring_process'] = array(
-    '#type' => 'radios',
-    '#title' => t('Process recurring transactions during queue consumption'),
-    '#description' => t('If enabled, recurring processing will take place at the end of the regular queue2civicrm job.  If disabled, recurring notifications must be processed by a dedicated job.'),
-    '#required' => TRUE,
-    '#options' => array(
-      FALSE => t('No'),
-      TRUE => t('Yes'),
-    ),
-    '#default_value' => variable_get('recurring_process', FALSE),
+  $form['recurring_disable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable job'),
+    '#description' => t('If checked, no message processing will be performed.'),
+    '#default_value' => variable_get('recurring_disable', false),
+  );
+ 
+  $form['recurring_description'] = array(
+    '#type' => 'markup',
+    '#markup' => t('<p>The recurring queue contains notifications pertaining to subscription donations, such as monthly payments, cancellation,and expiration.</p>'),
   );
   
-  $form[ 'recurring' ][ 'recurring_subscription' ] = array(
+  $form['recurring_subscription'] = array(
     '#type' => 'textfield',
     '#title' => t('Subscription path'),
     '#required' => TRUE,
@@ -61,14 +53,13 @@ function recurring_settings() {
     '#description' => t( 'Queue to watch for recurring notifications' ),
   );
   
-  $form[ 'recurring' ][ 'recurring_batch' ] = array(
+  $form['recurring_batch'] = array(
     '#type' => 'select',
     '#title' => t('Cron batch size'),
     '#description' => t('Maximum number of items processed by the recurring job'),
-    '#required' => TRUE,
     '#default_value' => variable_get('recurring_batch', 0),
     '#options' => array(
-      0 => '0 (Disable)',
+      '' => 'Unlimited',
       1 => 1,
       5 => 5,
       10 => 10,
@@ -82,16 +73,20 @@ function recurring_settings() {
       150 => 150,
     ),
   );
-  
+
+  $form['recurring_batch_time'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Job time limit (in seconds)'),
+    '#description' => t('Maximum elapsed duration of a recurring job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  Either a time limit or batch size limit is required.'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('recurring_batch_time', 90),
+  );
+
   return system_settings_form( $form );
 }
 
-/**
- * Implementation of hook queue2civicrm_batch_process
- * 
- */
-function recurring_queue2civicrm_batch_process() {
-  if (!variable_get( "recurring_process", false )){
+function recurring_batch_process() {
+  if (variable_get( "recurring_disable", false )){
     watchdog('recurring', 'Recurring is disabled. No contributions processed.');
     return 0;
   }
@@ -99,6 +94,7 @@ function recurring_queue2civicrm_batch_process() {
   $recurring_processed = queue2civicrm_stomp()->dequeue_loop(
       variable_get( 'recurring_subscription', '/queue/test_recurring' ),
       variable_get( 'recurring_batch', 0 ),
+      variable_get( 'recurring_batch_time', 0 ),
       'recurring_import'
   );
 

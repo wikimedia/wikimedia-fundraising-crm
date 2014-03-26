@@ -22,15 +22,19 @@ function wmf_refund_qc_menu() {
 function refund_qc_settings() {
   $form = array();
 
-  $form[ 'refund_qc' ][ 'description' ] = array(
-    '#type'        => 'fieldset',
-    '#title'       => t('Refund queue'),
-    '#description' => t('This queue contains refund notifications, usually sent by the gateway to our IPN listener, or a nightly audit manifest.  We honor these notifications by refunding the associated contributions in our CRM.'),
-    '#collapsible' => FALSE,
-    '#collapsed'   => FALSE,
+  $form['description'] = array(
+    '#type'        => 'markup',
+    '#markup' => t('<p>This queue contains refund notifications, usually sent by the gateway to our IPN listener, or a nightly audit manifest.  We honor these notifications by refunding the associated contributions in our CRM.</p>'),
   );
 
-  $form[ 'refund_qc' ][ 'refund_queue' ] = array(
+  $form['refund_disable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable job'),
+    '#description' => t('If checked, no message processing will be performed.'),
+    '#default_value' => variable_get('refund_disable', false),
+  );
+
+  $form['refund_queue'] = array(
     '#type'          => 'textfield',
     '#title'         => t('Subscription path'),
     '#required'      => TRUE,
@@ -38,14 +42,13 @@ function refund_qc_settings() {
     '#description'   => t('Queue for refund notifications'),
   );
 
-  $form[ 'refund_qc' ][ 'refund_batch' ] = array(
+  $form['refund_batch'] = array(
     '#type'          => 'select',
     '#title'         => t('Cron batch size'),
     '#description'   => t('Maximum number of donations processed by a refund job'),
-    '#required'      => TRUE,
     '#default_value' => variable_get('refund_batch', 0),
     '#options'       => array(
-      0   => '0 (Disable)',
+      ''  => 'Unlimited',
       1   => 1,
       5   => 5,
       10  => 10,
@@ -64,6 +67,14 @@ function refund_qc_settings() {
     ),
   );
 
+  $form['refund_batch_time'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Job time limit (in seconds)'),
+    '#description' => t('Maximum elapsed duration of a refund job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  Either a time limit or batch size limit is required.'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('refund_batch_time', 90),
+  );
+
   return system_settings_form($form);
 }
 
@@ -73,6 +84,11 @@ function refund_qc_settings() {
  * @ref drush_refund_queue_consume
  */
 function refund_batch_process() {
+  if ( variable_get('refund_disable', false) ) {
+    watchdog( 'wmf_refund_qc', 'Job is disabled.  Exiting.', NULL, WATCHDOG_INFO );
+    return;
+  }
+
   civicrm_api_classapi(); # hah
 
   watchdog('refund', 'Executing: refund_batch_process');
@@ -81,6 +97,7 @@ function refund_batch_process() {
   $processed = $q->dequeue_loop(
     variable_get('refund_queue', '/queue/refund-notifications_test'),
     variable_get('refund_batch', 0),
+    variable_get('refund_batch_time', 0),
     'refund_import'
   );
 

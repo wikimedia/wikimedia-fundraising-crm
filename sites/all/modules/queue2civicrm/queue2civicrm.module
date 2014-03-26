@@ -90,6 +90,13 @@ function queue2civicrm_permission() {
 function queue2civicrm_settings() {
   $form = array();
 
+  $form['queue2civicrm_disable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable job'),
+    '#description' => t('If checked, no message processing will be performed.'),
+    '#default_value' => variable_get('queue2civicrm_disable', false),
+  );
+
   $form['queue2civicrm_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Connection URL'),
@@ -110,10 +117,9 @@ function queue2civicrm_settings() {
     '#type' => 'select',
     '#title' => t('Cron batch size'),
     '#description' => t('Maximum number of donations processed by a queue2civicrm job.'),
-    '#required' => TRUE,
     '#default_value' => variable_get('queue2civicrm_batch', 0),
     '#options' => array(
-      0 => '0 (Disable)',
+      '' => 'Unlimited',
       1 => 1,
       5 => 5,
       10 => 10,
@@ -136,6 +142,14 @@ function queue2civicrm_settings() {
       650 => 650,
       700 => 700,
     ),
+  );
+
+  $form['queue2civicrm_batch_time'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Job time limit (in seconds)'),
+    '#description' => t('Maximum elapsed duration of a queue2civicrm job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  Either a time limit or batch size limit is required.'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('queue2civicrm_batch_time', 90),
   );
 
   $form[ 'queue2civicrm_gateways_to_monitor' ] = array(
@@ -168,9 +182,15 @@ function queue2civicrm_settings() {
 function queue2civicrm_batch_process() {
   wmf_civicrm_boost_performance();
 
+  if ( variable_get( 'queue2civicrm_disable', false ) ) {
+    watchdog( 'queue2civicrm', 'Job is disabled.  Exiting.', NULL, WATCHDOG_INFO );
+    return;
+  }
+
   $processed = queue2civicrm_stomp()->dequeue_loop(
       variable_get('queue2civicrm_subscription', '/queue/test'),
       variable_get( 'queue2civicrm_batch', 0 ),
+      variable_get( 'queue2civicrm_batch_time', 0 ),
       'queue2civicrm_import'
   );
 
