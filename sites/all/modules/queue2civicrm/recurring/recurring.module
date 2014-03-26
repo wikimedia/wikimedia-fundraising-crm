@@ -86,6 +86,8 @@ function recurring_settings() {
 }
 
 function recurring_batch_process() {
+  civicrm_initialize();
+
   if (variable_get( "recurring_disable", false )){
     watchdog('recurring', 'Recurring is disabled. No contributions processed.');
     return 0;
@@ -115,7 +117,6 @@ function recurring_batch_process() {
  */
 function recurring_import( $msg ) {
   global $txn_subscr_payment, $txn_subscr_acct;
-  civicrm_initialize(true);
   
   // store the original message for logging later
   $msg_orig = $msg;
@@ -191,8 +192,6 @@ function recurring_import_subscr_payment( $msg ) {
     watchdog( 'recurring', 'Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.' );
     throw new WmfException( 'MISSING_PREDECESSOR', "Missing the initial recurring record for subscr_id {$msg['subscr_id']}" );
   }
-
-  civicrm_initialize(true);
 
   $contact[ 'id' ] = $recur_record->contact_id;
 
