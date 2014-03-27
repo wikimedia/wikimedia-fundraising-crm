@@ -12,6 +12,17 @@ function recurring_queue_consume_drush_command() {
     'examples' => array( 'drush recurring-queue-consume' => '# Consume the queue' ), 
     'aliases' => array( 'rqc' ),
   );
+  $items['recurring-process-messagefile'] = array(
+    'description' => 
+      'Feeds a single message directly into the recurring import pipeline, bypassing the queue.',
+    'arguments' => array(
+        'path' => 'The JSON file containing the message'
+    ),
+    'required-arguments' => true,
+    'examples' => array( 'drush rpm /tmp/blurr.json' => '# process the file' ), 
+    'aliases' => array( 'rpm' ),
+  );
+ 
 
   return $items;
 }
@@ -23,6 +34,8 @@ function recurring_queue_consume_drush_help( $section ) {
   switch ( $section ) {
     case 'drush:recurring-queue-consume':
       return dt( "Pulls recurring items from an ActiveMQ queue and processes them into CiviCRM" );
+    case 'drush:recurring-process-messagefile':
+      return dt( "Feeds a single message directly into the recurring import pipeline, bypassing the queue." );
   }
 }
 
@@ -34,4 +47,12 @@ function recurring_queue_consume_drush_help( $section ) {
  */
 function drush_recurring_queue_consume() {
   module_invoke( 'recurring', 'batch_process' );
+}
+
+function drush_recurring_queue_consume_recurring_process_messagefile( $path ) {
+    watchdog( 'recurring', "Processing input file @path and feeding to recurring_import.",
+        array( '@path' => realpath( $path ) ), WATCHDOG_INFO );
+    $contents = file_get_contents( $path );
+    $msg = json_decode( $contents, true );
+    module_invoke( 'recurring', 'import', $msg );
 }

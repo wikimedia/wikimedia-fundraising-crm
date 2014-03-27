@@ -467,7 +467,7 @@ function recurring_get_recur_record( $subscr_id ) {
  * 
  * If message is in json format, it will be converted into an array.
  *
- * @param array|string $msg
+ * @param array|StompFrame $msg
  * @return array
  */
 function recurring_normalize_msg( $msg  ) {
