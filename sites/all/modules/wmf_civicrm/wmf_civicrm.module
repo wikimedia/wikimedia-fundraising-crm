@@ -282,8 +282,10 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     watchdog( 'wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
     
     if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
-        throw new WmfException( 'INVALID_MESSAGE',
-            t( 'Cannot create contribution: !error.', array( '!error' => $contribution_result['error_message'] ) )
+        throw new WmfException(
+            'INVALID_MESSAGE',
+            'Cannot create contribution, civi error!',
+            $contribution_result['error_message']
         );
     }
   
