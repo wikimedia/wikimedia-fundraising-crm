@@ -1,0 +1,14 @@
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/3.7/phpunit.xsd"
+    bootstrap="sites/default/bootstrap-phpunit.php">
+
+    <testsuites>
+      <testsuite name="queue2civicrm tests">
+        <directory>sites/all/modules/queue2civicrm/tests/phpunit</directory>
+      </testsuite>
+      <testsuite name="wmf_common tests">
+        <directory>sites/all/modules/wmf_common/tests/phpunit</directory>
+      </testsuite>
+    </testsuites>
+</phpunit>

@@ -1,9 +1,8 @@
 <?php
 
-require_once __DIR__ . '/../../Stomp.php';
-
-require_once __DIR__ . '/Message.php';
-
+/**
+ * FIXME: injecting into a live MQ should done from a drush command, not from tests
+ */
 class MessageSource {
     protected $stomp_url = 'tcp://localhost:61613';
     //protected $message_type = "TransactionMessage";
