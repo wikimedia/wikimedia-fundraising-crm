@@ -1,10 +1,21 @@
-<p>Vážený dárče,</p>
+{% if first_name and last_name %}
+<p>Milý/á {{ first_name }},</p>
+
+{% else %}
+<p>Vážená dárkyně, vážený dárče,</p>
+{% endif %}
 
 <p>Jste senzační. DĚKUJI VÁM za podporu nadace Wikimedia - neziskové organizace, která
 provozuje Wikipedii a její sesterské projekty.</p>
 
+{% if "RecurringRestarted" in contribution_tags %}<p> Nedávno jsme odstranili malý technický
+problém, který pozastavil vaše pravidelné měsíční dary. Vaše opakované dary jsou znovu
+obnoveny a budou již nadále zpracovány normálně. Nebudeme Vám účtovat za měsíce, které
+byly vynechány. Děkujeme Vám za vaši trpělivost a podporu. Pokud máte jakékoliv dotaz, tak
+neváhejte napsat na donate@wikimedia.org </p>{% endif %}
+
 <p>Váš příspěvek pomáhá krýt nejen ty výdaje, které je třeba vynaložit, aby byla
-Wikipedie k dispozici Vám, ale i výdaje na další čtenáře Wikipedie.</p>
+Wikipedie k dispozici Vám, ale i výdaje pro další čtenáře Wikipedie.</p>
 
 <p>Například jistý penzionovaný farmář poblíž New Yorku může díky darům studovat nauku o
 kalech. Student v Kuala Lumpur může bádat v oblasti organické chemie. Britský automechanik se
@@ -18,15 +29,15 @@ světě v jeho vlastním jazyce. Je to samozřejmě velmi odvážné poslání, 
 článků ve 287 jazycích si myslím, že díky Vám a lidem jako jste Vy se nám to daří.</p>
 
 <p>Jménem nadace Wikimedia a půl miliardy dalších čtenářů Wikipedie po celém světě:
-děkujeme. Díky tomu, že nám pomáháte pokrývat náklady na provoz, se Wikipedie obejde bez
+Děkujeme. Díky tomu, že nám pomáháte pokrývat náklady na provoz, se Wikipedie obejde bez
 inzerce a zůstává nezávislá na cizích zájmech, zaměřená výhradně na pomoc svým
 čtenářům. Přesně tak, jak to má být.</p>
 
 <p>Možná jste si všimli, že letos poprvé jsme pozměnili výběr finančních prostředků tak,
 že většina lidí vidí naše bannery jen několikrát a ne celé týdny. To je záměrné:
 nechceme lidi dráždit příliš častými výzvami. To ale znamená, že méně lidí zjistí, že
-jsme nezisková společnost a že stojíme o jejich pomoc. Jestli tedy chcete, budu ráda, když
-tuto informaci pomůžete šířit přeposláním tohoto e-mailu pár svým přátelům.</p>
+jsme nezisková společnost a že stojíme o jejich pomoc. Jestli tedy chcete, budeme rádi, když
+tuto informaci pomůžete šířit přeposláním tohoto e-mailu nekolika svým přátelům.</p>
 
 <p>A co takhle pokusit se k nám připojit a napsat něco do Wikipedie? To by bylo skvělé!
 Wikipedii píšou pouze dobrovolníci – desetitisíce obyčejných lidí po celém světě, zrovna
@@ -61,13 +72,14 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 strategický plán Wikimedia Foundation</a>. Také již můžete nakupovat v našem obchodě na <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Pro Vaše záznamy: Váš příspěvek číslo {{ transaction_id }} ze dne
-{{ receive_date }} činil {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Pro Vaše záznamy: Váš příspěvek číslo {{ transaction_id }} ze dne {{ receive_date }}
+činil {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-<p>{% if recurring %} Tento dar je součástí pravidelně opakovaných příspěvků. Měsíční
+{% if recurring %}<p> Tento dar je součástí pravidelně opakovaných příspěvků. Měsíční
 platby budou inkasovány nadací Wikimedia tak dlouho, dokud nepožádáte o jejich zastavení.
-Nechcete-li už dále přispívat, přečtěte si <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">jednoduché instrukce pro zrušení</a>. {% endif %}</p>
+Nechcete-li již nadále přispívat, přečtěte si <a
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">jednoduché instrukce pro zrušení</a>. </p>{% endif %}
 
 <p>Tento dopis slouží jako záznam o daru. Za tento příspěvek nebylo poskytnuto žádné
 zboží ani služby, ať úplné či částečné. Nadace Wikimedia je nezisková charitativní
@@ -81,8 +93,8 @@ USA.</p>
 sbírkách. Pokud si ale takové zprávy nepřejete dostávat, klikněte, prosím, na odkaz níže a
 my Vás ze seznamu příjemců vymažeme.</p>
   <div style="margin: 0 25px">
-    <p><a href="{{unsubscribe_link|raw}}">Odhlásit</a></p>
+    <p><a href="{{ unsubscribe_link | raw }}">Odhlásit</a></p>
   </div>
 </div>
 
-<hr/>
+<p>Pomozte nám preložit #translate tuto zprávu.</p>

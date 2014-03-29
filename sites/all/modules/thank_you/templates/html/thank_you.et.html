@@ -1,39 +1,48 @@
+{% if first_name and last_name %}
 <p>Hea {{ first_name }}</p>
 
-<p>Oled suurepärane. Aitäh, et toetasid Wikimedia Foundationit, mis kasumitaotluseta veab
-Vikipeediat ja ta sõsarprojekte.</p>
+{% else %}
+<p>Hea toetaja</p>
+{% endif %}
 
-<p>Sinu annetus pole ainult selleks, et saaksid ise Vikipeediat kasutada, vaid võimaldab seda ka
+<p>Oled suurepärane inimene! Aitäh, et toetasid Wikimedia Foundationit, mis arendab Vikipeediat ja
+ta sõsarprojekte ilma seejuures kasumit taotlemata.</p>
+
+{% if "RecurringRestarted" in contribution_tags %}<p> Hiljuti lahendasime väikese tehnilise
+probleemi, mis peatas mõned igakuised korduvannetused. Oleme sinu korduvannetuse ennistanud ja see
+toimib edaspidi nii nagu vaja. Vahele jäänud kuude eest raha ei võeta. Aitäh kannatlikkuse ja
+toetuse eest. Kui sul on küsimusi, kirjuta julgelt aadressile donate@wikimedia.org. </p>{% endif %}
+
+<p>Sinu annetus ei toeta ainuüksi sinu enda Vikipeedia kasutamist, vaid võimaldab seda kasutada ka
 teistel Vikipeedia lugejatel.</p>
 
-<p>Nii ka New Yorgi osariigi ülaosas endisel põllumehel, kes õpib reovee settemudade teadust ning
-Kuala Lumpuri õpilasel, kes uurib orgaanilist keemiat. Briti mehaanikul, kes pärast õnnetul
-kombel selja murdmist kasutas Vikipeediat, et õppida ümber veebiarendajaks. Soome
-riigiteenistujal, kes pani Ghanas väikese kooli jaoks püsti Vikipeedia veebivälise versiooni. Ja
-isal, kes elab Méxicos ja viib väikesed tütred nädalalõppudel muuseumisse ja kasutab
-Vikipeediat, et aidata tütardel aru saada kõigest, mida nad muuseumis näevad.</p>
+<p>Näiteks kas või ühel New Yorgi osariigi endisel põllumehel, kes õpib reovee settemudade
+kohta ning Kuala Lumpuri õpilasel, kes uurib orgaanilist keemiat. Või siis Briti mehaanik, kes
+pärast õnnetul kombel selja vigastamist kasutas Vikipeediat, et õppida veebiarendajaks. Soome
+riigiteenistuja, kes pani Ghanas väikese kooli jaoks püsti Vikipeedia veebivälise versiooni. Ja
+isa, kes elab Méxicos ja viib oma väikesed tütred nädalalõppudel muuseumidesse ja kasutab
+Vikipeediat, et selgitada tütardele kõike, mida nad muuseumis näevad.</p>
 
-<p>Vikipeedia ülesanne on tuua inimkonna kõik teadmised emakeeles iga inimeseni maailmas. See on
-üsnagi hullumeelne ettevõtmine, aga 30 miljoni artikliga 287 keeles ja tänu sinusuguste inimeste
-abile ütleksin, et see on tehtav.</p>
+<p>Vikipeedia ülesanne on tuua iga inimeseni maailmas tema enda emakeeles kõik inimkonna
+teadmised. See on hullupööra suurejooneline ettevõtmine, aga 30 miljoni artikliga 287 keeles ja
+tänu sinusuguste inimeste abile ütleksin, et see on teostatav.</p>
 
-<p>Tänan sind Wikimedia Foundationi ja Vikipeedia teiste lugejate nimel. Viimaseid on üle maailma
-pool miljardit. Sellepärast, et aitad tasuda Vikipeedia töös hoidmise kulud, saab see jääda
+<p>Tänan sind Wikimedia Foundationi ja Vikipeedia teiste lugejate nimel, keda on üle maailma pool
+miljardit. Seetõttu, et aitad tasuda Vikipeedia töös hoidmise kulusid, saab see jääda
 reklaamivabaks ja kallutamatuks ning keskenduda vaid lugejate aitamisele. Just nii nagu olema
 peakski.</p>
 
 <p>Võib-olla oled märganud, et esimest korda oleme korraldanud rahakogumise nii, et enamik inimesi
-näeb kampaaniariba vaid mõned korrad, mitte nädalaid. See on sihilik, sest me ei teha, et inimesi
-häiritaks abipalvega liiga palju kordi. Kuid seetõttu teadvustab vähem inimesi, et oleme
-kasumitaotlusta organisatsioon ja et soovime nende abi. Sellepärast oleksime tänulikud, kui
-saaksid võimaluse korral kampaaniat kuulutada ja saata selle e-kirja edasi mõnele oma
-sõbrale.</p>
+näeb kampaaniakuulutust nädalate asemel vaid mõned korrad. See on sihilik, sest me ei taha
+inimesi liiga palju kordi abipalvetega häirida. Kuid seetõttu teab vähem inimesi, et oleme
+kasumitaotluseta organisatsioon ja et vajame nende abi. Sellepärast oleksime tänulikud, kui
+saaksid võimaluse korral kampaanias osaleda, saates sella e-kirja edasi mõnele oma sõbrale.</p>
 
-<p>Ja mul oleks väga hea meel, kui prooviksid aidata meil Vikipeediat kirjutada. Vikipeediat
-kirjutavad täies ulatuses vabatahtlikud, kümned tuhanded tavalised inimesed üle maailma, just
-nagu meie. Kui leiad Vikipeediast trükivea või muu väikse vea, palun paranda see. Kui tead midagi
-lisamisväärset, lisa palun see. Mõnele inimesele pakub kaastöö suurt rahuldust, võib-olla
-pakuks ka sulle.</p>
+<p>Ja mul oleks väga hea meel, kui prooviksid aidata meil Vikipeediasse kirjutada. Vikipeediat
+kirjutavad täies ulatuses vabatahtlikud, kümned tuhanded tavalised inimesed üle maailma,
+samasugused nagu meie. Kui leiad Vikipeediast trükivea või muu väikse vea, palun paranda see
+ära. Kui tead midagi lisamisväärset, siis palun lisa see. Mõnele inimesele pakub kaastöö suurt
+rahulolutunnet, võib-olla pakuks ka sinule?</p>
 
 <p>Aitäh veel kord. Olen sinu usalduse eest väga tänulik ja luban, et kasutame sinu raha
 hoolikalt ja targasti.</p>
@@ -58,31 +67,31 @@ Foundationi aastaaruanne (2012–13)</a>, <a
 href="http://wikimediafoundation.org/wiki/2013-2014_Annual_Plan_Questions_and_Answers">Wikimedia
 Foundationi aastaplaan (2013–2014)</a> ja <a
 href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">Wikimedia
-Foundationi viie aasta strateegiline plaan</a>. Saad osta ka Vikipeedia meeneid asukohas <a
+Foundationi viie aasta strateegiline plaan</a>. Saad osta ka Vikipeedia meeneid aadressil <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Ülestähenduseks: sinu annetusnumber oli {{ transaction_id }}, annetuskuupäev
-{{ receive_date }} ja annetussumma
-{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Sinu arvepidamise tarbeks: sinu annetusnumber oli {{ transaction_id }}, annetuskuupäev {{
+receive_date }} ja annetussumma {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-<p>{% if recurring %} See annetus on tehtud seoses sõlmitud püsikorraldusega. Raha kantakse
+{% if recurring %}<p> See annetus on üle kantud seoses sõlmitud püsikorraldusega. Raha kantakse
 Wikimedia Foundationile igakuiselt seni, kuni teatad meile soovist lõpetada. Kui soovid maksetest
 loobuda, vaata palun meie <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">sellesisulisi lihtsaid juhiseid</a>. {% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">sellesisulisi lihtsaid juhiseid</a>. </p>{% endif %}
 
-<p>Käesolev kiri võib sobida kinnituseks sinu annetuse kohta. Selle eest ei pakutud kaupu ega
-teenuseid ei täismahus ega ka osaliselt. Wikimedia Foundation on Ameerika Ühendriikide
-maksuseadustiku lõike 501(c)(3) põhjal maksuvabastusega mittetulunduslik heategevuslik
-organisatsioon. Meie aadress on 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Meie USA
-maksuvabastusnumber on 20-0049703.</p>
+<p>Käesolev kiri sobib kinnituseks sinu annetuse kohta. Selle eest ei pakutud kaupu ega teenuseid
+ei täismahus ega ka osaliselt. Wikimedia Foundation on Ameerika Ühendriikide maksuseadustiku
+lõike 501(c)(3) põhjal maksuvabastusega mittetulunduslik heategevuslik organisatsioon. Meie
+aadress on 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Meie USA maksuvabastusnumber on
+20-0049703.</p>
 
 <div style="border: 1px solid black; padding:0 10px 5px 10px;">
   <p>Teadetest loobumine:</p>
   <p>Meile meeldiks, kui saaksime sinule kui annetajale saata teateid meie kogukonna tegemiste ja
 rahakogumiskampaaniate kohta. Kui sa siiski ei taha sedasorti kirju saada, klõpsa palun allpool ja
-me tõmbame sind nimekirjast maha.</p>
+me kustutame sind nimekirjast.</p>
   <div style="margin: 0 25px">
-    <p><a href="{{unsubscribe_link|raw}}">Loobu</a></p>
+    <p><a href="{{ unsubscribe_link | raw }}">Loobu teadetest</a></p>
   </div>
 </div>
 
