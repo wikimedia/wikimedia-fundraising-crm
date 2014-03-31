@@ -110,17 +110,19 @@ function refund_batch_process() {
 }
 
 /**
- * @param $msg A STOMP message class.
+ * @param StompFrame|array $msg
  */
 function refund_import($msg) {
-  $txnid = $msg->headers['correlation-id'];
-  watchdog('refund', "Beginning processing of message $txnid: " . json_encode($msg), array(), WATCHDOG_INFO);
+  if ( is_array( $msg ) ) {
+      $body = $msg;
+  } elseif ( property_exists( $msg, 'body' ) ) {
+      $body = json_decode( $msg->body, TRUE );
+  }
 
   // Sanity checking :)
   $required_fields = array( "gateway_refund_id", "gateway_parent_id", "gross_currency", "gross", "date", "gateway",
     "type",
   );
-  $body = json_decode($msg->body, TRUE);
   foreach( $required_fields as $field_name ) {
     if ( !array_key_exists( $field_name, $body ) ) {
       $error = "$txnid: Required field '$field_name' not present! Dropping message on floor.";

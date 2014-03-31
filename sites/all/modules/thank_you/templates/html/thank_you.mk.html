@@ -1,9 +1,24 @@
+{% if first_name and last_name %}
 <p>Почитуван(а) {{ first_name }},</p>
+
+{% else %}
+<p>Драг дарителу,</p>
+{% endif %}
 
 <p>Фантастични сте. Би сакала да искажам ГОЛЕМА
 БЛАГОДАРНОСТ што ја поддржувате Фондацијата
 Викимедија, непрофитната организација што раководи со
 Википедија и нејзините збратимени проекти.</p>
+
+{% if "RecurringRestarted" in contribution_tags %}<p> Неодамна решивме мал
+технички проблем кој предизвика застој кај некои
+донации кои се повторуваат секој месец. Повторно ја
+активиравме Вашата повторувачка донација и таа
+нормално ќе продолжи да се спроведува. Нема да Ви
+наплатиме за месеците кои биле пресконати. Ви
+благодариме за Вашето трпение и поддршка и Ве молиме
+слободно испратете е-маил на donate@wikimedia.org доколку имате
+какви било прашања. </p>{% endif %}
 
 <p>Со донацијата ги покривате не само Вашите трошоци за
 користењето на Википедија, туку и трошоците на други
@@ -87,17 +102,16 @@ href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Sum
 стратешки план</a>. Можете и да купите производи со
 нашите обележја на <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>За Ваша евиденција: Донацијата со бр.
-{{ transaction_id }} што ја направивте на
-{{ receive_date }} изнесуваше
-{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>За Ваша евиденција: Донацијата со бр. {{ transaction_id }} што
+ја направивте на {{ receive_date }} изнесуваше {{ (currency ~ " " ~ amount)
+| l10n_currency(locale) }}.</p>
 
-<p>{% if recurring %} Оваа донација е дел од повторлива уплата.
+{% if recurring %}<p> Оваа донација е дел од повторлива уплата.
 Фондацијата секој месец ќе одбива средства сè додека
 не нè известите да престанеме. Ако сакате да се
 откажете од ова, погледајте го <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">упатството за лесно откажување</a>.
-{% endif %}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">упатството за лесно откажување</a>. </p>{% endif %}
 
 <p>Писмово може да служи како евиденција за Вашата
 донација. За овој Ваш придонес не сте надоместени со
@@ -115,7 +129,7 @@ href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Can
 пораки од нас, стиснете на врската подолу за да Ве
 отстраниме од списокот.</p>
   <div style="margin: 0 25px">
-    <p><a href="{{unsubscribe_link|raw}}">Откажете се</a></p>
+    <p><a href="{{ unsubscribe_link | raw }}">Откажете се</a></p>
   </div>
 </div>
 

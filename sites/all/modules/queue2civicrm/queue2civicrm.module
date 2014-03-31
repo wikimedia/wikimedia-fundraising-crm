@@ -234,11 +234,19 @@ function queue2civicrm_batch_process() {
  *
  * @param Stomp_Frame $msg
  */
-function queue2civicrm_import( Stomp_Frame $msg ) {
-    // save the original message for logging
-    $msg_orig = $msg;
+function queue2civicrm_import( $msg ) {
+    if ( property_exists( $msg, 'body' ) ) {
+        $msg = $msg->body;
+    }
 
-    $msg = json_decode( $msg->body, true );
+    if ( is_string( $msg ) ) {
+        // save the original message for logging
+        $msg_orig = $msg;
+
+        $msg = json_decode( $msg, true );
+    } else {
+        $msg_orig = json_encode( $msg );
+    }
 
     /**
     * prepare data for logging
@@ -246,7 +254,7 @@ function queue2civicrm_import( Stomp_Frame $msg ) {
     $log = array(
         'gateway' => $msg[ 'gateway' ],
         'gateway_txn_id' => $msg[ 'gateway_txn_id' ],
-        'data' => $msg_orig->body,
+        'data' => $msg_orig,
         'timestamp' => time(),
         'verified' => 0,
     );

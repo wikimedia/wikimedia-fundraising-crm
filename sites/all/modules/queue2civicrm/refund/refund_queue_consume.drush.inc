@@ -25,6 +25,16 @@ function refund_queue_consume_drush_command() {
     ),
     'aliases' => array( 'rfdqc' ),
   );
+  $items['refund-process-messagefile'] = array(
+    'description' => 
+      'Feeds a single message directly into the refund pipeline, bypassing the queue.',
+    'arguments' => array(
+        'path' => 'The JSON file containing the message'
+    ),
+    'required-arguments' => true,
+    'examples' => array( 'drush rfdpm /tmp/blurr.json' => '# process the file' ), 
+    'aliases' => array( 'rfdpm' ),
+  );
   return $items;
 }
 
@@ -38,6 +48,8 @@ function refund_queue_consume_drush_help( $section ) {
   switch ( $section ) {
     case 'drush:refund-queue-consume':
       return dt( "Pulls refund requests from a remote queue; then uses the Civi API associate the refund appropriately.");
+    case 'drush:refund-process-messagefile':
+      return dt( "Feeds a single message directly into the refund pipeline, bypassing the queue." );
   }
 }
 
@@ -62,3 +74,11 @@ function drush_refund_queue_consume() {
   }
 }
 
+function drush_refund_queue_consume_refund_process_messagefile( $path ) {
+    watchdog( 'wmf_refund', "Processing input file @path and feeding to refund_import.",
+        array( '@path' => realpath( $path ) ), WATCHDOG_INFO );
+    $contents = file_get_contents( $path );
+    $msg = json_decode( $contents, true );
+    module_invoke( 'civicrm', 'initialize' );
+    module_invoke( 'refund', 'import', $msg );
+}
