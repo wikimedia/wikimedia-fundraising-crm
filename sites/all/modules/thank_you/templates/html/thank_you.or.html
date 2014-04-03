@@ -39,8 +39,8 @@
 ନିର୍ଦେଶକ</p>
 
 <p>ଆପଣଙ୍କ ମନେରଖିବା ପାଇଁ: ଆପଣଙ୍କ ଦାନ
-ତାରିଖ {{ contribution.receive_date|date("Y-m-d") }} ପରିମାଣ {{
-contribution.contribution_source }} ।
+ତାରିଖ {{ receive_date }} ପରିମାଣ
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }} ।
 {% if recurring %}
 {% include 'html/recurring/or.html' ignore missing %}
 {% endif %}</p>

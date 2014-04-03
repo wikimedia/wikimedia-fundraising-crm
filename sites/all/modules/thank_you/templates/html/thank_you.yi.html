@@ -27,9 +27,8 @@
 סו גארדנער<br />
 וויקימעדיע פונדאציע עקסעקיוטיוו דירעקטאר</p>
 
-<p>פאר אייערע אקטן: אייער נדבה פון {{
-contribution.receive_date|date("Y-m-d") }} איז געווען {{
-contribution.contribution_source }}.
+<p>פאר אייערע אקטן: אייער נדבה פון {{ receive_date }} איז געווען
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 {% if recurring %}
 {% include 'html/recurring/yi.html' ignore missing %}
 {% endif %}</p>

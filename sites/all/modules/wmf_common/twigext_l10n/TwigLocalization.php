@@ -105,7 +105,6 @@ class TwigLocalization extends Twig_Extension  {
 		'SYP' => '£',
 		'THB' => '฿',
 		'TRL' => '₤',
-		'TRY' => 'info',
 		'TTD' => 'TT$',
 		'TVD' => '$',
 		'TWD' => 'NT$',

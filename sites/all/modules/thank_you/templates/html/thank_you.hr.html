@@ -19,8 +19,8 @@ vam na Vašem povjerenju u nas.</p>
 Sue Gardner<br />
 izvršna direktorica Zaklade Wikimedije</p>
 
-<p>Za Vas: Vaš prilog dana {{ contribution.receive_date|date("Y-m-d") }} iznosio je {{
-contribution.contribution_source }}.
+<p>Za Vas: Vaš prilog dana {{ receive_date }} iznosio je
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 {% if recurring %}
 {% include 'html/recurring/hr.html' ignore missing %}
 {% endif %}</p>

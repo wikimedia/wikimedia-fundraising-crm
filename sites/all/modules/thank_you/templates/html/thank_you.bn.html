@@ -39,9 +39,8 @@
 উইকিমিডিয়া ফাউন্ডেশনের
 নির্বাহী পরিচালক</p>
 
-<p>আপনার রেকর্ডের জন্য: {{
-contribution.receive_date|date("Y-m-d") }} তারিখে আপনার দান
-ছিল {{ contribution.contribution_source }}.
+<p>আপনার রেকর্ডের জন্য: {{ receive_date }} তারিখে আপনার দান
+ছিল {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 {% if recurring %}
 {% include 'html/recurring/bn.html' ignore missing %}
 {% endif %}</p>
