@@ -1,0 +1,211 @@
+<?php
+
+/**
+* Implements hook_permission().
+*/
+function wmf_zendesk_reports_permission() {
+  return array(
+    'access wmf_zendesk_reports query page' => array(
+      'title' => t('Access WMF ZenDesk Reports Query Page'),
+    )
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function wmf_zendesk_reports_menu() {
+  $items['admin/zendesk_query'] = array(
+                                        'title' => 'Zendesk Tickets Query',
+                                        'access arguments' => array('access wmf_zendesk_reports query page'),
+                                        'page callback' => 'drupal_get_form',
+                                        'page arguments' => array('wmf_zendesk_reports_ticket_query_page'),
+                                        );
+
+ return $items;
+}
+
+
+function wmf_zendesk_reports_ticket_query_page() {
+
+  $form['username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Your ZenDesk Username'),
+  );
+  $form['password'] = array(
+    '#type' => 'password',
+    '#title' => t('Your ZenDesk Password'),
+  );
+  $form['tags'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Tags to search for'),
+    '#description' => t('Separate multiple tags with commas'),
+  );
+  $form['active'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Include Active Support Tickets Only'),
+  );
+  $form['submit_query'] = array(
+    '#type' => 'submit',
+    '#value' => 'Get Results',
+    '#submit' => array('wmf_zendesk_reports_make_query'),
+  );
+  return $form;
+}
+
+function wmf_zendesk_reports_make_query($form, &$form_state) {
+
+  // Get username, password from form
+  $username = $form_state['values']['username'];
+  $password = $form_state['values']['password'];
+
+  // Get tag from form, strip leading/trailing whitespace, and replace remaining spaces with underscores
+  $tags = $form_state['values']['tags'];
+  $tags_array = explode(',', $tags);
+  foreach ($tags_array as $key => $tag) {
+    $tags_array[$key] = str_replace(" ", "_", trim($tag));
+  }
+
+  $tags = implode(',', $tags_array);
+  $url = "https://wikimedia.zendesk.com/api/v2/search.json?query=type:ticket%20tags:" . $tags;
+
+  // Modify url for Active tickets only
+  if ($form_state['values']['active'] === 1) {
+    $url .= '%20status%3Cclosed';
+  }
+
+  $query_result = wmf_zendesk_reports_make_single_query_request($url, $username, $password);
+  $some_results = wmf_zendesk_reports_flatten_result_array($query_result['results']);
+  $csv_headers = wmf_zendesk_reports_get_headers_from_flattened_results($some_results);
+
+  if (ob_get_level()) {
+    ob_end_clean();
+  }
+
+  drupal_add_http_header('Content-Type', 'text/csv; utf-8');
+  drupal_add_http_header('Content-Disposition', 'attachment; filename = zendesk.csv');
+  drupal_send_headers();
+
+  $out = fopen('php://output', 'w');
+  wmf_zendesk_reports_fputcsv($out, $csv_headers, ',', '"');
+  wmf_zendesk_reports_write_some_results_to_csv($some_results, $out);
+
+  while ($query_result['next_page'] != null) {
+    $query_result = wmf_zendesk_reports_make_single_query_request($query_result['next_page'], $username, $password);
+    $some_results = wmf_zendesk_reports_flatten_result_array($query_result['results']);
+    wmf_zendesk_reports_write_some_results_to_csv($some_results, $out);
+  }
+
+  fclose($out);
+  drupal_exit();
+}
+
+function wmf_zendesk_reports_write_some_results_to_csv($some_results, $file_handle) {
+  foreach ($some_results as $key => $val) {
+    wmf_zendesk_reports_fputcsv($file_handle, $val, ',', '"');
+  }
+}
+
+function wmf_zendesk_reports_fputcsv($filePointer,$dataArray,$delimiter,$enclosure) {
+  // Write a line to a file
+  // $filePointer = the file resource to write to
+  // $dataArray = the data to write out
+  // $delimeter = the field separator
+
+  // Build the string
+  $string = "";
+
+  // No leading delimiter
+  $writeDelimiter = FALSE;
+  foreach($dataArray as $dataElement)
+   {
+    // Replaces a double quote with two double quotes
+    $dataElement=str_replace("\"", "\"\"", $dataElement);
+
+    // Adds a delimiter before each field (except the first)
+    if($writeDelimiter) $string .= $delimiter;
+
+    // Encloses each field with $enclosure and adds it to the string
+    $string .= $enclosure . $dataElement . $enclosure;
+
+    // Delimiters are used every time except the first.
+    $writeDelimiter = TRUE;
+   } // end foreach($dataArray as $dataElement)
+
+  // Append new line
+  $string .= "\n";
+
+  // Write the string to the file
+  fwrite($filePointer,$string);
+}
+
+function wmf_zendesk_reports_get_headers_from_flattened_results($results) {
+  $result = $results[0];
+  $output = array();
+  foreach ($result as $key => $val) {
+    $output[$key] = $key;
+  }
+  return $output;
+}
+
+function wmf_zendesk_reports_flatten_result_array($input) {
+  $output = $input;
+  foreach ($input as $index => $single_result) {
+    drupal_set_time_limit(120);
+    if (is_array($single_result)) {
+      foreach ($single_result as $key => $val) {
+        if (is_array($val)) {
+
+          // keep name and address from via
+          if ($key == "via") {
+            if (array_key_exists("name", $input[$index]['via']['source']['from'])) {
+              $output[$index]['via-from-name'] = $input[$index]['via']['source']['from']['name'];
+            }
+            else {
+              $output[$index]['via-from-name'] = "";
+            }
+            if (array_key_exists("address", $input[$index]['via']['source']['from'])) {
+              $output[$index]['via-from-address'] = $input[$index]['via']['source']['from']['address'];
+            }
+            else {
+              $output[$index]['via-from-address'] = "";
+            }
+          }
+          // combine and keep tags
+          else if ($key == "tags") {
+            $tags = implode(", ", $input[$index]['tags']);
+            $output[$index]['combined-tags'] = $tags;
+          }
+
+          unset($output[$index][$key]);
+        }
+      }
+    }
+  }
+  return $output;
+
+}
+
+function wmf_zendesk_reports_make_single_query_request($url, $username, $password) {
+
+  // create curl resource
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+  curl_setopt($ch, CURLOPT_MAXREDIRS, 10 );
+  curl_setopt($ch, CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_USERPWD, $username . ":" . $password);
+  curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+  curl_setopt($ch, CURLOPT_USERAGENT, "MozillaXYZ/1.0");
+
+  //return the transfer as a string
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+  // $output contains the output string
+  $output = curl_exec($ch);
+
+  // close curl resource to free up system resources
+  curl_close($ch);
+
+  $json_obj = json_decode($output, true);
+  return $json_obj;
+}
