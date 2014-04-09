@@ -1,8 +1,21 @@
-<p>عزيزي/عزيزتي {{ first_name }}،</p>
+{% if first_name and last_name %}
+<p>إلى السيد {{ first_name }}،</p>
+
+{% else %}
+<p>عزيزنا المُتبرع</p>
+{% endif %}
 
 <p>أنت في غاية الروعة. نشكرك جزيل الشكر على مساندة مؤسسة
 ويكيميديا، المؤسسة غير الربحية التي تدير موقع
 ويكيبيديا ومشروعاتها الشقيقة.</p>
+
+{% if "RecurringRestarted" in contribution_tags %}<p> لقد قمنا مؤخراً بحل
+المشكلة الفنية الصغيرة التي تسببت في إيقاف بعض
+التبرعات الشهرية المنتظمة. وقد قمنا بإعادة تفعيل
+تبرعاتك المنتظمة، وستستمر بشكل طبيعي. ولن يتم احتساب
+تبرعات الأشهر التي حدث فيها الخلل. نشكرك لتحليك بالصبر
+ونشكرك لدعمك لنا، ولا تتردد بإرسال أي استفسار إلى
+البريد الإلكتروني التالي: donate@wikimedia.org. </p>{% endif %}
 
 <p>إن تبرعك لا يغطي تكلفة استخدامك لموقع ويكيبيديا
 فحسب، بل أنه يغطي تكاليف قراء ويكيبيديا الآخرين.</p>
@@ -25,7 +38,7 @@
 أقول أنه بفضلكم وبفضل من يساندوننا، فقد اقتربنا من
 تحقيقها.</p>
 
-<p>نيابة عن مؤسسة ويكيميديا، ونيابة عن نصف بليون قارئ
+<p>نيابة عن مؤسسة ويكيميديا، ونيابة عن نصف مليار قارئ
 للموسوعة في جميع أنحاء العالم: شكرا لكم. حيث تعني حقيقة
 أنكم تساعدون من خلال سداد تكاليف ويكيبيديا أنه
 بإمكانها أن تظل خالية من الإعلانات وبعيدة عن التحيز،
@@ -57,7 +70,7 @@
 <p>شكراً لكم،<br/>
 سو</p>
 
-<p>سو غاردنر<br/>
+<p>سو جاردنر<br/>
 المديرة التنفيذية،<br/>
 مؤسسة ويكيميديا<br/>
 <a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
@@ -71,7 +84,7 @@ href="https://plus.google.com/+Wikipedia/posts">غوغل+</a> ويمكنك أن 
 إعجابك بنا على <a href="https://www.facebook.com/wikipedia">فيسبوك</a> و <a
 href="https://blog.wikimedia.org">قراء مدونتنا</a>. وهذا هو <a
 href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Wikimedia_Foundation/Annual_Report/2012-2013/Front">التقرير
-السنوي لمؤسسة ويكيميديا للسنة المالية 2011-12</a> وكذلك <a
+السنوي لمؤسسة ويكيميديا للسنة المالية 2012-13</a> وكذلك <a
 href="http://wikimediafoundation.org/wiki/2013-2014_Annual_Plan_Questions_and_Answers">الخطة
 السنوية لمؤسسة ويكيميديا للسنة المالية 2013-2014</a> وأيضاً
 <a href="https://wikimediafoundation.org/wiki/Wikimedia_Movement_Strategic_Plan_Summary">الخطة
@@ -79,22 +92,21 @@ href="http://wikimediafoundation.org/wiki/2013-2014_Annual_Plan_Questions_and_An
 الآن أن تشتري بضائع ويكيبيديا من <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>من أجل سجلاتك: كان تبرعك، برقم {{ transaction_id }}، في
-تاريخ {{ receive_date }} بمبلغ وقدره
-{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>من أجل سجلاتك: كان تبرعك، برقم {{ transaction_id }}، في تاريخ {{
+receive_date }} بمبلغ وقدره {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-<p>{% if recurring %} هذا التبرع جزء من اشتراك متكرر. وسوف تخصم
+{% if recurring %}<p> هذا التبرع جزء من اشتراك متكرر. وسوف تخصم
 دفعات شهرية من طرف مؤسسة ويكيميديا حتى تعلمنا بإيقاف
 ذلك الخصم. إذا رغبت في إلغاء الدفعات يرجى قراءة <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">تعليمات عن كيفية الإلغاء</a>. {% endif
-%}</p>
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">تعليمات عن كيفية الإلغاء</a>. </p>{% endif %}
 
 <p>يمكن لهذه الرسالة أن تشكل سجلاً لتبرعك. لم يتم تقديم
 أي سلع أو خدمات - كلياً أو جزئياً - لهذه المساهمة. تعتبر
-شركة مؤسسة ويكيميديا، شركة خيرية غير ربحية مع حالة
-الإعفاء الضريبي 501(c)(3) في الولايات المتحدة. عنواننا هو
-149 New Montgomery، الطابق الثالث، سان فرانسيسكو، كالفورنيا،
-94105. الولايات المتحدة. رقم الإعفاء الضريبي: 20-0049703</p>
+مؤسسة ويكيميديا، مؤسسة خيرية غير ربحية مع حالة الإعفاء
+الضريبي 501(c)(3) في الولايات المتحدة. عنواننا هو 149 New
+Montgomery، الطابق الثالث، سان فرانسيسكو، كالفورنيا، 94105.
+الولايات المتحدة. رقم الإعفاء الضريبي: 20-0049703</p>
 
 <div style="border: 1px solid black; padding:0 10px 5px 10px;">
   <p>خيار عدم المشاركة:</p>
@@ -103,13 +115,9 @@ href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Can
 هذا القبيل من طرفنا، يرجى النقر أدناه وسنقوم بإزالتك
 من القائمة.</p>
   <div style="margin: 0 25px">
-    <p><a href="{{unsubscribe_link|raw}}">إلغاء الاشتراك</a></p>
+    <p><a href="{{ unsubscribe_link | raw }}">إلغاء الاشتراك</a></p>
   </div>
 </div>
-
-<p>
-  <br/>
-</p>
 
 <hr/>
 
