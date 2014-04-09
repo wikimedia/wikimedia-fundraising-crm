@@ -1136,7 +1136,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
             $msg['direct_mail_appeal'] = "Mediander";
             break;
         default:
-                // pass
+            $msg['direct_mail_appeal'] = $msg['utm_campaign'];
             break;
         }
     }
