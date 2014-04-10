@@ -19,8 +19,8 @@ atsakingai, ir dėkoju, kad mumis pasitikite. </p>
 Sue Gardner<br />
 Wikimedia Foundation direktorė</p>
 
-<p>Jūsų įrašams: Jūsų {{ contribution.receive_date|date("Y-m-d") }} paaukota suma
-buvo {{ contribution.contribution_source }}.
+<p>Jūsų įrašams: Jūsų {{ receive_date }} paaukota suma
+buvo {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 {% if recurring %}
 {% include 'html/recurring/lt.html' ignore missing %}
 {% endif %}</p>

@@ -22,8 +22,8 @@ falënderoj për faktin që keni besim tek ne.</p>
 Sue Gardner<br />
 Drejtoresha ekzekutive e Fondacionit Wikimedia</p>
 
-<p>Për të qene në dijeni: Kontributi juaj më datë {{
-contribution.receive_date|date("Y-m-d") }} ishte {{ contribution.contribution_source }}.
+<p>Për të qene në dijeni: Kontributi juaj më datë {{ receive_date }}
+ishte {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 {% if recurring %}
 {% include 'html/recurring/sq.html' ignore missing %}
 {% endif %}</p>

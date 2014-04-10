@@ -23,9 +23,8 @@ sa ibinigay ninyong pagtitiwala sa amin.</p>
 Sue Gardner<br />
 Direktora ng Tagapagpaganap, Pundasyong Wikimedia</p>
 
-<p>Para sa inyong kabatiran: ang inyong kaloob na ginawa noong {{
-contribution.receive_date|date("Y-m-d") }} ay may halaga na {{
-contribution.contribution_source }}.
+<p>Para sa inyong kabatiran: ang inyong kaloob na ginawa noong {{ receive_date }} ay may halaga na
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 {% if recurring %}
 {% include 'html/recurring/tl.html' ignore missing %}
 {% endif %}</p>

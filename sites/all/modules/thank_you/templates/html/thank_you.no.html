@@ -19,8 +19,8 @@ takker for at du stoler på oss.</p>
 Sue Gardner<br />
 Wikimedia Foundations daglige leder</p>
 
-<p>Til senere bruk: Din gave {{ contribution.receive_date|date("Y-m-d") }} var på {{
-contribution.contribution_source }}.
+<p>Til senere bruk: Din gave {{ receive_date }} var på
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 {% if recurring %}
 {% include 'html/recurring/no.html' ignore missing %}
 {% endif %}</p>

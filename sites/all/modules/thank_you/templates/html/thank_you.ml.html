@@ -48,8 +48,8 @@
 വിക്കിമീഡിയ ഫൗണ്ടേഷൻ. </p>
 
 <p>നിങ്ങളുടെ രേഖകൾക്ക്:  നിങ്ങളുടെ
-സംഭാവന {{ contribution.receive_date|date("Y-m-d") }}  തിയതിയിൽ
-  {{ contribution.contribution_source }} തുക ആണ്.
+സംഭാവന {{ receive_date }}  തിയതിയിൽ
+ {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} തുക ആണ്.
 {% if recurring %}
 {% include 'html/recurring/ml.html' ignore missing %}
 {% endif %}</p>
