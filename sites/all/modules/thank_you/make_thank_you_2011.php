@@ -212,9 +212,7 @@ function strip_extraneous( &$file ){
  * @param $lang string the language that we are rendering
  */
 function replace_tokens( &$file, $lang ){
-	require_once '../wmf_common/MessageFile.php';
-
-	$di_i18n = new MessageFile( '../wmf_common/DonationInterface/gateway_common/interface.i18n.php' );
+	$di_i18n = MediaWikiMessages::getInstance();
 
     $pattern = array(
         '/\[first name\]/',

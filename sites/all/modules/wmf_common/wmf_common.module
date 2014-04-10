@@ -4,50 +4,6 @@ require_once 'failmail.php';
 require_once 'wmf_dates.php';
 
 /**
- * Replaces tokens in a string with entries from a @class MessageFile.
- *
- * @param        $string        The string to replace tokens in
- * @param        $message_file  The file to obtain natural language messages from
- * @param string $language      The ISO-2 language code
- *
- * @return mixed                The resultant natural language string
- */
-function replace_messages($string, $message_file, $language = 'en') {
-
-  if ($message_file instanceof MessageFile) {
-    // go ahead and use the provided instance
-    $messages = $message_file;
-  }
-  else {
-    $messages = new MessageFile( $message_file );
-  }
-
-  // search for messages in the source file like %message_token% and, optionally,
-  // like %message_token|param1|param2%
-  $matches = array();
-  preg_match_all("/%([a-zA-Z0-9_-]+)(|(?:(?!%).)*)%/", $string, $matches);
-
-  // loop through the found tokens and replace with messages, if they exist
-  foreach ($matches[ 1 ] as $i => $msg_key) {
-    // look for parameters passed to the message
-    if (isset( $matches[ 2 ][ $i ] ) && $matches[ 2 ][ $i ] != '') {
-      $m = $messages->getMsg($matches[ 1 ][ $i ], $language);
-      $params = explode('|', trim($matches[ 2 ][ $i ], '|'));
-      foreach ($params as $k => $value) {
-        $k++; // params are 1-indexed
-        $m = str_replace("\$$k", $value, $m);
-      }
-      $string = str_replace($matches[ 0 ][ $i ], $m, $string);
-    }
-    else {
-      $string = str_replace($matches[ 0 ][ $i ], $messages->getMsg($matches[ 1 ][ $i ], $language), $string);
-    }
-  }
-
-  return $string;
-}
-
-/**
  * Drupal hook function setting up the configuration page.
  *
  * @return array Menu entries
@@ -152,7 +108,7 @@ function wmf_common_settings() {
     '#description'   => "{$phpmailer_msg} " . t('Filesystem path of the PHPMailer library.'),
   );
 
-  $di_path = variable_get('wmf_common_di_location', drupal_get_path('module', 'wmf_common') . DIRECTORY_SEPARATOR);
+  $di_path = variable_get('wmf_common_di_location', null);
   $di_installed = file_exists(implode(DIRECTORY_SEPARATOR, array($di_path, 'gateway_common', 'interface.i18n.php')));
   $di_msg = $di_installed ? '<span style="color:green;">Installed Correctly</span>' : '<span style="color:red;">Please install</span>';
 

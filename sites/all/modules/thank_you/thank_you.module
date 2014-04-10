@@ -5,8 +5,6 @@ use wmf_communication\Templating;
 use wmf_communication\Translation;
 use Html2Text\Html2Text;
 
-require_once drupal_get_path( 'module', 'wmf_common' ) . '/MessageFile.php';
-
 // TODO:
 // * use more exceptions in place of watchdog/return false
 // * encapsulate template params structure and validation
