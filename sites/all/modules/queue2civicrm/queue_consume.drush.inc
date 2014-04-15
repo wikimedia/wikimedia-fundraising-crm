@@ -71,5 +71,8 @@ function drush_queue_consume_donations_process_messagefile( $path ) {
         array( '@path' => realpath( $path ) ), WATCHDOG_INFO );
     $contents = file_get_contents( $path );
     $msg = json_decode( $contents, true );
+    if ($msg === NULL) {
+      throw new Exception("Error decoding JSON in '$path'.");
+    }
     module_invoke( 'queue2civicrm', 'import', $msg );
 }
