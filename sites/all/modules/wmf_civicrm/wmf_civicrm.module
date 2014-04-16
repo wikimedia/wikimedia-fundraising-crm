@@ -473,8 +473,20 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                     case 'visa':
                         $payment_instrument .= ': Visa';
                         break;
+                    case 'visa-beneficial':
+                        $payment_instrument .= ': Visa Beneficial';
+                        break;
+                    case 'visa-electron':
+                        $payment_instrument .= ': Visa Electron';
+                        break;
+                    case 'visa-debit':
+                        $payment_instrument .= ': Visa Debit';
+                        break;
                     case 'mc':
                         $payment_instrument .= ': MasterCard';
+                        break;
+                    case 'mc':
+                        $payment_instrument .= ': MasterCard Debit';
                         break;
                     case 'amex':
                         $payment_instrument .= ': American Express';
@@ -496,6 +508,9 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                         break;
                     case 'cb':
                         $payment_instrument .= ': Carte Bleue';
+                        break;
+                    case 'diners':
+                        $payment_instrument .= ': Diners';
                         break;
                 }
                 break;
