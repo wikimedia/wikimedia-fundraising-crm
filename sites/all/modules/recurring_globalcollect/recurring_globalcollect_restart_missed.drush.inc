@@ -20,6 +20,7 @@ function recurring_globalcollect_restart_missed_drush_command() {
 /**
  * Fires the 'batch_process' method in the recurring_globalcollect module.
  *
+ * TODO: Move app logic out of the drush command file.
  */
 function drush_recurring_globalcollect_restart_missed() {
     $batch_size = intval(drush_get_option('batch', variable_get('recurring_globalcollect_batch_max', 100)));
@@ -29,12 +30,18 @@ function drush_recurring_globalcollect_restart_missed() {
     /*
      * Donations which 'just stopped' and did not have a scheduled recurring attempt
      */
-    watchdog('recurring_globalcollect', 'Attempting to restart up to ' . $batch_size . ' recurring contribution(s).');
+    watchdog(
+        'recurring_globalcollect',
+        'Attempting to restart up to a maximum of @max recurring contribution(s).',
+        array( '@max' => $batch_size ),
+        WATCHDOG_INFO
+    );
     $contribution_batch = rgcrm_get_contributions( $limit, $grace, $batch_size );
     watchdog(
         'recurring_globalcollect',
         'Query returned @count messages to process',
-        array('@count' => count($contribution_batch))
+        array('@count' => count($contribution_batch)),
+        WATCHDOG_INFO
     );
     $result = recurring_globalcollect_batch_charge(
         $contribution_batch,
@@ -43,14 +50,15 @@ function drush_recurring_globalcollect_restart_missed() {
     $processed = count($result['succeeded']) + count($result['failed']);
     watchdog(
         'recurring_globalcollect',
-        'Attempted to restart :processed missed contribution(s). :failed failed to restart',
-        array('processed' => $processed, ':failed' => count($result['failed']))
+        'Attempted to restart @processed missed contribution(s). @failed failed to restart',
+        array('@processed' => $processed, '@failed' => count($result['failed'])),
+        WATCHDOG_INFO
     );
 
     /*
      * Donations which had a recurring attempt but failed and then missed their retry date
      */
-    watchdog('recurring_globalcollect', 'Attempting to restart up to ' . $batch_size . ' abandoned contribution(s).');
+    watchdog('recurring_globalcollect', 'Attempting to restart up to a maximum of @max abandoned contribution(s).', array( '@max' => $batch_size ), WATCHDOG_INFO );
     try {
         $contribution_batch = recurring_globalcollect_get_failure_retry_batch( $batch_size, 'now', $limit );
     } catch(Exception $ex) {
@@ -59,20 +67,28 @@ function drush_recurring_globalcollect_restart_missed() {
     watchdog(
         'recurring_globalcollect',
         'Query returned @count messages to process',
-        array('@count' => count($contribution_batch))
+        array('@count' => count($contribution_batch)),
+        WATCHDOG_INFO
     );
     $result = recurring_globalcollect_batch_charge(
         $contribution_batch,
         array( 'contribution_tags' => array( 'RecurringRestarted' ) )
     );
 
-    $processed = count($result['succeeded']) + count($result['failed']);
+    $succeeded = count($result['succeeded']);
+    $failed = count($result['failed']);
     watchdog(
         'recurring_globalcollect',
-        'Attempted to restart :processed contribution(s). :failed failed to restart',
-        array('processed' => $processed, ':failed' => count($result['failed']))
+        'Attempted to restart @processed contribution(s). @succeeded succeeded and @failed failed to restart',
+        array(
+            '@processed' => $succeeded + $failed,
+            '@succeeded' => $succeeded,
+            '@failed' => $failed,
+        ),
+        WATCHDOG_INFO
     );
 
+    # FIXME: this isn't done somewhere more general, such as the input pipes to Jenkins?
     // Outputting errors again so they can be picked up by Jenkins.
     $errors = drush_get_error_log();
     if (!empty($errors)){
@@ -100,18 +116,19 @@ function rgcrm_get_contributions( $limit, $grace, $batch ) {
     watchdog(
         'recurring_globalcollect',
         'Looking for contributions to restart in timeframe @min -> @max; recurring on day of month @ds -> @de ',
-        array('@min' => $earliest, '@max' => $latest, '@ds' => $start_day_of_month, '@de' => $end_day_of_month )
+        array('@min' => $earliest, '@max' => $latest, '@ds' => $start_day_of_month, '@de' => $end_day_of_month ),
+        WATCHDOG_INFO
     );
 
     $query = <<<EOS
 SELECT * FROM civicrm_contribution_recur
 WHERE
-    civicrm_contribution_recur.next_sched_contribution BETWEEN :start AND :end
-    AND civicrm_contribution_recur.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
-    AND ( civicrm_contribution_recur.end_date IS NULL )
-    AND civicrm_contribution_recur.contribution_status_id = :status_id
-    AND civicrm_contribution_recur.cycle_day BETWEEN :ds AND :de
-    AND civicrm_contribution_recur.frequency_unit = 'month'
+    next_sched_contribution BETWEEN :start AND :end
+    AND trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
+    AND ( end_date IS NULL )
+    AND contribution_status_id = :status_id
+    AND cycle_day BETWEEN :ds AND :de
+    AND frequency_unit = 'month'
 LIMIT :batch
 EOS;
 
