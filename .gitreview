@@ -2,5 +2,5 @@
 host=gerrit.wikimedia.org
 port=29418
 project=wikimedia/fundraising/crm.git
-defaultbranch=master
+defaultbranch=deployment
 defaultrebase=0
