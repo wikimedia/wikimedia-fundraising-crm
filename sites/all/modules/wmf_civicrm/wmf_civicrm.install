@@ -782,3 +782,22 @@ function wmf_civicrm_update_7017()
         throw new Exception( $api->errorMsg() );
     }
 }
+
+/**
+ * Add contribution types and payment instruments
+ */
+function wmf_civicrm_update_7018()
+{
+    $payment_instruments = array(
+        'Visa Beneficial',
+        'Visa Electron',
+        'Visa Debit',
+        'MasterCard Debit',
+        'Diners',
+    );
+
+    wmf_civicrm_bootstrap_civi();
+    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
+
+    return array();
+}
