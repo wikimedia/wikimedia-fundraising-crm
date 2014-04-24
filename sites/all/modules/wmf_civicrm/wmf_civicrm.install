@@ -790,11 +790,11 @@ function wmf_civicrm_update_7017()
 function wmf_civicrm_update_7018()
 {
     $payment_instruments = array(
-        'Visa Beneficial',
-        'Visa Electron',
-        'Visa Debit',
-        'MasterCard Debit',
-        'Diners',
+        'Credit Card: Visa Beneficial',
+        'Credit Card: Visa Electron',
+        'Credit Card: Visa Debit',
+        'Credit Card: MasterCard Debit',
+        'Credit Card: Diners',
     );
 
     wmf_civicrm_bootstrap_civi();
