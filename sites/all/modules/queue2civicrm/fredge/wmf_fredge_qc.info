@@ -1,0 +1,6 @@
+name = WMF fredge Queue Consumer
+description = Raids several queues for fundraiser metrics-type noncritical data.
+core = 7.x
+package = queue2civicrm
+configure = admin/config/queue2civicrm/fredge_qc
+dependencies[] = queue2civicrm

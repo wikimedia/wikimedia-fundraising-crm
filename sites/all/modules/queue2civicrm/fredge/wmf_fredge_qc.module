@@ -1,0 +1,227 @@
+<?php
+
+/**
+ * Implements hook_menu
+ */
+function wmf_fredge_qc_menu() {
+  $items[ 'admin/config/queue2civicrm/fredge_qc' ] = array(
+    'title'            => 'fredge',
+    'description'      => t('Configure fredge queue consumers'),
+    'access arguments' => array( 'administer queue2civicrm' ),
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array( 'fredge_qc_settings' ),
+  );
+  return $items;
+}
+
+/**
+ * Constructs the settings page for this module.
+ *
+ * @return array Of form components.
+ */
+function fredge_qc_settings() {
+  $form = array();
+
+  $form['fredge_qc_disable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable payments-init job'),
+    '#description' => t('If checked, no message processing will be performed for the payments-init queue.'),
+    '#default_value' => variable_get('fredge_qc_disable', false),
+  );
+
+  $form['fredge_payments_init_queue'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Payments-init subscription path'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('fredge_payments_init_queue', '/queue/payments-init_test'),
+    '#description' => t('Queue for payments-init items'),
+  );
+
+  $form['fredge_payments_antifraud_queue'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Payments-antifraud subscription path'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('fredge_payments_antifraud_queue', '/queue/payments-antifraud_test'),
+    '#description' => t('Queue for payments-antifraud items'),
+  );
+//  payments-antifraud
+
+  $form['fredge_batch_time'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Job time limit (in seconds)'),
+    '#description' => t('Maximum elapsed duration of an fredge job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  Either a time limit or batch size limit is required.'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('fredge_batch_time', 90),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Callback from Drush that actually executes the loop for processing messages in the queue.
+ * @ref fredge_process_message
+ * @ref drush_fredge_queue_consume
+ */
+function fredge_batch_process() {
+  watchdog('fredge', 'Executing: fredge_batch_process');
+
+  civicrm_initialize();
+
+  $dequeue_params = array(
+    'init' => array(
+      'queue' => variable_get('fredge_payments_init_queue', '/queue/payments-init_test'),
+      'callback' => 'fredge_payments_init_process_message'
+    ),
+    'fraud' => array(
+      'queue' => variable_get('fredge_payments_antifraud_queue', '/queue/payments-antifraud_test'),
+      'callback' => 'fredge_payments_antifraud_process_message'
+    ),
+  );
+
+  //Let's start with the simplest possible division of labor
+  $cycle_time = variable_get('fredge_batch_time', 0) / count($dequeue_params);
+
+  $processed = 0;
+  foreach ($dequeue_params as $type => $params) {
+    $processed += queue2civicrm_stomp()->dequeue_loop(
+      $params['queue'], false, //not using the queue count limiter anymore
+      $cycle_time, $params['callback']
+    );
+  }
+
+  if ($processed > 0) {
+    watchdog('fredge', 'Successfully processed ' . $processed . ' fredge message(s).');
+  }
+  else {
+    watchdog('fredge', 'No fredge messages processed.');
+  }
+}
+
+/**
+ * Processes an individual payments-init message.
+ *
+ * @param $msg A STOMP message class.
+ *
+ * @return bool True if the message was processed without errors. False if errors occured; the msg
+ *              will still have been removed from the queue though.
+ */
+function fredge_payments_init_process_message($msg) {
+  $txnid = $msg->headers['correlation-id'];
+  watchdog('fredge', "Beginning processing of payments-init message for $txnid: " . json_encode($msg), array(), WATCHDOG_INFO);
+
+  $body = json_decode($msg->body, TRUE);
+  $id = fredge_insert_data($body, 'payments_initial', $txnid, true);
+}
+
+/**
+ * Processes an individual payments-antifraud message.
+ *
+ * @param $msg A STOMP message class.
+ *
+ * @return bool True if the message was processed without errors. False if errors occured; the msg
+ *              will still have been removed from the queue though.
+ */
+function fredge_payments_antifraud_process_message($msg) {
+  $txnid = $msg->headers['correlation-id'];
+  watchdog('fredge', "Beginning processing of payments-antifraud message for $txnid: " . json_encode($msg), array(), WATCHDOG_INFO);
+
+  $body = json_decode($msg->body, TRUE);
+
+  $antifraud_breakdown = $body['score_breakdown'];
+  unset($body['score_breakdown']);
+
+  //handle the IP address conversion to binary so we can do database voodoo later.
+  if (array_key_exists('user_ip', $body)) {
+    //check for IPv6
+    if ( strpos(':', $body['user_ip']) !== false ){
+      /** despite a load of documentation to the contrary, the following line
+       * ***doesn't work at all***.
+       * Which is okay for now: We force IPv4 on payments.
+       * @TODO eventually: Actually handle IPv6 here.
+       */
+      
+//    $body['user_ip'] = inet_pton($body['user_ip']);
+
+      watchdog('fredge', "Weird. Somehow an ipv6 address got through on payments. Caught in antifraud consumer. $txnid");
+      $body['user_ip'] = 0;
+    } else {
+      $body['user_ip'] = ip2long($body['user_ip']);
+    }
+    
+  }
+
+  $id = fredge_insert_data($body, 'payments_fraud', $txnid, true);
+
+  if ($id) {
+    foreach ($antifraud_breakdown as $test => $score) {
+      //format the way the table wants it
+      $insert = array(
+        'payments_fraud_id' => $id,
+        'filter_name' => $test,
+        'risk_score' => $score,
+      );
+      fredge_insert_data($insert, 'payments_fraud_breakdown', $txnid, true);
+    }
+  }
+}
+
+/**
+ * take a message, and shovel that data straight into a table.
+ * If the *exact* fields in the table aren't in the message, this will complain
+ * and drop things. So don't do that.
+ * @param array $msg the array-converted message body that you want to shovel
+ * into $table.
+ * @param type $table the name of the target fredge table that should have the
+ * same fields as the $msg
+ * @param string $log_identifier Some small string for the log that will help id
+ * the message if something goes amiss and we have to log about it.
+ * @param boolean $require_all True if we want to require all fields described in
+ * the current schema for $table, otherwise false.
+ */
+function fredge_insert_data($msg, $table, $log_identifier, $require_all = false) {
+  static $schemata = null;
+  if (is_null($schemata)) {
+    require_once('wmf_fredge_qc.install'); //annoyed I have to do this, but this seems the cleanest way from here
+    $schemata = wmf_fredge_qc_get_current_schema();
+    //and then, because we only care about the stuff we're inserting, remove the 'type' => 'serial' fields, because autonumber
+    foreach ($schemata as $schema_table => $schema) {
+      foreach ($schema['fields'] as $field => $definition) {
+        if ($definition['type'] === 'serial') {
+          unset($schemata[$schema_table]['fields'][$field]);
+        }
+      }
+    }
+  }
+
+  if ( !is_array($msg) || empty($msg) ){
+    $error = "$log_identifier: Trying to insert nothing into table $table. Dropping message on floor.";
+    throw new WmfException('fredge', $error);
+  }
+
+  $insert = array();
+  foreach ($schemata[$table]['fields'] as $field => $definition) {
+    if (!array_key_exists($field, $msg)) {
+      if ($require_all) {
+        $error = "$log_identifier: Expected field $field bound for table $table not present! Dropping message on floor.";
+        throw new WmfException('fredge', $error);
+        //so... add fields to DI first when you do schema changes.
+      }
+    } else {
+      //the field exists. Woot.
+      if (array_key_exists('mysql_type', $definition) && $definition['mysql_type'] === 'DATETIME') {
+        $msg[$field] = date('Y-m-d H:i:s', $msg[$field]);
+      }
+      $insert[$field] = $msg[$field];
+    }
+  }
+
+  //now all you have to do is insert the actual message data.
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('fredge');
+  $id = db_insert($table)
+    ->fields($insert)
+    ->execute();
+
+  return $id;
+}
+
