@@ -98,6 +98,7 @@ function offline2civicrm_import_checks_form() {
     '#options' => array(
         'azl' => t( 'AZ Lockbox' ),
         'paypal' => t( 'EFT donations' ),
+        'jpmorgan' => t( 'JP Morgan' ),
     ),
   );
   $form['log'] = array(
@@ -130,6 +131,9 @@ function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
         break;
       case 'paypal':
         $importer = new PayPalChecksFile( $file->uri );
+        break;
+      case 'jpmorgan':
+        $importer = new JpMorganFile( $file->uri );
         break;
       default:
         throw new Exception( 'Bad file format selection' );

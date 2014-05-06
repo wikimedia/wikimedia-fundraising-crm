@@ -23,6 +23,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7016();
     wmf_civicrm_update_7017();
     wmf_civicrm_update_7018();
+    wmf_civicrm_update_7019();
 }
 
 /**
@@ -554,6 +555,7 @@ function wmf_civicrm_update_6011()
  */
 function wmf_civicrm_update_6012()
 {
+    $ret = array();
     $api = wmf_civicrm_bootstrap_civi();
 
     $success = $api->CustomGroup->get(array(
@@ -801,4 +803,16 @@ function wmf_civicrm_update_7018()
     wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
 
     return array();
+}
+
+/**
+ * Add JP Morgan payment instrument
+ */
+function wmf_civicrm_update_7019()
+{
+    $payment_instruments = array(
+        'JP Morgan EUR',
+    );
+
+    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
 }
