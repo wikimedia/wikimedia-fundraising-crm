@@ -239,23 +239,11 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
     $transaction->recur_sequence = $effort_id;
     $trxn_id = $transaction->get_unique_id();
 
-    $msg['contribution_type'] = wmf_civicrm_get_message_contribution_type($msg);
-    $contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', $msg['contribution_type'] );
-
-    if ( !array_key_exists( "payment_instrument", $msg ) ){
-        $msg['payment_instrument'] = wmf_civicrm_get_message_payment_instrument( $msg );
-    }
-    $payment_instrument_id = wmf_civicrm_get_civi_id( 'payment_instrument_id', $msg['payment_instrument'] );
-    if ( !$payment_instrument_id )
-    {
-        throw new WmfException("INVALID_MESSAGE", "No payment type found for message." );
-    }
-
     $contribution = array(
         'contact_id' => $contact[ 'id' ],
         'total_amount' => $msg['gross'],
-        'contribution_type_id' => $contribution_type_id,
-        'payment_instrument_id' => $payment_instrument_id,
+        'contribution_type_id' => $msg['contribution_type_id'],
+        'payment_instrument_id' => $msg['payment_instrument_id'],
         'fee_amount' => $msg['fee'],
         'net_amount' => $msg['net'],
         'trxn_id' => $trxn_id,
@@ -451,6 +439,8 @@ function wmf_civicrm_get_message_contribution_type( $msg ) {
  * string (if it exists).   
  *
  * TODO lookup table
+ *
+ * @return string payment instrument label
  */
 function wmf_civicrm_get_message_payment_instrument( $msg )
 {
@@ -1079,9 +1069,17 @@ function wmf_civicrm_normalize_msg( $msg ) {
     );
     $msg = $msg + $defaults;
     
-    //handle the payment instrument without altering the original message
-    //(just in case any downstream logic needs to switch on the raw data)
-    $msg['payment_instrument'] = wmf_civicrm_get_message_payment_instrument( $msg );
+    $msg['contribution_type'] = wmf_civicrm_get_message_contribution_type( $msg );
+    $msg['contribution_type_id'] = wmf_civicrm_get_civi_id( 'contribution_type_id', $msg['contribution_type'] );
+
+    if ( empty( $msg['payment_instrument'] ) ) {
+        $msg['payment_instrument'] = wmf_civicrm_get_message_payment_instrument( $msg );
+    }
+    $msg['payment_instrument_id'] = wmf_civicrm_get_civi_id( 'payment_instrument_id', $msg['payment_instrument'] );
+    if ( !$msg['payment_instrument_id'] ) {
+        throw new WmfException( "INVALID_MESSAGE", "No payment type found for message." );
+    }
+
 
     // if we're missing a contrib id, insert new record to the table
     // this can happen if a user somehow makes a trxn from outside the normal workflow
