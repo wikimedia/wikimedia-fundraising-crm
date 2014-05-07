@@ -37,126 +37,28 @@ abstract class ChecksFile {
 
         $num_successful = 0;
         $num_duplicates = 0;
-        $row_index = 0;
+        $this->row_index = -1;
 
         while( ( $row = fgetcsv( $file, 0, ',', '"', '\\')) !== FALSE) {
-            list($currency, $source_amount) = explode( " ", _get_value( "Source", $row, $headers ) );
-            $total_amount = floatval( trim( _get_value( "Total Amount", $row, $headers ), '$' ) );
+            $this->row_index++;
 
-            if ( abs( $source_amount - $total_amount ) > .01 ) {
-                $pretty_msg = json_encode( array_combine( array_keys( $headers ), $row ) );
-                watchdog( 'offline2civicrm', "Amount mismatch in row: " . $pretty_msg, NULL, WATCHDOG_ERROR );
-                throw new WmfException( 'INVALID_MESSAGE', "Amount mismatch during checks import" );
+            // Zip headers and row into a dict
+            $data = array_combine( array_keys( $headers ), array_slice( $row, 0, count( $headers ) ) );
+
+            // Strip whitespaces
+            foreach ( $data as $key => &$value ) {
+                $value = trim( $value );
             }
 
-            $msg = array(
-                "optout" => "1",
-                "anonymous" => "0",
-                "letter_code" => _get_value( "Letter Code", $row, $headers ),
-                "contact_source" => "check",
-                "language" => "en",
-                "street_address" => _get_value( "Street Address", $row, $headers ),
-                "supplemental_address_1" => _get_value( "Additional Address 1", $row, $headers ),
-                "city" => _get_value( "City", $row, $headers ),
-                "state_province" => _get_value( "State", $row, $headers ),
-                "postal_code" => _get_value( "Postal Code", $row, $headers ),
-                "payment_method" => _get_value( "Payment Instrument", $row, $headers ),
-                "payment_submethod" => "",
-                "check_number" => _get_value( "Check Number", $row, $headers ),
-                "currency" => $currency,
-                "original_currency" => $currency,
-                "original_gross" => $total_amount,
-                "fee" => "0",
-                "gross" => $total_amount,
-                "net" => $total_amount,
-                "date" => strtotime( _get_value( "Received Date", $row, $headers ) ),
-                "no_thank_you" => _get_value( "No Thank You", $row, $headers ),
-                "thankyou_date" => strtotime( _get_value( "Thank You Letter Date", $row, $headers ) ),
-                "postmark_date" => strtotime( _get_value( "Postmark Date", $row, $headers ) ),
-                "restrictions" => _get_value( "Restrictions", $row, $headers ),
-                "gift_source" => _get_value( "Gift Source", $row, $headers ),
-                "direct_mail_appeal" => _get_value( "Direct Mail Appeal", $row, $headers ),
-                "import_batch_number" => _get_value( "Batch", $row, $headers ),
-            );
-
-            $contype = _get_value( 'Contribution Type', $row, $headers );
-            switch ( $contype ) {
-                case "Merkle":
-                    $msg['gateway'] = "merkle";
-                    break;
-
-                case "Arizona Lockbox":
-                    $msg['gateway'] = "arizonalockbox";
-                    break;
-
-                case "Cash":
-                    $msg['contribution_type'] = "cash";
-                    break;
-
-                default:
-                    throw new WmfException( 'INVALID_MESSAGE', "Contribution Type '$contype' is unknown whilst importing checks!" );
+            try {
+                $msg = $this->parseRow( $data );
+            } catch ( EmptyRowException $ex ) {
+                continue;
+            } catch ( WmfException $ex ) {
+                $rowNum = $this->row_index + 2;
+                $errorMsg = "Import aborted due to error at row {$rowNum}: {$ex->getMessage()}, after {$num_successful} records were stored successfully and {$num_duplicates} duplicates encountered.";
+                throw new Exception($errorMsg);
             }
-
-            // Attempt to get the organization name if it exists...
-            // Merkle used the "Organization Name" column header where AZL uses "Company"
-            $orgname = _get_value( 'Organization Name', $row, $headers, FALSE );
-            if ( $orgname === FALSE ) {
-                $orgname = _get_value( 'Company', $row, $headers, FALSE );
-            }
-
-            if( $orgname === FALSE ) {
-                // If it's still false let's just assume it's an individual
-                $msg['contact_type'] = "Individual";
-                $msg["first_name"] = _get_value( "First Name", $row, $headers );
-                $msg["middle_name"] = _get_value( "Middle Name", $row, $headers );
-                $msg["last_name"] = _get_value( "Last Name", $row, $headers );
-            } else {
-                $msg['contact_type'] = "Organization";
-                $msg['organization_name'] = $orgname;
-            }
-
-            // check for additional address information
-            if( _get_value( 'Additional Address 2', $row, $headers ) != ''){
-                $msg['supplemental_address_2'] .= ' ' . _get_value( 'Additional Address 2', $row, $headers );
-            }
-
-            // An email address is one of the crucial fields we need
-            if( _get_value( 'Email', $row, $headers ) == ''){
-                // set to the default, no TY will be sent
-                $msg['email'] = "nobody@wikimedia.org";
-            } else {
-                $msg['email'] = _get_value( 'Email', $row, $headers );
-            }
-
-            // CiviCRM gets all weird when there is no country set
-            // Making the assumption that none = US
-            if( _get_value( 'Country', $row, $headers ) == ''){
-                $msg['country'] = "US";
-            } else {
-                $msg['country'] = _get_value( 'Country', $row, $headers );
-            }
-
-            if ( $msg['country'] === "US" ) {
-                // left-pad the zipcode
-                if ( preg_match( '/^(\d{1,4})(-\d+)?$/', $msg['postal_code'], $matches ) ) {
-                    $msg['postal_code'] = str_pad( $matches[1], 5, "0", STR_PAD_LEFT );
-                    if ( !empty( $matches[2] ) ) {
-                        $msg['postal_code'] .= $matches[2];
-                    }
-                }
-            }
-
-            // Generating a transaction id so that we don't import the same rows multiple times
-            $name_salt = $msg['contact_type'] == "Individual" ? $msg["first_name"] . $msg["last_name"] : $msg["organization_name"];
-            if ( !empty( $msg['check_number'] ) ) {
-                $msg['gateway_txn_id'] = md5( $msg['check_number'] . $name_salt );
-            } else {
-                $msg['gateway_txn_id'] = md5( $msg['date'] . $name_salt . $row_index );
-            }
-
-            $row_index++;
-
-            $this->mungeMessage( $msg );
 
             // check to see if we have already processed this check
             if ( $existing = wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ){
@@ -166,16 +68,7 @@ abstract class ChecksFile {
                 continue;
             }
 
-            $failed = array();
-            foreach ( $this->getRequiredFields() as $key ) {
-                if ( !array_key_exists( $key, $msg ) or empty( $msg[$key] ) ) {
-                    $failed[] = $key;
-                }
-            }
-            if ( $failed ) {
-                throw new WmfException( 'CIVI_REQ_FIELD', t( "Missing required fields @keys during check import", array( "@keys" => implode( ", ", $failed ) ) ) );
-            }
-
+            // tha business.
             $contribution = wmf_civicrm_contribution_message_import( $msg );
 
             watchdog( 'offline2civicrm',
@@ -192,8 +85,195 @@ abstract class ChecksFile {
         watchdog( 'offline2civicrm', $message, array(), WATCHDOG_INFO );
     }
 
-    protected function mungeMessage( &$msg ) { }
+    /**
+     * Read a row and transform into normalized queue message form
+     *
+     * @param array $row native format for this upload file, usually a dict
+     *
+     * @return array queue message format
+     */
+    protected function parseRow( $data ) {
+        $msg = array();
 
-    abstract protected function getRequiredFields();
+        foreach ( $this->getFieldMapping() as $normal => $header ) {
+            if ( !empty( $data[$header] ) ) {
+                $msg[$normal] = $data[$header];
+            }
+        }
+
+        foreach ( $this->getDatetimeFields() as $field ) {
+            if ( !empty( $msg[$field] ) ) {
+                $msg[$field] = strtotime( $msg[$field] );
+            }
+        }
+
+        $this->setDefaults( $msg );
+
+        $this->mungeMessage( $msg );
+
+        $failed = array();
+        foreach ( $this->getRequiredFields() as $key ) {
+            if ( !array_key_exists( $key, $msg ) or empty( $msg[$key] ) ) {
+                $failed[] = $key;
+            }
+        }
+        if ( $failed ) {
+            throw new WmfException( 'CIVI_REQ_FIELD', t( "Missing required fields @keys during check import", array( "@keys" => implode( ", ", $failed ) ) ) );
+        }
+
+        return $msg;
+    }
+
+    protected function setDefaults( &$msg ) {
+        foreach ( $this->getDefaultValues() as $key => $defaultValue ) {
+            if ( empty( $msg[$key] ) ) {
+                $msg[$key] = $defaultValue;
+            }
+        }
+    }
+
+    /**
+     * Do any final transformation on a normalized and default-laden queue
+     * message.  This is very specific to each upload source.
+     */
+    protected function mungeMessage( &$msg ) {
+        $contype = $msg['raw_contribution_type'];
+        switch ( $contype ) {
+            case "Merkle":
+                $msg['gateway'] = "merkle";
+                break;
+
+            case "Arizona Lockbox":
+                $msg['gateway'] = "arizonalockbox";
+                break;
+
+            case "Cash":
+                $msg['contribution_type'] = "cash";
+                break;
+
+            default:
+                throw new WmfException( 'INVALID_MESSAGE', "Contribution Type '$contype' is unknown whilst importing checks!" );
+        }
+
+        if ( !empty( $msg['organization_name'] ) ) {
+            $msg['contact_type'] = "Organization";
+        }
+
+        // Check that the message amounts match
+        list($currency, $source_amount) = explode( ' ', $msg['contribution_source'] );
+        $msg['gross'] = floatval( trim( $msg['gross'], '$' ) );
+
+        if ( abs( $source_amount - $msg['gross'] ) > .01 ) {
+            $pretty_msg = json_encode( $msg );
+            watchdog( 'offline2civicrm', "Amount mismatch in row: " . $pretty_msg, NULL, WATCHDOG_ERROR );
+            throw new WmfException( 'INVALID_MESSAGE', "Amount mismatch during checks import" );
+        }
+
+        $msg = array_merge( $msg, array(
+            'currency' => $currency,
+            'original_currency' => $currency,
+            'original_gross' => $msg['gross'],
+        ) );
+
+        // left-pad the zipcode
+        if ( $msg['country'] === 'US' ) {
+            if ( preg_match( '/^(\d{1,4})(-\d+)?$/', $msg['postal_code'], $matches ) ) {
+                $msg['postal_code'] = str_pad( $matches[1], 5, "0", STR_PAD_LEFT );
+                if ( !empty( $matches[2] ) ) {
+                    $msg['postal_code'] .= $matches[2];
+                }
+            }
+        }
+
+        // Generate a transaction ID so that we don't import the same rows multiple times
+        if ( empty( $msg['gateway_txn_id'] ) ) {
+            if ( $msg['contact_type'] === 'Individual' ) {
+                $name_salt = $msg['first_name'] . $msg['last_name'];
+            } else {
+                $name_salt = $msg['organization_name'];
+            }
+
+            if ( !empty( $msg['check_number'] ) ) {
+                $msg['gateway_txn_id'] = md5( $msg['check_number'] . $name_salt );
+            } else {
+                $msg['gateway_txn_id'] = md5( $msg['date'] . $name_salt . $this->row_index );
+            }
+        }
+    }
+
+    protected function getDefaultValues() {
+        return array(
+            'contact_source' => 'check',
+            'contact_type' => 'Individual',
+            'country' => 'US',
+            'email' => 'nobody@wikimedia.org',
+            'gift_source' => 'Community Gift',
+            'restrictions' => 'Unrestricted - General',
+        );
+    }
+
+    /**
+     * Return column mappings
+     *
+     * @return array of {normalized field name} => {spreadsheet column title}
+     */
+    protected function getFieldMapping() {
+        return array(
+            'check_number' => 'Check Number',
+            'city' => 'City',
+            'contribution_source' => 'Source',
+            'country' => 'Country',
+            'date' => 'Received Date',
+            'direct_mail_appeal' => 'Direct Mail Appeal',
+            'email' => 'Email',
+            'first_name' => 'First Name',
+            'gift_source' => 'Gift Source',
+            'gross' => 'Total Amount',
+            'import_batch_number' => 'Batch',
+            'last_name' => 'Last Name',
+            'letter_code' => 'Letter Code',
+            'middle_name' => 'Middle Name',
+            'no_thank_you' => 'No Thank You',
+            'organization_name' => 'Organization Name',
+            'payment_method' => 'Payment Instrument',
+            'postal_code' => 'Postal Code',
+            'postmark_date' => 'Postmark Date',
+            'raw_contribution_type' => 'Contribution Type',
+            'restrictions' => 'Restrictions',
+            'state_province' => 'State',
+            'street_address' => 'Street Address',
+            'supplemental_address_1' => 'Additional Address 1',
+            'supplemental_address_2' => 'Additional Address 2',
+            'thankyou_date' => 'Thank You Letter Date',
+        );
+    }
+
+    /**
+     * Date fields which must be converted to unix timestamps
+     *
+     * @return array of field names
+     */
+    protected function getDatetimeFields() {
+        return array(
+            'date',
+            'thankyou_date',
+            'postmark_date',
+        );
+    }
+
+    /**
+     * Columns which must exist in the spreadsheet
+     *
+     * This is just a "schema" check.  We don't require that the fields contain data.
+     *
+     * @return array of column header titles
+     */
     abstract protected function getRequiredColumns();
+
+    /**
+     * Fields that must not be empty in the normalized message
+     *
+     * @return array of normalized message field names
+     */
+    abstract protected function getRequiredFields();
 }
