@@ -379,6 +379,8 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     
     $transaction = WmfTransaction::from_unique_id( $contribution_recur['trxn_id'] );
 
+    $initial_contribution = wmf_civicrm_get_initial_recurring_contribution( $contribution_recur );
+
     $contact = array(
         'id' => $contribution_recur['contact_id'],
     );
@@ -386,6 +388,9 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     $msg = array();
     $msg['fee'] = 0.00;
     
+    $msg['contribution_type_id'] = $initial_contribution['contribution_type_id'];
+    $msg['payment_instrument_id'] = $initial_contribution['payment_instrument_id'];
+
     $msg['gateway'] = 'globalcollect';
     $msg['gross'] = $contribution_recur['amount'];
     $msg['net'] = $msg['gross'] - $msg['fee'];
