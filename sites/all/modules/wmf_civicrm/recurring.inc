@@ -354,3 +354,28 @@ function wmf_civicrm_get_cycle_day_for_month($cycle_day, $month, $year){
     }
     return $cycle_day;
 }
+
+/**
+ * Get the first contribution in a recurring series
+ *
+ * @param array $contribution_recur
+ *
+ * @return array|false $contribution
+ */
+function wmf_civicrm_get_initial_recurring_contribution( $contribution_recur ) {
+    $sql = "
+SELECT * FROM civicrm_contribution
+WHERE contribution_recur_id = %1
+ORDER BY id ASC
+LIMIT 1";
+
+    $res = CRM_Core_DAO::executeQuery( $sql, array(
+        '1' => array( $contribution_recur['id'], 'Integer' ),
+    ) );
+    
+    $out = wmf_civicrm_dao_to_list( $res );
+    if ( !$out ) {
+        return false;
+    }
+    return array_pop($out);
+}
