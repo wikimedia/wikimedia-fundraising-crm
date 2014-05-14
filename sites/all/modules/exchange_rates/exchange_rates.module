@@ -15,7 +15,7 @@ function exchange_rates_menu() {
     'title' => 'Display exchange rates',
     'description' => 'List the current exchange rates for every country, and date retrieved.',
     'page callback' => 'exchange_rates_listing',
-    'access callback' => TRUE,
+    'access arguments' => array('access content'),
   );
   $items['admin/config/exchange_rates/update'] = array(
     'title' => t('Update exchange rates'),
