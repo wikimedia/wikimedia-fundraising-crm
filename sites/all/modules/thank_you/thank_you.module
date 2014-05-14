@@ -47,7 +47,7 @@ function thank_you_menu() {
    $items['admin/config/thank_you/test'] = array(
      'title' => 'Send test thank-yous',
      'description' => 'Send a test letter',
-     'access callback' => true,
+     'access arguments' => array('access content'),
      'page callback' => 'drupal_get_form',
      'page arguments' => array('thank_you_send_test_form'),
    );

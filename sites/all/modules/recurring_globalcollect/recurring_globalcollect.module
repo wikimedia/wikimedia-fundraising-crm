@@ -36,13 +36,7 @@ function recurring_globalcollect_menu() {
     'access arguments' => array('administer recurring_globalcollect'),
     'page callback' => 'recurring_globalcollect_test',
   );
-  
-  $items['recurring_globalcollect'] = array(
-    'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
-    'page callback' => 'recurring_globalcollect_batch_process',
-  );
-  
+
   return $items;
 }
 
