@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<extension key="org.wikimedia.dedupeReview" type="module">
+  <file>dedupeReview</file>
+  <name>Dedupe Review</name>
+  <description>Manual review workflow for deduping</description>
+  <license>GPL-2.0</license>
+  <maintainer>
+    <author>Adam Roses Wight</author>
+    <email>awight@wikimedia.org</email>
+  </maintainer>
+  <releaseDate>2014-05-14</releaseDate>
+  <version>1.0.alpha1</version>
+  <develStage>alpha</develStage>
+  <compatibility>
+    <ver>4.2</ver>
+    <ver>4.3</ver>
+    <ver>4.4</ver>
+    <ver>4.5</ver>
+  </compatibility>
+  <comments>This is a new, undeveloped module</comments>
+  <civix>
+    <namespace>CRM/DedupeReview</namespace>
+  </civix>
+</extension>

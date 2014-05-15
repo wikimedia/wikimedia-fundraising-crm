@@ -1,0 +1,24 @@
+{
+    "name": "wikimedia/dedupe_review",
+    "description": "",
+    "keywords": ["CiviCRM", "dedupe"],
+    "license": "GPLv2",
+    "authors": [
+        {
+            "name": "Adam Roses Wight",
+            "email": "awight@wikimedia.org"
+        }
+    ],
+    "support": {
+        "irc": "irc://irc.freenode.org/wikimedia-fundraising"
+    },
+    "repositories": [
+         {
+             "type": "vcs",
+             "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/FineDiff.git"
+         }
+    ],
+    "require": {
+        "cogpowered/finediff": "dev-master"
+    }
+}

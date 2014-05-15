@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<menu>
+  <item>
+     <path>civicrm/dedupe_review</path>
+     <page_callback>CRM_DedupeReview_Page_Overview</page_callback>
+     <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+  <item>
+     <path>civicrm/dedupe_review/ajax</path>
+     <page_callback>CRM_DedupeReview_Page_Ajax</page_callback>
+     <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+  <item>
+     <path>civicrm/dedupe_review/assign</path>
+     <page_callback>CRM_DedupeReview_Page_Batch_Assign</page_callback>
+     <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+  <item>
+     <path>civicrm/dedupe_review/batch</path>
+     <page_callback>CRM_DedupeReview_Page_Batch_Review</page_callback>
+     <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+  <item>
+     <path>civicrm/dedupe_review/batches</path>
+     <page_callback>CRM_DedupeReview_Page_Batch_Index</page_callback>
+     <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+</menu>
