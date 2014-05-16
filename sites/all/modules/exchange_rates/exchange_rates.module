@@ -340,7 +340,7 @@ function exchange_rates_cron() {
 	
 	// Construct the URL for the API call
 	$currencyList = implode( '_', $currencies );
-	$url = 'https://www.oanda.com/cgi-bin/fxml/fxml?fxmlrequest=%3Cconvert%3E%3Cclient_id%3E';
+	$url = 'https://web-services.oanda.com/cgi-bin/fxml/fxml?fxmlrequest=%3Cconvert%3E%3Cclient_id%3E';
 	$url .= 'WikimediaFoundation';
 	$url .= '%3C/client_id%3E%3Cexpr%3EUSD%3C/expr%3E%3Cexch%3E';
 	$url .= $currencyList;
@@ -371,6 +371,7 @@ function exchange_rates_cron() {
 		}
 	} else {
 		// Use our back-up XML source. This will only set the rate for the most common currencies.
+        watchdog( WATCHDOG_WARNING, 'Using backup exchange rates source from the ECB' );
 		$url = 'http://www.ecb.int/stats/eurofxref/eurofxref-daily.xml';
 		
 		// Retrieve and parse the XML results
@@ -395,21 +396,22 @@ function exchange_rates_cron() {
 		$bankUpdateTimestamp = strtotime( $date . ' 00:00:00 GMT' );
 		variable_set( 'exchange_rates_bank_update', $bankUpdateTimestamp );
 	  
-		// Table is based on EUR, so must insert manually
-		exchange_rates_update_rate( 'EUR', $usdBase, $bankUpdateTimestamp );
-	  
-		// Calculate and insert remaining rates
-		foreach ( $index['CUBE'] as $valIndex ) {
-			$current = $results[$valIndex];
-			if ( isset( $current['attributes']['CURRENCY'] ) && isset( $current['attributes']['RATE'] ) ) {
-				exchange_rates_update_rate(
-					$current['attributes']['CURRENCY'], 
-					$usdBase / $current['attributes']['RATE'], 
-					$bankUpdateTimestamp
-				);
-			}
-		}
-		
+		// Table is based on EUR, so must insert manually if we actually got anything
+        if ( $usdBase !== 0 ) {
+            exchange_rates_update_rate( 'EUR', $usdBase, $bankUpdateTimestamp );
+
+            // Calculate and insert remaining rates
+            foreach ( $index['CUBE'] as $valIndex ) {
+                $current = $results[$valIndex];
+                if ( isset( $current['attributes']['CURRENCY'] ) && isset( $current['attributes']['RATE'] ) ) {
+                    exchange_rates_update_rate(
+                        $current['attributes']['CURRENCY'],
+                        $usdBase / $current['attributes']['RATE'],
+                        $bankUpdateTimestamp
+                    );
+                }
+            }
+        }
 	}
 	
 }
