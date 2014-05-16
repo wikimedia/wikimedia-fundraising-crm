@@ -1,4 +1,5 @@
-<?php namespace wmf_communication;
+<?php
+namespace wmf_communication;
 
 use \Exception;
 
@@ -8,6 +9,51 @@ use \Exception;
  * TODO: deprecate
  */
 class Translation {
+    /**
+     * Replaces tokens in a string with a translation
+     *
+     * Tokens are specified using the MediaWiki message key, and are delimited by "%".
+     *
+     * For example:
+     *   $locale = 'fr';
+     *   $template = '<p id="unsub-text">%donate_interface-email-unsub-fail%</p>';
+     *   $rendered = $l10n->replace_messages($template, $locale);
+     *   -->  <p id="unsub-text">Vous avez le fail, foo.</p>
+     *
+     * @param        $string        The string to replace tokens in
+     * @param        $message_file  The file to obtain natural language messages from
+     * @param string $language      The ISO-2 language code
+     *
+     * @return mixed                The resultant natural language string
+     */
+    static function replace_messages($string, $language = 'en') {
+      $messages = MediaWikiMessages::getInstance();
+
+      // search for messages in the source file like %message_token% and, optionally,
+      // like %message_token|param1|param2%
+      $matches = array();
+      preg_match_all("/%([a-zA-Z0-9_-]+)(|(?:(?!%).)*)%/", $string, $matches);
+
+      // loop through the found tokens and replace with messages, if they exist
+      foreach ($matches[ 1 ] as $i => $msg_key) {
+        // look for parameters passed to the message
+        if (isset( $matches[ 2 ][ $i ] ) && $matches[ 2 ][ $i ] != '') {
+          $m = $messages->getMsg($matches[ 1 ][ $i ], $language);
+          $params = explode('|', trim($matches[ 2 ][ $i ], '|'));
+          foreach ($params as $k => $value) {
+            $k++; // params are 1-indexed
+            $m = str_replace("\$$k", $value, $m);
+          }
+          $string = str_replace($matches[ 0 ][ $i ], $m, $string);
+        }
+        else {
+          $string = str_replace($matches[ 0 ][ $i ], $messages->getMsg($matches[ 1 ][ $i ], $language), $string);
+        }
+      }
+
+      return $string;
+    }
+
     /**
      * Given a specific locale, get the next most general locale
      *
@@ -37,16 +83,7 @@ class Translation {
      * TODO: generalize beyond DonationInterface
      */
     static function get_translated_message( $key, $language ) {
-        require_once drupal_get_path( 'module', 'wmf_common' ) . '/MessageFile.php';
-
-        $di_include = implode( DIRECTORY_SEPARATOR, array(
-            variable_get( 'wmf_common_di_location', null ), 'gateway_common', 'interface.i18n.php'
-        ) );
-        if ( !file_exists( $di_include ) ) {
-            throw new Exception( "DonationInterface i18n libraries not found.  Path checked: {$di_include}" );
-        }
-
-        $di_i18n = new \MessageFile( $di_include );
+        $di_i18n = MediaWikiMessages::getInstance();
         do {
             $msg = $di_i18n->getMsg( $key, $language );
             if ( $msg ) {

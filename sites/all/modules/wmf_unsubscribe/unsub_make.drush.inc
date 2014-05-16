@@ -8,6 +8,9 @@
  * @TODO print some useful info to STDOUT
  */
 
+use wmf_communication\MediaWikiMessages;
+use wmf_communication\Translation;
+
 /**
  * Implementation of hook_drush_command()
  */
@@ -15,6 +18,7 @@ function unsub_make_drush_command() {
     $items = array();
 
     $items['unsub-make'] = array(
+        'bootstrap' => DRUSH_BOOTSTRAP_FULL,
         'description' => 'Generates translated versions of the unsubscription pages from the i18n files',
         'examples' => array(
             'drush unsub-make' => '# Make translations',
@@ -48,12 +52,9 @@ function unsub_make_drush_help( $section ) {
  * DonationInterface i18n files.
  */
 function drush_unsub_make() {
-    require_once drupal_get_path( 'module', 'wmf_common' ) . '/wmf_common.module';
-    require_once drupal_get_path( 'module', 'wmf_common' ) . '/MessageFile.php';
-
     $partial = drush_get_option( 'partial', false );
 
-    $base_path = drupal_get_path( 'module', 'wmf_unsubscribe' ) . '/';
+    $base_path = __DIR__ . '/';
     $template_path = $base_path . 'templates/'; // TODO: ensure that this path exists
     $output_path = $base_path . 'templates/i18n/'; // TODO: ensure that this path exists
 
@@ -72,9 +73,10 @@ function drush_unsub_make() {
         'donate_interface-email-unsub-button'
     );
 
-    $DImsgs = new MessageFile( drupal_get_path( 'module', 'wmf_common' ) . '/DonationInterface/gateway_common/interface.i18n.php' );
+    $DImsgs = MediaWikiMessages::getInstance();
+    $languages = $DImsgs->languageList();
 
-    foreach( $DImsgs->languageList() as $lang ){
+    foreach( $languages as $lang ){
         if( $lang === "qqq" ){
             continue;
         }
@@ -90,7 +92,7 @@ function drush_unsub_make() {
             foreach( $pages as $p ){
                 echo "\t writing $p ... ";
                 $page_str = file_get_contents( $template_path . "$p.html" );
-                $replaced = replace_messages( $page_str, $DImsgs, $lang );
+                $replaced = Translation::replace_messages( $page_str, $lang );
 
                 // the following is required to fix errors in the submission of
                 // messages for translation
