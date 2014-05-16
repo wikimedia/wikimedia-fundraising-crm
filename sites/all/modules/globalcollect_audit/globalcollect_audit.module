@@ -1011,8 +1011,8 @@ function globalcollect_audit_move_completed_wr1( $file, $nearly = false ){
 		}	
 	}
 	
-	$path_info = pathinfo( $file );
-	$newfile = $path_info['dirname'] . '/' . $subdir . '/' . $path_info['basename'];
+	$filename = basename( $file );
+	$newfile = $completed_dir . '/' . $filename;
 	
 	if (!rename( $file, $newfile )){
 		$message = "Unable to move $file to $newfile";
