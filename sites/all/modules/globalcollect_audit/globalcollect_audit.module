@@ -2,6 +2,7 @@
 
 define( 'CONTRIBUTION_AUDIT_WR1_PARSER_DIR', '/usr/local/src/Wr1Parser/' );
 define( 'CONTRIBUTION_AUDIT_WR1_FILES_DIR', '/usr/local/src/Wr1_files/' );
+define( 'CONTRIBUTION_AUDIT_WR1_COMPLETED_DIR', '/usr/local/src/Wr1_files-completed/' );
 define( 'CONTRIBUTION_AUDIT_LOG_FILES_DIR', '/usr/local/src/logs/' );
 define( 'CONTRIBUTION_AUDIT_PLUSMINUS', 7 );
 define( 'CONTRIBUTION_AUDIT_TEST_MODE', true );
@@ -41,9 +42,15 @@ function globalcollect_audit_settings() {
   );
   $form['globalcollect_audit_wr1_files_dir']  = array(
     '#type' => 'textfield',
-    '#title' => t( 'Path to directory containing WR1 files' ),
+    '#title' => t( 'Directory containing incoming WR1 files' ),
     '#required' => TRUE,
     '#default_value' => variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR ),
+  );
+  $form['globalcollect_audit_wr1_completed_dir']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Directory for completed WR1 files' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'globalcollect_audit_wr1_completed_dir', CONTRIBUTION_AUDIT_WR1_COMPLETED_DIR ),
   );
   $form['globalcollect_audit_log_files_dir']  = array(
     '#type' => 'textfield',
@@ -994,7 +1001,7 @@ function globalcollect_audit_move_completed_wr1( $file, $nearly = false ){
 	if ($nearly){
 		$subdir .= '-nearly-' . date('Y-m-d', time());
 	}
-	$files_directory = variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR );
+	$files_directory = variable_get( 'globalcollect_audit_wr1_completed_dir', CONTRIBUTION_AUDIT_WR1_COMPLETED_DIR );
 	$completed_dir = $files_directory . '/' . $subdir;
 	if ( !is_dir( $completed_dir ) ){
 		if ( !mkdir ( $completed_dir, 0700 )){
