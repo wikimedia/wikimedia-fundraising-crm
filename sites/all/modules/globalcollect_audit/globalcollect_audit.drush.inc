@@ -24,11 +24,7 @@ function globalcollect_audit_drush_command() {
         'test' => 'Test the audit scripts, but do not generate stomp messages. No data will be changed.',
 		'fakedb' => 'Fake the database information. This will cause the script to avoid looking up the actual contribution id.',
 		'makemissing' => 'Will reconstruct the un-rebuildable transactions found in the wr1, with default values. USE WITH CAUTION.',
-		'charlimit' => array(
-            'description' => 'Will cause echoing to line break after the given number of characters',
-            'value' => 'required',
-            'example_value' => '50',
-        ),
+		'charlimit' => 'Will cause echoing to line break after the given number of characters',
 		'mismatch_override' => 'Won\'t die on a keygrind mismatch',
 		'verbose' => 'Verbose output',
     ),
