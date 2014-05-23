@@ -18,7 +18,7 @@ function unsub_make_drush_command() {
     $items = array();
 
     $items['unsub-make'] = array(
-        'bootstrap' => DRUSH_BOOTSTRAP_FULL,
+        'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
         'description' => 'Generates translated versions of the unsubscription pages from the i18n files',
         'examples' => array(
             'drush unsub-make' => '# Make translations',
