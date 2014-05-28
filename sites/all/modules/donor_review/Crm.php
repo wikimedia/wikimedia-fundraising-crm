@@ -2,6 +2,7 @@
 namespace DonorReview;
 
 use \CRM_Utils_System;
+use \Exception;
 
 class Crm {
     static function getTagId( $tag ) {
