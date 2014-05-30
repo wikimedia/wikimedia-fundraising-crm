@@ -10,12 +10,12 @@
   position: absolute;
   top: 0px;
   bottom: 0px;
-  width: 30px;
+  width: 20px;
   color: #FFFFFF;
   text-align: center;
   font-weight: bold;
   z-index: 1000;
-  padding-top: 5px;
+  padding-top: 35px;
 }
 body > #environment-indicator {
   position: fixed;
@@ -38,7 +38,7 @@ body.environment-indicator {
 }
 
 body.environment-indicator-adjust.environment-indicator-left {
-  margin-left: 30px;
+  margin-left: 20px;
 }
 
 body.environment-indicator-adjust.environment-indicator-right {
@@ -50,8 +50,8 @@ body.environment-indicator-adjust.environment-indicator-left.admin-expanded.admi
 body.environment-indicator-adjust.environment-indicator-left.admin-expanded.admin-vertical.admin-sw { margin-left:290px; }
 
 body.environment-indicator-adjust.environment-indicator-left div#admin-toolbar.nw,
-body.environment-indicator-adjust.environment-indicator-left div#admin-toolbar.sw { left:30px; }
-body.environment-indicator-adjust.environment-indicator-left div#admin-toolbar.sw .admin-toggle { left:30px; }
+body.environment-indicator-adjust.environment-indicator-left div#admin-toolbar.sw { left:20px; }
+body.environment-indicator-adjust.environment-indicator-left div#admin-toolbar.sw .admin-toggle { left:20px; }
 body.environment-indicator-adjust.environment-indicator-left.admin-expanded div#admin-toolbar.sw .admin-toggle { left:0; }
 
 
@@ -66,7 +66,7 @@ body.environment-indicator-adjust.environment-indicator-right.admin-expanded div
 /* compatability with admin_menu.module */
 body.environment-indicator-adjust.environment-indicator-left #admin-menu #admin-menu-wrapper {
   margin-right: 0px;
-  padding-left: 30px;
+  padding-left: 20px;
 }
 
 /* compatability with admin_menu.module */
