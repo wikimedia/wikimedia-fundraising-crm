@@ -74,7 +74,7 @@ function wmf_campaigns_index_form() {
 
     $rows = array();
     foreach ( $optionValues as $value ) {
-        $campaign = WmfCampaign::fromValue( $value->value );
+        $campaign = WmfCampaign::fromKey( $value->value );
         $rows[] = array(
             l( $value->label, "admin/config/wmf_campaigns/edit/{$value->value}" ),
             $value->value,
