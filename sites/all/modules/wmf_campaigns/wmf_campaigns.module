@@ -1,0 +1,256 @@
+<?php
+
+use wmf_communication\Mailer;
+
+const WMF_CAMPAIGNS_OPTION_GROUP_NAME = 'appeal_20080709183729';
+
+/**
+ * Implementation of hook_menu().
+ */
+function wmf_campaigns_menu() {
+    $items = array();
+
+    $items['admin/config/wmf_campaigns'] = array(
+        'title' => 'WMF Fundraising Campaigns',
+        'access arguments' => array('administer WMF campaigns'),
+        'page callback' => 'system_admin_menu_block_page',
+        'file' => 'system.admin.inc',
+        'file path' => drupal_get_path('module', 'system'),
+    );
+
+    $items['admin/config/wmf_campaigns/list'] = array(
+        'title' => 'Campaigns',
+        'description' => 'Manage campaigns.',
+        'access arguments' => array('administer WMF campaigns'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('wmf_campaigns_index_form'),
+    );
+
+    $items['admin/config/wmf_campaigns/edit/%'] = array(
+        'title' => 'Campaigns',
+        'description' => 'Manage campaigns.',
+        'access arguments' => array('administer WMF campaigns'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('wmf_campaigns_edit_form', 4),
+    );
+
+    return $items;
+}
+
+/**
+ * Implementation of hook_permission().
+ */
+function wmf_campaigns_permission() {
+    return array(
+        'administer WMF campaigns' => array(
+            'title' => t('Administer WMF Campaigns'),
+        ),
+    );
+}
+
+/**
+ * Callback for menu path "admin/config/wmf_campaigns".
+ */
+function wmf_campaigns_index_form() {
+    $form = array();
+
+    $api = civicrm_api_classapi();
+    $success = $api->OptionValue->get( array(
+        'option_group_name' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+    ) );
+    if ( !$success ) {
+        drupal_set_message( "Tough luck, cannot fetch campaigns: " . $api->errorMsg(), 'error' );
+        return;
+    }
+
+    // Do a little dance to reverse sort the stupid things
+    $optionValues = array();
+    foreach ( $api->values as $value ) {
+        $optionValues[] = $value;
+    }
+    usort( $optionValues, function( $a, $b ) {
+        return $a->value < $b->value;
+    } );
+
+    $rows = array();
+    foreach ( $optionValues as $value ) {
+        $campaign = WmfCampaign::fromValue( $value->value );
+        $rows[] = array(
+            l( $value->label, "admin/config/wmf_campaigns/edit/{$value->value}" ),
+            $value->value,
+            $value->is_active ? t( 'Yes' ) : t( 'No' ),
+            $campaign->getNotificationEmail() ? t( 'Yes' ) : t( 'No' ),
+        );
+    }
+
+    $headers = array(
+        'Campaign',
+        'Key',
+        'Enabled',
+        'Notification',
+    );
+    $table_html = theme_table( array(
+        'header' => $headers,
+        'rows' => $rows,
+        'caption' => t( 'Campaigns' ),
+        'empty' => t( 'No campaigns!' ),
+        'sticky' => false,
+        'colgroups' => array(),
+        'attributes' => array(),
+    ) );
+
+    $form['table'] = array(
+        '#markup' => $table_html,
+    );
+
+    return $form;
+}
+
+function wmf_campaigns_edit_form( $form, $formState, $campaignValue ) {
+    drupal_add_js( drupal_get_path( 'module', 'wmf_campaigns' ) . '/wmf_campaigns.js' );
+
+    $form = array();
+
+    $api = civicrm_api_classapi();
+    $success = $api->OptionValue->get( array(
+        'option_group_name' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+        'value' => intval( $campaignValue ),
+    ) );
+    if ( !$success || count( $api->values ) != 1 ) {
+        drupal_set_message( "No such campaign value: {$campaignValue}" );
+        return;
+    }
+    $campaign = $api->values[0];
+
+    $result = db_select( 'wmf_campaigns_campaign' )
+        ->fields( 'wmf_campaigns_campaign' )
+        ->condition( 'campaign_key', $campaign->value )
+        ->execute()
+        ->fetchAssoc();
+    if ( !$result ) {
+        $email = null;
+    } else {
+        $email = $result['notification_email'];
+    }
+
+    $form['label'] = array(
+        '#markup' => "<h2>{$campaign->label}</h2>",
+    );
+
+    $form['key'] = array(
+        '#markup' => "<b>utm_campaign key</b>: <code>{$campaign->value}</code>",
+    );
+
+    $form['notification'] = array(
+        '#type' => 'fieldset',
+        '#title' => t( 'Notifications' ),
+    );
+
+    $form['notification']['notification_enabled'] = array(
+        '#type' => 'checkbox',
+        '#title' => t( 'Enable notifications' ),
+        '#description' => t( 'Select if you wish to receive emails when donations containing this campaign identifier are received.' ),
+        '#required' => false,
+        '#default_value' => !empty( $email ),
+    );
+
+    $form['notification']['notification_email'] = array(
+        '#type' => 'textfield',
+        '#title' => t( 'Email recipient' ),
+        '#description' => t( 'Any notifications will be sent to this address.  To use multiple addresses, separate with a comma.' ),
+        '#required' => false,
+        '#default_value' => $email,
+    );
+
+    $form['campaign_key'] = array(
+        '#type' => 'hidden',
+        '#value' => $campaign->value,
+    );
+
+	$form['submit'] = array(
+		'#value' => t( 'Save' ),
+		'#type' => 'submit'
+	);
+
+    return $form;
+}
+
+function wmf_campaigns_edit_form_submit( $formId, &$formState ) {
+    $params = $formState['values'];
+
+    if ( $params['notification_enabled'] ) {
+        $email = $params['notification_email'];
+    } else {
+        $email = null;
+    }
+
+    db_merge( 'wmf_campaigns_campaign' )
+        ->key( array( 'campaign_value' => $params['campaign_value'] ) )
+        ->fields( array(
+            'campaign_key' => $params['campaign_key'],
+            'notification_email' => $email,
+        ) )
+        ->execute();
+    
+    drupal_set_message( t( "Successfully saved settings." ) );
+
+    $formState['redirect'] = "admin/config/wmf_campaigns/list";
+}
+
+/**
+ * implementation of hook_queue2civicrm_import
+ */
+function wmf_campaigns_queue2civicrm_import( $contributionInfo ) {
+    if ( empty( $contributionInfo['msg']['utm_campaign'] ) ) {
+        watchdog( 'wmf_campaigns', "No campaign for message", NULL, WATCHDOG_INFO );
+        return;
+    }
+
+    $campaignKey = $contributionInfo['msg']['utm_campaign'];
+    $campaign = WmfCampaign::fromKey( $campaignKey );
+    if ( !$campaign || !$campaign->getNotificationEmail() ) {
+        watchdog( 'wmf_campaigns', "No special behaviors configured for campaign {$campaignKey}", NULL, WATCHDOG_INFO );
+        return;
+    }
+
+    $email = $campaign->getNotificationEmail();
+    watchdog( 'wmf_campaigns', "Notifying {$email} about match on campaign {$campaignKey}", NULL, WATCHDOG_INFO );
+
+    //TODO: template this POS. So inconvenient.
+    $letter = array(
+        'from_address' => "fr-tech+wmf_campaigns@wikimedia.org",
+        'from_name' => "Campaign notifer",
+        'reply_to' => "fr-tech+wmf_campaigns-bounce@wikimedia.org",
+        'subject' => "Campaign donation: {$campaignKey}",
+    );
+    $civiUrl = CRM_Utils_System::url( 'civicrm/contact/view/contribution', array(
+        'reset' => 1,
+        'id' => $contributionInfo['contribution_id'],
+        'cid' => $contributionInfo['contact_id'],
+        'action' => 'view',
+    ) );
+    $dump = print_r( $contributionInfo['msg'], true );
+    $letter['html'] = <<<EOS
+<p>Contribution for campaign {$campaignKey}: <a href="{$civiUrl}">console</a></p>
+
+<p>{$dump}</p>
+EOS;
+
+    $civiUrl = html_entity_decode( $civiUrl );
+    $letter['plaintext'] = <<<EOS
+Contribution for campaign {$campaignKey}:
+
+{$civiUrl}
+
+{$dump}
+EOS;
+
+    $addressees = explode( ",", $campaign->getNotificationEmail() );
+    $mailer = Mailer::getDefault();
+    foreach ( $addressees as $recipient ) {
+        $letter['to_address'] = trim( $recipient );
+        $letter['to_name'] = t( "Dear donor services" );
+
+        $mailer->send( $letter );
+    }
+}
