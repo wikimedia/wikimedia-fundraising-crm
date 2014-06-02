@@ -1,0 +1,25 @@
+<?php
+
+function wmf_campaigns_schema() {
+    $schema = array();
+
+    $schema['wmf_campaigns_campaign'] = array(
+        'description' => 'Additional information about a Fundraising campaign',
+        'fields' => array(
+            'campaign_key' => array(
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => true,
+            ),
+            'notification_email' => array(
+                'type' => 'varchar',
+                'length' => '255',
+            ),
+        ),
+        'unique keys' => array(
+            'campaign_key' => array( 'campaign_key' ),
+        ),
+    );
+
+    return $schema;
+}
