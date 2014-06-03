@@ -223,26 +223,24 @@ function wmf_campaigns_queue2civicrm_import( $contributionInfo ) {
         'reply_to' => "fr-tech+wmf_campaigns-bounce@wikimedia.org",
         'subject' => "Campaign donation: {$campaignKey}",
     );
-    $civiUrl = CRM_Utils_System::url( 'civicrm/contact/view/contribution', array(
-        'reset' => 1,
-        'id' => $contributionInfo['contribution_id'],
-        'cid' => $contributionInfo['contact_id'],
-        'action' => 'view',
-    ) );
-    $dump = print_r( $contributionInfo['msg'], true );
+    $civiUrl = CRM_Utils_System::url( 'civicrm/contact/view/contribution',
+        array(
+            'reset' => 1,
+            'id' => $contributionInfo['contribution_id'],
+            'cid' => $contributionInfo['contact_id'],
+            'action' => 'view',
+        ),
+        true // absolute link
+    );
     $letter['html'] = <<<EOS
-<p>Contribution for campaign {$campaignKey}: <a href="{$civiUrl}">console</a></p>
-
-<p>{$dump}</p>
+<p>Contribution for campaign {$campaignKey}: Contact ID {$contributionInfo['contact_id']}, [link to <a href="{$civiUrl}">Civi console</a>]</p>
 EOS;
 
     $civiUrl = html_entity_decode( $civiUrl );
     $letter['plaintext'] = <<<EOS
-Contribution for campaign {$campaignKey}:
+Contribution for campaign {$campaignKey}: Contact ID {$contributionInfo['contact_id']}
 
 {$civiUrl}
-
-{$dump}
 EOS;
 
     $addressees = explode( ",", $campaign->getNotificationEmail() );
