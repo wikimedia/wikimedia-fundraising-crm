@@ -16,6 +16,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
     $msg[ 'frequency_unit' ] = isset( $msg[ 'frequency_unit' ] ) ? $msg[ 'frequency_unit' ] : 'month';
     $msg[ 'frequency_interval' ] = isset( $msg[ 'frequency_interval' ] ) ? (integer) $msg[ 'frequency_interval' ] : 1;
     $msg[ 'installments' ] = isset( $msg[ 'installments' ] ) ? (integer) $msg[ 'installments' ] : 0;
+    $msg['cancel'] = isset( $msg[ 'cancel' ] ) ? (integer) $msg[ 'cancel' ] : 0;
 
     if ( !isset( $msg[ 'recurring' ] ) && $msg[ 'recurring' ] != 1 ) {
         $error_message = t(
@@ -88,7 +89,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
         'installments' => $msg[ 'installments' ],
         'start_date' => wmf_common_date_unix_to_civicrm( $msg[ 'date' ] ),
         'create_date' => wmf_common_date_unix_to_civicrm( $msg[ 'date' ] ),
-        'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm( time() ) : null ),
+        'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm( $msg['cancel'] ) : null ),
         #FIXME:
         'processor_id' => 1,
         'cycle_day' => $msg[ 'cycle_day' ],
