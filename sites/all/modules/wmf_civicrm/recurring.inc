@@ -227,56 +227,66 @@ EOS;
 /**
  * wmf_civicrm_get_next_sched_contribution_date_for_month
  * 
+ * @param $record contribution_recur db record, containing at least:
+ *     frequency_interval, cycle_day
+ * @param $nowstamp optional timestamp at which to perform the calculation, otherwise now()
+ *
  * @return  string  Returns a date stamp in the format 'Y-m-d H:i:s' => 2011-12-31 00:00:00
  */
-function wmf_civicrm_get_next_sched_contribution_date_for_month($record)
+function wmf_civicrm_get_next_sched_contribution_date_for_month( $record, $nowstamp = null )
 {
-    $triggered_for_date = wmf_civicrm_get_last_trigger_date($record);
+    $triggered_for_date = wmf_civicrm_get_last_trigger_date( $record, $nowstamp );
     //$frequency_interval and $cycle_day will, at this point, have been found in $record. 
     $frequency_interval = (integer) $record['frequency_interval'];
     $cycle_day = $record['cycle_day'];
 
     $scheduled_date_stamp = $triggered_for_date;
     $added = 0;
-    while ( date('Y-m-d', $triggered_for_date) >= date('Y-m-d', $scheduled_date_stamp) && ( $added < $frequency_interval ) ){
+    while ( gmdate('Y-m-d', $triggered_for_date) >= gmdate('Y-m-d', $scheduled_date_stamp) && ( $added < $frequency_interval ) ){
         //this will happen at least once.
         $scheduled_date_stamp = wmf_civicrm_increment_date_to_target_day( $scheduled_date_stamp, 'month', $cycle_day );
         $added += 1;
     }
     
-    return date('Y-m-d H:i:s', $scheduled_date_stamp);
+    return gmdate('Y-m-d H:i:s', $scheduled_date_stamp);
 }
 
 /**
  * Calculates the last date this payment should have been triggered for, 
  * regardless of the actual date, or the last recorded date in the schedule. 
+ *
  * @param array $record An array that contains, at least, the cycle day. Passing 
  * this around in record format because that's what the rest of the module does. 
+ * @param int|null $nowstamp optional unix timestamp if we are performing the
+ * calculation for another date
+ *
  * @TODO: Stop passing around the whole record. 
  * @return timestamp A midnight timestamp for the day that should have triggered 
  * this recurring transaction. 
  */
-function wmf_civicrm_get_last_trigger_date($record)
+function wmf_civicrm_get_last_trigger_date( $record, $nowstamp = null )
 {
+    if ( $nowstamp === null ) {
+        $nowstamp = time();
+    }
+
     //Instead of adding to now, we have to look for the last time the cycle date 
     //should have been triggered, regardless of when the transaction actually went through.
     
     //TODO: This needs to implement more frequency intervals. For now, though, we only use monthly, so...
     if ( !array_key_exists( 'cycle_day', $record ) || !is_numeric( $record['cycle_day'] ) ){
-        return time();
+        return $nowstamp;
     } else {
         $cycle_day = (integer) $record['cycle_day'];
     }
-    
-    $nowstamp = time();
-    
-    $month = (int) date('n', $nowstamp);
-    $year = (int) date('Y', $nowstamp);
+
+    $month = (int) gmdate('n', $nowstamp);
+    $year = (int) gmdate('Y', $nowstamp);
     
     // Build a timestamp for the cycle day in this month
     // If we are still in the same month, this will be the correct value. If we're in the next month,
     // it'll be the wrong value and it'll be in the future; we fix that up below.
-    $last_trigger = mktime(0, 0, 0, $month, wmf_civicrm_get_cycle_day_for_month( $cycle_day, $month, $year ), $year);
+    $last_trigger = gmmktime(0, 0, 0, $month, wmf_civicrm_get_cycle_day_for_month( $cycle_day, $month, $year ), $year);
     
     // This loop fixes up $last_trigger in the case where we're running in a later month than when
     // the last trigger date actually was, which means $last_trigger will be in the future and will
@@ -293,7 +303,7 @@ function wmf_civicrm_get_last_trigger_date($record)
             $month = 12;
             --$year;
         }
-        $last_trigger = mktime(0, 0, 0, $month, wmf_civicrm_get_cycle_day_for_month( $cycle_day, $month, $year ), $year);
+        $last_trigger = gmmktime(0, 0, 0, $month, wmf_civicrm_get_cycle_day_for_month( $cycle_day, $month, $year ), $year);
     }
     return $last_trigger;
 }
@@ -323,8 +333,8 @@ function wmf_civicrm_increment_date_to_target_day( $date, $interval = 'month', $
         if ( is_null( $cycle_day ) ){
           $cycle_day = wmf_civicrm_get_cycle_day( $date );
         }
-        $month = (int) date('n', $date);
-        $year = (int) date('Y', $date);
+        $month = (int) gmdate('n', $date);
+        $year = (int) gmdate('Y', $date);
 
         $month += 1;
         //if we wanted to edit this to handle adding more than one month at 
@@ -336,7 +346,7 @@ function wmf_civicrm_increment_date_to_target_day( $date, $interval = 'month', $
 
         $target_day = wmf_civicrm_get_cycle_day_for_month($cycle_day, $month, $year);
 
-        $next_date = mktime(0, 0, 0, $month, $target_day, $year);
+        $next_date = gmmktime(0, 0, 0, $month, $target_day, $year);
         return $next_date;
     }
 }
