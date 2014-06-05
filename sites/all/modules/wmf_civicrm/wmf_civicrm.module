@@ -1233,7 +1233,6 @@ function wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id
  * @throws WmfException
  */
 function wmf_civicrm_get_contributions_from_contribution_id($contribution_id) {
-    $gateway = strtolower($gateway);
     $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc
 		ON cc.id = cx.entity_id
 		WHERE cc.id = %1";
