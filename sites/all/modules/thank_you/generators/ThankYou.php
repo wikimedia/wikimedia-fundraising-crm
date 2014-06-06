@@ -1,8 +1,8 @@
 <?php namespace thank_you\generators;
 
-class ThankYou20131202 extends RenderTranslatedPage {
+class ThankYou extends RenderTranslatedPage {
 	function __construct() {
-		$this->title = 'Fundraising/Translation/Thank_you_email_20131202';
+		$this->title = 'Fundraising/Translation/Thank_you_email_20140606';
 		$this->proto_file = __DIR__ . '/../templates/html/thank_you.$1.html';
 
 		$this->substitutions = array(
@@ -38,7 +38,7 @@ class ThankYou20131202 extends RenderTranslatedPage {
 			'/\[#shop ((?:(?!\]).)*)\]/' => '<a href="https://shop.wikimedia.org">$1</a>',
 			'/\[#unsubscribe ((?:(?!\]).)*)\]/' => '<a href="{{ unsubscribe_link | raw }}">$1</a>',
 			'/\[#recurringCancel ((?:(?!\]).)*)\]/' => '<a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">$1</a>',
-			'/\[#translate ((?:(?!\]).)*)\]/' => '<a href="https://meta.wikimedia.org/w/index.php?title=Special:Translate&group=page-Fundraising%2FTranslation%2FThank_you_email_20131202">$1</a>',
+			'/\[#translate ((?:(?!\]).)*)\]/' => '<a href="https://meta.wikimedia.org/w/index.php?title=Special:Translate&group=page-Fundraising%2FTranslation%2FThank_you_email_20140606">$1</a>',
 			'/\[#donate ((?:(?!\]).)*)\]/' => '<a href="https://donate.wikimedia.org/">$1</a>',
 		);
 	}

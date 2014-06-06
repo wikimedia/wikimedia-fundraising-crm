@@ -45,13 +45,13 @@ function drush_make_thank_you() {
  */
 function get_thank_you_generators() {
     return array(
+        'generic' => '\thank_you\generators\ThankYou',
         '2012' => '\thank_you\generators\ThankYou2012',
-        '20131202' => '\thank_you\generators\ThankYou20131202',
     );
 }
 
 function get_default_thank_you_generator() {
+    // FIXME: yikes.
     $generators = array_keys(get_thank_you_generators());
-    rsort($generators);
     return $generators[0];
 }
