@@ -22,6 +22,8 @@ class RenderTranslatedPage {
 	/** @var string API URL to use on source wiki */
 	protected $api_url = 'https://meta.wikimedia.org/w/api.php';
 
+	protected $review_history;
+
 	/**
 	 * @var string[] Translation states that this module will accept as acceptable
 	 * to include in a composite message.
@@ -46,8 +48,9 @@ class RenderTranslatedPage {
         }
 		foreach( $languages as $lang ) {
 			try {
-				$this->check_translation( $lang );
-				$page_content = $this->get_parsed_page( $lang );
+				$published_revision = $this->get_published_revision( $lang );
+
+				$page_content = $this->get_parsed_page( $lang, $published_revision );
 				$page_content = $this->do_replacements( $page_content );
 				$page_content = wordwrap( $page_content, 100 );
 
@@ -155,106 +158,111 @@ class RenderTranslatedPage {
 	}
 
 	/**
-	 * Obtain and verify correctness of the translation segments of the
-	 * working title from MediaWiki.
+	 * Determine if and when a page has been marked "published", and prepare to
+	 * fetch that revision
 	 *
 	 * @param string $lang Language of the translation to be retrieved
 	 *
 	 * @throws TranslationException if content could not be retrieved
-	 * @return bool True if OK
+	 * @return int revision_id when page was published
 	 */
-	protected function check_translation( $lang ) {
-		static $expectedParts = array();
+	protected function get_published_revision( $lang ) {
+        // No translation workflow for English, just use the most recent rev
+        if ( $lang === 'en' ) {
+            return $this->get_revision_at_time( null, 'en' );
+        }
 
-		$j = $this->do_query(
-			array (
-				'action' => 'query',
-				'list' => 'messagecollection',
-				'mcgroup' => "page-{$this->title}",
-				'mclanguage' => $lang,
-				'mcprop' => array( 'translation', 'properties'),
-				'format' => 'json'
-			)
-		);
+        $history = $this->get_page_review_history();
+        $ts = null;
+        // Grab the most recent publication event
+        foreach ( $history as $review_event ) {
+            if ( $review_event['language'] === $lang ) {
+                if ( $review_event['new-state'] === 'published' ) {
+                    $ts = $review_event['timestamp'];
+                    break;
+                }
+            }
+        }
+        if ( !$ts ) {
+            throw new TranslationException( "Page {$this->title} / $lang has never been published" );
+        }
 
-		if ( is_array( $j ) ) {
-			// Check for required base elements
-			if ( !array_key_exists( 'query', $j ) ||
-				 !array_key_exists( 'messagecollection', $j['query'] ) ||
-				 !array_key_exists( 'metadata', $j['query'] ) ||
-				 !array_key_exists( 'resultsize', $j['query']['metadata'] )
-			) {
-				throw new TranslationException( "Title object {$this->title}/$lang was malformed" );
-			}
-
-			// Did we get everything?
-			if ( $j['query']['metadata']['remaining'] > 0 ) {
-				throw new TranslationException(
-					"Title object {$this->title}/$lang was not completely fetched"
-				);
-			}
-
-			// Make sure we get everything that should be there
-			$numParts = count( $j['query']['messagecollection'] );
-			if ( $lang === $this->source_lang ) {
-				$expectedParts[$this->title] = $numParts;
-			} else {
-				if ( !array_key_exists( $this->title, $expectedParts ) ) {
-					$this->check_translation( $this->source_lang );
-				}
-
-				if ( $numParts != $expectedParts[$this->title] ) {
-					throw new TranslationException(
-						"Title object {$this->title}/$lang did not have the expected number of parts " .
-						"($numParts / {$expectedParts[$this->title]})"
-					);
-				}
-			}
-
-			// Now check each part
-			foreach ( $j['query']['messagecollection'] as $part ) {
-				// check for required keys
-				if ( !array_key_exists( 'key', $part ) ||
-					 !array_key_exists( 'translation', $part ) ||
-					 !array_key_exists( 'properties', $part ) ||
-					 !array_key_exists( 'status', $part['properties'] )
-				) {
-					throw new TranslationException(
-						"Title object {$this->title}/$lang - {$part['key']} was malformed and missing keys"
-					);
-				}
-				$transState = $part['properties']['status'];
-				if ( !in_array( $transState, $this->valid_translation_states ) ) {
-					$subObj = explode( '/', $part['key'] );
-					$subObj = end( $subObj );
-
-					throw new TranslationException(
-						"Title '{$this->title}/$lang' sub object $subObj not in a valid state: {$transState}"
-					);
-				}
-			}
-
-			// If we're here everything is peachy
-			return true;
-
-		} else {
-			throw new TranslationException( "Title object {$this->title}/$lang had invalid JSON" );
-		}
+        // FIXME: we probably have to use pageid to survive traversal across
+        // renames.  That will take an additional API request, of course, cos
+        // the preceding call does not link directly to the page.
+        return $this->get_revision_at_time( $ts, $lang );
 	}
+
+    protected function get_revision_at_time( $ts, $lang ) {
+        $ts = preg_replace( '/[-T:Z]/', '', $ts );
+
+        $j = $this->do_query( array(
+            'action' => 'query',
+            'prop' => 'revisions',
+            'titles' => $this->get_translated_title( $lang ),
+            'rvstart' => $ts,
+            'rvlimit' => 1,
+            'format' => 'json',
+        ) );
+
+        if ( is_array( $j ) ) {
+            $page = array_pop( $j['query']['pages'] );
+            $revision_id = $page['revisions'][0]['revid'];
+            watchdog( 'make-thank-you', "Using published version {$revision_id} at {$ts} for {$lang}", NULL, WATCHDOG_INFO );
+            return $revision_id;
+        }
+        throw new TranslationException( "Could not find page revision of {$this->title} / $lang at time {$ts}" );
+    }
+
+    protected function get_page_review_history() {
+        if ( !$this->review_history ) {
+            $query = array(
+                'action' => 'query',
+                'list' => 'logevents',
+                'letype' => 'translationreview',
+                'leaction' => 'translationreview/group',
+                'letitle' => "Special:Translate/page-{$this->title}",
+                'lelimit' => 500,
+                'format' => 'json',
+            );
+
+            $j = $this->do_query( $query );
+
+            if ( !is_array( $j ) ) {
+                throw new TranslationException( "Title object {$this->title}/$lang log query returned invalid JSON" );
+            }
+
+            $this->review_history = $j['query']['logevents'];
+
+            while ( array_key_exists( 'query-continue', $j ) ) {
+                $query['lecontinue'] = $j['query-continue']['logevents']['lecontinue'];
+                $j = $this->do_query( $query );
+
+                $this->review_history = array_merge( $this->review_history, $j['query']['logevents'] );
+            }
+        }
+        return $this->review_history;
+    }
+
+    protected function get_translated_title( $lang ) {
+        return ($lang === $this->source_lang ) ? $this->title : "{$this->title}/$lang";
+    }
 
 	/**
 	 * Obtains the parsed HTML content of the translated working title.
 	 *
-	 * @param $lang
+	 * @param string $lang
+     * @param int $revision_id
 	 *
 	 * @return mixed
 	 * @throws TranslationException
 	 */
-	protected function get_parsed_page( $lang ) {
+	protected function get_parsed_page( $lang, $revision_id ) {
 		$j = $this->do_query(
 			array (
 				'action' => 'parse',
-				'page' => ( $lang === $this->source_lang ) ? $this->title : "{$this->title}/$lang",
+				'page' => $this->get_translated_title( $lang ),
+				'oldid' => $revision_id,
 				'format' => 'json'
 			)
 		);
