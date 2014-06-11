@@ -203,6 +203,15 @@ function thank_you_send_test_form_submit( $form_id, $form_values ) {
 	return true;
 }
 
+function thank_you_get_languages() {
+    return array_map(
+        function ( $path ) {
+            return preg_replace( '/^.+[.]([^.]+)[.]html$/', '\1', $path );
+        },
+        glob( __DIR__ . '/templates/html/thank_you.*.html' )
+    );
+}
+
 function thank_you_send_test( $params ) {
     watchdog( 'thank_you', "Starting thank_you test send to {$params['recipient_address']} in {$params['locale']}", array(), WATCHDOG_INFO );
 
