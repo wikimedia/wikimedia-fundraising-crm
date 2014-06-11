@@ -6,6 +6,7 @@ dependencies[] = wmf_civicrm
 dependencies[] = wmf_communication
 package = Wikimedia
 configure = admin/config/thank_you
+files[] = FindUnconsumedTokens.php
 files[] = Html2Text.php
 files[] = generators/RenderTranslatedPage.php
 files[] = generators/ThankYou2012.php

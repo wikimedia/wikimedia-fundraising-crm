@@ -35,6 +35,8 @@ function drush_make_thank_you() {
         $generator = new $generators[$genname]();
         $generator->execute($langs);
     }
+
+    FindUnconsumedTokens::searchTokens();
 }
 
 /**
