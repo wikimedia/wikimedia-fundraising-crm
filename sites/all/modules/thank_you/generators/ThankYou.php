@@ -31,6 +31,7 @@ class ThankYou extends RenderTranslatedPage {
 			'/\[#blog ((?:(?!\]).)*)\]/' => '<a href="https://blog.wikimedia.org">$1</a>',
 			// TODO: DO WE HAVE TRANSLATIONS FOR THE ANNUAL REPORT
 			'/\[#annual ((?:(?!\]).)*)\]/' => '<a href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Wikimedia_Foundation/Annual_Report/2012-2013/Front">$1</a>',
+			'/\[#matching ([^]]+)\]/' => '<a href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">$1</a>',
 			// TODO: DO WE HAVE TRANSLATIONS FOR THE ANNUAL PLAN
 			'/\[#plan ((?:(?!\]).)*)\]/' => '<a href="http://wikimediafoundation.org/wiki/2013-2014_Annual_Plan_Questions_and_Answers">$1</a>',
 			// TODO: DO WE HAVE TRANSLATIONS FOR THE 5-YEAR, STRATEGIC PLAN
