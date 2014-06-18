@@ -1,34 +1,34 @@
 {% if first_name and last_name %}
-<p>Caro Utilizador</p>
+<p>Caro {{ first_name }},</p>
 
 {% else %}
-<p>Caro Doador</p>
+<p>Caro doador</p>
 {% endif %}
 
-<p>Agradecemos A Sua Valiosa Oferta, Que Consiste Em Iluminar Com Conhecimentos Pessoas À Volta Do
-Mundo!</p>
+<p>Obrigado pela sua contribuição inestimável de levar conhecimento a todo ser humano ao redor do
+mundo.</p>
 
-<p>Meu nome é Lila Tretikov, e sou Diretora Executiva da Wikimedia Foundation. Durante o ano
-passado, doações como a sua alimentaram nossos esforços para expandir a enciclopédia em 287
-idiomas e fazê-la mais acessível por todo o mundo. Nos esforçamos mais para impactar aqueles que
-não teriam acesso a educação de outra forma. trazemos conhecimento para pessoas como Akshaya
-Iyengar de Solapur, Índia. Crescendo nessa pequena cidade de fabricação de produtos têxteis, ela
-usou a Wikipédia como sua fonte primária de aprendizado. Para estudantes nestas áreas, onde
-livros são um recurso escasso mas existe o acesso a redes de internet móveis, Wikipédia é um
-instrumento. Akshaya graduou-se num colégio na Índia e agora trabalha como engenheira de software
-nos Estados Unidos. Ela atribui à Wikipédia como a fornecedora de metade de seu conhecimento.</p>
+<p>O meu nome é Lila Tretikov, e sou a Diretora Executiva da Wikimedia Foundation. Durante o ano
+anterior, doações como a sua contribuiram os nossos esforços para expandir a enciclopédia em 287
+idiomas e fazê-la mais acessível por todo o mundo. Esforçamo-nos mais para impactar aqueles que
+não teriam acesso a educação de outra forma. Trazemos conhecimento a pessoas como Akshaya Iyengar
+de Solapur, Índia. Ao crescer nessa pequena cidade de industrias de produtos têxteis, ela usou a
+Wikipédia como fonte primária de aprendizagem. Para estudantes nestas áreas, onde os livros são
+um recurso escasso mas existe o acesso a redes de internet móveis, a Wikipédia é um instrumento.
+A Akshaya formou-se num colégio na Índia e agora trabalha como engenheira de software nos Estados
+Unidos. Ela credita à Wikipédia o fornecimento de metade de seu conhecimento.</p>
 
-<p>Esta história não é unica. Nossa missão é sublime e apresenta grandes desafios. A maior
-parte das pessoas que usam a Wikipédia ficam surpresas ao saber que é gerida por uma organização
-sem fins lucrativos e financiada por suas doações. Cada ano, apenas a quantidade suficiente de
-pessoas doam para manter a soma de todo o conhecimento humano disponível para todos. Obrigado por
-tornar esta missão possível.</p>
+<p>Esta história não é única. A nossa missão é sublime e apresenta grandes desafios. A maior
+parte das pessoas que usam a Wikipédia ficam surpreendidas ao saber que é gerida por uma
+organização sem fins lucrativos e financiada por doações. Cada ano, as pessoas doam o suficiente
+para manter a soma de todo o conhecimento humano disponível para todos. Obrigado por tornar esta
+missão possível.</p>
 
 <p>Em nome do meio bilhão de pessoas que leem a Wikipédia, milhares de editores voluntários, e
-dos funcionários da Fundação, eu lhe agradeço por manter a Wikipédia online e livre de
-anúncios neste ano.</p>
+dos funcionários da Fundação, agradeço-lhe por manter a Wikipédia online e livre de anúncios
+este ano.</p>
 
-<p>obrigado,<br/>
+<p>Obrigado,<br/>
 Lila</p>
 
 <p>Lila Tretikov<br/>
@@ -36,31 +36,32 @@ Executive Director,<br/>
 Wikimedia Foundation<br/>
 <a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
-<p>Muitos empregadores vão igualar as contribuições dos empregados, por favor, descubra se sua
-empresa tem um programa corporativo de correspondência de doações. Ajude a espalhar a palavra
-sobre a nossa arrecadação de fundos no <a href="https://www.facebook.com/wikipedia">Facebook</a>,
-<a href="https://twitter.com/Wikipedia">Twitter</a>, <a
+<p>Muitos funcionários vão igualar as contribuições dos empregados, por favor, descubra se sua
+empresa tem um <a href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">programa
+corporativo de doações</a>. Ajude a espalhar a palavra sobre a nossa arrecadação de fundos no <a
+href="https://www.facebook.com/wikipedia">Facebook</a>, <a
+href="https://twitter.com/Wikipedia">Twitter</a>, <a
 href="https://identi.ca/wikipedia">identi.ca</a> ou <a
 href="https://plus.google.com/+Wikipedia/posts">Google+</a> e <a
-href="https://blog.wikimedia.org">leia nosso blog</a>. Aqui está o <a
-href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Wikimedia_Foundation/Annual_Report/2012-2013/Front">Wikimedia
-Foundation relatório anual para 2012-13</a> da Fundação Wikimedia. Agora você também pode
-comprar a mercadorias da Wikipedia na <a
+href="https://blog.wikimedia.org">leia o nosso blog</a>. Aqui está o <a
+href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Wikimedia_Foundation/Annual_Report/2012-2013/Front">relatório
+anual da Wikimedia Foundation para 2012-13</a> da Fundação Wikimedia. Agora você também pode
+comprar merchandise da Wikipédia na <a
 href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
 
-<p>Para sus registros: su donação, numero {{ transaction_id }}, é {{ receive_date }} foi de {{
+<p>Para seu registro: Sua doação, número {{ transaction_id }} em {{ receive_date }} foi de {{
 (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Esta doação é parte de uma doação renovável. Pagamentos mensais serão
-debitados pela Wikimedia Foundation, até que nos notifique para parar. Se desejar cancelar os
+{% if recurring %}<p> Esta doação é parte de uma doação renovável. Serão debitados pela
+Wikimedia Foundation pagamentos mensais, até que nos notifique para parar. Se desejar cancelar os
 pagamentos, por favor veja nossas instruções em <a
 href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
-locale }}">easy cancellation instructions</a>. </p>{% endif %}
+locale }}">Instruções cancelamento fácil</a>. </p>{% endif %}
 
-<p>Esta carta pode servir como um registro de sua doação. Nenhum bem ou serviço foram providos,
-no todo ou em parte, por essa contribuição. A Fundação Wikimedia Ltda. é uma empresa de
-caridade sem fins lucrativos com isenção de impostos 501(c)(3) nos Estados Unidos. Nosso endereço
-é 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Número de isenção fiscal dos EUA:
+<p>Esta carta pode servir como um registo de sua doação. Nenhum bem ou serviço foram providos, no
+todo ou em parte, por essa contribuição. A Fundação Wikimedia Ltda. é uma empresa de caridade
+sem fins lucrativos com isenção de impostos 501(c)(3) nos Estados Unidos. Nosso endereço é 149
+New Montgomery, 3rd Floor, San Francisco, CA, 94105. Número de isenção fiscal dos EUA:
 20-0049703.</p>
 
 <div style="border: 1px solid black; padding:0 10px 5px 10px;">
@@ -70,10 +71,10 @@ Gostaríamos de o manter como um doador informado sobre as nossas atividades da 
 campanhas de angariação de fundos. Contudo, se preferir não receber os nossos e-mails, por favor
 clique abaixo e será retirado da lista.</p>
   <div style="margin: 0 25px">
-    <p><a href="{{ unsubscribe_link | raw }}">Unsubscribe</a></p>
+    <p><a href="{{ unsubscribe_link | raw }}">Remover inscrição</a></p>
   </div>
 </div>
 
-<p>Por favor ajude-nos a <a
+<p>Por favor, ajude-nos a <a
 href="https://meta.wikimedia.org/w/index.php?title=Special:Translate&group=page-Fundraising%2FTranslation%2FThank_you_email_20140606">traduzir</a>
 este e-mail.</p>

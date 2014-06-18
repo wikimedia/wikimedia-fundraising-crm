@@ -11,16 +11,15 @@ teşekkür ederiz.</p>
 <p>Ben Lila Tretikov, Wikimedia Vakfı'nın yetkili müdürüyüm. Önceki yıllarda, sizinki gibi
 yardımlar sayesinde ansiklopedimiz 287 dile ulaştı ve tüm dünyada daha ulaşılabilir hâle
 geldi. En çok da başka türlü bilgiye ulaşamayanlara etkide bulunabilmek için uğraşıyoruz.
-Biz Akshaya Iyengar gibi insanlara bilgi sunuyoruz. Akshaya, Solapur, Hindistan'da yaşıyor.
-Küçük bir dokuma kumaş imalatı yapan bir kasabada büyüyen Akshaya, Vikipedi'yi ana bilgi
-kaynağı olarak kullanıyor. Kitapların sınırlı ama mobil internet erişiminin bulunduğu bu
-bölgelerdeki öğrenciler için, Vikipedi çok etkili bir kaynak. Akshaya Hindistan'da eğitimini
-sürdürüp orada üniversiteden mezun oldu ve şimdi Birleşik Devletler'de yazılım mühendisi
-olarak çalışıyor. Vikipedi'den ise bilgilerinin yarısını edindiği bir kaynak olarak
-bahsediyor.</p>
+Biz Solapur, Hindistan'da yaşayan Akshaya Iyengar gibi insanlara bilgiyi sunuyoruz. Dokuma kumaş
+imalatı yapan küçük bir kasabada büyüyen Akshaya, Vikipedi'yi ana bilgi kaynağı olarak
+kullanıyor. Kitapların sınırlı ama mobil internet erişiminin bulunduğu bu bölgelerdeki
+öğrenciler için, Vikipedi çok etkili bir kaynak. Akshaya Hindistan'da eğitimini sürdürüp
+orada üniversiteden mezun oldu ve şimdi Birleşik Devletler'de yazılım mühendisi olarak
+çalışıyor. Vikipedi'den ise bilgilerinin yarısını edindiği bir kaynak olarak bahsediyor.</p>
 
-<p>Bu hikâye kendine mahsus değil. Bizim görevimiz ulvidir ve büyük zorluklar sunar.
-Vikipedi'yi kullananların büyük bir kısmı bizim kâr amacı gütmeyen bir organizasyon olarak
+<p>Bu hikâye eşsiz değil. Bizim görevimiz yücedir ve büyük zorluklar sunar. Vikipedi'yi
+kullananların büyük bir kısmı bizim kâr amacı gütmeyen bir organizasyon olarak
 çalıştığımızı ve sizlerin kaynaklarıyla finanse edildiğini duyunca büyük bir
 şaşkınlık yaşıyorlar. Her yıl, ucu ucuna yetecek sayıda insan, bilginin herkese
 ulaşabilmesini sağlamak amacıyla bağış yapıyor. Bu görevi yapabilmeyi mümkün
@@ -39,7 +38,8 @@ Wikimedia Vakfı<br/>
 <a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>Pekçok işveren eleman katkılarını eşleyecek, eğer şirketiniz eşleşen hediyeler şirket
-hediyeler eşleştirme programına dahilse lütfen bunu keşfedin. <a
+<a href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">hediyeler eşleştirme
+programına</a> dahilse lütfen bunu keşfedin. <a
 href="https://www.facebook.com/wikipedia">Facebook</a>, <a
 href="https://twitter.com/Wikipedia">Twitter</a>, <a
 href="https://identi.ca/wikipedia">identi.ca</a> ve ya <a
@@ -50,8 +50,8 @@ href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Wikimedia_Foundation/An
 Öte yandan, <a href="https://shop.wikimedia.org">shop.wikimedia.org</a> de, Vikipedi ürünlerini
 alabilirsiniz.</p>
 
-<p>Kendi kayıtlarınız için: Bağışınız {{ receive_date }} tarihinde {{ (currency ~ " " ~
-amount) | l10n_currency(locale) }} kadardır.</p>
+<p>Kendi kayıtlarınız için: {{ transaction_id }} numaralı bağışınız {{ receive_date }}
+tarihinde {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} kadardır.</p>
 
 {% if recurring %}<p> Bu bağış tekrar eden aboneliğiniz gereğince yapılmıştır. Wikimedia
 Vakfı, sizden bize durdurma isteği gelene kadar her ay hesabınızdan para çekecektir. Ödemeleri
@@ -62,7 +62,7 @@ locale }}">kolayca iptal talimatları</a>na bakın. </p>{% endif %}
 <p>Bu mektup sizin bağışınızın bir kaydı olarak görülebilir. Bu katkının tamamı ve ya
 bir kısmı karşılığında herhangi bir mal ve ya hizmet sağlanmamıştır. Wikimedia Vakfı
 anonim şirketi kâr amacı gütmeyen bir yardım vakfıdır, Birleşik Devletler'de 501(c)(3)
-vergiden muaf durumundadır. Adresimiz: 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. ABD
+vergiden muaf durumundadır. Adresimiz: 149 New Montgomery, 3. Kat, San Francisco, CA, 94105. ABD
 vergi muafiyet numaramız: 20-0049703</p>
 
 <div style="border: 1px solid black; padding:0 10px 5px 10px;">
@@ -72,7 +72,7 @@ Bağışta bulunan biri olarak sizi topluluk etkinlikleri ve bağış toplantıl
 bilgilendirmeye devam etmek isteriz. Yine de bu gibi e-postaları bizden almamayı tercih ederseniz,
 lütfen aşağıdaki bağlantıyı tıklayın ve sizi listeden çıkaralım.</p>
   <div style="margin: 0 25px">
-    <p><a href="{{ unsubscribe_link | raw }}">İptal et</a></p>
+    <p><a href="{{ unsubscribe_link | raw }}">Aboneliği iptal et</a></p>
   </div>
 </div>
 
