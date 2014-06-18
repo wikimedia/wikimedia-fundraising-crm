@@ -48,7 +48,6 @@ function drush_make_thank_you() {
 function get_thank_you_generators() {
     return array(
         'generic' => '\thank_you\generators\ThankYou',
-        '2012' => '\thank_you\generators\ThankYou2012',
     );
 }
 
