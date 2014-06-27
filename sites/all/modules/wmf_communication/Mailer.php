@@ -43,6 +43,35 @@ class Mailer {
             throw new Exception( "Unknown mailer requested: " . self::$defaultSystem );
         }
     }
+
+    /**
+     * Wrap raw HTML in a full document
+     *
+     * This is necessary to convince recalcitrant mail clients that we are
+     * serious about the character encoding.
+     *
+     * @param string $html
+     *
+     * @return string
+     */
+    static public function wrapHtmlSnippet( $html ) {
+        if ( preg_match( '/<html.*>/i', $html ) ) {
+            watchdog( 'wmf_communication',
+                "Tried to wrap something that already contains a full HTML document.",
+                NULL, WATCHDOG_ERROR );
+            return $html;
+        }
+
+        return "
+<html>
+<head>
+    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />
+</head>
+<body>
+{$html}
+</body>
+</html>";
+    }
 }
 
 /**
@@ -82,7 +111,7 @@ class MailerPHPMailer implements IMailer {
 
         $mailer->Subject = $email['subject'];
         # n.b. - must set AltBody after MsgHTML(), or the text will be overwritten.
-        $mailer->MsgHTML( $email['html'] );
+        $mailer->MsgHTML( Mailer::wrapHtmlSnippet( $email['html'] ) );
         $mailer->AltBody = $email['plaintext'];
 
         $success = $mailer->Send();
@@ -104,7 +133,7 @@ class MailerDrupal implements IMailer {
             'Return-Path' => $from,
         );
 
-        $body = $this->formatTwoPart( $email['html'], $email['plaintext'], $headers );
+        $body = $this->formatTwoPart( Mailer::wrapHtmlSnippet( $email['html'] ), $email['plaintext'], $headers );
 
         $message = array(
             'id' => 'wmf_communication_generic',
