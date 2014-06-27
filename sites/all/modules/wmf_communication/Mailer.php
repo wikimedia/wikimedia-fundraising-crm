@@ -98,6 +98,7 @@ class MailerPHPMailer implements IMailer {
         $mailer = new \PHPMailer( true );
 
         $mailer->set( 'CharSet', 'utf-8' );
+        $mailer->Encoding = 'quoted-printable';
 
         $mailer->AddReplyTo( $email['from_address'], $email['from_name'] );
         $mailer->SetFrom( $email['from_address'], $email['from_name'] );
