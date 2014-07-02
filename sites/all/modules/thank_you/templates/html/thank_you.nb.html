@@ -1,0 +1,79 @@
+{% if first_name and last_name %}
+<p>Kjære {{ first_name }},</p>
+
+{% else %}
+<p>Kjære giver,</p>
+{% endif %}
+
+<p>Takk for din verdifulle gave som bringer kunnskap til alle mennesker i verden.</p>
+
+<p>Mitt navn er Lila Tretikov, og jeg er direktør for Wikimedia Foundation. I løpet av de siste
+årene har gaver som dine bidratt til vårt arbeide med å utvide leksikonet til 287 språkgrupper
+og til å gjøre det mer tilgjengelig over hele verden. Vi jobber mest med å nå dem som ikke har
+adgang til annen utdanning. Vi gir kunnskap til folk som Akshaya Iyengar fra Solapur, India. Med en
+oppvekst i denne lille tekstilbyen brukte hun Wikipedia som hovedkunnskapskilde. For studenter i
+disse områdene, hvor bøker er sjeldne men mobil internett-tilgang finnes, er Wikipedia
+uunnværlig. Akshaya tok collegeeksamen i India, og arbeider nå som software engineer i USA. Hun
+hevder at Wikipedia har gitt henne halvparten av kunnskapen hun har.</p>
+
+<p>Denne historien er ikke unik. Våre mål er ambisiøse og har store utfordringer knyttet til
+seg.De fleste som bruker Wikipedia er forbauset når de hører at det drives av en ideell
+organisasjon, som finansieres av bidragsytere som deg. Hvert år gir akkurat nok mennesker nok
+penger til å holde summen av all menneskelig kunnskap tilgjengelig for alle.Takk for at du har
+bidratt til dette.</p>
+
+<p>På vegne av en halv milliard mennesker som leser Wikipedia, tusener av frivillige skribenter og
+ansatte i Foundation vil jeg takke deg for at Wikipedia kan være online og annonsefritt i enda et
+år.</p>
+
+<p>Mange takk!<br/>
+Lila</p>
+
+<p>Lila Tretikov<br/>
+Executive Director,<br/>
+Wikimedia Foundation<br/>
+<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+
+<p>Mange arbeidesgivere vil matche bidragene de ansatte gir: vær så snill å sjekk om din bedrift
+har <a href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">bedriftsgiverprogram</a>.
+Hjelp til med å spre ordet om innsamlingsaksjonen på <a
+href="https://www.facebook.com/wikipedia">Facebook</a>, <a
+href="https://twitter.com/Wikipedia">Twitter</a>, <a
+href="https://identi.ca/wikipedia">identi.ca</a> eller <a
+href="https://plus.google.com/+Wikipedia/posts">Google+</a> og <a
+href="https://blog.wikimedia.org">les bloggen vår</a>. Her er Wikimedia Foundation <a
+href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Wikimedia_Foundation/Annual_Report/2012-2013/Front">Wikimedia
+Foundation sin årsrapport for 2012-13</a>. Du kan også kjøpe Wikipedia-effekter i butikken vår.
+<a href="https://shop.wikimedia.org">shop.wikimedia.org</a></p>
+
+<p>Til din opplysning: Din donasjon {{ transaction_id }} den {{ receive_date }} var {{ (currency ~ "
+" ~ amount) | l10n_currency(locale) }}</p>
+
+{% if recurring %}<p> Denne donasjonen er del av et løpende abonnement. Månedlige betalinger vil
+bli innbetalt til Wikimedia Foundation til du gir oss beskjed om annet. Hvis du ønsker å stanse
+betalingen, vennligst se vår <a
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">enkle avmeldingsinstruks</a>. </p>{% endif %}
+
+<p>Denne meldingen kan tjene som en dokumentasjon på ditt bidrag. Det er ikke blitt gitt motytelser
+i form av varer eller tjenester. Wikimedia Foundation er et non-profit veldedig selskap. Det er
+underlagt 501(c)(3) tax exempt status i USA (lov om skattefritak for allmennyttige stiftelser).
+Adressen er 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt-nummer:
+20-0049703</p>
+
+<div style="border: 1px solid black; padding:0 10px 5px 10px;">
+  <p>Mulighet for avmelding:</p>
+  <p><br/>
+Som støttespiller vil vi gjerne holde deg oppdatert om aktivitetene og innsamlingsaksjonene våre.
+Hvis du foretrekker å ikke motta e-poster om dette fra oss, så klikk på lenken under, så fjerner
+vi deg fra listen.</p>
+  <div style="margin: 0 25px">
+    <p><a href="{{ unsubscribe_link | raw }}">Avslutt abonnement</a></p>
+  </div>
+</div>
+
+<hr/>
+
+<p>Vennligst hjelp oss med å <a
+href="https://meta.wikimedia.org/w/index.php?title=Special:Translate&group=page-Fundraising%2FTranslation%2FThank_you_email_20140606">oversette</a>
+denne e-posten.</p>
