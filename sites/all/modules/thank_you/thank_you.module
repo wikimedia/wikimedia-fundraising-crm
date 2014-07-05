@@ -411,6 +411,8 @@ function thank_you_send_mail( $params ) {
 		'to_address' => $params['recipient_address'],
 
 		'subject' => variable_get( 'thank_you_subject', 'Thank you from the Wikimedia Foundation' ),
+
+		'locale' => $params['locale'],
 	);
 
 	$email['html'] = thank_you_render( $params );
