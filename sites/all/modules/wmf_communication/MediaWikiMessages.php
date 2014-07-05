@@ -50,7 +50,7 @@ class MediaWikiMessages {
         }
     }
 
-    function getInstance() {
+    static public function getInstance() {
         static $singleton;
         if ( !$singleton ) {
             $singleton = new MediaWikiMessages();
