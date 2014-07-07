@@ -27,6 +27,30 @@ interface IMailer {
  */
 class Mailer {
     static public $defaultSystem = 'phpmailer';
+    /**
+     * RTL languages, comes from http://en.wikipedia.org/wiki/Right-to-left#RTL_Wikipedia_languages
+     * TODO: move to the LanguageTag module once that's available from here.
+     */
+    static public $rtlLanguages = array(
+        'ar',
+        'arc',
+        'bcc',
+        'bqi',
+        'ckb',
+        'dv',
+        'fa',
+        'glk',
+        'he',
+        'ku',
+        'mzn',
+        'pnb',
+        'ps',
+        'sd',
+        'syc',
+        'ug',
+        'ur',
+        'yi',
+    );
 
     /**
      * Get the default Mailer
@@ -54,7 +78,7 @@ class Mailer {
      *
      * @return string
      */
-    static public function wrapHtmlSnippet( $html ) {
+    static public function wrapHtmlSnippet( $html, $locale = null ) {
         if ( preg_match( '/<html.*>/i', $html ) ) {
             watchdog( 'wmf_communication',
                 "Tried to wrap something that already contains a full HTML document.",
@@ -62,12 +86,24 @@ class Mailer {
             return $html;
         }
 
+        $langClause = '';
+        $bodyStyle = '';
+        if ( $locale ) {
+            $langClause = "lang=\"{$locale}\"";
+
+            $localeComponents = explode( '-', $locale );
+            $bareLanguage = $localeComponents[0];
+            if ( in_array( $bareLanguage, self::$rtlLanguages ) ) {
+                $bodyStyle = 'style="text-align:right; direction:rtl;"';
+            }
+        }
+
         return "
-<html>
+<html {$langClause}>
 <head>
     <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />
 </head>
-<body>
+<body {$bodyStyle}>
 {$html}
 </body>
 </html>";
@@ -112,7 +148,7 @@ class MailerPHPMailer implements IMailer {
 
         $mailer->Subject = $email['subject'];
         # n.b. - must set AltBody after MsgHTML(), or the text will be overwritten.
-        $mailer->MsgHTML( Mailer::wrapHtmlSnippet( $email['html'] ) );
+        $mailer->MsgHTML( Mailer::wrapHtmlSnippet( $email['html'], $email['locale'] ) );
         $mailer->AltBody = $email['plaintext'];
 
         $success = $mailer->Send();
