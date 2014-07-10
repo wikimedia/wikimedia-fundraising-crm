@@ -4,6 +4,8 @@
  * CSV batch format for manually-keyed donation checks
  */
 abstract class ChecksFile {
+    protected $numSkippedRows = 0;
+
     /**
      * @param string $file_uri path to the file
      */
@@ -21,6 +23,12 @@ abstract class ChecksFile {
         ini_set( 'auto_detect_line_endings', true );
         if( ( $file = fopen( $this->file_uri, 'r' )) === FALSE ){
             throw new WmfException( 'FILE_NOT_FOUND', 'Import checks: Could not open file for reading: ' . $this->file_uri );
+        }
+
+        if ( $this->numSkippedRows ) {
+            foreach ( range( 1, $this->numSkippedRows ) as $i ) {
+                fgets( $file );
+            }
         }
 
         $headers = _load_headers( fgetcsv( $file, 0, ',', '"', '\\') );
