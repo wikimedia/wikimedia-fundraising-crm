@@ -69,7 +69,7 @@ class RenderTranslatedPage {
 					continue;
 				}
 			} catch ( TranslationException $ex ) {
-				watchdog( 'make-than-you', "$lang -- {$ex->getMessage()}", null, WATCHDOG_ERROR );
+				watchdog( 'make-thank-you', "$lang -- {$ex->getMessage()}", null, WATCHDOG_ERROR );
 			}
 		}
 	}
