@@ -636,18 +636,20 @@ function wmf_civicrm_normalize_contribution_amounts( $msg ) {
     }
 
     $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
-    try {
-        $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
-    }
-    catch (ExchangeRatesException $ex) {
-        throw new WmfException( 'INVALID_MESSAGE', "UNKNOWN_CURRENCY: '{$msg['original_currency']}': " . $ex->getMessage() );
-    }
+    if ( $msg['currency'] !== $settlement_currency ) {
+        try {
+            $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
+        }
+        catch (ExchangeRatesException $ex) {
+            throw new WmfException( 'INVALID_MESSAGE', "UNKNOWN_CURRENCY: '{$msg['original_currency']}': " . $ex->getMessage() );
+        }
 
-    // round the amounts and do exchange rate conversion
-    $msg['fee'] = round( $msg['fee'] * $settlement_convert, 2 );
-    $msg['gross'] = round( $msg['gross'] * $settlement_convert, 2 );
-    $msg['net'] = round( $msg['net'] * $settlement_convert, 2 );
-    $msg['currency'] = $settlement_currency;
+        // round the amounts and do exchange rate conversion
+        $msg['fee'] = round( $msg['fee'] * $settlement_convert, 2 );
+        $msg['gross'] = round( $msg['gross'] * $settlement_convert, 2 );
+        $msg['net'] = round( $msg['net'] * $settlement_convert, 2 );
+        $msg['currency'] = $settlement_currency;
+    }
 
     return $msg;
 }
