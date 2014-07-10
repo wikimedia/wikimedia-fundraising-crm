@@ -11,6 +11,7 @@ dependencies[] = civicrm
 files[] = AzlChecksFile.php
 files[] = ChecksFile.php
 files[] = ChecksImportLog.php
+files[] = CoinbaseFile.php
 files[] = ContributionConversion.php
 files[] = CsvBatchFile.php
 files[] = EmptyRowException.php
