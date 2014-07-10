@@ -301,6 +301,15 @@ function thank_you_for_contribution( $contribution_id ) {
         return false;
     }
 
+    $amount = $custom_values['original_amount'];
+    $currency = $custom_values['original_currency'];
+
+    // Use settlement currency if the original currency is virtual, for tax reasons.
+    if ( $custom_values['original_currency'] === 'BTC' ) {
+        $amount = $contribution['total_amount'];
+        $currency = $contribution['currency'];
+    }
+
     $tags = civicrm_api3( 'EntityTag', 'getdetails', array(
         'entity_table' => 'civicrm_contribution',
         'entity_id' => $contribution_id
@@ -322,8 +331,8 @@ function thank_you_for_contribution( $contribution_id ) {
     $locale = wmf_common_locale_civi_to_mediawiki( $locale );
 
     $params = array(
-        'amount' => $custom_values['original_amount'],
-        'currency' => $custom_values['original_currency'],
+        'amount' => $amount,
+        'currency' => $currency,
         'first_name' => $contact['first_name'],
 		'from_name' => variable_get( 'thank_you_from_name', 'Wikimedia Foundation' ),
 		'from_address' => variable_get( 'thank_you_from_address', 'donate@wikimedia.org' ),
