@@ -129,6 +129,8 @@ abstract class ChecksFile {
             throw new WmfException( 'CIVI_REQ_FIELD', t( "Missing required fields @keys during check import", array( "@keys" => implode( ", ", $failed ) ) ) );
         }
 
+        $this->setSourceData( $msg );
+
         return $msg;
     }
 
@@ -207,6 +209,17 @@ abstract class ChecksFile {
                 $msg['gateway_txn_id'] = md5( $msg['date'] . $name_salt . $this->row_index );
             }
         }
+    }
+
+    protected function setSourceData( &$msg ) {
+        $msg = array_merge( $msg, array(
+            'source_type' => 'direct',
+            'source_name' => 'Offline importer: ' . get_class($this),
+            'source_host' => gethostname(),
+            'source_run_id' => getmypid(),
+            'source_version' => wmf_common_get_my_revision(),
+            'source_enqueued_time' => time(),
+        ) );
     }
 
     protected function getDefaultValues() {
