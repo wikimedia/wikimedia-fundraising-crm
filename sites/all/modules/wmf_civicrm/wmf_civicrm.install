@@ -816,3 +816,14 @@ function wmf_civicrm_update_7019()
 
     wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
 }
+
+/**
+ * Add Bitcoin payment instrument
+ */
+function wmf_civicrm_update_7020()
+{
+    $payment_instruments = array(
+        'Bitcoin',
+    );
+    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
+}
