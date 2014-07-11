@@ -650,12 +650,18 @@ function wmf_civicrm_normalize_contribution_amounts( $msg ) {
             throw new WmfException( 'INVALID_MESSAGE', "UNKNOWN_CURRENCY: '{$msg['original_currency']}': " . $ex->getMessage() );
         }
 
-        // round the amounts and do exchange rate conversion
-        $msg['fee'] = round( $msg['fee'] * $settlement_convert, 2 );
-        $msg['gross'] = round( $msg['gross'] * $settlement_convert, 2 );
-        $msg['net'] = round( $msg['net'] * $settlement_convert, 2 );
+        // Do exchange rate conversion
         $msg['currency'] = $settlement_currency;
+        $msg['fee'] = $msg['fee'] * $settlement_convert;
+        $msg['gross'] = $msg['gross'] * $settlement_convert;
+        $msg['net'] = $msg['net'] * $settlement_convert;
     }
+
+    // TODO: Lookup by currency
+    $significantDecimals = 2;
+    $msg['fee'] = round( $msg['fee'], $significantDecimals );
+    $msg['gross'] = round( $msg['gross'], $significantDecimals );
+    $msg['net'] = round( $msg['net'], $significantDecimals );
 
     return $msg;
 }
