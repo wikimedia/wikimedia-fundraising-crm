@@ -493,7 +493,7 @@ function recurring_normalize_msg( $msg  ) {
 
   //Seeing as we're in the recurring module...
   $msg[ 'recurring' ] = true;
-  
+
   $msg = wmf_civicrm_normalize_msg( $msg );
   return $msg;
 }
@@ -516,7 +516,6 @@ function recurring_normalize_paypal_msg( $msg ) {
 
   $timestamp = ( !isset( $msg[ 'payment_date' ] ) || !strlen( $msg[ 'payment_date' ] )) ? strtotime( "now" ) : strtotime( $msg[ 'payment_date' ] );
 
-  
   // the subscription id
   $msg_normalized[ 'subscr_id' ] = $msg[ 'subscr_id' ];
   $msg_normalized[ 'txn_type' ] = $msg[ 'txn_type' ];

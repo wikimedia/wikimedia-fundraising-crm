@@ -62,6 +62,7 @@ function civicrm_api_classapi()
 /**
  * Determines the settlement currency for a given donation.
  * Argument is a queue message or a civicrm contribution array.
+ * TODO: implement hook to determine our actual settlement currency.
  */
 function wmf_civicrm_get_settlement_currency($transaction)
 {
@@ -616,6 +617,8 @@ function wmf_civicrm_normalize_contribution_amounts( $msg ) {
         and ( empty( $msg['original_gross'] ) or empty( $msg['original_currency'] ) )
     ) {
         // just... don't
+        watchdog( 'wmf_civicrm', 'Not freaking out about non-monetary message.',
+            NULL, WATCHDOG_INFO );
         return $msg;
     }
 
@@ -637,6 +640,9 @@ function wmf_civicrm_normalize_contribution_amounts( $msg ) {
 
     $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
     if ( $msg['currency'] !== $settlement_currency ) {
+        watchdog( 'wmf_civicrm', 'Converting to settlement currency: %old -> %new',
+            array( '%old' => $msg['currency'], '%new' => $settlement_currency ),
+            WATCHDOG_INFO );
         try {
             $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
         }
@@ -1050,7 +1056,10 @@ function wmf_civicrm_normalize_msg( $msg ) {
     //if they don't exist (even if they're blank).
     // FIXME: don't use defaults.  Access msg properties using a functional interface.
     $defaults = array(
-        'date' => time(), //defaulting to now. @fixme: if you can think of a better thing to do in the name of historical exchange rates.
+        // FIXME: Default to now. If you can think of a better thing to do in
+        // the name of historical exchange rates.  Searching ts and
+        // source_enqueued_time is a good start.
+        'date' => time(),
         'first_name' => '',
         'middle_name' => '',
         'last_name' => '',
