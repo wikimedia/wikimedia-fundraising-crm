@@ -622,11 +622,9 @@ function wmf_civicrm_normalize_contribution_amounts( $msg ) {
         return $msg;
     }
 
-    if ( empty( $msg['original_gross'] ) ) {
-        $msg['original_gross'] = $msg['gross'];
-    }
-    if ( empty( $msg['original_currency'] ) ) {
+    if ( empty( $msg['original_currency'] ) && empty( $msg['original_gross'] ) ) {
         $msg['original_currency'] = $msg['currency'];
+        $msg['original_gross'] = $msg['gross'];
     }
 
     if ( !array_key_exists('fee', $msg) && !array_key_exists('net', $msg) ) {
