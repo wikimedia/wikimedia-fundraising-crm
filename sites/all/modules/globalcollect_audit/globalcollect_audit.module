@@ -549,8 +549,8 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 			//then the mismatch is expected, and with a little more checking...
 			// Invoice-amount-deliv = what we think it is.
 			// Payment-amount = what actually happened.
-			if ( (int)$wr1['Invoice-amount-deliv'] === (int)$donor_data['AMOUNT']  ){
-				$unstaged_amount = (int)wr1_amount($wr1)/100; //it's a GC thing.
+			if ((int) $wr1['Invoice-amount-deliv'] === (int) $donor_data['AMOUNT'] || (int) $wr1['Order-amount-deliv'] === (int) $donor_data['AMOUNT']) {
+        $unstaged_amount = (int)wr1_amount($wr1)/100; //it's a GC thing.
 				$amount_problem = false;
 			}
 		} 
@@ -731,8 +731,10 @@ function globalcollect_audit_make_default_donor_data( $wr1 ){
 		//absolute madness. But I'm curious. So... here we go.
 		$currency_code_fields = array(
 			'Invoice-currency-deliv',
-			'Invoice-currency-local',
-			'Payment-currency',
+      'Order-currency-deliv',
+      'Invoice-currency-local',
+      'Order-currency-local',
+      'Payment-currency',
 			'Currency-due',
 			'Over-under-currency-local', //the heck you say.
 		);
@@ -1806,8 +1808,10 @@ function wr1_currency( $record ){
 		'Transaction-currency',
 		'Payment-currency',
 		'Invoice-currency-deliv',
-		'Invoice-currency-local',
-		'Currency-due',
+    'Order-currency-deliv',
+    'Invoice-currency-local',
+    'Order-currency-local',
+    'Currency-due',
 		'Over-under-currency-local',
 	);
 	return gca_wr1_key_grinder($record, $ordered_keys, 'currency', true);
@@ -1816,7 +1820,8 @@ function wr1_currency( $record ){
 function wr1_date( $record ){
 	$ordered_keys = array(
 		'Date-authorised',
-		'Date-due',
+    'Date-order',
+    'Date-due',
 	);
 	return gca_wr1_key_grinder($record, $ordered_keys, 'date');
 }
