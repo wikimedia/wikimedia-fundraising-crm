@@ -19,6 +19,9 @@
         <directory>sites/all/modules/recurring_globalcollect/tests</directory>
       </testsuite>
       -->
+      <testsuite name="wmf_civicrm tests">
+        <directory>sites/all/modules/wmf_civicrm/tests/phpunit</directory>
+      </testsuite>
       <testsuite name="wmf_common tests">
         <directory>sites/all/modules/wmf_common/tests/phpunit</directory>
       </testsuite>

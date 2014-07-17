@@ -188,15 +188,16 @@ function recurring_import_subscr_payment( $msg ) {
    */
   if ( !isset( $msg[ 'subscr_id' ] ) ) {
     throw new WmfException( 'INVALID_RECURRING', 'Msg missing the subscr_id; cannot process.' );
-  } elseif ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) { // check for parent record in civicrm_contribution_recur and fetch its id
+  } elseif ( !$recur_record = wmf_civicrm_get_recur_record( $msg[ 'subscr_id' ] ) ) { // check for parent record in civicrm_contribution_recur and fetch its id
     watchdog( 'recurring', 'Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.' );
     throw new WmfException( 'MISSING_PREDECESSOR', "Missing the initial recurring record for subscr_id {$msg['subscr_id']}" );
   }
 
-  $contact[ 'id' ] = $recur_record->contact_id;
+  $msg['contact_id'] = $recur_record->contact_id;
+  $msg['contribution_recur_id'] = $recur_record->id;
 
   //insert the contribution
-  $contribution = wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_record->id );
+  $contribution = wmf_civicrm_contribution_message_import( $msg );
   
   /**
    *  Insert the contribution record.
@@ -208,7 +209,8 @@ function recurring_import_subscr_payment( $msg ) {
    *  for this contribution.
    */
   if ( $msg[ 'contribution_tracking_update' ] ) {
-    
+    // TODO: this scenario should be handled by the wmf_civicrm_contribution_message_import function.
+
     // Map the tracking record to the CiviCRM contribution
     wmf_civicrm_message_update_contribution_tracking( $msg, $contribution );
     
@@ -285,7 +287,7 @@ function recurring_import_subscr_acct( $msg ) {
  */
 function recurring_import_subscr_signup( $msg ) {
   // ensure there is not already a record of this account - if so, mark the message as succesfuly processed
-  if ( $recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
+  if ( $recur_record = wmf_civicrm_get_recur_record( $msg[ 'subscr_id' ] ) ) {
     throw new WmfException( 'DUPLICATE_CONTRIBUTION', 'Subscription account already exists' );
   }
   
@@ -327,7 +329,7 @@ function recurring_import_subscr_signup( $msg ) {
  */
 function recurring_import_subscr_cancel( $msg ) {
   // ensure we have a record of the subscription
-  if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
+  if ( !$recur_record = wmf_civicrm_get_recur_record( $msg[ 'subscr_id' ] ) ) {
     throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist' );
   }
   
@@ -354,7 +356,7 @@ function recurring_import_subscr_cancel( $msg ) {
  */
 function recurring_import_subscr_eot( $msg ) {
   // ensure we have a record of the subscription
-  if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
+  if ( !$recur_record = wmf_civicrm_get_recur_record( $msg[ 'subscr_id' ] ) ) {
     throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist' );
   }
 
@@ -382,7 +384,7 @@ function recurring_import_subscr_eot( $msg ) {
  */
 function recurring_import_subscr_modify( $msg ) {
   // ensure we have a record of the subscription
-  if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
+  if ( !$recur_record = wmf_civicrm_get_recur_record( $msg[ 'subscr_id' ] ) ) {
     throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist for subscription id: ' . print_r( $msg['subscr_id'], true ));
   }
 
@@ -421,7 +423,7 @@ function recurring_import_subscr_modify( $msg ) {
  */
 function recurring_import_subscr_failed( $msg ) {
   // ensure we have a record of the subscription
-  if ( !$recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] ) ) {
+  if ( !$recur_record = wmf_civicrm_get_recur_record( $msg[ 'subscr_id' ] ) ) {
     throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist for subscription id: ' . print_r( $msg['subscr_id'], true ) );
   }
   
@@ -438,25 +440,6 @@ function recurring_import_subscr_failed( $msg ) {
   } else {
     watchdog( 'recurring', 'Succesfuly cacneled subscription for failed payment for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
   }
-}
-
-/**
- * Get recurring record in CiviCRM for the given subscriber id
- * @param int $subscr_id
- * @return object|false
- */
-function recurring_get_recur_record( $subscr_id ) {
-  $query = "SELECT * FROM civicrm_contribution_recur WHERE trxn_id = %1";
-
-  $dao = CRM_Core_DAO::executeQuery( $query, array(
-    1 => array( $subscr_id, 'String' ),
-  ) );
-
-  if ( !$dao->fetch() ) {
-    return false;
-  }
-
-  return $dao;
 }
 
 /**
@@ -636,7 +619,7 @@ function recurring_normalize_paypal_msg( $msg ) {
     }
 
     if ( $msg[ 'txn_type' ] == 'subscr_failed' ) {
-      $recur_record = recurring_get_recur_record( $msg[ 'subscr_id' ] );
+      $recur_record = wmf_civicrm_get_recur_record( $msg[ 'subscr_id' ] );
       $msg_normalized[ 'failure_count' ] = $recur_record->failure_count + 1;
       if ( isset( $msg[ 'retry_at' ] )) {
         $msg_normalized[ 'failure_retry_date' ] = strtotime( $msg[ 'retry_at' ] );
@@ -680,7 +663,7 @@ function recurring_get_contribution_tracking_id( $msg ) {
     $contrib_ids = array();
 
     // determine if we already have a contrib tracking id for related contribs, working backwards from recur record
-    $recurring_record = recurring_get_recur_record( $msg['subscr_id'] );
+    $recurring_record = wmf_civicrm_get_recur_record( $msg['subscr_id'] );
 
     if ( $recurring_record ) { // we potentially have related contributions
       $recur_id = $recurring_record->id;

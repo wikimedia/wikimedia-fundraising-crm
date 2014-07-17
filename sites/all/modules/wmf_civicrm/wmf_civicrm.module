@@ -190,58 +190,77 @@ function wmf_civicrm_get_custom_field_name( $field_name ) {
  * throw an exception.
  */
 function wmf_civicrm_contribution_message_import( &$msg ) {
+    civicrm_initialize();
+
     $msg = wmf_civicrm_verify_message_and_stage($msg);
 
-    // insert the contact information
-    $contact = wmf_civicrm_message_contact_insert( $msg );
+    if ( !$msg['contact_id'] ) {
+        // insert the contact information
+        $contact = wmf_civicrm_message_contact_insert( $msg );
 
-    // Insert the location record
-    $location = wmf_civicrm_message_location_insert( $msg, $contact );
+        // Insert the location record
+        $location = wmf_civicrm_message_location_insert( $msg, $contact );
+
+        // Tag contact for review
+        try {
+            $tag = wmf_civicrm_tag_contact_for_review( $contact );
+        } catch ( WmfException $ex ) {
+            watchdog( 'queue2civicrm_import', 'Failed to tag contact for review.', NULL, WATCHDOG_ERROR );
+        }
+
+        $msg['contact_id'] = $contact['id'];
+    }
+
+    // Make new or associate with existing recurring records
+    $initial_recurring = false;
+    if ( $msg['recurring'] ) {
+        if ( !$msg['contribution_recur_id'] ) {
+            if ( !empty( $msg['subscr_id'] ) ) {
+                $recur_record = wmf_civicrm_get_recur_record( $msg['subscr_id'] );
+                if ( $recur_record ) {
+                    watchdog( 'queue2civicrm_import', 'Found matching recurring record for subscr_id: ' . $msg['subscr_id'] );
+                } else {
+                    // This is the initial recurring record
+                    watchdog( 'queue2civicrm_import', 'Attempting to insert recurring record.');
+                    wmf_civicrm_message_contribution_recur_insert( $msg, $contact['id'], $msg['subscr_id'] );
+                    $recur_record = wmf_civicrm_get_recur_record( $msg['subscr_id'] );
+                    $initial_recurring = true;
+                }
+                $msg['contribution_recur_id'] = $recur_record->id;
+            }
+        }
+    }
 
     // Insert the contribution record.
-    $contribution = wmf_civicrm_message_contribution_insert( $msg, $contact );
+    $contribution = _wmf_civicrm_message_contribution_insert( $msg );
 
-    if ( isset( $msg[ 'recurring' ] ) && $msg[ 'recurring' ] == 1 ) {
-        watchdog( 'queue2civicrm_import', 'Attempting to insert recurring record.'); //BLAH
-        wmf_civicrm_message_contribution_recur_insert( $msg, $contact['id'], $contribution );
+    if ( !$msg['recurring'] || $initial_recurring ) {
+        // Map the tracking record to the CiviCRM contribution
+        // @FIXME what do we do if this returns false?  nothing at the moment...
+        wmf_civicrm_message_update_contribution_tracking( $msg, $contribution );
     }
-
-    // Tag contact for review
-    try {
-        $tag = wmf_civicrm_tag_contact_for_review( $contact );
-    } catch (WmfException $ex) {
-        // XXX copying old logic, continues without a review tag
-    }
-
-    // Map the tracking record to the CiviCRM contribution
-    // @FIXME what do we do if this returns false?  nothing at the moment...
-    wmf_civicrm_message_update_contribution_tracking( $msg, $contribution );
 
     return $contribution;
 }
 
 /**
  * Insert the contribution record
- * 
- * Serves as a standard way for message processors to handle contribution
- * insertion.
- * 
+ *
+ * This is an internal method, you must be looking for
+ * @see wmf_civicrm_contribution_message_import.
+ *
  * @param array $msg
- * @param array $contact
- * @param integer $recur_id   See `civicrm_contribution`.`contribution_recur_id`
- * @param integer $effort_id  The effort id - the number of successful payments for recurring payments
+ *
  * @return array
  */
-function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL, $effort_id=NULL )
+function _wmf_civicrm_message_contribution_insert( $msg )
 {
-    civicrm_initialize();
-
     $transaction = WmfTransaction::from_message( $msg );
-    $transaction->recur_sequence = $effort_id;
+    $transaction->recur_sequence = $msg['effort_id'];
     $trxn_id = $transaction->get_unique_id();
 
     $contribution = array(
-        'contact_id' => $contact[ 'id' ],
+        'contact_id' => $msg['contact_id'],
         'total_amount' => $msg['gross'],
         'contribution_type_id' => $msg['contribution_type_id'],
         'payment_instrument_id' => $msg['payment_instrument_id'],
@@ -251,7 +270,7 @@ function wmf_civicrm_message_contribution_insert( $msg, $contact, $recur_id=NULL
         'receive_date' => wmf_common_date_unix_to_civicrm( $msg['date'] ),
         'currency' => $msg['currency'],
         'source' => $msg['original_currency'] . ' ' . $msg['original_gross'],
-        'contribution_recur_id' => $recur_id,
+        'contribution_recur_id' => $msg['contribution_recur_id'],
         'check_number' => $msg['check_number'],
         'letter_code' => $msg['letter_code'],
 
@@ -1081,6 +1100,10 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'thankyou_date' => null,
         'recurring' => null,
         'utm_campaign' => null,
+        'recurring' => null,
+        'contact_id' => null,
+        'contribution_recur_id' => null,
+        'effort_id' => null,
     );
     $msg = $msg + $defaults;
     

@@ -3,6 +3,7 @@ description = Tests
 core = 7.x
 dependencies[] = queue2civicrm
 dependencies[] = recurring
+dependencies[] = wmf_civicrm
 dependencies[] = wmf_refund_qc
 dependencies[] = recurring_globalcollect
 package = queue2civicrm.simpletest
