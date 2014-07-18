@@ -42,10 +42,7 @@ class WmfException extends Exception {
             'fatal' => TRUE,
         ),
         'UNSUBSCRIBE' => array(
-            'fatal' => TRUE,
-        ),
-        'UNSUBSCRIBE_WARN' => array(
-            'no-email' => TRUE,
+            'reject' => TRUE,
         ),
         'MISSING_PREDECESSOR' => array(
             'requeue' => TRUE,
