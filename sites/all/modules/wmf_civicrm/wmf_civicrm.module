@@ -1087,6 +1087,10 @@ function wmf_civicrm_normalize_msg( $msg ) {
     if ( empty( $msg['contribution_type_id'] ) ) {
         if ( empty( $msg['contribution_type'] ) ) {
             $msg['contribution_type'] = wmf_civicrm_get_message_contribution_type( $msg );
+
+            if ( !$msg['contribution_type'] ) {
+                throw new WmfException( 'INVALID_MESSAGE', 'No contribution type specified' );
+            }
         }
         $msg['contribution_type_id'] = wmf_civicrm_get_civi_id( 'contribution_type_id', $msg['contribution_type'] );
     }
@@ -1094,6 +1098,10 @@ function wmf_civicrm_normalize_msg( $msg ) {
     if ( empty( $msg['payment_instrument_id'] ) ) {
         if ( empty( $msg['payment_instrument'] ) ) {
             $msg['payment_instrument'] = wmf_civicrm_get_message_payment_instrument( $msg );
+
+            if ( !$msg['payment_instrument'] ) {
+                throw new WmfException( 'INVALID_MESSAGE', 'No payment instrument specified' );
+            }
         }
         $msg['payment_instrument_id'] = wmf_civicrm_get_civi_id( 'payment_instrument_id', $msg['payment_instrument'] );
     }
