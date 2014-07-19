@@ -1,6 +1,6 @@
 <?php
 
-class WmfTransactionTestCase extends PHPUnit_Framework_TestCase {
+class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
     public function testParseUniqueId() {
         $transaction = WmfTransaction::from_unique_id( "RFD RECURRING GLOBALCOLLECT 1234 432" );
         $this->assertEquals(
