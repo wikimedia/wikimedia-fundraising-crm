@@ -45,7 +45,7 @@ abstract class ChecksFile {
 
         $num_successful = 0;
         $num_duplicates = 0;
-        $this->row_index = -1;
+        $this->row_index = -1 + $this->numSkippedRows;
 
         while( ( $row = fgetcsv( $file, 0, ',', '"', '\\')) !== FALSE) {
             $this->row_index++;
@@ -60,6 +60,26 @@ abstract class ChecksFile {
 
             try {
                 $msg = $this->parseRow( $data );
+
+                // check to see if we have already processed this check
+                if ( $existing = wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ){
+                    // if so, move on
+                    watchdog( 'offline2civicrm', 'Contribution matches existing contribution (id: @id), skipping it.', array( '@id' => $existing[0]['id'] ), WATCHDOG_INFO );
+                    $num_duplicates++;
+                    continue;
+                }
+
+                // tha business.
+                $contribution = wmf_civicrm_contribution_message_import( $msg );
+                $this->mungeContribution( $contribution );
+
+                watchdog( 'offline2civicrm',
+                    'Import checks: Contribution imported successfully (@id): !msg', array(
+                        '@id' => $contribution['id'],
+                        '!msg' => print_r( $msg, true ),
+                    ), WATCHDOG_INFO
+                );
+                $num_successful++;
             } catch ( EmptyRowException $ex ) {
                 continue;
             } catch ( WmfException $ex ) {
@@ -67,25 +87,6 @@ abstract class ChecksFile {
                 $errorMsg = "Import aborted due to error at row {$rowNum}: {$ex->getMessage()}, after {$num_successful} records were stored successfully and {$num_duplicates} duplicates encountered.";
                 throw new Exception($errorMsg);
             }
-
-            // check to see if we have already processed this check
-            if ( $existing = wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ){
-                // if so, move on
-                watchdog( 'offline2civicrm', 'Contribution matches existing contribution (id: @id), skipping it.', array( '@id' => $existing[0]['id'] ), WATCHDOG_INFO );
-                $num_duplicates++;
-                continue;
-            }
-
-            // tha business.
-            $contribution = wmf_civicrm_contribution_message_import( $msg );
-
-            watchdog( 'offline2civicrm',
-                'Import checks: Contribution imported successfully (@id): !msg', array(
-                    '@id' => $contribution['id'],
-                    '!msg' => print_r( $msg, true ),
-                ), WATCHDOG_INFO
-            );
-            $num_successful++;
         }
 
         $message = t( "Checks import complete. @successful imported, not including @duplicates duplicates.", array( '@successful' => $num_successful, '@duplicates' => $num_duplicates ) );
@@ -220,6 +221,16 @@ abstract class ChecksFile {
             'source_version' => wmf_common_get_my_revision(),
             'source_enqueued_time' => time(),
         ) );
+    }
+
+    /**
+     * Do fancy stuff with the contribution we just created
+     *
+     * FIXME: We need to wrap each loop iteration in a transaction to
+     * make this safe.  Otherwise we can easily die before adding the
+     * second message, and skip it when resuming the import.
+     */
+    protected function mungeContribution( $contribution ) {
     }
 
     protected function getDefaultValues() {

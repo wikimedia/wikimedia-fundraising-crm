@@ -11,7 +11,7 @@
             if ( uploadFile ) {
                 $submitButton.removeAttr( "disabled" );
 
-                if ( /Coinbase|Orders-Report/.test( uploadFile ) ) {
+                if ( /Coinbase|Orders-Report|\(Orders\)/.test( uploadFile ) ) {
                     fileType = "coinbase";
                 } else if ( /JPMorgan/.test( uploadFile ) ) {
                     fileType = "jpmorgan";
