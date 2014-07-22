@@ -7,6 +7,12 @@
 
 <p>Gracias por tu inestimable regalo de llevar el conocimiento a todos los rincones del mundo.</p>
 
+{% if "RecurringRestarted" in contribution_tags %}<p> Hemos resuelto recientemente un pequeño
+problema técnico que hizo que algunas donaciones mensuales recurrentes no se efectuaran. Hemos
+restablecido tu donación periódica y de ahora en adelante se procesará normalmente. No
+realizaremos cargos adicionales por los meses que se saltaron. Agradecemos tu paciencia y apoyo.
+Escríbenos a donate@wikimedia.org si tienes alguna pregunta. </p>{% endif %}
+
 <p>Me llamo Lila Tretikov, y soy la directora ejecutiva de la Fundación Wikimedia. Durante el año
 pasado, donaciones como las tuyas apoyaron nuestros esfuerzos para expandir la enciclopedia a 287
 idiomas y hacerla más accesible en todo el mundo. Nuestra prioridad principal son las personas que
@@ -34,7 +40,7 @@ Lila</p>
 <p>Lila Tretikov<br/>
 Directora Ejecutiva,<br/>
 Fundación Wikimedia<br/>
-<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>Para tu registro: Tu donativo, número {{ transaction_id }}, el día {{ receive_date }} fue de {{
 (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>

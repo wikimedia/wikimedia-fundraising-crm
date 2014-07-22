@@ -1,11 +1,17 @@
 {% if first_name and last_name %}
-<p>Kjære {{ first_name }},</p>
+<p>Kjære, {{ first_name }}</p>
 
 {% else %}
 <p>Kjære giver,</p>
 {% endif %}
 
 <p>Takk for din verdifulle gave som bringer kunnskap til alle mennesker i verden.</p>
+
+{% if "RecurringRestarted" in contribution_tags %}<p> Vi løste nylig et lite teknisk problem som
+midlertidig stoppet noen månedlige donasjoner. Din månedlige donasjon har blitt satt igang igjen,
+og den vil trekkes som vanlig fremover. Vi kommer ikke til å trekke penger for de månedene du ikke
+har blitt trukket pga. dette problemet. Takk for tålmodigheten og støtten din, og ikke nøl med å
+sende en epost til donate@wikimedia.org om du har noen spørsmål. </p>{% endif %}
 
 <p>Mitt navn er Lila Tretikov, og jeg er direktør for Wikimedia Foundation. I løpet av de siste
 årene har gaver som dine bidratt til vårt arbeide med å utvide leksikonet til 287 språkgrupper
@@ -30,9 +36,9 @@ ansatte i Foundation vil jeg takke deg for at Wikipedia kan være online og anno
 Lila</p>
 
 <p>Lila Tretikov<br/>
-Executive Director,<br/>
+Direktør,<br/>
 Wikimedia Foundation<br/>
-<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>Til din opplysning: Din donasjon {{ transaction_id }} den {{ receive_date }} var {{ (currency ~ "
 " ~ amount) | l10n_currency(locale) }}</p>

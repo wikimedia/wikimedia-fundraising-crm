@@ -8,6 +8,12 @@
 <p>Merci pour votre inestimable don pour apporter la connaissance à chaque être humain, partout
 dans le monde.</p>
 
+{% if "RecurringRestarted" in contribution_tags %}<p> Nous avons récemment résolu un petit
+problème technique qui interrompait certains dons mensuels. Nous avons rétabli votre don mensuel,
+et il continuera désormais normalement. Nous ne vous facturerons pas pour les mois qui ont été
+sautés. Nous vous remercions de votre patience et de votre soutien, et vous prions de ne pas
+hésiter à contacter donate@wikimedia.org si vous avez des questions. </p>{% endif %}
+
 <p>Je m’appelle Lila Tretikov et je suis la directrice exécutive de la Fondation Wikimédia.
 L'année dernière, les dons comme le vôtre ont soutenu nos efforts pour développer
 l’encyclopédie en 287 langues et pour la rendre plus accessible dans le monde entier. Nous
@@ -36,7 +42,7 @@ Lila</p>
 <p>Lila Tretikov,<br/>
 Directrice exécutive,<br/>
 Fondation Wikimédia.<br/>
-<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>Pour vos archives : votre don du {{ receive_date }}, numéro {{ transaction_id }}, était de {{
 (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>

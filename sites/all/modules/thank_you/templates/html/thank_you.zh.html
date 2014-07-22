@@ -1,0 +1,51 @@
+{% if first_name and last_name %}
+<p>您好 {{ first_name }},</p>
+
+{% else %}
+<p>尊敬的捐赠者，</p>
+{% endif %}
+
+<p>感谢您将自己无价的学识在这里贡献给了全世界的每一个人。</p>
+
+{% if "RecurringRestarted" in contribution_tags %}<p>
+最近我们解决了影响每月定期捐款的技术问题。现在您又可以一如往常的自动月捐了。我们不会让您补缴因技术问题而未付的款额。感谢您的耐心和支持，同时如果您有任何问题，可随时发邮件到
+donate@wikimedia.org。 </p>{% endif %}
+
+<p>我的名字是里拉•特雷梯科夫，现任维基百科基金会的执行董事。在过去的一年里，全靠捐赠者作出的贡献帮助我们将百科全书增加了287种语言，让全世界更容易使用。我们致力于让那些没有机会接受教育的人们得到我们的帮助。我们将知识带给像来自印度Solapur的阿克沙雅•里颜加。她自小成长在一个纺织业小镇，并以维基百科作为主要的学习工具。在这些处于书本资源匮乏却拥有手机因特网服务区域的学生们，维基百科不可少的。在阿克沙雅毕业于一个印度大学后，就来到了美国任职软件工程师。她十分感激维基百科，她认为自己有一半的知识都来自于此。</p>
+
+<p>像这样的故事并不少见，我们团队任重道远，前途曲折，充满挑战。很多使用维基的人们在得知它是由非盈利组织和捐款下运作后，都十分震惊。每年，都会有恰好人数的捐款者帮助我们把知识得以带给全世界任何人。我再次感谢你们，让我们能完成这个任务。</p>
+
+<p>我再次代表近五亿阅读维基百科的人们，上千维基编辑者和基金会的成员们，感谢你让我们得以使维基百科今年依旧上线而无广告。</p>
+
+<p>感谢您，<br/>
+里拉</p>
+
+<p>里拉·特雷梯科夫<br/>
+执行董事<br/>
+维基媒体基金会<br/>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+
+<p>特此证明：你于{{ receive_date }}日做出{{ (currency ~ " " ~ amount) |
+l10n_currency(locale) }}的捐款，捐款号{{ transaction_id }}。</p>
+
+{% if recurring %}<p>
+这次捐款是重复性的，每个月维基基金会都会从你的账号扣除，直到您通知停止。如果您想取消支付，请参见我们<a
+href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
+locale }}">快捷取消指令</a>。 </p>{% endif %}
+
+<p>这封邮件可以证明您的捐款金额记录。对此捐款没有提供任何商品和服务。维基基金会符合美国501
+(c)(3)规定的非盈利的慈善机构，我们的地址是美国加州旧金山新蒙哥马利大厦149号3层。免税号：20-0049703</p>
+
+<div style="border: 1px solid black; padding:0 10px 5px 10px;">
+  <p>退订选项：</p>
+  <p><br/>
+我们希望给您发送关于我们的社区活动和筹款活动的信息。如果您不希望收到相关邮件，请点击以下链接。我们将把您从列表中删除。</p>
+  <div style="margin: 0 25px">
+    <p><a href="{{ unsubscribe_link | raw }}">退订</a></p>
+  </div>
+</div>
+
+<hr/>
+
+<p>请帮助我们<a
+href="https://meta.wikimedia.org/w/index.php?title=Special:Translate&group=page-Fundraising%2FTranslation%2FThank_you_email_20140606">翻译</a>这封邮件。</p>
