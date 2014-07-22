@@ -8,6 +8,12 @@
 <p>תודה על מתנתך, שלא תסולא בפז, של הבאת ידע לכל אדם
 בעולם.</p>
 
+{% if "RecurringRestarted" in contribution_tags %}<p> פתרנו לאחרונה בעיה טכנית
+קטנה שעצרה חלק מהתרומות החודשיות. הפעלנו מחדש את
+תרומתך ועכשיו זה עובד כנדרש. אנו לא נחייב אותך על
+החודשים שעברו. תודה על סבלנותך ותמיכתך. הרגש חופשי
+לשלוח דוא"ל ל־donate@wikimedia.org אם יש לך שאלה כלשהיא. </p>{% endif %}
+
 <p>שמי הוא לילה טרטיקוב ואני המנכ״לית של קרן ויקימדיה.
 במהלך השנה האחרונה, מתנות כשלך סייעו בהנעת המאמצים
 להרחבת האנציקלופדיה ב־287 שפות כדי לאפשר גישה אליה מכל
@@ -37,7 +43,7 @@
 <p>לילה טרטיקוב<br/>
 מנכ״ל,<br/>
 קרן ויקימדיה<br/>
-<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>לידיעתך: תרומתך, מספר {{ transaction_id }} ב־{{ receive_date }} הייתה
 על סך {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>

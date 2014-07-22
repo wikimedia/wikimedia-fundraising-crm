@@ -1,5 +1,5 @@
 {% if first_name and last_name %}
-<p>Sehr geehrte/r {{ first_name }},</p>
+<p>Guten Tag {{ first_name }},</p>
 
 {% else %}
 <p>Sehr geehrte/r Spender/in,</p>
@@ -7,6 +7,12 @@
 
 <p>vielen Dank für Ihren unschätzbaren Beitrag, allen Menschen auf der Welt Wissen zu
 vermitteln.</p>
+
+{% if "RecurringRestarted" in contribution_tags %}<p> Wir haben vor Kurzem ein kleines technisches
+Problem behoben, auf Grund dessen einige monatliche Spendenabbuchungen ausgesetzt wurden, in Zukunft
+werden die Beträge wieder wie gehabt abgebucht. Für die ausgelassenen Monate buchen wir aber
+nichts nachträglich ab. Danke für deine Geduld und Unterstützung und zögere nicht, uns an
+donate@wikimedia.org zu schreiben, wenn du Fragen hast. </p>{% endif %}
 
 <p>Mein Name ist Lila Tretikov und ich bin Geschäftsführerin der Wikimedia-Stiftung. Während des
 letzten Jahres haben Spenden wie Ihre uns darin unterstützt, die Wikipedia auf 287 Sprachen zu
@@ -36,7 +42,7 @@ helfen, dass Wikipedia auch dieses Jahr weiter existieren kann und frei von Werb
 <p>Lila Tretikov<br/>
 Geschäftsführerin,<br/>
 Wikimedia Foundation<br/>
-<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>Für Ihre Unterlagen: Ihre {{ transaction_id }}Spende am {{ receive_date }} betrug {{ (currency ~
 " " ~ amount) | l10n_currency(locale) }}.</p>

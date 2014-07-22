@@ -8,6 +8,12 @@
 <p>Obrigado pela sua contribuição inestimável de levar conhecimento a todo ser humano ao redor do
 mundo.</p>
 
+{% if "RecurringRestarted" in contribution_tags %}<p> Recentemente resolvemos um pequeno problema
+técnico que suspendeu algumas doações mensais recorrentes. Já reintegramos a sua doação
+recorrente, pelo que a mesma será processada normalmente daqui em diante. Não serão cobrados os
+meses que foram suspensos. Obrigado pela sua paciência e pelo seu apoio, e por favor não hesite em
+enviar e-mail para donate@wikimedia.org se tiver alguma questão. </p>{% endif %}
+
 <p>O meu nome é Lila Tretikov, e sou a Diretora Executiva da Wikimedia Foundation. Durante o ano
 anterior, doações como a sua contribuiram os nossos esforços para expandir a enciclopédia em 287
 idiomas e fazê-la mais acessível por todo o mundo. Esforçamo-nos mais para impactar aqueles que
@@ -28,20 +34,20 @@ missão possível.</p>
 dos funcionários da Fundação, agradeço-lhe por manter a Wikipédia online e livre de anúncios
 este ano.</p>
 
-<p>Obrigado,<br/>
+<p>Obrigada,<br/>
 Lila</p>
 
 <p>Lila Tretikov<br/>
-Executive Director,<br/>
-Wikimedia Foundation<br/>
-<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+Diretora Executiva,<br/>
+Fundação Wikimedia<br/>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>Para seu registro: Sua doação, número {{ transaction_id }} em {{ receive_date }} foi de {{
 (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 {% if recurring %}<p> Esta doação é parte de uma doação renovável. Serão debitados pela
-Wikimedia Foundation pagamentos mensais, até que nos notifique para parar. Se desejar cancelar os
-pagamentos, por favor veja nossas instruções em <a
+Fundação Wikimedia pagamentos mensais até que nos notifique a fim de parar. Se desejar cancelar
+os pagamentos, por favor veja nossas instruções em <a
 href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
 locale }}">Instruções cancelamento fácil</a>. </p>{% endif %}
 

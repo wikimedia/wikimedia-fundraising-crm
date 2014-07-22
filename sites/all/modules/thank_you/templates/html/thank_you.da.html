@@ -7,6 +7,12 @@
 
 <p>Tak for dit uvurderlige bidrag til gøre viden tilgængelig for alle mennesker i verden.</p>
 
+{% if "RecurringRestarted" in contribution_tags %}<p> Vi har for nylig løst et lille teknisk
+problem, der standsede nogle månedligt tilbagevendende donationer. Vi har genstartet din
+tilbagevendende donation, og den vil forløbe normalt herfra. Vi opkræver ikke for de måneder, der
+er blevet sprunget over. Tak for din tålmodighed og støtte. Skriv endelig til
+donate@wikimedia.org, hvis du har spørgsmål. </p>{% endif %}
+
 <p>Mit navn er Lila Tretikov, og jeg er Wikimedia Foundations administrerende direktør. I løbet af
 det sidste års tid, har gaver som din drevet vores arbejde på encyklopædien, der findes på 287
 sprog, og gjort den tilgængelig over hele verden. Vi stræber især efter at berøre dem, der
@@ -33,7 +39,7 @@ Lila</p>
 <p>Lila Tretikov<br/>
 Adminstrerende Direktør,<br/>
 Wikimedia Foundation<br/>
-<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>Til dit regnskab: Dit bidrag, med nummer {{ transaction_id }}, den {{ receive_date }} var på {{
 (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
