@@ -8,6 +8,12 @@
 <p>ti ringraziamo per il tuo inestimabile contributo nel diffondere la conoscenza a ogni essere
 umano nel mondo.</p>
 
+{% if "RecurringRestarted" in contribution_tags %}<p> Abbiamo recentemente risolto un piccolo
+inconveniente tecnico che ha sospeso alcune donazioni con ricorrenza mensile. Abbiamo riavviato la
+tua donazione periodica e d'ora in poi sarà registrata come di consueto. Non ti addebiteremo le
+donazioni per i mesi saltati. Grazie per la tua pazienza e per il tuo sostegno. Puoi scrivere a
+donate@wikimedia.org per qualsiasi informazione. </p>{% endif %}
+
 <p>Il mio nome è Lila Tretikov e sono la direttrice esecutiva di Wikimedia Foundation. Negli scorsi
 anni, donazioni come la tua hanno alimentato i nostri sforzi per estendere l'enciclopedia in 287
 lingue e renderla più accessibile in tutto il mondo. Ci battiamo soprattutto per raggiungere coloro
@@ -35,7 +41,7 @@ Lila</p>
 <p>Lila Tretikov<br/>
 Direttrice esecutiva,<br/>
 Wikimedia Foundation<br/>
-<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>Per tua informazione: la tua donazione, numero {{ transaction_id }}, effettuata in data {{
 receive_date }}, è stata di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
@@ -55,7 +61,7 @@ CA, 94105. Numero di esenzione fiscale U.S.: 20-0049703</p>
 <div style="border: 1px solid black; padding:0 10px 5px 10px;">
   <p>Opzioni per la cancellazione:</p>
   <p><br/>
-Saremmo felici di aggiornarti, in quanto donatore, sulle attività della community e le raccolte
+In quanto donatore, saremmo felici di aggiornarti sulle attività della community e le raccolte
 fondi. Se tuttavia preferisci non ricevere questo genere di email, clicca sul link sottostante e il
 tuo nominativo sarà cancellato dalla lista.</p>
   <div style="margin: 0 25px">

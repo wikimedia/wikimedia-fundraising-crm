@@ -7,6 +7,12 @@
 
 <p>Děkuji Vám za Váš neocenitelný dar šíření vědomostí všem lidem po celém světě.</p>
 
+{% if "RecurringRestarted" in contribution_tags %}<p> Nedávno jsme odstranili malý technický
+problém, který pozastavil vaše pravidelné měsíční dary. Vaše opakované dary jsou znovu
+obnoveny a budou již nadále zpracovány normálně. Nebudeme Vám účtovat za měsíce, které
+byly vynechány. Děkujeme Vám za vaši trpělivost a podporu. Pokud máte jakékoliv dotaz, tak
+neváhejte napsat na donate@wikimedia.org. </p>{% endif %}
+
 <p>Jmenuji se Lila Tretikovová a jsem výkonnou ředitelkou nadace Wikimedia. V průběhu minulého
 roku poháněly dary, jako je ten Váš, naše úsilí rozšiřovat naši encyklopedii v 287
 jazycích a více ji zpřístupnit po celém světě. Nejvíce usilujeme o dosažení těch, kteří
@@ -32,7 +38,7 @@ Lila</p>
 <p>Lila Tretikovová<br/>
 výkonná ředitelka,<br/>
 Nadace Wikimedia<br/>
-<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>Pro vaše záznamy: Váš příspěvek číslo {{ transaction_id }} ze dne {{ receive_date }} byl
 {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>

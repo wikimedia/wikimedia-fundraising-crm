@@ -8,8 +8,15 @@
 <p>Dziękuję za Twój bezcenny dar, który pozwala zapewnić dostęp do sumy ludzkiej wiedzy osobom
 z całego świata.</p>
 
+{% if "RecurringRestarted" in contribution_tags %}<p> Niedawno rozwiązaliśmy mały problem
+techniczny, który był przyczyną wstrzymania niektórych dotacji okresowych. Udało się nam
+uruchomić ponownie Twoją dotację, a proces przekazywania funduszy powinien już przebiegać bez
+zakłóceń. Oczywiście nie obciązymy Twojego konta wpłatami, które zostały pominięte.
+Dziękujemy za Twoją cierpliwość i wsparcie. Jeżeli masz jakiekolwiek pytania, prosimy o kontakt
+pod adresem donate@wikimedia.org. </p>{% endif %}
+
 <p>Nazywam się Lila Tretikov i jestem Dyrektorem Wykonawczym Wikimedia Foundation. Przez ostatni
-rok dotacje takie, jak Twoja, wsparły naszą pracę mającą na celu rozbudowę istniejących 287
+rok dotacje, takie jak Twoja, wsparły naszą pracę mającą na celu rozbudowę istniejących 287
 edycji językowych Wikipedii i ułatwienie dostępu do nich osobom z całego świata. Szczególnie
 mocno staramy się oddziaływać na te regiony, w których nie ma dostępu do edukacji. Zapewniamy
 dostęp do wiedzy osobom takim jak Akshaya Iyengar z miasta Solapur w Indiach. Dorastając w tym
@@ -35,7 +42,7 @@ Lila</p>
 <p>Lila Tretikov<br/>
 Dyrektor Wykonawczy<br/>
 Wikimedia Foundation,<br/>
-<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>Dla Twojego użytku: Twoja darowizna o numerze {{ transaction_id }} została złożona w dniu {{
 receive_date }} w wysokości {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>

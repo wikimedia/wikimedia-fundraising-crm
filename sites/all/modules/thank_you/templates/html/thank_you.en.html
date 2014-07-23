@@ -7,6 +7,12 @@
 
 <p>Thank you for your invaluable gift of bringing knowledge to every human around the world.</p>
 
+{% if "RecurringRestarted" in contribution_tags %}<p> We recently resolved a small technical issue
+which paused some monthly recurring donations. We have reinstated your recurring donation, and it
+will process normally going forward. We will not charge you for the months that were skipped. Thank
+you for your patience and your support, and please feel free to email donate@wikimedia.org if you
+have any questions. </p>{% endif %}
+
 <p>My name is Lila Tretikov, and I’m the Executive Director of the Wikimedia Foundation. Over the
 past year, gifts like yours powered our efforts to expand the encyclopedia in 287 languages and to
 make it more accessible all over the world. We strive most to impact those who would not have access
@@ -31,7 +37,7 @@ Lila</p>
 <p>Lila Tretikov<br/>
 Executive Director,<br/>
 Wikimedia Foundation<br/>
-<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>For your records: Your donation, number {{ transaction_id }}, on {{ receive_date }} was {{
 (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>

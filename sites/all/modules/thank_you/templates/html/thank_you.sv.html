@@ -7,13 +7,20 @@
 
 <p>Tack för din ovärderliga gåva som sprider kunskap till alla människor världen över.</p>
 
+{% if "RecurringRestarted" in contribution_tags %}<p> Vi löste nyligen ett mindre tekniskt problem
+i vårt datasystem som har påverkat vissa månadsvist återkommande donationer. Detta orsakade en
+tillfällig paus i dina bidrag, men vi har nu löst problemet och ditt månadsvisa bidrag för att
+stödja Wikipedia är åter aktivt. Du kommer inte att debiteras för de månader som uteblev. Vi
+tackar dig hjärtligt för ditt tålamod och ditt stöd. Om du har några frågor är du välkommen
+att mejla oss på donate@wikimedia.org. </p>{% endif %}
+
 <p>Mitt namn är Lila Tretikov. Jag är verkställande direktör för Wikimediastiftelsen. Under det
 senaste året har gåvor som din möjliggjort vårt arbete med att utöka uppslagsverket till 287
 språk och att göra det mer tillgängligt världen över. Vi strävar främst efter att nå de som
 annars inte skulle ha tillgång till utbildning. Vi förmedlar kunskap till personer som Akshaya
 Iyengar från staden Solapur i Indien. Under sin uppväxt i den lilla textilstaden var Wikipedia
 hennes främsta källa till kunskap. För studenter i dessa områden, där böcker är svårfunna
-men mobilt bredband finns, är Wikipedia behjälpligt. Akshaya fortsatte med att ta examen från
+men mobilt bredband finns, är Wikipedia mycket viktigt. Akshaya fortsatte med att ta examen från
 college i Indien, och arbetar nu som programvaruutvecklare i USA. Hon tackar Wikipedia för att ha
 bidragit till halva hennes kunskap.</p>
 
@@ -32,7 +39,7 @@ Lila</p>
 <p>Lila Tretikov<br/>
 Verkställande direktör,<br/>
 Wikimediastiftelsen<br/>
-<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
 <p>För din bokföring: Din gåva, med nummer {{ transaction_id }}, den {{ receive_date }} var {{
 (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
