@@ -510,8 +510,8 @@ function globalcollect_audit_parse_wr1_file( $file ){
 			//have to do this to avoid collisions between the original and the chargeback / refund / whatever
 			$order_id = '-' . $order_id;
 		} 
-		$wr1_data[ $order_id ] = $record;
-	} 
+      $wr1_data[ $order_id ] = $record;
+    }
 	globalcollect_audit_echo("\n");
 	$time = microtime(true) - $start_time;
 	globalcollect_audit_echo("$file parsed in $time");
@@ -1610,8 +1610,45 @@ function globalcollect_audit_get_payment_submethod( $payment_product ){
 			'code' => 'cb',
 			'group' => 'cc',
 		),
+//non-recurring pre-SEPA DD in country-alpha order
+		703 => array(
+			'code' => 'dd_at',
+			'group' => 'dd',
+		),
+		706 => array(
+			'code' => 'dd_be',
+			'group' => 'dd',
+		),
+		707 => array(
+			'code' => 'dd_ch',
+			'group' => 'dd',
+		),
+		702 => array(
+			'code' => 'dd_de',
+			'group' => 'dd',
+		),
+		709 => array(
+			'code' => 'dd_es',
+			'group' => 'dd',
+		),
+		704 => array(
+			'code' => 'dd_fr',
+			'group' => 'dd',
+		),
+		705 => array(
+			'code' => 'dd_gb',
+			'group' => 'dd',
+		),
+		708 => array(
+			'code' => 'dd_it',
+			'group' => 'dd',
+		),
+		701 => array(
+			'code' => 'dd_nl',
+			'group' => 'dd',
+		),
+//recurring pre-SEPA DD in country-alpha order
 		713 => array(
-			//Direct Debit - all 'dd'
 			'code' => 'dd_at',
 			'group' => 'dd',
 		),
@@ -1647,6 +1684,12 @@ function globalcollect_audit_get_payment_submethod( $payment_product ){
 			'code' => 'dd_nl',
 			'group' => 'dd',
 		),
+//SEPA DD
+    770 => array(
+			'code' => 'dd_sepa',
+			'group' => 'dd',
+    ),
+//ewallets
 		840 => array(
 			//paypal
 			'code' => 'ew_paypal',
@@ -1774,6 +1817,9 @@ function wr1_echochar( $record ){
 			case 'PP': //this actually means "ewallets" to us
 				return 'e';
 				break;
+      case 'DD': //Direct Debit. Obviously.
+        return 'd';
+        break;
 			default:
 				return '+';
 		}
