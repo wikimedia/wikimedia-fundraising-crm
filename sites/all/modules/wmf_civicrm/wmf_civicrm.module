@@ -194,6 +194,22 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
 
     $msg = wmf_civicrm_verify_message_and_stage($msg);
 
+    // Associate with existing recurring records
+    if ( $msg['recurring']
+        && !$msg['contribution_recur_id']
+    ) {
+        if ( $msg['subscr_id'] ) {
+            $recur_record = wmf_civicrm_get_recur_record( $msg['subscr_id'] );
+            if ( $recur_record ) {
+                watchdog( 'queue2civicrm_import', 'Found matching recurring record for subscr_id: ' . $msg['subscr_id'], NULL, WATCHDOG_INFO );
+                $msg['contribution_recur_id'] = $recur_record->id;
+                $msg['contact_id'] = $recur_record->contact_id;
+            }
+        } else {
+            throw new WmfException( 'INVALID_MESSAGE', 'Recurring donation, but no subscription ID found.' );
+        }
+    }
+
     if ( !$msg['contact_id'] ) {
         // insert the contact information
         $contact = wmf_civicrm_message_contact_insert( $msg );
@@ -211,24 +227,13 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         $msg['contact_id'] = $contact['id'];
     }
 
-    // Make new or associate with existing recurring records
-    $initial_recurring = false;
-    if ( $msg['recurring'] ) {
-        if ( !$msg['contribution_recur_id'] ) {
-            if ( !empty( $msg['subscr_id'] ) ) {
-                $recur_record = wmf_civicrm_get_recur_record( $msg['subscr_id'] );
-                if ( $recur_record ) {
-                    watchdog( 'queue2civicrm_import', 'Found matching recurring record for subscr_id: ' . $msg['subscr_id'] );
-                } else {
-                    // This is the initial recurring record
-                    watchdog( 'queue2civicrm_import', 'Attempting to insert recurring record.');
-                    wmf_civicrm_message_contribution_recur_insert( $msg, $contact['id'], $msg['subscr_id'] );
-                    $recur_record = wmf_civicrm_get_recur_record( $msg['subscr_id'] );
-                    $initial_recurring = true;
-                }
-                $msg['contribution_recur_id'] = $recur_record->id;
-            }
-        }
+    // Make new recurring record if necessary
+    $initial_recurring = ( $msg['recurring'] && !$msg['contribution_recur_id'] );
+    if ( $initial_recurring ) {
+        watchdog( 'queue2civicrm_import', 'Attempting to insert new recurring subscription: ' . $msg['subscr_id'], NULL, WATCHDOG_INFO );
+        wmf_civicrm_message_contribution_recur_insert( $msg, $contact['id'], $msg['subscr_id'] );
+        $recur_record = wmf_civicrm_get_recur_record( $msg['subscr_id'] );
+        $msg['contribution_recur_id'] = $recur_record->id;
     }
 
     // Insert the contribution record.
@@ -1104,6 +1109,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'contact_id' => null,
         'contribution_recur_id' => null,
         'effort_id' => null,
+        'subscr_id' => null,
     );
     $msg = $msg + $defaults;
     
