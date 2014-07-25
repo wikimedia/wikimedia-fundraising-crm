@@ -16,7 +16,8 @@ class ContributionConversion {
             'date' => wmf_common_date_civicrm_to_unix( $contribution['receive_date'] ),
             'cancel' => $cancel,
         );
-        wmf_civicrm_message_contribution_recur_insert( $synth_msg, $contribution['contact_id'], $contribution );
+        // FIXME: preserving old incorrect behavior.  Use a real subscr_id here.
+        wmf_civicrm_message_contribution_recur_insert( $synth_msg, $contribution['contact_id'], $contribution['trxn_id'], $contribution );
         $api = civicrm_api_classapi();
         $update_params = array(
             'id' => $contribution['id'],

@@ -8,10 +8,12 @@
  * 
  * @param array $msg
  * @param integer $contact_id
+ * @param string $subscr_id
+ * //FIXME: should not pass a contribution in, only subscr_id
  * @param array $contribution   The contribution record
  * @return boolean	Returns true on success
  */
-function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $contribution_record )
+function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $subscr_id, $contribution_record = null )
 {
     $msg[ 'frequency_unit' ] = isset( $msg[ 'frequency_unit' ] ) ? $msg[ 'frequency_unit' ] : 'month';
     $msg[ 'frequency_interval' ] = isset( $msg[ 'frequency_interval' ] ) ? (integer) $msg[ 'frequency_interval' ] : 1;
@@ -58,21 +60,20 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
         throw new WmfException('IMPORT_SUBSCRIPTION', $error_message );
     }
     
-    if ( empty( $contribution_record ) ) {
-        $error_message = t(
-            'The contribution_record is empty, with the contact_id [!contact_id]',
-            array("!contact_id" => $contact_id)
-        );
-        throw new WmfException('IMPORT_SUBSCRIPTION', $error_message );
-    }
+    if ( !empty( $msg['subscr_id'] ) ) {
+        $gateway_subscr_id = $msg['subscr_id'];
+    } else {
+        // trxn_id must be set.
+        // FIXME: this should always be the subscr_id.
+        if ( empty( $contribution_record[ 'trxn_id' ] ) ) {
+            $error_message = t(
+                '`trxn_id` must be set and not empty, with the contact_id [!contact_id]',
+                array("!contact_id" => $contact_id)
+            );
+            throw new WmfException('IMPORT_SUBSCRIPTION', $error_message );
+        }
 
-    // trxn_id must be set.
-    if ( empty( $contribution_record[ 'trxn_id' ] ) ) {
-        $error_message = t(
-            '`trxn_id` must be set and not empty, with the contact_id [!contact_id]',
-            array("!contact_id" => $contact_id)
-        );
-        throw new WmfException('IMPORT_SUBSCRIPTION', $error_message );
+        $gateway_subscr_id = $contribution_record['trxn_id'];
     }
     
     $msg['cycle_day'] = wmf_civicrm_get_cycle_day( $msg['date'] );
@@ -94,20 +95,23 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $cont
         'processor_id' => 1,
         'cycle_day' => $msg[ 'cycle_day' ],
         'next_sched_contribution' => $next_sched_contribution,
-        'trxn_id' => $contribution_record['trxn_id'],
+        'trxn_id' => $gateway_subscr_id,
 
         'version' => 3,
     );
-    $api->ContributionRecur->Create( $insert_params );
-    $contribution_recur_id = $api->id;
-    if ( !$contribution_recur_id ) {
+    $success = $api->ContributionRecur->Create( $insert_params );
+    if ( !$success ) {
         throw new WmfException( 'IMPORT_SUBSCRIPTION', $api->errorMsg() );
     }
+    $contribution_recur_id = $api->id;
 
-    // Link the contribution to the recurring payment
-    $link_contribution_status = wmf_civicrm_update_contribution_for_recurring( $contribution_record['id'], $contribution_recur_id );
-    
-    return $link_contribution_status;
+    if ( $contribution_record ) {
+        // Link the contribution to the recurring payment
+        $link_contribution_status = wmf_civicrm_update_contribution_for_recurring( $contribution_record['id'], $contribution_recur_id );
+        return $link_contribution_status;
+    } else {
+        return true;
+    }
 }
 
 /**
@@ -389,4 +393,23 @@ LIMIT 1";
         return false;
     }
     return array_pop($out);
+}
+
+/**
+ * Get recurring record in CiviCRM for the given subscriber id
+ * @param string $subscr_id
+ * @return object|false
+ */
+function wmf_civicrm_get_recur_record( $subscr_id ) {
+  $query = "SELECT * FROM civicrm_contribution_recur WHERE trxn_id = %1";
+
+  $dao = CRM_Core_DAO::executeQuery( $query, array(
+    1 => array( $subscr_id, 'String' ),
+  ) );
+
+  if ( !$dao->fetch() ) {
+    return false;
+  }
+
+  return $dao;
 }

@@ -375,10 +375,6 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
 
     $initial_contribution = wmf_civicrm_get_initial_recurring_contribution( $contribution_recur['id'] );
 
-    $contact = array(
-        'id' => $contribution_recur['contact_id'],
-    );
-    
     $msg = array();
     $msg['fee'] = 0.00;
     
@@ -407,16 +403,12 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     $msg['source_run_id'] = getmypid();
     $msg['source_enqueued_time'] = wmf_common_date_unix_to_sql( time() ); // ARGH
 
-    /*
-     * This array needs to be rekeyed to be consistent with:
-     *
-     * @see thank_you_queue2civicrm_import
-     *
-     * id -> contribution_id
-     *
-     * @var array $contribution
-     */
-    $contribution = wmf_civicrm_message_contribution_insert($msg, $contact, $contribution_recur['id'], $values['effort_id']);
+    $msg['contact_id'] = $contribution_recur['contact_id'];
+    $msg['contribution_recur_id'] = $contribution_recur['id'];
+    $msg['effort_id'] = $values['effort_id'];
+
+    $contribution = wmf_civicrm_contribution_message_import( $msg );
+
     $contribution['contribution_id'] = $contribution['id'];
     unset( $contribution['id'] );
     

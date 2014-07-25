@@ -119,7 +119,7 @@ class PaypalRecurringTest extends BaseTestCase {
         $payment_data = $this->payment_message->getBody();
 
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $payment_data['gateway'], $payment_data['gateway_txn_id'] );
-        $recur_record = recurring_get_recur_record( $this->subscr_id );
+        $recur_record = wmf_civicrm_get_recur_record( $this->subscr_id );
         //FIXME: convert to array
 
         $this->verbose( json_encode( $contributions ) );
@@ -158,7 +158,7 @@ class PaypalRecurringTest extends BaseTestCase {
         recurring_import( $this->subscription_message );
         recurring_import( $this->expire_message );
 
-        $recur_record = recurring_get_recur_record( $this->subscr_id );
+        $recur_record = wmf_civicrm_get_recur_record( $this->subscr_id );
         $this->assertNotNull( $recur_record->end_date );
     }
 
@@ -166,7 +166,7 @@ class PaypalRecurringTest extends BaseTestCase {
         recurring_import( $this->subscription_message );
         recurring_import( $this->cancel_message );
 
-        $recur_record = recurring_get_recur_record( $this->subscr_id );
+        $recur_record = wmf_civicrm_get_recur_record( $this->subscr_id );
         $this->assertSuperset( get_object_vars( $recur_record ), array(
             'end_date' => '2000-04-01 00:01:02',
             'cancel_date' => '2000-04-01 00:01:02',
@@ -177,7 +177,7 @@ class PaypalRecurringTest extends BaseTestCase {
         recurring_import( $this->subscription_message );
         recurring_import( $this->failed_message );
 
-        $recur_record = recurring_get_recur_record( $this->subscr_id );
+        $recur_record = wmf_civicrm_get_recur_record( $this->subscr_id );
         $this->assertSuperset( get_object_vars( $recur_record ), array(
             'failure_count' => '3',
             'failure_retry_date' => '2000-05-01 00:01:02',
