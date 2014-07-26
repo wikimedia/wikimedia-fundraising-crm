@@ -58,7 +58,6 @@ class WmfException extends Exception {
         ),
     );
 
-    var $type;
     var $extra;
 
     function __construct( $type, $message, $extra = null ) {
@@ -66,13 +65,13 @@ class WmfException extends Exception {
             $message .= ' -- ' . t( 'Warning, throwing a misspelled exception: "%type"', array( '%type' => $type ) );
             $type = 'UNKNOWN';
         }
-        $this->type = $type;
+        $this->code = $type;
         $this->extra = $extra;
 
         if ( is_array( $message ) ) {
             $message = implode( "\n", $message );
         }
-        $this->message = "{$this->type} {$message}";
+        $this->message = "{$this->code} {$message}";
 
         if ( $extra ) {
             $this->message .= "\nSource: " . var_export( $extra, true );
@@ -85,13 +84,13 @@ class WmfException extends Exception {
             watchdog( 'wmf_common', $escaped, NULL, WATCHDOG_ERROR );
         }
         if ( function_exists('drush_set_error') && $this->isFatal() ) {
-            drush_set_error( $this->type, $this->message );
+            drush_set_error( $this->code, $this->message );
         }
     }
 
     function getErrorName()
     {
-        return $this->type;
+        return $this->code;
     }
 
     function isRollbackDb()
@@ -135,7 +134,7 @@ class WmfException extends Exception {
 
     protected function getErrorCharacteristic($property, $default)
     {
-        $info = self::$error_types[$this->type];
+        $info = self::$error_types[$this->code];
         if (array_key_exists($property, $info)) {
             return $info[$property];
         }
