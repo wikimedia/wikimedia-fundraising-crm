@@ -39,9 +39,11 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals( 1, count( $contributions ) );
         $this->assertEquals( $recur_record->id, $contributions[0]['contribution_recur_id']);
 
-        $contributions = wmf_civicrm_get_contributions_from_gateway_id( $message2->getGateway(), $message2->getGatewayTxnId() );
-        $this->assertEquals( 1, count( $contributions ) );
-        $this->assertEquals( $recur_record->id, $contributions[0]['contribution_recur_id']);
+        $contributions2 = wmf_civicrm_get_contributions_from_gateway_id( $message2->getGateway(), $message2->getGatewayTxnId() );
+        $this->assertEquals( 1, count( $contributions2 ) );
+        $this->assertEquals( $recur_record->id, $contributions2[0]['contribution_recur_id']);
+
+        $this->assertEquals( $contributions[0]['contact_id'], $contributions2[0]['contact_id'] );
     }
 
     /**
