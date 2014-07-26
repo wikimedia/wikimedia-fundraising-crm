@@ -9,11 +9,9 @@
         <directory>sites/all/modules/offline2civicrm/tests</directory>
       </testsuite>
       -->
-      <!-- FIXME: decouple from stomp dependencies...
       <testsuite name="queue2civicrm tests">
         <directory>sites/all/modules/queue2civicrm/tests/phpunit</directory>
       </testsuite>
-      -->
       <testsuite name="recurring_globalcollect tests">
         <directory>sites/all/modules/recurring_globalcollect/tests</directory>
       </testsuite>

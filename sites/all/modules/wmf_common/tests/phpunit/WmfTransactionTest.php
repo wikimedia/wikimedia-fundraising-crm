@@ -64,4 +64,96 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
             preg_match( "/GLOBALCOLLECT 1234 [0-9]+/", $transaction->get_unique_id() ),
             "parsed message is given a timestamp" );
     }
+
+    /**
+     * @expectedException WmfException
+     * @expectedExceptionCode INVALID_MESSAGE
+     */
+    function testInvalidEmptyId() {
+        $transaction = WmfTransaction::from_unique_id( "" );
+    }
+
+    /**
+     * @expectedException WmfException
+     * @expectedExceptionCode INVALID_MESSAGE
+     */
+    function testInvalidAlmostEmptyId() {
+        $transaction = WmfTransaction::from_unique_id( 'RFD RECURRING' );
+    }
+
+    /**
+     * @expectedException WmfException
+     * @expectedExceptionCode INVALID_MESSAGE
+     */
+    function testInvalidWhitespaceId() {
+        $transaction = WmfTransaction::from_unique_id( 'RFD RECURRING ' );
+    }
+
+    /**
+     * @expectedException WmfException
+     * @expectedExceptionCode INVALID_MESSAGE
+     */
+    function testInvalidExtraPartsId() {
+        $transaction = WmfTransaction::from_unique_id( 'TEST_GATEWAY 123 1234 EXTRA_PART' );
+    }
+
+    /**
+     * @expectedException WmfException
+     * @expectedExceptionCode INVALID_MESSAGE
+     */
+    function testInvalidTimestampId() {
+        $transaction = WmfTransaction::from_unique_id( 'TEST_GATEWAY 123 BAD_TIMESTAMP' );
+    }
+
+    function testExistsNone() {
+        $transaction = WmfTransaction::from_unique_id( 'TEST_GATEWAY ' . mt_rand() );
+        $this->assertEquals( false, $transaction->exists() );
+    }
+
+    function testExistsOne() {
+        $gateway_txn_id = mt_rand();
+        $msg = array(
+            'gross' => 1,
+            'currency' => 'USD',
+            'gateway' => 'TEST_GATEWAY',
+            'gateway_txn_id' => $gateway_txn_id,
+            'payment_method' => 'cc',
+            'email' => 'nobody@wikimedia.org',
+        );
+        wmf_civicrm_contribution_message_import( $msg );
+        $transaction = WmfTransaction::from_unique_id( 'TEST_GATEWAY ' . $gateway_txn_id );
+        $this->assertEquals( true, $transaction->exists() );
+    }
+
+    /**
+     * @expectedException NonUniqueTransaction
+     */
+    function testGetContributionMany() {
+        $gateway_txn_id = mt_rand();
+        $api = civicrm_api_classapi();
+        $api->Contact->create( array(
+            'contact_type' => 'Individual',
+            'display_name' => 'test',
+            'version' => 3,
+        ) );
+        $params = array(
+            'contact_id' => $api->values[0]->id,
+            'contribution_type' => 'Cash',
+            'total_amount' => 1,
+            'version' => 3,
+        );
+        $api->Contribution->create( $params );
+        wmf_civicrm_set_custom_field_values( $api->values[0]->id, array(
+            'gateway' => 'TEST_GATEWAY',
+            'gateway_txn_id' => $gateway_txn_id,
+        ) );
+        $api->Contribution->create( $params );
+        wmf_civicrm_set_custom_field_values( $api->values[0]->id, array(
+            'gateway' => 'TEST_GATEWAY',
+            'gateway_txn_id' => $gateway_txn_id,
+        ) );
+
+        $transaction = WmfTransaction::from_unique_id( 'TEST_GATEWAY ' . $gateway_txn_id );
+        $transaction->getContribution();
+    }
 }
