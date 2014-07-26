@@ -235,7 +235,7 @@ function queue2civicrm_batch_process() {
  * @param Stomp_Frame $msg
  */
 function queue2civicrm_import( $msg ) {
-    if ( property_exists( $msg, 'body' ) ) {
+    if ( is_object( $msg ) && property_exists( $msg, 'body' ) ) {
         $msg = $msg->body;
     }
 

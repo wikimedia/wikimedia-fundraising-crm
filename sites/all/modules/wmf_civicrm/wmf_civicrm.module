@@ -1466,7 +1466,7 @@ WHERE
         if ( ($original_currency && round($original_currency, 2) != round($actual_currency, 2))
             || ($original_amount && round($original_amount, 2) != round($actual_amount, 2)) )
         {
-            throw new WmfException( 'INVALID_MESSAGE', "Payment amount specified did not match original contribution: $contribution_id" );
+            throw new WmfException( 'INVALID_MESSAGE', "Payment amount specified did not match original contribution, ID=$contribution_id.  $original_currency $original_amount != $actual_currency $actual_amount" );
         }
 
         $original_currency = $actual_currency;

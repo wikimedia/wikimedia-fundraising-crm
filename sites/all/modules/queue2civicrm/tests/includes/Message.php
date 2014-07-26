@@ -70,6 +70,10 @@ class TransactionMessage extends Message {
     function getGatewayTxnId() {
         return $this->data[$this->txn_id_key];
     }
+
+    function get( $key ) {
+        return $this->data[$key];
+    }
 }
 
 class RefundMessage extends TransactionMessage {
