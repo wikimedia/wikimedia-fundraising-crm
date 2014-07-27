@@ -833,6 +833,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['organization_name'] = $msg['organization_name'];
     }
     if ( empty($msg['language']) ) {
+        // TODO: use LanguageTag to prevent truncation of >2 char lang codes
         // guess from contribution_tracking data
         $tracking = wmf_civicrm_get_contribution_tracking( $msg );
         if ( $tracking and !empty($tracking['language']) ) {
@@ -1212,10 +1213,10 @@ function wmf_civicrm_normalize_msg( $msg ) {
     }
 
     // Check for special flags
+    // TODO: push non-generic cases into database
     if ( !empty( $msg['utm_campaign'] ) ) {
         switch ( $msg['utm_campaign'] ) {
         case 'NY2013':
-            //TODO: expose direct_mail_appeal custom field in the UI
             $msg['direct_mail_appeal'] = "New York Event 2013";
             break;
         case 'NYCShaku2013':
@@ -1779,11 +1780,19 @@ function wmf_civicrm_get_dbs() {
     return new db_switcher();
 }
 
+/**
+ * Expand CiviCRM DAO results object into an array of rows as array
+ *
+ * @param $dao CRM_Core_DAO
+ *
+ * @return array
+ */
 function wmf_civicrm_dao_to_list( $dao ) {
     $result = array();
     while ($dao->fetch()) {
         $result[] = $dao->toArray();
     }
+    // FIXME: pick wart
     if (empty($result)) {
         return false;
     }
