@@ -365,7 +365,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     wmf_civicrm_set_custom_field_values( $contribution_result[ 'id' ], $custom_vars );
 
     // Create any required tags on the contribution
-    if ( !empty( $msg['contribution_tags'] ) ) {
+    if ( $msg['contribution_tags'] ) {
         $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
         $stacked_ex = array();
         foreach ( array_unique( $msg['contribution_tags'] ) as $tag ) {
@@ -875,7 +875,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
 
     // Do we have any tags we need to add to this contact?
     $contact_id = $contact_result['id'];
-    if ( !empty( $msg['contact_tags'] ) ) {
+    if ( $msg['contact_tags'] ) {
         $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
         $stacked_ex = array();
         foreach ( array_unique( $msg['contact_tags'] ) as $tag ) {
@@ -1127,6 +1127,8 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'contribution_recur_id' => null,
         'effort_id' => null,
         'subscr_id' => null,
+        'contact_tags' => array(),
+        'contribution_tags' => array(),
     );
     $msg = $msg + $defaults;
     
