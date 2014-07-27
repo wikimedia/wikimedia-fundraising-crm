@@ -375,7 +375,9 @@ function wmf_civicrm_get_cycle_day_for_month($cycle_day, $month, $year){
  *
  * @param integer $contribution_recur_id
  *
- * @return array|false $contribution
+ * @return array $contribution
+ *
+ * @throws WmfException if no matching subscription exists.
  */
 function wmf_civicrm_get_initial_recurring_contribution( $contribution_recur_id ) {
     $sql = "
@@ -390,7 +392,7 @@ LIMIT 1";
     
     $out = wmf_civicrm_dao_to_list( $res );
     if ( !$out ) {
-        return false;
+        throw new WmfException( 'MISSING_PREDECESSOR', 'No such recurring contribution, id=' . $contribution_recur_id );
     }
     return array_pop($out);
 }
