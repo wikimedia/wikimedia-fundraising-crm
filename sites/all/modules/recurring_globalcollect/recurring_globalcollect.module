@@ -368,19 +368,14 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
 
     $msg['contribution_tags'] = isset( $options['contribution_tags'] ) ? $options['contribution_tags'] : array();
 
-    $msg['source_type'] = "direct";
-    $msg['source_name'] = "Recurring GlobalCollect";
-    $msg['source_host'] = gethostname();
-    $msg['source_version'] = wmf_common_get_my_revision();
-    $msg['source_run_id'] = getmypid();
-    $msg['source_enqueued_time'] = time(); // ARGH
-
     $msg['contact_id'] = $contribution_recur['contact_id'];
     $msg['contribution_recur_id'] = $contribution_recur['id'];
     $msg['effort_id'] = $values['effort_id'];
 
     //FIXME: ignored cos we already have a contact
     $msg['email'] = 'nobody@wikimedia.org';
+
+    wmf_common_set_message_source( $msg, 'direct', 'Recurring GlobalCollect' );
 
     $contribution = wmf_civicrm_contribution_message_import( $msg );
 

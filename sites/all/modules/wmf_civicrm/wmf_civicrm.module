@@ -1505,14 +1505,11 @@ WHERE
         'parent_contribution_id' => $contribution->id,
         'finance_only' => 1,
         'no_thank_you' => 'refund',
-
-        'source_type' => 'direct',
-        'source_name' => "Refund",
-        'source_host' => gethostname(),
-        'source_run_id' => getmypid(),
-        'source_version' => wmf_common_get_my_revision(),
-        'source_enqueued_time' => wmf_common_date_unix_to_sql( time() ),
     );
+
+    wmf_common_set_message_source( $custom_values, 'direct', 'Refund' );
+    $custom_values['source_enqueued_time'] = wmf_common_date_unix_to_sql( $custom_values['source_enqueued_time'] );
+
     wmf_civicrm_set_custom_field_values($refund->id, $custom_values);
 
     $custom_values = array(
