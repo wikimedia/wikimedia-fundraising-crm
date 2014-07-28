@@ -215,7 +215,7 @@ function recurring_import_subscr_payment( $msg ) {
     wmf_civicrm_message_update_contribution_tracking( $msg, $contribution );
     
     // update the contact
-    $contact = wmf_civicrm_message_contact_update( $msg, $contact[ 'id' ] );
+    $contact = wmf_civicrm_message_contact_update( $msg, $recur_record->contact_id );
   
     // Insert the location record
     wmf_civicrm_message_location_insert( $msg, $contact );
@@ -237,7 +237,7 @@ function recurring_import_subscr_payment( $msg ) {
   // construct an array of useful info to invocations of queue2civicrm_import
   $contribution_info = array(
     'contribution_id' => $contribution['id'],
-    'contact_id' => $contact[ 'id' ],
+    'contact_id' => $recur_record->contact_id,
     'msg' => $msg,
   );
   
