@@ -397,6 +397,10 @@ LIMIT 1";
 
 /**
  * Get recurring record in CiviCRM for the given subscriber id
+ *
+ * FIXME: tension between trxn_id as searchable index and full gateway style.
+ * Probably best to move towards full: "RECURRING GC <order_id>", with no effortid.
+ *
  * @param string $subscr_id
  * @return object|false
  */

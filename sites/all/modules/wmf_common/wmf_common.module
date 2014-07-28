@@ -333,3 +333,12 @@ function wmf_common_locale_civi_to_mediawiki( $locale ) {
     // LOL
     return strtolower( str_replace( '_', '-', $locale ) );
 }
+
+function wmf_common_set_message_source( &$msg, $type, $name ) {
+    $msg['source_type'] = $type;
+    $msg['source_name'] = $name;
+    $msg['source_host'] = gethostname();
+    $msg['source_version'] = wmf_common_get_my_revision();
+    $msg['source_run_id'] = getmypid();
+    $msg['source_enqueued_time'] = time();
+}

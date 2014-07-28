@@ -14,11 +14,9 @@
         <directory>sites/all/modules/queue2civicrm/tests/phpunit</directory>
       </testsuite>
       -->
-      <!-- FIXME: unknown API error
       <testsuite name="recurring_globalcollect tests">
         <directory>sites/all/modules/recurring_globalcollect/tests</directory>
       </testsuite>
-      -->
       <testsuite name="wmf_civicrm tests">
         <directory>sites/all/modules/wmf_civicrm/tests/phpunit</directory>
       </testsuite>

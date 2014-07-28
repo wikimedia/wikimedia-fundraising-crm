@@ -6,7 +6,7 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
         civicrm_initialize();
 
         $this->original_standalone_globalcollect_adapter_path = variable_get( 'standalone_globalcollect_adapter_path', null );
-        variable_set( 'standalone_globalcollect_adapter_path', __DIR__ . '/adapter' );
+        variable_set( 'standalone_globalcollect_adapter_path', __DIR__ . '/includes' );
 
         $this->subscription_id = 'SUB-FOO-' . mt_rand();
         $this->amount = '1.12';
@@ -35,6 +35,7 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
         $result = civicrm_api3( 'Contribution', 'create', array(
             'contact_id' => $this->contact_id,
             'contribution_recur_id' => $this->contribution_recur_id,
+            'currency' => 'USD',
             'total_amount' => $this->amount,
             'contribution_type' => 'Cash',
             'payment_instrument' => 'Credit Card',
