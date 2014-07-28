@@ -32,7 +32,7 @@ function wmf_civicrm_insert_contribution_tracking( $utm_source, $utm_medium, $ts
 }
 
 /**
- * Map contribution to tracking record in contribution_tracking table
+ * Update contribution_tracking record with a pointer to the contribution.
  * 
  * @param array $msg
  * @param array $contribution

@@ -294,61 +294,36 @@ function recurring_globalcollect_batch_charge($contribution_batch, $options = ar
 
 /**
  * Connect to GlobalCollect and process recurring charge
+ *
+ * @param array $contribution_recur the subscription record
+ * @param array $options Accepts the following optional keys:
+ *      contribution_tags - array of tags to associate with the contribution
+ *
+ * @return array adapter result details
+ *
+ * @throws WmfException if the payment fails or any other error occurs.
  */
 function recurring_globalcollect_charge($contribution_recur, $options = array()){
   if (is_object($contribution_recur)) {
     $contribution_recur = (array) $contribution_recur;
   }
 
-  $adapterOptions = array();
-  
-  // Set the merchant ID
-  global $wgGlobalCollectGatewayMerchantID;
-  $wgGlobalCollectGatewayMerchantID = variable_get('recurring_globalcollect_merchant_id', 0);
-
-  $IPADDRESS = isset($options['IPADDRESS']) ? $options['IPADDRESS'] : '';
-  
-  $IPADDRESS = (empty($IPADDRESS) && isset($_SERVER['SERVER_ADDR'])) ? $_SERVER['SERVER_ADDR'] : ''; 
-  
-  if (empty($IPADDRESS)) {
-    $IPADDRESS = '127.0.0.1';
-    $message = 'You must specify a valid IP address.';
-    //throw new Exception($message);
-  }
-  
   try {
     $transaction = WmfTransaction::from_unique_id( $contribution_recur['trxn_id'] );
-    $ORDERID = $transaction->gateway_txn_id;
   } catch ( Exception $ex ) {
     throw new WmfException( 'INVALID_RECURRING', $ex->getMessage(), $contribution_recur );
   }
    
-  // Increment the EFFORTID
+  // Copy stuff from the subscription, and increment the EFFORTID
   $values = array(
 	  'amount' => $contribution_recur['amount'],
 	  'effort_id' => $contribution_recur['processor_id'] + 1,
-	  'order_id' => $ORDERID,
-	  'server_ip' => $IPADDRESS,
+	  'order_id' => $transaction->gateway_txn_id,
 	  'currency_code' => $contribution_recur['currency'],
 	  'payment_product' => '',
   );
 
-  // Set the URL for the adapter
-  if (isset($options['url'])) {
-    $adapterOptions['url'] = $options['url'];
-  }
-  else {
-    $adapterOptions['url'] = variable_get('globalcollect_url', '');
-  }
-
-  // $values and $options are used for testing.
-  global $wgGlobalCollectGatewayURL;
-  $wgGlobalCollectGatewayURL = recurring_globalcollect_build_url($values, $adapterOptions['url']);
-
-  $standalone_globalcollect_adapter_path = variable_get('standalone_globalcollect_adapter_path', null);
-  require_once implode(DIRECTORY_SEPARATOR, array($standalone_globalcollect_adapter_path, 'globalcollect.adapter.php'));
-
-  $instance = new GlobalCollectAdapter( $adapterOptions );
+  $instance = DonationInterface::getAdapter( 'GlobalCollect' );
 
   watchdog('recurring_globalcollect', 'Processing recurring charge: <pre>' . print_r($contribution_recur, true) . '</pre>');
 
@@ -373,12 +348,8 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     
     $transaction = WmfTransaction::from_unique_id( $contribution_recur['trxn_id'] );
 
-    $initial_contribution = wmf_civicrm_get_initial_recurring_contribution( $contribution_recur );
+    $initial_contribution = wmf_civicrm_get_initial_recurring_contribution( $contribution_recur['id'] );
 
-    $contact = array(
-        'id' => $contribution_recur['contact_id'],
-    );
-    
     $msg = array();
     $msg['fee'] = 0.00;
     
@@ -388,40 +359,33 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
     $msg['gateway'] = 'globalcollect';
     $msg['gross'] = $contribution_recur['amount'];
     $msg['net'] = $msg['gross'] - $msg['fee'];
+    $msg['currency'] = $contribution_recur['currency'];
     //$msg['contribution_id'] = $contribution_recur['contribution_id'];
     $msg['gateway_txn_id'] = $transaction->gateway_txn_id;
     $msg['payment_method'] = 'cc';
     $msg['payment_submethod'] = '';
     $msg['date'] = time();
-    $msg['original_currency'] = $contribution_recur['currency'];
-    $msg['original_gross'] = $msg['gross'];
 
     $msg['contribution_tags'] = isset( $options['contribution_tags'] ) ? $options['contribution_tags'] : array();
 
-    $msg = wmf_civicrm_normalize_contribution_amounts($msg);
+    $msg['contact_id'] = $contribution_recur['contact_id'];
+    $msg['contribution_recur_id'] = $contribution_recur['id'];
+    $msg['effort_id'] = $values['effort_id'];
 
-    $msg['source_type'] = "direct";
-    $msg['source_name'] = "Recurring GlobalCollect";
-    $msg['source_host'] = gethostname();
-    $msg['source_version'] = wmf_common_get_my_revision();
-    $msg['source_run_id'] = getmypid();
-    $msg['source_enqueued_time'] = wmf_common_date_unix_to_sql( time() ); // ARGH
+    //FIXME: ignored cos we already have a contact
+    $msg['email'] = 'nobody@wikimedia.org';
 
-    /*
-     * This array needs to be rekeyed to be consistent with:
-     *
-     * @see thank_you_queue2civicrm_import
-     *
-     * id -> contribution_id
-     *
-     * @var array $contribution
-     */
-    $contribution = wmf_civicrm_message_contribution_insert($msg, $contact, $contribution_recur['id'], $values['effort_id']);
+    wmf_common_set_message_source( $msg, 'direct', 'Recurring GlobalCollect' );
+
+    $contribution = wmf_civicrm_contribution_message_import( $msg );
+
     $contribution['contribution_id'] = $contribution['id'];
     unset( $contribution['id'] );
     
     // Send thank you email, other post-import things
     module_invoke_all( 'recurring_globalcollect', $contribution );
+
+    return $result;
   }
   else
   {
@@ -430,70 +394,6 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
   }
   
   return $result;
-}
-
-/**
- * recurring_globalcollect_build_url
- *
- *
- * @param type $options
- * @return string; 
- */
-function recurring_globalcollect_build_url($values, $gateway_url) {
-    
-  $url = isset($gateway_url) ? $gateway_url : '';
-
-  // Fix case where boolean values are strings
-  if ( $url == 'true') {
-      $url = true;
-  }
-  elseif ( $url == 'false') {
-      $url = false;
-  }
-  
-  //$url = false;
-  $returnUrl = variable_get('globalcollect_url', '');
-
-  if (is_bool($url)) {
-
-    $returnUrl  = variable_get('localhost_test_url', '');
-    $returnUrl .= (substr($returnUrl, -1) == '/') ? '' : '/';
-    $returnUrl .= 'sites/all/modules/recurring_globalcollect/tests/resources/responses/';
-    // Fail should go to a global collect example failure. A 404 will do for now.
-
-    if ($url) {
-      $returnUrl .=  'curlTransaction.valid.response.php?';
-      $returnUrl .=  '&ORDERID=' . $values['order_id'];
-      $returnUrl .=  '&EFFORTID=' . $values['effort_id'];
-      $returnUrl .=  '&IPADDRESS=' . $values['server_ip'];
-    }
-    else {
-      $returnUrl .= '404.php';
-    }
-  }
-  elseif (is_numeric($url)) {
-
-    $returnUrl  = variable_get('localhost_test_url', '');
-    $returnUrl .= (substr($returnUrl, -1) == '/') ? '' : '/';
-    $returnUrl .= 'sites/all/modules/recurring_globalcollect/tests/resources/responses/';
-
-    $returnUrl .= $url . '.php';
-  }
-  elseif (!empty($url)) {
-
-    if (substr($url, 0, 4) == 'http') {
-      
-      // Setting a full url
-      $returnUrl = $url;
-    }
-    else {
-      $returnUrl  = variable_get('localhost_test_url', '');
-      $returnUrl .= $url;
-    }
-      
-  }
-
-  return $returnUrl;
 }
 
 /**

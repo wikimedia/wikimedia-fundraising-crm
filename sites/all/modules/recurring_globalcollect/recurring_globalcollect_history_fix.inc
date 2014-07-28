@@ -139,11 +139,6 @@ function recurring_globalcollect_record_old_success( $subscription, $effort_id )
 	 * $subscription['currency']
 	 * $subscription['id']
 	 */
-	
-	
-      $contact = array(
-          'id' => $subscription['contact_id'],
-      );
 
       $transaction = WmfTransaction::from_unique_id( $subscription['trxn_id'] );
       
@@ -160,16 +155,13 @@ function recurring_globalcollect_record_old_success( $subscription, $effort_id )
       $msg['date'] = time();
       $msg['original_currency'] = $subscription['currency'];
       $msg['original_gross'] = $msg['gross'];
-      /*
-       * This array needs to be rekeyed to be consistent with:
-       *
-       * @see thank_you_queue2civicrm_import
-       *
-       * id -> contribution_id
-       *
-       * @var array $contribution
-       */
-      $contribution = wmf_civicrm_message_contribution_insert($msg, $contact, $subscription['id'], $effort_id);
+
+      $msg['contact_id'] = $subscription['contact_id'];
+      $msg['contribution_recur_id'] = $subscription['id'];
+      $msg['effort_id'] = $effort_id;
+
+      $contribution = wmf_civicrm_contribution_message_import( $msg );
+
       $contribution['contribution_id'] = $contribution['id'];
       unset( $contribution['id'] );
       

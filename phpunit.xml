@@ -4,11 +4,29 @@
     bootstrap="sites/default/bootstrap-phpunit.php">
 
     <testsuites>
+      <!-- FIXME: need to mock currency conversion
+      <testsuite name="offline2civicrm tests">
+        <directory>sites/all/modules/offline2civicrm/tests</directory>
+      </testsuite>
+      -->
+      <!-- FIXME: decouple from stomp dependencies...
       <testsuite name="queue2civicrm tests">
         <directory>sites/all/modules/queue2civicrm/tests/phpunit</directory>
+      </testsuite>
+      -->
+      <testsuite name="recurring_globalcollect tests">
+        <directory>sites/all/modules/recurring_globalcollect/tests</directory>
+      </testsuite>
+      <testsuite name="wmf_civicrm tests">
+        <directory>sites/all/modules/wmf_civicrm/tests/phpunit</directory>
       </testsuite>
       <testsuite name="wmf_common tests">
         <directory>sites/all/modules/wmf_common/tests/phpunit</directory>
       </testsuite>
+      <!-- FIXME: requires DonationInterface and interpretive dance
+      <testsuite name="wmf_communication tests">
+        <directory>sites/all/modules/wmf_communication/tests/phpunit</directory>
+      </testsuite>
+      -->
     </testsuites>
 </phpunit>

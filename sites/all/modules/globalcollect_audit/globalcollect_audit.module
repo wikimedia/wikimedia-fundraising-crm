@@ -1994,14 +1994,8 @@ function globalcollect_audit_send_stomp( $queueId, $body ) {
         throw new Exception( "What kind of a queue is this??: {$queueId}" );
     }
 
-    $headers = array(
-        'source_name' => "GlobalCollect WR1 Auditor",
-        'source_type' => 'audit',
-        'source_host' => gethostname(),
-        'source_run_id' => getmypid(),
-        'source_version' => wmf_common_get_my_revision(),
-        'source_enqueued_at' => time(),
-    );
+    $headers = array();
+    wmf_common_set_message_source( $headers, 'audit', 'GlobalCollect WR1 Auditor' );
 
     return $q->enqueue( json_encode( $body ), $headers, $queuePath );
 }

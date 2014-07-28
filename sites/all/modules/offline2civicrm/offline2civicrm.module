@@ -169,6 +169,8 @@ function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
  * If the contribution was a check, it adds the check to a "Review" group for manual review
  * by the Development/Major Gifts team.
  *
+ * FIXME: kill this.
+ *
  * Implementation of hook_queue2civicrm_import
  *
  * @param $contribution_info
