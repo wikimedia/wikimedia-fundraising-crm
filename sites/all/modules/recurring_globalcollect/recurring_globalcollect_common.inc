@@ -17,7 +17,7 @@ function recurring_globalcollect_get_payment_by_id($id)
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
 
-  $query = 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` WHERE `civicrm_contribution_recur`.`id` = :id LIMIT 1';
+  $query = 'SELECT civicrm_contribution_recur.* FROM civicrm_contribution_recur WHERE civicrm_contribution_recur.id = :id LIMIT 1';
   
   $result = db_query( $query, array( ':id' => $id ) )->fetch();
 

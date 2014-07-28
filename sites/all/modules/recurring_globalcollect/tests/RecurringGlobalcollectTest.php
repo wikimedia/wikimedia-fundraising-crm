@@ -50,12 +50,7 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     function testCharge() {
-        $result = civicrm_api3( 'ContributionRecur', 'get', array(
-            'id' => $this->contribution_recur_id,
-        ) );
-        $contribution_recur = array_pop( $result['values'] );
-
-        $result = recurring_globalcollect_charge( $contribution_recur );
+        $result = recurring_globalcollect_charge( $this->contribution_recur_id );
         $this->assertEquals( 'completed', $result['status'] );
 
         $result = civicrm_api3( 'Contribution', 'get', array(
