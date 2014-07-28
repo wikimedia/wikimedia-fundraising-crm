@@ -18,7 +18,6 @@ class WmfTransaction {
     var $timestamp;
     var $is_refund;
     var $is_recurring;
-    var $recur_sequence;
 
     //FIXME: we can't actually cache without wrapping set accessors
     //var $unique_id;
@@ -38,10 +37,6 @@ class WmfTransaction {
         $parts[] = $this->gateway;
 
         $txn_id = $this->gateway_txn_id;
-        if ( $this->recur_sequence ) {
-            // TODO push this down into GC recur
-            $txn_id .= "-" . $this->recur_sequence;
-        }
         $parts[] = $txn_id;
 
         // FIXME: deprecate the timestamp term
@@ -58,7 +53,7 @@ class WmfTransaction {
         $transaction = new WmfTransaction();
         $transaction->gateway_txn_id = $msg['gateway_txn_id'];
         $transaction->gateway = $msg['gateway'];
-        $transaction->is_recurring = ( array_key_exists( 'recurring', $msg ) && $msg['recurring'] );
+        $transaction->is_recurring = $msg['recurring'];
         return $transaction;
     }
 
@@ -96,6 +91,8 @@ class WmfTransaction {
             $transaction->gateway = strtolower( array_shift( $parts ) );
             // pass
         case 1:
+            // Note that this sucks in effort_id and any other stuff we're
+            // using to maintain an actually-unique per-gateway surrogate key.
             $transaction->gateway_txn_id = array_shift( $parts );
             break;
         default:

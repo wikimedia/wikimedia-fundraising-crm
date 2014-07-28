@@ -39,24 +39,13 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
             'total_amount' => $this->amount,
             'contribution_type' => 'Cash',
             'payment_instrument' => 'Credit Card',
+            'trxn_id' => 'RECURRING GLOBALCOLLECT STUB_ORIG_CONTRIB-' . mt_rand(),
         ) );
         $this->contributions[] = $result['id'];
     }
 
     function tearDown() {
         variable_set( 'standalone_globalcollect_adapter_path', $this->original_standalone_globalcollect_adapter_path );
-
-        foreach ( $this->contributions as $contribution_id ) {
-            civicrm_api3( 'Contribution', 'delete', array(
-                'id' => $contribution_id,
-            ) );
-        }
-        civicrm_api3( 'ContributionRecur', 'delete', array(
-            'id' => $this->contribution_recur_id,
-        ) );
-        civicrm_api3( 'Contact', 'delete', array(
-            'id' => $this->contact_id,
-        ) );
         parent::tearDown();
     }
 
@@ -75,9 +64,12 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals( 2, count( $result['values'] ) );
         foreach ( $result['values'] as $contribution ) {
             if ( $contribution['id'] == $this->contributions[0] ) {
+                // Skip assertions on the synthetic original contribution
                 continue;
             }
-            $this->contributions[] = $contribution['id'];
+
+            $this->assertEquals( 1,
+                preg_match( "/^RECURRING GLOBALCOLLECT {$this->subscription_id}-2 \d+\$/", $contribution['trxn_id'] ) );
         }
     }
 }
