@@ -396,6 +396,7 @@ function recurring_globalcollect_charge($contribution_recur, $options = array())
 
 /**
  * Create the form to search for subscriptions by order id.
+ * TODO: deprecate
  */ 
 function recurring_globalcollect_search_by_order_id_form() {
 

@@ -15,11 +15,13 @@
 class WmfTransaction {
     var $gateway;
     var $gateway_txn_id;
-    var $timestamp;
     var $is_refund;
     var $is_recurring;
 
-    //FIXME: we can't actually cache without wrapping set accessors
+    /** @deprecated */
+    var $timestamp;
+
+    //FIXME: we can't actually lazy evaluate without wrapping set accessors
     //var $unique_id;
 
     function get_unique_id() {
@@ -33,17 +35,14 @@ class WmfTransaction {
             $parts[] = "RECURRING";
         }
 
-        //FIXME: validate that a gateway has been set.
-        $parts[] = $this->gateway;
-
-        $txn_id = $this->gateway_txn_id;
-        $parts[] = $txn_id;
-
-        // FIXME: deprecate the timestamp term
-        if ( !$this->timestamp ) {
-            $this->timestamp = time();
+        if ( !$this->gateway ) {
+            throw new WmfException( 'INVALID_MESSAGE', 'Missing gateway.' );
         }
-        $parts[] = $this->timestamp;
+        if ( !$this->gateway_txn_id ) {
+            throw new WmfException( 'INVALID_MESSAGE', 'Missing gateway_txn_id.' );
+        }
+        $parts[] = $this->gateway;
+        $parts[] = $this->gateway_txn_id;
 
         return strtoupper( implode( " ", $parts ) );
     }
@@ -82,6 +81,7 @@ class WmfTransaction {
         case 0:
             throw new WmfException( 'INVALID_MESSAGE', "Unique ID is missing terms." );
         case 3:
+            // TODO: deprecate timestamp
             $transaction->timestamp = array_pop( $parts );
             if ( !is_numeric( $transaction->timestamp ) ) {
                 throw new WmfException( 'INVALID_MESSAGE', "Malformed unique id (timestamp does not appear to be numeric)" );
@@ -92,15 +92,11 @@ class WmfTransaction {
             // pass
         case 1:
             // Note that this sucks in effort_id and any other stuff we're
-            // using to maintain an actually-unique per-gateway surrogate key.
+            // using to maintain an actually-unique per-gateway natural key.
             $transaction->gateway_txn_id = array_shift( $parts );
             break;
         default:
             throw new WmfException( 'INVALID_MESSAGE', "Malformed unique id (too many terms)" );
-        }
-
-        if ( !$transaction->timestamp ) {
-            $transaction->timestamp = time();
         }
 
         // TODO: debate whether to renormalize here
