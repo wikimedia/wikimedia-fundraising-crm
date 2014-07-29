@@ -199,7 +199,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         && !$msg['contribution_recur_id']
     ) {
         if ( $msg['subscr_id'] ) {
-            $recur_record = wmf_civicrm_get_recur_record( $msg['subscr_id'] );
+            $recur_record = wmf_civicrm_get_gateway_subscription( $msg['gateway'], $msg['subscr_id'] );
             if ( $recur_record ) {
                 watchdog( 'queue2civicrm_import', 'Found matching recurring record for subscr_id: ' . $msg['subscr_id'], NULL, WATCHDOG_INFO );
                 $msg['contribution_recur_id'] = $recur_record->id;
@@ -232,7 +232,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
     if ( $initial_recurring ) {
         watchdog( 'queue2civicrm_import', 'Attempting to insert new recurring subscription: ' . $msg['subscr_id'], NULL, WATCHDOG_INFO );
         wmf_civicrm_message_contribution_recur_insert( $msg, $contact['id'], $msg['subscr_id'] );
-        $recur_record = wmf_civicrm_get_recur_record( $msg['subscr_id'] );
+        $recur_record = wmf_civicrm_get_gateway_subscription( $msg['gateway'], $msg['subscr_id'] );
         $msg['contribution_recur_id'] = $recur_record->id;
     }
 
