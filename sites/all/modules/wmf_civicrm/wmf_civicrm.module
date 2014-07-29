@@ -261,7 +261,6 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
 function _wmf_civicrm_message_contribution_insert( $msg )
 {
     $transaction = WmfTransaction::from_message( $msg );
-    $transaction->recur_sequence = $msg['effort_id'];
     $trxn_id = $transaction->get_unique_id();
 
     $contribution = array(

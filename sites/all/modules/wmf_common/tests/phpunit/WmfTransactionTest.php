@@ -54,6 +54,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
         $msg = array(
             'gateway' => "globalcollect",
             'gateway_txn_id' => "1234",
+            'recurring' => null,
         );
         $transaction = WmfTransaction::from_message( $msg );
         $this->assertEquals(
