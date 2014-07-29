@@ -176,6 +176,7 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
  * - date           string    Uses strtotime() to parse the date
  * - $limit         integer   Number of records to pull. Default is 1.
  * 
+ * TODO: other gateways than GC
  * @todo The field `civicrm_payment_processor`.`payment_processor_type` should be set.
  * @todo Implement $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
  * 
@@ -183,6 +184,9 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
  */
 function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now', $run_missed_days = 0)
 {
+    $oldTimezone = date_default_timezone_get();
+    date_default_timezone_set( "UTC" );
+
     $date = date('Y-m-d', strtotime($date));
     
     $start_day = $date . ' 00:00:00';
@@ -197,6 +201,8 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now', $run
         
         $start_day = date('Y-m-d 00:00:00', strtotime($decrement_date, $start_day_stamp));
     }
+
+    date_default_timezone_set( $oldTimezone );
     
     $contribution_status_id = civicrm_api_contribution_status('Completed');
 
