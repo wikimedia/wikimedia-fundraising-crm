@@ -1171,6 +1171,13 @@ function wmf_civicrm_normalize_msg( $msg ) {
         $msg['create_date'] = $msg['date'];
     }
 
+    if ( $msg['recurring'] and $msg['gateway'] == 'globalcollect' ) {
+        if ( !$msg['subscr_id'] ) {
+            // Well randomly grab an ID, of course :-/
+            $msg['subscr_id'] = $msg['gateway_txn_id'];
+        }
+    }
+
     if ( !empty( $msg['thankyou_date'] ) ) {
         if ( !is_numeric( $msg['thankyou_date'] ) ) {
             $unix_time = strtotime( $msg['thankyou_date'] );
