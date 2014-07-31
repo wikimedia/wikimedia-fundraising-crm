@@ -2,6 +2,12 @@
 
 use \Exception;
 
+// FIXME: encapsulate here, not in wmf_common
+use \Twig_Environment;
+use \Twig_Loader_String;
+
+use \TwigLocalization;
+
 /**
  * Single-use template.
  */
@@ -131,5 +137,26 @@ class Templating {
             // File does not exist.  pass
         }
         return null;
+    }
+
+    /**
+     * Evaluate a template passed as string literal
+     *
+     * TODO: clean up interface
+     */
+    static function renderStringTemplate( $template, $params ) {
+        // TODO: autoload instead
+        if ( !class_exists( 'Twig_Loader_String' ) ) {
+            module_load_include( 'inc', 'wmf_common', 'twig' );
+
+            // FIXME: throwaway call to initialize
+            wmf_common_get_twig( __DIR__ );
+        }
+
+        $loader = new Twig_Loader_String();
+        $twig = new Twig_Environment( $loader );
+        $twig->addExtension( new TwigLocalization() );
+
+        return $twig->render( $template, $params );
     }
 }

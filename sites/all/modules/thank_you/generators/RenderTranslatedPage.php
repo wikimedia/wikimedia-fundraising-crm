@@ -24,16 +24,6 @@ class RenderTranslatedPage {
 
 	protected $review_history;
 
-	/**
-	 * @var string[] Translation states that this module will accept as acceptable
-	 * to include in a composite message.
-	 */
-	protected $valid_translation_states = array(
-		'ready',
-		'proofread',
-		'translated', // what exactly is this state?
-	);
-
 	public function execute($wantedLangs = array()) {
 		watchdog(
 			'make-thank-you',
@@ -58,6 +48,9 @@ class RenderTranslatedPage {
 				$page_content = str_replace( '|</p>|', "</p>\n", $page_content );
 
 				$file = str_replace( '$1', $lang, $this->proto_file );
+
+				// Assert no garbage
+				FindUnconsumedTokens::renderAndFindTokens( $page_content, $lang );
 
 				if (file_put_contents( $file, $page_content )) {
 					watchdog( 'make-thank-you', "$lang -- Wrote translation into $file", null, WATCHDOG_INFO );
@@ -315,6 +308,7 @@ class RenderTranslatedPage {
 		foreach( $this->substitutions as $k => $v ) {
 			$content = preg_replace( $k, $v, $content );
 		}
+
 		return $content;
 	}
 }
