@@ -1,5 +1,7 @@
 <?php
 
+use thank_you\generators\FindUnconsumedTokens;
+
 function find_unconsumed_tokens_drush_command() {
 	$items = array();
 
@@ -11,5 +13,5 @@ function find_unconsumed_tokens_drush_command() {
 }
 
 function drush_find_unconsumed_tokens() {
-    FindUnconsumedTokens::searchTokens();
+    FindUnconsumedTokens::findAllTokens();
 }
