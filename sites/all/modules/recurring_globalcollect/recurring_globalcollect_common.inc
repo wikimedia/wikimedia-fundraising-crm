@@ -135,7 +135,10 @@ SELECT
 FROM civicrm_contribution_recur
 LEFT JOIN civicrm_contact ON
     civicrm_contribution_recur.contact_id = civicrm_contact.id
-WHERE civicrm_contribution_recur.trxn_id LIKE 'RECURRING GLOBALCOLLECT :order_id %' LIMIT 1
+WHERE
+    civicrm_contribution_recur.trxn_id = CONCAT_WS( ' ', 'RECURRING GLOBALCOLLECT', :order_id )
+    OR civicrm_contribution_recur.trxn_id LIKE CONCAT_WS( ' ', 'RECURRING GLOBALCOLLECT', :order_id, '%' )
+LIMIT 1
 EOS;
   
   $result = db_query( $query, array( ':order_id' => $order_id ) )->fetch();
