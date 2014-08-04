@@ -22,15 +22,26 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     public function testRecurring() {
-        $shared_id = array( 'subscr_id' => mt_rand() );
-        $signup_message = new RecurringSignupMessage( $shared_id );
-        $message = new RecurringPaymentMessage( $shared_id );
+        $subscr_id = mt_rand();
+        $values = array( 'subscr_id' => $subscr_id );
+        $signup_message = new RecurringSignupMessage( $values );
+        $message = new RecurringPaymentMessage( $values );
+        $message2 = new RecurringPaymentMessage( $values );
 
         recurring_import( $signup_message );
         recurring_import( $message );
+        recurring_import( $message2 );
+
+        $recur_record = wmf_civicrm_get_recur_record( $subscr_id );
+        $this->assertNotEquals( false, $recur_record );
 
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $message->getGateway(), $message->getGatewayTxnId() );
         $this->assertEquals( 1, count( $contributions ) );
+        $this->assertEquals( $recur_record->id, $contributions[0]['contribution_recur_id']);
+
+        $contributions = wmf_civicrm_get_contributions_from_gateway_id( $message2->getGateway(), $message2->getGatewayTxnId() );
+        $this->assertEquals( 1, count( $contributions ) );
+        $this->assertEquals( $recur_record->id, $contributions[0]['contribution_recur_id']);
     }
 
     /**
