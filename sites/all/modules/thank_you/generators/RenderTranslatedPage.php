@@ -1,4 +1,5 @@
 <?php namespace thank_you\generators;
+use CiviMailStore;
 
 /**
  * Generator template for pulling a translated page from a mediawiki
@@ -36,6 +37,10 @@ class RenderTranslatedPage {
         if (count($wantedLangs) > 0) {
             $languages = array_intersect($wantedLangs, $languages);
         }
+
+		civicrm_initialize();
+		$civimail_store = new CiviMailStore();
+
 		foreach( $languages as $lang ) {
 			try {
 				$published_revision = $this->get_published_revision( $lang );
@@ -52,8 +57,14 @@ class RenderTranslatedPage {
 				// Assert no garbage
 				FindUnconsumedTokens::renderAndFindTokens( $page_content, $lang );
 
+				$template_name = basename( $file );
+
+				$page_content = $this->add_template_info_comment( $page_content, $template_name, $published_revision );
+
 				if (file_put_contents( $file, $page_content )) {
 					watchdog( 'make-thank-you', "$lang -- Wrote translation into $file", null, WATCHDOG_INFO );
+					$subject = thank_you_get_subject( $lang );
+					$civimail_store->addMailing( 'thank_you', $template_name, $page_content, $subject, $published_revision );
 				} else {
 					watchdog( 'make-thank-you', "$lang -- Could not open $file for writing!", null, WATCHDOG_ERROR );
 
@@ -63,10 +74,25 @@ class RenderTranslatedPage {
 				}
 			} catch ( TranslationException $ex ) {
 				watchdog( 'make-thank-you', "$lang -- {$ex->getMessage()}", null, WATCHDOG_ERROR );
+			} catch ( CiviMailingInsertException $ex ) {
+				watchdog( 'make-thank-you', "Could not insert CiviMail Mailing for $lang -- {$ex->getMessage()}", null, WATCHDOG_ERROR );
 			}
 		}
 	}
 
+	/**
+	 * Add an HTML comment with the file name and revision number to the bottom of the page
+	 *
+	 * @param string $page_content HTML content without comment
+	 * @param string $template_name name of template
+	 * @param int $revision revision number of template
+	 *
+	 * @returns string Content with revision comment appended
+	 */
+	protected function add_template_info_comment( $page_content, $template_name, $revision ) {
+		$comment = "<!-- template $template_name revision $revision -->";
+		return $page_content . $comment;
+	}
 	/**
 	 * This function builds a valid MediaWiki API URL by joining the $base_url
 	 * with a query string that is generated from the passed key, value pairs.

@@ -166,6 +166,7 @@ function thank_you_send_test_form() {
  * TODO: document what code and configuration this test covers, and which it does not
  */
 function thank_you_send_test_form_submit( $form_id, $form_values ) {
+	civicrm_initialize();
 	$params = $form_values['values'];
 
     # Massage the params a bit
@@ -441,12 +442,21 @@ function thank_you_send_mail( $params ) {
 		return false;
 	}
 
-	$subj_msg = "donate_interface-email-subject";
-	$email['subject'] = Translation::get_translated_message( $subj_msg, $params['locale'] );
+	$email['subject'] = thank_you_get_subject( $params['locale'] );
 
 	$mailer = Mailer::getDefault();
 
-	$email['reply_to'] = 'bounce-' . str_replace( '@', '=', $email['to_address'] ) . '@donate.wikimedia.org';
+	$civi_queue_record = thank_you_add_civi_queue(
+		$email['to_address'],
+		$email['subject'],
+		$email['html']
+	);
+
+	if ( $civi_queue_record ) {
+		$email['reply_to'] = $civi_queue_record->getVerp();
+	} else {
+		$email['reply_to'] = 'bounce-' . str_replace( '@', '=', $email['to_address'] ) . '@donate.wikimedia.org';
+	}
 
 	try {
 
@@ -456,11 +466,15 @@ function thank_you_send_mail( $params ) {
 			$email,
 			array( 'List-Unsubscribe' => '<' . $params['unsubscribe_link'] . '>' )
 		);
-        
+
+		if ( $civi_queue_record ) {
+			$civi_queue_record->markDelivered();
+		}
+
         return $email_success;
 	} catch (phpmailerException $e) {
         //TODO: don't assume phpmailer
-
+		//TODO: something with the CiviMail queue record to indicate it failed;
 		$debug = array_merge( $email, array( "html" => '', "plaintext" => '' ) );
 		watchdog('thank_you', 'Sending thank you message failed in phpmailer for contribution: ' .
 			'<pre>' . check_plain(print_r($params, TRUE)) . "\n\n" .
@@ -495,6 +509,69 @@ function thank_you_send_mail( $params ) {
 
 		return false;
 	}
+}
+
+/**
+ * Gets the template name and revision number from an html comment
+ *
+ * @param string $html HTML source of the thank you email
+ *
+ * @returns array, 'revision' contains rev no, 'name' contains template name
+ *
+ * @throws TemplateInfoMissingException if comment is not found
+ */
+function thank_you_get_template_info( $html ) {
+	$matches = array();
+	if ( preg_match( '/<!-- template (.+) revision (\d+) -->/', $html, $matches ) ) {
+		return array(
+			'name' => $matches[1],
+			'revision' => (int) $matches[2]
+		);
+	}
+	throw new TemplateInfoMissingException();
+}
+
+/**
+ * Add record of the sent email to CiviMail
+ *
+ * @param string $email recipient address
+ * @param string $subject subject header to insert in case of missing mailing
+ * @param string $html HTML email body, which should have a template info comment
+ *
+ * @returns CiviMailQueueRecord mail queue record with VERP header
+ */
+function thank_you_add_civi_queue( $email, $subject, $html ) {
+	$civi_mailing = null;
+	$civi_queue_record = null;
+	$civimail_store = new CiviMailStore();
+	try {
+		$template_info = thank_you_get_template_info( $html );
+		try {
+			$civi_mailing = $civimail_store->getMailing( 'thank_you', $template_info['name'], $template_info['revision'] );
+		}
+		catch ( CiviMailingMissingException $e ) {
+			watchdog( 'thank_you', 'Could not find mailing record for email with subject ' . $subject, WATCHDOG_INFO );
+			$civi_mailing = $civimail_store->addMailing( 'thank_you', $template_info['name'], 'missing body', $subject, $template_info['revision'] );
+		}
+		$civi_queue_record = $civimail_store->addQueueRecord( $civi_mailing, $email );
+	}
+	catch ( TemplateInfoMissingException $e ) {
+		watchdog( 'thank_you', 'Could not find template info comment in thank you email template with subject ' . $subject, WATCHDOG_INFO );
+	}
+	catch ( CiviQueueInsertException $e ) {
+		watchdog( 'thank_you', 'CiviMail queue insert failed: ' . $e->getMessage(), WATCHDOG_INFO );
+	}
+	catch ( CiviMailingInsertException $e ) {
+		watchdog( 'thank_you', 'Could not insert fallback mailing: ' . $e->getMessage(), WATCHDOG_INFO );
+	}
+	return $civi_queue_record;
+}
+/**
+ * Get the translated email subject
+ */
+function thank_you_get_subject( $locale ) {
+	$subj_msg = "donate_interface-email-subject";
+	return Translation::get_translated_message( $subj_msg, $locale );
 }
 
 function thank_you_settings_form() {
@@ -606,6 +683,7 @@ function thank_you_recurring_globalcollect( $contribution_info ) {
 }
 
 function thank_you_batch_process(){
+	civicrm_initialize();
 	// the following variables should be set in the module settings, not here
 	$days = variable_get( 'thank_you_days', false );
 	$batch = variable_get( 'thank_you_batch', false );
@@ -694,4 +772,5 @@ function build_unsub_link( $contributionId, $emailAddr, $language ) {
 	return variable_get( 'thank_you_unsubscribe_url', '' ) . '?' . http_build_query( $unsub_params, '', '&' );
 }
 
-class ThankYouException extends Exception{};
+class ThankYouException extends Exception {}
+class TemplateInfoMissingException extends Exception {}
