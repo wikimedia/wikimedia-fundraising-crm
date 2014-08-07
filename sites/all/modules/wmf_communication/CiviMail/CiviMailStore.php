@@ -36,12 +36,12 @@ interface ICiviMailStore {
 	function getMailing( $source, $templateName, $revision = 0 );
 
 	/**
-	 * Adds a child job with completed date $date, a queue entry,
-	 * and an Activity record.
+	 * Adds a child job with completed date $date, a queue entry, and an entry
+	 * in the recipients table
 	 *
 	 * @param ICiviMailingRecord $mailingRecord Mailing that is being sent
 	 * @param string $email Email address of recipient
-	 * @param int $date Completion date to use for child job
+	 * @param string $date Completion date to use for child job
 	 *
 	 * @returns ICiviMailQueueRecord
 	 *
@@ -53,11 +53,25 @@ interface ICiviMailStore {
 	 * Retrieves the queue record matching the parameters.
 	 *
 	 * @param ICiviMailingRecord $mailingRecord
-	 * @param string $email
+	 * @param string $email recipient address
+	 * @param string $date approximate original send date
 	 *
 	 * @returns ICiviMailQueueRecord
 	 */
 	function getQueueRecord( $mailingRecord, $email, $date = null );
+
+	/**
+	 * Adds an individual activity and activity target record associated with
+	 * a sent email.  This is separate from inserting the queue record because
+	 * of the distinction between bulk email activities which all share the same
+	 * date and individual email activities
+	 *
+	 * @param ICiviMailQueueRecord $queueRecord record of sent email
+	 * @param string $subject subject of sent email
+	 * @param string $details full text of email
+	 * @param string $date date of activity
+	 */
+	function addActivity( $queueRecord, $subject, $details, $date = null );
 }
 
 class CiviMailStore implements ICiviMailStore {
@@ -131,8 +145,29 @@ VALUES ( %1, %2, %3 )";
 			$msg = "Error inserting CiviMail queue entry for email $emailAddress -- {$e->getMessage()}";
 			throw new CiviQueueInsertException( $msg, 0, $e );
 		}
-		//TODO: Add activity record
-		return new CiviMailQueueRecord( $queue, $emailAddress );
+		return new CiviMailQueueRecord( $queue, $email );
+	}
+
+	public function addActivity( $queueRecord, $subject, $details, $date = null ) {
+		if ( !$date ) {
+			$date = gmdate( 'YmdHis' );
+		}
+		$activityType = CRM_Core_OptionGroup::getValue('activity_type',
+          'Email',
+          'name'
+        );
+		$activity = array(
+			'source_contact_id' => $queueRecord->getContactID(),
+			'target_contact_id' => $queueRecord->getContactID(),
+			'activity_type_id' => $activityType,
+			'activity_date_time' => $date,
+			'subject' => $subject,
+			'details' => $details,
+			'status_id' => 2,
+			'deleteActivityTarget' => FALSE,
+		);
+
+		CRM_Activity_BAO_Activity::create( $activity );
 	}
 
 	public function getMailing( $source, $templateName, $revision = 0) {

@@ -554,6 +554,7 @@ function thank_you_add_civi_queue( $email, $subject, $html ) {
 			$civi_mailing = $civimail_store->addMailing( 'thank_you', $template_info['name'], 'missing body', $subject, $template_info['revision'] );
 		}
 		$civi_queue_record = $civimail_store->addQueueRecord( $civi_mailing, $email );
+		$civimail_store->addActivity( $civi_queue_record, $subject, $html );
 	}
 	catch ( TemplateInfoMissingException $e ) {
 		watchdog( 'thank_you', 'Could not find template info comment in thank you email template with subject ' . $subject, WATCHDOG_INFO );
