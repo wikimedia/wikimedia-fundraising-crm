@@ -46,7 +46,7 @@ class CoinbaseFile extends ChecksFile {
         $msg['contribution_type'] = 'cash';
         $msg['payment_instrument'] = 'Bitcoin';
 
-        $msg['first_name'] = $msg['full_name'];
+        list($msg['first_name'], $msg['last_name']) = wmf_civicrm_janky_split_name( $msg['full_name'] );
 
         if ( !empty( $msg['gateway_refund_id'] ) ) {
             $this->refundLastTransaction = true;
