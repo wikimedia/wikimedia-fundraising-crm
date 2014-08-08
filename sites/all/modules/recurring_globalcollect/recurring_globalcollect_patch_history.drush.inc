@@ -10,6 +10,7 @@ function recurring_globalcollect_patch_history_drush_command() {
         ),
         'options' => array(
             'contribution_tag' => 'Annotation to add to the contribution record, for example: --contribution_tag UnrecordedCharge',
+            'withhold_thank_you' => 'Mark contributions with no_thank_you=withheld, for manual thank-you release.',
         ),
     );
     return $items;
@@ -52,6 +53,9 @@ function recurring_globalcollect_create_historical_donation( $date, $order_id, $
     $msg['gateway_txn_id'] = "{$transaction->gateway_txn_id}-{$effort_id}";
 
     $msg['contribution_tags'] = $tags;
+    if ( drush_get_option( 'withhold_thank_you' ) ) {
+        $msg['no_thank_you'] = 'withheld';
+    }
 
     watchdog( 'recurring_globalcollect', 'Importing payment record: ' . print_r( $msg ), NULL, WATCHDOG_INFO );
     $contribution = wmf_civicrm_contribution_message_import( $msg );
