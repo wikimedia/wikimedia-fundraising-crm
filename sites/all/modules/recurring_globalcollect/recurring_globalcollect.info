@@ -1,6 +1,7 @@
 name = Recurring GlobalCollect Processor
 description = Processes recurring payments for GlobalCollect
 core = 7.x
+dependencies[] = civicrm
 dependencies[] = wmf_common
 dependencies[] = queue2civicrm
 dependencies[] = wmf_civicrm
