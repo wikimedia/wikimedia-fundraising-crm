@@ -1840,3 +1840,24 @@ function wmf_civicrm_evil_get_custom_field_in_form( $name, $fields ) {
     watchdog( 'wmf_civicrm', 'Form is missing your precious custom field.', NULL, WATCHDOG_ERROR );
     return null;
 }
+
+/**
+ * Split a full name into first and last
+ *
+ * Splits at the first space, cos we currently want the first name for emails,
+ * so we err on the side of not pulling in middle names.
+ *
+ * TODO: this is always a bad idea, there is no correct way to split names.
+ * Rework any templates or code that assumes a binomial.
+ *
+ * @param string $full_name
+ *
+ * @return array [first_name, last_name]
+ */
+function wmf_civicrm_janky_split_name( $full_name ) {
+    $names = preg_split( '/\s+/', $full_name, 2 );
+    if ( count( $names ) == 1 ) {
+        $names[] = '';
+    }
+    return $names;
+}
