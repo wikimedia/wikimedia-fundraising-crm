@@ -113,6 +113,7 @@ EOS;
  * RECURRING GLOBALCOLLECT <ORDERID> %
  *
  * This ignores the timestamp when doing a search.
+ * TODO: deprecate
  *
  * @param integer $order_id must be a positive integer.
  * @return false|array

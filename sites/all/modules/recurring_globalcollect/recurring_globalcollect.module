@@ -402,6 +402,7 @@ function recurring_globalcollect_create_message( $contribution_recur_id ) {
 
 /**
  * Create the form to search for subscriptions by order id.
+ * TODO: deprecate
  */ 
 function recurring_globalcollect_search_by_order_id_form() {
 

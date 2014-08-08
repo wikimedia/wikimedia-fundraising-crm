@@ -64,7 +64,7 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
             }
 
             $this->assertEquals( 1,
-                preg_match( "/^RECURRING GLOBALCOLLECT {$this->subscription_id}-2 \d+\$/", $contribution['trxn_id'] ) );
+                preg_match( "/^RECURRING GLOBALCOLLECT {$this->subscription_id}-2\$/", $contribution['trxn_id'] ) );
         }
     }
 }
