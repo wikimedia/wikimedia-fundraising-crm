@@ -28,7 +28,7 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
             'installments' => 0,
             'processor_id' => 1,
             'currency' => 'USD',
-            'trxn_id' => "TESTGATEWAY {$this->subscription_id}",
+            'trxn_id' => "RECURRING TESTGATEWAY {$this->subscription_id}",
         ) );
         $this->contribution_recur_id = $result['id'];
 

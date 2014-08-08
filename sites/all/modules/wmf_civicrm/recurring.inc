@@ -406,8 +406,7 @@ LIMIT 1";
 /**
  * Get recurring record in CiviCRM for the given subscriber id
  *
- * FIXME: tension between trxn_id as searchable index and full gateway style.
- * Probably best to move towards full: "RECURRING GC <order_id>", with no effortid.
+ * @deprecated Use wmf_civicrm_get_gateway_subscription instead.
  *
  * @param string $subscr_id
  * @return object|false
@@ -417,6 +416,36 @@ function wmf_civicrm_get_recur_record( $subscr_id ) {
 
   $dao = CRM_Core_DAO::executeQuery( $query, array(
     1 => array( $subscr_id, 'String' ),
+  ) );
+
+  if ( !$dao->fetch() ) {
+    return false;
+  }
+
+  return $dao;
+}
+
+/**
+ * Get recurring record in CiviCRM for the given subscriber id
+ *
+ * There is tension between trxn_id as searchable index and full gateway style
+ * at the moment, so we search using either style: either bare gateway
+ * subscription ID, or trxn-style full natural key.
+ *
+ * @param string $subscr_id
+ * @return object|false
+ */
+function wmf_civicrm_get_gateway_subscription( $gateway, $subscr_id ) {
+  $full_trxn_id = "RECURRING {$gateway} {$subscr_id}";
+
+  $query = "select *
+    from civicrm_contribution_recur
+    where
+        trxn_id = %1
+        or trxn_id = %2";
+  $dao = CRM_Core_DAO::executeQuery( $query, array(
+    1 => array( $subscr_id, 'String' ),
+    2 => array( $full_trxn_id, 'String' ),
   ) );
 
   if ( !$dao->fetch() ) {
