@@ -1,0 +1,17 @@
+<p>To whom it may concern:</p>
+
+<p>A large donation was made (over {{ threshold }} USD):</p>
+
+<p>contact_id: {{ contribution.contact_id }}</p>
+
+<p>contribution_id: {{ contribution.id }}</p>
+
+<p>converted amount: {{ contribution.total_amount }} USD</p>
+
+<p>original amount: {{ contribution.source }}</p>
+
+<p>Contact contribution in CiviCRM:</p>
+
+<p><a href="{{ contribution_link|raw }}">{{ contribution_link|raw }}</a></p>
+
+<p>You may need to examine this donation.</p>

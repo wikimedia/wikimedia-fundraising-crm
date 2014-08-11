@@ -2,10 +2,12 @@
 namespace wmf_communication;
 
 class TestMailer implements IMailer {
-    static private $mailings = array();
+    static protected $mailings;
 
     public function setup() {
         Mailer::$defaultSystem = 'test';
+
+        self::$mailings = array();
     }
 
     public function send( $email ) {
@@ -17,6 +19,6 @@ class TestMailer implements IMailer {
     }
 
     public function getMailing( $index ) {
-        return $mailings[$index];
+        return self::$mailings[$index];
     }
 }
