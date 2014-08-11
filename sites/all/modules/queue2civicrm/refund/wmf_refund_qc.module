@@ -125,7 +125,7 @@ function refund_import($msg) {
   );
   foreach( $required_fields as $field_name ) {
     if ( !array_key_exists( $field_name, $body ) ) {
-      $error = "$txnid: Required field '$field_name' not present! Dropping message on floor.";
+      $error = "Required field '$field_name' not present! Dropping message on floor.";
       throw new WmfException( 'CIVI_REQ_FIELD', $error );
     }
   }
@@ -147,13 +147,13 @@ function refund_import($msg) {
         $body['gross']
       );
 
-      watchdog('refund', "$txnid: Successfully marked as refunded", WATCHDOG_INFO);
+      watchdog('refund', "$refundTxn: Successfully marked as refunded", WATCHDOG_INFO);
     } catch (Exception $ex) {
-      watchdog('refund', "$txnid: Could not refund due to internal error: " . $ex->getMessage(), NULL, WATCHDOG_ERROR);
+      watchdog('refund', "$refundTxn: Could not refund due to internal error: " . $ex->getMessage(), NULL, WATCHDOG_ERROR);
       throw $ex;
     }
   } else {
-    watchdog( 'refund', "$txnid: Contribution not found for this transaction!", NULL, WATCHDOG_ERROR );
-    throw new WmfException( 'MISSING_PREDECESSOR', "Parent not found: $parentTxn" );
+    watchdog( 'refund', "$refundTxn: Contribution not found for this transaction!", NULL, WATCHDOG_ERROR );
+    throw new WmfException( 'MISSING_PREDECESSOR', "Parent not found: $gateway $parentTxn" );
   }
 }

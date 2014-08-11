@@ -17,7 +17,7 @@ function recurring_globalcollect_get_payment_by_id($id)
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
 
-  $query = 'SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur` WHERE `civicrm_contribution_recur`.`id` = :id LIMIT 1';
+  $query = 'SELECT civicrm_contribution_recur.* FROM civicrm_contribution_recur WHERE civicrm_contribution_recur.id = :id LIMIT 1';
   
   $result = db_query( $query, array( ':id' => $id ) )->fetch();
 
@@ -113,6 +113,7 @@ EOS;
  * RECURRING GLOBALCOLLECT <ORDERID> %
  *
  * This ignores the timestamp when doing a search.
+ * TODO: deprecate
  *
  * @param integer $order_id must be a positive integer.
  * @return false|array
@@ -135,7 +136,10 @@ SELECT
 FROM civicrm_contribution_recur
 LEFT JOIN civicrm_contact ON
     civicrm_contribution_recur.contact_id = civicrm_contact.id
-WHERE civicrm_contribution_recur.trxn_id LIKE 'RECURRING GLOBALCOLLECT :order_id %' LIMIT 1
+WHERE
+    civicrm_contribution_recur.trxn_id = CONCAT_WS( ' ', 'RECURRING GLOBALCOLLECT', :order_id )
+    OR civicrm_contribution_recur.trxn_id LIKE CONCAT_WS( ' ', 'RECURRING GLOBALCOLLECT', :order_id, '%' )
+LIMIT 1
 EOS;
   
   $result = db_query( $query, array( ':order_id' => $order_id ) )->fetch();

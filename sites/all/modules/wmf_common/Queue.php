@@ -104,7 +104,9 @@ class Queue {
 
             try {
                 $this->commonMessageNormalize( $msg );
-                $this->transactionalCall( $callback, $msg );
+                WmfDatabase::transactionalCall(
+                    $callback, array( $msg )
+                );
                 $this->ack( $msg );
             } catch ( WmfException $ex ) {
                 watchdog( 'wmf_common', 'Failure while processing message: ' . $ex->getMessage(), NULL, WATCHDOG_ERROR );
@@ -183,39 +185,6 @@ class Queue {
             $messages[] = $msg;
         }
         return $messages;
-    }
-
-    /**
-     * Call the message processing callback and perform common error handling
-     *
-     * TODO: move the remaining error handling in here
-     */
-    protected function transactionalCall( $callback, $msg ) {
-        watchdog( 'wmf_common', "Beginning DB transaction", NULL, WATCHDOG_INFO );
-        $drupal_transaction = db_transaction( 'dequeue_default', array( 'target' => 'default' ) );
-        $ct_transaction = db_transaction( 'dequeue_donations', array( 'target' => 'donations' ) );
-        $crm_transaction = db_transaction( 'dequeue_civicrm', array( 'target' => 'civicrm' ) );
-        $native_civi_transaction = new CRM_Core_Transaction();
-
-        try {
-            // Do the right thing
-            $callback( $msg );
-        }
-        catch ( Exception $ex ) {
-            watchdog( 'wmf_common', "Aborting DB transaction.", NULL, WATCHDOG_INFO );
-            $native_civi_transaction->rollback();
-            $crm_transaction->rollback();
-            $ct_transaction->rollback();
-            $drupal_transaction->rollback();
-
-            throw $ex;
-        }
-
-        watchdog( 'wmf_common', "Committing DB transaction", NULL, WATCHDOG_INFO );
-        $native_civi_transaction->commit();
-        unset( $crm_transaction );
-        unset( $ct_transaction );
-        unset( $drupal_transaction );
     }
 
     function getByCorrelationId( $queue, $correlationId ) {

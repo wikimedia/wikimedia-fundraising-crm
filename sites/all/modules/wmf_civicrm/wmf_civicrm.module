@@ -199,7 +199,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         && !$msg['contribution_recur_id']
     ) {
         if ( $msg['subscr_id'] ) {
-            $recur_record = wmf_civicrm_get_recur_record( $msg['subscr_id'] );
+            $recur_record = wmf_civicrm_get_gateway_subscription( $msg['gateway'], $msg['subscr_id'] );
             if ( $recur_record ) {
                 watchdog( 'queue2civicrm_import', 'Found matching recurring record for subscr_id: ' . $msg['subscr_id'], NULL, WATCHDOG_INFO );
                 $msg['contribution_recur_id'] = $recur_record->id;
@@ -232,7 +232,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
     if ( $initial_recurring ) {
         watchdog( 'queue2civicrm_import', 'Attempting to insert new recurring subscription: ' . $msg['subscr_id'], NULL, WATCHDOG_INFO );
         wmf_civicrm_message_contribution_recur_insert( $msg, $contact['id'], $msg['subscr_id'] );
-        $recur_record = wmf_civicrm_get_recur_record( $msg['subscr_id'] );
+        $recur_record = wmf_civicrm_get_gateway_subscription( $msg['gateway'], $msg['subscr_id'] );
         $msg['contribution_recur_id'] = $recur_record->id;
     }
 
@@ -365,7 +365,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     wmf_civicrm_set_custom_field_values( $contribution_result[ 'id' ], $custom_vars );
 
     // Create any required tags on the contribution
-    if ( !empty( $msg['contribution_tags'] ) ) {
+    if ( $msg['contribution_tags'] ) {
         $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
         $stacked_ex = array();
         foreach ( array_unique( $msg['contribution_tags'] ) as $tag ) {
@@ -833,6 +833,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['organization_name'] = $msg['organization_name'];
     }
     if ( empty($msg['language']) ) {
+        // TODO: use LanguageTag to prevent truncation of >2 char lang codes
         // guess from contribution_tracking data
         $tracking = wmf_civicrm_get_contribution_tracking( $msg );
         if ( $tracking and !empty($tracking['language']) ) {
@@ -874,7 +875,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
 
     // Do we have any tags we need to add to this contact?
     $contact_id = $contact_result['id'];
-    if ( !empty( $msg['contact_tags'] ) ) {
+    if ( $msg['contact_tags'] ) {
         $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
         $stacked_ex = array();
         foreach ( array_unique( $msg['contact_tags'] ) as $tag ) {
@@ -1126,6 +1127,8 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'contribution_recur_id' => null,
         'effort_id' => null,
         'subscr_id' => null,
+        'contact_tags' => array(),
+        'contribution_tags' => array(),
     );
     $msg = $msg + $defaults;
     
@@ -1212,10 +1215,10 @@ function wmf_civicrm_normalize_msg( $msg ) {
     }
 
     // Check for special flags
+    // TODO: push non-generic cases into database
     if ( !empty( $msg['utm_campaign'] ) ) {
         switch ( $msg['utm_campaign'] ) {
         case 'NY2013':
-            //TODO: expose direct_mail_appeal custom field in the UI
             $msg['direct_mail_appeal'] = "New York Event 2013";
             break;
         case 'NYCShaku2013':
@@ -1466,7 +1469,7 @@ WHERE
         if ( ($original_currency && round($original_currency, 2) != round($actual_currency, 2))
             || ($original_amount && round($original_amount, 2) != round($actual_amount, 2)) )
         {
-            throw new WmfException( 'INVALID_MESSAGE', "Payment amount specified did not match original contribution: $contribution_id" );
+            throw new WmfException( 'INVALID_MESSAGE', "Payment amount specified did not match original contribution, ID=$contribution_id.  $original_currency $original_amount != $actual_currency $actual_amount" );
         }
 
         $original_currency = $actual_currency;
@@ -1779,11 +1782,19 @@ function wmf_civicrm_get_dbs() {
     return new db_switcher();
 }
 
+/**
+ * Expand CiviCRM DAO results object into an array of rows as array
+ *
+ * @param $dao CRM_Core_DAO
+ *
+ * @return array
+ */
 function wmf_civicrm_dao_to_list( $dao ) {
     $result = array();
     while ($dao->fetch()) {
         $result[] = $dao->toArray();
     }
+    // FIXME: pick wart
     if (empty($result)) {
         return false;
     }
@@ -1839,4 +1850,25 @@ function wmf_civicrm_evil_get_custom_field_in_form( $name, $fields ) {
     }
     watchdog( 'wmf_civicrm', 'Form is missing your precious custom field.', NULL, WATCHDOG_ERROR );
     return null;
+}
+
+/**
+ * Split a full name into first and last
+ *
+ * Splits at the first space, cos we currently want the first name for emails,
+ * so we err on the side of not pulling in middle names.
+ *
+ * TODO: this is always a bad idea, there is no correct way to split names.
+ * Rework any templates or code that assumes a binomial.
+ *
+ * @param string $full_name
+ *
+ * @return array [first_name, last_name]
+ */
+function wmf_civicrm_janky_split_name( $full_name ) {
+    $names = preg_split( '/\s+/', $full_name, 2 );
+    if ( count( $names ) == 1 ) {
+        $names[] = '';
+    }
+    return $names;
 }
