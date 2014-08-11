@@ -469,12 +469,6 @@ function thank_you_send_mail( $params ) {
 		if( strpos( $e->errorMessage(), "Invalid address:" ) === false ){
 			watchdog( 'thank_you', "PhpMailer died unexpectedly: {$e->errorMessage()} at {$e->getTraceAsString()}", array(), WATCHDOG_ERROR );
 			wmf_common_failmail( 'thank_you', "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n" . $e->getTraceAsString(), $debug );
-
-			if( variable_get( "thank_you_async_send", false ) ){
-				// we are not sending as part of q2c, so abort abort abort
-				watchdog( "thank_you", "HALTING the processing of thank you emails", array(), WATCHDOG_ERROR );
-				exit( 1 );
-			}
 		}
 
         return false;
@@ -486,12 +480,6 @@ function thank_you_send_mail( $params ) {
 			$e->getMessage() . '</pre>', array(), WATCHDOG_ERROR);
 
 		wmf_common_failmail( 'thank_you', "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__ . "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString(), $debug );
-
-		if( variable_get( "thank_you_async_send", false ) ){
-			// we are not sending as part of q2c, so abort abort abort
-			watchdog( "thank_you", "HALTING the processing of thank you emails", array(), WATCHDOG_ERROR );
-			exit( 1 );
-		}
 
 		return false;
 	}
@@ -572,37 +560,7 @@ function thank_you_settings_form() {
     '#default_value' => variable_get('thank_you_onestep_unsubscribe', 'false'),
   );
 
-	$form['thank_you_async_send'] = array(
-		'#type' => 'radios',
-		'#title' => t('Thank you mail sending'),
-		'#required' => TRUE,
-		'#options' => array(
-			false => t('Send TY email on queue consumption'),
-			true => t('Send TY email asynchronously'),
-		),
-		'#default_value' => variable_get('thank_you_async_send', false),
-	);
-
   return system_settings_form($form);
-}
-
-function thank_you_queue2civicrm_import( $contribution_info ) {
-
-  static $async;
-  if( !isset( $async ) ){
-    $async = variable_get( "thank_you_async_send", false );
-  }
-  if( $async ){
-    return;
-  }
-
-  $contribution_id = $contribution_info[ 'contribution_id' ];
-  watchdog('thank_you', 'Calling thank you function for contribution: ' . $contribution_id, array(), WATCHDOG_INFO );
-  thank_you_for_contribution( $contribution_id );
-}
-
-function thank_you_recurring_globalcollect( $contribution_info ) {
-	thank_you_queue2civicrm_import( $contribution_info );
 }
 
 function thank_you_batch_process(){
