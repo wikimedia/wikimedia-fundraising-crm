@@ -376,12 +376,12 @@ function _wmf_civicrm_message_contribution_insert( $msg )
                     'tag_id' => $supported_tags[$tag]
                 ));
             } catch ( CiviCRM_API3_Exception $ex ) {
-                $stacked_ex[] = "Failed to add tag {$tag} to contact ID {$contribution_result['id']}. Error: " . $ex->getMessage();
+                $stacked_ex[] = "Failed to add tag {$tag} to contribution ID {$contribution_result['id']}. Error: " . $ex->getMessage();
             }
         }
         if ( !empty( $stacked_ex ) ) {
             throw new WmfException(
-                "IMPORT_CONTACT",
+                "IMPORT_CONTRIB",
                 implode( "\n", $stacked_ex )
             );
         }
