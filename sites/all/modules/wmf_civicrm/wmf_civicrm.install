@@ -839,3 +839,28 @@ function wmf_civicrm_update_7020()
     );
     wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
 }
+
+/**
+ * Create UnrecordedCharge contribution tag
+ */
+function wmf_civicrm_update_7021()
+{
+    $ret = array();
+    $api = wmf_civicrm_bootstrap_civi();
+    $success = $api->Tag->get(array(
+        'name' => 'UnrecordedCharge',
+        'used_for' => 'civicrm_contribution',
+    ));
+    if (!count($api->values)) {
+        $success = $api->Tag->create(array(
+            'name' => 'UnrecordedCharge',
+            'description' => 'For donations which have already been charged, but were not recorded in Civi at the time.',
+            'is_selectable' => false,
+            'is_reserved' => true,
+            'used_for' => 'civicrm_contribution'
+        ));
+        if (!$success) {
+            throw new Exception( $api->errorMsg() );
+        }
+    }
+}
