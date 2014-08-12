@@ -14,11 +14,18 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
      */
     public function testDonation() {
         $message = new TransactionMessage();
+        $message2 = new TransactionMessage();
 
         queue2civicrm_import( $message );
+        queue2civicrm_import( $message2 );
 
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $message->getGateway(), $message->getGatewayTxnId() );
         $this->assertEquals( 1, count( $contributions ) );
+
+        $contributions2 = wmf_civicrm_get_contributions_from_gateway_id( $message2->getGateway(), $message2->getGatewayTxnId() );
+        $this->assertEquals( 1, count( $contributions2 ) );
+
+        $this->assertNotEquals( $contributions[0]['contact_id'], $contributions2[0]['contact_id'] );
     }
 
     public function testRecurring() {
