@@ -262,7 +262,7 @@ function recurring_globalcollect_batch_charge($contribution_batch, $options = ar
       try {
           WmfDatabase::transactionalCall(
               'recurring_globalcollect_charge',
-              array( $contribution_recur['id'], $options )
+              array( $contribution_recur->id, $options )
           );
 
           $succeeded[] = $contribution_recur;
