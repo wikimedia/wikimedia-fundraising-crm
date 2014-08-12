@@ -260,12 +260,13 @@ function recurring_globalcollect_batch_charge($contribution_batch, $options = ar
   foreach ($contribution_batch as $contribution_recur)
   {
       try {
-          WmfDatabase::transactionalCall(
-              'recurring_globalcollect_charge',
-              array( $contribution_recur->id, $options )
-          );
+          $status = recurring_globalcollect_charge($contribution_recur->id, $options);
 
-          $succeeded[] = $contribution_recur;
+          if ($status) {
+              $succeeded[] = $contribution_recur;
+          } else {
+              $failed[] = $contribution_recur;
+          }
       }
       catch ( WmfException $e )
       {
