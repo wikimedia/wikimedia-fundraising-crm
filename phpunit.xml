@@ -26,5 +26,8 @@
         <directory>sites/all/modules/wmf_communication/tests/phpunit</directory>
       </testsuite>
       -->
+	  <testsuite name="wmf_communication tests">
+        <file>sites/all/modules/wmf_communication/tests/phpunit/CiviMailTest.php</file>
+      </testsuite>
     </testsuites>
 </phpunit>

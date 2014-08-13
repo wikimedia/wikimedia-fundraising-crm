@@ -228,7 +228,7 @@ VALUES ( %1, %2, %3 )";
 	}
 
 	public function getQueueRecord( $mailingRecord, $email, $date = null ) {
-		return new CiviMailQueueRecord( '1.2.6d8a8e7f6b87c8af4e', 123 );
+		//TODO: will use this for Silverpop, but not needed for TY emails
 	}
 
 	public static function makeUniqueName( $source, $templateName, $revision ) {
