@@ -57,6 +57,7 @@ function wmf_campaigns_index_form() {
     $api = civicrm_api_classapi();
     $success = $api->OptionValue->get( array(
         'option_group_name' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+        'rowCount' => 1000,
     ) );
     if ( !$success ) {
         drupal_set_message( "Tough luck, cannot fetch campaigns: " . $api->errorMsg(), 'error' );
