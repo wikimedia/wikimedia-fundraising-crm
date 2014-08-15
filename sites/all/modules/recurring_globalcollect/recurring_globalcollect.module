@@ -304,18 +304,25 @@ function recurring_globalcollect_batch_charge($contribution_batch, $options = ar
  * @throws WmfException if the payment fails or any other error occurs.
  */
 function recurring_globalcollect_charge( $contribution_recur_id, $options = array() ){
-  $instance = DonationInterface::getAdapter( 'GlobalCollect' );
+  watchdog( 'recurring_globalcollect', "Processing recurring charge: {$contribution_recur_id}" );
 
-  watchdog('recurring_globalcollect', 'Processing recurring charge: <pre>' . print_r($contribution_recur, true) . '</pre>');
-
-  $instance->load_request_data( $values );
-  
   $gotLock = _recurring_globalcollect_update_record_in_progress($contribution_recur_id);
   if ( !$gotLock ) {
     $message = t('Failed to mark record as in progress');
     throw new WmfException( 'CIVI_CONFIG', $message );
   }
-  
+
+  $subscription = recurring_globalcollect_get_payment_by_id( $contribution_recur_id );
+  $transaction = WmfTransaction::from_unique_id( $subscription->trxn_id );
+  $values = array(
+      'amount' => $subscription->amount,
+      'effort_id' => $subscription->processor_id + 1,
+      'order_id' => $transaction->gateway_txn_id,
+      'currency_code' => $subscription->currency,
+      'payment_product' => '',
+  );
+  $instance = DonationInterface::getAdapter( 'GlobalCollect' );
+  $instance->load_request_data( $values );
   $result = $instance->do_transaction('Recurring_Charge');
   
   // If success, add a record to the contribution table and send a thank you email.
