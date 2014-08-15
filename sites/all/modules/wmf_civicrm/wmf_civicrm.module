@@ -350,7 +350,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     // If the date is already in mysql format, it will be 14 characters long:
     // YYYYmmddHHiiss :-/
     $date_mangle = array(
-        'postmark_date',
+        'Postmark_Date',
         'source_enqueued_time',
     );
     foreach ( $date_mangle as $field ) {
