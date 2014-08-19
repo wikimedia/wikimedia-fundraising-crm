@@ -498,6 +498,10 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                 break;
             case 'cc':
                 $payment_instrument = 'Credit Card';	
+                if ( empty( $msg['payment_submethod'] ) ) {
+                    watchdog( 'wmf_civicrm', 'No credit card submethod given', NULL, WATCHDOG_WARNING );
+                    break;
+                }
                 switch ( strtolower( $msg['payment_submethod'] ) ){
                     case 'visa':
                         $payment_instrument .= ': Visa';
