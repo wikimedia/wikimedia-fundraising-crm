@@ -59,20 +59,16 @@ class WmfTransaction {
     static function from_unique_id( $unique_id ) {
         $transaction = new WmfTransaction();
 
-        $parts = explode( ' ', $unique_id );
-
-        if ( count( $parts ) === 0 ) {
-            throw new WmfException( 'INVALID_MESSAGE', "Missing ID." );
-        }
+        $parts = explode( ' ', trim( $unique_id ) );
 
         $transaction->is_refund = false;
-        while ( $parts[0] === "RFD" or $parts[0] === "REFUND" ) {
+        while ( $parts and in_array( $parts[0], array( 'RFD', 'REFUND' ) ) ) {
             $transaction->is_refund = true;
             array_shift( $parts );
         }
 
         $transaction->is_recurring = false;
-        while ( $parts[0] === "RECURRING" ) {
+        while ( $parts and $parts[0] === 'RECURRING' ) {
             $transaction->is_recurring = true;
             array_shift( $parts );
         }
@@ -94,6 +90,9 @@ class WmfTransaction {
             // Note that this sucks in effort_id and any other stuff we're
             // using to maintain an actually-unique per-gateway natural key.
             $transaction->gateway_txn_id = array_shift( $parts );
+            if ( empty( $transaction->gateway_txn_id ) ) {
+                throw new WmfException( 'INVALID_MESSAGE', "Empty gateway transaction id" );
+            }
             break;
         default:
             throw new WmfException( 'INVALID_MESSAGE', "Malformed unique id (too many terms)" );
