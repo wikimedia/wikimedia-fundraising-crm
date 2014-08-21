@@ -342,9 +342,6 @@ function recurring_globalcollect_charge( $contribution_recur_id, $options = arra
     $contribution['contribution_id'] = $contribution['id'];
     unset( $contribution['id'] );
 
-    // Send thank you email, other post-import things
-    module_invoke_all( 'recurring_globalcollect', $contribution );
-
     return $result;
   }
   else
