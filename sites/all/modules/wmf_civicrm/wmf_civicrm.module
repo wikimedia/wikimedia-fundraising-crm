@@ -354,8 +354,9 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'source_enqueued_time',
     );
     foreach ( $date_mangle as $field ) {
-        if ( is_numeric( $custom_vars[$field] )
-            and strlen( $custom_vars[$field] ) < 14
+        if ( array_key_exists( $field, $custom_vars )
+            && is_numeric( $custom_vars[$field] )
+            && strlen( $custom_vars[$field] ) < 14
         ) {
             $custom_vars[$field] = wmf_common_date_unix_to_sql( $custom_vars[$field] );
         }
