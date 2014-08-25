@@ -14,3 +14,4 @@ files[] = Translation.php
 files[] = CiviMail/CiviMailStore.php
 files[] = CiviMail/CiviMailingRecord.php
 files[] = CiviMail/CiviMailQueueRecord.php
+files[] = tests/TestMailer.php

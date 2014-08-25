@@ -65,6 +65,8 @@ class Mailer {
             return new MailerPHPMailer();
         case 'drupal':
             return new MailerDrupal();
+        case 'test':
+            return new TestMailer();
         default:
             throw new Exception( "Unknown mailer requested: " . self::$defaultSystem );
         }
