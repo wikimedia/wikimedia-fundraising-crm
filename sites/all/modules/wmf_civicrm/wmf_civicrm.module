@@ -137,6 +137,7 @@ function wmf_civicrm_contribution_get_custom_values( $contribution_id, $names )
         $field_map[ $field ] = $name;
     }
     $result = CRM_Core_BAO_CustomValueTable::getValues( $params );
+    $ret = array();
     foreach ( $result as $field => $value ) {
         if ( array_key_exists( $field, $field_map ) ) {
             $ret[ $field_map[ $field ] ] = $value;
@@ -145,7 +146,7 @@ function wmf_civicrm_contribution_get_custom_values( $contribution_id, $names )
     return $ret;
 }
 
-// FIXME: contribution_set_custom_values
+// FIXME: this is only valid for contributions
 function wmf_civicrm_set_custom_field_values($entity_id, $map)
 {
     $params = array(
