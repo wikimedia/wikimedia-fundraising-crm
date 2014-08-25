@@ -152,7 +152,13 @@ class MailerPHPMailer implements IMailer {
         $mailer->SetFrom( $email['from_address'], $email['from_name'] );
         $mailer->set( 'Sender', $email['reply_to'] );
 
-        $mailer->AddAddress( $email['to_address'], $email['to_name'] );
+        if ( isset( $email['to'] ) ) {
+            foreach ( $email['to'] as $to ) {
+                $mailer->AddAddress( $to );
+            }
+        } else {
+            $mailer->AddAddress( $email['to_address'], $email['to_name'] );
+        }
 
 		foreach ($headers as $header => $value) {
 			$mailer->AddCustomHeader( "$header: $value" );
