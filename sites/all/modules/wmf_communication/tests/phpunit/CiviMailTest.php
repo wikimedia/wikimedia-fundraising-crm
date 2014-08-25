@@ -8,9 +8,12 @@ use \CiviMailStore;
  */
 class CiviMailTest extends BaseWmfDrupalPhpUnitTestCase {
 
-	protected $source = 'wmf_connumication_test';
+	protected $source = 'wmf_communication_test';
 	protected $body = '<p>Dear Wikipedia supporter,</p><p>You are beautiful.</p>';
 	protected $subject = 'Thank you';
+	/**
+	 * @var ICiviMailStore
+	 */
 	protected $mailStore;
 	protected $contactID;
 	protected $emailID;
@@ -19,29 +22,38 @@ class CiviMailTest extends BaseWmfDrupalPhpUnitTestCase {
 		parent::setUp();
 		civicrm_initialize();
 		$this->mailStore = new CiviMailStore();
+		$contact = $this->getContact( 'generaltrius@hondo.mil', 'Trius', 'Hondo' );
+		$this->emailID = $contact[ 'emailID' ];
+		$this->contactID = $contact[ 'contactID' ];
+	}
 
+	protected function getContact( $email, $firstName, $lastName ) {
 		$emailResult = civicrm_api3( 'Email', 'get', array(
-			'email' => 'generaltrius@hondo.mil',
+			'email' => $email,
 		) );
 		$firstResult = reset( $emailResult['values'] );
 		if ( $firstResult ) {
-			$this->emailID = $firstResult['id'];
-			$this->contactID = $firstResult['contact_id'];
+			return array(
+				'emailID' => $firstResult['id'],
+				'contactID' => $firstResult['contact_id'],
+			);
 		} else {
 			$contactResult = civicrm_api3( 'Contact', 'create', array(
-				'first_name' => 'Trius',
-				'last_name' => 'Hondo',
+				'first_name' => $firstName,
+				'last_name' => $lastName,
 				'contact_type' => 'Individual',
 			) );
-			$this->contactID = $contactResult['id'];
 			$emailResult = civicrm_api3( 'Email', 'create', array(
-				'email' => 'generaltrius@hondo.mil',
-				'contact_id' => $this->contactID
+				'email' => $email,
+				'contact_id' => $contactResult['id'],
 			) );
-			$this->emailID = $emailResult['id'];
+			return array(
+				'emailID' => $emailResult['id'],
+				'contactID' => $contactResult['id'],
+			);
 		}
 	}
-	
+
 	public function tearDown() {
 		civicrm_api3( 'Email', 'delete', array( 'id' => $this->emailID ) );
 		civicrm_api3( 'Contact', 'delete', array( 'id' => $this->contactID ) );

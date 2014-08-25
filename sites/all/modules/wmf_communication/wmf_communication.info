@@ -11,6 +11,7 @@ files[] = MediaWikiMessages.php
 files[] = Recipient.php
 files[] = Templating.php
 files[] = Translation.php
+files[] = CiviMail/CiviMailBulkStore.php
 files[] = CiviMail/CiviMailStore.php
 files[] = CiviMail/CiviMailingRecord.php
 files[] = CiviMail/CiviMailQueueRecord.php
