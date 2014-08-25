@@ -3,7 +3,6 @@
 use wmf_communication\Mailer;
 use wmf_communication\Templating;
 use wmf_communication\Translation;
-use Html2Text\Html2Text;
 
 // TODO:
 // * use more exceptions in place of watchdog/return false
@@ -430,15 +429,6 @@ function thank_you_send_mail( $params ) {
 	if( $email['html'] == false ){
 		watchdog( 'thank_you', "HTML rendering of template failed in {$params['locale']}.", array(), WATCHDOG_ERROR );
 		wmf_common_failmail( 'thank_you', "FAILED TO RENDER HTML EMAIL in " . __FUNCTION__, $params );
-		return false;
-	}
-
-	$converter = new Html2Text( $email['html'], false, array( 'do_links' => 'table' ) );
-	$email['plaintext'] = $converter->get_text();
-
-	if( $email['plaintext'] == false ){
-		watchdog( 'thank_you', "Text rendering of template failed in {$params['locale']}.", array(), WATCHDOG_ERROR );
-		wmf_common_failmail( 'thank_you', "FAILED TO RENDER PLAINTEXT EMAIL in " . __FUNCTION__, $params );
 		return false;
 	}
 

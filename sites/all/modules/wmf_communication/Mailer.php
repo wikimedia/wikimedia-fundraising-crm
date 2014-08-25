@@ -1,5 +1,7 @@
 <?php namespace wmf_communication;
 
+use Html2Text\Html2Text;
+
 /**
  * Must be implemented by every mailing engine
  */
@@ -108,6 +110,16 @@ class Mailer {
 </body>
 </html>";
     }
+
+    function normalizeContent( &$email ) {
+        $converter = new Html2Text( $email['html'], false, array( 'do_links' => 'table' ) );
+        $email['plaintext'] = $converter->get_text();
+
+        if ( $email['plaintext'] === false ) {
+            watchdog( 'thank_you', "Text rendering of template failed in {$email['locale']}.", array(), WATCHDOG_ERROR );
+            throw new WmfException( 'RENDER', "Could not render plaintext" );
+        }
+    }
 }
 
 /**
@@ -149,6 +161,7 @@ class MailerPHPMailer implements IMailer {
         $mailer->Subject = $email['subject'];
         # n.b. - must set AltBody after MsgHTML(), or the text will be overwritten.
         $mailer->MsgHTML( Mailer::wrapHtmlSnippet( $email['html'], $email['locale'] ) );
+        $this->normalizeContent( $email );
         $mailer->AltBody = $email['plaintext'];
 
         $success = $mailer->Send();
@@ -170,6 +183,7 @@ class MailerDrupal implements IMailer {
             'Return-Path' => $from,
         );
 
+        $this->normalizeContent( $email );
         $body = $this->formatTwoPart( Mailer::wrapHtmlSnippet( $email['html'] ), $email['plaintext'], $headers );
 
         $message = array(
