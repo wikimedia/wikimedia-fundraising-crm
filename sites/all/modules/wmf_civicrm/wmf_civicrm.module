@@ -288,20 +288,6 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         $contribution[ 'thankyou_date' ] = wmf_common_date_unix_to_civicrm( $msg['thankyou_date'] );
     }
 
-    watchdog( 'wmf_civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), NULL, WATCHDOG_DEBUG);
-
-    $contribution_result = civicrm_api( "Contribution", "Create", $contribution );
-    
-    watchdog( 'wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
-    
-    if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
-        throw new WmfException(
-            'INVALID_MESSAGE',
-            'Cannot create contribution, civi error!',
-            $contribution_result['error_message']
-        );
-    }
-  
     /**
     *  Hopefully the Civi API will eventually handle custom fields in the
     *  above "Create" call.
@@ -364,8 +350,28 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     }
 
     $custom_vars += $custom_field_defaults;
-    wmf_civicrm_set_custom_field_values( $contribution_result[ 'id' ], $custom_vars );
 
+    $custom_name_mapping = wmf_civicrm_get_custom_field_map( array_keys( $custom_vars ) );
+    foreach ( $custom_name_mapping as $readable => $machined ) {
+        if ( array_key_exists( $readable, $custom_vars ) ) {
+            $contribution[$machined] = $custom_vars[$readable];
+        }
+    }
+
+    watchdog( 'wmf_civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), NULL, WATCHDOG_DEBUG);
+
+    $contribution_result = civicrm_api( "Contribution", "Create", $contribution );
+    
+    watchdog( 'wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
+    
+    if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
+        throw new WmfException(
+            'INVALID_MESSAGE',
+            'Cannot create contribution, civi error!',
+            $contribution_result['error_message']
+        );
+    }
+  
     // Create any required tags on the contribution
     if ( $msg['contribution_tags'] ) {
         $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
