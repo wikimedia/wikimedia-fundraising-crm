@@ -94,8 +94,7 @@ class Templating {
     protected function loadTemplate() {
         $language = $this->language;
         do {
-            // TODO: encapsulate path strategy in a function so it can be overridden
-            $template = $this->loadTemplateFile( "{$this->format}/{$this->template_name}.{$language}.{$this->format}" );
+            $template = $this->loadTemplateFile( $language );
             if ( $template ) {
                 return $template;
             }
@@ -110,22 +109,19 @@ class Templating {
             $language = Translation::next_fallback( $language );
         } while ( $language );
 
-        watchdog( 'wmf_communication',
-            "Using universal language fallback for template :key...",
-            array( ':key' => $this->key() ),
-            WATCHDOG_INFO
-        );
-        return $this->loadTemplateFile( "{$this->format}/{$this->template_name}.{$this->format}" );
+        throw new Exception( "No fallbacks for template {$this->template_name}, from {$this->language}" );
     }
 
     /**
-     * Load a Twig template from the given filesystem path
+     * Load a Twig template from the filesystem
      *
-     * @param string $path absolute path, or path relative to configured Twig include dirs
+     * @param string $language
      *
      * @return Twig_Template
      */
-    protected function loadTemplateFile( $path ) {
+    protected function loadTemplateFile( $language ) {
+        $path = "{$this->format}/{$this->template_name}.{$language}.{$this->format}";
+
         watchdog( 'wmf_communication',
             "Searching for template file at :path",
             array( ':path' => $path ),
