@@ -21,12 +21,7 @@
       <testsuite name="wmf_common tests">
         <directory>sites/all/modules/wmf_common/tests/phpunit</directory>
       </testsuite>
-      <!-- FIXME: requires DonationInterface and interpretive dance
       <testsuite name="wmf_communication tests">
-        <directory>sites/all/modules/wmf_communication/tests/phpunit</directory>
-      </testsuite>
-      -->
-	  <testsuite name="wmf_communication tests">
         <file>sites/all/modules/wmf_communication/tests/phpunit/CiviMailTest.php</file>
         <file>sites/all/modules/wmf_communication/tests/phpunit/CiviMailBulkTest.php</file>
       </testsuite>

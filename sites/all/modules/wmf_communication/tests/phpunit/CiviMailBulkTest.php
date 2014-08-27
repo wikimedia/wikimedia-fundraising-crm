@@ -1,11 +1,16 @@
 <?php
 namespace wmf_communication;
 
-use \CiviMailBulkStore;
+use \CRM_Activity_BAO_Activity;
+use \CRM_Activity_BAO_ActivityTarget;
+use \CRM_Core_OptionGroup;
+use \CRM_Mailing_BAO_Recipients;
+use \CRM_Mailing_Event_BAO_Queue;
+use \CRM_Mailing_Event_BAO_Delivered;
 /**
  * Tests for CiviMail helper classes
  */
-class CiviMailBulkTest extends CiviMailTest {
+class CiviMailBulkTest extends CiviMailTestBase {
 
 	protected $contacts = array();
 	protected $emails = array();
@@ -54,8 +59,8 @@ class CiviMailBulkTest extends CiviMailTest {
 
 		$mailingID = $storedMailing->getMailingID();
 		// Should have a single bulk mailing activity created
-		$activity = new \CRM_Activity_BAO_Activity();
-		$bulkMail = \CRM_Core_OptionGroup::getValue('activity_type',
+		$activity = new CRM_Activity_BAO_Activity();
+		$bulkMail = CRM_Core_OptionGroup::getValue('activity_type',
           'Bulk Email',
           'name'
         );
@@ -65,7 +70,7 @@ class CiviMailBulkTest extends CiviMailTest {
 
 		foreach ( $this->contacts as $contact ) {
 			//recipients table
-			$recipients = new \CRM_Mailing_BAO_Recipients();
+			$recipients = new CRM_Mailing_BAO_Recipients();
 			$recipients->mailing_id = $mailingID;
 			$recipients->contact_id = $contact['contactID'];
 			$recipients->email_id = $contact['emailID'];
@@ -77,17 +82,17 @@ FROM civicrm_mailing_event_queue q
 INNER JOIN civicrm_mailing_job j ON q.job_id = j.id
 WHERE j.mailing_id = $mailingID";
 
-			$queue = new \CRM_Mailing_Event_BAO_Queue();
+			$queue = new CRM_Mailing_Event_BAO_Queue();
 			$queue->query( $queueQuery );
 			$this->assertTrue( $queue->fetch() );
 
 			//delivery event
-			$delivered = new \CRM_Mailing_Event_BAO_Delivered();
+			$delivered = new CRM_Mailing_Event_BAO_Delivered();
 			$delivered->event_queue_id = $queue->id;
 			$this->assertTrue( $delivered->find() && $delivered->fetch() );
 
 			//activity target
-			$activityTarget = new \CRM_Activity_BAO_ActivityTarget();
+			$activityTarget = new CRM_Activity_BAO_ActivityTarget();
 			$activityTarget->activity_id = $activity->id;
 			$activityTarget->target_contact_id = $contact['contactID'];
 			$this->assertTrue( $activityTarget->find() && $activityTarget->fetch() );

@@ -1,5 +1,11 @@
 <?php
+namespace wmf_communication;
 
+use \CRM_Core_DAO;
+use \CRM_Core_Transaction;
+use \CRM_Mailing_BAO_Job;
+use \CRM_Mailing_Event_BAO_Queue;
+use \Exception;
 /**
  * Handle inserting sent CiviMail records for bulk emails
  * not actually sent by CiviCRM

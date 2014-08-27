@@ -1,5 +1,5 @@
 <?php namespace thank_you\generators;
-use CiviMailStore;
+use wmf_communication\CiviMailStore;
 
 /**
  * Generator template for pulling a translated page from a mediawiki

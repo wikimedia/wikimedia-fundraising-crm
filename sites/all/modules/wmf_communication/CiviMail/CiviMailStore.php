@@ -1,6 +1,17 @@
-<?php //namespace wmf_communication;
-require_once 'CiviMailingRecord.php';
-require_once 'CiviMailQueueRecord.php';
+<?php
+namespace wmf_communication;
+
+use \CRM_Activity_BAO_Activity;
+use \CRM_Core_DAO;
+use \CRM_Core_DAO_Email;
+use \CRM_Core_OptionGroup;
+use \CRM_Core_Transaction;
+use \CRM_Mailing_BAO_Job;
+use \CRM_Mailing_BAO_Mailing;
+use \CRM_Mailing_DAO_Job;
+use \CRM_Mailing_DAO_Mailing;
+use \CRM_Mailing_Event_BAO_Queue;
+use \Exception;
 /**
  * Handle inserting sent CiviMail records for emails
  * not actually sent by CiviCRM
