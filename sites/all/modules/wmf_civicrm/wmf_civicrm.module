@@ -1216,8 +1216,8 @@ function wmf_civicrm_normalize_msg( $msg ) {
     }
 
     if ( empty( $msg['first_name'] ) and empty( $msg['last_name'] ) ) {
-        $msg['first_name'] = 'Chester';
-        $msg['last_name'] = 'McDefault';
+        $msg['first_name'] = 'Anonymous';
+        $msg['last_name'] = '';
     }
 
     // Check for special flags
