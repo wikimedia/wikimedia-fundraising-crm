@@ -29,7 +29,31 @@ interface IMailer {
  */
 class Mailer {
     static public $defaultSystem = 'phpmailer';
+
     /**
+     * Get the default Mailer
+     *
+     * @return IMailer instantiated default Mailer
+     */
+    static public function getDefault() {
+        switch ( self::$defaultSystem ) {
+        case 'phpmailer':
+            return new MailerPHPMailer();
+        case 'drupal':
+            return new MailerDrupal();
+        case 'test':
+            return new TestMailer();
+        default:
+            throw new Exception( "Unknown mailer requested: " . self::$defaultSystem );
+        }
+    }
+}
+
+/**
+ * Shared functionality for mailer classes
+ */
+abstract class MailerBase {
+	/**
      * RTL languages, comes from http://en.wikipedia.org/wiki/Right-to-left#RTL_Wikipedia_languages
      * TODO: move to the LanguageTag module once that's available from here.
      */
@@ -55,24 +79,6 @@ class Mailer {
     );
 
     /**
-     * Get the default Mailer
-     *
-     * @return IMailer instantiated default Mailer
-     */
-    static public function getDefault() {
-        switch ( self::$defaultSystem ) {
-        case 'phpmailer':
-            return new MailerPHPMailer();
-        case 'drupal':
-            return new MailerDrupal();
-        case 'test':
-            return new TestMailer();
-        default:
-            throw new Exception( "Unknown mailer requested: " . self::$defaultSystem );
-        }
-    }
-
-    /**
      * Wrap raw HTML in a full document
      *
      * This is necessary to convince recalcitrant mail clients that we are
@@ -82,7 +88,7 @@ class Mailer {
      *
      * @return string
      */
-    static public function wrapHtmlSnippet( $html, $locale = null ) {
+    protected function wrapHtmlSnippet( $html, $locale = null ) {
         if ( preg_match( '/<html.*>/i', $html ) ) {
             watchdog( 'wmf_communication',
                 "Tried to wrap something that already contains a full HTML document.",
@@ -113,7 +119,7 @@ class Mailer {
 </html>";
     }
 
-    function normalizeContent( &$email ) {
+    protected function normalizeContent( &$email ) {
         $converter = new Html2Text( $email['html'], false, array( 'do_links' => 'table' ) );
         $email['plaintext'] = $converter->get_text();
 
@@ -127,7 +133,7 @@ class Mailer {
 /**
  * Use the PHPMailer engine
  */
-class MailerPHPMailer implements IMailer {
+class MailerPHPMailer extends MailerBase implements IMailer {
     function __construct() {
         $path = implode(DIRECTORY_SEPARATOR, array(variable_get('wmf_common_phpmailer_location', ''), 'class.phpmailer.php'));
         watchdog( 'wmf_communication',
@@ -168,7 +174,7 @@ class MailerPHPMailer implements IMailer {
 
         $mailer->Subject = $email['subject'];
         # n.b. - must set AltBody after MsgHTML(), or the text will be overwritten.
-        $mailer->MsgHTML( Mailer::wrapHtmlSnippet( $email['html'], $email['locale'] ) );
+        $mailer->MsgHTML( $this->wrapHtmlSnippet( $email['html'], $email['locale'] ) );
         $this->normalizeContent( $email );
         $mailer->AltBody = $email['plaintext'];
 
@@ -181,7 +187,7 @@ class MailerPHPMailer implements IMailer {
 /**
  * Use the Drupal mailing system
  */
-class MailerDrupal implements IMailer {
+class MailerDrupal extends MailerBase implements IMailer {
     function send( $email ) {
         $from = "{$email['from_name']} <{$email['from_address']}>";
 
@@ -192,7 +198,7 @@ class MailerDrupal implements IMailer {
         );
 
         $this->normalizeContent( $email );
-        $body = $this->formatTwoPart( Mailer::wrapHtmlSnippet( $email['html'] ), $email['plaintext'], $headers );
+        $body = $this->formatTwoPart( $this->wrapHtmlSnippet( $email['html'] ), $email['plaintext'], $headers );
 
         $message = array(
             'id' => 'wmf_communication_generic',
