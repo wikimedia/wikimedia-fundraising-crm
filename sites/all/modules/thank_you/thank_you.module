@@ -436,12 +436,13 @@ function thank_you_send_mail( $params ) {
 	$email['subject'] = thank_you_get_subject( $params['locale'] );
 
 	$mailer = Mailer::getDefault();
-
-	$civi_queue_record = thank_you_add_civi_queue(
-		$email['to_address'],
-		$email['subject'],
-		$email['html']
-	);
+	if ( variable_get( 'thank_you_add_civimail_records', 'false' ) ) {
+		$civi_queue_record = thank_you_add_civi_queue(
+			$email['to_address'],
+			$email['subject'],
+			$email['html']
+		);
+	}
 
 	if ( $civi_queue_record ) {
 		$email['reply_to'] = $civi_queue_record->getVerp();
@@ -628,6 +629,17 @@ function thank_you_settings_form() {
 	   "true" => t('Do not require confirmation'),
 	),
     '#default_value' => variable_get('thank_you_onestep_unsubscribe', 'false'),
+  );
+
+  $form['thank_you_add_civimail_records'] = array(
+    '#type' => 'radios',
+    '#title' => t('Track thank you emails to CiviMail'),
+    '#required' => TRUE,
+	'#options' => array(
+	   "false" => t('Do not create CiviMail records'),
+	   "true" => t('Create CiviMail records'),
+	),
+    '#default_value' => variable_get('thank_you_add_civimail_records', 'false'),
   );
 
   return system_settings_form($form);
