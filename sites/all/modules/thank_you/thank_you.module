@@ -501,13 +501,14 @@ function thank_you_send_mail( $params ) {
  */
 function thank_you_get_template_info( $html ) {
 	$matches = array();
-	if ( preg_match( '/<!-- template (.+) revision (\d+) -->/', $html, $matches ) ) {
-		return array(
-			'name' => $matches[1],
-			'revision' => (int) $matches[2]
-		);
+	$info = null;
+	if ( preg_match( '/<!-- TI_BEGIN(.+)TI_END -->/', $html, $matches ) ) {
+		$info = json_decode( $matches[1] );
 	}
-	throw new TemplateInfoMissingException();
+	if ( $info === null ) {
+		throw new TemplateInfoMissingException();
+	}
+	return $info;
 }
 
 /**
@@ -526,11 +527,11 @@ function thank_you_add_civi_queue( $email, $subject, $html ) {
 	try {
 		$template_info = thank_you_get_template_info( $html );
 		try {
-			$civi_mailing = $civimail_store->getMailing( 'thank_you', $template_info['name'], $template_info['revision'] );
+			$civi_mailing = $civimail_store->getMailing( 'thank_you', $template_info->name, $template_info->revision );
 		}
 		catch ( CiviMailingMissingException $e ) {
 			watchdog( 'thank_you', 'Could not find mailing record for email with subject ' . $subject, WATCHDOG_INFO );
-			$civi_mailing = $civimail_store->addMailing( 'thank_you', $template_info['name'], 'missing body', $subject, $template_info['revision'] );
+			$civi_mailing = $civimail_store->addMailing( 'thank_you', $template_info->name, 'missing body', $subject, $template_info->revision );
 		}
 		$civi_queue_record = $civimail_store->addQueueRecord( $civi_mailing, $email );
 		$civimail_store->addActivity( $civi_queue_record, $subject, $html );
