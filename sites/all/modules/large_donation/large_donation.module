@@ -245,6 +245,6 @@ function large_donation_notification_send( $contribution, $notification ) {
     }
 
     if ( $email_success ) {
-        watchdog('large_donation', 'A large donation notification was sent to: ' . $to);
+        watchdog('large_donation', 'A large donation notification was sent to: ' . print_r( $to, true ) );
     }
 }
