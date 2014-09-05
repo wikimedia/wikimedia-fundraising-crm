@@ -371,7 +371,12 @@ function exchange_rates_cron() {
 		}
 	} else {
 		// Use our back-up XML source. This will only set the rate for the most common currencies.
-        watchdog( WATCHDOG_WARNING, 'Using backup exchange rates source from the ECB' );
+        watchdog(
+			'exchange_rates',
+			'Using backup exchange rates source from the ECB',
+			array(),
+			WATCHDOG_WARNING
+		);
 		$url = 'http://www.ecb.int/stats/eurofxref/eurofxref-daily.xml';
 		
 		// Retrieve and parse the XML results
