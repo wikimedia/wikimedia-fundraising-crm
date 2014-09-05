@@ -51,7 +51,12 @@ WHERE e.email = %2';
 			$dao = CRM_Core_DAO::executeQuery( $query, $params );
 
 			if ( !$dao->fetch() ) {
-				watchdog( WATCHDOG_WARNING, "Email '$address' not found in CiviCRM");
+				watchdog(
+					'wmf_communication',
+					"addSentBulk cannot find email address $address in CiviCRM",
+					array(),
+					WATCHDOG_WARNING
+				);
 				continue;
 			}
 
