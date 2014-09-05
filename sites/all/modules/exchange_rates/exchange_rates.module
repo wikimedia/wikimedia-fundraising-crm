@@ -11,6 +11,14 @@ function exchange_rates_menu() {
     'file path' => drupal_get_path('module', 'system'),
     'access arguments' => array('administer site configuration'),
   );
+  $items['admin/config/exchange_rates/key'] = array(
+    'title' => t('Configure Credentials'),
+    'description' => t('Set API key values for exchange rate providers that require authentication'),
+	'page callback' => 'drupal_get_form',
+    'page arguments' => array('exchange_rates_credentials_form'),
+    'access arguments' => array('administer site configuration'),
+	'type' => MENU_NORMAL_ITEM,
+  );
   $items['admin/config/exchange_rates/show'] = array(
     'title' => 'Display exchange rates',
     'description' => 'List the current exchange rates for every country, and date retrieved.',
@@ -25,6 +33,20 @@ function exchange_rates_menu() {
   );
   
   return $items;
+}
+
+function exchange_rates_credentials_form() {
+	$form = array();
+
+	$form['exchange_rates_key_oanda'] = array(
+		'#type' => 'password',
+		'#title' => 'OANDA API Key',
+		'#required' => TRUE,
+		'#default_value' => variable_get('exchange_rates_key_oanda', ''),
+		'#description' => 'Key for OANDA API calls (found on OANDA account settings page)',
+	);
+
+	return system_settings_form($form);
 }
 
 function exchange_rates_get_currencies() {
@@ -52,11 +74,12 @@ function exchange_rates_listing() {
   );
 
   $rates = exchange_rates_get_conversions();
-  
+
   $content[] = t('Last updated: %updated', array('%updated' => format_date(variable_get('exchange_rates_bank_update', 0))));
+  $content[] = t('Remaining quotes: %remaining', array('%remaining' => variable_get('exchange_rates_remaining_quotes', 'unknown')));
   $content[] = theme( 'table', array( 'header' => $cols, 'rows' => $rates ) );
   
-  return implode("\n", $content);
+  return implode("<br />\n", $content);
 }
 
 /**
