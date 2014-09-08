@@ -1,9 +1,59 @@
 <?php
 
 function large_donation_install() {
-  // Nothing to install
+    large_donation_update_7000();
 }
 
-function large_donation_uninstall() {
-  // Nothing to uninstall
+/**
+ * Migrate notification config to new format
+ */
+function large_donation_update_7000() {
+    if ( !db_table_exists( 'large_donation_notification' ) ) {
+        db_create_table( 'large_donation_notification', array(
+            'description' => 'Notification thresholds and addressees',
+            'fields' => array(
+                'id' => array(
+                    'type' => 'serial',
+                    'unsigned' => true,
+                    'not null' => true,
+                ),
+                'threshold' => array(
+                    'type' => 'numeric',
+                    'precision' => 10,
+                    'scale' => 2,
+                    'unsigned' => true,
+                    'not null' => true,
+                ),
+                'addressee' => array(
+                    'type' => 'text',
+                    'not null' => true,
+                ),
+                'enabled' => array(
+                    'type' => 'int',
+                    'size' => 'tiny',
+                    'not null' => true,
+                    'default' => 1,
+                ),
+            ),
+            'primary key' => array( 'id' ),
+            'indexes' => array(
+                'threshold' => array( 'threshold' ),
+            ),
+        ) );
+    }
+
+    $old_amount = variable_get( 'large_donation_amount', 1000 );
+    $old_addressee = variable_get( 'large_donation_notifymail', '' );
+
+    if ( $old_addressee ) {
+        db_insert( 'large_donation_notification' )
+            ->fields( array(
+                'threshold' => $old_amount,
+                'addressee' => $old_addressee,
+            ) )
+            ->execute();
+    }
+
+    variable_del( 'large_donation_amount' );
+    variable_del( 'large_donation_notifymail' );
 }

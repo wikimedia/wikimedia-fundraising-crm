@@ -9,11 +9,17 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
 
         TestMailer::setup();
 
-        $this->original_large_donation_amount = variable_get( 'large_donation_amount', null );
-        $this->original_large_donation_notifymail = variable_get( 'large_donation_notifymail', null );
         $this->threshold = 100;
-        variable_set( 'large_donation_amount', $this->threshold );
-        variable_set( 'large_donation_notifymail', 'notifee@localhost.net' );
+
+        db_delete( 'large_donation_notification' )
+            ->execute();
+
+        db_insert( 'large_donation_notification' )
+            ->fields( array(
+                'addressee' => 'notifee@localhost.net',
+                'threshold' => $this->threshold,
+            ) )
+            ->execute();
 
         $result = civicrm_api3( 'Contact', 'create', array(
             'contact_type' => 'Individual',
@@ -23,8 +29,9 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     function tearDown() {
-        variable_set( 'large_donation_amount', $this->original_large_donation_amount );
-        variable_set( 'large_donation_notifymail', $this->original_large_donation_notifymail );
+        db_delete( 'large_donation_notification' )
+            ->execute();
+
         parent::tearDown();
     }
 

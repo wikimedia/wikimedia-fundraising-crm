@@ -43,26 +43,116 @@ function large_donation_permission() {
 /**
  * Callback for menu path "admin/config/large_donation".
  */
-function large_donation_settings() {
+function large_donation_settings( $formId, $formState ) {
   $form = array();
 
-  $form['large_donation_notifymail'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Email Notification Addresses'),
-    '#required' => FALSE,
-    '#default_value' => variable_get('large_donation_notifymail', ''),
-    '#description' => t('Addresses, separated by commas or newlines, to be notified on large contributions.'),
+  // Should we display a blank new entry for adding a threshold level?
+  $plus_new_level = isset( $formState['clicked_button'] )
+      && $formState['clicked_button']['#attributes']['id'] === 'add_threshold';
+
+  // Are we deleting something?
+  $is_deleting = isset( $formState['clicked_button'] )
+      && $formState['clicked_button']['#attributes']['class'] === array( 'delete' );
+
+  if ( $is_deleting ) {
+      preg_match( '/^delete_(\d+|NEW)$/', $formState['clicked_button']['#attributes']['id'], $matches );
+      $id = $matches[1];
+      if ( $id !== 'NEW' ) {
+          db_delete( 'large_donation_notification' )
+            ->condition( 'id', $id, '=' )
+            ->execute();
+
+          drupal_set_message( "Deleted notification threshold with id={$id}.", 'warning' );
+      }
+  }
+
+  $result = db_select( 'large_donation_notification' )
+      ->fields( 'large_donation_notification' )
+      ->condition( 'enabled', true, '=' )
+      ->orderBy( 'threshold', 'ASC' )
+      ->execute();
+
+  $levels = $result->fetchAllAssoc( 'id', PDO::FETCH_ASSOC );
+
+  if ( $plus_new_level ) {
+      $levels[] = array(
+          'id' => 'NEW',
+          'threshold' => '',
+          'addressee' => '',
+      );
+  }
+
+  $uiIndex = 1;
+  foreach ( $levels as $row ) {
+      $form["group_{$row['id']}"] = array(
+          '#type' => 'fieldset',
+      );
+
+      $form["group_{$row['id']}"]["delete_{$row['id']}"] = array(
+          '#type' => 'button',
+          '#value' => t( 'Delete this notification' ),
+          '#attributes' => array(
+              'id' => "delete_{$row['id']}",
+              'class' => array( 'delete' ),
+          ),
+      );
+
+      $form["group_{$row['id']}"]["threshold_{$row['id']}"] = array(
+          '#type' => 'textfield',
+          '#title' => t( 'Large donation value !index', array( '!index' => $uiIndex ) ),
+          '#required' => TRUE,
+          '#default_value' => $row['threshold'],
+          '#description' => t( 'Donations over this amount (USD) will trigger an email.' ),
+      );
+
+      $form["group_{$row['id']}"]["addressee_{$row['id']}"] = array(
+          '#type' => 'textarea',
+          '#title' => t( 'Email Notification Addresses !index', array( '!index' => $uiIndex ) ),
+          '#required' => FALSE,
+          '#default_value' => $row['addressee'],
+          '#description' => t( 'Addresses, separated by commas or newlines, to be notified on large contributions.' ),
+      );
+
+      $uiIndex++;
+  }
+
+  $form['add_threshold'] = array(
+      '#type' => 'button',
+      '#value' => t( 'Add threshold level' ),
+      '#attributes' => array(
+          'id' => 'add_threshold',
+      ),
   );
 
-  $form['large_donation_amount'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Large donation value'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('large_donation_amount', 1000),
-    '#description' => t('Donations over this amount (USD) will trigger an email.'),
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t( 'Save configuration' ),
   );
 
-  return system_settings_form($form);
+  return $form;
+}
+
+function large_donation_settings_submit( $form, $formState ) {
+    foreach ( $formState['values'] as $field => $value ) {
+        if ( preg_match( '/^threshold_(\d+|NEW)$/', $field, $matches ) ) {
+            $id = $matches[1];
+            $addressee = $formState['values']["addressee_{$id}"];
+
+            if ( $id === 'NEW' ) {
+                drupal_set_message( "Added a new threshold level." );
+                $id = null;
+            }
+            db_merge( 'large_donation_notification' )
+                ->key( array( 'id' => $id ) )
+                ->fields( array(
+                    'threshold' => $value,
+                    'addressee' => $addressee,
+                ) )
+                ->execute();
+        }
+    }
+
+    drupal_set_message( "Saved the configuration." );
 }
 
 /**
@@ -72,14 +162,25 @@ function large_donation_civicrm_post( $action, $type, $id, &$contribution ) {
     switch ( $action ) {
     case 'create':
         if ( $type === 'Contribution' ) {
-            $large_donation_amount = floatval( variable_get( 'large_donation_amount', 0.00 ) );
+            $dbs = wmf_civicrm_get_dbs();
+            $dbs->push( 'default' );
 
-            if ( $contribution->total_amount >= $large_donation_amount ) {
-                watchdog( 'large_donation', "Notifying of large donation, contribution: {$contribution->id}" );
+            $result = db_select( 'large_donation_notification' )
+                ->fields( 'large_donation_notification' )
+                ->condition( 'threshold', (float) $contribution->total_amount, '<' )
+                ->condition( 'enabled', true, '=' )
+                ->execute();
 
-                large_donation_notification_send( $contribution );
-            } else {
-                watchdog('large_donation', "Donation amount {$contribution->total_amount} was not above the threshold [{$large_donation_amount}]");
+            $count = 0;
+            while ( $notification = $result->fetch() ) {
+                $count++;
+                watchdog( 'large_donation', "Notifying of large donation, contribution: {$contribution->id} above threshold {$notification->threshold}" );
+
+                large_donation_notification_send( $contribution, $notification );
+            }
+            
+            if ( !$count ) {
+                watchdog( 'large_donation', "Donation amount {$contribution->total_amount} was not above the lowest notification threshold." );
             }
         }
         break;
@@ -95,9 +196,10 @@ function large_donation_civicrm_post( $action, $type, $id, &$contribution ) {
  *
  * No personally identifiable information should be included.
  *
- * @param array $contribution
+ * @param CRM_Contribution_BAO_Contribution $contribution
+ * @param stdClass $notification
  */
-function large_donation_notification_send( $contribution ) {
+function large_donation_notification_send( $contribution, $notification ) {
     $contribution_link = CRM_Utils_System::url(
         'civicrm/contact/view',
         array(
@@ -109,10 +211,10 @@ function large_donation_notification_send( $contribution ) {
         'Contributions'
     );
 
-    $to = variable_get('large_donation_notifymail', '');
+    $to = $notification->addressee;
 
     $params = array(
-        'threshold' => floatval( variable_get( 'large_donation_amount', 0.00 ) ),
+        'threshold' => floatval( $notification->threshold ),
         'contribution' => $contribution,
         'contribution_link' => $contribution_link,
     );
