@@ -1,5 +1,8 @@
 <?php
 // FIXME: some functions begin with the incorrect prefix "exchange_rate_"
+use exchange_rates\OandaRetriever;
+use exchange_rates\EcbRetriever;
+use exchange_rates\ExchangeRateUpdateException;
 
 function exchange_rates_menu() {
   $items = array();
@@ -37,6 +40,20 @@ function exchange_rates_menu() {
 
 function exchange_rates_credentials_form() {
 	$form = array();
+
+	$form['exchange_rates_quote_oanda'] = array(
+		'#type' => 'select',
+		'#title' => 'OANDA data request',
+		'#required' => TRUE,
+		'#options' => array(
+			'bid' => 'Average bid',
+			'low_bid' => 'Low bid',
+			'high_bid' => 'High bid',
+			'midpoint' => 'Midpoint between average bid and average ask'
+		),
+		'#default_value' => variable_get('exchange_rates_quote_oanda', 'bid'),
+		'#description' => 'Which data point to request from OANDA for each currency',
+	);
 
 	$form['exchange_rates_key_oanda'] = array(
 		'#type' => 'password',
@@ -360,88 +377,44 @@ function exchange_rates_cron() {
 		'ZMK', // Zambian Kwacha
 		'ZWD', // Zimbabwe Dollar
 	);
-	
-	// Construct the URL for the API call
-	$currencyList = implode( '_', $currencies );
-	$url = 'https://web-services.oanda.com/cgi-bin/fxml/fxml?fxmlrequest=%3Cconvert%3E%3Cclient_id%3E';
-	$url .= 'WikimediaFoundation';
-	$url .= '%3C/client_id%3E%3Cexpr%3EUSD%3C/expr%3E%3Cexch%3E';
-	$url .= $currencyList;
-	$url .= '%3C/exch%3E%3C/convert%3E';
-	
-	// Retrieve and parse the XML results
-	$request = drupal_http_request( $url );
-	$xml = $request->data;
-	$p = xml_parser_create();
-	$parseSuccess = xml_parse_into_struct( $p, $xml, $results, $index );
-	xml_parser_free( $p );
-	
-	if ( $parseSuccess ) { // make sure parsing the XML was successful before proceeding
-		//date_default_timezone_set( 'America/Los_Angeles' );
-		$datetime = '';
-		if ( isset( $results[$index['DATE'][0]]['value'] ) ) {
-			$datetime = $results[$index['DATE'][0]]['value']; // get datatime from XML
-		}
-		$bankUpdateTimestamp = strtotime( $datetime ); // the bank's timestamp for the rate
-		variable_set( 'exchange_rates_bank_update', $bankUpdateTimestamp ); // set as persistent drupal var
-		
-		// For each currency, get the values from the XML and update the table
-		$currencyCount = count( $index['EXCH'] );
-		for ( $x = 0; $x < $currencyCount; $x++ ) {
-			$currency = $results[$index['EXCH'][$x]]['value']; // the currency code
-			$valueInUsd = $results[$index['BID'][$x]]['value']; // the value of 1 $currency in US dollars
-			exchange_rates_update_rate( $currency, $valueInUsd, $bankUpdateTimestamp ); // update the table
-		}
-	} else {
-		// Use our back-up XML source. This will only set the rate for the most common currencies.
-        watchdog(
-			'exchange_rates',
-			'Using backup exchange rates source from the ECB',
-			array(),
-			WATCHDOG_WARNING
-		);
-		$url = 'http://www.ecb.int/stats/eurofxref/eurofxref-daily.xml';
-		
-		// Retrieve and parse the XML results
-		$request = drupal_http_request( $url );
-		$xml = $request->data;
-		$p = xml_parser_create();
-		xml_parse_into_struct( $p, $xml, $results, $index );
-		xml_parser_free( $p );
-		
-		// Get date and base USD rate
-		$usdBase = 0;
-		$date = '';
-		foreach ( $index['CUBE'] as $valIndex ) {
-			$current = $results[$valIndex];
-			if ( $current['attributes']['CURRENCY'] == 'USD' && isset( $current['attributes']['RATE'] ) ) {
-				$usdBase = $current['attributes']['RATE'];
-			}
-			if ( isset( $current['attributes']['TIME'] ) ) {
-				$date = $current['attributes']['TIME'];
-			}
-		}
-		$bankUpdateTimestamp = strtotime( $date . ' 00:00:00 GMT' );
-		variable_set( 'exchange_rates_bank_update', $bankUpdateTimestamp );
-	  
-		// Table is based on EUR, so must insert manually if we actually got anything
-        if ( $usdBase !== 0 ) {
-            exchange_rates_update_rate( 'EUR', $usdBase, $bankUpdateTimestamp );
 
-            // Calculate and insert remaining rates
-            foreach ( $index['CUBE'] as $valIndex ) {
-                $current = $results[$valIndex];
-                if ( isset( $current['attributes']['CURRENCY'] ) && isset( $current['attributes']['RATE'] ) ) {
-                    exchange_rates_update_rate(
-                        $current['attributes']['CURRENCY'],
-                        $usdBase / $current['attributes']['RATE'],
-                        $bankUpdateTimestamp
-                    );
-                }
-            }
-        }
+	$retrievers = array();
+	$oanda_key = variable_get( 'exchange_rates_key_oanda', '' );
+	$oanda_quote = variable_get( 'exchange_rates_quote_oanda', 'bid' );
+	if ( $oanda_key === '' ) {
+		watchdog( 'exchange_rates', 'OANDA API key not set!  Will fall back to ECB', array(), WATCHDOG_ERROR );
+	} else {
+		$retrievers[] = new OandaRetriever( 'drupal_http_request', $oanda_key, $oanda_quote );
 	}
-	
+
+	$retrievers[] = new EcbRetriever( 'drupal_http_request' );
+	$result = null;
+
+	foreach ( $retrievers as $retriever ) {
+		try {
+			$result = $retriever->updateRates( $currencies );
+			break;
+		} catch ( ExchangeRateUpdateException $ex) {
+			watchdog( 'exchange_rates', $ex );
+		}
+	}
+	if ( $result === null ) {
+		watchdog( 'exchange_rates', 'Could not update exchange rates from any provider!' );
+		return;
+	}
+
+	$date_set = false;
+	foreach( $result->rates as $code => $rate ) {
+		exchange_rates_update_rate( $code, $rate['value'], $rate['date'] );
+		if ( !$date_set ) {
+			variable_set( 'exchange_rates_bank_update',  $rate['date'] );
+			$date_set = true;
+		}
+	}
+
+	if ( $result->quotesRemaining > -1 ) {
+		variable_set( 'exchange_rates_remaining_quotes', $result->quotesRemaining );
+	}
 }
 
 function exchange_rates_update_rate($currency, $value_in_usd, $bank_update) {
