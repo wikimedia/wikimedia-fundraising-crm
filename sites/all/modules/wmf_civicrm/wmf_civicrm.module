@@ -361,9 +361,9 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     watchdog( 'wmf_civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), NULL, WATCHDOG_DEBUG);
 
     $contribution_result = civicrm_api( "Contribution", "Create", $contribution );
-    
+
     watchdog( 'wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
-    
+
     if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
         throw new WmfException(
             'INVALID_MESSAGE',
@@ -371,7 +371,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
             $contribution_result['error_message']
         );
     }
-  
+
     // Create any required tags on the contribution
     if ( $msg['contribution_tags'] ) {
         $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
@@ -410,7 +410,7 @@ function wmf_civicrm_get_civi_id($type, $name)
     static $civi_ids = array();
     $params = array('name' => $name);
     $dummy = array();
-    
+
     if(array_key_exists($type, $civi_ids) && array_key_exists($name, $civi_ids[$type])) {
         return $civi_ids[$type][$name];
     }
@@ -494,9 +494,9 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
     civicrm_initialize();
 
     $payment_instrument = null;
-    
+
     if ( array_key_exists( 'payment_method', $msg ) && trim( $msg['payment_method'] ) != '' ){
-    
+
         switch( strtolower( $msg[ 'payment_method' ] ) ){
             case 'check':
                 $payment_instrument = 'Check';
@@ -619,7 +619,7 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                 }
                 break;
         }
-        
+
     }
     if ( !$payment_instrument
             and array_key_exists( 'gateway', $msg )
@@ -815,7 +815,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     if ( !array_key_exists( 'optout', $msg ) ) {
         $msg['optout'] = 0;
     }
-  
+
     // Create the contact record
 	$fname = substr( trim( $msg['first_name'] ), 0, 64 );
 	$mname = substr( trim( $msg['middle_name'] ), 0, 64 );
@@ -1143,7 +1143,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'contribution_tags' => array(),
     );
     $msg = $msg + $defaults;
-    
+
     if ( empty( $msg['contribution_type_id'] ) ) {
         if ( empty( $msg['contribution_type'] ) ) {
             $msg['contribution_type'] = wmf_civicrm_get_message_contribution_type( $msg );
