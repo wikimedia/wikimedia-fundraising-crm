@@ -1,0 +1,17 @@
+{
+    "name": "Wikimedia Foundation donor CRM",
+    "license": "GPL-2.0",
+    "type": "project",
+    "support": {
+        "irc": "irc://irc.freenode.org/wikimedia-fundraising"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/phpseclib/phpseclib.git"
+        }
+    ],
+    "require": {
+        "phpseclib/phpseclib": "0.3.7"
+    }
+}

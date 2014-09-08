@@ -4,3 +4,6 @@
 [submodule "drupal"]
 	path = drupal
 	url = https://gerrit.wikimedia.org/r/wikimedia/fundraising/crm/drupal
+[submodule "vendor"]
+	path = vendor
+	url = https://gerrit.wikimedia.org/r/wikimedia/fundraising/crm/vendor

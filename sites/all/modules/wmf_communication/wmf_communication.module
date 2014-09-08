@@ -1,17 +1,4 @@
 <?php
-
-# oh well, Drupal's registry won't do namespaces until d8.
-require_once 'Job.php';
-require_once 'Mailer.php';
-require_once 'MailingTemplate.php';
-require_once 'Recipient.php';
-require_once 'Templating.php';
-require_once 'Translation.php';
-require_once 'Silverpop/SilverpopImporter.php';
-require_once 'Silverpop/lib/Engage.php';
-
-include('Net/SFTP.php');
-
 use wmf_communication\CiviMailBulkStore;
 use wmf_communication\Job;
 use wmf_communication\SilverpopImporter;
@@ -96,6 +83,9 @@ function wmf_communication_silverpop_form() {
  * @param int $days Number of days into the past to look for sent mailings
  */
 function wmf_communication_silverpop_import_mailings( $days ) {
+	require_once __DIR__ . '/Silverpop/lib/Engage.php';
+	require_once DRUPAL_ROOT . '/../vendor/autoload.php';
+
 	civicrm_initialize();
 	$username = variable_get('wmf_communication_silverpop_username', '');
 	$password = variable_get('wmf_communication_silverpop_password', '');
