@@ -1,0 +1,673 @@
+<?php
+
+define( 'WP_AUDIT_RECON_PARSER_DIR', '/usr/local/src/WP_Parser_Lib/' );
+define( 'WP_AUDIT_RECON_FILES_DIR', '/usr/local/src/recon_files/' );
+define('WP_AUDIT_RECON_COMPLETED_DIR', '/usr/local/src/recon_files-completed/');
+define('WP_AUDIT_WORKING_LOG_DIR', '/usr/local/src/log_files-working/');
+define('WP_AUDIT_LOG_SEARCH_PAST_DAYS', 7);
+define( 'WP_AUDIT_TEST_MODE', true );
+
+/**
+ * Implementation of hook_menu()
+ */
+function worldpay_audit_menu() {
+  $items = array();
+
+  $items['admin/config/wmf_audit/worldpay_audit'] = array(
+    'title' => 'WorldPay Audit',
+    'description' => t('Configure WMF audit settings.'),
+    'access arguments' => array('administer wmf_audit'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'worldpay_audit_settings' ),
+  );
+
+  return $items;
+}
+
+/**
+ * Callback for menu
+ */
+function worldpay_audit_settings() {
+  $form['worldpay_audit_recon_parser_dir']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Path to directory containing reconciliation file parser classes' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'worldpay_audit_recon_parser_dir', WP_AUDIT_RECON_PARSER_DIR ),
+  );
+  $form['worldpay_audit_recon_files_dir']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Directory containing incoming reconciliation files' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'worldpay_audit_recon_files_dir', WP_AUDIT_RECON_FILES_DIR ),
+  );
+  $form['worldpay_audit_recon_completed_dir']  = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Directory for completed reconciliation files' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get( 'worldpay_audit_recon_completed_dir', WP_AUDIT_RECON_COMPLETED_DIR ),
+  );
+  $form['worldpay_audit_working_log_dir'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Working directory for payments logs (Not the source - that is defined at the wmf_audit level)'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('worldpay_audit_working_log_dir', WP_AUDIT_WORKING_LOG_DIR),
+  );
+  $form['worldpay_audit_test_mode']  = array(
+    '#type' => 'checkbox',
+    '#title' => t( 'When this box is checked, no stomp messages will be sent.' ),
+    '#required' => FALSE,
+    '#default_value' => variable_get( 'worldpay_audit_test_mode', WP_AUDIT_TEST_MODE ),
+  );
+  $form['worldpay_audit_log_search_past_days'] = array(
+    '#type' => 'textfield',
+    '#title' => t( 'Plus or minus log search (in days)' ),
+    '#required' => TRUE,
+    '#default_value' => variable_get('worldpay_audit_log_search_past_days', WP_AUDIT_LOG_SEARCH_PAST_DAYS),
+  );
+  return system_settings_form( $form );
+}
+
+/**
+ * Returns the configurable path to the recon files
+ * @return string Path to the directory
+ */
+function worldpay_audit_get_recon_dir() {
+  return variable_get( 'worldpay_audit_recon_files_dir', WP_AUDIT_RECON_FILES_DIR );
+}
+
+/**
+ * Returns the configurable path to the completed recon files
+ * @return string Path to the directory
+ */
+function worldpay_audit_get_recon_completed_dir() {
+  return variable_get('worldpay_audit_recon_completed_dir', WP_AUDIT_RECON_COMPLETED_DIR);
+}
+
+/**
+ * Returns the configurable path to the working log dir
+ * @return string Path to the directory
+ */
+function worldpay_audit_get_working_log_dir() {
+  return variable_get('worldpay_audit_working_log_dir', WP_AUDIT_WORKING_LOG_DIR);
+}
+
+/**
+ * Returns the configurable number of days we want to jump back in to the past,
+ * to look for transactions in the payments logs.
+ * @return in Number of days
+ */
+function worldpay_audit_get_log_days_in_past() {
+  return variable_get('worldpay_audit_log_search_past_days', WP_AUDIT_LOG_SEARCH_PAST_DAYS);
+}
+
+/**
+ * The regex to use to determine if a file is a reconciliation file for this
+ * gateway.
+ * @return string regular expression
+ */
+function worldpay_audit_regex_for_recon() {
+  //WP recon files look like the following thing:
+  //  MA.PISCESSW.#M.RECON.WIKI.D280514
+  return '/\.RECON\.WIKI\./';
+}
+
+/**
+ * The regex to use to determine if a file is a working log for this gateway.
+ * @return string regular expression
+ */
+function worldpay_audit_regex_for_working_log() {
+  return '/\d{8}_worldpay\.working/';
+}
+
+/**
+ * The regex to use to determine if a file is a compressed payments log.
+ * @return string regular expression
+ */
+function worldpay_audit_regex_for_compressed_log() {
+  return '/.gz/';
+}
+
+/**
+ * The regex to use to determine if a file is an uncompressed log for this
+ * gateway.
+ * @return string regular expression
+ */
+function worldpay_audit_regex_for_uncompressed_log() {
+  return '/worldpay_\d{8}/';
+}
+
+/**
+ * Given a reconciliation file name, pull the date out of the filename and
+ * return it in YYYYMMDD format.
+ * @param string $file Name of the recon file (not full path)
+ * @return string date in YYYYMMDD format
+ */
+function worldpay_audit_get_recon_file_date( $file ){
+  //WP recon files look like the following thing:
+  //  MA.PISCESSW.#M.RECON.WIKI.D280514
+  //For that, we'd want to return 20140518
+  $parts = explode('.', $file);
+  $end_piece = $parts[count($parts)-1];
+  $date = '20' . substr( $end_piece, 5, 2) . substr( $end_piece, 3, 2) . substr( $end_piece, 1, 2);
+  return $date;
+}
+
+/**
+ * Given the name of a working log file, pull out the date portion.
+ * @param string $file Name of the working log file (not full path)
+ * @return string date in YYYYMMDD format
+ */
+function worldpay_audit_get_working_log_file_date($file) {
+  //  '/\d{8}_worldpay\.working/';
+  $parts = explode('_', $file);
+  return $parts[0];
+}
+
+/**
+ * Get the name of a compressed log file based on the supplied date.
+ * @param string $date date in YYYYMMDD format
+ * @return string Name of the file we're looking for
+ */
+function worldpay_audit_get_compressed_log_file_name($date) {
+//  payments-worldpay-20140413.gz
+  return "payments-worldpay-$date.gz";
+}
+
+/**
+ * Get the name of an uncompressed log file based on the supplied date.
+ * @param string $date date in YYYYMMDD format
+ * @return string Name of the file we're looking for
+ */
+function worldpay_audit_get_uncompressed_log_file_name($date) {
+//  payments-worldpay-20140413 - no extension. Weird.
+  return "payments-worldpay-$date";
+}
+
+/**
+ * Get the name of a working log file based on the supplied date.
+ * @param string $date date in YYYYMMDD format
+ * @return string Name of the file we're looking for
+ */
+function worldpay_audit_get_working_log_file_name($date) {
+  //  '/\d{8}_worldpay\.working/';
+  return $date . '_worldpay.working';
+}
+
+/**
+ * In order to create the distilled "working" log files, we need to grep through
+ * the uncompressed log file for lines that contain a copy of our original
+ * communication with the payment provider. This function returns the string
+ * that, when used in a command-line grep statement against a payments log, will
+ * pick out all instances of communication with the 3rd party that contain donor
+ * information that is not included in the recon file, but which we need to
+ * re-fuse with the recon data and save in civicrm.
+ * @return string the pattern we're going to grep for in the payments logs
+ */
+function worldpay_audit_get_log_distilling_grep_string() {
+  return 'Request XML.*TMSTN.*<TransactionType>PT.*<RequestType>S<';
+}
+
+/**
+ * Just parse one recon file.
+ * @staticvar null $parserClass The class of the parser we're going to use
+ * @param string $file Absolute location of the recon file you want to parse
+ * @return mixed An array of recon data, or false
+ */
+function worldpay_audit_parse_recon_file($file) {
+  static $parserClass = null;
+  if (is_null($parserClass)) {
+    $parser_directory = variable_get('worldpay_audit_recon_parser_dir', WP_AUDIT_RECON_PARSER_DIR);
+
+    //get the classes we need
+    require_once( $parser_directory . 'WorldPayAudit.php' );
+    require_once( $parser_directory . 'TransactionReconciliationFile.php' );
+    $parserClass = 'SmashPig\PaymentProviders\WorldPay\Audit\WorldPayAudit'; //yeesh.
+  }
+
+  $recon_data = array();
+  $recon_parser = new $parserClass();
+
+  $data = null;
+  try {
+    $data = $recon_parser->parseFile($file);
+  } catch (Exception $e) {
+    wmf_audit_log_error("Something went amiss with the recon parser while processing $file ", 'RECON_PARSE_ERROR');
+  }
+
+  //At this point, $data already contains the usable portions of the file.
+
+  if (!empty($data)) {
+    foreach ($data as $record) {
+      wmf_audit_echo(wmf_audit_echochar($record));
+    }
+  }
+  if ( count( $data ) ){
+		return $data;
+	}
+	return false;
+}
+
+/**
+ * Checks to see if the transaction already exists in civi
+ * @param array $transaction Array of donation data
+ * @return boolean true if it's in there, otherwise false
+ */
+function worldpay_audit_main_transaction_exists_in_civi($transaction) {
+  //go through the transactions and check to see if they're in civi
+  if (wmf_civicrm_get_contributions_from_gateway_id('worldpay', $transaction['gateway_txn_id']) === false) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+/**
+ * Checks to see if the refund or chargeback already exists in civi.
+ * NOTE: This does not check to see if the parent is present at all, nor should
+ * it. Call worldpay_audit_main_transaction_exists_in_civi for that.
+ * @param array $transaction Array of donation data
+ * @return boolean true if it's in there, otherwise false
+ */
+function worldpay_audit_negative_transaction_exists_in_civi($transaction) {
+  //go through the transactions and check to see if they're in civi
+  if (wmf_civicrm_get_child_contributions_from_gateway_id('worldpay', $transaction['gateway_txn_id']) === false) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+/**
+ * Checks the array to see if the data inside is describing a refund.
+ * @param aray $record The transaction we would like to know is a refund or not.
+ * @return boolean true if it is, otherwise false
+ */
+function worldpay_audit_record_is_refund($record) {
+  if (array_key_exists('type', $record) && $record['type'] === 'refund') {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Checks the array to see if the data inside is describing a chargeback.
+ * @param aray $record The transaction we would like to know is a chargeback or
+ * not.
+ * @return boolean true if it is, otherwise false
+ */
+function worldpay_audit_record_is_chargeback($record) {
+  //@TODO: there should be more here. But we have no examples yet.
+  return false;
+}
+
+/**
+ * Return a date in the format YYYYMMDD for the given record
+ * @param array $record A transaction, or partial transaction
+ * @return string Date in YYYYMMDD format
+ */
+function worldpay_audit_get_record_human_date($record) {
+  if (array_key_exists('date', $record)) {
+    return date(WMF_DATEFORMAT, $record['date']); //date format defined in wmf_dates
+  }
+
+  echo print_r($record, true);
+  die(__FUNCTION__ . ': No date present in the record. This seems like a problem.');
+}
+
+/**
+ * In order to match data in working payments logs with the data we're trying to
+ * rebuild, we will need to grep for something. This, actually.
+ * @param string $order_id The order id (transaction id) of what we're looking for.
+ * @return string the pattern to grep for, for this specific transaction
+ */
+function worldpay_audit_get_log_line_grep_string($order_id) {
+  return "<OrderNumber>$order_id</OrderNumber>";
+}
+
+/**
+ * The name of the outermost node in the log XML we're going to try to make
+ * sense of. Usually, this is "XML", but apparently not all the time. Huh.
+ * @return string node name
+ */
+function worldpay_audit_get_log_line_xml_outermost_node() {
+  return 'TMSTN';
+}
+
+/**
+ * This would probably make more sense if this was not the same as the
+ * outermost. WP is really... flat.
+ * *ahem*
+ * If the XML is complete (not truncated by syslog), then the data just comes
+ * straight from the child nodes of the parent nodes defined here.
+ * @return array Names of the nodes whose children describe donor data.
+ */
+function worldpay_audit_get_log_line_xml_parent_nodes() {
+  return array(
+    'TMSTN'
+  );
+}
+
+/**
+ * If the XML happens to be incomplete (truncated by syslog), we avoid total
+ * tragedy by searching whatever is left for individual complete data nodes.
+ * Yes: This has happened before.
+ * @return array Names of the nodes whose children describe donor data.
+ */
+function worldpay_audit_get_log_line_xml_data_nodes() {
+  return array(
+    'OrderNumber',
+    'Amount',
+    'REMOTE_ADDR',
+    'FirstName',
+    'LastName',
+    'Address1',
+    'ZipCode',
+    'CountryCode',
+    'Email',
+  );
+}
+
+/**
+ * Grabs just the order_id out of a $transaction. This makes more sense if the
+ * parser doesn't normalize as well as the WP one does, or even at all.
+ * @param array $transaction possibly incomplete set of transaction data
+ * @return string|false the order_id, or false if we can't figure it out
+ */
+function worldpay_audit_get_order_id($transaction) {
+  if (is_array($transaction) && array_key_exists('gateway_txn_id', $transaction)) {
+    return $transaction['gateway_txn_id'];
+  }
+  return false;
+}
+
+/**
+ * Normalize refund/chargeback messages before sending
+ * @param array $record transaction data
+ * @return array The normalized data we want to send
+ */
+function worldpay_audit_normalize_negative($record) {
+  $send_message = array(
+    'gateway_refund_id' => 'RFD' . $record['gateway_txn_id'], //Notes from a previous version: "after intense deliberation, we don't actually care what this is at all."
+    'gateway_parent_id' => $record['gateway_txn_id'], //gateway transaction ID
+    'gross_currency' => $record['currency'], //currency code
+    'gross' => $record['gross'], //amount
+    'date' => $record['date'], //timestamp
+    'gateway' => 'worldpay', //lcase
+//  'gateway_account' => $record['gateway_account'], //BOO. @TODO: Later.
+//  'payment_method' => $record['payment_method'], //Argh. Not telling you.
+//  'payment_submethod' => $record['payment_submethod'], //Still not telling you.
+    'type' => $record['type'], //This actually works here. Weird, right?
+  );
+  return $send_message;
+}
+
+/**
+ * Used in makemissing mode
+ * This should take care of any extra data not sent in the recon file, that will
+ * actually make qc choke. Not so necessary with WP, but this will need to
+ * happen elsewhere, probably. Just thinking ahead.
+ * @param array $record transaction data
+ * @return type The normalized data we want to send.
+ */
+function worldpay_audit_normalize_partial($record) {
+  //@TODO: Still need gateway account to go in here when that happens.
+  return $record;
+}
+
+/**
+ * Takes whatever we've found in the xml, and whatever we've found in the recon
+ * file, and makes them get along. If that works, it fuses them into a normal
+ * message.
+ * Presumably, if we're calling this function, we already have reason to believe
+ * that the xml and recon data supplied go together. There should always be some
+ * internal sanity checking, though. Stuff can get weird.
+ * @param array $xml_data Transaction data from payments log xml
+ * @param array $recon_data Transaction data from the recon file
+ * @return array|false The re-fused and normalized data, or false if something
+ * went wrong.
+ */
+function worldpay_audit_normalize_and_merge_data($xml_data, $recon_data) {
+  if (empty($xml_data) || empty($recon_data)) {
+    $message = ": Missing one of the required arrays.\nXML Data: " . print_r($xml_data, true) . "\nRecon Data: " . print_r($recon_data, true);
+    wmf_audit_log_error(__FUNCTION__ . $message, 'DATA_WEIRD');
+    return false;
+  }
+  $normal = array();
+
+  //first, normalize the $xml_data
+  $nodemap = array(
+    'OrderNumber' => 'gateway_txn_id',
+    'Amount' => 'original_gross',
+    'REMOTE_ADDR' => 'user_ip',
+    'FirstName' => 'fname',
+    'LastName' => 'lname',
+    'Address1' => 'street', //N0NE PROVIDED
+    'ZipCode' => 'zip', //0
+    'CountryCode' => 'country',
+    'Email' => 'email',
+    'contribution_tracking_id' => 'contribution_tracking_id', //passed through, because I already set this manually
+  );
+
+  foreach ($xml_data as $key => $value) {
+    if (array_key_exists($key, $nodemap)) {
+      $normal[$nodemap[$key]] = $value;
+    }
+  }
+
+  if (array_key_exists('CurrencyId', $xml_data)) {
+    $normal['currency'] = worldpay_audit_get_currency_code_from_stupid_number($xml_data['CurrencyId']);
+  }
+
+  $unsets = array(
+    'street' => 'N0NE PROVIDED',
+    'zip' => '0',
+  );
+
+  foreach ($unsets as $key => $value) {
+    if (array_key_exists($key, $normal) && $normal[$key] === $value) {
+      unset($normal[$key]);
+    }
+  }
+
+  //now, cross-reference what's in $recon_data and complain loudly if something doesn't match.
+  //@TODO: see if there's a way we can usefully use [settlement_currency] and [settlement_amount]
+  //from the recon file. This is actually super useful, but might require new import code and/or schema change.
+  //
+  //Check between the two sets... normal => recon
+  $cross_check = array(
+    'currency' => 'currency',
+    'original_gross' => 'gross',
+  );
+
+  foreach ($cross_check as $check1 => $check2) {
+    if (array_key_exists($check1, $normal) && array_key_exists($check2, $recon_data)) {
+      if (is_numeric($normal[$check1])) {
+        //I actually hate everything.
+        //Floatval all by itself doesn't do the job, even if I turn the !== into !=.
+        //"Data mismatch between normal original_gross (5) and recon gross (5)."
+        $normal[$check1] = (string) floatval($normal[$check1]);
+        $recon_data[$check2] = (string) floatval($recon_data[$check2]);
+      }
+      if ($normal[$check1] !== $recon_data[$check2]) {
+        wmf_audit_log_error("Data mismatch between normal $check1 ($normal[$check1]) and recon $check2 ($recon_data[$check2]). Investigation required. " . print_r($recon_data, true), 'DATA_INCONSISTENT');
+        return false;
+      }
+    } else {
+      wmf_audit_log_error("Recon data is expecting normal $check1 and recon $check2, but at least one is missing. Investigation required. " . print_r($recon_data, true), 'DATA_INCONSISTENT');
+      return false;
+    }
+  }
+
+  //just port these
+  $believe = array(//because we have no choice
+    'gateway', //ha
+    'date',
+    'payment_method',
+    'payment_submethod',
+    'gross',
+  );
+
+  foreach ($believe as $key) {
+    if (array_key_exists($key, $recon_data)) {
+      $normal[$key] = $recon_data[$key];
+    } else {
+      wmf_audit_log_error("Recon data is missing expected key $key. " . print_r($recon_data, true), 'DATA_INCOMPLETE');
+    }
+  }
+
+  return $normal;
+}
+
+/**
+ * HELPER FUNCTIONS
+ * ...only this file will ever call them.
+ */
+
+/**
+ * Instead of using sane ISO codes for currencies, WP uses a long list of
+ * numbers that everybody immediately turns back into the ISO codes at the
+ * earliest convenience.
+ * This array is backwards, because I straight up copied it from
+ * DonationInterface. Not even sorry.
+ * @staticvar array $flipped The currency code array in the format we need to do
+ * an easy lookup.
+ * @param int $number The number that appears in WP payments log XML for the
+ * currency code.
+ * @return string The ISO currency code
+ */
+function worldpay_audit_get_currency_code_from_stupid_number($number) {
+  static $flipped = array();
+  //This mega-array was straight-up copied from DonationInterface.
+  //Not even bothering to reformat, because that will make it harder to update later.
+  if (empty($flipped)) {
+    $CURRENCY_CODES = array(
+      'AED' => 784,
+      'ALL' => 8,
+      'ANG' => 532,
+      'ARS' => 32,
+      'AUD' => 36,
+      'AWG' => 533,
+      'AZN' => 944,
+      'BAM' => 977,
+      'BBD' => 52,
+      'BDT' => 50,
+      'BGN' => 975,
+      'BHD' => 48,
+      'BMD' => 60,
+      'BND' => 96,
+      'BOB' => 68,
+      'BRL' => 986,
+      'BSD' => 44,
+      'BWP' => 72,
+      'BZD' => 84,
+      'CAD' => 124,
+      'CHF' => 756,
+      'CLP' => 152,
+      'CNY' => 156,
+      'COP' => 170,
+      'CRC' => 188,
+      'CUP' => 192,
+      'CZK' => 203,
+      'DJF' => 262,
+      'DKK' => 208,
+      'DOP' => 214,
+      'DZD' => 12,
+      'EGP' => 818,
+      'ERN' => 232,
+      'ETB' => 230,
+      'EUR' => 978,
+      'FJD' => 242,
+      'GBP' => 826,
+      'GEL' => 981,
+      'GIP' => 292,
+      'GTQ' => 320,
+      'GYD' => 328,
+      'HKD' => 344,
+      'HNL' => 340,
+      'HRK' => 191,
+      'HTG' => 332,
+      'HUF' => 348,
+      'IDR' => 360,
+      'ILS' => 376,
+      'INR' => 356,
+      'IQD' => 368,
+      'JMD' => 388,
+      'JOD' => 400,
+      'JPY' => 392,
+      'KES' => 404,
+      'KHR' => 116,
+      'KRW' => 410,
+      'KWD' => 414,
+      'KYD' => 136,
+      'KZT' => 398,
+      'LBP' => 422,
+      'LKR' => 144,
+      'LSL' => 426,
+      'LTL' => 440,
+      'LVL' => 428,
+      'MAD' => 504,
+      'MKD' => 807,
+      'MNT' => 496,
+      'MOP' => 446,
+      'MRO' => 478,
+      'MUR' => 480,
+      'MVR' => 462,
+      'MWK' => 454,
+      'MXN' => 484,
+      'MYR' => 458,
+      'MZN' => 943,
+      'NAD' => 516,
+      'NGN' => 566,
+      'NIO' => 558,
+      'NOK' => 578,
+      'NPR' => 524,
+      'NZD' => 554,
+      'OMR' => 512,
+      'PAB' => 590,
+      'PEN' => 604,
+      'PGK' => 598,
+      'PHP' => 608,
+      'PKR' => 586,
+      'PLN' => 985,
+      'PYG' => 600,
+      'QAR' => 634,
+      'RON' => 946,
+      'RSD' => 941,
+      'RUB' => 643,
+      'RWF' => 646,
+      'SAR' => 682,
+      'SCR' => 690,
+      'SEK' => 752,
+      'SGD' => 702,
+      'SLL' => 694,
+      'SVC' => 222,
+      'SYP' => 760,
+      'SZL' => 748,
+      'THB' => 764,
+      'TND' => 788,
+      'TRY' => 949,
+      'TTD' => 780,
+      'TWD' => 901,
+      'TZS' => 834,
+      'UAH' => 980,
+      'USD' => 840,
+      'UYU' => 858,
+      'UZS' => 860,
+      'VEF' => 937,
+      'XAF' => 950,
+      'XCD' => 951,
+      'XOF' => 952,
+      'XPF' => 953,
+      'YER' => 886,
+      'ZAR' => 710,
+      'ZMK' => 894,
+    );
+    $flipped = array_flip($CURRENCY_CODES);
+  }
+  if (array_key_exists($number, $flipped)) {
+    return $flipped[$number];
+  } else {
+    wmf_audit_log_error(__FUNCTION__ . ": No currency found for code $number", 'MISSING_MANDATORY_DATA');
+  }
+}
+
