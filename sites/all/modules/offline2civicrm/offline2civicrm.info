@@ -17,4 +17,4 @@ files[] = ContributionConversion.php
 files[] = EmptyRowException.php
 files[] = JpMorganFile.php
 files[] = PayPalChecksFile.php
-files[] = tests/ContributionConversion.test 
+files[] = tests/includes/BaseChecksFileTest.php

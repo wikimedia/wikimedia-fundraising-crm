@@ -1,6 +1,6 @@
 <?php
 
-class AzlChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
+class AzlChecksFileTest extends BaseChecksFileTest {
     function setUp() {
         parent::setUp();
 
@@ -68,6 +68,7 @@ class AzlChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
         $importer = new AzlChecksFileProbe( "null URI" );
         $output = $importer->_parseRow( $data );
 
+        $this->stripSourceData( $output );
         $this->assertEquals( $expected_normal, $output );
     }
 
@@ -128,6 +129,7 @@ class AzlChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
         $importer = new AzlChecksFileProbe( "null URI" );
         $output = $importer->_parseRow( $data );
 
+        $this->stripSourceData( $output );
         $this->assertEquals( $expected_normal, $output );
     }
 }

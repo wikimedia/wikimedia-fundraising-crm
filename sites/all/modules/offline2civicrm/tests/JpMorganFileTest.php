@@ -1,6 +1,6 @@
 <?php
 
-class JpMorganFileTest extends BaseWmfDrupalPhpUnitTestCase {
+class JpMorganFileTest extends BaseChecksFileTest {
     function setUp() {
         parent::setUp();
 
@@ -43,6 +43,7 @@ class JpMorganFileTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertTrue( $output['gross'] > 0 );
         unset( $output['gross'] );
 
+        $this->stripSourceData( $output );
         $this->assertEquals( $expected_normal, $output );
     }
 
