@@ -720,7 +720,6 @@ function wmf_civicrm_verify_message_and_stage($msg)
     $msg = wmf_civicrm_normalize_msg( $msg );
 
     $required = array(
-        'email',
         'gross',
         'currency',
         'gateway',
