@@ -26,12 +26,12 @@ class JpMorganFile extends ChecksFile {
 
     protected function getFieldMapping() {
         return array(
-            'gateway_account' => 'ACCOUNT NAME',
-            'original_currency' => 'CURRENCY',
-            'gateway_txn_id' => 'Bank Ref Number',
-            'date' => 'TRANSACTION DATE',
-            'settlement_date' => 'VALUE DATE',
-            'original_gross' => 'CREDITS',
+            'ACCOUNT NAME' => 'gateway_account',
+            'Bank Ref Number' => 'gateway_txn_id',
+            'CREDITS' => 'original_gross',
+            'CURRENCY' => 'original_currency',
+            'TRANSACTION DATE' => 'date',
+            'VALUE DATE' => 'settlement_date',
         );
     }
 

@@ -104,7 +104,7 @@ abstract class ChecksFile {
     protected function parseRow( $data ) {
         $msg = array();
 
-        foreach ( $this->getFieldMapping() as $normal => $header ) {
+        foreach ( $this->getFieldMapping() as $header => $normal ) {
             if ( !empty( $data[$header] ) ) {
                 $msg[$normal] = $data[$header];
             }
@@ -236,36 +236,38 @@ abstract class ChecksFile {
     /**
      * Return column mappings
      *
-     * @return array of {normalized field name} => {spreadsheet column title}
+     * @return array of {spreadsheet column title} => {normalized field name}
      */
     protected function getFieldMapping() {
         return array(
-            'check_number' => 'Check Number',
-            'city' => 'City',
-            'contribution_source' => 'Source',
-            'country' => 'Country',
-            'date' => 'Received Date',
-            'direct_mail_appeal' => 'Direct Mail Appeal',
-            'email' => 'Email',
-            'first_name' => 'First Name',
-            'gift_source' => 'Gift Source',
-            'gross' => 'Total Amount',
-            'import_batch_number' => 'Batch',
-            'last_name' => 'Last Name',
-            'letter_code' => 'Letter Code',
-            'middle_name' => 'Middle Name',
-            'no_thank_you' => 'No Thank You',
-            'organization_name' => 'Organization Name',
-            'payment_method' => 'Payment Instrument',
-            'postal_code' => 'Postal Code',
-            'postmark_date' => 'Postmark Date',
-            'raw_contribution_type' => 'Contribution Type',
-            'restrictions' => 'Restrictions',
-            'state_province' => 'State',
-            'street_address' => 'Street Address',
-            'supplemental_address_1' => 'Additional Address 1',
-            'supplemental_address_2' => 'Additional Address 2',
-            'thankyou_date' => 'Thank You Letter Date',
+            'Additional Address 1' => 'supplemental_address_1',
+            'Additional Address 2' => 'supplemental_address_2',
+            'Batch' => 'import_batch_number',
+            'Check Number' => 'check_number',
+            'City' => 'city',
+            'Contribution Type' => 'raw_contribution_type',
+            'Country' => 'country',
+            'Direct Mail Appeal' => 'direct_mail_appeal',
+            'Email' => 'email',
+            'First Name' => 'first_name',
+            'Gift Source' => 'gift_source',
+            'Last Name' => 'last_name',
+            'Letter Code' => 'letter_code',
+            'Middle Name' => 'middle_name',
+            'No Thank You' => 'no_thank_you',
+            'Organization Name' => 'organization_name',
+            'Original Amount' => 'gross',
+            'Original Currency' => 'currency',
+            'Payment Instrument' => 'payment_method',
+            'Postal Code' => 'postal_code',
+            'Postmark Date' => 'postmark_date',
+            'Received Date' => 'date',
+            'Restrictions' => 'restrictions',
+            'Source' => 'contribution_source',
+            'State' => 'state_province',
+            'Street Address' => 'street_address',
+            'Thank You Letter Date' => 'thankyou_date',
+            'Total Amount' => 'gross',
         );
     }
 
