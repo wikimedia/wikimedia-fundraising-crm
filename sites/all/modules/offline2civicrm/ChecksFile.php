@@ -148,43 +148,44 @@ abstract class ChecksFile {
      * message.  This is very specific to each upload source.
      */
     protected function mungeMessage( &$msg ) {
-        $contype = $msg['raw_contribution_type'];
-        switch ( $contype ) {
-            case "Merkle":
-                $msg['gateway'] = "merkle";
-                break;
+        if ( isset( $msg['raw_contribution_type'] ) ) {
+            $contype = $msg['raw_contribution_type'];
+            switch ( $contype ) {
+                case "Merkle":
+                    $msg['gateway'] = "merkle";
+                    break;
 
-            case "Arizona Lockbox":
-                $msg['gateway'] = "arizonalockbox";
-                break;
+                case "Arizona Lockbox":
+                    $msg['gateway'] = "arizonalockbox";
+                    break;
 
-            case "Cash":
-                $msg['contribution_type'] = "cash";
-                break;
+                case "Cash":
+                    $msg['contribution_type'] = "cash";
+                    break;
 
-            default:
-                throw new WmfException( 'INVALID_MESSAGE', "Contribution Type '$contype' is unknown whilst importing checks!" );
+                default:
+                    throw new WmfException( 'INVALID_MESSAGE', "Contribution Type '$contype' is unknown whilst importing checks!" );
+            }
         }
 
         if ( !empty( $msg['organization_name'] ) ) {
             $msg['contact_type'] = "Organization";
         }
 
-        // Check that the message amounts match
-        list($currency, $source_amount) = explode( ' ', $msg['contribution_source'] );
-        $msg['gross'] = floatval( trim( $msg['gross'], '$' ) );
+        $msg['gross'] = trim( $msg['gross'], '$' );
 
-        if ( abs( $source_amount - $msg['gross'] ) > .01 ) {
-            $pretty_msg = json_encode( $msg );
-            watchdog( 'offline2civicrm', "Amount mismatch in row: " . $pretty_msg, NULL, WATCHDOG_ERROR );
-            throw new WmfException( 'INVALID_MESSAGE', "Amount mismatch during checks import" );
+        if ( isset( $msg['contribution_source'] ) ) {
+            // Check that the message amounts match
+            list($currency, $source_amount) = explode( ' ', $msg['contribution_source'] );
+
+            if ( abs( $source_amount - $msg['gross'] ) > .01 ) {
+                $pretty_msg = json_encode( $msg );
+                watchdog( 'offline2civicrm', "Amount mismatch in row: " . $pretty_msg, NULL, WATCHDOG_ERROR );
+                throw new WmfException( 'INVALID_MESSAGE', "Amount mismatch during checks import" );
+            }
+
+            $msg['currency'] = $currency;
         }
-
-        $msg = array_merge( $msg, array(
-            'currency' => $currency,
-            'original_currency' => $currency,
-            'original_gross' => $msg['gross'],
-        ) );
 
         // left-pad the zipcode
         if ( $msg['country'] === 'US' ) {
