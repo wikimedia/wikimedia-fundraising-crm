@@ -227,9 +227,6 @@ abstract class ChecksFile {
             'contact_source' => 'check',
             'contact_type' => 'Individual',
             'country' => 'US',
-            'email' => 'nobody@wikimedia.org',
-            'gift_source' => 'Community Gift',
-            'restrictions' => 'Unrestricted - General',
         );
     }
 
