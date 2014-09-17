@@ -1,6 +1,17 @@
-<?php //namespace wmf_communication;
-require_once 'CiviMailingRecord.php';
-require_once 'CiviMailQueueRecord.php';
+<?php
+namespace wmf_communication;
+
+use \CRM_Activity_BAO_Activity;
+use \CRM_Core_DAO;
+use \CRM_Core_DAO_Email;
+use \CRM_Core_OptionGroup;
+use \CRM_Core_Transaction;
+use \CRM_Mailing_BAO_Job;
+use \CRM_Mailing_BAO_Mailing;
+use \CRM_Mailing_DAO_Job;
+use \CRM_Mailing_DAO_Mailing;
+use \CRM_Mailing_Event_BAO_Queue;
+use \Exception;
 /**
  * Handle inserting sent CiviMail records for emails
  * not actually sent by CiviCRM
@@ -15,12 +26,14 @@ interface ICiviMailStore {
 	 * @param string $bodyTemplate the body of the mailing
 	 * @param string $subjectTemplate the subject of the mailing
 	 * @param int $revision the revision the mailing
+	 * @param string $jobStatus the CiviMail status of the mailing job
+	 *	enum('Scheduled', 'Running', 'Complete', 'Paused', 'Canceled')
 	 *
 	 * We use the source, templateName and revision to create a unique name
 	 *
 	 * @throws CiviMailingInsertException something bad happened with the insert
 	 */
-	function addMailing( $source, $templateName, $bodyTemplate, $subjectTemplate, $revision = 0 );
+	function addMailing( $source, $templateName, $bodyTemplate, $subjectTemplate, $revision = 0, $jobStatus = 'Complete' );
 
 	/**
 	 * Gets a mailing record matching the input parameters
@@ -75,7 +88,7 @@ interface ICiviMailStore {
 }
 
 class CiviMailStore implements ICiviMailStore {
-	public function addMailing( $source, $templateName, $bodyTemplate, $subjectTemplate, $revision = 0 ) {
+	public function addMailing( $source, $templateName, $bodyTemplate, $subjectTemplate, $revision = 0, $jobStatus = 'Complete' ) {
 		$name = $this::makeUniqueName( $source, $templateName, $revision );
 		$mailing = $this->getMailingInternal( $name );
 
@@ -95,16 +108,21 @@ class CiviMailStore implements ICiviMailStore {
 
 			$job = $this->getJobInternal( $mailing->id );
 
+			$saveJob = ( !$job || $job->status !== $jobStatus );
+
 			if ( !$job ) {
 				$job = new CRM_Mailing_BAO_Job();
 				$job->start_date = $job->end_date = gmdate( 'YmdHis' );
-				$job->status = 'Complete';
 				$job->job_type = 'external';
 				$job->mailing_id = $mailing->id;
+			}
+
+			if ( $saveJob ) {
+				$job->status = $jobStatus;
 				$job->save();
 			}
 			$transaction->commit();
-			return new CiviMailingRecord( $name, $mailing->id, $job->id );
+			return new CiviMailingRecord( $mailing, $job );
 		}
 		catch ( Exception $e ) {
 			$transaction->rollback();
@@ -182,7 +200,7 @@ VALUES ( %1, %2, %3 )";
 		if ( !$job ) {
 			throw new CiviMailingMissingException();
 		}
-		return new CiviMailingRecord( $name, $mailing->id, $job->id );
+		return new CiviMailingRecord( $mailing, $job );
 	}
 
 	protected function getMailingInternal( $name ) {

@@ -1,15 +1,110 @@
 <?php
-
-# oh well, Drupal's registry won't do namespaces until d8.
-require_once 'Job.php';
-require_once 'Mailer.php';
-require_once 'MailingTemplate.php';
-require_once 'Recipient.php';
-require_once 'Templating.php';
-require_once 'Translation.php';
-
+use wmf_communication\CiviMailBulkStore;
 use wmf_communication\Job;
+use wmf_communication\SilverpopImporter;
 
 function wmf_communication_send_letters( $jobId ) {
     Job::getJob( $jobId )->run();
+}
+
+function wmf_communication_permission() {
+  return array(
+    'administer silverpop import' => array(
+      'title' => t('Administer Silverpop import'),
+    ),
+  );
+}
+
+function wmf_communication_menu() {
+	$items = array();
+
+	$items['admin/config/wmf_communication'] = array(
+		'title' => 'WMF communication settings',
+		'access arguments' => array('administer silverpop import'),
+		'page callback' => 'system_admin_menu_block_page',
+		'file' => 'system.admin.inc',
+		'file path' => drupal_get_path('module', 'system'),
+	);
+
+	$items['admin/config/wmf_communication/silverpop'] = array(
+		'title' => 'Silverpop import settings',
+		'description' => 'Configure settings for importing Silverpop mail records',
+		'access arguments' => array('administer silverpop import'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('wmf_communication_silverpop_form'),
+		'type' => MENU_NORMAL_ITEM,
+	);
+
+	return $items;
+}
+
+function wmf_communication_silverpop_form() {
+	$form = array();
+
+	//TODO: validate that they have replaced the {X}
+	$form['wmf_communication_silverpop_api_endpoint'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Silverpop API endpoint'),
+		'#required' => TRUE,
+		'#default_value' => variable_get('wmf_communication_silverpop_api_endpoint', 'api{X}.silverpop.com'),
+		'#description' => 'api{X}.silverpop.com, where {X} is the number of your Engage pod.  Do not include the https://.'
+	);
+
+	$form['wmf_communication_silverpop_sftp_server'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Silverpop SFTP server'),
+		'#required' => TRUE,
+		'#default_value' => variable_get('wmf_communication_silverpop_sftp_server', 'transfer{X}.silverpop.com'),
+		'#description' => 'transfer{X}.silverpop.com, where {X} is the number of your Engage pod.'
+	);
+
+	$form['wmf_communication_silverpop_username'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Silverpop username'),
+		'#required' => TRUE,
+		'#default_value' => variable_get('wmf_communication_silverpop_username', ''),
+		'#description' => 'Email address of Silverpop account to use for API calls'
+	);
+
+	$form['wmf_communication_silverpop_password'] = array(
+		'#type' => 'password',
+		'#title' => t('Silverpop password'),
+		'#required' => TRUE,
+		'#default_value' => variable_get('wmf_communication_silverpop_password', ''),
+		'#description' => 'Password of Silverpop account to use for API calls'
+	);
+
+	return system_settings_form($form);
+}
+
+/**
+ * Imports sent mailings from silverpop.
+ *
+ * @param int $days Number of days into the past to look for sent mailings
+ */
+function wmf_communication_silverpop_import_mailings( $days ) {
+	require_once __DIR__ . '/Silverpop/lib/Engage.php';
+	require_once DRUPAL_ROOT . '/../vendor/autoload.php';
+
+	civicrm_initialize();
+	$username = variable_get('wmf_communication_silverpop_username', '');
+	$password = variable_get('wmf_communication_silverpop_password', '');
+	$endpoint = variable_get('wmf_communication_silverpop_api_endpoint', '');
+	$sftpserver = variable_get('wmf_communication_silverpop_sftp_server', '');
+
+	if ($username === '' || $password === '' || $endpoint === '' || $sftpserver === '') {
+		throw new Exception('Please configure Silverpop username, password, SFTP server and API endpoint!');
+	}
+
+	$options = array(
+		'engage' => new Engage($endpoint),
+		'username' => $username,
+		'password' => $password,
+		'sftp' => new Net_SFTP($sftpserver, '22'),
+		'civimailstore' => new CiviMailBulkStore(),
+		'zipper' => new ZipArchive(),
+	);
+
+	$importer = new SilverpopImporter($options);
+	return $importer->import($days);
 }

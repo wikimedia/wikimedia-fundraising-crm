@@ -194,10 +194,6 @@ function queue2civicrm_batch_process() {
       'queue2civicrm_import'
   );
 
-  // allow for other modules to handle their own related batch processing
-  $batchprocessed = module_invoke_all( 'queue2civicrm_batch_process');
-  $processed += array_sum($batchprocessed);
-  
   /**
    * this may some day supercede the process counts handled above...
    * 

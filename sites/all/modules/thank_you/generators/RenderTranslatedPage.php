@@ -1,5 +1,5 @@
 <?php namespace thank_you\generators;
-use CiviMailStore;
+use wmf_communication\CiviMailStore;
 
 /**
  * Generator template for pulling a translated page from a mediawiki
@@ -59,7 +59,13 @@ class RenderTranslatedPage {
 
 				$template_name = basename( $file );
 
-				$page_content = $this->add_template_info_comment( $page_content, $template_name, $published_revision );
+				$template_info = array(
+					'version' => 1,
+					'sourceUrl' => "https://meta.wikimedia.org/w/index.php?title={$this->title}/{$lang}&oldid={$published_revision}",
+					'name' => $template_name,
+					'revision' => $published_revision,
+				);
+				$page_content = $this->add_template_info_comment( $page_content, $template_info );
 
 				if (file_put_contents( $file, $page_content )) {
 					watchdog( 'make-thank-you', "$lang -- Wrote translation into $file", null, WATCHDOG_INFO );
@@ -84,13 +90,13 @@ class RenderTranslatedPage {
 	 * Add an HTML comment with the file name and revision number to the bottom of the page
 	 *
 	 * @param string $page_content HTML content without comment
-	 * @param string $template_name name of template
-	 * @param int $revision revision number of template
+	 * @param array $template_info key/val pairs describing template
 	 *
 	 * @returns string Content with revision comment appended
 	 */
-	protected function add_template_info_comment( $page_content, $template_name, $revision ) {
-		$comment = "<!-- template $template_name revision $revision -->";
+	protected function add_template_info_comment( $page_content, $template_info ) {
+		$info_json = json_encode( $template_info );
+		$comment = "<!-- TI_BEGIN{$info_json}TI_END -->";
 		return $page_content . $comment;
 	}
 	/**

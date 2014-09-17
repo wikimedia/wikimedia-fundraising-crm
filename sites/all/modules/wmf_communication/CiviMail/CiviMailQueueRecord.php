@@ -1,41 +1,50 @@
 <?php
+namespace wmf_communication;
+
+use \CRM_Core_DAO;
+use \CRM_Mailing_BAO_Mailing;
 
 interface ICiviMailQueueRecord {
 	/**
 	 * Adds a bounce mail record and calls the CiviCRM bounce processing hooks
+	 *
+	 * @param string $bounceType type of bounce
+	 * @param string $date date of bounce, in mysql format
 	 */
-	function markBounced( $bounceType );
+	function markBounced( $bounceType, $date = null );
 
 	/**
 	 * Adds a 'delivered' event for this message
+	 *
+	 * @param string date delivered, in mysql format
 	 */
 	function markDelivered( $date = null );
 
 	/**
 	 * Get the Variable Email Return Path header to use
 	 *
-	 * @returns string the VERP header
+	 * @return string the VERP header
 	 */
 	function getVerp();
 
 	/**
 	 * Get the CiviMail database ID of this queue record
 	 *
-	 * @returns int
+	 * @return int
 	 */
 	function getQueueID();
 
 	/**
 	 * Get the CiviCRM Contact ID of this queue record
 	 *
-	 * @returns int
+	 * @return int
 	 */
 	function getContactID();
 
 	/**
 	 * Get the CiviCRM Email ID of this queue record
 	 *
-	 * @returns int
+	 * @return int
 	 */
 	function getEmailID();
 }
@@ -46,8 +55,8 @@ class CiviMailQueueRecord implements ICiviMailQueueRecord {
 	protected $emailAddress;
 
 	/**
-	 * @param CRM_Mailing_Event_DAO_Queue $queue
-	 * @param CRM_Core_Email $email
+	 * @param \CRM_Mailing_Event_DAO_Queue $queue
+	 * @param \CRM_Core_Email $email
 	 */
 	public function __construct( $queue, $email ) {
 		$this->queue = $queue;

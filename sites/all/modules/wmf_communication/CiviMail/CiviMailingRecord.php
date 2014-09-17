@@ -1,49 +1,74 @@
 <?php
+namespace wmf_communication;
 
 interface ICiviMailingRecord {
 	/**
 	 * Gets the unique name for this mailing in CiviCRM
 	 *
-	 * @returns string mailing name
+	 * @return string mailing name
 	 */
 	function getMailingName();
 
 	/**
 	 * Gets the CiviCRM db ID for the mailing
 	 *
-	 * @returns int mailing id
+	 * @return int mailing id
 	 */
 	function getMailingID();
 
 	/**
-	 * Gets the id of the completed parent job created along with this mailing
+	 * Gets the id of the parent job created along with this mailing
 	 *
-	 * @returns int parent job id
+	 * @return int parent job id
 	 */
 	function getJobID();
+
+	/**
+	 * Gets the status of the parent job created along with this mailing
+	 *
+	 * @return enum('Scheduled', 'Running', 'Complete', 'Paused', 'Canceled') parent job status
+	 */
+	function getJobStatus();
+
+	/**
+	 * Gets the underlying CiviCRM Mailing record
+	 *
+	 * @return \CRM_Mailing_DAO_Mailing
+	 */
+	function getMailing();
 }
 
 class CiviMailingRecord implements ICiviMailingRecord {
 
-	protected $mailingName;
-	protected $mailingID;
-	protected $jobID;
+	protected $mailing;
+	protected $job;
 
-	public function __construct( $mailingName, $mailingID, $jobID ) {
-		$this->mailingName = $mailingName;
-		$this->mailingID = $mailingID;
-		$this->jobID = $jobID;
+	/**
+	 * @param \CRM_Mailing_DAO_Mailing $mailing
+	 * @param \CRM_Mailing_DAO_Job $job
+	 */
+	public function __construct( $mailing, $job ) {
+		$this->mailing = $mailing;
+		$this->job = $job;
 	}
 
 	public function getJobID() {
-		return $this->jobID;
+		return $this->job->id;
 	}
 
 	public function getMailingID() {
-		return $this->mailingID;
+		return $this->mailing->id;
 	}
 
 	public function getMailingName() {
-		return $this->mailingName;
+		return $this->mailing->name;
+	}
+
+	public function getJobStatus() {
+		return $this->job->status;
+	}
+
+	public function getMailing() {
+		return $this->mailing;
 	}
 }

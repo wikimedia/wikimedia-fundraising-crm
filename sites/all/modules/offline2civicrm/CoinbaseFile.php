@@ -6,7 +6,6 @@
  * See https://coinbase.com/reports
  */
 class CoinbaseFile extends ChecksFile {
-    protected $numSkippedRows = 2;
     protected $refundLastTransaction = false;
 
     protected function getRequiredColumns() {

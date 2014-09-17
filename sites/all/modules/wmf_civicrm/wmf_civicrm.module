@@ -137,6 +137,7 @@ function wmf_civicrm_contribution_get_custom_values( $contribution_id, $names )
         $field_map[ $field ] = $name;
     }
     $result = CRM_Core_BAO_CustomValueTable::getValues( $params );
+    $ret = array();
     foreach ( $result as $field => $value ) {
         if ( array_key_exists( $field, $field_map ) ) {
             $ret[ $field_map[ $field ] ] = $value;
@@ -145,7 +146,7 @@ function wmf_civicrm_contribution_get_custom_values( $contribution_id, $names )
     return $ret;
 }
 
-// FIXME: contribution_set_custom_values
+// FIXME: this is only valid for contributions
 function wmf_civicrm_set_custom_field_values($entity_id, $map)
 {
     $params = array(
@@ -287,20 +288,6 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         $contribution[ 'thankyou_date' ] = wmf_common_date_unix_to_civicrm( $msg['thankyou_date'] );
     }
 
-    watchdog( 'wmf_civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), NULL, WATCHDOG_DEBUG);
-
-    $contribution_result = civicrm_api( "Contribution", "Create", $contribution );
-    
-    watchdog( 'wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
-    
-    if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
-        throw new WmfException(
-            'INVALID_MESSAGE',
-            'Cannot create contribution, civi error!',
-            $contribution_result['error_message']
-        );
-    }
-  
     /**
     *  Hopefully the Civi API will eventually handle custom fields in the
     *  above "Create" call.
@@ -354,15 +341,36 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'source_enqueued_time',
     );
     foreach ( $date_mangle as $field ) {
-        if ( is_numeric( $custom_vars[$field] )
-            and strlen( $custom_vars[$field] ) < 14
+        if ( array_key_exists( $field, $custom_vars )
+            && is_numeric( $custom_vars[$field] )
+            && strlen( $custom_vars[$field] ) < 14
         ) {
             $custom_vars[$field] = wmf_common_date_unix_to_sql( $custom_vars[$field] );
         }
     }
 
     $custom_vars += $custom_field_defaults;
-    wmf_civicrm_set_custom_field_values( $contribution_result[ 'id' ], $custom_vars );
+
+    $custom_name_mapping = wmf_civicrm_get_custom_field_map( array_keys( $custom_vars ) );
+    foreach ( $custom_name_mapping as $readable => $machined ) {
+        if ( array_key_exists( $readable, $custom_vars ) ) {
+            $contribution[$machined] = $custom_vars[$readable];
+        }
+    }
+
+    watchdog( 'wmf_civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), NULL, WATCHDOG_DEBUG);
+
+    $contribution_result = civicrm_api( "Contribution", "Create", $contribution );
+
+    watchdog( 'wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
+
+    if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
+        throw new WmfException(
+            'INVALID_MESSAGE',
+            'Cannot create contribution, civi error!',
+            $contribution_result['error_message']
+        );
+    }
 
     // Create any required tags on the contribution
     if ( $msg['contribution_tags'] ) {
@@ -402,7 +410,7 @@ function wmf_civicrm_get_civi_id($type, $name)
     static $civi_ids = array();
     $params = array('name' => $name);
     $dummy = array();
-    
+
     if(array_key_exists($type, $civi_ids) && array_key_exists($name, $civi_ids[$type])) {
         return $civi_ids[$type][$name];
     }
@@ -486,9 +494,9 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
     civicrm_initialize();
 
     $payment_instrument = null;
-    
+
     if ( array_key_exists( 'payment_method', $msg ) && trim( $msg['payment_method'] ) != '' ){
-    
+
         switch( strtolower( $msg[ 'payment_method' ] ) ){
             case 'check':
                 $payment_instrument = 'Check';
@@ -611,7 +619,7 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                 }
                 break;
         }
-        
+
     }
     if ( !$payment_instrument
             and array_key_exists( 'gateway', $msg )
@@ -807,7 +815,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     if ( !array_key_exists( 'optout', $msg ) ) {
         $msg['optout'] = 0;
     }
-  
+
     // Create the contact record
 	$fname = substr( trim( $msg['first_name'] ), 0, 64 );
 	$mname = substr( trim( $msg['middle_name'] ), 0, 64 );
@@ -1135,7 +1143,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'contribution_tags' => array(),
     );
     $msg = $msg + $defaults;
-    
+
     if ( empty( $msg['contribution_type_id'] ) ) {
         if ( empty( $msg['contribution_type'] ) ) {
             $msg['contribution_type'] = wmf_civicrm_get_message_contribution_type( $msg );
