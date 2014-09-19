@@ -33,11 +33,14 @@ class FindUnconsumedTokens {
             'first_name' => 'fix',
             'last_name' => 'me',
             'recurring' => true,
-            'RecurringRestarted' => true,
 
             'receive_date' => time(),
 
             'locale' => $locale,
+            'contribution_tags' => array(
+                "RecurringRestarted",
+                "UnrecordedCharge",
+            ),
         );
         return $params;
     }
@@ -61,8 +64,9 @@ class FindUnconsumedTokens {
      * @throws UnconsumedTokenException
      */
     static function renderAndFindTokens( $template, $locale ) {
-        $rendered = Templating::renderStringTemplate( $template, FindUnconsumedTokens::getRandomTemplateParams( $locale ) );
-        FindUnconsumedTokens::findTokens( $buf );
+        $params = FindUnconsumedTokens::getRandomTemplateParams( $locale );
+        $rendered = Templating::renderStringTemplate( $template, $params );
+        FindUnconsumedTokens::findTokens( $rendered );
     }
 
     /**
@@ -87,7 +91,7 @@ class FindUnconsumedTokens {
         if ( $count = preg_match_all( $bad_punctuation_re, $buf, $matches ) ) {
             $bad_punc = implode( ', ', $matches[0] );
             throw new UnconsumedTokenException(
-                "Found {$count} likely tokens [{$bad_punc}] in rendered thank-you translation." );
+                "Found {$count} likely tokens \"{$bad_punc}\" in rendered thank-you translation." );
         }
     }
 }

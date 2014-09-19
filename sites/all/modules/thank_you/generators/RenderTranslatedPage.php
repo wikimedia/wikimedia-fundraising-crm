@@ -51,11 +51,11 @@ class RenderTranslatedPage {
 				// Make it nicer to read
 				$page_content = str_replace( '|</p>|', "</p>\n", $page_content );
 
-				$file = str_replace( '$1', $lang, $this->proto_file );
 
 				// Assert no garbage
 				FindUnconsumedTokens::renderAndFindTokens( $page_content, $lang );
 
+				$file = str_replace( '$1', $lang, $this->proto_file );
 				$template_name = basename( $file );
 
 				$template_info = array(
