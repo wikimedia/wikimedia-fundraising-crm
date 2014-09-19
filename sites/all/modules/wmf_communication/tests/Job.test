@@ -18,17 +18,9 @@ class JobTest extends DrupalWebTestCase {
     }
 
     public function setUp() {
-        // FIXME: cheat by taking some variables from the live db
-        $phpmailerDir = variable_get( 'wmf_common_phpmailer_location', '' );
-        $twigDir = variable_get( 'wmf_common_twig_location', '' );
-        $diDir = variable_get( 'wmf_common_di_location', '' );
-
         parent::setUp( 'wmf_communication', 'wmf_common' );
 
-        variable_set( 'wmf_common_phpmailer_location', $phpmailerDir );
-        variable_set( 'wmf_common_twig_location', $twigDir );
-        variable_set( 'wmf_common_di_location', $diDir );
-
+        // FIXME
         variable_set( 'thank_you_from_address', 'test@localhost.net' );
         variable_set( 'thank_you_from_name', 'Testus' );
 
