@@ -1,6 +1,6 @@
 <?php
 
-class AzlChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
+class AzlChecksFileTest extends BaseChecksFileTest {
     function setUp() {
         parent::setUp();
 
@@ -54,8 +54,6 @@ class AzlChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
             'gross' => '50.00',
             'import_batch_number' => '1234',
             'last_name' => 'Tell',
-            'original_currency' => 'USD',
-            'original_gross' => '50.00',
             'payment_method' => 'Check',
             'postal_code' => '02468',
             'raw_contribution_type' => 'Arizona Lockbox',
@@ -68,6 +66,7 @@ class AzlChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
         $importer = new AzlChecksFileProbe( "null URI" );
         $output = $importer->_parseRow( $data );
 
+        $this->stripSourceData( $output );
         $this->assertEquals( $expected_normal, $output );
     }
 
@@ -114,8 +113,6 @@ class AzlChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
             'gross' => 51.00,
             'import_batch_number' => '1235',
             'organization_name' => 'One Pacific Entitlement',
-            'original_currency' => 'USD',
-            'original_gross' => 51.00,
             'payment_method' => 'Check',
             'postal_code' => '123-LAX',
             'raw_contribution_type' => 'Arizona Lockbox',
@@ -128,6 +125,7 @@ class AzlChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
         $importer = new AzlChecksFileProbe( "null URI" );
         $output = $importer->_parseRow( $data );
 
+        $this->stripSourceData( $output );
         $this->assertEquals( $expected_normal, $output );
     }
 }

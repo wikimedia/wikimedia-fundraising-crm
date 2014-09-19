@@ -1,6 +1,6 @@
 <?php
 
-class PayPalChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
+class PayPalChecksFileTest extends BaseChecksFileTest {
     function setUp() {
         parent::setUp();
 
@@ -54,6 +54,7 @@ class PayPalChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
         $importer = new PayPalChecksFileProbe( "no URI" );
         $output = $importer->_parseRow( $data );
 
+        $this->stripSourceData( $output );
         $this->assertEquals( $expected_normal, $output );
     }
 }
