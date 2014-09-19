@@ -1,4 +1,7 @@
 <?php
+
+use wmf_communication\Templating;
+
 /**
  * Implementation of hook_drush_command()
  */
@@ -44,17 +47,14 @@ function drush_make_exchange_refs() {
 
 /* protected */
 function exchange_rates_make_ref_content( $format, $rates ) {
-    static $twig = null;
+    $twig = Templating::twig_from_directory( __DIR__ . '/templates' );
 
-    if ( !$twig ) {
-        module_load_include( 'inc', 'wmf_common', 'twig' );
-        $twig = wmf_common_get_twig( __DIR__ . "/templates" );
-    }
-
-    $filename = "ref_source.{$format}.twig";
-    return $twig->render( $filename, array(
+    $params = array(
         'generated_by' => basename( __FILE__ ) . ":templates/{$filename}",
         'last_updated' => variable_get( 'exchange_rates_bank_update', 0 ),
         'currency_rates' => $rates,
-    ) );
+    );
+
+    $filename = "ref_source.{$format}.twig";
+    return $twig->render( $filename, $params );
 }

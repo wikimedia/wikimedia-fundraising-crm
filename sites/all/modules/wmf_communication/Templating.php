@@ -2,9 +2,11 @@
 
 use \Exception;
 
-// FIXME: encapsulate here, not in wmf_common
 use \Twig_Environment;
+use \Twig_Extension_Sandbox;
+use \Twig_Loader_Filesystem;
 use \Twig_Loader_String;
+use \Twig_Sandbox_SecurityPolicy;
 
 use \TwigLocalization;
 
@@ -35,12 +37,7 @@ class Templating {
      * @param string $format initial rendering mode (TODO: review usage)
      */
     function __construct( $templates_dir, $template_name, $lang_code, $template_params, $format = null ) {
-        // TODO: autoloaded Twig::get
-        if ( !function_exists( 'wmf_common_get_twig' ) ) {
-            module_load_include( 'inc', 'wmf_common', 'twig' );
-        }
-        $this->twig = wmf_common_get_twig( $templates_dir );
-        //TODO: class TemplatingTwig ; $this->twig = WmfTwig( $templates_dir );
+        $this->twig = Templating::twig_from_directory( $templates_dir );
 
         $this->templates_dir = $templates_dir;
         $this->template_name = $template_name;
@@ -52,6 +49,49 @@ class Templating {
         $this->language = $lang_code;
         $this->template_params = $template_params;
         $this->format = $format;
+    }
+
+    static function twig_from_directory( $template_dir ) {
+        # FIXME: Autoload in settings.php rather than assuming dir structure here.
+        require_once DRUPAL_ROOT . '/../vendor/autoload.php';
+
+        $loader = new Twig_Loader_Filesystem( $template_dir );
+        return Templating::twig_from_loader( $loader );
+    }
+
+    static protected function twig_from_loader( $loader ) {
+        $cache_dir = drupal_realpath( file_default_scheme() . '://' ) . '/twig/cache';
+
+        $twig = new Twig_Environment( $loader, array(
+            'cache' => $cache_dir,
+            'auto_reload' => true,
+            'charset' => 'utf-8',
+        ) );
+
+        $twig->addExtension( new TwigLocalization() );
+
+        $tags = array(
+            'if'
+        );
+        $filters = array(
+            'escape',
+            'l10n_currency',
+            'raw',
+        );
+        $methods = array(
+            //'Article' => array('getTitle', 'getBody'),
+        );
+        $properties = array(
+            //'Article' => array('title', 'body'),
+        );
+        $functions = array(
+            //'range'
+        );
+        $policy = new Twig_Sandbox_SecurityPolicy( $tags, $filters, $methods, $properties, $functions );
+        $sandbox = new Twig_Extension_Sandbox( $policy, true );
+        $twig->addExtension( $sandbox );
+
+        return $twig;
     }
 
     /**
@@ -141,17 +181,10 @@ class Templating {
      * TODO: clean up interface
      */
     static function renderStringTemplate( $template, $params ) {
-        // TODO: autoload instead
-        if ( !class_exists( 'Twig_Loader_String' ) ) {
-            module_load_include( 'inc', 'wmf_common', 'twig' );
-
-            // FIXME: throwaway call to initialize
-            wmf_common_get_twig( __DIR__ );
-        }
+        require_once DRUPAL_ROOT . '/../vendor/autoload.php';
 
         $loader = new Twig_Loader_String();
-        $twig = new Twig_Environment( $loader );
-        $twig->addExtension( new TwigLocalization() );
+        $twig = Templating::twig_from_loader( $loader );
 
         return $twig->render( $template, $params );
     }
