@@ -864,3 +864,79 @@ function wmf_civicrm_update_7021()
         }
     }
 }
+
+/**
+ * DO NOT RUN ON PRODUCTION Add gift data group.
+ */
+function wmf_civicrm_update_7022() {
+    $api = wmf_civicrm_bootstrap_civi();
+    $api->CustomGroup->get(array(
+        'name' => 'Gift_Data',
+    ));
+    $result = $api->values();
+    if ($result) {
+        return;
+    }
+
+    $success = $api->CustomGroup->create(array(
+        'extends' => 'Contribution',
+        'name' => 'Gift_Data',
+        'title' => ts('Gift Data'),
+        'is_active' => 1,
+    ));
+    if (!$success) {
+        throw new Exception('Could not create custom group');
+    }
+    $values = $api->values();
+    $custom_group = array_pop($values);
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'Fund',
+        'column_name' => 'fund',
+        'label' => ts('Restrictions'),
+        'data_type' => 'String',
+        'html_type' => 'Select',
+        'default_value' => 'Unrestricted - General',
+        'is_active' => 1,
+        'is_required' => 1,
+        'is_searchable' => 1,
+    ));
+    if (!$success) {
+        throw new Exception('Failed to create custom field.');
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'Campaign',
+        'column_name' => 'campaign',
+        'label' => ts('Gift Source'),
+        'data_type' => 'String',
+        'html_type' => 'Select',
+        'default_value' => 'Community Gift',
+        'is_active' => 1,
+        'is_required' => 1,
+        'is_searchable' => 1,
+    ));
+    if (!$success) {
+        throw new Exception('Failed to create custom field.');
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'Appeal',
+        'column_name' => 'appeal',
+        'label' => ts('Direct Mail Appeal'),
+        'data_type' => 'String',
+        'html_type' => 'Select',
+        'default_value' => 'spontaneousdonation',
+        'is_active' => 1,
+        'is_required' => 1,
+        'is_searchable' => 1,
+    ));
+    if (!$success) {
+        throw new Exception('Failed to create custom field.');
+    }
+
+    // TODO: define option groups in another migration if necessary
+}
