@@ -51,6 +51,9 @@ class RenderTranslatedPage {
 				// Make it nicer to read
 				$page_content = str_replace( '|</p>|', "</p>\n", $page_content );
 
+// WTF: We're suddenly getting strange errors about the unknown 'endif ' tag.
+// So, strip spaces....
+$page_content = preg_replace( '/{%[^%]*endif[^%]*%}/sm', '{%endif%}', $page_content );
 
 				// Assert no garbage
 				FindUnconsumedTokens::renderAndFindTokens( $page_content, $lang );
