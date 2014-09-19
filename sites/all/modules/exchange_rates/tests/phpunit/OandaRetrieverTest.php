@@ -70,11 +70,11 @@ class OandaRetrieverTestCase extends BaseWmfDrupalPhpUnitTestCase {
    "quotes" : {
       "EUR" : {
          "date" : "2014-01-01T21:00:00+0000",
-         "midpoint" : "0.72527"
+         "midpoint" : "0.8"
       },
       "GBP" : {
          "date" : "2014-01-01T21:00:00+0000",
-         "midpoint" : "0.60365"
+         "midpoint" : "0.5"
       }
    }
 }';
@@ -88,8 +88,8 @@ class OandaRetrieverTestCase extends BaseWmfDrupalPhpUnitTestCase {
 			'midpoint'
 		);
 		$result = $retriever->updateRates( array( 'EUR', 'GBP' ) );
-		$this->assertEquals( 0.72527, $result->rates['EUR']['value'] );
-		$this->assertEquals( 0.60365, $result->rates['GBP']['value'] );
+		$this->assertEquals( 1.25, $result->rates['EUR']['value'] );
+		$this->assertEquals( 2, $result->rates['GBP']['value'] );
 		$this->assertEquals( 144, $result->quotesRemaining );
 	}
 }
