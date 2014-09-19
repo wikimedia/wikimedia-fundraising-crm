@@ -98,7 +98,8 @@ $page_content = preg_replace( '/{%[^%]*endif[^%]*%}/sm', '{%endif%}', $page_cont
 	 */
 	protected function add_template_info_comment( $page_content, $template_info ) {
 		$info_json = json_encode( $template_info );
-		$comment = "<!-- TI_BEGIN{$info_json}TI_END -->";
+		$comment = "\n\n<!-- TI_BEGIN{$info_json}TI_END -->";
+		$comment = str_replace( '\/', '/', $comment );
 		return $page_content . $comment;
 	}
 	/**
