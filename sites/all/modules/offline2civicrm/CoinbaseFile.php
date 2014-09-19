@@ -74,25 +74,25 @@ class CoinbaseFile extends ChecksFile {
 
     protected function getFieldMapping() {
         return array(
-            'city' => 'Shipping City',
-            //'contribution_tracking' => 'Custom', // TODO
-            'country' => 'Shipping Country',
-            'currency' => 'Currency',
-            'date' => 'Timestamp',
-            'email' => 'Customer Email',
-            'full_name' => 'Shipping Name',
-            'gateway_status_raw' => 'Status',
-            'gateway_txn_id' => 'Tracking Code',
-            'gateway_refund_id' => 'Refund Transaction ID',
-            'gross' => 'Native Price',
+            //'BTC Price' => 'original_gross',
+            'Currency' => 'currency',
+            //'Custom' => 'contribution_tracking', // TODO
+            'Customer Email' => 'email',
             // FIXME: this will destroy recurring subscription import, for now.
-            //'original_gross' => 'BTC Price',
-            'phone' => 'Phone Number', // TODO: not stored
-            'postal_code' => 'Shipping Postal Code',
-            'state_province' => 'Shipping State',
-            'street_address' => 'Shipping Address 1',
-            'subscr_id' => 'Recurring Payment ID',
-            'supplemental_address_1' => 'Shipping Address 2',
+            'Native Price' => 'gross',
+            'Phone Number' => 'phone', // TODO: not stored
+            'Recurring Payment ID' => 'subscr_id',
+            'Refund Transaction ID' => 'gateway_refund_id',
+            'Shipping Address 1' => 'street_address',
+            'Shipping Address 2' => 'supplemental_address_1',
+            'Shipping City' => 'city',
+            'Shipping Country' => 'country',
+            'Shipping Name' => 'full_name',
+            'Shipping Postal Code' => 'postal_code',
+            'Shipping State' => 'state_province',
+            'Status' => 'gateway_status_raw',
+            'Timestamp' => 'date',
+            'Tracking Code' => 'gateway_txn_id',
         );
     }
 }
