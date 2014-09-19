@@ -12,6 +12,9 @@
         <directory>sites/all/modules/offline2civicrm/tests</directory>
       </testsuite>
       -->
+      <testsuite name="exchange_rates tests">
+        <directory>sites/all/modules/exchange_rates/tests/phpunit</directory>
+      </testsuite>
       <testsuite name="queue2civicrm tests">
         <directory>sites/all/modules/queue2civicrm/tests/phpunit</directory>
       </testsuite>
