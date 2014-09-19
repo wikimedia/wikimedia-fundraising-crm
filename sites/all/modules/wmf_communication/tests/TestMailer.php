@@ -4,7 +4,7 @@ namespace wmf_communication;
 class TestMailer implements IMailer {
     static protected $mailings;
 
-    public function setup() {
+    static public function setup() {
         Mailer::$defaultSystem = 'test';
 
         self::$mailings = array();
@@ -14,11 +14,11 @@ class TestMailer implements IMailer {
         self::$mailings[] = $email;
     }
 
-    public function countMailings() {
+    static public function countMailings() {
         return count( self::$mailings );
     }
 
-    public function getMailing( $index ) {
+    static public function getMailing( $index ) {
         return self::$mailings[$index];
     }
 }
