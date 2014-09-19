@@ -719,7 +719,10 @@ function thank_you_render( $params ) {
         $params
     );
 
-    return $template->render( 'html' );
+    $page_content = $template->render( 'html' );
+    $page_content = str_replace( '<p></p>', '', $page_content );
+    $page_content = wordwrap( $page_content, 100 );
+    return $page_content;
 }
 
 function build_unsub_link( $contributionId, $emailAddr, $language ) {
