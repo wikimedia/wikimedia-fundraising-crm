@@ -47,7 +47,6 @@ class RenderTranslatedPage {
 
 				$page_content = $this->get_parsed_page( $lang, $published_revision );
 				$page_content = $this->do_replacements( $page_content );
-				$page_content = wordwrap( $page_content, 100 );
 
 				// Make it nicer to read
 				$page_content = str_replace( '|</p>|', "</p>\n", $page_content );
