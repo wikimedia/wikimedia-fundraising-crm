@@ -1,5 +1,7 @@
 <?php
 
+use wmf_communication\Templating;
+
 /**
  * Implements hook_menu
  */
@@ -165,23 +167,7 @@ function unsubscribe_page(){
  */
 function render_page( $page, $params=array(), $language='en' ){
 
-    $twig_include = implode(DIRECTORY_SEPARATOR, array(variable_get('wmf_common_twig_location', ''), 'lib', 'Twig', 'Autoloader.php'));
-    if (!file_exists($twig_include))
-    {
-        watchdog("wmf_unsubscribe", "Twig libraries not found", array(), WATCHDOG_ERROR);
-        return "";
-
-    }
-    require_once $twig_include;
-
-    Twig_Autoloader::register();
-
-    $loader = new Twig_Loader_Filesystem( drupal_get_path( 'module', 'wmf_unsubscribe' ) . '/templates/i18n/' );
-    $twig = new Twig_Environment( $loader, array(
-        'cache' => '/tmp/twig/cache/wmf_unsubscribe',
-        'auto_reload' => TRUE,
-        'charset' => 'utf-8',
-    ));
+    $twig = Templating::twig_from_directory( __DIR__ . '/templates/i18n/' );
 
     try{
         $template = $twig->loadTemplate( "$page.$language.html" );

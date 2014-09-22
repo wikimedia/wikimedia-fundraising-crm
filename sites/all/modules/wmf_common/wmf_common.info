@@ -7,6 +7,4 @@ files[] = CsvBatchFile.php
 files[] = Queue.php
 files[] = WmfDatabase.php
 files[] = WmfException.php
-files[] = twigext_l10n/CldrData.php
-files[] = twigext_l10n/TwigLocalization.php
 files[] = tests/include/BaseWmfDrupalPhpUnitTestCase.php
