@@ -827,8 +827,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         'last_name' => $lname,
         'sort_name' => substr( trim( $lname . ', ' . $fname, ' ,' ), 0, 128 ),
         'display_name' => substr( $fname . ' ' . $lname, 0, 128 ),
-        'do_not_trade' => $msg['anonymous'],
-        'is_opt_out' => '0', // $msg['optout'], // we don't offer an option to unsub on contrib, eliminate bugs
+        'do_not_trade' => $msg['anonymous'], // FIXME: has the wrong meaning
         'contact_source' => $msg['contact_source'],
 
         // API required fields
@@ -866,6 +865,20 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['preferred_language'] = strtolower(substr($msg['language'], 0, 2));
         if ( !empty( $msg['country'] ) ) {
             $contact['preferred_language'] .= '_' . strtoupper(substr($msg['country'], 0, 2));
+        }
+    }
+
+    // Copy some fields, if they exist
+    $direct_fields = array(
+        'do_not_email',
+        'do_not_mail',
+        'do_not_phone',
+        'do_not_sms',
+        'is_opt_out',
+    );
+    foreach ( $direct_fields as $field ) {
+        if ( isset( $msg[$field] ) ) {
+            $contact[$field] = $msg[$field];
         }
     }
 
