@@ -1,0 +1,45 @@
+{% if first_name and last_name %}
+<p>Annwyl {{ first_name }},</p>
+
+{% else %}
+<p>Annwyl roddwr,</p>
+{%endif%}
+
+<p>Diolch am eich rhodd werthfawr tu hwnt o roi gwybodaeth i bawb drwy'r byd.</p>
+
+<p>Lila Tretikov ydw i, Prif Weithredwr Sefydliad Wikimedia. Yn ystod y flwyddyn aeth heibio, fe arianodd rhoddion fel eich un chi ein hymdrechion i ehangu'r gwyddoniadur mewn 287 o ieithoedd a'i gwneud yn haws ddod o hyd i ni drwy'r byd i gyd. Rydym yn ymdrechu'n bennaf i gyrraedd y rhai hynny na fyddent fel arall yn gallu cael hyd i addysg. Down â gwybodaeth i bobl tebyg i Akshaya Iyengar o Solapur, India. Tra'n prifio yn y dref fach hon ynghanol y diwydiant gwehyddu, defnyddiai Wicipedia yn brif ffynhonnell dysg. Mae llyfrau'n brin yn ei bro hi ond mae'r we ar gael drwy'r ffôn symudol a thrwy hwnnw y mae Wicipedia yn galluogi myfyrwyr i ddysgu. Llwyddodd Akshaya i raddio o'r coleg yn India ac erbyn hyn mae'n gweithio fel peiriannydd meddalwedd yn yr Unol Daleithiau. Mae'n cydnabod Wicipedia yn ffynhonell hanner y dysg sydd ganddi.</p>
+
+<p>Nid stori unigryw yw hon. Mae ein nod yn her aruchel. Mae llawer sy'n defnyddio Wicipedia yn synnu o glywed ei fod yn cael ei lywio gan elusen a ariennir gan eich rhoddion chi. Bob blwyddyn, mae digon, a dim ond digon, o bobl yn cyfrannu i gadw'r cyfan o wybodaeth yr hil ddynol ar gael i bawb. Diolch am wneud hyn yn bosib.</p>
+
+<p>Ar ran yr hanner biliwn o ddarllenwyr Wicipedia, y miloedd o olygyddion gwirfoddol, a staff y Sefydliad, rwyn diolch i chi am gadw Wicipedia arlein ac yn rhydd o hysbysebion eleni.</p>
+
+<p>Diolch yn fawr,<br/>
+Lila</p>
+
+<p>Lila Tretikov<br/>
+Prif Weithredwr,<br/>
+Sefydliad Wikimedia<br/>
+<a href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+
+<p>Mae nifer o gyflogwyr yn rhoi symiau cyfatebol at roddion eu gweithwyr: gallwch holi eich cwmni a oes <a href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">rhaglen i gwmni rhoi'n gyfatebol</a> ganddynt. Gallwch ein cynorthwyo ni i ledu'r sôn am ein hymgyrch codi arian ar <a href="https://www.facebook.com/wikipedia">Facebook</a>, <a href="https://twitter.com/Wikipedia">Twitter</a>, <a href="https://identi.ca/wikipedia">identi.ca</a> neu <a href="https://plus.google.com/+Wikipedia/posts">Google+</a> a <a href="https://blog.wikimedia.org">darllen ein blog</a>. Dyma <a href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Wikimedia_Foundation/Annual_Report/2012-2013/Front">adroddiad blynyddol Sefydliad Wikimedia am 2012-13</a>. Gallwch hefyd brynu nwyddau Wicipedia ar <a href="https://shop.wikimedia.org">shop.wikimedia.org</a>.</p>
+
+<p>Dyma fanylion eich rhodd: Rydych wedi rhoi {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} ar {{ receive_date }} gyda'r cyfeirnod {{ transaction_id }}.</p>
+
+{% if recurring %}<p> Mae'r rhodd hon yn ran o danysgrifiad rheolaidd. Bydd taliadau misol yn cael eu trosglwyddo i Sefydliad Wikimedia hyd nes i chi ddweud wrthym am ddod â'r taliadau i ben. Os ydych am ddiddymu'r taliadau, ewch draw at ein <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">cyfarwyddiadau diddymu syml</a>. </p>{%endif%}
+
+<p>Bydd y llythyr hwn yn gofnod o'ch rhodd. Ni ddarparwyd unrhyw nwyddau na gwasanaethau, yn gyfan neu'n rhannol, yn gyfnewid am y rhodd. Mae Sefydliad Wikimedia, Inc. yn gorfforaeth elusennol di-elw ag iddo statws 501(c)(3) o fod wedi ei eithrio o dalu treth yn yr Unol Daleithiau. 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105 yw ein cyfeiriad. Rhif eithrio o dreth: 20-0049703</p>
+
+<div style="border: 1px solid black; padding:0 10px 5px 10px;">
+  <p>Dewis peidio â derbyn gwybodaeth:</p>
+  <p><br/>
+Gan eich bod wedi cyfrannu atom, hoffwn anfon e-byst atoch i roi gwybod i chwi am weithgareddau ein cymuned a'n hymgyrchoedd codi arian. Os oes gwell gennych beidio â derbyn e-byst iddu wrthym, gallwch glicio isod ac fe dynnwn eich enw oddi ar y rhestr.</p>
+  <div style="margin: 0 25px">
+    <p><a href="{{ unsubscribe_link | raw }}">Dad-danysgrifio</a></p>
+  </div>
+</div>
+
+<hr/>
+
+<p>Helpwch ni i <a href="https://meta.wikimedia.org/w/index.php?title=Special:Translate&group=page-Fundraising%2FTranslation%2FThank_you_email_20140606">gyfieithu'r</a> e-bost hwn.</p>
+
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/cy&oldid=9066498","name":"thank_you.cy.html","revision":9066498}TI_END -->
