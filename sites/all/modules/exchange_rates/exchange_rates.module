@@ -79,7 +79,7 @@ function exchange_rates_get_currencies() {
 }
 
 function exchange_rates_manual_update() {
-  exchange_rates_cron();
+  exchange_rates_update_all();
   drupal_set_message(t('Exchange rates updated'));
   drupal_goto('admin/config/exchange_rates');
 }
@@ -175,7 +175,7 @@ function exchange_rate_cache_set($currency, $timestamp, $rate) {
     $_exchange_rate_cache[$key] = $rate;
 }
 
-function exchange_rates_cron() {
+function exchange_rates_update_all() {
 
 	// If you update this list, also update the list in the DonationInterface extension
 	$currencies = array(
