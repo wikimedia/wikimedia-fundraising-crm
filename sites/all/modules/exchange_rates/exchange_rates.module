@@ -175,7 +175,7 @@ function exchange_rate_cache_set($currency, $timestamp, $rate) {
     $_exchange_rate_cache[$key] = $rate;
 }
 
-function exchange_rates_update_all() {
+function exchange_rates_update_all( $date = null ) {
 
 	// If you update this list, also update the list in the DonationInterface extension
 	$currencies = array(
@@ -392,7 +392,7 @@ function exchange_rates_update_all() {
 
 	foreach ( $retrievers as $retriever ) {
 		try {
-			$result = $retriever->updateRates( $currencies );
+			$result = $retriever->updateRates( $currencies, $date );
 			break;
 		} catch ( ExchangeRateUpdateException $ex) {
 			watchdog( 'exchange_rates', $ex );
@@ -404,9 +404,12 @@ function exchange_rates_update_all() {
 	}
 
 	$date_set = false;
+	$last_update = variable_get( 'exchange_rates_bank_update' );
 	foreach( $result->rates as $code => $rate ) {
 		exchange_rates_update_rate( $code, $rate['value'], $rate['date'] );
-		if ( !$date_set ) {
+		if ( !$date_set &&
+				( !$last_update || $rate['date'] > $last_update )
+		) {
 			variable_set( 'exchange_rates_bank_update',  $rate['date'] );
 			$date_set = true;
 		}
@@ -425,6 +428,23 @@ function exchange_rates_update_rate($currency, $value_in_usd, $bank_update) {
       'value_in_usd' => $value_in_usd,
       'local_update' => time(),
   ) )->execute();
+}
+
+function exchange_rates_backfill( $start, $end ) {
+	if ( $start == null ) {
+		$start_timestamp = db_query_range('SELECT MAX(bank_update) FROM {exchange_rates}', 0, 1 )->fetchField();
+		if ( !start_timestamp ) {
+			throw new ExchangeRatesException( 'Backfill start date not specified and no records in database' );
+		}
+		$start = new DateTime( "@$start_timestamp" ); // No TZ param
+		watchdog( 'exchange_rates', "Backfill start date not specified - using last bank update from db ({$start->format( 'Y-m-d' )})" );
+	}
+	if ( $end == null ) {
+		$end = new DateTime( 'now', new DateTimeZone( 'UTC' ) );
+	}
+	for ( $date = $start; $date <= $end; $date->add( new DateInterval( 'P1D' ) ) ) {
+		exchange_rates_update_all( $date );
+	}
 }
 
 class ExchangeRatesException extends Exception {
