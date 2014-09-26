@@ -70,24 +70,7 @@ class Templating {
 
         $twig->addExtension( new TwigLocalization() );
 
-        $tags = array(
-            'if'
-        );
-        $filters = array(
-            'escape',
-            'l10n_currency',
-            'raw',
-        );
-        $methods = array(
-            //'Article' => array('getTitle', 'getBody'),
-        );
-        $properties = array(
-            //'Article' => array('title', 'body'),
-        );
-        $functions = array(
-            //'range'
-        );
-        $policy = new Twig_Sandbox_SecurityPolicy( $tags, $filters, $methods, $properties, $functions );
+        $policy = new RestrictiveSecurityPolicy();
         $sandbox = new Twig_Extension_Sandbox( $policy, true );
         $twig->addExtension( $sandbox );
 
@@ -187,5 +170,26 @@ class Templating {
         $twig = Templating::twig_from_loader( $loader );
 
         return $twig->render( $template, $params );
+    }
+}
+
+class RestrictiveSecurityPolicy extends Twig_Sandbox_SecurityPolicy {
+    function __construct() {
+        $tags = array(
+            'if'
+        );
+        $filters = array(
+            'escape',
+            'l10n_currency',
+            'raw',
+        );
+        $methods = array();
+        $properties = array(); // Overridden to allow all
+        $functions = array();
+        parent::__construct( $tags, $filters, $methods, $properties, $functions );
+    }
+
+    function checkPropertyAllowed( $obj, $property ) {
+        // pass
     }
 }
