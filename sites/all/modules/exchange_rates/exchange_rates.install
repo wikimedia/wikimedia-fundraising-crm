@@ -11,7 +11,7 @@ function exchange_rates_schema() {
         'not null' => TRUE,
       ),
       'value_in_usd' => array(
-        'description' => t('The timestamp of the last update.'),
+        'description' => t('USD value of a single unit of the currency.'),
         'type' => 'float',
         'size' => 'big',
         'unsigned' => TRUE,

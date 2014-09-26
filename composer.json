@@ -1,17 +1,23 @@
 {
     "name": "Wikimedia Foundation donor CRM",
+    "authors": [
+        { "name": "Elliott Eggleston" },
+        { "name": "Peter Gehres" },
+        { "name": "Katie Horn" },
+        { "name": "Jeremy Postlethwaite" },
+        { "name": "Arthur Richards" },
+        { "name": "Matt Walker" },
+        { "name": "Adam Roses Wight" }
+    ],
     "license": "GPL-2.0",
     "type": "project",
     "support": {
         "irc": "irc://irc.freenode.org/wikimedia-fundraising"
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/phpseclib/phpseclib.git"
-        }
-    ],
     "require": {
-        "phpseclib/phpseclib": "0.3.7"
+        "cogpowered/finediff": "0.*",
+        "fusesource/stomp-php": "2.*",
+        "phpseclib/phpseclib": "0.3.7",
+        "twig/twig": "1.*"
     }
 }

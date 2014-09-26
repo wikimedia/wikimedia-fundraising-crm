@@ -47,16 +47,18 @@ class RenderTranslatedPage {
 
 				$page_content = $this->get_parsed_page( $lang, $published_revision );
 				$page_content = $this->do_replacements( $page_content );
-				$page_content = wordwrap( $page_content, 100 );
 
 				// Make it nicer to read
 				$page_content = str_replace( '|</p>|', "</p>\n", $page_content );
 
-				$file = str_replace( '$1', $lang, $this->proto_file );
+// WTF: We're suddenly getting strange errors about the unknown 'endif ' tag.
+// So, strip spaces....
+$page_content = preg_replace( '/{%[^%]*endif[^%]*%}/sm', '{%endif%}', $page_content );
 
 				// Assert no garbage
 				FindUnconsumedTokens::renderAndFindTokens( $page_content, $lang );
 
+				$file = str_replace( '$1', $lang, $this->proto_file );
 				$template_name = basename( $file );
 
 				$template_info = array(
@@ -96,7 +98,8 @@ class RenderTranslatedPage {
 	 */
 	protected function add_template_info_comment( $page_content, $template_info ) {
 		$info_json = json_encode( $template_info );
-		$comment = "<!-- TI_BEGIN{$info_json}TI_END -->";
+		$comment = "\n\n<!-- TI_BEGIN{$info_json}TI_END -->";
+		$comment = str_replace( '\/', '/', $comment );
 		return $page_content . $comment;
 	}
 	/**

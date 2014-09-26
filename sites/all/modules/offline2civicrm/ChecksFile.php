@@ -104,7 +104,7 @@ abstract class ChecksFile {
     protected function parseRow( $data ) {
         $msg = array();
 
-        foreach ( $this->getFieldMapping() as $normal => $header ) {
+        foreach ( $this->getFieldMapping() as $header => $normal ) {
             if ( !empty( $data[$header] ) ) {
                 $msg[$normal] = $data[$header];
             }
@@ -148,43 +148,44 @@ abstract class ChecksFile {
      * message.  This is very specific to each upload source.
      */
     protected function mungeMessage( &$msg ) {
-        $contype = $msg['raw_contribution_type'];
-        switch ( $contype ) {
-            case "Merkle":
-                $msg['gateway'] = "merkle";
-                break;
+        if ( isset( $msg['raw_contribution_type'] ) ) {
+            $contype = $msg['raw_contribution_type'];
+            switch ( $contype ) {
+                case "Merkle":
+                    $msg['gateway'] = "merkle";
+                    break;
 
-            case "Arizona Lockbox":
-                $msg['gateway'] = "arizonalockbox";
-                break;
+                case "Arizona Lockbox":
+                    $msg['gateway'] = "arizonalockbox";
+                    break;
 
-            case "Cash":
-                $msg['contribution_type'] = "cash";
-                break;
+                case "Cash":
+                    $msg['contribution_type'] = "cash";
+                    break;
 
-            default:
-                throw new WmfException( 'INVALID_MESSAGE', "Contribution Type '$contype' is unknown whilst importing checks!" );
+                default:
+                    throw new WmfException( 'INVALID_MESSAGE', "Contribution Type '$contype' is unknown whilst importing checks!" );
+            }
         }
 
         if ( !empty( $msg['organization_name'] ) ) {
             $msg['contact_type'] = "Organization";
         }
 
-        // Check that the message amounts match
-        list($currency, $source_amount) = explode( ' ', $msg['contribution_source'] );
-        $msg['gross'] = floatval( trim( $msg['gross'], '$' ) );
+        $msg['gross'] = trim( $msg['gross'], '$' );
 
-        if ( abs( $source_amount - $msg['gross'] ) > .01 ) {
-            $pretty_msg = json_encode( $msg );
-            watchdog( 'offline2civicrm', "Amount mismatch in row: " . $pretty_msg, NULL, WATCHDOG_ERROR );
-            throw new WmfException( 'INVALID_MESSAGE', "Amount mismatch during checks import" );
+        if ( isset( $msg['contribution_source'] ) ) {
+            // Check that the message amounts match
+            list($currency, $source_amount) = explode( ' ', $msg['contribution_source'] );
+
+            if ( abs( $source_amount - $msg['gross'] ) > .01 ) {
+                $pretty_msg = json_encode( $msg );
+                watchdog( 'offline2civicrm', "Amount mismatch in row: " . $pretty_msg, NULL, WATCHDOG_ERROR );
+                throw new WmfException( 'INVALID_MESSAGE', "Amount mismatch during checks import" );
+            }
+
+            $msg['currency'] = $currency;
         }
-
-        $msg = array_merge( $msg, array(
-            'currency' => $currency,
-            'original_currency' => $currency,
-            'original_gross' => $msg['gross'],
-        ) );
 
         // left-pad the zipcode
         if ( $msg['country'] === 'US' ) {
@@ -227,45 +228,44 @@ abstract class ChecksFile {
             'contact_source' => 'check',
             'contact_type' => 'Individual',
             'country' => 'US',
-            'email' => 'nobody@wikimedia.org',
-            'gift_source' => 'Community Gift',
-            'restrictions' => 'Unrestricted - General',
         );
     }
 
     /**
      * Return column mappings
      *
-     * @return array of {normalized field name} => {spreadsheet column title}
+     * @return array of {spreadsheet column title} => {normalized field name}
      */
     protected function getFieldMapping() {
         return array(
-            'check_number' => 'Check Number',
-            'city' => 'City',
-            'contribution_source' => 'Source',
-            'country' => 'Country',
-            'date' => 'Received Date',
-            'direct_mail_appeal' => 'Direct Mail Appeal',
-            'email' => 'Email',
-            'first_name' => 'First Name',
-            'gift_source' => 'Gift Source',
-            'gross' => 'Total Amount',
-            'import_batch_number' => 'Batch',
-            'last_name' => 'Last Name',
-            'letter_code' => 'Letter Code',
-            'middle_name' => 'Middle Name',
-            'no_thank_you' => 'No Thank You',
-            'organization_name' => 'Organization Name',
-            'payment_method' => 'Payment Instrument',
-            'postal_code' => 'Postal Code',
-            'postmark_date' => 'Postmark Date',
-            'raw_contribution_type' => 'Contribution Type',
-            'restrictions' => 'Restrictions',
-            'state_province' => 'State',
-            'street_address' => 'Street Address',
-            'supplemental_address_1' => 'Additional Address 1',
-            'supplemental_address_2' => 'Additional Address 2',
-            'thankyou_date' => 'Thank You Letter Date',
+            'Additional Address 1' => 'supplemental_address_1',
+            'Additional Address 2' => 'supplemental_address_2',
+            'Batch' => 'import_batch_number',
+            'Check Number' => 'check_number',
+            'City' => 'city',
+            'Contribution Type' => 'raw_contribution_type',
+            'Country' => 'country',
+            'Direct Mail Appeal' => 'direct_mail_appeal',
+            'Email' => 'email',
+            'First Name' => 'first_name',
+            'Gift Source' => 'gift_source',
+            'Last Name' => 'last_name',
+            'Letter Code' => 'letter_code',
+            'Middle Name' => 'middle_name',
+            'No Thank You' => 'no_thank_you',
+            'Organization Name' => 'organization_name',
+            'Original Amount' => 'gross',
+            'Original Currency' => 'currency',
+            'Payment Instrument' => 'payment_method',
+            'Postal Code' => 'postal_code',
+            'Postmark Date' => 'postmark_date',
+            'Received Date' => 'date',
+            'Restrictions' => 'restrictions',
+            'Source' => 'contribution_source',
+            'State' => 'state_province',
+            'Street Address' => 'street_address',
+            'Thank You Letter Date' => 'thankyou_date',
+            'Total Amount' => 'gross',
         );
     }
 

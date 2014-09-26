@@ -3,76 +3,39 @@
 
 {% else %}
 <p>Cher donateur, chère donatrice,</p>
-{% endif %}
+{%endif%}
 
-<p>Merci pour votre inestimable don pour apporter la connaissance à chaque être humain, partout
-dans le monde.</p>
+<p>Merci pour votre don inestimable d'apporter la connaissance à chaque être humain, partout dans le monde.</p>
 
-{% if "RecurringRestarted" in contribution_tags %}<p> Nous avons récemment résolu un petit
-problème technique qui interrompait certains dons mensuels. Nous avons rétabli votre don mensuel,
-et il continuera désormais normalement. Nous ne vous facturerons pas pour les mois qui ont été
-sautés. Nous vous remercions de votre patience et de votre soutien, et vous prions de ne pas
-hésiter à contacter donate@wikimedia.org si vous avez des questions. </p>{% endif %}
+<p>{% if "RecurringRestarted" in contribution_tags %} Nous avons récemment résolu un petit problème technique qui interrompait certains dons mensuels. Nous avons rétabli votre don mensuel, et il continuera désormais normalement. Nous ne vous facturerons pas les mois qui ont été sautés. Nous vous remercions de votre patience et de votre soutien, et nous vous prions de ne pas hésiter à contacter donate@wikimedia.org si vous avez les moindres questions. {%endif%}</p>
 
-<p>Je m’appelle Lila Tretikov et je suis la directrice exécutive de la Fondation Wikimédia.
-L'année dernière, les dons comme le vôtre ont soutenu nos efforts pour développer
-l’encyclopédie en 287 langues et pour la rendre plus accessible dans le monde entier. Nous
-travaillons dur pour avoir un impact sur ceux qui n’auraient autrement pas accès à
-l’éducation. Nous apportons la connaissance à des personnes comme Akshaya Iyengar, de Solapur en
-Inde. Ayant grandi dans cette petite ville manufacturière de textile, elle a utilisé Wikipédia
-comme principale source d’apprentissage. Pour les étudiants dans ces régions, où les livres
-sont rares mais où existe un accès à l’Internet mobile, Wikipédia est essentiel. Akshaya est
-allée faire des études universitaires en Inde et travaille maintenant comme développeuse de
-logiciels aux États-Unis. Elle reconnaît que Wikipédia l'a aidée à acquérir la moité de ses
-connaissances.</p>
+<p>{% if "UnrecordedCharge" in contribution_tags %} Nous avons récemment résolu un problème technique ayant eu pour effet qu’un petit nombre de donateurs n’ont pas reçu de confirmation de leur don. Veuillez accepter ce courriel en remerciement pour votre don du {{ receive_date }}. Nous apprécions votre patience et votre soutien et n’hésitez pas à nous écrire à donate@wikimedia.org si vous avez des questions. {%endif%}</p>
 
-<p>Cette histoire n’est pas unique. Notre mission est importante et présente de grands défis. La
-plupart des personnes qui utilisent Wikipédia sont surprises d’apprendre qu’elle fonctionne
-grâce à une organisation à but non-lucratif et qu’elle est financée par des dons. Chaque
-année, il y a juste assez de dons pour que tout ce savoir continue d'être accessible à tout un
-chacun. Merci de rendre cette mission possible.</p>
+<p>Je m’appelle Lila Tretikov et je suis la directrice générale de la Fondation Wikimédia. Durant l'année dernière, les dons comme le vôtre ont soutenu nos efforts pour développer l’encyclopédie en 287 langues et pour la rendre plus accessible à travers le monde entier. Nous nous efferçons d'avoir de l'incidence sur ceux qui n’auraient autrement pas accès à l’éducation. Nous apportons la connaissance à des personnes comme Akshaya Iyengar, de Solapur en Inde. Ayant grandi dans cette petite ville manufacturière de textile, elle a utilisé Wikipédia comme principale source d’apprentissage. Pour les étudiants dans ces régions, où les livres sont rares mais où il existe un accès à l’Internet mobile, Wikipédia est essentiel. Akshaya est allée faire des études universitaires en Inde et travaille maintenant comme développeuse de logiciels aux États-Unis. Elle attribue à Wikipédia la moitié de ses connaissances actuelles.</p>
 
-<p>Au nom du demi-milliard de personnes qui lisent Wikipédia, des milliers de contributeurs
-bénévoles qui éditent Wikipédia et du personnel de la Fondation, je vous remercie pour votre
-aide à garder Wikipédia, cette année encore, en ligne et sans publicité.</p>
+<p>Cette histoire n’est pas unique. Notre mission est importante et présente de grands défis. La plupart des personnes qui utilisent Wikipédia sont surprises d’apprendre que Wikipedia est dirigé par une association sans but lucratif et est financé par vos dons. Chaque année, il y a juste assez de dons pour que tout ce savoir continue d'être accessible à tout un chacun. Merci de rendre cette mission possible.</p>
+
+<p>Au nom du demi-milliard de personnes qui utilisent Wikipédia, des milliers de contributeurs bénévoles qui éditent Wikipédia et du personnel de la Fondation, je vous remercie pour votre aide à garder Wikipédia, cette année encore, accessible en ligne et sans publicité.</p>
 
 <p>Merci,<br/>
 Lila</p>
 
-<p>Lila Tretikov,<br/>
+<p>Lila Tretikov<br/>
 Directrice exécutive,<br/>
-Fondation Wikimédia.<br/>
+Fondation Wikimédia<br/>
 <a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
-<p>Pour vos archives : votre don du {{ receive_date }}, numéro {{ transaction_id }}, était de {{
-(currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Pour vos archives : votre don du {{ receive_date }}, numéro {{ transaction_id }}, était de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Ce don fait partie d’un don régulier. Les dons mensualisés seront
-prélevés par la Fondation Wikimédia jusqu’à ce que vous nous demandiez d’arrêter. Si vous
-désirez arrêter les paiements, suivez simplement nos <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
-locale }}">instructions d’annulation</a>. </p>{% endif %}
+{% if recurring %}<p> Ce don fait partie d’un don régulier. Les dons mensualisés seront prélevés par la Fondation Wikimédia jusqu’à ce que vous nous demandiez d’arrêter. Si vous désirez arrêter les paiements, suivez simplement nos <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instructions d’annulation</a>. </p>{%endif%}
 
-<p>Cette lettre peut servir d’archive pour votre don. Aucun bien ou service n’a été fourni, en
-partie ou en totalité, en échange de ce don. La Fondation Wikimédia (enregistrée officiellement
-au nom de <i>Wikimedia Foundation, Inc.</i>) est une organisation à but non lucratif qui
-bénéficie du statut de déduction fiscale 501(c)(3) aux États-Unis. Notre adresse postale est 149
-New Montgomery, 3rd Floor, San Francisco, CA, 94105. Notre numéro de déduction fiscale aux
-États-Unis est : 20-0049703.</p>
+<p>Cette lettre peut servir d’archive pour votre don. Aucun bien ou service n’a été fourni, en partie ou en totalité, en échange de ce don. La Fondation Wikimédia (enregistrée officiellement au nom de <i>Wikimedia Foundation, Inc.</i>) est une organisation à but non lucratif qui bénéficie du statut de déduction fiscale 501(c)(3) aux États-Unis. Notre adresse postale est 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Notre numéro de déduction fiscale aux États-Unis est : 20-0049703.</p>
 
 <div style="border: 1px solid black; padding:0 10px 5px 10px;">
-  <p>Désabonnement :</p>
+  <p>Désabonnement :</p>
   <p><br/>
-En tant que donateur, nous aimerions vous tenir informé(e) de nos activités communautaires et de
-nos levées de fonds. Si vous préférez cependant ne pas recevoir de tels courriels de notre part,
-veuillez cliquer sur le lien ci-dessous pour que nous vous retirions de la liste.</p>
+En tant que donateur, nous aimerions vous tenir informé(e) de nos activités communautaires et de nos levées de fonds. Si vous préférez cependant ne pas recevoir de tels courriels de notre part, veuillez cliquer sur le lien ci-dessous pour que nous vous retirions de la liste.</p>
   <div style="margin: 0 25px">
     <p><a href="{{ unsubscribe_link | raw }}">Se désinscrire</a></p>
   </div>
-</div>
-
-<hr/>
-
-<p>Aidez-nous à <a
-href="https://meta.wikimedia.org/w/index.php?title=Special:Translate&group=page-Fundraising%2FTranslation%2FThank_you_email_20140606">traduire</a>
-ce courriel.</p>
+</div><!-- TI_BEGIN{"version":1,"sourceUrl":"https:\/\/meta.wikimedia.org\/w\/index.php?title=Fundraising\/Translation\/Thank_you_email_20140606\/fr&oldid=9822248","name":"thank_you.fr.html","revision":9822248}TI_END -->

@@ -15,5 +15,6 @@ files[] = ChecksImportLog.php
 files[] = CoinbaseFile.php
 files[] = ContributionConversion.php
 files[] = EmptyRowException.php
+files[] = ForeignChecksFile.php
 files[] = JpMorganFile.php
 files[] = PayPalChecksFile.php

@@ -84,18 +84,6 @@ function wmf_common_settings() {
     '#description'   => t('Comma-delimited (no spaces) list of donor email addresses that will never trigger failmail'),
   );
 
-  $twig_path = variable_get('wmf_common_twig_location', drupal_get_path('module', 'wmf_common') . DIRECTORY_SEPARATOR . "Twig");
-  $twig_installed = file_exists(implode(DIRECTORY_SEPARATOR, array($twig_path, 'lib', 'Twig', 'Autoloader.php')));
-  $twig_msg = $twig_installed ? '<span style="color:green;">Installed Correctly</span>' : '<span style="color:red;">Please install</span>';
-
-  $form['wmf_common_twig_location'] = array(
-    '#type'          => 'textfield',
-    '#title'         => t('Twig location'),
-    '#default_value' => $twig_path,
-    '#required'      => TRUE,
-    '#description'   => "{$twig_msg} " . t('Filesystem path of the Twig library.  Try: <code>git clone https://gerrit.wikimedia.org/r/wikimedia/fundraising/twig</code>'),
-  );
-
   $phpmailer_path = variable_get('wmf_common_phpmailer_location', drupal_get_path('module', 'wmf_common') . DIRECTORY_SEPARATOR . "PHPMailer");
   $phpmailer_installed = file_exists(implode(DIRECTORY_SEPARATOR, array($phpmailer_path, 'class.phpmailer.php')));
   $phpmailer_msg = $phpmailer_installed ? '<span style="color:green;">Installed Correctly</span>' : '<span style="color:red;">Please install.  Try: <code>git clone https://gerrit.wikimedia.org/r/wikimedia/fundraising/phpmailer</code></span>';

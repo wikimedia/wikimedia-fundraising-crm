@@ -101,6 +101,7 @@ function offline2civicrm_import_checks_form() {
     '#options' => array(
         'azl' => t( 'AZ Lockbox' ),
         'coinbase' => t( 'Coinbase Merchant Orders' ),
+        'foreign_checks' => t( 'Foreign Checks' ),
         'jpmorgan' => t( 'JP Morgan' ),
         'paypal' => t( 'PayPal EFT' ),
     ),
@@ -141,6 +142,9 @@ function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
         break;
       case 'jpmorgan':
         $importer = new JpMorganFile( $file->uri );
+        break;
+      case 'foreign_checks':
+        $importer = new ForeignChecksFile( $file->uri );
         break;
       default:
         throw new Exception( 'Bad file format selection' );
