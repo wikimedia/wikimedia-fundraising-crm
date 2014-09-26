@@ -17,6 +17,7 @@ class ForeignChecksFile extends ChecksFile {
             'Is Opt Out',
             'Last Name',
             'No Thank You',
+            'Notes',
             'Original Amount',
             'Original Currency',
             'Postal Code',

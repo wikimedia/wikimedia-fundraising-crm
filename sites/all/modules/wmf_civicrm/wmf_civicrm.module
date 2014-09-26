@@ -246,6 +246,14 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         wmf_civicrm_message_update_contribution_tracking( $msg, $contribution );
     }
 
+    if ( !empty( $msg['notes'] ) ) {
+        civicrm_api3( "Note", "Create", array(
+            'entity_table' => 'civicrm_contact',
+            'entity_id' => $msg['contact_id'],
+            'note' => $msg['notes'],
+        ) );
+    }
+
     return $contribution;
 }
 
