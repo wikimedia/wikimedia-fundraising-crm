@@ -3,36 +3,17 @@
 
 {% else %}
 <p>Querido(a) doador(a),</p>
-{% endif %}
+{%endif%}
 
-<p>Obrigado pela sua contribuição inestimável de levar conhecimento a todo ser humano ao redor do
-mundo.</p>
+<p>Obrigado pela sua contribuição inestimável de levar conhecimento a todo ser humano ao redor do mundo.</p>
 
-{% if "RecurringRestarted" in contribution_tags %}<p> Nós recentemente resolvemos um pequeno
-problema técnico que parou algumas doações mensais recorrentes. Nós já reintegramos a sua
-doação recorrente, e vamos processá-las normalmente daqui para frente. Não iremos cobrar-lhe os
-meses que foram ignorados. Obrigado por sua paciência e apoio, e não hesite em nos enviar e-mail:
-donate@wikimedia.org se você tiver quaisquer perguntas. </p>{% endif %}
+{% if "RecurringRestarted" in contribution_tags %}<p> Nós recentemente resolvemos um pequeno problema técnico que parou algumas doações mensais recorrentes. Nós já reintegramos a sua doação recorrente, e vamos processá-las normalmente daqui para frente. Não iremos cobrar-lhe os meses que foram ignorados. Obrigado por sua paciência e apoio, e não hesite em nos enviar e-mail: donate@wikimedia.org se você tiver quaisquer perguntas. </p>{%endif%}
 
-<p>Meu nome é Lila Tretikov, e eu sou a Diretora Executiva da Fundação Wikimedia. Durante o ano
-passado, doações como a sua alimentaram nossos esforços para expandir a enciclopédia em 287
-línguas e para torná-la mais acessível por todo o mundo. Nós nos esforçamos mais para impactar
-aqueles que não têm acesso à educação de outra forma. Trazemos conhecimento para pessoas como
-Akshaya Iyengar de Solânea, na Índia. Ao crescer nessa pequena cidade de fabricação têxtil, ela
-usou a Wikipédia como sua fonte primária de aprendizagem. Para os estudantes nessas áreas, onde
-os livros são escassos, mas o acesso à Internet móvel existe, a Wikipédia é instrumental.
-Akshaya seguiu até se graduar na faculdade na Índia e agora trabalha como engenheira de software
-nos Estados Unidos. Ela credita à Wikipédia o fornecimento de metade de seu conhecimento.</p>
+<p>Meu nome é Lila Tretikov, e eu sou a Diretora Executiva da Fundação Wikimedia. Durante o ano passado, doações como a sua alimentaram nossos esforços para expandir a enciclopédia em 287 línguas e para torná-la mais acessível por todo o mundo. Nós nos esforçamos mais para impactar aqueles que não têm acesso à educação de outra forma. Trazemos conhecimento para pessoas como Akshaya Iyengar de Solânea, na Índia. Ao crescer nessa pequena cidade de fabricação têxtil, ela usou a Wikipédia como sua fonte primária de aprendizagem. Para os estudantes nessas áreas, onde os livros são escassos, mas o acesso à Internet móvel existe, a Wikipédia é instrumental. Akshaya seguiu até se graduar na faculdade na Índia e agora trabalha como engenheira de software nos Estados Unidos. Ela credita à Wikipédia o fornecimento de metade de seu conhecimento.</p>
 
-<p>Essa história não é única. Nossa missão é sublime e apresenta grandes desafios. A maioria
-das pessoas que usam a Wikipédia ficam surpresos ao ouvir que ela é gerida por uma organização
-sem fins lucrativos e financiada por suas doações. A cada ano, apenas um número suficiente de
-pessoas doam para manter a soma de todo o conhecimento humano disponível para todos. Obrigado por
-tornar essa missão possível.</p>
+<p>Essa história não é única. Nossa missão é sublime e apresenta grandes desafios. A maioria das pessoas que usam a Wikipédia ficam surpresos ao ouvir que ela é gerida por uma organização sem fins lucrativos e financiada por suas doações. A cada ano, apenas um número suficiente de pessoas doam para manter a soma de todo o conhecimento humano disponível para todos. Obrigado por tornar essa missão possível.</p>
 
-<p>Em nome do meio bilhão de pessoas que leem a Wikipédia, milhares de editores voluntários, e
-dos funcionários da Fundação, eu agradeço-lhe por manter a Wikipédia online e livre de
-anúncios neste ano.</p>
+<p>Em nome do meio bilhão de pessoas que leem a Wikipédia, milhares de editores voluntários, e dos funcionários da Fundação, eu agradeço-lhe por manter a Wikipédia online e livre de anúncios neste ano.</p>
 
 <p>Obrigada,<br/>
 Lila</p>
@@ -42,32 +23,19 @@ Diretora Executiva,<br/>
 Fundação Wikimedia<br/>
 <a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
-<p>Para seu registro: Sua doação, número {{ transaction_id }} em {{ receive_date }} foi de {{
-(currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Para seu registro: Sua doação, número {{ transaction_id }} em {{ receive_date }} foi de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Esta doação faz parte de uma assinatura recorrente. Os pagamentos mensais
-serão debitados pela Fundação Wikimedia até que você nos avise para parar. Se você desejar
-cancelar os pagamentos, por favor consulte nossas <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
-locale }}">instruções de cancelamento fácil</a>. </p>{% endif %}
+{% if recurring %}<p> Esta doação faz parte de uma assinatura recorrente. Os pagamentos mensais serão debitados pela Fundação Wikimedia até que você nos avise para parar. Se você desejar cancelar os pagamentos, por favor consulte nossas <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instruções de cancelamento fácil</a>. </p>{%endif%}
 
-<p>Esta carta pode servir como um registro de sua doação. Nenhum bem ou serviços foram providos,
-no todo ou em parte, por essa contribuição. A Fundação Wikimedia Ltda. é uma empresa de
-caridade sem fins lucrativos com isenção de impostos 501(c)(3) nos Estados Unidos. Nosso endereço
-é 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Número de isenção fiscal dos EUA:
-20-0049703.</p>
+<p>Esta carta pode servir como um registro de sua doação. Nenhum bem ou serviços foram providos, no todo ou em parte, por essa contribuição. A Fundação Wikimedia Ltda. é uma empresa de caridade sem fins lucrativos com isenção de impostos 501(c)(3) nos Estados Unidos. Nosso endereço é 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Número de isenção fiscal dos EUA: 20-0049703.</p>
 
 <div style="border: 1px solid black; padding:0 10px 5px 10px;">
   <p>Opção para sair:</p>
   <p><br/>
-Nós gostaríamos de manter você como um(a) doador(a) informado(a) sobre nossas atividades
-comunitárias e campanhas de arrecadação de fundos. Se você preferir, no entanto, não receber
-esses e-mails de nós, por favor clique abaixo e nós tiraremos você da lista.</p>
+Nós gostaríamos de manter você como um(a) doador(a) informado(a) sobre nossas atividades comunitárias e campanhas de arrecadação de fundos. Se você preferir, no entanto, não receber esses e-mails de nós, por favor clique abaixo e nós tiraremos você da lista.</p>
   <div style="margin: 0 25px">
     <p><a href="{{ unsubscribe_link | raw }}">Descadastrar</a></p>
   </div>
 </div>
 
-<p>Por favor, ajude-nos a <a
-href="https://meta.wikimedia.org/w/index.php?title=Special:Translate&group=page-Fundraising%2FTranslation%2FThank_you_email_20140606">traduzir</a>
-este email.</p>
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/pt-br&oldid=9363681","name":"thank_you.pt-br.html","revision":9363681}TI_END -->

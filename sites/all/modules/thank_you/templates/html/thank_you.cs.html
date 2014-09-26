@@ -3,34 +3,17 @@
 
 {% else %}
 <p>Vážená dárkyně, vážený dárče,</p>
-{% endif %}
+{%endif%}
 
 <p>Děkuji Vám za Váš neocenitelný dar šíření vědomostí všem lidem po celém světě.</p>
 
-{% if "RecurringRestarted" in contribution_tags %}<p> Nedávno jsme odstranili malý technický
-problém, který pozastavil vaše pravidelné měsíční dary. Vaše opakované dary jsou znovu
-obnoveny a budou již nadále zpracovány normálně. Nebudeme Vám účtovat za měsíce, které
-byly vynechány. Děkujeme Vám za vaši trpělivost a podporu. Pokud máte jakékoliv dotaz, tak
-neváhejte napsat na donate@wikimedia.org. </p>{% endif %}
+{% if "RecurringRestarted" in contribution_tags %}<p> Nedávno jsme odstranili malý technický problém, který pozastavil vaše pravidelné měsíční dary. Vaše opakované dary jsou znovu obnoveny a budou již nadále zpracovány normálně. Nebudeme Vám účtovat za měsíce, které byly vynechány. Děkujeme Vám za vaši trpělivost a podporu. Pokud máte jakékoliv dotaz, tak neváhejte napsat na donate@wikimedia.org. </p>{%endif%}
 
-<p>Jmenuji se Lila Tretikovová a jsem výkonnou ředitelkou nadace Wikimedia. V průběhu minulého
-roku poháněly dary, jako je ten Váš, naše úsilí rozšiřovat naši encyklopedii v 287
-jazycích a více ji zpřístupnit po celém světě. Nejvíce usilujeme o dosažení těch, kteří
-by se jinak ke vzdělání nedostali. Přinášíme vědomosti lidem jako Akshaya Iyengarová z
-indického Solapuru. Když vyrůstala v tomto malém městě žijícím z textilního průmyslu,
-používala Wikipedii jako hlavní výukový zdroj. Pro studenty v těchto oblastech, kde jsou knihy
-vzácné, ale je k dispozici mobilní přístup k internetu, je Wikipedie zásadní. Akshaya
-později získala v Indii vysokoškolský titul a nyní pracuje ve Spojených státech jako
-softwarová inženýrka. Wikipedii připisuje polovinu svých vědomostí.</p>
+<p>Jmenuji se Lila Tretikovová a jsem výkonnou ředitelkou nadace Wikimedia. V průběhu minulého roku poháněly dary, jako je ten Váš, naše úsilí rozšiřovat naši encyklopedii v 287 jazycích a více ji zpřístupnit po celém světě. Nejvíce usilujeme o dosažení těch, kteří by se jinak ke vzdělání nedostali. Přinášíme vědomosti lidem jako Akshaya Iyengarová z indického Solapuru. Když vyrůstala v tomto malém městě žijícím z textilního průmyslu, používala Wikipedii jako hlavní výukový zdroj. Pro studenty v těchto oblastech, kde jsou knihy vzácné, ale je k dispozici mobilní přístup k internetu, je Wikipedie zásadní. Akshaya později získala v Indii vysokoškolský titul a nyní pracuje ve Spojených státech jako softwarová inženýrka. Wikipedii připisuje polovinu svých vědomostí.</p>
 
-<p>Tento příběh není výjimečný. Naše mise je vznešená a představuje veliké výzvy.
-Většina lidí, kteří používají Wikipedii, je překvapena, když se dozví, že je
-provozována neziskovou organizací a financována z vašich darů. Každý rok lidé přispívají,
-abychom uchovali veškeré lidské znalosti dostupné všem. Děkujeme, že umožňujete naplňovat
-tuto misi.</p>
+<p>Tento příběh není výjimečný. Naše mise je vznešená a představuje veliké výzvy. Většina lidí, kteří používají Wikipedii, je překvapena, když se dozví, že je provozována neziskovou organizací a financována z vašich darů. Každý rok lidé přispívají, abychom uchovali veškeré lidské znalosti dostupné všem. Děkujeme, že umožňujete naplňovat tuto misi.</p>
 
-<p>Jménem půl miliardy čtenářů Wikipedie, tisíců dobrovolných editorů a zaměstnanců
-nadace Vám děkuji, že tento rok uchováváte Wikipedii v provozu a bez reklam.</p>
+<p>Jménem půl miliardy čtenářů Wikipedie, tisíců dobrovolných editorů a zaměstnanců nadace Vám děkuji, že tento rok uchováváte Wikipedii v provozu a bez reklam.</p>
 
 <p>Děkuji Vám,<br/>
 Lila</p>
@@ -40,34 +23,19 @@ výkonná ředitelka,<br/>
 Nadace Wikimedia<br/>
 <a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
 
-<p>Pro vaše záznamy: Váš příspěvek číslo {{ transaction_id }} ze dne {{ receive_date }} byl
-{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Pro vaše záznamy: Váš příspěvek číslo {{ transaction_id }} ze dne {{ receive_date }} byl {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Tento dar je součástí pravidelně opakovaných příspěvků. Měsíční
-platby budou inkasovány nadací Wikimedia tak dlouho, dokud nepožádáte o jejich zastavení.
-Nechcete-li již nadále přispívat, přečtěte si <a
-href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{
-locale }}">jednoduché instrukce pro zrušení</a>. </p>{% endif %}
+{% if recurring %}<p> Tento dar je součástí pravidelně opakovaných příspěvků. Měsíční platby budou inkasovány nadací Wikimedia tak dlouho, dokud nepožádáte o jejich zastavení. Nechcete-li již nadále přispívat, přečtěte si <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">jednoduché instrukce pro zrušení</a>. </p>{%endif%}
 
-<p>Tento dopis může sloužit jako záznam o Vašem daru. Za tento příspěvek nebylo poskytnuto
-žádné zboží ani služby, úplně ani částečně. Nadace Wikimedia je nezisková charitativní
-organizace, ve Spojených státech amerických osvobozená od daně podle paragrafu 501(c)(3). Naše
-adresa je 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105, USA. Číslo amerického
-osvobození od daně: 20-0049703</p>
+<p>Tento dopis může sloužit jako záznam o Vašem daru. Za tento příspěvek nebylo poskytnuto žádné zboží ani služby, úplně ani částečně. Nadace Wikimedia je nezisková charitativní organizace, ve Spojených státech amerických osvobozená od daně podle paragrafu 501(c)(3). Naše adresa je 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105, USA. Číslo amerického osvobození od daně: 20-0049703</p>
 
 <div style="border: 1px solid black; padding:0 10px 5px 10px;">
   <p>Odhlášení:</p>
   <p><br/>
-Rádi bychom Vás jakožto dárce informovali o aktivitách naší komunity a dalších sbírkách.
-Pokud si ale takové zprávy nepřejete dostávat, klikněte, prosím, na odkaz níže a my Vás ze
-seznamu příjemců vymažeme.</p>
+Rádi bychom Vás jakožto dárce informovali o aktivitách naší komunity a dalších sbírkách. Pokud si ale takové zprávy nepřejete dostávat, klikněte, prosím, na odkaz níže a my Vás ze seznamu příjemců vymažeme.</p>
   <div style="margin: 0 25px">
     <p><a href="{{ unsubscribe_link | raw }}">Odhlásit</a></p>
   </div>
 </div>
 
-<hr/>
-
-<p>Pomozte nám s <a
-href="https://meta.wikimedia.org/w/index.php?title=Special:Translate&group=page-Fundraising%2FTranslation%2FThank_you_email_20140606">překladem</a>
-této zprávy.</p>
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/cs&oldid=9363649","name":"thank_you.cs.html","revision":9363649}TI_END -->
