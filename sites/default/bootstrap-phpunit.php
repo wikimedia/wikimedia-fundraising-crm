@@ -12,3 +12,6 @@ drupal_bootstrap( DRUPAL_BOOTSTRAP_FULL );
 
 // Drupal just usurped PHPUnit's error handler.  Kick it off the throne.
 restore_error_handler();
+
+// Load contrib libs so tests can inherit from them.
+require_once( '../vendor/autoload.php' );
