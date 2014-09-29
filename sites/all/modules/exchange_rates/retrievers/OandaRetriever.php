@@ -49,13 +49,19 @@ class OandaRetriever extends ExchangeRateRetriever {
 			)
 		);
 		if ( $response->code != 200 ) {
-			throw new ExchangeRateUpdateException( "OANDA API endpoint returned code {$response->code}" );
+			$msg = "OANDA API endpoint returned code {$response->code} for request URL $url.";
+			if ( property_exists( $response, 'data' ) ) {
+				$msg .= "  Full response data: {$response->data}";
+			}
+			throw new ExchangeRateUpdateException( $msg );
 		}
 		$result = new ExchangeRateUpdateResult();
 		if ( array_key_exists( 'x-rate-limit-remaining', $response->headers ) ) {
 			$remaining = $response->headers['x-rate-limit-remaining'];
 			if ( is_numeric( $remaining ) ) {
 				$result->quotesRemaining = (int) $remaining;
+			} else {
+				watchdog( 'exchange-rates', "Got weird x-rate-limit-remaining header: '$remaining'" );
 			}
 		}
 		$json = json_decode( $response->data );

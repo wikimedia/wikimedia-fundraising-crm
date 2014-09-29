@@ -1,17 +1,23 @@
 <?php
 
 class ForeignChecksFile extends ChecksFile {
-    function getRequiredColumns() {
+    protected function getRequiredColumns() {
         return array(
             'Check Number',
             'City',
             'Country',
             'Direct Mail Appeal',
+            'Do Not Email',
+            'Do Not Mail',
+            'Do Not Phone',
+            'Do Not SMS',
             'Email',
             'First Name',
             'Gift Source',
+            'Is Opt Out',
             'Last Name',
             'No Thank You',
+            'Notes',
             'Original Amount',
             'Original Currency',
             'Postal Code',
@@ -22,12 +28,18 @@ class ForeignChecksFile extends ChecksFile {
         );
     }
 
-    function getRequiredFields() {
+    protected function getRequiredFields() {
         return array(
             'check_number',
             'date',
             'currency',
             'gross',
         );
+    }
+
+    protected function mungeMessage( &$msg ) {
+        $msg['gateway'] = 'check';
+
+        parent::mungeMessage( $msg );
     }
 }
