@@ -382,7 +382,7 @@ function exchange_rates_update_all( $date = null ) {
 	$oanda_key = variable_get( 'exchange_rates_key_oanda', '' );
 	$oanda_quote = variable_get( 'exchange_rates_quote_oanda', 'bid' );
 	if ( $oanda_key === '' ) {
-		watchdog( 'exchange_rates', 'OANDA API key not set!  Will fall back to ECB', array(), WATCHDOG_ERROR );
+		wmf_common_failmail( 'exchange_rates', 'OANDA API key not set!  Will fall back to ECB' );
 	} else {
 		$retrievers[] = new OandaRetriever( 'drupal_http_request', $oanda_key, $oanda_quote );
 	}
@@ -395,11 +395,11 @@ function exchange_rates_update_all( $date = null ) {
 			$result = $retriever->updateRates( $currencies, $date );
 			break;
 		} catch ( ExchangeRateUpdateException $ex) {
-			watchdog( 'exchange_rates', $ex );
+			wmf_common_failmail( 'exchange_rates', $ex );
 		}
 	}
 	if ( $result === null ) {
-		watchdog( 'exchange_rates', 'Could not update exchange rates from any provider!' );
+		wmf_common_failmail( 'exchange_rates', 'Could not update exchange rates from any provider!' );
 		return;
 	}
 
