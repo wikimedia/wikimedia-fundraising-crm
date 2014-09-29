@@ -30,13 +30,10 @@ class OandaRetriever extends ExchangeRateRetriever {
 	}
 
 	public function updateRates( $currencies ) {
-		$params = array(
-			'fields' => $this->fields,
-			'decimal_places' => 'all',
-		);
 		$url = $this->endpoint .
-			'/v1/rates/USD.json?' .
-			http_build_query( $params ) .
+			'/v1/rates/USD.json' .
+			'?fields=' . $this->fields .
+			'&decimal_places=all' .
 			'&quote=' . implode ( '&quote=', $currencies );
 
 		$response = call_user_func(
