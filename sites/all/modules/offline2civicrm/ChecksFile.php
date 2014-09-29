@@ -258,6 +258,7 @@ abstract class ChecksFile {
             'Letter Code' => 'letter_code',
             'Middle Name' => 'middle_name',
             'No Thank You' => 'no_thank_you',
+            'Notes' => 'notes',
             'Organization Name' => 'organization_name',
             'Original Amount' => 'gross',
             'Original Currency' => 'currency',
