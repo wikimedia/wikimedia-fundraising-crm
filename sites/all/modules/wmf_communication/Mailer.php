@@ -1,6 +1,7 @@
 <?php namespace wmf_communication;
 
 use Html2Text\Html2Text;
+use PHPMailer;
 
 /**
  * Must be implemented by every mailing engine
@@ -134,16 +135,6 @@ abstract class MailerBase {
  * Use the PHPMailer engine
  */
 class MailerPHPMailer extends MailerBase implements IMailer {
-    function __construct() {
-        $path = implode(DIRECTORY_SEPARATOR, array(variable_get('wmf_common_phpmailer_location', ''), 'class.phpmailer.php'));
-        watchdog( 'wmf_communication',
-            "Loading PHPMailer class from :path",
-            array( ':path' => $path ),
-            WATCHDOG_INFO
-        );
-        require_once( $path );
-    }
-
     function send( $email, $headers = array() ) {
         watchdog( 'wmf_communication',
             "Sending an email to :to_address, using PHPMailer",
@@ -151,7 +142,7 @@ class MailerPHPMailer extends MailerBase implements IMailer {
             WATCHDOG_DEBUG
         );
 
-        $mailer = new \PHPMailer( true );
+        $mailer = new PHPMailer( true );
 
         $mailer->set( 'CharSet', 'utf-8' );
         $mailer->Encoding = 'quoted-printable';
