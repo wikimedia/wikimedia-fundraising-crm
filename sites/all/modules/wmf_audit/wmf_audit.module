@@ -1119,7 +1119,7 @@ function wmf_audit_get_contribution_tracking_data($record) {
 
     $ret = array();
     foreach ($keep as $thing) {
-      $ret = $result[$thing];
+      $ret[$thing] = $result[$thing];
     }
 
     //and then, so we can double-check ourselves on the outside...
