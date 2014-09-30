@@ -21,9 +21,10 @@ abstract class ExchangeRateRetriever {
 	/**
 	 * Retrieve updated rates using $this->httpRequester
 	 * @param array $currencies - list of currency codes to update
+	 * @param DateTime $date - retrieve rates for this date.  If omitted, get latest rates.
 	 * @return ExchangeRateUpdateResult
 	 */
-	abstract function updateRates( $currencies );
+	abstract function updateRates( $currencies, $date = null );
 }
 
 class ExchangeRateUpdateResult {

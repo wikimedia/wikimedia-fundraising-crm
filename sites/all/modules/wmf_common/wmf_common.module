@@ -84,18 +84,6 @@ function wmf_common_settings() {
     '#description'   => t('Comma-delimited (no spaces) list of donor email addresses that will never trigger failmail'),
   );
 
-  $phpmailer_path = variable_get('wmf_common_phpmailer_location', drupal_get_path('module', 'wmf_common') . DIRECTORY_SEPARATOR . "PHPMailer");
-  $phpmailer_installed = file_exists(implode(DIRECTORY_SEPARATOR, array($phpmailer_path, 'class.phpmailer.php')));
-  $phpmailer_msg = $phpmailer_installed ? '<span style="color:green;">Installed Correctly</span>' : '<span style="color:red;">Please install.  Try: <code>git clone https://gerrit.wikimedia.org/r/wikimedia/fundraising/phpmailer</code></span>';
-
-  $form['wmf_common_phpmailer_location'] = array(
-    '#type'          => 'textfield',
-    '#title'         => t('PHPMailer location'),
-    '#default_value' => $phpmailer_path,
-    '#required'      => TRUE,
-    '#description'   => "{$phpmailer_msg} " . t('Filesystem path of the PHPMailer library.'),
-  );
-
   $di_path = variable_get('wmf_common_di_location', null);
   $di_installed = file_exists(implode(DIRECTORY_SEPARATOR, array($di_path, 'gateway_common', 'interface.i18n.php')));
   $di_msg = $di_installed ? '<span style="color:green;">Installed Correctly</span>' : '<span style="color:red;">Please install</span>';

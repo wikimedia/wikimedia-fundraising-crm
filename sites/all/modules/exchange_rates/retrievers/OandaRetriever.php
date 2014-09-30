@@ -29,15 +29,15 @@ class OandaRetriever extends ExchangeRateRetriever {
 		$this->fields = $quoteFields[$quote];
 	}
 
-	public function updateRates( $currencies ) {
-		$params = array(
-			'fields' => $this->fields,
-			'decimal_places' => 'all',
-		);
+	public function updateRates( $currencies, $date = null ) {
 		$url = $this->endpoint .
-			'/v1/rates/USD.json?' .
-			http_build_query( $params ) .
+			'/v1/rates/USD.json' .
+			'?fields=' . $this->fields .
+			'&decimal_places=all' .
 			'&quote=' . implode ( '&quote=', $currencies );
+		if ( $date ) {
+			$url .= '&date=' . $date->format( 'Y-m-d' );
+		}
 
 		$response = call_user_func(
 			$this->httpRequester,

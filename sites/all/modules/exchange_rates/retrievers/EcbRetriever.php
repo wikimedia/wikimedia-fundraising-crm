@@ -3,7 +3,11 @@ namespace exchange_rates;
 
 class EcbRetriever extends ExchangeRateRetriever {
 
-	public function updateRates( $currencies ) {
+	public function updateRates( $currencies, $date = null ) {
+		if ( $date !== null ) {
+			throw new ExchangeRateUpdateException( 'ECB does not provide historical exchange rates' );
+		}
+
 		$url = 'http://www.ecb.int/stats/eurofxref/eurofxref-daily.xml';
 
 		// Retrieve and parse the XML results

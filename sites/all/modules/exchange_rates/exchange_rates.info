@@ -2,6 +2,7 @@ name = Exchange Rates
 description = Downloads exchange rates and converts currencies.
 core = 7.x
 version = 2.x-dev
+dependencies[] = wmf_common
 dependencies[] = wmf_communication
 files[] = retrievers/EcbRetriever.php
 files[] = retrievers/ExchangeRateRetriever.php
