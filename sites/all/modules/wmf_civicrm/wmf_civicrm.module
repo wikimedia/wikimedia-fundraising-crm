@@ -1904,3 +1904,85 @@ function wmf_civicrm_janky_split_name( $full_name ) {
     }
     return $names;
 }
+
+/**
+ * Recalculates USD amounts of contributions between $start and $end
+ * based on exchange rates in our database.  Useful if you spent three months
+ * not retrieving the latest exchange rates.
+ *
+ * @param DateTime $start the date from which to start recalculation
+ * @param DateTime $end the cutoff date
+ * @param int $batch_size number of contributions to recalculate at once
+ */
+function wmf_civicrm_recalculate_contributions( $start, $end, $batch_size = 1000 ) {
+	$api = civicrm_api_classapi();
+	$query = "SELECT c.id, c.receive_date, c.total_amount, c.fee_amount,
+c.net_amount, e.original_amount, e.original_currency
+FROM civicrm_contribution c
+JOIN wmf_contribution_extra e on e.entity_id = c.id
+WHERE c.receive_date > %1
+AND c.receive_date <= %2
+AND c.id > %3
+AND e.original_currency <> 'USD'
+ORDER BY c.id ASC
+LIMIT %4";
+	$last_id = 0;
+	while ( true ) {
+		$dao = CRM_Core_DAO::executeQuery( $query, array(
+			1 => array( $start->format( 'Ymd' ), 'Date' ),
+			2 => array( $end->format( 'Ymd' ), 'Date' ),
+			3 => array( $last_id, 'Integer' ),
+			4 => array( $batch_size, 'Integer' )
+		) );
+		$batch = wmf_civicrm_dao_to_list( $dao );
+		if ( empty( $batch ) ) {
+			break;
+		}
+
+		foreach ( $batch as $contribution ) {
+			$id = $contribution['id'];
+			$original_amount = $contribution['original_amount'];
+			$currency = $contribution['original_currency'];
+			$total_amount = $contribution['total_amount'];
+
+			if ( $id > $last_id ) {
+				$last_id = $id;
+			}
+
+			if ( $original_amount == 0 || $total_amount == 0 ) {
+				watchdog( 'recalculate_contributions', "Not recalculating contribution $id with zero original or total amount", null, WATCHDOG_DEBUG );
+				continue;
+			}
+			// Approximate rate we originally used so we can correct the fee & net.
+			$rate_used = $total_amount / $original_amount;
+			$correct_rate = exchange_rate_convert( $currency, 1, $contribution['receive_date'] );
+
+			$recalculated_total = round( $correct_rate * $original_amount, 2 );
+			$recalculated_fee = round( $contribution['fee_amount'] / $rate_used * $correct_rate, 2 );
+			$recalculated_net = $recalculated_total - $recalculated_fee;
+
+			$params = array(
+				'id' => $contribution['id'],
+				'total_amount' => $recalculated_total,
+				'fee_amount' => $recalculated_fee,
+				'net_amount' => $recalculated_net
+			);
+
+			watchdog(
+				'recalculate_contributions',
+				"Recalculating contribution $id, received on {$contribution['receive_date']}. " .
+				"Original_amount: $original_amount, original_currency: $currency, " .
+				"old total_amount: $total_amount, old fee_amount: {$contribution['fee_amount']}, " .
+				"old net_amount: {$contribution['net_amount']}.  " .
+				"New total_amount: $recalculated_total, new fee_amount: $recalculated_fee, " .
+				"new net_amount: $recalculated_net.",
+				null,
+				WATCHDOG_DEBUG
+			);
+
+			if ( !$api->Contribution->Create( $params ) ) {
+				throw new WmfException( 'recalculate_contributions', "Failed to update USD amount of contribution: $id, " . db_error() );
+			}
+		}
+	}
+}
