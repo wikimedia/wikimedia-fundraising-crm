@@ -25,7 +25,7 @@ function wmf_civicrm_drush_command() {
 function wmf_civicrm_drush_help( $section ) {
 	switch ( $section ) {
 	case 'drush:wmf-recalculate-contributions':
-		return dt( 'Recalculates USD amounts of non-USD contributions over a given range.  --start and --end parameters take a date in YYYYmmDD format.');
+		return dt( 'Recalculates USD amounts of non-USD contributions over a given range.  Requires two arguments, start and end dates in YYYY-MM-DD format.');
 	}
 }
 
