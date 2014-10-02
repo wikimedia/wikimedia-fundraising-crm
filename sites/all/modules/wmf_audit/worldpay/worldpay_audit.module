@@ -437,7 +437,7 @@ function worldpay_audit_normalize_and_merge_data($xml_data, $recon_data) {
   //first, normalize the $xml_data
   $nodemap = array(
     'OrderNumber' => 'gateway_txn_id',
-    'Amount' => 'original_gross',
+    'Amount' => 'gross',
     'REMOTE_ADDR' => 'user_ip',
     'FirstName' => 'fname',
     'LastName' => 'lname',
@@ -476,7 +476,7 @@ function worldpay_audit_normalize_and_merge_data($xml_data, $recon_data) {
   //Check between the two sets... normal => recon
   $cross_check = array(
     'currency' => 'currency',
-    'original_gross' => 'gross',
+    'gross' => 'gross',
   );
 
   foreach ($cross_check as $check1 => $check2) {
@@ -484,7 +484,7 @@ function worldpay_audit_normalize_and_merge_data($xml_data, $recon_data) {
       if (is_numeric($normal[$check1])) {
         //I actually hate everything.
         //Floatval all by itself doesn't do the job, even if I turn the !== into !=.
-        //"Data mismatch between normal original_gross (5) and recon gross (5)."
+        //"Data mismatch between normal gross (5) and recon gross (5)."
         $normal[$check1] = (string) floatval($normal[$check1]);
         $recon_data[$check2] = (string) floatval($recon_data[$check2]);
       }

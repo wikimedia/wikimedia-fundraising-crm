@@ -372,7 +372,11 @@ function wmf_audit_log_hunt_and_send($missing_by_date) {
     }
     $log = false;
     if (!empty($display_dates)) {
-      wmf_audit_echo("Checking log $log_date for missing transactions that came in with the following dates: " . print_r($display_dates, true));
+      $message = "Checking log $log_date for missing transactions that came in with the following dates: ";
+      foreach ($display_dates as $display_date => $local_count) {
+        $message .= "\n\t$display_date : $local_count";
+      }
+      wmf_audit_echo($message);
 
       //now actually check the log from $log_date, for the missing transactions in $tryme
       // Get the prepped log with the current date, returning false if it's not there.
@@ -384,7 +388,7 @@ function wmf_audit_log_hunt_and_send($missing_by_date) {
       //Echochar with results for each one.
       foreach ($tryme as $date => $missing) {
         if (!empty($missing)) {
-          wmf_audit_echo("Log Date: $log_date: About to check " . count($missing) . " missing transactions from $date");
+          wmf_audit_echo("Log Date: $log_date: About to check " . count($missing) . " missing transactions from $date", true);
           $checked = 0;
           $found = 0;
           foreach ($missing as $id => $transaction) {
@@ -434,7 +438,7 @@ function wmf_audit_log_hunt_and_send($missing_by_date) {
                 //Now that we've made it this far: Easy check to make sure we're even looking at the right thing...
                 //I'm not totally sure this is going to be the right thing to do, though. Intended fragility.
                 if ((!wmf_audit_runtime_options('fakedb')) &&
-                  (!is_null($contribution_tracking_data['utm_payment_method'])) &&
+                  (!empty($contribution_tracking_data['utm_payment_method'])) &&
                   ($contribution_tracking_data['utm_payment_method'] !== $all_data['payment_method'])) {
 
                   $message = 'Payment method mismatch between utm tracking data(' . $contribution_tracking_data['utm_payment_method'];
@@ -445,10 +449,11 @@ function wmf_audit_log_hunt_and_send($missing_by_date) {
                   );
                 } else {
                   unset($contribution_tracking_data['utm_payment_method']);
-                  // On the next line, the date field from contribution_tracking will win, which we totally want.
+                  // On the next line, the date field from all_data will win, which we totally want.
+                  // I had thought we'd prefer the contribution tracking date, but that's just silly.
                   // However, I'd just like to point out that it would be terribly enlightening for some gateways to log the difference...
                   // ...but not inside the char block, because it'll break the pretty.
-                  $all_data = array_merge($all_data, $contribution_tracking_data);
+                  $all_data = array_merge($contribution_tracking_data, $all_data);
                 }
 
                 if (!$error) {
@@ -587,7 +592,7 @@ function wmf_audit_get_log_by_date($date) {
   }
 
   //this happens if the archive file doesn't exist. Definitely not the end of the world, but we should probably log about it.
-  wmf_audit_log_error("Archive file $full_archive_path seems not to exist", 'MISSING_PAYMENTS_LOG');
+  wmf_audit_log_error("Archive file $full_archive_path seems not to exist\n", 'MISSING_PAYMENTS_LOG');
   return false;
 }
 
@@ -1218,8 +1223,33 @@ function wmf_audit_send_stomp($body, $type) {
     throw new Exception(__FUNCTION__ . ": Unhandled message type '$type'");
   }
 
-  $headers = array();
+  $headers = array(
+    'gateway' => $body['gateway'],
+  );
+
+  if ($type != 'negative') {
+    $headers['correlation-id'] = $body['gateway'] . '-' . $body['gateway_txn_id'];
+    $headers['php-message-class'] = 'SmashPig\CrmLink\Messages\DonationInterfaceMessage';
+    $headers['payment_method'] = $body['payment_method'];
+  }
+
   wmf_common_set_message_source($headers, 'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor');
+
+  $rekey = array(
+    'first_name' => 'fname',
+    'last_name' => 'lname',
+    'street_address' => 'street',
+    'state_province' => 'state',
+    'postal_code' => 'zip',
+    'currency' => 'currency_code',
+  );
+
+  foreach ($rekey as $new => $old) {
+    if (array_key_exists($old, $body)) {
+      $body[$new] = $body[$old];
+      //don't unset; It's okay.
+    }
+  }
 
   return $q->enqueue(json_encode($body), $headers, $types[$type]);
 }
