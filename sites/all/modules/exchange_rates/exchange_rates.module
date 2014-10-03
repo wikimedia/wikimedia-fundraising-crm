@@ -430,9 +430,9 @@ function exchange_rates_update_rate($currency, $value_in_usd, $bank_update) {
   ) )->execute();
 }
 
-function exchange_rates_backfill( $start, $end ) {
+function exchange_rates_backfill( $start, $end, $recalculate ) {
 	if ( $start == null ) {
-		$start_timestamp = db_query_range('SELECT MAX(bank_update) FROM {exchange_rates}', 0, 1 )->fetchField();
+		$start_timestamp = db_query_range( 'SELECT MAX(bank_update) FROM {exchange_rates}', 0, 1 )->fetchField();
 		if ( !start_timestamp ) {
 			throw new ExchangeRatesException( 'Backfill start date not specified and no records in database' );
 		}
@@ -441,9 +441,14 @@ function exchange_rates_backfill( $start, $end ) {
 	}
 	if ( $end == null ) {
 		$end = new DateTime( 'now', new DateTimeZone( 'UTC' ) );
+		watchdog( 'exchange_rates', "Backfill end date not specified - using today ({$end->format( 'Y-m-d' )})" );
 	}
 	for ( $date = $start; $date <= $end; $date->add( new DateInterval( 'P1D' ) ) ) {
 		exchange_rates_update_all( $date );
+	}
+
+	if ( $recalculate ) {
+		wmf_civicrm_recalculate_contributions( $start, $end );
 	}
 }
 
