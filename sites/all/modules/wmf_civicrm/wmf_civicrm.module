@@ -232,6 +232,14 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
     $initial_recurring = ( $msg['recurring'] && !$msg['contribution_recur_id'] );
     if ( $initial_recurring ) {
         watchdog( 'queue2civicrm_import', 'Attempting to insert new recurring subscription: ' . $msg['subscr_id'], NULL, WATCHDOG_INFO );
+
+        // FIXME: level across processors
+        if ( $msg['gateway'] === 'globalcollect' ) {
+            if ( false === strpos( $msg['subscr_id'], 'RECURRING GLOBALCOLLECT' ) ) {
+                $msg['subscr_id'] = "RECURRING GLOBALCOLLECT {$msg['subscr_id']}";
+            }
+        }
+
         wmf_civicrm_message_contribution_recur_insert( $msg, $contact['id'], $msg['subscr_id'] );
         $recur_record = wmf_civicrm_get_gateway_subscription( $msg['gateway'], $msg['subscr_id'] );
         $msg['contribution_recur_id'] = $recur_record->id;
