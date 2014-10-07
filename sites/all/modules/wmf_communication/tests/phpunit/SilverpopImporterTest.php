@@ -6,7 +6,7 @@ class SilverpopImporterTest extends BaseWmfDrupalPhpUnitTestCase {
 	function testImport() {
 		$sftp = $this->getMockBuilder( 'Net_SFTP' )
 			->disableOriginalConstructor()
-			->setMethods( array( 'login', 'get' ) )
+			->setMethods( array( 'login', 'get', 'disconnect' ) )
 			->getMock();
 		$mailStore = $this->getMock( 'CiviMailBulkStore', array( 'getMailing', 'addMailing', 'addSentBulk' ) );
 		$zipper = $this->getMock( 'ZipArchive', array( 'open', 'extractTo' ) );
