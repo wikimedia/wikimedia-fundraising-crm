@@ -81,7 +81,7 @@ $page_content = preg_replace( '/{%[^%]*endif[^%]*%}/sm', '{%endif%}', $page_cont
 					continue;
 				}
 			} catch ( TranslationException $ex ) {
-				watchdog( 'make-thank-you', "$lang -- {$ex->getMessage()}", null, WATCHDOG_ERROR );
+				watchdog( 'make-thank-you', "$lang -- {$ex->getMessage()}", null, WATCHDOG_INFO );
 			} catch ( CiviMailingInsertException $ex ) {
 				watchdog( 'make-thank-you', "Could not insert CiviMail Mailing for $lang -- {$ex->getMessage()}", null, WATCHDOG_ERROR );
 			}
