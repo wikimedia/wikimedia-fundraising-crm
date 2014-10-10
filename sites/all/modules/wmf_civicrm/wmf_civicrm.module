@@ -1963,7 +1963,7 @@ LIMIT %4";
 			}
 			// Approximate rate we originally used so we can correct the fee & net.
 			$rate_used = $total_amount / $original_amount;
-			$correct_rate = exchange_rate_convert( $currency, 1, $contribution['receive_date'] );
+			$correct_rate = exchange_rate_convert( $currency, 1, strtotime( $contribution['receive_date'] ) );
 
 			$recalculated_total = round( $correct_rate * $original_amount, 2 );
 			$recalculated_fee = round( $contribution['fee_amount'] / $rate_used * $correct_rate, 2 );
