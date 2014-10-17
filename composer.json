@@ -1,5 +1,5 @@
 {
-    "name": "Wikimedia Foundation donor CRM",
+    "description": "Wikimedia Foundation donor CRM",
     "authors": [
         { "name": "Elliott Eggleston" },
         { "name": "Peter Gehres" },
@@ -11,11 +11,18 @@
     ],
     "license": "GPL-2.0",
     "type": "project",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://gerrit.wikimedia.org/r/p/mediawiki/extensions/DonationInterface.git"
+        }
+    ],
     "support": {
         "irc": "irc://irc.freenode.org/wikimedia-fundraising"
     },
     "require": {
         "cogpowered/finediff": "0.*",
+        "wikimedia/DonationInterface": "dev-drupal",
         "fusesource/stomp-php": "2.*",
         "phpmailer/phpmailer": "5.2.6",
         "phpseclib/phpseclib": "0.3.7",
