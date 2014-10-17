@@ -83,20 +83,6 @@ function recurring_globalcollect_settings() {
     '#description' => t( 'The url to the local server to test the connection. This should point to your CiviCRM host.' ),
   );
   
-  // Get the path of the file to make sure it is installed.
-  $standalone_globalcollect_adapter_path = variable_get('standalone_globalcollect_adapter_path', null);
-
-  // Flag to tell the user to install the library
-  $standalone_globalcollect_adapter_installed = is_dir( $standalone_globalcollect_adapter_path ) ? '<span style="color:green;">Installed</span>' : '<span style="color:red;">Please install</span>';
-
-  $form['standalone_globalcollect_adapter_path'] = array(
-    '#type' => 'textfield',
-    '#title' => t('StandaloneGlobalCollectAdapter Path'),
-    '#required' => TRUE,
-    '#default_value' => $standalone_globalcollect_adapter_path,
-    '#description' => t($standalone_globalcollect_adapter_installed . ' Link: ') . l(t('Current version of payment_library'), "https://svn.wikimedia.org/viewvc/wikimedia/trunk/fundraising-misc/payment_library/"),
-  );
-
   $form['recurring_globalcollect_merchant_id'] = array(
     '#type' => 'textfield',
     '#title' => t('Global Collect Merchant ID'),
@@ -320,11 +306,16 @@ function recurring_globalcollect_charge( $contribution_recur_id, $options = arra
       'order_id' => $transaction->gateway_txn_id,
       'currency_code' => $subscription->currency,
       'payment_product' => '',
+      'language' => 'en',
+      // We just need to avoid some ContributionTracking MediaWiki extension code,
+      // it's possible to look the actual ID, but it should not be necessary.
+      'contribution_tracking_id' => '123456',
+      // Avoiding some more code.
+      'referrer' => 'dummy',
   );
-  $instance = DonationInterface::getAdapter( 'GlobalCollect' );
-  $instance->load_request_data( $values );
-  $result = $instance->do_transaction('Recurring_Charge');
-  
+  $adapter = DonationInterface::createAdapter( 'GlobalCollect', $values );
+  $result = $adapter->do_transaction('Recurring_Charge');
+
   // If success, add a record to the contribution table and send a thank you email.
   if ($result['status'] && empty($result['errors'])) {
     // Mark this donation as successful, and reschedule it for next month
