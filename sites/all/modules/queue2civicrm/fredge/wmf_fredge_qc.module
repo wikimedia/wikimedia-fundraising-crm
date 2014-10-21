@@ -139,7 +139,7 @@ function fredge_payments_antifraud_process_message($msg) {
        * Which is okay for now: We force IPv4 on payments.
        * @TODO eventually: Actually handle IPv6 here.
        */
-      
+
 //    $body['user_ip'] = inet_pton($body['user_ip']);
 
       watchdog('fredge', "Weird. Somehow an ipv6 address got through on payments. Caught in antifraud consumer. $txnid");
@@ -147,7 +147,7 @@ function fredge_payments_antifraud_process_message($msg) {
     } else {
       $body['user_ip'] = ip2long($body['user_ip']);
     }
-    
+
   }
 
   $id = fredge_insert_data($body, 'payments_fraud', $txnid, true);
@@ -209,7 +209,7 @@ function fredge_insert_data($msg, $table, $log_identifier, $require_all = false)
     } else {
       //the field exists. Woot.
       if (array_key_exists('mysql_type', $definition) && $definition['mysql_type'] === 'DATETIME') {
-        $msg[$field] = date('Y-m-d H:i:s', $msg[$field]);
+        $msg[$field] = wmf_common_date_unix_to_sql($msg[$field]);
       }
       $insert[$field] = $msg[$field];
     }
