@@ -21,6 +21,22 @@ function wmf_audit_menu() {
 }
 
 /**
+ * Implements hook_permission.
+ *
+ * Exported permissions are:
+ *    administer wmf_audit
+ *
+ * @return array of exported permissions.
+ */
+function wmf_audit_permission() {
+  return array(
+    'administer wmf_audit' => array(
+        'title' => 'Configure the wmf_audit module',
+    ),
+  );
+}
+
+/**
  * Callback for menu
  */
 function wmf_audit_settings() {
