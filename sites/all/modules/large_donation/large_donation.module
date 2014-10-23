@@ -167,7 +167,7 @@ function large_donation_civicrm_post( $action, $type, $id, &$contribution ) {
 
             $result = db_select( 'large_donation_notification' )
                 ->fields( 'large_donation_notification' )
-                ->condition( 'threshold', (float) $contribution->total_amount, '<' )
+                ->condition( 'threshold', (float) $contribution->total_amount, '<=' )
                 ->condition( 'enabled', true, '=' )
                 ->execute();
 
