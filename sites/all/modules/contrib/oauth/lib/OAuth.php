@@ -265,9 +265,10 @@ class OAuthRequest {
    * attempt to build up a request from what was passed to the server
    */
   public static function from_request($http_method=NULL, $http_url=NULL, $parameters=NULL) {
-    $scheme = (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] != "on")
-              ? 'http'
-              : 'https';
+    $local_https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on';
+    $forwarded_https = isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https';
+    $scheme = ($local_https || $forwarded_https) ? 'https' : 'http';
+
     $http_url = ($http_url) ? $http_url : $scheme .
                               '://' . $_SERVER['SERVER_NAME'] .
                               ':' .
