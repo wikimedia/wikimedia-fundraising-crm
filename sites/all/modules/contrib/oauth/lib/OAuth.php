@@ -676,6 +676,7 @@ class OAuthServer {
 
     $signature_method = $this->get_signature_method($request);
 	watchdog('oauth', 'About to verify request ', array('request' => $request), WATCHDOG_DEBUG);
+	watchdog('oauth', 'Server variables: ' . print_r($_SERVER, true), array(), WATCHDOG_DEBUG);
 	watchdog('oauth', 'Base string should be ' . $request->get_signature_base_string(), array(), WATCHDOG_DEBUG);
     $signature = $request->get_parameter('oauth_signature');
     $valid_sig = $signature_method->check_signature(
