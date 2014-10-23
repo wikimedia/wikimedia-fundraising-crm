@@ -205,6 +205,7 @@ function wmf_campaigns_edit_form_submit( $formId, &$formState ) {
 function wmf_campaigns_civicrm_custom( $action, $groupId, $entityId, $params ) {
     switch ( $action ) {
     case 'create':
+    case 'edit':
         $result = civicrm_api3( 'CustomGroup', 'get', array(
             'name' => 'Gift_Data',
         ) );
