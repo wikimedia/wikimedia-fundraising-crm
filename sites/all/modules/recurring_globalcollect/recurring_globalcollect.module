@@ -314,6 +314,12 @@ function recurring_globalcollect_charge( $contribution_recur_id, $options = arra
       'referrer' => 'dummy',
   );
   $adapter = DonationInterface::createAdapter( 'GlobalCollect', $values );
+
+  // FIXME hack.  This is getting overriden by sad.
+  $adapter->addData( array(
+      'effort_id' => $subscription->processor_id + 1,
+  ) );
+
   $result = $adapter->do_transaction('Recurring_Charge');
 
   // If success, add a record to the contribution table and send a thank you email.
