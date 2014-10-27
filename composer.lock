@@ -1,9 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
+        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
     ],
-    "hash": "34c7e4634f2890624622ac69d79aa1db",
+    "hash": "293cae5eec4ee935625711e18c44ba34",
     "packages": [
         {
             "name": "cogpowered/finediff",
@@ -314,6 +315,34 @@
                 "templating"
             ],
             "time": "2014-07-05 12:19:05"
+        },
+        {
+            "name": "wikimedia/DonationInterface",
+            "version": "dev-drupal",
+            "source": {
+                "type": "git",
+                "url": "/home/adamw/git/DonationInterface.git",
+                "reference": "76b80e416e5b75e5d56a6b1a7f8529e2416266ed"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "adyen_gateway",
+                    "amazon_gateway",
+                    "gateway_common",
+                    "globalcollect_gateway",
+                    "paypal_gateway",
+                    "worldpay_gateway"
+                ]
+            },
+            "license": [
+                "GPL-2.0"
+            ],
+            "description": "Wikimedia Foundation payment processing library",
+            "support": {
+                "irc": "irc://irc.freenode.net/wikimedia-fundraising"
+            },
+            "time": "2014-10-06 22:49:15"
         }
     ],
     "packages-dev": [
@@ -323,9 +352,10 @@
 
     ],
     "minimum-stability": "stable",
-    "stability-flags": [
-
-    ],
+    "stability-flags": {
+        "wikimedia/donationinterface": 20
+    },
+    "prefer-stable": false,
     "platform": [
 
     ],
