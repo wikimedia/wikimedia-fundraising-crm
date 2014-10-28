@@ -84,18 +84,6 @@ function wmf_common_settings() {
     '#description'   => t('Comma-delimited (no spaces) list of donor email addresses that will never trigger failmail'),
   );
 
-  $di_path = variable_get('wmf_common_di_location', null);
-  $di_installed = file_exists(implode(DIRECTORY_SEPARATOR, array($di_path, 'gateway_common', 'interface.i18n.php')));
-  $di_msg = $di_installed ? '<span style="color:green;">Installed Correctly</span>' : '<span style="color:red;">Please install</span>';
-
-  $form['wmf_common_di_location'] = array(
-    '#type'          => 'textfield',
-    '#title'         => t('Donation Interface location'),
-    '#default_value' => $di_path,
-    '#required'      => TRUE,
-    '#description'   => "{$di_msg} " . t('Filesystem path to a checkout of Donation Interface.  Try: <code>git clone https://gerrit.wikimedia.org/r/p/mediawiki/extensions/DonationInterface.git</code>'),
-  );
-
   $form['wmf_common_requeue_delay'] = array(
     '#type'          => 'textfield',
     '#title'         => t('Requeue Delay Time'),
