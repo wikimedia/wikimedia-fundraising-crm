@@ -52,9 +52,6 @@ class Templating {
     }
 
     static function twig_from_directory( $template_dir ) {
-        # FIXME: Autoload in settings.php rather than assuming dir structure here.
-        require_once DRUPAL_ROOT . '/../vendor/autoload.php';
-
         $loader = new Twig_Loader_Filesystem( $template_dir );
         return Templating::twig_from_loader( $loader );
     }
@@ -164,8 +161,6 @@ class Templating {
      * TODO: clean up interface
      */
     static function renderStringTemplate( $template, $params ) {
-        require_once DRUPAL_ROOT . '/../vendor/autoload.php';
-
         $loader = new Twig_Loader_String();
         $twig = Templating::twig_from_loader( $loader );
 

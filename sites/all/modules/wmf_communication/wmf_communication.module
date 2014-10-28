@@ -84,7 +84,6 @@ function wmf_communication_silverpop_form() {
  */
 function wmf_communication_silverpop_import_mailings( $days ) {
 	require_once __DIR__ . '/Silverpop/lib/Engage.php';
-	require_once DRUPAL_ROOT . '/../vendor/autoload.php';
 
 	civicrm_initialize();
 	$username = variable_get('wmf_communication_silverpop_username', '');
