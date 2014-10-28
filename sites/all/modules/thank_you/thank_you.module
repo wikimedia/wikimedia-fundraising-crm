@@ -724,7 +724,6 @@ function thank_you_render( $params ) {
 
     $page_content = $template->render( 'html' );
     $page_content = str_replace( '<p></p>', '', $page_content );
-    $page_content = wordwrap( $page_content, 100 );
     return $page_content;
 }
 
