@@ -122,7 +122,7 @@ abstract class MailerBase {
 
     protected function normalizeContent( &$email ) {
         $converter = new Html2Text( $email['html'], false, array( 'do_links' => 'table' ) );
-        $email['plaintext'] = $converter->get_text();
+        $email['plaintext'] = wordwrap( $converter->get_text(), 100 );
 
         if ( $email['plaintext'] === false ) {
             watchdog( 'thank_you', "Text rendering of template failed in {$email['locale']}.", array(), WATCHDOG_ERROR );

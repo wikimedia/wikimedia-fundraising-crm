@@ -74,15 +74,6 @@ function recurring_globalcollect_settings() {
     '#description' => t( 'The url to the Global Collect Gateway.' ),
   );
 
-  $form[ 'recurring_globalcollect' ][ 'localhost_test_url' ] = array(
-    '#maxlength' => 255,
-    '#type' => 'textfield',
-    '#title' => t('Default Testing Url'),
-    '#required' => FALSE,
-    '#default_value' => variable_get('localhost_test_url', $defaultTestUrl),
-    '#description' => t( 'The url to the local server to test the connection. This should point to your CiviCRM host.' ),
-  );
-  
   $form['recurring_globalcollect_merchant_id'] = array(
     '#type' => 'textfield',
     '#title' => t('Global Collect Merchant ID'),
