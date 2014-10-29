@@ -439,7 +439,7 @@ function thank_you_send_mail( $params ) {
 	$email['subject'] = thank_you_get_subject( $params['locale'] );
 
 	$mailer = Mailer::getDefault();
-	if ( variable_get( 'thank_you_add_civimail_records', 'false' ) ) {
+	if ( variable_get( 'thank_you_add_civimail_records', 'false' ) === 'true' ) {
 		$civi_queue_record = thank_you_add_civi_queue(
 			$email['to_address'],
 			$email['subject'],
