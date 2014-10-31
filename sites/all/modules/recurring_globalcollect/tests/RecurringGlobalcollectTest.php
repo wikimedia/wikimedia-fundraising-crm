@@ -42,7 +42,8 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
             'trxn_id' => 'RECURRING GLOBALCOLLECT STUB_ORIG_CONTRIB-' . mt_rand(),
         ) );
         $this->contributions[] = $result['id'];
-    }
+		wmf_civicrm_insert_contribution_tracking( '..rcc', 'civicrm', wmf_common_date_unix_to_sql( strtotime( 'now' ) ), $result['id'] );
+	}
 
     function tearDown() {
         variable_set( 'standalone_globalcollect_adapter_path', $this->original_standalone_globalcollect_adapter_path );

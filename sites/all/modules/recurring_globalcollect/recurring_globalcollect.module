@@ -291,6 +291,11 @@ function recurring_globalcollect_charge( $contribution_recur_id, $options = arra
 
   $subscription = recurring_globalcollect_get_payment_by_id( $contribution_recur_id );
   $transaction = WmfTransaction::from_unique_id( $subscription->trxn_id );
+  $contribution_tracking_id = recurring_get_contribution_tracking_id( array(
+	'txn_type' => 'subscr_payment',
+	'subscr_id' => $subscription->trxn_id,
+	'payment_date' => strtotime( "now" ),
+  ) );
   $values = array(
       'amount' => $subscription->amount,
       'effort_id' => $subscription->processor_id + 1,
@@ -298,9 +303,7 @@ function recurring_globalcollect_charge( $contribution_recur_id, $options = arra
       'currency_code' => $subscription->currency,
       'payment_product' => '',
       'language' => 'en',
-      // We just need to avoid some ContributionTracking MediaWiki extension code,
-      // it's possible to look the actual ID, but it should not be necessary.
-      'contribution_tracking_id' => '123456',
+      'contribution_tracking_id' => $contribution_tracking_id,
       // Avoiding some more code.
       'referrer' => 'dummy',
   );
