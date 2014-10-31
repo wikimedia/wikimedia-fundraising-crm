@@ -120,8 +120,12 @@ function wmf_communication_silverpop_import_mailings( $days ) {
  * @param CRM_Core_DAO_Email $email new email object.
  */
 function wmf_communication_civicrm_pre( $op, $type, $id, &$email ) {
-	// only deal with Emails, and ignore on_hold status changes
-	if ( $type !== 'Email' || ( $email->on_hold && $email->on_hold !== 'null' ) ) {
+	// only work with Emails, and only when we have an object reference
+	if ( $type !== 'Email' || $email === null ) {
+		return;
+	}
+	// ignore on_hold status changes 
+	if ( $email->on_hold && $email->on_hold !== 'null' ) {
 		return;
 	}
 	if ( $op !== 'edit' && $op !== 'delete' ) {
