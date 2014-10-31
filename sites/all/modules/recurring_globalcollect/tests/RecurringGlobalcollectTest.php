@@ -5,9 +5,6 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
         parent::setUp();
         civicrm_initialize();
 
-        $this->original_standalone_globalcollect_adapter_path = variable_get( 'standalone_globalcollect_adapter_path', null );
-        variable_set( 'standalone_globalcollect_adapter_path', __DIR__ . '/includes' );
-
         $this->subscription_id = 'SUB-FOO-' . mt_rand();
         $this->amount = '1.12';
 
@@ -44,11 +41,6 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->contributions[] = $result['id'];
 		wmf_civicrm_insert_contribution_tracking( '..rcc', 'civicrm', wmf_common_date_unix_to_sql( strtotime( 'now' ) ), $result['id'] );
 	}
-
-    function tearDown() {
-        variable_set( 'standalone_globalcollect_adapter_path', $this->original_standalone_globalcollect_adapter_path );
-        parent::tearDown();
-    }
 
     function testCharge() {
         $result = recurring_globalcollect_charge( $this->contribution_recur_id );
