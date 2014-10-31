@@ -6,6 +6,7 @@ function wmf_reports_install()
     wmf_reports_update_6001();
     wmf_reports_update_6002();
     wmf_reports_update_6003();
+    wmf_reports_update_6004();
 }
 
 /**
@@ -265,3 +266,23 @@ function wmf_reports_update_6003()
     return array();
 }
 
+/**
+ * Install customized LYBUNT report template
+ */
+function wmf_reports_update_6004()
+{
+    wmf_reports_bootstrap_civi();
+
+    $groupParams = array( 'name' => ('report_template') );
+    $params = array(
+        'label' => 'WMF LYBUNT',
+        'name' => 'CRM_Report_Form_Contribute_WmfLybunt',
+        'value' => 'contribute/wmf_lybunt',
+        'description' => 'WMF-customized LYBUNT',
+        'component_id' => CRM_Core_Component::getComponentID( 'CiviContribute' ),
+        'is_active' => true,
+    );
+    CRM_Core_OptionValue::addOptionValue( $params, $groupParams, $nullAction, $nullId );
+
+    return array();
+}
