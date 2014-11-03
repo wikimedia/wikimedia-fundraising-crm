@@ -21,7 +21,14 @@ function _queue2civicrm_log( $log=array() ) {
   if ( empty( $log ) ) {
     return false;  
   }
-  
+
+  // Replace any nulls with the empty string.
+  foreach ( $log as $key => $value ) {
+      if ( $value === null ) {
+          $log[$key] = '';
+      }
+  }
+
   // make sure we're using the default db
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'default' );
