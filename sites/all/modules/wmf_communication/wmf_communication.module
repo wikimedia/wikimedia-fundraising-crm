@@ -108,3 +108,56 @@ function wmf_communication_silverpop_import_mailings( $days ) {
 	$importer = new SilverpopImporter($options);
 	return $importer->import($days);
 }
+
+/**
+ * Implements hook_civicrm_pre
+ * When an active email address is edited or deleted, re-add it as 'On Hold'
+ * to make sure it is exported on the suppression list.
+ * If the email address being deleted is already 'On Hold', let it be deleted.
+ * @param string $op operation just performed
+ * @param string $type type of object on which operation was performed
+ * @param int $id object identifier
+ * @param CRM_Core_DAO_Email $email new email object.
+ */
+function wmf_communication_civicrm_pre( $op, $type, $id, &$email ) {
+	// only work with Emails, and only when we have an object reference
+	if ( $type !== 'Email' || $email === null ) {
+		return;
+	}
+	// ignore on_hold status changes 
+	if ( $email->on_hold && $email->on_hold !== 'null' ) {
+		return;
+	}
+	if ( $op !== 'edit' && $op !== 'delete' ) {
+		return;
+	}
+	// get the old values
+	$old_email_result = civicrm_api( "Email", "get",
+		array (
+			'version' =>'3',
+			'id' => $email->id,
+			'return' => 'email,on_hold'
+		)
+	);
+	// bail out if we can't find the old values
+	if ( !array_key_exists( $email->id, $old_email_result['values'] ) ) {
+		return;
+	}
+	$old_email = $old_email_result['values'][$email->id];
+	// if we're editing, but not the address, bail out
+	if ( $op === 'edit' && $old_email['email'] === $email->email ) {
+		return;
+	}
+	// if we're deleting an email that's already on hold, stop here
+	if ( $op === 'delete' && !empty( $old_email['on_hold'] ) ) {
+		return;
+	}
+	$params = array(
+		'version' => 3,
+		'email' => $old_email['email'],
+		'on_hold' => TRUE,
+		'hold_date' => date('YmdHis'),
+		'contact_id' => $email->contact_id
+	);
+	$new_email_result = civicrm_api( "Email", "create", $params );
+}
