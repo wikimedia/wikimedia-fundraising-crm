@@ -1961,10 +1961,20 @@ LIMIT %4";
 				watchdog( 'recalculate_contributions', "Not recalculating contribution $id with zero original or total amount", null, WATCHDOG_DEBUG );
 				continue;
 			}
+			if ( !preg_match( '/^[a-z][a-z][a-z]$/i', $currency ) ) {
+				watchdog( 'recalculate_contributions', "Not recalculating contribution $id with nonsense currency $currency", null, WATCHDOG_DEBUG );
+				continue;
+			}
+
 			// Approximate rate we originally used so we can correct the fee & net.
 			$rate_used = $total_amount / $original_amount;
-			$correct_rate = exchange_rate_convert( $currency, 1, strtotime( $contribution['receive_date'] ) );
-
+			try {
+				$correct_rate = exchange_rate_convert( $currency, 1, strtotime( $contribution['receive_date'] ) );
+			}
+			catch ( ExchangeRatesException $ex ) {
+				watchdog( 'recalculate_contributions', "Not recalculating contribution $id.  Cannot find rate for currency $currency", null, WATCHDOG_DEBUG );
+				continue;
+			}
 			$recalculated_total = round( $correct_rate * $original_amount, 2 );
 			$recalculated_fee = round( $contribution['fee_amount'] / $rate_used * $correct_rate, 2 );
 			$recalculated_net = $recalculated_total - $recalculated_fee;
