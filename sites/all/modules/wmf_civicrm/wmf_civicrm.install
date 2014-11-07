@@ -24,6 +24,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7017();
     wmf_civicrm_update_7018();
     wmf_civicrm_update_7019();
+    wmf_civicrm_update_7023();
 }
 
 /**
@@ -939,4 +940,46 @@ function wmf_civicrm_update_7022() {
     }
 
     // TODO: define option groups in another migration if necessary
+}
+
+/**
+ * Add custom donor data group.
+ */
+function wmf_civicrm_update_7023() {
+    $api = wmf_civicrm_bootstrap_civi();
+    $api->CustomGroup->get(array(
+        'name' => 'WMF_Donor',
+    ));
+    $result = $api->values();
+    if ($result) {
+        return;
+    }
+
+    $success = $api->CustomGroup->create(array(
+        'extends' => 'Contact',
+        'name' => 'wmf_donor',
+		'table_name' => 'wmf_donor',
+        'title' => ts('WMF Donor'),
+        'is_active' => 1,
+    ));
+    if (!$success) {
+        throw new Exception('Could not create custom group');
+    }
+    $values = $api->values();
+    $custom_group = array_pop($values);
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'do_not_solicit',
+        'column_name' => 'do_not_solicit',
+        'label' => ts('Do not solicit'),
+        'data_type' => 'Boolean',
+        'html_type' => 'Radio',
+        'is_active' => 1,
+        'is_required' => 1,
+        'is_searchable' => 1,
+    ));
+    if (!$success) {
+        throw new Exception('Failed to create custom field.');
+    }
 }
