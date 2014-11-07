@@ -126,13 +126,12 @@ function wmf_civicrm_settle( $contribution, $settled_timestamp = null )
     return array_merge( $contribution, $custom_values );
 }
 
-// FIXME all of these custom field helpers share flaws: they do not consider entity type, or custom group name
-function wmf_civicrm_contribution_get_custom_values( $contribution_id, $names )
+function wmf_civicrm_contribution_get_custom_values( $entity_id, $names, $group_name = null )
 {
     $names = (array)$names;
-    $params[ 'entityID' ] = $contribution_id;
+    $params[ 'entityID' ] = $entity_id;
     foreach ( $names as $name ) {
-        $field = wmf_civicrm_get_custom_field_name( $name );
+        $field = wmf_civicrm_get_custom_field_name( $name, $group_name );
         $params[ $field ] = 1;
         $field_map[ $field ] = $name;
     }
@@ -146,13 +145,12 @@ function wmf_civicrm_contribution_get_custom_values( $contribution_id, $names )
     return $ret;
 }
 
-// FIXME: this is only valid for contributions
-function wmf_civicrm_set_custom_field_values($entity_id, $map)
+function wmf_civicrm_set_custom_field_values($entity_id, $map, $group_name = null)
 {
     $params = array(
         'entityID' => $entity_id,
     );
-    $custom_fields = wmf_civicrm_get_custom_field_map(array_keys($map));
+    $custom_fields = wmf_civicrm_get_custom_field_map(array_keys($map), $group_name);
     foreach ($map as $field_name => $value)
     {
         $params[$custom_fields[$field_name]] = $value;
@@ -181,8 +179,8 @@ function wmf_civicrm_get_custom_field_map( $field_names, $group_name = null )
     return $custom_fields;
 }
 
-function wmf_civicrm_get_custom_field_name( $field_name ) {
-    $custom_fields = wmf_civicrm_get_custom_field_map( array( $field_name ) );
+function wmf_civicrm_get_custom_field_name( $field_name, $group_name = null ) {
+    $custom_fields = wmf_civicrm_get_custom_field_map( array( $field_name ), $group_name );
     return $custom_fields[ $field_name ];
 }
 
@@ -912,9 +910,27 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
             "Contact could not be added. Aborting import. Contact data was " . print_r($contact, true) . " Original error: " . $ex->getMessage()
         );
     }
+    $contact_id = $contact_result['id'];
+
+    // Add any wmf_donor custom field values
+    $wmf_donor_fields = array(
+        'do_not_solicit',
+    );
+    $wmf_donor_values = array();
+    foreach ( $wmf_donor_fields as $donor_field ) {
+        if ( isset( $msg[$donor_field] ) ) {
+            $wmf_donor_values[$donor_field] = $msg[$donor_field];
+        }
+    }
+    if ( !empty( $wmf_donor_values ) ) {
+        try {
+            wmf_civicrm_set_custom_field_values( $contact_id, $wmf_donor_values, 'wmf_donor' );
+        } catch ( WmfException $ex ) {
+            watchdog( 'wmf_civicrm', "Setting wmf_donor custom field values failed with details: {$ex->getMessage()}", array(), WATCHDOG_ERROR );
+        }
+    }
 
     // Do we have any tags we need to add to this contact?
-    $contact_id = $contact_result['id'];
     if ( $msg['contact_tags'] ) {
         $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
         $stacked_ex = array();

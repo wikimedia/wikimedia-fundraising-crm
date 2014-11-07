@@ -82,6 +82,28 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     /**
+     * Make sure we import 'Do Not Solicit' values to the wmf_donor table
+     */
+    public function testImportDoNotSolicit() {
+        $msg = array(
+            'email' => 'nobody@wikimedia.org',
+            'gross' => '1.23',
+            'currency' => 'USD',
+            'payment_method' => 'cc',
+            'gateway' => 'test_gateway',
+            'do_not_solicit' => 'Y',
+            'gateway_txn_id' => mt_rand(),
+        );
+        $contribution = wmf_civicrm_contribution_message_import( $msg );
+        $donor_fields = wmf_civicrm_contribution_get_custom_values(
+            $contribution['contact_id'],
+            array( 'do_not_solicit' ),
+            'wmf_donor'
+        );
+        $this->assertEquals( '1', $donor_fields['do_not_solicit'] );
+    }
+
+    /**
      * Remove unique stuff which cannot be expected
      */
     function stripUniques( &$contribution ) {

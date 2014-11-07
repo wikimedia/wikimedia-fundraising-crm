@@ -250,6 +250,7 @@ abstract class ChecksFile {
             'Do Not Mail' => 'do_not_mail',
             'Do Not Phone' => 'do_not_phone',
             'Do Not SMS' => 'do_not_sms',
+            'Do Not Solicit' => 'do_not_solicit',
             'Email' => 'email',
             'First Name' => 'first_name',
             'Gift Source' => 'gift_source',
