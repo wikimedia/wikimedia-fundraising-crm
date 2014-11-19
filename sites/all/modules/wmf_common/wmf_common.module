@@ -166,7 +166,7 @@ function wmf_common_queue_item_form( $form, &$form_state, $queue, $correlationId
   $q = queue2civicrm_stomp();
 
   $queue = preg_replace( '/[^-_a-z]/', '', $queue );
-  $correlationId = preg_replace( '/[^-a-zA-Z0-9:]/', '', $correlationId );
+  $correlationId = preg_replace( '/[^-a-zA-Z0-9\.:]/', '', $correlationId );
 
   $msg = $q->getByCorrelationId( $queue, $correlationId );
 
