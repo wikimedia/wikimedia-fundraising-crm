@@ -226,7 +226,7 @@ function wmf_common_queue_item_form( $form, &$form_state, $queue, $correlationId
 
 function wmf_common_queue_item_submit( $form, &$form_state ) {
   $queue = preg_replace( '/[^-_a-z]|-damaged$/', '', $form_state['build_info']['args'][0] );
-  $correlationId = preg_replace( '/[^-a-zA-Z0-9:]/', '', $form_state['build_info']['args'][1] );
+  $correlationId = preg_replace( '/[^-a-zA-Z0-9\.:]/', '', $form_state['build_info']['args'][1] );
 
   $headers = array(
     'correlation-id' => $correlationId,
@@ -264,7 +264,7 @@ function wmf_common_queue_item_submit( $form, &$form_state ) {
 
 function wmf_common_queue_item_download( $queue, $correlationId ) {
   $queue = preg_replace( '/[^-_a-z]/', '', $queue );
-  $correlationId = preg_replace( '/[^-a-zA-Z0-9:]/', '', $correlationId );
+  $correlationId = preg_replace( '/[^-a-zA-Z0-9\.:]/', '', $correlationId );
 
   $q = queue2civicrm_stomp();
   $msg = $q->getByAnyId( $queue, $correlationId );
