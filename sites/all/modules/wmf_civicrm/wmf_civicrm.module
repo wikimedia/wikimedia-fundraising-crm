@@ -1790,7 +1790,7 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
 			$sql = <<<EOS
 SELECT id FROM civicrm_contribution
 WHERE contact_id = {$contact_id}
-AND receive_date > {$receive_date}
+AND receive_date > '{$contribution_date->format( 'Y-m-d H:i:s' )}'
 LIMIT 1
 EOS;
 			$dao = CRM_Core_DAO::executeQuery( $sql );
@@ -1799,7 +1799,7 @@ EOS;
 			}
 		}
 		if ( $latest ) {
-			$wmf_donor['last_donation_date'] = $receive_date;
+			$wmf_donor['last_donation_date'] = $contribution_date->format( 'YmdHis' );
 			$wmf_donor['last_donation_usd'] = $total_amount;
 			if ( isset( $extra['original_currency'] ) ) {
 				$wmf_donor['last_donation_currency'] = $extra['original_currency'];
