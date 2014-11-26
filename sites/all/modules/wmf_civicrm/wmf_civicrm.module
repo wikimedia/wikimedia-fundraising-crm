@@ -1749,10 +1749,33 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
 			wmf_civicrm_set_custom_field_values( $id, $extra );
 		}
 
+		// If we're missing any of the data we need for wmf_donor, retrieve it
+		// from the database.
+		if( $contribution->contact_id
+			&& $contribution->total_amount
+			&& $contribution->receive_date ) {
+			$receive_date = $contribution->receive_date;
+			$contact_id = $contribution->contact_id;
+			$total_amount = $contribution->total_amount;
+		} else {
+			$api = civicrm_api_classapi();
+			$result = $api->Contribution->get( array(
+				'id' => $contribution->id,
+			) );
+			if ( !$result || count( $api->values ) != 1) {
+				// can't get the data, skip wmf_donor updates
+				break;
+			}
+			$db_contribution = $api->values[0];
+			$receive_date = $db_contribution->receive_date;
+			$contact_id = $db_contribution->contact_id;
+			$total_amount = $db_contribution->total_amount;
+		} 
+
 		// Update the wmf_donor data.  Set the is_YYYY_donor column to true
 		// FIXME: if this is an edit, we should review all contributions
 		$wmf_donor = array();
-		$contribution_date = new DateTime( $contribution->receive_date );
+		$contribution_date = new DateTime( $receive_date );
 		$fiscal_year = intval( $contribution_date->format( 'Y' ) );
 		if ( intval( $contribution_date->format( 'm' ) ) < 7 ) {
 			$fiscal_year = $fiscal_year - 1;
@@ -1766,8 +1789,8 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
 		if ( $op === 'edit' ) {
 			$sql = <<<EOS
 SELECT id FROM civicrm_contribution
-WHERE contact_id = {$contribution->contact_id}
-AND receive_date > {$contribution->receive_date}
+WHERE contact_id = {$contact_id}
+AND receive_date > {$receive_date}
 LIMIT 1
 EOS;
 			$dao = CRM_Core_DAO::executeQuery( $sql );
@@ -1776,8 +1799,8 @@ EOS;
 			}
 		}
 		if ( $latest ) {
-			$wmf_donor['last_donation_date'] = $contribution->receive_date;
-			$wmf_donor['last_donation_usd'] = $contribution->total_amount;
+			$wmf_donor['last_donation_date'] = $receive_date;
+			$wmf_donor['last_donation_usd'] = $total_amount;
 			if ( isset( $extra['original_currency'] ) ) {
 				$wmf_donor['last_donation_currency'] = $extra['original_currency'];
 			}
@@ -1789,7 +1812,7 @@ EOS;
 		$sql = <<<EOS
 SELECT SUM(total_amount) AS lifetime_usd_total
 FROM civicrm_contribution
-WHERE contact_id = {$contribution->contact_id}
+WHERE contact_id = {$contact_id}
 EOS;
 		$dao = CRM_Core_DAO::executeQuery( $sql );
 		if ( $dao->fetch() ) {
@@ -1797,7 +1820,7 @@ EOS;
 		}
 		if ( !empty( $wmf_donor ) ) {
 			wmf_civicrm_set_custom_field_values(
-				$contribution->contact_id,
+				$contact_id,
 				$wmf_donor,
 				'wmf_donor'
 			);
