@@ -25,6 +25,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7018();
     wmf_civicrm_update_7019();
     wmf_civicrm_update_7023();
+    wmf_civicrm_update_7024();
 }
 
 /**
@@ -982,4 +983,120 @@ function wmf_civicrm_update_7023() {
     if (!$success) {
         throw new Exception('Failed to create custom field.');
     }
+}
+
+/**
+ * Add yearly contribution rollup and last donation data
+ */
+function wmf_civicrm_update_7024() {
+    $api = wmf_civicrm_bootstrap_civi();
+    $api->CustomGroup->get(array(
+        'name' => 'wmf_donor',
+    ));
+    $result = $api->values();
+    if (!$result) {
+        throw new Exception('Could not find custom group wmf_donor.  Please run update 7023 first.');
+    }
+	
+    $custom_group = array_pop($result);
+
+	for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
+		$success = $api->CustomField->create(array(
+			'custom_group_id' => $custom_group->id,
+			'name' => "is_{$year}_donor",
+			'column_name' => "is_{$year}_donor",
+			'label' => ts("Is {$year} donor"),
+			'data_type' => 'Boolean',
+			'html_type' => 'CheckBox',
+			'default_value' => 0,
+			'is_active' => 1,
+			'is_required' => 0,
+			'is_searchable' => 1,
+			'is_view' => 1,
+		));
+		if (!$success) {
+			$ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+		}
+	}
+	$success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+		'name' => 'last_donation_date',
+		'column_name' => 'last_donation_date',
+		'label' => ts('Last donation date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+    ));
+    if (!$success) {
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'last_donation_currency',
+        'column_name' => 'last_donation_currency',
+        'label' => ts('Last Donation Currency'),
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'last_donation_amount',
+        'column_name' => 'last_donation_amount',
+        'label' => ts('Last Donation Amount (unconverted)'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'last_donation_usd',
+        'column_name' => 'last_donation_usd',
+        'label' => ts('Last Donation Amount (USD)'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
+
+    $success = $api->CustomField->create(array(
+        'custom_group_id' => $custom_group->id,
+        'name' => 'lifetime_usd_total',
+        'column_name' => 'lifetime_usd_total',
+        'label' => ts('Lifetime Donations (USD)'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+    ));
+    if (!$success) {
+        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+    }
+	return $ret;
 }

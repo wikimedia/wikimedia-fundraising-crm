@@ -1718,34 +1718,90 @@ EOS;
 
 /**
  * Implementation of hook_civicrm_post, used to update contribution_extra fields
+ * and wmf_donor rollup fields.
  */
 function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
+	if ( $type !== 'Contribution' ) {
+		return;
+	}
     switch ( $op ) {
     case 'create':
     case 'edit':
-        if ( $type === 'Contribution' ) {
-            $extra = array();
+		$extra = array();
 
-            if ( $contribution->trxn_id ) {
-                try {
-                    $transaction = WmfTransaction::from_unique_id( $contribution->trxn_id );
-                    $extra['gateway'] = strtolower( $transaction->gateway );
-                    $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
-                } catch ( WmfException $ex ) {
-                    watchdog( 'wmf_civicrm', "Failed to parse trxn_id: {$contribution->trxn_id}, " . $ex->getMessage() );
-                }
-            }
+		if ( $contribution->trxn_id ) {
+			try {
+				$transaction = WmfTransaction::from_unique_id( $contribution->trxn_id );
+				$extra['gateway'] = strtolower( $transaction->gateway );
+				$extra['gateway_txn_id'] = $transaction->gateway_txn_id;
+			} catch ( WmfException $ex ) {
+				watchdog( 'wmf_civicrm', "Failed to parse trxn_id: {$contribution->trxn_id}, " . $ex->getMessage() );
+			}
+		}
 
-            if ( $contribution->source ) {
-                list( $original_currency, $original_amount ) = explode( " ", $contribution->source );
-                $extra['original_currency'] = $original_currency;
-                $extra['original_amount'] = $original_amount;
-            }
+		if ( $contribution->source ) {
+			list( $original_currency, $original_amount ) = explode( " ", $contribution->source );
+			$extra['original_currency'] = $original_currency;
+			$extra['original_amount'] = $original_amount;
+		}
 
-            if ( $extra ) {
-                wmf_civicrm_set_custom_field_values( $id, $extra );
-            }
-        }
+		if ( $extra ) {
+			wmf_civicrm_set_custom_field_values( $id, $extra );
+		}
+
+		// Update the wmf_donor data.  Set the is_YYYY_donor column to true
+		// FIXME: if this is an edit, we should review all contributions
+		$wmf_donor = array();
+		$contribution_date = new DateTime( $contribution->receive_date );
+		$fiscal_year = intval( $contribution_date->format( 'Y' ) );
+		if ( intval( $contribution_date->format( 'm' ) ) < 7 ) {
+			$fiscal_year = $fiscal_year - 1;
+		}
+		if ( $fiscal_year >= WMF_MIN_ROLLUP_YEAR && $fiscal_year <= WMF_MAX_ROLLUP_YEAR ) {
+			$wmf_donor["is_{$fiscal_year}_donor"] = true;	
+		}
+		// Update the latest donation data.
+		// If this is an edit, first check if it's the latest
+		$latest = true;
+		if ( $op === 'edit' ) {
+			$sql = <<<EOS
+SELECT id FROM civicrm_contribution
+WHERE contact_id = {$contribution->contact_id}
+AND receive_date > {$contribution->receive_date}
+LIMIT 1
+EOS;
+			$dao = CRM_Core_DAO::executeQuery( $sql );
+			if ( $dao->fetch() ) {
+				$latest = false;
+			}
+		}
+		if ( $latest ) {
+			$wmf_donor['last_donation_date'] = $contribution->receive_date;
+			$wmf_donor['last_donation_usd'] = $contribution->total_amount;
+			if ( isset( $extra['original_currency'] ) ) {
+				$wmf_donor['last_donation_currency'] = $extra['original_currency'];
+			}
+			if ( isset( $extra['original_amount'] ) ) {	
+			    $wmf_donor['last_donation_amount'] = $extra['original_amount'];
+			}
+		}
+		// Get lifetime totals
+		$sql = <<<EOS
+SELECT SUM(total_amount) AS lifetime_usd_total
+FROM civicrm_contribution
+WHERE contact_id = {$contribution->contact_id}
+EOS;
+		$dao = CRM_Core_DAO::executeQuery( $sql );
+		if ( $dao->fetch() ) {
+			$wmf_donor['lifetime_usd_total'] = $dao->lifetime_usd_total;
+		}
+		if ( !empty( $wmf_donor ) ) {
+			wmf_civicrm_set_custom_field_values(
+				$contribution->contact_id,
+				$wmf_donor,
+				'wmf_donor'
+			);
+		}
         break;
     }
 }

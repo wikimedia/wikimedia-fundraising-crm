@@ -38,8 +38,6 @@ class DedupeDiff {
      * @return string HTML rendering of diff
      */
     static function charDiff( $str1, $str2 ) {
-        # FIXME
-        require_once DRUPAL_ROOT . "/../vendor/autoload.php";
         $matcher = new DiffMatcher();
         $renderer = new HtmlDiffRenderer();
         $opcodes = $matcher->getOpcodes( $str1, $str2 );
