@@ -104,6 +104,38 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     /**
+     * Check that wmf_donor fields are updated correctly
+     */
+    public function testImportWmfDonor() {
+        $msg = array(
+            'email' => 'nobody5@wikimedia.org',
+            'gross' => '7.55',
+            'currency' => 'USD',
+            'payment_method' => 'cc',
+            'gateway' => 'test_gateway',
+			'date' => '2014-07-02',
+            'gateway_txn_id' => mt_rand(),
+        );
+        $contribution = wmf_civicrm_contribution_message_import( $msg );
+        $donor_fields = wmf_civicrm_contribution_get_custom_values(
+            $contribution['contact_id'],
+            array(
+				'is_2014_donor',
+				'is_2013_donor',
+				'last_donation_date',
+				'last_donation_usd',
+				'lifetime_usd_total',
+			),
+            'wmf_donor'
+        );
+        $this->assertEquals( '1', $donor_fields['is_2014_donor'] );
+		$this->assertEquals( '0', $donor_fields['is_2013_donor'] );
+		$this->assertEquals( '2014-07-02', substr( $donor_fields['last_donation_date'], 0, 10 ) );
+		$this->assertEquals( '7.55', $donor_fields['last_donation_usd'] );
+		$this->assertEquals( '7.55', $donor_fields['lifetime_usd_total'] );
+    }
+
+    /**
      * Remove unique stuff which cannot be expected
      */
     function stripUniques( &$contribution ) {
