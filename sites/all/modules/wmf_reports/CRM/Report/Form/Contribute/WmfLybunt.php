@@ -200,24 +200,19 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
           ),
         ),
       ),
-      'silverpop.silverpop_export' => array(
-        'bao' => 'CRM_BAO_SilverpopExport',
-        'fields' => array(
-          'lifetime_usd_total' => array(
-            'default' => true,
-          ),
-          'latest_donation' => array(
-            'default' => true,
-          ),
-          'latest_usd_amount' => array(
-            'default' => true,
-          ),
-        ),
-      ),
       'wmf_donor' => array(
         'bao' => 'CRM_BAO_WmfDonor',
         'fields' => array(
           'do_not_solicit' => array(
+            'default' => true,
+          ),
+          'lifetime_usd_total' => array(
+            'default' => true,
+          ),
+          'last_donation_date' => array(
+            'default' => true,
+          ),
+          'last_donation_usd' => array(
             'default' => true,
           ),
         ),
@@ -296,8 +291,6 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
               LEFT JOIN civicrm_country {$this->_aliases['civicrm_country']}
                       ON {$this->_aliases['civicrm_address']}.country_id = {$this->_aliases['civicrm_country']}.id AND
                          {$this->_aliases['civicrm_address']}.is_primary = 1
-              LEFT JOIN silverpop.silverpop_export {$this->_aliases['silverpop.silverpop_export']}
-                      ON {$this->_aliases['silverpop.silverpop_export']}.contact_id = {$this->_aliases['civicrm_contact']}.id
               LEFT JOIN wmf_donor {$this->_aliases['wmf_donor']}
                       ON {$this->_aliases['wmf_donor']}.entity_id = {$this->_aliases['civicrm_contact']}.id ";
   }
@@ -313,8 +306,8 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
         foreach ($table['filters'] as $fieldName => $field) {
           $clause = NULL;
           if ($fieldName == 'yid') {
-            $clause = "{$this->_aliases['silverpop.silverpop_export']}.is_{$current_year}_donor = 0
-                           AND {$this->_aliases['silverpop.silverpop_export']}.is_{$previous_year}_donor = 1";
+            $clause = "{$this->_aliases['wmf_donor']}.is_{$current_year}_donor = 0
+                           AND {$this->_aliases['wmf_donor']}.is_{$previous_year}_donor = 1";
           }
           elseif (CRM_Utils_Array::value('type', $field) & CRM_Utils_Type::T_DATE) {
             $relative = CRM_Utils_Array::value("{$fieldName}_relative", $this->_params);
