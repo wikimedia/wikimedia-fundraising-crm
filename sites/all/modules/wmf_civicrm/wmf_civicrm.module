@@ -1727,6 +1727,7 @@ EOS;
             SELECT contact_id, MAX(receive_date) AS last_donation_date, SUM(total_amount) AS lifetime_usd_total
             FROM civicrm_contribution
             WHERE contact_id = $mainId
+            GROUP by contact_id
         ) ON DUPLICATE KEY UPDATE
             last_donation_date = VALUES(last_donation_date),
             lifetime_usd_total = VALUES(lifetime_usd_total)";
