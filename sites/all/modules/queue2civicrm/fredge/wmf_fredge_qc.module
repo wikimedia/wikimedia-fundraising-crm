@@ -206,6 +206,7 @@ function fredge_insert_data($msg, $table, $log_identifier, $require_all = false)
         throw new WmfException('fredge', $error);
         //so... add fields to DI first when you do schema changes.
       }
+      $insert[$field] = null;
     } else {
       //the field exists. Woot.
       if (array_key_exists('mysql_type', $definition) && $definition['mysql_type'] === 'DATETIME') {
