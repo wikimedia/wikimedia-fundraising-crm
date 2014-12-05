@@ -110,7 +110,9 @@ function worldpay_audit_get_log_days_in_past() {
 function worldpay_audit_regex_for_recon() {
   //WP recon files look like the following thing:
   //  MA.PISCESSW.#M.RECON.WIKI.D280514
-  return '/\.RECON\.WIKI\./';
+  // or
+  //  TranDetVer2_530860_11-26-2014_8'27'08 AM.csv
+  return '/\.RECON\.WIKI\.|TranDetVer2/';
 }
 
 /**
