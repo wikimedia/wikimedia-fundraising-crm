@@ -168,7 +168,7 @@ function wmf_audit_main($submod_prefix, $drush_params) {
   wmf_audit_echo("Processing 'negative' transactions");
   $neg_count = 0;
 
-  if (array_key_exists('negative', $missing) && !empty($total_missing['negative'])) {
+  if (array_key_exists('negative', $total_missing) && !empty($total_missing['negative'])) {
     foreach ($total_missing['negative'] as $record) {
       //check to see if the parent exists. If it does, normalize and send.
       if (worldpay_audit_main_transaction_exists_in_civi($record)) {
