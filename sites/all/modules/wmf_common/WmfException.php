@@ -56,6 +56,10 @@ class WmfException extends Exception {
         'INVALID_FILE_FORMAT' => array(
             'fatal' => TRUE,
         ),
+
+        'fredge' => array(
+            'reject' => TRUE,
+        ),
     );
 
     var $extra;

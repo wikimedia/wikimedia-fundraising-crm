@@ -195,7 +195,7 @@ function fredge_insert_data($msg, $table, $log_identifier, $require_all = false)
 
   if ( !is_array($msg) || empty($msg) ){
     $error = "$log_identifier: Trying to insert nothing into table $table. Dropping message on floor.";
-    throw new WmfException('fredge', $error);
+    throw new FredgeDataValidationException( $error );
   }
 
   $insert = array();
@@ -203,12 +203,22 @@ function fredge_insert_data($msg, $table, $log_identifier, $require_all = false)
     if (!array_key_exists($field, $msg)) {
       if ($require_all) {
         $error = "$log_identifier: Expected field $field bound for table $table not present! Dropping message on floor.";
-        throw new WmfException('fredge', $error);
+        throw new FredgeDataValidationException( $error );
         //so... add fields to DI first when you do schema changes.
       }
       $insert[$field] = null;
     } else {
       //the field exists. Woot.
+
+      // Check data length.
+      if ( array_key_exists( 'length', $definition )
+        && $definition['length'] < strlen( $msg[$field] )
+      ) {
+        $error = "$log_identifier: Data in field $field is too long! Dropping message on floor.";
+        throw new FredgeDataValidationException( $error );
+      }
+
+      // Convert timestamps to native SQL format datetime.
       if (array_key_exists('mysql_type', $definition) && $definition['mysql_type'] === 'DATETIME') {
         $msg[$field] = wmf_common_date_unix_to_sql($msg[$field]);
       }
@@ -226,3 +236,10 @@ function fredge_insert_data($msg, $table, $log_identifier, $require_all = false)
   return $id;
 }
 
+class FredgeDataValidationException extends WmfException {
+    public function __construct( $message ) {
+        // FIXME: other exception types are descriptive of the error,
+        // not just its source module.  Make like the others.
+        parent::__construct( 'fredge', $message );
+    }
+}

@@ -21,6 +21,17 @@ function fredge_queue_consume_drush_command() {
     ),
 		'aliases' => array( 'fqc' ),
 	);
+    $items['fredge-process-messagefile'] = array(
+        'description' => 
+            'Feeds a single message directly into the import pipeline, bypassing the queue.',
+        'arguments' => array(
+            'type' => 'Either "init" or "fraud"',
+            'path' => 'The JSON file containing the message',
+        ),
+        'required-arguments' => true,
+        'examples' => array( 'drush fpm init /tmp/blurr.json' => '# process the file' ), 
+        'aliases' => array( 'fpm' ),
+    );
 	return $items;
 }
 
@@ -58,3 +69,25 @@ function drush_fredge_queue_consume() {
 	}
 }
 
+function drush_fredge_queue_consume_fredge_process_messagefile( $type, $path ) {
+    watchdog( 'queue2civicrm', "Processing input file @path and feeding to queue2civicrm_import.",
+        array( '@path' => realpath( $path ) ), WATCHDOG_INFO );
+    $contents = file_get_contents( $path );
+
+    $msg = new stdClass();
+    $msg->headers = array(
+        'correlation-id' => mt_rand(),
+    );
+    $msg->body = $contents;
+
+    switch ( $type ) {
+    case 'init':
+        module_invoke( 'fredge', 'payments_init_process_message', $msg );
+        break;
+    case 'fraud':
+        module_invoke( 'fredge', 'payments_antifraud_process_message', $msg );
+        break;
+    default:
+        throw new Exception( "Unsupported queue type: $type" );
+    }
+}
