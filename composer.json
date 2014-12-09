@@ -15,6 +15,10 @@
         {
             "type": "vcs",
             "url": "https://gerrit.wikimedia.org/r/p/mediawiki/extensions/DonationInterface.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://gerrit.wikimedia.org/r/p/wikimedia/fundraising/SmashPig.git"
         }
     ],
     "support": {
@@ -23,6 +27,7 @@
     "require": {
         "cogpowered/finediff": "0.*",
         "wikimedia/DonationInterface": "dev-drupal",
+        "wikimedia/SmashPig": "dev-master",
         "fusesource/stomp-php": "2.*",
         "phpmailer/phpmailer": "5.2.6",
         "phpseclib/phpseclib": "0.3.7",
