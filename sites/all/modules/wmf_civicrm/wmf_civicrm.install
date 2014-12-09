@@ -26,6 +26,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7019();
     wmf_civicrm_update_7023();
     wmf_civicrm_update_7024();
+    wmf_civicrm_update_7025();
 }
 
 /**
@@ -1099,4 +1100,18 @@ function wmf_civicrm_update_7024() {
         $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
     }
 	return $ret;
+}
+
+/**
+ * Add indexes to the civicrm_prevnext_cache table
+ */
+function wmf_civicrm_update_7025()
+{
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push('civicrm');
+
+    db_query("alter table civicrm_prevnext_cache
+            add index entity_id1 (entity_id1),
+            add index entity_id2 (entity_id2),
+            add index cacheKey (cacheKey)");
 }
