@@ -7,6 +7,8 @@ define('WP_AUDIT_WORKING_LOG_DIR', '/usr/local/src/log_files-working/');
 define('WP_AUDIT_LOG_SEARCH_PAST_DAYS', 7);
 define( 'WP_AUDIT_TEST_MODE', true );
 
+use SmashPig\PaymentProviders\WorldPay\Audit\WorldPayAudit;
+
 /**
  * Implementation of hook_menu()
  */
@@ -28,12 +30,6 @@ function worldpay_audit_menu() {
  * Callback for menu
  */
 function worldpay_audit_settings() {
-  $form['worldpay_audit_recon_parser_dir']  = array(
-    '#type' => 'textfield',
-    '#title' => t( 'Path to directory containing reconciliation file parser classes' ),
-    '#required' => TRUE,
-    '#default_value' => variable_get( 'worldpay_audit_recon_parser_dir', WP_AUDIT_RECON_PARSER_DIR ),
-  );
   $form['worldpay_audit_recon_files_dir']  = array(
     '#type' => 'textfield',
     '#title' => t( 'Directory containing incoming reconciliation files' ),
@@ -108,7 +104,9 @@ function worldpay_audit_get_log_days_in_past() {
 function worldpay_audit_regex_for_recon() {
   //WP recon files look like the following thing:
   //  MA.PISCESSW.#M.RECON.WIKI.D280514
-  return '/\.RECON\.WIKI\./';
+  // or
+  //  TranDetVer2_530860_11-26-2014_8'27'08 AM.csv
+  return '/\.RECON\.WIKI\.|TranDetVer2/';
 }
 
 /**
@@ -214,18 +212,8 @@ function worldpay_audit_get_log_distilling_grep_string() {
  * @return mixed An array of recon data, or false
  */
 function worldpay_audit_parse_recon_file($file) {
-  static $parserClass = null;
-  if (is_null($parserClass)) {
-    $parser_directory = variable_get('worldpay_audit_recon_parser_dir', WP_AUDIT_RECON_PARSER_DIR);
-
-    //get the classes we need
-    require_once( $parser_directory . 'WorldPayAudit.php' );
-    require_once( $parser_directory . 'TransactionReconciliationFile.php' );
-    $parserClass = 'SmashPig\PaymentProviders\WorldPay\Audit\WorldPayAudit'; //yeesh.
-  }
-
   $recon_data = array();
-  $recon_parser = new $parserClass();
+  $recon_parser = new WorldPayAudit();
 
   $data = null;
   try {

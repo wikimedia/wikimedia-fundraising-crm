@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "293cae5eec4ee935625711e18c44ba34",
+    "hash": "118d4f47ff407c79a3a6d54fe95442cd",
     "packages": [
         {
             "name": "cogpowered/finediff",
@@ -260,17 +260,121 @@
             "time": "2014-07-05 16:36:21"
         },
         {
-            "name": "twig/twig",
-            "version": "v1.16.0",
+            "name": "symfony/event-dispatcher",
+            "version": "v2.3.23",
+            "target-dir": "Symfony/Component/EventDispatcher",
             "source": {
                 "type": "git",
-                "url": "https://github.com/fabpot/Twig.git",
-                "reference": "8ce37115802e257a984a82d38254884085060024"
+                "url": "https://github.com/symfony/EventDispatcher.git",
+                "reference": "36a40695d94e948d7a85347db0b12ba446c400fa"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/fabpot/Twig/zipball/8ce37115802e257a984a82d38254884085060024",
-                "reference": "8ce37115802e257a984a82d38254884085060024",
+                "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/36a40695d94e948d7a85347db0b12ba446c400fa",
+                "reference": "36a40695d94e948d7a85347db0b12ba446c400fa",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "require-dev": {
+                "symfony/dependency-injection": "~2.0"
+            },
+            "suggest": {
+                "symfony/dependency-injection": "",
+                "symfony/http-kernel": ""
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.3-dev"
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "Symfony\\Component\\EventDispatcher\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Symfony Community",
+                    "homepage": "http://symfony.com/contributors"
+                },
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                }
+            ],
+            "description": "Symfony EventDispatcher Component",
+            "homepage": "http://symfony.com",
+            "time": "2014-11-30 13:33:44"
+        },
+        {
+            "name": "symfony/http-foundation",
+            "version": "v2.3.23",
+            "target-dir": "Symfony/Component/HttpFoundation",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/HttpFoundation.git",
+                "reference": "94935ec4f9ad28d554e82c6e1fa11615a031108d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/HttpFoundation/zipball/94935ec4f9ad28d554e82c6e1fa11615a031108d",
+                "reference": "94935ec4f9ad28d554e82c6e1fa11615a031108d",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.3-dev"
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "Symfony\\Component\\HttpFoundation\\": ""
+                },
+                "classmap": [
+                    "Symfony/Component/HttpFoundation/Resources/stubs"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Symfony Community",
+                    "homepage": "http://symfony.com/contributors"
+                },
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                }
+            ],
+            "description": "Symfony HttpFoundation Component",
+            "homepage": "http://symfony.com",
+            "time": "2014-12-02 19:42:47"
+        },
+        {
+            "name": "twig/twig",
+            "version": "v1.16.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/twigphp/Twig.git",
+                "reference": "42f758d9fe2146d1f0470604fc05ee43580873fc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/twigphp/Twig/zipball/42f758d9fe2146d1f0470604fc05ee43580873fc",
+                "reference": "42f758d9fe2146d1f0470604fc05ee43580873fc",
                 "shasum": ""
             },
             "require": {
@@ -314,15 +418,15 @@
             "keywords": [
                 "templating"
             ],
-            "time": "2014-07-05 12:19:05"
+            "time": "2014-10-17 12:53:44"
         },
         {
             "name": "wikimedia/DonationInterface",
             "version": "dev-drupal",
             "source": {
                 "type": "git",
-                "url": "/home/adamw/git/DonationInterface.git",
-                "reference": "76b80e416e5b75e5d56a6b1a7f8529e2416266ed"
+                "url": "https://gerrit.wikimedia.org/r/p/mediawiki/extensions/DonationInterface.git",
+                "reference": "a1944f2c21dcc24d05b0846ff8e5c8176aeffda1"
             },
             "type": "library",
             "autoload": {
@@ -342,7 +446,50 @@
             "support": {
                 "irc": "irc://irc.freenode.net/wikimedia-fundraising"
             },
-            "time": "2014-10-06 22:49:15"
+            "time": "2014-10-27 19:20:24"
+        },
+        {
+            "name": "wikimedia/SmashPig",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://gerrit.wikimedia.org/r/p/wikimedia/fundraising/SmashPig.git",
+                "reference": "f956a0a03c3121d075bd9f8414d5d46990d26d32"
+            },
+            "require": {
+                "php": ">=5.3.3",
+                "symfony/event-dispatcher": ">=2.1,<2.4-dev",
+                "symfony/http-foundation": ">=2.1,<2.4-dev"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "SmashPig\\": "./"
+                }
+            },
+            "license": [
+                "GPLv2"
+            ],
+            "authors": [
+                {
+                    "name": "Katie Horn",
+                    "email": "khorn@wikimedia.org"
+                },
+                {
+                    "name": "Matthew Walker",
+                    "email": "mwalker@wikimedia.org"
+                },
+                {
+                    "name": "Adam Roses Wight",
+                    "email": "awight@wikimedia.org"
+                }
+            ],
+            "description": "The open source PHP flexible payments library and frontend/backend mediator.",
+            "homepage": "http://smashpig.org",
+            "keywords": [
+                "payments, donations"
+            ],
+            "time": "2014-12-09 01:34:40"
         }
     ],
     "packages-dev": [
@@ -353,7 +500,8 @@
     ],
     "minimum-stability": "stable",
     "stability-flags": {
-        "wikimedia/donationinterface": 20
+        "wikimedia/donationinterface": 20,
+        "wikimedia/smashpig": 20
     },
     "prefer-stable": false,
     "platform": [
