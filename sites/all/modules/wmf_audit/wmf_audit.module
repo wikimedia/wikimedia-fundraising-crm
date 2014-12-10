@@ -214,7 +214,7 @@ function wmf_audit_main($submod_prefix, $drush_params) {
   $wrap_up .= 'Missing at end: ' . $missing_at_end . "\n\n";
 
   if ($missing_at_end > 0) {
-    $wrap_up .= "Missing sumamry:\n";
+    $wrap_up .= "Missing transaction summary:\n";
     $wrap_up .= "Regular donations: $missing_main\n";
     if ($missing_main > 0) {
       foreach ($remaining['main'] as $date => $missing) {
@@ -236,6 +236,15 @@ function wmf_audit_main($submod_prefix, $drush_params) {
       foreach ($remaining['recurring'] as $date => $missing) {
         if (count($missing) > 0) {
           $wrap_up .= "\t$date: " . count($missing) . "\n";
+        }
+      }
+    }
+
+    $wrap_up .= "Transaction IDs:\n";
+    foreach ($remaining as $group => $transactions) {
+      foreach ($transactions as $date => $missing) {
+        foreach ($missing as $transaction) {
+          $wrap_up .= "\t" . WmfTransaction::from_message($transaction)->get_unique_id() . "\n";
         }
       }
     }
