@@ -134,6 +134,9 @@ function wmf_audit_main($submod_prefix, $drush_params) {
     wmf_audit_echo(wmf_audit_count_missing($missing) . ' missing transactions (of a possible ' . count($parsed) . ") identified in $time seconds\n");
 
     //If the file is empty, move it off.
+    // Note that we are not archiving files that have missing transactions,
+    // which might be resolved below.  Those are archived on the next run,
+    // once we can confirm they have hit Civi and are no longer missing.
     if (wmf_audit_count_missing($missing) <= wmf_audit_runtime_options('recon_complete_count')) {
       wmf_audit_move_completed_recon_file($file);
     }
