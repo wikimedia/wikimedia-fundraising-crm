@@ -11,6 +11,14 @@ function wmf_audit_menu() {
 
   $items['admin/config/wmf_audit'] = array(
     'title' => 'WMF Audit',
+    'access arguments' => array('administer wmf_audit'),
+    'page callback' => 'system_admin_menu_block_page',
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+  $items['admin/config/wmf_audit/configure'] = array(
+    'title' => 'WMF Audit',
     'description' => t('Configure WMF audit settings.'),
     'access arguments' => array('administer wmf_audit'),
     'page callback' => 'drupal_get_form',
