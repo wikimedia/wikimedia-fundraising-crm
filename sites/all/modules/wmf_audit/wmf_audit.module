@@ -1006,7 +1006,10 @@ function wmf_audit_get_xml_log_data_by_order_id($order_id, $log) {
     //look for the raw xml
     $full_xml = false;
     $node = wmfa_execute('get_log_line_xml_outermost_node');
-    $xmlstart = strpos($line, "<$node>");
+    $xmlstart = strpos($line, '<?xml');
+    if ($xmlstart === false) {
+      $xmlstart = strpos($line, "<$node>");
+    }
     $xmlend = strpos($line, "</$node>");
     if ($xmlend) {
       $full_xml = true;
@@ -1016,6 +1019,8 @@ function wmf_audit_get_xml_log_data_by_order_id($order_id, $log) {
       //this is a broken line, and it won't load... but we can still parse what's left of the thing, the slow way.
       $xml = substr($line, $xmlstart);
     }
+    // Syslog wart.  Other control characters should be encoded normally.
+    $xml = str_replace( '#012', "\n", $xml );
 
     $donor_data = array();
 
