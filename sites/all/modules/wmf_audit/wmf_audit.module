@@ -214,7 +214,7 @@ function wmf_audit_main($submod_prefix, $drush_params) {
   $wrap_up .= 'Missing at end: ' . $missing_at_end . "\n\n";
 
   if ($missing_at_end > 0) {
-    $wrap_up .= "Missing sumamry:\n";
+    $wrap_up .= "Missing transaction summary:\n";
     $wrap_up .= "Regular donations: $missing_main\n";
     if ($missing_main > 0) {
       foreach ($remaining['main'] as $date => $missing) {
@@ -236,6 +236,15 @@ function wmf_audit_main($submod_prefix, $drush_params) {
       foreach ($remaining['recurring'] as $date => $missing) {
         if (count($missing) > 0) {
           $wrap_up .= "\t$date: " . count($missing) . "\n";
+        }
+      }
+    }
+
+    $wrap_up .= "Transaction IDs:\n";
+    foreach ($remaining as $group => $transactions) {
+      foreach ($transactions as $date => $missing) {
+        foreach ($missing as $transaction) {
+          $wrap_up .= "\t" . WmfTransaction::from_message($transaction)->get_unique_id() . "\n";
         }
       }
     }
@@ -997,7 +1006,10 @@ function wmf_audit_get_xml_log_data_by_order_id($order_id, $log) {
     //look for the raw xml
     $full_xml = false;
     $node = wmfa_execute('get_log_line_xml_outermost_node');
-    $xmlstart = strpos($line, "<$node>");
+    $xmlstart = strpos($line, '<?xml');
+    if ($xmlstart === false) {
+      $xmlstart = strpos($line, "<$node>");
+    }
     $xmlend = strpos($line, "</$node>");
     if ($xmlend) {
       $full_xml = true;
@@ -1007,6 +1019,8 @@ function wmf_audit_get_xml_log_data_by_order_id($order_id, $log) {
       //this is a broken line, and it won't load... but we can still parse what's left of the thing, the slow way.
       $xml = substr($line, $xmlstart);
     }
+    // Syslog wart.  Other control characters should be encoded normally.
+    $xml = str_replace( '#012', "\n", $xml );
 
     $donor_data = array();
 
