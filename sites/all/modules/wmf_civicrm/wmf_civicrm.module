@@ -1152,6 +1152,15 @@ function wmf_civicrm_normalize_msg( $msg ) {
         $msg = json_decode( $msg->body, true );
     }
 
+	$trim_strings = function( $input ) {
+		if ( !is_string( $input ) ) {
+			return $input;
+		}
+		return trim( $input );
+	};
+
+	$msg = array_map( $trim_strings, $msg );
+
     //defaults: Keys that aren't actually required, but which will cause some portion of the code to complain
     //if they don't exist (even if they're blank).
     // FIXME: don't use defaults.  Access msg properties using a functional interface.

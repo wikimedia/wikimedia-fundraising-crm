@@ -1,5 +1,6 @@
 {
     "description": "Wikimedia Foundation donor CRM",
+    "name": "wikimedia/fundraising-crm",
     "authors": [
         { "name": "Elliott Eggleston" },
         { "name": "Peter Gehres" },
