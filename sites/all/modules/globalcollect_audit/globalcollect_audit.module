@@ -1715,6 +1715,11 @@ function globalcollect_audit_get_payment_submethod( $payment_product ){
 			'code' => 'ew_yandex',
 			'group' => 'ew',
 		),
+		861 => array(
+			//alipay
+			'code' => 'ew_alipay',
+			'group' => 'ew',
+		),
 		500 => array(
 			//bpay
 			'code' => 'bpay',
