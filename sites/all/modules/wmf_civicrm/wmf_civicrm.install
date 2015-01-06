@@ -27,6 +27,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7023();
     wmf_civicrm_update_7024();
     wmf_civicrm_update_7025();
+    wmf_civicrm_update_7026();
 }
 
 /**
@@ -1114,4 +1115,14 @@ function wmf_civicrm_update_7025()
             add index entity_id1 (entity_id1),
             add index entity_id2 (entity_id2),
             add index cacheKey (cacheKey)");
+}
+
+/**
+ * Add Alipay to payment_instrument
+ */
+function wmf_civicrm_update_7026()
+{
+	wmf_civicrm_create_option_values( 'payment_instrument', array( 'Alipay' ) );
+
+    return array();
 }

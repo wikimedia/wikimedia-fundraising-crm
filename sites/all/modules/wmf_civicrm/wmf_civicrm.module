@@ -592,6 +592,9 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                     case 'ew_yandex':
                         $payment_instrument = 'Yandex';
                         break;
+                    case 'ew_alipay':
+                        $payment_instrument = 'Alipay';
+                        break;
                 }
                 break;
             case 'obt':
