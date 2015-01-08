@@ -90,7 +90,7 @@ function large_donation_settings( $formId, $formState ) {
 
       $form["group_{$row['id']}"]["delete_{$row['id']}"] = array(
           '#type' => 'button',
-          '#value' => t( 'Delete this notification' ),
+          '#value' => t( 'Delete notification !index', array( '!index' => $uiIndex ) ),
           '#attributes' => array(
               'id' => "delete_{$row['id']}",
               'class' => array( 'delete' ),
