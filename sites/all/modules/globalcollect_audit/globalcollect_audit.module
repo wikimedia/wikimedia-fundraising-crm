@@ -1927,9 +1927,23 @@ function wr1_get_negative_type( $record ){
 }
 
 function gca_wr1_key_grinder( $record, $keys, $name, $error_on_mismatch = false ){
+	$ret = null;
+	//Alipay charges in CNY and pays out in EUR
+	//short-circuit both currency and amount for them
+	if ( $record['WbC Payment method ID'] === '8'
+		&& $record['WbC Payment product ID'] === '861'
+		&& in_array( $name, array( 'currency', 'amount' ) ) ){
+
+		if ( $name === 'currency' ) {
+			$ret = $record['Invoice-currency-deliv'];
+		} else {
+			$ret = $record['Invoice-amount-deliv'];
+		}
+		globalcollect_audit_echo("Alipay exception: setting $name to $ret");
+		return $ret;
+	}
 
 	if ( $error_on_mismatch ){
-		$ret = null;
 		$first = '';
 		foreach ( $keys as $key ){
 			if (array_key_exists( $key, $record )){
