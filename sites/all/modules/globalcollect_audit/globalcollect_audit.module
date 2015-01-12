@@ -162,8 +162,8 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 					$error = true;
 				}
 				
-				if ( !$error && !is_null( $parent['contribution_recur_id'] ) ){
-					//this is a recurring transaction, and we're not cool enough to handle that yet. Defer to later.
+				if (!$error && !empty($parent['contribution_recur_id'])) {
+          //this is a recurring transaction, and we're not cool enough to handle that yet. Defer to later.
 					globalcollect_audit_log_error( "Not cool enough to handle recurring refunds/chargebacks yet for " . wr1_order_id( $transactions[$order_id] ) . print_r( $transactions[$order_id], true ), 'RECURRING_CBK' );
 					$error = true; //well, not really an "error", per se, but we do want to ignore this for now.
 				}
