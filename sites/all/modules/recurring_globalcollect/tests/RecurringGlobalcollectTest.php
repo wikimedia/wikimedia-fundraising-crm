@@ -43,6 +43,9 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
 	}
 
     function testCharge() {
+        // FIXME: don't make real API calls, rely on DI test fixture responses instead.
+        $this->markTestSkipped( 'Makes API calls.' );
+
         $result = recurring_globalcollect_charge( $this->contribution_recur_id );
         $this->assertEquals( 'completed', $result['status'] );
 

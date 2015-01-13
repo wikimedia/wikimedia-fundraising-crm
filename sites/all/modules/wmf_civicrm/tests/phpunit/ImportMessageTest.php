@@ -26,6 +26,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->contact_id = $api->id;
 
         $this->recur_amount = '1.23';
+        $this->trxn_id = mt_rand();
+        $this->time = time();
 
         $contribution_params = array(
             'contact_id' => $this->contact_id,
@@ -34,13 +36,13 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'frequency_unit' => 'month',
             'frequency_interval' => '1',
             'installments' => '0',
-            'start_date' => wmf_common_date_unix_to_civicrm( time() ),
-            'create_date' => wmf_common_date_unix_to_civicrm( time() ),
+            'start_date' => wmf_common_date_unix_to_civicrm( $this->time ),
+            'create_date' => wmf_common_date_unix_to_civicrm( $this->time ),
             'cancel_date' => null,
             'processor_id' => 1,
             'cycle_day' => '1',
             'next_sched_contribution' => null,
-            'trxn_id' => 'RECURRING TEST_GATEWAY 123-1 ' . time(),
+            'trxn_id' => "RECURRING TEST_GATEWAY {$this->trxn_id}-1 {$this->time}",
 
             'version' => 3,
         );
