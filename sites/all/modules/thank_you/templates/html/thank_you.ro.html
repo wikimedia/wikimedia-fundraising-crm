@@ -1,0 +1,44 @@
+{% if first_name and last_name %}
+<p>Stimată/Stimate {{ first_name }},</p>
+
+{% else %}
+<p>Stimate donator,</p>
+{%endif%}
+
+<p>Vă mulţumim pentru darul nepreţuit de a acorda fiecărei persoane de pe glob acces la cunoaştere.</p>
+
+<p>{% if "RecurringRestarted" in contribution_tags %} De curând, am rezolvat o mică problemă tehnică, din cauza căreia au fost întrerupte câteva donaţii recurente lunare. Am restabilit donaţia dumneavoastră curentă, astfel încât aceasta va fi prelucrată în mod obişnuit de acum înainte. Nu vă vom percepe suma aferentă lunilor de întrerupere. Vă mulţumim pentru răbdare şi pentru sprijin. Dacă aveţi întrebări, nu ezitaţi să ne contactaţi prin e-mail la adresa donate@wikimedia.org. {%endif%}</p>
+
+<p>{% if "UnrecordedCharge" in contribution_tags %} De curând, am rezolvat o problemă tehnică, din cauza căreia câţiva donatori nu au primit confirmarea efectuării donaţiei. Vă rugăm să acceptaţi acest e-mail în semn de mulţumire pentru donaţia dumneavoastră din data de {{ receive_date }}. Vă mulţumim pentru răbdare şi pentru sprijin. Dacă aveţi întrebări, nu ezitaţi să ne contactaţi prin e-mail la adresa donate@wikimedia.org. {%endif%}</p>
+
+<p>Numele meu este Lila Tretikov şi sunt Directoarea executivă a Fundaţiei Wikimedia. În ultimul an, donaţiile precum cea efectuată de către dumneavoastră ne-au sprijinit eforturile de a extinde enciclopedia în 287 de limbi şi de a-i spori accesibilitatea pe glob. Ne străduim îndeosebi să o punem la dispoziţia persoanelor care altfel nu ar avea acces la educaţie. Acordăm acces la cunoaştere unor persoane cum este cazul Akshayei Iyengar din Solapur, India. Crescând într-un orăşel în care domeniul predominant de activitate era industria textilă, Akshaya folosea Wikipedia ca sursă principală de învăţare. Pentru elevii din astfel de zone, în care cărţile sunt limitate, dar în care există acces la Internet prin reţele mobile, Wikipedia este un instrument de învăţare vital. Akshaya a absolvit o universitate din India, iar în prezent lucrează ca inginer software în Statele Unite. Ea susţine că jumătate din cunoştinţele pe care le-a dobândit se datorează Wikipediei.</p>
+
+<p>Acest caz nu este unic. Misiunea noastră este de mare anvergură şi nu este lipsită de provocări. Pentru majoritatea utilizatorilor Wikipediei este o surpriză să afle că enciclopedia este tutelată de o fundaţie fără scop lucrativ şi este finanţată din donaţiile dumneavoastră. În fiecare an, îndeajuns de mulţi oameni donează pentru ca ansamblul cunoaşterii să rămână disponibil tuturor. Vă mulţumim pentru contribuţia dumneavoastră la îndeplinirea acestei misiuni.</p>
+
+<p>În numele a aproape jumătate de miliard de persoane care consultă Wikipedia, al miilor de editori voluntari şi al Fundaţiei, vă mulţumesc că ne permiteţi să menţinem Wikipedia online şi fără anunţuri publicitare în acest an.</p>
+
+<p>Vă mulţumesc,<br/>
+Lila</p>
+
+<p>Lila Tretikov<br/>
+Director executiv,<br/>
+Wikimedia Foundation<br/>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+
+<p>Mulţi angajatori alocă fonduri în completarea sumei donate de către angajat: vă rugăm să vă informaţi dacă firma la care lucraţi are <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">un program de donaţii complementare.</a></p>
+
+<p>Pentru referinţa dumneavoastră: donaţia cu numărul {{ transaction_id }}, pe care aţi efectuat-o la {{ receive_date }} a fost de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+
+{% if recurring %}<p> Această donaţie este o plată recurentă. Plăţile lunare vor fi încasate de către Fundaţia Wikimedia până în momentul în care ne veţi solicita întreruperea acestora. Dacă doriţi să anulaţi plăţile, vă rugăm să consultaţi <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instrucţiunile noastre privind anularea cu uşurinţă</a>. </p>{%endif%}
+
+<p>Această scrisoare este un document de referinţă privind donaţia dumneavoastră. Nu au fost furnizate bunuri sau servicii, integral sau parţial, în schimbul aceste contribuţii. Wikimedia Foundation, Inc. este o fundaţie caritabilă fără scop lucrativ, care beneficiază de statutul 501(c)(3) de scutire de impozit în Statele Unite ale Americii. Sediul nostru se află la adresa: 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Codul privind scutirea de impozit în SUA: 20-0049703.</p>
+
+<p>Dezabonare:</p>
+
+<p>În calitate de donator, dorim să vă informăm în permanenţă asupra activităţilor şi a strângerilor de fonduri din comunitatea noastră. Totuşi, dacă preferaţi să nu mai primiţi astfel de e-mailuri din partea noastră, faceţi clic mai jos şi vom elimina adresa dumneavoastră din lista de corespondenţă.</p>
+
+<div style="margin: 0 25px">
+  <p><a href="{{ unsubscribe_link | raw }}">Dezabonare</a></p>
+</div>
+
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/ro&oldid=10945434","name":"thank_you.ro.html","revision":10945434}TI_END -->

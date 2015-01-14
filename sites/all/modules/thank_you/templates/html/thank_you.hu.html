@@ -1,0 +1,44 @@
+{% if first_name and last_name %}
+<p>Kedves {{ first_name }}!</p>
+
+{% else %}
+<p>Kedves Támogatónk!</p>
+{%endif%}
+
+<p>Köszönjük felbecsülhetetlen értékű ajándékát, mellyel a világ minden lakója számára elérhetővé tehetjük az emberi tudást.</p>
+
+<p>{% if "RecurringRestarted" in contribution_tags %} Nemrég megoldottunk egy technikai problémát, amely megakadályozta, hogy a havi rendszerességű adományok célba érjenek. Az Ön rendszeres adománya is mostantól akadálytalanul eljut majd hozzánk. A kiesett hónapokra természetesen nem fogunk számlázni. Köszönjük türelmét és támogatását! Bármely felmerülő kérdés esetén, kérjük, írjon a donate@wikimedia.org címre! {%endif%}</p>
+
+<p>{% if "UnrecordedCharge" in contribution_tags %} Nemrég megoldottunk egy technikai problémát, amely miatt néhány adományozónk nem kapta meg az adományáról visszaigazoló levelünket. Ezzel a levéllel szeretnénk megköszönni a {{ receive_date }} napon küldött adományát. Igazán nagyra becsüljük türelmét és támogatását, és írjon bátran a donate@wikimedia.org címre, ha kérdése merül fel! {%endif%}</p>
+
+<p>Az én nevem Lila Tretikov, én vagyok a Wikimédia Alapítvány ügyvezető igazgatója. Az elmúlt években kapott, az Önéhez hasonló támogatások tették lehetővé, hogy az enciklopédia 287 nyelven és a világ minden részén elérhető legyen. A leginkább azon igyekszünk, hogy azokhoz is eljussunk, akik másképp nem férnek hozzá az oktatáshoz. Kezébe adjuk a tudást olyan embereknek, mint Akshaya Iyengar Solapurból, Indiából. Ő ebben a textiliparra épülő városban nőtt fel és a Wikipediát, mint elsődleges ismeretanyag-forrást használta. Az olyan helyeken élő diákok számára, ahol a könyvek ritkák, az internetet viszont el lehet érni mobil eszközökön, a Wikipédia létfontosságú. Akshaya Indiában elvégezte a főiskolát és most már az Egyesült Államokban szoftverfejlesztőként dolgozik. Akshaya a Wikipédiának tulajdonítja tudása felét.</p>
+
+<p>Ez a történet nem egyedi. A küldetésünk nemes és komoly kihívásokkal teli. A legtöbb Wikipédiát használó ember csodálkozik, ha azt hallja, hogy azt egy nonprofit szervezet üzemelteti és az Ön adományaiból tartják fent. Minden évben éppen csak elegendő adományozónk van ahhoz, hogy az emberi tudáshalmaz mindenki számára elérhető maradhasson. Köszönjük, hogy lehetővé teszi ennek megvalósítását!</p>
+
+<p>A Wikipédiát olvasó közel félmilliárd ember, önkéntes szerkesztők ezrei és az Alapítvány nevében szeretném megköszönni, hogy hozzájárult, hogy a Wikipédiát idén is reklámmentesen tudjuk működtetni.</p>
+
+<p>Köszönettel:<br/>
+Lila</p>
+
+<p>Lila Tretikov<br/>
+Ügyvezető Igazgató<br/>
+Wikimédia Alapítvány<br/>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+
+<p>Sok munkáltató megduplázza az alkalmazottaik adományait: kérjük, tájékozódjon a munkáltatójánál, hogy van-e ilyen <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">szervezeti adományozási programjuk</a>.</p>
+
+<p>Tájékoztatásul: {{ receive_date }} időpontban {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összeget adományozott. Adományát a {{ transaction_id }} azonosító alatt rögzítettük.</p>
+
+{% if recurring %}<p> Ez az adomány egy ismétlődő adományozás része. Az adományt a Wikimédia Alapítvány minden hónapban levonja a számlájáról, amíg értesítést nem küld az adományozás lemondásáról. Ha le szeretné mondani az adományozást, kérjük, kövesse <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">az egyszerű utasításokat a lemondáshoz</a>. </p>{%endif%}
+
+<p>Ez a levél az Ön adományának visszaigazolására szolgál. Semmilyen árut vagy szolgáltatást nem biztosítottunk ellenértékként a támogatásért. A Wikimédia Alapítvány (Wikimedia Foundation, Inc.) egy non-profit szervezet, az Amerikai Egyesült Államok 501(c)(3) jelű adómentességi státuszával. Címünk: 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Az adómentesség regisztrációs száma: 20-0049703</p>
+
+<p>Leiratkozás:</p>
+
+<p>Szeretnénk Önt, mint adományozónkat a közösség eseményeiről és adománygyűjtéseiről rendszeresen tájékoztatni. Amennyiben mégsem kíván tőlünk ilyen tartalmú levelet kapni, kérjük, kattintson alább a linkre és levesszük a levelezőlistáról.</p>
+
+<div style="margin: 0 25px">
+  <p><a href="{{ unsubscribe_link | raw }}">Leiratkozás</a></p>
+</div>
+
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/hu&oldid=10944795","name":"thank_you.hu.html","revision":10944795}TI_END -->
