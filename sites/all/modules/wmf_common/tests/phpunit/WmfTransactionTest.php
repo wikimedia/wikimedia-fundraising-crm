@@ -144,12 +144,14 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
             'total_amount' => 1,
             'version' => 3,
         );
-        $api->Contribution->create( $params );
+        $ret = $api->Contribution->create( $params );
+        $this->assertTrue( $ret );
         wmf_civicrm_set_custom_field_values( $api->values[0]->id, array(
             'gateway' => 'TEST_GATEWAY',
             'gateway_txn_id' => $gateway_txn_id,
         ) );
-        $api->Contribution->create( $params );
+        $ret = $api->Contribution->create( $params );
+        $this->assertTrue( $ret );
         wmf_civicrm_set_custom_field_values( $api->values[0]->id, array(
             'gateway' => 'TEST_GATEWAY',
             'gateway_txn_id' => $gateway_txn_id,
