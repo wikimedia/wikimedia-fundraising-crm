@@ -1,0 +1,44 @@
+{% if first_name and last_name %}
+<p>Labdien, {{ first_name }}!</p>
+
+{% else %}
+<p>Cienījamais ziedotāj!</p>
+{%endif%}
+
+<p>Paldies par Jūsu nenovērtējamo dāvanu — zināšanu sniegšanu cilvēkiem visā pasaulē.</p>
+
+<p>{% if "RecurringRestarted" in contribution_tags %} Mēs nesen novērsām nelielu tehnisku problēmu, kuras dēļ daži ikmēneša ziedojumi tika apturēti. Mēs esam atjaunojuši Jūsu regulāro ziedojumu, un turpmāk tas tiks apstrādāts ierastajā veidā. Par mēnešiem, kas tika izlaisti, nauda netiks iekasēta. Pateicamies par Jūsu pacietību un sniegto atbalstu. Ja Jums ir kādi jautājumi, lūdzu, nosūtiet e-pasta ziņojumu uz adresi donate@wikimedia.org. {%endif%}</p>
+
+<p>{% if "UnrecordedCharge" in contribution_tags %} Mēs nesen novērsām nelielu tehnisku problēmu, kuras dēļ daži ziedotāji nesaņēma apstiprinājumu par veikto ziedojumu. Lūdzu, pieņemiet šo e-pasta ziņojumu kā pateicību par ziedojumu, ko veicāt {{ receive_date }}. Pateicamies par Jūsu pacietību un sniegto atbalstu. Ja Jums ir kādi jautājumi, lūdzu, nosūtiet e-pasta ziņojumu uz adresi donate@wikimedia.org. {%endif%}</p>
+
+<p>Mani sauc Lila Tretikova, un esmu Wikimedia Foundation izpilddirektore. Pēdējā gada laikā Jūsu un citu lasītāju ziedojumi ļāva mums enciklopēdiju paplašināt 287 valodās un uzlabot tās pieejamību visā pasaulē. Mūsu lielākā vēlme ir palīdzēt tiem cilvēkiem, kuriem nav citu izglītošanās iespēju. Mēs sniedzam zināšanas tādiem ļaudīm kā Akšaijai Ijengarai Solapurā, Indijā. Viņa pavadīja bērnību mazā audumu ražošanas ciematā un Wikipedia vietni izmantoja kā galveno mācību līdzekli. Šādās vietās, kur ir maz grāmatu, taču ir pieeja mobilajam internetam, Wikipedia vietne ir neaizstājama. Galu galā Akšaija absolvēja koledžu Indijā un tagad strādā par programmatūras inženieri ASV. Viņa apgalvo, ka pateicība par pusi no iegūtajām zināšanām pienākas Wikipedia projektam.</p>
+
+<p>Šis stāsts nav unikāls. Mūsu mērķi ir apjomīgi un rada lielus izaicinājumus. Lielākā daļa Wikipedia vietnes lietotāju ir izbrīnīti, uzzinot, ka to pārvalda bezpeļņas organizācija un finansē ziedotāji. Ik gadu saņemam tieši tik daudz ziedojumu, lai visas cilvēces uzkrātās zināšanas padarītu pieejamas ikvienam. Paldies, ka palīdzat īstenot šo mērķi.</p>
+
+<p>Gandrīz pusmiljarda Wikipedia lasītāju, tūkstošiem brīvprātīgo redaktoru un fonda darbinieku vārdā es Jums pateicos par palīdzību, kas ļāva šogad uzturēt Wikipedia tiešsaistes datu bāzi un atteikties no reklāmu izmantošanas.</p>
+
+<p>Paldies,<br/>
+Lila</p>
+
+<p>Lila Tretikova<br/>
+izpilddirektore,<br/>
+Wikimedia Foundation<br/>
+<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+
+<p>Daudzi darba devēji veic papildu ziedojumu par katru darbinieka ziedojumu: sazinieties ar savu uzņēmumu, lai uzzinātu, vai tajā ir programma, <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">kas paredz veikt korporatīvos ziedojumus atbilstoši darbinieku ieguldījumam</a>.</p>
+
+<p>Jūsu lietvedībai: Jūs veicāt {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} ziedojumu Nr. {{ transaction_id }} šādā datumā: {{ receive_date }}.</p>
+
+{% if recurring %}<p> Šis ziedojums ir daļa no regulāru ziedojumu plāna. Wikimedia Foundation reizi mēnesī iekasēs maksājumu, līdz saņemsim Jūsu pieprasījumu tos pārtraukt. Ja vēlaties atcelt maksājumus, lūdzu, <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">skatiet mūsu vienkāršos norādījumus par atcelšanu</a>. </p>{%endif%}
+
+<p>Šī vēstule var būt pierādījums veiktajam ziedojumam. Apmaiņā pret šo ziedojumu netika piedāvātas nekādas preces vai pakalpojumi nedz pilnā, nedz daļējā apjomā. Wikimedia Foundation, Inc. ir bezpeļņas labdarības organizācija, kurai Amerikas Savienotajās Valstīs tiek piemērots statuss 501(c)(3), kas to atbrīvo no nodokļu maksāšanas. Mūsu adrese ir šāda: 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105, USA. ASV nodokļu atbrīvojuma numurs: 20-0049703</p>
+
+<p>Atteikšanās iespēja:</p>
+
+<p>Mēs vēlētos, lai Jūs kā ziedotājs būtu informēts par mūsu kopienas aktivitātēm un līdzekļu vākšanas kampaņām. Taču, ja nevēlaties no mums saņemt šādus e-pasta ziņojumus, lūdzu, noklikšķiniet uz tālāk redzamās opcijas, un mēs izņemsim Jūs no abonentu datubāzes.</p>
+
+<div style="margin: 0 25px">
+  <p><a href="{{ unsubscribe_link | raw }}">Pārtraukt abonēšanu</a></p>
+</div>
+
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/lv&oldid=10955131","name":"thank_you.lv.html","revision":10955131}TI_END -->
