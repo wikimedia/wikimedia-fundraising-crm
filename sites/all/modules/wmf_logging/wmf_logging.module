@@ -140,12 +140,16 @@ function wmf_logging_watchdog($entry) {
  */
 function wmf_logging_format_message($entry) {
 
+  $uid = -1;
+  if ( isset( $entry[ 'user' ] ) ) {
+    $uid = $entry[ 'user' ]->uid;
+  }
   $message = $entry[ 'type' ];
   $message .= '|' . $entry[ 'timestamp' ];
   $message .= '|' . $entry[ 'ip' ];
   $message .= '|' . $entry[ 'request_uri' ];
   $message .= '|' . $entry[ 'referer' ];
-  $message .= '|' . $entry[ 'user' ]->uid;
+  $message .= '|' . $uid;
   $message .= '|' . $entry[ 'link' ];
 
   if (empty($entry[ 'variables' ])) {
