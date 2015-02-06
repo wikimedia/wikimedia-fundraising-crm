@@ -1037,7 +1037,7 @@ function globalcollect_audit_mark_rfd_cbk( $missing ){
       $parent = array_shift($parents);
     }
 
-    if (!is_null($parent) || !array_key_exists('gateway_txn_id', $parent)) {
+    if (is_null($parent) || !array_key_exists('gateway_txn_id', $parent)) {
       globalcollect_audit_log_error(__FUNCTION__ . ": Could not find parent (or any related) transaction for refund/chargeback, but that should be impossible to do here... " . wr1_order_id($wr1), 'MISSING_PARENT');
     } else {
       $real_oid = $parent['gateway_txn_id'];
