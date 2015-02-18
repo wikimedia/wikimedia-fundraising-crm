@@ -22,8 +22,8 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'contribution_tags' => array(),
             'contribution_tracking_id' => mt_rand(),
             'contribution_tracking_update' => '1',
-            'contribution_type' => 'cash',
-            'contribution_type_id' => '9',
+            'contribution_type' => 'cash', // FIXME
+            'contribution_type_id' => '9', // FIXME
             'country' => 'IL',
             'create_date' => time() + 11,
             'currency' => 'USD',
