@@ -1453,16 +1453,18 @@ function wmf_civicrm_set_no_thank_you( $contribution_id, $reason ) {
  * equal refund contribution is created.  This contribution will be linked
  * to the original through the parent_contribution_id field, and will have
  * status "Pending" unless the $refund_completed argument is true.
+ * TODO: Default to refund_completed=true.
  *
  * $refund_type should be 'refund' or 'chargeback', for now we simply dump
  * this string into the "source" field of the negative contribution.
  *
- * If $original_amount and $original_currency are provided, they will be
+ * If $refund_amount and $refund_currency are provided, they will be
  * checked against the original contribution and an exception thrown on a
- * mismatch.  If the original amount has been zeroed we reconstruct the
- * contribution using the currency and amount from function parameters.
+ * mismatch.  If the original amount has been zeroed (legacy protocol) we will
+ * reconstruct the contribution using the currency and amount from these
+ * function parameters.
  *
- * returns the refund contribution id.
+ * @return integer the refund's contribution id.
  */
 function wmf_civicrm_mark_refund(
     $contribution_id,
@@ -1470,8 +1472,8 @@ function wmf_civicrm_mark_refund(
     $refund_completed = false,
     $refund_date = null,
     $refund_gateway_txn_id = null,
-    $original_currency = null,
-    $original_amount = null
+    $refund_currency = null,
+    $refund_amount = null
 ) {
     $api = civicrm_api_classapi();
 
@@ -1515,33 +1517,49 @@ WHERE
 
     // Should we restore?
     if ( (floatval( $contribution->total_amount ) == 0
-            or $contribution->contribution_source === "RFD")
-        and $original_currency and $original_amount > 0
+            || $contribution->contribution_source === "RFD")
+        && $refund_currency !== null && $refund_amount !== null
     ) {
         //FIXME!: call this from the contribution save hook. $round parameter. 
         $contribution->total_amount = round( exchange_rate_convert(
-            $original_currency, $original_amount,
+            $refund_currency, $refund_amount,
             strtotime( $contribution->receive_date )
         ), 2 );
 
         $api->Contribution->Create( array(
             'id' => $contribution_id,
 
-            'source' => "{$original_currency} {$original_amount}",
+            'source' => "{$refund_currency} {$refund_amount}",
             'total_amount' => $contribution->total_amount,
 
             'version' => 3,
         ) );
     } else {
-        list($actual_currency, $actual_amount) = explode(" ", $contribution->contribution_source);
-        if ( ($original_currency && round($original_currency, 2) != round($actual_currency, 2))
-            || ($original_amount && round($original_amount, 2) != round($actual_amount, 2)) )
-        {
-            throw new WmfException( 'INVALID_MESSAGE', "Payment amount specified did not match original contribution, ID=$contribution_id.  $original_currency $original_amount != $actual_currency $actual_amount" );
+        // Deal with any discrepancies in the refunded amount.
+        list( $original_currency, $original_amount ) = explode(" ", $contribution->contribution_source);
+
+        if ( $refund_currency !== null ) {
+            if ( $refund_currency != $original_currency ) {
+                throw new WmfException( 'INVALID_MESSAGE', "Refund was in a different currency.  Freaking out." );
+            }
+        } else {
+            $refund_currency = $original_currency;
         }
 
-        $original_currency = $actual_currency;
-        $original_amount = $actual_amount;
+        if ( $refund_amount !== null ) {
+            $amount_scammed = round( $refund_amount, 2 ) - round( $original_amount, 2 );
+            if ( $amount_scammed > 0 ) {
+                throw new WmfException( 'INVALID_MESSAGE', "The refunded amount was greater than the payment: $refund_currency $refund_amount > $original_amount" );
+            } elseif ( $amount_scammed != 0 ) {
+                // By accident or design, it turns out you don't quite get your
+                // money back in the real world.  So don't trip.
+                watchdog( 'wmf_civicrm', "Refunded ($refund_type) amount did not exactly match original contribution, ID=$contribution_id.  $refund_currency $refund_amount != $original_currency $original_amount", NULL, WATCHDOG_INFO );
+
+                // TODO: Record the difference here, as a fee or something.
+            }
+        } else {
+            $refund_amount = $original_amount;
+        }
     }
 
     $transaction = WmfTransaction::from_unique_id( $contribution->trxn_id );
@@ -1567,7 +1585,7 @@ WHERE
         'contribution_type_id' => wmf_civicrm_get_civi_id( 'contribution_type_id', $refund_type ),
         'receive_date' => wmf_common_date_unix_to_civicrm( $refund_date ),
         'contribution_status_id' => civicrm_api_contribution_status( $refund_status ),
-        'contribution_source' => "$original_currency -{$original_amount}",
+        'contribution_source' => "$refund_currency -{$refund_amount}",
         'trxn_id' => $refund_unique_id,
 
         // API required fields
