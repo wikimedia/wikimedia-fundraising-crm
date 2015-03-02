@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "118d4f47ff407c79a3a6d54fe95442cd",
+    "hash": "9871c3a8b44fbca95bd7eb8937cd980d",
     "packages": [
         {
             "name": "cogpowered/finediff",
@@ -105,6 +105,48 @@
                 "stomp"
             ],
             "time": "2013-02-23 17:34:44"
+        },
+        {
+            "name": "minfraud/http",
+            "version": "v1.60",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/maxmind/ccfd-api-php.git",
+                "reference": "553ceffe363185e20e17045d5058aba2154a6faf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/maxmind/ccfd-api-php/zipball/553ceffe363185e20e17045d5058aba2154a6faf",
+                "reference": "553ceffe363185e20e17045d5058aba2154a6faf",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/HTTPBase.php",
+                    "src/CreditCardFraudDetection.php",
+                    "src/TelephoneVerification.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-2.1+"
+            ],
+            "authors": [
+                {
+                    "name": "MaxMind, Inc.",
+                    "email": "support@maxmind.com",
+                    "homepage": "http://www.maxmind.com/"
+                }
+            ],
+            "description": "MaxMind minFraud HTTP API",
+            "homepage": "https://github.com/maxmind/ccfd-api-php",
+            "keywords": [
+                "fraud",
+                "maxmind",
+                "minfraud"
+            ],
+            "time": "2014-07-23 16:34:20"
         },
         {
             "name": "phpmailer/phpmailer",
@@ -261,24 +303,24 @@
         },
         {
             "name": "symfony/event-dispatcher",
-            "version": "v2.3.23",
+            "version": "v2.3.25",
             "target-dir": "Symfony/Component/EventDispatcher",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/EventDispatcher.git",
-                "reference": "36a40695d94e948d7a85347db0b12ba446c400fa"
+                "reference": "49d3432269d092b8d325b58615815fdbe93f49cb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/36a40695d94e948d7a85347db0b12ba446c400fa",
-                "reference": "36a40695d94e948d7a85347db0b12ba446c400fa",
+                "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/49d3432269d092b8d325b58615815fdbe93f49cb",
+                "reference": "49d3432269d092b8d325b58615815fdbe93f49cb",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.3"
             },
             "require-dev": {
-                "symfony/dependency-injection": "~2.0"
+                "symfony/dependency-injection": "~2.0,>=2.0.5"
             },
             "suggest": {
                 "symfony/dependency-injection": "",
@@ -311,21 +353,21 @@
             ],
             "description": "Symfony EventDispatcher Component",
             "homepage": "http://symfony.com",
-            "time": "2014-11-30 13:33:44"
+            "time": "2015-01-03 13:14:51"
         },
         {
             "name": "symfony/http-foundation",
-            "version": "v2.3.23",
+            "version": "v2.3.25",
             "target-dir": "Symfony/Component/HttpFoundation",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/HttpFoundation.git",
-                "reference": "94935ec4f9ad28d554e82c6e1fa11615a031108d"
+                "reference": "d61a1aa601f343fc24ce468ef06b04b18e6e2569"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/HttpFoundation/zipball/94935ec4f9ad28d554e82c6e1fa11615a031108d",
-                "reference": "94935ec4f9ad28d554e82c6e1fa11615a031108d",
+                "url": "https://api.github.com/repos/symfony/HttpFoundation/zipball/d61a1aa601f343fc24ce468ef06b04b18e6e2569",
+                "reference": "d61a1aa601f343fc24ce468ef06b04b18e6e2569",
                 "shasum": ""
             },
             "require": {
@@ -361,20 +403,20 @@
             ],
             "description": "Symfony HttpFoundation Component",
             "homepage": "http://symfony.com",
-            "time": "2014-12-02 19:42:47"
+            "time": "2015-01-30 09:53:49"
         },
         {
             "name": "twig/twig",
-            "version": "v1.16.2",
+            "version": "v1.18.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twigphp/Twig.git",
-                "reference": "42f758d9fe2146d1f0470604fc05ee43580873fc"
+                "reference": "4cf7464348e7f9893a93f7096a90b73722be99cf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/Twig/zipball/42f758d9fe2146d1f0470604fc05ee43580873fc",
-                "reference": "42f758d9fe2146d1f0470604fc05ee43580873fc",
+                "url": "https://api.github.com/repos/twigphp/Twig/zipball/4cf7464348e7f9893a93f7096a90b73722be99cf",
+                "reference": "4cf7464348e7f9893a93f7096a90b73722be99cf",
                 "shasum": ""
             },
             "require": {
@@ -383,7 +425,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.16-dev"
+                    "dev-master": "1.18-dev"
                 }
             },
             "autoload": {
@@ -409,7 +451,7 @@
                 },
                 {
                     "name": "Twig Team",
-                    "homepage": "https://github.com/fabpot/Twig/graphs/contributors",
+                    "homepage": "http://twig.sensiolabs.org/contributors",
                     "role": "Contributors"
                 }
             ],
@@ -418,15 +460,19 @@
             "keywords": [
                 "templating"
             ],
-            "time": "2014-10-17 12:53:44"
+            "time": "2015-01-25 17:32:08"
         },
         {
-            "name": "wikimedia/DonationInterface",
-            "version": "dev-drupal",
+            "name": "wikimedia/donation-interface",
+            "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://gerrit.wikimedia.org/r/p/mediawiki/extensions/DonationInterface.git",
-                "reference": "a1944f2c21dcc24d05b0846ff8e5c8176aeffda1"
+                "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
+                "reference": "f2a16464ea48f833dff9d504c5a282e55b2bc13f"
+            },
+            "require": {
+                "fusesource/stomp-php": "2.*",
+                "minfraud/http": "~1.60"
             },
             "type": "library",
             "autoload": {
@@ -437,24 +483,25 @@
                     "globalcollect_gateway",
                     "paypal_gateway",
                     "worldpay_gateway"
+                ],
+                "files": [
+                    "gateway_common/WmfFramework.php"
                 ]
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "support": {
-                "irc": "irc://irc.freenode.net/wikimedia-fundraising"
-            },
-            "time": "2014-10-27 19:20:24"
+            "time": "2015-03-01 21:03:51"
         },
         {
-            "name": "wikimedia/SmashPig",
+            "name": "wikimedia/smash-pig",
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://gerrit.wikimedia.org/r/p/wikimedia/fundraising/SmashPig.git",
-                "reference": "f956a0a03c3121d075bd9f8414d5d46990d26d32"
+                "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
+                "reference": "4a580c6eda141379188e5ca92d9a9d510b77eb89"
             },
             "require": {
                 "php": ">=5.3.3",
@@ -467,6 +514,7 @@
                     "SmashPig\\": "./"
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPLv2"
             ],
@@ -487,27 +535,21 @@
             "description": "The open source PHP flexible payments library and frontend/backend mediator.",
             "homepage": "http://smashpig.org",
             "keywords": [
-                "payments, donations"
+                "donations",
+                "payments"
             ],
-            "time": "2014-12-09 01:34:40"
+            "time": "2015-03-02 19:29:34"
         }
     ],
-    "packages-dev": [
-
-    ],
-    "aliases": [
-
-    ],
+    "packages-dev": [],
+    "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "wikimedia/donationinterface": 20,
-        "wikimedia/smashpig": 20
+        "wikimedia/donation-interface": 20,
+        "wikimedia/smash-pig": 20
     },
     "prefer-stable": false,
-    "platform": [
-
-    ],
-    "platform-dev": [
-
-    ]
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
 }

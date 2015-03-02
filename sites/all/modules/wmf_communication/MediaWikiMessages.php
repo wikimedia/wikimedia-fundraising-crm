@@ -27,7 +27,7 @@ class MediaWikiMessages {
     protected function __construct() {
         // TODO: ability to configure multiple messages sources
         // FIXME: stealth dependency
-        $di_root = DRUPAL_ROOT . '/../vendor/wikimedia/DonationInterface';
+        $di_root = DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface';
         if ( !is_dir( $di_root ) ) {
             throw new Exception( "DonationInterface i18n libraries not found.  Path checked: {$di_root}" );
         }
