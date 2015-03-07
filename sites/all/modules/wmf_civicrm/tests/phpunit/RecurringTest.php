@@ -21,7 +21,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
      */
     public function testNextScheduled( $now, $cycle_day, $expected_next_sched ) {
         if ( defined( 'HHVM_VERSION' ) ) {
-            throw new PHPUnit_Framework_SkippedTestError( 'Running under HHVM, skipping known failure' );
+            $this->markTestSkipped( 'Running under HHVM, skipping known failure' );
         }
 
         $msg = array(
