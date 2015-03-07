@@ -15,7 +15,7 @@ JOB_ID="${JOB_ID//-/_}"
 
 CIVICRM_SCHEMA_PREFIX="civicrm_${JOB_ID}_"
 
-BUILD_HOST=`hostname`
+CIVICRM_MYSQL_CLIENT="localhost"
 # MySQL username is limited to 16 chars, use build number as an identifier:
 CIVICRM_MYSQL_USERNAME="civitest_${BUILD_NUMBER}"
 

@@ -9,6 +9,6 @@ for i in 1 2 3; do
 	mysql -u root <<EOS
 	drop database if exists ${CIVICRM_SCHEMA_PREFIX}${i};
 	create database ${CIVICRM_SCHEMA_PREFIX}${i};
-	grant all on ${CIVICRM_SCHEMA_PREFIX}${i}.* to '${CIVICRM_MYSQL_USERNAME}'@'${BUILD_HOST}' identified by '${CIVICRM_MYSQL_PASSWORD}';
+	grant all on ${CIVICRM_SCHEMA_PREFIX}${i}.* to '${CIVICRM_MYSQL_USERNAME}'@'${CIVICRM_MYSQL_CLIENT}' identified by '${CIVICRM_MYSQL_PASSWORD}';
 EOS
 done
