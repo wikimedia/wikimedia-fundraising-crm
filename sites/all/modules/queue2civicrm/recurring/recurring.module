@@ -497,7 +497,9 @@ function recurring_normalize_msg( $msg  ) {
 function recurring_normalize_paypal_msg( $msg ) {
   $msg_normalized = array();
 
-  $timestamp = ( !isset( $msg[ 'payment_date' ] ) || !strlen( $msg[ 'payment_date' ] )) ? strtotime( "now" ) : strtotime( $msg[ 'payment_date' ] );
+  if ( isset( $msg['payment_date'] ) ) {
+    $msg_normalized['date'] = strtotime( $msg['payment_date'] );
+  }
 
   // the subscription id
   $msg_normalized[ 'subscr_id' ] = $msg[ 'subscr_id' ];
@@ -612,8 +614,11 @@ function recurring_normalize_paypal_msg( $msg ) {
       } elseif( $msg[ 'txn_type' ] == 'subscr_cancel' ) {
         $msg_normalized[ 'cancel_date' ] = strtotime( $msg[ 'subscr_date' ] );
       }
+      if ( !isset( $msg_normalized['date'] ) ) {
+        $msg_normalized['date'] = strtotime( $msg['subscr_date'] );
+      }
     }
-    
+
     if ( $msg[ 'txn_type' ] == 'subscr_modify' ) {
       $msg_normalized[ 'modified_date' ] = $msg[ 'subscr_effective' ];
     }
@@ -631,7 +636,9 @@ function recurring_normalize_paypal_msg( $msg ) {
 
   $msg_normalized[ 'gateway' ] = ( !empty( $msg['gateway'] ) ? $msg['gateway'] : 'paypal' );
 
-  $msg_normalized[ 'date' ] = $timestamp;
+  if ( !isset( $msg_normalized['date'] ) ) {
+    $msg_normalized['date'] = time();
+  }
 
   // FIXME: so dirty.
   foreach ( $msg as $key => $value ) {
