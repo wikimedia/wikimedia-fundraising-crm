@@ -147,7 +147,7 @@ function refund_import($msg) {
         $body['gross']
       );
 
-      watchdog('refund', "$refundTxn: Successfully marked as refunded", WATCHDOG_INFO);
+      watchdog('refund', "$refundTxn: Successfully marked as refunded", NULL, WATCHDOG_INFO);
     } catch (Exception $ex) {
       watchdog('refund', "$refundTxn: Could not refund due to internal error: " . $ex->getMessage(), NULL, WATCHDOG_ERROR);
       throw $ex;
