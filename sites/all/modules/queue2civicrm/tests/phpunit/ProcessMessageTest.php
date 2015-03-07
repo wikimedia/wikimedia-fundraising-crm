@@ -16,6 +16,9 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $message = new TransactionMessage();
         $message2 = new TransactionMessage();
 
+        exchange_rate_cache_set( 'USD', $message->get( 'date' ), 1 );
+        exchange_rate_cache_set( $message->get( 'currency' ), $message->get( 'date' ), 3 );
+
         queue2civicrm_import( $message );
         queue2civicrm_import( $message2 );
 
@@ -34,6 +37,13 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $signup_message = new RecurringSignupMessage( $values );
         $message = new RecurringPaymentMessage( $values );
         $message2 = new RecurringPaymentMessage( $values );
+
+        $subscr_time = strtotime( $signup_message->get( 'subscr_date' ) );
+        exchange_rate_cache_set( 'USD', $subscr_time, 1 );
+        exchange_rate_cache_set( $signup_message->get('mc_currency'), $subscr_time, 3 );
+        $payment_time = strtotime( $message->get( 'payment_date' ) );
+        exchange_rate_cache_set( 'USD', $payment_time, 1 );
+        exchange_rate_cache_set( $message->get('mc_currency'), $payment_time, 3 );
 
         recurring_import( $signup_message );
         recurring_import( $message );
@@ -62,6 +72,10 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'subscr_id' => mt_rand(),
         ) );
 
+        $payment_time = strtotime( $message->get( 'payment_date' ) );
+        exchange_rate_cache_set( 'USD', $payment_time, 1 );
+        exchange_rate_cache_set( $message->get('mc_currency'), $payment_time, 3 );
+
         recurring_import( $message );
     }
 
@@ -73,6 +87,10 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $message = new RecurringPaymentMessage( array(
             'subscr_id' => null,
         ) );
+
+        $payment_time = strtotime( $message->get( 'payment_date' ) );
+        exchange_rate_cache_set( 'USD', $payment_time, 1 );
+        exchange_rate_cache_set( $message->get('mc_currency'), $payment_time, 3 );
 
         recurring_import( $message );
     }
@@ -86,6 +104,9 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'gross' => $donation_message->get( 'original_gross' ),
             'gross_currency' => $donation_message->get( 'original_currency' ),
         ) );
+
+        exchange_rate_cache_set( 'USD', $donation_message->get('date'), 1 );
+        exchange_rate_cache_set( $donation_message->get('currency'), $donation_message->get('date'), 3 );
 
         queue2civicrm_import( $donation_message );
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $donation_message->getGateway(), $donation_message->getGatewayTxnId() );
