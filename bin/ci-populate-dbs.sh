@@ -9,6 +9,8 @@ export PRECREATED_DSN_PATTERN="mysql://${CIVICRM_MYSQL_USERNAME}:${CIVICRM_MYSQL
 
 #FIXME: --web-root="$WORKSPACE/src/crm"
 
+$WORKSPACE/src/wikimedia/fundraising/civicrm-buildkit/bin/civi-download-tools
+
 $WORKSPACE/src/wikimedia/fundraising/civicrm-buildkit/bin/amp config:set \
 	--mysql_type=precreated \
 	--httpd_type=none \
