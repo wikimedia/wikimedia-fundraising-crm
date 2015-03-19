@@ -1,11 +1,7 @@
 #!/bin/bash
 
-if [ "x${JOB_NAME}" = "x" ]; then
-	echo "JOB_NAME environment variable was not set, exiting."
-	exit 1
-fi
-if [ "x${BUILD_NUMBER}" = "x" ]; then
-	echo "BUILD_NUMBER environment variable was not set, exiting."
+if [ -z "$BUILD_TAG" ]; then
+	echo "BUILD_TAG environment variable was not set, exiting."
 	exit 1
 fi
 
