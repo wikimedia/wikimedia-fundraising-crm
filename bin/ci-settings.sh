@@ -9,9 +9,8 @@ if [ "x${BUILD_NUMBER}" = "x" ]; then
 	exit 1
 fi
 
-# MYSQL database name cant use spaces or dashes:
-JOB_ID="${JOB_NAME// /_}_${BUILD_NUMBER}"
-JOB_ID="${JOB_ID//-/_}"
+# MYSQL database name can't use spaces or dashes:
+JOB_ID="${BUILD_TAG//-/_}"
 
 CIVICRM_SCHEMA_PREFIX="civicrm_${JOB_ID}_"
 
