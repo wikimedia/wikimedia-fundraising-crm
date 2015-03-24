@@ -88,6 +88,11 @@ interface ICiviMailStore {
 }
 
 class CiviMailStore implements ICiviMailStore {
+
+	protected static $mailings = array();
+	protected static $jobs = array();
+	protected static $emailActivityTypeId = -1;
+
 	public function addMailing( $source, $templateName, $bodyTemplate, $subjectTemplate, $revision = 0, $jobStatus = 'Complete' ) {
 		$name = $this::makeUniqueName( $source, $templateName, $revision );
 		$mailing = $this->getMailingInternal( $name );
@@ -104,6 +109,7 @@ class CiviMailStore implements ICiviMailStore {
 					'scheduled_id' => 1
 				);
 				$mailing = CRM_Mailing_BAO_Mailing::add( $params, CRM_Core_DAO::$_nullArray );
+				self::$mailings[$name] = $mailing;
 			}
 
 			$job = $this->getJobInternal( $mailing->id );
@@ -120,6 +126,7 @@ class CiviMailStore implements ICiviMailStore {
 			if ( $saveJob ) {
 				$job->status = $jobStatus;
 				$job->save();
+				self::$jobs[$mailing->id] = $job;
 			}
 			$transaction->commit();
 			return new CiviMailingRecord( $mailing, $job );
@@ -170,14 +177,16 @@ VALUES ( %1, %2, %3 )";
 		if ( !$date ) {
 			$date = gmdate( 'YmdHis' );
 		}
-		$activityType = CRM_Core_OptionGroup::getValue('activity_type',
-          'Email',
-          'name'
-        );
+		if ( self::$emailActivityTypeId == -1 ) {
+			self::$emailActivityTypeId = CRM_Core_OptionGroup::getValue('activity_type',
+				'Email',
+				'name'
+			);
+		}
 		$activity = array(
 			'source_contact_id' => $queueRecord->getContactID(),
 			'target_contact_id' => $queueRecord->getContactID(),
-			'activity_type_id' => $activityType,
+			'activity_type_id' => self::$emailActivityTypeId,
 			'activity_date_time' => $date,
 			'subject' => $subject,
 			'details' => $details,
@@ -204,21 +213,29 @@ VALUES ( %1, %2, %3 )";
 	}
 
 	protected function getMailingInternal( $name ) {
+		if ( array_key_exists( $name, self::$mailings ) ) {
+			return self::$mailings[$name];
+		}
 		$mailing = new CRM_Mailing_DAO_Mailing();
 		$mailing->name = $name;
 
 		if ( !$mailing->find() || !$mailing->fetch() ) {
 			return null;
 		}
+		self::$mailings[$name] = $mailing;
 		return $mailing;
 	}
 
 	protected function getJobInternal( $mailingId ) {
+		if ( array_key_exists( $mailingId, self::$jobs ) ) {
+			return self::$jobs[$mailingId];
+		}
 		$job = new CRM_Mailing_DAO_Job();
 		$job->mailing_id = $mailingId;
 		if ( !$job->find() || !$job->fetch() ) {
 			return null;
 		}
+		self::$jobs[$mailingId] = $job;
 		return $job;
 	}
 

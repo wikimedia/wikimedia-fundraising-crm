@@ -13,7 +13,7 @@
 
                 if ( /Coinbase|Orders-Report|\(Orders\)/.test( uploadFile ) ) {
                     fileType = "coinbase";
-                } else if ( /JPMorgan/.test( uploadFile ) ) {
+                } else if ( /JPM/.test( uploadFile ) ) {
                     fileType = "jpmorgan";
                 } else if ( /Paypal/.test( uploadFile ) ) {
                     fileType = "paypal";

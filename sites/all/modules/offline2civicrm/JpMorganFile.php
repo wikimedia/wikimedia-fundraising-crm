@@ -55,21 +55,13 @@ class JpMorganFile extends ChecksFile {
         );
     }
 
-    protected function parseRow( $data ) {
-        // Empty rows are acceptable for this file
-        if ( empty( $data['ACCOUNT NAME'] ) and empty( $data['REFERENCE'] ) ) {
-            throw new EmptyRowException();
-        }
-
-        return parent::parseRow( $data );
-    }
-
     protected function mungeMessage( &$msg ) {
         // Approximate value in USD
         $msg['gross'] = exchange_rate_convert(
             $msg['original_currency'], $msg['original_gross'], $msg['settlement_date']
         );
 
+        // TODO: We can remove this once MG uses smart groups instead of this label.
         // Flag as big-time if over $1000
         if ( $msg['gross'] > 1000 ) {
             $msg['gift_source'] = 'Benefactor Gift';
