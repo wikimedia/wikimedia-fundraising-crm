@@ -2026,7 +2026,7 @@ function wmf_civicrm_civicrm_buildForm( $formName, &$form ) {
     switch ( $formName ) {
     case 'CRM_Contribute_Form_Contribution':
         // Only run this validation for users having the Engage role.
-        if ( !wmf_civicrm_user_has_role( 'Engage Direct Mail' ) ) {
+        if ( !wmf_civicrm_user_has_role( 'Engage' ) ) {
             break;
         }
 
@@ -2056,7 +2056,7 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
     switch ( $formName ) {
     case 'CRM_Contribute_Form_Contribution':
         // Only run this validation for users having the Engage role.
-        if ( !wmf_civicrm_user_has_role( 'Engage Direct Mail' ) ) {
+        if ( !wmf_civicrm_user_has_role( 'Engage' ) ) {
             break;
         }
 
