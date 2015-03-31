@@ -32,7 +32,6 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7025();
     wmf_civicrm_update_7026();
     wmf_civicrm_update_7027();
-    wmf_civicrm_update_7028();
 }
 
 /**
@@ -1156,22 +1155,4 @@ function wmf_civicrm_update_7027()
         WHERE custom_group_id = {$custom_group->id}
         AND column_name LIKE 'is%donor'
         AND html_type = 'CheckBox'");
-}
-
-/**
- * Add "Engage" contribution type
- *
- * Note that we create the "Engage" role programatically, but it won't have usable permissions.
- */
-function wmf_civicrm_update_7028() {
-    if ( false === user_role_load_by_name( 'Engage' ) ) {
-        $role = new stdClass();
-        $role->name = 'Engage';
-        user_role_save( $role );
-    }
-
-    wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_contribution_types( array(
-        'Engage',
-    ) );
 }
