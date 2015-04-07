@@ -2061,7 +2061,7 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
         }
 
         $engage_contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Engage' );
-        if ( (int)$fields['contribution_type_id'] !== $engage_contribution_type_id ) {
+        if ( $fields['contribution_type_id'] !== $engage_contribution_type_id ) {
             $errors['contribution_type_id'] = t("Must use the \"Engage\" contribution type.");
         }
 
