@@ -9,6 +9,7 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
             '' => '--any--',
             'ADYEN' => 'Adyen',
             'AMAZON' => 'Amazon',
+            'ASTROPAY' => 'Astropay',
             'GLOBALCOLLECT' => 'GlobalCollect',
             'PAYPAL' => 'PayPal',
             'WORLDPAY' => 'WorldPay',
