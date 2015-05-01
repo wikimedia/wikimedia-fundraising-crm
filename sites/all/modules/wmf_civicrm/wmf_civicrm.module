@@ -2055,10 +2055,18 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
 
     switch ( $formName ) {
     case 'CRM_Contribute_Form_Contribution':
-        // Source has to be of the form USD 15.25 so as not to gum up the works
+        // Source has to be of the form USD 15.25 so as not to gum up the works,
+        // and the currency code on the front should be something we understand
         $source = $fields['source'];
-        if ( !preg_match( '/[a-z]{3} [0-9]+(\.[0-9]+)?/i', $source) ) {
-            $errors['source'] = t('Source must be in the format USD 15.25');
+        if ( preg_match( '/([a-z]{3}) [0-9]+(\.[0-9]+)?/i', $source, $matches ) ) {
+            $currency = strtoupper( $matches[1] );
+            // TODO: stick a get_currency_codes function someplace
+            $all_currencies = array_keys( CurrencyRates::getCurrencyRates() );
+            if ( !in_array( $currency, $all_currencies ) ) {
+                $errors['source'] = t( 'Please set a supported currency code' );
+            }
+        } else {
+            $errors['source'] = t( 'Source must be in the format USD 15.25' );
         }
 
         // Only run the following validation for users having the Engage role.
