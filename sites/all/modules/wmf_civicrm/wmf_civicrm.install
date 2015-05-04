@@ -1161,12 +1161,13 @@ function wmf_civicrm_update_7027()
 /**
  * Add "Engage" contribution type
  *
- * Note that we create the "Engage" role programatically, but it won't have usable permissions.
+ * Note that we create the "Engage Direct Mail" role programatically, but it
+ * won't have usable permissions.
  */
 function wmf_civicrm_update_7028() {
-    if ( false === user_role_load_by_name( 'Engage' ) ) {
+    if ( false === user_role_load_by_name( 'Engage Direct Mail' ) ) {
         $role = new stdClass();
-        $role->name = 'Engage';
+        $role->name = 'Engage Direct Mail';
         user_role_save( $role );
     }
 
