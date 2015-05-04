@@ -2020,37 +2020,113 @@ function wmf_civicrm_dao_to_list( $dao ) {
 }
 
 /**
+ * Implements hook_civicrm_buildForm
+ */
+function wmf_civicrm_civicrm_buildForm( $formName, &$form ) {
+    switch ( $formName ) {
+    case 'CRM_Contribute_Form_Contribution':
+        // Only run this validation for users having the Engage role.
+        if ( !wmf_civicrm_user_has_role( 'Engage Direct Mail' ) ) {
+            break;
+        }
+
+        // Default to the Engage contribution type, if this is a new contribution.
+        if ( $form->_action & CRM_Core_Action::ADD ) {
+            $engage_contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Engage' );
+            $form->setDefaults( array(
+                'contribution_type_id' => $engage_contribution_type_id,
+            ) );
+        }
+
+        // Make Batch Number required, if the field exists.
+        $batch_num_field_name = wmf_civicrm_evil_get_custom_field_in_form( 'import_batch_number', $form->_elementIndex );
+        if ( $batch_num_field_name ) {
+            $form->addRule( $batch_num_field_name, t('Batch number is required'), 'required' );
+        }
+        break;
+    }
+}
+
+/**
  * Implements hook_civicrm_validate
- *
- * FIXME: temporary request, revert when RLewis no longer needs it
  */
 function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
     $errors = array();
 
     switch ( $formName ) {
     case 'CRM_Contribute_Form_Contribution':
-        $date = strptime( $fields['receive_date'], "%m/%d/%Y" );
-        $azl_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', "Arizona Lockbox" );
-        $custom_field_name = wmf_civicrm_evil_get_custom_field_in_form( 'postmark_date', $fields );
-        if ( !$custom_field_name ) {
-            return;
+        // Source has to be of the form USD 15.25 so as not to gum up the works,
+        // and the currency code on the front should be something we understand
+        $source = $fields['source'];
+        if ( preg_match( '/([a-z]{3}) [0-9]+(\.[0-9]+)?/i', $source, $matches ) ) {
+            $currency = strtoupper( $matches[1] );
+            // TODO: stick a get_currency_codes function someplace
+            $all_currencies = array_keys( CurrencyRates::getCurrencyRates() );
+            if ( !in_array( $currency, $all_currencies ) ) {
+                $errors['source'] = t( 'Please set a supported currency code' );
+            }
+        } else {
+            $errors['source'] = t( 'Source must be in the format USD 15.25' );
         }
 
-        if (
-            // The receive_date is in Dec, 2013
-            $date['tm_year'] === (2013 - 1900) and $date['tm_mon'] == (12 - 1)
-            // And it came in through the Arizona Lockbox check imports
-            and $fields['contribution_type_id'] === $azl_type_id
-        ) {
+        // Only run the following validation for users having the Engage role.
+        if ( !wmf_civicrm_user_has_role( 'Engage Direct Mail' ) ) {
+            break;
+        }
+
+        $engage_contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Engage' );
+        if ( $fields['contribution_type_id'] !== $engage_contribution_type_id ) {
+            $errors['contribution_type_id'] = t("Must use the \"Engage\" contribution type.");
+        }
+
+        // Gift Source (sic field named "Campaign") is limited.
+        $gift_source_field_name = wmf_civicrm_evil_get_custom_field_in_form( 'Campaign', $fields );
+        if ( $gift_source_field_name ) {
+            $allowed_sources = array(
+                'Combined Federal Campaign',
+                'Donor Advised Fund',
+                'Matching Gift',
+                'Payroll Deduction',
+            );
+            if ( !in_array( $fields[$gift_source_field_name], $allowed_sources ) ) {
+                $errors[$gift_source_field_name] = t('Must choose a Gift Source from the following list: ') . implode( ', ', $allowed_sources );
+            }
+        }
+
+        $postmark_field_name = wmf_civicrm_evil_get_custom_field_in_form( 'postmark_date', $fields );
+        // If the receive_date is in Dec or Jan, make sure we have a postmark date,
+        // to be generous to donors' tax stuff.
+        $date = strptime( $fields['receive_date'], "%m/%d/%Y" );
+        // n.b.: 0-based date spoiler.
+        if ( $date['tm_mon'] == (12 - 1) || $date['tm_mon'] == (1 - 1) ) {
             // And the postmark date is missing
-            if ( !$fields[$custom_field_name] ) {
-                $errors[$custom_field_name] = t("You forgot the postmark date!");
+            if ( !$fields[$postmark_field_name] ) {
+                $errors[$postmark_field_name] = t("You forgot the postmark date!");
             }
         }
         break;
     }
 
     return ( empty($errors) ? true : $errors );
+}
+
+/**
+ * Return true if the user has this role
+ *
+ * @param string $role Name of the role
+ *
+ * @return bool
+ */
+function wmf_civicrm_user_has_role( $role ) {
+    global $user;
+
+    foreach ( $user->roles as $rid => $roleName ) {
+        if ( $role === $roleName ) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**
