@@ -97,9 +97,9 @@ function offline2civicrm_import_checks_form() {
   $form['import_upload_format'] = array(
     '#title' => t( 'File format' ),
     '#type' => 'radios',
-    '#default_value' => 'azl',
+    '#default_value' => 'engage',
     '#options' => array(
-        'azl' => t( 'AZ Lockbox' ),
+        'engage' => t( 'Engage' ),
         'coinbase' => t( 'Coinbase Merchant Orders' ),
         'foreign_checks' => t( 'Foreign Checks' ),
         'jpmorgan' => t( 'JP Morgan' ),
@@ -131,8 +131,8 @@ function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
       $smellyTmp = CRM_Core_TemporaryErrorScope::useException();
 
       switch ( $form_state['values']['import_upload_format'] ) {
-      case 'azl':
-        $importer = new AzlChecksFile( $file->uri );
+      case 'engage':
+        $importer = new EngageChecksFile( $file->uri );
         break;
       case 'coinbase':
         $importer = new CoinbaseFile( $file->uri );

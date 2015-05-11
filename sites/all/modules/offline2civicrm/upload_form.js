@@ -18,7 +18,7 @@
                 } else if ( /Paypal/.test( uploadFile ) ) {
                     fileType = "paypal";
                 } else if ( /Organization|Individual/.test( uploadFile ) ) {
-                    fileType = "azl";
+                    fileType = "engage";
                 } else if ( /Foreign/.test( uploadFile ) ) {
                     fileType = "foreign_checks";
                 }

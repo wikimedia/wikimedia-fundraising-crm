@@ -1,6 +1,6 @@
 <?php
 
-class AzlChecksFileProbe extends AzlChecksFile {
+class EngageChecksFileProbe extends EngageChecksFile {
     function _parseRow( $data ) {
         return $this->parseRow( $data );
     }

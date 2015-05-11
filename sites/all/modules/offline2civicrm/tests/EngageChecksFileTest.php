@@ -1,10 +1,10 @@
 <?php
 
-class AzlChecksFileTest extends BaseChecksFileTest {
+class EngageChecksFileTest extends BaseChecksFileTest {
     function setUp() {
         parent::setUp();
 
-        require_once __DIR__ . "/includes/AzlChecksFileProbe.php";
+        require_once __DIR__ . "/includes/EngageChecksFileProbe.php";
     }
 
     function testParseRow_Individual() {
@@ -63,7 +63,7 @@ class AzlChecksFileTest extends BaseChecksFileTest {
             'thankyou_date' => 1398927600,
         );
 
-        $importer = new AzlChecksFileProbe( "null URI" );
+        $importer = new EngageChecksFileProbe( "null URI" );
         $output = $importer->_parseRow( $data );
 
         $this->stripSourceData( $output );
@@ -122,7 +122,7 @@ class AzlChecksFileTest extends BaseChecksFileTest {
             'thankyou_date' => 1398927600,
         );
 
-        $importer = new AzlChecksFileProbe( "null URI" );
+        $importer = new EngageChecksFileProbe( "null URI" );
         $output = $importer->_parseRow( $data );
 
         $this->stripSourceData( $output );

@@ -1,6 +1,6 @@
 <?php
 
-class AzlChecksFile extends ChecksFile {
+class EngageChecksFile extends ChecksFile {
     function getRequiredColumns() {
         return array(
             'Batch',
