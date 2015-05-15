@@ -155,8 +155,9 @@ abstract class ChecksFile {
                     $msg['gateway'] = "merkle";
                     break;
 
-                case "Arizona Lockbox":
-                    $msg['gateway'] = "arizonalockbox";
+                case "Engage":
+                case "Engage Direct Mail":
+                    $msg['gateway'] = "engage";
                     break;
 
                 case "Cash":

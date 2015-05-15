@@ -2058,7 +2058,7 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
         // Source has to be of the form USD 15.25 so as not to gum up the works,
         // and the currency code on the front should be something we understand
         $source = $fields['source'];
-        if ( preg_match( '/([a-z]{3}) [0-9]+(\.[0-9]+)?/i', $source, $matches ) ) {
+        if ( preg_match( '/^([a-z]{3}) [0-9]+(\.[0-9]+)?$/i', $source, $matches ) ) {
             $currency = strtoupper( $matches[1] );
             // TODO: stick a get_currency_codes function someplace
             $all_currencies = array_keys( CurrencyRates::getCurrencyRates() );
@@ -2067,6 +2067,12 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
             }
         } else {
             $errors['source'] = t( 'Source must be in the format USD 15.25' );
+        }
+
+        // Amount field should be decimal
+        $amount = $fields['total_amount'];
+        if ( !preg_match( '/^[0-9]+(\.[0-9]+)?$/', $amount ) ) {
+            $errors['total_amount'] = t( 'Amount must be a decimal number' );
         }
 
         // Only run the following validation for users having the Engage role.
