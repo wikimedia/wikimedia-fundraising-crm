@@ -2055,6 +2055,10 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
 
     switch ( $formName ) {
     case 'CRM_Contribute_Form_Contribution':
+		// Only run on add or update
+		if ( ! ( $form->_action & ( CRM_Core_Action::UPDATE | CRM_Core_Action::ADD ) ) ) {
+			break;
+		}
         // Source has to be of the form USD 15.25 so as not to gum up the works,
         // and the currency code on the front should be something we understand
         $source = $fields['source'];
