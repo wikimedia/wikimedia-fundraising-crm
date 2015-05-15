@@ -6,13 +6,24 @@
  *
  * @param $row Array containing the column headers for the csv
  * @return Array mapping the header keys to the column index
+ * @throws WmfException if a duplicate header is found
  */
 function _load_headers( $row ){
   $header_keys = array();
 
-  # trimming the " from each side
+  $used = array(); // uppercased headers
+  $duplicates = array();
+  # check for duplicates, case insensitive
   foreach( $row as $i => $k ) {
-    $header_keys[trim( $k, '"' )] = $i;
+    $upper = strtoupper( $k );
+    if ( array_key_exists( $upper, $used ) ) {
+      $duplicates[] = $k;
+    }
+    $header_keys[$k] = $i;
+    $used[$upper] = true;
+  }
+  if ( !empty( $duplicates ) ) {
+    throw new WmfException( 'INVALID_FILE_FORMAT', 'Duplicate column headers: ' . implode( ", ", $duplicates ) );
   }
   watchdog('offline2civicrm', 'Import checks: Column headers loaded from file', array(), WATCHDOG_INFO);
 

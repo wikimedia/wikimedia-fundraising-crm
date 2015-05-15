@@ -8,7 +8,13 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
             throw new Exception( "Define DRUPAL_ROOT somewhere before running unit tests." );
         }
 
-        global $_exchange_rate_cache;
+        global $user, $_exchange_rate_cache;
         $_exchange_rate_cache = array();
+
+        $user = new stdClass();
+        $user->name = "foo_who";
+        $user->uid = "321";
+        $user->roles = array( DRUPAL_AUTHENTICATED_RID => 'authenticated user' );
+
     }
 }

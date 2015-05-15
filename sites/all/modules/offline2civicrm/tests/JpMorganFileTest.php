@@ -48,13 +48,6 @@ class JpMorganFileTest extends BaseChecksFileTest {
     }
 
     function testImport() {
-        global $user;
-        //FIXME: move to BaseWmfDrupalPhpUnitTestCase
-        $user = new stdClass();
-        $user->name = "foo_who";
-        $user->uid = "321";
-        $user->roles = array( DRUPAL_AUTHENTICATED_RID => 'authenticated user' );
-
         //FIXME
         $_GET['q'] = '';
         //FIXME
@@ -66,5 +59,20 @@ class JpMorganFileTest extends BaseChecksFileTest {
         $contribution = wmf_civicrm_get_contributions_from_gateway_id( 'jpmorgan', '1234TEST' );
         $this->assertEquals( 1, count( $contribution ) );
         $this->assertEquals( $contribution[0]['trxn_id'], 'JPMORGAN 1234TEST 1399363947' );
+    }
+
+    /**
+     * @expectedException WmfException
+     * @expectedExceptionCode WMFException::INVALID_FILE_FORMAT
+     * @expectedExceptionMessage Duplicate column headers: CURRENCY, reference
+     */
+    function testImportDuplicateHeaders() {
+        //FIXME
+        $_GET['q'] = '';
+        //FIXME
+        civicrm_initialize();
+
+        $importer = new JpMorganFileProbe( __DIR__ . "/data/duplicate_header.csv" );
+        $importer->import();
     }
 }
