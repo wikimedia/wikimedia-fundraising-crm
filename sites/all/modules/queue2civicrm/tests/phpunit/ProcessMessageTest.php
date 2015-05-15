@@ -65,7 +65,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
     /**
      * @expectedException WmfException
-     * @expectedExceptionCode MISSING_PREDECESSOR
+     * @expectedExceptionCode WmfException::MISSING_PREDECESSOR
      */
     public function testRecurringNoPredecessor() {
         $message = new RecurringPaymentMessage( array(
@@ -81,7 +81,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
     /**
      * @expectedException WmfException
-     * @expectedExceptionCode INVALID_RECURRING
+     * @expectedExceptionCode WmfException::INVALID_RECURRING
      */
     public function testRecurringNoSubscrId() {
         $message = new RecurringPaymentMessage( array(
@@ -119,7 +119,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
     /**
      * @expectedException WmfException
-     * @expectedExceptionCode MISSING_PREDECESSOR
+     * @expectedExceptionCode WmfException::MISSING_PREDECESSOR
      */
     public function testRefundNoPredecessor() {
         $refund_message = new RefundMessage();
@@ -129,7 +129,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
     /**
      * @expectedException WmfException
-     * @expectedExceptionCode INVALID_MESSAGE
+     * @expectedExceptionCode WmfException::INVALID_MESSAGE
      */
     public function testRefundMismatched() {
         $donation_message = new TransactionMessage( array(

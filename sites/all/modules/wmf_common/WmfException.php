@@ -1,6 +1,24 @@
 <?php
 
 class WmfException extends Exception {
+    const CIVI_CONFIG = 1;
+    const STOMP_BAD_CONNECTION = 2;
+    const INVALID_MESSAGE = 3;
+    const INVALID_RECURRING = 4;
+    const CIVI_REQ_FIELD = 5;
+    const IMPORT_CONTACT = 6;
+    const IMPORT_CONTRIB = 7;
+    const IMPORT_SUBSCRIPTION = 8;
+    const DUPLICATE_CONTRIBUTION = 9;
+    const GET_CONTRIBUTION = 10;
+    const PAYMENT_FAILED = 11;
+    const UNKNOWN = 12;
+    const UNSUBSCRIBE = 13;
+    const MISSING_PREDECESSOR = 14;
+    const FILE_NOT_FOUND = 15;
+    const INVALID_FILE_FORMAT = 16;
+    const fredge = 17;
+
     //XXX shit we aren't using the 'rollback' attribute
     // and it's not correct in most of these cases
     static $error_types = array(
@@ -63,19 +81,21 @@ class WmfException extends Exception {
     );
 
     var $extra;
+    var $type;
 
     function __construct( $type, $message, $extra = null ) {
         if ( !array_key_exists( $type, self::$error_types ) ) {
             $message .= ' -- ' . t( 'Warning, throwing a misspelled exception: "%type"', array( '%type' => $type ) );
             $type = 'UNKNOWN';
         }
-        $this->code = $type;
+        $this->type = $type;
+        $this->code = constant( 'WmfException::' . $type );
         $this->extra = $extra;
 
         if ( is_array( $message ) ) {
             $message = implode( "\n", $message );
         }
-        $this->message = "{$this->code} {$message}";
+        $this->message = "{$this->type} {$message}";
 
         if ( $extra ) {
             $this->message .= "\nSource: " . var_export( $extra, true );
@@ -88,13 +108,13 @@ class WmfException extends Exception {
             watchdog( 'wmf_common', $escaped, NULL, WATCHDOG_ERROR );
         }
         if ( function_exists('drush_set_error') && $this->isFatal() ) {
-            drush_set_error( $this->code, $this->message );
+            drush_set_error( $this->type, $this->message );
         }
     }
 
     function getErrorName()
     {
-        return $this->code;
+        return $this->type;
     }
 
     function isRollbackDb()
@@ -138,7 +158,7 @@ class WmfException extends Exception {
 
     protected function getErrorCharacteristic($property, $default)
     {
-        $info = self::$error_types[$this->code];
+        $info = self::$error_types[$this->type];
         if (array_key_exists($property, $info)) {
             return $info[$property];
         }

@@ -69,7 +69,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
 
     /**
      * @expectedException WmfException
-     * @expectedExceptionCode INVALID_MESSAGE
+     * @expectedExceptionCode WmfException::INVALID_MESSAGE
      */
     function testInvalidEmptyId() {
         $transaction = WmfTransaction::from_unique_id( "" );
@@ -77,7 +77,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
 
     /**
      * @expectedException WmfException
-     * @expectedExceptionCode INVALID_MESSAGE
+     * @expectedExceptionCode WmfException::INVALID_MESSAGE
      */
     function testInvalidAlmostEmptyId() {
         $transaction = WmfTransaction::from_unique_id( 'RFD RECURRING' );
@@ -85,7 +85,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
 
     /**
      * @expectedException WmfException
-     * @expectedExceptionCode INVALID_MESSAGE
+     * @expectedExceptionCode WmfException::INVALID_MESSAGE
      */
     function testInvalidWhitespaceId() {
         $transaction = WmfTransaction::from_unique_id( 'RFD RECURRING ' );
@@ -93,7 +93,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
 
     /**
      * @expectedException WmfException
-     * @expectedExceptionCode INVALID_MESSAGE
+     * @expectedExceptionCode WmfException::INVALID_MESSAGE
      */
     function testInvalidExtraPartsId() {
         $transaction = WmfTransaction::from_unique_id( 'TEST_GATEWAY 123 1234 EXTRA_PART' );
@@ -101,7 +101,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
 
     /**
      * @expectedException WmfException
-     * @expectedExceptionCode INVALID_MESSAGE
+     * @expectedExceptionCode WmfException::INVALID_MESSAGE
      */
     function testInvalidTimestampId() {
         $transaction = WmfTransaction::from_unique_id( 'TEST_GATEWAY 123 BAD_TIMESTAMP' );
