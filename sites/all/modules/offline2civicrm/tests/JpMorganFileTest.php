@@ -81,7 +81,7 @@ class JpMorganFileTest extends BaseChecksFileTest {
 
     /**
      * @expectedException WmfException
-     * @expectedExceptionCode WMFException::INVALID_FILE_FORMAT
+     * @expectedExceptionCode WmfException::INVALID_FILE_FORMAT
      * @expectedExceptionMessage Duplicate column headers: CURRENCY, reference
      */
     function testImportDuplicateHeaders() {

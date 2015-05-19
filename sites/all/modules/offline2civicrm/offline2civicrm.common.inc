@@ -26,10 +26,10 @@ function _load_headers( $row ){
     $header_keys[$k] = $i;
     $used[$upper] = true;
   }
-  if ( !empty( $duplicates ) ) {
+  if ( $duplicates ) {
     throw new WmfException( 'INVALID_FILE_FORMAT', 'Duplicate column headers: ' . implode( ", ", $duplicates ) );
   }
-  watchdog('offline2civicrm', 'Import checks: Column headers loaded from file', array(), WATCHDOG_INFO);
+  watchdog( 'offline2civicrm', 'Import checks: Column headers loaded from file', array(), WATCHDOG_INFO );
 
   return $header_keys;
 }
