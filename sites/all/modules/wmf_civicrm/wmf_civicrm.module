@@ -2094,6 +2094,7 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
         if ( $gift_source_field_name ) {
             $allowed_sources = array(
                 'Combined Federal Campaign',
+                'Community Gift',
                 'Donor Advised Fund',
                 'Matching Gift',
                 'Payroll Deduction',
