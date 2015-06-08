@@ -216,6 +216,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         // Insert the location record
         $location = wmf_civicrm_message_location_insert( $msg, $contact );
 
+        // TODO: Add to contact_tags instead.
         // Tag contact for review
         try {
             $tag = wmf_civicrm_tag_contact_for_review( $contact );
@@ -243,6 +244,25 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         $msg['contribution_recur_id'] = $recur_record->id;
     }
 
+    // Look up soft credit contact.
+    if ( !empty( $msg['soft_credit_to'] ) ) {
+        $api = civicrm_api_classapi();
+        $success = $api->Contact->Get( array(
+            'organization_name' => $msg['soft_credit_to'],
+
+            'version' => 3,
+        ) );
+        if ( count( $api->values ) !== 1 ) {
+            throw new WmfException(
+                'INVALID_MESSAGE',
+                "Bad soft credit target, [${msg['soft_credit_to']}]"
+            );
+        }
+        $soft_credit_contact = $api->values[0];
+        # FIXME: awkward to have the two fields.
+        $msg['soft_credit_to_id'] = $soft_credit_contact->id;
+    }
+
     // Insert the contribution record.
     $contribution = _wmf_civicrm_message_contribution_insert( $msg );
 
@@ -253,6 +273,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
     }
 
     if ( !empty( $msg['notes'] ) ) {
+        // TODO: Handle failure.
         civicrm_api3( "Note", "Create", array(
             'entity_table' => 'civicrm_contact',
             'entity_id' => $msg['contact_id'],
@@ -292,6 +313,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'contribution_recur_id' => $msg['contribution_recur_id'],
         'check_number' => $msg['check_number'],
         'letter_code' => $msg['letter_code'],
+        'soft_credit_to' => $msg['soft_credit_to_id'],
 
         // API required fields
         'version' => '3'
@@ -320,11 +342,12 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'direct_mail_appeal' => 'Appeal',
         'gift_source' => 'Campaign',
         'letter_code' => 'Gift_Data',
-        'restrictions' => 'Fund',
         'postmark_date' => 'Postmark_Date',
+        'restrictions' => 'Fund',
+        'stock_description' => 'Description_of_Stock',
     );
 
-    // Custom fields with names that match the message fields
+    // Custom fields with names that match the message fields.
     $custom_name_passthrough = array(
         'gateway_account',
         'import_batch_number',
@@ -933,6 +956,30 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         }
     }
 
+    // Add groups to this contact.
+    if ( $msg['contact_groups'] ) {
+        // TODO: Use CRM_Contact_GroupContact::buildOptions in Civi 4.4, also
+        // in place of ::tag below.
+        $supported_groups = array_flip(CRM_Core_PseudoConstant::allGroup());
+        $stacked_ex = array();
+        foreach ( array_unique( $msg['contact_groups'] ) as $group ) {
+            try {
+                $tag_result = civicrm_api3( "GroupContact", "Create", array(
+                    'contact_id' => $contact_id,
+                    'group_id' => $supported_groups[$group],
+                ));
+            } catch ( CiviCRM_API3_Exception $ex ) {
+                $stacked_ex[] = "Failed to add group {$group} to contact ID {$contact_id}. Error: " . $ex->getMessage();
+            }
+        }
+        if ( !empty( $stacked_ex ) ) {
+            throw new WmfException(
+                "IMPORT_CONTACT",
+                implode( "\n", $stacked_ex )
+            );
+        }
+    }
+
     // Do we have any tags we need to add to this contact?
     if ( $msg['contact_tags'] ) {
         $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
@@ -1195,8 +1242,11 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'contribution_recur_id' => null,
         'effort_id' => null,
         'subscr_id' => null,
+        'contact_groups' => array(),
         'contact_tags' => array(),
         'contribution_tags' => array(),
+        'soft_credit_to' => null,
+        'soft_credit_to_id' => null,
     );
     $msg = $msg + $defaults;
 
