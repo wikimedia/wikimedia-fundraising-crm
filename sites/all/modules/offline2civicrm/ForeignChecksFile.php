@@ -28,7 +28,7 @@ class ForeignChecksFile extends ChecksFile {
         );
     }
 
-    protected function getRequiredFields() {
+    protected function getRequiredData() {
         return array(
             'check_number',
             'date',

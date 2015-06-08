@@ -14,7 +14,7 @@ class JpMorganFile extends ChecksFile {
         );
     }
 
-    protected function getRequiredFields() {
+    protected function getRequiredData() {
         return array(
             'date',
             'gateway_txn_id',

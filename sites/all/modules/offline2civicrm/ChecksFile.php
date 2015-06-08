@@ -121,7 +121,7 @@ abstract class ChecksFile {
         $this->mungeMessage( $msg );
 
         $failed = array();
-        foreach ( $this->getRequiredFields() as $key ) {
+        foreach ( $this->getRequiredData() as $key ) {
             if ( !array_key_exists( $key, $msg ) or empty( $msg[$key] ) ) {
                 $failed[] = $key;
             }
@@ -304,5 +304,5 @@ abstract class ChecksFile {
      *
      * @return array of normalized message field names
      */
-    abstract protected function getRequiredFields();
+    abstract protected function getRequiredData();
 }

@@ -24,7 +24,7 @@ class EngageChecksFile extends ChecksFile {
         );
     }
 
-    function getRequiredFields() {
+    function getRequiredData() {
         return array(
             'check_number',
             'date',
