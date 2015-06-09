@@ -9,7 +9,7 @@
  * 
  * @return the contribution_tracking id 
  */
-function wmf_civicrm_insert_contribution_tracking( $utm_source, $utm_medium, $ts, $contrib_id=null, $optout=null, $anonymous=null ) {
+function wmf_civicrm_insert_contribution_tracking( $utm_source, $utm_medium, $utm_campaign, $ts, $contrib_id=null, $optout=null, $anonymous=null ) {
     // make sure we're using the default (drupal) db
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'donations' );
@@ -17,6 +17,7 @@ function wmf_civicrm_insert_contribution_tracking( $utm_source, $utm_medium, $ts
     $values = array(
         'utm_source' => $utm_source,
         'utm_medium' => $utm_medium,
+        'utm_campaign' => $utm_campaign,
         'optout' => $optout,
         'anonymous' => $anonymous,
         'ts' => $ts,

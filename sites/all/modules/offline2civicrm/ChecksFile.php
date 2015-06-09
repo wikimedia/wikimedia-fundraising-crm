@@ -285,6 +285,9 @@ abstract class ChecksFile {
             'Additional Address 1' => 'supplemental_address_1',
             'Additional Address 2' => 'supplemental_address_2',
             'Batch' => 'import_batch_number', # deprecated, use External Batch Number instead.
+            'Banner' => 'utm_source',
+            'Batch' => 'import_batch_number',
+            'Campaign' => 'utm_campaign',
             'Check Number' => 'check_number',
             'City' => 'city',
             'Contribution Type' => 'raw_contribution_type',
@@ -304,6 +307,7 @@ abstract class ChecksFile {
             'Is Opt Out' => 'is_opt_out',
             'Last Name' => 'last_name',
             'Letter Code' => 'letter_code',
+            'Medium' => 'utm_medium',
             'Middle Name' => 'middle_name',
             'Name' => 'org_contact_name',
             'No Thank You' => 'no_thank_you',
