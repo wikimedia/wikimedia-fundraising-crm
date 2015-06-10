@@ -47,6 +47,9 @@ function queue2civicrm_stomp_url() {
   return variable_get( 'queue2civicrm_url', 'tcp://localhost:61613' );
 }
 
+/**
+ * @return Queue
+ */
 function queue2civicrm_stomp() {
   static $q = null;
 
@@ -256,6 +259,18 @@ function queue2civicrm_import( $msg ) {
     );
     $cid = _queue2civicrm_log( $log );
 
+    $completion_message = false;
+    // If more information is available, find it from the pending queue
+    if ( isset( $msg['completion_message_id'] ) ) {
+        $completion_message = queue2civicrm_import_completion_message( $msg );
+        if ( !$completion_message ) {
+            // If the completion message is missing, throw an exception that
+            // tells dequeue_loop to requeue the incomplete message with a delay
+            $message = "Message {$msg['gateway']}-{$msg['gateway_txn_id']} indicates a completion message with ID {$msg['completion_message_id']}, but none was found in pending queue.  Requeueing.";
+            throw new WmfException( 'MISSING_PREDECESSOR', $message );
+        }
+    }
+
     $contribution = wmf_civicrm_contribution_message_import($msg);
 
     // construct an array of useful info to invocations of queue2civicrm_import
@@ -278,6 +293,25 @@ function queue2civicrm_import( $msg ) {
     
     // keep count of the transactions
     _queue2civicrm_trxn_counter_add( $msg[ 'gateway' ] );
+
+    // Ack any completion message once the rest has completed successfully
+    if ( $completion_message ) {
+        queue2civicrm_stomp()->ack( $completion_message );
+    }
+}
+
+/**
+ * Fill in some missing information from the pending queue
+ * @return Stomp_Frame|boolean message from queue, or false if not found
+ */
+function queue2civicrm_import_completion_message( &$msg ) {
+    $cid = $msg['completion_message_id'];
+    $pending = queue2civicrm_stomp()->getByCorrelationId( 'pending', $cid );
+    if ( $pending ) {
+        $data = json_decode( $pending->body, true );
+        $msg = $msg + $data;
+    }
+    return $pending;
 }
 
 /**
