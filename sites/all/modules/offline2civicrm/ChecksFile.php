@@ -175,8 +175,15 @@ abstract class ChecksFile {
             }
         }
 
-        if ( !empty( $msg['organization_name'] ) ) {
+        if ( isset( $msg['organization_name'] ) ) {
             $msg['contact_type'] = "Organization";
+        } else {
+            // If this is not an Organization contact, freak out if Name or Title are filled.
+            if ( !empty( $msg['org_contact_name'] )
+                || !empty( $msg['org_contact_title'] )
+            ) {
+                throw new WmfException( 'INVALID_MESSAGE', "Don't give a Name or Title unless this is an Organization contact." );
+            }
         }
 
         $msg['gross'] = trim( $msg['gross'], '$' );
