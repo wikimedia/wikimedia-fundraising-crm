@@ -247,11 +247,12 @@ abstract class ChecksFile {
         return array(
             'Additional Address 1' => 'supplemental_address_1',
             'Additional Address 2' => 'supplemental_address_2',
-            'Batch' => 'import_batch_number',
+            'Batch' => 'import_batch_number', # deprecated, use External Batch Number instead.
             'Check Number' => 'check_number',
             'City' => 'city',
             'Contribution Type' => 'raw_contribution_type',
             'Country' => 'country',
+            'Description of Stock' => 'stock_description',
             'Direct Mail Appeal' => 'direct_mail_appeal',
             'Do Not Email' => 'do_not_email',
             'Do Not Mail' => 'do_not_mail',
@@ -259,12 +260,15 @@ abstract class ChecksFile {
             'Do Not SMS' => 'do_not_sms',
             'Do Not Solicit' => 'do_not_solicit',
             'Email' => 'email',
+            'External Batch Number' => 'import_batch_number',
             'First Name' => 'first_name',
             'Gift Source' => 'gift_source',
+            'Groups' => 'contact_groups',
             'Is Opt Out' => 'is_opt_out',
             'Last Name' => 'last_name',
             'Letter Code' => 'letter_code',
             'Middle Name' => 'middle_name',
+            'Name' => 'org_contact_name',
             'No Thank You' => 'no_thank_you',
             'Notes' => 'notes',
             'Organization Name' => 'organization_name',
@@ -273,13 +277,19 @@ abstract class ChecksFile {
             'Payment Instrument' => 'payment_method',
             'Postal Code' => 'postal_code',
             'Postmark Date' => 'postmark_date',
+            'Prefix' => 'name_prefix',
             'Received Date' => 'date',
             'Restrictions' => 'restrictions',
+            'Soft Credit To' => 'soft_credit_to',
             'Source' => 'contribution_source',
             'State' => 'state_province',
             'Street Address' => 'street_address',
+            'Suffix' => 'name_suffix',
+            'Tags' => 'contact_tags',
             'Thank You Letter Date' => 'thankyou_date',
-            'Total Amount' => 'gross',
+            'Title' => 'org_contact_title',
+            'Total Amount' => 'gross', # deprecated, use Original Amount
+            'Transaction ID' => 'gateway_txn_id',
         );
     }
 
@@ -310,5 +320,11 @@ abstract class ChecksFile {
      *
      * @return array of normalized message field names
      */
-    abstract protected function getRequiredData();
+    protected function getRequiredData() {
+		return array(
+			'currency',
+			'date',
+			'gross',
+		);
+	}
 }

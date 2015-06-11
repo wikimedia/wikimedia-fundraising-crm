@@ -18,4 +18,5 @@ files[] = EmptyRowException.php
 files[] = ForeignChecksFile.php
 files[] = JpMorganFile.php
 files[] = PayPalChecksFile.php
+files[] = WmfImportFile.php
 files[] = tests/includes/BaseChecksFileTest.php

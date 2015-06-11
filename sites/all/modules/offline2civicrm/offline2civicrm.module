@@ -137,6 +137,9 @@ function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
       case 'coinbase':
         $importer = new CoinbaseFile( $file->uri );
         break;
+      case 'generic':
+        $importer = new WmfImportFile( $file->uri );
+        break;
       case 'paypal':
         $importer = new PayPalChecksFile( $file->uri );
         break;
