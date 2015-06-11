@@ -2,6 +2,8 @@
 
 /**
  * CSV batch format for manually-keyed donation checks
+ *
+ * FIXME: This currently includes stuff specific to Wikimedia Foundation fundraising.
  */
 abstract class ChecksFile {
     protected $numSkippedRows = 0;
@@ -149,7 +151,7 @@ abstract class ChecksFile {
 
     /**
      * Do any final transformation on a normalized and default-laden queue
-     * message.  This is very specific to each upload source.
+     * message.  Overrides are specific to each upload source.
      */
     protected function mungeMessage( &$msg ) {
         if ( isset( $msg['raw_contribution_type'] ) ) {

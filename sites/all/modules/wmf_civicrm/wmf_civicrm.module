@@ -216,6 +216,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         // Insert the location record
         $location = wmf_civicrm_message_location_insert( $msg, $contact );
 
+        // TODO: Add to contact_tags instead.
         // Tag contact for review
         try {
             $tag = wmf_civicrm_tag_contact_for_review( $contact );
@@ -253,6 +254,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
     }
 
     if ( !empty( $msg['notes'] ) ) {
+        // TODO: Handle failure.
         civicrm_api3( "Note", "Create", array(
             'entity_table' => 'civicrm_contact',
             'entity_id' => $msg['contact_id'],
@@ -324,7 +326,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'postmark_date' => 'Postmark_Date',
     );
 
-    // Custom fields with names that match the message fields
+    // Custom fields with names that match the message fields.
     $custom_name_passthrough = array(
         'gateway_account',
         'import_batch_number',
