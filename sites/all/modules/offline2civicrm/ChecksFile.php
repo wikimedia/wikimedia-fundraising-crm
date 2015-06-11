@@ -110,6 +110,10 @@ abstract class ChecksFile {
             }
         }
 
+        if ( !$msg ) {
+            throw new EmptyRowException();
+        }
+
         foreach ( $this->getDatetimeFields() as $field ) {
             if ( !empty( $msg[$field] ) ) {
                 $msg[$field] = strtotime( $msg[$field] );
