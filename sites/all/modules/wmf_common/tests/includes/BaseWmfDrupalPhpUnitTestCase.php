@@ -15,6 +15,16 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
         $user->name = "foo_who";
         $user->uid = "321";
         $user->roles = array( DRUPAL_AUTHENTICATED_RID => 'authenticated user' );
-
     }
+
+	/**
+	 * Temporarily set foreign exchange rates to known values
+	 *
+	 * TODO: Should reset after each test.
+	 */
+	protected function setExchangeRates( $timestamp, $rates ) {
+		foreach ( $rates as $currency => $rate ) {
+			exchange_rate_cache_set( $currency, $timestamp, $rate );
+		}
+	}
 }

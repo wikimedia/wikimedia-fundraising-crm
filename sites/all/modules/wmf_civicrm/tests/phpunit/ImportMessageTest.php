@@ -160,6 +160,10 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     public function messageProvider() {
+        $contribution_type_cash = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Cash' );
+        // FIXME: No CC submethods are created in the migrations?
+        $payment_instrument_cc = wmf_civicrm_get_civi_id( 'payment_instrument_id', 'Credit Card' );
+
         return array(
             array(
                 // Normal contribution
@@ -171,9 +175,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                     'gateway' => 'test_gateway',
                 ),
                 array(
-                    'contribution_type_id' => '5',
+                    'contribution_type_id' => $contribution_type_cash,
                     'contribution_page_id' => '',
-                    'payment_instrument_id' => '1',
+                    'payment_instrument_id' => $payment_instrument_cc,
                     'non_deductible_amount' => '',
                     'total_amount' => '1.23',
                     'fee_amount' => '0',
@@ -212,9 +216,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                 ),
                 array(
                     'contact_id' => strval( $this->contact_id ),
-                    'contribution_type_id' => '5',
+                    'contribution_type_id' => $contribution_type_cash,
                     'contribution_page_id' => '',
-                    'payment_instrument_id' => '1',
+                    'payment_instrument_id' => $payment_instrument_cc,
                     'non_deductible_amount' => '',
                     'total_amount' => $this->recur_amount,
                     'fee_amount' => '0',

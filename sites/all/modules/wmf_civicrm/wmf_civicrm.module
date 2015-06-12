@@ -1349,6 +1349,7 @@ function wmf_civicrm_tag_contact_for_review( $contact )
  * @param string $gateway
  * @param string $gateway_txn_id
  * @return mixed array of result rows, or false if none present.
+ * TODO: return empty set rather than false.
  * @throws WmfException
  */
 function wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id) {
