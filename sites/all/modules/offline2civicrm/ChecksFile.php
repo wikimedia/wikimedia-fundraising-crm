@@ -116,7 +116,7 @@ abstract class ChecksFile {
 
         foreach ( $this->getDatetimeFields() as $field ) {
             if ( !empty( $msg[$field] ) ) {
-                $msg[$field] = strtotime( $msg[$field] );
+                $msg[$field] = wmf_common_date_parse_string( $msg[$field] );
             }
         }
 
