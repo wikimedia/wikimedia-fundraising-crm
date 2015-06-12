@@ -10,4 +10,4 @@ files[] = db_switcher.inc
 files[] = DonationInterface.php
 files[] = WmfTransaction.php
 files[] = civicrm_api_check.inc
-files[] = tests/Refund.test
+files[] = tests/includes/CiviFixtures.php

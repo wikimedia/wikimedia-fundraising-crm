@@ -82,6 +82,7 @@ function wmf_common_date_add_days( $date, $add ){
  * 
  * @param string $format format appropriate for the php date() function
  * @param integer $unixtime timestamp, seconds since epoch
+ * @return string Formatted time
  */
 function wmf_common_date_format_using_utc( $format, $unixtime ) {
     try {

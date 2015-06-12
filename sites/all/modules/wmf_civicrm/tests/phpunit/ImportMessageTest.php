@@ -1,6 +1,8 @@
 <?php
 
 class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
+    protected $contribution_id;
+
     public static function getInfo() {
         return array(
             'name' => 'Import Message',
@@ -9,237 +11,207 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         );
     }
 
-    public function setUp() {
-        parent::setUp();
-
-        $api = civicrm_api_classapi();
-
-        // TODO: clean up the fixtures
-        $contact_params = array(
-            'contact_type' => 'Individual',
-            'first_name' => 'Test',
-            'last_name' => 'Es',
-
-            'version' => 3,
-        );
-        $api->Contact->Create( $contact_params );
-        $this->contact_id = $api->id;
-
-        $this->recur_amount = '1.23';
-        $this->trxn_id = mt_rand();
-        $this->time = time();
-
-        $contribution_params = array(
-            'contact_id' => $this->contact_id,
-            'amount' => $this->recur_amount,
-            'currency' => 'USD',
-            'frequency_unit' => 'month',
-            'frequency_interval' => '1',
-            'installments' => '0',
-            'start_date' => wmf_common_date_unix_to_civicrm( $this->time ),
-            'create_date' => wmf_common_date_unix_to_civicrm( $this->time ),
-            'cancel_date' => null,
-            'processor_id' => 1,
-            'cycle_day' => '1',
-            'next_sched_contribution' => null,
-            'trxn_id' => "RECURRING TEST_GATEWAY {$this->trxn_id}-1 {$this->time}",
-
-            'version' => 3,
-        );
-        $api->ContributionRecur->Create( $contribution_params );
-        $this->contribution_recur_id = $api->id;
-    }
-
-    /**
-     * @XXX doesn't stupid work cos of member vars: dataProvider messageProvider
-     */
-    public function testMessageInsert() {
-        foreach ( $this->messageProvider() as $test ) {
-            list( $msg, $expected_contribution ) = $test;
-
-            // FIXME
-            $this->run_random_id = mt_rand();
-            $msg['gateway_txn_id'] = $this->run_random_id;
-
-            $contribution = wmf_civicrm_contribution_message_import( $msg );
-
-            // Synthesize trxn_id so it matches the random id we just used
-            $expected_transaction = new WmfTransaction();
-            $expected_transaction->gateway = $msg['gateway'];
-            $expected_transaction->gateway_txn_id = $msg['gateway_txn_id'];
-            $expected_transaction->recurring = $msg['recurring'];
-            $expected_transaction->recur_sequence = ( isset( $msg['effort_id'] ) ? $msg['effort_id'] : null );
-            $expected_contribution['trxn_id'] = $expected_transaction->get_unique_id();
-            $this->stripTrxnIdTimestamp( $expected_contribution );
-
-            $this->stripUniques( $contribution );
-
-            // Strip contact_id if we are have no expectation
-            if ( empty( $expected_contribution['contact_id'] ) ) {
-                unset( $contribution['contact_id'] );
-            }
-
-            $this->assertEquals( $expected_contribution, $contribution );
+    public function tearDown() {
+        if ( $this->contribution_id ) {
+            civicrm_api_classapi()->Contribution->Delete( array(
+                'id' => $this->contribution_id,
+                'version' => '3',
+            ) );
         }
+        parent::tearDown();
     }
 
     /**
-     * Make sure we import 'Do Not Solicit' values to the wmf_donor table
+     * @dataProvider messageProvider
      */
-    public function testImportDoNotSolicit() {
-        $msg = array(
-            'email' => 'nobody@wikimedia.org',
-            'gross' => '1.23',
-            'currency' => 'USD',
-            'payment_method' => 'cc',
-            'gateway' => 'test_gateway',
-            'do_not_solicit' => 'Y',
-            'gateway_txn_id' => mt_rand(),
-        );
+    public function testMessageInsert( $msg, $expected ) {
         $contribution = wmf_civicrm_contribution_message_import( $msg );
-        $donor_fields = wmf_civicrm_contribution_get_custom_values(
-            $contribution['contact_id'],
-            array( 'do_not_solicit' ),
-            'wmf_donor'
-        );
-        $this->assertEquals( '1', $donor_fields['do_not_solicit'] );
-    }
+        $this->contribution_id = $contribution['id'];
 
-    /**
-     * Check that wmf_donor fields are updated correctly
-     */
-    public function testImportWmfDonor() {
-        $msg = array(
-            'email' => 'nobody5@wikimedia.org',
-            'gross' => '7.55',
-            'currency' => 'USD',
-            'payment_method' => 'cc',
-            'gateway' => 'test_gateway',
-			'date' => '2014-07-02',
-            'gateway_txn_id' => mt_rand(),
-        );
-        $contribution = wmf_civicrm_contribution_message_import( $msg );
-        $donor_fields = wmf_civicrm_contribution_get_custom_values(
-            $contribution['contact_id'],
-            array(
-				'is_2014_donor',
-				'is_2013_donor',
-				'last_donation_date',
-				'last_donation_usd',
-				'lifetime_usd_total',
-			),
-            'wmf_donor'
-        );
-        $this->assertEquals( '1', $donor_fields['is_2014_donor'] );
-		$this->assertEquals( '0', $donor_fields['is_2013_donor'] );
-		$this->assertEquals( '2014-07-02', substr( $donor_fields['last_donation_date'], 0, 10 ) );
-		$this->assertEquals( '7.55', $donor_fields['last_donation_usd'] );
-		$this->assertEquals( '7.55', $donor_fields['lifetime_usd_total'] );
-    }
+        $anonymized_contribution = $contribution;
+        // Strip contact_id if we have no expectation.
+        if ( empty( $expected['contribution']['contact_id'] ) ) {
+            unset( $anonymized_contribution['contact_id'] );
+        }
+        unset( $anonymized_contribution['id'] );
 
-    /**
-     * Remove unique stuff which cannot be expected
-     */
-    function stripUniques( &$contribution ) {
-        $isNumber = array(
-            'id',
-            'receive_date',
-        );
-        foreach ( $isNumber as $field ) {
-            $this->assertGreaterThan( 0, $contribution[$field] );
-            unset( $contribution[$field] );
+        $this->assertEquals( $expected['contribution'], $anonymized_contribution );
+
+        if ( !empty( $expected['contribution_custom_values'] ) ) {
+            $actual_contribution_custom_values = wmf_civicrm_contribution_get_custom_values(
+                $contribution['id'],
+                array_keys( $expected['contribution_custom_values'] )
+            );
+            $this->assertEquals( $expected['contribution_custom_values'], $actual_contribution_custom_values );
         }
 
-        $this->stripTrxnIdTimestamp( $contribution );
-    }
-
-    function stripTrxnIdTimestamp( &$contribution ) {
-        $parts = explode( ' ', $contribution['trxn_id'] );
-        array_pop( $parts );
-        $contribution['trxn_id'] = implode( ' ', $parts );
+        if ( !empty( $expected['contact_custom_values'] ) ) {
+            $actual_contact_custom_values = wmf_civicrm_contribution_get_custom_values(
+                $contribution['contact_id'],
+                array_keys( $expected['contact_custom_values'] )
+            );
+            $this->assertEquals( $expected['contact_custom_values'], $actual_contact_custom_values );
+        }
     }
 
     public function messageProvider() {
+        $fixtures = CiviFixtures::instance();
+
         $contribution_type_cash = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Cash' );
         // FIXME: No CC submethods are created in the migrations?
         $payment_instrument_cc = wmf_civicrm_get_civi_id( 'payment_instrument_id', 'Credit Card' );
 
+        $gateway_txn_id = mt_rand();
+
         return array(
+            // Minimal contribution
             array(
-                // Normal contribution
                 array(
-                    'email' => 'nobody@wikimedia.org',
-                    'gross' => '1.23',
                     'currency' => 'USD',
-                    'payment_method' => 'cc',
+                    'date' => '2012-05-01 00:00:00',
+                    'email' => 'nobody@wikimedia.org',
                     'gateway' => 'test_gateway',
+                    'gateway_txn_id' => $gateway_txn_id,
+                    'gross' => '1.23',
+                    'payment_method' => 'cc',
                 ),
                 array(
-                    'contribution_type_id' => $contribution_type_cash,
-                    'contribution_page_id' => '',
-                    'payment_instrument_id' => $payment_instrument_cc,
-                    'non_deductible_amount' => '',
-                    'total_amount' => '1.23',
-                    'fee_amount' => '0',
-                    'net_amount' => '1.23',
-                    'invoice_id' => '',
-                    'currency' => 'USD',
-                    'cancel_date' => '',
-                    'cancel_reason' => '',
-                    'receipt_date' => '',
-                    'thankyou_date' => '',
-                    'source' => 'USD 1.23',
-                    'amount_level' => '',
-                    'contribution_recur_id' => '',
-                    'honor_contact_id' => '',
-                    'is_test' => '',
-                    'is_pay_later' => '',
-                    'contribution_status_id' => '',
-                    'honor_type_id' => '',
-                    'address_id' => '',
-                    'check_number' => 'null',
-                    'campaign_id' => '',
+                    'contribution' => array(
+                        'address_id' => '',
+                        'amount_level' => '',
+                        'campaign_id' => '',
+                        'cancel_date' => '',
+                        'cancel_reason' => '',
+                        'check_number' => 'null',
+                        'contribution_page_id' => '',
+                        'contribution_recur_id' => '',
+                        'contribution_status_id' => '',
+                        'contribution_type_id' => $contribution_type_cash,
+                        'currency' => 'USD',
+                        'fee_amount' => '0',
+                        'honor_contact_id' => '',
+                        'honor_type_id' => '',
+                        'invoice_id' => '',
+                        'is_pay_later' => '',
+                        'is_test' => '',
+                        'net_amount' => '1.23',
+                        'non_deductible_amount' => '',
+                        'payment_instrument_id' => $payment_instrument_cc,
+                        'receipt_date' => '',
+                        'receive_date' => '20120501000000',
+                        'source' => 'USD 1.23',
+                        'thankyou_date' => '',
+                        'total_amount' => '1.23',
+                        'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+                    ),
                 ),
             ),
 
-            // Recurring contribution
+            // Maximal contribution
             array(
                 array(
-                    'email' => 'nobody@wikimedia.org',
-                    'gross' => $this->recur_amount,
                     'currency' => 'USD',
-                    'payment_method' => 'cc',
+                    'date' => '2012-03-01 00:00:00',
+                    'do_not_solicit' => 'Y',
+                    'email' => 'nobody@wikimedia.org',
+                    'fee' => '0.03',
                     'gateway' => 'test_gateway',
-                    'contact_id' => $this->contact_id,
-                    'contribution_recur_id' => $this->contribution_recur_id,
-                    'effort_id' => 2,
+                    'gateway_txn_id' => $gateway_txn_id,
+                    'gross' => '1.23',
+                    'no_thank_you' => 'no forwarding address',
+                    'payment_method' => 'cc',
+                    'thankyou_date' => '2012-04-01',
                 ),
                 array(
-                    'contact_id' => strval( $this->contact_id ),
-                    'contribution_type_id' => $contribution_type_cash,
-                    'contribution_page_id' => '',
-                    'payment_instrument_id' => $payment_instrument_cc,
-                    'non_deductible_amount' => '',
-                    'total_amount' => $this->recur_amount,
-                    'fee_amount' => '0',
-                    'net_amount' => $this->recur_amount,
-                    'invoice_id' => '',
+                    'contribution' => array(
+                        'address_id' => '',
+                        'amount_level' => '',
+                        'campaign_id' => '',
+                        'cancel_date' => '',
+                        'cancel_reason' => '',
+                        'check_number' => 'null',
+                        'contribution_page_id' => '',
+                        'contribution_recur_id' => '',
+                        'contribution_status_id' => '',
+                        'contribution_type_id' => $contribution_type_cash,
+                        'currency' => 'USD',
+                        'fee_amount' => '0.03',
+                        'honor_contact_id' => '',
+                        'honor_type_id' => '',
+                        'invoice_id' => '',
+                        'is_pay_later' => '',
+                        'is_test' => '',
+                        'net_amount' => '1.2', # :(
+                        'non_deductible_amount' => '',
+                        'payment_instrument_id' => $payment_instrument_cc,
+                        'receipt_date' => '',
+                        'receive_date' => '20120301000000',
+                        'source' => 'USD 1.23',
+                        'thankyou_date' => '20120401000000',
+                        'total_amount' => '1.23',
+                        'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+                    ),
+                    'contribution_custom_values' => array(
+                        'gateway' => 'test_gateway',
+                        'gateway_txn_id' => $gateway_txn_id,
+                        'no_thank_you' => 'no forwarding address',
+                    ),
+                    'contact_custom_values' => array(
+                        'do_not_solicit' => '1',
+                        'is_2010_donor' => '0',
+                        'is_2011_donor' => '1', # Fiscal year
+                        'is_2012_donor' => '0',
+                        'last_donation_date' => '2012-03-01 00:00:00',
+                        'last_donation_usd' => '1.23',
+                        'lifetime_usd_total' => '1.23',
+                    ),
+                ),
+            ),
+
+            // Subscription payment
+            array(
+                array(
+                    'contact_id' => $fixtures->contact_id,
+                    'contribution_recur_id' => $fixtures->contribution_recur_id,
                     'currency' => 'USD',
-                    'cancel_date' => '',
-                    'cancel_reason' => '',
-                    'receipt_date' => '',
-                    'thankyou_date' => '',
-                    'source' => 'USD ' . $this->recur_amount,
-                    'amount_level' => '',
-                    'contribution_recur_id' => strval( $this->contribution_recur_id ),
-                    'honor_contact_id' => '',
-                    'is_test' => '',
-                    'is_pay_later' => '',
-                    'contribution_status_id' => '',
-                    'honor_type_id' => '',
-                    'address_id' => '',
-                    'check_number' => 'null',
-                    'campaign_id' => '',
+                    'date' => '2014-01-01 00:00:00',
+                    'effort_id' => 2,
+                    'email' => 'nobody@wikimedia.org',
+                    'gateway' => 'test_gateway',
+                    'gateway_txn_id' => $gateway_txn_id,
+                    'gross' => $fixtures->recur_amount,
+                    'payment_method' => 'cc',
+                ),
+                array(
+                    'contribution' => array(
+                        'address_id' => '',
+                        'amount_level' => '',
+                        'campaign_id' => '',
+                        'cancel_date' => '',
+                        'cancel_reason' => '',
+                        'check_number' => 'null',
+                        'contact_id' => strval( $fixtures->contact_id ),
+                        'contribution_page_id' => '',
+                        'contribution_recur_id' => strval( $fixtures->contribution_recur_id ),
+                        'contribution_status_id' => '',
+                        'contribution_type_id' => $contribution_type_cash,
+                        'currency' => 'USD',
+                        'fee_amount' => '0',
+                        'honor_contact_id' => '',
+                        'honor_type_id' => '',
+                        'invoice_id' => '',
+                        'is_pay_later' => '',
+                        'is_test' => '',
+                        'net_amount' => $fixtures->recur_amount,
+                        'non_deductible_amount' => '',
+                        'payment_instrument_id' => $payment_instrument_cc,
+                        'receipt_date' => '',
+                        'receive_date' => '20140101000000',
+                        'source' => 'USD ' . $fixtures->recur_amount,
+                        'thankyou_date' => '',
+                        'total_amount' => $fixtures->recur_amount,
+                        'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+                    ),
                 ),
             ),
         );
