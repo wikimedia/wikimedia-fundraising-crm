@@ -1145,6 +1145,8 @@ EOS;
  * that are consistent with how we need to insert data into CiviCRM.
  * This should be useful by other modules processing contribution messages 
  * out of the queue.
+ *
+ * TODO: Split this into a transformation chain.
  * 
  * @param mixed $msg
  * @return array
@@ -2008,6 +2010,9 @@ function wmf_civicrm_get_dbs() {
  * @return array
  */
 function wmf_civicrm_dao_to_list( $dao ) {
+    if ( PEAR::isError( $dao ) ) {
+        throw new Exception( $dao->getMessage() );
+    }
     $result = array();
     while ($dao->fetch()) {
         $result[] = $dao->toArray();
