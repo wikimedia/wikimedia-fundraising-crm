@@ -48,16 +48,20 @@ function queue2civicrm_stomp_url() {
 }
 
 /**
- * @return Queue
+ * Create or retrieve a stomp queue connection.  It's best to use a different
+ * Queue object for each queue you access if you are interleaving reads from
+ * different queues.
+ * @param string $name a label for the Queue object
+ * @return Queue named connection object
  */
-function queue2civicrm_stomp() {
-  static $q = null;
+function queue2civicrm_stomp( $name = 'default' ) {
+  static $q = array();
 
-  if ( !$q ) {
-    $q = new Queue( queue2civicrm_stomp_url() );
+  if ( empty( $q[$name] ) ) {
+    $q[$name] = new Queue( queue2civicrm_stomp_url() );
   }
 
-  return $q;
+  return $q[$name];
 }
 
 function queue2civicrm_test() {
@@ -296,7 +300,7 @@ function queue2civicrm_import( $msg ) {
 
     // Ack any completion message once the rest has completed successfully
     if ( $completion_message ) {
-        queue2civicrm_stomp()->ack( $completion_message );
+        queue2civicrm_stomp( 'pending' )->ack( $completion_message );
     }
 }
 
@@ -306,7 +310,7 @@ function queue2civicrm_import( $msg ) {
  */
 function queue2civicrm_import_completion_message( &$msg ) {
     $cid = $msg['completion_message_id'];
-    $pending = queue2civicrm_stomp()->getByCorrelationId( 'pending', $cid );
+    $pending = queue2civicrm_stomp( 'pending' )->getByCorrelationId( 'pending', $cid );
     if ( $pending ) {
         $data = json_decode( $pending->body, true );
         $msg = $msg + $data;
