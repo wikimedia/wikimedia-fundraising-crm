@@ -955,6 +955,30 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         }
     }
 
+    // Add groups to this contact.
+    if ( $msg['contact_groups'] ) {
+        // TODO: Use CRM_Contact_GroupContact::buildOptions in Civi 4.4, also
+        // in place of ::tag below.
+        $supported_groups = array_flip(CRM_Core_PseudoConstant::allGroup());
+        $stacked_ex = array();
+        foreach ( array_unique( $msg['contact_groups'] ) as $group ) {
+            try {
+                $tag_result = civicrm_api3( "GroupContact", "Create", array(
+                    'contact_id' => $contact_id,
+                    'group_id' => $supported_groups[$group],
+                ));
+            } catch ( CiviCRM_API3_Exception $ex ) {
+                $stacked_ex[] = "Failed to add group {$group} to contact ID {$contact_id}. Error: " . $ex->getMessage();
+            }
+        }
+        if ( !empty( $stacked_ex ) ) {
+            throw new WmfException(
+                "IMPORT_CONTACT",
+                implode( "\n", $stacked_ex )
+            );
+        }
+    }
+
     // Do we have any tags we need to add to this contact?
     if ( $msg['contact_tags'] ) {
         $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
@@ -1219,6 +1243,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'contribution_recur_id' => null,
         'effort_id' => null,
         'subscr_id' => null,
+        'contact_groups' => array(),
         'contact_tags' => array(),
         'contribution_tags' => array(),
         'soft_credit_to' => null,
@@ -1335,6 +1360,18 @@ function wmf_civicrm_normalize_msg( $msg ) {
 
     $msg['anonymous'] = ((!empty( $msg['anonymous'] ) && strtoupper($msg['anonymous'] ) !== "FALSE") ? 1 : 0);
     $msg['optout'] = ((empty( $msg['optout'] ) || $msg['optout'] === 0 || $msg['optout'] === '0' || strtoupper( $msg['optout'] ) === "FALSE") ? 0 : 1);
+
+    $list_fields = array(
+        'contact_groups',
+        'contact_tags',
+        'contribution_tags',
+    );
+    foreach ( $list_fields as $field ) {
+        if ( is_string( $msg[$field] ) ) {
+            $msg[$field] = preg_split( '/[\s,]+/', $msg[$field], null, PREG_SPLIT_NO_EMPTY );
+        }
+        $msg[$field] = array_unique( $msg[$field] );
+    }
 
     // set the correct amount fields/data and do exchange rate conversions.
     $msg = wmf_civicrm_normalize_contribution_amounts( $msg );
