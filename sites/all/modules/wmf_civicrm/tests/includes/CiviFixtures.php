@@ -78,13 +78,16 @@ class CiviFixtures {
             'title' => $out->contact_group_name,
             'version' => 3,
         ) );
-        if ( $success && $api->values ) {
+        if ( $success && $api->count === 1 ) {
             $out->contact_group_id = $api->id;
         } else {
-            $api->Group->Create( array(
+            $success = $api->Group->Create( array(
                 'title' => $out->contact_group_name,
                 'version' => 3,
             ) );
+            if ( !$success ) {
+                throw new Exception( $api->errorMsg() );
+            }
             $out->contact_group_id = $api->id;
         }
 
