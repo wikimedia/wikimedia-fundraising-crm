@@ -244,6 +244,25 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         $msg['contribution_recur_id'] = $recur_record->id;
     }
 
+    // Look up soft credit contact.
+    if ( !empty( $msg['soft_credit_to'] ) ) {
+        $api = civicrm_api_classapi();
+        $success = $api->Contact->Get( array(
+            'organization_name' => $msg['soft_credit_to'],
+
+            'version' => 3,
+        ) );
+        if ( count( $api->values ) !== 1 ) {
+            throw new WmfException(
+                'INVALID_MESSAGE',
+                "Bad soft credit target, [${msg['soft_credit_to']}]"
+            );
+        }
+        $soft_credit_contact = $api->values[0];
+        # FIXME: awkward to have the two fields.
+        $msg['soft_credit_to_id'] = $soft_credit_contact->id;
+    }
+
     // Insert the contribution record.
     $contribution = _wmf_civicrm_message_contribution_insert( $msg );
 
@@ -294,6 +313,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'contribution_recur_id' => $msg['contribution_recur_id'],
         'check_number' => $msg['check_number'],
         'letter_code' => $msg['letter_code'],
+        'soft_credit_to' => $msg['soft_credit_to_id'],
 
         // API required fields
         'version' => '3'
@@ -1201,6 +1221,8 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'subscr_id' => null,
         'contact_tags' => array(),
         'contribution_tags' => array(),
+        'soft_credit_to' => null,
+        'soft_credit_to_id' => null,
     );
     $msg = $msg + $defaults;
 
