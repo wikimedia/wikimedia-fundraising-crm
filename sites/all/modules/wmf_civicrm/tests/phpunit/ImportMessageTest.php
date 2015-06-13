@@ -217,4 +217,28 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             ),
         );
     }
+
+    public function testImportContactGroups() {
+        $fixtures = CiviFixtures::create();
+
+        $msg = array(
+            'currency' => 'USD',
+            'date' => '2012-03-01 00:00:00',
+            'gateway' => 'test_gateway',
+            'gateway_txn_id' => mt_rand(),
+            'gross' => '1.23',
+            'payment_method' => 'cc',
+            'contact_groups' => $fixtures->contact_group_name,
+        );
+        $contribution = wmf_civicrm_contribution_message_import( $msg );
+
+        $api = civicrm_api_classapi();
+        $api->GroupContact->Get( array(
+            'contact_id' => $contribution['contact_id'],
+
+            'version' => 3,
+        ) );
+        $this->assertEquals( 1, count( $api->values ) );
+        $this->assertEquals( $fixtures->contact_group_id, $api->values[0]->group_id );
+    }
 }
