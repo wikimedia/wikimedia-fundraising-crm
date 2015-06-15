@@ -82,7 +82,7 @@ function wmf_civicrm_settle( $contribution, $settled_timestamp = null )
 {
     if ( $settled_timestamp === null ) {
         // Get the stored date
-        // FIXME wmf_civicrm_contribution_get_custom_values('settlement_date');
+        // FIXME wmf_civicrm_get_custom_values('settlement_date');
         $field = wmf_civicrm_get_custom_field_name( 'settlement_date' );
         $params = array(
             'entityID' => $contribution['id'],
@@ -126,7 +126,7 @@ function wmf_civicrm_settle( $contribution, $settled_timestamp = null )
     return array_merge( $contribution, $custom_values );
 }
 
-function wmf_civicrm_contribution_get_custom_values( $entity_id, $names, $group_name = null )
+function wmf_civicrm_get_custom_values( $entity_id, $names, $group_name = null )
 {
     $names = (array)$names;
     $params[ 'entityID' ] = $entity_id;
@@ -1624,7 +1624,7 @@ WHERE
     $result = $api->values;
     $refund = array_pop($result);
 
-    $parent_custom_values = wmf_civicrm_contribution_get_custom_values( $contribution_id, array(
+    $parent_custom_values = wmf_civicrm_get_custom_values( $contribution_id, array(
         'gateway_account',
     ) );
 
@@ -1708,7 +1708,7 @@ function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_statu
         $gateway_date = gmdate( 'YmdHis', $timestamp );
     }
 
-    $original_custom_values = wmf_civicrm_contribution_get_custom_values( $contribution_id, array(
+    $original_custom_values = wmf_civicrm_get_custom_values( $contribution_id, array(
         'gateway_date',
     ) );
     $last_timestamp = wmf_common_date_parse_string( $original_custom_values['gateway_date'] );
