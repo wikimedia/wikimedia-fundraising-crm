@@ -1176,3 +1176,24 @@ function wmf_civicrm_update_7028() {
         'Engage',
     ) );
 }
+
+/**
+ * Rename "Old and add "Old 2015" Location Type values
+ *
+ * We are also adding existing values programmatically if they don't already
+ * exist.
+ */
+function wmf_civicrm_update_7029() {
+  $api = wmf_civicrm_bootstrap_civi();
+  $location_types = array(
+    'Home' => 'Home',
+    'Work' => 'Work',
+    'Main' => 'Main',
+    'Other' => 'Other',
+    'Mailing' => 'Mailing',
+    'Billing' => 'Billing',
+    'Old' => 'Old 2014',
+    'Old_2015' => 'Old 2015',
+  );
+  wmf_civicrm_create_location_types($location_types, TRUE);
+}
