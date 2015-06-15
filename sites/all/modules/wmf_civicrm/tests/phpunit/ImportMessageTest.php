@@ -2,6 +2,7 @@
 
 class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     protected $contribution_id;
+    static protected $fixtures;
 
     public static function getInfo() {
         return array(
@@ -55,10 +56,10 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     public function messageProvider() {
-        $fixtures = CiviFixtures::instance();
+        // Make static so it isn't destroyed until class cleanup.
+        self::$fixtures = CiviFixtures::create();
 
         $contribution_type_cash = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Cash' );
-        // FIXME: No CC submethods are created in the migrations?
         $payment_instrument_cc = wmf_civicrm_get_civi_id( 'payment_instrument_id', 'Credit Card' );
 
         $gateway_txn_id = mt_rand();
@@ -171,15 +172,15 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             // Subscription payment
             array(
                 array(
-                    'contact_id' => $fixtures->contact_id,
-                    'contribution_recur_id' => $fixtures->contribution_recur_id,
+                    'contact_id' => self::$fixtures->contact_id,
+                    'contribution_recur_id' => self::$fixtures->contribution_recur_id,
                     'currency' => 'USD',
                     'date' => '2014-01-01 00:00:00',
                     'effort_id' => 2,
                     'email' => 'nobody@wikimedia.org',
                     'gateway' => 'test_gateway',
                     'gateway_txn_id' => $gateway_txn_id,
-                    'gross' => $fixtures->recur_amount,
+                    'gross' => self::$fixtures->recur_amount,
                     'payment_method' => 'cc',
                 ),
                 array(
@@ -190,9 +191,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'cancel_date' => '',
                         'cancel_reason' => '',
                         'check_number' => 'null',
-                        'contact_id' => strval( $fixtures->contact_id ),
+                        'contact_id' => strval( self::$fixtures->contact_id ),
                         'contribution_page_id' => '',
-                        'contribution_recur_id' => strval( $fixtures->contribution_recur_id ),
+                        'contribution_recur_id' => strval( self::$fixtures->contribution_recur_id ),
                         'contribution_status_id' => '',
                         'contribution_type_id' => $contribution_type_cash,
                         'currency' => 'USD',
@@ -202,14 +203,14 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'invoice_id' => '',
                         'is_pay_later' => '',
                         'is_test' => '',
-                        'net_amount' => $fixtures->recur_amount,
+                        'net_amount' => self::$fixtures->recur_amount,
                         'non_deductible_amount' => '',
                         'payment_instrument_id' => $payment_instrument_cc,
                         'receipt_date' => '',
                         'receive_date' => '20140101000000',
-                        'source' => 'USD ' . $fixtures->recur_amount,
+                        'source' => 'USD ' . self::$fixtures->recur_amount,
                         'thankyou_date' => '',
-                        'total_amount' => $fixtures->recur_amount,
+                        'total_amount' => self::$fixtures->recur_amount,
                         'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
                     ),
                 ),

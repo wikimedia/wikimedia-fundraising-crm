@@ -18,12 +18,11 @@ class CiviFixtures {
     /**
      * @return CiviFixtures
      */
-    static function instance() {
+    static function create() {
         $out = new CiviFixtures();
 
         $api = civicrm_api_classapi();
 
-        // TODO: clean up the fixtures
         $contact_params = array(
             'contact_type' => 'Individual',
             'first_name' => 'Test',
@@ -49,7 +48,7 @@ class CiviFixtures {
         $out->epoch_time = time();
         $out->sql_time = wmf_common_date_unix_to_sql( $out->epoch_time );
 
-        $initial_contribution_params = array(
+        $subscription_params = array(
             'contact_id' => $out->contact_id,
             'amount' => $out->recur_amount,
             'currency' => 'USD',
@@ -66,9 +65,22 @@ class CiviFixtures {
 
             'version' => 3,
         );
-        $api->ContributionRecur->Create( $initial_contribution_params );
+        $api->ContributionRecur->Create( $subscription_params );
         $out->contribution_recur_id = $api->id;
 
         return $out;
+    }
+
+    // FIXME: probably need control over destruction order to not conflict with stuff added by test cases
+    public function __destruct() {
+        $api = civicrm_api_classapi();
+        $api->ContributionRecur->Delete( array(
+            'id' => $this->contribution_recur_id,
+            'version' => 3,
+        ) );
+        $api->Contact->Delete( array(
+            'id' => $this->contact_id,
+            'version' => 3,
+        ) );
     }
 }
