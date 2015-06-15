@@ -16,11 +16,10 @@ class JpMorganFile extends ChecksFile {
 
     protected function getRequiredData() {
         return array(
+            'currency',
             'date',
             'gateway_txn_id',
             'gross',
-            'original_currency',
-            'original_gross',
         );
     }
 
@@ -28,8 +27,8 @@ class JpMorganFile extends ChecksFile {
         return array(
             'ACCOUNT NAME' => 'gateway_account',
             'Bank Ref Number' => 'gateway_txn_id',
-            'CREDITS' => 'original_gross',
-            'CURRENCY' => 'original_currency',
+            'CREDITS' => 'gross',
+            'CURRENCY' => 'currency',
             'TRANSACTION DATE' => 'date',
             'VALUE DATE' => 'settlement_date',
         );
@@ -43,7 +42,7 @@ class JpMorganFile extends ChecksFile {
     }
 
     protected function getDefaultValues() {
-        return array(
+        return parent::getDefaultValues() + array(
             'contact_type' => 'Individual',
             'direct_mail_appeal' => 'White Mail',
             'email' => 'nobody@wikimedia.org',
@@ -53,18 +52,5 @@ class JpMorganFile extends ChecksFile {
             'payment_instrument' => 'JP Morgan EUR',
             'restrictions' => 'Unrestricted - General',
         );
-    }
-
-    protected function mungeMessage( &$msg ) {
-        // Approximate value in USD
-        $msg['gross'] = exchange_rate_convert(
-            $msg['original_currency'], $msg['original_gross'], $msg['settlement_date']
-        );
-
-        // TODO: We can remove this once MG uses smart groups instead of this label.
-        // Flag as big-time if over $1000
-        if ( $msg['gross'] > 1000 ) {
-            $msg['gift_source'] = 'Benefactor Gift';
-        }
     }
 }

@@ -7,11 +7,10 @@
       <testsuite name="large_donation tests">
         <directory>sites/all/modules/large_donation/tests</directory>
       </testsuite>
-      <!-- FIXME: need to mock currency conversion
       <testsuite name="offline2civicrm tests">
         <directory>sites/all/modules/offline2civicrm/tests</directory>
+        <exclude>sites/all/modules/offline2civicrm/tests/includes/BaseChecksFileTest.php</exclude>
       </testsuite>
-      -->
       <testsuite name="exchange_rates tests">
         <directory>sites/all/modules/exchange_rates/tests/phpunit</directory>
       </testsuite>
@@ -32,7 +31,7 @@
       </testsuite>
       <testsuite name="wmf_communication tests">
         <directory>sites/all/modules/wmf_communication/tests/phpunit</directory>
-	<exclude>sites/all/modules/wmf_communication/tests/phpunit/CiviMailTestBase.php</exclude>
+        <exclude>sites/all/modules/wmf_communication/tests/phpunit/CiviMailTestBase.php</exclude>
       </testsuite>
     </testsuites>
 </phpunit>
