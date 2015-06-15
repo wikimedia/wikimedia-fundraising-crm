@@ -284,7 +284,8 @@ function wmf_common_queue_item_download( $queue, $correlationId ) {
  *
  * @return string
  *
- * TODO: This is a site-specific kludge.  Move to deployment configuration.
+ * TODO: This is a site-specific kludge.  Move to deployment configuration,
+ * set a variable in settings_local.php
  */
 function wmf_common_get_my_revision() {
     static $sourceRevision;
@@ -293,11 +294,12 @@ function wmf_common_get_my_revision() {
         return WMF_SOURCE_REVISION;
     } else if ( !$sourceRevision ) {
         $versionStampPath = DRUPAL_ROOT . "/.version-stamp";
-        $versionId = file_get_contents( $versionStampPath );
-        if ( $versionId !== false ) {
+        if ( file_exists( $versionStampPath ) ) {
+            $versionId = file_get_contents( $versionStampPath );
             $sourceRevision = trim( $versionId );
+        } else {
+            $sourceRevision = 'unknown';
         }
-        $sourceRevision = 'unknown';
     }
     return $sourceRevision;
 }

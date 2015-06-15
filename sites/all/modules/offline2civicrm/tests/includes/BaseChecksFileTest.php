@@ -1,6 +1,9 @@
 <?php
 
 class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
+    /**
+     * Test and remove some dynamic fields, to simplify test fixtures.
+     */
     function stripSourceData( &$msg ) {
         $this->assertEquals( 'direct', $msg['source_type'] );
         $importerClass = str_replace( 'Test', 'Probe', get_class( $this ) );

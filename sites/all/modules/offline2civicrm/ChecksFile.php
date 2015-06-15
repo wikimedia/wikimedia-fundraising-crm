@@ -193,7 +193,7 @@ abstract class ChecksFile {
         }
 
         // left-pad the zipcode
-        if ( $msg['country'] === 'US' ) {
+        if ( $msg['country'] === 'US' && !empty( $msg['postal_code'] ) ) {
             if ( preg_match( '/^(\d{1,4})(-\d+)?$/', $msg['postal_code'], $matches ) ) {
                 $msg['postal_code'] = str_pad( $matches[1], 5, "0", STR_PAD_LEFT );
                 if ( !empty( $matches[2] ) ) {
