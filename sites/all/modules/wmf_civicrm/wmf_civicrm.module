@@ -90,7 +90,7 @@ function wmf_civicrm_settle( $contribution, $settled_timestamp = null )
         );
         $result = CRM_Core_BAO_CustomValueTable::getValues( $params );
         $settlement_db_date = $result[$field];
-        $settled_timestamp = strtotime( $settlement_db_date );
+        $settled_timestamp = wmf_common_date_parse_string( $settlement_db_date );
         $settlement_db_date = wmf_common_date_unix_to_sql( $settled_timestamp );
     } else {
         $settlement_db_date = wmf_common_date_unix_to_sql( $settled_timestamp );
@@ -1248,7 +1248,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
 
     // Convert times to Unix timestamps.
     if ( !is_numeric( $msg['date'] ) ) {
-        $msg['date'] = strtotime($msg['date']);
+        $msg['date'] = wmf_common_date_parse_string($msg['date']);
     }
     // if all else fails, fall back to now.
     if ( empty( $msg['date'] ) ) {
@@ -1269,7 +1269,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
 
     if ( !empty( $msg['thankyou_date'] ) ) {
         if ( !is_numeric( $msg['thankyou_date'] ) ) {
-            $unix_time = strtotime( $msg['thankyou_date'] );
+            $unix_time = wmf_common_date_parse_string( $msg['thankyou_date'] );
             if ( $unix_time !== false ) {
                 $msg['thankyou_date'] = $unix_time;
             } else {
@@ -1525,7 +1525,7 @@ WHERE
         //FIXME!: call this from the contribution save hook. $round parameter. 
         $contribution->total_amount = round( exchange_rate_convert(
             $refund_currency, $refund_amount,
-            strtotime( $contribution->receive_date )
+            wmf_common_date_parse_string( $contribution->receive_date )
         ), 2 );
 
         $api->Contribution->Create( array(
@@ -1577,7 +1577,7 @@ WHERE
     if ( $refund_date === null ) {
         $refund_date = time();
     } elseif ( !is_numeric( $refund_date ) ) {
-        $refund_date = strtotime( $refund_date );
+        $refund_date = wmf_common_date_parse_string( $refund_date );
     }
 
     $refund_status = ( $refund_completed ? 'Completed' : 'Pending' );
@@ -1686,7 +1686,7 @@ function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_statu
     $original_custom_values = wmf_civicrm_contribution_get_custom_values( $contribution_id, array(
         'gateway_date',
     ) );
-    $last_timestamp = strtotime( $original_custom_values['gateway_date'] );
+    $last_timestamp = wmf_common_date_parse_string( $original_custom_values['gateway_date'] );
     $last_gateway_date = wmf_common_date_unix_to_sql( $last_timestamp );
 
     if ( $last_gateway_date >= $gateway_date ) {
@@ -2239,7 +2239,7 @@ LIMIT %4";
 			// Approximate rate we originally used so we can correct the fee & net.
 			$rate_used = $total_amount / $original_amount;
 			try {
-				$correct_rate = exchange_rate_convert( $currency, 1, strtotime( $contribution['receive_date'] ) );
+				$correct_rate = exchange_rate_convert( $currency, 1, wmf_common_date_parse_string( $contribution['receive_date'] ) );
 			}
 			catch ( ExchangeRatesException $ex ) {
 				watchdog( 'recalculate_contributions', "Not recalculating contribution $id.  Cannot find rate for currency $currency", null, WATCHDOG_DEBUG );

@@ -7,7 +7,7 @@ define('WMF_MAX_ROLLUP_YEAR', 2025);
 /**
  * Converts various kinds of dates to our favorite string format. 
  * @param mixed $date An integer in ***timestamp*** format, or a DateTime object.
- * @return int The date in the format yyyymmdd. 
+ * @return string The date in the format yyyymmdd.
  */
 function wmf_common_date_format_string( $date ){
 	if ( is_numeric( $date ) ){
@@ -15,6 +15,22 @@ function wmf_common_date_format_string( $date ){
 	} elseif( is_object( $date ) ) {
 		return date_format($date, WMF_DATEFORMAT);
 	}
+}
+
+/**
+ * Run strtotime in UTC
+ * @param string $date Random date format you hope is parseable by PHP, and is
+ * in UTC.
+ * @return int Seconds since Unix epoch
+ */
+function wmf_common_date_parse_string( $date ){
+    try {
+        $obj = new DateTime( $date, new DateTimeZone( 'UTC' ) );
+        return $obj->getTimestamp();
+    } catch ( Exception $ex ) {
+        watchdog( 'wmf_common', t( "Caught date exception: " ) . $ex->getMessage(), NULL, WATCHDOG_ERROR );
+        return null;
+    }
 }
 
 /**
