@@ -106,6 +106,7 @@ function offline2civicrm_import_checks_form() {
         'generic_org' => t( 'Generic Organizations' ),
         'jpmorgan' => t( 'JP Morgan' ),
         'paypal' => t( 'PayPal EFT' ),
+        'square' => t( 'Square' ),
     ),
   );
   $form['log'] = array(
@@ -153,6 +154,9 @@ function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
         break;
       case 'foreign_checks':
         $importer = new ForeignChecksFile( $file->uri );
+        break;
+      case 'square':
+        $importer = new SquareFile( $file->uri );
         break;
       default:
         throw new Exception( 'Bad file format selection' );

@@ -45,6 +45,7 @@ abstract class ChecksFile {
             throw new WmfException( 'INVALID_FILE_FORMAT', "This file is missing column headers: " . implode( ", ", $failed ) );
         }
 
+        $num_ignored = 0;
         $num_successful = 0;
         $num_duplicates = 0;
         $this->row_index = -1 + $this->numSkippedRows;
@@ -65,9 +66,12 @@ abstract class ChecksFile {
 
                 // check to see if we have already processed this check
                 if ( $existing = wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ){
-                    // if so, move on
-                    watchdog( 'offline2civicrm', 'Contribution matches existing contribution (id: @id), skipping it.', array( '@id' => $existing[0]['id'] ), WATCHDOG_INFO );
-                    $num_duplicates++;
+                    $skipped = $this->handleDuplicate( $existing );
+                    if ( $skipped ) {
+                        $num_duplicates++;
+                    } else {
+                        $num_successful++;
+                    }
                     continue;
                 }
 
@@ -84,14 +88,17 @@ abstract class ChecksFile {
                 $num_successful++;
             } catch ( EmptyRowException $ex ) {
                 continue;
+            } catch ( IgnoredRowException $ex ) {
+                $num_ignored++;
+                continue;
             } catch ( WmfException $ex ) {
                 $rowNum = $this->row_index + 2;
-                $errorMsg = "Import aborted due to error at row {$rowNum}: {$ex->getMessage()}, after {$num_successful} records were stored successfully and {$num_duplicates} duplicates encountered.";
+                $errorMsg = "Import aborted due to error at row {$rowNum}: {$ex->getMessage()}, after {$num_successful} records were stored successfully, {$num_ignored} were ignored, and {$num_duplicates} duplicates encountered.";
                 throw new Exception($errorMsg);
             }
         }
 
-        $message = t( "Checks import complete. @successful imported, not including @duplicates duplicates.", array( '@successful' => $num_successful, '@duplicates' => $num_duplicates ) );
+        $message = t( "Checks import complete. @successful imported, @ignored ignored, not including @duplicates duplicates.", array( '@successful' => $num_successful, '@ignored' => $num_ignored, '@duplicates' => $num_duplicates ) );
         ChecksImportLog::record( $message );
         watchdog( 'offline2civicrm', $message, array(), WATCHDOG_INFO );
     }
@@ -117,7 +124,7 @@ abstract class ChecksFile {
         }
 
         foreach ( $this->getDatetimeFields() as $field ) {
-            if ( !empty( $msg[$field] ) ) {
+            if ( !empty( $msg[$field] ) && !is_numeric( $msg[$field] ) ) {
                 $msg[$field] = wmf_common_date_parse_string( $msg[$field] );
             }
         }
@@ -139,6 +146,11 @@ abstract class ChecksFile {
         wmf_common_set_message_source( $msg, 'direct', 'Offline importer: ' . get_class( $this ) );
 
         return $msg;
+    }
+
+    protected function handleDuplicate ( $duplicate ) {
+        watchdog( 'offline2civicrm', 'Contribution matches existing contribution (id: @id), skipping it.', array( '@id' => $duplicate[0]['id'] ), WATCHDOG_INFO );
+        return true; // true means this was a duplicate and i skipped it
     }
 
     protected function setDefaults( &$msg ) {
