@@ -1,7 +1,9 @@
 <?php
 
 class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
+    protected $contact_custom_mangle;
     protected $contribution_id;
+    protected $contribution_custom_mangle;
     static protected $fixtures;
 
     public static function getInfo() {
@@ -71,8 +73,10 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
         $contribution_type_cash = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Cash' );
         $payment_instrument_cc = wmf_civicrm_get_civi_id( 'payment_instrument_id', 'Credit Card' );
+        $payment_instrument_check = wmf_civicrm_get_civi_id( 'payment_instrument_id', 'Check' );
 
         $gateway_txn_id = mt_rand();
+        $check_number = (string) mt_rand();
 
         return array(
             // Minimal contribution
@@ -121,21 +125,29 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             // Maximal contribution
             array(
                 array(
+                    'check_number' => $check_number,
                     'currency' => 'USD',
                     'date' => '2012-03-01 00:00:00',
+                    'direct_mail_appeal' => 'mail code here',
                     'do_not_email' => 'Y',
                     'do_not_mail' => 'Y',
                     'do_not_phone' => 'Y',
                     'do_not_sms' => 'Y',
                     'do_not_solicit' => 'Y',
                     'email' => 'nobody@wikimedia.org',
+                    'first_name' => 'First',
                     'fee' => '0.03',
                     'gateway' => 'test_gateway',
                     'gateway_txn_id' => $gateway_txn_id,
+                    'gift_source' => 'Red mail',
                     'gross' => '1.23',
+                    'import_batch_number' => '4321',
                     'is_opt_out' => 'Y',
+                    'last_name' => 'Last',
+                    'middle_name' => 'Middle',
                     'no_thank_you' => 'no forwarding address',
-                    'payment_method' => 'cc',
+                    'payment_method' => 'check',
+                    'stock_description' => 'Long-winded prolegemenon',
                     'thankyou_date' => '2012-04-01',
                 ),
                 array(
@@ -144,7 +156,10 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'do_not_mail' => '1',
                         'do_not_phone' => '1',
                         'do_not_sms' => '1',
+                        'first_name' => 'First',
                         'is_opt_out' => '1',
+                        'last_name' => 'Last',
+                        'middle_name' => 'Middle',
                     ),
                     'contribution' => array(
                         'address_id' => '',
@@ -152,7 +167,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'campaign_id' => '',
                         'cancel_date' => '',
                         'cancel_reason' => '',
-                        'check_number' => 'null',
+                        'check_number' => $check_number,
                         'contribution_page_id' => '',
                         'contribution_recur_id' => '',
                         'contribution_status_id' => '',
@@ -166,7 +181,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'is_test' => '',
                         'net_amount' => '1.2', # :(
                         'non_deductible_amount' => '',
-                        'payment_instrument_id' => $payment_instrument_cc,
+                        'payment_instrument_id' => $payment_instrument_check,
                         'receipt_date' => '',
                         'receive_date' => '20120301000000',
                         'source' => 'USD 1.23',
@@ -175,9 +190,13 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
                     ),
                     'contribution_custom_values' => array(
+                        'Appeal' => 'mail code here',
+                        'import_batch_number' => '4321',
+                        'Campaign' => 'Red mail',
                         'gateway' => 'test_gateway',
-                        'gateway_txn_id' => $gateway_txn_id,
+                        'gateway_txn_id' => (string) $gateway_txn_id,
                         'no_thank_you' => 'no forwarding address',
+                        'Description_of_Stock' => 'Long-winded prolegemenon',
                     ),
                     'contact_custom_values' => array(
                         'do_not_solicit' => '1',
@@ -194,13 +213,13 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             // Organization contribution
             array(
                 array(
-					'contact_type' => 'Organization',
+                    'contact_type' => 'Organization',
                     'currency' => 'USD',
                     'date' => '2012-03-01 00:00:00',
                     'gateway' => 'test_gateway',
                     'gateway_txn_id' => $gateway_txn_id,
                     'gross' => '1.23',
-					'organization_name' => 'Hedgeco',
+                    'organization_name' => 'Hedgeco',
                     'org_contact_name' => 'Testname',
                     'org_contact_title' => 'Testtitle',
                     'payment_method' => 'cc',
@@ -218,13 +237,13 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'contribution_status_id' => '',
                         'contribution_type_id' => $contribution_type_cash,
                         'currency' => 'USD',
-						'fee_amount' => '0',
+			'fee_amount' => '0',
                         'honor_contact_id' => '',
                         'honor_type_id' => '',
                         'invoice_id' => '',
                         'is_pay_later' => '',
                         'is_test' => '',
-						'net_amount' => '1.23',
+			'net_amount' => '1.23',
                         'non_deductible_amount' => '',
                         'payment_instrument_id' => $payment_instrument_cc,
                         'receipt_date' => '',
