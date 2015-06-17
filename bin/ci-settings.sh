@@ -10,7 +10,10 @@ JOB_ID="${BUILD_TAG//-/_}"
 
 CIVICRM_SCHEMA_PREFIX="civicrm_${JOB_ID}_"
 
-CIVICRM_MYSQL_CLIENT="localhost"
+# 'localhost' would use socket for the MySQL which Wikimedia HHVM build does
+# not support.
+CIVICRM_MYSQL_CLIENT="127.0.0.1"
+
 # MySQL username is limited to 16 chars, use build number as an identifier:
 CIVICRM_MYSQL_USERNAME="civitest_${BUILD_NUMBER}"
 
