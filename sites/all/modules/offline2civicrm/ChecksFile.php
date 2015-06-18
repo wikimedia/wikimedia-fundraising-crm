@@ -237,6 +237,10 @@ abstract class ChecksFile {
                 $msg['soft_credit_to'] = $nickname_mapping[$msg['soft_credit_to']];
             }
         }
+
+        if ( empty( $msg['gateway'] ) ) {
+            $msg['gateway'] = 'generic_import';
+        }
     }
 
     /**
