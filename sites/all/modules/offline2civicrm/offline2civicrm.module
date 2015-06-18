@@ -97,11 +97,12 @@ function offline2civicrm_import_checks_form() {
   $form['import_upload_format'] = array(
     '#title' => t( 'File format' ),
     '#type' => 'radios',
-    '#default_value' => 'engage',
+    '#default_value' => 'generic',
     '#options' => array(
         'engage' => t( 'Engage' ),
         'coinbase' => t( 'Coinbase Merchant Orders' ),
         'foreign_checks' => t( 'Foreign Checks' ),
+        'generic' => t( 'Generic' ),
         'jpmorgan' => t( 'JP Morgan' ),
         'paypal' => t( 'PayPal EFT' ),
     ),
