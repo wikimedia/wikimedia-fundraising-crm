@@ -19,11 +19,8 @@ class SquareFile extends ChecksFile {
     }
 
     protected function getRequiredData() {
-        return array(
-            'currency',
-            'date',
+        return parent::getRequiredData() + array(
             'gateway_txn_id',
-            'gross',
         );
     }
 
