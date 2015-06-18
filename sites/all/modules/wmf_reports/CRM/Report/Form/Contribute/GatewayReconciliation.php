@@ -13,6 +13,7 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
             'ASTROPAY' => 'Astropay',
             'COINBASE' => 'Coinbase',
             'ENGAGE' => 'Engage',
+            'GENERIC_IMPORT' => 'Generic Import',
             'GLOBALCOLLECT' => 'GlobalCollect',
             'JPMORGAN' => 'JP Morgan',
             'PAYPAL' => 'PayPal',
