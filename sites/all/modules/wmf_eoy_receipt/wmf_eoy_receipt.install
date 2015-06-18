@@ -2,10 +2,10 @@
 
 function wmf_eoy_receipt_install()
 {
-    wmf_eoy_receipt_update_6000();
+    wmf_eoy_receipt_update_7000();
 }
 
-function wmf_eoy_receipt_update_6000()
+function wmf_eoy_receipt_update_7000()
 {
     $result = array();
 
