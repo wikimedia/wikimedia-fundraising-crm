@@ -171,7 +171,7 @@ abstract class ChecksFile {
                     break;
 
                 default:
-                    throw new WmfException( 'INVALID_MESSAGE', "Contribution Type '$contype' is unknown whilst importing checks!" );
+                    $msg['contribution_type'] = $msg['raw_contribution_type'];
             }
         }
 
