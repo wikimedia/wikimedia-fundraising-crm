@@ -38,7 +38,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals( $expected['contribution'], $anonymized_contribution );
 
         if ( !empty( $expected['contribution_custom_values'] ) ) {
-            $actual_contribution_custom_values = wmf_civicrm_contribution_get_custom_values(
+            $actual_contribution_custom_values = wmf_civicrm_get_custom_values(
                 $contribution['id'],
                 array_keys( $expected['contribution_custom_values'] )
             );
@@ -46,7 +46,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         }
 
         if ( !empty( $expected['contact_custom_values'] ) ) {
-            $actual_contact_custom_values = wmf_civicrm_contribution_get_custom_values(
+            $actual_contact_custom_values = wmf_civicrm_get_custom_values(
                 $contribution['contact_id'],
                 array_keys( $expected['contact_custom_values'] )
             );
