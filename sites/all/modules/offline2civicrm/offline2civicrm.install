@@ -49,8 +49,7 @@ function offline2civicrm_update_7000() {
     $success = $api->CustomGroup->get(array(
         'name' => 'Gift_Information',
     ));
-    $result = $api->values();
-    if (empty($result)) {
+    if ( !$success || !count( $api->values ) ) {
         $success = $api->CustomGroup->create(array(
             'extends' => 'Contribution',
             'name' => 'Gift_Information',
