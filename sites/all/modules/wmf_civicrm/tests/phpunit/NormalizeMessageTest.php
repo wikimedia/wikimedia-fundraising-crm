@@ -49,6 +49,8 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'postal_code' => '',
             'postmark_date' => null,
             'recurring' => '1',
+            'soft_credit_to' => null,
+            'soft_credit_to_id' => null,
             'source_enqueued_time' => time() + 2,
             'source_host' => 'thulium',
             'source_name' => 'PayPal IPN (legacy)',

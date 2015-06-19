@@ -225,6 +225,18 @@ abstract class ChecksFile {
                 $msg['gateway_txn_id'] = md5( $msg['date'] . $name_salt . $this->row_index );
             }
         }
+
+        // Expand soft credit short names.
+        if ( !empty( $msg['soft_credit_to'] ) ) {
+            $nickname_mapping = array(
+                'Fidelity' => 'Fidelity Charitable Gift Fund',
+                'Vanguard' => 'Vanguard Charitable Endowment Program',
+                'Schwab' => 'Schwab Charitable Fund',
+            );
+            if ( array_key_exists( $msg['soft_credit_to'], $nickname_mapping ) ) {
+                $msg['soft_credit_to'] = $nickname_mapping[$msg['soft_credit_to']];
+            }
+        }
     }
 
     /**
