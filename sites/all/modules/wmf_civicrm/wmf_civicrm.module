@@ -642,6 +642,9 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                         break;
                 }
                 break;
+	    case 'stock':
+		$payment_instrument = 'Stock';
+		break;
             case 'cash':
                 $payment_instrument = 'Cash';
                 //'cash_boleto' - Only one right now. I assume there might be more later? 
