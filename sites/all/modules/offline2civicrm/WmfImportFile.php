@@ -6,7 +6,6 @@ class WmfImportFile extends ChecksFile {
         return array(
             'Additional Address 1',
             'Additional Address 2',
-            'Amount (USD)',
             'Assistant Contact',
             'Assistant Name',
             'Check Number',
