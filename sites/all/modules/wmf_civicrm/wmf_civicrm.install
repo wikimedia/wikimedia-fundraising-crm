@@ -35,6 +35,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7028();
     wmf_civicrm_update_7029();
     wmf_civicrm_update_7030();
+    wmf_civicrm_update_7031();
 }
 
 /**
@@ -881,28 +882,24 @@ function wmf_civicrm_update_7021()
  */
 function wmf_civicrm_update_7022() {
     $api = wmf_civicrm_bootstrap_civi();
-    $api->CustomGroup->get(array(
+    $success = $api->CustomGroup->get(array(
         'name' => 'Gift_Data',
     ));
-    $result = $api->values();
-    if ($result) {
-        return;
+    if ( !$success || !count( $api->values ) ) {
+        $success = $api->CustomGroup->create(array(
+            'extends' => 'Contribution',
+            'name' => 'Gift_Data',
+            'title' => ts('Gift Data'),
+            'is_active' => 1,
+        ));
+        if (!$success) {
+            throw new Exception( $api->errorMsg() );
+        }
     }
-
-    $success = $api->CustomGroup->create(array(
-        'extends' => 'Contribution',
-        'name' => 'Gift_Data',
-        'title' => ts('Gift Data'),
-        'is_active' => 1,
-    ));
-    if (!$success) {
-        throw new Exception('Could not create custom group');
-    }
-    $values = $api->values();
-    $custom_group = array_pop($values);
+    $custom_group_id = $api->values[0]->id;
 
     $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
+        'custom_group_id' => $custom_group_id,
         'name' => 'Fund',
         'column_name' => 'fund',
         'label' => ts('Restrictions'),
@@ -914,11 +911,11 @@ function wmf_civicrm_update_7022() {
         'is_searchable' => 1,
     ));
     if (!$success) {
-        throw new Exception('Failed to create custom field.');
+        throw new Exception( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
+        'custom_group_id' => $custom_group_id,
         'name' => 'Campaign',
         'column_name' => 'campaign',
         'label' => ts('Gift Source'),
@@ -930,11 +927,11 @@ function wmf_civicrm_update_7022() {
         'is_searchable' => 1,
     ));
     if (!$success) {
-        throw new Exception('Failed to create custom field.');
+        throw new Exception( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
+        'custom_group_id' => $custom_group_id,
         'name' => 'Appeal',
         'column_name' => 'appeal',
         'label' => ts('Direct Mail Appeal'),
@@ -946,7 +943,7 @@ function wmf_civicrm_update_7022() {
         'is_searchable' => 1,
     ));
     if (!$success) {
-        throw new Exception('Failed to create custom field.');
+        throw new Exception( $api->errorMsg() );
     }
 
     // TODO: define option groups in another migration if necessary
@@ -1254,4 +1251,62 @@ function wmf_civicrm_update_7030() {
     }
 
 	return implode( "\n", $warnings );
+}
+
+/**
+ * Add more custom fields that already exist on production
+ */
+function wmf_civicrm_update_7031() {
+    $warnings = array();
+
+    $api = wmf_civicrm_bootstrap_civi();
+
+    // No API available yet.
+    $existingTypes = array_flip( CRM_Contribute_PseudoConstant::contributionType() );
+    if ( array_key_exists( 'Stock', $existingTypes ) ) {
+        $stockContributionTypeId = $existingTypes['Stock'];
+    } else {
+        $params = array(
+            'accounting_code' => 'STOCK',
+            'is_active' => 1,
+            'is_deductible' => 1,
+            'name' => 'Stock',
+        );
+        $ids = array();
+        $stockContributionType = CRM_Contribute_BAO_ContributionType::add( $params, $ids );
+        if ( is_a( $stockContributionType, 'CRM_Core_Error' ) ) {
+            throw new Exception( $stockContributionType->getMessages() );
+        }
+        $stockContributionTypeId = $stockContributionType->id;
+    }
+
+    $success = $api->CustomGroup->get(array(
+        'name' => 'Stock_Information',
+    ) );
+    if ( !$success || !$api->count ) {
+        $success = $api->CustomGroup->Create( array(
+            'name' => 'Stock_Information',
+            'title' => 'Stock Information',
+            'extends' => 'Contribution',
+            'extends_entity_column_value' => array( $stockContributionTypeId ),
+            'is_active' => 1,
+        ) );
+        if ( !$success ) {
+            throw new Exception( $api->errorMsg() );
+        }
+    }
+    $custom_group = $api->values[0];
+
+    $success = $api->CustomField->Create( array(
+        'custom_group_id' => $custom_group->id,
+        'data_type' => 'String',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'label' => 'Description of Stock',
+        'name' => 'Description_of_Stock',
+    ) );
+    if ( !$success ) {
+        throw new Exception( $api->errorMsg() );
+    }
 }

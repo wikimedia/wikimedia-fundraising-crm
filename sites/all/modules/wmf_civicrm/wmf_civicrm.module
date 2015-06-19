@@ -132,6 +132,7 @@ function wmf_civicrm_get_custom_values( $entity_id, $names, $group_name = null )
     $params[ 'entityID' ] = $entity_id;
     foreach ( $names as $name ) {
         $field = wmf_civicrm_get_custom_field_name( $name, $group_name );
+#var_export( "Custom field mapping: {$name} -> {$field}" );
         $params[ $field ] = 1;
         $field_map[ $field ] = $name;
     }
