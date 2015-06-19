@@ -313,7 +313,6 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'source' => $msg['original_currency'] . ' ' . $msg['original_gross'],
         'contribution_recur_id' => $msg['contribution_recur_id'],
         'check_number' => $msg['check_number'],
-        'letter_code' => $msg['letter_code'],
         'soft_credit_to' => $msg['soft_credit_to_id'],
 
         // API required fields
@@ -333,7 +332,6 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     */
     $custom_field_defaults = array(
         'Contribution_Comments' => '',
-        'Gift_Data' => NULL,
         'gateway_account' => '',
     );
 
@@ -342,7 +340,6 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'comment' => 'Contribution_Comments',
         'direct_mail_appeal' => 'Appeal',
         'gift_source' => 'Campaign',
-        'letter_code' => 'Gift_Data',
         'postmark_date' => 'Postmark_Date',
         'restrictions' => 'Fund',
         'stock_description' => 'Description_of_Stock',
@@ -1237,7 +1234,6 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'postal_code' => '',
         'postmark_date' => null,
         'check_number' => null,
-        'letter_code' => null,
         'thankyou_date' => null,
         'recurring' => null,
         'utm_campaign' => null,
