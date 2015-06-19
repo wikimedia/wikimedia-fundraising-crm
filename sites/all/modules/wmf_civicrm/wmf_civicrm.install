@@ -36,6 +36,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7029();
     wmf_civicrm_update_7030();
     wmf_civicrm_update_7031();
+    wmf_civicrm_update_7032();
 }
 
 /**
@@ -1198,6 +1199,7 @@ function wmf_civicrm_update_7029() {
 }
 
 /**
+<<<<<<< HEAD
  * Add some custom fields that already exist on production
  */
 function wmf_civicrm_update_7030() {
@@ -1309,6 +1311,172 @@ function wmf_civicrm_update_7031() {
         'name' => 'Description_of_Stock',
     ) );
     if ( !$success ) {
+        throw new Exception( $api->errorMsg() );
+    }
+}
+
+/**
+ * Link Restrictions and Gift Source options to custom fields.
+ */
+function wmf_civicrm_update_7032() {
+    $restriction_values = array(
+        'Unrestricted - General',
+        'Restricted - Foundation',
+        'Restricted - Program',
+        'Restricted - Fiscal Sponsorship',
+    );
+
+    $api = wmf_civicrm_bootstrap_civi();
+
+    // Get the custom group.
+    $success = $api->CustomGroup->get( array(
+        'name' => 'Gift_Data',
+    ) );
+    if ( !$success || !count( $api->values ) ) {
+        throw new Exception( $api->errorMsg() );
+    }
+    $custom_group_id = $api->values[0]->id;
+
+    // Get the field.
+    $success = $api->CustomField->get( array(
+        'custom_group_id' => $custom_group_id,
+        'name' => 'Fund',
+    ) );
+    if ( !$success || !count( $api->values ) ) {
+        throw new Exception( $api->errorMsg() );
+    }
+    $custom_field_id = $api->values[0]->id;
+
+    // Make the options.
+    $success = $api->OptionGroup->get( array(
+        'name' => 'fund_20080709173248',
+    ) );
+    if ( !$success || !count( $api->values ) ) {
+        $success = $api->OptionGroup->create( array(
+            'is_active' => 1,
+            'is_reserved' => 1,
+            'name' => 'fund_20080709173248',
+            'title' => 'Fund',
+        ) );
+        if ( !$success || !count( $api->values ) ) {
+            throw new Exception( $api->errorMsg() );
+        }
+    }
+    $option_group_id = $api->values[0]->id;
+
+    foreach ( $restriction_values as $value ) {
+        $success = $api->OptionValue->get( array(
+            'group_id' => $option_group_id,
+            'value' => $value,
+        ) );
+        if ( !$success || !count( $api->values ) ) {
+            $success = $api->OptionValue->create( array(
+                'option_group_id' => $option_group_id,
+                'label' => ts( $value ),
+                'value' => $value,
+                'weight' => 'next',
+            ) );
+            if ( !$success ) {
+                throw new Exception( $api->errorMsg() );
+            }
+        }
+    }
+
+    // Link the options to this field.
+    // FIXME: Maybe we could have done all this with the native api option_value helper params.
+    $success = $api->CustomField->create( array(
+        'column_name' => 'fund',
+        'custom_group_id' => $custom_group_id,
+        'data_type' => 'String',
+        'default_value' => 'Unrestricted - General',
+        'html_type' => 'Select',
+        'id' => $custom_field_id,
+        'is_active' => 1,
+        'is_required' => 1,
+        'is_searchable' => 1,
+        'label' => ts('Restrictions'),
+        'name' => 'Fund',
+        'option_group_id' => $option_group_id,
+    ) );
+    if ( !$success || !count( $api->values ) ) {
+        throw new Exception( $api->errorMsg() );
+    }
+
+    $gift_source_values = array(
+        'Community Gift',
+        'Benefactor Gift',
+        'Foundation Gift',
+        'Matching Gift',
+        'Donor Advised Fund',
+        'Corporate Gift',
+        'Legacy Gift',
+        'Chapter Gift',
+        'Major Gift',
+        'Combined Federal Campaign',
+        'Payroll Deduction',
+    );
+
+    // Get the field.
+    $success = $api->CustomField->get( array(
+        'custom_group_id' => $custom_group_id,
+        'name' => 'Campaign',
+    ) );
+    if ( !$success || !count( $api->values ) ) {
+        throw new Exception( $api->errorMsg() );
+    }
+    $custom_field_id = $api->values[0]->id;
+
+    // Make the options.
+    $success = $api->OptionGroup->get( array(
+        'name' => 'campaign_20080709183311',
+    ) );
+    if ( !$success || !count( $api->values ) ) {
+        $success = $api->OptionGroup->create( array(
+            'is_active' => 1,
+            'is_reserved' => 1,
+            'name' => 'campaign_20080709183311',
+            'title' => 'Campaign',
+        ) );
+        if ( !$success || !count( $api->values ) ) {
+            throw new Exception( $api->errorMsg() );
+        }
+    }
+    $option_group_id = $api->values[0]->id;
+
+    foreach ( $gift_source_values as $value ) {
+        $success = $api->OptionValue->get( array(
+            'group_id' => $option_group_id,
+            'value' => $value,
+        ) );
+        if ( !$success || !count( $api->values ) ) {
+            $success = $api->OptionValue->create( array(
+                'option_group_id' => $option_group_id,
+                'label' => ts( $value ),
+                'value' => $value,
+                'weight' => 'next',
+            ) );
+            if ( !$success ) {
+                throw new Exception( $api->errorMsg() );
+            }
+        }
+    }
+
+    // Link the options to this field.
+    $success = $api->CustomField->create( array(
+        'column_name' => 'campaign',
+        'custom_group_id' => $custom_group_id,
+        'data_type' => 'String',
+        'default_value' => 'Community Gift',
+        'html_type' => 'Select',
+        'id' => $custom_field_id,
+        'is_active' => 1,
+        'is_required' => 1,
+        'is_searchable' => 1,
+        'label' => ts('Gift Source'),
+        'name' => 'Campaign',
+        'option_group_id' => $option_group_id,
+    ) );
+    if ( !$success || !count( $api->values ) ) {
         throw new Exception( $api->errorMsg() );
     }
 }
