@@ -7,8 +7,6 @@
  */
 class CiviFixtures {
     // TODO: Clean up interface by grouping each fixture under an object.
-    public $contact_group_name;
-    public $contact_group_id;
     public $contact_id;
     public $contribution_recur_id;
     public $epoch_time;
@@ -70,24 +68,6 @@ class CiviFixtures {
         );
         $api->ContributionRecur->Create( $initial_contribution_params );
         $out->contribution_recur_id = $api->id;
-
-        // FIXME: Can't generate random groups because of caching in
-        // CRM_Core_Pseudoconstant.  Make temp and random again once we're
-        // using Civi 4.6's buildOptions.
-        $out->contact_group_name = 'test_thrilled_demographic';
-        $success = $api->Group->Get( array(
-            'title' => $out->contact_group_name,
-            'version' => 3,
-        ) );
-        if ( $success && $api->values ) {
-            $out->contact_group_id = $api->id;
-        } else {
-            $api->Group->Create( array(
-                'title' => $out->contact_group_name,
-                'version' => 3,
-            ) );
-            $out->contact_group_id = $api->id;
-        }
 
         return $out;
     }
