@@ -886,6 +886,38 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['display_name'] = $msg['organization_name'];
         $contact['organization_name'] = $msg['organization_name'];
     }
+    if ( !empty( $msg['name_prefix'] ) ) {
+        $existing_prefixes = array_flip( CRM_Core_PseudoConstant::individualPrefix() );
+        if ( array_key_exists( $msg['name_prefix'], $existing_prefixes ) ) {
+            $prefix_id = $existing_prefixes[$msg['name_prefix']];
+        } else {
+            $option_group_result = civicrm_api3( 'OptionGroup', 'Get', array(
+                'name' => 'individual_prefix',
+            ) );
+            $result = civicrm_api3( 'OptionValue', 'Create', array(
+                'option_group_id' => $option_group_result['id'],
+                'name' => $msg['name_prefix'],
+            ) );
+            $prefix_id = $result['id'];
+        }
+        $contact['individual_prefix'] = $prefix_id;
+    }
+    if ( !empty( $msg['name_suffix'] ) ) {
+        $existing_suffixes = array_flip( CRM_Core_PseudoConstant::individualSuffix() );
+        if ( array_key_exists( $msg['name_suffix'], $existing_suffixes ) ) {
+            $suffix_id = $existing_suffixes[$msg['name_suffix']];
+        } else {
+            $option_group_result = civicrm_api3( 'OptionGroup', 'Get', array(
+                'name' => 'individual_suffix',
+            ) );
+            $result = civicrm_api3( 'OptionValue', 'Create', array(
+                'option_group_id' => $option_group_result['id'],
+                'name' => $msg['name_suffix'],
+            ) );
+            $suffix_id = $result['id'];
+        }
+        $contact['individual_suffix'] = $suffix_id;
+    }
     if ( empty($msg['language']) ) {
         // TODO: use LanguageTag to prevent truncation of >2 char lang codes
         // guess from contribution_tracking data
