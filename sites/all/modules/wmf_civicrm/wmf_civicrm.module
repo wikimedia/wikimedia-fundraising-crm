@@ -188,6 +188,9 @@ function wmf_civicrm_get_custom_field_name( $field_name, $group_name = null ) {
 /**
  * Try to import a transaction message into CiviCRM, otherwise
  * throw an exception.
+ *
+ * @param array $msg
+ * @return array Contribution as inserted
  */
 function wmf_civicrm_contribution_message_import( &$msg ) {
     civicrm_initialize();
@@ -1002,6 +1005,27 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
                 "IMPORT_CONTACT",
                 implode( "\n", $stacked_ex )
             );
+        }
+    }
+
+    // Create a relationship to an existing contact?
+    if ( !empty( $msg['relationship_target_contact_id'] ) ) {
+        $relationship_type = civicrm_api3( "RelationshipType", "Get", array(
+            'name_a_b' => $msg['relationship_type'],
+        ) );
+        if ( !$relationship_type['count'] ) {
+            throw new WmfException( 'IMPORT_CONTACT', "Bad relationship type: {$msg['relationship_type']}" );
+        }
+
+        try {
+            civicrm_api3( "Relationship", "Create", array(
+                'contact_id_a' => $contact_id,
+                'contact_id_b' => $msg['relationship_target_contact_id'],
+                'relationship_type_id' => $relationship_type['id'],
+                'is_active' => 1,
+            ) );
+        } catch ( CiviCRM_API3_Exception $ex ) {
+            throw new WmfException( 'IMPORT_CONTACT', $ex->getMessage() );
         }
     }
 

@@ -249,6 +249,8 @@ abstract class ChecksFile {
      * FIXME: We need to wrap each loop iteration in a transaction to
      * make this safe.  Otherwise we can easily die before adding the
      * second message, and skip it when resuming the import.
+     *
+     * @param array $contribution
      */
     protected function mungeContribution( $contribution ) {
     }
@@ -302,6 +304,7 @@ abstract class ChecksFile {
             'Postmark Date' => 'postmark_date',
             'Prefix' => 'name_prefix',
             'Received Date' => 'date',
+            'Relationship Type' => 'relationship_type',
             'Restrictions' => 'restrictions',
             'Soft Credit To' => 'soft_credit_to',
             'Source' => 'contribution_source',
@@ -309,6 +312,7 @@ abstract class ChecksFile {
             'Street Address' => 'street_address',
             'Suffix' => 'name_suffix',
             'Tags' => 'contact_tags',
+            'Target Contact ID' => 'relationship_target_contact_id',
             'Thank You Letter Date' => 'thankyou_date',
             'Title' => 'org_contact_title',
             'Total Amount' => 'gross', # deprecated, use Original Amount
