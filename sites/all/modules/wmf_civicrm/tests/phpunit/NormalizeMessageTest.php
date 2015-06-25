@@ -17,6 +17,7 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'city' => '',
             'comment' => '',
             'contact_id' => mt_rand(),
+            'contact_groups' => array(),
             'contact_tags' => array(),
             'contribution_recur_id' => mt_rand(),
             'contribution_tags' => array(),
