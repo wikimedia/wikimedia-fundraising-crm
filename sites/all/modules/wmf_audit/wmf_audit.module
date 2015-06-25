@@ -1245,7 +1245,7 @@ function wmf_audit_send_stomp($body, $type) {
   static $types = array();
 
   if (!$q) {
-    $q = new Queue(queue2civicrm_stomp_url());
+    $q = queue2civicrm_stomp();
   }
 
   //@FIXME: This is actually more for the queue consumer modules, but: Make a
