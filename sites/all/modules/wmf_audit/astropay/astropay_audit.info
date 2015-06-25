@@ -1,0 +1,7 @@
+name = AstroPay Audit
+description = Auditing framework for contacts and contributions that come in through nightly reconciliation files, for AstroPay
+core = 7.x
+dependencies[] = wmf_audit
+package = WMF Audit
+configure = admin/config/wmf_audit/astropay_audit
+files[] = AstroPayAuditProcessor.php

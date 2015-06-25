@@ -167,9 +167,7 @@ abstract class BaseAuditProcessor {
      */
     protected function normalize_negative($record) {
       $send_message = array(
-	'gateway_refund_id' => 'RFD' . $record['gateway_txn_id'], //Notes from a previous version: "after intense deliberation, we don't actually care what this is at all."
-	'gateway_parent_id' => $record['gateway_txn_id'], //gateway transaction ID
-	'gross_currency' => $record['currency'], //currency code
+        // FIXME: Use WmfTransaction
 	'gross' => $record['gross'], //amount
 	'date' => $record['date'], //timestamp
 	'gateway' => $this->name,
@@ -178,6 +176,22 @@ abstract class BaseAuditProcessor {
     //  'payment_submethod' => $record['payment_submethod'], //Still not telling you.
 	'type' => $record['type'], //This actually works here. Weird, right?
       );
+	   // for now, just don't try to normalize if it's already normal
+	  if ( isset( $record['gateway_refund_id'] ) ) {
+		  $send_message['gateway_refund_id'] = $record['gateway_refund_id'];
+	  } else {
+		  $send_message['gateway_refund_id'] = 'RFD ' . $record['gateway_txn_id']; //Notes from a previous version: "after intense deliberation, we don't actually care what this is at all."
+	  }
+	  if ( isset( $record['gateway_parent_id'] ) ) {
+		  $send_message['gateway_parent_id'] = $record['gateway_parent_id'];
+	  } else {
+		  $send_message['gateway_parent_id'] = $record['gateway_txn_id'];
+	  }
+	  if ( isset( $record['gross_currency'] ) ) {
+		  $send_message['gross_currency'] = $record['gross_currency'];
+	  } else {
+		  $send_message['gross_currency'] = $record['gross'];
+	  }
       return $send_message;
     }
 
@@ -971,7 +985,9 @@ abstract class BaseAuditProcessor {
 	//just take the last one, just in case somebody did manage to do a duplicate.
 	$line = $ret[count($ret) - 1];
 	// $linedata for *everything* from payments goes Month, day, time, box, bucket, CTID:OID, absolute madness with lots of unpredictable spaces.
-	$linedata = explode(' ', $line);
+	// Hack: logs space-pad single digit days, so we collapse all repeated spaces
+	$unspaced = preg_replace( '/ +/', ' ', $line );
+	$linedata = explode(' ', $unspaced);
 	$contribution_id = explode(':', $linedata[5]);
 	$contribution_id = $contribution_id[0];
 

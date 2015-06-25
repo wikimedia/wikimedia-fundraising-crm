@@ -379,6 +379,7 @@
                     "phpseclib/Crypt/Random.php"
                 ]
             },
+            "notification-url": "https://packagist.org/downloads/",
             "include-path": [
                 "phpseclib/"
             ],
@@ -428,10 +429,6 @@
                 "x.509",
                 "x509"
             ],
-            "support": {
-                "source": "https://github.com/phpseclib/phpseclib/tree/0.3.7",
-                "issues": "https://github.com/phpseclib/phpseclib/issues"
-            },
             "time": "2014-07-05 16:36:21"
         },
         {
@@ -693,13 +690,12 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "956eeef784777671dcb7090f7f79be4481e477c7"
+                "reference": "a4fc38c376a5d404aa45157c86b8d55cf47c48c3"
             },
             "require": {
                 "coderkungfu/php-queue": "dev-master",
                 "fusesource/stomp-php": "2.1.*",
                 "monolog/monolog": "1.12.0",
-                "predis/predis": "1.*",
                 "psr/log": "1.0.0",
                 "zordius/lightncandy": "0.18"
             },
@@ -722,7 +718,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2015-06-28 20:10:36"
+            "time": "2015-07-06 19:45:20"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -730,7 +726,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "405bfac00a1c4f42c89352b27414d3bf07a17a97"
+                "reference": "e466dd074d545da123e71a0c629cb709cd4a1198"
             },
             "require": {
                 "fusesource/stomp-php": "2.*",
@@ -769,7 +765,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2015-06-25 18:10:49"
+            "time": "2015-07-07 23:30:21"
         },
         {
             "name": "zordius/lightncandy",
@@ -1297,16 +1293,16 @@
         },
         {
             "name": "phpunit/phpunit-mock-objects",
-            "version": "2.3.4",
+            "version": "2.3.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit-mock-objects.git",
-                "reference": "92408bb1968a81b3217a6fdf6c1a198da83caa35"
+                "reference": "1c330b1b6e1ea8fd15f2fbea46770576e366855c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit-mock-objects/zipball/92408bb1968a81b3217a6fdf6c1a198da83caa35",
-                "reference": "92408bb1968a81b3217a6fdf6c1a198da83caa35",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit-mock-objects/zipball/1c330b1b6e1ea8fd15f2fbea46770576e366855c",
+                "reference": "1c330b1b6e1ea8fd15f2fbea46770576e366855c",
                 "shasum": ""
             },
             "require": {
@@ -1348,7 +1344,7 @@
                 "mock",
                 "xunit"
             ],
-            "time": "2015-06-11 15:55:48"
+            "time": "2015-07-04 05:41:32"
         },
         {
             "name": "sebastian/comparator",
