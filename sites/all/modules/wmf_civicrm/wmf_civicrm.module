@@ -342,8 +342,9 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'direct_mail_appeal' => 'Appeal',
         'gift_source' => 'Campaign',
         'letter_code' => 'Gift_Data',
-        'restrictions' => 'Fund',
         'postmark_date' => 'Postmark_Date',
+        'restrictions' => 'Fund',
+        'stock_description' => 'Description_of_Stock',
     );
 
     // Custom fields with names that match the message fields.
@@ -921,6 +922,25 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         }
     }
 
+    $custom_vars = array();
+    $custom_field_mangle = array(
+        'do_not_solicit' => 'do_not_solicit',
+        'org_contact_name' => 'Name',
+        'org_contact_title' => 'Title',
+    );
+    foreach ( $custom_field_mangle as $msgField => $customField ) {
+        if ( isset( $msg[$msgField] ) ) {
+            $custom_vars[$customField] = $msg[$msgField];
+        }
+    }
+
+    $custom_name_mapping = wmf_civicrm_get_custom_field_map( array_keys( $custom_vars ) );
+    foreach ( $custom_name_mapping as $readable => $machined ) {
+        if ( array_key_exists( $readable, $custom_vars ) ) {
+            $contact[$machined] = $custom_vars[$readable];
+        }
+    }
+
     // Attempt to insert the contact
     try {
         $contact_result = civicrm_api3( "Contact", "Create", $contact );
@@ -936,24 +956,6 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         );
     }
     $contact_id = $contact_result['id'];
-
-    // Add any wmf_donor custom field values
-    $wmf_donor_fields = array(
-        'do_not_solicit',
-    );
-    $wmf_donor_values = array();
-    foreach ( $wmf_donor_fields as $donor_field ) {
-        if ( isset( $msg[$donor_field] ) ) {
-            $wmf_donor_values[$donor_field] = $msg[$donor_field];
-        }
-    }
-    if ( !empty( $wmf_donor_values ) ) {
-        try {
-            wmf_civicrm_set_custom_field_values( $contact_id, $wmf_donor_values, 'wmf_donor' );
-        } catch ( WmfException $ex ) {
-            watchdog( 'wmf_civicrm', "Setting wmf_donor custom field values failed with details: {$ex->getMessage()}", array(), WATCHDOG_ERROR );
-        }
-    }
 
     // Add groups to this contact.
     if ( $msg['contact_groups'] ) {

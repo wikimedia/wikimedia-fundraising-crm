@@ -46,6 +46,16 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             $this->assertEquals( $expected['contribution_custom_values'], $actual_contribution_custom_values );
         }
 
+        if ( !empty( $expected['contact'] ) ) {
+            $api = civicrm_api_classapi();
+            $api->Contact->Get( array(
+                'id' => $contribution['contact_id'],
+                'version' => 3,
+            ) );
+            $contact = (array) $api->values[0];
+            $this->assertEquals( $expected['contact'], array_intersect_key( $expected['contact'], $contact ) );
+        }
+
         if ( !empty( $expected['contact_custom_values'] ) ) {
             $actual_contact_custom_values = wmf_civicrm_get_custom_values(
                 $contribution['contact_id'],
@@ -113,17 +123,29 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                 array(
                     'currency' => 'USD',
                     'date' => '2012-03-01 00:00:00',
+                    'do_not_email' => 'Y',
+                    'do_not_mail' => 'Y',
+                    'do_not_phone' => 'Y',
+                    'do_not_sms' => 'Y',
                     'do_not_solicit' => 'Y',
                     'email' => 'nobody@wikimedia.org',
                     'fee' => '0.03',
                     'gateway' => 'test_gateway',
                     'gateway_txn_id' => $gateway_txn_id,
                     'gross' => '1.23',
+                    'is_opt_out' => 'Y',
                     'no_thank_you' => 'no forwarding address',
                     'payment_method' => 'cc',
                     'thankyou_date' => '2012-04-01',
                 ),
                 array(
+                    'contact' => array(
+                        'do_not_email' => '1',
+                        'do_not_mail' => '1',
+                        'do_not_phone' => '1',
+                        'do_not_sms' => '1',
+                        'is_opt_out' => '1',
+                    ),
                     'contribution' => array(
                         'address_id' => '',
                         'amount_level' => '',
@@ -165,6 +187,56 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'last_donation_date' => '2012-03-01 00:00:00',
                         'last_donation_usd' => '1.23',
                         'lifetime_usd_total' => '1.23',
+                    ),
+                ),
+            ),
+
+            // Organization contribution
+            array(
+                array(
+					'contact_type' => 'Organization',
+                    'currency' => 'USD',
+                    'date' => '2012-03-01 00:00:00',
+                    'gateway' => 'test_gateway',
+                    'gateway_txn_id' => $gateway_txn_id,
+                    'gross' => '1.23',
+					'organization_name' => 'Hedgeco',
+                    'org_contact_name' => 'Testname',
+                    'org_contact_title' => 'Testtitle',
+                    'payment_method' => 'cc',
+                ),
+                array(
+                    'contribution' => array(
+                        'address_id' => '',
+                        'amount_level' => '',
+                        'campaign_id' => '',
+                        'cancel_date' => '',
+                        'cancel_reason' => '',
+                        'check_number' => 'null',
+                        'contribution_page_id' => '',
+                        'contribution_recur_id' => '',
+                        'contribution_status_id' => '',
+                        'contribution_type_id' => $contribution_type_cash,
+                        'currency' => 'USD',
+						'fee_amount' => '0',
+                        'honor_contact_id' => '',
+                        'honor_type_id' => '',
+                        'invoice_id' => '',
+                        'is_pay_later' => '',
+                        'is_test' => '',
+						'net_amount' => '1.23',
+                        'non_deductible_amount' => '',
+                        'payment_instrument_id' => $payment_instrument_cc,
+                        'receipt_date' => '',
+                        'receive_date' => '20120301000000',
+                        'source' => 'USD 1.23',
+                        'thankyou_date' => '',
+                        'total_amount' => '1.23',
+                        'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+                    ),
+                    'contact_custom_values' => array(
+                        'Name' => 'Testname',
+                        'Title' => 'Testtitle',
                     ),
                 ),
             ),
