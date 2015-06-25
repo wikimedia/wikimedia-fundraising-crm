@@ -27,13 +27,6 @@ abstract class BaseAuditProcessor {
 	 */
 	abstract protected function parse_log_line( $line );
 
-	// TODO: Move XML stuff into a helper class.
-	protected function get_log_line_xml_data_nodes() {}
-
-	protected function get_log_line_xml_outermost_node() {}
-
-	protected function get_log_line_xml_parent_nodes() {}
-
 	/**
 	 * Get some identifier for a given files to let us sort all
 	 * recon files for this processor chronologically.
@@ -245,16 +238,20 @@ abstract class BaseAuditProcessor {
 			// FIXME: Use WmfTransaction
 			'gross' => $record['gross'], //amount
 			'date' => $record['date'], //timestamp
-			'gateway' => $this->name,
 			// 'gateway_account' => $record['gateway_account'], //BOO. @TODO: Later.
 			// 'payment_method' => $record['payment_method'], //Argh. Not telling you.
 			// 'payment_submethod' => $record['payment_submethod'], //Still not telling you.
 			'type' => $record['type'], //This actually works here. Weird, right?
 		);
+		if ( isset( $record['gateway'] ) ) {
+			$send_message['gateway'] = $record['gateway'];
+		} else {
+			$send_message['gateway'] = $this->name;
+		}
 		// for now, just don't try to normalize if it's already normal
 		if ( isset( $record['gateway_refund_id'] ) ) {
 			$send_message['gateway_refund_id'] = $record['gateway_refund_id'];
-		} else {
+		} elseif ( isset( $record['gateway_txn_id'] ) ) {
 			$send_message['gateway_refund_id'] = $record['gateway_txn_id']; //Notes from a previous version: "after intense deliberation, we don't actually care what this is at all."
 		}
 		if ( isset( $record['gateway_parent_id'] ) ) {
@@ -290,8 +287,9 @@ abstract class BaseAuditProcessor {
 	 */
 	protected function main_transaction_exists_in_civi( $transaction ) {
 		$positive_txn_id = $this->get_parent_order_id( $transaction );
+		$gateway = $transaction['gateway'];
 		//go through the transactions and check to see if they're in civi
-		if ( wmf_civicrm_get_contributions_from_gateway_id( $this->name, $positive_txn_id ) === false ) {
+		if ( wmf_civicrm_get_contributions_from_gateway_id( $gateway, $positive_txn_id ) === false ) {
 			return false;
 		} else {
 			return true;
@@ -307,7 +305,8 @@ abstract class BaseAuditProcessor {
 	 */
 	protected function negative_transaction_exists_in_civi( $transaction ) {
 		$positive_txn_id = $this->get_parent_order_id( $transaction );
-		return wmf_civicrm_is_refunded_by_gateway_id( $this->name, $positive_txn_id );
+		$gateway = $transaction['gateway'];
+		return wmf_civicrm_is_refunded_by_gateway_id( $gateway, $positive_txn_id );
 	}
 
 	protected function get_runtime_options( $name ) {
@@ -1104,68 +1103,6 @@ abstract class BaseAuditProcessor {
 			);
 		}
 		return false; //no big deal, it just wasn't there. This will happen most of the time.
-	}
-
-	protected function parse_xml_log_line( $line ) {
-		//look for the raw xml
-		$full_xml = false;
-		$node = $this->get_log_line_xml_outermost_node();
-		$xmlstart = strpos( $line, '<?xml' );
-		if ( $xmlstart === false ) {
-			$xmlstart = strpos( $line, "<$node>" );
-		}
-		$xmlend = strpos( $line, "</$node>" );
-		if ( $xmlend ) {
-			$full_xml = true;
-			$xmlend += (strlen( $node ) + 3);
-			$xml = substr( $line, $xmlstart, $xmlend - $xmlstart );
-		} else {
-			//this is a broken line, and it won't load... but we can still parse what's left of the thing, the slow way.
-			$xml = substr( $line, $xmlstart );
-		}
-		// Syslog wart.	Other control characters should be encoded normally.
-		$xml = str_replace( '#012', "\n", $xml );
-
-		$donor_data = array();
-
-		if ( $full_xml ) {
-			$xmlobj = new DomDocument;
-			$xmlobj->loadXML( $xml );
-
-			$parent_nodes = $this->get_log_line_xml_parent_nodes();
-
-			if ( empty( $parent_nodes ) ) {
-				wmf_audit_log_error( __FUNCTION__ . ': No parent nodes defined. Can not continue.', 'RUNTIME_ERROR' );
-				throw new Exception( "Stop dying here" );
-			}
-
-			foreach ( $parent_nodes as $parent_node ) {
-				foreach ( $xmlobj->getElementsByTagName( $parent_node ) as $node ) {
-					foreach ( $node->childNodes as $childnode ) {
-						if ( trim( $childnode->nodeValue ) != '' ) {
-							$donor_data[$childnode->nodeName] = $childnode->nodeValue;
-						}
-					}
-				}
-			}
-		} else {
-			//the XML got cut off prematurely, probably because syslog was set up to truncate on payments.
-			//rebuild what we can the old-fashioned way.
-			$search_for_nodes = $this->get_log_line_xml_data_nodes();
-
-			if ( empty( $search_for_nodes ) ) {
-				wmf_audit_log_error( __FUNCTION__ . ': No searchable nodes defined. Can not continue.', 'RUNTIME_ERROR' );
-				throw new Exception( "Stop dying here" );
-			}
-			foreach ( $search_for_nodes as $node ) {
-				$tmp = wmf_audit_get_partial_xml_node_value( $node, $xml );
-				if ( !is_null( $tmp ) ) {
-					$donor_data[$node] = $tmp;
-				}
-			}
-		}
-
-		return $donor_data;
 	}
 
 	protected function parse_json_log_line( $line ) {
