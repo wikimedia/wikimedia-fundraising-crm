@@ -28,6 +28,20 @@ function wmf_audit_menu() {
 }
 
 /**
+ * Dispatches to the correct processor.
+ *
+ * @param string $gateway name
+ * @param array $options Runtime parameters
+ */
+function wmf_audit_main( $gateway, $options ) {
+    $audit = module_hook_invoke( "{$gateway}_audit", 'create_processor', $options );
+    if ( !$audit ) {
+	throw new Exception( "Gateway [$gateway] not found" );
+    }
+    $audit->run();
+}
+
+/**
  * Implements hook_permission.
  *
  * Exported permissions are:

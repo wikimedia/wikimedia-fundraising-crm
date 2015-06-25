@@ -14,7 +14,7 @@ function worldpay_audit_menu() {
   $items = array();
 
   $items['admin/config/wmf_audit/worldpay_audit'] = array(
-    'title' => 'WorldPay Audit',
+    'title' => 'Worldpay Audit',
     'description' => t('Configure WMF audit settings.'),
     'access arguments' => array('administer wmf_audit'),
     'page callback' => 'drupal_get_form',
@@ -59,4 +59,8 @@ function worldpay_audit_settings() {
     '#default_value' => variable_get('worldpay_audit_log_search_past_days', WP_AUDIT_LOG_SEARCH_PAST_DAYS),
   );
   return system_settings_form( $form );
+}
+
+function worldpay_audit_create_processor( $options ) {
+    return new WorldpayAuditProcessor( $options );
 }
