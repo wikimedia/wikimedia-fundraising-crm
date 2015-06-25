@@ -1,6 +1,7 @@
-name = WorldPay Audit
-description = Auditing framework for contacts and contributions that come in through nightly reconciliation files, for WorldPay
+name = Worldpay Audit
+description = Auditing framework for contacts and contributions that come in through nightly reconciliation files, for Worldpay
 core = 7.x
 dependencies[] = wmf_audit
 package = WMF Audit
 configure = admin/config/wmf_audit/worldpay_audit
+files[] = WorldpayAuditProcessor.php
