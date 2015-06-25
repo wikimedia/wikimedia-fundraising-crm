@@ -10,7 +10,7 @@ class SoftCreditTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     public function testSoftCredit() {
-        $fixtures = CiviFixtures::instance();
+        $fixtures = CiviFixtures::create();
 
         $msg = array(
             'currency' => 'USD',
