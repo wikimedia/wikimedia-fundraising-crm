@@ -2,6 +2,7 @@
 
 abstract class BaseAuditProcessor {
     protected $options;
+    protected $name;
 
     public function __construct( $options ) {
 	$this->options = $options;
@@ -9,35 +10,212 @@ abstract class BaseAuditProcessor {
 	wmf_audit_runtime_options( $options );
     }
 
-    // FIXME: This is a huge interface.  Simplify and find more shared code.
-    abstract function get_compressed_log_file_name( $date );
-    abstract function get_log_days_in_past();
     abstract function get_log_distilling_grep_string();
     abstract function get_log_line_grep_string( $order_id );
     abstract function get_log_line_xml_data_nodes();
     abstract function get_log_line_xml_outermost_node();
     abstract function get_log_line_xml_parent_nodes();
     abstract function get_order_id( $transaction );
-    abstract function get_recon_completed_dir();
-    abstract function get_recon_dir();
     abstract function get_recon_file_date( $file );
-    abstract function get_record_human_date( $record );
-    abstract function get_uncompressed_log_file_name( $date );
-    abstract function get_working_log_dir();
-    abstract function get_working_log_file_date( $file );
-    abstract function get_working_log_file_name( $date );
-    abstract function main_transaction_exists_in_civi( $transaction );
-    abstract function negative_transaction_exists_in_civi( $transaction );
     abstract function normalize_and_merge_data( $data, $transaction );
-    abstract function normalize_negative( $record );
-    abstract function normalize_partial( $all_data );
     abstract function parse_recon_file( $file );
-    abstract function record_is_chargeback( $record );
-    abstract function record_is_refund( $record );
-    abstract function regex_for_compressed_log();
     abstract function regex_for_recon();
-    abstract function regex_for_uncompressed_log();
-    abstract function regex_for_working_log();
+
+    /**
+     * Returns the configurable path to the recon files
+     * @return string Path to the directory
+     */
+    protected function get_recon_dir() {
+      return variable_get( $this->name . '_audit_recon_files_dir' );
+    }
+
+    /**
+     * Returns the configurable path to the completed recon files
+     * @return string Path to the directory
+     */
+    protected function get_recon_completed_dir() {
+      return variable_get($this->name . '_audit_recon_completed_dir');
+    }
+
+    /**
+     * Returns the configurable path to the working log dir
+     * @return string Path to the directory
+     */
+    protected function get_working_log_dir() {
+      return variable_get($this->name . '_audit_working_log_dir');
+    }
+
+    /**
+     * The regex to use to determine if a file is a working log for this gateway.
+     * @return string regular expression
+     */
+    protected function regex_for_working_log() {
+      return "/\d{8}_{$this->name}[.]working/";
+    }
+
+    /**
+     * The regex to use to determine if a file is a compressed payments log.
+     * @return string regular expression
+     */
+    protected function regex_for_compressed_log() {
+      return '/.gz/';
+    }
+
+    /**
+     * The regex to use to determine if a file is an uncompressed log for this
+     * gateway.
+     * @return string regular expression
+     */
+    protected function regex_for_uncompressed_log() {
+      return "/{$this->name}_\d{8}/";
+    }
+
+    /**
+     * Returns the configurable number of days we want to jump back in to the past,
+     * to look for transactions in the payments logs.
+     * @return in Number of days
+     */
+    protected function get_log_days_in_past() {
+      return variable_get($this->name . '_audit_log_search_past_days');
+    }
+
+    /**
+     * Given the name of a working log file, pull out the date portion.
+     * @param string $file Name of the working log file (not full path)
+     * @return string date in YYYYMMDD format
+     */
+    protected function get_working_log_file_date($file) {
+      //  '/\d{8}_GATEWAY\.working/';
+      $parts = explode('_', $file);
+      return $parts[0];
+    }
+
+    /**
+     * Get the name of a compressed log file based on the supplied date.
+     * @param string $date date in YYYYMMDD format
+     * @return string Name of the file we're looking for
+     */
+    protected function get_compressed_log_file_name($date) {
+    //  payments-worldpay-20140413.gz
+      return "payments-{$this->name}-{$date}.gz";
+    }
+
+    /**
+     * Get the name of an uncompressed log file based on the supplied date.
+     * @param string $date date in YYYYMMDD format
+     * @return string Name of the file we're looking for
+     */
+    protected function get_uncompressed_log_file_name($date) {
+    //  payments-worldpay-20140413 - no extension. Weird.
+      return "payments-{$this->name}-{$date}";
+    }
+
+    /**
+     * Get the name of a working log file based on the supplied date.
+     * @param string $date date in YYYYMMDD format
+     * @return string Name of the file we're looking for
+     */
+    protected function get_working_log_file_name($date) {
+      //  '/\d{8}_worldpay\.working/';
+      return "{$date}_{$this->name}.working";
+    }
+
+    /**
+     * Checks the array to see if the data inside is describing a refund.
+     * @param aray $record The transaction we would like to know is a refund or not.
+     * @return boolean true if it is, otherwise false
+     */
+    protected function record_is_refund($record) {
+      return (array_key_exists('type', $record) && $record['type'] === 'refund');
+    }
+
+    /**
+     * Checks the array to see if the data inside is describing a chargeback.
+     * @param aray $record The transaction we would like to know is a chargeback or
+     * not.
+     * @return boolean true if it is, otherwise false
+     */
+    protected function record_is_chargeback($record) {
+      return (array_key_exists('type', $record) && $record['type'] === 'chargeback');
+    }
+
+    /**
+     * Return a date in the format YYYYMMDD for the given record
+     * @param array $record A transaction, or partial transaction
+     * @return string Date in YYYYMMDD format
+     */
+    protected function get_record_human_date($record) {
+      if (array_key_exists('date', $record)) {
+	return date(WMF_DATEFORMAT, $record['date']); //date format defined in wmf_dates
+      }
+
+      echo print_r($record, true);
+      throw new Exception( __FUNCTION__ . ': No date present in the record. This seems like a problem.' );
+    }
+
+    /**
+     * Normalize refund/chargeback messages before sending
+     * @param array $record transaction data
+     * @return array The normalized data we want to send
+     */
+    protected function normalize_negative($record) {
+      $send_message = array(
+	'gateway_refund_id' => 'RFD' . $record['gateway_txn_id'], //Notes from a previous version: "after intense deliberation, we don't actually care what this is at all."
+	'gateway_parent_id' => $record['gateway_txn_id'], //gateway transaction ID
+	'gross_currency' => $record['currency'], //currency code
+	'gross' => $record['gross'], //amount
+	'date' => $record['date'], //timestamp
+	'gateway' => $this->name,
+    //  'gateway_account' => $record['gateway_account'], //BOO. @TODO: Later.
+    //  'payment_method' => $record['payment_method'], //Argh. Not telling you.
+    //  'payment_submethod' => $record['payment_submethod'], //Still not telling you.
+	'type' => $record['type'], //This actually works here. Weird, right?
+      );
+      return $send_message;
+    }
+
+    /**
+     * Used in makemissing mode
+     * This should take care of any extra data not sent in the recon file, that will
+     * actually make qc choke. Not so necessary with WP, but this will need to
+     * happen elsewhere, probably. Just thinking ahead.
+     * @param array $record transaction data
+     * @return type The normalized data we want to send.
+     */
+    protected function normalize_partial($record) {
+      //@TODO: Still need gateway account to go in here when that happens.
+      return $record;
+    }
+
+    /**
+     * Checks to see if the transaction already exists in civi
+     * @param array $transaction Array of donation data
+     * @return boolean true if it's in there, otherwise false
+     */
+    protected function main_transaction_exists_in_civi($transaction) {
+      //go through the transactions and check to see if they're in civi
+      if (wmf_civicrm_get_contributions_from_gateway_id($this->name, $transaction['gateway_txn_id']) === false) {
+	return false;
+      } else {
+	return true;
+      }
+    }
+
+    /**
+     * Checks to see if the refund or chargeback already exists in civi.
+     * NOTE: This does not check to see if the parent is present at all, nor should
+     * it. Call worldpay_audit_main_transaction_exists_in_civi for that.
+     * @param array $transaction Array of donation data
+     * @return boolean true if it's in there, otherwise false
+     */
+    protected function negative_transaction_exists_in_civi($transaction) {
+      //go through the transactions and check to see if they're in civi
+      if (wmf_civicrm_get_child_contributions_from_gateway_id($this->name, $transaction['gateway_txn_id']) === false) {
+	return false;
+      } else {
+	return true;
+      }
+    }
 
     protected function get_runtime_options( $name ) {
 	if ( isset( $this->options[$name] ) ) {
@@ -581,7 +759,7 @@ abstract class BaseAuditProcessor {
       $working_dir = $this->get_working_log_dir();
       //do the directory read and cache the results in the static
       if (!$handle = opendir($working_dir)) {
-	die(__FUNCTION__ . ": Can't open directory. We should have noticed earlier (in setup_required_directories) that this wasn't going to work. \n");
+	throw new Exception(__FUNCTION__ . ": Can't open directory. We should have noticed earlier (in setup_required_directories) that this wasn't going to work. \n");
       }
       while (( $file = readdir($handle) ) !== false) {
 	$temp_date = false;
@@ -749,7 +927,7 @@ abstract class BaseAuditProcessor {
       }
 
       echo print_r($record, true);
-      die(__FUNCTION__ . " Not cc...");
+      throw new Exception(__FUNCTION__ . " Not cc...");
     }
 
     /**
@@ -819,7 +997,7 @@ abstract class BaseAuditProcessor {
 
 	  if (empty($parent_nodes)) {
 	    wmf_audit_log_error(__FUNCTION__ . ': No parent nodes defined. Can not continue.', 'RUNTIME_ERROR');
-	    die("Stop dying here");
+	    throw new Exception("Stop dying here");
 	  }
 
 	  foreach ($parent_nodes as $parent_node) {
@@ -838,7 +1016,7 @@ abstract class BaseAuditProcessor {
 
 	  if (empty($search_for_nodes)) {
 	    wmf_audit_log_error(__FUNCTION__ . ': No searchable nodes defined. Can not continue.', 'RUNTIME_ERROR');
-	    die("Stop dying here");
+	    throw new Exception("Stop dying here");
 	  }
 	  foreach ($search_for_nodes as $node) {
 	    $tmp = wmf_audit_get_partial_xml_node_value($node, $xml);
