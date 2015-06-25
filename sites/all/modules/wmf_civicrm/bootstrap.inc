@@ -80,3 +80,37 @@ function wmf_civicrm_create_option_values( $group_name, $values )
         }
     }
 }
+
+function wmf_civicrm_create_location_types($location_types, $update_existing = FALSE)
+{
+    foreach ($location_types as $name => $display_name)
+    {
+        $location_type_id = CRM_Utils_Array::key(
+            $name,
+            CRM_Contribute_PseudoConstant::locationType()
+        );
+
+        if (!$location_type_id || $update_existing == TRUE)
+        {
+            $params = array(
+                'name' => $name,
+                'display_name' => $display_name,
+                'is_active' => 1,
+            );
+            if ($location_type_id && $update_existing == TRUE)
+            {
+                $params['id'] = $location_type_id;
+            }
+            wmf_civicrm_add_location_type($params);
+        }
+    }
+}
+
+function wmf_civicrm_add_location_type($params)
+{
+    $locationType = new CRM_Core_DAO_LocationType();
+    $locationType->copyValues($params);
+    $locationType->save();
+
+    return $locationType;
+}

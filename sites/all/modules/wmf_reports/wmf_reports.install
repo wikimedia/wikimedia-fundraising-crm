@@ -2,17 +2,17 @@
 
 function wmf_reports_install()
 {
-    wmf_reports_update_6000();
-    wmf_reports_update_6001();
-    wmf_reports_update_6002();
-    wmf_reports_update_6003();
-    wmf_reports_update_6004();
+    wmf_reports_update_7000();
+    wmf_reports_update_7001();
+    wmf_reports_update_7002();
+    wmf_reports_update_7003();
+    wmf_reports_update_7004();
 }
 
 /**
  * Add a default mapping to support Contacts and Contributions export
  */
-function wmf_reports_update_6000()
+function wmf_reports_update_7000()
 {
     $api = wmf_reports_bootstrap_civi();
 
@@ -118,7 +118,7 @@ function wmf_reports_update_6000()
  * Remove some of the mapping fields thanks to a hard mysql limit of
  * 61 join tables.
  */
-function wmf_reports_update_6001()
+function wmf_reports_update_7001()
 {
     wmf_reports_bootstrap_civi();
 
@@ -166,7 +166,7 @@ function wmf_reports_update_6001()
 /**
  * Install custom report templates
  */
-function wmf_reports_update_6002()
+function wmf_reports_update_7002()
 {
     wmf_reports_bootstrap_civi();
 
@@ -248,7 +248,7 @@ function wmf_reports_bootstrap_civi()
 /**
  * Install gateway reconciliation report template
  */
-function wmf_reports_update_6003()
+function wmf_reports_update_7003()
 {
     wmf_reports_bootstrap_civi();
 
@@ -269,7 +269,7 @@ function wmf_reports_update_6003()
 /**
  * Install customized LYBUNT report template
  */
-function wmf_reports_update_6004()
+function wmf_reports_update_7004()
 {
     wmf_reports_bootstrap_civi();
 

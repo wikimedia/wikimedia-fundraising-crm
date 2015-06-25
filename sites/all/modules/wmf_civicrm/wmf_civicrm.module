@@ -82,7 +82,7 @@ function wmf_civicrm_settle( $contribution, $settled_timestamp = null )
 {
     if ( $settled_timestamp === null ) {
         // Get the stored date
-        // FIXME wmf_civicrm_contribution_get_custom_values('settlement_date');
+        // FIXME wmf_civicrm_get_custom_values('settlement_date');
         $field = wmf_civicrm_get_custom_field_name( 'settlement_date' );
         $params = array(
             'entityID' => $contribution['id'],
@@ -90,7 +90,7 @@ function wmf_civicrm_settle( $contribution, $settled_timestamp = null )
         );
         $result = CRM_Core_BAO_CustomValueTable::getValues( $params );
         $settlement_db_date = $result[$field];
-        $settled_timestamp = strtotime( $settlement_db_date );
+        $settled_timestamp = wmf_common_date_parse_string( $settlement_db_date );
         $settlement_db_date = wmf_common_date_unix_to_sql( $settled_timestamp );
     } else {
         $settlement_db_date = wmf_common_date_unix_to_sql( $settled_timestamp );
@@ -126,7 +126,7 @@ function wmf_civicrm_settle( $contribution, $settled_timestamp = null )
     return array_merge( $contribution, $custom_values );
 }
 
-function wmf_civicrm_contribution_get_custom_values( $entity_id, $names, $group_name = null )
+function wmf_civicrm_get_custom_values( $entity_id, $names, $group_name = null )
 {
     $names = (array)$names;
     $params[ 'entityID' ] = $entity_id;
@@ -216,6 +216,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         // Insert the location record
         $location = wmf_civicrm_message_location_insert( $msg, $contact );
 
+        // TODO: Add to contact_tags instead.
         // Tag contact for review
         try {
             $tag = wmf_civicrm_tag_contact_for_review( $contact );
@@ -243,6 +244,25 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         $msg['contribution_recur_id'] = $recur_record->id;
     }
 
+    // Look up soft credit contact.
+    if ( !empty( $msg['soft_credit_to'] ) ) {
+        $api = civicrm_api_classapi();
+        $success = $api->Contact->Get( array(
+            'organization_name' => $msg['soft_credit_to'],
+
+            'version' => 3,
+        ) );
+        if ( count( $api->values ) !== 1 ) {
+            throw new WmfException(
+                'INVALID_MESSAGE',
+                "Bad soft credit target, [${msg['soft_credit_to']}]"
+            );
+        }
+        $soft_credit_contact = $api->values[0];
+        # FIXME: awkward to have the two fields.
+        $msg['soft_credit_to_id'] = $soft_credit_contact->id;
+    }
+
     // Insert the contribution record.
     $contribution = _wmf_civicrm_message_contribution_insert( $msg );
 
@@ -253,6 +273,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
     }
 
     if ( !empty( $msg['notes'] ) ) {
+        // TODO: Handle failure.
         civicrm_api3( "Note", "Create", array(
             'entity_table' => 'civicrm_contact',
             'entity_id' => $msg['contact_id'],
@@ -292,6 +313,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'contribution_recur_id' => $msg['contribution_recur_id'],
         'check_number' => $msg['check_number'],
         'letter_code' => $msg['letter_code'],
+        'soft_credit_to' => $msg['soft_credit_to_id'],
 
         // API required fields
         'version' => '3'
@@ -324,7 +346,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'postmark_date' => 'Postmark_Date',
     );
 
-    // Custom fields with names that match the message fields
+    // Custom fields with names that match the message fields.
     $custom_name_passthrough = array(
         'gateway_account',
         'import_batch_number',
@@ -1145,6 +1167,8 @@ EOS;
  * that are consistent with how we need to insert data into CiviCRM.
  * This should be useful by other modules processing contribution messages 
  * out of the queue.
+ *
+ * TODO: Split this into a transformation chain.
  * 
  * @param mixed $msg
  * @return array
@@ -1197,6 +1221,8 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'subscr_id' => null,
         'contact_tags' => array(),
         'contribution_tags' => array(),
+        'soft_credit_to' => null,
+        'soft_credit_to_id' => null,
     );
     $msg = $msg + $defaults;
 
@@ -1246,7 +1272,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
 
     // Convert times to Unix timestamps.
     if ( !is_numeric( $msg['date'] ) ) {
-        $msg['date'] = strtotime($msg['date']);
+        $msg['date'] = wmf_common_date_parse_string($msg['date']);
     }
     // if all else fails, fall back to now.
     if ( empty( $msg['date'] ) ) {
@@ -1267,7 +1293,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
 
     if ( !empty( $msg['thankyou_date'] ) ) {
         if ( !is_numeric( $msg['thankyou_date'] ) ) {
-            $unix_time = strtotime( $msg['thankyou_date'] );
+            $unix_time = wmf_common_date_parse_string( $msg['thankyou_date'] );
             if ( $unix_time !== false ) {
                 $msg['thankyou_date'] = $unix_time;
             } else {
@@ -1347,6 +1373,7 @@ function wmf_civicrm_tag_contact_for_review( $contact )
  * @param string $gateway
  * @param string $gateway_txn_id
  * @return mixed array of result rows, or false if none present.
+ * TODO: return empty set rather than false.
  * @throws WmfException
  */
 function wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id) {
@@ -1523,7 +1550,7 @@ WHERE
         //FIXME!: call this from the contribution save hook. $round parameter. 
         $contribution->total_amount = round( exchange_rate_convert(
             $refund_currency, $refund_amount,
-            strtotime( $contribution->receive_date )
+            wmf_common_date_parse_string( $contribution->receive_date )
         ), 2 );
 
         $api->Contribution->Create( array(
@@ -1575,7 +1602,7 @@ WHERE
     if ( $refund_date === null ) {
         $refund_date = time();
     } elseif ( !is_numeric( $refund_date ) ) {
-        $refund_date = strtotime( $refund_date );
+        $refund_date = wmf_common_date_parse_string( $refund_date );
     }
 
     $refund_status = ( $refund_completed ? 'Completed' : 'Pending' );
@@ -1597,7 +1624,7 @@ WHERE
     $result = $api->values;
     $refund = array_pop($result);
 
-    $parent_custom_values = wmf_civicrm_contribution_get_custom_values( $contribution_id, array(
+    $parent_custom_values = wmf_civicrm_get_custom_values( $contribution_id, array(
         'gateway_account',
     ) );
 
@@ -1681,10 +1708,10 @@ function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_statu
         $gateway_date = gmdate( 'YmdHis', $timestamp );
     }
 
-    $original_custom_values = wmf_civicrm_contribution_get_custom_values( $contribution_id, array(
+    $original_custom_values = wmf_civicrm_get_custom_values( $contribution_id, array(
         'gateway_date',
     ) );
-    $last_timestamp = strtotime( $original_custom_values['gateway_date'] );
+    $last_timestamp = wmf_common_date_parse_string( $original_custom_values['gateway_date'] );
     $last_gateway_date = wmf_common_date_unix_to_sql( $last_timestamp );
 
     if ( $last_gateway_date >= $gateway_date ) {
@@ -2008,6 +2035,9 @@ function wmf_civicrm_get_dbs() {
  * @return array
  */
 function wmf_civicrm_dao_to_list( $dao ) {
+    if ( PEAR::isError( $dao ) ) {
+        throw new Exception( $dao->getMessage() );
+    }
     $result = array();
     while ($dao->fetch()) {
         $result[] = $dao->toArray();
@@ -2234,7 +2264,7 @@ LIMIT %4";
 			// Approximate rate we originally used so we can correct the fee & net.
 			$rate_used = $total_amount / $original_amount;
 			try {
-				$correct_rate = exchange_rate_convert( $currency, 1, strtotime( $contribution['receive_date'] ) );
+				$correct_rate = exchange_rate_convert( $currency, 1, wmf_common_date_parse_string( $contribution['receive_date'] ) );
 			}
 			catch ( ExchangeRatesException $ex ) {
 				watchdog( 'recalculate_contributions', "Not recalculating contribution $id.  Cannot find rate for currency $currency", null, WATCHDOG_DEBUG );

@@ -2,6 +2,8 @@
 
 /**
  * CSV batch format for manually-keyed donation checks
+ *
+ * FIXME: This currently includes stuff specific to Wikimedia Foundation fundraising.
  */
 abstract class ChecksFile {
     protected $numSkippedRows = 0;
@@ -110,9 +112,13 @@ abstract class ChecksFile {
             }
         }
 
+        if ( !$msg ) {
+            throw new EmptyRowException();
+        }
+
         foreach ( $this->getDatetimeFields() as $field ) {
             if ( !empty( $msg[$field] ) ) {
-                $msg[$field] = strtotime( $msg[$field] );
+                $msg[$field] = wmf_common_date_parse_string( $msg[$field] );
             }
         }
 
@@ -145,7 +151,7 @@ abstract class ChecksFile {
 
     /**
      * Do any final transformation on a normalized and default-laden queue
-     * message.  This is very specific to each upload source.
+     * message.  Overrides are specific to each upload source.
      */
     protected function mungeMessage( &$msg ) {
         if ( isset( $msg['raw_contribution_type'] ) ) {
@@ -169,8 +175,15 @@ abstract class ChecksFile {
             }
         }
 
-        if ( !empty( $msg['organization_name'] ) ) {
+        if ( isset( $msg['organization_name'] ) ) {
             $msg['contact_type'] = "Organization";
+        } else {
+            // If this is not an Organization contact, freak out if Name or Title are filled.
+            if ( !empty( $msg['org_contact_name'] )
+                || !empty( $msg['org_contact_title'] )
+            ) {
+                throw new WmfException( 'INVALID_MESSAGE', "Don't give a Name or Title unless this is an Organization contact." );
+            }
         }
 
         $msg['gross'] = trim( $msg['gross'], '$' );
@@ -189,7 +202,7 @@ abstract class ChecksFile {
         }
 
         // left-pad the zipcode
-        if ( $msg['country'] === 'US' ) {
+        if ( $msg['country'] === 'US' && !empty( $msg['postal_code'] ) ) {
             if ( preg_match( '/^(\d{1,4})(-\d+)?$/', $msg['postal_code'], $matches ) ) {
                 $msg['postal_code'] = str_pad( $matches[1], 5, "0", STR_PAD_LEFT );
                 if ( !empty( $matches[2] ) ) {
@@ -210,6 +223,18 @@ abstract class ChecksFile {
                 $msg['gateway_txn_id'] = md5( $msg['check_number'] . $name_salt );
             } else {
                 $msg['gateway_txn_id'] = md5( $msg['date'] . $name_salt . $this->row_index );
+            }
+        }
+
+        // Expand soft credit short names.
+        if ( !empty( $msg['soft_credit_to'] ) ) {
+            $nickname_mapping = array(
+                'Fidelity' => 'Fidelity Charitable Gift Fund',
+                'Vanguard' => 'Vanguard Charitable Endowment Program',
+                'Schwab' => 'Schwab Charitable Fund',
+            );
+            if ( array_key_exists( $msg['soft_credit_to'], $nickname_mapping ) ) {
+                $msg['soft_credit_to'] = $nickname_mapping[$msg['soft_credit_to']];
             }
         }
     }
@@ -241,11 +266,12 @@ abstract class ChecksFile {
         return array(
             'Additional Address 1' => 'supplemental_address_1',
             'Additional Address 2' => 'supplemental_address_2',
-            'Batch' => 'import_batch_number',
+            'Batch' => 'import_batch_number', # deprecated, use External Batch Number instead.
             'Check Number' => 'check_number',
             'City' => 'city',
             'Contribution Type' => 'raw_contribution_type',
             'Country' => 'country',
+            'Description of Stock' => 'stock_description',
             'Direct Mail Appeal' => 'direct_mail_appeal',
             'Do Not Email' => 'do_not_email',
             'Do Not Mail' => 'do_not_mail',
@@ -253,12 +279,15 @@ abstract class ChecksFile {
             'Do Not SMS' => 'do_not_sms',
             'Do Not Solicit' => 'do_not_solicit',
             'Email' => 'email',
+            'External Batch Number' => 'import_batch_number',
             'First Name' => 'first_name',
             'Gift Source' => 'gift_source',
+            'Groups' => 'contact_groups',
             'Is Opt Out' => 'is_opt_out',
             'Last Name' => 'last_name',
             'Letter Code' => 'letter_code',
             'Middle Name' => 'middle_name',
+            'Name' => 'org_contact_name',
             'No Thank You' => 'no_thank_you',
             'Notes' => 'notes',
             'Organization Name' => 'organization_name',
@@ -267,13 +296,19 @@ abstract class ChecksFile {
             'Payment Instrument' => 'payment_method',
             'Postal Code' => 'postal_code',
             'Postmark Date' => 'postmark_date',
+            'Prefix' => 'name_prefix',
             'Received Date' => 'date',
             'Restrictions' => 'restrictions',
+            'Soft Credit To' => 'soft_credit_to',
             'Source' => 'contribution_source',
             'State' => 'state_province',
             'Street Address' => 'street_address',
+            'Suffix' => 'name_suffix',
+            'Tags' => 'contact_tags',
             'Thank You Letter Date' => 'thankyou_date',
-            'Total Amount' => 'gross',
+            'Title' => 'org_contact_title',
+            'Total Amount' => 'gross', # deprecated, use Original Amount
+            'Transaction ID' => 'gateway_txn_id',
         );
     }
 
@@ -304,5 +339,11 @@ abstract class ChecksFile {
      *
      * @return array of normalized message field names
      */
-    abstract protected function getRequiredData();
+    protected function getRequiredData() {
+		return array(
+			'currency',
+			'date',
+			'gross',
+		);
+	}
 }

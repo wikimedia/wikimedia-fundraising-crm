@@ -16,6 +16,10 @@ function _load_headers( $row ){
   # check for duplicates, case insensitive
   foreach( $row as $i => $k ) {
     $upper = strtoupper( $k );
+    // Ignore empty labels.
+    if ( !$upper ) {
+        continue;
+    }
     if ( array_key_exists( $upper, $used ) ) {
       $duplicates[] = $k;
     }

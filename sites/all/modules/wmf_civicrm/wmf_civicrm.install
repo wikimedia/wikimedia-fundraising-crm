@@ -4,20 +4,20 @@ require_once( __DIR__ . "/bootstrap.inc" );
 
 function wmf_civicrm_install()
 {
-    wmf_civicrm_update_6000();
-    wmf_civicrm_update_6001();
-    wmf_civicrm_update_6002();
-    wmf_civicrm_update_6003();
-    wmf_civicrm_update_6004();
-    wmf_civicrm_update_6005();
-    wmf_civicrm_update_6006();
-    wmf_civicrm_update_6007();
-    wmf_civicrm_update_6008();
-    wmf_civicrm_update_6009();
-    wmf_civicrm_update_6010();
-    wmf_civicrm_update_6011();
-    wmf_civicrm_update_6012();
-    wmf_civicrm_update_6013();
+    wmf_civicrm_update_7000();
+    wmf_civicrm_update_7001();
+    wmf_civicrm_update_7002();
+    wmf_civicrm_update_7003();
+    wmf_civicrm_update_7004();
+    wmf_civicrm_update_7005();
+    wmf_civicrm_update_7006();
+    wmf_civicrm_update_7007();
+    wmf_civicrm_update_7008();
+    wmf_civicrm_update_7009();
+    wmf_civicrm_update_7010();
+    wmf_civicrm_update_7011();
+    wmf_civicrm_update_7012();
+    wmf_civicrm_update_7013();
     wmf_civicrm_update_7014();
     wmf_civicrm_update_7015();
     wmf_civicrm_update_7016();
@@ -38,7 +38,7 @@ function wmf_civicrm_install()
 /**
  * Add contribution types and payment instruments
  */
-function wmf_civicrm_update_6000()
+function wmf_civicrm_update_7000()
 {
     $contribution_types = array(
         'Cash',
@@ -82,7 +82,7 @@ function wmf_civicrm_update_6000()
 /**
  * Add settlement date field
  */
-function wmf_civicrm_update_6001()
+function wmf_civicrm_update_7001()
 {
     $api = wmf_civicrm_bootstrap_civi();
     $api->CustomGroup->get(array(
@@ -130,7 +130,7 @@ function wmf_civicrm_update_6001()
 /**
  * Add non-authoritatize USD conversion estimate
  */
-function wmf_civicrm_update_6002()
+function wmf_civicrm_update_7002()
 {
     $api = wmf_civicrm_bootstrap_civi();
     $success = $api->CustomGroup->get(array(
@@ -161,7 +161,7 @@ function wmf_civicrm_update_6002()
     return array();
 }
 
-function wmf_civicrm_update_6003()
+function wmf_civicrm_update_7003()
 {
     wmf_civicrm_bootstrap_civi();
     wmf_civicrm_create_contribution_types(array(
@@ -172,7 +172,7 @@ function wmf_civicrm_update_6003()
 /**
  * Add gateway_account name field
  */
-function wmf_civicrm_update_6004()
+function wmf_civicrm_update_7004()
 {
     $api = wmf_civicrm_bootstrap_civi();
     $success = $api->CustomGroup->get(array(
@@ -205,7 +205,7 @@ function wmf_civicrm_update_6004()
 /**
  * More complete gateway and settlement recording. Adding a field to mark auditing-only transactions, and a hack to link contributions.
  */
-function wmf_civicrm_update_6005()
+function wmf_civicrm_update_7005()
 {
     $ret = array();
 
@@ -444,7 +444,7 @@ function wmf_civicrm_update_6005()
 /**
  * Additional, gateway-related contribution statuses
  */
-function wmf_civicrm_update_6006()
+function wmf_civicrm_update_7006()
 {
     $ret = array();
 
@@ -483,7 +483,7 @@ function wmf_civicrm_update_6006()
 /**
  * New contribution types to distinguish refunds from chargebacks. Create old "Review" tag.
  */
-function wmf_civicrm_update_6007()
+function wmf_civicrm_update_7007()
 {
     $api = wmf_civicrm_bootstrap_civi();
 
@@ -504,7 +504,7 @@ function wmf_civicrm_update_6007()
 /**
  * Add new check processor!
  */
-function wmf_civicrm_update_6008()
+function wmf_civicrm_update_7008()
 {
 	wmf_civicrm_bootstrap_civi();
 	wmf_civicrm_create_contribution_types(array(
@@ -515,7 +515,7 @@ function wmf_civicrm_update_6008()
 /**
  * Extend some CiviCRM column maximum lengths
  */
-function wmf_civicrm_update_6009()
+function wmf_civicrm_update_7009()
 {
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push('civicrm');
@@ -530,7 +530,7 @@ function wmf_civicrm_update_6009()
 /**
  * Improve civicrm_entity_tag indexing--DO NOT RUN ON PRODUCTION
  */
-function wmf_civicrm_update_6010()
+function wmf_civicrm_update_7010()
 {
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push('civicrm');
@@ -546,7 +546,7 @@ function wmf_civicrm_update_6010()
 /**
  * Improve civicrm_entity_tag indexing
  */
-function wmf_civicrm_update_6011()
+function wmf_civicrm_update_7011()
 {
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push('civicrm');
@@ -562,7 +562,7 @@ function wmf_civicrm_update_6011()
 /**
  * Add source metadata fields
  */
-function wmf_civicrm_update_6012()
+function wmf_civicrm_update_7012()
 {
     $ret = array();
     $api = wmf_civicrm_bootstrap_civi();
@@ -675,7 +675,7 @@ function wmf_civicrm_update_6012()
 /**
  * Add Postmark Date field
  */
-function wmf_civicrm_update_6013()
+function wmf_civicrm_update_7013()
 {
     $api = wmf_civicrm_bootstrap_civi();
     $api->CustomGroup->get(array(
@@ -1175,4 +1175,25 @@ function wmf_civicrm_update_7028() {
     wmf_civicrm_create_contribution_types( array(
         'Engage',
     ) );
+}
+
+/**
+ * Rename "Old and add "Old 2015" Location Type values
+ *
+ * We are also adding existing values programmatically if they don't already
+ * exist.
+ */
+function wmf_civicrm_update_7029() {
+  $api = wmf_civicrm_bootstrap_civi();
+  $location_types = array(
+    'Home' => 'Home',
+    'Work' => 'Work',
+    'Main' => 'Main',
+    'Other' => 'Other',
+    'Mailing' => 'Mailing',
+    'Billing' => 'Billing',
+    'Old' => 'Old 2014',
+    'Old_2015' => 'Old 2015',
+  );
+  wmf_civicrm_create_location_types($location_types, TRUE);
 }

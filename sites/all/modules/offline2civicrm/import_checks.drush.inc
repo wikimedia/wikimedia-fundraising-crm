@@ -21,7 +21,10 @@ function import_checks_drush_command() {
   	'required-arguments' => true,
 	'arguments' => array(
 		'file' => 'Name of CSV file to process'
-	)
+	),
+	'options' => array(
+		'type' => 'File format to assume for the import',
+	),
   );
 
   return $items;
@@ -43,9 +46,12 @@ function import_checks_drush_help( $section ) {
 function drush_import_checks() {
 	$args = drush_get_arguments();
 	$filename = $args[1];
+	$type = drush_get_option( 'type', 'ChecksFile' );
 
 	try {
-		ChecksFile::import( $filename );
+		civicrm_initialize();
+		$importer = new $type( $filename );
+		$importer->import();
 	}
 	catch ( WmfException $ex ) {
 		watchdog( 'offline2civicrm', 'Import checks: error during import ' + $ex->getMessage(), NULL, WATCHDOG_ERROR );
