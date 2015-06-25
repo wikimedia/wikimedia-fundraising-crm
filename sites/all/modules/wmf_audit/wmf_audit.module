@@ -1276,21 +1276,5 @@ function wmf_audit_send_stomp($body, $type) {
 
   wmf_common_set_message_source($headers, 'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor');
 
-  $rekey = array(
-    'first_name' => 'fname',
-    'last_name' => 'lname',
-    'street_address' => 'street',
-    'state_province' => 'state',
-    'postal_code' => 'zip',
-    'currency' => 'currency_code',
-  );
-
-  foreach ($rekey as $new => $old) {
-    if (array_key_exists($old, $body)) {
-      $body[$new] = $body[$old];
-      //don't unset; It's okay.
-    }
-  }
-
   return $q->enqueue(json_encode($body), $headers, $types[$type]);
 }
