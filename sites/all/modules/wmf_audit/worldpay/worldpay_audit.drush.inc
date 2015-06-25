@@ -24,7 +24,6 @@ function worldpay_audit_drush_command() {
       'makemissing' => 'Will reconstruct the un-rebuildable transactions found in the recon file, with default values. USE WITH CAUTION: Currently this prevents real data from entering the system if we ever get it.',
       'charlimit' => 'Will cause echoing to line break after the given number of characters',
       'verbose' => 'Verbose output',
-      'no_queue' => 'Running in direct insert mode - no queue flooding',
       'recon_complete_count' => 'Number past which we should consider a recon file to be "complete", and move it out of the working dir.',
     ),
     'aliases' => array('wp_audit'),
@@ -54,7 +53,6 @@ function drush_worldpay_audit() {
     'makemissing' => 'Making payments data for missing transactions',
     'run_all' => 'Running all recon files! This might take a while...',
     'verbose' => 'Outputting verbose.',
-    'no_queue' => 'Running in direct insert mode',
     'recon_complete_count' => 'Number past which we should consider a recon file to be "complete", and move it out of the working dir.'
   );
 
@@ -62,7 +60,6 @@ function drush_worldpay_audit() {
 
   //handle our defaults first...
   $args['test'] = variable_get('worldpay_audit_test_mode', WP_AUDIT_TEST_MODE);
-  $args['no_queue'] = variable_get('wmf_audit_direct_insert', WMF_AUDIT_DIRECT_INSERT); //defaults to false at the UI level. Can't really set *to* false at the command line, though...
   //now override with the command line settings
   foreach ($simple_opts as $key => $message) {
     if (drush_get_option($key)) {
