@@ -49,8 +49,8 @@ function wmf_common_date_get_today_string(){
  * @return An array of all date strings between the $start and $end values
  */
 function wmf_common_date_get_date_gap( $start, $end ){
-	$startdate = date_create_from_format(WMF_DATEFORMAT, $start);
-	$enddate = date_create_from_format(WMF_DATEFORMAT, $end);
+	$startdate = date_create_from_format(WMF_DATEFORMAT, (string)$start);
+	$enddate = date_create_from_format(WMF_DATEFORMAT, (string)$end);
 	
 	$next = $startdate;
 	$interval = new DateInterval('P1D');

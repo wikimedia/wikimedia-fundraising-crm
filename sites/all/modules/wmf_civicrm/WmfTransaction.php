@@ -52,7 +52,7 @@ class WmfTransaction {
         $transaction = new WmfTransaction();
         $transaction->gateway_txn_id = $msg['gateway_txn_id'];
         $transaction->gateway = $msg['gateway'];
-        $transaction->is_recurring = $msg['recurring'];
+        $transaction->is_recurring = !empty( $msg['recurring'] );
         return $transaction;
     }
 
