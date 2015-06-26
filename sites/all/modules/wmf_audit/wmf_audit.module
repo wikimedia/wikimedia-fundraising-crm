@@ -164,7 +164,9 @@ function wmf_audit_move_completed_recon_file($file, $completed_dir) {
  * @return null
  */
 function wmf_audit_echo($echo, $verbose = false) {
-  if ($verbose && wmf_audit_runtime_options('verbose') === false) {
+  if (($verbose && wmf_audit_runtime_options('verbose') === false)
+    || wmf_audit_runtime_options('quiet') )
+  {
     return;
   }
   static $chars = 0;

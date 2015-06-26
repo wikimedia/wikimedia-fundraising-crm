@@ -1,5 +1,6 @@
 <?php
 
+use \WorldpayAdapter;
 use SmashPig\PaymentProviders\WorldPay\Audit\WorldPayAudit;
 
 class WorldpayAuditProcessor extends BaseAuditProcessor {
@@ -82,7 +83,7 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
 
       if (!empty($data)) {
 	foreach ($data as $record) {
-	  wmf_audit_echo(wmf_audit_echochar($record));
+	  wmf_audit_echo($this->audit_echochar($record));
 	}
       }
       if ( count( $data ) ){
@@ -198,7 +199,7 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
       }
 
       if (array_key_exists('CurrencyId', $xml_data)) {
-	$normal['currency'] = worldpay_audit_get_currency_code_from_stupid_number($xml_data['CurrencyId']);
+	$normal['currency'] = $this->get_currency_code_from_stupid_number($xml_data['CurrencyId']);
       }
 
       $unsets = array(
@@ -281,7 +282,7 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
     protected function get_currency_code_from_stupid_number($number) {
       static $flipped = array();
       if (empty($flipped)) {
-	$flipped = array_flip(WorldPayAdapter::$CURRENCY_CODES);
+	$flipped = array_flip(WorldpayAdapter::$CURRENCY_CODES);
       }
       if (array_key_exists($number, $flipped)) {
 	return $flipped[$number];

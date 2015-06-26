@@ -7,19 +7,20 @@ abstract class BaseAuditProcessor {
     public function __construct( $options ) {
 	$this->options = $options;
 	// FIXME: Copy to confusing global thing.
+	$options['submod_prefix'] = $this->name;
 	wmf_audit_runtime_options( $options );
     }
 
-    abstract function get_log_distilling_grep_string();
-    abstract function get_log_line_grep_string( $order_id );
-    abstract function get_log_line_xml_data_nodes();
-    abstract function get_log_line_xml_outermost_node();
-    abstract function get_log_line_xml_parent_nodes();
-    abstract function get_order_id( $transaction );
-    abstract function get_recon_file_date( $file );
-    abstract function normalize_and_merge_data( $data, $transaction );
-    abstract function parse_recon_file( $file );
-    abstract function regex_for_recon();
+    abstract protected function get_log_distilling_grep_string();
+    abstract protected function get_log_line_grep_string( $order_id );
+    abstract protected function get_log_line_xml_data_nodes();
+    abstract protected function get_log_line_xml_outermost_node();
+    abstract protected function get_log_line_xml_parent_nodes();
+    abstract protected function get_order_id( $transaction );
+    abstract protected function get_recon_file_date( $file );
+    abstract protected function normalize_and_merge_data( $data, $transaction );
+    abstract protected function parse_recon_file( $file );
+    abstract protected function regex_for_recon();
 
     /**
      * Returns the configurable path to the recon files
@@ -456,7 +457,6 @@ abstract class BaseAuditProcessor {
       }
       wmf_audit_echo("\n");
 
-
       //REMEMBER: Log date is a liar!
       //Stepping backwards, log date really means "Now you have all the data for
       //this date, and some from the previous."
@@ -701,34 +701,37 @@ abstract class BaseAuditProcessor {
 	wmf_audit_echo("Retrieving $full_archive_path");
 	$cmd = "cp $full_archive_path " . $working_directory;
 	exec(escapeshellcmd($cmd), $ret, $errorlevel);
-	if (!file_exists($working_directory . $compressed_filename)) {
+        $full_compressed_path = $working_directory . $compressed_filename;
+	if (!file_exists($full_compressed_path)) {
 	  wmf_audit_log_error("FILE PROBLEM: Trying to get log archives, and something went wrong with $cmd", 'FILE_MOVE');
 	  return false;
 	} else {
-	  $cleanup[] = $working_directory . $compressed_filename;
+	  $cleanup[] = $full_compressed_path;
 	}
 	//uncompress
-	wmf_audit_echo("Gunzipping $working_directory$compressed_filename");
-	$cmd = "gunzip -f $working_directory$compressed_filename";
+	wmf_audit_echo("Gunzipping $full_compressed_path");
+	$cmd = "gunzip -f $full_compressed_path";
 	exec(escapeshellcmd($cmd), $ret, $errorlevel);
 	//now check to make sure the file you expect, actually exists
 	$uncompressed_file = $this->get_uncompressed_log_file_name( $date );
-	if (!file_exists($working_directory . $uncompressed_file)) {
-	  wmf_audit_log_error("FILE PROBLEM: Something went wrong with uncompressing logs: $cmd : $working_directory.$uncompressed_file doesn't exist.", 'FILE_UNCOMPRESS');
+	$full_uncompressed_path = $working_directory . $uncompressed_file;
+	if (!file_exists($full_uncompressed_path)) {
+	  wmf_audit_log_error("FILE PROBLEM: Something went wrong with uncompressing logs: $cmd : $full_uncompressed_path doesn't exist.", 'FILE_UNCOMPRESS');
 	} else {
-	  $cleanup[] = $working_directory . $uncompressed_file;
+	  $cleanup[] = $full_uncompressed_path;
 	}
 
 	//distill & cache locally
 	$distilled_file = $this->get_working_log_file_name( $date );
+        $full_distilled_path = $working_directory . $distilled_file;
 	//Can't escape the hard-coded string we're grepping for, because it breaks terribly.
-	$cmd = "grep '" . $this->get_log_distilling_grep_string() . "' " . escapeshellcmd($working_directory . $uncompressed_file) . " > " . escapeshellcmd($working_directory . $distilled_file);
+	$cmd = "grep '" . $this->get_log_distilling_grep_string() . "' " . escapeshellcmd($full_uncompressed_path) . " > " . escapeshellcmd($full_distilled_path);
 
 	wmf_audit_echo($cmd);
 	$ret = array();
 	exec($cmd, $ret, $errorlevel);
-	chmod($working_directory . $distilled_file, 0770);
-	$ready_files[$date] = $working_directory . $distilled_file;
+	chmod($full_distilled_path, 0770);
+	$ready_files[$date] = $full_distilled_path;
 
 	//clean up
 	if (!empty($cleanup)) {
@@ -740,7 +743,7 @@ abstract class BaseAuditProcessor {
 	}
 
 	//return
-	return $working_directory . $distilled_file;
+	return $full_distilled_path;
       }
 
       //this happens if the archive file doesn't exist. Definitely not the end of the world, but we should probably log about it.
