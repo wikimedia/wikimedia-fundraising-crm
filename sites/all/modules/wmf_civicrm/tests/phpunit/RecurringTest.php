@@ -20,10 +20,6 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
      * @dataProvider nextSchedProvider
      */
     public function testNextScheduled( $now, $cycle_day, $expected_next_sched ) {
-        if ( defined( 'HHVM_VERSION' ) ) {
-            $this->markTestSkipped( 'Running under HHVM, skipping known failure' );
-        }
-
         $msg = array(
             'cycle_day' => $cycle_day,
             'frequency_interval' => 1,
