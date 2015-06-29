@@ -41,7 +41,7 @@ class WmfOrgImportFile extends ChecksFile {
             'State',
             'Street Address',
             'Tags',
-            'Target Contact',
+            'Target Contact ID',
             'Thank You Letter Date',
             'Title',
             'Transaction ID',
