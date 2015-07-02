@@ -70,7 +70,7 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
      */
     protected function parse_recon_file($file) {
       $recon_data = array();
-      $recon_parser = new WorldPayAudit();
+      $recon_parser = new WorldpayAudit();
 
       $data = null;
       try {

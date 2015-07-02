@@ -17,7 +17,7 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
             'GLOBALCOLLECT' => 'GlobalCollect',
             'JPMORGAN' => 'JP Morgan',
             'PAYPAL' => 'PayPal',
-            'WORLDPAY' => 'WorldPay',
+            'WORLDPAY' => 'Worldpay',
         );
 
         $this->_columns = array(
