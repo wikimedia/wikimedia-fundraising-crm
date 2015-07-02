@@ -1,7 +1,7 @@
 <?php
 
 use \WorldpayAdapter;
-use SmashPig\PaymentProviders\WorldPay\Audit\WorldPayAudit;
+use SmashPig\PaymentProviders\Worldpay\Audit\WorldpayAudit;
 
 class WorldpayAuditProcessor extends BaseAuditProcessor {
     protected $name = 'worldpay';
