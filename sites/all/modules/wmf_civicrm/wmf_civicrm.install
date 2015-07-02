@@ -1200,7 +1200,6 @@ function wmf_civicrm_update_7029() {
 }
 
 /**
-<<<<<<< HEAD
  * Add some custom fields that already exist on production
  */
 function wmf_civicrm_update_7030() {
