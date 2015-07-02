@@ -97,13 +97,16 @@ function offline2civicrm_import_checks_form() {
   $form['import_upload_format'] = array(
     '#title' => t( 'File format' ),
     '#type' => 'radios',
-    '#default_value' => 'engage',
+    '#default_value' => 'generic_ind',
     '#options' => array(
         'engage' => t( 'Engage' ),
         'coinbase' => t( 'Coinbase Merchant Orders' ),
         'foreign_checks' => t( 'Foreign Checks' ),
+        'generic_ind' => t( 'Generic Individuals' ),
+        'generic_org' => t( 'Generic Organizations' ),
         'jpmorgan' => t( 'JP Morgan' ),
         'paypal' => t( 'PayPal EFT' ),
+        'square' => t( 'Square' ),
     ),
   );
   $form['log'] = array(
@@ -137,8 +140,11 @@ function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
       case 'coinbase':
         $importer = new CoinbaseFile( $file->uri );
         break;
-      case 'generic':
+      case 'generic_ind':
         $importer = new WmfImportFile( $file->uri );
+        break;
+      case 'generic_org':
+        $importer = new WmfOrgImportFile( $file->uri );
         break;
       case 'paypal':
         $importer = new PayPalChecksFile( $file->uri );
@@ -148,6 +154,9 @@ function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
         break;
       case 'foreign_checks':
         $importer = new ForeignChecksFile( $file->uri );
+        break;
+      case 'square':
+        $importer = new SquareFile( $file->uri );
         break;
       default:
         throw new Exception( 'Bad file format selection' );

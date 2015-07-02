@@ -369,12 +369,36 @@ function wmf_civicrm_increment_date_to_target_day( $date, $interval = 'month', $
  * target cycle day. This will only change if the target day doesn't exist in certain months. 
  */
 function wmf_civicrm_get_cycle_day_for_month($cycle_day, $month, $year){
-    # FIXME: cal_days_in_month is not supported by HHVM
-    $last_day = cal_days_in_month( CAL_GREGORIAN, $month, $year );
+    $last_day = wmf_civicrm_cal_days_in_month( $month );
     if ( $cycle_day > $last_day ){
         return $last_day;
     }
     return $cycle_day;
+}
+
+/**
+ * Cheap port of cal_days_in_month, which is not supported in hhvm
+ *
+ * Ignores the leap year cos we don't care.
+ *
+ * @param integer $month One-based month number
+ */
+function wmf_civicrm_cal_days_in_month( $month ) {
+    $lookup = array(
+        '1' => 31,
+        '2' => 28,
+        '3' => 31,
+        '4' => 30,
+        '5' => 31,
+        '6' => 30,
+        '7' => 31,
+        '8' => 31,
+        '9' => 30,
+        '10' => 31,
+        '11' => 30,
+        '12' => 31,
+    );
+    return $lookup[$month];
 }
 
 /**

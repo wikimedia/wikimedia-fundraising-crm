@@ -1,6 +1,6 @@
 <?php
 
-class WmfImportFile extends ChecksFile {
+class WmfOrgImportFile extends ChecksFile {
     /** Make sure the file schema is not damaged. */
     protected function getRequiredColumns() {
         return array(
@@ -21,30 +21,29 @@ class WmfImportFile extends ChecksFile {
             'Do Not Solicit',
             'Email',
             'External Batch Number',
-            'First Name',
             'Gift Source',
             'Groups',
             'Is Opt Out',
-            'Last Name',
+            'Name',
             'Notes',
             'No Thank You',
+            'Organization Name',
             'Original Amount',
             'Original Currency',
             'Payment Instrument',
             'Phone',
             'Postal Code',
             'Postmark Date',
-            'Prefix',
             'Received Date',
             'Relationship Type',
             'Restrictions',
             'Soft Credit To',
             'State',
             'Street Address',
-            'Suffix',
             'Tags',
             'Target Contact',
             'Thank You Letter Date',
+            'Title',
             'Transaction ID',
         );
     }

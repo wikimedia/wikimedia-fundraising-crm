@@ -1,7 +1,6 @@
 <?php
 
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
-define('WMF_AUDIT_DIRECT_INSERT', false);
 
 /**
  * Implementation of hook_menu()
@@ -53,12 +52,6 @@ function wmf_audit_settings() {
     '#title' => t('Path to directory containing WMF payments logs'),
     '#required' => TRUE,
     '#default_value' => variable_get('wmf_audit_log_archive_dir', WMF_AUDIT_PAYMENTS_LOGS_DIR),
-  );
-  $form['wmf_audit_direct_insert'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('When this box is checked, the audit scripts will attempt to write to civicrm directly, instead of flooding the regular queues'),
-    '#required' => FALSE,
-    '#default_value' => variable_get('wmf_audit_direct_insert', WMF_AUDIT_DIRECT_INSERT),
   );
   return system_settings_form($form);
 }
@@ -1204,9 +1197,8 @@ function wmf_audit_make_contribution_tracking_data($record) {
 /**
  * Sends a completed transaction to... somewhere.
  * The default is to send this thing to an appropriate stomp queue for its type.
- * Other possibilities are to echo the complete message (test mode) or try to
- * save the message to civicm directly (no_queue, not currently supported.
- * It's nice to want things.)
+ * Other possibilities are to echo the complete message (test mode).
+ *
  * @param array $record An array representing the complete data we want to save
  * @param string $type The type of transaction we are. 'main', 'negative',
  * 'recurring'... like that.
@@ -1218,14 +1210,7 @@ function wmf_audit_send_transaction($record, $type) {
     return true;
   }
 
-  if (wmf_audit_runtime_options('no_queue')) {
-    die(__FUNCTION__ . " Direct inserts are not yet supported. Please use queue flood mode." . print_r($record, true));
-    //    wmf_civicrm_contribution_message_import($record); //or something like that
-    //BLOCKERS: No failmail or standard hooks yet.
-    //Other things: Do we need a different import function for each main type? I mean, we have three different queue consumers.
-  } else {
-    return wmf_audit_send_stomp($record, $type);
-  }
+  return wmf_audit_send_stomp($record, $type);
 }
 
 /**
@@ -1245,7 +1230,7 @@ function wmf_audit_send_stomp($body, $type) {
   static $types = array();
 
   if (!$q) {
-    $q = new Queue(queue2civicrm_stomp_url());
+    $q = queue2civicrm_stomp();
   }
 
   //@FIXME: This is actually more for the queue consumer modules, but: Make a
@@ -1275,22 +1260,6 @@ function wmf_audit_send_stomp($body, $type) {
   }
 
   wmf_common_set_message_source($headers, 'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor');
-
-  $rekey = array(
-    'first_name' => 'fname',
-    'last_name' => 'lname',
-    'street_address' => 'street',
-    'state_province' => 'state',
-    'postal_code' => 'zip',
-    'currency' => 'currency_code',
-  );
-
-  foreach ($rekey as $new => $old) {
-    if (array_key_exists($old, $body)) {
-      $body[$new] = $body[$old];
-      //don't unset; It's okay.
-    }
-  }
 
   return $q->enqueue(json_encode($body), $headers, $types[$type]);
 }

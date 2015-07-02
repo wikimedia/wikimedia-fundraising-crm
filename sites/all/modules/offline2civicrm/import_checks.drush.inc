@@ -46,7 +46,7 @@ function import_checks_drush_help( $section ) {
 function drush_import_checks() {
 	$args = drush_get_arguments();
 	$filename = $args[1];
-	$type = drush_get_option( 'type', 'ChecksFile' );
+	$type = drush_get_option( 'type', 'WmfImportFile' );
 
 	try {
 		civicrm_initialize();

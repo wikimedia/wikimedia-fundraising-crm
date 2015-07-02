@@ -440,10 +440,10 @@ function worldpay_audit_normalize_and_merge_data($xml_data, $recon_data) {
     'OrderNumber' => 'gateway_txn_id',
     'Amount' => 'gross',
     'REMOTE_ADDR' => 'user_ip',
-    'FirstName' => 'fname',
-    'LastName' => 'lname',
-    'Address1' => 'street', //N0NE PROVIDED
-    'ZipCode' => 'zip', //0
+    'FirstName' => 'first_name',
+    'LastName' => 'last_name',
+    'Address1' => 'street_address', //N0NE PROVIDED
+    'ZipCode' => 'postal_code', //0
     'CountryCode' => 'country',
     'Email' => 'email',
     'contribution_tracking_id' => 'contribution_tracking_id', //passed through, because I already set this manually
@@ -460,8 +460,8 @@ function worldpay_audit_normalize_and_merge_data($xml_data, $recon_data) {
   }
 
   $unsets = array(
-    'street' => 'N0NE PROVIDED',
-    'zip' => '0',
+    'street_address' => 'N0NE PROVIDED',
+    'postal_code' => '0',
   );
 
   foreach ($unsets as $key => $value) {

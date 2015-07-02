@@ -25,7 +25,7 @@ function civicrm_api_option_group($group_name, $key = null)
 	if ($key)
 	{
 		// In this case, just lookup name and return the option value
-		$forwards = array_flip($cached_group[$group_name]);
+		$forwards = array_flip( $cached_group[$group_name] );
 		return $forwards[$key];
 	}
 	return $cached_group[$group_name];
@@ -132,6 +132,7 @@ function wmf_civicrm_get_custom_values( $entity_id, $names, $group_name = null )
     $params[ 'entityID' ] = $entity_id;
     foreach ( $names as $name ) {
         $field = wmf_civicrm_get_custom_field_name( $name, $group_name );
+#var_export( "Custom field mapping: {$name} -> {$field}" );
         $params[ $field ] = 1;
         $field_map[ $field ] = $name;
     }
@@ -187,6 +188,9 @@ function wmf_civicrm_get_custom_field_name( $field_name, $group_name = null ) {
 /**
  * Try to import a transaction message into CiviCRM, otherwise
  * throw an exception.
+ *
+ * @param array $msg
+ * @return array Contribution as inserted
  */
 function wmf_civicrm_contribution_message_import( &$msg ) {
     civicrm_initialize();
@@ -312,7 +316,6 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'source' => $msg['original_currency'] . ' ' . $msg['original_gross'],
         'contribution_recur_id' => $msg['contribution_recur_id'],
         'check_number' => $msg['check_number'],
-        'letter_code' => $msg['letter_code'],
         'soft_credit_to' => $msg['soft_credit_to_id'],
 
         // API required fields
@@ -332,7 +335,6 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     */
     $custom_field_defaults = array(
         'Contribution_Comments' => '',
-        'Gift_Data' => NULL,
         'gateway_account' => '',
     );
 
@@ -341,9 +343,9 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'comment' => 'Contribution_Comments',
         'direct_mail_appeal' => 'Appeal',
         'gift_source' => 'Campaign',
-        'letter_code' => 'Gift_Data',
-        'restrictions' => 'Fund',
         'postmark_date' => 'Postmark_Date',
+        'restrictions' => 'Fund',
+        'stock_description' => 'Description_of_Stock',
     );
 
     // Custom fields with names that match the message fields.
@@ -410,7 +412,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
 
     // Create any required tags on the contribution
     if ( $msg['contribution_tags'] ) {
-        $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
+        $supported_tags = array_flip( CRM_Core_PseudoConstant::tag() );
         $stacked_ex = array();
         foreach ( array_unique( $msg['contribution_tags'] ) as $tag ) {
             try {
@@ -643,6 +645,9 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                         break;
                 }
                 break;
+	    case 'stock':
+		$payment_instrument = 'Stock';
+		break;
             case 'cash':
                 $payment_instrument = 'Cash';
                 //'cash_boleto' - Only one right now. I assume there might be more later? 
@@ -674,6 +679,12 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
             $payment_instrument = 'Paypal';
             if ( array_key_exists( 'payment_method', $msg ) and strtolower( $msg['payment_method'] ) !== 'paypal' ) {
                 watchdog( 'wmf_civicrm', 'payment_method constraint violated: gateway Paypal, but method=@method ; gateway_txn_id=@id', array( '@method' => $msg['payment_method'], '@id' => $msg['gateway_txn_id'] ), WATCHDOG_DEBUG );
+            }
+            break;
+        case 'square':
+            $payment_instrument = 'Square Cash';
+            if ( array_key_exists( 'payment_method', $msg ) and strtolower( $msg['payment_method'] ) !== 'square' ) {
+                watchdog( 'wmf_civicrm', 'payment_method constraint violated: gateway Square, but method=@method ; gateway_txn_id=@id', array( '@method' => $msg['payment_method'], '@id' => $msg['gateway_txn_id'] ), WATCHDOG_DEBUG );
             }
             break;
         }
@@ -921,6 +932,25 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         }
     }
 
+    $custom_vars = array();
+    $custom_field_mangle = array(
+        'do_not_solicit' => 'do_not_solicit',
+        'org_contact_name' => 'Name',
+        'org_contact_title' => 'Title',
+    );
+    foreach ( $custom_field_mangle as $msgField => $customField ) {
+        if ( isset( $msg[$msgField] ) ) {
+            $custom_vars[$customField] = $msg[$msgField];
+        }
+    }
+
+    $custom_name_mapping = wmf_civicrm_get_custom_field_map( array_keys( $custom_vars ) );
+    foreach ( $custom_name_mapping as $readable => $machined ) {
+        if ( array_key_exists( $readable, $custom_vars ) ) {
+            $contact[$machined] = $custom_vars[$readable];
+        }
+    }
+
     // Attempt to insert the contact
     try {
         $contact_result = civicrm_api3( "Contact", "Create", $contact );
@@ -937,27 +967,33 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
     $contact_id = $contact_result['id'];
 
-    // Add any wmf_donor custom field values
-    $wmf_donor_fields = array(
-        'do_not_solicit',
-    );
-    $wmf_donor_values = array();
-    foreach ( $wmf_donor_fields as $donor_field ) {
-        if ( isset( $msg[$donor_field] ) ) {
-            $wmf_donor_values[$donor_field] = $msg[$donor_field];
+    // Add groups to this contact.
+    if ( $msg['contact_groups'] ) {
+        // TODO: Use CRM_Contact_GroupContact::buildOptions in Civi 4.4, also
+        // in place of ::tag below.
+        $supported_groups = array_flip( CRM_Core_PseudoConstant::allGroup() );
+        $stacked_ex = array();
+        foreach ( array_unique( $msg['contact_groups'] ) as $group ) {
+            try {
+                $tag_result = civicrm_api3( "GroupContact", "Create", array(
+                    'contact_id' => $contact_id,
+                    'group_id' => $supported_groups[$group],
+                ));
+            } catch ( CiviCRM_API3_Exception $ex ) {
+                $stacked_ex[] = "Failed to add group {$group} to contact ID {$contact_id}. Error: " . $ex->getMessage();
+            }
         }
-    }
-    if ( !empty( $wmf_donor_values ) ) {
-        try {
-            wmf_civicrm_set_custom_field_values( $contact_id, $wmf_donor_values, 'wmf_donor' );
-        } catch ( WmfException $ex ) {
-            watchdog( 'wmf_civicrm', "Setting wmf_donor custom field values failed with details: {$ex->getMessage()}", array(), WATCHDOG_ERROR );
+        if ( !empty( $stacked_ex ) ) {
+            throw new WmfException(
+                "IMPORT_CONTACT",
+                implode( "\n", $stacked_ex )
+            );
         }
     }
 
     // Do we have any tags we need to add to this contact?
     if ( $msg['contact_tags'] ) {
-        $supported_tags = array_flip(CRM_Core_PseudoConstant::tag());
+        $supported_tags = array_flip( CRM_Core_PseudoConstant::tag() );
         $stacked_ex = array();
         foreach ( array_unique( $msg['contact_tags'] ) as $tag ) {
             try {
@@ -975,6 +1011,27 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
                 "IMPORT_CONTACT",
                 implode( "\n", $stacked_ex )
             );
+        }
+    }
+
+    // Create a relationship to an existing contact?
+    if ( !empty( $msg['relationship_target_contact_id'] ) ) {
+        $relationship_type = civicrm_api3( "RelationshipType", "Get", array(
+            'name_a_b' => $msg['relationship_type'],
+        ) );
+        if ( !$relationship_type['count'] ) {
+            throw new WmfException( 'IMPORT_CONTACT', "Bad relationship type: {$msg['relationship_type']}" );
+        }
+
+        try {
+            civicrm_api3( "Relationship", "Create", array(
+                'contact_id_a' => $contact_id,
+                'contact_id_b' => $msg['relationship_target_contact_id'],
+                'relationship_type_id' => $relationship_type['id'],
+                'is_active' => 1,
+            ) );
+        } catch ( CiviCRM_API3_Exception $ex ) {
+            throw new WmfException( 'IMPORT_CONTACT', $ex->getMessage() );
         }
     }
 
@@ -1210,7 +1267,6 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'postal_code' => '',
         'postmark_date' => null,
         'check_number' => null,
-        'letter_code' => null,
         'thankyou_date' => null,
         'recurring' => null,
         'utm_campaign' => null,
@@ -1219,6 +1275,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'contribution_recur_id' => null,
         'effort_id' => null,
         'subscr_id' => null,
+        'contact_groups' => array(),
         'contact_tags' => array(),
         'contribution_tags' => array(),
         'soft_credit_to' => null,
@@ -1335,6 +1392,18 @@ function wmf_civicrm_normalize_msg( $msg ) {
 
     $msg['anonymous'] = ((!empty( $msg['anonymous'] ) && strtoupper($msg['anonymous'] ) !== "FALSE") ? 1 : 0);
     $msg['optout'] = ((empty( $msg['optout'] ) || $msg['optout'] === 0 || $msg['optout'] === '0' || strtoupper( $msg['optout'] ) === "FALSE") ? 0 : 1);
+
+    $list_fields = array(
+        'contact_groups',
+        'contact_tags',
+        'contribution_tags',
+    );
+    foreach ( $list_fields as $field ) {
+        if ( is_string( $msg[$field] ) ) {
+            $msg[$field] = preg_split( '/[\s,]+/', $msg[$field], null, PREG_SPLIT_NO_EMPTY );
+        }
+        $msg[$field] = array_unique( $msg[$field] );
+    }
 
     // set the correct amount fields/data and do exchange rate conversions.
     $msg = wmf_civicrm_normalize_contribution_amounts( $msg );
