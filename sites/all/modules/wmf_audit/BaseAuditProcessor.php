@@ -3,6 +3,7 @@
 abstract class BaseAuditProcessor {
     protected $options;
     protected $name;
+    protected $ready_files;
 
     public function __construct( $options ) {
 	$this->options = $options;
@@ -680,15 +681,14 @@ abstract class BaseAuditProcessor {
       //Could be either in .gz format in the archive
       //check for the distilled version first
       //check the local static cache to see if the file we want is available in distilled format.
-      static $ready_files = null;
 
-      if (is_null($ready_files)) {
-	$ready_files = $this->read_working_logs_dir();
+      if (is_null($this->ready_files)) {
+	$this->ready_files = $this->read_working_logs_dir();
       }
 
       //simple case: It's already ready, or none are ready
-      if (!is_null($ready_files) && array_key_exists($date, $ready_files)) {
-	return $ready_files[$date];
+      if (!is_null($this->ready_files) && array_key_exists($date, $this->ready_files)) {
+	return $this->ready_files[$date];
       }
 
       //This date is not ready yet. Get the zipped version from the archive, unzip
@@ -731,7 +731,7 @@ abstract class BaseAuditProcessor {
 	$ret = array();
 	exec($cmd, $ret, $errorlevel);
 	chmod($full_distilled_path, 0770);
-	$ready_files[$date] = $full_distilled_path;
+	$this->ready_files[$date] = $full_distilled_path;
 
 	//clean up
 	if (!empty($cleanup)) {
