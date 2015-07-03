@@ -116,38 +116,6 @@ function wmf_audit_remove_old_logs($date, $working_logs) {
 }
 
 /**
- * Moves recon files to the completed directory. This should probably only be
- * done at the beginning of a run: If we're running in queue flood mode, we
- * don't know if the data will actually make it all the way in.
- * @param string $file Full path to the file we want to move off
- * @param string $completed_dir Path to the recon completed directory.
- * @return boolean true on success, otherwise false
- */
-function wmf_audit_move_completed_recon_file($file, $completed_dir) {
-  if (!is_dir($completed_dir)) {
-    if (!mkdir($completed_dir, 0770)) {
-      $message = "Could not make $completed_dir";
-      wmf_audit_log_error($message, 'FILE_PERMS');
-      return false;
-    }
-  }
-
-  $filename = basename($file);
-  $newfile = $completed_dir . '/' . $filename;
-
-  if (!rename($file, $newfile)) {
-    $message = "Unable to move $file to $newfile";
-
-    wmf_audit_log_error($message, 'FILE_PERMS');
-    return false;
-  } else {
-    chmod($newfile, 0770);
-  }
-  wmf_audit_echo("Moved $file to $newfile");
-  return true;
-}
-
-/**
  * Wrapper for echo
  * Lets us switch on things we only want to see in verbose mode.
  * Also allows us to impose a char limit per line for the benefit of jenkins

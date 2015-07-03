@@ -206,7 +206,7 @@ abstract class BaseAuditProcessor {
     /**
      * Checks to see if the refund or chargeback already exists in civi.
      * NOTE: This does not check to see if the parent is present at all, nor should
-     * it. Call worldpay_audit_main_transaction_exists_in_civi for that.
+     * it. Call main_transaction_exists_in_civi for that.
      * @param array $transaction Array of donation data
      * @return boolean true if it's in there, otherwise false
      */
@@ -277,7 +277,7 @@ abstract class BaseAuditProcessor {
 	  // which might be resolved below.  Those are archived on the next run,
 	  // once we can confirm they have hit Civi and are no longer missing.
 	  if (wmf_audit_count_missing($missing) <= $this->get_runtime_options('recon_complete_count')) {
-	    wmf_audit_move_completed_recon_file($file, $this->get_recon_completed_dir());
+	    $this->move_completed_recon_file($file);
 	  }
 
 	  //grumble...
@@ -321,7 +321,7 @@ abstract class BaseAuditProcessor {
 	if (array_key_exists('negative', $total_missing) && !empty($total_missing['negative'])) {
 	  foreach ($total_missing['negative'] as $record) {
 	    //check to see if the parent exists. If it does, normalize and send.
-	    if (worldpay_audit_main_transaction_exists_in_civi($record)) {
+	    if ($this->main_transaction_exists_in_civi($record)) {
 	      $normal = $this->normalize_negative( $record );
 	      if (wmf_audit_send_transaction($normal, 'negative')) {
 		$neg_count += 1;
