@@ -12,15 +12,20 @@ abstract class BaseAuditProcessor {
 	wmf_audit_runtime_options( $options );
     }
 
+    /**
+     * Return an object that performs the file parsing.
+     */
+    abstract protected function get_audit_parser();
+
     abstract protected function get_log_distilling_grep_string();
     abstract protected function get_log_line_grep_string( $order_id );
-    abstract protected function get_log_line_xml_data_nodes();
-    abstract protected function get_log_line_xml_outermost_node();
-    abstract protected function get_log_line_xml_parent_nodes();
-    abstract protected function get_order_id( $transaction );
+    abstract protected function parse_log_line( $line );
+    // TODO: Move XML stuff into a helper class.
+    protected function get_log_line_xml_data_nodes() {}
+    protected function get_log_line_xml_outermost_node() {}
+    protected function get_log_line_xml_parent_nodes() {}
     abstract protected function get_recon_file_date( $file );
     abstract protected function normalize_and_merge_data( $data, $transaction );
-    abstract protected function parse_recon_file( $file );
     abstract protected function regex_for_recon();
 
     /**
@@ -195,8 +200,9 @@ abstract class BaseAuditProcessor {
      * @return boolean true if it's in there, otherwise false
      */
     protected function main_transaction_exists_in_civi($transaction) {
+      $positive_txn_id = $this->get_parent_order_id( $transaction );
       //go through the transactions and check to see if they're in civi
-      if (wmf_civicrm_get_contributions_from_gateway_id($this->name, $transaction['gateway_txn_id']) === false) {
+      if (wmf_civicrm_get_contributions_from_gateway_id($this->name, $positive_txn_id) === false) {
 	return false;
       } else {
 	return true;
@@ -211,8 +217,9 @@ abstract class BaseAuditProcessor {
      * @return boolean true if it's in there, otherwise false
      */
     protected function negative_transaction_exists_in_civi($transaction) {
+      $positive_txn_id = $this->get_parent_order_id( $transaction );
       //go through the transactions and check to see if they're in civi
-      if (wmf_civicrm_get_child_contributions_from_gateway_id($this->name, $transaction['gateway_txn_id']) === false) {
+      if (wmf_civicrm_get_child_contributions_from_gateway_id($this->name, $positive_txn_id) === false) {
 	return false;
       } else {
 	return true;
@@ -560,9 +567,7 @@ abstract class BaseAuditProcessor {
 		    'code' => 'MISSING_MANDATORY_DATA',
 		  );
 		} else {
-		  //@TODO: If you ever have a gateway that doesn't communicate with xml, this is going to have to be abstracted slightly.
-		  //Not going to worry about that right now, though.
-		  $data = $this->get_xml_log_data_by_order_id($order_id, $log);
+		  $data = $this->get_log_data_by_order_id($order_id, $log);
 		}
 
 		//if we have data at this point, it means we have a match in the logs
@@ -945,16 +950,16 @@ abstract class BaseAuditProcessor {
      * @return array|boolean The data we sent to the gateway for that order id, or
      * false if we can't find it there.
      */
-    protected function get_xml_log_data_by_order_id($order_id, $log) {
+    protected function get_log_data_by_order_id($order_id, $log) {
       if (!$order_id) {
 	return false;
       }
 
-      $cmd = 'grep ' . $this->get_log_line_grep_string( $order_id ) . ' ' . $log;
+      $cmd = 'grep \'' . $this->get_log_line_grep_string( $order_id ) . '\' ' . $log;
       wmf_audit_echo(__FUNCTION__ . ' ' . $cmd, true);
 
       $ret = array();
-      exec(escapeshellcmd($cmd), $ret, $errorlevel);
+      exec($cmd, $ret, $errorlevel);
 
       if (count($ret) > 0) {
 
@@ -970,7 +975,19 @@ abstract class BaseAuditProcessor {
 	$contribution_id = explode(':', $linedata[5]);
 	$contribution_id = $contribution_id[0];
 
+        $raw_data = $this->parse_log_line( $line );
 
+	if (!empty($raw_data)) {
+	  $raw_data['contribution_tracking_id'] = $contribution_id;
+	  return $raw_data;
+	} else {
+	  wmf_audit_log_error("We found a transaction in the logs for $order_id, but there's nothing left after we tried to grab its data. Investigation required.", 'DATA_WEIRD');
+	}
+      }
+      return false; //no big deal, it just wasn't there. This will happen most of the time.
+    }
+
+    protected function parse_xml_log_line( $line ) {
 	//look for the raw xml
 	$full_xml = false;
 	$node = $this->get_log_line_xml_outermost_node();
@@ -1029,13 +1046,66 @@ abstract class BaseAuditProcessor {
 	  }
 	}
 
-	if (!empty($donor_data)) {
-	  $donor_data['contribution_tracking_id'] = $contribution_id;
-	  return $donor_data;
-	} else {
-	  wmf_audit_log_error("We found a transaction in the logs for $order_id, but there's nothing left after we tried to grab its data. Investigation required.", 'DATA_WEIRD');
+	return $donor_data;
+    }
+
+    /**
+     * Grabs the positive transaction id associated with a transaction.
+     *
+     * @param array $transaction possibly incomplete set of transaction data
+     * @return string|false the order_id, or false if we can't figure it out
+     */
+    protected function get_parent_order_id( $transaction ) {
+      if (is_array($transaction) && array_key_exists('gateway_parent_id', $transaction)) {
+	return $transaction['gateway_parent_id'];
+      }
+      if (is_array($transaction) && array_key_exists('gateway_txn_id', $transaction)) {
+	return $transaction['gateway_txn_id'];
+      }
+      return false;
+    }
+
+    /**
+     * Grabs just the order_id out of a $transaction. Override if the
+     * parser doesn't normalize.
+     *
+     * @param array $transaction possibly incomplete set of transaction data
+     * @return string|false the order_id, or false if we can't figure it out
+     */
+    protected function get_order_id($transaction) {
+      if (is_array($transaction) && array_key_exists('gateway_txn_id', $transaction)) {
+	return $transaction['gateway_txn_id'];
+      }
+      return false;
+    }
+
+    /**
+     * Just parse one recon file.
+     * @staticvar null $parserClass The class of the parser we're going to use
+     * @param string $file Absolute location of the recon file you want to parse
+     * @return mixed An array of recon data, or false
+     */
+    protected function parse_recon_file($file) {
+      $recon_data = array();
+      $recon_parser = $this->get_audit_parser();
+
+      $data = null;
+      try {
+	$data = $recon_parser->parseFile($file);
+      } catch (Exception $e) {
+	wmf_audit_log_error("Something went amiss with the recon parser while processing $file ", 'RECON_PARSE_ERROR');
+      }
+
+      //At this point, $data already contains the usable portions of the file.
+
+      if (!empty($data)) {
+	foreach ($data as $record) {
+	  wmf_audit_echo($this->audit_echochar($record));
 	}
       }
-      return false; //no big deal, it just wasn't there. This will happen most of the time.
+      if ( count( $data ) ){
+        return $data;
+      }
+      return false;
     }
 }

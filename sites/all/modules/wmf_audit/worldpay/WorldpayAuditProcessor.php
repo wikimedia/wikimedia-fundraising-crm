@@ -62,34 +62,8 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
       return 'Request XML.*TMSTN.*<TransactionType>PT.*<RequestType>S<';
     }
 
-    /**
-     * Just parse one recon file.
-     * @staticvar null $parserClass The class of the parser we're going to use
-     * @param string $file Absolute location of the recon file you want to parse
-     * @return mixed An array of recon data, or false
-     */
-    protected function parse_recon_file($file) {
-      $recon_data = array();
-      $recon_parser = new WorldpayAudit();
-
-      $data = null;
-      try {
-	$data = $recon_parser->parseFile($file);
-      } catch (Exception $e) {
-	wmf_audit_log_error("Something went amiss with the recon parser while processing $file ", 'RECON_PARSE_ERROR');
-      }
-
-      //At this point, $data already contains the usable portions of the file.
-
-      if (!empty($data)) {
-	foreach ($data as $record) {
-	  wmf_audit_echo($this->audit_echochar($record));
-	}
-      }
-      if ( count( $data ) ){
-		    return $data;
-	    }
-	    return false;
+    protected function get_audit_parser() {
+	return new WorldpayAudit();
     }
 
     /**
@@ -99,7 +73,11 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
      * @return string the pattern to grep for, for this specific transaction
      */
     protected function get_log_line_grep_string($order_id) {
-      return "<OrderNumber>$order_id</OrderNumber>";
+      return "<OrderNumber>{$order_id}</OrderNumber>";
+    }
+
+    protected function parse_log_line( $logline ) {
+        return $this->parse_xml_log_line( $logline );
     }
 
     /**
@@ -143,19 +121,6 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
 	'CountryCode',
 	'Email',
       );
-    }
-
-    /**
-     * Grabs just the order_id out of a $transaction. This makes more sense if the
-     * parser doesn't normalize as well as the WP one does, or even at all.
-     * @param array $transaction possibly incomplete set of transaction data
-     * @return string|false the order_id, or false if we can't figure it out
-     */
-    protected function get_order_id($transaction) {
-      if (is_array($transaction) && array_key_exists('gateway_txn_id', $transaction)) {
-	return $transaction['gateway_txn_id'];
-      }
-      return false;
     }
 
     /**
