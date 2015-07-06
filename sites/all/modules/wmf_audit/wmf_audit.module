@@ -373,6 +373,10 @@ function wmf_audit_make_contribution_tracking_data($record) {
 function wmf_audit_send_transaction($record, $type) {
   if (wmf_audit_runtime_options('test')) {
     wmf_audit_echo("Test mode: Would send the following message: " . print_r($record, true), true);
+    if (wmf_audit_runtime_options('test_callback')) {
+	$func = wmf_audit_runtime_options('test_callback');
+	$func($record, $type);
+    }
     return true;
   }
 
