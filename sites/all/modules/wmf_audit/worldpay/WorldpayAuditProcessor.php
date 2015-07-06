@@ -1,6 +1,5 @@
 <?php
 
-use \WorldpayAdapter;
 use SmashPig\PaymentProviders\Worldpay\Audit\WorldpayAudit;
 
 class WorldpayAuditProcessor extends BaseAuditProcessor {
