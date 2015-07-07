@@ -1,6 +1,6 @@
 <?php
 
-function wmf_audit_watchdog( $entry ) {
+function worldpay_audit_watchdog( $entry ) {
     WorldpayAuditTest::receiveLogline( $entry );
 }
 
