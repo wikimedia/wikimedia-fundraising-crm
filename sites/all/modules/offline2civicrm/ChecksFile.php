@@ -123,12 +123,6 @@ abstract class ChecksFile {
             throw new EmptyRowException();
         }
 
-        foreach ( $this->getDatetimeFields() as $field ) {
-            if ( !empty( $msg[$field] ) && !is_numeric( $msg[$field] ) ) {
-                $msg[$field] = wmf_common_date_parse_string( $msg[$field] );
-            }
-        }
-
         $this->setDefaults( $msg );
 
         $this->mungeMessage( $msg );
@@ -252,6 +246,12 @@ abstract class ChecksFile {
 
         if ( empty( $msg['gateway'] ) ) {
             $msg['gateway'] = 'generic_import';
+        }
+
+        foreach ( $this->getDatetimeFields() as $field ) {
+            if ( !empty( $msg[$field] ) && !is_numeric( $msg[$field] ) ) {
+                $msg[$field] = wmf_common_date_parse_string( $msg[$field] );
+            }
         }
     }
 
