@@ -43,7 +43,7 @@ class WmfImportFile extends ChecksFile {
             'Street Address',
             'Suffix',
             'Tags',
-            'Target Contact',
+            'Target Contact ID',
             'Thank You Letter Date',
             'Transaction ID',
         );
