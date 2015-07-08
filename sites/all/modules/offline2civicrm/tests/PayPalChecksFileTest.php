@@ -37,6 +37,7 @@ class PayPalChecksFileTest extends BaseChecksFileTest {
             'contact_type' => 'Individual',
             'contribution_source' => 'USD 10.00',
             'country' => 'US',
+            'currency' => 'USD',
             'date' => 1359244800,
             'direct_mail_appeal' => 'MissionFish (PayPal)',
             'first_name' => 'Diz and',

@@ -29,11 +29,8 @@ class ForeignChecksFile extends ChecksFile {
     }
 
     protected function getRequiredData() {
-        return array(
+        return parent::getRequiredData() + array(
             'check_number',
-            'date',
-            'currency',
-            'gross',
         );
     }
 

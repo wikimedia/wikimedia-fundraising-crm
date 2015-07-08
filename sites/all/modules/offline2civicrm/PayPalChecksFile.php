@@ -19,10 +19,8 @@ class PayPalChecksFile extends ChecksFile {
     }
 
     protected function getRequiredData() {
-        return array(
-            'date',
+        return parent::getRequiredData() + array(
             'gift_source',
-            'gross',
             'payment_method',
             'restrictions',
         );
@@ -30,5 +28,6 @@ class PayPalChecksFile extends ChecksFile {
 
     protected function mungeMessage( &$msg ) {
         $msg['gateway'] = 'paypal';
+        $msg['currency'] = 'USD';
     }
 }
