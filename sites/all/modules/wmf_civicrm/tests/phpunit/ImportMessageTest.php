@@ -78,6 +78,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $gateway_txn_id = mt_rand();
         $check_number = (string) mt_rand();
 
+        $new_prefix = 'M' . mt_rand();
+
         return array(
             // Minimal contribution
             array(
@@ -146,6 +148,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                     'last_name' => 'Last',
                     'middle_name' => 'Middle',
                     'no_thank_you' => 'no forwarding address',
+                    'name_prefix' => $new_prefix,
+                    'name_suffix' => 'Sr.',
                     'payment_method' => 'check',
                     'stock_description' => 'Long-winded prolegemenon',
                     'thankyou_date' => '2012-04-01',
@@ -160,6 +164,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'is_opt_out' => '1',
                         'last_name' => 'Last',
                         'middle_name' => 'Middle',
+                        'prefix' => $new_prefix,
+                        'suffix' => 'Sr.',
                     ),
                     'contribution' => array(
                         'address_id' => '',
