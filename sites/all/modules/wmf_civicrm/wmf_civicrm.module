@@ -999,6 +999,22 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
     $contact_id = $contact_result['id'];
 
+    // Add phone number
+    if ( isset( $msg['phone'] ) ) {
+      try {
+        $phone_result = civicrm_api3( 'Phone', 'Create', array(
+          // XXX all the fields are nullable, should we set any others?
+          'contact_id' => $contact_id,
+          'phone' => $msg['phone'],
+        ));
+      } catch ( CiviCRM_API3_Exception $ex ) {
+        throw new WmfException(
+          "IMPORT_CONTACT",
+          "Failed to add phone for contact ID {$contact_id}: {$ex->getMessage()}"
+        );
+      }
+    }
+
     // Add groups to this contact.
     if ( $msg['contact_groups'] ) {
         // TODO: Use CRM_Contact_GroupContact::buildOptions in Civi 4.4, also
