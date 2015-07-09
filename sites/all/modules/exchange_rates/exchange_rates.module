@@ -156,7 +156,9 @@ function exchange_rate_convert($from_currency, $amount = 1, $timestamp = NULL) {
 }
 
 function exchange_rate_cache_key($currency, $timestamp) {
-    return "$currency-$timestamp";
+	// Only need one entry per currency per day
+	$rounded = floor( $timestamp / ( 24 * 60 * 60 ) );
+    return "$currency-$rounded";
 }
 
 function exchange_rate_cache_get($currency, $timestamp) {
