@@ -26,8 +26,7 @@ class AstroPayAuditProcessor extends BaseAuditProcessor {
 	}
 
 	protected function get_log_line_grep_string( $order_id ) {
-		# FIXME: escaping is getting silly
-		return "\"contribution_tracking_id\":\"\\?$order_id\"\\?";
+		return ":$order_id Redirecting for transaction:";
 	}
 
 	protected function parse_log_line( $logline ) {
@@ -123,8 +122,8 @@ class AstroPayAuditProcessor extends BaseAuditProcessor {
 	 * @return string|false the order_id, or false if we can't figure it out
 	 */
 	protected function get_order_id( $transaction ) {
-		if ( is_array( $transaction ) && array_key_exists( 'contribution_tracking_id', $transaction ) ) {
-			return $transaction['contribution_tracking_id'];
+		if ( is_array( $transaction ) && array_key_exists( 'log_id', $transaction ) ) {
+			return $transaction['log_id'];
 		}
 		return false;
 	}
