@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @group Import
+ * @group Offline2Civicrm
+ */
 class JpMorganFileTest extends BaseChecksFileTest {
     protected $epochtime;
     protected $strtime;

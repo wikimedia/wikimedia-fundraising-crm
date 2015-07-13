@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @group Import
+ * @group Pipeline
+ * @group WmfCivicrm
+ */
 class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     protected $contact_custom_mangle;
     protected $contribution_id;

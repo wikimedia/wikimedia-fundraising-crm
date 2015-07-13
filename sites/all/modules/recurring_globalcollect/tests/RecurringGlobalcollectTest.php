@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @group Globalcollect
+ */
 class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
     function setUp() {
         parent::setUp();

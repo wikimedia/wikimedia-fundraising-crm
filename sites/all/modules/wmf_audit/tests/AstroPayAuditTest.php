@@ -6,6 +6,7 @@ function astropay_audit_watchdog( $entry ) {
 
 /**
  * @group AstroPay
+ * @group WmfAudit
  */
 class AstroPayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 	static protected $messages;

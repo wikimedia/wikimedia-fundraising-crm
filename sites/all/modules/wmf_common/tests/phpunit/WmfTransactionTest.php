@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @group WmfCommon
+ */
 class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
     public function testParseUniqueId() {
         $transaction = WmfTransaction::from_unique_id( "RFD RECURRING GLOBALCOLLECT 1234 432" );

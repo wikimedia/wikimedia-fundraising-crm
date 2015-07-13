@@ -3,6 +3,8 @@ namespace wmf_communication;
 
 /**
  * Tests for CiviMail helper classes
+ * @group CiviMail
+ * @group WmfCommunication
  */
 class CiviMailTest extends CiviMailTestBase {
 

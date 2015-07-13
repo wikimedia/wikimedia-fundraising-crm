@@ -2,6 +2,9 @@
 
 use wmf_communication\TestMailer;
 
+/**
+ * @group LargeDonation
+ */
 class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
     function setUp() {
         parent::setUp();

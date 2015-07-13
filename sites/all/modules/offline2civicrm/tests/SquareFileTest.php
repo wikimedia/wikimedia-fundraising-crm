@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @group Import
+ * @group Offline2Civicrm
+ */
 class SquareFileTest extends BaseChecksFileTest {
     function setUp() {
         parent::setUp();

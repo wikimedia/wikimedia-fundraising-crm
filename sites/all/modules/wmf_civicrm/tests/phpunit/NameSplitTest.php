@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @group WmfCivicrm
+ */
 class NameSplitTest extends BaseWmfDrupalPhpUnitTestCase {
     public static function getInfo() {
         return array(

@@ -2,6 +2,9 @@
 
 use wmf_communication\TestMailer;
 
+/**
+ * @group WmfCampaigns
+ */
 class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
     function setUp() {
         parent::setUp();

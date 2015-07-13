@@ -1,6 +1,11 @@
 <?php
 
 require_once __DIR__ . "/includes/BaseChecksFileTest.php";
+
+/**
+ * @group Import
+ * @group Offline2Civicrm
+ */
 class ForeignChecksFileTest extends BaseChecksFileTest {
     function setUp() {
         parent::setUp();

@@ -4,6 +4,10 @@ function worldpay_audit_watchdog( $entry ) {
     WorldpayAuditTest::receiveLogline( $entry );
 }
 
+/**
+ * @group WmfAudit
+ * @group Worldpay
+ */
 class WorldpayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
     static protected $messages;
     static protected $loglines;

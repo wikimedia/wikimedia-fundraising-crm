@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @group Pipeline
+ * @group Queue2Civicrm
+ */
 class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     public static function getInfo() {
         return array(

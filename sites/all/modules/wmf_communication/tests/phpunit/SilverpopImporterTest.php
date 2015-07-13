@@ -2,6 +2,10 @@
 namespace wmf_communication;
 use \BaseWmfDrupalPhpUnitTestCase;
 
+/**
+ * @group CiviMail
+ * @group WmfCommunication
+ */
 class SilverpopImporterTest extends BaseWmfDrupalPhpUnitTestCase {
 	function testImport() {
 		$sftp = $this->getMockBuilder( 'Net_SFTP' )

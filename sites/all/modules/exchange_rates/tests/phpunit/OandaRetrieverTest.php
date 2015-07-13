@@ -5,6 +5,7 @@ use \BaseWmfDrupalPhpUnitTestCase;
 
 /**
  * Test OandaRetriever
+ * @group ExchangeRates
  */
 class OandaRetrieverTestCase extends BaseWmfDrupalPhpUnitTestCase {
 

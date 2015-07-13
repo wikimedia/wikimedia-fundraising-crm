@@ -3,6 +3,9 @@ namespace wmf_communication;
 
 use \BaseWmfDrupalPhpUnitTestCase;
 
+/**
+ * @group WmfCommunication
+ */
 class MediaWikiMessagesTest extends BaseWmfDrupalPhpUnitTestCase {
     function setUp() {
         parent::setUp();

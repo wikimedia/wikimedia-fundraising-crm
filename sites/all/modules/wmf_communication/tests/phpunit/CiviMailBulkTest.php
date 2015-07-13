@@ -9,6 +9,8 @@ use \CRM_Mailing_Event_BAO_Queue;
 use \CRM_Mailing_Event_BAO_Delivered;
 /**
  * Tests for CiviMail helper classes
+ * @group CiviMail
+ * @group WmfCommunication
  */
 class CiviMailBulkTest extends CiviMailTestBase {
 

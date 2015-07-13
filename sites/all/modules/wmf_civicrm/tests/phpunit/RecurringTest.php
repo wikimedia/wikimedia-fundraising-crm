@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @group Pipeline
+ * @group WmfCivicrm
+ */
 class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
     public static function getInfo() {
         return array(
