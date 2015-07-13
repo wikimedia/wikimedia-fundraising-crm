@@ -1,14 +1,12 @@
 <?php
 
-// FIXME: case.  use SmashPig\PaymentProviders\AstroPay\Audit\AstroPayAudit;
-use SmashPig\PaymentProviders\Astropay\Audit\AstropayAudit;
+use SmashPig\PaymentProviders\AstroPay\Audit\AstroPayAudit;
 
 class AstroPayAuditProcessor extends BaseAuditProcessor {
 	protected $name = 'astropay';
 
 	protected function get_audit_parser() {
-		# FIXME: "AstroPay" case
-		return new AstropayAudit();
+		return new AstroPayAudit();
 	}
 
 	protected function get_recon_file_date( $file ) {
@@ -108,6 +106,7 @@ class AstroPayAuditProcessor extends BaseAuditProcessor {
 			}
 		}
 
+		unset( $recon_data['log_id'] );
 		// Just port everything.
 		return array_merge( $recon_data, $normal );
 	}
