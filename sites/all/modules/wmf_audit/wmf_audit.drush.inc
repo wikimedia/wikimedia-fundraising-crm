@@ -13,9 +13,9 @@ function wmf_audit_drush_command() {
 
   $items['parse-audit'] = array(
     'description' =>
-      'Worldpay Audit tool: Parses reconciliation files and inserts any missing transactions into the message queues.',
+      'Audit parsing tool: Parses reconciliation files and inserts any missing transactions into the message queues.',
     'examples' => array(
-      'drush parse-audit worldpay' => '# Run the audit and rebuild job',
+      'drush parse-audit worldpay' => '# Run the audit for Worldpay and rebuild job',
     ),
     'arguments' => array(
       'gateway' => 'Gateway name to process',
@@ -48,7 +48,13 @@ function wmf_audit_drush_help($section) {
 /**
  * Fires the 'wmf_audit_main' method with the appropriate parameters
  */
-function drush_wmf_audit() {
+function drush_wmf_audit_parse_audit() {
+
+  $args = drush_get_arguments();
+  if ( count( $args ) !== 2 ) {
+    throw new WmfException( "{$args[0]} requires a gateway." );
+  }
+  $gateway = $args[1];
 
   $simple_opts = array(
     'test' => 'Running in test mode: No stomp messages will be sent',
@@ -59,29 +65,29 @@ function drush_wmf_audit() {
     'recon_complete_count' => 'Number past which we should consider a recon file to be "complete", and move it out of the working dir.'
   );
 
-  $args = array();
+  $options = array();
 
   //handle our defaults first...
-  $args['test'] = variable_get('wmf_audit_test_mode');
+  $options['test'] = variable_get('wmf_audit_test_mode');
   //now override with the command line settings
   foreach ($simple_opts as $key => $message) {
     if (drush_get_option($key)) {
       echo "$message\n";
-      $args[$key] = true;
+      $options[$key] = true;
     }
   }
 
   //now, params that come with values
   if (drush_get_option('charlimit')) {
     echo "Char limit of " . drush_get_option('charlimit') . " is in effect.\n";
-    $args['charlimit'] = drush_get_option('charlimit');
+    $options['charlimit'] = drush_get_option('charlimit');
   }
   //local default
-  $args['recon_complete_count'] = 0;
+  $options['recon_complete_count'] = 0;
   if (drush_get_option('recon_complete_count')) {
     echo "Moving recon files with less than " . drush_get_option('recon_complete_count') . " outstanding transactions.\n";
-    $args['recon_complete_count'] = drush_get_option('recon_complete_count');
+    $options['recon_complete_count'] = drush_get_option('recon_complete_count');
   }
 
-  wmf_audit_main( $gateway, $args );
+  wmf_audit_main( $gateway, $options );
 }
