@@ -32,7 +32,7 @@ function wmf_civicrm_drush_help( $section ) {
 function drush_wmf_civicrm_recalculate_contributions() {
 	$args = drush_get_arguments();
 	if ( count( $args ) !== 3 ) {
-		throw new WMFException( "{$args[0]} requires a start and an end date." );
+		throw new WmfException( "{$args[0]} requires a start and an end date." );
 	}
 	$start_string = $args[1];
 	$end_string = $args[2];

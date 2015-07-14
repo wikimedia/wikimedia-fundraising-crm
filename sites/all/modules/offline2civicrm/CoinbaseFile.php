@@ -32,10 +32,7 @@ class CoinbaseFile extends ChecksFile {
     }
 
     protected function getRequiredData() {
-        return array(
-            'date',
-            'gross',
-            'currency',
+        return parent::getRequiredData() + array(
             'gateway_txn_id',
         );
     }

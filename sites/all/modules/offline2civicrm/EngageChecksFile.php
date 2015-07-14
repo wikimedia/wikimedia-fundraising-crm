@@ -25,11 +25,9 @@ class EngageChecksFile extends ChecksFile {
     }
 
     function getRequiredData() {
-        return array(
+        return parent::getRequiredData() + array(
             'check_number',
-            'date',
             'gift_source',
-            'gross',
             'import_batch_number',
             'payment_method',
             'restrictions',

@@ -1,22 +1,26 @@
 <?php
 /**
  * @file wmf_audit.drush.inc
- * Parses reconciliation files from worldpay, and adds any missing data to civi.
+ * Parses reconciliation files and adds any missing data to civi.
  * @author Katie Horn <khorn@wikimedia.org>
  */
 
 /**
  * Implementation of hook_drush_command()
  */
-function worldpay_audit_drush_command() {
+function wmf_audit_drush_command() {
   $items = array();
 
-  $items['worldpay-audit'] = array(
+  $items['parse-audit'] = array(
     'description' =>
-      'Worldpay Audit tool: Parses worldpay reconciliation files and inserts any missing transactions into the message queues.',
+      'Worldpay Audit tool: Parses reconciliation files and inserts any missing transactions into the message queues.',
     'examples' => array(
-      'drush worldpay-audit' => '# Run the audit and rebuild job',
+      'drush parse-audit worldpay' => '# Run the audit and rebuild job',
     ),
+    'arguments' => array(
+      'gateway' => 'Gateway name to process',
+    ),
+    'required-arguments' => true,
     'options' => array(
       'run_all' => 'Batch search for all missing transactions across all available recon files, instead of just the top three',
       'test' => 'Test the audit and rebuild job, but do not generate stomp messages. No data will be changed.',
@@ -26,7 +30,6 @@ function worldpay_audit_drush_command() {
       'verbose' => 'Verbose output',
       'recon_complete_count' => 'Number past which we should consider a recon file to be "complete", and move it out of the working dir.',
     ),
-    'aliases' => array('wp_audit'),
   );
 
   return $items;
@@ -35,17 +38,17 @@ function worldpay_audit_drush_command() {
 /**
  * Implementation of hook_drush_help()
  */
-function worldpay_audit_drush_help($section) {
+function wmf_audit_drush_help($section) {
   switch ($section) {
-    case 'worldpay-audit':
-      return dt("Worldpay Audit tool: Parses worldpay reconciliation files and inserts any missing transactions into the message queues.");
+    case 'parse-audit':
+      return dt("Audit parsing tool: Parses reconciliation files and inserts any missing transactions into the message queues.");
   }
 }
 
 /**
  * Fires the 'wmf_audit_main' method with the appropriate parameters
  */
-function drush_worldpay_audit() {
+function drush_wmf_audit() {
 
   $simple_opts = array(
     'test' => 'Running in test mode: No stomp messages will be sent',
@@ -59,7 +62,7 @@ function drush_worldpay_audit() {
   $args = array();
 
   //handle our defaults first...
-  $args['test'] = variable_get('worldpay_audit_test_mode', WP_AUDIT_TEST_MODE);
+  $args['test'] = variable_get('wmf_audit_test_mode');
   //now override with the command line settings
   foreach ($simple_opts as $key => $message) {
     if (drush_get_option($key)) {
@@ -80,18 +83,5 @@ function drush_worldpay_audit() {
     $args['recon_complete_count'] = drush_get_option('recon_complete_count');
   }
 
-  module_invoke('wmf_audit', 'main', 'worldpay', $args);
-
-  $errors = drush_get_error_log();
-  if (!empty($errors)) {
-    echo "\n***ERRORS***";
-    foreach ($errors as $error => $msgarray) {
-      echo "\n$error: ";
-      foreach ($msgarray as $count => $message) {
-        echo "\n    $message";
-      }
-    }
-    echo "\n\n";
-    exit(drush_get_error());
-  }
+  wmf_audit_main( $gateway, $args );
 }

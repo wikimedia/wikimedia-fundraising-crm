@@ -7,3 +7,4 @@ dependencies[] = wmf_common
 dependencies[] = wmf_civicrm
 package = WMF Audit
 configure = admin/config/wmf_audit
+files[] = BaseAuditProcessor.php

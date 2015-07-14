@@ -19,11 +19,8 @@ class SquareFile extends ChecksFile {
     }
 
     protected function getRequiredData() {
-        return array(
-            'currency',
-            'date',
+        return parent::getRequiredData() + array(
             'gateway_txn_id',
-            'gross',
         );
     }
 
@@ -43,6 +40,8 @@ class SquareFile extends ChecksFile {
     }
 
     protected function parseRow ( $data ) {
+        // completed and refunded are the only rows that mean anything.
+        // the others as of now are pending, canceled, and deposited.
         if (! in_array($data['Status'], array('Completed', 'Refunded'))) {
             throw new IgnoredRowException;
         }
@@ -85,7 +84,10 @@ class SquareFile extends ChecksFile {
 
     protected function handleDuplicate( $duplicate ) {
         if ( $this->refundLastTransaction ) {
-            // square updates the existing row with the "Refunded" status and resends
+            // override the default behavior which is skip all duplicates.
+            // square sends refund rows with the same transaction ID as
+            // the parent contribution.  so in this case we still want to
+            // ignore the sent row but also insert a wmf approved refund.
             wmf_civicrm_mark_refund(
                 $duplicate[0]['id'],
                 'refund',

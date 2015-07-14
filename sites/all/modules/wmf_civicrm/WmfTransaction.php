@@ -50,9 +50,13 @@ class WmfTransaction {
     static function from_message( $msg ) {
         // stomp message, does not have a unique id yet
         $transaction = new WmfTransaction();
-        $transaction->gateway_txn_id = $msg['gateway_txn_id'];
+        if ( isset( $msg['gateway_refund_id'] ) ) {
+            $transaction->gateway_txn_id = $msg['gateway_refund_id'];
+        } else {
+            $transaction->gateway_txn_id = $msg['gateway_txn_id'];
+        }
         $transaction->gateway = $msg['gateway'];
-        $transaction->is_recurring = $msg['recurring'];
+        $transaction->is_recurring = !empty( $msg['recurring'] );
         return $transaction;
     }
 

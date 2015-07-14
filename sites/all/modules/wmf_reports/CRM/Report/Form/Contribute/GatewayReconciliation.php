@@ -10,14 +10,14 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
             'ADYEN' => 'Adyen',
             'AMAZON' => 'Amazon',
             'ARIZONALOCKBOX' => 'Arizona Lockbox',
-            'ASTROPAY' => 'Astropay',
+            'ASTROPAY' => 'AstroPay',
             'COINBASE' => 'Coinbase',
             'ENGAGE' => 'Engage',
             'GENERIC_IMPORT' => 'Generic Import',
             'GLOBALCOLLECT' => 'GlobalCollect',
             'JPMORGAN' => 'JP Morgan',
             'PAYPAL' => 'PayPal',
-            'WORLDPAY' => 'WorldPay',
+            'WORLDPAY' => 'Worldpay',
         );
 
         $this->_columns = array(
