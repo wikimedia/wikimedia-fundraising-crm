@@ -36,6 +36,9 @@ class PhoneImportTest extends BaseWmfDrupalPhpUnitTestCase {
         ) );
 
         $this->assertEquals( $phone, $api->values[0]->phone );
+        $this->assertEquals( 1, $api->values[0]->is_primary );
+        $this->assertEquals( wmf_civicrm_get_default_location_type_id(), $api->values[0]->location_type_id );
+        $this->assertEquals( CRM_Core_OptionGroup::getValue('phone_type', 'phone'), $api->values[0]->phone_type_id );
     }
 
 }

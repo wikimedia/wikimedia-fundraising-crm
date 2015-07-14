@@ -1005,7 +1005,10 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $phone_result = civicrm_api3( 'Phone', 'Create', array(
           // XXX all the fields are nullable, should we set any others?
           'contact_id' => $contact_id,
+          'location_type_id' => wmf_civicrm_get_default_location_type_id(),
           'phone' => $msg['phone'],
+          'phone_type_id' => CRM_Core_OptionGroup::getValue('phone_type', 'phone'),
+          'is_primary' => 1,
         ));
       } catch ( CiviCRM_API3_Exception $ex ) {
         throw new WmfException(
