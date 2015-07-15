@@ -54,9 +54,11 @@ class SquareFile extends ChecksFile {
         $msg['contribution_type'] = 'cash';
 
         $msg['gross'] = ltrim( $msg['gross'], '$' );
+        $msg['gross'] = preg_replace( '/,/', '', $msg['gross'] );
 
         if ( array_key_exists('net', $msg) ) {
             $msg['net'] = ltrim( $msg['net'], '$' );
+            $msg['net'] = preg_replace( '/,/', '', $msg['net'] );
         }
 
         list($msg['first_name'], $msg['last_name']) = wmf_civicrm_janky_split_name( $msg['full_name'] );
@@ -88,11 +90,21 @@ class SquareFile extends ChecksFile {
             // square sends refund rows with the same transaction ID as
             // the parent contribution.  so in this case we still want to
             // ignore the sent row but also insert a wmf approved refund.
-            wmf_civicrm_mark_refund(
-                $duplicate[0]['id'],
-                'refund',
-                true
-            );
+            try {
+                wmf_civicrm_mark_refund(
+                    $duplicate[0]['id'],
+                    'refund',
+                    true
+                );
+            } catch ( WmfException $ex ) {
+                // TODO DuplicateRowException?
+                if ( $ex->getCode() === WmfException::DUPLICATE_CONTRIBUTION ) {
+                    return true; // duplicate refund
+                } else {
+                    throw $ex;
+                }
+            }
+
             watchdog( 'offline2civicrm', 'Refunding contribution @id', array(
                 '@id' => $duplicate[0]['id'],
             ), WATCHDOG_INFO );
