@@ -956,8 +956,16 @@ abstract class BaseAuditProcessor {
 			return 'c';
 		}
 
+		if ( $record['payment_method'] === 'bt' ) {
+			return 't';
+		}
+
+		if ( $record['payment_method'] === 'cash' ) {
+			return 'h';
+		}
+
 		echo print_r( $record, true );
-		throw new Exception( __FUNCTION__ . " Not cc..." );
+		throw new Exception( __FUNCTION__ . " Not cc, bt, or cash..." );
 	}
 
 	/**

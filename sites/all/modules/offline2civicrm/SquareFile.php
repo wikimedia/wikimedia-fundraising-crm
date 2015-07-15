@@ -99,6 +99,7 @@ class SquareFile extends ChecksFile {
             } catch ( WmfException $ex ) {
                 // TODO DuplicateRowException?
                 if ( $ex->getCode() === WmfException::DUPLICATE_CONTRIBUTION ) {
+                    $this->refundLastTransaction = false;
                     return true; // duplicate refund
                 } else {
                     throw $ex;
