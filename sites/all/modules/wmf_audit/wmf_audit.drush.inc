@@ -51,10 +51,7 @@ function wmf_audit_drush_help($section) {
 function drush_wmf_audit_parse_audit() {
 
   $args = drush_get_arguments();
-  if ( count( $args ) !== 2 ) {
-    throw new WmfException( "{$args[0]} requires a gateway." );
-  }
-  $gateway = $args[1];
+  $gateway = $args[1]; // required-arguments should ensure this exists
 
   $simple_opts = array(
     'test' => 'Running in test mode: No stomp messages will be sent',

@@ -34,9 +34,9 @@ function wmf_audit_menu() {
  * @param array $options Runtime parameters
  */
 function wmf_audit_main( $gateway, $options ) {
-    $audit = module_hook_invoke( "{$gateway}_audit", 'create_processor', $options );
+    $audit = module_invoke( "{$gateway}_audit", 'create_processor', $options );
     if ( !$audit ) {
-	throw new Exception( "Gateway [$gateway] not found" );
+        throw new Exception( "Gateway [$gateway] not found" );
     }
     $audit->run();
 }
