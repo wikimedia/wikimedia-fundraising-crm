@@ -24,7 +24,8 @@ class DonationInterface {
             $wgGlobalCollectGatewayAccountInfo,
             $wgGlobalCollectGatewayURL,
             $wgGlobalCollectGatewayMerchantID,
-            $wgDonationInterfaceGatewayAdapters;
+            $wgDonationInterfaceGatewayAdapters,
+            $wgDonationInterfaceDebugLog;
 
         // Adapt Drupal configuration into MediaWiki globals.
         $wgGlobalCollectGatewayMerchantID = variable_get('recurring_globalcollect_merchant_id', 0);
@@ -42,6 +43,9 @@ class DonationInterface {
 
         $className = "{$type}Adapter";
         $wgDonationInterfaceGatewayAdapters = array( $className );
+
+        // send us all the messages and we'll sort 'em out
+        $wgDonationInterfaceDebugLog = true;
 
         $adapter = new $className( $adapterOptions );
         return $adapter;
