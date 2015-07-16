@@ -307,28 +307,28 @@ function recurring_globalcollect_charge( $contribution_recur_id, $options = arra
       'effort_id' => $subscription->processor_id + 1,
   ) );
 
-  $result = $adapter->do_transaction( 'Recurring_Charge' );
-  $communicationStatus = $result->getCommunicationStatus();
-  $errors = $result->getErrors();
+  $transactionResponse = $adapter->do_transaction( 'Recurring_Charge' );
+  $result = PaymentResult::fromResults(
+    $transactionResponse,
+    $adapter->getFinalStatus()
+  );
 
-  // If success, add a record to the contribution table and send a thank you email.
-  if ( $communicationStatus && empty( $errors ) ) {
-    // Mark this donation as successful, and reschedule it for next month
-    // This is done before anything else, otherwise any errors that occur while storing the contribution
-    // record in civi might cause this subscription to end up in a weird state and not recur correctly.
-    // If storing the donation in civi fails, that's not a big deal, we'll get the data eventually
-    // by reconciling the data we get from the payment processor.
-    _recurring_globalcollect_update_record_success( $contribution_recur_id );
-
-    $msg = recurring_globalcollect_create_message( $contribution_recur_id );
-
-    wmf_civicrm_contribution_message_import( $msg );
-  }
-  else
-  {
+  if ( $result->isFailed() || $result->getErrors() ) {
     _recurring_globalcollect_update_record_failure($contribution_recur_id);
     throw new WmfException( 'PAYMENT_FAILED', 'recurring charge failed', $result);
   }
+
+  // If success, add a record to the contribution table and send a thank you email.
+  // Mark this donation as successful, and reschedule it for next month
+  // This is done before anything else, otherwise any errors that occur while storing the contribution
+  // record in civi might cause this subscription to end up in a weird state and not recur correctly.
+  // If storing the donation in civi fails, that's not a big deal, we'll get the data eventually
+  // by reconciling the data we get from the payment processor.
+  _recurring_globalcollect_update_record_success( $contribution_recur_id );
+
+  $msg = recurring_globalcollect_create_message( $contribution_recur_id );
+
+  wmf_civicrm_contribution_message_import( $msg );
 }
 
 /**
