@@ -23,7 +23,8 @@ class DonationInterface {
             $wgDonationInterfacePriceCeiling,
             $wgGlobalCollectGatewayAccountInfo,
             $wgGlobalCollectGatewayURL,
-            $wgGlobalCollectGatewayMerchantID;
+            $wgGlobalCollectGatewayMerchantID,
+            $wgDonationInterfaceGatewayAdapters;
 
         // Adapt Drupal configuration into MediaWiki globals.
         $wgGlobalCollectGatewayMerchantID = variable_get('recurring_globalcollect_merchant_id', 0);
@@ -40,6 +41,8 @@ class DonationInterface {
         $wgDonationInterfacePriceCeiling = 10000.00;
 
         $className = "{$type}Adapter";
+        $wgDonationInterfaceGatewayAdapters = array( $className );
+
         $adapter = new $className( $adapterOptions );
         return $adapter;
     }
