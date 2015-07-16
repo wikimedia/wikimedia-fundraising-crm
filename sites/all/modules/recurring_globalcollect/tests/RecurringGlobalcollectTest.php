@@ -28,7 +28,7 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
             'installments' => 0,
             'processor_id' => 1,
             'currency' => 'USD',
-            'trxn_id' => "RECURRING TESTGATEWAY {$this->subscription_id}",
+            'trxn_id' => "RECURRING GLOBALCOLLECT {$this->subscription_id}",
         ) );
         $this->contribution_recur_id = $result['id'];
 
@@ -49,8 +49,7 @@ class RecurringGlobalcollectTest extends BaseWmfDrupalPhpUnitTestCase {
         // FIXME: don't make real API calls, rely on DI test fixture responses instead.
         $this->markTestSkipped( 'Makes API calls.' );
 
-        $result = recurring_globalcollect_charge( $this->contribution_recur_id );
-        $this->assertEquals( 'completed', $result['status'] );
+        recurring_globalcollect_charge( $this->contribution_recur_id );
 
         $result = civicrm_api3( 'Contribution', 'get', array(
             'contact_id' => $this->contact_id,
