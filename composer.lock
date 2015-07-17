@@ -379,7 +379,6 @@
                     "phpseclib/Crypt/Random.php"
                 ]
             },
-            "notification-url": "https://packagist.org/downloads/",
             "include-path": [
                 "phpseclib/"
             ],
@@ -429,6 +428,10 @@
                 "x.509",
                 "x509"
             ],
+            "support": {
+                "source": "https://github.com/phpseclib/phpseclib/tree/0.3.7",
+                "issues": "https://github.com/phpseclib/phpseclib/issues"
+            },
             "time": "2014-07-05 16:36:21"
         },
         {
@@ -690,7 +693,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "a4fc38c376a5d404aa45157c86b8d55cf47c48c3"
+                "reference": "80f1e488856d9c5ba9c5f8cc204e39691050bc56"
             },
             "require": {
                 "coderkungfu/php-queue": "dev-master",
@@ -718,7 +721,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2015-07-06 19:45:20"
+            "time": "2015-07-17 19:58:45"
         },
         {
             "name": "wikimedia/smash-pig",
