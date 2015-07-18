@@ -693,7 +693,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "80f1e488856d9c5ba9c5f8cc204e39691050bc56"
+                "reference": "899be810fa33ae02e09f606ca5669b6d6890b236"
             },
             "require": {
                 "coderkungfu/php-queue": "dev-master",
