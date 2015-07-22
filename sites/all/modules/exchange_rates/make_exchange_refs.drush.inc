@@ -7,7 +7,7 @@ use wmf_communication\Templating;
  */
 function make_exchange_refs_drush_command() {
     $items['make-exchange-refs'] = array(
-        'description' => 'Generate reference tables of the currency exchange rates, in multiple output formats.',
+        'description' => 'Generate CurrencyRates.php static exchange rate class.',
         'examples' => array( 'drush make-exchange-refs' ),
     );
     return $items;
@@ -26,35 +26,43 @@ function make_exchange_refs_drush_help( $section ) {
 function drush_make_exchange_refs() {
 
     $rates = module_invoke( 'exchange_rates', 'get_conversions' );
-    $dir = __DIR__ . "/generated/";
+    $dir = __DIR__ . '/generated/';
+	if ( !is_dir( $dir ) ) {
+		mkdir( $dir );
+	}
     file_put_contents(
-        $dir . "ExchangeRates.html",
-        exchange_rates_make_ref_content( 'html', $rates )
-    );
-    file_put_contents(
-        $dir . "ExchangeRates.php",
+        $dir . 'CurrencyRates.php',
         exchange_rates_make_ref_content( 'php', $rates )
     );
-    foreach ( $rates as $info ) {
-        list ( $currency, $rate ) = $info;
-        //TODO: a more compact template for this case
-        file_put_contents(
-            $dir . "ExchangeRates_{$currency}.html",
-            exchange_rates_make_ref_content( 'html', array( $info ) )
-        );
-    }
 }
 
 /* protected */
 function exchange_rates_make_ref_content( $format, $rates ) {
+	$inverse = array_map( 'exchange_rates_invert_and_round', $rates );
     $twig = Templating::twig_from_directory( __DIR__ . '/templates' );
+
+	$filename = "ref_source.{$format}.twig";
 
     $params = array(
         'generated_by' => basename( __FILE__ ) . ":templates/{$filename}",
-        'last_updated' => variable_get( 'exchange_rates_bank_update', 0 ),
-        'currency_rates' => $rates,
+        'last_updated' => date( 'Y-m-d', variable_get( 'exchange_rates_bank_update', 0 ) ),
+        'currency_rates' => $inverse,
     );
 
-    $filename = "ref_source.{$format}.twig";
     return $twig->render( $filename, $params );
+}
+function exchange_rates_invert_and_round( $rate ) {
+	$value_in_usd = $rate[1];
+	if ( $value_in_usd === 0 ) {
+		return $rate;
+	}
+	$units_in_one_dollar = 1.0 / $value_in_usd;
+	if ( $units_in_one_dollar > 10 ) {
+		$rate[1] = round( $units_in_one_dollar );
+	} else if ( $units_in_one_dollar > 1 ) {
+		$rate[1] = round( $units_in_one_dollar, 2 );
+	} else {
+		$rate[1] = $units_in_one_dollar;
+	}
+	return $rate;
 }
