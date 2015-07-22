@@ -170,6 +170,7 @@ abstract class ChecksFile {
                 case "Engage":
                 case "Engage Direct Mail":
                     $msg['gateway'] = "engage";
+                    $msg['contribution_type'] = "engage";
                     break;
 
                 case "Cash":
