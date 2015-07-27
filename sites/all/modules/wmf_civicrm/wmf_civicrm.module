@@ -2104,7 +2104,7 @@ FROM
 ) AS t
 LIMIT 0, 10
 EOS;
-    } else {
+    } else if ( !empty( $name ) ) {
         $query = <<<EOS
 SELECT DISTINCT(id), data, sort_name, email
 FROM
