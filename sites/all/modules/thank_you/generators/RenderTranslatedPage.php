@@ -204,8 +204,8 @@ $page_content = preg_replace( '/{%[^%]*endif[^%]*%}/sm', '{%endif%}', $page_cont
         $ts = null;
         // Grab the most recent publication event
         foreach ( $history as $review_event ) {
-            if ( $review_event['language'] === $lang ) {
-                if ( $review_event['new-state'] === 'published' ) {
+            if ( $review_event['params']['language'] === $lang ) {
+                if ( $review_event['params']['new-state'] === 'published' ) {
                     $ts = $review_event['timestamp'];
                     break;
                 }
