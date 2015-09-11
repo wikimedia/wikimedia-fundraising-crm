@@ -687,6 +687,12 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                 watchdog( 'wmf_civicrm', 'payment_method constraint violated: gateway Square, but method=@method ; gateway_txn_id=@id', array( '@method' => $msg['payment_method'], '@id' => $msg['gateway_txn_id'] ), WATCHDOG_DEBUG );
             }
             break;
+        case 'trilogy':
+            $payment_instrument = 'Trilogy';
+            if ( array_key_exists( 'payment_method', $msg ) and strtolower( $msg['payment_method'] ) !== 'trilogy' ) {
+                watchdog( 'wmf_civicrm', 'payment_method constraint violated: gateway Trilogy, but method=@method ; gateway_txn_id=@id', array( '@method' => $msg['payment_method'], '@id' => $msg['gateway_txn_id'] ), WATCHDOG_DEBUG );
+            }
+            break;
         }
     }
 
