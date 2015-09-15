@@ -5,25 +5,25 @@
 <p>Dear donor,</p>
 {%endif%}
 
-<p>Thank you for your invaluable gift of bringing knowledge to every human around the world.</p>
+<p>Thank you for your donation of {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} to the Wikimedia Foundation. The Wikimedia Foundation is the non-profit organization that supports Wikipedia and other free knowledge projects. Our mission is to build the most accessible and comprehensive source of free knowledge in the world.</p>
 
 <p>{% if "RecurringRestarted" in contribution_tags %} We recently resolved a small technical issue which paused some monthly recurring donations. We have reinstated your recurring donation, and it will process normally going forward. We will not charge you for the months that were skipped. Thank you for your patience and your support, and please feel free to email donate@wikimedia.org if you have any questions. {%endif%}</p>
 
 <p>{% if "UnrecordedCharge" in contribution_tags %} We recently resolved a technical issue which caused a small number of donors to not receive a confirmation of their donation. Please accept this email as a thank you for your donation on {{ receive_date }}. We truly appreciate your patience and your support, and please feel free to email donate@wikimedia.org if you have any questions. {%endif%}</p>
 
-<p>My name is Lila Tretikov, and I’m the Executive Director of the Wikimedia Foundation. Over the past year, gifts like yours powered our efforts to expand the encyclopedia in 287 languages and to make it more accessible all over the world. We strive most to impact those who would not have access to education otherwise. We bring knowledge to people like Akshaya Iyengar from Solapur, India. Growing up in this small textile manufacturing town, she used Wikipedia as her primary learning source. For students in these areas, where books are scarce but mobile Internet access exists, Wikipedia is instrumental. Akshaya went on to graduate from college in India and now works as a software engineer in the United States. She credits Wikipedia with powering half of her knowledge.</p>
+<p>We believe that knowledge is a fundamental human right. As humanity rushes into our digital future, we need open, accessible, public spaces to access knowledge online. Wikimedia is such a space. Wikipedia delivers free knowledge to people, by people, in hundreds of languages around our planet.</p>
 
-<p>This story is not unique. Our mission is lofty and presents great challenges. Most people who use Wikipedia are surprised to hear it is run by a non-profit organization and funded by your donations. Each year, just enough people donate to keep the sum of all human knowledge available for everyone. Thank you for making this mission possible.</p>
+<p>Over the course of a year, Wikipedia is edited and read by people on every continent, including Antarctica. Nearly half a billion people visit Wikipedia every month for everything from preserving cultural heritage, to improving cancer detection, to researching homework. They come to learn. They stay and discover.</p>
 
-<p>On behalf of nearly half a billion people who read Wikipedia, thousands of volunteer editors, and staff at the Foundation, I thank you for keeping Wikipedia online and ad-free this year.</p>
+<p>Everyone is a potential Wikipedian. If you don't find what you're looking for on Wikipedia, you can start <a class="external text" href="https://en.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">start creating it yourself</a>. The articles, words, pictures and data are created by a diverse community of people who volunteer to share their knowledge with the world.</p>
 
-<p>Thank you,<br/>
-Lila</p>
+<p>Every day, we ask ourselves how we can increase our impact, and ensure Wikipedia and its sister projects are even more accurate, rich, and accessible tomorrow than they are today. Your donation will help us get there.</p>
+
+<p>Thank you for keeping us growing and impacting lives another year.</p>
 
 <p>Lila Tretikov<br/>
 Executive Director,<br/>
-Wikimedia Foundation<br/>
-<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+Wikimedia Foundation<br/></p>
 
 <p>Many employers will match employee contributions: please check with your company to see if they have a <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">corporate matching gift program</a>.</p>
 
@@ -33,12 +33,4 @@ Wikimedia Foundation<br/>
 
 <p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit charitable corporation with 501(c)(3) tax exempt status in the United States. Our address is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703</p>
 
-<p>Opt out option:</p>
-
-<p>We'd like to keep you as a donor informed of our community activities and fundraisers. If you prefer however not to receive such emails from us, please click below and we'll take you off the list.</p>
-
-<div style="margin: 0 25px">
-  <p><a href="{{ unsubscribe_link | raw }}">Unsubscribe</a></p>
-</div>
-
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/en&oldid=10720380","name":"thank_you.en.html","revision":10720380}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/en&oldid=13642225","name":"thank_you.en.html","revision":13642225}TI_END -->

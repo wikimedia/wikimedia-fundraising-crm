@@ -2,28 +2,28 @@
 <p>Estimado/a {{ first_name }},</p>
 
 {% else %}
-<p>Estimado/a donante:</p>
+<p>Estimado/a donante,</p>
 {%endif%}
 
-<p>Gracias por tu inestimable aportación para diseminar conocimiento a todas las personas del mundo.</p>
+<p>Gracias por su donación de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a la Fundación Wikimedia. La Fundación Wikimedia es una organización sin ánimo de lucro que apoya a la Wikipedia y otros proyectos de información gratuita. Nuestro objetivo es construir en el mundo una fuente gratuita de información lo más accesible y exhaustiva posible.</p>
 
 <p>{% if "RecurringRestarted" in contribution_tags %} Hemos resuelto recientemente un pequeño problema técnico que interrumpió algunas donaciones mensuales recurrentes. Hemos restablecido tu donación periódica y de ahora en adelante se procesará normalmente. No realizaremos cargos adicionales por los meses ya pasados. Agradecemos tu paciencia y apoyo. Si tienes alguna pregunta puedes escribirnos a donate@wikimedia.org. {%endif%}</p>
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Recientemente hemos resuelto un problema técnico que impedía a algunos donantes recibir la confirmación de su donativo. Por favor, acepta este correo electrónico como agradecimiento por el donativo que has realizado el {{ receive_date }}. Agradecemos sinceramente tu paciencia y apoyo, y no dudes en escribir a donate@wikimedia.org si tienes cualquier pregunta. {%endif%}</p>
+<p>{% if "UnrecordedCharge" in contribution_tags %} Recientemente hemos resuelto un problema técnico que impedía a algunos donantes recibir la confirmación de su donativo. Por favor, acepta este correo electrónico como agradecimiento por el donativo que has realizado el $date. Agradecemos sinceramente tu paciencia y apoyo, y no dudes en escribir a donate@wikimedia.org si tienes cualquier pregunta. {%endif%}</p>
 
-<p>Me llamo Lila Tretikov, y soy la directora ejecutiva de la Fundación Wikimedia. Durante el año pasado, donaciones como las tuyas contribuyeron a nuestros esfuerzos para expandir la enciclopedia a 287 idiomas y hacerla más accesible en todo el mundo. Nuestra prioridad principal son las personas que no tienen otra forma de acceder a la educación. Brindamos conocimiento a personas como Akshaya Iyengar de Solapur, India. Mientras crecía en un pequeño pueblo dedicado a la manufactura textil, Wikipedia fue su fuente principal de aprendizaje. Wikipedia es esencial para los estudiantes de estas regiones, donde escasean los libros pero existe acceso móvil a Internet. Akshaya continuó sus estudios hasta obtener un título universitario en la India y actualmente trabaja como ingeniera de programación en los Estados Unidos. Ella asegura que la mitad de sus conocimientos proceden de Wikipedia.</p>
+<p>Creemos que el acceso a la información es un derecho humano fundamental. Al precipitarnos hacia nuestro futuro digital, necesitamos espacios abiertos, accesibles y públicos para acceder a la información online. Wikimedia es un espacio así. Wikipedia ofrece información gratuita a las personas, generada por las personas, en cientos de idiomas en el mundo.</p>
 
-<p>Esta experiencia no es la única. Nuestra misión es ambiciosa y presenta grandes desafíos. La mayoría de personas que utilizan Wikipedia se sorprenden al saber que está dirigida por una organización sin ánimo de lucro financiada mediante donaciones. Cada año suficientes personas hacen una donación para poner la totalidad del conocimiento humano a disposición de todos. Gracias por hacer posible esta misión.</p>
+<p>A lo largo de un año, millones de personas editan y leen Wikipedia en cada continente, incluida la Antártida. Casi quinientos millones de personas visitan Wikipedia cada mes para actividades que van desde la conservación del patrimonio cultural hasta mejorar la detección del cáncer o hacer los deberes. Vienen para aprender. Se quedan y descubren.</p>
 
-<p>En nombre de casi quinientos millones de personas que leen Wikipedia, de los miles de editores voluntarios y del personal de la Fundación, te doy las gracias por mantener a Wikipedia en línea y sin publicidad este año.</p>
+<p>Todos somos potenciales Wikipedistas. Si alguien no encuentra lo que busca en Wikipedia, puede <a rel="nofollow" class="external text" href="https:///es.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">empezar a crearlo él mismo</a>. Una comunidad muy variada de personas crea los artículos, palabras, imágenes y datos para compartir la información con el mundo.</p>
 
-<p>Gracias,<br/>
-Lila</p>
+<p>Todos los días nos preguntamos cómo aumentar nuestro impacto y garantizar que Wikipedia y sus proyectos afines sean aún más precisos, ricos y accesibles mañana de lo que lo son hoy. Su donación nos permitirá conseguirlo.</p>
+
+<p>Gracias por ayudarnos a crecer y seguir llegando a más personas durante otro año.</p>
 
 <p>Lila Tretikov<br/>
-Directora Ejecutiva,<br/>
-Fundación Wikimedia<br/>
-<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+Directora Ejecutiva<br/>
+Fundación Wikimedia<br/></p>
 
 <p>Muchas empresas igualarán la contribución de sus empleados: por favor, consulta con tu empresa para averiguar si tienen un <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">programa de donaciones corporativo</a>.</p>
 
@@ -31,14 +31,6 @@ Fundación Wikimedia<br/>
 
 {% if recurring %}<p> Este donativo forma parte de una suscripción periódica. La Fundación Wikimedia cargará mensualmente la misma cantidad hasta que nos indiques lo contrario. Si deseas cancelar tus aportaciones, lee estas <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">sencillas instrucciones de cancelación</a>. </p>{%endif%}
 
-<p>Esta carta puede servir de comprobante de tu donativo. No se ofrecieron mercancías, ni servicios íntegros ni parciales, a cambio de esta contribución. La Fundación Wikimedia, Inc. es una organización benéfica sin ánimo de lucro exenta de impuestos bajo el estatuto 501(c)(3) en los Estados Unidos. Nuestra dirección es 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Número de exención de impuestos en Estados Unidos: 20-0049703</p>
+<p>Esta carta puede servir como comprobante de su donación. En esta aportación no se han suministrado bienes ni servicios, en parte ni en su totalidad. La Fundación Wikimedia es una organización sin ánimo de lucro, con un estado 501(c)(3) de exención de impuestos en los Estados Unidos. Nuestra dirección es 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105 EE. UU. Número de exención fiscal en los EE. UU.: 20-0049703</p>
 
-<p>Opción para darse de baja:</p>
-
-<p>Como donante, nos gustaría mantenerte informado de nuestras actividades y campañas de recaudación de fondos. Sin embargo, si prefieres no recibir este tipo de mensajes, pulsa abajo y te excluiremos de la lista.</p>
-
-<div style="margin: 0 25px">
-  <p><a href="{{ unsubscribe_link | raw }}">Darse de baja</a></p>
-</div>
-
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/es&oldid=10919309","name":"thank_you.es.html","revision":10919309}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/es&oldid=13656201","name":"thank_you.es.html","revision":13656201}TI_END -->

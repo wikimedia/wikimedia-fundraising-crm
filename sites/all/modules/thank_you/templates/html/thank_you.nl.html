@@ -1,29 +1,29 @@
 {% if first_name and last_name %}
-<p>Geachte {{ first_name }},</p>
+<p>Beste {{ first_name }},</p>
 
 {% else %}
-<p>Geachte donateur,</p>
+<p>Beste donateur,</p>
 {%endif%}
 
-<p>Dank u voor uw onschatbare bijdrage, waarmee we mensen over de hele wereld van kennis kunnen blijven voorzien van kennis.</p>
+<p>Bedankt voor je donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} aan de Wikimedia Foundation. De Wikimedia Foundation is de non-profitorganisatie die Wikipedia and andere projecten rond vrije kennis ondersteunt. Het is onze missie om de meest toegankelijke en veelomvattende bron van vrije kennis ter wereld te bouwen.</p>
 
 <p>{% if "RecurringRestarted" in contribution_tags %} Kort geleden hebben we een klein technisch probleem opgelost waarbij een aantal maandelijkse donaties werden stopgezet. Uw periodieke donatie is inmiddels hervat. De maanden die overgeslagen zijn, innen we uw donatie niet. Bedankt voor uw geduld en uw steun. Als u nog vragen heeft, stuur dan gerust een e-mail naar donate@wikimedia.org. {%endif%}</p>
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Onlangs hebben we een technisch probleem opgelost dat ervoor zorgde dat een klein aantal donateurs geen bevestiging heeft gekregen voor hun donatie. Daarom willen we u vragen deze e-mail als dank te beschouwen voor uw donatie die op {{ receive_date }} is overgemaakt. We waarderen uw geduld en steun enorm, en mocht u nog vragen hebben dan kunt u gerust een e-mail sturen naar donate@wikimedia.org. {%endif%}</p>
+<p>{% if "UnrecordedCharge" in contribution_tags %} Onlangs hebben we een technisch probleem opgelost dat ervoor zorgde dat een klein aantal donateurs geen bevestiging heeft gekregen voor hun donatie. Daarom willen we u vragen deze e-mail als dank te beschouwen voor uw donatie die op $date is overgemaakt. We waarderen uw geduld en steun enorm, en mocht u nog vragen hebben dan kunt u gerust een e-mail sturen naar donate@wikimedia.org. {%endif%}</p>
 
-<p>Mijn naam is Lila Tretikov en ik ben Algemeen Directeur van de Wikimedia Foundation. Het afgelopen jaar hebben giften zoals die van u het ons mogelijk gemaakt de encyclopedie naar 287 talen uit te breiden en daarmee nog beter toegankelijk te maken voor de wereld. We proberen met name juist hen te bereiken die geen andere toegang tot onderwijs hebben. Wij dragen kennis over aan mensen als Akshaya Iyengar uit Solapur, India. Toen zij opgroeide in dit dorpje van textielarbeiders, was Wikipedia voor haar de belangrijkste bron van kennis. Voor studenten in regio's waar boeken schaars zijn, maar wel mobiel internet bestaat, is Wikipedia essentieel. Akshaya is uiteindelijk in India afgestudeerd en werkt nu als software-ontwikkelaar in de Verenigde Staten. Ze heeft bekend gemaakt dat de helft van de kennis die ze heeft opgedaan te danken is aan Wikipedia.</p>
+<p>We zijn ervan overtuigd dat kennis een fundamenteel mensenrecht is. Nu de mens met volle snelheid de digitale toekomst ingaat, is er nood aan open, toegankelijke en openbare plekken waar iedereen online toegang krijgt tot kennis. Wikimedia is zo'n plek. Wikipedia levert vrije kennis aan mensen, door mensen en in honderden talen over de hele wereld.</p>
 
-<p>Dit verhaal is niet uniek. Onze missie is nobel en stelt ons voor grote uitdagingen. De meeste mensen die Wikipedia gebruiken zijn verrast als zij horen dat het een organisatie is zonder winstoogmerk die wordt gefinancierd door uw donaties. Elk jaar doneren net voldoende mensen om het totaal van alle menselijke kennis toegankelijk te houden voor iedereen. Bedankt dat u deze missie mogelijk maakt.</p>
+<p>Elk jaar wordt Wikipedia door mensen van elk continent gelezen en bijgewerkt, zelfs op Antarctica. Bijna een half miljard mensen bezoeken Wikipedia elke maand voor uiteenlopende doeleinden, van het behoud van cultureel erfgoed tot het verbeteren van kankeropsporing en het opzoeken van informatie voor huiswerk. Ze komen om te leren. Ze blijven en ontdekken.</p>
 
-<p>In naam van bijna een half miljard mensen die Wikipedia raadplegen, duizenden vrijwillige redacteurs en de werknemers van de stichting, dank ik u voor het ook dit jaar gratis en zonder advertenties online houden van Wikipedia</p>
+<p>Iedereen is een potentiële Wikipediaan. En vind je op Wikipedia niet wat je zoekt, dan <a rel="nofollow" class="external text" href="https:///nl.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">creëer je het gewoon zelf</a>. De artikelen, woorden, afbeeldingen en gegevens worden gecreëerd door een gevarieerde groep mensen die hun kennis vrijwillig delen met de wereld.</p>
 
-<p>Dank u,<br/>
-Lila</p>
+<p>Elke dag vragen we ons af hoe we onze impact kunnen vergroten en kunnen zorgen dat Wikipedia en de zusterprojecten morgen nóg nauwkeuriger, waardevoller en toegankelijker zijn dan vandaag. Jouw donatie helpt ons daarbij.</p>
+
+<p>Dankzij jou kunnen we blijven groeien en het leven van velen weer een jaar lang positief beïnvloeden.</p>
 
 <p>Lila Tretikov<br/>
 Algemeen Directeur,<br/>
-Wikimedia Foundation<br/>
-<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+Wikimedia Foundation<br/></p>
 
 <p>Veel werkgevers verdubbelen de giften van werknemers: gelieve te verifiëren in uw bedrijf om te zien of ze een <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">giftenprogramma</a> hebben.</p>
 
@@ -31,14 +31,6 @@ Wikimedia Foundation<br/>
 
 {% if recurring %}<p> Deze schenking maakt deel uit van een periodieke afschrijving. Maandelijkse betalingen worden geïncasseerd door de Wikimedia Foundation tot u ons verzoekt deze te stoppen. Mocht u de periodieke afschrijvingen willen annuleren, zie dan onze <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">eenvoudige annuleringsinstructies</a>. </p>{%endif%}
 
-<p>Deze brief kan dienst doen als bewijs van uw donatie. Er zijn geen goederen of diensten, niet geheel noch gedeeltelijk, geleverd als tegenprestatie voor deze donatie. De Wikimedia Foundation, Inc. is een liefdadigheidsorganisatie zonder winstoogmerk met 501(c)(3)-uitzonderingsstatus voor de belasting in de Verenigde staten. Ons adres is 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703</p>
+<p>Je kunt deze brief gebruiken als bewijs van je donatie. Voor deze bijdrage zijn, geheel of gedeeltelijk, geen goederen of diensten geleverd. De Wikimedia Foundation, Inc. is een liefdadigheidsorganisatie zonder winstoogmerk met 501(c)(3)-status voor belastingvrijstelling in de Verenigde Staten. Ons adres is 149 New Montgomery, 3rd Floor, San Francisco, CA 94105, Verenigde Staten. Belastingnummer in de VS: 20-0049703</p>
 
-<p>Mogelijkheid tot uitschrijven:</p>
-
-<p>Als donateur zouden wij u graag op de hoogte willen houden van activiteiten binnen onze organisatie en onze fondsenwervingen. Mocht u deze emails liever niet van ons willen ontvangen, klikt u dan hieronder, dan verwijderen wij u van deze lijst.</p>
-
-<div style="margin: 0 25px">
-  <p><a href="{{ unsubscribe_link | raw }}">Uitschrijven</a></p>
-</div>
-
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/nl&oldid=10921870","name":"thank_you.nl.html","revision":10921870}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/nl&oldid=13656085","name":"thank_you.nl.html","revision":13656085}TI_END -->

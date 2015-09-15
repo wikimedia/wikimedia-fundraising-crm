@@ -5,40 +5,32 @@
 <p>Estimat/da donant,</p>
 {%endif%}
 
-<p>Gràcies pel teu incalculable regal de difondre el coneixement arreu del món.</p>
+<p>Gràcies per la seva donació de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a la Fundació Wikimedia. La Fundació Wikimedia és una organització sense ànim de lucre que dóna suport a la Viquipèdia i altres projectes de coneixement lliure. La nostra missió és construir la font de coneixement lliure més accessible i completa del món.</p>
 
 <p>{% if "RecurringRestarted" in contribution_tags %} Recentment hem resolt un petit problema tècnic que ha interromput algunes donacions mensuals. Hem restablert la teva donació periòdica, que seguirà el seu curs normal. No et carregarem els mesos que no se t'han cobrat. Moltes gràcies per la teva paciència i suport. Si us plau, no dubtis a contactar-nos a donate@wikimedia.org si tens qualsevol dubte. {%endif%}</p>
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Fa poc que hem resolt un petit problema tècnic que un petit nombre de persones no hagi rebut confirmació de la seva donació. Aquest correu és un agraïment per la vostra donació efectuada el {{ receive_date }}. Moltes gràcies per la vostra paciència i el vostre suport, i no dubteu en enviar un missatge a donate@wikimedia.org si teniu cap pregunta. {%endif%}</p>
+<p>{% if "UnrecordedCharge" in contribution_tags %} Fa poc que hem resolt un petit problema tècnic que un petit nombre de persones no hagi rebut confirmació de la seva donació. Aquest correu és un agraïment per la vostra donació efectuada el $date. Moltes gràcies per la vostra paciència i el vostre suport, i no dubteu en enviar un missatge a donate@wikimedia.org si teniu cap pregunta. {%endif%}</p>
 
-<p>Em dic Lila Tretikov, i sóc la directora executiva de la Fundació Wikimedia. Durant l'any passat, regals com el teu van potenciar els nostres esforços per a expandir l'enciclopèdia en 287 llengües i fer-la més accessible arreu del món. Ara mateix estem centrant els nostres esforços en ajudar aquells que, d'altra manera, no tindrien accés a una educació. Portem coneixement a gent com l'Akshaya Iyengar de Solapur, Índia. Durant la seva infantesa en una petita població vinculada a la indústria tèxtil, feia servir la Viquipèdia com la seva font d'aprenentatge. Per als estudiants d'aquestes àrees, on els llibres són escassos però l'accés a Internet existeix, la Viquipèdia és decisiva. L'Akshaya es va graduar a la universitat a l'Índia i ara treballa com a enginyera informàtica als Estats Units. Ella atribueix la meitat del seu coneixement a Wikipedia.</p>
+<p>Creiem que el coneixement és un dret humà fonamental. Com la humanitat es llança al nostre futur digital, necessitem espais oberts, accessibles i públics per accedir al coneixement en línia. Això és el que proveeix Wikimedia. La Viquipèdia ofereix coneixement lliure a la gent, fet per la gent, en centenars d'idiomes a tot el nostre planeta.</p>
 
-<p>Aquesta història no és l'única. La nostra missió és plena de reptes. La majoria de la gent que utilitza la Viquipèdia es sorprèn en saber que està dirigida per una organització sense ànim de lucre i finançada per les vostres donacions. Cada any, hi ha suficients persones que donen per poder mantenir la suma de tot el coneixement humà disponible per a tothom. Gràcies per fer possible aquesta missió.</p>
+<p>Durant tot l’any, gent de tots els continents, inclosa l'Antàrtida, edita i llegeix la Viquipèdia. Gairebé cinc cents milions de persones visiten Wikipedia tots els mesos per a qualsevol cosa, des de la preservació del patrimoni cultural, a la millora de la detecció del càncer, recerca per fer els deures. Vénen a aprendre. Es queden i descobreixen.</p>
 
-<p>En nom dels gairebé cinc-cents milions de persones que llegeixen la Viquipèdia, milers d'editors voluntaris i el personal de la Fundació, et dono les gràcies per mantenir la Viquipèdia en línia i sense publicitat un any més.</p>
+<p>Tothom és un potencial viquipedista. Si no troba el que està buscant a la Wikipedia, vostè mateix pot començar a <a rel="nofollow" class="external text" href="https:///ca.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">crear-ho.</a> Els articles, paraules, imatges i dades són creats per una comunitat diversa de persones que treballen com a voluntaris per compartir els seus coneixements amb el món.</p>
 
-<p>Moltes gràcies,<br/>
-Lila</p>
+<p>Cada dia ens preguntem com podem augmentar el nostre impacte i assegurar-nos de que Viquipèdia i els altres projectes germans siguin demà encara més precisos, rics i accessibles del que ho són avui. La seva donació ens ajudarà a reeixir-ne.</p>
+
+<p>Gràcies per permetre'ns continuar creixent i impactant vides un any més.</p>
 
 <p>Lila Tretikov<br/>
-Directora executiva,<br/>
-Fundació Wikimedia<br/>
-<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+Directora Executiva,<br/>
+Fundació Wikimedia<br/></p>
 
 <p>Moltes empreses doblen la donació que fan els seus treballadors: per favor, comprova si la teva empresa té <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">un programa similar</a>.</p>
 
 <p>Per a la vostra informació: La vostra donació, numero {{ transaction_id }} amb data {{ receive_date }} va ser de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Aquesta donació forma part d'una donació periòdica. Cada mes es realitzarà un cobrament per part de la Fundació Wikimedia fins que ens avisi. Si volgués cancel·lar la subscripció, consulteu les nostres <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instruccions de cancel·lació simple</a>. </p>{%endif%}
+{% if recurring %}<p> Aquesta donació forma part d'una donació periòdica. Cada mes es realitzarà un cobrament per part de la Fundació Wikimedia fins que ens avisi. Si volgués cancel·lar la subscripció, consulteu les nostres <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instruccions de cancel·lació simple</a> </p>{%endif%}
 
 <p>Aquesta carta serveix de rebut de la donació. Aquesta donació no implica, en cap cas, fins lucratius. La Wikimedia Foundation, Inc. és una organització sense ànim de lucre amb l'exemció d'impostos 501(c)(3) al Estats Units. La nostra adreça és 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Número d'exempció d'impostos: 20-0049703</p>
 
-<p>Opció per a donar-se de baixa:</p>
-
-<p>Com a donant, ens agradaria mantenir-te informat de les activitats que desenvolupa la comunitat de voluntaris i de les campanyes de recaptació de fons. Si t'estimes més no rebre aquest tipus de correus, per favor, prem a sota i et traurem de la llista.</p>
-
-<div style="margin: 0 25px">
-  <p><a href="{{ unsubscribe_link | raw }}">donar-se de baixa</a></p>
-</div>
-
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/ca&oldid=10951221","name":"thank_you.ca.html","revision":10951221}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/ca&oldid=13656030","name":"thank_you.ca.html","revision":13656030}TI_END -->

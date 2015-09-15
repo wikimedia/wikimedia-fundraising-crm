@@ -1,44 +1,36 @@
 {% if first_name and last_name %}
-<p>Kära {{ first_name }},</p>
+<p>Hej {{ first_name }},</p>
 
 {% else %}
 <p>Kära bidragsgivare,</p>
 {%endif%}
 
-<p>Tack för din gåva som bidrar till att vi tillsammans kan fortsätta sprida kunskap till alla människor världen över.</p>
+<p>Tack för ditt bidrag på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} till Wikimedia Foundation. Wikimedia Foundation är en ideell organisation som stödjer Wikipedia och andra projekt med inriktning på fri kunskap. Vårt mål är att bygga den mest tillgängliga och omfattande källan av fri kunskap i hela världen.</p>
 
 <p>{% if "RecurringRestarted" in contribution_tags %} Vi löste nyligen ett mindre tekniskt problem i vårt datasystem som stoppade vissa månadsvisa återkommande donationer. Vi har återställt dina månadsvisa bidrag, så att de förs över som vanligt igen. Du kommer inte att debiteras för de månader som uteblev. Vi tackar dig för ditt tålamod och stöd. Om du har några frågor är du välkommen att mejla oss på donate@wikimedia.org. {%endif%}</p>
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Vi löste nyligen ett mindre tekniskt problem vilket orsakade att några månatliga bidragsgivare inte fick någon kvittens. Detta email är en bekräftelse på det bidrag du gav den {{ receive_date }}. Vi tackar dig för ditt tålamod och stöd. Om du har några frågor är du välkommen att kontakta oss via donate@wikimedia.org. {%endif%}</p>
+<p>{% if "UnrecordedCharge" in contribution_tags %} Vi löste nyligen ett mindre tekniskt problem vilket orsakade att några månatliga bidragsgivare inte fick någon kvittens. Detta email är en bekräftelse på det bidrag du gav den $date. Vi tackar dig för ditt tålamod och stöd. Om du har några frågor är du välkommen att kontakta oss via donate@wikimedia.org. {%endif%}</p>
 
-<p>Mitt namn är Lila Tretikov. Jag är verkställande direktör för Wikimediastiftelsen. Under det senaste året har gåvor som din möjliggjort vårt arbete med att utöka uppslagsverket till 287 språk och att göra det mer tillgängligt världen över. Vi strävar främst efter att nå de som annars inte skulle ha tillgång till utbildning. Vi förmedlar kunskap till personer som Akshaya Iyengar från staden Solapur i Indien. Under sin uppväxt i den lilla textilstaden var Wikipedia hennes främsta källa till kunskap. För studenter i dessa områden, där böcker är svårfunna men mobilt bredband finns, är Wikipedia mycket viktigt. Akshaya fortsatte med att ta examen från college i Indien, och arbetar nu som programvaruutvecklare i USA. Hon tackar Wikipedia för att ha bidragit till halva hennes kunskap.</p>
+<p>Vi tror att kunskap är en fundamental mänsklig rättighet. När mänskligheten rusar in i en digital framtid så behöver vi också öppna, tillgängliga och offentliga platser på nätet där vi kan inhämta kunskap. Wikimedia är en sådan plats. Wikipedia levererar fri kunskap, kunskap som skapas av individer över hela världen, på hundratals språk.</p>
 
-<p>Denna historia är inte unik. Vårt uppdrag är stort och erbjuder svåra utmaningar. De flesta som använder Wikipedia blir förvånade när de får veta att det drivs av en ideell organisation som försörjs genom donationer såsom din. Varje år bestämmer sig precis tillräckligt många att bidra för att säkerställa att mänsklighetens samlade kunskap är fortsatt fritt tillgänglig för alla. Tack för att du gör det möjligt att uppfylla detta åtagande.</p>
+<p>Under loppet av ett år så redigeras och läses Wikipedia av människor på varje kontinent, inklusive Antarktis. Nästan en halv miljard människor besöker Wikipedia varje månad med olika syften, alltifrån att bevara kulturellt arv till att förbättra cancerdetektion, eller söka efter information för skolarbeten. De kommer för att lära sig något nytt. De stannar kvar och upptäcker.</p>
 
-<p>Å nästan en halv miljard Wikipedialäsares, tusentals skribenters och stiftelseanställdas vägnar, tackar jag dig för att du håller Wikipedia online och annonsfritt i år.</p>
+<p>Varje enskild person är en potentiell Wikipedian. Om du inte finner det du letar efter på Wikipedia så kan du börja med att <a rel="nofollow" class="external text" href="https:///sv.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">skapa det själv</a>. Artiklarna, orden, bilderna och informationen skapas av en blandad grupp av människor som frivilligt delar med sig av sin kunskap till omvärlden.</p>
 
-<p>Tack,<br/>
-Lila</p>
+<p>Dagligen frågar vi oss själva om vad vi kan göra för att nå våra mål och försäkra oss om att Wikipedia, samt andra relaterade projekt, är ännu mer exakta, kunskapsrika, och tillgängliga imorgon än vad de är idag. Ditt bidrag kommer hjälpa oss att nå dessa mål.</p>
+
+<p>Tack för att du hjälper oss att växa och berika liv ännu ett år.</p>
 
 <p>Lila Tretikov<br/>
 Verkställande direktör,<br/>
-Wikimediastiftelsen<br/>
-<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+Wikimedia Foundation<br/></p>
 
-<p>Många arbetsgivare har program där arbetsgivaren förbinder sig att donera motsvarande summa som du själv donerat: Hör gärna efter med din arbetsgivare om ni har <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">ett sådant program</a> på din arbetsplats.</p>
+<p>Många arbetsgivare har program där arbetsgivaren förbinder sig att donera motsvarande summa som du själv donerat. Hör gärna efter med din arbetsgivare om ni har <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">ett sådant program</a> på din arbetsplats.</p>
 
 <p>För din bokföring: Din gåva, med nummer {{ transaction_id }}, den {{ receive_date }} var {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Du har valt att skänka pengar regelbundet. Månatliga överföringar till Wikimedia Foundation kommer att ske till dess du meddelar oss att de ska upphöra. Om du vill sluta skänka pengar finns <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">enkla instruktioner för att avsluta överföringarna</a>. </p>{%endif%}
+{% if recurring %}<p> Du har valt att skänka pengar regelbundet. Månatliga överföringar till Wikimedia Foundation kommer att ske till dess du meddelar oss att de ska upphöra. Om du vill sluta skänka pengar läs våra <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">enkla instruktioner för att avsluta överföringarna</a>. </p>{%endif%}
 
-<p>Detta brev kan utgöra kvitto för din donation. Inga varor eller tjänster har bytts, helt eller delvis, mot denna betalning. Wikimedia Foundation, Inc. är en ideell, skattebefriad organisation enligt amerikansk taxeringslag 501(c)(3). Vår adress är 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Amerikanskt skattefrihetsnummer: 20-0049703.</p>
+<p>Detta brev är ett kvitto på ditt bidrag. Inga varor eller tjänster har bytts, helt eller delvis, mot denna betalning. Wikimedia Foundation, Inc. är en ideell, skattebefriad organisation enligt amerikansk taxeringslag 501(c)(3). Vår adress är 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Amerikanskt skattefrihetsnummer: 20-0049703.</p>
 
-<p>Jag vill inte ha fler brev:</p>
-
-<p>Vi vill gärna hålla dig som skänkt pengar informerad om de aktiviteter som vår gemenskap ordnar och om våra insamlingar. Om du föredrar att inte mottaga sådana e-brev från oss, klicka nedan så tar vi bort dig från listan.</p>
-
-<div style="margin: 0 25px">
-  <p><a href="{{ unsubscribe_link | raw }}">Avregistrera</a></p>
-</div>
-
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/sv&oldid=11280705","name":"thank_you.sv.html","revision":11280705}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/sv&oldid=13656205","name":"thank_you.sv.html","revision":13656205}TI_END -->
