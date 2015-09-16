@@ -20,5 +20,6 @@ files[] = IgnoredRowException.php
 files[] = JpMorganFile.php
 files[] = PayPalChecksFile.php
 files[] = SquareFile.php
+files[] = TrilogyFile.php
 files[] = WmfImportFile.php
 files[] = WmfOrgImportFile.php

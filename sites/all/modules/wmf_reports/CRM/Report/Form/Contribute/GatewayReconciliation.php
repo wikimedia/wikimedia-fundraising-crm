@@ -18,6 +18,7 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
             'JPMORGAN' => 'JP Morgan',
             'PAYPAL' => 'PayPal',
             'SQUARE' => 'Square',
+            'TRILOGY' => 'Trilogy',
             'WORLDPAY' => 'Worldpay',
         );
 

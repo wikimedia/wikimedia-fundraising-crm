@@ -38,6 +38,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7031();
     wmf_civicrm_update_7032();
     wmf_civicrm_update_7033();
+    wmf_civicrm_update_7034();
 }
 
 /**
@@ -1437,5 +1438,14 @@ function wmf_civicrm_update_7032() {
 function wmf_civicrm_update_7033() {
     wmf_civicrm_bootstrap_civi();
     wmf_civicrm_create_option_values( 'payment_instrument', array('Square Cash') );
+    return array();
+}
+
+/**
+ * Add "Trilogy" payment instrument.
+ */
+function wmf_civicrm_update_7034() {
+    wmf_civicrm_bootstrap_civi();
+    wmf_civicrm_create_option_values( 'payment_instrument', array('Trilogy') );
     return array();
 }
