@@ -5,39 +5,32 @@
 <p>Kære bidragsyder,</p>
 {%endif%}
 
-<p>Tak for Deres uvurderlige bidrag til gøre viden tilgængelig for alle mennesker i verden.</p>
+<p>Tak for din donering på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} til Wikimedia Foundation. Wikimedia Foundation er den nonprofit organisation som støtter Wikipedia og andre gratis vidensprojekter. Vores mission er at opbygge den mest tilgængelige og omfattende kilde med gratis viden i hele verden.</p>
 
-<p>{% if "RecurringRestarted" in contribution_tags %} Vi har for nylig løst et lille teknisk problem, der standsede nogle månedligt tilbagevendende donationer. Vi har genstartet Deres tilbagevendende donation, og den vil forløbe normalt fremover. Vi opkræver ikke for de måneder, der er blevet sprunget over. Tak for Deres tålmodighed og støtte. Skriv endelig til donate@wikimedia.org, hvis De har spørgsmål. {%endif%}</p>
+<p>{% if "RecurringRestarted" in contribution_tags %} Vi har for nylig løst et lille teknisk problem, der standsede nogle månedligt tilbagevendende donationer. Vi har genstartet din tilbagevendende donation, og den vil forløbe normalt fremover. Vi opkræver ikke for de måneder, der er blevet sprunget over. Tak for din tålmodighed og støtte. Skriv endelig til donate@wikimedia.org, hvis du har spørgsmål. {%endif%}</p>
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Vi har for nylig rettet en mindre teknisk fejl, der betød, at en mindre gruppe af donorer ikke modtog en kvittering for deres bidrag. Denne email er derfor en tak til Dem for Deres donation fra {{ receive_date }}. Vi takker for Deres tålmodighed og støtte, og husk at De altid er altid velkommen til at emaile donate@wikimedia.org, hvis De har nogen spørgsmål. {%endif%}</p>
+<p>{% if "UnrecordedCharge" in contribution_tags %} Vi har for nylig rettet en mindre teknisk fejl, der betød, at en mindre gruppe af donorer ikke modtog en kvittering for deres bidrag. Denne email er derfor en tak til dig for din donation fra $date. Vi takker for din tålmodighed og støtte, og husk at du altid er altid velkommen til at emaile donate@wikimedia.org, hvis du har nogen spørgsmål. {%endif%}</p>
 
-<p>Mit navn er Lila Tretikov, og jeg er Wikimedia Foundations administrerende direktør. I løbet af det sidste års tid, har gaver som din drevet vores arbejde på at udvide encyklopædien på 287 sprog, og på at gøre den tilgængelig over hele verden. Vi stræber især efter at berøre dem, der ellers ikke har adgang til uddannelse. Vi leverer viden til folk som Akshaya Iyengar fra Solapur i Indien. Hun voksede op i en lille tekstilproducerende by, og benyttede Wikipedia som sin primære kilde til læring. For studerende i sådanne områder, hvor bøger er en sjældenhed, men mobil internetadgang findes, er Wikipedia afgørende. Akshaya endte med at få en universitetsuddannelse i Indien og arbejder nu som softwareudvikler i USA. Hun nævner Wikipedia som kilde til halvdelen af den viden hun har tilegnet sig.</p>
+<p>Vi tror på at viden er en grundlæggende menneskeret. Mens vi som menneskehed haster sig ind i vores digitale fremtid, har vi brug for åbne, tilgængelige, offentlige rum til at få adgang til viden online. Wikimedia er et sådant rum. Wikipedia leverer gratis viden til mennesker, via mennesker, i hundreder af sprog rundt på hele jordkloden.</p>
 
-<p>Dette er ikke et enkeltstående tilfælde. Vores mission er ambitiøs og giver store udfordringer. De fleste af Wikipedias brugere bliver overraskede over at høre, at Wikipedia drives af en non-profitorganisation og finansieres af brugeres donationer. Hvert år bidrager lige nøjagtigt nok personer til, at summen af al menneskelig viden kan forblive tilgængelig for alle og enhver. Tak for at muliggøre vores mission.</p>
+<p>Gennem en periode på et år, er Wikipedia redigeret og læst af mennesker på hver eneste kontinent, inklusiv Antarktis. Næsten en halv milliard mennesker besøger Wikipedia hver måned for alting fra bevaring af kulturarv til forbedring af kræftgenkendelse og undersøgning for lektiearbejde. De kommer der for at lære. De bliver og opdager.</p>
 
-<p>På vegne af en halv milliard mennesker som læser Wikipedia, tusinder af frivillige redaktører og en stab af ansatte hos Wikimedia Foundation, takker jeg Dem for at holde Wikipedia online og reklamefri igen i år.</p>
+<p>Enhver er en potentiel Wikipedian. Hvis du ikke finder det som du leder efter på Wikipedia, <a rel="nofollow" class="external text" href="https:///da.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">kan du begynde at skabe det selv</a>. Artiklerne, ordene, billederne og dataene er skabt af diverse fælleskaber af mennesker som frivilligt deler deres viden med verden.</p>
 
-<p>Tak,<br/>
-Lila</p>
+<p>Hver dag spørger vi os selv, hvordan vi kan forøge vores indflydelse og sikre, at Wikipedia og søsterprojekterne kan blive endnu mere præcise, rige og tilgængelige i morgen end de er i dag. Din donering vil hjælpe os til at nå derhen.</p>
+
+<p>Vi takker dig for at bevare os i vækst og påvirkning af menneskeliv i endnu et år.</p>
 
 <p>Lila Tretikov<br/>
-Adminstrerende Direktør,<br/>
-Wikimedia Foundation<br/>
-<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+Adminstrerende direktør,<br/>
+Wikimedia Foundation<br/></p>
 
-<p>Til Deres regnskab: Dit bidrag, med nummer {{ transaction_id }}, den {{ receive_date }} var på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Mange arbejdsgivere matcher ansattes donationer. Prøv at tjekke om din arbejdsgiver har et <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">match gaveprogram.</a></p>
 
-{% if recurring %}<p> Denne donation er en del af en månedlig betaling. Månedlige bidrag vil blive trukket af Wikimedia Foundation indtil De giver os besked om at de skal ophøre. Ønsker De at betalingerne skal ophøre, så se vores <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">vejledning i hvordan man let standser betalingerne</a>. </p>{%endif%}
+<p>Til dit regnskab: Dit bidrag, med nummer {{ transaction_id }}, den {{ receive_date }} var på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-<p>Dette brev kan anvendes som kvittering for Deres bidrag. Ingen varer eller tjenesteydelser blev leveret, hverken helt eller delvist, som følge af dette bidrag. Wikimedia Foundation, Inc., er en velgørende non-profitorganisation med 501(c)(3) skattefritagelsesstatus i USA. Vores adresse er 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105, USA. Skattefritagelsesnummer i USA: 20-0049703</p>
+{% if recurring %}<p> Denne donation er en del af en månedlig betaling. Månedlige bidrag vil blive trukket af Wikimedia Foundation, indtil du giver os besked om, at de skal ophøre. Ønsker du, at betalingerne skal ophøre, så se vores <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">vejledning i, hvordan du let standser betalingerne</a>. </p>{%endif%}
 
-<div style="border: 1px solid black; padding:0 10px 5px 10px;">
-  <p>Mulighed for at melde fra:</p>
-  <p><br/>
-Som bidragsyder vil vi gerne holde Dem informeret om vores fællesskabsaktiviteter og pengeindsamlinger. Hvis De foretrækker ikke at modtage sådanne mails fra os, så klik venligst nedenfor for at blive fjernet fra listen.</p>
-  <div style="margin: 0 25px">
-    <p><a href="{{ unsubscribe_link | raw }}">Meld fra</a></p>
-  </div>
-</div>
+<p>Dette brev kan anvendes som kvittering for dit bidrag. Ingen varer eller tjenesteydelser blev leveret, hverken helt eller delvist, som følge af dette bidrag. Wikimedia Foundation, Inc., er en velgørende non-profitorganisation med 501(c)(3) skattefritagelsesstatus i USA. Vores adresse er 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105, USA. Skattefritagelsesnummer i USA: 20-0049703</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/da&oldid=9894191","name":"thank_you.da.html","revision":9894191}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/da&oldid=13656047","name":"thank_you.da.html","revision":13656047}TI_END -->
