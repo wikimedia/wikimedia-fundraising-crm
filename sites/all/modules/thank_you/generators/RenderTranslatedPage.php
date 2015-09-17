@@ -97,7 +97,7 @@ $page_content = preg_replace( '/{%[^%]*endif[^%]*%}/sm', '{%endif%}', $page_cont
 	 * @returns string Content with revision comment appended
 	 */
 	protected function add_template_info_comment( $page_content, $template_info ) {
-		$info_json = json_encode( $template_info );
+		$info_json = htmlentities( json_encode( $template_info ), ENT_NOQUOTES | ENT_HTML401 );
 		$comment = "\n\n<!-- TI_BEGIN{$info_json}TI_END -->";
 		$comment = str_replace( '\/', '/', $comment );
 		return $page_content . $comment;
