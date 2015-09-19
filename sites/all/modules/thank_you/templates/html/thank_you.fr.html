@@ -1,44 +1,36 @@
 {% if first_name and last_name %}
-<p>Cher/chère {{ first_name }},</p>
+<p>Chère/Cher {{ first_name }},</p>
 
 {% else %}
 <p>Cher donateur, chère donatrice,</p>
 {%endif%}
 
-<p>Merci pour l’inestimable don que vous faites en apportant la connaissance à chaque être humain, partout dans le monde.</p>
+<p>Nous vous remercions pour votre don de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} à la Wikimedia Foundation. La Wikimedia Foundation est une organisation à but non lucratif qui soutient Wikipédia et d’autres projets de connaissance libre. Notre mission est d’élaborer la source la plus accessible et compréhensible de connaissance libre au monde.</p>
 
 <p>{% if "RecurringRestarted" in contribution_tags %} Nous avons récemment résolu un petit problème technique qui interrompait certains dons mensuels. Nous avons rétabli votre don mensuel, et il continuera désormais normalement. Nous ne vous facturerons pas les mois qui ont été omis. Nous vous remercions de votre patience et de votre soutien, et nous vous prions de ne pas hésiter à contacter donate@wikimedia.org si vous avez une quelconque question. {%endif%}</p>
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Nous avons récemment résolu un problème technique ayant entraîné l’absence de confirmation de don pour un nombre restreint de donateurs. Veuillez accepter ce courriel en remerciement pour votre don du {{ receive_date }}. Nous apprécions votre patience et votre soutien et n’hésitez pas à nous écrire à donate@wikimedia.org si vous avez des questions. {%endif%}</p>
+<p>{% if "UnrecordedCharge" in contribution_tags %} Nous avons récemment résolu un problème technique ayant entraîné l’absence de confirmation de don pour un nombre restreint de donateurs. Veuillez accepter ce courriel en remerciement pour votre don du $date. Nous apprécions votre patience et votre soutien et n’hésitez pas à nous écrire à donate@wikimedia.org si vous avez des questions. {%endif%}</p>
 
-<p>Je m’appelle Lila Tretikov et je suis la directrice générale de la Fondation Wikimédia. Au cours de l'année passée, les dons comme le vôtre ont soutenu nos efforts pour développer l’encyclopédie en 287 langues et pour la rendre plus accessible à travers le monde entier. Nous nous efforçons d'avoir de l'incidence sur ceux qui n’auraient autrement pas accès à l’éducation. Nous apportons la connaissance à des personnes comme Akshaya Iyengar, de Solapur en Inde. Ayant grandi dans cette petite ville manufacturière de textile, elle a utilisé Wikipédia comme principale source d’apprentissage. Pour les étudiants dans ces régions, où les livres sont rares mais où il existe un accès à l’Internet mobile, Wikipédia est essentiel. Akshaya est allée faire des études universitaires en Inde et travaille maintenant comme développeuse de logiciels aux États-Unis. Elle attribue à Wikipédia la moitié de ses connaissances actuelles.</p>
+<p>Nous croyons que la connaissance est un droit humain fondamental. Alors que l’humanité se précipite vers un avenir numérique, nous avons besoin d’espaces publics, accessibles et ouverts pour accéder au savoir en ligne. Wikimédia est cet endroit. Wikipédia met gratuitement des connaissances à la disposition des personnes, fournies par d’autres personnes, dans des centaines de langues et dans le monde entier.</p>
 
-<p>Cette histoire n’est pas unique. Notre mission est importante et présente de grands défis. La plupart des personnes qui utilisent Wikipédia sont surprises d’apprendre que Wikipedia est dirigé par une association sans but lucratif et financé par vos dons. Chaque année, il y a juste assez de dons pour que tout ce savoir continue d'être accessible à tout un chacun. Merci de rendre cette mission possible.</p>
+<p>Au cours d’une année, Wikipédia est édité et lu sur tous les continents, même en Antarctique. Environ un demi-milliard de personnes visitent Wikipédia chaque mois pour des recherches variées, comme la conservation du patrimoine culturel, l’amélioration de la détection du cancer ou des informations pour les devoirs scolaires. Elles viennent pour apprendre. Elles restent et découvrent.</p>
 
-<p>Au nom de presque un demi-milliard de personnes qui utilisent Wikipédia, des milliers de contributeurs bénévoles qui éditent Wikipédia et du personnel de la Fondation, je vous remercie de votre aide qui permettra cette année encore de maintenir Wikipédia accessible en ligne et sans publicité.</p>
+<p>Tout le monde est un potentiel Wikipédien. Si vous ne trouvez pas le contenu que vous cherchez sur Wikipédia, vous pouvez <a rel="nofollow" class="external text" href="https:///fr.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">le créer vous-même.</a> Les articles, les mots, les images et les données sont créés par une communauté diversifiée qui partage volontairement ses connaissances avec le monde.</p>
 
-<p>Merci,<br/>
-Lila</p>
+<p>Chaque jour, nous nous demandons comment nous pouvons augmenter notre impact et nous assurer que Wikipédia, ainsi que d’autres projets associés, seront toujours plus précis, complets et accessibles demain. Votre don nous aidera à atteindre cet objectif.</p>
+
+<p>Merci de nous aider à croître et à améliorer des vies pendant une année supplémentaire.</p>
 
 <p>Lila Tretikov<br/>
 Directrice générale,<br/>
-Fondation Wikimédia<br/>
-<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+Wikimedia Foundation<br/></p>
 
 <p>Certains employeurs doublent la contribution que peuvent faire leurs salariés : voyez auprès de votre entreprise si elle adopte <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">un tel programme de dons jumelés</a>.</p>
 
 <p>Pour vos archives : votre don du {{ receive_date }}, numéro {{ transaction_id }}, était de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Ce don fait partie d’un don régulier. Les dons mensualisés seront prélevés par la Fondation Wikimédia jusqu’à ce que vous nous demandiez d’arrêter. Si vous désirez arrêter les paiements, suivez simplement nos <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instructions d’annulation</a>. </p>{%endif%}
+{% if recurring %}<p> Ce don fait partie d’un don régulier. Les dons mensualisés seront prélevés par la Wikimedia Foundation jusqu’à ce que vous nous demandiez d’arrêter. Si vous désirez arrêter les paiements, suivez simplement nos <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instructions d’annulation</a>. </p>{%endif%}
 
-<p>Cette lettre peut servir d’archive pour votre don. Aucun bien ou service n’a été fourni, en partie ou en totalité, en échange de ce don. La Fondation Wikimédia (enregistrée officiellement au nom de <i>Wikimedia Foundation, Inc.</i>) est une organisation à but non lucratif qui bénéficie du statut de déduction fiscale 501(c)(3) aux États-Unis. Notre adresse postale est 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Notre numéro de déduction fiscale aux États-Unis est : 20-0049703.</p>
+<p>Cette lettre peut servir d’archive pour votre don. Aucun bien ou service n’a été fourni, en partie ou en totalité, en échange de ce don. La Wikimedia Foundation est une organisation à but non lucratif qui bénéficie du statut de déduction fiscale 501(c)(3) aux États-Unis. Notre adresse postale est 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Notre numéro de déduction fiscale aux États-Unis est : 20-0049703.</p>
 
-<p>Désabonnement :</p>
-
-<p>En tant que donateur, nous aimerions vous tenir informé(e) de nos activités communautaires et de nos levées de fonds. Si vous préférez cependant ne pas recevoir de tels courriels de notre part, veuillez cliquer sur le lien ci-dessous pour que nous vous retirions de la liste.</p>
-
-<div style="margin: 0 25px">
-  <p><a href="{{ unsubscribe_link | raw }}">Se désinscrire</a></p>
-</div>
-
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/fr&oldid=10781305","name":"thank_you.fr.html","revision":10781305}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/fr&amp;oldid=13656101","name":"thank_you.fr.html","revision":13656101}TI_END -->

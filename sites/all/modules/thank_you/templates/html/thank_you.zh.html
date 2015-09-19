@@ -5,25 +5,25 @@
 <p>尊敬的捐赠者，</p>
 {%endif%}
 
-<p>感谢您和世界每一个人分享您丰富的知识。</p>
+<p>感谢您为维基媒体基金会捐款{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}。维基媒体基金会是非盈利组织，为维基百科及其他免费知识类项目提供支持。我们的使命是在全世界提供覆盖最广、惠及率最高的免费知识来源。</p>
 
 <p>{% if "RecurringRestarted" in contribution_tags %} 最近我们解决了影响每月定期捐款的技术问题。今后每月的自动捐款将会被自动处理。我们不会让您补缴因技术问题而未捐的金额。感谢您的耐心和支持，如有任何问题，请随时发邮件到 donate@wikimedia.org。 {%endif%}</p>
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} 我们最近解决了一个导致一小部分捐献者没有受到捐献确认通知的问题。对此我们深表歉意同时非常感谢您month月day日的捐款。再次感谢您的耐心和支持,如有任何问题，请随时发邮件到 donate@wikimedia.org。 {%endif%}</p>
+<p>{% if "UnrecordedCharge" in contribution_tags %} 我们最近解决了一个导致一小部分捐赠者没有收到捐赠者确认通知的问题。对此我们深表歉意同时非常感谢您$date的捐款。再次感谢您的耐心和支持,如有任何问题，请随时发邮件到 donate@wikimedia.org。 {%endif%}</p>
 
-<p>我的名字是里拉•特雷梯科夫，现任维基百科基金会的执行董事。在过去的一年里，全靠捐赠者作出的贡献帮助我们将百科全书增加了287种语言，让全世界更容易使用。我们致力于让那些没有机会接受教育的人们得到我们的帮助。我们将知识带给像来自印度Solapur的阿克沙雅•里颜加。她自小成长在一个纺织业小镇，并以维基百科作为主要的学习工具。在这些处于书本资源匮乏却拥有手机因特网服务区域的学生们，维基百科不可少的。在阿克沙雅毕业于一个印度大学后，就来到了美国任职软件工程师。她十分感激维基百科，她认为自己有一半的知识都来自于此。</p>
+<p>我们认为，知识是一项基本人权。随着人类迅速跨入数字未来，我们需要开放、可准入的公共空间来获取在线知识。维基媒体提供了这样的空间，而维基百科则把免费的知识通过全球成百上千种语言传递给公众，让大家彼此分享。</p>
 
-<p>像这样的故事并不少见，我们团队任重道远，前途曲折，充满挑战。很多使用维基的人们在得知它是由非盈利组织和捐款下运作后，都十分震惊。每年，都会有恰好人数的捐款者帮助我们把知识得以带给全世界任何人。我再次感谢你们，让我们能完成这个任务。</p>
+<p>过去一年中，维基百科的编辑和读者遍布七大洲，包括南极洲。维基百科每月有近五亿访客，其目的从保护文化遗产，到完善癌症探测，到作业调研，各不相同。他们希望从中丰富知识，发现奥秘。</p>
 
-<p>我再次代表近五亿阅读维基百科的人们，上千维基编辑者和基金会的成员们，感谢你让我们得以使维基百科今年依旧上线而无广告。</p>
+<p>每个人都有可能成为维基人。如果您在维基百科搜索无果，可以<a rel="nofollow" class="external autonumber" href="https:///zh.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015自己动手新建内容">[1]</a>。这些章节、文字、图片和数据的创建有赖于一群多样化且乐于向世界分享知识的志愿者。</p>
 
-<p>感谢您，<br/>
-里拉</p>
+<p>每一天，我们都在思索如何提升我们的影响力，并确保维基百科及姊妹项目今后会更加精细，更加丰富，并惠及更多人。您的捐款将有助于我们早日实现这一目标。</p>
+
+<p>感谢您支持我们不断成长，并在新的一年更上一层楼。</p>
 
 <p>里拉·特雷梯科夫<br/>
 执行董事<br/>
-维基媒体基金会<br/>
-<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+维基媒体基金会<br/></p>
 
 <p>大多数公司会提供配额捐赠: 请联络贵公司，询问他们是否提供<a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">配捐计划</a> 。</p>
 
@@ -31,14 +31,6 @@
 
 {% if recurring %}<p> 这次捐款是重复性的，每个月维基基金会都会从你的账号扣除，直到您通知停止。如果您想取消支付，请参见我们<a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">快捷取消指令</a>。 </p>{%endif%}
 
-<p>这封邮件可以证明您的捐款金额记录。对此捐款没有提供任何商品和服务。维基基金会符合美国501 (c)(3)规定的非盈利的慈善机构，我们的地址是美国加州旧金山新蒙哥马利大厦149号3层。免税号：20-0049703</p>
+<p>此函可作为您的捐款备案。针对此次捐款，不提供整体或部分商品或服务。维基媒体基金会是非盈利慈善机构，符合美国501(c)(3) 免税资格。我们的地址是 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. 免税号: 20-0049703。</p>
 
-<p>退订选项：</p>
-
-<p>我们希望给您发送关于我们的社区活动和筹款活动的信息。如果您不希望收到相关邮件，请点击以下链接。我们将把您从列表中删除。</p>
-
-<div style="margin: 0 25px">
-  <p><a href="{{ unsubscribe_link | raw }}">退订</a></p>
-</div>
-
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/zh&oldid=11051984","name":"thank_you.zh.html","revision":11051984}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/zh&amp;oldid=13656056","name":"thank_you.zh.html","revision":13656056}TI_END -->

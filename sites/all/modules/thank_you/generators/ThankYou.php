@@ -2,7 +2,7 @@
 
 class ThankYou extends RenderTranslatedPage {
 	function __construct() {
-		$this->title = 'Fundraising/Translation/Thank_you_email_20140606';
+		$this->title = 'Fundraising/Translation/Thank_you_email_20150904';
 		$this->proto_file = __DIR__ . '/../templates/html/thank_you.$1.html';
 
 		$this->substitutions = array(

@@ -5,39 +5,32 @@
 <p>Kjære giver,</p>
 {%endif%}
 
-<p>Takk for din verdifulle gave som er med på å bringe kunnskap til alle mennesker i verden.</p>
+<p>Takk for donasjonen din på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} til Wikimedia Foundation. Wikimedia Foundation er den ikke-fortjenestebare organisasjonen som støtter Wikipedia og andre prosjekter som fremmer gratis kunnskap. Oppdraget vårt er å bygge verdens mest tilgjengelige og omfattende kilde som tilbyr gratis kunnskap.</p>
 
 <p>{% if "RecurringRestarted" in contribution_tags %} Vi løste nylig et lite teknisk problem som midlertidig stoppet noen faste månedlige donasjoner. Din månedlige donasjon har nå blitt satt i gang igjen, og den vil bli trukket som vanlig fremover. Vi kommer ikke til å belaste deg for de månedene donosjonen var midlertidig stoppet. Takk for tålmodigheten og støtten din, og ikke nøl med å sende en e-post til donate@wikimedia.org om du har noen spørsmål. {%endif%}</p>
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Vi har nylig løst et teknisk problem som førte til at noen få givere ikke mottok bekreftelse på sin donasjon. Ta vennligst i mot denne e-posten som en takk for donasjonen din den {{ receive_date }}. Vi setter stor pris på din tålmodighet og støtte, og kontakt oss gjerne via e-post på donate@wikimedia.org hvis du har noen spørsmål. {%endif%}</p>
+<p>{% if "UnrecordedCharge" in contribution_tags %} Vi har nylig løst et teknisk problem som førte til at noen få givere ikke mottok bekreftelse på sin donasjon. Ta vennligst i mot denne e-posten som en takk for donasjonen din den $date. Vi setter stor pris på din tålmodighet og støtte, og kontakt oss gjerne via e-post på donate@wikimedia.org hvis du har noen spørsmål. {%endif%}</p>
 
-<p>Mitt navn er Lila Tretikov, og jeg er direktør for Wikimedia Foundation. I løpet av de siste årene har gaver som dine gjort det mulig for oss å utvide leksikonet til 287 språk og bidratt til å gjøre det mer tilgjengelig over hele verden. Vi jobber mest med å nå dem som ellers ikke har adgang til utdanning. Vi gir kunnskap til folk som Akshaya Iyengar fra Solapur, India. I oppvekst i denne lille tekstilbyen brukte hun Wikipedia som sin hovedkilde til kunnskap. For studenter i disse områdene, hvor bøker er sjeldne, men mobil internett-tilgang finnes, er Wikipedia uunnværlig. Akshaya tok høgskoleeksamen i India, og arbeider nå som programvareingeniør i USA. Hun gir Wikipedia æren for halvparten av kunnskapen hun har.</p>
+<p>Vi mener at kunnskap er en grunnleggende menneskerett. I den framtidige digitale tidsalderen er det på Internett behov for steder som er åpne, tilgjengelige og offentlige hvor man kan hente kunnskap. Wikimedia er et slikt sted. Wikipedia gir gratis kunnskap til mennesker, skrevet av mennesker rundt om i verden, på hundrevis av språk.</p>
 
-<p>Denne historien er ikke unik. Vår oppdrag er ambisiøst og har store utfordringer knyttet til seg. De fleste som bruker Wikipedia blir forbauset når de hører at det drives av en ideell organisasjon som finansieres av bidragsytere som deg. Hvert år gir akkurat nok mennesker nok penger til å holde summen av all menneskelig kunnskap tilgjengelig for alle. Takk for at du gjør dette oppdraget mulig.</p>
+<p>I løpet av ett år redigeres og leses Wikipedia på alle kontinenter, inkludert Antarktis. Wikipedia har månedlig nesten en halv milliard besøkende som leter etter alt fra hvordan kulturarven kan bevares, og kreft kan oppdages til å finne bakgrunnsmateriale til hjemmelekser. De kommer for å lære. De blir værende og oppdager.</p>
 
-<p>På vegne av en halv milliard mennesker som leser Wikipedia, tusenvis av frivillige skribenter, og ansatte i Wikimedia Foundation, vil jeg takke deg for at du i år bidrar til å beholde Wikipedia på nett og uten reklame.</p>
+<p>Alle er en potensiell Wikipedianer. Hvis du ikke finner det du leter etter på Wikipedia, kan du <a rel="nofollow" class="external text" href="https:///nb.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">lage innholdet selv</a>. Artiklene, ordene, bildene og dataene er laget av et variert samfunn bestående av mennesker som frivillig deler kunnskapen sin med verden.</p>
 
-<p>Tusen takk!<br/>
-Lila</p>
+<p>Hver dag spør vi oss selv om hvordan vi kan øke påvirkningen vår, samt sikre at Wikipedia og beslektede prosjekter er enda mer nøyaktige, innholdsrike og tilgjengelige i morgen enn de er i dag. Donasjonen din hjelper oss med å komme dit.</p>
+
+<p>Takk for at du hjelper oss med å vokse og påvirke andres liv.</p>
 
 <p>Lila Tretikov<br/>
-Direktør,<br/>
-Wikimedia Foundation<br/>
-<a class="external text" href="https://donate.wikimedia.org/">donate.wikimedia.org</a></p>
+Adm. Direktør,<br/>
+Wikimedia Foundation<br/></p>
+
+<p>Mange arbeidsgivere benytter seg av et program hvor de gir like mye i pengegaver som de ansatte: Sjekk med selskapet du jobber i om det benytter seg av <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">dette programmet</a>.</p>
 
 <p>Til din orientering: Din donasjon {{ transaction_id }} den {{ receive_date }} var {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}</p>
 
 {% if recurring %}<p> Denne donasjonen er del av et løpende abonnement. Månedlige betalinger vil bli innbetalt til Wikimedia Foundation til du gir oss beskjed om annet. Dersom du ønsker å stanse betalingen, vennligst se vår <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">enkle avmeldingsinstruks</a>. </p>{%endif%}
 
-<p>Denne meldingen kan tjene som en dokumentasjon på ditt bidrag. Det er ikke blitt gitt motytelser i form av varer eller tjenester. Wikimedia Foundation er et non-profit veldedig selskap. Det er underlagt 501(c)(3) tax exempt status i USA (lov om skattefritak for allmennyttige stiftelser). Adressen er 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. tax-exempt-nummer: 20-0049703</p>
+<p>Du kan bruke dette brevet som en kvittering på donasjonen din. Ingen varer eller tjenester ble helt eller delvis levert som en del av dette bidraget. Wikimedia Foundation, Inc. er en ikke-fortjenestebar veldedig organisasjon med 501(c)(3) skattefritak-status i USA. Adressen vår er 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. skattefritaksnummer: 20-0049703.</p>
 
-<div style="border: 1px solid black; padding:0 10px 5px 10px;">
-  <p>Mulighet for avmelding:</p>
-  <p><br/>
-Som støttespiller vil vi gjerne holde deg oppdatert om aktivitetene og innsamlingsaksjonene våre. Hvis du foretrekker å ikke motta e-poster om dette fra oss, så klikk på lenken under, så fjerner vi deg fra listen.</p>
-  <div style="margin: 0 25px">
-    <p><a href="{{ unsubscribe_link | raw }}">Avslutt abonnement</a></p>
-  </div>
-</div>
-
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20140606/nb&oldid=9880461","name":"thank_you.nb.html","revision":9880461}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/nb&amp;oldid=13656155","name":"thank_you.nb.html","revision":13656155}TI_END -->
