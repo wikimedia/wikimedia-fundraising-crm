@@ -332,21 +332,32 @@ function recurring_import_subscr_cancel( $msg ) {
   if ( !$recur_record = wmf_civicrm_get_recur_record( $msg[ 'subscr_id' ] ) ) {
     throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist' );
   }
-  
-  $api = civicrm_api_classapi();
-  $update_params = array(
-    'id' => $recur_record->id,
-
-    'cancel_date' => wmf_common_date_unix_to_civicrm( $msg[ 'cancel_date' ] ), 
-    'end_date' => wmf_common_date_unix_to_civicrm( $msg[ 'cancel_date' ] ), 
-
-    'version' => 3,
+  $activityParams = array(
+    'subject' => ts('Recurring contribution cancelled'),
   );
-  if ( !$api->ContributionRecur->Create( $update_params ) ) {
-    throw new WmfException( 'INVALID_RECURRING', 'There was a problem updating the subscription for cancelation for subscriber id: ' . print_r( $msg[ 'subscr_id' ], true ) . ": " . $api->errorMsg() );
-  } else {
-    watchdog( 'recurring', 'Succesfuly cancelled subscription for subscriber id %subscr_id', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+  $cancelStatus = CRM_Contribute_BAO_ContributionRecur::cancelRecurContribution(
+    $recur_record->id,
+    CRM_Core_DAO::$_nullObject,
+    $activityParams
+  );
+  if ( !$cancelStatus ) {
+    throw new WmfException( 'INVALID_RECURRING', 'There was a problem cancelling the subscription for subscriber id: ' . print_r( $msg[ 'subscr_id' ], true ) );
   }
+
+  if ( $msg[ 'cancel_date' ] ) {
+    // Set cancel and end dates to match those from message.
+    $api = civicrm_api_classapi();
+    $update_params = array(
+      'id' => $recur_record->id,
+      'cancel_date' => wmf_common_date_unix_to_civicrm( $msg[ 'cancel_date' ] ),
+      'end_date' => wmf_common_date_unix_to_civicrm( $msg[ 'cancel_date' ] ),
+      'version' => 3,
+    );
+    if ( !$api->ContributionRecur->Create( $update_params ) ) {
+      throw new WmfException( 'INVALID_RECURRING', 'There was a problem updating the subscription for cancelation for subscriber id: ' . print_r( $msg[ 'subscr_id' ], true ) . ": " . $api->errorMsg() );
+    }
+  }
+  watchdog( 'recurring', 'Succesfuly cancelled subscription for subscriber id %subscr_id', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
 }
 
 /**
