@@ -852,6 +852,10 @@ function wmf_civicrm_update_7016()
 {
     $ret = array();
     $api = wmf_civicrm_bootstrap_civi();
+    wmf_civicrm_create_option_values_detailed('tag_used_for', array(
+        'Contributions' => array('value' => 'civicrm_contribution'),
+    ));
+
     $success = $api->Tag->get(array(
         'name' => 'RecurringRestarted',
         'used_for' => 'civicrm_contribution',

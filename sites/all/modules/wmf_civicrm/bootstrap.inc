@@ -53,31 +53,71 @@ function wmf_civicrm_create_financial_types($financial_types)
     }
 }
 
+/**
+ * Create option values in CiviCRM.
+ *
+ * For more control use the option_values_detailed function below.
+ *
+ * NB - encapsulated the detailed create function has a slight performance
+ * cost since group is resolved potentially multiple times - but this
+ * function seems like a rarely run function.
+ *
+ * @param string $group_name
+ * @param array $values
+ */
 function wmf_civicrm_create_option_values( $group_name, $values )
+{
+    foreach ($values as $value) {
+        wmf_civicrm_create_option_values_detailed($group_name, array(
+            $value => array(
+                'name' => $value,
+        )));
+    }
+}
+
+/**
+ * Create option values in CiviCRM with details.
+ *
+ * The previous other of this only permits a flat array. This allows a more
+ * nuanced option value create.
+ *
+ * This checks for an existing option value first.
+ *
+ * @param string $group_name
+ * @param array $values
+ */
+function wmf_civicrm_create_option_values_detailed($group_name, $values)
 {
     $api = wmf_civicrm_bootstrap_civi();
 
     $api->OptionGroup->Get(array(
-        'name' => $group_name,
+      'name' => $group_name,
     ));
     $result = $api->values();
     $option_group = array_pop($result);
-    foreach ($values as $value)
+    foreach ($values as $key => $value)
     {
+        $params = array_merge(array(
+          'option_group_id' => $option_group->id,
+          'name' => $key,
+          'label' => $key,
+          'is_active' => 1,
+        ), $value);
+
         $api->OptionValue->Get(array(
-            'option_group_id' => $option_group->id,
-            'name' => $value,
+          'option_group_id' => $option_group->id,
+          'name' => $params['name'],
         ));
 
         $result = $api->values();
         if (empty($result))
         {
-            $api->OptionValue->Create(array(
-                'option_group_id' => $option_group->id,
-                'name' => $value,
-                'label' => $value,
-                'is_active' => 1,
-            ));
+            $api->OptionValue->Create(array_merge(array(
+              'option_group_id' => $option_group->id,
+              'name' => $key,
+              'label' => $key,
+              'is_active' => 1,
+            )), $value);
         }
     }
 }
