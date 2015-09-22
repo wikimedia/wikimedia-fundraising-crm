@@ -1453,3 +1453,14 @@ function wmf_civicrm_update_7034() {
     wmf_civicrm_create_option_values( 'payment_instrument', array('Trilogy') );
     return array();
 }
+
+/**
+ * Add option value 'tag_used_for' for civicrm_contribution.
+ *
+ * This might exist as it had to be added to update 7022 so check first.d
+ */
+function wmf_civicrm_update_7035() {
+    wmf_civicrm_bootstrap_civi();
+    wmf_civicrm_create_option_values( 'payment_instrument', array('Trilogy') );
+    return array();
+}
