@@ -161,7 +161,7 @@ function wmf_civicrm_update_7000()
     );
 
     wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_contribution_types($contribution_types);
+    wmf_civicrm_create_financial_types($contribution_types);
     wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
 
     return array();
@@ -252,7 +252,7 @@ function wmf_civicrm_update_7002()
 function wmf_civicrm_update_7003()
 {
     wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_contribution_types(array(
+    wmf_civicrm_create_financial_types(array(
         'Merkle',
     ));
 }
@@ -575,7 +575,7 @@ function wmf_civicrm_update_7007()
 {
     $api = wmf_civicrm_bootstrap_civi();
 
-    wmf_civicrm_create_contribution_types(array(
+    wmf_civicrm_create_financial_types(array(
         'Refund',
         'Chargeback',
     ));
@@ -595,7 +595,7 @@ function wmf_civicrm_update_7007()
 function wmf_civicrm_update_7008()
 {
 	wmf_civicrm_bootstrap_civi();
-	wmf_civicrm_create_contribution_types(array(
+	wmf_civicrm_create_financial_types(array(
 		'Arizona Lockbox',
 	));
 }
@@ -1088,7 +1088,7 @@ function wmf_civicrm_update_7024() {
     if (!$result) {
         throw new Exception('Could not find custom group wmf_donor.  Please run update 7023 first.');
     }
-	
+
     $custom_group = array_pop($result);
 
 	for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
@@ -1256,7 +1256,7 @@ function wmf_civicrm_update_7028() {
     }
 
     wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_contribution_types( array(
+    wmf_civicrm_create_financial_types( array(
         'Engage',
     ) );
 }
