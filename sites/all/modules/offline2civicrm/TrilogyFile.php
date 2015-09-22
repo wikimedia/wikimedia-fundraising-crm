@@ -41,6 +41,7 @@ protected function getFieldMapping() {
         return parent::getDefaultValues() + array(
             'gateway' => 'trilogy',
             'currency' => 'USD',
+            'no_thank_you' => 'trilogy',
             );
     }
 }
