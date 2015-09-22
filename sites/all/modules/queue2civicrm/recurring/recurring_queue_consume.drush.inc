@@ -50,6 +50,7 @@ function drush_recurring_queue_consume() {
 }
 
 function drush_recurring_queue_consume_recurring_process_messagefile( $path ) {
+	civicrm_initialize();
     watchdog( 'recurring', "Processing input file @path and feeding to recurring_import.",
         array( '@path' => realpath( $path ) ), WATCHDOG_INFO );
     $contents = file_get_contents( $path );
