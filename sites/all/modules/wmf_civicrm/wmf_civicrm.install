@@ -99,7 +99,6 @@ function _link_gift_data_field_to_new_group ( $field_name, $group_name, $values 
                 'option_group_id' => $option_group_id,
                 'label' => ts( $value ),
                 'value' => $value,
-                'weight' => 'next',
             ) );
             if ( !$success ) {
                 throw new Exception( $api->errorMsg() );
