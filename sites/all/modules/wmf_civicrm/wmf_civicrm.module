@@ -899,7 +899,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['organization_name'] = $msg['organization_name'];
     }
     if ( !empty( $msg['name_prefix'] ) ) {
-        $existing_prefixes = array_flip( CRM_Core_PseudoConstant::individualPrefix() );
+        $existing_prefixes = array_flip(wmf_civicrm_get_options('Contact', 'prefix_id'));
         if ( array_key_exists( $msg['name_prefix'], $existing_prefixes ) ) {
             $prefix_id = $existing_prefixes[$msg['name_prefix']];
         } else {
@@ -915,7 +915,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['individual_prefix'] = $prefix_id;
     }
     if ( !empty( $msg['name_suffix'] ) ) {
-        $existing_suffixes = array_flip( CRM_Core_PseudoConstant::individualSuffix() );
+        $existing_suffixes = array_flip(wmf_civicrm_get_options('Contact', 'suffix_id'));
         if ( array_key_exists( $msg['name_suffix'], $existing_suffixes ) ) {
             $suffix_id = $existing_suffixes[$msg['name_suffix']];
         } else {
@@ -2425,4 +2425,18 @@ LIMIT %4";
 			}
 		}
 	}
+}
+
+/**
+ * Get options for a field.
+ *
+ * @param string $entity
+ * @param string $field
+ *
+ * @return array
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_get_options($entity, $field) {
+    $options = civicrm_api3($entity, 'getoptions', array('field' => $field));
+    return $options['values'];
 }
