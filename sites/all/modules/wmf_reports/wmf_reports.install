@@ -82,7 +82,7 @@ function wmf_reports_update_7000()
             );
         }
 
-        $phone_types = array_keys(CRM_Core_PseudoConstant::phoneType());
+        $phone_types = array_keys(wmf_reports_get_options('Phone', 'phone_type_id'));
         foreach ($phone_types as $phone_type)
         {
             $mapping_fields[] = array(
@@ -115,6 +115,20 @@ function wmf_reports_update_7000()
 }
 
 /**
+ * Get options for a field.
+ *
+ * @param string $entity
+ * @param string $field
+ *
+ * @return array
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_reports_get_options($entity, $field) {
+    $options = civicrm_api3($entity, 'getoptions', array('field' => $field));
+    return $options['values'];
+}
+
+/**
  * Remove some of the mapping fields thanks to a hard mysql limit of
  * 61 join tables.
  */
@@ -136,7 +150,7 @@ function wmf_reports_update_7001()
         'Pager',
         'Voicemail',
     );
-    $all_phone_types = CRM_Core_PseudoConstant::phoneType();
+    $all_phone_types = wmf_reports_get_options('Phone', 'phone_type_id');
     foreach ($drop_phone_types as $name)
     {
         $id = array_search($name, $all_phone_types);
