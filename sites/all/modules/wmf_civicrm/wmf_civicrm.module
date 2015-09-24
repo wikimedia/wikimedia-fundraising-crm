@@ -457,7 +457,7 @@ function wmf_civicrm_get_civi_id($type, $name)
         case 'contribution_type_id':
             //fixme: This is probably the upside-down way to do it. Really ought to go through the API.
             //
-            $result = CRM_Contribute_BAO_ContributionType::retrieve($params, $dummy);
+            $result = CRM_Financial_BAO_FinancialType::retrieve($params, $dummy);
             if (!is_null($result)){
                 $civi_ids[$type][$name] = $result->id;
                 watchdog('wmf_civicrm', "Found id for contribution_type $name: " . $civi_ids[$type][$name]);
@@ -469,7 +469,7 @@ function wmf_civicrm_get_civi_id($type, $name)
                 $params['accounting_code'] = strtoupper($name);
                 $params['is_deductible'] = 1;
                 $params['is_active'] = 1;
-                $result = CRM_Contribute_BAO_ContributionType::add($params, $dummy);
+                $result = CRM_Financial_BAO_FinancialType::add($params, $dummy);
                 $civi_ids[$type][$name] = $result->id;
                 watchdog('wmf_civicrm', "New id for contribution_type $name :" . $civi_ids[$type][$name]);
             }
