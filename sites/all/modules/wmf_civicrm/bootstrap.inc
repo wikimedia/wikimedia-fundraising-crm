@@ -29,27 +29,26 @@ function wmf_civicrm_bootstrap_civi()
     return $api;
 }
 
-/**
- * Ensure that a financial type exists for every item in the array.
- *
- * @param array $financial_types
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_create_financial_types($financial_types)
+function wmf_civicrm_create_contribution_types($contribution_types)
 {
-    $existingFinancialTypes = civicrm_api3('Contribution', 'getoptions', array(
-        'field' => 'financial_type_id',
-    ));
-    $missingTypes = array_diff($financial_types, $existingFinancialTypes['values']);
-    foreach ($missingTypes  as $type)
+    foreach ($contribution_types as $type)
     {
-        civicrm_api3('FinancialType', 'create', array(
-          'is_active' => 1,
-          'is_deductible' => 1,
-          'accounting_code' => strtoupper($type),
-          'name' => $type,
-        ));
+        $contribution_type_id = CRM_Utils_Array::key(
+            $type,
+            CRM_Contribute_PseudoConstant::contributionType()
+        );
+
+        if (!$contribution_type_id)
+        {
+            $params = array(
+                'is_active' => 1,
+                'is_deductible' => 1,
+                'accounting_code' => strtoupper($type),
+                'name' => $type,
+            );
+            $ids = array();
+            CRM_Contribute_BAO_ContributionType::add($params, $ids);
+        }
     }
 }
 
