@@ -134,7 +134,7 @@ function wmf_communication_civicrm_pre( $op, $type, $id, &$email ) {
 	$old_email_result = civicrm_api( "Email", "get",
 		array (
 			'version' =>'3',
-			'id' => $email->id,
+			'id' => $email['id'],
 			'return' => 'email,on_hold'
 		)
 	);
