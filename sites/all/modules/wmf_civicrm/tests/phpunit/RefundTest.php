@@ -104,7 +104,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
         ) );
         $contribution = array_pop( $results['values'] );
 
-        $this->assertEquals( 'Chargeback', $contribution['contribution_type'],
+        $this->assertEquals( 'Chargeback', $contribution['financial_type'],
             'Refund contribution has correct type' );
     }
 
