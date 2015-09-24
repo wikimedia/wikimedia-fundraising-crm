@@ -223,7 +223,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         // TODO: Add to contact_tags instead.
         // Tag contact for review
         try {
-            $tag = wmf_civicrm_tag_contact_for_review( $contact );
+            wmf_civicrm_tag_contact_for_review( $contact );
         } catch ( WmfException $ex ) {
             watchdog( 'queue2civicrm_import', 'Failed to tag contact for review.', NULL, WATCHDOG_ERROR );
         }
@@ -1475,16 +1475,15 @@ function wmf_civicrm_normalize_msg( $msg ) {
 
 /**
  * Insert the tag record
- * 
+ *
  * Serves as a standard way for message processors to handle tag
  * insertion.
- * 
+ *
  * @param array $contact
  * @return array
  */
 function wmf_civicrm_tag_contact_for_review( $contact )
 {
-    require_once 'api/v2/EntityTag.php';
 
     $review_tag_id = wmf_civicrm_get_civi_id('tag_id', 'Review');
 
@@ -1492,8 +1491,7 @@ function wmf_civicrm_tag_contact_for_review( $contact )
         'tag_id' => $review_tag_id,
         'contact_id' => $contact[ 'id' ]
     );
-    $tag_result = civicrm_entity_tag_add( $tag );
-    return $tag_result;
+    return civicrm_api3('EntityTag', 'create', $tag);
 }
 
 /**
