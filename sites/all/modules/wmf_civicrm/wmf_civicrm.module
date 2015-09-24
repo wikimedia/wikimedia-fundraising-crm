@@ -915,6 +915,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['individual_prefix'] = $prefix_id;
     }
     if ( !empty( $msg['name_suffix'] ) ) {
+        // @todo api will accept names instead of ids so can probably remove this.
         $existing_suffixes = array_flip(wmf_civicrm_get_options('Contact', 'suffix_id'));
         if ( array_key_exists( $msg['name_suffix'], $existing_suffixes ) ) {
             $suffix_id = $existing_suffixes[$msg['name_suffix']];
@@ -954,6 +955,9 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         if ( !empty( $msg['country'] ) ) {
             $contact['preferred_language'] .= '_' . strtoupper(substr($msg['country'], 0, 2));
         }
+    }
+    if (!empty($contact['preferred_language'])) {
+        wmf_civicrm_ensure_language_exists($contact['preferred_language']);
     }
 
     // Copy some fields, if they exist
@@ -1093,6 +1097,39 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     return $contact_result;
+}
+
+/**
+ * Ensure the selected language is valid in CiviCRM DB.
+ *
+ * In 4.6 CiviCRM validates preferred_language against the language
+ * option_group in the DB.
+ *
+ * wmf has (at least in the tests) defined these ad hoc.
+ * Options are to manage the list of available languages or create them at
+ * run time if required. This function does the latter.
+ *
+ * When retrieved using getoptions it uses a pseudoconstant
+ * so, the DB query won't run more than once. I haven't added an
+ * extra level of caching into this function at this stage for fear of fragility
+ * if it gets updated elsewhere but it could be done.
+ *
+ * @param string
+ *
+ * @return mixed
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_ensure_language_exists($languageAbbreviation) {
+    $availableLanguages = civicrm_api3('Contact', 'getoptions', array(
+      'field' => 'preferred_language',
+    ));
+    if ($languageAbbreviation && empty($availableLanguages['values'][$languageAbbreviation])) {
+        civicrm_api3('OptionValue', 'create', array(
+            'option_group_id' => 'languages',
+            'value' => $languageAbbreviation,
+            'name' => $languageAbbreviation,
+        ));
+    }
 }
 
 /**

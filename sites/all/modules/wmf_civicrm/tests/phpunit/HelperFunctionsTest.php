@@ -20,6 +20,9 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
     public function setUp() {
         // @todo not sure why I needed to do this to be enotice free.
         global $user;
+        if (empty($user)) {
+            $user = new stdClass();
+        }
         $user->timezone = '+13';
         civicrm_initialize();
         parent::setUp();
@@ -45,4 +48,22 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertArrayHasKey(civicrm_api3('Tag', 'getvalue', array('name' => 'Review', 'return' => 'id')), $entityTags['values']);
     }
 
+    /**
+     * Test wmf_ensure_language_exists
+     *
+     * Maintenance note: the civicrm entity_tag get api returns an odd syntax.
+     *
+     * If that ever gets fixed it may break this test - but only the test would
+     * need to be altered to adapt.
+     *
+     * @throws \CiviCRM_API3_Exception
+     */
+    public function testEnsureLanguageExists() {
+        wmf_civicrm_ensure_language_exists('en_IL');
+        $languages = civicrm_api3('OptionValue', 'get', array(
+            'option_group_name' => 'languages',
+            'value' => 'en_IL',
+        ));
+        $this->assertEquals(1, $languages['count']);
+    }
 }
