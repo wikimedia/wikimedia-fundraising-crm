@@ -3,7 +3,7 @@ namespace wmf_communication;
 
 use \CRM_Core_DAO;
 use \CRM_Core_Transaction;
-use \CRM_Mailing_BAO_Job;
+use \CRM_Mailing_BAO_MailingJob;
 use \CRM_Mailing_Event_BAO_Queue;
 use \Exception;
 /**
@@ -122,7 +122,7 @@ WHERE e.email = %2';
 			CRM_Mailing_Event_BAO_Queue::bulkCreate( $queueParams, $date );
 			$this->insertRecipients( $mailingRecord->getMailingID(), $childJob->id );
 
-			// add delivered event and activities with CRM_Mailing_BAO_Job::writeToDB
+			// add delivered event and activities with CRM_Mailing_BAO_MailingJob::writeToDB
 			$queueIDs = array();
 			$contacts = array();
 
@@ -141,7 +141,7 @@ WHERE q.job_id = %1';
 			}
 
 			// TODO: must be a better way to get a BAO from a DAO
-			$jobBao = new CRM_Mailing_BAO_Job();
+			$jobBao = new CRM_Mailing_BAO_MailingJob();
 			$jobParams = array(
 				'id' => $childJob->id,
 				'mailing_id' => $childJob->mailing_id
@@ -156,7 +156,7 @@ WHERE q.job_id = %1';
 			);
 
 			if ( !$success ) {
-				throw new CiviMailBulkInsertException( "CRM_Mailing_BAO_Job::writeToDB failed" );
+				throw new CiviMailBulkInsertException( "CRM_Mailing_BAO_MailingJob::writeToDB failed" );
 			}
 		} catch ( Exception $ex ) {
 			$transaction->rollback();
