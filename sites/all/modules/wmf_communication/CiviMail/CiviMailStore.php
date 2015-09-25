@@ -6,9 +6,9 @@ use \CRM_Core_DAO;
 use \CRM_Core_DAO_Email;
 use \CRM_Core_OptionGroup;
 use \CRM_Core_Transaction;
-use \CRM_Mailing_BAO_Job;
+use \CRM_Mailing_BAO_MailingJob;
 use \CRM_Mailing_BAO_Mailing;
-use \CRM_Mailing_DAO_Job;
+use \CRM_Mailing_DAO_MailingJob;
 use \CRM_Mailing_DAO_Mailing;
 use \CRM_Mailing_Event_BAO_Queue;
 use \Exception;
@@ -117,7 +117,7 @@ class CiviMailStore implements ICiviMailStore {
 			$saveJob = ( !$job || $job->status !== $jobStatus );
 
 			if ( !$job ) {
-				$job = new CRM_Mailing_BAO_Job();
+				$job = new \CRM_Mailing_BAO_MailingJob();
 				$job->start_date = $job->end_date = gmdate( 'YmdHis' );
 				$job->job_type = 'external';
 				$job->mailing_id = $mailing->id;
@@ -230,7 +230,7 @@ VALUES ( %1, %2, %3 )";
 		if ( array_key_exists( $mailingId, self::$jobs ) ) {
 			return self::$jobs[$mailingId];
 		}
-		$job = new CRM_Mailing_DAO_Job();
+		$job = new \CRM_Mailing_DAO_MailingJob();
 		$job->mailing_id = $mailingId;
 		if ( !$job->find() || !$job->fetch() ) {
 			return null;
@@ -240,7 +240,7 @@ VALUES ( %1, %2, %3 )";
 	}
 
 	protected function addChildJob( $mailingRecord, $date ) {
-		$job = new CRM_Mailing_DAO_Job();
+		$job = new CRM_Mailing_DAO_MailingJob();
 		$job->mailing_id = $mailingRecord->getMailingID();
 		$job->parent_id = $mailingRecord->getJobID();
 		$job->status = 'Complete';
