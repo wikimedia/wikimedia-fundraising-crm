@@ -62,7 +62,7 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
         wmf_civicrm_ensure_language_exists('en_IL');
         $languages = civicrm_api3('OptionValue', 'get', array(
             'option_group_name' => 'languages',
-            'value' => 'en_IL',
+            'name' => 'en_IL',
         ));
         $this->assertEquals(1, $languages['count']);
     }
