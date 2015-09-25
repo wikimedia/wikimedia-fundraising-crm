@@ -439,7 +439,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
 /**
  * @fixme TODO: make the v3 API calls use the wrapper function
  *
- * @param $type
+ * @param string $type
  * @param $name
  * @return bool
  */
@@ -519,9 +519,9 @@ function wmf_civicrm_get_message_contribution_type( $msg ) {
 }
 
 /**
- * Determines which civi-only payment instrument is appropriate for the current 
- * message, and resturns the civi payment instrument's human-readable display 
- * string (if it exists).   
+ * Determines which civi-only payment instrument is appropriate for the current
+ * message, and resturns the civi payment instrument's human-readable display
+ * string (if it exists).
  *
  * TODO lookup table
  *
@@ -543,7 +543,7 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                 $payment_instrument = 'Bank Transfer';
                 break;
             case 'cc':
-                $payment_instrument = 'Credit Card';	
+                $payment_instrument = 'Credit Card';
                 if ( empty( $msg['payment_submethod'] ) ) {
                     watchdog( 'wmf_civicrm', 'No credit card submethod given', NULL, WATCHDOG_WARNING );
                     break;
@@ -650,13 +650,13 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
 		break;
             case 'cash':
                 $payment_instrument = 'Cash';
-                //'cash_boleto' - Only one right now. I assume there might be more later? 
+                //'cash_boleto' - Only one right now. I assume there might be more later?
                 switch ( strtolower( $msg['payment_submethod'] ) ){
-                    case 'cash_boleto': 
+                    case 'cash_boleto':
                         $payment_instrument = 'Boleto';
                         break;
                 }
-                break;	
+                break;
             case 'payflowpro':
                 if ( strtolower( $msg['gateway'] ) === 'payflowpro' ){
                     $payment_instrument = 'Credit Card';
@@ -702,7 +702,7 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
 
 /**
  * Normalize contribution amounts
- * 
+ *
  * Do exchange rate conversions and set appropriate fields for CiviCRM
  * based on information contained in the message.
  *
@@ -844,10 +844,10 @@ function wmf_civicrm_verify_message_and_stage($msg)
 
 /**
  * Insert the contact record
- * 
+ *
  * Serves as a standard way for message processors to handle contact
  * insertion.  By passing a contact id, a contact can be updated.
- * 
+ *
  * @param array $msg
  * @param int $contact_id
  * @return array
@@ -1134,10 +1134,10 @@ function wmf_civicrm_ensure_language_exists($languageAbbreviation) {
 
 /**
  * Update the contact record
- * 
+ *
  * Serves as a standard way for message processors to handle contact
  * updates.
- * 
+ *
  * @param array $msg
  * @param int $contact_id
  * @return array
@@ -1150,10 +1150,10 @@ function wmf_civicrm_message_contact_update( $msg, $contact_id )
 
 /**
  * Insert the location record
- * 
+ *
  * Serves as a standard way for message processors to handle location
  * insertion.
- * 
+ *
  * @param array $msg
  * @param array $contact
  */
@@ -1163,10 +1163,10 @@ function wmf_civicrm_message_location_insert( $msg, $contact ) {
 
 /**
  * Update the location record
- * 
+ *
  * Serves as a standard way for message processors to handle location
  * updates.
- * 
+ *
  * @param array $msg
  * @param array $contact
  */
@@ -1266,7 +1266,7 @@ function wmf_civicrm_get_country_id( $raw ) {
 
 /**
  * Find correct state for insertion
- * 
+ *
  * When passing CiviCRM a state abbreviation, odd things can happen - like getting the right abbreviation, but the wrong state
  * So we'll pull back the correct state/province name based off of a user's country/state abbreviation
  */
@@ -1313,14 +1313,14 @@ EOS;
 
 /**
  * Normalize the queued message
- * 
- * Decodes the message and updates some of the message fields in ways 
+ *
+ * Decodes the message and updates some of the message fields in ways
  * that are consistent with how we need to insert data into CiviCRM.
- * This should be useful by other modules processing contribution messages 
+ * This should be useful by other modules processing contribution messages
  * out of the queue.
  *
  * TODO: Split this into a transformation chain.
- * 
+ *
  * @param mixed $msg
  * @return array
  */
@@ -1542,8 +1542,8 @@ function wmf_civicrm_tag_contact_for_review( $contact )
  */
 function wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id) {
     $gateway = strtolower( $gateway );
-	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc 
-		ON cc.id = cx.entity_id 
+	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc
+		ON cc.id = cx.entity_id
 		WHERE gateway = %1 AND gateway_txn_id = %2";
 
     $dao = CRM_Core_DAO::executeQuery( $query, array(
@@ -1582,9 +1582,9 @@ function wmf_civicrm_get_contributions_from_contribution_id($contribution_id) {
  */
 function wmf_civicrm_get_child_contributions_from_gateway_id($gateway, $gateway_txn_id) {
     $gateway = strtolower( $gateway );
-	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp 
-		INNER JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id 
-		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id 
+	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp
+		INNER JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id
+		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id
 		WHERE cxp.gateway = %1 AND cxp.gateway_txn_id = %2";
 
     $dao = CRM_Core_DAO::executeQuery( $query, array(
@@ -1711,7 +1711,7 @@ WHERE
             || $contribution->contribution_source === "RFD")
         && $refund_currency !== null && $refund_amount !== null
     ) {
-        //FIXME!: call this from the contribution save hook. $round parameter. 
+        //FIXME!: call this from the contribution save hook. $round parameter.
         $contribution->total_amount = round( exchange_rate_convert(
             $refund_currency, $refund_amount,
             wmf_common_date_parse_string( $contribution->receive_date )
@@ -2044,7 +2044,7 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
 			$receive_date = $db_contribution->receive_date;
 			$contact_id = $db_contribution->contact_id;
 			$total_amount = $db_contribution->total_amount;
-		} 
+		}
 
 		// Update the wmf_donor data.  Set the is_YYYY_donor column to true
 		// FIXME: if this is an edit, we should review all contributions
@@ -2055,7 +2055,7 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
 			$fiscal_year = $fiscal_year - 1;
 		}
 		if ( $fiscal_year >= WMF_MIN_ROLLUP_YEAR && $fiscal_year <= WMF_MAX_ROLLUP_YEAR ) {
-			$wmf_donor["is_{$fiscal_year}_donor"] = true;	
+			$wmf_donor["is_{$fiscal_year}_donor"] = true;
 		}
 		// Update the latest donation data.
 		// If this is an edit, first check if it's the latest
@@ -2078,7 +2078,7 @@ EOS;
 			if ( isset( $extra['original_currency'] ) ) {
 				$wmf_donor['last_donation_currency'] = $extra['original_currency'];
 			}
-			if ( isset( $extra['original_amount'] ) ) {	
+			if ( isset( $extra['original_amount'] ) ) {
 			    $wmf_donor['last_donation_amount'] = $extra['original_amount'];
 			}
 		}
