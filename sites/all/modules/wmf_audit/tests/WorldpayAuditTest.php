@@ -24,9 +24,9 @@ class WorldpayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 	parent::setUp();
 	self::$messages = array();
 	$dirs = array(
-	    'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
-	    'worldpay_audit_recon_completed_dir' => $this->getTempDir(),
-	    'worldpay_audit_working_log_dir' => $this->getTempDir(),
+	    'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs',
+	    'worldpay_audit_recon_completed_dir' => $this->getTempDir() . '/completed',
+	    'worldpay_audit_working_log_dir' => $this->getTempDir() . '/working',
 	);
 
 	foreach ( $dirs as $var => $dir ) {
@@ -41,7 +41,7 @@ class WorldpayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 
     public function auditTestProvider() {
 	return array(
-	    array( __DIR__ . '/data/TransactionReconciliationFile/', array(
+	    array( __DIR__ . '/data/TransactionReconciliationFile', array(
 		'main' => array(
 		    array(
 		      'utm_source' => 'worldpay_audit',

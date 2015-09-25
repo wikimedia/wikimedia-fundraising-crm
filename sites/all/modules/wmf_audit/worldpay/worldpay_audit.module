@@ -1,9 +1,10 @@
 <?php
 
-define( 'WP_AUDIT_RECON_PARSER_DIR', '/usr/local/src/WP_Parser_Lib/' );
-define( 'WP_AUDIT_RECON_FILES_DIR', '/usr/local/src/recon_files/' );
-define( 'WP_AUDIT_RECON_COMPLETED_DIR', '/usr/local/src/recon_files-completed/' );
-define( 'WP_AUDIT_WORKING_LOG_DIR', '/usr/local/src/log_files-working/' );
+// Defaults
+define( 'WP_AUDIT_RECON_PARSER_DIR', '/usr/local/src/WP_Parser_Lib' );
+define( 'WP_AUDIT_RECON_FILES_DIR', '/usr/local/src/recon_files' );
+define( 'WP_AUDIT_RECON_COMPLETED_DIR', '/usr/local/src/recon_files-completed' );
+define( 'WP_AUDIT_WORKING_LOG_DIR', '/usr/local/src/log_files-working' );
 define( 'WP_AUDIT_LOG_SEARCH_PAST_DAYS', 7 );
 define( 'WP_AUDIT_TEST_MODE', true );
 
