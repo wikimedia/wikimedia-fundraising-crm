@@ -60,7 +60,16 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                 'version' => 3,
             ) );
             $contact = (array) $api->values[0];
-            $this->assertEquals( $expected['contact'], array_intersect_key( $expected['contact'], $contact ) );
+            $renamedFields = array('prefix' => 1, 'suffix' => 1);
+            $this->assertEquals( array_diff_key($expected['contact'], $renamedFields), array_intersect_key( $expected['contact'], $contact ) );
+            foreach (array_keys($renamedFields) as $renamedField) {
+                $this->assertEquals(civicrm_api3('OptionValue', 'getvalue', array(
+                    'value' => $contact[$renamedField . '_id'],
+                    'option_group_id' => 'individual_' . $renamedField,
+                    'return' => 'name',
+                )), $expected['contact'][$renamedField]);
+            }
+
         }
 
         if ( !empty( $expected['contact_custom_values'] ) ) {

@@ -899,37 +899,12 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['organization_name'] = $msg['organization_name'];
     }
     if ( !empty( $msg['name_prefix'] ) ) {
-        $existing_prefixes = array_flip(wmf_civicrm_get_options('Contact', 'prefix_id'));
-        if ( array_key_exists( $msg['name_prefix'], $existing_prefixes ) ) {
-            $prefix_id = $existing_prefixes[$msg['name_prefix']];
-        } else {
-            $option_group_result = civicrm_api3( 'OptionGroup', 'Get', array(
-                'name' => 'individual_prefix',
-            ) );
-            $result = civicrm_api3( 'OptionValue', 'Create', array(
-                'option_group_id' => $option_group_result['id'],
-                'name' => $msg['name_prefix'],
-            ) );
-            $prefix_id = $result['id'];
-        }
-        $contact['individual_prefix'] = $prefix_id;
+        $contact['prefix_id'] = $msg['name_prefix'];
+        wmf_civicrm_ensure_option_exists($msg['name_prefix'], 'prefix_id', 'individual_prefix');
     }
     if ( !empty( $msg['name_suffix'] ) ) {
-        // @todo api will accept names instead of ids so can probably remove this.
-        $existing_suffixes = array_flip(wmf_civicrm_get_options('Contact', 'suffix_id'));
-        if ( array_key_exists( $msg['name_suffix'], $existing_suffixes ) ) {
-            $suffix_id = $existing_suffixes[$msg['name_suffix']];
-        } else {
-            $option_group_result = civicrm_api3( 'OptionGroup', 'Get', array(
-                'name' => 'individual_suffix',
-            ) );
-            $result = civicrm_api3( 'OptionValue', 'Create', array(
-                'option_group_id' => $option_group_result['id'],
-                'name' => $msg['name_suffix'],
-            ) );
-            $suffix_id = $result['id'];
-        }
-        $contact['individual_suffix'] = $suffix_id;
+        $contact['suffix_id'] = $msg['name_suffix'];
+        wmf_civicrm_ensure_option_exists($msg['name_suffix'], 'suffix_id', 'individual_suffix');
     }
     if ( empty($msg['language']) ) {
         // TODO: use LanguageTag to prevent truncation of >2 char lang codes
@@ -1120,15 +1095,29 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
  * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_ensure_language_exists($languageAbbreviation) {
-    $availableLanguages = civicrm_api3('Contact', 'getoptions', array(
-      'field' => 'preferred_language',
+    wmf_civicrm_ensure_option_exists($languageAbbreviation, 'preferred_language', 'languages', array('value' => substr($languageAbbreviation, 0, 2)));
+}
+
+/**
+ * Ensure the required option value exists.
+ *
+ * @param string $option_value
+ * @param string $field_name
+ * @param string|int $option_group_name
+ *   Option group name or option group ID if known
+ * @param string $entity
+ * @throws \CiviCRM_API3_Exception
+ * @internal param string $optionValue
+ */
+function wmf_civicrm_ensure_option_exists($option_value, $field_name, $option_group_name, $spec = array(), $entity = 'Contact') {
+    $available_options = civicrm_api3($entity, 'getoptions', array(
+        'field' => $field_name,
     ));
-    if ($languageAbbreviation && empty($availableLanguages['values'][$languageAbbreviation])) {
-        civicrm_api3('OptionValue', 'create', array(
-            'option_group_id' => 'languages',
-            'value' => $languageAbbreviation,
-            'name' => $languageAbbreviation,
-        ));
+    if ($option_value && empty($available_options['values'][$option_value])) {
+        civicrm_api3('OptionValue', 'create', array_merge(array(
+            'option_group_id' => $option_group_name,
+            'name' => $option_value,
+        ), $spec));
     }
 }
 
