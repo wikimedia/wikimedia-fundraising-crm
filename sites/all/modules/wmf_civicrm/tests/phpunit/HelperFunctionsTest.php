@@ -16,7 +16,7 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
      * @throws \CiviCRM_API3_Exception
      */
     public function testTagContactForReview() {
-        civicrm_intialize();
+        civicrm_initialize();
         $contact = civicrm_api3('Contact', 'create', array(
             'contact_type' => 'Organization',
             'organization_name' => 'The Evil Empire',
@@ -37,7 +37,7 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
      * @throws \CiviCRM_API3_Exception
      */
     public function testEnsureLanguageExists() {
-        civicrm_intialize();
+        civicrm_initialize();
         wmf_civicrm_ensure_language_exists('en_IL');
         $languages = civicrm_api3('OptionValue', 'get', array(
             'option_group_name' => 'languages',
