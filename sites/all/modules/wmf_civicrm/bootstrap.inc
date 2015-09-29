@@ -34,6 +34,9 @@ function wmf_civicrm_bootstrap_civi()
  *
  * @param array $financial_types
  *
+ * @return array
+ *   Financial types in th DB.
+ *
  * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_create_financial_types($financial_types)
@@ -44,13 +47,15 @@ function wmf_civicrm_create_financial_types($financial_types)
     $missingTypes = array_diff($financial_types, $existingFinancialTypes['values']);
     foreach ($missingTypes  as $type)
     {
-        civicrm_api3('FinancialType', 'create', array(
+        $result = civicrm_api3('FinancialType', 'create', array(
           'is_active' => 1,
           'is_deductible' => 1,
           'accounting_code' => strtoupper($type),
           'name' => $type,
         ));
+        $existingFinancialTypes[$result['id']] = $type;
     }
+    return $existingFinancialTypes;
 }
 
 /**
