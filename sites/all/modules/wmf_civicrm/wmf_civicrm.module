@@ -1105,9 +1105,10 @@ function wmf_civicrm_ensure_language_exists($languageAbbreviation) {
  * @param string $field_name
  * @param string|int $option_group_name
  *   Option group name or option group ID if known
+ * @param array $spec
+ *   Values for the entity if it is to be created.
  * @param string $entity
  * @throws \CiviCRM_API3_Exception
- * @internal param string $optionValue
  */
 function wmf_civicrm_ensure_option_exists($option_value, $field_name, $option_group_name, $spec = array(), $entity = 'Contact') {
     $available_options = civicrm_api3($entity, 'getoptions', array(
