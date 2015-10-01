@@ -22,6 +22,9 @@ abstract class BaseAuditProcessor {
 
 	abstract protected function get_log_line_grep_string( $order_id );
 
+	/**
+	 * Create a normalized message from a line in a payments log file
+	 */
 	abstract protected function parse_log_line( $line );
 
 	// TODO: Move XML stuff into a helper class.
@@ -33,9 +36,56 @@ abstract class BaseAuditProcessor {
 
 	abstract protected function get_recon_file_date( $file );
 
-	abstract protected function normalize_and_merge_data( $data, $transaction );
-
 	abstract protected function regex_for_recon();
+
+	/**
+	 * Check for consistency
+	 * @param array $log_data Transaction data from payments log
+	 * @param array $audit_file_data Transaction data from the audit file
+	 * @return boolean true if data is good, false if something went wrong
+	 */
+	protected function check_consistency( $log_data, $audit_file_data ) {
+		if ( empty( $log_data ) || empty( $audit_file_data ) ) {
+			$message = ": Missing one of the required arrays.\nLog Data: "
+				. print_r( $log_data, true )
+				. "\nAudit file Data: " . print_r( $audit_file_data, true );
+			wmf_audit_log_error( __FUNCTION__ . $message, 'DATA_WEIRD' );
+			return false;
+		}
+
+		//Cross-reference log and audit file data and complain loudly if something doesn't match.
+		//@TODO: see if there's a way we can usefully use [settlement_currency] and [settlement_amount]
+		//from the recon file. This is actually super useful, but might require new import code and/or schema change.
+
+		$cross_check = array(
+			'currency',
+			'gross',
+		);
+
+		foreach ( $cross_check as $field ) {
+			if ( array_key_exists( $field, $log_data ) && array_key_exists( $field, $audit_file_data ) ) {
+				if ( is_numeric( $log_data[$field] ) ) {
+					//I actually hate everything.
+					//Floatval all by itself doesn't do the job, even if I turn the !== into !=.
+					//"Data mismatch between normal gross (5) and recon gross (5)."
+					$log_data[$field] = (string) floatval( $log_data[$field] );
+					$audit_file_data[$field] = (string) floatval( $audit_file_data[$field] );
+				}
+				if ( $log_data[$field] !== $audit_file_data[$field] ) {
+					wmf_audit_log_error( "Data mismatch between log and audit $field ({$log_data[$field]} != {$audit_file_data[$field]}). Investigation required. " . print_r( $audit_file_data, true ), 'DATA_INCONSISTENT' );
+					return false;
+				}
+			} else {
+				wmf_audit_log_error( "Audit data is expecting $field but at least one is missing. Investigation required. " . print_r( $audit_file_data, true ), 'DATA_INCONSISTENT' );
+				return false;
+			}
+		}
+		return true;
+	}
+
+	protected function merge_data( $log_data, $audit_file_data ) {
+		return array_merge( $audit_file_data, $log_data );
+	}
 
 	/**
 	 * Returns the configurable path to the recon files
@@ -581,80 +631,71 @@ abstract class BaseAuditProcessor {
 							$data = false;
 							$all_data = false;
 							$contribution_tracking_data = false;
-							$error = false;
-
-							$order_id = $this->get_order_id( $transaction );
-							if ( !$order_id ) {
-								$error = array(
-									'message' => 'Could not get an order id for the following transaction ' . print_r( $transaction, true ),
-									'code' => 'MISSING_MANDATORY_DATA',
-								);
-							} else {
-								$data = $this->get_log_data_by_order_id( $order_id, $log );
-							}
-
-							//if we have data at this point, it means we have a match in the logs
-							if ( $data ) {
-								$found += 1;
-								$all_data = $this->normalize_and_merge_data( $data, $transaction );
-								if ( !$all_data ) {
-									$error = array(
-										'message' => 'Error normalizing data. Skipping the following: ' . print_r( $transaction, true ) . "\n" . print_r( $data, true ),
-										'code' => 'NORMALIZE_DATA',
+							try {
+								$order_id = $this->get_order_id( $transaction );
+								if ( !$order_id ) {
+									throw new WmfException(
+										'MISSING_MANDATORY_DATA',
+										'Could not get an order id for the following transaction ' . print_r( $transaction, true )
 									);
 								}
-								if ( !$error ) {
-									//lookup contribution_tracking data, and fill it in with audit markers if there's nothing there.
-									$contribution_tracking_data = wmf_audit_get_contribution_tracking_data( $all_data );
+								$data = $this->get_log_data_by_order_id( $order_id, $log );
+
+								if ( !$data ) {
+									//no data found in this log, which is expected and normal and not a problem.
+									wmf_audit_echo( '.' );
+									continue;
 								}
+								//if we have data at this point, it means we have a match in the logs
+								$found += 1;
+
+								if ( !$this->check_consistency( $data, $transaction ) ) {
+									throw new WmfException(
+										'DATA_INCONSISTENT',
+										'Inconsistent data. Skipping the following: ' . print_r( $transaction, true ) . "\n" . print_r( $data, true )
+									);
+								}
+								$all_data = $this->merge_data( $data, $transaction );
+								//lookup contribution_tracking data, and fill it in with audit markers if there's nothing there.
+								$contribution_tracking_data = wmf_audit_get_contribution_tracking_data( $all_data );
 
 								if ( !$contribution_tracking_data ) {
-									$error = array(
-										'message' => 'No contribution trackin data retrieved for transaction ' . print_r( $all_data, true ),
-										'code' => 'MISSING_MANDATORY_DATA',
+									throw new WmfException(
+										'MISSING_MANDATORY_DATA',
+										'No contribution tracking data retrieved for transaction ' . print_r( $all_data, true )
 									);
 								}
 
-								if ( !$error ) {
-									//Now that we've made it this far: Easy check to make sure we're even looking at the right thing...
-									//I'm not totally sure this is going to be the right thing to do, though. Intended fragility.
-									if ( ( !$this->get_runtime_options( 'fakedb' ) ) &&
-									 ( !empty( $contribution_tracking_data['utm_payment_method'] ) ) &&
-									 ( $contribution_tracking_data['utm_payment_method'] !== $all_data['payment_method'] ) ) {
+								//Now that we've made it this far: Easy check to make sure we're even looking at the right thing...
+								//I'm not totally sure this is going to be the right thing to do, though. Intended fragility.
+								if ( ( !$this->get_runtime_options( 'fakedb' ) ) &&
+								 ( !empty( $contribution_tracking_data['utm_payment_method'] ) ) &&
+								 ( $contribution_tracking_data['utm_payment_method'] !== $all_data['payment_method'] ) ) {
 
-										$message = 'Payment method mismatch between utm tracking data(' . $contribution_tracking_data['utm_payment_method'];
-										$message .= ') and normalized log and recon data(' . $all_data['payment_method'] . '). Investigation required.';
-										$error = array(
-											'message' => $message,
-											'code' => 'UTM_DATA_MISMATCH',
-										);
-									} else {
-										unset( $contribution_tracking_data['utm_payment_method'] );
-										// On the next line, the date field from all_data will win, which we totally want.
-										// I had thought we'd prefer the contribution tracking date, but that's just silly.
-										// However, I'd just like to point out that it would be terribly enlightening for some gateways to log the difference...
-										// ...but not inside the char block, because it'll break the pretty.
-										$all_data = array_merge( $contribution_tracking_data, $all_data );
-									}
-
-									if ( !$error ) {
-										//Send to stomp. Or somewhere. Or don't (if it's test mode).
-										wmf_audit_send_transaction( $all_data, 'main' );
-										unset( $tryme[$date][$id] );
-										wmf_audit_echo( '!' );
-									}
+									$message = 'Payment method mismatch between utm tracking data(' . $contribution_tracking_data['utm_payment_method'];
+									$message .= ') and normalized log and recon data(' . $all_data['payment_method'] . '). Investigation required.';
+									throw new WmfException(
+										'DATA_INCONSISTENT',
+										$message
+									);
 								}
-							} else {
-								//no data found in this log, which is expected and normal and not a problem.
-								wmf_audit_echo( '.' );
-							}
+								unset( $contribution_tracking_data['utm_payment_method'] );
+								// On the next line, the date field from all_data will win, which we totally want.
+								// I had thought we'd prefer the contribution tracking date, but that's just silly.
+								// However, I'd just like to point out that it would be terribly enlightening for some gateways to log the difference...
+								// ...but not inside the char block, because it'll break the pretty.
+								$all_data = array_merge( $contribution_tracking_data, $all_data );
 
-							//End of the transaction search/destroy loop. If we're here and have
-							//an error, we found something and the re-fusion didn't work.
-							//Handle consistently, and definitely don't try looking in other
-							//logs.
-							if ( is_array( $error ) ) {
-								wmf_audit_log_error( $error['message'], $error['code'] );
+								//Send to stomp. Or somewhere. Or don't (if it's test mode).
+								wmf_audit_send_transaction( $all_data, 'main' );
+								unset( $tryme[$date][$id] );
+								wmf_audit_echo( '!' );
+							} catch ( WmfException $ex ) {
+								// End of the transaction search/destroy loop. If we're here and have
+								// an error, we found something and the re-fusion didn't work.
+								// Handle consistently, and definitely don't try looking in other
+								// logs.
+								wmf_audit_log_error( $ex->getMessage(), $ex->getType() );
 								unset( $tryme[$date][$id] );
 								wmf_audit_echo( 'X' );
 							}
@@ -1079,6 +1120,48 @@ abstract class BaseAuditProcessor {
 		}
 
 		return $donor_data;
+	}
+
+	protected function parse_json_log_line( $line ) {
+		$matches = array();
+		if ( !preg_match( '/[^{]*([{].*)/', $line, $matches ) ) {
+			throw new WmfException(
+				'MISSING_MANDATORY_DATA',
+				"JSON data not found in $line"
+			);
+		}
+		$log_data = json_decode( $matches[1], true );
+		if ( !$log_data ) {
+			throw new WmfException(
+				'MISSING_MANDATORY_DATA',
+				"Could not parse JSON data in $line"
+			);
+		}
+		// Translate and filter field names
+		$map = array(
+			'amount' => 'gross',
+			'country',
+			'currency_code' => 'currency',
+			'email',
+			'fname' => 'first_name',
+			'gateway',
+			'language',
+			'lname' => 'last_name',
+			'payment_method',
+			'payment_submethod',
+			'referrer',
+			'user_ip',
+			'utm_source',
+		);
+		$normal = array();
+		foreach ( $map as $logName => $normalName ) {
+			if ( is_numeric( $logName ) ) {
+				$normal[$normalName] = $log_data[$normalName];
+			} else {
+				$normal[$normalName] = $log_data[$logName];
+			}
+		}
+		return $normal;
 	}
 
 	/**

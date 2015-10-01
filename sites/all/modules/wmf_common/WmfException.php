@@ -18,6 +18,8 @@ class WmfException extends Exception {
     const FILE_NOT_FOUND = 15;
     const INVALID_FILE_FORMAT = 16;
     const fredge = 17;
+    const MISSING_MANDATORY_DATA = 18;
+    const DATA_INCONSISTENT = 19;
 
     //XXX shit we aren't using the 'rollback' attribute
     // and it's not correct in most of these cases
@@ -76,6 +78,12 @@ class WmfException extends Exception {
         ),
 
         'fredge' => array(
+            'reject' => TRUE,
+        ),
+        'MISSING_MANDATORY_DATA' => array(
+            'reject' => TRUE,
+        ),
+        'DATA_INCONSISTENT' => array(
             'reject' => TRUE,
         ),
     );
