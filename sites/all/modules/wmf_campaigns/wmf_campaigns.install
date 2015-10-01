@@ -1,5 +1,9 @@
 <?php
 
+function wmf_campaigns_install() {
+    wmf_campaigns_update_7000();
+}
+
 function wmf_campaigns_schema() {
     $schema = array();
 
@@ -22,4 +26,25 @@ function wmf_campaigns_schema() {
     );
 
     return $schema;
+}
+
+/**
+ * Create campaign group
+ */
+function wmf_campaigns_update_7000() {
+    civicrm_initialize();
+
+    $result = civicrm_api3( 'OptionGroup', 'get', array(
+        'name' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+    ) );
+
+    if ( empty( $result['id'] ) ) {
+        $result = civicrm_api3( 'OptionGroup', 'create', array(
+            'name' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+        ) );
+
+        if ( empty( $result['id'] ) ) {
+            throw new RuntimeException( 'Failed to create campaign option group.' );
+        }
+    }
 }

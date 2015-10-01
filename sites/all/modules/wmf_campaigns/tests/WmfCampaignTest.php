@@ -6,6 +6,11 @@ use wmf_communication\TestMailer;
  * @group WmfCampaigns
  */
 class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
+    public $campaign_custom_field_name;
+    public $campaign_key;
+    public $notification_email;
+    public $contact_id;
+
     function setUp() {
         parent::setUp();
         civicrm_initialize();
@@ -16,6 +21,11 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
 
         $this->campaign_key = 'fooCamp' . mt_rand();
         $this->notification_email = 'notifee@localhost.net';
+
+        civicrm_api3( 'OptionValue', 'create', array(
+            'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+            'name' => $this->campaign_key,
+        ) );
 
         $result = civicrm_api3( 'Contact', 'create', array(
             'contact_type' => 'Individual',

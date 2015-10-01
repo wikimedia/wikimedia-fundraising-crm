@@ -6,12 +6,20 @@ class WmfCampaign {
 
     protected function __construct() {}
 
+    /**
+     * @return WmfCampaign|null
+     */
     public static function fromKey( $key ) {
-        $result = db_select( 'wmf_campaigns_campaign' )
-            ->fields( 'wmf_campaigns_campaign' )
-            ->condition( 'campaign_key', $key )
-            ->execute()
-            ->fetchAssoc();
+        try {
+            $result = db_select( 'wmf_campaigns_campaign' )
+                ->fields( 'wmf_campaigns_campaign' )
+                ->condition( 'campaign_key', $key )
+                ->execute()
+                ->fetchAssoc();
+        } catch ( CiviCRM_API3_Exception $ex ) {
+            watchdog( 'wmf_campaigns', "Couldn't find campaign {$key}: " . $ex->getMessage(), NULL, WATCHDOG_WARNING );
+            return null;
+        }
         return WmfCampaign::fromDbRecord( $result );
     }
 
