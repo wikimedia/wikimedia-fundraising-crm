@@ -1,5 +1,7 @@
 <?php
 
+define( 'ImportMessageTest_campaign', 'test mail code here + ' . mt_rand() );
+
 /**
  * @group Import
  * @group Pipeline
@@ -11,12 +13,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     protected $contribution_custom_mangle;
     static protected $fixtures;
 
-    public static function getInfo() {
-        return array(
-            'name' => 'Import Message',
-            'group' => 'Pipeline',
-            'description' => 'Attempt contribution message import.',
-        );
+    public function setUp() {
+        civicrm_api3( 'OptionValue', 'create', array(
+            'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+            'label' => ImportMessageTest_campaign,
+            'value' => ImportMessageTest_campaign,
+        ) );
     }
 
     public function tearDown() {
@@ -145,7 +147,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                     'check_number' => $check_number,
                     'currency' => 'USD',
                     'date' => '2012-03-01 00:00:00',
-                    'direct_mail_appeal' => 'mail code here',
+                    'direct_mail_appeal' => ImportMessageTest_campaign,
                     'do_not_email' => 'Y',
                     'do_not_mail' => 'Y',
                     'do_not_phone' => 'Y',
@@ -156,7 +158,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                     'fee' => '0.03',
                     'gateway' => 'test_gateway',
                     'gateway_txn_id' => $gateway_txn_id,
-                    'gift_source' => 'Red mail',
+                    'gift_source' => 'Legacy Gift',
                     'gross' => '1.23',
                     'import_batch_number' => '4321',
                     'is_opt_out' => 'Y',
@@ -212,9 +214,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'tax_amount' => '',
                     ),
                     'contribution_custom_values' => array(
-                        'Appeal' => 'mail code here',
+                        'Appeal' => ImportMessageTest_campaign,
                         'import_batch_number' => '4321',
-                        'Campaign' => 'Red mail',
+                        'Campaign' => 'Legacy Gift',
                         'gateway' => 'test_gateway',
                         'gateway_txn_id' => (string) $gateway_txn_id,
                         'no_thank_you' => 'no forwarding address',
