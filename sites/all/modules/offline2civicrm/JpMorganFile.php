@@ -50,4 +50,10 @@ class JpMorganFile extends ChecksFile {
             'restrictions' => 'Unrestricted - General',
         );
     }
+
+    protected function mungeMessage( &$msg ) {
+        $msg['gross'] = str_replace( ',' , '' , $msg['gross'] );
+
+        parent::mungeMessage( $msg );
+    }
 }
