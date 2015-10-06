@@ -40,6 +40,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7033();
     wmf_civicrm_update_7034();
     wmf_civicrm_update_7060();
+    wmf_civicrm_update_7061();
 }
 
 /**
@@ -1432,7 +1433,6 @@ function wmf_civicrm_update_7034() {
     return array();
 }
 
-
 /**
  * Add option value 'tag_used_for' for civicrm_contribution.
  *
@@ -1447,4 +1447,27 @@ function wmf_civicrm_update_7060() {
         'Contributions' => array('value' => 'civicrm_contribution'),
     ));
     return array();
+}
+
+/**
+ * Append '&output=context' to all report instances.
+ *
+ * This 'upgrades' existing reports to not render results when opened by default.
+ *
+ * Although the GR work changed the default this isn't going to fly upstream so we
+ * need to change the behaviour of all of the WMF reports in a way that won't be
+ * later reverted so adding a parameter & upstreaming the meaning of that parameter provides
+ * future proofing.
+ *
+ * CRM-17225
+ */
+function wmf_civicrm_update_7061() {
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push('civicrm');
+    db_query(
+    "UPDATE civicrm_navigation
+    SET url = CONCAT(url, '&output=criteria')
+    WHERE url LIKE 'civicrm\/report\/instance%'
+    AND url NOT LIKE '%output=criteria%'"
+    );
 }
