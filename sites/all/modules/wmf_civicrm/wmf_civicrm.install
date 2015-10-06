@@ -41,6 +41,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7034();
     wmf_civicrm_update_7060();
     wmf_civicrm_update_7061();
+    wmf_civicrm_update_7062();
 }
 
 /**
@@ -1470,4 +1471,19 @@ function wmf_civicrm_update_7061() {
     WHERE url LIKE 'civicrm\/report\/instance%'
     AND url NOT LIKE '%output=criteria%'"
     );
+}
+
+/**
+ * Set default language for contacts to 'undefined'.
+ *
+ * This means a new contact created will have an empty language rather than a guessed one.
+ *
+ * CRM-14232
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_7062() {
+    civicrm_api3('Setting', 'create', array(
+        'contact_default_language' => "undefined",
+    ));
 }
