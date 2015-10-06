@@ -42,6 +42,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7060();
     wmf_civicrm_update_7061();
     wmf_civicrm_update_7062();
+    wmf_civicrm_update_7063();
 }
 
 /**
@@ -1485,5 +1486,18 @@ function wmf_civicrm_update_7061() {
 function wmf_civicrm_update_7062() {
     civicrm_api3('Setting', 'create', array(
         'contact_default_language' => "undefined",
+    ));
+}
+
+/**
+ * Reset navigation menu.
+ *
+ * CRM-17176
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_7063() {
+    civicrm_api3('Navigation', 'reset', array(
+      'for' => "report",
     ));
 }
