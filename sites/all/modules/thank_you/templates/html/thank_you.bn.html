@@ -41,9 +41,6 @@
 
 <p>আপনার রেকর্ডের জন্য: {{ receive_date }} তারিখে আপনার দান
 ছিল {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
-{% if recurring %}
-{% include 'html/recurring/bn.html' ignore missing %}
-{% endif %}</p>
 
 <p>এই চিঠি আপনার দানের একটি রেকর্ড
 হিসাবে ব্যবহার হতে পারে। এই
