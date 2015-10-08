@@ -65,7 +65,6 @@ class AmazonAuditProcessor extends BaseAuditProcessor {
 	 * @return string Name of the file we're looking for
 	 */
 	protected function get_compressed_log_file_name( $date ) {
-		// payments-worldpay-20140413.gz
 		return "payments-amazon_gateway-{$date}.gz";
 	}
 
