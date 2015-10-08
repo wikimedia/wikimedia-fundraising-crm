@@ -8,17 +8,11 @@
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
-            "version": "v1.0.0",
+            "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/amzn/login-and-pay-with-amazon-sdk-php.git",
-                "reference": "3bf17e802dc6913aa97f1afdaf26a08480f670d0"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/amzn/login-and-pay-with-amazon-sdk-php/zipball/3bf17e802dc6913aa97f1afdaf26a08480f670d0",
-                "reference": "3bf17e802dc6913aa97f1afdaf26a08480f670d0",
-                "shasum": ""
+                "url": "https://github.com/ejegg/login-and-pay-with-amazon-sdk-php",
+                "reference": "8d4bb3131acf6f9842372619b7147852bc349574"
             },
             "require": {
                 "ext-curl": "*",
@@ -30,7 +24,6 @@
                     "PayWithAmazon\\": "PayWithAmazon/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "Apache OSL-2"
             ],
@@ -50,7 +43,7 @@
                 "payment",
                 "payments"
             ],
-            "time": "2015-04-16 21:14:01"
+            "time": "2015-10-07 15:01:25"
         },
         {
             "name": "clio/clio",
@@ -775,10 +768,10 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "1f370943983373b2aaa3c89e8262c8790b51703b"
+                "reference": "b5ff2a7d5f17aaaa33a169ca101cbea639769c90"
             },
             "require": {
-                "amzn/login-and-pay-with-amazon-sdk-php": "^1.0",
+                "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
                 "fusesource/stomp-php": "2.*",
                 "php": ">=5.3.3",
                 "phpmailer/phpmailer": "5.2.6",
@@ -815,7 +808,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2015-09-16 18:38:04"
+            "time": "2015-10-08 14:32:04"
         },
         {
             "name": "zordius/lightncandy",
@@ -1820,6 +1813,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
+        "amzn/login-and-pay-with-amazon-sdk-php": 20,
         "coderkungfu/php-queue": 20,
         "wikimedia/donation-interface": 20,
         "wikimedia/smash-pig": 20
