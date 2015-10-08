@@ -16,7 +16,7 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
 		//  MA.PISCESSW.#M.RECON.WIKI.D280514
 		// or
 		//  TranDetVer2_530860_11-26-2014_8'27'08 AM.csv
-		return '/\.RECON\.WIKI\.|TranDetVer2/';
+		return '/\.RECON\.WIKI\.|TranDetVer2|WPG_AUDIT/';
 	}
 
 	/**
@@ -44,6 +44,9 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
 			$dateParts = explode( '-', $dateStr );
 			$date = $dateParts[2] . str_pad( $dateParts[0], 2, '0' ) . str_pad( $dateParts[1], 2, '0' );
 			return $date;
+		} elseif ( preg_match( '/WPG_AUDIT/', $file ) ) {
+			// WPG audit files look like WPG_AUDIT_YYYYMMDDhhmm.csv
+			return substr( $file, 10, -8 );
 		}
 		throw new Exception( "Cannot parse date in surprise file {$file}" );
 	}
