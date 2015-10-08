@@ -695,7 +695,7 @@ abstract class BaseAuditProcessor {
 								// an error, we found something and the re-fusion didn't work.
 								// Handle consistently, and definitely don't try looking in other
 								// logs.
-								wmf_audit_log_error( $ex->getMessage(), $ex->getType() );
+								wmf_audit_log_error( $ex->getMessage(), $ex->getErrorName() );
 								unset( $tryme[$date][$id] );
 								wmf_audit_echo( 'X' );
 							}
