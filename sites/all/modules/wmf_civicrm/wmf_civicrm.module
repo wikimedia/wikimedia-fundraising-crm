@@ -1401,10 +1401,14 @@ function wmf_civicrm_normalize_msg( $msg ) {
         $msg['create_date'] = $msg['date'];
     }
 
-    if ( $msg['recurring'] and $msg['gateway'] == 'globalcollect' ) {
-        if ( !$msg['subscr_id'] ) {
+    if ( $msg['recurring'] and !$msg['subscr_id'] ) {
+        if ( $msg['gateway'] == 'globalcollect' ) {
             // Well randomly grab an ID, of course :-/
             $msg['subscr_id'] = $msg['gateway_txn_id'];
+        } else if ( $msg['gateway'] == 'amazon' ) {
+            // Amazon 'subscription id' is the Billing Agreement ID, which
+            // is a substring of the Capture ID we record as 'gateway_txn_id'
+            $msg['subscr_id'] = substr( $msg['gateway_txn_id'], 0, 19 );
         }
     }
 
