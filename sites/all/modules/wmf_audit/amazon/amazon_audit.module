@@ -1,0 +1,84 @@
+<?php
+
+use SmashPig\Core\Configuration;
+use SmashPig\Core\Context;
+
+/**
+ * Implementation of hook_menu()
+ */
+function amazon_audit_menu() {
+	$items = array();
+
+	$items['admin/config/wmf_audit/amazon_audit'] = array(
+		'title' => 'Amazon Audit',
+		'description' => t( 'Configure WMF audit settings.' ),
+		'access arguments' => array( 'administer wmf_audit' ),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'amazon_audit_settings' ),
+	);
+
+	return $items;
+}
+
+/**
+ * Callback for menu
+ */
+function amazon_audit_settings() {
+	$form['amazon_audit_recon_files_dir'] = array(
+		'#type' => 'textfield',
+		'#title' => t( 'Directory containing incoming reconciliation files' ),
+		'#required' => TRUE,
+		'#default_value' => variable_get( 'amazon_audit_recon_files_dir' ),
+	);
+	$form['amazon_audit_recon_completed_dir'] = array(
+		'#type' => 'textfield',
+		'#title' => t( 'Directory for completed reconciliation files' ),
+		'#required' => TRUE,
+		'#default_value' => variable_get( 'amazon_audit_recon_completed_dir' ),
+	);
+	$form['amazon_audit_working_log_dir'] = array(
+		'#type' => 'textfield',
+		'#title' => t( 'Working directory for payments logs (Not the source - that is defined at the wmf_audit level)' ),
+		'#required' => TRUE,
+		'#default_value' => variable_get( 'amazon_audit_working_log_dir' ),
+	);
+	$form['amazon_audit_test_mode'] = array(
+		'#type' => 'checkbox',
+		'#title' => t( 'When this box is checked, no stomp messages will be sent.' ),
+		'#required' => FALSE,
+		'#default_value' => variable_get( 'amazon_audit_test_mode' ),
+	);
+	$form['amazon_audit_log_search_past_days'] = array(
+		'#type' => 'textfield',
+		'#title' => t( 'Plus or minus log search (in days)' ),
+		'#required' => TRUE,
+		'#default_value' => variable_get( 'amazon_audit_log_search_past_days' ),
+	);
+	return system_settings_form( $form );
+}
+
+function amazon_audit_create_processor( $options ) {
+	/**
+	 * Set your amazon credentials in $settings_file file like so:
+	 * $config = array(
+	 *		'amazon' => array(
+	 *			'credentials' => array( array(
+	 *			'merchant_id' => '', // 13 or so uppercase letters
+	 *			'client_id' => '', // app or site-specific, starts with amznX.application
+	 *			'access_key' => '', // 20 alphanumeric characters
+	 *			'secret_key' => '', // 40 base-64 encoded chars
+	 *			'region' => '', // 'de', 'jp', 'uk', or 'us'
+	 *			'sandbox' => false,
+	 *		) ),
+	 * );
+	 */
+	$settings_file = DRUPAL_ROOT . '/sites/default/smashpig.settings.php';
+	$config = new Configuration(
+		DRUPAL_ROOT . '/../vendor/wikimedia/smash-pig/config_defaults.php',
+		$settings_file,
+		'amazon',
+		true
+	);
+	Context::init( $config );
+	return new AmazonAuditProcessor( $options );
+}

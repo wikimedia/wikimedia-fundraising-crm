@@ -77,7 +77,44 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
 	}
 
 	protected function parse_log_line( $logline ) {
-		return $this->parse_xml_log_line( $logline );
+		$xml_data = $this->parse_xml_log_line( $logline );
+		$normal = array();
+
+		// normalize the $xml_data
+		$nodemap = array(
+			'OrderNumber' => 'gateway_txn_id',
+			'Amount' => 'gross',
+			'REMOTE_ADDR' => 'user_ip',
+			'FirstName' => 'first_name',
+			'LastName' => 'last_name',
+			'Address1' => 'street_address', //N0NE PROVIDED
+			'ZipCode' => 'postal_code', //0
+			'CountryCode' => 'country',
+			'Email' => 'email',
+			'contribution_tracking_id' => 'contribution_tracking_id', //passed through, because I already set this manually
+		);
+
+		foreach ( $xml_data as $key => $value ) {
+			if ( array_key_exists( $key, $nodemap ) ) {
+				$normal[$nodemap[$key]] = $value;
+			}
+		}
+
+		if ( array_key_exists( 'CurrencyId', $xml_data ) ) {
+			$normal['currency'] = $this->get_currency_code_from_stupid_number( $xml_data['CurrencyId'] );
+		}
+
+		$unsets = array(
+			'street_address' => 'N0NE PROVIDED',
+			'postal_code' => '0',
+		);
+
+		foreach ( $unsets as $key => $value ) {
+			if ( array_key_exists( $key, $normal ) && $normal[$key] === $value ) {
+				unset( $normal[$key] );
+			}
+		}
+		return $normal;
 	}
 
 	/**
@@ -130,83 +167,12 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
 	 * Presumably, if we're calling this function, we already have reason to believe
 	 * that the xml and recon data supplied go together. There should always be some
 	 * internal sanity checking, though. Stuff can get weird.
-	 * @param array $xml_data Transaction data from payments log xml
+	 * @param array $log_data Transaction data from payments log xml
 	 * @param array $recon_data Transaction data from the recon file
 	 * @return array|false The re-fused and normalized data, or false if something
 	 * went wrong.
 	 */
-	protected function normalize_and_merge_data( $xml_data, $recon_data ) {
-		if ( empty( $xml_data ) || empty( $recon_data ) ) {
-			$message = ": Missing one of the required arrays.\nXML Data: " . print_r( $xml_data, true ) . "\nRecon Data: " . print_r( $recon_data, true );
-			wmf_audit_log_error( __FUNCTION__ . $message, 'DATA_WEIRD' );
-			return false;
-		}
-		$normal = array();
-
-		//first, normalize the $xml_data
-		$nodemap = array(
-			'OrderNumber' => 'gateway_txn_id',
-			'Amount' => 'gross',
-			'REMOTE_ADDR' => 'user_ip',
-			'FirstName' => 'first_name',
-			'LastName' => 'last_name',
-			'Address1' => 'street_address', //N0NE PROVIDED
-			'ZipCode' => 'postal_code', //0
-			'CountryCode' => 'country',
-			'Email' => 'email',
-			'contribution_tracking_id' => 'contribution_tracking_id', //passed through, because I already set this manually
-		);
-
-		foreach ( $xml_data as $key => $value ) {
-			if ( array_key_exists( $key, $nodemap ) ) {
-				$normal[$nodemap[$key]] = $value;
-			}
-		}
-
-		if ( array_key_exists( 'CurrencyId', $xml_data ) ) {
-			$normal['currency'] = $this->get_currency_code_from_stupid_number( $xml_data['CurrencyId'] );
-		}
-
-		$unsets = array(
-			'street_address' => 'N0NE PROVIDED',
-			'postal_code' => '0',
-		);
-
-		foreach ( $unsets as $key => $value ) {
-			if ( array_key_exists( $key, $normal ) && $normal[$key] === $value ) {
-				unset( $normal[$key] );
-			}
-		}
-
-		//now, cross-reference what's in $recon_data and complain loudly if something doesn't match.
-		//@TODO: see if there's a way we can usefully use [settlement_currency] and [settlement_amount]
-		//from the recon file. This is actually super useful, but might require new import code and/or schema change.
-		//
-		//Check between the two sets... normal => recon
-		$cross_check = array(
-			'currency' => 'currency',
-			'gross' => 'gross',
-		);
-
-		foreach ( $cross_check as $check1 => $check2 ) {
-			if ( array_key_exists( $check1, $normal ) && array_key_exists( $check2, $recon_data ) ) {
-				if ( is_numeric( $normal[$check1] ) ) {
-					//I actually hate everything.
-					//Floatval all by itself doesn't do the job, even if I turn the !== into !=.
-					//"Data mismatch between normal gross (5) and recon gross (5)."
-					$normal[$check1] = (string) floatval( $normal[$check1] );
-					$recon_data[$check2] = (string) floatval( $recon_data[$check2] );
-				}
-				if ( $normal[$check1] !== $recon_data[$check2] ) {
-					wmf_audit_log_error( "Data mismatch between normal $check1 ($normal[$check1]) and recon $check2 ($recon_data[$check2]). Investigation required. " . print_r( $recon_data, true ), 'DATA_INCONSISTENT' );
-					return false;
-				}
-			} else {
-				wmf_audit_log_error( "Recon data is expecting normal $check1 and recon $check2, but at least one is missing. Investigation required. " . print_r( $recon_data, true ), 'DATA_INCONSISTENT' );
-				return false;
-			}
-		}
-
+	protected function merge_data( $log_data, $recon_data ) {
 		//just port these
 		$believe = array( //because we have no choice
 			'gateway', //ha
@@ -218,13 +184,13 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
 
 		foreach ( $believe as $key ) {
 			if ( array_key_exists( $key, $recon_data ) ) {
-				$normal[$key] = $recon_data[$key];
+				$log_data[$key] = $recon_data[$key];
 			} else {
 				wmf_audit_log_error( "Recon data is missing expected key $key. " . print_r( $recon_data, true ), 'DATA_INCOMPLETE' );
 			}
 		}
 
-		return $normal;
+		return $log_data;
 	}
 
 	/**

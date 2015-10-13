@@ -1,32 +1,32 @@
 <?php
 
-use SmashPig\PaymentProviders\AstroPay\Audit\AstroPayAudit;
+use SmashPig\PaymentProviders\Amazon\Audit\AuditParser;
 
-class AstroPayAuditProcessor extends BaseAuditProcessor {
-	protected $name = 'astropay';
+class AmazonAuditProcessor extends BaseAuditProcessor {
+	protected $name = 'amazon';
 
 	protected function get_audit_parser() {
-		return new AstroPayAudit();
+		return new AuditParser();
 	}
 
 	protected function get_recon_file_date( $file ) {
-		// Example:  wikimedia_report_2015-06-16.csv
-		// For that, we'd want to return 20150616
-		$parts = preg_split( '/_|\./', $file );
-		$date_piece = $parts[count( $parts ) - 2];
-		$date = preg_replace( '/-/', '', $date_piece );
-		if ( !preg_match( '/\d{6}/', $date ) ) {
+		// Example:  2015-09-29-SETTLEMENT_DATA_353863080016707.csv
+		// For that, we'd want to return 20150929
+		$parts = preg_split( '/-/', $file );
+		if ( count( $parts ) !== 4 ) {
 			throw new Exception( "Unparseable reconciliation file name: {$file}" );
 		}
+		$date = "{$parts[0]}{$parts[1]}{$parts[2]}";
+
 		return $date;
 	}
 
 	protected function get_log_distilling_grep_string() {
-		return 'Redirecting for transaction:';
+		return 'Got info for Amazon donation: ';
 	}
 
 	protected function get_log_line_grep_string( $order_id ) {
-		return ":$order_id Redirecting for transaction:";
+		return ":$order_id Got info for Amazon donation: ";
 	}
 
 	protected function parse_log_line( $logline ) {
@@ -42,12 +42,12 @@ class AstroPayAuditProcessor extends BaseAuditProcessor {
 	}
 
 	protected function regex_for_recon() {
-		return '/_report_/';
+		return '/SETTLEMENT_DATA|REFUND_DATA/';
 	}
 
 	/**
-	 * Initial logs for AstroPay have no gateway transaction id, just our
-	 * contribution tracking id.
+	 * Amazon audit parser should add our reference id as log_id.  This will
+	 * be the contribution tracking id, a dash, and the attempt number.
 	 *
 	 * @param array $transaction possibly incomplete set of transaction data
 	 * @return string|false the order_id, or false if we can't figure it out
