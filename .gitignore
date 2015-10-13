@@ -1,5 +1,6 @@
 sites/default/civicrm.settings.php
 sites/default/settings.php
+sites/default/smashpig.settings.php
 sites/default/files
 .idea
 vendor
