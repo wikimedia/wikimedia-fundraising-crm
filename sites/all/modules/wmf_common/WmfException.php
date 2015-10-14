@@ -20,6 +20,7 @@ class WmfException extends Exception {
     const fredge = 17;
     const MISSING_MANDATORY_DATA = 18;
     const DATA_INCONSISTENT = 19;
+    const BANNER_HISTORY = 20;
 
     //XXX shit we aren't using the 'rollback' attribute
     // and it's not correct in most of these cases
@@ -67,6 +68,9 @@ class WmfException extends Exception {
         'MISSING_PREDECESSOR' => array(
             'requeue' => TRUE,
             'no-email' => TRUE,
+        ),
+        'BANNER_HISTORY' => array(
+             'reject' => TRUE,
         ),
 
         // other errors
