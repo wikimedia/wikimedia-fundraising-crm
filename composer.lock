@@ -768,7 +768,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "c7133276607f63d5601c7eddc367a77beccc45e8"
+                "reference": "24e682ffbc686736eeab569d20200afd5c4dc248"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -808,7 +808,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2015-10-08 14:32:04"
+            "time": "2015-10-14 20:28:15"
         },
         {
             "name": "zordius/lightncandy",

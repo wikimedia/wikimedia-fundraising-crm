@@ -153,7 +153,7 @@ class AstroPayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 						'date' => 1434488406,
 						'gateway' => 'astropay',
 						'gateway_parent_id' => '5138333',
-						'gateway_refund_id' => 'RFD 33333',
+						'gateway_refund_id' => '33333',
 						'gross' => '5.00',
 						'gross_currency' => 'BRL',
 						'type' => 'refund',

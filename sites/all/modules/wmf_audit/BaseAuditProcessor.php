@@ -239,7 +239,7 @@ abstract class BaseAuditProcessor {
 		if ( isset( $record['gateway_refund_id'] ) ) {
 			$send_message['gateway_refund_id'] = $record['gateway_refund_id'];
 		} else {
-			$send_message['gateway_refund_id'] = 'RFD ' . $record['gateway_txn_id']; //Notes from a previous version: "after intense deliberation, we don't actually care what this is at all."
+			$send_message['gateway_refund_id'] = $record['gateway_txn_id']; //Notes from a previous version: "after intense deliberation, we don't actually care what this is at all."
 		}
 		if ( isset( $record['gateway_parent_id'] ) ) {
 			$send_message['gateway_parent_id'] = $record['gateway_parent_id'];
