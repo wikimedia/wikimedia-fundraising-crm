@@ -239,7 +239,7 @@ abstract class BaseAuditProcessor {
 		if ( isset( $record['gateway_refund_id'] ) ) {
 			$send_message['gateway_refund_id'] = $record['gateway_refund_id'];
 		} else {
-			$send_message['gateway_refund_id'] = 'RFD ' . $record['gateway_txn_id']; //Notes from a previous version: "after intense deliberation, we don't actually care what this is at all."
+			$send_message['gateway_refund_id'] = $record['gateway_txn_id']; //Notes from a previous version: "after intense deliberation, we don't actually care what this is at all."
 		}
 		if ( isset( $record['gateway_parent_id'] ) ) {
 			$send_message['gateway_parent_id'] = $record['gateway_parent_id'];
@@ -484,16 +484,21 @@ abstract class BaseAuditProcessor {
 	protected function get_all_recon_files() {
 		$files_directory = $this->get_recon_dir();
 		//foreach file in the directory, if it matches our pattern, add it to the array.
-		$files = array();
+		$files_by_date = array();
 		if ( $handle = opendir( $files_directory ) ) {
 			while ( ( $file = readdir( $handle ) ) !== false ) {
 				if ( $this->get_filetype( $file ) === 'recon' ) {
 					$filedate = $this->get_recon_file_date( $file ); //which is not the same thing as the edited date... probably.
-					$files[$filedate] = $files_directory . $file;
+					$files_by_date[$filedate][] = $files_directory . $file;
 				}
 			}
 			closedir( $handle );
-			ksort( $files );
+			ksort( $files_by_date );
+			// now flatten it
+			$files = array();
+			foreach ( $files_by_date as $date => $date_files ) {
+				$files = array_merge( $files, $date_files );
+			}
 			return $files;
 		} else {
 			//can't open the directory at all. Problem.
