@@ -65,7 +65,7 @@ function drush_wmf_audit_parse_audit() {
   $options = array();
 
   //handle our defaults first...
-  $options['test'] = variable_get('wmf_audit_test_mode');
+  $options['test'] = variable_get('wmf_audit_test_mode') || variable_get("{$gateway}_audit_test_mode");
   //now override with the command line settings
   foreach ($simple_opts as $key => $message) {
     if (drush_get_option($key)) {
