@@ -59,20 +59,24 @@ function amazon_audit_settings() {
 
 function amazon_audit_create_processor( $options ) {
 	/**
-	 * Set your amazon credentials in $settings_file file like so:
+	 * To override default audit parser settings, you can create a
+	 * file at $settings_file with content like this:
+	 *
 	 * $config = array(
 	 *		'amazon' => array(
-	 *			'credentials' => array( array(
-	 *			'merchant_id' => '', // 13 or so uppercase letters
-	 *			'client_id' => '', // app or site-specific, starts with amznX.application
-	 *			'access_key' => '', // 20 alphanumeric characters
-	 *			'secret_key' => '', // 40 base-64 encoded chars
-	 *			'region' => '', // 'de', 'jp', 'uk', or 'us'
-	 *			'sandbox' => false,
-	 *		) ),
+	 *			'audit' => array(
+	 *				'file-types' => array(
+	 *					'SmashPig\PaymentProviders\Amazon\Audit\RefundReport',
+	 *					'SmashPig\PaymentProviders\Amazon\Audit\SettlementReport',
+	 *				),
+	 *			),
+	 *		),
 	 * );
 	 */
 	$settings_file = DRUPAL_ROOT . '/sites/default/smashpig.settings.php';
+	if ( !file_exists( $settings_file ) ) {
+		$settings_file = null;
+	}
 	$config = new Configuration(
 		DRUPAL_ROOT . '/../vendor/wikimedia/smash-pig/config_defaults.php',
 		$settings_file,
