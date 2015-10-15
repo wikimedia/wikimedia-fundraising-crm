@@ -25,8 +25,8 @@ class WorldpayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 	self::$messages = array();
 	$dirs = array(
 	    'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
-	    'worldpay_audit_recon_completed_dir' => '/tmp/test-completed/',
-	    'worldpay_audit_working_log_dir' => '/tmp/test-working/',
+	    'worldpay_audit_recon_completed_dir' => $this->getTempDir(),
+	    'worldpay_audit_working_log_dir' => $this->getTempDir(),
 	);
 
 	foreach ( $dirs as $var => $dir ) {

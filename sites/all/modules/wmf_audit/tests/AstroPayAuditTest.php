@@ -28,8 +28,8 @@ class AstroPayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 		self::$messages = array();
 		$dirs = array(
 			'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
-			'astropay_audit_recon_completed_dir' => '/tmp/test-completed/',
-			'astropay_audit_working_log_dir' => '/tmp/test-working/',
+			'astropay_audit_recon_completed_dir' => $this->getTempDir(),
+			'astropay_audit_working_log_dir' => $this->getTempDir(),
 		);
 
 		foreach ( $dirs as $var => $dir ) {
