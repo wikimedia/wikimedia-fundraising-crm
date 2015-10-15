@@ -385,7 +385,6 @@ function wmf_audit_send_transaction($record, $type) {
 
 /**
  * Send the message in $body to an appropriate stomp message queue.
- * @staticvar Queue $q The queue object.
  * @staticvar array $types Types of transaction we know about, that probably all
  * have different queues.
  * @param array $body An array representing the transaction we're trying to
@@ -396,12 +395,9 @@ function wmf_audit_send_transaction($record, $type) {
  * @throws Exception
  */
 function wmf_audit_send_stomp($body, $type) {
-  static $q;
   static $types = array();
 
-  if (!$q) {
-    $q = queue2civicrm_stomp();
-  }
+  $q = queue2civicrm_stomp();
 
   //@FIXME: This is actually more for the queue consumer modules, but: Make a
   //goshdarn get function for each of these queue variables so I don't have to
