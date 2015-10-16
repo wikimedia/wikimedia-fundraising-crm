@@ -357,7 +357,11 @@ abstract class BaseAuditProcessor {
 			// which might be resolved below.	Those are archived on the next run,
 			// once we can confirm they have hit Civi and are no longer missing.
 			if ( wmf_audit_count_missing( $missing ) <= $this->get_runtime_options( 'recon_complete_count' ) ) {
-				$this->move_completed_recon_file( $file );
+				if ( wmf_audit_runtime_options('test') ) {
+					wmf_audit_echo( "Not moving file '{$file}' because test mode\n" );
+				} else {
+					$this->move_completed_recon_file( $file );
+				}
 			}
 
 			//grumble...
