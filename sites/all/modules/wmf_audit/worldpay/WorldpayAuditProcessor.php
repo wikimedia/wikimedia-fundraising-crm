@@ -46,7 +46,7 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
 			return $date;
 		} elseif ( preg_match( '/WPG_AUDIT/', $file ) ) {
 			// WPG audit files look like WPG_AUDIT_YYYYMMDDhhmm.csv
-			return substr( $file, 10, -8 );
+			return substr( $file, 10, 12 );
 		}
 		throw new Exception( "Cannot parse date in surprise file {$file}" );
 	}
