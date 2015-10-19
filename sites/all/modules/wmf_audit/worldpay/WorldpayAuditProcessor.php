@@ -16,7 +16,9 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
 		//  MA.PISCESSW.#M.RECON.WIKI.D280514
 		// or
 		//  TranDetVer2_530860_11-26-2014_8'27'08 AM.csv
-		return '/\.RECON\.WIKI\.|TranDetVer2|WPG_AUDIT/';
+		// or
+		//  WPG_AUDIT_YYYYMMDDhhmm.txt
+		return '/\.RECON\.WIKI\.|TranDetVer2|^WPG_AUDIT_\d{12}\.\w{3}$/';
 	}
 
 	/**
