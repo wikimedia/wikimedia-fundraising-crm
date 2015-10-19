@@ -182,7 +182,7 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
         parent::__construct( );
     }
 
-    function buildQuery() {
+    function buildQuery($applyLimit = true) {
         return "/* timeout=600 */ " . parent::buildQuery();
     }
 
@@ -205,7 +205,7 @@ EOS;
 \nLEFT JOIN civicrm_address
     ON civicrm_address.contact_id = {$this->_aliases['civicrm_contribution']}.contact_id
         AND civicrm_address.is_primary = 1
-LEFT JOIN civicrm_country {$this->_aliases['civicrm_country']} 
+LEFT JOIN civicrm_country {$this->_aliases['civicrm_country']}
     ON {$this->_aliases['civicrm_country']}.id = civicrm_address.country_id
 EOS;
         }
@@ -254,12 +254,12 @@ EOS;
                 and array_key_exists( $field_name, $this->_params['group_bys'] ) );
     }
 
-    function addDateRange( $name, $from = '_from', $to = '_to', $label = 'From:', $dateFormat = 'searchDate', $required = false ) {
+    function addDateRange( $name, $from = '_from', $to = '_to', $label = 'From:', $dateFormat = 'searchDate', $required = false, $displayTime = false ) {
         $this->addDateTime( $name . $from, $label , $required, array( 'formatType' => $dateFormat ) );
         $this->addDateTime( $name . $to, ts('To:'), $required, array( 'formatType' => $dateFormat ) );
     }
 
-    function selectClause( $tableName, $type, $fieldName, &$field ) {
+    function selectClause( &$tableName, $type, &$fieldName, &$field ) {
         switch ( $fieldName ) {
         case 'is_negative':
             $this->register_field_alias( $tableName, $fieldName, $field );
