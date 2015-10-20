@@ -1,5 +1,9 @@
 <?php
 
+use SmashPig\Core\Configuration;
+use SmashPig\Core\Context;
+use SmashPig\Core\Logging\Logger;
+
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
 
 /**
@@ -34,6 +38,19 @@ function wmf_audit_menu() {
  * @param array $options Runtime parameters
  */
 function wmf_audit_main( $gateway, $options ) {
+    $settings_file = DRUPAL_ROOT . '/sites/default/smashpig.settings.php';
+    if ( !file_exists( $settings_file ) ) {
+        $settings_file = null;
+    }
+    $config = new Configuration(
+        DRUPAL_ROOT . '/../vendor/wikimedia/smash-pig/config_defaults.php',
+        $settings_file,
+        'amazon',
+        true
+    );
+    Context::init( $config );
+    Logger::init( $config->val( 'logging/root-context' ), $config->val( 'logging/log-level' ), $config );
+
     $audit = module_invoke( "{$gateway}_audit", 'create_processor', $options );
     if ( !$audit ) {
         throw new Exception( "Gateway [$gateway] not found" );

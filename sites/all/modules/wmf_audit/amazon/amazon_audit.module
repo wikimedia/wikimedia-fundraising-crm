@@ -1,8 +1,5 @@
 <?php
 
-use SmashPig\Core\Configuration;
-use SmashPig\Core\Context;
-
 /**
  * Implementation of hook_menu()
  */
@@ -73,16 +70,5 @@ function amazon_audit_create_processor( $options ) {
 	 *		),
 	 * );
 	 */
-	$settings_file = DRUPAL_ROOT . '/sites/default/smashpig.settings.php';
-	if ( !file_exists( $settings_file ) ) {
-		$settings_file = null;
-	}
-	$config = new Configuration(
-		DRUPAL_ROOT . '/../vendor/wikimedia/smash-pig/config_defaults.php',
-		$settings_file,
-		'amazon',
-		true
-	);
-	Context::init( $config );
 	return new AmazonAuditProcessor( $options );
 }
