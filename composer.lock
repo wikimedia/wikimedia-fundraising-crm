@@ -768,7 +768,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "b8ca986501838d5feacabd91473d6ee352e84bc4"
+                "reference": "60c9f5e68784e077b04f73757d12682020df1a72"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
