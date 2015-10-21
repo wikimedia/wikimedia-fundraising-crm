@@ -20,9 +20,9 @@ function queue_consume_drush_command() {
   );
   $items['donations-process-messagefile'] = array(
     'description' => 
-      'Feeds a single message directly into the import pipeline, bypassing the queue.',
+      'Feeds messages directly into the import pipeline, bypassing the queue.',
     'arguments' => array(
-        'path' => 'The JSON file containing the message'
+        'path' => 'The JSON file containing the message(s)'
     ),
     'required-arguments' => true,
     'examples' => array( 'drush dpm /tmp/blurr.json' => '# process the file' ), 
@@ -40,7 +40,7 @@ function queue_consume_drush_help( $section ) {
     case 'drush:queue-consume':
       return dt( "Pulls items from an ActiveMQ queue and processes them into CiviCRM" );
     case 'drush:donations-process-messagefile':
-      return dt( "Feeds a single message directly into the import pipeline, bypassing the queue." );
+      return dt( "Feeds messages directly into the import pipeline, bypassing the queue." );
   }
 }
 
@@ -70,9 +70,14 @@ function drush_queue_consume_donations_process_messagefile( $path ) {
     watchdog( 'queue2civicrm', "Processing input file @path and feeding to queue2civicrm_import.",
         array( '@path' => realpath( $path ) ), WATCHDOG_INFO );
     $contents = file_get_contents( $path );
-    $msg = json_decode( $contents, true );
-    if ($msg === NULL) {
+    $messages = json_decode( $contents, true );
+    if ( !is_array( $messages ) ) {
       throw new Exception("Error decoding JSON in '$path'.");
     }
-    module_invoke( 'queue2civicrm', 'import', $msg );
+    if ( !isset( $messages[0] ) || !is_array( $messages[0] ) ) {
+      $messages = array( $messages );
+    }
+    foreach( $messages as $msg ) {
+      module_invoke( 'queue2civicrm', 'import', $msg );
+    }
 }
