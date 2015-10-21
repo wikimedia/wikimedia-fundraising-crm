@@ -732,14 +732,16 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "1971cbbc12b967ff776399e57f5098de04785637"
+                "reference": "e9c479de7594f9e1d011fa344792cb1cca987aad"
             },
             "require": {
                 "coderkungfu/php-queue": "dev-master",
                 "fusesource/stomp-php": "2.1.*",
                 "monolog/monolog": "1.12.0",
+                "predis/predis": "1.*",
                 "psr/log": "1.0.0",
-                "zordius/lightncandy": "0.18"
+                "zordius/lightncandy": "0.18",
+                "amzn/login-and-pay-with-amazon-sdk-php": "dev-master"
             },
             "type": "library",
             "autoload": {
@@ -760,7 +762,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2015-07-17 19:58:45"
+            "time": "2015-10-21 13:44:26"
         },
         {
             "name": "wikimedia/smash-pig",
