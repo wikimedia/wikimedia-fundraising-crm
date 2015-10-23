@@ -15,9 +15,9 @@ class WmfCampaign {
             ->condition( 'campaign_key', $key )
             ->execute()
             ->fetchAssoc();
-        if ( !$result ) {
-            return null;
-        }
+		if ( $result === false ) {
+			throw new CampaignNotFoundException( "Campaign {$key} is missing WMF Campaign info." );
+		}
         return WmfCampaign::fromDbRecord( $result );
     }
 
@@ -35,4 +35,7 @@ class WmfCampaign {
     public function getNotificationEmail() {
         return $this->notification_email;
     }
+}
+
+class CampaignNotFoundException extends RuntimeException {
 }
