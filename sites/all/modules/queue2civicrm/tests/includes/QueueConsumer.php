@@ -1,7 +1,6 @@
 <?php
 
 class QueueConsumer {
-    public $faux_gateways = "lions, tigers, bears";
     protected $queue_name = 'civiCRM_test';
     protected $url = 'tcp://localhost:61613';
 
@@ -11,7 +10,6 @@ class QueueConsumer {
         variable_set( 'queue2civicrm_subscription', "/queue/{$this->queue_name}" );
         variable_set( 'queue2civicrm_url', $this->url );
         variable_set( 'queue2civicrm_failmail', $this->recip_email );
-        variable_set( 'queue2civicrm_gateways_to_monitor', $this->faux_gateways );
     }
 
     function tearDown(){
@@ -239,31 +237,33 @@ class QueueConsumer {
      * Test methods in Queue2civicrmTrxnCounter and associated wrapper functions
      */
     function testQueue2CivicrmTrxnCounter() {
-      $trxn_counter = _queue2civicrm_trxn_counter_get();
+      $trxn_counter = Queue2civicrmTrxnCounter::instance();
       $trxn_counter->foo = 'bar';
-      // make sure that _queue2civicrm_trxn_counter_get() is returning the same trxnc counter
-      $this->assertEqual( $trxn_counter, _queue2civicrm_trxn_counter_get(), "_queue2civicrm_trxn_counter_get() not returning identical objects.");
-      
-      // make sure gateways are properly being set.
-      $gateways = implode( ", ", array_keys( $trxn_counter->get_trxn_counts()));
-      $this->assertEqual( $this->faux_gateways, $gateways, 'Gateways are not properly being set in Queue2civicrmTrxnCounter. Expected "' . $this->faux_gateways . '", got "' . $gateways . '".' );
+      $this->assertIdentical( $trxn_counter, Queue2civicrmTrxnCounter::instance(),
+		 'Queue2civicrmTrxnCounter::instance() not returning identical objects.');
       
       // make sure adding and fetching counts work
-      _queue2civicrm_trxn_counter_add( 'lions' );
+      Queue2civicrmTrxnCounter::instance()->increment( 'lions' );
       $lions_count = $trxn_counter->get_count_total( 'lions' );
       $this->assertEqual( $lions_count, 1, 'Gateway count test failed, expected 1, got ' . $lions_count );
-      _queue2civicrm_trxn_counter_add( 'lions', 3 );
+      Queue2civicrmTrxnCounter::instance()->increment( 'lions', 3 );
       $lions_count = $trxn_counter->get_count_total( 'lions' );
       $this->assertEqual( $lions_count, 4, 'Gateway count test failed, expected 4, got ' . $lions_count );
       $overall_count = $trxn_counter->get_count_total();
       $this->assertEqual( $overall_count, 4, 'Overall gateway count test failed.  Expected 4, got ' . $overall_count );
 
       // make sure that our overall counts are right and that we didn't get a count for 'foo' gateway
-      _queue2civicrm_trxn_counter_add( 'bears' );
-      _queue2civicrm_trxn_counter_add( 'foo' );
+      Queue2civicrmTrxnCounter::instance()->increment( 'bears' );
+      Queue2civicrmTrxnCounter::instance()->increment( 'foo' );
       $this->assertFalse( in_array( 'foo', array_keys( $trxn_counter->get_trxn_counts())), 'Was able to set an invalid gateway.' );
       $overall_count = $trxn_counter->get_count_total();
       $this->assertEqual( $overall_count, 5, 'Overall gateway count test failed.  Expected 5, got ' . $overall_count );
+
+      // make sure gateways are properly being set.
+	  $allGateways = 'lions, bears, foo';
+      $gateways = implode( ", ", array_keys( $trxn_counter->get_trxn_counts()));
+      $this->assertEqual( $allGateways, $gateways,
+	    'Gateways are not properly being set in Queue2civicrmTrxnCounter. Expected "' . $allGateways . '", got "' . $gateways . '".' );
     }
 
 }

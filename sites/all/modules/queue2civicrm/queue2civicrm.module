@@ -159,14 +159,6 @@ function queue2civicrm_settings() {
     '#default_value' => variable_get('queue2civicrm_batch_time', 90),
   );
 
-  $form[ 'queue2civicrm_gateways_to_monitor' ] = array(
-    '#type' => 'textfield',
-    '#title' => t('Gateways to monitor'),
-    '#required' => false,
-    '#default_value' => variable_get( 'queue2civicrm_gateways_to_monitor', 'payflowpro, paypal' ),
-    '#description' => t( 'A CSV of gateway-strings that you wish to monitor in Ganglia.  The gateway string should match the name of the gateway as defined in the "gateway" field of transaction messages.')
-  );
-  
   $form [ 'queue2civicrm_gmetric_tmax' ] = array(
     '#type' => 'textfield',
     '#title' => t('Default tmax for gmetric reporting (in seconds)'),
@@ -218,7 +210,7 @@ function queue2civicrm_batch_process() {
    */
   $gmetric_tmax = variable_get( 'queue2civicrm_gmetric_tmax', 60 );
   $gmetric_dmax = variable_get( 'queue2civicrm_gmetric_dmax', 360 );
-  $counter = _queue2civicrm_trxn_counter_get();
+  $counter = Queue2civicrmTrxnCounter::instance();
   foreach ( $counter->get_trxn_counts() as $gateway => $count ) {
     module_invoke( 'ganglia_reporter', 'send_metric', $gateway . ' donations', $count, 'int8', 'donations', 'both', $gmetric_tmax, $gmetric_dmax );
   }
@@ -296,7 +288,7 @@ function queue2civicrm_import( $msg ) {
     module_invoke_all( 'queue2civicrm_import', $contribution_info );
     
     // keep count of the transactions
-    _queue2civicrm_trxn_counter_add( $msg[ 'gateway' ] );
+    Queue2civicrmTrxnCounter::instance()->increment( $msg['gateway'] );
 
     // Ack any completion message once the rest has completed successfully
     if ( $completion_message ) {
