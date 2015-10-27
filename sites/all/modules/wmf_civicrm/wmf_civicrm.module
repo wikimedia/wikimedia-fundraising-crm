@@ -2129,7 +2129,7 @@ function wmf_civicrm_dao_to_list( $dao ) {
  */
 function wmf_civicrm_civicrm_buildForm( $formName, &$form ) {
     switch ( $formName ) {
-    case 'CRM_Contribute_Form_Contribution':
+      case 'CRM_Contribute_Form_Contribution':
         // Only run this validation for users having the Engage role.
         if ( !wmf_civicrm_user_has_role( 'Engage Direct Mail' ) ) {
             break;
@@ -2148,6 +2148,12 @@ function wmf_civicrm_civicrm_buildForm( $formName, &$form ) {
         if ( $batch_num_field_name ) {
             $form->addRule( $batch_num_field_name, t('Batch number is required'), 'required' );
         }
+        break;
+
+      case 'CRM_Contact_Form_Search_Advanced' :
+      case 'CRM_Contribute_Form_Search' :
+        $defaults['contribution_date_relative'] = 0;
+        $form->setDefaults($defaults);
         break;
     }
 }
