@@ -2139,7 +2139,7 @@ function wmf_civicrm_civicrm_buildForm( $formName, &$form ) {
         if ( $form->_action & CRM_Core_Action::ADD ) {
             $engage_contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Engage' );
             $form->setDefaults( array(
-                'contribution_type_id' => $engage_contribution_type_id,
+                'financial_type_id' => $engage_contribution_type_id,
             ) );
         }
 
@@ -2189,9 +2189,9 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
             break;
         }
 
-        $engage_contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Engage' );
-        if ( $fields['contribution_type_id'] !== $engage_contribution_type_id ) {
-            $errors['contribution_type_id'] = t("Must use the \"Engage\" contribution type.");
+        $engage_contribution_type_id = wmf_civicrm_get_civi_id( 'financial_type_id', 'Engage' );
+        if ( $fields['financial_type_id'] !== $engage_contribution_type_id ) {
+            $errors['financial_type_id'] = t("Must use the \"Engage\" contribution type.");
         }
 
         // Gift Source (sic field named "Campaign") is limited.
