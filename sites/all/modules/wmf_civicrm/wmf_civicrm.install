@@ -39,6 +39,10 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7032();
     wmf_civicrm_update_7033();
     wmf_civicrm_update_7034();
+    wmf_civicrm_update_7060();
+    wmf_civicrm_update_7061();
+    wmf_civicrm_update_7062();
+    wmf_civicrm_update_7063();
 }
 
 /**
@@ -1088,7 +1092,7 @@ function wmf_civicrm_update_7024() {
     if (!$result) {
         throw new Exception('Could not find custom group wmf_donor.  Please run update 7023 first.');
     }
-	
+
     $custom_group = array_pop($result);
 
 	for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
@@ -1449,3 +1453,73 @@ function wmf_civicrm_update_7034() {
     wmf_civicrm_create_option_values( 'payment_instrument', array('Trilogy') );
     return array();
 }
+
+/**
+ * Add option value 'tag_used_for' for civicrm_contribution.
+ *
+ * This might exist as it had to be added to update 7016 so check first.d
+ *
+ * Note I have skipped to 7060 leaving a numerical gap for upgrades that happen
+ * in master before this is merged.
+ */
+function wmf_civicrm_update_7060() {
+    wmf_civicrm_bootstrap_civi();
+    wmf_civicrm_create_option_values_detailed('tag_used_for', array(
+        'Contributions' => array('value' => 'civicrm_contribution'),
+    ));
+    return array();
+}
+
+/**
+ * Append '&output=context' to all report instances.
+ *
+ * This 'upgrades' existing reports to not render results when opened by default.
+ *
+ * Although the GR work changed the default this isn't going to fly upstream so we
+ * need to change the behaviour of all of the WMF reports in a way that won't be
+ * later reverted so adding a parameter & upstreaming the meaning of that parameter provides
+ * future proofing.
+ *
+ * CRM-17225
+ */
+function wmf_civicrm_update_7061() {
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push('civicrm');
+    db_query(
+    "UPDATE civicrm_navigation
+    SET url = CONCAT(url, '&output=criteria')
+    WHERE url LIKE 'civicrm\/report\/instance%'
+    AND url NOT LIKE '%output=criteria%'"
+    );
+}
+
+/**
+ * Set default language for contacts to 'undefined'.
+ *
+ * This means a new contact created will have an empty language rather than a guessed one.
+ *
+ * CRM-14232
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_7062() {
+    civicrm_initialize();
+    civicrm_api3('Setting', 'create', array(
+        'contact_default_language' => "undefined",
+    ));
+}
+
+/**
+ * Reset navigation menu.
+ *
+ * CRM-17176
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_7063() {
+    civicrm_initialize();
+    civicrm_api3('Navigation', 'reset', array(
+      'for' => "report",
+    ));
+}
+

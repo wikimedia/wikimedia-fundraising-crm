@@ -3,6 +3,7 @@
 use wmf_communication\Mailer;
 use wmf_communication\Templating;
 
+// FIXME: Find the production value dynamically.
 const WMF_CAMPAIGNS_OPTION_GROUP_NAME = 'appeal_20080709183729';
 
 /**
@@ -57,7 +58,7 @@ function wmf_campaigns_index_form() {
 
     $api = civicrm_api_classapi();
     $success = $api->OptionValue->get( array(
-        'option_group_name' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+        'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
         'rowCount' => 1000,
     ) );
     if ( !$success ) {
@@ -119,7 +120,7 @@ function wmf_campaigns_edit_form( $form, $formState, $campaignValue ) {
 
     $api = civicrm_api_classapi();
     $success = $api->OptionValue->get( array(
-        'option_group_name' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+        'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
         'value' => $campaignValue,
     ) );
     if ( !$success || count( $api->values ) != 1 ) {

@@ -223,7 +223,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         // TODO: Add to contact_tags instead.
         // Tag contact for review
         try {
-            $tag = wmf_civicrm_tag_contact_for_review( $contact );
+            wmf_civicrm_tag_contact_for_review( $contact );
         } catch ( WmfException $ex ) {
             watchdog( 'queue2civicrm_import', 'Failed to tag contact for review.', NULL, WATCHDOG_ERROR );
         }
@@ -899,36 +899,12 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['organization_name'] = $msg['organization_name'];
     }
     if ( !empty( $msg['name_prefix'] ) ) {
-        $existing_prefixes = array_flip( CRM_Core_PseudoConstant::individualPrefix() );
-        if ( array_key_exists( $msg['name_prefix'], $existing_prefixes ) ) {
-            $prefix_id = $existing_prefixes[$msg['name_prefix']];
-        } else {
-            $option_group_result = civicrm_api3( 'OptionGroup', 'Get', array(
-                'name' => 'individual_prefix',
-            ) );
-            $result = civicrm_api3( 'OptionValue', 'Create', array(
-                'option_group_id' => $option_group_result['id'],
-                'name' => $msg['name_prefix'],
-            ) );
-            $prefix_id = $result['id'];
-        }
-        $contact['individual_prefix'] = $prefix_id;
+        $contact['prefix_id'] = $msg['name_prefix'];
+        wmf_civicrm_ensure_option_exists($msg['name_prefix'], 'prefix_id', 'individual_prefix');
     }
     if ( !empty( $msg['name_suffix'] ) ) {
-        $existing_suffixes = array_flip( CRM_Core_PseudoConstant::individualSuffix() );
-        if ( array_key_exists( $msg['name_suffix'], $existing_suffixes ) ) {
-            $suffix_id = $existing_suffixes[$msg['name_suffix']];
-        } else {
-            $option_group_result = civicrm_api3( 'OptionGroup', 'Get', array(
-                'name' => 'individual_suffix',
-            ) );
-            $result = civicrm_api3( 'OptionValue', 'Create', array(
-                'option_group_id' => $option_group_result['id'],
-                'name' => $msg['name_suffix'],
-            ) );
-            $suffix_id = $result['id'];
-        }
-        $contact['individual_suffix'] = $suffix_id;
+        $contact['suffix_id'] = $msg['name_suffix'];
+        wmf_civicrm_ensure_option_exists($msg['name_suffix'], 'suffix_id', 'individual_suffix');
     }
     if ( empty($msg['language']) ) {
         // TODO: use LanguageTag to prevent truncation of >2 char lang codes
@@ -954,6 +930,9 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         if ( !empty( $msg['country'] ) ) {
             $contact['preferred_language'] .= '_' . strtoupper(substr($msg['country'], 0, 2));
         }
+    }
+    if (!empty($contact['preferred_language'])) {
+        wmf_civicrm_ensure_language_exists($contact['preferred_language']);
     }
 
     // Copy some fields, if they exist
@@ -1093,6 +1072,54 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     return $contact_result;
+}
+
+/**
+ * Ensure the selected language is valid in CiviCRM DB.
+ *
+ * In 4.6 CiviCRM validates preferred_language against the language
+ * option_group in the DB.
+ *
+ * wmf has (at least in the tests) defined these ad hoc.
+ * Options are to manage the list of available languages or create them at
+ * run time if required. This function does the latter.
+ *
+ * When retrieved using getoptions it uses a pseudoconstant
+ * so, the DB query won't run more than once. I haven't added an
+ * extra level of caching into this function at this stage for fear of fragility
+ * if it gets updated elsewhere but it could be done.
+ *
+ * @param string
+ *
+ * @return mixed
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_ensure_language_exists($languageAbbreviation) {
+    wmf_civicrm_ensure_option_exists($languageAbbreviation, 'preferred_language', 'languages', array('value' => substr($languageAbbreviation, 0, 2)));
+}
+
+/**
+ * Ensure the required option value exists.
+ *
+ * @param string $option_value
+ * @param string $field_name
+ * @param string|int $option_group_name
+ *   Option group name or option group ID if known
+ * @param array $spec
+ *   Values for the entity if it is to be created.
+ * @param string $entity
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_ensure_option_exists($option_value, $field_name, $option_group_name, $spec = array(), $entity = 'Contact') {
+    $available_options = civicrm_api3($entity, 'getoptions', array(
+        'field' => $field_name,
+    ));
+    if ($option_value && empty($available_options['values'][$option_value])) {
+        civicrm_api3('OptionValue', 'create', array_merge(array(
+            'option_group_id' => $option_group_name,
+            'name' => $option_value,
+        ), $spec));
+    }
 }
 
 /**
@@ -1488,7 +1515,6 @@ function wmf_civicrm_normalize_msg( $msg ) {
  */
 function wmf_civicrm_tag_contact_for_review( $contact )
 {
-    require_once 'api/v2/EntityTag.php';
 
     $review_tag_id = wmf_civicrm_get_civi_id('tag_id', 'Review');
 
@@ -1496,8 +1522,7 @@ function wmf_civicrm_tag_contact_for_review( $contact )
         'tag_id' => $review_tag_id,
         'contact_id' => $contact[ 'id' ]
     );
-    $tag_result = civicrm_entity_tag_add( $tag );
-    return $tag_result;
+    return civicrm_api3('EntityTag', 'create', $tag);
 }
 
 /**
@@ -2073,85 +2098,6 @@ EOS;
 }
 
 /**
- * Implementation of hook_civicrm_contactListQuery, this is short-circuiting
- * the normal quicksearch to workaround bad queries which take several minutes...
- * filesort...  This should be fixed upstream in this issue:
- *    http://issues.civicrm.org/jira/browse/CRM-12326
- */
-function wmf_civicrm_civicrm_contactListQuery( &$query, $name, $context, $id ) {
-    if (is_numeric($name)) {
-        $query = <<<EOS
-SELECT DISTINCT(id), data, sort_name, email
-FROM
-(
-    (
-        SELECT
-            civicrm_contact.id,
-            CONCAT_WS( ' :: ', CONCAT( 'Contact - ', sort_name ), email ) AS data,
-            sort_name,
-            email
-        FROM civicrm_contact
-        LEFT JOIN civicrm_email
-			ON ( civicrm_email.contact_id = civicrm_contact.id AND civicrm_email.is_primary = 1 )
-        WHERE
-            civicrm_contact.id = {$name}
-            AND civicrm_contact.is_deleted = 0
-    ) UNION (
-        SELECT
-            civicrm_contact.id,
-            CONCAT_WS( ' :: ', CONCAT( 'Contribution - ', sort_name ), email ) AS data,
-            sort_name,
-            email
-        FROM civicrm_contribution
-        JOIN civicrm_contact
-            ON civicrm_contribution.contact_id = civicrm_contact.id
-        LEFT JOIN civicrm_email
-			ON ( civicrm_email.contact_id = civicrm_contribution.id AND civicrm_email.is_primary = 1 )
-        WHERE
-            civicrm_contribution.id = {$name}
-            AND civicrm_contact.is_deleted = 0
-    )
-) AS t
-LIMIT 0, 10
-EOS;
-    } else if ( !empty( $name ) ) {
-        $query = <<<EOS
-SELECT DISTINCT(id), data, sort_name, email
-FROM
-(
-    (
-        SELECT
-            civicrm_contact.id,
-            CONCAT_WS( ' :: ', sort_name, email ) AS data,
-            sort_name,
-            email
-        FROM civicrm_contact
-        LEFT JOIN civicrm_email
-			ON ( civicrm_email.contact_id = civicrm_contact.id AND civicrm_email.is_primary = 1 )
-        WHERE
-            civicrm_contact.sort_name LIKE '{$name}%'
-            AND civicrm_contact.is_deleted = 0
-    ) UNION (
-        SELECT
-            civicrm_contact.id,
-            CONCAT_WS( ' :: ', sort_name, email ) AS data,
-            sort_name,
-            email
-        FROM civicrm_email
-        JOIN civicrm_contact
-            ON civicrm_email.contact_id = civicrm_contact.id
-        WHERE
-            civicrm_email.email LIKE '{$name}%'
-            AND civicrm_contact.is_deleted = 0
-            AND civicrm_email.is_primary = 1
-    )
-) AS t
-LIMIT 0, 10
-EOS;
-    }
-}
-
-/**
  * Get a grip on multiple database connections.
  *
  * @return db_switcher
@@ -2187,7 +2133,7 @@ function wmf_civicrm_dao_to_list( $dao ) {
  */
 function wmf_civicrm_civicrm_buildForm( $formName, &$form ) {
     switch ( $formName ) {
-    case 'CRM_Contribute_Form_Contribution':
+      case 'CRM_Contribute_Form_Contribution':
         // Only run this validation for users having the Engage role.
         if ( !wmf_civicrm_user_has_role( 'Engage Direct Mail' ) ) {
             break;
@@ -2197,7 +2143,7 @@ function wmf_civicrm_civicrm_buildForm( $formName, &$form ) {
         if ( $form->_action & CRM_Core_Action::ADD ) {
             $engage_contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Engage' );
             $form->setDefaults( array(
-                'contribution_type_id' => $engage_contribution_type_id,
+                'financial_type_id' => $engage_contribution_type_id,
             ) );
         }
 
@@ -2206,6 +2152,12 @@ function wmf_civicrm_civicrm_buildForm( $formName, &$form ) {
         if ( $batch_num_field_name ) {
             $form->addRule( $batch_num_field_name, t('Batch number is required'), 'required' );
         }
+        break;
+
+      case 'CRM_Contact_Form_Search_Advanced' :
+      case 'CRM_Contribute_Form_Search' :
+        $defaults['contribution_date_relative'] = 0;
+        $form->setDefaults($defaults);
         break;
     }
 }
@@ -2247,9 +2199,9 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
             break;
         }
 
-        $engage_contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Engage' );
-        if ( $fields['contribution_type_id'] !== $engage_contribution_type_id ) {
-            $errors['contribution_type_id'] = t("Must use the \"Engage\" contribution type.");
+        $engage_contribution_type_id = wmf_civicrm_get_civi_id( 'financial_type_id', 'Engage' );
+        if ( $fields['financial_type_id'] !== $engage_contribution_type_id ) {
+            $errors['financial_type_id'] = t("Must use the \"Engage\" contribution type.");
         }
 
         // Gift Source (sic field named "Campaign") is limited.
@@ -2431,4 +2383,18 @@ LIMIT %4";
 			}
 		}
 	}
+}
+
+/**
+ * Get options for a field.
+ *
+ * @param string $entity
+ * @param string $field
+ *
+ * @return array
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_get_options($entity, $field) {
+    $options = civicrm_api3($entity, 'getoptions', array('field' => $field));
+    return $options['values'];
 }

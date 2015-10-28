@@ -423,7 +423,7 @@ function recurring_import_subscr_modify( $msg ) {
   $location = wmf_civicrm_message_location_update( $msg, $contact );
   
   // Tag contact for review
-  $tag = wmf_civicrm_tag_contact_for_review( $contact );
+  wmf_civicrm_tag_contact_for_review( $contact );
 
   watchdog( 'recurring', 'Subscription succesfully modified for subscription id: %subscr_id', array( '%subscr_id' => print_r( $msg['subscr_id'], true )), WATCHDOG_NOTICE );
 }
