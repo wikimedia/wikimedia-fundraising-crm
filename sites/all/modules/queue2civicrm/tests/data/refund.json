@@ -1,9 +1,0 @@
-{
-    "date": 1234567,
-    "gateway": "globalcollect",
-    "gateway_parent_id": "1234",
-    "gateway_refund_id": "1235",
-    "gross": "50",
-    "gross_currency": "BAA",
-    "type": "chargeback"
-}

@@ -1,6 +1,0 @@
-name = WMF Communication Test Cases
-description = Simpletests
-package = Wikimedia
-core = 7.x
-dependencies[] = wmf_communication
-files[] = Job.test
