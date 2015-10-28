@@ -2,15 +2,15 @@
 /**
  * An extension of the queue2civicrm module to handle processing recurring payment
  * related messages from a queue.
- * 
- * You may notice the use of the words 'recurring' and 'subscription' - they are 
- * essentially interchangable.  They have slightly different meanings in the 
+ *
+ * You may notice the use of the words 'recurring' and 'subscription' - they are
+ * essentially interchangable.  They have slightly different meanings in the
  * PayPal land of subscription/recurring payments, but essentially they function
  * the same.  'Recurring' more clearly captures the idea behind how the WMF uses
- * PayPal's subscription payments and is how the fundraising team colloquially refers  
- * to the 'subscription' service, so 'recurring' is used here in attempt to promote  
- * greater clarity.  'Subscription' or its derivations are used in places where PayPal 
- * uses the word in its field/variable names (eg subscr_payment). 
+ * PayPal's subscription payments and is how the fundraising team colloquially refers
+ * to the 'subscription' service, so 'recurring' is used here in attempt to promote
+ * greater clarity.  'Subscription' or its derivations are used in places where PayPal
+ * uses the word in its field/variable names (eg subscr_payment).
  */
 
 /**
@@ -39,12 +39,12 @@ function recurring_settings() {
     '#description' => t('If checked, no message processing will be performed.'),
     '#default_value' => variable_get('recurring_disable', false),
   );
- 
+
   $form['recurring_description'] = array(
     '#type' => 'markup',
     '#markup' => t('<p>The recurring queue contains notifications pertaining to subscription donations, such as monthly payments, cancellation,and expiration.</p>'),
   );
-  
+
   $form['recurring_subscription'] = array(
     '#type' => 'textfield',
     '#title' => t('Subscription path'),
@@ -52,7 +52,7 @@ function recurring_settings() {
     '#default_value' => variable_get('recurring_subscription', '/queue/test_recurring'),
     '#description' => t( 'Queue to watch for recurring notifications' ),
   );
-  
+
   $form['recurring_batch'] = array(
     '#type' => 'select',
     '#title' => t('Cron batch size'),
@@ -106,18 +106,18 @@ function recurring_batch_process() {
   else {
     watchdog('recurring', 'No contributions processed.');
   }
-  
+
   return $recurring_processed;
 }
 
 /**
  * Import queued message contents to CiviCRM
- * 
+ *
  * @param $msg
  */
 function recurring_import( $msg ) {
   global $txn_subscr_payment, $txn_subscr_acct;
-  
+
   // store the original message for logging later
   $msg_orig = $msg;
 
@@ -125,22 +125,22 @@ function recurring_import( $msg ) {
 
   /**
    * prepare data for logging
-   * 
-   * if we don't have a gateway_txn_id, we'll store the transaction type + the subscriber id instead - 
+   *
+   * if we don't have a gateway_txn_id, we'll store the transaction type + the subscriber id instead -
    * this should happen for all non-payment transactions.
    */
   $log = array(
     'gateway' => 'recurring_' . $msg['gateway'],
     'gateway_txn_id' => ( !empty( $msg[ 'gateway_txn_id_orig' ] ) ? $msg[ 'gateway_txn_id_orig' ] : $msg[ 'txn_type' ] . ":" . $msg[ 'subscr_id' ] ),
-    'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ), 
+    'data' => ( is_array( $msg_orig ) ? json_encode( $msg_orig ) : $msg_orig->body ),
     'timestamp' => time(),
     'verified' => 0,
   );
   $cid = _queue2civicrm_log( $log );
-  
+
   // define the subscription txn type for an actual 'payment'
   $txn_subscr_payment = array( 'subscr_payment' );
-  
+
   // define the subscription txn types that affect the subscription account
   $txn_subscr_acct = array(
     'subscr_cancel', // subscription canceled
@@ -149,7 +149,7 @@ function recurring_import( $msg ) {
     //'subscr_modify', // subscription modification
     'subscr_signup', // subscription account creation
   );
-  
+
   // route the message to the appropriate handler depending on transaction type
   if ( isset( $msg[ 'txn_type' ] ) && in_array( $msg[ 'txn_type' ], $txn_subscr_payment ) ) {
     if ( wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ) {
@@ -162,7 +162,7 @@ function recurring_import( $msg ) {
   } else {
     throw new WmfException( 'INVALID_RECURRING', 'Msg not recognized as a recurring payment related message.' );
   }
-  
+
   // update the log
   if ( $cid ) {
     $log[ 'cid' ] = $cid;
@@ -174,16 +174,16 @@ function recurring_import( $msg ) {
 
 /**
  * Import a recurring payment
- * 
+ *
  * @param array $msg
  */
 function recurring_import_subscr_payment( $msg ) {
   /**
    * if the subscr_id is not set, we can't process it due to an error in the message.
-   *  
+   *
    * otherwise, check for the parent record in civicrm_contribution_recur.
    * if one does not exist, the message is not ready for reprocessing, so requeue it.
-   * 
+   *
    * otherwise, process the payment.
    */
   if ( !isset( $msg[ 'subscr_id' ] ) ) {
@@ -198,13 +198,13 @@ function recurring_import_subscr_payment( $msg ) {
 
   //insert the contribution
   $contribution = wmf_civicrm_contribution_message_import( $msg );
-  
+
   /**
    *  Insert the contribution record.
-   *  
+   *
    *  PayPal only sends us full address information for the user in payment messages,
    *  but we only want to insert this data once unless we're modifying the record.
-   *  We know that this should be the first time we're processing a contribution 
+   *  We know that this should be the first time we're processing a contribution
    *  for this given user if we are also updating the contribution_tracking table
    *  for this contribution.
    */
@@ -213,10 +213,10 @@ function recurring_import_subscr_payment( $msg ) {
 
     // Map the tracking record to the CiviCRM contribution
     wmf_civicrm_message_update_contribution_tracking( $msg, $contribution );
-    
+
     // update the contact
     $contact = wmf_civicrm_message_contact_update( $msg, $recur_record->contact_id );
-  
+
     // Insert the location record
     wmf_civicrm_message_location_insert( $msg, $contact );
 
@@ -233,24 +233,24 @@ function recurring_import_subscr_payment( $msg ) {
     'version' => 3,
   );
   $api->ContributionRecur->Create( $update_params );
-  
+
   // construct an array of useful info to invocations of queue2civicrm_import
   $contribution_info = array(
     'contribution_id' => $contribution['id'],
     'contact_id' => $recur_record->contact_id,
     'msg' => $msg,
   );
-  
+
   // Send thank you email, other post-import things
   module_invoke_all( 'queue2civicrm_import', $contribution_info );
 }
 
 /**
  * Import subscription account
- * 
+ *
  * Routes different subscription message types to an appropriate handling
  * function.
- * 
+ *
  * @param $msg
  */
 function recurring_import_subscr_acct( $msg ) {
@@ -258,23 +258,23 @@ function recurring_import_subscr_acct( $msg ) {
     case 'subscr_signup':
       recurring_import_subscr_signup( $msg );
       break;
-      
+
     case 'subscr_cancel':
       recurring_import_subscr_cancel( $msg );
       break;
-      
+
     case 'subscr_eot':
       recurring_import_subscr_eot( $msg );
       break;
-      
+
     case 'subscr_modify':
       recurring_import_subscr_modify( $msg );
       break;
-      
+
     case 'subscr_failed':
       recurring_import_subscr_failed( $msg );
       break;
-     
+
     default:
       throw new WmfException( 'INVALID_RECURRING', 'Invalid subscription message type' );
   }
@@ -282,7 +282,7 @@ function recurring_import_subscr_acct( $msg ) {
 
 /**
  * Import a subscription signup message
- * 
+ *
  * @param $msg
  */
 function recurring_import_subscr_signup( $msg ) {
@@ -290,7 +290,7 @@ function recurring_import_subscr_signup( $msg ) {
   if ( $recur_record = wmf_civicrm_get_recur_record( $msg[ 'subscr_id' ] ) ) {
     throw new WmfException( 'DUPLICATE_CONTRIBUTION', 'Subscription account already exists' );
   }
-  
+
   // create contact record
   $contact = wmf_civicrm_message_contact_insert( $msg );
 
@@ -299,7 +299,7 @@ function recurring_import_subscr_signup( $msg ) {
 
   // Tag contact for review
   wmf_civicrm_tag_contact_for_review( $contact );
-  
+
   $api = civicrm_api_classapi();
   $insert_params = array(
     'contact_id' => $contact[ 'id' ],
@@ -311,7 +311,7 @@ function recurring_import_subscr_signup( $msg ) {
     'start_date' => wmf_common_date_unix_to_civicrm( $msg[ 'start_date' ] ),
     'create_date' => wmf_common_date_unix_to_civicrm( $msg[ 'create_date' ] ),
     'trxn_id' => $msg[ 'subscr_id' ],
-    
+
     'version' => 3,
   );
 
@@ -324,7 +324,7 @@ function recurring_import_subscr_signup( $msg ) {
 
 /**
  * Process a subscriber cancellation
- * 
+ *
  * @param array $msg
  */
 function recurring_import_subscr_cancel( $msg ) {
@@ -362,7 +362,7 @@ function recurring_import_subscr_cancel( $msg ) {
 
 /**
  * Process an expired subscription
- * 
+ *
  * @param array $msg
  */
 function recurring_import_subscr_eot( $msg ) {
@@ -387,10 +387,10 @@ function recurring_import_subscr_eot( $msg ) {
 
 /**
  * Process a subscription modification
- * 
+ *
  * NOTE: at the moment, we are not accepting modification messages, so this is currently
  * unused.
- * 
+ *
  * @param array $msg
  */
 function recurring_import_subscr_modify( $msg ) {
@@ -418,10 +418,10 @@ function recurring_import_subscr_modify( $msg ) {
 
   // update the contact
   $contact = wmf_civicrm_message_contact_update( $msg, $recur_record->contact_id );
-  
+
   // Insert the location record
   $location = wmf_civicrm_message_location_update( $msg, $contact );
-  
+
   // Tag contact for review
   wmf_civicrm_tag_contact_for_review( $contact );
 
@@ -437,7 +437,7 @@ function recurring_import_subscr_failed( $msg ) {
   if ( !$recur_record = wmf_civicrm_get_recur_record( $msg[ 'subscr_id' ] ) ) {
     throw new WmfException( 'INVALID_RECURRING', 'Subscription account does not exist for subscription id: ' . print_r( $msg['subscr_id'], true ) );
   }
-  
+
   $api = civicrm_api_classapi();
   $update_params = array(
     'id' => $recur_record->id,
@@ -455,10 +455,10 @@ function recurring_import_subscr_failed( $msg ) {
 
 /**
  * Convert queued message to a standardized format
- * 
- * This is a wrapper to ensure that all necessary normalization occurs on the 
+ *
+ * This is a wrapper to ensure that all necessary normalization occurs on the
  * message.
- * 
+ *
  * If message is in json format, it will be converted into an array.
  *
  * @param array|StompFrame $msg
@@ -494,14 +494,14 @@ function recurring_normalize_msg( $msg  ) {
 
 /**
  * Normalize raw PayPal message
- * 
- * It is possible that we'll get a raw message from PayPal.  If that is the 
+ *
+ * It is possible that we'll get a raw message from PayPal.  If that is the
  * case, this will convert the raw PayPal message to our normalized format.
- * 
+ *
  * This is large and unwieldly.
  *
  * FIXME: move this normalization into the paypal listener
- * 
+ *
  * @param $msg
  * @return array
  */
@@ -554,12 +554,12 @@ function recurring_normalize_paypal_msg( $msg ) {
         $msg_normalized['country'] = $msg['residence_country'];
       }
   }
-  
+
   // payment-specific message handling
   if ( $msg[ 'txn_type' ] == 'subscr_payment' ) {
     // default to not update contribution tracking data
     $msg_normalized[ 'contribution_tracking_update' ] = false;
-    
+
     // get the database connection to the tracking table
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'donations' );
@@ -580,12 +580,12 @@ function recurring_normalize_paypal_msg( $msg ) {
 	$msg_normalized[ 'gateway_txn_id' ] = $msg[ 'txn_id' ];
 	$msg_normalized[ 'currency' ] = $msg[ 'mc_currency' ];
 	$msg_normalized[ 'gross' ] = $msg[ 'mc_gross' ];
-	$msg_normalized[ 'fee' ] = $msg[ 'mc_fee' ];  
-	$msg_normalized[ 'gross' ] = $msg[ 'mc_gross' ]; 
+	$msg_normalized[ 'fee' ] = $msg[ 'mc_fee' ];
+	$msg_normalized[ 'gross' ] = $msg[ 'mc_gross' ];
 	$msg_normalized[ 'net' ] = $msg_normalized[ 'gross' ] - $msg_normalized[ 'fee' ];
-	$msg_normalized[ 'payment_date' ] = strtotime( $msg[ 'payment_date' ] ); 
+	$msg_normalized[ 'payment_date' ] = strtotime( $msg[ 'payment_date' ] );
   } else {
-    
+
     // break the period out for civicrm
     if( isset( $msg[ 'period3' ] ) ) {
       // map paypal period unit to civicrm period units
@@ -595,19 +595,19 @@ function recurring_normalize_paypal_msg( $msg ) {
         'w' => 'week',
         'y' => 'year',
       );
-      
+
       $period = explode( " ", $msg[ 'period3' ] );
       $msg_normalized[ 'frequency_interval' ] = $period[0];
       $msg_normalized[ 'frequency_unit' ] = $period_map[ strtolower( $period[1] ) ];
     }
-    
+
     if ( isset( $msg[ 'recur_times' ] ) ) {
       $msg_normalized[ 'installments' ] = $msg[ 'recur_times' ];
     } else {
       // forever
       $msg_normalized[ 'installments' ] = 0;
     }
-    
+
     if ( isset( $msg[ 'amount3' ] ) ) {
       $msg_normalized[ 'gross' ] = $msg[ 'amount3' ];
     } elseif ( isset( $msg[ 'mc_amount3' ] ) ) {
@@ -657,16 +657,16 @@ function recurring_normalize_paypal_msg( $msg ) {
         $msg_normalized[$key] = $value;
     }
   }
-  
+
   return $msg_normalized;
 }
 
 /**
  * Get the contribution tracking id for a given a recurring trxn
- * 
+ *
  * If the 'custom' field is not set (from paypal, which would normally carry the tracking id),
  * we look and see if any related recurring transactions have had a contrib tracking id set.
- * 
+ *
  * If they do, we'll use that contrib tracking id, otherwise we'll generate a new row in the
  * contrib tracking table.
  * @param array $msg
@@ -707,7 +707,7 @@ function recurring_get_contribution_tracking_id( $msg ) {
         return $contribution_tracking_id;
       }
     }
-    
+
     // if we still don't have a contribution tracking id, we're gonna have to make one
     if ( !$contribution_tracking_id ) {
       // if we already have previous contributions, we should create a contrib id connected with the first contrib
