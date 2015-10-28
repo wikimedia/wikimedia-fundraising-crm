@@ -1484,6 +1484,7 @@ function wmf_civicrm_update_7061() {
  * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_update_7062() {
+    civicrm_initialize();
     civicrm_api3('Setting', 'create', array(
         'contact_default_language' => "undefined",
     ));
@@ -1497,6 +1498,7 @@ function wmf_civicrm_update_7062() {
  * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_update_7063() {
+    civicrm_initialize();
     civicrm_api3('Navigation', 'reset', array(
       'for' => "report",
     ));
