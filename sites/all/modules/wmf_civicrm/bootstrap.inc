@@ -117,12 +117,7 @@ function wmf_civicrm_create_option_values_detailed($group_name, $values)
         $result = $api->values();
         if (empty($result))
         {
-            $api->OptionValue->Create(array_merge(array(
-              'option_group_id' => $option_group->id,
-              'name' => $key,
-              'label' => $key,
-              'is_active' => 1,
-            )), $value);
+            $api->OptionValue->Create($params);
         }
     }
 }
