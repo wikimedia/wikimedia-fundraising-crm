@@ -3,6 +3,7 @@
 use wmf_communication\Mailer;
 use wmf_communication\Templating;
 
+// FIXME: Find the production value dynamically.
 const WMF_CAMPAIGNS_OPTION_GROUP_NAME = 'appeal_20080709183729';
 
 /**
@@ -57,7 +58,7 @@ function wmf_campaigns_index_form() {
 
     $api = civicrm_api_classapi();
     $success = $api->OptionValue->get( array(
-        'option_group_name' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+        'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
         'rowCount' => 1000,
     ) );
     if ( !$success ) {
@@ -76,13 +77,17 @@ function wmf_campaigns_index_form() {
 
     $rows = array();
     foreach ( $optionValues as $value ) {
-        $campaign = WmfCampaign::fromKey( $value->value );
-        $rows[] = array(
-            l( $value->label, "admin/config/wmf_campaigns/edit/{$value->value}" ),
-            $value->value,
-            $value->is_active ? t( 'Yes' ) : t( 'No' ),
-            $campaign->getNotificationEmail() ? t( 'Yes' ) : t( 'No' ),
-        );
+		try {
+			$campaign = WmfCampaign::fromKey( $value->value );
+			$rows[] = array(
+				l( $value->label, "admin/config/wmf_campaigns/edit/{$value->value}" ),
+				$value->value,
+				$value->is_active ? t( 'Yes' ) : t( 'No' ),
+				$campaign->getNotificationEmail() ? t( 'Yes' ) : t( 'No' ),
+			);
+		} catch ( CampaignNotFoundException $ex ) {
+			drupal_set_message( $ex->getMessage(), 'warning' );
+		}
     }
 
     $headers = array(
@@ -115,7 +120,7 @@ function wmf_campaigns_edit_form( $form, $formState, $campaignValue ) {
 
     $api = civicrm_api_classapi();
     $success = $api->OptionValue->get( array(
-        'option_group_name' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+        'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
         'value' => $campaignValue,
     ) );
     if ( !$success || count( $api->values ) != 1 ) {
@@ -225,8 +230,13 @@ function wmf_campaigns_civicrm_custom( $action, $groupId, $entityId, $params ) {
                 return;
             }
 
-            $campaign = WmfCampaign::fromKey( $campaignKey );
-            if ( !$campaign || !$campaign->getNotificationEmail() ) {
+			try {
+				$campaign = WmfCampaign::fromKey( $campaignKey );
+			} catch ( CampaignNotFoundException $ex ) {
+                watchdog( 'wmf_campaigns', $ex->getMessage(), NULL, WATCHDOG_WARNING );
+				return;
+			}
+            if ( !$campaign->getNotificationEmail() ) {
                 watchdog( 'wmf_campaigns', "No special behaviors configured for campaign {$campaignKey}", NULL, WATCHDOG_INFO );
                 return;
             }

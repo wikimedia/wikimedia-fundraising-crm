@@ -177,7 +177,7 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
           'contribution_type_id' => array(
             'title' => ts('Contribution Type'),
             'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-            'options' => CRM_Contribute_PseudoConstant::contributionType(),
+            'options' => CRM_Contribute_PseudoConstant::financialType(),
           ),
           'contribution_status_id' => array(
             'title' => ts('Contribution Status'),
@@ -228,6 +228,9 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
   function select() {
 
     $this->_columnHeaders = $select = array();
+    if (!isset($params['yid_value'])) {
+      $this->_params['yid_value'] = date('Y');
+    }
     $current_year = $this->_params['yid_value'];
     $previous_year = $current_year - 1;
 

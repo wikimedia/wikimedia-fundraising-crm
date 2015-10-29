@@ -6,12 +6,20 @@ class WmfCampaign {
 
     protected function __construct() {}
 
+    /**
+     * @return WmfCampaign|null
+     */
     public static function fromKey( $key ) {
         $result = db_select( 'wmf_campaigns_campaign' )
             ->fields( 'wmf_campaigns_campaign' )
             ->condition( 'campaign_key', $key )
             ->execute()
             ->fetchAssoc();
+
+		if ( $result === false ) {
+			throw new CampaignNotFoundException( "Campaign {$key} is missing WMF Campaign info." );
+		}
+
         return WmfCampaign::fromDbRecord( $result );
     }
 
@@ -29,4 +37,7 @@ class WmfCampaign {
     public function getNotificationEmail() {
         return $this->notification_email;
     }
+}
+
+class CampaignNotFoundException extends RuntimeException {
 }
