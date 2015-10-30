@@ -94,7 +94,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $subs
         #FIXME:
         'processor_id' => 1,
         'cycle_day' => $msg[ 'cycle_day' ],
-        'next_sched_contribution' => $next_sched_contribution,
+        'next_sched_contribution_date' => $next_sched_contribution,
         'trxn_id' => $gateway_subscr_id,
 
         'version' => 3,
@@ -215,7 +215,7 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now', $run
     $query = <<<EOS
 SELECT * FROM civicrm_contribution_recur
 WHERE
-    civicrm_contribution_recur.next_sched_contribution BETWEEN :start AND :end
+    civicrm_contribution_recur.next_sched_contribution_date BETWEEN :start AND :end
     AND civicrm_contribution_recur.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
     AND ( civicrm_contribution_recur.end_date IS NULL )
     AND civicrm_contribution_recur.contribution_status_id = :status_id

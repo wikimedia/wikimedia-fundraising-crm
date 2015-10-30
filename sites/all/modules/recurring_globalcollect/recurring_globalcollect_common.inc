@@ -205,7 +205,7 @@ function _recurring_globalcollect_update_record_failure($id) {
         ->fields( array(
             'failure_retry_date' => null,
             'contribution_status_id' => $contribution_status_id,
-            'next_sched_contribution' => null,
+            'next_sched_contribution_date' => null,
         ) )->condition( 'id', $id )->execute();
   }
   else {
@@ -290,7 +290,7 @@ function _recurring_globalcollect_update_record_success($id) {
           'failure_count' => 0,
           'failure_retry_date' => null,
           'contribution_status_id' => civicrm_api_contribution_status('Completed'),
-          'next_sched_contribution' => $next_sched_contribution,
+          'next_sched_contribution_date' => $next_sched_contribution,
       ) )
       ->expression( 'processor_id', "processor_id + 1" )
       ->condition( 'id', $id )
@@ -319,7 +319,7 @@ function _recurring_globalcollect_validate_record_for_update($record) {
   $cycle_day = isset($record['cycle_day']) ? (integer) $record['cycle_day'] : false;
   $frequency_unit = isset($record['frequency_unit']) ? $record['frequency_unit'] : false;
   $frequency_interval = (integer) $record['frequency_interval'];
-  $next_sched_contribution = isset($record['next_sched_contribution']) ? $record['next_sched_contribution'] : false;
+  $next_sched_contribution = isset($record['next_sched_contribution_date']) ? $record['next_sched_contribution_date'] : false;
 
   // Make sure $cycle_day is not empty
   if (empty($cycle_day)) {
@@ -341,7 +341,7 @@ function _recurring_globalcollect_validate_record_for_update($record) {
 
   // Make sure $next_sched_contribution is assigned
   if (empty($next_sched_contribution)) {
-    $message = 'next_sched_contribution cannot be empty';
+    $message = 'next_sched_contribution_date cannot be empty';
     throw new WmfException( 'INVALID_RECURRING', $message, $record );
   }
 }
