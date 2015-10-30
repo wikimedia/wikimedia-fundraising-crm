@@ -123,7 +123,7 @@ function rgcrm_get_contributions( $limit, $grace, $batch ) {
     $query = <<<EOS
 SELECT * FROM civicrm_contribution_recur
 WHERE
-    next_sched_contribution BETWEEN :start AND :end
+    next_sched_contribution_date BETWEEN :start AND :end
     AND trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
     AND ( end_date IS NULL )
     AND contribution_status_id = :status_id
