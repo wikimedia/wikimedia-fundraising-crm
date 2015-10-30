@@ -1472,7 +1472,10 @@ function wmf_civicrm_normalize_msg( $msg ) {
             $msg['direct_mail_appeal'] = "Mediander";
             break;
         default:
-            $msg['direct_mail_appeal'] = $msg['utm_campaign'];
+            $values = civicrm_api_option_group( 'Appeal' );
+            if ( in_array( $msg['utm_campaign'], $values ) ) {
+                $msg['direct_mail_appeal'] = $msg['utm_campaign'];
+            }
             break;
         }
     }
