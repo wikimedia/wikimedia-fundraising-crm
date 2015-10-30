@@ -46,4 +46,56 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals(1, $languages['count']);
     }
 
+    /**
+     * Test wmf custom api entity get detail.
+     *
+     * @todo consider moving test to thank_you module or helper function out of there.
+     *
+     * @throws \CiviCRM_API3_Exception
+     */
+    public function testGetEntityTagDetail() {
+        civicrm_initialize();
+        $contact = $this->callAPISuccess('Contact', 'create', array(
+            'first_name' => 'Papa',
+            'last_name' => 'Smurf',
+            'contact_type' => 'Individual',
+        ));
+        $contribution = $this->callAPISuccess('Contribution', 'create', array(
+            'contact_id' => $contact['id'],
+            'total_amount' => 40,
+            'financial_type_id' => 'Donation',
+        ));
+
+        $tag1 = $this->ensureTagExists('smurfy');
+        $tag2 = $this->ensureTagExists('smurfalicious');
+
+        $this->callAPISuccess('EntityTag', 'create', array('entity_id' => $contribution['id'], 'entity_table' => 'civicrm_contribution', 'tag_id' => 'smurfy'));
+        $this->callAPISuccess('EntityTag', 'create', array('entity_id' => $contribution['id'], 'entity_table' => 'civicrm_contribution', 'tag_id' => 'smurfalicious'));
+
+        $smurfiestTags = wmf_thank_you_get_tag_names($contribution['id']);
+        $this->assertEquals(array('smurfy', 'smurfalicious'), $smurfiestTags);
+
+        $this->callAPISuccess('Tag', 'delete', array('id' => $tag1));
+        $this->callAPISuccess('Tag', 'delete', array('id' => $tag2));
+    }
+
+    /**
+     * Helper function to protect test against cleanup issues.
+     *
+     * @param string $name
+     * @return int
+     */
+    public function ensureTagExists($name) {
+        $tags = $this->callAPISuccess('EntityTag', 'getoptions', array('field' => 'tag_id'));
+        if (in_array($name, $tags['values'])) {
+            return array_search($name, $tags['values']);
+        }
+        $tag = $this->callAPISuccess('Tag', 'create', array(
+            'used_for' => 'civicrm_contribution',
+            'name' => $name
+        ));
+        $this->callAPISuccess('Tag', 'getfields', array('cache_clear' => 1));
+        return $tag['id'];
+    }
+
 }
