@@ -412,7 +412,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
 
     // Create any required tags on the contribution
     if ( $msg['contribution_tags'] ) {
-        $supported_tags = array_flip( CRM_Core_PseudoConstant::tag() );
+        $supported_tags = array_flip( CRM_Core_BAO_Tag::getTags( 'civicrm_contribution' ) );
         $stacked_ex = array();
         foreach ( array_unique( $msg['contribution_tags'] ) as $tag ) {
             try {
@@ -1029,7 +1029,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
 
     // Do we have any tags we need to add to this contact?
     if ( $msg['contact_tags'] ) {
-        $supported_tags = array_flip( CRM_Core_PseudoConstant::tag() );
+        $supported_tags = array_flip( CRM_Core_BAO_Tag::getTags( 'civicrm_contact' ) );
         $stacked_ex = array();
         foreach ( array_unique( $msg['contact_tags'] ) as $tag ) {
             try {
