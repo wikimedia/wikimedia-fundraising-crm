@@ -1,0 +1,40 @@
+<?php
+
+function banner_history_schema() {
+
+	$schema['banner_history_contribution_associations'] = array(
+		'description' => 'Associations of banner history log IDs and contribution tracking IDs',
+		'fields' => array(
+			'id' => array(
+				'type' => 'serial',
+				'size' => 'normal',
+				'unsigned' => true,
+				'not null' => true,
+			),
+			'contribution_tracking_id' => array(
+				'type' => 'int',
+				'size' => 'normal',
+				'unsigned' => true,
+				'not null' => true,
+				'description' => 'Expected to correspond to the id column of the contribution_tracking table.',
+			),
+			'banner_history_log_id' => array(
+				'type' => 'varchar',
+				'length' => 255,
+				'not null' => true,
+				'description' => 'Temporary banner history log ID to associate banner history EventLogging events.'
+			),
+		),
+		'indexes' => array(
+			'contribution_tracking_id' => array( 'contribution_tracking_id' ),
+			'banner_history_log_id' => array( 'banner_history_log_id' ),
+		),
+		'unique keys' => array(
+			'ct_id_bh_id_unique' =>
+				array( 'contribution_tracking_id', 'banner_history_log_id' ),
+		),
+		'primary key' => array( 'id' ),
+	);
+
+	return $schema;
+}

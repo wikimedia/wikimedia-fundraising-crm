@@ -227,7 +227,7 @@ function recurring_import_subscr_payment( $msg ) {
   // update subscription record with next payment date
   $api = civicrm_api_classapi();
   $update_params = array(
-    'next_sched_contribution' => wmf_common_date_unix_to_civicrm( strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'payment_date' ] )),
+    'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm( strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'payment_date' ] )),
     'id' => $recur_record->id,
 
     'version' => 3,
@@ -408,7 +408,7 @@ function recurring_import_subscr_modify( $msg ) {
     'frequency_interval' => $msg[ 'frequency_interval' ],
     'modified_date' => wmf_common_date_unix_to_civicrm( $msg[ 'modified_date' ] ),
     //FIXME: looks wrong to base off of start_date
-    'next_sched_contribution' => wmf_common_date_unix_to_civicrm( strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'start_date' ] )),
+    'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm( strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'start_date' ] )),
 
     'version' => 3,
   );
