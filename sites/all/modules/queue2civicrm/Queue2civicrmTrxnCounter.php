@@ -1,24 +1,19 @@
 <?php
 
 /**
- * A class to keep track of transaction counts for various payment gateways
+ * A class to keep track of transaction counts, grouped by payment gateway
  */
 class Queue2civicrmTrxnCounter {
-  protected $gateways = array();
+  protected static $singleton;
   protected $trxn_counts = array();
 
-  /**
-   * Constructor
-   *
-   * Takes an array of gateway names to keep track of trxn counts.  The
-   * gateway names should be exactly as they appear in transactional messages.
-   * @param array $gateways
-   */
-  public function __construct( array $gateways ) {
-    $this->gateways = $gateways;
-    foreach ( $gateways as $gateway ) {
-      $this->trxn_counts[ $gateway ] = 0;
+  protected function __construct() {}
+
+  public static function instance() {
+    if ( !self::$singleton ) {
+	  self::$singleton = new Queue2civicrmTrxnCounter();
     }
+    return self::$singleton;
   }
 
   /**
@@ -26,27 +21,26 @@ class Queue2civicrmTrxnCounter {
    * @param string $gateway
    * @param int $count
    */
-  public function add( $gateway, $count ) {
-    if ( !in_array( $gateway, $this->gateways )) {
-      return false;
+  public function increment( $gateway, $count = 1 ) {
+    if ( !array_key_exists( $gateway, $this->trxn_counts )) {
+      $this->trxn_counts[$gateway] = 0;
     }
-    $this->trxn_counts[ $gateway ] += $count;
+    $this->trxn_counts[$gateway] += $count;
   }
 
   /**
    * Get counts for all gateways combined or one particular gateway.
    * @param string $gateway
-   * @return trxn count for all gateways ( when $gateway === null ) or specified gateway
+   * @return integer|false trxn count for all gateways ( when $gateway === null ) or specified gateway
    */
   public function get_count_total( $gateway = null ) {
-    if ( $gateway ) {
-      if ( !in_array( $gateway, $this->gateways )) {
-        return false;
-      }
-      return $this->trxn_counts[ $gateway ];
-    } else {
+    if ( $gateway === null ) {
       return array_sum( $this->trxn_counts );
     }
+    if ( !array_key_exists( $gateway, $this->trxn_counts ) ) {
+      return false;
+    }
+    return $this->trxn_counts[$gateway];
   }
 
   /**

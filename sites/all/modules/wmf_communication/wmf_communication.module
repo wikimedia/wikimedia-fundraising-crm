@@ -123,8 +123,8 @@ function wmf_communication_civicrm_pre( $op, $type, $id, &$email ) {
 	if ( $type !== 'Email' || $email === null ) {
 		return;
 	}
-	// ignore on_hold status changes 
-	if ( $email->on_hold && $email->on_hold !== 'null' ) {
+	// ignore on_hold status changes
+	if ( isset($email['on_hold']) && $email['on_hold'] !== 'null' ) {
 		return;
 	}
 	if ( $op !== 'edit' && $op !== 'delete' ) {
@@ -134,17 +134,17 @@ function wmf_communication_civicrm_pre( $op, $type, $id, &$email ) {
 	$old_email_result = civicrm_api( "Email", "get",
 		array (
 			'version' =>'3',
-			'id' => $email->id,
+			'id' => $email['id'],
 			'return' => 'email,on_hold'
 		)
 	);
 	// bail out if we can't find the old values
-	if ( !array_key_exists( $email->id, $old_email_result['values'] ) ) {
+	if ( !array_key_exists( $email['id'], $old_email_result['values'] ) ) {
 		return;
 	}
-	$old_email = $old_email_result['values'][$email->id];
+	$old_email = $old_email_result['values'][$email['id']];
 	// if we're editing, but not the address, bail out
-	if ( $op === 'edit' && $old_email['email'] === $email->email ) {
+	if ( $op === 'edit' && $old_email['email'] === $email['email'] ) {
 		return;
 	}
 	// if we're deleting an email that's already on hold, stop here
@@ -156,7 +156,7 @@ function wmf_communication_civicrm_pre( $op, $type, $id, &$email ) {
 		'email' => $old_email['email'],
 		'on_hold' => TRUE,
 		'hold_date' => date('YmdHis'),
-		'contact_id' => $email->contact_id
+		'contact_id' => $email['contact_id'],
 	);
 	$new_email_result = civicrm_api( "Email", "create", $params );
 }
