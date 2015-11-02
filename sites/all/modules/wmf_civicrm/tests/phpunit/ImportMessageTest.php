@@ -1,5 +1,7 @@
 <?php
 
+define( 'ImportMessageTest_campaign', 'test mail code here + ' . mt_rand() );
+
 /**
  * @group Import
  * @group Pipeline
@@ -11,12 +13,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     protected $contribution_custom_mangle;
     static protected $fixtures;
 
-    public static function getInfo() {
-        return array(
-            'name' => 'Import Message',
-            'group' => 'Pipeline',
-            'description' => 'Attempt contribution message import.',
-        );
+    public function setUp() {
+        civicrm_api3( 'OptionValue', 'create', array(
+            'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+            'label' => ImportMessageTest_campaign,
+            'value' => ImportMessageTest_campaign,
+        ) );
     }
 
     public function tearDown() {
@@ -60,7 +62,16 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                 'version' => 3,
             ) );
             $contact = (array) $api->values[0];
-            $this->assertEquals( $expected['contact'], array_intersect_key( $expected['contact'], $contact ) );
+            $renamedFields = array('prefix' => 1, 'suffix' => 1);
+            $this->assertEquals( array_diff_key($expected['contact'], $renamedFields), array_intersect_key( $expected['contact'], $contact ) );
+            foreach (array_keys($renamedFields) as $renamedField) {
+                $this->assertEquals(civicrm_api3('OptionValue', 'getvalue', array(
+                    'value' => $contact[$renamedField . '_id'],
+                    'option_group_id' => 'individual_' . $renamedField,
+                    'return' => 'name',
+                )), $expected['contact'][$renamedField]);
+            }
+
         }
 
         if ( !empty( $expected['contact_custom_values'] ) ) {
@@ -104,15 +115,13 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'campaign_id' => '',
                         'cancel_date' => '',
                         'cancel_reason' => '',
-                        'check_number' => 'null',
+                        'check_number' => '',
                         'contribution_page_id' => '',
                         'contribution_recur_id' => '',
-                        'contribution_status_id' => '',
+                        'contribution_status_id' => '1',
                         'contribution_type_id' => $contribution_type_cash,
                         'currency' => 'USD',
                         'fee_amount' => '0',
-                        'honor_contact_id' => '',
-                        'honor_type_id' => '',
                         'invoice_id' => '',
                         'is_pay_later' => '',
                         'is_test' => '',
@@ -125,6 +134,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'thankyou_date' => '',
                         'total_amount' => '1.23',
                         'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+                        'financial_type_id' => $contribution_type_cash,
+                        'creditnote_id' => '',
+                        'tax_amount' => '',
                     ),
                 ),
             ),
@@ -135,7 +147,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                     'check_number' => $check_number,
                     'currency' => 'USD',
                     'date' => '2012-03-01 00:00:00',
-                    'direct_mail_appeal' => 'mail code here',
+                    'direct_mail_appeal' => ImportMessageTest_campaign,
                     'do_not_email' => 'Y',
                     'do_not_mail' => 'Y',
                     'do_not_phone' => 'Y',
@@ -146,7 +158,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                     'fee' => '0.03',
                     'gateway' => 'test_gateway',
                     'gateway_txn_id' => $gateway_txn_id,
-                    'gift_source' => 'Red mail',
+                    'gift_source' => 'Legacy Gift',
                     'gross' => '1.23',
                     'import_batch_number' => '4321',
                     'is_opt_out' => 'Y',
@@ -181,12 +193,10 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'check_number' => $check_number,
                         'contribution_page_id' => '',
                         'contribution_recur_id' => '',
-                        'contribution_status_id' => '',
+                        'contribution_status_id' => '1',
                         'contribution_type_id' => $contribution_type_cash,
                         'currency' => 'USD',
                         'fee_amount' => '0.03',
-                        'honor_contact_id' => '',
-                        'honor_type_id' => '',
                         'invoice_id' => '',
                         'is_pay_later' => '',
                         'is_test' => '',
@@ -199,11 +209,14 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'thankyou_date' => '20120401000000',
                         'total_amount' => '1.23',
                         'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+                        'financial_type_id' => $contribution_type_cash,
+                        'creditnote_id' => '',
+                        'tax_amount' => '',
                     ),
                     'contribution_custom_values' => array(
-                        'Appeal' => 'mail code here',
+                        'Appeal' => ImportMessageTest_campaign,
                         'import_batch_number' => '4321',
-                        'Campaign' => 'Red mail',
+                        'Campaign' => 'Legacy Gift',
                         'gateway' => 'test_gateway',
                         'gateway_txn_id' => (string) $gateway_txn_id,
                         'no_thank_you' => 'no forwarding address',
@@ -242,15 +255,13 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'campaign_id' => '',
                         'cancel_date' => '',
                         'cancel_reason' => '',
-                        'check_number' => 'null',
+                        'check_number' => '',
                         'contribution_page_id' => '',
                         'contribution_recur_id' => '',
-                        'contribution_status_id' => '',
+                        'contribution_status_id' => '1',
                         'contribution_type_id' => $contribution_type_cash,
                         'currency' => 'USD',
 			'fee_amount' => '0',
-                        'honor_contact_id' => '',
-                        'honor_type_id' => '',
                         'invoice_id' => '',
                         'is_pay_later' => '',
                         'is_test' => '',
@@ -263,6 +274,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'thankyou_date' => '',
                         'total_amount' => '1.23',
                         'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+                        'financial_type_id' => $contribution_type_cash,
+                        'creditnote_id' => '',
+                        'tax_amount' => '',
                     ),
                     'contact_custom_values' => array(
                         'Name' => 'Testname',
@@ -292,16 +306,14 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'campaign_id' => '',
                         'cancel_date' => '',
                         'cancel_reason' => '',
-                        'check_number' => 'null',
+                        'check_number' => '',
                         'contact_id' => strval( self::$fixtures->contact_id ),
                         'contribution_page_id' => '',
                         'contribution_recur_id' => strval( self::$fixtures->contribution_recur_id ),
-                        'contribution_status_id' => '',
+                        'contribution_status_id' => '1',
                         'contribution_type_id' => $contribution_type_cash,
                         'currency' => 'USD',
                         'fee_amount' => '0',
-                        'honor_contact_id' => '',
-                        'honor_type_id' => '',
                         'invoice_id' => '',
                         'is_pay_later' => '',
                         'is_test' => '',
@@ -314,6 +326,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'thankyou_date' => '',
                         'total_amount' => self::$fixtures->recur_amount,
                         'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+                        'financial_type_id' => $contribution_type_cash,
+                        'creditnote_id' => '',
+                        'tax_amount' => '',
                     ),
                 ),
             ),

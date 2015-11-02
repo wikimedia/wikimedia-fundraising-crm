@@ -45,7 +45,7 @@ class CiviMailingRecord implements ICiviMailingRecord {
 
 	/**
 	 * @param \CRM_Mailing_DAO_Mailing $mailing
-	 * @param \CRM_Mailing_DAO_Job $job
+	 * @param \CRM_Mailing_DAO_MailingJob; $job
 	 */
 	public function __construct( $mailing, $job ) {
 		$this->mailing = $mailing;

@@ -83,7 +83,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
         ) );
         $refund_contribution = array_pop( $results['values'] );
 
-        $this->assertEquals( 'Refund', $refund_contribution['contribution_type'] );
+        $this->assertEquals( 'Refund', $refund_contribution['financial_type'] );
         $this->assertEquals( 'Pending', $refund_contribution['contribution_status'] );
         $this->assertEquals(
             "{$this->original_currency} -{$this->original_amount}",
@@ -104,7 +104,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
         ) );
         $contribution = array_pop( $results['values'] );
 
-        $this->assertEquals( 'Chargeback', $contribution['contribution_type'],
+        $this->assertEquals( 'Chargeback', $contribution['financial_type'],
             'Refund contribution has correct type' );
     }
 
