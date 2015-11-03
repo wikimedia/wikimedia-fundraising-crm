@@ -455,6 +455,7 @@ function wmf_civicrm_get_civi_id($type, $name)
 
     switch ($type) {
         case 'contribution_type_id':
+        case 'financial_type_id':
             //fixme: This is probably the upside-down way to do it. Really ought to go through the API.
             //
             $result = CRM_Financial_BAO_FinancialType::retrieve($params, $dummy);
