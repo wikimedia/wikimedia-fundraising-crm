@@ -79,4 +79,20 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $normal_msg_2 = wmf_civicrm_normalize_msg( $normal_msg_1 );
         $this->assertEquals( $original_msg, $normal_msg_2 );
     }
+
+	public function testEmptyNet() {
+		$msg = array(
+			'gateway' => 'adyen',
+			'payment_method' => 'cc',
+			'first_name' => 'blah',
+			'last_name' => 'wah',
+			'country' => 'US',
+			'currency' => 'USD',
+			'gross' => '1.00',
+			'net' => '',
+			'fee' => '0.21',
+		);
+		$normalized = wmf_civicrm_normalize_msg( $msg );
+		$this->assertEquals( 0.79, $normalized['net'] );
+	}
 }
