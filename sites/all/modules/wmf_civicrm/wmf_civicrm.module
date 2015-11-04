@@ -735,12 +735,14 @@ function wmf_civicrm_normalize_contribution_amounts( $msg ) {
         $msg['original_gross'] = $msg['gross'];
     }
 
-    if ( !array_key_exists('fee', $msg) && !array_key_exists('net', $msg) ) {
+    $validFee = array_key_exists( 'fee', $msg ) && is_numeric( $msg['fee'] );
+    $validNet = array_key_exists( 'net', $msg ) && is_numeric( $msg['net'] );
+    if ( !$validFee && !$validNet ) {
         $msg['fee'] = '0.00';
         $msg['net'] = $msg['gross'];
-    } elseif ( !array_key_exists('fee', $msg) && array_key_exists('net', $msg) ) {
+    } elseif ( $validNet && !$validFee ) {
         $msg['fee'] = $msg['gross'] - $msg['net'];
-    } elseif ( array_key_exists('fee', $msg) && !array_key_exists('net', $msg) ) {
+    } elseif ( $validFee && !$validNet ) {
         $msg['net'] = $msg['gross'] - $msg['fee'];
     }
 
