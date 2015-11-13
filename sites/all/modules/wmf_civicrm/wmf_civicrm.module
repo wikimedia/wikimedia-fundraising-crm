@@ -2194,12 +2194,6 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
             $errors['source'] = t( 'Source must be in the format USD 15.25' );
         }
 
-        // Amount field should be decimal
-        $amount = $fields['total_amount'];
-        if ( !preg_match( '/^[0-9]+(\.[0-9]+)?$/', $amount ) ) {
-            $errors['total_amount'] = t( 'Amount must be a decimal number' );
-        }
-
         // Only run the following validation for users having the Engage role.
         if ( !wmf_civicrm_user_has_role( 'Engage Direct Mail' ) ) {
             break;
