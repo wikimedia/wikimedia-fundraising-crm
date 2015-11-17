@@ -13,6 +13,39 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     protected $contribution_custom_mangle;
     static protected $fixtures;
 
+  /**
+   * These are contribution fields that we do not check for in our comparison.
+   *
+   * Since we never set these always checking for them adds boilerplate code
+   * and potential test breakiness.
+   *
+   * @var array
+   */
+    protected $fieldsToIgnore = array(
+      'address_id',
+      'contact_id',
+      'cancel_date',
+      'cancel_reason',
+      'thankyou_date',
+      'amount_level',
+      'contribution_recur_id',
+      'contribution_page_id',
+      'creditnote_id',
+      'is_test',
+      'id',
+      'invoice_id',
+      'is_pay_later',
+      'campaign_id',
+      'tax_amount',
+    );
+
+    protected $moneyFields = array(
+      'total_amount',
+      'source',
+      'net_amount',
+      'fee_amount',
+    );
+
     public function setUp() {
         civicrm_api3( 'OptionValue', 'create', array(
             'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
@@ -38,14 +71,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $contribution = wmf_civicrm_contribution_message_import( $msg );
         $this->contribution_id = $contribution['id'];
 
-        $anonymized_contribution = $contribution;
-        // Strip contact_id if we have no expectation.
+        // Ignore contact_id if we have no expectation.
         if ( empty( $expected['contribution']['contact_id'] ) ) {
-            unset( $anonymized_contribution['contact_id'] );
+            $this->fieldsToIgnore[] = 'contact_id';
         }
-        unset( $anonymized_contribution['id'] );
 
-        $this->assertEquals( $expected['contribution'], $anonymized_contribution );
+        $this->assertComparable( $expected['contribution'], $contribution );
 
         if ( !empty( $expected['contribution_custom_values'] ) ) {
             $actual_contribution_custom_values = wmf_civicrm_get_custom_values(
@@ -137,6 +168,37 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'financial_type_id' => $contribution_type_cash,
                         'creditnote_id' => '',
                         'tax_amount' => '',
+                    ),
+                ),
+            ),
+
+            // Minimal contribution with comma thousand separator.
+            array(
+                array(
+                    'currency' => 'USD',
+                    'date' => '2012-05-01 00:00:00',
+                    'email' => 'nobody@wikimedia.org',
+                    'gateway' => 'test_gateway',
+                    'gateway_txn_id' => $gateway_txn_id,
+                    'gross' => '1,000.23',
+                    'payment_method' => 'cc',
+                ),
+                array(
+                    'contribution' => array(
+                        'contribution_status_id' => '1',
+                        'contribution_type_id' => $contribution_type_cash,
+                        'currency' => 'USD',
+                        'fee_amount' => '0',
+                        'total_amount' => '1,000.23',
+                        'net_amount' => '1,000.23',
+                        'non_deductible_amount' => '',
+                        'payment_instrument_id' => $payment_instrument_cc,
+                        'receipt_date' => '',
+                        'receive_date' => '20120501000000',
+                        'source' => 'USD 1,000.23',
+                        'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+                        'financial_type_id' => $contribution_type_cash,
+                        'check_number' => '',
                     ),
                 ),
             ),
@@ -358,4 +420,47 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals( 1, count( $api->values ) );
         $this->assertEquals( $fixtures->contact_group_id, $api->values[0]->group_id );
     }
+
+  /**
+   * Assert that 2 arrays are the same in all the ways that matter :-).
+   *
+   * This has been written for a specific test & will probably take extra work
+   * to use more broadly.
+   *
+   * @param array $array1
+   * @param array $array2
+   */
+    public function assertComparable($array1, $array2) {
+      $this->reformatMoneyFields($array1);
+      $this->reformatMoneyFields($array2);
+      $array1 = $this->filterIgnoredFieldsFromArray($array1);
+      $array2 = $this->filterIgnoredFieldsFromArray($array2);
+      $this->assertEquals($array1, $array2);
+
+    }
+
+  /**
+   * Remove commas from money fields.
+   *
+   * @param array $array
+   */
+    public function reformatMoneyFields(&$array) {
+      foreach ($array as $field => $value) {
+        if (in_array($field, $this->moneyFields)) {
+          $array[$field] = str_replace(',', '', $value);
+        }
+      }
+    }
+
+  /**
+   * Remove fields we don't care about from the array.
+   *
+   * @param array $array
+   *
+   * @return array
+   */
+    public function filterIgnoredFieldsFromArray($array) {
+      return array_diff_key($array, array_flip($this->fieldsToIgnore));
+    }
+
 }
