@@ -289,7 +289,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
 }
 
 /**
- * Insert the contribution record
+ * Insert the contribution record.
  *
  * This is an internal method, you must be looking for
  * @see wmf_civicrm_contribution_message_import.
@@ -719,6 +719,7 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
  * @return array
  */
 function wmf_civicrm_normalize_contribution_amounts( $msg ) {
+    $msg = wmf_civicrm_format_currency_fields($msg);
 
     // If there is anything fishy about the amount...
     if ( ( empty( $msg['gross'] ) or empty( $msg['currency'] ) )
@@ -772,6 +773,26 @@ function wmf_civicrm_normalize_contribution_amounts( $msg ) {
     $msg['net'] = round( $msg['net'], $significantDecimals );
 
     return $msg;
+}
+
+/**
+ * Format currency fields in passed array.
+ *
+ * Currently we are just stripping out commas on the assumption they are a
+ * thousand separator and unhelpful.
+ *
+ * @param array $values
+ * @param array $currencyFields
+ *
+ * @return array
+ */
+function wmf_civicrm_format_currency_fields($values, $currencyFields = array('gross', 'fee', 'net')) {
+  foreach ($currencyFields as $field) {
+    if (isset($values[$field])) {
+      $values[$field] = str_replace(',', '', $values[$field]);
+    }
+  }
+  return $values;
 }
 
 function wmf_civicrm_verify_message_and_stage($msg)
@@ -2192,12 +2213,6 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
             }
         } else {
             $errors['source'] = t( 'Source must be in the format USD 15.25' );
-        }
-
-        // Amount field should be decimal
-        $amount = $fields['total_amount'];
-        if ( !preg_match( '/^[0-9]+(\.[0-9]+)?$/', $amount ) ) {
-            $errors['total_amount'] = t( 'Amount must be a decimal number' );
         }
 
         // Only run the following validation for users having the Engage role.

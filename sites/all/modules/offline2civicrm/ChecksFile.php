@@ -51,6 +51,9 @@ abstract class ChecksFile {
         $this->row_index = -1 + $this->numSkippedRows;
 
         while( ( $row = fgetcsv( $file, 0, ',', '"', '\\')) !== FALSE) {
+            // Reset the PHP timeout for each row.
+            set_time_limit( 10 );
+
             $this->row_index++;
 
             // Zip headers and row into a dict
