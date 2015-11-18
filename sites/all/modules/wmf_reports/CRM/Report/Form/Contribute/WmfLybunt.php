@@ -169,7 +169,6 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
           'yid' => array(
             'name' => 'receive_date',
             'title' => ts('This Year'),
-            // FIXME: we've hardcoded fiscal year matching, set and lock the filter type dropdown
             'operatorType' => CRM_Report_Form::OP_SELECT,
             'options' => $optionYear,
             'default' => date('Y'),
@@ -299,6 +298,7 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
   }
 
   function where() {
+
     $this->_statusClause = "";
     $clauses             = array($this->_aliases['civicrm_contribution'] . '.is_test = 0');
     $current_year        = $this->_params['yid_value'];
@@ -309,8 +309,13 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
         foreach ($table['filters'] as $fieldName => $field) {
           $clause = NULL;
           if ($fieldName == 'yid') {
-            $clause = "{$this->_aliases['wmf_donor']}.is_{$current_year}_donor = 0
+            if($this->_params['yid_op'] == 'calendar') {
+                $clause = "YEAR({$this->_aliases['wmf_donor']}.last_donation_date) = $previous_year";
+            }
+            else {
+              $clause = "{$this->_aliases['wmf_donor']}.is_{$current_year}_donor = 0
                            AND {$this->_aliases['wmf_donor']}.is_{$previous_year}_donor = 1";
+            }
           }
           elseif (CRM_Utils_Array::value('type', $field) & CRM_Utils_Type::T_DATE) {
             $relative = CRM_Utils_Array::value("{$fieldName}_relative", $this->_params);
