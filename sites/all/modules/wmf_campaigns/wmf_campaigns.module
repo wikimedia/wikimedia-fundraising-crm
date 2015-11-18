@@ -249,6 +249,7 @@ function wmf_campaigns_civicrm_custom( $action, $groupId, $entityId, $params ) {
         $giftDataGroupId = (int)$result['id'];
 
         if ( (int)$groupId === $giftDataGroupId ) {
+            $campaignKey = null;
             foreach ( $params as $index => $values ) {
                 if ( $values['column_name'] === 'appeal' ) {
                     $contributionId = $values['entity_id'];
