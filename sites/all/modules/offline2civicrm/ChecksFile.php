@@ -101,6 +101,9 @@ abstract class ChecksFile {
             }
         }
 
+       // Unset time limit.
+       set_time_limit( 0 );
+
         $message = t( "Checks import complete. @successful imported, @ignored ignored, not including @duplicates duplicates.", array( '@successful' => $num_successful, '@ignored' => $num_ignored, '@duplicates' => $num_duplicates ) );
         ChecksImportLog::record( $message );
         watchdog( 'offline2civicrm', $message, array(), WATCHDOG_INFO );
