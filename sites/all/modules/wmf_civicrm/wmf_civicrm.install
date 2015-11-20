@@ -543,7 +543,6 @@ function wmf_civicrm_update_7006()
     wmf_civicrm_create_option_values('contribution_status', array(
         'Settled',
         'Paid',
-        'Refunded',
     ));
 
     $api = wmf_civicrm_bootstrap_civi();
@@ -1518,3 +1517,46 @@ function wmf_civicrm_update_7064() {
     wmf_civicrm_fill_missing_appeal_data('2015-10-01');
 }
 
+/**
+ * Remove any duplication of the 'Refunded' Contribution status.
+ *
+ * This status was added to WMF & then added to core - resulting in
+ * 2 on WMF. The retained one should be set to reserved.
+ *
+ * NB I didn't add this to the install as I don't think it should be relevant there.
+ *
+ * T116317
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_7075() {
+  civicrm_initialize();
+  if ((civicrm_api3('OptionValue', 'getcount', array('name' => 'Refunded', 'option_group_id' => 'contribution_status'))) == 1) {
+    // Nothing to do here, move along.
+    return;
+  }
+  $options = civicrm_api3('OptionValue', 'get', array(
+    'name' => 'Refunded',
+    'option_group_id' =>
+    'contribution_status',
+    'sequential' => 1,
+    'options' => array('sort' => 'id ASC'),
+  ));
+
+  if ($options['count'] != 2) {
+    throw new Exception(ts('This is an unexpected state - we are only expecting to handle the situation where there is one wmf added & one core added. Please wave a wand'));
+  }
+
+  $expectedRedundantType = $options['values'][1];
+  $refundValueToKeep = $options['values'][0]['value'];
+
+  if (civicrm_api3('Contribution', 'getcount', array('contribution_status_id' => $expectedRedundantType['value']))) {
+      CRM_Core_DAO::executeQuery("DELETE FROM civicrm_financial_trxn WHERE status_id = %1", array(1 => array($expectedRedundantType['value'], 'Integer')));
+      CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution SET contribution_status_id = %1 WHERE contribution_status_id = %2", array(
+          1 => array($refundValueToKeep, 'Integer'),
+          2 => array($expectedRedundantType['value'], 'Integer'),
+      ));
+  }
+  civicrm_api3('OptionValue', 'delete', array('id' => $expectedRedundantType['id']));
+  civicrm_api3('OptionValue', 'create', array('id' => $options['values'][0]['id'], 'is_reserved' => TRUE));
+}
