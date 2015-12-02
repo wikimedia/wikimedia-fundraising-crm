@@ -86,7 +86,12 @@ function wmf_campaigns_index_form() {
 				$campaign->getNotificationEmail() ? t( 'Yes' ) : t( 'No' ),
 			);
 		} catch ( CampaignNotFoundException $ex ) {
-			drupal_set_message( $ex->getMessage(), 'warning' );
+			$rows[] = array(
+				l( $value->label, "admin/config/wmf_campaigns/edit/{$value->value}" ),
+				$value->value,
+				$value->is_active ? t( 'Yes' ) : t( 'No' ),
+				t( 'No' ),
+			);
 		}
     }
 
