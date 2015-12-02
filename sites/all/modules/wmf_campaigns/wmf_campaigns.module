@@ -57,6 +57,27 @@ function wmf_campaigns_index_form() {
     $form = array();
 
     $api = civicrm_api_classapi();
+    $success = $api->OptionGroup->get( array(
+        'name' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+    ) );
+    if ( !$success || count( $api->values ) !== 1 ) {
+        drupal_set_message( "Tough luck, cannot fetch campaigns: " . $api->errorMsg(), 'error' );
+        return;
+    }
+    $group = $api->values[0];
+    $success = $api->CustomField->get( array(
+        'option_group_id' => $group->id,
+    ) );
+    if ( !$success || count( $api->values ) === 0 ) {
+        drupal_set_message( "Tough luck, cannot fetch campaigns: " . $api->errorMsg(), 'error' );
+        return;
+    }
+    $field = $api->values[0];
+    $link = CRM_Utils_System::url(
+        'civicrm/admin/custom/group/field/option',
+        "reset=1&action=browse&gid={$group->id}&fid={$field->id}",
+        true
+    );
     $success = $api->OptionValue->get( array(
         'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
         'rowCount' => 1000,
@@ -111,6 +132,9 @@ function wmf_campaigns_index_form() {
         'attributes' => array(),
     ) );
 
+    $form['header'] = array(
+        '#markup' => "<a href='$link'>Click here to add, enable, or disable campaigns</a>",
+    );
     $form['table'] = array(
         '#markup' => $table_html,
     );
