@@ -360,6 +360,13 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
       $this->_orderBy = "ORDER BY civicrm_contribution_total_amount DESC";
     }
     
+    public function groupBy() {
+    $this->_groupBy = "GROUP BY  {$this->_aliases['civicrm_contribution']}.contact_id, " .
+      self::fiscalYearOffset($this->_aliases['civicrm_contribution'] .
+        '.receive_date');
+    $this->assign('chartSupported', TRUE);
+  }
+    
     function postProcess() {
 
     // get ready with post process params
@@ -371,7 +378,7 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
     $this->from();
     $this->where();
     $this->groupBy();
-    $this->orderBy();
+    //$this->orderBy();
 
     $rows = $this->_contactIds = array();
     $this->limit();
@@ -389,7 +396,7 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
 
     if (!empty($this->_contactIds) || !empty($this->_params['charts'])) {
       $sql = "{$this->_select} {$this->_from} WHERE {$this->_aliases['civicrm_contact']}.id IN (" . implode(',', $this->_contactIds) . ")
-        AND {$this->_aliases['civicrm_contribution']}.is_test = 0 {$this->_statusClause} {$this->_groupBy} {$this->_orderBy}";
+        AND {$this->_aliases['civicrm_contribution']}.is_test = 0 {$this->_statusClause} {$this->_groupBy}";
       $this->addToDeveloperTab($sql);
       $dao = CRM_Core_DAO::executeQuery($sql);
       $current_year = $this->_params['yid_value'];
