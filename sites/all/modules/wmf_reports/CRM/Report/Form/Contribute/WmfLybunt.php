@@ -356,13 +356,13 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
   }
 
     function orderBy() {
-        
+
       $this->_orderBy = "ORDER BY civicrm_contribution_total_amount DESC";
       $this->addToDeveloperTab("TESTORDER BY civicrm_contribution_total_amount DESC");
   }
-  
+
   function postProcess() {
-      
+
       $this->orderBy();
       parent::postProcess();
   }
