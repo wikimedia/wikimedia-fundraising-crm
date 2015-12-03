@@ -57,6 +57,27 @@ function wmf_campaigns_index_form() {
     $form = array();
 
     $api = civicrm_api_classapi();
+    $success = $api->OptionGroup->get( array(
+        'name' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+    ) );
+    if ( !$success || count( $api->values ) !== 1 ) {
+        drupal_set_message( "Tough luck, cannot fetch campaigns: " . $api->errorMsg(), 'error' );
+        return;
+    }
+    $group = $api->values[0];
+    $success = $api->CustomField->get( array(
+        'option_group_id' => $group->id,
+    ) );
+    if ( !$success || count( $api->values ) === 0 ) {
+        drupal_set_message( "Tough luck, cannot fetch campaigns: " . $api->errorMsg(), 'error' );
+        return;
+    }
+    $field = $api->values[0];
+    $link = CRM_Utils_System::url(
+        'civicrm/admin/custom/group/field/option',
+        "reset=1&action=browse&gid={$group->id}&fid={$field->id}",
+        true
+    );
     $success = $api->OptionValue->get( array(
         'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
         'rowCount' => 1000,
@@ -66,17 +87,8 @@ function wmf_campaigns_index_form() {
         return;
     }
 
-    // Do a little dance to reverse sort the stupid things
-    $optionValues = array();
-    foreach ( $api->values as $value ) {
-        $optionValues[] = $value;
-    }
-    usort( $optionValues, function( $a, $b ) {
-        return $a->value < $b->value;
-    } );
-
     $rows = array();
-    foreach ( $optionValues as $value ) {
+    foreach ( $api->values as $value ) {
 		try {
 			$campaign = WmfCampaign::fromKey( $value->value );
 			$rows[] = array(
@@ -86,9 +98,26 @@ function wmf_campaigns_index_form() {
 				$campaign->getNotificationEmail() ? t( 'Yes' ) : t( 'No' ),
 			);
 		} catch ( CampaignNotFoundException $ex ) {
-			drupal_set_message( $ex->getMessage(), 'warning' );
+			$rows[] = array(
+				l( $value->label, "admin/config/wmf_campaigns/edit/{$value->value}" ),
+				$value->value,
+				$value->is_active ? t( 'Yes' ) : t( 'No' ),
+				t( 'No' ),
+			);
 		}
     }
+
+    usort( $rows, function( $campaign1, $campaign2 ) {
+        // Sort by active first
+        if ( $campaign1[2] != $campaign2[2] ) {
+            if ( $campaign1[2] === t( 'No' ) ) {
+                return 1;
+            }
+            return -1;
+        }
+        // Then by value descending, for some reason
+        return strcasecmp( $campaign2[1], $campaign1[1] );
+    } );
 
     $headers = array(
         'Campaign',
@@ -106,6 +135,9 @@ function wmf_campaigns_index_form() {
         'attributes' => array(),
     ) );
 
+    $form['header'] = array(
+        '#markup' => "<a href='$link'>Click here to add, enable, or disable campaigns</a>",
+    );
     $form['table'] = array(
         '#markup' => $table_html,
     );
