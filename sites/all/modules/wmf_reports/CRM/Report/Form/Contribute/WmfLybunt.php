@@ -373,9 +373,23 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
     $this->groupBy();
     $this->orderBy();
 
+    $rows = $this->_contactIds = array();
+    $this->limit();
+    $getContacts = "SELECT SQL_CALC_FOUND_ROWS {$this->_aliases['civicrm_contact']}.id as cid {$this->_from} {$this->_where}  GROUP BY {$this->_aliases['civicrm_contact']}.id {$this->_limit}";
+    $this->addToDeveloperTab($getContacts);
+    $dao = CRM_Core_DAO::executeQuery($getContacts);
 
+    while ($dao->fetch()) {
+      $this->_contactIds[] = $dao->cid;
+    }
+    $dao->free();
+    if (empty($this->_params['charts'])) {
+      $this->setPager();
+    }
+
+    if (!empty($this->_contactIds) || !empty($this->_params['charts'])) {
       $sql = "{$this->_select} {$this->_from} WHERE {$this->_aliases['civicrm_contact']}.id IN (" . implode(',', $this->_contactIds) . ")
-        AND {$this->_aliases['civicrm_contribution']}.is_test = 0 {$this->_statusClause} {$this->_groupBy} ";
+        AND {$this->_aliases['civicrm_contribution']}.is_test = 0 {$this->_statusClause} {$this->_groupBy} {$this->_orderBy}";
       $this->addToDeveloperTab($sql);
       $dao = CRM_Core_DAO::executeQuery($sql);
       $current_year = $this->_params['yid_value'];
@@ -404,7 +418,7 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
         }
       }
       $dao->free();
-    
+    }
 
     $this->formatDisplay($rows, FALSE);
 
