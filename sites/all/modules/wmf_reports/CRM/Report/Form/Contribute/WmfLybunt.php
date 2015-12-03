@@ -246,10 +246,8 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
               $select[] = "SUM({$field['dbAlias']}) as {$tableName}_{$fieldName}";
 
               $this->_columnHeaders["{$previous_year}"]['type'] = $field['type'];
-              $this->_columnHeaders["{$previous_year}"]['title'] = "({$field['dbAlias']}) as {$tableName}_{$fieldName}";//$previous_year;
-
-              $this->_columnHeaders["{$previous_year}"]['title'] = "SUM({$field['dbAlias']}) as {$tableName}_{$fieldName}";//$previous_year;
-
+              $this->_columnHeaders["{$previous_year}"]['title'] = $previous_year;
+              
               $this->_columnHeaders["civicrm_life_time_total"]['type'] = $field['type'];
               $this->_columnHeaders["civicrm_life_time_total"]['title'] = 'LifeTime';;
             }
@@ -358,8 +356,14 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
   }
 
     function orderBy() {
-      //$this->_orderBy = "ORDER BY civicrm_contribution_total_amount DESC";
-       $this->_orderBy = "ORDER BY civicrm_contact_first_name DESC"; 
+        
+      $this->_orderBy = "ORDER BY civicrm_contribution_total_amount DESC";
+  }
+  
+  function postProcess() {
+      
+      $this->orderBy();
+      parent::postProcess();
   }
   
   function alterDisplay(&$rows) {
