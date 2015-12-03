@@ -358,13 +358,75 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
     function orderBy() {
 
       $this->_orderBy = "ORDER BY civicrm_contribution_total_amount DESC";
-      $this->addToDeveloperTab("TESTORDER BY civicrm_contribution_total_amount DESC");
-  }
+    }
+    
+    function postProcess() {
 
-  function postProcess() {
+    // get ready with post process params
+    $this->beginPostProcess();
 
-      $this->orderBy();
-      parent::postProcess();
+    // get the acl clauses built before we assemble the query
+    $this->buildACLClause($this->_aliases['civicrm_contact']);
+    $this->select();
+    $this->from();
+    $this->where();
+    $this->groupBy();
+    $this->orderBy();
+
+    $rows = $this->_contactIds = array();
+    $this->limit();
+    $getContacts = "SELECT SQL_CALC_FOUND_ROWS {$this->_aliases['civicrm_contact']}.id as cid {$this->_from} {$this->_where}  GROUP BY {$this->_aliases['civicrm_contact']}.id {$this->_orderBy} {$this->_limit}";
+    $this->addToDeveloperTab($getContacts);
+    $dao = CRM_Core_DAO::executeQuery($getContacts);
+
+    while ($dao->fetch()) {
+      $this->_contactIds[] = $dao->cid;
+    }
+    $dao->free();
+    if (empty($this->_params['charts'])) {
+      $this->setPager();
+    }
+
+    if (!empty($this->_contactIds) || !empty($this->_params['charts'])) {
+      $sql = "{$this->_select} {$this->_from} WHERE {$this->_aliases['civicrm_contact']}.id IN (" . implode(',', $this->_contactIds) . ")
+        AND {$this->_aliases['civicrm_contribution']}.is_test = 0 {$this->_statusClause} {$this->_groupBy} ";
+      $this->addToDeveloperTab($sql);
+      $dao = CRM_Core_DAO::executeQuery($sql);
+      $current_year = $this->_params['yid_value'];
+      $previous_year = $current_year - 1;
+
+      while ($dao->fetch()) {
+
+        if (!$dao->civicrm_contribution_contact_id) {
+          continue;
+        }
+
+        $row = array();
+        foreach ($this->_columnHeaders as $key => $value) {
+          if (property_exists($dao, $key)) {
+            $rows[$dao->civicrm_contribution_contact_id][$key] = $dao->$key;
+          }
+        }
+
+        if ($dao->civicrm_contribution_receive_date) {
+          if ($dao->civicrm_contribution_receive_date == $previous_year) {
+            $rows[$dao->civicrm_contribution_contact_id][$dao->civicrm_contribution_receive_date] = $dao->civicrm_contribution_total_amount;
+          }
+        }
+        else {
+          $rows[$dao->civicrm_contribution_contact_id]['civicrm_life_time_total'] = $dao->civicrm_contribution_total_amount;
+        }
+      }
+      $dao->free();
+    }
+
+    $this->formatDisplay($rows, FALSE);
+
+    // assign variables to templates
+    $this->doTemplateAssignment($rows);
+
+    // do print / pdf / instance stuff if needed
+    $this->endPostProcess($rows);
   }
   
   function alterDisplay(&$rows) {
