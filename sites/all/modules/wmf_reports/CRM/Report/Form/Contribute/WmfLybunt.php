@@ -360,10 +360,10 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
       $this->_orderBy = "ORDER BY civicrm_contribution_total_amount DESC";
     }
     
-    public function groupBy() {
+public function groupBy() {
     $this->_groupBy = "GROUP BY  {$this->_aliases['civicrm_contribution']}.contact_id, " .
       self::fiscalYearOffset($this->_aliases['civicrm_contribution'] .
-        '.receive_date');
+        '.receive_date') . "DESC WITH ROLLUP";
     $this->assign('chartSupported', TRUE);
   }
     
