@@ -146,7 +146,7 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 							$parent = $match;
 							$copy_fields = array(
 								'entity_id', //for the parent!
-								'contribution_type_id',
+								'financial_type_id',
 								'payment_instrument_id',
 								'gateway_account',
 							);
@@ -170,11 +170,11 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 
 				$matches = globalcollect_audit_get_child_contributions_from_whatever_this_is(wr1_order_id($transactions[$order_id]));
                 if ( !$error && is_array( $matches ) && count( $matches ) ) {
-					$im_a = wmf_civicrm_get_civi_id( 'contribution_type_id', wr1_get_negative_type( $transactions[$order_id] ) );
+					$im_a = wmf_civicrm_get_civi_id( 'financial_type_id', wr1_get_negative_type( $transactions[$order_id] ) );
 					foreach ( $matches as $match ) {
 						//None of these are themselves parents. 
 						//check to make sure they're not the same type of thing we are.
-						if ( $im_a === $match['contribution_type_id'] ) {
+						if ( $im_a === $match['financial_type_id'] ) {
 							$found = true; //already went there.
 						} else {
 							globalcollect_audit_log_error( "Refund/Chargeback Collision on order id " . wr1_order_id( $transactions[$order_id] ), 'CBK+RFD' );
