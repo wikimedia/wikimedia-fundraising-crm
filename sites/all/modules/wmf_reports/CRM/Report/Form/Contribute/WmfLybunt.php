@@ -361,7 +361,7 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
     }
     
 public function groupBy() {
-    $this->_groupBy = "GROUP BY  {$this->_aliases['civicrm_contribution']}.contact_id, ";
+    $this->_groupBy = "GROUP BY  {$this->_aliases['civicrm_contribution']}.contact_id ";
     $this->assign('chartSupported', TRUE);
   }
     
