@@ -185,6 +185,14 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
             'default' => array('1'),
           ),
         ),
+        'order_bys' => array(
+          'total_amount' => array(
+            'title' => ts('Total amount last year (affects available columns)'),
+            'default' => '0',
+            'default_weight' => '0',
+            'default_order' => 'DESC',
+          ),
+        ),
       ),
       'civicrm_group' => array(
         'dao' => 'CRM_Contact_DAO_GroupContact',
@@ -227,7 +235,7 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
   function select() {
 
     $this->_columnHeaders = $select = array();
-    if (!isset($params['yid_value'])) {
+    if (!isset($this->_params['yid_value'])) {
       $this->_params['yid_value'] = date('Y');
     }
     $current_year = $this->_params['yid_value'];
@@ -358,4 +366,19 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
   function alterDisplay(&$rows) {
     // Prevent parent behavior
   }
+
+  /**
+   * Are we ordering by the latest year total.
+   *
+   * If we are we need to drop the rollup to do the ordering.
+   *
+   * Without bigger changes we can't get the lifetime total and order by
+   * the latest year total in the same query.
+   *
+   * @return bool
+   */
+  public function isOrderByLastYearTotal() {
+    return TRUE;
+  }
+
 }
