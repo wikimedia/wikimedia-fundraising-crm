@@ -46,7 +46,6 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
                 'filters' => array(
                     'receive_date' => array(
                         'title' => ts( 'Initiated Date (UTC)' ),
-                        'type' => CRM_Utils_Type::T_DATE,
                         'operatorType' => CRM_Report_Form::OP_DATE,
                     ),
                     /*

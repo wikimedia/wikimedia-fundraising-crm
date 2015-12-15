@@ -6,14 +6,15 @@ require_once 'tracking.inc';
 /**
  * return a map of option value (id) => option name
  */
-function civicrm_api_option_group($group_name, $key = null)
+function civicrm_api_option_group($group_name, $key = null, $force = FALSE)
 {
 	static $cached_group = array();
-	if (!array_key_exists($group_name, $cached_group))
+	if (!array_key_exists($group_name, $cached_group) || $force)
 	{
 		$api = civicrm_api_classapi();
 		$api->OptionValue->Get(array(
 			'option_group_name' => $group_name,
+			'options' => array('limit' => 0),
 		));
 		$cached_group[$group_name] = array();
 		$option_values = $api->values();
@@ -1500,7 +1501,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
             $msg['direct_mail_appeal'] = "Mediander";
             break;
         default:
-            $values = civicrm_api_option_group( 'Appeal' );
+            $values = civicrm_api_option_group( wmf_civicrm_get_direct_mail_field_option_name() );
             if ( in_array( $msg['utm_campaign'], $values ) ) {
                 $msg['direct_mail_appeal'] = $msg['utm_campaign'];
             }
@@ -1529,6 +1530,23 @@ function wmf_civicrm_normalize_msg( $msg ) {
     watchdog( 'wmf_civicrm', 'Contribution (normalized):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>', NULL, WATCHDOG_INFO );
 
     return $msg;
+}
+
+/**
+ * Get the name value for the option group for direct mail.
+ *
+ * The option group for the direct mail field has been given a distinctive title but
+ * the name (which is the unique one) is distinctly historical.
+ *
+ * This name is included (as per below) in the install script so this function exists mostly
+ * to document it as such a wierd name is guaranteed to get people worried about avoiding
+ * hard-coding. The more appealing title 'Appeal' cannot be guaranteed to be unique.
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_get_direct_mail_field_option_name()
+{
+    return 'appeal_20080709183729';
 }
 
 /**

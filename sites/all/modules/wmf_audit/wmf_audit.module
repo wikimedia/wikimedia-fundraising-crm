@@ -45,7 +45,7 @@ function wmf_audit_main( $gateway, $options ) {
     $config = new Configuration(
         DRUPAL_ROOT . '/../vendor/wikimedia/smash-pig/config_defaults.php',
         $settings_file,
-        'amazon',
+        $gateway,
         true
     );
     Context::init( $config );
