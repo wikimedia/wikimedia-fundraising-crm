@@ -253,11 +253,6 @@ EOS;
                 and array_key_exists( $field_name, $this->_params['group_bys'] ) );
     }
 
-    function addDateRange( $name, $from = '_from', $to = '_to', $label = 'From:', $dateFormat = 'searchDate', $required = false, $displayTime = false ) {
-        $this->addDateTime( $name . $from, $label , $required, array( 'formatType' => $dateFormat ) );
-        $this->addDateTime( $name . $to, ts('To:'), $required, array( 'formatType' => $dateFormat ) );
-    }
-
     function selectClause( &$tableName, $type, &$fieldName, &$field ) {
         switch ( $fieldName ) {
         case 'is_negative':

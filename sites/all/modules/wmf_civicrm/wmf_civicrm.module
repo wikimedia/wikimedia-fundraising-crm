@@ -2437,3 +2437,53 @@ function wmf_civicrm_get_options($entity, $field) {
     $options = civicrm_api3($entity, 'getoptions', array('field' => $field));
     return $options['values'];
 }
+
+/**
+ * Fills in the appear field with any data that might be missing from it.
+ * @param string $startDate
+ */
+function wmf_civicrm_fill_missing_appeal_data($startDate) {
+  civicrm_initialize();
+  $customGroup = civicrm_api3('CustomGroup', 'getsingle', array('name' => 'Gift_Data'));
+  $optionGroupID = civicrm_api3('OptionGroup', 'getvalue', array(
+    'name' => wmf_civicrm_get_direct_mail_field_option_name(),
+    'return' => 'id',
+  ));
+  global $databases;
+  $drupalDbName = $databases['default']['default']['database'];
+  CRM_Core_DAO::executeQuery("
+    UPDATE
+    {$customGroup['table_name']} v
+    LEFT JOIN {$drupalDbName}.contribution_tracking t ON v.entity_id = t.contribution_id
+    LEFT JOIN civicrm_contribution c ON c.id = contribution_id
+
+    SET v.appeal = utm_campaign
+
+    WHERE
+      t.ts > '{$startDate}' AND
+      c.id IS NOT NULL
+      AND (v.appeal IS NULL OR v.appeal = '')
+      AND utm_campaign IN (
+        SELECT value COLLATE utf8_unicode_ci FROM civicrm_option_value ov WHERE ov.option_group_id= {$optionGroupID} AND is_active = 1
+      )
+  ");
+
+  CRM_Core_DAO::executeQuery("
+    INSERT INTO
+    {$customGroup['table_name']} (entity_id, appeal)
+
+    SELECT contribution_id, utm_campaign
+    FROM {$drupalDbName}.contribution_tracking
+    LEFT JOIN civicrm_contribution c ON c.id = contribution_id
+    LEFT JOIN {$customGroup['table_name']} v ON v.entity_id = contribution_id
+
+    WHERE
+      ts > '{$startDate}' AND
+      c.id IS NOT NULL
+      AND v.id IS NULL
+      AND utm_campaign IN (
+        SELECT value COLLATE utf8_unicode_ci FROM civicrm_option_value ov WHERE ov.option_group_id= {$optionGroupID} AND is_active = 1
+      )
+  ");
+
+}
