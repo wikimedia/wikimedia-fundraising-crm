@@ -1,7 +1,7 @@
 <?php
 
 class CRM_BAO_WmfContributionExtra {
-    function exportableFields() {
+    static function exportableFields() {
         return array(
             'deposit_date' => array(
                 'title' => 'Deposit Date',
