@@ -31,17 +31,6 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
                         'required' => true,
                         'no_display' => true,
                     ),
-                    'total_amount' => array(
-                        'required' => true,
-                        'statistics' => array(
-                            'sum' => ts( 'Total Amount (USD)' ),
-                            'count' => ts( 'Number of Contributions' ),
-                        ),
-                    ),
-                    'is_negative' => array(
-                        'title' => ts( 'Credit (+) or Debit (-)' ),
-                        'required' => true,
-                    ),
                 ),
                 'filters' => array(
                     'receive_date' => array(
@@ -59,35 +48,48 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
                     ),
                     */
                 ),
-                'group_bys' => array(
+              'group_bys' => array(),
+            ),
+            'civicrm_financial_trxn' => array(
+                'dao' => 'CRM_Financial_DAO_FinancialTrxn',
+                'fields' => array(
+                    'total_amount' => array(
+                        'title' => ts('Total Amount (USD)'),
+                        'required' => true,
+                        'type' => CRM_Utils_Type::T_MONEY,
+                        'statistics' => array(
+                            'sum' => ts( 'Total Amount (USD)' ),
+                            'count' => ts( 'Number of Contributions' ),
+                        ),
+                    ),
                     'is_negative' => array(
                         'title' => ts( 'Credit (+) or Debit (-)' ),
-                        'default' => false,
+                        'required' => true,
                     ),
-                ),
-            ),
-            'payment_instrument' => array(
-                'dao' => 'CRM_Core_DAO_OptionValue',
-                'fields' => array(
-                    'simplified_payment_instrument' => array(
-                        'name' => 'label',
+                    'financial_trxn_payment_instrument_id' => array(
+                        'name' => 'payment_instrument_id',
                         'title' => ts( 'Payment Method' ),
+                        'default' => true,
                     ),
                 ),
                 'filters' => array(
-                    'simplified_payment_instrument' => array(
-                        'name' => 'label',
+                  'financial_trxn_payment_instrument_id' => array(
+                        'name' => 'payment_instrument_id',
                         'title' => ts( 'Payment Method' ),
-                        'type' => CRM_Utils_Type::T_STRING,
-                        'operatorType' => CRM_Report_Form::OP_STRING,
-                        'having' => true,
+                        'type' => CRM_Utils_Type::T_INT,
+                        'operatorType' => CRM_Report_Form::OP_MULTISELECT,
+                        'options' => $this->getOptions('FinancialTrxn', 'payment_instrument_id'),
                     ),
                 ),
                 'group_bys' => array(
-                    'simplified_payment_instrument' => array(
-                        'name' => 'label',
+                  'payment_instrument_id' => array(
+                        'name' => 'payment_instrument_id',
                         'title' => ts( 'Payment Method' ),
-                    ),
+                  ),
+                  'is_negative' => array(
+                      'title' => ts( 'Credit (+) or Debit (-)' ),
+                      'default' => false,
+                  ),
                 ),
             ),
             'wmf_contribution_extra' => array(
@@ -181,25 +183,39 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
         parent::__construct( );
     }
 
+    /**
+     * Get the options for a given field.
+     *
+     * @param string $entity
+     * @param string $field
+     *
+     * @return array
+     * @throws CiviCRM_API3_Exception
+     */
+    function getOptions($entity, $field) {
+        $options = civicrm_api3($entity, 'getoptions', array('field' => $field));
+        return $options['values'];
+    }
+
     function buildQuery($applyLimit = true) {
         return "/* timeout=600 */ " . parent::buildQuery();
     }
 
-    function select() {
-        if ( $this->is_active('simplified_payment_instrument') ) {
-            $this->_columns['payment_instrument']['fields']['simplified_payment_instrument']['required'] = true;
-        }
-
-        parent::select();
-    }
-
     function from( ) {
+
         $this->_from = <<<EOS
 FROM civicrm_contribution {$this->_aliases['civicrm_contribution']}
 LEFT JOIN wmf_contribution_extra {$this->_aliases['wmf_contribution_extra']}
     ON {$this->_aliases['wmf_contribution_extra']}.entity_id = {$this->_aliases['civicrm_contribution']}.id
+
+LEFT JOIN civicrm_entity_financial_trxn entity_financial_trxn_civireport
+                    ON (contribution_civireport.id = entity_financial_trxn_civireport.entity_id AND
+                        entity_financial_trxn_civireport.entity_table = 'civicrm_contribution')
+
+  LEFT JOIN civicrm_financial_trxn {$this->_aliases['civicrm_financial_trxn']}
+                    ON {$this->_aliases['civicrm_financial_trxn']}.id = entity_financial_trxn_civireport.financial_trxn_id
 EOS;
-        if ( $this->is_active( 'iso_code' ) ) {
+        if ( $this->isTableSelected( 'civicrm_country' ) ) {
             $this->_from .= <<<EOS
 \nLEFT JOIN civicrm_address
     ON civicrm_address.contact_id = {$this->_aliases['civicrm_contribution']}.contact_id
@@ -208,26 +224,17 @@ LEFT JOIN civicrm_country {$this->_aliases['civicrm_country']}
     ON {$this->_aliases['civicrm_country']}.id = civicrm_address.country_id
 EOS;
         }
-
-        if ( $this->is_active( 'simplified_payment_instrument' ) ) {
-            $option_group_id = civicrm_option_group_id( 'payment_instrument' );
-            $this->_from .= <<<EOS
-\nLEFT JOIN civicrm_option_value {$this->_aliases['payment_instrument']}
-    ON {$this->_aliases['payment_instrument']}.value = {$this->_aliases['civicrm_contribution']}.payment_instrument_id
-        AND {$this->_aliases['payment_instrument']}.option_group_id = {$option_group_id}
-EOS;
-        }
     }
 
     function grandTotal( &$rows ) {
         $sum_amount = $sum_count = 0;
         foreach ( $rows as $rowNum => $row ) {
-            $sum_amount += $row['civicrm_contribution_total_amount_sum'];
-            $sum_count += $row['civicrm_contribution_total_amount_count'];
+            $sum_amount += $row['civicrm_financial_trxn_total_amount_sum'];
+            $sum_count += $row['civicrm_financial_trxn_total_amount_count'];
         }
         $grand_total_row = array(
-            'civicrm_contribution_total_amount_sum' => $sum_amount,
-            'civicrm_contribution_total_amount_count' => $sum_count,
+            'civicrm_financial_trxn_total_amount_sum' => $sum_amount,
+            'civicrm_financial_trxn_total_amount_count' => $sum_count,
         );
         $this->assign( 'grandStat', $grand_total_row );
     }
@@ -246,31 +253,15 @@ EOS;
         }
     }
 
-    function is_active( $field_name ) {
-        return ( array_key_exists( "{$field_name}_value", $this->_params )
-                and $this->_params["{$field_name}_value"] )
-            or ( array_key_exists( 'group_bys', $this->_params )
-                and array_key_exists( $field_name, $this->_params['group_bys'] ) );
-    }
-
     function selectClause( &$tableName, $type, &$fieldName, &$field ) {
         switch ( $fieldName ) {
         case 'is_negative':
             $this->register_field_alias( $tableName, $fieldName, $field );
-            $sql = "IF( {$this->_aliases['civicrm_contribution']}.total_amount < 0, '-', '+' )";
+            $sql = "IF( {$this->_aliases['civicrm_financial_trxn']}.total_amount < 0, '-', '+' )";
             if ( $type === 'fields' ) {
                 return $sql . " AS {$field['dbAlias']}";
             }
             return false;
-        /*
-        case 'simplified_payment_instrument':
-            $this->register_field_alias( $tableName, $fieldName, $field );
-            $sql = "IF( {$this->_aliases['payment_instrument']}.label LIKE 'Credit Card%', 'Credit Card', {$this->_aliases['payment_instrument']}.label )";
-            if ( $type === 'fields' ) {
-                return $sql . " AS {$field['dbAlias']}";
-            }
-            return false;
-        */
         }
         return parent::selectClause( $tableName, $type, $fieldName, $field );
     }
@@ -291,4 +282,28 @@ EOS;
         $this->_columnHeaders[$field['dbAlias']]['type'] = CRM_Utils_Array::value( 'type', $field );
         $this->_selectAliases[] = $field['dbAlias'];
     }
+
+  /**
+   *
+  * Alter display of rows.
+  *
+  * We can speed up the query significantly by eliminating the join to
+  * the option value table. Despite appearances it is an unindexed join.
+  *
+  * @param array $rows
+  *   Rows generated by SQL, with an array for each row.
+  */
+  public function alterDisplay(&$rows) {
+    $paymentInstruments = CRM_Contribute_PseudoConstant::paymentInstrument();
+
+    foreach ($rows as $rowNum => $row) {
+      if (!array_key_exists('civicrm_financial_trxn_payment_instrument_id', $row)) {
+        return;
+      }
+      if (!empty($row['civicrm_financial_trxn_payment_instrument_id'])) {
+        $rows[$rowNum]['civicrm_financial_trxn_payment_instrument_id'] = $paymentInstruments[$row['civicrm_financial_trxn_payment_instrument_id']];
+      }
+    }
+  }
+
 }
