@@ -193,6 +193,8 @@ class Queue {
             'ack' => 'client',
             'selector' => "JMSCorrelationID='{$correlationId}'",
         );
+		$timeout = variable_get( "queue_timeout_$queue", 5 );
+		$con->setReadTimeout( $timeout );
         $con->subscribe( $this->normalizeQueueName( $queue ), $properties );
 
         return $con->readFrame();
