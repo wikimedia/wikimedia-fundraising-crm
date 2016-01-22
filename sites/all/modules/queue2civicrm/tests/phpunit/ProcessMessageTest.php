@@ -35,6 +35,59 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertNotEquals( $contributions[0]['contact_id'], $contributions2[0]['contact_id'] );
     }
 
+    /**
+     * Process an ordinary (one-time) donation message with an UTF campaign.
+     */
+    public function testDonationWithUTFCampaignOption() {
+        $message = new TransactionMessage(array('utm_campaign' => 'EmailCampaign1'));
+        $appealFieldID = $this->createCustomOption('Appeal', 'EmailCampaign1');
+
+        exchange_rate_cache_set( 'USD', $message->get( 'date' ), 1 );
+        exchange_rate_cache_set( $message->get( 'currency' ), $message->get( 'date' ), 3 );
+
+        queue2civicrm_import( $message );
+
+        $contributions = wmf_civicrm_get_contributions_from_gateway_id( $message->getGateway(), $message->getGatewayTxnId() );
+        $contribution = civicrm_api3('Contribution', 'getsingle', array(
+            'id' => $contributions[0]['id'],
+            'return' => 'custom_' . $appealFieldID,
+        ));
+      $this->assertEquals('EmailCampaign1', $contribution['custom_' . $appealFieldID]);
+        $this->deleteCustomOption('Appeal', 'EmailCampaign1');
+    }
+
+  /**
+   * Create a custom option for the given field.
+   *
+   * @param string $fieldName
+   *
+   * @param string $optionValue
+   *
+   * @return mixed
+   * @throws \CiviCRM_API3_Exception
+   */
+    public function createCustomOption($fieldName, $optionValue) {
+        $appealField = civicrm_api3('custom_field', 'getsingle', array('name' => $fieldName));
+        civicrm_api3('OptionValue', 'create', array('name' => $optionValue, 'value' => $optionValue, 'option_group_id' => $appealField['option_group_id']));
+        civicrm_api_option_group(wmf_civicrm_get_direct_mail_field_option_name(), null, TRUE);
+        return $appealField['id'];
+    }
+
+    /**
+     * Cleanup custom field option after test.
+     *
+     * @param string $fieldName
+     *
+     * @param string $optionValue
+     *
+     * @return mixed
+     * @throws \CiviCRM_API3_Exception
+     */
+    public function deleteCustomOption($fieldName, $optionValue) {
+        $appealField = civicrm_api3('custom_field', 'getsingle', array('name' => $fieldName));
+        return $appealField['id'];
+    }
+
     public function testRecurring() {
         $subscr_id = mt_rand();
         $values = array( 'subscr_id' => $subscr_id );
