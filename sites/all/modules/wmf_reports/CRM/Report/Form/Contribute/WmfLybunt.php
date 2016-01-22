@@ -215,12 +215,14 @@ class CRM_Report_Form_Contribute_WmfLybunt extends CRM_Report_Form_Contribute_Ly
           ),
           'lifetime_usd_total' => array(
             'default' => true,
+            'type' => CRM_Utils_Type::T_MONEY,
           ),
           'last_donation_date' => array(
             'default' => true,
           ),
           'last_donation_usd' => array(
             'default' => true,
+            'type' => CRM_Utils_Type::T_MONEY,
           ),
         ),
       ),
