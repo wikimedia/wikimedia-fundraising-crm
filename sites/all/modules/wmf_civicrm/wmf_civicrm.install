@@ -1560,3 +1560,27 @@ WHERE ceft.entity_table = 'civicrm_contribution' AND cft.payment_instrument_id I
   );
 }
 
+/**
+ * Update upgraded 4.2 refund transactions to have negative refund records.
+ *
+ * In the 4.3 upgrade transaction records were done for statuses Completed
+ * Pending and Cancelled. The status Refunded was not a core status until 4.3
+ * so transactions were NOT added in the upgrade to refunded status transactions.
+ *
+ * The original upgrade code is in the function
+ * CRM_Upgrade_Incremental_php_FourThree::createFinancialRecords
+ *
+ * I tried re-editing it for use here but the sql was just too slow and we don't
+ * want another long-outage. It's probably slower for this section than on the main
+ * upgrade as the financial_trxn table has been populated in the meantime. The main
+ * upgrade sql included adding and dropping columns on tables whereas here I
+ * have used LAST_INSERT_ID() to get the inserted row ids.
+ *
+ * OTOH we only need to deal with ~16k records to php parsing is a reasonable option
+ * (it might take a little while but it won't lock the tables so I don't think
+ * the site would need to come down to run it).
+ */
+function wmf_civicrm_update_7070() {
+  require_once('update_7070.php');
+  _wmf_civicrm_update_7070_fill_refund_transaction_data();
+}
