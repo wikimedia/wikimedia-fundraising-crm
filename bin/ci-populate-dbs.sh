@@ -6,6 +6,7 @@ BASEDIR=$(dirname $0)
 echo "Populating databases with the prefix '${CIVICRM_SCHEMA_PREFIX}'"
 
 export PRECREATED_DSN_PATTERN="mysql://${CIVICRM_MYSQL_USERNAME}:${CIVICRM_MYSQL_PASSWORD}@${CIVICRM_MYSQL_CLIENT}/${CIVICRM_SCHEMA_PREFIX}{{db_seq}}"
+export AMPHOME="${WORKSPACE}/.amp-${BUILD_NUMBER}"
 
 #FIXME: --web-root="$WORKSPACE/src/crm"
 
