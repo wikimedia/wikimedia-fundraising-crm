@@ -1518,6 +1518,48 @@ function wmf_civicrm_update_7064() {
 }
 
 /**
+ * Ensure all payments have a payment instrument id.
+ *
+ * Per http://wiki.civicrm.org/confluence/display/CRMDOC/Fixing+Transactions+Missing+a+Payment+Instrument+-+4.4.3+Upgrades
+ * there is a payment instrument id set for all contributions.
+ *
+ * The code there basically just figures out a default & sets the empty ones to that.
+ *
+ * If we look at the first million contributions just setting the it to 'Gateway' seems a reasonable
+ * choice of default.
+ *
+ * SELECT  payment_instrument_id, count(*) FROM (SELECT * FROM civicrm_contribution LIMIT 1000000) as t GROUP BY payment_instrument_id;
+ * +-----------------------+----------+
+ * | payment_instrument_id | count(*) |
+ * +-----------------------+----------+
+ * |                  NULL |       33 |
+ * |                     1 |        3 |
+ * |                     3 |       30 |
+ * |                     4 |    14162 |
+ * |                     5 |      119 |
+ * |                     6 |   982954 |
+ * |                     7 |     1451 |
+ * |                     8 |     1246 |
+ * |                    44 |        1 |
+ * |                   186 |        1 |
+ */
+function wmf_civicrm_update_7065() {
+  $paymentInstruments = civicrm_api3('Contribution', 'getoptions', array('field' => 'payment_instrument_id'));
+  $defaultPaymentInstrument = array_search('Gateway', $paymentInstruments);
+  CRM_Core_DAO::executeQuery(
+    "UPDATE civicrm_contribution SET payment_instrument_id = $defaultPaymentInstrument WHERE payment_instrument_id IS NULL"
+  );
+  CRM_Core_DAO::executeQuery(
+    "UPDATE civicrm_financial_trxn cft
+LEFT JOIN civicrm_entity_financial_trxn ceft ON ceft.financial_trxn_id = cft.id
+LEFT JOIN civicrm_contribution cc  ON ceft.entity_id = cc.id
+SET cc.payment_instrument_id =
+  cft.payment_instrument_id = $defaultPaymentInstrument IFNULL(cc.payment_instrument_id, $defaultPaymentInstrument)
+WHERE ceft.entity_table = 'civicrm_contribution' AND cft.payment_instrument_id IS NULL;"
+  );
+}
+
+/**
  * Update upgraded 4.2 refund transactions to have negative refund records.
  *
  * In the 4.3 upgrade transaction records were done for statuses Completed
