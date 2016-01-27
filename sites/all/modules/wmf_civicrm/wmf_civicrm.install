@@ -44,6 +44,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7062();
     wmf_civicrm_update_7063();
     wmf_civicrm_update_7064();
+    wmf_civicrm_update_7080();
 }
 
 /**
@@ -1626,4 +1627,27 @@ function wmf_civicrm_update_7075() {
   }
   civicrm_api3('OptionValue', 'delete', array('id' => $expectedRedundantType['id']));
   civicrm_api3('OptionValue', 'create', array('id' => $options['values'][0]['id'], 'is_reserved' => TRUE));
+}
+
+/**
+ * Add indexes that are missing from CiviCRM 4.6.
+ *
+ * These indexes have been added to 4.7 using the same php function.
+ *
+ * This function checks the index does not already exist before adding it.
+ * This ensures that we will not hit a problem on upgrade as a result of adding them now.
+ *
+ * Note this could be a slow update.
+ *
+ * https://github.com/civicrm/civicrm-core/pull/7672
+ * https://github.com/civicrm/civicrm-core/pull/7678
+ * https://github.com/civicrm/civicrm-core/pull/7673
+ */
+function wmf_civicrm_update_7080() {
+  civicrm_initialize();
+  $tables = array('civicrm_contribution' => array('creditnote_id'));
+  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+
+  $tables = array('civicrm_financial_trxn' => array('trxn_id'));
+  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
