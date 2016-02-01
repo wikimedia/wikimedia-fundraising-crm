@@ -1545,6 +1545,8 @@ function wmf_civicrm_update_7064() {
  */
 function wmf_civicrm_update_7065() {
   civicrm_initialize();
+  // Ensure that 'Gateway' option exists. Will be a no-op if it's already there.
+  wmf_civicrm_create_option_values( 'payment_instrument', array( 'Gateway' ) );
   $paymentInstruments = civicrm_api3('Contribution', 'getoptions', array('field' => 'payment_instrument_id'));
   $defaultPaymentInstrument = array_search('Gateway', $paymentInstruments['values']);
   CRM_Core_DAO::executeQuery(
