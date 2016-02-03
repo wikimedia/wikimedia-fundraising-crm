@@ -102,15 +102,18 @@ function fredge_batch_process() {
  *
  * @param $msg A STOMP message class.
  *
- * @return bool True if the message was processed without errors. False if errors occured; the msg
- *              will still have been removed from the queue though.
  */
 function fredge_payments_init_process_message($msg) {
   $txnid = $msg->headers['correlation-id'];
   watchdog('fredge', "Beginning processing of payments-init message for $txnid: " . json_encode($msg), array(), WATCHDOG_INFO);
 
   $body = json_decode($msg->body, TRUE);
-  $id = fredge_insert_data($body, 'payments_initial', $txnid, true);
+  $data = fredge_prep_data($body, 'payments_initial', $txnid, true);
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('fredge');
+  $id = db_insert('payments_initial')
+    ->fields($data)
+    ->execute();
 }
 
 /**
@@ -118,17 +121,12 @@ function fredge_payments_init_process_message($msg) {
  *
  * @param $msg A STOMP message class.
  *
- * @return bool True if the message was processed without errors. False if errors occured; the msg
- *              will still have been removed from the queue though.
  */
 function fredge_payments_antifraud_process_message($msg) {
   $txnid = $msg->headers['correlation-id'];
   watchdog('fredge', "Beginning processing of payments-antifraud message for $txnid: " . json_encode($msg), array(), WATCHDOG_INFO);
 
   $body = json_decode($msg->body, TRUE);
-
-  $antifraud_breakdown = $body['score_breakdown'];
-  unset($body['score_breakdown']);
 
   //handle the IP address conversion to binary so we can do database voodoo later.
   if (array_key_exists('user_ip', $body)) {
@@ -147,38 +145,88 @@ function fredge_payments_antifraud_process_message($msg) {
     } else {
       $body['user_ip'] = ip2long($body['user_ip']);
     }
-
   }
 
-  $id = fredge_insert_data($body, 'payments_fraud', $txnid, true);
+  fredge_insert_antifraud_data($body, $txnid);
+}
 
+/**
+ * take a message and insert or update rows in payments_fraud and payments_fraud_breakdown.
+ * If there is not yet an antifraud row for this ct_id and order_id, all fields
+ * in the table must be present in the message.
+ * @param array $msg the array-converted message body that you want to upsert.
+ * @param string $log_identifier Some small string for the log that will help id
+ * the message if something goes amiss and we have to log about it.
+ */
+function fredge_insert_antifraud_data($msg, $log_identifier) {
+
+  if ( empty($msg) || empty($msg['contribution_tracking_id']) || empty($msg['order_id']) ){
+    $error = "$log_identifier: missing essential payments_fraud IDs. Dropping message on floor.";
+    throw new FredgeDataValidationException( $error );
+  }
+
+  $id = 0;
+  $inserting = true;
+
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('fredge');
+  $query = 'SELECT id FROM payments_fraud WHERE contribution_tracking_id = :ct_id AND order_id = :order_id LIMIT 1';
+  $result = db_query( $query, array(
+    ':ct_id' => $msg['contribution_tracking_id'],
+    ':order_id' => $msg['order_id']
+  ) );
+  if ( $result->rowCount() === 1 ){
+    $id = $result->fetch()->id;
+    $inserting = false;
+  }
+  $data = fredge_prep_data( $msg, 'payments_fraud', $log_identifier, $inserting );
+  //now all you have to do is insert the actual message data.
+  if ( $inserting ) {
+    $id = db_insert( 'payments_fraud' )
+      ->fields($data)
+      ->execute();
+  } else {
+    db_update( 'payments_fraud' )
+      ->fields($data)
+      ->condition('id', $id)
+      ->execute();
+  }
   if ($id) {
-    foreach ($antifraud_breakdown as $test => $score) {
-      //format the way the table wants it
-      $insert = array(
+    foreach ($msg['score_breakdown'] as $test => $score) {
+      $breakdown = array(
         'payments_fraud_id' => $id,
         'filter_name' => $test,
         'risk_score' => $score,
       );
-      fredge_insert_data($insert, 'payments_fraud_breakdown', $txnid, true);
+      // validate the data. none of these fields would be converted, so no need
+      // to store the output
+      fredge_prep_data( $breakdown, 'payments_fraud_breakdown', $log_identifier, true );
+      db_merge( 'payments_fraud_breakdown' )->key( array(
+        'payments_fraud_id' => $id,
+        'filter_name' => $test,
+      ) )->fields( array (
+        'risk_score' => $score,
+      ) )->execute();
     }
   }
 }
-
 /**
- * take a message, and shovel that data straight into a table.
- * If the *exact* fields in the table aren't in the message, this will complain
- * and drop things. So don't do that.
- * @param array $msg the array-converted message body that you want to shovel
- * into $table.
- * @param type $table the name of the target fredge table that should have the
- * same fields as the $msg
+ * Check a message against a table schema, and complain if it doesn't fit. Also
+ * format date fields and discard fields with no matching column.
+ * @param array $msg the array-converted message body
+ * @param string $table the table you're trying to put $msg into
  * @param string $log_identifier Some small string for the log that will help id
  * the message if something goes amiss and we have to log about it.
- * @param boolean $require_all True if we want to require all fields described in
- * the current schema for $table, otherwise false.
+ * @param bool $require_all if true, throw an exception on missing fields
+ * @return array an array of the relevant fields, with dates in the right format
+ * @throws FredgeDataValidationException
  */
-function fredge_insert_data($msg, $table, $log_identifier, $require_all = false) {
+function fredge_prep_data( $msg, $table, $log_identifier, $require_all = true ) {
+  if ( !is_array($msg) || empty($msg) ){
+    $error = "$log_identifier: Trying to insert nothing into $table. Dropping message on floor.";
+    throw new FredgeDataValidationException( $error );
+  }
+
   static $schemata = null;
   if (is_null($schemata)) {
     require_once('wmf_fredge_qc.install'); //annoyed I have to do this, but this seems the cleanest way from here
@@ -193,12 +241,7 @@ function fredge_insert_data($msg, $table, $log_identifier, $require_all = false)
     }
   }
 
-  if ( !is_array($msg) || empty($msg) ){
-    $error = "$log_identifier: Trying to insert nothing into table $table. Dropping message on floor.";
-    throw new FredgeDataValidationException( $error );
-  }
-
-  $insert = array();
+  $data = array();
   foreach ($schemata[$table]['fields'] as $field => $definition) {
     if (!array_key_exists($field, $msg)) {
       if ($require_all) {
@@ -206,10 +249,8 @@ function fredge_insert_data($msg, $table, $log_identifier, $require_all = false)
         throw new FredgeDataValidationException( $error );
         //so... add fields to DI first when you do schema changes.
       }
-      $insert[$field] = null;
     } else {
       //the field exists. Woot.
-
       // Check data length.
       if ( array_key_exists( 'length', $definition )
         && $definition['length'] < strlen( $msg[$field] )
@@ -222,18 +263,10 @@ function fredge_insert_data($msg, $table, $log_identifier, $require_all = false)
       if (array_key_exists('mysql_type', $definition) && $definition['mysql_type'] === 'DATETIME') {
         $msg[$field] = wmf_common_date_unix_to_sql($msg[$field]);
       }
-      $insert[$field] = $msg[$field];
+      $data[$field] = $msg[$field];
     }
   }
-
-  //now all you have to do is insert the actual message data.
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('fredge');
-  $id = db_insert($table)
-    ->fields($insert)
-    ->execute();
-
-  return $id;
+  return $data;
 }
 
 class FredgeDataValidationException extends WmfException {
