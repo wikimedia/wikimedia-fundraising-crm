@@ -45,6 +45,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7063();
     wmf_civicrm_update_7064();
     wmf_civicrm_update_7080();
+    wmf_civicrm_update_7090();
 }
 
 /**
@@ -1650,4 +1651,22 @@ function wmf_civicrm_update_7080() {
 
   $tables = array('civicrm_financial_trxn' => array('trxn_id'));
   CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+}
+
+/**
+ * T122947 add index to civicrm_financial item.
+ *
+ * The existing one does not start with entity_id so the queries that omit
+ * entity_table dont' use it. It is also logically the wrong way around as the
+ * one with more variation should lead.
+ *
+ * The upstream patch (CRM-17775) removes indexes as well. I have not ported that part
+ * back at this stage as I'm viewing it as tidy up rather than a performance
+ * fix and leaving 4.7.2 upgrade to catch it.
+ */
+function wmf_civicrm_update_7090() {
+  civicrm_initialize();
+  CRM_Core_BAO_SchemaHandler::createIndexes(array(
+    'civicrm_financial_item' => array(array('entity_id', 'entity_table')),
+  ));
 }
