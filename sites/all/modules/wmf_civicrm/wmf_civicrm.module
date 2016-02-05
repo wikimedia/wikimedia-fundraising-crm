@@ -3905,7 +3905,7 @@ LIMIT %4";
 
       if (!$api->Contribution->Create($params)) {
         throw new WmfException(
-          WmfException::UNKNOWN, "Failed to update USD amount of contribution: $id, " . db_error()
+          WmfException::UNKNOWN, "Failed to update USD amount of contribution: $id, " . $api->errorMsg()
         );
       }
     }
