@@ -1852,11 +1852,14 @@ WHERE
     $update_params = array(
         'id' => $contribution->id,
         'contribution_status_id' => civicrm_api_contribution_status( 'Refunded' ),
-
+        'debug' => 1,
         'version' => 3,
     );
-    if ( !$api->Contribution->Create($update_params) ) {
-        throw new WmfException( 'IMPORT_CONTRIB', "Cannot mark original contribution as refunded: $contribution_id, " . db_error() );
+    try {
+      civicrm_api3('Contribution', 'create', $update_params);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      throw new WmfException('IMPORT_CONTRIB', "Cannot mark original contribution as refunded: $contribution_id, " . print_r($e->getExtraParams(), TRUE));
     }
 
     return $refund->id;
