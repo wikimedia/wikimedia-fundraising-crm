@@ -46,6 +46,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7064();
     wmf_civicrm_update_7080();
     wmf_civicrm_update_7090();
+    wmf_civicrm_update_7100();
 }
 
 /**
@@ -1668,5 +1669,34 @@ function wmf_civicrm_update_7090() {
   civicrm_initialize();
   CRM_Core_BAO_SchemaHandler::createIndexes(array(
     'civicrm_financial_item' => array(array('entity_id', 'entity_table')),
+  ));
+}
+
+/**
+ * T124979 add Chargeback refund status and chargeback & contra account relationships.
+ *
+ * This is the same code in 4.7.2 to add these options and is written to be upgrade safe.
+ */
+function wmf_civicrm_update_7100() {
+  civicrm_initialize();
+  // First we enable and edit the record for Credit contra - this exists but is disabled for most sites.
+  // Using the ensure function (below) will not enabled a disabled option (by design).
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_option_value v
+     INNER JOIN civicrm_option_group g on v.option_group_id=g.id and g.name='account_relationship'
+     SET v.is_active=1, v.label='Credit/Contra Revenue Account is', v.name='Credit/Contra Revenue Account is', v.description='Credit/Contra Revenue Account is'
+     WHERE v.name = 'Credit/Contra Account is';");
+  CRM_Core_BAO_OptionValue::ensureOptionValueExists(array(
+    'option_group_id' => 'account_relationship',
+    'name' => 'Chargeback Account is',
+    'label' => ts('Chargeback Account is'),
+    'is_active' => TRUE,
+    'component_id' => 'CiviContribute',
+  ));
+  CRM_Core_BAO_OptionValue::ensureOptionValueExists(array(
+    'option_group_id' => 'contribution_status',
+    'name' => 'Chargeback',
+    'label' => ts('Chargeback'),
+    'is_active' => TRUE,
+    'component_id' => 'CiviContribute',
   ));
 }
