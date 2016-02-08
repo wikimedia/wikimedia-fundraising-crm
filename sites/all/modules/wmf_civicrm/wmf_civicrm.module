@@ -2054,8 +2054,13 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
 
 		if ( $contribution->source ) {
 			list( $original_currency, $original_amount ) = explode( " ", $contribution->source );
-			$extra['original_currency'] = $original_currency;
-			$extra['original_amount'] = $original_amount;
+			if ( is_numeric( $original_amount ) && wmf_civicrm_is_valid_currency( $original_currency ) ) {
+				$extra['original_currency'] = $original_currency;
+				$extra['original_amount'] = $original_amount;
+			} else {
+				$extra['original_currency'] = 'USD';
+				$extra['original_amount'] = $contribution->total_amount;
+			}
 		}
 
 		if ( $extra ) {
@@ -2224,9 +2229,7 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
         $source = $fields['source'];
         if ( preg_match( '/^([a-z]{3}) [0-9]+(\.[0-9]+)?$/i', $source, $matches ) ) {
             $currency = strtoupper( $matches[1] );
-            // TODO: stick a get_currency_codes function someplace
-            $all_currencies = array_keys( CurrencyRates::getCurrencyRates() );
-            if ( !in_array( $currency, $all_currencies ) ) {
+            if ( !wmf_civicrm_is_valid_currency( $currency ) ) {
                 $errors['source'] = t( 'Please set a supported currency code' );
             }
         } else {
@@ -2486,4 +2489,15 @@ function wmf_civicrm_fill_missing_appeal_data($startDate) {
       )
   ");
 
+}
+
+/**
+ * Determine if a code represents a supported currency. Uses the
+ * DonationInterface currency list as a canonical source.
+ * @param string $currency should be an ISO 4217 code
+ * @return bool true if it's a real currency that we can handle
+ */
+function wmf_civicrm_is_valid_currency( $currency ) {
+	$all_currencies = array_keys( CurrencyRates::getCurrencyRates() );
+	return in_array( $currency, $all_currencies );
 }
