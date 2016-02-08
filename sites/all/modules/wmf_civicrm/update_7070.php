@@ -70,8 +70,8 @@ function _wmf_civicrm_update_7070_fill_refund_transaction_data() {
       cont.total_amount,
       cont.net_amount,
       cont.fee_amount,
-      cont.trxn_id,
-      cont.check_number,
+      COALESCE(cont.trxn_id, '') as trxn_id,
+      COALESCE(cont.check_number, '') as check_number,
       cont.receive_date,
       cont.contact_id,
       cont.financial_type_id
@@ -121,7 +121,7 @@ function _wmf_civicrm_update_7070_fill_refund_transaction_data() {
           from_financial_account_id,
           trxn_date
         )
-       SELECT
+       VALUES(
          {$result->payment_instrument_id},
          %1,
          {$result->total_amount},
@@ -130,10 +130,10 @@ function _wmf_civicrm_update_7070_fill_refund_transaction_data() {
          %2,
          $refundStatus,
          %3,
-         " . (empty($result->payment_instrument_id) ? $financialAccountId : $paymentInstrumentMapping[$result->payment_instrument_id]) . " as to_financial_account_id,
+         " . (empty($result->payment_instrument_id) ? $financialAccountId : $paymentInstrumentMapping[$result->payment_instrument_id]) . ",
          NULL,
          '{$trxn_date}'
-        ";
+        )";
       CRM_Core_DAO::executeQuery($sql, $params);
       $financialTransactionID = CRM_Core_DAO::singleValueQuery("SELECT LAST_INSERT_ID()");
 
