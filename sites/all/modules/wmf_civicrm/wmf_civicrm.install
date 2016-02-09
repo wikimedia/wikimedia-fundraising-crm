@@ -48,6 +48,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7090();
     wmf_civicrm_update_7100();
     wmf_civicrm_update_7110();
+    wmf_civicrm_update_7120();
 }
 
 /**
@@ -1708,4 +1709,27 @@ function wmf_civicrm_update_7100() {
 function wmf_civicrm_update_7110() {
   civicrm_initialize();
   CRM_Core_BAO_SchemaHandler::createIndexes(array('civicrm_contribution' => array('source')));
+}
+
+/**
+ * T124979 add a Financial Account to each Financial Type for Chargeback & Refund.
+ */
+function wmf_civicrm_update_7120() {
+  civicrm_initialize();
+  $financialTypes = civicrm_api3('FinancialType', 'get', array());
+
+  foreach (array_keys($financialTypes['values']) as $financialTypeID) {
+    civicrm_api3('EntityFinancialAccount', 'create', array(
+      'entity_id' => $financialTypeID,
+      'entity_table' => 'civicrm_financial_type',
+      'account_relationship' => 'Chargeback Account is',
+      'financial_account_id' => 'Chargeback',
+    ));
+    civicrm_api3('EntityFinancialAccount', 'create', array(
+      'entity_id' => $financialTypeID,
+      'entity_table' => 'civicrm_financial_type',
+      'account_relationship' => 'Credit/Contra Revenue Account is',
+      'financial_account_id' => 'Refund',
+    ));
+  }
 }
