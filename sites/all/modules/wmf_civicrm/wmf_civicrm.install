@@ -47,6 +47,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7080();
     wmf_civicrm_update_7090();
     wmf_civicrm_update_7100();
+    wmf_civicrm_update_7110();
 }
 
 /**
@@ -1699,4 +1700,12 @@ function wmf_civicrm_update_7100() {
     'is_active' => TRUE,
     'component_id' => 'CiviContribute',
   ));
+}
+
+/**
+ * 123418 / CRM-17999 add index to civicrm_contribution.source field.
+ */
+function wmf_civicrm_update_7110() {
+  civicrm_initialize();
+  CRM_Core_BAO_SchemaHandler::createIndexes(array('civicrm_contribution' => array('source')));
 }
