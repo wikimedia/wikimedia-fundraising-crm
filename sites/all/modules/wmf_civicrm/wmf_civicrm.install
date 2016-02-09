@@ -1733,3 +1733,38 @@ function wmf_civicrm_update_7120() {
     ));
   }
 }
+
+/**
+ * T122946 fix financial trxn record for upgraded contributions missing to_financial_account_id.
+ *
+ * These came about in the upgrade (this update does not need to run on install) and affect the
+ * same contributions as update 7065.
+ *
+ * My queries suggest they all have financial_type = 'Cash' so I explicitly limited to that.
+ */
+function wmf_civicrm_update_7130() {
+  civicrm_initialize();
+  $depositFinancialAccountID = civicrm_api3('FinancialAccount', 'getvalue', array(
+    'return' => 'id',
+    'name' => 'Deposit Bank Account',
+  ));
+
+  $cashFinancialTypeID = civicrm_api3('FinancialType', 'getvalue', array(
+    'return' => 'id',
+    'name' => 'Cash',
+  ));
+  CRM_Core_DAO::executeQuery(
+   "UPDATE
+     civicrm_contribution con
+     LEFT JOIN civicrm_entity_financial_trxn eft ON (eft.entity_id = con.id AND eft.entity_table = 'civicrm_contribution')
+     INNER JOIN civicrm_financial_trxn ft ON ft.id = eft.financial_trxn_id
+
+     SET ft.to_financial_account_id = %1
+
+     WHERE ft.to_financial_account_id IS NULL AND con.financial_type_id = %2",
+     array(
+       1 => array($depositFinancialAccountID, 'Integer'),
+       2 => array($cashFinancialTypeID, 'Integer'),
+     )
+   );
+}
