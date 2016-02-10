@@ -62,7 +62,7 @@ function _link_gift_data_field_to_new_group ( $field_name, $group_name, $values 
         'name' => 'Gift_Data',
     ) );
     if ( !$success || !count( $api->values ) ) {
-        throw new Exception( $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
     $custom_group_id = $api->values[0]->id;
 
@@ -72,7 +72,7 @@ function _link_gift_data_field_to_new_group ( $field_name, $group_name, $values 
         'name' => $field_name,
     ) );
     if ( !$success || !count( $api->values ) ) {
-        throw new Exception( $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
     $custom_field_id = $api->values[0]->id;
 
@@ -88,7 +88,7 @@ function _link_gift_data_field_to_new_group ( $field_name, $group_name, $values 
             'title' => $field_name,
         ) );
         if ( !$success ) {
-            throw new Exception( $api->errorMsg() );
+            throw new DrupalUpdateException( $api->errorMsg() );
         }
     }
     $option_group_id = $api->values[0]->id;
@@ -105,7 +105,7 @@ function _link_gift_data_field_to_new_group ( $field_name, $group_name, $values 
                 'value' => $value,
             ) );
             if ( !$success ) {
-                throw new Exception( $api->errorMsg() );
+                throw new DrupalUpdateException( $api->errorMsg() );
             }
         }
     }
@@ -122,7 +122,7 @@ function _link_gift_data_field_to_new_group ( $field_name, $group_name, $values 
         'is_searchable' => 1,
     ) );
     if ( !$success ) {
-        throw new Exception( $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 }
 
@@ -166,8 +166,6 @@ function wmf_civicrm_update_7000()
     wmf_civicrm_bootstrap_civi();
     wmf_civicrm_create_financial_types($contribution_types);
     wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
-
-    return array();
 }
 
 /**
@@ -190,7 +188,7 @@ function wmf_civicrm_update_7001()
             'is_active' => 1,
         ));
         if (!$success) {
-            $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+            throw new DrupalUpdateException( $api->errorMsg() );
         }
         $result = $api->values();
     }
@@ -212,10 +210,8 @@ function wmf_civicrm_update_7001()
         'time_format' => 2,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
-
-    return array();
 }
 
 /**
@@ -228,7 +224,7 @@ function wmf_civicrm_update_7002()
         'name' => 'contribution_extra',
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        throw new DrupalUpdateException($api->errorMsg());
     }
     $values = $api->values();
     $custom_group = array_pop($values);
@@ -246,10 +242,8 @@ function wmf_civicrm_update_7002()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
-
-    return array();
 }
 
 function wmf_civicrm_update_7003()
@@ -270,7 +264,7 @@ function wmf_civicrm_update_7004()
         'name' => 'contribution_extra',
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        throw new DrupalUpdateException($api->errorMsg());
     }
     $values = $api->values();
     $custom_group = array_pop($values);
@@ -287,10 +281,8 @@ function wmf_civicrm_update_7004()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
-
-    return array();
 }
 
 /**
@@ -298,14 +290,12 @@ function wmf_civicrm_update_7004()
  */
 function wmf_civicrm_update_7005()
 {
-    $ret = array();
-
     $api = wmf_civicrm_bootstrap_civi();
     $success = $api->CustomGroup->get(array(
         'name' => 'contribution_extra',
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        throw new DrupalUpdateException($api->errorMsg());
     }
     $values = $api->values();
     $custom_group = array_pop($values);
@@ -322,7 +312,7 @@ function wmf_civicrm_update_7005()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -337,7 +327,7 @@ function wmf_civicrm_update_7005()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -352,7 +342,7 @@ function wmf_civicrm_update_7005()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -367,7 +357,7 @@ function wmf_civicrm_update_7005()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -385,7 +375,7 @@ function wmf_civicrm_update_7005()
         'time_format' => 2,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -401,7 +391,7 @@ function wmf_civicrm_update_7005()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -416,7 +406,7 @@ function wmf_civicrm_update_7005()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -432,7 +422,7 @@ function wmf_civicrm_update_7005()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -447,7 +437,7 @@ function wmf_civicrm_update_7005()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -465,7 +455,7 @@ function wmf_civicrm_update_7005()
         'time_format' => 2,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -481,7 +471,7 @@ function wmf_civicrm_update_7005()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -496,7 +486,7 @@ function wmf_civicrm_update_7005()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -511,7 +501,7 @@ function wmf_civicrm_update_7005()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -526,10 +516,8 @@ function wmf_civicrm_update_7005()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
-
-    return $ret;
 }
 
 /**
@@ -537,8 +525,6 @@ function wmf_civicrm_update_7005()
  */
 function wmf_civicrm_update_7006()
 {
-    $ret = array();
-
     wmf_civicrm_create_option_values('contribution_status', array(
         'Settled',
         'Paid',
@@ -551,7 +537,7 @@ function wmf_civicrm_update_7006()
         'name' => 'contribution_extra',
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        throw new DrupalUpdateException($api->errorMsg());
     }
     $custom_group = $api->values[0];
     $success = $api->CustomField->get(array(
@@ -564,11 +550,9 @@ function wmf_civicrm_update_7006()
             'id' => $field->id,
         ));
         if (!$success) {
-            $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+            throw new DrupalUpdateException( $api->errorMsg() );
         }
     }
-
-    return $ret;
 }
 
 /**
@@ -588,7 +572,7 @@ function wmf_civicrm_update_7007()
         'description' => 'Review',
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 }
 
@@ -655,14 +639,13 @@ function wmf_civicrm_update_7011()
  */
 function wmf_civicrm_update_7012()
 {
-    $ret = array();
     $api = wmf_civicrm_bootstrap_civi();
 
     $success = $api->CustomGroup->get(array(
         'name' => 'contribution_extra',
     ));
     if (!$success) {
-        throw new Exception($api->errorMsg());
+        throw new DrupalUpdateException($api->errorMsg());
     }
     $values = $api->values();
     $custom_group = array_pop($values);
@@ -679,7 +662,7 @@ function wmf_civicrm_update_7012()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = $api->errorMsg();
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -694,7 +677,7 @@ function wmf_civicrm_update_7012()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = $api->errorMsg();
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -709,7 +692,7 @@ function wmf_civicrm_update_7012()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = $api->errorMsg();
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -724,7 +707,7 @@ function wmf_civicrm_update_7012()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = $api->errorMsg();
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -739,7 +722,7 @@ function wmf_civicrm_update_7012()
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = $api->errorMsg();
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -757,10 +740,8 @@ function wmf_civicrm_update_7012()
         'time_format' => 2,
     ));
     if (!$success) {
-        $ret[] = $api->errorMsg();
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
-
-    return implode("\n", $ret);
 }
 
 /**
@@ -787,10 +768,8 @@ function wmf_civicrm_update_7013()
         'is_view' => 0,
     ));
     if (!$success) {
-        $ret[] = $api->errorMsg();
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
-
-    return $ret;
 }
 
 /**
@@ -818,7 +797,7 @@ function wmf_civicrm_update_7014()
         'is_view' => 0,
     ));
     if (!$success) {
-        $ret[] = $api->errorMsg();
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $dbs = wmf_civicrm_get_dbs();
@@ -832,8 +811,6 @@ WHERE
     wmf_contribution_extra.entity_id = civicrm_contribution.id
     AND thankyou_date = '1970-01-01 00:00:00'
 " );
-
-    return $ret;
 }
 
 /**
@@ -872,7 +849,7 @@ function wmf_civicrm_update_7016()
             'used_for' => 'civicrm_contribution'
         ));
         if (!$success) {
-            throw new Exception( $api->errorMsg() );
+            throw new DrupalUpdateException( $api->errorMsg() );
         }
     }
 }
@@ -897,7 +874,7 @@ function wmf_civicrm_update_7017()
                 'used_for' => 'civicrm_contact'
             ));
         if (!$success) {
-            throw new Exception( $api->errorMsg() );
+            throw new DrupalUpdateException( $api->errorMsg() );
         }
     }
 }
@@ -964,7 +941,7 @@ function wmf_civicrm_update_7021()
             'used_for' => 'civicrm_contribution'
         ));
         if (!$success) {
-            throw new Exception( $api->errorMsg() );
+            throw new DrupalUpdateException( $api->errorMsg() );
         }
     }
 }
@@ -985,7 +962,7 @@ function wmf_civicrm_update_7022() {
             'is_active' => 1,
         ));
         if (!$success) {
-            throw new Exception( $api->errorMsg() );
+            throw new DrupalUpdateException( $api->errorMsg() );
         }
     }
     $custom_group_id = $api->values[0]->id;
@@ -1003,7 +980,7 @@ function wmf_civicrm_update_7022() {
         'is_searchable' => 1,
     ));
     if (!$success) {
-        throw new Exception( $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -1019,7 +996,7 @@ function wmf_civicrm_update_7022() {
         'is_searchable' => 1,
     ));
     if (!$success) {
-        throw new Exception( $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -1035,7 +1012,7 @@ function wmf_civicrm_update_7022() {
         'is_searchable' => 1,
     ));
     if (!$success) {
-        throw new Exception( $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     // TODO: define option groups in another migration if necessary
@@ -1062,7 +1039,7 @@ function wmf_civicrm_update_7023() {
         'is_active' => 1,
     ));
     if (!$success) {
-        throw new Exception('Could not create custom group');
+        throw new DrupalUpdateException('Could not create custom group');
     }
     $values = $api->values();
     $custom_group = array_pop($values);
@@ -1079,7 +1056,7 @@ function wmf_civicrm_update_7023() {
         'is_searchable' => 1,
     ));
     if (!$success) {
-        throw new Exception('Failed to create custom field.');
+        throw new DrupalUpdateException('Failed to create custom field.');
     }
 }
 
@@ -1093,7 +1070,7 @@ function wmf_civicrm_update_7024() {
     ));
     $result = $api->values();
     if (!$result) {
-        throw new Exception('Could not find custom group wmf_donor.  Please run update 7023 first.');
+        throw new DrupalUpdateException('Could not find custom group wmf_donor.  Please run update 7023 first.');
     }
 
     $custom_group = array_pop($result);
@@ -1113,7 +1090,7 @@ function wmf_civicrm_update_7024() {
 			'is_view' => 1,
 		));
 		if (!$success) {
-			$ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+			throw new DrupalUpdateException( $api->errorMsg() );
 		}
 	}
 	$success = $api->CustomField->create(array(
@@ -1131,7 +1108,7 @@ function wmf_civicrm_update_7024() {
         'time_format' => 2,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -1146,7 +1123,7 @@ function wmf_civicrm_update_7024() {
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -1162,7 +1139,7 @@ function wmf_civicrm_update_7024() {
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -1178,7 +1155,7 @@ function wmf_civicrm_update_7024() {
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 
     $success = $api->CustomField->create(array(
@@ -1194,9 +1171,8 @@ function wmf_civicrm_update_7024() {
         'is_view' => 1,
     ));
     if (!$success) {
-        $ret[] = array( 'success' => false, 'query' => $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
-	return $ret;
 }
 
 /**
@@ -1215,8 +1191,6 @@ function wmf_civicrm_update_7025()
 function wmf_civicrm_update_7026()
 {
 	wmf_civicrm_create_option_values( 'payment_instrument', array( 'Alipay' ) );
-
-    return array();
 }
 
 /**
@@ -1230,7 +1204,7 @@ function wmf_civicrm_update_7027()
     ));
     $result = $api->values();
     if (!$result) {
-        throw new Exception('Could not find custom group wmf_donor.  Please run update 7023 first.');
+        throw new DrupalUpdateException('Could not find custom group wmf_donor.  Please run update 7023 first.');
     }
 
     $custom_group = array_pop($result);
@@ -1303,7 +1277,7 @@ function wmf_civicrm_update_7030() {
             'is_active' => 1,
         ) );
         if ( !$success ) {
-            throw new Exception( $api->errorMsg() );
+            throw new DrupalUpdateException( $api->errorMsg() );
         }
     }
     $custom_group_id = $api->id;
@@ -1362,7 +1336,7 @@ function wmf_civicrm_update_7031() {
             'is_active' => 1,
         ) );
         if ( !$success ) {
-            throw new Exception( $api->errorMsg() );
+            throw new DrupalUpdateException( $api->errorMsg() );
         }
     }
     $custom_group = $api->values[0];
@@ -1377,7 +1351,7 @@ function wmf_civicrm_update_7031() {
         'name' => 'Description_of_Stock',
     ) );
     if ( !$success ) {
-        throw new Exception( $api->errorMsg() );
+        throw new DrupalUpdateException( $api->errorMsg() );
     }
 }
 
@@ -1423,7 +1397,6 @@ function wmf_civicrm_update_7032() {
 function wmf_civicrm_update_7033() {
     wmf_civicrm_bootstrap_civi();
     wmf_civicrm_create_option_values( 'payment_instrument', array('Square Cash') );
-    return array();
 }
 
 /**
@@ -1432,7 +1405,6 @@ function wmf_civicrm_update_7033() {
 function wmf_civicrm_update_7034() {
     wmf_civicrm_bootstrap_civi();
     wmf_civicrm_create_option_values( 'payment_instrument', array('Trilogy') );
-    return array();
 }
 
 /**
@@ -1448,7 +1420,6 @@ function wmf_civicrm_update_7060() {
     wmf_civicrm_create_option_values_detailed('tag_used_for', array(
         'Contributions' => array('value' => 'civicrm_contribution'),
     ));
-    return array();
 }
 
 /**
