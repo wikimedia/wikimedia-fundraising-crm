@@ -2087,25 +2087,32 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
 		// FIXME: if this is an edit, we should review all contributions
 		$wmf_donor = array();
 		$contribution_date = new DateTime( $receive_date );
+    $isNegative = CRM_Contribute_BAO_Contribution::isContributionStatusNegative($contribution->contribution_status_id);
 		$fiscal_year = intval( $contribution_date->format( 'Y' ) );
 		if ( intval( $contribution_date->format( 'm' ) ) < 7 ) {
 			$fiscal_year = $fiscal_year - 1;
 		}
 		if ( $fiscal_year >= WMF_MIN_ROLLUP_YEAR && $fiscal_year <= WMF_MAX_ROLLUP_YEAR ) {
-			$wmf_donor["is_{$fiscal_year}_donor"] = true;
+      if (!$isNegative) {
+        $wmf_donor["is_{$fiscal_year}_donor"] = TRUE;
+      }
+      else {
+        $wmf_donor["is_{$fiscal_year}_donor"] = civicrm_api3('Contribution', 'getcount', array(
+          'contact_id' => $contact_id,
+          'contribution_status_id' => 'Completed',
+          'receive_date' => array('BETWEEN' => array($fiscal_year . '-07-01', $fiscal_year +1 . '-06-30')),
+          'total_amout' => array('>' => 0),
+        ));
+      }
 		}
+
 		// Update the latest donation data.
 		// If this is an edit, first check if it's the latest
 		$latest = true;
-		if ( $op === 'edit' ) {
-			$sql = <<<EOS
-SELECT id FROM civicrm_contribution
-WHERE contact_id = {$contact_id}
-AND receive_date > '{$contribution_date->format( 'Y-m-d H:i:s' )}'
-LIMIT 1
-EOS;
-			$dao = CRM_Core_DAO::executeQuery( $sql );
-			if ( $dao->fetch() ) {
+
+			if ( $op === 'edit' ) {
+      $latestDate = wmf_civicrm_most_recent_completed_contribution_date($contact_id);
+        if (strtotime($latestDate) > strtotime($receive_date) || $isNegative) {
 				$latest = false;
 			}
 		}
@@ -2115,10 +2122,20 @@ EOS;
 			if ( isset( $extra['original_currency'] ) ) {
 				$wmf_donor['last_donation_currency'] = $extra['original_currency'];
 			}
-			if ( isset( $extra['original_amount'] ) ) {
+			if ( isset( $extra['original_amount'] ) && $extra['original_amount'] > 0) {
 			    $wmf_donor['last_donation_amount'] = $extra['original_amount'];
 			}
 		}
+      if ($isNegative && $latestDate) {
+        $latestContribution = wmf_civicrm_get_single_contribution_for_contact_by_date($contact_id, $latestDate);
+        $wmf_donor['last_donation_date'] = date('YmdHis', strtotime($latestContribution['receive_date']));
+      $wmf_donor['last_donation_usd'] =  $latestContribution['total_amount'];
+      if (!empty($latestContribution['contribution_source'])) {
+        $source = explode(' ', $latestContribution['contribution_source']);
+        $wmf_donor['last_donation_currency'] = $source[0];
+        $wmf_donor['last_donation_amount'] = $source[1];
+      }
+    }
 		// Get lifetime totals.
     // Note that in 4.7 a new field is_payment is added to the financial_trxn table.
     // We should probably switch to that at that point.
@@ -2146,6 +2163,41 @@ EOS;
 		}
         break;
     }
+}
+
+/**
+ * Check if any completed contributions exist for the contact after the provided date.
+ *
+ * @param int $contact_id
+ *
+ * @return string $contribution_date
+ */
+function wmf_civicrm_most_recent_completed_contribution_date($contact_id) {
+  $completedStatusID = civicrm_api_contribution_status('Completed');
+  return CRM_Core_DAO::singleValueQuery("
+    SELECT max(receive_date) FROM civicrm_contribution
+    WHERE contact_id = {$contact_id}
+    AND contribution_status_id = $completedStatusID
+    AND total_amount > 0
+  ");
+}
+
+/**
+ * Check if any completed contributions exist for the contact after the provided date.
+ *
+ * @param int $contact_id
+ * @param string $contribution_date
+ *
+ * @return string $contribution_date
+ */
+function wmf_civicrm_get_single_contribution_for_contact_by_date($contact_id, $contribution_date) {
+  return civicrm_api3('Contribution', 'getsingle', array(
+    'contact_id' => $contact_id,
+    'receive_date' => $contribution_date,
+    'contribution_status_id' => 'Completed',
+    'total_amount' => array('>' => 0),
+    'return' => array('receive_date', 'total_amount', 'source'),
+  ));
 }
 
 /**

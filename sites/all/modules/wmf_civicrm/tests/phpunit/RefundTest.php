@@ -97,7 +97,51 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals($transaction2['trxn_id'], 'my_special_ref');
     }
 
-    /**
+  /**
+   * Check that marking a contribution as refunded updates custom data appropriately.
+   */
+  public function testMarkRefundCheckCustomData() {
+    civicrm_api3('contribution', 'create', array(
+      'contact_id' => $this->contact_id,
+      'financial_type_id' => 'Cash',
+      'total_amount' => 50,
+      'contribution_source' => 'USD 50',
+      'receive_date' => '2014-11-01',
+    ));
+    // Create an additional negative contribution. This is how they were prior to Feb 2016.
+    // We want to check it is ignored for the purpose of determining the most recent donation
+    // although it should contribute to the lifetime total.
+    civicrm_api3('contribution', 'create', array(
+      'contact_id' => $this->contact_id,
+      'financial_type_id' => 'Cash',
+      'total_amount' => -10,
+      'contribution_source' => 'USD -10',
+      'receive_date' => '2015-12-01',
+    ));
+    wmf_civicrm_mark_refund( $this->original_contribution_id, 'refund', false, '2015-09-09', 'my_special_ref');
+    $contact = civicrm_api3('Contact', 'getsingle', array(
+      'id' => $this->contact_id,
+      'return' => array(
+        wmf_civicrm_get_custom_field_name('lifetime_usd_total'),
+        wmf_civicrm_get_custom_field_name('last_donation_date'),
+        wmf_civicrm_get_custom_field_name('last_donation_amount'),
+        wmf_civicrm_get_custom_field_name('last_donation_usd'),
+        wmf_civicrm_get_custom_field_name('is_2014_donor'),
+        wmf_civicrm_get_custom_field_name('is_' . date('Y') . '_donor'),
+        wmf_civicrm_get_custom_field_name('is_2015_donor'),
+      ),
+    ));
+    $this->assertEquals(40.00, $contact[wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
+    $this->assertEquals(50.00, $contact[wmf_civicrm_get_custom_field_name('last_donation_usd')]);
+    $this->assertEquals(50, $contact[wmf_civicrm_get_custom_field_name('last_donation_amount')]);
+    $this->assertEquals('2014-11-01 00:00:00', $contact[wmf_civicrm_get_custom_field_name('last_donation_date')]);
+    $this->assertEquals(TRUE, $contact[wmf_civicrm_get_custom_field_name('is_2014_donor')]);
+    $this->assertEquals(0, $contact[wmf_civicrm_get_custom_field_name('is_' . date('Y') . '_donor')]);
+    $this->assertEquals(0, $contact[wmf_civicrm_get_custom_field_name('is_2015_donor')]);
+  }
+
+
+  /**
      * Make a refund with type set to "chargeback"
      */
     public function testMarkRefundWithType() {
