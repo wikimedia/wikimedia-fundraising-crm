@@ -2114,15 +2114,23 @@ EOS;
 			    $wmf_donor['last_donation_amount'] = $extra['original_amount'];
 			}
 		}
-		// Get lifetime totals
+		// Get lifetime totals.
+    // Note that in 4.7 a new field is_payment is added to the financial_trxn table.
+    // We should probably switch to that at that point.
+    // For now from_financial_account_id IS NULL seems to filter out the fee lines.
 		$sql = <<<EOS
-SELECT SUM(total_amount) AS lifetime_usd_total
-FROM civicrm_contribution
+SELECT SUM(t.total_amount) AS lifetime_usd_total
+FROM civicrm_contribution c
+LEFT JOIN `civicrm_entity_financial_trxn`eft ON eft.`entity_id` = c.id
+AND eft.entity_table = 'civicrm_contribution'
+LEFT JOIN civicrm_financial_trxn t ON t.id = eft.financial_trxn_id
 WHERE contact_id = {$contact_id}
+AND from_financial_account_id IS NULL
+GROUP BY contact_id
 EOS;
-		$dao = CRM_Core_DAO::executeQuery( $sql );
-		if ( $dao->fetch() ) {
-			$wmf_donor['lifetime_usd_total'] = $dao->lifetime_usd_total;
+
+		if(($lifetimeTotal = CRM_Core_DAO::singleValueQuery($sql)) !== FALSE) {
+			$wmf_donor['lifetime_usd_total'] = $lifetimeTotal;
 		}
 		if ( !empty( $wmf_donor ) ) {
 			wmf_civicrm_set_custom_field_values(
