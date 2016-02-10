@@ -61,42 +61,12 @@ function _offline2civicrm_import_chargebacks_chargeback_trxn($contribution_id){
 
   print "\tCharging back $contribution_id\n";
 
-  $contribution = civicrm_api("Contribution", "Get", array(
-    "version" => "3",
-    "id" => $contribution_id
-  ));
-
-  if(!WMFCiviAPICheck::check_api_contribution($contribution, $contribution_id)){
-    watchdog('offline2civicrm', "Contribution (id: $contribution_id) could not be loaded via CiviCRM API: " .
-      print_r($contribution, TRUE), NULL, WATCHDOG_ERROR);
-    return false;
+  try {
+    wmf_civicrm_mark_refund( $contribution_id, 'chargeback', true );
+    watchdog('offline2civicrm', "Updated contribution $contribution_id", NULL, WATCHDOG_INFO);
+  } catch ( WmfException $e ) {
+	watchdog('offline2civicrm', "Cannot charge back contribution $contribution_id: {$e->getMessage()})", array(), WATCHDOG_ERROR);
   }
-
-  $contribution_flat = WMFCiviAPICheck::check_api_simplify($contribution, $contribution_id);
-
-  if($contribution_flat === false){
-    watchdog('offline2civicrm', "Contribution could not be extracted from API response: " .
-      print_r($contribution, TRUE), NULL, WATCHDOG_ERROR);
-    return false;
-  }
-
-  $contribution = $contribution_flat;
-
-  if(substr($contribution["contribution_source"], 0, 3) == "RFD"){
-      // the contribution has already been charged back or refunded
-      return true;
-  }
-
-  $contribution["total_amount"] = "0.00";
-  $contribution["net_amount"] = "0.00";
-  $contribution["contribution_source"] = "RFD CHARGEDBACK (" . $contribution["contribution_source"] . ")";
-
-  $updated = civicrm_api("Contribution", "Update", array_merge($contribution, array('version' => '3',)));
-
-  watchdog('offline2civicrm', "Updated contribution: " . print_r($updated, true), NULL, WATCHDOG_INFO);
-
-  return true;
-
 }
 
 function _offline2civicrm_import_chargebacks_globalcollect($filename){
