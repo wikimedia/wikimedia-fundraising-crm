@@ -1613,51 +1613,40 @@ function wmf_civicrm_get_contributions_from_contribution_id($contribution_id) {
 }
 
 /**
- * Pulls all child contributions in the wmf_contribution_extras table that match
- * the gateway
+ * Checks to see whether a contribution is refunded or charged back by gateway
  * and gateway transaction id.
  * @param string $gateway
  * @param string $gateway_txn_id
- * @return mixed array of result rows, or false if none present.
- * @throws WmfException
+ * @return bool true if contribution exists and is refunded or charged back, else false
  */
-function wmf_civicrm_get_child_contributions_from_gateway_id($gateway, $gateway_txn_id) {
-    $gateway = strtolower( $gateway );
-	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp
-		INNER JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id
-		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id
-		WHERE cxp.gateway = %1 AND cxp.gateway_txn_id = %2";
-
-    $dao = CRM_Core_DAO::executeQuery( $query, array(
-        1 => array( $gateway, 'String' ),
-        2 => array( $gateway_txn_id, 'String' ),
-    ) );
-	return wmf_civicrm_dao_to_list( $dao );
+function wmf_civicrm_is_refunded_by_gateway_id( $gateway, $gateway_txn_id ) {
+	$contributions = wmf_civicrm_get_contributions_from_gateway_id( $gateway, $gateway_txn_id );
+	if ( !$contributions ) {
+		return false;
+	}
+	return CRM_Contribute_BAO_Contribution::isContributionStatusNegative(
+		$contributions[0]['contribution_status_id']
+	);
 }
 
 
 /**
- * Pulls all child contributions in the wmf_contribution_extras table that match
- * the civicrm contribution id.
+ * Checks to see whether a contribution is refunded or charged back by
+ * contribution id.
  * @param string $contribution_id
- * @return mixed array of result rows, or false if none present.
- * @throws WmfException
+ * @return true if contribution exists and is refunded or charged back, else false
  */
-function wmf_civicrm_get_child_contributions_from_contribution_id($contribution_id) {
-//    $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp
-//		INNER JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id
-//		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id
-//		WHERE cc.id = %1";
-
-    $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp
-		INNER JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id
-		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id
-		WHERE cxp.entity_id = %1";
-
-    $dao = CRM_Core_DAO::executeQuery($query, array(
-                1 => array($contribution_id, 'Integer'),
-    ));
-    return wmf_civicrm_dao_to_list($dao);
+function wmf_civicrm_is_refunded_by_contribution_id($contribution_id) {
+	try {
+		$statusId = civicrm_api3( 'Contribution', 'getvalue', array(
+			'id' => $contribution_id,
+			'return' => 'contribution_status_id'
+		) );
+	}
+	catch ( CiviCRM_API3_Exception $e ) {
+		return false;
+	}
+	return CRM_Contribute_BAO_Contribution::isContributionStatusNegative( $statusId );
 }
 
 function wmf_civicrm_boost_performance() {
