@@ -132,18 +132,18 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
             $matches = globalcollect_audit_get_contributions_from_whatever_this_is(wr1_order_id($transactions[$order_id]));
 
             if ( !$matches ) {
-				globalcollect_audit_log_error("Could not find parent (or any related) transaction for refund/chargeback " . wr1_order_id($transactions[$order_id]) . print_r($transactions[$order_id], true), 'MISSING_PARENT');
+				globalcollect_audit_log_error("Could not find original (or any related) transaction for refund/chargeback " . wr1_order_id($transactions[$order_id]) . print_r($transactions[$order_id], true), 'MISSING_PARENT');
                 $error = true;
             } else {
 				//Make sure the match we have is a base transaction. 
-				$parent = null;
+				$original = null;
 				foreach ( $matches as $index => $match ) {
 					if ( trim( $match['parent_contribution_id'] ) === '' ) {
-						if ( !is_null( $parent ) ) {
-							globalcollect_audit_log_error( "Too many parents for refund/chargeback $order_id", 'PARENT_OVERFLOW' );
+						if ( !is_null( $original ) ) {
+							globalcollect_audit_log_error( "Ambiguous original transaction for refund/chargeback $order_id", 'PARENT_OVERFLOW' );
 							$error = true;
 						} else {
-							$parent = $match;
+							$original = $match;
 							$copy_fields = array(
 								'entity_id', //for the parent!
 								'financial_type_id',
@@ -157,33 +157,20 @@ function globalcollect_audit_find_missing_gc_trxns( $transactions ) {
 					}
 				}
 				
-				if ( !$error && is_null( $parent ) ){
-					globalcollect_audit_log_error( "Could not find parent transaction for refund/chargeback " . wr1_order_id( $transactions[$order_id] ) . print_r( $transactions[$order_id], true ), 'MISSING_PARENT' );
+				if ( !$error && is_null( $original ) ){
+					globalcollect_audit_log_error( "Could not find original transaction for refund/chargeback " . wr1_order_id( $transactions[$order_id] ) . print_r( $transactions[$order_id], true ), 'MISSING_PARENT' );
 					$error = true;
 				}
 				
-				if (!$error && !empty($parent['contribution_recur_id'])) {
+				if (!$error && !empty($original['contribution_recur_id'])) {
           //this is a recurring transaction, and we're not cool enough to handle that yet. Defer to later.
 					globalcollect_audit_log_error( "Not cool enough to handle recurring refunds/chargebacks yet for " . wr1_order_id( $transactions[$order_id] ) . print_r( $transactions[$order_id], true ), 'RECURRING_CBK' );
 					$error = true; //well, not really an "error", per se, but we do want to ignore this for now.
 				}
 
-				$matches = globalcollect_audit_get_child_contributions_from_whatever_this_is(wr1_order_id($transactions[$order_id]));
-                if ( !$error && is_array( $matches ) && count( $matches ) ) {
-					$im_a = wmf_civicrm_get_civi_id( 'financial_type_id', wr1_get_negative_type( $transactions[$order_id] ) );
-					foreach ( $matches as $match ) {
-						//None of these are themselves parents. 
-						//check to make sure they're not the same type of thing we are.
-						if ( $im_a === $match['financial_type_id'] ) {
-							$found = true; //already went there.
-						} else {
-							globalcollect_audit_log_error( "Refund/Chargeback Collision on order id " . wr1_order_id( $transactions[$order_id] ), 'CBK+RFD' );
-							$error = true;
-							//TODO: Seems like some kind of alert should happen 
-							//here if there's a sibling transaction, but at this
-							//point in time for all we know, this is totally normal...
-						}
-					}
+				$already_refunded = globalcollect_audit_is_whatever_this_is_refunded(wr1_order_id($transactions[$order_id]));
+				if ( !$error && $already_refunded ) {
+					$found = true;
 				}
 			}
 		} elseif (globalcollect_audit_get_contributions_from_whatever_this_is($order_id)) {
@@ -2085,11 +2072,11 @@ function globalcollect_audit_get_contributions_from_whatever_this_is($oid_or_cti
 /**
  * ...I thought the last one was the punch line.
  * @param type $oid_or_ctid_iono
- * @return The db matches if they exist, or false
+ * @return bool true if the thing is refunded or charged back
  */
-function globalcollect_audit_get_child_contributions_from_whatever_this_is($oid_or_ctid_iono) {
+function globalcollect_audit_is_whatever_this_is_refunded($oid_or_ctid_iono) {
     $ctid = gca_wr1_get_ctid_from_old_order_id($oid_or_ctid_iono);
-    $things = false;
+    $refunded = false;
     if ($ctid) {
         //get the contribution from contribution_tracking
         $ct_row = globalcollect_audit_get_contribution_tracking_data($ctid);
@@ -2099,14 +2086,14 @@ function globalcollect_audit_get_child_contributions_from_whatever_this_is($oid_
         if (isset($ct_row['contribution_id'])) {
             //get the contribution, and from there, the order_id...
             $cc_id = $ct_row['contribution_id'];
-            $things = wmf_civicrm_get_child_contributions_from_contribution_id($cc_id);
+            $refunded = wmf_civicrm_is_refunded_by_contribution_id($cc_id);
         }
     } else {
         //oldschool
         $order_id = $oid_or_ctid_iono;
-        $things = wmf_civicrm_get_child_contributions_from_gateway_id('globalcollect', $order_id);
+        $refunded = wmf_civicrm_is_refunded_by_gateway_id('globalcollect', $order_id);
     }
 
-    return $things;
+    return $refunded;
 }
 

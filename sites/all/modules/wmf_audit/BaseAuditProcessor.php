@@ -291,12 +291,7 @@ abstract class BaseAuditProcessor {
 	 */
 	protected function negative_transaction_exists_in_civi( $transaction ) {
 		$positive_txn_id = $this->get_parent_order_id( $transaction );
-		//go through the transactions and check to see if they're in civi
-		if ( wmf_civicrm_get_child_contributions_from_gateway_id( $this->name, $positive_txn_id ) === false ) {
-			return false;
-		} else {
-			return true;
-		}
+		return wmf_civicrm_is_refunded_by_gateway_id( $this->name, $positive_txn_id );
 	}
 
 	protected function get_runtime_options( $name ) {
