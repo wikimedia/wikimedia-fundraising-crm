@@ -1758,3 +1758,62 @@ function wmf_civicrm_update_7141() {
     }
   }
 }
+
+/**
+ * Fix financial item records with null financial_account.
+ *
+ * Incredibly we have only 4 of these in our database & Elliott picked up this problem through spot
+ * checks!.
+ *
+ * Reference contact is civicrm/contact/view?reset=1&cid=11346599 - before this update
+ * one of the contact's transactions does not display financial details when expanded in the UI.
+ *
+ *  [civicrm]> SELECT count(*) FROM civicrm_financial_item WHERE financial_account_id IS NULL;
+ * +----------+
+ * | count(*) |
+ * +----------+
+ * |        4 |
+ * +----------+
+ *
+ * These relate to line items with no financial_type_id of which we have 74.
+ *
+ * SELECT count(*) FROM civicrm_line_item li LEFT JOIN civicrm_contribution c ON c.id = li.contribution_id WHERE li.financial_type_id IS NULL;
+ * +----------+
+ * | count(*) |
+ * +----------+
+ * |       74 |
+ * +----------+
+ *
+ * Of those 74 rows 70 are orphans - ie line items with no contributions. It appears the contributions
+ * were deleted at some point in the past.
+ *
+ * This relates to T122946 & is a follow up fix.
+ */
+function wmf_civicrm_update_7150() {
+  civicrm_initialize();
+  $cashFinancialTypeID = civicrm_api3('FinancialType', 'getvalue', array(
+    'return' => 'id',
+    'name' => 'Cash',
+  ));
+
+  $cashFinancialAccountID = civicrm_api3('FinancialAccount', 'getvalue', array(
+    'return' => 'id',
+    'name' => 'Cash',
+  ));
+  // Deletes 70 orphan entries - a bit slow but I couldn't bring myself to take out the join & just filter
+  // on contribution_id IS NOT NULL as it felt less safe. Takes 1-2 minutes
+  CRM_Core_DAO::executeQuery("
+    DELETE li
+    FROM civicrm_line_item li
+    LEFT JOIN civicrm_contribution c ON li.entity_id = c.id
+    AND li.entity_table = 'civicrm_contribution'
+    WHERE c.id IS NULL
+  ");
+  // Updates 4 records.
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution SET financial_type_id = $cashFinancialTypeID WHERE financial_type_id IS NULL");
+  // Updates 4 records.
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_line_item SET financial_type_id = $cashFinancialTypeID WHERE financial_type_id IS NULL");
+  // Updates 4 records.
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_financial_item SET financial_account_id = $cashFinancialAccountID WHERE financial_account_id IS NULL");
+
+}
