@@ -20,7 +20,9 @@ function civicrm_api_option_group($group_name, $key = null, $force = FALSE)
 		$option_values = $api->values();
 		foreach ($option_values as $row)
 		{
-			$cached_group[$group_name][$row->value] = $row->name;
+			if (!array_search($key, $cached_group[$group_name])) {
+				$cached_group[$group_name][$row->value] = $row->name;
+			}
 		}
 	}
 	if ($key)
@@ -1611,51 +1613,40 @@ function wmf_civicrm_get_contributions_from_contribution_id($contribution_id) {
 }
 
 /**
- * Pulls all child contributions in the wmf_contribution_extras table that match
- * the gateway
+ * Checks to see whether a contribution is refunded or charged back by gateway
  * and gateway transaction id.
  * @param string $gateway
  * @param string $gateway_txn_id
- * @return mixed array of result rows, or false if none present.
- * @throws WmfException
+ * @return bool true if contribution exists and is refunded or charged back, else false
  */
-function wmf_civicrm_get_child_contributions_from_gateway_id($gateway, $gateway_txn_id) {
-    $gateway = strtolower( $gateway );
-	$query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp
-		INNER JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id
-		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id
-		WHERE cxp.gateway = %1 AND cxp.gateway_txn_id = %2";
-
-    $dao = CRM_Core_DAO::executeQuery( $query, array(
-        1 => array( $gateway, 'String' ),
-        2 => array( $gateway_txn_id, 'String' ),
-    ) );
-	return wmf_civicrm_dao_to_list( $dao );
+function wmf_civicrm_is_refunded_by_gateway_id( $gateway, $gateway_txn_id ) {
+	$contributions = wmf_civicrm_get_contributions_from_gateway_id( $gateway, $gateway_txn_id );
+	if ( !$contributions ) {
+		return false;
+	}
+	return CRM_Contribute_BAO_Contribution::isContributionStatusNegative(
+		$contributions[0]['contribution_status_id']
+	);
 }
 
 
 /**
- * Pulls all child contributions in the wmf_contribution_extras table that match
- * the civicrm contribution id.
+ * Checks to see whether a contribution is refunded or charged back by
+ * contribution id.
  * @param string $contribution_id
- * @return mixed array of result rows, or false if none present.
- * @throws WmfException
+ * @return true if contribution exists and is refunded or charged back, else false
  */
-function wmf_civicrm_get_child_contributions_from_contribution_id($contribution_id) {
-//    $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp
-//		INNER JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id
-//		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id
-//		WHERE cc.id = %1";
-
-    $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cxp
-		INNER JOIN wmf_contribution_extra cx ON cxp.entity_id = cx.parent_contribution_id
-		LEFT JOIN civicrm_contribution cc ON cc.id = cx.entity_id
-		WHERE cxp.entity_id = %1";
-
-    $dao = CRM_Core_DAO::executeQuery($query, array(
-                1 => array($contribution_id, 'Integer'),
-    ));
-    return wmf_civicrm_dao_to_list($dao);
+function wmf_civicrm_is_refunded_by_contribution_id($contribution_id) {
+	try {
+		$statusId = civicrm_api3( 'Contribution', 'getvalue', array(
+			'id' => $contribution_id,
+			'return' => 'contribution_status_id'
+		) );
+	}
+	catch ( CiviCRM_API3_Exception $e ) {
+		return false;
+	}
+	return CRM_Contribute_BAO_Contribution::isContributionStatusNegative( $statusId );
 }
 
 function wmf_civicrm_boost_performance() {
@@ -1679,23 +1670,58 @@ function wmf_civicrm_set_no_thank_you( $contribution_id, $reason ) {
 /**
  * Sets the civi records to reflect a contribution refund.
  *
- * The original contribution is set to status "Refunded", and a negative and
- * equal refund contribution is created.  This contribution will be linked
- * to the original through the parent_contribution_id field, and will have
- * status "Pending" unless the $refund_completed argument is true.
- * TODO: Default to refund_completed=true.
+ * The original contribution is set to status "Refunded", or "Chargeback" and a negative financial
+ * transaction record is created. If the amount refunded does not match a second contribution is added for the balance.
+ * The parent_contribution_id custom field is set on the balance contribution to connect it to the parent.
  *
- * $refund_type should be 'refund' or 'chargeback', for now we simply dump
- * this string into the "source" field of the negative contribution.
+ * Prior to the 4.6 CiviCRM upgrade refunds resulted in second contribution with a negative amount. They were linked
+ * to the original through the parent_contribution_id custom field. This was consistent with 4.2 behaviour which was
+ * the then current version.
  *
- * If $refund_amount and $refund_currency are provided, they will be
- * checked against the original contribution and an exception thrown on a
- * mismatch.  If the original amount has been zeroed (legacy protocol) we will
- * reconstruct the contribution using the currency and amount from these
- * function parameters.
+ * 4.3 (included in the 4.6 upgrade) introduced recording multiple financial transactions (payments) against
+ * one contribution. In order to adapt to this the markRefund function now records second financial transactions
+ * against the original contribution (using
+ * the contribution.create api). Discussion about this change is at https://phabricator.wikimedia.org/T116317
  *
- * @return integer the refund's contribution id.
+ * Some refunds do not have the same $ amount as the original transaction. Prior to Oct 2014 these were
+ * seemingly always imported to CiviCRM.
+ * Since that time the code was changed to throw an exception when the refund exceeded the original amount, and not import it
+ * into CiviCRM. (this does have visibility as it results in fail_mail).
+ *
+ * The code suggested an intention to record mismatched refunds with a the difference in the custom fields settlement_usd.
+ * However, this returns no rows. select * from wmf_contribution_extra WHERE settlement_usd IS NOT NULL LIMIT.
+ * It would appear they have been recorded without any record of the discrepancy, or there were none.
+ *
+ * That issue should be addressed (as a separate issue). The methodology for recording the difference needs to be
+ * considered e.g T89437 - preferably in conjunction with getting the appropriate method tested within the core codebase.
+ *
+ * Note that really core CiviCRM should have a way of handling this and we should work on getting that resolved and adopting it.
+ *
+ * An earlier iteration of this function reconstructed the value of the original contribution when it had been zero'd
+ * or marked as 'RFD'. This appears to be last used several years ago & this handling has been removed now.
+ *
+ * @param int $contribution_id
+ * @param string $refund_type
+ *   'refund'|'chargeback' - this will determine the new contribution status.
+ * @param bool $refund_completed
+ *   It turns out this is only passed in as anything other than true from the tests (based on grepping).
+ *   The UI DOES allow for a status of 'Pending Refund' to be used if this is required from the UI although we
+ *   don't have a process around that at this stage.
+ * @param string $refund_date
+ * @param int $refund_gateway_txn_id
+ * @param string $refund_currency
+ *   If provided this will be checked against the original contribution and an exception will be thrown
+ *   on mismatch.
+ * @param float $refund_amount
+ *   If provided this will be checked against the original contribution and an exception will be thrown
+ *   on mismatch.
+ *
+ * @return int
+ *   The refund's contribution id.
+ * @throws \ExchangeRatesException
+ * @throws \WmfException
  */
+
 function wmf_civicrm_mark_refund(
     $contribution_id,
     $refund_type = 'refund',
@@ -1705,161 +1731,117 @@ function wmf_civicrm_mark_refund(
     $refund_currency = null,
     $refund_amount = null
 ) {
-    $api = civicrm_api_classapi();
+    $amount_scammed = 0;
 
-    $success = $api->Contribution->Get( array(
+    try {
+      $contribution = civicrm_api3('Contribution', 'getsingle', array(
         'id' => $contribution_id,
-        'version' => 3,
-    ) );
-    if ( !$success ) {
-        throw new WmfException( 'INVALID_MESSAGE', "Could not load contribution: $contribution_id, " . $api->errorMsg() );
-    } elseif ( !$api->values() ) {
-        throw new WmfException( 'INVALID_MESSAGE', "No such contribution: $contribution_id" );
+        'return' => array(
+          'total_amount',
+          'trxn_id',
+          'contribution_source',
+          'contact_id',
+          'receive_date',
+          'contribution_status_id'
+        )
+      ));
     }
-    $result = $api->values;
-    $contribution = array_pop($result);
+    catch (CiviCRM_API3_Exception $e) {
+      throw new WmfException(
+        'INVALID_MESSAGE', "Could not load contribution: $contribution_id with error " . $e->getMessage()
+      );
+    }
 
-    // Look for existing refunds
-    $query = "
-SELECT id FROM wmf_contribution_extra
-WHERE
-    parent_contribution_id = %1";
-
-    $dao = CRM_Core_DAO::executeQuery( $query, array(
-        1 => array( $contribution_id, 'Integer' ),
-    ) );
-    if ( $dao->fetch() ) {
+    // Note that my usual reservation about using BAO functions from custom code is overridden by the
+    // caching problems we are hitting in testing (plus the happy knowledge the tests care about this line of
+    // code).
+    if (CRM_Contribute_BAO_Contribution::isContributionStatusNegative($contribution['contribution_status_id'])
+    ) {
         throw new WmfException( 'DUPLICATE_CONTRIBUTION', "Contribution is already refunded: $contribution_id" );
     }
+    // Deal with any discrepancies in the refunded amount.
+    list( $original_currency, $original_amount ) = explode(" ", $contribution['contribution_source']);
 
-    // Look for existing refunds
-    $query = "
-SELECT id FROM wmf_contribution_extra
-WHERE
-    entity_id = %1 AND COALESCE(parent_contribution_id, 0)";
-
-    $dao = CRM_Core_DAO::executeQuery( $query, array(
-        1 => array( $contribution_id, 'Integer' ),
-    ) );
-    if ( $dao->fetch() ) {
-        throw new WmfException( 'INVALID_MESSAGE', "Contribution to refund is itself a refund: $contribution_id" );
-    }
-
-    // Should we restore?
-    if ( (floatval( $contribution->total_amount ) == 0
-            || $contribution->contribution_source === "RFD")
-        && $refund_currency !== null && $refund_amount !== null
-    ) {
-        //FIXME!: call this from the contribution save hook. $round parameter.
-        $contribution->total_amount = round( exchange_rate_convert(
-            $refund_currency, $refund_amount,
-            wmf_common_date_parse_string( $contribution->receive_date )
-        ), 2 );
-
-        $api->Contribution->Create( array(
-            'id' => $contribution_id,
-
-            'source' => "{$refund_currency} {$refund_amount}",
-            'total_amount' => $contribution->total_amount,
-
-            'version' => 3,
-        ) );
+    if ( $refund_currency !== null ) {
+        if ( $refund_currency != $original_currency ) {
+            throw new WmfException( 'INVALID_MESSAGE', "Refund was in a different currency.  Freaking out." );
+        }
     } else {
-        // Deal with any discrepancies in the refunded amount.
-        list( $original_currency, $original_amount ) = explode(" ", $contribution->contribution_source);
-
-        if ( $refund_currency !== null ) {
-            if ( $refund_currency != $original_currency ) {
-                throw new WmfException( 'INVALID_MESSAGE', "Refund was in a different currency.  Freaking out." );
-            }
-        } else {
-            $refund_currency = $original_currency;
-        }
-
-        if ( $refund_amount !== null ) {
-            $amount_scammed = round( $refund_amount, 2 ) - round( $original_amount, 2 );
-            if ( $amount_scammed > 0 ) {
-                throw new WmfException( 'INVALID_MESSAGE', "The refunded amount was greater than the payment: $refund_currency $refund_amount > $original_amount" );
-            } elseif ( $amount_scammed != 0 ) {
-                // By accident or design, it turns out you don't quite get your
-                // money back in the real world.  So don't trip.
-                watchdog( 'wmf_civicrm', "Refunded ($refund_type) amount did not exactly match original contribution, ID=$contribution_id.  $refund_currency $refund_amount != $original_currency $original_amount", NULL, WATCHDOG_INFO );
-
-                // TODO: Record the difference here, as a fee or something.
-            }
-        } else {
-            $refund_amount = $original_amount;
-        }
+        $refund_currency = $original_currency;
     }
-
-    $transaction = WmfTransaction::from_unique_id( $contribution->trxn_id );
-    if ( $refund_gateway_txn_id ) {
-        $transaction->gateway_txn_id = $refund_gateway_txn_id;
-    }
-    $transaction->is_refund = true;
-    $refund_unique_id = $transaction->get_unique_id();
-
-    # FIXME: remove debug line,
-    watchdog( 'wmf_civicrm', "Refund date: " . var_export( $refund_date, true ), NULL, WATCHDOG_INFO );
-
     if ( $refund_date === null ) {
         $refund_date = time();
-    } elseif ( !is_numeric( $refund_date ) ) {
+    }
+    elseif ( !is_numeric( $refund_date ) ) {
         $refund_date = wmf_common_date_parse_string( $refund_date );
     }
+    $dbTransaction = new CRM_Core_Transaction();
 
-    $refund_status = ( $refund_completed ? 'Completed' : 'Pending' );
-    $refund_params = array(
-        'contact_id' => $contribution->contact_id,
-        'total_amount' => 0 - $contribution->total_amount,
-        'contribution_type_id' => wmf_civicrm_get_civi_id( 'contribution_type_id', $refund_type ),
-        'receive_date' => wmf_common_date_unix_to_civicrm( $refund_date ),
-        'contribution_status_id' => civicrm_api_contribution_status( $refund_status ),
-        'contribution_source' => "$refund_currency -{$refund_amount}",
-        'trxn_id' => $refund_unique_id,
-
-        // API required fields
-        'version' => '3'
-    );
-    if ( !$api->Contribution->Create($refund_params) ) {
-        throw new WmfException( 'IMPORT_CONTRIB', "Failed to create refund contribution for: $contribution_id, " . $api->errorMsg() );
+    try {
+      civicrm_api3('Contribution', 'create', array(
+        'id' => $contribution_id,
+        'debug' => 1,
+        'contribution_status_id' => ($refund_type == 'refund' ? 'Refunded' : 'Chargeback'),
+        'cancel_date' => wmf_common_date_unix_to_civicrm($refund_date),
+        'refund_trxn_id' => $refund_gateway_txn_id,
+      ));
     }
-    $result = $api->values;
-    $refund = array_pop($result);
-
-    $parent_custom_values = wmf_civicrm_get_custom_values( $contribution_id, array(
-        'gateway_account',
-    ) );
-
-    // FIXME: race condition on no_thank_you
-    $custom_values = array(
-        'gateway_account' => $parent_custom_values['gateway_account'],
-        'parent_contribution_id' => $contribution->id,
-        'finance_only' => 1,
-        'no_thank_you' => 'refund',
-    );
-
-    wmf_common_set_message_source( $custom_values, 'direct', 'Refund' );
-    $custom_values['source_enqueued_time'] = wmf_common_date_unix_to_sql( $custom_values['source_enqueued_time'] );
-
-    wmf_civicrm_set_custom_field_values($refund->id, $custom_values);
-
-    $custom_values = array(
-        'finance_only' => 1,
-    );
-    wmf_civicrm_set_custom_field_values($contribution->id, $custom_values);
-
-    $update_params = array(
-        'id' => $contribution->id,
-        'contribution_status_id' => civicrm_api_contribution_status( 'Refunded' ),
-
-        'version' => 3,
-    );
-    if ( !$api->Contribution->Create($update_params) ) {
-        throw new WmfException( 'IMPORT_CONTRIB', "Cannot mark original contribution as refunded: $contribution_id, " . db_error() );
+    catch (CiviCRM_API3_Exception $e) {
+      throw new WmfException(
+        'IMPORT_CONTRIB',
+        "Cannot mark original contribution as refunded:
+                $contribution_id, " . $e->getMessage() . print_r($e->getExtraParams(), TRUE)
+      );
     }
 
-    return $refund->id;
+    if ( $refund_amount !== null ) {
+
+        $amount_scammed = round( $refund_amount, 2 ) - round( $original_amount, 2 );
+        if ( $amount_scammed != 0 ) {
+            $transaction = WmfTransaction::from_unique_id($contribution['trxn_id']);
+            if ( $refund_gateway_txn_id ) {
+              $transaction->gateway_txn_id = $refund_gateway_txn_id;
+            }
+            $transaction->is_refund = true;
+            $refund_unique_id = $transaction->get_unique_id();
+
+            try {
+              civicrm_api3('Contribution', 'create', array(
+                'total_amount' => -$amount_scammed,
+                // New type?
+                'financial_type_id' => 'Refund',
+                'contact_id' => $contribution['contact_id'],
+                'contribution_source' => $refund_currency . " " . $amount_scammed,
+                'trxn_id' => $refund_unique_id,
+                'receive_date' => date('Y-m-d h:i:s', $refund_date),
+                'currency' => $refund_currency,
+                'debug' => 1,
+                wmf_civicrm_get_custom_field_name('parent_contribution_id') => $contribution_id,
+                wmf_civicrm_get_custom_field_name('no_thank_you') => 1,
+              ));
+            }
+            catch (CiviCRM_API3_Exception $e) {
+              throw new WmfException(
+                'IMPORT_CONTRIB',
+                "Cannot create new contribution for the refund difference:
+                $contribution_id, " . $e->getMessage() . print_r($e->getExtraParams(), TRUE)
+            );
+          }
+        }
+    }
+  $dbTransaction->commit();
+
+    if ($amount_scammed > 0) {
+      // We need to be careful here - if this is caught by an api call (that does not
+      // use the is_transactional => FALSE flag it will cause
+      // a transaction rollback. Hence we put it after the commit.
+      throw new WmfException(
+        'IMPORT_CONTRIB',
+        "Refund amount mismatch for : $contribution_id, difference is $amount_scammed"
+      );
+    }
+
+    return $contribution_id;
 }
 
 /**
@@ -2054,8 +2036,13 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
 
 		if ( $contribution->source ) {
 			list( $original_currency, $original_amount ) = explode( " ", $contribution->source );
-			$extra['original_currency'] = $original_currency;
-			$extra['original_amount'] = $original_amount;
+			if ( is_numeric( $original_amount ) && wmf_civicrm_is_valid_currency( $original_currency ) ) {
+				$extra['original_currency'] = $original_currency;
+				$extra['original_amount'] = $original_amount;
+			} else {
+				$extra['original_currency'] = 'USD';
+				$extra['original_amount'] = $contribution->total_amount;
+			}
 		}
 
 		if ( $extra ) {
@@ -2089,25 +2076,32 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
 		// FIXME: if this is an edit, we should review all contributions
 		$wmf_donor = array();
 		$contribution_date = new DateTime( $receive_date );
+    $isNegative = CRM_Contribute_BAO_Contribution::isContributionStatusNegative($contribution->contribution_status_id);
 		$fiscal_year = intval( $contribution_date->format( 'Y' ) );
 		if ( intval( $contribution_date->format( 'm' ) ) < 7 ) {
 			$fiscal_year = $fiscal_year - 1;
 		}
 		if ( $fiscal_year >= WMF_MIN_ROLLUP_YEAR && $fiscal_year <= WMF_MAX_ROLLUP_YEAR ) {
-			$wmf_donor["is_{$fiscal_year}_donor"] = true;
+      if (!$isNegative) {
+        $wmf_donor["is_{$fiscal_year}_donor"] = TRUE;
+      }
+      else {
+        $wmf_donor["is_{$fiscal_year}_donor"] = civicrm_api3('Contribution', 'getcount', array(
+          'contact_id' => $contact_id,
+          'contribution_status_id' => 'Completed',
+          'receive_date' => array('BETWEEN' => array($fiscal_year . '-07-01', $fiscal_year +1 . '-06-30')),
+          'total_amout' => array('>' => 0),
+        ));
+      }
 		}
+
 		// Update the latest donation data.
 		// If this is an edit, first check if it's the latest
 		$latest = true;
-		if ( $op === 'edit' ) {
-			$sql = <<<EOS
-SELECT id FROM civicrm_contribution
-WHERE contact_id = {$contact_id}
-AND receive_date > '{$contribution_date->format( 'Y-m-d H:i:s' )}'
-LIMIT 1
-EOS;
-			$dao = CRM_Core_DAO::executeQuery( $sql );
-			if ( $dao->fetch() ) {
+
+			if ( $op === 'edit' ) {
+      $latestDate = wmf_civicrm_most_recent_completed_contribution_date($contact_id);
+        if (strtotime($latestDate) > strtotime($receive_date) || $isNegative) {
 				$latest = false;
 			}
 		}
@@ -2117,19 +2111,37 @@ EOS;
 			if ( isset( $extra['original_currency'] ) ) {
 				$wmf_donor['last_donation_currency'] = $extra['original_currency'];
 			}
-			if ( isset( $extra['original_amount'] ) ) {
+			if ( isset( $extra['original_amount'] ) && $extra['original_amount'] > 0) {
 			    $wmf_donor['last_donation_amount'] = $extra['original_amount'];
 			}
 		}
-		// Get lifetime totals
+      if ($isNegative && $latestDate) {
+        $latestContribution = wmf_civicrm_get_single_contribution_for_contact_by_date($contact_id, $latestDate);
+        $wmf_donor['last_donation_date'] = date('YmdHis', strtotime($latestContribution['receive_date']));
+      $wmf_donor['last_donation_usd'] =  $latestContribution['total_amount'];
+      if (!empty($latestContribution['contribution_source'])) {
+        $source = explode(' ', $latestContribution['contribution_source']);
+        $wmf_donor['last_donation_currency'] = $source[0];
+        $wmf_donor['last_donation_amount'] = $source[1];
+      }
+    }
+		// Get lifetime totals.
+    // Note that in 4.7 a new field is_payment is added to the financial_trxn table.
+    // We should probably switch to that at that point.
+    // For now from_financial_account_id IS NULL seems to filter out the fee lines.
 		$sql = <<<EOS
-SELECT SUM(total_amount) AS lifetime_usd_total
-FROM civicrm_contribution
+SELECT SUM(t.total_amount) AS lifetime_usd_total
+FROM civicrm_contribution c
+LEFT JOIN `civicrm_entity_financial_trxn`eft ON eft.`entity_id` = c.id
+AND eft.entity_table = 'civicrm_contribution'
+LEFT JOIN civicrm_financial_trxn t ON t.id = eft.financial_trxn_id
 WHERE contact_id = {$contact_id}
+AND from_financial_account_id IS NULL
+GROUP BY contact_id
 EOS;
-		$dao = CRM_Core_DAO::executeQuery( $sql );
-		if ( $dao->fetch() ) {
-			$wmf_donor['lifetime_usd_total'] = $dao->lifetime_usd_total;
+
+		if(($lifetimeTotal = CRM_Core_DAO::singleValueQuery($sql)) !== FALSE) {
+			$wmf_donor['lifetime_usd_total'] = $lifetimeTotal;
 		}
 		if ( !empty( $wmf_donor ) ) {
 			wmf_civicrm_set_custom_field_values(
@@ -2140,6 +2152,41 @@ EOS;
 		}
         break;
     }
+}
+
+/**
+ * Check if any completed contributions exist for the contact after the provided date.
+ *
+ * @param int $contact_id
+ *
+ * @return string $contribution_date
+ */
+function wmf_civicrm_most_recent_completed_contribution_date($contact_id) {
+  $completedStatusID = civicrm_api_contribution_status('Completed');
+  return CRM_Core_DAO::singleValueQuery("
+    SELECT max(receive_date) FROM civicrm_contribution
+    WHERE contact_id = {$contact_id}
+    AND contribution_status_id = $completedStatusID
+    AND total_amount > 0
+  ");
+}
+
+/**
+ * Check if any completed contributions exist for the contact after the provided date.
+ *
+ * @param int $contact_id
+ * @param string $contribution_date
+ *
+ * @return string $contribution_date
+ */
+function wmf_civicrm_get_single_contribution_for_contact_by_date($contact_id, $contribution_date) {
+  return civicrm_api3('Contribution', 'getsingle', array(
+    'contact_id' => $contact_id,
+    'receive_date' => $contribution_date,
+    'contribution_status_id' => 'Completed',
+    'total_amount' => array('>' => 0),
+    'return' => array('receive_date', 'total_amount', 'source'),
+  ));
 }
 
 /**
@@ -2224,9 +2271,7 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
         $source = $fields['source'];
         if ( preg_match( '/^([a-z]{3}) [0-9]+(\.[0-9]+)?$/i', $source, $matches ) ) {
             $currency = strtoupper( $matches[1] );
-            // TODO: stick a get_currency_codes function someplace
-            $all_currencies = array_keys( CurrencyRates::getCurrencyRates() );
-            if ( !in_array( $currency, $all_currencies ) ) {
+            if ( !wmf_civicrm_is_valid_currency( $currency ) ) {
                 $errors['source'] = t( 'Please set a supported currency code' );
             }
         } else {
@@ -2486,4 +2531,15 @@ function wmf_civicrm_fill_missing_appeal_data($startDate) {
       )
   ");
 
+}
+
+/**
+ * Determine if a code represents a supported currency. Uses the
+ * DonationInterface currency list as a canonical source.
+ * @param string $currency should be an ISO 4217 code
+ * @return bool true if it's a real currency that we can handle
+ */
+function wmf_civicrm_is_valid_currency( $currency ) {
+	$all_currencies = array_keys( CurrencyRates::getCurrencyRates() );
+	return in_array( $currency, $all_currencies );
 }

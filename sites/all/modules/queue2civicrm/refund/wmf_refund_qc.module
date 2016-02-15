@@ -120,7 +120,7 @@ function refund_import($msg) {
   }
 
   // Sanity checking :)
-  $required_fields = array( "gateway_refund_id", "gateway_parent_id", "gross_currency", "gross", "date", "gateway",
+  $required_fields = array( "gateway_parent_id", "gross_currency", "gross", "date", "gateway",
     "type",
   );
   foreach( $required_fields as $field_name ) {
@@ -132,7 +132,7 @@ function refund_import($msg) {
 
   $gateway = strtoupper($body['gateway']);
   $parentTxn = $body['gateway_parent_id'];
-  $refundTxn = $body['gateway_refund_id'];
+  $refundTxn = isset( $body['gateway_refund_id'] ) ? $body['gateway_refund_id'] : null;
 
   if ( $body['gross'] < 0 ) {
     $body['gross'] = abs( $body['gross'] );

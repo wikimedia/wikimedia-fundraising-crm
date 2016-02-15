@@ -457,7 +457,9 @@ function thank_you_send_mail( $params ) {
 	$mailer = Mailer::getDefault();
 
 	$civi_queue_record = null;
-	if ( variable_get( 'thank_you_add_civimail_records', 'false' ) === 'true' ) {
+	$create_civi_mail = variable_get( 'thank_you_add_civimail_records', 'false' );
+	$rate = variable_get( 'thank_you_civimail_rate', 1.0 );
+	if ( $create_civi_mail === 'true' && mt_rand(0, 10000) <= $rate * 10000 ) {
 		$civi_queue_record = thank_you_add_civi_queue(
 			$email['to_address'],
 			$email['subject'],
@@ -661,6 +663,13 @@ function thank_you_settings_form() {
 	   "true" => t('Create CiviMail records'),
 	),
     '#default_value' => variable_get('thank_you_add_civimail_records', 'false'),
+  );
+
+  $form['thank_you_civimail_rate'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CiviMail sample rate, from 0 (never) to 1 (always)'),
+    '#default_value' => variable_get('thank_you_civimail_rate', 1),
+    '#required' => TRUE,
   );
 
   return system_settings_form($form);
