@@ -22,6 +22,12 @@ function civicrm_api_option_group($group_name, $key = null, $force = FALSE)
 		{
 			if (!array_search($key, $cached_group[$group_name])) {
 				$cached_group[$group_name][$row->value] = $row->name;
+				if (empty($row->name)) {
+					watchdog('wmf_civicrm', 'Option Value Not Found: %group_name -> %value',
+						array('%group_name' => $group_name, '%value' => print_r($row, TRUE)),
+						WATCHDOG_NOTICE
+					);
+				}
 			}
 		}
 	}
