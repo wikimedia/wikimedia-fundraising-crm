@@ -359,8 +359,10 @@ function recurring_globalcollect_create_message( $contribution_recur_id ) {
         'order_id' => $transaction->gateway_txn_id,
         'currency_code' => $contribution_recur['currency'],
         'payment_product' => '',
+        'financial_type_id' => $initial_contribution['financial_type_id'],
+        // Setting both until we are sure contribution_type_id is not being used anywhere.
+        'contribution_type_id' => $initial_contribution['financial_type_id'],
 
-        'contribution_type_id' => $initial_contribution['contribution_type_id'],
         'payment_instrument_id' => $initial_contribution['payment_instrument_id'],
 
         'gateway' => 'globalcollect',
