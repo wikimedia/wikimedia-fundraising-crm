@@ -2083,15 +2083,16 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
 		}
 		if ( $fiscal_year >= WMF_MIN_ROLLUP_YEAR && $fiscal_year <= WMF_MAX_ROLLUP_YEAR ) {
       if (!$isNegative) {
-        $wmf_donor["is_{$fiscal_year}_donor"] = TRUE;
+        $wmf_donor["is_{$fiscal_year}_donor"] = 1;
       }
       else {
-        $wmf_donor["is_{$fiscal_year}_donor"] = civicrm_api3('Contribution', 'getcount', array(
+        $donationsCount = civicrm_api3('Contribution', 'getcount', array(
           'contact_id' => $contact_id,
           'contribution_status_id' => 'Completed',
           'receive_date' => array('BETWEEN' => array($fiscal_year . '-07-01', $fiscal_year +1 . '-06-30')),
           'total_amout' => array('>' => 0),
         ));
+        $wmf_donor["is_{$fiscal_year}_donor"] = $donationsCount ? 1 : 0;
       }
 		}
 
