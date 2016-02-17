@@ -49,6 +49,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7100();
     wmf_civicrm_update_7110();
     wmf_civicrm_update_7120();
+    wmf_civicrm_update_7170();
 }
 
 /**
@@ -1838,5 +1839,28 @@ function wmf_civicrm_update_7160() {
     LEFT JOIN civicrm_contribution c ON c.id = li.contribution_id
     LEFT JOIN civicrm_entity_financial_trxn cont_ft ON cont_ft.entity_id = c.id AND cont_ft.entity_table = 'civicrm_contribution'
     WHERE ft.id IS NULL AND fi.created_date > '2016-02-01'
+  ");
+}
+
+/**
+ * Further refund financial data fix.
+ *
+ * This is a change Elliott made on live to reflect these accounts as Expenses not Income.
+ *
+ * Added here to ensure dev sites have the same info.
+ */
+function wmf_civicrm_update_7170() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+   UPDATE civicrm_financial_account
+   SET account_type_code = 'EXP',
+   financial_account_type_id = (
+     SELECT v.value
+     FROM civicrm_option_value v
+     INNER JOIN civicrm_option_group g
+       ON g.id = v.option_group_id AND g.name = 'financial_account_type'
+       AND v.name = 'Expenses'
+   )
+   WHERE name in ('Refund', 'Chargeback')
   ");
 }
