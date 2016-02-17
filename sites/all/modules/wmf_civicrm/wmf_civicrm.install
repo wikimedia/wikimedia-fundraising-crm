@@ -50,6 +50,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7110();
     wmf_civicrm_update_7120();
     wmf_civicrm_update_7170();
+    wmf_civicrm_update_7180();
 }
 
 /**
@@ -1862,5 +1863,25 @@ function wmf_civicrm_update_7170() {
        AND v.name = 'Expenses'
    )
    WHERE name in ('Refund', 'Chargeback')
+  ");
+}
+
+/**
+ * Fix e-Notice due to some Option Values not having the 'name' field filled in.
+ *
+ * This is just an e-notice visible in the jenkins log. It appears to do no harm
+ * other than having caused me to investigate it when checking the logs.
+ *
+ * T127029.
+ */
+function wmf_civicrm_update_7180() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_option_group g
+    LEFT JOIN civicrm_option_value v ON v.option_group_id = g.id
+    INNER JOIN civicrm_custom_field cf ON cf.option_group_id = g.id
+    SET v.name = REPLACE(v.value, ' ', '_')
+    WHERE
+     v.name IS NULL
   ");
 }
