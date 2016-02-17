@@ -1817,3 +1817,26 @@ function wmf_civicrm_update_7150() {
   CRM_Core_DAO::executeQuery("UPDATE civicrm_financial_item SET financial_account_id = $cashFinancialAccountID WHERE financial_account_id IS NULL");
 
 }
+
+/**
+ * Further refund financial data fix.
+ *
+ * This is an extra record that was missing in 7070. It was obvious until the patch for
+ * CRM-17951 was merged:
+ *
+ * CRM-17951 (merged into 4.7) modify transaction view to show the financial account of the transaction
+ */
+function wmf_civicrm_update_7160() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    INSERT INTO civicrm_entity_financial_trxn
+    (entity_table, entity_id, financial_trxn_id, amount)
+    SELECT  'civicrm_financial_item' as entity_table, fi.id as entity_id, cont_ft.financial_trxn_id  as financial_trxn_id, fi.amount
+    FROM civicrm_financial_item fi
+    LEFT JOIN civicrm_entity_financial_trxn ft  ON ft.entity_id = fi.id AND ft.entity_table = 'civicrm_financial_item'
+    LEFT JOIN civicrm_line_item li ON li.id = fi.entity_id AND fi.entity_table = 'civicrm_line_item'
+    LEFT JOIN civicrm_contribution c ON c.id = li.contribution_id
+    LEFT JOIN civicrm_entity_financial_trxn cont_ft ON cont_ft.entity_id = c.id AND cont_ft.entity_table = 'civicrm_contribution'
+    WHERE ft.id IS NULL AND fi.created_date > '2016-02-01'
+  ");
+}
