@@ -1221,7 +1221,11 @@ abstract class BaseAuditProcessor {
 		try {
 			$recon_data = $recon_parser->parseFile( $file );
 		} catch ( Exception $e ) {
-			wmf_audit_log_error( "Something went amiss with the recon parser while processing $file ", 'RECON_PARSE_ERROR' );
+			wmf_audit_log_error(
+				"Something went amiss with the recon parser while "
+				. "processing $file: \"{$e->getMessage()}\""
+				, 'RECON_PARSE_ERROR'
+			);
 		}
 
 		//At this point, $recon_data already contains the usable portions of the file.
