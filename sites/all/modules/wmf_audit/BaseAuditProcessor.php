@@ -34,7 +34,13 @@ abstract class BaseAuditProcessor {
 
 	protected function get_log_line_xml_parent_nodes() {}
 
-	abstract protected function get_recon_file_date( $file );
+	/**
+	 * Get some identifier for a given files to let us sort all
+	 * recon files for this processor chronologically.
+	 * @param string $file name of the recon file
+	 * @return string key for chronological sort
+	 */
+	abstract protected function get_recon_file_sort_key( $file );
 
 	abstract protected function regex_for_recon();
 
@@ -477,26 +483,27 @@ abstract class BaseAuditProcessor {
 	}
 
 	/**
-	 * Returns an array of the full paths to all valid reconciliation files
+	 * Returns an array of the full paths to all valid reconciliation files,
+	 * sorted in chronological order.
 	 * @return array Full paths to all recon files
 	 */
 	protected function get_all_recon_files() {
 		$files_directory = $this->get_recon_dir();
 		//foreach file in the directory, if it matches our pattern, add it to the array.
-		$files_by_date = array();
+		$files_by_sort_key = array();
 		if ( $handle = opendir( $files_directory ) ) {
 			while ( ( $file = readdir( $handle ) ) !== false ) {
 				if ( $this->get_filetype( $file ) === 'recon' ) {
-					$filedate = $this->get_recon_file_date( $file ); //which is not the same thing as the edited date... probably.
-					$files_by_date[$filedate][] = $files_directory . $file;
+					$sort_key = $this->get_recon_file_sort_key( $file ); // report date or sequence number or something
+					$files_by_sort_key[$sort_key][] = $files_directory . $file;
 				}
 			}
 			closedir( $handle );
-			ksort( $files_by_date );
+			ksort( $files_by_sort_key );
 			// now flatten it
 			$files = array();
-			foreach ( $files_by_date as $date => $date_files ) {
-				$files = array_merge( $files, $date_files );
+			foreach ( $files_by_sort_key as $key => $key_files ) {
+				$files = array_merge( $files, $key_files );
 			}
 			return $files;
 		} else {

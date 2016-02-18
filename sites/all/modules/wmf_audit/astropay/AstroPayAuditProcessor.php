@@ -9,13 +9,13 @@ class AstroPayAuditProcessor extends BaseAuditProcessor {
 		return new AstroPayAudit();
 	}
 
-	protected function get_recon_file_date( $file ) {
+	protected function get_recon_file_sort_key( $file ) {
 		// Example:  wikimedia_report_2015-06-16.csv
 		// For that, we'd want to return 20150616
 		$parts = preg_split( '/_|\./', $file );
 		$date_piece = $parts[count( $parts ) - 2];
 		$date = preg_replace( '/-/', '', $date_piece );
-		if ( !preg_match( '/\d{6}/', $date ) ) {
+		if ( !preg_match( '/^\d{8}$/', $date ) ) {
 			throw new Exception( "Unparseable reconciliation file name: {$file}" );
 		}
 		return $date;
