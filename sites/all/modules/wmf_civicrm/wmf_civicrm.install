@@ -49,6 +49,8 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7100();
     wmf_civicrm_update_7110();
     wmf_civicrm_update_7120();
+    wmf_civicrm_update_7170();
+    wmf_civicrm_update_7180();
 }
 
 /**
@@ -1757,4 +1759,129 @@ function wmf_civicrm_update_7141() {
       civicrm_api3('CustomField', 'create', array('id' => $field['id'], 'label' => 'Is FY ' . $fieldNameParts[1] . '-' . ($fieldNameParts[1] + 1) . ' donor'));
     }
   }
+}
+
+/**
+ * Fix financial item records with null financial_account.
+ *
+ * Incredibly we have only 4 of these in our database & Elliott picked up this problem through spot
+ * checks!.
+ *
+ * Reference contact is civicrm/contact/view?reset=1&cid=11346599 - before this update
+ * one of the contact's transactions does not display financial details when expanded in the UI.
+ *
+ *  [civicrm]> SELECT count(*) FROM civicrm_financial_item WHERE financial_account_id IS NULL;
+ * +----------+
+ * | count(*) |
+ * +----------+
+ * |        4 |
+ * +----------+
+ *
+ * These relate to line items with no financial_type_id of which we have 74.
+ *
+ * SELECT count(*) FROM civicrm_line_item li LEFT JOIN civicrm_contribution c ON c.id = li.contribution_id WHERE li.financial_type_id IS NULL;
+ * +----------+
+ * | count(*) |
+ * +----------+
+ * |       74 |
+ * +----------+
+ *
+ * Of those 74 rows 70 are orphans - ie line items with no contributions. It appears the contributions
+ * were deleted at some point in the past.
+ *
+ * This relates to T122946 & is a follow up fix.
+ */
+function wmf_civicrm_update_7150() {
+  civicrm_initialize();
+  $cashFinancialTypeID = civicrm_api3('FinancialType', 'getvalue', array(
+    'return' => 'id',
+    'name' => 'Cash',
+  ));
+
+  $cashFinancialAccountID = civicrm_api3('FinancialAccount', 'getvalue', array(
+    'return' => 'id',
+    'name' => 'Cash',
+  ));
+  // Deletes 70 orphan entries - a bit slow but I couldn't bring myself to take out the join & just filter
+  // on contribution_id IS NOT NULL as it felt less safe. Takes 1-2 minutes
+  CRM_Core_DAO::executeQuery("
+    DELETE li
+    FROM civicrm_line_item li
+    LEFT JOIN civicrm_contribution c ON li.entity_id = c.id
+    AND li.entity_table = 'civicrm_contribution'
+    WHERE c.id IS NULL
+  ");
+  // Updates 4 records.
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution SET financial_type_id = $cashFinancialTypeID WHERE financial_type_id IS NULL");
+  // Updates 4 records.
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_line_item SET financial_type_id = $cashFinancialTypeID WHERE financial_type_id IS NULL");
+  // Updates 4 records.
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_financial_item SET financial_account_id = $cashFinancialAccountID WHERE financial_account_id IS NULL");
+
+}
+
+/**
+ * Further refund financial data fix.
+ *
+ * This is an extra record that was missing in 7070. It was obvious until the patch for
+ * CRM-17951 was merged:
+ *
+ * CRM-17951 (merged into 4.7) modify transaction view to show the financial account of the transaction
+ */
+function wmf_civicrm_update_7160() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    INSERT INTO civicrm_entity_financial_trxn
+    (entity_table, entity_id, financial_trxn_id, amount)
+    SELECT  'civicrm_financial_item' as entity_table, fi.id as entity_id, cont_ft.financial_trxn_id  as financial_trxn_id, fi.amount
+    FROM civicrm_financial_item fi
+    LEFT JOIN civicrm_entity_financial_trxn ft  ON ft.entity_id = fi.id AND ft.entity_table = 'civicrm_financial_item'
+    LEFT JOIN civicrm_line_item li ON li.id = fi.entity_id AND fi.entity_table = 'civicrm_line_item'
+    LEFT JOIN civicrm_contribution c ON c.id = li.contribution_id
+    LEFT JOIN civicrm_entity_financial_trxn cont_ft ON cont_ft.entity_id = c.id AND cont_ft.entity_table = 'civicrm_contribution'
+    WHERE ft.id IS NULL AND fi.created_date > '2016-02-01'
+  ");
+}
+
+/**
+ * Further refund financial data fix.
+ *
+ * This is a change Elliott made on live to reflect these accounts as Expenses not Income.
+ *
+ * Added here to ensure dev sites have the same info.
+ */
+function wmf_civicrm_update_7170() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+   UPDATE civicrm_financial_account
+   SET account_type_code = 'EXP',
+   financial_account_type_id = (
+     SELECT v.value
+     FROM civicrm_option_value v
+     INNER JOIN civicrm_option_group g
+       ON g.id = v.option_group_id AND g.name = 'financial_account_type'
+       AND v.name = 'Expenses'
+   )
+   WHERE name in ('Refund', 'Chargeback')
+  ");
+}
+
+/**
+ * Fix e-Notice due to some Option Values not having the 'name' field filled in.
+ *
+ * This is just an e-notice visible in the jenkins log. It appears to do no harm
+ * other than having caused me to investigate it when checking the logs.
+ *
+ * T127029.
+ */
+function wmf_civicrm_update_7180() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_option_group g
+    LEFT JOIN civicrm_option_value v ON v.option_group_id = g.id
+    INNER JOIN civicrm_custom_field cf ON cf.option_group_id = g.id
+    SET v.name = REPLACE(v.value, ' ', '_')
+    WHERE
+     v.name IS NULL
+  ");
 }

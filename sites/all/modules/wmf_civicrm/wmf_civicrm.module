@@ -326,6 +326,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'contribution_recur_id' => $msg['contribution_recur_id'],
         'check_number' => $msg['check_number'],
         'soft_credit_to' => $msg['soft_credit_to_id'],
+        'debug' => TRUE,
 
         // API required fields
         'version' => '3'
@@ -406,16 +407,15 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     }
 
     watchdog( 'wmf_civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), NULL, WATCHDOG_DEBUG);
-
-    $contribution_result = civicrm_api( "Contribution", "Create", $contribution );
-
-    watchdog( 'wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
-
-    if ( array_key_exists( 'is_error', $contribution_result ) && $contribution_result['is_error'] != 0 ) {
+    try {
+      $contribution_result = civicrm_api3("Contribution", "Create", $contribution);
+      watchdog('wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
+    }
+    catch (CiviCRM_API3_Exception $e) {
         throw new WmfException(
             'INVALID_MESSAGE',
             'Cannot create contribution, civi error!',
-            $contribution_result['error_message']
+            $e->getMessage() . print_r($e->getExtraParams(), TRUE)
         );
     }
 
