@@ -493,6 +493,10 @@ abstract class BaseAuditProcessor {
 		$files_by_sort_key = array();
 		if ( $handle = opendir( $files_directory ) ) {
 			while ( ( $file = readdir( $handle ) ) !== false ) {
+				// ignore hidden files
+				if ( substr( $file, 0, 1 ) == '.' ) {
+					continue;
+				}
 				if ( $this->get_filetype( $file ) === 'recon' ) {
 					$sort_key = $this->get_recon_file_sort_key( $file ); // report date or sequence number or something
 					$files_by_sort_key[$sort_key][] = $files_directory . $file;
