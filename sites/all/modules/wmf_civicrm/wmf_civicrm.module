@@ -574,7 +574,7 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                     case 'mc':
                         $payment_instrument .= ': MasterCard';
                         break;
-                    case 'mc':
+                    case 'mc-debit':
                         $payment_instrument .= ': MasterCard Debit';
                         break;
                     case 'amex':
