@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * Implementation of hook_menu()
+ */
+function adyen_audit_menu() {
+	$items = array();
+
+	$items['admin/config/wmf_audit/adyen_audit'] = array(
+		'title' => 'Adyen Audit',
+		'description' => t( 'Configure WMF audit settings.' ),
+		'access arguments' => array( 'administer wmf_audit' ),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'adyen_audit_settings' ),
+	);
+
+	return $items;
+}
+
+/**
+ * Callback for menu
+ */
+function adyen_audit_settings() {
+	$form['adyen_audit_recon_files_dir'] = array(
+		'#type' => 'textfield',
+		'#title' => t( 'Directory containing incoming reconciliation files' ),
+		'#required' => TRUE,
+		'#default_value' => variable_get( 'adyen_audit_recon_files_dir' ),
+	);
+	$form['adyen_audit_recon_completed_dir'] = array(
+		'#type' => 'textfield',
+		'#title' => t( 'Directory for completed reconciliation files' ),
+		'#required' => TRUE,
+		'#default_value' => variable_get( 'adyen_audit_recon_completed_dir' ),
+	);
+	$form['adyen_audit_working_log_dir'] = array(
+		'#type' => 'textfield',
+		'#title' => t( 'Working directory for payments logs (Not the source - that is defined at the wmf_audit level)' ),
+		'#required' => TRUE,
+		'#default_value' => variable_get( 'adyen_audit_working_log_dir' ),
+	);
+	$form['adyen_audit_test_mode'] = array(
+		'#type' => 'checkbox',
+		'#title' => t( 'When this box is checked, no stomp messages will be sent.' ),
+		'#required' => FALSE,
+		'#default_value' => variable_get( 'adyen_audit_test_mode' ),
+	);
+	$form['adyen_audit_log_search_past_days'] = array(
+		'#type' => 'textfield',
+		'#title' => t( 'Plus or minus log search (in days)' ),
+		'#required' => TRUE,
+		'#default_value' => variable_get( 'adyen_audit_log_search_past_days' ),
+	);
+	return system_settings_form( $form );
+}
+
+function adyen_audit_create_processor( $options ) {
+	return new AdyenAuditProcessor( $options );
+}
