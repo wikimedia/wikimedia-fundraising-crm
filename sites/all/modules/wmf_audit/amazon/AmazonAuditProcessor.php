@@ -9,7 +9,7 @@ class AmazonAuditProcessor extends BaseAuditProcessor {
 		return new AuditParser();
 	}
 
-	protected function get_recon_file_date( $file ) {
+	protected function get_recon_file_sort_key( $file ) {
 		// Example:  2015-09-29-SETTLEMENT_DATA_353863080016707.csv
 		// For that, we'd want to return 20150929
 		$parts = preg_split( '/-/', $file );

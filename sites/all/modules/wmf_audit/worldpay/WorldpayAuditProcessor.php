@@ -27,7 +27,7 @@ class WorldpayAuditProcessor extends BaseAuditProcessor {
 	 * @param string $file Name of the recon file (not full path)
 	 * @return string date in YYYYMMDD format
 	 */
-	protected function get_recon_file_date( $file ) {
+	protected function get_recon_file_sort_key( $file ) {
 		// FIXME: this is two-fer-one functionality.  Unmash.
 
 		if ( preg_match( '/\.RECON\.WIKI\./', $file ) ) {

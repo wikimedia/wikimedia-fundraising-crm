@@ -770,7 +770,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "60c9f5e68784e077b04f73757d12682020df1a72"
+                "reference": "c34a5fc3cfbb16d6fb019bea9a3d8d73eeb73f7b"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -802,6 +802,10 @@
                 {
                     "name": "Adam Roses Wight",
                     "email": "awight@wikimedia.org"
+                },
+                {
+                    "name": "Elliott Eggleston",
+                    "email": "eeggleston@wikimedia.org"
                 }
             ],
             "description": "The open source PHP flexible payments library and frontend/backend mediator.",
@@ -810,7 +814,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2015-10-14 20:28:15"
+            "time": "2016-02-19 05:15:23"
         },
         {
             "name": "zordius/lightncandy",
