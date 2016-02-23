@@ -918,7 +918,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         'display_name' => substr( $fname . ' ' . $lname, 0, 128 ),
         'do_not_trade' => $msg['anonymous'], // FIXME: has the wrong meaning
         'contact_source' => $msg['contact_source'],
-
+        'debug' => TRUE,
         // API required fields
         'version' => '3'
     );
@@ -1013,6 +1013,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         throw new WmfException(
             "IMPORT_CONTACT",
             "Contact could not be added. Aborting import. Contact data was " . print_r($contact, true) . " Original error: " . $ex->getMessage()
+            . " Details: " . print_r($ex->getExtraParams(), TRUE)
         );
     }
     $contact_id = $contact_result['id'];
