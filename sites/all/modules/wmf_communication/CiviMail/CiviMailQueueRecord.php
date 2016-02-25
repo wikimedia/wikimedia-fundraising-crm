@@ -52,7 +52,7 @@ interface ICiviMailQueueRecord {
 class CiviMailQueueRecord implements ICiviMailQueueRecord {
 
 	protected $queue;
-	protected $emailAddress;
+	protected $email;
 
 	/**
 	 * @param \CRM_Mailing_Event_DAO_Queue $queue

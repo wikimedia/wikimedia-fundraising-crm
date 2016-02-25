@@ -76,7 +76,7 @@ class CiviMailTest extends CiviMailTestBase {
 		$queueRecord = $this->mailStore->addQueueRecord(
 			$storedMailing,
 			'generaltrius@hondo.mil',
-			'20140205104611'
+			$this->contactID
 		);
 		$this->assertInstanceOf(
 			'wmf_communication\ICiviMailQueueRecord',

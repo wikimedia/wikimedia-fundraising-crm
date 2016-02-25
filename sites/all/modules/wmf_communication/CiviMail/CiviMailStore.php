@@ -54,13 +54,13 @@ interface ICiviMailStore {
 	 *
 	 * @param ICiviMailingRecord $mailingRecord Mailing that is being sent
 	 * @param string $email Email address of recipient
-	 * @param string $date Completion date to use for child job
+	 * @param int $contactId Used to disambiguate contacts with the same address
 	 *
 	 * @returns ICiviMailQueueRecord
 	 *
 	 * @throws CiviQueueInsertException if email isn't in Civi or an error occurs
 	 */
-	function addQueueRecord( $mailingRecord, $email, $date = null );
+	function addQueueRecord( $mailingRecord, $email, $contactId );
 
 	/**
 	 * Retrieves the queue record matching the parameters.
@@ -138,12 +138,12 @@ class CiviMailStore implements ICiviMailStore {
 		}
 	}
 
-	public function addQueueRecord( $mailingRecord, $emailAddress, $date = null ) {
-		if ( !$date ) {
-			$date = gmdate( 'YmdHis' );
-		}
+	public function addQueueRecord( $mailingRecord, $emailAddress, $contactId ) {
+		$date = gmdate( 'YmdHis' );
+
 		$email = new CRM_Core_DAO_Email();
 		$email->email = $emailAddress;
+		$email->contact_id = $contactId;
 
 		if ( !$email->find() || !$email->fetch() ) {
 			throw new CiviQueueInsertException( "No record of email $emailAddress in CiviCRM" );
