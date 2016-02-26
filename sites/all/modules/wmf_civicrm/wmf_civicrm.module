@@ -601,6 +601,36 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                     case 'diners':
                         $payment_instrument .= ': Diners';
                         break;
+                    case 'elo':
+                        $payment_instrument .= ': Elo';
+                        break;
+                    case 'hiper':
+                        $payment_instrument .= ': HiperCard';
+                        break;
+                    case 'mercadolivre':
+                        $payment_instrument .= ': MercadoLivre';
+                        break;
+                    case 'cabal':
+                        $payment_instrument .= ': Cabal';
+                        break;
+                    case 'naranja':
+                        $payment_instrument .= ': Naranja';
+                        break;
+                    case 'shopping':
+                        $payment_instrument .= ': Tarjeta Shopping';
+                        break;
+                    case 'nativa':
+                        $payment_instrument .= ': Nativa';
+                        break;
+                    case 'cencosud':
+                        $payment_instrument .= ': Cencosud';
+                        break;
+                    case 'argen':
+                        $payment_instrument .= ': Argencard';
+                        break;
+                    case 'webpay':
+                        $payment_instrument .= ': Webpay';
+                        break;
                 }
                 break;
             case 'dd':
@@ -655,15 +685,44 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                         break;
                 }
                 break;
-	    case 'stock':
-		$payment_instrument = 'Stock';
-		break;
+            case 'stock':
+                $payment_instrument = 'Stock';
+                break;
             case 'cash':
                 $payment_instrument = 'Cash';
-                //'cash_boleto' - Only one right now. I assume there might be more later?
                 switch ( strtolower( $msg['payment_submethod'] ) ){
                     case 'cash_boleto':
                         $payment_instrument = 'Boleto';
+                        break;
+                    case 'cash_banamex':
+                        $payment_instrument = 'Banamex';
+                        break;
+                    case 'cash_bancomer':
+                        $payment_instrument = 'Bancomer';
+                        break;
+                    case 'cash_davivienda':
+                        $payment_instrument = 'Davivienda';
+                        break;
+                    case 'cash_efecty':
+                        $payment_instrument = 'Efecty';
+                        break;
+                    case 'cash_oxxo':
+                        $payment_instrument = 'OXXO';
+                        break;
+                    case 'cash_pago_facil':
+                        $payment_instrument = 'Pago Facil';
+                        break;
+                    case 'cash_provencia_pagos':
+                        $payment_instrument = 'Provencia Pagos';
+                        break;
+                    case 'cash_red_pagos':
+                        $payment_instrument = 'Red Pagos';
+                        break;
+                    case 'cash_rapipago':
+                        $payment_instrument = 'Rapi Pago';
+                        break;
+                    case 'cash_santander':
+                        $payment_instrument = 'Santander';
                         break;
                 }
                 break;
