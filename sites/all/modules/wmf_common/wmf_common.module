@@ -112,6 +112,7 @@ function wmf_common_queue_browser_form( $form, &$form_state ) {
     variable_get( 'recurring_subscription' ),
     variable_get( 'refund_queue' ),
     variable_get( 'unsubscribe_queue' ),
+    variable_get( 'job_queue', '/queue/job-requests' ),
   );
 
   # semi-FIXME: not actually paging
