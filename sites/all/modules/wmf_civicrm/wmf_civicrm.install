@@ -52,6 +52,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7170();
     wmf_civicrm_update_7180();
     wmf_civicrm_update_7190();
+    wmf_civicrm_update_7195();
 }
 
 /**
@@ -1900,4 +1901,34 @@ function wmf_civicrm_update_7190() {
   CRM_Core_BAO_SchemaHandler::createIndexes(array(
     'civicrm_contribution' => array(array('total_amount', 'receive_date')),
   ));
+}
+
+/**
+ * Add Latin American payment methods for AstroPay
+ */
+function wmf_civicrm_update_7195() {
+    $payment_instruments = array(
+        'Credit Card: Elo',
+        'Credit Card: HiperCard',
+        'Credit Card: MercadoLivre',
+        'Credit Card: Cabal',
+        'Credit Card: Naranja',
+        'Credit Card: Tarjeta Shopping',
+        'Credit Card: Nativa',
+        'Credit Card: Cencosud',
+        'Credit Card: Argencard',
+        'Credit Card: Webpay',
+        'Banamex',
+        'Bancomer',
+        'Davivienda',
+        'Efecty',
+        'OXXO',
+        'Pago Facil',
+        'Provencia Pagos',
+        'Red Pagos',
+        'Rapi Pago',
+        'Santander',
+    );
+    wmf_civicrm_bootstrap_civi();
+    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
 }

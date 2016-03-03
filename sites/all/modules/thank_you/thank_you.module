@@ -331,6 +331,7 @@ function thank_you_for_contribution( $contribution_id ) {
 
     $params = array(
         'amount' => $amount,
+        'contact_id' => $contact['id'],
         'currency' => $currency,
         'first_name' => $contact['first_name'],
 		'from_name' => variable_get( 'thank_you_from_name', 'Wikimedia Foundation' ),
@@ -459,9 +460,10 @@ function thank_you_send_mail( $params ) {
 	$civi_queue_record = null;
 	$create_civi_mail = variable_get( 'thank_you_add_civimail_records', 'false' );
 	$rate = variable_get( 'thank_you_civimail_rate', 1.0 );
-	if ( $create_civi_mail === 'true' && mt_rand(0, 10000) <= $rate * 10000 ) {
+	if ( $create_civi_mail === 'true' && mt_rand(0, 10000) <= $rate * 10000 && isset( $params['contact_id'] ) ) {
 		$civi_queue_record = thank_you_add_civi_queue(
 			$email['to_address'],
+			$params['contact_id'],
 			$email['subject'],
 			$email['html']
 		);
@@ -539,12 +541,12 @@ function thank_you_get_template_info( $html ) {
  * Add record of the sent email to CiviMail
  *
  * @param string $email recipient address
+ * @param $contact_id recipient contact id
  * @param string $subject subject header to insert in case of missing mailing
  * @param string $html HTML email body, which should have a template info comment
- *
- * @returns CiviMailQueueRecord mail queue record with VERP header
+ * @return CiviMailQueueRecord mail queue record with VERP header
  */
-function thank_you_add_civi_queue( $email, $subject, $html ) {
+function thank_you_add_civi_queue( $email, $contact_id, $subject, $html ) {
 	$civi_mailing = null;
 	$civi_queue_record = null;
 	$civimail_store = new CiviMailStore();
@@ -557,7 +559,7 @@ function thank_you_add_civi_queue( $email, $subject, $html ) {
 			watchdog( 'thank_you', 'Could not find mailing record for email with subject ' . $subject, WATCHDOG_INFO );
 			$civi_mailing = $civimail_store->addMailing( 'thank_you', $template_info->name, 'missing body', $subject, $template_info->revision );
 		}
-		$civi_queue_record = $civimail_store->addQueueRecord( $civi_mailing, $email );
+		$civi_queue_record = $civimail_store->addQueueRecord( $civi_mailing, $email, $contact_id );
 		$civimail_store->addActivity( $civi_queue_record, $subject, $html );
 	}
 	catch ( TemplateInfoMissingException $e ) {
