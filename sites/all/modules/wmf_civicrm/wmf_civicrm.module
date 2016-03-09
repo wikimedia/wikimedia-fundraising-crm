@@ -598,6 +598,9 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                     case 'cb':
                         $payment_instrument .= ': Carte Bleue';
                         break;
+                    case 'cmr':
+                        $payment_instrument .= ': CMR Falabella';
+                        break;
                     case 'diners':
                         $payment_instrument .= ': Diners';
                         break;
@@ -607,8 +610,14 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                     case 'hiper':
                         $payment_instrument .= ': HiperCard';
                         break;
+                    case 'magna':
+                        $payment_instrument .= ': Magna';
+                        break;
                     case 'mercadolivre':
                         $payment_instrument .= ': MercadoLivre';
+                        break;
+                    case 'presto':
+                        $payment_instrument .= ': Presto';
                         break;
                     case 'cabal':
                         $payment_instrument .= ': Cabal';
