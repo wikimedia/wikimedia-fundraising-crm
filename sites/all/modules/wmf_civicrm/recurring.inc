@@ -298,14 +298,9 @@ function wmf_civicrm_get_last_trigger_date( $record, $nowstamp = null )
     // it'll be the wrong value and it'll be in the future; we fix that up below.
     $last_trigger = gmmktime(0, 0, 0, $month, wmf_civicrm_get_cycle_day_for_month( $cycle_day, $month, $year ), $year);
     
-    // This loop fixes up $last_trigger in the case where we're running in a later month than when
-    // the last trigger date actually was, which means $last_trigger will be in the future and will
-    // therefore be wrong (instead, it'll be the *next* trigger date). In this case, we move
-    // $last_trigger back a month. The 60*60*24*7 represents a week in seconds: if the next payment
-    // is due in less than a week, do NOT execute it but skip to the next month instead.
-    // TODO this is incredibly confusing, mostly because this logic is in the wrong place. It
-    // should be checked when computing the next payment date, not here where we're computing the
-    // previous (scheduled) payment date.
+    // So... we actually want last month's date... to psych out the code which
+    // will add a month.  Note that this is not necessarily the true last
+    // trigger date, just our best-case guess.
     while ( $last_trigger > $nowstamp && ( $last_trigger - $nowstamp ) > 60*60*24*7 ){
         //decrement the month until it was in the past. 
         --$month;

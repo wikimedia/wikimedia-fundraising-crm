@@ -1932,3 +1932,16 @@ function wmf_civicrm_update_7195() {
     wmf_civicrm_bootstrap_civi();
     wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
 }
+
+/**
+ * Add a few more Chilean credit cards
+ */
+function wmf_civicrm_update_7196() {
+    $payment_instruments = array(
+        'Credit Card: CMR Falabella',
+        'Credit Card: Magna',
+        'Credit Card: Presto',
+    );
+    wmf_civicrm_bootstrap_civi();
+    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
+}
