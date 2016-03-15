@@ -1945,3 +1945,19 @@ function wmf_civicrm_update_7196() {
     wmf_civicrm_bootstrap_civi();
     wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
 }
+
+/**
+ * Add contact deleted by merge activity.
+ *
+ * CRM-18106 / T119246.
+ */
+function wmf_civicrm_update_7200() {
+  civicrm_initialize();
+  CRM_Core_BAO_OptionValue::ensureOptionValueExists(array(
+    'option_group_id' => 'activity_type',
+    'name' => 'Contact Deleted by Merge',
+    'label' => ts('Contact Deleted by Merge'),
+    'description' => ts('Contact was merged into another contact'),
+    'is_active' => TRUE,
+  ));
+}
