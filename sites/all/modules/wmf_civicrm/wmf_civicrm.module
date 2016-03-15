@@ -5,6 +5,8 @@ require_once 'tracking.inc';
 
 /**
  * return a map of option value (id) => option name
+ *
+ * FIXME: Break into separate functions rather than magically switching return type
  */
 function civicrm_api_option_group($group_name, $key = null, $force = FALSE)
 {
@@ -18,23 +20,17 @@ function civicrm_api_option_group($group_name, $key = null, $force = FALSE)
 		));
 		$cached_group[$group_name] = array();
 		$option_values = $api->values();
-		foreach ($option_values as $row)
-		{
-			if (!array_search($key, $cached_group[$group_name])) {
-				$cached_group[$group_name][$row->value] = $row->name;
-				if (empty($row->name)) {
-					watchdog('wmf_civicrm', 'Option Value Not Found: %group_name -> %value',
-						array('%group_name' => $group_name, '%value' => print_r($row, TRUE)),
-						WATCHDOG_NOTICE
-					);
-				}
-			}
+		foreach ($option_values as $row) {
+			$cached_group[$group_name][$row->value] = $row->name;
 		}
 	}
 	if ($key)
 	{
 		// In this case, just lookup name and return the option value
 		$forwards = array_flip( $cached_group[$group_name] );
+		if ( !array_key_exists( $key, $forwards ) ) {
+			throw new DomainException( "Option value not found: {$group_name} -> {$key}" );
+		}
 		return $forwards[$key];
 	}
 	return $cached_group[$group_name];
