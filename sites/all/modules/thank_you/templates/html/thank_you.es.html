@@ -2,12 +2,12 @@
 <p>Estimado/a {{ first_name }},</p>
 
 {% else %}
-<p>Estimado/a donante,</p>
+<p>Estimado/a donador/a,</p>
 {%endif%}
 
-<p>Gracias por su donación de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a la Fundación Wikimedia. La Fundación Wikimedia es una organización sin ánimo de lucro que apoya a la Wikipedia y otros proyectos de información gratuita. Nuestro objetivo es construir en el mundo una fuente gratuita de información lo más accesible y exhaustiva posible.</p>
+<p>Gracias por su donación de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a la Fundación Wikimedia. La Fundación Wikimedia es una organización sin fines de lucro que apoya a Wikipedia y otros proyectos de información gratuita. Nuestro objetivo es el construir la fuente de conocimiento gratuita más accesible y exhaustiva en el mundo.</p>
 
-<p>{% if "RecurringRestarted" in contribution_tags %} Hemos resuelto recientemente un pequeño problema técnico que interrumpió algunas donaciones mensuales recurrentes. Hemos restablecido tu donación periódica y de ahora en adelante se procesará normalmente. No realizaremos cargos adicionales por los meses ya pasados. Agradecemos tu paciencia y apoyo. Si tienes alguna pregunta puedes escribirnos a donate@wikimedia.org. {%endif%}</p>
+<p>{% if "RecurringRestarted" in contribution_tags %} Hemos resuelto recientemente un pequeño problema técnico que interrumpió algunas donaciones mensuales recurrentes. Hemos restablecido su donación periódica y de ahora en adelante se procesará normalmente. No se le cargará por los meses que no se lo hizo. Agradecemos su paciencia y apoyo. Si tiene alguna pregunta puede escribirnos a donate@wikimedia.org. {%endif%}</p>
 
 <p>{% if "UnrecordedCharge" in contribution_tags %} Recientemente hemos resuelto un problema técnico que impedía a algunos donantes recibir la confirmación de su donativo. Por favor, acepta este correo electrónico como agradecimiento por el donativo que has realizado el $date. Agradecemos sinceramente tu paciencia y apoyo, y no dudes en escribir a donate@wikimedia.org si tienes cualquier pregunta. {%endif%}</p>
 
@@ -21,9 +21,7 @@
 
 <p>Gracias por ayudarnos a crecer y seguir llegando a más personas durante otro año.</p>
 
-<p>Lila Tretikov<br/>
-Directora Ejecutiva<br/>
-Fundación Wikimedia<br/></p>
+<p>Fundación Wikimedia<br/></p>
 
 <p>Muchas empresas igualarán la contribución de sus empleados: por favor, consulta con tu empresa para averiguar si tienen un <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">programa de donaciones corporativo</a>.</p>
 
@@ -33,4 +31,4 @@ Fundación Wikimedia<br/></p>
 
 <p>Esta carta puede servir como comprobante de su donación. En esta aportación no se han suministrado bienes ni servicios, en parte ni en su totalidad. La Fundación Wikimedia es una organización sin ánimo de lucro, con un estado 501(c)(3) de exención de impuestos en los Estados Unidos. Nuestra dirección es 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105 EE. UU. Número de exención fiscal en los EE. UU.: 20-0049703</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/es&amp;oldid=13656201","name":"thank_you.es.html","revision":13656201}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/es&amp;oldid=15425755","name":"thank_you.es.html","revision":15425755}TI_END -->
