@@ -2228,6 +2228,31 @@ EOS;
 }
 
 /**
+ * Implements hook_logTableSpec().
+ *
+ * @param array $logTableSpec
+ */
+function wmf_civicrm_civicrm_logTableSpec(&$logTableSpec) {
+  $logTableSpec['wmf_donor'] = array();
+  $logTableSpec['wmf_contribution_extra'] = array();
+  $contactReferences = CRM_Dedupe_Merger::cidRefs();
+  foreach (array_keys($logTableSpec) as $tableName) {
+    $contactIndexes = array();
+    $logTableSpec[$tableName]['engine'] = 'INNODB';
+    $logTableSpec[$tableName]['engine_config'] = 'ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4';
+    $contactRefsForTable = CRM_Utils_Array::value($tableName, $contactReferences, array());
+    foreach ($contactRefsForTable as $fieldName) {
+      $contactIndexes['index_' . $fieldName] = $fieldName;
+    }
+    $logTableSpec[$tableName]['indexes'] = array_merge(array(
+      'index_id' => 'id',
+      'index_log_conn_id' => 'log_conn_id',
+      'index_log_date' => 'log_date',
+    ), $contactIndexes);
+  }
+}
+
+/**
  * Check if any completed contributions exist for the contact after the provided date.
  *
  * @param int $contact_id
