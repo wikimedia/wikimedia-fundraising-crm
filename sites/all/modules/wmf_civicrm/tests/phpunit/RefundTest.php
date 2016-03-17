@@ -17,10 +17,11 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
         parent::setUp();
         civicrm_initialize();
 
-        $results = civicrm_api3( 'contact', 'create', array(
+        $results = $this->callAPISuccess( 'contact', 'create', array(
             'contact_type' => 'Individual',
             'first_name' => 'Test',
             'last_name' => 'Es',
+            'debug' => 1,
         ) );
         $this->contact_id = $results['id'];
 
@@ -29,6 +30,8 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->gateway_txn_id = mt_rand();
         $time = time();
         $this->trxn_id = "TEST_GATEWAY {$this->gateway_txn_id} {$time}";
+
+        $this->setExchangeRates( $time, array( 'USD' => 1, 'EUR' => 0.5 ) );
 
         $results = civicrm_api3( 'contribution', 'create', array(
             'contact_id' => $this->contact_id,
@@ -213,4 +216,43 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
             $this->original_currency, $this->original_amount + 100.00
         );
     }
+
+    /**
+     * Make a lesser refund in the wrong currency
+     */
+    public function testLesserWrongCurrencyRefund() {
+      $strtime = '04/03/2000';
+      $dbtime = '2000-04-03';
+      $epochtime = wmf_common_date_parse_string( $dbtime );
+      $this->setExchangeRates( $epochtime, array('COP' => .01 ) );
+
+      $result = $this->callAPISuccess('contribution', 'create', array(
+        'contact_id' => $this->contact_id,
+        'financial_type_id' => 'Cash',
+        'total_amount' => 200,
+        'contribution_source' => 'COP 20000',
+        'trxn_id' => "TEST_GATEWAY {$this->gateway_txn_id} " . (time() + 20),
+      ));
+
+      wmf_civicrm_mark_refund(
+        $result['id'],
+        'refund',
+        TRUE,
+        $dbtime,
+        NULL,
+        'COP',
+        5000
+      );
+
+      $contributions = $this->callAPISuccess('Contribution', 'get', array(
+        'contact_id' => $this->contact_id,
+        'sequential' => TRUE
+      ));
+      $this->assertEquals(3, $contributions['count'], print_r($contributions, TRUE));
+      $this->assertEquals(200, $contributions['values'][1]['total_amount']);
+      $this->assertEquals('USD', $contributions['values'][2]['currency']);
+      // Exchange rates might move a bit but hopefully it stays less than the original amount.
+      $this->assertEquals($contributions['values'][2]['total_amount'], 150);
+    }
+
 }
