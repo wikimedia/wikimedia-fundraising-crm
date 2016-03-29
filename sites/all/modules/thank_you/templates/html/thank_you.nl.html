@@ -5,32 +5,30 @@
 <p>Beste donateur,</p>
 {%endif%}
 
-<p>Bedankt voor je donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} aan de Wikimedia Foundation. De Wikimedia Foundation is de non-profitorganisatie die Wikipedia and andere projecten rond vrije kennis ondersteunt. Het is onze missie om de meest toegankelijke en veelomvattende bron van vrije kennis ter wereld te bouwen.</p>
+<p>Bedankt voor je donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} aan de Wikimedia Foundation. De Wikimedia Foundation is de non-profitorganisatie die Wikipedia en andere projecten rond vrije kennis ondersteunt. Het is onze missie om de meest toegankelijke en veelomvattende bron van vrije kennis ter wereld te bouwen.</p>
 
-<p>{% if "RecurringRestarted" in contribution_tags %} Kort geleden hebben we een klein technisch probleem opgelost waarbij een aantal maandelijkse donaties werden stopgezet. Uw periodieke donatie is inmiddels hervat. De maanden die overgeslagen zijn, innen we uw donatie niet. Bedankt voor uw geduld en uw steun. Als u nog vragen heeft, stuur dan gerust een e-mail naar donate@wikimedia.org. {%endif%}</p>
+<p>{% if "RecurringRestarted" in contribution_tags %} Kort geleden hebben we een klein technisch probleem opgelost waarbij een aantal maandelijkse donaties werden stopgezet. Uw periodieke donatie is inmiddels hervat. De maanden die overgeslagen zijn, innen we niet. Bedankt voor uw geduld en uw steun. Als u nog vragen heeft, stuur dan gerust een e-mail naar donate@wikimedia.org. {%endif%}</p>
 
 <p>{% if "UnrecordedCharge" in contribution_tags %} Onlangs hebben we een technisch probleem opgelost dat ervoor zorgde dat een klein aantal donateurs geen bevestiging heeft gekregen voor hun donatie. Daarom willen we u vragen deze e-mail als dank te beschouwen voor uw donatie die op $date is overgemaakt. We waarderen uw geduld en steun enorm, en mocht u nog vragen hebben dan kunt u gerust een e-mail sturen naar donate@wikimedia.org. {%endif%}</p>
 
-<p>We zijn ervan overtuigd dat kennis een fundamenteel mensenrecht is. Nu de mens met volle snelheid de digitale toekomst ingaat, is er nood aan open, toegankelijke en openbare plekken waar iedereen online toegang krijgt tot kennis. Wikimedia is zo'n plek. Wikipedia levert vrije kennis aan mensen, door mensen en in honderden talen over de hele wereld.</p>
+<p>We zijn ervan overtuigd dat kennis een fundamenteel mensenrecht is. Nu de mens met volle snelheid de digitale toekomst ingaat, is er behoefte aan open, toegankelijke en openbare plekken waar iedereen online toegang heeft tot kennis. Wikimedia is zo'n plek. Wikipedia levert vrije kennis aan mensen, door mensen. In honderden talen over de hele wereld.</p>
 
-<p>Elk jaar wordt Wikipedia door mensen van elk continent gelezen en bijgewerkt, zelfs op Antarctica. Bijna een half miljard mensen bezoeken Wikipedia elke maand voor uiteenlopende doeleinden, van het behoud van cultureel erfgoed tot het verbeteren van kankeropsporing en het opzoeken van informatie voor huiswerk. Ze komen om te leren. Ze blijven en ontdekken.</p>
+<p>Elk jaar wordt Wikipedia door mensen van elk continent gelezen en bijgewerkt, zelfs op Antarctica. Bijna een half miljard mensen bezoeken Wikipedia elke maand voor uiteenlopende doeleinden, van het behoud van cultureel erfgoed tot het verbeteren van kankeropsporing en het opzoeken van informatie voor huiswerk. Ze komen om te leren, ze blijven en ontdekken.</p>
 
 <p>Iedereen is een potentiële Wikipediaan. En vind je op Wikipedia niet wat je zoekt, dan <a rel="nofollow" class="external text" href="https:///nl.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">creëer je het gewoon zelf</a>. De artikelen, woorden, afbeeldingen en gegevens worden gecreëerd door een gevarieerde groep mensen die hun kennis vrijwillig delen met de wereld.</p>
 
-<p>Elke dag vragen we ons af hoe we onze impact kunnen vergroten en kunnen zorgen dat Wikipedia en de zusterprojecten morgen nóg nauwkeuriger, waardevoller en toegankelijker zijn dan vandaag. Jouw donatie helpt ons daarbij.</p>
+<p>Elke dag vragen we ons af hoe we onze impact kunnen vergroten en werken we eraan om te kunnen zorgen dat Wikipedia en de zusterprojecten morgen nóg nauwkeuriger, waardevoller en toegankelijker zijn dan vandaag. Jouw donatie helpt ons daarbij.</p>
 
 <p>Dankzij jou kunnen we blijven groeien en het leven van velen weer een jaar lang positief beïnvloeden.</p>
 
-<p>Lila Tretikov<br/>
-Algemeen Directeur,<br/>
-Wikimedia Foundation<br/></p>
+<p>Wikimedia Foundation<br/></p>
 
 <p>Veel werkgevers verdubbelen de giften van werknemers: gelieve te verifiëren in uw bedrijf om te zien of ze een <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">giftenprogramma</a> hebben.</p>
 
-<p>Voor uw administratie: uw donatie, met nummer {{ transaction_id }}, op {{ receive_date }} was {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Voor jouw administratie: jouw donatie, met nummer {{ transaction_id }}, op {{ receive_date }} was {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 {% if recurring %}<p> Deze schenking maakt deel uit van een periodieke afschrijving. Maandelijkse betalingen worden geïncasseerd door de Wikimedia Foundation tot u ons verzoekt deze te stoppen. Mocht u de periodieke afschrijvingen willen annuleren, zie dan onze <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">eenvoudige annuleringsinstructies</a>. </p>{%endif%}
 
-<p>Je kunt deze brief gebruiken als bewijs van je donatie. Voor deze bijdrage zijn, geheel of gedeeltelijk, geen goederen of diensten geleverd. De Wikimedia Foundation, Inc. is een liefdadigheidsorganisatie zonder winstoogmerk met 501(c)(3)-status voor belastingvrijstelling in de Verenigde Staten. Ons adres is 149 New Montgomery, 3rd Floor, San Francisco, CA 94105, Verenigde Staten. Belastingnummer in de VS: 20-0049703</p>
+<p>Je kunt deze brief gebruiken als bewijs van je donatie. Voor deze bijdrage zijn, geheel of gedeeltelijk, geen goederen of diensten geleverd. De Wikimedia Foundation, Inc. is een non-profitorganisatie zonder winstoogmerk met 501(c)(3)-status voor belastingvrijstelling in de Verenigde Staten. Ons adres is 149 New Montgomery, 3rd Floor, San Francisco, CA 94105, Verenigde Staten. Belastingnummer in de VS: 20-0049703</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/nl&amp;oldid=13656085","name":"thank_you.nl.html","revision":13656085}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/nl&amp;oldid=15425657","name":"thank_you.nl.html","revision":15425657}TI_END -->
