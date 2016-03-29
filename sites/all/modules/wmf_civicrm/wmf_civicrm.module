@@ -1092,11 +1092,12 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
           'phone' => $msg['phone'],
           'phone_type_id' => CRM_Core_OptionGroup::getValue('phone_type', 'phone'),
           'is_primary' => 1,
+          'debug' => TRUE,
         ));
       } catch ( CiviCRM_API3_Exception $ex ) {
         throw new WmfException(
           "IMPORT_CONTACT",
-          "Failed to add phone for contact ID {$contact_id}: {$ex->getMessage()}"
+          "Failed to add phone for contact ID {$contact_id}: {$ex->getMessage()} " . print_r($e->getExtraParams(), TRUE)
         );
       }
     }
