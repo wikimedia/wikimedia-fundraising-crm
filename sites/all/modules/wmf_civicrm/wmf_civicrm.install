@@ -54,6 +54,8 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7190();
     wmf_civicrm_update_7195();
     wmf_civicrm_update_7200();
+    wmf_civicrm_update_7205();
+    wmf_civicrm_update_7210();
 }
 
 /**
@@ -1965,7 +1967,23 @@ function wmf_civicrm_update_7200() {
 }
 
 /**
- * Opps this activity type was added without filter = 1 being set.
+ * Enable setting to specify logging is handled offline.
+ *
+ * CRM-18212 / T127133.
+ */
+function wmf_civicrm_update_7205() {
+  civicrm_initialize();
+  civicrm_api3('System', 'flush', array(
+    'triggers' => 0,
+    'session' => 0,
+  ));
+  civicrm_api3('Setting', 'create', array(
+    'logging_no_trigger_permission' => 1,
+  ));
+}
+
+/**
+ * Oops this activity type was added without filter = 1 being set.
  *
  * CRM-18327 / T119246.
  */
