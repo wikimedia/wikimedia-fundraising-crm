@@ -241,7 +241,8 @@ function thank_you_for_contribution( $contribution_id ) {
 	// check that the API result is a valid contribution result
 	if( !WMFCiviAPICheck::check_api_contribution( $contribution, $contribution_id ) ){
 		// the API result is bad
-		watchdog('thank_you', 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true ) . '</pre>', array(), WATCHDOG_ERROR);
+		$msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true ) . '</pre>';
+		wmf_common_failmail( 'thank_you', $msg );
 		return false;
 	}
 	// go ahead and remove the extra layer of indirection to make it easier to use
