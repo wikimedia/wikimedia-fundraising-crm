@@ -1960,5 +1960,21 @@ function wmf_civicrm_update_7200() {
     'label' => ts('Contact Deleted by Merge'),
     'description' => ts('Contact was merged into another contact'),
     'is_active' => TRUE,
+    'filter' => 1,
   ));
+}
+
+/**
+ * Opps this activity type was added without filter = 1 being set.
+ *
+ * CRM-18327 / T119246.
+ */
+function wmf_civicrm_update_7210() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery(
+    "UPDATE civicrm_option_value ov
+       LEFT JOIN civicrm_option_group og ON og.id = ov.option_group_id
+       SET filter = 1
+       WHERE ov.name = 'Contact Deleted By Merge' AND og.name = 'activity_type'"
+  );
 }
