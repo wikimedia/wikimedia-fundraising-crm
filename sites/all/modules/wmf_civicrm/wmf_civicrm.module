@@ -1097,7 +1097,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
       } catch ( CiviCRM_API3_Exception $ex ) {
         throw new WmfException(
           "IMPORT_CONTACT",
-          "Failed to add phone for contact ID {$contact_id}: {$ex->getMessage()} " . print_r($e->getExtraParams(), TRUE)
+          "Failed to add phone for contact ID {$contact_id}: {$ex->getMessage()} " . print_r($ex->getExtraParams(), TRUE)
         );
       }
     }
