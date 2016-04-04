@@ -289,8 +289,8 @@ class Queue {
     /**
      * Enqueue a STOMP message
      *
-     * @param $msg    Message to queue
-     * @param $queue  Queue to queue to; should start with /queue/
+     * @param array $msg    Message to queue
+     * @param string $queue  Queue to queue to; should start with /queue/
      * @return bool   True if STOMP claims it worked
      */
     function enqueue( $msg, $properties, $queue ) {

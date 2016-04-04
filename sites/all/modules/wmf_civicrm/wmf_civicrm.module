@@ -1946,8 +1946,13 @@ function wmf_civicrm_mark_refund(
  * For refund events, mark the refund using our helper function.
  *
  * Raw gateway status is stored in a custom field.
+ * @param int $contribution_id
+ * @param string $raw_status
+ * @param string $normalized_status
+ * @param int $timestamp
+ * @throws WmfException
  */
-function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_status, string $normalized_status = null, int $timestamp = null )
+function wmf_civicrm_set_gateway_status( $contribution_id, $raw_status, $normalized_status = null, $timestamp = null )
 {
     civicrm_initialize();
 

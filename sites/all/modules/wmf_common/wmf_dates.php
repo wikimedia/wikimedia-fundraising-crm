@@ -46,7 +46,7 @@ function wmf_common_date_get_today_string(){
  * Get an array of all the valid dates between $start(exclusive) and $end(inclusive)
  * @param int $start Date string in the format yyyymmdd
  * @param int $end Date string in the format yyyymmdd
- * @return An array of all date strings between the $start and $end values
+ * @return array all date strings between the $start and $end values
  */
 function wmf_common_date_get_date_gap( $start, $end ){
 	$startdate = date_create_from_format(WMF_DATEFORMAT, (string)$start);
@@ -100,6 +100,7 @@ function wmf_common_date_format_using_utc( $format, $unixtime ) {
  * Used to format dates for the CiviCRM API.
  *
  * @param string $unixtime unix timestamp in seconds since epoch
+ * @return string Formatted time
  */
 function wmf_common_date_unix_to_civicrm( $unixtime ) {
     return wmf_common_date_format_using_utc( "Y-m-d H:i:s", $unixtime );
@@ -109,6 +110,7 @@ function wmf_common_date_unix_to_civicrm( $unixtime ) {
  * Used to format dates for MySQL datetime columns.
  *
  * @param string $unixtime unix timestamp in seconds since epoch
+ * @return string Formatted time
  */
 function wmf_common_date_unix_to_sql( $unixtime ) {
     return wmf_common_date_format_using_utc( "YmdHis", $unixtime );
