@@ -1888,7 +1888,7 @@ function wmf_civicrm_mark_refund(
                 // New type?
                 'financial_type_id' => 'Refund',
                 'contact_id' => $contribution['contact_id'],
-                'contribution_source' => $refund_currency . " " . $amount_scammed,
+                'contribution_source' => $refund_currency . " " . -$amount_scammed,
                 'trxn_id' => $refund_unique_id,
                 'receive_date' => date('Y-m-d h:i:s', $refund_date),
                 'currency' => 'USD',

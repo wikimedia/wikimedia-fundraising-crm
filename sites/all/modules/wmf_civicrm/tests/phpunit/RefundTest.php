@@ -183,7 +183,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
         ));
 
         $this->assertEquals(
-            "{$this->original_currency} -0.25",
+            "{$this->original_currency} 0.25",
             $refund_contribution['contribution_source'],
             'Refund contribution has correct lesser amount'
         );
@@ -253,6 +253,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       $this->assertEquals('USD', $contributions['values'][2]['currency']);
       // Exchange rates might move a bit but hopefully it stays less than the original amount.
       $this->assertEquals($contributions['values'][2]['total_amount'], 150);
+      $this->assertEquals('COP 15000', $contributions['values'][2]['contribution_source']);
     }
 
 }
