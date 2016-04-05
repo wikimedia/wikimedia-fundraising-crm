@@ -53,6 +53,9 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7180();
     wmf_civicrm_update_7190();
     wmf_civicrm_update_7195();
+    wmf_civicrm_update_7200();
+    wmf_civicrm_update_7205();
+    wmf_civicrm_update_7210();
 }
 
 /**
@@ -1959,5 +1962,37 @@ function wmf_civicrm_update_7200() {
     'label' => ts('Contact Deleted by Merge'),
     'description' => ts('Contact was merged into another contact'),
     'is_active' => TRUE,
+    'filter' => 1,
   ));
+}
+
+/**
+ * Enable setting to specify logging is handled offline.
+ *
+ * CRM-18212 / T127133.
+ */
+function wmf_civicrm_update_7205() {
+  civicrm_initialize();
+  civicrm_api3('System', 'flush', array(
+    'triggers' => 0,
+    'session' => 0,
+  ));
+  civicrm_api3('Setting', 'create', array(
+    'logging_no_trigger_permission' => 1,
+  ));
+}
+
+/**
+ * Oops this activity type was added without filter = 1 being set.
+ *
+ * CRM-18327 / T119246.
+ */
+function wmf_civicrm_update_7210() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery(
+    "UPDATE civicrm_option_value ov
+       LEFT JOIN civicrm_option_group og ON og.id = ov.option_group_id
+       SET filter = 1
+       WHERE ov.name = 'Contact Deleted By Merge' AND og.name = 'activity_type'"
+  );
 }

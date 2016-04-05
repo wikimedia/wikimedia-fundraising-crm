@@ -260,6 +260,36 @@ abstract class ChecksFile {
                 $msg[$field] = wmf_common_date_parse_string( $msg[$field] );
             }
         }
+
+        // Allow yes or true as inputs for opt-out fields
+        $optOutFields = array(
+            'do_not_email',
+            'do_not_mail',
+            'do_not_phone',
+            'do_not_sms',
+            'do_not_solicit',
+            'is_opt_out',
+            );
+
+        $trueValues = array(
+            'yes',
+            'y',
+            'true',
+            't',
+            '1',
+        );
+
+        foreach( $optOutFields as $field ) {
+            if ( isset( $msg[$field] ) ) {
+                if ( in_array( strtolower( $msg[$field] ), $trueValues ) ) {
+                    $msg[$field] = 1;
+                }
+                else {
+                    $msg[$field] = 0;
+                }
+            }
+        }
+
     }
 
     /**

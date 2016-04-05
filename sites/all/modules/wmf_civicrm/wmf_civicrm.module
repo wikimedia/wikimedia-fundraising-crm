@@ -1092,11 +1092,12 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
           'phone' => $msg['phone'],
           'phone_type_id' => CRM_Core_OptionGroup::getValue('phone_type', 'phone'),
           'is_primary' => 1,
+          'debug' => TRUE,
         ));
       } catch ( CiviCRM_API3_Exception $ex ) {
         throw new WmfException(
           "IMPORT_CONTACT",
-          "Failed to add phone for contact ID {$contact_id}: {$ex->getMessage()}"
+          "Failed to add phone for contact ID {$contact_id}: {$ex->getMessage()} " . print_r($ex->getExtraParams(), TRUE)
         );
       }
     }
@@ -1878,14 +1879,19 @@ function wmf_civicrm_mark_refund(
 
             try {
               civicrm_api3('Contribution', 'create', array(
-                'total_amount' => -$amount_scammed,
+                'total_amount' => round(
+                    exchange_rate_convert(
+                      $refund_currency,
+                      -$amount_scammed,
+                      wmf_common_date_parse_string(date('Y-m-d h:i:s', $refund_date)
+                  )), 2),
                 // New type?
                 'financial_type_id' => 'Refund',
                 'contact_id' => $contribution['contact_id'],
                 'contribution_source' => $refund_currency . " " . $amount_scammed,
                 'trxn_id' => $refund_unique_id,
                 'receive_date' => date('Y-m-d h:i:s', $refund_date),
-                'currency' => $refund_currency,
+                'currency' => 'USD',
                 'debug' => 1,
                 wmf_civicrm_get_custom_field_name('parent_contribution_id') => $contribution_id,
                 wmf_civicrm_get_custom_field_name('no_thank_you') => 1,
@@ -2224,6 +2230,31 @@ EOS;
 		}
         break;
     }
+}
+
+/**
+ * Implements hook_logTableSpec().
+ *
+ * @param array $logTableSpec
+ */
+function wmf_civicrm_civicrm_logTableSpec(&$logTableSpec) {
+  $logTableSpec['wmf_donor'] = array();
+  $logTableSpec['wmf_contribution_extra'] = array();
+  $contactReferences = CRM_Dedupe_Merger::cidRefs();
+  foreach (array_keys($logTableSpec) as $tableName) {
+    $contactIndexes = array();
+    $logTableSpec[$tableName]['engine'] = 'INNODB';
+    $logTableSpec[$tableName]['engine_config'] = 'ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4';
+    $contactRefsForTable = CRM_Utils_Array::value($tableName, $contactReferences, array());
+    foreach ($contactRefsForTable as $fieldName) {
+      $contactIndexes['index_' . $fieldName] = $fieldName;
+    }
+    $logTableSpec[$tableName]['indexes'] = array_merge(array(
+      'index_id' => 'id',
+      'index_log_conn_id' => 'log_conn_id',
+      'index_log_date' => 'log_date',
+    ), $contactIndexes);
+  }
 }
 
 /**
