@@ -2092,10 +2092,13 @@ EOS;
  * Implementation of hook_civicrm_post, used to update contribution_extra fields
  * and wmf_donor rollup fields.
  */
-function wmf_civicrm_civicrm_post( $op, $type, $id, &$contribution ) {
-	if ( $type !== 'Contribution' ) {
-		return;
+function wmf_civicrm_civicrm_post( $op, $type, $id, &$entity ) {
+	if ( $type === 'Contribution' ) {
+		wmf_civicrm_civicrm_post_Contribution( $op, $id, $entity );
 	}
+}
+
+function wmf_civicrm_civicrm_post_Contribution( $op, $id, &$contribution ) {
     switch ( $op ) {
     case 'create':
     case 'edit':
