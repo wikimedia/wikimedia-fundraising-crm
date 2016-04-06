@@ -2099,9 +2099,9 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$entity ) {
 }
 
 function wmf_civicrm_civicrm_post_Contribution( $op, $id, &$contribution ) {
-    switch ( $op ) {
-    case 'create':
-    case 'edit':
+	switch ( $op ) {
+	case 'create':
+	case 'edit':
 		$extra = array();
 
 		if ( $contribution->trxn_id ) {
@@ -2142,7 +2142,7 @@ function wmf_civicrm_civicrm_post_Contribution( $op, $id, &$contribution ) {
 			$result = $api->Contribution->get( array(
 				'id' => $contribution->id,
 			) );
-			if ( !$result || count( $api->values ) != 1) {
+			if ( !$result || count( $api->values ) != 1 ) {
 				// can't get the data, skip wmf_donor updates
 				break;
 			}
@@ -2156,33 +2156,32 @@ function wmf_civicrm_civicrm_post_Contribution( $op, $id, &$contribution ) {
 		// FIXME: if this is an edit, we should review all contributions
 		$wmf_donor = array();
 		$contribution_date = new DateTime( $receive_date );
-    $isNegative = CRM_Contribute_BAO_Contribution::isContributionStatusNegative($contribution->contribution_status_id);
+		$isNegative = CRM_Contribute_BAO_Contribution::isContributionStatusNegative( $contribution->contribution_status_id );
 		$fiscal_year = intval( $contribution_date->format( 'Y' ) );
 		if ( intval( $contribution_date->format( 'm' ) ) < 7 ) {
 			$fiscal_year = $fiscal_year - 1;
 		}
 		if ( $fiscal_year >= WMF_MIN_ROLLUP_YEAR && $fiscal_year <= WMF_MAX_ROLLUP_YEAR ) {
-      if (!$isNegative) {
-        $wmf_donor["is_{$fiscal_year}_donor"] = 1;
-      }
-      else {
-        $donationsCount = civicrm_api3('Contribution', 'getcount', array(
-          'contact_id' => $contact_id,
-          'contribution_status_id' => 'Completed',
-          'receive_date' => array('BETWEEN' => array($fiscal_year . '-07-01', $fiscal_year +1 . '-06-30')),
-          'total_amout' => array('>' => 0),
-        ));
-        $wmf_donor["is_{$fiscal_year}_donor"] = $donationsCount ? 1 : 0;
-      }
+			if ( !$isNegative ) {
+				$wmf_donor["is_{$fiscal_year}_donor"] = 1;
+			} else {
+			  $donationsCount = civicrm_api3('Contribution', 'getcount', array(
+				'contact_id' => $contact_id,
+				'contribution_status_id' => 'Completed',
+				'receive_date' => array('BETWEEN' => array($fiscal_year . '-07-01', $fiscal_year +1 . '-06-30')),
+				'total_amout' => array('>' => 0),
+			  ));
+			  $wmf_donor["is_{$fiscal_year}_donor"] = $donationsCount ? 1 : 0;
+			}
 		}
 
 		// Update the latest donation data.
 		// If this is an edit, first check if it's the latest
 		$latest = true;
 
-			if ( $op === 'edit' ) {
-      $latestDate = wmf_civicrm_most_recent_completed_contribution_date($contact_id);
-        if (strtotime($latestDate) > strtotime($receive_date) || $isNegative) {
+		if ( $op === 'edit' ) {
+			$latestDate = wmf_civicrm_most_recent_completed_contribution_date($contact_id);
+			if (strtotime($latestDate) > strtotime($receive_date) || $isNegative) {
 				$latest = false;
 			}
 		}
@@ -2193,23 +2192,23 @@ function wmf_civicrm_civicrm_post_Contribution( $op, $id, &$contribution ) {
 				$wmf_donor['last_donation_currency'] = $extra['original_currency'];
 			}
 			if ( isset( $extra['original_amount'] ) && $extra['original_amount'] > 0) {
-			    $wmf_donor['last_donation_amount'] = $extra['original_amount'];
+				$wmf_donor['last_donation_amount'] = $extra['original_amount'];
 			}
 		}
-      if ($isNegative && $latestDate) {
-        $latestContribution = wmf_civicrm_get_single_contribution_for_contact_by_date($contact_id, $latestDate);
-        $wmf_donor['last_donation_date'] = date('YmdHis', strtotime($latestContribution['receive_date']));
-      $wmf_donor['last_donation_usd'] =  $latestContribution['total_amount'];
-      if (!empty($latestContribution['contribution_source'])) {
-        $source = explode(' ', $latestContribution['contribution_source']);
-        $wmf_donor['last_donation_currency'] = $source[0];
-        $wmf_donor['last_donation_amount'] = $source[1];
-      }
-    }
+		if ( $isNegative && $latestDate ) {
+			$latestContribution = wmf_civicrm_get_single_contribution_for_contact_by_date($contact_id, $latestDate);
+			$wmf_donor['last_donation_date'] = date('YmdHis', strtotime($latestContribution['receive_date']));
+			$wmf_donor['last_donation_usd'] =  $latestContribution['total_amount'];
+			if ( isset( $latestContribution['contribution_source'] ) ) {
+				$source = explode(' ', $latestContribution['contribution_source']);
+				$wmf_donor['last_donation_currency'] = $source[0];
+				$wmf_donor['last_donation_amount'] = $source[1];
+			}
+		}
 		// Get lifetime totals.
-    // Note that in 4.7 a new field is_payment is added to the financial_trxn table.
-    // We should probably switch to that at that point.
-    // For now from_financial_account_id IS NULL seems to filter out the fee lines.
+		// Note that in 4.7 a new field is_payment is added to the financial_trxn table.
+		// We should probably switch to that at that point.
+		// For now from_financial_account_id IS NULL seems to filter out the fee lines.
 		$sql = <<<EOS
 SELECT SUM(t.total_amount) AS lifetime_usd_total
 FROM civicrm_contribution c
@@ -2221,7 +2220,7 @@ AND from_financial_account_id IS NULL
 GROUP BY contact_id
 EOS;
 
-		if(($lifetimeTotal = CRM_Core_DAO::singleValueQuery($sql)) !== FALSE) {
+		if ( ( $lifetimeTotal = CRM_Core_DAO::singleValueQuery( $sql ) ) !== FALSE ) {
 			$wmf_donor['lifetime_usd_total'] = $lifetimeTotal;
 		}
 		if ( !empty( $wmf_donor ) ) {
@@ -2231,8 +2230,8 @@ EOS;
 				'wmf_donor'
 			);
 		}
-        break;
-    }
+		break;
+	}
 }
 
 /**
