@@ -20,14 +20,14 @@ class JpMorganFileTest extends BaseChecksFileTest {
 
     function testParseRow() {
         $data = array(
-            'ACCOUNT NAME' => 'Testes EUR_Public',
-            'CURRENCY' => 'EUR',
-            'REFERENCE' => 'UNAVAILABLE',
-            'Bank Ref Number' => '1234TEST',
-            'TRANSACTION DATE' => '04/01/2000',
-            'TRANSACTION TYPE' => 'FOO CREDIT RECEIVED',
-            'VALUE DATE' => $this->strtime,
-            'CREDITS' => '5.50',
+            'Account Name' => 'Testes EUR_Public',
+            'Currency' => 'EUR',
+            'Customer Reference' => 'UNAVAILABLE',
+            'Bank Reference' => '1234TEST',
+            'Transaction Date' => '04/01/2000',
+            'Description' => 'FOO CREDIT RECEIVED',
+            'Value Date' => $this->strtime,
+            'Credit Amount' => '5.50',
         );
         $expected_normal = array(
             'contact_source' => 'check',

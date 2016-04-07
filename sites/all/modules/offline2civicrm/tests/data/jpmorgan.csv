@@ -1,2 +1,2 @@
-ACCOUNT NAME,CURRENCY,REFERENCE,Bank Ref Number,TRANSACTION DATE,TRANSACTION TYPE,VALUE DATE,CREDITS
+Account Name,Currency,Customer Reference,Bank Reference,Transaction Date,Description,Value Date,Credit Amount
 Testes EUR_Public,EUR,UNAVAILABLE,1234TEST,04/01/2000,FOO CREDIT RECEIVED,04/02/2000,5.50
