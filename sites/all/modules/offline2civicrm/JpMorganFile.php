@@ -3,14 +3,14 @@
 class JpMorganFile extends ChecksFile {
     protected function getRequiredColumns() {
         return array(
-            'ACCOUNT NAME',
-            'CURRENCY',
-            'REFERENCE',
-            'Bank Ref Number',
-            'TRANSACTION DATE',
-            'TRANSACTION TYPE',
-            'VALUE DATE',
-            'CREDITS',
+            'Account Name',
+            'Currency',
+            'Customer Reference',
+            'Bank Reference',
+            'Transaction Date',
+            'Description',
+            'Value Date',
+            'Credit Amount',
         );
     }
 
@@ -22,12 +22,12 @@ class JpMorganFile extends ChecksFile {
 
     protected function getFieldMapping() {
         return array(
-            'ACCOUNT NAME' => 'gateway_account',
-            'Bank Ref Number' => 'gateway_txn_id',
-            'CREDITS' => 'gross',
-            'CURRENCY' => 'currency',
-            'TRANSACTION DATE' => 'date',
-            'VALUE DATE' => 'settlement_date',
+            'Account Name' => 'gateway_account',
+            'Bank Reference' => 'gateway_txn_id',
+            'Credit Amount' => 'gross',
+            'Currency' => 'currency',
+            'Transaction Date' => 'date',
+            'Value Date' => 'settlement_date',
         );
     }
 
