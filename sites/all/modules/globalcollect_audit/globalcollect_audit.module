@@ -1017,34 +1017,40 @@ function globalcollect_audit_mark_rfd_cbk( $missing ){
 	globalcollect_audit_echo('Marking refunds and chargebacks');
 	$count = 0;
 	foreach ($missing as $index => $wr1) {
-    //get the real order ID.
-    $parents = globalcollect_audit_get_contributions_from_whatever_this_is(wr1_order_id($wr1));
-    $parent = null;
-    if (is_array($parents) && !empty($parents)) {
-      $parent = array_shift($parents);
-    }
+		if ( !wr1_is_negative_txn( $wr1 ) ) {
+			continue;
+		}
+		//get the real order ID.
+		$parents = globalcollect_audit_get_contributions_from_whatever_this_is( wr1_order_id( $wr1 ) );
+		$parent = null;
+		if ( is_array( $parents ) && !empty( $parents ) ) {
+			$parent = array_shift( $parents );
+		}
 
-    if (is_null($parent) || !array_key_exists('gateway_txn_id', $parent)) {
-      globalcollect_audit_log_error(__FUNCTION__ . ": Could not find parent (or any related) transaction for refund/chargeback, but that should be impossible to do here... " . wr1_order_id($wr1), 'MISSING_PARENT');
-    } else {
-      $real_oid = $parent['gateway_txn_id'];
-
-      if (wr1_is_negative_txn($wr1)) {
-        $send_message = array(
-          'gateway_parent_id' => $real_oid, //gateway transaction ID
-          'gross_currency' => wr1_currency($wr1), //currency code
-          'gross' => wr1_amount($wr1) / 100, //amount
-          'date' => wr1_date_to_timestamp($wr1), //timestamp
-          'gateway' => 'globalcollect', //lcase
-          'type' => wr1_get_negative_type($wr1), //refund or chargeback
-        );
-        echo print_r($send_message, true);
-        globalcollect_audit_send_stomp('refund', $send_message);
-        $count += 1;
-        globalcollect_audit_echo('.');
-      }
-      unset($missing[$index]); //only unset if we killed it
-    }
+		if ( is_null( $parent ) || !array_key_exists( 'gateway_txn_id', $parent ) ) {
+			globalcollect_audit_log_error(
+				__FUNCTION__ .
+				    ': Could not find parent (or any related) transaction for refund/chargeback, ' .
+				    'but that should be impossible to do here... ' .
+				    wr1_order_id( $wr1 ),
+				'MISSING_PARENT'
+			);
+		} else {
+			$real_oid = $parent['gateway_txn_id'];
+			$send_message = array(
+				'gateway_parent_id' => $real_oid, //gateway transaction ID
+				'gross_currency' => wr1_currency( $wr1 ), //currency code
+				'gross' => wr1_amount( $wr1 ) / 100, //amount
+				'date' => wr1_date_to_timestamp( $wr1 ), //timestamp
+				'gateway' => 'globalcollect', //lcase
+				'type' => wr1_get_negative_type( $wr1 ), //refund or chargeback
+			);
+			echo print_r( $send_message, true );
+			globalcollect_audit_send_stomp( 'refund', $send_message );
+			$count += 1;
+			globalcollect_audit_echo( '.' );
+			unset( $missing[$index] ); //only unset if we killed it
+		}
 	}
 	globalcollect_audit_results_ball( 'refunds/chargebacks', $count );
 	return $missing;
