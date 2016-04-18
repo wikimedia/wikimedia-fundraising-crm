@@ -1849,11 +1849,19 @@ function wmf_civicrm_mark_refund(
     }
     $dbTransaction = new CRM_Core_Transaction();
 
+    // TODO: These are already getting normalized from processor codes in the
+    // classes that call this function so this is a bit redundant.
+    $validTypes = array(
+        'refund' => 'Refunded',
+        'chargeback' => 'Chargeback',
+        'cancel' => 'Cancelled'
+    );
+
     try {
       civicrm_api3('Contribution', 'create', array(
         'id' => $contribution_id,
         'debug' => 1,
-        'contribution_status_id' => ($refund_type == 'refund' ? 'Refunded' : 'Chargeback'),
+        'contribution_status_id' => $validTypes[$refund_type],
         'cancel_date' => wmf_common_date_unix_to_civicrm($refund_date),
         'refund_trxn_id' => $refund_gateway_txn_id,
       ));
