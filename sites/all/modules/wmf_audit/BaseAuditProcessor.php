@@ -212,6 +212,16 @@ abstract class BaseAuditProcessor {
 	}
 
 	/**
+	 * Checks the array to see if the data inside is describing a cancel.
+	 * @param aray $record The transaction we would like to know is a cancel or
+	 * not.
+	 * @return boolean true if it is, otherwise false
+	 */
+	protected function record_is_cancel( $record ) {
+		return ( array_key_exists( 'type', $record ) && $record['type'] === 'cancel' );
+	}
+
+	/**
 	 * Return a date in the format YYYYMMDD for the given record
 	 * @param array $record A transaction, or partial transaction
 	 * @return string Date in YYYYMMDD format
@@ -1006,6 +1016,10 @@ abstract class BaseAuditProcessor {
 
 		if ( $this->record_is_chargeback( $record ) ) {
 			return 'b';
+		}
+
+		if ( $this->record_is_cancel( $record ) ) {
+			return 'x';
 		}
 
 		if ( $record['payment_method'] === 'cc' ) {
