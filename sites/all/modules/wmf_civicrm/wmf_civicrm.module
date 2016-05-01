@@ -2243,11 +2243,11 @@ EOS;
 }
 
 /**
- * Implements hook_logTableSpec().
+ * Implements hook_alterLogTables().
  *
  * @param array $logTableSpec
  */
-function wmf_civicrm_civicrm_logTableSpec(&$logTableSpec) {
+function wmf_civicrm_civicrm_alterLogTables(&$logTableSpec) {
   $logTableSpec['wmf_donor'] = array();
   $logTableSpec['wmf_contribution_extra'] = array();
   $contactReferences = CRM_Dedupe_Merger::cidRefs();
