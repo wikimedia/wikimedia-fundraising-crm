@@ -424,9 +424,13 @@ abstract class BaseAuditProcessor {
 					}
 					wmf_audit_echo( 'X' );
 				} else {
-					//@TODO: Some version of makemissing should make these, too. Gar.
-					$remaining['negative'][$this->get_record_human_date( $record )][] = $record;
-					wmf_audit_echo( '.' );
+					// Ignore cancels with no parents because they must have
+					// been cancelled before reaching Civi.
+					if ( ! $this->record_is_cancel( $record ) ) {
+						//@TODO: Some version of makemissing should make these, too. Gar.
+						$remaining['negative'][$this->get_record_human_date( $record )][] = $record;
+						wmf_audit_echo( '.' );
+					}
 				}
 			}
 			wmf_audit_echo( "Processed $neg_count 'negative' transactions\n" );
@@ -983,7 +987,11 @@ abstract class BaseAuditProcessor {
 			'recurring' => array(),
 		);
 		foreach ( $transactions as $transaction ) {
-			if ( $this->record_is_refund( $transaction ) || $this->record_is_chargeback( $transaction ) ) { //negative
+			if (
+				$this->record_is_refund( $transaction ) ||
+				$this->record_is_chargeback( $transaction ) ||
+				$this->record_is_cancel( $transaction )
+			) { //negative
 				if ( $this->negative_transaction_exists_in_civi( $transaction ) === false ) {
 					wmf_audit_echo( '-' ); //add a subtraction. I am the helpfulest comment ever.
 					$missing['negative'][] = $transaction;
