@@ -42,6 +42,52 @@ class Message {
             $this->defaults = json_decode( file_get_contents( $path ), true );
         }
     }
+
+    /**
+     * Generates random data for queue and donation insertion testing
+     */
+    public static function generateRandom() {
+        //language codes
+        $lang = array( 'en', 'de', 'fr' );
+
+        $currency_codes = array( 'USD', 'GBP', 'EUR', 'ILS' );
+        shuffle( $currency_codes );
+        $currency = ( mt_rand( 0, 1 ) ) ? 'USD' : $currency_codes[0];
+
+        $message = array(
+            'contribution_tracking_id' => '',
+            'optout' => mt_rand( 0, 1 ),
+            'anonymous' => mt_rand( 0, 1 ),
+            'comment' => mt_rand(),
+            'utm_source' => mt_rand(),
+            'utm_medium' => mt_rand(),
+            'utm_campaign' => mt_rand(),
+            'language' => $lang[array_rand( $lang )],
+            'referrer' => 'http://example.com/' . mt_rand(),
+            'email' => mt_rand() . '@example.com',
+            'first_name' => mt_rand(),
+            'middle_name' => mt_rand(),
+            'last_name' => mt_rand(),
+            'street_address' => mt_rand(),
+            'supplemental_address_1' => '',
+            'city' => 'San Francisco',
+            'state_province' => 'CA',
+            'country' => 'USA',
+            'countryID' => 'US',
+            'postal_code' => mt_rand( 2801, 99999 ),
+            'gateway' => 'insert_test',
+            'gateway_txn_id' => mt_rand(),
+            'response' => mt_rand(),
+            'currency' => $currency,
+            'original_currency' => $currency_codes[0],
+            'original_gross' => mt_rand( 0, 10000 ) / 100,
+            'fee' => '0',
+            'gross' => mt_rand( 0, 10000 ) / 100,
+            'net' => mt_rand( 0, 10000 ) / 100,
+            'date' => date( 'r' ), //time(),
+        );
+        return $message;
+    }
 }
 
 class TransactionMessage extends Message {
