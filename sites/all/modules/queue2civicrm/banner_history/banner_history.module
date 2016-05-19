@@ -106,6 +106,14 @@ function banner_history_process_message( $msg ) {
 			'Missing banner history or contribution tracking ID.' );
 	}
 
+	if (
+		!is_numeric( $contributionTrackingId ) ||
+		!preg_match( '/^[0-9a-f]{16,20}$/', $bannerHistoryId )
+	) {
+		throw new WmfException( 'BANNER_HISTORY',
+			'Invalid data in banner history message.' );
+	}
+
 	watchdog( 'banner_history', "About to add row for $bannerHistoryId",
 		array(), WATCHDOG_INFO);
 
