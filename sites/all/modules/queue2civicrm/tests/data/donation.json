@@ -28,7 +28,6 @@
     "postal_code": "11122",
     "postal_code_2": "11122",
     "premium_language": "en",
-    "referrer": "http://payments.local.net/index.php/Special:GlobalCollectGateway?uselang=en&amp;masthead=none&amp;form_name=RapidHtml&amp;text_template=2010/JimmyQuote-green&amp;appeal=JimmyQuote-green&amp;language=ar&amp;ffname=cc_vma&amp;amount=12.34&amp;currency_code=BRL",
     "response": "Original Response Status (pre-SET_PAYMENT): 600",
     "size": "",
     "state_province_2": "AL",

@@ -116,7 +116,6 @@ class AdyenAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 						'last_name' => 'asdff',
 						'payment_method' => 'cc',
 						'payment_submethod' => 'visa',
-						'referrer' => 'https://payments.wikimedia.org/index.php?title=Special:AdyenGateway&amp;payment_method=cc&amp;language=en&amp;country=US&amp;currency_code=USD&amp;amount=1',
 						'user_ip' => '77.177.177.77',
 						'utm_campaign' => 'adyen_audit',
 						'utm_medium' => 'adyen_audit',
