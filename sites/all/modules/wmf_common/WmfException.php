@@ -71,6 +71,7 @@ class WmfException extends Exception {
         ),
         'BANNER_HISTORY' => array(
              'reject' => TRUE,
+             'no-email' => TRUE,
         ),
 
         // other errors
