@@ -21,7 +21,7 @@ class QueueConsumer {
         $this->emptyQueue();
         //queue2civicrm_insertmq_form_submit($form, &$form_state) $form_state['values'] appears to be where all the $key=>$value form pairs live.
         ////Just fake it out. :p queue2civicrm_generate_message() will do nicely.
-        $message = queue2civicrm_generate_message();
+        $message = Message::generateRandom();
         //I think we want gateway_txn_id and contribution_tracking_id to match much the same way we did before.
         $message['gateway_txn_id'] = "civiTest";
         $message['contribution_tracking_id'] = $message['gateway_txn_id'];
@@ -147,7 +147,7 @@ class QueueConsumer {
 
         $messages_in = array();
         for ($i=0; $i<10; ++$i){
-            $message = queue2civicrm_generate_message();
+            $message = Message::generateRandom();
             unset($message['contribution_tracking_id']);
             $message['gateway'] = 'CiviTest' . $i;
             $message['gateway_txn_id'] = time();

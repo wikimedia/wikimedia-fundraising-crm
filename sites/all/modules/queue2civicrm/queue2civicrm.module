@@ -26,18 +26,9 @@ function queue2civicrm_menu() {
 
   $items['admin/config/queue2civicrm/test'] = array(
     'title' => 'Test',
-    'description' => 'Run a test message through the queue.',
+    'description' => 'Test queue connectivity.',
     'access arguments' => array('administer queue2civicrm'),
     'page callback' => 'queue2civicrm_test',
-  );
-
-  $items['admin/config/queue2civicrm/insert'] = array(
-    'title' => 'Insert item',
-    'description' => 'Insert a message into the queue.',
-    'access arguments' => array('administer queue2civicrm'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('queue2civicrm_insertmq_form'),
-    'weight' => 10,
   );
 
   return $items;
@@ -308,103 +299,4 @@ function queue2civicrm_import_completion_message( &$msg ) {
         $msg = $msg + $data;
     }
     return $pending;
-}
-
-/**
- * Make the form to insert a test message into the queue
- */ 
-function queue2civicrm_insertmq_form() {
-  $message = queue2civicrm_generate_message();
-
-  $form['submit1'] = array(
-    '#value' => 'Insert into queue',
-    '#type' => 'submit'
-  );
-  
-  $form['queue'] = array(
-    '#type' => 'textfield',
-    '#title' => 'Queue to submit to',
-    '#default_value' => variable_get( 'queue2civicrm_subscription', '/queue/test_donations' ),
-    '#required' => TRUE
-  );
-  
-  foreach ( $message as $key => $value ) {
-    $form[$key] = array(
-      '#type' => 'textfield',
-      '#title' => $key,
-      '#default_value' => $value
-    );
-  }
-
-  $form['submit2'] = array(
-    '#value' => 'Insert into queue',
-    '#type' => 'submit'
-  );
-
-  return $form;
-}
-
-/** 
- * Implementation of hook_form_submit
- *
- * Submits a test message to the queue
- */
-function queue2civicrm_insertmq_form_submit($form, &$form_state) {
-    $q = queue2civicrm_stomp();
-	  $result = $q->enqueue( drupal_json_encode($form_state['values']), array('persistent' => true), $form_state['values']['queue'] );
-	  $q->disconnect();
-	  if (!$result) {
-      watchdog('queue2civicrm','Send to queue failed for this message: <pre>' . check_plain(print_r($form_state['values'], TRUE)) . '</pre>');
-      $content = 'Failed to add item to the queue.';
-      drupal_set_message($content, 'error');
-    }
-	  $content = 'Success adding item to the queue!';
-	  watchdog('queue2civicrm','Successfully added the following to the queue: <pre>' . check_plain(print_r($form_state['values'], TRUE)) . '</pre>');
-	  drupal_set_message($content);
-}
-
-/**
- * Generates random data for queue and donation insertion testing
- */
-function queue2civicrm_generate_message() {
-  //language codes
-  $lang = array('en','de','fr');
-
-  $currency_codes = array('USD', 'GBP', 'EUR', 'ILS');
-  shuffle($currency_codes);
-  $currency = (mt_rand(0,1)) ? 'USD' : $currency_codes[0];
-  
-  $message = array(
-	'contribution_tracking_id' => '',
-	'optout'                 => mt_rand(0,1),
-	'anonymous'              => mt_rand(0,1),
-	'comment'                => mt_rand(),
-	'utm_source'             => mt_rand(),
-	'utm_medium'             => mt_rand(),
-	'utm_campaign'           => mt_rand(),
-	'language'               => $lang[array_rand($lang)],
-	'referrer'               => 'http://example.com/'.mt_rand(),
-	'email'                  => mt_rand() . '@example.com',
-	'first_name'             => mt_rand(),
-	'middle_name'            => mt_rand(),
-	'last_name'              => mt_rand(),
-	'street_address'         => mt_rand(),
-	'supplemental_address_1' => '',
-	'city'                   => 'San Francisco',
-	'state_province'         => 'CA',
-	'country'                => 'USA',
-	'countryID'              => 'US',
-	'postal_code'            => mt_rand(02801,99999),
-	'gateway'                => 'insert_test',
-	'gateway_txn_id'         => mt_rand(),
-	'response'               => mt_rand(),
-	'currency'               => $currency,
-	'original_currency'      => $currency_codes[0],
-	'original_gross'         => mt_rand(0,10000)/100,
-	'fee'                    => '0',
-	'gross'                  => mt_rand(0,10000)/100,
-	'net'                    => mt_rand(0,10000)/100,
-	'date'                   => date('r'), //time(),
-  );
-  return $message;
 }
