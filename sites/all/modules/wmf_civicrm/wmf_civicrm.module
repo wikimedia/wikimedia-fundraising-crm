@@ -2031,6 +2031,7 @@ function wmf_civicrm_merge_contacts( $main_contact_id, $other_contact_id ) {
 function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) {
     switch ( $type ) {
       case 'batch' :
+        CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(1 => array(uniqid() . CRM_Utils_String::createRandom(CRM_Utils_String::ALPHANUMERIC, 4), 'String')));
         if (isset($refs['fields_in_conflict'])){
           $wmfCalculatedFields = wmf_civicrm_get_calculated_fields();
           foreach ($wmfCalculatedFields as $wmfCalculatedField) {
