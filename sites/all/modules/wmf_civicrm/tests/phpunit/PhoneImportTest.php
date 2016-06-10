@@ -5,15 +5,10 @@
  * @group WmfCivicrm
  */
 class PhoneImportTest extends BaseWmfDrupalPhpUnitTestCase {
-    public static function getInfo() {
-        return array(
-            'name' => 'Phone Number',
-            'group' => 'Pipeline',
-            'description' => 'Ensure we record phone numbers.',
-        );
-    }
 
     public function testPhoneImport() {
+      $this->refreshStripFunction();
+
         $phone = '555-555-5555';
 
         $msg = array(
@@ -40,5 +35,16 @@ class PhoneImportTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals( wmf_civicrm_get_default_location_type_id(), $api->values[0]->location_type_id );
         $this->assertEquals( CRM_Core_OptionGroup::getValue('phone_type', 'phone'), $api->values[0]->phone_type_id );
     }
+
+  /**
+   * This SQL function is not created during the test at the right time & it seems the triggers ARE
+   * created despite it not being present. This is not an issue on live (where the function seems to already exist).
+   */
+  public function refreshStripFunction() {
+    civicrm_initialize();
+    CRM_Core_DAO::executeQuery(CRM_Contact_BAO_Contact::DROP_STRIP_FUNCTION_43);
+    CRM_Core_DAO::executeQuery(CRM_Contact_BAO_Contact::CREATE_STRIP_FUNCTION_43);
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_phone SET phone_numeric = civicrm_strip_non_numeric(phone)");
+  }
 
 }
