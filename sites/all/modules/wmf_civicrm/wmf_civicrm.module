@@ -750,15 +750,7 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
             }
             break;
         case 'paypal':
-        case 'paypal_ec':
-            // These PayPal flows are distinct gateway classes, but are
-            // recorded together.  They might share an account, although the
-            // configuration will have to be broken up across gateway globals.
             $payment_instrument = 'Paypal';
-            // FIXME: Case is spelled "PayPal", but existing records must be
-            // migrated when we do that.
-
-            // Validate method if provided.
             if ( array_key_exists( 'payment_method', $msg ) and strtolower( $msg['payment_method'] ) !== 'paypal' ) {
                 watchdog( 'wmf_civicrm', 'payment_method constraint violated: gateway Paypal, but method=@method ; gateway_txn_id=@id', array( '@method' => $msg['payment_method'], '@id' => $msg['gateway_txn_id'] ), WATCHDOG_DEBUG );
             }
