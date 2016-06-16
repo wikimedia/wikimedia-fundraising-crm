@@ -2047,26 +2047,6 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
         }
         break;
 
-    case 'cidRefs':
-        // adds our custom tables, except for wmf_donor, which is recalculated
-        $contact_types = array( "Contact" );
-        $contact_types = array_merge( CRM_Contact_BAO_ContactType::basicTypes(), $contact_types );
-        foreach ( $contact_types as &$type ) {
-            $type = "'" . $type . "'";
-        }
-        $contact_types = implode( ", ", $contact_types );
-
-        $sql = <<<EOS
-SELECT table_name
-FROM civicrm_custom_group
-WHERE extends IN ( $contact_types )
-AND table_name <> 'wmf_donor'
-EOS;
-        $dao = CRM_Core_DAO::executeQuery( $sql );
-        while ( $dao->fetch() ) {
-            $refs[ $dao->table_name ][] = 'entity_id';
-        }
-        break;
     }
 }
 
