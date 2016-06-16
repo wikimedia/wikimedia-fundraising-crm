@@ -63,13 +63,27 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'contact_id' => $this->contactID,
       'financial_type_id' => 'Cash',
       'total_amount' => 10,
-      'currencty' => 'USD',
+      'currency' => 'USD',
+      // Should cause 'is_2014 to be true.
+      'receive_date' => '2014-08-04',
+      wmf_civicrm_get_custom_field_name('original_currency') => 'NZD',
+      wmf_civicrm_get_custom_field_name('original_amount') => 8,
     ));
     $this->callAPISuccess('Contribution', 'create', array(
       'contact_id' => $this->contactID2,
       'financial_type_id' => 'Cash',
       'total_amount' => 5,
-      'currencty' => 'USD',
+      'currency' => 'USD',
+      // Should cause 'is_2012_donor to be true.
+      'receive_date' => '2013-01-04',
+    ));
+    $this->callAPISuccess('Contribution', 'create', array(
+      'contact_id' => $this->contactID2,
+      'financial_type_id' => 'Cash',
+      'total_amount' => 9,
+      'currency' => 'NZD',
+      // Should cause 'is_2015_donor to be true.
+      'receive_date' => '2016-04-04',
     ));
     $contact = $this->callAPISuccess('Contact', 'get', array(
       'id' => $this->contactID,
@@ -84,10 +98,33 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $contact = $this->callAPISuccess('Contact', 'get', array(
       'id' => $this->contactID,
       'sequential' => 1,
-      'return' => array(wmf_civicrm_get_custom_field_name('lifetime_usd_total'), wmf_civicrm_get_custom_field_name('do_not_solicit')),
+      'return' => array(
+        wmf_civicrm_get_custom_field_name('lifetime_usd_total'),
+        wmf_civicrm_get_custom_field_name('do_not_solicit'),
+        wmf_civicrm_get_custom_field_name('last_donation_amount'),
+        wmf_civicrm_get_custom_field_name('last_donation_currency'),
+        wmf_civicrm_get_custom_field_name('last_donation_usd'),
+        wmf_civicrm_get_custom_field_name('last_donation_date'),
+        wmf_civicrm_get_custom_field_name('is_2011_donor'),
+        wmf_civicrm_get_custom_field_name('is_2012_donor'),
+        wmf_civicrm_get_custom_field_name('is_2013_donor'),
+        wmf_civicrm_get_custom_field_name('is_2014_donor'),
+        wmf_civicrm_get_custom_field_name('is_2015_donor'),
+        wmf_civicrm_get_custom_field_name('is_2016_donor'),
+      ),
     ));
-    $this->assertEquals(15, $contact['values'][0][wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
+    $this->assertEquals(24, $contact['values'][0][wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
     $this->assertEquals(1, $contact['values'][0][wmf_civicrm_get_custom_field_name('do_not_solicit')]);
+    $this->assertEquals(0, $contact['values'][0][wmf_civicrm_get_custom_field_name('is_2011_donor')]);
+    $this->assertEquals(1, $contact['values'][0][wmf_civicrm_get_custom_field_name('is_2012_donor')]);
+    $this->assertEquals(0, $contact['values'][0][wmf_civicrm_get_custom_field_name('is_2013_donor')]);
+    $this->assertEquals(1, $contact['values'][0][wmf_civicrm_get_custom_field_name('is_2014_donor')]);
+    $this->assertEquals(1, $contact['values'][0][wmf_civicrm_get_custom_field_name('is_2015_donor')]);
+    $this->assertEquals(0, $contact['values'][0][wmf_civicrm_get_custom_field_name('is_2016_donor')]);
+    $this->assertEquals(9, $contact['values'][0][wmf_civicrm_get_custom_field_name('last_donation_amount')]);
+    $this->assertEquals(9, $contact['values'][0][wmf_civicrm_get_custom_field_name('last_donation_usd')]);
+    $this->assertEquals('2016-04-04 00:00:00', $contact['values'][0][wmf_civicrm_get_custom_field_name('last_donation_date')]);
+    $this->assertEquals('NZD', $contact['values'][0][wmf_civicrm_get_custom_field_name('last_donation_currency')]);
 
     // Now lets check the one to be deleted has a do_not_solicit = 0.
     $this->callAPISuccess('Contact', 'create', array(

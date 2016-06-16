@@ -2008,7 +2008,12 @@ function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_statu
 }
 
 /**
- * Implementation of hook_civicrm_merge
+ * Implementation of hook_civicrm_merge().
+ * @param string $type
+ * @param array $refs
+ * @param int $mainId
+ * @param int $otherId
+ * @param array $tables
  */
 function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) {
     switch ( $type ) {
@@ -2027,9 +2032,82 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
             }
           }
         }
+
+        // Only bother to calculate the totals if we are already starting to merge.
+        if (empty($refs['fields_in_conflict'])) {
+          wmf_civicrm_add_calculated_fields_to_migration_info($refs['migration_info'], $mainId, $otherId);
+        }
         break;
 
     }
+}
+
+/**
+ * Add the calculated fields to the migration info when merging.
+ *
+ * The contributions have already been merged so we can query the DB for this info. We
+ * are safeguarded against change by the test in our mergeTest although it makes sense to add
+ * a similar test upstream too.
+ *
+ * Doing this here rather than post merge means there are less changes to these values, meaning it
+ * is easier to revert.
+ *
+ * @param array $migrationInfo
+ * @param int $contactID
+ * @params int $otherID
+ *   ID of the contact to be deleted.
+ */
+function wmf_civicrm_add_calculated_fields_to_migration_info(&$migrationInfo, $contactID, $otherID) {
+  $select = "
+    SELECT
+      SUM(total_amount) AS lifetime_usd_total,
+      MAX(receive_date) AS last_donation_date,
+      SUM(COALESCE(total_amount, 0)) as total_usd_amount
+   ";
+  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
+    $nextYear = $year + 1;
+    $select .= ", MAX(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', 1, 0)) as is_{$year}_donor";
+  }
+  $query = $select . "
+    FROM
+      civicrm_contribution c
+      LEFT JOIN wmf_contribution_extra x ON x.entity_id = c.contact_id
+      WHERE contact_id  IN ($contactID, $otherID)
+  ";
+  $result = CRM_Core_DAO::executeQuery($query);
+  $migrationInfo = _wmf_civicrm_add_result_fields_to_migration_info($migrationInfo, $result);
+  $query = "
+    SELECT
+      COALESCE(x.original_currency, currency) as last_donation_currency,
+      COALESCE(x.original_amount, total_amount) as last_donation_amount,
+      total_amount as last_donation_usd
+
+    FROM
+      civicrm_contribution c
+      LEFT JOIN wmf_contribution_extra x ON x.entity_id = c.id
+      WHERE contact_id  IN ($contactID, $otherID) AND receive_date = %1 LIMIT 1";
+
+  $lastDate = $migrationInfo['move_' . wmf_civicrm_get_custom_field_name('last_donation_date')];
+  $result = CRM_Core_DAO::executeQuery($query, array(
+    1 => array($lastDate,
+    'String'
+  )));
+  $migrationInfo = _wmf_civicrm_add_result_fields_to_migration_info($migrationInfo, $result);
+}
+
+/**
+ * @param $migrationInfo
+ * @param $result
+ * @return mixed
+ */
+function _wmf_civicrm_add_result_fields_to_migration_info($migrationInfo, $result) {
+  $result->fetch();
+  foreach (wmf_get_calculated_field_names() as $field) {
+    if (isset($result->$field)) {
+      $migrationInfo['move_' . wmf_civicrm_get_custom_field_name($field)] = $result->$field;
+    }
+  }
+  return $migrationInfo;
 }
 
 /**
@@ -2044,22 +2122,32 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
  *   - custom_2
  */
 function wmf_civicrm_get_calculated_fields() {
+  $fieldNames = wmf_get_calculated_field_names();
+  $fieldNames[] = 'do_not_solicit';
+  $customFields = array();
+  foreach ($fieldNames as $fieldName) {
+    $customFields[] = wmf_civicrm_get_custom_field_name($fieldName);
+  }
+  return $customFields;
+}
+
+/**
+ * Get the names of the calculated fields.
+ *
+ * @return array
+ */
+function wmf_get_calculated_field_names() {
   $fieldNames = array(
     'last_donation_date',
     'last_donation_currency',
     'last_donation_amount',
     'last_donation_usd',
     'lifetime_usd_total',
-    'do_not_solicit',
   );
   for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
     $fieldNames[] = 'is_' . $year . '_donor';
   }
-  $customFields = array();
-  foreach ($fieldNames as $fieldName) {
-    $customFields[] = wmf_civicrm_get_custom_field_name($fieldName);
-  }
-  return $customFields;
+  return $fieldNames;
 }
 
 /**
@@ -2070,9 +2158,6 @@ function wmf_civicrm_civicrm_post( $op, $type, $id, &$entity ) {
 	if ( $type === 'Contribution' ) {
 		wmf_civicrm_civicrm_post_Contribution( $op, $id, $entity );
 	}
-  if ($op == 'merge') {
-    wmf_civicrm_calculate_donor_fields($id);
-  }
 }
 
 /**
