@@ -108,12 +108,34 @@ function fredge_payments_init_process_message($msg) {
   watchdog('fredge', "Beginning processing of payments-init message for $txnid: " . json_encode($msg), array(), WATCHDOG_INFO);
 
   $body = json_decode($msg->body, TRUE);
-  $data = fredge_prep_data($body, 'payments_initial', $txnid, true);
+
+  $id = 0;
+  $inserting = true;
+
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push('fredge');
-  $id = db_insert('payments_initial')
-    ->fields($data)
-    ->execute();
+  $query = 'SELECT id FROM payments_initial WHERE contribution_tracking_id = :ct_id AND order_id = :order_id LIMIT 1';
+  $result = db_query( $query, array(
+    ':ct_id' => $msg['contribution_tracking_id'],
+    ':order_id' => $msg['order_id']
+  ) );
+  if ( $result->rowCount() === 1 ){
+    $id = $result->fetch()->id;
+    $inserting = false;
+  }
+
+  $data = fredge_prep_data($body, 'payments_initial', $txnid, $inserting);
+
+  if ( $inserting ) {
+    db_insert( 'payments_initial' )
+      ->fields( $data )
+      ->execute();
+  } else {
+    db_update( 'payments_initial' )
+      ->fields( $data )
+      ->condition( 'id', $id )
+      ->execute();
+  }
 }
 
 /**
