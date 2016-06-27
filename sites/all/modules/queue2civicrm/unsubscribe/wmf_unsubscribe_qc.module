@@ -38,7 +38,7 @@ function unsubscribe_qc_settings() {
     '#type'          => 'textfield',
     '#title'         => t('Subscription path'),
     '#required'      => TRUE,
-    '#default_value' => variable_get('unsubscribe_queue', '/queue/unsubscribe_test'),
+    '#default_value' => variable_get('unsubscribe_queue', '/queue/unsubscribe'),
     '#description'   => t('Queue for unsubscribe items'),
   );
 
@@ -85,7 +85,7 @@ function unsubscribe_batch_process() {
   civicrm_initialize();
 
   $processed = queue2civicrm_stomp()->dequeue_loop(
-    variable_get('unsubscribe_queue', '/queue/unsubscribe-test'),
+    variable_get('unsubscribe_queue', '/queue/unsubscribe'),
     variable_get('unsubscribe_batch', 0),
     variable_get('unsubscribe_batch_time', 0),
     'unsubscribe_process_message'

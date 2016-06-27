@@ -33,7 +33,7 @@ function fredge_qc_settings() {
     '#type' => 'textfield',
     '#title' => t('Payments-init subscription path'),
     '#required' => TRUE,
-    '#default_value' => variable_get('fredge_payments_init_queue', '/queue/payments-init_test'),
+    '#default_value' => variable_get('fredge_payments_init_queue', '/queue/payments-init'),
     '#description' => t('Queue for payments-init items'),
   );
 
@@ -41,7 +41,7 @@ function fredge_qc_settings() {
     '#type' => 'textfield',
     '#title' => t('Payments-antifraud subscription path'),
     '#required' => TRUE,
-    '#default_value' => variable_get('fredge_payments_antifraud_queue', '/queue/payments-antifraud_test'),
+    '#default_value' => variable_get('fredge_payments_antifraud_queue', '/queue/payments-antifraud'),
     '#description' => t('Queue for payments-antifraud items'),
   );
 //  payments-antifraud
@@ -69,11 +69,11 @@ function fredge_batch_process() {
 
   $dequeue_params = array(
     'init' => array(
-      'queue' => variable_get('fredge_payments_init_queue', '/queue/payments-init_test'),
+      'queue' => variable_get('fredge_payments_init_queue', '/queue/payments-init'),
       'callback' => 'fredge_payments_init_process_message'
     ),
     'fraud' => array(
-      'queue' => variable_get('fredge_payments_antifraud_queue', '/queue/payments-antifraud_test'),
+      'queue' => variable_get('fredge_payments_antifraud_queue', '/queue/payments-antifraud'),
       'callback' => 'fredge_payments_antifraud_process_message'
     ),
   );
