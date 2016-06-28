@@ -37,6 +37,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'is_pay_later',
       'campaign_id',
       'tax_amount',
+      'revenue_recognition_date',
     );
 
     protected $moneyFields = array(
