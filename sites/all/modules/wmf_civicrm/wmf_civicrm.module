@@ -2008,24 +2008,6 @@ function wmf_civicrm_set_gateway_status( int $contribution_id, string $raw_statu
 }
 
 /**
- * Dedupe helper.
- */
-function wmf_civicrm_merge_contacts( $main_contact_id, $other_contact_id ) {
-    $api = civicrm_api_classapi();
-
-    $cidRefs = CRM_Dedupe_Merger::cidRefs();
-    $eidRefs = CRM_Dedupe_Merger::eidRefs();
-    $moveTables = array_merge( array_keys( $cidRefs ), array_keys( $eidRefs ) );
-
-    CRM_Dedupe_Merger::moveContactBelongings( $main_contact_id, $other_contact_id, $moveTables );
-
-    $api->Contact->delete( array(
-        'contact_id' => $other_contact_id,
-        'version' => 3
-    ) );
-}
-
-/**
  * Implementation of hook_civicrm_merge
  */
 function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) {
