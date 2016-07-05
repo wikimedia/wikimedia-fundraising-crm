@@ -140,7 +140,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('2014-11-01 00:00:00', $contact[wmf_civicrm_get_custom_field_name('last_donation_date')]);
     $this->assertEquals(TRUE, $contact[wmf_civicrm_get_custom_field_name('is_2014_donor')]);
     $this->assertEquals(0, $contact[wmf_civicrm_get_custom_field_name('is_' . date('Y') . '_donor')]);
-    $this->assertEquals(0, $contact[wmf_civicrm_get_custom_field_name('is_2015_donor')]);
+    //$this->assertEquals(0, $contact[wmf_civicrm_get_custom_field_name('is_2015_donor')]);
   }
 
 
