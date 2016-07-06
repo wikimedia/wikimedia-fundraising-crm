@@ -242,15 +242,14 @@ function thank_you_for_contribution( $contribution_id ) {
 	if( !WMFCiviAPICheck::check_api_contribution( $contribution, $contribution_id ) ){
 		// the API result is bad
 		$msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true ) . '</pre>';
-		wmf_common_failmail( 'thank_you', $msg );
-		return false;
+		throw new WmfException( 'GET_CONTRIBUTION', $msg );
 	}
 	// go ahead and remove the extra layer of indirection to make it easier to use
 	$simplified = WMFCiviAPICheck::check_api_simplify( $contribution, $contribution_id );
 	if( !$simplified ){
 		// simplification failed
-		watchdog('thank_you', 'Could not simplify contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true )  . '</pre>', array(), WATCHDOG_ERROR);
-		return false;
+		$msg = 'Could not simplify contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true )  . '</pre>';
+		throw new WmfException( 'GET_CONTRIBUTION', $msg );
 	}
 	$contribution = $simplified;
 
@@ -277,14 +276,15 @@ function thank_you_for_contribution( $contribution_id ) {
 	// check that the API result is a valid contact result
 	if( !WMFCiviAPICheck::check_api_contact( $contact, $contribution[ 'contact_id' ] ) ){
 		// the API result is bad
-		watchdog('thank_you', 'Could not retrieve contact record for: ' . $contribution['contact_id'] . '<pre>' . print_r( $contact, true )  . '</pre>', array(), WATCHDOG_ERROR);
-		return false;
+		$msg = 'Could not retrieve contact record for: ' . $contribution['contact_id'] . '<pre>' . print_r( $contact, true )  . '</pre>';
+		throw new WmfException( 'GET_CONTACT', $msg );
 	}
 	// go ahead and remove the extra layer of indirection to make it easier to use
 	$simplified = WMFCiviAPICheck::check_api_simplify( $contact, $contribution[ 'contact_id' ] );
 	if( !$simplified ){
 		// simplification failed
-		watchdog('thank_you', 'Could not simplify contact record for: ' . $contribution['contact_id']. '<pre>' . print_r( $contact, true ). '</pre>', array(), WATCHDOG_ERROR);
+		$msg = 'Could not simplify contact record for: ' . $contribution['contact_id']. '<pre>' . print_r( $contact, true ). '</pre>';
+		throw new WmfException( 'GET_CONTACT', $msg );
 	}
 	$contact = $simplified;
 
@@ -292,7 +292,7 @@ function thank_you_for_contribution( $contribution_id ) {
     if ( empty( $contact['email'] ) or $contact['email'] === 'nobody@wikimedia.org' ) {
         watchdog('thank_you', 'No email address found. Processing as anonymous.', array(), WATCHDOG_INFO);
         wmf_civicrm_set_no_thank_you( $contribution['contribution_id'], 'anonymous' );
-        return true;
+        return false;
     }
 
     $custom_values = wmf_civicrm_get_custom_values( $contribution_id, array(
@@ -353,9 +353,10 @@ function thank_you_for_contribution( $contribution_id ) {
     if ( $success ) {
 		watchdog('thank_you', "Thank you mail sent successfully for contribution id: $contribution_id to " . $params['recipient_address'], array(), WATCHDOG_INFO);
         thank_you_update_ty_date( $contribution );
+		return true;
     } else {
-		watchdog('thank_you', "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'], array(), WATCHDOG_ERROR);
-        wmf_civicrm_set_no_thank_you( $contribution_id, 'failed' );
+		$msg = "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'];
+		throw new WmfException( 'BAD_EMAIL', $msg );
     }
 }
 
@@ -430,8 +431,8 @@ function thank_you_send_mail( $params ) {
     if ( $missing ) {
         $as_list = implode( ', ', $missing );
         watchdog( 'thank_you', "Missing stuff from the TY params: {$as_list} " . check_plain(print_r( $params, true )), array(), WATCHDOG_ERROR );
-        wmf_common_failmail( 'thank_you', "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__, $params );
-        return false;
+        $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
+        throw new WmfException( 'MISSING_MANDATORY_DATA', $msg );
     }
 
 	$email = array(
@@ -449,9 +450,8 @@ function thank_you_send_mail( $params ) {
 	$email['html'] = thank_you_render( $params );
 
 	if( $email['html'] == false ){
-		watchdog( 'thank_you', "HTML rendering of template failed in {$params['locale']}.", array(), WATCHDOG_ERROR );
-		wmf_common_failmail( 'thank_you', "FAILED TO RENDER HTML EMAIL in " . __FUNCTION__, $params );
-		return false;
+		$msg = "HTML rendering of template failed in {$params['locale']}.";
+		throw new WmfException( 'UNKNOWN', $msg, $params );
 	}
 
 	$email['subject'] = thank_you_get_subject( $params['locale'] );
@@ -500,7 +500,10 @@ function thank_you_send_mail( $params ) {
 
 		if( strpos( $e->errorMessage(), "Invalid address:" ) === false ){
 			watchdog( 'thank_you', "PhpMailer died unexpectedly: {$e->errorMessage()} at {$e->getTraceAsString()}", array(), WATCHDOG_ERROR );
-			wmf_common_failmail( 'thank_you', "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n" . $e->getTraceAsString(), $debug );
+			$msg = "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n"
+				. __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n"
+				. $e->getTraceAsString();
+			throw new WmfException( 'EMAIL_SYSTEM_FAILURE', $msg, $debug );
 		}
 
         return false;
@@ -511,9 +514,10 @@ function thank_you_send_mail( $params ) {
 			check_plain(print_r($debug, TRUE)) . "\n\n" .
 			$e->getMessage() . '</pre>', array(), WATCHDOG_ERROR);
 
-		wmf_common_failmail( 'thank_you', "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__ . "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString(), $debug );
+		$msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
+			. "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
 
-		return false;
+		throw new WmfException( 'EMAIL_SYSTEM_FAILURE', $msg, $debug );
 	}
 }
 
@@ -585,6 +589,16 @@ function thank_you_get_subject( $locale ) {
 function thank_you_settings_form() {
   $form = array();
 
+  $form['thank_you_enabled'] = array(
+    '#type' => 'radios',
+    '#title' => t('Enable Thank You send job'),
+	'#options' => array(
+	  'false' => t('Do not send Thank You emails'),
+	  'true' => t('Send Thank You emails'),
+	),
+    '#default_value' => variable_get('thank_you_enabled', 'true'),
+  );
+
 	$form['thank_you_unsubscribe_url'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Base URL for the unsubscribe page'),
@@ -618,9 +632,8 @@ function thank_you_settings_form() {
 		'#type' => 'select',
 		'#title' => t('Cron batch size'),
 		'#required' => TRUE,
-		'#default_value' => variable_get('thank_you_batch', 0),
+		'#default_value' => variable_get('thank_you_batch', 1),
 		'#options' => array(
-			0 => '0 (Disable)',
 			1 => 1,
 			5 => 5,
 			10 => 10,
@@ -675,6 +688,13 @@ function thank_you_settings_form() {
     '#required' => TRUE,
   );
 
+  $form['thank_you_failure_threshold'] = array(
+	'#type' => 'textfield',
+    '#title' => t('Number of consecutive failures to allow before disabling thank you job'),
+    '#default_value' => variable_get('thank_you_failure_threshold', 5),
+    '#required' => TRUE,
+  );
+
   return system_settings_form($form);
 }
 
@@ -683,7 +703,12 @@ function thank_you_batch_process(){
 	// the following variables should be set in the module settings, not here
 	$days = variable_get( 'thank_you_days', false );
 	$batch = variable_get( 'thank_you_batch', false );
+	$enabled = variable_get( 'thank_you_enabled', 'true' );
 
+	if ( $enabled === 'false' ) {
+		watchdog( 'thank_you', 'Thank You send job is disabled', array(), WATCHDOG_INFO );
+		return;
+	}
 	if ( !$days ) {
 		watchdog( "thank_you", "Number of days to send thank you mails not configured", array(), WATCHDOG_ERROR );
         return;
@@ -713,6 +738,9 @@ EOT;
 	$result = db_query( $ty_query, array( ':interval' => $days ) );
 
 	$count = 0;
+	$consecutiveFailures = 0;
+	$failureThreshold = variable_get( 'thank_you_failure_threshold', 5 );
+	$abort = false;
 
 	foreach( $result as $contribution ) {
 		watchdog(
@@ -721,10 +749,55 @@ EOT;
 			array(),
 			WATCHDOG_INFO
 		);
+		try {
+			if ( thank_you_for_contribution( $contribution->id ) ) {
+				$count++;
+			}
+			$consecutiveFailures = 0;
+		} catch ( WmfException $ex ) {
+			$errName = $ex->getErrorName();
+			$noThankYou = "failed: $errName";
 
-		thank_you_for_contribution( $contribution->id );
+			$logMessage = $ex->getMessage()
+				. "<br/>Setting no_thank_you to '$noThankYou'";
+			wmf_civicrm_set_no_thank_you( $contribution->id, $noThankYou );
 
-		++$count;
+			$consecutiveFailures++;
+			$msg = "Disabling thank you job after $consecutiveFailures consecutive failures";
+			if ( $consecutiveFailures > $failureThreshold ) {
+				$abort = true;
+				watchdog( 'thank_you', $msg, array(), WATCHDOG_ALERT );
+				$logMessage .= "<br/>$msg";
+			}
+
+			// Always email if we're disabling the job
+			if ( $ex->isNoEmail() && !$abort ) {
+				watchdog( 'thank_you', $logMessage, array(), WATCHDOG_ERROR );
+			} else {
+				try {
+					// Make an exception for failmail with the updated message,
+					// but avoid doubling the type prefix.
+					$logMessage = substr( $logMessage, strlen( $errName ) + 1 );
+					$mailException = new WmfException( $errName, $logMessage );
+
+					// Failmail also logs a WATCHDOG_ERROR
+					wmf_common_failmail( 'thank_you', $mailException );
+				} catch ( Exception $innerEx ) {
+					watchdog(
+						'thank_you',
+						'Can\'t even send failmail, disabling thank you job',
+						array(),
+						WATCHDOG_ALERT
+					);
+					$abort = true;
+				}
+			}
+
+			if ( $abort ) {
+				variable_set( 'thank_you_enabled', 'false' );
+				break;
+			}
+		}
 	}
 
 	watchdog( "thank_you", "Sent $count thank you emails ", array(), WATCHDOG_INFO );

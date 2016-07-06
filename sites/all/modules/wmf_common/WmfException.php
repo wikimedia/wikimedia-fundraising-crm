@@ -21,6 +21,9 @@ class WmfException extends Exception {
     const MISSING_MANDATORY_DATA = 18;
     const DATA_INCONSISTENT = 19;
     const BANNER_HISTORY = 20;
+    const GET_CONTACT = 21;
+    const EMAIL_SYSTEM_FAILURE = 22;
+    const BAD_EMAIL = 22;
 
     //XXX shit we aren't using the 'rollback' attribute
     // and it's not correct in most of these cases
@@ -71,6 +74,7 @@ class WmfException extends Exception {
         ),
         'BANNER_HISTORY' => array(
              'reject' => TRUE,
+             'no-email' => TRUE,
         ),
 
         // other errors
@@ -90,6 +94,15 @@ class WmfException extends Exception {
         'DATA_INCONSISTENT' => array(
             'reject' => TRUE,
         ),
+        'GET_CONTACT' => array(
+            'fatal' => FALSE,
+        ),
+        'EMAIL_SYSTEM_FAILURE' => array(
+            'fatal' => TRUE,
+        ),
+        'BAD_EMAIL' => array(
+            'no-email' => TRUE,
+        )
     );
 
     var $extra;

@@ -56,6 +56,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7200();
     wmf_civicrm_update_7205();
     wmf_civicrm_update_7210();
+    wmf_civicrm_update_7220();
 }
 
 /**
@@ -1995,4 +1996,88 @@ function wmf_civicrm_update_7210() {
        SET filter = 1
        WHERE ov.name = 'Contact Deleted By Merge' AND og.name = 'activity_type'"
   );
+}
+
+/**
+ * Create additional prospecting custom fields.
+ */
+function wmf_civicrm_update_7220() {
+  civicrm_initialize();
+  $customGroup = civicrm_api3('CustomGroup', 'get', array('name' => 'Prospect'));
+  if (!$customGroup['count']) {
+    $customGroup = civicrm_api3('CustomGroup', 'create', array(
+      'name' => 'Prospect',
+      'title' => 'Prospect',
+      'extends' => 'Contact',
+      'style' => 'tab',
+      'is_active' => 1,
+    ));
+  }
+  $fields = array(
+    'ask_amount' => array(
+      'name' => 'ask_amount',
+      'label' => 'Ask Amount',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+    ),
+    'expected_amount' => array(
+      'name' => 'expected_amount',
+      'label' => 'Expected Amount',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+    ),
+    'likelihood' => array(
+      'name' => 'likelihood',
+      'label' => 'Likelihood (%)',
+      'data_type' => 'Integer',
+      'html_type' => 'Text',
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+    ),
+    'expected_close_date' => array(
+      'name' => 'expected_close_date',
+      'label' => 'Expected Close Date',
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+    ),
+    'close_date' => array(
+      'name' => 'close_date',
+      'label' => 'Close Date',
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+    ),
+    'next_step' => array(
+      'name' => 'next_step',
+      'label' => 'Next Step',
+      'data_type' => 'Memo',
+      'html_type' => 'RichTextEditor',
+      'note_columns' => 60,
+      'note_rows' => 4,
+    ),
+  );
+  // We mostly are trying to ensure a unique weight since weighting can be re-orded in the UI but it gets messy
+  // if they are all set to 1.
+  $weight = CRM_Core_DAO::singleValueQuery('SELECT max(weight) FROM civicrm_custom_field WHERE custom_group_id = %1',
+    array(1 => array($customGroup['id'], 'Integer'))
+  );
+
+  foreach ($fields as $field) {
+    $weight++;
+    civicrm_api3('CustomField', 'create', array_merge(
+      $field,
+      array(
+        'custom_group_id' => $customGroup['id'],
+        'weight' => $weight,
+        )
+      )
+    );
+  }
 }

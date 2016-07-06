@@ -45,16 +45,22 @@ abstract class ChecksFile {
             throw new WmfException( 'INVALID_FILE_FORMAT', "This file is missing column headers: " . implode( ", ", $failed ) );
         }
 
+        $num_errors = 0;
         $num_ignored = 0;
         $num_successful = 0;
         $num_duplicates = 0;
         $this->row_index = -1 + $this->numSkippedRows;
+        $error_streak_start = 0;
+        $error_streak_count = 0;
+        $error_streak_threshold = 10;
 
         while( ( $row = fgetcsv( $file, 0, ',', '"', '\\')) !== FALSE) {
             // Reset the PHP timeout for each row.
             set_time_limit( 10 );
 
             $this->row_index++;
+            // FIXME: This is odd.  Can't we just keep track of one index?
+            $rowNum = $this->row_index + 2;
 
             // Zip headers and row into a dict
             $data = array_combine( array_keys( $headers ), array_slice( $row, 0, count( $headers ) ) );
@@ -95,16 +101,30 @@ abstract class ChecksFile {
                 $num_ignored++;
                 continue;
             } catch ( WmfException $ex ) {
-                $rowNum = $this->row_index + 2;
-                $errorMsg = "Import aborted due to error at row {$rowNum}: {$ex->getMessage()}, after {$num_successful} records were stored successfully, {$num_ignored} were ignored, and {$num_duplicates} duplicates encountered.";
-                throw new Exception($errorMsg);
+                $num_errors++;
+
+                ChecksImportLog::record( t( "Error in line @rownum: @row", array(
+                    '@rownum' => $rowNum,
+                    '@row' => implode( ', ', $row ),
+                ) ) );
+
+                if ( $error_streak_start + $error_streak_count < $rowNum ) {
+                    // The last result must have been a success.  Restart streak counts.
+                    $error_streak_start = $rowNum;
+                    $error_streak_count = 0;
+                }
+                $error_streak_count++;
+                if ( $error_streak_count >= $error_streak_threshold ) {
+                    $errorMsg = "Import aborted due to {$error_streak_count} consecutive errors, last error was at row {$rowNum}: {$ex->getMessage()}, after {$num_successful} records were stored successfully, {$num_ignored} were ignored, {$num_duplicates} duplicates, and {$num_errors} errors encountered.";
+                    throw new Exception($errorMsg);
+                }
             }
         }
 
        // Unset time limit.
        set_time_limit( 0 );
 
-        $message = t( "Checks import complete. @successful imported, @ignored ignored, not including @duplicates duplicates.", array( '@successful' => $num_successful, '@ignored' => $num_ignored, '@duplicates' => $num_duplicates ) );
+        $message = t( "Checks import complete. @successful imported, @ignored ignored, not including @duplicates duplicates and @errors errors.", array( '@successful' => $num_successful, '@ignored' => $num_ignored, '@duplicates' => $num_duplicates, '@errors' => $num_errors ) );
         ChecksImportLog::record( $message );
         watchdog( 'offline2civicrm', $message, array(), WATCHDOG_INFO );
     }
