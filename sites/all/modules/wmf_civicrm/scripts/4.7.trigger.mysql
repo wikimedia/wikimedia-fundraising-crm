@@ -1392,30 +1392,6 @@ DROP TRIGGER IF EXISTS civicrm_im_after_delete //
 DELIMITER ;
 
 DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_before_insert //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_before_update //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_before_delete //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_after_insert //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_after_update //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_after_delete //
-DELIMITER ;
-
-DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_job_before_insert //
 DELIMITER ;
 
@@ -3909,7 +3885,7 @@ DROP TRIGGER IF EXISTS civicrm_contact_before_insert //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_contact_before_insert before insert ON civicrm_contact FOR EACH ROW BEGIN  
+CREATE TRIGGER civicrm_contact_before_insert before insert ON civicrm_contact FOR EACH ROW BEGIN
 SET NEW.created_date = CURRENT_TIMESTAMP;
  END //
 DELIMITER ;
@@ -4933,30 +4909,6 @@ UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.cont
 DELIMITER ;
 
 DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_after_insert //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER civicrm_install_canary_after_insert after insert ON civicrm_install_canary FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_install_canary (id, log_conn_id, log_user_id, log_action) VALUES ( NEW.id, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF; END //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_after_update //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER civicrm_install_canary_after_update after update ON civicrm_install_canary FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.id,'') <> IFNULL(NEW.id,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_install_canary (id, log_conn_id, log_user_id, log_action) VALUES (NEW.id, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_after_delete //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER civicrm_install_canary_after_delete after delete ON civicrm_install_canary FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_install_canary (id, log_conn_id, log_user_id, log_action) VALUES ( OLD.id, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
-DELIMITER ;
-
-DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_job_after_insert //
 DELIMITER ;
 
@@ -5860,7 +5812,7 @@ DROP TRIGGER IF EXISTS civicrm_phone_before_insert //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_phone_before_insert before insert ON civicrm_phone FOR EACH ROW BEGIN  
+CREATE TRIGGER civicrm_phone_before_insert before insert ON civicrm_phone FOR EACH ROW BEGIN
 SET NEW.phone_numeric = civicrm_strip_non_numeric(NEW.phone);
  END //
 DELIMITER ;
@@ -5881,7 +5833,7 @@ DROP TRIGGER IF EXISTS civicrm_phone_before_update //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_phone_before_update before update ON civicrm_phone FOR EACH ROW BEGIN  
+CREATE TRIGGER civicrm_phone_before_update before update ON civicrm_phone FOR EACH ROW BEGIN
 SET NEW.phone_numeric = civicrm_strip_non_numeric(NEW.phone);
  END //
 DELIMITER ;
