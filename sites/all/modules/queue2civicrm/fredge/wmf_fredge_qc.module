@@ -116,8 +116,8 @@ function fredge_payments_init_process_message($msg) {
   $dbs->push('fredge');
   $query = 'SELECT id FROM payments_initial WHERE contribution_tracking_id = :ct_id AND order_id = :order_id LIMIT 1';
   $result = db_query( $query, array(
-    ':ct_id' => $msg['contribution_tracking_id'],
-    ':order_id' => $msg['order_id']
+    ':ct_id' => $body['contribution_tracking_id'],
+    ':order_id' => $body['order_id']
   ) );
   if ( $result->rowCount() === 1 ){
     $id = $result->fetch()->id;
