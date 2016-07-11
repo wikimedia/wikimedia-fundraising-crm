@@ -2751,3 +2751,36 @@ function wmf_civicrm_is_valid_currency( $currency ) {
 	$all_currencies = array_keys( CurrencyRates::getCurrencyRates() );
 	return in_array( $currency, $all_currencies );
 }
+
+
+/**
+ * Implements hook_civicrm_validateForm().
+ *
+ * @param string $formName
+ * @param array $fields
+ * @param array $files
+ * @param CRM_Core_Form $form
+ * @param array $errors
+ */
+function wmf_civicrm_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  if ($formName === 'CRM_Contact_Form_DedupeFind') {
+    if (!$fields['limit']) {
+      $errors['limit'] = ts('Save the database. Use a limit');
+    }
+  }
+}
+
+/**
+ * Block users from accessing the dedupe page without a limit.
+ *
+ * @param CRM_Core_Page $page
+ */
+function wmf_civicrm_civicrm_pageRun(&$page) {
+  if (get_class($page) == 'CRM_Contact_Page_DedupeFind') {
+    $action = $page->get('action');
+    if (!CRM_Utils_Request::retrieve('limit', 'Integer') && ($action != CRM_Core_Action::PREVIEW)) {
+      CRM_Core_Error::statusBounce(ts('The dedupe page can only be accessed with a limit. How did you get there without one? Tell fr-tech'), 'civicrm/contact/deduperules?reset=1');
+    }
+  }
+
+}
