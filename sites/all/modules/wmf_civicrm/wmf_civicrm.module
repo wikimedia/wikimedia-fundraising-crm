@@ -2444,7 +2444,8 @@ function wmf_civicrm_civicrm_buildForm( $formName, &$form ) {
             $engage_contribution_type_id = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Engage' );
             $form->setDefaults( array(
                 'financial_type_id' => $engage_contribution_type_id,
-            ) );
+            ));
+            $form->assign('customDataSubType', $engage_contribution_type_id);
         }
 
         // Make Batch Number required, if the field exists.
