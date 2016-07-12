@@ -83,7 +83,6 @@ function offline2civicrm_update_7000() {
             'html_type' => 'Text',
             'is_active' => 1,
             'is_searchable' => 1,
-            'is_view' => 1,
         ));
         if (!$success) {
             throw new Exception($api->errorMsg());
