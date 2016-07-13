@@ -35,7 +35,9 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
                 'filters' => array(
                     'receive_date' => array(
                         'title' => ts( 'Initiated Date (UTC)' ),
-                        'operatorType' => CRM_Report_Form::OP_DATE,
+                        'operatorType' => CRM_Report_Form::OP_DATETIME,
+                        'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
+
                     ),
                     /*
                     'is_negative' => array(
@@ -121,13 +123,13 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
                 'filters' => array(
                     'deposit_date' => array(
                         'title' => ts( 'Deposit Date (UTC)' ),
-                        'type' => CRM_Utils_Type::T_DATE,
-                        'operatorType' => CRM_Report_Form::OP_DATE,
+                        'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
+                        'operatorType' => CRM_Report_Form::OP_DATETIME,
                     ),
                     'settlement_date' => array(
                         'title' => ts( 'Settlement Date (UTC)' ),
-                        'type' => CRM_Utils_Type::T_DATE,
-                        'operatorType' => CRM_Report_Form::OP_DATE,
+                        'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
+                        'operatorType' => CRM_Report_Form::OP_DATETIME,
                     ),
                     'gateway' => array(
                         'title' => ts( 'Gateway' ),
