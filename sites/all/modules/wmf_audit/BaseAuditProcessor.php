@@ -513,7 +513,7 @@ abstract class BaseAuditProcessor {
 				}
 				if ( $this->get_filetype( $file ) === 'recon' ) {
 					$sort_key = $this->get_recon_file_sort_key( $file ); // report date or sequence number or something
-					$files_by_sort_key[$sort_key][] = $files_directory . $file;
+					$files_by_sort_key[$sort_key][] = $files_directory . '/' . $file;
 				}
 			}
 			closedir( $handle );
@@ -791,14 +791,14 @@ abstract class BaseAuditProcessor {
 		//This date is not ready yet. Get the zipped version from the archive, unzip
 		//to the working directory, and distill.
 		$compressed_filename = $this->get_compressed_log_file_name( $date );
-		$full_archive_path = wmf_audit_get_log_archive_dir() . $compressed_filename;
+		$full_archive_path = wmf_audit_get_log_archive_dir() . '/' . $compressed_filename;
 		$working_directory = $this->get_working_log_dir();
 		$cleanup = array(); //add files we want to make sure aren't there anymore when we're done here.
 		if ( file_exists( $full_archive_path ) ) {
 			wmf_audit_echo( "Retrieving $full_archive_path" );
 			$cmd = "cp $full_archive_path " . $working_directory;
 			exec( escapeshellcmd( $cmd ), $ret, $errorlevel );
-			$full_compressed_path = $working_directory . $compressed_filename;
+			$full_compressed_path = $working_directory . '/' . $compressed_filename;
 			if ( !file_exists( $full_compressed_path ) ) {
 				wmf_audit_log_error( "FILE PROBLEM: Trying to get log archives, and something went wrong with $cmd", 'FILE_MOVE' );
 				return false;
@@ -811,7 +811,7 @@ abstract class BaseAuditProcessor {
 			exec( escapeshellcmd( $cmd ), $ret, $errorlevel );
 			//now check to make sure the file you expect, actually exists
 			$uncompressed_file = $this->get_uncompressed_log_file_name( $date );
-			$full_uncompressed_path = $working_directory . $uncompressed_file;
+			$full_uncompressed_path = $working_directory . '/' . $uncompressed_file;
 			if ( !file_exists( $full_uncompressed_path ) ) {
 				wmf_audit_log_error( "FILE PROBLEM: Something went wrong with uncompressing logs: $cmd : $full_uncompressed_path doesn't exist.", 'FILE_UNCOMPRESS' );
 			} else {
@@ -864,7 +864,7 @@ abstract class BaseAuditProcessor {
 		while ( ( $file = readdir( $handle ) ) !== false ) {
 			$temp_date = false;
 			if ( $this->get_filetype( $file ) === 'working_log' ) {
-				$full_path = $working_dir . $file;
+				$full_path = $working_dir . '/' . $file;
 				$temp_date = $this->get_working_log_file_date( $file );
 			}
 			if ( !$temp_date ) {

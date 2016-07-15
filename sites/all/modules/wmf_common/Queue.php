@@ -445,6 +445,10 @@ class Queue {
     }
 
     protected function commonMessageNormalize( &$msg ) {
+        if ( !$msg->body ) {
+            throw new WmfException( 'INVALID_MESSAGE', 'Bad news, this message was lacking a body.' );
+        }
+
         // argh.  Collapse useful headers into the message, then do a stupid dance.
         $pull_headers = array(
             'source_name',
