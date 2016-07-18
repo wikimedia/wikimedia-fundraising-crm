@@ -2502,6 +2502,7 @@ function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
         if ( $gift_source_field_name ) {
             $allowed_sources = array(
                 'Combined Federal Campaign',
+                'Benefactor Gift',
                 'Community Gift',
                 'Donor Advised Fund',
                 'Matching Gift',
@@ -2767,6 +2768,12 @@ function wmf_civicrm_civicrm_validateForm($formName, &$fields, &$files, &$form, 
   if ($formName === 'CRM_Contact_Form_DedupeFind') {
     if (!$fields['limit']) {
       $errors['limit'] = ts('Save the database. Use a limit');
+    }
+  }
+  if ($formName == 'CRM_Contribute_Form_Contribution') {
+    $engageErrors = wmf_civicrm_civicrm_validate($formName, $fields, $files, $form);
+    if (!empty($engageErrors)) {
+      $errors = array_merge($errors, $engageErrors);
     }
   }
 }
