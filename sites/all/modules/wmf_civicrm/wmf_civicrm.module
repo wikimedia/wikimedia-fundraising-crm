@@ -2464,70 +2464,67 @@ function wmf_civicrm_civicrm_buildForm( $formName, &$form ) {
 }
 
 /**
- * Implements hook_civicrm_validate
+ * Additional validations for the contribution form
+ * @return array of any errors in the form
  */
-function wmf_civicrm_civicrm_validate( $formName, &$fields, &$files, &$form ) {
+function wmf_civicrm_validate_contribution( $fields, $form ) {
     $errors = array();
 
-    switch ( $formName ) {
-    case 'CRM_Contribute_Form_Contribution':
-		// Only run on add or update
-		if ( ! ( $form->_action & ( CRM_Core_Action::UPDATE | CRM_Core_Action::ADD ) ) ) {
-			break;
-		}
-        // Source has to be of the form USD 15.25 so as not to gum up the works,
-        // and the currency code on the front should be something we understand
-        $source = $fields['source'];
-        if ( preg_match( '/^([a-z]{3}) [0-9]+(\.[0-9]+)?$/i', $source, $matches ) ) {
-            $currency = strtoupper( $matches[1] );
-            if ( !wmf_civicrm_is_valid_currency( $currency ) ) {
-                $errors['source'] = t( 'Please set a supported currency code' );
-            }
-        } else {
-            $errors['source'] = t( 'Source must be in the format USD 15.25' );
+    // Only run on add or update
+    if ( ! ( $form->_action & ( CRM_Core_Action::UPDATE | CRM_Core_Action::ADD ) ) ) {
+        return $errors;
+    }
+    // Source has to be of the form USD 15.25 so as not to gum up the works,
+    // and the currency code on the front should be something we understand
+    $source = $fields['source'];
+    if ( preg_match( '/^([a-z]{3}) [0-9]+(\.[0-9]+)?$/i', $source, $matches ) ) {
+        $currency = strtoupper( $matches[1] );
+        if ( !wmf_civicrm_is_valid_currency( $currency ) ) {
+            $errors['source'] = t( 'Please set a supported currency code' );
         }
-
-        // Only run the following validation for users having the Engage role.
-        if ( !wmf_civicrm_user_has_role( 'Engage Direct Mail' ) ) {
-            break;
-        }
-
-        $engage_contribution_type_id = wmf_civicrm_get_civi_id( 'financial_type_id', 'Engage' );
-        if ( $fields['financial_type_id'] !== $engage_contribution_type_id ) {
-            $errors['financial_type_id'] = t("Must use the \"Engage\" contribution type.");
-        }
-
-        // Gift Source (sic field named "Campaign") is limited.
-        $gift_source_field_name = wmf_civicrm_evil_get_custom_field_in_form( 'Campaign', $fields );
-        if ( $gift_source_field_name ) {
-            $allowed_sources = array(
-                'Combined Federal Campaign',
-                'Benefactor Gift',
-                'Community Gift',
-                'Donor Advised Fund',
-                'Matching Gift',
-                'Payroll Deduction',
-            );
-            if ( !in_array( $fields[$gift_source_field_name], $allowed_sources ) ) {
-                $errors[$gift_source_field_name] = t('Must choose a Gift Source from the following list: ') . implode( ', ', $allowed_sources );
-            }
-        }
-
-        $postmark_field_name = wmf_civicrm_evil_get_custom_field_in_form( 'postmark_date', $fields );
-        // If the receive_date is in Dec or Jan, make sure we have a postmark date,
-        // to be generous to donors' tax stuff.
-        $date = strptime( $fields['receive_date'], "%m/%d/%Y" );
-        // n.b.: 0-based date spoiler.
-        if ( $date['tm_mon'] == (12 - 1) || $date['tm_mon'] == (1 - 1) ) {
-            // And the postmark date is missing
-            if ( !$fields[$postmark_field_name] ) {
-                $errors[$postmark_field_name] = t("You forgot the postmark date!");
-            }
-        }
-        break;
+    } else {
+        $errors['source'] = t( 'Source must be in the format USD 15.25' );
     }
 
-    return ( empty($errors) ? true : $errors );
+    // Only run the following validation for users having the Engage role.
+    if ( !wmf_civicrm_user_has_role( 'Engage Direct Mail' ) ) {
+        return $errors;
+    }
+
+    $engage_contribution_type_id = wmf_civicrm_get_civi_id( 'financial_type_id', 'Engage' );
+    if ( $fields['financial_type_id'] !== $engage_contribution_type_id ) {
+        $errors['financial_type_id'] = t("Must use the \"Engage\" contribution type.");
+    }
+
+    // Gift Source (sic field named "Campaign") is limited.
+    $gift_source_field_name = wmf_civicrm_evil_get_custom_field_in_form( 'Campaign', $fields );
+    if ( $gift_source_field_name ) {
+        $allowed_sources = array(
+            'Combined Federal Campaign',
+            'Benefactor Gift',
+            'Community Gift',
+            'Donor Advised Fund',
+            'Matching Gift',
+            'Payroll Deduction',
+        );
+        if ( !in_array( $fields[$gift_source_field_name], $allowed_sources ) ) {
+            $errors[$gift_source_field_name] = t('Must choose a Gift Source from the following list: ') . implode( ', ', $allowed_sources );
+        }
+    }
+
+    $postmark_field_name = wmf_civicrm_evil_get_custom_field_in_form( 'postmark_date', $fields );
+    // If the receive_date is in Dec or Jan, make sure we have a postmark date,
+    // to be generous to donors' tax stuff.
+    $date = strptime( $fields['receive_date'], "%m/%d/%Y" );
+    // n.b.: 0-based date spoiler.
+    if ( $date['tm_mon'] == (12 - 1) || $date['tm_mon'] == (1 - 1) ) {
+        // And the postmark date is missing
+        if ( !$fields[$postmark_field_name] ) {
+            $errors[$postmark_field_name] = t("You forgot the postmark date!");
+        }
+    }
+
+    return $errors;
 }
 
 /**
@@ -2771,7 +2768,7 @@ function wmf_civicrm_civicrm_validateForm($formName, &$fields, &$files, &$form, 
     }
   }
   if ($formName == 'CRM_Contribute_Form_Contribution') {
-    $engageErrors = wmf_civicrm_civicrm_validate($formName, $fields, $files, $form);
+    $engageErrors = wmf_civicrm_validate_contribution($fields, $form);
     if (!empty($engageErrors)) {
       $errors = array_merge($errors, $engageErrors);
     }
