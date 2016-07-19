@@ -57,6 +57,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7205();
     wmf_civicrm_update_7210();
     wmf_civicrm_update_7220();
+    wmf_civicrm_update_7230();
 }
 
 /**
@@ -1047,7 +1048,7 @@ function wmf_civicrm_update_7023() {
     $success = $api->CustomGroup->create(array(
         'extends' => 'Contact',
         'name' => 'wmf_donor',
-		'table_name' => 'wmf_donor',
+        'table_name' => 'wmf_donor',
         'title' => ts('WMF Donor'),
         'is_active' => 1,
     ));
@@ -2092,4 +2093,18 @@ function wmf_civicrm_update_7225() {
   CRM_Core_DAO::executeQuery(
     "UPDATE civicrm_contact SET do_not_trade = 0"
   );
+}
+
+/**
+ * Add Endowment gifts to gift source.
+ *
+ * T139629
+ */
+function wmf_civicrm_update_7230() {
+  civicrm_initialize();
+  CRM_Core_BAO_OptionValue::ensureOptionValueExists(array(
+    'name' => 'Endowment Gift',
+    'value' =>  'Endowment Gift',
+    'option_group_id' => 'campaign_20080709183311',
+  ));
 }
