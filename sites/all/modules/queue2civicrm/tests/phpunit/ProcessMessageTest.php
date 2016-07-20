@@ -1,19 +1,27 @@
 <?php
 
+use SmashPig\Core\Context;
+use SmashPig\Core\DataStores\PendingDatabase;
+use SmashPig\Tests\SmashPigDatabaseTestConfiguration;
+
 /**
  * @group Pipeline
  * @group Queue2Civicrm
  */
 class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
-    public static function getInfo() {
-        return array(
-            'name' => 'Process Message',
-            'group' => 'Pipeline',
-            'description' => 'Push messages through the queue intake functions.',
-        );
-    }
+	/**
+	 * @var PendingDatabase
+	 */
+	protected $pendingDb;
 
-    /**
+    public function setUp() {
+		parent::setUp();
+		Context::initWithLogger( new SmashPigDatabaseTestConfiguration() );
+		$this->pendingDb = PendingDatabase::get();
+		$this->pendingDb->createTable();
+	}
+
+	/**
      * Process an ordinary (one-time) donation message
      */
     public function testDonation() {
@@ -268,4 +276,52 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals('Chargeback', CRM_Contribute_PseudoConstant::contributionStatus($contributions['values'][0]['contribution_status_id']));
         $this->assertEquals('-.5', $contributions['values'][1]['total_amount']);
     }
+
+	/**
+	 * Process a donation message with some info from pending db
+	 * @dataProvider getSparseMessages
+	 */
+	public function testDonationSparseMessages( $message, $pendingMessage ) {
+		$pendingMessage['order_id'] = $message->get( 'order_id' );
+		$this->pendingDb->storeMessage( $pendingMessage );
+		$appealFieldID = $this->createCustomOption(
+			'Appeal', $pendingMessage['utm_campaign'], false
+		);
+
+		exchange_rate_cache_set( 'USD', $message->get( 'date' ), 1 );
+		exchange_rate_cache_set( $message->get( 'currency' ), $message->get( 'date' ), 3 );
+
+		queue2civicrm_import( $message );
+
+		$contributions = wmf_civicrm_get_contributions_from_gateway_id( $message->getGateway(), $message->getGatewayTxnId() );
+		$contribution = civicrm_api3('Contribution', 'getsingle', array(
+			'id' => $contributions[0]['id'],
+			'return' => 'custom_' . $appealFieldID,
+		));
+		$this->assertEquals( $pendingMessage['utm_campaign'], $contribution['custom_' . $appealFieldID]);
+		$this->deleteCustomOption('Appeal', $pendingMessage['utm_campaign']);
+		$pendingEntry = $this->pendingDb->fetchMessageByGatewayOrderId(
+			$message->get( 'gateway' ), $pendingMessage['order_id']
+		);
+		$this->assertNull( $pendingEntry, 'Should have deleted pending DB entry' );
+		civicrm_api3( 'Contribution', 'delete', array( 'id' => $contributions[0]['id'] ) );
+		civicrm_api3( 'Contact', 'delete', array( 'id' => $contributions[0]['contact_id'] ) );
+	}
+
+	public function getSparseMessages() {
+		return array(
+			array(
+				new AmazonDonationMessage(),
+				json_decode(
+					file_get_contents( __DIR__ . '/../data/pending_amazon.json'), true
+				)
+			),
+			array(
+				new AstroPayDonationMessage(),
+				json_decode(
+					file_get_contents( __DIR__ . '/../data/pending_astropay.json'), true
+				)
+			),
+		);
+	}
 }
