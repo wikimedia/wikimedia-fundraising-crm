@@ -4,7 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "2b36382b6d20b05e807d014f5f30e938",
+    "hash": "ae571a825c6749af580406d180db83ce",
+    "content-hash": "4581a7cbf5498bf8560c7527272ea4f7",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
@@ -43,7 +44,7 @@
                 "payment",
                 "payments"
             ],
-            "time": "2015-10-07 15:01:25"
+            "time": "2015-10-07 20:06:54"
         },
         {
             "name": "clio/clio",
@@ -233,7 +234,7 @@
                     "homepage": "http://www.nighttale.net"
                 },
                 {
-                    "name": "S\u00f6ren Rohweder",
+                    "name": "Sören Rohweder",
                     "email": "s.rohweder@blage.net",
                     "homepage": "http://www.monofone.de"
                 }
@@ -441,7 +442,7 @@
                     "role": "Developer"
                 },
                 {
-                    "name": "Hans-J\u00fcrgen Petrich",
+                    "name": "Hans-Jürgen Petrich",
                     "email": "petrich@tronic-media.com",
                     "role": "Developer"
                 }
@@ -475,23 +476,23 @@
         },
         {
             "name": "predis/predis",
-            "version": "v1.0.1",
+            "version": "v1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nrk/predis.git",
-                "reference": "7a170b3d8123c556597b4fbdb88631f99de180c2"
+                "reference": "f0210e38881631afeafb56ab43405a92cafd9fd1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nrk/predis/zipball/7a170b3d8123c556597b4fbdb88631f99de180c2",
-                "reference": "7a170b3d8123c556597b4fbdb88631f99de180c2",
+                "url": "https://api.github.com/repos/nrk/predis/zipball/f0210e38881631afeafb56ab43405a92cafd9fd1",
+                "reference": "f0210e38881631afeafb56ab43405a92cafd9fd1",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.2"
+                "php": ">=5.3.9"
             },
             "require-dev": {
-                "phpunit/phpunit": "~4.0"
+                "phpunit/phpunit": "~4.8"
             },
             "suggest": {
                 "ext-curl": "Allows access to Webdis when paired with phpiredis",
@@ -514,14 +515,14 @@
                     "homepage": "http://clorophilla.net"
                 }
             ],
-            "description": "Flexible and feature-complete PHP client library for Redis",
+            "description": "Flexible and feature-complete Redis client for PHP and HHVM",
             "homepage": "http://github.com/nrk/predis",
             "keywords": [
                 "nosql",
                 "predis",
                 "redis"
             ],
-            "time": "2015-01-02 12:51:34"
+            "time": "2016-06-16 16:22:20"
         },
         {
             "name": "psr/log",
@@ -567,12 +568,12 @@
             "target-dir": "Symfony/Component/EventDispatcher",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/EventDispatcher.git",
+                "url": "https://github.com/symfony/event-dispatcher.git",
                 "reference": "af8fba40bdab97fc666173a8c2087e02445c231c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/af8fba40bdab97fc666173a8c2087e02445c231c",
+                "url": "https://api.github.com/repos/symfony/event-dispatcher/zipball/af8fba40bdab97fc666173a8c2087e02445c231c",
                 "reference": "af8fba40bdab97fc666173a8c2087e02445c231c",
                 "shasum": ""
             },
@@ -622,12 +623,12 @@
             "target-dir": "Symfony/Component/HttpFoundation",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/HttpFoundation.git",
+                "url": "https://github.com/symfony/http-foundation.git",
                 "reference": "a2223f6d2202af50ac2029bc9e2fa770de84fa3f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/HttpFoundation/zipball/a2223f6d2202af50ac2029bc9e2fa770de84fa3f",
+                "url": "https://api.github.com/repos/symfony/http-foundation/zipball/a2223f6d2202af50ac2029bc9e2fa770de84fa3f",
                 "reference": "a2223f6d2202af50ac2029bc9e2fa770de84fa3f",
                 "shasum": ""
             },
@@ -668,6 +669,55 @@
             "description": "Symfony HttpFoundation Component",
             "homepage": "https://symfony.com",
             "time": "2015-05-20 08:53:09"
+        },
+        {
+            "name": "symfony/yaml",
+            "version": "v2.8.8",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/yaml.git",
+                "reference": "dba4bb5846798cd12f32e2d8f3f35d77045773c8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/dba4bb5846798cd12f32e2d8f3f35d77045773c8",
+                "reference": "dba4bb5846798cd12f32e2d8f3f35d77045773c8",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.9"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.8-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Yaml\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony Yaml Component",
+            "homepage": "https://symfony.com",
+            "time": "2016-06-29 05:29:29"
         },
         {
             "name": "twig/twig",
@@ -735,13 +785,13 @@
                 "reference": "e9c479de7594f9e1d011fa344792cb1cca987aad"
             },
             "require": {
+                "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
                 "coderkungfu/php-queue": "dev-master",
                 "fusesource/stomp-php": "2.1.*",
                 "monolog/monolog": "1.12.0",
                 "predis/predis": "1.*",
                 "psr/log": "1.0.0",
-                "zordius/lightncandy": "0.18",
-                "amzn/login-and-pay-with-amazon-sdk-php": "dev-master"
+                "zordius/lightncandy": "0.18"
             },
             "type": "library",
             "autoload": {
@@ -762,7 +812,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2015-10-21 13:44:26"
+            "time": "2015-10-20 20:46:30"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -770,15 +820,22 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "bc16fd9c319c8ca7e8795883f1e45ba51c0bd9e5"
+                "reference": "743aff6dd9ae168d1d02c7de1e25d9e8af5c5531"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
-                "fusesource/stomp-php": "2.*",
-                "php": ">=5.3.3",
-                "phpmailer/phpmailer": "5.2.6",
-                "symfony/event-dispatcher": ">=2.1,<2.4-dev",
-                "symfony/http-foundation": ">=2.1,<2.4-dev"
+                "coderkungfu/php-queue": "dev-master",
+                "fusesource/stomp-php": "^2.1.1",
+                "php": "^5.3.3",
+                "phpmailer/phpmailer": "^5.2",
+                "predis/predis": "^1.1",
+                "symfony/event-dispatcher": "^2.1",
+                "symfony/http-foundation": "^2.1",
+                "symfony/yaml": "^2.8"
+            },
+            "require-dev": {
+                "jakub-onderka/php-parallel-lint": "^0.9",
+                "phpunit/phpunit": "^4.8"
             },
             "type": "library",
             "autoload": {
@@ -788,7 +845,7 @@
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "GPLv2"
+                "GPL-2.0"
             ],
             "authors": [
                 {
@@ -814,7 +871,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2016-03-11 23:11:37"
+            "time": "2016-07-20 18:33:16"
         },
         {
             "name": "zordius/lightncandy",
@@ -1765,55 +1822,6 @@
             "description": "Library that helps with managing the version number of Git-hosted PHP projects",
             "homepage": "https://github.com/sebastianbergmann/version",
             "time": "2015-06-21 13:59:46"
-        },
-        {
-            "name": "symfony/yaml",
-            "version": "v2.7.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/symfony/Yaml.git",
-                "reference": "9808e75c609a14f6db02f70fccf4ca4aab53c160"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Yaml/zipball/9808e75c609a14f6db02f70fccf4ca4aab53c160",
-                "reference": "9808e75c609a14f6db02f70fccf4ca4aab53c160",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.9"
-            },
-            "require-dev": {
-                "symfony/phpunit-bridge": "~2.7"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.7-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Symfony\\Component\\Yaml\\": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Fabien Potencier",
-                    "email": "fabien@symfony.com"
-                },
-                {
-                    "name": "Symfony Community",
-                    "homepage": "https://symfony.com/contributors"
-                }
-            ],
-            "description": "Symfony Yaml Component",
-            "homepage": "https://symfony.com",
-            "time": "2015-06-10 15:30:22"
         }
     ],
     "aliases": [],

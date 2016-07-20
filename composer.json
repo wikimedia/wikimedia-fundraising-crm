@@ -16,6 +16,7 @@
         "irc": "irc://irc.freenode.org/wikimedia-fundraising"
     },
     "require": {
+        "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
         "coderkungfu/php-queue": "dev-master",
         "cogpowered/finediff": "0.*",
         "wikimedia/donation-interface": "dev-master",
@@ -30,6 +31,10 @@
         {
             "type": "vcs",
             "url": "https://gerrit.wikimedia.org/r/p/wikimedia/fundraising/php-queue.git"
+        },
+        {
+            "type": "git",
+            "url": "https://github.com/ejegg/login-and-pay-with-amazon-sdk-php"
         }
     ],
     "require-dev": {

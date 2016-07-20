@@ -19,10 +19,8 @@ class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 
 		// Use the test configuration for SmashPig
 		$config = new Configuration(
-			DRUPAL_ROOT . '/../vendor/wikimedia/smash-pig/config_defaults.php',
-			DRUPAL_ROOT . '/../vendor/wikimedia/smash-pig/PaymentProviders/Amazon/Tests/config_test.php',
 			'amazon',
-			true
+			DRUPAL_ROOT . '/../vendor/wikimedia/smash-pig/PaymentProviders/Amazon/Tests/config_test.yaml'
 		);
 		Context::init( $config );
 

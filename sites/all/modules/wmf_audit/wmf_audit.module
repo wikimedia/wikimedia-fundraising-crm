@@ -42,14 +42,14 @@ function wmf_audit_main( $gateway, $options ) {
     if ( !file_exists( $settings_file ) ) {
         $settings_file = null;
     }
-    $config = new Configuration(
-        DRUPAL_ROOT . '/../vendor/wikimedia/smash-pig/config_defaults.php',
-        $settings_file,
-        $gateway,
-        true
-    );
+    $config = new Configuration( $gateway );
     Context::init( $config );
-    Logger::init( $config->val( 'logging/root-context' ), $config->val( 'logging/log-level' ), $config );
+    Logger::init(
+        $config->val( 'logging/root-context' ),
+        $config->val( 'logging/log-level' ),
+        $config,
+        "{$gateway}_audit"
+    );
 
     $audit = module_invoke( "{$gateway}_audit", 'create_processor', $options );
     if ( !$audit ) {
