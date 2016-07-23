@@ -1,0 +1,6 @@
+name = Ingenico Audit
+description = Ingenico orphan rectification, and TODO audit
+core = 7.x
+dependencies[] = wmf_audit
+package = WMF Audit
+configure = admin/config/wmf_audit/ingenico_audit
