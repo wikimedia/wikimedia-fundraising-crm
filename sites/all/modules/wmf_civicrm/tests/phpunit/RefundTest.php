@@ -1,5 +1,7 @@
 <?php
 
+use wmf_communication\TestMailer;
+
 /**
  * @group Pipeline
  * @group WmfCivicrm
@@ -16,6 +18,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     public function setUp() {
         parent::setUp();
         civicrm_initialize();
+        TestMailer::setup();
 
         $results = $this->callAPISuccess( 'contact', 'create', array(
             'contact_type' => 'Individual',
@@ -205,9 +208,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     /**
-     * Make a refund for too much
-     *
-     * @expectedException WmfException
+     * Make a refund for too much.
      */
     public function testMakeScammerRefund() {
         wmf_civicrm_mark_refund(
@@ -215,13 +216,14 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
             true, null, null,
             $this->original_currency, $this->original_amount + 100.00
         );
+        $mailing = TestMailer::getMailing(0);
+        $this->assertContains("<p>Refund amount mismatch for : {$this->original_contribution_id}, difference is 100. See http", $mailing['html']);
     }
 
     /**
      * Make a lesser refund in the wrong currency
      */
     public function testLesserWrongCurrencyRefund() {
-      $strtime = '04/03/2000';
       $dbtime = '2000-04-03';
       $epochtime = wmf_common_date_parse_string( $dbtime );
       $this->setExchangeRates( $epochtime, array('COP' => .01 ) );
