@@ -254,7 +254,7 @@ class Queue {
                 watchdog( 'wmf_common', "Queue connection failure #$attempt: " . $e->getMessage(), array(), WATCHDOG_ERROR );
             }
         }
-        
+
         if ( !$this->isConnected() ) {
             throw new WmfException( "STOMP_BAD_CONNECTION", "Gave up connecting to the queue." );
         }

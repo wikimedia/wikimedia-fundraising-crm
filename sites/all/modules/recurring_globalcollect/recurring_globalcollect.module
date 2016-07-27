@@ -7,7 +7,7 @@ require_once( drupal_get_path( 'module', 'recurring_globalcollect' ) . '/recurri
  */
 function recurring_globalcollect_menu() {
   $items = array();
-  
+
   $items['admin/config/recurring_globalcollect'] = array(
     'title' => 'Recurring GlobalCollect Processor',
     'access arguments' => array('administer recurring_globalcollect'),
@@ -64,7 +64,7 @@ function recurring_globalcollect_settings() {
   $form = array();
 
   $defaultTestUrl = buildDefaultTestUrl();
-  
+
   $form[ 'recurring_globalcollect' ][ 'globalcollect_url' ] = array(
     '#maxlength' => 255,
     '#type' => 'textfield',
@@ -132,7 +132,7 @@ function recurring_globalcollect_settings() {
       100 => 100,
     ),
   );
-  
+
   return system_settings_form($form);
 }
 
@@ -141,13 +141,13 @@ function recurring_globalcollect_settings() {
  *
  * This is the entry function for this module.
  *
- * This function is invoked here: drush_recurring_globalcollect() 
- * @see drush_recurring_globalcollect() 
+ * This function is invoked here: drush_recurring_globalcollect()
+ * @see drush_recurring_globalcollect()
  *
  * Validation is performed here: drush_recurring_globalcollect_validate()
  * @see drush_recurring_globalcollect_validate()
  *
- * @param array $options 
+ * @param array $options
  * - $options['batch'] The number of contributions to process. If empty or not set or zero, no contributions will be processed.
  * - $options['date'] @uses strtotime()
  * - $options['url'] Used for testing and overriding the url
@@ -162,7 +162,7 @@ function recurring_globalcollect_batch_process($options = array()) {
   }
 
   $run_missed_days = (integer) variable_get('recurring_globalcollect_run_missed_days', 0);
-  
+
   watchdog('recurring_globalcollect', 'Attempting to process up to ' . $batch . ' recurring contribution(s).');
 
   $contribution_batch = wmf_civicrm_get_next_sched_contribution($batch, 'now', $run_missed_days);
@@ -390,48 +390,48 @@ function recurring_globalcollect_create_message( $contribution_recur_id ) {
 /**
  * Create the form to search for subscriptions by order id.
  * TODO: deprecate
- */ 
+ */
 function recurring_globalcollect_search_by_order_id_form() {
 
   $form['submit'] = array(
     '#value' => 'Search by order id',
     '#type' => 'submit'
   );
-  
+
   $form['order_id'] = array(
     '#type' => 'textfield',
     '#title' => 'Order id',
     '#default_value' => '',
     '#required' => TRUE
   );
-  
+
   return $form;
 }
 
-/** 
+/**
  * Implementation of hook_form_submit
  *
  * Submits a form to search for subscriptions by order id.
  */
 function recurring_globalcollect_search_by_order_id_form_submit($form, &$form_state) {
-  
+
   $order_id = isset( $form_state['values']['order_id'] ) ? (integer) $form_state['values']['order_id'] : 0;
-  
+
   $record = _recurring_globalcollect_get_subscription_by_order_id($order_id);
-  
+
   if ( $record === false ) {
-  
+
     $message = 'No results found.';
-    
+
   } else {
     $display_name = isset( $record['display_name'] ) ? $record['display_name'] : 'Unknown donor';
     $trxn_id = isset( $record['trxn_id'] ) ? $record['trxn_id'] : '';
     $cid = isset( $record['contact_id'] ) ? $record['contact_id'] : '';
-    
+
     // Create a link to the recurring contribution for the donor.
     $link = '<a href="?q=civicrm/contact/view&reset=1&selectedChild=contribute&cid=' . urlencode($cid) . '#Contributions">' . htmlspecialchars($display_name) . '</a>';
     $message = 'Found the contact [' . $link . '] for the order id [ ' . $order_id . ' ] and with the transaction id [ ' . htmlspecialchars($trxn_id) . ' ]';
   }
-  
+
   drupal_set_message($message);
 }
