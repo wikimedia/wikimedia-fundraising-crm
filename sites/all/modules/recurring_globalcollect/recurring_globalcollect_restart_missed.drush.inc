@@ -62,7 +62,7 @@ function drush_recurring_globalcollect_restart_missed() {
     try {
         $contribution_batch = recurring_globalcollect_get_failure_retry_batch( $batch_size, 'now', $limit );
     } catch(Exception $ex) {
-        wmf_common_failmail('recurring_globalcollect', $ex);
+        wmf_common_failmail('recurring_globalcollect', '', $ex);
     }
     watchdog(
         'recurring_globalcollect',

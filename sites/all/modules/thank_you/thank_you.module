@@ -781,7 +781,7 @@ EOT;
 					$mailException = new WmfException( $errName, $logMessage );
 
 					// Failmail also logs a WATCHDOG_ERROR
-					wmf_common_failmail( 'thank_you', $mailException );
+					wmf_common_failmail( 'thank_you', '', $mailException );
 				} catch ( Exception $innerEx ) {
 					watchdog(
 						'thank_you',

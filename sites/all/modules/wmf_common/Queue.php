@@ -135,7 +135,7 @@ class Queue {
                 }
 
                 if ( !$ex->isNoEmail() ) {
-                    wmf_common_failmail( 'wmf_common', $ex, $mailableDetails );
+                    wmf_common_failmail( 'wmf_common', '', $ex, $mailableDetails );
                 }
 
                 if ( $ex->isFatal() ) {
@@ -147,7 +147,7 @@ class Queue {
             } catch (Exception $ex) {
                 $error = 'UNHANDLED ERROR. Halting dequeue loop. Exception: ' . $ex->getMessage() . "\nStack Trace: " . print_r( $ex->getTrace(), true );
                 watchdog( 'wmf_common', $error, NULL, WATCHDOG_ERROR );
-                wmf_common_failmail( 'wmf_common', $error, Queue::getCorrelationId( $msg ) );
+                wmf_common_failmail( 'wmf_common', $error, NULL, Queue::getCorrelationId( $msg ) );
 
                 throw $ex;
             }

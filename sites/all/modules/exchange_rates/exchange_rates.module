@@ -199,7 +199,7 @@ function exchange_rates_update_all( $date = null ) {
 			$result = $retriever->updateRates( $currencies, $date );
 			break;
 		} catch ( ExchangeRateUpdateException $ex) {
-			wmf_common_failmail( 'exchange_rates', $ex );
+			wmf_common_failmail( 'exchange_rates', '', $ex );
 		}
 	}
 	if ( $result === null ) {

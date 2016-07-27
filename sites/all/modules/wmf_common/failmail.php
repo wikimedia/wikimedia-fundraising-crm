@@ -1,21 +1,28 @@
 <?php
 
-function wmf_common_failmail( $module, $error, $source = null )
+/**
+ * Send out a failmail notifying fr-tech of an abnormality in processing.
+ *
+ * @param string $module
+ * @param string $message
+ * @param Exception $error
+ * @param string $source
+ */
+function wmf_common_failmail( $module, $message, $error = null, $source = null )
 {
     $to = variable_get('wmf_common_failmail', '');
     if (empty($to)) {
         $to = 'fr-tech@wikimedia.org';
     }
     $params['error'] = $error;
-    if ($source) {		
+    $params['message'] = $message;
+    if ($source) {
         $params['source'][] = $source;
-    } elseif (property_exists($error, 'source')) {
-        $params['source'][] = $error->source;
     }
 
     watchdog(
         'failmail',
-        "What's that? Something wrong: $error",
+        "What's that? Something wrong: $message",
         array(),
         WATCHDOG_ERROR
     );
@@ -53,7 +60,7 @@ function wmf_common_mail($key, &$message, $params)
     if (is_callable(array($params['error'], 'getMessage'))) {
         $message['body'][] = t("Error: ") . $params['error']->getMessage();
     } elseif (!empty($params['error'])) {
-        $message['body'][] = t("Error: ") . $params['error'];
+        $message['body'][] = t("Error: ") . $params['message'];
     }
     if(!empty($params['source'])){
         $message['body'][] = "---" . t("Source") . "---";

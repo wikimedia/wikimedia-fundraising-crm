@@ -244,7 +244,7 @@ function recurring_globalcollect_batch_charge($contribution_batch, $options = ar
       {
           $failed[] = $contribution_recur;
           if ( !$e->isNoEmail() ) {
-              wmf_common_failmail( 'recurring_globalcollect', $e, $contribution_recur );
+              wmf_common_failmail( 'recurring_globalcollect', '', $e, $contribution_recur );
           }
           if ( $e->isFatal() ) {
               break;
