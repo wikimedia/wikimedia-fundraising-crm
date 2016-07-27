@@ -1891,7 +1891,6 @@ function wmf_civicrm_mark_refund(
     elseif ( !is_numeric( $refund_date ) ) {
         $refund_date = wmf_common_date_parse_string( $refund_date );
     }
-    $dbTransaction = new CRM_Core_Transaction();
 
     // TODO: These are already getting normalized from processor codes in the
     // classes that call this function so this is a bit redundant.

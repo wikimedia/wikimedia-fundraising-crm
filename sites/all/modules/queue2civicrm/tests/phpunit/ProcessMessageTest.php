@@ -238,10 +238,14 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     /**
-     * @expectedException WmfException
-     * @expectedExceptionCode WmfException::INVALID_MESSAGE
+     * Test refunding a mismatched amount.
+     *
+     * Note that we were checking against an exception - but it turned out the exception
+     * could be thrown in this fn queue2civicrm_import if the exchange rate does not
+     * exist - which is not what we are testing for.
      */
     public function testRefundMismatched() {
+        $this->setExchangeRates(1234567, array( 'USD' => 1, 'PLN' => 0.5 ) );
         $donation_message = new TransactionMessage( array(
             'gateway' => 'test_gateway',
             'gateway_txn_id' => mt_rand(),
@@ -259,5 +263,9 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals( 1, count( $contributions ) );
 
         refund_import( $refund_message );
+        $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $contributions[0]['contact_id'], 'sequential' => 1));
+        $this->assertEquals(2, count($contributions['values']));
+        $this->assertEquals('Chargeback', CRM_Contribute_PseudoConstant::contributionStatus($contributions['values'][0]['contribution_status_id']));
+        $this->assertEquals('-.5', $contributions['values'][1]['total_amount']);
     }
 }
