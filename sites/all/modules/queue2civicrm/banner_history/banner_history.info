@@ -4,3 +4,4 @@ core = 7.x
 package = queue2civicrm
 configure = admin/config/queue2civicrm/banner_history
 dependencies[] = queue2civicrm
+files[] = BannerHistoryQueueConsumer.php
