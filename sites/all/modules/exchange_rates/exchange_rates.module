@@ -6,7 +6,7 @@ use exchange_rates\ExchangeRateUpdateException;
 
 function exchange_rates_menu() {
   $items = array();
-  
+
   $items['admin/config/exchange_rates'] = array(
     'title' => 'Exchange rates',
     'page callback' => 'system_admin_menu_block_page',
@@ -34,7 +34,7 @@ function exchange_rates_menu() {
     'page callback' => 'exchange_rates_manual_update',
     'access arguments' => array('administer site configuration'),
   );
-  
+
   return $items;
 }
 
@@ -95,7 +95,7 @@ function exchange_rates_listing() {
   $content[] = t('Last updated: %updated', array('%updated' => format_date(variable_get('exchange_rates_bank_update', 0))));
   $content[] = t('Remaining quotes: %remaining', array('%remaining' => variable_get('exchange_rates_remaining_quotes', 'unknown')));
   $content[] = theme( 'table', array( 'header' => $cols, 'rows' => $rates ) );
-  
+
   return implode("<br />\n", $content);
 }
 
@@ -147,12 +147,12 @@ function exchange_rate_convert($from_currency, $amount = 1, $timestamp = NULL) {
   if (!$rate) {
     $rate = db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = :currency ORDER BY bank_update', 0, 1, array( ':currency' => $from_currency ))->fetchField();
   }
-  
+
   if (!$rate) {
     throw new ExchangeRatesException(t("No conversion available for currency !cur", array("!cur" => $from_currency)));
   }
 
-  return $amount * $rate;  
+  return $amount * $rate;
 }
 
 function exchange_rate_cache_key($currency, $timestamp) {
@@ -199,7 +199,7 @@ function exchange_rates_update_all( $date = null ) {
 			$result = $retriever->updateRates( $currencies, $date );
 			break;
 		} catch ( ExchangeRateUpdateException $ex) {
-			wmf_common_failmail( 'exchange_rates', $ex );
+			wmf_common_failmail( 'exchange_rates', '', $ex );
 		}
 	}
 	if ( $result === null ) {

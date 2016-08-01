@@ -108,7 +108,7 @@ function queue2civicrm_settings() {
     '#title' => t('Subscription path'),
     '#description' => t('The queue holding normal, incoming donations waiting to be processed.'),
     '#required' => TRUE,
-    '#default_value' => variable_get('queue2civicrm_subscription', '/queue/test'),
+    '#default_value' => variable_get('queue2civicrm_subscription', '/queue/donations'),
   );
 
   $form['queue2civicrm_batch'] = array(
@@ -178,7 +178,7 @@ function queue2civicrm_batch_process() {
   }
 
   $processed = queue2civicrm_stomp()->dequeue_loop(
-      variable_get('queue2civicrm_subscription', '/queue/test'),
+      variable_get( 'queue2civicrm_subscription', '/queue/donations' ),
       variable_get( 'queue2civicrm_batch', 0 ),
       variable_get( 'queue2civicrm_batch_time', 0 ),
       'queue2civicrm_import'

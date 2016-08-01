@@ -422,9 +422,9 @@ function wmf_audit_send_stomp($body, $type) {
   //there, this breaks.
   if (empty($types)) {
     $types = array(
-      'main' => variable_get('queue2civicrm_subscription', '/queue/test'),
-      'negative' => variable_get('refund_queue', '/queue/refund-notifications_test'),
-      'recurring' => variable_get('recurring_subscription', '/queue/test_recurring'),
+      'main' => variable_get('queue2civicrm_subscription', '/queue/donations'),
+      'negative' => variable_get('refund_queue', '/queue/refund_test'),
+      'recurring' => variable_get('recurring_subscription', '/queue/donations_recurring'),
     );
   }
 

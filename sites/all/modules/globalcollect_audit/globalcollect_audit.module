@@ -2016,9 +2016,9 @@ function globalcollect_audit_send_stomp( $queueId, $body ) {
 
     // FIXME: register the queue mapping somewhere sane
     if ( $queueId === 'donations' ) {
-        $queuePath = variable_get( 'queue2civicrm_subscription', '/queue/test' );
+        $queuePath = variable_get( 'queue2civicrm_subscription', '/queue/donations' );
     } elseif ( $queueId === 'refund' ) {
-        $queuePath = variable_get( 'refund_queue', '/queue/refund-notifications_test' );
+        $queuePath = variable_get( 'refund_queue', '/queue/refund' );
     } else {
         throw new Exception( "What kind of a queue is this??: {$queueId}" );
     }

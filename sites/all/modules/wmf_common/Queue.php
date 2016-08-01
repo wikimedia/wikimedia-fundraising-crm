@@ -135,7 +135,7 @@ class Queue {
                 }
 
                 if ( !$ex->isNoEmail() ) {
-                    wmf_common_failmail( 'wmf_common', $ex, $mailableDetails );
+                    wmf_common_failmail( 'wmf_common', '', $ex, $mailableDetails );
                 }
 
                 if ( $ex->isFatal() ) {
@@ -147,7 +147,7 @@ class Queue {
             } catch (Exception $ex) {
                 $error = 'UNHANDLED ERROR. Halting dequeue loop. Exception: ' . $ex->getMessage() . "\nStack Trace: " . print_r( $ex->getTrace(), true );
                 watchdog( 'wmf_common', $error, NULL, WATCHDOG_ERROR );
-                wmf_common_failmail( 'wmf_common', $error, Queue::getCorrelationId( $msg ) );
+                wmf_common_failmail( 'wmf_common', $error, NULL, Queue::getCorrelationId( $msg ) );
 
                 throw $ex;
             }
@@ -254,7 +254,7 @@ class Queue {
                 watchdog( 'wmf_common', "Queue connection failure #$attempt: " . $e->getMessage(), array(), WATCHDOG_ERROR );
             }
         }
-        
+
         if ( !$this->isConnected() ) {
             throw new WmfException( "STOMP_BAD_CONNECTION", "Gave up connecting to the queue." );
         }
@@ -289,8 +289,8 @@ class Queue {
     /**
      * Enqueue a STOMP message
      *
-     * @param $msg    Message to queue
-     * @param $queue  Queue to queue to; should start with /queue/
+     * @param array $msg    Message to queue
+     * @param string $queue  Queue to queue to; should start with /queue/
      * @return bool   True if STOMP claims it worked
      */
     function enqueue( $msg, $properties, $queue ) {
