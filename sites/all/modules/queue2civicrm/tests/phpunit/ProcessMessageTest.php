@@ -57,18 +57,71 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
   /**
+   * Process an ordinary (one-time) donation message with an UTF campaign not already existing.
+   */
+  public function testDonationWithInvalidUTFCampaignOption() {
+      civicrm_initialize();
+      $optionValue = uniqid();
+      $message = new TransactionMessage(array('utm_campaign' => $optionValue));
+      $appealField = civicrm_api3('custom_field', 'getsingle', array('name' => 'Appeal'));
+
+      exchange_rate_cache_set('USD', $message->get('date'), 1);
+      exchange_rate_cache_set($message->get('currency'), $message->get('date'), 3);
+
+      queue2civicrm_import($message);
+
+      $contributions = wmf_civicrm_get_contributions_from_gateway_id($message->getGateway(), $message->getGatewayTxnId());
+      $contribution = civicrm_api3('Contribution', 'getsingle', array(
+        'id' => $contributions[0]['id'],
+        'return' => 'custom_' . $appealField['id'],
+      ));
+      $this->assertEquals($optionValue, $contribution['custom_' . $appealField['id']]);
+      $this->deleteCustomOption('Appeal', $optionValue);
+  }
+
+  /**
+   * Process an ordinary (one-time) donation message with an UTF campaign previously disabled.
+   */
+  public function testDonationWithDisabledUTFCampaignOption() {
+    civicrm_initialize();
+    $optionValue = uniqid();
+    $message = new TransactionMessage(array('utm_campaign' => $optionValue));
+    $appealFieldID = $this->createCustomOption('Appeal', $optionValue, FALSE);
+
+    exchange_rate_cache_set('USD', $message->get('date'), 1);
+    exchange_rate_cache_set($message->get('currency'), $message->get('date'), 3);
+
+    queue2civicrm_import($message);
+
+    $contributions = wmf_civicrm_get_contributions_from_gateway_id($message->getGateway(), $message->getGatewayTxnId());
+    $contribution = civicrm_api3('Contribution', 'getsingle', array(
+      'id' => $contributions[0]['id'],
+      'return' => 'custom_' . $appealFieldID,
+    ));
+    $this->assertEquals($optionValue, $contribution['custom_' . $appealFieldID]);
+    $this->deleteCustomOption('Appeal', $optionValue);
+  }
+
+  /**
    * Create a custom option for the given field.
    *
    * @param string $fieldName
    *
    * @param string $optionValue
+   * @param bool $is_active
+   *   Is the option value enabled.
    *
    * @return mixed
    * @throws \CiviCRM_API3_Exception
    */
-    public function createCustomOption($fieldName, $optionValue) {
+    public function createCustomOption($fieldName, $optionValue, $is_active = 1) {
         $appealField = civicrm_api3('custom_field', 'getsingle', array('name' => $fieldName));
-        civicrm_api3('OptionValue', 'create', array('name' => $optionValue, 'value' => $optionValue, 'option_group_id' => $appealField['option_group_id']));
+        civicrm_api3('OptionValue', 'create', array(
+          'name' => $optionValue,
+          'value' => $optionValue,
+          'option_group_id' => $appealField['option_group_id'],
+          'is_active' => $is_active,
+        ));
         civicrm_api_option_group(wmf_civicrm_get_direct_mail_field_option_name(), null, TRUE);
         return $appealField['id'];
     }
