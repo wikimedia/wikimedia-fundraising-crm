@@ -247,6 +247,7 @@
                 "messaging",
                 "stomp"
             ],
+            "abandoned": "stomp-php/stomp-php",
             "time": "2013-02-23 17:34:44"
         },
         {
@@ -812,7 +813,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2015-10-21 13:44:26"
+            "time": "2015-10-20 20:46:30"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -820,7 +821,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "0167d3b50665550823bf701af580741e0e08cd4b"
+                "reference": "601f1fe54ff7c889a5a2202d8f5f88a5b49a0541"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -871,7 +872,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2016-07-22 20:31:15"
+            "time": "2016-08-02 15:07:20"
         },
         {
             "name": "zordius/lightncandy",
