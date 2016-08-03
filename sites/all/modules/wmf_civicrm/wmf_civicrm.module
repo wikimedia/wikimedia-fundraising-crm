@@ -17,6 +17,7 @@ function civicrm_api_option_group($group_name, $key = null, $force = FALSE)
 		$api->OptionValue->Get(array(
 			'option_group_name' => $group_name,
 			'options' => array('limit' => 0),
+			'is_active' => 1,
 		));
 		$cached_group[$group_name] = array();
 		$option_values = $api->values();
