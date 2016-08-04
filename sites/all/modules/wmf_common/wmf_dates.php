@@ -26,7 +26,7 @@ function wmf_common_date_format_string( $date ){
 function wmf_common_date_parse_string( $date ){
     try {
         // Funky hack to trim decimal timestamp
-        $date = preg_replace( '/(@\d+)\.\d+/', '$1', $date );
+        $date = preg_replace( '/^(@\d+)\.\d+$/', '$1', $date );
 
         $obj = new DateTime( $date, new DateTimeZone( 'UTC' ) );
         return $obj->getTimestamp();
