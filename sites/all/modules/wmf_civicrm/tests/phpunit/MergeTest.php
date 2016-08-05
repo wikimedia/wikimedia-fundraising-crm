@@ -261,6 +261,30 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test that a conflict on 'on_hold' is handled.
+   */
+  public function testBatchMergeConflictOnHold() {
+    $emailDuck1 = $this->callAPISuccess('Email', 'get', array('contact_id' => $this->contactID, 'return' => 'id'));
+    $emailDuck2 = $this->callAPISuccess('Email', 'get', array('contact_id' => $this->contactID2, 'return' => 'id'));
+
+    $this->callAPISuccess('Email', 'create', array('id' => $emailDuck1['id'], 'on_hold' => 1));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['skipped']));
+    $this->assertEquals(0, count($result['values']['merged']));
+
+    $this->callAPISuccess('Email', 'create', array('id' => $emailDuck1['id'], 'on_hold' => 0));
+    $this->callAPISuccess('Email', 'create', array('id' => $emailDuck2['id'], 'on_hold' => 1));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['skipped']));
+    $this->assertEquals(0, count($result['values']['merged']));
+
+    $this->callAPISuccess('Email', 'create', array('id' => $emailDuck1['id'], 'on_hold' => 1));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(0, count($result['values']['skipped']));
+    $this->assertEquals(1, count($result['values']['merged']));
+  }
+
+  /**
    * Get address combinations for the merge test.
    *
    * @return array

@@ -2074,6 +2074,15 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
                 $refs['is_major_gift'] = _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId);
               }
               if (!$refs['is_major_gift']) {
+                $fieldParts = explode('_', $moveField);
+                if ($fieldParts[2] == 'email') {
+                  $mainIsOnHold = $refs['migration_info']['main_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+                  $otherIsOnHold = $refs['migration_info']['other_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+                  if ($mainIsOnHold + $otherIsOnHold === 1) {
+                    // One is one hold & the other isn't - conflict.
+                    continue;
+                  }
+                }
                 unset($refs['fields_in_conflict'][$moveField]);
               }
 
@@ -2218,6 +2227,9 @@ function wmf_civicrm_add_calculated_fields_to_migration_info(&$migrationInfo, $c
   ";
   $result = CRM_Core_DAO::executeQuery($query);
   $migrationInfo = _wmf_civicrm_add_result_fields_to_migration_info($migrationInfo, $result);
+  if (!isset($migrationInfo['move_' . wmf_civicrm_get_custom_field_name('last_donation_date')])) {
+    return;
+  }
   $query = "
     SELECT
       COALESCE(x.original_currency, currency) as last_donation_currency,
