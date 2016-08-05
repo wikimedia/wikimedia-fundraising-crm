@@ -1958,16 +1958,10 @@ function wmf_civicrm_mark_refund(
           }
         }
     }
-  $dbTransaction->commit();
 
     if ($amount_scammed > 0) {
-      // We need to be careful here - if this is caught by an api call (that does not
-      // use the is_transactional => FALSE flag it will cause
-      // a transaction rollback. Hence we put it after the commit.
-      throw new WmfException(
-        'IMPORT_CONTRIB',
-        "Refund amount mismatch for : $contribution_id, difference is $amount_scammed"
-      );
+      wmf_common_failmail('wmf_civicrm', "Refund amount mismatch for : $contribution_id, difference is {$amount_scammed}. See "
+        . CRM_Utils_System::url('civicrm/contact/view/contribution', array('reset' => 1, 'id' => $contribution_id, 'action' => 'view'), TRUE));
     }
 
     return $contribution_id;
