@@ -1,7 +1,7 @@
 <?php
 
-use SmashPig\Core\Configuration;
 use SmashPig\Core\Context;
+use SmashPig\PaymentProviders\Amazon\Tests\AmazonTestConfiguration;
 
 /**
  * @group Amazon
@@ -18,11 +18,8 @@ class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 		self::$messages = array();
 
 		// Use the test configuration for SmashPig
-		$config = new Configuration(
-			'amazon',
-			DRUPAL_ROOT . '/../vendor/wikimedia/smash-pig/PaymentProviders/Amazon/Tests/config_test.yaml'
-		);
-		Context::init( $config );
+		$config = new AmazonTestConfiguration();
+		Context::initWithLogger( $config );
 
 		$dirs = array(
 			'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',

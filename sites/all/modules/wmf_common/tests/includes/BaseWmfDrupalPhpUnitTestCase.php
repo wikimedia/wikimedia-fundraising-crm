@@ -1,5 +1,7 @@
 <?php
 
+use SmashPig\Core\Context;
+
 class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
     public function setUp() {
         parent::setUp();
@@ -16,6 +18,11 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
         $user->uid = "321";
         $user->roles = array( DRUPAL_AUTHENTICATED_RID => 'authenticated user' );
     }
+
+    public function tearDown() {
+		Context::set(); // Nullify any SmashPig context for the next run
+		parent::tearDown();
+	}
 
 	/**
 	 * Temporarily set foreign exchange rates to known values

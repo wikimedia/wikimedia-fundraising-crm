@@ -2,7 +2,6 @@
 
 use SmashPig\Core\Configuration;
 use SmashPig\Core\Context;
-use SmashPig\Core\Logging\Logger;
 
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
 
@@ -38,16 +37,8 @@ function wmf_audit_menu() {
  * @param array $options Runtime parameters
  */
 function wmf_audit_main( $gateway, $options ) {
-    $settings_file = DRUPAL_ROOT . '/sites/default/smashpig.settings.php';
-    if ( !file_exists( $settings_file ) ) {
-        $settings_file = null;
-    }
-    $config = new Configuration( $gateway );
-    Context::init( $config );
-    Logger::init(
-        $config->val( 'logging/root-context' ),
-        $config->val( 'logging/log-level' ),
-        $config,
+    Context::initWithLogger(
+        new Configuration( $gateway ),
         "{$gateway}_audit"
     );
 
