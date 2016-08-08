@@ -44,7 +44,7 @@
                 "payment",
                 "payments"
             ],
-            "time": "2015-10-07 20:06:54"
+            "time": "2015-10-07 15:01:25"
         },
         {
             "name": "clio/clio",
@@ -93,27 +93,23 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/p/wikimedia/fundraising/php-queue.git",
-                "reference": "da00b03c229b4437b5cb69427b8e5b9adbffaa3f"
+                "reference": "14198ba1f7d4868933649a85621a3955965e83cd"
             },
             "require": {
-                "clio/clio": "@stable",
+                "clio/clio": "0.1.*",
                 "monolog/monolog": "~1.3",
                 "php": ">=5.3.0"
             },
             "require-dev": {
-                "amazonwebservices/aws-sdk-for-php": "dev-master",
-                "aws/aws-sdk-php": "dev-master",
-                "ext-memcache": "*",
-                "iron-io/iron_mq": "dev-master",
-                "microsoft/windowsazure": "dev-master",
-                "mrpoundsign/pheanstalk-5.3": "dev-master",
-                "predis/predis": "1.*"
+                "jakub-onderka/php-parallel-lint": "0.9",
+                "phpunit/phpunit": "4.4.*"
             },
             "suggest": {
                 "Respect/Rest": "For a REST server to post job data",
                 "amazonwebservices/aws-sdk-for-php": "For AWS SQS backend support (legacy version)",
                 "aws/aws-sdk-php": "For AWS SQS backend support",
                 "clio/clio": "Support for daemonizing PHP CLI runner",
+                "ext-memcache": "*",
                 "fusesource/stomp-php": "For the STOMP backend",
                 "iron-io/iron_mq": "For IronMQ backend support",
                 "microsoft/windowsazure": "For Windows Azure Service Bus backend support",
@@ -132,6 +128,12 @@
                     "PHPQueue": "src/"
                 }
             },
+            "scripts": {
+                "test": [
+                    "parallel-lint . --exclude vendor",
+                    "phpunit"
+                ]
+            },
             "license": [
                 "MIT"
             ],
@@ -147,7 +149,7 @@
                 "queue",
                 "transaction"
             ],
-            "time": "2015-06-11 20:26:19"
+            "time": "2016-08-05 19:16:32"
         },
         {
             "name": "cogpowered/finediff",
@@ -813,7 +815,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2015-10-20 20:46:30"
+            "time": "2015-10-21 13:44:26"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -821,7 +823,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "601f1fe54ff7c889a5a2202d8f5f88a5b49a0541"
+                "reference": "6746e0f6393f23c0351b0379de94e6b2e861b359"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -872,7 +874,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2016-08-02 15:07:20"
+            "time": "2016-08-08 21:50:08"
         },
         {
             "name": "zordius/lightncandy",
