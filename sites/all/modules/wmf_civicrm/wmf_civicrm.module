@@ -1891,7 +1891,6 @@ function wmf_civicrm_mark_refund(
     elseif ( !is_numeric( $refund_date ) ) {
         $refund_date = wmf_common_date_parse_string( $refund_date );
     }
-    $dbTransaction = new CRM_Core_Transaction();
 
     // TODO: These are already getting normalized from processor codes in the
     // classes that call this function so this is a bit redundant.
@@ -1958,16 +1957,10 @@ function wmf_civicrm_mark_refund(
           }
         }
     }
-  $dbTransaction->commit();
 
     if ($amount_scammed > 0) {
-      // We need to be careful here - if this is caught by an api call (that does not
-      // use the is_transactional => FALSE flag it will cause
-      // a transaction rollback. Hence we put it after the commit.
-      throw new WmfException(
-        'IMPORT_CONTRIB',
-        "Refund amount mismatch for : $contribution_id, difference is $amount_scammed"
-      );
+      wmf_common_failmail('wmf_civicrm', "Refund amount mismatch for : $contribution_id, difference is {$amount_scammed}. See "
+        . CRM_Utils_System::url('civicrm/contact/view/contribution', array('reset' => 1, 'id' => $contribution_id, 'action' => 'view'), TRUE));
     }
 
     return $contribution_id;
@@ -2050,6 +2043,7 @@ function wmf_civicrm_set_gateway_status( $contribution_id, $raw_status, $normali
 
 /**
  * Implementation of hook_civicrm_merge().
+ *
  * @param string $type
  * @param array $refs
  * @param int $mainId
@@ -2072,6 +2066,27 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
               }
             }
           }
+          foreach (array_keys($refs['fields_in_conflict']) as $moveField) {
+
+            if (substr($moveField, 0, 13) === 'move_location') {
+              if (!isset($refs['is_major_gift'])) {
+                $refs['is_major_gift'] = _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId);
+              }
+              if (!$refs['is_major_gift']) {
+                $fieldParts = explode('_', $moveField);
+                if ($fieldParts[2] == 'email') {
+                  $mainIsOnHold = $refs['migration_info']['main_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+                  $otherIsOnHold = $refs['migration_info']['other_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+                  if ($mainIsOnHold + $otherIsOnHold === 1) {
+                    // One is one hold & the other isn't - conflict.
+                    continue;
+                  }
+                }
+                unset($refs['fields_in_conflict'][$moveField]);
+              }
+
+            }
+          }
         }
 
         // Only bother to calculate the totals if we are already starting to merge.
@@ -2081,6 +2096,100 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
         break;
 
     }
+}
+
+/**
+ * Has the combined contact given $500 or more?
+ *
+ * @param int $mainId
+ * @param int $otherId
+ *
+ * @return bool
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId) {
+  $total = 0;
+  $donations = civicrm_api3('Contribution', 'get', array(
+    'return' => 'total_amount',
+    'contact_id' => array('IN' => array($mainId, $otherId)),
+  ));
+  foreach ($donations['values'] as $donation) {
+    $total += $donation['total_amount'];
+  }
+  return ($total >= 500) ? TRUE : FALSE;
+}
+
+/**
+ *
+ * We are testing a nuanced real life situation where the address data of the
+ * most recent donor gets priority - resulting in the primary address being set
+ * to the primary address of the most recent donor and address data on a per
+ * location type basis also being set to the most recent donor. Hook also excludes
+ * a fully matching address with a different location.
+ *
+ * This has been added to the test suite to ensure the code supports more this
+ * type of intervention.
+ *
+ * @param array $blocksDAO
+ *   Array of location DAO to be saved. These are arrays in 2 keys 'update' & 'delete'.
+ * @param int $mainId
+ *   Contact_id of the contact that survives the merge.
+ * @param int $otherId
+ *   Contact_id of the contact that will be absorbed and deleted.
+ * @param array $migrationInfo
+ *   Calculated migration info, informational only.
+ *
+ * @return mixed
+ */
+function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $otherId, $migrationInfo) {
+
+  $lastDonor = civicrm_api3('Contribution', 'get', array(
+    'return' => 'contact_id',
+    'contact_id' => array('IN' => array($mainId, $otherId)),
+    'options' => array('sort' => 'receive_date DESC', 'limit' => 1),
+  ));
+  if (!$lastDonor['count']) {
+    return;
+  }
+  $lastDonorID = $lastDonor['id'];
+  // Since the last donor is not the main ID we are prioritising info from the last donor.
+  // In the test this should always be true - but keep the check in case
+  // something changes that we need to detect.
+  if ($lastDonorID != $mainId) {
+    $higherPriorityLocationBlocks = $migrationInfo['other_details']['location_blocks'];
+    $lowerPriorityLocationBlocks = $migrationInfo['main_details']['location_blocks'];
+    foreach ($higherPriorityLocationBlocks as $blockType => $blocks) {
+      foreach ($blocks as $block) {
+        if (empty($lowerPriorityLocationBlocks[$blockType])) {
+          continue;
+        }
+        foreach ($lowerPriorityLocationBlocks[$blockType] as $index => $lowerPriorityLocationBlock) {
+          if (_wmf_civicrm_is_delete_location_in_favour_of_higher_priority_one(
+            $blocks, $block, $lowerPriorityLocationBlock)
+          ) {
+            $blocksDAO[$blockType]['delete'][$lowerPriorityLocationBlock['id']] = _civicrm_api3_load_DAO($blockType);
+            $blocksDAO[$blockType]['delete'][$lowerPriorityLocationBlock['id']]->id = $lowerPriorityLocationBlock['id'];
+            if (!isset($blocksDAO[$blockType]['update'][$block['id']])) {
+              $blocksDAO[$blockType]['update'][$block['id']] = _civicrm_api3_load_DAO($blockType);
+              $blocksDAO[$blockType]['update'][$block['id']]->id = $block['id'];
+              $blocksDAO[$blockType]['update'][$block['id']]->contact_id = $mainId;
+            }
+            unset($lowerPriorityLocationBlocks[$blockType][$index]);
+          }
+          if (isset($blocksDAO[$blockType]['update'][$block['id']]->is_primary)) {
+            $blocksDAO[$blockType]['update'][$block['id']]->is_primary = $block['is_primary'];
+          }
+        }
+        foreach ($lowerPriorityLocationBlocks[$blockType] as $remainingLocation) {
+          $blocksDAO[$blockType]['update'][$remainingLocation['id']] = _civicrm_api3_load_DAO($blockType);
+          $blocksDAO[$blockType]['update'][$remainingLocation['id']]->id = $remainingLocation['id'];
+          $blocksDAO[$blockType]['update'][$remainingLocation['id']]->contact_id = $mainId;
+          $blocksDAO[$blockType]['update'][$remainingLocation['id']]->is_primary = 0;
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -2117,6 +2226,9 @@ function wmf_civicrm_add_calculated_fields_to_migration_info(&$migrationInfo, $c
   ";
   $result = CRM_Core_DAO::executeQuery($query);
   $migrationInfo = _wmf_civicrm_add_result_fields_to_migration_info($migrationInfo, $result);
+  if (!isset($migrationInfo['move_' . wmf_civicrm_get_custom_field_name('last_donation_date')])) {
+    return;
+  }
   $query = "
     SELECT
       COALESCE(x.original_currency, currency) as last_donation_currency,
@@ -2829,4 +2941,24 @@ function wmf_civicrm_civicrm_pageRun(&$page) {
     }
   }
 
-}
+}/**
+ * @param array $blocks
+ * @param array $lowerPriorityLocationBlock
+ * @param array $block
+ *
+ * @return array
+ */
+  function _wmf_civicrm_is_delete_location_in_favour_of_higher_priority_one($blocks, $block, $lowerPriorityLocationBlock) {
+    // If the address is an exact match for any address on the preferred contact or matches the location
+    // type of an existing address we want to delete it.
+    $lowerPriorityLocationTypeID = $lowerPriorityLocationBlock['location_type_id'];
+    unset($lowerPriorityLocationBlock['location_type_id']);
+    if ($lowerPriorityLocationTypeID == $block['location_type_id'] ||
+      CRM_Dedupe_Merger::locationIsSame($block, $lowerPriorityLocationBlock)
+      && (!isset($blocks['update']) || !isset($blocks['update'][$lowerPriorityLocationBlock['id']]))
+      && (!isset($blocks['delete']) || !isset($blocks['delete'][$lowerPriorityLocationBlock['id']]))
+    ) {
+      return TRUE;
+    }
+    return FALSE;
+  }

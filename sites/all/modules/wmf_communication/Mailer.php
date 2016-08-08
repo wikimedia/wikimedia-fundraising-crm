@@ -129,6 +129,15 @@ abstract class MailerBase {
             throw new WmfException( 'RENDER', "Could not render plaintext" );
         }
     }
+
+	/**
+	 * Split a string list of addresses, separated by commas or whitespace, into an array.
+	 * @param string $to
+	 * @return array
+	 */
+	protected function splitAddresses( $to ) {
+		return preg_split( '/\\s*[,\\n]\\s*/', $to, -1, PREG_SPLIT_NO_EMPTY );
+	}
 }
 
 /**
@@ -136,12 +145,6 @@ abstract class MailerBase {
  */
 class MailerPHPMailer extends MailerBase implements IMailer {
     function send( $email, $headers = array() ) {
-        watchdog( 'wmf_communication',
-            "Sending an email to :to_address, using PHPMailer",
-            array( ':to_address' => $email['to_address'] ),
-            WATCHDOG_DEBUG
-        );
-
         $mailer = new PHPMailer( true );
 
         $mailer->set( 'CharSet', 'utf-8' );
@@ -151,7 +154,15 @@ class MailerPHPMailer extends MailerBase implements IMailer {
         $mailer->SetFrom( $email['from_address'], $email['from_name'] );
         $mailer->set( 'Sender', $email['reply_to'] );
 
+        // Note that this is incredibly funky.  This is the only mailer to support
+        // a "to" parameter, and it behaves differently than to_address/to_name.
+        // You can pass a list of bare email addresses through "to" and they'll all
+        // become to addresses, but without names, so this should only be used by
+        // maintenancey things directed at staff.
         if ( isset( $email['to'] ) ) {
+            if ( is_string( $email['to'] ) ) {
+                $email['to'] = $this->splitAddresses( $email['to'] );
+            }
             foreach ( $email['to'] as $to ) {
                 $mailer->AddAddress( $to );
             }

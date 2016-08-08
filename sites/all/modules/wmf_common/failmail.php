@@ -27,8 +27,7 @@ function wmf_common_failmail( $module, $message, $error = null, $source = null )
       'html' => wmf_common_get_body($message, $error, $source, $isRemoved),
       'reply_to' => '',
       'subject' => _wmf_common_get_subject($error, $module, $isRemoved),
-      'to_address' => variable_get('wmf_common_failmail', 'fr-tech@wikimedia.org'),
-      'to_name' => 'FR-Tech',
+      'to' => variable_get('wmf_common_failmail', 'fr-tech@wikimedia.org'),
     ));
 }
 
