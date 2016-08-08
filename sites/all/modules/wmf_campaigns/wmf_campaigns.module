@@ -288,6 +288,7 @@ function wmf_campaigns_civicrm_custom( $action, $groupId, $entityId, $params ) {
                 'from_name' => "Campaign notifer",
                 'reply_to' => "fr-tech+wmf_campaigns-bounce@wikimedia.org",
                 'subject' => "Campaign donation: {$campaignKey}",
+                'to' => $campaign->getNotificationEmail(),
             );
             $civiUrl = CRM_Utils_System::url( 'civicrm/contact/view/contribution',
                 array(
@@ -306,14 +307,8 @@ function wmf_campaigns_civicrm_custom( $action, $groupId, $entityId, $params ) {
             $template = new Templating( __DIR__ . '/templates', 'notification', 'en', $params, 'html' );
             $letter['html'] = $template->render();
 
-            $addressees = explode( ",", $campaign->getNotificationEmail() );
             $mailer = Mailer::getDefault();
-            foreach ( $addressees as $recipient ) {
-                $letter['to_address'] = trim( $recipient );
-                $letter['to_name'] = t( "Dear donor services" );
-
-                $mailer->send( $letter );
-            }
+            $mailer->send( $letter );
         }
     }
 }

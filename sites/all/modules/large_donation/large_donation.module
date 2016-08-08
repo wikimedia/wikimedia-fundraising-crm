@@ -231,7 +231,7 @@ function large_donation_notification_send( $contribution, $notification ) {
 
     try {
         $email = array(
-            'to' => preg_split( '/\\s*[,\\n]\\s*/', $to, -1, PREG_SPLIT_NO_EMPTY ),
+            'to' => $to,
             'from_address' => 'fr-tech+large_donation@wikimedia.org',
             'from_name' => 'Large Donation Bot',
             'subject' => "WMF - large donation: \${$contribution->total_amount}",
