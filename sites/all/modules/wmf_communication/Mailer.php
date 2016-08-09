@@ -1,7 +1,9 @@
 <?php namespace wmf_communication;
 
+use Exception;
 use Html2Text\Html2Text;
 use PHPMailer;
+use WmfException;
 
 /**
  * Must be implemented by every mailing engine
@@ -152,7 +154,9 @@ class MailerPHPMailer extends MailerBase implements IMailer {
 
         $mailer->AddReplyTo( $email['from_address'], $email['from_name'] );
         $mailer->SetFrom( $email['from_address'], $email['from_name'] );
-        $mailer->set( 'Sender', $email['reply_to'] );
+        if ( !empty( $email['reply_to'] ) ) {
+            $mailer->set( 'Sender', $email['reply_to'] );
+        }
 
         // Note that this is incredibly funky.  This is the only mailer to support
         // a "to" parameter, and it behaves differently than to_address/to_name.
@@ -176,7 +180,8 @@ class MailerPHPMailer extends MailerBase implements IMailer {
 
         $mailer->Subject = $email['subject'];
         # n.b. - must set AltBody after MsgHTML(), or the text will be overwritten.
-        $mailer->MsgHTML( $this->wrapHtmlSnippet( $email['html'], $email['locale'] ) );
+        $locale = empty( $email['locale'] ) ? null : $email['locale'];
+        $mailer->MsgHTML( $this->wrapHtmlSnippet( $email['html'], $locale ) );
         $this->normalizeContent( $email );
         $mailer->AltBody = $email['plaintext'];
 
