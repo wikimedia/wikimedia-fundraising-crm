@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Helps us not break the DonationInterface gateway adapter wrapper
+ * Helps us not break the DonationInterfaceFactory gateway adapter wrapper
  *
  * @group WmfCivicrm
  */
-class DonationInterfaceTest extends BaseWmfDrupalPhpUnitTestCase {
+class DonationInterfaceFactoryTest extends BaseWmfDrupalPhpUnitTestCase {
 
 	/**
 	 * Do we blow up on the launch pad?
@@ -21,7 +21,7 @@ class DonationInterfaceTest extends BaseWmfDrupalPhpUnitTestCase {
 			'contribution_tracking_id' => mt_rand(),
 			'referrer' => 'dummy',
 		);
-		$adapter = DonationInterface::createAdapter( 'GlobalCollect', $values );
+		$adapter = DonationInterfaceFactory::createAdapter( 'globalcollect', $values );
 		// see FIXME in recurring globalcollect
 		$adapter->addRequestData( array(
 			'effort_id' => 1,

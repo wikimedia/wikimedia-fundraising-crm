@@ -1,7 +1,7 @@
 <?php
 
-class DonationInterface {
-    static public function createAdapter( $type, $data ) {
+class DonationInterfaceFactory {
+    static public function createAdapter( $gatewayName, $data ) {
         // Configure DonationInterface according to Drupal settings.
         $adapterOptions = array(
             'batch_mode' => true,
@@ -14,6 +14,7 @@ class DonationInterface {
             'returnTo' => 'dumber',
         );
 
+        // @deprecated This all gets moved in to configuration files or SmashPig.
         // Yeah, I know... this is a consequence of not running the main
         // initializations in the extension's DonationInterface.php.  We
         // could clean it up by moving initialization to a function which
@@ -24,8 +25,8 @@ class DonationInterface {
             $wgGlobalCollectGatewayAccountInfo,
             $wgGlobalCollectGatewayURL,
             $wgGlobalCollectGatewayMerchantID,
-            $wgDonationInterfaceGatewayAdapters,
-            $wgDonationInterfaceDebugLog;
+            $wgDonationInterfaceDebugLog,
+            $wgDonationInterfaceGatewayAdapters;
 
         // Adapt Drupal configuration into MediaWiki globals.
         $wgGlobalCollectGatewayMerchantID = variable_get('recurring_globalcollect_merchant_id', 0);
@@ -41,12 +42,14 @@ class DonationInterface {
         $wgDonationInterfacePriceFloor = 1.00;
         $wgDonationInterfacePriceCeiling = 10000.00;
 
-        $className = "{$type}Adapter";
-        $wgDonationInterfaceGatewayAdapters = array( $className );
-
         // send us all the messages and we'll sort 'em out
         $wgDonationInterfaceDebugLog = true;
 
+        $wgDonationInterfaceGatewayAdapters = array(
+            'globalcollect' => 'GlobalCollectAdapter',
+        );
+
+        $className = DonationInterface::getAdapterClassForGateway( $gatewayName );
         $adapter = new $className( $adapterOptions );
         return $adapter;
     }

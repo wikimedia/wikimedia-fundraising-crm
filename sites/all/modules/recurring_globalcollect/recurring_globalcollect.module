@@ -300,7 +300,7 @@ function recurring_globalcollect_charge( $contribution_recur_id, $options = arra
       // Avoiding some more code.
       'referrer' => 'dummy',
   );
-  $adapter = DonationInterface::createAdapter( 'GlobalCollect', $values );
+  $adapter = DonationInterfaceFactory::createAdapter( 'globalcollect', $values );
 
   // FIXME hack.  This is getting overriden by sad.
   $adapter->addRequestData( array(
