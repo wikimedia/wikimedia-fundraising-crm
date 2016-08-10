@@ -2053,6 +2053,8 @@ function wmf_civicrm_set_gateway_status( $contribution_id, $raw_status, $normali
 function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) {
     switch ( $type ) {
       case 'batch' :
+      case 'form' :
+
         CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(1 => array(uniqid() . CRM_Utils_String::createRandom(CRM_Utils_String::ALPHANUMERIC, 4), 'String')));
         if (isset($refs['fields_in_conflict'])){
           $wmfCalculatedFields = wmf_civicrm_get_calculated_fields();
