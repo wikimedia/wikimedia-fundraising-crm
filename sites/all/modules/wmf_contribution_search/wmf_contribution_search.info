@@ -1,4 +1,0 @@
-name = WMF Contribution Search
-description = Modifies contribution search form
-core = 7.x
-package = Wikimedia
