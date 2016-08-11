@@ -1,12 +1,12 @@
 <?php 
 
-define( 'CONTRIBUTION_AUDIT_WR1_PARSER_DIR', '/usr/local/src/Wr1Parser/' );
-define( 'CONTRIBUTION_AUDIT_WR1_FILES_DIR', '/usr/local/src/Wr1_files/' );
-define( 'CONTRIBUTION_AUDIT_WR1_COMPLETED_DIR', '/usr/local/src/Wr1_files-completed/' );
-define( 'CONTRIBUTION_AUDIT_LOG_FILES_DIR', '/usr/local/src/logs/' );
-define( 'CONTRIBUTION_AUDIT_PLUSMINUS', 7 );
-define( 'CONTRIBUTION_AUDIT_TEST_MODE', true );
-define( 'CONTRIBUTION_AUDIT_FAKE_DB', false );
+define( 'GC_AUDIT_WR1_PARSER_DIR', '/usr/local/src/Wr1Parser/' );
+define( 'GC_AUDIT_WR1_FILES_DIR', '/usr/local/src/Wr1_files/' );
+define( 'GC_AUDIT_WR1_COMPLETED_DIR', '/usr/local/src/Wr1_files-completed/' );
+define( 'GC_AUDIT_LOG_FILES_DIR', '/usr/local/src/logs/' );
+define( 'GC_AUDIT_PLUSMINUS', 7 );
+define( 'GC_AUDIT_TEST_MODE', true );
+define( 'GC_AUDIT_FAKE_DB', false );
 define( 'GC_AUDIT_MAKE_FNAME', 'John' );
 define( 'GC_AUDIT_MAKE_LNAME', 'Doe' );
 define( 'GC_AUDIT_MAKE_EMAIL', 'nobody@wikimedia.org' );
@@ -19,10 +19,10 @@ define( 'GC_AUDIT_MAKE_CITY', 'Springfield' );
 function globalcollect_audit_menu() {
   $items = array();
   
-  $items['admin/config/contribution_audit/globalcollect_audit'] = array(
+  $items['admin/config/wmf_audit/globalcollect_audit'] = array(
     'title' => 'Globalcollect Audit',
     'description' => t('Configure globalcollect audit settings.'),
-    'access arguments' => array('administer contribution_audit'),
+    'access arguments' => array('administer wmf_audit'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array( 'globalcollect_audit_settings' ),
   );
@@ -38,43 +38,43 @@ function globalcollect_audit_settings() {
     '#type' => 'textfield',
     '#title' => t( 'Path to directory containing WR1 parser classes' ),
     '#required' => TRUE,
-    '#default_value' => variable_get( 'globalcollect_audit_wr1_parser_dir', CONTRIBUTION_AUDIT_WR1_PARSER_DIR ),
+    '#default_value' => variable_get( 'globalcollect_audit_wr1_parser_dir', GC_AUDIT_WR1_PARSER_DIR ),
   );
   $form['globalcollect_audit_wr1_files_dir']  = array(
     '#type' => 'textfield',
     '#title' => t( 'Directory containing incoming WR1 files' ),
     '#required' => TRUE,
-    '#default_value' => variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR ),
+    '#default_value' => variable_get( 'globalcollect_audit_wr1_files_dir', GC_AUDIT_WR1_FILES_DIR ),
   );
   $form['globalcollect_audit_wr1_completed_dir']  = array(
     '#type' => 'textfield',
     '#title' => t( 'Directory for completed WR1 files' ),
     '#required' => TRUE,
-    '#default_value' => variable_get( 'globalcollect_audit_wr1_completed_dir', CONTRIBUTION_AUDIT_WR1_COMPLETED_DIR ),
+    '#default_value' => variable_get( 'globalcollect_audit_wr1_completed_dir', GC_AUDIT_WR1_COMPLETED_DIR ),
   );
   $form['globalcollect_audit_log_files_dir']  = array(
     '#type' => 'textfield',
     '#title' => t( 'Path to directory containing WMF GlobalCollect log files' ),
     '#required' => TRUE,
-    '#default_value' => variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR ),
+    '#default_value' => variable_get( 'globalcollect_audit_log_files_dir', GC_AUDIT_LOG_FILES_DIR ),
   );
   $form['globalcollect_audit_log_files_dir_secondary']  = array(
     '#type' => 'textfield',
     '#title' => t( 'Alternate path to directory containing WMF GlobalCollect log files' ),
     '#required' => TRUE,
-    '#default_value' => variable_get( 'globalcollect_audit_log_files_dir_secondary', CONTRIBUTION_AUDIT_LOG_FILES_DIR ),
+    '#default_value' => variable_get( 'globalcollect_audit_log_files_dir_secondary', GC_AUDIT_LOG_FILES_DIR ),
   );
   $form['globalcollect_audit_test_mode']  = array(
     '#type' => 'checkbox',
     '#title' => t( 'When this box is checked, no stomp messages will be sent.' ),
     '#required' => FALSE,
-    '#default_value' => variable_get( 'globalcollect_audit_test_mode', CONTRIBUTION_AUDIT_TEST_MODE ),
+    '#default_value' => variable_get( 'globalcollect_audit_test_mode', GC_AUDIT_TEST_MODE ),
   );
   $form['globalcollect_audit_plusminus']  = array(
     '#type' => 'textfield',
     '#title' => t( 'Plus or minus search (in days)' ),
     '#required' => TRUE,
-    '#default_value' => variable_get( 'globalcollect_audit_plusminus', CONTRIBUTION_AUDIT_PLUSMINUS ),
+    '#default_value' => variable_get( 'globalcollect_audit_plusminus', GC_AUDIT_PLUSMINUS ),
   );
   $form['globalcollect_audit_make_fname']  = array(
     '#type' => 'textfield',
@@ -287,7 +287,7 @@ function globalcollect_audit_parse_all_wr1(){
 	globalcollect_audit_echo( print_r( posix_getpwuid( posix_getuid() ), true ), true );
 
 	$actual_start_time = microtime(true);
-	$test_mode = variable_get( 'globalcollect_audit_test_mode', CONTRIBUTION_AUDIT_TEST_MODE );
+	$test_mode = variable_get( 'globalcollect_audit_test_mode', GC_AUDIT_TEST_MODE );
 	
 	$wr1_files = globalcollect_audit_get_all_wr1_files();
 	
@@ -481,7 +481,7 @@ function globalcollect_audit_find_more_missing(&$wr1_files){
 function globalcollect_audit_parse_wr1_file( $file ){
 	static $parser_directory = null;
 	if (is_null($parser_directory)){
-		$parser_directory = variable_get( 'globalcollect_audit_wr1_parser_dir', CONTRIBUTION_AUDIT_WR1_PARSER_DIR );
+		$parser_directory = variable_get( 'globalcollect_audit_wr1_parser_dir', GC_AUDIT_WR1_PARSER_DIR );
 	}
 	require_once( $parser_directory . 'Wr1DataRecord.php' );
 	
@@ -510,7 +510,7 @@ function globalcollect_audit_parse_wr1_file( $file ){
 
 
 function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $contribution_tracking_id = null ){
-	$fake_db = variable_get( 'globalcollect_audit_fake_db', CONTRIBUTION_AUDIT_FAKE_DB );
+	$fake_db = variable_get( 'globalcollect_audit_fake_db', GC_AUDIT_FAKE_DB );
 	$make_missing = variable_get( 'globalcollect_audit_make_missing', false );
 	//you should probably make sure the data between the two sources match up before we do anything else
 	
@@ -826,7 +826,7 @@ function globalcollect_audit_get_contribution_tracking_data( $contribution_track
  * @return array full paths to all wr1-type files
  */
 function globalcollect_audit_get_all_wr1_files(){
-	$files_directory = variable_get( 'globalcollect_audit_wr1_files_dir', CONTRIBUTION_AUDIT_WR1_FILES_DIR );
+	$files_directory = variable_get( 'globalcollect_audit_wr1_files_dir', GC_AUDIT_WR1_FILES_DIR );
 	//foreach file in the directory, if it's a '*.wr?', add it to the list of files we could open.
 	$files = array();
 	if ( $handle = opendir( $files_directory ) ){
@@ -855,8 +855,8 @@ function globalcollect_audit_get_all_wr1_files(){
  * @return array A list of full paths to the files in their buckets 
  */
 function globalcollect_audit_groom_logs(){
-	$files_directory = variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
-	$files_directory_alt = variable_get( 'globalcollect_audit_log_files_dir_secondary', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
+	$files_directory = variable_get( 'globalcollect_audit_log_files_dir', GC_AUDIT_LOG_FILES_DIR );
+	$files_directory_alt = variable_get( 'globalcollect_audit_log_files_dir_secondary', GC_AUDIT_LOG_FILES_DIR );
 
 	$files = array(
 		'gz' => array(),
@@ -990,7 +990,7 @@ function globalcollect_audit_move_completed_wr1( $file, $nearly = false ){
 	if ($nearly){
 		$subdir .= '-nearly-' . date('Y-m-d', time());
 	}
-	$files_directory = variable_get( 'globalcollect_audit_wr1_completed_dir', CONTRIBUTION_AUDIT_WR1_COMPLETED_DIR );
+	$files_directory = variable_get( 'globalcollect_audit_wr1_completed_dir', GC_AUDIT_WR1_COMPLETED_DIR );
 	$completed_dir = $files_directory . '/' . $subdir;
 	if ( !is_dir( $completed_dir ) ){
 		if ( !mkdir ( $completed_dir, 0700 )){
@@ -1083,7 +1083,7 @@ function globalcollect_audit_get_next_log( $missing, $counts ){
 	
 	//this is the var that tells us how far to cluster around the dates we're 
 	//missing, before we simply slide backwards into history.
-	$plusminus = variable_get( 'globalcollect_audit_plusminus', CONTRIBUTION_AUDIT_PLUSMINUS );
+	$plusminus = variable_get( 'globalcollect_audit_plusminus', GC_AUDIT_PLUSMINUS );
 	
 	//haven't found anything yet. 
 	$file = null;
@@ -1183,7 +1183,7 @@ function globalcollect_audit_get_log_file_by_date( $date ){
 	$date = wmf_common_date_add_days( $date, 1 );
 	//I swear it makes sense. Most of the data in any given log are actually from the previous day. 
 	
-	$log_directory = variable_get( 'globalcollect_audit_log_files_dir', CONTRIBUTION_AUDIT_LOG_FILES_DIR );
+	$log_directory = variable_get( 'globalcollect_audit_log_files_dir', GC_AUDIT_LOG_FILES_DIR );
 	$file = $log_directory . $date . '_iop.log';
 	if ( file_exists( $file ) ){
 		return $file;
