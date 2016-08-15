@@ -41,10 +41,17 @@ function drush_civicrm_merge() {
   $startVariableName = 'civicrm_merge_batch_last_processed_id' . $ruleGroupID . '_' . $groupID;
   $start = variable_get($startVariableName, 1);
   $batch_size = (integer) drush_get_option('batch', variable_get('wmf_civicrm_merge_batch_size', 1000));
+  $end = CRM_Core_DAO::singleValueQuery("
+    SELECT max(id)
+    FROM (
+      SELECT id FROM civicrm_contact WHERE id > %1 ORDER BY id ASC LIMIT %2
+    ) as c",
+    array(1 => array($start, 'Integer'), 2 => array($batch_size, 'Integer'))
+  );
 
   $mergeParams = array(
     'criteria' => array(
-      'contact' => array('id' => array('BETWEEN' => array($start, $start + $batch_size))),
+      'contact' => array('id' => array('BETWEEN' => array($start, $end))),
     ),
   );
   if ($groupID) {
@@ -54,9 +61,11 @@ function drush_civicrm_merge() {
     $mergeParams['rule_group_id'] = $ruleGroupID;
   }
 
+  watchdog('civicrm_merge', 'Deduping contact range: %start to %end', array('%start' => $start, '%end' => $end), WATCHDOG_INFO);
   $result = civicrm_api3('Job', 'process_batch_merge', $mergeParams);
 
-  variable_set($startVariableName, $start + $batch_size);
-  drush_print("Processed id range $start to " . $start + $batch_size . '
+  variable_set($startVariableName, $end);
+  watchdog('civicrm_merge', 'Deduped contact range: %start to %end', array('%start' => $start, '%end' => $end), WATCHDOG_INFO);
+  drush_print("Processed id range $start to " . $end . '
   Merged ' . count($result['values']['merged']) . ". Skipped " . count($result['values']['skipped']));
 }

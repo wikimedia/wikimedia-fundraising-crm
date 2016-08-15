@@ -48,7 +48,7 @@ function globalcollect_audit_reset_drush_vars(){
 	static $vars = null;
 	if ( is_null( $vars ) ){
 		$vars = array(
-			'globalcollect_audit_test_mode' => variable_get( 'globalcollect_audit_test_mode', CONTRIBUTION_AUDIT_TEST_MODE ),
+			'globalcollect_audit_test_mode' => variable_get( 'globalcollect_audit_test_mode', GC_AUDIT_TEST_MODE ),
 			'globalcollect_audit_fake_db' => false,
 			'globalcollect_audit_make_missing' => false,
 			'globalcollect_audit_run_all_wr1' => false,
