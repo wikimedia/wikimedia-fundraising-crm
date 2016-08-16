@@ -1,4 +1,9 @@
 <?php
+use SmashPig\Core\Configuration;
+use SmashPig\Core\Context;
+use SmashPig\Core\DataStores\PendingDatabase;
+use SmashPig\Core\Logging\Logger;
+
 // include common functions
 require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_common.inc' );
 
@@ -170,6 +175,11 @@ function queue2civicrm_settings() {
 }
 
 function queue2civicrm_batch_process() {
+  // We only want to initialize the SmashPig stuff once, so we use the default
+  // config section rather than a processor-specific section. This means all
+  // processors have to use the same database for pending donation info.
+  $config = new Configuration();
+  Context::initWithLogger( $config, 'queue2civicrm' );
   wmf_civicrm_boost_performance();
 
   if ( variable_get( 'queue2civicrm_disable', false ) ) {
@@ -250,11 +260,45 @@ function queue2civicrm_import( $msg ) {
     // If more information is available, find it from the pending queue
     if ( isset( $msg['completion_message_id'] ) ) {
         $completion_message = queue2civicrm_import_completion_message( $msg );
+        $dbEntry = queue2civicrm_get_completion_message_from_pending_db( $msg );
         if ( !$completion_message ) {
             // If the completion message is missing, throw an exception that
             // tells dequeue_loop to requeue the incomplete message with a delay
             $message = "Message {$msg['gateway']}-{$msg['gateway_txn_id']} indicates a completion message with ID {$msg['completion_message_id']}, but none was found in pending queue.  Requeueing.";
+            if ( $dbEntry ) {
+                $message .= "\nThere was a row in the pending database, but we're not using that yet.";
+                watchdog(
+                    'queue2civicrm',
+                    "ActiveMQ missing {$msg['completion_message_id']} " .
+                        'but it exists in the pending database: ' .
+                        json_encode( $dbEntry, true ),
+                    null,
+                    WATCHDOG_NOTICE
+                );
+            }
             throw new WmfException( 'MISSING_PREDECESSOR', $message );
+        }
+        if ( $dbEntry ) {
+            $queueData = json_decode( $completion_message->body, true );
+            $differences = array_diff_assoc( $queueData, $dbEntry );
+            if ( !empty( $differences ) ) {
+                watchdog(
+                    'queue2civicrm',
+                    "Pending message for {$msg['completion_message_id']} " .
+                        'differs between ActiveMQ and pending database: ' .
+                        json_encode( $differences, true ),
+                    null,
+                    WATCHDOG_NOTICE
+                );
+            }
+        } else {
+            watchdog(
+                'queue2civicrm',
+                "Found pending message for {$msg['completion_message_id']} " .
+                    'in ActiveMQ but not in pending database.',
+                null,
+                WATCHDOG_NOTICE
+            );
         }
     }
 
@@ -299,4 +343,20 @@ function queue2civicrm_import_completion_message( &$msg ) {
         $msg = $msg + $data;
     }
     return $pending;
+}
+
+/**
+ * Read some missing information from the pending database
+ *
+ * @param $msg array normalized message to match by order id
+ * @return array|null message from database, or null if not found
+ */
+function queue2civicrm_get_completion_message_from_pending_db( $msg ) {
+    $gateway = $msg['gateway'];
+    $orderId = $msg['order_id'];
+
+    return PendingDatabase::get()->fetchMessageByGatewayOrderId(
+        $gateway,
+        $orderId
+    );
 }
