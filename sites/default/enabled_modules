@@ -4,7 +4,6 @@ amazon_audit
 astropay_audit
 banner_history
 civicrm
-contribution_audit
 contribution_tracking
 ctools
 environment_indicator
@@ -13,12 +12,10 @@ ganglia_reporter
 globalcollect_audit
 large_donation
 libraries
-log_audit
 oauth_common
 oauth_common_providerui
 offline2civicrm
 oneoffs
-paypal_audit
 queue2civicrm
 recurring
 recurring_globalcollect
@@ -31,12 +28,10 @@ wmf_campaigns
 wmf_civicrm
 wmf_common
 wmf_communication
-wmf_contribution_search
 wmf_fredge_qc
 wmf_logging
 wmf_refund_qc
 wmf_reports
-wmf_test_settings
 wmf_unsubscribe
 wmf_unsubscribe_qc
 wmf_zendesk_reports

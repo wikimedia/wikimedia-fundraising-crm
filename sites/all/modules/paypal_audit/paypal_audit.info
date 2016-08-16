@@ -1,6 +1,0 @@
-name = PayPal Audit
-description = Auditing framework for contacts and contributions in PayPal services
-core = 7.x
-package = CiviAudit
-configure = admin/config/contribution_audit/paypal_audit
-files[] = paypal_audit.php
