@@ -1,8 +1,6 @@
 <?php
 namespace wmf_communication;
 
-use \Exception;
-
 /**
  * Helper for language tag manipulation and a rudimentary MediaWiki i18n facade
  *
@@ -20,8 +18,7 @@ class Translation {
      *   $rendered = $l10n->replace_messages($template, $locale);
      *   -->  <p id="unsub-text">Vous avez le fail, foo.</p>
      *
-     * @param        $string        The string to replace tokens in
-     * @param        $message_file  The file to obtain natural language messages from
+     * @param string $string        The string to replace tokens in
      * @param string $language      The ISO-2 language code
      *
      * @return mixed                The resultant natural language string
@@ -73,8 +70,8 @@ class Translation {
     /**
      * Fetch a MediaWiki message translated in the DonationInterface group
      *
-     * @param $key message key
-     * @param $language MediaWiki language code
+     * @param string $key message key
+     * @param string $language MediaWiki language code
      *
      * @return string message contents
      *
