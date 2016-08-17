@@ -100,7 +100,6 @@ class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 						'last_name' => 'Person',
 						'payment_method' => 'amazon',
 						'payment_submethod' => '',
-						'referrer' => 'https://mail.google.com/mail/u/0/?pli=1',
 						'user_ip' => '1.2.3.4',
 						'utm_campaign' => 'amazon_audit',
 						'utm_medium' => 'amazon_audit',

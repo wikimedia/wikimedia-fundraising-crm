@@ -63,7 +63,6 @@ class Message {
             'utm_medium' => mt_rand(),
             'utm_campaign' => mt_rand(),
             'language' => $lang[array_rand( $lang )],
-            'referrer' => 'http://example.com/' . mt_rand(),
             'email' => mt_rand() . '@example.com',
             'first_name' => mt_rand(),
             'middle_name' => mt_rand(),

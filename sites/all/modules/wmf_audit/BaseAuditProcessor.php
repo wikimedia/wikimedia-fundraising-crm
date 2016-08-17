@@ -1190,7 +1190,6 @@ abstract class BaseAuditProcessor {
 			'lname' => 'last_name',
 			'payment_method',
 			'payment_submethod',
-			'referrer',
 			'user_ip',
 			'utm_source',
 		);

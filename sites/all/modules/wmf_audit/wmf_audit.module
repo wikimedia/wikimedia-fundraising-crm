@@ -335,7 +335,6 @@ function wmf_audit_get_contribution_tracking_data($record) {
       'utm_medium',
       'utm_campaign',
       'language',
-      'referrer',
       'date',
     );
 
