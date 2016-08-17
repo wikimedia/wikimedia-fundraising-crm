@@ -25,13 +25,10 @@ function wmf_common_date_format_string( $date ){
  */
 function wmf_common_date_parse_string( $date ){
     try {
-        // Funky hack to trim decimal timestamp
-        $date = preg_replace( '/^(@\d+)\.\d+$/', '$1', $date );
-
-        $obj = new DateTime( $date, new DateTimeZone( 'UTC' ) );
+        $obj = wmf_common_make_datetime( $date );
         return $obj->getTimestamp();
     } catch ( Exception $ex ) {
-        watchdog( 'wmf_common', t( "Caught date exception: " ) . $ex->getMessage(), NULL, WATCHDOG_ERROR );
+        watchdog( 'wmf_common', t( 'Caught date exception in ' . __METHOD__ . ': ' ) . $ex->getMessage(), NULL, WATCHDOG_ERROR );
         return null;
     }
 }
@@ -89,14 +86,26 @@ function wmf_common_date_add_days( $date, $add ){
  */
 function wmf_common_date_format_using_utc( $format, $unixtime ) {
     try {
-        $obj = new DateTime( '@' . $unixtime, new DateTimeZone( 'UTC' ) );
+        $obj = wmf_common_make_datetime( '@' . $unixtime );
         $formatted = $obj->format( $format );
     } catch ( Exception $ex ) {
-        watchdog( 'wmf_common', t( "Caught date exception: " ) . $ex->getMessage(), NULL, WATCHDOG_ERROR );
+        watchdog( 'wmf_common', t( 'Caught date exception in ' . __METHOD__ . ': ' ) . $ex->getMessage(), NULL, WATCHDOG_ERROR );
         return '';
     }
 
     return $formatted;
+}
+
+/**
+ * Normalize a date string and attempt to parse into a DateTime object.
+ * @throws Exception when the string is unparsable.
+ * @return DateTime
+ */
+function wmf_common_make_datetime( $text ) {
+	// Funky hack to trim decimal timestamp.  More normalizations may follow.
+	$text = preg_replace( '/^(@\d+)\.\d+$/', '$1', $text );
+
+	return new DateTime( $text, new DateTimeZone( 'UTC' ) );
 }
 
 /**
