@@ -675,6 +675,7 @@ abstract class BaseAuditProcessor {
 									wmf_audit_echo( '.' );
 									continue;
 								}
+								$data['order_id'] = $order_id;
 								//if we have data at this point, it means we have a match in the logs
 								$found += 1;
 
@@ -1186,12 +1187,14 @@ abstract class BaseAuditProcessor {
 			'email',
 			'fname' => 'first_name',
 			'gateway',
+			'gateway_account',
 			'language',
 			'lname' => 'last_name',
 			'payment_method',
 			'payment_submethod',
-			'referrer',
 			'user_ip',
+			'utm_campaign',
+			'utm_medium',
 			'utm_source',
 		);
 		$normal = array();

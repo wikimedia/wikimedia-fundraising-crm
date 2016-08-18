@@ -1534,6 +1534,14 @@ function wmf_civicrm_normalize_msg( $msg ) {
         throw new WmfException( "INVALID_MESSAGE", "No payment type found for message." );
     }
 
+    // Convert times to Unix timestamps.
+    if ( !is_numeric( $msg['date'] ) ) {
+        $msg['date'] = wmf_common_date_parse_string($msg['date']);
+    }
+    // if all else fails, fall back to now.
+    if ( empty( $msg['date'] ) ) {
+        $msg['date'] = time();
+    }
 
     // if we're missing a contrib id, insert new record to the table
     // this can happen if a user somehow makes a trxn from outside the normal workflow
@@ -1554,15 +1562,6 @@ function wmf_civicrm_normalize_msg( $msg ) {
             watchdog( 'wmf_civicrm', 'Newly inserted contribution tracking id: @id', array( '@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
             $msg['contribution_tracking_id'] = $contribution_tracking_id;
         }
-    }
-
-    // Convert times to Unix timestamps.
-    if ( !is_numeric( $msg['date'] ) ) {
-        $msg['date'] = wmf_common_date_parse_string($msg['date']);
-    }
-    // if all else fails, fall back to now.
-    if ( empty( $msg['date'] ) ) {
-        $msg['date'] = time();
     }
 
     if ( $msg['recurring'] and !isset( $msg['start_date'] ) ) {

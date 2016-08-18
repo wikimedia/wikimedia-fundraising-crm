@@ -44,7 +44,7 @@ function drush_civicrm_merge() {
   $end = CRM_Core_DAO::singleValueQuery("
     SELECT max(id)
     FROM (
-      SELECT id FROM civicrm_contact WHERE id > %1 ORDER BY id ASC LIMIT %2
+      SELECT id FROM civicrm_contact WHERE id > %1 AND is_deleted = 0 ORDER BY id ASC LIMIT %2
     ) as c",
     array(1 => array($start, 'Integer'), 2 => array($batch_size, 'Integer'))
   );

@@ -56,7 +56,7 @@ class CiviMailQueueRecord implements ICiviMailQueueRecord {
 
 	/**
 	 * @param \CRM_Mailing_Event_DAO_Queue $queue
-	 * @param \CRM_Core_Email $email
+	 * @param \CRM_Core_DAO_Email $email
 	 */
 	public function __construct( $queue, $email ) {
 		$this->queue = $queue;
