@@ -80,7 +80,7 @@ class JpMorganFileTest extends BaseChecksFileTest {
 
         $contribution = wmf_civicrm_get_contributions_from_gateway_id( 'jpmorgan', '1234TEST' );
         $this->assertEquals( 1, count( $contribution ) );
-        $this->assertEquals( $contribution[0]['trxn_id'], 'JPMORGAN 1234TEST' );
+        $this->assertEquals( 'JPMORGAN 1234TEST', $contribution[0]['trxn_id'] );
     }
 
     /**
