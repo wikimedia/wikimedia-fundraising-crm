@@ -526,7 +526,7 @@ function thank_you_send_mail( $params ) {
  *
  * @param string $html HTML source of the thank you email
  *
- * @returns array, 'revision' contains rev no, 'name' contains template name
+ * @returns stdClass, 'revision' contains rev no, 'name' contains template name
  *
  * @throws TemplateInfoMissingException if comment is not found
  */
@@ -536,7 +536,7 @@ function thank_you_get_template_info( $html ) {
 	if ( preg_match( '/<!-- TI_BEGIN(.+)TI_END -->/', $html, $matches ) ) {
 		$info = json_decode( $matches[1] );
 	}
-	if ( $info === null ) {
+	if ( $info === null || !is_object( $info ) ) {
 		throw new TemplateInfoMissingException();
 	}
 	return $info;
@@ -546,10 +546,10 @@ function thank_you_get_template_info( $html ) {
  * Add record of the sent email to CiviMail
  *
  * @param string $email recipient address
- * @param $contact_id recipient contact id
+ * @param int $contact_id recipient contact id
  * @param string $subject subject header to insert in case of missing mailing
  * @param string $html HTML email body, which should have a template info comment
- * @return CiviMailQueueRecord mail queue record with VERP header
+ * @return \wmf_communication\CiviMailQueueRecord mail queue record with VERP header
  */
 function thank_you_add_civi_queue( $email, $contact_id, $subject, $html ) {
 	$civi_mailing = null;
