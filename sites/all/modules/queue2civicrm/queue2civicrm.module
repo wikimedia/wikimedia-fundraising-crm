@@ -262,6 +262,16 @@ function queue2civicrm_import( $msg ) {
     if ( isset( $msg['completion_message_id'] ) ) {
         $dbEntry = queue2civicrm_update_from_pending_db( $msg );
         if ( !$dbEntry ) {
+            // If the contribution has already been imported, we don't want
+            // to re-queue this message, but drop it entirely.
+            if ( wmf_civicrm_get_contributions_from_gateway_id(
+                $msg['gateway'], $msg['gateway_txn_id']
+            ) ) {
+                throw new WmfException(
+                    'DUPLICATE_CONTRIBUTION',
+                    'Contribution already exists. Ignoring message.'
+                );
+            }
             // If the pending db row is missing, throw an exception that
             // tells dequeue_loop to requeue the incomplete message with a delay
             $errorMessage = "Message {$msg['gateway']}-{$msg['gateway_txn_id']} " .
