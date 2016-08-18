@@ -29,7 +29,7 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 		$logId = _queue2civicrm_log( $log );
 
 		// If more information is available, find it from the pending database
-		// FIXME: replace completion_message_id with a boolean flag
+		// FIXME: combine the information in a SmashPig job a la Adyen, not here
 		if ( isset( $message['completion_message_id'] ) ) {
 			$pendingDbEntry = PendingDatabase::get()->fetchMessageByGatewayOrderId(
 				$message['gateway'],
