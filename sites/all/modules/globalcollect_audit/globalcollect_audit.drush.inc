@@ -7,6 +7,9 @@
  * @TODO print some useful info to STDOUT
  */
 
+use SmashPig\Core\Context;
+use SmashPig\Core\Configuration;
+
 /**
  * Implementation of hook_drush_command()
  */
@@ -69,6 +72,9 @@ function globalcollect_audit_reset_drush_vars(){
  * TODO: More comments here-ish. 
  */
 function drush_globalcollect_audit() {
+	$config = new Configuration();
+	Context::initWithLogger( $config, 'globalcollect_audit' );
+
 	//$args = drush_get_arguments();
 	
 	//if the last execution died before we got back here
