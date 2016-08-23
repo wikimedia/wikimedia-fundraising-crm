@@ -61,7 +61,7 @@ function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
     $createRequired = TRUE;
   }
   elseif (!$existingValues['values'][0]['is_active']) {
-    $params['id'] = $existingValues['id'];
+    $params['id'] = $existingValues['values'][0]['id'];
     $createRequired = TRUE;
   }
   if ($createRequired) {
