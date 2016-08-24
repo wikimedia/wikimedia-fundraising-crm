@@ -14,41 +14,6 @@ class DonationInterfaceFactory {
             'returnTo' => 'dumber',
         );
 
-        // @deprecated This all gets moved in to configuration files or SmashPig.
-        // Yeah, I know... this is a consequence of not running the main
-        // initializations in the extension's DonationInterface.php.  We
-        // could clean it up by moving initialization to a function which
-        // is safe to call from Drupal.
-        global $wgDonationInterfaceForbiddenCountries,
-            $wgDonationInterfacePriceFloor,
-            $wgDonationInterfacePriceCeiling,
-            $wgGlobalCollectGatewayAccountInfo,
-            $wgGlobalCollectGatewayURL,
-            $wgGlobalCollectGatewayMerchantID,
-            $wgDonationInterfaceDebugLog,
-            $wgDonationInterfaceGatewayAdapters;
-
-        // Adapt Drupal configuration into MediaWiki globals.
-        $wgGlobalCollectGatewayMerchantID = variable_get('recurring_globalcollect_merchant_id', 0);
-
-        $wgGlobalCollectGatewayAccountInfo['default'] = array(
-            'MerchantID' => $wgGlobalCollectGatewayMerchantID,
-        );
-
-        $wgGlobalCollectGatewayURL = variable_get( 'globalcollect_url', '' );
-
-        $wgDonationInterfaceForbiddenCountries = array();
-
-        $wgDonationInterfacePriceFloor = 1.00;
-        $wgDonationInterfacePriceCeiling = 10000.00;
-
-        // send us all the messages and we'll sort 'em out
-        $wgDonationInterfaceDebugLog = true;
-
-        $wgDonationInterfaceGatewayAdapters = array(
-            'globalcollect' => 'GlobalCollectAdapter',
-        );
-
         $className = DonationInterface::getAdapterClassForGateway( $gatewayName );
         $adapter = new $className( $adapterOptions );
         return $adapter;
