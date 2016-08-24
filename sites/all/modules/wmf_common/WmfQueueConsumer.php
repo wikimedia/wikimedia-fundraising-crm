@@ -42,11 +42,18 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 		$message, WmfException $ex, $correlationId
 	) {
 		$mailableDetails = '';
+		$reject = false;
 
 		if ( $ex->isRequeue() ) {
 			$delay = intval( variable_get( 'wmf_common_requeue_delay', 20 * 60 ) );
-			$retryDate = time() + $delay;
-			$this->sendToDamagedStore( $message, $ex, $retryDate );
+			$maxTries = intval( variable_get( 'wmf_common_requeue_max', 10 ) );
+			$ageLimit = $delay * $maxTries;
+			if ( $message['date'] + $ageLimit < time() ) {
+				$reject = true;
+			} else {
+				$retryDate = time() + $delay;
+				$this->sendToDamagedStore( $message, $ex, $retryDate );
+			}
 		}
 
 		if ( $ex->isDropMessage() ) {
@@ -56,7 +63,7 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 				NULL,
 				WATCHDOG_ERROR
 			);
-		} elseif ( $ex->isRejectMessage() ) {
+		} elseif ( $ex->isRejectMessage() || $reject ) {
 			$messageString = json_encode( $message );
 			watchdog(
 				'wmf_common',
