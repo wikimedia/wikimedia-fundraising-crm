@@ -285,6 +285,22 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test that a conflict on communication preferences is handled.
+   */
+  public function testBatchMergeConflictCommunicationPreferences() {
+    $this->callAPISuccess('Contact', 'create', array('id' => $this->contactID, 'do_not_email' => FALSE, 'is_opt_out' => TRUE));
+    $this->callAPISuccess('Contact', 'create', array('id' => $this->contactID2, 'do_not_email' => TRUE, 'is_opt_out' => FALSE));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(0, count($result['values']['skipped']));
+    $this->assertEquals(1, count($result['values']['merged']));
+
+    $contact = $this->callAPISuccess('Contact', 'get', array('id' => $this->contactID, 'sequential' => 1));
+    $this->assertEquals(1, $contact['values'][0]['is_opt_out']);
+    $this->assertEquals(1, $contact['values'][0]['do_not_email']);
+  }
+
+  /**
    * Get address combinations for the merge test.
    *
    * @return array
