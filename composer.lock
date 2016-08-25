@@ -44,7 +44,7 @@
                 "payment",
                 "payments"
             ],
-            "time": "2016-02-17 00:53:20"
+            "time": "2016-02-17 00:44:20"
         },
         {
             "name": "clio/clio",
@@ -1091,7 +1091,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "586d32677a1792454ff8fab71671744d923e8b5e"
+                "reference": "1e2fd3deade07d4663999496dd0aa79c27eb9d2d"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -1111,7 +1111,10 @@
                 "classmap": [
                     "adyen_gateway",
                     "amazon_gateway",
+                    "astropay_gateway",
+                    "extras",
                     "gateway_common",
+                    "gateway_forms",
                     "globalcollect_gateway",
                     "paypal_gateway",
                     "DonationInterface.class.php"
@@ -1125,7 +1128,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2016-08-11 17:04:28"
+            "time": "2016-08-25 21:28:41"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -1133,13 +1136,13 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "29866633d165747dbf8be1d2ec482886dd31a2dd"
+                "reference": "fd570e4ad72ae5b35f317346e53d753855957835"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
                 "coderkungfu/php-queue": "dev-master",
                 "fusesource/stomp-php": "^2.1.1",
-                "php": "^5.3.3",
+                "php": ">=5.3.3",
                 "phpmailer/phpmailer": "^5.2",
                 "predis/predis": "^1.1",
                 "symfony/event-dispatcher": "^2.1",
@@ -1184,7 +1187,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2016-08-15 06:59:28"
+            "time": "2016-08-22 17:15:23"
         },
         {
             "name": "zordius/lightncandy",
