@@ -61,7 +61,7 @@ function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
     $createRequired = TRUE;
   }
   elseif (!$existingValues['values'][0]['is_active']) {
-    $params['id'] = $existingValues['id'];
+    $params['id'] = $existingValues['values'][0]['id'];
     $createRequired = TRUE;
   }
   if ($createRequired) {
@@ -2067,25 +2067,38 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
               }
             }
           }
-          foreach (array_keys($refs['fields_in_conflict']) as $moveField) {
 
-            if (substr($moveField, 0, 13) === 'move_location') {
-              if (!isset($refs['is_major_gift'])) {
-                $refs['is_major_gift'] = _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId);
-              }
-              if (!$refs['is_major_gift']) {
-                $fieldParts = explode('_', $moveField);
-                if ($fieldParts[2] == 'email') {
-                  $mainIsOnHold = $refs['migration_info']['main_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
-                  $otherIsOnHold = $refs['migration_info']['other_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
-                  if ($mainIsOnHold + $otherIsOnHold === 1) {
-                    // One is one hold & the other isn't - conflict.
-                    continue;
-                  }
-                }
+          // If type is 'form' then the user is responsible for selecting how to merge the
+          // non-calculated fields but in batch mode we have selected assumptions
+          // ie. take the latest address and give opt out choices priority over
+          // default settings for opt out fields.
+          if ($type === 'batch') {
+            foreach (array_keys($refs['fields_in_conflict']) as $moveField) {
+              if (_wmf_civicrm_merge_is_communication_boolean($moveField)) {
                 unset($refs['fields_in_conflict'][$moveField]);
+                $refs['migration_info'][$moveField] = 1;
+                $refs['migration_info']['rows'][$moveField]['other'] = ts('Yes');
+                continue;
               }
 
+              if (substr($moveField, 0, 13) === 'move_location') {
+                if (!isset($refs['is_major_gift'])) {
+                  $refs['is_major_gift'] = _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId);
+                }
+                if (!$refs['is_major_gift']) {
+                  $fieldParts = explode('_', $moveField);
+                  if ($fieldParts[2] == 'email') {
+                    $mainIsOnHold = $refs['migration_info']['main_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+                    $otherIsOnHold = $refs['migration_info']['other_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+                    if ($mainIsOnHold + $otherIsOnHold === 1) {
+                      // One is one hold & the other isn't - conflict.
+                      continue;
+                    }
+                  }
+                  unset($refs['fields_in_conflict'][$moveField]);
+                }
+
+              }
             }
           }
         }
@@ -2097,6 +2110,28 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
         break;
 
     }
+}
+
+/**
+ * Is this one of the communication boolean fields.
+ *
+ * If it is we will give 'opt out' precedence as that indicates a conscious choice.
+ *
+ * @param string $moveField
+ *
+ * @return bool
+ */
+function _wmf_civicrm_merge_is_communication_boolean($moveField) {
+  if (in_array($moveField, array(
+    'move_do_not_email',
+    'move_is_opt_out',
+    'move_do_not_mail',
+    'move_do_not_phone',
+    'move_do_not_sms'
+  ))) {
+    return TRUE;
+  }
+  return FALSE;
 }
 
 /**
