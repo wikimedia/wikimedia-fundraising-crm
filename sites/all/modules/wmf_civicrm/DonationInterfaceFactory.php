@@ -1,6 +1,11 @@
 <?php
 
 class DonationInterfaceFactory {
+	/**
+	 * @param string $gatewayName
+	 * @param array $data
+	 * @return GatewayType
+	 */
     static public function createAdapter( $gatewayName, $data ) {
         // Configure DonationInterface according to Drupal settings.
         $adapterOptions = array(
