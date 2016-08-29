@@ -1,0 +1,13 @@
+{
+    "completion_message_id": "amazon-9876512345-1",
+    "contribution_tracking_id": "9876512345",
+    "currency": "PLN",
+    "date": 1234567,
+    "fee": "0.15",
+    "gateway": "amazon",
+    "gateway_status": "Completed",
+    "gateway_txn_id": "3611204184",
+    "gross": "10.00",
+    "order_id": "9876512345-1",
+    "payment_method": "amazon"
+}
