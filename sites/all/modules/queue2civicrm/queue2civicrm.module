@@ -228,7 +228,7 @@ function queue2civicrm_batch_process() {
 /**
  * Process one contribution from the queue to CiviCRM.
  *
- * @param Stomp_Frame $msg
+ * @param Stomp_Frame|array $msg
  */
 function queue2civicrm_import( $msg ) {
     if ( is_object( $msg ) && property_exists( $msg, 'body' ) ) {
@@ -256,49 +256,18 @@ function queue2civicrm_import( $msg ) {
     );
     $cid = _queue2civicrm_log( $log );
 
-    $completion_message = false;
-    // If more information is available, find it from the pending queue
+    $dbEntry = false;
+    // If more information is available, find it from the pending database
+    // FIXME: replace completion_message_id with a boolean flag
     if ( isset( $msg['completion_message_id'] ) ) {
-        $completion_message = queue2civicrm_import_completion_message( $msg );
-        $dbEntry = queue2civicrm_get_completion_message_from_pending_db( $msg );
-        if ( !$completion_message ) {
-            // If the completion message is missing, throw an exception that
+        $dbEntry = queue2civicrm_update_from_pending_db( $msg );
+        if ( !$dbEntry ) {
+            // If the pending db row is missing, throw an exception that
             // tells dequeue_loop to requeue the incomplete message with a delay
-            $message = "Message {$msg['gateway']}-{$msg['gateway_txn_id']} indicates a completion message with ID {$msg['completion_message_id']}, but none was found in pending queue.  Requeueing.";
-            if ( $dbEntry ) {
-                $message .= "\nThere was a row in the pending database, but we're not using that yet.";
-                watchdog(
-                    'queue2civicrm',
-                    "ActiveMQ missing {$msg['completion_message_id']} " .
-                        'but it exists in the pending database: ' .
-                        json_encode( $dbEntry, true ),
-                    null,
-                    WATCHDOG_NOTICE
-                );
-            }
-            throw new WmfException( 'MISSING_PREDECESSOR', $message );
-        }
-        if ( $dbEntry ) {
-            $queueData = json_decode( $completion_message->body, true );
-            $differences = array_diff_assoc( $queueData, $dbEntry );
-            if ( !empty( $differences ) ) {
-                watchdog(
-                    'queue2civicrm',
-                    "Pending message for {$msg['completion_message_id']} " .
-                        'differs between ActiveMQ and pending database: ' .
-                        json_encode( $differences, true ),
-                    null,
-                    WATCHDOG_NOTICE
-                );
-            }
-        } else {
-            watchdog(
-                'queue2civicrm',
-                "Found pending message for {$msg['completion_message_id']} " .
-                    'in ActiveMQ but not in pending database.',
-                null,
-                WATCHDOG_NOTICE
-            );
+            $errorMessage = "Message {$msg['gateway']}-{$msg['gateway_txn_id']} " .
+                "indicates a pending DB entry with order ID {$msg['order_id']}, " .
+                "but none was found.  Requeueing.";
+            throw new WmfException( 'MISSING_PREDECESSOR', $errorMessage );
         }
     }
 
@@ -325,38 +294,31 @@ function queue2civicrm_import( $msg ) {
     // keep count of the transactions
     Queue2civicrmTrxnCounter::instance()->increment( $msg['gateway'] );
 
-    // Ack any completion message once the rest has completed successfully
-    if ( $completion_message ) {
-        queue2civicrm_stomp( 'pending' )->ack( $completion_message );
+    // Delete message from pending db once the rest has completed successfully
+    if ( $dbEntry ) {
+        PendingDatabase::get()->deleteMessage( $dbEntry );
     }
 }
 
 /**
- * Fill in some missing information from the pending queue
- * @return Stomp_Frame|boolean message from queue, or false if not found
- */
-function queue2civicrm_import_completion_message( &$msg ) {
-    $cid = $msg['completion_message_id'];
-    $pending = queue2civicrm_stomp( 'pending' )->getByCorrelationId( 'pending', $cid );
-    if ( $pending ) {
-        $data = json_decode( $pending->body, true );
-        $msg = $msg + $data;
-    }
-    return $pending;
-}
-
-/**
- * Read some missing information from the pending database
- *
- * @param $msg array normalized message to match by order id
+ * Fill in some missing information from the pending database
+ * @param array $msg sparse donation message, usually from IPN listener
  * @return array|null message from database, or null if not found
  */
-function queue2civicrm_get_completion_message_from_pending_db( $msg ) {
+function queue2civicrm_update_from_pending_db( &$msg ) {
     $gateway = $msg['gateway'];
     $orderId = $msg['order_id'];
 
-    return PendingDatabase::get()->fetchMessageByGatewayOrderId(
+    $data = PendingDatabase::get()->fetchMessageByGatewayOrderId(
         $gateway,
         $orderId
     );
+
+	// Sparse messages should have no keys at all for the missing info,
+	// rather than blanks or junk data. And $msg should always have newer
+	// info than the pending db.
+    if ( $data ) {
+        $msg = $msg + $data;
+    }
+    return $data;
 }

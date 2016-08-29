@@ -148,3 +148,31 @@ class RecurringSignupMessage extends TransactionMessage {
         parent::__construct( $values );
     }
 }
+
+/**
+ * Class AmazonDonationMessage Sparse message format pointing to donor
+ *  details in the pending database
+ */
+class AmazonDonationMessage extends TransactionMessage {
+	function __construct( $values = array() ) {
+		$this->loadDefaults( "sparse_donation_amazon" );
+
+		parent::__construct( $values );
+		$this->data['completion_message_id'] =
+			'amazon-' . $this->get( 'order_id' );
+	}
+}
+
+/**
+ * Class AstroPayDonationMessage Sparse message format pointing to donor
+ *  details in the pending database
+ */
+class AstroPayDonationMessage extends TransactionMessage {
+	function __construct( $values = array() ) {
+		$this->loadDefaults( "sparse_donation_astropay" );
+
+		parent::__construct( $values );
+		$this->data['completion_message_id'] =
+			'astropay-' . $this->get( 'order_id' );
+	}
+}
