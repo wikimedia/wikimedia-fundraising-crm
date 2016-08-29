@@ -329,6 +329,9 @@ function queue2civicrm_update_from_pending_db( &$msg ) {
 	// info than the pending db.
     if ( $data ) {
         $msg = $msg + $data;
+        // $data has a pending_id key for ease of deletion,
+        // but $msg doesn't need it
+        unset( $msg['pending_id'] );
     }
     return $data;
 }
