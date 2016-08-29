@@ -975,11 +975,28 @@ function wmf_civicrm_verify_message_and_stage($msg)
     }
 
     //Now check to make sure this isn't going to be a duplicate message for this gateway.
-    if ( wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ) {
-        throw new WmfException( 'DUPLICATE_CONTRIBUTION', "Contribution already exists. Ignoring message." );
-    }
+    wmf_civicrm_check_for_duplicates( $msg['gateway'], $msg['gateway_txn_id'] );
 
     return $msg;
+}
+
+/**
+ * Throw an exception if a contribution already exists
+ *
+ * @param string $gateway
+ * @param string $gateway_txn_id
+ * @throws WmfException
+ */
+function wmf_civicrm_check_for_duplicates( $gateway, $gateway_txn_id ) {
+    $txn = wmf_civicrm_get_contributions_from_gateway_id(
+        $gateway, $gateway_txn_id
+    );
+    if ( $txn ) {
+        throw new WmfException(
+            'DUPLICATE_CONTRIBUTION',
+            'Contribution already exists. Ignoring message.'
+        );
+    }
 }
 
 /**
