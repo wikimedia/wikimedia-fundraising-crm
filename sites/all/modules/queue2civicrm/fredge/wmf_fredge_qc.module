@@ -74,7 +74,6 @@ function fredge_batch_process() {
 
   $paymentsInitConsumer = new PaymentsInitQueueConsumer(
     variable_get('fredge_payments_init_queue', 'payments-init'),
-    false,
     $cycle_time
   );
 
