@@ -1,6 +1,8 @@
 <?php
 use queue2civicrm\fredge\AntifraudQueueConsumer;
 use queue2civicrm\fredge\PaymentsInitQueueConsumer;
+use SmashPig\Core\Configuration;
+use SmashPig\Core\Context;
 
 /**
  * Implements hook_menu
@@ -68,6 +70,8 @@ function fredge_batch_process() {
   watchdog('fredge', 'Executing: fredge_batch_process');
 
   civicrm_initialize();
+  $config = new Configuration();
+  Context::initWithLogger($config, 'fredge_batch_process');
 
   //Let's start with the simplest possible division of labor
   $cycle_time = variable_get('fredge_batch_time', 0) / 2;
