@@ -80,7 +80,6 @@ function fredge_batch_process() {
 
   $fraudQueueConsumer = new AntifraudQueueConsumer(
     variable_get('fredge_payments_antifraud_queue', 'payments-antifraud'),
-    false,
     $cycle_time
   );
 
