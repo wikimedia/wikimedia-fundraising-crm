@@ -2121,3 +2121,57 @@ function wmf_civicrm_update_7235() {
     'Endowment Gift',
   ));
 }
+
+/**
+ * Fix next_sched_contribution_date on records affected by Aug recur bug.
+ *
+ * There appear to be only 8 that still need fixing before re-enabling the job.
+ *
+ * These 8 failed to re-process on their second attempt so were not reset.
+ *
+ * The others all re-processed within the affected time period and their dates were pushed out
+ *
+ * SQL to view these 8.
+ *
+ * SELECT count(*) as c, contribution_recur_id, cr.contact_id, group_concat(receive_date) as rdate,
+ * next_sched_contribution_date, c.contribution_status_id, cr.contribution_status_id
+ * FROM civicrm_contribution c LEFT JOIN civicrm_contribution_recur cr ON cr.id = c.contribution_recur_id
+ * WHERE receive_date > '2016-08-31'
+ * AND contribution_recur_id IS NOT NULL
+ * AND c.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
+ * AND next_sched_contribution_date < '2016-09-30' GROUP BY contribution_recur_id having c = 1 AND rdate < '2016-09-01';
+ *
+ * To view the others:
+ *
+ * SELECT count(*) as c, contribution_recur_id, c.contact_id, group_concat(receive_date) as dates,
+ * next_sched_contribution_date, GROUP_CONCAT(c.trxn_id)
+ * FROM civicrm_contribution c
+ * Left JOIN civicrm_contribution_recur cr ON cr.id = c.contribution_recur_id
+ * WHERE receive_date > '2016-08-30' AND contribution_recur_id IS NOT NULL
+ * AND c.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
+ * GROUP BY contribution_recur_id having c > 1;
+ *
+ * T144489
+ */
+function wmf_civicrm_update_7240() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution_recur
+    SET 
+      failure_retry_date = NULL, 
+      failure_count = 0, 
+      next_sched_contribution_date = '2010-10-01',
+      contribution_status_id = 5
+
+   WHERE id IN
+    (SELECT  contribution_recur_id FROM (
+      SELECT count(*) as c, contribution_recur_id, cr.contact_id, group_concat(receive_date) as rdate,
+      next_sched_contribution_date, c.contribution_status_id
+      FROM civicrm_contribution c
+      LEFT JOIN civicrm_contribution_recur cr ON cr.id = c.contribution_recur_id
+      WHERE receive_date > '2016-08-31' AND contribution_recur_id IS NOT NULL AND c.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
+       AND next_sched_contribution_date < '2016-09-30'
+      GROUP BY contribution_recur_id having c = 1 AND rdate < '2016-09-01')
+    as d )
+    ");
+}
