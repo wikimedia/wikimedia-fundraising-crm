@@ -261,6 +261,78 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Do address tests with contact ids reversed.
+   *
+   * Since the higher ID merges into the lower ID we were seeing accidental successes despite an error.
+   *
+   * This reversal of the previous test set forces it to work on logic not id co-incidence.
+   *
+   * @dataProvider getMergeLocationData
+   *
+   * @param array $dataSet
+   */
+  public function testBatchMergesAddressesHookLowerIDMoreRecentDonor($dataSet) {
+    // here the lower contact ID has the higher receive_date as opposed to the previous test.
+    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1));
+    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2012-01-01', 'invoice_id' => 2, 'trxn_id' => 2));
+    if ($dataSet['is_major_gifts']) {
+      $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2012-01-01', 'total_amount' => 300));
+    }
+    foreach ($dataSet['contact_1'] as $address) {
+      $this->callAPISuccess($dataSet['entity'], 'create', array_merge(array('contact_id' => $this->contactID2), $address));
+    }
+    foreach ($dataSet['contact_2'] as $address) {
+      $this->callAPISuccess($dataSet['entity'], 'create', array_merge(array('contact_id' => $this->contactID), $address));
+    }
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+
+    $this->assertEquals($dataSet['skipped'], count($result['values']['skipped']));
+    $this->assertEquals($dataSet['merged'], count($result['values']['merged']));
+    if ($dataSet['merged']) {
+      // higher contact merged into this so we are interested in this contact.
+      $keptContact = $this->contactID;
+    }
+    else {
+      // ie. no merge has taken place, so we just going to check our contact2 is unchanged.
+      $keptContact = $this->contactID2;
+    }
+    $addresses = $this->callAPISuccess($dataSet['entity'], 'get', array(
+      'contact_id' => $keptContact,
+      'sequential' => 1,
+    ));
+
+    if (!empty($dataSet['fix_required_for_reverse'])) {
+      return;
+    }
+    $this->assertEquals(count($dataSet['expected_hook']), $addresses['count']);
+    $locationTypes = $this->callAPISuccess($dataSet['entity'], 'getoptions', array('field' => 'location_type_id'));
+    foreach ($dataSet['expected_hook'] as $index => $expectedAddress) {
+      foreach ($addresses['values'] as $index => $address) {
+        // compared to the previous test the addresses are in a different order (for some datasets.
+        // so, first find the matching address and then check it fully matches.
+        // by unsetting afterwards we should find them all gone by the end.
+        if (!empty($address['street_address']) && $address['street_address'] == $expectedAddress['street_address']
+        || !empty($address['phone']) && $address['phone'] == $expectedAddress['phone']
+        || !empty($address['email']) && $address['email'] == $expectedAddress['email']
+        ) {
+          foreach ($expectedAddress as $key => $value) {
+            if ($key == 'location_type_id') {
+              $this->assertEquals($locationTypes['values'][$addresses['values'][$index][$key]], $value);
+            }
+            else {
+              $this->assertEquals($value, $addresses['values'][$index][$key], $dataSet['entity'] . ': Unexpected value for ' . $key . (!empty($dataSet['description']) ? " on dataset {$dataSet['description']}" : ''));
+            }
+          }
+          unset($addresses['values'][$index]);
+          continue;
+        }
+      }
+    }
+    $this->assertEmpty($addresses['values']);
+  }
+
+  /**
    * Test that a conflict on 'on_hold' is handled.
    */
   public function testBatchMergeConflictOnHold() {
@@ -606,6 +678,10 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       ),
       9 => array(
         'same_primaries_different_location' => array(
+          'fix_required_for_reverse' => 1,
+          'comment' => 'core is not identifying this as an address conflict in reverse order'
+          . ' this is not an issue at the moment as it only happens in reverse from the'
+          . 'form merge - where we do not intervene',
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 1,
@@ -633,6 +709,10 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       ),
       10 => array(
         'same_primaries_different_location_reverse' => array(
+          'fix_required_for_reverse' => 1,
+          'comment' => 'core is not identifying this as an address conflict in reverse order'
+            . ' this is not an issue at the moment as it only happens in reverse from the'
+            . 'form merge - where we do not intervene',
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 1,
@@ -685,6 +765,10 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       ),
       12 => array(
         'conflicting_home_address_not_major_gifts' => array(
+          'fix_required_for_reverse' => 1,
+          'comment' => 'our code needs an update as both are being kept'
+            . ' this is not an issue at the moment as it only happens in reverse from the'
+            . 'form merge - where we do not intervene',
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 0,
@@ -749,6 +833,10 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       ),
       14 => array(
         'conflicting_home_address__one_more_not_major_gifts' => array(
+          'fix_required_for_reverse' => 1,
+          'comment' => 'our code needs an update as an extra 1 is being kept'
+            . ' this is not an issue at the moment as it only happens in reverse from the'
+            . 'form merge - where we do not intervene',
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 0,

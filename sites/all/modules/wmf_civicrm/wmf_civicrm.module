@@ -2188,7 +2188,7 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
   if (!$lastDonor['count']) {
     return;
   }
-  $lastDonorID = $lastDonor['id'];
+  $lastDonorID = $lastDonor['values'][$lastDonor['id']]['contact_id'];
   // Since the last donor is not the main ID we are prioritising info from the last donor.
   // In the test this should always be true - but keep the check in case
   // something changes that we need to detect.
