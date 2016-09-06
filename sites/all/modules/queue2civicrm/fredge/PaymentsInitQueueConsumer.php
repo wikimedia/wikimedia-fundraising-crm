@@ -24,6 +24,11 @@ class PaymentsInitQueueConsumer extends WmfQueueConsumer {
 		$id = 0;
 		$inserting = true;
 
+		// Delete corresponding pending rows if this message is finished.
+		if ( in_array( $message['payments_final_status'], array( 'completed', 'failed' ) ) ) {
+			PendingDatabase::get()->deleteMessage( $message );
+		}
+
 		$dbs = wmf_civicrm_get_dbs();
 		$dbs->push( 'fredge' );
 		$query = 'SELECT id FROM payments_initial
