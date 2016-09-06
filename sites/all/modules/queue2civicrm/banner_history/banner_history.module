@@ -1,5 +1,8 @@
 <?php
 
+use queue2civicrm\banner_history\BannerHistoryQueueConsumer;
+use SmashPig\Core\Configuration;
+use SmashPig\Core\Context;
 
 /**
  * Implements hook_menu
@@ -34,7 +37,7 @@ function banner_history_settings_page_args() {
 		'#title' => t( 'Subscription path' ),
 		'#required' => true,
 		'#default_value' => variable_get(
-			'banner_history_queue', '/queue/banner-history' ),
+			'banner_history_queue', 'banner-history' ),
 		'#description'	 => t( 'Queue for banner history log ID associations' ),
 	);
 
@@ -71,13 +74,17 @@ function banner_history_queue_consume() {
 	watchdog( 'banner_history', 'Executing: banner_history_queue_consume' );
 
 	civicrm_initialize();
+    $config = new Configuration();
+    Context::initWithLogger( $config, 'banner_history' );
 
-	$processed = queue2civicrm_stomp()->dequeue_loop(
-		variable_get( 'banner_history_queue', '/queue/banner-history' ) ,
-		variable_get( 'banner_history_batch', 0 ),
+	$queue = variable_get( 'banner_history_queue', 'banner-history' );
+
+	$qc = new BannerHistoryQueueConsumer(
+		$queue,
 		variable_get( 'banner_history_batch_time', 0 ),
-		'banner_history_process_message'
+		variable_get( 'banner_history_batch', 0 )
 	);
+	$processed = $qc->dequeueMessages();
 
 	if ( $processed > 0 ) {
 		watchdog( 'banner_history',
@@ -87,46 +94,4 @@ function banner_history_queue_consume() {
 		watchdog( 'banner_history',
 			'No banner history log ID associations processed.' );
 	}
-}
-
-function banner_history_process_message( $msg ) {
-
-	$body = json_decode( $msg->body, true );
-
-	if ( is_null( $body ) ) {
-		throw new WmfException( 'BANNER_HISTORY',
-			'Couldn\'t parse banner history message body.' );
-	}
-
-	$bannerHistoryId = $body['banner_history_id'];
-	$contributionTrackingId = $body['contribution_tracking_id'];
-
-	if ( !$bannerHistoryId || !$contributionTrackingId ) {
-		throw new WmfException( 'BANNER_HISTORY',
-			'Missing banner history or contribution tracking ID.' );
-	}
-
-	if (
-		!is_numeric( $contributionTrackingId ) ||
-		!preg_match( '/^[0-9a-f]{16,20}$/', $bannerHistoryId )
-	) {
-		throw new WmfException( 'BANNER_HISTORY',
-			'Invalid data in banner history message.' );
-	}
-
-	watchdog( 'banner_history', "About to add row for $bannerHistoryId",
-		array(), WATCHDOG_INFO);
-
-	db_merge( 'banner_history_contribution_associations' )
-		->key( array(
-			'banner_history_log_id' => $bannerHistoryId,
-			'contribution_tracking_id' => $contributionTrackingId
-		) )
-		->insertFields( array(
-			'banner_history_log_id' => $bannerHistoryId,
-			'contribution_tracking_id' => $contributionTrackingId
-		) )
-		->execute();
-
-	watchdog( 'banner_history', "Processed $bannerHistoryId" );
 }

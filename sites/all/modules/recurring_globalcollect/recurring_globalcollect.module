@@ -191,7 +191,7 @@ function recurring_globalcollect_batch_process($options = array()) {
   watchdog(
     'recurring_globalcollect',
     'Query returned @count messages to process',
-    array('@count' => count($contribution_batch))
+    array('@count' => count($retry_batch))
   );
   $result = recurring_globalcollect_batch_charge($retry_batch, $options);
 
