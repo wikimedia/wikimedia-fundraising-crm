@@ -1,5 +1,6 @@
 <?php
 
+use queue2civicrm\DonationQueueConsumer;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Tests\SmashPigDatabaseTestConfiguration;
@@ -14,11 +15,29 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 	 */
 	protected $pendingDb;
 
-    public function setUp() {
+	/**
+	 * @var DonationQueueConsumer
+	 */
+	protected $queueConsumer;
+
+	public function setUp() {
 		parent::setUp();
-		Context::initWithLogger( SmashPigDatabaseTestConfiguration::instance() );
+		$config = SmashPigDatabaseTestConfiguration::instance();
+		// FIXME: Use all-purpose SmashPig test config when ready
+		$config->override( array(
+			'data-store' => array(
+				'donations' => array(
+					'class' => 'PHPQueue\Backend\PDO',
+					'constructor-parameters' => array( array(
+						'connection_string' => 'sqlite::memory:'
+					) )
+				)
+			)
+		) );
+		Context::initWithLogger( $config );
 		$this->pendingDb = PendingDatabase::get();
 		$this->pendingDb->createTable();
+		$this->queueConsumer = new DonationQueueConsumer( 'donations' );
 	}
 
 	/**
@@ -31,8 +50,8 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         exchange_rate_cache_set( 'USD', $message->get( 'date' ), 1 );
         exchange_rate_cache_set( $message->get( 'currency' ), $message->get( 'date' ), 3 );
 
-        queue2civicrm_import( $message );
-        queue2civicrm_import( $message2 );
+        $this->queueConsumer->processMessage( $message->getBody() );
+        $this->queueConsumer->processMessage( $message2->getBody() );
 
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $message->getGateway(), $message->getGatewayTxnId() );
         $this->assertEquals( 1, count( $contributions ) );
@@ -53,7 +72,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         exchange_rate_cache_set( 'USD', $message->get( 'date' ), 1 );
         exchange_rate_cache_set( $message->get( 'currency' ), $message->get( 'date' ), 3 );
 
-        queue2civicrm_import( $message );
+        $this->queueConsumer->processMessage( $message->getBody()  );
 
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $message->getGateway(), $message->getGatewayTxnId() );
         $contribution = civicrm_api3('Contribution', 'getsingle', array(
@@ -76,7 +95,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       exchange_rate_cache_set('USD', $message->get('date'), 1);
       exchange_rate_cache_set($message->get('currency'), $message->get('date'), 3);
 
-      queue2civicrm_import($message);
+      $this->queueConsumer->processMessage( $message->getBody()  );
 
       $contributions = wmf_civicrm_get_contributions_from_gateway_id($message->getGateway(), $message->getGatewayTxnId());
       $contribution = civicrm_api3('Contribution', 'getsingle', array(
@@ -99,7 +118,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     exchange_rate_cache_set('USD', $message->get('date'), 1);
     exchange_rate_cache_set($message->get('currency'), $message->get('date'), 3);
 
-    queue2civicrm_import($message);
+    $this->queueConsumer->processMessage( $message->getBody() );
 
     $contributions = wmf_civicrm_get_contributions_from_gateway_id($message->getGateway(), $message->getGatewayTxnId());
     $contribution = civicrm_api3('Contribution', 'getsingle', array(
@@ -226,7 +245,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         exchange_rate_cache_set( 'USD', $donation_message->get('date'), 1 );
         exchange_rate_cache_set( $donation_message->get('currency'), $donation_message->get('date'), 3 );
 
-        queue2civicrm_import( $donation_message );
+        $this->queueConsumer->processMessage( $donation_message->getBody() );
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $donation_message->getGateway(), $donation_message->getGatewayTxnId() );
         $this->assertEquals( 1, count( $contributions ) );
 
@@ -249,7 +268,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
      * Test refunding a mismatched amount.
      *
      * Note that we were checking against an exception - but it turned out the exception
-     * could be thrown in this fn queue2civicrm_import if the exchange rate does not
+     * could be thrown in this fn $this->queueConsumer->processMessage if the exchange rate does not
      * exist - which is not what we are testing for.
      */
     public function testRefundMismatched() {
@@ -266,7 +285,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'gross_currency' => $donation_message->get( 'original_currency' ),
         ) );
 
-        queue2civicrm_import( $donation_message );
+        $this->queueConsumer->processMessage( $donation_message->getBody() );
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $donation_message->getGateway(), $donation_message->getGatewayTxnId() );
         $this->assertEquals( 1, count( $contributions ) );
 
@@ -280,6 +299,8 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 	/**
 	 * Process a donation message with some info from pending db
 	 * @dataProvider getSparseMessages
+	 * @param TransactionMessage $message
+	 * @param array $pendingMessage
 	 */
 	public function testDonationSparseMessages( $message, $pendingMessage ) {
 		$pendingMessage['order_id'] = $message->get( 'order_id' );
@@ -291,7 +312,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 		exchange_rate_cache_set( 'USD', $message->get( 'date' ), 1 );
 		exchange_rate_cache_set( $message->get( 'currency' ), $message->get( 'date' ), 3 );
 
-		queue2civicrm_import( $message );
+		$this->queueConsumer->processMessage( $message->getBody()  );
 
 		$contributions = wmf_civicrm_get_contributions_from_gateway_id( $message->getGateway(), $message->getGatewayTxnId() );
 		$contribution = civicrm_api3('Contribution', 'getsingle', array(
