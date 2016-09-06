@@ -1,19 +1,39 @@
 <?php
+use queue2civicrm\banner_history\BannerHistoryQueueConsumer;
+
+use SmashPig\Core\Context;
+use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
+use SmashPig\Tests\QueueTestConfiguration;
 
 /**
  * @group Queue2Civicrm
  */
 class BannerHistoryTest extends BaseWmfDrupalPhpUnitTestCase {
-	public function testValidMessage() {
-		$msg = ( object ) array(
-			'body' => json_encode( array(
-				'banner_history_id' => substr(
-					md5( mt_rand() . time() ), 0, 16
-				),
-				'contribution_tracking_id' => strval( mt_rand() ),
-			) ),
+
+	/**
+	 * @var BannerHistoryQueueConsumer
+	 */
+	protected $consumer;
+
+	public function setUp() {
+		parent::setUp();
+		$config = new QueueTestConfiguration();
+		Context::initWithLogger( $config );
+		$queue = BaseQueueConsumer::getQueue( 'test' );
+		$queue->createTable( 'test' );
+		$this->consumer = new BannerHistoryQueueConsumer(
+			'test'
 		);
-		banner_history_process_message( $msg );
+	}
+
+	public function testValidMessage() {
+		$msg = array(
+			'banner_history_id' => substr(
+				md5( mt_rand() . time() ), 0, 16
+			),
+			'contribution_tracking_id' => strval( mt_rand() ),
+		);
+		$this->consumer->processMessage( $msg );
 		// check for thing in db
 	}
 
@@ -21,27 +41,23 @@ class BannerHistoryTest extends BaseWmfDrupalPhpUnitTestCase {
 	 * @expectedException WmfException
 	 */
 	public function testBadContributionId() {
-		$msg = ( object ) array(
-			'body' => json_encode( array(
-				'banner_history_id' => substr(
-					md5( mt_rand() . time() ), 0, 16
-				),
-				'contribution_tracking_id' => '1=1; DROP TABLE students;--',
-			) ),
+		$msg = array(
+			'banner_history_id' => substr(
+				md5( mt_rand() . time() ), 0, 16
+			),
+			'contribution_tracking_id' => '1=1; DROP TABLE students;--',
 		);
-		banner_history_process_message( $msg );
+		$this->consumer->processMessage( $msg );
 	}
 
 	/**
 	 * @expectedException WmfException
 	 */
 	public function testBadHistoryId() {
-		$msg = ( object ) array(
-			'body' => json_encode( array(
-				'banner_history_id' => '\';GRANT ALL ON drupal.* TO \'leet\'@\'haxx0r\'',
-				'contribution_tracking_id' => strval( mt_rand() ),
-			) ),
+		$msg = array(
+			'banner_history_id' => '\';GRANT ALL ON drupal.* TO \'leet\'@\'haxx0r\'',
+			'contribution_tracking_id' => strval( mt_rand() ),
 		);
-		banner_history_process_message( $msg );
+		$this->consumer->processMessage( $msg );
 	}
 }
