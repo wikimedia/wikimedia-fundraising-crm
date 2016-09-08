@@ -40,24 +40,45 @@ class RefundFile {
 			$amount = _get_value( 'Amount', $row, $headers );
 			$date = _get_value( 'Date', $row, $headers );
 			$refundType = _get_value( 'Type', $row, $headers, 'refund' );
+			$contributionId = _get_value( 'Contribution ID', $row, $headers );
 
-			if ( $orderid === '' ) {
+			if ( $orderid === '' && $contributionId === '') {
 				watchdog(
 					'offline2civicrm',
-					"Invalid OrderID for refund on row $rowCount",
+					"Need Order ID or Contribution ID for refund on row $rowCount",
 					$row,
 					WATCHDOG_INFO
 				);
 				continue;
 			}
 
-			$contributions = wmf_civicrm_get_contributions_from_gateway_id( $this->processor, $orderid );
-			if ( $contributions ) {
-				$contribution = array_shift( $contributions );
+			if ( $contributionId === '' ) {
+				$logId = "{$this->processor} transaction $orderid";
+				$contributions = wmf_civicrm_get_contributions_from_gateway_id( $this->processor, $orderid );
 			} else {
+				$logId = "contribution with ID $contributionId";
+				$contributions = wmf_civicrm_get_contributions_from_contribution_id( $contributionId );
+			}
+
+			if ( !$contributions ) {
 				watchdog(
 					'offline2civicrm',
-					"Could not find transaction matching trxn_id: $orderid",
+					"Could not find $logId",
+					NULL,
+					WATCHDOG_ERROR
+				);
+				continue;
+			}
+
+			$contribution = array_shift( $contributions );
+			$contributionId = $contribution['id'];
+
+			// verify gateway in case we're retrieving by contribution ID
+			if ( $contribution['gateway'] !== $this->processor ) {
+				watchdog(
+					'offline2civicrm',
+					"$logId is from processor {$contribution['gateway']}, " .
+						"not expected processor {$this->processor}",
 					NULL,
 					WATCHDOG_ERROR
 				);
@@ -66,7 +87,7 @@ class RefundFile {
 
 			// execute the refund
 			wmf_civicrm_mark_refund(
-				$contribution['id'],
+				$contributionId,
 				$refundType,
 				true,
 				$date,
@@ -76,7 +97,7 @@ class RefundFile {
 			);
 			watchdog(
 				'offline2civicrm',
-				"Marked {$this->processor} transaction $orderid refunded",
+				"Marked $logId refunded",
 				null,
 				WATCHDOG_INFO
 			);

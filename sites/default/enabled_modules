@@ -10,6 +10,7 @@ environment_indicator
 exchange_rates
 ganglia_reporter
 globalcollect_audit
+ingenico_audit
 large_donation
 libraries
 oauth_common
