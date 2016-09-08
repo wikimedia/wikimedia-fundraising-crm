@@ -1,5 +1,6 @@
 <?php namespace queue2civicrm\fredge;
 
+use SmashPig\Core\DataStores\PendingDatabase;
 use wmf_common\WmfQueueConsumer;
 use WmfException;
 
