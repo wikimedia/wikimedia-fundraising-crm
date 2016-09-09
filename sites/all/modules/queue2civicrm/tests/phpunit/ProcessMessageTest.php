@@ -2,6 +2,7 @@
 
 use queue2civicrm\DonationQueueConsumer;
 use queue2civicrm\refund\RefundQueueConsumer;
+use queue2civicrm\recurring\RecurringQueueConsumer;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Tests\SmashPigDatabaseTestConfiguration;
@@ -26,6 +27,10 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 	 */
 	protected $refundConsumer;
 
+	/**
+	 * @var RecurringQueueConsumer
+	 */
+	protected $recurringConsumer;
 
 	public function setUp() {
 		parent::setUp();
@@ -35,11 +40,17 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 			'data-store' => array(
 				'donations' => array(
 					'class' => 'PHPQueue\Backend\PDO',
-            		'constructor-parameters' => array( array(
+					'constructor-parameters' => array( array(
 						'connection_string' => 'sqlite::memory:'
 					) )
 				),
 				'refund-new' => array(
+					'class' => 'PHPQueue\Backend\PDO',
+					'constructor-parameters' => array( array(
+						'connection_string' => 'sqlite::memory:'
+					) )
+				),
+				'recurring-new' => array(
 					'class' => 'PHPQueue\Backend\PDO',
 					'constructor-parameters' => array( array(
 						'connection_string' => 'sqlite::memory:'
@@ -52,6 +63,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 		$this->pendingDb->createTable();
 		$this->queueConsumer = new DonationQueueConsumer( 'donations' );
 		$this->refundConsumer = new RefundQueueConsumer( 'refund-new' );
+		$this->recurringConsumer = new RecurringQueueConsumer( 'recurring-new' );
 	}
 
 	/**
@@ -196,9 +208,9 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         exchange_rate_cache_set( 'USD', $payment_time, 1 );
         exchange_rate_cache_set( $message->get('mc_currency'), $payment_time, 3 );
 
-        recurring_import( $signup_message );
-        recurring_import( $message );
-        recurring_import( $message2 );
+        $this->recurringConsumer->processMessage( $signup_message->getBody() );
+        $this->recurringConsumer->processMessage( $message->getBody() );
+        $this->recurringConsumer->processMessage( $message2->getBody() );
 
         $recur_record = wmf_civicrm_get_recur_record( $subscr_id );
         $this->assertNotEquals( false, $recur_record );
@@ -227,7 +239,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         exchange_rate_cache_set( 'USD', $payment_time, 1 );
         exchange_rate_cache_set( $message->get('mc_currency'), $payment_time, 3 );
 
-        recurring_import( $message );
+        $this->recurringConsumer->processMessage( $message->getBody() );
     }
 
     /**
@@ -243,7 +255,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         exchange_rate_cache_set( 'USD', $payment_time, 1 );
         exchange_rate_cache_set( $message->get('mc_currency'), $payment_time, 3 );
 
-        recurring_import( $message );
+        $this->recurringConsumer->processMessage( $message->getBody() );
     }
 
     public function testRefund() {
@@ -263,7 +275,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $donation_message->getGateway(), $donation_message->getGatewayTxnId() );
         $this->assertEquals( 1, count( $contributions ) );
 
-		$this->refundConsumer->processMessage( $refund_message->getBody() );
+	$this->refundConsumer->processMessage( $refund_message->getBody() );
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $refund_message->getGateway(), $refund_message->getGatewayTxnId() );
         $this->assertEquals( 1, count( $contributions ) );
     }
@@ -275,7 +287,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     public function testRefundNoPredecessor() {
         $refund_message = new RefundMessage();
 
-		$this->refundConsumer->processMessage( $refund_message->getBody() );
+	$this->refundConsumer->processMessage( $refund_message->getBody() );
     }
 
     /**
@@ -303,7 +315,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $donation_message->getGateway(), $donation_message->getGatewayTxnId() );
         $this->assertEquals( 1, count( $contributions ) );
 
-		$this->refundConsumer->processMessage( $refund_message->getBody() );
+	$this->refundConsumer->processMessage( $refund_message->getBody() );
         $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $contributions[0]['contact_id'], 'sequential' => 1));
         $this->assertEquals(2, count($contributions['values']));
         $this->assertEquals('Chargeback', CRM_Contribute_PseudoConstant::contributionStatus($contributions['values'][0]['contribution_status_id']));
