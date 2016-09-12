@@ -1,4 +1,0 @@
-name = WMF ZenDesk Reports
-description = Custom reports from ZenDesk
-core = 7.x
-package = Wikimedia
