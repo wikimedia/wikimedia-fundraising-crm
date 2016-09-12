@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 function contribution_tracking_schema() {
   $schema[ 'contribution_tracking' ] = array(
@@ -66,7 +66,7 @@ function contribution_tracking_schema() {
       'optout' => array(
         'type' => 'int',
         'size' => 'tiny',
-      	'unsigned' => true,
+        'unsigned' => true,
         'not null' => false,
       ),
       'language' => array(
@@ -99,12 +99,27 @@ function contribution_tracking_schema() {
       'ts' => array( 'ts' ),
       'utm_source_id' => array( 'utm_source' ),
       'utm_medium_id' => array( 'utm_medium' ),
-      'utm_campaign_id' => array( 'utm_campaign' )
+      'utm_campaign_id' => array( 'utm_campaign' ),
+      'language' => array( 'language' )
     ),
     'unique keys' => array(
-    	'contribution_id' => array( 'contribution_id' ),
+      'contribution_id' => array( 'contribution_id' ),
     ),
     'primary key' => array( 'id' ),
   );
   return $schema;
+}
+
+/**
+ * Add index to language field on contribution tracking table.
+ *
+ * I noticed the lack on an index here was slowing down my queries & silverpop exports.
+ *
+ * T96410
+ */
+function contribution_tracking_update_7000() {
+  db_query("
+    ALTER TABLE contribution_tracking
+    ADD INDEX `language` (`language`)
+  ");
 }

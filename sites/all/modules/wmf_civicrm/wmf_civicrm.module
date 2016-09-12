@@ -2081,6 +2081,15 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
                 continue;
               }
 
+              if (_wmf_civicrm_merge_resolve_casing_conflict(
+                str_replace('move_', '', $moveField),
+                $refs['migration_info'][$moveField],
+                $refs['migration_info']['rows'][$moveField]['other'],
+                $refs['migration_info']['rows'][$moveField]['main'])) {
+                  unset($refs['fields_in_conflict'][$moveField]);
+                  continue;
+              }
+
               if (substr($moveField, 0, 13) === 'move_location') {
                 if (!isset($refs['is_major_gift'])) {
                   $refs['is_major_gift'] = _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId);
@@ -2132,6 +2141,63 @@ function _wmf_civicrm_merge_is_communication_boolean($moveField) {
     return TRUE;
   }
   return FALSE;
+}
+
+/**
+ * Resolve conflicts that are only about name casing.
+ *
+ * If we have a conflict of 'Sarah' vs 'sarah' vs 'SARAH' we choose the one with
+ * the least number of capitals, that is not all lower case.
+ *
+ * This is not perfect but only on edge cases would another choice be better and,
+ * importantly, all these variants have been entered at some point deliberately.
+ *
+ * The most common poor-data-options are not using the caps key at all, or having
+ * caps lock on - so this formula prefers mixed caps.
+ *
+ * If we find a match we need to alter the $moveFieldValue & $valueToKeep vars.
+ * That is not hugely logical but unfortunately the hook interaction has been organic
+ * and until we started using batch merge was not actually tested in core.
+ *
+ * @param string $fieldName
+ * @param string $moveFieldValue
+ * @param string $valueToKeep
+ * @param string $valueToOverwrite
+ *
+ * @return bool
+ */
+function _wmf_civicrm_merge_resolve_casing_conflict($fieldName, &$moveFieldValue, &$valueToKeep, &$valueToOverwrite) {
+  $fieldsToResolveCasingFor = array('last_name', 'first_name');
+  if (!in_array(str_replace('move_', '', $fieldName), $fieldsToResolveCasingFor)) {
+    return FALSE;
+  }
+  if (strtoupper($valueToKeep) != strtoupper($valueToOverwrite)) {
+    return FALSE;
+  }
+  $capitalsInToKeepValue =  _wmf_civicrm_count_capital_letters($valueToKeep);
+  $capitalsInToOverwriteValue =  _wmf_civicrm_count_capital_letters($valueToOverwrite);
+
+  if ($capitalsInToOverwriteValue === 0 || ($capitalsInToKeepValue > 0 && $capitalsInToKeepValue < $capitalsInToOverwriteValue)) {
+    // We have a conflict to resolve and we are going to resolve it
+    // by keeping the default copy behaviour.
+    return TRUE;
+  }
+  // We have a conflict to resolve and we are going to resolve it by keeping
+  //the value that was to be overwritten.
+  $moveFieldValue = $valueToOverwrite;
+  $valueToKeep = $valueToOverwrite;
+  return TRUE;
+}
+
+/**
+ * Count the number of capital letters in a string.
+ *
+ * @param $string
+ *
+ * @return int
+ */
+function _wmf_civicrm_count_capital_letters($string) {
+  return strlen(preg_replace('/[^A-Z]+/', '', $string));
 }
 
 /**
@@ -2188,7 +2254,7 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
   if (!$lastDonor['count']) {
     return;
   }
-  $lastDonorID = $lastDonor['id'];
+  $lastDonorID = $lastDonor['values'][$lastDonor['id']]['contact_id'];
   // Since the last donor is not the main ID we are prioritising info from the last donor.
   // In the test this should always be true - but keep the check in case
   // something changes that we need to detect.
