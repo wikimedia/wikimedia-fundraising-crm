@@ -123,3 +123,39 @@ function contribution_tracking_update_7000() {
     ADD INDEX `language` (`language`)
   ");
 }
+
+
+/**
+ * Clean up legacy junk data from preferred_language field.
+ *
+ * This nulls out various junk data strings.
+ *
+ * Bug: T96410
+ */
+function contribution_tracking_update_7010() {
+  db_query("
+    UPDATE contribution_tracking
+    SET language = NULL 
+    WHERE
+    language LIKE '?%'
+    OR language LIKE '\" % '
+    OR language LIKE '\'%'
+    OR language LIKE '!%'
+    OR language LIKE '\%%'
+    OR language LIKE '(%'
+    OR language LIKE '*%'
+    OR language LIKE '.%'
+    OR language LIKE '-%'
+    OR language LIKE '0%'
+    OR language LIKE '1%'
+    OR language LIKE '2%'
+    OR language LIKE '3%'
+    OR language LIKE '4%'
+    OR language LIKE '5%'
+    OR language LIKE '6%'
+    OR language LIKE '7%'
+    OR language LIKE '8%'
+    OR language LIKE '9%'
+    OR language LIKE 'Donat%'
+  ");
+}
