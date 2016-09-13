@@ -2213,3 +2213,13 @@ function wmf_civicrm_update_7250() {
     )
   ");
 }
+
+/**
+ * T128221 add index to civicrm_contribution.total_amount.
+ *
+ * Bug: T96410
+ */
+function wmf_civicrm_update_7255() {
+  civicrm_initialize();
+  CRM_Core_BAO_SchemaHandler::createIndexes(array('civicrm_contact' => array('preferred_language')));
+}
