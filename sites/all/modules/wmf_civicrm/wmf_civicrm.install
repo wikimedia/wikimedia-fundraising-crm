@@ -2229,6 +2229,16 @@ function wmf_civicrm_update_7255() {
 }
 
 /**
+ * Update the preferred_language field in civicrm_contact based on tracking data.
+ *
+ * Bug: T96410
+*/
+function wmf_civicrm_update_7260() {
+  require_once('update_7260.php');
+  _wmf_civicrm_update_7260_update_preferred_language();
+}
+
+/**
  * Clean up weird English variants from preferred_language field.
  *
  * Good bye Dutch English, Uzbekastani English etc.
