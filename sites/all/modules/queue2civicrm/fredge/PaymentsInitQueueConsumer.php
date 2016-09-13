@@ -26,7 +26,8 @@ class PaymentsInitQueueConsumer extends WmfQueueConsumer {
 		$inserting = true;
 
 		// Delete corresponding pending rows if this message is finished.
-		if ( in_array( $message['payments_final_status'], array( 'completed', 'failed' ) ) ) {
+		if ( in_array( $message['payments_final_status'], array( 'complete', 'failed' ) ) ) {
+			watchdog( 'fredge', "Deleting pending row for finalized message {$logId}", array(), WATCHDOG_INFO );
 			PendingDatabase::get()->deleteMessage( $message );
 		}
 
