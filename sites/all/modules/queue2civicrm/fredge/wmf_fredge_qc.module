@@ -70,7 +70,7 @@ function fredge_batch_process() {
   watchdog('fredge', 'Executing: fredge_batch_process');
 
   civicrm_initialize();
-  $config = new Configuration();
+  $config = Configuration::createForView('default');
   Context::initWithLogger($config, 'fredge_batch_process');
 
   //Let's start with the simplest possible division of labor

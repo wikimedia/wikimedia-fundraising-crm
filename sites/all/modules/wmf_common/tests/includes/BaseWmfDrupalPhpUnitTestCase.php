@@ -20,7 +20,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
     }
 
     public function tearDown() {
-		Context::set(); // Nullify any SmashPig context for the next run
+		Context::set( null ); // Nullify any SmashPig context for the next run
 		parent::tearDown();
 	}
 

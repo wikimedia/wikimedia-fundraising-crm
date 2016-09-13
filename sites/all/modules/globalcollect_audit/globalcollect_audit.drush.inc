@@ -72,7 +72,7 @@ function globalcollect_audit_reset_drush_vars(){
  * TODO: More comments here-ish. 
  */
 function drush_globalcollect_audit() {
-	$config = new Configuration();
+	$config = Configuration::createForView( 'globalcollect' );
 	Context::initWithLogger( $config, 'globalcollect_audit' );
 
 	//$args = drush_get_arguments();

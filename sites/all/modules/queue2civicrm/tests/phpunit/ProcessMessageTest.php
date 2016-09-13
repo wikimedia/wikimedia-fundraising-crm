@@ -16,7 +16,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
     public function setUp() {
 		parent::setUp();
-		Context::initWithLogger( new SmashPigDatabaseTestConfiguration() );
+		Context::initWithLogger( SmashPigDatabaseTestConfiguration::instance() );
 		$this->pendingDb = PendingDatabase::get();
 		$this->pendingDb->createTable();
 	}
