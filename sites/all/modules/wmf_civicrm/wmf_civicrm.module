@@ -1089,7 +1089,19 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         }
     }
     if (!empty($contact['preferred_language'])) {
-        wmf_civicrm_ensure_language_exists($contact['preferred_language']);
+        if (!wmf_civicrm_check_language_exists($contact['preferred_language'])) {
+          $parts = explode('_', $contact['preferred_language']);
+          if (wmf_civicrm_check_language_exists($parts[0])) {
+            // in other words en_NO will be converted to en
+            // rather than Norwegian English.
+            $contact['preferred_language'] = $parts[0];
+          }
+          else {
+            // otherwise let's create it rather than fail.
+            // seems like the easiest way not to lose visibility, data or the plot.
+            wmf_civicrm_ensure_language_exists($contact['preferred_language']);
+          }
+        }
     }
 
     // Copy some fields, if they exist
@@ -1257,6 +1269,23 @@ function wmf_civicrm_ensure_language_exists($languageAbbreviation) {
     wmf_civicrm_ensure_option_exists($languageAbbreviation, 'preferred_language', 'languages', array('value' => substr($languageAbbreviation, 0, 2)));
 }
 
+/**
+ * Check if the language string exists.
+ *
+ * @param string $languageAbbreviation
+ *
+ * @return bool
+ */
+function wmf_civicrm_check_language_exists($languageAbbreviation) {
+  static $languages;
+  if (empty($languages)) {
+    $available_options = civicrm_api3('Contact', 'getoptions', array(
+      'field' => 'preferred_language',
+    ));
+    $languages = $available_options['values'];
+  }
+  return !empty($languages[$languageAbbreviation]);
+}
 /**
  * Ensure the required option value exists.
  *
