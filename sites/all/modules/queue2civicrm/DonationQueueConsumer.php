@@ -28,12 +28,21 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 		);
 		$logId = _queue2civicrm_log( $log );
 
-		$pendingDbEntry = false;
 		// If more information is available, find it from the pending database
 		// FIXME: replace completion_message_id with a boolean flag
 		if ( isset( $message['completion_message_id'] ) ) {
-			$pendingDbEntry = $this->updateFromPendingDb( $message );
-			if ( !$pendingDbEntry ) {
+			$pendingDbEntry = PendingDatabase::get()->fetchMessageByGatewayOrderId(
+				$message['gateway'],
+				$message['order_id']
+			);
+			if ( $pendingDbEntry ) {
+				// Sparse messages should have no keys at all for the missing info,
+				// rather than blanks or junk data. And $msg should always have newer
+				// info than the pending db.
+				$message = $message + $pendingDbEntry;
+				// $pendingDbEntry has a pending_id key, but $msg doesn't need it
+				unset( $message['pending_id'] );
+			} else {
 				// If the contribution has already been imported, this check will
 				// throw an exception that says to drop it entirely, not re-queue.
 				wmf_civicrm_check_for_duplicates(
@@ -48,14 +57,7 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 			}
 		}
 
-		$contribution = wmf_civicrm_contribution_message_import( $message );
-
-		// construct an array of useful info to invocations of queue2civicrm_import
-		$contribution_info = array(
-			'contribution_id' => $contribution['id'],
-			'contact_id' => $contribution['contact_id'],
-			'msg' => $message,
-		);
+		wmf_civicrm_contribution_message_import( $message );
 
 		// update the log if things went well
 		if ( $logId ) {
@@ -65,41 +67,10 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 			_queue2civicrm_log( $log );
 		}
 
-		// Fire a hook handler that I'm pretty sure isn't used (FIXME)
-		module_invoke_all( 'queue2civicrm_import', $contribution_info );
-
 		// keep count of the transactions
 		Queue2civicrmTrxnCounter::instance()->increment( $message['gateway'] );
 
-		// Delete message from pending db once the rest has completed successfully
-		if ( $pendingDbEntry ) {
-			PendingDatabase::get()->deleteMessage( $pendingDbEntry );
-		}
-	}
-
-	/**
-	 * Fill in some missing information from the pending database
-	 * @param array $msg sparse donation message, usually from IPN listener
-	 * @return array|null message from database, or null if not found
-	 */
-	protected function updateFromPendingDb( &$msg ) {
-		$gateway = $msg['gateway'];
-		$orderId = $msg['order_id'];
-
-		$pendingDbData = PendingDatabase::get()->fetchMessageByGatewayOrderId(
-			$gateway,
-			$orderId
-		);
-
-		// Sparse messages should have no keys at all for the missing info,
-		// rather than blanks or junk data. And $msg should always have newer
-		// info than the pending db.
-		if ( $pendingDbData ) {
-			$msg = $msg + $pendingDbData;
-			// $data has a pending_id key for ease of deletion,
-			// but $msg doesn't need it
-			unset( $msg['pending_id'] );
-		}
-		return $pendingDbData;
+		// Delete any pending db entries with matching gateway and order_id
+		PendingDatabase::get()->deleteMessage( $message );
 	}
 }
