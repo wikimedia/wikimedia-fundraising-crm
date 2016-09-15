@@ -2018,7 +2018,7 @@ function globalcollect_audit_send_queue_message( $queueId, $body ) {
     // FIXME: register the queue mapping somewhere sane
     if ( $queueId === 'donations' ) {
         $queuePath = variable_get( 'queue2civicrm_subscription', '/queue/donations' );
-		$configKey = 'data-store/verified-new';
+		$configKey = 'data-store/donations';
     } elseif ( $queueId === 'refund' ) {
         $queuePath = variable_get( 'refund_queue', '/queue/refund' );
 		$configKey = 'data-store/refund-new';
