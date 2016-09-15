@@ -9,3 +9,4 @@ files[] = Queue2civicrmTrxnCounter.php
 files[] = Stomp.php
 files[] = tests/includes/Message.php
 files[] = tests/includes/MessageSource.php
+files[] = tests/includes/TestingSmashPigDbQueueConfiguration.php

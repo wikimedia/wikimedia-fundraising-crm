@@ -1,0 +1,22 @@
+default:
+    data-store:
+        test:
+            class: PHPQueue\Backend\PDO
+            constructor-parameters:
+                -
+                    connection_string: 'sqlite::memory:'
+
+        damaged-db:
+            class: PDO
+            constructor-parameters:
+                - 'sqlite::memory:'
+
+        fredge-db:
+            class: PDO
+            constructor-parameters:
+                - 'sqlite::memory:'
+
+        pending-db:
+            class: PDO
+            constructor-parameters:
+                - 'sqlite::memory:'
