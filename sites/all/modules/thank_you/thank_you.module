@@ -324,7 +324,7 @@ function thank_you_for_contribution( $contribution_id ) {
     }
 
     $locale = $contact['preferred_language'];
-    if ( !$locale or substr( $locale, 0, 1 ) === '_' ) {
+    if ( !$locale ) {
         watchdog( 'thank_you', "Donor language unknown.  Defaulting to English...", NULL, WATCHDOG_INFO );
         $locale = 'en';
     }
