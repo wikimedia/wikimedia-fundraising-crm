@@ -103,7 +103,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                     'return' => 'name',
                 )), $expected['contact'][$renamedField]);
             }
-
         }
 
         if ( !empty( $expected['contact_custom_values'] ) ) {
@@ -141,35 +140,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                     'payment_method' => 'cc',
                 ),
                 array(
-                    'contribution' => array(
-                        'address_id' => '',
-                        'amount_level' => '',
-                        'campaign_id' => '',
-                        'cancel_date' => '',
-                        'cancel_reason' => '',
-                        'check_number' => '',
-                        'contribution_page_id' => '',
-                        'contribution_recur_id' => '',
-                        'contribution_status_id' => '1',
-                        'contribution_type_id' => $contribution_type_cash,
-                        'currency' => 'USD',
-                        'fee_amount' => '0',
-                        'invoice_id' => '',
-                        'is_pay_later' => '',
-                        'is_test' => '',
-                        'net_amount' => '1.23',
-                        'non_deductible_amount' => '',
-                        'payment_instrument_id' => $payment_instrument_cc,
-                        'receipt_date' => '',
-                        'receive_date' => '20120501000000',
-                        'source' => 'USD 1.23',
-                        'thankyou_date' => '',
-                        'total_amount' => '1.23',
-                        'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
-                        'financial_type_id' => $contribution_type_cash,
-                        'creditnote_id' => '',
-                        'tax_amount' => '',
-                    ),
+                    'contribution' => $this->getBaseContribution($gateway_txn_id),
                 ),
             ),
 
@@ -219,6 +190,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                     'email' => 'nobody@wikimedia.org',
                     'first_name' => 'First',
                     'fee' => '0.03',
+                    'preferred_language' => 'en_US',
                     'gateway' => 'test_gateway',
                     'gateway_txn_id' => $gateway_txn_id,
                     'gift_source' => 'Legacy Gift',
@@ -246,6 +218,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'middle_name' => 'Middle',
                         'prefix' => $new_prefix,
                         'suffix' => 'Sr.',
+                        'preferred_language' => 'en_US',
                     ),
                     'contribution' => array(
                         'address_id' => '',
@@ -296,8 +269,57 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                     ),
                 ),
             ),
+          // Invalid language suffix for valid short lang.
+          'invalid language suffix' => array(
+            array(
+              'currency' => 'USD',
+              'date' => '2012-05-01 00:00:00',
+              'email' => 'nobody@wikimedia.org',
+              'gateway' => 'test_gateway',
+              'gateway_txn_id' => $gateway_txn_id,
+              'gross' => '1.23',
+              'payment_method' => 'cc',
+              'preferred_language' => 'en_ZZ',
+              'name_prefix' => $new_prefix,
+              'name_suffix' => 'Sr.',
+            ),
+            array(
+              'contact' => array(
+                'preferred_language' => 'en',
+                'prefix' => $new_prefix,
+                'suffix' => 'Sr.',
+              ),
+              'contribution' => $this->getBaseContribution($gateway_txn_id),
+            ),
+          ),
 
-            // Organization contribution
+          // Invalid language suffix for invalid short lang.
+          'invalid short language' => array(
+            array(
+              'currency' => 'USD',
+              'date' => '2012-05-01 00:00:00',
+              'email' => 'nobody@wikimedia.org',
+              'gateway' => 'test_gateway',
+              'gateway_txn_id' => $gateway_txn_id,
+              'gross' => '1.23',
+              'payment_method' => 'cc',
+              'preferred_language' => 'zz_ZZ',
+              'name_prefix' => $new_prefix,
+              'name_suffix' => 'Sr.',
+              'prefix' => $new_prefix,
+              'suffix' => 'Sr.',
+            ),
+            array(
+              'contact' => array(
+                'preferred_language' => 'zz_ZZ',
+                'prefix' => $new_prefix,
+                'suffix' => 'Sr.',
+              ),
+              'contribution' => $this->getBaseContribution($gateway_txn_id),
+            ),
+          ),
+
+          // Organization contribution
             array(
                 array(
                     'contact_type' => 'Organization',
@@ -439,6 +461,47 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       $this->assertEquals($array1, $array2);
 
     }
+
+  /**
+   * Get the basic array of contribution data.
+   *
+   * @param string $gateway_txn_id
+   *
+   * @return array
+   */
+  protected function getBaseContribution($gateway_txn_id) {
+    $contribution_type_cash = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Cash' );
+    $payment_instrument_cc = wmf_civicrm_get_civi_id( 'payment_instrument_id', 'Credit Card' );
+    return array(
+      'address_id' => '',
+      'amount_level' => '',
+      'campaign_id' => '',
+      'cancel_date' => '',
+      'cancel_reason' => '',
+      'check_number' => '',
+      'contribution_page_id' => '',
+      'contribution_recur_id' => '',
+      'contribution_status_id' => '1',
+      'contribution_type_id' => $contribution_type_cash,
+      'currency' => 'USD',
+      'fee_amount' => '0',
+      'invoice_id' => '',
+      'is_pay_later' => '',
+      'is_test' => '',
+      'net_amount' => '1.23',
+      'non_deductible_amount' => '',
+      'payment_instrument_id' => $payment_instrument_cc,
+      'receipt_date' => '',
+      'receive_date' => '20120501000000',
+      'source' => 'USD 1.23',
+      'thankyou_date' => '',
+      'total_amount' => '1.23',
+      'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+      'financial_type_id' => $contribution_type_cash,
+      'creditnote_id' => '',
+      'tax_amount' => '',
+    );
+  }
 
   /**
    * Remove commas from money fields.
