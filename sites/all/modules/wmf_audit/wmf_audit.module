@@ -39,7 +39,7 @@ function wmf_audit_menu() {
  */
 function wmf_audit_main( $gateway, $options ) {
     Context::initWithLogger(
-        new Configuration( $gateway ),
+        Configuration::createForView( $gateway ),
         "{$gateway}_audit"
     );
 

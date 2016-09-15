@@ -17,7 +17,7 @@ class BannerHistoryTest extends BaseWmfDrupalPhpUnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$config = new QueueTestConfiguration();
+		$config = QueueTestConfiguration::instance();
 		Context::initWithLogger( $config );
 		$queue = BaseQueueConsumer::getQueue( 'test' );
 		$queue->createTable( 'test' );

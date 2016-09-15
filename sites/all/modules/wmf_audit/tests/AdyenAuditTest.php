@@ -1,8 +1,5 @@
 <?php
 
-use SmashPig\Core\Configuration;
-use SmashPig\Core\Context;
-
 /**
  * @group Adyen
  * @group WmfAudit
