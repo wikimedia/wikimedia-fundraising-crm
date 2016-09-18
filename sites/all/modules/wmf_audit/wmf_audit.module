@@ -1,7 +1,6 @@
 <?php
 
 use SmashPig\Core\Configuration;
-use SmashPig\Core\ConfigurationKeyException;
 use SmashPig\Core\Context;
 
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
@@ -388,11 +387,11 @@ function wmf_audit_send_transaction($record, $type) {
     return true;
   }
 
-  return wmf_audit_send_queue_message($record, $type);
+  return wmf_audit_send_stomp($record, $type);
 }
 
 /**
- * Send the message in $body to appropriate message queues.
+ * Send the message in $body to an appropriate stomp message queue.
  * @staticvar array $types Types of transaction we know about, that probably all
  * have different queues.
  * @param array $body An array representing the transaction we're trying to
@@ -402,7 +401,7 @@ function wmf_audit_send_transaction($record, $type) {
  * Standard for the stomp libraries, but still lame.
  * @throws Exception
  */
-function wmf_audit_send_queue_message( $body, $type ) {
+function wmf_audit_send_stomp($body, $type) {
   static $types = array();
 
   $q = queue2civicrm_stomp();
@@ -434,20 +433,6 @@ function wmf_audit_send_queue_message( $body, $type ) {
   }
 
   wmf_common_set_message_source($headers, 'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor');
-  wmf_common_set_message_source($body, 'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor');
 
-  $configKeys = array(
-    'main' => 'data-store/verified-new',
-    'negative' => 'data-store/refund-new',
-    'recurring' => 'data-store/recurring-new',
-  );
-  try{
-    $newQueue = Configuration::getDefaultConfig()->object(
-      $configKeys[$type]
-    );
-    $newQueue->push( $body );
-  } catch ( ConfigurationKeyException $ex ) {
-    // do nothing
-  }
   return $q->enqueue(json_encode($body), $headers, $types[$type]);
 }
