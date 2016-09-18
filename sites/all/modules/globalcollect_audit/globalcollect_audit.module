@@ -1,6 +1,4 @@
-<?php
-use SmashPig\Core\Configuration;
-use SmashPig\Core\ConfigurationKeyException;
+<?php 
 
 define( 'GC_AUDIT_WR1_PARSER_DIR', '/usr/local/src/Wr1Parser/' );
 define( 'GC_AUDIT_WR1_FILES_DIR', '/usr/local/src/Wr1_files/' );
@@ -352,7 +350,7 @@ function globalcollect_audit_parse_all_wr1(){
 				$local_found_ids[] = $order_id;
 				globalcollect_audit_echo('!');
 			} else {
-				if ( globalcollect_audit_send_queue_message( 'donations', $missing_txn_message ) ){
+				if ( globalcollect_audit_send_stomp( 'donations', $missing_txn_message ) ){
 					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
 					$local_found_ids[] = $order_id;
 					globalcollect_audit_echo('!');
@@ -395,7 +393,7 @@ function globalcollect_audit_parse_all_wr1(){
 				$local_built_ids[] = $order_id;
 				globalcollect_audit_echo('!');
 			} else {
-				if ( globalcollect_audit_send_queue_message( 'donations', $missing_txn_message ) ){
+				if ( globalcollect_audit_send_stomp( 'donations', $missing_txn_message ) ){
 					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
 					$local_built_ids[] = $order_id;
 					globalcollect_audit_echo('!');
@@ -652,6 +650,8 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 		'optout' => array( 'contribution_tracking', 'optout' ),
 		'anonymous' => array( 'contribution_tracking', 'anonymous' ),
 		'comment' => array( 'contribution_tracking', 'note' ), //I think.
+		'size',
+		'premium_language',
 		'utm_source' => array( 'contribution_tracking', 'utm_source' ),
 		'utm_medium' => array( 'contribution_tracking', 'utm_medium' ),
 		'utm_campaign' => array( 'contribution_tracking', 'utm_campaign' ),
@@ -667,7 +667,6 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 		'country' => array( 'donor_data', 'COUNTRYCODE' ),
 		'postal_code' => array( 'donor_data', 'ZIP' ),
 		'gateway_txn_id' => array( 'donor_data', 'ORDERID' ),
-		'order_id' => array( 'donor_data', 'ORDERID' ), //fixme: should be merchant reference
 		'response', //? Maybe some dummy value for "found it in the audit phase"
 		'currency' => array( 'donor_data', 'CURRENCYCODE' ),
 		'date' => array( 'contribution_tracking', 'ts' ), //double-check how the dates work
@@ -1047,7 +1046,7 @@ function globalcollect_audit_mark_rfd_cbk( $missing ){
 				'type' => wr1_get_negative_type( $wr1 ), //refund or chargeback
 			);
 			echo print_r( $send_message, true );
-			globalcollect_audit_send_queue_message( 'refund', $send_message );
+			globalcollect_audit_send_stomp( 'refund', $send_message );
 			$count += 1;
 			globalcollect_audit_echo( '.' );
 			unset( $missing[$index] ); //only unset if we killed it
@@ -2008,7 +2007,7 @@ function gca_wr1_key_grinder( $record, $keys, $name, $error_on_mismatch = false 
 	}
 }
 
-function globalcollect_audit_send_queue_message( $queueId, $body ) {
+function globalcollect_audit_send_stomp( $queueId, $body ) {
     static $q;
 
     if ( !$q ) {
@@ -2018,24 +2017,15 @@ function globalcollect_audit_send_queue_message( $queueId, $body ) {
     // FIXME: register the queue mapping somewhere sane
     if ( $queueId === 'donations' ) {
         $queuePath = variable_get( 'queue2civicrm_subscription', '/queue/donations' );
-		$configKey = 'data-store/verified-new';
     } elseif ( $queueId === 'refund' ) {
         $queuePath = variable_get( 'refund_queue', '/queue/refund' );
-		$configKey = 'data-store/refund-new';
     } else {
         throw new Exception( "What kind of a queue is this??: {$queueId}" );
     }
 
     $headers = array();
     wmf_common_set_message_source( $headers, 'audit', 'GlobalCollect WR1 Auditor' );
-	wmf_common_set_message_source( $body, 'audit', 'GlobalCollect WR1 Auditor' );
 
-	try {
-		$newQueue = Configuration::getDefaultConfig()->object( $configKey, true );
-		$newQueue->push( $body );
-	} catch ( ConfigurationKeyException $ex ) {
-		// do nothing
-	}
     return $q->enqueue( json_encode( $body ), $headers, $queuePath );
 }
 
