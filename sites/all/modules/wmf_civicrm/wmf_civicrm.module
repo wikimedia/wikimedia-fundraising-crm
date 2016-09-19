@@ -2071,6 +2071,7 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
       case 'batch' :
       case 'form' :
 
+        $refs['migration_info']['context'] = $type;
         CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(1 => array(uniqid() . CRM_Utils_String::createRandom(CRM_Utils_String::ALPHANUMERIC, 4), 'String')));
         if (isset($refs['fields_in_conflict'])){
           $wmfCalculatedFields = wmf_civicrm_get_calculated_fields();
@@ -2263,6 +2264,10 @@ function _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId) {
  */
 function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $otherId, $migrationInfo) {
 
+  // If we are dealing with a manual merge do not intervene.
+  if ($migrationInfo['context'] == 'form') {
+    return;
+  }
   $lastDonor = civicrm_api3('Contribution', 'get', array(
     'return' => 'contact_id',
     'contact_id' => array('IN' => array($mainId, $otherId)),
