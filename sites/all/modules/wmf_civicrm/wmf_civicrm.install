@@ -2227,3 +2227,46 @@ function wmf_civicrm_update_7255() {
   civicrm_initialize();
   CRM_Core_BAO_SchemaHandler::createIndexes(array('civicrm_contact' => array('preferred_language')));
 }
+
+/**
+ * Clean up weird English variants from preferred_language field.
+ *
+ * Good bye Dutch English, Uzbekastani English etc.
+ *
+ * Bug: T96410
+ */
+function wmf_civicrm_update_7270() {
+  $nonUsefulEnglishes = array(
+    // these ones have information in CldrData.php so don't alter.
+    //'en_BE', 'en_ZA', 'en_BW', 'en_BZ', 'en_HK', 'en_IN', 'en_JM', 'en_NA', 'en_PK', 'en_SG', 'en_TT', 'en_ZW',
+    'en_NZ', // :-(
+    'en_EN', // en_GB instead? Only 3 - who cares.
+    'en_SE', 'en_NO', 'en_NL', 'en_ES', 'en_IT', 'en_IL', 'en_DK', 'en_FR', 'en_IE',
+    'en_MY', 'en_BR', 'en_RO', 'en_AT', 'en_HU', 'en_PL', 'en_MX', 'en_PT', 'en_JP',
+    'en_CN', 'en_CZ', 'en_SK', 'en_GR', 'en_DE', 'en_AE', 'en_UA', 'en_TH', 'en_TW', 'en_LV', 'en_LU',
+    'en_CH', 'en_PH', 'en_SI', 'en_BG', 'en_AR', 'en_HR', 'en_CL', 'en_CO', 'en_IS', 'en_LT', 'en_CY',
+    'en_XX', 'en_KW', 'en_UY', 'en_QA', 'en_MT', 'en_PE', 'en_VN', 'en_CR', 'en_RS', 'en_LK', 'en_KZ',
+    'en_EG', 'en_BH', 'en_DO', 'en_PR', 'en_NG', 'en_VE', 'en_EC', 'en_PA', 'en_OM',
+    'en_BA', 'en_JO', 'en_KE', 'en_GT', 'en_MU', 'en_GE', 'en_AZ', 'en_AM', 'en_BN', 'en_MK',
+    'en_NI', 'en_AL', 'en_BD', 'en_BS', 'en_BM', 'en_KH', 'en_BB', 'en_SV', 'en_MD', 'en_HN', 'en_MO',
+    'en_NP', 'en_VI', 'en_MV', 'en_GI', 'en_KY', 'en_TZ', 'en_ET', 'en_AO', 'en_ME', 'en_MA',
+    'en_MZ', 'en_AF', 'en_GU', 'en_PY', 'en_AD', 'en_FO', 'en_BO', 'en_MN', 'en_AW', 'en_UG',
+    'en_FJ', 'en_GN', 'en_PG', 'en_GH', 'en_ZM', 'en_KG', 'en_GY', 'en_JE', 'en_CW', 'en_LC',
+    'en_IM', 'en_BL', 'en_MC', 'en_SB', 'en_DZ', 'en_GL', 'en_HT', 'en_AG', 'en_GD', 'en_LA', 'en_UZ',
+    'en_LI', 'en_PF', 'en_KN', 'en_DM', 'en_GG', 'en_NC', 'en_SC', 'en_GP', 'en_TC', 'en_VC', 'en_VG',
+    'en_VU', 'en_PS', 'en_TN', 'en_MW', 'en_SX', 'en_SM', 'en_SR', 'en_SZ', 'en_FM', 'en_RE', 'en_RW',
+    'en_SN', 'en_TJ', 'en_CM', 'en_AI', 'en_CK', 'en_LR', 'en_MG', 'en_LS', 'en_SL', 'en_TM', 'en_BJ',
+    'en_MH', 'en_ML', 'en_WS', 'en_AS', 'en_BF', 'en_BQ', 'en_FK', 'en_GA', 'en_MP', 'en_MQ', 'en_CV',
+    'en_GF', 'en_MF', 'en_MR', 'en_KR', 'en_NE', 'en_TL', 'en_RU', 'en_AX', 'en_BI', 'en_ID', 'en_TO',
+    'en_FI', 'en_TR', 'en_SA', 'en_GM', 'en_GQ', 'en_HO', 'en_SP', 'en_AN', 'en_TA', 'en_SJ', 'en_IO',
+    'en_PW', 'en_JA', 'en_CD', 'en_IR', 'en_UN', 'en_WW', 'en_CG', 'en_DJ', 'en_TD', 'en_TV', 'en_NF',
+    'en_OS', 'en_DN', 'en_YE', 'en_ER', 'en_VA', 'en_BY', 'en_LB', 'en_IQ', 'en_MM', 'en_EH', 'en_LY',
+    'en_BT', 'en_CF', 'en_SD', 'en_SS', 'en_KP', 'en_AQ', 'en_SH', 'en_CI', 'en_UM', 'en_WF',
+    'en_KI', 'en_NU', 'en_SY', 'en_SO', 'en_TG', 'en_CU', 'en_HM', 'en_BV', 'en_MS',
+  );
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = 'en' WHERE preferred_language IN('"
+    . implode("',", $nonUsefulEnglishes) . "')");
+  // This only needs to run on production so hard-coding option_group_id seems OK.
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_option_value SET is_active = 0 WHERE option_group_id = 86 AND value IN('"
+    . implode("',", $nonUsefulEnglishes) . "')");
+}
