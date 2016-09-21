@@ -2202,14 +2202,18 @@ function wmf_civicrm_update_7245() {
 function wmf_civicrm_update_7250() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery("
-    UPDATE civicrm_email SET is_primary = 1
-    WHERE id IN (SELECT id FROM
+    CREATE TEMPORARY TABLE civicrm_email_updates
+     SELECT id FROM
       (
         SELECT contact_id, sum(is_primary) as c, e.id
         FROM civicrm_email e
         INNER JOIN civicrm_contact c ON c.id = contact_id AND is_deleted = 0
         GROUP BY contact_id HAVING c = 0
       ) as i
-    )
+  ");
+
+  CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_email_updates ADD INDEX index_id(id)");
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_email e INNER JOIN civicrm_email_updates u ON e.id = u.id
+    SET e.is_primary = 1
   ");
 }
