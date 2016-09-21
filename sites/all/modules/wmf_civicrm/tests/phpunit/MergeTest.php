@@ -426,7 +426,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function getMergeLocations($locationParams1, $locationParams2, $locationParams3, $entity, $additionalExpected = array()) {
     $data = array(
-      1 => array(
+      'matching_primary' => array(
         'matching_primary' => array(
           'merged' => 1,
           'skipped' => 0,
@@ -461,7 +461,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      2 => array(
+      'matching_primary_reverse' => array(
         'matching_primary_reverse' => array(
           'merged' => 1,
           'skipped' => 0,
@@ -496,7 +496,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      3 => array(
+      'only_one_has_address' => array(
         'only_one_has_address' => array(
           'merged' => 1,
           'skipped' => 0,
@@ -528,7 +528,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      4 => array(
+      'only_one_has_address_reverse' => array(
         'only_one_has_address_reverse' => array(
           'merged' => 1,
           'skipped' => 0,
@@ -558,7 +558,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      5 => array(
+      'different_primaries_with_different_location_type' => array(
         'different_primaries_with_different_location_type' => array(
           'merged' => 1,
           'skipped' => 0,
@@ -589,7 +589,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      6 => array(
+      'different_primaries_with_different_location_type_reverse' => array(
         'different_primaries_with_different_location_type_reverse' => array(
           'merged' => 1,
           'skipped' => 0,
@@ -619,7 +619,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      7 => array(
+      'different_primaries_location_match_only_one_address' => array(
         'different_primaries_location_match_only_one_address' => array(
           'merged' => 1,
           'skipped' => 0,
@@ -654,7 +654,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      8 => array(
+      'different_primaries_location_match_only_one_address_reverse' => array(
         'different_primaries_location_match_only_one_address_reverse' => array(
           'merged' => 1,
           'skipped' => 0,
@@ -688,7 +688,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      9 => array(
+      'same_primaries_different_location' => array(
         'same_primaries_different_location' => array(
           'fix_required_for_reverse' => 1,
           'comment' => 'core is not identifying this as an address conflict in reverse order'
@@ -719,7 +719,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      10 => array(
+      'same_primaries_different_location_reverse' => array(
         'same_primaries_different_location_reverse' => array(
           'fix_required_for_reverse' => 1,
           'comment' => 'core is not identifying this as an address conflict in reverse order'
@@ -749,7 +749,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      11 => array(
+      'conflicting_home_address_major_gifts' => array(
         'conflicting_home_address_major_gifts' => array(
           'merged' => 0,
           'skipped' => 1,
@@ -775,7 +775,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      12 => array(
+      'conflicting_home_address_not_major_gifts' => array(
         'conflicting_home_address_not_major_gifts' => array(
           'fix_required_for_reverse' => 1,
           'comment' => 'our code needs an update as both are being kept'
@@ -805,7 +805,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      13 => array(
+      'conflicting_home_address_one_more_major_gifts' => array(
         'conflicting_home_address_one_more_major_gifts' => array(
           'merged' => 0,
           'skipped' => 1,
@@ -843,7 +843,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-      14 => array(
+      'conflicting_home_address__one_more_not_major_gifts' => array(
         'conflicting_home_address__one_more_not_major_gifts' => array(
           'fix_required_for_reverse' => 1,
           'comment' => 'our code needs an update as an extra 1 is being kept'
@@ -885,6 +885,75 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
+      'duplicate_home_address_on_one_contact' => array(
+        'duplicate_home_address_on_one_contact' => array(
+          'fix_required_for_reverse' => 1,
+          'comment' => 'our code needs an update as an extra 1 is being kept'
+            . ' this is not an issue at the moment as it only happens in reverse from the'
+            . 'form merge - where we do not intervene',
+          'merged' => 1,
+          'skipped' => 0,
+          'is_major_gifts' => 0,
+          'entity' => $entity,
+          'contact_1' => array(
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 0,
+            ), $locationParams1),
+          ),
+          'contact_2' => array(
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 1,
+            ), $locationParams1),
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 0,
+            ), $locationParams1),
+          ),
+          'expected_hook' => array_merge($additionalExpected, array(
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 1,
+            ), $locationParams1),
+          )),
+        ),
+      ),
+      'duplicate_home_address_on_one_contact_second_primary' => array(
+        'duplicate_home_address_on_one_contact_second_primary' => array(
+          'fix_required_for_reverse' => 1,
+          'comment' => 'our code needs an update as an extra 1 is being kept'
+            . ' this is not an issue at the moment as it only happens in reverse from the'
+            . 'form merge - where we do not intervene',
+          'merged' => 1,
+          'skipped' => 0,
+          'is_major_gifts' => 0,
+          'entity' => $entity,
+          'contact_1' => array(
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 0,
+            ), $locationParams1),
+          ),
+          'contact_2' => array(
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 0,
+            ), $locationParams1),
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 1,
+            ), $locationParams1),
+          ),
+          'expected_hook' => array_merge($additionalExpected, array(
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 1,
+            ), $locationParams1),
+          )),
+        ),
+      ),
+
     );
     return $data;
   }
