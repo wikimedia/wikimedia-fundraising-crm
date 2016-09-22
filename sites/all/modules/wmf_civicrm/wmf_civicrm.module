@@ -1281,6 +1281,16 @@ function wmf_civicrm_ensure_language_exists($languageAbbreviation) {
  * @return bool
  */
 function wmf_civicrm_check_language_exists($languageAbbreviation) {
+  $languages = wmf_civicrm_get_valid_languages();
+  return !empty($languages[$languageAbbreviation]);
+}
+
+/**
+ * Get valid languages.
+ *
+ * @return array
+ */
+function wmf_civicrm_get_valid_languages() {
   static $languages;
   if (empty($languages)) {
     $available_options = civicrm_api3('Contact', 'getoptions', array(
@@ -1288,8 +1298,9 @@ function wmf_civicrm_check_language_exists($languageAbbreviation) {
     ));
     $languages = $available_options['values'];
   }
-  return !empty($languages[$languageAbbreviation]);
+  return $languages;
 }
+
 /**
  * Ensure the required option value exists.
  *
@@ -2137,6 +2148,15 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
                 continue;
               }
 
+              if (_wmf_civicrm_merge_resolve_preferred_language_conflict(
+                str_replace('move_', '', $moveField),
+                $refs['migration_info'][$moveField],
+                $refs['migration_info']['rows'][$moveField]['other'],
+                $refs['migration_info']['rows'][$moveField]['main'])) {
+                unset($refs['fields_in_conflict'][$moveField]);
+                continue;
+              }
+
               if (_wmf_civicrm_merge_resolve_casing_conflict(
                 str_replace('move_', '', $moveField),
                 $refs['migration_info'][$moveField],
@@ -2242,6 +2262,59 @@ function _wmf_civicrm_merge_resolve_casing_conflict($fieldName, &$moveFieldValue
   //the value that was to be overwritten.
   $moveFieldValue = $valueToOverwrite;
   $valueToKeep = $valueToOverwrite;
+  return TRUE;
+}
+
+/**
+ * Resolve conflicts on preferred language.
+ *
+ * If the underlying language (first 2 letters) is the same we make a value choice.
+ *
+ * 1) we prefer 'valid' languages - ones that have entries in the option_value table.
+ * 2) we prefer more explicit (longer) languages (en_US over en).
+ * 3) we prefer languages with labels that describe them. For example
+ *   'de_DE' => 'German' has been deliberately created
+ *   'de_NZ' => 'de_NZ' has been code-created.
+ *
+ * Note preferring based on the option value table means updates to what is enabled
+ * or whether they have labels will flow through.
+ *
+ * We could also return the later donor but this feels like poor return on effort given they are
+ * already the same main language and we don't easily have that info at this point in the code.
+ * We will usually get the most recent donor anyway by default - as it merges higher id to lower id.
+ *
+ * @param string $fieldName
+ * @param string $moveFieldValue
+ * @param string $valueToKeep
+ * @param string $valueToOverwrite
+ *
+ * @return bool
+ *   Has the conflict been resolved?
+ */
+function _wmf_civicrm_merge_resolve_preferred_language_conflict($fieldName, &$moveFieldValue, &$valueToKeep, &$valueToOverwrite) {
+  if ($fieldName !== 'preferred_language') {
+    return FALSE;
+  }
+
+  if (substr($valueToKeep, 0, 2) != substr($valueToOverwrite, 0, 2)) {
+    return FALSE;
+  }
+  if (!wmf_civicrm_check_language_exists($valueToOverwrite)) {
+    // The conflict is resolved & the value to keep is fine.
+    return TRUE;
+  }
+
+  $languages = wmf_civicrm_get_valid_languages();
+  if (!wmf_civicrm_check_language_exists($valueToKeep)
+    || strlen($valueToOverwrite) > strlen($valueToKeep)
+    || ($languages[$valueToKeep] == $valueToKeep && $languages[$valueToOverwrite] != $valueToOverwrite)
+  ) {
+    // The conflict is resolved & we will chose the overwrite value as the keeper is invalid.
+    $moveFieldValue = $valueToOverwrite;
+    $valueToKeep = $valueToOverwrite;
+    return TRUE;
+  }
+
   return TRUE;
 }
 

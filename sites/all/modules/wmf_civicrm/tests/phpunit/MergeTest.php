@@ -358,6 +358,57 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals(1, $contact['values'][0]['do_not_email']);
   }
 
+
+  /**
+   * Test that a conflict on communication preferences is handled.
+   *
+   * @dataProvider getLanguageCombos
+   */
+  public function testBatchMergeConflictPreferredLanguage($dataSet) {
+    // Can't use api if we are trying to use invalid data.
+    wmf_civicrm_ensure_language_exists('en');
+    wmf_civicrm_ensure_language_exists('en_NZ');
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '{$dataSet['languages'][0]}' WHERE id = $this->contactID");
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '{$dataSet['languages'][1]}' WHERE id = $this->contactID2");
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    if ($dataSet['is_conflict']) {
+      $this->assertEquals(1, count($result['values']['skipped']));
+    }
+    else {
+      $this->assertEquals(1, count($result['values']['merged']));
+      $contact = $this->callAPISuccess('Contact', 'get', array(
+        'id' => $this->contactID,
+        'sequential' => 1
+      ));
+      $this->assertEquals($dataSet['selected'], $contact['values'][0]['preferred_language']);
+    }
+  }
+
+  /**
+   * Get combinations of languages for comparison.
+   *
+   * @return array
+   */
+  public function getLanguageCombos() {
+    $dataSet = array(
+      // Choose longer.
+      array(array('languages' => array('en', 'en_US'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
+      array(array('languages' => array('en_US', 'en'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
+      // Choose valid.
+      array(array('languages' => array('en_XX', 'en_US'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
+      array(array('languages' => array('en_US', 'en_XX'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
+      // Chose one with a 'real' label  (more valid).
+      array(array('languages' => array('en_US', 'en_NZ'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
+      array(array('languages' => array('en_NZ', 'en_US'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
+      // Chose either - feels like the return on coding any decision making now is negligible.
+      // Could go for most recent donor but feels like no return on effort.
+      // we will usually get the most recent donor anyway by default - as it merges higher number to smaller.
+      array(array('languages' => array('en_GB', 'en_US'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
+      array(array('languages' => array('en_US', 'en_GB'), 'is_conflict' => FALSE, 'selected' => 'en_GB'))
+    );
+    return $dataSet;
+  }
   /**
    * Test that source conflicts are ignored.
    *
