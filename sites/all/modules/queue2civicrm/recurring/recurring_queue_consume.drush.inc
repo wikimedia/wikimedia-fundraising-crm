@@ -8,7 +8,7 @@ function recurring_queue_consume_drush_command() {
 
   $items['recurring-queue-consume'] = array(
     'description' => 
-      'Consumes items from a specified ActiveMQ queue and processes them into CiviCRM',
+      'Consumes items from a specified message queue and processes them into CiviCRM',
     'examples' => array( 'drush recurring-queue-consume' => '# Consume the queue' ), 
     'aliases' => array( 'rqc' ),
   );
@@ -33,7 +33,7 @@ function recurring_queue_consume_drush_command() {
 function recurring_queue_consume_drush_help( $section ) {
   switch ( $section ) {
     case 'drush:recurring-queue-consume':
-      return dt( "Pulls recurring items from an ActiveMQ queue and processes them into CiviCRM" );
+      return dt( "Pulls recurring items from a message queue and processes them into CiviCRM" );
     case 'drush:recurring-process-messagefile':
       return dt( "Feeds a single message directly into the recurring import pipeline, bypassing the queue." );
   }

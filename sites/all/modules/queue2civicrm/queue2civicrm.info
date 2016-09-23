@@ -1,5 +1,5 @@
 name = Queue to CiviCRM
-description = Imports contributions from a STOMP-compliant message queue.
+description = Imports contributions from a message queue.
 core = 7.x
 configure = admin/config/queue2civicrm
 dependencies[] = exchange_rates
@@ -7,7 +7,5 @@ dependencies[] = wmf_civicrm
 package = queue2civicrm
 files[] = Queue2civicrmTrxnCounter.php
 files[] = DonationQueueConsumer.php
-files[] = Stomp.php
 files[] = tests/includes/Message.php
-files[] = tests/includes/MessageSource.php
 files[] = tests/includes/TestingSmashPigDbQueueConfiguration.php

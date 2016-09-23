@@ -1,7 +1,7 @@
 <?php
 /**
  * @file queue_consume.drush.inc
- *  Consume and process items from an ActiveMQ queue into CiviCRM
+ *  Consume and process items from a message queue into CiviCRM
  * @author Arthur Richards <arichards@wikimedia.org>
  * @TODO print some useful info to STDOUT
  */
@@ -14,7 +14,7 @@ function queue_consume_drush_command() {
 
   $items['queue-consume'] = array(
     'description' => 
-      'Consumes items from a specified ActiveMQ queue and processes them into CiviCRM',
+      'Consumes items from a specified queue and processes them into CiviCRM',
     'examples' => array( 'drush queue-consume' => '# Consume the queue' ), 
     'aliases' => array( 'qc' ),
   );
@@ -38,7 +38,7 @@ function queue_consume_drush_command() {
 function queue_consume_drush_help( $section ) {
   switch ( $section ) {
     case 'drush:queue-consume':
-      return dt( "Pulls items from an ActiveMQ queue and processes them into CiviCRM" );
+      return dt( "Pulls items from a message queue and processes them into CiviCRM" );
     case 'drush:donations-process-messagefile':
       return dt( "Feeds messages directly into the import pipeline, bypassing the queue." );
   }
