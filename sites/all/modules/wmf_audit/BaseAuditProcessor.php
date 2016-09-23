@@ -716,7 +716,7 @@ abstract class BaseAuditProcessor {
 								// ...but not inside the char block, because it'll break the pretty.
 								$all_data = array_merge( $contribution_tracking_data, $all_data );
 
-								//Send to stomp. Or somewhere. Or don't (if it's test mode).
+								//Send to queue. Or somewhere. Or don't (if it's test mode).
 								wmf_audit_send_transaction( $all_data, 'main' );
 								unset( $tryme[$date][$id] );
 								wmf_audit_echo( '!' );

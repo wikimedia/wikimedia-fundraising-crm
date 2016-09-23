@@ -41,7 +41,7 @@ function adyen_audit_settings() {
 	);
 	$form['adyen_audit_test_mode'] = array(
 		'#type' => 'checkbox',
-		'#title' => t( 'When this box is checked, no stomp messages will be sent.' ),
+		'#title' => t( 'When this box is checked, no queue messages will be sent.' ),
 		'#required' => FALSE,
 		'#default_value' => variable_get( 'adyen_audit_test_mode' ),
 	);
