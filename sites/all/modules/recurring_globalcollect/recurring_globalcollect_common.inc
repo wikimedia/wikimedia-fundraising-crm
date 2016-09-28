@@ -1,12 +1,12 @@
-<?php 
+<?php
 /**
- * Common functions for recurring_globalcollect modules 
+ * Common functions for recurring_globalcollect modules
  */
 
 
 /**
  * Select one payment by the primary key.
- * 
+ *
  * @return false|object
  */
 function recurring_globalcollect_get_payment_by_id($id)
@@ -18,23 +18,23 @@ function recurring_globalcollect_get_payment_by_id($id)
   $dbs->push( 'civicrm' );
 
   $query = 'SELECT civicrm_contribution_recur.* FROM civicrm_contribution_recur WHERE civicrm_contribution_recur.id = :id LIMIT 1';
-  
+
   $result = db_query( $query, array( ':id' => $id ) )->fetch();
 
   if ( empty( $result ) ) {
     throw new WmfException( 'INVALID_RECURRING', t( 'No record was found with the id: [!id].', array( '!id' => $id ) ) );
   }
- 
+
   return $result;
 }
 
 /**
  * Select a set of recurring payments that need to be retried today
- * 
+ *
  * NOTE: `end_date` should only be set if the end has passed.
- * 
+ *
  * Example query called with standard options and the date set to: 2012-01-01
- * 
+ *
  * SELECT `civicrm_contribution_recur`.* FROM `civicrm_contribution_recur`
  *  WHERE `civicrm_contribution_recur`.`failure_retry_date`
  *   BETWEEN '2012-01-01 00:00:00' AND '2012-04-01 23:59:59'
@@ -42,7 +42,7 @@ function recurring_globalcollect_get_payment_by_id($id)
  *  AND ( `civicrm_contribution_recur`.`end_date` IS NULL )
  *  AND `civicrm_contribution_recur`.`contribution_status_id` = 4
  * LIMIT 1
- * 
+ *
  * @param int $limit Number of records to pull. Default is 1.
  * @param string $date End of period to look for failure retries. Start of
  *      period is this minus recurring_globalcollect_run_missed_days. Uses
@@ -50,7 +50,7 @@ function recurring_globalcollect_get_payment_by_id($id)
  *
  * @todo The field `civicrm_payment_processor`.`payment_processor_type` should be set.
  * @todo Implement $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
- * 
+ *
  * @return false|object
  */
 function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'now', $past_days = 0) {
@@ -125,7 +125,7 @@ function _recurring_globalcollect_get_subscription_by_order_id($order_id) {
     return false;
   }
   $order_id = intval( $order_id );
-  
+
   // make sure we're using the default (civicrm) db
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
@@ -141,11 +141,11 @@ WHERE
     OR civicrm_contribution_recur.trxn_id LIKE CONCAT_WS( ' ', 'RECURRING GLOBALCOLLECT', :order_id, '%' )
 LIMIT 1
 EOS;
-  
+
   $result = db_query( $query, array( ':order_id' => $order_id ) )->fetch();
 
   $record = is_object( $result ) ? (array) $result : false;
-  
+
   return $record;
 }
 
@@ -166,7 +166,7 @@ EOS;
  * - [6] => Overdue (not used by this module)
  *
  * @param integer $id     The primary key of the record.
- * 
+ *
  * @return integer  Returns the number of affected rows.
  */
 function _recurring_globalcollect_update_record_failure($id) {
@@ -176,7 +176,7 @@ function _recurring_globalcollect_update_record_failure($id) {
 
   // Make sure all of the proper fields are set to sane values.
   _recurring_globalcollect_validate_record_for_update($record);
-  
+
   $failures_before_cancellation = (integer) variable_get( 'recurring_globalcollect_failures_before_cancellation', 0 );
   $recurring_globalcollect_failure_retry_rate = (integer) abs(variable_get('recurring_globalcollect_failure_retry_rate', 1));
 
@@ -227,14 +227,14 @@ function _recurring_globalcollect_update_record_failure($id) {
  * @todo Implement $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
  *
  * @param integer $id     The primary key of the record.
- * 
+ *
  * @return integer  Returns the number of affected rows.
  */
 function _recurring_globalcollect_update_record_in_progress($id) {
- 
+
   $result = recurring_globalcollect_get_payment_by_id($id);
   $record = (array) $result;
-  
+
   $working_statuses = array(
       civicrm_api_contribution_status( 'Completed' ),
       civicrm_api_contribution_status( 'Failed' ),
@@ -255,11 +255,11 @@ function _recurring_globalcollect_update_record_in_progress($id) {
       ->execute();
 
   $dbs->pop();
-  
+
   if ( !$affected_rows ) {
     throw new WmfException( 'INVALID_RECURRING', t( 'The subscription was not marked as in progress.' ), $record );
   }
-  
+
   return $affected_rows;
 }
 
@@ -269,17 +269,17 @@ function _recurring_globalcollect_update_record_in_progress($id) {
  * Payments will be rescheduled for the following month.
  *
  * @param integer $id     The primary key of the record.
- * 
+ *
  * @return integer  Returns the number of affected rows.
  */
 function _recurring_globalcollect_update_record_success($id) {
- 
+
   $result = recurring_globalcollect_get_payment_by_id($id);
   $record = (array) $result;
-  
+
   // Make sure all of the proper fields are set to sane values.
   _recurring_globalcollect_validate_record_for_update($record);
-  
+
   $next_sched_contribution = wmf_civicrm_get_next_sched_contribution_date_for_month($record);
 
   $dbs = wmf_civicrm_get_dbs();
@@ -355,7 +355,7 @@ function buildDefaultTestUrl() {
 
   $protocol = (isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) == 'on') ? 'https' : 'http';
   $host = (isset($_SERVER['HTTP_HOST'])) ? $_SERVER['HTTP_HOST'] : 'localhost';
-  
+
   $defaultTestUrl = $protocol . '://' . $host . '/';
 
   return $defaultTestUrl;

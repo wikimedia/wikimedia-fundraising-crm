@@ -435,3 +435,39 @@ function recurring_globalcollect_search_by_order_id_form_submit($form, &$form_st
 
   drupal_set_message($message);
 }
+
+/**
+ * Are there any recurring contributions with next_dates that are dubious.
+ *
+ * The next date, for monthly contributions, should be one month after
+ * the last payment, give or take a couple of days for month length weirdness.
+ *
+ * If there are we might not want to run the charges until we have checked them out.
+ *
+ * Only check 2016+ transactions (since those are currently clean) and
+ * exclude Coinbase (not currently clean).
+ *
+ * @return bool
+ */
+function is_found_globalcollect_invalid_next_sched_dates() {
+  civicrm_initialize();
+  $query = "
+  SELECT count(*) FROM (
+    SELECT
+    DATEDIFF(DATE_ADD(DATE(max(receive_date) ), INTERVAL 1 month) , DATE(next_sched_contribution_date)) as date_diff
+    FROM civicrm_contribution_recur cr
+    LEFT JOIN civicrm_contribution c  on c.contribution_recur_id = cr.id
+    WHERE end_date IS NULL
+    AND cr.contribution_status_id <> 3
+    AND cr.contribution_status_id <> 4
+    AND c.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
+    AND next_sched_contribution_date > '2016-01-01'
+    AND frequency_unit = 'month' AND frequency_interval = 1
+    GROUP BY cr.id DESC
+   ) as inn
+  WHERE date_diff NOT BETWEEN -3 AND 3
+ ";
+
+  $count = CRM_Core_DAO::singleValueQuery($query);
+  return !empty($count);
+}
