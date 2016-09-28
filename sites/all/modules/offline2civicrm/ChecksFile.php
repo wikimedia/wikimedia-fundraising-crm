@@ -377,6 +377,7 @@ abstract class ChecksFile {
             'Postal Code' => 'postal_code',
             'Postmark Date' => 'postmark_date',
             'Prefix' => 'name_prefix',
+            'Raw Payment Instrument' => 'raw_payment_instrument',
             'Received Date' => 'date',
             'Relationship Type' => 'relationship_type',
             'Restrictions' => 'restrictions',
