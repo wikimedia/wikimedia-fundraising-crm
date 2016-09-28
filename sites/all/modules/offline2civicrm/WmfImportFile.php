@@ -30,7 +30,7 @@ class WmfImportFile extends ChecksFile {
             'No Thank You',
             'Original Amount',
             'Original Currency',
-            'Payment Instrument',
+            'Raw Payment Instrument',
             'Phone',
             'Postal Code',
             'Postmark Date',

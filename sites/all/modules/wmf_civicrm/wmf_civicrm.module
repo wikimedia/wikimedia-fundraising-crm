@@ -574,6 +574,10 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
 
     $payment_instrument = null;
 
+    if ( isset( $msg['raw_payment_instrument'] ) ) {
+        return $msg['raw_payment_instrument'];
+    }
+
     if ( array_key_exists( 'payment_method', $msg ) && trim( $msg['payment_method'] ) != '' ){
 
         switch( strtolower( $msg[ 'payment_method' ] ) ){
