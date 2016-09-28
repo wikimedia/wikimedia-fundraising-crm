@@ -103,9 +103,10 @@ abstract class ChecksFile {
             } catch ( WmfException $ex ) {
                 $num_errors++;
 
-                ChecksImportLog::record( t( "Error in line @rownum: @row", array(
+                ChecksImportLog::record( t( "Error in line @rownum: @row (@exception)", array(
                     '@rownum' => $rowNum,
                     '@row' => implode( ', ', $row ),
+                    '@exception' => $ex->getMessage(),
                 ) ) );
 
                 if ( $error_streak_start + $error_streak_count < $rowNum ) {
