@@ -2234,6 +2234,7 @@ function wmf_civicrm_update_7255() {
  * Bug: T96410
 */
 function wmf_civicrm_update_7260() {
+  civicrm_initialize();
   require_once('update_7260.php');
   _wmf_civicrm_update_7260_update_preferred_language();
 }
