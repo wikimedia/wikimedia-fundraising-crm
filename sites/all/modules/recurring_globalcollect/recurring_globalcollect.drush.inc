@@ -14,7 +14,7 @@ function recurring_globalcollect_drush_command() {
 
   $items['recurring-globalcollect'] = array(
     'description' => 'Process recurring payments through GlobalCollect. ',
-    'examples' => array( 
+    'examples' => array(
       'drush recurring-globalcollect'       => '# Process recurring payments',
       'drush rg --batch=10'                        => '# Process up to 10 contributions.',
       'drush rg --date=2011-12-31'                 => '# Specify a date to process. By default, today will be processed.',
@@ -56,17 +56,17 @@ function drush_recurring_globalcollect() {
   $date = drush_get_option('date');
   $url = drush_get_option('url');
   $batch = drush_get_option('batch');
-  
+
   $options = array();
 
   // Set the date
   $options['date'] = drush_recurring_globalcollect_parse_date($date);
- 
+
   // Set the url
   if ( !is_null($url)) {
     $options['url'] = $url;
   }
- 
+
   // Set the number of contributions to batch
   if ( !is_null( $batch ) ) {
     $options['batch'] = $batch;
@@ -91,7 +91,7 @@ function drush_recurring_globalcollect() {
 
 /**
  * drush_recurring_globalcollect_validate
- * 
+ *
  * This function is called magically from within Drush
  *
  * Numeric values for batch will be converted to an integer:
@@ -119,8 +119,16 @@ function drush_recurring_globalcollect_validate() {
 
   $batch = drush_get_option('batch');
   $date = drush_get_option('date');
-  
+
   $batch_max = (integer) variable_get('recurring_globalcollect_batch_max', 100);
+  if (is_found_globalcollect_invalid_next_sched_dates()) {
+    $message = 'Global Collect recurring processing aborted '
+      . 'until invalid next scheduled recurring dates resolved. The query '
+      . ' to find them is in https://phabricator.wikimedia.org/T144557#2673161';
+    wmf_common_failmail('Invalid data blocking global collect', $message);
+    drush_set_error('SCHED_DATE_CHECK', dt($message));
+    return false;
+  }
 
   /**
    * Validate batch:
@@ -137,18 +145,18 @@ function drush_recurring_globalcollect_validate() {
       drush_set_error('BATCHING', dt($message));
       return false;
     }
-    
+
     // $batch is numeric, convert it to an integer for further testing.
     $batch = (integer) $batch;
-    
+
     if ($batch < 1) {
-      
+
       $message = 'Batching is disabled: $batch = "' . $batch . '"';
       $link = l('Edit recurring GlobalCollect settings', 'admin/config/recurring_globalcollect');
       watchdog('recurring_globalcollect', $message, array(), WATCHDOG_WARNING, $link);
-      return false;         
+      return false;
     }
-    
+
     if ($batch < 0) {
 
       $message = 'You specified a negative number. You must specify either'
@@ -157,7 +165,7 @@ function drush_recurring_globalcollect_validate() {
       drush_set_error('BATCHING', dt($message));
       return false;
     }
-    
+
     if ($batch > $batch_max) {
       $message = 'You are attempting to batch ' . $batch .' payments, which'
         . ' is more than the maximum allowed: ' . $batch_max .'. Either batch'
@@ -173,7 +181,7 @@ function drush_recurring_globalcollect_validate() {
    * - failures_before_cancellation
    */
   $failures_before_cancellation = (integer) variable_get('recurring_globalcollect_failures_before_cancellation', 0);
-  
+
   if ( $failures_before_cancellation < 1 ) {
     $message = 'The value in settings, "Failures before subscription is'
              . ' cancelled" must be a postive integer. You specifed ['
@@ -196,7 +204,7 @@ function drush_recurring_globalcollect_validate() {
  * @return			Returns the date with the format: 'Y-m-d'
  */
 function drush_recurring_globalcollect_parse_date($date) {
-  
+
   if (!empty($date)) {
     $oldTimezone = date_default_timezone_get();
     date_default_timezone_set( "UTC" );
@@ -204,20 +212,20 @@ function drush_recurring_globalcollect_parse_date($date) {
     $now_stamp = time();
     $now = date('Y-m-d', $now_stamp);
     $date_stamp = strtotime($date);
-    
+
     // Set date from stamp so we have the proper format expected by the module.
     $date = date('Y-m-d', $date_stamp);
 
     date_default_timezone_set( $oldTimezone );
-    
+
     if ($date_stamp > $now_stamp) {
       $message = 'The date you entered [' . $date . '] is being parsed as [' . $date . ']. The current date is: [' . $now . ']. You are not allowed to specify dates in the future.';
       drush_set_error('FUTURE_DATE', dt($message));
       return false;
     }
   }
-  
+
   return $date;
-	
+
 }
 
