@@ -1,7 +1,7 @@
 <?php
+use queue2civicrm\DonationQueueConsumer;
 use SmashPig\Core\Configuration;
 use SmashPig\Core\Context;
-use SmashPig\Core\DataStores\PendingDatabase;
 
 // include common functions
 require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_common.inc' );
@@ -107,6 +107,7 @@ function queue2civicrm_settings() {
     '#default_value' => queue2civicrm_stomp_url(),
   );
 
+  // TODO: Remove when done mirroring from audits to ActiveMQ
   $form['queue2civicrm_subscription'] = array(
     '#type' => 'textfield',
     '#title' => t('Subscription path'),
@@ -186,15 +187,15 @@ function queue2civicrm_batch_process() {
     return;
   }
 
-  $processed = queue2civicrm_stomp()->dequeue_loop(
-      variable_get( 'queue2civicrm_subscription', '/queue/donations' ),
-      variable_get( 'queue2civicrm_batch', 0 ),
-      variable_get( 'queue2civicrm_batch_time', 0 ),
-      'queue2civicrm_import'
+  $consumer = new DonationQueueConsumer(
+    'donations',
+    variable_get( 'queue2civicrm_batch_time', 0 ),
+    variable_get( 'queue2civicrm_batch', 0 )
   );
+  $processed = $consumer->dequeueMessages();
 
   /**
-   * this may some day supercede the process counts handled above...
+   * this may some day supersede the process counts handled above...
    * 
    * Note that this might be a little whack.  At least, it feels a little sloppy.
    * The tmax/dmax fields should probably be configurable
@@ -222,111 +223,4 @@ function queue2civicrm_batch_process() {
   else {
     watchdog('queue2civicrm', 'No contributions processed.');
   }
-}
-
-/**
- * Process one contribution from the queue to CiviCRM.
- *
- * @param Stomp_Frame|array $msg
- */
-function queue2civicrm_import( $msg ) {
-    if ( is_object( $msg ) && property_exists( $msg, 'body' ) ) {
-        $msg = $msg->body;
-    }
-
-    if ( is_string( $msg ) ) {
-        // save the original message for logging
-        $msg_orig = $msg;
-
-        $msg = json_decode( $msg, true );
-    } else {
-        $msg_orig = json_encode( $msg );
-    }
-
-    /**
-    * prepare data for logging
-    */
-    $log = array(
-        'gateway' => $msg[ 'gateway' ],
-        'gateway_txn_id' => $msg[ 'gateway_txn_id' ],
-        'data' => $msg_orig,
-        'timestamp' => time(),
-        'verified' => 0,
-    );
-    $cid = _queue2civicrm_log( $log );
-
-    $dbEntry = false;
-    // If more information is available, find it from the pending database
-    // FIXME: replace completion_message_id with a boolean flag
-    if ( isset( $msg['completion_message_id'] ) ) {
-        $dbEntry = queue2civicrm_update_from_pending_db( $msg );
-        if ( !$dbEntry ) {
-            // If the contribution has already been imported, this check will
-            // throw an exception that says to drop it entirely, not re-queue.
-            wmf_civicrm_check_for_duplicates(
-                $msg['gateway'], $msg['gateway_txn_id']
-            );
-
-            // Otherwise, throw an exception that tells the queue consumer to
-            // requeue the incomplete message with a delay.
-            $errorMessage = "Message {$msg['gateway']}-{$msg['gateway_txn_id']} " .
-                "indicates a pending DB entry with order ID {$msg['order_id']}, " .
-                "but none was found.  Requeueing.";
-            throw new WmfException( 'MISSING_PREDECESSOR', $errorMessage );
-        }
-    }
-
-    $contribution = wmf_civicrm_contribution_message_import($msg);
-
-    // construct an array of useful info to invocations of queue2civicrm_import
-    $contribution_info = array(
-        'contribution_id' => $contribution['id'],
-        'contact_id' => $contribution['contact_id'],
-        'msg' => $msg,
-    );
-
-    // update the log if things went well
-    if ( $cid ) {
-        $log[ 'cid' ] = $cid;
-        $log[ 'verified' ] = 1;
-        $log[ 'timestamp' ] = time();
-        _queue2civicrm_log( $log );
-    }
-
-    // Send thank you email, other post-import things
-    module_invoke_all( 'queue2civicrm_import', $contribution_info );
-    
-    // keep count of the transactions
-    Queue2civicrmTrxnCounter::instance()->increment( $msg['gateway'] );
-
-    // Delete message from pending db once the rest has completed successfully
-    if ( $dbEntry ) {
-        PendingDatabase::get()->deleteMessage( $dbEntry );
-    }
-}
-
-/**
- * Fill in some missing information from the pending database
- * @param array $msg sparse donation message, usually from IPN listener
- * @return array|null message from database, or null if not found
- */
-function queue2civicrm_update_from_pending_db( &$msg ) {
-    $gateway = $msg['gateway'];
-    $orderId = $msg['order_id'];
-
-    $data = PendingDatabase::get()->fetchMessageByGatewayOrderId(
-        $gateway,
-        $orderId
-    );
-
-	// Sparse messages should have no keys at all for the missing info,
-	// rather than blanks or junk data. And $msg should always have newer
-	// info than the pending db.
-    if ( $data ) {
-        $msg = $msg + $data;
-        // $data has a pending_id key for ease of deletion,
-        // but $msg doesn't need it
-        unset( $msg['pending_id'] );
-    }
-    return $data;
 }
