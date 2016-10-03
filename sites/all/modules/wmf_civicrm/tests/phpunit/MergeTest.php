@@ -359,6 +359,21 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test that source conflicts are ignored.
+   *
+   * We don't care enough about source it seems to do much with it.
+   *
+   * Bug T146946
+   */
+  public function testBatchMergeConflictSource() {
+    $this->breedDuck(array('id' => $this->contactID, 'source' => 'egg'));
+    $this->breedDuck(array('id' => $this->contactID2, 'source' => 'chicken'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(0, count($result['values']['skipped']));
+    $this->assertEquals(1, count($result['values']['merged']));
+  }
+
+  /**
    * Test that a conflict on casing in first names is handled.
    *
    * We do a best effort on this to get the more correct on assuming that 1 capital letter in a
