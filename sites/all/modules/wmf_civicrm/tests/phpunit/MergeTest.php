@@ -311,7 +311,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
             }
           }
           unset($addresses['values'][$index]);
-          continue;
+          // break to find a match for the next $expected address.
+          continue 2;
         }
       }
     }
@@ -1019,7 +1020,78 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           )),
         ),
       ),
-
+      'duplicate_mixed_address_on_one_contact' => array(
+        'duplicate_mixed_address_on_one_contact' => array(
+          'merged' => 1,
+          'skipped' => 0,
+          'comment' => 'We want to be sure we still have a primary. Ideally we would squash
+          matching addresses here too but currently that only happens on the to-merge contact.
+          (no high priority improvement)',
+          'is_major_gifts' => 0,
+          'entity' => $entity,
+          'contact_1' => array(
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 0,
+            ), $locationParams1),
+          ),
+          'contact_2' => array(
+            array_merge(array(
+              'location_type_id' => 'Main',
+              'is_primary' => 1,
+            ), $locationParams1),
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 0,
+            ), $locationParams1),
+          ),
+          'expected_hook' => array_merge($additionalExpected, array(
+            array_merge(array(
+              'location_type_id' => 'Main',
+              'is_primary' => 1,
+            ), $locationParams1),
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 0,
+            ), $locationParams1),
+          )),
+        ),
+      ),
+      'duplicate_mixed_address_on_one_contact_second_primary' => array(
+        'duplicate_mixedaddress_on_one_contact_second_primary' => array(
+          'comment' => 'check we do not lose the primary. Matching addresses are squashed.',
+          'merged' => 1,
+          'skipped' => 0,
+          'is_major_gifts' => 0,
+          'entity' => $entity,
+          'contact_1' => array(
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 0,
+            ), $locationParams1),
+          ),
+          'contact_2' => array(
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 0,
+            ), $locationParams1),
+            array_merge(array(
+              'location_type_id' => 'Main',
+              'is_primary' => 1,
+            ), $locationParams1),
+          ),
+          'expected_hook' => array_merge($additionalExpected, array(
+            array_merge(array(
+              'location_type_id' => 'Home',
+              'is_primary' => 0,
+            ), $locationParams1),
+            array_merge(array(
+              'location_type_id' => 'Main',
+              'is_primary' => 1,
+            ), $locationParams1),
+          )),
+        ),
+      ),
     );
     return $data;
   }

@@ -2397,9 +2397,14 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
 
     foreach ($higherPriorityLocationBlocks as $blockType => $blocks) {
       foreach ($blocks as $block) {
+        if ($block['is_primary'] == 1 && isset($blocksDAO[$blockType]['update'][$block['id']])) {
+          unset($blocksDAO[$blockType]['update'][$block['id']]->is_primary);
+        }
+
         if (empty($lowerPriorityLocationBlocks[$blockType])) {
           continue;
         }
+
         foreach ($lowerPriorityLocationBlocks[$blockType] as $index => $lowerPriorityLocationBlock) {
           if (_wmf_civicrm_is_delete_location_in_favour_of_higher_priority_one(
             $blocks, $block, $lowerPriorityLocationBlock)
