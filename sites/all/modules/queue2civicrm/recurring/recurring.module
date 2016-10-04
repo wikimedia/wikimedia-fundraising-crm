@@ -13,6 +13,8 @@
  * uses the word in its field/variable names (eg subscr_payment).
  */
 use queue2civicrm\recurring\RecurringQueueConsumer;
+use SmashPig\Core\Configuration;
+use SmashPig\Core\Context;
 
 /**
  * Implementation of hook_menu
@@ -88,6 +90,8 @@ function recurring_settings() {
 
 function recurring_batch_process() {
   civicrm_initialize();
+  $config = Configuration::createForView();
+  Context::initWithLogger( $config, 'recurring' );
 
   if (variable_get( "recurring_disable", false )){
     watchdog('recurring', 'Recurring is disabled. No contributions processed.');
