@@ -5,3 +5,4 @@ dependencies[] = queue2civicrm
 dependencies[] = wmf_civicrm
 package = queue2civicrm
 core = 7.x
+files[] = RecurringQueueConsumer.php
