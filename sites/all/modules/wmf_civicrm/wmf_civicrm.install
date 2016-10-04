@@ -2282,3 +2282,29 @@ function wmf_civicrm_update_7270() {
   CRM_Core_DAO::executeQuery("UPDATE civicrm_option_value SET is_active = 0 WHERE option_group_id = 86 AND value IN('"
     . implode("', '", $nonUsefulEnglishes) . "')");
 }
+
+/**
+ * Clean up legacy junk data from preferred_language field.
+ *
+ * This nulls out '_' junk data string (19690 rows)
+ * and changes '_US' to 'en_US' (which is implied) (25387 rows).
+ * plus some other oddities.
+ *
+ * Bug: T96410
+ */
+function wmf_civicrm_update_7275() {
+  civicrm_initialize();
+  // 19691 records.
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = NULL WHERE preferred_language = '_' OR preferred_language = '<c_US'");
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = 'en_US' WHERE preferred_language = '_US'");
+  // There are some 14000 of these. They stopped being created 'half a database ago' and they have been
+  // effectively treated as 'en' due to the fact the data is invalid. NULL has the same effect.
+  // We could try to guess them by their country but that would break from what we have been doing and could be wrong.
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = NULL WHERE preferred_language LIKE '\_%'");
+  // only 186, very old. Same consideration about choosing to set to NULL.
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = NULL WHERE preferred_language LIKE 'Do_%'");
+  // 9356 with an extraneous '_' at the end
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = REPLACE(preferred_language, '_', '') WHERE RIGHT(preferred_language, 1) = '_'");
+  // Just a single oddity.
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = 'zh_CN' WHERE preferred_language = '恩_CN'");
+}
