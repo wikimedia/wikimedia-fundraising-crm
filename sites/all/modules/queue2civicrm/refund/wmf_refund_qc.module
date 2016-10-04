@@ -1,6 +1,8 @@
 <?php
 
 use queue2civicrm\refund\RefundQueueConsumer;
+use SmashPig\Core\Configuration;
+use SmashPig\Core\Context;
 /**
  * Implements hook_menu
  */
@@ -85,6 +87,9 @@ function refund_qc_settings() {
  * @ref drush_refund_queue_consume
  */
 function refund_batch_process() {
+  $config = Configuration::createForView( 'default' );
+  Context::initWithLogger( $config, 'refund' );
+
   if ( variable_get('refund_disable', false) ) {
     watchdog( 'wmf_refund_qc', 'Job is disabled.  Exiting.', NULL, WATCHDOG_INFO );
     return;
