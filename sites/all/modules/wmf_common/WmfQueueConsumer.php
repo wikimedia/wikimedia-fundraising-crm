@@ -110,6 +110,17 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 		}
 	}
 
+	public function processMessageWithErrorHandling( $message ) {
+		$this->logMessage( $message );
+		parent::processMessageWithErrorHandling( $message );
+	}
+
+	protected function logMessage( $message ) {
+		$className = preg_replace( '/.*\\/', '', get_called_class() );
+		$formattedMessage = print_r( $message, true );
+		watchdog( $className, $formattedMessage, NULL, WATCHDOG_INFO );
+	}
+
 	/**
 	 * Get a url to view the damaged message
 	 *
