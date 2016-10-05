@@ -75,7 +75,7 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 				$message,
 				$ex
 			);
-			$mailableDetails = $this->itemUrl( $damagedId );
+			$mailableDetails = self::itemUrl( $damagedId );
 		} else {
 			$mailableDetails = "Redacted contents of message ID: $correlationId";
 		}
@@ -94,12 +94,11 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 
 	/**
 	 * Get a url to view the damaged message
-	 * TODO: UI
 	 *
 	 * @param int $damagedId
 	 * @return string
 	 */
-	protected function itemUrl( $damagedId ) {
+	public static function itemUrl( $damagedId ) {
 		global $base_url;
 		return "{$base_url}/damaged/{$damagedId}";
 	}

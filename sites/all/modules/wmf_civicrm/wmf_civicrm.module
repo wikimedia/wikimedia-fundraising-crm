@@ -2132,6 +2132,11 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
                 continue;
               }
 
+              if ($moveField == 'move_contact_source') {
+                unset($refs['fields_in_conflict'][$moveField]);
+                continue;
+              }
+
               if (_wmf_civicrm_merge_resolve_casing_conflict(
                 str_replace('move_', '', $moveField),
                 $refs['migration_info'][$moveField],

@@ -51,7 +51,7 @@ function refund_qc_settings() {
     '#description'   => t('Maximum number of donations processed by a refund job'),
     '#default_value' => variable_get('refund_batch', 0),
     '#options'       => array(
-      ''  => 'Unlimited',
+      0  => 'Unlimited',
       1   => 1,
       5   => 5,
       10  => 10,

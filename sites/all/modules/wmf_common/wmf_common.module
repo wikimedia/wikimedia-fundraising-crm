@@ -1,5 +1,11 @@
 <?php
 
+use SmashPig\Core\Configuration;
+use SmashPig\Core\Context;
+use SmashPig\Core\DataStores\DamagedDatabase;
+use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
+use wmf_common\WmfQueueConsumer;
+
 require_once 'failmail.php';
 require_once 'wmf_dates.php';
 
@@ -41,6 +47,18 @@ function wmf_common_menu() {
     'page callback' => 'wmf_common_queue_item_download',
     'page arguments' => array( 1, 2 ),
   );
+	$items['damaged/%'] = array(
+		'title' => 'Examine damaged message',
+		'access arguments' => array( 'manipulate queues' ),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'wmf_common_damaged_item_form', 1 ),
+	);
+	$items['damaged'] = array(
+		'title' => 'Search damaged messages',
+		'access arguments' => array( 'manipulate queues' ),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'wmf_common_damaged_search_form' ),
+	);
 
   return $items;
 }
@@ -210,6 +228,7 @@ function wmf_common_queue_item_form( $form, &$form_state, $queue, $correlationId
     $form['resend'] = array(
       '#type' => 'submit',
       '#value' => t( 'Resend' ),
+      '#disabled' => 'true',
     );
     $form['download'] = array(
       '#type' => 'submit',
@@ -317,4 +336,306 @@ function wmf_common_set_message_source( &$msg, $type, $name ) {
     $msg['source_version'] = wmf_common_get_my_revision();
     $msg['source_run_id'] = getmypid();
     $msg['source_enqueued_time'] = time();
+}
+
+function wmf_common_damaged_search_form( $form, &$form_state ) {
+	if (
+		isset( $form_state['confirm_delete'] ) &&
+		isset( $form_state['values']['table'] )
+	) {
+		return wmf_common_damaged_confirm_delete(
+			$form, $form_state['values']['table']
+		);
+	}
+
+	// TODO: Chill on the boilerplate.
+	if ( !empty( $_GET['gateway'] ) ) {
+		$gateway = $_GET['gateway'];
+	} elseif ( !empty( $form_state['input']['gateway'] ) ) {
+		$gateway = $form_state['input']['gateway'];
+	} else {
+		$gateway = '';
+	}
+
+	if ( !empty( $_GET['queue'] ) ) {
+		$queue = $_GET['queue'];
+	} elseif ( !empty( $form_state['input']['queue'] ) ) {
+		$queue = $form_state['input']['queue'];
+	} else {
+		$queue = '';
+	}
+
+	$form['gateway'] = array(
+		'#type' => 'textfield',
+		'#title' => 'Gateway',
+		'#value' => $gateway,
+		'#maxlength' => 256,
+	);
+
+	$form['queue'] = array(
+		'#type' => 'textfield',
+		'#title' => 'Queue',
+		'#value' => $queue,
+		'#maxlength' => 256,
+	);
+
+	$form['search'] = array(
+		'#type' => 'submit',
+		'#value' => t( 'Search' ),
+	);
+
+	$form['#submit'] = array( 'wmf_common_damaged_search_submit' );
+
+	// FIXME: Strip query params cos including GET params in the action is burning us.  Crude!
+	$form['#action'] = request_path();
+
+	if (
+		isset( $form_state['perform_query'] ) ||
+		empty( $form_state['input']['op'] ) // Run query on first load
+	) {
+		return wmf_common_damaged_perform_query( $form, $gateway, $queue );
+	}
+
+	return $form;
+}
+
+function wmf_common_damaged_search_submit( $form, &$form_state ) {
+	switch( $form_state['values']['op'] ) {
+		case $form_state['values']['search']:
+			$form_state['rebuild'] = true;
+			$form_state['perform_query'] = true;
+			break;
+		case $form_state['values']['delete']:
+			// Rebuild the form to confirm message deletion.
+			$form_state['rebuild'] = true;
+			$form_state['confirm_delete'] = true;
+			break;
+	}
+}
+
+function wmf_common_damaged_perform_query( $form, $gateway, $queue ) {
+	$query = Database::getConnection( 'default', 'smashpig' )
+		->select( 'damaged', 'd' )
+		->fields( 'd', array(
+			'id', 'original_date', 'damaged_date', 'original_queue',
+			'gateway', 'order_id', 'gateway_txn_id', 'error'
+		) )
+		->orderBy( 'damaged_date', 'DESC' )
+		->condition( 'retry_date', null );
+
+	if ( !empty( $gateway ) ) {
+		$query->condition( 'gateway', $gateway );
+	}
+	if ( !empty( $queue ) ) {
+		$query->condition( 'original_queue', $queue );
+	}
+
+	$rows = $query
+		->extend( 'PagerDefault' )
+		->execute()
+		->fetchAllAssoc( 'id', PDO::FETCH_ASSOC );
+
+	foreach ( $rows as $id => &$row ) {
+		$err = empty( $row['error'] ) ? 'View details' : $row['error'];
+		$row['error'] = l( $err, WmfQueueConsumer::itemUrl( $id ) );
+	}
+
+    // query parameters to append to the GET string
+    $query_params = array( 'queue' => $queue, 'gateway' => $gateway );
+
+	$table_html = theme_table(
+	  array(
+        // FIXME: Are these translated implicitly or shall we wrap in t()?
+        'header' => array(
+          'ID',
+          'Original Date',
+          'Damaged Date',
+          'Original Queue',
+          'Gateway',
+          'Order ID',
+          'Gateway txn ID',
+          'Error',
+        ),
+        'rows' => $rows,
+        'empty' => 'Nothing in the damaged message table!  Be very suspicious...',
+        'attributes' => array(),
+        'caption' => t( 'Damaged messages' ),
+        'colgroups' => array(),
+        'sticky' => true,
+      )
+    ).theme( 'pager', array(
+      'parameters' => $query_params,
+    ) );
+
+	$form['table'] = array(
+	  '#markup' => $table_html,
+	);
+
+	$form['resend'] = array(
+		'#type' => 'submit',
+		'#value' => t( 'Resend' ),
+        '#disabled' => 'disabled',
+	);
+	$form['delete'] = array(
+		'#type' => 'submit',
+		'#value' => t( 'Delete' ),
+	);
+	return $form;
+}
+
+/**
+ * Takes a list of selected and unselected ids provided by tableselect
+ * and returns just those which are selected.
+ * @param array $ids
+ * @return array
+ */
+function wmf_common_get_selected( $ids ) {
+	$selected = array_filter( $ids, function( $n ) { return $n; } );
+	return array_keys( $selected );
+}
+
+function wmf_common_damaged_confirm_delete( $form, $ids ) {
+	$ids = wmf_common_get_selected( $ids );
+	$form['#submit'] = array( 'wmf_common_damaged_confirm_delete_submit' );
+	$form['#ids'] = implode( ',', $ids );
+	return confirm_form(
+		$form,
+		t( 'Really delete %n damaged messages?', array( '%n' => count( $ids ) ) ),
+		'damaged'
+	);
+}
+
+function wmf_common_damaged_confirm_delete_submit( $form, &$form_state ) {
+	$ids = explode( ',', $form['#ids'] );
+	$ddb = DamagedDatabase::get();
+	foreach( $ids as $id ) {
+		$ddb->deleteMessage( array(
+			'damaged_id' => $id
+		) );
+	}
+	drupal_set_message( t(
+		'Deleted %n messages', array( '%n' => count( $ids ) )
+	) );
+}
+
+function wmf_common_damaged_item_form( $form, &$form_state, $id ) {
+	$dbEntry = Database::getConnection( 'default', 'smashpig' )
+		->select( 'damaged', 'd' )
+		->fields( 'd', array(
+			'original_date', 'damaged_date', 'original_queue',
+			'error', 'trace', 'message'
+		) )
+		->condition( 'id', $id )
+		->execute()
+		->fetchAssoc();
+
+	if ( !$dbEntry ) {
+		drupal_set_message( t( 'Message %id not found.', array( '%id' => $id ) ) );
+		return $form;
+	}
+
+	if ( !empty( $dbEntry['error'] ) ) {
+		$form['error'] = array(
+			'#title' => 'Error',
+			'#markup' => "<div>Failure reason:<br>" . check_plain( $dbEntry['error'] ) . "</div>",
+		);
+	}
+
+	if ( !empty( $dbEntry['trace'] ) ) {
+		$form['trace'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Stack trace'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+		);
+		$form['trace']['details'] = array(
+			'#markup' => str_replace(
+				"\n", '<br/>', check_plain( $dbEntry['trace'] )
+			)
+		);
+	}
+
+	$form['original_queue'] = array(
+		'#type' => 'hidden',
+		'#value' => $dbEntry['original_queue']
+	);
+
+	$form['damaged_id'] = array(
+		'#type' => 'hidden',
+		'#value' => $id
+	);
+
+	$message = json_decode( $dbEntry['message'], true );
+
+	$form['msg_fields'] = array(
+		'#type' => 'fieldset',
+		'#title' => 'Message',
+	);
+	foreach ( $message as $key => $value ) {
+		$form['msg_fields']['field-' . $key] = array(
+			'#type' => 'textfield',
+			'#title' => $key,
+			'#default_value' => $value,
+			'#maxlength' => 1024,
+		);
+	}
+	$form['resend'] = array(
+		'#type' => 'submit',
+		'#value' => t( 'Resend' ),
+	);
+	$form['download'] = array(
+		'#type' => 'submit',
+		'#value' => t( 'Download' ),
+	);
+	$form['delete'] = array(
+		'#type' => 'submit',
+		'#value' => t( 'Delete' ),
+	);
+	$form['#submit'] = array( 'wmf_common_damaged_item_submit' );
+	return $form;
+}
+
+function wmf_common_damaged_item_submit( $form, &$form_state ) {
+	$delete = false;
+	$id = $form_state['values']['damaged_id'];
+
+	switch ( $form_state['values']['op'] ) {
+		case $form_state['values']['resend']:
+			// TODO: resend by id only for shortcut
+			$message = array();
+			foreach ( $form_state['values'] as $key => $value ) {
+				if ( preg_match( '/field-(.*)/', $key, $matches ) ) {
+					$message[$matches[1]] = $value;
+				}
+			}
+			$queueName = $form_state['values']['original_queue'];
+			$queue = BaseQueueConsumer::getQueue( $queueName );
+			$queue->push( $message );
+			drupal_set_message(
+				t( 'Message %id resent for processing.', array( '%id' => $id ) )
+			);
+			$delete = true;
+			break;
+		case $form_state['values']['delete']:
+			$delete = true;
+			drupal_set_message(
+				t( 'Message %id deleted.', array( '%id' => $id ) )
+			);
+			break;
+		default:
+			drupal_set_message( t( 'Not implemented!' ) );
+			break;
+	}
+	if ( $delete ) {
+		DamagedDatabase::get()->deleteMessage( array(
+			'damaged_id' => $id
+		) );
+		$form_state['redirect'] = 'damaged';
+	}
+}
+
+function wmf_common_init() {
+	// Initialize SmashPig
+	$config = Configuration::createForView();
+	Context::initWithLogger( $config, 'wmf_common' );
 }

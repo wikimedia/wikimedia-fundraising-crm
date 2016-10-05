@@ -62,7 +62,7 @@ function recurring_settings() {
     '#description' => t('Maximum number of items processed by the recurring job'),
     '#default_value' => variable_get('recurring_batch', 0),
     '#options' => array(
-      '' => 'Unlimited',
+      0 => 'Unlimited',
       1 => 1,
       5 => 5,
       10 => 10,
