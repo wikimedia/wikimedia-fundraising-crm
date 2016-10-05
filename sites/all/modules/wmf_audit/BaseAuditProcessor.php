@@ -418,11 +418,9 @@ abstract class BaseAuditProcessor {
 				//check to see if the parent exists. If it does, normalize and send.
 				if ( $this->main_transaction_exists_in_civi( $record ) ) {
 					$normal = $this->normalize_negative( $record );
-					if ( wmf_audit_send_transaction( $normal, 'negative' ) ) {
-						$neg_count += 1;
-						wmf_audit_echo( '!' );
-					}
-					wmf_audit_echo( 'X' );
+					wmf_audit_send_transaction( $normal, 'negative' );
+					$neg_count += 1;
+					wmf_audit_echo( '!' );
 				} else {
 					// Ignore cancels with no parents because they must have
 					// been cancelled before reaching Civi.
