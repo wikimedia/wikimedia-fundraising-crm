@@ -1,7 +1,6 @@
 <?php
 
 use SmashPig\Core\Configuration;
-use SmashPig\Core\ConfigurationKeyException;
 use SmashPig\Core\Context;
 
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
@@ -376,7 +375,6 @@ function wmf_audit_make_contribution_tracking_data($record) {
  * @param array $record An array representing the complete data we want to save
  * @param string $type The type of transaction we are. 'main', 'negative',
  * 'recurring'... like that.
- * @return boolean true on success, otherwise false
  */
 function wmf_audit_send_transaction($record, $type) {
   if (wmf_audit_runtime_options('test')) {
@@ -385,10 +383,10 @@ function wmf_audit_send_transaction($record, $type) {
 	$func = wmf_audit_runtime_options('test_callback');
 	$func($record, $type);
     }
-    return true;
+    return;
   }
 
-  return wmf_audit_send_queue_message($record, $type);
+  wmf_audit_send_queue_message($record, $type);
 }
 
 /**
@@ -396,7 +394,6 @@ function wmf_audit_send_transaction($record, $type) {
  * @param array $body An array representing the transaction we're trying to
  * send.
  * @param string $type The type of transaction. 'main'|'negative'|'recurring'.
- * @return boolean I think this one is always true, whether or not it worked.
  * @throws Exception
  */
 function wmf_audit_send_queue_message( $body, $type ) {

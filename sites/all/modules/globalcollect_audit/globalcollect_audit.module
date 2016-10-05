@@ -1,7 +1,5 @@
 <?php
 use SmashPig\Core\Configuration;
-use SmashPig\Core\ConfigurationKeyException;
-use SmashPig\Core\SmashPigException;
 
 define( 'GC_AUDIT_WR1_PARSER_DIR', '/usr/local/src/Wr1Parser/' );
 define( 'GC_AUDIT_WR1_FILES_DIR', '/usr/local/src/Wr1_files/' );
@@ -351,19 +349,12 @@ function globalcollect_audit_parse_all_wr1(){
 
 			if ( $test_mode ){
 				$local_found_ids[] = $order_id;
-				globalcollect_audit_echo('!');
 			} else {
-				try {
-					globalcollect_audit_send_queue_message( 'donations', $missing_txn_message );
-					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to queue successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
-					$local_found_ids[] = $order_id;
-					globalcollect_audit_echo('!');
-				} catch( SmashPigException $ex ) {
-					$wd_message = __FUNCTION__ . ': Sending message to queue failed: ' . print_r( $missing_txn_message, true );
-					globalcollect_audit_log_error( $wd_message, "QUEUE_BAD_SEND", $ex->getMessage() );
-					return;
-				}
+				globalcollect_audit_send_queue_message( 'donations', $missing_txn_message );
+				watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to queue successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
+				$local_found_ids[] = $order_id;
 			}
+			globalcollect_audit_echo('!');
 
 		}
 		globalcollect_audit_echo("\n");
@@ -394,19 +385,12 @@ function globalcollect_audit_parse_all_wr1(){
 			//but then we have to send the transaction...
 			if ( $test_mode ){
 				$local_built_ids[] = $order_id;
-				globalcollect_audit_echo('!');
 			} else {
-				try{
-					globalcollect_audit_send_queue_message( 'donations', $missing_txn_message );
-					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to queue successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
-					$local_built_ids[] = $order_id;
-					globalcollect_audit_echo('!');
-				} catch( SmashPigException $ex ) {
-					$wd_message = __FUNCTION__ . ': Sending message to queue failed: ' . print_r( $missing_txn_message, true );
-					globalcollect_audit_log_error( $wd_message, "QUEUE_BAD_SEND", $ex->getMessage() );
-					return;
-				}
+				globalcollect_audit_send_queue_message( 'donations', $missing_txn_message );
+				watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to queue successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
+				$local_built_ids[] = $order_id;
 			}
+			globalcollect_audit_echo('!');
 		}
 	}
 
@@ -1066,7 +1050,7 @@ function globalcollect_audit_mark_rfd_cbk( $missing ){
  * @staticvar string $available The groomed files that are currently available
  * in the logs directory.
  * @param array $missing Parsed missing transaction data form the wr1 files
- * @return string
+ * @return string file name, without full path
  */
 function globalcollect_audit_get_next_log( $missing ){
 	static $tried = array();
