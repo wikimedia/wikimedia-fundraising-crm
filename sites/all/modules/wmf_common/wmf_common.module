@@ -348,15 +348,34 @@ function wmf_common_damaged_search_form( $form, &$form_state ) {
 		);
 	}
 
+	// TODO: Chill on the boilerplate.
+	if ( !empty( $_GET['gateway'] ) ) {
+		$gateway = $_GET['gateway'];
+	} elseif ( !empty( $form_state['input']['gateway'] ) ) {
+		$gateway = $form_state['input']['gateway'];
+	} else {
+		$gateway = '';
+	}
+
+	if ( !empty( $_GET['queue'] ) ) {
+		$queue = $_GET['queue'];
+	} elseif ( !empty( $form_state['input']['queue'] ) ) {
+		$queue = $form_state['input']['queue'];
+	} else {
+		$queue = '';
+	}
+
 	$form['gateway'] = array(
 		'#type' => 'textfield',
 		'#title' => 'Gateway',
+		'#value' => $gateway,
 		'#maxlength' => 256,
 	);
 
 	$form['queue'] = array(
 		'#type' => 'textfield',
 		'#title' => 'Queue',
+		'#value' => $queue,
 		'#maxlength' => 256,
 	);
 
@@ -367,11 +386,14 @@ function wmf_common_damaged_search_form( $form, &$form_state ) {
 
 	$form['#submit'] = array( 'wmf_common_damaged_search_submit' );
 
+	// FIXME: Strip query params cos including GET params in the action is burning us.  Crude!
+	$form['#action'] = request_path();
+
 	if (
 		isset( $form_state['perform_query'] ) ||
 		empty( $form_state['input']['op'] ) // Run query on first load
 	) {
-		return wmf_common_damaged_perform_query( $form, $form_state );
+		return wmf_common_damaged_perform_query( $form, $gateway, $queue );
 	}
 
 	return $form;
@@ -391,7 +413,7 @@ function wmf_common_damaged_search_submit( $form, &$form_state ) {
 	}
 }
 
-function wmf_common_damaged_perform_query( $form, &$form_state ) {
+function wmf_common_damaged_perform_query( $form, $gateway, $queue ) {
 	$query = Database::getConnection( 'default', 'smashpig' )
 		->select( 'damaged', 'd' )
 		->fields( 'd', array(
@@ -401,12 +423,11 @@ function wmf_common_damaged_perform_query( $form, &$form_state ) {
 		->orderBy( 'damaged_date', 'DESC' )
 		->condition( 'retry_date', null );
 
-	if ( !empty( $form_state['input']['gateway'] ) ) {
-		$query->condition( 'gateway', $form_state['input']['gateway'] );
+	if ( !empty( $gateway ) ) {
+		$query->condition( 'gateway', $gateway );
 	}
-
-	if ( !empty( $form_state['input']['queue'] ) ) {
-		$query->condition( 'original_queue', $form_state['input']['queue'] );
+	if ( !empty( $queue ) ) {
+		$query->condition( 'original_queue', $queue );
 	}
 
 	$rows = $query
@@ -419,20 +440,35 @@ function wmf_common_damaged_perform_query( $form, &$form_state ) {
 		$row['error'] = l( $err, WmfQueueConsumer::itemUrl( $id ) );
 	}
 
+    // query parameters to append to the GET string
+    $query_params = array( 'queue' => $queue, 'gateway' => $gateway );
+
+	$table_html = theme_table(
+	  array(
+        // FIXME: Are these translated implicitly or shall we wrap in t()?
+        'header' => array(
+          'ID',
+          'Original Date',
+          'Damaged Date',
+          'Original Queue',
+          'Gateway',
+          'Order ID',
+          'Gateway txn ID',
+          'Error',
+        ),
+        'rows' => $rows,
+        'empty' => 'Nothing in the damaged message table!  Be very suspicious...',
+        'attributes' => array(),
+        'caption' => t( 'Damaged messages' ),
+        'colgroups' => array(),
+        'sticky' => true,
+      )
+    ).theme( 'pager', array(
+      'parameters' => $query_params,
+    ) );
+
 	$form['table'] = array(
-		'#type' => 'tableselect',
-		'#header' => array(
-			'id' => t( 'ID' ),
-			'original_date' => t( 'Original Date' ),
-			'damaged_date' => t( 'Damaged Date' ),
-			'original_queue' => t( 'Original Queue' ),
-			'gateway' => t( 'Gateway' ),
-			'order_id' => t( 'Order ID' ),
-			'gateway_txn_id' => t( 'Gateway txn ID' ),
-			'error' => t( 'Error' )
-		),
-		'#options' => $rows,
-		'#empty' => 'Nothing in the damaged message table!  Be very suspicious...',
+	  '#markup' => $table_html,
 	);
 
 	$form['resend'] = array(
