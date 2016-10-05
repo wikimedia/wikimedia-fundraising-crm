@@ -1,6 +1,5 @@
 <?php
 use SmashPig\Core\Configuration;
-use SmashPig\Core\ConfigurationKeyException;
 
 define( 'GC_AUDIT_WR1_PARSER_DIR', '/usr/local/src/Wr1Parser/' );
 define( 'GC_AUDIT_WR1_FILES_DIR', '/usr/local/src/Wr1_files/' );
@@ -68,7 +67,7 @@ function globalcollect_audit_settings() {
   );
   $form['globalcollect_audit_test_mode']  = array(
     '#type' => 'checkbox',
-    '#title' => t( 'When this box is checked, no stomp messages will be sent.' ),
+    '#title' => t( 'When this box is checked, no queue messages will be sent.' ),
     '#required' => FALSE,
     '#default_value' => variable_get( 'globalcollect_audit_test_mode', GC_AUDIT_TEST_MODE ),
   );
@@ -334,7 +333,7 @@ function globalcollect_audit_parse_all_wr1(){
 			}
 
 			//This isn't going to work unless you're connecting to a database that has the row you're looking for. 
-			$missing_txn_message = globalcollect_audit_format_data_for_stomp( $data, $logdata['donor_data'], $logdata['contribution_id'] );
+			$missing_txn_message = globalcollect_audit_format_data_for_queue( $data, $logdata['donor_data'], $logdata['contribution_id'] );
 			if ( is_null( $missing_txn_message ) ){
 				//log this out in a list of troubled transactions. 
 				$info = array(
@@ -350,19 +349,12 @@ function globalcollect_audit_parse_all_wr1(){
 
 			if ( $test_mode ){
 				$local_found_ids[] = $order_id;
-				globalcollect_audit_echo('!');
 			} else {
-				if ( globalcollect_audit_send_queue_message( 'donations', $missing_txn_message ) ){
-					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
-					$local_found_ids[] = $order_id;
-					globalcollect_audit_echo('!');
-				} else {
-					$wd_message = __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true );
-					$drush_message = "Failed sending STOMP message to queue.";
-					globalcollect_audit_log_error( $wd_message, "STOMP_BAD_SEND", $drush_message );
-					return;
-				}
+				globalcollect_audit_send_queue_message( 'donations', $missing_txn_message );
+				watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to queue successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
+				$local_found_ids[] = $order_id;
 			}
+			globalcollect_audit_echo('!');
 
 		}
 		globalcollect_audit_echo("\n");
@@ -388,24 +380,17 @@ function globalcollect_audit_parse_all_wr1(){
 	if ( $make_missing && count( $missing ) ){
 		//make all the remaining missing transactions with data defaults. 
 		foreach ( $missing as $order_id => $data ) {
-			$missing_txn_message = globalcollect_audit_format_data_for_stomp( $data );
+			$missing_txn_message = globalcollect_audit_format_data_for_queue( $data );
 			
 			//but then we have to send the transaction...
 			if ( $test_mode ){
 				$local_built_ids[] = $order_id;
-				globalcollect_audit_echo('!');
 			} else {
-				if ( globalcollect_audit_send_queue_message( 'donations', $missing_txn_message ) ){
-					watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to stomp successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
-					$local_built_ids[] = $order_id;
-					globalcollect_audit_echo('!');
-				} else {
-					$wd_message = __FUNCTION__ . ': Sending message to stomp failed: ' . print_r( $missing_txn_message, true );
-					$drush_message = "Failed sending STOMP message to queue.";
-					globalcollect_audit_log_error( $wd_message, "STOMP_BAD_SEND", $drush_message );
-					return;
-				}
+				globalcollect_audit_send_queue_message( 'donations', $missing_txn_message );
+				watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to queue successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
+				$local_built_ids[] = $order_id;
 			}
+			globalcollect_audit_echo('!');
 		}
 	}
 
@@ -511,7 +496,7 @@ function globalcollect_audit_parse_wr1_file( $file ){
 }
 
 
-function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $contribution_tracking_id = null ){
+function globalcollect_audit_format_data_for_queue( $wr1, $donor_data = null, $contribution_tracking_id = null ){
 	$fake_db = variable_get( 'globalcollect_audit_fake_db', GC_AUDIT_FAKE_DB );
 	$make_missing = variable_get( 'globalcollect_audit_make_missing', false );
 	//you should probably make sure the data between the two sources match up before we do anything else
@@ -627,7 +612,7 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 	}
 	
 	//start it off with the stuff that's always there...
-	$stomp_data = array(
+	$queue_data = array(
 		'contribution_tracking_id' => $contribution_tracking_id,
 		'gateway' => 'globalcollect',
 		'gross' => $unstaged_amount,
@@ -635,20 +620,20 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 	);
 	
 	if ( $payment_submethod ){
-		$stomp_data['payment_submethod'] = $payment_submethod;
+		$queue_data['payment_submethod'] = $payment_submethod;
 	}
 	
 	if( $recurring ){
-		$stomp_data['recurring'] = 1;
+		$queue_data['recurring'] = 1;
 	}
 	
 	if ( $make_missing ){
-		$stomp_data['audit_hole'] = true;
+		$queue_data['audit_hole'] = true;
 	}
 	
 	
 	//now, we have three sources for this mess: $wr1, $donor_data, and $contribution_tracking. Map 'em.
-	$stomp_field_map = array(
+	$queue_field_map = array(
 		'optout' => array( 'contribution_tracking', 'optout' ),
 		'anonymous' => array( 'contribution_tracking', 'anonymous' ),
 		'comment' => array( 'contribution_tracking', 'note' ), //I think.
@@ -673,21 +658,21 @@ function globalcollect_audit_format_data_for_stomp( $wr1, $donor_data = null, $c
 		'date' => array( 'contribution_tracking', 'ts' ), //double-check how the dates work
 	);
 	
-	foreach ( $stomp_field_map as $key => $location ){
+	foreach ( $queue_field_map as $key => $location ){
 		if( is_array( $location ) ){
 			$source = $location[0];
 			$source_key = $location[1];
 			if ( is_array( ${$source} ) && array_key_exists( $source_key, ${$source} ) ){
-				$stomp_data[$key] = ${$source}[$source_key];
+				$queue_data[$key] = ${$source}[$source_key];
 			} else {
-				$stomp_data[$key] = '';
+				$queue_data[$key] = '';
 			}
 		} else {
-			$stomp_data[$location] = '';
+			$queue_data[$location] = '';
 		}
 	}
 	
-	return $stomp_data;
+	return $queue_data;
 
 
 }
@@ -763,7 +748,7 @@ function globalcollect_audit_make_contribution_tracking_data( $wr1 ){
 
 	$return = array(
 		//don't care about the actual values here: They're not saved downstream. 
-		//It's just so we can eyeball where the stomp message came from, really.
+		//It's just so we can eyeball where the queue message came from, really.
 		'utm_source' => 'gc_wr1',
 		'utm_medium' => 'gc_wr1',
 		'utm_campaign' => 'gc_wr1',
@@ -1058,18 +1043,16 @@ function globalcollect_audit_mark_rfd_cbk( $missing ){
 }
 
 /**
- * Tries to intelligently select the next most likely log to knock off the 
- * majority of the remaining missing transactions, which drastically cuts down 
- * on runtime. 
+ * Tries to intelligently select the next most likely log to knock off the
+ * majority of the remaining missing transactions, which drastically cuts down
+ * on runtime.
  * @staticvar array $tried The dates we have tried
- * @staticvar string $available The groomed files that are currently available 
- * in the logs directory. 
+ * @staticvar string $available The groomed files that are currently available
+ * in the logs directory.
  * @param array $missing Parsed missing transaction data form the wr1 files
- * @param array $counts Array of log data we have found, indexed by the actual 
- * date it was initiated (logdate - 1)
- * @return type 
+ * @return string file name, without full path
  */
-function globalcollect_audit_get_next_log( $missing, $counts ){
+function globalcollect_audit_get_next_log( $missing ){
 	static $tried = array();
 	static $available = null;
 	if ( is_null( $available ) ){
@@ -1392,9 +1375,9 @@ function globalcollect_audit_get_log_data_by_order_id($order_id, $log) {
 
 /**
  * Logs the errors we get in a consistent way
- * @param type $watchdog_message
- * @param type $drush_code
- * @param type $drush_message 
+ * @param string $watchdog_message
+ * @param string $drush_code
+ * @param string $drush_message
  */
 function globalcollect_audit_log_error( $watchdog_message, $drush_code, $drush_message = null ){
 	global $gc_audit_errors;
@@ -2009,34 +1992,20 @@ function gca_wr1_key_grinder( $record, $keys, $name, $error_on_mismatch = false 
 }
 
 function globalcollect_audit_send_queue_message( $queueId, $body ) {
-    static $q;
-
-    if ( !$q ) {
-        $q = new Queue( queue2civicrm_stomp_url() );
-    }
 
     // FIXME: register the queue mapping somewhere sane
     if ( $queueId === 'donations' ) {
-        $queuePath = variable_get( 'queue2civicrm_subscription', '/queue/donations' );
 		$configKey = 'data-store/donations';
     } elseif ( $queueId === 'refund' ) {
-        $queuePath = variable_get( 'refund_queue', '/queue/refund' );
 		$configKey = 'data-store/refund-new';
     } else {
         throw new Exception( "What kind of a queue is this??: {$queueId}" );
     }
 
-    $headers = array();
-    wmf_common_set_message_source( $headers, 'audit', 'GlobalCollect WR1 Auditor' );
 	wmf_common_set_message_source( $body, 'audit', 'GlobalCollect WR1 Auditor' );
 
-	try {
-		$newQueue = Configuration::getDefaultConfig()->object( $configKey, true );
-		$newQueue->push( $body );
-	} catch ( ConfigurationKeyException $ex ) {
-		// do nothing
-	}
-    return $q->enqueue( json_encode( $body ), $headers, $queuePath );
+	$newQueue = Configuration::getDefaultConfig()->object( $configKey, true );
+	$newQueue->push( $body );
 }
 
 /**

@@ -2,7 +2,7 @@
 /**
  * @file globalcollact_audit.drush.inc
  *  Parses .wr1 files from globalcollect and inserts any missing transactions 
- * into the regular stomp message queue.
+ * into the regular message queue.
  * @author Katie Horn <khorn@wikimedia.org>
  * @TODO print some useful info to STDOUT
  */
@@ -18,13 +18,13 @@ function globalcollect_audit_drush_command() {
 
   $items['globalcollect-audit'] = array(
     'description' => 
-      'Globalcollect Audit tool: Parses .wr1 files from globalcollect and inserts any missing transactions into the regular stomp message queue.',
+      'Globalcollect Audit tool: Parses .wr1 files from globalcollect and inserts any missing transactions into the regular message queues.',
     'examples' => array( 
 		'drush globalcollect-audit' => '# Parse the wr1 file',
 		), 
     'options' => array(
         'run_all' => 'Batch search for all missing transactions across all wr1 files.',
-        'test' => 'Test the audit scripts, but do not generate stomp messages. No data will be changed.',
+        'test' => 'Test the audit scripts, but do not generate queue messages. No data will be changed.',
 		'fakedb' => 'Fake the database information. This will cause the script to avoid looking up the actual contribution id.',
 		'makemissing' => 'Will reconstruct the un-rebuildable transactions found in the wr1, with default values. USE WITH CAUTION.',
 		'charlimit' => 'Will cause echoing to line break after the given number of characters',
@@ -43,7 +43,7 @@ function globalcollect_audit_drush_command() {
 function globalcollect_audit_drush_help( $section ) {
   switch ( $section ) {
     case 'globalcollect-audit':
-      return dt( "Parses .wr1 files from globalcollect and inserts any missing transactions into the regular stomp message queue." );
+      return dt( "Parses .wr1 files from globalcollect and inserts any missing transactions into the regular message queue." );
   }
 }
 
@@ -81,7 +81,7 @@ function drush_globalcollect_audit() {
 	globalcollect_audit_reset_drush_vars();
 	
 	if (drush_get_option('test')){
-		echo "Running in test mode: No stomp messages will be sent\n";
+		echo "Running in test mode: No queue messages will be sent\n";
 		variable_set( 'globalcollect_audit_test_mode', true );
 	}
 	if (drush_get_option('fakedb')){

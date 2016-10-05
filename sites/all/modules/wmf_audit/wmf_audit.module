@@ -1,7 +1,6 @@
 <?php
 
 use SmashPig\Core\Configuration;
-use SmashPig\Core\ConfigurationKeyException;
 use SmashPig\Core\Context;
 
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
@@ -370,13 +369,12 @@ function wmf_audit_make_contribution_tracking_data($record) {
 
 /**
  * Sends a completed transaction to... somewhere.
- * The default is to send this thing to an appropriate stomp queue for its type.
+ * The default is to send this thing to an appropriate queue for its type.
  * Other possibilities are to echo the complete message (test mode).
  *
  * @param array $record An array representing the complete data we want to save
  * @param string $type The type of transaction we are. 'main', 'negative',
  * 'recurring'... like that.
- * @return boolean true on success, otherwise false
  */
 function wmf_audit_send_transaction($record, $type) {
   if (wmf_audit_runtime_options('test')) {
@@ -385,69 +383,33 @@ function wmf_audit_send_transaction($record, $type) {
 	$func = wmf_audit_runtime_options('test_callback');
 	$func($record, $type);
     }
-    return true;
+    return;
   }
 
-  return wmf_audit_send_queue_message($record, $type);
+  wmf_audit_send_queue_message($record, $type);
 }
 
 /**
  * Send the message in $body to appropriate message queues.
- * @staticvar array $types Types of transaction we know about, that probably all
- * have different queues.
  * @param array $body An array representing the transaction we're trying to
  * send.
  * @param string $type The type of transaction. 'main'|'negative'|'recurring'.
- * @return boolean I think this one is always true, whether or not it worked.
- * Standard for the stomp libraries, but still lame.
  * @throws Exception
  */
 function wmf_audit_send_queue_message( $body, $type ) {
-  static $types = array();
+  $configKeys = array(
+    'main' => 'data-store/donations',
+    'negative' => 'data-store/refund-new', // FIXME: almost ready to do away with -new
+    'recurring' => 'data-store/recurring-new',
+  );
 
-  $q = queue2civicrm_stomp();
-
-  //@FIXME: This is actually more for the queue consumer modules, but: Make a
-  //goshdarn get function for each of these queue variables so I don't have to
-  //steal the variable_get line from the .module files. If we change that over
-  //there, this breaks.
-  if (empty($types)) {
-    $types = array(
-      'main' => variable_get('queue2civicrm_subscription', '/queue/donations'),
-      'negative' => variable_get('refund_queue', '/queue/refund_test'),
-      'recurring' => variable_get('recurring_subscription', '/queue/donations_recurring'),
-    );
-  }
-
-  if (!array_key_exists($type, $types)) {
+  if (!array_key_exists($type, $configKeys)) {
     throw new Exception(__FUNCTION__ . ": Unhandled message type '$type'");
   }
 
-  $headers = array(
-    'gateway' => $body['gateway'],
-  );
-
-  if ($type != 'negative') {
-    $headers['correlation-id'] = $body['gateway'] . '-' . $body['gateway_txn_id'];
-    $headers['php-message-class'] = 'SmashPig\CrmLink\Messages\DonationInterfaceMessage';
-    $headers['payment_method'] = $body['payment_method'];
-  }
-
-  wmf_common_set_message_source($headers, 'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor');
   wmf_common_set_message_source($body, 'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor');
-
-  $configKeys = array(
-    'main' => 'data-store/donations',
-    'negative' => 'data-store/refund-new',
-    'recurring' => 'data-store/recurring-new',
+  $newQueue = Configuration::getDefaultConfig()->object(
+    $configKeys[$type]
   );
-  try{
-    $newQueue = Configuration::getDefaultConfig()->object(
-      $configKeys[$type]
-    );
-    $newQueue->push( $body );
-  } catch ( ConfigurationKeyException $ex ) {
-    // do nothing
-  }
-  return $q->enqueue(json_encode($body), $headers, $types[$type]);
+  $newQueue->push( $body );
 }

@@ -36,7 +36,6 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 	 * @param WmfException $ex
 	 * @param string $correlationId
 	 * @throws WmfException when we want to halt the dequeue loop
-	 * @internal param string $errorText
 	 */
 	protected function handleWmfException(
 		$message, WmfException $ex, $correlationId
@@ -48,7 +47,26 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 			$delay = intval( variable_get( 'wmf_common_requeue_delay', 20 * 60 ) );
 			$maxTries = intval( variable_get( 'wmf_common_requeue_max', 10 ) );
 			$ageLimit = $delay * $maxTries;
-			if ( $message['date'] + $ageLimit < time() ) {
+			if ( isset( $message['source_enqueued_time'] ) ) {
+				// This should be set the first time a message is queued and
+				// not updated on retry.
+				$queuedTime = $message['source_enqueued_time'];
+			} else if ( isset( $message['date'] ) ) {
+				// This is not entirely accurate, being the date the payment
+				// actually occurred. Can still use it as fallback.
+				$queuedTime = $message['date'];
+			} else {
+				// Setting this to 0 means we'll always go the reject route
+				// and log an error.
+				$queuedTime = 0;
+				watchdog(
+					'wmf_common',
+					"Message has no useful information about queued date",
+					$message,
+					WATCHDOG_NOTICE
+				);
+			}
+			if ( $queuedTime + $ageLimit < time() ) {
 				$reject = true;
 			} else {
 				$retryDate = time() + $delay;

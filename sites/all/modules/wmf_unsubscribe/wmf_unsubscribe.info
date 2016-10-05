@@ -1,6 +1,0 @@
-name = WMF Unsubscribe
-description = Unsubscription module for the Wikimedia Foundation
-core = 7.x
-package = Wikimedia
-dependencies[] = wmf_common
-dependencies[] = wmf_communication

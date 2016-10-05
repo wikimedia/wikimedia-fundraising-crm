@@ -418,11 +418,9 @@ abstract class BaseAuditProcessor {
 				//check to see if the parent exists. If it does, normalize and send.
 				if ( $this->main_transaction_exists_in_civi( $record ) ) {
 					$normal = $this->normalize_negative( $record );
-					if ( wmf_audit_send_transaction( $normal, 'negative' ) ) {
-						$neg_count += 1;
-						wmf_audit_echo( '!' );
-					}
-					wmf_audit_echo( 'X' );
+					wmf_audit_send_transaction( $normal, 'negative' );
+					$neg_count += 1;
+					wmf_audit_echo( '!' );
 				} else {
 					// Ignore cancels with no parents because they must have
 					// been cancelled before reaching Civi.
@@ -716,7 +714,7 @@ abstract class BaseAuditProcessor {
 								// ...but not inside the char block, because it'll break the pretty.
 								$all_data = array_merge( $contribution_tracking_data, $all_data );
 
-								//Send to stomp. Or somewhere. Or don't (if it's test mode).
+								//Send to queue. Or somewhere. Or don't (if it's test mode).
 								wmf_audit_send_transaction( $all_data, 'main' );
 								unset( $tryme[$date][$id] );
 								wmf_audit_echo( '!' );
