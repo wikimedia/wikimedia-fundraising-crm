@@ -506,6 +506,7 @@ function wmf_common_damaged_confirm_delete( $form, $ids ) {
 }
 
 function wmf_common_damaged_confirm_delete_submit( $form, &$form_state ) {
+	wmf_common_create_smashpig_context();
 	$ids = explode( ',', $form['#ids'] );
 	$ddb = DamagedDatabase::get();
 	foreach( $ids as $id ) {
@@ -598,6 +599,7 @@ function wmf_common_damaged_item_form( $form, &$form_state, $id ) {
 function wmf_common_damaged_item_submit( $form, &$form_state ) {
 	$delete = false;
 	$id = $form_state['values']['damaged_id'];
+	wmf_common_create_smashpig_context();
 
 	switch ( $form_state['values']['op'] ) {
 		case $form_state['values']['resend']:
@@ -634,7 +636,7 @@ function wmf_common_damaged_item_submit( $form, &$form_state ) {
 	}
 }
 
-function wmf_common_init() {
+function wmf_common_create_smashpig_context() {
 	// Initialize SmashPig
 	$config = Configuration::createForView();
 	Context::initWithLogger( $config, 'wmf_common' );
