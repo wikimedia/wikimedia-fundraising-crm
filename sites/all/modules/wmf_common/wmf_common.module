@@ -410,7 +410,6 @@ function wmf_common_damaged_perform_query( $form, &$form_state ) {
 	}
 
 	$rows = $query
-		->extend( 'PagerDefault' )
 		->execute()
 		->fetchAllAssoc( 'id', PDO::FETCH_ASSOC );
 
