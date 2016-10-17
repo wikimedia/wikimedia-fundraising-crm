@@ -339,13 +339,20 @@ function wmf_common_set_message_source( &$msg, $type, $name ) {
 }
 
 function wmf_common_damaged_search_form( $form, &$form_state ) {
-	if (
-		isset( $form_state['confirm_delete'] ) &&
-		isset( $form_state['values']['table'] )
-	) {
-		return wmf_common_damaged_confirm_delete(
-			$form, $form_state['values']['table']
-		);
+	if ( isset( $form_state['confirm_delete'] ) ) {
+		// WTF. If you try to do a bulk operation after loading the form
+		// once, the selected IDs go in $form_state['input']['table']. If
+		// you do the bulk operation after submitting a search, they go in
+		// $form_state['values']['table']
+		if ( isset( $form_state['values']['table'] ) ) {
+			return wmf_common_damaged_confirm_delete(
+				$form, $form_state['values']['table']
+			);
+		} else if ( isset( $form_state['input']['table'] ) ) {
+			return wmf_common_damaged_confirm_delete(
+				$form, $form_state['input']['table']
+			);
+		}
 	}
 
 	$form['gateway'] = array(
@@ -372,6 +379,20 @@ function wmf_common_damaged_search_form( $form, &$form_state ) {
 		empty( $form_state['input']['op'] ) // Run query on first load
 	) {
 		return wmf_common_damaged_perform_query( $form, $form_state );
+	} else {
+		// Terrible hack. If these buttons are not added here, drupal
+		// assumes that the triggering button is always search.
+		$form['resend'] = array(
+			'#type' => 'submit',
+			'#value' => t( 'Resend' ),
+			'#disabled' => 'disabled',
+			'#hidden' => 'true',
+		);
+		$form['delete'] = array(
+			'#type' => 'submit',
+			'#value' => t( 'Delete' ),
+			'#hidden' => 'true',
+		);
 	}
 
 	return $form;
