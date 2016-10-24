@@ -1,5 +1,6 @@
 <?php namespace queue2civicrm\fredge;
 
+use SmashPig\Core\DataStores\PaymentsInitialDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 use wmf_common\WmfQueueConsumer;
 use WmfException;
@@ -29,13 +30,10 @@ class PaymentsInitQueueConsumer extends WmfQueueConsumer {
 		// The DonationQueueConsumer will delete pending rows for successful
 		// contributions, and we don't want to be too hasty.
 		// Leave details for payments still open for manual review.
-		if (
-			$message['payments_final_status'] === 'failed' &&
-			$message['validation_action'] === 'reject'
-		) {
+		if ( PaymentsInitialDatabase::isMessageFailed( $message ) ) {
 			watchdog(
 				'fredge',
-				"Deleting pending row for failed and rejected payment {$logId}",
+				"Deleting pending row for failed payment {$logId}",
 				array(),
 				WATCHDOG_INFO
 			);
