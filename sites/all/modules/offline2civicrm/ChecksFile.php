@@ -35,15 +35,7 @@ abstract class ChecksFile {
 
         $headers = _load_headers( fgetcsv( $file, 0, ',', '"', '\\') );
 
-        $failed = array();
-        foreach ( $this->getRequiredColumns() as $name ) {
-            if ( !array_key_exists( $name, $headers ) ) {
-                $failed[] = $name;
-            }
-        }
-        if ( $failed ) {
-            throw new WmfException( 'INVALID_FILE_FORMAT', "This file is missing column headers: " . implode( ", ", $failed ) );
-        }
+		$this->validateColumns( $headers );
 
         $num_errors = 0;
         $num_ignored = 0;
@@ -428,5 +420,23 @@ abstract class ChecksFile {
 			'date',
 			'gross',
 		);
+	}
+
+	/**
+	 * Ensure the file contains all the data we need.
+	 *
+	 * @param array $headers Column names
+	 * @throws WmfException if required columns are missing
+	 */
+	protected function validateColumns( $headers ) {
+		$failed = array();
+		foreach ( $this->getRequiredColumns() as $name ) {
+			if ( !array_key_exists( $name, $headers ) ) {
+				$failed[] = $name;
+			}
+		}
+		if ( $failed ) {
+			throw new WmfException( 'INVALID_FILE_FORMAT', "This file is missing column headers: " . implode( ", ", $failed ) );
+		}
 	}
 }

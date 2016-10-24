@@ -30,7 +30,6 @@ class WmfImportFile extends ChecksFile {
             'No Thank You',
             'Original Amount',
             'Original Currency',
-            'Raw Payment Instrument',
             'Phone',
             'Postal Code',
             'Postmark Date',
@@ -48,4 +47,17 @@ class WmfImportFile extends ChecksFile {
             'Transaction ID',
         );
     }
+
+	protected function validateColumns( $headers ) {
+		if (
+			!array_key_exists( 'Raw Payment Instrument', $headers ) &&
+			!array_key_exists( 'Payment Instrument', $headers )
+		) {
+			throw new WmfException(
+				'INVALID_FILE_FORMAT',
+				'File must contain either \'Payment Instrument\' or \'Raw Payment Instrument\''
+			);
+		}
+		parent::validateColumns( $headers );
+	}
 }
