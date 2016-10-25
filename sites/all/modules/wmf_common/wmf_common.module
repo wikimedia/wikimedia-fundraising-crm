@@ -354,7 +354,7 @@ function wmf_common_damaged_search_form( $form, &$form_state ) {
 		'#maxlength' => 256,
 	);
 
-	$form['queue'] = array(
+	$form['original_queue'] = array(
 		'#type' => 'textfield',
 		'#title' => 'Queue',
 		'#maxlength' => 256,
@@ -394,21 +394,26 @@ function wmf_common_damaged_search_submit( $form, &$form_state ) {
 function wmf_common_damaged_perform_query( $form, &$form_state ) {
 	$query = Database::getConnection( 'default', 'smashpig' )
 		->select( 'damaged', 'd' )
-		->fields( 'd', array(
+		->extend( 'PagerDefault' );
+
+	$query->fields( 'd', array(
 			'id', 'original_date', 'damaged_date', 'original_queue',
 			'gateway', 'order_id', 'gateway_txn_id', 'error'
 		) )
 		->orderBy( 'damaged_date', 'DESC' )
 		->condition( 'retry_date', null );
 
-	if ( !empty( $form_state['input']['gateway'] ) ) {
-		$query->condition( 'gateway', $form_state['input']['gateway'] );
+	$allowedFields = array( 'gateway', 'original_queue' );
+	$parameters = array();
+
+	foreach( $allowedFields as $field ) {
+		if ( !empty( $form_state['input'][$field] ) ) {
+			$query->condition( $field, $form_state['input'][$field] );
+			$parameters[$field] = $form_state['input'][$field];
+		}
 	}
 
-	if ( !empty( $form_state['input']['queue'] ) ) {
-		$query->condition( 'original_queue', $form_state['input']['queue'] );
-	}
-
+	$query->limit( 10 );
 	$rows = $query
 		->execute()
 		->fetchAllAssoc( 'id', PDO::FETCH_ASSOC );
@@ -432,6 +437,10 @@ function wmf_common_damaged_perform_query( $form, &$form_state ) {
 		),
 		'#options' => $rows,
 		'#empty' => 'Nothing in the damaged message table!  Be very suspicious...',
+	);
+	$form['pager'] = array(
+		'#theme' => 'pager',
+		'#parameters' => $parameters
 	);
 
 	$form['resend'] = array(
