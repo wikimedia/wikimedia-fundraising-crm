@@ -1,5 +1,6 @@
 <?php  namespace queue2civicrm\refund;
 
+use Exception;
 use wmf_common\TransactionalWmfQueueConsumer;
 use WmfException;
 
@@ -21,6 +22,12 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer{
 		$gateway = strtoupper($message[ 'gateway' ]);
 		$parentTxn = $message['gateway_parent_id'];
 		$refundTxn = isset( $message[ 'gateway_refund_id' ] ) ? $message[ 'gateway_refund_id' ] : null;
+		if ( $refundTxn === null ) {
+			$logId = $parentTxn;
+		} else {
+			$logId = $refundTxn;
+		}
+
 
 		if ( $message[ 'gross' ] < 0 ) {
 			$message[ 'gross' ] = abs( $message[ 'gross' ] );
@@ -29,19 +36,20 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer{
 		if ( $contributions = wmf_civicrm_get_contributions_from_gateway_id( $gateway, $parentTxn ) ) {
 			// Perform the refund!
 			try {
+				watchdog( 'refund', "$logId: Marking as refunded", NULL, WATCHDOG_INFO );
 				wmf_civicrm_mark_refund( $contributions[0][ 'id' ], $message[ 'type' ], true, $message[ 'date' ],
 					$refundTxn,
 					$message[ 'gross_currency' ],
 					$message[ 'gross' ]
 				);
 
-				watchdog( 'refund', "$refundTxn: Successfully marked as refunded", NULL, WATCHDOG_INFO );
-			} catch (Exception $ex) {
-				watchdog( 'refund', "$refundTxn: Could not refund due to internal error: " . $ex->getMessage(), NULL, WATCHDOG_ERROR );
+				watchdog( 'refund', "$logId: Successfully marked as refunded", NULL, WATCHDOG_INFO );
+			} catch ( Exception $ex ) {
+				watchdog( 'refund', "$logId: Could not refund due to internal error: " . $ex->getMessage(), NULL, WATCHDOG_ERROR );
 				throw $ex;
 			}
 		} else {
-			watchdog( 'refund', "$refundTxn: Contribution not found for this transaction!", NULL, WATCHDOG_ERROR );
+			watchdog( 'refund', "$logId: Contribution not found for this transaction!", NULL, WATCHDOG_ERROR );
 			throw new WmfException( 'MISSING_PREDECESSOR', "Parent not found: $gateway $parentTxn" );
 		}
 	}
