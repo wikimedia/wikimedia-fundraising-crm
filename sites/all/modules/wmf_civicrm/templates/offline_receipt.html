@@ -1,7 +1,22 @@
 <html>
+
+{assign var="amount" value=$formValues.total_amount}
+{foreach from=$customGroup item=value key=customName}
+  {if $customName === "Contribution Extra"}
+    {foreach from=$value item=v key=n}
+      {if $n == "Original Currency Received"}
+        {assign var="currency" value=$v}
+      {/if}
+      {if $n == "Original Amount Received (unconverted)"}
+        {assign var="amount" value=$v}
+      {/if}
+    {/foreach}
+  {/if}
+{/foreach}
+
 <p>Dear {contact.first_name},</p>
 
-<p>Thank you for your donation of {$formValues.total_amount-$totalTaxAmount|crmMoney:$currency} to the Wikimedia Foundation. The Wikimedia Foundation is the non-profit organization that supports Wikipedia and other free knowledge projects. Our mission is to build the most accessible and comprehensive source of free knowledge in the world.</p>
+<p>Thank you for your donation of {$amount|crmMoney:$currency} to the Wikimedia Foundation. The Wikimedia Foundation is the non-profit organization that supports Wikipedia and other free knowledge projects. Our mission is to build the most accessible and comprehensive source of free knowledge in the world.</p>
 
 <p>We believe that knowledge is a fundamental human right. As humanity rushes into our digital future, we need open, accessible, public spaces to access knowledge online. Wikimedia is such a space. Wikipedia delivers free knowledge to people, by people, in hundreds of languages around our planet.</p>
 
@@ -18,7 +33,7 @@
 <p>Many employers will match employee contributions: please check with your company to see if they have a <a class="external text" href=\"https://wikimediafoundation.org/wiki/Matching_Gifts/form\">corporate matching gift program</a>.</p>
 
 <p>For your records: Your donation, number CNT-{$contactID}, on {$receive_date|truncate:10:\'\'|crmDate}
-    was {$formValues.total_amount-$totalTaxAmount|crmMoney:$currency}.</p>
+    was {$amount|crmMoney:$currency}.</p>
 
 
 <p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit charitable corporation with 501(c)(3) tax exempt status in the United States. Our address is 149 New Montgomery, 6th Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703</p>
