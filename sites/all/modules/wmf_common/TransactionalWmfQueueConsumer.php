@@ -16,6 +16,7 @@ abstract class TransactionalWmfQueueConsumer extends WmfQueueConsumer {
 	 * @param array $message
 	 */
 	public function processMessageWithErrorHandling( $message ) {
+		$this->logMessage( $message );
 		$callback = array( $this, 'processMessage' );
 		try {
 			WmfDatabase::transactionalCall(
