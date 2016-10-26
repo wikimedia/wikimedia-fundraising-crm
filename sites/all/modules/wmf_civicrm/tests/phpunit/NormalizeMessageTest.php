@@ -45,6 +45,7 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'middle_name' => '',
             'net' => 5.29,
             'optout' => 0,
+            'order_id' => mt_rand(),
             'organization_name' => '',
             'original_currency' => 'ILS',
             'original_gross' => '20.00',
