@@ -387,6 +387,63 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test that a conflict on communication preferences is handled.
+   *
+   * @dataProvider getDifferentLanguageCombos
+   *
+   * @param string $language1
+   * @param string $language2
+   */
+  public function testBatchMergeConflictDifferentPreferredLanguage($language1, $language2) {
+    // Can't use api if we are trying to use invalid data.
+    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1));
+    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2012-01-01', 'invoice_id' => 2, 'trxn_id' => 2));
+
+    wmf_civicrm_ensure_language_exists('en_US');
+    wmf_civicrm_ensure_language_exists('fr_FR');
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language1' WHERE id = $this->contactID");
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language2' WHERE id = $this->contactID2");
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['merged']));
+    $contact = $this->callAPISuccess('Contact', 'get', array(
+      'id' => $this->contactID,
+      'sequential' => 1
+    ));
+    $this->assertEquals($language2, $contact['values'][0]['preferred_language']);
+  }
+
+  /**
+   * Test that a conflict on communication preferences is handled.
+   *
+   * This is the same as the other test except the contact with the lower id is
+   * the later donor.
+   *
+   * @dataProvider getDifferentLanguageCombos
+   *
+   * @param string $language1
+   * @param string $language2
+   */
+  public function testBatchMergeConflictDifferentPreferredLanguageReverse($language1, $language2) {
+    // Can't use api if we are trying to use invalid data.
+    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2012-01-01', 'invoice_id' => 1, 'trxn_id' => 1));
+    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'invoice_id' => 2, 'trxn_id' => 2));
+
+    wmf_civicrm_ensure_language_exists('en_US');
+    wmf_civicrm_ensure_language_exists('fr_FR');
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language1' WHERE id = $this->contactID");
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language2' WHERE id = $this->contactID2");
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['merged']));
+    $contact = $this->callAPISuccess('Contact', 'get', array(
+      'id' => $this->contactID,
+      'sequential' => 1
+    ));
+    $this->assertEquals($language1, $contact['values'][0]['preferred_language']);
+  }
+
+  /**
    * Get combinations of languages for comparison.
    *
    * @return array
@@ -410,6 +467,21 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     );
     return $dataSet;
   }
+
+  /**
+   * Get combinations of languages for comparison.
+   *
+   * @return array
+   */
+  public function getDifferentLanguageCombos() {
+    $dataSet = array(
+      // Choose longer.
+      array('fr_FR', 'en_US'),
+      array('en_US', 'fr_FR'),
+    );
+    return $dataSet;
+  }
+
   /**
    * Test that source conflicts are ignored.
    *

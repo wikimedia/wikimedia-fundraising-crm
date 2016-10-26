@@ -2152,7 +2152,10 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
                 str_replace('move_', '', $moveField),
                 $refs['migration_info'][$moveField],
                 $refs['migration_info']['rows'][$moveField]['other'],
-                $refs['migration_info']['rows'][$moveField]['main'])) {
+                $refs['migration_info']['rows'][$moveField]['main'],
+                $mainId,
+                $otherId
+              )) {
                 unset($refs['fields_in_conflict'][$moveField]);
                 continue;
               }
@@ -2291,13 +2294,31 @@ function _wmf_civicrm_merge_resolve_casing_conflict($fieldName, &$moveFieldValue
  * @return bool
  *   Has the conflict been resolved?
  */
-function _wmf_civicrm_merge_resolve_preferred_language_conflict($fieldName, &$moveFieldValue, &$valueToKeep, &$valueToOverwrite) {
+function _wmf_civicrm_merge_resolve_preferred_language_conflict($fieldName, &$moveFieldValue, &$valueToKeep, &$valueToOverwrite, $contactToKeepID, $contactToDeleteID) {
   if ($fieldName !== 'preferred_language') {
     return FALSE;
   }
 
   if (substr($valueToKeep, 0, 2) != substr($valueToOverwrite, 0, 2)) {
-    return FALSE;
+    $lastDonor = civicrm_api3('Contribution', 'getvalue', array(
+      'return' => 'contact_id',
+      'contact_id' => array('IN' => array($contactToKeepID, $contactToDeleteID)),
+      'options' => array('sort' => 'receive_date DESC', 'limit' => 1),
+    ));
+    if ($lastDonor == $contactToKeepID) {
+      // We are resolving the conflict by keeping the language unchanged from our 'keeper' contact.
+      // By default it will be trying to overwrite that value with the 'to-delete' contact
+      // (and it would block that through the conflict process).
+      // We re-instate the values that it was going to overwrite.
+      $moveFieldValue = $valueToOverwrite;
+      $valueToKeep = $valueToOverwrite;
+      return TRUE;
+    }
+    else {
+      // We are resolving the conflict by keeping the language from our 'to-delete' contact.
+      // These are what it was going to carry over & we keep that.
+      return TRUE;
+    }
   }
   if (!wmf_civicrm_check_language_exists($valueToOverwrite)) {
     // The conflict is resolved & the value to keep is fine.
