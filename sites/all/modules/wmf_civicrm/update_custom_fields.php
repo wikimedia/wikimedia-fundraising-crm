@@ -5,40 +5,99 @@
  */
 function _wmf_civicrm_update_custom_fields() {
   civicrm_initialize();
-  $customGroup = civicrm_api3('CustomGroup', 'get', array('name' => 'Prospect'));
-  if (!$customGroup['count']) {
-    $customGroup = civicrm_api3('CustomGroup', 'create', array(
-      'name' => 'Prospect',
-      'title' => 'Prospect',
-      'extends' => 'Contact',
-      'style' => 'tab',
-      'is_active' => 1,
-    ));
-  }
-  // We mostly are trying to ensure a unique weight since weighting can be re-ordered in the UI but it gets messy
-  // if they are all set to 1.
-  $weight = CRM_Core_DAO::singleValueQuery('SELECT max(weight) FROM civicrm_custom_field WHERE custom_group_id = %1',
-    array(1 => array($customGroup['id'], 'Integer'))
+  $customGroupSpecs = array(
+    'Prospect' => array(
+      'group' => array(
+        'name' => 'Prospect',
+        'title' => 'Prospect',
+        'extends' => 'Contact',
+        'style' => 'tab',
+        'is_active' => 1,
+      ),
+      'fields' => _wmf_civicrm_get_prospect_fields(),
+    ),
+    'Anonymous' => array(
+      'group' => array(
+        'name' => 'Anonymous',
+        'title' => 'Benefactor Page Listing',
+        'extends' => 'Contact',
+        'style' => 'Inline',
+        'is_active' => 1,
+      ),
+      'fields' => _wmf_civicrm_get_benefactor_fields(),
+    ),
   );
+  foreach ($customGroupSpecs as $groupName => $customGroupSpec) {
+    $customGroup = civicrm_api3('CustomGroup', 'get', array('name' => $groupName));
+    if (!$customGroup['count']) {
+      $customGroup = civicrm_api3('CustomGroup', 'create', $customGroupSpec['group']);
+    }
+    // We mostly are trying to ensure a unique weight since weighting can be re-ordered in the UI but it gets messy
+    // if they are all set to 1.
+    $weight = CRM_Core_DAO::singleValueQuery('SELECT max(weight) FROM civicrm_custom_field WHERE custom_group_id = %1',
+      array(1 => array($customGroup['id'], 'Integer'))
+    );
 
-  foreach (_wmf_civicrm_get_prospect_fields() as $field) {
-    if (!civicrm_api3('CustomField', 'getcount', array(
-      'custom_group_id' => $customGroup['id'],
-      'name' => $field['name'],
-    ))
-    ) {
-      $weight++;
-      civicrm_api3('CustomField', 'create', array_merge(
-        $field,
-        array(
-          'custom_group_id' => $customGroup['id'],
-          'weight' => $weight,
-        )
-      ));
+    foreach ($customGroupSpec['fields'] as $field) {
+      if (!civicrm_api3('CustomField', 'getcount', array(
+        'custom_group_id' => $customGroup['id'],
+        'name' => $field['name'],
+      ))
+      ) {
+        $weight++;
+        civicrm_api3('CustomField', 'create', array_merge(
+          $field,
+          array(
+            'custom_group_id' => $customGroup['id'],
+            'weight' => $weight,
+          )
+        ));
+      }
     }
   }
 }
 
+/**
+ * Get fields from prospect custom group.
+ *
+ * @return array
+ */
+function _wmf_civicrm_get_benefactor_fields() {
+  return array(
+    'Listed_as_Anonymous' => array(
+      'name' => 'Listed_as_Anonymous',
+      'label' => 'Listed as',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'default_value' => 'not_replied',
+      'is_searchable' => 1,
+      'text_length' => 255,
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'option_values' => array(
+        'anonymous' => 'Anonymous',
+        'not_replied' => 'Not replied',
+        'public' => 'Public',
+      ),
+    ),
+    'Listed_on_Benefactor_Page_as' => array(
+      'name' => 'Listed_on_Benefactor_Page_as',
+      'label' => 'Listed on Benefactor Page as',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_searchable' => 1,
+      'text_length' => 255,
+      'note_columns' => 60,
+      'note_rows' => 4,
+    ),
+  );
+}
+
+/**
+ * Get fields from prospect custom group.
+ *
+ * @return array
+ */
 function _wmf_civicrm_get_prospect_fields() {
   return array(
     'Origin' => array(
