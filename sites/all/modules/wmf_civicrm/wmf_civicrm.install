@@ -56,11 +56,11 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7200();
     wmf_civicrm_update_7205();
     wmf_civicrm_update_7210();
-    wmf_civicrm_update_7220();
     wmf_civicrm_update_7230();
     wmf_civicrm_update_7235();
     wmf_civicrm_update_7280();
     wmf_civicrm_update_7290();
+    wmf_civicrm_update_7300();
 }
 
 /**
@@ -2006,84 +2006,8 @@ function wmf_civicrm_update_7210() {
  * Create additional prospecting custom fields.
  */
 function wmf_civicrm_update_7220() {
-  civicrm_initialize();
-  $customGroup = civicrm_api3('CustomGroup', 'get', array('name' => 'Prospect'));
-  if (!$customGroup['count']) {
-    $customGroup = civicrm_api3('CustomGroup', 'create', array(
-      'name' => 'Prospect',
-      'title' => 'Prospect',
-      'extends' => 'Contact',
-      'style' => 'tab',
-      'is_active' => 1,
-    ));
-  }
-  $fields = array(
-    'ask_amount' => array(
-      'name' => 'ask_amount',
-      'label' => 'Ask Amount',
-      'data_type' => 'Money',
-      'html_type' => 'Text',
-      'is_searchable' => 1,
-      'is_search_range' => 1,
-    ),
-    'expected_amount' => array(
-      'name' => 'expected_amount',
-      'label' => 'Expected Amount',
-      'data_type' => 'Money',
-      'html_type' => 'Text',
-      'is_searchable' => 1,
-      'is_search_range' => 1,
-    ),
-    'likelihood' => array(
-      'name' => 'likelihood',
-      'label' => 'Likelihood (%)',
-      'data_type' => 'Integer',
-      'html_type' => 'Text',
-      'is_searchable' => 1,
-      'is_search_range' => 1,
-    ),
-    'expected_close_date' => array(
-      'name' => 'expected_close_date',
-      'label' => 'Expected Close Date',
-      'data_type' => 'Date',
-      'html_type' => 'Select Date',
-      'is_searchable' => 1,
-      'is_search_range' => 1,
-    ),
-    'close_date' => array(
-      'name' => 'close_date',
-      'label' => 'Close Date',
-      'data_type' => 'Date',
-      'html_type' => 'Select Date',
-      'is_searchable' => 1,
-      'is_search_range' => 1,
-    ),
-    'next_step' => array(
-      'name' => 'next_step',
-      'label' => 'Next Step',
-      'data_type' => 'Memo',
-      'html_type' => 'RichTextEditor',
-      'note_columns' => 60,
-      'note_rows' => 4,
-    ),
-  );
-  // We mostly are trying to ensure a unique weight since weighting can be re-orded in the UI but it gets messy
-  // if they are all set to 1.
-  $weight = CRM_Core_DAO::singleValueQuery('SELECT max(weight) FROM civicrm_custom_field WHERE custom_group_id = %1',
-    array(1 => array($customGroup['id'], 'Integer'))
-  );
-
-  foreach ($fields as $field) {
-    $weight++;
-    civicrm_api3('CustomField', 'create', array_merge(
-      $field,
-      array(
-        'custom_group_id' => $customGroup['id'],
-        'weight' => $weight,
-        )
-      )
-    );
-  }
+  require_once 'update_custom_fields.php';
+  _wmf_civicrm_update_custom_fields();
 }
 
 /**
@@ -2363,4 +2287,44 @@ function wmf_civicrm_update_7285() {
 function wmf_civicrm_update_7290() {
   civicrm_initialize();
   civicrm_api3('Setting', 'create', array('moneyformat' => '%c%a'));
+}
+
+/**
+ * Update custom fields to match fields defined on live.
+ *
+ * Note that these are generally created on live by non-tech staff
+ * (e.g major gifts) and we add them in the script to keep our dev
+ * environments in sync.
+ *
+ * Bug: T147965
+ */
+function wmf_civicrm_update_7300() {
+  require_once 'update_custom_fields.php';
+  _wmf_civicrm_update_custom_fields();
+}
+
+/**
+ * Remove invalid address na@na.com.
+ *
+ * I put this before update 7305 in case it leaves any contacts without a primary.
+ *
+ * Only a small number of emails involved.
+ *
+ * Bug: T149248
+ */
+function wmf_civicrm_update_7303() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('DELETE FROM civicrm_email WHERE email = "na@na.com"');
+}
+
+/**
+ * Rerun fix for no primary address.
+ *
+ * I fixed a second cause for this (a rarer one) - make sure
+ * all contacts have a primary address.
+ *
+ * Bug: T145873
+ */
+function wmf_civicrm_update_7305() {
+  wmf_civicrm_update_7250();
 }

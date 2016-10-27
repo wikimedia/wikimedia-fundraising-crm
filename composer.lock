@@ -249,6 +249,7 @@
                 "messaging",
                 "stomp"
             ],
+            "abandoned": "stomp-php/stomp-php",
             "time": "2013-02-23 17:34:44"
         },
         {
@@ -1139,7 +1140,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "345dc21e9cb0b4ef0a1a1e25286f21a91d099171"
+                "reference": "648351fbc2f9f158fcff53823fefa27639e3b827"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -1190,7 +1191,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2016-10-24 21:30:18"
+            "time": "2016-10-26 18:59:19"
         },
         {
             "name": "zordius/lightncandy",
