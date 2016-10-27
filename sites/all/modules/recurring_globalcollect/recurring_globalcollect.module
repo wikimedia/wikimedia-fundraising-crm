@@ -442,6 +442,9 @@ function recurring_globalcollect_search_by_order_id_form_submit($form, &$form_st
  * The next date, for monthly contributions, should be one month after
  * the last payment, give or take a couple of days for month length weirdness.
  *
+ * We also accept it if it is more than 28 days ahead - this could happen
+ * if we are waiting for the audit file to fill in the gaps.
+ *
  * If there are we might not want to run the charges until we have checked them out.
  *
  * Only check 2016+ transactions (since those are currently clean) and
@@ -465,7 +468,7 @@ function is_found_globalcollect_invalid_next_sched_dates() {
     AND frequency_unit = 'month' AND frequency_interval = 1
     GROUP BY cr.id DESC
    ) as inn
-  WHERE date_diff NOT BETWEEN -3 AND 3
+  WHERE date_diff NOT BETWEEN -3 AND 3 AND date_diff > -28
  ";
 
   $count = CRM_Core_DAO::singleValueQuery($query);
