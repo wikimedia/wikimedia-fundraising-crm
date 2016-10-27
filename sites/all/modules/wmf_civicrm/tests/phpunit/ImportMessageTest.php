@@ -105,6 +105,15 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             }
         }
 
+		if ( !empty( $expected['address'] ) ) {
+			$addresses = civicrm_api3( 'Address', 'get', array(
+				'contact_id' => $contribution['contact_id'],
+				'return' => 'city,postal_code,street_address,geo_code_1,geo_code_2,timezone',
+			) );
+			$address = $addresses['values'][$addresses['id']];
+			$this->assertComparable( $expected['address'], $address );
+		}
+
         if ( !empty( $expected['contact_custom_values'] ) ) {
             $actual_contact_custom_values = wmf_civicrm_get_custom_values(
                 $contribution['contact_id'],
@@ -415,6 +424,34 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'creditnote_id' => '',
                         'tax_amount' => '',
                     ),
+                ),
+            ),
+            // US address import is geocoded
+            array(
+                array(
+                    'city' => 'Somerville',
+                    'country' => 'US',
+                    'currency' => 'USD',
+                    'date' => '2012-05-01 00:00:00',
+                    'email' => 'nobody@wikimedia.org',
+                    'gateway' => 'test_gateway',
+                    'gateway_txn_id' => $gateway_txn_id,
+                    'gross' => '1.23',
+                    'payment_method' => 'cc',
+                    'postal_code' => '02144',
+                    'state_province' => 'MA',
+                    'street_address' => '1 Davis Square',
+                ),
+                array(
+                    'contribution' => $this->getBaseContribution( $gateway_txn_id ),
+                    'address' => array(
+                        'city' => 'Somerville',
+                        'postal_code' => '02144',
+                        'street_address' => '1 Davis Square',
+                        'geo_code_1' => '42.3995',
+                        'geo_code_2' => '-71.1217',
+                        'timezone' => 'UTC-5',
+                    )
                 ),
             ),
         );
