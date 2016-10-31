@@ -2250,6 +2250,11 @@ function _wmf_civicrm_merge_resolve_casing_conflict($fieldName, &$moveFieldValue
   if (!in_array(str_replace('move_', '', $fieldName), $fieldsToResolveCasingFor)) {
     return FALSE;
   }
+  // Let's get rid of any preceding or trailing spaces.
+  $valueToKeep = trim($valueToKeep);
+  $valueToOverwrite = trim($valueToOverwrite);
+  $moveFieldValue = trim($moveFieldValue);
+
   if (strtoupper($valueToKeep) != strtoupper($valueToOverwrite)) {
     return FALSE;
   }
