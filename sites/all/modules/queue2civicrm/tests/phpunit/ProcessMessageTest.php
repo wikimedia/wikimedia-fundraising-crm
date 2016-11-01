@@ -66,11 +66,11 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 		$this->recurringConsumer = new RecurringQueueConsumer( 'recurring-new' );
 	}
 
-	/**
+    /**
      * Process an ordinary (one-time) donation message
      */
     public function testDonation() {
-        $message = new TransactionMessage();
+        $message = new TransactionMessage(array('gross' => 400, 'original_gross' => 400, 'original_currency' => 'USD'));
         $message2 = new TransactionMessage();
 
         exchange_rate_cache_set( 'USD', $message->get( 'date' ), 1 );
@@ -79,13 +79,20 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->queueConsumer->processMessage( $message->getBody() );
         $this->queueConsumer->processMessage( $message2->getBody() );
 
-        $contributions = wmf_civicrm_get_contributions_from_gateway_id( $message->getGateway(), $message->getGatewayTxnId() );
-        $this->assertEquals( 1, count( $contributions ) );
+        $contribution = civicrm_api3('Contribution', 'getsingle', array(
+          wmf_civicrm_get_custom_field_name('gateway_txn_id') => $message->getGatewayTxnId(),
+          'return' => array(wmf_civicrm_get_custom_field_name('Campaign'), 'total_amount'),
+        ));
+        $this->assertEmpty($contribution[wmf_civicrm_get_custom_field_name('campaign')] );
 
-        $contributions2 = wmf_civicrm_get_contributions_from_gateway_id( $message2->getGateway(), $message2->getGatewayTxnId() );
-        $this->assertEquals( 1, count( $contributions2 ) );
+        $contribution2 = civicrm_api3('Contribution', 'getsingle', array(
+          wmf_civicrm_get_custom_field_name('gateway_txn_id') => $message2->getGatewayTxnId(),
+          'return' => array(wmf_civicrm_get_custom_field_name('Campaign'), 'total_amount'),
+        ));
 
-        $this->assertNotEquals( $contributions[0]['contact_id'], $contributions2[0]['contact_id'] );
+        $this->assertEquals('Benefactor Gift', $contribution2[wmf_civicrm_get_custom_field_name('campaign')] );
+
+        $this->assertNotEquals( $contribution['contact_id'], $contribution2['contact_id'] );
     }
 
     /**

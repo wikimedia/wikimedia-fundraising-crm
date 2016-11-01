@@ -375,9 +375,13 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     * NOTE: the custom field for "Gift_Information" indicates that check number is stored here.  It is not.
     */
     $custom_field_defaults = array(
+        // Contribution_comments field does not appear to exist & is quietly ignored I believe.
         'Contribution_Comments' => '',
         'gateway_account' => '',
     );
+    if ($contribution['total_amount'] >= 1000) {
+        $custom_field_defaults['Campaign'] = 'Benefactor Gift';
+    }
 
     // Legacy field names which do not match the message field names
     $custom_name_mangle = array(
