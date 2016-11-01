@@ -2338,3 +2338,30 @@ function wmf_civicrm_update_7310() {
   require_once('update_7310.php');
   _wmf_civicrm_update_7310_add_zip_geo();
 }
+
+/**
+ * Fix contacts who have no primary address- this has arisen from the dedupes.
+ *
+ * I did this on emails before and but I just checked and there are around 7000 addresses
+ *
+ * Bug: T143062
+ */
+function wmf_civicrm_update_7315() {
+  civicrm_initialize();
+  $entity = 'address';
+  CRM_Core_DAO::executeQuery("
+    CREATE TEMPORARY TABLE civicrm_{$entity}_updates
+     SELECT id FROM
+      (
+        SELECT contact_id, sum(is_primary) as c, e.id
+        FROM civicrm_{$entity} e
+        INNER JOIN civicrm_contact c ON c.id = contact_id AND is_deleted = 0
+        GROUP BY contact_id HAVING c = 0
+      ) as i
+  ");
+
+  CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_{$entity}_updates ADD INDEX index_id(id)");
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_{$entity} e INNER JOIN civicrm_{$entity}_updates u ON e.id = u.id
+    SET e.is_primary = 1
+  ");
+}
