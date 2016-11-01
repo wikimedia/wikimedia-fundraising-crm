@@ -2610,13 +2610,27 @@ function wmf_get_calculated_field_names() {
  * and wmf_donor rollup fields.
  */
 function wmf_civicrm_civicrm_post( $op, $type, $id, &$entity ) {
-	if ( $type === 'Contribution' ) {
-		wmf_civicrm_civicrm_post_Contribution( $op, $id, $entity );
+	switch( $type ) {
+		case 'Contribution':
+			wmf_civicrm_civicrm_post_Contribution( $op, $id, $entity );
+			break;
+	}
+}
+
+
+/**
+ * Implementation of hook_civicrm_pre, used to geocode US addresses
+ */
+function wmf_civicrm_civicrm_pre( $op, $type, $id, &$entity ) {
+	switch( $type ) {
+		case 'Address':
+			wmf_civicrm_civicrm_pre_Address( $op, $entity );
+			break;
 	}
 }
 
 /**
- * Fill in the calculed donor fields for a given donor.
+ * Fill in the calculated donor fields for a given donor.
  *
  * @param int $contactID
  */
@@ -2656,6 +2670,58 @@ function wmf_civicrm_calculate_donor_fields($contactID) {
   }
 }
 
+/**
+ * Geocode US addresses using wmf_zip_geo. Adds latitude, longitude,
+ * and timezone as GMT offset.
+ *
+ * @param string $op Type of operation being performed
+ * @param array $address Values being submitted
+ */
+function wmf_civicrm_civicrm_pre_Address( $op, &$address ) {
+	static $usId = null;
+	if ( $usId == null ) {
+		$usId = wmf_civicrm_get_country_id( 'US' );
+	};
+
+	switch ( $op ) {
+		case 'create':
+		case 'edit':
+			$geoData = array();
+
+			// Do we have any geo info for this address?
+			if (
+				$address['country_id'] == $usId &&
+				!empty( $address['postal_code'] )
+			) {
+				$sql = 'SELECT latitude, longitude, timezone
+					FROM wmf_zip_geo
+					WHERE zip = %1';
+
+				$result = CRM_Core_DAO::executeQuery(
+					$sql,
+					array(
+						1 => array( $address['postal_code'], 'String' )
+					)
+				);
+				if ( $result->fetch() ) {
+					$geoData = array(
+						'geo_code_1' => $result->latitude,
+						'geo_code_2' => $result->longitude,
+						'timezone' => $result->timezone,
+					);
+				}
+			}
+			if ( empty( $geoData ) && $op == 'edit' ) {
+				// Blank out any outdated information on edit
+				$geoData = array(
+					'geo_code_1' => '',
+					'geo_code_2' => '',
+					'timezone' => '',
+				);
+			}
+			$address = array_merge( $address, $geoData );
+	}
+}
 function wmf_civicrm_civicrm_post_Contribution( $op, $id, &$contribution ) {
 	switch ( $op ) {
 	case 'create':
