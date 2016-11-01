@@ -2365,3 +2365,28 @@ function wmf_civicrm_update_7315() {
     SET e.is_primary = 1
   ");
 }
+
+/**
+ * Update existing US addresses with latitude, longitude, and time zone
+ */
+function wmf_civicrm_update_7320() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    CREATE TEMPORARY TABLE civicrm_address_geocode
+     SELECT id, LEFT(postal_code, 5) AS zip
+     FROM civicrm_address
+     WHERE country_id = (SELECT id FROM civicrm_country WHERE iso_code = 'US')
+  ");
+
+  CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_address_geocode ADD INDEX index_id(id)");
+  CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_address_geocode ADD INDEX index_zip(zip)");
+
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_address a
+    INNER JOIN civicrm_address_geocode c ON c.id = a.id
+    INNER JOIN wmf_zip_geo g ON c.zip = g.zip
+    SET a.geo_code_1 = g.latitude,
+      a.geo_code_2 = g.longitude,
+      a.timezone = g.timezone
+  ");
+}
