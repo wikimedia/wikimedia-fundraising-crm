@@ -21,7 +21,6 @@
         "cogpowered/finediff": "0.*",
         "wikimedia/donation-interface": "dev-master",
         "wikimedia/smash-pig": "dev-master",
-        "fusesource/stomp-php": "2.*",
         "phpmailer/phpmailer": "5.2.6",
         "phpseclib/phpseclib": "0.3.7",
         "predis/predis": "1.*",

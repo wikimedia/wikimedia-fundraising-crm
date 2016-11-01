@@ -61,6 +61,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7280();
     wmf_civicrm_update_7290();
     wmf_civicrm_update_7300();
+    wmf_civicrm_update_7310();
 }
 
 /**
@@ -2327,4 +2328,65 @@ function wmf_civicrm_update_7303() {
  */
 function wmf_civicrm_update_7305() {
   wmf_civicrm_update_7250();
+}
+
+/**
+ * Create and populate a table to geocode US addresses by zip code
+ */
+function wmf_civicrm_update_7310() {
+  civicrm_initialize();
+  require_once('update_7310.php');
+  _wmf_civicrm_update_7310_add_zip_geo();
+}
+
+/**
+ * Fix contacts who have no primary address- this has arisen from the dedupes.
+ *
+ * I did this on emails before and but I just checked and there are around 7000 addresses
+ *
+ * Bug: T143062
+ */
+function wmf_civicrm_update_7315() {
+  civicrm_initialize();
+  $entity = 'address';
+  CRM_Core_DAO::executeQuery("
+    CREATE TEMPORARY TABLE civicrm_{$entity}_updates
+     SELECT id FROM
+      (
+        SELECT contact_id, sum(is_primary) as c, e.id
+        FROM civicrm_{$entity} e
+        INNER JOIN civicrm_contact c ON c.id = contact_id AND is_deleted = 0
+        GROUP BY contact_id HAVING c = 0
+      ) as i
+  ");
+
+  CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_{$entity}_updates ADD INDEX index_id(id)");
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_{$entity} e INNER JOIN civicrm_{$entity}_updates u ON e.id = u.id
+    SET e.is_primary = 1
+  ");
+}
+
+/**
+ * Update existing US addresses with latitude, longitude, and time zone
+ */
+function wmf_civicrm_update_7320() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    CREATE TEMPORARY TABLE civicrm_address_geocode
+     SELECT id, LEFT(postal_code, 5) AS zip
+     FROM civicrm_address
+     WHERE country_id = (SELECT id FROM civicrm_country WHERE iso_code = 'US')
+  ");
+
+  CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_address_geocode ADD INDEX index_id(id)");
+  CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_address_geocode ADD INDEX index_zip(zip)");
+
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_address a
+    INNER JOIN civicrm_address_geocode c ON c.id = a.id
+    INNER JOIN wmf_zip_geo g ON c.zip = g.zip
+    SET a.geo_code_1 = g.latitude,
+      a.geo_code_2 = g.longitude,
+      a.timezone = g.timezone
+  ");
 }

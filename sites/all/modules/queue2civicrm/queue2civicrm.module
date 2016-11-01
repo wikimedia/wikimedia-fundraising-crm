@@ -43,39 +43,6 @@ function queue2civicrm_stomp_url() {
 }
 
 /**
- * Create or retrieve a stomp queue connection.  It's best to use a different
- * Queue object for each queue you access if you are interleaving reads from
- * different queues.
- * @param string $name a label for the Queue object
- * @return Queue named connection object
- */
-function queue2civicrm_stomp( $name = 'default' ) {
-  static $q = array();
-
-  if ( empty( $q[$name] ) ) {
-    $q[$name] = new Queue( queue2civicrm_stomp_url() );
-  }
-
-  return $q[$name];
-}
-
-function queue2civicrm_test() {
-  $content = array();
-  
-  $content[] = '<p>Attempting connection to ' . queue2civicrm_stomp_url() . '... ';  
-  $q = queue2civicrm_stomp();
-  try {
-    $q->getConnection();
-    $content[] = '[SUCCESS]</p>';
-  }
-  catch (Exception $e) {
-    $content[] = '[FAILURE], error: ' . $e . '</p>';
-  }
-  
-  return implode("\n", $content);
-}
-
-/**
  * Implements hook_permission().
  */
 function queue2civicrm_permission() {
@@ -97,23 +64,6 @@ function queue2civicrm_settings() {
     '#title' => t('Disable job'),
     '#description' => t('If checked, no message processing will be performed.'),
     '#default_value' => variable_get('queue2civicrm_disable', false),
-  );
-
-  $form['queue2civicrm_url'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Connection URL'),
-    '#description' => t('Include the port number, like so for a typical development environment: !example_url', array( '!example_url' => 'http://localhost:61613')),
-    '#required' => TRUE,
-    '#default_value' => queue2civicrm_stomp_url(),
-  );
-
-  // TODO: Remove when done mirroring from audits to ActiveMQ
-  $form['queue2civicrm_subscription'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Subscription path'),
-    '#description' => t('The queue holding normal, incoming donations waiting to be processed.'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('queue2civicrm_subscription', '/queue/donations'),
   );
 
   $form['queue2civicrm_batch'] = array(

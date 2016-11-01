@@ -1625,6 +1625,28 @@ function wmf_civicrm_normalize_msg( $msg ) {
         }
     }
 
+    // Order ID is used as a message identifier in a bunch of places.
+    // If it's missing, fill it with something unique-ish.
+    if ( !isset( $msg[ 'order_id' ] ) ) {
+        watchdog(
+            'wmf_civicrm',
+            'Message is missing order_id, looking for a substitute identifier.',
+            WATCHDOG_INFO
+        );
+        $keys = array( 'contribution_tracking_id', 'gateway_txn_id' );
+        foreach ( $keys as $key ) {
+            if ( isset( $msg[$key] ) ) {
+                watchdog(
+                    'wmf_civicrm',
+                    "Filling order_id with {$msg[$key]} from key $key.",
+                    WATCHDOG_INFO
+                );
+                $msg['order_id'] = $msg[$key];
+                break;
+            }
+        }
+    }
+
     if ( $msg['recurring'] and !isset( $msg['start_date'] ) ) {
         $msg['start_date'] = $msg['date'];
         $msg['create_date'] = $msg['date'];
@@ -2250,6 +2272,11 @@ function _wmf_civicrm_merge_resolve_casing_conflict($fieldName, &$moveFieldValue
   if (!in_array(str_replace('move_', '', $fieldName), $fieldsToResolveCasingFor)) {
     return FALSE;
   }
+  // Let's get rid of any preceding or trailing spaces.
+  $valueToKeep = trim($valueToKeep);
+  $valueToOverwrite = trim($valueToOverwrite);
+  $moveFieldValue = trim($moveFieldValue);
+
   if (strtoupper($valueToKeep) != strtoupper($valueToOverwrite)) {
     return FALSE;
   }
@@ -2610,13 +2637,27 @@ function wmf_get_calculated_field_names() {
  * and wmf_donor rollup fields.
  */
 function wmf_civicrm_civicrm_post( $op, $type, $id, &$entity ) {
-	if ( $type === 'Contribution' ) {
-		wmf_civicrm_civicrm_post_Contribution( $op, $id, $entity );
+	switch( $type ) {
+		case 'Contribution':
+			wmf_civicrm_civicrm_post_Contribution( $op, $id, $entity );
+			break;
+	}
+}
+
+
+/**
+ * Implementation of hook_civicrm_pre, used to geocode US addresses
+ */
+function wmf_civicrm_civicrm_pre( $op, $type, $id, &$entity ) {
+	switch( $type ) {
+		case 'Address':
+			wmf_civicrm_civicrm_pre_Address( $op, $entity );
+			break;
 	}
 }
 
 /**
- * Fill in the calculed donor fields for a given donor.
+ * Fill in the calculated donor fields for a given donor.
  *
  * @param int $contactID
  */
@@ -2656,6 +2697,58 @@ function wmf_civicrm_calculate_donor_fields($contactID) {
   }
 }
 
+/**
+ * Geocode US addresses using wmf_zip_geo. Adds latitude, longitude,
+ * and timezone as GMT offset.
+ *
+ * @param string $op Type of operation being performed
+ * @param array $address Values being submitted
+ */
+function wmf_civicrm_civicrm_pre_Address( $op, &$address ) {
+	static $usId = null;
+	if ( $usId == null ) {
+		$usId = wmf_civicrm_get_country_id( 'US' );
+	};
+
+	switch ( $op ) {
+		case 'create':
+		case 'edit':
+			$geoData = array();
+
+			// Do we have any geo info for this address?
+			if (
+				$address['country_id'] == $usId &&
+				!empty( $address['postal_code'] )
+			) {
+				$sql = 'SELECT latitude, longitude, timezone
+					FROM wmf_zip_geo
+					WHERE zip = %1';
+
+				$result = CRM_Core_DAO::executeQuery(
+					$sql,
+					array(
+						1 => array( $address['postal_code'], 'String' )
+					)
+				);
+				if ( $result->fetch() ) {
+					$geoData = array(
+						'geo_code_1' => $result->latitude,
+						'geo_code_2' => $result->longitude,
+						'timezone' => $result->timezone,
+					);
+				}
+			}
+			if ( empty( $geoData ) && $op == 'edit' ) {
+				// Blank out any outdated information on edit
+				$geoData = array(
+					'geo_code_1' => '',
+					'geo_code_2' => '',
+					'timezone' => '',
+				);
+			}
+			$address = array_merge( $address, $geoData );
+	}
+}
 function wmf_civicrm_civicrm_post_Contribution( $op, $id, &$contribution ) {
 	switch ( $op ) {
 	case 'create':

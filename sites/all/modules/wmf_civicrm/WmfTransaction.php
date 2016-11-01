@@ -48,7 +48,7 @@ class WmfTransaction {
     }
 
     static function from_message( $msg ) {
-        // stomp message, does not have a unique id yet
+        // queue message, does not have a unique id yet
         $transaction = new WmfTransaction();
         if ( isset( $msg['gateway_refund_id'] ) ) {
             $transaction->gateway_txn_id = $msg['gateway_refund_id'];

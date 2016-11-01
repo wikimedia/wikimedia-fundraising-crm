@@ -71,7 +71,7 @@ function wmf_common_get_body($message, $error, $source, $isRemoved)
     $body = array();
 
     if ($isRemoved === true){
-        $body[] = t("A message was removed from ActiveMQ due to the following error(s):");
+        $body[] = t("A message was removed from the queue due to the following error(s):");
     } elseif($error === null && !$message){
         $body[] = t("A message failed for reasons unknown, while being processed:");
     } else {
