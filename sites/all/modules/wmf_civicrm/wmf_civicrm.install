@@ -2372,21 +2372,35 @@ function wmf_civicrm_update_7315() {
 function wmf_civicrm_update_7320() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery("
-    CREATE TEMPORARY TABLE civicrm_address_geocode
-     SELECT id, LEFT(postal_code, 5) AS zip
+    CREATE TEMPORARY TABLE civicrm_address_geocode (
+      id INT PRIMARY KEY,
+      zip CHAR(5),
+      latitude DOUBLE,
+      longitude DOUBLE,
+      timezone VARCHAR(8)
+    )");
+
+  CRM_Core_DAO::executeQuery("INSERT INTO civicrm_address_geocode (id, zip)
+     SELECT id, LEFT(postal_code, 5)
      FROM civicrm_address
      WHERE country_id = (SELECT id FROM civicrm_country WHERE iso_code = 'US')
   ");
 
-  CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_address_geocode ADD INDEX index_id(id)");
   CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_address_geocode ADD INDEX index_zip(zip)");
+
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_address_geocode c
+    INNER JOIN wmf_zip_geo g ON c.zip = g.zip
+    SET c.latitude = g.latitude,
+      c.longitude = g.longitude,
+      c.timezone = g.timezone
+  ");
 
   CRM_Core_DAO::executeQuery("
     UPDATE civicrm_address a
     INNER JOIN civicrm_address_geocode c ON c.id = a.id
-    INNER JOIN wmf_zip_geo g ON c.zip = g.zip
-    SET a.geo_code_1 = g.latitude,
-      a.geo_code_2 = g.longitude,
-      a.timezone = g.timezone
+    SET a.geo_code_1 = c.latitude,
+      a.geo_code_2 = c.longitude,
+      a.timezone = c.timezone
   ");
 }
