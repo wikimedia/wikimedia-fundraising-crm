@@ -565,7 +565,7 @@ function wmf_civicrm_get_message_contribution_type( $msg ) {
 
 /**
  * Determines which civi-only payment instrument is appropriate for the current
- * message, and resturns the civi payment instrument's human-readable display
+ * message, and returns the civi payment instrument's human-readable display
  * string (if it exists).
  *
  * TODO lookup table
@@ -738,6 +738,10 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                 break;
             case 'cash':
                 $payment_instrument = 'Cash';
+                if ( empty( $msg['payment_submethod'] ) ) {
+                    watchdog( 'wmf_civicrm', 'No cash submethod given', NULL, WATCHDOG_WARNING );
+                    break;
+                }
                 switch ( strtolower( $msg['payment_submethod'] ) ){
                     case 'cash_boleto':
                         $payment_instrument = 'Boleto';
