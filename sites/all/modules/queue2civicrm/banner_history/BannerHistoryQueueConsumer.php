@@ -34,7 +34,7 @@ class BannerHistoryQueueConsumer extends WmfQueueConsumer {
 
 		if (
 			!is_numeric( $contributionTrackingId ) ||
-			!preg_match( '/^[0-9a-f]{16,20}$/', $bannerHistoryId )
+			!preg_match( '/^[0-9a-f]{10,20}$/', $bannerHistoryId )
 		) {
 			throw new WmfException(
 				'BANNER_HISTORY',
