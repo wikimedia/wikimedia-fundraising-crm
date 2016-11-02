@@ -2726,9 +2726,10 @@ function wmf_civicrm_civicrm_pre_Address( $op, &$address ) {
 
 				$result = CRM_Core_DAO::executeQuery(
 					$sql,
-					array(
-						1 => array( $address['postal_code'], 'String' )
-					)
+					array( 1 => array(
+						substr( trim( $address['postal_code'] ), 0, 5 ),
+						'String'
+					) )
 				);
 				if ( $result->fetch() ) {
 					$geoData = array(
