@@ -7,12 +7,20 @@
  */
 abstract class ChecksFile {
     protected $numSkippedRows = 0;
+    protected $messages = array();
+    protected $file_uri = '';
+    protected $error_file_uri = '';
+    protected $skipped_file_uri = '';
+    protected $ignored_file_uri = '';
 
     /**
      * @param string $file_uri path to the file
      */
     function __construct( $file_uri ) {
         $this->file_uri = $file_uri;
+        $this->error_file_uri = str_replace('.csv', '_errors.csv', $file_uri);
+        $this->skipped_file_uri = str_replace('.csv', '_skipped.csv', $file_uri);
+        $this->ignored_file_uri = str_replace('.csv', '_ignored.csv', $file_uri);
     }
 
     /**
@@ -35,7 +43,7 @@ abstract class ChecksFile {
 
         $headers = _load_headers( fgetcsv( $file, 0, ',', '"', '\\') );
 
-		$this->validateColumns( $headers );
+        $this->validateColumns( $headers );
 
         $num_errors = 0;
         $num_ignored = 0;
@@ -69,7 +77,12 @@ abstract class ChecksFile {
                 if ( $existing = wmf_civicrm_get_contributions_from_gateway_id( $msg['gateway'], $msg['gateway_txn_id'] ) ){
                     $skipped = $this->handleDuplicate( $existing );
                     if ( $skipped ) {
+                        if ($num_duplicates === 0) {
+                          $skipped_file = $this->createOutputFile($this->skipped_file_uri, 'Skipped', $headers);
+                        }
                         $num_duplicates++;
+                        fputcsv($skipped_file, array_merge(array('Skipped' => 'Duplicate'), $data));
+
                     } else {
                         $num_successful++;
                     }
@@ -90,15 +103,24 @@ abstract class ChecksFile {
             } catch ( EmptyRowException $ex ) {
                 continue;
             } catch ( IgnoredRowException $ex ) {
+                if ($num_ignored === 0) {
+                  $ignored_file = $this->createOutputFile($this->ignored_file_uri, 'Ignored', $headers);
+                }
+                fputcsv($ignored_file, array_merge(array('Ignored' => $ex->getUserErrorMessage()), $data));
                 $num_ignored++;
                 continue;
             } catch ( WmfException $ex ) {
+                if ($num_errors === 0) {
+                  $error_file = $this->createOutputFile($this->error_file_uri, 'Error', $headers);
+                }
+              $m = $ex->getUserErrorMessage();
                 $num_errors++;
+                fputcsv($error_file, array_merge(array('error' => $ex->getUserErrorMessage()), $data));
 
-                ChecksImportLog::record( t( "Error in line @rownum: @row (@exception)", array(
+                ChecksImportLog::record( t( "Error in line @rownum: (@exception) @row", array(
                     '@rownum' => $rowNum,
                     '@row' => implode( ', ', $row ),
-                    '@exception' => $ex->getMessage(),
+                    '@exception' => $ex->getUserErrorMessage(),
                 ) ) );
 
                 if ( $error_streak_start + $error_streak_count < $rowNum ) {
@@ -107,19 +129,37 @@ abstract class ChecksFile {
                     $error_streak_count = 0;
                 }
                 $error_streak_count++;
+
                 if ( $error_streak_count >= $error_streak_threshold ) {
-                    $errorMsg = "Import aborted due to {$error_streak_count} consecutive errors, last error was at row {$rowNum}: {$ex->getMessage()}, after {$num_successful} records were stored successfully, {$num_ignored} were ignored, {$num_duplicates} duplicates, and {$num_errors} errors encountered.";
+                    $errorMsg = "Import aborted due to {$error_streak_count} consecutive errors, last error was at row {$rowNum}: {$ex->getUserErrorMessage()}, after {$num_successful} records were stored successfully, {$num_ignored} were ignored, {$num_duplicates} duplicates, and {$num_errors} errors encountered. "
+                    . implode(' ', $this->messages);
                     throw new Exception($errorMsg);
                 }
             }
         }
 
-       // Unset time limit.
-       set_time_limit( 0 );
+        // Unset time limit.
+        set_time_limit( 0 );
 
-        $message = t( "Checks import complete. @successful imported, @ignored ignored, not including @duplicates duplicates and @errors errors.", array( '@successful' => $num_successful, '@ignored' => $num_ignored, '@duplicates' => $num_duplicates, '@errors' => $num_errors ) );
+        $message = t( "Checks import complete. @successful imported, @ignored ignored, not including @duplicates duplicates and @errors errors. "
+          . implode(' ', $this->messages) , array(
+          '@successful' => $num_successful,
+          '@ignored' => $num_ignored,
+          '@duplicates' => $num_duplicates,
+          '@errors' => $num_errors,
+        ) );
         ChecksImportLog::record( $message );
         watchdog( 'offline2civicrm', $message, array(), WATCHDOG_INFO );
+        if ($num_errors) {
+          fclose($error_file);
+        }
+        if ($num_ignored) {
+          fclose($ignored_file);
+        }
+        if ($num_duplicates) {
+          fclose($skipped_file);
+        }
+
     }
 
     /**
@@ -439,4 +479,21 @@ abstract class ChecksFile {
 			throw new WmfException( 'INVALID_FILE_FORMAT', "This file is missing column headers: " . implode( ", ", $failed ) );
 		}
 	}
+
+  /**
+   * Create a file for output.
+   *
+   * @param string $uri
+   * @param string $type
+   * @param array $headers
+   *
+   * @return array
+   */
+  public function createOutputFile($uri, $type, $headers) {
+    $file = fopen($uri, 'w');
+    fputcsv($file, array_merge(array($type => $type), array_flip($headers)));
+    $this->messages[$type] = ts("%1 rows logged to <a href='/import_output/" . substr($uri, 12, -4) . "'> file</a>.", array('%1' => $type));
+    ChecksImportLog::record($this->messages[$type]);
+    return $file;
+  }
 }
