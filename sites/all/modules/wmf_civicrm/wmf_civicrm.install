@@ -2404,3 +2404,26 @@ function wmf_civicrm_update_7320() {
       a.timezone = c.timezone
   ");
 }
+
+/**
+ * Backfill gift so that donations of $1000+ have a gift source.
+ *
+ * These fields have defaults which will have been used if the table is
+ * touched at all during the update. As this stage I think we are just filling
+ * missing data.
+ *
+ * T138361
+ */
+function wmf_civicrm_update_7325() {
+  civicrm_initialize();
+  $customGroup = civicrm_api3('CustomGroup', 'getsingle', array('name' => 'Gift_Data', 'return' => 'table_name'));
+  $customField = civicrm_api3('CustomField', 'getsingle', array('name' => 'Campaign', 'return' => 'column_name'));
+
+  CRM_Core_DAO::executeQuery("INSERT INTO {$customGroup['table_name']} (entity_id, {$customField['column_name']})
+    SELECT c.id as entity_id, 'Benefactor Gift' as {$customField['column_name']}
+    FROM civicrm_contribution c
+    LEFT JOIN {$customGroup['table_name']} v ON v.entity_id = c.id
+    WHERE c.total_amount >= 1000 AND v.id IS NULL
+  ");
+
+}

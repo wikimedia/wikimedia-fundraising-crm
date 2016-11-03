@@ -375,9 +375,13 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     * NOTE: the custom field for "Gift_Information" indicates that check number is stored here.  It is not.
     */
     $custom_field_defaults = array(
+        // Contribution_comments field does not appear to exist & is quietly ignored I believe.
         'Contribution_Comments' => '',
         'gateway_account' => '',
     );
+    if ($contribution['total_amount'] >= 1000) {
+        $custom_field_defaults['Campaign'] = 'Benefactor Gift';
+    }
 
     // Legacy field names which do not match the message field names
     $custom_name_mangle = array(
@@ -561,7 +565,7 @@ function wmf_civicrm_get_message_contribution_type( $msg ) {
 
 /**
  * Determines which civi-only payment instrument is appropriate for the current
- * message, and resturns the civi payment instrument's human-readable display
+ * message, and returns the civi payment instrument's human-readable display
  * string (if it exists).
  *
  * TODO lookup table
@@ -734,6 +738,10 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                 break;
             case 'cash':
                 $payment_instrument = 'Cash';
+                if ( empty( $msg['payment_submethod'] ) ) {
+                    watchdog( 'wmf_civicrm', 'No cash submethod given', NULL, WATCHDOG_WARNING );
+                    break;
+                }
                 switch ( strtolower( $msg['payment_submethod'] ) ){
                     case 'cash_boleto':
                         $payment_instrument = 'Boleto';
@@ -1631,6 +1639,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
         watchdog(
             'wmf_civicrm',
             'Message is missing order_id, looking for a substitute identifier.',
+            array(),
             WATCHDOG_INFO
         );
         $keys = array( 'contribution_tracking_id', 'gateway_txn_id' );
@@ -1639,6 +1648,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
                 watchdog(
                     'wmf_civicrm',
                     "Filling order_id with {$msg[$key]} from key $key.",
+                    array(),
                     WATCHDOG_INFO
                 );
                 $msg['order_id'] = $msg[$key];
@@ -2726,9 +2736,10 @@ function wmf_civicrm_civicrm_pre_Address( $op, &$address ) {
 
 				$result = CRM_Core_DAO::executeQuery(
 					$sql,
-					array(
-						1 => array( $address['postal_code'], 'String' )
-					)
+					array( 1 => array(
+						substr( trim( $address['postal_code'] ), 0, 5 ),
+						'String'
+					) )
 				);
 				if ( $result->fetch() ) {
 					$geoData = array(
