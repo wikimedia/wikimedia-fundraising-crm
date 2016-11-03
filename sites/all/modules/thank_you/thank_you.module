@@ -451,7 +451,7 @@ function thank_you_send_mail( $params ) {
 
 	if( $email['html'] == false ){
 		$msg = "HTML rendering of template failed in {$params['locale']}.";
-		throw new WmfException( 'UNKNOWN', $msg, $params );
+		throw new WmfException( 'UNKNOWN', $msg, array('thank_you_params' => $params) );
 	}
 
 	$email['subject'] = thank_you_get_subject( $params['locale'] );

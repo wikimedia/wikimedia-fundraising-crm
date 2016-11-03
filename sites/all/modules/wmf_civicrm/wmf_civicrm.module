@@ -450,7 +450,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         throw new WmfException(
             'INVALID_MESSAGE',
             'Cannot create contribution, civi error!',
-            $e->getMessage() . print_r($e->getExtraParams(), TRUE)
+            $e->getExtraParams()
         );
     }
 
@@ -1396,7 +1396,7 @@ function wmf_civicrm_message_email_update( $msg, $contact_id ) {
 
     $result = civicrm_api( "Email", "Create", $email_params );
     if ( array_key_exists( 'is_error', $result ) && $result['is_error'] != 0 ) {
-        throw new WmfException( 'IMPORT_CONTACT', "Couldn't store email for the contact.", $result );
+        throw new WmfException( 'IMPORT_CONTACT', "Couldn't store email for the contact.", array('result' => $result) );
     }
 }
 
@@ -1431,7 +1431,7 @@ function wmf_civicrm_message_address_update( $msg, $contact_id ) {
 
     $result = CRM_Core_BAO_Address::add( $address_params, false );
     if ( !$result ) {
-        throw new WmfException( 'IMPORT_CONTACT', "Couldn't store address for the contact.", $result );
+        throw new WmfException( 'IMPORT_CONTACT', "Couldn't store address for the contact.");
     }
 }
 
