@@ -2730,9 +2730,11 @@ function wmf_civicrm_civicrm_pre_Address( $op, &$address ) {
 				$address['country_id'] == $usId &&
 				!empty( $address['postal_code'] )
 			) {
-				$sql = 'SELECT latitude, longitude, timezone
-					FROM wmf_zip_geo
-					WHERE zip = %1';
+				$sql = "SELECT city, s.id AS state_id, latitude, longitude, timezone
+					FROM wmf_zip_geo g
+					JOIN civicrm_state_province s ON s.abbreviation = g.state
+					    AND s.country_id = $usId
+					WHERE zip = %1";
 
 				$result = CRM_Core_DAO::executeQuery(
 					$sql,
@@ -2747,6 +2749,13 @@ function wmf_civicrm_civicrm_pre_Address( $op, &$address ) {
 						'geo_code_2' => $result->longitude,
 						'timezone' => $result->timezone,
 					);
+					// Only overwrite city and state if empty
+					if ( empty( $address['city'] ) ) {
+						$geoData['city'] = $result->city;
+					}
+					if ( $address['state_province_id'] == 'null' ) {
+						$geoData['state_province_id'] = $result->state_id;
+					}
 				}
 			}
 			if ( empty( $geoData ) && $op == 'edit' ) {
