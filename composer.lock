@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "ae571a825c6749af580406d180db83ce",
-    "content-hash": "4581a7cbf5498bf8560c7527272ea4f7",
+    "hash": "9d1888ed603a23fbd5afb2b4eb99acdb",
+    "content-hash": "d3d501379291d40d65774ef35b503768",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
@@ -1092,7 +1092,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "675a404c1114b598ca0e0cd93b04b9d3510ffc4d"
+                "reference": "c66382e80ff7093c6de3f84df7764ca90e6150af"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -1132,7 +1132,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2016-10-11 20:43:31"
+            "time": "2016-11-04 22:44:03"
         },
         {
             "name": "wikimedia/smash-pig",
