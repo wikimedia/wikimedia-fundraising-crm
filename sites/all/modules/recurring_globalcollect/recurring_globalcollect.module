@@ -137,6 +137,26 @@ function recurring_globalcollect_settings() {
 }
 
 /**
+ * Turn off fraud checking for this run.  We've already validated the donor to
+ * some degree when starting the subscription.
+ */
+function recurring_globalcollect_disable_fraud_checks() {
+  global $wgDonationInterfaceEnableCustomFilters,
+    $wgDonationInterfaceEnableMinfraud,
+	$wgDonationInterfaceEnableReferrerFilter,
+	$wgDonationInterfaceEnableSourceFilter,
+	$wgDonationInterfaceEnableIPVelocityFilter,
+	$wgDonationInterfaceEnableSessionVelocityFilter;
+
+  $wgDonationInterfaceEnableCustomFilters = false;
+  $wgDonationInterfaceEnableMinfraud = false;
+  $wgDonationInterfaceEnableReferrerFilter = false;
+  $wgDonationInterfaceEnableSourceFilter = false;
+  $wgDonationInterfaceEnableIPVelocityFilter = false;
+  $wgDonationInterfaceEnableSessionVelocityFilter = false;
+}
+
+/**
  * recurring_globalcollect_batch_process
  *
  * This is the entry function for this module.
@@ -153,6 +173,8 @@ function recurring_globalcollect_settings() {
  * - $options['url'] Used for testing and overriding the url
  */
 function recurring_globalcollect_batch_process($options = array()) {
+
+  recurring_globalcollect_disable_fraud_checks();
 
   // The number of contributions to process
   if ( array_key_exists( 'batch', $options ) ) {
