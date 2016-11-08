@@ -107,8 +107,22 @@ class WmfException extends Exception {
 
     var $extra;
     var $type;
+    var $userMessage;
 
-    function __construct( $type, $message, $extra = null ) {
+  /**
+   * WmfException constructor.
+   *
+   * @param string $type Error type
+   * @param int $message A WMF constructed message.
+   * @param array $extra Extra parameters.
+   *   If error_message is included then it will be included in the User Error message.
+   *   If you are working with a CiviCRM Exception ($e) then you can pass in $e->getExtraParams()
+   *   which will include the api error message and message and potentially backtrace & sql
+   *   details (if you passed in 'debug' => 1).
+   *   Any data in the $extra array will be rendered in fail mails - but only 'error_message'
+   *   is used for user messages (provided the getUserMessage function is used).
+   */
+    function __construct( $type, $message, $extra = array()) {
         if ( !array_key_exists( $type, self::$error_types ) ) {
             $message .= ' -- ' . t( 'Warning, throwing a misspelled exception: "%type"', array( '%type' => $type ) );
             $type = 'UNKNOWN';
@@ -121,20 +135,27 @@ class WmfException extends Exception {
             $message = implode( "\n", $message );
         }
         $this->message = "{$this->type} {$message}";
-
-        if ( $extra ) {
-            $this->message .= "\nSource: " . var_export( $extra, true );
-        }
+        $this->userMessage = $this->message;
+        $this->message = $this->message . "\nSource: " . var_export( $this->extra, true );
 
         if ( function_exists( 'watchdog' ) ) {
             // It seems that dblog_watchdog will pass through XSS, so
             // rely on our own escaping above, rather than pass $vars.
-            $escaped = htmlspecialchars( $this->message, ENT_COMPAT, 'UTF-8', false );
+            $escaped = htmlspecialchars( $this->getMessage(), ENT_COMPAT, 'UTF-8', false );
             watchdog( 'wmf_common', $escaped, NULL, WATCHDOG_ERROR );
         }
         if ( function_exists('drush_set_error') && $this->isFatal() ) {
-            drush_set_error( $this->type, $this->message );
+            drush_set_error( $this->type, $this->getMessage() );
         }
+    }
+
+  /**
+   * Get error message intended for end users.
+   *
+   * @return string
+   */
+    function getUserErrorMessage() {
+        return !empty($this->extra['error_message']) ? $this->extra['error_message'] : $this->userMessage;
     }
 
     function getErrorName()
