@@ -2375,8 +2375,8 @@ function wmf_civicrm_update_7320() {
     CREATE TEMPORARY TABLE civicrm_address_geocode (
       id INT PRIMARY KEY,
       zip CHAR(5),
-      latitude DOUBLE,
-      longitude DOUBLE,
+      latitude DECIMAL (13,9),
+      longitude DECIMAL (13,9),
       timezone VARCHAR(8)
     )");
 
@@ -2426,4 +2426,19 @@ function wmf_civicrm_update_7325() {
     WHERE c.total_amount >= 1000 AND v.id IS NULL
   ");
 
+}
+
+/**
+ * Fix rounding of lat/long caused by DOUBLE wierdness.
+ *
+ * T150305
+ */
+function wmf_civicrm_update_7330() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_address
+    SET geo_code_1 = ROUND(geo_code_1, 6),
+    geo_code_2 = ROUND(geo_code_2, 6)
+    WHERE geo_code_1 IS NOT NULL;
+  ");
 }
