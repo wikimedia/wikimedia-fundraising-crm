@@ -59,9 +59,14 @@ function contribution_tracking_schema() {
         'not null' => false,
       ),
       'utm_key' => array(
-          'type' => 'varchar',
-          'length' => 128,
-          'not null' => false,
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => false,
+      ),
+      'payments_form' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => false,
       ),
       'optout' => array(
         'type' => 'int',
