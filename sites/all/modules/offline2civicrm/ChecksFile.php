@@ -297,7 +297,9 @@ abstract class ChecksFile {
         }
 
         // left-pad the zipcode
-        if ( $msg['country'] === 'US' && !empty( $msg['postal_code'] ) ) {
+        // Unclear whether US needs to be handled. United States is valid from a csv &
+        // gets this far. United States covered by a unit test.
+        if ( ($msg['country'] === 'US' || $msg['country'] === 'United States') && !empty( $msg['postal_code'] ) ) {
             if ( preg_match( '/^(\d{1,4})(-\d+)?$/', $msg['postal_code'], $matches ) ) {
                 $msg['postal_code'] = str_pad( $matches[1], 5, "0", STR_PAD_LEFT );
                 if ( !empty( $matches[2] ) ) {
