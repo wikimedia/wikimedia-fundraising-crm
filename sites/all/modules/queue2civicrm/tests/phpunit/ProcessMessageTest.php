@@ -163,6 +163,31 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Process an ordinary (one-time) donation message with an UTF campaign with a different label.
+   */
+  public function testDonationWithDifferentLabelUTFCampaignOption() {
+    civicrm_initialize();
+    $optionValue = uniqid();
+    $message = new TransactionMessage(array('utm_campaign' => $optionValue));
+    $appealFieldID = $this->createCustomOption('Appeal', $optionValue, TRUE, uniqid());
+
+    exchange_rate_cache_set('USD', $message->get('date'), 1);
+    exchange_rate_cache_set($message->get('currency'), $message->get('date'), 3);
+
+    $this->queueConsumer->processMessage( $message->getBody() );
+
+    $contributions = wmf_civicrm_get_contributions_from_gateway_id($message->getGateway(), $message->getGatewayTxnId());
+    $contribution = civicrm_api3('Contribution', 'getsingle', array(
+      'id' => $contributions[0]['id'],
+      'return' => 'custom_' . $appealFieldID,
+    ));
+    $this->assertEquals($optionValue, $contribution['custom_' . $appealFieldID]);
+    $values = $this->callAPISuccess('OptionValue', 'get', array('value' => $optionValue));
+    $this->assertEquals(1, $values['count']);
+    $this->deleteCustomOption('Appeal', $optionValue);
+  }
+
+  /**
    * Create a custom option for the given field.
    *
    * @param string $fieldName
@@ -174,10 +199,13 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @return mixed
    * @throws \CiviCRM_API3_Exception
    */
-    public function createCustomOption($fieldName, $optionValue, $is_active = 1) {
+    public function createCustomOption($fieldName, $optionValue, $is_active = 1, $label = NULL) {
+        if (!$label) {
+          $label = $optionValue;
+        }
         $appealField = civicrm_api3('custom_field', 'getsingle', array('name' => $fieldName));
         civicrm_api3('OptionValue', 'create', array(
-          'name' => $optionValue,
+          'name' => $label,
           'value' => $optionValue,
           'option_group_id' => $appealField['option_group_id'],
           'is_active' => $is_active,
