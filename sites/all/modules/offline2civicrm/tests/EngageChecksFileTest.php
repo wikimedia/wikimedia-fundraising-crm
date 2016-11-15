@@ -5,6 +5,8 @@
  * @group Offline2Civicrm
  */
 class EngageChecksFileTest extends BaseChecksFileTest {
+
+    protected $sourceFileUri = '';
     function setUp() {
         parent::setUp();
 
@@ -132,5 +134,101 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
         $this->stripSourceData( $output );
         $this->assertEquals( $expected_normal, $output );
+    }
+
+    public function testImporterCreatesOutputFiles() {
+      civicrm_initialize();
+      $this->sourceFileUri = __DIR__ . '/../test_data/engage_reduced.csv';
+      $this->purgePreviousData();
+
+      // copy the file to a temp dir so copies are made in the temp dir.
+      // This is where it would be in an import.
+      $fileUri = tempnam(sys_get_temp_dir(), 'Engage') . '.csv';
+      copy($this->sourceFileUri, $fileUri);
+
+      $importer = new EngageChecksFile($fileUri);
+      $messages = $importer->import();
+      global $user;
+      $this->assertEquals(
+        array (
+          0 => 'Successful import!',
+          'Result' => '14 out of 18  rows were imported.',
+          'not imported' => '4 not imported rows logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_all_missed.' . $user->uid, $fileUri), 12) ."'> file</a>.",
+          'Duplicate' => '1 Duplicate row logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_skipped.' . $user->uid, $fileUri), 12) ."'> file</a>.",
+          'Error' => '3 Error rows logged to <a href=\'/import_output/'.  substr(str_replace('.csv', '_errors.' . $user->uid, $fileUri), 12) ."'> file</a>.",
+        )
+       , $messages);
+
+      $errorsURI = str_replace('.csv', '_errors.' . $user->uid . '.csv', $fileUri);
+      $this->assertTrue(file_exists($errorsURI));
+      $errors = file($errorsURI);
+
+      // Header row
+      $this->assertEquals('Error,Banner,Campaign,Medium,Batch,"Contribution Type","Total Amount",Source,"Postmark Date","Received Date","Payment Instrument","Check Number",Restrictions,"Gift Source","Direct Mail Appeal","Organization Name","Street Address",City,Country,"Postal Code",Email,State,"Thank You Letter Date","AC Flag",Notes,"Do Not Email","Do Not Phone","Do Not Mail","Do Not SMS","Is Opt Out"', trim($errors[0]));
+      unset($errors[0]);
+
+      $this->assertEquals(3, count($errors));
+      $this->assertEquals('"\'Unrstricted - General\' is not a valid option for field ' . wmf_civicrm_get_custom_field_name('Fund') . '",B15_0601_enlvroskLVROSK_dsk_lg_nag_sd.no-LP.cc,C15_mlWW_mob_lw_FR,sitenotice,10563,Engage,24,"USD 24.00",5/9/2015,5/9/2015,Cash,1,"Unrstricted - General","Corporate Gift","Carl TEST Perry",Roombo,"53 International Circle",Nowe,Poland,,cperry0@salon.com,,12/21/2014,,,,,,,
+', $errors[1]);
+
+      $skippedURI = str_replace('.csv', '_skipped.' . $user->uid . '.csv', $fileUri);
+      $this->assertTrue(file_exists($skippedURI));
+      $skipped = file($skippedURI);
+      // 1 + 1 header row
+      $this->assertEquals(2, count($skipped));
+
+      $allURI = str_replace('.csv', '_all_missed.' . $user->uid . '.csv', $fileUri);
+      $this->assertTrue(file_exists($allURI));
+      $all = file($allURI);
+      // 1 header row, 1 skipped, 3 errors.
+      $this->assertEquals(5, count($all));
+
+    }
+
+  /**
+   * Clean up transactions from previous test runs.
+   *
+   * If you run this several times locally it will fail on duplicate transactions
+   * if we don't clean them up first.
+   */
+  public function purgePreviousData() {
+    $this->callAPISuccess('Contribution', 'get', array(
+      'api.Contribution.delete' => 1,
+      wmf_civicrm_get_custom_field_name('gateway_txn_id') => array('IN' => $this->getGatewayIDs())
+    ));
+  }
+
+   /**
+    * Get the gateway IDS from the source file.
+    */
+    public function getGatewayIDs() {
+      $gatewayIDs = array();
+      $data = $this->getParsedData();
+      foreach ($data as $record) {
+        $gatewayIDs[] = $record['gateway_txn_id'];
+      }
+      return $gatewayIDs;
+    }
+
+   /**
+    * Get parsed data from the source file.
+    *
+    * @return array
+    */
+    public function getParsedData() {
+      $file = fopen($this->sourceFileUri, 'r');
+      $result = array();
+      $importer = new EngageChecksFileProbe( "null URI" );
+      while(($row = fgetcsv( $file, 0, ',', '"', '\\')) !== FALSE) {
+        if ($row[0] == 'Banner') {
+          // Header row.
+          $headers = _load_headers($row);
+          continue;
+        }
+        $data = array_combine(array_keys($headers), array_slice($row, 0, count($headers)));
+        $result[] = $importer->_parseRow($data);
+
+      }
+      return $result;
     }
 }

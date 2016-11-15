@@ -12,20 +12,49 @@ abstract class ChecksFile {
     protected $error_file_uri = '';
     protected $skipped_file_uri = '';
     protected $ignored_file_uri = '';
+    protected $all_missed_file_uri = '';
+
+    /**
+     * @var resource
+     */
+    protected $ignoredFileResource = NULL;
+
+    /**
+     * @var resource
+     */
+    protected $skippedFileResource = NULL;
+
+    /**
+     * @var resource
+     */
+    protected $errorFileResource = NULL;
+
+    /**
+     * @var resource
+     */
+    protected $allMissedFileResource = NULL;
 
     /**
      * @param string $file_uri path to the file
      */
     function __construct( $file_uri ) {
         $this->file_uri = $file_uri;
-        $this->error_file_uri = str_replace('.csv', '_errors.csv', $file_uri);
-        $this->skipped_file_uri = str_replace('.csv', '_skipped.csv', $file_uri);
-        $this->ignored_file_uri = str_replace('.csv', '_ignored.csv', $file_uri);
+        global $user;
+        $suffix = $user->uid . '.csv';
+        $this->error_file_uri = str_replace('.csv', '_errors.' . $suffix, $file_uri);
+        $this->skipped_file_uri = str_replace('.csv', '_skipped.' . $suffix, $file_uri);
+        $this->ignored_file_uri = str_replace('.csv', '_ignored.' . $suffix, $file_uri);
+        $this->all_missed_file_uri = str_replace('.csv', '_all_missed.' . $suffix, $file_uri);
     }
 
-    /**
-     * Read checks from a file and save to the database.
-     */
+  /**
+   * Read checks from a file and save to the database.
+   *
+   * @return array
+   *   Output messages to display to the user.
+   *
+   * @throws \Exception
+   */
     function import() {
         ChecksImportLog::record( "Beginning import of checks file {$this->file_uri}..." );
         //TODO: $db->begin();
@@ -53,6 +82,9 @@ abstract class ChecksFile {
         $error_streak_start = 0;
         $error_streak_count = 0;
         $error_streak_threshold = 10;
+        $this->allMissedFileResource = $this->createOutputFile($this->all_missed_file_uri, 'Not Imported', $headers);
+        $lastError = '';
+        $lastErrorRow = 0;
 
         while( ( $row = fgetcsv( $file, 0, ',', '"', '\\')) !== FALSE) {
             // Reset the PHP timeout for each row.
@@ -69,6 +101,9 @@ abstract class ChecksFile {
             foreach ( $data as $key => &$value ) {
                 $value = trim( $value );
             }
+            if ( $error_streak_count >= $error_streak_threshold ) {
+                throw new IgnoredRowException('Error limit reached');
+            }
 
             try {
                 $msg = $this->parseRow( $data );
@@ -78,10 +113,11 @@ abstract class ChecksFile {
                     $skipped = $this->handleDuplicate( $existing );
                     if ( $skipped ) {
                         if ($num_duplicates === 0) {
-                          $skipped_file = $this->createOutputFile($this->skipped_file_uri, 'Skipped', $headers);
+                          $this->skippedFileResource = $this->createOutputFile($this->skipped_file_uri, 'Skipped', $headers);
                         }
                         $num_duplicates++;
-                        fputcsv($skipped_file, array_merge(array('Skipped' => 'Duplicate'), $data));
+                        fputcsv($this->skippedFileResource, array_merge(array('Skipped' => 'Duplicate'), $data));
+                        fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Duplicate'), $data));
 
                     } else {
                         $num_successful++;
@@ -104,20 +140,23 @@ abstract class ChecksFile {
                 continue;
             } catch ( IgnoredRowException $ex ) {
                 if ($num_ignored === 0) {
-                  $ignored_file = $this->createOutputFile($this->ignored_file_uri, 'Ignored', $headers);
+                  $this->ignoredFileResource = $this->createOutputFile($this->ignored_file_uri, 'Ignored', $headers);
                 }
-                fputcsv($ignored_file, array_merge(array('Ignored' => $ex->getUserErrorMessage()), $data));
+                fputcsv($this->ignoredFileResource, array_merge(array('Ignored' => $ex->getUserErrorMessage()), $data));
+                fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Ignored: ' . $ex->getUserErrorMessage()), $data));
                 $num_ignored++;
                 continue;
             } catch ( WmfException $ex ) {
                 if ($num_errors === 0) {
-                  $error_file = $this->createOutputFile($this->error_file_uri, 'Error', $headers);
+                    $this->errorFileResource = $this->createOutputFile($this->error_file_uri, 'Error', $headers);
                 }
-              $m = $ex->getUserErrorMessage();
-                $num_errors++;
-                fputcsv($error_file, array_merge(array('error' => $ex->getUserErrorMessage()), $data));
 
-                ChecksImportLog::record( t( "Error in line @rownum: (@exception) @row", array(
+                $num_errors++;
+                fputcsv($this->errorFileResource, array_merge(array('error' => $ex->getUserErrorMessage()), $data));
+                fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Error: ' . $ex->getUserErrorMessage()), $data));
+
+
+              ChecksImportLog::record( t( "Error in line @rownum: (@exception) @row", array(
                     '@rownum' => $rowNum,
                     '@row' => implode( ', ', $row ),
                     '@exception' => $ex->getUserErrorMessage(),
@@ -129,36 +168,26 @@ abstract class ChecksFile {
                     $error_streak_count = 0;
                 }
                 $error_streak_count++;
-
-                if ( $error_streak_count >= $error_streak_threshold ) {
-                    $errorMsg = "Import aborted due to {$error_streak_count} consecutive errors, last error was at row {$rowNum}: {$ex->getUserErrorMessage()}, after {$num_successful} records were stored successfully, {$num_ignored} were ignored, {$num_duplicates} duplicates, and {$num_errors} errors encountered. "
-                    . implode(' ', $this->messages);
-                    throw new Exception($errorMsg);
-                }
+                $lastError = $ex->getUserErrorMessage();
+                $lastErrorRow = $rowNum;
             }
         }
+      $totalRows = $rowNum -1;
+
+      if ( $error_streak_count >= $error_streak_threshold ) {
+        $this->closeFilesAndSetMessage($totalRows, $num_successful, $num_errors, $num_ignored, $num_duplicates);
+        throw new Exception("Import aborted due to {$error_streak_count} consecutive errors, last error was at row {$lastErrorRow}: {$lastError}. " . implode(' ', $this->messages)
+        );
+      }
+      array_unshift($this->messages, "Successful import!");
 
         // Unset time limit.
         set_time_limit( 0 );
 
-        $message = t( "Checks import complete. @successful imported, @ignored ignored, not including @duplicates duplicates and @errors errors. "
-          . implode(' ', $this->messages) , array(
-          '@successful' => $num_successful,
-          '@ignored' => $num_ignored,
-          '@duplicates' => $num_duplicates,
-          '@errors' => $num_errors,
-        ) );
-        ChecksImportLog::record( $message );
-        watchdog( 'offline2civicrm', $message, array(), WATCHDOG_INFO );
-        if ($num_errors) {
-          fclose($error_file);
-        }
-        if ($num_ignored) {
-          fclose($ignored_file);
-        }
-        if ($num_duplicates) {
-          fclose($skipped_file);
-        }
+        ChecksImportLog::record(implode(' ', $this->messages));
+        watchdog( 'offline2civicrm', implode(' ', $this->messages), array(), WATCHDOG_INFO );
+        $this->closeFilesAndSetMessage($totalRows, $num_successful, $num_errors, $num_ignored, $num_duplicates);
+        return $this->messages;
 
     }
 
@@ -487,13 +516,66 @@ abstract class ChecksFile {
    * @param string $type
    * @param array $headers
    *
-   * @return array
+   * @return resource
    */
   public function createOutputFile($uri, $type, $headers) {
     $file = fopen($uri, 'w');
     fputcsv($file, array_merge(array($type => $type), array_flip($headers)));
-    $this->messages[$type] = ts("%1 rows logged to <a href='/import_output/" . substr($uri, 12, -4) . "'> file</a>.", array('%1' => $type));
-    ChecksImportLog::record($this->messages[$type]);
     return $file;
+  }
+
+  /**
+   * Close our csv files and set the messages to display.
+   *
+   * @param int $totalRows
+   * @param int $num_successful
+   * @param int $num_ignored
+   * @param int $num_duplicates
+   */
+  public function closeFilesAndSetMessage($totalRows, $num_successful, $num_errors, $num_ignored, $num_duplicates) {
+    foreach (array($this->skippedFileResource, $this->errorFileResource, $this->ignoredFileResource, $this->allMissedFileResource) as $fileResource) {
+      if ($fileResource) {
+        fclose($fileResource);
+      }
+    }
+
+    $notImported = $totalRows - $num_successful;
+    if ($notImported === 0) {
+      $this->messages['Result'] = ts("All rows were imported");
+    }
+    else {
+      $this->messages['Result'] = ts("%1 out of %2  rows were imported.", array('1' => $num_successful, 2 => $totalRows));
+
+      if($num_duplicates !== $notImported && $num_errors !== $notImported && $num_ignored !== $notImported) {
+        // If the number of rows not imported is the same as the number skipped, or the number of errors etc
+        // then the Not Imported csv will duplicate that & it is confusing to provide a link to it.
+        $this->setMessage($this->all_missed_file_uri, 'not imported', $notImported);
+      }
+    }
+
+    if ($num_errors) {
+      $this->setMessage($this->error_file_uri, 'Error', $num_errors);
+    }
+    if ($num_ignored) {
+      $this->setMessage($this->ignored_file_uri, 'Ignored', $num_ignored);
+    }
+    if ($num_duplicates) {
+      $this->setMessage($this->skipped_file_uri, 'Duplicate', $num_duplicates);
+    }
+  }
+
+  /**
+   * Set a message relating to this output.
+   *
+   * @param $uri
+   * @param $type
+   */
+  public function setMessage($uri, $type, $count) {
+    $row = ($count > 1) ? 'rows' : 'row';
+    // The file name is the middle part, minus 'temporary://' and .csv'.
+    // We stick to this rigid assumption because if it changes we might want to re-evaluate the security aspects of
+    // allowing people to download csv files from the temp directory based on role.
+    $this->messages[$type] = "$count $type $row logged to <a href='/import_output/" . substr($uri, 12, -4) . "'> file</a>.";
+    ChecksImportLog::record($this->messages[$type]);
   }
 }
