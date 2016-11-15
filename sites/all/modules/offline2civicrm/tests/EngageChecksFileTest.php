@@ -136,15 +136,21 @@ class EngageChecksFileTest extends BaseChecksFileTest {
         $this->assertEquals( $expected_normal, $output );
     }
 
+  public function testImporterFormatsPostal() {
+    civicrm_initialize();
+    $fileUri = $this->setupFile('engage_postal.csv');
+
+    $importer = new EngageChecksFile($fileUri);
+    $importer->import();
+    $contact = $this->callAPISuccess('Contact', 'get', array('email' => 'rsimpson4@unblog.fr', 'sequential' => 1));
+    $this->assertEquals('07065', $contact['values'][0]['postal_code']);
+    $this->assertEquals(5, strlen($contact['values'][0]['postal_code']));
+  }
+
     public function testImporterCreatesOutputFiles() {
       civicrm_initialize();
       $this->sourceFileUri = __DIR__ . '/../test_data/engage_reduced.csv';
-      $this->purgePreviousData();
-
-      // copy the file to a temp dir so copies are made in the temp dir.
-      // This is where it would be in an import.
-      $fileUri = tempnam(sys_get_temp_dir(), 'Engage') . '.csv';
-      copy($this->sourceFileUri, $fileUri);
+      $fileUri = $this->setupFile('engage_reduced.csv');
 
       $importer = new EngageChecksFile($fileUri);
       $messages = $importer->import();
@@ -194,8 +200,10 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   public function purgePreviousData() {
     $this->callAPISuccess('Contribution', 'get', array(
       'api.Contribution.delete' => 1,
-      wmf_civicrm_get_custom_field_name('gateway_txn_id') => array('IN' => $this->getGatewayIDs())
+      wmf_civicrm_get_custom_field_name('gateway_txn_id') => array('IN' => $this->getGatewayIDs()),
+      'api.contact.delete' => array('skip_undelete' => 1),
     ));
+    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_contact WHERE organization_name = "Jaloo"');
   }
 
    /**
@@ -231,4 +239,22 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       }
       return $result;
     }
+
+  /**
+   * Set up the file for import.
+   *
+   * @param string $inputFileName
+   *
+   * @return string
+   */
+  public function setupFile($inputFileName) {
+    $this->sourceFileUri = __DIR__ . '/../test_data/' . $inputFileName;
+    $this->purgePreviousData();
+
+    // copy the file to a temp dir so copies are made in the temp dir.
+    // This is where it would be in an import.
+    $fileUri = tempnam(sys_get_temp_dir(), 'Engage') . '.csv';
+    copy($this->sourceFileUri, $fileUri);
+    return $fileUri;
+  }
 }
