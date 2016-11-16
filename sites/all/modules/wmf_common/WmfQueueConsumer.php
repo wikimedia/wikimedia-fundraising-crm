@@ -2,6 +2,7 @@
 
 use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
 use Exception;
+use SmashPig\CrmLink\Messages\DateFields;
 use WmfException;
 
 /**
@@ -47,18 +48,10 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 			$delay = intval( variable_get( 'wmf_common_requeue_delay', 20 * 60 ) );
 			$maxTries = intval( variable_get( 'wmf_common_requeue_max', 10 ) );
 			$ageLimit = $delay * $maxTries;
-			if ( isset( $message['source_enqueued_time'] ) ) {
-				// This should be set the first time a message is queued and
-				// not updated on retry.
-				$queuedTime = $message['source_enqueued_time'];
-			} else if ( isset( $message['date'] ) ) {
-				// This is not entirely accurate, being the date the payment
-				// actually occurred. Can still use it as fallback.
-				$queuedTime = $message['date'];
-			} else {
-				// Setting this to 0 means we'll always go the reject route
-				// and log an error.
-				$queuedTime = 0;
+			// Defaulting to 0 means we'll always go the reject route
+			// and log an error if no date fields are set.
+			$queuedTime = DateFields::getOriginalDateOrDefault( $message, 0 );
+			if ( $queuedTime === 0 ) {
 				watchdog(
 					'wmf_common',
 					"Message has no useful information about queued date",
