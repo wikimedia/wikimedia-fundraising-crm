@@ -1711,7 +1711,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
             break;
         default:
             $values = civicrm_api_option_group( wmf_civicrm_get_direct_mail_field_option_name() );
-            if ( !in_array( $msg['utm_campaign'], $values ) ) {
+            if ( !array_key_exists( $msg['utm_campaign'], $values ) ) {
               wmf_civicrm_ensure_option_value_exists(wmf_civicrm_get_direct_mail_field_option_name(), $msg['utm_campaign']);
             }
             $msg['direct_mail_appeal'] = $msg['utm_campaign'];

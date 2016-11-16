@@ -1,4 +1,4 @@
 <?php
 
-class IgnoredRowException extends Exception {
+class IgnoredRowException extends WmfException {
 }

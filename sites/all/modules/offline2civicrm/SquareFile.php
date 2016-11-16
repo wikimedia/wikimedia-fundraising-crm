@@ -42,8 +42,9 @@ class SquareFile extends ChecksFile {
     protected function parseRow ( $data ) {
         // completed and refunded are the only rows that mean anything.
         // the others as of now are pending, canceled, and deposited.
+
         if (! in_array($data['Status'], array('Completed', 'Refunded'))) {
-            throw new IgnoredRowException;
+            throw new IgnoredRowException('INVALID_MESSAGE', t('Status of @status not valid for Square import', array('@status' => $data['Status'])));
         }
 
         return parent::parseRow( $data );

@@ -9,7 +9,7 @@ use wmf_communication\Templating;
  */
 function offline2civicrm_menu() {
   $items = array();
-  
+
   $items['admin/config/offline2civicrm'] = array(
     'title' => 'Offline to CiviCRM',
     'access arguments' => array('administer offline2civicrm'),
@@ -132,6 +132,10 @@ function offline2civicrm_import_checks_form() {
  * @param $file_name
  */
 function offline2civicrm_download_csv($file_name) {
+    global $user;
+    if (!preg_match ('/\.' . $user->uid . '$/', $file_name)) {
+      return drupal_access_denied();
+    }
     $fileURI = 'temporary://' . $file_name . '.csv';
     if ($file_name && file_exists($fileURI)) {
       file_transfer($fileURI, array(
@@ -190,8 +194,8 @@ function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
       default:
         throw new Exception( 'Bad file format selection' );
       }
-      $importer->import();
-      drupal_set_message( "Successful import!" );
+      $messages = $importer->import();
+      drupal_set_message((implode(' ', $messages)));
     }
     catch ( WmfException $ex ) {
       $message = t( "Import error: !err", array( '!err' => $ex->getMessage() ) );
