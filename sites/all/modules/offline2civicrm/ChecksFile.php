@@ -319,6 +319,11 @@ abstract class ChecksFile {
             if ( !empty( $msg['check_number'] ) ) {
                 $msg['gateway_txn_id'] = md5( $msg['check_number'] . $name_salt );
             } else {
+                // The scenario where this would happen is anonymous cash gifts.
+                // the name would be 'Anonymous Anonymous' and there might be several on the same
+                // day. Hence we rely on them all being carefully arranged in a spreadsheet and
+                // no-one messing with the order. I was worried this was fragile but there
+                // is no obvious better way.
                 $msg['gateway_txn_id'] = md5( $msg['date'] . $name_salt . $this->row_index );
             }
         }
