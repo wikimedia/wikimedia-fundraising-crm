@@ -382,26 +382,24 @@ function wmf_thank_you_get_tag_names($entity_id) {
 }
 
 function thank_you_update_ty_date( $contribution ) {
+	$date = wmf_common_date_unix_to_civicrm( time() );
+	watchdog('thank_you', "Updating TY send date to: $date", array(), WATCHDOG_INFO);
 
-	$params = array(
-		'version' => '3',
-		'id' => $contribution[ 'contribution_id' ],
-		'contribution_id' => $contribution[ 'contribution_id' ],
-		'thankyou_date' => wmf_common_date_unix_to_civicrm( time() ),
-	);
+	// We go directly to the database table here to avoid setting off a cascade
+	// of line item updates and recalculations.
+	$query = "UPDATE civicrm_contribution
+		SET thankyou_date = %1
+		WHERE id = %2";
 
-	watchdog('thank_you', 'Updating TY send date to: ' . $params['thankyou_date'], array(), WATCHDOG_INFO);
-
-	// the update function seems to not work for Contribution and the insert
-	// updates when a contribution_id is passed
-	$result = civicrm_api( "Contribution", "create", $params );
-
-	if( WMFCiviAPICheck::check_api_contribution( $result, $contribution['contribution_id'] ) ){
+	try {
+		CRM_Core_DAO::executeQuery( $query, array(
+			1 => array( $date, 'String' ),
+			2 => array( $contribution[ 'contribution_id' ], 'Integer' ),
+		) );
 		return true;
+	} catch( Exception $ex ) {
+		watchdog( 'thank_you', 'Updating successful TY send failed with details: ' . print_r( $ex, true ), array(), WATCHDOG_ERROR );
 	}
-
-	watchdog('thank_you', 'Updating successful TY send failed with details: ' . print_r( $result, true ), array(), WATCHDOG_ERROR);
-
 	return false;
 }
 
