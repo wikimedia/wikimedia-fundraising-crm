@@ -373,7 +373,10 @@ function wmf_thank_you_get_tag_names($entity_id) {
     'entity_table' => 'civicrm_contribution',
     'entity_id' => $entity_id
   ));
-  $tags = civicrm_api3('EntityTag', 'getoptions', array('field' => 'tag_id'));
+  static $tags = null;
+  if ( $tags === null ) {
+    $tags = civicrm_api3( 'EntityTag', 'getoptions', array( 'field' => 'tag_id' ) );
+  }
   $tag_names = array();
   foreach ($entityTags['values'] as $id => $entityTag) {
     $tag_names[] = $tags['values'][$entityTag['tag_id']];

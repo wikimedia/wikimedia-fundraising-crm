@@ -243,10 +243,13 @@ function wmf_campaigns_civicrm_custom( $action, $groupId, $entityId, $params ) {
     switch ( $action ) {
     case 'create':
     case 'edit':
-        $result = civicrm_api3( 'CustomGroup', 'get', array(
-            'name' => 'Gift_Data',
-        ) );
-        $giftDataGroupId = (int)$result['id'];
+        static $giftDataGroupId = null;
+        if ( $giftDataGroupId === null ) {
+            $result = civicrm_api3( 'CustomGroup', 'get', array(
+                'name' => 'Gift_Data',
+            ) );
+            $giftDataGroupId = (int)$result['id'];
+        }
 
         if ( (int)$groupId === $giftDataGroupId ) {
             $campaignKey = null;
