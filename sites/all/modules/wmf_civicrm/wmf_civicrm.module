@@ -391,6 +391,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'postmark_date' => 'Postmark_Date',
         'restrictions' => 'Fund',
         'stock_description' => 'Description_of_Stock',
+        'gateway_status' => 'gateway_status_raw',
     );
 
     // Custom fields with names that match the message fields.
@@ -1984,13 +1985,18 @@ function wmf_civicrm_mark_refund(
         $refund_date = wmf_common_date_parse_string( $refund_date );
     }
 
-    // TODO: These are already getting normalized from processor codes in the
-    // classes that call this function so this is a bit redundant.
+    // TODO: Normalize earlier.
     $validTypes = array(
         'refund' => 'Refunded',
         'chargeback' => 'Chargeback',
-        'cancel' => 'Cancelled'
+        'cancel' => 'Cancelled',
+        'reversal' => 'Chargeback', // from the audit processor
+        'admin_fraud_reversal' => 'Chargeback', // raw IPN code
     );
+
+    if ( !array_key_exists( $refund_type, $validTypes ) ) {
+        throw new WmfException( 'IMPORT_CONTRIB', "Unknown refund type '{$refund_type}'" );
+    }
 
     try {
       civicrm_api3('Contribution', 'create', array(
