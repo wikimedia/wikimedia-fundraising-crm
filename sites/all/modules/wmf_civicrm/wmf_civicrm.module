@@ -1984,13 +1984,18 @@ function wmf_civicrm_mark_refund(
         $refund_date = wmf_common_date_parse_string( $refund_date );
     }
 
-    // TODO: These are already getting normalized from processor codes in the
-    // classes that call this function so this is a bit redundant.
+    // TODO: Normalize earlier.
     $validTypes = array(
         'refund' => 'Refunded',
         'chargeback' => 'Chargeback',
-        'cancel' => 'Cancelled'
+        'cancel' => 'Cancelled',
+        'reversal' => 'Chargeback', // from the audit processor
+        'admin_fraud_reversal' => 'Chargeback', // raw IPN code
     );
+
+    if ( !array_key_exists( $refund_type, $validTypes ) ) {
+        throw new WmfException( 'IMPORT_CONTRIB', "Unknown refund type '{$refund_type}'" );
+    }
 
     try {
       civicrm_api3('Contribution', 'create', array(
