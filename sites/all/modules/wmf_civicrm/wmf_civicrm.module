@@ -391,6 +391,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'postmark_date' => 'Postmark_Date',
         'restrictions' => 'Fund',
         'stock_description' => 'Description_of_Stock',
+        'gateway_status' => 'gateway_status_raw',
     );
 
     // Custom fields with names that match the message fields.
