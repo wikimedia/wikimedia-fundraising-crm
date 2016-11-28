@@ -2442,3 +2442,13 @@ function wmf_civicrm_update_7330() {
     WHERE geo_code_1 IS NOT NULL;
   ");
 }
+
+/**
+ * Text updates to the Thank you letter.
+ *
+ * Bug T151814
+ */
+function wmf_civicrm_update_7335() {
+  require_once 'update_receipt.php';
+  _wmf_civicrm_update_offline_receipt();
+}
