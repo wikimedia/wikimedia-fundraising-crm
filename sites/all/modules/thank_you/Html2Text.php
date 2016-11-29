@@ -135,7 +135,7 @@ class Html2Text
 		'/&(copy|#169);/i',                      // Copyright
 		'/&(trade|#8482|#153);/i',               // Trademark
 		'/&(reg|#174);/i',                       // Registered
-		'/&(mdash|#151|#8212);/i',               // mdash
+		'/&(mdash|#151|#8212);|—/i',             // mdash
 		'/&(ndash|minus|#8211|#8722);/i',        // ndash
 		'/&(bull|#149|#8226);/i',                // Bullet
 		'/&(pound|#163);/i',                     // Pound sign
@@ -617,7 +617,10 @@ class Html2Text
 		switch (strtolower($matches[1])) {
 			case 'b':
 			case 'strong':
-				return $this->_toupper($matches[3]);
+/** Temporarily hacked out per https://phabricator.wikimedia.org/T151784#2829667
+ *				return $this->_toupper($matches[3]);
+ */
+				return $matches[3];
 			case 'th':
 				return $this->_toupper("\t\t". $matches[3] ."\n");
 			case 'h':

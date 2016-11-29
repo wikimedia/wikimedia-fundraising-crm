@@ -26,15 +26,24 @@ class FindUnconsumedTokens {
         }
     }
 
+    /**
+     * Pass template parameters which will light up as many conditional
+     * branches as possible, as a cheap and dirty way to get good coverage of
+     * the template contents for finding unconsumed tokens.
+     */
     static protected function getRandomTemplateParams( $locale ) {
-        // Turn on all the lights
         $params = array(
-            // FIXME: name should be run through both branches
+            // FIXME: name should be run through both nameful and anonymous
+            // branches.
             'first_name' => 'fix',
             'last_name' => 'me',
+            'contact_id' => 234,
             'recurring' => true,
 
+            'currency' => 'EUR',
+            'amount' => '1.23',
             'receive_date' => time(),
+            'transaction_id' => '12345',
 
             'locale' => $locale,
             'contribution_tags' => array(
