@@ -171,6 +171,8 @@ class Templating {
 class RestrictiveSecurityPolicy extends Twig_Sandbox_SecurityPolicy {
     function __construct() {
         $tags = array(
+			'else',
+			'endif',
             'if',
 			'for',
         );
