@@ -139,15 +139,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         return array(
             // Minimal contribution
             array(
-                array(
-                    'currency' => 'USD',
-                    'date' => '2012-05-01 00:00:00',
-                    'email' => 'nobody@wikimedia.org',
-                    'gateway' => 'test_gateway',
-                    'gateway_txn_id' => $gateway_txn_id,
-                    'gross' => '1.23',
-                    'payment_method' => 'cc',
-                ),
+                $this->getMinimalImportData($gateway_txn_id),
                 array(
                     'contribution' => $this->getBaseContribution($gateway_txn_id),
                 ),
@@ -182,6 +174,17 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'check_number' => '',
                     ),
                 ),
+            ),
+
+            // over-long city.
+            array(
+              array_merge(
+                $this->getMinimalImportData($gateway_txn_id),
+                array('city' => 'This is just stupidly long and I do not know why I would enter something this crazily long into a field')
+              ),
+              array(
+                'contribution' => $this->getBaseContribution($gateway_txn_id),
+              ),
             ),
 
             // Maximal contribution
@@ -500,6 +503,18 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       $this->assertEquals($array1, $array2);
 
     }
+
+  protected function getMinimalImportData($gateway_txn_id) {
+    return array(
+      'currency' => 'USD',
+      'date' => '2012-05-01 00:00:00',
+      'email' => 'nobody@wikimedia.org',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => $gateway_txn_id,
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+    );
+  }
 
   /**
    * Get the basic array of contribution data.
