@@ -969,6 +969,7 @@ function wmf_civicrm_verify_message_and_stage($msg)
         'street_address' => 'AddressTruncated',
         'supplemental_address_1' => 'AddressTruncated',
         'supplemental_address_2' => 'AddressTruncated',
+        'city' => 'AddressTruncated',
     );
     foreach ( $max_lengths as $key => $limit ) {
         if ( strlen( $msg[$key] ) > $limit ) {

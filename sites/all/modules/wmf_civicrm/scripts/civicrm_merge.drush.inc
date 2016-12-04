@@ -12,6 +12,8 @@ function civicrm_merge_drush_command() {
       'batch' => "Batch size",
       'rule_group_id' => "Rule ID to use - defaults to Individual Unsupervised (email match)",
       'group_id' => "Limit to a group of contacts (default is all)",
+      'threshold' => 'Threshold for aborting. If there are more than this number of contributions in the threshold period then abort.',
+      'threshold_period' => 'Number of minutes in the threshold period',
     ),
   );
 
@@ -35,6 +37,16 @@ function civicrm_merge_drush_help($section) {
  */
 function drush_civicrm_merge() {
   module_invoke('civicrm', 'initialize');
+
+  $threshold = (int) drush_get_option('threshold');
+  if ($threshold) {
+    $thresholdNumberOfMinutes = (int) drush_get_option('threshold_period', 5);
+    if (_drush_civicrm_queue_is_backed_up($threshold, $thresholdNumberOfMinutes)) {
+      return;
+    }
+  }
+
+
 
   $ruleGroupID = drush_get_option('rule_group_id');
   $groupID = drush_get_option('group_id');
@@ -68,4 +80,35 @@ function drush_civicrm_merge() {
   watchdog('civicrm_merge', 'Deduped contact range: %start to %end', array('%start' => $start, '%end' => $end), WATCHDOG_INFO);
   drush_print("Processed id range $start to " . $end . '
   Merged ' . count($result['values']['merged']) . ". Skipped " . count($result['values']['skipped']));
+}
+
+/**
+ * Check if the queue is backed up.
+ *
+ * @todo think about using a hook structure here so different modules can interact
+ * (and to keep it generic for others to use).
+ *
+ * @param int $threshold
+ *   Contribution threshold - abort if more in the period.
+ * @param int $numberOfMinutes
+ *   Number of minutes in threshold period.
+ *
+ * @return int|bool
+ *   Number of contributions of FALSE if not more than the threshold.
+ */
+function _drush_civicrm_queue_is_backed_up($threshold, $numberOfMinutes = 5) {
+    $countOfContributionsInTimeFrame = CRM_Core_DAO::singleValueQuery('
+      SELECT count(*) FROM civicrm_contact WHERE created_date > DATE_SUB(NOW(), INTERVAL %1 MINUTE);
+    ',
+    array(1 => array($numberOfMinutes, 'Integer'))
+  );
+  if ($countOfContributionsInTimeFrame > $threshold) {
+    drush_print(
+      "Early return as queue is backed up. $countOfContributionsInTimeFrame contributions in the last $numberOfMinutes"
+      . " minutes is greater than the threshold of $threshold"
+    );
+    return TRUE;
+  }
+  return FALSE;
+
 }
