@@ -107,6 +107,13 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
                         'default' => false,
                         'no_display' => true,
                     ),
+                    'original_amount' => array(
+                      'title' => ts( 'Original Amount' ),
+                      'type' => CRM_Utils_Type::T_MONEY,
+                      'statistics' => array(
+                        'sum' => ts( 'Total Original Amount' ),
+                      ),
+                    ),
                     'original_currency' => array(
                         'title' => ts( 'Original Currency' ),
                         'required' => true,
@@ -204,12 +211,6 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
     }
 
     function from( ) {
-
-        $depositFinancialAccountID = civicrm_api3('FinancialAccount', 'getvalue', array(
-          'return' => 'id',
-          'name' => 'Deposit Bank Account',
-        ));
-
         $this->_from = <<<EOS
 FROM civicrm_contribution {$this->_aliases['civicrm_contribution']}
 LEFT JOIN wmf_contribution_extra {$this->_aliases['wmf_contribution_extra']}
@@ -221,7 +222,6 @@ LEFT JOIN civicrm_entity_financial_trxn entity_financial_trxn_civireport
 
   LEFT JOIN civicrm_financial_trxn {$this->_aliases['civicrm_financial_trxn']}
                     ON {$this->_aliases['civicrm_financial_trxn']}.id = entity_financial_trxn_civireport.financial_trxn_id
-                    AND {$this->_aliases['civicrm_financial_trxn']}.to_financial_account_id = {$depositFinancialAccountID}
 EOS;
         if ( $this->isTableSelected( 'civicrm_country' ) ) {
             $this->_from .= <<<EOS
@@ -289,6 +289,16 @@ EOS;
         $this->_columnHeaders[$field['dbAlias']]['title'] = CRM_Utils_Array::value( 'title', $field );
         $this->_columnHeaders[$field['dbAlias']]['type'] = CRM_Utils_Array::value( 'type', $field );
         $this->_selectAliases[] = $field['dbAlias'];
+    }
+
+    function storeWhereHavingClauseArray() {
+      parent::storeWhereHavingClauseArray();
+      $depositFinancialAccountID = civicrm_api3('FinancialAccount', 'getvalue', array(
+        'return' => 'id',
+        'name' => 'Deposit Bank Account',
+      ));
+      $this->_whereClauses[] = "{$this->_aliases['civicrm_financial_trxn']}.to_financial_account_id = {$depositFinancialAccountID}";
+
     }
 
   /**
