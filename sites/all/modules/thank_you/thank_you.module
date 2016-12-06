@@ -15,6 +15,9 @@ use wmf_communication\Translation;
 // * reconsider need for twig extensions, we already do calculated values
 // * give template fragments a named key rather than using integers
 
+// FIXME: this constant is for test code
+const DUMB_BIG_TY_DAYS = 100000;
+
 /**
  * Implements hook_permission
  */
@@ -719,6 +722,15 @@ function thank_you_batch_process(){
         return;
 	}
 
+	// FIXME: refactor this whole module to be more object oriented, so we can
+	// just set these properties and override during the test.
+	// This code resets the thank_you_days variable in case it's been left in
+	// a bad state by an aborted simulation run
+	if ( $days == DUMB_BIG_TY_DAYS ) {
+		$days = variable_get( 'old_thank_you_days', false );
+		variable_set( 'thank_you_days', $days );
+	}
+
 	watchdog( "thank_you", "Attempting to send $batch thank you mails for contributions from the last $days days.", array(), WATCHDOG_INFO );
 
 	$dbs = wmf_civicrm_get_dbs();
@@ -842,6 +854,68 @@ function build_unsub_link( $contributionId, $emailAddr, $language ) {
 	);
 
 	return variable_get( 'thank_you_unsubscribe_url', '' ) . '?' . http_build_query( $unsub_params, '', '&' );
+}
+
+function thank_you_batch_test() {
+	if ( !defined( 'WMF_UNSUB_SALT' ) ) {
+		define( 'WMF_UNSUB_SALT', 'aslkdhaslkdjasd' );
+	}
+	civicrm_initialize();
+
+	$create_civi_mail = variable_get( 'thank_you_add_civimail_records', 'false' );
+	$rate = variable_get( 'thank_you_civimail_rate', 1.0 );
+
+	// Don't actually send any emails
+	wmf_communication\Mailer::$defaultSystem = 'test';
+
+	// Don't want to skip anything due to age
+	$oldTyDays = variable_get('thank_you_days', 14);
+	variable_set('old_thank_you_days', $oldTyDays);
+	variable_set('thank_you_days', DUMB_BIG_TY_DAYS);
+
+	watchdog( "thank_you", "Simulating up to 1000 thank you mails.", array(), WATCHDOG_INFO );
+	watchdog( "thank_you", "Civimail creation: $create_civi_mail. Sample rate: $rate", array(), WATCHDOG_INFO );
+
+	$start = time();
+	$sent = 0;
+	
+	$dbs = wmf_civicrm_get_dbs();
+	$dbs->push( 'civicrm' );
+	try {
+
+		$ty_query = <<<EOT
+		SELECT civicrm_contribution.id, trxn_id
+		FROM civicrm_contribution
+		JOIN wmf_contribution_extra
+			ON wmf_contribution_extra.entity_id = civicrm_contribution.id
+		JOIN civicrm_email
+			ON civicrm_email.contact_id = civicrm_contribution.contact_id
+		WHERE trxn_id IS NOT NULL
+		AND civicrm_email.email <> 'nobody@wikimedia.org'
+		AND thankyou_date IS NULL
+		AND no_thank_you IS NULL
+		ORDER BY id DESC LIMIT 1000;
+EOT;
+
+		$result = db_query( $ty_query );
+		foreach ( $result as $contribution ) {
+			watchdog(
+				"thank_you",
+				"Pretending to send thank you mail for contribution ID [{$contribution->id}], trxn_id [{$contribution->trxn_id}]",
+				array(),
+				WATCHDOG_INFO
+			);
+			if ( thank_you_for_contribution( $contribution->id ) ) {
+				$sent++;
+			}
+		}
+	} catch ( Exception $ex ) {
+		// Just need to make sure we reset the TY days
+	}
+	$dbs->pop();
+	$elapsed = time() - $start;
+	variable_set('thank_you_days', $oldTyDays);
+	watchdog( "thank_you", "Simulated sending $sent emails in $elapsed seconds.", array(), WATCHDOG_INFO );
 }
 
 class ThankYouException extends Exception {}
