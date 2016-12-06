@@ -3087,19 +3087,31 @@ function wmf_civicrm_validate_contribution( $fields, $form ) {
         }
     }
 
-    $postmark_field_name = wmf_civicrm_evil_get_custom_field_in_form( 'postmark_date', $fields );
-    // If the receive_date is in Dec or Jan, make sure we have a postmark date,
-    // to be generous to donors' tax stuff.
-    $date = strptime( $fields['receive_date'], "%m/%d/%Y" );
-    // n.b.: 0-based date spoiler.
-    if ( $date['tm_mon'] == (12 - 1) || $date['tm_mon'] == (1 - 1) ) {
-        // And the postmark date is missing
-        if ( !$fields[$postmark_field_name] ) {
-            $errors[$postmark_field_name] = t("You forgot the postmark date!");
-        }
-    }
+	if ( wmf_civicrm_tomorrows_month() === '01' ) {
+		$postmark_field_name = wmf_civicrm_evil_get_custom_field_in_form( 'postmark_date', $fields );
+		// If the receive_date is in Dec or Jan, make sure we have a postmark date,
+		// to be generous to donors' tax stuff.
+		$date = strptime( $fields['receive_date'], "%m/%d/%Y" );
+		// n.b.: 0-based date spoiler.
+		if ( $date['tm_mon'] == (12 - 1) || $date['tm_mon'] == (1 - 1) ) {
+			// And the postmark date is missing
+			if ( !$fields[$postmark_field_name] ) {
+				$errors[$postmark_field_name] = t("You forgot the postmark date!");
+			}
+		}
+	}
 
     return $errors;
+}
+
+/**
+ * Return tomorrow's month number.  Used to tell if today is New Year's Eve or
+ * later.
+ */
+function wmf_civicrm_tomorrows_month() {
+	$tomorrow = new DateTime('+1 day');
+	$month = gmdate("m", $tomorrow->getTimestamp());
+	return $month;
 }
 
 /**
