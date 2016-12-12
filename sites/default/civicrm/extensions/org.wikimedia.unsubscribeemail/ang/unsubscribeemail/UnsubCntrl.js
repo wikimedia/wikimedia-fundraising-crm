@@ -26,7 +26,7 @@
         var messages = {start: ts('Refreshing results ...'), success: ts('Refresh complete')};
       }
       else {
-        var messages = {start: ts('Finding matchs...'), success: ts('Search complete')}
+        var messages = {start: ts('Finding matches...'), success: ts('Search complete')}
       }
       crmApi('Contact', 'get', {
           email: emailEntered,
