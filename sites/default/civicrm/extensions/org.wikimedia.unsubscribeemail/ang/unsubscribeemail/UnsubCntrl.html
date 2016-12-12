@@ -1,0 +1,87 @@
+<div class="crm-container">
+  <form name="unsubscribeForm" crm-ui-id-scope>
+
+    <div class="help">
+      <p>{{ts('Enter the email address you wish to unsubscribe.')}}</p>
+      <p>{{ts('Unsubscribing is defined as setting the opt out flag on the contact if it is the primary address and
+        removing any bulk email flag from non-primaries. Once you have found potential matches, check the actions you
+        wish to take and click Unsubscribe')}}</p>
+    </div>
+
+    <div crm-ui-accordion="{title: ts('Email to Unsubscribe')}">
+      <div crm-ui-field="{name: 'unsubscribeForm.email',
+        title: ts('Email')
+        }">
+        <input
+            crm-ui-id="unsubscribeForm.email"
+            name="enteredEmail"
+            ng-model="enteredEmail"
+            class="crm-form-text"
+            type="email"
+            placeholder="{{ts('email')}}"
+        />
+        <button id="find_matches_btn" ng-disabled=unsubscribeForm.enteredEmail.$invalid ng-click="find(enteredEmail)"
+                class='crm-button'>{{ts('Find contact(s)')}}
+        </button>
+        <button ng-disabled="nothingToUnsubscribe" ng-click="unsubscribe(unsubscribeForm.enteredEmail.$modelValue)"
+                class='crm-button'>{{ts('Unsubscribe')}}
+        </button>
+      </div>
+    </div>
+    <div crm-ui-accordion="{title: ts('Actions')}">
+      <div ng-show="unsubscribeContacts[0]"><h3>{{ts('Contacts to opt out')}}</h3>
+        <p>{{ enteredEmail }} {{ ts('These contacts use %1 as their primary address. Leave them checked and click
+          Unsubscribe to set their communication preference to NO BULK Emails (User Opt Out)', {1:
+          unsubscribeForm.enteredEmail.$viewValue}) }}</p>
+        <div class="crm-block">
+          <div class="crm-group">
+            <table>
+              <tr>
+                <th width="50%">{{ ts('Contact') }}</th>
+                <th>{{ ts('Set opt out communication preference?') }}</th>
+              </tr>
+              <tr ng-repeat="unsubscribeContact in unsubscribeContacts">
+                <td><a href="{{unsubscribeContact.url}}">
+                  {{unsubscribeContact.display_name}} ({{unsubscribeContact.contact_type}})
+                </a>
+                </td>
+                <td>
+                  <span ng-show="unsubscribeContact.is_opt_out > 0">{{ ts('Contact is already opted out') }} </span>
+                <span ng-show="unsubscribeContact.is_opt_out == 0">
+                  <input type="checkbox" ng-model="unsubscribeContact.do_opt_out"/>
+                </span>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div ng-show="unsubscribeEmails[0]"><h3>{{ts('Emails to remove bulk email flag from (non primary)')}}</h3>
+          <p>{{ enteredEmail }} {{ ts('These contacts have %1 as as a non-primary email. Leave them checked and click
+            unsubscribe to unset the bulk email flag on them.', {1: unsubscribeForm.enteredEmail.$viewValue}) }}</p>
+          <div class="crm-group">
+            <table>
+              <tr>
+                <th width="50%">{{ ts('Contact') }}</th>
+                <th>{{ ts('Unset bulk email flag on email address?') }}</th>
+              </tr>
+              <tr ng-repeat="unsubscribeEmail in unsubscribeEmails">
+                <td>
+                  <a href="{{unsubscribeEmail.url}}">{{unsubscribeEmail.contact_id_display_name}}</a>
+                </td>
+                <td>
+                  <span ng-show="unsubscribeEmail.is_bulkmail == 0">{{ ts('Email is not set as bulk email') }}</span>
+                      <span ng-show="unsubscribeEmail.is_bulkmail == 1">
+                        <input type="checkbox" ng-model="unsubscribeEmail.do_opt_out"/>
+                      </span>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </form>
+
+</div>
