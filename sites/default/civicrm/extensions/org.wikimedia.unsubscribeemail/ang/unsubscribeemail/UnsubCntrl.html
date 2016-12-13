@@ -14,25 +14,25 @@
         }">
         <input
             crm-ui-id="unsubscribeForm.email"
-            name="enteredEmail"
-            ng-model="enteredEmail"
+            name="entered_email"
+            ng-model="formVars.enteredEmail"
             class="crm-form-text"
             type="email"
             placeholder="{{ts('email')}}"
         />
-        <button id="find_matches_btn" ng-disabled=unsubscribeForm.enteredEmail.$invalid ng-click="find(enteredEmail)"
+        <button id="find_matches_btn" ng-disabled=unsubscribeForm.$invalid ng-click="find()"
                 class='crm-button'>{{ts('Find contact(s)')}}
         </button>
-        <button ng-disabled="nothingToUnsubscribe" ng-click="unsubscribe(unsubscribeForm.enteredEmail.$modelValue)"
+        <button ng-disabled="nothingToUnsubscribe || searchedEmail != formVars.enteredEmail" ng-click="unsubscribe()"
                 class='crm-button'>{{ts('Unsubscribe')}}
         </button>
       </div>
     </div>
-    <div crm-ui-accordion="{title: ts('Actions')}">
+    <div ng-show="searchedEmail && searchedEmail == formVars.enteredEmail && (unsubscribeContacts[0] || unsubscribeEmails[0])" crm-ui-accordion="{title: ts('Actions')}">
       <div ng-show="unsubscribeContacts[0]"><h3>{{ts('Contacts to opt out')}}</h3>
-        <p>{{ enteredEmail }} {{ ts('These contacts use %1 as their primary address. Leave them checked and click
+        <p>{{ ts('These contacts use %1 as their primary address. Leave them checked and click
           Unsubscribe to set their communication preference to NO BULK Emails (User Opt Out)', {1:
-          unsubscribeForm.enteredEmail.$viewValue}) }}</p>
+          formVars.enteredEmail }) }}</p>
         <div class="crm-block">
           <div class="crm-group">
             <table>
@@ -56,8 +56,8 @@
           </div>
         </div>
         <div ng-show="unsubscribeEmails[0]"><h3>{{ts('Emails to remove bulk email flag from (non primary)')}}</h3>
-          <p>{{ enteredEmail }} {{ ts('These contacts have %1 as as a non-primary email. Leave them checked and click
-            unsubscribe to unset the bulk email flag on them.', {1: unsubscribeForm.enteredEmail.$viewValue}) }}</p>
+          <p>{{ ts('These contacts have %1 as as a non-primary email. Leave them checked and click
+            unsubscribe to unset the bulk email flag on them.', {1: formVars.enteredEmail}) }}</p>
           <div class="crm-group">
             <table>
               <tr>
@@ -80,6 +80,10 @@
         </div>
       </div>
 
+    </div>
+    <div ng-show="!unsubscribeContacts[0] && !unsubscribeEmails[0] && searchedEmail && searchedEmail == formVars.enteredEmail">
+      {{ts ('The email %1 is not used as a the primary email for any contact in your database and it is not subscribed to any bulk emails', {1:
+      formVars.enteredEmail }) }}
     </div>
 
   </form>
