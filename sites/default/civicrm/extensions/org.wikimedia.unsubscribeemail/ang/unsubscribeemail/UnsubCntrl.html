@@ -19,6 +19,7 @@
             class="crm-form-text"
             type="email"
             placeholder="{{ts('email')}}"
+            ng-required=true
         />
         <button id="find_matches_btn" ng-disabled=unsubscribeForm.$invalid ng-click="find()"
                 class='crm-button'>{{ts('Find contact(s)')}}
