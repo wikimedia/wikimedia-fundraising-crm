@@ -110,6 +110,7 @@
             if ($scope.unsubscribeEmails[id]['do_opt_out'] == 1) {
               $scope.unsubscribeEmails[id]['is_bulkmail'] = 0;
               $scope.unsubscribeEmails[id]['do_opt_out'] = 0;
+              $scope.unsubscribeEmails[id]['opt_out_actioned'] = 1;
             }
             else {
               $scope.nothingToUnsubscribe = false;
@@ -119,6 +120,7 @@
             if ($scope.unsubscribeContacts[id]['do_opt_out'] == 1) {
               $scope.unsubscribeContacts[id]['is_opt_out'] = 1;
               $scope.unsubscribeContacts[id]['do_opt_out'] = 0;
+              $scope.unsubscribeContacts[id]['opt_out_actioned'] = 1;
             }
             else {
               $scope.nothingToUnsubscribe = false;
