@@ -19,9 +19,13 @@
     $scope.unsubscribeContacts = {};
     $scope.unsubscribeEmails = {};
     $scope.nothingToUnsubscribe = true;
+    $scope.searchedEmail = '';
+    $scope.formVars = {};
 
-    $scope.find = function find(emailEntered) {
+    $scope.find = function find() {
       $scope.nothingToUnsubscribe = true;
+      var emailEntered = $scope.formVars.enteredEmail;
+      $scope.searchedEmail = emailEntered ;
       if ($scope.unsubscribeContacts.length) {
         var messages = {start: ts('Refreshing results ...'), success: ts('Refresh complete')};
       }
@@ -82,7 +86,7 @@
         });
     };
 
-    $scope.unsubscribe = function unsubscribe(enteredEmail) {
+    $scope.unsubscribe = function unsubscribe() {
       var requests = [];
       for (var id in $scope.unsubscribeContacts) {
         if ($scope.unsubscribeContacts[id].do_opt_out) {
@@ -106,6 +110,7 @@
             if ($scope.unsubscribeEmails[id]['do_opt_out'] == 1) {
               $scope.unsubscribeEmails[id]['is_bulkmail'] = 0;
               $scope.unsubscribeEmails[id]['do_opt_out'] = 0;
+              $scope.unsubscribeEmails[id]['opt_out_actioned'] = 1;
             }
             else {
               $scope.nothingToUnsubscribe = false;
@@ -115,6 +120,7 @@
             if ($scope.unsubscribeContacts[id]['do_opt_out'] == 1) {
               $scope.unsubscribeContacts[id]['is_opt_out'] = 1;
               $scope.unsubscribeContacts[id]['do_opt_out'] = 0;
+              $scope.unsubscribeContacts[id]['opt_out_actioned'] = 1;
             }
             else {
               $scope.nothingToUnsubscribe = false;
