@@ -78,6 +78,9 @@ function drush_queue_consume_donations_process_messagefile( $path ) {
       $messages = array( $messages );
     }
     foreach( $messages as $msg ) {
-      module_invoke( 'queue2civicrm', 'import', $msg );
+    	// FIXME: this bypasses pending database handling. Currently only good
+		// for inserting test data that has no matching pending messages.
+		// Could call DonationQueueConsumer::processMessage
+		wmf_civicrm_contribution_message_import( $msg );
     }
 }
