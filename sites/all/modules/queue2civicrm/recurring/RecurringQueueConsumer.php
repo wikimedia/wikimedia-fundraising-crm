@@ -318,7 +318,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 			$contact = wmf_civicrm_message_contact_update( $msg, $recur_record->contact_id );
 
 			// Insert the location record
-			wmf_civicrm_message_location_insert( $msg, $contact );
+			wmf_civicrm_message_location_update( $msg, $contact );
 
 			// Tag contact for review
 			wmf_civicrm_tag_contact_for_review( $contact );
@@ -525,7 +525,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 		$contact = wmf_civicrm_message_contact_update( $msg, $recur_record->contact_id );
 
 		// Insert the location record
-		wmf_civicrm_message_location_update( $msg, $contact );
+		wmf_civicrm_message_location_insert( $msg, $contact );
 
 		// Tag contact for review
 		wmf_civicrm_tag_contact_for_review( $contact );

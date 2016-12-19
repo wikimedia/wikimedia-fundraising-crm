@@ -230,6 +230,7 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     public function testRecurring() {
+        civicrm_initialize();
         $subscr_id = mt_rand();
         $values = array( 'subscr_id' => $subscr_id );
         $signup_message = new RecurringSignupMessage( $values );
@@ -243,8 +244,14 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         exchange_rate_cache_set( 'USD', $payment_time, 1 );
         exchange_rate_cache_set( $message->get('mc_currency'), $payment_time, 3 );
 
-        $this->recurringConsumer->processMessage( $signup_message->getBody() );
-        $this->recurringConsumer->processMessage( $message->getBody() );
+        $this->recurringConsumer->processMessage($signup_message->getBody());
+
+        $msg = $message->getBody();
+        db_insert('contribution_tracking')
+          ->fields(array('id' => $msg['custom']))
+        ->execute();
+
+        $this->recurringConsumer->processMessage($msg);
         $this->recurringConsumer->processMessage( $message2->getBody() );
 
         $recur_record = wmf_civicrm_get_recur_record( $subscr_id );
@@ -259,6 +266,20 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals( $recur_record->id, $contributions2[0]['contribution_recur_id']);
 
         $this->assertEquals( $contributions[0]['contact_id'], $contributions2[0]['contact_id'] );
+        $addresses = $this->callAPISuccess('Address', 'get', array('contact_id' => $contributions2[0]['contact_id']));
+        $this->assertEquals(1, $addresses['count']);
+        // The address comes from the recurring_payment.json not the recurring_signup.json as it
+        // has been overwritten. This is perhaps not a valid scenario in production but it is
+        // the scenario the code works to. In production they would probably always be the same.
+        $this->assertEquals('1211122 132 st', $addresses['values'][$addresses['id']]['street_address']);
+
+        $emails = $this->callAPISuccess('Email', 'get', array('contact_id' => $contributions2[0]['contact_id']));
+        $this->assertEquals(1, $addresses['count']);
+        $this->assertEquals('test+fr@wikimedia.org', $emails['values'][$emails['id']]['email']);
+
+        db_delete('contribution_tracking')
+        ->condition('id', $msg['custom'])
+        ->execute();
     }
 
     /**

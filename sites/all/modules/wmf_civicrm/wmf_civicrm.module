@@ -1361,7 +1361,8 @@ function wmf_civicrm_message_contact_update( $msg, $contact_id )
  * @param array $contact
  */
 function wmf_civicrm_message_location_insert( $msg, $contact ) {
-    wmf_civicrm_message_location_update( $msg, $contact );
+    wmf_civicrm_message_email_insert( $msg, $contact[ 'id' ] );
+    wmf_civicrm_message_address_insert( $msg, $contact[ 'id' ] );
 }
 
 /**
@@ -1373,15 +1374,63 @@ function wmf_civicrm_message_location_insert( $msg, $contact ) {
  * @param array $msg
  * @param array $contact
  */
-function wmf_civicrm_message_location_update( $msg, $contact ) {
-    wmf_civicrm_message_email_update( $msg, $contact[ 'id' ] );
-    wmf_civicrm_message_address_update( $msg, $contact[ 'id' ] );
+function wmf_civicrm_message_location_update($msg, $contact) {
+    wmf_civicrm_message_email_update($msg, $contact['id']);
+    wmf_civicrm_message_address_update($msg, $contact['id']);
 }
 
-function wmf_civicrm_message_email_update( $msg, $contact_id ) {
-    // unset the email address if the default is used
-    // this enables us to properly dedupe contacts later on
-    if( empty( $msg['email'] ) or $msg[ 'email' ] === 'nobody@wikimedia.org' ){
+/**
+ * Updates the email for a contact.
+ *
+ * @param string $msg
+ * @param int $contact_id
+ * @throws \WmfException
+ */
+function wmf_civicrm_message_email_update($msg, $contact_id ) {
+  if (!wmf_civicrm_is_email_valid(CRM_Utils_Array::value('email', $msg))) {
+    return;
+  }
+
+  try {
+    civicrm_api3( "Email", "Replace", array(
+      'location_type_id' => $loc_type_id = wmf_civicrm_get_default_location_type_id(),
+      'contact_id' => $contact_id,
+      'values' => array(array(
+        'email' => $msg[ 'email' ],
+        'is_primary' => 1,
+        'is_billing' => 1,
+      ),
+    )));
+  }
+  catch (CiviCRM_API3_Exception $e) {
+    throw new WmfException( 'IMPORT_CONTACT', "Couldn't store email for the contact.", array('result' => $e->getMessage()) );
+  }
+}
+
+/**
+ * We do not store empty emails or placeholder emails.
+ *
+ * @param string $email
+ * @return bool
+ */
+function wmf_civicrm_is_email_valid($email) {
+  if(empty($email) || $email === 'nobody@wikimedia.org' ){
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
+ * Updates the email for a contact.
+ *
+ * If updating or unsure use the marginally slower update function.
+ *
+ * @param string $msg
+ * @param int $contact_id
+ * @throws \WmfException
+ */
+function wmf_civicrm_message_email_insert($msg, $contact_id ) {
+    if (!wmf_civicrm_is_email_valid(CRM_Utils_Array::value('email', $msg))) {
         return;
     }
 
@@ -1402,7 +1451,59 @@ function wmf_civicrm_message_email_update( $msg, $contact_id ) {
     }
 }
 
-function wmf_civicrm_message_address_update( $msg, $contact_id ) {
+/**
+ * Update address for a contact.
+ *
+ * @param array $msg
+ * @param int $contact_id
+ *
+ * @throws \WmfException
+ */
+function wmf_civicrm_message_address_update($msg, $contact_id ) {
+
+  // CiviCRM does a DB lookup instead of checking the pseudoconstant.
+  // @todo fix Civi to use the pseudoconstant.
+  $country_id = wmf_civicrm_get_country_id( $msg[ 'country' ] );
+
+  $address_params = array(
+    'contact_id' => $contact_id,
+    'location_type_id' => wmf_civicrm_get_default_location_type_id(),
+    'values' => array(array(
+      'is_primary' => 1,
+      'street_address' => $msg['street_address'],
+      'supplemental_address_1' => $msg['supplemental_address_1'],
+      'city' => $msg['city'],
+      'postal_code' => $msg['postal_code'],
+      'country_id' => $country_id,
+      'country' => $msg['country' ],
+      'is_billing' => 1,
+    )),
+  );
+
+  if (!empty($msg['state_province'])) {
+    $address_params['values'][0]['state_province'] = $msg['state_province'];
+    $address_params['values'][0]['state_province_id'] = wmf_civicrm_get_state_id($country_id, $msg['state_province']);
+  }
+
+  try {
+    civicrm_api3('Address', 'replace', $address_params);
+  }
+  catch (CiviCRM_API3_Exception $e) {
+    throw new WmfException( 'IMPORT_CONTACT', "Couldn't store address for the contact." . $e->getMessage());
+  }
+}
+
+/**
+ * Insert a new address for a contact.
+ *
+ * If updating or unsure use the marginally slower update function.
+ *
+ * @param array $msg
+ * @param int $contact_id
+ *
+ * @throws \WmfException
+ */
+function wmf_civicrm_message_address_insert($msg, $contact_id ) {
     $loc_type_id = wmf_civicrm_get_default_location_type_id();
 
     // We can do these lookups a bit more efficiently than Civi
@@ -1428,6 +1529,10 @@ function wmf_civicrm_message_address_update( $msg, $contact_id ) {
     }
 
     // FIXME: api does not offer control over fixAddress flag
+    // UPDATE - the fixAddress function mostly backs out early based on params
+    // checks so as long as things like 'country_id' are set it doesn't seem very
+    // expensive (& those checks would be an easy fix). Bypassing the api
+    // probably does not gain us much.
     //$result = civicrm_api( "Address", "Create", $address_params );
     //if ( array_key_exists( 'is_error', $result ) && $result['is_error'] != 0 ) {
 
