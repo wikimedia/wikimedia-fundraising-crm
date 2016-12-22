@@ -1452,6 +1452,34 @@ function wmf_civicrm_message_email_insert($msg, $contact_id ) {
 }
 
 /**
+ * We do not store empty emails or placeholder emails.
+ *
+ * @param array $address
+ * @return bool
+ */
+function wmf_civicrm_is_address_valid($address) {
+  $meaningfulFields = array(
+    'street_address',
+    'supplemental_address_1',
+    'city',
+    'postal_code',
+    'country_id',
+    'state_province_id',
+  );
+  foreach ($meaningfulFields as $field) {
+    if (!empty($address[$field])) {
+      // We could also filter for strings like 'None' here
+      // I feel like there is one like 'None provided' that is common.
+      // only 241 instances of 'none' in street address and second place in the
+      // none-stakes has only 15 instances of 'None of your business'
+      // 'None of your goddamn business' got no traction with only one instance.
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
  * Update address for a contact.
  *
  * @param array $msg
@@ -1464,26 +1492,29 @@ function wmf_civicrm_message_address_update($msg, $contact_id ) {
   // CiviCRM does a DB lookup instead of checking the pseudoconstant.
   // @todo fix Civi to use the pseudoconstant.
   $country_id = wmf_civicrm_get_country_id( $msg[ 'country' ] );
+  $address = array(
+    'is_primary' => 1,
+    'street_address' => $msg['street_address'],
+    'supplemental_address_1' => $msg['supplemental_address_1'],
+    'city' => $msg['city'],
+    'postal_code' => $msg['postal_code'],
+    'country_id' => $country_id,
+    'country' => $msg['country' ],
+    'is_billing' => 1,
+  );
+  if (!empty($msg['state_province'])) {
+    $address['state_province'] = $msg['state_province'];
+    $address['state_province_id'] = wmf_civicrm_get_state_id($country_id, $msg['state_province']);
+  }
+  if (!wmf_civicrm_is_address_valid($address)) {
+    return;
+  }
 
   $address_params = array(
     'contact_id' => $contact_id,
     'location_type_id' => wmf_civicrm_get_default_location_type_id(),
-    'values' => array(array(
-      'is_primary' => 1,
-      'street_address' => $msg['street_address'],
-      'supplemental_address_1' => $msg['supplemental_address_1'],
-      'city' => $msg['city'],
-      'postal_code' => $msg['postal_code'],
-      'country_id' => $country_id,
-      'country' => $msg['country' ],
-      'is_billing' => 1,
-    )),
+    'values' => array($address),
   );
-
-  if (!empty($msg['state_province'])) {
-    $address_params['values'][0]['state_province'] = $msg['state_province'];
-    $address_params['values'][0]['state_province_id'] = wmf_civicrm_get_state_id($country_id, $msg['state_province']);
-  }
 
   try {
     civicrm_api3('Address', 'replace', $address_params);
@@ -1528,6 +1559,9 @@ function wmf_civicrm_message_address_insert($msg, $contact_id ) {
         $address_params['state_province_id'] = wmf_civicrm_get_state_id( $country_id, $msg['state_province'] );
     }
 
+    if (!wmf_civicrm_is_address_valid($address_params)) {
+        return;
+    }
     // FIXME: api does not offer control over fixAddress flag
     // UPDATE - the fixAddress function mostly backs out early based on params
     // checks so as long as things like 'country_id' are set it doesn't seem very

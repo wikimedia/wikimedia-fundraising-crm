@@ -232,19 +232,14 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     public function testRecurring() {
         civicrm_initialize();
         $subscr_id = mt_rand();
-        $values = array( 'subscr_id' => $subscr_id );
-        $signup_message = new RecurringSignupMessage( $values );
+        $values = $this->processRecurringSignup($subscr_id);
+
         $message = new RecurringPaymentMessage( $values );
         $message2 = new RecurringPaymentMessage( $values );
 
-        $subscr_time = strtotime( $signup_message->get( 'subscr_date' ) );
-        exchange_rate_cache_set( 'USD', $subscr_time, 1 );
-        exchange_rate_cache_set( $signup_message->get('mc_currency'), $subscr_time, 3 );
         $payment_time = strtotime( $message->get( 'payment_date' ) );
         exchange_rate_cache_set( 'USD', $payment_time, 1 );
         exchange_rate_cache_set( $message->get('mc_currency'), $payment_time, 3 );
-
-        $this->recurringConsumer->processMessage($signup_message->getBody());
 
         $msg = $message->getBody();
         db_insert('contribution_tracking')
@@ -280,6 +275,39 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         db_delete('contribution_tracking')
         ->condition('id', $msg['custom'])
         ->execute();
+    }
+
+    /**
+     *  Test that the a blank address is not written to the DB.
+     */
+    public function testRecurringBlankEmail() {
+      civicrm_initialize();
+      $subscr_id = mt_rand();
+      $values = $this->processRecurringSignup($subscr_id);
+
+      $message = new RecurringPaymentMessage($values);
+      $this->setExchangeRates($message->get('payment_date'), array('USD' => 1, $message->get('mc_currency') => 3));
+      $messageBody = $message->getBody();
+
+      $addressFields = array('address_city', "address_country_code", "address_country", "address_state","address_street", "address_zip");
+      foreach ($addressFields as $addressField) {
+        $messageBody[$addressField] = '';
+      }
+
+      db_insert('contribution_tracking')
+        ->fields(array('id' => $messageBody['custom']))
+        ->execute();
+
+      $this->recurringConsumer->processMessage($messageBody);
+
+      $contributions = wmf_civicrm_get_contributions_from_gateway_id(
+        $message->getGateway(),
+        $message->getGatewayTxnId()
+      );
+      $addresses = $this->callAPISuccess('Address', 'get', array('contact_id' => $contributions[0]['contact_id'], 'sequential' => 1));
+      $this->assertEquals(1, $addresses['count']);
+      // The address created by the sign up (Lockwood Rd) should not have been overwritten by the blank.
+      $this->assertEquals('5109 Lockwood Rd', $addresses['values'][0]['street_address']);
     }
 
     /**
@@ -427,4 +455,20 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 			),
 		);
 	}
+
+  /**
+   * Process the original recurring sign up message.
+   *
+   * @param string $subscr_id
+   * @return array
+   */
+  private function processRecurringSignup($subscr_id) {
+    $values = array('subscr_id' => $subscr_id);
+    $signup_message = new RecurringSignupMessage($values);
+    $subscr_time = strtotime($signup_message->get('subscr_date'));
+    exchange_rate_cache_set('USD', $subscr_time, 1);
+    exchange_rate_cache_set($signup_message->get('mc_currency'), $subscr_time, 3);
+    $this->recurringConsumer->processMessage($signup_message->getBody());
+    return $values;
+  }
 }
