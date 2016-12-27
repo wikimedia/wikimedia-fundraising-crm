@@ -1,6 +1,21 @@
 <?php
 
 class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
+  /**
+   * Gateway.
+   *
+   * eg. jpmorgan, paypal etc.
+   *
+   * @var string
+   */
+    protected $gateway;
+
+  /**
+   * Transaction id being worked with. This is combined with the gateway for the civi trxn_id.
+   *
+   * @var string
+   */
+    protected $trxn_id;
     /**
      * Test and remove some dynamic fields, to simplify test fixtures.
      */
@@ -19,5 +34,17 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
         unset( $msg['source_run_id'] );
         unset( $msg['source_version'] );
         unset( $msg['source_enqueued_time'] );
+    }
+
+    /**
+     * Clean up transactions from previous test runs.
+     */
+    function doCleanUp() {
+      $contributions = wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $this->trxn_id);
+      if ($contributions) {
+        foreach ($contributions as $contribution) {
+          $this->callAPISuccess('Contribution', 'delete', array('id' => $contribution['id']));
+        }
+      }
     }
 }

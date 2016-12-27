@@ -16,6 +16,7 @@ class JpMorganFileTest extends BaseChecksFileTest {
         $this->strtime = '04/02/2000';
         $this->epochtime = wmf_common_date_parse_string('2000-04-02');
         $this->setExchangeRates( $this->epochtime, array( 'USD' => 1, 'EUR' => 3 ) );
+        $this->gateway = 'jpmorgan';
     }
 
     function testParseRow() {
@@ -58,20 +59,9 @@ class JpMorganFileTest extends BaseChecksFileTest {
     function testImport() {
         //FIXME
         $_GET['q'] = '';
-        //FIXME
         civicrm_initialize();
-
-        // Clean slate.
-        $contributions = wmf_civicrm_get_contributions_from_gateway_id( 'jpmorgan', '1234TEST' );
-        if ( $contributions ) {
-            foreach ( $contributions as $existing ) {
-                $success = civicrm_api_classapi()->Contribution->Delete( array(
-                    'id' => $existing['id'],
-                    'version' => 3,
-                ) );
-                $this->assertTrue( $success );
-            }
-        }
+        $this->trxn_id = '1234TEST';
+        $this->doCleanUp();
 
         $this->setExchangeRates( wmf_common_date_parse_string( '2000-04-01' ), array( 'USD' => 1, 'EUR' => 3 ) );
 
