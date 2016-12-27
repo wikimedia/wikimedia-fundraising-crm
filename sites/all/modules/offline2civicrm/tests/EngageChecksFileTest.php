@@ -149,7 +149,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     public function testImporterCreatesOutputFiles() {
       civicrm_initialize();
-      $this->sourceFileUri = __DIR__ . '/../test_data/engage_reduced.csv';
+      $this->sourceFileUri = __DIR__ . '/../tests/data/engage_reduced.csv';
       $fileUri = $this->setupFile('engage_reduced.csv');
 
       $importer = new EngageChecksFile($fileUri);
@@ -248,7 +248,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @return string
    */
   public function setupFile($inputFileName) {
-    $this->sourceFileUri = __DIR__ . '/../test_data/' . $inputFileName;
+    $this->sourceFileUri = __DIR__ . '/../tests/data/' . $inputFileName;
     $this->purgePreviousData();
 
     // copy the file to a temp dir so copies are made in the temp dir.
