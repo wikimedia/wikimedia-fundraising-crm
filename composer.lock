@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "cec6275ac424c446d05c52716f6274f5",
-    "content-hash": "91931727db11a0b3a078b4c4401f5b5f",
+    "hash": "c2a08d033ae69a5ecbae72fdbe929a2a",
+    "content-hash": "824641a9a433422fd2773d67876f5d7b",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
@@ -449,16 +449,16 @@
         },
         {
             "name": "phpmailer/phpmailer",
-            "version": "v5.2.19",
+            "version": "v5.2.21",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPMailer/PHPMailer.git",
-                "reference": "9e4b8fb3deb7d9cfa515c04cec41f71bc37ce9a9"
+                "reference": "1d51856b76c06fc687fcd9180efa7a0bed0d761e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/9e4b8fb3deb7d9cfa515c04cec41f71bc37ce9a9",
-                "reference": "9e4b8fb3deb7d9cfa515c04cec41f71bc37ce9a9",
+                "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/1d51856b76c06fc687fcd9180efa7a0bed0d761e",
+                "reference": "1d51856b76c06fc687fcd9180efa7a0bed0d761e",
                 "shasum": ""
             },
             "require": {
@@ -505,7 +505,7 @@
                 }
             ],
             "description": "PHPMailer is a full-featured email creation and transfer class for PHP",
-            "time": "2016-12-26 10:09:10"
+            "time": "2016-12-28 15:35:48"
         },
         {
             "name": "phpseclib/phpseclib",
