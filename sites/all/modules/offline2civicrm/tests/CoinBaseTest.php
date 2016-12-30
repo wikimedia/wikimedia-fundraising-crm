@@ -24,8 +24,9 @@ class CoinBaseTest extends BaseChecksFileTest {
         $importer->import();
 
         $contribution = wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $this->trxn_id);
-        $this->assertEquals( 1, count( $contribution ) );
-        $this->assertEquals( 'COINBASE PLUTO', $contribution[0]['trxn_id'] );
+        $this->assertEquals(1, count($contribution));
+        $this->assertEquals('COINBASE PLUTO', $contribution[0]['trxn_id']);
+        $this->assertEquals('online', db_query("SELECT {utm_medium} from {contribution_tracking} WHERE contribution_id = {$contribution[0]['id']}")->fetchField());
     }
 
 }

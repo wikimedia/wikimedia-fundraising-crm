@@ -1755,9 +1755,15 @@ function wmf_civicrm_normalize_msg( $msg ) {
 
     // if we're missing a contrib id, insert new record to the table
     // this can happen if a user somehow makes a trxn from outside the normal workflow
-    // checks are ignored as they were completely offline
+    // Historically checks have been  ignored as they are completely offline.
+    // T146295 has raised some questions about this.
+    // code change respects previous recognition of 'payment_method' as being a little bit magic,
+    // but also assumes that if you are setting utm_medium or utm_source in your import you intend them to be recorded.
     if ( !isset( $msg[ 'contribution_tracking_id' ] ) ) {
-        if ( array_key_exists( 'payment_method', $msg ) && strtoupper( $msg['payment_method'] ) != "CHECK" ) {
+        if (
+          (!empty($msg['utm_medium']) || !empty($msg['utm_source']))
+          || (array_key_exists('payment_method', $msg) && strtoupper($msg['payment_method']) != "CHECK")
+        ) {
 
             watchdog( 'wmf_civicrm', 'Contribution missing contribution_tracking_id', array(), WATCHDOG_DEBUG );
             //@fixme: For the regular transactions, this has been moved to the staging function. This needs to happen in recurring also, and then it can be removed here.
