@@ -1,60 +1,45 @@
 <?php
 
-module_load_include( 'php', 'queue2civicrm', 'tests/simpletest/BaseTestCase' );
-
-class ContributionConversionTest extends BaseTestCase {
-    public static function getInfo() {
-        return array(
-            'name' => 'ContributionConversion',
-            'group' => 'Wikimedia',
-            'description' => 'Convert single contributions to recurring',
-        );
-    }
+class ContributionConversionTest extends BaseChecksFileTest {
 
     public function setUp() {
         parent::setUp();
+        civicrm_initialize();
+        // I'm slightly confused why this is required. phpunit is blowing away GLOBALS,
+        // including the one holding the DB connection but civicrm_initialize is not
+        // calling this on the second run due to the static being set.
+        // The reason this is confusing is logically, but not in practice,
+        // this test should be no more affected than other tests.
+        CRM_Core_Config::singleton(TRUE, TRUE);
 
-        $api = civicrm_api_classapi();
-        $api->Contact->Create( array(
+        $result = $this->callAPISuccess('Contact', 'create', array(
             'contact_type' => 'Individual',
             'email' => 'foo@example.com',
-            'version' => 3,
-        ) );
-        $this->contact_id = $api->id;
+        ));
+        $this->contact_id = $result['id'];
 
         $this->gateway_txn_id = "NaN-" . mt_rand();
         $this->transaction = WmfTransaction::from_unique_id( "GLOBALCOLLECT {$this->gateway_txn_id}" );
 
-        $api->Contribution->Create( array(
+        $contributionResult = $this->callAPISuccess('Contribution', 'create', array(
             'contact_id' => $this->contact_id,
             'trxn_id' => $this->transaction->get_unique_id(),
             'contribution_type' => 'Cash',
             'total_amount' => '20.01',
             'receive_date' => wmf_common_date_unix_to_sql( time() ),
-            'version' => 3,
-        ) );
-        $this->contribution_id = $api->id;
+        ));
+        $this->contribution_id = $contributionResult['id'];
 
-        wmf_civicrm_set_custom_field_values( $this->contribution_id, array(
+        wmf_civicrm_set_custom_field_values($this->contribution_id, array(
             'original_amount' => '20.01',
             'original_currency' => 'USD',
-        ) );
+        ));
     }
 
     public function tearDown() {
-        $api = civicrm_api_classapi();
-
-        $api->Contribution->Delete( array(
-            'id' => $this->contribution_id,
-            'version' => 3,
-        ) );
-
-        $api->Contact->Delete( array(
-            'id' => $this->contact_id,
-            'version' => 3,
-        ) );
-
         parent::tearDown();
+        $this->callAPISuccess('Contribution', 'delete', array('id' => $this->contribution_id));
+        $this->callAPISuccess('Contact', 'delete', array('id' => $this->contact_id));
     }
 
     public function testMakeRecurring() {
