@@ -23,7 +23,8 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
         ));
         wmf_civicrm_tag_contact_for_review($contact);
         $entityTags = civicrm_api3('EntityTag', 'get', array('entity_id' => $contact['id']));
-        $this->assertArrayHasKey(civicrm_api3('Tag', 'getvalue', array('name' => 'Review', 'return' => 'id')), $entityTags['values']);
+        $tag = reset($entityTags['values']);
+        $this->assertEquals(civicrm_api3('Tag', 'getvalue', array('name' => 'Review', 'return' => 'id')), $tag['tag_id']);
     }
 
     /**
