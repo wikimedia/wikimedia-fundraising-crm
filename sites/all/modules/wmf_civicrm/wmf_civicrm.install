@@ -2452,3 +2452,18 @@ function wmf_civicrm_update_7335() {
   require_once 'update_receipt.php';
   _wmf_civicrm_update_offline_receipt();
 }
+
+/**
+ * Remove review tag.
+ *
+ * Bug: T118904
+ */
+function wmf_civicrm_update_7440() {
+  civicrm_initialize();
+  $tagID = civicrm_api3('Tag', 'getvalue', array('name' => 'Review', 'return' => 'id'));
+  CRM_Core_DAO::executeQuery("
+    DELETE FROM civicrm_entity_tag
+    WHERE tag_id = $tagID
+    AND entity_table = 'civicrm_contact'
+  ");
+}
