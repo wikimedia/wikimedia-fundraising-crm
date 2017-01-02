@@ -260,14 +260,6 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
         // Insert the location record
         $location = wmf_civicrm_message_location_insert( $msg, $contact );
 
-        // TODO: Add to contact_tags instead.
-        // Tag contact for review
-        try {
-            wmf_civicrm_tag_contact_for_review( $contact );
-        } catch ( WmfException $ex ) {
-            watchdog( 'queue2civicrm_import', 'Failed to tag contact for review.', NULL, WATCHDOG_ERROR );
-        }
-
         $msg['contact_id'] = $contact['id'];
     }
 
@@ -538,16 +530,6 @@ function wmf_civicrm_get_civi_id($type, $name)
                 throw new WmfException("CIVI_CONFIG", t("Payment Instrument '!name' not found!", array("!name" => $name)));
             }
             break;
-        case 'tag_id':
-            require_once 'api/v3/Tag.php';
-            $tag_id = civicrm_api3_tag_get(array('name'=> $name, 'version' => '3'));
-            if (is_array($tag_id) && array_key_exists('id', $tag_id)){
-                $civi_ids[$type][$name] = $tag_id['id'];
-                watchdog('wmf_civicrm', "Found id for Entity Tag $name :" . $civi_ids[$type][$name]);
-                return $civi_ids[$type][$name];
-            } else {
-                throw new WmfException("CIVI_CONFIG", t("Entity Tag '!name' not found!", array("!name" => $name)));
-            }
         default:
             throw new WmfException("CIVI_CONFIG", t("Civi lookup for type '!type' not implemented", array("!type" => $type)));
     }
@@ -1904,27 +1886,6 @@ function wmf_civicrm_normalize_msg( $msg ) {
 function wmf_civicrm_get_direct_mail_field_option_name()
 {
     return 'appeal_20080709183729';
-}
-
-/**
- * Insert the tag record
- *
- * Serves as a standard way for message processors to handle tag
- * insertion.
- *
- * @param array $contact
- * @return array
- */
-function wmf_civicrm_tag_contact_for_review( $contact )
-{
-
-    $review_tag_id = wmf_civicrm_get_civi_id('tag_id', 'Review');
-
-    $tag = array(
-        'tag_id' => $review_tag_id,
-        'contact_id' => $contact[ 'id' ]
-    );
-    return civicrm_api3('EntityTag', 'create', $tag);
 }
 
 /**

@@ -319,9 +319,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
 			// Insert the location record
 			wmf_civicrm_message_location_update( $msg, $contact );
-
-			// Tag contact for review
-			wmf_civicrm_tag_contact_for_review( $contact );
 		}
 
 		// update subscription record with next payment date
@@ -398,9 +395,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
 		// Insert the location record
 		wmf_civicrm_message_location_insert( $msg, $contact );
-
-		// Tag contact for review
-		wmf_civicrm_tag_contact_for_review( $contact );
 
 		$api = civicrm_api_classapi();
 		$insert_params = array(
@@ -526,9 +520,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
 		// Insert the location record
 		wmf_civicrm_message_location_insert( $msg, $contact );
-
-		// Tag contact for review
-		wmf_civicrm_tag_contact_for_review( $contact );
 
 		watchdog( 'recurring', 'Subscription succesfully modified for subscription id: %subscr_id', array( '%subscr_id' => print_r( $msg['subscr_id'], true )), WATCHDOG_NOTICE );
 	}
