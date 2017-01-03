@@ -412,7 +412,6 @@ abstract class ChecksFile {
             'Additional Address 2' => 'supplemental_address_2',
             'Batch' => 'import_batch_number', # deprecated, use External Batch Number instead.
             'Banner' => 'utm_source',
-            'Batch' => 'import_batch_number',
             'Campaign' => 'utm_campaign',
             'Check Number' => 'check_number',
             'City' => 'city',

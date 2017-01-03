@@ -12,7 +12,6 @@ class CoinbaseFile extends ChecksFile {
         return array(
             'BTC Price',
             'Currency',
-            //'Custom',
             'Customer Email',
             'Native Price',
             'Phone Number',
@@ -41,6 +40,9 @@ class CoinbaseFile extends ChecksFile {
         $msg['gateway'] = 'coinbase';
         $msg['contribution_type'] = 'cash';
         $msg['payment_instrument'] = 'Bitcoin';
+        // It seems that payment_method is used for creating the contribution_tracking source
+        // whereas payment_instrument is used for CiviCRM contributions payment_instrument_id field.
+        $msg['payment_method'] = 'bitcoin';
 
         list($msg['first_name'], $msg['last_name']) = wmf_civicrm_janky_split_name( $msg['full_name'] );
 
@@ -71,10 +73,12 @@ class CoinbaseFile extends ChecksFile {
 
     protected function getFieldMapping() {
         return array(
+            'Banner' => 'utm_source',
+            'Campaign' => 'utm_campaign',
             //'BTC Price' => 'original_gross',
             'Currency' => 'currency',
-            //'Custom' => 'contribution_tracking', // TODO
             'Customer Email' => 'email',
+            'Medium' => 'utm_medium',
             // FIXME: this will destroy recurring subscription import, for now.
             'Native Price' => 'gross',
             'Phone Number' => 'phone', // TODO: not stored
