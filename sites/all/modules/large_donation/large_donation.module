@@ -196,7 +196,7 @@ function large_donation_civicrm_post( $action, $type, $id, &$contribution ) {
  *
  * No personally identifiable information should be included.
  *
- * @param CRM_Contribution_BAO_Contribution $contribution
+ * @param CRM_Contribute_BAO_Contribution $contribution
  * @param stdClass $notification
  */
 function large_donation_notification_send( $contribution, $notification ) {
@@ -238,13 +238,8 @@ function large_donation_notification_send( $contribution, $notification ) {
             'html' => $message,
         );
         $mailer->send( $email );
-
-        $email_success = true;
+		watchdog('large_donation', 'A large donation notification was sent to: ' . print_r( $to, true ) );
     } catch ( Exception $e ) {
-        watchdog('large_donation', 'Sending large donation message failed for contribution: ' . $contribution_id . '<pre>' . check_plain(print_r($contribution, TRUE)) . "\n\n" . $e->getMessage() . '</pre>', array(), WATCHDOG_ERROR);
-    }
-
-    if ( $email_success ) {
-        watchdog('large_donation', 'A large donation notification was sent to: ' . print_r( $to, true ) );
+        watchdog('large_donation', 'Sending large donation message failed for contribution: ' . $contribution->id . '<pre>' . check_plain(print_r($contribution, TRUE)) . "\n\n" . $e->getMessage() . '</pre>', array(), WATCHDOG_ERROR);
     }
 }
