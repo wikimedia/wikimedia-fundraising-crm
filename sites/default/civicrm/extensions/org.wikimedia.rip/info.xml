@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<extension key="org.wikimedia.rip" type="module">
+  <file>rip</file>
+  <name>Civi-RIP</name>
+  <description>Set opt out flag on deceased people. On install existing contacts will be opted out.</description>
+  <license>AGPL-3.0</license>
+  <maintainer>
+    <author>eileen</author>
+    <email>emcnaughton@wikimedia.org</email>
+  </maintainer>
+  <urls>
+    <url desc="Main Extension Page">http://FIXME</url>
+    <url desc="Documentation">http://FIXME</url>
+    <url desc="Support">http://FIXME</url>
+    <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
+  </urls>
+  <releaseDate>2017-01-02</releaseDate>
+  <version>1.0</version>
+  <develStage>alpha</develStage>
+  <compatibility>
+    <ver>4.7</ver>
+  </compatibility>
+  <comments>CiviCRM functions usually respect the is_deceased flag so this is only necessary if it helps your data processes.</comments>
+  <civix>
+    <namespace>CRM/Rip</namespace>
+  </civix>
+</extension>
