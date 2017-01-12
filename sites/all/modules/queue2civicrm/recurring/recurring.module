@@ -167,8 +167,10 @@ function recurring_get_contribution_tracking_id( $msg ) {
         $query = "SELECT id FROM {contribution_tracking} WHERE contribution_id IN ( {$id_list} )";
         // we can use this related contribution tracking id
         $contribution_tracking_id = db_query( $query )->fetchField();
-        watchdog( 'recurring', 'recurring_get_contribution_tracking_id: Selected contrib tracking id from past contributions, %cti', array( '%cti' => $contribution_tracking_id ), WATCHDOG_DEBUG );
-        return $contribution_tracking_id;
+        if ( !empty( $contribution_tracking_id ) ) {
+          watchdog( 'recurring', 'recurring_get_contribution_tracking_id: Selected contrib tracking id from past contributions, %cti', array( '%cti' => $contribution_tracking_id ), WATCHDOG_DEBUG );
+          return $contribution_tracking_id;
+        }
       }
     }
 

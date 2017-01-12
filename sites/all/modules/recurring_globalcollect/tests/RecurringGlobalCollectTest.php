@@ -186,4 +186,22 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 		$this->assertTrue( $result->getCommunicationStatus() );
 		$this->assertRegExp( '/SET_PAYMENT/', $result->getRawResponse() );
 	}
+
+	/**
+	 * Recover from missing ct_ids on all associated contributions
+	 */
+	public function testBackfillContributionTracking() {
+		$id_list = implode( ',', $this->contributions );
+
+		$dbs = wmf_civicrm_get_dbs();
+		$dbs->push( 'donations' );
+		$query = "DELETE FROM {contribution_tracking} WHERE contribution_id IN( $id_list )";
+		db_query( $query );
+		$contribution_tracking_id = recurring_get_contribution_tracking_id( array(
+			'txn_type' => 'subscr_payment',
+			'subscr_id' => $this->subscriptionId,
+			'payment_date' => strtotime( "now" ),
+		) );
+		$this->assertNotEmpty( $contribution_tracking_id );
+	}
 }
