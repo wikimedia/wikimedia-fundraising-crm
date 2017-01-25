@@ -2467,21 +2467,3 @@ function wmf_civicrm_update_7440() {
     AND entity_table = 'civicrm_contact'
   ");
 }
-
-/**
- * Round latitude and longitude to 4 digits, to match the values currently
- * being assigned and avoid dedupe conflicts
- */
-function wmf_civicrm_update_7450() {
-  // Update 1,000,000 at a time to avoid locking things up for too long
-  civicrm_initialize();
-  $million = 1000000;
-  for($startId = 0; $startId <= 21 * $million; $startId += $million) {
-    $endId = $startId + $million;
-    CRM_Core_DAO::executeQuery("
-      UPDATE civicrm_address
-      SET geo_code_1 = ROUND(geo_code_1, 4), geo_code_2 = ROUND(geo_code_2, 4)
-      WHERE id BETWEEN $startId AND $endId
-    ");
-  }
-}
