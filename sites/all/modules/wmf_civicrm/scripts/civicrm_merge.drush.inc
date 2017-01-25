@@ -61,6 +61,11 @@ function drush_civicrm_merge() {
     array(1 => array($start, 'Integer'), 2 => array($batch_size, 'Integer'))
   );
 
+  if (empty($end)) {
+    watchdog('civicrm_merge', 'Deduping contact range from %start - there are no more contacts to dedupe.', array('%start' => $start), WATCHDOG_INFO);
+    return;
+  }
+
   $mergeParams = array(
     'criteria' => array(
       'contact' => array('id' => array('BETWEEN' => array($start, $end))),

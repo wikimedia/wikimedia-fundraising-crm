@@ -2004,7 +2004,7 @@ function globalcollect_audit_send_queue_message( $queueId, $body ) {
 
 	wmf_common_set_message_source( $body, 'audit', 'GlobalCollect WR1 Auditor' );
 
-	$newQueue = Configuration::getDefaultConfig()->object( $configKey, true );
+	$newQueue = Configuration::getDefaultConfig()->object( $configKey, false );
 	$newQueue->push( $body );
 }
 

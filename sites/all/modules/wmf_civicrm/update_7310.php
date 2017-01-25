@@ -3,13 +3,14 @@
 function _wmf_civicrm_update_7310_add_zip_geo() {
   $queries = array();
 
+  $queries[] = 'DROP TABLE IF EXISTS `wmf_zip_geo`';
   $queries[] = '
     CREATE TABLE `wmf_zip_geo` (
 		`zip` char(5) primary key,
 		`city` varchar(64),
 		`state` char(2),
-		`latitude` float,
-		`longitude` float,
+		`latitude` decimal(10,6),
+		`longitude` decimal(10,6),
 		`timezone` varchar(8),
 		`dst` tinyint
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci';

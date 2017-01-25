@@ -2375,8 +2375,8 @@ function wmf_civicrm_update_7320() {
     CREATE TEMPORARY TABLE civicrm_address_geocode (
       id INT PRIMARY KEY,
       zip CHAR(5),
-      latitude DECIMAL (13,9),
-      longitude DECIMAL (13,9),
+      latitude DECIMAL (10,6),
+      longitude DECIMAL (10,6),
       timezone VARCHAR(8)
     )");
 
@@ -2396,13 +2396,18 @@ function wmf_civicrm_update_7320() {
       c.timezone = g.timezone
   ");
 
-  CRM_Core_DAO::executeQuery("
-    UPDATE civicrm_address a
-    INNER JOIN civicrm_address_geocode c ON c.id = a.id
-    SET a.geo_code_1 = c.latitude,
-      a.geo_code_2 = c.longitude,
-      a.timezone = c.timezone
-  ");
+  $batch = 100000;
+  for($startId = 0; $startId < 210 * $batch; $startId += $batch) {
+    $endId = $startId + $batch;
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_address a
+      INNER JOIN civicrm_address_geocode c ON c.id = a.id
+      SET a.geo_code_1 = c.latitude,
+        a.geo_code_2 = c.longitude,
+        a.timezone = c.timezone
+      WHERE a.id BETWEEN $startId AND $endId
+    ");
+  }
 }
 
 /**
@@ -2466,4 +2471,14 @@ function wmf_civicrm_update_7440() {
     WHERE tag_id = $tagID
     AND entity_table = 'civicrm_contact'
   ");
+}
+
+/**
+ * Re-run fixed geocoding updates
+ *
+ * Bug: T155677
+ */
+function wmf_civicrm_update_7450() {
+  wmf_civicrm_update_7310();
+  wmf_civicrm_update_7320();
 }
