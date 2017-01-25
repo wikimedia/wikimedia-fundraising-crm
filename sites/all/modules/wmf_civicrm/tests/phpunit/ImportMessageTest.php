@@ -453,8 +453,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'city' => 'Somerville',
                         'postal_code' => '02144',
                         'street_address' => '1 Davis Square',
-                        'geo_code_1' => '42.3995',
-                        'geo_code_2' => '-71.1217',
+                        'geo_code_1' => '42.399546',
+                        'geo_code_2' => '-71.12165',
                         'timezone' => 'UTC-5',
                     )
                 ),
