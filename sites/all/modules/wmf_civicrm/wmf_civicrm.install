@@ -2482,3 +2482,19 @@ function wmf_civicrm_update_7450() {
   wmf_civicrm_update_7310();
   wmf_civicrm_update_7320();
 }
+
+/**
+ * Add index to nick_name column as we have decided to use it for imports.
+ *
+ * We have decided the Benevity Import should accept org matches on nick_name
+ * or organization_name in order to provide the option to refer to them with
+ * 2 names. In order to use it it must be indexed. Note that I believe the index size
+ * is relative to the number of values in it (currently a few hundred).
+ *
+ * Bug: T115044
+ */
+function wmf_civicrm_update_7455() {
+  civicrm_initialize();
+  $tables = array('civicrm_contact' => array('nick_name'));
+  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+}

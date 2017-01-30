@@ -7,7 +7,7 @@
  * particular transaction.  Rare, but inserting some data for a trxn when
  * absent helps facilitate better analytics.
  * 
- * @return the contribution_tracking id 
+ * @return int the contribution_tracking id
  */
 function wmf_civicrm_insert_contribution_tracking( $utm_source, $utm_medium, $utm_campaign, $ts, $contrib_id=null, $optout=null, $anonymous=null ) {
     // make sure we're using the default (drupal) db
