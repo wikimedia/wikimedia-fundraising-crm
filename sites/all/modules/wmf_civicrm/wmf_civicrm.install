@@ -62,6 +62,8 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7290();
     wmf_civicrm_update_7300();
     wmf_civicrm_update_7310();
+    wmf_civicrm_update_7455();
+    wmf_civicrm_update_7460();
 }
 
 /**
@@ -2496,5 +2498,21 @@ function wmf_civicrm_update_7450() {
 function wmf_civicrm_update_7455() {
   civicrm_initialize();
   $tables = array('civicrm_contact' => array('nick_name'));
+  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+}
+
+/**
+ * Add index to activity_date_time column.
+ *
+ * Without this index activities are basically unsearchable as we need to limit
+ * them to a time frame to make it manageable.
+ *
+ * Some performance discussion here.
+ *
+ * https://issues.civicrm.org/jira/browse/CRM-19821
+ */
+function wmf_civicrm_update_7460() {
+  civicrm_initialize();
+  $tables = array('civicrm_activity' => array('activity_date_time'));
   CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
