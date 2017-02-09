@@ -147,6 +147,26 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $this->assertEquals(5, strlen($contact['values'][0]['postal_code']));
   }
 
+  /**
+   * Test valid output files are created when an error streak is encountered.
+   *
+   * An error streak is 10 or more invalid rows in a row.
+   */
+  public function testImporterErrorStreak() {
+    civicrm_initialize();
+    $fileUri = $this->setupFile('engage_multiple_errors.csv');
+
+    try {
+      $importer = new EngageChecksFile($fileUri);
+      $importer->import();
+    }
+    catch (Exception $e) {
+      $this->assertTrue(strpos($e->getMessage(), 'Import aborted due to 10 consecutive errors, last error was at row 12: \'Invalid Name\'') === 0, 'Actual error was ' . $e->getMessage());
+      return;
+    }
+    $this->fail('An exception should have been thrown');
+  }
+
     public function testImporterCreatesOutputFiles() {
       civicrm_initialize();
       $this->sourceFileUri = __DIR__ . '/../tests/data/engage_reduced.csv';
@@ -158,7 +178,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       $this->assertEquals(
         array (
           0 => 'Successful import!',
-          'Result' => '14 out of 18  rows were imported.',
+          'Result' => '14 out of 18 rows were imported.',
           'not imported' => '4 not imported rows logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_all_missed.' . $user->uid, $fileUri), 12) ."'> file</a>.",
           'Duplicate' => '1 Duplicate row logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_skipped.' . $user->uid, $fileUri), 12) ."'> file</a>.",
           'Error' => '3 Error rows logged to <a href=\'/import_output/'.  substr(str_replace('.csv', '_errors.' . $user->uid, $fileUri), 12) ."'> file</a>.",

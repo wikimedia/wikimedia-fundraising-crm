@@ -1,0 +1,5 @@
+Participating Corporation,Project,Date of Donation,Donor First Name,Donor Last Name,Email,Address,City,State/Province,Postal Code,Comment,Transaction ID,Donation Frequency,Donation Amount,Matched Amount,Total
+Donald Duck Inc,,2015-11-01,Hewey,Duck,hewey@duck.org,2 Quacker Road,Duckville,CA,90210,,trxn-QUACK,One-time,200,0,200
+Mickey Mouse Inc,WIKIPEDIA,2015-11-02,Minnie,Mouse,minnie@mouse.org,2 Cheesey Place,Mouseville,CA,90210,,trxn-SQUEAK,One-time,100,100,200
+Goofy Inc,,2015-11-02,Pluto,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,90210,,trxn-WOOF,One-time,25,25,50
+Uncle Scrooge Inc,,2015-11-02,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,90210,Very stingy,trxn-AARF,Recurring,0,0.5,0.5

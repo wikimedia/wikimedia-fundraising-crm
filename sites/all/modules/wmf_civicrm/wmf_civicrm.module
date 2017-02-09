@@ -262,6 +262,17 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
 
         $msg['contact_id'] = $contact['id'];
     }
+    else {
+      if (isset($msg['employer_id'])) {
+        civicrm_api3('Contact', 'create', array('contact_id' => $msg['contact_id'],'employer_id' => $msg['employer_id']));
+      }
+      // We have set the bar for invoking a location update fairly high here - ie state,
+      // city or postal_code is not enough, as historically this update has not occurred at
+      // all & introducing it this conservatively feels like a safe strategy.
+      if (!empty($msg['street_address'])) {
+        wmf_civicrm_message_location_update($msg, array('id' => $msg['contact_id']));
+      }
+    }
 
     // Make new recurring record if necessary
     $initial_recurring = ( $msg['recurring'] && !$msg['contribution_recur_id'] );
@@ -350,9 +361,6 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         'check_number' => $msg['check_number'],
         'soft_credit_to' => $msg['soft_credit_to_id'],
         'debug' => TRUE,
-
-        // API required fields
-        'version' => '3'
     );
 
     // Add the thank you date when it exists and is not null (e.g.: we're importing from a check)
@@ -1039,8 +1047,6 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         'do_not_trade' => $msg['anonymous'], // FIXME: has the wrong meaning
         'contact_source' => $msg['contact_source'],
         'debug' => TRUE,
-        // API required fields
-        'version' => '3'
     );
     if ( strtolower( $msg['contact_type'] ) == "organization" ){
         unset( $contact['first_name'] );
@@ -1050,6 +1056,9 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         $contact['sort_name'] = $msg['organization_name'];
         $contact['display_name'] = $msg['organization_name'];
         $contact['organization_name'] = $msg['organization_name'];
+    }
+    elseif (!empty($msg['employer_id'])) {
+      $contact['employer_id'] = $msg['employer_id'];
     }
     if ( !empty( $msg['name_prefix'] ) ) {
         $contact['prefix_id'] = $msg['name_prefix'];
@@ -1477,7 +1486,7 @@ function wmf_civicrm_message_address_update($msg, $contact_id ) {
   $address = array(
     'is_primary' => 1,
     'street_address' => $msg['street_address'],
-    'supplemental_address_1' => $msg['supplemental_address_1'],
+    'supplemental_address_1' => !empty($msg['supplemental_address_1']) ? $msg['supplemental_address_1'] : '',
     'city' => $msg['city'],
     'postal_code' => $msg['postal_code'],
     'country_id' => $country_id,

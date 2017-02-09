@@ -110,6 +110,29 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
         $this->assertEquals(0, $apiResult['is_error'], $prefix . $errorMessage);
     }
 
+  /**
+   * Getsingle test function from civicrm core codebase test suite.
+   *
+   * This function exists to wrap api getsingle function & check the result
+   * so we can ensure they succeed & throw exceptions without litterering the test with checks
+   *
+   * @param string $entity
+   * @param array $params
+   *
+   * @throws Exception
+   * @return array|int
+   */
+  public function callAPISuccessGetSingle($entity, $params) {
+    $params += array(
+      'version' => 3,
+      'debug' => 1,
+    );
+    $result = civicrm_api($entity, 'getsingle', $params);
+    if (!is_array($result) || !empty($result['is_error']) || isset($result['values'])) {
+      throw new Exception('Invalid getsingle result' . print_r($result, TRUE));
+    }
+    return $result;
+  }
 
   /**
    * Emulate a logged in user since certain functions use that.

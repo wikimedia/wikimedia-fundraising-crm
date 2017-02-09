@@ -48,6 +48,15 @@ abstract class ChecksFile {
     }
 
   /**
+   * Getter for messages array.
+   *
+   * @return array
+   */
+  public function getMessages() {
+    return $this->messages;
+  }
+
+  /**
    * Read checks from a file and save to the database.
    *
    * @return array
@@ -101,11 +110,11 @@ abstract class ChecksFile {
             foreach ( $data as $key => &$value ) {
                 $value = trim( $value );
             }
-            if ( $error_streak_count >= $error_streak_threshold ) {
-                throw new IgnoredRowException('Error limit reached');
-            }
 
             try {
+                if ( $error_streak_count >= $error_streak_threshold ) {
+                  throw new IgnoredRowException('IMPORT_CONTRIB', 'Error limit reached');
+                }
                 $msg = $this->parseRow( $data );
 
                 // check to see if we have already processed this check
@@ -124,10 +133,8 @@ abstract class ChecksFile {
                     }
                     continue;
                 }
-
                 // tha business.
-                $contribution = wmf_civicrm_contribution_message_import( $msg );
-                $this->mungeContribution( $contribution );
+                $contribution = WmfDatabase::transactionalCall(array($this, 'doImport'), array($msg));
 
                 watchdog( 'offline2civicrm',
                     'Import checks: Contribution imported successfully (@id): !msg', array(
@@ -550,7 +557,7 @@ abstract class ChecksFile {
       $this->messages['Result'] = ts("All rows were imported");
     }
     else {
-      $this->messages['Result'] = ts("%1 out of %2  rows were imported.", array('1' => $num_successful, 2 => $totalRows));
+      $this->messages['Result'] = ts("%1 out of %2 rows were imported.", array('1' => $num_successful, 2 => $totalRows));
 
       if($num_duplicates !== $notImported && $num_errors !== $notImported && $num_ignored !== $notImported) {
         // If the number of rows not imported is the same as the number skipped, or the number of errors etc
@@ -584,4 +591,17 @@ abstract class ChecksFile {
     $this->messages[$type] = "$count $type $row logged to <a href='/import_output/" . substr($uri, 12, -4) . "'> file</a>.";
     ChecksImportLog::record($this->messages[$type]);
   }
+
+  /**
+   * Do the actual import.
+   *
+   * @param array $msg
+   * @return array
+   */
+  public function doImport($msg) {
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->mungeContribution($contribution);
+    return $contribution;
+  }
+
 }
