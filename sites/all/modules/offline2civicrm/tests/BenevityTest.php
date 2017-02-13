@@ -208,7 +208,7 @@ class BenevityTest extends BaseChecksFileTest {
    */
   function testImportSucceedOrganizationDisambiguatedBySingleNickName() {
     $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Donald Duck Inc', 'contact_type' => 'Organization'));
-    $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Donald Duck', 'nick_name' => 'Donald Duck Inc', 'contact_type' => 'Organization'));
+    $theRealDuck = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Donald Duck', 'nick_name' => 'Donald Duck Inc', 'contact_type' => 'Organization'));
     $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Donald Duck Inc', 'contact_type' => 'Organization'));
 
     $importer = new BenevityFile( __DIR__ . "/data/benevity.csv" );
@@ -217,15 +217,13 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY TRXN-QUACK'));
     $this->assertEquals(200, $contribution['total_amount']);
-    // Donald duck is the organization name for the preferred contact.
-    $this->assertEquals('Donald Duck', $contribution['soft_credit'][1]['contact_name']);
 
     $address = $this->callAPISuccess('Address', 'get', array('contact_id' => $contribution['contact_id'], 'sequential' => TRUE));
     $this->assertEquals('2 Quacker Road', $address['values'][0]['street_address']);
     $this->assertEquals('Duckville', $address['values'][0]['city']);
     $this->assertEquals(90210, $address['values'][0]['postal_code']);
 
-    $orgContributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $contribution['soft_credit'][1]['contact_id']));
+    $orgContributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $theRealDuck['id']));
     // The first row has no matching contribution.
     $this->assertEquals(0, $orgContributions['count']);
 
@@ -259,12 +257,14 @@ class BenevityTest extends BaseChecksFileTest {
     $dogContact = $this->callAPISuccessGetSingle('Contact', array('id' => $contribution['contact_id']));
     $dogContributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $dogContact['id']));
     $this->assertEquals(1, $dogContributions['count']);
+    $this->assertTrue(empty($dogContributions['values'][$dogContributions['id']]['soft_credit']));
 
-    $orgContributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $contribution['soft_credit'][1]['contact_id']));
+    $orgContributions = $this->callAPISuccess('Contribution', 'get', array('trxn_id' => 'BENEVITY TRXN-WOOF_MATCHED'));
     // The first row has a matching contribution.
     $this->assertEquals(1, $orgContributions['count']);
     $this->assertEquals(25, $orgContributions['values'][$orgContributions['id']]['total_amount']);
-    $this->assertEquals('BENEVITY TRXN-WOOF_MATCHED', $orgContributions['values'][$orgContributions['id']]['trxn_id']);
+    $this->assertEquals('Goofy Inc', $orgContributions['values'][$orgContributions['id']]['display_name']);
+    $this->assertEquals($dogContact['id'], $orgContributions['values'][$orgContributions['id']]['soft_credit_to']);
 
     $contribution = $this->callAPISuccess('Contribution', 'get', array('trxn_id' => 'BENEVITY TRXN-AARF'));
     $this->assertEquals(0, $contribution['count']);
@@ -282,7 +282,8 @@ class BenevityTest extends BaseChecksFileTest {
     $anonymousContact = $this->callAPISuccessGetSingle('Contact', array('email' => 'fakeemail@wikimedia.org'));
     $this->assertEquals('Anonymous', $anonymousContact['first_name']);
     $this->assertEquals('Anonymous', $anonymousContact['last_name']);
-    $this->assertEquals($anonymousContact['id'], $orgContributions['values'][$orgContributions['id']]['soft_credit_to']);
+    // Let's not soft credit anonymouse.
+    $this->assertTrue(empty($orgContributions['values'][$orgContributions['id']]['soft_credit_to']));
     $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_a' => $anonymousContact['id']));
     $this->assertEquals(0, $relationships['count']);
 

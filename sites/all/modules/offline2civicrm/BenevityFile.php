@@ -58,7 +58,7 @@ class BenevityFile extends ChecksFile {
         unset($msg['field']);
       }
     }
-    $msg['soft_credit_to_id'] = $msg['employer_id'] = $this->getOrganizationID($msg['matching_organization_name']);
+    $msg['employer_id'] = $this->getOrganizationID($msg['matching_organization_name']);
     // If we let this go through the individual will be treated as an organization.
     parent::mungeMessage($msg);
     $msg['contact_id'] = $this->getIndividualID($msg);
@@ -118,8 +118,8 @@ class BenevityFile extends ChecksFile {
 
     $matchedMsg = $msg;
     if (!empty($msg['matching_amount'])) {
-      $matchedMsg['contact_id'] = $msg['soft_credit_to_id'];
-      $matchedMsg['soft_credit_to_id'] = $msg['contact_id'];
+      $matchedMsg['contact_id'] = $msg['employer_id'];
+      $matchedMsg['soft_credit_to_id'] = ($msg['contact_id'] == $this->getAnonymousContactID() ? NULL : $msg['contact_id']);
       $matchedMsg['gross'] = $msg['matching_amount'];
       $matchedMsg['gateway_txn_id'] = $msg['gateway_txn_id'] . '_matched';
       $this->unsetAddressFields($matchedMsg);
