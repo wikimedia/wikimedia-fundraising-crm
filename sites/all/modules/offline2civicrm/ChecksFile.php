@@ -288,7 +288,7 @@ abstract class ChecksFile {
             }
         }
 
-        $msg['gross'] = trim( $msg['gross'], '$' );
+        $msg['gross'] = str_replace(',','', trim( $msg['gross'], '$' ));
 
         if ( isset( $msg['contribution_source'] ) ) {
             // Check that the message amounts match

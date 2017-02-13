@@ -51,9 +51,4 @@ class JpMorganFile extends ChecksFile {
         );
     }
 
-    protected function mungeMessage( &$msg ) {
-        $msg['gross'] = str_replace( ',' , '' , $msg['gross'] );
-
-        parent::mungeMessage( $msg );
-    }
 }
