@@ -106,6 +106,7 @@ function offline2civicrm_import_checks_form() {
     '#type' => 'radios',
     '#default_value' => 'generic_ind',
     '#options' => array(
+        'benevity' => t('Benevity'),
         'engage' => t( 'Engage' ),
         'coinbase' => t( 'Coinbase Merchant Orders' ),
         'foreign_checks' => t( 'Foreign Checks' ),
@@ -176,6 +177,10 @@ function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
       case 'generic_org':
         $importer = new WmfOrgImportFile( $file->uri );
         break;
+      case 'benevity':
+        $importer = new BenevityFile($file->uri );
+        break;
+
       case 'paypal':
         $importer = new PayPalChecksFile( $file->uri );
         break;

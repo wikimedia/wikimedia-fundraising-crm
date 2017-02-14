@@ -2,14 +2,19 @@
 
 //TODO: namespace
 class WmfDatabase {
-    /**
-     * Multiple-database transaction around your callback
-     *
-     * FIXME: This is not even two-phase locking.  If any commit fails, the dbs become inconsistent.
-     *
-     * @param callable $callback
-     * @param array $params
-     */
+  /**
+   * Multiple-database transaction around your callback.
+   *
+   * FIXME: This is not even two-phase locking.  If any commit fails, the dbs become inconsistent.
+   *
+   * @param callable $callback
+   * @param array $params
+   *
+   * @return mixed
+   *   The result of the function call.
+   *
+   * @throws \Exception
+   */
     static function transactionalCall( $callback, $params ) {
         watchdog( 'wmf_common', "Beginning DB transaction", NULL, WATCHDOG_INFO );
         $drupal_transaction = db_transaction( 'wmf_default', array( 'target' => 'default' ) );
@@ -19,7 +24,7 @@ class WmfDatabase {
 
         try {
             // Do the thing itself
-            call_user_func_array( $callback, $params );
+            $result = call_user_func_array( $callback, $params );
         }
         catch ( Exception $ex ) {
             watchdog( 'wmf_common', "Aborting DB transaction.", NULL, WATCHDOG_INFO );
@@ -36,5 +41,6 @@ class WmfDatabase {
         unset( $crm_transaction );
         unset( $ct_transaction );
         unset( $drupal_transaction );
+        return $result;
     }
 }

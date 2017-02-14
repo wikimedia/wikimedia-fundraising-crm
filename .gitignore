@@ -3,3 +3,4 @@ sites/default/*settings.php
 sites/default/files
 vendor
 .version-stamp
+sites/default/civicrm/extensions/cache
