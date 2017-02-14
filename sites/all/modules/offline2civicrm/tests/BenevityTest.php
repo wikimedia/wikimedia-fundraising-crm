@@ -87,7 +87,7 @@ class BenevityTest extends BaseChecksFileTest {
    * Test that import passes for the Individual contact if a single match is found.
    */
   function testImportSucceedIndividualSingleContactExists() {
-    $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
+    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
     $minnie = $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org',
     ));
@@ -97,6 +97,26 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
     $this->assertEquals(1, $contributions['count']);
+    $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_a' => $minnie['id'], 'contact_id_b' => $thaMouseMeister['id']));
+    $this->assertEquals(1, $relationships['count']);
+  }
+
+  /**
+   * Test that import passes for the Individual contact if a single match is found.
+   */
+  function testImportSucceedIndividualNoExistingMatch() {
+    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
+    $importer = new BenevityFile( __DIR__ . "/data/benevity.csv" );
+    $importer->import();
+    $messages = $importer->getMessages();
+    $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('trxn_id' => 'BENEVITY TRXN-SQUEAK', 'sequential' => 1));
+    $this->assertEquals(1, $contributions['count']);
+    $relationships = $this->callAPISuccess('Relationship', 'get', array(
+      'contact_id_a' => $contributions['values'][0]['contact_id'],
+      'contact_id_b' => $thaMouseMeister['id'])
+    );
+    $this->assertEquals(1, $relationships['count']);
   }
 
   /**
@@ -119,6 +139,8 @@ class BenevityTest extends BaseChecksFileTest {
 
     $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $betterMinnie['id']));
     $this->assertEquals(1, $contributions['count']);
+    $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_a' => $betterMinnie['id'], 'contact_id_b' => $organization['id']));
+    $this->assertEquals(1, $relationships['count']);
   }
 
   /**
