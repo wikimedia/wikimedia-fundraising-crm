@@ -7,7 +7,7 @@ class WmfDatabase {
    *
    * FIXME: This is not even two-phase locking.  If any commit fails, the dbs become inconsistent.
    *
-   * @param string $callback
+   * @param callable $callback
    * @param array $params
    *
    * @return mixed
