@@ -274,7 +274,8 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals('All rows were imported', $messages['Result']);
 
     $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY trxn-WOOF'));
-    $this->assertEquals(25, $contribution['total_amount']);
+    $this->assertEquals(22, $contribution['total_amount']);
+    $this->assertEquals(22, $contribution['net_amount']);
 
     $dogContact = $this->callAPISuccessGetSingle('Contact', array('id' => $contribution['contact_id']));
     $dogContributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $dogContact['id']));
@@ -285,6 +286,7 @@ class BenevityTest extends BaseChecksFileTest {
     // The first row has a matching contribution.
     $this->assertEquals(1, $orgContributions['count']);
     $this->assertEquals(25, $orgContributions['values'][$orgContributions['id']]['total_amount']);
+    $this->assertEquals(25, $orgContributions['values'][$orgContributions['id']]['net_amount']);
     $this->assertEquals('Goofy Inc', $orgContributions['values'][$orgContributions['id']]['display_name']);
     $this->assertEquals($dogContact['id'], $orgContributions['values'][$orgContributions['id']]['soft_credit_to']);
 

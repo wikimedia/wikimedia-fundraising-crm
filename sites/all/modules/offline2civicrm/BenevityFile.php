@@ -116,8 +116,9 @@ class BenevityFile extends ChecksFile {
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
 
-    $matchedMsg = $msg;
-    if (!empty($msg['matching_amount'])) {
+    if (!empty($msg['matching_amount']) && $msg['matching_amount'] > 0) {
+      $matchedMsg = $msg;
+      unset($matchedMsg['net'], $matchedMsg['fee']);
       $matchedMsg['contact_id'] = $msg['employer_id'];
       $matchedMsg['soft_credit_to_id'] = ($msg['contact_id'] == $this->getAnonymousContactID() ? NULL : $msg['contact_id']);
       $matchedMsg['gross'] = $msg['matching_amount'];
