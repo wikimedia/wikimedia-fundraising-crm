@@ -112,7 +112,7 @@ class BenevityFile extends ChecksFile {
    */
   public function doImport($msg) {
     $contribution = array();
-    if (!empty($msg['gross'])) {
+    if (!empty($msg['gross']) && $msg['gross'] > 0) {
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
 
