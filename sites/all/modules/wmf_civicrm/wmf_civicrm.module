@@ -2879,7 +2879,7 @@ function wmf_civicrm_civicrm_pre_Address( $op, &$address ) {
 					if ( empty( $address['city'] ) ) {
 						$geoData['city'] = $result->city;
 					}
-					if ( $address['state_province_id'] == 'null' ) {
+					if (empty($address['state_province_id']) || $address['state_province_id'] == 'null') {
 						$geoData['state_province_id'] = $result->state_id;
 					}
 				}

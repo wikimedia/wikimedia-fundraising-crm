@@ -22,9 +22,6 @@ class BenevityFile extends ChecksFile {
   function getRequiredData() {
     return array(
       'matching_organization_name',
-      'first_name',
-      'email',
-      'last_name',
       'currency',
       'date',
     );
@@ -55,9 +52,10 @@ class BenevityFile extends ChecksFile {
     }
     foreach ($msg as $field => $value) {
       if ($value == 'Not shared by donor') {
-        unset($msg['field']);
+        $msg[$field] = '';
       }
     }
+
     $msg['employer_id'] = $this->getOrganizationID($msg['matching_organization_name']);
     // If we let this go through the individual will be treated as an organization.
     parent::mungeMessage($msg);
@@ -66,6 +64,31 @@ class BenevityFile extends ChecksFile {
       $this->unsetAddressFields($msg);
     }
 
+  }
+
+  /**
+   * Validate that required fields are present.
+   *
+   * If a contact has already been identified name fields are not required.
+   *
+   * @param array $msg
+   *
+   * @throws \WmfException
+   */
+  protected function validateRequiredFields($msg) {
+    $failed = array();
+    $requiredFields = $this->getRequiredData();
+    if (empty($msg['contact_id'])) {
+      $requiredFields = array_merge($requiredFields, array('first_name', 'last_name', 'email'));
+    }
+    foreach ($requiredFields as $key) {
+      if (!array_key_exists($key, $msg) or empty($msg[$key])) {
+        $failed[] = $key;
+      }
+    }
+    if ($failed) {
+      throw new WmfException('CIVI_REQ_FIELD', t("Missing required fields @keys during check import", array("@keys" => implode(", ", $failed))));
+    }
   }
 
   protected function getDefaultValues() {
@@ -185,8 +208,8 @@ class BenevityFile extends ChecksFile {
    * @throws \WmfException
    */
   protected function getIndividualID(&$msg) {
-    if ($msg['email'] === 'Not shared by donor'
-      && ($msg['first_name'] === 'Not shared by donor' && $msg['last_name'] === 'Not shared by donor')
+    if (empty($msg['email'])
+      && (empty($msg['first_name']) && empty($msg['last_name']))
     ) {
       try {
         // At best we have a first name or a last name. Match this to our anonymous contact.
@@ -201,9 +224,9 @@ class BenevityFile extends ChecksFile {
     }
 
     $params = array(
-      'email' => ($msg['email'] !== 'Not shared by donor') ? $msg['email'] : '',
-      'first_name' => ($msg['first_name'] !== 'Not shared by donor') ? $msg['first_name'] : '',
-      'last_name' => ($msg['last_name'] !== 'Not shared by donor') ? $msg['last_name'] : '',
+      'email' => $msg['email'],
+      'first_name' => $msg['first_name'],
+      'last_name' => $msg['last_name'],
       'contact_type' => 'Individual',
       'return' => 'current_employer',
       'sort' => 'organization_name DESC',

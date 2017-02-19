@@ -281,6 +281,8 @@ class BenevityTest extends BaseChecksFileTest {
     $dogContributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $dogContact['id']));
     $this->assertEquals(1, $dogContributions['count']);
     $this->assertTrue(empty($dogContributions['values'][$dogContributions['id']]['soft_credit']));
+    $dogHouse = $this->callAPISuccess('Address', 'get', array('contact_id' => $dogContact['id'], 'sequential' => 1));
+    $this->assertEquals(0, $dogHouse['count']);
 
     $orgContributions = $this->callAPISuccess('Contribution', 'get', array('trxn_id' => 'BENEVITY TRXN-WOOF_MATCHED'));
     // The first row has a matching contribution.
