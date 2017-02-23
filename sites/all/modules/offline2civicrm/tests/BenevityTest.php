@@ -191,8 +191,42 @@ class BenevityTest extends BaseChecksFileTest {
     $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
     $this->assertEquals(0, $contributions['count']);
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $betterMinnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', array(
+      'contact_id' => $betterMinnie['id'],
+      'sequential' => 1,
+      'return' => array(
+        wmf_civicrm_get_custom_field_name('no_thank_you'),
+        wmf_civicrm_get_custom_field_name('Fund'),
+        wmf_civicrm_get_custom_field_name('Campaign')
+      ),
+    ));
     $this->assertEquals(2, $contributions['count']);
+    $contribution1 = $contributions['values'][0];
+    $this->assertEquals(1, $contribution1[wmf_civicrm_get_custom_field_name('no_thank_you')], 'No thank you should be set');
+    $this->assertEquals('Community Gift', $contribution1[wmf_civicrm_get_custom_field_name('Campaign')]);
+    $this->assertEquals('Unrestricted - General', $contribution1[wmf_civicrm_get_custom_field_name('Fund')]);
+
+    $contribution2 = $contributions['values'][1];
+    $this->assertEquals(1, $contribution2[wmf_civicrm_get_custom_field_name('no_thank_you')]);
+    // This contribution was over $1000 & hence is a benefactor gift.
+    $this->assertEquals('Benefactor Gift', $contribution2[wmf_civicrm_get_custom_field_name('Campaign')]);
+    $this->assertEquals('Unrestricted - General', $contribution2[wmf_civicrm_get_custom_field_name('Fund')]);
+
+    $organizationContributions = $this->callAPISuccess('Contribution', 'get', array(
+      'contact_id' => $organization['id'],
+      'sequential' => 1,
+      'return' => array(
+        wmf_civicrm_get_custom_field_name('no_thank_you'),
+        wmf_civicrm_get_custom_field_name('Fund'),
+        wmf_civicrm_get_custom_field_name('Campaign')
+      ),
+    ));
+    foreach ($organizationContributions['values'] as $contribution) {
+      $this->assertEquals(1, $contribution[wmf_civicrm_get_custom_field_name('no_thank_you')]);
+      $this->assertEquals('Restricted - Foundation', $contribution[wmf_civicrm_get_custom_field_name('Fund')]);
+      $this->assertEquals('Matching Gift', $contribution[wmf_civicrm_get_custom_field_name('Campaign')]);
+    }
+
   }
 
   /**

@@ -50,6 +50,12 @@ class BenevityFile extends ChecksFile {
     if (!isset($msg['gross'])) {
       $msg['gross'] = 0;
     }
+    if ($msg['gross'] >= 1000) {
+      $msg['gift_source'] = 'Benefactor Gift';
+    }
+    else {
+      $msg['gift_source'] = 'Community Gift';
+    }
     foreach ($msg as $field => $value) {
       if ($value == 'Not shared by donor') {
         $msg[$field] = '';
@@ -98,6 +104,12 @@ class BenevityFile extends ChecksFile {
       'contact_type' => 'Individual',
       'country' => 'US',
       'currency' => 'USD',
+      // Setting this avoids emails going out. We could set the thank_you_date
+      // instead to reflect Benevity having sent them out
+      // but we don't actually know what date they did that on,
+      // and recording it in our system would seem to imply we know for
+      // sure it happened (as opposed to Benevity says it happens).
+      'no_thank_you' => 1,
     );
   }
 
@@ -146,6 +158,8 @@ class BenevityFile extends ChecksFile {
       $matchedMsg['soft_credit_to_id'] = ($msg['contact_id'] == $this->getAnonymousContactID() ? NULL : $msg['contact_id']);
       $matchedMsg['gross'] = $msg['matching_amount'];
       $matchedMsg['gateway_txn_id'] = $msg['gateway_txn_id'] . '_matched';
+      $matchedMsg['gift_source'] = 'Matching Gift';
+      $matchedMsg['restrictions'] = 'Restricted - Foundation';
       $this->unsetAddressFields($matchedMsg);
       $matchingContribution = wmf_civicrm_contribution_message_import($matchedMsg);
     }
