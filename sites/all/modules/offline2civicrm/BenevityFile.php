@@ -22,9 +22,6 @@ class BenevityFile extends ChecksFile {
   function getRequiredData() {
     return array(
       'matching_organization_name',
-      'first_name',
-      'email',
-      'last_name',
       'currency',
       'date',
     );
@@ -53,11 +50,18 @@ class BenevityFile extends ChecksFile {
     if (!isset($msg['gross'])) {
       $msg['gross'] = 0;
     }
+    if ($msg['gross'] >= 1000) {
+      $msg['gift_source'] = 'Benefactor Gift';
+    }
+    else {
+      $msg['gift_source'] = 'Community Gift';
+    }
     foreach ($msg as $field => $value) {
       if ($value == 'Not shared by donor') {
-        unset($msg['field']);
+        $msg[$field] = '';
       }
     }
+
     $msg['employer_id'] = $this->getOrganizationID($msg['matching_organization_name']);
     // If we let this go through the individual will be treated as an organization.
     parent::mungeMessage($msg);
@@ -68,6 +72,31 @@ class BenevityFile extends ChecksFile {
 
   }
 
+  /**
+   * Validate that required fields are present.
+   *
+   * If a contact has already been identified name fields are not required.
+   *
+   * @param array $msg
+   *
+   * @throws \WmfException
+   */
+  protected function validateRequiredFields($msg) {
+    $failed = array();
+    $requiredFields = $this->getRequiredData();
+    if (empty($msg['contact_id'])) {
+      $requiredFields = array_merge($requiredFields, array('first_name', 'last_name', 'email'));
+    }
+    foreach ($requiredFields as $key) {
+      if (!array_key_exists($key, $msg) or empty($msg[$key])) {
+        $failed[] = $key;
+      }
+    }
+    if ($failed) {
+      throw new WmfException('CIVI_REQ_FIELD', t("Missing required fields @keys during check import", array("@keys" => implode(", ", $failed))));
+    }
+  }
+
   protected function getDefaultValues() {
     return array(
       'source' => 'Matched gift',
@@ -75,6 +104,12 @@ class BenevityFile extends ChecksFile {
       'contact_type' => 'Individual',
       'country' => 'US',
       'currency' => 'USD',
+      // Setting this avoids emails going out. We could set the thank_you_date
+      // instead to reflect Benevity having sent them out
+      // but we don't actually know what date they did that on,
+      // and recording it in our system would seem to imply we know for
+      // sure it happened (as opposed to Benevity says it happens).
+      'no_thank_you' => 1,
     );
   }
 
@@ -123,6 +158,8 @@ class BenevityFile extends ChecksFile {
       $matchedMsg['soft_credit_to_id'] = ($msg['contact_id'] == $this->getAnonymousContactID() ? NULL : $msg['contact_id']);
       $matchedMsg['gross'] = $msg['matching_amount'];
       $matchedMsg['gateway_txn_id'] = $msg['gateway_txn_id'] . '_matched';
+      $matchedMsg['gift_source'] = 'Matching Gift';
+      $matchedMsg['restrictions'] = 'Restricted - Foundation';
       $this->unsetAddressFields($matchedMsg);
       $matchingContribution = wmf_civicrm_contribution_message_import($matchedMsg);
     }
@@ -185,8 +222,8 @@ class BenevityFile extends ChecksFile {
    * @throws \WmfException
    */
   protected function getIndividualID(&$msg) {
-    if ($msg['email'] === 'Not shared by donor'
-      && ($msg['first_name'] === 'Not shared by donor' && $msg['last_name'] === 'Not shared by donor')
+    if (empty($msg['email'])
+      && (empty($msg['first_name']) && empty($msg['last_name']))
     ) {
       try {
         // At best we have a first name or a last name. Match this to our anonymous contact.
@@ -201,9 +238,9 @@ class BenevityFile extends ChecksFile {
     }
 
     $params = array(
-      'email' => ($msg['email'] !== 'Not shared by donor') ? $msg['email'] : '',
-      'first_name' => ($msg['first_name'] !== 'Not shared by donor') ? $msg['first_name'] : '',
-      'last_name' => ($msg['last_name'] !== 'Not shared by donor') ? $msg['last_name'] : '',
+      'email' => $msg['email'],
+      'first_name' => $msg['first_name'],
+      'last_name' => $msg['last_name'],
       'contact_type' => 'Individual',
       'return' => 'current_employer',
       'sort' => 'organization_name DESC',

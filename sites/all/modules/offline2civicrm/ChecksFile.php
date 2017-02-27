@@ -222,15 +222,7 @@ abstract class ChecksFile {
 
         $this->mungeMessage( $msg );
 
-        $failed = array();
-        foreach ( $this->getRequiredData() as $key ) {
-            if ( !array_key_exists( $key, $msg ) or empty( $msg[$key] ) ) {
-                $failed[] = $key;
-            }
-        }
-        if ( $failed ) {
-            throw new WmfException( 'CIVI_REQ_FIELD', t( "Missing required fields @keys during check import", array( "@keys" => implode( ", ", $failed ) ) ) );
-        }
+        $this->validateRequiredFields($msg);
 
         wmf_common_set_message_source( $msg, 'direct', 'Offline importer: ' . get_class( $this ) );
 
@@ -602,6 +594,25 @@ abstract class ChecksFile {
     $contribution = wmf_civicrm_contribution_message_import($msg);
     $this->mungeContribution($contribution);
     return $contribution;
+  }
+
+  /**
+   * Validate that required fields are present.
+   *
+   * @param array $msg
+   *
+   * @throws \WmfException
+   */
+  protected function validateRequiredFields($msg) {
+    $failed = array();
+    foreach ($this->getRequiredData() as $key) {
+      if (!array_key_exists($key, $msg) or empty($msg[$key])) {
+        $failed[] = $key;
+      }
+    }
+    if ($failed) {
+      throw new WmfException('CIVI_REQ_FIELD', t("Missing required fields @keys during check import", array("@keys" => implode(", ", $failed))));
+    }
   }
 
 }
