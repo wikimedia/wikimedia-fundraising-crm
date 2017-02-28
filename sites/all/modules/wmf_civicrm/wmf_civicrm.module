@@ -254,13 +254,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
     }
 
     if ( !$msg['contact_id'] ) {
-        // insert the contact information
-        $contact = wmf_civicrm_message_contact_insert( $msg );
-
-        // Insert the location record
-        $location = wmf_civicrm_message_location_insert( $msg, $contact );
-
-        $msg['contact_id'] = $contact['id'];
+      wmf_civicrm_message_create_contact($msg);
     }
     else {
       if (isset($msg['employer_id'])) {
@@ -286,7 +280,7 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
             }
         }
 
-        wmf_civicrm_message_contribution_recur_insert( $msg, $contact['id'], $msg['subscr_id'] );
+        wmf_civicrm_message_contribution_recur_insert( $msg, $msg['contact_id'], $msg['subscr_id'] );
         $recur_record = wmf_civicrm_get_gateway_subscription( $msg['gateway'], $msg['subscr_id'] );
         $msg['contribution_recur_id'] = $recur_record->id;
     }
@@ -332,6 +326,20 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
 }
 
 /**
+ * Create a contact from the $msg array and set the contact_id.
+ *
+ * @param array $msg
+ *   Normalised wmf msg array.
+ *
+ * @throws \WmfException
+ */
+function wmf_civicrm_message_create_contact(&$msg) {
+  $contact = wmf_civicrm_message_contact_insert($msg);
+  wmf_civicrm_message_location_insert($msg, $contact);
+  $msg['contact_id'] = $contact['id'];
+}
+
+/**
  * Insert the contribution record.
  *
  * This is an internal method, you must be looking for
@@ -346,10 +354,13 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     $transaction = WmfTransaction::from_message( $msg );
     $trxn_id = $transaction->get_unique_id();
 
+
     $contribution = array(
         'contact_id' => $msg['contact_id'],
         'total_amount' => $msg['gross'],
-        'contribution_type_id' => $msg['contribution_type_id'],
+        // CiviCRM supports financial_type_id rather than contribution_type_id now. Handling both here
+        // is a first step to deprecating contribution_type_id.
+        'financial_type_id' => empty($msg['financial_type_id']) ? $msg['contribution_type_id'] : $msg['financial_type_id'],
         'payment_instrument_id' => $msg['payment_instrument_id'],
         'fee_amount' => $msg['fee'],
         'net_amount' => $msg['net'],
@@ -1033,26 +1044,24 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     // Create the contact record
-	$fname = substr( trim( $msg['first_name'] ), 0, 64 );
-	$mname = substr( trim( $msg['middle_name'] ), 0, 64 );
-	$lname = substr( trim( $msg['last_name'] ), 0, 64 );
     $contact = array(
         'id' => $contact_id,
         'contact_type' => $msg['contact_type'],
-        'first_name' => $fname,
-        'middle_name' => $mname,
-        'last_name' => $lname,
-        'sort_name' => substr( trim( $lname . ', ' . $fname, ' ,' ), 0, 128 ),
-        'display_name' => substr( $fname . ' ' . $lname, 0, 128 ),
-        'do_not_trade' => $msg['anonymous'], // FIXME: has the wrong meaning
         'contact_source' => $msg['contact_source'],
         'debug' => TRUE,
     );
+    if (strtolower($msg['contact_type']) !== "organization") {
+      foreach (array('first_name', 'last_name', 'middle_name') as $name) {
+        if (isset($msg[$name])) {
+          $msg[$name] = substr(trim($msg[$name]), 0, 64);
+        }
+      }
+      // @todo this may not be needed as core may handle, but unsure how it handles over-long strings.
+      $contact['sort_name'] = substr(trim($msg['last_name'] . ', ' . $msg['first_name'], ' ,'), 0, 128);
+      $contact['display_name'] = substr($msg['first_name'] . ' ' . $msg['last_name'], 0, 128 );
+    }
     if ( strtolower( $msg['contact_type'] ) == "organization" ){
-        unset( $contact['first_name'] );
-        unset( $contact['middle_name'] );
-        unset( $contact['last_name'] );
-
+        // @todo probably can remove handling for sort name and display name now.
         $contact['sort_name'] = $msg['organization_name'];
         $contact['display_name'] = $msg['organization_name'];
         $contact['organization_name'] = $msg['organization_name'];
@@ -1180,7 +1189,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     // Add groups to this contact.
-    if ( $msg['contact_groups'] ) {
+    if (!empty($msg['contact_groups'])) {
         // TODO: Use CRM_Contact_GroupContact::buildOptions in Civi 4.4, also
         // in place of ::tag below.
         $supported_groups = array_flip( CRM_Core_PseudoConstant::allGroup() );
@@ -1204,7 +1213,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     // Do we have any tags we need to add to this contact?
-    if ( $msg['contact_tags'] ) {
+    if (!empty($msg['contact_tags'])) {
         $supported_tags = array_flip( CRM_Core_BAO_Tag::getTags( 'civicrm_contact' ) );
         $stacked_ex = array();
         foreach ( array_unique( $msg['contact_tags'] ) as $tag ) {
@@ -1540,7 +1549,7 @@ function wmf_civicrm_message_address_insert($msg, $contact_id ) {
         'location_type_id' => $loc_type_id,
         'is_primary' => 1,
         'street_address' => $msg['street_address'],
-        'supplemental_address_1' => $msg['supplemental_address_1'],
+        'supplemental_address_1' => !empty($msg['supplemental_address_1']) ? $msg['supplemental_address_1'] : NULL,
         'city' => $msg['city'],
         'postal_code' => $msg['postal_code'],
         'country_id' => $country_id,
