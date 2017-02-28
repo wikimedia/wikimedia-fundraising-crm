@@ -333,6 +333,17 @@ class BenevityFile extends ChecksFile {
     if ($contact['current_employer'] == $this->getOrganizationResolvedName($organization_name)) {
       return TRUE;
     }
+    $softCredits = civicrm_api3('ContributionSoft', 'get', array('contact_id' => $contact['id'], 'api.Contribution.get' => array('return' => 'contact_id')));
+    if ($softCredits['count'] == 0) {
+      return FALSE;
+    }
+    foreach ($softCredits['values'] as $softCredit) {
+      if ($softCredit['api.Contribution.get']['values'][0]['contact_id'] == $this->getOrganizationID($organization_name)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+
   }
 
   /**

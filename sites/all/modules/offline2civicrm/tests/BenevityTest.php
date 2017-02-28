@@ -193,6 +193,43 @@ class BenevityTest extends BaseChecksFileTest {
   }
 
   /**
+   * Test that import resolves ambiguous individuals based on previous soft credit history.
+   *
+   * If an organisation has previously soft credited an individual we consider that
+   * to be equivalent to an employer relationship having been formed.
+   *
+   * Probably longer term the employment relationships will exist and this will be redundant.
+   */
+  function testImportSucceedIndividualDismabiguateByPreviousSoftCredit() {
+    $organization = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
+    $minnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org',
+    ));
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org',
+    ));
+    // Create a contribution on the organisation, soft credited to Better Minnie.
+    $this->callAPISuccess('Contribution', 'create', array(
+      'total_amount' => 4,
+      'financial_type_id' => 'Donation',
+      'soft_credit_to' => $betterMinnie['id'],
+      'contact_id' => $organization['id'],
+    ));
+    $importer = new BenevityFile( __DIR__ . "/data/benevity.csv" );
+    $importer->import();
+    $messages = $importer->getMessages();
+    $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $this->assertEquals(0, $contributions['count']);
+
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $betterMinnie['id']));
+    $this->assertEquals(1, $contributions['count']);
+    $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_a' => $betterMinnie['id'], 'contact_id_b' => $organization['id']));
+    $this->assertEquals(1, $relationships['count']);
+  }
+
+
+  /**
    * Check that without an email the match is only accepted with an employer connection.
    */
   function testImportSucceedIndividualOneMatchNoEmail() {
