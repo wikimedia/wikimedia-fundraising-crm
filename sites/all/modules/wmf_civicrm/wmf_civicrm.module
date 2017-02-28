@@ -354,10 +354,13 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     $transaction = WmfTransaction::from_message( $msg );
     $trxn_id = $transaction->get_unique_id();
 
+
     $contribution = array(
         'contact_id' => $msg['contact_id'],
         'total_amount' => $msg['gross'],
-        'contribution_type_id' => $msg['contribution_type_id'],
+        // CiviCRM supports financial_type_id rather than contribution_type_id now. Handling both here
+        // is a first step to deprecating contribution_type_id.
+        'financial_type_id' => empty($msg['financial_type_id']) ? $msg['contribution_type_id'] : $msg['financial_type_id'],
         'payment_instrument_id' => $msg['payment_instrument_id'],
         'fee_amount' => $msg['fee'],
         'net_amount' => $msg['net'],

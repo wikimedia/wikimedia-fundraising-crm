@@ -119,6 +119,7 @@ class BenevityTest extends BaseChecksFileTest {
     $messages = $importer->getMessages();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY TRXN-SQUEAK'));
+    $this->assertEquals('Engage', $contribution['financial_type']);
     $relationships = $this->callAPISuccess('Relationship', 'get', array(
       'contact_id_a' => $contribution['contact_id'],
       'contact_id_b' => $thaMouseMeister['id'])

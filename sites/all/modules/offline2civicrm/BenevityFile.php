@@ -110,6 +110,7 @@ class BenevityFile extends ChecksFile {
       // and recording it in our system would seem to imply we know for
       // sure it happened (as opposed to Benevity says it happens).
       'no_thank_you' => 1,
+      'financial_type_id' => "Engage",
     );
   }
 
