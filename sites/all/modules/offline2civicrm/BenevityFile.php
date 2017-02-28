@@ -150,6 +150,11 @@ class BenevityFile extends ChecksFile {
     if (!empty($msg['gross']) && $msg['gross'] > 0) {
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
+    elseif (empty($msg['contact_id'])) {
+      // We still want to create the contact and link it to the organization, and
+      // soft credit it.
+      wmf_civicrm_message_create_contact($msg);
+    }
 
     if (!empty($msg['matching_amount']) && $msg['matching_amount'] > 0) {
       $matchedMsg = $msg;
@@ -281,7 +286,7 @@ class BenevityFile extends ChecksFile {
       }
     }
     catch (CiviCRM_API3_Exception $e) {
-      return NULL;
+      throw new WmfException('IMPORT_CONTRIB', $e->getMessage());
     }
   }
 

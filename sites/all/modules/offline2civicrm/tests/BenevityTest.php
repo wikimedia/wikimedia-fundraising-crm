@@ -3,6 +3,10 @@
 /**
  * @group Import
  * @group Offline2Civicrm
+ *
+ * Refer to this comment in Phab for rules about when contacts are created. These are
+ * the rules the tests are working to (and both should be updated to reflect rule changes).
+ * https://phabricator.wikimedia.org/T115044#3012232
  */
 class BenevityTest extends BaseChecksFileTest {
   protected $epochtime;
@@ -102,7 +106,11 @@ class BenevityTest extends BaseChecksFileTest {
   }
 
   /**
-   * Test that import passes for the Individual contact if a single match is found.
+   * Test that import passes for the Individual contact when no single match is found.
+   *
+   * In this scenario an email exists so a contact is created. The origanization exists and can be
+   * matched, however the individual does not exist.  Per rules a contact will be created if there is an
+   * email but no existing match.
    */
   function testImportSucceedIndividualNoExistingMatch() {
     $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
@@ -110,13 +118,31 @@ class BenevityTest extends BaseChecksFileTest {
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('trxn_id' => 'BENEVITY TRXN-SQUEAK', 'sequential' => 1));
-    $this->assertEquals(1, $contributions['count']);
+    $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY TRXN-SQUEAK'));
     $relationships = $this->callAPISuccess('Relationship', 'get', array(
-      'contact_id_a' => $contributions['values'][0]['contact_id'],
+      'contact_id_a' => $contribution['contact_id'],
       'contact_id_b' => $thaMouseMeister['id'])
     );
     $this->assertEquals(1, $relationships['count']);
+  }
+
+  /**
+   * Test that import works when creating a contact just for the matching gift.
+   *
+   * In this scenario an email exists so a contact is created. The contact does
+   * not make a donation but is soft credited the organisation's donation.
+   */
+  function testImportSucceedIndividualNoExistingMatchOnlyMatchingGift() {
+    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
+    $importer = new BenevityFile( __DIR__ . "/data/benevity_only_match.csv" );
+    $importer->import();
+    $messages = $importer->getMessages();
+    $this->assertEquals('All rows were imported', $messages['Result']);
+    $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED'));
+    $relationship = $this->callAPISuccessGetSingle('Relationship', array(
+        'contact_id_b' => $thaMouseMeister['id'])
+    );
+    $this->assertEquals( $relationship['contact_id_a'], $contribution['soft_credit_to']);
   }
 
   /**
