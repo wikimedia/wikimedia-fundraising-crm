@@ -1392,14 +1392,16 @@ function wmf_civicrm_message_email_update($msg, $contact_id ) {
   }
 
   try {
+    $loc_type_id = isset($msg['email_location_type_id']) ? $msg['email_location_type_id'] : wmf_civicrm_get_default_location_type_id();
+    $isPrimary = isset($msg['email_location_type_id']) ? 0 : 1;
     civicrm_api3( "Email", "Replace", array(
       'debug' => 1,
-      'location_type_id' => $loc_type_id = wmf_civicrm_get_default_location_type_id(),
+      'location_type_id' => $loc_type_id,
       'contact_id' => $contact_id,
       'values' => array(array(
         'email' => $msg[ 'email' ],
-        'is_primary' => 1,
-        'is_billing' => 1,
+        'is_primary' => $isPrimary,
+        'is_billing' => $isPrimary,
       ),
     )));
   }

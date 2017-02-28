@@ -228,6 +228,36 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals(1, $relationships['count']);
   }
 
+  /**
+   * Test that we will accept a name match for employees, even when there is an email mis-match.
+   *
+   * We have a situation where employees are often in the database with a different email than in
+   * the Benevity import (e.g a personal email). If there is already a contact with the same first and
+   * last name and they have been related to the organization (by an employer relationship or a previous
+   * soft credit) we should accept them.
+   */
+  function testImportSucceedIndividualMatchToEmployerDisregardingEmail() {
+    $organization = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse_home.org', 'employer_id' => $organization['id'],
+    ));
+    $importer = new BenevityFile( __DIR__ . "/data/benevity.csv" );
+    $importer->import();
+    $messages = $importer->getMessages();
+    $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
+
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $betterMinnie['id']));
+    $this->assertEquals(1, $contributions['count']);
+    $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_a' => $betterMinnie['id'], 'contact_id_b' => $organization['id']));
+    $this->assertEquals(1, $relationships['count']);
+    $emails = $this->callAPISuccess('Email', 'get', array('contact_id' => $betterMinnie['id'], 'sequential' => 1));
+    $this->assertEquals(2, $emails['count']);
+    $this->assertEquals(1, $emails['values'][0]['is_primary']);
+    $this->assertEquals('minnie@mouse_home.org', $emails['values'][0]['email']);
+    $this->assertEquals(0, $emails['values'][1]['is_primary']);
+    $this->assertEquals('minnie@mouse.org', $emails['values'][1]['email']);
+  }
+
 
   /**
    * Check that without an email the match is only accepted with an employer connection.

@@ -69,7 +69,11 @@ class BenevityFile extends ChecksFile {
     if ($msg['contact_id'] == $this->getAnonymousContactID()) {
       $this->unsetAddressFields($msg);
     }
-
+    if ($msg['contact_id'] === FALSE) {
+      if (($msg['contact_id'] = $this->getNameMatchedEmployedIndividualID($msg)) != FALSE) {
+        $msg['email_location_type_id'] = 'Work';
+      }
+    }
   }
 
   /**
@@ -368,6 +372,40 @@ class BenevityFile extends ChecksFile {
       }
     }
     return \Civi::$statics[__CLASS__]['organization_resolved_name'][$organizationName];
+  }
+
+  /**
+   * Get the id of any employee who is a full name match but has a different email.
+   *
+   * We handle this outside the main getIndividualID because contact's matched
+   * by this method need to have their email preserved.
+   *
+   * @param array $msg
+   *
+   * @return mixed
+   */
+  protected function getNameMatchedEmployedIndividualID($msg) {
+    $matches = array();
+    if (isset($msg['first_name']) && isset($msg['last_name']) && isset($msg['email'])) {
+      $params = array(
+        'first_name' => $msg['first_name'],
+        'last_name' => $msg['last_name'],
+        'contact_type' => 'Individual',
+        'return' => 'current_employer',
+        'options' => array('limit' => 0),
+      );
+      unset($params['email']);
+      $contacts = civicrm_api3('Contact', 'get', $params);
+      foreach ($contacts['values'] as $contact) {
+        if ($this->isContactEmployedByOrganization($msg['matching_organization_name'], $contact)) {
+          $matches[] = $contact['id'];
+        }
+      }
+    }
+    if (count($matches) === 1) {
+      return reset($matches);
+    }
+    return FALSE;
   }
 
 }
