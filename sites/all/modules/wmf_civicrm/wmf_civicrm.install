@@ -2516,3 +2516,20 @@ function wmf_civicrm_update_7460() {
   $tables = array('civicrm_activity' => array('activity_date_time'));
   CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
+
+/**
+ * Adjust contribution date on 4 recurring contributions to get past blockage.
+ *
+ * https://phabricator.wikimedia.org/T159298#3063457
+ *
+ * T159298
+ */
+function wmf_civicrm_update_7465() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution_recur
+    SET next_sched_contribution_date = '2017-04-01'
+    WHERE id IN (163431,163364,59477,59458)
+    AND next_sched_contribution_date IN ('2017-03-28', '2017-03-27')
+  ");
+}
