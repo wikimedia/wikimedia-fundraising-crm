@@ -79,19 +79,57 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->queueConsumer->processMessage( $message->getBody() );
         $this->queueConsumer->processMessage( $message2->getBody() );
 
+        $campaignField = wmf_civicrm_get_custom_field_name('campaign');
+
+        $expected = array(
+          'contact_type' => 'Individual',
+          'sort_name' => 'laast, firrst',
+          'display_name' => 'firrst laast',
+          'first_name' => 'firrst',
+          'last_name' => 'laast',
+          'currency' => 'USD',
+          'total_amount' => '400.00',
+          'fee_amount' => '0.00',
+          'net_amount' => '400.00',
+          'trxn_id' => 'GLOBALCOLLECT ' . $message->getGatewayTxnId(),
+          'contribution_source' => 'USD 400',
+          'financial_type' => 'Cash',
+          'contribution_status' => 'Completed',
+          'payment_instrument' => 'Credit Card: Visa',
+          $campaignField => '',
+        );
+        $returnFields = array_keys( $expected );
+
         $contribution = civicrm_api3('Contribution', 'getsingle', array(
           wmf_civicrm_get_custom_field_name('gateway_txn_id') => $message->getGatewayTxnId(),
-          'return' => array(wmf_civicrm_get_custom_field_name('Campaign'), 'total_amount'),
+          'return' => $returnFields
         ));
-        $this->assertEmpty($contribution[wmf_civicrm_get_custom_field_name('campaign')] );
+
+        $this->assertArraySubset( $expected, $contribution );
 
         $contribution2 = civicrm_api3('Contribution', 'getsingle', array(
           wmf_civicrm_get_custom_field_name('gateway_txn_id') => $message2->getGatewayTxnId(),
-          'return' => array(wmf_civicrm_get_custom_field_name('Campaign'), 'total_amount'),
+          'return' => $returnFields
         ));
 
-        $this->assertEquals('Benefactor Gift', $contribution2[wmf_civicrm_get_custom_field_name('campaign')] );
-
+        $expected = array(
+          'contact_type' => 'Individual',
+          'sort_name' => 'laast, firrst',
+          'display_name' => 'firrst laast',
+          'first_name' => 'firrst',
+          'last_name' => 'laast',
+          'currency' => 'USD',
+          'total_amount' => '2857.02',
+          'fee_amount' => '0.00',
+          'net_amount' => '2857.02',
+          'trxn_id' => 'GLOBALCOLLECT ' . $message2->getGatewayTxnId(),
+          'contribution_source' => 'PLN 952.34',
+          'financial_type' => 'Cash',
+          'contribution_status' => 'Completed',
+          'payment_instrument' => 'Credit Card: Visa',
+          $campaignField => 'Benefactor Gift',
+        );
+        $this->assertArraySubset( $expected, $contribution2 );
         $this->assertNotEquals( $contribution['contact_id'], $contribution2['contact_id'] );
     }
 
