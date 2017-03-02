@@ -2568,3 +2568,24 @@ function wmf_civicrm_update_7475() {
   );
 
 }
+
+
+/**
+ * Fill in missing first and last names from the sort_name field
+ *
+ * Bug: T159455
+ */
+function wmf_civicrm_update_7480() {
+	civicrm_initialize();
+	CRM_Core_DAO::executeQuery(
+		"UPDATE civicrm_contact
+		SET last_name = SUBSTRING_INDEX(sort_name, ', ', 1),
+			first_name = SUBSTRING_INDEX(sort_name, ', ', -1)
+		WHERE created_date BETWEEN '2017-02-28' AND '2017-03-03'
+		AND contact_type = 'Individual'
+		AND first_name IS NULL
+		AND last_name IS NULL
+		AND is_deleted = 0
+		AND sort_name LIKE '%, %' --leading % seems to be OK after all the other conditions
+    ");
+}
