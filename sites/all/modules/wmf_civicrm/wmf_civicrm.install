@@ -2542,3 +2542,29 @@ function wmf_civicrm_update_7465() {
 function wmf_civicrm_update_7470() {
   wmf_civicrm_update_7320();
 }
+
+/**
+ * Create table of all candidates for blank address fixes.
+ *
+ * We will delete from here as we resolve them.
+ *
+ * Bug: T159396
+ */
+function wmf_civicrm_update_7475() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery(
+    "CREATE TABLE blank_addresses
+     SELECT *
+     FROM log_civicrm_address
+     WHERE street_address IS NULL
+     AND city IS NULL
+     AND postal_code IS NULL
+     AND state_province_id IS NULL
+     AND country_id IS NULL
+    "
+  );
+  CRM_Core_DAO::executeQuery(
+    "ALTER TABLE blank_addresses ADD INDEX index_id(id), ADD INDEX index_log_action(log_action)"
+  );
+
+}
