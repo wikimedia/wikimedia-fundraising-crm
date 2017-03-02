@@ -2542,3 +2542,64 @@ function wmf_civicrm_update_7465() {
 function wmf_civicrm_update_7470() {
   wmf_civicrm_update_7320();
 }
+
+/**
+ * Create table of all candidates for blank address fixes.
+ *
+ * We will delete from here as we resolve them.
+ *
+ * Bug: T159396
+ */
+function wmf_civicrm_update_7475() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery(
+    "CREATE TABLE blank_addresses
+     SELECT *
+     FROM log_civicrm_address
+     WHERE street_address IS NULL
+     AND city IS NULL
+     AND postal_code IS NULL
+     AND state_province_id IS NULL
+     AND country_id IS NULL
+    "
+  );
+  CRM_Core_DAO::executeQuery(
+    "ALTER TABLE blank_addresses ADD INDEX index_id(id), ADD INDEX index_log_action(log_action)"
+  );
+
+}
+
+
+/**
+ * Fill in missing first and last names from the sort_name field
+ *
+ * Bug: T159455
+ */
+function wmf_civicrm_update_7480() {
+	civicrm_initialize();
+	// First the easy ones
+	CRM_Core_DAO::executeQuery(
+		"UPDATE civicrm_contact
+		SET last_name = SUBSTRING_INDEX(sort_name, ', ', 1),
+			first_name = SUBSTRING_INDEX(sort_name, ', ', -1)
+		WHERE created_date BETWEEN '2017-02-28' AND '2017-03-03'
+		AND contact_type = 'Individual'
+		AND first_name IS NULL
+		AND last_name IS NULL
+		AND sort_name LIKE '%, %' --leading % seems to be OK after all the other conditions
+    ");
+	// Some of the contacts have been touched since creation, and Civi has helpfully
+	// destroyed the sort_name. log_civicrm_contact to the rescue!
+	CRM_Core_DAO::executeQuery(
+		"UPDATE civicrm_contact c
+		INNER JOIN log_civicrm_contact l ON c.id = l.id
+		SET c.last_name = SUBSTRING_INDEX(l.sort_name, ', ', 1),
+			c.first_name = SUBSTRING_INDEX(l.sort_name, ', ', -1)
+		WHERE c.created_date BETWEEN '2017-02-28' AND '2017-03-03'
+		AND c.contact_type = 'Individual'
+		AND c.first_name IS NULL
+		AND c.last_name IS NULL
+		AND c.sort_name NOT LIKE '%, %'
+		AND l.sort_name LIKE '%, %'
+    ");
+}
