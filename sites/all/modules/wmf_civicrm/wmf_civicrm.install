@@ -2577,6 +2577,7 @@ function wmf_civicrm_update_7475() {
  */
 function wmf_civicrm_update_7480() {
 	civicrm_initialize();
+	// First the easy ones
 	CRM_Core_DAO::executeQuery(
 		"UPDATE civicrm_contact
 		SET last_name = SUBSTRING_INDEX(sort_name, ', ', 1),
@@ -2585,7 +2586,20 @@ function wmf_civicrm_update_7480() {
 		AND contact_type = 'Individual'
 		AND first_name IS NULL
 		AND last_name IS NULL
-		AND is_deleted = 0
 		AND sort_name LIKE '%, %' --leading % seems to be OK after all the other conditions
+    ");
+	// Some of the contacts have been touched since creation, and Civi has helpfully
+	// destroyed the sort_name. log_civicrm_contact to the rescue!
+	CRM_Core_DAO::executeQuery(
+		"UPDATE civicrm_contact c
+		INNER JOIN log_civicrm_contact l ON c.id = l.id
+		SET c.last_name = SUBSTRING_INDEX(l.sort_name, ', ', 1),
+			c.first_name = SUBSTRING_INDEX(l.sort_name, ', ', -1)
+		WHERE c.created_date BETWEEN '2017-02-28' AND '2017-03-03'
+		AND c.contact_type = 'Individual'
+		AND c.first_name IS NULL
+		AND c.last_name IS NULL
+		AND c.sort_name NOT LIKE '%, %'
+		AND l.sort_name LIKE '%, %'
     ");
 }
