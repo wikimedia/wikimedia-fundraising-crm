@@ -2566,9 +2566,7 @@ function wmf_civicrm_update_7475() {
   CRM_Core_DAO::executeQuery(
     "ALTER TABLE blank_addresses ADD INDEX index_id(id), ADD INDEX index_log_action(log_action)"
   );
-
 }
-
 
 /**
  * Fill in missing first and last names from the sort_name field
@@ -2630,4 +2628,60 @@ where
 			'last_name' => $dao->last_name,
 		));
 	}
+}
+
+/**
+ * Remove blank addresses that were created blank & have not been updated.
+ *
+ * Bug: T159402
+ */
+function wmf_civicrm_update_7485() {
+  civicrm_initialize();
+  $batch = 50000;
+  // arbitrary start.
+  $count = 1;
+  while ($count > 0) {
+    CRM_Core_DAO::executeQuery("
+    CREATE TABLE blanks_to_go
+    SELECT b.id
+    FROM blank_addresses b
+    INNER JOIN civicrm_address a
+      ON a.id = b.id
+    LEFT JOIN log_civicrm_address c
+      ON c.id = b.id AND c.log_action <> b.log_action
+    WHERE
+      a.street_address IS NULL
+      AND a.city IS NULL
+      AND a.country_id IS NULL
+      AND a.postal_code IS NULL
+      AND a.state_province_id IS NULL
+      AND b.log_action IN ('Initialization', 'Insert')
+      AND c.id IS NULL
+      LIMIT $batch
+    ");
+    $count = CRM_Core_DAO::singleValueQuery('SELECT count(*) FROM blanks_to_go');
+
+    CRM_Core_DAO::executeQuery(
+      "DELETE a
+       FROM civicrm_address a
+       WHERE id IN (
+        SELECT b.id
+        FROM blanks_to_go b
+       )
+     "
+    );
+
+    CRM_Core_DAO::executeQuery(
+      "DELETE a
+       FROM blanks_to_go b
+       INNER JOIN blank_addresses a ON a.id = b.id
+     "
+    );
+
+    CRM_Core_DAO::executeQuery(
+      "DROP TABLE blanks_to_go"
+    );
+
+  }
+
 }
