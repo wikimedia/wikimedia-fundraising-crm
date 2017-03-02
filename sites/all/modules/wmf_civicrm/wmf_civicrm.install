@@ -2376,7 +2376,7 @@ function wmf_civicrm_update_7320() {
   CRM_Core_DAO::executeQuery("
     CREATE TEMPORARY TABLE civicrm_address_geocode (
       id INT PRIMARY KEY,
-      zip CHAR(5),
+      zip CHAR(64),
       latitude DECIMAL (10,6),
       longitude DECIMAL (10,6),
       timezone VARCHAR(8)
@@ -2399,7 +2399,7 @@ function wmf_civicrm_update_7320() {
   ");
 
   $batch = 100000;
-  for($startId = 0; $startId < 210 * $batch; $startId += $batch) {
+  for($startId = 0; $startId < 21000000; $startId += $batch) {
     $endId = $startId + $batch;
     CRM_Core_DAO::executeQuery("
       UPDATE civicrm_address a
@@ -2532,4 +2532,13 @@ function wmf_civicrm_update_7465() {
     WHERE id IN (163431,163364,59477,59458)
     AND next_sched_contribution_date IN ('2017-03-28', '2017-03-27')
   ");
+}
+
+/**
+ * Re-run geocoding update, many not updated.
+ *
+ * Bug T158271.
+ */
+function wmf_civicrm_update_7470() {
+  wmf_civicrm_update_7320();
 }

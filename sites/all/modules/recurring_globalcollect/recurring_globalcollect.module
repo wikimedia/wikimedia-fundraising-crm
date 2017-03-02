@@ -490,7 +490,7 @@ function is_found_globalcollect_invalid_next_sched_dates() {
     AND frequency_unit = 'month' AND frequency_interval = 1
     GROUP BY cr.id DESC
    ) as inn
-  WHERE date_diff NOT BETWEEN -3 AND 3 AND date_diff > -28
+  WHERE date_diff NOT BETWEEN -5 AND 5 AND date_diff > -28
  ";
 
   $count = CRM_Core_DAO::singleValueQuery($query);
