@@ -2586,7 +2586,7 @@ function wmf_civicrm_update_7480() {
 		AND contact_type = 'Individual'
 		AND first_name IS NULL
 		AND last_name IS NULL
-		AND sort_name LIKE '%, %' --leading % seems to be OK after all the other conditions
+		AND sort_name LIKE '%, %' /* leading % seems to be OK after all the other conditions */
     ");
 	// Some of the contacts have been touched since creation, and Civi has helpfully
 	// destroyed the sort_name. log_civicrm_contact to the rescue!
