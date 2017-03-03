@@ -2590,16 +2590,44 @@ function wmf_civicrm_update_7480() {
     ");
 	// Some of the contacts have been touched since creation, and Civi has helpfully
 	// destroyed the sort_name. log_civicrm_contact to the rescue!
-	CRM_Core_DAO::executeQuery(
-		"UPDATE civicrm_contact c
-		INNER JOIN log_civicrm_contact l ON c.id = l.id
-		SET c.last_name = SUBSTRING_INDEX(l.sort_name, ', ', 1),
-			c.first_name = SUBSTRING_INDEX(l.sort_name, ', ', -1)
-		WHERE c.created_date BETWEEN '2017-02-28' AND '2017-03-03'
-		AND c.contact_type = 'Individual'
-		AND c.first_name IS NULL
-		AND c.last_name IS NULL
-		AND c.sort_name NOT LIKE '%, %'
-		AND l.sort_name LIKE '%, %'
-    ");
+	CRM_Core_DAO::executeQuery("
+create temporary table tmp_T159455
+select
+    id,
+	-- Include null columns as placeholders.
+	first_name,
+	last_name
+from civicrm_contact
+where
+    created_date between '2017-02-28' and '2017-03-03'
+    and contact_type = 'Individual'
+    and first_name is null
+    and last_name is null
+		");
+
+	CRM_Core_DAO::executeQuery("
+update tmp_T159455 t
+inner join log_civicrm_contact l
+    on t.id = l.id
+set
+    t.last_name = substring_index(l.sort_name, ', ', 1),
+    t.first_name = substring_index(l.sort_name, ', ', -1)
+where
+    l.sort_name like '%, %'
+		");
+
+	// Set the names using the API in order to refresh calculations.
+	$query = "
+		select * from tmp_T159455
+		where first_name is not null
+			and last_name is not null
+	";
+	$dao = CRM_Core_DAO::executeQuery($query);
+	while ($dao->fetch()) {
+		civicrm_api3('Contact', 'create', array(
+			'id' => $dao->id,
+			'first_name' => $dao->first_name,
+			'last_name' => $dao->last_name,
+		));
+	}
 }
