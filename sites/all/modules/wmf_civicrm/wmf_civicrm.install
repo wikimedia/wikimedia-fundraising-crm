@@ -152,8 +152,9 @@ function _link_gift_data_field_to_new_group ( $field_name, $group_name, $values 
  */
 function wmf_civicrm_update_7000()
 {
-    $contribution_types = array(
+    $financial_types = array(
         'Cash',
+        'Benevity',
     );
     $payment_instruments = array(
         'Amazon',
@@ -185,7 +186,7 @@ function wmf_civicrm_update_7000()
     );
 
     wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_financial_types($contribution_types);
+    wmf_civicrm_create_financial_types($financial_types);
     wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
 }
 
@@ -2792,4 +2793,14 @@ function wmf_civicrm_get_log_conn_bulk_update() {
     '5823950b11501',
   );
 
+}
+
+/**
+ * Add benevity as a financial type for benevity imports.
+ *
+ * Bug: T115044
+ */
+function wmf_civicrm_update_7500() {
+  civicrm_initialize();
+  wmf_civicrm_create_financial_types(array('Benevity'));
 }
