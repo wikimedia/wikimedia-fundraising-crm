@@ -2685,3 +2685,57 @@ function wmf_civicrm_update_7485() {
   }
 
 }
+
+/**
+ *
+ * Remove obsolete blank address from tracking table.
+ *
+ * The blank_addresses table tracks blanked addresses. This
+ * function removes addresses from that table that were inserted as blanks,
+ * later deleted while still blanks and which did not have an updates made.
+ *
+ * In some cases an update may have been made without adding data. This
+ * could involve either fixing the is_primary flag or updating the contact in
+ * a merge. However, we know the record has been deleted and never had any
+ * retrievable data on it.
+ *
+ * In other words we don't need to track these as they were fully resolved already.
+ *
+ * 21590 rows so we don't need to batch.
+ *
+ * Bug: T159396
+ */
+function wmf_civicrm_update_7490() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    CREATE TABLE blanks_to_go
+    SELECT i.id
+    FROM blank_addresses i
+    INNER JOIN blank_addresses d
+      ON i.id = d.id
+      AND i.log_action  IN ('Insert', 'Initialization')
+      AND d.log_action = 'Delete'
+    LEFT JOIN log_civicrm_address l
+      ON l.id = i.id AND l.log_action = 'Update'
+      AND (
+       l.country_id IS NOT NULL
+       OR l.state_province_id IS NOT NULL
+       OR l.street_address IS NOT NULL
+       OR l.postal_code IS NOT NULL
+       OR l.city IS NOT NULL
+      )
+    WHERE l.id IS NULL
+    ");
+
+  CRM_Core_DAO::executeQuery(
+    "DELETE a
+       FROM blanks_to_go b
+       INNER JOIN blank_addresses a ON a.id = b.id
+     "
+  );
+
+  CRM_Core_DAO::executeQuery(
+    "DROP TABLE blanks_to_go"
+  );
+
+}
