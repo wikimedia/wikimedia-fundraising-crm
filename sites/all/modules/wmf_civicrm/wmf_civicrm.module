@@ -785,6 +785,10 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                     $payment_instrument = 'Credit Card';
                 }
                 break;
+
+          case 'trilogy':
+                $payment_instrument = 'Trilogy';
+                break;
         }
 
     }
