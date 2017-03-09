@@ -276,12 +276,8 @@ class BenevityFile extends ChecksFile {
             $contactID = $contact['id'];
           }
         }
-        if (!$contactID && empty($params['email'])) {
-          // Do not create a contact - error out & let importer ensure a contact exists.
-          throw new WmfException('IMPORT_CONTRIB', 'Ambiguous contact');
-        }
 
-        return $contactID;
+        return $contactID ? $contactID : FALSE;
       }
       return FALSE;
     }

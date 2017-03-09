@@ -170,6 +170,37 @@ class BenevityTest extends BaseChecksFileTest {
   }
 
   /**
+   * Test that import creates new contacts when it can't resolve to a single contact.
+   */
+  function testImportSucceedIndividualTooManyChoicesCantDecideSpamTheDB() {
+    $organization = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
+    $minnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org',
+    ));
+    $doppelgangerMinnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org',
+    ));
+    $importer = new BenevityFile( __DIR__ . "/data/benevity_mice_no_email.csv" );
+    $importer->import();
+    $messages = $importer->getMessages();
+    $this->assertEquals('All rows were imported', $messages['Result']);
+
+    // All you Minnie's are not the real Minnie
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $this->assertEquals(0, $contributions['count']);
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $doppelgangerMinnie['id']));
+    $this->assertEquals(0, $contributions['count']);
+
+    // Will the Real Minnie Mouse Please stand up.
+    $relationship = $this->callAPISuccessGetSingle('Relationship', array('contact_id_b' => $organization['id']));
+    $this->assertNotEquals($minnie['id'], $relationship['contact_id_a']);
+    $this->assertNotEquals($doppelgangerMinnie['id'], $relationship['contact_id_a']);
+
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $relationship['contact_id_a']));
+    $this->assertEquals(2, $contributions['count']);
+  }
+
+  /**
    * Test that import resolves ambiguous individuals by choosing based on the employer where nick_name match in play.
    */
   function testImportSucceedIndividualDismabiguateByEmployerNickName() {
