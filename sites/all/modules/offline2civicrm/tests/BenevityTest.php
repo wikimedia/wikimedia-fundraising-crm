@@ -259,17 +259,14 @@ class BenevityTest extends BaseChecksFileTest {
 
 
   /**
-   * Check that without an email the match is only accepted with an employer connection.
+   * Check that without an email the match is accepted with an employer connection.
+   *
    */
-  function testImportSucceedIndividualOneMatchNoEmail() {
+  function testImportSucceedIndividualOneMatchNoEmailEmployerMatch() {
     $organization = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
     $minnie = $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org',
     ));
-    $importer = new BenevityFile( __DIR__ . "/data/benevity_mice_no_email.csv" );
-    $importer->import();
-    $messages = $importer->getMessages();
-    $this->assertEquals('0 out of 2 rows were imported.', $messages['Result']);
 
     $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual',
@@ -319,7 +316,35 @@ class BenevityTest extends BaseChecksFileTest {
       $this->assertEquals('Restricted - Foundation', $contribution[wmf_civicrm_get_custom_field_name('Fund')]);
       $this->assertEquals('Matching Gift', $contribution[wmf_civicrm_get_custom_field_name('Campaign')]);
     }
+  }
 
+  /**
+   * Check that without an email & no employer connection a match is not made.
+   *
+   * If there is no employer connection a new contact should be created.
+   */
+  function testImportSucceedIndividualOneMatchNoEmailNoEmployerMatch() {
+    $organization = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
+    $minnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org',
+    ));
+
+    $importer = new BenevityFile( __DIR__ . "/data/benevity_mice_no_email.csv" );
+    $importer->import();
+    $messages = $importer->getMessages();
+    $this->assertEquals('All rows were imported', $messages['Result']);
+
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $this->assertEquals(0, $contributions['count']);
+    $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_b' => $organization['id']));
+    $this->assertEquals(1, $relationships['count']);
+    $individualID = $relationships['values'][$relationships['id']]['contact_id_a'];
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $individualID));
+    // Note that both importees have been matched up. They are both legit matches based on our rules.
+    // It feels weird because one has less data than the other. But single name contacts should be
+    // very rare & single name contacts that match a different double-name contact in the same
+    // org seems 'beyond-edge'
+    $this->assertEquals(2, $contributions['count']);
   }
 
   /**

@@ -264,7 +264,7 @@ class BenevityFile extends ChecksFile {
         if (!empty($params['email']) || $this->isContactEmployedByOrganization($msg['matching_organization_name'], $contacts['values'][$contacts['id']])) {
           return $contacts['id'];
         }
-        throw new WmfException('IMPORT_CONTRIB', 'Did not find an unambiguous match for ' . implode(',', $params));
+        return false;
       }
       elseif ($contacts['count'] > 1) {
         $contactID = NULL;
