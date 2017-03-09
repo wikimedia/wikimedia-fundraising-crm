@@ -96,7 +96,7 @@ class BenevityFile extends ChecksFile {
         $failed[] = $key;
       }
     }
-    if ($failed) {
+    if (count($failed) === 3) {
       throw new WmfException('CIVI_REQ_FIELD', t("Missing required fields @keys during check import", array("@keys" => implode(", ", $failed))));
     }
   }
@@ -228,7 +228,10 @@ class BenevityFile extends ChecksFile {
    * Refer to https://phabricator.wikimedia.org/T115044#3012232 for discussion of logic.
    *
    * @param array $msg
+   *
    * @return int|NULL
+   *   Contact ID to use, if no integer is returned a new contact will be created
+   *
    * @throws \WmfException
    */
   protected function getIndividualID(&$msg) {
@@ -280,15 +283,7 @@ class BenevityFile extends ChecksFile {
 
         return $contactID;
       }
-      elseif ($contacts['count'] == 0) {
-        if (empty($params['email'])) {
-          // Do not create a contact - error out & let importer ensure a contact exists.
-          throw new WmfException('IMPORT_CONTRIB', 'Ambiguous contact');
-        }
-        else {
-          return FALSE;
-        }
-      }
+      return FALSE;
     }
     catch (CiviCRM_API3_Exception $e) {
       throw new WmfException('IMPORT_CONTRIB', $e->getMessage());

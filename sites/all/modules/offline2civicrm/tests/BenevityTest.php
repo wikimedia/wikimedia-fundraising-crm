@@ -109,8 +109,7 @@ class BenevityTest extends BaseChecksFileTest {
    * Test that import passes for the Individual contact when no single match is found.
    *
    * In this scenario an email exists so a contact is created. The origanization exists and can be
-   * matched, however the individual does not exist.  Per rules a contact will be created if there is an
-   * email but no existing match.
+   * matched, however the individual does not exist & should be created.
    */
   function testImportSucceedIndividualNoExistingMatch() {
     $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
@@ -380,9 +379,9 @@ class BenevityTest extends BaseChecksFileTest {
   }
 
   /**
-   * Test that all imports fail if the organization has multiple matches.
+   * Test a successful import run.
    */
-  function testImportSucceedOrganizationAll() {
+  function testImportSucceedAll() {
     $mouseOrg = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
     $dogOrg = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Goofy Inc', 'contact_type' => 'Organization'));
     $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Donald Duck Inc', 'contact_type' => 'Organization'));
@@ -390,10 +389,6 @@ class BenevityTest extends BaseChecksFileTest {
 
     $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org', 'employer_id' => $mouseOrg['id'],
-    ));
-
-    $this->callAPISuccess('Contact', 'create', array(
-      'first_name' => 'Pluto', 'contact_type' => 'Individual', 'employer_id' => $dogOrg['id'],
     ));
 
     $importer = new BenevityFile( __DIR__ . "/data/benevity.csv" );
@@ -405,12 +400,16 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals(22, $contribution['total_amount']);
     $this->assertEquals(22, $contribution['net_amount']);
 
+    // Our dog has very little details, a new contact will have been created for Pluto.
+    // It should have an address & a relationship & be soft-credited.
     $dogContact = $this->callAPISuccessGetSingle('Contact', array('id' => $contribution['contact_id']));
     $dogContributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $dogContact['id']));
     $this->assertEquals(1, $dogContributions['count']);
     $this->assertTrue(empty($dogContributions['values'][$dogContributions['id']]['soft_credit']));
     $dogHouse = $this->callAPISuccess('Address', 'get', array('contact_id' => $dogContact['id'], 'sequential' => 1));
-    $this->assertEquals(0, $dogHouse['count']);
+    $this->assertEquals(1, $dogHouse['count']);
+    $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_a' => $dogContact['id']));
+    $this->assertEquals(1, $relationships['count']);
 
     $orgContributions = $this->callAPISuccess('Contribution', 'get', array('trxn_id' => 'BENEVITY TRXN-WOOF_MATCHED'));
     // The first row has a matching contribution.
