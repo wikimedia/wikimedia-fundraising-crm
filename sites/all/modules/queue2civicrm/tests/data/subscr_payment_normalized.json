@@ -1,0 +1,22 @@
+{
+    "date": 1383346353,
+    "subscr_id": null,
+    "txn_type": "subscr_payment",
+    "contribution_tracking_id": "15017277",
+    "email": "test+fr@wikimedia.org",
+    "first_name": "Gen",
+    "middle_name": "",
+    "last_name": "Russ",
+    "street_address": "1211122 132 st",
+    "city": "Edmonton",
+    "state_province": "Alberta",
+    "country": "CA",
+    "postal_code": "T4V 2L2",
+    "gateway_txn_id": 1765009520,
+    "currency": "CAD",
+    "gross": "3.00",
+    "fee": "0.33",
+    "net": 2.67,
+    "gateway": "paypal",
+    "recurring": true
+}
