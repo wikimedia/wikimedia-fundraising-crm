@@ -160,6 +160,11 @@ class BenevityFile extends ChecksFile {
       // soft credit it.
       wmf_civicrm_message_create_contact($msg);
     }
+    if (isset($msg['employer_id']) && $msg['contact_id'] != $this->getAnonymousContactID()) {
+      // This is done in the import but if we have no donation let's still do this update.
+      civicrm_api3('Contact', 'create', array('contact_id' => $msg['contact_id'],'employer_id' => $msg['employer_id']));
+    }
+
 
     if (!empty($msg['matching_amount']) && $msg['matching_amount'] > 0) {
       $matchedMsg = $msg;

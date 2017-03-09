@@ -134,6 +134,45 @@ class BenevityTest extends BaseChecksFileTest {
    */
   function testImportSucceedIndividualNoExistingMatchOnlyMatchingGift() {
     $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
+    $relationships = $this->callAPISuccess('Relationship', 'get', array(
+        'contact_id_b' => $thaMouseMeister['id'])
+    );
+    $this->assertEquals(0, $relationships['count']);
+
+    $importer = new BenevityFile( __DIR__ . "/data/benevity_only_match.csv" );
+    $importer->import();
+    $messages = $importer->getMessages();
+    $this->assertEquals('All rows were imported', $messages['Result']);
+    $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED'));
+    $relationship = $this->callAPISuccessGetSingle('Relationship', array(
+        'contact_id_b' => $thaMouseMeister['id'])
+    );
+    $this->assertEquals( $relationship['contact_id_a'], $contribution['soft_credit_to']);
+  }
+
+  /**
+   * Test when creating a contact just for the matching gift on a soft credit match.
+   *
+   * In this scenario the contact is matched based on a prior soft credit. Their
+   * email is ignored to make this match.
+   *
+   * The contact does not make a donation but is soft credited the organisation's donation.
+   *
+   * We are checking the relationship is created.
+   */
+  function testImportSucceedIndividualSofCreditMatchMatchingGiftNoDonorGift() {
+    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
+    $minnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse_home.org'
+    ));
+    // Create a contribution on the organisation, soft credited to Better Minnie.
+    $this->callAPISuccess('Contribution', 'create', array(
+      'total_amount' => 4,
+      'financial_type_id' => 'Donation',
+      'soft_credit_to' => $minnie['id'],
+      'contact_id' => $thaMouseMeister['id'],
+    ));
+
     $importer = new BenevityFile( __DIR__ . "/data/benevity_only_match.csv" );
     $importer->import();
     $messages = $importer->getMessages();
@@ -287,7 +326,6 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals(0, $emails['values'][1]['is_primary']);
     $this->assertEquals('minnie@mouse.org', $emails['values'][1]['email']);
   }
-
 
   /**
    * Check that without an email the match is accepted with an employer connection.
