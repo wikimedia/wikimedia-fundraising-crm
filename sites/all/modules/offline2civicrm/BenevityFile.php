@@ -96,7 +96,7 @@ class BenevityFile extends ChecksFile {
         $failed[] = $key;
       }
     }
-    if ($failed) {
+    if (count($failed) === 3) {
       throw new WmfException('CIVI_REQ_FIELD', t("Missing required fields @keys during check import", array("@keys" => implode(", ", $failed))));
     }
   }
@@ -114,7 +114,7 @@ class BenevityFile extends ChecksFile {
       // and recording it in our system would seem to imply we know for
       // sure it happened (as opposed to Benevity says it happens).
       'no_thank_you' => 1,
-      'financial_type_id' => "Engage",
+      'financial_type_id' => "Benevity",
     );
   }
 
@@ -160,6 +160,11 @@ class BenevityFile extends ChecksFile {
       // soft credit it.
       wmf_civicrm_message_create_contact($msg);
     }
+    if (isset($msg['employer_id']) && $msg['contact_id'] != $this->getAnonymousContactID()) {
+      // This is done in the import but if we have no donation let's still do this update.
+      civicrm_api3('Contact', 'create', array('contact_id' => $msg['contact_id'],'employer_id' => $msg['employer_id']));
+    }
+
 
     if (!empty($msg['matching_amount']) && $msg['matching_amount'] > 0) {
       $matchedMsg = $msg;
@@ -228,7 +233,10 @@ class BenevityFile extends ChecksFile {
    * Refer to https://phabricator.wikimedia.org/T115044#3012232 for discussion of logic.
    *
    * @param array $msg
+   *
    * @return int|NULL
+   *   Contact ID to use, if no integer is returned a new contact will be created
+   *
    * @throws \WmfException
    */
   protected function getIndividualID(&$msg) {
@@ -261,7 +269,7 @@ class BenevityFile extends ChecksFile {
         if (!empty($params['email']) || $this->isContactEmployedByOrganization($msg['matching_organization_name'], $contacts['values'][$contacts['id']])) {
           return $contacts['id'];
         }
-        throw new WmfException('IMPORT_CONTRIB', 'Did not find an unambiguous match for ' . implode(',', $params));
+        return false;
       }
       elseif ($contacts['count'] > 1) {
         $contactID = NULL;
@@ -273,22 +281,10 @@ class BenevityFile extends ChecksFile {
             $contactID = $contact['id'];
           }
         }
-        if (!$contactID && empty($params['email'])) {
-          // Do not create a contact - error out & let importer ensure a contact exists.
-          throw new WmfException('IMPORT_CONTRIB', 'Ambiguous contact');
-        }
 
-        return $contactID;
+        return $contactID ? $contactID : FALSE;
       }
-      elseif ($contacts['count'] == 0) {
-        if (empty($params['email'])) {
-          // Do not create a contact - error out & let importer ensure a contact exists.
-          throw new WmfException('IMPORT_CONTRIB', 'Ambiguous contact');
-        }
-        else {
-          return FALSE;
-        }
-      }
+      return FALSE;
     }
     catch (CiviCRM_API3_Exception $e) {
       throw new WmfException('IMPORT_CONTRIB', $e->getMessage());
