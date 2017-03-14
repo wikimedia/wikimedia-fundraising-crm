@@ -2875,7 +2875,7 @@ function wmf_civicrm_civicrm_pre_Address( $op, &$address ) {
 
 			// Do we have any geo info for this address?
 			if (
-				$address['country_id'] == $usId &&
+				!empty($address['country_id']) &&  $address['country_id']== $usId &&
 				!empty( $address['postal_code'] )
 			) {
 				$sql = "SELECT city, s.id AS state_id, latitude, longitude, timezone

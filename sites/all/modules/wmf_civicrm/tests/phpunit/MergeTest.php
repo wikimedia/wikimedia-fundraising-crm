@@ -1226,4 +1226,147 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     return $contact['id'];
   }
 
+  /**
+   * Test recovery where a blank email has overwritten a non-blank email on merge.
+   *
+   * In this case an email existed during merge that held no data. It was used
+   * on the merge, but now we want the lost data.
+   */
+  public function testRepairBlankedAddressOnMerge() {
+    $this->prepareForBlankAddressTests();
+    $this->replicateBlankedAddress();
+
+    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $this->assertTrue(empty($address['street_address']));
+
+    wmf_civicrm_fix_blanked_address($address['id']);
+    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $this->assertEquals('25 Mousey Way', $address['street_address']);
+
+    $this->cleanupFromBlankAddressRepairTests();
+  }
+
+  /**
+   * Test recovery where an always-blank email has been transferred to another contact on merge.
+   *
+   * We have established the address was always blank and still exists. Lets
+   * anihilate it.
+   */
+  public function testRemoveEternallyBlankMergedAddress() {
+    $this->prepareForBlankAddressTests();
+
+    $this->replicateBlankedAddress(array(
+      'street_address' => NULL,
+      'country_id' => NULL,
+      'location_type_id' => 'Main',
+    ));
+
+    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $this->assertTrue(empty($address['street_address']));
+
+    wmf_civicrm_fix_blanked_address($address['id']);
+    $address = $this->callAPISuccess('Address', 'get', array('contact_id' => $this->contactID));
+    $this->assertEquals(0, $address['count']);
+
+    $this->cleanupFromBlankAddressRepairTests();
+  }
+
+  /**
+   * Test recovery where a secondary always-blank email has been transferred to another contact on merge.
+   *
+   * We have established the address was always blank and still exists, and there is
+   * a valid other address. Lets annihilate it.
+   */
+  public function testRemoveEternallyBlankNonPrimaryMergedAddress() {
+    $this->prepareForBlankAddressTests();
+    $this->createContributions();
+
+    $this->callAPISuccess('Address', 'create', array(
+      'street_address' => '25 Mousey Way',
+      'country_id' => 'US',
+      'contact_id' => $this->contactID,
+      'location_type_id' => 'Main',
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'street_address' => 'something',
+      'contact_id' => $this->contactID2,
+      'location_type_id' => 'Main',
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'street_address' => '',
+      'contact_id' => $this->contactID2,
+      'location_type_id' => 'Main',
+    ));
+    $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+
+    $address = $this->callAPISuccess('Address', 'get', array('contact_id' => $this->contactID, 'sequential' => 1));
+    $this->assertEquals(2, $address['count']);
+    $this->assertTrue(empty($address['values'][1]['street_address']));
+
+    wmf_civicrm_fix_blanked_address($address['values'][1]['id']);
+    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $this->assertEquals('something', $address['street_address']);
+
+    $this->cleanupFromBlankAddressRepairTests();
+  }
+
+  /**
+   * Replicate the merge that would result in a blanked address.
+   *
+   * @param array $overrides
+   */
+  protected function replicateBlankedAddress($overrides = array()) {
+    $this->createContributions();
+    $this->callAPISuccess('Address', 'create', array_merge(array(
+      'street_address' => '25 Mousey Way',
+      'country_id' => 'US',
+      'contact_id' => $this->contactID,
+      'location_type_id' => 'Main',
+    ), $overrides));
+    $this->callAPISuccess('Address', 'create', array(
+      'street_address' => NULL,
+      'contact_id' => $this->contactID2,
+      'location_type_id' => 'Main',
+    ));
+    $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+  }
+
+  /**
+   * Common code for testing blank address repairs.
+   */
+  protected function prepareForBlankAddressTests() {
+    civicrm_api3('Setting', 'create', array(
+      'logging_no_trigger_permission' => 0,
+    ));
+    civicrm_api3('Setting', 'create', array('logging' => 1));
+
+    CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS blank_addresses');
+    require_once __DIR__ . '/../../wmf_civicrm.install';
+    require_once __DIR__ . '/../../update_restore_addresses.php';
+    wmf_civicrm_update_7475();
+  }
+
+  protected function cleanupFromBlankAddressRepairTests() {
+    CRM_Core_DAO::executeQuery('DROP TABLE blank_addresses');
+
+    civicrm_api3('Setting', 'create', array(
+      'logging_no_trigger_permission' => 1,
+    ));
+  }
+
+  protected function createContributions() {
+    $this->contributionCreate(array(
+      'contact_id' => $this->contactID,
+      'receive_date' => '2010-01-01',
+      'invoice_id' => 1,
+      'trxn_id' => 1
+    ));
+    $this->contributionCreate(array(
+      'contact_id' => $this->contactID2,
+      'receive_date' => '2012-01-01',
+      'invoice_id' => 2,
+      'trxn_id' => 2
+    ));
+  }
+
 }
