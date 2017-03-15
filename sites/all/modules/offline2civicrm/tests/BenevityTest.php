@@ -298,6 +298,85 @@ class BenevityTest extends BaseChecksFileTest {
   }
 
   /**
+   * Test that import creates new if there are multiple choices based on previous soft credit history.
+   *
+   * If we try to disambiguate our contact using soft credit history and there is more than
+   * one match, we give up & create a new one. In future this one should get used
+   * as it will have an employee relationship.
+   */
+  function testImportSucceedIndividualCreateIfAmbiguousPreviousSoftCredit() {
+    $organization = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
+    $minnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org',
+    ));
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org',
+    ));
+    foreach (array($minnie, $betterMinnie) as $mouse) {
+      // Create a contribution on the organisation, soft credited to each mouse..
+      $this->callAPISuccess('Contribution', 'create', array(
+        'total_amount' => 4,
+        'financial_type_id' => 'Donation',
+        'soft_credit_to' => $mouse['id'],
+        'contact_id' => $organization['id'],
+      ));
+    }
+
+    $importer = new BenevityFile( __DIR__ . "/data/benevity.csv" );
+    $importer->import();
+    $messages = $importer->getMessages();
+    $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => array('IN' => array($minnie['id'], $betterMinnie['id']))));
+    $this->assertEquals(0, $contributions['count']);
+
+    $newestMouse = $this->callAPISuccessGetSingle('Contact', array(
+      'id' => array('NOT IN' => array($minnie['id'], $betterMinnie['id'])),
+      'first_name' => 'Minnie',
+      'last_name' => 'Mouse',
+    ));
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $newestMouse['id']));
+    $this->assertEquals(1, $contributions['count']);
+    $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_a' => $newestMouse['id'], 'contact_id_b' => $organization['id']));
+    $this->assertEquals(1, $relationships['count']);
+  }
+
+  /**
+   * Test that import resolves ambiguous individuals preferring relationships over soft credits.
+   *
+   * We resolve ambiguous contacts by choosing one previously linked to the employer.
+   * If there is more than one that is linked by 'is employed by' or 'has been previously
+   * soft credited' then we prefer the one with an employee relationship.
+   */
+  function testImportSucceedIndividualPreferRelationshipOverPreviousSoftCredit() {
+    $organization = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
+    $minnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org',
+    ));
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org', 'employer_id' => $organization['id'],
+    ));
+
+    // Create a contribution on the organisation, soft credited to each minne.
+    $this->callAPISuccess('Contribution', 'create', array(
+      'total_amount' => 4,
+      'financial_type_id' => 'Donation',
+      'soft_credit_to' => $minnie['id'],
+      'contact_id' => $organization['id'],
+    ));
+
+    // But betterMinnie has a relationship, she wins.
+
+    $importer = new BenevityFile( __DIR__ . "/data/benevity.csv" );
+    $importer->import();
+    $messages = $importer->getMessages();
+    $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $this->assertEquals(0, $contributions['count']);
+
+    $this->callAPISuccessGetSingle('Contribution', array('contact_id' => $betterMinnie['id']));
+  }
+
+  /**
    * Test that we will accept a name match for employees, even when there is an email mis-match.
    *
    * We have a situation where employees are often in the database with a different email than in

@@ -272,17 +272,24 @@ class BenevityFile extends ChecksFile {
         return false;
       }
       elseif ($contacts['count'] > 1) {
+        $possibleContacts = array();
         $contactID = NULL;
         foreach ($contacts['values'] as $contact) {
           if ($this->isContactEmployedByOrganization($msg['matching_organization_name'], $contact)) {
-            if ($contactID) {
-              throw new WmfException('IMPORT_CONTRIB', 'Ambiguous contact');
+            $possibleContacts[] = $contact['id'];
+          }
+          if (count($possibleContacts) > 1) {
+            foreach ($possibleContacts as $index => $possibleContactID) {
+              if (
+                $contacts['values'][$possibleContactID]['current_employer']
+                !== $this->getOrganizationResolvedName($msg['matching_organization_name'])
+              ) {
+                unset($possibleContacts[$index]);
+              }
             }
-            $contactID = $contact['id'];
           }
         }
-
-        return $contactID ? $contactID : FALSE;
+        return (count($possibleContacts) == 1) ? reset($possibleContacts) : FALSE;
       }
       return FALSE;
     }
