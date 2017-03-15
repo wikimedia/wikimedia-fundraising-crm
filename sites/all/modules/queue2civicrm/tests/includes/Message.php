@@ -141,12 +141,30 @@ class RecurringPaymentMessage extends TransactionMessage {
     }
 }
 
+class NormalizedSubscriptionPaymentMessage extends TransactionMessage {
+	function __construct( $values = array() ) {
+		$this->loadDefaults( "subscr_payment_normalized" );
+
+		$this->txn_id_key = 'gateway_txn_id';
+
+		parent::__construct( $values );
+	}
+}
+
 class RecurringSignupMessage extends TransactionMessage {
     function __construct( $values = array() ) {
         $this->loadDefaults( "recurring_signup" );
 
         parent::__construct( $values );
     }
+}
+
+class NormalizedRecurringSignupMessage extends TransactionMessage {
+	function __construct( $values = array() ) {
+		$this->loadDefaults( "subscr_signup_normalized" );
+
+		parent::__construct( $values );
+	}
 }
 
 /**

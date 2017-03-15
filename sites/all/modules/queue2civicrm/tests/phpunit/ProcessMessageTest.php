@@ -315,6 +315,52 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         ->execute();
     }
 
+	public function testNormalizedRecurring() {
+		civicrm_initialize();
+		$subscr_id = mt_rand();
+		$values = $this->processNormalizedRecurringSignup($subscr_id);
+
+		$message = new NormalizedSubscriptionPaymentMessage( $values );
+
+		$payment_time = $message->get( 'date' );
+		exchange_rate_cache_set( 'USD', $payment_time, 1 );
+		exchange_rate_cache_set( $message->get( 'currency' ), $payment_time, 2 );
+
+		db_insert( 'contribution_tracking' )
+			->fields( array( 'id' => $message->get( 'contribution_tracking_id' ) ) )
+			->execute();
+
+		$this->recurringConsumer->processMessage( $message->getBody() );
+
+		$recur_record = wmf_civicrm_get_recur_record( $subscr_id );
+		$this->assertNotEquals( false, $recur_record );
+
+		$contributions = wmf_civicrm_get_contributions_from_gateway_id( $message->getGateway(), $message->getGatewayTxnId() );
+		$this->assertEquals( 1, count( $contributions ) );
+		$this->assertEquals( $recur_record->id, $contributions[0]['contribution_recur_id']);
+
+		$addresses = $this->callAPISuccess('Address', 'get', array('contact_id' => $contributions[0]['contact_id']));
+		$this->assertEquals(1, $addresses['count']);
+
+		$emails = $this->callAPISuccess('Email', 'get', array('contact_id' => $contributions[0]['contact_id']));
+		$this->assertEquals(1, $addresses['count']);
+		$this->assertEquals('test+fr@wikimedia.org', $emails['values'][$emails['id']]['email']);
+
+		db_delete( 'contribution_tracking' )
+			->condition('id', $message->get( 'contribution_tracking_id' ) )
+			->execute();
+		CRM_Core_DAO::executeQuery("
+			DELETE FROM civicrm_contribution
+			WHERE id = %1",
+			array( 1 => array( $contributions[0]['id'], 'Positive' ) )
+		);
+		CRM_Core_DAO::executeQuery("
+			DELETE FROM civicrm_contact
+			WHERE id = %1",
+			array( 1 => array( $contributions[0]['contact_id'], 'Positive' ) )
+		);
+	}
+
     /**
      *  Test that the a blank address is not written to the DB.
      */
@@ -346,6 +392,9 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       $this->assertEquals(1, $addresses['count']);
       // The address created by the sign up (Lockwood Rd) should not have been overwritten by the blank.
       $this->assertEquals('5109 Lockwood Rd', $addresses['values'][0]['street_address']);
+      db_delete( 'contribution_tracking' )
+	    ->condition('id', $messageBody['custom'])
+	    ->execute();
     }
 
     /**
@@ -509,4 +558,20 @@ class ProcessMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->recurringConsumer->processMessage($signup_message->getBody());
     return $values;
   }
+
+	/**
+	 * Process the original recurring sign up message.
+	 *
+	 * @param string $subscr_id
+	 * @return array
+	 */
+	private function processNormalizedRecurringSignup($subscr_id) {
+		$values = array('subscr_id' => $subscr_id);
+		$signup_message = new NormalizedRecurringSignupMessage($values);
+		$subscr_time = $signup_message->get('date');
+		exchange_rate_cache_set('USD', $subscr_time, 1);
+		exchange_rate_cache_set($signup_message->get('currency'), $subscr_time, 2);
+		$this->recurringConsumer->processMessage($signup_message->getBody());
+		return $values;
+	}
 }

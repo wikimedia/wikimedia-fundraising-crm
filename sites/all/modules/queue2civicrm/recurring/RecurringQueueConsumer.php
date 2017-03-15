@@ -83,8 +83,12 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 		if ( isset( $msg['gateway'] ) && $msg['gateway'] === 'amazon' ) {
 			// should not require special normalization
 		} else if ( !isset( $msg[ 'contribution_tracking_id' ]) ) {
-			// we can safely assume we have a raw msg from paypal if contribution_tracking_id isn't set
-			$msg = $this->normalizePaypalMessage( $msg );
+			$msg_normalized[ 'contribution_tracking_id' ] = recurring_get_contribution_tracking_id( $msg );
+			// TODO: remove this after deploying audit and IPN updates to do message normalization there
+			if ( isset( $msg['payer_email'] ) ) {
+				// This is an old-school non-normalized PayPal message.
+				$msg = $this->normalizePaypalMessage( $msg );
+			}
 		} else {
 			$msg['contribution_tracking_update'] = false;
 		}
@@ -125,7 +129,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 		// the subscription id
 		$msg_normalized[ 'subscr_id' ] = $msg[ 'subscr_id' ];
 		$msg_normalized[ 'txn_type' ] = $msg[ 'txn_type' ];
-		$msg_normalized[ 'contribution_tracking_id' ] = recurring_get_contribution_tracking_id( $msg );
 		$msg_normalized[ 'email' ] = $msg[ 'payer_email' ];
 
 		// Premium info
@@ -325,8 +328,14 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
 		// update subscription record with next payment date
 		$api = civicrm_api_classapi();
+		if ( isset( $msg['date'] ) ) {
+			$date = $msg['date'];
+		} else {
+			// TODO: Remove this when audit and IPN are sending normalized messages
+			$date = $msg[ 'payment_date' ];
+		}
 		$update_params = array(
-			'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm( strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg[ 'payment_date' ] )),
+			'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm( strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $date )),
 			'id' => $recur_record->id,
 
 			'version' => 3,
