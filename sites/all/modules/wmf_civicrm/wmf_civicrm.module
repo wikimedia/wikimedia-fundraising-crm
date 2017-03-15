@@ -1716,7 +1716,6 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'thankyou_date' => null,
         'recurring' => null,
         'utm_campaign' => null,
-        'recurring' => null,
         'contact_id' => null,
         'contribution_recur_id' => null,
         'effort_id' => null,
@@ -1728,6 +1727,14 @@ function wmf_civicrm_normalize_msg( $msg ) {
         'soft_credit_to_id' => null,
     );
     $msg = $msg + $defaults;
+
+    // Remove known dummy data.
+    if ($msg['street_address'] === 'N0NE PROVIDED') {
+        $msg['street_address'] = '';
+    }
+    if ($msg['postal_code'] === 0) {
+        $msg['postal_code'] = '';
+    }
 
     if ( empty( $msg['contribution_type_id'] ) ) {
         if ( empty( $msg['contribution_type'] ) ) {

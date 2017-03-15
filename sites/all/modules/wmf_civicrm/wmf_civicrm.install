@@ -2554,7 +2554,7 @@ function wmf_civicrm_update_7470() {
 function wmf_civicrm_update_7475() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery(
-    "CREATE TABLE blank_addresses
+    "CREATE TABLE IF NOT EXISTS blank_addresses
      SELECT *
      FROM log_civicrm_address
      WHERE street_address IS NULL
@@ -2652,6 +2652,16 @@ function wmf_civicrm_update_7485() {
       ON c.id = b.id
       AND c.log_action <> b.log_action
       AND c.log_conn_id NOT IN ('" . implode("','", wmf_civicrm_get_log_conn_bulk_update()) . "')
+      AND (
+        c.contact_id <> b.contact_id
+        OR (
+          c.city IS NOT NULL
+          OR c.postal_code IS NOT NULL
+          OR c.state_province_id IS NOT NULL
+          OR c.country_id IS NOT NULL
+          OR c.street_address IS NOT NULL
+        )
+      )
     WHERE
       a.street_address IS NULL
       AND a.city IS NULL
@@ -2727,6 +2737,7 @@ function wmf_civicrm_update_7490() {
        OR l.postal_code IS NOT NULL
        OR l.city IS NOT NULL
       )
+      AND l.log_conn_id NOT IN ('" . implode("','", wmf_civicrm_get_log_conn_bulk_update()) . "')
     WHERE l.id IS NULL
     ");
 
@@ -2803,4 +2814,16 @@ function wmf_civicrm_get_log_conn_bulk_update() {
 function wmf_civicrm_update_7500() {
   civicrm_initialize();
   wmf_civicrm_create_financial_types(array('Benevity'));
+}
+
+/**
+ * Rerun 7845 & 7490 with a slightly bigger catchment.
+ *
+ * This means that addresses with updates that only affect bulk updates on things
+ * like geocode & is_primary will also be treated as 'non-updated' & removed
+ * from the db if blank.
+ */
+function wmf_civicrm_update_7505() {
+  wmf_civicrm_update_7485();
+  wmf_civicrm_update_7490();
 }
