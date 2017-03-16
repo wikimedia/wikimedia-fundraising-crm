@@ -2827,3 +2827,32 @@ function wmf_civicrm_update_7505() {
   wmf_civicrm_update_7485();
   wmf_civicrm_update_7490();
 }
+
+/**
+ * Set street address/ postal_code to NULL where placeholder info has been used.
+ *
+ * Note that all addresses in the DB with N0NE PROVIDED or 0 postal_code have a
+ * country_id so this is really precautionary, but we would want to delete the
+ * address if it were blank, rather than update it.
+ *
+ * Bug: T158268
+ */
+function wmf_civicrm_update_7510() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_address
+    SET street_address = NULL
+    WHERE street_address = 'N0NE PROVIDED'
+    AND country_id IS NOT NULL
+    "
+  );
+  // sorry can't be bothered trying to write it into one query :-(
+  // would need IF & I am undercaffeinated right now.
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_address
+    SET postal_code = NULL
+    WHERE postal_code = '0'
+    AND country_id IS NOT NULL
+    "
+  );
+}
