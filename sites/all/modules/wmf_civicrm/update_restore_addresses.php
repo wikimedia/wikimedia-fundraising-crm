@@ -128,13 +128,6 @@ function wmf_civicrm_fix_blanked_address($addressID) {
   ));
   $emptyAddress = $addresses['values'][$addressID];
   $isPrimary = $emptyAddress['is_primary'];
-  if ($addresses['count'] > 1 && $isPrimary && !empty($deletedAddresses)) {
-    // Still being precautionary as we work through examples. Have concluded
-    // unchanged non-primary addresses are extraneous, not sure about primary.
-    // We still only revert or remove this address if it has been through a
-    // 'simple change'.
-    return;
-  }
 
   // Let's first establish if there was only one address deleted in the merge.
   // if so, we're gonna get through this. If not, bottle out.
