@@ -2839,20 +2839,69 @@ function wmf_civicrm_update_7505() {
  */
 function wmf_civicrm_update_7510() {
   civicrm_initialize();
-  CRM_Core_DAO::executeQuery("
-    UPDATE civicrm_address
-    SET street_address = NULL
-    WHERE street_address = 'N0NE PROVIDED'
-    AND country_id IS NOT NULL
+
+  $batch = 10000;
+  $nextId = 1;
+
+  while ($nextId > 0) {
+    CRM_Core_DAO::executeQuery("
+      CREATE TEMPORARY TABLE address_to_update
+      SELECT id FROM civicrm_address
+      WHERE street_address = 'N0NE PROVIDED'
+      LIMIT $batch
+    ");
+    CRM_Core_DAO::executeQuery("
+      ALTER TABLE address_to_update
+      ADD INDEX(id)
+    ");
+    CRM_Core_DAO::executeQuery("
+      UPDATE address_to_update t
+      INNER JOIN civicrm_address a
+      ON t.id = a.id
+      SET a.street_address = NULL
+      WHERE country_id IS NOT NULL
     "
-  );
-  // sorry can't be bothered trying to write it into one query :-(
-  // would need IF & I am undercaffeinated right now.
-  CRM_Core_DAO::executeQuery("
-    UPDATE civicrm_address
-    SET postal_code = NULL
-    WHERE postal_code = '0'
-    AND country_id IS NOT NULL
+    );
+    $nextId = CRM_Core_DAO::singleValueQuery("
+      SELECT id
+      FROM civicrm_address
+      WHERE street_address = 'N0NE PROVIDED'
+      AND country_id IS NOT NULL
+      LIMIT 1
+    ");
+    CRM_Core_DAO::executeQuery("DROP TEMPORARY TABLE address_to_update");
+  }
+
+  $nextId = 1;
+
+  while ($nextId > 0) {
+    CRM_Core_DAO::executeQuery("
+      CREATE TEMPORARY TABLE address_to_update
+      SELECT id FROM civicrm_address
+      WHERE postal_code = '0'
+      LIMIT $batch
+    ");
+    CRM_Core_DAO::executeQuery("
+      ALTER TABLE address_to_update
+      ADD INDEX(id)
+    ");
+    CRM_Core_DAO::executeQuery("
+      UPDATE address_to_update t
+      INNER JOIN civicrm_address a
+      ON a.id = t.id
+      SET a.postal_code = NULL
+      WHERE country_id IS NOT NULL
     "
-  );
+    );
+    CRM_Core_DAO::executeQuery("DROP TEMPORARY TABLE address_to_update");
+
+    $nextId = CRM_Core_DAO::singleValueQuery("
+      SELECT id
+      FROM civicrm_address
+      WHERE postal_code = '0'
+      AND country_id IS NOT NULL
+      LIMIT 1
+    ");
+  }
+
 }
