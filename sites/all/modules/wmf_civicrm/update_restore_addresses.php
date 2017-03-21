@@ -72,27 +72,24 @@ function wmf_civicrm_fix_blanked_address($addressID) {
       return;
     }
   }
-  $logs = array();
+
+  $deletedAddresses = array();
   foreach ($logEntries as $logEntryID => $logEntry) {
+    if ($logEntryID === 0) {
+      continue;
+    }
     // Fetch all the address changes that happened during the most recent merge action.
-    $logsRows = civicrm_api3('Logging', 'get', array(
+    $logs = civicrm_api3('Logging', 'get', array(
       'tables' => array('civicrm_address'),
       'log_conn_id' => $logEntries[$logEntryID]['log_conn_id']
     ));
-    $logs += $logsRows['values'];
-  }
-  $updates = array();
-  $deletedAddresses = array();
-  foreach ($logs as $log) {
-    if ($log['action'] == 'Delete') {
-      $deletedAddresses[$log['id']][$log['field']] = $log['from'];
+    foreach ($logs['values'] as $log) {
+      if ($log['action'] == 'Delete') {
+        $deletedAddresses[$log['id']][$log['field']] = $log['from'];
+      }
     }
   }
-  // Q. What do we do if more than one address was deleted during the merged?
-  // A. Chicken out.
-  if (count($deletedAddresses) > 1) {
-    return;
-  }
+  $updates = array();
 
   /**
    * Some checks / precautions.
@@ -154,11 +151,23 @@ function wmf_civicrm_fix_blanked_address($addressID) {
     // 2) it was transferred from one contact to another during the
     // merge.
     // But... was another address deleted to make way for it?
-    // If more than one address was deleted in this merge we will chicken out.
+    // If more than one address was deleted we will select the last
+    // one which is close enough to latest for this last round.
     if (count($deletedAddresses) > 1)  {
-      return;
+      foreach ($deletedAddresses as $deletedAddress) {
+        $deletedAddressDetails = array_intersect_key($deletedAddress, array_fill_keys($dataFields, 1));
+        foreach ($addresses['values'] as $address) {
+          $addressDetails = array_intersect_key($address, $deletedAddressDetails);
+          if ($deletedAddressDetails === $addressDetails) {
+            // This is our last check. Basically $addressDetails holds a subset of the
+            // address keys that matches those present in the deleted address Details. If it exactly matches
+            // the deleted address then let's ignore the deleted address & move on.
+            continue;
+          }
+          $updates = $deletedAddressDetails;
+        }
+      }
     }
-    $updates = array();
   }
 
   if (empty($updates)) {
