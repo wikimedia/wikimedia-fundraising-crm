@@ -75,7 +75,9 @@ function wmf_civicrm_fix_blanked_address($addressID) {
 
   $deletedAddresses = array();
   foreach ($logEntries as $logEntryID => $logEntry) {
-    if ($logEntryID > 0);
+    if ($logEntryID === 0) {
+      continue;
+    }
     // Fetch all the address changes that happened during the most recent merge action.
     $logs = civicrm_api3('Logging', 'get', array(
       'tables' => array('civicrm_address'),
@@ -88,12 +90,6 @@ function wmf_civicrm_fix_blanked_address($addressID) {
     }
   }
   $updates = array();
-
-  // Q. What do we do if more than one address was deleted during the merged?
-  // A. Chicken out.
-  if (count($deletedAddresses) > 1) {
-    return;
-  }
 
   /**
    * Some checks / precautions.
@@ -155,11 +151,23 @@ function wmf_civicrm_fix_blanked_address($addressID) {
     // 2) it was transferred from one contact to another during the
     // merge.
     // But... was another address deleted to make way for it?
-    // If more than one address was deleted in this merge we will chicken out.
+    // If more than one address was deleted we will select the last
+    // one which is close enough to latest for this last round.
     if (count($deletedAddresses) > 1)  {
-      return;
+      foreach ($deletedAddresses as $deletedAddress) {
+        $deletedAddressDetails = array_intersect_key($deletedAddress, array_fill_keys($dataFields, 1));
+        foreach ($addresses['values'] as $address) {
+          $addressDetails = array_intersect_key($address, $deletedAddressDetails);
+          if ($deletedAddressDetails === $addressDetails) {
+            // This is our last check. Basically $addressDetails holds a subset of the
+            // address keys that matches those present in the deleted address Details. If it exactly matches
+            // the deleted address then let's ignore the deleted address & move on.
+            continue;
+          }
+          $updates = $deletedAddressDetails;
+        }
+      }
     }
-    $updates = array();
   }
 
   if (empty($updates)) {

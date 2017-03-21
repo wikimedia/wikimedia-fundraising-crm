@@ -1247,6 +1247,34 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test recovery where a blank email has overwritten a non-blank email on merge.
+   *
+   * In this case an email existed during merge that held no data. It was used
+   * on the merge, but now we want the lost data. It underwent 2 merges.
+   */
+  public function testRepairBlankedAddressOnMergeDoubleWhammy() {
+    $this->prepareForBlankAddressTests();
+    $contact3 = $this->breedDuck(
+      array('api.address.create' => array(
+        'street_address' => '25 Ducky Way',
+        'country_id' => 'US',
+        'contact_id' => $this->contactID,
+        'location_type_id' => 'Main',
+      )));
+    $this->replicateBlankedAddress();
+
+    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $this->assertTrue(empty($address['street_address']));
+
+    wmf_civicrm_fix_blanked_address($address['id']);
+    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $this->assertEquals('25 Mousey Way', $address['street_address']);
+
+    $this->cleanupFromBlankAddressRepairTests();
+  }
+
+
+  /**
    * Test recovery where an always-blank email has been transferred to another contact on merge.
    *
    * We have established the address was always blank and still exists. Lets
