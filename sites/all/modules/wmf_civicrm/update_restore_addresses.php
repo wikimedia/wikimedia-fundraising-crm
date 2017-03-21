@@ -75,7 +75,30 @@ function wmf_civicrm_fix_blanked_address($addressID) {
 
   $deletedAddresses = array();
   foreach ($logEntries as $logEntryID => $logEntry) {
-    if ($logEntryID === 0) {
+    if ($logEntryID === 0 || in_array($logEntries[$logEntryID]['log_conn_id'], array(
+        // Bulk update on 2017-02-07 involving 11712 records.
+        // Consistent with the fix to primary addresses.
+        // I committed the relevant fix on
+        // commit 7b287e68292da1ae161aa2383808d8925af4a583
+        // Author: eileen <emcnaughton@wikimedia.org>
+        // Date:   Thu Feb 2 15:41:58 2017 +1300
+        '589a35f1e77ec',
+        // Buld update on 2016-11-02 involving 4458473 records
+        // Consistent with first attempt to add (non-rounded) geocodes.
+        //commit e4bf03d321f975a21510337f75e088c235c49521
+        // Author: Elliott Eggleston <ejegg@ejegg.com>
+        // Date:   Tue Nov 1 14:18:31 2016 -0500
+        // Geocode existing US addresses
+        '581939a5f3bc8',
+        // Bulk update on 2016-11-09 21:28:43 involving 4715708 records
+        // consistent with fixing the rounding on prior changes.
+        //commit 25558f9b27b2b2d0be17d1dd25e16ff4d0708a96
+        // Author: eileen <emcnaughton@wikimedia.org>
+        // Date:   Thu Nov 10 10:01:36 2016 +1300
+        // Fix rounding of lat/long caused by DOUBLE wierdness.
+        // (note I think the commit is in my tz).
+        '5823950b11501',
+      ))) {
       continue;
     }
     // Fetch all the address changes that happened during the most recent merge action.
