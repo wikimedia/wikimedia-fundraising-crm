@@ -48,6 +48,7 @@ function wmf_civicrm_fix_blanked_address($addressID) {
   while ($result->fetch()) {
     $logEntries[] = (array) $result;
   }
+  $highestLogID = count($logEntries) - 1;
 
   $dataFields = array(
     'street_address',
@@ -71,14 +72,18 @@ function wmf_civicrm_fix_blanked_address($addressID) {
       return;
     }
   }
-  // Fetch all the address changes that happened during this merge action.
-  $logs = civicrm_api3('Logging', 'get', array(
-    'tables' => array('civicrm_address'),
-    'log_conn_id' => $logEntries[1]['log_conn_id']
-  ));
+  $logs = array();
+  foreach ($logEntries as $logEntryID => $logEntry) {
+    // Fetch all the address changes that happened during the most recent merge action.
+    $logsRows = civicrm_api3('Logging', 'get', array(
+      'tables' => array('civicrm_address'),
+      'log_conn_id' => $logEntries[$logEntryID]['log_conn_id']
+    ));
+    $logs += $logsRows['values'];
+  }
   $updates = array();
   $deletedAddresses = array();
-  foreach ($logs['values'] as $log) {
+  foreach ($logs as $log) {
     if ($log['action'] == 'Delete') {
       $deletedAddresses[$log['id']][$log['field']] = $log['from'];
     }
@@ -94,19 +99,18 @@ function wmf_civicrm_fix_blanked_address($addressID) {
    * - how many times has this address been changed?
    * - only 2? we are just dealing with a single address moved from one
    *   contact to another (double check that because we like belts & braces, red ones).
-   * - more than 2? ug complications. hide.
+   * - more than 2? ug complications. - give it a go working with the most recent one.
   */
   if (
-    count($logEntries) > 2
-    ||  !in_array($logEntries[0]['log_action'], array('Insert', 'Initialization'))
-    || $logEntries[1]['log_action'] !== 'Update'
+    !in_array($logEntries[0]['log_action'], array('Insert', 'Initialization'))
+    || $logEntries[$highestLogID]['log_action'] !== 'Update'
     ) {
     return;
   }
 
   // We are specifically trying to handle merged data at this stage.
   // May extend if we identify other patterns.
-  if ($logEntries[0]['contact_id'] == $logEntries[1]['contact_id']) {
+  if ($logEntries[0]['contact_id'] == $logEntries[$highestLogID]['contact_id']) {
     return;
   }
 
@@ -114,7 +118,7 @@ function wmf_civicrm_fix_blanked_address($addressID) {
   // was transferred to another contact. We have the log_conn_id & the new contact id.
   // let's make sure the new contact has not since been deleted (merged)
   $keptContact = civicrm_api3('Contact', 'get', array(
-    'id' => $logEntries[1]['contact_id'],
+    'id' => $logEntries[$highestLogID]['contact_id'],
     'sequential' => 1
   ));
   if ($keptContact['count'] == 0 || !empty($keptContact['values'][0]['is_deleted'])) {
@@ -124,7 +128,7 @@ function wmf_civicrm_fix_blanked_address($addressID) {
 
   // If our address is NOT the primary
   $addresses = civicrm_api3('Address', 'get', array(
-    'contact_id' => $logEntries[1]['contact_id'],
+    'contact_id' => $logEntries[$highestLogID]['contact_id'],
   ));
   $emptyAddress = $addresses['values'][$addressID];
   $isPrimary = $emptyAddress['is_primary'];
