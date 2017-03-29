@@ -266,6 +266,13 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
       if (!empty($msg['street_address'])) {
         wmf_civicrm_message_location_update($msg, array('id' => $msg['contact_id']));
       }
+      elseif (!empty($msg['email'])) {
+        // location_update updates email, if set and address, if set.
+        // However, not quite ready to start dealing with the situation
+        // where less of the address is incoming than already exists
+        // hence only call this part if street_address is empty.
+        wmf_civicrm_message_email_update($msg, $msg['contact_id']);
+      }
     }
 
     // Make new recurring record if necessary

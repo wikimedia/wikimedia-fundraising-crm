@@ -124,6 +124,8 @@ class BenevityTest extends BaseChecksFileTest {
       'contact_id_b' => $thaMouseMeister['id'])
     );
     $this->assertEquals(1, $relationships['count']);
+    $minnie = $this->callAPISuccessGetSingle('Contact', array('id' => $contribution['contact_id'], 'return' => 'email'));
+    $this->assertEquals('minnie@mouse.org', $minnie['email']);
   }
 
   /**
@@ -206,6 +208,31 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals(1, $contributions['count']);
     $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_a' => $betterMinnie['id'], 'contact_id_b' => $organization['id']));
     $this->assertEquals(1, $relationships['count']);
+  }
+
+  /**
+   * Test that import resolves ambiguous individuals by choosing based on the employer.
+   */
+  function testImportSucceedIndividualDisambiguateByEmployerEmailAdded() {
+    $organization = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Mickey Mouse Inc', 'contact_type' => 'Organization'));
+    $minnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual',
+    ));
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'employer_id' => $organization['id'],
+    ));
+    $importer = new BenevityFile( __DIR__ . "/data/benevity.csv" );
+    $importer->import();
+    $messages = $importer->getMessages();
+    $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $this->assertEquals(0, $contributions['count']);
+
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $betterMinnie['id']));
+    $this->assertEquals(1, $contributions['count']);
+    $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_a' => $betterMinnie['id'], 'contact_id_b' => $organization['id']));
+    $this->assertEquals(1, $relationships['count']);
+    $this->callAPISuccessGetSingle('Email', array('email' => 'minnie@mouse.org'));
   }
 
   /**
