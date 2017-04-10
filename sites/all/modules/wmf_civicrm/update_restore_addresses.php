@@ -98,6 +98,8 @@ function wmf_civicrm_fix_blanked_address($addressID) {
         // Fix rounding of lat/long caused by DOUBLE wierdness.
         // (note I think the commit is in my tz).
         '5823950b11501',
+        // another bulk update, not fully diagnosed but around 7000 records.
+        '581923f4ee6ec',
       ))) {
       continue;
     }

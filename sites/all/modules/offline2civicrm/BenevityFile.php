@@ -168,7 +168,7 @@ class BenevityFile extends ChecksFile {
 
     if (!empty($msg['matching_amount']) && $msg['matching_amount'] > 0) {
       $matchedMsg = $msg;
-      unset($matchedMsg['net'], $matchedMsg['fee']);
+      unset($matchedMsg['net'], $matchedMsg['fee'], $matchedMsg['email']);
       $matchedMsg['contact_id'] = $msg['employer_id'];
       $matchedMsg['soft_credit_to_id'] = ($msg['contact_id'] == $this->getAnonymousContactID() ? NULL : $msg['contact_id']);
       $matchedMsg['gross'] = $msg['matching_amount'];
