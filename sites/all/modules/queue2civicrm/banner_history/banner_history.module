@@ -32,15 +32,6 @@ function banner_history_settings_page_args() {
 			' queue and placed in a table.</p>' ),
 	);
 
-	$form['banner_history_queue'] = array(
-		'#type'	=> 'textfield',
-		'#title' => t( 'Subscription path' ),
-		'#required' => true,
-		'#default_value' => variable_get(
-			'banner_history_queue', 'banner-history' ),
-		'#description'	 => t( 'Queue for banner history log ID associations' ),
-	);
-
 	$form['banner_history_batch'] = array(
 		'#type' => 'textfield',
 		'#title' => t( 'Batch size' ),
@@ -77,10 +68,8 @@ function banner_history_queue_consume() {
     $config = Configuration::createForView();
     Context::initWithLogger( $config, 'banner_history' );
 
-	$queue = variable_get( 'banner_history_queue', 'banner-history' );
-
 	$qc = new BannerHistoryQueueConsumer(
-		$queue,
+		'banner-history',
 		variable_get( 'banner_history_batch_time', 0 ),
 		variable_get( 'banner_history_batch', 0 )
 	);

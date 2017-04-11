@@ -37,14 +37,6 @@ function refund_qc_settings() {
     '#default_value' => variable_get('refund_disable', false),
   );
 
-  $form['refund_queue'] = array(
-    '#type'          => 'textfield',
-    '#title'         => t('Subscription path'),
-    '#required'      => TRUE,
-    '#default_value' => variable_get('refund_queue', '/queue/refund'),
-    '#description'   => t('Queue for refund notifications'),
-  );
-
   $form['refund_batch'] = array(
     '#type'          => 'select',
     '#title'         => t('Cron batch size'),

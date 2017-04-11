@@ -38,14 +38,6 @@ function unsubscribe_qc_settings() {
     '#description' => t('<p>Contacts in the unsubscribe queue are processed by marking them as opt-out in the CRM.</p>'),
   );
 
-  $form['unsubscribe_queue'] = array(
-    '#type'          => 'textfield',
-    '#title'         => t('Subscription path'),
-    '#required'      => TRUE,
-    '#default_value' => variable_get('unsubscribe_queue', '/queue/unsubscribe'),
-    '#description'   => t('Queue for unsubscribe items'),
-  );
-
   $form['unsubscribe_batch'] = array(
     '#type'          => 'select',
     '#title'         => t('Cron batch size'),

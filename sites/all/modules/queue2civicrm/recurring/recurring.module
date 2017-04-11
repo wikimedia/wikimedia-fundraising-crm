@@ -48,14 +48,6 @@ function recurring_settings() {
     '#markup' => t('<p>The recurring queue contains notifications pertaining to subscription donations, such as monthly payments, cancellation,and expiration.</p>'),
   );
 
-  $form['recurring_subscription'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Subscription path'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('recurring_subscription', '/queue/donations_recurring'),
-    '#description' => t( 'Queue to watch for recurring notifications' ),
-  );
-
   $form['recurring_batch'] = array(
     '#type' => 'select',
     '#title' => t('Cron batch size'),
