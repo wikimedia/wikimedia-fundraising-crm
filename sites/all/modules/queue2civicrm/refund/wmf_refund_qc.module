@@ -92,7 +92,7 @@ function refund_batch_process() {
   watchdog('refund', 'Executing: refund_batch_process');
 
 	$consumer = new RefundQueueConsumer (
-		'refund-new', // TODO: kill all the -new suffixes
+		'refund',
 		variable_get('refund_batch_time', 0),
 		variable_get('refund_batch', 0)
 
