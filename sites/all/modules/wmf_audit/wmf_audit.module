@@ -399,8 +399,8 @@ function wmf_audit_send_transaction($record, $type) {
 function wmf_audit_send_queue_message( $body, $type ) {
   $configKeys = array(
     'main' => 'data-store/donations',
-    'negative' => 'data-store/refund-new', // FIXME: almost ready to do away with -new
-    'recurring' => 'data-store/recurring-new',
+    'negative' => 'data-store/refund',
+    'recurring' => 'data-store/recurring',
   );
 
   if (!array_key_exists($type, $configKeys)) {
