@@ -84,8 +84,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 			// should not require special normalization
 		} else if ( !isset( $msg[ 'contribution_tracking_id' ]) ) {
 			$msg_normalized[ 'contribution_tracking_id' ] = recurring_get_contribution_tracking_id( $msg );
-		} else {
-			$msg['contribution_tracking_update'] = false;
 		}
 
 		if ( isset( $msg['frequency_unit'] ) ) {
@@ -138,7 +136,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 		 *  for this given user if we are also updating the contribution_tracking table
 		 *  for this contribution.
 		 */
-		if ( $msg[ 'contribution_tracking_update' ] ) {
+		$ctRecord = wmf_civicrm_get_contribution_tracking( $msg );
+		if ( empty( $ctRecord[ 'contribution_id' ] ) ) {
 			// TODO: this scenario should be handled by the wmf_civicrm_contribution_message_import function.
 
 			// Map the tracking record to the CiviCRM contribution

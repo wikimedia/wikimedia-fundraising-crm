@@ -35,6 +35,14 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 				->execute();
 		}
 		foreach( $this->contributions as $contribution ) {
+			if ( !empty( $contribution['contribution_recur_id'] ) ) {
+				CRM_Core_DAO::executeQuery(
+					"
+				DELETE FROM civicrm_contribution_recur
+				WHERE id = %1",
+					array( 1 => array( $contribution['contribution_recur_id'], 'Positive' ) )
+				);
+			}
 			CRM_Core_DAO::executeQuery(
 				"
 			DELETE FROM civicrm_contribution
@@ -86,8 +94,29 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 		$this->addContributionTracking( $msg['contribution_tracking_id'] );
 
 		$contributions = $this->importMessage( $message );
+		$ctRecord = db_select( 'contribution_tracking', 'ct' )
+			->fields( 'ct' )
+			->condition( 'id', $msg['contribution_tracking_id'], '=' )
+			->execute()
+			->fetchAssoc();
+
+		$this->assertEquals(
+			$contributions[0]['id'],
+			$ctRecord['contribution_id']
+		);
 		$contributions2 = $this->importMessage( $message2 );
 
+		$ctRecord2 = db_select( 'contribution_tracking', 'ct' )
+			->fields( 'ct' )
+			->condition( 'id', $msg['contribution_tracking_id'], '=' )
+			->execute()
+			->fetchAssoc();
+
+		// The ct_id record should still link to the first contribution
+		$this->assertEquals(
+			$contributions[0]['id'],
+			$ctRecord2['contribution_id']
+		);
 		$recur_record = wmf_civicrm_get_recur_record( $subscr_id );
 
 		$this->assertNotEquals( false, $recur_record );
