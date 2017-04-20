@@ -135,20 +135,10 @@ class RecurringPaymentMessage extends TransactionMessage {
     function __construct( $values = array() ) {
         $this->loadDefaults( "recurring_payment" );
 
-        $this->txn_id_key = 'txn_id';
+        $this->txn_id_key = 'gateway_txn_id';
 
         parent::__construct( $values );
     }
-}
-
-class NormalizedSubscriptionPaymentMessage extends TransactionMessage {
-	function __construct( $values = array() ) {
-		$this->loadDefaults( "subscr_payment_normalized" );
-
-		$this->txn_id_key = 'gateway_txn_id';
-
-		parent::__construct( $values );
-	}
 }
 
 class RecurringSignupMessage extends TransactionMessage {
@@ -157,14 +147,6 @@ class RecurringSignupMessage extends TransactionMessage {
 
         parent::__construct( $values );
     }
-}
-
-class NormalizedRecurringSignupMessage extends TransactionMessage {
-	function __construct( $values = array() ) {
-		$this->loadDefaults( "subscr_signup_normalized" );
-
-		parent::__construct( $values );
-	}
 }
 
 /**
