@@ -2905,3 +2905,64 @@ function wmf_civicrm_update_7510() {
   }
 
 }
+/**
+ * Backfill contribution_tracking associations for recurring donations
+ *
+ * Bug: T163443
+ */
+function wmf_civicrm_update_7520() {
+  $affected = CRM_Core_DAO::executeQuery("
+    SELECT cont.id, ext.gateway_txn_id
+    FROM civicrm_contribution cont
+    INNER JOIN wmf_contribution_extra ext on ext.entity_id = cont.id
+    LEFT JOIN drupal.contribution_tracking ct
+    ON ct.contribution_id = cont.id
+    WHERE cont.trxn_id LIKE 'RECURRING PAYPAL%'
+    AND cont.receive_date > '2017-04-09'
+    AND ct.id IS NULL
+  ");
+  $found = [];
+  $logDir = wmf_audit_get_log_archive_dir();
+  $lines = array();
+  // These lines will have the gateway_trxn_id and the ct_id
+  $files = implode( ' ', glob( "$logDir/fundraising-drupal-201704*" ) );
+  $cmd = "/bin/zgrep subscr_payment $files";
+  exec( $cmd, $lines );
+  foreach ( $lines as $line ) {
+    $parsed = wmf_civicrm_parse_watchdog_array( $line );
+    if (
+      !empty( $parsed['gateway_txn_id'] ) &&
+      !empty( $parsed['contribution_tracking_id'] )
+    ) {
+      // Normalized lines
+      $found[$parsed['gateway_txn_id']] = $parsed['contribution_tracking_id'];
+    } else if ( !empty( $parsed['txn_id'] ) ) {
+      // Raw PayPal IPNs
+      if (
+        !empty( $parsed['transaction_subject'] ) &&
+        is_numeric( $parsed['transaction_subject'] )
+      ) {
+        $found[$parsed['txn_id']] = $parsed['transaction_subject'];
+      } else if (
+        !empty( $parsed['custom'] ) &&
+		is_numeric( $parsed['custom'] )
+      ) {
+        $found[$parsed['txn_id']] = $parsed['custom'];
+      }
+    }
+  }
+  $fixed = 0;
+  $missing = 0;
+  while( $affected->fetch() ) {
+    $gatewayTxnId = $affected->gateway_txn_id;
+    if ( empty( $found[$gatewayTxnId] ) ) {
+      $missing++;
+    } else {
+      wmf_civicrm_message_update_contribution_tracking(
+        array( 'contribution_tracking_id' => $found[$gatewayTxnId] ),
+        array( 'id' => $affected->id )
+      );
+      $fixed++;
+    }
+  }
+}
