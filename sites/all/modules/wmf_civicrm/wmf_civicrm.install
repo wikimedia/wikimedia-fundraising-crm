@@ -2904,6 +2904,16 @@ function wmf_civicrm_update_7510() {
     ");
   }
 
+  /**
+   * Add Bijcard
+   */
+  function wmf_civicrm_update_7511() {
+    $payment_instruments = array(
+      'Credit Card: Bijenkorf',
+    );
+    wmf_civicrm_bootstrap_civi();
+    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
+  }
 }
 /**
  * Backfill contribution_tracking associations for recurring donations

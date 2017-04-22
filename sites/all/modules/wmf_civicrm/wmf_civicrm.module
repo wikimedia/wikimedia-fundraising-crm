@@ -688,6 +688,9 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                     case 'webpay':
                         $payment_instrument .= ': Webpay';
                         break;
+                    case 'bij':
+                        $payment_instrument .= ': Bijenkorf';
+                        break;
                 }
                 break;
             case 'dd':
