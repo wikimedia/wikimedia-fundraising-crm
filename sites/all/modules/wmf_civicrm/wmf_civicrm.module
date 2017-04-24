@@ -688,6 +688,9 @@ function wmf_civicrm_get_message_payment_instrument( $msg )
                     case 'webpay':
                         $payment_instrument .= ': Webpay';
                         break;
+                    case 'bij':
+                        $payment_instrument .= ': Bijenkorf';
+                        break;
                 }
                 break;
             case 'dd':
@@ -3544,3 +3547,19 @@ function wmf_civicrm_civicrm_pageRun(&$page) {
     }
     return FALSE;
   }
+
+  /**
+   * Given a line from a drupal watchdog log with an array, reconstruct
+   * the keys and values from the mangled print_r variant
+   * e.g. [gateway] =&gt; paypal#012    [source_name] =&gt; SmashPig#012
+   */
+  function wmf_civicrm_parse_watchdog_array( $logLine ) {
+    $logLine = str_replace( '=&gt;', '=>', $logLine );
+    $output = [];
+    preg_match_all( '/\[([^\]]+)\] => (.*?)#012/', $logLine, $matches);
+    foreach( $matches[1] as $index => $key ) {
+      $output[$key] = $matches[2][$index];
+    }
+    return $output;
+  }
+
