@@ -2921,6 +2921,7 @@ function wmf_civicrm_update_7510() {
  * Bug: T163443
  */
 function wmf_civicrm_update_7520() {
+  civicrm_initialize();
   $affected = CRM_Core_DAO::executeQuery("
     SELECT cont.id, ext.gateway_txn_id
     FROM civicrm_contribution cont
