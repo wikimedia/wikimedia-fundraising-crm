@@ -66,15 +66,8 @@ class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 	}
 
 	public function tearDown() {
-		$api = civicrm_api_classapi();
-		$api->Contribution->Delete( array(
-			'id' => $this->contribution_id,
-			'version' => 3,
-		) );
-		$api->Contact->Delete( array(
-			'id' => $this->contact_id,
-			'version' => 3,
-		) );
+    $this->callAPISuccess('Contribution', 'delete', array('id' => $this->contribution_id));
+    $this->callAPISuccess('Contact', 'delete', array('id' => $this->contact_id));
 		parent::tearDown();
 	}
 

@@ -55,14 +55,8 @@ class ContributionConversionTest extends BaseChecksFileTest {
 
         $contributions = wmf_civicrm_get_contributions_from_gateway_id( $this->transaction->gateway, $this->transaction->gateway_txn_id );
 
-        $api = civicrm_api_classapi();
-        $api->ContributionRecur->Get( array(
-            'id' => $contributions[0]['contribution_recur_id'],
-
-            'version' => 3,
-        ) );
-        $contribution_recur = $api->values[0];
-        $this->assertNotNull( $contribution_recur->cancel_date,
+        $contribution_recur = $this->callAPISuccessGetSingle('ContributionRecur', array('id' => $contributions[0]['contribution_recur_id']));
+        $this->assertNotNull( $contribution_recur['cancel_date'],
             "Marked as cancelled" );
     }
 }

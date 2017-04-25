@@ -135,27 +135,23 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
      */
     function testGetContributionMany() {
         $gateway_txn_id = mt_rand();
-        $api = civicrm_api_classapi();
-        $api->Contact->create( array(
+        $contact = $this->callAPISuccess('Contact', 'create', array(
             'contact_type' => 'Individual',
             'display_name' => 'test',
-            'version' => 3,
-        ) );
+        ));
         $params = array(
-            'contact_id' => $api->values[0]->id,
+            'contact_id' => $contact['id'],
             'contribution_type' => 'Cash',
             'total_amount' => 1,
             'version' => 3,
         );
-        $ret = $api->Contribution->create( $params );
-        $this->assertTrue( $ret );
-        wmf_civicrm_set_custom_field_values( $api->values[0]->id, array(
+        $contribution = $this->callAPISuccess('Contribution', 'create', $params);
+        wmf_civicrm_set_custom_field_values($contribution['id'], array(
             'gateway' => 'TEST_GATEWAY',
             'gateway_txn_id' => $gateway_txn_id,
         ) );
-        $ret = $api->Contribution->create( $params );
-        $this->assertTrue( $ret );
-        wmf_civicrm_set_custom_field_values( $api->values[0]->id, array(
+        $contribution = $this->callAPISuccess('Contribution', 'create', $params);
+        wmf_civicrm_set_custom_field_values($contribution['id'], array(
             'gateway' => 'TEST_GATEWAY',
             'gateway_txn_id' => $gateway_txn_id,
         ) );

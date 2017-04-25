@@ -9,7 +9,7 @@ class PhoneImportTest extends BaseWmfDrupalPhpUnitTestCase {
     public function testPhoneImport() {
       $this->refreshStripFunction();
 
-        $phone = '555-555-5555';
+        $phoneNumber = '555-555-5555';
 
         $msg = array(
             'currency' => 'USD',
@@ -19,21 +19,18 @@ class PhoneImportTest extends BaseWmfDrupalPhpUnitTestCase {
             'gateway_txn_id' => mt_rand(),
             'gross' => '1.23',
             'payment_method' => 'cc',
-
-            'phone' => $phone,
+            'phone' => $phoneNumber,
         );
 
         $contribution = wmf_civicrm_contribution_message_import( $msg );
 
-        $api = civicrm_api_classapi();
-        $api->Phone->Get( array(
-            'contact_id' => $contribution['contact_id'],
-        ) );
+        $phones = $this->callAPISuccess('Phone', 'get', array('contact_id' => $contribution['contact_id'], 'sequential' => 1));
+        $phone = $phones['values'][0];
 
-        $this->assertEquals( $phone, $api->values[0]->phone );
-        $this->assertEquals( 1, $api->values[0]->is_primary );
-        $this->assertEquals( wmf_civicrm_get_default_location_type_id(), $api->values[0]->location_type_id );
-        $this->assertEquals( CRM_Core_OptionGroup::getValue('phone_type', 'phone'), $api->values[0]->phone_type_id );
+        $this->assertEquals($phoneNumber, $phone['phone']);
+        $this->assertEquals(1, $phone['is_primary']);
+        $this->assertEquals(wmf_civicrm_get_default_location_type_id(), $phone['location_type_id']);
+        $this->assertEquals(CRM_Core_OptionGroup::getValue('phone_type', 'phone'), $phone['phone_type_id']);
     }
 
   /**

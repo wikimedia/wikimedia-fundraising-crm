@@ -26,21 +26,17 @@ class JobTest extends DrupalWebTestCase {
 
         Mailer::$defaultSystem = 'drupal';
 
-        $api = civicrm_api_classapi();
-        $success = $api->Contact->create( array(
+        $contact = civicrm_api3('Contact', 'create', array(
             'contact_type' => 'Individual',
             'email' => 'test@example.com',
             'first_name' => 'Foo',
             'last_name' => 'Beer',
             'preferred_language' => 'it',
-            'version' => 3,
         ) );
-        if ( !$success ) {
-            $this->fail( $api->errorMsg() );
+        if ($contact['is_error'] ) {
+            $this->fail($contact['error_message']);
         }
-        $result = $api->values();
-        $contact = array_pop( $result );
-        $this->contactId = $contact->id;
+        $this->contactId = $contact['id'];
 
         $this->job = Job::create( 'TestThankyouTemplate' );
 

@@ -31,18 +31,15 @@ class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
 
         $contribution = wmf_civicrm_contribution_message_import( $msg );
 
-        $api = civicrm_api_classapi();
-
-        $api->RelationshipType->Get( array(
+        $relationshipType = $this->callAPISuccessGetSingle('RelationshipType', array(
             'name_a_b' => 'Spouse of',
-        ) );
-        $relationship_type_id = $api->values[0]->id;
+        ));
 
-        $api->Relationship->Get( array(
+        $relationship = $this->callAPISuccessGetSingle('Relationship', array(
             'contact_id_a' => $contribution['contact_id'],
-        ) );
+        ));
 
-        $this->assertEquals( $relationship_type_id, $api->values[0]->relationship_type_id );
+        $this->assertEquals($relationshipType['id'], $relationship['relationship_type_id']);
     }
 
     /**

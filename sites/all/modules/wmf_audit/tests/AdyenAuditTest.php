@@ -80,17 +80,11 @@ class AdyenAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 	}
 
 	public function tearDown() {
-		$api = civicrm_api_classapi();
 		foreach( $this->contribution_ids as $id ) {
-			$api->Contribution->Delete( array(
-				'id' => $id,
-				'version' => 3,
-			) );
+      $this->callAPISuccess('Contribution', 'delete', array('id' => $id));
 		}
-		$api->Contact->Delete( array(
-			'id' => $this->contact_id,
-			'version' => 3,
-		) );
+
+    $this->callAPISuccess('Contact', 'delete', array('id' => $this->contact_id));
 		parent::tearDown();
 	}
 

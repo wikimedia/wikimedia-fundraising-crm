@@ -21,29 +21,23 @@ class CiviFixtures {
      * @return CiviFixtures
      */
     static function create() {
+        civicrm_initialize();
         $out = new CiviFixtures();
 
-        $api = civicrm_api_classapi();
-
-        $contact_params = array(
-            'contact_type' => 'Individual',
-            'first_name' => 'Test',
-            'last_name' => 'Es',
-
-            'version' => 3,
-        );
-        $api->Contact->Create( $contact_params );
-        $out->contact_id = $api->id;
+        $individual = civicrm_api3('Contact', 'Create', array(
+          'contact_type' => 'Individual',
+          'first_name' => 'Test',
+          'last_name' => 'Es'
+        ));
+        $out->contact_id = $individual['id'];
 
         $out->org_contact_name = 'Test DAF ' . mt_rand();
-        $contact_params = array(
-            'contact_type' => 'Organization',
-            'organization_name' => $out->org_contact_name,
 
-            'version' => 3,
-        );
-        $api->Contact->Create( $contact_params );
-        $out->org_contact_id = $api->id;
+        $organization = civicrm_api3('Contact', 'Create', array(
+          'contact_type' => 'Organization',
+          'organization_name' => $out->org_contact_name,
+        ));
+        $out->org_contact_id = $organization['id'];
 
         $out->recur_amount = '2.34';
         $out->subscription_id = 'SUB-' . mt_rand();
@@ -67,43 +61,30 @@ class CiviFixtures {
 
             'version' => 3,
         );
-        $api->ContributionRecur->Create( $subscription_params );
-        $out->contribution_recur_id = $api->id;
+        $contributionRecur = civicrm_api3('ContributionRecur', 'Create', $subscription_params);
+        $out->contribution_recur_id = $contributionRecur['id'];
 
-        // FIXME: Can't generate random groups because of caching in
-        // CRM_Core_Pseudoconstant.  Make temp and random again once we're
-        // using Civi 4.6's buildOptions.
         $out->contact_group_name = 'test_thrilled_demographic';
-        $success = $api->Group->Get( array(
-            'title' => $out->contact_group_name,
-            'version' => 3,
-        ) );
-        if ( $success && $api->count === 1 ) {
-            $out->contact_group_id = $api->id;
+        $group = civicrm_api3('Group', 'get', array('title' => $out->contact_group_name));
+
+        if ($group['count'] === 1 ) {
+            $out->contact_group_id = $group['id'];
         } else {
-            $success = $api->Group->Create( array(
-                'title' => $out->contact_group_name,
-                'version' => 3,
-            ) );
-            if ( !$success ) {
-                throw new Exception( $api->errorMsg() );
-            }
-            $out->contact_group_id = $api->id;
+            $group = civicrm_api3('Group', 'create', array(
+              'title' => $out->contact_group_name,
+              'name' => $out->contact_group_name,
+            ));
+            $out->contact_group_id = $group['id'];
         }
 
         return $out;
     }
 
-    // FIXME: probably need control over destruction order to not conflict with stuff added by test cases
+  /**
+   * Tear down function.
+   */
     public function __destruct() {
-        $api = civicrm_api_classapi();
-        $api->ContributionRecur->Delete( array(
-            'id' => $this->contribution_recur_id,
-            'version' => 3,
-        ) );
-        $api->Contact->Delete( array(
-            'id' => $this->contact_id,
-            'version' => 3,
-        ) );
+        civicrm_api3('ContributionRecur', 'delete', array('id' => $this->contribution_recur_id));
+        civicrm_api3('Contact', 'delete', array('id' => $this->contact_id));
     }
 }

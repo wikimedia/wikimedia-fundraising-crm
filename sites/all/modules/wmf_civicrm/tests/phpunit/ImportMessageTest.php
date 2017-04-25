@@ -48,6 +48,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     );
 
     public function setUp() {
+        parent::setUp();
         civicrm_api3( 'OptionValue', 'create', array(
             'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
             'label' => ImportMessageTest_campaign,
@@ -57,10 +58,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
     public function tearDown() {
         if ( $this->contribution_id ) {
-            civicrm_api_classapi()->Contribution->Delete( array(
-                'id' => $this->contribution_id,
-                'version' => '3',
-            ) );
+          $this->callAPISuccess('Contribution', 'delete', array('id' => $this->contribution_id));
         }
         parent::tearDown();
     }
@@ -88,12 +86,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         }
 
         if ( !empty( $expected['contact'] ) ) {
-            $api = civicrm_api_classapi();
-            $api->Contact->Get( array(
-                'id' => $contribution['contact_id'],
-                'version' => 3,
-            ) );
-            $contact = (array) $api->values[0];
+            $contact = $this->callAPISuccessGetSingle('Contact', array('id' => $contribution['contact_id']));
             $renamedFields = array('prefix' => 1, 'suffix' => 1);
             $this->assertEquals( array_diff_key($expected['contact'], $renamedFields), array_intersect_key( $expected['contact'], $contact ) );
             foreach (array_keys($renamedFields) as $renamedField) {
@@ -476,14 +469,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         );
         $contribution = wmf_civicrm_contribution_message_import( $msg );
 
-        $api = civicrm_api_classapi();
-        $api->GroupContact->Get( array(
-            'contact_id' => $contribution['contact_id'],
-
-            'version' => 3,
-        ) );
-        $this->assertEquals( 1, count( $api->values ) );
-        $this->assertEquals( $fixtures->contact_group_id, $api->values[0]->group_id );
+        $group = $this->callAPISuccessGetSingle('GroupContact', array('contact_id' => $contribution['contact_id']));
+        $this->assertEquals($fixtures->contact_group_id, $group['group_id']);
     }
 
   /**

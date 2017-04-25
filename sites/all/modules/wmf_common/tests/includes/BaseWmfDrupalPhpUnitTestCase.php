@@ -11,6 +11,8 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
         }
 
         global $user, $_exchange_rate_cache;
+        $GLOBALS['_PEAR_default_error_mode'] = NULL;
+        $GLOBALS['_PEAR_default_error_options'] = NULL;
         $_exchange_rate_cache = array();
 
         $user = new stdClass();

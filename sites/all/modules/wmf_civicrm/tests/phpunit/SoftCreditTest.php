@@ -30,17 +30,14 @@ class SoftCreditTest extends BaseWmfDrupalPhpUnitTestCase {
 
         $contribution = wmf_civicrm_contribution_message_import( $msg );
 
-        $api = civicrm_api_classapi();
-        $api->Contribution->Get( array(
-            'id' => $contribution['id'],
-            'return' => array(
-                'soft_credit_to' => 1,
-            ),
+        $retrievedContribution = $this->callAPISuccessGetSingle('Contribution', array(
+          'id' => $contribution['id'],
+          'return' => array(
+            'soft_credit_to' => 1,
+          ),
+        ));
 
-            'version' => 3,
-        ) );
-
-        $this->assertEquals( $fixtures->org_contact_id, $api->values[0]->soft_credit_to );
+        $this->assertEquals( $fixtures->org_contact_id, $retrievedContribution['soft_credit_to']);
     }
 
     /**
