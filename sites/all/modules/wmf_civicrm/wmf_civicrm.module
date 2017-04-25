@@ -500,7 +500,11 @@ function _wmf_civicrm_message_contribution_insert( $msg )
 }
 
 /**
- * @fixme TODO: make the v3 API calls use the wrapper function
+ * Translate option value to CiviCRM id.
+ *
+ * Note that in general we do not need to translate these names to ids as the CiviCRM
+ * api does that. This allows us to add additional error checking, although
+ * possibly for not much gain.
  *
  * @param string $type
  * @param $name
@@ -545,17 +549,10 @@ function wmf_civicrm_get_civi_id($type, $name)
             }
             return $id;
         case 'payment_instrument_id':
-            require_once 'api/v3/OptionValue.php';
-            $group_id = civicrm_api3_option_value_get(
-                array('option_group_name' => 'payment_instrument', 'label'=> $name, 'version' => '3'));
-            if($group_id['count'] == 1){
-                $civi_ids[$type][$name] = $group_id['values'][strval($group_id['id'])]['value'];
-                watchdog('wmf_civicrm', "Found value for payment_instrument $name :" . $civi_ids[$type][$name]);
-                return $civi_ids[$type][$name];
-            } else {
-                throw new WmfException("CIVI_CONFIG", t("Payment Instrument '!name' not found!", array("!name" => $name)));
-            }
+            $instruments = civicrm_api3('Contribution', 'getoptions', array('field' => 'payment_instrument_id'));
+            return array_search($name, $instruments['values']);
             break;
+
         default:
             throw new WmfException("CIVI_CONFIG", t("Civi lookup for type '!type' not implemented", array("!type" => $type)));
     }
@@ -1765,6 +1762,8 @@ function wmf_civicrm_normalize_msg( $msg ) {
                 throw new WmfException( 'INVALID_MESSAGE', 'No payment instrument specified' );
             }
         }
+        // CiviCRM does not require us to do this translation. It will do the same thing
+        // if we don't & through a mandatory_missing error.
         $msg['payment_instrument_id'] = wmf_civicrm_get_civi_id( 'payment_instrument_id', $msg['payment_instrument'] );
     }
     if ( !$msg['payment_instrument_id'] ) {

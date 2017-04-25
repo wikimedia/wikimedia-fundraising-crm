@@ -26,6 +26,28 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals(1, $languages['count']);
     }
 
+  /**
+   * Test that the payment instrument is converted to an id.
+   *
+   * Use a high number to ensure the default 25 limit does not hurt us.
+   */
+    public function testGetCiviID() {
+      civicrm_initialize();
+      $paymentMethodID = wmf_civicrm_get_civi_id('payment_instrument_id', 'Trilogy');
+      $this->assertTrue(is_numeric($paymentMethodID));
+    }
+
+  /**
+   * Test that the payment instrument is converted to an id.
+   *
+   * Use a high number to ensure the default 25 limit does not hurt us.
+   */
+  public function testGetInvalidCiviID() {
+    civicrm_initialize();
+    $paymentMethodID = wmf_civicrm_get_civi_id('payment_instrument_id', 'Monopoly money');
+    $this->assertEquals(FALSE, $paymentMethodID);
+  }
+
     /**
      * Test wmf custom api entity get detail.
      *
