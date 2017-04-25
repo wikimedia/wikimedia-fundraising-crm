@@ -64,6 +64,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7310();
     wmf_civicrm_update_7455();
     wmf_civicrm_update_7460();
+    wmf_civicrm_update_7521();
 }
 
 /**
@@ -2903,18 +2904,8 @@ function wmf_civicrm_update_7510() {
       LIMIT 1
     ");
   }
-
-  /**
-   * Add Bijcard
-   */
-  function wmf_civicrm_update_7511() {
-    $payment_instruments = array(
-      'Credit Card: Bijenkorf',
-    );
-    wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
-  }
 }
+
 /**
  * Backfill contribution_tracking associations for recurring donations
  *
@@ -2976,4 +2967,15 @@ function wmf_civicrm_update_7520() {
       $fixed++;
     }
   }
+}
+
+/**
+ * Add Bijcard
+ */
+function wmf_civicrm_update_7521() {
+  $payment_instruments = array(
+    'Credit Card: Bijenkorf',
+  );
+  wmf_civicrm_bootstrap_civi();
+  wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
 }
