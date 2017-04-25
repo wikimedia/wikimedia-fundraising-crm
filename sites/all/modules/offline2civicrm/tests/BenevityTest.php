@@ -33,6 +33,7 @@ class BenevityTest extends BaseChecksFileTest {
     \Civi::$statics = array();
     $countries = $this->callAPISuccess('Country', 'get', array());
     $this->callAPISuccess('Setting', 'create', array('countryLimit' => array_keys($countries['values'])));
+    $this->callAPISuccess('Setting', 'create', array('provinceLimit' => array()));
 
   }
 
