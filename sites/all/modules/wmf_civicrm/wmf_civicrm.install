@@ -66,6 +66,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7460();
     wmf_civicrm_update_7521();
     wmf_civicrm_update_7524();
+    wmf_civicrm_update_7525();
 }
 
 /**
@@ -2089,9 +2090,9 @@ function wmf_civicrm_update_7240() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery("
     UPDATE civicrm_contribution_recur
-    SET 
-      failure_retry_date = NULL, 
-      failure_count = 0, 
+    SET
+      failure_retry_date = NULL,
+      failure_count = 0,
       next_sched_contribution_date = '2010-10-01',
       contribution_status_id = 5
 
@@ -3010,13 +3011,29 @@ function wmf_civicrm_update_7523() {
   * Add duplicate contribution tag
   */
 function wmf_civicrm_update_7524() {
- civicrm_initialize();
- $tag = array(
+  civicrm_initialize();
+  $tag = array(
     'name' => 'DuplicateInvoiceId',
     'used_for' => 'civicrm_contribution',
     'description' => 'Used for contributions where the original assigned invoice id was a duplicate with another already in the database',
     'is_reserved' => 1, //WIP: What does this mean?
     'selectable' => 0,
- );
- civicrm_api3('Tag', 'Create', $tag);
+  );
+  civicrm_api3('Tag', 'Create', $tag);
+}
+
+/**
+ * Enable CiviCampaign.
+ */
+function wmf_civicrm_update_7525() {
+  wmf_civicrm_bootstrap_civi();
+  $components = civicrm_api3('Setting', 'getvalue', array(
+    'name' => "enable_components",
+  ));
+  if (isset($components['is_error'])) {
+    // weirdness.
+    unset($components['is_error']);
+  }
+  $components[] = 'CiviCampaign';
+  civicrm_api3('Setting', 'create', array('enable_components' => $components));
 }
