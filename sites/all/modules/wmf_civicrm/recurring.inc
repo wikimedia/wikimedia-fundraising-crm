@@ -133,28 +133,25 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
         $error_message = t('`contribution_recur_id` must be set and not empty.');
         throw new WmfException('IMPORT_SUBSCRIPTION', $error_message);
     }
-
-    $api = civicrm_api_classapi();
-    $update_params = array(
+    try {
+      $result = civicrm_api3('Contribution', 'create', array(
         'id' => $contribution_id,
         'contribution_recur_id' => $contribution_recur_id,
-
-        'version' => 3,
-    );
-    if ( !$api->Contribution->Create($update_params) ) {
-        $error_message = t(
-            'There was a problem linking the contribution [!contribution_id] to the recurring contribution [!contribution_recur_id]: !msg',
-            array(
-                '!contribution_id' => $contribution_id,
-                '!contribution_recur_id' => $contribution_recur_id,
-                '!msg' => $api->errorMsg(),
-            )
-        );
-        throw new WmfException('IMPORT_SUBSCRIPTION', $error_message);
-    } else {
-        watchdog( 'wmf_civicrm', 'Successfully linked the contribution  [!contribution_id] to the recurring contribution [!contribution_recur_id]', array( '!contribution_id' => $contribution_id, '!contribution_recur_id' => $contribution_recur_id ) );
-        return true;
+      ));
     }
+    catch (CiviCRM_API3_Exception $e) {
+      $error_message = t(
+        'There was a problem linking the contribution [!contribution_id] to the recurring contribution [!contribution_recur_id]: !msg',
+        array(
+          '!contribution_id' => $contribution_id,
+          '!contribution_recur_id' => $contribution_recur_id,
+          '!msg' => $e->getMessage(),
+        )
+      );
+      throw new WmfException('IMPORT_SUBSCRIPTION', $error_message);
+    }
+    watchdog( 'wmf_civicrm', 'Successfully linked the contribution  [!contribution_id] to the recurring contribution [!contribution_recur_id]', array( '!contribution_id' => $contribution_id, '!contribution_recur_id' => $contribution_recur_id ) );
+    return true;
 }
 
 /**
