@@ -16,3 +16,7 @@ restore_error_handler();
 
 // Load contrib libs so tests can inherit from them.
 require_once( DRUPAL_ROOT . '/../vendor/autoload.php' );
+
+putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php');
+require_once DRUPAL_ROOT . '/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit/bootstrap.php';
+

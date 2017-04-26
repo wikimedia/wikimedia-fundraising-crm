@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<extension key="au.org.greens.extendedmailingstats" type="module">
+  <file>extendedmailingstats</file>
+  <name>Extended Mailing Statistics</name>
+  <description>Provides more info on mailings</description>
+  <license>The same as CiviCRM itself.  http://civicrm.org/what/licensing</license>
+  <maintainer>
+    <author>Andrew McNaughton</author>
+    <email>andrew@mcnaughty.com</email>
+  </maintainer>
+  <releaseDate>2013-09-25</releaseDate>
+  <version>0.5</version>
+  <develStage>stable</develStage>
+  <compatibility>
+    <ver>4.7</ver>
+  </compatibility>
+  <comments>Developed for the Australian Greens, http://greens.org.au/</comments>
+  <civix>
+    <namespace>CRM/ExtendedMailingStats</namespace>
+  </civix>
+</extension>

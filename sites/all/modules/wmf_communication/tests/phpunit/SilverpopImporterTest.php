@@ -12,9 +12,9 @@ class SilverpopImporterTest extends BaseWmfDrupalPhpUnitTestCase {
 			->disableOriginalConstructor()
 			->setMethods( array( 'login', 'get', 'disconnect' ) )
 			->getMock();
-		$mailStore = $this->getMock( 'CiviMailBulkStore', array( 'getMailing', 'addMailing', 'addSentBulk' ) );
-		$zipper = $this->getMock( 'ZipArchive', array( 'open', 'extractTo' ) );
-		$mailing = $this->getMock( 'ICiviMailingRecord', array( 'getMailingName' ) );
+		$mailStore = $this->createMock( 'wmf_communication\CiviMailBulkStore');
+		$zipper = $this->createMock( 'ZipArchive');
+		$mailing = $this->createMock( 'wmf_communication\ICiviMailingRecord');
 
 		$tempDir = file_directory_temp();
 

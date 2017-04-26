@@ -68,6 +68,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7524();
     wmf_civicrm_update_7525();
     wmf_civicrm_update_7526();
+    wmf_civicrm_update_7530();
 }
 
 /**
@@ -3048,4 +3049,17 @@ function wmf_civicrm_update_7526() {
     civicrm_initialize();
     $tables = array('civicrm_campaign' => array('name'));
     CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+}
+
+/**
+ * Enable Omnimail.
+ */
+function wmf_civicrm_update_7530() {
+  civicrm_initialize();
+  // We are looking for the best place to set this dir. Currently on live it is
+  // set in civicrm.settings etc. That will override any attempt to set it here.
+  civicrm_api3('setting', 'create', array('extensionsDir' => 'sites/default/civicrm/extensions'));
+  civicrm_api3('extension', 'refresh', array());
+  civicrm_api3('extension', 'install',  array('key' => 'org.wikimedia.omnimail'));
+  civicrm_api3('extension', 'install',  array('key' => 'au.org.greens.extendedmailingstats'));
 }

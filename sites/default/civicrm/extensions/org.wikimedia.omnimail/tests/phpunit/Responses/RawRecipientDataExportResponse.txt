@@ -1,0 +1,13 @@
+<Envelope>
+<Body>
+		<RESULT>
+<SUCCESS>TRUE</SUCCESS>
+<MAILING>
+<JOB_ID>101569750</JOB_ID>
+<FILE_PATH>Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.zip</FILE_PATH>
+</MAILING>
+</RESULT>
+
+
+	</Body>
+</Envelope>

@@ -1,0 +1,12 @@
+vendor/omnimail/omnimail/.gitattributes
+vendor/omnimail/omnimail/.gitignore
+vendor/omnimail/omnimail/.scrutinizer.yml
+vendor/omnimail/omnimail/.styleci.yml
+vendor/omnimail/omnimail/.travis.yml
+vendor/omnimail/omnimail/CHANGELOG.md
+vendor/omnimail/omnimail/CONTRIBUTING.md
+vendor/omnimail/omnimail/omnimail-logo.svg
+vendor/omnimail/omnimail/phpunit.xml
+vendor/omnimail/omnimail/test
+vendor/wikimedia/omnimail-silverpop/vendor
+vendor/mrmarkfrench/php-silverpop-php-connector/vendor
