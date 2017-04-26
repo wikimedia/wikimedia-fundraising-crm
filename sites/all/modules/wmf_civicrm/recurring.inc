@@ -79,8 +79,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $subs
     $msg['cycle_day'] = wmf_civicrm_get_cycle_day( $msg['date'] );
 
     $next_sched_contribution = wmf_civicrm_get_next_sched_contribution_date_for_month( $msg );
-    
-    $api = civicrm_api_classapi();
+
     $insert_params = array(
         'contact_id' => $contact_id,
         'amount' => $msg[ 'original_gross' ],
@@ -96,14 +95,15 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $subs
         'cycle_day' => $msg[ 'cycle_day' ],
         'next_sched_contribution_date' => $next_sched_contribution,
         'trxn_id' => $gateway_subscr_id,
-
-        'version' => 3,
     );
-    $success = $api->ContributionRecur->Create( $insert_params );
-    if ( !$success ) {
-        throw new WmfException( 'IMPORT_SUBSCRIPTION', $api->errorMsg() );
+    try {
+      $result = civicrm_api3('ContributionRecur', 'Create', $insert_params);
     }
-    $contribution_recur_id = $api->id;
+    catch (CiviCRM_API3_Exception $e) {
+      throw new WmfException( 'IMPORT_SUBSCRIPTION', $e->getMessage());
+    }
+
+    $contribution_recur_id = $result ['id'];
 
     if ( $contribution_record ) {
         // Link the contribution to the recurring payment

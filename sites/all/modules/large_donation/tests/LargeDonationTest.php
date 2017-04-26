@@ -24,10 +24,10 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
             ) )
             ->execute();
 
-        $result = civicrm_api3( 'Contact', 'create', array(
+        $result = $this->callAPISuccess('Contact', 'create', array(
             'contact_type' => 'Individual',
             'first_name' => 'Testes',
-        ) );
+        ));
         $this->contact_id = $result['id'];
     }
 
