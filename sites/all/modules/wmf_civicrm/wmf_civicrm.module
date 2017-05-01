@@ -294,21 +294,20 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
 
     // Look up soft credit contact.
     if ( !empty( $msg['soft_credit_to'] ) ) {
-        $api = civicrm_api_classapi();
-        $success = $api->Contact->Get( array(
-            'organization_name' => $msg['soft_credit_to'],
 
-            'version' => 3,
+        $soft_credit_contact = civicrm_api3('Contact', 'Get', array(
+            'organization_name' => $msg['soft_credit_to'],
+            'sequential' => 1,
+            'return' => 'id',
         ) );
-        if ( count( $api->values ) !== 1 ) {
+        if ( $soft_credit_contact['count'] !== 1 ) {
             throw new WmfException(
                 'INVALID_MESSAGE',
                 "Bad soft credit target, [${msg['soft_credit_to']}]"
             );
         }
-        $soft_credit_contact = $api->values[0];
         # FIXME: awkward to have the two fields.
-        $msg['soft_credit_to_id'] = $soft_credit_contact->id;
+        $msg['soft_credit_to_id'] = $soft_credit_contact['id'];
     }
 
     // Insert the contribution record.
@@ -2966,18 +2965,19 @@ function wmf_civicrm_civicrm_post_Contribution( $op, $id, &$contribution ) {
 			$contact_id = $contribution->contact_id;
 			$total_amount = $contribution->total_amount;
 		} else {
-			$api = civicrm_api_classapi();
-			$result = $api->Contribution->get( array(
-				'id' => $contribution->id,
-			) );
-			if ( !$result || count( $api->values ) != 1 ) {
+			try {
+				$db_contribution = civicrm_api3('Contribution', 'getsingle', array(
+					'id' => $contribution->id,
+					'return' => array('contact_id', 'total_amount', 'receive_date'),
+				));
+			}
+			catch (CiviCRM_API3_Exception $e) {
 				// can't get the data, skip wmf_donor updates
 				break;
 			}
-			$db_contribution = $api->values[0];
-			$receive_date = $db_contribution->receive_date;
-			$contact_id = $db_contribution->contact_id;
-			$total_amount = $db_contribution->total_amount;
+			$receive_date = $db_contribution['receive_date'];
+			$contact_id = $db_contribution['contact_id'];
+			$total_amount = $db_contribution['total_amount'];
 		}
 
 		// Update the wmf_donor data.  Set the is_YYYY_donor column to true
