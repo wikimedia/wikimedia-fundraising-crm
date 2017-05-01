@@ -93,33 +93,30 @@ function wmf_civicrm_create_option_values( $group_name, $values )
  */
 function wmf_civicrm_create_option_values_detailed($group_name, $values)
 {
-    $api = wmf_civicrm_bootstrap_civi();
-
-    $api->OptionGroup->Get(array(
+    civicrm_initialize();
+    $optionGroup = civicrm_api3('OptionGroup', 'getsingle', array(
       'name' => $group_name,
     ));
-    $result = $api->values();
-    $option_group = array_pop($result);
+
     foreach ($values as $key => $value)
     {
         $params = array_merge(array(
-          'option_group_id' => $option_group->id,
+          'option_group_id' => $optionGroup['id'],
           'name' => $key,
           'label' => $key,
           'is_active' => 1,
         ), $value);
 
-        $api->OptionValue->Get(array(
-          'option_group_id' => $option_group->id,
+        $result = civicrm_api3('OptionValue', 'get', array(
+          'option_group_id' => $optionGroup['id'],
           'name' => $params['name'],
         ));
-
-        $result = $api->values();
-        if (empty($result))
-        {
-            $api->OptionValue->Create($params);
+        if ($result['count'] === 0) {
+          civicrm_api3('OptionValue', 'create', $params);
+          wmf_civicrm_flush_cached_options();
         }
     }
+
 }
 
 /**
