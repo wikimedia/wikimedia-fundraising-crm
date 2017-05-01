@@ -4,40 +4,6 @@ require_once 'recurring.inc';
 require_once 'tracking.inc';
 
 /**
- * return a map of option value (id) => option name
- *
- * FIXME: Break into separate functions rather than magically switching return type
- */
-function civicrm_api_option_group($group_name, $key = null, $force = FALSE)
-{
-	static $cached_group = array();
-	if (!array_key_exists($group_name, $cached_group) || $force)
-	{
-		$api = civicrm_api_classapi();
-		$api->OptionValue->Get(array(
-			'option_group_name' => $group_name,
-			'options' => array('limit' => 0),
-			'is_active' => 1,
-		));
-		$cached_group[$group_name] = array();
-		$option_values = $api->values();
-		foreach ($option_values as $row) {
-			$cached_group[$group_name][$row->value] = $row->name;
-		}
-	}
-	if ($key)
-	{
-		// In this case, just lookup name and return the option value
-		$forwards = array_flip( $cached_group[$group_name] );
-		if ( !array_key_exists( $key, $forwards ) ) {
-			throw new DomainException( "Option value not found: {$group_name} -> {$key}" );
-		}
-		return $forwards[$key];
-	}
-	return $cached_group[$group_name];
-}
-
-/**
  * Ensure the specified option value exists.
  *
  * @param string $group_name
@@ -66,8 +32,9 @@ function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
   }
   if ($createRequired) {
     civicrm_api3('OptionValue', 'create', $params);
-    // Flush cache.
-    civicrm_api_option_group($group_name, $value, TRUE);
+    // It won't take much to rebuild this & we don't know the entity.
+    // This should be rare.
+    wmf_civicrm_flush_cached_options();
   }
 }
 
@@ -83,7 +50,7 @@ function civicrm_option_group_id( $group_name ) {
 
 function civicrm_api_contribution_status($key = null)
 {
-	return civicrm_api_option_group('contribution_status', $key);
+    return wmf_civicrm_get_option('Contribution', 'contribution_status_id', $key);
 }
 
 function civicrm_api_classapi()
@@ -3423,8 +3390,26 @@ LIMIT %4";
  * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_get_options($entity, $field) {
-    $options = civicrm_api3($entity, 'getoptions', array('field' => $field));
-    return $options['values'];
+    if (!isset(\Civi::$statics['wmf_civicrm'][$entity][$field])) {
+      $options = civicrm_api3($entity, 'getoptions', array('field' => $field));
+      \Civi::$statics['wmf_civicrm'][$entity][$field] = $options['values'];
+    }
+    return \Civi::$statics['wmf_civicrm'][$entity][$field];
+}
+
+/**
+ * Get options for a field.
+ *
+ * @param string $entity
+ * @param string $field
+ * @param string $key
+ *
+ * @return array
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_get_option($entity, $field, $key) {
+  $options = wmf_civicrm_get_options($entity, $field);
+  return array_search($key, $options);
 }
 
 /**
@@ -3562,3 +3547,9 @@ function wmf_civicrm_civicrm_pageRun(&$page) {
     return $output;
   }
 
+/**
+ * Flush statically cached option values.
+ */
+  function wmf_civicrm_flush_cached_options() {
+    \Civi::$statics['wmf_civicrm'] = array();
+  }

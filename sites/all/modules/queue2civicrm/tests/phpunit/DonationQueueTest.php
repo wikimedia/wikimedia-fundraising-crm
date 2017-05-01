@@ -253,7 +253,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 				'is_active' => $is_active,
 			)
 		);
-		civicrm_api_option_group( wmf_civicrm_get_direct_mail_field_option_name(), null, TRUE );
+		wmf_civicrm_flush_cached_options();
 		return $appealField['id'];
 	}
 
