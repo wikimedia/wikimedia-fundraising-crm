@@ -8,9 +8,6 @@ class TestingSmashPigDbQueueConfiguration {
 		$config = TestingConfiguration::loadConfigWithFileOverrides( array(
 			__DIR__ . '/../data/config_queue_and_db.yaml',
 		) );
-
-        PendingDatabase::get()->createTable();
-
         return $config;
     }
 }

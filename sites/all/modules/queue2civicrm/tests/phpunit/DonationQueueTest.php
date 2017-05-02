@@ -3,10 +3,10 @@
 use queue2civicrm\DonationQueueConsumer;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\PendingDatabase;
-use SmashPig\Tests\QueueTestConfiguration;
 
 /**
  * @group Pipeline
+ * @group DonationQueue
  * @group Queue2Civicrm
  */
 class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
@@ -22,7 +22,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$config = QueueTestConfiguration::instance();
+		$config = TestingSmashPigDbQueueConfiguration::instance();
 		Context::initWithLogger( $config );
 		$this->pendingDb = PendingDatabase::get();
 		$this->pendingDb->createTable();

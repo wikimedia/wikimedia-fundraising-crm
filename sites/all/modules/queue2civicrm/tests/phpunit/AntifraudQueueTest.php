@@ -2,7 +2,6 @@
 use queue2civicrm\fredge\AntifraudQueueConsumer;
 use SmashPig\Core\Context;
 use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
-use SmashPig\Tests\QueueTestConfiguration;
 
 /**
  * @group Queue2Civicrm
@@ -16,7 +15,7 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$config = QueueTestConfiguration::instance();
+		$config = TestingSmashPigDbQueueConfiguration::instance();
 		Context::initWithLogger( $config );
 		$queue = BaseQueueConsumer::getQueue( 'test' );
 		$queue->createTable( 'test' );
