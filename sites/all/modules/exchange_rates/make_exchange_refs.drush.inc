@@ -8,7 +8,12 @@ use wmf_communication\Templating;
 function make_exchange_refs_drush_command() {
     $items['make-exchange-refs'] = array(
         'description' => 'Generate CurrencyRates.php static exchange rate class.',
-        'examples' => array( 'drush make-exchange-refs' ),
+		'arguments' => array(
+			'output-dir' => 'The directory in which to write the output file',
+		),
+		'required-arguments' => true,
+        'examples' => array( 'drush make-exchange-refs /home/foo/generated' ),
+
     );
     return $items;
 }
@@ -23,10 +28,9 @@ function make_exchange_refs_drush_help( $section ) {
     }
 }
 
-function drush_make_exchange_refs() {
+function drush_make_exchange_refs( $dir ) {
 
     $rates = module_invoke( 'exchange_rates', 'get_conversions' );
-    $dir = __DIR__ . '/generated/';
 	if ( !is_dir( $dir ) ) {
 		mkdir( $dir );
 	}
