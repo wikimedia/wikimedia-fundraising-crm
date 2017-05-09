@@ -53,7 +53,7 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
 
     function testAboveThreshold() {
         $amount = $this->threshold + 0.01;
-        $result = civicrm_api3( 'Contribution', 'create', array(
+        $this->callAPISuccess('Contribution', 'create', array(
             'contact_id' => $this->contact_id,
             'contribution_type' => 'Cash',
             'currency' => 'USD',

@@ -9,6 +9,7 @@ require_once __DIR__ . "/includes/BaseChecksFileTest.php";
 class ForeignChecksFileTest extends BaseChecksFileTest {
     function setUp() {
         parent::setUp();
+        civicrm_initialize();
         $this->epochtime = wmf_common_date_parse_string('2017-02-28');
         $this->setExchangeRates($this->epochtime, array('USD' => 1, 'GBP' => 2));
 
@@ -71,7 +72,6 @@ class ForeignChecksFileTest extends BaseChecksFileTest {
    * Test that all imports fail if the organization does not pre-exist.
    */
   function testImportForeignCheckes() {
-    civicrm_initialize();
     $importer = new ForeignChecksFile( __DIR__ . "/data/foreign_checks_trilogy.csv" );
     $importer->import();
     $messages = $importer->getMessages();

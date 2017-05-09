@@ -36,15 +36,35 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
         unset( $msg['source_enqueued_time'] );
     }
 
+  /**
+   * Clean up after test runs.
+   */
+    public function tearDown() {
+      $this->doCleanUp();
+    }
+
     /**
      * Clean up transactions from previous test runs.
      */
     function doCleanUp() {
-      $contributions = wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $this->trxn_id);
-      if ($contributions) {
-        foreach ($contributions as $contribution) {
-          $this->callAPISuccess('Contribution', 'delete', array('id' => $contribution['id']));
+      if ($this->trxn_id) {
+        $contributions = wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $this->trxn_id);
+        if ($contributions) {
+          foreach ($contributions as $contribution) {
+            $this->callAPISuccess('Contribution', 'delete', array('id' => $contribution['id']));
+          }
         }
       }
+      $this->doMouseHunt();
+    }
+
+    /**
+     * Clean up previous runs.
+     *
+     * Also get rid of the nest.
+     */
+    protected function doMouseHunt() {
+      CRM_Core_DAO::executeQuery('DELETE FROM civicrm_contact WHERE display_name = "Mickey Mouse"');
+      CRM_Core_DAO::executeQuery('DELETE FROM civicrm_prevnext_cache');
     }
 }
