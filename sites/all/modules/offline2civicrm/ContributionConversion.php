@@ -18,15 +18,10 @@ class ContributionConversion {
         );
         // FIXME: preserving old incorrect behavior.  Use a real subscr_id here.
         wmf_civicrm_message_contribution_recur_insert( $synth_msg, $contribution['contact_id'], $contribution['trxn_id'], $contribution );
-        $api = civicrm_api_classapi();
-        $update_params = array(
-            'id' => $contribution['id'],
-
-            'trxn_id' => $contribution['trxn_id'],
-
-            'version' => 3,
-        );
-        $api->Contribution->Create( $update_params );
+        civicrm_api3('Contribution', 'Create', array(
+          'id' => $contribution['id'],
+          'trxn_id' => $contribution['trxn_id'],
+        ));
     }
 }
 
