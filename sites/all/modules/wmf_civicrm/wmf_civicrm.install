@@ -2979,3 +2979,21 @@ function wmf_civicrm_update_7521() {
   wmf_civicrm_bootstrap_civi();
   wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
 }
+
+/**
+ * Normalize old phone numbers
+ **/
+function wmf_civicrm_update_7522() {
+  civicrm_initialize();
+  $maxId = CRM_CORE_DAO::singleValueQuery("SELECT max(id) FROM civicrm_phone");
+  $batch = 100000;
+  for($startId = 0; $startId < $maxId; $startId += $batch) {
+    $endId = $startId + $batch;
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_phone
+      SET phone_numeric = civicrm_strip_non_numeric(phone)
+      WHERE id BETWEEN $startId AND $endId
+    ");
+  }
+}
+
