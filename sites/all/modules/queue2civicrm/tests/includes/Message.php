@@ -4,13 +4,11 @@ class Message {
     protected $defaults = array();
 
     public $body;
-    public $headers;
 
     protected $data;
 
     function __construct( $values = array() ) {
         $this->data = $this->defaults;
-        $this->headers = array();
         $this->set( $values );
     }
 
@@ -22,18 +20,8 @@ class Message {
         $this->body = json_encode( $this->data );
     }
 
-    function setHeaders( $values ) {
-        if ( is_array( $values ) ) {
-            $this->headers = array_merge( $this->headers, $values );
-        }
-    }
-
     function getBody() {
         return $this->data;
-    }
-
-    function getHeaders() {
-        return $this->headers;
     }
 
     function loadDefaults( $name ) {
@@ -99,13 +87,6 @@ class TransactionMessage extends Message {
             $this->txn_id_key => mt_rand(),
             'order_id' => mt_rand(),
         ) + $values );
-
-        $this->setHeaders( array(
-            "persistent" => 'true',
-            // FIXME: this might indicate a key error in our application code.
-            "correlation-id" => "{$this->data['gateway']}-{$this->data[$this->txn_id_key]}",
-            "JMSCorrelationID" => "{$this->data['gateway']}-{$this->data[$this->txn_id_key]}",
-        ) );
     }
 
     function getGateway() {

@@ -15,7 +15,6 @@
 	"user_ip": "1.2.3.4",
 	"freeform": "1",
 	"gateway_txn_id": "",
-	"correlation-id": "testgateway-28713751.0",
 	"date": "1445990975",
 	"server": "testpayments1001",
 	"gateway": "testgateway",
