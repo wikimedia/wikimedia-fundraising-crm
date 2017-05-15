@@ -2,6 +2,7 @@
 
 class ThankYou extends RenderTranslatedPage {
 	function __construct() {
+		// FIXME: drupal var and settings UI
 		$this->title = 'Fundraising/Translation/Thank_you_email_20161128';
 		$this->proto_file = __DIR__ . '/../templates/html/thank_you.$1.html';
 
