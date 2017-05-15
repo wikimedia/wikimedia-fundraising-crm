@@ -291,7 +291,6 @@ class RenderTranslatedPage {
 		$j = $this->do_query(
 			array (
 				'action' => 'parse',
-				'page' => $this->get_translated_title( $lang ),
 				'oldid' => $revision_id,
 				'format' => 'json'
 			)
