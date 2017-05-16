@@ -147,13 +147,12 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 			$contact = wmf_civicrm_message_contact_update( $msg, $recur_record->contact_id );
 
 			// Insert the location record
-      // This will be duplicated in some cases in the main message_import, but should
-      // not have a negative impact. Longer term it should be removed from here in favour of there.
+			// This will be duplicated in some cases in the main message_import, but should
+			// not have a negative impact. Longer term it should be removed from here in favour of there.
 			wmf_civicrm_message_location_update( $msg, $contact );
 		}
 
 		// update subscription record with next payment date
-		$api = civicrm_api_classapi();
 		if ( isset( $msg['date'] ) ) {
 			$date = $msg['date'];
 		} else {
@@ -163,10 +162,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 		$update_params = array(
 			'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm( strtotime( "+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $date )),
 			'id' => $recur_record->id,
-
-			'version' => 3,
 		);
-		$api->ContributionRecur->Create( $update_params );
+		civicrm_api3('ContributionRecur', 'Create', $update_params);
 
 		// construct an array of useful info to invocations of queue2civicrm_import
 		$contribution_info = array(
@@ -233,26 +230,23 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 		// Insert the location record
 		wmf_civicrm_message_location_insert( $msg, $contact );
 
-		$api = civicrm_api_classapi();
-		$insert_params = array(
-			'contact_id' => $contact[ 'id' ],
-			'currency' => $msg[ 'original_currency' ],
-			'amount' => $msg[ 'original_gross' ],
-			'frequency_unit' => $msg[ 'frequency_unit' ],
-			'frequency_interval' => $msg[ 'frequency_interval' ],
-			'installments' => $msg[ 'installments' ],
-			'start_date' => wmf_common_date_unix_to_civicrm( $msg[ 'start_date' ] ),
-			'create_date' => wmf_common_date_unix_to_civicrm( $msg[ 'create_date' ] ),
-			'trxn_id' => $msg[ 'subscr_id' ],
-
-			'version' => 3,
-		);
-
-		if ( !$api->ContributionRecur->Create( $insert_params ) ) {
-			throw new WmfException( 'IMPORT_CONTRIB', 'Failed inserting subscriber signup for subscriber id: ' . print_r( $msg['subscr_id'], true ) . ': ' . $api->errorMsg() );
-		} else {
-			watchdog( 'recurring', 'Succesfully inserted subscription signup for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
+		try {
+			$result = civicrm_api3('ContributionRecur', 'create', array(
+				'contact_id' => $contact['id'],
+				'currency' => $msg['original_currency'],
+				'amount' => $msg['original_gross'],
+				'frequency_unit' => $msg['frequency_unit'],
+				'frequency_interval' => $msg['frequency_interval'],
+				'installments' => $msg['installments'],
+				'start_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
+				'create_date' => wmf_common_date_unix_to_civicrm($msg['create_date']),
+				'trxn_id' => $msg['subscr_id'],
+			));
 		}
+		catch (\CiviCRM_API3_Exception $e) {
+			throw new WmfException( 'IMPORT_CONTRIB', 'Failed inserting subscriber signup for subscriber id: ' . print_r( $msg['subscr_id'], true ) . ': ' . $e->getMessage());
+		}
+		watchdog( 'recurring', 'Succesfully inserted subscription signup for subscriber id: %subscr_id ', array( '%subscr_id' => print_r( $msg[ 'subscr_id' ], true )), WATCHDOG_NOTICE );
 	}
 
 	/**

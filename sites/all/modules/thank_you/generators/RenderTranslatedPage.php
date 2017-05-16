@@ -259,7 +259,7 @@ class RenderTranslatedPage {
             $j = $this->do_query( $query );
 
             if ( !is_array( $j ) ) {
-                throw new TranslationException( "Title object {$this->title}/$lang log query returned invalid JSON" );
+                throw new TranslationException( "Title object {$this->title} log query returned invalid JSON" );
             }
 
             $this->review_history = $j['query']['logevents'];
@@ -291,7 +291,6 @@ class RenderTranslatedPage {
 		$j = $this->do_query(
 			array (
 				'action' => 'parse',
-				'page' => $this->get_translated_title( $lang ),
 				'oldid' => $revision_id,
 				'format' => 'json'
 			)

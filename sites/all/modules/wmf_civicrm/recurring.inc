@@ -2,10 +2,10 @@
 
 /**
  * Insert the recurring contribution record
- * 
+ *
  * @todo Determine the watchdog level for errors.
  * @todo Are the dates being set with the correct value?
- * 
+ *
  * @param array $msg
  * @param integer $contact_id
  * @param string $subscr_id
@@ -27,7 +27,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $subs
         );
         throw new WmfException( 'IMPORT_SUBSCRIPTION', $error_message );
       }
-    
+
     // Allowed frequency_units
     $frequency_units = array( 'month' );
     if ( !in_array( $msg[ 'frequency_unit' ], $frequency_units ) ) {
@@ -59,7 +59,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $subs
         );
         throw new WmfException('IMPORT_SUBSCRIPTION', $error_message );
     }
-    
+
     if ( !empty( $msg['subscr_id'] ) ) {
         $gateway_subscr_id = $msg['subscr_id'];
     } else {
@@ -75,12 +75,11 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $subs
 
         $gateway_subscr_id = $contribution_record['trxn_id'];
     }
-    
+
     $msg['cycle_day'] = wmf_civicrm_get_cycle_day( $msg['date'] );
-    
+
     $next_sched_contribution = wmf_civicrm_get_next_sched_contribution_date_for_month( $msg );
-    
-    $api = civicrm_api_classapi();
+
     $insert_params = array(
         'contact_id' => $contact_id,
         'amount' => $msg[ 'original_gross' ],
@@ -96,14 +95,15 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $subs
         'cycle_day' => $msg[ 'cycle_day' ],
         'next_sched_contribution_date' => $next_sched_contribution,
         'trxn_id' => $gateway_subscr_id,
-
-        'version' => 3,
     );
-    $success = $api->ContributionRecur->Create( $insert_params );
-    if ( !$success ) {
-        throw new WmfException( 'IMPORT_SUBSCRIPTION', $api->errorMsg() );
+    try {
+      $result = civicrm_api3('ContributionRecur', 'Create', $insert_params);
     }
-    $contribution_recur_id = $api->id;
+    catch (CiviCRM_API3_Exception $e) {
+      throw new WmfException( 'IMPORT_SUBSCRIPTION', $e->getMessage());
+    }
+
+    $contribution_recur_id = $result ['id'];
 
     if ( $contribution_record ) {
         // Link the contribution to the recurring payment
@@ -116,7 +116,7 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $subs
 
 /**
  * Link a recurring payment to the contribution record
- * 
+ *
  * @param integer $contribution_id
  * @param integer $contribution_recur_id
  */
@@ -127,34 +127,31 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
         $error_message = t('`contribution_id` must be set and not empty.');
         throw new WmfException('IMPORT_SUBSCRIPTION', $error_message);
     }
-    
+
     // contribution_recur_id must be set and not null or zero
     if ( empty( $contribution_recur_id ) ) {
         $error_message = t('`contribution_recur_id` must be set and not empty.');
         throw new WmfException('IMPORT_SUBSCRIPTION', $error_message);
     }
-
-    $api = civicrm_api_classapi();
-    $update_params = array(
+    try {
+      $result = civicrm_api3('Contribution', 'create', array(
         'id' => $contribution_id,
         'contribution_recur_id' => $contribution_recur_id,
-
-        'version' => 3,
-    );
-    if ( !$api->Contribution->Create($update_params) ) {
-        $error_message = t(
-            'There was a problem linking the contribution [!contribution_id] to the recurring contribution [!contribution_recur_id]: !msg',
-            array(
-                '!contribution_id' => $contribution_id,
-                '!contribution_recur_id' => $contribution_recur_id,
-                '!msg' => $api->errorMsg(),
-            )
-        );
-        throw new WmfException('IMPORT_SUBSCRIPTION', $error_message);
-    } else {
-        watchdog( 'wmf_civicrm', 'Successfully linked the contribution  [!contribution_id] to the recurring contribution [!contribution_recur_id]', array( '!contribution_id' => $contribution_id, '!contribution_recur_id' => $contribution_recur_id ) );
-        return true;
+      ));
     }
+    catch (CiviCRM_API3_Exception $e) {
+      $error_message = t(
+        'There was a problem linking the contribution [!contribution_id] to the recurring contribution [!contribution_recur_id]: !msg',
+        array(
+          '!contribution_id' => $contribution_id,
+          '!contribution_recur_id' => $contribution_recur_id,
+          '!msg' => $e->getMessage(),
+        )
+      );
+      throw new WmfException('IMPORT_SUBSCRIPTION', $error_message);
+    }
+    watchdog( 'wmf_civicrm', 'Successfully linked the contribution  [!contribution_id] to the recurring contribution [!contribution_recur_id]', array( '!contribution_id' => $contribution_id, '!contribution_recur_id' => $contribution_recur_id ) );
+    return true;
 }
 
 /**
@@ -171,15 +168,15 @@ function wmf_civicrm_update_contribution_for_recurring( $contribution_id, $contr
  *  AND `civicrm_contribution_recur`.`failure_count` = 0
  *  AND `civicrm_contribution_recur`.`contribution_status_id` = 1
  * LIMIT 1
- * 
+ *
  * options:
  * - date           string    Uses strtotime() to parse the date
  * - $limit         integer   Number of records to pull. Default is 1.
- * 
+ *
  * TODO: other gateways than GC
  * @todo The field `civicrm_payment_processor`.`payment_processor_type` should be set.
  * @todo Implement $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
- * 
+ *
  * @return array of contribution_recur objects
  */
 function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now', $run_missed_days = 0)
@@ -188,22 +185,22 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now', $run
     date_default_timezone_set( "UTC" );
 
     $date = date('Y-m-d', strtotime($date));
-    
+
     $start_day = $date . ' 00:00:00';
     $end_day = $date . ' 23:59:59';
-    
+
     $start_day_stamp = strtotime($start_day);
     $end_day_stamp = strtotime($end_day);
-    
+
     if ($run_missed_days > 0) {
 
         $decrement_date = '-' . $run_missed_days . ' day';
-        
+
         $start_day = date('Y-m-d 00:00:00', strtotime($decrement_date, $start_day_stamp));
     }
 
     date_default_timezone_set( $oldTimezone );
-    
+
     $contribution_status_id = civicrm_api_contribution_status('Completed');
 
     watchdog(
@@ -230,13 +227,13 @@ EOS;
         ':end' => $end_day,
         ':status_id' => $contribution_status_id,
     ) );
-    
+
     return $res->fetchAll();
 }
 
 /**
  * wmf_civicrm_get_next_sched_contribution_date_for_month
- * 
+ *
  * @param $record contribution_recur db record, containing at least:
  *     frequency_interval, cycle_day
  * @param $nowstamp optional timestamp at which to perform the calculation, otherwise now()
@@ -246,7 +243,7 @@ EOS;
 function wmf_civicrm_get_next_sched_contribution_date_for_month( $record, $nowstamp = null )
 {
     $triggered_for_date = wmf_civicrm_get_last_trigger_date( $record, $nowstamp );
-    //$frequency_interval and $cycle_day will, at this point, have been found in $record. 
+    //$frequency_interval and $cycle_day will, at this point, have been found in $record.
     $frequency_interval = (integer) $record['frequency_interval'];
     $cycle_day = $record['cycle_day'];
 
@@ -257,22 +254,22 @@ function wmf_civicrm_get_next_sched_contribution_date_for_month( $record, $nowst
         $scheduled_date_stamp = wmf_civicrm_increment_date_to_target_day( $scheduled_date_stamp, 'month', $cycle_day );
         $added += 1;
     }
-    
+
     return gmdate('Y-m-d H:i:s', $scheduled_date_stamp);
 }
 
 /**
- * Calculates the last date this payment should have been triggered for, 
- * regardless of the actual date, or the last recorded date in the schedule. 
+ * Calculates the last date this payment should have been triggered for,
+ * regardless of the actual date, or the last recorded date in the schedule.
  *
- * @param array $record An array that contains, at least, the cycle day. Passing 
- * this around in record format because that's what the rest of the module does. 
+ * @param array $record An array that contains, at least, the cycle day. Passing
+ * this around in record format because that's what the rest of the module does.
  * @param int|null $nowstamp optional unix timestamp if we are performing the
  * calculation for another date
  *
- * @TODO: Stop passing around the whole record. 
- * @return timestamp A midnight timestamp for the day that should have triggered 
- * this recurring transaction. 
+ * @TODO: Stop passing around the whole record.
+ * @return timestamp A midnight timestamp for the day that should have triggered
+ * this recurring transaction.
  */
 function wmf_civicrm_get_last_trigger_date( $record, $nowstamp = null )
 {
@@ -280,9 +277,9 @@ function wmf_civicrm_get_last_trigger_date( $record, $nowstamp = null )
         $nowstamp = time();
     }
 
-    //Instead of adding to now, we have to look for the last time the cycle date 
+    //Instead of adding to now, we have to look for the last time the cycle date
     //should have been triggered, regardless of when the transaction actually went through.
-    
+
     //TODO: This needs to implement more frequency intervals. For now, though, we only use monthly, so...
     if ( !array_key_exists( 'cycle_day', $record ) || !is_numeric( $record['cycle_day'] ) ){
         return $nowstamp;
@@ -292,17 +289,17 @@ function wmf_civicrm_get_last_trigger_date( $record, $nowstamp = null )
 
     $month = (int) gmdate('n', $nowstamp);
     $year = (int) gmdate('Y', $nowstamp);
-    
+
     // Build a timestamp for the cycle day in this month
     // If we are still in the same month, this will be the correct value. If we're in the next month,
     // it'll be the wrong value and it'll be in the future; we fix that up below.
     $last_trigger = gmmktime(0, 0, 0, $month, wmf_civicrm_get_cycle_day_for_month( $cycle_day, $month, $year ), $year);
-    
+
     // So... we actually want last month's date... to psych out the code which
     // will add a month.  Note that this is not necessarily the true last
     // trigger date, just our best-case guess.
     while ( $last_trigger > $nowstamp && ( $last_trigger - $nowstamp ) > 60*60*24*7 ){
-        //decrement the month until it was in the past. 
+        //decrement the month until it was in the past.
         --$month;
         if ( $month < 1 ){
             $month = 12;
@@ -322,13 +319,13 @@ function wmf_civicrm_get_cycle_day( $date ) {
 }
 
 /**
- * Increment the $date by one $interval, landing as close as possible to 
- * $cycle_day. Have only implemented the $interval of 'month' at this point. 
- * Might wire up more later as-needed. 
+ * Increment the $date by one $interval, landing as close as possible to
+ * $cycle_day. Have only implemented the $interval of 'month' at this point.
+ * Might wire up more later as-needed.
  * @param timestamp $date Timestamp to increment by the interval
- * @param string $interval A name for the interval that we're incrementing. 
+ * @param string $interval A name for the interval that we're incrementing.
  * @param int $cycle_day The target day of the month for this payment
- * @return timestamp The $date parameter incremented by one calendar interval. 
+ * @return timestamp The $date parameter incremented by one calendar interval.
  */
 function wmf_civicrm_increment_date_to_target_day( $date, $interval = 'month', $cycle_day = null )
 {
@@ -342,8 +339,8 @@ function wmf_civicrm_increment_date_to_target_day( $date, $interval = 'month', $
         $year = (int) gmdate('Y', $date);
 
         $month += 1;
-        //if we wanted to edit this to handle adding more than one month at 
-        //a time, we could do some fun stuff with modulo here. 
+        //if we wanted to edit this to handle adding more than one month at
+        //a time, we could do some fun stuff with modulo here.
         if ( $month > 12 ){
           $month = 1;
           $year += 1;
@@ -359,9 +356,9 @@ function wmf_civicrm_increment_date_to_target_day( $date, $interval = 'month', $
 /**
  * @param int $cycle_day - target day of the month for this subscription
  * @param int $month - target month
- * @param int $year - target year. 
- * @return int The day of the specified month and year most appropriate for the 
- * target cycle day. This will only change if the target day doesn't exist in certain months. 
+ * @param int $year - target year.
+ * @return int The day of the specified month and year most appropriate for the
+ * target cycle day. This will only change if the target day doesn't exist in certain months.
  */
 function wmf_civicrm_get_cycle_day_for_month($cycle_day, $month, $year){
     $last_day = wmf_civicrm_cal_days_in_month( $month );
@@ -415,7 +412,7 @@ LIMIT 1";
     $res = CRM_Core_DAO::executeQuery( $sql, array(
         '1' => array( $contribution_recur_id, 'Integer' ),
     ) );
-    
+
     $out = wmf_civicrm_dao_to_list( $res );
     if ( !$out ) {
         throw new WmfException( 'MISSING_PREDECESSOR', 'No such recurring contribution, id=' . $contribution_recur_id );

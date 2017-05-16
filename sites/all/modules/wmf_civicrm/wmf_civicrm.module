@@ -4,40 +4,6 @@ require_once 'recurring.inc';
 require_once 'tracking.inc';
 
 /**
- * return a map of option value (id) => option name
- *
- * FIXME: Break into separate functions rather than magically switching return type
- */
-function civicrm_api_option_group($group_name, $key = null, $force = FALSE)
-{
-	static $cached_group = array();
-	if (!array_key_exists($group_name, $cached_group) || $force)
-	{
-		$api = civicrm_api_classapi();
-		$api->OptionValue->Get(array(
-			'option_group_name' => $group_name,
-			'options' => array('limit' => 0),
-			'is_active' => 1,
-		));
-		$cached_group[$group_name] = array();
-		$option_values = $api->values();
-		foreach ($option_values as $row) {
-			$cached_group[$group_name][$row->value] = $row->name;
-		}
-	}
-	if ($key)
-	{
-		// In this case, just lookup name and return the option value
-		$forwards = array_flip( $cached_group[$group_name] );
-		if ( !array_key_exists( $key, $forwards ) ) {
-			throw new DomainException( "Option value not found: {$group_name} -> {$key}" );
-		}
-		return $forwards[$key];
-	}
-	return $cached_group[$group_name];
-}
-
-/**
  * Ensure the specified option value exists.
  *
  * @param string $group_name
@@ -66,8 +32,9 @@ function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
   }
   if ($createRequired) {
     civicrm_api3('OptionValue', 'create', $params);
-    // Flush cache.
-    civicrm_api_option_group($group_name, $value, TRUE);
+    // It won't take much to rebuild this & we don't know the entity.
+    // This should be rare.
+    wmf_civicrm_flush_cached_options();
   }
 }
 
@@ -83,7 +50,7 @@ function civicrm_option_group_id( $group_name ) {
 
 function civicrm_api_contribution_status($key = null)
 {
-	return civicrm_api_option_group('contribution_status', $key);
+    return wmf_civicrm_get_option('Contribution', 'contribution_status_id', $key);
 }
 
 function civicrm_api_classapi()
@@ -294,21 +261,20 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
 
     // Look up soft credit contact.
     if ( !empty( $msg['soft_credit_to'] ) ) {
-        $api = civicrm_api_classapi();
-        $success = $api->Contact->Get( array(
-            'organization_name' => $msg['soft_credit_to'],
 
-            'version' => 3,
+        $soft_credit_contact = civicrm_api3('Contact', 'Get', array(
+            'organization_name' => $msg['soft_credit_to'],
+            'sequential' => 1,
+            'return' => 'id',
         ) );
-        if ( count( $api->values ) !== 1 ) {
+        if ( $soft_credit_contact['count'] !== 1 ) {
             throw new WmfException(
                 'INVALID_MESSAGE',
                 "Bad soft credit target, [${msg['soft_credit_to']}]"
             );
         }
-        $soft_credit_contact = $api->values[0];
         # FIXME: awkward to have the two fields.
-        $msg['soft_credit_to_id'] = $soft_credit_contact->id;
+        $msg['soft_credit_to_id'] = $soft_credit_contact['id'];
     }
 
     // Insert the contribution record.
@@ -500,7 +466,11 @@ function _wmf_civicrm_message_contribution_insert( $msg )
 }
 
 /**
- * @fixme TODO: make the v3 API calls use the wrapper function
+ * Translate option value to CiviCRM id.
+ *
+ * Note that in general we do not need to translate these names to ids as the CiviCRM
+ * api does that. This allows us to add additional error checking, although
+ * possibly for not much gain.
  *
  * @param string $type
  * @param $name
@@ -545,17 +515,10 @@ function wmf_civicrm_get_civi_id($type, $name)
             }
             return $id;
         case 'payment_instrument_id':
-            require_once 'api/v3/OptionValue.php';
-            $group_id = civicrm_api3_option_value_get(
-                array('option_group_name' => 'payment_instrument', 'label'=> $name, 'version' => '3'));
-            if($group_id['count'] == 1){
-                $civi_ids[$type][$name] = $group_id['values'][strval($group_id['id'])]['value'];
-                watchdog('wmf_civicrm', "Found value for payment_instrument $name :" . $civi_ids[$type][$name]);
-                return $civi_ids[$type][$name];
-            } else {
-                throw new WmfException("CIVI_CONFIG", t("Payment Instrument '!name' not found!", array("!name" => $name)));
-            }
+            $instruments = civicrm_api3('Contribution', 'getoptions', array('field' => 'payment_instrument_id'));
+            return array_search($name, $instruments['values']);
             break;
+
         default:
             throw new WmfException("CIVI_CONFIG", t("Civi lookup for type '!type' not implemented", array("!type" => $type)));
     }
@@ -1765,6 +1728,8 @@ function wmf_civicrm_normalize_msg( $msg ) {
                 throw new WmfException( 'INVALID_MESSAGE', 'No payment instrument specified' );
             }
         }
+        // CiviCRM does not require us to do this translation. It will do the same thing
+        // if we don't & through a mandatory_missing error.
         $msg['payment_instrument_id'] = wmf_civicrm_get_civi_id( 'payment_instrument_id', $msg['payment_instrument'] );
     }
     if ( !$msg['payment_instrument_id'] ) {
@@ -1884,8 +1849,8 @@ function wmf_civicrm_normalize_msg( $msg ) {
             $msg['direct_mail_appeal'] = "Mediander";
             break;
         default:
-            $values = civicrm_api_option_group( wmf_civicrm_get_direct_mail_field_option_name() );
-            if ( !array_key_exists( $msg['utm_campaign'], $values ) ) {
+            $directMailOptions = wmf_civicrm_get_options('Contribution', wmf_civicrm_get_custom_field_name('Appeal'));
+            if ( !array_key_exists( $msg['utm_campaign'], $directMailOptions) ) {
               wmf_civicrm_ensure_option_value_exists(wmf_civicrm_get_direct_mail_field_option_name(), $msg['utm_campaign']);
             }
             $msg['direct_mail_appeal'] = $msg['utm_campaign'];
@@ -2967,18 +2932,19 @@ function wmf_civicrm_civicrm_post_Contribution( $op, $id, &$contribution ) {
 			$contact_id = $contribution->contact_id;
 			$total_amount = $contribution->total_amount;
 		} else {
-			$api = civicrm_api_classapi();
-			$result = $api->Contribution->get( array(
-				'id' => $contribution->id,
-			) );
-			if ( !$result || count( $api->values ) != 1 ) {
+			try {
+				$db_contribution = civicrm_api3('Contribution', 'getsingle', array(
+					'id' => $contribution->id,
+					'return' => array('contact_id', 'total_amount', 'receive_date'),
+				));
+			}
+			catch (CiviCRM_API3_Exception $e) {
 				// can't get the data, skip wmf_donor updates
 				break;
 			}
-			$db_contribution = $api->values[0];
-			$receive_date = $db_contribution->receive_date;
-			$contact_id = $db_contribution->contact_id;
-			$total_amount = $db_contribution->total_amount;
+			$receive_date = $db_contribution['receive_date'];
+			$contact_id = $db_contribution['contact_id'];
+			$total_amount = $db_contribution['total_amount'];
 		}
 
 		// Update the wmf_donor data.  Set the is_YYYY_donor column to true
@@ -3424,8 +3390,26 @@ LIMIT %4";
  * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_get_options($entity, $field) {
-    $options = civicrm_api3($entity, 'getoptions', array('field' => $field));
-    return $options['values'];
+    if (!isset(\Civi::$statics['wmf_civicrm'][$entity][$field])) {
+      $options = civicrm_api3($entity, 'getoptions', array('field' => $field));
+      \Civi::$statics['wmf_civicrm'][$entity][$field] = $options['values'];
+    }
+    return \Civi::$statics['wmf_civicrm'][$entity][$field];
+}
+
+/**
+ * Get options for a field.
+ *
+ * @param string $entity
+ * @param string $field
+ * @param string $key
+ *
+ * @return array
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_get_option($entity, $field, $key) {
+  $options = wmf_civicrm_get_options($entity, $field);
+  return array_search($key, $options);
 }
 
 /**
@@ -3563,3 +3547,9 @@ function wmf_civicrm_civicrm_pageRun(&$page) {
     return $output;
   }
 
+/**
+ * Flush statically cached option values.
+ */
+  function wmf_civicrm_flush_cached_options() {
+    \Civi::$statics['wmf_civicrm'] = array();
+  }
