@@ -6,14 +6,14 @@
 function thank_you_drush_command() {
   $items = array();
 
-  $items['thank-you'] = array(
+  $items['thank-you-send'] = array(
     'description' => 
       'Sends thank you emails for donations',
     'examples' => array( 'drush thank-you' => '# Send thank you emails' ),
     'aliases' => array( 'ty' ),
   );
 
-  $items['thank-you-test'] = array(
+  $items['thank-you-send-test'] = array(
     'description' =>
       'Simulates sending 1000 thank you emails for donations, to test DB performance',
     'aliases' => array( 'tyt' ),
@@ -26,7 +26,7 @@ function thank_you_drush_command() {
  */
 function thank_you_drush_help( $section ) {
   switch ( $section ) {
-    case 'drush:thank-you':
+    case 'drush:thank-you-send':
       return dt( "Send thank you emails for donations " );
   }
 }
@@ -37,7 +37,7 @@ function thank_you_drush_help( $section ) {
  * This simply executes the code necessary to run the thank you modules.
  * All configuration happens in the module.
  */
-function drush_thank_you() {
+function drush_thank_you_send() {
   module_invoke( 'thank_you', 'batch_process' );
   $errors = drush_get_error_log();
   if (!empty($errors)){
@@ -60,6 +60,6 @@ function drush_thank_you() {
  * This simply executes the code necessary to run the thank you modules.
  * All configuration happens in the module.
  */
-function drush_thank_you_test() {
+function drush_thank_you_send_test() {
 	module_invoke( 'thank_you', 'batch_test' );
 }
