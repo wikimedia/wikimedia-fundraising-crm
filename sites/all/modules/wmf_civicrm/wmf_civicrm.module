@@ -1772,30 +1772,6 @@ function wmf_civicrm_normalize_msg( $msg ) {
         }
     }
 
-    // Order ID is used as a message identifier in a bunch of places.
-    // If it's missing, fill it with something unique-ish.
-    if ( !isset( $msg[ 'order_id' ] ) ) {
-        watchdog(
-            'wmf_civicrm',
-            'Message is missing order_id, looking for a substitute identifier.',
-            array(),
-            WATCHDOG_INFO
-        );
-        $keys = array( 'contribution_tracking_id', 'gateway_txn_id' );
-        foreach ( $keys as $key ) {
-            if ( isset( $msg[$key] ) ) {
-                watchdog(
-                    'wmf_civicrm',
-                    "Filling order_id with {$msg[$key]} from key $key.",
-                    array(),
-                    WATCHDOG_INFO
-                );
-                $msg['order_id'] = $msg[$key];
-                break;
-            }
-        }
-    }
-
     if ( $msg['recurring'] and !isset( $msg['start_date'] ) ) {
         $msg['start_date'] = $msg['date'];
         $msg['create_date'] = $msg['date'];
