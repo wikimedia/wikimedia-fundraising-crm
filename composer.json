@@ -39,7 +39,7 @@
     },
     "scripts": {
         "test": [
-			"parallel-lint --exclude vendor ."
+			"parallel-lint -e php,module,install,inc --exclude vendor ."
 		]
     }
 }
