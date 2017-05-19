@@ -61,6 +61,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 			'financial_type' => 'Cash',
 			'contribution_status' => 'Completed',
 			'payment_instrument' => 'Credit Card: Visa',
+			'invoice_id' => $message->get('order_id'),
 			$campaignField => '',
 		);
 		$returnFields = array_keys( $expected );
@@ -100,6 +101,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 			'financial_type' => 'Cash',
 			'contribution_status' => 'Completed',
 			'payment_instrument' => 'Credit Card: Visa',
+			'invoice_id' => $message2->get('order_id'),
 			$campaignField => 'Benefactor Gift',
 		);
 		$this->assertArraySubset( $expected, $contribution2 );

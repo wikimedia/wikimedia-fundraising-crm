@@ -352,6 +352,11 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         $contribution[ 'thankyou_date' ] = wmf_common_date_unix_to_civicrm( $msg['thankyou_date'] );
     }
 
+    // Store the identifier we generated on payments
+    if ( !empty( $msg['order_id'] ) ) {
+        $contribution['invoice_id'] = $msg['order_id'];
+    }
+
     /**
     *  Hopefully the Civi API will eventually handle custom fields in the
     *  above "Create" call.
