@@ -1178,28 +1178,32 @@ abstract class BaseAuditProcessor {
 			);
 		}
 		// Translate and filter field names
+		// TODO: we're phasing out the non-standard front-end names
+		// We can reduce this to a filter a month or so after that.
 		$map = array(
 			'amount' => 'gross',
-			'country',
+			'country' => 'country',
+			'currency' => 'currency',
 			'currency_code' => 'currency',
-			'email',
+			'email' => 'email',
+			'first_name' => 'first_name',
 			'fname' => 'first_name',
-			'gateway',
-			'gateway_account',
-			'language',
+			'gateway' => 'gateway',
+			'gateway_account' => 'gateway_account',
+			'gross' => 'gross',
+			'language' => 'language',
+			'last_name' => 'last_name',
 			'lname' => 'last_name',
-			'payment_method',
-			'payment_submethod',
-			'user_ip',
-			'utm_campaign',
-			'utm_medium',
-			'utm_source',
+			'payment_method' => 'payment_method',
+			'payment_submethod' => 'payment_submethod',
+			'user_ip' => 'user_ip',
+			'utm_campaign' => 'utm_campaign',
+			'utm_medium' => 'utm_medium',
+			'utm_source' => 'utm_source',
 		);
 		$normal = array();
 		foreach ( $map as $logName => $normalName ) {
-			if ( is_numeric( $logName ) ) {
-				$normal[$normalName] = $log_data[$normalName];
-			} else {
+			if ( isset( $log_data[$logName] ) ) {
 				$normal[$normalName] = $log_data[$logName];
 			}
 		}
