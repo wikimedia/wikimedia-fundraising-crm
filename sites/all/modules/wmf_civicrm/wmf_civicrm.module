@@ -352,6 +352,11 @@ function _wmf_civicrm_message_contribution_insert( $msg )
         $contribution[ 'thankyou_date' ] = wmf_common_date_unix_to_civicrm( $msg['thankyou_date'] );
     }
 
+    // Store the identifier we generated on payments
+    if ( !empty( $msg['order_id'] ) ) {
+        $contribution['invoice_id'] = $msg['order_id'];
+    }
+
     /**
     *  Hopefully the Civi API will eventually handle custom fields in the
     *  above "Create" call.
@@ -1769,30 +1774,6 @@ function wmf_civicrm_normalize_msg( $msg ) {
             $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking( $source, $medium, $campaign, wmf_common_date_unix_to_sql( $msg['date'] ), null, $optout, $anonymous ); //ACK! this should not be handled this way! should be dynamic!
             watchdog( 'wmf_civicrm', 'Newly inserted contribution tracking id: @id', array( '@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
             $msg['contribution_tracking_id'] = $contribution_tracking_id;
-        }
-    }
-
-    // Order ID is used as a message identifier in a bunch of places.
-    // If it's missing, fill it with something unique-ish.
-    if ( !isset( $msg[ 'order_id' ] ) ) {
-        watchdog(
-            'wmf_civicrm',
-            'Message is missing order_id, looking for a substitute identifier.',
-            array(),
-            WATCHDOG_INFO
-        );
-        $keys = array( 'contribution_tracking_id', 'gateway_txn_id' );
-        foreach ( $keys as $key ) {
-            if ( isset( $msg[$key] ) ) {
-                watchdog(
-                    'wmf_civicrm',
-                    "Filling order_id with {$msg[$key]} from key $key.",
-                    array(),
-                    WATCHDOG_INFO
-                );
-                $msg['order_id'] = $msg[$key];
-                break;
-            }
         }
     }
 

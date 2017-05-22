@@ -2997,3 +2997,10 @@ function wmf_civicrm_update_7522() {
   }
 }
 
+/**
+ * Add correct currency symbols
+ */
+function wmf_civicrm_update_7523() {
+  require_once('update_7523.php');
+  _wmf_civicrm_update_7523_insert_currency_symbols();
+}
