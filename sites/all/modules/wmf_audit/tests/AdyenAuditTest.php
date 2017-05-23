@@ -119,6 +119,35 @@ class AdyenAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 					),
 				),
 			) ),
+			array( __DIR__ . '/data/Adyen/donation_new/', array(
+				'main' => array(
+					array(
+						'contribution_tracking_id' => '43992337',
+						'country' => 'US',
+						'currency' => 'USD',
+						'date' => 1487484651,
+						'email' => 'asdf@asdf.com',
+						'fee' => '0.24',
+						'first_name' => 'asdf',
+						'gateway' => 'adyen',
+						'gateway_account' => 'TestMerchant',
+						'gateway_txn_id' => '5364893193133131',
+						'gross' => '1.00',
+						'language' => 'en',
+						'last_name' => 'asdff',
+						'order_id' => '43992337.0',
+						'payment_method' => 'cc',
+						'payment_submethod' => 'visa',
+						'user_ip' => '77.177.177.77',
+						'utm_campaign' => 'C13_en.wikipedia.org',
+						'utm_medium' => 'sidebar',
+						'utm_source' => '..cc',
+						'settled_gross' => '0.76',
+						'settled_currency' => 'USD',
+						'settled_fee' => '0.24',
+					),
+				),
+			) ),
 		 array( __DIR__ . '/data/Adyen/refund/', array(
 				'negative' => array(
 					array(
