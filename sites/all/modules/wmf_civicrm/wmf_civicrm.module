@@ -1,5 +1,7 @@
 <?php
 
+use SmashPig\Core\UtcDate;
+
 require_once 'recurring.inc';
 require_once 'tracking.inc';
 
@@ -355,6 +357,10 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     // Store the identifier we generated on payments
     if ( !empty( $msg['order_id'] ) ) {
         $contribution['invoice_id'] = $msg['order_id'];
+        // The invoice_id column has a unique constraint
+        if ( $msg['recurring'] ) {
+            $contribution['invoice_id'] .= '|recur-' . UtcDate::getUtcTimestamp();
+        }
     }
 
     /**
