@@ -74,11 +74,12 @@ class PaymentsInitQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 		$fields = array(
 			'gateway',  'gateway_txn_id', 'validation_action',
 			'payments_final_status', 'payment_method', 'payment_submethod',
-			'country', 'amount', 'currency_code', 'server'
+			'country', 'amount', 'server'
 		);
 		foreach ( $fields as $field ) {
 			$this->assertEquals( $message[$field], $dbEntries[0][$field] );
 		}
+		$this->assertEquals( $message['currency'], $dbEntries[0]['currency_code'] );
 		$this->assertEquals(
 			$message['date'], wmf_common_date_civicrm_to_unix( $dbEntries[0]['date'] )
 		);

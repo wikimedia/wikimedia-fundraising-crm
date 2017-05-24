@@ -1,5 +1,4 @@
 {
-	"php-message-class": "SmashPig\\CrmLink\\Messages\\DonationInterfaceFinalStatus",
 	"contribution_tracking_id": "12345",
 	"gateway": "testgateway",
 	"order_id": "",
@@ -10,7 +9,7 @@
 	"payment_submethod": "",
 	"country": "IT",
 	"amount": "2.00",
-	"currency_code": "EUR",
+	"currency": "EUR",
 	"server": "testpayments1002",
 	"date": "1445990999"
 }

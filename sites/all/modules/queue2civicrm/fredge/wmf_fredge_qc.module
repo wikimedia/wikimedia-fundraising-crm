@@ -111,7 +111,12 @@ function fredge_prep_data( $msg, $table, $log_identifier, $require_all = true ) 
       }
     }
   }
-
+  // FIXME: schema should match wire format & frontend name
+  // renaming message field here to match column.
+  if (empty($msg['currency_code']) && !empty($msg['currency'])) {
+    $msg['currency_code'] = $msg['currency'];
+    unset($msg['currency']);
+  }
   $data = array();
   foreach ($schemata[$table]['fields'] as $field => $definition) {
     if (!array_key_exists($field, $msg)) {
