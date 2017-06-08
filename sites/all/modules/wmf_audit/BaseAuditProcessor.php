@@ -666,7 +666,7 @@ abstract class BaseAuditProcessor {
 										'Could not get an order id for the following transaction ' . print_r( $transaction, true )
 									);
 								}
-								$data = $this->get_log_data_by_order_id( $order_id, $log );
+								$data = $this->get_log_data_by_order_id( $order_id, $log, $data );
 
 								if ( !$data ) {
 									//no data found in this log, which is expected and normal and not a problem.
@@ -1061,7 +1061,7 @@ abstract class BaseAuditProcessor {
 	 * @return array|boolean The data we sent to the gateway for that order id, or
 	 * false if we can't find it there.
 	 */
-	protected function get_log_data_by_order_id( $order_id, $log ) {
+	protected function get_log_data_by_order_id( $order_id, $log, $audit_data ) {
 		if ( !$order_id ) {
 			return false;
 		}
@@ -1079,22 +1079,27 @@ abstract class BaseAuditProcessor {
 				wmf_audit_echo( "Odd: More than one logline returned for $order_id. Investigation Required." );
 			}
 
-			//just take the last one, just in case somebody did manage to do a duplicate.
-			$line = $ret[count( $ret ) - 1];
-			// $linedata for *everything* from payments goes Month, day, time, box, bucket, CTID:OID, absolute madness with lots of unpredictable spaces.
-			// Hack: logs space-pad single digit days, so we collapse all repeated spaces
-			$unspaced = preg_replace( '/ +/', ' ', $line );
-			$linedata = explode( ' ', $unspaced );
-			$contribution_id = explode( ':', $linedata[5] );
-			$contribution_id = $contribution_id[0];
+			// Get a log line that is consistent with the data from the audit file
+			// Count backwards, because we used to only take the last one.
+			foreach( array_reverse( $ret ) as $line ) {
+				// $linedata for *everything* from payments goes Month, day, time, box, bucket, CTID:OID, absolute madness with lots of unpredictable spaces.
+				// Hack: logs space-pad single digit days, so we collapse all repeated spaces
+				$unspaced = preg_replace( '/ +/', ' ', $line );
+				$linedata = explode( ' ', $unspaced );
+				$contribution_id = explode( ':', $linedata[5] );
+				$contribution_id = $contribution_id[0];
 
-			$raw_data = $this->parse_log_line( $line );
+				$raw_data = $this->parse_log_line( $line );
 
-			if ( !empty( $raw_data ) ) {
-				$raw_data['contribution_tracking_id'] = $contribution_id;
-				return $raw_data;
-			} else {
-				wmf_audit_log_error( "We found a transaction in the logs for $order_id, but there's nothing left after we tried to grab its data. Investigation required.", 'DATA_WEIRD' );
+				if ( empty( $raw_data ) ) {
+					wmf_audit_log_error(
+						"We found a transaction in the logs for $order_id, but there's nothing left after we tried to grab its data. Investigation required.",
+						'DATA_WEIRD'
+					);
+				} else if ( $this->check_consistency( $raw_data, $audit_data ) ) {
+					$raw_data['contribution_tracking_id'] = $contribution_id;
+					return $raw_data;
+				}
 			}
 		}
 		return false; //no big deal, it just wasn't there. This will happen most of the time.
