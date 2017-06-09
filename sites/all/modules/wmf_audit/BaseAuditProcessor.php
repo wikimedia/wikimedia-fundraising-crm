@@ -666,7 +666,7 @@ abstract class BaseAuditProcessor {
 										'Could not get an order id for the following transaction ' . print_r( $transaction, true )
 									);
 								}
-								$data = $this->get_log_data_by_order_id( $order_id, $log, $data );
+								$data = $this->get_log_data_by_order_id( $order_id, $log, $transaction );
 
 								if ( !$data ) {
 									//no data found in this log, which is expected and normal and not a problem.
@@ -677,12 +677,6 @@ abstract class BaseAuditProcessor {
 								//if we have data at this point, it means we have a match in the logs
 								$found += 1;
 
-								if ( !$this->check_consistency( $data, $transaction ) ) {
-									throw new WmfException(
-										'DATA_INCONSISTENT',
-										'Inconsistent data. Skipping the following: ' . print_r( $transaction, true ) . "\n" . print_r( $data, true )
-									);
-								}
 								$all_data = $this->merge_data( $data, $transaction );
 								//lookup contribution_tracking data, and fill it in with audit markers if there's nothing there.
 								$contribution_tracking_data = wmf_audit_get_contribution_tracking_data( $all_data );
@@ -1058,7 +1052,8 @@ abstract class BaseAuditProcessor {
 	 * If this log doesn't contain data for the order_id in question, return false.
 	 * @param string $order_id The order id (transaction id) of the missing payment
 	 * @param string $log The full path to the log we want to search
-	 * @return array|boolean The data we sent to the gateway for that order id, or
+	 * @param $audit_data array the data from the audit file.
+	 * @return array|bool The data we sent to the gateway for that order id, or
 	 * false if we can't find it there.
 	 */
 	protected function get_log_data_by_order_id( $order_id, $log, $audit_data ) {
@@ -1078,6 +1073,7 @@ abstract class BaseAuditProcessor {
 			if ( count( $ret ) > 1 ) {
 				wmf_audit_echo( "Odd: More than one logline returned for $order_id. Investigation Required." );
 			}
+			$raw_data = array();
 
 			// Get a log line that is consistent with the data from the audit file
 			// Count backwards, because we used to only take the last one.
@@ -1101,6 +1097,11 @@ abstract class BaseAuditProcessor {
 					return $raw_data;
 				}
 			}
+			// We have log data, but nothing matches. This is too weird.
+			throw new WmfException(
+				'DATA_INCONSISTENT',
+				'Inconsistent data. Skipping the following: ' . print_r( $audit_data, true ) . "\n" . print_r( $raw_data, true )
+			);
 		}
 		return false; //no big deal, it just wasn't there. This will happen most of the time.
 	}
