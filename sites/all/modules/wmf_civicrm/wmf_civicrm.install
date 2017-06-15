@@ -65,6 +65,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7455();
     wmf_civicrm_update_7460();
     wmf_civicrm_update_7521();
+    wmf_civicrm_update_7524();
 }
 
 /**
@@ -3003,4 +3004,19 @@ function wmf_civicrm_update_7522() {
 function wmf_civicrm_update_7523() {
   require_once('update_7523.php');
   _wmf_civicrm_update_7523_insert_currency_symbols();
+}
+
+/**
+  * Add duplicate contribution tag
+  */
+function wmf_civicrm_update_7524() {
+ civicrm_initialize();
+ $tag = array(
+    'name' => 'DuplicateInvoiceId',
+    'used_for' => 'civicrm_contribution',
+    'description' => 'Used for contributions where the original assigned invoice id was a duplicate with another already in the database',
+    'is_reserved' => 1, //WIP: What does this mean?
+    'selectable' => 0,
+ );
+ civicrm_api3('Tag', 'Create', $tag);
 }

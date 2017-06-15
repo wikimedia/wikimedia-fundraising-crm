@@ -16,6 +16,8 @@ class CiviFixtures {
     public $org_contact_name;
     public $recur_amount;
     public $subscription_id;
+    public $contribution_amount;
+    public $contribution_invoice_id;
 
     /**
      * @return CiviFixtures
@@ -76,6 +78,21 @@ class CiviFixtures {
             ));
             $out->contact_group_id = $group['id'];
         }
+
+        $out->contribution_amount = '1.00';
+
+        $contribution_params = array(
+            'contact_id' => $out->contact_id,
+            'amount' => $out->contribution_amount,
+            'total_amount' => $out->contribution_amount,
+            'create_date' => wmf_common_date_unix_to_civicrm( $out->epoch_time ),
+            'financial_type_id' => 1,
+            'invoice_id' => mt_rand(),
+        );
+        $contribution = civicrm_api3('Contribution', 'Create', $contribution_params);
+        $id = $contribution['id'];
+        $contribution_values = $contribution['values'][$id];
+        $out->contribution_invoice_id = $contribution_values['invoice_id'];
 
         return $out;
     }

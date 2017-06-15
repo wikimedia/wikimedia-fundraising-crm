@@ -473,6 +473,22 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals($fixtures->contact_group_id, $group['group_id']);
     }
 
+    public function testDuplicateHandling() {
+        $fixtures = CiviFixtures::create();
+        $error = null;
+        $msg = array(
+            'currency' => 'USD',
+            'date' => '2012-03-01 00:00:00',
+            'gateway' => 'test_gateway',
+            'order_id' => $fixtures->contribution_invoice_id,
+            'gross' => '1.23',
+            'payment_method' => 'cc',
+            'gateway_txn_id' => 'CON_TEST_GATEWAY' . mt_rand(),
+        );
+        $contribution = wmf_civicrm_contribution_message_import($msg);
+        $this->assertEquals(substr($contribution['invoice_id'], 0, strlen($fixtures->contribution_invoice_id)), $fixtures->contribution_invoice_id);
+    }
+
   /**
    * Assert that 2 arrays are the same in all the ways that matter :-).
    *
