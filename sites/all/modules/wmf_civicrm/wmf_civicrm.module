@@ -443,11 +443,23 @@ function _wmf_civicrm_message_contribution_insert( $msg )
       watchdog('wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
     }
     catch (CiviCRM_API3_Exception $e) {
-        throw new WmfException(
-            'INVALID_MESSAGE',
-            'Cannot create contribution, civi error!',
-            $e->getExtraParams()
-        );
+        $duplicate = null;
+        if (array_key_exists('invoice_id', $contribution)) {
+            $invoice_id = $contribution['invoice_id'];
+            $duplicate = civicrm_api3("Contribution", "getSingle", array("invoice_id" => $invoice_id));
+        }
+        if ($duplicate){
+            $contribution['invoice_id'] = $contribution['invoice_id'] . '|dup-' . UtcDate::getUtcTimeStamp();
+            $contribution_result = civicrm_api3("Contribution", "Create", $contribution);
+            $msg['contribution_tags'][] = 'DuplicateInvoiceId';
+        }
+        else {
+            throw new WmfException(
+                'INVALID_MESSAGE',
+                'Cannot create contribution, civi error!',
+                $e->getExtraParams()
+            );
+        }
     }
 
     // Create any required tags on the contribution
