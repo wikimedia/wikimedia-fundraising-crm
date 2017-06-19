@@ -61,14 +61,11 @@ class CiviMailBulkTest extends CiviMailTestBase {
 
 		$mailingID = $storedMailing->getMailingID();
 		// Should have a single bulk mailing activity created
-		$activity = new CRM_Activity_BAO_Activity();
-		$bulkMail = CRM_Core_OptionGroup::getValue('activity_type',
-          'Bulk Email',
-          'name'
-        );
-		$activity->activity_type_id = $bulkMail;
-		$activity->source_record_id = $mailingID;
-		$this->assertTrue( $activity->find() && $activity->fetch() );
+		$activities = $this->callAPISuccess('Activity', 'get', array(
+			'source_record_id' => $mailingID,
+			'activity_type_id' => 'Bulk Email',
+		));
+		$this->assertTrue($activities['count'] === 1);
 
 		foreach ( $this->contacts as $contact ) {
 			//recipients table
@@ -95,7 +92,7 @@ WHERE j.mailing_id = $mailingID";
 
 			//activity target
 			$activityTarget = new CRM_Activity_BAO_ActivityTarget();
-			$activityTarget->activity_id = $activity->id;
+			$activityTarget->activity_id = $activities['id'];
 			$activityTarget->target_contact_id = $contact['contactID'];
 			$this->assertTrue( $activityTarget->find() && $activityTarget->fetch() );
 		}
