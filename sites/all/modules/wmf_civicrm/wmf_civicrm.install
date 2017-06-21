@@ -67,6 +67,7 @@ function wmf_civicrm_install()
     wmf_civicrm_update_7521();
     wmf_civicrm_update_7524();
     wmf_civicrm_update_7525();
+    wmf_civicrm_update_7526();
 }
 
 /**
@@ -3036,4 +3037,15 @@ function wmf_civicrm_update_7525() {
   }
   $components[] = 'CiviCampaign';
   civicrm_api3('Setting', 'create', array('enable_components' => $components));
+}
+
+/**
+ * Add index to name field on civicrm_campaign.
+ *
+ * Bug: T168499
+ */
+function wmf_civicrm_update_7526() {
+    civicrm_initialize();
+    $tables = array('civicrm_campaign' => array('name'));
+    CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
