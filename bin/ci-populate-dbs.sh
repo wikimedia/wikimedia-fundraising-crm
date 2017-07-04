@@ -10,6 +10,11 @@ export PRECREATED_DSN_PATTERN="mysql://${CIVICRM_MYSQL_USERNAME}:${CIVICRM_MYSQL
 export AMPHOME="${WORKSPACE}/.amp-${BUILD_NUMBER}"
 export NO_SAMPLE_DATA=1
 
+# CI lacks sendmail and Drupal install would fails without it. drush can pass
+# extra options to PHP via PHP_OPTIONS - T171724
+PHP_OPTIONS="-d sendmail_path=$(which true)"
+export PHP_OPTIONS
+
 #FIXME: --web-root="$WORKSPACE/src/crm"
 
 "$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/bin/civi-download-tools
