@@ -1392,30 +1392,6 @@ DROP TRIGGER IF EXISTS civicrm_im_after_delete //
 DELIMITER ;
 
 DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_before_insert //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_before_update //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_before_delete //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_after_insert //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_after_update //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_install_canary_after_delete //
-DELIMITER ;
-
-DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_job_before_insert //
 DELIMITER ;
 
@@ -3165,30 +3141,6 @@ DELIMITER ;
 
 DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_value_1_language_after_delete //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_note_11_before_insert //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_note_11_before_update //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_note_11_before_delete //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_note_11_after_insert //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_note_11_after_update //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_note_11_after_delete //
 DELIMITER ;
 
 DELIMITER //
