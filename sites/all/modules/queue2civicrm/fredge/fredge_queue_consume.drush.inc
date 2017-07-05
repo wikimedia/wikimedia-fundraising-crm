@@ -69,6 +69,7 @@ function drush_fredge_queue_consume() {
 	}
 }
 
+// FIXME: this is now broken
 function drush_fredge_queue_consume_fredge_process_messagefile( $type, $path ) {
     watchdog( 'queue2civicrm', "Processing input file @path and feeding to queue2civicrm_import.",
         array( '@path' => realpath( $path ) ), WATCHDOG_INFO );

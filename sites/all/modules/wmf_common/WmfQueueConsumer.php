@@ -11,7 +11,7 @@ use WmfException;
 abstract class WmfQueueConsumer extends BaseQueueConsumer {
 
 	protected function handleError( $message, Exception $ex ) {
-		$correlationId = "{$message['gateway']}-{$message['order_id']}";
+		$logId = "{$message['gateway']}-{$message['order_id']}";
 		if ( $ex instanceof WmfException ) {
 			watchdog(
 				'wmf_common',
@@ -20,13 +20,13 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 				WATCHDOG_ERROR
 			);
 
-			$this->handleWmfException( $message, $ex, $correlationId );
+			$this->handleWmfException( $message, $ex, $logId );
 		} else {
 			$error = 'UNHANDLED ERROR. Halting dequeue loop. Exception: ' .
 				$ex->getMessage() . "\nStack Trace: " .
 				$ex->getTraceAsString();
 			watchdog( 'wmf_common', $error, NULL, WATCHDOG_ERROR );
-			wmf_common_failmail( 'wmf_common', $error, NULL, $correlationId );
+			wmf_common_failmail( 'wmf_common', $error, NULL, $logId );
 
 			throw $ex;
 		}
@@ -35,11 +35,11 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 	/**
 	 * @param array $message
 	 * @param WmfException $ex
-	 * @param string $correlationId
+	 * @param string $logId
 	 * @throws WmfException when we want to halt the dequeue loop
 	 */
 	protected function handleWmfException(
-		$message, WmfException $ex, $correlationId
+		$message, WmfException $ex, $logId
 	) {
 		$mailableDetails = '';
 		$reject = false;
@@ -70,7 +70,7 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 		if ( $ex->isDropMessage() ) {
 			watchdog(
 				'wmf_common',
-				"Dropping message altogether: $correlationId",
+				"Dropping message altogether: $logId",
 				NULL,
 				WATCHDOG_ERROR
 			);
@@ -88,7 +88,7 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 			);
 			$mailableDetails = self::itemUrl( $damagedId );
 		} else {
-			$mailableDetails = "Redacted contents of message ID: $correlationId";
+			$mailableDetails = "Redacted contents of message ID: $logId";
 		}
 
 		if ( !$ex->isNoEmail() ) {
