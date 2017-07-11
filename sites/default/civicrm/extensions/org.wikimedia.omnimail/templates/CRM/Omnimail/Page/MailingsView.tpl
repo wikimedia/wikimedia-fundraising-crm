@@ -25,9 +25,9 @@
 *}
 {* relationship selector *}
 <h3>Mailing events (up to 500 most recent)</h3>
-<div>
+
   <table
-    class="crm-contact-mailings"
+    class="crm-contact-mailings">
     <thead>
     <tr>
       <th class='crm-contact-recipient_action_datetime'>{ts}When{/ts}</th>
@@ -36,8 +36,9 @@
       <th class='crm-contact-email'>{ts}Email{/ts}</th>
     </tr>
     </thead>
+
   </table>
-</div>
+
 {literal}
 <script type="text/javascript">
   {/literal}var tableData = {$mailings}{literal}
@@ -46,7 +47,10 @@
       columns: [
         { data: 'recipient_action_datetime' },
         { data: 'event_type' },
-        { data: 'mailing_identifier' },
+        { data: {
+           _:   "mailing_identifier.display",
+          sort: "mailing_identifier.name"
+        } },
         { data: 'email' }
       ]
     });
