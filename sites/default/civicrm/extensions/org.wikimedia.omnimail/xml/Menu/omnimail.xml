@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/contact/mailings/view</path>
+    <page_callback>CRM_Omnimail_Page_MailingsView</page_callback>
+    <title>MailingsView</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>

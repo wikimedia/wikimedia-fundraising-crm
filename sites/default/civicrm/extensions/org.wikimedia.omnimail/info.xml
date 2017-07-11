@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<extension key="org.wikimedia.omnimail" type="module">
+  <file>omnimail</file>
+  <name>Omnimail for CiviCRM</name>
+  <description>Omnimail support for CiviCRM</description>
+  <license>AGPL-3.0</license>
+  <maintainer>
+    <author>eileen</author>
+    <email>emcnaughton@wikimedia.org</email>
+  </maintainer>
+  <urls>
+    <url desc="Main Extension Page">http://FIXME</url>
+    <url desc="Documentation">http://FIXME</url>
+    <url desc="Support">http://FIXME</url>
+    <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
+  </urls>
+  <releaseDate>2017-04-04</releaseDate>
+  <version>1.0</version>
+  <develStage>stable</develStage>
+  <compatibility>
+    <ver>4.7</ver>
+  </compatibility>
+  <comments>Omnimail wraps mailers and mail providers, making them available for CiviCRM. So far only Silverpop is implemented for CiviCRM</comments>
+  <civix>
+    <namespace>CRM/Omnimail</namespace>
+  </civix>
+</extension>
