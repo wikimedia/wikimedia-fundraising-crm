@@ -754,7 +754,7 @@ function thank_you_batch_process(){
 			receive_date > DATE_SUB( NOW(), INTERVAL :interval DAY ) AND
 			thankyou_date IS NULL AND
 			no_thank_you IS NULL
-		ORDER BY id ASC LIMIT {$batch};
+		ORDER BY receive_date ASC LIMIT {$batch};
 EOT;
 
 	$result = db_query( $ty_query, array( ':interval' => $days ) );
