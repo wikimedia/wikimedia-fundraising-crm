@@ -766,7 +766,7 @@ EOT;
 	$endTime = $startTime + $timeLimit;
 	foreach( $result as $contribution ) {
 		if (time() >= $endTime){
-			watchdog("Batch time limit elapsed", WATCHDOG_NOTICE);
+			watchdog("thank_you", "Batch time limit ($timeLimit s) elapsed", array(), WATCHDOG_INFO);
 			break;
 		}
 		watchdog(
