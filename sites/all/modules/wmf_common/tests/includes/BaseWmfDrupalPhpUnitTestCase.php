@@ -1,10 +1,16 @@
 <?php
 
 use SmashPig\Core\Context;
+use SmashPig\Tests\TestingContext;
+use SmashPig\Tests\TestingGlobalConfiguration;
 
 class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
     public function setUp() {
         parent::setUp();
+
+        // Initialize SmashPig with a fake context object
+        $config = TestingGlobalConfiguration::create();
+        TestingContext::init( $config );
 
         if ( !defined( 'DRUPAL_ROOT' ) ) {
             throw new Exception( "Define DRUPAL_ROOT somewhere before running unit tests." );

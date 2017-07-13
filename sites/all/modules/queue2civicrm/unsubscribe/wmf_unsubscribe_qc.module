@@ -76,8 +76,7 @@ function unsubscribe_qc_settings() {
  * @ref drush_unsubscribe_queue_consume
  */
 function unsubscribe_batch_process() {
-  $config = Configuration::createForView( 'default' );
-  Context::initWithLogger( $config, 'unsubscribe' );
+  wmf_common_create_smashpig_context('unsubscribe');
   watchdog('unsubscribe', 'Executing: unsubscribe_batch_process');
 
   civicrm_initialize();

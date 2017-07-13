@@ -1,7 +1,5 @@
 <?php
 use queue2civicrm\fredge\PaymentsInitQueueConsumer;
-use SmashPig\Core\Context;
-use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
 
 /**
  * @group Queue2Civicrm
@@ -15,12 +13,8 @@ class PaymentsInitQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$config = TestingSmashPigDbQueueConfiguration::instance();
-		Context::initWithLogger( $config );
-		$queue = BaseQueueConsumer::getQueue( 'test' );
-		$queue->createTable( 'test' );
 		$this->consumer = new PaymentsInitQueueConsumer(
-			'test'
+			'payments-init'
 		);
 	}
 

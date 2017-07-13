@@ -65,8 +65,8 @@ function banner_history_queue_consume() {
 	watchdog( 'banner_history', 'Executing: banner_history_queue_consume' );
 
 	civicrm_initialize();
-    $config = Configuration::createForView();
-    Context::initWithLogger( $config, 'banner_history' );
+
+	wmf_common_create_smashpig_context( 'banner_history' );
 
 	$qc = new BannerHistoryQueueConsumer(
 		'banner-history',

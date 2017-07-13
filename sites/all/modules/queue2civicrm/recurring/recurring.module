@@ -82,8 +82,7 @@ function recurring_settings() {
 
 function recurring_batch_process() {
   civicrm_initialize();
-  $config = Configuration::createForView();
-  Context::initWithLogger( $config, 'recurring' );
+  wmf_common_create_smashpig_context( 'recurring' );
 
   if (variable_get( "recurring_disable", false )){
     watchdog('recurring', 'Recurring is disabled. No contributions processed.');

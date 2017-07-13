@@ -1,7 +1,5 @@
 <?php
 use queue2civicrm\refund\RefundQueueConsumer;
-use SmashPig\Core\Context;
-use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
 
 /**
  * @group Queue2Civicrm
@@ -15,12 +13,8 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$config = TestingSmashPigDbQueueConfiguration::instance();
-		Context::initWithLogger( $config );
-		$queue = BaseQueueConsumer::getQueue( 'test' );
-		$queue->createTable( 'test' );
 		$this->consumer = new RefundQueueConsumer(
-			'test'
+			'refund'
 		);
 	}
 
