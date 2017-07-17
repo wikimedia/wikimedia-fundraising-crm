@@ -1842,7 +1842,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "c48de4450ec495a8fd1cb26ba5e656876321e025"
+                "reference": "cd3933b8ee7b263d0472cc44d047b82f3ec4029c"
             },
             "require": {
                 "league/csv": "^8.0",
