@@ -1,4 +1,3 @@
-/node_modules/
 sites/default/*settings.php
 !sites/default/default.settings.php
 sites/default/files
