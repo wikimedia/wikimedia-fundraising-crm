@@ -67,7 +67,7 @@ function civicrm_api3_omnimailing_load($params) {
           'hash' => 'sp' . $mailing['external_identifier'],
           'scheduled_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
           'campaign_id' => $campaign['id'],
-          'status_id' => 'Completed',
+          'is_completed' => 1,
         )
       ),
     ));
