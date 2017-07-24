@@ -443,21 +443,34 @@ function _wmf_civicrm_message_contribution_insert( $msg )
       watchdog('wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
     }
     catch (CiviCRM_API3_Exception $e) {
+        watchdog( 'wmf_civicrm', 'Error inserting contribution: ' . $e->getMessage(), NULL, WATCHDOG_INFO );
         $duplicate = null;
-        if (array_key_exists('invoice_id', $contribution)) {
-            $invoice_id = $contribution['invoice_id'];
-            $duplicate = civicrm_api3("Contribution", "getSingle", array("invoice_id" => $invoice_id));
+
+        try {
+            if ( array_key_exists( 'invoice_id', $contribution ) ) {
+                watchdog( 'wmf_civicrm', 'Checking for duplicate on invoice ID ' . $contribution['invoice_id'], NULL, WATCHDOG_INFO );
+                $invoice_id = $contribution['invoice_id'];
+                $duplicate = civicrm_api3( "Contribution", "getSingle", array( "invoice_id" => $invoice_id ) );
+            }
+            if ( $duplicate ) {
+                $contribution['invoice_id'] = $contribution['invoice_id'] . '|dup-' . UtcDate::getUtcTimeStamp();
+                watchdog( 'wmf_civicrm', 'Found duplicate invoice ID, changing this one to ' . $contribution['invoice_id'], NULL, WATCHDOG_INFO );
+                $contribution_result = civicrm_api3( "Contribution", "Create", $contribution );
+                watchdog( 'wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r( $contribution_result, TRUE ), NULL, WATCHDOG_DEBUG );
+                $msg['contribution_tags'][] = 'DuplicateInvoiceId';
+            } else {
+                throw new WmfException(
+                    'INVALID_MESSAGE',
+                    'Cannot create contribution, civi error!',
+                    $e->getExtraParams()
+                );
+            }
         }
-        if ($duplicate){
-            $contribution['invoice_id'] = $contribution['invoice_id'] . '|dup-' . UtcDate::getUtcTimeStamp();
-            $contribution_result = civicrm_api3("Contribution", "Create", $contribution);
-            $msg['contribution_tags'][] = 'DuplicateInvoiceId';
-        }
-        else {
+        catch ( CiviCRM_API3_Exception $eInner ) {
             throw new WmfException(
                 'INVALID_MESSAGE',
                 'Cannot create contribution, civi error!',
-                $e->getExtraParams()
+                $eInner->getExtraParams()
             );
         }
     }
