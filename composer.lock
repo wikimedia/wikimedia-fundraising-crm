@@ -88,7 +88,7 @@
                 "payment",
                 "payments"
             ],
-            "time": "2016-02-17T00:44:20+00:00"
+            "time": "2016-02-17 00:53:20"
         },
         {
             "name": "clio/clio",
@@ -198,7 +198,7 @@
                 "queue",
                 "transaction"
             ],
-            "time": "2017-04-17T14:11:55+00:00"
+            "time": "2017-04-17 14:11:55"
         },
         {
             "name": "cogpowered/finediff",
@@ -655,7 +655,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/silverpop-php-connector",
-                "reference": "da4275f3a44888954e72068642956056fdc74a9b"
+                "reference": "6cbb9e1760c3927f871109ed588e6056b58fd7d2"
             },
             "require": {
                 "ext-curl": "*",
@@ -691,7 +691,7 @@
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2017-07-06 03:06:53"
+            "time": "2017-07-24 07:31:30"
         },
         {
             "name": "neitanod/forceutf8",
@@ -1791,7 +1791,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2017-04-13T00:15:19+00:00"
+            "time": "2017-04-13 00:15:19"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
@@ -1897,7 +1897,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2017-04-22T00:12:45+00:00"
+            "time": "2017-04-22 00:12:45"
         },
         {
             "name": "zordius/lightncandy",
