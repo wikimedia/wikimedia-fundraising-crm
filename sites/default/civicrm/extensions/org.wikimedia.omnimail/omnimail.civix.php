@@ -355,14 +355,13 @@ function _omnimail_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentID) 
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterSettingsFolders
  */
 function _omnimail_civix_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  static $configured = FALSE;
-  if ($configured) {
+  if (isset(\Civi::$statics['_omnimail_settings'], \Civi::$statics['_omnimail_settings']['configured']) && \Civi::$statics['_omnimail_settings']['configured']) {
     return;
   }
-  $configured = TRUE;
 
   $settingsDir = __DIR__ . DIRECTORY_SEPARATOR . 'settings';
   if (is_dir($settingsDir) && !in_array($settingsDir, $metaDataFolders)) {
     $metaDataFolders[] = $settingsDir;
   }
+  \Civi::$statics['_omnimail_settings']['configured'] = TRUE;
 }

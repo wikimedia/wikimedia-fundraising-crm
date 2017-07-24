@@ -15,12 +15,10 @@
  */
 function civicrm_api3_omnimailing_load($params) {
   $values = array();
-  $mailings = civicrm_api3('Omnimailing', 'get', array(
-    'mail_provider' => 'Silverpop',
+  $getParams = array(
+    'mail_provider' => $params['mail_provider'],
     'start_date' => $params['start_date'],
     'end_date' => $params['end_date'],
-    'username' => $params['username'],
-    'password' => $params['password'],
     'return' => array(
       'external_identifier',
       'subject',
@@ -38,7 +36,12 @@ function civicrm_api3_omnimailing_load($params) {
       'number_bounced',
       'number_sent',
     ),
-  ));
+  );
+  if (isset($params['username']) && isset($params['password'])) {
+    $getParams['username'] = $params['username'];
+    $getParams['password'] = $params['password'];
+  }
+  $mailings = civicrm_api3('Omnimailing', 'get', $getParams);
 
   foreach ($mailings['values']  as $mailing) {
     $campaign = civicrm_api3('Campaign', 'replace', array(
