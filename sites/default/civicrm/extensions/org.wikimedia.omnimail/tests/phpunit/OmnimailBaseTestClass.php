@@ -27,8 +27,8 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
   public function setUp() {
     parent::setUp();
     $null = NULL;
-    civicrm_api3('Setting', 'getfields', array('cache_clear' => 1));
-    \Civi::cache('settings')->set('settingsMetadata_' . \CRM_Core_Config::domainID() . '_', $null);
+    Civi::service('settings_manager')->flush();
+    \Civi::$statics['_omnimail_settings'] = array();
   }
 
   /**
