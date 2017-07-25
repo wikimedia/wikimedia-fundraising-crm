@@ -1801,8 +1801,16 @@ function wmf_civicrm_normalize_msg( $msg ) {
             $source = isset($msg['utm_source']) ? $msg['utm_source'] : '..' . $msg['payment_method'];
             $medium = isset($msg['utm_medium']) ? $msg['utm_medium'] : 'civicrm';
             $campaign = isset($msg['utm_campaign']) ? $msg['utm_campaign'] : null;
-            // FIXME: make the next line readable, safe, sane, useful.  See "ACK!"
-            $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking( $source, $medium, $campaign, wmf_common_date_unix_to_sql( $msg['date'] ), null, $optout, $anonymous ); //ACK! this should not be handled this way! should be dynamic!
+
+            $tracking = array(
+                'utm_source' => $source,
+                'utm_medium' => $medium,
+                'utm_campaign' => $campaign,
+                'optout' => $optout,
+                'anonymous' => $anonymous,
+                'ts' => wmf_common_date_unix_to_sql( $msg['date'] )
+            );
+            $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking( $tracking );
             watchdog( 'wmf_civicrm', 'Newly inserted contribution tracking id: @id', array( '@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
             $msg['contribution_tracking_id'] = $contribution_tracking_id;
         }

@@ -2,29 +2,19 @@
 
 /**
  * Insert a record into contribution_tracking table
- * 
+ *
  * Primarily used when a record does not already exist in the table for a
  * particular transaction.  Rare, but inserting some data for a trxn when
  * absent helps facilitate better analytics.
- * 
+ *
+ * @param array $values associative array of columns => values to insert
+ *  into the contribution tracking table
  * @return int the contribution_tracking id
  */
-function wmf_civicrm_insert_contribution_tracking( $utm_source, $utm_medium, $utm_campaign, $ts, $contrib_id=null, $optout=null, $anonymous=null ) {
+function wmf_civicrm_insert_contribution_tracking( $values ) {
     // make sure we're using the default (drupal) db
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push( 'donations' );
-
-    $values = array(
-        'utm_source' => $utm_source,
-        'utm_medium' => $utm_medium,
-        'utm_campaign' => $utm_campaign,
-        'optout' => $optout,
-        'anonymous' => $anonymous,
-        'ts' => $ts,
-    );
-    if ($contrib_id !== null){
-        $values['contribution_id'] = $contrib_id;
-    }
 
     $contribution_tracking_id = db_insert( 'contribution_tracking' )->fields( $values )->execute();
     watchdog( 'wmf_civicrm', "Created new contribution_tracking entry %id", array( '%id' => $contribution_tracking_id ), WATCHDOG_INFO );
