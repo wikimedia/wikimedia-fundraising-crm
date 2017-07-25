@@ -1810,6 +1810,12 @@ function wmf_civicrm_normalize_msg( $msg ) {
                 'anonymous' => $anonymous,
                 'ts' => wmf_common_date_unix_to_sql( $msg['date'] )
             );
+            if (
+                !empty( $msg['country'] ) &&
+                CRM_Core_PseudoConstant::countryIsoCode( $msg['country'] ) !== null
+            ) {
+                $tracking['country'] = $msg['country'];
+            }
             $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking( $tracking );
             watchdog( 'wmf_civicrm', 'Newly inserted contribution tracking id: @id', array( '@id' => $contribution_tracking_id ), WATCHDOG_DEBUG );
             $msg['contribution_tracking_id'] = $contribution_tracking_id;
