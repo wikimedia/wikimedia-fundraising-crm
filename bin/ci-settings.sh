@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/bash -eu
 
-if [ -z "$BUILD_TAG" ]; then
+if [ -z "${BUILD_TAG:-}" ]; then
 	echo "BUILD_TAG environment variable was not set, exiting."
 	exit 1
 fi

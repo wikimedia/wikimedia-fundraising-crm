@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -eu
 
 if [ $# -ne 3 ]; then
 	app_name=`basename $0`

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -eu
 
 BASEDIR=$(dirname $0)
 . $BASEDIR/ci-settings.sh
