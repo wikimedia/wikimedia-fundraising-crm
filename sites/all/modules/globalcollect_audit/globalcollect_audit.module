@@ -1,5 +1,5 @@
 <?php
-use SmashPig\Core\Configuration;
+use SmashPig\Core\DataStores\QueueWrapper;
 
 define( 'GC_AUDIT_WR1_PARSER_DIR', '/usr/local/src/Wr1Parser/' );
 define( 'GC_AUDIT_WR1_FILES_DIR', '/usr/local/src/Wr1_files/' );
@@ -1993,19 +1993,9 @@ function gca_wr1_key_grinder( $record, $keys, $name, $error_on_mismatch = false 
 
 function globalcollect_audit_send_queue_message( $queueId, $body ) {
 
-    // FIXME: register the queue mapping somewhere sane
-    if ( $queueId === 'donations' ) {
-		$configKey = 'data-store/donations';
-    } elseif ( $queueId === 'refund' ) {
-		$configKey = 'data-store/refund';
-    } else {
-        throw new Exception( "What kind of a queue is this??: {$queueId}" );
-    }
-
 	wmf_common_set_message_source( $body, 'audit', 'GlobalCollect WR1 Auditor' );
 
-	$newQueue = Configuration::getDefaultConfig()->object( $configKey, false );
-	$newQueue->push( $body );
+    QueueWrapper::push( $queueId, $body );
 }
 
 /**
