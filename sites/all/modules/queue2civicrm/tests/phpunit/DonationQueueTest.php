@@ -22,10 +22,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$config = TestingSmashPigDbQueueConfiguration::instance();
-		Context::initWithLogger( $config );
 		$this->pendingDb = PendingDatabase::get();
-		$this->pendingDb->createTable();
 		$this->queueConsumer = new DonationQueueConsumer( 'test' );
 	}
 

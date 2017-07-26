@@ -88,7 +88,7 @@
                 "payment",
                 "payments"
             ],
-            "time": "2016-02-17 00:53:20"
+            "time": "2016-02-17T00:44:20+00:00"
         },
         {
             "name": "clio/clio",
@@ -198,7 +198,7 @@
                 "queue",
                 "transaction"
             ],
-            "time": "2017-04-17 14:11:55"
+            "time": "2017-04-17T14:11:55+00:00"
         },
         {
             "name": "cogpowered/finediff",
@@ -250,6 +250,48 @@
                 "text"
             ],
             "time": "2014-05-19T10:25:02+00:00"
+        },
+        {
+            "name": "corneltek/getoptionkit",
+            "version": "2.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/c9s/GetOptionKit.git",
+                "reference": "995607ddf4fc90ebdb4a7d58fe972d581ad8495f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/c9s/GetOptionKit/zipball/995607ddf4fc90ebdb4a7d58fe972d581ad8495f",
+                "reference": "995607ddf4fc90ebdb4a7d58fe972d581ad8495f",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.6.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "GetOptionKit\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Yo-An Lin",
+                    "email": "yoanlin93@gmail.com"
+                }
+            ],
+            "description": "Powerful command-line option toolkit",
+            "homepage": "http://github.com/c9s/GetOptionKit",
+            "time": "2017-06-30T14:54:48+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -691,7 +733,7 @@
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2017-07-24 07:31:30"
+            "time": "2017-07-06T03:06:53+00:00"
         },
         {
             "name": "neitanod/forceutf8",
@@ -797,7 +839,7 @@
                 "sendgrid",
                 "sendinblue"
             ],
-            "time": "2017-05-15 13:50:56"
+            "time": "2017-05-15T13:50:56+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -1751,7 +1793,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "417df8110ab71a3cf3b34a2630a4cf6c3a441f80"
+                "reference": "b6eb7d3c689fd2a612f522d43cfd7d6b68218d02"
             },
             "require": {
                 "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
@@ -1767,7 +1809,8 @@
                 "zordius/lightncandy": "0.23"
             },
             "require-dev": {
-                "jakub-onderka/php-parallel-lint": "0.9.2"
+                "jakub-onderka/php-parallel-lint": "0.9.2",
+                "wikimedia/testing-access-wrapper": "~1.0"
             },
             "type": "library",
             "autoload": {
@@ -1791,7 +1834,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2017-04-13 00:15:19"
+            "time": "2017-07-12T20:59:10+00:00"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
@@ -1838,7 +1881,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2017-07-09 22:55:21"
+            "time": "2017-07-09T22:55:21+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -1846,11 +1889,12 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "3b81aba0abe619bed038c8d31c7f36cae5b041cb"
+                "reference": "28035b9795b5cb70689a142a08377c2d03574956"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
                 "coderkungfu/php-queue": "dev-master",
+                "corneltek/getoptionkit": "^2.5",
                 "php": ">=5.3.3",
                 "phpmailer/phpmailer": "^5.2",
                 "predis/predis": "^1.1",
@@ -1897,7 +1941,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2017-04-22 00:12:45"
+            "time": "2017-07-17T14:48:07+00:00"
         },
         {
             "name": "zordius/lightncandy",

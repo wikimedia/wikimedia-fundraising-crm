@@ -128,8 +128,7 @@ function queue2civicrm_batch_process() {
   // We only want to initialize the SmashPig stuff once, so we use the default
   // config section rather than a processor-specific section. This means all
   // processors have to use the same database for pending donation info.
-  $config = Configuration::createForView( 'default' );
-  Context::initWithLogger( $config, 'queue2civicrm' );
+  wmf_common_create_smashpig_context( 'queue2civicrm' );
   wmf_civicrm_boost_performance();
 
   if ( variable_get( 'queue2civicrm_disable', false ) ) {

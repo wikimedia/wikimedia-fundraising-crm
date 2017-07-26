@@ -18,8 +18,9 @@ class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 		self::$messages = array();
 
 		// Use the test configuration for SmashPig
-		$config = AmazonTestConfiguration::instance();
-		Context::initWithLogger( $config );
+		$ctx = Context::get();
+		$config = AmazonTestConfiguration::instance( $ctx->getGlobalConfiguration() );
+		$ctx->setProviderConfiguration( $config );
 
 		$dirs = array(
 			'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',

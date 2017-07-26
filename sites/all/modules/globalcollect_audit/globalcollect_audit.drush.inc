@@ -72,8 +72,7 @@ function globalcollect_audit_reset_drush_vars(){
  * TODO: More comments here-ish. 
  */
 function drush_globalcollect_audit() {
-	$config = Configuration::createForView( 'globalcollect' );
-	Context::initWithLogger( $config, 'globalcollect_audit' );
+	wmf_common_create_smashpig_context( 'ingenico_audit', 'ingenico' );
 
 	//$args = drush_get_arguments();
 	

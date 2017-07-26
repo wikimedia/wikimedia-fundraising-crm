@@ -97,8 +97,8 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 			'amount' => '2345',
 			'effort_id' => 2,
 			'order_id' => '9998890004',
-			'currency_code' => 'EUR',
-			'payment_product' => '',
+			'currency' => 'EUR',
+			'payment_method' => 'cc',
 		);
 		$gateway = DonationInterfaceFactory::createAdapter( 'globalcollect', $init );
 
@@ -121,8 +121,8 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 			'amount' => '2345',
 			'effort_id' => 2,
 			'order_id' => '9998890004',
-			'currency_code' => 'EUR',
-			'payment_product' => '',
+			'currency' => 'EUR',
+			'payment_method' => 'cc',
 		);
 		$gateway = DonationInterfaceFactory::createAdapter( 'globalcollect', $init );
 
@@ -148,8 +148,8 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 			'amount' => '2345',
 			'effort_id' => 2,
 			'order_id' => '9998890004',
-			'currency_code' => 'EUR',
-			'payment_product' => '',
+			'currency' => 'EUR',
+			'payment_method' => 'cc',
 		);
 		$gateway = DonationInterfaceFactory::createAdapter( 'globalcollect', $init );
 
@@ -174,8 +174,8 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 			'amount' => '2345',
 			'effort_id' => 2,
 			'order_id' => '9998890004',
-			'currency_code' => 'EUR',
-			'payment_product' => '',
+			'currency' => 'EUR',
+			'payment_method' => 'cc',
 		);
 		$gateway = DonationInterfaceFactory::createAdapter( 'globalcollect', $init );
 
