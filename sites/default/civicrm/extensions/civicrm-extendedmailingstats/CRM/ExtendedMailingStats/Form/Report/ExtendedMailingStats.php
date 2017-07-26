@@ -1,11 +1,9 @@
 <?php
-// $Id$
-
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.2                                                |
+ | CiviCRM version 4.7                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2012                                |
+ | Copyright CiviCRM LLC (c) 2004-2017                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -31,15 +29,10 @@
  *
  * @package CRM
  * @copyright CiviCRM LLC (c) 2004-2012
- * $Id$
- *
  */
 class CRM_ExtendedMailingStats_Form_Report_ExtendedMailingStats extends CRM_Report_Form {
 
   protected $_summary = NULL;
-
-  # just a toggle we use to build the from
-  protected $_mailingidField = FALSE;
 
   protected $_customGroupExtends = array('Campaign');
 
@@ -57,6 +50,11 @@ class CRM_ExtendedMailingStats_Form_Report_ExtendedMailingStats extends CRM_Repo
     if (CRM_Campaign_BAO_Campaign::isCampaignEnable()) {
       $this->_columns['civicrm_mailing'] = array(
         'fields' => array(
+          'mailing_id' => array(
+            'title' => ts('Mailing ID'),
+            'name' => 'id',
+            'required' => TRUE,
+          ),
           'mailing_campaign_id' => array(
             'title' => ts('Campaign'),
             'name' => 'campaign_id',
@@ -75,126 +73,23 @@ class CRM_ExtendedMailingStats_Form_Report_ExtendedMailingStats extends CRM_Repo
       );
     }
 
-    $this->_columns = array_merge($this->_columns, $this->getCampaignColumns());
+    $this->_columns = array_merge($this->_columns, $this->getCampaignColumns(), $this->getMailingStatColumns());
 
-    $this->_columns['civicrm_mailing_stats'] = array(
-      'dao' => 'CRM_Mailing_DAO_Mailing',
-      'fields' => array(
-        'mailing_id' => array(
-          'title' => ts('Mailing ID'),
-          'required' => TRUE,
-        ),
-        'mailing_name' => array(
-          'title' => ts('Mailing Name'),
-          'default' => TRUE,
-        ),
-        'is_completed' => array(
-          'title' => ts('Is Completed'),
-          'default' => TRUE,
-        ),
-        'created_date' => array(
-          'title' => ts('Date Created'),
-          'default' => TRUE,
-        ),
-        'start' => array(
-          'title' => ts('Start Date'),
-          'default' => TRUE,
-        ),
-        'finish' => array(
-          'title' => ts('End Date'),
-        ),
-        'recipients' => array(
-          'title' => ts('recipients'),
-          'default' => TRUE,
-        ),
-        'delivered' => array(
-          'title' => ts('delivered'),
-          'default' => TRUE,
-        ),
-        'send_rate' => array(
-          'title' => ts('Send Rate'),
-          'default' => TRUE,
-        ),
-        'bounced' => array(
-          'title' => ts('bounced'),
-          'default' => TRUE,
-        ),
-        'opened_total' => array(
-          'title' => ts('Total Opens'),
-          'default' => TRUE,
-        ),
-        'opened_unique' => array(
-          'title' => ts('Unique Opens'),
-          'default' => TRUE,
-        ),
-        'unsubscribed' => array(
-          'title' => ts('unsubscribed'),
-          'default' => TRUE,
-        ),
-        'forwarded' => array(
-          'title' => ts('forwarded'),
-          'default' => TRUE,
-        ),
-        'clicked_total' => array(
-          'title' => ts('clicked_total'),
-          'default' => TRUE,
-        ),
-        'clicked_unique' => array(
-          'title' => ts('clicked_unique'),
-          'default' => TRUE,
-        ),
-        'trackable_urls' => array(
-          'title' => ts('trackable_urls'),
-          'default' => TRUE,
-        ),
-        'clicked_contribution_page' => array(
-          'title' => ts('clicked_contribution_page'),
-          'default' => TRUE,
-        ),
-        'contribution_count' => array(
-          'title' => ts('Contribution Count'),
-          'default' => TRUE,
-        ),
-        'contribution_total' => array(
-          'title' => ts('contributions_total'),
-          'default' => TRUE,
-        ),
-      ),
-      'filters' => array(
-        'is_completed' => array(
-          'title' => ts('Mailing Status'),
-          'operatorType' => CRM_Report_Form::OP_SELECT,
-          'type' => CRM_Utils_Type::T_INT,
-          'options' => array(
-            0 => 'Incomplete',
-            1 => 'Complete',
-          ),
-          //'operator' => 'like',
-          'default' => 1,
-        ),
-        'start' => array(
-          'title' => ts('Start Date'),
-          'default' => 'this.year',
-          'operatorType' => CRM_Report_Form::OP_DATE,
-          'type' => CRM_Utils_Type::T_DATE,
-        ),
-        'finish' => array(
-          'title' => ts('End Date'),
-          'operatorType' => CRM_Report_Form::OP_DATE,
-          'type' => CRM_Utils_Type::T_DATE,
-        ),
-        'recipients' => array(
-          'title' => ts('Number of Recipients'),
-          'operatorType' => CRM_Report_Form::OP_INT,
-          'type' => CRM_Utils_Type::T_INT,
-        ),
-        'Clicked_contribution_page' => array(
-          'title' => ts('Clicked Contribution Page?'),
-          'operatorType' => CRM_Report_Form::OP_INT,
-          'type' => CRM_Utils_Type::T_INT,
-        ),
-      ),
-    );
+    $this->_columns['civicrm_mailing_stats']['fields']['mailing_stats_mailing_name']['default'] = TRUE;
+    $this->_columns['civicrm_mailing_stats']['fields']['mailing_stats_is_completed']['default'] = TRUE;
+    $this->_columns['civicrm_mailing_stats']['fields']['mailing_stats_start']['default'] = TRUE;
+    $this->_columns['civicrm_mailing_stats']['fields']['mailing_stats_recipients']['default'] = TRUE;
+    $this->_columns['civicrm_mailing_stats']['fields']['mailing_stats_bounced']['default'] = TRUE;
+    $this->_columns['civicrm_mailing_stats']['fields']['mailing_stats_opened_total']['default'] = TRUE;
+    $this->_columns['civicrm_mailing_stats']['fields']['mailing_stats_opened_unique']['default'] = TRUE;
+    $this->_columns['civicrm_mailing_stats']['fields']['mailing_stats_unsubscribed']['default'] = TRUE;
+    $this->_columns['civicrm_mailing_stats']['fields']['mailing_stats_clicked_total']['default'] = TRUE;
+    $this->_columns['civicrm_mailing_stats']['fields']['mailing_stats_clicked_unique']['default'] = TRUE;
+    $this->_columns['civicrm_mailing_stats']['fields']['mailing_stats_delivered']['default'] = TRUE;
+
+    $this->_columns['civicrm_mailing_stats']['filters']['mailing_stats_start']['default'] = 'this.year';
+
+    $this->_columns['civicrm_mailing_stats']['order_bys']['mailing_stats_start']['default_order'] = 'DESC';
 
     parent::__construct();
   }
@@ -304,38 +199,207 @@ class CRM_ExtendedMailingStats_Form_Report_ExtendedMailingStats extends CRM_Repo
   function alterDisplay(&$rows) {
     // custom code to alter rows
     $entryFound = FALSE;
-    foreach ($rows as $rowNum => $row) {
+    foreach ($rows as $rowNum => &$row) {
+      $checkedColumns = array('civicrm_mailing_stats_mailing_stats_mailing_name', 'civicrm_mailing_mailing_id', 'civicrm_mailing_mailing_campaign_id');
+
+      foreach ($checkedColumns as $columnName) {
+        if (isset($row[$columnName])) {
+          $entryFound = TRUE;
+        }
+      }
+      if (!$entryFound) {
+        return;
+      }
 
       // Link mailing name to Civimail Report
-      if (array_key_exists('civicrm_mailing_name', $row) &&
-        array_key_exists('civicrm_mailing_id', $row)
+      if (array_key_exists('civicrm_mailing_stats_mailing_stats_mailing_name', $row) &&
+        !empty($row['civicrm_mailing_mailing_id'])
       ) {
         $url = CRM_Report_Utils_Report::getNextUrl('civicrm/mailing/report',
-            'reset=1&mid=' . $row['civicrm_mailing_id'],
+            'reset=1&mid=' . $row['civicrm_mailing_mailing_id'],
             $this->_absoluteUrl, $this->_id
         );
-        $rows[$rowNum]['civicrm_mailing_name_link'] = $url;
-        $rows[$rowNum]['civicrm_mailing_name_hover'] = ts("View CiviMail Report for this mailing.");
+        $rows[$rowNum]['civicrm_mailing_stats_mailing_stats_mailing_name_link'] = $url;
+        $rows[$rowNum]['civicrm_mailing_stats_mailing_stats_mailing_name_hover'] = ts("View CiviMail Report for this mailing.");
         $entryFound = TRUE;
+      }
+
+      if (!empty($row['civicrm_mailing_mailing_id'])) {
+        $row['civicrm_mailing_mailing_id_link'] = CRM_Utils_System::url('civicrm/mailing/view', 'reset=1&id=' .(int) $row['civicrm_mailing_mailing_id']);
+        $row['civicrm_mailing_mailing_id_hover'] = ts('View mailing') . (!empty($row['civicrm_mailing_stats_mailing_stats_mailing_name'] ? ' ' . $row['civicrm_mailing_stats_mailing_stats_mailing_name'] : ''));
+
       }
 
       if (!empty($row['civicrm_mailing_mailing_campaign_id'])) {
         $campaigns = CRM_Mailing_BAO_Mailing::buildOptions('campaign_id');
         $rows[$rowNum]['civicrm_mailing_mailing_campaign_id'] = $campaigns[$row['civicrm_mailing_mailing_campaign_id']];
-        $entryFound = TRUE;
-      }
-
-      // skip looking further in rows, if first row itself doesn't
-      // have the column we need
-      if (!$entryFound) {
-        break;
       }
     }
   }
 
   /**
+   * Get columns for mailing stats table.
    *
-   * @param array
+   * @return array
+   */
+  function getMailingStatColumns() {
+    $specs = array(
+      'mailing_name' => array(
+        'title' => ts('Mailing Name'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_STRING,
+      ),
+      'is_completed' => array(
+        'title' => ts('Is Completed'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'operatorType' => CRM_Report_Form::OP_SELECT,
+        'type' => CRM_Utils_Type::T_INT,
+        'options' => array(
+          1 => 'Complete',
+          0 => 'Incomplete',
+        ),
+      ),
+      'created_date' => array(
+        'title' => ts('Date Created'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'operatorType' => CRM_Report_Form::OP_DATE,
+        'type' => CRM_Utils_Type::T_DATE,
+      ),
+      'start' => array(
+        'title' => ts('Start Date'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'default' => TRUE,
+        'operatorType' => CRM_Report_Form::OP_DATE,
+        'type' => CRM_Utils_Type::T_DATE,
+      ),
+      'finish' => array(
+        'title' => ts('End Date'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'operatorType' => CRM_Report_Form::OP_DATE,
+        'type' => CRM_Utils_Type::T_DATE,
+      ),
+      'recipients' => array(
+        'title' => ts('Number of recipients'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'default' => TRUE,
+        'operatorType' => CRM_Report_Form::OP_INT,
+        'type' => CRM_Utils_Type::T_INT,
+      ),
+      'delivered' => array(
+        'title' => ts('delivered'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
+      ),
+      'send_rate' => array(
+        'title' => ts('Send Rate'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
+      ),
+      'bounced' => array(
+        'title' => ts('bounced'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
+      ),
+      'opened_total' => array(
+        'title' => ts('Total Opens'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
+      ),
+      'opened_unique' => array(
+        'title' => ts('Unique Opens'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'default' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
+      ),
+      'unsubscribed' => array(
+        'title' => ts('unsubscribed'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'default' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
+      ),
+      'forwarded' => array(
+        'title' => ts('forwarded'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'default' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
+      ),
+      'clicked_total' => array(
+        'title' => ts('clicked_total'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_MONEY,
+      ),
+      'clicked_unique' => array(
+        'title' => ts('clicked_unique'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
+      ),
+      'trackable_urls' => array(
+        'title' => ts('trackable_urls'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_STRING,
+      ),
+      'clicked_contribution_page' => array(
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'default' => TRUE,
+        'title' => ts('Clicked Contribution Page?'),
+        'operatorType' => CRM_Report_Form::OP_INT,
+        'type' => CRM_Utils_Type::T_INT,
+      ),
+      'contribution_count' => array(
+        'title' => ts('Contribution Count'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
+      ),
+      'contribution_total' => array(
+        'title' => ts('contributions_total'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_MONEY,
+      ),
+    );
+
+    return $this->buildColumns($specs, 'civicrm_mailing_stats', 'CRM_ExtendedMailingStats_BAO_MailingStats');
+  }
+
+  /**
+   * Get columns for campaign table.
    *
    * @return array
    */
