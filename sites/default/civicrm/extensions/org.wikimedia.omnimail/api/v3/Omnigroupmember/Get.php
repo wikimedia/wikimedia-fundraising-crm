@@ -19,7 +19,7 @@ function civicrm_api3_omnigroupmember_get($params) {
   $options = _civicrm_api3_get_options_from_params($params);
   $values = array();
   foreach ($result as $groupMember) {
-    $values[] = array(
+    $value = array(
       'email' => (string) $groupMember->getEmail(),
       'is_opt_out' => (string) $groupMember->isOptOut(),
       'opt_in_date' => (string) $groupMember->getOptInIsoDateTime(),
@@ -28,6 +28,10 @@ function civicrm_api3_omnigroupmember_get($params) {
       'opt_out_date' => (string) $groupMember->getOptOutIsoDateTime(),
       'contact_id' => (string) $groupMember->getContactReference(),
     );
+    foreach ($params['custom_data_map'] as $fieldName => $dataKey) {
+      $value[$fieldName] = (string) $groupMember->getCustomData($dataKey);
+    }
+    $values[] = $value;
     if ($options['limit'] > 0 && count($values) === (int) $options['limit']) {
       break;
     }
@@ -67,6 +71,17 @@ function _civicrm_api3_omnigroupmember_get_spec(&$params) {
   );
   $params['retrieval_parameters'] = array(
     'title' => ts('Additional information for retrieval of pre-stored requests'),
+  );
+  $params['custom_data_map'] = array(
+    'type' => CRM_Utils_Type::T_STRING,
+    'title' => ts('Custom fields map'),
+    'description' => array('custom mappings pertaining to the mail provider fields'),
+    'api.default' => array(
+      'language' => 'rml_language',
+      'source' => 'rml_source',
+      'created_date' => 'rml_submitdate',
+      'country' => 'rml_country',
+    ),
   );
 
 }

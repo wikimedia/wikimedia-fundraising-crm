@@ -23,7 +23,7 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  *
  * @group e2e
  */
-class OmnigroupmemberGetTest extends OmnimailBaseTestClass implements EndToEndInterface, TransactionalInterface {
+class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndInterface, TransactionalInterface {
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
@@ -40,22 +40,30 @@ class OmnigroupmemberGetTest extends OmnimailBaseTestClass implements EndToEndIn
   /**
    * Example: Test that a version is returned.
    */
-  public function testOmnigroupmemberGet() {
+  public function testOmnigroupmemberLoad() {
     $client = $this->setupSuccessfulDownloadClient();
+    $group = civicrm_api3('Group', 'create', array('name' => 'Omnimailers', 'title' => 'Omni'));
 
-    $result = civicrm_api3('Omnigroupmember', 'get', array('mail_provider' => 'Silverpop', 'username' => 'Shrek', 'password' => 'Fiona', 'options' => array('limit' => 3), 'client' => $client, 'group_identifier' => 123));
-    $this->assertEquals(3, $result['count']);
-    $this->assertEquals('eric@example.com', $result['values'][0]['email']);
-    $this->assertEquals('', $result['values'][0]['contact_id']);
-    $this->assertEquals(TRUE, $result['values'][0]['is_opt_out']);
-    $this->assertEquals('2016-10-18 20:01:00', $result['values'][0]['opt_in_date']);
-    $this->assertEquals('2017-07-04 11:11:00', $result['values'][0]['opt_out_date']);
-    $this->assertEquals('Added by WebForms', $result['values'][0]['opt_in_source']);
-    $this->assertEquals('Opt out via email opt out.', $result['values'][0]['opt_out_source']);
-    $this->assertEquals('clever place', $result['values'][2]['source']);
-    $this->assertEquals('US', $result['values'][2]['country']);
-    $this->assertEquals('en', $result['values'][2]['language']);
-    $this->assertEquals('07/04/17', $result['values'][2]['created_date']);
+    civicrm_api3('Omnigroupmember', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Shrek', 'password' => 'Fiona', 'options' => array('limit' => 3), 'client' => $client, 'group_identifier' => 123, 'group_id' => $group['id']));
+    $groupMembers = civicrm_api3('GroupContact', 'get', array('group_id' => $group['id']));
+    $this->assertEquals(3, $groupMembers['count']);
+    $contactIDs = array('IN' => array());
+    foreach ($groupMembers['values'] as $groupMember) {
+      $contactIDs['IN'][] = $groupMember['contact_id'];
+    }
+    $contacts = civicrm_api3('Contact', 'get', array(
+      'contact_id' => $contactIDs,
+      'sequential' => 1,
+      'return' => array('contact_source', 'email', 'country', 'created_date', 'preferred_language', 'is_opt_out')
+    ));
+    $this->assertEquals('fr_FR', $contacts['values'][0]['preferred_language']);
+    $this->assertEquals('eric@example.com', $contacts['values'][0]['email']);
+    $this->assertEquals('France', $contacts['values'][0]['country']);
+    $this->assertEquals(1, $contacts['values'][0]['is_opt_out']);
+    $this->assertEquals('Silverpop Added by WebForms 10/18/16', $contacts['values'][0]['contact_source']);
+
+    $this->assertEquals('Silverpop clever place 07/04/17', $contacts['values'][2]['contact_source']);
+
   }
 
 
