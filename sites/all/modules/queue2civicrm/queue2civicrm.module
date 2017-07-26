@@ -1,7 +1,5 @@
 <?php
 use queue2civicrm\DonationQueueConsumer;
-use SmashPig\Core\Configuration;
-use SmashPig\Core\Context;
 
 // include common functions
 require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_common.inc' );

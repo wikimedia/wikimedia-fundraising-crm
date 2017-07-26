@@ -1,7 +1,6 @@
 <?php
 
-use SmashPig\Core\Configuration;
-use SmashPig\Core\Context;
+use SmashPig\Core\DataStores\QueueWrapper;
 
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
 
@@ -394,19 +393,16 @@ function wmf_audit_send_transaction($record, $type) {
  * @throws Exception
  */
 function wmf_audit_send_queue_message( $body, $type ) {
-  $configKeys = array(
-    'main' => 'data-store/donations',
-    'negative' => 'data-store/refund',
-    'recurring' => 'data-store/recurring',
+  $queueNames = array(
+    'main' => 'donations',
+    'negative' => 'refund',
+    'recurring' => 'recurring',
   );
 
-  if (!array_key_exists($type, $configKeys)) {
+  if (!array_key_exists($type, $queueNames)) {
     throw new Exception(__FUNCTION__ . ": Unhandled message type '$type'");
   }
 
   wmf_common_set_message_source($body, 'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor');
-  $newQueue = Configuration::getDefaultConfig()->object(
-    $configKeys[$type]
-  );
-  $newQueue->push( $body );
+  QueueWrapper::push( $queueNames[$type], $body );
 }
