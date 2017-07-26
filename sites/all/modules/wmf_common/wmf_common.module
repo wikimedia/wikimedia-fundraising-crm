@@ -1,9 +1,11 @@
 <?php
 
-use SmashPig\Core\Configuration;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\DamagedDatabase;
-use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
+use SmashPig\Core\DataStores\QueueWrapper;
+use SmashPig\Core\GlobalConfiguration;
+use SmashPig\Core\Logging\Logger;
+use SmashPig\Core\ProviderConfiguration;
 use wmf_common\WmfQueueConsumer;
 
 require_once 'failmail.php';
@@ -305,7 +307,7 @@ function wmf_common_damaged_confirm_delete( $form, $ids ) {
 }
 
 function wmf_common_damaged_confirm_delete_submit( $form, &$form_state ) {
-	wmf_common_create_smashpig_context();
+	wmf_common_create_smashpig_context( 'damaged_message_form' );
 	$ids = explode( ',', $form['#ids'] );
 	$ddb = DamagedDatabase::get();
 	foreach( $ids as $id ) {
@@ -398,7 +400,7 @@ function wmf_common_damaged_item_form( $form, &$form_state, $id ) {
 function wmf_common_damaged_item_submit( $form, &$form_state ) {
 	$delete = false;
 	$id = $form_state['values']['damaged_id'];
-	wmf_common_create_smashpig_context();
+	wmf_common_create_smashpig_context( 'damaged_message_form' );
 
 	switch ( $form_state['values']['op'] ) {
 		case $form_state['values']['resend']:
@@ -410,8 +412,7 @@ function wmf_common_damaged_item_submit( $form, &$form_state ) {
 				}
 			}
 			$queueName = $form_state['values']['original_queue'];
-			$queue = BaseQueueConsumer::getQueue( $queueName );
-			$queue->push( $message );
+			QueueWrapper::push( $queueName, $message );
 			drupal_set_message(
 				t( 'Message %id resent for processing.', array( '%id' => $id ) )
 			);
@@ -435,8 +436,17 @@ function wmf_common_damaged_item_submit( $form, &$form_state ) {
 	}
 }
 
-function wmf_common_create_smashpig_context() {
-	// Initialize SmashPig
-	$config = Configuration::createForView();
-	Context::initWithLogger( $config, 'wmf_common' );
+function wmf_common_create_smashpig_context( $logPrefix, $provider = ProviderConfiguration::NO_PROVIDER ) {
+	// Initialize SmashPig, or set provider configuration if already initialized
+	$ctx = Context::get();
+	if ( $ctx ) {
+		$globalConfig = $ctx->getGlobalConfiguration();
+		$config = ProviderConfiguration::createForProvider( $provider, $globalConfig );
+		$ctx->setProviderConfiguration( $config );
+	} else {
+		$globalConfig = GlobalConfiguration::create();
+		$config = ProviderConfiguration::createForProvider( $provider, $globalConfig );
+		Context::init( $globalConfig, $config );
+	}
+	Logger::setPrefix( $logPrefix );
 }

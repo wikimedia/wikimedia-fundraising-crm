@@ -93,7 +93,7 @@ function civicrm_api3_omnimailing_load($params) {
           'opened_total' => $mailing['number_opened_total'],
           'opened_unique' => $mailing['number_opened_unique'],
           'unsubscribed' => $mailing['number_unsubscribed'],
-          'suppressed' => $mailing['number_unsuppressed'],
+          'suppressed' => $mailing['number_suppressed'],
           // 'forwarded'
           'blocked' => $mailing['number_blocked'],
           // 'clicked_total' => $stats['NumGrossClick'],

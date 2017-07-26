@@ -57,8 +57,7 @@ function orphan_rectify_drush_help($section) {
 function drush_orphan_rectify() {
 	// TODO: SmashPig and DI initialization should be reused from a higher
 	// level and integrated with app config
-	$config = Configuration::createForView( 'globalcollect' );
-	Context::init( $config );
+	wmf_common_create_smashpig_context( 'ingenico_orphan_rectifier', 'ingenico' );
 
 	$rectifier = new GlobalCollectOrphanRectifier();
 	$rectifier->processOrphans();

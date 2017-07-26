@@ -37,10 +37,7 @@ function wmf_audit_menu() {
  * @param array $options Runtime parameters
  */
 function wmf_audit_main( $gateway, $options ) {
-    Context::initWithLogger(
-        Configuration::createForView( $gateway ),
-        "{$gateway}_audit"
-    );
+    wmf_common_create_smashpig_context( "{$gateway}_audit", $gateway );
 
     $audit = module_invoke( "{$gateway}_audit", 'create_processor', $options );
     if ( !$audit ) {

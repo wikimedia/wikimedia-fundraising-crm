@@ -53,8 +53,7 @@ function fredge_batch_process() {
   watchdog('fredge', 'Executing: fredge_batch_process');
 
   civicrm_initialize();
-  $config = Configuration::createForView('default');
-  Context::initWithLogger($config, 'fredge_batch_process');
+  wmf_common_create_smashpig_context( 'fredge_batch_process');
 
   //Let's start with the simplest possible division of labor
   $cycle_time = variable_get('fredge_batch_time', 0) / 2;

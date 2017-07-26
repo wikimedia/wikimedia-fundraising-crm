@@ -41,12 +41,6 @@ class OmnigroupmemberGetTest extends OmnimailBaseTestClass implements EndToEndIn
    * Example: Test that a version is returned.
    */
   public function testOmnigroupmemberGet() {
-    // We are having weird cache issues ... :-( This is fine on extension only tests
-    // but not when run in WMF suite. Trying an extra clear.
-    // Maybe https://github.com/civicrm/civicrm-drupal/pull/447 will help (not on wmf yet).
-    $null = NULL;
-    \Civi::cache('settings')->set('settingsMetadata_' . \CRM_Core_Config::domainID() . '_', $null);
-
     $client = $this->setupSuccessfulDownloadClient();
 
     $result = civicrm_api3('Omnigroupmember', 'get', array('mail_provider' => 'Silverpop', 'username' => 'Shrek', 'password' => 'Fiona', 'options' => array('limit' => 3), 'client' => $client, 'group_identifier' => 123));

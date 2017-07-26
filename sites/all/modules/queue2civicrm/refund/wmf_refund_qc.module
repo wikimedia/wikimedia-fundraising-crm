@@ -79,8 +79,7 @@ function refund_qc_settings() {
  * @ref drush_refund_queue_consume
  */
 function refund_batch_process() {
-  $config = Configuration::createForView( 'default' );
-  Context::initWithLogger( $config, 'refund' );
+  wmf_common_create_smashpig_context( 'refund' );
 
   if ( variable_get('refund_disable', false) ) {
     watchdog( 'wmf_refund_qc', 'Job is disabled.  Exiting.', NULL, WATCHDOG_INFO );
