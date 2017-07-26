@@ -1,8 +1,6 @@
 <?php
 
 use queue2civicrm\refund\RefundQueueConsumer;
-use SmashPig\Core\Configuration;
-use SmashPig\Core\Context;
 /**
  * Implements hook_menu
  */

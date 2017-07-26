@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/bin/bash -eu
 
-BASEDIR=$(dirname $0)
+BASEDIR=$(dirname "$0")
+# shellcheck source=ci-settings.sh
 . $BASEDIR/ci-settings.sh
 
 echo "Creating databases with the prefix '${CIVICRM_SCHEMA_PREFIX}'"

@@ -7,9 +7,6 @@
  * @TODO print some useful info to STDOUT
  */
 
-use SmashPig\Core\Context;
-use SmashPig\Core\Configuration;
-
 /**
  * Implementation of hook_drush_command()
  */

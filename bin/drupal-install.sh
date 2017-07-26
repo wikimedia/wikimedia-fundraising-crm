@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/bash -eu
 
 if [ $# -ne 3 ]; then
-	app_name=`basename $0`
+	app_name=$(basename "$0")
 	cat <<-EOS
 		Usage: $app_name DB_URL SITE_NAME ADMIN_PASSWORD
 
@@ -16,7 +16,7 @@ SITE_NAME=$2
 ADMIN_PASSWORD=$3
 
 drush \
-	--root=`dirname $0`/../drupal \
+	--root="$(dirname "$0")"/../drupal \
     site-install standard \
     --db-url="$DB_URL" \
     --site-name="$SITE_NAME" \

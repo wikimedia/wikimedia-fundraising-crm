@@ -3,9 +3,6 @@
  * Detect and rectify recently orphaned Ingenico transactions
  */
 
-use SmashPig\Core\Configuration;
-use SmashPig\Core\Context;
-
 /**
  * Implementation of hook_drush_command()
  */
