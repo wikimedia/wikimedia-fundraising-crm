@@ -1,6 +1,7 @@
 #!/bin/bash -eu
 
-BASEDIR=$(dirname $0)
+BASEDIR=$(dirname "$0")
+# shellcheck source=ci-settings.sh
 . $BASEDIR/ci-settings.sh
 
 echo "Populating databases with the prefix '${CIVICRM_SCHEMA_PREFIX}'"
@@ -11,15 +12,15 @@ export NO_SAMPLE_DATA=1
 
 #FIXME: --web-root="$WORKSPACE/src/crm"
 
-$WORKSPACE/src/wikimedia/fundraising/civicrm-buildkit/bin/civi-download-tools
+"$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/bin/civi-download-tools
 
-$WORKSPACE/src/wikimedia/fundraising/civicrm-buildkit/bin/amp config:set \
+"$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/bin/amp config:set \
 	--db_type=mysql_precreated \
 	--httpd_type=none \
 	--perm_type=none
 
-rm -rf $WORKSPACE/src/wikimedia/fundraising/civicrm-buildkit/build/wmff
-mkdir -p $WORKSPACE/src/wikimedia/fundraising/civicrm-buildkit/build
-ln -s $WORKSPACE/src/wikimedia/fundraising/crm $WORKSPACE/src/wikimedia/fundraising/civicrm-buildkit/build/wmff
+rm -rf "$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/build/wmff
+mkdir -p "$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/build
+ln -s "$WORKSPACE"/src/wikimedia/fundraising/crm "$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/build/wmff
 
-$WORKSPACE/src/wikimedia/fundraising/civicrm-buildkit/bin/civibuild reinstall wmff
+"$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/bin/civibuild reinstall wmff
