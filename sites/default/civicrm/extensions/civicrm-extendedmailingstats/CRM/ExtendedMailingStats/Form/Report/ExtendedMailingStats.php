@@ -289,7 +289,7 @@ class CRM_ExtendedMailingStats_Form_Report_ExtendedMailingStats extends CRM_Repo
         'type' => CRM_Utils_Type::T_DATE,
       ),
       'recipients' => array(
-        'title' => ts('Number of recipients'),
+        'title' => ts('Number Sent'),
         'is_filters' => TRUE,
         'is_order_bys' => TRUE,
         'is_fields' => TRUE,
@@ -298,7 +298,7 @@ class CRM_ExtendedMailingStats_Form_Report_ExtendedMailingStats extends CRM_Repo
         'type' => CRM_Utils_Type::T_INT,
       ),
       'delivered' => array(
-        'title' => ts('delivered'),
+        'title' => ts('Number delivered'),
         'is_filters' => TRUE,
         'is_order_bys' => TRUE,
         'is_fields' => TRUE,
@@ -313,6 +313,13 @@ class CRM_ExtendedMailingStats_Form_Report_ExtendedMailingStats extends CRM_Repo
       ),
       'bounced' => array(
         'title' => ts('bounced'),
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+        'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
+      ),
+      'suppressed' => array(
+        'title' => ts('Number Supressed by Provider'),
         'is_filters' => TRUE,
         'is_order_bys' => TRUE,
         'is_fields' => TRUE,
