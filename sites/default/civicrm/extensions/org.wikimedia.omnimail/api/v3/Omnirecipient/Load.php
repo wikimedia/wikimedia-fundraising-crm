@@ -34,6 +34,11 @@ function civicrm_api3_omnirecipient_load($params) {
     $omnimail = new CRM_Omnimail_Omnirecipients();
     $recipients = $omnimail->getResult($params);
 
+    $throttleSeconds = CRM_Utils_Array::value('throttle_seconds', $params);
+    $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . ' seconds');
+    $throttleCount = (int) CRM_Utils_Array::value('throttle_number', $params);
+    $rowsLeftBeforeThrottle = $throttleCount;
+
     foreach ($recipients as $recipient) {
       $insertValues = array(
         1 => array((string) $recipient->getContactIdentifier(), 'String'),
@@ -54,7 +59,21 @@ function civicrm_api3_omnirecipient_load($params) {
          (`contact_identifier`, `mailing_identifier`, `email`, `event_type`, `recipient_action_datetime`, `contact_id`)
          values(%1, %2, %3, %4, %5, %6 )",
         $insertValues);
+
+      $rowsLeftBeforeThrottle--;
+      if ($throttleStagePoint && (strtotime('now') > $throttleStagePoint)) {
+        $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . 'seconds');
+        $rowsLeftBeforeThrottle = $throttleCount;
+      }
+      if ($throttleSeconds && $rowsLeftBeforeThrottle <= 0) {
+        sleep(ceil($throttleStagePoint - strtotime('now')));
+      }
     }
+    civicrm_api3('Setting', 'create', array(
+      'omnimail_omnirecipient_load' => array(
+        $params['mail_provider'] => array('last_timestamp' => $omnimail->endTimeStamp),
+      ),
+    ));
     return civicrm_api3_create_success(1);
   }
   catch (CRM_Omnimail_IncompleteDownloadException $e) {
@@ -97,16 +116,27 @@ function _civicrm_api3_omnirecipient_load_spec(&$params) {
     'title' => ts('Date to fetch to'),
     'type' => CRM_Utils_Type::T_TIMESTAMP,
   );
-  $params['mailing_external_identifier'] = array(
-    'title' => ts('Identifier for the mailing'),
+  $params['mailing_prefix'] = array(
+    'title' => ts('A prefix to prepend to the mailing_identifier when storing'),
     'type' => CRM_Utils_Type::T_STRING,
   );
   $params['retrieval_parameters'] = array(
     'title' => ts('Additional information for retrieval of pre-stored requests'),
   );
   $params['table_name'] = array(
-    'title' => 'Name of table to store to',
+    'title' => ts('Name of table to store to'),
     'type' => CRM_Utils_Type::T_STRING,
+  );
+  $params['throttle_number'] = array(
+    'title' => ts('Number of inserts to throttle after'),
+    'type' => CRM_Utils_Type::T_INT,
+    'api.default' => 100000,
+  );
+  $params['throttle_seconds'] = array(
+    'title' => ts('Throttle after the number has been reached in this number of seconds'),
+    'description' => ts('If the throttle limit is passed before this number of seconds is reached php will sleep until it hits it.'),
+    'type' => CRM_Utils_Type::T_INT,
+    'api.default' => 300,
   );
 
 }
