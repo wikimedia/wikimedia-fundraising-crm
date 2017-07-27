@@ -88,7 +88,7 @@
                 "payment",
                 "payments"
             ],
-            "time": "2016-02-17T00:44:20+00:00"
+            "time": "2016-02-17 00:53:20"
         },
         {
             "name": "clio/clio",
@@ -198,7 +198,7 @@
                 "queue",
                 "transaction"
             ],
-            "time": "2017-04-17T14:11:55+00:00"
+            "time": "2017-04-17 14:11:55"
         },
         {
             "name": "cogpowered/finediff",
@@ -2821,7 +2821,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "cd3933b8ee7b263d0472cc44d047b82f3ec4029c"
+                "reference": "c3248b3932e62cd2812aa3502d875b7c12c25c66"
             },
             "require": {
                 "league/csv": "^8.0",
@@ -2860,7 +2860,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2017-07-17 20:03:43"
+            "time": "2017-07-27 02:53:46"
         },
         {
             "name": "wikimedia/smash-pig",
