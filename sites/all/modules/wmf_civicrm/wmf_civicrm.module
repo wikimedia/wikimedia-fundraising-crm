@@ -452,7 +452,7 @@ function _wmf_civicrm_message_contribution_insert( $msg )
                 $invoice_id = $contribution['invoice_id'];
                 $duplicate = civicrm_api3( "Contribution", "getSingle", array( "invoice_id" => $invoice_id ) );
             }
-            if ( $duplicate ) {
+            if ( $duplicate && array_key_exists('id', $duplicate ) ) {
                 $contribution['invoice_id'] = $contribution['invoice_id'] . '|dup-' . UtcDate::getUtcTimeStamp();
                 watchdog( 'wmf_civicrm', 'Found duplicate invoice ID, changing this one to ' . $contribution['invoice_id'], NULL, WATCHDOG_INFO );
                 $contribution_result = civicrm_api3( "Contribution", "Create", $contribution );
