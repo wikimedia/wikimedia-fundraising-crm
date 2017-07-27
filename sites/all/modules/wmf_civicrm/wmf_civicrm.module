@@ -444,15 +444,15 @@ function _wmf_civicrm_message_contribution_insert( $msg )
     }
     catch (CiviCRM_API3_Exception $e) {
         watchdog( 'wmf_civicrm', 'Error inserting contribution: ' . $e->getMessage(), NULL, WATCHDOG_INFO );
-        $duplicate = null;
+        $duplicate = 0;
 
         try {
             if ( array_key_exists( 'invoice_id', $contribution ) ) {
                 watchdog( 'wmf_civicrm', 'Checking for duplicate on invoice ID ' . $contribution['invoice_id'], NULL, WATCHDOG_INFO );
                 $invoice_id = $contribution['invoice_id'];
-                $duplicate = civicrm_api3( "Contribution", "getSingle", array( "invoice_id" => $invoice_id ) );
+                $duplicate = civicrm_api3( "Contribution", "getcount", array( "invoice_id" => $invoice_id ) );
             }
-            if ( $duplicate && array_key_exists('id', $duplicate ) ) {
+            if ( $duplicate > 0 ) {
                 $contribution['invoice_id'] = $contribution['invoice_id'] . '|dup-' . UtcDate::getUtcTimeStamp();
                 watchdog( 'wmf_civicrm', 'Found duplicate invoice ID, changing this one to ' . $contribution['invoice_id'], NULL, WATCHDOG_INFO );
                 $contribution_result = civicrm_api3( "Contribution", "Create", $contribution );

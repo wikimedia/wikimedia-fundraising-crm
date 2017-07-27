@@ -20,6 +20,11 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
   /**
    * @var string
    */
+  public $endTimeStamp;
+
+  /**
+   * @var string
+   */
   protected $job = 'omnirecipient';
 
   /**
@@ -39,7 +44,7 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
     $request = Omnimail::create($params['mail_provider'], $mailerCredentials)->getRecipients();
 
     $startTimestamp = self::getStartTimestamp($params, $jobSettings);
-    $endTimestamp = self::getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
+    $this->endTimeStamp = self::getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
 
     if (isset($jobSettings['retrieval_parameters'])) {
       if (!empty($params['end_date']) || !empty($params['start_date'])) {
@@ -49,18 +54,13 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
     }
     elseif ($startTimestamp) {
       $request->setStartTimeStamp($startTimestamp);
-      $request->setEndTimeStamp($endTimestamp);
+      $request->setEndTimeStamp($this->endTimeStamp);
     }
 
     $result = $request->getResponse();
     for ($i = 0; $i < $settings['omnimail_job_retry_number']; $i++) {
       if ($result->isCompleted()) {
         $data = $result->getData();
-        civicrm_api3('Setting', 'create', array(
-          'omnimail_omnirecipient_load' => array(
-            $params['mail_provider'] => array('last_timestamp' => $endTimestamp),
-          ),
-        ));
         return $data;
       }
       else {
@@ -70,7 +70,7 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
     throw new CRM_Omnimail_IncompleteDownloadException('Download incomplete', 0, array(
       'retrieval_parameters' => $result->getRetrievalParameters(),
       'mail_provider' => $params['mail_provider'],
-      'end_date' => $endTimestamp,
+      'end_date' => $this->endTimeStamp,
     ));
 
   }
