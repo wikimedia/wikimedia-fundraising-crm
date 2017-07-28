@@ -5,6 +5,7 @@ use wmf_communication\TestMailer;
 /**
  * @group Pipeline
  * @group WmfCivicrm
+ * @group Refund
  */
 class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
 
@@ -14,6 +15,11 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
      * @var int
      */
     protected $original_contribution_id;
+    protected $gateway_txn_id;
+    protected $contact_id;
+    protected $original_currency;
+    protected $original_amount;
+    protected $trxn_id;
 
     public function setUp() {
         parent::setUp();
@@ -45,24 +51,10 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
             'trxn_id' => $this->trxn_id,
         ) );
         $this->original_contribution_id = $results['id'];
-
-        $this->refund_contribution_id = null;
     }
 
     public function tearDown() {
-        civicrm_api3('contribution', 'delete', array(
-            'id' => $this->original_contribution_id,
-        ));
-
-        if ($this->refund_contribution_id && $this->refund_contribution_id != $this->original_contribution_id) {
-          civicrm_api3('contribution', 'delete', array(
-            'id' => $this->refund_contribution_id,
-          ));
-        }
-
-        civicrm_api3( 'contact', 'delete', array(
-            'id' => $this->contact_id,
-        ) );
+        $this->cleanUpContact( $this->contact_id );
 
         parent::tearDown();
     }
@@ -151,7 +143,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
      * Make a refund with type set to "chargeback"
      */
     public function testMarkRefundWithType() {
-        $this->refund_contribution_id = wmf_civicrm_mark_refund( $this->original_contribution_id, 'chargeback' );
+        wmf_civicrm_mark_refund( $this->original_contribution_id, 'chargeback' );
 
         $contribution = civicrm_api3('contribution', 'getsingle', array(
           'id' => $this->original_contribution_id,
@@ -174,7 +166,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
         );
 
 
-        $this->refund_contribution_id  = CRM_Core_DAO::singleValueQuery("
+        $refund_contribution_id = CRM_Core_DAO::singleValueQuery("
           SELECT entity_id FROM wmf_contribution_extra
           WHERE
           parent_contribution_id = %1",
@@ -182,7 +174,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
         );
 
         $refund_contribution = civicrm_api3('Contribution', 'getsingle', array(
-          'id' => $this->refund_contribution_id,
+          'id' => $refund_contribution_id,
         ));
 
         $this->assertEquals(
@@ -224,14 +216,15 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
      * Make a lesser refund in the wrong currency
      */
     public function testLesserWrongCurrencyRefund() {
-      $dbtime = '2000-04-03';
-      $epochtime = wmf_common_date_parse_string( $dbtime );
-      $this->setExchangeRates( $epochtime, array('COP' => .01 ) );
+      $epochtime = time();
+      $dbtime = wmf_common_date_unix_to_civicrm( $epochtime );
+      $this->setExchangeRates( $epochtime, array('USD' => 1, 'COP' => .01 ) );
 
       $result = $this->callAPISuccess('contribution', 'create', array(
         'contact_id' => $this->contact_id,
         'financial_type_id' => 'Cash',
         'total_amount' => 200,
+        'currency' => 'USD',
         'contribution_source' => 'COP 20000',
         'trxn_id' => "TEST_GATEWAY {$this->gateway_txn_id} " . (time() + 20),
       ));
@@ -253,7 +246,6 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       $this->assertEquals(3, $contributions['count'], print_r($contributions, TRUE));
       $this->assertEquals(200, $contributions['values'][1]['total_amount']);
       $this->assertEquals('USD', $contributions['values'][2]['currency']);
-      // Exchange rates might move a bit but hopefully it stays less than the original amount.
       $this->assertEquals($contributions['values'][2]['total_amount'], 150);
       $this->assertEquals('COP 15000', $contributions['values'][2]['contribution_source']);
     }

@@ -174,4 +174,19 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
     return $contactID;
   }
 
+  public function cleanUpContact( $contactId ) {
+    $contributions = $this->callAPISuccess('Contribution', 'get', array(
+      'contact_id' => $contactId
+    ) );
+    if ( !empty( $contributions['values'] ) ) {
+      foreach ( $contributions['values'] as $id => $details ) {
+        $this->callAPISuccess( 'Contribution', 'delete', array(
+          'id' => $id
+        ) );
+      }
+    }
+    $this->callAPISuccess('Contact', 'delete', array(
+      'id' => $contactId
+    ) );
+  }
 }
