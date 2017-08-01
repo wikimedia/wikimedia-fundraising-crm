@@ -169,12 +169,18 @@ function recurring_get_contribution_tracking_id( $msg ) {
       sort( $contrib_ids, SORT_NUMERIC );
       $contrib_id = array_shift( $contrib_ids ); // this should return null if $contrib_ids is empty
       $date = wmf_common_date_unix_to_sql( strtotime( $msg[ 'payment_date' ] ));
-      $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking( '..rpp', 'civicrm', null, $date, $contrib_id );
+      $tracking = array(
+        'utm_source' => '..rpp',
+        'utm_medium' => 'civicrm',
+        'ts' => $date,
+        'contribution_id' => $contrib_id
+      );
+      $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking( $tracking );
       watchdog( 'recurring', 'recurring_get_contribution_tracking_id: Inserted contrib tracking id, %cti', array( '%cti' => $contribution_tracking_id ), WATCHDOG_DEBUG );
       return $contribution_tracking_id;
     }
   } else {
-  	watchdog( 'recurring', 'recurring_get_contribution_tracking_id: No contribution_tracking_id returned.', array(), WATCHDOG_DEBUG );
+    watchdog( 'recurring', 'recurring_get_contribution_tracking_id: No contribution_tracking_id returned.', array(), WATCHDOG_DEBUG );
     return null;
   }
 }

@@ -28,34 +28,40 @@ function civicrm_api3_omnimailing_get($params) {
   $mailings = $mailer->getMailings($mailerParameters)->getResponse();
   $results = array();
   foreach ($mailings as $mailing) {
-    $result = array(
-      'subject' => $mailing->getSubject(),
-      'external_identifier' => $mailing->getMailingIdentifier(),
-      'name' => $mailing->getName(),
-      'scheduled_date' => $mailing->getScheduledDate(),
-      'start_date' => $mailing->getSendStartDate(),
-      'number_sent' => $mailing->getNumberSent(),
-      'body_html' => $mailing->getHtmlBody(),
-      'body_text' => $mailing->getTextBody(),
-      'number_bounced' => $mailing->getNumberBounces(),
-      'number_opened_total' => $mailing->getNumberOpens(),
-      'number_opened_unique' => $mailing->getNumberUniqueOpens(),
-      'number_unsubscribed' => $mailing->getNumberUnsubscribes(),
-      'number_suppressed' => $mailing->getNumberSuppressedByProvider(),
-      // 'forwarded'
-      'number_blocked' => $mailing->getNumberBlocked(),
-      // 'clicked_total' => $stats['NumGrossClick'],
-      'number_abuse_complaints' => $mailing->getNumberAbuseReports(),
-    );
+    try {
+      $result = array(
+        'subject' => $mailing->getSubject(),
+        'external_identifier' => $mailing->getMailingIdentifier(),
+        'name' => $mailing->getName(),
+        'scheduled_date' => $mailing->getScheduledDate(),
+        'start_date' => $mailing->getSendStartDate(),
+        'number_sent' => $mailing->getNumberSent(),
+        'body_html' => $mailing->getHtmlBody(),
+        'body_text' => $mailing->getTextBody(),
+        'number_bounced' => $mailing->getNumberBounces(),
+        'number_opened_total' => $mailing->getNumberOpens(),
+        'number_opened_unique' => $mailing->getNumberUniqueOpens(),
+        'number_unsubscribed' => $mailing->getNumberUnsubscribes(),
+        'number_suppressed' => $mailing->getNumberSuppressedByProvider(),
+        // 'forwarded'
+        'number_blocked' => $mailing->getNumberBlocked(),
+        // 'clicked_total' => $stats['NumGrossClick'],
+        'number_abuse_complaints' => $mailing->getNumberAbuseReports(),
+      );
 
-    foreach ($result as $key => $value) {
-      // Assuming we might change provider and they might not return
-      // all the above, we unset any not returned.
-      if ($value === NULL) {
-        unset($result[$key]);
+      foreach ($result as $key => $value) {
+        // Assuming we might change provider and they might not return
+        // all the above, we unset any not returned.
+        if ($value === NULL) {
+          unset($result[$key]);
+        }
       }
+      $results[] = $result;
     }
-    $results[] = $result;
+    catch (Exception $e) {
+      // Continue. It seems we sometimes get back deleted emails which
+      // should not derail the process.
+    }
   }
   return civicrm_api3_create_success($results);
 }
