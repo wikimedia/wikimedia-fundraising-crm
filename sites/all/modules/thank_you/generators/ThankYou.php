@@ -28,6 +28,7 @@ class ThankYou extends RenderTranslatedPage {
 			'/\[endifRecurringProblem\]<\/p>/' => "</p>\n{% endif %}",
 			'/(<p>)?\[ifRecurring\]\s*/' => "{% if recurring %}\n\\1",
 			'/\s*\[endifRecurring\]\s*(<\/p>)?/' => "\\1\n{% endif %}",
+			'/\[#?unsubscribe ((?:(?!\]).)*)\]/' => '<a href="{{ unsubscribe_link | raw }}">$1</a>',
 			// All of the thank you letter's if...endif blocks should be outside p tags, not inside
 			'/<p>\s*({%\s*if [^}]+})\s*/i' => "\\1\n<p>",
 			'/\s*{%\s*endif\s*%}\s*<\/p>/i' => "</p>\n{% endif %}",
