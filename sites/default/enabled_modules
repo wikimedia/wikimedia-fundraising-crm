@@ -16,6 +16,7 @@ libraries
 oauth_common
 oauth_common_providerui
 offline2civicrm
+orphan_slayer
 queue2civicrm
 recurring
 recurring_globalcollect

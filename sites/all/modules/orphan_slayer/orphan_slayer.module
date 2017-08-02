@@ -1,0 +1,18 @@
+<?php
+
+use \SmashPig\Core\UtcDate;
+
+function orphan_slayer_process_orphans($gateway, $time = 30)
+{
+    $slayer = new OrphanSlayer($gateway);
+    $orphan = $slayer->get_oldest();
+    while ($orphan && ($orphan['date'] < UtcDate::getUtcTimestamp("-$time minutes"))) {
+        if ($orphan['contribution_tracking_id']) {
+            $result = $slayer->rectify($orphan);
+            watchdog('orphan slayer', 'orphan ' .$orphan['contribution_tracking_id'] . ': was rectified and the result is ' . print_r($result, true));
+        } else {
+            $slayer->cancel($orphan);
+        }
+        $orphan = $slayer->get_oldest();
+    }
+}
