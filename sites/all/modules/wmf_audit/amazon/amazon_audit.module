@@ -56,19 +56,14 @@ function amazon_audit_settings() {
 
 function amazon_audit_create_processor( $options ) {
 	/**
-	 * To override default audit parser settings, you can create a
-	 * file at $settings_file with content like this:
+	 * To override default audit parser settings, edit the SmashPig
+	 * processor configuration amazon/main.yaml:
 	 *
-	 * $config = array(
-	 *		'amazon' => array(
-	 *			'audit' => array(
-	 *				'file-types' => array(
-	 *					'SmashPig\PaymentProviders\Amazon\Audit\RefundReport',
-	 *					'SmashPig\PaymentProviders\Amazon\Audit\SettlementReport',
-	 *				),
-	 *			),
-	 *		),
-	 * );
+	 * audit:
+	 *     file-types:
+	 *         - SmashPig\PaymentProviders\Amazon\Audit\RefundReport
+	 *         - SmashPig\PaymentProviders\Amazon\Audit\SettlementReport
+	 *
 	 */
 	return new AmazonAuditProcessor( $options );
 }

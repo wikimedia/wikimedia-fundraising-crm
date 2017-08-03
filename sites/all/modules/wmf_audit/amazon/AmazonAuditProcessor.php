@@ -1,12 +1,12 @@
 <?php
 
-use SmashPig\PaymentProviders\Amazon\Audit\AuditParser;
+use SmashPig\PaymentProviders\Amazon\Audit\AmazonAudit;
 
 class AmazonAuditProcessor extends BaseAuditProcessor {
 	protected $name = 'amazon';
 
 	protected function get_audit_parser() {
-		return new AuditParser();
+		return new AmazonAudit();
 	}
 
 	protected function get_recon_file_sort_key( $file ) {

@@ -88,7 +88,7 @@
                 "payment",
                 "payments"
             ],
-            "time": "2016-02-17 00:53:20"
+            "time": "2016-02-17T00:44:20+00:00"
         },
         {
             "name": "clio/clio",
@@ -198,7 +198,7 @@
                 "queue",
                 "transaction"
             ],
-            "time": "2017-04-17 14:11:55"
+            "time": "2017-04-17T14:11:55+00:00"
         },
         {
             "name": "cogpowered/finediff",
@@ -1056,7 +1056,7 @@
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2017-07-24 07:31:30"
+            "time": "2017-07-24T07:31:30+00:00"
         },
         {
             "name": "neitanod/forceutf8",
@@ -1213,7 +1213,7 @@
                 "sendgrid",
                 "sendinblue"
             ],
-            "time": "2017-05-15 13:50:56"
+            "time": "2017-05-15T13:50:56+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -2813,7 +2813,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2017-07-12 20:59:10"
+            "time": "2017-07-12T20:59:10+00:00"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
@@ -2860,7 +2860,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2017-07-27 02:53:46"
+            "time": "2017-07-27T02:53:46+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -2868,7 +2868,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "28035b9795b5cb70689a142a08377c2d03574956"
+                "reference": "c188e2e90c4a753d17ca8e9ecbd58aa943b5fce2"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -2920,7 +2920,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2017-07-17 14:48:07"
+            "time": "2017-08-03T18:29:58+00:00"
         },
         {
             "name": "zordius/lightncandy",
