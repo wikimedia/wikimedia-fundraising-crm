@@ -63,9 +63,81 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
     $this->assertEquals('Silverpop Added by WebForms 10/18/16', $contacts['values'][0]['contact_source']);
 
     $this->assertEquals('Silverpop clever place 07/04/17', $contacts['values'][2]['contact_source']);
+    $this->cleanupGroup($group);
 
   }
 
+  /**
+   * Test when download does not complete in time.
+   */
+  public function testOmnigroupmemberLoadIncomplete() {
+    civicrm_api3('Setting', 'create', array(
+      'omnimail_omnigroupmembers_load' => array(
+        'Silverpop' => array('last_timestamp' => '1487890800'),
+      ),
+    ));
+    $responses = array(
+      file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
+    );
+    for ($i = 0; $i < 15; $i++) {
+      $responses[] = file_get_contents(__DIR__ . '/Responses/JobStatusWaitingResponse.txt');
+    }
+    civicrm_api3('setting', 'create', array('omnimail_job_retry_interval' => 0.01));
+    $group = civicrm_api3('Group', 'create', array('name' => 'Omnimailers2', 'title' => 'Omni2'));
+
+    civicrm_api3('Omnigroupmember', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $this->getMockRequest($responses), 'group_identifier' => 123, 'group_id' => $group['id']));
+
+    $groupMembers = civicrm_api3('GroupContact', 'get', array('group_id' => $group['id']));
+    $this->assertEquals(0, $groupMembers['count']);
+
+    $this->assertEquals(array(
+      'last_timestamp' => '1487890800',
+      'retrieval_parameters' => array(
+        'jobId' => '101719657',
+        'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
+      ),
+      'progress_end_date' => '1488495600',
+    ), $this->getJobSettings());
+    $this->cleanupGroup($group);
+  }
+
+  /**
+   * After completing an incomplete download the end date should be the progress end date.
+   */
+  public function testCompleteIncomplete() {
+    $client = $this->setupSuccessfulDownloadClient();
+    $group = civicrm_api3('Group', 'create', array('name' => 'Omnimailers3', 'title' => 'Omni3'));
+    civicrm_api3('setting', 'create', array(
+      'omnimail_omnigroupmembers_load' => array(
+        'Silverpop' => array(
+          'last_timestamp' => '1487890800',
+          'retrieval_parameters' => array(
+            'jobId' => '101719657',
+            'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
+          ),
+          'progress_end_date' => '1488150000',
+        ),
+      ),
+    ));
+
+    civicrm_api3('Omnigroupmember', 'load', array(
+      'mail_provider' => 'Silverpop',
+      'username' => 'Shrek',
+      'password' => 'Fiona',
+      'options' => array('limit' => 3),
+      'client' => $client,
+      'group_identifier' => 123,
+      'group_id' => $group['id'],
+     ));
+
+    $groupMembers = civicrm_api3('GroupContact', 'get', array('group_id' => $group['id']));
+    $this->assertEquals(3, $groupMembers['count']);
+
+    $this->assertEquals(array(
+      'last_timestamp' => '1488495600',
+    ), $this->getJobSettings(array('mail_provider' => 'Silverpop')));
+    $this->cleanupGroup($group);
+  }
 
   /**
    * @return \GuzzleHttp\Client
@@ -82,4 +154,27 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
     $client = $this->getMockRequest($responses);
     return $client;
   }
+
+  /**
+   * Get job settings.
+   *
+   * @return array
+   */
+  public function getJobSettings() {
+    $omnimail = new CRM_Omnimail_Omnigroupmembers();
+    return $omnimail->getJobSettings(array('mail_provider' => 'Silverpop'));
+  }
+
+  /**
+   * @param $group
+   */
+  protected function cleanupGroup($group) {
+    civicrm_api3('GroupContact', 'get', array(
+      'group_id' => $group['id'],
+      'api.contact.delete' => array('skip_undelete' => 1),
+    ));
+    civicrm_api3('Group', 'delete', array('id' => $group['id']));
+
+  }
+
 }

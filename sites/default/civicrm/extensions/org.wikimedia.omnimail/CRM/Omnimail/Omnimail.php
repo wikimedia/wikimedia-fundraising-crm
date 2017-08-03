@@ -22,6 +22,11 @@ class CRM_Omnimail_Omnimail {
   protected $job;
 
   /**
+   * @var string
+   */
+  public $endTimeStamp;
+
+  /**
    * Get the timestamp to start from.
    *
    * @param array $params

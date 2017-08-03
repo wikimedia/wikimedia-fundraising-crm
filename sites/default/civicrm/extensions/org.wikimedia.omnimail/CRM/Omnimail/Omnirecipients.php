@@ -20,11 +20,6 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
   /**
    * @var string
    */
-  public $endTimeStamp;
-
-  /**
-   * @var string
-   */
   protected $job = 'omnirecipient';
 
   /**

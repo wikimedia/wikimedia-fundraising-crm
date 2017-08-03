@@ -14,11 +14,36 @@
  * @return array
  */
 function civicrm_api3_omnigroupmember_load($params) {
-  $contacts = civicrm_api3('Omnigroupmember', 'get', $params);
+  $values = array();
+
+  $throttleSeconds = CRM_Utils_Array::value('throttle_seconds', $params);
+  $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . ' seconds');
+  $throttleCount = (int) CRM_Utils_Array::value('throttle_number', $params);
+  $rowsLeftBeforeThrottle = $throttleCount;
+
+  $job = new CRM_Omnimail_Omnigroupmembers();
+  try {
+    $contacts = $job->getResult($params);
+  }
+  catch (CRM_Omnimail_IncompleteDownloadException $e) {
+    $jobSettings = $job->getJobSettings($params);
+    civicrm_api3('Setting', 'create', array(
+      'omnimail_omnigroupmembers_load' => array(
+        $params['mail_provider'] => array(
+          'last_timestamp' => $jobSettings['last_timestamp'],
+          'retrieval_parameters' => $e->getRetrievalParameters(),
+          'progress_end_date' => $e->getEndTimestamp(),
+        ),
+      ),
+    ));
+    return civicrm_api3_create_success(1);
+  }
+
   $defaultLocationType = CRM_Core_BAO_LocationType::getDefault();
   $locationTypeID = $defaultLocationType->id;
 
-  foreach ($contacts['values'] as $groupMember) {
+  foreach ($contacts as $contact) {
+    $groupMember = $job->formatRow($contact, $params['custom_data_map']);
     if (!empty($groupMember['email']) && !civicrm_api3('email', 'getcount', array('email' => $groupMember['email']))) {
       // If there is already a contact with this email we will skip for now.
       // It might that we want to create duplicates, update contacts or do other actions later
@@ -51,7 +76,21 @@ function civicrm_api3_omnigroupmember_load($params) {
       }
       $values[$contact['id']] = reset($contact['values']);
     }
+
+    $rowsLeftBeforeThrottle--;
+    if ($throttleStagePoint && (strtotime('now') > $throttleStagePoint)) {
+      $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . 'seconds');
+      $rowsLeftBeforeThrottle = $throttleCount;
+    }
+    if ($throttleSeconds && $rowsLeftBeforeThrottle <= 0) {
+      sleep(ceil($throttleStagePoint - strtotime('now')));
+    }
   }
+  civicrm_api3('Setting', 'create', array(
+    'omnimail_omnigroupmembers_load' => array(
+      $params['mail_provider'] => array('last_timestamp' => $job->endTimeStamp),
+    ),
+  ));
   return civicrm_api3_create_success($values);
 }
 
@@ -126,7 +165,6 @@ function _civicrm_api3_omnigroupmember_load_spec(&$params) {
   );
   $params['start_date'] = array(
     'title' => ts('Date to fetch from'),
-    'api.default' => '3 days ago',
     'type' => CRM_Utils_Type::T_TIMESTAMP,
   );
   $params['end_date'] = array(
@@ -140,6 +178,36 @@ function _civicrm_api3_omnigroupmember_load_spec(&$params) {
   );
   $params['retrieval_parameters'] = array(
     'title' => ts('Additional information for retrieval of pre-stored requests'),
+  );
+  $params['custom_data_map'] = array(
+    'type' => CRM_Utils_Type::T_STRING,
+    'title' => ts('Custom fields map'),
+    'description' => array('custom mappings pertaining to the mail provider fields'),
+    'api.default' => array(
+      'language' => 'rml_language',
+      'source' => 'rml_source',
+      'created_date' => 'rml_submitdate',
+      'country' => 'rml_country',
+    ),
+  );
+  $params['is_opt_in_only'] = array(
+    'type' => CRM_Utils_Type::T_BOOLEAN,
+    'title' => ts('Opted in contacts only'),
+    'description' => array('Restrict to opted in contacts'),
+    'api.default' => 1,
+  );
+
+  $params['throttle_number'] = array(
+    'title' => ts('Number of inserts to throttle after'),
+    'type' => CRM_Utils_Type::T_INT,
+    'api.default' => 5000,
+  );
+
+  $params['throttle_seconds'] = array(
+    'title' => ts('Throttle after the number has been reached in this number of seconds'),
+    'description' => ts('If the throttle limit is passed before this number of seconds is reached php will sleep until it hits it.'),
+    'type' => CRM_Utils_Type::T_INT,
+    'api.default' => 60,
   );
 
 }
