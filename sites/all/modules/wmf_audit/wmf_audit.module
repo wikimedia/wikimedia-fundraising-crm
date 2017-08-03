@@ -239,37 +239,6 @@ function wmf_audit_error_isfatal($error) {
 }
 
 /**
- * Sometimes, syslog is a jerk and truncates lines in the middle of some XML. If
- * that happens, this will salvage whatever it didn't cut off.
- * @param string $node The node we want to see if we have a complete value for
- * in what's left of the xml string.
- * @param string $xml The truncated sad XML string. Or, what's left of it.
- * @return string|null If we have the entire node, the value of that node.
- * Otherwise, null.
- */
-function wmf_audit_get_partial_xml_node_value($node, $xml) {
-  $node1 = "<$node>";
-  $node2 = "</$node>";
-
-  $valstart = strpos($xml, $node1) + strlen($node1);
-  if (!$valstart) {
-    return null;
-  }
-
-  $valend = strpos($xml, $node2);
-  if (!$valend) { //it cut off in that node. This next thing is therefore safe(ish).
-    $valend = strpos($xml, '</');
-  }
-
-  if (!$valend) {
-    return null;
-  }
-
-  $value = substr($xml, $valstart, $valend - $valstart);
-  return $value;
-}
-
-/**
  * Returns the contribution tracking data for $record, if we can find it.
  * Sometimes even if we can't find it: If we're running in fakedb mode, it'll
  * stuff in placeholders.
@@ -405,4 +374,45 @@ function wmf_audit_send_queue_message( $body, $type ) {
 
   wmf_common_set_message_source($body, 'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor');
   QueueWrapper::push( $queueNames[$type], $body );
+}
+
+/**
+ * Checks to make sure that the message we're working on, is complete enough to
+ * send.
+ * @param type $message
+ */
+function wmf_audit_get_message_missing_fields($message) {
+  $common_fields = array(
+    'contribution_tracking_id' => true,
+    'utm_source' => true,
+    'utm_medium' => true,
+    'utm_campaign' => true,
+    'language' => true,
+    'referrer' => true,
+    'email' => true,
+    'first_name' => true,
+    'middle_name' => false,
+    'last_name' => true,
+    'street_address' => false,
+    'supplemental_address_1' => false,
+    'city' => false,
+    'state_province' => false,
+    'country' => true,
+    'postal_code' => false,
+    'gateway' => true,
+    'gateway_account' => false,
+    'gateway_txn_id' => true,
+    'payment_method' => true,
+    'payment_submethod' => true,
+    'response' => false, //but cool
+    'currency' => true,
+    'fee' => true,
+    'gross' => true,
+    'net' => true,
+    'user_ip' => true,
+    'date' => true,
+    'recurring' => true,
+  );
+  //but if we're a chargeback or something, we won't have all of those.
+  //What's the rational subset to expect?
 }

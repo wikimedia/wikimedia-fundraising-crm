@@ -83,5 +83,11 @@ function _civicrm_api3_omnigroupmember_get_spec(&$params) {
       'country' => 'rml_country',
     ),
   );
+  $params['is_opt_in_only'] = array(
+    'type' => CRM_Utils_Type::T_BOOLEAN,
+    'title' => ts('Opted in contacts only'),
+    'description' => array('Restrict to opted in contacts'),
+    'api.default' => 1,
+  );
 
 }
