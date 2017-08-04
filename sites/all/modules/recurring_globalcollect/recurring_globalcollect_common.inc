@@ -155,7 +155,7 @@ EOS;
  * There are two different queries in this function.
  * - payments need to be marked as failure
  * - payments need to be marked as cancelled if there have been two prior failures for this EFFORTID (`processor_id`)
- *
+ * FIXME: should use 'installements' column, not processor_id
  * These are the possible values for `contribution_status_id`:
  * XXX actually the ids are determined by querying the db
  * - [1] => Completed (previous donation succeeded, or new donation that has never been recurred before)
@@ -268,9 +268,9 @@ function _recurring_globalcollect_update_record_in_progress($id) {
  *
  * Payments will be rescheduled for the following month.
  *
- * @param integer $id     The primary key of the record.
+ * @param integer $id The primary key of the record.
  *
- * @return integer  Returns the number of affected rows.
+ * @return int Returns the number of affected rows.
  */
 function _recurring_globalcollect_update_record_success($id) {
 
@@ -292,6 +292,8 @@ function _recurring_globalcollect_update_record_success($id) {
           'contribution_status_id' => civicrm_api_contribution_status('Completed'),
           'next_sched_contribution_date' => $next_sched_contribution,
       ) )
+      // FIXME: misuse of processor_id - it should indicate which payment
+      // processor the recurring payment is registered with.
       ->expression( 'processor_id', "processor_id + 1" )
       ->condition( 'id', $id )
       ->execute();
