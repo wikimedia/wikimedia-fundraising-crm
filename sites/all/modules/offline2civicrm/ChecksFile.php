@@ -1,5 +1,7 @@
 <?php
 
+use SmashPig\CrmLink\Messages\SourceFields;
+
 /**
  * CSV batch format for manually-keyed donation checks
  *
@@ -45,6 +47,9 @@ abstract class ChecksFile {
         $this->skipped_file_uri = str_replace('.csv', '_skipped.' . $suffix, $file_uri);
         $this->ignored_file_uri = str_replace('.csv', '_ignored.' . $suffix, $file_uri);
         $this->all_missed_file_uri = str_replace('.csv', '_all_missed.' . $suffix, $file_uri);
+        wmf_common_set_smashpig_message_source(
+            'direct', 'Offline importer: ' . get_class( $this )
+        );
     }
 
   /**
@@ -222,10 +227,9 @@ abstract class ChecksFile {
 
         $this->mungeMessage( $msg );
 
-        $this->validateRequiredFields($msg);
+        $this->validateRequiredFields( $msg );
 
-        wmf_common_set_message_source( $msg, 'direct', 'Offline importer: ' . get_class( $this ) );
-
+        SourceFields::addToMessage( $msg );
         return $msg;
     }
 
