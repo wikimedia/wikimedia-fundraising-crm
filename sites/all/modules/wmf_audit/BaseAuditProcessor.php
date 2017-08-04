@@ -187,7 +187,7 @@ abstract class BaseAuditProcessor {
 
 	/**
 	 * Checks the array to see if the data inside is describing a refund.
-	 * @param aray $record The transaction we would like to know is a refund or not.
+	 * @param array $record The transaction we would like to know is a refund or not.
 	 * @return boolean true if it is, otherwise false
 	 */
 	protected function record_is_refund( $record ) {
@@ -196,7 +196,7 @@ abstract class BaseAuditProcessor {
 
 	/**
 	 * Checks the array to see if the data inside is describing a chargeback.
-	 * @param aray $record The transaction we would like to know is a chargeback or
+	 * @param array $record The transaction we would like to know is a chargeback or
 	 * not.
 	 * @return boolean true if it is, otherwise false
 	 */
@@ -206,7 +206,7 @@ abstract class BaseAuditProcessor {
 
 	/**
 	 * Checks the array to see if the data inside is describing a cancel.
-	 * @param aray $record The transaction we would like to know is a cancel or
+	 * @param array $record The transaction we would like to know is a cancel or
 	 * not.
 	 * @return boolean true if it is, otherwise false
 	 */
@@ -1006,7 +1006,7 @@ abstract class BaseAuditProcessor {
 	 * Visualization helper. Returns the character we want to display for the kind
 	 * of transaction we have just parsed out of a recon file.
 	 * @param array $record A single transaction from a recon file
-	 * @return char A single char to display in the char block.
+	 * @return string A single char to display in the char block.
 	 */
 	protected function audit_echochar( $record ) {
 
@@ -1022,24 +1022,34 @@ abstract class BaseAuditProcessor {
 			return 'x';
 		}
 
-		if ( $record['payment_method'] === 'cc' ) {
-			return 'c';
+		switch( $record['payment_method'] ) {
+			case 'cc':
+				return 'c';
+			case 'bt':
+			case 'rtbt':
+			case 'obt':
+				return 't';
+			case 'cash':
+				return 'h';
+			case 'amazon':
+				return 'a';
+			case 'paypal':
+				return 'p';
+			case 'dd':
+				return 'd';
+			case 'check':
+			case 'stock':
+				return 'k';
+			case 'ew':
+				return 'w';
 		}
-
-		if ( $record['payment_method'] === 'bt' ) {
-			return 't';
-		}
-
-		if ( $record['payment_method'] === 'cash' ) {
-			return 'h';
-		}
-
-		if ( $record['payment_method'] === 'amazon' ) {
-			return 'a';
-		}
-
+		if ( $record)
 		echo print_r( $record, true );
-		throw new Exception( __FUNCTION__ . " Not cc, bt, cash, or Amazon..." );
+		wmf_audit_log_error(
+			__FUNCTION__ . " Appeareth a payment_method hitherto unknown...",
+			'DATA_WEIRD'
+		);
+		return '?';
 	}
 
 	/**
