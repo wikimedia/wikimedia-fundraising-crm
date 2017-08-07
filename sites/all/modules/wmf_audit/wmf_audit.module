@@ -37,7 +37,9 @@ function wmf_audit_menu() {
  */
 function wmf_audit_main( $gateway, $options ) {
     wmf_common_create_smashpig_context( "{$gateway}_audit", $gateway );
-
+    wmf_common_set_smashpig_message_source(
+        'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor'
+    );
     $audit = module_invoke( "{$gateway}_audit", 'create_processor', $options );
     if ( !$audit ) {
         throw new Exception( "Gateway [$gateway] not found" );
@@ -372,7 +374,6 @@ function wmf_audit_send_queue_message( $body, $type ) {
     throw new Exception(__FUNCTION__ . ": Unhandled message type '$type'");
   }
 
-  wmf_common_set_message_source($body, 'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor');
   QueueWrapper::push( $queueNames[$type], $body );
 }
 

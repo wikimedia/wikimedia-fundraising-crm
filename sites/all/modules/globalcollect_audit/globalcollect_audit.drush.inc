@@ -70,7 +70,9 @@ function globalcollect_audit_reset_drush_vars(){
  */
 function drush_globalcollect_audit() {
 	wmf_common_create_smashpig_context( 'ingenico_audit', 'ingenico' );
-
+	wmf_common_set_smashpig_message_source(
+		'audit', 'GlobalCollect WR1 Auditor'
+	);
 	//$args = drush_get_arguments();
 	
 	//if the last execution died before we got back here

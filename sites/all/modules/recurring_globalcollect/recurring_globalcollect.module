@@ -403,9 +403,6 @@ function recurring_globalcollect_create_message( $contribution_recur_id ) {
         //FIXME: ignored cos we already have a contact
         'email' => 'nobody@wikimedia.org',
     );
-
-    wmf_common_set_message_source( $msg, 'direct', 'Recurring GlobalCollect' );
-
     return $msg;
 }
 

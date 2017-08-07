@@ -350,7 +350,7 @@ function globalcollect_audit_parse_all_wr1(){
 			if ( $test_mode ){
 				$local_found_ids[] = $order_id;
 			} else {
-				globalcollect_audit_send_queue_message( 'donations', $missing_txn_message );
+				QueueWrapper::push( 'donations', $missing_txn_message );
 				watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to queue successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
 				$local_found_ids[] = $order_id;
 			}
@@ -386,7 +386,7 @@ function globalcollect_audit_parse_all_wr1(){
 			if ( $test_mode ){
 				$local_built_ids[] = $order_id;
 			} else {
-				globalcollect_audit_send_queue_message( 'donations', $missing_txn_message );
+				QueueWrapper::push( 'donations', $missing_txn_message );
 				watchdog('globalcollect_audit', __FUNCTION__ . ': Message sent to queue successfully: ' . print_r( $missing_txn_message, true ), array(), WATCHDOG_INFO);
 				$local_built_ids[] = $order_id;
 			}
@@ -1032,7 +1032,7 @@ function globalcollect_audit_mark_rfd_cbk( $missing ){
 				'type' => wr1_get_negative_type( $wr1 ), //refund or chargeback
 			);
 			echo print_r( $send_message, true );
-			globalcollect_audit_send_queue_message( 'refund', $send_message );
+			QueueWrapper::push( 'refund', $send_message );
 			$count += 1;
 			globalcollect_audit_echo( '.' );
 			unset( $missing[$index] ); //only unset if we killed it
@@ -1989,13 +1989,6 @@ function gca_wr1_key_grinder( $record, $keys, $name, $error_on_mismatch = false 
 		}
 		return null;
 	}
-}
-
-function globalcollect_audit_send_queue_message( $queueId, $body ) {
-
-	wmf_common_set_message_source( $body, 'audit', 'GlobalCollect WR1 Auditor' );
-
-    QueueWrapper::push( $queueId, $body );
 }
 
 /**

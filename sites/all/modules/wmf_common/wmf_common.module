@@ -137,15 +137,6 @@ function wmf_common_locale_civi_to_mediawiki( $locale ) {
     return strtolower( str_replace( '_', '-', $locale ) );
 }
 
-function wmf_common_set_message_source( &$msg, $type, $name ) {
-    $msg['source_type'] = $type;
-    $msg['source_name'] = $name;
-    $msg['source_host'] = gethostname();
-    $msg['source_version'] = wmf_common_get_my_revision();
-    $msg['source_run_id'] = getmypid();
-    $msg['source_enqueued_time'] = time();
-}
-
 function wmf_common_damaged_search_form( $form, &$form_state ) {
 	if ( isset( $form_state['confirm_delete'] ) ) {
 		// WTF. If you try to do a bulk operation after loading the form
@@ -401,6 +392,7 @@ function wmf_common_damaged_item_submit( $form, &$form_state ) {
 	$delete = false;
 	$id = $form_state['values']['damaged_id'];
 	wmf_common_create_smashpig_context( 'damaged_message_form' );
+	wmf_common_set_smashpig_message_source( 'direct', 'Damaged message UI' );
 
 	switch ( $form_state['values']['op'] ) {
 		case $form_state['values']['resend']:
@@ -447,6 +439,14 @@ function wmf_common_create_smashpig_context( $logPrefix, $provider = ProviderCon
 		$globalConfig = GlobalConfiguration::create();
 		$config = ProviderConfiguration::createForProvider( $provider, $globalConfig );
 		Context::init( $globalConfig, $config );
+		wmf_common_set_smashpig_message_source( 'direct', 'CiviCRM' );
 	}
 	Logger::setPrefix( $logPrefix );
+}
+
+function wmf_common_set_smashpig_message_source( $type, $name ) {
+	$ctx = Context::get();
+	$ctx->setSourceType( $type );
+	$ctx->setSourceName( $name );
+	$ctx->setVersionFromFile( DRUPAL_ROOT . "/.version-stamp" );
 }

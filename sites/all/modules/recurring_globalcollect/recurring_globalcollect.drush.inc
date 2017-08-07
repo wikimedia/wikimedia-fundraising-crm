@@ -53,7 +53,7 @@ function recurring_globalcollect_drush_help( $section ) {
  */
 function drush_recurring_globalcollect() {
   wmf_common_create_smashpig_context( 'ingenico_recurring', 'ingenico' );
-
+  wmf_common_set_smashpig_message_source( 'direct', 'Recurring GlobalCollect' );
   $date = drush_get_option('date');
   $url = drush_get_option('url');
   $batch = drush_get_option('batch');
