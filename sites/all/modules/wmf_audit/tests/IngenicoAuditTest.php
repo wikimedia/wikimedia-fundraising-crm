@@ -97,6 +97,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 						'gateway' => 'globalcollect', // TODO: Connect donations get 'ingenico'
 						'gateway_txn_id' => '987654321',
 						'gross' => '3.00',
+						'installment' => 1,
 						'last_name' => 'Aardvark',
 						'order_id' => '987654321',
 						'payment_method' => 'cc',
@@ -118,6 +119,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 						'date' => 1500942220,
 						'gateway' => 'globalcollect',
 						'gateway_parent_id' => '11992288',
+						'gateway_refund_id' => '11992288',
 						'gross' => '100.00',
 						'gross_currency' => 'USD',
 						'type' => 'refund',
@@ -130,6 +132,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 						'date' => 1495023569,
 						'gateway' => 'globalcollect',
 						'gateway_parent_id' => '55500002',
+						'gateway_refund_id' => '55500002',
 						'gross' => '200.00',
 						'gross_currency' => 'USD',
 						'type' => 'chargeback',
