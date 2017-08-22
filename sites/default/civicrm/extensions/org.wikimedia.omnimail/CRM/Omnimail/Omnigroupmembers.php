@@ -25,7 +25,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
   /**
    * @param array $params
    *
-   * @return \Omnimail\Silverpop\Responses\RecipientsResponse
+   * @return \Omnimail\Silverpop\Responses\GroupMembersResponse
    *
    * @throws \CRM_Omnimail_IncompleteDownloadException
    * @throws \API_Exception
@@ -43,7 +43,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     $request = Omnimail::create($params['mail_provider'], $mailerCredentials)->getGroupMembers($jobParameters);
 
     $startTimestamp = self::getStartTimestamp($params, $jobSettings);
-    $endTimestamp = self::getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
+    $this->endTimeStamp = self::getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
 
     if (isset($jobSettings['retrieval_parameters'])) {
       if (!empty($params['end_date']) || !empty($params['start_date'])) {
@@ -53,7 +53,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     }
     elseif ($startTimestamp) {
       $request->setStartTimeStamp($startTimestamp);
-      $request->setEndTimeStamp($endTimestamp);
+      $request->setEndTimeStamp($this->endTimeStamp);
     }
     $request->setGroupIdentifier($params['group_identifier']);
 
@@ -61,23 +61,66 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     for ($i = 0; $i < $settings['omnimail_job_retry_number']; $i++) {
       if ($result->isCompleted()) {
         $data = $result->getData();
-        civicrm_api3('Setting', 'create', array(
-          'omnimail_' . $this->job . '_load' => array(
-            $params['mail_provider'] => array('last_timestamp' => $endTimestamp),
-          ),
-        ));
         return $data;
       }
       else {
         sleep($settings['omnimail_job_retry_interval']);
       }
     }
+
     throw new CRM_Omnimail_IncompleteDownloadException('Download incomplete', 0, array(
       'retrieval_parameters' => $result->getRetrievalParameters(),
       'mail_provider' => $params['mail_provider'],
-      'end_date' => $endTimestamp,
+      'end_date' => $this->endTimeStamp,
     ));
 
   }
+
+  /**
+   * Format the result into the fields we with to return.
+   *
+   * @param array $params
+   * @param \Omnimail\Silverpop\Responses\Contact $result
+   *
+   * @return array
+   */
+  public function formatResult($params, $result) {
+    $options = _civicrm_api3_get_options_from_params($params);
+    $values = array();
+    foreach ($result as $groupMember) {
+      $value = $this->formatRow($groupMember, $params['custom_data_map']);
+      $values[] = $value;
+      if ($options['limit'] > 0 && count($values) === (int) $options['limit']) {
+        break;
+      }
+    }
+    return $values;
+  }
+
+  /**
+   * Format a single row of the result.
+   *
+   * @param $groupMember
+   * @param array $customDataMap
+   *   - Mapping of provider fields to desired output fields.
+   *
+   * @return array
+   */
+  public function formatRow($groupMember, $customDataMap) {
+    $value = array(
+      'email' => (string) $groupMember->getEmail(),
+      'is_opt_out' => (string) $groupMember->isOptOut(),
+      'opt_in_date' => (string) $groupMember->getOptInIsoDateTime(),
+      'opt_in_source' => (string) $groupMember->getOptInSource(),
+      'opt_out_source' => (string) $groupMember->getOptOutSource(),
+      'opt_out_date' => (string) $groupMember->getOptOutIsoDateTime(),
+      'contact_id' => (string) $groupMember->getContactReference(),
+    );
+    foreach ($customDataMap as $fieldName => $dataKey) {
+      $value[$fieldName] = (string) $groupMember->getCustomData($dataKey);
+    }
+    return $value;
+  }
+
 
 }

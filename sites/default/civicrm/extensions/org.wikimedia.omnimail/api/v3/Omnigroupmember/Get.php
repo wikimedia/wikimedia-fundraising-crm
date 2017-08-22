@@ -16,26 +16,7 @@
 function civicrm_api3_omnigroupmember_get($params) {
   $job = new CRM_Omnimail_Omnigroupmembers();
   $result = $job->getResult($params);
-  $options = _civicrm_api3_get_options_from_params($params);
-  $values = array();
-  foreach ($result as $groupMember) {
-    $value = array(
-      'email' => (string) $groupMember->getEmail(),
-      'is_opt_out' => (string) $groupMember->isOptOut(),
-      'opt_in_date' => (string) $groupMember->getOptInIsoDateTime(),
-      'opt_in_source' => (string) $groupMember->getOptInSource(),
-      'opt_out_source' => (string) $groupMember->getOptOutSource(),
-      'opt_out_date' => (string) $groupMember->getOptOutIsoDateTime(),
-      'contact_id' => (string) $groupMember->getContactReference(),
-    );
-    foreach ($params['custom_data_map'] as $fieldName => $dataKey) {
-      $value[$fieldName] = (string) $groupMember->getCustomData($dataKey);
-    }
-    $values[] = $value;
-    if ($options['limit'] > 0 && count($values) === (int) $options['limit']) {
-      break;
-    }
-  }
+  $values = $job->formatResult($params, $result);
   return civicrm_api3_create_success($values);
 }
 
