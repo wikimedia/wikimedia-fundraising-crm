@@ -14,12 +14,13 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
             'COINBASE' => 'Coinbase',
             'ENGAGE' => 'Engage',
             'GENERIC_IMPORT' => 'Generic Import',
-            'GLOBALCOLLECT' => 'GlobalCollect',
+            'GLOBALCOLLECT' => 'GlobalCollect (legacy integration)',
+			'INGENICO' => 'Ingenico (Connect)',
             'JPMORGAN' => 'JP Morgan',
-            'PAYPAL' => 'PayPal',
+            'PAYPAL' => 'PayPal (legacy integration)',
+			'PAYPAL_EC' => 'PayPal Express Checkout',
             'SQUARE' => 'Square',
             'TRILOGY' => 'Trilogy',
-            'WORLDPAY' => 'Worldpay',
         );
 
         $this->_columns = array(
