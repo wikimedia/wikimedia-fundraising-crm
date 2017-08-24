@@ -1,4 +1,5 @@
 <?php namespace thank_you\generators;
+use wmf_communication\CiviMailingInsertException;
 use wmf_communication\CiviMailStore;
 
 /**
@@ -305,12 +306,12 @@ class RenderTranslatedPage {
 			);
 		}
 
-		// Load the partial DOM into a document, wrapping it with <chunk> tags (so there is only
-		// one top level node) and doing a multibyte conversion from whatever PHP is running under
-		// into UTF-8 (so that loadXML() doesn't throw a bitch fit and fail to load)
+		// Load the partial DOM into a document doing a multibyte conversion
+		// from whatever PHP is running under into UTF-8 (so that loadXML()
+		// doesn't throw a bitch fit and fail to load)
 		$dom = new \DOMDocument( '1.0', 'UTF-8' );
 		$dom->preserveWhiteSpace = false;
-		$dom->loadXML( '<chunk>' . $j['parse']['text']['*'] . '</chunk>' );
+		$dom->loadXML( $j['parse']['text']['*'] );
 		$dom->encoding = 'UTF-8';
 		$xpath = new \DOMXPath( $dom );
 
@@ -324,7 +325,7 @@ class RenderTranslatedPage {
 			$node->parentNode->removeChild( $node );
 		}
 
-		// Save it, not outputting the freaking <xml> header and <chunk> tags
+		// Save it, not outputting the freaking <xml> header and wrapper div
 		$result = array();
 		$dom->formatOutput = true;
 		foreach( $dom->firstChild->childNodes as $node ) {
