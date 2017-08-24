@@ -21,6 +21,8 @@ class ThankYou extends RenderTranslatedPage {
 			'/\[last name\]/' => '{{ last_name }}',
 
 			'/\[date\]/' => '{{ receive_date }}',
+
+			'/\$date/' => '{{ receive_date }}',
 			'/\[amount\]/' => '{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}',
 			'/\[contributionId\]/' => '{{ transaction_id }}',
 
