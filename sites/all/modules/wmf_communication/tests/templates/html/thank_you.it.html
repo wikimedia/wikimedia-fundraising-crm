@@ -4,4 +4,4 @@
 cuore!</p>
 
 <p>Per le tue registrazioni: La tua donazione il {{receive_date}} è stata
-{{amount|l10n_currency(locale)}}.</p>
+{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
