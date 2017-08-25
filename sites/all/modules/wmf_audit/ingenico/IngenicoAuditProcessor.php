@@ -212,4 +212,23 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
 	protected function regex_for_uncompressed_log() {
 		return "/globalcollect_\d{8}/";
 	}
+
+	protected function pre_process_refund( $transaction ) {
+		// We get woefully sparse records from some audit files.
+		// Try to reconstruct missing/false-y gateway_parent_id from ct_id
+		if (
+			empty( $transaction['gateway_parent_id'] ) &&
+			empty( $transaction['gateway_txn_id'] ) &&
+			!empty( $transaction['contribution_tracking_id'] )
+		) {
+			$transaction['gateway_parent_id'] = $this->getGatewayIdFromTracking( $transaction );
+		}
+		if ( empty( $transaction['gateway_refund_id'] ) ) {
+			// This stinks, but Ingenico doesn't give refunds their own ID,
+			// and sometimes even sends '0'
+			// We'll prepend an 'RFD' in the trxn_id column later.
+			$transaction['gateway_refund_id'] = $transaction['gateway_parent_id'];
+		}
+		return $transaction;
+	}
 }

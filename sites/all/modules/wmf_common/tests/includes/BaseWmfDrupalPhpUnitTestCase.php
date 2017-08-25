@@ -183,6 +183,10 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
         $this->callAPISuccess( 'Contribution', 'delete', array(
           'id' => $id
         ) );
+
+        db_delete( 'contribution_tracking' )
+          ->condition( 'contribution_id', $id )
+          ->execute();
       }
     }
     $this->callAPISuccess('Contact', 'delete', array(

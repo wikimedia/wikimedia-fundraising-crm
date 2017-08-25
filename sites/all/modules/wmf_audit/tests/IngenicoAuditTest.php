@@ -7,7 +7,7 @@
 class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 	static protected $messages;
 
-	protected $contact_id;
+	protected $contact_ids = array();
 	protected $contribution_ids = array();
 
 	public function setUp() {
@@ -55,7 +55,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 			);
 			$contribution = wmf_civicrm_contribution_message_import( $msg );
 		}
-		$this->contact_id = $contribution['contact_id'];
+		$this->contact_ids[] = $contribution['contact_id'];
 
 		// and another for the chargeback
 		$existing = wmf_civicrm_get_contributions_from_gateway_id( 'globalcollect', '55500002' );
@@ -73,14 +73,47 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 				'gross' => 200.00,
 				'payment_method' => 'cc',
 				'payment_submethod' => 'visa',
-				'contact_id' => $this->contact_id,
 			);
 			$contribution = wmf_civicrm_contribution_message_import( $msg );
 		}
+		$this->contact_ids[] = $contribution['contact_id'];
+
+		// and another for the sparse refund
+		$this->setExchangeRates( 1443724034, array( 'EUR' => 1.5, 'USD' => 1 ) );
+		$existing = wmf_civicrm_get_contributions_from_gateway_id( 'globalcollect', '1111662235' );
+		if ( $existing ) {
+			// Previous test run may have crashed before cleaning up
+			$contribution = $existing[0];
+		} else {
+			db_merge( 'contribution_tracking' )->key( array(
+				'id' => 48987654
+			) )->fields( array(
+				'country' => 'IT',
+				'utm_source' => 'something',
+				'utm_medium' => 'another_thing',
+				'utm_campaign' => 'campaign_thing',
+				'language' => 'it'
+			) )->execute();
+			$msg = array(
+				'contribution_tracking_id' => 48987654,
+				'currency' => 'EUR',
+				'date' => 1443724034,
+				'email' => 'lovelyspam@python.com',
+				'gateway' => 'globalcollect',
+				'gateway_txn_id' => '1111662235',
+				'gross' => 15.00,
+				'payment_method' => 'cc',
+				'payment_submethod' => 'visa',
+			);
+			$contribution = wmf_civicrm_contribution_message_import( $msg );
+		}
+		$this->contact_ids[] = $contribution['contact_id'];
 	}
 
 	public function tearDown() {
-		$this->cleanUpContact( $this->contact_id );
+		foreach( $this->contact_ids as $contact_id ) {
+			$this->cleanUpContact( $contact_id );
+		}
 	}
 
 	public function auditTestProvider() {
@@ -113,7 +146,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 					),
 				),
 			) ),
-		 array( __DIR__ . '/data/Ingenico/refund/', array(
+			array( __DIR__ . '/data/Ingenico/refund/', array(
 				'negative' => array(
 					array(
 						'date' => 1500942220,
@@ -126,7 +159,20 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 					),
 				),
 			) ),
-		 array( __DIR__ . '/data/Ingenico/chargeback/', array(
+			array( __DIR__ . '/data/Ingenico/sparseRefund/', array(
+				'negative' => array(
+					array(
+						'date' => 1503964800,
+						'gateway' => 'globalcollect',
+						'gateway_parent_id' => '1111662235',
+						'gateway_refund_id' => '1111662235',
+						'gross' => '15.00',
+						'gross_currency' => 'EUR',
+						'type' => 'refund',
+					),
+				),
+			) ),
+			array( __DIR__ . '/data/Ingenico/chargeback/', array(
 				'negative' => array(
 					array(
 						'date' => 1495023569,
