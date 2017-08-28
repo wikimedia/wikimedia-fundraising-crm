@@ -36,10 +36,6 @@ function orphan_rectify_drush_help($section) {
  * Note: You'll need to include a bunch of exciting MediaWiki globals in your
  * Drupal settings.local.php, including default values that would normally be
  * read from extension.json.
- *     $wgDonationInterfaceDefaultQueueServer
- *     $wgDonationInterfaceQueues
- *     $wgDonationInterfaceEnableQueue
- *     $wgDonationInterfaceQueueMirrors
  *     $wgDonationInterfaceOrphanCron
  *     $wgDonationInterfaceGatewayAdapters
  *     $wgDonationInterfaceForbiddenCountries

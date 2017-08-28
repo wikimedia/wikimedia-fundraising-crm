@@ -472,7 +472,6 @@ function recurring_globalcollect_search_by_order_id_form_submit($form, &$form_st
  * @return bool
  */
 function is_found_globalcollect_invalid_next_sched_dates() {
-  civicrm_initialize();
   $query = "
   SELECT count(*) FROM (
     SELECT
