@@ -116,7 +116,7 @@ function drush_recurring_globalcollect() {
  *   - failures_before_cancellation
  */
 function drush_recurring_globalcollect_validate() {
-
+  civicrm_initialize();
   $link_to_settings = url('admin/config/recurring_globalcollect', array('absolute'=>true));
 
   $batch = drush_get_option('batch');
