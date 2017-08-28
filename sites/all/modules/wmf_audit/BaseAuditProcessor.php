@@ -984,6 +984,7 @@ abstract class BaseAuditProcessor {
 				$this->record_is_chargeback( $transaction ) ||
 				$this->record_is_cancel( $transaction )
 			) { //negative
+				$transaction = $this->pre_process_refund( $transaction );
 				if ( $this->negative_transaction_exists_in_civi( $transaction ) === false ) {
 					wmf_audit_echo( '-' ); //add a subtraction. I am the helpfulest comment ever.
 					$missing['negative'][] = $transaction;
@@ -1223,5 +1224,30 @@ abstract class BaseAuditProcessor {
 			return $recon_data;
 		}
 		return false;
+	}
+
+	protected function getGatewayIdFromTracking( $record = array() ) {
+		$tracking = wmf_civicrm_get_contribution_tracking( $record );
+		if ( empty( $tracking['contribution_id'] ) ) {
+			return null;
+		}
+		$contributions = wmf_civicrm_get_contributions_from_contribution_id(
+			$tracking['contribution_id']
+		);
+		if ( empty( $contributions ) ) {
+			return null;
+		}
+		return $contributions[0]['gateway_txn_id'];
+	}
+
+	/**
+	 * Override this if your gateway's audit process needs to do things
+	 * with refunds that can't be done in the file parser.
+	 *
+	 * @param array $transaction
+	 * @return array
+	 */
+	protected function pre_process_refund( $transaction ) {
+		return $transaction;
 	}
 }
