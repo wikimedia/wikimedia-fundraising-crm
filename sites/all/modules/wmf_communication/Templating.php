@@ -123,11 +123,22 @@ class Templating {
         do {
             $cacheKey = $this->getFilePath( $language );
             if ( array_key_exists( $cacheKey, self::$template_cache ) ) {
-                return self::$template_cache[$cacheKey];
+                $template = self::$template_cache[$cacheKey];
+                // If the language we originally asked for wasn't cached, but
+                // the fallback language was, let's cache the template under
+                // our original language too so we don't fall back next time.
+                if ( $language !== $this->language ) {
+                    self::$template_cache[$originalLookupCacheKey] = $template;
+                }
+                return $template;
             }
             $template = $this->loadTemplateFile( $language );
             if ( $template ) {
+                // We have successfully loaded a thing that's not cached yet.
+                // Cache the template under its actual language.
                 self::$template_cache[$cacheKey] = $template;
+                // And if we originally asked for a different language, cache
+                // it under that one so we don't have to fall back next time.
                 if ( $language !== $this->language ) {
                     self::$template_cache[$originalLookupCacheKey] = $template;
                 }
