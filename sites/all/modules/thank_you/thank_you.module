@@ -565,20 +565,40 @@ function thank_you_add_civi_queue( $email, $contact_id, $subject, $html ) {
 			$civi_mailing = $civimail_store->getMailing( 'thank_you', $template_info->name, $template_info->revision );
 		}
 		catch ( CiviMailingMissingException $e ) {
-			watchdog( 'thank_you', 'Could not find mailing record for email with subject ' . $subject, WATCHDOG_INFO );
+			watchdog(
+				'thank_you',
+				'Could not find mailing record for email with subject ' . $subject,
+				array(),
+				WATCHDOG_INFO
+			);
 			$civi_mailing = $civimail_store->addMailing( 'thank_you', $template_info->name, 'missing body', $subject, $template_info->revision );
 		}
 		$civi_queue_record = $civimail_store->addQueueRecord( $civi_mailing, $email, $contact_id );
 		$civimail_store->addActivity( $civi_queue_record, $subject, $html );
 	}
 	catch ( TemplateInfoMissingException $e ) {
-		watchdog( 'thank_you', 'Could not find template info comment in thank you email template with subject ' . $subject, WATCHDOG_INFO );
+		watchdog(
+			'thank_you',
+			'Could not find template info comment in thank you email template with subject ' . $subject,
+			array(),
+			WATCHDOG_INFO
+		);
 	}
 	catch ( CiviQueueInsertException $e ) {
-		watchdog( 'thank_you', 'CiviMail queue insert failed: ' . $e->getMessage(), WATCHDOG_INFO );
+		watchdog(
+			'thank_you',
+			'CiviMail queue insert failed: ' . $e->getMessage(),
+			array(),
+			WATCHDOG_INFO
+		);
 	}
 	catch ( CiviMailingInsertException $e ) {
-		watchdog( 'thank_you', 'Could not insert fallback mailing: ' . $e->getMessage(), WATCHDOG_INFO );
+		watchdog(
+			'thank_you',
+			'Could not insert fallback mailing: ' . $e->getMessage(),
+			array(),
+			WATCHDOG_INFO
+		);
 	}
 	return $civi_queue_record;
 }
