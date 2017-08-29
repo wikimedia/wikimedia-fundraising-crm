@@ -833,7 +833,7 @@ EOT;
 /**
  *
  *
- * @param $params template parameters
+ * @param $params array template parameters
  */
 function thank_you_render( $params ) {
 

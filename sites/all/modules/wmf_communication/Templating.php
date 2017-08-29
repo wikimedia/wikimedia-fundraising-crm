@@ -3,11 +3,13 @@
 use \Exception;
 
 use \Twig_Environment;
+use \Twig_Error_Loader;
 use \Twig_Extension_Sandbox;
 use \Twig_Loader_Filesystem;
 use \Twig_Loader_String;
 use \Twig_Sandbox_SecurityPolicy;
 
+use \Twig_Template;
 use \TwigLocalization;
 
 /**
@@ -21,6 +23,8 @@ class Templating {
     protected $language;
     protected $format;
     protected $template_params;
+
+    protected static $template_cache = array();
 
     /**
      * Prepare a template for substitution.
@@ -109,13 +113,24 @@ class Templating {
     /**
      * Find the best available template file for the desired locale and load
      *
-     * @return \Twig_Template
+     * @return Twig_Template
      */
     protected function loadTemplate() {
+        // We'll cache the result under the first language code we looked for,
+        // so we don't need to go through the fallback chain next time.
+        $originalLookupCacheKey = $this->getFilePath( $this->language );
         $language = $this->language;
         do {
+            $cacheKey = $this->getFilePath( $language );
+            if ( array_key_exists( $cacheKey, self::$template_cache ) ) {
+                return self::$template_cache[$cacheKey];
+            }
             $template = $this->loadTemplateFile( $language );
             if ( $template ) {
+                self::$template_cache[$cacheKey] = $template;
+                if ( $language !== $this->language ) {
+                    self::$template_cache[$originalLookupCacheKey] = $template;
+                }
                 return $template;
             }
 
@@ -140,7 +155,7 @@ class Templating {
      * @return Twig_Template
      */
     protected function loadTemplateFile( $language ) {
-        $path = "{$this->format}/{$this->template_name}.{$language}.{$this->format}";
+        $path = $this->getRelativeFilePath( $language );
 
         watchdog( 'wmf_communication',
             "Searching for template file at :path",
@@ -149,10 +164,18 @@ class Templating {
         );
         try {
             return $this->twig->loadTemplate( $path );
-        } catch ( \Twig_Error_Loader $ex ) {
+        } catch ( Twig_Error_Loader $ex ) {
             // File does not exist.  pass
         }
         return null;
+    }
+
+    protected function getFilePath( $language ) {
+        return $this->templates_dir . '/' . $this->getRelativeFilePath( $language );
+    }
+
+    protected function getRelativeFilePath( $language ) {
+        return "{$this->format}/{$this->template_name}.{$language}.{$this->format}";
     }
 
     /**
