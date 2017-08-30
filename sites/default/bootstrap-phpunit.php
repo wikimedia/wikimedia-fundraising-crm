@@ -20,3 +20,6 @@ require_once( DRUPAL_ROOT . '/../vendor/autoload.php' );
 putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php');
 require_once DRUPAL_ROOT . '/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit/bootstrap.php';
 
+if ( !defined( 'PRINT_WATCHDOG_ON_TEST_FAIL' ) ) {
+	define( 'PRINT_WATCHDOG_ON_TEST_FAIL', true );
+}

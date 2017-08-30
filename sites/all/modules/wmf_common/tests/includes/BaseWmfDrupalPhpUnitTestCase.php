@@ -5,7 +5,9 @@ use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingGlobalConfiguration;
 
 class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
-    public function setUp() {
+	protected $startTimestamp;
+
+	public function setUp() {
         parent::setUp();
 
         // Initialize SmashPig with a fake context object
@@ -25,6 +27,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
         $user->name = "foo_who";
         $user->uid = "321";
         $user->roles = array( DRUPAL_AUTHENTICATED_RID => 'authenticated user' );
+        $this->startTimestamp = time();
     }
 
     public function tearDown() {
@@ -192,5 +195,42 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
     $this->callAPISuccess('Contact', 'delete', array(
       'id' => $contactId
     ) );
+  }
+
+  public function onNotSuccessfulTest( $e ) {
+    if ( !PRINT_WATCHDOG_ON_TEST_FAIL ) {
+      return;
+	}
+    $output = "\nWatchdog messages:\n";
+
+    // show watchdog messages since the start of this test
+    $rsc = db_select( 'watchdog', 'wd' )
+      ->condition( 'timestamp' , $this->startTimestamp, '>=' )
+      ->fields( 'wd' )
+      ->orderBy( 'wid', 'ASC' )
+      ->execute();
+
+    while ( $result = $rsc->fetchAssoc() ) {
+      if ( isset ( $result['variables'] ) ) {
+        $vars = unserialize( $result['variables'] );
+      } else {
+        $vars = null;
+      }
+      $message = strip_tags(
+        is_array( $vars )
+          ? strtr( $result['message'], $vars )
+          : $result['message']
+      );
+      $output .= "{$result['timestamp']}, lvl {$result['severity']}, {$result['type']}: $message\n";
+    }
+
+    if ( method_exists( $e, 'getMessage' ) ) {
+      $accessible = \Wikimedia\TestingAccessWrapper::newFromObject( $e );
+      $accessible->message = $e->getMessage() . $output;
+    } else {
+      echo $output;
+    }
+
+    throw $e;
   }
 }
