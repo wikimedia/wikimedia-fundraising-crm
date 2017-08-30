@@ -4,7 +4,7 @@ namespace wmf_communication;
 use \CRM_Activity_BAO_Activity;
 use \CRM_Core_DAO;
 use \CRM_Core_DAO_Email;
-use \CRM_Core_OptionGroup;
+use \CRM_Core_PseudoConstant;
 use \CRM_Core_Transaction;
 use \CRM_Mailing_BAO_MailingJob;
 use \CRM_Mailing_BAO_Mailing;
@@ -178,9 +178,10 @@ VALUES ( %1, %2, %3 )";
 			$date = gmdate( 'YmdHis' );
 		}
 		if ( self::$emailActivityTypeId == -1 ) {
-			self::$emailActivityTypeId = CRM_Core_OptionGroup::getValue('activity_type',
-				'Email',
-				'name'
+			self::$emailActivityTypeId = CRM_Core_PseudoConstant::getKey(
+				'CRM_Activity_BAO_Activity',
+				'activity_type_id',
+				'Email'
 			);
 		}
 		$activity = array(
