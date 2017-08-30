@@ -376,7 +376,7 @@ function wmf_thank_you_get_tag_names($entity_id) {
     'entity_table' => 'civicrm_contribution',
     'entity_id' => $entity_id
   ));
-  static $tags = null;
+  static $tags = null; // FIXME: this causes test pain
   if ( $tags === null ) {
     $tags = civicrm_api3( 'EntityTag', 'getoptions', array( 'field' => 'tag_id' ) );
   }

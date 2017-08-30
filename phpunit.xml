@@ -21,6 +21,9 @@
       <testsuite name="recurring_globalcollect tests">
         <directory>sites/all/modules/recurring_globalcollect/tests</directory>
       </testsuite>
+      <testsuite name="thank_you tests">
+        <directory>sites/all/modules/thank_you/tests/phpunit</directory>
+      </testsuite>
       <testsuite name="wmf_audit tests">
         <directory>sites/all/modules/wmf_audit/tests</directory>
       </testsuite>
