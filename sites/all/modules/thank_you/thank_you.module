@@ -234,99 +234,86 @@ function thank_you_send_test( $params ) {
  * TODO: rewrite the civi api stuff to work like other code
  */
 function thank_you_for_contribution( $contribution_id ) {
-	civicrm_initialize( true );
-	$contribution = civicrm_api("Contribution","get",
-		array (
-			  'version' =>'3',
-			  'contribution_id' => $contribution_id
-		));
+	civicrm_initialize();
+	$mailingData = CRM_Core_DAO::executeQuery("
+		SELECT
+			cntr.id AS contribution_id,
+			cntr.currency,
+			cntr.receive_date,
+			cntr.thankyou_date,
+			cntr.total_amount,
+			cntr.trxn_id,
+			cntc.id AS contact_id,
+			cntc.display_name,
+			cntc.first_name,
+			cntc.last_name,
+			cntc.preferred_language,
+			e.email,
+			x.no_thank_you,
+			x.original_amount,
+			x.original_currency
+		FROM civicrm_contribution cntr
+		INNER JOIN civicrm_contact cntc ON cntr.contact_id = cntc.id
+		LEFT JOIN civicrm_email e ON e.contact_id = cntc.id AND e.is_primary = 1
+		INNER JOIN wmf_contribution_extra x ON cntr.id = x.entity_id
+		WHERE cntr.id = %1
+	", array(
+		1 => array(
+			$contribution_id,
+			'Int'
+		)
+	));
+	$found = $mailingData->fetch();
 
 	// check that the API result is a valid contribution result
-	if( !WMFCiviAPICheck::check_api_contribution( $contribution, $contribution_id ) ){
+	if( !$found ){
 		// the API result is bad
-		$msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true ) . '</pre>';
+		$msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r( $mailingData, true ) . '</pre>';
 		throw new WmfException( 'GET_CONTRIBUTION', $msg );
 	}
-	// go ahead and remove the extra layer of indirection to make it easier to use
-	$simplified = WMFCiviAPICheck::check_api_simplify( $contribution, $contribution_id );
-	if( !$simplified ){
-		// simplification failed
-		$msg = 'Could not simplify contribution record for: ' . $contribution_id . '<pre>' . print_r( $contribution, true )  . '</pre>';
-		throw new WmfException( 'GET_CONTRIBUTION', $msg );
-	}
-	$contribution = $simplified;
+	$mailingData = (array) $mailingData;
 
     // don't send a Thank You email if one has already been sent
-    if ( !empty($contribution['thankyou_date']) ) {
+    if ( !empty($mailingData['thankyou_date']) ) {
         watchdog('thank_you', 'Thank you email already sent for this transaction.', array(), WATCHDOG_INFO);
         return false;
     }
     // only send a Thank You email if we are within the specified window
-    if (strtotime($contribution['receive_date']) < time() - 86400 * variable_get('thank_you_days', 14)) {
+    if (strtotime($mailingData['receive_date']) < time() - 86400 * variable_get('thank_you_days', 14)) {
         watchdog('thank_you', 'Contribution is older than limit, ignoring.', array(), WATCHDOG_INFO);
         return false;
     }
 
-	// get the information for the associated contact
-	$contact = civicrm_api("Contact","get",
-		array (
-			  'version' =>'3',
-			  'id' => $contribution[ 'contact_id' ],
-			  'return' => "display_name,first_name,last_name,email,preferred_language"
-		)
-    );
-
-	// check that the API result is a valid contact result
-	if( !WMFCiviAPICheck::check_api_contact( $contact, $contribution[ 'contact_id' ] ) ){
-		// the API result is bad
-		$msg = 'Could not retrieve contact record for: ' . $contribution['contact_id'] . '<pre>' . print_r( $contact, true )  . '</pre>';
-		throw new WmfException( 'GET_CONTACT', $msg );
-	}
-	// go ahead and remove the extra layer of indirection to make it easier to use
-	$simplified = WMFCiviAPICheck::check_api_simplify( $contact, $contribution[ 'contact_id' ] );
-	if( !$simplified ){
-		// simplification failed
-		$msg = 'Could not simplify contact record for: ' . $contribution['contact_id']. '<pre>' . print_r( $contact, true ). '</pre>';
-		throw new WmfException( 'GET_CONTACT', $msg );
-	}
-	$contact = $simplified;
-
     // check for contacts without an email address
-    if ( empty( $contact['email'] ) or $contact['email'] === 'nobody@wikimedia.org' ) {
+    if ( empty( $mailingData['email'] ) or $mailingData['email'] === 'nobody@wikimedia.org' ) {
         watchdog('thank_you', 'No email address found. Processing as anonymous.', array(), WATCHDOG_INFO);
-        wmf_civicrm_set_no_thank_you( $contribution['contribution_id'], 'anonymous' );
+        wmf_civicrm_set_no_thank_you( $contribution_id, 'anonymous' );
         return false;
     }
 
-    $custom_values = wmf_civicrm_get_custom_values( $contribution_id, array(
-        'no_thank_you',
-        'original_amount',
-        'original_currency',
-    ) );
-
-    if ( $custom_values['no_thank_you'] ) {
-        watchdog('thank_you', "Contribution has been marked no_thank_you={$custom_values['no_thank_you']}, skipping.", array(), WATCHDOG_INFO);
+    if ( $mailingData['no_thank_you'] ) {
+        watchdog('thank_you', "Contribution has been marked no_thank_you={$mailingData['no_thank_you']}, skipping.", array(), WATCHDOG_INFO);
         return false;
     }
 
-    $amount = $custom_values['original_amount'];
-    $currency = $custom_values['original_currency'];
+    $amount = $mailingData['original_amount'];
+    $currency = $mailingData['original_currency'];
 
     // Use settlement currency if the original currency is virtual, for tax reasons.
-    if ( $custom_values['original_currency'] === 'BTC' ) {
-        $amount = $contribution['total_amount'];
-        $currency = $contribution['currency'];
+    if ( $mailingData['original_currency'] === 'BTC' ) {
+        $amount = $mailingData['total_amount'];
+        $currency = $mailingData['currency'];
     }
 
     $is_recurring = false;
     try {
-        $transaction = WmfTransaction::from_unique_id( $contribution['trxn_id'] );
+        $transaction = WmfTransaction::from_unique_id( $mailingData['trxn_id'] );
         $is_recurring = $transaction->is_recurring;
     } catch ( WmfException $ex ) {
         watchdog( 'thank_you', $ex->getMessage(), NULL, WATCHDOG_NOTICE );
     }
 
-    $locale = $contact['preferred_language'];
+    $locale = $mailingData['preferred_language'];
     if ( !$locale ) {
         watchdog( 'thank_you', "Donor language unknown.  Defaulting to English...", NULL, WATCHDOG_INFO );
         $locale = 'en';
@@ -335,19 +322,19 @@ function thank_you_for_contribution( $contribution_id ) {
 
     $params = array(
         'amount' => $amount,
-        'contact_id' => $contact['id'],
+        'contact_id' => $mailingData['contact_id'],
         'currency' => $currency,
-        'first_name' => $contact['first_name'],
+        'first_name' => $mailingData['first_name'],
 		'from_name' => variable_get( 'thank_you_from_name', 'Wikimedia Foundation' ),
 		'from_address' => variable_get( 'thank_you_from_address', 'donate@wikimedia.org' ),
-        'last_name' => $contact['last_name'],
+        'last_name' => $mailingData['last_name'],
         'locale' => $locale,
-        'name' => $contact['display_name'],
-        'receive_date' => $contribution['receive_date'],
-        'recipient_address' => $contact['email'],
+        'name' => $mailingData['display_name'],
+        'receive_date' => $mailingData['receive_date'],
+        'recipient_address' => $mailingData['email'],
         'recurring' => $is_recurring,
-        'transaction_id' => "CNTCT-{$contact['id']}",
-        'unsubscribe_link' => build_unsub_link( $contribution['id'], $contact['email'], $locale ),
+        'transaction_id' => "CNTCT-{$mailingData['contact_id']}",
+        'unsubscribe_link' => build_unsub_link( $contribution_id, $mailingData['email'], $locale ),
         'contribution_tags' => wmf_thank_you_get_tag_names($contribution_id),
     );
 
@@ -355,7 +342,7 @@ function thank_you_for_contribution( $contribution_id ) {
 
     if ( $success ) {
 		watchdog('thank_you', "Thank you mail sent successfully for contribution id: $contribution_id to " . $params['recipient_address'], array(), WATCHDOG_INFO);
-        thank_you_update_ty_date( $contribution );
+        thank_you_update_ty_date( $mailingData );
 		return true;
     } else {
 		$msg = "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'];
@@ -376,7 +363,7 @@ function wmf_thank_you_get_tag_names($entity_id) {
     'entity_table' => 'civicrm_contribution',
     'entity_id' => $entity_id
   ));
-  static $tags = null;
+  static $tags = null; // FIXME: this causes test pain
   if ( $tags === null ) {
     $tags = civicrm_api3( 'EntityTag', 'getoptions', array( 'field' => 'tag_id' ) );
   }

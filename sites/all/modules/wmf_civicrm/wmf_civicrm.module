@@ -1623,6 +1623,7 @@ function wmf_civicrm_get_country_id( $raw ) {
 		array( '%txt' => $raw ),
 		WATCHDOG_NOTICE
 	);
+	return false;
 }
 
 /**
@@ -1812,7 +1813,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
             );
             if (
                 !empty( $msg['country'] ) &&
-                CRM_Core_PseudoConstant::countryIsoCode( $msg['country'] ) !== null
+				array_search( $msg['country'], CRM_Core_PseudoConstant::countryIsoCode() ) !== false
             ) {
                 $tracking['country'] = $msg['country'];
             }
