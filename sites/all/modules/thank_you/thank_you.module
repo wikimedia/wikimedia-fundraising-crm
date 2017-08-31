@@ -1,5 +1,6 @@
 <?php
 
+use SmashPig\Core\UtcDate;
 use wmf_communication\CiviMailStore;
 use wmf_communication\CiviMailingInsertException;
 use wmf_communication\CiviMailingMissingException;
@@ -732,19 +733,20 @@ function thank_you_batch_process(){
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
 
+	$earliest = UtcDate::getUtcDatabaseString( "-$days days" );
 	$ty_query = <<<EOT
 		SELECT civicrm_contribution.id, trxn_id
 		FROM civicrm_contribution
 		JOIN wmf_contribution_extra
 			ON wmf_contribution_extra.entity_id = civicrm_contribution.id
 		WHERE
-			receive_date > DATE_SUB( NOW(), INTERVAL :interval DAY ) AND
+			receive_date > :earliest AND
 			thankyou_date IS NULL AND
 			no_thank_you IS NULL
 		ORDER BY receive_date ASC LIMIT {$batch};
 EOT;
 
-	$result = db_query( $ty_query, array( ':interval' => $days ) );
+	$result = db_query( $ty_query, array( ':earliest' => $earliest ) );
 
 	$count = 0;
 	$consecutiveFailures = 0;
