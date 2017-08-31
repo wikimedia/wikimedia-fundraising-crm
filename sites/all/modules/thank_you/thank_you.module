@@ -698,8 +698,14 @@ function thank_you_settings_form() {
 
 function thank_you_batch_process(){
 	civicrm_initialize();
+	// If available, use the time the drush script started as the start time
+	// This way we're less likely to run past the start of the next run.
+	if ( isset( $_SERVER['REQUEST_TIME'] ) ) {
+		$startTime = $_SERVER['REQUEST_TIME'];
+	} else {
+		$startTime = time();
+	}
 	// the following variables should be set in the module settings, not here
-	$startTime = time();
 	$timeLimit = variable_get('thank_you_batch_time', 90); 
 	$days = variable_get( 'thank_you_days', false );
 	$batch = variable_get( 'thank_you_batch', false );
