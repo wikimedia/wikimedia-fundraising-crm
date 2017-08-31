@@ -524,6 +524,108 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Make sure José whomps Jose.
+   *
+   * Test diacritic matches are resolved to the one using 'authentic' characters.
+   *
+   * @param array $names
+   * @param bool $isMatch
+   * @param string $preferredName
+   *
+   * @dataProvider getDiacriticData
+   */
+  public function testBatchMergeConflictNameDiacritic($names, $isMatch, $preferredName) {
+    $this->callAPISuccess('Contact', 'create', array(
+      'id' => $this->contactID,
+      'first_name' => $names[0],
+    ));
+
+    $this->callAPISuccess('Contact', 'create', array(
+      'id' => $this->contactID2,
+      'first_name' => $names[1],
+    ));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(!$isMatch, count($result['values']['skipped']));
+    $this->assertEquals($isMatch, count($result['values']['merged']));
+
+    if ($isMatch) {
+      $contacts = $this->callAPISuccess('Contact', 'get', array(
+        'email' => 'the_don@duckland.com',
+        'sequential' => 1
+      ));
+      $this->assertEquals($preferredName, $contacts['values'][0]['first_name']);
+    }
+  }
+
+  /**
+   * Get names with different character sets.
+   */
+  public function getDiacriticData() {
+    $dataSet = array();
+    $dataSet['cyrilic_dissimilar_hyphenated'] = array(
+      'pair' => array('Леони-́дович', 'ни́-тский'),
+      'is_match' => FALSE,
+      'choose' => NULL,
+    );
+    $dataSet['germanic'] = array(
+      'pair' => array('Boß', 'Boss'),
+      'is_match' => TRUE,
+      'choose' => 'Boß',
+    );
+    $dataSet['germanic_reverse'] = array(
+      'pair' => array('Boss', 'Boß'),
+      'is_match' => TRUE,
+      'choose' => 'Boß',
+    );
+    $dataSet['accent_vs_no_accent'] = array(
+      'pair' => array('Jose', 'Josè'),
+      'is_match' => TRUE,
+      'choose' => 'Josè',
+    );
+    $dataSet['accent_vs_no_accent_revese'] = array(
+      'pair' => array('José', 'Jose'),
+      'is_match' => TRUE,
+      'choose' => 'José',
+    );
+    $dataSet['different_direction_accent'] = array(
+      'pair' => array('Josè', 'José'),
+      'is_match' => TRUE,
+      // No preference applied, first wins.
+      'choose' => 'Josè',
+    );
+    $dataSet['no_way_jose'] = array(
+      'pair' => array('Jose', 'Josà'),
+      'is_match' => FALSE,
+      'choose' => NULL,
+    );
+    $dataSet['cyric_sergei'] = array(
+      'pair' => array('Серге́й', 'Sergei'),
+      // Actually this is a real translation but will not
+      // match at our level of sophistication.
+      'is_match' => FALSE,
+      'choose' => NULL,
+    );
+    $dataSet['cyric_sergai'] = array(
+      'pair' => array('Серге́й', 'Sergi'),
+      // Actually this is a real translation but will not
+      // match at our level of sophistication.
+      'is_match' => FALSE,
+      'choose' => NULL,
+    );
+    $dataSet['cyrilic_different_length'] = array(
+      'pair' => array('Серге́й', 'Серге'),
+      'is_match' => FALSE,
+      'choose' => NULL,
+    );
+    $dataSet['cyrilic_dissimilar'] = array(
+      'pair' => array('Леони́дович', 'ни́тский'),
+      'is_match' => FALSE,
+      'choose' => NULL,
+    );
+    return $dataSet;
+  }
+
+  /**
    * Get address combinations for the merge test.
    *
    * @return array
@@ -1175,7 +1277,11 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Also get rid of the nest.
    */
   protected function doDuckHunt() {
-    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_contact WHERE display_name = "Donald Duck"');
+    CRM_Core_DAO::executeQuery('
+      DELETE c, e
+      FROM civicrm_contact c
+      LEFT JOIN civicrm_email e ON e.contact_id = c.id
+      WHERE display_name = "Donald Duck" OR email = "the_don@duckland.com"');
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_prevnext_cache');
   }
 
