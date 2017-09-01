@@ -16,6 +16,11 @@ restore_error_handler();
 
 // Load contrib libs so tests can inherit from them.
 require_once( DRUPAL_ROOT . '/../vendor/autoload.php' );
+// And explicitly load some DonationInterface things that it doesn't export via Composer
+require_once( DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/test.adapter.php' );
+require_once( DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/TestingGlobalCollectAdapter.php' );
+require_once( DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/TestingGlobalCollectOrphanAdapter.php' );
+require_once( DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/TestingPaypalExpressAdapter.php' );
 
 putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php');
 require_once DRUPAL_ROOT . '/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit/bootstrap.php';

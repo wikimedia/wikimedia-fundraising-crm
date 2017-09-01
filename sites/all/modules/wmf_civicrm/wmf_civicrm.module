@@ -1,6 +1,7 @@
 <?php
 
 use SmashPig\Core\UtcDate;
+use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
