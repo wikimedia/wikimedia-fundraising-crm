@@ -14,8 +14,6 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 		parent::setUp();
 		civicrm_initialize();
 
-		// FIXME - but do we really want to stuff the autoloader with all of our test classes?
-		require_once( DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/TestingGlobalCollectAdapter.php' );
 		global $wgDonationInterfaceGatewayAdapters,
 			$wgDonationInterfaceForbiddenCountries,
 			$wgDonationInterfacePriceFloor,
@@ -66,20 +64,17 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 			'ts' => wmf_common_date_unix_to_sql( strtotime( 'now' ) ),
 			'contribution_id' => $result['id'],
 		);
+		TestingGlobalCollectAdapter::setDummyGatewayResponseCode( 'recurring-OK' );
 		wmf_civicrm_insert_contribution_tracking( $tracking );
 	}
 
+	public function tearDown() {
+		parent::tearDown();
+		$this->cleanUpContact( $this->contactId );
+		TestingGlobalCollectAdapter::setDummyGatewayResponseCode( null );
+	}
+
 	function testChargeRecorded() {
-
-		// Get some extra access to the testing adapter :(
-		global $wgDonationInterfaceGatewayAdapters;
-		$wgDonationInterfaceGatewayAdapters['globalcollect'] = 'TestingRecurringStubAdapter';
-
-		// Include using require_once rather than autoload because the file
-		// depends on a DonationInterface testing class we loaded above.
-		require_once __DIR__ . '/TestingRecurringStubAdapter.php';
-		TestingRecurringStubAdapter::$singletonDummyGatewayResponseCode = 'recurring-OK';
-
 		recurring_globalcollect_charge( $this->contributionRecurId );
 
 		$result = civicrm_api3( 'Contribution', 'get', array(
@@ -108,8 +103,6 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 		);
 		$gateway = DonationInterfaceFactory::createAdapter( 'globalcollect', $init );
 
-		$gateway->setDummyGatewayResponseCode( 'recurring-OK' );
-
 		$result = $gateway->do_transaction( 'Recurring_Charge' );
 
 		$this->assertTrue( $result->getCommunicationStatus() );
@@ -132,7 +125,7 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 		);
 		$gateway = DonationInterfaceFactory::createAdapter( 'globalcollect', $init );
 
-		$gateway->setDummyGatewayResponseCode( 'recurring-declined' );
+		TestingGlobalCollectAdapter::setDummyGatewayResponseCode( 'recurring-declined' );
 
 		$result = $gateway->do_transaction( 'Recurring_Charge' );
 
@@ -159,7 +152,7 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 		);
 		$gateway = DonationInterfaceFactory::createAdapter( 'globalcollect', $init );
 
-		$gateway->setDummyGatewayResponseCode( 'recurring-timeout' );
+		TestingGlobalCollectAdapter::setDummyGatewayResponseCode( 'recurring-timeout' );
 
 		$result = $gateway->do_transaction( 'Recurring_Charge' );
 
@@ -185,7 +178,7 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 		);
 		$gateway = DonationInterfaceFactory::createAdapter( 'globalcollect', $init );
 
-		$gateway->setDummyGatewayResponseCode( 'recurring-resume' );
+		TestingGlobalCollectAdapter::setDummyGatewayResponseCode( 'recurring-resume' );
 
 		$result = $gateway->do_transaction( 'Recurring_Charge' );
 
