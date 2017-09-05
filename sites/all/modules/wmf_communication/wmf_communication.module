@@ -1,11 +1,6 @@
 <?php
 use wmf_communication\CiviMailBulkStore;
-use wmf_communication\Job;
 use wmf_communication\SilverpopImporter;
-
-function wmf_communication_send_letters( $jobId ) {
-    Job::getJob( $jobId )->run();
-}
 
 function wmf_communication_permission() {
   return array(

@@ -40,13 +40,16 @@ class UnsubscribeQueueConsumer extends TransactionalWmfQueueConsumer {
 		if ( count( $contacts ) === 0 ) {
 			watchdog( 'unsubscribe',
 				"$contribId: No contacts returned for contribution ID. Acking frame and returning.",
+				array(),
 				WATCHDOG_NOTICE );
 		} else {
 			// Excellent -- we have a collection of emails to unsubscribe now! :) Check opt out status and add them to the array
 			foreach ( $contacts as $contact ) {
 				if ( $contact['is_opt_out'] == TRUE )
 				{
-					watchdog( 'unsubscribe', "$contribId: Contact already opted out with this contribution ID.",
+					watchdog( 'unsubscribe',
+						"$contribId: Contact already opted out with this contribution ID.",
+						array(),
 						WATCHDOG_NOTICE );
 					continue;
 				}
