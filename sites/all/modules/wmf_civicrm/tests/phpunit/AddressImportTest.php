@@ -48,6 +48,49 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test creating an address not use void data.
+   *
+   * @dataProvider getVoidValues
+   *
+   * @param string $voidValue
+   */
+  public function testAddressImportSkipVoidData($voidValue) {
+    $msg = array(
+      'currency' => 'USD',
+      'date' => time(),
+      'last_name' => 'Mouse',
+      'email' => 'nobody@wikimedia.org',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'street_address' => 'really cool place',
+      'postal_code' => $voidValue,
+      'city' => $voidValue,
+      'country' => 'US',
+    );
+
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $address = $this->callAPISuccessGetSingle('Address',  array('contact_id' => $contribution['contact_id']));
+    $this->assertTrue(!isset($address['city']));
+    $this->assertTrue(!isset($address['postal_code']));
+  }
+
+  /**
+   * Get values which should not be stored to the DB.
+   *
+   * @return array
+   */
+  public function getVoidValues() {
+    return array(
+      array('0'),
+      array(0),
+      array('NoCity'),
+      array('City/Town'),
+    );
+  }
+
+  /**
    * Test creating an address with void data does not create an address.
    *
    * In this case the contact already exists.

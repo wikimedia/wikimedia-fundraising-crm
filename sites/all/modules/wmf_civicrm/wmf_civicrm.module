@@ -1739,13 +1739,7 @@ function wmf_civicrm_normalize_msg( $msg ) {
     );
     $msg = $msg + $defaults;
 
-    // Remove known dummy data.
-    if ($msg['street_address'] === 'N0NE PROVIDED') {
-        $msg['street_address'] = '';
-    }
-    if ($msg['postal_code'] === 0) {
-        $msg['postal_code'] = '';
-    }
+    wmf_civicrm_removeKnownBadStringsFromAddressFields($msg);
 
     if ( empty( $msg['contribution_type_id'] ) ) {
         if ( empty( $msg['contribution_type'] ) ) {
@@ -1907,6 +1901,28 @@ function wmf_civicrm_normalize_msg( $msg ) {
     watchdog( 'wmf_civicrm', 'Contribution (normalized):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>', NULL, WATCHDOG_INFO );
 
     return $msg;
+}
+
+/**
+ * Remove known bad strings from address.
+ *
+ * This function focuses on specific forms of bad data with high
+ * prevalence in the fields we see them in.
+ *
+ * @param array $msg
+ */
+function wmf_civicrm_removeKnownBadStringsFromAddressFields(&$msg) {
+  // Remove known dummy data.
+  if ($msg['street_address'] === 'N0NE PROVIDED') {
+    $msg['street_address'] = '';
+  }
+
+  $invalidAddressStrings = array('0', 'City/Town', 'NoCity', 'City');
+  foreach (array('postal_code', 'city') as $fieldName) {
+    if (in_array($msg[$fieldName], $invalidAddressStrings)) {
+      $msg[$fieldName] = '';
+    }
+  }
 }
 
 /**
