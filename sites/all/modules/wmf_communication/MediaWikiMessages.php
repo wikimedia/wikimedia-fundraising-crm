@@ -136,7 +136,7 @@ class MediaWikiMessages {
         $dir_iterator = new RecursiveDirectoryIterator( $this->baseMessagesDir );
         $iterator = new RecursiveIteratorIterator( $dir_iterator, RecursiveIteratorIterator::LEAVES_ONLY );
         foreach ( $iterator as $path => $fileObject ) {
-            if ( is_readable( $path ) ) {
+            if ( is_readable( $path ) && substr( $path, -5 ) === '.json' ) {
                 $messageFiles[] = $path;
             }
         }

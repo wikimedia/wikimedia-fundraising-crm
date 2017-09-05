@@ -1,5 +1,6 @@
 <?php
 
+use SmashPig\Core\UtcDate;
 use wmf_communication\CiviMailStore;
 use wmf_communication\CiviMailingInsertException;
 use wmf_communication\CiviMailingMissingException;
@@ -698,8 +699,14 @@ function thank_you_settings_form() {
 
 function thank_you_batch_process(){
 	civicrm_initialize();
+	// If available, use the time the drush script started as the start time
+	// This way we're less likely to run past the start of the next run.
+	if ( isset( $_SERVER['REQUEST_TIME'] ) ) {
+		$startTime = $_SERVER['REQUEST_TIME'];
+	} else {
+		$startTime = time();
+	}
 	// the following variables should be set in the module settings, not here
-	$startTime = time();
 	$timeLimit = variable_get('thank_you_batch_time', 90); 
 	$days = variable_get( 'thank_you_days', false );
 	$batch = variable_get( 'thank_you_batch', false );
@@ -732,19 +739,20 @@ function thank_you_batch_process(){
 	$dbs = wmf_civicrm_get_dbs();
 	$dbs->push( 'civicrm' );
 
+	$earliest = UtcDate::getUtcDatabaseString( "-$days days" );
 	$ty_query = <<<EOT
 		SELECT civicrm_contribution.id, trxn_id
 		FROM civicrm_contribution
 		JOIN wmf_contribution_extra
 			ON wmf_contribution_extra.entity_id = civicrm_contribution.id
 		WHERE
-			receive_date > DATE_SUB( NOW(), INTERVAL :interval DAY ) AND
+			receive_date > :earliest AND
 			thankyou_date IS NULL AND
 			no_thank_you IS NULL
 		ORDER BY receive_date ASC LIMIT {$batch};
 EOT;
 
-	$result = db_query( $ty_query, array( ':interval' => $days ) );
+	$result = db_query( $ty_query, array( ':earliest' => $earliest ) );
 
 	$count = 0;
 	$consecutiveFailures = 0;

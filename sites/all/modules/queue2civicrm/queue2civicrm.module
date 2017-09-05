@@ -134,9 +134,19 @@ function queue2civicrm_batch_process() {
     return;
   }
 
+  $batch_time = variable_get( 'queue2civicrm_batch_time', 0 );
+
+  // If we're running on a time limit, try to account for drush's startup time.
+  if ( $batch_time > 0 && isset( $_SERVER['REQUEST_TIME'] ) ) {
+    $already_elapsed = time() - $_SERVER['REQUEST_TIME'];
+    if ( $already_elapsed < $batch_time ) {
+      $batch_time = $batch_time - $already_elapsed;
+    }
+  }
+
   $consumer = new DonationQueueConsumer(
     'donations',
-    variable_get( 'queue2civicrm_batch_time', 0 ),
+    $batch_time,
     variable_get( 'queue2civicrm_batch', 0 )
   );
   $processed = $consumer->dequeueMessages();
