@@ -2857,38 +2857,55 @@ function wmf_civicrm_update_7510() {
  *   Values to strip out.
  */
 function wmf_civicrm_remove_bad_data_from_field($tableName, $fieldName, $fieldValues) {
+
   civicrm_initialize();
 
   foreach ($fieldValues as $fieldValue) {
-    $batch = 10000;
-    $nextId = 1;
+    $whereClause = "WHERE $fieldName = '{$fieldValue}'";
+    $setClause = "SET a.{$fieldName} = NULL";
+    wmf_civicrm_batch_update_data($tableName, $whereClause, $setClause);
+  }
+}
 
-    while ($nextId > 0) {
-      CRM_Core_DAO::executeQuery("
+/**
+ * Update civicrm data in batches.
+ *
+ * @param string $tableName
+ *   Name of table to update.
+ * @param string string $whereClause
+ *   Where clause to apply
+ * @param string $setClause
+ *   SET clause to apply.
+ * @param int $batchSize
+ *   Number to process per iteration
+ */
+function wmf_civicrm_batch_update_data($tableName, $whereClause, $setClause, $batchSize = 10000) {
+  $nextId = 1;
+  while ($nextId > 0) {
+    CRM_Core_DAO::executeQuery("
         CREATE TEMPORARY TABLE {$tableName}_to_update
-        SELECT id FROM civicrm_{$tableName}
-        WHERE $fieldName = '{$fieldValue}'
-        LIMIT $batch
+        SELECT id FROM {$tableName}
+        $whereClause
+        LIMIT $batchSize
       ");
-      CRM_Core_DAO::executeQuery("
+    CRM_Core_DAO::executeQuery("
         ALTER TABLE {$tableName}_to_update
         ADD INDEX(id)
       ");
-      CRM_Core_DAO::executeQuery("
+    CRM_Core_DAO::executeQuery("
         UPDATE {$tableName}_to_update t
-        INNER JOIN civicrm_{$tableName} a
+        INNER JOIN {$tableName} a
         ON t.id = a.id
-        SET a.{$fieldName} = NULL
+        $setClause
       "
-      );
-      $nextId = CRM_Core_DAO::singleValueQuery("
+    );
+    $nextId = CRM_Core_DAO::singleValueQuery("
         SELECT id
-        FROM civicrm_{$tableName}
-        WHERE $fieldName = '{$fieldValue}'
+        FROM {$tableName}
+        $whereClause
         LIMIT 1
       ");
-      CRM_Core_DAO::executeQuery("DROP TEMPORARY TABLE {$tableName}_to_update");
-    }
+    CRM_Core_DAO::executeQuery("DROP TEMPORARY TABLE {$tableName}_to_update");
   }
 }
 
@@ -3047,8 +3064,61 @@ function wmf_civicrm_update_7530() {
 }
 
 /**
- * Remove void data from city field.
+ * Remove void data from city field & tidy name field data.
  */
 function wmf_civicrm_update_7540() {
   wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'city', array('city', '0', 'City/Town', 'NoCity'));
+  wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'postal_code', array('0'));
+  $replacements = array(
+    array(
+      // Non breaking space. If we don't sort out these odd spaces
+      // first the replace spaces line doesn't work on them & we get an endless loop.
+      // Although the LIKE BINARY down further probably now mitigates.
+      'find' => "C2A0",
+      'replace_with' => ' ',
+      'fields' => array('first_name', 'last_name'),
+      'is_binary' => TRUE,
+      'like_clause' => "BINARY CONCAT('%', unhex('C2A0'), '%')",
+    ),
+    array(
+      // IDEOGRAPHIC SPACE
+      // http://www.fileformat.info/info/unicode/char/3000/index.htm
+      'find' => "E38080",
+      'replace_with' => ' ',
+      'fields' => array('first_name', 'last_name'),
+      'is_binary' => TRUE,
+      'like_clause' => "BINARY CONCAT('%', unhex('E38080'), '%')",
+    ),
+    array(
+      'find' => '  ',
+      'replace_with' => ' ',
+      'fields' => array('first_name', 'last_name'),
+    ),
+    array(
+      'find' => '&amp;',
+      'replace_with' => '&',
+      'fields' => array('first_name', 'last_name'),
+    ),
+    array(
+      'find' => '&Amp;',
+      'replace_with' => '&',
+      'fields' => array('first_name', 'last_name'),
+    ),
+  );
+  foreach ($replacements as $replacement) {
+    $likeClause = "'%{$replacement['find']}%'";
+    $findString = "'{$replacement['find']}'";
+    if (!empty($replacement['is_binary'])) {
+      $likeClause = $replacement['like_clause'];
+      $findString = "UNHEX('{$replacement['find']}')";
+    }
+    foreach ($replacement['fields'] as $field) {
+      wmf_civicrm_batch_update_data(
+        'civicrm_contact',
+        "WHERE $field LIKE BINARY $likeClause",
+      "SET a.{$field} = REPLACE({$field}, {$findString}, '{$replacement['replace_with']}')"
+      );
+    }
+  }
+
 }
