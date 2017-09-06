@@ -17,6 +17,3 @@ files[] = CiviMail/CiviMailingRecord.php
 files[] = CiviMail/CiviMailQueueRecord.php
 files[] = tests/TestMailer.php
 files[] = tests/phpunit/CiviMailTestBase.php
-files[] = Silverpop/lib/Engage.php
-files[] = Silverpop/lib/Validation.php
-files[] = Silverpop/SilverpopImporter.php
