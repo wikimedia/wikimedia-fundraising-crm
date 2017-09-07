@@ -2843,70 +2843,69 @@ function wmf_civicrm_update_7505() {
  * Bug: T158268
  */
 function wmf_civicrm_update_7510() {
+  wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'street_address', array('N0NE PROVIDED'));
+  wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'postal_code', array('0'));
+}
+
+/**
+ * Remove bad data from an address field in a batched manner.
+ *
+ * @param string $tableName
+ * @param string $fieldName
+ *   Field name to update
+ * @param array $fieldValues
+ *   Values to strip out.
+ */
+function wmf_civicrm_remove_bad_data_from_field($tableName, $fieldName, $fieldValues) {
+
   civicrm_initialize();
 
-  $batch = 10000;
-  $nextId = 1;
-
-  while ($nextId > 0) {
-    CRM_Core_DAO::executeQuery("
-      CREATE TEMPORARY TABLE address_to_update
-      SELECT id FROM civicrm_address
-      WHERE street_address = 'N0NE PROVIDED'
-      LIMIT $batch
-    ");
-    CRM_Core_DAO::executeQuery("
-      ALTER TABLE address_to_update
-      ADD INDEX(id)
-    ");
-    CRM_Core_DAO::executeQuery("
-      UPDATE address_to_update t
-      INNER JOIN civicrm_address a
-      ON t.id = a.id
-      SET a.street_address = NULL
-      WHERE country_id IS NOT NULL
-    "
-    );
-    $nextId = CRM_Core_DAO::singleValueQuery("
-      SELECT id
-      FROM civicrm_address
-      WHERE street_address = 'N0NE PROVIDED'
-      AND country_id IS NOT NULL
-      LIMIT 1
-    ");
-    CRM_Core_DAO::executeQuery("DROP TEMPORARY TABLE address_to_update");
+  foreach ($fieldValues as $fieldValue) {
+    $whereClause = "WHERE $fieldName = '{$fieldValue}'";
+    $setClause = "SET a.{$fieldName} = NULL";
+    wmf_civicrm_batch_update_data($tableName, $whereClause, $setClause);
   }
+}
 
+/**
+ * Update civicrm data in batches.
+ *
+ * @param string $tableName
+ *   Name of table to update.
+ * @param string string $whereClause
+ *   Where clause to apply
+ * @param string $setClause
+ *   SET clause to apply.
+ * @param int $batchSize
+ *   Number to process per iteration
+ */
+function wmf_civicrm_batch_update_data($tableName, $whereClause, $setClause, $batchSize = 10000) {
   $nextId = 1;
-
   while ($nextId > 0) {
     CRM_Core_DAO::executeQuery("
-      CREATE TEMPORARY TABLE address_to_update
-      SELECT id FROM civicrm_address
-      WHERE postal_code = '0'
-      LIMIT $batch
-    ");
+        CREATE TEMPORARY TABLE {$tableName}_to_update
+        SELECT id FROM {$tableName}
+        $whereClause
+        LIMIT $batchSize
+      ");
     CRM_Core_DAO::executeQuery("
-      ALTER TABLE address_to_update
-      ADD INDEX(id)
-    ");
+        ALTER TABLE {$tableName}_to_update
+        ADD INDEX(id)
+      ");
     CRM_Core_DAO::executeQuery("
-      UPDATE address_to_update t
-      INNER JOIN civicrm_address a
-      ON a.id = t.id
-      SET a.postal_code = NULL
-      WHERE country_id IS NOT NULL
-    "
+        UPDATE {$tableName}_to_update t
+        INNER JOIN {$tableName} a
+        ON t.id = a.id
+        $setClause
+      "
     );
-    CRM_Core_DAO::executeQuery("DROP TEMPORARY TABLE address_to_update");
-
     $nextId = CRM_Core_DAO::singleValueQuery("
-      SELECT id
-      FROM civicrm_address
-      WHERE postal_code = '0'
-      AND country_id IS NOT NULL
-      LIMIT 1
-    ");
+        SELECT id
+        FROM {$tableName}
+        $whereClause
+        LIMIT 1
+      ");
+    CRM_Core_DAO::executeQuery("DROP TEMPORARY TABLE {$tableName}_to_update");
   }
 }
 
@@ -3062,4 +3061,64 @@ function wmf_civicrm_update_7530() {
   civicrm_api3('extension', 'refresh', array());
   civicrm_api3('extension', 'install',  array('key' => 'org.wikimedia.omnimail'));
   civicrm_api3('extension', 'install',  array('key' => 'au.org.greens.extendedmailingstats'));
+}
+
+/**
+ * Remove void data from city field & tidy name field data.
+ */
+function wmf_civicrm_update_7540() {
+  wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'city', array('city', '0', 'City/Town', 'NoCity'));
+  wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'postal_code', array('0'));
+  $replacements = array(
+    array(
+      // Non breaking space. If we don't sort out these odd spaces
+      // first the replace spaces line doesn't work on them & we get an endless loop.
+      // Although the LIKE BINARY down further probably now mitigates.
+      'find' => "C2A0",
+      'replace_with' => ' ',
+      'fields' => array('first_name', 'last_name'),
+      'is_binary' => TRUE,
+      'like_clause' => "BINARY CONCAT('%', unhex('C2A0'), '%')",
+    ),
+    array(
+      // IDEOGRAPHIC SPACE
+      // http://www.fileformat.info/info/unicode/char/3000/index.htm
+      'find' => "E38080",
+      'replace_with' => ' ',
+      'fields' => array('first_name', 'last_name'),
+      'is_binary' => TRUE,
+      'like_clause' => "BINARY CONCAT('%', unhex('E38080'), '%')",
+    ),
+    array(
+      'find' => '  ',
+      'replace_with' => ' ',
+      'fields' => array('first_name', 'last_name'),
+    ),
+    array(
+      'find' => '&amp;',
+      'replace_with' => '&',
+      'fields' => array('first_name', 'last_name'),
+    ),
+    array(
+      'find' => '&Amp;',
+      'replace_with' => '&',
+      'fields' => array('first_name', 'last_name'),
+    ),
+  );
+  foreach ($replacements as $replacement) {
+    $likeClause = "'%{$replacement['find']}%'";
+    $findString = "'{$replacement['find']}'";
+    if (!empty($replacement['is_binary'])) {
+      $likeClause = $replacement['like_clause'];
+      $findString = "UNHEX('{$replacement['find']}')";
+    }
+    foreach ($replacement['fields'] as $field) {
+      wmf_civicrm_batch_update_data(
+        'civicrm_contact',
+        "WHERE $field LIKE BINARY $likeClause",
+      "SET a.{$field} = REPLACE({$field}, {$findString}, '{$replacement['replace_with']}')"
+      );
+    }
+  }
+
 }
