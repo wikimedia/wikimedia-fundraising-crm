@@ -203,4 +203,56 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 		) );
 		$this->assertNotEmpty( $contribution_tracking_id );
 	}
+
+	/**
+	 * Tests to make sure that certain error codes returned from GC will
+	 * trigger subscription cancellation, even if retryable errors also exist.
+	 *
+	 * @dataProvider mcNoRetryCodeProvider
+	 */
+	public function testNoMastercardFinesForRepeatOnBadCodes( $code ) {
+		TestingGlobalCollectAdapter::setDummyGatewayResponseCode( array(
+			'recurring-declined', // for the DO_PAYMENT call
+			$code // for the GET_ORDERSTATUS call
+		) );
+
+		$exceptioned = false;
+		try {
+			recurring_globalcollect_charge( $this->contributionRecurId );
+		} catch ( WmfException $e ) {
+			$this->assertEquals( 'PAYMENT_FAILED', $e->type );
+			$exceptioned = true;
+		}
+		$this->assertTrue( $exceptioned );
+
+		$contributions = civicrm_api3( 'Contribution', 'get', array(
+			'contact_id' => $this->contactId,
+		) );
+		// Should still just have the 1 from setUp
+		$this->assertEquals( 1, count( $contributions['values'] ) );
+		$contributionRecur = civicrm_api3( 'ContributionRecur', 'getSingle',
+			array( 'contact_id' => $this->contactId )
+		);
+		$cancelledStatus = civicrm_api_contribution_status('Cancelled');
+		$this->assertEquals(
+			$cancelledStatus, $contributionRecur['contribution_status_id']
+		);
+		$this->assertNotEmpty( $contributionRecur['cancel_date'] );
+		$this->assertTrue( empty( $contributionRecur['next_sched_contribution_date'] ) );
+		$this->assertTrue( empty( $contributionRecur['failure_retry_date'] ) );
+	}
+
+	/**
+	 * Transaction codes for GC and GC orphan adapters not to be retried
+	 * on pain of $1000+ fines by Mastercard
+	 */
+	public function mcNoRetryCodeProvider() {
+		return array(
+			array( '430260' ),
+			array( '430306' ),
+			array( '430330' ),
+			array( '430354' ),
+			array( '430357' ),
+		);
+	}
 }

@@ -165,11 +165,12 @@ EOS;
  * - [5] => In Progress (there is a process actively trying to process this donation right now; used to avoid race conditions, if a contribution is stuck in this state it'll need manual intervention and reconciliation)
  * - [6] => Overdue (not used by this module)
  *
- * @param integer $id     The primary key of the record.
+ * @param integer $id The primary key of the record.
  *
- * @return integer  Returns the number of affected rows.
+ * @param array $errors
+ * @return int Returns the number of affected rows.
  */
-function _recurring_globalcollect_update_record_failure($id) {
+function _recurring_globalcollect_update_record_failure($id, $errors) {
 
   $result = recurring_globalcollect_get_payment_by_id($id);
   $record = (array) $result;
@@ -188,7 +189,10 @@ function _recurring_globalcollect_update_record_failure($id) {
   $contribution_status_id = civicrm_api_contribution_status('Failed');
 
   // If there have been too many failures, cancel this payment permanently.
-  if ( $record['failure_count'] >= ( $failures_before_cancellation - 1 ) ) {
+  if (
+    $record['failure_count'] >= ( $failures_before_cancellation - 1 )
+    || recurring_globalcollect_should_force_cancel( $errors )
+  ) {
     $contribution_status_id = civicrm_api_contribution_status('Cancelled');
     $end_date = 'NULL';
     $failure_retry_date = 'NULL';
@@ -219,6 +223,40 @@ function _recurring_globalcollect_update_record_failure($id) {
   }
 
   return $affected_rows;
+}
+
+/**
+ * Detect payment errors serious enough to warrant cancelling the subscription
+ * without any retries. These are mostly codes which Mastercard would fine us
+ * for retrying.
+ * TODO: de-duplicate this list, or indicate severity somewhere in PaymentError
+ *
+ * @param PaymentError[] $errors
+ * @return bool true if there's an error serious enough to force cancellation
+ */
+function recurring_globalcollect_should_force_cancel( $errors ) {
+  $thirdRailErrorCodes = array(
+    '430260',
+    '430349',
+    '430357',
+    '430410',
+    '430415',
+    '430418',
+    '430421',
+    '430697',
+    '485020',
+    '4360022',
+    '4360023',
+    '430306',
+    '430330',
+    '430354',
+  );
+  foreach ( $errors as $error ) {
+    if ( array_search( $error->getErrorCode(), $thirdRailErrorCodes ) !== false ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
