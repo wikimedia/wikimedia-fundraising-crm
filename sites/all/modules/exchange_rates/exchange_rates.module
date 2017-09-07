@@ -3,6 +3,7 @@
 use exchange_rates\OandaRetriever;
 use exchange_rates\EcbRetriever;
 use exchange_rates\ExchangeRateUpdateException;
+use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
 function exchange_rates_menu() {
   $items = array();

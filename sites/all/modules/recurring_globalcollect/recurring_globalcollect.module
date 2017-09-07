@@ -338,7 +338,7 @@ function recurring_globalcollect_charge( $contribution_recur_id, $options = arra
   );
 
   if ( $result->isFailed() || $result->getErrors() ) {
-    _recurring_globalcollect_update_record_failure($contribution_recur_id);
+    _recurring_globalcollect_update_record_failure($contribution_recur_id, $result->getErrors());
     throw new WmfException( 'PAYMENT_FAILED', 'recurring charge failed', array('payment_result' => $result));
   }
 
