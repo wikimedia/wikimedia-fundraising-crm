@@ -26,6 +26,26 @@ class CRM_Omnimail_Omnimail {
    */
   public $endTimeStamp;
 
+
+  /**
+   * @var array
+   */
+  protected $retrievalParameters;
+
+  /**
+   * @return array
+   */
+  public function getRetrievalParameters() {
+    return $this->retrievalParameters;
+  }
+
+  /**
+   * @param array $retrievalParameters
+   */
+  public function setRetrievalParameters($retrievalParameters) {
+    $this->retrievalParameters = $retrievalParameters;
+  }
+
   /**
    * Get the timestamp to start from.
    *

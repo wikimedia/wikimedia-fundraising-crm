@@ -47,15 +47,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
     civicrm_api3('Omnigroupmember', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Shrek', 'password' => 'Fiona', 'options' => array('limit' => 3), 'client' => $client, 'group_identifier' => 123, 'group_id' => $group['id']));
     $groupMembers = civicrm_api3('GroupContact', 'get', array('group_id' => $group['id']));
     $this->assertEquals(3, $groupMembers['count']);
-    $contactIDs = array('IN' => array());
-    foreach ($groupMembers['values'] as $groupMember) {
-      $contactIDs['IN'][] = $groupMember['contact_id'];
-    }
-    $contacts = civicrm_api3('Contact', 'get', array(
-      'contact_id' => $contactIDs,
-      'sequential' => 1,
-      'return' => array('contact_source', 'email', 'country', 'created_date', 'preferred_language', 'is_opt_out')
-    ));
+    $contacts = $this->getGroupMemberDetails($groupMembers);
     $this->assertEquals('fr_FR', $contacts['values'][0]['preferred_language']);
     $this->assertEquals('eric@example.com', $contacts['values'][0]['email']);
     $this->assertEquals('France', $contacts['values'][0]['country']);
@@ -63,6 +55,45 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
     $this->assertEquals('Silverpop Added by WebForms 10/18/16', $contacts['values'][0]['contact_source']);
 
     $this->assertEquals('Silverpop clever place 07/04/17', $contacts['values'][2]['contact_source']);
+    $this->cleanupGroup($group);
+  }
+
+  /**
+   * Example: Test that offset is respected.
+   */
+  public function testOmnigroupmemberLoadOffset() {
+    $client = $this->setupSuccessfulDownloadClient();
+    $group = civicrm_api3('Group', 'create', array('name' => 'Omnimailers', 'title' => 'Omni'));
+
+    civicrm_api3('Omnigroupmember', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Shrek', 'password' => 'Fiona', 'options' => array('offset' => 1), 'client' => $client, 'group_identifier' => 123, 'group_id' => $group['id']));
+    $groupMembers = civicrm_api3('GroupContact', 'get', array('group_id' => $group['id']));
+    $this->assertEquals(2, $groupMembers['count']);
+    $contacts = $this->getGroupMemberDetails($groupMembers);
+    $this->assertEquals('sarah@example.com', $contacts['values'][0]['email']);
+    $this->assertEquals('lisa@example.com', $contacts['values'][1]['email']);
+    $this->cleanupGroup($group);
+  }
+
+  /**
+   * Example: Test that offset is respected.
+   */
+  public function testOmnigroupmemberLoadUseOffsetSetting() {
+    $client = $this->setupSuccessfulDownloadClient();
+    $group = civicrm_api3('Group', 'create', array('name' => 'Omnimailers', 'title' => 'Omni'));
+
+    civicrm_api3('Omnigroupmember', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Shrek', 'password' => 'Fiona', 'options' => array('limit' => 1), 'client' => $client, 'group_identifier' => 123, 'group_id' => $group['id']));
+    $groupMembers = civicrm_api3('GroupContact', 'get', array('group_id' => $group['id']));
+    $this->assertEquals(1, $groupMembers['count']);
+    $contacts = $this->getGroupMemberDetails($groupMembers);
+    $this->assertEquals('eric@example.com', $contacts['values'][0]['email']);
+
+    // Re-run. Offset is now 1 in settings & we are passing in limit =1. Sarah should be created.
+    $client = $this->setupSuccessfulDownloadClient(FALSE);
+    civicrm_api3('Omnigroupmember', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Shrek', 'password' => 'Fiona', 'options' => array('limit' => 1), 'client' => $client, 'group_identifier' => 123, 'group_id' => $group['id']));
+    $groupMembers = civicrm_api3('GroupContact', 'get', array('group_id' => $group['id']));
+    $this->assertEquals(2, $groupMembers['count']);
+    $contacts = $this->getGroupMemberDetails($groupMembers);
+    $this->assertEquals('sarah@example.com', $contacts['values'][1]['email']);
     $this->cleanupGroup($group);
 
   }
@@ -97,6 +128,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
         'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
       ),
       'progress_end_date' => '1488495600',
+      'offset' => 0,
     ), $this->getJobSettings());
     $this->cleanupGroup($group);
   }
@@ -140,16 +172,21 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
   }
 
   /**
+   * Set up the mock client to emulate a successful download.
+   * @param bool $isUpdateSetting
+   *
    * @return \GuzzleHttp\Client
    */
-  protected function setupSuccessfulDownloadClient() {
+  protected function setupSuccessfulDownloadClient($isUpdateSetting = TRUE) {
     $responses = array(
       file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
     );
     copy(__DIR__ . '/Responses/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv', sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
     fopen(sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv.complete', 'c');
-    $this->createSetting('omnimail_omnigroupmembers_load', array('Silverpop' => array('last_timestamp' => '1487890800')));
+    if ($isUpdateSetting) {
+      $this->createSetting('omnimail_omnigroupmembers_load', array('Silverpop' => array('last_timestamp' => '1487890800')));
+    }
 
     $client = $this->getMockRequest($responses);
     return $client;
@@ -175,6 +212,30 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
     ));
     civicrm_api3('Group', 'delete', array('id' => $group['id']));
 
+  }
+
+  /**
+   * @param $groupMembers
+   * @return array
+   */
+  protected function getGroupMemberDetails($groupMembers) {
+    $contactIDs = array('IN' => array());
+    foreach ($groupMembers['values'] as $groupMember) {
+      $contactIDs['IN'][] = $groupMember['contact_id'];
+    }
+    $contacts = civicrm_api3('Contact', 'get', array(
+      'contact_id' => $contactIDs,
+      'sequential' => 1,
+      'return' => array(
+        'contact_source',
+        'email',
+        'country',
+        'created_date',
+        'preferred_language',
+        'is_opt_out'
+      )
+    ));
+    return $contacts;
   }
 
 }

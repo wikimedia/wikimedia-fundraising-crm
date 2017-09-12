@@ -41,6 +41,13 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     }
 
     $request = Omnimail::create($params['mail_provider'], $mailerCredentials)->getGroupMembers($jobParameters);
+    $offset = CRM_Utils_Array::value('offset', $jobSettings, 0);
+    if (isset($params['options']['offset'])) {
+      $offset = $params['options']['offset'];
+    }
+    if ($offset) {
+      $request->setOffset((int) $offset);
+    }
 
     $startTimestamp = self::getStartTimestamp($params, $jobSettings);
     $this->endTimeStamp = self::getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
@@ -58,6 +65,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     $request->setGroupIdentifier($params['group_identifier']);
 
     $result = $request->getResponse();
+    $this->setRetrievalParameters($result->getRetrievalParameters());
     for ($i = 0; $i < $settings['omnimail_job_retry_number']; $i++) {
       if ($result->isCompleted()) {
         $data = $result->getData();
@@ -69,7 +77,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     }
 
     throw new CRM_Omnimail_IncompleteDownloadException('Download incomplete', 0, array(
-      'retrieval_parameters' => $result->getRetrievalParameters(),
+      'retrieval_parameters' => $this->getRetrievalParameters(),
       'mail_provider' => $params['mail_provider'],
       'end_date' => $this->endTimeStamp,
     ));

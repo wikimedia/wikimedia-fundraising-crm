@@ -22,17 +22,18 @@ function civicrm_api3_omnigroupmember_load($params) {
   $rowsLeftBeforeThrottle = $throttleCount;
 
   $job = new CRM_Omnimail_Omnigroupmembers();
+  $jobSettings = $job->getJobSettings($params);
   try {
     $contacts = $job->getResult($params);
   }
   catch (CRM_Omnimail_IncompleteDownloadException $e) {
-    $jobSettings = $job->getJobSettings($params);
     civicrm_api3('Setting', 'create', array(
       'omnimail_omnigroupmembers_load' => array(
         $params['mail_provider'] => array(
           'last_timestamp' => $jobSettings['last_timestamp'],
           'retrieval_parameters' => $e->getRetrievalParameters(),
           'progress_end_date' => $e->getEndTimestamp(),
+          'offset' => 0,
         ),
       ),
     ));
@@ -42,7 +43,31 @@ function civicrm_api3_omnigroupmember_load($params) {
   $defaultLocationType = CRM_Core_BAO_LocationType::getDefault();
   $locationTypeID = $defaultLocationType->id;
 
+  if (isset($params['options']['offset'])) {
+    $offset = $params['options']['offset'];
+  }
+  else {
+    $offset = CRM_Utils_Array::value('offset', $jobSettings, 0);
+  }
+  $limit = (isset($params['options']['limit'])) ? $params['options']['limit'] : NULL;
+  $count = 0;
+
   foreach ($contacts as $contact) {
+    if ($count === $limit) {
+      civicrm_api3('Setting', 'create', array(
+        'omnimail_omnigroupmembers_load' => array(
+          $params['mail_provider'] => array(
+            'last_timestamp' => $jobSettings['last_timestamp'],
+            'retrieval_parameters' => $job->getRetrievalParameters(),
+            'progress_end_date' => $job->endTimeStamp,
+            'offset' => $offset,
+          ),
+        ),
+      ));
+      // Do this here - ie. before processing a new row rather than at the end of the last row
+      // to avoid thinking a job is incomplete if the limit co-incides with available rows.
+      return civicrm_api3_create_success($values);
+    }
     $groupMember = $job->formatRow($contact, $params['custom_data_map']);
     if (!empty($groupMember['email']) && !civicrm_api3('email', 'getcount', array('email' => $groupMember['email']))) {
       // If there is already a contact with this email we will skip for now.
@@ -76,12 +101,23 @@ function civicrm_api3_omnigroupmember_load($params) {
       }
       $values[$contact['id']] = reset($contact['values']);
     }
+    $offset++;
+    $count++;
+    // Every row seems extreme but perhaps not in this performance monitoring phase.
+    civicrm_api3('Setting', 'create', array(
+      'omnimail_omnigroupmembers_load' => array(
+        $params['mail_provider'] => array_merge(
+          $jobSettings, array('offset' => $offset)
+        )
+      ),
+    ));
 
     $rowsLeftBeforeThrottle--;
     if ($throttleStagePoint && (strtotime('now') > $throttleStagePoint)) {
       $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . 'seconds');
       $rowsLeftBeforeThrottle = $throttleCount;
     }
+
     if ($throttleSeconds && $rowsLeftBeforeThrottle <= 0) {
       sleep(ceil($throttleStagePoint - strtotime('now')));
     }
