@@ -180,6 +180,14 @@ class WmfException extends Exception {
 
     function isRequeue()
     {
+    	if ( $this->extra && !empty( $this->extra['sql'] ) ) {
+    		// We want to retry later if the problem was a lock wait timeout
+			// or a deadlock. Unfortunately we have to do string parsing to
+			// figure that out.
+    		if ( preg_match( '/\bnativecode=12(05|13)\b/', $this->extra['sql'] ) ) {
+    			return TRUE;
+			}
+		}
         return $this->getErrorCharacteristic('requeue', FALSE);
     }
 
