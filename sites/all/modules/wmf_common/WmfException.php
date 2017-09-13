@@ -136,7 +136,11 @@ class WmfException extends Exception {
         }
         $this->message = "{$this->type} {$message}";
         $this->userMessage = $this->message;
-        $this->message = $this->message . "\nSource: " . var_export( $this->extra, true );
+        $addToMessage = $this->extra;
+        if ( isset ( $addToMessage['trace'] ) ) {
+        	unset ( $addToMessage['trace'] );
+		}
+        $this->message = $this->message . "\nSource: " . var_export( $addToMessage, true );
 
         if ( function_exists( 'watchdog' ) ) {
             // It seems that dblog_watchdog will pass through XSS, so
@@ -170,7 +174,7 @@ class WmfException extends Exception {
 
     function isRejectMessage()
     {
-        return $this->getErrorCharacteristic('reject', FALSE);
+        return !$this->isRequeue() && $this->getErrorCharacteristic('reject', FALSE);
     }
 
     function isDropMessage()
@@ -180,11 +184,11 @@ class WmfException extends Exception {
 
     function isRequeue()
     {
-    	if ( $this->extra && !empty( $this->extra['sql'] ) ) {
+    	if ( $this->extra && !empty( $this->extra['trace'] ) ) {
     		// We want to retry later if the problem was a lock wait timeout
 			// or a deadlock. Unfortunately we have to do string parsing to
 			// figure that out.
-    		if ( preg_match( '/\bnativecode=12(05|13)\b/', $this->extra['sql'] ) ) {
+    		if ( preg_match( '/\'12(05|13) \*\* /', $this->extra['trace'] ) ) {
     			return TRUE;
 			}
 		}
