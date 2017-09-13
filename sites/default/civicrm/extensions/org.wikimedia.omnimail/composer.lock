@@ -707,7 +707,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "e06e50192ae17fe93f1045ee7562aa286272cbcc"
+                "reference": "45eaa193c3353bcceb27bb2676da08598fd57686"
             },
             "require": {
                 "league/csv": "^8.0",
@@ -746,7 +746,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2017-07-05 04:12:48"
+            "time": "2017-09-12 23:04:53"
         }
     ],
     "packages-dev": [
