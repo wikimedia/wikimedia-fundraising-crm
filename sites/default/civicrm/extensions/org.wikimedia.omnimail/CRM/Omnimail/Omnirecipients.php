@@ -48,6 +48,9 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
       $request->setRetrievalParameters($jobSettings['retrieval_parameters']);
     }
     elseif ($startTimestamp) {
+      if ($this->endTimeStamp < $startTimestamp) {
+        throw new CiviCRM_API3_Exception(ts("End timestamp: " . date('Y-m-d H:i:s', $this->endTimeStamp) . " is before " . "Start timestamp: " . date('Y-m-d H:i:s', $startTimestamp)));
+      }
       $request->setStartTimeStamp($startTimestamp);
       $request->setEndTimeStamp($this->endTimeStamp);
     }
