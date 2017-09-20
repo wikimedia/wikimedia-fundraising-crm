@@ -21,21 +21,17 @@ function civicrm_api3_omnigroupmember_load($params) {
   $throttleCount = (int) CRM_Utils_Array::value('throttle_number', $params);
   $rowsLeftBeforeThrottle = $throttleCount;
 
-  $job = new CRM_Omnimail_Omnigroupmembers();
+  $job = new CRM_Omnimail_Omnigroupmembers($params);
   $jobSettings = $job->getJobSettings($params);
   try {
     $contacts = $job->getResult($params);
   }
   catch (CRM_Omnimail_IncompleteDownloadException $e) {
-    civicrm_api3('Setting', 'create', array(
-      'omnimail_omnigroupmembers_load' => array(
-        $params['mail_provider'] => array(
-          'last_timestamp' => $jobSettings['last_timestamp'],
-          'retrieval_parameters' => $e->getRetrievalParameters(),
-          'progress_end_date' => $e->getEndTimestamp(),
-          'offset' => 0,
-        ),
-      ),
+    $job->saveJobSetting(array(
+      'last_timestamp' => $jobSettings['last_timestamp'],
+      'retrieval_parameters' => $e->getRetrievalParameters(),
+      'progress_end_date' => $e->getEndTimestamp(),
+      'offset' => 0,
     ));
     return civicrm_api3_create_success(1);
   }
@@ -43,26 +39,17 @@ function civicrm_api3_omnigroupmember_load($params) {
   $defaultLocationType = CRM_Core_BAO_LocationType::getDefault();
   $locationTypeID = $defaultLocationType->id;
 
-  if (isset($params['options']['offset'])) {
-    $offset = $params['options']['offset'];
-  }
-  else {
-    $offset = CRM_Utils_Array::value('offset', $jobSettings, 0);
-  }
+  $offset = $job->getOffset();
   $limit = (isset($params['options']['limit'])) ? $params['options']['limit'] : NULL;
   $count = 0;
 
   foreach ($contacts as $contact) {
     if ($count === $limit) {
-      civicrm_api3('Setting', 'create', array(
-        'omnimail_omnigroupmembers_load' => array(
-          $params['mail_provider'] => array(
-            'last_timestamp' => $jobSettings['last_timestamp'],
-            'retrieval_parameters' => $job->getRetrievalParameters(),
-            'progress_end_date' => $job->endTimeStamp,
-            'offset' => $offset,
-          ),
-        ),
+      $job->saveJobSetting(array(
+        'last_timestamp' => $jobSettings['last_timestamp'],
+        'retrieval_parameters' => $job->getRetrievalParameters(),
+        'progress_end_date' => $job->endTimeStamp,
+        'offset' => $offset + $count,
       ));
       // Do this here - ie. before processing a new row rather than at the end of the last row
       // to avoid thinking a job is incomplete if the limit co-incides with available rows.
@@ -101,16 +88,10 @@ function civicrm_api3_omnigroupmember_load($params) {
       }
       $values[$contact['id']] = reset($contact['values']);
     }
-    $offset++;
+
     $count++;
     // Every row seems extreme but perhaps not in this performance monitoring phase.
-    civicrm_api3('Setting', 'create', array(
-      'omnimail_omnigroupmembers_load' => array(
-        $params['mail_provider'] => array_merge(
-          $jobSettings, array('offset' => $offset)
-        )
-      ),
-    ));
+    $job->saveJobSetting(array_merge($jobSettings, array('offset' => $offset + $count)));
 
     $rowsLeftBeforeThrottle--;
     if ($throttleStagePoint && (strtotime('now') > $throttleStagePoint)) {
@@ -122,11 +103,8 @@ function civicrm_api3_omnigroupmember_load($params) {
       sleep(ceil($throttleStagePoint - strtotime('now')));
     }
   }
-  civicrm_api3('Setting', 'create', array(
-    'omnimail_omnigroupmembers_load' => array(
-      $params['mail_provider'] => array('last_timestamp' => $job->endTimeStamp),
-    ),
-  ));
+
+  $job->saveJobSetting(array('last_timestamp' => $job->endTimeStamp));
   return civicrm_api3_create_success($values);
 }
 
@@ -244,6 +222,12 @@ function _civicrm_api3_omnigroupmember_load_spec(&$params) {
     'description' => ts('If the throttle limit is passed before this number of seconds is reached php will sleep until it hits it.'),
     'type' => CRM_Utils_Type::T_INT,
     'api.default' => 60,
+  );
+  $params['job_suffix'] = array(
+    'title' => ts('A suffix string to add to job-specific settings.'),
+    'description' => ts('The suffix allows for multiple settings to be stored for one job. For example if wishing to run an up-top-date job and a catch-up job'),
+    'type' => CRM_Utils_Type::T_STRING,
+    'api.default' => '',
   );
 
 }

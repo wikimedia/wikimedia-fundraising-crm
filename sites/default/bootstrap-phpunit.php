@@ -1,5 +1,6 @@
 <?php
 
+define( 'WMF_CRM_PHPUNIT', true );
 define( 'DRUPAL_ROOT', realpath( __DIR__ ) . "/../../drupal" );
 require_once( DRUPAL_ROOT . "/sites/all/modules/wmf_common/tests/includes/BaseWmfDrupalPhpUnitTestCase.php" );
 require_once( DRUPAL_ROOT . "/sites/all/modules/offline2civicrm/tests/includes/BaseChecksFileTest.php" );
@@ -17,6 +18,7 @@ restore_error_handler();
 // Load contrib libs so tests can inherit from them.
 require_once( DRUPAL_ROOT . '/../vendor/autoload.php' );
 // And explicitly load some DonationInterface things that it doesn't export via Composer
+require_once(DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface/tests/phpunit/TestConfiguration.php');
 require_once( DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/test.adapter.php' );
 require_once( DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/TestingGlobalCollectAdapter.php' );
 require_once( DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/TestingGlobalCollectOrphanAdapter.php' );
@@ -26,5 +28,5 @@ putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php'
 require_once DRUPAL_ROOT . '/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit/bootstrap.php';
 
 if ( !defined( 'PRINT_WATCHDOG_ON_TEST_FAIL' ) ) {
-	define( 'PRINT_WATCHDOG_ON_TEST_FAIL', true );
+    define( 'PRINT_WATCHDOG_ON_TEST_FAIL', true );
 }

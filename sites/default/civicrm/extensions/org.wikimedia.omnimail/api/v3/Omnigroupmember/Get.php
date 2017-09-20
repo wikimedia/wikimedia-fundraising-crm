@@ -14,7 +14,7 @@
  * @return array
  */
 function civicrm_api3_omnigroupmember_get($params) {
-  $job = new CRM_Omnimail_Omnigroupmembers();
+  $job = new CRM_Omnimail_Omnigroupmembers($params);
   $result = $job->getResult($params);
   $values = $job->formatResult($params, $result);
   return civicrm_api3_create_success($values);

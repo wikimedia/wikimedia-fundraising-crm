@@ -24,28 +24,26 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
 
   /**
    * @param array $params
-   *
    * @return \Omnimail\Silverpop\Responses\RecipientsResponse
    *
-   * @throws \CRM_Omnimail_IncompleteDownloadException
    * @throws \API_Exception
+   * @throws \CRM_Omnimail_IncompleteDownloadException
+   * @throws \CiviCRM_API3_Exception
    */
   public function getResult($params) {
-    $jobSettings = $this->getJobSettings($params);
     $settings = CRM_Omnimail_Helper::getSettings();
 
     $mailerCredentials = CRM_Omnimail_Helper::getCredentials($params);
 
+    /** @var Omnimail\Silverpop\Requests\RawRecipientDataExportRequest $request */
     $request = Omnimail::create($params['mail_provider'], $mailerCredentials)->getRecipients();
+    $request->setOffset($this->offset);
 
-    $startTimestamp = self::getStartTimestamp($params, $jobSettings);
+    $startTimestamp = $this->getStartTimestamp($params);
     $this->endTimeStamp = self::getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
 
-    if (isset($jobSettings['retrieval_parameters'])) {
-      if (!empty($params['end_date']) || !empty($params['start_date'])) {
-        throw new API_Exception('A prior retrieval is in progress. Do not pass in dates to complete a retrieval');
-      }
-      $request->setRetrievalParameters($jobSettings['retrieval_parameters']);
+    if ($this->getRetrievalParameters()) {
+      $request->setRetrievalParameters($this->getRetrievalParameters());
     }
     elseif ($startTimestamp) {
       if ($this->endTimeStamp < $startTimestamp) {
@@ -56,6 +54,7 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
     }
 
     $result = $request->getResponse();
+    $this->setRetrievalParameters($result->getRetrievalParameters());
     for ($i = 0; $i < $settings['omnimail_job_retry_number']; $i++) {
       if ($result->isCompleted()) {
         $data = $result->getData();
@@ -66,7 +65,7 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
       }
     }
     throw new CRM_Omnimail_IncompleteDownloadException('Download incomplete', 0, array(
-      'retrieval_parameters' => $result->getRetrievalParameters(),
+      'retrieval_parameters' => $this->getRetrievalParameters(),
       'mail_provider' => $params['mail_provider'],
       'end_date' => $this->endTimeStamp,
     ));

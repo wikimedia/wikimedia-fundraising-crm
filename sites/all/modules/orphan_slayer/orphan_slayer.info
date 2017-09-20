@@ -1,0 +1,5 @@
+name = Orphan Slayer
+description = Drush command to find what happened to orphaned transactions
+core = 7.x
+dependencies[] = wmf_civicrm
+files[] = OrphanSlayer.php

@@ -96,6 +96,16 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
     $this->assertEquals('sarah@example.com', $contacts['values'][1]['email']);
     $this->cleanupGroup($group);
 
+    $this->assertEquals(array(
+      'last_timestamp' => '1487890800',
+      'progress_end_date' => '1488495600',
+      'offset' => 2,
+      'retrieval_parameters' => array(
+        'jobId' => '101719657',
+        'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
+      ),
+    ), $this->getJobSettings());
+
   }
 
   /**
@@ -130,6 +140,49 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
       'progress_end_date' => '1488495600',
       'offset' => 0,
     ), $this->getJobSettings());
+    $this->cleanupGroup($group);
+  }
+
+  /**
+   * Test when download does not complete in time.
+   */
+  public function testOmnigroupmemberLoadIncompleteUseSuffix() {
+    civicrm_api3('Setting', 'create', array(
+      'omnimail_omnigroupmembers_load' => array(
+        'Silverpop' . '_woot' => array('last_timestamp' => '1487890800'),
+      ),
+    ));
+    $responses = array(
+      file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
+    );
+    for ($i = 0; $i < 15; $i++) {
+      $responses[] = file_get_contents(__DIR__ . '/Responses/JobStatusWaitingResponse.txt');
+    }
+    civicrm_api3('setting', 'create', array('omnimail_job_retry_interval' => 0.01));
+    $group = civicrm_api3('Group', 'create', array('name' => 'Omnimailers2', 'title' => 'Omni2'));
+
+    civicrm_api3('Omnigroupmember', 'load', array(
+      'mail_provider' => 'Silverpop',
+      'username' => 'Donald',
+      'password' => 'Duck',
+      'client' => $this->getMockRequest($responses),
+      'group_identifier' => 123,
+      'group_id' => $group['id'],
+      'job_suffix' => '_woot',
+      ));
+
+    $groupMembers = civicrm_api3('GroupContact', 'get', array('group_id' => $group['id']));
+    $this->assertEquals(0, $groupMembers['count']);
+
+    $this->assertEquals(array(
+      'last_timestamp' => '1487890800',
+      'retrieval_parameters' => array(
+        'jobId' => '101719657',
+        'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
+      ),
+      'progress_end_date' => '1488495600',
+      'offset' => 0,
+    ), $this->getJobSettings(array('mail_provider' => 'Silverpop', 'job_suffix' => '_woot')));
     $this->cleanupGroup($group);
   }
 
@@ -195,11 +248,13 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
   /**
    * Get job settings.
    *
+   * @param array $params
+   *
    * @return array
    */
-  public function getJobSettings() {
-    $omnimail = new CRM_Omnimail_Omnigroupmembers();
-    return $omnimail->getJobSettings(array('mail_provider' => 'Silverpop'));
+  public function getJobSettings($params = array('mail_provider' => 'Silverpop')) {
+    $omnimail = new CRM_Omnimail_Omnigroupmembers($params);
+    return $omnimail->getJobSettings();
   }
 
   /**
