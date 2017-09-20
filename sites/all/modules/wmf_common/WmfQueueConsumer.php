@@ -43,6 +43,7 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 	) {
 		$mailableDetails = '';
 		$reject = false;
+		$requeued = false;
 
 		if ( $ex->isRequeue() ) {
 			$delay = intval( variable_get( 'wmf_common_requeue_delay', 20 * 60 ) );
@@ -64,6 +65,7 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 			} else {
 				$retryDate = time() + $delay;
 				$this->sendToDamagedStore( $message, $ex, $retryDate );
+				$requeued = true;
 			}
 		}
 
@@ -91,7 +93,7 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 			$mailableDetails = "Redacted contents of message ID: $logId";
 		}
 
-		if ( !$ex->isNoEmail() ) {
+		if ( !$ex->isNoEmail() && !$requeued ) {
 			wmf_common_failmail( 'wmf_common', '', $ex, $mailableDetails );
 		}
 
