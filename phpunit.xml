@@ -15,6 +15,9 @@
       <testsuite name="exchange_rates tests">
         <directory>sites/all/modules/exchange_rates/tests/phpunit</directory>
       </testsuite>
+      <testsuite name="metrics_reporting tests">
+        <directory>sites/all/modules/metrics_reporting/tests/phpunit</directory>
+      </testsuite>
       <testsuite name="orphan_slayer tests">
         <directory>sites/all/modules/orphan_slayer/tests/phpunit</directory>
       </testsuite>
