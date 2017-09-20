@@ -42,6 +42,15 @@ class CRM_Omnimail_Omnimail {
   protected $retrievalParameters;
 
   /**
+   * @var string
+   */
+  protected $job_suffix;
+
+  /**
+   * @var string
+   */
+  protected $mail_provider;
+  /**
    * CRM_Omnimail_Omnimail constructor.
    *
    * @param array $params
@@ -49,6 +58,8 @@ class CRM_Omnimail_Omnimail {
    * @throws \API_Exception
    */
   public function __construct($params) {
+    $this->job_suffix = !empty($params['job_suffix']) ? $params['job_suffix'] : '';
+    $this->mail_provider = $params['mail_provider'];
     $this->setJobSettings($params);
     $this->setOffset($params);
     $this->setRetrievalParameters(CRM_Utils_Array::value('retrieval_parameters', $this->jobSettings));
@@ -150,7 +161,20 @@ class CRM_Omnimail_Omnimail {
    */
   protected function setJobSettings($params) {
     $settings = CRM_Omnimail_Helper::getSettings();
-    $this->jobSettings = CRM_Utils_Array::value($params['mail_provider'], $settings['omnimail_' . $this->job . '_load'], array());
+    $this->jobSettings = CRM_Utils_Array::value($params['mail_provider'] . $this->job_suffix, $settings['omnimail_' . $this->job . '_load'], array());
+  }
+
+  /**
+   * Save the job settings.
+   *
+   * @param array $setting
+   */
+  function saveJobSetting($setting) {
+    civicrm_api3('Setting', 'create', array(
+      'omnimail_' . $this->job . '_load' => array(
+        $this->mail_provider . $this->job_suffix => $setting,
+      ),
+    ));
   }
 
 }
