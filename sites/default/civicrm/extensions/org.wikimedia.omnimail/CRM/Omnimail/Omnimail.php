@@ -45,10 +45,19 @@ class CRM_Omnimail_Omnimail {
    * CRM_Omnimail_Omnimail constructor.
    *
    * @param array $params
+   *
+   * @throws \API_Exception
    */
   public function __construct($params) {
     $this->setJobSettings($params);
     $this->setOffset($params);
+    $this->setRetrievalParameters(CRM_Utils_Array::value('retrieval_parameters', $this->jobSettings));
+
+    if ($this->getRetrievalParameters()) {
+      if (!empty($params['end_date']) || !empty($params['start_date'])) {
+        throw new API_Exception('A prior retrieval is in progress. Do not pass in dates to complete a retrieval');
+      }
+    }
   }
 
   /**
@@ -69,16 +78,15 @@ class CRM_Omnimail_Omnimail {
    * Get the timestamp to start from.
    *
    * @param array $params
-   * @param array $jobSettings
    *
    * @return string
    */
-  protected static function getStartTImestamp($params, $jobSettings) {
+  public function getStartTimestamp($params) {
     if (isset($params['start_date'])) {
       return strtotime($params['start_date']);
     }
-    if (!empty($jobSettings['last_timestamp'])) {
-      return $jobSettings['last_timestamp'];
+    if (!empty($this->jobSettings['last_timestamp'])) {
+      return $this->jobSettings['last_timestamp'];
     }
     return strtotime('450 days ago');
   }

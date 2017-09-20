@@ -43,14 +43,11 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     $request = Omnimail::create($params['mail_provider'], $mailerCredentials)->getGroupMembers($jobParameters);
     $request->setOffset((int) $this->offset);
 
-    $startTimestamp = self::getStartTimestamp($params, $this->jobSettings);
+    $startTimestamp = $this->getStartTimestamp($params);
     $this->endTimeStamp = self::getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
 
-    if (isset($this->jobSettings['retrieval_parameters'])) {
-      if (!empty($params['end_date']) || !empty($params['start_date'])) {
-        throw new API_Exception('A prior retrieval is in progress. Do not pass in dates to complete a retrieval');
-      }
-      $request->setRetrievalParameters($this->jobSettings['retrieval_parameters']);
+    if ($this->getRetrievalParameters()) {
+      $request->setRetrievalParameters($this->getRetrievalParameters());
     }
     elseif ($startTimestamp) {
       $request->setStartTimeStamp($startTimestamp);

@@ -33,13 +33,31 @@ function civicrm_api3_omnirecipient_load($params) {
   try {
     $omnimail = new CRM_Omnimail_Omnirecipients($params);
     $recipients = $omnimail->getResult($params);
+    $jobSettings = $omnimail->getJobSettings();
 
     $throttleSeconds = CRM_Utils_Array::value('throttle_seconds', $params);
     $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . ' seconds');
     $throttleCount = (int) CRM_Utils_Array::value('throttle_number', $params);
     $rowsLeftBeforeThrottle = $throttleCount;
+    $limit = (isset($params['options']['limit'])) ? $params['options']['limit'] : NULL;
+    $count = 0;
 
     foreach ($recipients as $recipient) {
+      if ($count === $limit) {
+        civicrm_api3('Setting', 'create', array(
+          'omnimail_omnirecipient_load' => array(
+            $params['mail_provider'] => array(
+              'last_timestamp' => $jobSettings['last_timestamp'],
+              'retrieval_parameters' => $omnimail->getRetrievalParameters(),
+              'progress_end_date' => $omnimail->endTimeStamp,
+              'offset' => $omnimail->getOffset() + $count,
+            ),
+          ),
+        ));
+        // Do this here - ie. before processing a new row rather than at the end of the last row
+        // to avoid thinking a job is incomplete if the limit co-incides with available rows.
+        return civicrm_api3_create_success(1);
+      }
       $insertValues = array(
         1 => array((string) $recipient->getContactIdentifier(), 'String'),
         2 => array(
@@ -61,6 +79,7 @@ function civicrm_api3_omnirecipient_load($params) {
         $insertValues);
 
       $rowsLeftBeforeThrottle--;
+      $count++;
       if ($throttleStagePoint && (strtotime('now') > $throttleStagePoint)) {
         $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . 'seconds');
         $rowsLeftBeforeThrottle = $throttleCount;
@@ -77,11 +96,10 @@ function civicrm_api3_omnirecipient_load($params) {
     return civicrm_api3_create_success(1);
   }
   catch (CRM_Omnimail_IncompleteDownloadException $e) {
-    $jobSettings = $omnimail->getJobSettings($params);
     civicrm_api3('Setting', 'create', array(
       'omnimail_omnirecipient_load' => array(
         $params['mail_provider'] => array(
-          'last_timestamp' => $jobSettings['last_timestamp'],
+          'last_timestamp' => $omnimail->getStartTimestamp($params),
           'retrieval_parameters' => $e->getRetrievalParameters(),
           'progress_end_date' => $e->getEndTimestamp(),
         ),

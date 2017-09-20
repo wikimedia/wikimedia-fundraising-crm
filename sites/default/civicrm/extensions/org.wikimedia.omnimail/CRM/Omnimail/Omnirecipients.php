@@ -37,15 +37,13 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
 
     /** @var Omnimail\Silverpop\Requests\RawRecipientDataExportRequest $request */
     $request = Omnimail::create($params['mail_provider'], $mailerCredentials)->getRecipients();
+    $request->setOffset($this->offset);
 
-    $startTimestamp = self::getStartTimestamp($params, $this->jobSettings);
+    $startTimestamp = $this->getStartTimestamp($params);
     $this->endTimeStamp = self::getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
 
-    if (isset($this->jobSettings['retrieval_parameters'])) {
-      if (!empty($params['end_date']) || !empty($params['start_date'])) {
-        throw new API_Exception('A prior retrieval is in progress. Do not pass in dates to complete a retrieval');
-      }
-      $request->setRetrievalParameters($this->jobSettings['retrieval_parameters']);
+    if ($this->getRetrievalParameters()) {
+      $request->setRetrievalParameters($this->getRetrievalParameters());
     }
     elseif ($startTimestamp) {
       if ($this->endTimeStamp < $startTimestamp) {
@@ -56,6 +54,7 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
     }
 
     $result = $request->getResponse();
+    $this->setRetrievalParameters($result->getRetrievalParameters());
     for ($i = 0; $i < $settings['omnimail_job_retry_number']; $i++) {
       if ($result->isCompleted()) {
         $data = $result->getData();
@@ -66,7 +65,7 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
       }
     }
     throw new CRM_Omnimail_IncompleteDownloadException('Download incomplete', 0, array(
-      'retrieval_parameters' => $result->getRetrievalParameters(),
+      'retrieval_parameters' => $this->getRetrievalParameters(),
       'mail_provider' => $params['mail_provider'],
       'end_date' => $this->endTimeStamp,
     ));

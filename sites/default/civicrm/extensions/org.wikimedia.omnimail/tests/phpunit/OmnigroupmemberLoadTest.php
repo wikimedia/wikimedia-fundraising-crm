@@ -96,6 +96,16 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
     $this->assertEquals('sarah@example.com', $contacts['values'][1]['email']);
     $this->cleanupGroup($group);
 
+    $this->assertEquals(array(
+      'last_timestamp' => '1487890800',
+      'progress_end_date' => '1488495600',
+      'offset' => 2,
+      'retrieval_parameters' => array(
+        'jobId' => '101719657',
+        'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
+      ),
+    ), $this->getJobSettings());
+
   }
 
   /**

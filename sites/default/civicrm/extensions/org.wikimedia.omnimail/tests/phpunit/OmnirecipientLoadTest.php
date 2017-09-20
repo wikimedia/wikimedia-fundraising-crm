@@ -93,6 +93,47 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
   }
 
   /**
+   * Example: Test that a version is returned.
+   */
+  public function testOmnirecipientLoadLimitAndOffset() {
+    $client = $this->setupSuccessfulDownloadClient();
+
+    civicrm_api3('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'debug' => 1, 'client' => $client, 'options' => array('limit' => 2, 'offset' => 1)));
+    $providers = CRM_Core_DAO::executeQuery('SELECT * FROM civicrm_mailing_provider_data')->fetchAll();
+    $this->assertEquals(array(
+      0 => array(
+        'contact_identifier' => '126312673126',
+        'mailing_identifier' => '54132674',
+        'email' => 'sarah@example.com',
+        'event_type' => 'Open',
+        'recipient_action_datetime' => '2017-06-30 23:32:00',
+        'contact_id' => '',
+        'is_civicrm_updated' => '0',
+      ),
+      1 => array(
+        'contact_identifier' => '15915939159',
+        'mailing_identifier' => '54132674',
+        'email' => 'cliff@example.com',
+        'event_type' => 'Open',
+        'recipient_action_datetime' => '2017-06-30 23:32:00',
+        'contact_id' => '',
+        'is_civicrm_updated' => '0',
+      ),
+    ), $providers);
+
+    $this->assertEquals(array(
+      'last_timestamp' => '1487890800',
+      'progress_end_date' => '1488495600',
+      'offset' => 3,
+      'retrieval_parameters' => array(
+        'jobId' => '101569750',
+        'filePath' => 'Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.zip'
+      ),
+    ), $this->getJobSettings());
+
+  }
+
+  /**
    * Test when download does not complete in time.
    */
   public function testOmnirecipientLoadIncomplete() {
