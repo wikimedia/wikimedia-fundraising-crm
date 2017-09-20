@@ -2153,7 +2153,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "313ef51cc3990238438f5dc5207b25cb132ea131"
+                "reference": "288f2602952468a4fd5874b11b1bd8da5b0dfb7b"
             },
             "require": {
                 "league/csv": "^8.0",
@@ -2192,7 +2192,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2017-09-12T23:04:53+00:00"
+            "time": "2017-09-20 02:50:06"
         },
         {
             "name": "wikimedia/smash-pig",
