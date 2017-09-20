@@ -188,7 +188,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
    * @return array
    */
   public function getJobSettings() {
-    $omnimail = new CRM_Omnimail_Omnirecipients();
-    return $omnimail->getJobSettings(array('mail_provider' => 'Silverpop'));
+    $omnimail = new CRM_Omnimail_Omnirecipients(array('mail_provider' => 'Silverpop'));
+    return $omnimail->getJobSettings();
   }
 }

@@ -26,11 +26,30 @@ class CRM_Omnimail_Omnimail {
    */
   public $endTimeStamp;
 
+  /**
+   * @var int
+   */
+  protected $offset;
+
+  /**
+   * @var array
+   */
+  protected $jobSettings = array();
 
   /**
    * @var array
    */
   protected $retrievalParameters;
+
+  /**
+   * CRM_Omnimail_Omnimail constructor.
+   *
+   * @param array $params
+   */
+  public function __construct($params) {
+    $this->setJobSettings($params);
+    $this->setOffset($params);
+  }
 
   /**
    * @return array
@@ -89,15 +108,41 @@ class CRM_Omnimail_Omnimail {
    *
    * This requires the child class to declare $this->job.
    *
-   * @param array $params
-   *   - mail_provider
-   *
    * @return array
    */
-  public function getJobSettings($params) {
+  public function getJobSettings() {
+    return $this->jobSettings;
+  }
+
+  /**
+   * @return int
+   */
+  public function getOffset() {
+    return $this->offset;
+  }
+
+  /**
+   * Set the offset to start loading from.
+   *
+   * This is the row in the csv file to start from in csv jobs.
+   *
+   * @param array $params
+   *
+   * @return mixed
+   */
+  protected function setOffset($params) {
+    $this->offset = CRM_Utils_Array::value('offset', $this->jobSettings, 0);
+    if (isset($params['options']['offset'])) {
+      $this->offset = $params['options']['offset'];
+    }
+  }
+
+  /**
+   * @param $params
+   */
+  protected function setJobSettings($params) {
     $settings = CRM_Omnimail_Helper::getSettings();
-    $jobSettings = CRM_Utils_Array::value($params['mail_provider'], $settings['omnimail_' . $this->job . '_load'], array());
-    return $jobSettings;
+    $this->jobSettings = CRM_Utils_Array::value($params['mail_provider'], $settings['omnimail_' . $this->job . '_load'], array());
   }
 
 }

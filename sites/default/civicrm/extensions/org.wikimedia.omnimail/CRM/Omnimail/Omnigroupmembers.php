@@ -31,7 +31,6 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
    * @throws \API_Exception
    */
   public function getResult($params) {
-    $jobSettings = self::getJobSettings($params);
     $settings = CRM_Omnimail_Helper::getSettings();
 
     $mailerCredentials = CRM_Omnimail_Helper::getCredentials($params);
@@ -40,23 +39,18 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
       $jobParameters['exportType'] = 'OPT_IN';
     }
 
+    /* @var \Omnimail\Silverpop\Requests\ExportListRequest $request */
     $request = Omnimail::create($params['mail_provider'], $mailerCredentials)->getGroupMembers($jobParameters);
-    $offset = CRM_Utils_Array::value('offset', $jobSettings, 0);
-    if (isset($params['options']['offset'])) {
-      $offset = $params['options']['offset'];
-    }
-    if ($offset) {
-      $request->setOffset((int) $offset);
-    }
+    $request->setOffset((int) $this->offset);
 
-    $startTimestamp = self::getStartTimestamp($params, $jobSettings);
+    $startTimestamp = self::getStartTimestamp($params, $this->jobSettings);
     $this->endTimeStamp = self::getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
 
-    if (isset($jobSettings['retrieval_parameters'])) {
+    if (isset($this->jobSettings['retrieval_parameters'])) {
       if (!empty($params['end_date']) || !empty($params['start_date'])) {
         throw new API_Exception('A prior retrieval is in progress. Do not pass in dates to complete a retrieval');
       }
-      $request->setRetrievalParameters($jobSettings['retrieval_parameters']);
+      $request->setRetrievalParameters($this->jobSettings['retrieval_parameters']);
     }
     elseif ($startTimestamp) {
       $request->setStartTimeStamp($startTimestamp);
@@ -129,6 +123,5 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     }
     return $value;
   }
-
 
 }

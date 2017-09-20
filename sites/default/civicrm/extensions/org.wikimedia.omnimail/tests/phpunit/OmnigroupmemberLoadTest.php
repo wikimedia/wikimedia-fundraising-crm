@@ -198,8 +198,8 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
    * @return array
    */
   public function getJobSettings() {
-    $omnimail = new CRM_Omnimail_Omnigroupmembers();
-    return $omnimail->getJobSettings(array('mail_provider' => 'Silverpop'));
+    $omnimail = new CRM_Omnimail_Omnigroupmembers(array('mail_provider' => 'Silverpop'));
+    return $omnimail->getJobSettings();
   }
 
   /**

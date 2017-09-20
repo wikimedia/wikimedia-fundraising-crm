@@ -8,7 +8,7 @@
  * @return array
  */
 function civicrm_api3_omnirecipient_get($params) {
-  $omnimail = new CRM_Omnimail_Omnirecipients();
+  $omnimail = new CRM_Omnimail_Omnirecipients($params);
   $result = $omnimail->getResult($params);
   $options = _civicrm_api3_get_options_from_params($params);
   $values = array();

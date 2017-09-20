@@ -31,7 +31,7 @@
  */
 function civicrm_api3_omnirecipient_load($params) {
   try {
-    $omnimail = new CRM_Omnimail_Omnirecipients();
+    $omnimail = new CRM_Omnimail_Omnirecipients($params);
     $recipients = $omnimail->getResult($params);
 
     $throttleSeconds = CRM_Utils_Array::value('throttle_seconds', $params);

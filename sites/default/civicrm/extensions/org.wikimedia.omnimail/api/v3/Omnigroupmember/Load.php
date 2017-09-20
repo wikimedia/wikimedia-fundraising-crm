@@ -21,7 +21,7 @@ function civicrm_api3_omnigroupmember_load($params) {
   $throttleCount = (int) CRM_Utils_Array::value('throttle_number', $params);
   $rowsLeftBeforeThrottle = $throttleCount;
 
-  $job = new CRM_Omnimail_Omnigroupmembers();
+  $job = new CRM_Omnimail_Omnigroupmembers($params);
   $jobSettings = $job->getJobSettings($params);
   try {
     $contacts = $job->getResult($params);
