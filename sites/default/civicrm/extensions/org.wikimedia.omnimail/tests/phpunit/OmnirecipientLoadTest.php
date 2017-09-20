@@ -93,6 +93,46 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
   }
 
   /**
+   * Test for no errors when using 'insert_batch_size' parameter.
+   *
+   * It's hard to test that it does batch, but at least we can check it
+   * succeeds.
+   */
+  public function testOmnirecipientLoadIncreasedBatchInsert() {
+    $client = $this->setupSuccessfulDownloadClient();
+
+    civicrm_api3('Omnirecipient', 'load', array(
+      'mail_provider' => 'Silverpop',
+      'username' => 'Donald',
+      'password' => 'Duck',
+      'debug' => 1,
+      'client' => $client,
+      'insert_batch_size' => 4,
+    ));
+    $this->assertEquals(4, CRM_Core_DAO::singleValueQuery('SELECT count(*) FROM civicrm_mailing_provider_data'));
+  }
+
+  /**
+   * Test for no errors when using 'insert_batch_size' parameter.
+   *
+   * It's hard to test that it does batch, but at least we can check it
+   * succeeds.
+   */
+  public function testOmnirecipientLoadIncreasedBatchInsertExceedsAvailable() {
+    $client = $this->setupSuccessfulDownloadClient();
+
+    civicrm_api3('Omnirecipient', 'load', array(
+      'mail_provider' => 'Silverpop',
+      'username' => 'Donald',
+      'password' => 'Duck',
+      'debug' => 1,
+      'client' => $client,
+      'insert_batch_size' => 6,
+    ));
+    $this->assertEquals(4, CRM_Core_DAO::singleValueQuery('SELECT count(*) FROM civicrm_mailing_provider_data'));
+  }
+
+  /**
    * Example: Test that a version is returned.
    */
   public function testOmnirecipientLoadLimitAndOffset() {
