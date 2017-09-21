@@ -473,7 +473,77 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals($fixtures->contact_group_id, $group['group_id']);
     }
 
-    public function testDuplicateHandling() {
+  /**
+   * Test that existing on hold setting is retained.
+   */
+    public function testKeepOnHold() {
+      self::$fixtures = CiviFixtures::create();
+      $this->callAPISuccess('Email', 'create', array(
+        'email' => 'Agatha@wikimedia.org',
+        'on_hold' => 1,
+        'location_type_id' => 1,
+        'contact_id' => self::$fixtures->contact_id,
+      ));
+
+      $msg = array(
+        'contact_id' => self::$fixtures->contact_id,
+        'contribution_recur_id' => self::$fixtures->contribution_recur_id,
+        'currency' => 'USD',
+        'date' => '2014-01-01 00:00:00',
+        'effort_id' => 2,
+        'email' => 'Agatha@wikimedia.org',
+        'gateway' => 'test_gateway',
+        'gateway_txn_id' => mt_rand(),
+        'gross' => self::$fixtures->recur_amount,
+        'payment_method' => 'cc',
+      );
+      $contribution = wmf_civicrm_contribution_message_import($msg);
+      $emails = $this->callAPISuccess('Email', 'get', array('contact_id' => self::$fixtures->contact_id, 'sequential' => 1));
+      $this->assertEquals(1, $emails['count']);
+
+      $this->assertEquals(1, $emails['values'][0]['on_hold']);
+      $this->assertEquals('agatha@wikimedia.org', $emails['values'][0]['email']);
+
+      $this->callAPISuccess('Contribution', 'delete', array('id' => $contribution['id']));
+
+    }
+
+  /**
+   * Test that existing on hold setting is removed if the email changes.
+   */
+  public function testRemoveOnHoldWhenUpdating() {
+    self::$fixtures = CiviFixtures::create();
+    $this->callAPISuccess('Email', 'create', array(
+      'email' => 'Agatha@wikimedia.org',
+      'on_hold' => 1,
+      'location_type_id' => 1,
+      'contact_id' => self::$fixtures->contact_id,
+    ));
+
+    $msg = array(
+      'contact_id' => self::$fixtures->contact_id,
+      'contribution_recur_id' => self::$fixtures->contribution_recur_id,
+      'currency' => 'USD',
+      'date' => '2014-01-01 00:00:00',
+      'effort_id' => 2,
+      'email' => 'Pantha@wikimedia.org',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => self::$fixtures->recur_amount,
+      'payment_method' => 'cc',
+    );
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $emails = $this->callAPISuccess('Email', 'get', array('contact_id' => self::$fixtures->contact_id, 'sequential' => 1));
+    $this->assertEquals(1, $emails['count']);
+
+    $this->assertEquals(0, $emails['values'][0]['on_hold']);
+    $this->assertEquals('pantha@wikimedia.org', $emails['values'][0]['email']);
+
+    $this->callAPISuccess('Contribution', 'delete', array('id' => $contribution['id']));
+  }
+
+
+  public function testDuplicateHandling() {
         $fixtures = CiviFixtures::create();
         $error = null;
         $msg = array(

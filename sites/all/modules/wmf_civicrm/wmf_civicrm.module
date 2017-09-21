@@ -1401,8 +1401,9 @@ function wmf_civicrm_message_location_update($msg, $contact) {
 /**
  * Updates the email for a contact.
  *
- * @param string $msg
+ * @param array $msg
  * @param int $contact_id
+ *
  * @throws \WmfException
  */
 function wmf_civicrm_message_email_update($msg, $contact_id ) {
@@ -1413,16 +1414,34 @@ function wmf_civicrm_message_email_update($msg, $contact_id ) {
   try {
     $loc_type_id = isset($msg['email_location_type_id']) ? $msg['email_location_type_id'] : wmf_civicrm_get_default_location_type_id();
     $isPrimary = isset($msg['email_location_type_id']) ? 0 : 1;
-    civicrm_api3( "Email", "Replace", array(
-      'debug' => 1,
+
+    $emailParams = array(
+      'email' => $msg['email'],
+      'is_primary' => $isPrimary,
+      'is_billing' => $isPrimary,
+      'contact_id' => $contact_id,
+    );
+
+    // Look up contact's existing email to get the id and to determine
+    // if the email has changed.
+    $existingEmails = civicrm_api3( "Email", 'get', array(
       'location_type_id' => $loc_type_id,
       'contact_id' => $contact_id,
-      'values' => array(array(
-        'email' => $msg[ 'email' ],
-        'is_primary' => $isPrimary,
-        'is_billing' => $isPrimary,
-      ),
-    )));
+      'sequential' => 1,
+    ));
+
+    if ($existingEmails['count']) {
+      $existingEmail = $existingEmails['values'][0];
+      if (strtolower($existingEmail['email']) === strtolower($msg['email'])) {
+        // A case could be made for ensuring isPrimary / isBilling it set
+        // but unclear if the incoming would necesarily be more primary-y/billingy
+        return;
+      }
+      $emailParams['id'] = $existingEmail['id'];
+      $emailParams['on_hold'] = 0;
+    }
+
+    civicrm_api3( "Email", "create", $emailParams);
   }
   catch (CiviCRM_API3_Exception $e) {
     throw new WmfException( 'IMPORT_CONTACT', "Couldn't store email for the contact.", $e->getExtraParams());
