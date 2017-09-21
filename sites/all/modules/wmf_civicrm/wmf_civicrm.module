@@ -3701,24 +3701,33 @@ function wmf_civicrm_civicrm_dupeQuery($ruleGroup, $queryType, &$queries) {
   $message .= 'Queries : ' . print_r( $queries, true ) . '.  ';
   $message .= 'Stack trace: ' . CRM_Core_Error::formatBacktrace( debug_backtrace() );
 
-  watchdog( 'wmf_civicrm', $message, WATCHDOG_INFO );
+  watchdog( 'wmf_civicrm', $message, array(), WATCHDOG_INFO );
   return TRUE;
 }
 
 /**
- * Block users from accessing the dedupe page without a limit.
+ * Abuse the permissions hook to prevent de-duping without a limit
  *
- * @param CRM_Core_Page $page
+ * @param string $permission
+ * @param bool $granted
+ * @return bool
  */
-function wmf_civicrm_civicrm_pageRun(&$page) {
-  if (get_class($page) == 'CRM_Contact_Page_DedupeFind') {
-    $action = $page->get('action');
-    if (!CRM_Utils_Request::retrieve('limit', 'Integer') && ($action != CRM_Core_Action::PREVIEW)) {
-      CRM_Core_Error::statusBounce(ts('The dedupe page can only be accessed with a limit. How did you get there without one? Tell fr-tech'), 'civicrm/contact/deduperules?reset=1');
+function wmf_civicrm_civicrm_permission_check($permission, &$granted) {
+  if ( $permission === 'merge duplicate contacts' ) {
+    $action = CRM_Utils_Request::retrieve( 'action', 'String' );
+    $path = CRM_Utils_System::currentPath();
+    if (
+      $path === 'civicrm/contact/dedupefind' &&
+	  !CRM_Utils_Request::retrieve( 'limit', 'Integer' ) &&
+	  ( $action != CRM_Core_Action::PREVIEW )
+	) {
+      $granted = false;
     }
   }
+  return TRUE;
+}
 
-}/**
+/**
  * @param array $blocks
  * @param array $lowerPriorityLocationBlock
  * @param array $block
