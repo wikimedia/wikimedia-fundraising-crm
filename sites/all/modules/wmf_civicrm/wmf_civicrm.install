@@ -3122,3 +3122,13 @@ function wmf_civicrm_update_7540() {
   }
 
 }
+
+/**
+ * Clean up CiviCRM groups.
+ *
+ * T174407.
+ */
+function wmf_civicrm_update_7545() {
+  require_once('update_7545.php');
+  _wmf_civicrm_cleanup_groups();
+}
