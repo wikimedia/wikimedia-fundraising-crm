@@ -485,8 +485,16 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'payment_method' => 'cc',
             'gateway_txn_id' => 'CON_TEST_GATEWAY' . mt_rand(),
         );
-        $contribution = wmf_civicrm_contribution_message_import($msg);
-        $this->assertEquals(substr($contribution['invoice_id'], 0, strlen($fixtures->contribution_invoice_id)), $fixtures->contribution_invoice_id);
+        $exceptioned = false;
+        try {
+            wmf_civicrm_contribution_message_import( $msg );
+        } catch ( WmfException $ex ) {
+            $exceptioned = true;
+            $this->assertTrue( $ex->isRequeue() );
+            $this->assertEquals( 'DUPLICATE_INVOICE', $ex->getErrorName() );
+            $this->assertEquals( WmfException::DUPLICATE_INVOICE, $ex->getCode() );
+        }
+        $this->assertTrue( $exceptioned );
     }
 
   /**
