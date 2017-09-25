@@ -1,0 +1,6 @@
+name = Metrics Reporting
+description = Generic metrics reporting
+core = 7.x
+configure = admin/config/metrics_reporting/configure
+files[] = MetricsReporter.php
+files[] = PrometheusReporter.php

@@ -1,0 +1,64 @@
+<?php 
+
+/**
+ * Invocation of hook_menu
+ */
+function metrics_reporting_menu() {
+	$items = array();
+
+	// displays settings form
+	$items['admin/config/metrics_reporting'] = array(
+		'title' => 'metrics reporting',
+		'access arguments' => array( 'administer metrics reporting' ),
+		'page callback' => 'system_admin_menu_block_page',
+		'file' => 'system.admin.inc',
+		'file path' => drupal_get_path( 'module', 'system' ),
+	);
+
+	// forces 'metrics reporting' to appear on the config page
+	$items['admin/config/metrics_reporting/configure'] = array(
+		'title' => 'Configure',
+		'description' => 'Configure metrics reporting.',
+		'access arguments' => array( 'administer metrics reporting' ),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'metrics_reporting_settings' ),
+	);
+
+	return $items;
+}
+
+/**
+ * Invocation of hook_permission
+ */
+function metrics_reporting_permission() {
+	return array(
+		'administer metrics reporting' => array(
+			'title' => t( 'Administer metrics reporting' ),
+		),
+	);
+}
+
+/**
+ * Generate settings form
+ */
+function metrics_reporting_settings() {
+	$form = array();
+
+	$form['metrics_reporting_prometheus_path'] = array(
+		'#type' => 'textfield',
+		'#title' => t( 'Prometheus Path' ),
+		'#required' => true,
+		'#default_value' => variable_get( 'metrics_reporting_prometheus_path', '/var/log/fundraising_metrics' ),
+		'#description' => t( 'The full path to the directory where we should write Prometheus metrics files.' )
+	);
+
+	return system_settings_form( $form );
+}
+
+function metrics_reporting_report_metrics( $component, $metrics = array() ) {
+	$prometheusPath = variable_get(
+		'metrics_reporting_prometheus_path', '/var/log/fundraising_metrics'
+	);
+	$reporter = new PrometheusReporter( $prometheusPath );
+	$reporter->reportMetrics( $component, $metrics );
+}

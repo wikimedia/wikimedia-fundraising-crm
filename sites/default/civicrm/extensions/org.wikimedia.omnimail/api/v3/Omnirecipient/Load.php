@@ -43,19 +43,18 @@ function civicrm_api3_omnirecipient_load($params) {
     $count = 0;
     $insertBatchSize = CRM_Utils_Array::value('insert_batch_size', $params, 1);
     $valueStrings = array();
+    $progressSettings = array(
+      'last_timestamp' => $jobSettings['last_timestamp'],
+      'retrieval_parameters' => $omnimail->getRetrievalParameters(),
+      'progress_end_date' => $omnimail->endTimeStamp,
+    );
 
     foreach ($recipients as $recipient) {
       if ($count === $limit) {
         // Do this here - ie. before processing a new row rather than at the end of the last row
         // to avoid thinking a job is incomplete if the limit co-incides with available rows.
         // Also write any remaining rows to the DB before exiting.
-        _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings);
-        $omnimail->saveJobSetting(array(
-          'last_timestamp' => $jobSettings['last_timestamp'],
-          'retrieval_parameters' => $omnimail->getRetrievalParameters(),
-          'progress_end_date' => $omnimail->endTimeStamp,
-          'offset' => $omnimail->getOffset() + $count,
-        ));
+        _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $omnimail, $progressSettings, $omnimail->getOffset() + $count);
         return civicrm_api3_create_success(1);
       }
       $insertValues = array(
@@ -72,11 +71,12 @@ function civicrm_api3_omnirecipient_load($params) {
         ),
         6 => array((string) $recipient->getContactReference(), 'String'),
       );
-      $valueStrings[] = CRM_Core_DAO::composeQuery("(%1, %2, %3, %4, %5, %6 )", $insertValues);
-      $valueStrings = _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $insertBatchSize);
-
       $rowsLeftBeforeThrottle--;
       $count++;
+
+      $valueStrings[] = CRM_Core_DAO::composeQuery("(%1, %2, %3, %4, %5, %6 )", $insertValues);
+      $valueStrings = _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $insertBatchSize, $omnimail, $progressSettings, $omnimail->getOffset() + $count);
+
       if ($throttleStagePoint && (strtotime('now') > $throttleStagePoint)) {
         $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . 'seconds');
         $rowsLeftBeforeThrottle = $throttleCount;
@@ -85,7 +85,7 @@ function civicrm_api3_omnirecipient_load($params) {
         sleep(ceil($throttleStagePoint - strtotime('now')));
       }
     }
-    _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings);
+    _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $omnimail, $progressSettings, $omnimail->getOffset() + $count);
     $omnimail->saveJobSetting(array('last_timestamp' => $omnimail->endTimeStamp));
     return civicrm_api3_create_success(1);
   }
@@ -101,11 +101,16 @@ function civicrm_api3_omnirecipient_load($params) {
 }
 
 /**
- * @param $valueStrings
+ * Write remaining rows, if any, to the database.
+ *
+ * @param array $valueStrings
+ * @param \CRM_Omnimail_Omnirecipients $job
+ * @param array $jobSettings
+ * @param int $newOffSet
  */
-function _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings) {
+function _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $job, $jobSettings, $newOffSet) {
   if (count($valueStrings)) {
-    _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, count($valueStrings));
+    _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, count($valueStrings), $job, $jobSettings, $newOffSet);
   }
 }
 
@@ -113,20 +118,24 @@ function _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings) {
  * Write the imported values to the DB, batching per parameter.
  *
  * Save the values to the DB in batch sizes accordant with the insertBatchSize
- * parameter.
+ * parameter. Also store where we are up to in setting.
  *
  * @param array $valueStrings
  * @param int $insertBatchSize
+ * @param \CRM_Omnimail_Omnirecipients $job
+ * @param array $jobSettings
+ * @param int $newOffSet
  *
  * @return array
  */
-function _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $insertBatchSize) {
+function _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $insertBatchSize, $job, $jobSettings, $newOffSet) {
   if (count($valueStrings) === $insertBatchSize) {
     CRM_Core_DAO::executeQuery("
          INSERT IGNORE INTO civicrm_mailing_provider_data
          (`contact_identifier`, `mailing_identifier`, `email`, `event_type`, `recipient_action_datetime`, `contact_id`)
          values" . implode(',', $valueStrings)
     );
+    $job->saveJobSetting(array_merge($jobSettings, array('offset' => $newOffSet)));
     $valueStrings = array();
   }
   return $valueStrings;

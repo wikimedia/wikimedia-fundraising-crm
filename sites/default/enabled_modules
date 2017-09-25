@@ -13,6 +13,7 @@ globalcollect_audit
 ingenico_audit
 large_donation
 libraries
+metrics_reporting
 oauth_common
 oauth_common_providerui
 offline2civicrm
