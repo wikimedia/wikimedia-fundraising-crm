@@ -252,7 +252,7 @@ function recurring_globalcollect_should_force_cancel( $errors ) {
     '430354',
   );
   foreach ( $errors as $error ) {
-    if ( array_search( $error->getErrorCode(), $thirdRailErrorCodes ) !== false ) {
+    if (get_class($error) == 'PaymentError' && array_search( $error->getErrorCode(), $thirdRailErrorCodes ) !== false ) {
       return true;
     }
   }

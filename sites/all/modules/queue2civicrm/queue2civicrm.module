@@ -102,22 +102,6 @@ function queue2civicrm_settings() {
     '#required' => TRUE,
     '#default_value' => variable_get('queue2civicrm_batch_time', 90),
   );
-
-  $form [ 'queue2civicrm_gmetric_tmax' ] = array(
-    '#type' => 'textfield',
-    '#title' => t('Default tmax for gmetric reporting (in seconds)'),
-    '#required' => false,
-    '#default_value' => variable_get( 'queue2civicrm_gmetric_tmax', 60 ),
-    '#description' => t('TMAX indicates the freshness of a metric. If TN exceeds TMAX, then Ganglia is expecting a new value. However, TMAX is only advisory: Ganglia takes no action when TN exceeds TMAX.')
-  );
-  
-  $form [ 'queue2civicrm_gmetric_dmax' ] = array(
-  	'#type' => 'textfield',
-    '#title' => t('Default dmax for gmetric reporting (in seconds)'),
-    '#required' => false,
-    '#default_value' => variable_get( 'queue2civicrm_gmetric_dmax', 360 ),
-    '#description' => t('DMAX indicates for how long an old metric should be retained. If TN exceeds DMAX then Ganglia will consider that that metric is no longer being monitored. Therefore, it will discard information about that metric.')
-  );
   
   return system_settings_form($form);
 }
@@ -155,24 +139,20 @@ function queue2civicrm_batch_process() {
    * this may some day supersede the process counts handled above...
    * 
    * Note that this might be a little whack.  At least, it feels a little sloppy.
-   * The tmax/dmax fields should probably be configurable
-   * through the UI rather than hardcoded here. Furthermore, we might consider specifying the names
-   * of gateways to keep track of, rather than auto-generate the gateways to keep track of during 
-   * queue consumption.  With the latter (current) method, we'll only report to gmetric when there
-   * are > 0 msgs consumed from the queue - meaning if there are no msgs for a particular gateway, 
-   * that fact will not get reported to gmetric.  But I've hardcoded the dmax param here to be the
-   * same as the frequency of queue consumption, so if there are no messages in the queue for
-   * a particular gateway, the gateway will report as having consumed 0 messages in ganglia anyway.
+   * We might consider specifying the names of gateways to keep track of, rather than auto-generate
+   * the gateways to keep track of during queue consumption. With the latter (current) method,
+   * we'll only report to prometheus when there are > 0 msgs consumed from the queue - meaning if
+   * there are no msgs for a particular gateway, that fact will not get reported to prometheus.
    *
-   * TODO: the ganglia stuff should be a hook
+   * TODO: metrics stuff should be a hook
    */
-  $gmetric_tmax = variable_get( 'queue2civicrm_gmetric_tmax', 60 );
-  $gmetric_dmax = variable_get( 'queue2civicrm_gmetric_dmax', 360 );
   $counter = Queue2civicrmTrxnCounter::instance();
+  $metrics = array();
   foreach ( $counter->get_trxn_counts() as $gateway => $count ) {
-    module_invoke( 'ganglia_reporter', 'send_metric', $gateway . ' donations', $count, 'int8', 'donations', 'both', $gmetric_tmax, $gmetric_dmax );
+    $metrics["${gateway}_donations"] = $count;
   }
-  module_invoke( 'ganglia_reporter', 'send_metric', 'Total donations', $counter->get_count_total(), 'int8', 'donations', 'both', $gmetric_tmax, $gmetric_dmax );
+  $metrics['total_donations'] = $counter->get_count_total();
+  metrics_reporting_report_metrics( 'queue2civicrm', $metrics );
   
   if ($processed > 0) {
     watchdog('queue2civicrm', 'Successfully processed ' . $processed . ' contribution(s).');
