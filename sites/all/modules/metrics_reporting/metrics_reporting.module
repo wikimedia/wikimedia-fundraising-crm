@@ -48,7 +48,7 @@ function metrics_reporting_settings() {
 		'#type' => 'textfield',
 		'#title' => t( 'Prometheus Path' ),
 		'#required' => true,
-		'#default_value' => variable_get( 'metrics_reporting_prometheus_path', '/var/log/fundraising_metrics' ),
+		'#default_value' => variable_get( 'metrics_reporting_prometheus_path', '/var/spool/prometheus' ),
 		'#description' => t( 'The full path to the directory where we should write Prometheus metrics files.' )
 	);
 
@@ -57,7 +57,7 @@ function metrics_reporting_settings() {
 
 function metrics_reporting_report_metrics( $component, $metrics = array() ) {
 	$prometheusPath = variable_get(
-		'metrics_reporting_prometheus_path', '/var/log/fundraising_metrics'
+		'metrics_reporting_prometheus_path', '/var/spool/prometheus'
 	);
 	$reporter = new PrometheusReporter( $prometheusPath );
 	$reporter->reportMetrics( $component, $metrics );
