@@ -6,6 +6,7 @@
  * reportMetrics overwrites the file with the new data.
  */
 class PrometheusReporter implements MetricsReporter {
+	public static $extension = '.prom';
 
 	/**
 	 * Directory where we should write prometheus files
@@ -35,7 +36,10 @@ class PrometheusReporter implements MetricsReporter {
 		foreach ( $metrics as $name => $value ) {
 			$contents[] = "$name $value\n";
 		}
-		$path = $this->prometheusPath . DIRECTORY_SEPARATOR . $component;
+		$path = $this->prometheusPath .
+			DIRECTORY_SEPARATOR .
+			$component .
+			self::$extension;
 		file_put_contents( $path, implode( '', $contents ) );
 	}
 }

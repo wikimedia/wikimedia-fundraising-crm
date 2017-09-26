@@ -13,7 +13,8 @@ class PrometheusReporterTest extends BaseWmfDrupalPhpUnitTestCase {
 			'prisoners_freed' => 5,
 		);
 		$reporter->reportMetrics( 'foo', $metrics );
-		$filename = $dir . DIRECTORY_SEPARATOR . 'foo';
+		$filename = $dir . DIRECTORY_SEPARATOR . 'foo' .
+			PrometheusReporter::$extension;
 		$this->assertFileExists( $filename );
 		// don't want the trailing newline
 		$written = rtrim( file_get_contents( $filename ) );
