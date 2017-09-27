@@ -25,6 +25,14 @@ class WmfDatabase {
         try {
             // Do the thing itself
             $result = call_user_func_array( $callback, $params );
+
+            // Detect if anything has marked the native Civi transaction for
+			// rollback, and do not proceed if so.
+            if (\Civi\Core\Transaction\Manager::singleton()->getFrame()->isRollbackOnly()) {
+            	throw new RuntimeException(
+            		'Civi Transaction was marked for rollback and Exception was suppressed'
+				);
+			}
         }
         catch ( Exception $ex ) {
             watchdog( 'wmf_common', "Aborting DB transaction.", NULL, WATCHDOG_INFO );
