@@ -18,6 +18,7 @@ class CiviFixtures {
     public $subscription_id;
     public $contribution_amount;
     public $contribution_invoice_id;
+    public $contribution_id;
 
     /**
      * @return CiviFixtures
@@ -90,10 +91,11 @@ class CiviFixtures {
             'invoice_id' => mt_rand(),
         );
         $contribution = civicrm_api3('Contribution', 'Create', $contribution_params);
-        $id = $contribution['id'];
-        $contribution_values = $contribution['values'][$id];
+		$out->contribution_id = $contribution['id'];
+        $contribution_values = $contribution['values'][$out->contribution_id];
         $out->contribution_invoice_id = $contribution_values['invoice_id'];
 
+		(new CRM_Core_Transaction())->commit();
         return $out;
     }
 
@@ -102,6 +104,7 @@ class CiviFixtures {
    */
     public function __destruct() {
         civicrm_api3('ContributionRecur', 'delete', array('id' => $this->contribution_recur_id));
+		civicrm_api3('Contribution', 'delete', array('id' => $this->contribution_id));
         civicrm_api3('Contact', 'delete', array('id' => $this->contact_id));
     }
 }
