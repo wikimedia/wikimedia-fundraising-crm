@@ -2,6 +2,7 @@
 
 use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
 use Exception;
+use SmashPig\Core\UtcDate;
 use SmashPig\CrmLink\Messages\DateFields;
 use WmfException;
 
@@ -49,6 +50,14 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 			$delay = intval( variable_get( 'wmf_common_requeue_delay', 20 * 60 ) );
 			$maxTries = intval( variable_get( 'wmf_common_requeue_max', 10 ) );
 			$ageLimit = $delay * $maxTries;
+			// TODO: add a requeueMessage hook that allows modifying
+			// the message or the decision to requeue it. Or maybe a
+			// more generic (WMF)Exception handling hook?
+			if ( $ex->getCode() === WmfException::DUPLICATE_INVOICE ) {
+				// Crappy special-case handling that we can't handle at
+				// lower levels.
+				$message = $this->modifyDuplicateInvoice( $message );
+			}
 			// Defaulting to 0 means we'll always go the reject route
 			// and log an error if no date fields are set.
 			$queuedTime = DateFields::getOriginalDateOrDefault( $message, 0 );
@@ -125,5 +134,15 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 	public static function itemUrl( $damagedId ) {
 		global $base_url;
 		return "{$base_url}/damaged/{$damagedId}";
+	}
+
+	protected function modifyDuplicateInvoice( $message ) {
+		$message['invoice_id'] .= '|dup-' . UtcDate::getUtcTimeStamp();
+		watchdog(
+			'wmf_civicrm',
+			'Found duplicate invoice ID, changing this one to ' .
+				$message['invoice_id']
+		);
+		$msg['contribution_tags'][] = 'DuplicateInvoiceId';
 	}
 }
