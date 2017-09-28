@@ -23,7 +23,8 @@ class WmfException extends Exception {
     const BANNER_HISTORY = 20;
     const GET_CONTACT = 21;
     const EMAIL_SYSTEM_FAILURE = 22;
-    const BAD_EMAIL = 22;
+    const BAD_EMAIL = 23;
+	const DUPLICATE_INVOICE = 24;
 
     //XXX shit we aren't using the 'rollback' attribute
     // and it's not correct in most of these cases
@@ -56,6 +57,10 @@ class WmfException extends Exception {
             'drop' => TRUE,
             'no-email' => TRUE,
         ),
+		'DUPLICATE_INVOICE' => array(
+			'requeue' => TRUE,
+			'no-email' => TRUE,
+		),
         'GET_CONTRIBUTION' => array(
             'reject' => TRUE,
         ),
@@ -113,7 +118,7 @@ class WmfException extends Exception {
    * WmfException constructor.
    *
    * @param string $type Error type
-   * @param int $message A WMF constructed message.
+   * @param string $message A WMF constructed message.
    * @param array $extra Extra parameters.
    *   If error_message is included then it will be included in the User Error message.
    *   If you are working with a CiviCRM Exception ($e) then you can pass in $e->getExtraParams()
