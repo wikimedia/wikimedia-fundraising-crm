@@ -111,6 +111,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     function testExistsNone() {
+        civicrm_initialize();
         $transaction = WmfTransaction::from_unique_id( 'TEST_GATEWAY ' . mt_rand() );
         $this->assertEquals( false, $transaction->exists() );
     }
@@ -159,4 +160,62 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
         $transaction = WmfTransaction::from_unique_id( 'TEST_GATEWAY ' . $gateway_txn_id );
         $transaction->getContribution();
     }
+
+  /**
+   * Test that when an exception is thrown without our wrapper no further rollback happens.
+   *
+   * (this is really just the 'control' for the following test.
+   */
+    public function testNoRollBack() {
+      civicrm_initialize();
+      CRM_Core_DAO::executeQuery("UPDATE civicrm_domain SET description = 'WMF'");
+
+      $this->callbackFunction(1);
+
+      $this->assertEquals('Cool planet', CRM_Core_DAO::singleValueQuery('SELECT description FROM civicrm_domain LIMIT 1'));
+      $contact = $this->callAPISuccess('Contact', 'get', array('external_identifier' => 'oh so strange'));
+      $this->assertEquals(1, $contact['count']);
+
+      // Cleanup
+      $this->callAPISuccess('Contact', 'delete', array('id' => $contact['id']));
+      CRM_Core_DAO::executeQuery("UPDATE civicrm_domain SET description = 'WMF'");
+    }
+
+  /**
+   * Test that when an exception is thrown with our wrapper the whole lot rolls back.
+   */
+  public function testFullRollBack() {
+    civicrm_initialize();
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_domain SET description = 'WMF'");
+
+    try {
+      WmfDatabase::transactionalCall(array($this, 'callbackFunction'), array());
+    }
+    catch (RuntimeException $e) {
+      // We were expecting this :-)
+    }
+
+    $this->assertEquals('WMF', CRM_Core_DAO::singleValueQuery('SELECT description FROM civicrm_domain LIMIT 1'));
+    $contact = $this->callAPISuccess('Contact', 'getcount', array('external_identifier' => 'oh so strange'));
+    $this->assertEquals(0, $contact['count']);
+  }
+
+    public function callbackFunction() {
+      CRM_Core_DAO::executeQuery("UPDATE civicrm_domain SET description = 'Cool planet'");
+      $contact = array(
+        'contact_type' => 'Individual',
+        'first_name' => 'Dr',
+        'last_name' => 'Strange',
+        'external_identifier' => 'oh so strange',
+      );
+      $this->callAPISuccess('Contact', 'create', $contact);
+      try {
+        civicrm_api3('Contact', 'create', $contact);
+      }
+      catch (Exception $e) {
+        // We have done nothing to roll back.
+        return;
+      }
+    }
+
 }
