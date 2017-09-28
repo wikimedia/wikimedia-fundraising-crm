@@ -2,6 +2,7 @@
 
 use Queue2civicrmTrxnCounter;
 use SmashPig\Core\DataStores\PendingDatabase;
+use SmashPig\Core\UtcDate;
 use wmf_common\TransactionalWmfQueueConsumer;
 use WmfException;
 
@@ -57,7 +58,7 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 			}
 		}
 
-		wmf_civicrm_contribution_message_import( $message );
+		$contribution = wmf_civicrm_contribution_message_import( $message );
 
 		// update the log if things went well
 		if ( $logId ) {
@@ -67,8 +68,12 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 			_queue2civicrm_log( $log );
 		}
 
+		$age = UtcDate::getUtcTimestamp() - strtotime( $contribution['receive_date'] );
+
 		// keep count of the transactions
-		Queue2civicrmTrxnCounter::instance()->increment( $message['gateway'] );
+		$counter = Queue2civicrmTrxnCounter::instance();
+		$counter->increment( $message['gateway'] );
+		$counter->addAgeMeasurement( $message['gateway'], $age );
 
 		// Delete any pending db entries with matching gateway and order_id
 		PendingDatabase::get()->deleteMessage( $message );

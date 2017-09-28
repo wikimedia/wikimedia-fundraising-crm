@@ -6,6 +6,7 @@
 class Queue2civicrmTrxnCounter {
   protected static $singleton;
   protected $trxn_counts = array();
+  protected $ages = array();
 
   protected function __construct() {}
 
@@ -28,6 +29,15 @@ class Queue2civicrmTrxnCounter {
     $this->trxn_counts[$gateway] += $count;
   }
 
+	/**
+	 * Add a 
+	 * @param string $gateway
+	 * @param float $age of donation in seconds
+	 */
+  public function addAgeMeasurement( $gateway, $age ) {
+    $this->ages[$gateway][] = $age;
+  }
+
   /**
    * Get counts for all gateways combined or one particular gateway.
    * @param string $gateway
@@ -48,5 +58,26 @@ class Queue2civicrmTrxnCounter {
    */
   public function get_trxn_counts() {
     return $this->trxn_counts;
+  }
+
+  /**
+   * Get the average age in seconds for donations
+   * @return array
+   */
+  public function get_average_ages() {
+    $averages = array();
+    $overallTotal = 0;
+    $overallCount = 0;
+    foreach ( $this->ages as $gateway => $ages ) {
+      $total = 0;
+      foreach ( $ages as $age ) {
+        $total += $age;
+        $overallCount += 1;
+      }
+      $overallTotal += $total;
+      $averages[$gateway] = $total / count( $ages );
+    }
+    $averages['overall'] = $overallCount === 0 ? 0 : $overallTotal / $overallCount;
+    return $averages;
   }
 }
