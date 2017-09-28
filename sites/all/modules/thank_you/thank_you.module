@@ -250,6 +250,7 @@ function thank_you_for_contribution( $contribution_id ) {
 			cntc.last_name,
 			cntc.preferred_language,
 			e.email,
+			x.gateway,
 			x.no_thank_you,
 			x.original_amount,
 			x.original_currency
@@ -272,7 +273,7 @@ function thank_you_for_contribution( $contribution_id ) {
 		$msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r( $mailingData, true ) . '</pre>';
 		throw new WmfException( 'GET_CONTRIBUTION', $msg );
 	}
-	$mailingData = (array) $mailingData;
+	$mailingData = $mailingData->toArray();
 
     // don't send a Thank You email if one has already been sent
     if ( !empty($mailingData['thankyou_date']) ) {
@@ -280,7 +281,8 @@ function thank_you_for_contribution( $contribution_id ) {
         return false;
     }
     // only send a Thank You email if we are within the specified window
-    if (strtotime($mailingData['receive_date']) < time() - 86400 * variable_get('thank_you_days', 14)) {
+    $ageInSeconds = UtcDate::getUtcTimestamp() - strtotime($mailingData['receive_date']);
+    if ($ageInSeconds > 86400 * variable_get('thank_you_days', 14)) {
         watchdog('thank_you', 'Contribution is older than limit, ignoring.', array(), WATCHDOG_INFO);
         return false;
     }
@@ -340,10 +342,13 @@ function thank_you_for_contribution( $contribution_id ) {
     );
 
     $success = thank_you_send_mail( $params );
+    $counter = Queue2civicrmTrxnCounter::instance();
 
     if ( $success ) {
 		watchdog('thank_you', "Thank you mail sent successfully for contribution id: $contribution_id to " . $params['recipient_address'], array(), WATCHDOG_INFO);
-        thank_you_update_ty_date( $mailingData );
+		thank_you_update_ty_date( $mailingData );
+		$counter->increment( $mailingData['gateway'] );
+		$counter->addAgeMeasurement( $mailingData['gateway'], $ageInSeconds );
 		return true;
     } else {
 		$msg = "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'];
@@ -774,7 +779,6 @@ EOT;
 
 	$result = db_query( $ty_query, array( ':earliest' => $earliest ) );
 
-	$count = 0;
 	$consecutiveFailures = 0;
 	$failureThreshold = variable_get( 'thank_you_failure_threshold', 5 );
 	$abort = false;
@@ -791,9 +795,7 @@ EOT;
 			WATCHDOG_INFO
 		);
 		try {
-			if ( thank_you_for_contribution( $contribution->id ) ) {
-				$count++;
-			}
+			thank_you_for_contribution( $contribution->id );
 			$consecutiveFailures = 0;
 		} catch ( WmfException $ex ) {
 			$errName = $ex->getErrorName();
@@ -841,7 +843,24 @@ EOT;
 		}
 	}
 
-	watchdog( "thank_you", "Sent $count thank you emails ", array(), WATCHDOG_INFO );
+	$counter = Queue2civicrmTrxnCounter::instance();
+	$metrics = array();
+	foreach ( $counter->get_trxn_counts() as $gateway => $count ) {
+		$metrics["${gateway}_thank_you_emails"] = $count;
+	}
+	$metrics['total_thank_you_emails'] = $counter->get_count_total();
+	metrics_reporting_report_metrics( 'thank_you_emails_sent', $metrics );
+	$ageMetrics = array();
+	foreach ( $counter->get_average_ages() as $gateway => $age ) {
+		$ageMetrics["${gateway}_thank_you_donation_age"] = $age;
+	}
+	metrics_reporting_report_metrics( 'thank_you_donation_age', $ageMetrics );
+	watchdog(
+		"thank_you",
+		"Sent {$metrics['total_thank_you_emails']} thank you emails.",
+		array(),
+		WATCHDOG_INFO
+	);
 }
 
 
