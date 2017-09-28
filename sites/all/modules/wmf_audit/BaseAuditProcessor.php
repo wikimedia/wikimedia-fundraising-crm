@@ -273,7 +273,7 @@ abstract class BaseAuditProcessor {
 	 * actually make qc choke. Not so necessary with WP, but this will need to
 	 * happen elsewhere, probably. Just thinking ahead.
 	 * @param array $record transaction data
-	 * @return type The normalized data we want to send.
+	 * @return array The normalized data we want to send.
 	 */
 	protected function normalize_partial( $record ) {
 		//@TODO: Still need gateway account to go in here when that happens.
@@ -743,8 +743,12 @@ abstract class BaseAuditProcessor {
 				foreach ( $tryme as $date => $missing ) {
 					if ( (int) $date <= (int) $cutoff ) {
 						foreach ( $missing as $id => $message ) {
-							$contribution_tracking_data = wmf_audit_make_contribution_tracking_data( $message );
-							$all_data = array_merge( $message, $contribution_tracking_data );
+							if ( empty( $message['contribution_tracking_id'] ) ) {
+								$contribution_tracking_data = wmf_audit_make_contribution_tracking_data( $message );
+								$all_data = array_merge( $message, $contribution_tracking_data );
+							} else {
+								$all_data = $message;
+							}
 							$sendme = $this->normalize_partial( $all_data );
 							wmf_audit_send_transaction( $sendme, 'main' );
 							$made += 1;

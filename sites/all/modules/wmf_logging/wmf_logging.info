@@ -1,5 +1,0 @@
-name = WMF Logging
-description = WMF specific log framework. Hooks into Watchdog.
-core = 7.x
-package = Wikimedia
-configure = admin/config/logging/wmf_logging
