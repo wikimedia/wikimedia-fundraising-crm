@@ -109,7 +109,7 @@ function wmf_audit_count_missing($missing) {
  * Not even a big deal if we overshoot and remove too many, because we'll just
  * remake them next time if they're missing.
  * @param string $date The date string for the oldest log we want to keep
- * @param string $working_logs path to working logs directory
+ * @param array $working_logs list of working log files by date
  */
 function wmf_audit_remove_old_logs($date, $working_logs) {
   if (!empty($working_logs)) {
