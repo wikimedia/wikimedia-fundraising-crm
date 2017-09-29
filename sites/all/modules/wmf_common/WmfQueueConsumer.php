@@ -137,12 +137,16 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 	}
 
 	protected function modifyDuplicateInvoice( $message ) {
+		if ( empty( $message['invoice_id'] ) && isset ( $message['order_id'] ) ) {
+			$message['invoice_id'] = $message['order_id'];
+		}
 		$message['invoice_id'] .= '|dup-' . UtcDate::getUtcTimeStamp();
 		watchdog(
 			'wmf_civicrm',
 			'Found duplicate invoice ID, changing this one to ' .
 				$message['invoice_id']
 		);
-		$msg['contribution_tags'][] = 'DuplicateInvoiceId';
+		$message['contribution_tags'][] = 'DuplicateInvoiceId';
+		return $message;
 	}
 }
