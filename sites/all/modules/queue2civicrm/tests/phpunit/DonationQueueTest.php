@@ -1,8 +1,9 @@
 <?php
 
 use queue2civicrm\DonationQueueConsumer;
-use SmashPig\Core\Context;
+use SmashPig\Core\DataStores\DamagedDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
+use SmashPig\Core\DataStores\QueueWrapper;
 
 /**
  * @group Pipeline
@@ -16,6 +17,11 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 	protected $pendingDb;
 
 	/**
+	 * @var DamagedDatabase
+	 */
+	protected $damagedDb;
+
+	/**
 	 * @var DonationQueueConsumer
 	 */
 	protected $queueConsumer;
@@ -23,6 +29,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 	public function setUp() {
 		parent::setUp();
 		$this->pendingDb = PendingDatabase::get();
+		$this->damagedDb = DamagedDatabase::get();
 		$this->queueConsumer = new DonationQueueConsumer( 'test' );
 	}
 
@@ -378,5 +385,64 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 				)
 			),
 		);
+	}
+
+	public function testDuplicateHandling() {
+		$message = new TransactionMessage();
+		$message2 = new TransactionMessage(
+			array(
+				'contribution_tracking_id' => $message->get( 'contribution_tracking_id' ),
+				'order_id' => $message->get( 'order_id' ),
+				'date' => time(),
+			)
+		);
+
+		exchange_rate_cache_set( 'USD', $message->get( 'date' ), 1 );
+		exchange_rate_cache_set( $message->get( 'currency' ), $message->get( 'date' ), 3 );
+		exchange_rate_cache_set( 'USD', $message2->get( 'date' ), 1 );
+		exchange_rate_cache_set( $message2->get( 'currency' ), $message2->get( 'date' ), 3 );
+
+		QueueWrapper::getQueue( 'test' )->push( $message->getBody() );
+		QueueWrapper::getQueue( 'test' )->push( $message2->getBody() );
+
+		$this->queueConsumer->dequeueMessages();
+
+		$this->callAPISuccessGetSingle( 'Contribution', array(
+			'invoice_id' => $message->get( 'order_id' )
+		) );
+		$originalOrderId = $message2->get( 'order_id' );
+		$damagedPDO = $this->damagedDb->getDatabase();
+		$result = $damagedPDO->query( "
+			SELECT * FROM damaged
+			WHERE gateway = '{$message2->getGateway()}'
+			AND order_id = '{$originalOrderId}'" );
+		$rows = $result->fetchAll( PDO::FETCH_ASSOC );
+		$this->assertEquals( 1, count( $rows ),
+			'One row stored and retrieved.' );
+		$expected = array(
+			// NOTE: This is a db-specific string, sqlite3 in this case, and
+			// you'll have different formatting if using any other database.
+			'original_date' => wmf_common_date_unix_to_sql( $message2->get('date') ),
+			'gateway' => $message2->getGateway(),
+			'order_id' => $originalOrderId,
+			'gateway_txn_id' => "{$message2->get('gateway_txn_id')}",
+			'original_queue' => 'test',
+		);
+		$this->assertArraySubset( $expected, $rows[0],
+			'Stored message had expected contents' );
+		$this->assertNotNull( $rows[0]['retry_date'], 'Should retry' );
+		$storedMessage = json_decode( $rows[0]['message'], true );
+		$storedInvoiceId = $storedMessage['invoice_id'];
+		$storedTags = $storedMessage['contribution_tags'];
+		unset( $storedMessage['invoice_id'] );
+		unset( $storedMessage['contribution_tags'] );
+		$this->assertEquals( $message2->getBody(), $storedMessage );
+
+		$invoiceIdLen = strlen( strval( $originalOrderId ) );
+		$this->assertEquals(
+			"$originalOrderId|dup-",
+			substr( $storedInvoiceId, 0, $invoiceIdLen + 5 )
+		);
+		$this->assertEquals( array( 'DuplicateInvoiceId' ), $storedTags );
 	}
 }
