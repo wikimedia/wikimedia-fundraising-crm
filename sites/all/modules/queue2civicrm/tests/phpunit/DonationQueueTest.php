@@ -106,6 +106,53 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 	}
 
 	/**
+	 * If 'invoice_id' is in the message, don't stuff that field with order_id
+	 */
+	public function testDonationInvoiceId() {
+		$message = new TransactionMessage(
+			array( 'invoice_id' => mt_rand() )
+		);
+
+		exchange_rate_cache_set( 'USD', $message->get( 'date' ), 1 );
+		exchange_rate_cache_set( $message->get( 'currency' ), $message->get( 'date' ), 3 );
+
+		$this->queueConsumer->processMessage( $message->getBody() );
+
+		$campaignField = wmf_civicrm_get_custom_field_name( 'campaign' );
+
+		$expected = array(
+			'contact_type' => 'Individual',
+			'sort_name' => 'laast, firrst',
+			'display_name' => 'firrst laast',
+			'first_name' => 'firrst',
+			'last_name' => 'laast',
+			'currency' => 'USD',
+			'total_amount' => '2857.02',
+			'fee_amount' => '0.00',
+			'net_amount' => '2857.02',
+			'trxn_id' => 'GLOBALCOLLECT ' . $message->getGatewayTxnId(),
+			'contribution_source' => 'PLN 952.34',
+			'financial_type' => 'Cash',
+			'contribution_status' => 'Completed',
+			'payment_instrument' => 'Credit Card: Visa',
+			'invoice_id' => $message->get( 'invoice_id' ),
+			$campaignField => 'Benefactor Gift',
+		);
+		$returnFields = array_keys( $expected );
+
+		$contribution = civicrm_api3(
+			'Contribution',
+			'getsingle',
+			array(
+				wmf_civicrm_get_custom_field_name( 'gateway_txn_id' ) => $message->getGatewayTxnId(),
+				'return' => $returnFields
+			)
+		);
+
+		$this->assertArraySubset( $expected, $contribution );
+	}
+
+	/**
 	 * Process an ordinary (one-time) donation message with an UTF campaign.
 	 */
 	public function testDonationWithUTFCampaignOption() {

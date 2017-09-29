@@ -82,11 +82,13 @@ class TransactionMessage extends Message {
 
     function __construct( $values = array() ) {
         $this->loadDefaults( "donation" );
+        $ct_id = mt_rand();
 
-        parent::__construct( array(
+        parent::__construct( $values + array(
             $this->txn_id_key => mt_rand(),
-            'order_id' => mt_rand(),
-        ) + $values );
+            'order_id' => "$ct_id.1",
+            'contribution_tracking_id' => $ct_id,
+        ) );
     }
 
     function getGateway() {
