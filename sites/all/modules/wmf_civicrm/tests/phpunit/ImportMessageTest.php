@@ -426,7 +426,65 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                     ),
                 ),
             ),
-            // US address import is geocoded
+          // Strip duff characters
+          array(
+            array_merge($this->getMinimalImportData($gateway_txn_id),
+              array(
+                'first_name' => 'Baa   baa black sheep',
+              )),
+            array(
+              'contact' => array(
+                'first_name' => 'Baa baa black sheep',
+              ),
+              'contribution' => $this->getBaseContribution($gateway_txn_id),
+            ),
+          ),
+          'white_space_cleanup' => array(
+            array_merge($this->getMinimalImportData($gateway_txn_id),
+              array(
+                // The multiple spaces & trailing ideographic space should go.
+                // Internally I have set it to reduce multiple ideographic space to only one.
+                // However, I've had second thoughts about my earlier update change to
+                // convert them as they are formatted differently & the issue was not the
+                // existance of them but the strings of several of them in a row.
+                'first_name' => 'Baa   baa' .  html_entity_decode("&#x3000;") . html_entity_decode("&#x3000;") . 'black sheep' .html_entity_decode("&#x3000;"),
+                'middle_name' => '  Have &nbsp; you any wool',
+                'last_name' => ' Yes sir yes sir ' . html_entity_decode('&nbsp;') . ' three bags full',
+              )),
+            array(
+              'contact' => array(
+                'first_name' => 'Baa baa' .  html_entity_decode("&#x3000;") . 'black sheep',
+                'middle_name' => 'Have you any wool',
+                'last_name' => 'Yes sir yes sir three bags full',
+                'display_name' => 'Baa baa' .  html_entity_decode("&#x3000;") . 'black sheep Yes sir yes sir three bags full',
+              ),
+              'contribution' => $this->getBaseContribution($gateway_txn_id),
+            ),
+          ),
+          'ampersands' => array(
+            array_merge($this->getMinimalImportData($gateway_txn_id),
+              array(
+                // The multiple spaces & trailing ideographic space should go.
+                // Internally I have set it to reduce multiple ideographic space to only one.
+                // However, I've had second thoughts about my earlier update change to
+                // convert them as they are formatted differently & the issue was not the
+                // existance of them but the strings of several of them in a row.
+                'first_name' => 'Jack &amp; Jill',
+                'middle_name' => 'Jack &Amp; Jill',
+                'last_name' => 'Jack & Jill',
+              )),
+            array(
+              'contact' => array(
+                'first_name' => 'Jack & Jill',
+                'middle_name' => 'Jack & Jill',
+                'last_name' => 'Jack & Jill',
+                'display_name' => 'Jack & Jill Jack & Jill',
+              ),
+              'contribution' => $this->getBaseContribution($gateway_txn_id),
+            ),
+          ),
+
+          // US address import is geocoded
             array(
                 array(
                     'city' => 'Somerville',

@@ -1076,7 +1076,7 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     if (strtolower($msg['contact_type']) !== "organization") {
       foreach (array('first_name', 'last_name', 'middle_name') as $name) {
         if (isset($msg[$name])) {
-          $contact[$name] = substr(trim($msg[$name]), 0, 64);
+          $contact[$name] = wmf_civicrm_string_clean($msg[$name], 64);
         }
       }
     }
@@ -1282,6 +1282,35 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     return $contact_result;
+}
+
+/**
+ * Clean up a string by
+ *  - trimming preceding & ending whitespace
+ *  - removing any in-string double whitespace
+ *
+ * @param string $string
+ * @param int $length
+ *
+ * @return string
+ */
+function wmf_civicrm_string_clean($string, $length) {
+  $replacements = array(
+    // Hex for &nbsp;
+    '/\xC2\xA0/' => ' ',
+    '/&nbsp;/' => ' ',
+    // Replace multiple ideographic space with just one.
+    '/(\xE3\x80\x80){2}/' => html_entity_decode("&#x3000;"),
+    // Trim ideographic space (this could be done in trim further down but seems a bit fiddly)
+    '/^(\xE3\x80\x80)/' => ' ',
+    '/(\xE3\x80\x80)$/' => ' ',
+    // Replace multiple space with just one.
+    '/\s\s+/' => ' ',
+    // And html ampersands with normal ones.
+    '/&amp;/' => '&',
+    '/&Amp;/' => '&',
+  );
+  return substr(trim(preg_replace(array_keys($replacements), $replacements, $string)), 0, $length);
 }
 
 /**
