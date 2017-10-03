@@ -1147,8 +1147,13 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         'is_opt_out',
     );
     foreach ( $direct_fields as $field ) {
-        if ( isset( $msg[$field] ) ) {
-            $contact[$field] = $msg[$field];
+        if ( isset( $msg[$field] )) {
+            if (in_array($msg[$field], array(0, 1, '0', '1', TRUE, FALSE), TRUE)) {
+                $contact[$field] = $msg[$field];
+            }
+            elseif (strtoupper($msg[$field]) === 'Y') {
+                $contact[$field] = TRUE;
+            }
         }
     }
 

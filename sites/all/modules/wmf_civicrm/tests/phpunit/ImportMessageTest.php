@@ -88,13 +88,15 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         if ( !empty( $expected['contact'] ) ) {
             $contact = $this->callAPISuccessGetSingle('Contact', array('id' => $contribution['contact_id']));
             $renamedFields = array('prefix' => 1, 'suffix' => 1);
-            $this->assertEquals( array_diff_key($expected['contact'], $renamedFields), array_intersect_key( $expected['contact'], $contact ) );
+            $this->assertEquals( array_diff_key($expected['contact'], $renamedFields), array_intersect_key( $contact, $expected['contact'] ), print_r(array_intersect_key( $contact, $expected['contact'] ), TRUE) . " does not match " . print_r(array_diff_key($expected['contact'], $renamedFields), TRUE));
             foreach (array_keys($renamedFields) as $renamedField) {
+              if (isset($expected['contact'][$renamedField])) {
                 $this->assertEquals(civicrm_api3('OptionValue', 'getvalue', array(
-                    'value' => $contact[$renamedField . '_id'],
-                    'option_group_id' => 'individual_' . $renamedField,
-                    'return' => 'name',
+                  'value' => $contact[$renamedField . '_id'],
+                  'option_group_id' => 'individual_' . $renamedField,
+                  'return' => 'name',
                 )), $expected['contact'][$renamedField]);
+              }
             }
         }
 
@@ -195,7 +197,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                     'email' => 'nobody@wikimedia.org',
                     'first_name' => 'First',
                     'fee' => '0.03',
-                    'preferred_language' => 'en_US',
+                    'language' => 'en_US',
                     'gateway' => 'test_gateway',
                     'gateway_txn_id' => $gateway_txn_id,
                     'gateway_status' => 'P',
@@ -224,7 +226,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
                         'middle_name' => 'Middle',
                         'prefix' => $new_prefix,
                         'suffix' => 'Sr.',
-                        'preferred_language' => 'en_US',
+                        'preferred_language' => 'en',
                     ),
                     'contribution' => array(
                         'address_id' => '',
@@ -286,7 +288,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
               'gateway_txn_id' => $gateway_txn_id,
               'gross' => '1.23',
               'payment_method' => 'cc',
-              'preferred_language' => 'en_ZZ',
+              'language' => 'en_ZZ',
               'name_prefix' => $new_prefix,
               'name_suffix' => 'Sr.',
             ),
@@ -310,7 +312,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
               'gateway_txn_id' => $gateway_txn_id,
               'gross' => '1.23',
               'payment_method' => 'cc',
-              'preferred_language' => 'zz_ZZ',
+              'language' => 'zz_ZZ',
               'name_prefix' => $new_prefix,
               'name_suffix' => 'Sr.',
               'prefix' => $new_prefix,
@@ -318,7 +320,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             ),
             array(
               'contact' => array(
-                'preferred_language' => 'zz_ZZ',
+                'preferred_language' => 'zz',
                 'prefix' => $new_prefix,
                 'suffix' => 'Sr.',
               ),
