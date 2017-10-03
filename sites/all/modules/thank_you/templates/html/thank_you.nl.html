@@ -5,30 +5,41 @@
 <p>Beste donateur,</p>
 {%endif%}
 
-<p>Bedankt voor je donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} aan de Wikimedia Foundation. De Wikimedia Foundation is de non-profitorganisatie die Wikipedia en andere projecten rond vrije kennis ondersteunt. Het is onze missie om de meest toegankelijke en veelomvattende bron van vrije kennis ter wereld te bouwen.</p>
+<p>Bedankt voor je steun aan Wikipedia en de Wikimedia Foundation. Je bijdrage van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} steunt Wikipedia en helpt de toekomst van vrije kennis voor iedereen te waarborgen.</p>
 
-<p>{% if "RecurringRestarted" in contribution_tags %} Kort geleden hebben we een klein technisch probleem opgelost waarbij een aantal maandelijkse donaties werden stopgezet. Uw periodieke donatie is inmiddels hervat. De maanden die overgeslagen zijn, innen we niet. Bedankt voor uw geduld en uw steun. Als u nog vragen heeft, stuur dan gerust een e-mail naar donate@wikimedia.org. {%endif%}</p>
+{% if "RecurringRestarted" in contribution_tags %}
+<p>Kort geleden hebben we een klein technisch probleem opgelost waarbij een aantal maandelijkse donaties werden stopgezet. Uw periodieke donatie is inmiddels hervat. De maanden die overgeslagen zijn, innen we niet. Bedankt voor uw geduld en uw steun. Als u nog vragen heeft, stuur dan gerust een e-mail naar donate@wikimedia.org.</p>
+{%endif%}
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Onlangs hebben we een technisch probleem opgelost dat ervoor zorgde dat een klein aantal donateurs geen bevestiging heeft gekregen voor hun donatie. Daarom willen we u vragen deze e-mail als dank te beschouwen voor uw donatie die op $date is overgemaakt. We waarderen uw geduld en steun enorm, en mocht u nog vragen hebben dan kunt u gerust een e-mail sturen naar donate@wikimedia.org. {%endif%}</p>
+{% if "UnrecordedCharge" in contribution_tags %}
+<p>Onlangs hebben we een technisch probleem opgelost dat ervoor zorgde dat een klein aantal donateurs geen bevestiging heeft gekregen voor hun donatie. Daarom willen we u vragen deze e-mail als dank te beschouwen voor uw donatie die op {{ receive_date }} is overgemaakt. We waarderen uw geduld en steun enorm, en mocht u nog vragen hebben dan kunt u gerust een e-mail sturen naar donate@wikimedia.org.</p>
+{%endif%}
 
-<p>We zijn ervan overtuigd dat kennis een fundamenteel mensenrecht is. Nu de mens met volle snelheid de digitale toekomst ingaat, is er behoefte aan open, toegankelijke en openbare plekken waar iedereen online toegang heeft tot kennis. Wikimedia is zo'n plek. Wikipedia levert vrije kennis aan mensen, door mensen. In honderden talen over de hele wereld.</p>
+<p>
+  <b>Wikipedia wordt mogelijk gemaakt door een krachtig idee: dat mensen, zoals jij en ik, deel kunnen nemen aan de ontwikkeling van kennis over de wereld en deze vrij ter beschikking kunnen stellen aan iedereen, overal.</b>
+</p>
 
-<p>Elk jaar wordt Wikipedia door mensen van elk continent gelezen en bijgewerkt, zelfs op Antarctica. Bijna een half miljard mensen bezoeken Wikipedia elke maand voor uiteenlopende doeleinden, van het behoud van cultureel erfgoed tot het verbeteren van kankeropsporing en het opzoeken van informatie voor huiswerk. Ze komen om te leren, ze blijven en ontdekken.</p>
+<p>Vandaag, dankzij de steun van miljoenen vrijwillige donateurs en medestanders, kun je uren ronddwalen over Wikipedia. Met meer dan 40 miljoen Wikipedia artikels en 35 miljoen afbeeldingen met vrije licentie, kan Wikipedia vrijwel elke vraag beantwoorden en je meenemen naar plekken waar je nog nooit bent geweest.</p>
 
-<p>Iedereen is een potentiële Wikipediaan. En vind je op Wikipedia niet wat je zoekt, dan <a rel="nofollow" class="external text" href="https:///nl.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">creëer je het gewoon zelf</a>. De artikelen, woorden, afbeeldingen en gegevens worden gecreëerd door een gevarieerde groep mensen die hun kennis vrijwillig delen met de wereld.</p>
+<p>Jouw gift steunt de creatie en uitwisseling van vrije kennis op een echte, praktische manier. Het helpt ons om Wikipedia snel, veilig en voor iedereen ter wereld toegankelijk te maken. Het helpt ons om vrije toegang tot Wikipedia te verlenen op plekken waar hoge mobiele datakosten mensen belemmeren om online te gaan. Het helpt ons om mensen te steunen bij het digitaliseren van kennis die zich momenteel nog in analoge archieven bevindt. Het beschermt Wikipedia van bedreigingen tegen vrije kennis en het open internet.</p>
 
-<p>Elke dag vragen we ons af hoe we onze impact kunnen vergroten en werken we eraan om te kunnen zorgen dat Wikipedia en de zusterprojecten morgen nóg nauwkeuriger, waardevoller en toegankelijker zijn dan vandaag. Jouw donatie helpt ons daarbij.</p>
+<p>Jouw steunt betekent dat je de kennis die je nu nodig hebt kunt vinden, waar je ook bent - om een weddenschap met een vriend te winnen tijdens een feestje of om de wereld om ons heen beter te begrijpen.</p>
 
-<p>Dankzij jou kunnen we blijven groeien en het leven van velen weer een jaar lang positief beïnvloeden.</p>
+<p>
+  <b>Doneren aan Wikipedia maakt je een voorvechter van een krachtig idee.</b>
+</p>
 
-<p>Wikimedia Foundation<br/></p>
+<p>Wikipedia zal blijven evolueren, groeien en nieuwe uitdagingen tegenkomen. We staan te popelen om deze uitdagingen ook aan te gaan. Jouw donatie zal ons daarbij aardig op weg helpen. We kunnen je niet genoeg bedanken voor je steun. Namens de Wikimedia Foundation, bedankt voor het investeren in onze toekomst en voor het maken van deze reis met ons.</p>
 
-<p>Veel werkgevers verdubbelen de giften van werknemers: gelieve te verifiëren in uw bedrijf om te zien of ze een <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">giftenprogramma</a> hebben.</p>
+<p>Katherine Maher<br/>
+Executive Director, Wikimedia Foundation</p>
 
-<p>Voor jouw administratie: jouw donatie, met nummer {{ transaction_id }}, op {{ receive_date }} was {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Veel werkgevers zullen bijdrages van werknemers ruimhartig verdubbelen: controleer met je werkgever om te zien of deze een <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">zakelijk donatieprogramma</a> heeft. Voor je administratie: Je donatie, met het nummer {{ transaction_id }}, op {{ receive_date }} was {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Deze schenking maakt deel uit van een periodieke afschrijving. Maandelijkse betalingen worden geïncasseerd door de Wikimedia Foundation tot u ons verzoekt deze te stoppen. Mocht u de periodieke afschrijvingen willen annuleren, zie dan onze <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">eenvoudige annuleringsinstructies</a>. </p>{%endif%}
+{% if recurring %}
+<p>Deze schenking maakt deel uit van een periodieke afschrijving. Maandelijkse betalingen worden geïncasseerd door de Wikimedia Foundation tot u ons verzoekt deze te stoppen. Mocht u de periodieke afschrijvingen willen annuleren, zie dan onze <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">eenvoudige annuleringsinstructies</a>.</p>
+{%endif%}
 
-<p>Je kunt deze brief gebruiken als bewijs van je donatie. Voor deze bijdrage zijn, geheel of gedeeltelijk, geen goederen of diensten geleverd. De Wikimedia Foundation, Inc. is een non-profitorganisatie zonder winstoogmerk met 501(c)(3)-status voor belastingvrijstelling in de Verenigde Staten. Ons adres is 149 New Montgomery, 3rd Floor, San Francisco, CA 94105, Verenigde Staten. Belastingnummer in de VS: 20-0049703</p>
+<p>Deze brief kan dienen als bewijs van je donatie. Er werden geen gehele of gedeeltelijke goederen of diensten geboden voor deze bijdrage. Verzend bericht alsjeblieft naar: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Nummer voor vrijstelling van belasting in de Verenigde Staten: 20-0049703</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/nl&amp;oldid=15425657","name":"thank_you.nl.html","revision":15425657}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20161128/nl&amp;oldid=16767058","name":"thank_you.nl.html","revision":16767058}TI_END -->

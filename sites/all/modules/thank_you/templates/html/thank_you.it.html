@@ -5,30 +5,41 @@
 <p>Caro/a donatore/trice,</p>
 {%endif%}
 
-<p>Grazie davvero per la tua donazione di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} alla Wikimedia Foundation. La Wikimedia Foundation è l’organizzazione non-profit che supporta Wikipedia e altri progetti di condivisione gratuita della conoscenza. La nostra mission è costruire la più ampia ed accessibile fonte di conoscenza nel mondo.</p>
+<p>Grazie per il tuo supporto nei confronti di Wikipedia e di Wikimedia Foundation. Il tuo contributo di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} supporta Wikipedia e aiuta a garantire il futuro della conoscenza libera per tutti.</p>
 
-<p>{% if "RecurringRestarted" in contribution_tags %} Abbiamo recentemente risolto un piccolo inconveniente tecnico che ha sospeso alcune donazioni a ricorrenza mensile. Abbiamo riavviato la tua donazione periodica e d'ora in poi sarà registrata come di consueto. Non ti addebiteremo le donazioni dovute durante i mesi di sospensione del servizio. Grazie per la tua pazienza e per il tuo sostegno. Per qualsiasi informazione, puoi scrivere a donate@wikimedia.org. {%endif%}</p>
+{% if "RecurringRestarted" in contribution_tags %}
+<p>Abbiamo recentemente risolto un piccolo inconveniente tecnico che ha sospeso alcune donazioni a ricorrenza mensile. Abbiamo riavviato la tua donazione periodica e d'ora in poi sarà registrata come di consueto. Non ti addebiteremo le donazioni dovute durante i mesi di sospensione del servizio. Grazie per la tua pazienza e per il tuo sostegno. Per qualsiasi informazione, puoi scrivere a donate@wikimedia.org.</p>
+{%endif%}
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Abbiamo da poco risolto un piccolo problema tecnico che faceva sì che a fronte di alcune donazioni a ricorrenza mensile non venisse inviata una conferma. Questa email è la conferma di una donazione effettuata il $date. Grazie per la tua pazienza e per il tuo sostegno. Per qualsiasi informazione, puoi scrivere a donate@wikimedia.org. {%endif%}</p>
+{% if "UnrecordedCharge" in contribution_tags %}
+<p>Abbiamo da poco risolto un piccolo problema tecnico che faceva sì che a fronte di alcune donazioni a ricorrenza mensile non venisse inviata una conferma. Questa email è la conferma di una donazione effettuata il {{ receive_date }}. Grazie per la tua pazienza e per il tuo sostegno. Per qualsiasi informazione, puoi scrivere a donate@wikimedia.org.</p>
+{%endif%}
 
-<p>Crediamo nella conoscenza come diritto umano fondamentale. Mentre l'umanità si precipita nel nostro futuro digitale, abbiamo sempre di più l’esigenza di trovare spazi aperti, accessibili e pubblici per condividere la conoscenza online. Wikipedia è proprio questo. Wikipedia crea uno scambio di conoscenza tra persone in tutto il mondo in centinaia di lingue diverse.</p>
+<p>
+  <b>Wikipedia è resa possibile grazie a un’idea vincente: che le persone, come me e te, possono partecipare allo sviluppo della conoscenza mondiale per renderla liberamente disponibile a tutti, ovunque.</b>
+</p>
 
-<p>Durante tutto l'anno, Wikipedia viene letta e modificata da persone da tutti i continenti, incluso l’Antartide. Quasi mezzo miliardo di persone visitano Wikipedia ogni mese per ricerche in ogni campo, dalla tutela del patrimonio culturale, alle cure per il cancro, alla ricerca per studio o lavoro. Vengono per imparare. Rimangono a scoprire.</p>
+<p>Oggi, grazie al supporto di milioni di collaboratori e sostenitori volontari, puoi navigare su Wikipedia per ore. Con più di 40 milioni di articoli su Wikipedia e 35 milioni di immagini concesse liberamente in licenza, Wikipedia può rispondere a quasi ogni domanda e portarti in luoghi mai esplorati prima.</p>
 
-<p>Ognuno di noi è un potenziale Wikipediano. Se non trovi quello che stai cercando su Wikipedia, puoi iniziare <a rel="nofollow" class="external text" href="https:///it.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">a crearlo tu stesso.</a> Gli articoli, i testi, le immagini e i dati sono creati da un’ampia comunità di persone che offrono di condividere la loro conoscenza con il resto del mondo.</p>
+<p>La tua donazione supporta la creazione e la condivisione della conoscenza libera in modo pratico e realistico. Ci aiuta a rendere Wikipedia veloce, sicura e accessibile a chiunque nel mondo. Ci aiuta a fornire libero accesso a Wikipedia in luoghi dove i costi elevati dei dati mobili impediscono alle persone di connettersi. Ci aiuta a supportare le persone che stanno digitalizzando la conoscenza attualmente rinchiusa in archivi analogici. Protegge Wikipedia dalle minacce alla conoscenza libera e all’internet aperto.</p>
 
-<p>Ogni giorno ci chiediamo come possiamo migliorare e garantire che domani Wikipedia e gli altri nostri progetti siano ancora più affidabili, ricchi e accessibili di oggi. La tua donazione ci aiuterà a raggiungere il nostro obiettivo.</p>
+<p>Offrire il tuo supporto significa poter reperire le informazioni di cui hai bisogno adesso, in qualsiasi luogo ti trovi-vincere una scommessa con un amico durante una cena, o comprendere il mondo che ci circonda.</p>
 
-<p>Grazie di cuore: ci permetti di crescere per un altro anno e di fare davvero la differenza.</p>
+<p>
+  <b>Effettuare una donazione a Wikipedia ti rende portavoce di un’idea vincente.</b>
+</p>
 
-<p>Wikimedia Foundation<br/></p>
+<p>Wikipedia continuerà a evolvere, crescere e affrontare nuove sfide. Siamo molto contenti e desiderosi di affrontare tutto ciò e molto altro. La tua donazione ci aiuterà a raggiungere questo obiettivo. Non ti ringrazieremo mai abbastanza per il tuo supporto. Per conto di Wikimedia Foundation, ti ringraziamo per aver investito nel nostro futuro e aver intrapreso questo percorso con noi.</p>
 
-<p>Molti datori di lavoro potrebbero sottoscrivere un contributo dello stesso ammontare di quello effettuato dai dipendenti, raddoppiando il valore della tua donazione: per favore, controlla se la tua azienda ha <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">un programma di donazione aziendale di questo tipo</a>.</p>
+<p>Katherine Maher<br/>
+Direttore esecutivo, Wikimedia Foundation</p>
 
-<p>Promemoria: la tua donazione numero {{ transaction_id }} del {{ receive_date }} è stata di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Molti datori di lavoro verseranno con generosità gli stessi contributi dei propri dipendenti: verifica con il tuo datore di lavoro che questi abbiano un <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">programma aziendale di matching gift</a>. Dettagli della donazione: la tua donazione, numero {{ transaction_id }}, del {{ receive_date }} è stata di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Questa donazione è parte di una sottoscrizione ricorrente. I pagamenti mensili saranno accreditati alla Wikimedia Foundation finché non ci inoltrerai una richiesta di interruzione. Se vuoi annullare il pagamento, per favore controlla le nostre <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">semplici istruzioni per l'annullamento</a>. </p>{%endif%}
+{% if recurring %}
+<p>Questa donazione è parte di una sottoscrizione ricorrente. I pagamenti mensili saranno accreditati alla Wikimedia Foundation finché non ci inoltrerai una richiesta di interruzione. Se vuoi annullare il pagamento, per favore controlla le nostre <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">semplici istruzioni per l'annullamento</a>.</p>
+{%endif%}
 
-<p>Questa lettera può fungere da certificazione per la tua donazione. Nessun bene o servizio è stato erogato, del tutto o in parte, in cambio di questo contributo. La Wikimedia Foundation, Inc. è una associazione benefica senza fini di lucro che gode dello status di esenzione fiscale 501(c)(3) negli Stati Uniti. Il nostro indirizzo è 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Numero di esenzione fiscale U.S.: 20-0049703</p>
+<p>Questa lettera può servire come copia di attestazione della tua donazione. Per questo contributo non sono stati forniti, in tutto o in parte, né beni né servizi. Inviare la corrispondenza a: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Numero per esenzione fiscale degli Stati Uniti: 20-0049703</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/it&amp;oldid=15425763","name":"thank_you.it.html","revision":15425763}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20161128/it&amp;oldid=16766846","name":"thank_you.it.html","revision":16766846}TI_END -->

@@ -5,30 +5,41 @@
 <p>Estimat/da donant,</p>
 {%endif%}
 
-<p>Gràcies per la seva donació de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a la Fundació Wikimedia. La Fundació Wikimedia és una organització sense ànim de lucre que dóna suport a la Viquipèdia i altres projectes de coneixement lliure. La nostra missió és construir la font de coneixement lliure més accessible i completa del món.</p>
+<p>Gràcies pel teu suport a la Viquipèdia i a la Wikimedia Foundation. La teva contribució de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} ajuda la Viquipèdia i permet assegurar el futur del coneixement lliure per a tothom.</p>
 
-<p>{% if "RecurringRestarted" in contribution_tags %} Recentment hem resolt un petit problema tècnic que ha interromput algunes donacions mensuals. Hem restablert la teva donació periòdica, que seguirà el seu curs normal. No et carregarem els mesos que no se t'han cobrat. Moltes gràcies per la teva paciència i suport. Si us plau, no dubtis a contactar-nos a donate@wikimedia.org si tens qualsevol dubte. {%endif%}</p>
+{% if "RecurringRestarted" in contribution_tags %}
+<p>Recentment hem resolt un petit problema tècnic que ha interromput algunes donacions mensuals. Hem restablert la teva donació periòdica, que seguirà el seu curs normal. No et carregarem els mesos que no se t'han cobrat. Moltes gràcies per la teva paciència i suport. Si us plau, no dubtis a contactar-nos a donate@wikimedia.org si tens qualsevol dubte.</p>
+{%endif%}
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Fa poc que hem resolt un petit problema tècnic que un petit nombre de persones no hagi rebut confirmació de la seva donació. Aquest correu és un agraïment per la vostra donació efectuada el $date. Moltes gràcies per la vostra paciència i el vostre suport, i no dubteu en enviar un missatge a donate@wikimedia.org si teniu cap pregunta. {%endif%}</p>
+{% if "UnrecordedCharge" in contribution_tags %}
+<p>Fa poc que hem resolt un petit problema tècnic que un petit nombre de persones no hagi rebut confirmació de la seva donació. Aquest correu és un agraïment per la vostra donació efectuada el {{ receive_date }}. Moltes gràcies per la vostra paciència i el vostre suport, i no dubteu en enviar un missatge a donate@wikimedia.org si teniu cap pregunta.</p>
+{%endif%}
 
-<p>Creiem que el coneixement és un dret humà fonamental. Com la humanitat es llança al nostre futur digital, necessitem espais oberts, accessibles i públics per accedir al coneixement en línia. Això és el que proveeix Wikimedia. La Viquipèdia ofereix coneixement lliure a la gent, fet per la gent, en centenars d'idiomes a tot el nostre planeta.</p>
+<p>
+  <b>La Viquipèdia és possible gràcies a una idea poderosa: el fet que la gent, com tu i com jo, puguem participar en la construcció del coneixement del món i fer que aquest coneixement estigui disponible gratuïtament per a tothom, a tot arreu.</b>
+</p>
 
-<p>Durant tot l’any, gent de tots els continents, inclosa l'Antàrtida, edita i llegeix la Viquipèdia. Gairebé cinc cents milions de persones visiten Wikipedia tots els mesos per a qualsevol cosa, des de la preservació del patrimoni cultural, a la millora de la detecció del càncer, recerca per fer els deures. Vénen a aprendre. Es queden i descobreixen.</p>
+<p>Avui, gràcies al suport de milions de col·laboradors i promotors voluntaris, pots rondar per la Viquipèdia durant hores. Amb més de 40 milions d’articles i 35 milions d’imatges lliures de drets, la Viquipèdia pot respondre pràcticament a qualsevol pregunta i portar-te a llocs on mai abans havies estat.</p>
 
-<p>Tothom és un potencial viquipedista. Si no troba el que està buscant a la Wikipedia, vostè mateix pot començar a <a rel="nofollow" class="external text" href="https:///ca.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">crear-ho.</a> Els articles, paraules, imatges i dades són creats per una comunitat diversa de persones que treballen com a voluntaris per compartir els seus coneixements amb el món.</p>
+<p>La teva donació permet crear i compartir coneixement lliure de forma real i pràctica. Ens ajuda a fer la Viquipèdia ràpida, segura i accessible per a tothom arreu del món. Ens ajuda a donar accés gratuït a la Viquipèdia a llocs on el gran cost de les dades mòbils impedeix a la gent navegar per Internet. Ens ajuda a donar suport a la gent que està digitalitzant el coneixement actualment ocult en arxius analògics. Protegeix la Viquipèdia d’amenaces contra el coneixement lliure i la Internet oberta.</p>
 
-<p>Cada dia ens preguntem com podem augmentar el nostre impacte i assegurar-nos de que Viquipèdia i els altres projectes germans siguin demà encara més precisos, rics i accessibles del que ho són avui. La seva donació ens ajudarà a reeixir-ne.</p>
+<p>El teu suport permet trobar la informació que necessites des de qualsevol lloc: per guanyar una aposta amb un amic durant un sopar o per entendre el món que ens envolta.</p>
 
-<p>Gràcies per permetre'ns continuar creixent i impactant vides un any més.</p>
+<p>
+  <b>Fer una donació a la Viquipèdia et converteix en defensor d’una idea poderosa.</b>
+</p>
 
-<p>Fundació Wikimedia<br/></p>
+<p>La Viquipèdia continuarà evolucionant, creixent i trobant nous reptes. Tenim moltíssimes ganes de fer front a aquests i molts més altres reptes. I la teva donació ens ajudarà. Mai et podrem agrair prou el teu suport! En nom de Wikimedia Foundation, gràcies per invertir en el nostre futur i participar en aquest viatge amb nosaltres.</p>
 
-<p>Moltes empreses doblen la donació que fan els seus treballadors: per favor, comprova si la teva empresa té <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">un programa similar</a>.</p>
+<p>Katherine Maher<br/>
+Directora executiva de Wikimedia Foundation</p>
 
-<p>Per a la vostra informació: La vostra donació, numero {{ transaction_id }} amb data {{ receive_date }} va ser de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Moltes empreses estaran encantades de fer contribucions amb els seus treballadors: pregunta al teu cap si, a la teva empresa, tenen un <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">programa de donacions corporatives d’aquest tipus</a>. Per a la teva informació: La teva donació, amb número {{ transaction_id }}, que es va fer el {{ receive_date }}, va ser de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Aquesta donació forma part d'una donació periòdica. Cada mes es realitzarà un cobrament per part de la Fundació Wikimedia fins que ens avisi. Si volgués cancel·lar la subscripció, consulteu les nostres <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instruccions de cancel·lació simple</a> </p>{%endif%}
+{% if recurring %}
+<p>Aquesta donació forma part d'una donació periòdica. Cada mes es realitzarà un cobrament per part de la Fundació Wikimedia fins que ens avisi. Si volgués cancel·lar la subscripció, consulteu les nostres <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instruccions de cancel·lació simple</a></p>
+{%endif%}
 
-<p>Aquesta carta serveix de rebut de la donació. Aquesta donació no implica, en cap cas, fins lucratius. La Wikimedia Foundation, Inc. és una organització sense ànim de lucre amb l'exemció d'impostos 501(c)(3) al Estats Units. La nostra adreça és 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Número d'exempció d'impostos: 20-0049703</p>
+<p>Aquesta carta pot servir com a comprovant de la teva donació. No es van donar productes ni serveis, en la seva totalitat o en part, per a aquesta contribució. Envia un correu a: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204 (EUA). Número d’exempció d’impostos d’EUA: 20-0049703</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/ca&amp;oldid=15425718","name":"thank_you.ca.html","revision":15425718}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20161128/ca&amp;oldid=16748952","name":"thank_you.ca.html","revision":16748952}TI_END -->
