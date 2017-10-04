@@ -1079,9 +1079,6 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
           $contact[$name] = substr(trim($msg[$name]), 0, 64);
         }
       }
-      // @todo this may not be needed as core may handle, but unsure how it handles over-long strings.
-      $contact['sort_name'] = substr(trim($msg['last_name'] . ', ' . $msg['first_name'], ' ,'), 0, 128);
-      $contact['display_name'] = substr($msg['first_name'] . ' ' . $msg['last_name'], 0, 128 );
     }
     if ( strtolower( $msg['contact_type'] ) == "organization" ){
         // @todo probably can remove handling for sort name and display name now.
