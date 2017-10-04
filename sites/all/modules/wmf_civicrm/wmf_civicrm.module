@@ -2595,9 +2595,14 @@ function _wmf_civicrm_merge_resolve_uninformative_characters_conflict($fieldName
     "\xE3\x80\x80",
     // Hex nbsp
     '/\xC2\xA0/',
-
   );
-  if (strtoupper(str_replace($whitespaceChars, '', $valueToKeep)) != strtoupper(str_replace($whitespaceChars, '', ($valueToOverwrite)))) {
+
+  // http://grammar.yourdictionary.com/punctuation/what/Fourteen-Punctuation-Marks.html
+  // but elipsis? really?
+  $punctuationChars = array('.', ':', ',', '&', ';', "'", '-', '_', '?', '(', ')', '!', '"');
+
+  $ignoreChars = array_merge($whitespaceChars, $punctuationChars);
+  if (strtoupper(str_replace($ignoreChars, '', $valueToKeep)) != strtoupper(str_replace($ignoreChars, '', ($valueToOverwrite)))) {
     return FALSE;
   }
 
