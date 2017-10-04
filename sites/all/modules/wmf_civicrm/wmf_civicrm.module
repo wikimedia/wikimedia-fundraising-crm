@@ -2363,75 +2363,7 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
           // default settings for opt out fields.
           if ($type === 'batch') {
             foreach (array_keys($refs['fields_in_conflict']) as $moveField) {
-              if (_wmf_civicrm_merge_is_communication_boolean($moveField)) {
-                unset($refs['fields_in_conflict'][$moveField]);
-                $refs['migration_info'][$moveField] = 1;
-                $refs['migration_info']['rows'][$moveField]['other'] = ts('Yes');
-                continue;
-              }
-
-              if ($moveField == 'move_contact_source') {
-                unset($refs['fields_in_conflict'][$moveField]);
-                continue;
-              }
-
-              if (_wmf_civicrm_merge_resolve_preferred_language_conflict(
-                str_replace('move_', '', $moveField),
-                $refs['migration_info'][$moveField],
-                $refs['migration_info']['rows'][$moveField]['other'],
-                $refs['migration_info']['rows'][$moveField]['main'],
-                $mainId,
-                $otherId
-              )) {
-                unset($refs['fields_in_conflict'][$moveField]);
-                continue;
-              }
-
-              if (_wmf_civicrm_merge_resolve_casing_conflict(
-                str_replace('move_', '', $moveField),
-                $refs['migration_info'][$moveField],
-                $refs['migration_info']['rows'][$moveField]['other'],
-                $refs['migration_info']['rows'][$moveField]['main'])) {
-                  unset($refs['fields_in_conflict'][$moveField]);
-                  continue;
-              }
-
-              if (_wmf_civicrm_merge_resolve_diacritic_conflict(
-                str_replace('move_', '', $moveField),
-                $refs['migration_info'][$moveField],
-                $refs['migration_info']['rows'][$moveField]['other'],
-                $refs['migration_info']['rows'][$moveField]['main'])) {
-                unset($refs['fields_in_conflict'][$moveField]);
-                continue;
-              }
-
-              if (_wmf_civicrm_merge_resolve_uninformative_characters_conflict(
-                str_replace('move_', '', $moveField),
-                $refs['migration_info'][$moveField],
-                $refs['migration_info']['rows'][$moveField]['other'],
-                $refs['migration_info']['rows'][$moveField]['main'])) {
-                unset($refs['fields_in_conflict'][$moveField]);
-                continue;
-              }
-
-              if (substr($moveField, 0, 13) === 'move_location') {
-                if (!isset($refs['is_major_gift'])) {
-                  $refs['is_major_gift'] = _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId);
-                }
-                if (!$refs['is_major_gift']) {
-                  $fieldParts = explode('_', $moveField);
-                  if ($fieldParts[2] == 'email') {
-                    $mainIsOnHold = $refs['migration_info']['main_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
-                    $otherIsOnHold = $refs['migration_info']['other_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
-                    if ($mainIsOnHold + $otherIsOnHold === 1) {
-                      // One is one hold & the other isn't - conflict.
-                      continue;
-                    }
-                  }
-                  unset($refs['fields_in_conflict'][$moveField]);
-                }
-
-              }
+              _wmf_civicrm_merge_resolve_field_conflict($refs, $moveField, $mainId, $otherId);
             }
           }
         }
@@ -2443,6 +2375,89 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
         break;
 
     }
+}
+
+/**
+ * Resolve any resolvable field conflicts.
+ *
+ * @param array $refs
+ * @param string $moveField
+ * @param int $mainId
+ *   Id of the main contact (the one to keep)
+ * @param int $otherId
+ *   Id of the other contact (the one to delete)
+ */
+function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, $otherId) {
+  $dbFieldName = str_replace('move_', '', $moveField);
+
+  if (_wmf_civicrm_merge_is_communication_boolean($moveField)) {
+    unset($refs['fields_in_conflict'][$moveField]);
+    $refs['migration_info'][$moveField] = 1;
+    $refs['migration_info']['rows'][$moveField]['other'] = ts('Yes');
+    return;
+  }
+
+  if ($moveField == 'move_contact_source') {
+    unset($refs['fields_in_conflict'][$moveField]);
+    return;
+  }
+  if (_wmf_civicrm_merge_resolve_preferred_language_conflict(
+    $dbFieldName,
+    $refs['migration_info'][$moveField],
+    $refs['migration_info']['rows'][$moveField]['other'],
+    $refs['migration_info']['rows'][$moveField]['main'],
+    $mainId,
+    $otherId
+  )) {
+    unset($refs['fields_in_conflict'][$moveField]);
+    return;
+  }
+
+  if (_wmf_civicrm_merge_resolve_casing_conflict(
+    $dbFieldName,
+    $refs['migration_info'][$moveField],
+    $refs['migration_info']['rows'][$moveField]['other'],
+    $refs['migration_info']['rows'][$moveField]['main'])) {
+    unset($refs['fields_in_conflict'][$moveField]);
+    return;
+  }
+
+  if (_wmf_civicrm_merge_resolve_diacritic_conflict(
+    $dbFieldName,
+    $refs['migration_info'][$moveField],
+    $refs['migration_info']['rows'][$moveField]['other'],
+    $refs['migration_info']['rows'][$moveField]['main'])) {
+    unset($refs['fields_in_conflict'][$moveField]);
+    return;
+  }
+
+  if (_wmf_civicrm_merge_resolve_uninformative_characters_conflict(
+    $dbFieldName,
+    $refs['migration_info'][$moveField],
+    $refs['migration_info']['rows'][$moveField]['other'],
+    $refs['migration_info']['rows'][$moveField]['main'])) {
+    unset($refs['fields_in_conflict'][$moveField]);
+    return;
+  }
+
+  if (substr($moveField, 0, 13) === 'move_location') {
+    if (!isset($refs['is_major_gift'])) {
+      $refs['is_major_gift'] = _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId);
+    }
+    if (!$refs['is_major_gift']) {
+      $fieldParts = explode('_', $moveField);
+      if ($fieldParts[2] == 'email') {
+        $mainIsOnHold = $refs['migration_info']['main_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+        $otherIsOnHold = $refs['migration_info']['other_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+        if ($mainIsOnHold + $otherIsOnHold === 1) {
+          // One is one hold & the other isn't - conflict.
+          return;
+        }
+      }
+      unset($refs['fields_in_conflict'][$moveField]);
+    }
+
+  }
 }
 
 /**
