@@ -5,30 +5,41 @@
 <p>Kære bidragsyder,</p>
 {%endif%}
 
-<p>Tak for din donering på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} til Wikimedia Foundation. Wikimedia Foundation er den nonprofit organisation som støtter Wikipedia og andre gratis vidensprojekter. Vores mission er at opbygge den mest tilgængelige og omfattende kilde med gratis viden i hele verden.</p>
+<p>Tak for din støtte til Wikipedia og Wikimedia Foundation. Din støtte på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} understøtter Wikipedia og hjælper til med at sikre fri information for alle i fremtiden.</p>
 
-<p>{% if "RecurringRestarted" in contribution_tags %} Vi har for nylig løst et lille teknisk problem, der standsede nogle månedligt tilbagevendende donationer. Vi har genstartet din tilbagevendende donation, og den vil forløbe normalt fremover. Vi opkræver ikke for de måneder, der er blevet sprunget over. Tak for din tålmodighed og støtte. Skriv endelig til donate@wikimedia.org, hvis du har spørgsmål. {%endif%}</p>
+{% if "RecurringRestarted" in contribution_tags %}
+<p>Vi har for nylig løst et lille teknisk problem, der standsede nogle månedligt tilbagevendende donationer. Vi har genstartet din tilbagevendende donation, og den vil forløbe normalt fremover. Vi opkræver ikke for de måneder, der er blevet sprunget over. Tak for din tålmodighed og støtte. Skriv endelig til donate@wikimedia.org, hvis du har spørgsmål.</p>
+{%endif%}
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Vi har for nylig rettet en mindre teknisk fejl, der betød, at en mindre gruppe af donorer ikke modtog en kvittering for deres bidrag. Denne email er derfor en tak til dig for din donation fra $date. Vi takker for din tålmodighed og støtte, og husk at du altid er altid velkommen til at emaile donate@wikimedia.org, hvis du har nogen spørgsmål. {%endif%}</p>
+{% if "UnrecordedCharge" in contribution_tags %}
+<p>Vi har for nylig rettet en mindre teknisk fejl, der betød, at en mindre gruppe af donorer ikke modtog en kvittering for deres bidrag. Denne email er derfor en tak til dig for din donation fra {{ receive_date }}. Vi takker for din tålmodighed og støtte, og husk at du altid er altid velkommen til at emaile donate@wikimedia.org, hvis du har nogen spørgsmål.</p>
+{%endif%}
 
-<p>Vi tror på at viden er en grundlæggende menneskeret. Mens vi som menneskehed haster sig ind i vores digitale fremtid, har vi brug for åbne, tilgængelige, offentlige rum til at få adgang til viden online. Wikimedia er et sådant rum. Wikipedia leverer gratis viden til mennesker, via mennesker, i hundreder af sprog rundt på hele jordkloden.</p>
+<p>
+  <b>En stærk idé danner grundlaget for Wikipedia: At folk som dig og mig kan være med til at opbygge vores fælles viden og gøre det frit tilgængeligt for alle, hvor som helst.</b>
+</p>
 
-<p>Gennem en periode på et år, er Wikipedia redigeret og læst af mennesker på hver eneste kontinent, inklusiv Antarktis. Næsten en halv milliard mennesker besøger Wikipedia hver måned for alting fra bevaring af kulturarv til forbedring af kræftgenkendelse og undersøgning for lektiearbejde. De kommer der for at lære. De bliver og opdager.</p>
+<p>I dag, takket være støtten fra millioner af frivillige bidrags- og støtteydere, kan du surfe rundt på Wikipedia i timevis. Med over 40 millioner Wikipedia-artikler og 35 millioner gratis licenserede billeder kan Wikipedia besvare næsten ethvert spørgsmål og tage dig til steder, hvor du aldrig har været.</p>
 
-<p>Enhver er en potentiel Wikipedian. Hvis du ikke finder det som du leder efter på Wikipedia, <a rel="nofollow" class="external text" href="https:///da.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">kan du begynde at skabe det selv</a>. Artiklerne, ordene, billederne og dataene er skabt af diverse fælleskaber af mennesker som frivilligt deler deres viden med verden.</p>
+<p>Din donation går til reelle og praktiske metoder til oprettelse og udbredelse af fri viden. Den hjælper os med at gøre Wikipedia hurtig, sikker og tilgængelig for alle i hele verden. Den hjælper os med at give fri adgang til Wikipedia på steder, hvor høje priser for mobildata forhindrer folk i at gå online. Den hjælper os til at støtte folk med at digitalisere viden, som ligger skjult i analoge arkiver. Den beskytter Wikipedia mod trusler mod fri viden og det åbne internet.</p>
 
-<p>Hver dag spørger vi os selv, hvordan vi kan forøge vores indflydelse og sikre, at Wikipedia og søsterprojekterne kan blive endnu mere præcise, rige og tilgængelige i morgen end de er i dag. Din donering vil hjælpe os til at nå derhen.</p>
+<p>Din støtte betyder, at du kan finde de oplysninger, du har brug for, nu, uanset hvor du befinder dig - for at afgøre et væddemål med en ven eller for at forstå verden omkring os.</p>
 
-<p>Vi takker dig for at bevare os i vækst og påvirkning af menneskeliv i endnu et år.</p>
+<p>
+  <b>En donation til Wikipedia gør dig til forkæmper for en stærk ide.</b>
+</p>
 
-<p>Wikimedia Foundation<br/></p>
+<p>Wikipedia vil fortsætte med at udvikle sig, vokse og møde nye udfordringer. Vi ser frem til at møde disse og mere. Din donation vil hjælpe os frem dertil. Vi kan ikke takke dig nok for din støtte. Så på vegne af Wikimedia Foundation, tak for at du investerede i vores fremtid og følger os på denne rejse.</p>
 
-<p>Mange arbejdsgivere matcher ansattes donationer. Prøv at tjekke om din arbejdsgiver har et <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">match gaveprogram.</a></p>
+<p>Katherine Maher<br/>
+Administrerende direktør, Wikimedia Foundation</p>
 
-<p>Til dit regnskab: Dit bidrag, med nummer {{ transaction_id }}, den {{ receive_date }} var på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Mange arbejdsgivere vil gavmildt betale et beløb svarende til medarbejderes bidrag. Spørg din arbejdsgiver, om de har en <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">ordning om betaling af tilsvarende bidrag</a>. Til dine optegnelser: Din donation, nummer {{ transaction_id }}, den {{ receive_date }} var på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Denne donation er en del af en månedlig betaling. Månedlige bidrag vil blive trukket af Wikimedia Foundation, indtil du giver os besked om, at de skal ophøre. Ønsker du, at betalingerne skal ophøre, så se vores <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">vejledning i, hvordan du let standser betalingerne</a>. </p>{%endif%}
+{% if recurring %}
+<p>Denne donation er en del af en månedlig betaling. Månedlige bidrag vil blive trukket af Wikimedia Foundation, indtil du giver os besked om, at de skal ophøre. Ønsker du, at betalingerne skal ophøre, så se vores <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">vejledning i, hvordan du let standser betalingerne</a>.</p>
+{%endif%}
 
-<p>Dette brev kan anvendes som kvittering for dit bidrag. Ingen varer eller tjenesteydelser blev leveret, hverken helt eller delvist, som følge af dette bidrag. Wikimedia Foundation, Inc., er en velgørende non-profitorganisation med 501(c)(3) skattefritagelsesstatus i USA. Vores adresse er 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105, USA. Skattefritagelsesnummer i USA: 20-0049703</p>
+<p>Dette brev kan bruges som dokumentation for din donation. Ingen varer eller tjenester blev givet, helt eller delvist, for dette bidrag. Send post til: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Amerikansk momsfritagelsesnummer: 20-0049703</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/da&amp;oldid=15425722","name":"thank_you.da.html","revision":15425722}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20161128/da&amp;oldid=16749241","name":"thank_you.da.html","revision":16749241}TI_END -->

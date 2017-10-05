@@ -5,30 +5,41 @@
 <p>Kedves Támogatónk!</p>
 {%endif%}
 
-<p>Köszönjük, hogy {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összegű adományával Ön is hozzájárult a Wikimédia Alapítvány tevékenységéhez. A Wikimédia Alapítvány egy olyan nonprofit szervezet, amely a Wikipédiát és más, ingyenes tudás terjesztését szolgáló projekteket támogat. Küldetésünk, hogy a világ leghozzáférhetőbb és legteljesebb ingyenes ismeretforrását alakítsuk ki.</p>
+<p>Köszönjük, hogy támogattad a Wikipédiát és a Wikimédia Alapítványt. {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összegű hozzájárulásod támogatja a Wikipédiát, és segít biztosítani a mindenki számára elérhető ingyenes tudás jövőjét.</p>
 
-<p>{% if "RecurringRestarted" in contribution_tags %} Nemrég megoldottunk egy technikai problémát, amely megakadályozta, hogy a havi rendszerességű adományok célba érjenek. Az Ön rendszeres adománya is mostantól akadálytalanul eljut majd hozzánk. A kiesett hónapokra természetesen nem fogunk számlázni. Köszönjük türelmét és támogatását! Bármely felmerülő kérdés esetén, kérjük, írjon a donate@wikimedia.org címre! {%endif%}</p>
+{% if "RecurringRestarted" in contribution_tags %}
+<p>Nemrég megoldottunk egy technikai problémát, amely megakadályozta, hogy a havi rendszerességű adományok célba érjenek. Az Ön rendszeres adománya is mostantól akadálytalanul eljut majd hozzánk. A kiesett hónapokra természetesen nem fogunk számlázni. Köszönjük türelmét és támogatását! Bármely felmerülő kérdés esetén, kérjük, írjon a donate@wikimedia.org címre!</p>
+{%endif%}
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Nemrég megoldottunk egy technikai problémát, amely miatt néhány adományozónk nem kapta meg az adományáról visszaigazoló levelünket. Ezzel a levéllel szeretnénk megköszönni a $date napon küldött adományát. Igazán nagyra becsüljük türelmét és támogatását, és írjon bátran a donate@wikimedia.org címre, ha kérdése merül fel! {%endif%}</p>
+{% if "UnrecordedCharge" in contribution_tags %}
+<p>Nemrég megoldottunk egy technikai problémát, amely miatt néhány adományozónk nem kapta meg az adományáról visszaigazoló levelünket. Ezzel a levéllel szeretnénk megköszönni a {{ receive_date }} napon küldött adományát. Igazán nagyra becsüljük türelmét és támogatását, és írjon bátran a donate@wikimedia.org címre, ha kérdése merül fel!</p>
+{%endif%}
 
-<p>Hisszük, hogy a tudáshoz való hozzáférés alapvető emberi jog. A digitális jövő felé sebesen haladó emberiségnek olyan bárki számára szabadon hozzáférhető közterekre van szüksége, ahol a tudás online érhető el. Ilyen köztér a Wikipédia is, amely több száz nyelven közzétett ismereteket közvetít ingyenesen az emberek felé az emberek által.</p>
+<p>
+  <b>A Wikipédia egy meghatározó szemléletnek köszönheti létezését, miszerint az olyan emberek, mint te és én, részt vehetnek a világ tudásának építésében, amelyhez bárki bárhol szabadon hozzáférhet.</b>
+</p>
 
-<p>A Wikipédiát, melynek szócikkeit folyamatosan szerkesztik, havonta közel félmilliárd ember látogatja a föld minden kontinenséről - az Antarktiszt is beleértve -, a legváltozatosabb témájú kérdésekre keresve választ a kulturális örökség megőrzésétől a rák korai kimutatásán át egészen a kutatómunkához való adatgyűjtésig. Az emberek új információért látogatnak a weblapunkra, és maradnak, hogy további ismeretekre tegyenek szert.</p>
+<p>Mára már órákon keresztül böngészhetsz a Wikipédián a több millió önkéntes közreműködő és támogató jóvoltából. Több mint 40 millió szócikkel és 35 millió szabadon licencelt képpel a Wikipédia szinte bármilyen kérdést képes megválaszolni, és elröpít olyan helyekre, ahol még sosem jártál.</p>
 
-<p>A Wikipédia bárki által szerkeszthető. Ha a keresett anyag még nem áll rendelkezésre, <a rel="nofollow" class="external text" href="https:///hu.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">azt Ön is megírhatja</a>. A Wikipédián közzétett szócikkeket, kulcsszavakat, képeket, adatokat olyan önkéntesek hozzák létre, akik szívesen osztják meg tudásukat a világgal.</p>
+<p>Adományoddal az ingyenes tudás létrehozását és megosztását támogatod valós, gyakorlati úton. Segítséget nyújtasz nekünk, hogy a Wikipédia a világ minden emberéhez eljusson gyors, biztonságos és hozzáférhető módon. Hozzájárulsz ahhoz, hogy azokon a helyeken is ingyenesen hozzáférhessenek a Wikipédiához, ahol a magas mobiladat-forgalmi árak miatt nem csatlakoznak az internetre. Támogatsz bennünket abban, hogy segítsük azokat az embereket, akik a jelenleg analóg archívumokba zárt tudás digitalizálásán dolgoznak. Megóvod a Wikipédiát azoktól a fenyegetésektől, amelyek az ingyenes tudást és a nyílt internetet veszélyeztetik.</p>
 
-<p>Naponta feltesszük önmagunknak a kérdést: mit tehetünk annak érdekében, hogy a Wikipédia és annak társprojektjei által közvetített információ a mainál is precízebbé, gazdagabbá és hozzáférhetőbbé váljék mindenki számára? Az Ön adománya nagymértékben támogatja ezen törekvésünket.</p>
+<p>Hozzájárulásoddal lehetőséged van hozzáférni az információhoz, amelyre éppen szükséged van, bárhol is járj – akár egy vacsorán szeretnéd eldönteni a fogadás eredményét, akár a minket körülvevő világot szeretnéd jobban megérteni.</p>
 
-<p>Köszönjük, hogy Ön is hozzájárult alapítványunk munkájához, elősegítve a tudás szabad áramlását.</p>
+<p>
+  <b>Wikipédiának küldött adományoddal egy meghatározó szemlélet bajnokává válsz.</b>
+</p>
 
-<p>Wikimédia Alapítvány<br/></p>
+<p>A Wikipédia folytatja fejlődését és növekedését, valamit továbbra is új kihívásokkal néz szembe. Nagy izgalommal, türelmetlenül várjuk, hogy legyőzzük ezeket a kihívásokat és még sok mást. Az adományod segítségével mindez sikerülhet. Nem tudjuk eléggé megköszönni támogatásodat. A Wikimédia Alapítvány nevében szeretnénk megköszönni, hogy befektetsz jövőnkbe, és velünk együtt indulsz el ezen az úton.</p>
 
-<p>Sok munkáltató megduplázza az alkalmazottaik adományait: kérjük, tájékozódjon a munkáltatójánál, hogy van-e ilyen <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">szervezeti adományozási programjuk</a>.</p>
+<p>Katherine Maher,<br/>
+a Wikimédia Alapítvány ügyvezető igazgatója</p>
 
-<p>Tájékoztatásul: {{ receive_date }} időpontban {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összeget adományozott. Adományát a {{ transaction_id }} azonosító alatt rögzítettük.</p>
+<p>Sok munkáltató nagyra értékeli a munkavállalói hozzájárulásokat: kérlek, lépj kapcsolatba munkáltatóddal, és járj utána, van-e <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">vállalati adományozási programja</a>. Az adományod adatai: adomány száma: {{ transaction_id }}, napja: {{ receive_date }}, összege: {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Ez az adomány egy ismétlődő adományozás része. Az adományt a Wikimédia Alapítvány minden hónapban levonja a számlájáról, amíg értesítést nem küld az adományozás lemondásáról. Ha le szeretné mondani az adományozást, kérjük, kövesse <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">az egyszerű utasításokat a lemondáshoz</a>. </p>{%endif%}
+{% if recurring %}
+<p>Ez az adomány egy ismétlődő adományozás része. Az adományt a Wikimédia Alapítvány minden hónapban levonja a számlájáról, amíg értesítést nem küld az adományozás lemondásáról. Ha le szeretné mondani az adományozást, kérjük, kövesse <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">az egyszerű utasításokat a lemondáshoz</a>.</p>
+{%endif%}
 
-<p>Ez a levél az Ön adományának visszaigazolására szolgál. Semmilyen árut vagy szolgáltatást nem biztosítottunk ellenértékként a támogatásért. A Wikimédia Alapítvány (Wikimedia Foundation, Inc.) egy non-profit szervezet, az Amerikai Egyesült Államok 501(c)(3) jelű adómentességi státuszával. Címünk: 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Az adómentesség regisztrációs száma: 20-0049703</p>
+<p>Ez a levél bizonylatként szolgál az adományozásodról. A hozzájárulásod ellentételezéseként semmilyen árut vagy szolgáltatást – egészében vagy részleteiben – nem adtunk át. Címünk: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, Amerikai Egyesült Államok. Amerikai egyesült államokbeli adómentességi szám: 20-0049703.</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/hu&amp;oldid=15425761","name":"thank_you.hu.html","revision":15425761}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20161128/hu&amp;oldid=16766803","name":"thank_you.hu.html","revision":16766803}TI_END -->

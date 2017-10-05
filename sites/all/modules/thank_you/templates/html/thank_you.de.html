@@ -1,34 +1,45 @@
 {% if first_name and last_name %}
-<p>Liebe/r {{ first_name }},</p>
+<p>Liebe(r) {{ first_name }},</p>
 
 {% else %}
 <p>Liebe/r Spender/in,</p>
 {%endif%}
 
-<p>Vielen Dank für Ihre Spende von {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} an Wikimedia Foundation. Die Wikimedia Foundation ist eine gemeinnützige Organisation, die Wikipedia und andere kostenlose Wissensprojekte fördert. Unsere Mission ist es, die am leichtesten zugängliche und umfassendste Ressource für Freies Wissen in der Welt zu schaffen.</p>
+<p>danke für deine Unterstützung von Wikipedia und der Wikimedia Foundation. Deine Spende von {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} unterstützt Wikipedia und hilft, kostenloses Wissen für Alle zu sichern.</p>
 
-<p>{% if "RecurringRestarted" in contribution_tags %} Wir haben vor Kurzem ein kleines technisches Problem behoben, auf Grund dessen einige monatliche Spendenabbuchungen ausgesetzt wurden. In Zukunft werden die Beträge wieder wie gewohnt abgebucht. Für die ausgelassenen Monate wird jedoch nichts nachträglich abgebucht. Danke für ihre Geduld und Unterstützung und zögern sie nicht, uns an donate@wikimedia.org zu schreiben, wenn sie Fragen haben. {%endif%}</p>
+{% if "RecurringRestarted" in contribution_tags %}
+<p>Wir haben vor Kurzem ein kleines technisches Problem behoben, auf Grund dessen einige monatliche Spendenabbuchungen ausgesetzt wurden. In Zukunft werden die Beträge wieder wie gewohnt abgebucht. Für die ausgelassenen Monate wird jedoch nichts nachträglich abgebucht. Danke für ihre Geduld und Unterstützung und zögern sie nicht, uns an donate@wikimedia.org zu schreiben, wenn sie Fragen haben.</p>
+{%endif%}
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Wir haben kürzlich ein technisches Problem behoben, das dazu geführt hat, dass einige wenige Nutzer keine Spendenbestätigung erhalten haben. Bitte akzeptieren Sie diese Email als ein Dankeschön für Ihre Spende vom $date. Wir bedanken uns vielmals für Ihre Geduld und Unterstützung. Bei weiteren Fragen wenden Sie sich bitte mit einer Email an donate@wikimedia.org. {%endif%}</p>
+{% if "UnrecordedCharge" in contribution_tags %}
+<p>Wir haben kürzlich ein technisches Problem behoben, das dazu geführt hat, dass einige wenige Nutzer keine Spendenbestätigung erhalten haben. Bitte akzeptieren Sie diese Email als ein Dankeschön für Ihre Spende vom {{ receive_date }}. Wir bedanken uns vielmals für Ihre Geduld und Unterstützung. Bei weiteren Fragen wenden Sie sich bitte mit einer Email an donate@wikimedia.org.</p>
+{%endif%}
 
-<p>Wir glauben, dass Wissen eines der Grundrechte der Menschen ist. Da die Menschheit in Richtung einer digitalen Zukunft voranschreitet, benötigen wir offene, zugängliche und öffentliche Umgebungen, um online auf Wissen zuzugreifen. Wikimedia ist eine solche Umgebung. Wikipedia stellt den Menschen Freies Wissen durch Menschen zur Verfügung, in Hunderten von Sprachen, rund um die Welt.</p>
+<p>
+  <b>Wikipedia basiert auf einer großen Idee: dass Menschen wie du und ich am Aufbau einer weltweiten Wissensdatenbank mithelfen und dass diese Datenbank für alle und überall kostenlos verfügbar ist.</b>
+</p>
 
-<p>Im Laufe eines Jahres wird Wikipedia von Menschen auf jedem Kontinent, einschließlich der Antarktis, bearbeitet und gelesen. Fast eine halbe Milliarde Menschen besuchen Wikipedia jeden Monat, um sich über die verschiedensten Themen zu informieren, von der Erhaltung des Kulturerbes über die Verbesserung der Krebsfrüherkennung oder für schulische Recherchen. Sie nutzen sie, um zu lernen. Sie bleiben und entdecken.</p>
+<p>Dank der Unterstützung von Millionen freiwilligen Autoren und anderen Unterstützern können wir heute stundenlang die Wikipedia durchstöbern. Mit mehr als 40 Millionen Artikeln und 35 Millionen lizenzfreien Bildern kann Wikipedia nahezu jede Frage beantworten und dich in Themen einführen, von denen du bisher nichts wusstest.</p>
 
-<p>Jeder ist ein potenzieller Wikipedianer. Wenn man etwas nicht auf Wikipedia findet, dann kann man beginnen, <a rel="nofollow" class="external text" href="https:///de.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">es selbst zu erstellen.</a> Die Artikel, Wörter, Bilder und Daten sind von einer vielfältigen Gemeinschaft von Menschen erstellt, die freiwillig ihr Wissen mit der Welt teilen.</p>
+<p>Deine Spende unterstützt das Erschaffen und Teilen von freiem Wissen auf praktische Weise. Durch sie können wir Wikipedia für jeden Menschen auf der Welt schnell, sicher und erreichbar machen. Sie hilft uns, freien Zugang zu Wikipedia in Gebieten zu schaffen, in denen hohe Kosten für Mobildaten die Menschen davon abhalten, online zu gehen. Sie hilft uns, Menschen zu unterstützen, die Wissen digitalisieren, das derzeit in analogen Archiven schlummert. Sie hilft, Wikipedia vor Angriffen auf und Gefahren für freies Wissen und ein offenes Internet zu schützen.</p>
 
-<p>Jeden Tag fragen wir uns, wie wir noch wirkungsvoller werden können und sicherstellen, dass Wikipedia und ihre Schwesterprojekte zukünftig noch genauer, umfassender und leichter zugänglich sind als jetzt. Ihre Spende unterstützt uns dabei, dieses Ziel zu erreichen.</p>
+<p>Deine Unterstützung bedeutet, dass du genau die Information finden kannst, die du brauchst - wo auch immer du bist: zum Beispiel, um eine Wette mit einem Freund auf einer Party zu klären, oder einfach, um unsere Welt besser zu verstehen.</p>
 
-<p>Vielen Dank, dass Sie uns ein weiteres Jahr bei unserem Wachstum und der Verbesserung des Lebens unterstützen.</p>
+<p>
+  <b>Durch deine Spende an Wikipedia wirst du zum Unterstützer einer großen Idee.</b>
+</p>
 
-<p>Wikimedia Foundation<br/></p>
+<p>Wikipedia wird sich weiter entwickeln, wachsen und sich neuen Herausforderungen gegenübersehen. Wir sind gespannt und hochmotiviert, diese und andere zu meistern. Deine Spende hilft uns dabei. Wir können dir nicht genug für deine Unterstützung danken. Im Namen der Wikimedia Foundation: Vielen Dank für dein Investment in unsere Zukunft und dafür, dass du diesen Weg gemeinsam mit uns beschreitest.</p>
 
-<p>Viele Arbeitgeber bieten Mitarbeiterspenden: bitte prüfen Sie, ob ihre Firma ein <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">Firmenspendenprogramm</a> bietet.</p>
+<p>Katherine Maher<br/>
+Geschäftsführerin, Wikimedia Foundation</p>
 
-<p>Für Ihre Unterlagen: Ihre {{ transaction_id }}Spende am {{ receive_date }} betrug {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Viele Arbeitgeber stocken gerne die Spenden ihrer Mitarbeiter auf: Frage doch bitte bei deinem Arbeitgeber nach, ob er <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">Körperschaftsspenden o. Ä. unterstützt</a>. Für deine Unterlagen: Deine Spende mit der Spendennummer {{ transaction_id }} am {{ receive_date }} betrug {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Diese Spende ist Teil einer regelmäßigen Zahlung. Die Wikimedia-Stiftung belastet Ihr Konto monatlich bis zu Ihrem Widerruf. Falls Sie die Zahlungen einstellen möchten, lesen Sie bitte unsere <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">einfache Widerrufsanleitung</a>. </p>{%endif%}
+{% if recurring %}
+<p>Diese Spende ist Teil einer regelmäßigen Zahlung. Die Wikimedia-Stiftung belastet Ihr Konto monatlich bis zu Ihrem Widerruf. Falls Sie die Zahlungen einstellen möchten, lesen Sie bitte unsere <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">einfache Widerrufsanleitung</a>.</p>
+{%endif%}
 
-<p>Dieses Schreiben gilt als Nachweis Ihrer Spende. Für diese Spende wurden keine Waren oder Dienstleistungen - ganz oder in Teilen - bereitgestellt. Die Wikimedia Foundation, Inc., ist eine gemeinnützige, nicht gewinnorientierte Organisation mit Steuerbefreiung in den Vereinigten Staaten. Unsere Adresse lautet: 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. US-Steuerbefreiungsnummer: 20-0049703</p>
+<p>Dieser Brief gilt als Spendenquittung. Diese Spende beinhaltete keinerlei Güter oder Dienstleistungen. Postanschrift: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. US Steuerbefreiungsnummer (tax-exempt number): 20-0049703</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/de&amp;oldid=15425726","name":"thank_you.de.html","revision":15425726}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20161128/de&amp;oldid=16749483","name":"thank_you.de.html","revision":16749483}TI_END -->
