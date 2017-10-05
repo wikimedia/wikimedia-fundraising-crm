@@ -153,9 +153,15 @@ function queue2civicrm_batch_process() {
   }
   $metrics['total_donations'] = $counter->get_count_total();
   metrics_reporting_report_metrics( 'queue2civicrm', $metrics );
-  
+  $ageMetrics = array();
+  foreach ( $counter->get_average_ages() as $gateway => $age ) {
+    $ageMetrics["${gateway}_message_age"] = $age;
+  }
+  metrics_reporting_report_metrics( 'donation_message_age', $ageMetrics );
+
   if ($processed > 0) {
     watchdog('queue2civicrm', 'Successfully processed ' . $processed . ' contribution(s).');
+    watchdog('queue2civicrm', 'Average message age: ' . $ageMetrics['overall'] . ' seconds.');
   }
   else {
     watchdog('queue2civicrm', 'No contributions processed.');
