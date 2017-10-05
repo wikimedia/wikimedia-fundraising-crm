@@ -5,30 +5,41 @@
 <p>Stimate donator,</p>
 {%endif%}
 
-<p>Vă mulțumim pentru donația dumneavoastră în valoare de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} către Wikimedia Foundation. Wikimedia Foundation este o organizație non-profit care susține enciclopedia Wikipedia și alte proiecte de acces gratuit la cunoaștere. Misiunea noastră este de a crea cea mai accesibilă și mai exhaustivă sursă de cunoaștere din lume, cu acces gratuit.</p>
+<p>Îți mulțumim pentru sprijinul acordat Wikipedia și Wikimedia Foundation. Contribuția ta în valoare de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} susține Wikipedia și ajută la asigurarea cunoștințelor gratuite pentru toată lumea.</p>
 
-<p>{% if "RecurringRestarted" in contribution_tags %} De curând, am rezolvat o mică problemă tehnică, din cauza căreia au fost întrerupte câteva donaţii recurente lunare. Am restabilit donaţia dumneavoastră curentă, astfel încât aceasta va fi prelucrată în mod obişnuit de acum înainte. Nu vă vom percepe suma aferentă lunilor de întrerupere. Vă mulţumim pentru răbdare şi pentru sprijin. Dacă aveţi întrebări, nu ezitaţi să ne contactaţi prin e-mail la adresa donate@wikimedia.org. {%endif%}</p>
+{% if "RecurringRestarted" in contribution_tags %}
+<p>De curând, am rezolvat o mică problemă tehnică, din cauza căreia au fost întrerupte câteva donaţii recurente lunare. Am restabilit donaţia dumneavoastră curentă, astfel încât aceasta va fi prelucrată în mod obişnuit de acum înainte. Nu vă vom percepe suma aferentă lunilor de întrerupere. Vă mulţumim pentru răbdare şi pentru sprijin. Dacă aveţi întrebări, nu ezitaţi să ne contactaţi prin e-mail la adresa donate@wikimedia.org.</p>
+{%endif%}
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} De curând, am rezolvat o problemă tehnică, din cauza căreia câţiva donatori nu au primit confirmarea efectuării donaţiei. Vă rugăm să acceptaţi acest e-mail în semn de mulţumire pentru donaţia dumneavoastră din data de $date. Vă mulţumim pentru răbdare şi pentru sprijin. Dacă aveţi întrebări, nu ezitaţi să ne contactaţi prin e-mail la adresa donate@wikimedia.org. {%endif%}</p>
+{% if "UnrecordedCharge" in contribution_tags %}
+<p>De curând, am rezolvat o problemă tehnică, din cauza căreia câţiva donatori nu au primit confirmarea efectuării donaţiei. Vă rugăm să acceptaţi acest e-mail în semn de mulţumire pentru donaţia dumneavoastră din data de {{ receive_date }}. Vă mulţumim pentru răbdare şi pentru sprijin. Dacă aveţi întrebări, nu ezitaţi să ne contactaţi prin e-mail la adresa donate@wikimedia.org.</p>
+{%endif%}
 
-<p>Considerăm că accesul la cunoaștere reprezintă un drept fundamental al omului. Pe măsură ce umanitatea se îndreaptă cu pași repezi spre viitorul digital, avem nevoie de spații publice online prin care accesul la cunoaștere să fie deschis și accesibil tuturor. Wikimedia este un astfel de spațiu. Grație enciclopediei Wikipedia, oamenii au acces în mod gratuit la o sursă de cunoaștere concepută de oameni, în sute de limbi de pe glob.</p>
+<p>
+  <b>Wikipedia funcționează grație unei idei puternice: aceea că oamenii ca tine și ca mine pot participa la construirea cunoștințelor omenirii și le pot pune la dispoziția oricui, oriunde și în mod gratuit.</b>
+</p>
 
-<p>În decursul unui an, articolele Wikipedia sunt modificate și citite de către oameni de pe toate continentele, inclusiv Antarctica. Aproape jumătate de miliard de persoane vizitează site-ul Wikipedia în fiecare lună pentru informații dintre cele mai diverse, de la păstrarea moștenirii culturale, la îmbunătățirea modalităților de depistare a cancerului, la subiecte pentru rezolvarea temelor pentru acasă. Acești oameni accesează Wikipedia pentru a învăța. Ei rămân pe site și explorează.</p>
+<p>Astăzi, grație susținerii oferite de milioane de contribuitori și de susținători voluntari, poți naviga pe Wikipedia ore în șir. Cu peste 40 de milioane de articole Wikipedia și 35 de milioane de imagini cu licență gratuită, Wikipedia poate răspunde la aproape orice întrebare și te poate purta prin locuri unde n-ai mai fost niciodată.</p>
 
-<p>La scrierea articolelor Wikipedia poate contribui oricine. Dacă nu găsiți pe site informațiile pe care le căutați, puteți <a rel="nofollow" class="external text" href="https:///ro.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">crea chiar dumneavoastră articole pe tema respectivă</a>. Articolele, imaginile și datele sunt concepute de către o comunitate diversă de voluntari care își împărtășeșc cunoștințele cu toată lumea.</p>
+<p>Donația ta sprijină crearea și distribuirea cunoștințelor în moduri reale și practice. Ne ajută să facem Wikipedia rapidă, sigură și accesibilă oamenilor din întreaga lume. Ne ajută să asigurăm accesul gratuit la Wikipedia în locuri unde costurile ridicate pentru serviciile de date mobile împiedică oamenii să intre online. Ne ajută să susținem oamenii care digitalizează cunoștințe blocate în prezent în arhive analogice. Protejează Wikipedia împotriva amenințărilor la adresa cunoștințelor gratuite și a internetului deschis.</p>
 
-<p>Facem zilnic eforturi pentru a crește impactul enciclopediei Wikipedia și al proiectelor conexe, astfel încât conținutul acestora să devină mai fiabil, mai bogat și mai accesibil în fiecare zi. Donația dumneavoastră ne va ajuta să ne atingem obiectivul.</p>
+<p>Sprijinul tău înseamnă că poți găsi informațiile de care ai nevoie pe loc, oriunde ai fi, indiferent dacă este vorba de un pariu cu un prieten la o petrecere sau de înțelegerea lumii înconjurătoare.</p>
 
-<p>Vă mulțumim pentru sprijinul pe care ni-l acordați și în acest an.</p>
+<p>
+  <b>Donând pentru Wikipedia, devii apărătorul unei idei puternice.</b>
+</p>
 
-<p>Wikimedia Foundation</p>
+<p>Wikipedia va continua să evolueze, să crească și să înfrunte noi provocări. Suntem încântați și nerăbdători să ne confruntăm cu ele, oricât de multe ar fi. Donația ta ne va ajuta să îndeplinim toate acestea. Nu avem destule cuvinte să îți mulțumim pentru sprijinul tău. Din partea Wikimedia Foundation, îți mulțumim pentru că investești în viitorul nostru și pentru că ai pornit în această călătorie împreună cu noi.</p>
 
-<p>Mulţi angajatori alocă fonduri în completarea sumei donate de către angajat: vă rugăm să vă informaţi dacă firma la care lucraţi are <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">un program de donaţii complementare.</a></p>
+<p>Katherine Maher<br/>
+Director Executiv, Wikimedia Foundation</p>
 
-<p>Pentru referinţa dumneavoastră: donaţia cu numărul {{ transaction_id }}, pe care aţi efectuat-o la {{ receive_date }} a fost de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Mulți angajatori vor egala cu generozitate contribuțiile angajaților: te rugăm să verifici dacă angajatorul tău deține un <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">program corporatist de dublare a donațiilor</a>. Pentru înregistrările tale contabile: donația ta, numărul {{ transaction_id }}, din data de {{ receive_date }} a fost de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Această donaţie este o plată recurentă. Plăţile lunare vor fi încasate de către Fundaţia Wikimedia până în momentul în care ne veţi solicita întreruperea acestora. Dacă doriţi să anulaţi plăţile, vă rugăm să consultaţi <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instrucţiunile noastre privind anularea cu uşurinţă</a>. </p>{%endif%}
+{% if recurring %}
+<p>Această donaţie este o plată recurentă. Plăţile lunare vor fi încasate de către Wikimedia Foundation până în momentul în care ne veţi solicita întreruperea acestora. Dacă doriţi să anulaţi plăţile, vă rugăm să consultaţi <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instrucţiunile noastre privind anularea cu uşurinţă</a>.</p>
+{%endif%}
 
-<p>Această scrisoare este un document de referinţă privind donaţia dumneavoastră. Nu au fost furnizate bunuri sau servicii, integral sau parţial, în schimbul acestei contribuţii. Wikimedia Foundation, Inc. este o fundaţie caritabilă fără scop lucrativ, care beneficiază de statutul 501(c)(3) de scutire de impozit în Statele Unite ale Americii. Sediul nostru se află la adresa: 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Codul privind scutirea de impozit în SUA: 20-0049703</p>
+<p>Această scrisoare poate servi ca o dovadă a donației tale. Nu au fost furnizate bunuri sau servicii, integral sau parțial, pentru această contribuție. Te rugăm să trimiți corespondența la adresa: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Număr scutire de taxe SUA: 20-0049703</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/ro&amp;oldid=15425774","name":"thank_you.ro.html","revision":15425774}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20161128/ro&amp;oldid=16839542","name":"thank_you.ro.html","revision":16839542}TI_END -->

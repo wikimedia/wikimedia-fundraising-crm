@@ -5,30 +5,43 @@
 <p>Vážená darkyňa, vážený darca,</p>
 {%endif%}
 
-<p>ďakujeme za príspevok v sume {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} pre Wikimedia Foundation. Wikimedia Foundation je nezisková organizácia, ktorá podporuje portál Wikipedia a ďalšie zdarma dostupné projekty. Naším cieľom je vybudovať dostupný a ucelený zdroj vedomostí na svete.</p>
+<p>ďakujeme Vám za podporu Wikipedie a nadácie Wikimedia Foundation. Váš príspevok vo výške {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} podporuje Wikipediu a pomáha zabezpečiť budúcnosť bezplatných vedomostí pre každého.</p>
 
-<p>{% if "RecurringRestarted" in contribution_tags %} Nedávno sme vyriešili malý technický problém, ktorý pozastavil niektoré pravidelné mesačné dary. Možnosť pravidelných darov sa nám podarilo obnoviť a budú sa naďalej spracúvať bežným spôsobom. Nebudeme si účtovať poplatok za vynechané mesiace. Ďakujeme Vám za trpezlivosť a podporu. V prípade akýchkoľvek otázok nám bez váhania napíšte na adresu donate@wikimedia.org. {%endif%}</p>
+{% if "RecurringRestarted" in contribution_tags %}
+<p>Nedávno sme vyriešili malý technický problém, ktorý pozastavil niektoré pravidelné mesačné dary. Možnosť pravidelných darov sa nám podarilo obnoviť a budú sa naďalej spracúvať bežným spôsobom. Nebudeme si účtovať poplatok za vynechané mesiace. Ďakujeme Vám za trpezlivosť a podporu. V prípade akýchkoľvek otázok nám bez váhania napíšte na adresu donate@wikimedia.org.</p>
+{%endif%}
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Nedávno sme vyriešili technický problém, ktorý spôsobil, že niekoľko darcov nedostalo potvrdenie o svojom príspevku. Prijmite prosím tento email ako poďakovanie za Váš dar zo dňa $date. Skutočne si ceníme Vašu trpezlivosť a podporu. V prípade akýchkoľvek otázok nám bez váhania napíšte na adresu donate@wikimedia.org. {%endif%}</p>
+{% if "UnrecordedCharge" in contribution_tags %}
+<p>Nedávno sme vyriešili technický problém, ktorý spôsobil, že niekoľko darcov nedostalo potvrdenie o svojom príspevku. Prijmite prosím tento email ako poďakovanie za Váš dar zo dňa {{ receive_date }}. Skutočne si ceníme Vašu trpezlivosť a podporu. V prípade akýchkoľvek otázok nám bez váhania napíšte na adresu donate@wikimedia.org.</p>
+{%endif%}
 
-<p>Sme presvedčení, že vzdelanie je základným ľudským právom. Keďže sa ľudstvo ponáhľa do digitálnej budúcnosti, potrebujeme otvorené, dostupné a verejné miesta, z ktorých by sme mohli on-line pristupovať k znalostiam. Wikimedia je tým pravým miestom. Wikipedia zdarma poskytuje používateľom znalosti od ľudí v stovkách jazykoch z celého sveta.</p>
+<p>
+  <b>Existencia Wikipedie je možná vďaka silnej myšlienke: že ľudia ako Vy a ja sa môžu podieľať na rozvíjaní vedomostí vo svete a na ich bezplatnom sprístupňovaní každému, a to všade.</b>
+</p>
 
-<p>V priebehu roka upravujú a čítajú obsah Wikipedie ľudia zo všetkých kontinentov, vrátane Antarktídy. Každý mesiac navštívi stránky Wikipedie takmer pol miliardy ľudí, aby hľadali rôzne informácie, od zachovania kultúrneho dedičstva, cez vylepšovanie odhaľovania rakoviny až po pomoc s domácimi úlohami. Prichádzajú sa učiť. Zostanú a začínajú objavovať.</p>
+<p>Dnes môžete vďaka podpore miliónov dobrovoľných prispievateľov a podporovateľov surfovať po Wikipedii celé hodiny. Wikipedia s viac ako 40 miliónmi článkov a 35 miliónmi obrázkov poskytovaných na základe bezplatnej licencie dokáže odpovedať na takmer ľubovoľnú otázku a zobrať vás na miesta, kde ste nikdy neboli.</p>
 
-<p>Každý z nás je potenciálny Wikipedian. Ak na Wikipedii nenájdete to, čo hľadáte, môžete <a rel="nofollow" class="external text" href="https:///sk.wikipedia.org/wiki/Special:UserLogin?type=signup&amp;campaign=lila2015">začať vytvárať obsah sami</a>. Články, slová, obrázky a dáta sú vytvárané rozmanitou komunitou ľudí, ktorí sú ochotní zdieľať svoje vedomosti s celým svetom.</p>
+<p>Váš dar podporuje vytváranie a výmenu bezplatných vedomostí skutočným, praktickým spôsobom. Pomáha nám zabezpečiť, aby Wikipedia bola rýchla, bezpečná a dostupná každému vo svete. Pomáha nám zabezpečiť bezplatný prístup k Wikipedii na miestach, kde vysoké náklady na mobilné dáta zabraňujú ľuďom byť pripojený on-line. Pomáha nám podporovať ľudí, ktorí digitalizujú vedomosti v súčasnosti uväznené v analógových archívoch. Chráni Wikipediu pred hrozbami ohrozujúcimi bezplatné vedomosti a otvorená internet.</p>
 
-<p>Každý deň sa pýtame samých seba, ako môžeme vylepšiť náš dopad a zaistiť, že Wikipedia a jej sesterské projekty budú zajtra ešte presnejšie, bohatšie a dostupnejšie ako sú dnes. Vaše príspevky nám to pomáhajú dosiahnuť.</p>
+<p>Vaša podpora znamená, že potrebné informácie nájdete všade, kde práve ste – ak ide o rozhodnutie stávky s kamarátom na večierku alebo pochopenie sveta okolo nás.</p>
 
-<p>Ďakujeme, že nám umožňujete rásť a ovplyvňovať životy aj ďalší rok.</p>
+<p>
+  <b>Finančnou podporou Wikipedie sa stávate zástancom tejto silnej myšlienky.</b>
+</p>
 
-<p>Wikimedia Foundation<br/></p>
+<p>Wikipedia sa bude naďalej rozvíjať, rozrastať a bude prijímať nové výzvy. Sme nadšení a odhodlaní postaviť sa týmto i budúcim výzvam. Váš dar nám to pomôže dosiahnuť. Slová našej vďaky za Vašu podporu sú nie sú adekvátnym výrazom našich pocitov. Za nadáciu Wikimedia Foundation Vám ďakujeme za investovanie do našej budúcnosti a za to, že pri nás stojíte.</p>
 
-<p>Mnohí zamestnávatelia prispievajú rovnakou čiastkou ako ich zamestnanci. Overte si prosím, či Vaša spoločnosť má <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">program podpory darcovstva.</a></p>
+<p>Katherine Maher<br/>
+výkonná riaditeľka, Wikimedia Foundation</p>
 
-<p>Pre Vaše záznamy: Váš dar číslo {{ transaction_id }}, zo dňa {{ receive_date }} bol {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Mnohí zamestnávatelia poskytujú štedrú pomoc poukázaním svojich príspevkov vo výške, ktorú zaplatia ich zamestnanci – overte si u zamestnávateľa, či má <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">firemný program dobročinných darov</a>. Pre vašu evidenciu: Váš dar číslo {{ transaction_id }} zo dňa {{ receive_date }} bol vo výške {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
-{% if recurring %}<p> Tento dar je súčasťou pravidelne sa opakujúcich príspevkov. Mesačné platby budú pripisované na účet nadácie Wikimedia Foundation dovtedy, kým nepožiadate o ich zastavenie. Ak už nechcete ďalej prispievať, prečítajte si <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">naše jednoduché pokyny na zrušenie platieb</a>. </p>{%endif%}
+{% if recurring %}
+<p>Tento dar je súčasťou pravidelne sa opakujúcich príspevkov. Mesačné platby budú pripisované na účet nadácie Wikimedia Foundation dovtedy, kým nepožiadate o ich zastavenie. Ak už nechcete ďalej prispievať, prečítajte si <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">naše jednoduché pokyny na zrušenie platieb</a>.</p>
+{%endif%}
 
-<p>Tento dopis môže slúžiť ako záznam o príspevku. Za tento príspevok nebol poskytnutý žiadny tovar ani žiadna služba, či už celá alebo čiastočná. Nadácia Wikimedia Foundation, Inc. je nezisková charitatívna spoločnosť, oslobodená od platenia daní v Spojených štátoch amerických, spadajúca pod organizáciu 501(c)(3). Naša adresa je 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. Číslo evidencie oslobodenia od dane: 20-0049703</p>
+<p>Tento list môže slúžiť ako doklad o poskytnutí Vášho daru. Za tento príspevok nebol poskytnutý žiadny tovar ani služby, ani čiastočné.</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20150904/sk&amp;oldid=15425776","name":"thank_you.sk.html","revision":15425776}TI_END -->
+<p>Poštu môžete posielať na adresu: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Číslo daňového oslobodenia v USA: 20-0049703</p>
+
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20161128/sk&amp;oldid=16767776","name":"thank_you.sk.html","revision":16767776}TI_END -->
