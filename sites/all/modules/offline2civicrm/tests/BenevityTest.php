@@ -31,7 +31,7 @@ class BenevityTest extends BaseChecksFileTest {
     ");
     $this->ensureAnonymousContactExists();
     \Civi::$statics = array();
-    $countries = $this->callAPISuccess('Country', 'get', array());
+    $countries = $this->callAPISuccess('Country', 'get', array('options' => array('limit' => 0)));
     $this->callAPISuccess('Setting', 'create', array('countryLimit' => array_keys($countries['values'])));
     $this->callAPISuccess('Setting', 'create', array('provinceLimit' => array()));
 

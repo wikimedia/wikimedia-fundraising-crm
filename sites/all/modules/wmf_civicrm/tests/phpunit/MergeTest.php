@@ -540,6 +540,227 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test that we don't see country only as conflicting with country plus.
+   *
+   * Bug T176699
+   */
+  public function testBatchMergeResolvableConflictCountryVsFullAddress() {
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID,
+      'location_type_id' => 1,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID2,
+      'street_address' => 'First on the left after you cross the border',
+      'location_type_id' => 1,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID2,
+      'street_address' => 'A different address',
+      'location_type_id' => 2,
+    ));
+    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['merged']));
+    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $this->assertEquals('Mexico', $contact['country']);
+    $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
+    $address = $this->callAPISuccessGetSingle('Address', array('street_address' => 'A different address'));
+    $this->assertEquals($contact['id'], $address['contact_id']);
+  }
+
+  /**
+   * Test that we don't see country only as conflicting with country plus.
+   *
+   * In this variant the most recent donor is the one with the lower contact
+   * ID (the one we are going to keep). Real world this is pretty rare but
+   * perhaps after some merging in strange orders it could happen.
+   *
+   * Bug T176699
+   */
+  public function testBatchMergeResolvableConflictCountryVsFullAddressOutOfOrder() {
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID,
+      'location_type_id' => 1,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID2,
+      'street_address' => 'First on the left after you cross the border',
+      'location_type_id' => 1,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID2,
+      'street_address' => 'A different address',
+      'location_type_id' => 2,
+    ));
+    // this is the change.
+    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['merged']));
+    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $this->assertEquals('Mexico', $contact['country']);
+    $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
+    $address = $this->callAPISuccessGetSingle('Address', array('street_address' => 'A different address'));
+    $this->assertEquals($contact['id'], $address['contact_id']);
+  }
+
+  /**
+   * Test that we don't see country only as conflicting with country plus.
+   *
+   * In this case the 'keeper' is against the second contact.
+   *
+   * Bug T176699
+   */
+  public function testBatchMergeResolvableConflictCountryVsFullAddressReverse() {
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID2,
+      'location_type_id' => 1,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID,
+      'street_address' => 'First on the left after you cross the border',
+      'location_type_id' => 1,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID,
+      'street_address' => 'A different address',
+      'location_type_id' => 2,
+    ));
+    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['merged']));
+    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $this->assertEquals('Mexico', $contact['country']);
+    $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
+    $address = $this->callAPISuccessGetSingle('Address', array('street_address' => 'A different address'));
+    $this->assertEquals($contact['id'], $address['contact_id']);
+  }
+
+  /**
+   * Test that we don't see country only as conflicting with country plus.
+   *
+   * In this case the 'keeper' is against the second contact.
+   *
+   * Bug T176699
+   */
+  public function testBatchMergeResolvableConflictCountryVsFullAddressReverseOutOfOrder() {
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID2,
+      'location_type_id' => 1,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID,
+      'street_address' => 'First on the left after you cross the border',
+      'location_type_id' => 1,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID,
+      'street_address' => 'A different address',
+      'location_type_id' => 2,
+    ));
+    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['merged']));
+    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $this->assertEquals('Mexico', $contact['country']);
+    $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
+    $address = $this->callAPISuccessGetSingle('Address', array('street_address' => 'A different address'));
+    $this->assertEquals($contact['id'], $address['contact_id']);
+  }
+
+  /**
+   * Test that we don't see a city named after a country as the same as a country.
+   *
+   * Bug T176699
+   */
+  public function testBatchMergeResolvableConflictCityLooksCountryishWithCounty() {
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'US',
+      'contact_id' => $this->contactID2,
+      'city' => 'Mexico',
+      'location_type_id' => 1,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID,
+      'street_address' => 'First on the left after you cross the border',
+      'location_type_id' => 1,
+    ));
+    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['skipped']));
+    $this->assertEquals(0, count($result['values']['merged']));
+  }
+
+  /**
+   * Test that we don't see a city named after a country as the same as a country
+   * when it has no country.
+   *
+   * Bug T176699
+   */
+  public function testBatchMergeResolvableConflictCityLooksCountryishNoCountry() {
+    $this->callAPISuccess('Address', 'create', array(
+      'contact_id' => $this->contactID2,
+      'city' => 'Mexico',
+      'location_type_id' => 1,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID,
+      'street_address' => 'First on the left after you cross the border',
+      'location_type_id' => 1,
+    ));
+    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['skipped']));
+    $this->assertEquals(0, count($result['values']['merged']));
+  }
+
+  /**
+   * Test that we don't see a city named after a country as the same as a country
+   * when it has no country.
+   *
+   * Bug T176699
+   */
+  public function testBatchMergeResolvableConflictRealConflict() {
+    $this->callAPISuccess('Address', 'create', array(
+      'contact_id' => $this->contactID2,
+      'city' => 'Poland',
+      'country_id' => 'US',
+      'state_province' => 'ME',
+      'location_type_id' => 1,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country' => 'Poland',
+      'contact_id' => $this->contactID,
+      'location_type_id' => 1,
+    ));
+    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['skipped']));
+    $this->assertEquals(0, count($result['values']['merged']));
+  }
+
+  /**
    * Test that a conflict on casing in first names is handled.
    *
    * We do a best effort on this to get the more correct on assuming that 1 capital letter in a
