@@ -68,7 +68,7 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 			_queue2civicrm_log( $log );
 		}
 
-		$age = UtcDate::getUtcTimestamp() - strtotime( $contribution['receive_date'] );
+		$age = UtcDate::getUtcTimestamp() - UtcDate::getUtcTimestamp( $contribution['receive_date'] );
 
 		// keep count of the transactions
 		$counter = Queue2civicrmTrxnCounter::instance();
