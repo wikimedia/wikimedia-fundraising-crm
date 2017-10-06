@@ -512,6 +512,20 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test that punctuation conflicts are ignored.
+   *
+   * Bug T175748
+   */
+  public function testBatchMergeResolvableConflictPunctuation() {
+    $this->breedDuck(array('id' => $this->contactID, 'first_name' => 'alter. ego'));
+    $this->breedDuck(array('id' => $this->contactID2, 'first_name' => 'alterego'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['merged']));
+    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $this->assertEquals('alter. ego', $contact['first_name']);
+  }
+
+  /**
    * Test that a conflict on casing in first names is handled.
    *
    * We do a best effort on this to get the more correct on assuming that 1 capital letter in a
