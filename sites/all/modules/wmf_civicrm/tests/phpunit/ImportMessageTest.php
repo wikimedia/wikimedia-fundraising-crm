@@ -10,6 +10,7 @@ define( 'ImportMessageTest_campaign', 'test mail code here + ' . mt_rand() );
 class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     protected $contact_custom_mangle;
     protected $contribution_id;
+    protected $contact_id;
     protected $contribution_custom_mangle;
     static protected $fixtures;
 
@@ -59,6 +60,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     public function tearDown() {
         if ( $this->contribution_id ) {
           $this->callAPISuccess('Contribution', 'delete', array('id' => $this->contribution_id));
+        }
+        if ( $this->contact_id ) {
+            $this->cleanUpContact( $this->contact_id );
         }
         parent::tearDown();
     }
@@ -681,6 +685,81 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         }
         $this->assertTrue( $exceptioned );
     }
+
+  /**
+   * When we get a contact ID and matching hash, update instead of create new
+   * @group contactHash
+   */
+  public function testImportWithContactIdAndHash() {
+    $existingContact = civicrm_api3('Contact', 'Create', array(
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Es' . mt_rand()
+    ));
+    $this->contact_id = $existingContact['id'];
+    $existingContact = $existingContact['values'][$existingContact['id']];
+    civicrm_api3('Email', 'Create', array(
+      'contact_id' => $this->contact_id,
+      'email' => 'booboo' . mt_rand() . '@example.org',
+      'location_type_id' => 1,
+    ));
+    $msg = array(
+      'contact_id' => $existingContact['id'],
+      'contact_hash' => $existingContact['hash'],
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'newspecialemail@wikimedia.org',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+    );
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->assertEquals($existingContact['id'], $contribution['contact_id']);
+    $email = $this->callAPISuccessGetSingle(
+      'Email', array('contact_id' => $existingContact['id'], 'location_type' => 1)
+    );
+    $this->assertEquals($msg['email'], $email['email']);
+  }
+
+  /**
+   * If we get a contact ID and a bad hash, leave the existing contact alone
+   * @group contactHash
+   */
+  public function testImportWithContactIdAndBadHash() {
+    $existingContact = civicrm_api3('Contact', 'Create', array(
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Es' . mt_rand()
+    ));
+    $this->contact_id = $existingContact['id'];
+    $existingContact = $existingContact['values'][$existingContact['id']];
+    civicrm_api3('Email', 'Create', array(
+      'contact_id' => $this->contact_id,
+      'email' => 'booboo' . mt_rand() . '@example.org',
+      'location_type_id' => 1,
+    ));
+    $msg = array(
+      'contact_id' => $existingContact['id'],
+      'first_name' => 'Lex',
+      'contact_hash' => 'This is not a valid hash',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'newspecialemail@wikimedia.org',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+    );
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
+    $email = $this->callAPISuccessGetSingle(
+      'Email', array('contact_id' => $existingContact['id'], 'location_type' => 1)
+    );
+    $this->assertNotEquals($msg['email'], $email['email']);
+  }
 
   /**
    * Assert that 2 arrays are the same in all the ways that matter :-).
