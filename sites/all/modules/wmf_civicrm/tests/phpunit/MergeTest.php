@@ -735,6 +735,29 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test that we still cope when there is no address conflict....
+   *
+   * Bug T176699
+   */
+  public function testBatchMergeNoRealConflictOnAddressButAnotherConflictResolved() {
+    $this->callAPISuccess('Address', 'create', array(
+      'contact_id' => $this->contactID2,
+      'country' => 'Korea, Republic of',
+      'location_type_id' => 1,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'contact_id' => $this->contactID,
+      'country' => 'Korea, Republic of',
+      'location_type_id' => 1,
+    ));
+    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(0, count($result['values']['skipped']));
+    $this->assertEquals(1, count($result['values']['merged']));
+  }
+
+  /**
    * Test that we don't see a city named after a country as the same as a country
    * when it has no country.
    *
