@@ -1076,12 +1076,9 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     if (strtolower($msg['contact_type']) !== "organization") {
       foreach (array('first_name', 'last_name', 'middle_name') as $name) {
         if (isset($msg[$name])) {
-          $contact[$name] = substr(trim($msg[$name]), 0, 64);
+          $contact[$name] = wmf_civicrm_string_clean($msg[$name], 64);
         }
       }
-      // @todo this may not be needed as core may handle, but unsure how it handles over-long strings.
-      $contact['sort_name'] = substr(trim($msg['last_name'] . ', ' . $msg['first_name'], ' ,'), 0, 128);
-      $contact['display_name'] = substr($msg['first_name'] . ' ' . $msg['last_name'], 0, 128 );
     }
     if ( strtolower( $msg['contact_type'] ) == "organization" ){
         // @todo probably can remove handling for sort name and display name now.
@@ -1150,8 +1147,13 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         'is_opt_out',
     );
     foreach ( $direct_fields as $field ) {
-        if ( isset( $msg[$field] ) ) {
-            $contact[$field] = $msg[$field];
+        if ( isset( $msg[$field] )) {
+            if (in_array($msg[$field], array(0, 1, '0', '1', TRUE, FALSE), TRUE)) {
+                $contact[$field] = $msg[$field];
+            }
+            elseif (strtoupper($msg[$field]) === 'Y') {
+                $contact[$field] = TRUE;
+            }
         }
     }
 
@@ -1280,6 +1282,35 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
     }
 
     return $contact_result;
+}
+
+/**
+ * Clean up a string by
+ *  - trimming preceding & ending whitespace
+ *  - removing any in-string double whitespace
+ *
+ * @param string $string
+ * @param int $length
+ *
+ * @return string
+ */
+function wmf_civicrm_string_clean($string, $length) {
+  $replacements = array(
+    // Hex for &nbsp;
+    '/\xC2\xA0/' => ' ',
+    '/&nbsp;/' => ' ',
+    // Replace multiple ideographic space with just one.
+    '/(\xE3\x80\x80){2}/' => html_entity_decode("&#x3000;"),
+    // Trim ideographic space (this could be done in trim further down but seems a bit fiddly)
+    '/^(\xE3\x80\x80)/' => ' ',
+    '/(\xE3\x80\x80)$/' => ' ',
+    // Replace multiple space with just one.
+    '/\s\s+/' => ' ',
+    // And html ampersands with normal ones.
+    '/&amp;/' => '&',
+    '/&Amp;/' => '&',
+  );
+  return substr(trim(preg_replace(array_keys($replacements), $replacements, $string)), 0, $length);
 }
 
 /**
@@ -2363,66 +2394,7 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
           // default settings for opt out fields.
           if ($type === 'batch') {
             foreach (array_keys($refs['fields_in_conflict']) as $moveField) {
-              if (_wmf_civicrm_merge_is_communication_boolean($moveField)) {
-                unset($refs['fields_in_conflict'][$moveField]);
-                $refs['migration_info'][$moveField] = 1;
-                $refs['migration_info']['rows'][$moveField]['other'] = ts('Yes');
-                continue;
-              }
-
-              if ($moveField == 'move_contact_source') {
-                unset($refs['fields_in_conflict'][$moveField]);
-                continue;
-              }
-
-              if (_wmf_civicrm_merge_resolve_preferred_language_conflict(
-                str_replace('move_', '', $moveField),
-                $refs['migration_info'][$moveField],
-                $refs['migration_info']['rows'][$moveField]['other'],
-                $refs['migration_info']['rows'][$moveField]['main'],
-                $mainId,
-                $otherId
-              )) {
-                unset($refs['fields_in_conflict'][$moveField]);
-                continue;
-              }
-
-              if (_wmf_civicrm_merge_resolve_casing_conflict(
-                str_replace('move_', '', $moveField),
-                $refs['migration_info'][$moveField],
-                $refs['migration_info']['rows'][$moveField]['other'],
-                $refs['migration_info']['rows'][$moveField]['main'])) {
-                  unset($refs['fields_in_conflict'][$moveField]);
-                  continue;
-              }
-
-              if (_wmf_civicrm_merge_resolve_diacritic_conflict(
-                str_replace('move_', '', $moveField),
-                $refs['migration_info'][$moveField],
-                $refs['migration_info']['rows'][$moveField]['other'],
-                $refs['migration_info']['rows'][$moveField]['main'])) {
-                unset($refs['fields_in_conflict'][$moveField]);
-                continue;
-              }
-
-              if (substr($moveField, 0, 13) === 'move_location') {
-                if (!isset($refs['is_major_gift'])) {
-                  $refs['is_major_gift'] = _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId);
-                }
-                if (!$refs['is_major_gift']) {
-                  $fieldParts = explode('_', $moveField);
-                  if ($fieldParts[2] == 'email') {
-                    $mainIsOnHold = $refs['migration_info']['main_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
-                    $otherIsOnHold = $refs['migration_info']['other_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
-                    if ($mainIsOnHold + $otherIsOnHold === 1) {
-                      // One is one hold & the other isn't - conflict.
-                      continue;
-                    }
-                  }
-                  unset($refs['fields_in_conflict'][$moveField]);
-                }
-
-              }
+              _wmf_civicrm_merge_resolve_field_conflict($refs, $moveField, $mainId, $otherId);
             }
           }
         }
@@ -2434,6 +2406,109 @@ function wmf_civicrm_civicrm_merge( $type, &$refs, $mainId, $otherId, $tables ) 
         break;
 
     }
+}
+
+/**
+ * Resolve any resolvable field conflicts.
+ *
+ * @param array $refs
+ * @param string $moveField
+ * @param int $mainId
+ *   Id of the main contact (the one to keep)
+ * @param int $otherId
+ *   Id of the other contact (the one to delete)
+ */
+function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, $otherId) {
+  $dbFieldName = str_replace('move_', '', $moveField);
+
+  if (_wmf_civicrm_merge_is_communication_boolean($moveField)) {
+    unset($refs['fields_in_conflict'][$moveField]);
+    $refs['migration_info'][$moveField] = 1;
+    $refs['migration_info']['rows'][$moveField]['other'] = ts('Yes');
+    return;
+  }
+
+  if ($moveField == 'move_contact_source') {
+    unset($refs['fields_in_conflict'][$moveField]);
+    return;
+  }
+  if (_wmf_civicrm_merge_resolve_preferred_language_conflict(
+    $dbFieldName,
+    $refs['migration_info'][$moveField],
+    $refs['migration_info']['rows'][$moveField]['other'],
+    $refs['migration_info']['rows'][$moveField]['main'],
+    $mainId,
+    $otherId
+  )) {
+    unset($refs['fields_in_conflict'][$moveField]);
+    return;
+  }
+
+  if (_wmf_civicrm_merge_resolve_casing_conflict(
+    $dbFieldName,
+    $refs['migration_info'][$moveField],
+    $refs['migration_info']['rows'][$moveField]['other'],
+    $refs['migration_info']['rows'][$moveField]['main'])) {
+    unset($refs['fields_in_conflict'][$moveField]);
+    return;
+  }
+
+  if (_wmf_civicrm_merge_resolve_diacritic_conflict(
+    $dbFieldName,
+    $refs['migration_info'][$moveField],
+    $refs['migration_info']['rows'][$moveField]['other'],
+    $refs['migration_info']['rows'][$moveField]['main'])) {
+    unset($refs['fields_in_conflict'][$moveField]);
+    return;
+  }
+
+  if (_wmf_civicrm_merge_resolve_uninformative_characters_conflict(
+    $dbFieldName,
+    $refs['migration_info'][$moveField],
+    $refs['migration_info']['rows'][$moveField]['other'],
+    $refs['migration_info']['rows'][$moveField]['main'])) {
+    unset($refs['fields_in_conflict'][$moveField]);
+    return;
+  }
+
+  if (_wmf_civicrm_merge_resolve_inappropriate_data_conflict(
+    $dbFieldName,
+    $refs['migration_info'][$moveField],
+    $refs['migration_info']['rows'][$moveField]['other'],
+    $refs['migration_info']['rows'][$moveField]['main'])) {
+    unset($refs['fields_in_conflict'][$moveField]);
+    return;
+  }
+
+  if (substr($moveField, 0, 13) === 'move_location') {
+    if (!isset($refs['is_major_gift'])) {
+      $refs['is_major_gift'] = _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId);
+    }
+    $fieldParts = explode('_', $moveField);
+    if (!$refs['is_major_gift']) {
+      if ($fieldParts[2] == 'email') {
+        $mainIsOnHold = $refs['migration_info']['main_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+        $otherIsOnHold = $refs['migration_info']['other_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+        if ($mainIsOnHold + $otherIsOnHold === 1) {
+          // One is one hold & the other isn't - conflict.
+          return;
+        }
+      }
+      unset($refs['fields_in_conflict'][$moveField]);
+    }
+    else {
+      if (_wmf_civicrm_merge_is_address_conflict_resolvable(
+        $refs['migration_info']['rows'][$moveField]['other'],
+        $refs['migration_info']['rows'][$moveField]['main'],
+        $refs['migration_info']['other_details']['location_blocks'][$fieldParts[2]][$fieldParts[3]],
+        $refs['migration_info']['main_details']['location_blocks'][$fieldParts[2]][$fieldParts[3]]
+    )) {
+          // Actual resolution is in alterLocationMergeData hook.
+          unset($refs['fields_in_conflict'][$moveField]);
+      }
+    }
+
+  }
 }
 
 /**
@@ -2549,6 +2624,139 @@ function _wmf_civicrm_merge_resolve_diacritic_conflict($fieldName, &$moveFieldVa
   $moveFieldValue = $valueToOverwrite;
   $valueToKeep = $valueToOverwrite;
   return TRUE;
+}
+
+/**
+ * Resolve conflicts that are based on uninformative characters.
+ *
+ * @param string $fieldName
+ * @param string $moveFieldValue
+ * @param string $valueToKeep
+ * @param string $valueToOverwrite
+ *
+ * @return bool
+ */
+function _wmf_civicrm_merge_resolve_uninformative_characters_conflict($fieldName, &$moveFieldValue, &$valueToKeep, &$valueToOverwrite) {
+  $fieldsToResolve = array('last_name', 'first_name');
+  if (!in_array(str_replace('move_', '', $fieldName), $fieldsToResolve)) {
+    return FALSE;
+  }
+  // Let's get rid of any preceding or trailing spaces.
+  $valueToKeep = trim($valueToKeep);
+  $valueToOverwrite = trim($valueToOverwrite);
+  $moveFieldValue = trim($moveFieldValue);
+  $whitespaceChars = array(
+    // Taken from trim spec
+    " ",
+    "\t",
+    "\n",
+    "\r",
+    "\0",
+    "\x0B",
+    // And lets add a couple more we are too familiar with
+    // We probably removed these from the name fields already but if we extend
+    // this to other fields they may not be clean.
+    "&nbsp;",
+    // ideographic space.
+    "\xE3\x80\x80",
+    // Hex nbsp
+    '/\xC2\xA0/',
+  );
+
+  // http://grammar.yourdictionary.com/punctuation/what/Fourteen-Punctuation-Marks.html
+  // but elipsis? really?
+  $punctuationChars = array('.', ':', ',', '&', ';', "'", '-', '_', '?', '(', ')', '!', '"');
+
+  $ignoreChars = array_merge($whitespaceChars, $punctuationChars);
+  if (strtoupper(str_replace($ignoreChars, '', $valueToKeep)) != strtoupper(str_replace($ignoreChars, '', ($valueToOverwrite)))) {
+    return FALSE;
+  }
+
+  if (strlen($valueToKeep) > strlen($valueToOverwrite)) {
+    // keep the one with more white space.
+    // hopefully we have cleaned up double whitespace so the extra space is helpful...
+    return TRUE;
+  }
+  // We have a conflict to resolve and we are going to resolve it by keeping
+  //the value that was to be overwritten.
+  $moveFieldValue = $valueToOverwrite;
+  $valueToKeep = $valueToOverwrite;
+  return TRUE;
+}
+
+/**
+ * Resolve conflicts whether the data is not appropriate to the field.
+ *
+ * A numeric name is not valid so if we have a non-numeric alternative we
+ * should take it.
+ *
+ * @param string $fieldName
+ * @param string $moveFieldValue
+ * @param string $valueToKeep
+ * @param string $valueToOverwrite
+ *
+ * @return bool
+ */
+function _wmf_civicrm_merge_resolve_inappropriate_data_conflict($fieldName, &$moveFieldValue, &$valueToKeep, &$valueToOverwrite) {
+  $fieldsToResolve = array('last_name', 'first_name');
+  if (!in_array(str_replace('move_', '', $fieldName), $fieldsToResolve)) {
+    return FALSE;
+  }
+  // Let's get rid of any preceding or trailing spaces.
+  $valueToKeep = trim($valueToKeep);
+  $valueToOverwrite = trim($valueToOverwrite);
+  $moveFieldValue = trim($moveFieldValue);
+
+  if (!is_numeric($valueToKeep) && !is_numeric($valueToOverwrite)) {
+    return FALSE;
+  }
+
+  if (is_numeric($valueToOverwrite)) {
+    // We are already overwriting the number so individualism is winning.
+    return TRUE;
+  }
+  // We have a conflict to resolve and we are going to resolve it by keeping
+  //the value that was to be overwritten.
+  $moveFieldValue = $valueToOverwrite;
+  $valueToKeep = $valueToOverwrite;
+  return TRUE;
+}
+
+/**
+ * Resolve conflicts where 2 different addresses are really the same.
+ *
+ * The way CiviCRM handles addresses is by converting the whole address into
+ * one string & comparing it. This means addresses that only differ by
+ * having additional information are treated as a conflict.
+ *
+ * @param string $valueToKeep
+ * @param string $valueToOverwrite
+ * @param array $blockToKeep
+ * @param array $blockToOverwrite
+ *
+ * @return bool
+ */
+function _wmf_civicrm_merge_is_address_conflict_resolvable($valueToKeep, $valueToOverwrite, $blockToKeep, $blockToOverwrite) {
+  // Let's get rid of any preceding or trailing spaces.
+  $valueToKeep = trim($valueToKeep);
+  $valueToOverwrite = trim($valueToOverwrite);
+
+  if (!stristr($valueToKeep, $valueToOverwrite) && !stristr($valueToOverwrite, $valueToKeep)) {
+    return FALSE;
+  }
+  static $countries = array();
+  if (empty($countries)) {
+    $countries = civicrm_api3('Address', 'getoptions', array('field' => 'country_id'));
+    $countries = $countries['values'];
+  }
+  if ((in_array($valueToOverwrite, $countries) || in_array($valueToKeep, $countries))
+    && (!empty($blockToKeep['country_id']) && $blockToKeep['country_id'] === $blockToOverwrite['country_id'])
+  ) {
+    // One of the values is a country & it is a subset of the other value. We
+    // can get past this.
+    return TRUE;
+  }
+  return FALSE;
 }
 
 /**
@@ -2793,15 +3001,22 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
     return;
   }
   $lastDonorID = $lastDonor['values'][$lastDonor['id']]['contact_id'];
+  $contactIDToBeKeptIsMostRecentDonor = ($lastDonorID == $mainId) ? TRUE : FALSE;
   // Since the last donor is not the main ID we are prioritising info from the last donor.
   // In the test this should always be true - but keep the check in case
   // something changes that we need to detect.
-  if ($lastDonorID != $mainId) {
+  if (!$contactIDToBeKeptIsMostRecentDonor) {
     $higherPriorityLocationBlocks = _wmf_civicrm_clean_duplicate_location_from_merge_blocks($migrationInfo['other_details']['location_blocks']);
     $lowerPriorityLocationBlocks = $migrationInfo['main_details']['location_blocks'];
+  }
+  else {
+    $higherPriorityLocationBlocks = _wmf_civicrm_clean_duplicate_location_from_merge_blocks($migrationInfo['main_details']['location_blocks']);
+    $lowerPriorityLocationBlocks = $migrationInfo['other_details']['location_blocks'];
+  }
+  $primaryAddressCandidates = array();
 
-    foreach ($higherPriorityLocationBlocks as $blockType => $blocks) {
-      foreach ($blocks as $block) {
+  foreach ($higherPriorityLocationBlocks as $blockType => $blocks) {
+    foreach ($blocks as $block) {
         if ($block['is_primary'] == 1 && isset($blocksDAO[$blockType]['update'][$block['id']])) {
           unset($blocksDAO[$blockType]['update'][$block['id']]->is_primary);
         }
@@ -2811,7 +3026,38 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
         }
 
         foreach ($lowerPriorityLocationBlocks[$blockType] as $index => $lowerPriorityLocationBlock) {
-          if (_wmf_civicrm_is_delete_location_in_favour_of_higher_priority_one(
+          if (_wmf_civicrm_is_this_address_better($lowerPriorityLocationBlock, $block)) {
+            // The address on the 'main' contact is better than on the more recent one.
+            if ($contactIDToBeKeptIsMostRecentDonor) {
+              // engage in some mickey mouse to keep this better address.
+              // By default the calculation will be to bring the address across from the other donor.
+              // We want to make sure the non-useful address is also deleted & the primary field
+              // is set on the one being brought across (appropriately).
+              $blocksDAO[$blockType]['delete'][$block['id']] = _civicrm_api3_load_DAO($blockType);
+              $blocksDAO[$blockType]['delete'][$block['id']]->id = $block['id'];
+              if ($lowerPriorityLocationBlock['is_primary'] || (empty($primaryAddressCandidates) && $blocksDAO[$blockType]['delete'][$block['id']]->is_primary)) {
+                $blocksDAO[$blockType]['update'][$lowerPriorityLocationBlock['id']]->is_primary = 1;
+                if (!empty($primaryAddressCandidates)) {
+                  foreach ($primaryAddressCandidates as $primaryAddressCandidate) {
+                    // We are here because you lost sucker - demotion.
+                    // In actual fact we 'think' that the primary would always be processed first &
+                    // so this would not be hit.
+                    if (isset($blocksDAO[$blockType]['update'][$primaryAddressCandidate])) {
+                      $blocksDAO[$blockType]['update'][$primaryAddressCandidate]['is_primary'] = 0;
+                    }
+                  }
+                }
+                $primaryAddressCandidates[] = $lowerPriorityLocationBlock['id'];
+              }
+              unset($lowerPriorityLocationBlocks[$blockType][$index]);
+            }
+            else {
+              // Leave Civi to process this address.
+              // Unset it from our array for consideration & skip further processing.
+              unset($lowerPriorityLocationBlocks[$blockType][$index]);
+            }
+          }
+          elseif (_wmf_civicrm_is_delete_location_in_favour_of_higher_priority_one(
             $blocks, $block, $lowerPriorityLocationBlock)
           ) {
             $blocksDAO[$blockType]['delete'][$lowerPriorityLocationBlock['id']] = _civicrm_api3_load_DAO($blockType);
@@ -2835,7 +3081,7 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
         }
       }
     }
-  }
+
 }
 
 /**
@@ -3756,15 +4002,17 @@ function wmf_civicrm_civicrm_permission_check($permission, &$granted) {
 }
 
 /**
+ * If the address is an exact match or a subset of the address on the preferred contact or matches the location
+ *  type of an existing address we want to delete it.
  * @param array $blocks
  * @param array $lowerPriorityLocationBlock
  * @param array $block
+ * @param book $isPreferOtherContact
+ *   Is the other contact preferred (due to being a more recent donor).
  *
  * @return array
  */
   function _wmf_civicrm_is_delete_location_in_favour_of_higher_priority_one($blocks, $block, $lowerPriorityLocationBlock) {
-    // If the address is an exact match for any address on the preferred contact or matches the location
-    // type of an existing address we want to delete it.
     $lowerPriorityLocationTypeID = $lowerPriorityLocationBlock['location_type_id'];
     unset($lowerPriorityLocationBlock['location_type_id']);
     if ($lowerPriorityLocationTypeID == $block['location_type_id'] ||
@@ -3774,6 +4022,36 @@ function wmf_civicrm_civicrm_permission_check($permission, &$granted) {
     ) {
       return TRUE;
     }
+    return FALSE;
+  }
+
+  /**
+   * Compare 2 addresses to the block that is on the block actually rocks.
+   *
+   * Basically if one block is 'better' than the other we should keep it.
+   * 'better' would mean that it has more data & does not conflict.
+   * Currently we are defining 'more data' in the very narrow sense of 'the
+   * other one just has a country but this has the same country & oh so much more'.
+   *
+   * @param array $mainAddress
+   * @param array $comparisonAddress
+   *   If $mainAddress is WORSE than comparisonAddress we return TRUE.
+   *
+   * @return bool
+   */
+   function _wmf_civicrm_is_this_address_better($mainAddress, $comparisonAddress) {
+    $keysToIgnore = array('id', 'is_primary', 'is_billing', 'manual_geo_code', 'contact_id', 'reset_date', 'hold_date', 'display', 'location_type_id');
+    $comparisonAddress = array_diff_key($comparisonAddress, array_flip($keysToIgnore));
+    $mainAddress = array_diff_key($mainAddress, array_flip($keysToIgnore));
+    if (count($comparisonAddress) === 1
+      && !empty($comparisonAddress['country_id'])
+      && !empty($mainAddress['country_id'])
+      && $comparisonAddress['country_id'] == $mainAddress['country_id']
+    ) {
+      // Comparison address is not up to snuff. Main address rocks.
+      return TRUE;
+    }
+
     return FALSE;
   }
 
