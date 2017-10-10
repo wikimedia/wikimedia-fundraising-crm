@@ -4043,6 +4043,10 @@ function wmf_civicrm_civicrm_permission_check($permission, &$granted) {
     $keysToIgnore = array('id', 'is_primary', 'is_billing', 'manual_geo_code', 'contact_id', 'reset_date', 'hold_date', 'display', 'location_type_id');
     $comparisonAddress = array_diff_key($comparisonAddress, array_flip($keysToIgnore));
     $mainAddress = array_diff_key($mainAddress, array_flip($keysToIgnore));
+    if ($mainAddress === $comparisonAddress) {
+      // They are the same... which to choose, which to choose :-)
+      return FALSE;
+    }
     if (count($comparisonAddress) === 1
       && !empty($comparisonAddress['country_id'])
       && !empty($mainAddress['country_id'])
