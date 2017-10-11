@@ -2741,6 +2741,10 @@ function _wmf_civicrm_merge_is_address_conflict_resolvable($valueToKeep, $valueT
   $valueToKeep = trim($valueToKeep);
   $valueToOverwrite = trim($valueToOverwrite);
 
+  if (_wmf_civicrm_merge_is_only_extra_postal_code_suffix($valueToKeep, $valueToOverwrite, $blockToKeep, $blockToOverwrite)) {
+    return TRUE;
+  }
+
   if (!stristr($valueToKeep, $valueToOverwrite) && !stristr($valueToOverwrite, $valueToKeep)) {
     return FALSE;
   }
@@ -2754,6 +2758,31 @@ function _wmf_civicrm_merge_is_address_conflict_resolvable($valueToKeep, $valueT
   ) {
     // One of the values is a country & it is a subset of the other value. We
     // can get past this.
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Is the merge conflict purely the addition of a postal code suffix.
+ *
+ * @param string $valueToKeep
+ * @param string $valueToOverwrite
+ * @param array $blockToKeep
+ * @param array $blockToOverwrite
+ *
+ * @return bool
+ */
+function _wmf_civicrm_merge_is_only_extra_postal_code_suffix($valueToKeep, $valueToOverwrite, $blockToKeep, $blockToOverwrite) {
+  $fieldsInBlockToKeepOnly = array_diff_key($blockToKeep, $blockToOverwrite);
+  $fieldsInBlockToOverwriteOnly = array_diff_key($blockToOverwrite, $blockToKeep);
+  if (array_keys($fieldsInBlockToKeepOnly) === array('postal_code_suffix')
+    && str_replace('-' . $blockToKeep['postal_code_suffix'], '', $valueToKeep) === $valueToOverwrite) {
+    return TRUE;
+  }
+  if (array_keys($fieldsInBlockToOverwriteOnly) === array('postal_code_suffix')
+    && str_replace('-' . $blockToOverwrite['postal_code_suffix'], '', $valueToOverwrite) === $valueToKeep
+  ) {
     return TRUE;
   }
   return FALSE;
@@ -4054,6 +4083,16 @@ function wmf_civicrm_civicrm_permission_check($permission, &$granted) {
     ) {
       // Comparison address is not up to snuff. Main address rocks.
       return TRUE;
+    }
+
+    // If the only difference that main address has postal_code_suffix &
+    // the other doesn't? This is a common faux-conflict.
+    $keysInMainAddressOnly = array_diff_key($mainAddress, $comparisonAddress);
+    if (array_keys($keysInMainAddressOnly) === array('postal_code_suffix')) {
+      unset($mainAddress['postal_code_suffix']);
+      if ($mainAddress === $comparisonAddress) {
+        return TRUE;
+      }
     }
 
     return FALSE;

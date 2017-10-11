@@ -784,6 +784,70 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test that we don't the addition of a postal suffix only as a conflict.
+   *
+   * Bug T177807
+   */
+  public function testBatchMergeResolvableConflictPostalSuffixExists() {
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID2,
+      'location_type_id' => 1,
+      'street_address' => 'First on the left after you cross the border',
+      'postal_code' => 90210,
+      'postal_code_suffix' => 6666,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID,
+      'street_address' => 'First on the left after you cross the border',
+      'postal_code' => 90210,
+      'location_type_id' => 1,
+    ));
+    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['merged']));
+    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $this->assertEquals('Mexico', $contact['country']);
+    $this->assertEquals('6666', $contact['postal_code_suffix']);
+    $this->assertEquals('90210', $contact['postal_code']);
+    $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
+  }
+
+  /**
+   * Test that we don't the addition of a postal suffix only as a conflict.
+   *
+   * Bug T177807
+   */
+  public function testBatchMergeResolvableConflictPostalSuffixExistsReverse() {
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID2,
+      'location_type_id' => 1,
+      'street_address' => 'First on the left after you cross the border',
+      'postal_code' => 90210,
+    ));
+    $this->callAPISuccess('Address', 'create', array(
+      'country_id' => 'MX',
+      'contact_id' => $this->contactID,
+      'street_address' => 'First on the left after you cross the border',
+      'postal_code' => 90210,
+      'location_type_id' => 1,
+      'postal_code_suffix' => 6666,
+    ));
+    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(1, count($result['values']['merged']));
+    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $this->assertEquals('Mexico', $contact['country']);
+    $this->assertEquals('6666', $contact['postal_code_suffix']);
+    $this->assertEquals('90210', $contact['postal_code']);
+    $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
+  }
+
+  /**
    * Test that a conflict on casing in first names is handled.
    *
    * We do a best effort on this to get the more correct on assuming that 1 capital letter in a
