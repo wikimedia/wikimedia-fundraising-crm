@@ -1536,22 +1536,23 @@ function wmf_civicrm_message_email_insert($msg, $contact_id ) {
  * @return bool
  */
 function wmf_civicrm_is_address_valid($address) {
-  $meaningfulFields = array(
-    'street_address',
-    'supplemental_address_1',
-    'city',
-    'postal_code',
-    'country_id',
-    'state_province_id',
-  );
-  foreach ($meaningfulFields as $field) {
-    if (!empty($address[$field])) {
-      // We could also filter for strings like 'None' here
-      // I feel like there is one like 'None provided' that is common.
-      // only 241 instances of 'none' in street address and second place in the
-      // none-stakes has only 15 instances of 'None of your business'
-      // 'None of your goddamn business' got no traction with only one instance.
-      return TRUE;
+  if (!empty($address['country_id'])) {
+    $meaningfulFields = array(
+      'street_address',
+      'supplemental_address_1',
+      'city',
+      'postal_code',
+      'state_province_id',
+    );
+    foreach ($meaningfulFields as $field) {
+      if (!empty($address[$field])) {
+        // We could also filter for strings like 'None' here
+        // I feel like there is one like 'None provided' that is common.
+        // only 241 instances of 'none' in street address and second place in the
+        // none-stakes has only 15 instances of 'None of your business'
+        // 'None of your goddamn business' got no traction with only one instance.
+        return TRUE;
+      }
     }
   }
   return FALSE;
