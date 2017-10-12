@@ -41,69 +41,73 @@ function civicrm_api3_omnimailing_load($params) {
     $getParams['username'] = $params['username'];
     $getParams['password'] = $params['password'];
   }
+  if (isset($params['client'])) {
+    $getParams['client'] = $params['client'];
+  }
   $mailings = civicrm_api3('Omnimailing', 'get', $getParams);
 
   foreach ($mailings['values']  as $mailing) {
-    $campaign = civicrm_api3('Campaign', 'replace', array(
-      'name' => 'sp' . $mailing['external_identifier'],
-      'values' => array(
-        array(
-          'title' => 'sp' . $mailing['external_identifier'],
-          'description' => $mailing['subject'],
-          'campaign_type_id' => 'Email',
-          'start_date' => date('Y-m-d H:i:s', $mailing['start_date']),
-          'status_id' => 'Completed',
-        )
-      )
+    $campaign = _civicrm_api3_omnimailing_load_api_replace(
+      'Campaign',
+      array('name' => 'sp' . $mailing['external_identifier']),
+      array(
+        'title' => 'sp' . $mailing['external_identifier'],
+        'description' => $mailing['subject'],
+        'campaign_type_id' => 'Email',
+        'start_date' => date('Y-m-d H:i:s', $mailing['start_date']),
+        'status_id' => 'Completed',
     ));
+
     CRM_Core_PseudoConstant::flush();
-    $result = civicrm_api3('Mailing', 'replace', array(
-      'hash' => 'sp' . $mailing['external_identifier'],
-      'debug' => 1,
-      'values' => array(
-        array(
-          'body_html' => !empty($mailing['body_html']) ? $mailing['body_html'] : '',
-          'body_text' => !empty($mailing['body_text']) ? $mailing['body_text'] : '',
-          'name' => !empty($mailing['name']) ? $mailing['name'] : 'sp' . $mailing['external_identifier'],
-          'subject' => $mailing['subject'],
-          'created_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
-          'hash' => 'sp' . $mailing['external_identifier'],
-          'scheduled_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
-          'campaign_id' => $campaign['id'],
-          'is_completed' => 1,
-        )
+
+    $result =  _civicrm_api3_omnimailing_load_api_replace(
+      'Mailing',
+      array('hash' => 'sp' . $mailing['external_identifier']),
+      array(
+        'body_html' => !empty($mailing['body_html']) ? $mailing['body_html'] : '',
+        'body_text' => !empty($mailing['body_text']) ? $mailing['body_text'] : '',
+        'name' => !empty($mailing['name']) ? $mailing['name'] : 'sp' . $mailing['external_identifier'],
+        'subject' => $mailing['subject'],
+        'created_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
+        'hash' => 'sp' . $mailing['external_identifier'],
+        'scheduled_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
+        'campaign_id' => $campaign['id'],
       ),
-    ));
-    $values[] = $result['values'][$result['id']];
-    civicrm_api3('MailingStats', 'replace', array(
-      'mailing_id' => $result['id'],
-      'values' => array(
-        array(
-          'debug' => 1,
-          'mailing_id' => $result['id'],
-          'mailing_name' => !empty($mailing['name']) ? $mailing['name'] : 'sp' . $mailing['external_identifier'],
-          'is_completed' => TRUE,
-          'created_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
-          'start' => date('Y-m-d H:i:s', $mailing['start_date']),
-          //'finish' =>
-          'recipients' => $mailing['number_sent'],
-          'delivered' => $mailing['number_sent'] - $mailing['number_bounced'],
-          // 'send_rate'
-          'bounced' => $mailing['number_bounced'],
-          'opened_total' => $mailing['number_opened_total'],
-          'opened_unique' => $mailing['number_opened_unique'],
-          'unsubscribed' => $mailing['number_unsubscribed'],
-          'suppressed' => $mailing['number_suppressed'],
-          // 'forwarded'
-          'blocked' => $mailing['number_blocked'],
-          // 'clicked_total' => $stats['NumGrossClick'],
-          'abuse_complaints' => $mailing['number_abuse_complaints'],
-          // 'clicked_contribution_page'
-          // 'contribution_count'
-          // 'contribution_total'
-        )
-      ),
-    ));
+      array(
+        'is_completed' => 1,
+        '_skip_evil_bao_auto_recipients_' => 1,
+        '_skip_evil_bao_auto_schedule_' => 1,
+      )
+    );
+    $values[] = $result;
+
+    _civicrm_api3_omnimailing_load_api_replace(
+      'MailingStats',
+      array('mailing_id' => $result['id']),
+      array(
+        'mailing_id' => $result['id'],
+        'mailing_name' => !empty($mailing['name']) ? $mailing['name'] : 'sp' . $mailing['external_identifier'],
+        'is_completed' => TRUE,
+        'created_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
+        'start' => date('Y-m-d H:i:s', $mailing['start_date']),
+        //'finish' =>
+        'recipients' => $mailing['number_sent'],
+        'delivered' => $mailing['number_sent'] - $mailing['number_bounced'],
+        // 'send_rate'
+        'bounced' => $mailing['number_bounced'],
+        'opened_total' => $mailing['number_opened_total'],
+        'opened_unique' => $mailing['number_opened_unique'],
+        'unsubscribed' => $mailing['number_unsubscribed'],
+        'suppressed' => $mailing['number_suppressed'],
+        // 'forwarded'
+        'blocked' => $mailing['number_blocked'],
+        // 'clicked_total' => $stats['NumGrossClick'],
+        'abuse_complaints' => $mailing['number_abuse_complaints'],
+        // 'clicked_contribution_page'
+        // 'contribution_count'
+        // 'contribution_total'
+      )
+    );
   }
   return civicrm_api3_create_success($values);
 }
@@ -135,4 +139,38 @@ function _civicrm_api3_omnimailing_load_spec(&$params) {
     'api.default' => 'now',
   );
 
+}
+
+/**
+ * Replace entity with updated version as appropriate.
+ *
+ * This does what I thought 'replace' already did & does a retrieve + an insert if needed.
+ *
+ * @todo centralise this somewhere to be available for other calls.
+ *
+ * @param string $entity
+ * @param array $retrieveParams
+ * @param array $updateParams
+ * @param array $extraParams
+ *
+ * @return array
+ *   Entity created or retrieved.
+ */
+function _civicrm_api3_omnimailing_load_api_replace($entity, $retrieveParams, $updateParams, $extraParams = array()) {
+  $retrieveParams['return'] = array_keys($updateParams);
+  $preExisting = civicrm_api3($entity, 'get', $retrieveParams);
+  if (isset($preExisting['id'])) {
+    $preExisting = $preExisting['values'][$preExisting['id']];
+    foreach ($updateParams as $key => $updateParam) {
+      if (CRM_Utils_Array::value($key, $preExisting) === $updateParam) {
+        unset($updateParams[$key]);
+      }
+    }
+    if (empty($updateParams)) {
+      return $preExisting;
+    }
+    $updateParams['id'] = $preExisting['id'];
+  }
+  $created = civicrm_api3($entity, 'create', array_merge($updateParams, $extraParams));
+  return $created['values'][$created['id']];
 }
