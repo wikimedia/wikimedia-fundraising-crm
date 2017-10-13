@@ -2,6 +2,7 @@
 
 use SmashPig\Core\Context;
 use SmashPig\Tests\TestingContext;
+use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 
 class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
@@ -31,6 +32,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
     }
 
     public function tearDown() {
+		TestingDatabase::clearStatics();
 		Context::set( null ); // Nullify any SmashPig context for the next run
 		parent::tearDown();
 	}
@@ -199,7 +201,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
 
   public function onNotSuccessfulTest( $e ) {
     if ( !PRINT_WATCHDOG_ON_TEST_FAIL ) {
-      return;
+      throw $e;
 	}
     $output = "\nWatchdog messages:\n";
 
