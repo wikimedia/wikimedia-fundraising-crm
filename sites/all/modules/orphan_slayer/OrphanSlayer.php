@@ -23,7 +23,8 @@ class OrphanSlayer {
     }
 
     public function cancel($orphan) {
-        //FIXME: Add cancel when implementing ingenico
+        $this->adapter = DonationInterfaceFactory::createAdapter($this->gateway, $orphan);
+        $this->adapter->cancel();
         $this->delete_orphan($orphan);
     }
 
