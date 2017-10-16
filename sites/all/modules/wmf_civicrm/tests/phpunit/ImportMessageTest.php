@@ -103,7 +103,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 		if ( !empty( $expected['address'] ) ) {
 			$addresses = civicrm_api3( 'Address', 'get', array(
 				'contact_id' => $contribution['contact_id'],
-				'return' => 'city,postal_code,street_address,geo_code_1,geo_code_2,timezone',
+				'return' => 'country_id,state_province_id,city,postal_code,street_address,geo_code_1,geo_code_2,timezone',
 			) );
 			$address = $addresses['values'][$addresses['id']];
 			$this->assertComparable( $expected['address'], $address );
@@ -119,401 +119,456 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     public function messageProvider() {
-        // Make static so it isn't destroyed until class cleanup.
-        self::$fixtures = CiviFixtures::create();
+		// Make static so it isn't destroyed until class cleanup.
+		self::$fixtures = CiviFixtures::create();
 
-        $contribution_type_cash = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Cash' );
-        $payment_instrument_cc = wmf_civicrm_get_civi_id( 'payment_instrument_id', 'Credit Card' );
-        $payment_instrument_check = wmf_civicrm_get_civi_id( 'payment_instrument_id', 'Check' );
+		$contribution_type_cash = wmf_civicrm_get_civi_id( 'contribution_type_id', 'Cash' );
+		$payment_instrument_cc = wmf_civicrm_get_civi_id( 'payment_instrument_id', 'Credit Card' );
+		$payment_instrument_check = wmf_civicrm_get_civi_id( 'payment_instrument_id', 'Check' );
 
-        $gateway_txn_id = mt_rand();
-        $check_number = (string) mt_rand();
+		$gateway_txn_id = mt_rand();
+		$check_number = (string) mt_rand();
 
-        $new_prefix = 'M' . mt_rand();
+		$new_prefix = 'M' . mt_rand();
 
-        return array(
-            // Minimal contribution
-            array(
-                $this->getMinimalImportData($gateway_txn_id),
-                array(
-                    'contribution' => $this->getBaseContribution($gateway_txn_id),
-                ),
-            ),
+		$cases = array(
+			// Minimal contribution
+			array(
+				$this->getMinimalImportData( $gateway_txn_id ),
+				array(
+					'contribution' => $this->getBaseContribution( $gateway_txn_id ),
+				),
+			),
+		);
+		$gateway_txn_id = mt_rand();
+		$cases[] =
+			// Minimal contribution with comma thousand separator.
+			array(
+				array(
+					'currency' => 'USD',
+					'date' => '2012-05-01 00:00:00',
+					'email' => 'nobody@wikimedia.org',
+					'gateway' => 'test_gateway',
+					'gateway_txn_id' => $gateway_txn_id,
+					'gross' => '1,000.23',
+					'payment_method' => 'cc',
+				),
+				array(
+					'contribution' => array(
+						'contribution_status_id' => '1',
+						'contribution_type_id' => $contribution_type_cash,
+						'currency' => 'USD',
+						'fee_amount' => '0',
+						'total_amount' => '1,000.23',
+						'net_amount' => '1,000.23',
+						'non_deductible_amount' => '',
+						'payment_instrument_id' => $payment_instrument_cc,
+						'receipt_date' => '',
+						'receive_date' => '20120501000000',
+						'source' => 'USD 1,000.23',
+						'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+						'financial_type_id' => $contribution_type_cash,
+						'check_number' => '',
+					),
+				),
+			);
 
-            // Minimal contribution with comma thousand separator.
-            array(
-                array(
-                    'currency' => 'USD',
-                    'date' => '2012-05-01 00:00:00',
-                    'email' => 'nobody@wikimedia.org',
-                    'gateway' => 'test_gateway',
-                    'gateway_txn_id' => $gateway_txn_id,
-                    'gross' => '1,000.23',
-                    'payment_method' => 'cc',
-                ),
-                array(
-                    'contribution' => array(
-                        'contribution_status_id' => '1',
-                        'contribution_type_id' => $contribution_type_cash,
-                        'currency' => 'USD',
-                        'fee_amount' => '0',
-                        'total_amount' => '1,000.23',
-                        'net_amount' => '1,000.23',
-                        'non_deductible_amount' => '',
-                        'payment_instrument_id' => $payment_instrument_cc,
-                        'receipt_date' => '',
-                        'receive_date' => '20120501000000',
-                        'source' => 'USD 1,000.23',
-                        'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
-                        'financial_type_id' => $contribution_type_cash,
-                        'check_number' => '',
-                    ),
-                ),
-            ),
+		$gateway_txn_id = mt_rand();
+		$cases[] =
+			// over-long city.
+			array(
+				array_merge(
+					$this->getMinimalImportData( $gateway_txn_id ),
+					array( 'city' => 'This is just stupidly long and I do not know why I would enter something this crazily long into a field' )
+				),
+				array(
+					'contribution' => $this->getBaseContribution( $gateway_txn_id ),
+				),
+			);
 
-            // over-long city.
-            array(
-              array_merge(
-                $this->getMinimalImportData($gateway_txn_id),
-                array('city' => 'This is just stupidly long and I do not know why I would enter something this crazily long into a field')
-              ),
-              array(
-                'contribution' => $this->getBaseContribution($gateway_txn_id),
-              ),
-            ),
+		$gateway_txn_id = mt_rand();
+		$cases[] =
+			// Maximal contribution
+			array(
+				array(
+					'check_number' => $check_number,
+					'currency' => 'USD',
+					'date' => '2012-03-01 00:00:00',
+					'direct_mail_appeal' => ImportMessageTest_campaign,
+					'do_not_email' => 'Y',
+					'do_not_mail' => 'Y',
+					'do_not_phone' => 'Y',
+					'do_not_sms' => 'Y',
+					'do_not_solicit' => 'Y',
+					'email' => 'nobody@wikimedia.org',
+					'first_name' => 'First',
+					'fee' => '0.03',
+					'language' => 'en_US',
+					'gateway' => 'test_gateway',
+					'gateway_txn_id' => $gateway_txn_id,
+					'gateway_status' => 'P',
+					'gift_source' => 'Legacy Gift',
+					'gross' => '1.23',
+					'import_batch_number' => '4321',
+					'is_opt_out' => 'Y',
+					'last_name' => 'Last',
+					'middle_name' => 'Middle',
+					'no_thank_you' => 'no forwarding address',
+					'name_prefix' => $new_prefix,
+					'name_suffix' => 'Sr.',
+					'payment_method' => 'check',
+					'stock_description' => 'Long-winded prolegemenon',
+					'thankyou_date' => '2012-04-01',
+				),
+				array(
+					'contact' => array(
+						'do_not_email' => '1',
+						'do_not_mail' => '1',
+						'do_not_phone' => '1',
+						'do_not_sms' => '1',
+						'first_name' => 'First',
+						'is_opt_out' => '1',
+						'last_name' => 'Last',
+						'middle_name' => 'Middle',
+						'prefix' => $new_prefix,
+						'suffix' => 'Sr.',
+						'preferred_language' => 'en',
+					),
+					'contribution' => array(
+						'address_id' => '',
+						'amount_level' => '',
+						'campaign_id' => '',
+						'cancel_date' => '',
+						'cancel_reason' => '',
+						'check_number' => $check_number,
+						'contribution_page_id' => '',
+						'contribution_recur_id' => '',
+						'contribution_status_id' => '1',
+						'contribution_type_id' => $contribution_type_cash,
+						'currency' => 'USD',
+						'fee_amount' => '0.03',
+						'invoice_id' => '',
+						'is_pay_later' => '',
+						'is_test' => '',
+						'net_amount' => '1.2', # :(
+						'non_deductible_amount' => '',
+						'payment_instrument_id' => $payment_instrument_check,
+						'receipt_date' => '',
+						'receive_date' => '20120301000000',
+						'source' => 'USD 1.23',
+						'thankyou_date' => '20120401000000',
+						'total_amount' => '1.23',
+						'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+						'financial_type_id' => $contribution_type_cash,
+						'creditnote_id' => '',
+						'tax_amount' => '',
+					),
+					'contribution_custom_values' => array(
+						'Appeal' => ImportMessageTest_campaign,
+						'import_batch_number' => '4321',
+						'Campaign' => 'Legacy Gift',
+						'gateway' => 'test_gateway',
+						'gateway_txn_id' => (string) $gateway_txn_id,
+						'gateway_status_raw' => 'P',
+						'no_thank_you' => 'no forwarding address',
+						'Description_of_Stock' => 'Long-winded prolegemenon',
+					),
+					'contact_custom_values' => array(
+						'do_not_solicit' => '1',
+						'is_2010_donor' => '0',
+						'is_2011_donor' => '1', # Fiscal year
+						'is_2012_donor' => '0',
+						'last_donation_date' => '2012-03-01 00:00:00',
+						'last_donation_usd' => '1.23',
+						'lifetime_usd_total' => '1.23',
+					),
+				),
+			);
 
-            // Maximal contribution
-            array(
-                array(
-                    'check_number' => $check_number,
-                    'currency' => 'USD',
-                    'date' => '2012-03-01 00:00:00',
-                    'direct_mail_appeal' => ImportMessageTest_campaign,
-                    'do_not_email' => 'Y',
-                    'do_not_mail' => 'Y',
-                    'do_not_phone' => 'Y',
-                    'do_not_sms' => 'Y',
-                    'do_not_solicit' => 'Y',
-                    'email' => 'nobody@wikimedia.org',
-                    'first_name' => 'First',
-                    'fee' => '0.03',
-                    'language' => 'en_US',
-                    'gateway' => 'test_gateway',
-                    'gateway_txn_id' => $gateway_txn_id,
-                    'gateway_status' => 'P',
-                    'gift_source' => 'Legacy Gift',
-                    'gross' => '1.23',
-                    'import_batch_number' => '4321',
-                    'is_opt_out' => 'Y',
-                    'last_name' => 'Last',
-                    'middle_name' => 'Middle',
-                    'no_thank_you' => 'no forwarding address',
-                    'name_prefix' => $new_prefix,
-                    'name_suffix' => 'Sr.',
-                    'payment_method' => 'check',
-                    'stock_description' => 'Long-winded prolegemenon',
-                    'thankyou_date' => '2012-04-01',
-                ),
-                array(
-                    'contact' => array(
-                        'do_not_email' => '1',
-                        'do_not_mail' => '1',
-                        'do_not_phone' => '1',
-                        'do_not_sms' => '1',
-                        'first_name' => 'First',
-                        'is_opt_out' => '1',
-                        'last_name' => 'Last',
-                        'middle_name' => 'Middle',
-                        'prefix' => $new_prefix,
-                        'suffix' => 'Sr.',
-                        'preferred_language' => 'en',
-                    ),
-                    'contribution' => array(
-                        'address_id' => '',
-                        'amount_level' => '',
-                        'campaign_id' => '',
-                        'cancel_date' => '',
-                        'cancel_reason' => '',
-                        'check_number' => $check_number,
-                        'contribution_page_id' => '',
-                        'contribution_recur_id' => '',
-                        'contribution_status_id' => '1',
-                        'contribution_type_id' => $contribution_type_cash,
-                        'currency' => 'USD',
-                        'fee_amount' => '0.03',
-                        'invoice_id' => '',
-                        'is_pay_later' => '',
-                        'is_test' => '',
-                        'net_amount' => '1.2', # :(
-                        'non_deductible_amount' => '',
-                        'payment_instrument_id' => $payment_instrument_check,
-                        'receipt_date' => '',
-                        'receive_date' => '20120301000000',
-                        'source' => 'USD 1.23',
-                        'thankyou_date' => '20120401000000',
-                        'total_amount' => '1.23',
-                        'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
-                        'financial_type_id' => $contribution_type_cash,
-                        'creditnote_id' => '',
-                        'tax_amount' => '',
-                    ),
-                    'contribution_custom_values' => array(
-                        'Appeal' => ImportMessageTest_campaign,
-                        'import_batch_number' => '4321',
-                        'Campaign' => 'Legacy Gift',
-                        'gateway' => 'test_gateway',
-                        'gateway_txn_id' => (string) $gateway_txn_id,
-                        'gateway_status_raw' => 'P',
-                        'no_thank_you' => 'no forwarding address',
-                        'Description_of_Stock' => 'Long-winded prolegemenon',
-                    ),
-                    'contact_custom_values' => array(
-                        'do_not_solicit' => '1',
-                        'is_2010_donor' => '0',
-                        'is_2011_donor' => '1', # Fiscal year
-                        'is_2012_donor' => '0',
-                        'last_donation_date' => '2012-03-01 00:00:00',
-                        'last_donation_usd' => '1.23',
-                        'lifetime_usd_total' => '1.23',
-                    ),
-                ),
-            ),
-          // Invalid language suffix for valid short lang.
-          'invalid language suffix' => array(
-            array(
-              'currency' => 'USD',
-              'date' => '2012-05-01 00:00:00',
-              'email' => 'nobody@wikimedia.org',
-              'gateway' => 'test_gateway',
-              'gateway_txn_id' => $gateway_txn_id,
-              'gross' => '1.23',
-              'payment_method' => 'cc',
-              'language' => 'en_ZZ',
-              'name_prefix' => $new_prefix,
-              'name_suffix' => 'Sr.',
-            ),
-            array(
-              'contact' => array(
-                'preferred_language' => 'en',
-                'prefix' => $new_prefix,
-                'suffix' => 'Sr.',
-              ),
-              'contribution' => $this->getBaseContribution($gateway_txn_id),
-            ),
-          ),
+		$gateway_txn_id = mt_rand();
+		$cases[] =
+			// Invalid language suffix for valid short lang.
+			array(
+				array(
+					'currency' => 'USD',
+					'date' => '2012-05-01 00:00:00',
+					'email' => 'nobody@wikimedia.org',
+					'gateway' => 'test_gateway',
+					'gateway_txn_id' => $gateway_txn_id,
+					'gross' => '1.23',
+					'payment_method' => 'cc',
+					'language' => 'en_ZZ',
+					'name_prefix' => $new_prefix,
+					'name_suffix' => 'Sr.',
+				),
+				array(
+					'contact' => array(
+						'preferred_language' => 'en',
+						'prefix' => $new_prefix,
+						'suffix' => 'Sr.',
+					),
+					'contribution' => $this->getBaseContribution( $gateway_txn_id ),
+				),
+			);
 
-          // Invalid language suffix for invalid short lang.
-          'invalid short language' => array(
-            array(
-              'currency' => 'USD',
-              'date' => '2012-05-01 00:00:00',
-              'email' => 'nobody@wikimedia.org',
-              'gateway' => 'test_gateway',
-              'gateway_txn_id' => $gateway_txn_id,
-              'gross' => '1.23',
-              'payment_method' => 'cc',
-              'language' => 'zz_ZZ',
-              'name_prefix' => $new_prefix,
-              'name_suffix' => 'Sr.',
-              'prefix' => $new_prefix,
-              'suffix' => 'Sr.',
-            ),
-            array(
-              'contact' => array(
-                'preferred_language' => 'zz',
-                'prefix' => $new_prefix,
-                'suffix' => 'Sr.',
-              ),
-              'contribution' => $this->getBaseContribution($gateway_txn_id),
-            ),
-          ),
+		$gateway_txn_id = mt_rand();
+		$cases[] =
+			// Invalid language suffix for invalid short lang.
+			array(
+				array(
+					'currency' => 'USD',
+					'date' => '2012-05-01 00:00:00',
+					'email' => 'nobody@wikimedia.org',
+					'gateway' => 'test_gateway',
+					'gateway_txn_id' => $gateway_txn_id,
+					'gross' => '1.23',
+					'payment_method' => 'cc',
+					'language' => 'zz_ZZ',
+					'name_prefix' => $new_prefix,
+					'name_suffix' => 'Sr.',
+					'prefix' => $new_prefix,
+					'suffix' => 'Sr.',
+				),
+				array(
+					'contact' => array(
+						'preferred_language' => 'zz',
+						'prefix' => $new_prefix,
+						'suffix' => 'Sr.',
+					),
+					'contribution' => $this->getBaseContribution( $gateway_txn_id ),
+				),
+			);
 
-          // Organization contribution
-            array(
-                array(
-                    'contact_type' => 'Organization',
-                    'currency' => 'USD',
-                    'date' => '2012-03-01 00:00:00',
-                    'gateway' => 'test_gateway',
-                    'gateway_txn_id' => $gateway_txn_id,
-                    'gross' => '1.23',
-                    'organization_name' => 'Hedgeco',
-                    'org_contact_name' => 'Testname',
-                    'org_contact_title' => 'Testtitle',
-                    'payment_method' => 'cc',
-                ),
-                array(
-                    'contribution' => array(
-                        'address_id' => '',
-                        'amount_level' => '',
-                        'campaign_id' => '',
-                        'cancel_date' => '',
-                        'cancel_reason' => '',
-                        'check_number' => '',
-                        'contribution_page_id' => '',
-                        'contribution_recur_id' => '',
-                        'contribution_status_id' => '1',
-                        'contribution_type_id' => $contribution_type_cash,
-                        'currency' => 'USD',
-                        'fee_amount' => '0',
-                        'invoice_id' => '',
-                        'is_pay_later' => '',
-                        'is_test' => '',
-                        'net_amount' => '1.23',
-                        'non_deductible_amount' => '',
-                        'payment_instrument_id' => $payment_instrument_cc,
-                        'receipt_date' => '',
-                        'receive_date' => '20120301000000',
-                        'source' => 'USD 1.23',
-                        'thankyou_date' => '',
-                        'total_amount' => '1.23',
-                        'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
-                        'financial_type_id' => $contribution_type_cash,
-                        'creditnote_id' => '',
-                        'tax_amount' => '',
-                    ),
-                    'contact_custom_values' => array(
-                        'Name' => 'Testname',
-                        'Title' => 'Testtitle',
-                    ),
-                ),
-            ),
+		$gateway_txn_id = mt_rand();
+		$cases[] =
+			// Organization contribution
+			array(
+				array(
+					'contact_type' => 'Organization',
+					'currency' => 'USD',
+					'date' => '2012-03-01 00:00:00',
+					'gateway' => 'test_gateway',
+					'gateway_txn_id' => $gateway_txn_id,
+					'gross' => '1.23',
+					'organization_name' => 'Hedgeco',
+					'org_contact_name' => 'Testname',
+					'org_contact_title' => 'Testtitle',
+					'payment_method' => 'cc',
+				),
+				array(
+					'contribution' => array(
+						'address_id' => '',
+						'amount_level' => '',
+						'campaign_id' => '',
+						'cancel_date' => '',
+						'cancel_reason' => '',
+						'check_number' => '',
+						'contribution_page_id' => '',
+						'contribution_recur_id' => '',
+						'contribution_status_id' => '1',
+						'contribution_type_id' => $contribution_type_cash,
+						'currency' => 'USD',
+						'fee_amount' => '0',
+						'invoice_id' => '',
+						'is_pay_later' => '',
+						'is_test' => '',
+						'net_amount' => '1.23',
+						'non_deductible_amount' => '',
+						'payment_instrument_id' => $payment_instrument_cc,
+						'receipt_date' => '',
+						'receive_date' => '20120301000000',
+						'source' => 'USD 1.23',
+						'thankyou_date' => '',
+						'total_amount' => '1.23',
+						'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+						'financial_type_id' => $contribution_type_cash,
+						'creditnote_id' => '',
+						'tax_amount' => '',
+					),
+					'contact_custom_values' => array(
+						'Name' => 'Testname',
+						'Title' => 'Testtitle',
+					),
+				),
+			);
 
-            // Subscription payment
-            array(
-                array(
-                    'contact_id' => self::$fixtures->contact_id,
-                    'contribution_recur_id' => self::$fixtures->contribution_recur_id,
-                    'currency' => 'USD',
-                    'date' => '2014-01-01 00:00:00',
-                    'effort_id' => 2,
-                    'email' => 'nobody@wikimedia.org',
-                    'gateway' => 'test_gateway',
-                    'gateway_txn_id' => $gateway_txn_id,
-                    'gross' => self::$fixtures->recur_amount,
-                    'payment_method' => 'cc',
-                ),
-                array(
-                    'contribution' => array(
-                        'address_id' => '',
-                        'amount_level' => '',
-                        'campaign_id' => '',
-                        'cancel_date' => '',
-                        'cancel_reason' => '',
-                        'check_number' => '',
-                        'contact_id' => strval( self::$fixtures->contact_id ),
-                        'contribution_page_id' => '',
-                        'contribution_recur_id' => strval( self::$fixtures->contribution_recur_id ),
-                        'contribution_status_id' => '1',
-                        'contribution_type_id' => $contribution_type_cash,
-                        'currency' => 'USD',
-                        'fee_amount' => '0',
-                        'invoice_id' => '',
-                        'is_pay_later' => '',
-                        'is_test' => '',
-                        'net_amount' => self::$fixtures->recur_amount,
-                        'non_deductible_amount' => '',
-                        'payment_instrument_id' => $payment_instrument_cc,
-                        'receipt_date' => '',
-                        'receive_date' => '20140101000000',
-                        'source' => 'USD ' . self::$fixtures->recur_amount,
-                        'thankyou_date' => '',
-                        'total_amount' => self::$fixtures->recur_amount,
-                        'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
-                        'financial_type_id' => $contribution_type_cash,
-                        'creditnote_id' => '',
-                        'tax_amount' => '',
-                    ),
-                ),
-            ),
-          // Strip duff characters
-          array(
-            array_merge($this->getMinimalImportData($gateway_txn_id),
-              array(
-                'first_name' => 'Baa   baa black sheep',
-              )),
-            array(
-              'contact' => array(
-                'first_name' => 'Baa baa black sheep',
-              ),
-              'contribution' => $this->getBaseContribution($gateway_txn_id),
-            ),
-          ),
-          'white_space_cleanup' => array(
-            array_merge($this->getMinimalImportData($gateway_txn_id),
-              array(
-                // The multiple spaces & trailing ideographic space should go.
-                // Internally I have set it to reduce multiple ideographic space to only one.
-                // However, I've had second thoughts about my earlier update change to
-                // convert them as they are formatted differently & the issue was not the
-                // existance of them but the strings of several of them in a row.
-                'first_name' => 'Baa   baa' .  html_entity_decode("&#x3000;") . html_entity_decode("&#x3000;") . 'black sheep' .html_entity_decode("&#x3000;"),
-                'middle_name' => '  Have &nbsp; you any wool',
-                'last_name' => ' Yes sir yes sir ' . html_entity_decode('&nbsp;') . ' three bags full',
-              )),
-            array(
-              'contact' => array(
-                'first_name' => 'Baa baa' .  html_entity_decode("&#x3000;") . 'black sheep',
-                'middle_name' => 'Have you any wool',
-                'last_name' => 'Yes sir yes sir three bags full',
-                'display_name' => 'Baa baa' .  html_entity_decode("&#x3000;") . 'black sheep Yes sir yes sir three bags full',
-              ),
-              'contribution' => $this->getBaseContribution($gateway_txn_id),
-            ),
-          ),
-          'ampersands' => array(
-            array_merge($this->getMinimalImportData($gateway_txn_id),
-              array(
-                // The multiple spaces & trailing ideographic space should go.
-                // Internally I have set it to reduce multiple ideographic space to only one.
-                // However, I've had second thoughts about my earlier update change to
-                // convert them as they are formatted differently & the issue was not the
-                // existance of them but the strings of several of them in a row.
-                'first_name' => 'Jack &amp; Jill',
-                'middle_name' => 'Jack &Amp; Jill',
-                'last_name' => 'Jack & Jill',
-              )),
-            array(
-              'contact' => array(
-                'first_name' => 'Jack & Jill',
-                'middle_name' => 'Jack & Jill',
-                'last_name' => 'Jack & Jill',
-                'display_name' => 'Jack & Jill Jack & Jill',
-              ),
-              'contribution' => $this->getBaseContribution($gateway_txn_id),
-            ),
-          ),
+		$gateway_txn_id = mt_rand();
+		$cases[] =
+			// Subscription payment
+			array(
+				array(
+					'contact_id' => self::$fixtures->contact_id,
+					'contribution_recur_id' => self::$fixtures->contribution_recur_id,
+					'currency' => 'USD',
+					'date' => '2014-01-01 00:00:00',
+					'effort_id' => 2,
+					'email' => 'nobody@wikimedia.org',
+					'gateway' => 'test_gateway',
+					'gateway_txn_id' => $gateway_txn_id,
+					'gross' => self::$fixtures->recur_amount,
+					'payment_method' => 'cc',
+				),
+				array(
+					'contribution' => array(
+						'address_id' => '',
+						'amount_level' => '',
+						'campaign_id' => '',
+						'cancel_date' => '',
+						'cancel_reason' => '',
+						'check_number' => '',
+						'contact_id' => strval( self::$fixtures->contact_id ),
+						'contribution_page_id' => '',
+						'contribution_recur_id' => strval( self::$fixtures->contribution_recur_id ),
+						'contribution_status_id' => '1',
+						'contribution_type_id' => $contribution_type_cash,
+						'currency' => 'USD',
+						'fee_amount' => '0',
+						'invoice_id' => '',
+						'is_pay_later' => '',
+						'is_test' => '',
+						'net_amount' => self::$fixtures->recur_amount,
+						'non_deductible_amount' => '',
+						'payment_instrument_id' => $payment_instrument_cc,
+						'receipt_date' => '',
+						'receive_date' => '20140101000000',
+						'source' => 'USD ' . self::$fixtures->recur_amount,
+						'thankyou_date' => '',
+						'total_amount' => self::$fixtures->recur_amount,
+						'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+						'financial_type_id' => $contribution_type_cash,
+						'creditnote_id' => '',
+						'tax_amount' => '',
+					),
+				),
+			);
 
-          // US address import is geocoded
-            array(
-                array(
-                    'city' => 'Somerville',
-                    'country' => 'US',
-                    'currency' => 'USD',
-                    'date' => '2012-05-01 00:00:00',
-                    'email' => 'nobody@wikimedia.org',
-                    'gateway' => 'test_gateway',
-                    'gateway_txn_id' => $gateway_txn_id,
-                    'gross' => '1.23',
-                    'payment_method' => 'cc',
-                    'postal_code' => '02144',
-                    'state_province' => 'MA',
-                    'street_address' => '1 Davis Square',
-                ),
-                array(
-                    'contribution' => $this->getBaseContribution( $gateway_txn_id ),
-                    'address' => array(
-                        'city' => 'Somerville',
-                        'postal_code' => '02144',
-                        'street_address' => '1 Davis Square',
-                        'geo_code_1' => '42.399546',
-                        'geo_code_2' => '-71.12165',
-                        'timezone' => 'UTC-5',
-                    )
-                ),
-            ),
-        );
-    }
+		$gateway_txn_id = mt_rand();
+		$cases[] =
+			// Country-only address
+			array(
+				array_merge(
+					$this->getMinimalImportData( $gateway_txn_id ),
+					array(
+						'country' => 'FR',
+					)
+				),
+				array(
+					'contribution' => $this->getBaseContribution( $gateway_txn_id ),
+					'address' => array(
+						'country_id' => wmf_civicrm_get_country_id( 'FR' ),
+					)
+				),
+			);
+
+		$gateway_txn_id = mt_rand();
+		$cases[] =
+			// Strip duff characters
+			array(
+				array_merge(
+					$this->getMinimalImportData( $gateway_txn_id ),
+					array(
+						'first_name' => 'Baa   baa black sheep',
+					)
+				),
+				array(
+					'contact' => array(
+						'first_name' => 'Baa baa black sheep',
+					),
+					'contribution' => $this->getBaseContribution( $gateway_txn_id ),
+				),
+			);
+
+		$gateway_txn_id = mt_rand();
+		$cases[] = // white_space_cleanup
+			array(
+				array_merge(
+					$this->getMinimalImportData( $gateway_txn_id ),
+					array(
+						// The multiple spaces & trailing ideographic space should go.
+						// Internally I have set it to reduce multiple ideographic space to only one.
+						// However, I've had second thoughts about my earlier update change to
+						// convert them as they are formatted differently & the issue was not the
+						// existance of them but the strings of several of them in a row.
+						'first_name' => 'Baa   baa' . html_entity_decode( "&#x3000;" ) . html_entity_decode(
+								"&#x3000;"
+							) . 'black sheep' . html_entity_decode( "&#x3000;" ),
+						'middle_name' => '  Have &nbsp; you any wool',
+						'last_name' => ' Yes sir yes sir ' . html_entity_decode( '&nbsp;' ) . ' three bags full',
+					)
+				),
+				array(
+					'contact' => array(
+						'first_name' => 'Baa baa' . html_entity_decode( "&#x3000;" ) . 'black sheep',
+						'middle_name' => 'Have you any wool',
+						'last_name' => 'Yes sir yes sir three bags full',
+						'display_name' => 'Baa baa' . html_entity_decode(
+								"&#x3000;"
+							) . 'black sheep Yes sir yes sir three bags full',
+					),
+					'contribution' => $this->getBaseContribution( $gateway_txn_id ),
+				),
+			);
+		$cases[] = // 'ampersands'
+			array(
+				array_merge(
+					$this->getMinimalImportData( $gateway_txn_id ),
+					array(
+						// The multiple spaces & trailing ideographic space should go.
+						// Internally I have set it to reduce multiple ideographic space to only one.
+						// However, I've had second thoughts about my earlier update change to
+						// convert them as they are formatted differently & the issue was not the
+						// existance of them but the strings of several of them in a row.
+						'first_name' => 'Jack &amp; Jill',
+						'middle_name' => 'Jack &Amp; Jill',
+						'last_name' => 'Jack & Jill',
+					)
+				),
+				array(
+					'contact' => array(
+						'first_name' => 'Jack & Jill',
+						'middle_name' => 'Jack & Jill',
+						'last_name' => 'Jack & Jill',
+						'display_name' => 'Jack & Jill Jack & Jill',
+					),
+					'contribution' => $this->getBaseContribution( $gateway_txn_id ),
+				),
+			);
+		$cases[] =
+			// US address import is geocoded
+			array(
+				array(
+					'city' => 'Somerville',
+					'country' => 'US',
+					'currency' => 'USD',
+					'date' => '2012-05-01 00:00:00',
+					'email' => 'nobody@wikimedia.org',
+					'gateway' => 'test_gateway',
+					'gateway_txn_id' => $gateway_txn_id,
+					'gross' => '1.23',
+					'payment_method' => 'cc',
+					'postal_code' => '02144',
+					'state_province' => 'MA',
+					'street_address' => '1 Davis Square',
+				),
+				array(
+					'contribution' => $this->getBaseContribution( $gateway_txn_id ),
+					'address' => array(
+						'country_id' => wmf_civicrm_get_country_id( 'US' ),
+						'state_province_id' => wmf_civicrm_get_state_id(
+							wmf_civicrm_get_country_id( 'US' ),
+							'MA'
+						),
+						'city' => 'Somerville',
+						'postal_code' => '02144',
+						'street_address' => '1 Davis Square',
+						'geo_code_1' => '42.399546',
+						'geo_code_2' => '-71.12165',
+						'timezone' => 'UTC-5',
+					)
+				),
+			);
+		return $cases;
+	}
 
     public function testImportContactGroups() {
         $fixtures = CiviFixtures::create();
