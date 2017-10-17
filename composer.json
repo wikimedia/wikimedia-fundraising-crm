@@ -48,6 +48,9 @@
         "jakub-onderka/php-console-highlighter": "~0.3.2",
         "wikimedia/testing-access-wrapper": "~1.0"
     },
+    "replace": {
+        "symfony/polyfill-php54": "*"
+    },
     "scripts": {
       "test": [
         "parallel-lint -e php,module,install,inc --exclude vendor --exclude sites/default/civicrm/extensions/org.wikimedia.omnimail/vendor.",
