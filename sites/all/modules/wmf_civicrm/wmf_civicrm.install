@@ -3132,3 +3132,43 @@ function wmf_civicrm_update_7545() {
   require_once('update_7545.php');
   _wmf_civicrm_cleanup_groups();
 }
+
+/**
+ * Add country-only addresses omitted because of T178316
+ *
+ * Contributions imported between 2017-10-12 19:47 and
+ * 2017-10-16 23:39 were affected. IDs were gleaned from
+ * donation queue consumer logs.
+ */
+function wmf_civicrm_update_7550() {
+  civicrm_initialize();
+  $query = 'SELECT cc.id, cc.contact_id
+    FROM civicrm_contribution cc
+    LEFT JOIN civicrm_address a on cc.contact_id = a.contact_id
+    WHERE a.id IS NULL
+    AND cc.id BETWEEN 25045410 AND 25147673';
+  $dao = CRM_Core_DAO::executeQuery($query);
+  while ($dao->fetch()) {
+    $trackingCountry = db_select('contribution_tracking', 'ct')
+      ->fields('ct', array('country'))
+      ->condition('contribution_id', $dao->id)
+      ->execute()
+      ->fetchField();
+    if (!$trackingCountry) {
+      continue;
+    }
+    $countryId = wmf_civicrm_get_country_id($trackingCountry);
+    if (!$countryId) {
+      continue;
+    }
+    civicrm_api3(
+      'Address',
+      'create',
+      array(
+        'contact_id' => $dao->contact_id,
+        'country_id' => $countryId,
+        'location_type_id' => 1,
+      )
+    );
+  }
+}
