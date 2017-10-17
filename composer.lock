@@ -2103,7 +2103,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "ead1218664346e75adc7c8aff949db56c3b8944e"
+                "reference": "3db9a7a4df1d3b0d86ff8c23ef3ae7da8d853b4d"
             },
             "require": {
                 "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
@@ -2145,7 +2145,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2017-10-15 20:39:37"
+            "time": "2017-09-15T15:16:19+00:00"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
