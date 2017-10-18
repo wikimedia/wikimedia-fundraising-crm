@@ -69,7 +69,7 @@ class OmnigroupmemberGetTest extends OmnimailBaseTestClass implements EndToEndIn
     );
     copy(__DIR__ . '/Responses/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv', sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
     fopen(sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv.complete', 'c');
-    $this->createSetting('omnimail_omnigroupmembers_load', array('Silverpop' => array('last_timestamp' => '1487890800')));
+    $this->createSetting(array('job' => 'omnimail_omnigroupmembers_load', 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800'));
 
     $client = $this->getMockRequest($responses);
     return $client;

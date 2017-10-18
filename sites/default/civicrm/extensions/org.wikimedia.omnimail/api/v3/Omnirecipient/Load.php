@@ -44,7 +44,7 @@ function civicrm_api3_omnirecipient_load($params) {
     $insertBatchSize = CRM_Utils_Array::value('insert_batch_size', $params, 1);
     $valueStrings = array();
     $progressSettings = array(
-      'last_timestamp' => $jobSettings['last_timestamp'],
+      'last_timestamp' => CRM_Utils_Array::value('last_timestamp', $jobSettings),
       'retrieval_parameters' => $omnimail->getRetrievalParameters(),
       'progress_end_date' => $omnimail->endTimeStamp,
     );
