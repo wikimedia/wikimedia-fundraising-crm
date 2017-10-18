@@ -222,7 +222,20 @@ function wmf_civicrm_contribution_message_import( &$msg ) {
             throw new WmfException( 'INVALID_MESSAGE', 'Recurring donation, but no subscription ID found.' );
         }
     }
-
+    if ($msg['contact_id'] && isset($msg['contact_hash'])) {
+      // This message came from the donations front-end. We need to verify
+      // the hash before using the existing contact.
+      $existing = civicrm_api3('Contact', 'getSingle', array(
+        'id' => $msg['contact_id'],
+        'return' => 'hash'
+      ));
+      // If the contact doesn't exist, or the hash doesn't match, make it
+      // look like it's a new-donor message.
+      if (!$existing || $existing['hash'] !== $msg['contact_hash']) {
+        $msg['contact_id'] = null;
+        unset($msg['contact_hash']);
+      }
+    }
     if ( !$msg['contact_id'] ) {
       wmf_civicrm_message_create_contact($msg);
     }
