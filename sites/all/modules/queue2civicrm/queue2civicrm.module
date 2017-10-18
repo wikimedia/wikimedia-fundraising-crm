@@ -161,7 +161,7 @@ function queue2civicrm_batch_process() {
 
   if ($processed > 0) {
     watchdog('queue2civicrm', 'Successfully processed ' . $processed . ' contribution(s).');
-    watchdog('queue2civicrm', 'Average message age: ' . $ageMetrics['overall'] . ' seconds.');
+    watchdog('queue2civicrm', 'Average message age: ' . $ageMetrics['overall_message_age'] . ' seconds.');
   }
   else {
     watchdog('queue2civicrm', 'No contributions processed.');
