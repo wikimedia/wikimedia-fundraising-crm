@@ -76,42 +76,19 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
   /**
    * Create a CiviCRM setting with some extra debugging if it fails.
    *
-   * @param array $value
+   * @param array $values
    */
-  protected function createSetting($value) {
-    $keysToUnset = array(
-      'mailing_provider',
-      'job',
-      'job_identifier',
-    );
+  protected function createSetting($values) {
+    foreach (array('last_timestamp', 'progress_end_timestamp') as $dateField) {
+      if (!empty($values[$dateField])) {
+        $values[$dateField] = date('YmdHis', $values[$dateField]);
+      }
+    }
     try {
-      // This sequence for merging in the suffix version is temporary to assist refactoring.
-      // Otherwise it became too big & busy to read all the 'real' changes.
-      $result = civicrm_api3('Setting', 'get', array('return' => $value['job']));
-      if (isset($result ['values'][CRM_Core_Config::domainID()][$value['job']])) {
-        $existingSettings = $result['values'][CRM_Core_Config::domainID()][$value['job']];
-      }
-      else {
-        $existingSettings = array();
-      }
-      $key = $value['mailing_provider'] . (isset($value['job_identifier']) ? $value['job_identifier'] : '');
-
-      foreach (array_keys($existingSettings) as $existingKey) {
-        if ($existingKey === $key) {
-          unset($existingSettings[$existingKey]);
-        }
-      }
-
-      civicrm_api3('Setting', 'create', array(
-        'debug' => 1,
-        $value['job'] => array_merge($existingSettings, array(
-        $key  => array_diff_key(
-          $value, array_fill_keys($keysToUnset, 1)
-      )))));
+      civicrm_api3('OmnimailJobProgress', 'create', $values);
     }
     catch (CiviCRM_API3_Exception $e) {
-      $settings = \Civi\Core\SettingsMetadata::getMetadata();
-      $this->fail(print_r(array_keys($settings), 1), $e->getMessage() . $e->getTraceAsString() . print_r($e->getExtraParams(), TRUE));
+      $this->fail(print_r($values, 1), $e->getMessage() . $e->getTraceAsString() . print_r($e->getExtraParams(), TRUE));
     }
   }
 }

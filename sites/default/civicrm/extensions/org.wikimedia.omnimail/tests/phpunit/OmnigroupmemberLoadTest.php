@@ -98,12 +98,12 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
 
     $this->assertEquals(array(
       'last_timestamp' => '1487890800',
-      'progress_end_date' => '1488495600',
       'offset' => 2,
       'retrieval_parameters' => array(
         'jobId' => '101719657',
         'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
       ),
+      'progress_end_timestamp' => '1488495600',
     ), $this->getJobSettings());
 
   }
@@ -137,7 +137,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
         'jobId' => '101719657',
         'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
       ),
-      'progress_end_date' => '1488495600',
+      'progress_end_timestamp' => '1488495600',
       'offset' => 0,
     ), $this->getJobSettings());
     $this->cleanupGroup($group);
@@ -181,7 +181,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
         'jobId' => '101719657',
         'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
       ),
-      'progress_end_date' => '1488495600',
+      'progress_end_timestamp' => '1488495600',
       'offset' => 0,
     ), $this->getJobSettings(array('mail_provider' => 'Silverpop', 'job_suffix' => '_woot')));
     $this->cleanupGroup($group);
@@ -191,7 +191,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
    * After completing an incomplete download the end date should be the progress end date.
    */
   public function testCompleteIncomplete() {
-    $client = $this->setupSuccessfulDownloadClient();
+    $client = $this->setupSuccessfulDownloadClient(FALSE);
     $group = civicrm_api3('Group', 'create', array('name' => 'Omnimailers3', 'title' => 'Omni3'));
     $this->createSetting(array(
       'job' => 'omnimail_omnigroupmembers_load',
@@ -201,7 +201,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
         'jobId' => '101719657',
         'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
       ),
-      'progress_end_date' => '1488150000',
+      'progress_end_timestamp' => '1488150000',
     ));
 
     civicrm_api3('Omnigroupmember', 'load', array(
@@ -253,7 +253,9 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
    */
   public function getJobSettings($params = array('mail_provider' => 'Silverpop')) {
     $omnimail = new CRM_Omnimail_Omnigroupmembers($params);
-    return $omnimail->getJobSettings();
+    $result = $omnimail->getJobSettings();
+    unset($result['id'], $result['mailing_provider'], $result['job'], $result['job_identifier']);
+    return $result;
   }
 
   /**

@@ -63,7 +63,7 @@ class CRM_Omnimail_Omnimail {
    * @throws \API_Exception
    */
   public function __construct($params) {
-    $this->job_suffix = !empty($params['job_suffix']) ? $params['job_suffix'] : '';
+    $this->job_suffix = !empty($params['job_suffix']) ? $params['job_suffix'] : NULL;
     $this->mail_provider = $params['mail_provider'];
     $this->settings = CRM_Omnimail_Helper::getSettings();
     $this->setJobSettings($params);
@@ -163,10 +163,35 @@ class CRM_Omnimail_Omnimail {
   }
 
   /**
-   * @param $params
+   * Setter for job settings.
+   *
+   * @param array $params
+   *   Api input parameters.
    */
   protected function setJobSettings($params) {
-    $this->jobSettings = CRM_Utils_Array::value($params['mail_provider'] . $this->job_suffix, $this->settings['omnimail_' . $this->job . '_load'], array());
+    $this->jobSettings = array(
+      'mailing_provider' => $params['mail_provider'],
+      'job' => 'omnimail_' . $this->job . '_load',
+      'job_identifier' => $this->job_suffix ? : NULL,
+    );
+    $savedSettings = civicrm_api3('OmnimailJobProgress', 'get', $this->jobSettings);
+
+    if ($savedSettings['count']) {
+      foreach ($savedSettings['values'] as $savedSetting) {
+        // filter for job_identifier since NULL will not have been respected.
+        if (CRM_Utils_Array::value('job_identifier', $savedSetting) === $this->job_suffix) {
+          foreach (array('last_timestamp', 'progress_end_timestamp') as $dateField) {
+            if (isset($savedSetting[$dateField])) {
+              $savedSetting[$dateField] = strtotime($savedSetting[$dateField]);
+            }
+          }
+          if (isset($savedSetting['retrieval_parameters'])) {
+            $savedSetting['retrieval_parameters'] = json_decode($savedSetting['retrieval_parameters'], TRUE);
+          }
+          $this->jobSettings = $savedSetting;
+        }
+      }
+    }
   }
 
   /**
@@ -175,12 +200,13 @@ class CRM_Omnimail_Omnimail {
    * @param array $setting
    */
   function saveJobSetting($setting) {
-    $key = 'omnimail_' . $this->job . '_load';
-    civicrm_api3('Setting', 'create', array(
-      $key => array_merge($this->settings[$key], array(
-        $this->mail_provider . $this->job_suffix => $setting,
-      ))
-    ));
+    $this->jobSettings = $setting = array_merge($this->jobSettings, $setting);
+    foreach (array('last_timestamp', 'progress_end_timestamp') as $dateField) {
+      if (isset($setting[$dateField]) && $setting[$dateField] !== 'null') {
+        $setting[$dateField] = date('Y-m-d H:i:s', $setting[$dateField]);
+      }
+    }
+    civicrm_api3('OmnimailJobProgress', 'create', $setting);
   }
 
 }

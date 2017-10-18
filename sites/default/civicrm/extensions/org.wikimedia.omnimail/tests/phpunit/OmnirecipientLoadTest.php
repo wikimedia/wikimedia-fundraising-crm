@@ -163,7 +163,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
 
     $this->assertEquals(array(
       'last_timestamp' => '1487890800',
-      'progress_end_date' => '1488495600',
+      'progress_end_timestamp' => '1488495600',
       'offset' => 3,
       'retrieval_parameters' => array(
         'jobId' => '101569750',
@@ -198,7 +198,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
       'jobId' => '101569750',
       'filePath' => 'Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.zip',
       ),
-      'progress_end_date' => '1488495600',
+      'progress_end_timestamp' => '1488495600',
     ), $this->getJobSettings());
   }
 
@@ -215,7 +215,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
         'jobId' => '101569750',
         'filePath' => 'Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.zip',
       ),
-      'progress_end_date' => '1488495600',
+      'progress_end_timestamp' => '1488495600',
     ));
 
     civicrm_api3('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $client));
@@ -301,6 +301,8 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
    */
   public function getJobSettings($params = array('mail_provider' => 'Silverpop')) {
     $omnimail = new CRM_Omnimail_Omnirecipients($params);
-    return $omnimail->getJobSettings();
+    $result = $omnimail->getJobSettings();
+    unset($result['id'], $result['mailing_provider'], $result['job'], $result['job_identifier']);
+    return $result;
   }
 }
