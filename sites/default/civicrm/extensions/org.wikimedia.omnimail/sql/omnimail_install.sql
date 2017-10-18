@@ -14,3 +14,15 @@ CREATE TABLE IF NOT EXISTS `civicrm_mailing_provider_data` (
    KEY `event_type` (`event_type`),
    KEY `recipient_action_datetime` (`recipient_action_datetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE civicrm_omnimail_job_progress (
+ `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+ `mailing_provider` VARCHAR(32) NOT NULL,
+ `job` VARCHAR(32) NULL,
+ `job_identifier` VARCHAR(32) NULL,
+ `last_timestamp` timestamp NULL,
+ `progress_end_timestamp` timestamp NULL,
+ `retrieval_parameters` VARCHAR(255) NULL,
+ `offset` INT(10) unsigned,
+   PRIMARY KEY (`id`)
+) ENGINE=InnoDB CHARSET=utf8 COLLATE=utf8_unicode_ci;
