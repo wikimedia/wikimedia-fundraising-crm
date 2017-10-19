@@ -41,9 +41,7 @@ function civicrm_repair_blank_addresses_drush_help($section) {
 function drush_civicrm_repair_blank_addresses_civicrm_repair_address() {
   module_invoke('civicrm', 'initialize');
 
-  // This threshold stuff is a bit cheaty since I'm leveraging another drush file function.
-  // OTOH this should be a temporary script & maybe no-one will spot it....
-  require_once 'civicrm_merge.drush.inc';
+  require_once 'drush_threshholds.php';
   $threshold = (int) drush_get_option('threshold');
   if ($threshold) {
     $thresholdNumberOfMinutes = (int) drush_get_option('threshold_period', 5);
