@@ -4044,7 +4044,7 @@ function wmf_civicrm_civicrm_permission_check($permission, &$granted) {
    *
    * @param array $mainAddress
    * @param array $comparisonAddress
-   *   If $mainAddress is WORSE than comparisonAddress we return TRUE.
+   *   If $mainAddress is BETTER than comparisonAddress we return TRUE.
    *
    * @return bool
    */

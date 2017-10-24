@@ -3172,3 +3172,60 @@ function wmf_civicrm_update_7550() {
     );
   }
 }
+
+/**
+ * Fix contacts with two primary addresses
+ */
+function wmf_civicrm_update_7560() {
+  civicrm_initialize();
+  $query = 'SELECT contact_id
+    FROM civicrm_address
+    WHERE is_primary=1
+    AND contact_id IS NOT NULL
+    GROUP BY contact_id
+    HAVING COUNT(*) > 1';
+  $contactIds = CRM_Core_DAO::executeQuery($query);
+  while ($contactIds->fetch()) {
+  	$addresses = civicrm_api3(
+      'Address',
+      'get',
+      array(
+        'contact_id' => $contactIds->contact_id,
+        'is_primary' => 1
+      )
+    );
+    $bestAddress = null;
+    $addressesToDelete = array();
+    $addressesToDemote = array();
+    foreach ($addresses['values'] as $address) {
+      if ($bestAddress === null) {
+        $bestAddress = $address;
+      } else {
+        if (_wmf_civicrm_is_this_address_better($address, $bestAddress)) {
+          // previous best address is a subset of current address
+          $addressesToDelete[] = $bestAddress;
+          $bestAddress = $address;
+        } elseif(_wmf_civicrm_is_this_address_better($bestAddress, $address)) {
+          // current address is a subset of previous best address
+          $addressesToDelete[] = $address;
+        } elseif($address['id'] > $bestAddress['id']) {
+          // neither is a subset, current is newer than previous best
+          $addressesToDemote[] = $bestAddress;
+          $bestAddress = $address;
+        } else {
+          // neither is a subset, previous best is newer
+          $addressesToDemote[] = $address;
+        }
+      }
+    }
+    foreach ($addressesToDelete as $deleteMe) {
+      civicrm_api3('Address', 'delete', array('id' => $deleteMe['id']));
+    }
+    foreach ($addressesToDemote as $demoteMe) {
+      $dao = _civicrm_api3_load_DAO('Address');
+      $dao->id = $demoteMe['id'];
+      $dao->is_primary = 0;
+      $dao->update();
+    }
+  }
+}
