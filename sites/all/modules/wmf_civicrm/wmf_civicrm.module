@@ -3054,35 +3054,29 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
 
         foreach ($lowerPriorityLocationBlocks[$blockType] as $index => $lowerPriorityLocationBlock) {
           if (_wmf_civicrm_is_this_address_better($lowerPriorityLocationBlock, $block)) {
-            // The address on the 'main' contact is better than on the more recent one.
-            if ($contactIDToBeKeptIsMostRecentDonor) {
-              // engage in some mickey mouse to keep this better address.
-              // By default the calculation will be to bring the address across from the other donor.
-              // We want to make sure the non-useful address is also deleted & the primary field
-              // is set on the one being brought across (appropriately).
-              $blocksDAO[$blockType]['delete'][$block['id']] = _civicrm_api3_load_DAO($blockType);
-              $blocksDAO[$blockType]['delete'][$block['id']]->id = $block['id'];
-              if ($lowerPriorityLocationBlock['is_primary'] || (empty($primaryAddressCandidates) && $blocksDAO[$blockType]['delete'][$block['id']]->is_primary)) {
+            // engage in some mickey mouse to keep this better address.
+            // By default the calculation will be to bring the address across from the other donor.
+            // We want to make sure the non-useful address is also deleted & the primary field
+            // is set on the one being brought across (appropriately).
+            $blocksDAO[$blockType]['delete'][$block['id']] = _civicrm_api3_load_DAO($blockType);
+            $blocksDAO[$blockType]['delete'][$block['id']]->id = $block['id'];
+            if ($lowerPriorityLocationBlock['is_primary'] || (empty($primaryAddressCandidates) && $blocksDAO[$blockType]['delete'][$block['id']]->is_primary)) {
+              if (isset($blocksDAO[$blockType]['update'][$lowerPriorityLocationBlock['id']])) {
                 $blocksDAO[$blockType]['update'][$lowerPriorityLocationBlock['id']]->is_primary = 1;
-                if (!empty($primaryAddressCandidates)) {
-                  foreach ($primaryAddressCandidates as $primaryAddressCandidate) {
-                    // We are here because you lost sucker - demotion.
-                    // In actual fact we 'think' that the primary would always be processed first &
-                    // so this would not be hit.
-                    if (isset($blocksDAO[$blockType]['update'][$primaryAddressCandidate])) {
-                      $blocksDAO[$blockType]['update'][$primaryAddressCandidate]['is_primary'] = 0;
-                    }
+              }
+              if (!empty($primaryAddressCandidates)) {
+                foreach ($primaryAddressCandidates as $primaryAddressCandidate) {
+                  // We are here because you lost sucker - demotion.
+                  // In actual fact we 'think' that the primary would always be processed first &
+                  // so this would not be hit.
+                  if (isset($blocksDAO[$blockType]['update'][$primaryAddressCandidate])) {
+                    $blocksDAO[$blockType]['update'][$primaryAddressCandidate]['is_primary'] = 0;
                   }
                 }
-                $primaryAddressCandidates[] = $lowerPriorityLocationBlock['id'];
               }
-              unset($lowerPriorityLocationBlocks[$blockType][$index]);
+              $primaryAddressCandidates[] = $lowerPriorityLocationBlock['id'];
             }
-            else {
-              // Leave Civi to process this address.
-              // Unset it from our array for consideration & skip further processing.
-              unset($lowerPriorityLocationBlocks[$blockType][$index]);
-            }
+            unset($lowerPriorityLocationBlocks[$blockType][$index]);
           }
           elseif (_wmf_civicrm_is_delete_location_in_favour_of_higher_priority_one(
             $blocks, $block, $lowerPriorityLocationBlock)

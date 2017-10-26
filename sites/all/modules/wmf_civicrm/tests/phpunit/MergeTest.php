@@ -3,6 +3,7 @@
 /**
  * @group Pipeline
  * @group WmfCivicrm
+ * @group Merge
  */
 class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
 
@@ -549,12 +550,14 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'location_type_id' => 1,
+      'is_primary' => 1,
     ));
     $this->callAPISuccess('Address', 'create', array(
       'country_id' => 'MX',
       'contact_id' => $this->contactID2,
       'street_address' => 'First on the left after you cross the border',
       'location_type_id' => 1,
+      'is_primary' => 1,
     ));
     $this->callAPISuccess('Address', 'create', array(
       'country_id' => 'MX',
@@ -571,6 +574,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
     $address = $this->callAPISuccessGetSingle('Address', array('street_address' => 'A different address'));
     $this->assertEquals($contact['id'], $address['contact_id']);
+    $numPrimaries = civicrm_api3('Address', 'getcount', array('contact_id' => $contact['id'], 'is_primary' => 1));
+    $this->assertEquals(1, $numPrimaries);
   }
 
   /**
@@ -587,12 +592,14 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'location_type_id' => 1,
+      'is_primary' => 1,
     ));
     $this->callAPISuccess('Address', 'create', array(
       'country_id' => 'MX',
       'contact_id' => $this->contactID2,
       'street_address' => 'First on the left after you cross the border',
       'location_type_id' => 1,
+      'is_primary' => 1,
     ));
     $this->callAPISuccess('Address', 'create', array(
       'country_id' => 'MX',
@@ -610,6 +617,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
     $address = $this->callAPISuccessGetSingle('Address', array('street_address' => 'A different address'));
     $this->assertEquals($contact['id'], $address['contact_id']);
+    $numPrimaries = civicrm_api3('Address', 'getcount', array('contact_id' => $contact['id'], 'is_primary' => 1));
+    $this->assertEquals(1, $numPrimaries);
   }
 
   /**
@@ -624,12 +633,14 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'country_id' => 'MX',
       'contact_id' => $this->contactID2,
       'location_type_id' => 1,
+      'is_primary' => 1,
     ));
     $this->callAPISuccess('Address', 'create', array(
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'street_address' => 'First on the left after you cross the border',
       'location_type_id' => 1,
+      'is_primary' => 1,
     ));
     $this->callAPISuccess('Address', 'create', array(
       'country_id' => 'MX',
@@ -646,6 +657,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
     $address = $this->callAPISuccessGetSingle('Address', array('street_address' => 'A different address'));
     $this->assertEquals($contact['id'], $address['contact_id']);
+    $numPrimaries = civicrm_api3('Address', 'getcount', array('contact_id' => $contact['id'], 'is_primary' => 1));
+    $this->assertEquals(1, $numPrimaries);
   }
 
   /**
@@ -660,12 +673,14 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'country_id' => 'MX',
       'contact_id' => $this->contactID2,
       'location_type_id' => 1,
+      'is_primary' => 1,
     ));
     $this->callAPISuccess('Address', 'create', array(
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'street_address' => 'First on the left after you cross the border',
       'location_type_id' => 1,
+      'is_primary' => 1,
     ));
     $this->callAPISuccess('Address', 'create', array(
       'country_id' => 'MX',
@@ -682,6 +697,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
     $address = $this->callAPISuccessGetSingle('Address', array('street_address' => 'A different address'));
     $this->assertEquals($contact['id'], $address['contact_id']);
+    $numPrimaries = civicrm_api3('Address', 'getcount', array('contact_id' => $contact['id'], 'is_primary' => 1));
+    $this->assertEquals(1, $numPrimaries);
   }
 
   /**
