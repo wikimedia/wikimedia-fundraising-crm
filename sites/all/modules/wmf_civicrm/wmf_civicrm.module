@@ -3994,18 +3994,6 @@ function wmf_civicrm_civicrm_validateForm($formName, &$fields, &$files, &$form, 
   }
 }
 
-function wmf_civicrm_civicrm_dupeQuery($ruleGroup, $queryType, &$queries) {
-  $message = "Dedupe queries generated.  Query type $queryType.  ";
-  if ( $ruleGroup instanceof CRM_Dedupe_DAO_RuleGroup ) {
-    $message .= "Rule group: {$ruleGroup->name}.  ";
-  }
-  $message .= 'Queries : ' . print_r( $queries, true ) . '.  ';
-  $message .= 'Stack trace: ' . CRM_Core_Error::formatBacktrace( debug_backtrace() );
-
-  watchdog( 'wmf_civicrm', $message, array(), WATCHDOG_INFO );
-  return TRUE;
-}
-
 /**
  * Abuse the permissions hook to prevent de-duping without a limit
  *
