@@ -53,19 +53,50 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
   public function disable() {
     CRM_Core_DAO::executeQuery('UPDATE foo SET is_active = 0 WHERE bar = "whiz"');
   }
+   */
 
   /**
-   * Example: Run a couple simple queries.
+   * Convert setting tracking to table.
    *
    * @return TRUE on success
    * @throws Exception
-   *
-  public function upgrade_4200() {
-    $this->ctx->log->info('Applying update 4200');
-    CRM_Core_DAO::executeQuery('UPDATE foo SET bar = "whiz"');
-    CRM_Core_DAO::executeQuery('DELETE FROM bang WHERE willy = wonka(2)');
+   */
+  public function upgrade_1000() {
+    $this->ctx->log->info('Applying update 1000');
+    CRM_Core_DAO::executeQuery('
+      CREATE TABLE civicrm_omnimail_job_progress (
+       `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+       `mailing_provider` VARCHAR(32) NOT NULL,
+       `job` VARCHAR(32) NULL,
+       `job_identifier` VARCHAR(32) NULL,
+       `last_timestamp` timestamp NULL,
+       `progress_end_timestamp` timestamp NULL,
+       `retrieval_parameters` VARCHAR(255) NULL,
+       `offset` INT(10) unsigned,
+         PRIMARY KEY (`id`)
+      ) ENGINE=InnoDB CHARSET=utf8 COLLATE=utf8_unicode_ci');
+
+    foreach (array('omnimail_omnigroupmembers_load', 'omnimail_omnirecipient_load') as $job) {
+      $settings = civicrm_api3('Setting', 'get', array('return' => $job));
+      foreach ($settings['values'][CRM_Core_Config::domainId()][$job] as $mailingProvider => $setting) {
+        $mailingProviderParts = explode('_', $mailingProvider);
+        $jobIdentifier = isset($mailingProviderParts[1]) ? "'" . $mailingProviderParts[1] . "'" : 'NULL';
+        $progressEndTimestamp = isset($setting['progress_end_date']) ? 'FROM_UNIXTIME(' . $setting['progress_end_date'] . ')' : 'NULL';
+        $retrievalParameters = isset($setting['retrieval_parameters']) ? "'" . json_encode($setting['retrieval_parameters']) . "'" : 'NULL';
+        $offset = isset($setting['offset']) ? $setting['offset'] : 0;
+        CRM_Core_DAO::executeQuery(
+          "INSERT INTO civicrm_omnimail_job_progress
+        (`mailing_provider`, `job`, `job_identifier`, `last_timestamp`, `progress_end_timestamp`, `retrieval_parameters`, `offset`)
+        values ('{$mailingProviderParts[0]}', '{$job}', $jobIdentifier, FROM_UNIXTIME( {$setting['last_timestamp']} ), $progressEndTimestamp, $retrievalParameters, $offset)
+         "
+        );
+      }
+    }
+    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_setting WHERE name IN ('omnimail_omnigroupmembers_load', 'omnimail_omnirecipient_load')");
+
     return TRUE;
-  } // */
+  }
+   /*
 
 
   /**

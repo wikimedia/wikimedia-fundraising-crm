@@ -44,9 +44,9 @@ function civicrm_api3_omnirecipient_load($params) {
     $insertBatchSize = CRM_Utils_Array::value('insert_batch_size', $params, 1);
     $valueStrings = array();
     $progressSettings = array(
-      'last_timestamp' => $jobSettings['last_timestamp'],
+      'last_timestamp' => CRM_Utils_Array::value('last_timestamp', $jobSettings),
       'retrieval_parameters' => $omnimail->getRetrievalParameters(),
-      'progress_end_date' => $omnimail->endTimeStamp,
+      'progress_end_timestamp' => $omnimail->endTimeStamp,
     );
 
     foreach ($recipients as $recipient) {
@@ -86,14 +86,19 @@ function civicrm_api3_omnirecipient_load($params) {
       }
     }
     _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $omnimail, $progressSettings, $omnimail->getOffset() + $count);
-    $omnimail->saveJobSetting(array('last_timestamp' => $omnimail->endTimeStamp));
+    $omnimail->saveJobSetting(array(
+      'last_timestamp' => $omnimail->endTimeStamp,
+      'progress_end_timestamp' => 'null',
+      'offset' => 'null',
+      'retrieval_parameters' => 'null',
+    ));
     return civicrm_api3_create_success(1);
   }
   catch (CRM_Omnimail_IncompleteDownloadException $e) {
     $omnimail->saveJobSetting(array(
       'last_timestamp' => $omnimail->getStartTimestamp($params),
       'retrieval_parameters' => $e->getRetrievalParameters(),
-      'progress_end_date' => $e->getEndTimestamp(),
+      'progress_end_timestamp' => $e->getEndTimestamp(),
     ));
     return civicrm_api3_create_success(1);
   }

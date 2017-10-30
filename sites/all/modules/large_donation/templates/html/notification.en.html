@@ -2,16 +2,12 @@
 
 <p>A large donation was made (over {{ threshold }} USD):</p>
 
-<p>contact_id: {{ contribution.contact_id }}</p>
-
-<p>contribution_id: {{ contribution.id }}</p>
-
 <p>converted amount: {{ contribution.total_amount }} USD</p>
 
 <p>original amount: {{ contribution.source }}</p>
 
-<p>Contact contribution in CiviCRM:</p>
+<p><a href="{{ contact_link|raw }}">View Contributions from Contact in CiviCRM</a></p>
 
-<p><a href="{{ contribution_link|raw }}">{{ contribution_link|raw }}</a></p>
+<p><a href="{{ contribution_link|raw }}">View Contribution in CiviCRM</a></p>
 
 <p>You may need to examine this donation.</p>

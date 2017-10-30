@@ -103,6 +103,11 @@ function omnimail_civicrm_entityTypes(&$entityTypes) {
     'class' => 'CRM_Omnimail_DAO_MailingProviderData',
     'table' => 'civicrm_maiing_provider_data',
   );
+  $entityTypes['CRM_Omnimail_DAO_OmnimailJobProgress'] = array (
+    'name' => 'OmnimailJobProgress',
+    'class' => 'CRM_Omnimail_DAO_OmnimailJobProgress',
+    'table' => 'civicrm_omnimail_job_progress',
+  );
 }
 
 /**

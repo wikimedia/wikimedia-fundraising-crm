@@ -200,7 +200,7 @@ function large_donation_civicrm_post( $action, $type, $id, &$contribution ) {
  * @param stdClass $notification
  */
 function large_donation_notification_send( $contribution, $notification ) {
-    $contribution_link = CRM_Utils_System::url(
+    $contact_link = CRM_Utils_System::url(
         'civicrm/contact/view',
         array(
             'selectedChild' => 'contribute',
@@ -211,11 +211,22 @@ function large_donation_notification_send( $contribution, $notification ) {
         'Contributions'
     );
 
+    $contribution_link = CRM_Utils_System::url(
+        'civicrm/contact/view/contribution',
+        array(
+            'action' => 'view',
+            'id' => $contribution->id,
+            'reset' => 1,
+        ),
+        true
+    );
+
     $to = $notification->addressee;
 
     $params = array(
         'threshold' => floatval( $notification->threshold ),
         'contribution' => $contribution,
+        'contact_link' => $contact_link,
         'contribution_link' => $contribution_link,
     );
 
