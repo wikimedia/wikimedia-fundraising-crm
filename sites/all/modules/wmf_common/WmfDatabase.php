@@ -18,7 +18,6 @@ class WmfDatabase {
     static function transactionalCall( $callback, $params ) {
         watchdog( 'wmf_common', "Beginning DB transaction", NULL, WATCHDOG_INFO );
         $drupal_transaction = db_transaction( 'wmf_default', array( 'target' => 'default' ) );
-        $ct_transaction = db_transaction( 'wmf_donations', array( 'target' => 'donations' ) );
         $crm_transaction = db_transaction( 'wmf_civicrm', array( 'target' => 'civicrm' ) );
         $native_civi_transaction = new CRM_Core_Transaction();
 
@@ -38,7 +37,6 @@ class WmfDatabase {
             watchdog( 'wmf_common', "Aborting DB transaction.", NULL, WATCHDOG_INFO );
             $native_civi_transaction->rollback();
             $crm_transaction->rollback();
-            $ct_transaction->rollback();
             $drupal_transaction->rollback();
 
             throw $ex;
@@ -47,7 +45,6 @@ class WmfDatabase {
         watchdog( 'wmf_common', "Committing DB transaction", NULL, WATCHDOG_INFO );
         $native_civi_transaction->commit();
         unset( $crm_transaction );
-        unset( $ct_transaction );
         unset( $drupal_transaction );
         return $result;
     }

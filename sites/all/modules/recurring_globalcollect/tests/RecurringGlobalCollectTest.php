@@ -193,7 +193,7 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 		$id_list = implode( ',', $this->contributions );
 
 		$dbs = wmf_civicrm_get_dbs();
-		$dbs->push( 'donations' );
+		$dbs->push( 'default' );
 		$query = "DELETE FROM {contribution_tracking} WHERE contribution_id IN( $id_list )";
 		db_query( $query );
 		$contribution_tracking_id = recurring_get_contribution_tracking_id( array(

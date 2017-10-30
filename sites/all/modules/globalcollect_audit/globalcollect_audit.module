@@ -789,7 +789,7 @@ function globalcollect_audit_make_payment_method_info( $wr1 ){
 
 function globalcollect_audit_get_contribution_tracking_data( $contribution_tracking_id ){ 
 	$dbs = wmf_civicrm_get_dbs();
-	$dbs->push( 'donations' );
+	$dbs->push( 'default' );
 
 	$query = "SELECT * FROM contribution_tracking WHERE id = :id";
 	$result = db_query( $query, array( ':id' => $contribution_tracking_id ) );

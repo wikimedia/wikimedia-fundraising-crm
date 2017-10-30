@@ -14,7 +14,7 @@
 function wmf_civicrm_insert_contribution_tracking( $values ) {
     // make sure we're using the default (drupal) db
     $dbs = wmf_civicrm_get_dbs();
-    $dbs->push( 'donations' );
+    $dbs->push( 'default' );
 
     $contribution_tracking_id = db_insert( 'contribution_tracking' )->fields( $values )->execute();
     watchdog( 'wmf_civicrm', "Created new contribution_tracking entry %id", array( '%id' => $contribution_tracking_id ), WATCHDOG_INFO );
@@ -30,7 +30,7 @@ function wmf_civicrm_insert_contribution_tracking( $values ) {
  */
 function wmf_civicrm_message_update_contribution_tracking( $msg, $contribution ) {
     $dbs = wmf_civicrm_get_dbs();
-    $dbs->push( 'donations' );
+    $dbs->push( 'default' );
 
     if (array_key_exists( 'contribution_tracking_id', $msg )) {
         $result = db_update( 'contribution_tracking' )->fields( array(
