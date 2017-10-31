@@ -27,6 +27,11 @@ class CRM_Omnimail_Omnimail {
   public $endTimeStamp;
 
   /**
+   * @var string
+   */
+  public $startTimeStamp;
+
+  /**
    * @var int
    */
   protected $offset;
@@ -99,13 +104,18 @@ class CRM_Omnimail_Omnimail {
    * @return string
    */
   public function getStartTimestamp($params) {
-    if (isset($params['start_date'])) {
-      return strtotime($params['start_date']);
+    if (!$this->startTimeStamp) {
+      if (isset($params['start_date'])) {
+        $this->startTimeStamp = strtotime($params['start_date']);
+      }
+      if (!empty($this->jobSettings['last_timestamp'])) {
+        $this->startTimeStamp = $this->jobSettings['last_timestamp'];
+      }
+      else {
+        $this->startTimeStamp = strtotime('450 days ago');
+      }
     }
-    if (!empty($this->jobSettings['last_timestamp'])) {
-      return $this->jobSettings['last_timestamp'];
-    }
-    return strtotime('450 days ago');
+    return $this->startTimeStamp;
   }
 
   /**
