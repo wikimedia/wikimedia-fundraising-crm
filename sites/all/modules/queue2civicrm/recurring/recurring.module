@@ -151,7 +151,7 @@ function recurring_get_contribution_tracking_id( $msg ) {
       if ( count( $contrib_ids )) { // if we've got any related contributions
         // see if a record already exists
         $dbs = wmf_civicrm_get_dbs();
-        $dbs->push( 'donations' );
+        $dbs->push( 'default' );
         $id_list = implode( ",", $contrib_ids );
         $query = "SELECT id FROM {contribution_tracking} WHERE contribution_id IN ( {$id_list} )";
         // we can use this related contribution tracking id

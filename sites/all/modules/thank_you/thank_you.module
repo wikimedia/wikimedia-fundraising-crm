@@ -849,12 +849,22 @@ EOT;
 		$metrics["${gateway}_thank_you_emails"] = $count;
 	}
 	$metrics['total_thank_you_emails'] = $counter->get_count_total();
-	metrics_reporting_report_metrics( 'thank_you_emails_sent', $metrics );
+	module_invoke(
+		'metrics_reporting',
+		'report_metrics',
+		'thank_you_emails_sent',
+		$metrics
+	);
 	$ageMetrics = array();
 	foreach ( $counter->get_average_ages() as $gateway => $age ) {
 		$ageMetrics["${gateway}_thank_you_donation_age"] = $age;
 	}
-	metrics_reporting_report_metrics( 'thank_you_donation_age', $ageMetrics );
+	module_invoke(
+		'metrics_reporting',
+		'report_metrics',
+		'thank_you_donation_age',
+		$ageMetrics
+	);
 	watchdog(
 		"thank_you",
 		"Sent {$metrics['total_thank_you_emails']} thank you emails.",
