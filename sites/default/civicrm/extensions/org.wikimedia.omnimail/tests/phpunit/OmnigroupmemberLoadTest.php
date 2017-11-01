@@ -97,14 +97,14 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
     $this->cleanupGroup($group);
 
     $this->assertEquals(array(
-      'last_timestamp' => '1487890800',
+      'last_timestamp' => '2017-02-23 23:00:00',
       'offset' => 2,
       'retrieval_parameters' => array(
         'jobId' => '101719657',
         'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
       ),
-      'progress_end_timestamp' => '1488495600',
-    ), $this->getJobSettings());
+      'progress_end_timestamp' => '2017-03-02 23:00:00',
+    ), $this->getUtcDateFormattedJobSettings());
 
   }
 
@@ -132,14 +132,14 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
     $this->assertEquals(0, $groupMembers['count']);
 
     $this->assertEquals(array(
-      'last_timestamp' => '1487890800',
+      'last_timestamp' => '2017-02-23 23:00:00',
       'retrieval_parameters' => array(
         'jobId' => '101719657',
         'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
       ),
-      'progress_end_timestamp' => '1488495600',
+      'progress_end_timestamp' => '2017-03-02 23:00:00',
       'offset' => 0,
-    ), $this->getJobSettings());
+    ), $this->getUtcDateFormattedJobSettings());
     $this->cleanupGroup($group);
   }
 
@@ -176,14 +176,14 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
     $this->assertEquals(0, $groupMembers['count']);
 
     $this->assertEquals(array(
-      'last_timestamp' => '1487890800',
+      'last_timestamp' => '2017-02-23 23:00:00',
       'retrieval_parameters' => array(
         'jobId' => '101719657',
         'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
       ),
-      'progress_end_timestamp' => '1488495600',
+      'progress_end_timestamp' => '2017-03-02 23:00:00',
       'offset' => 0,
-    ), $this->getJobSettings(array('mail_provider' => 'Silverpop', 'job_identifier' => '_woot')));
+    ), $this->getUtcDateFormattedJobSettings(array('mail_provider' => 'Silverpop', 'job_identifier' => '_woot')));
     $this->cleanupGroup($group);
   }
 
@@ -218,8 +218,8 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
     $this->assertEquals(3, $groupMembers['count']);
 
     $this->assertEquals(array(
-      'last_timestamp' => '1488495600',
-    ), $this->getJobSettings(array('mail_provider' => 'Silverpop')));
+      'last_timestamp' => '2017-03-02 23:00:00',
+    ), $this->getUtcDateFormattedJobSettings(array('mail_provider' => 'Silverpop')));
     $this->cleanupGroup($group);
   }
 
