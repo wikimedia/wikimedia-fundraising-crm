@@ -27,6 +27,11 @@ class CRM_Omnimail_Omnimail {
   public $endTimeStamp;
 
   /**
+   * @var string
+   */
+  public $startTimeStamp;
+
+  /**
    * @var int
    */
   protected $offset;
@@ -49,7 +54,7 @@ class CRM_Omnimail_Omnimail {
   /**
    * @var string
    */
-  protected $job_suffix;
+  protected $job_identifier;
 
   /**
    * @var string
@@ -63,7 +68,7 @@ class CRM_Omnimail_Omnimail {
    * @throws \API_Exception
    */
   public function __construct($params) {
-    $this->job_suffix = !empty($params['job_suffix']) ? $params['job_suffix'] : NULL;
+    $this->job_identifier = !empty($params['job_identifier']) ? $params['job_identifier'] : NULL;
     $this->mail_provider = $params['mail_provider'];
     $this->settings = CRM_Omnimail_Helper::getSettings();
     $this->setJobSettings($params);
@@ -99,13 +104,18 @@ class CRM_Omnimail_Omnimail {
    * @return string
    */
   public function getStartTimestamp($params) {
-    if (isset($params['start_date'])) {
-      return strtotime($params['start_date']);
+    if (!$this->startTimeStamp) {
+      if (isset($params['start_date'])) {
+        $this->startTimeStamp = strtotime($params['start_date']);
+      }
+      if (!empty($this->jobSettings['last_timestamp'])) {
+        $this->startTimeStamp = $this->jobSettings['last_timestamp'];
+      }
+      else {
+        $this->startTimeStamp = strtotime('450 days ago');
+      }
     }
-    if (!empty($this->jobSettings['last_timestamp'])) {
-      return $this->jobSettings['last_timestamp'];
-    }
-    return strtotime('450 days ago');
+    return $this->startTimeStamp;
   }
 
   /**
@@ -172,14 +182,14 @@ class CRM_Omnimail_Omnimail {
     $this->jobSettings = array(
       'mailing_provider' => $params['mail_provider'],
       'job' => 'omnimail_' . $this->job . '_load',
-      'job_identifier' => $this->job_suffix ? : NULL,
+      'job_identifier' => $this->job_identifier ? : NULL,
     );
     $savedSettings = civicrm_api3('OmnimailJobProgress', 'get', $this->jobSettings);
 
     if ($savedSettings['count']) {
       foreach ($savedSettings['values'] as $savedSetting) {
         // filter for job_identifier since NULL will not have been respected.
-        if (CRM_Utils_Array::value('job_identifier', $savedSetting) === $this->job_suffix) {
+        if (CRM_Utils_Array::value('job_identifier', $savedSetting) === $this->job_identifier) {
           foreach (array('last_timestamp', 'progress_end_timestamp') as $dateField) {
             if (isset($savedSetting[$dateField])) {
               $savedSetting[$dateField] = strtotime($savedSetting[$dateField]);

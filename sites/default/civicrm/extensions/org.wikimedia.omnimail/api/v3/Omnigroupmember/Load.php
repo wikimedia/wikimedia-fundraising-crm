@@ -227,9 +227,9 @@ function _civicrm_api3_omnigroupmember_load_spec(&$params) {
     'type' => CRM_Utils_Type::T_INT,
     'api.default' => 60,
   );
-  $params['job_suffix'] = array(
-    'title' => ts('A suffix string to add to job-specific settings.'),
-    'description' => ts('The suffix allows for multiple settings to be stored for one job. For example if wishing to run an up-top-date job and a catch-up job'),
+  $params['job_identifier'] = array(
+    'title' => ts('An identifier string to add to job-specific settings.'),
+    'description' => ts('The identifier allows for multiple settings to be stored for one job. For example if wishing to run an up-top-date job and a catch-up job'),
     'type' => CRM_Utils_Type::T_STRING,
     'api.default' => '',
   );

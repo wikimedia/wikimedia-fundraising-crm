@@ -25,6 +25,7 @@ use GuzzleHttp\Psr7\Response;
 class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndToEndInterface, TransactionalInterface {
 
   public function setUp() {
+    civicrm_initialize();
     parent::setUp();
     $null = NULL;
     Civi::service('settings_manager')->flush();

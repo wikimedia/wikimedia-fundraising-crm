@@ -169,7 +169,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
       'client' => $this->getMockRequest($responses),
       'group_identifier' => 123,
       'group_id' => $group['id'],
-      'job_suffix' => '_woot',
+      'job_identifier' => '_woot',
       ));
 
     $groupMembers = civicrm_api3('GroupContact', 'get', array('group_id' => $group['id']));
@@ -183,7 +183,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
       ),
       'progress_end_timestamp' => '1488495600',
       'offset' => 0,
-    ), $this->getJobSettings(array('mail_provider' => 'Silverpop', 'job_suffix' => '_woot')));
+    ), $this->getJobSettings(array('mail_provider' => 'Silverpop', 'job_identifier' => '_woot')));
     $this->cleanupGroup($group);
   }
 

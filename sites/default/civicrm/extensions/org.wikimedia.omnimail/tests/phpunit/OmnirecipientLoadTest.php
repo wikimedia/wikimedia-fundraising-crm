@@ -248,11 +248,11 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
     ));
     $settings = $this->getJobSettings(array('mail_provider' => 'Silverpop'));
 
-    civicrm_api3('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $client, 'job_suffix' => '_woot'));
+    civicrm_api3('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $client, 'job_identifier' => '_woot'));
     $this->assertEquals(4, CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_mailing_provider_data'));
     $this->assertEquals(array(
       'last_timestamp' => '1488495600',
-    ), $this->getJobSettings(array('mail_provider' => 'Silverpop', 'job_suffix' => '_woot')));
+    ), $this->getJobSettings(array('mail_provider' => 'Silverpop', 'job_identifier' => '_woot')));
 
     $this->assertEquals($settings, $this->getJobSettings(array('mail_provider' => 'Silverpop')));
   }
