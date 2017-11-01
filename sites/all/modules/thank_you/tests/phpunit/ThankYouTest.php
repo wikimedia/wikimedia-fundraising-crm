@@ -106,8 +106,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 			"{$this->message['first_name']} {$this->message['last_name']}",
 			$sent['to_name']
 		);
-		$expectedBounce = 'bounce-' .
-			str_replace( '@', '=', $this->message['email'] ) .
+		$expectedBounce = "ty.{$this->contact_id}.{$this->contribution_id}" .
 			'@donate.wikimedia.org';
 		$this->assertEquals( $expectedBounce, $sent['reply_to'] );
 		$this->assertRegExp( '/\$ 1.23/', $sent['html'] );
