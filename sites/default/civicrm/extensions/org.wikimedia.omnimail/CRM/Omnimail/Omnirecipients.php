@@ -13,7 +13,7 @@ use Omnimail\Omnimail;
 class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
 
   /**
-   * @var 
+   * @var
    */
   protected $request;
 
