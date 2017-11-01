@@ -687,20 +687,27 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
   /**
-   * When we get a contact ID and matching hash, update instead of create new
-   * @group contactHash
+   * When we get a contact ID and matching hash and email, update instead of
+   * creating new contact.
    */
   public function testImportWithContactIdAndHash() {
     $existingContact = civicrm_api3('Contact', 'Create', array(
       'contact_type' => 'Individual',
       'first_name' => 'Test',
-      'last_name' => 'Es' . mt_rand()
+      'last_name' => 'Es' . mt_rand(),
     ));
     $this->contact_id = $existingContact['id'];
     $existingContact = $existingContact['values'][$existingContact['id']];
+    $email = 'booboo' . mt_rand() . '@example.org';
     civicrm_api3('Email', 'Create', array(
       'contact_id' => $this->contact_id,
-      'email' => 'booboo' . mt_rand() . '@example.org',
+      'email' => $email,
+      'location_type_id' => 1,
+    ));
+    civicrm_api3('Address', 'Create', array(
+      'contact_id' => $this->contact_id,
+      'country' => wmf_civicrm_get_country_id('FR'),
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
       'location_type_id' => 1,
     ));
     $msg = array(
@@ -709,7 +716,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'currency' => 'USD',
       'date' => '2017-01-01 00:00:00',
       'invoice_id' => mt_rand(),
-      'email' => 'newspecialemail@wikimedia.org',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'email' => $email,
       'gateway' => 'test_gateway',
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.25',
@@ -717,15 +726,14 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     );
     $contribution = wmf_civicrm_contribution_message_import($msg);
     $this->assertEquals($existingContact['id'], $contribution['contact_id']);
-    $email = $this->callAPISuccessGetSingle(
-      'Email', array('contact_id' => $existingContact['id'], 'location_type' => 1)
+    $address = $this->callAPISuccessGetSingle(
+      'Address', array('contact_id' => $existingContact['id'], 'location_type' => 1)
     );
-    $this->assertEquals($msg['email'], $email['email']);
+    $this->assertEquals($msg['street_address'], $address['street_address']);
   }
 
   /**
    * If we get a contact ID and a bad hash, leave the existing contact alone
-   * @group contactHash
    */
   public function testImportWithContactIdAndBadHash() {
     $existingContact = civicrm_api3('Contact', 'Create', array(
@@ -733,11 +741,18 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'first_name' => 'Test',
       'last_name' => 'Es' . mt_rand()
     ));
+    $email = 'booboo' . mt_rand() . '@example.org';
     $this->contact_id = $existingContact['id'];
     $existingContact = $existingContact['values'][$existingContact['id']];
     civicrm_api3('Email', 'Create', array(
       'contact_id' => $this->contact_id,
-      'email' => 'booboo' . mt_rand() . '@example.org',
+      'email' => $email,
+      'location_type_id' => 1,
+    ));
+    civicrm_api3('Address', 'Create', array(
+      'contact_id' => $this->contact_id,
+      'country' => wmf_civicrm_get_country_id('FR'),
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
       'location_type_id' => 1,
     ));
     $msg = array(
@@ -747,7 +762,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'currency' => 'USD',
       'date' => '2017-01-01 00:00:00',
       'invoice_id' => mt_rand(),
-      'email' => 'newspecialemail@wikimedia.org',
+      'email' => $email,
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
       'gateway' => 'test_gateway',
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.25',
@@ -755,10 +772,56 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     );
     $contribution = wmf_civicrm_contribution_message_import($msg);
     $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
-    $email = $this->callAPISuccessGetSingle(
-      'Email', array('contact_id' => $existingContact['id'], 'location_type' => 1)
+    $address = $this->callAPISuccessGetSingle(
+      'Address', array('contact_id' => $existingContact['id'], 'location_type' => 1)
     );
-    $this->assertNotEquals($msg['email'], $email['email']);
+    $this->assertNotEquals($msg['street_address'], $address['street_address']);
+  }
+
+  /**
+   * If we get a contact ID and a bad email, leave the existing contact alone
+   */
+  public function testImportWithContactIdAndBadEmail() {
+    $existingContact = civicrm_api3('Contact', 'Create', array(
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Es' . mt_rand()
+    ));
+    $email = 'booboo' . mt_rand() . '@example.org';
+    $this->contact_id = $existingContact['id'];
+    $existingContact = $existingContact['values'][$existingContact['id']];
+    civicrm_api3('Email', 'Create', array(
+      'contact_id' => $this->contact_id,
+      'email' => $email,
+      'location_type_id' => 1,
+    ));
+    civicrm_api3('Address', 'Create', array(
+      'contact_id' => $this->contact_id,
+      'country' => wmf_civicrm_get_country_id('FR'),
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
+      'location_type_id' => 1,
+    ));
+    $msg = array(
+      'contact_id' => $existingContact['id'],
+      'first_name' => 'Lex',
+      'contact_hash' => $existingContact['hash'],
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'totally.different@example.com',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+    );
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
+    $address = $this->callAPISuccessGetSingle(
+      'Address', array('contact_id' => $existingContact['id'], 'location_type' => 1)
+    );
+    $this->assertNotEquals($msg['street_address'], $address['street_address']);
   }
 
   /**
