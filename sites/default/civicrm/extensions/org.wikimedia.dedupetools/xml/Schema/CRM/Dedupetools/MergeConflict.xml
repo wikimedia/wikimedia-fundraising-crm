@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Dedupetools</base>
+  <class>MergeConflict</class>
+  <name>civicrm_mergeconflict</name>
+  <comment>Table for tracking and viewing merge conflicts.</comment>
+  <add>1.0</add>
+  <log>false</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique MergeConflict ID</comment>
+    <add>4.4</add>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>contact_1</name>
+    <type>int unsigned</type>
+    <comment>FK to Contact</comment>
+    <add>1.0</add>
+  </field>
+  <field>
+    <name>contact_2</name>
+    <type>int unsigned</type>
+    <comment>FK to Contact</comment>
+    <add>1.0</add>
+  </field>
+  <field>
+    <name>group_id</name>
+    <type>int unsigned</type>
+    <comment>FK to Group</comment>
+    <add>1.0</add>
+  </field>
+  <field>
+    <name>conflicted_field</name>
+    <type>varchar</type>
+    <add>1.0</add>
+  </field>
+  <field>
+    <name>value_1</name>
+    <type>varchar</type>
+    <add>1.0</add>
+  </field>
+  <field>
+    <name>value_2</name>
+    <type>varchar</type>
+    <add>1.0</add>
+  </field>
+  <field>
+    <name>analysis</name>
+    <type>varchar</type>
+    <add>1.0</add>
+  </field>
+</table>
