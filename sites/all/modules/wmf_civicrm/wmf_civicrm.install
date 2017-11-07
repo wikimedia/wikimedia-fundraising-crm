@@ -3129,6 +3129,9 @@ function wmf_civicrm_update_7540() {
  * T174407.
  */
 function wmf_civicrm_update_7545() {
+  // This has now run on live & may not run on people's locals so
+  // hack it down now.
+  return;
   require_once('update_7545.php');
   _wmf_civicrm_cleanup_groups();
 }
@@ -3229,6 +3232,7 @@ function wmf_civicrm_update_7560() {
     }
   }
 }
+
 /*
  * Update Contact Deleted by Merge activies
  */
@@ -3253,3 +3257,76 @@ function wmf_civicrm_update_7565() {
       }
     }
  }
+
+/**
+ * Tidy up our dedupe rules.
+ */
+function wmf_civicrm_update_7570() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_dedupe_rule_group SET name = 'IndividualSupervised' WHERE name = 'Kaldari Rule-9'");
+  // This didn't cascade right in single query so 2 deletes.
+  CRM_Core_DAO::executeQuery("DELETE r FROM civicrm_dedupe_rule_group rg LEFT JOIN civicrm_dedupe_rule r ON r.dedupe_rule_group_id = rg.id WHERE name = 'IndividualSupervised2_14'");
+  CRM_Core_DAO::executeQuery("DELETE FROM civicrm_dedupe_rule_group WHERE name = 'IndividualSupervised2_14'");
+
+  $generalRules = CRM_Core_DAO::singleValueQuery(
+    "SELECT count(*) FROM civicrm_dedupe_rule_group WHERE used = 'General' AND is_reserved = 1 AND contact_type = 'Individual'"
+  );
+  if ($generalRules > 1) {
+    // Otherwise we are probably on someone's dev environment. Goal here is to remove duff data from prod not mess with people (much).
+    CRM_Core_DAO::executeQuery("
+      DELETE r FROM civicrm_dedupe_rule_group rg
+      LEFT JOIN civicrm_dedupe_rule r ON r.dedupe_rule_group_id = rg.id
+      WHERE used = 'General' AND is_reserved = 1 AND contact_type = 'Individual' AND rg.id IN(10,11)
+    ");
+    CRM_Core_DAO::executeQuery("
+      DELETE FROM civicrm_dedupe_rule_group
+      WHERE used = 'General' AND is_reserved = 1 AND contact_type = 'Individual' AND id IN(10,11)
+    ");
+  }
+
+  // Create a new rule group that will catch a broad range of contacts (but should only be
+  // used against a narrow one for performance reasons.
+  // This is to help major gifts pull up a screen of possible matches rather than
+  // trawling for them.
+  //
+  // Struggling to think of a precise name / description so going for something
+  // people should remember. Am tempted to add a 'Go Fish' button to contact dash now.
+  // This rule is set up on staging and can be accessed from a contact record
+  // under the drop down actions. I tried it on a few fairly common names (John Smith)
+  // and there was some lag in those cases but not that bad & certainly better than doing searches.
+  $ruleGroup = civicrm_api3('RuleGroup', 'create', array(
+    'name' => 'fishing_net',
+    'title' => 'Fishing Net',
+    'contact_type' => 'Individual',
+    'used' => 'General',
+    'threshold' => 150,
+  ));
+
+  $queryStart = "INSERT INTO civicrm_dedupe_rule (dedupe_rule_group_id, rule_table, rule_field, rule_weight) VALUES ({$ruleGroup['id']}, ";
+
+  // Only 5 rule-criteria can be configured in the UI but more will work if added.
+  // An email match alone is enough to hit the threshold.
+  CRM_Core_DAO::executeQuery($queryStart . "'civicrm_email', 'email', 150 )");
+
+  // Last name is enough if the street address is the same OR the
+  // first name is the same too and either state or city is the same.
+  // There are some odd street address ones -
+  CRM_Core_DAO::executeQuery($queryStart . "'civicrm_contact', 'last_name', 120 )");
+  CRM_Core_DAO::executeQuery($queryStart . "'civicrm_contact', 'first_name', 25 )");
+  CRM_Core_DAO::executeQuery($queryStart . "'civicrm_address', 'street_address', 30 )");
+  CRM_Core_DAO::executeQuery($queryStart . "'civicrm_address', 'city', 10 )");
+  CRM_Core_DAO::executeQuery($queryStart . "'civicrm_address', 'state_province_id', 5 )");
+}
+
+/**
+ * Enable dedupe tools.
+ *
+ * This extension is intended to be where our custom dedupe code gets transferred to.
+ *
+ * Bug: T177999
+ */
+function wmf_civicrm_update_7575() {
+  civicrm_initialize();
+  civicrm_api3('extension', 'refresh', array());
+  civicrm_api3('extension', 'install',  array('key' => 'org.wikimedia.dedupetools'));
+}
