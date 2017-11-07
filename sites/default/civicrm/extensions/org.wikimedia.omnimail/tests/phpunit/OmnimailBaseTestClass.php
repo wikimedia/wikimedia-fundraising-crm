@@ -82,7 +82,7 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
   protected function createSetting($values) {
     foreach (array('last_timestamp', 'progress_end_timestamp') as $dateField) {
       if (!empty($values[$dateField])) {
-        $values[$dateField] = date('YmdHis', $values[$dateField]);
+        $values[$dateField] = gmdate('YmdHis', $values[$dateField]);
       }
     }
     try {
@@ -92,4 +92,23 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
       $this->fail(print_r($values, 1), $e->getMessage() . $e->getTraceAsString() . print_r($e->getExtraParams(), TRUE));
     }
   }
+
+  /**
+   * Get job settings with dates rendered to UTC string.
+   *
+   * @param array $params
+   *
+   * @return array
+   */
+  public function getUtcDateFormattedJobSettings($params = array('mail_provider' => 'Silverpop')) {
+     $settings = $this->getJobSettings($params);
+     $dateFields = array('last_timestamp', 'progress_end_timestamp');
+     foreach ($dateFields as $dateField) {
+       if (!empty($settings[$dateField])) {
+         $settings[$dateField] = date('Y-m-d H:i:s', $settings[$dateField]);
+       }
+     }
+     return $settings;
+  }
+
 }

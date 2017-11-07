@@ -39,6 +39,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
 
   public function tearDown() {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_mailing_provider_data');
+    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_omnimail_job_progress');
     parent::tearDown();
   }
 
@@ -88,7 +89,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
         'is_civicrm_updated' => '0',
       ),
     ), $providers);
-    $this->assertEquals(array ('last_timestamp' => '1488495600'), $this->getJobSettings());
+    $this->assertEquals(array ('last_timestamp' => '2017-03-02 23:00:00'), $this->getUtcDateFormattedJobSettings());
 
   }
 
@@ -162,14 +163,14 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
     ), $providers);
 
     $this->assertEquals(array(
-      'last_timestamp' => '1487890800',
-      'progress_end_timestamp' => '1488495600',
+      'last_timestamp' => '2017-02-23 23:00:00',
+      'progress_end_timestamp' => '2017-03-02 23:00:00',
       'offset' => 3,
       'retrieval_parameters' => array(
         'jobId' => '101569750',
         'filePath' => 'Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.zip'
       ),
-    ), $this->getJobSettings());
+    ), $this->getUtcDateFormattedJobSettings());
 
   }
 
@@ -193,13 +194,13 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
     $this->assertEquals(0, CRM_Core_DAO::singleValueQuery('SELECT  count(*) FROM civicrm_mailing_provider_data'));
 
     $this->assertEquals(array(
-      'last_timestamp' => '1487890800',
+      'last_timestamp' => '2017-02-23 23:00:00',
       'retrieval_parameters' => array(
       'jobId' => '101569750',
       'filePath' => 'Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.zip',
       ),
-      'progress_end_timestamp' => '1488495600',
-    ), $this->getJobSettings());
+      'progress_end_timestamp' => '2017-03-02 23:00:00',
+    ), $this->getUtcDateFormattedJobSettings());
   }
 
   /**
@@ -221,8 +222,8 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
     civicrm_api3('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $client));
     $this->assertEquals(4, CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_mailing_provider_data'));
     $this->assertEquals(array(
-      'last_timestamp' => '1488495600',
-    ), $this->getJobSettings(array('mail_provider' => 'Silverpop')));
+      'last_timestamp' => '2017-03-02 23:00:00',
+    ), $this->getUtcDateFormattedJobSettings(array('mail_provider' => 'Silverpop')));
   }
 
   /**
@@ -244,15 +245,15 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
         'jobId' => '101569750',
         'filePath' => 'Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.zip',
       ),
-      'progress_end_date' => '1488495600',
+      'progress_end_timestamp' => '1488495600',
     ));
     $settings = $this->getJobSettings(array('mail_provider' => 'Silverpop'));
 
     civicrm_api3('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $client, 'job_identifier' => '_woot'));
     $this->assertEquals(4, CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_mailing_provider_data'));
     $this->assertEquals(array(
-      'last_timestamp' => '1488495600',
-    ), $this->getJobSettings(array('mail_provider' => 'Silverpop', 'job_identifier' => '_woot')));
+      'last_timestamp' => '2017-03-02 23:00:00',
+    ), $this->getUtcDateFormattedJobSettings(array('mail_provider' => 'Silverpop', 'job_identifier' => '_woot')));
 
     $this->assertEquals($settings, $this->getJobSettings(array('mail_provider' => 'Silverpop')));
   }
