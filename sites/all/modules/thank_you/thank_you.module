@@ -144,8 +144,15 @@ function thank_you_send_test_form() {
 	$form['transaction_id'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Transaction ID'),
-		'#description' => t('Some kind of key we would use to find your records, example: "CNTCT-1234"'),
+		'#description' => t('ID to show in the text of the email, for example: "CNTCT-1234"'),
 		'#default_value' => 'TEST-' . mt_rand(),
+	);
+
+	$form['contribution_id'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Contribution ID'),
+		'#description' => t('Actual ID of contribution to be thanked, for example: 12345'),
+		'#default_value' => mt_rand(),
 	);
 
 	$form['recurring'] = array(
@@ -336,7 +343,8 @@ function thank_you_for_contribution( $contribution_id ) {
         'receive_date' => $mailingData['receive_date'],
         'recipient_address' => $mailingData['email'],
         'recurring' => $is_recurring,
-        'transaction_id' => "CNTCT-{$mailingData['contact_id']}",
+        'transaction_id' => "CNTCT-{$mailingData['contact_id']}", // shown in the body of the text
+		'contribution_id' => $contribution_id, // used for the bounce header
         'unsubscribe_link' => build_unsub_link( $contribution_id, $mailingData['email'], $locale ),
         'contribution_tags' => wmf_thank_you_get_tag_names($contribution_id),
     );
@@ -408,6 +416,7 @@ function thank_you_update_ty_date( $contribution ) {
 function thank_you_send_mail( $params ) {
     $require_params = array(
         'amount',
+        'contribution_id',
         'currency',
         'from_name',
         'from_address',
@@ -470,7 +479,7 @@ function thank_you_send_mail( $params ) {
 	if ( $civi_queue_record ) {
 		$email['reply_to'] = $civi_queue_record->getVerp();
 	} else {
-		$email['reply_to'] = 'bounce-' . str_replace( '@', '=', $email['to_address'] ) . '@donate.wikimedia.org';
+		$email['reply_to'] = "ty.{$params['contact_id']}.{$params['contribution_id']}@donate.wikimedia.org";
 	}
 
 	try {
