@@ -6,6 +6,7 @@ dependencies[] = exchange_rates
 dependencies[] = wmf_civicrm
 package = queue2civicrm
 files[] = Queue2civicrmTrxnCounter.php
+files[] = DonationStats.php
 files[] = DonationQueueConsumer.php
 files[] = tests/includes/Message.php
 files[] = tests/includes/TestingSmashPigDbQueueConfiguration.php

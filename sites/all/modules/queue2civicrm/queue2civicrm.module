@@ -9,7 +9,7 @@ require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_com
  */
 function queue2civicrm_menu() {
   $items = array();
-  
+
   $items['admin/config/queue2civicrm'] = array(
     'title' => 'Queue to CiviCRM',
     'access arguments' => array('administer queue2civicrm'),
@@ -102,7 +102,7 @@ function queue2civicrm_settings() {
     '#required' => TRUE,
     '#default_value' => variable_get('queue2civicrm_batch_time', 90),
   );
-  
+
   return system_settings_form($form);
 }
 
@@ -137,7 +137,7 @@ function queue2civicrm_batch_process() {
 
   /**
    * this may some day supersede the process counts handled above...
-   * 
+   *
    * Note that this might be a little whack.  At least, it feels a little sloppy.
    * We might consider specifying the names of gateways to keep track of, rather than auto-generate
    * the gateways to keep track of during queue consumption. With the latter (current) method,
@@ -146,24 +146,17 @@ function queue2civicrm_batch_process() {
    *
    * TODO: metrics stuff should be a hook
    */
-  $counter = Queue2civicrmTrxnCounter::instance();
-  $metrics = array();
-  foreach ( $counter->get_trxn_counts() as $gateway => $count ) {
-    $metrics["${gateway}_donations"] = $count;
-  }
-  $metrics['total_donations'] = $counter->get_count_total();
-  module_invoke( 'metrics_reporting', 'report_metrics', 'queue2civicrm', $metrics );
-  $ageMetrics = array();
-  foreach ( $counter->get_average_ages() as $gateway => $age ) {
-    $ageMetrics["${gateway}_message_age"] = $age;
-  }
-  module_invoke( 'metrics_reporting', 'report_metrics', 'donation_message_age', $ageMetrics );
+
+  $DonationStats = new DonationStats();
+  $DonationStats->export();
 
   if ($processed > 0) {
     watchdog('queue2civicrm', 'Successfully processed ' . $processed . ' contribution(s).');
-    watchdog('queue2civicrm', 'Average message age: ' . $ageMetrics['overall_message_age'] . ' seconds.');
-  }
-  else {
+    watchdog('queue2civicrm',
+      'Average Transaction age: ' . $DonationStats->getOverallAverageGatewayTransactionAge() . ' seconds.');
+    watchdog('queue2civicrm',
+      'Average Message Enqueued age: ' . $DonationStats->getOverallAverageMessageEnqueuedAge() . ' seconds.');
+  } else {
     watchdog('queue2civicrm', 'No contributions processed.');
   }
 }
