@@ -91,7 +91,7 @@ function thank_you_send_test_form() {
 	$form['from_address'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Sender\'s email address'),
-        '#default_value' => 'webmaster@local.localhost',
+        '#default_value' => variable_get( 'thank_you_from_address', 'donate@wikimedia.org' ),
 		'#required' => TRUE,
 	);
 
