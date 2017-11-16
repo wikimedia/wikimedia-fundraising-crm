@@ -1,6 +1,4 @@
 <?php namespace thank_you\generators;
-use wmf_communication\CiviMailingInsertException;
-use wmf_communication\CiviMailStore;
 
 /**
  * Generator template for pulling a translated page from a mediawiki
@@ -40,7 +38,6 @@ class RenderTranslatedPage {
         }
 
 		civicrm_initialize();
-		$civimail_store = new CiviMailStore();
 
 		foreach( $languages as $lang ) {
 			try {
@@ -74,8 +71,6 @@ class RenderTranslatedPage {
 
 				if (file_put_contents( $file, $page_content )) {
 					watchdog( 'make-thank-you', "$lang -- Wrote translation into $file", null, WATCHDOG_INFO );
-					$subject = thank_you_get_subject( $lang );
-					$civimail_store->addMailing( 'thank_you', $template_name, $page_content, $subject, $published_revision );
 				} else {
 					watchdog( 'make-thank-you', "$lang -- Could not open $file for writing!", null, WATCHDOG_ERROR );
 
@@ -85,8 +80,6 @@ class RenderTranslatedPage {
 				}
 			} catch ( TranslationException $ex ) {
 				watchdog( 'make-thank-you', "$lang -- {$ex->getMessage()}", null, WATCHDOG_INFO );
-			} catch ( CiviMailingInsertException $ex ) {
-				watchdog( 'make-thank-you', "Could not insert CiviMail Mailing for $lang -- {$ex->getMessage()}", null, WATCHDOG_ERROR );
 			}
 		}
 	}
