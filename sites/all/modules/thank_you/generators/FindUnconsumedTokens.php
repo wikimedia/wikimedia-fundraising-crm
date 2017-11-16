@@ -57,7 +57,7 @@ class FindUnconsumedTokens {
     // TODO: refactor out of this class
     static function renderLanguage( $lang ) {
         $params = FindUnconsumedTokens::getRandomTemplateParams( $lang );
-        $buf = thank_you_render( $params );
+        list($buf, $subj) = thank_you_render( $params );
         return $buf;
     }
 
