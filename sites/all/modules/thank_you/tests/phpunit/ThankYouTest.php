@@ -110,6 +110,11 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 			'@donate.wikimedia.org';
 		$this->assertEquals( $expectedBounce, $sent['reply_to'] );
 		$this->assertRegExp( '/\$ 1.23/', $sent['html'] );
+		$expectedSubject = file_get_contents(
+		  __DIR__ .
+      "/../../templates/subject/thank_you.{$this->message['language']}.subject"
+    );
+		$this->assertEquals( $expectedSubject, $sent['subject']);
 	}
 
 	public function testSendThankYouAddCiviMailActivity() {

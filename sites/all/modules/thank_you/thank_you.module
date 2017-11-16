@@ -458,14 +458,14 @@ function thank_you_send_mail( $params ) {
 		'locale' => $params['locale'],
 	);
 
-	$email['html'] = thank_you_render( $params );
-
-	if( $email['html'] == false ){
+  list($html, $subject) = thank_you_render($params);
+	if(!$html || !$subject){
 		$msg = "HTML rendering of template failed in {$params['locale']}.";
 		throw new WmfException( 'UNKNOWN', $msg, array('thank_you_params' => $params) );
 	}
 
-	$email['subject'] = thank_you_get_subject( $params['locale'] );
+  $email['html'] = $html;
+	$email['subject'] = $subject;
 
 	$mailer = Mailer::getDefault();
 
@@ -608,13 +608,6 @@ function thank_you_add_civi_queue( $email, $contact_id, $subject, $html ) {
 		);
 	}
 	return $civi_queue_record;
-}
-/**
- * Get the translated email subject
- */
-function thank_you_get_subject( $locale ) {
-	$subj_msg = "donate_interface-email-subject";
-	return Translation::get_translated_message( $subj_msg, $locale );
 }
 
 function thank_you_settings_form() {
@@ -911,7 +904,8 @@ function thank_you_render( $params ) {
 
     $page_content = $template->render( 'html' );
     $page_content = str_replace( '<p></p>', '', $page_content );
-    return $page_content;
+    $subject = $template->render( 'subject' );
+    return array($page_content, $subject);
 }
 
 function build_unsub_link( $contributionId, $emailAddr, $language ) {
