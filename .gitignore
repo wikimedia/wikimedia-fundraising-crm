@@ -1,7 +1,6 @@
 sites/default/*settings.php
 !sites/default/default.settings.php
 sites/default/files
-vendor
 .version-stamp
 sites/default/civicrm/extensions/cache
 sites/default/civicrm/extensions/org.wikimedia.omnimail/vendor
