@@ -46,6 +46,7 @@ function drush_make_thank_you() {
 function get_thank_you_generators() {
     return array(
         'generic' => '\thank_you\generators\ThankYou',
+        'subject' => '\thank_you\generators\ThankYouSubject',
     );
 }
 
