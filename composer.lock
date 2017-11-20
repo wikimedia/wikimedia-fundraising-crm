@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "0f140c0e86e31bb969f61598f711593c",
+    "content-hash": "bd2091c92d660d342e8926ad9516ed03",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -689,16 +689,16 @@
         },
         {
             "name": "jackgleeson/stats-collector",
-            "version": "dev-master",
+            "version": "v1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jackgleeson/stats-collector.git",
-                "reference": "1c792bbeac77d4781fbb788f341b601636696df5"
+                "reference": "bde2aee11f4cb09a3e0c43331c50cffa5d118c19"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jackgleeson/stats-collector/zipball/1c792bbeac77d4781fbb788f341b601636696df5",
-                "reference": "1c792bbeac77d4781fbb788f341b601636696df5",
+                "url": "https://api.github.com/repos/jackgleeson/stats-collector/zipball/bde2aee11f4cb09a3e0c43331c50cffa5d118c19",
+                "reference": "bde2aee11f4cb09a3e0c43331c50cffa5d118c19",
                 "shasum": ""
             },
             "require": {
@@ -710,8 +710,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Statistics\\": "src/",
-                    "Samples\\": "samples/"
+                    "Statistics\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -724,8 +723,8 @@
                     "email": "me@jackgleeson.co.uk"
                 }
             ],
-            "description": "Utility to help record, analyse and export statistics across any PHP process e.g. http request, batch jobs or cli-scrpts",
-            "time": "2017-11-22T13:56:02+00:00"
+            "description": "Lightweight utility to record, combine, retrieve and export statistics and log data across any PHP process",
+            "time": "2017-12-31T17:09:10+00:00"
         },
         {
             "name": "league/csv",
@@ -3776,7 +3775,7 @@
                 "parser",
                 "validator"
             ],
-            "time": "2018-01-03T12:13:57+00:00"
+            "time": "2017-06-18T15:11:04+00:00"
         },
         {
             "name": "webmozart/assert",
@@ -3884,7 +3883,6 @@
     "stability-flags": {
         "amzn/login-and-pay-with-amazon-sdk-php": 20,
         "wikimedia/donation-interface": 20,
-        "jackgleeson/stats-collector": 20,
         "wikimedia/omnimail-silverpop": 20,
         "mrmarkfrench/silverpop-php-connector": 20,
         "omnimail/omnimail": 20

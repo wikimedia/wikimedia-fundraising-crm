@@ -50,6 +50,8 @@ class DonationStats {
    * 7) Gateway specific moving average of (6)
    * 8) Overall moving average of (6)
    *
+   * This method is called within @see DonationQueueConsumer::processMessage()
+   *
    * @param array $message
    * @param array $contribution
    */
@@ -95,6 +97,20 @@ class DonationStats {
 
   /**
    * Export recorded stats to an output format to then be consumed upstream.
+   * Record DonationQueueConsumer total batch processing time.
+   *
+   * Also trigger the call to generate and record average-donations-processed stats.
+   *
+   * @param $batchProcessingTime
+   */
+  public function recordBatchProcessingTime($batchProcessingTime) {
+    $this->statsCollector->add("overall.processing_time", $batchProcessingTime);
+    $this->generateAndRecordAverageDonationsProcessedStats($batchProcessingTime);
+  }
+
+  /**
+   * Export donation stats data to Prometheus out files using the
+   * Statistics\Exporter\Prometheus exporter.
    *
    * Currently we only export to Prometheus.
    */
@@ -182,6 +198,32 @@ class DonationStats {
     );
   }
 
+  /*
+   * Record the average number of donations processed within a per-second time period using
+   * average-donations-processed-per-second as the base and extrapolating upwards to
+   * estimate averages over longer periods.
+   *
+   * This method of blind average scaling will distort the *actual* messages-processed
+   * per-time-window so will not be useful or accurate above short time periods.
+   *
+   * This stat is passed as an associative array so that it is mapped as a Prometheus metric
+   * with labels for each seconds grouping.
+   *
+   * @param $batchProcessingTime
+   */
+  protected function generateAndRecordAverageDonationsProcessedStats($batchProcessingTime) {
+    $totalDonationsProcessed = $this->statsCollector->get("overall.donations");
+
+    $donationsProcessedPerSecond = $totalDonationsProcessed / $batchProcessingTime;
+    $donationProcessingAverages = [
+      'period=1s' => $donationsProcessedPerSecond,
+      'period=5s' => ($donationsProcessedPerSecond * 5),
+      'period=10s' => ($donationsProcessedPerSecond * 10),
+      'period=30s' => ($donationsProcessedPerSecond * 30),
+    ];
+
+    $this->statsCollector->add("average.donations.processed", $donationProcessingAverages);
+  }
 
   /**
    * Export stats data to a Prometheus .prom out file using the

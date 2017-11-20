@@ -133,9 +133,13 @@ function queue2civicrm_batch_process() {
     $batch_time,
     variable_get( 'queue2civicrm_batch', 0 )
   );
+
+  $processingStartTime = microtime(TRUE);
   $processed = $consumer->dequeueMessages();
+  $processingEndTime = microtime(TRUE);
 
   $DonationStats = new DonationStats();
+  $DonationStats->recordBatchProcessingTime($processingEndTime - $processingStartTime);
   $DonationStats->export();
 
 
