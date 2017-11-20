@@ -3330,3 +3330,43 @@ function wmf_civicrm_update_7575() {
   civicrm_api3('extension', 'refresh', array());
   civicrm_api3('extension', 'install',  array('key' => 'org.wikimedia.dedupetools'));
 }
+
+/**
+ * Enable extended report.
+ *
+ * This extension gives us the Address History tab.
+ *
+ * Bug: T142549
+ */
+function wmf_civicrm_update_7580() {
+  civicrm_initialize();
+  civicrm_api3('extension', 'refresh', array());
+  civicrm_api3('extension', 'install',  array('key' => 'nz.co.fuzion.extendedreport'));
+}
+
+/**
+ * Add report for Address History tab.
+ *
+ * Bug: T142549
+ */
+function wmf_civicrm_update_7585() {
+  civicrm_initialize();
+  civicrm_api3('ReportInstance', 'create', array(
+    'title' => ts('Address History'),
+    'report_id' => 'contact/addresshistory',
+    'description' => 'ContactAddress History',
+    'permission' => 'access CiviReport',
+    'form_values' => serialize(array(
+      'fields' => array(
+        'address_display_address' => 1,
+        'log_date' => 1,
+        'address_location_type_id' => 1,
+        'address_is_primary' => 1,
+        'log_conn_id' => 1,
+        'log_user_id' => 1,
+        'log_action' => 1,
+      ),
+      'contact_dashboard_tab' => array('contact_dashboard_tab' => '1'),
+    )),
+  ));
+}
