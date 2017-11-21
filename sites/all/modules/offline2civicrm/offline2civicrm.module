@@ -70,59 +70,59 @@ function offline2civicrm_settings() {
 }
 
 function offline2civicrm_import_checks_form() {
-  $dir = drupal_get_path( 'module', 'offline2civicrm' );
-  drupal_add_js( $dir . '/upload_form.js' );
+  $dir = drupal_get_path('module', 'offline2civicrm');
+  drupal_add_js($dir . '/upload_form.js');
 
   $log_events = ChecksImportLog::recentEvents();
-  $headers = array( 'Time', 'Who', 'Done' );
+  $headers = array('Time', 'Who', 'Done');
   $rows = array();
-  foreach ( $log_events as $event ) {
+  foreach ($log_events as $event) {
     $rows[] = array(
       $event->time,
       $event->who,
       $event->done,
     );
   }
-  $log_html = theme_table( array(
-    'header' => $headers,
-    'rows' => $rows,
-    'empty' => "No events yet.",
-    'attributes' => array(),
-    'caption' => t( 'Latest import events' ),
-    'colgroups' => array(),
-    'sticky' => true,
-  ) ).theme('pager');
+  $log_html = theme_table(array(
+      'header' => $headers,
+      'rows' => $rows,
+      'empty' => "No events yet.",
+      'attributes' => array(),
+      'caption' => t('Latest import events'),
+      'colgroups' => array(),
+      'sticky' => TRUE,
+    )) . theme('pager');
 
   $form['import_upload_file'] = array(
-    '#title' => t( 'Upload checks file' ),
+    '#title' => t('Upload checks file'),
     '#type' => 'file',
   );
   $form['import_upload_submit'] = array(
     '#type' => 'submit',
-    '#value' => t( 'Upload' ),
+    '#value' => t('Upload'),
   );
   $form['import_upload_format'] = array(
-    '#title' => t( 'File format' ),
+    '#title' => t('File format'),
     '#type' => 'radios',
     '#default_value' => 'generic_ind',
     '#options' => array(
-        'benevity' => t('Benevity'),
-        'engage' => t( 'Engage' ),
-        'coinbase' => t( 'Coinbase Merchant Orders' ),
-        'foreign_checks' => t( 'Foreign Checks' ),
-        'generic_ind' => t( 'Generic Individuals' ),
-        'generic_org' => t( 'Generic Organizations' ),
-        'jpmorgan' => t( 'JP Morgan' ),
-        'paypal' => t( 'PayPal EFT' ),
-        'square' => t( 'Square' ),
-        'trilogy' => t( 'Trilogy' ),
+      'benevity' => t('Benevity'),
+      'engage' => t('Engage'),
+      'coinbase' => t('Coinbase Merchant Orders'),
+      'foreign_checks' => t('Foreign Checks'),
+      'generic_ind' => t('Generic Individuals'),
+      'generic_org' => t('Generic Organizations'),
+      'jpmorgan' => t('JP Morgan'),
+      'paypal' => t('PayPal EFT'),
+      'square' => t('Square'),
+      'trilogy' => t('Trilogy'),
     ),
   );
   $form['log'] = array(
     '#markup' => $log_html,
   );
 
-  $form['#attributes'] = array( 'enctype' => "multipart/form-data" );
+  $form['#attributes'] = array('enctype' => "multipart/form-data");
 
   return $form;
 }
@@ -133,88 +133,88 @@ function offline2civicrm_import_checks_form() {
  * @param $file_name
  */
 function offline2civicrm_download_csv($file_name) {
-    global $user;
-    if (!preg_match ('/\.' . $user->uid . '$/', $file_name)) {
-      return drupal_access_denied();
-    }
-    $fileURI = 'temporary://' . $file_name . '.csv';
-    if ($file_name && file_exists($fileURI)) {
-      file_transfer($fileURI, array(
-        'Content-Type' => 'text/csv',
-        'Content-Disposition' => 'attachment; filename="' . $file_name . '.csv"',
-      ));
-    }
-    else {
-      return drupal_access_denied();
-    }
+  global $user;
+  if (!preg_match('/\.' . $user->uid . '$/', $file_name)) {
+    return drupal_access_denied();
+  }
+  $fileURI = 'temporary://' . $file_name . '.csv';
+  if ($file_name && file_exists($fileURI)) {
+    file_transfer($fileURI, array(
+      'Content-Type' => 'text/csv',
+      'Content-Disposition' => 'attachment; filename="' . $file_name . '.csv"',
+    ));
+  }
+  else {
+    return drupal_access_denied();
+  }
 }
 
-function offline2civicrm_import_checks_form_submit( $form, $form_state ) {
-  wmf_common_create_smashpig_context( 'offline2civicrm' );
-  if ( !empty( $form_state['values']['import_upload_submit'] ) ) {
+function offline2civicrm_import_checks_form_submit($form, $form_state) {
+  wmf_common_create_smashpig_context('offline2civicrm');
+  if (!empty($form_state['values']['import_upload_submit'])) {
     try {
       $validators = array(
         'file_validate_extensions' => array('csv'),
       );
-      $file = file_save_upload( 'import_upload_file', $validators );
-      if ( !$file ) {
-        throw new Exception( t( "Form upload failed!" ) );
+      $file = file_save_upload('import_upload_file', $validators);
+      if (!$file) {
+        throw new Exception(t("Form upload failed!"));
       }
 
       // This workaround... does not always work.  Will be deprecated in Civi 4.3
       civicrm_initialize();
       $smellyTmp = CRM_Core_TemporaryErrorScope::useException();
 
-      switch ( $form_state['values']['import_upload_format'] ) {
-      case 'engage':
-        $importer = new EngageChecksFile( $file->uri );
-        break;
-      case 'coinbase':
-        $importer = new CoinbaseFile( $file->uri );
-        break;
-      case 'generic_ind':
-        $importer = new WmfImportFile( $file->uri );
-        break;
-      case 'generic_org':
-        $importer = new WmfOrgImportFile( $file->uri );
-        break;
-      case 'benevity':
-        $importer = new BenevityFile($file->uri );
-        break;
+      switch ($form_state['values']['import_upload_format']) {
+        case 'engage':
+          $importer = new EngageChecksFile($file->uri);
+          break;
+        case 'coinbase':
+          $importer = new CoinbaseFile($file->uri);
+          break;
+        case 'generic_ind':
+          $importer = new WmfImportFile($file->uri);
+          break;
+        case 'generic_org':
+          $importer = new WmfOrgImportFile($file->uri);
+          break;
+        case 'benevity':
+          $importer = new BenevityFile($file->uri);
+          break;
 
-      case 'paypal':
-        $importer = new PayPalChecksFile( $file->uri );
-        break;
-      case 'jpmorgan':
-        $importer = new JpMorganFile( $file->uri );
-        break;
-      case 'foreign_checks':
-        $importer = new ForeignChecksFile( $file->uri );
-        break;
-      case 'square':
-        $importer = new SquareFile( $file->uri );
-        break;
-      case 'trilogy':
-        $importer = new TrilogyFile( $file->uri );
-        break;
-      default:
-        throw new Exception( 'Bad file format selection' );
+        case 'paypal':
+          $importer = new PayPalChecksFile($file->uri);
+          break;
+        case 'jpmorgan':
+          $importer = new JpMorganFile($file->uri);
+          break;
+        case 'foreign_checks':
+          $importer = new ForeignChecksFile($file->uri);
+          break;
+        case 'square':
+          $importer = new SquareFile($file->uri);
+          break;
+        case 'trilogy':
+          $importer = new TrilogyFile($file->uri);
+          break;
+        default:
+          throw new Exception('Bad file format selection');
       }
       $messages = $importer->import();
       drupal_set_message((implode(' ', $messages)));
     }
-    catch ( WmfException $ex ) {
-      $message = t( "Import error: !err", array( '!err' => $ex->getMessage() ) );
-      form_set_error( 'import_upload_file', $message );
-      ChecksImportLog::record( $message );
+    catch (WmfException $ex) {
+      $message = t("Import error: !err", array('!err' => $ex->getMessage()));
+      form_set_error('import_upload_file', $message);
+      ChecksImportLog::record($message);
     }
-    catch ( Exception $ex ) {
-      $message = t( "Unknown import error: !err", array( '!err' => $ex->getMessage() ) );
-      form_set_error( 'import_upload_file', $message );
-      ChecksImportLog::record( $message );
+    catch (Exception $ex) {
+      $message = t("Unknown import error: !err", array('!err' => $ex->getMessage()));
+      form_set_error('import_upload_file', $message);
+      ChecksImportLog::record($message);
     }
-    if ( $file ) {
-      file_delete( $file, true );
+    if ($file) {
+      file_delete($file, TRUE);
     }
   }
 }
