@@ -22,6 +22,7 @@ files[] = BenevityFile.php
 files[] = PayPalChecksFile.php
 files[] = RefundFile.php
 files[] = SquareFile.php
+files[] = StripeFile.php
 files[] = TrilogyFile.php
 files[] = WmfImportFile.php
 files[] = WmfOrgImportFile.php

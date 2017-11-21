@@ -115,6 +115,7 @@ function offline2civicrm_import_checks_form() {
       'jpmorgan' => t('JP Morgan'),
       'paypal' => t('PayPal EFT'),
       'square' => t('Square'),
+      'stripe' => t('Stripe'),
       'trilogy' => t('Trilogy'),
     ),
   );
@@ -194,6 +195,11 @@ function offline2civicrm_import_checks_form_submit($form, $form_state) {
         case 'square':
           $importer = new SquareFile($file->uri);
           break;
+
+        case 'stripe':
+          $importer = new StripeFile($file->uri);
+          break;
+
         case 'trilogy':
           $importer = new TrilogyFile($file->uri);
           break;
