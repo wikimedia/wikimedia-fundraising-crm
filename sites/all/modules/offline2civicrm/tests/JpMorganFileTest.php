@@ -6,8 +6,6 @@
  */
 class JpMorganFileTest extends BaseChecksFileTest {
 
-  protected $epochtime;
-
   protected $strtime;
 
   function setUp() {

@@ -19,6 +19,13 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $trxn_id;
 
+  protected $epochtime;
+
+  function setUp() {
+    parent::setUp();
+    $this->epochtime = wmf_common_date_parse_string('2016-09-15');
+  }
+
   /**
    * Test and remove some dynamic fields, to simplify test fixtures.
    */

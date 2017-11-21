@@ -6,12 +6,8 @@
  */
 class CoinBaseTest extends BaseChecksFileTest {
 
-  protected $epochtime;
-
   function setUp() {
     parent::setUp();
-
-    $this->epochtime = wmf_common_date_parse_string('2016-09-15');
     $this->setExchangeRates($this->epochtime, array('USD' => 1, 'BTC' => 3));
     $this->gateway = 'coinbase';
   }
