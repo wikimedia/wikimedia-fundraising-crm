@@ -135,8 +135,12 @@ function queue2civicrm_batch_process() {
   );
   $processed = $consumer->dequeueMessages();
 
+  $DonationStats = new DonationStats();
+  $DonationStats->export();
+
+
   /**
-   * this may some day supersede the process counts handled above...
+   * === Legacy Donations Counter implementation ===
    *
    * Note that this might be a little whack.  At least, it feels a little sloppy.
    * We might consider specifying the names of gateways to keep track of, rather than auto-generate
@@ -146,9 +150,22 @@ function queue2civicrm_batch_process() {
    *
    * TODO: metrics stuff should be a hook
    */
+  $counter = Queue2civicrmTrxnCounter::instance();
+  $metrics = array();
+  foreach ( $counter->get_trxn_counts() as $gateway => $count ) {
+    $metrics["${gateway}_donations"] = $count;
+  }
+  $metrics['total_donations'] = $counter->get_count_total();
+  module_invoke( 'metrics_reporting', 'report_metrics', 'queue2civicrm', $metrics );
+  $ageMetrics = array();
+  foreach ( $counter->get_average_ages() as $gateway => $age ) {
+    $ageMetrics["${gateway}_message_age"] = $age;
+  }
+  module_invoke( 'metrics_reporting', 'report_metrics', 'donation_message_age', $ageMetrics );
 
-  $DonationStats = new DonationStats();
-  $DonationStats->export();
+  /**
+   * === End of Legacy Donations Counter implementation ===
+   */
 
   if ($processed > 0) {
     watchdog('queue2civicrm', 'Successfully processed ' . $processed . ' contribution(s).');
