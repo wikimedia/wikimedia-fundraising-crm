@@ -24,6 +24,8 @@ abstract class ChecksFile {
 
   protected $all_missed_file_uri = '';
 
+  protected $row_index;
+
   /**
    * @var resource
    */
@@ -221,9 +223,11 @@ abstract class ChecksFile {
   /**
    * Read a row and transform into normalized queue message form
    *
-   * @param array $row native format for this upload file, usually a dict
+   * @param $data
    *
    * @return array queue message format
+   *
+   * @throws \EmptyRowException
    */
   protected function parseRow($data) {
     $msg = array();
@@ -264,6 +268,10 @@ abstract class ChecksFile {
   /**
    * Do any final transformation on a normalized and default-laden queue
    * message.  Overrides are specific to each upload source.
+   *
+   * @param array $msg
+   *
+   * @throws \WmfException
    */
   protected function mungeMessage(&$msg) {
     if (isset($msg['raw_contribution_type'])) {
@@ -562,6 +570,7 @@ abstract class ChecksFile {
    *
    * @param int $totalRows
    * @param int $num_successful
+   * @param int $num_errors
    * @param int $num_ignored
    * @param int $num_duplicates
    */
@@ -608,8 +617,9 @@ abstract class ChecksFile {
   /**
    * Set a message relating to this output.
    *
-   * @param $uri
-   * @param $type
+   * @param string $uri
+   * @param string $type
+   * @param int $count
    */
   public function setMessage($uri, $type, $count) {
     $row = ($count > 1) ? 'rows' : 'row';
