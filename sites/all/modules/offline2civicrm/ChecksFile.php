@@ -131,9 +131,10 @@ abstract class ChecksFile {
           throw new IgnoredRowException('IMPORT_CONTRIB', 'Error limit reached');
         }
         $msg = $this->parseRow($data);
+        $existing = $this->checkForExistingContributions($msg);
 
         // check to see if we have already processed this check
-        if ($existing = wmf_civicrm_get_contributions_from_gateway_id($msg['gateway'], $msg['gateway_txn_id'])) {
+        if ($existing) {
           $skipped = $this->handleDuplicate($existing);
           if ($skipped) {
             if ($num_duplicates === 0) {
@@ -660,6 +661,17 @@ abstract class ChecksFile {
     if ($failed) {
       throw new WmfException('CIVI_REQ_FIELD', t("Missing required fields @keys during check import", array("@keys" => implode(", ", $failed))));
     }
+  }
+
+  /**
+   * Check for any existing contributions for the given transaction.
+   *
+   * @param $msg
+   *
+   * @return array|bool
+   */
+  protected function checkForExistingContributions($msg) {
+    return  wmf_civicrm_get_contributions_from_gateway_id($msg['gateway'], $msg['gateway_txn_id']);
   }
 
 }

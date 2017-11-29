@@ -411,4 +411,45 @@ class BenevityFile extends ChecksFile {
     return FALSE;
   }
 
+  /**
+   * Check for any existing contributions for the given transaction.
+   *
+   * If either the donor transaction of the matching gift transaction have already
+   * been imported return (1) imported transaction.
+   *
+   * If both the matching and donor transactions have been imported previously it
+   * is OK to return only one
+   *
+   * If it appears there has been a previous partial import
+   *
+   * @param $msg
+   *
+   * @return array|bool
+   *
+   * @throws \WmfException
+   */
+  protected function checkForExistingContributions($msg) {
+    $donorTransactionNeedsProcessing = (!empty($msg['gross']) && $msg['gross'] !== "0.00");
+    $matchingTransactionNeedsProcessing = (!empty($msg['matching_amount']) && $msg['matching_amount'] !== "0.00");
+
+    $main = $matched = FALSE;
+    if ($donorTransactionNeedsProcessing) {
+      $main = wmf_civicrm_get_contributions_from_gateway_id($msg['gateway'], $msg['gateway_txn_id']);
+    }
+
+    if ($matchingTransactionNeedsProcessing) {
+      $matched = wmf_civicrm_get_contributions_from_gateway_id($msg['gateway'], $msg['gateway_txn_id'] . '_matched');
+    }
+
+    if ($matchingTransactionNeedsProcessing && $donorTransactionNeedsProcessing) {
+      // Both transactions need processing. If one finds a match and the other doesn't we have a potential error scenario
+      // and should throw an exception.
+      $duplicates = ($main ? 1 : 0) + ($matched ? 1 : 0);
+      if ($duplicates === 1) {
+        throw new WmfException('INVALID_MESSAGE', 'row has already been partially imported');
+      }
+    }
+    return $main ? $main : $matched;
+  }
+
 }
