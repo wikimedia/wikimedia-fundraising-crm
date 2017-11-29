@@ -698,6 +698,73 @@ class BenevityTest extends BaseChecksFileTest {
   }
 
   /**
+   * Import the same file twice, checking all are seen as duplicates on round 2.
+   *
+   * We check this by making sure none are reported as errors.
+   */
+  function testDuplicateDetection() {
+    $this->createAllOrgs();
+
+    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
+    $importer->import();
+
+    $messages = $this->importBenevityFile();
+    $this->assertEquals('0 out of 4 rows were imported.', $messages['Result']);
+    $this->assertTrue(!isset($messages['Error']));
+    $this->assertEquals(4, substr($messages['Duplicate'], 0,1));
+  }
+
+
+  /**
+   * Import a transaction where half the transaction has already been imported.
+   *
+   * This should throw an error rather be treated as a valid duplicate.
+   */
+  function testDuplicateDetectionInvalidState() {
+    list ($mouseOrg) =$this->createAllOrgs();
+
+    $existing = $this->callAPISuccess('Contribution', 'create', array(
+      'trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED',
+      'financial_type_id' => 'Engage',
+      'total_amount' => 5,
+      'contact_id' => $mouseOrg['id'],
+    ));
+
+
+    $messages = $this->importBenevityFile();
+    $this->assertEquals('3 out of 4 rows were imported.', $messages['Result']);
+    $this->assertEquals(1, substr($messages['Error'], 0,1));
+
+    // Update existing dupe to match the donor transaction instead of the matching one.
+    // This should also result in an error as 1 out of 2 transactions for the row is imported.
+    $this->callAPISuccess('Contribution', 'create', array(
+      'trxn_id' => 'BENEVITY TRXN-SQUEAK',
+      'financial_type_id' => 'Engage',
+      'total_amount' => 5,
+      'contact_id' => $mouseOrg['id'],
+      'id' => $existing['id'],
+    ));
+
+    $messages = $this->importBenevityFile();
+    $this->assertEquals('0 out of 4 rows were imported.', $messages['Result']);
+    $this->assertEquals(3, substr($messages['Duplicate'], 0,1));
+    $this->assertEquals(1, substr($messages['Error'], 0,1));
+
+    // Create a second so they both match - should be a duplicate instead of an error now.
+    $this->callAPISuccess('Contribution', 'create', array(
+      'trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED',
+      'financial_type_id' => 'Engage',
+      'total_amount' => 5,
+      'contact_id' => $mouseOrg['id'],
+    ));
+
+    $messages = $this->importBenevityFile();
+    $this->assertEquals('0 out of 4 rows were imported.', $messages['Result']);
+    $this->assertEquals(4, substr($messages['Duplicate'], 0,1));
+    $this->assertTrue(!isset($messages['Error']));
+
+  }
+  /**
    * Test import succeeds if there is exactly one organization with the name as
    * a nick name.
    *
