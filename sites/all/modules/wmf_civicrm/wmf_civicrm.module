@@ -1631,6 +1631,7 @@ function wmf_civicrm_message_address_insert($msg, $contact_id ) {
         'postal_code' => $msg['postal_code'],
         'country_id' => $country_id,
         'country' => $msg[ 'country' ],
+        'fix_address' => isset($msg['fix_address']) ? $msg['fix_address'] : FALSE,
         'is_billing' => 1,
         'version' => 3,
     );
@@ -1643,17 +1644,16 @@ function wmf_civicrm_message_address_insert($msg, $contact_id ) {
     if (!wmf_civicrm_is_address_valid($address_params)) {
         return;
     }
-    // FIXME: api does not offer control over fixAddress flag
-    // UPDATE - the fixAddress function mostly backs out early based on params
-    // checks so as long as things like 'country_id' are set it doesn't seem very
-    // expensive (& those checks would be an easy fix). Bypassing the api
-    // probably does not gain us much.
-    //$result = civicrm_api( "Address", "Create", $address_params );
-    //if ( array_key_exists( 'is_error', $result ) && $result['is_error'] != 0 ) {
 
-    $result = CRM_Core_BAO_Address::add( $address_params, false );
-    if ( !$result ) {
-        throw new WmfException( 'IMPORT_CONTACT', "Couldn't store address for the contact.");
+    try {
+        civicrm_api3('Address', 'Create', $address_params);
+    }
+    catch(CiviCRM_API3_Exception $ex ) {
+        throw new WmfException(
+          'IMPORT_CONTACT',
+          'Couldn\'t store address for the contact: ' .
+          $ex->getMessage()
+        );
     }
 }
 
