@@ -66,9 +66,7 @@ class BenevityTest extends BaseChecksFileTest {
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
     ));
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('0 out of 4 rows were imported.', $messages['Result']);
   }
 
@@ -76,9 +74,7 @@ class BenevityTest extends BaseChecksFileTest {
    * Test that all imports fail if the organization does not pre-exist.
    */
   function testImportFailNoOrganizationContactExists() {
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('0 out of 4 rows were imported.', $messages['Result']);
   }
 
@@ -90,9 +86,7 @@ class BenevityTest extends BaseChecksFileTest {
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
     ));
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
   }
 
@@ -111,9 +105,7 @@ class BenevityTest extends BaseChecksFileTest {
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
     ));
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
     $this->assertEquals(1, $contributions['count']);
@@ -137,9 +129,7 @@ class BenevityTest extends BaseChecksFileTest {
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ));
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY TRXN-SQUEAK'));
     $this->assertEquals('Benevity', $contribution['financial_type']);
@@ -251,9 +241,7 @@ class BenevityTest extends BaseChecksFileTest {
       'email' => 'minnie@mouse.org',
       'employer_id' => $organization['id'],
     ));
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
     $this->assertEquals(0, $contributions['count']);
@@ -287,9 +275,7 @@ class BenevityTest extends BaseChecksFileTest {
       'contact_type' => 'Individual',
       'employer_id' => $organization['id'],
     ));
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
     $this->assertEquals(0, $contributions['count']);
@@ -368,9 +354,7 @@ class BenevityTest extends BaseChecksFileTest {
       'email' => 'minnie@mouse.org',
       'employer_id' => $organization['id'],
     ));
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
     $this->assertEquals(0, $contributions['count']);
@@ -413,9 +397,7 @@ class BenevityTest extends BaseChecksFileTest {
       'soft_credit_to' => $betterMinnie['id'],
       'contact_id' => $organization['id'],
     ));
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
     $this->assertEquals(0, $contributions['count']);
@@ -464,9 +446,7 @@ class BenevityTest extends BaseChecksFileTest {
       ));
     }
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contributions = $this->callAPISuccess('Contribution', 'get', array(
       'contact_id' => array(
@@ -530,9 +510,7 @@ class BenevityTest extends BaseChecksFileTest {
 
     // But betterMinnie has a relationship, she wins.
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
     $this->assertEquals(0, $contributions['count']);
@@ -562,9 +540,7 @@ class BenevityTest extends BaseChecksFileTest {
       'email' => 'minnie@mouse_home.org',
       'employer_id' => $organization['id'],
     ));
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
 
     $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $betterMinnie['id']));
@@ -710,9 +686,7 @@ class BenevityTest extends BaseChecksFileTest {
       'total_amount' => 5,
       'contact_id' => $organization['id'],
     ));
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('0 out of 4 rows were imported.', $messages['Result']);
     $contribution = $this->callAPISuccess('Contribution', 'get', array('trxn_id' => 'BENEVITY TRXN-SQUEAK'));
     $this->assertEquals(0, $contribution['count'], 'This contribution should have been rolled back');
@@ -745,9 +719,7 @@ class BenevityTest extends BaseChecksFileTest {
       'contact_type' => 'Organization',
     ));
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY TRXN-QUACK'));
     $this->assertEquals(200, $contribution['total_amount']);
@@ -770,22 +742,7 @@ class BenevityTest extends BaseChecksFileTest {
    * Test a successful import run.
    */
   function testImportSucceedAll() {
-    $mouseOrg = $this->callAPISuccess('Contact', 'create', array(
-      'organization_name' => 'Mickey Mouse Inc',
-      'contact_type' => 'Organization',
-    ));
-    $dogOrg = $this->callAPISuccess('Contact', 'create', array(
-      'organization_name' => 'Goofy Inc',
-      'contact_type' => 'Organization',
-    ));
-    $this->callAPISuccess('Contact', 'create', array(
-      'organization_name' => 'Donald Duck Inc',
-      'contact_type' => 'Organization',
-    ));
-    $stingyOrg = $this->callAPISuccess('Contact', 'create', array(
-      'organization_name' => 'Uncle Scrooge Inc',
-      'contact_type' => 'Organization',
-    ));
+    list($mouseOrg) = $this->createAllOrgs();
 
     $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Minnie',
@@ -795,9 +752,7 @@ class BenevityTest extends BaseChecksFileTest {
       'employer_id' => $mouseOrg['id'],
     ));
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
-    $importer->import();
-    $messages = $importer->getMessages();
+    $messages = $this->importBenevityFile();
     $this->assertEquals('All rows were imported', $messages['Result']);
 
     $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY trxn-WOOF'));
@@ -857,6 +812,38 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals('Mickey Mouse Inc', $minnie['current_employer']);
     $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_a' => $minnie['id']));
     $this->assertEquals(1, $relationships['count']);
+  }
+
+  /**
+   * @return array|int
+   */
+  protected function createAllOrgs() {
+    $mouseOrg = $this->callAPISuccess('Contact', 'create', array(
+      'organization_name' => 'Mickey Mouse Inc',
+      'contact_type' => 'Organization',
+    ));
+    $dogOrg = $this->callAPISuccess('Contact', 'create', array(
+      'organization_name' => 'Goofy Inc',
+      'contact_type' => 'Organization',
+    ));
+    $duckOrg = $this->callAPISuccess('Contact', 'create', array(
+      'organization_name' => 'Donald Duck Inc',
+      'contact_type' => 'Organization',
+    ));
+    $stingyOrg = $this->callAPISuccess('Contact', 'create', array(
+      'organization_name' => 'Uncle Scrooge Inc',
+      'contact_type' => 'Organization',
+    ));
+    return array($mouseOrg, $dogOrg, $duckOrg, $stingyOrg);
+  }
+
+  /**
+   * @return array
+   */
+  protected function importBenevityFile() {
+    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
+    $importer->import();
+    return $importer->getMessages();
   }
 
 }
