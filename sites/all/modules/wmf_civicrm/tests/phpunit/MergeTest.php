@@ -221,10 +221,10 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     if ($dataSet['is_major_gifts']) {
       $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2012-01-01', 'total_amount' => 300));
     }
-    foreach ($dataSet['contact_1'] as $address) {
+    foreach ($dataSet['earliest_donor'] as $address) {
       $this->callAPISuccess($dataSet['entity'], 'create', array_merge(array('contact_id' => $this->contactID), $address));
     }
-    foreach ($dataSet['contact_2'] as $address) {
+    foreach ($dataSet['most_recent_donor'] as $address) {
       $this->callAPISuccess($dataSet['entity'], 'create', array_merge(array('contact_id' => $this->contactID2), $address));
     }
 
@@ -265,10 +265,10 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     if ($dataSet['is_major_gifts']) {
       $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2012-01-01', 'total_amount' => 300));
     }
-    foreach ($dataSet['contact_1'] as $address) {
+    foreach ($dataSet['earliest_donor'] as $address) {
       $this->callAPISuccess($dataSet['entity'], 'create', array_merge(array('contact_id' => $this->contactID2), $address));
     }
-    foreach ($dataSet['contact_2'] as $address) {
+    foreach ($dataSet['most_recent_donor'] as $address) {
       $this->callAPISuccess($dataSet['entity'], 'create', array_merge(array('contact_id' => $this->contactID), $address));
     }
 
@@ -704,9 +704,12 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Test that we don't see a city named after a country as the same as a country.
    *
+   * UPDATE - this is now merged, keeping most recent donor - ie. 1 since
+   * that is the only one with a donation.
+   *
    * Bug T176699
    */
-  public function testBatchMergeResolvableConflictCityLooksCountryishWithCounty() {
+  public function testBatchMergeUnResolvableConflictCityLooksCountryishWithCounty() {
     $this->callAPISuccess('Address', 'create', array(
       'country_id' => 'US',
       'contact_id' => $this->contactID2,
@@ -722,17 +725,26 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
-    $this->assertEquals(1, count($result['values']['skipped']));
-    $this->assertEquals(0, count($result['values']['merged']));
+    $this->assertEquals(0, count($result['values']['skipped']));
+    $this->assertEquals(1, count($result['values']['merged']));
+
+    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $this->assertEquals('First on the left after you cross the border', $address['street_address']);
+    $this->assertEquals('MX', CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
+    $this->assertTrue(!isset($address['city']));
+
   }
 
   /**
    * Test that we don't see a city named after a country as the same as a country
    * when it has no country.
    *
+   * UPDATE - this is now merged, keeping most recent donor - ie. 1 since
+   * that is the only one with a donation.
+   *
    * Bug T176699
    */
-  public function testBatchMergeResolvableConflictCityLooksCountryishNoCountry() {
+  public function testBatchMergeUnResolvableConflictCityLooksCountryishNoCountry() {
     $this->callAPISuccess('Address', 'create', array(
       'contact_id' => $this->contactID2,
       'city' => 'Mexico',
@@ -747,8 +759,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
-    $this->assertEquals(1, count($result['values']['skipped']));
-    $this->assertEquals(0, count($result['values']['merged']));
+    $this->assertEquals(0, count($result['values']['skipped']));
+    $this->assertEquals(1, count($result['values']['merged']));
+
+    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $this->assertEquals('First on the left after you cross the border', $address['street_address']);
+    $this->assertEquals('MX', CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
+    $this->assertTrue(!isset($address['city']));
   }
 
   /**
@@ -778,9 +795,12 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that we don't see a city named after a country as the same as a country
    * when it has no country.
    *
+   * UPDATE - this is now merged, keeping most recent donor - ie. 1 since
+   * that is the only one with a donation.
+   *
    * Bug T176699
    */
-  public function testBatchMergeResolvableConflictRealConflict() {
+  public function testBatchMergeUnResolvableConflictRealConflict() {
     $this->callAPISuccess('Address', 'create', array(
       'contact_id' => $this->contactID2,
       'city' => 'Poland',
@@ -796,8 +816,12 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
-    $this->assertEquals(1, count($result['values']['skipped']));
-    $this->assertEquals(0, count($result['values']['merged']));
+    $this->assertEquals(0, count($result['values']['skipped']));
+    $this->assertEquals(1, count($result['values']['merged']));
+
+    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $this->assertEquals('PL', CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
+    $this->assertTrue(!isset($address['city']));
   }
 
   /**
@@ -1041,7 +1065,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'is_major_gifts' => 1,
           'description' => 'Same behaviour with & without the hook, matching primary AND other address maintained',
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
@@ -1051,7 +1075,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
               'is_primary' => 0,
             ), $locationParams2),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
@@ -1076,13 +1100,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'is_major_gifts' => 1,
           'description' => 'Same behaviour with & without the hook, matching primary AND other address maintained',
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
             ), $locationParams1),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
@@ -1111,7 +1135,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'is_major_gifts' => 1,
           'description' => 'Same behaviour with & without the hook, address is maintained',
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
@@ -1121,7 +1145,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
               'is_primary' => 0,
             ), $locationParams2),
           ),
-          'contact_2' => array(),
+          'most_recent_donor' => array(),
           'expected_hook' => array_merge($additionalExpected, array(
             array_merge(array(
               'location_type_id' => 'Home',
@@ -1143,8 +1167,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'is_major_gifts' => 1,
           'description' => 'Same behaviour with & without the hook, address is maintained',
           'entity' => $entity,
-          'contact_1' => array(),
-          'contact_2' => array(
+          'earliest_donor' => array(),
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
@@ -1173,13 +1197,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'is_major_gifts' => 1,
           'description' => 'Primaries are different with different location. Keep both addresses. Set primary to be that of more recent donor',
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
             ), $locationParams1),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
@@ -1203,13 +1227,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
             ), $locationParams2),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
@@ -1233,7 +1257,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
@@ -1243,7 +1267,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
               'is_primary' => 0,
             ), $locationParams2),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
@@ -1268,13 +1292,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
             ), $locationParams2),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
@@ -1306,13 +1330,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
             ), $locationParams1),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
@@ -1337,13 +1361,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
             ), $locationParams1),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
@@ -1359,17 +1383,17 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       ),
       'conflicting_home_address_major_gifts' => array(
         'conflicting_home_address_major_gifts' => array(
-          'merged' => 0,
-          'skipped' => 1,
+          'merged' => 1,
+          'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
             ), $locationParams1),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
@@ -1379,7 +1403,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
+            ), $locationParams2),
           )),
         ),
       ),
@@ -1393,13 +1417,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 0,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
             ), $locationParams1),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
@@ -1415,11 +1439,11 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       ),
       'conflicting_home_address_one_more_major_gifts' => array(
         'conflicting_home_address_one_more_major_gifts' => array(
-          'merged' => 0,
-          'skipped' => 1,
+          'merged' => 1,
+          'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 0,
@@ -1429,7 +1453,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
               'is_primary' => 1,
             ), $locationParams2),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 0,
@@ -1443,7 +1467,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
+            ), $locationParams3),
             array_merge(array(
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
@@ -1461,7 +1485,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 0,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 0,
@@ -1471,7 +1495,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
               'is_primary' => 1,
             ), $locationParams2),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 0,
@@ -1503,13 +1527,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 0,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 0,
             ), $locationParams1),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 1,
@@ -1537,13 +1561,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 0,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 0,
             ), $locationParams1),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 0,
@@ -1570,13 +1594,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           (no high priority improvement)',
           'is_major_gifts' => 0,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 0,
             ), $locationParams1),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Main',
               'is_primary' => 1,
@@ -1605,13 +1629,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 0,
           'entity' => $entity,
-          'contact_1' => array(
+          'earliest_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 0,
             ), $locationParams1),
           ),
-          'contact_2' => array(
+          'most_recent_donor' => array(
             array_merge(array(
               'location_type_id' => 'Home',
               'is_primary' => 0,
