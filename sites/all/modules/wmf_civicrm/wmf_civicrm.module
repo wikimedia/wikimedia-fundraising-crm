@@ -2487,29 +2487,16 @@ function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, 
       $refs['is_major_gift'] = _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId);
     }
     $fieldParts = explode('_', $moveField);
-    if (!$refs['is_major_gift']) {
-      if ($fieldParts[2] == 'email') {
-        $mainIsOnHold = $refs['migration_info']['main_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
-        $otherIsOnHold = $refs['migration_info']['other_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
-        if ($mainIsOnHold + $otherIsOnHold === 1) {
-          // One is one hold & the other isn't - conflict.
-          return;
-        }
-      }
-      unset($refs['fields_in_conflict'][$moveField]);
-    }
-    else {
-      if (_wmf_civicrm_merge_is_address_conflict_resolvable(
-        $refs['migration_info']['rows'][$moveField]['other'],
-        $refs['migration_info']['rows'][$moveField]['main'],
-        $refs['migration_info']['other_details']['location_blocks'][$fieldParts[2]][$fieldParts[3]],
-        $refs['migration_info']['main_details']['location_blocks'][$fieldParts[2]][$fieldParts[3]]
-    )) {
-          // Actual resolution is in alterLocationMergeData hook.
-          unset($refs['fields_in_conflict'][$moveField]);
-      }
-    }
 
+    if ($fieldParts[2] == 'email') {
+      $mainIsOnHold = $refs['migration_info']['main_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+      $otherIsOnHold = $refs['migration_info']['other_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+      if ($mainIsOnHold + $otherIsOnHold === 1) {
+        // One is one hold & the other isn't - conflict.
+        return;
+      }
+    }
+    unset($refs['fields_in_conflict'][$moveField]);
   }
 }
 
