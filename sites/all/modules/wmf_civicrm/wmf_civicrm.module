@@ -1193,6 +1193,9 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         }
     }
 
+    if (WmfDatabase::isNativeTxnRolledBack()) {
+      throw new WmfException("IMPORT_CONTACT", "Native txn rolled back before inserting contact");
+    }
     // Attempt to insert the contact
     try {
         $contact_result = civicrm_api3( "Contact", "Create", $contact );
@@ -1201,6 +1204,10 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         } else {
             watchdog( 'wmf_civicrm', 'Result for updating contact: %contact', array( '%contact' => print_r( $contact_result, true )), WATCHDOG_DEBUG );
         }
+
+      if (WmfDatabase::isNativeTxnRolledBack()) {
+        throw new WmfException("IMPORT_CONTACT", "Native txn rolled back after inserting contact");
+      }
     } catch ( CiviCRM_API3_Exception $ex ) {
         throw new WmfException(
             "IMPORT_CONTACT",
@@ -1297,7 +1304,9 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
             throw new WmfException( 'IMPORT_CONTACT', $ex->getMessage() );
         }
     }
-
+  if (WmfDatabase::isNativeTxnRolledBack()) {
+    throw new WmfException("IMPORT_CONTACT", "Native txn rolled back after inserting contact auxiliary fields");
+  }
     return $contact_result;
 }
 
@@ -1433,6 +1442,9 @@ function wmf_civicrm_message_contact_update( $msg, $contact_id )
  */
 function wmf_civicrm_message_location_insert( $msg, $contact ) {
     wmf_civicrm_message_email_insert( $msg, $contact[ 'id' ] );
+  if (WmfDatabase::isNativeTxnRolledBack()) {
+    throw new WmfException("IMPORT_CONTACT", "Native txn rolled back after inserting email");
+  }
     wmf_civicrm_message_address_insert( $msg, $contact[ 'id' ] );
 }
 
@@ -1644,7 +1656,9 @@ function wmf_civicrm_message_address_insert($msg, $contact_id ) {
     if (!wmf_civicrm_is_address_valid($address_params)) {
         return;
     }
-
+  if (WmfDatabase::isNativeTxnRolledBack()) {
+    throw new WmfException("IMPORT_CONTACT", "Native txn rolled back before inserting address");
+  }
     try {
         civicrm_api3('Address', 'Create', $address_params);
     }
@@ -1655,6 +1669,10 @@ function wmf_civicrm_message_address_insert($msg, $contact_id ) {
           $ex->getMessage()
         );
     }
+
+  if (WmfDatabase::isNativeTxnRolledBack()) {
+    throw new WmfException("IMPORT_CONTACT", "Native txn rolled back after inserting address");
+  }
 }
 
 function wmf_civicrm_get_default_location_type_id() {
