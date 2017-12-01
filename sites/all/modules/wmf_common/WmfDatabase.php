@@ -1,6 +1,8 @@
 <?php
 
 //TODO: namespace
+use Civi\Core\Transaction\Manager;
+
 class WmfDatabase {
   /**
    * Multiple-database transaction around your callback.
@@ -27,7 +29,7 @@ class WmfDatabase {
 
             // Detect if anything has marked the native Civi transaction for
 			// rollback, and do not proceed if so.
-            if (\Civi\Core\Transaction\Manager::singleton()->getFrame()->isRollbackOnly()) {
+            if (self::isNativeTxnRolledBack()) {
             	throw new RuntimeException(
             		'Civi Transaction was marked for rollback and Exception was suppressed'
 				);
@@ -47,5 +49,10 @@ class WmfDatabase {
         unset( $crm_transaction );
         unset( $drupal_transaction );
         return $result;
+    }
+
+    public static function isNativeTxnRolledBack() {
+      $frame = Manager::singleton()->getFrame();
+      return $frame && $frame->isRollbackOnly();
     }
 }
