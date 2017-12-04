@@ -3429,3 +3429,11 @@ function wmf_civicrm_update_7585() {
     )),
   ));
 }
+
+/**
+ * Add Stripe payment instrument
+ */
+function wmf_civicrm_update_7590() {
+  civicrm_initialize();
+  wmf_civicrm_create_option_values('payment_instrument', array('Stripe'));
+}
