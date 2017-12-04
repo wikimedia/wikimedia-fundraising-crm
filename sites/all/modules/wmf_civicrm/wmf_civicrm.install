@@ -1,74 +1,73 @@
 <?php
 
-require_once( __DIR__ . "/bootstrap.inc" );
+require_once(__DIR__ . "/bootstrap.inc");
 
-function wmf_civicrm_install()
-{
-    wmf_civicrm_update_7000();
-    wmf_civicrm_update_7001();
-    wmf_civicrm_update_7002();
-    wmf_civicrm_update_7003();
-    wmf_civicrm_update_7004();
-    wmf_civicrm_update_7005();
-    wmf_civicrm_update_7006();
-    wmf_civicrm_update_7007();
-    wmf_civicrm_update_7008();
-    wmf_civicrm_update_7009();
-    wmf_civicrm_update_7010();
-    wmf_civicrm_update_7011();
-    wmf_civicrm_update_7012();
-    wmf_civicrm_update_7013();
-    wmf_civicrm_update_7014();
-    wmf_civicrm_update_7015();
-    wmf_civicrm_update_7016();
-    wmf_civicrm_update_7017();
-    wmf_civicrm_update_7018();
-    wmf_civicrm_update_7019();
-    wmf_civicrm_update_7020();
-    wmf_civicrm_update_7021();
-    wmf_civicrm_update_7022();
-    wmf_civicrm_update_7023();
-    wmf_civicrm_update_7024();
-    wmf_civicrm_update_7025();
-    wmf_civicrm_update_7026();
-    wmf_civicrm_update_7027();
-    wmf_civicrm_update_7028();
-    wmf_civicrm_update_7029();
-    wmf_civicrm_update_7030();
-    wmf_civicrm_update_7031();
-    wmf_civicrm_update_7032();
-    wmf_civicrm_update_7033();
-    wmf_civicrm_update_7034();
-    wmf_civicrm_update_7060();
-    wmf_civicrm_update_7061();
-    wmf_civicrm_update_7062();
-    wmf_civicrm_update_7063();
-    wmf_civicrm_update_7064();
-    wmf_civicrm_update_7080();
-    wmf_civicrm_update_7090();
-    wmf_civicrm_update_7100();
-    wmf_civicrm_update_7110();
-    wmf_civicrm_update_7120();
-    wmf_civicrm_update_7170();
-    wmf_civicrm_update_7180();
-    wmf_civicrm_update_7190();
-    wmf_civicrm_update_7195();
-    wmf_civicrm_update_7200();
-    wmf_civicrm_update_7205();
-    wmf_civicrm_update_7210();
-    wmf_civicrm_update_7230();
-    wmf_civicrm_update_7235();
-    wmf_civicrm_update_7280();
-    wmf_civicrm_update_7290();
-    wmf_civicrm_update_7300();
-    wmf_civicrm_update_7310();
-    wmf_civicrm_update_7455();
-    wmf_civicrm_update_7460();
-    wmf_civicrm_update_7521();
-    wmf_civicrm_update_7524();
-    wmf_civicrm_update_7525();
-    wmf_civicrm_update_7526();
-    wmf_civicrm_update_7530();
+function wmf_civicrm_install() {
+  wmf_civicrm_update_7000();
+  wmf_civicrm_update_7001();
+  wmf_civicrm_update_7002();
+  wmf_civicrm_update_7003();
+  wmf_civicrm_update_7004();
+  wmf_civicrm_update_7005();
+  wmf_civicrm_update_7006();
+  wmf_civicrm_update_7007();
+  wmf_civicrm_update_7008();
+  wmf_civicrm_update_7009();
+  wmf_civicrm_update_7010();
+  wmf_civicrm_update_7011();
+  wmf_civicrm_update_7012();
+  wmf_civicrm_update_7013();
+  wmf_civicrm_update_7014();
+  wmf_civicrm_update_7015();
+  wmf_civicrm_update_7016();
+  wmf_civicrm_update_7017();
+  wmf_civicrm_update_7018();
+  wmf_civicrm_update_7019();
+  wmf_civicrm_update_7020();
+  wmf_civicrm_update_7021();
+  wmf_civicrm_update_7022();
+  wmf_civicrm_update_7023();
+  wmf_civicrm_update_7024();
+  wmf_civicrm_update_7025();
+  wmf_civicrm_update_7026();
+  wmf_civicrm_update_7027();
+  wmf_civicrm_update_7028();
+  wmf_civicrm_update_7029();
+  wmf_civicrm_update_7030();
+  wmf_civicrm_update_7031();
+  wmf_civicrm_update_7032();
+  wmf_civicrm_update_7033();
+  wmf_civicrm_update_7034();
+  wmf_civicrm_update_7060();
+  wmf_civicrm_update_7061();
+  wmf_civicrm_update_7062();
+  wmf_civicrm_update_7063();
+  wmf_civicrm_update_7064();
+  wmf_civicrm_update_7080();
+  wmf_civicrm_update_7090();
+  wmf_civicrm_update_7100();
+  wmf_civicrm_update_7110();
+  wmf_civicrm_update_7120();
+  wmf_civicrm_update_7170();
+  wmf_civicrm_update_7180();
+  wmf_civicrm_update_7190();
+  wmf_civicrm_update_7195();
+  wmf_civicrm_update_7200();
+  wmf_civicrm_update_7205();
+  wmf_civicrm_update_7210();
+  wmf_civicrm_update_7230();
+  wmf_civicrm_update_7235();
+  wmf_civicrm_update_7280();
+  wmf_civicrm_update_7290();
+  wmf_civicrm_update_7300();
+  wmf_civicrm_update_7310();
+  wmf_civicrm_update_7455();
+  wmf_civicrm_update_7460();
+  wmf_civicrm_update_7521();
+  wmf_civicrm_update_7524();
+  wmf_civicrm_update_7525();
+  wmf_civicrm_update_7526();
+  wmf_civicrm_update_7530();
 }
 
 /**
@@ -79,1127 +78,1107 @@ function wmf_civicrm_install()
  * to have a little less copypasta in this file.  I also
  * suspect there's a better place for it to live.
  */
-function _link_gift_data_field_to_new_group ( $field_name, $group_name, $values )
-{
-    $api = wmf_civicrm_bootstrap_civi();
+function _link_gift_data_field_to_new_group($field_name, $group_name, $values) {
+  $api = wmf_civicrm_bootstrap_civi();
 
-    // Get the custom group.
-    $success = $api->CustomGroup->get( array(
-        'name' => 'Gift_Data',
-    ) );
-    if ( !$success || !count( $api->values ) ) {
-        throw new DrupalUpdateException( $api->errorMsg() );
+  // Get the custom group.
+  $success = $api->CustomGroup->get(array(
+    'name' => 'Gift_Data',
+  ));
+  if (!$success || !count($api->values)) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
+  $custom_group_id = $api->values[0]->id;
+
+  // Get the field.
+  $success = $api->CustomField->get(array(
+    'custom_group_id' => $custom_group_id,
+    'name' => $field_name,
+  ));
+  if (!$success || !count($api->values)) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
+  $custom_field_id = $api->values[0]->id;
+
+  // Make the options.
+  $success = $api->OptionGroup->get(array(
+    'name' => $group_name,
+  ));
+  if (!$success || !count($api->values)) {
+    $success = $api->OptionGroup->create(array(
+      'is_active' => 1,
+      'is_reserved' => 1,
+      'name' => $group_name,
+      'title' => $field_name,
+    ));
+    if (!$success) {
+      throw new DrupalUpdateException($api->errorMsg());
     }
-    $custom_group_id = $api->values[0]->id;
+  }
+  $option_group_id = $api->values[0]->id;
 
-    // Get the field.
-    $success = $api->CustomField->get( array(
-        'custom_group_id' => $custom_group_id,
-        'name' => $field_name,
-    ) );
-    if ( !$success || !count( $api->values ) ) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
-    $custom_field_id = $api->values[0]->id;
-
-    // Make the options.
-    $success = $api->OptionGroup->get( array(
-        'name' => $group_name,
-    ) );
-    if ( !$success || !count( $api->values ) ) {
-        $success = $api->OptionGroup->create( array(
-            'is_active' => 1,
-            'is_reserved' => 1,
-            'name' => $group_name,
-            'title' => $field_name,
-        ) );
-        if ( !$success ) {
-            throw new DrupalUpdateException( $api->errorMsg() );
-        }
-    }
-    $option_group_id = $api->values[0]->id;
-
-    foreach ( $values as $value ) {
-        $success = $api->OptionValue->get( array(
-            'group_id' => $option_group_id,
-            'value' => $value,
-        ) );
-        if ( !$success || !count( $api->values ) ) {
-            $success = $api->OptionValue->create( array(
-                'option_group_id' => $option_group_id,
-                'label' => ts( $value ),
-                'value' => $value,
-            ) );
-            if ( !$success ) {
-                throw new DrupalUpdateException( $api->errorMsg() );
-            }
-        }
-    }
-
-    // Link the options to this field.
-    $success = $api->CustomField->create( array(
-        'id' => $custom_field_id,
+  foreach ($values as $value) {
+    $success = $api->OptionValue->get(array(
+      'group_id' => $option_group_id,
+      'value' => $value,
+    ));
+    if (!$success || !count($api->values)) {
+      $success = $api->OptionValue->create(array(
         'option_group_id' => $option_group_id,
-        // TODO why do i have to reset these fields here?
-        // they are set when the row is created but come
-        // out as 0 after this update.
-        'is_active' => 1,
-        'is_required' => 1,
-        'is_searchable' => 1,
-    ) );
-    if ( !$success ) {
-        throw new DrupalUpdateException( $api->errorMsg() );
+        'label' => ts($value),
+        'value' => $value,
+      ));
+      if (!$success) {
+        throw new DrupalUpdateException($api->errorMsg());
+      }
     }
+  }
+
+  // Link the options to this field.
+  $success = $api->CustomField->create(array(
+    'id' => $custom_field_id,
+    'option_group_id' => $option_group_id,
+    // TODO why do i have to reset these fields here?
+    // they are set when the row is created but come
+    // out as 0 after this update.
+    'is_active' => 1,
+    'is_required' => 1,
+    'is_searchable' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 }
 
 /**
  * Add contribution types and payment instruments
  */
-function wmf_civicrm_update_7000()
-{
-    $financial_types = array(
-        'Cash',
-        'Benevity',
-    );
-    $payment_instruments = array(
-        'Amazon',
-        'Bank Transfer',
-        'Boleto',
-        'Bpay',
-        'Cash',
-        'Cashu',
-        'Check',
-        'Credit Card',
-        'Credit Card: American Express',
-        'Credit Card: Carte Bleue',
-        'Credit Card: Discover',
-        'Credit Card: JCB',
-        'Credit Card: Laser',
-        'Credit Card: Maestro',
-        'Credit Card: MasterCard',
-        'Credit Card: Solo',
-        'Credit Card: Visa',
-        'Direct Debit',
-        'Enets',
-        'EPS',
-        'iDeal',
-        'Moneybookers',
-        'Nordea',
-        'Paypal',
-        'Sofort',
-        'Webmoney',
-    );
+function wmf_civicrm_update_7000() {
+  $financial_types = array(
+    'Cash',
+    'Benevity',
+  );
+  $payment_instruments = array(
+    'Amazon',
+    'Bank Transfer',
+    'Boleto',
+    'Bpay',
+    'Cash',
+    'Cashu',
+    'Check',
+    'Credit Card',
+    'Credit Card: American Express',
+    'Credit Card: Carte Bleue',
+    'Credit Card: Discover',
+    'Credit Card: JCB',
+    'Credit Card: Laser',
+    'Credit Card: Maestro',
+    'Credit Card: MasterCard',
+    'Credit Card: Solo',
+    'Credit Card: Visa',
+    'Direct Debit',
+    'Enets',
+    'EPS',
+    'iDeal',
+    'Moneybookers',
+    'Nordea',
+    'Paypal',
+    'Sofort',
+    'Webmoney',
+  );
 
-    wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_financial_types($financial_types);
-    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
+  wmf_civicrm_bootstrap_civi();
+  wmf_civicrm_create_financial_types($financial_types);
+  wmf_civicrm_create_option_values('payment_instrument', $payment_instruments);
 }
 
 /**
  * Add settlement date field
  */
-function wmf_civicrm_update_7001()
-{
-    $api = wmf_civicrm_bootstrap_civi();
-    $api->CustomGroup->get(array(
-        'name' => 'contribution_extra',
-    ));
-    $result = $api->values();
-    if (empty($result))
-    {
-        $success = $api->CustomGroup->create(array(
-            'extends' => 'Contribution',
-            'name' => 'contribution_extra',
-            'table_name' => 'wmf_contribution_extra',
-            'title' => ts('Contribution Extra'),
-            'is_active' => 1,
-        ));
-        if (!$success) {
-            throw new DrupalUpdateException( $api->errorMsg() );
-        }
-        $result = $api->values();
-    }
-    $values = $api->values();
-    $custom_group = array_pop($values);
-
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'settlement_date',
-        'column_name' => 'settlement_date',
-        'label' => ts('Settlement Date'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
+function wmf_civicrm_update_7001() {
+  $api = wmf_civicrm_bootstrap_civi();
+  $api->CustomGroup->get(array(
+    'name' => 'contribution_extra',
+  ));
+  $result = $api->values();
+  if (empty($result)) {
+    $success = $api->CustomGroup->create(array(
+      'extends' => 'Contribution',
+      'name' => 'contribution_extra',
+      'table_name' => 'wmf_contribution_extra',
+      'title' => ts('Contribution Extra'),
+      'is_active' => 1,
     ));
     if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
+      throw new DrupalUpdateException($api->errorMsg());
     }
+    $result = $api->values();
+  }
+  $values = $api->values();
+  $custom_group = array_pop($values);
+
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'settlement_date',
+    'column_name' => 'settlement_date',
+    'label' => ts('Settlement Date'),
+    'data_type' => 'Date',
+    'html_type' => 'Select Date',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_search_range' => 1,
+    'is_view' => 1,
+    'date_format' => 'M d, yy',
+    'time_format' => 2,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 }
 
 /**
  * Add non-authoritatize USD conversion estimate
  */
-function wmf_civicrm_update_7002()
-{
-    $api = wmf_civicrm_bootstrap_civi();
-    $success = $api->CustomGroup->get(array(
-        'name' => 'contribution_extra',
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException($api->errorMsg());
-    }
-    $values = $api->values();
-    $custom_group = array_pop($values);
+function wmf_civicrm_update_7002() {
+  $api = wmf_civicrm_bootstrap_civi();
+  $success = $api->CustomGroup->get(array(
+    'name' => 'contribution_extra',
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
+  $values = $api->values();
+  $custom_group = array_pop($values);
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'total_usd',
-        'column_name' => 'total_usd',
-        'label' => ts('Total in USD (approx)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'total_usd',
+    'column_name' => 'total_usd',
+    'label' => ts('Total in USD (approx)'),
+    'data_type' => 'Money',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_search_range' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 }
 
-function wmf_civicrm_update_7003()
-{
-    wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_financial_types(array(
-        'Merkle',
-    ));
+function wmf_civicrm_update_7003() {
+  wmf_civicrm_bootstrap_civi();
+  wmf_civicrm_create_financial_types(array(
+    'Merkle',
+  ));
 }
 
 /**
  * Add gateway_account name field
  */
-function wmf_civicrm_update_7004()
-{
-    $api = wmf_civicrm_bootstrap_civi();
-    $success = $api->CustomGroup->get(array(
-        'name' => 'contribution_extra',
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException($api->errorMsg());
-    }
-    $values = $api->values();
-    $custom_group = array_pop($values);
+function wmf_civicrm_update_7004() {
+  $api = wmf_civicrm_bootstrap_civi();
+  $success = $api->CustomGroup->get(array(
+    'name' => 'contribution_extra',
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
+  $values = $api->values();
+  $custom_group = array_pop($values);
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'gateway_account',
-        'column_name' => 'gateway_account',
-        'label' => ts('Gateway Account Name'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'gateway_account',
+    'column_name' => 'gateway_account',
+    'label' => ts('Gateway Account Name'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 }
 
 /**
- * More complete gateway and settlement recording. Adding a field to mark auditing-only transactions, and a hack to link contributions.
+ * More complete gateway and settlement recording. Adding a field to mark
+ * auditing-only transactions, and a hack to link contributions.
  */
-function wmf_civicrm_update_7005()
-{
-    $api = wmf_civicrm_bootstrap_civi();
-    $success = $api->CustomGroup->get(array(
-        'name' => 'contribution_extra',
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException($api->errorMsg());
-    }
-    $values = $api->values();
-    $custom_group = array_pop($values);
+function wmf_civicrm_update_7005() {
+  $api = wmf_civicrm_bootstrap_civi();
+  $success = $api->CustomGroup->get(array(
+    'name' => 'contribution_extra',
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
+  $values = $api->values();
+  $custom_group = array_pop($values);
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'gateway',
-        'column_name' => 'gateway',
-        'label' => ts('Gateway'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'gateway',
+    'column_name' => 'gateway',
+    'label' => ts('Gateway'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'gateway_txn_id',
-        'column_name' => 'gateway_txn_id',
-        'label' => ts('Gateway Transaction ID'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'gateway_txn_id',
+    'column_name' => 'gateway_txn_id',
+    'label' => ts('Gateway Transaction ID'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'gateway_status_raw',
-        'column_name' => 'gateway_status_raw',
-        'label' => ts('Gateway Status (raw)'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'gateway_status_raw',
+    'column_name' => 'gateway_status_raw',
+    'label' => ts('Gateway Status (raw)'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'gateway_status',
-        'column_name' => 'gateway_status',
-        'label' => ts('Gateway Status (normalized)'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'gateway_status',
+    'column_name' => 'gateway_status',
+    'label' => ts('Gateway Status (normalized)'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'gateway_date',
-        'column_name' => 'gateway_date',
-        'label' => ts('Gateway Last Update Timestamp'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'gateway_date',
+    'column_name' => 'gateway_date',
+    'label' => ts('Gateway Last Update Timestamp'),
+    'data_type' => 'Date',
+    'html_type' => 'Select Date',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_search_range' => 1,
+    'is_view' => 1,
+    'date_format' => 'M d, yy',
+    'time_format' => 2,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'original_amount',
-        'column_name' => 'original_amount',
-        'label' => ts('Original Amount Received (unconverted)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'original_amount',
+    'column_name' => 'original_amount',
+    'label' => ts('Original Amount Received (unconverted)'),
+    'data_type' => 'Money',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_search_range' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'original_currency',
-        'column_name' => 'original_currency',
-        'label' => ts('Original Currency Received'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'original_currency',
+    'column_name' => 'original_currency',
+    'label' => ts('Original Currency Received'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'settlement_usd',
-        'column_name' => 'settlement_usd',
-        'label' => ts('Settlement Total (USD)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'settlement_usd',
+    'column_name' => 'settlement_usd',
+    'label' => ts('Settlement Total (USD)'),
+    'data_type' => 'Money',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_search_range' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'settlement_currency',
-        'column_name' => 'settlement_currency',
-        'label' => ts('Settlement Currency'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'settlement_currency',
+    'column_name' => 'settlement_currency',
+    'label' => ts('Settlement Currency'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'deposit_date',
-        'column_name' => 'deposit_date',
-        'label' => ts('Deposit Received Date'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'deposit_date',
+    'column_name' => 'deposit_date',
+    'label' => ts('Deposit Received Date'),
+    'data_type' => 'Date',
+    'html_type' => 'Select Date',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_search_range' => 1,
+    'is_view' => 1,
+    'date_format' => 'M d, yy',
+    'time_format' => 2,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'deposit_usd',
-        'column_name' => 'deposit_usd',
-        'label' => ts('Deposit Total (USD)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'deposit_usd',
+    'column_name' => 'deposit_usd',
+    'label' => ts('Deposit Total (USD)'),
+    'data_type' => 'Money',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_search_range' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'deposit_currency',
-        'column_name' => 'deposit_currency',
-        'label' => ts('Deposit Currency'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'deposit_currency',
+    'column_name' => 'deposit_currency',
+    'label' => ts('Deposit Currency'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'parent_contribution_id',
-        'column_name' => 'parent_contribution_id',
-        'label' => ts('Parent Contribution ID'),
-        'data_type' => 'Int',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'parent_contribution_id',
+    'column_name' => 'parent_contribution_id',
+    'label' => ts('Parent Contribution ID'),
+    'data_type' => 'Int',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'finance_only',
-        'column_name' => 'finance_only',
-        'label' => ts('Finance Auditing Only'),
-        'data_type' => 'Boolean',
-        'html_type' => 'Radio',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'finance_only',
+    'column_name' => 'finance_only',
+    'label' => ts('Finance Auditing Only'),
+    'data_type' => 'Boolean',
+    'html_type' => 'Radio',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 }
 
 /**
  * Additional, gateway-related contribution statuses
  */
-function wmf_civicrm_update_7006()
-{
-    wmf_civicrm_create_option_values('contribution_status', array(
-        'Settled',
-        'Paid',
-    ));
+function wmf_civicrm_update_7006() {
+  wmf_civicrm_create_option_values('contribution_status', array(
+    'Settled',
+    'Paid',
+  ));
 
-    $api = wmf_civicrm_bootstrap_civi();
+  $api = wmf_civicrm_bootstrap_civi();
 
-    $success = $api->CustomGroup->get(array(
-        'name' => 'contribution_extra',
+  $success = $api->CustomGroup->get(array(
+    'name' => 'contribution_extra',
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
+  $custom_group = $api->values[0];
+  $success = $api->CustomField->get(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'gateway_status',
+  ));
+  if ($success && $api->values) {
+    $field = $api->values[0];
+    $success = $api->CustomField->delete(array(
+      'id' => $field->id,
     ));
     if (!$success) {
-        throw new DrupalUpdateException($api->errorMsg());
+      throw new DrupalUpdateException($api->errorMsg());
     }
-    $custom_group = $api->values[0];
-    $success = $api->CustomField->get(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'gateway_status',
-    ));
-    if ($success && $api->values) {
-        $field = $api->values[0];
-        $success = $api->CustomField->delete(array(
-            'id' => $field->id,
-        ));
-        if (!$success) {
-            throw new DrupalUpdateException( $api->errorMsg() );
-        }
-    }
+  }
 }
 
 /**
- * New contribution types to distinguish refunds from chargebacks. Create old "Review" tag.
+ * New contribution types to distinguish refunds from chargebacks. Create old
+ * "Review" tag.
  */
-function wmf_civicrm_update_7007()
-{
-    $api = wmf_civicrm_bootstrap_civi();
+function wmf_civicrm_update_7007() {
+  $api = wmf_civicrm_bootstrap_civi();
 
-    wmf_civicrm_create_financial_types(array(
-        'Refund',
-        'Chargeback',
-    ));
+  wmf_civicrm_create_financial_types(array(
+    'Refund',
+    'Chargeback',
+  ));
 
-    $success = $api->Tag->create(array(
-        'name' => 'Review',
-        'description' => 'Review',
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->Tag->create(array(
+    'name' => 'Review',
+    'description' => 'Review',
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 }
 
 /**
  * Add new check processor!
  */
-function wmf_civicrm_update_7008()
-{
-	wmf_civicrm_bootstrap_civi();
-	wmf_civicrm_create_financial_types(array(
-		'Arizona Lockbox',
-	));
+function wmf_civicrm_update_7008() {
+  wmf_civicrm_bootstrap_civi();
+  wmf_civicrm_create_financial_types(array(
+    'Arizona Lockbox',
+  ));
 }
 
 /**
  * Extend some CiviCRM column maximum lengths
  */
-function wmf_civicrm_update_7009()
-{
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push('civicrm');
+function wmf_civicrm_update_7009() {
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('civicrm');
 
-    db_query("ALTER TABLE civicrm_email
+  db_query("ALTER TABLE civicrm_email
             MODIFY email varchar(254) DEFAULT NULL");
 
-    db_query("ALTER TABLE civicrm_address
+  db_query("ALTER TABLE civicrm_address
             MODIFY postal_code varchar(64) DEFAULT NULL");
 }
 
 /**
  * Improve civicrm_entity_tag indexing--DO NOT RUN ON PRODUCTION
  */
-function wmf_civicrm_update_7010()
-{
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push('civicrm');
+function wmf_civicrm_update_7010() {
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('civicrm');
 
-    try {
-        db_query("ALTER TABLE civicrm_entity_tag
+  try {
+    db_query("ALTER TABLE civicrm_entity_tag
             ADD KEY entity_id (entity_id)");
-    } catch (PDOException $ex) {
-        drupal_set_message("Key already exists?: " + $ex->getMessage());
-    }
+  }
+  catch (PDOException $ex) {
+    drupal_set_message("Key already exists?: " + $ex->getMessage());
+  }
 }
 
 /**
  * Improve civicrm_entity_tag indexing
  */
-function wmf_civicrm_update_7011()
-{
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push('civicrm');
+function wmf_civicrm_update_7011() {
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('civicrm');
 
-    try {
-        db_query("ALTER TABLE civicrm_entity_tag
+  try {
+    db_query("ALTER TABLE civicrm_entity_tag
             ADD KEY entity_table (entity_table)");
-    } catch (PDOException $ex) {
-        drupal_set_message("Key already exists?: " + $ex->getMessage());
-    }
+  }
+  catch (PDOException $ex) {
+    drupal_set_message("Key already exists?: " + $ex->getMessage());
+  }
 }
 
 /**
  * Add source metadata fields
  */
-function wmf_civicrm_update_7012()
-{
-    $api = wmf_civicrm_bootstrap_civi();
+function wmf_civicrm_update_7012() {
+  $api = wmf_civicrm_bootstrap_civi();
 
-    $success = $api->CustomGroup->get(array(
-        'name' => 'contribution_extra',
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException($api->errorMsg());
-    }
-    $values = $api->values();
-    $custom_group = array_pop($values);
+  $success = $api->CustomGroup->get(array(
+    'name' => 'contribution_extra',
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
+  $values = $api->values();
+  $custom_group = array_pop($values);
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'source_name',
-        'column_name' => 'source_name',
-        'label' => ts('Source Name'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'source_name',
+    'column_name' => 'source_name',
+    'label' => ts('Source Name'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'source_type',
-        'column_name' => 'source_type',
-        'label' => ts('Source Type'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'source_type',
+    'column_name' => 'source_type',
+    'label' => ts('Source Type'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'source_host',
-        'column_name' => 'source_host',
-        'label' => ts('Source Host'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'source_host',
+    'column_name' => 'source_host',
+    'label' => ts('Source Host'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'source_run_id',
-        'column_name' => 'source_run_id',
-        'label' => ts('Source Run ID'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'source_run_id',
+    'column_name' => 'source_run_id',
+    'label' => ts('Source Run ID'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'source_version',
-        'column_name' => 'source_version',
-        'label' => ts('Source Version'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'source_version',
+    'column_name' => 'source_version',
+    'label' => ts('Source Version'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'source_enqueued_time',
-        'column_name' => 'source_enqueued_time',
-        'label' => ts('Enqueued At Timestamp'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'source_enqueued_time',
+    'column_name' => 'source_enqueued_time',
+    'label' => ts('Enqueued At Timestamp'),
+    'data_type' => 'Date',
+    'html_type' => 'Select Date',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_search_range' => 1,
+    'is_view' => 1,
+    'date_format' => 'M d, yy',
+    'time_format' => 2,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 }
 
 /**
  * Add Postmark Date field
  */
-function wmf_civicrm_update_7013()
-{
-    $api = wmf_civicrm_bootstrap_civi();
-    $api->CustomGroup->get(array(
-        'name' => 'contribution_extra',
-    ));
-    $values = $api->values();
-    $custom_group = array_pop($values);
+function wmf_civicrm_update_7013() {
+  $api = wmf_civicrm_bootstrap_civi();
+  $api->CustomGroup->get(array(
+    'name' => 'contribution_extra',
+  ));
+  $values = $api->values();
+  $custom_group = array_pop($values);
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'Postmark_Date',
-        'column_name' => 'postmark_date',
-        'label' => ts('Postmark Date'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 0,
-        'is_view' => 0,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'Postmark_Date',
+    'column_name' => 'postmark_date',
+    'label' => ts('Postmark Date'),
+    'data_type' => 'Date',
+    'html_type' => 'Select Date',
+    'is_active' => 1,
+    'is_searchable' => 0,
+    'is_view' => 0,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 }
 
 /**
  * Add no_thank_you field
  */
-function wmf_civicrm_update_7014()
-{
-    $ret = array();
-    $api = wmf_civicrm_bootstrap_civi();
-    $api->CustomGroup->get(array(
-        'name' => 'contribution_extra',
-    ));
-    $values = $api->values();
-    $custom_group = array_pop($values);
+function wmf_civicrm_update_7014() {
+  $ret = array();
+  $api = wmf_civicrm_bootstrap_civi();
+  $api->CustomGroup->get(array(
+    'name' => 'contribution_extra',
+  ));
+  $values = $api->values();
+  $custom_group = array_pop($values);
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'no_thank_you',
-        'column_name' => 'no_thank_you',
-        'label' => ts('No Thank-you Reason'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 0,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'no_thank_you',
+    'column_name' => 'no_thank_you',
+    'label' => ts('No Thank-you Reason'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 0,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push('civicrm');
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('civicrm');
 
-    db_query( "
+  db_query("
 UPDATE wmf_contribution_extra, civicrm_contribution
 SET
     no_thank_you = 'legacy'
 WHERE
     wmf_contribution_extra.entity_id = civicrm_contribution.id
     AND thankyou_date = '1970-01-01 00:00:00'
-" );
+");
 }
 
 /**
  * Extend contact.preferred_language column maximum length
  */
-function wmf_civicrm_update_7015()
-{
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push('civicrm');
+function wmf_civicrm_update_7015() {
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('civicrm');
 
-    db_query("ALTER TABLE civicrm_contact
+  db_query("ALTER TABLE civicrm_contact
             MODIFY preferred_language varchar(32) DEFAULT NULL");
 }
 
 /**
  * Create recurring restarted contribution tag
  */
-function wmf_civicrm_update_7016()
-{
-    $ret = array();
-    $api = wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_option_values_detailed('tag_used_for', array(
-        'Contributions' => array('value' => 'civicrm_contribution'),
-    ));
+function wmf_civicrm_update_7016() {
+  $ret = array();
+  $api = wmf_civicrm_bootstrap_civi();
+  wmf_civicrm_create_option_values_detailed('tag_used_for', array(
+    'Contributions' => array('value' => 'civicrm_contribution'),
+  ));
 
-    $success = $api->Tag->get(array(
-        'name' => 'RecurringRestarted',
-        'used_for' => 'civicrm_contribution',
+  $success = $api->Tag->get(array(
+    'name' => 'RecurringRestarted',
+    'used_for' => 'civicrm_contribution',
+  ));
+  if (!count($api->values)) {
+    $success = $api->Tag->create(array(
+      'name' => 'RecurringRestarted',
+      'description' => 'For the first contribution of a restarted recurring subscription.',
+      'is_selectable' => FALSE,
+      'is_reserved' => TRUE,
+      'used_for' => 'civicrm_contribution',
     ));
-    if (!count($api->values)) {
-        $success = $api->Tag->create(array(
-            'name' => 'RecurringRestarted',
-            'description' => 'For the first contribution of a restarted recurring subscription.',
-            'is_selectable' => false,
-            'is_reserved' => true,
-            'used_for' => 'civicrm_contribution'
-        ));
-        if (!$success) {
-            throw new DrupalUpdateException( $api->errorMsg() );
-        }
+    if (!$success) {
+      throw new DrupalUpdateException($api->errorMsg());
     }
+  }
 }
 
 /**
  * Create truncated address tag
  */
-function wmf_civicrm_update_7017()
-{
-    $ret = array();
-    $api = wmf_civicrm_bootstrap_civi();
-    $success = $api->Tag->get(array(
-        'name' => 'AddressTruncated',
-        'used_for' => 'civicrm_contact',
+function wmf_civicrm_update_7017() {
+  $ret = array();
+  $api = wmf_civicrm_bootstrap_civi();
+  $success = $api->Tag->get(array(
+    'name' => 'AddressTruncated',
+    'used_for' => 'civicrm_contact',
+  ));
+  if (!count($api->values)) {
+    $success = $api->Tag->create(array(
+      'name' => 'AddressTruncated',
+      'description' => 'Tag applied to a contact when the address was truncated on import.',
+      'is_selectable' => TRUE,
+      'is_reserved' => TRUE,
+      'used_for' => 'civicrm_contact',
     ));
-    if (!count($api->values)) {
-        $success = $api->Tag->create(array(
-                'name' => 'AddressTruncated',
-                'description' => 'Tag applied to a contact when the address was truncated on import.',
-                'is_selectable' => true,
-                'is_reserved' => true,
-                'used_for' => 'civicrm_contact'
-            ));
-        if (!$success) {
-            throw new DrupalUpdateException( $api->errorMsg() );
-        }
+    if (!$success) {
+      throw new DrupalUpdateException($api->errorMsg());
     }
+  }
 }
 
 /**
  * Add contribution types and payment instruments
  */
-function wmf_civicrm_update_7018()
-{
-    $payment_instruments = array(
-        'Credit Card: Visa Beneficial',
-        'Credit Card: Visa Electron',
-        'Credit Card: Visa Debit',
-        'Credit Card: MasterCard Debit',
-        'Credit Card: Diners',
-    );
+function wmf_civicrm_update_7018() {
+  $payment_instruments = array(
+    'Credit Card: Visa Beneficial',
+    'Credit Card: Visa Electron',
+    'Credit Card: Visa Debit',
+    'Credit Card: MasterCard Debit',
+    'Credit Card: Diners',
+  );
 
-    wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
+  wmf_civicrm_bootstrap_civi();
+  wmf_civicrm_create_option_values('payment_instrument', $payment_instruments);
 
-    return array();
+  return array();
 }
 
 /**
  * Add JP Morgan payment instrument
  */
-function wmf_civicrm_update_7019()
-{
-    $payment_instruments = array(
-        'JP Morgan EUR',
-    );
+function wmf_civicrm_update_7019() {
+  $payment_instruments = array(
+    'JP Morgan EUR',
+  );
 
-    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
+  wmf_civicrm_create_option_values('payment_instrument', $payment_instruments);
 }
 
 /**
  * Add Bitcoin payment instrument
  */
-function wmf_civicrm_update_7020()
-{
-    $payment_instruments = array(
-        'Bitcoin',
-    );
-    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
+function wmf_civicrm_update_7020() {
+  $payment_instruments = array(
+    'Bitcoin',
+  );
+  wmf_civicrm_create_option_values('payment_instrument', $payment_instruments);
 }
 
 /**
  * Create UnrecordedCharge contribution tag
  */
-function wmf_civicrm_update_7021()
-{
-    $ret = array();
-    $api = wmf_civicrm_bootstrap_civi();
-    $success = $api->Tag->get(array(
-        'name' => 'UnrecordedCharge',
-        'used_for' => 'civicrm_contribution',
+function wmf_civicrm_update_7021() {
+  $ret = array();
+  $api = wmf_civicrm_bootstrap_civi();
+  $success = $api->Tag->get(array(
+    'name' => 'UnrecordedCharge',
+    'used_for' => 'civicrm_contribution',
+  ));
+  if (!count($api->values)) {
+    $success = $api->Tag->create(array(
+      'name' => 'UnrecordedCharge',
+      'description' => 'For donations which have already been charged, but were not recorded in Civi at the time.',
+      'is_selectable' => FALSE,
+      'is_reserved' => TRUE,
+      'used_for' => 'civicrm_contribution',
     ));
-    if (!count($api->values)) {
-        $success = $api->Tag->create(array(
-            'name' => 'UnrecordedCharge',
-            'description' => 'For donations which have already been charged, but were not recorded in Civi at the time.',
-            'is_selectable' => false,
-            'is_reserved' => true,
-            'used_for' => 'civicrm_contribution'
-        ));
-        if (!$success) {
-            throw new DrupalUpdateException( $api->errorMsg() );
-        }
+    if (!$success) {
+      throw new DrupalUpdateException($api->errorMsg());
     }
+  }
 }
 
 /**
  * DO NOT RUN ON PRODUCTION Add gift data group.
  */
 function wmf_civicrm_update_7022() {
-    $api = wmf_civicrm_bootstrap_civi();
-    $success = $api->CustomGroup->get(array(
-        'name' => 'Gift_Data',
-    ));
-    if ( !$success || !count( $api->values ) ) {
-        $success = $api->CustomGroup->create(array(
-            'extends' => 'Contribution',
-            'name' => 'Gift_Data',
-            'title' => ts('Gift Data'),
-            'is_active' => 1,
-        ));
-        if (!$success) {
-            throw new DrupalUpdateException( $api->errorMsg() );
-        }
-    }
-    $custom_group_id = $api->values[0]->id;
-
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group_id,
-        'name' => 'Fund',
-        'column_name' => 'fund',
-        'label' => ts('Restrictions'),
-        'data_type' => 'String',
-        'html_type' => 'Select',
-        'default_value' => 'Unrestricted - General',
-        'is_active' => 1,
-        'is_required' => 1,
-        'is_searchable' => 1,
+  $api = wmf_civicrm_bootstrap_civi();
+  $success = $api->CustomGroup->get(array(
+    'name' => 'Gift_Data',
+  ));
+  if (!$success || !count($api->values)) {
+    $success = $api->CustomGroup->create(array(
+      'extends' => 'Contribution',
+      'name' => 'Gift_Data',
+      'title' => ts('Gift Data'),
+      'is_active' => 1,
     ));
     if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
+      throw new DrupalUpdateException($api->errorMsg());
     }
+  }
+  $custom_group_id = $api->values[0]->id;
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group_id,
-        'name' => 'Campaign',
-        'column_name' => 'campaign',
-        'label' => ts('Gift Source'),
-        'data_type' => 'String',
-        'html_type' => 'Select',
-        'default_value' => 'Community Gift',
-        'is_active' => 1,
-        'is_required' => 1,
-        'is_searchable' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group_id,
+    'name' => 'Fund',
+    'column_name' => 'fund',
+    'label' => ts('Restrictions'),
+    'data_type' => 'String',
+    'html_type' => 'Select',
+    'default_value' => 'Unrestricted - General',
+    'is_active' => 1,
+    'is_required' => 1,
+    'is_searchable' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group_id,
-        'name' => 'Appeal',
-        'column_name' => 'appeal',
-        'label' => ts('Direct Mail Appeal'),
-        'data_type' => 'String',
-        'html_type' => 'Select',
-        'default_value' => 'spontaneousdonation',
-        'is_active' => 1,
-        'is_required' => 1,
-        'is_searchable' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group_id,
+    'name' => 'Campaign',
+    'column_name' => 'campaign',
+    'label' => ts('Gift Source'),
+    'data_type' => 'String',
+    'html_type' => 'Select',
+    'default_value' => 'Community Gift',
+    'is_active' => 1,
+    'is_required' => 1,
+    'is_searchable' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    // TODO: define option groups in another migration if necessary
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group_id,
+    'name' => 'Appeal',
+    'column_name' => 'appeal',
+    'label' => ts('Direct Mail Appeal'),
+    'data_type' => 'String',
+    'html_type' => 'Select',
+    'default_value' => 'spontaneousdonation',
+    'is_active' => 1,
+    'is_required' => 1,
+    'is_searchable' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
+
+  // TODO: define option groups in another migration if necessary
 }
 
 /**
  * Add custom donor data group.
  */
 function wmf_civicrm_update_7023() {
-    $api = wmf_civicrm_bootstrap_civi();
-    $api->CustomGroup->get(array(
-        'name' => 'WMF_Donor',
-    ));
-    $result = $api->values();
-    if ($result) {
-        return;
-    }
+  $api = wmf_civicrm_bootstrap_civi();
+  $api->CustomGroup->get(array(
+    'name' => 'WMF_Donor',
+  ));
+  $result = $api->values();
+  if ($result) {
+    return;
+  }
 
-    $success = $api->CustomGroup->create(array(
-        'extends' => 'Contact',
-        'name' => 'wmf_donor',
-        'table_name' => 'wmf_donor',
-        'title' => ts('WMF Donor'),
-        'is_active' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException('Could not create custom group');
-    }
-    $values = $api->values();
-    $custom_group = array_pop($values);
+  $success = $api->CustomGroup->create(array(
+    'extends' => 'Contact',
+    'name' => 'wmf_donor',
+    'table_name' => 'wmf_donor',
+    'title' => ts('WMF Donor'),
+    'is_active' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException('Could not create custom group');
+  }
+  $values = $api->values();
+  $custom_group = array_pop($values);
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'do_not_solicit',
-        'column_name' => 'do_not_solicit',
-        'label' => ts('Do not solicit'),
-        'data_type' => 'Boolean',
-        'html_type' => 'Radio',
-        'is_active' => 1,
-        'is_required' => 1,
-        'is_searchable' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException('Failed to create custom field.');
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'do_not_solicit',
+    'column_name' => 'do_not_solicit',
+    'label' => ts('Do not solicit'),
+    'data_type' => 'Boolean',
+    'html_type' => 'Radio',
+    'is_active' => 1,
+    'is_required' => 1,
+    'is_searchable' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException('Failed to create custom field.');
+  }
 }
 
 /**
  * Add yearly contribution rollup and last donation data
  */
 function wmf_civicrm_update_7024() {
-    $api = wmf_civicrm_bootstrap_civi();
-    $api->CustomGroup->get(array(
-        'name' => 'wmf_donor',
-    ));
-    $result = $api->values();
-    if (!$result) {
-        throw new DrupalUpdateException('Could not find custom group wmf_donor.  Please run update 7023 first.');
-    }
+  $api = wmf_civicrm_bootstrap_civi();
+  $api->CustomGroup->get(array(
+    'name' => 'wmf_donor',
+  ));
+  $result = $api->values();
+  if (!$result) {
+    throw new DrupalUpdateException('Could not find custom group wmf_donor.  Please run update 7023 first.');
+  }
 
-    $custom_group = array_pop($result);
+  $custom_group = array_pop($result);
 
-	for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
+  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
     $nextYear = $year + 1;
-		$success = $api->CustomField->create(array(
-			'custom_group_id' => $custom_group->id,
-			'name' => "is_{$year}_donor",
-			'column_name' => "is_{$year}_donor",
-			'label' => ts("Is FY {$year}-{$nextYear} donor"),
-			'data_type' => 'Boolean',
-			'html_type' => 'Radio',
-			'default_value' => 0,
-			'is_active' => 1,
-			'is_required' => 0,
-			'is_searchable' => 1,
-			'is_view' => 1,
-		));
-		if (!$success) {
-			throw new DrupalUpdateException( $api->errorMsg() );
-		}
-	}
-	$success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-		'name' => 'last_donation_date',
-		'column_name' => 'last_donation_date',
-		'label' => ts('Last donation date'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
-
     $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'last_donation_currency',
-        'column_name' => 'last_donation_currency',
-        'label' => ts('Last Donation Currency'),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_view' => 1,
+      'custom_group_id' => $custom_group->id,
+      'name' => "is_{$year}_donor",
+      'column_name' => "is_{$year}_donor",
+      'label' => ts("Is FY {$year}-{$nextYear} donor"),
+      'data_type' => 'Boolean',
+      'html_type' => 'Radio',
+      'default_value' => 0,
+      'is_active' => 1,
+      'is_required' => 0,
+      'is_searchable' => 1,
+      'is_view' => 1,
     ));
     if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
+      throw new DrupalUpdateException($api->errorMsg());
     }
+  }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'last_donation_date',
+    'column_name' => 'last_donation_date',
+    'label' => ts('Last donation date'),
+    'data_type' => 'Date',
+    'html_type' => 'Select Date',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_search_range' => 1,
+    'is_view' => 1,
+    'date_format' => 'M d, yy',
+    'time_format' => 2,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'last_donation_amount',
-        'column_name' => 'last_donation_amount',
-        'label' => ts('Last Donation Amount (unconverted)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'last_donation_currency',
+    'column_name' => 'last_donation_currency',
+    'label' => ts('Last Donation Currency'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'last_donation_usd',
-        'column_name' => 'last_donation_usd',
-        'label' => ts('Last Donation Amount (USD)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'last_donation_amount',
+    'column_name' => 'last_donation_amount',
+    'label' => ts('Last Donation Amount (unconverted)'),
+    'data_type' => 'Money',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_search_range' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 
-    $success = $api->CustomField->create(array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'lifetime_usd_total',
-        'column_name' => 'lifetime_usd_total',
-        'label' => ts('Lifetime Donations (USD)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'last_donation_usd',
+    'column_name' => 'last_donation_usd',
+    'label' => ts('Last Donation Amount (USD)'),
+    'data_type' => 'Money',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_search_range' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
+
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group->id,
+    'name' => 'lifetime_usd_total',
+    'column_name' => 'lifetime_usd_total',
+    'label' => ts('Lifetime Donations (USD)'),
+    'data_type' => 'Money',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'is_search_range' => 1,
+    'is_view' => 1,
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 }
 
 /**
@@ -1207,39 +1186,36 @@ function wmf_civicrm_update_7024() {
  *
  * In CiviCRM 4.6 these are in core.
  */
-function wmf_civicrm_update_7025()
-{
+function wmf_civicrm_update_7025() {
 
 }
 
 /**
  * Add Alipay to payment_instrument
  */
-function wmf_civicrm_update_7026()
-{
-	wmf_civicrm_create_option_values( 'payment_instrument', array( 'Alipay' ) );
+function wmf_civicrm_update_7026() {
+  wmf_civicrm_create_option_values('payment_instrument', array('Alipay'));
 }
 
 /**
  * Fix year rollup HTML type
  */
-function wmf_civicrm_update_7027()
-{
-    $api = wmf_civicrm_bootstrap_civi();
-    $api->CustomGroup->get(array(
-        'name' => 'wmf_donor',
-    ));
-    $result = $api->values();
-    if (!$result) {
-        throw new DrupalUpdateException('Could not find custom group wmf_donor.  Please run update 7023 first.');
-    }
+function wmf_civicrm_update_7027() {
+  $api = wmf_civicrm_bootstrap_civi();
+  $api->CustomGroup->get(array(
+    'name' => 'wmf_donor',
+  ));
+  $result = $api->values();
+  if (!$result) {
+    throw new DrupalUpdateException('Could not find custom group wmf_donor.  Please run update 7023 first.');
+  }
 
-    $custom_group = array_pop($result);
+  $custom_group = array_pop($result);
 
-	$dbs = wmf_civicrm_get_dbs();
-    $dbs->push('civicrm');
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('civicrm');
 
-    db_query("UPDATE civicrm_custom_field
+  db_query("UPDATE civicrm_custom_field
         SET html_type = 'Radio'
         WHERE custom_group_id = {$custom_group->id}
         AND column_name LIKE 'is%donor'
@@ -1253,16 +1229,16 @@ function wmf_civicrm_update_7027()
  * won't have usable permissions.
  */
 function wmf_civicrm_update_7028() {
-    if ( false === user_role_load_by_name( 'Engage Direct Mail' ) ) {
-        $role = new stdClass();
-        $role->name = 'Engage Direct Mail';
-        user_role_save( $role );
-    }
+  if (FALSE === user_role_load_by_name('Engage Direct Mail')) {
+    $role = new stdClass();
+    $role->name = 'Engage Direct Mail';
+    user_role_save($role);
+  }
 
-    wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_financial_types( array(
-        'Engage',
-    ) );
+  wmf_civicrm_bootstrap_civi();
+  wmf_civicrm_create_financial_types(array(
+    'Engage',
+  ));
 }
 
 /**
@@ -1290,56 +1266,56 @@ function wmf_civicrm_update_7029() {
  * Add some custom fields that already exist on production
  */
 function wmf_civicrm_update_7030() {
-    $warnings = array();
+  $warnings = array();
 
-    $api = wmf_civicrm_bootstrap_civi();
-    $success = $api->CustomGroup->get(array(
-        'name' => 'Organization_Contact',
-    ) );
-    if ( !$success || !$api->count ) {
-        $success = $api->CustomGroup->create( array(
-            'name' => 'Organization_Contact',
-            'title' => 'Organization Contact',
-            'extends' => 'Organization',
-            'is_active' => 1,
-        ) );
-        if ( !$success ) {
-            throw new DrupalUpdateException( $api->errorMsg() );
-        }
+  $api = wmf_civicrm_bootstrap_civi();
+  $success = $api->CustomGroup->get(array(
+    'name' => 'Organization_Contact',
+  ));
+  if (!$success || !$api->count) {
+    $success = $api->CustomGroup->create(array(
+      'name' => 'Organization_Contact',
+      'title' => 'Organization Contact',
+      'extends' => 'Organization',
+      'is_active' => 1,
+    ));
+    if (!$success) {
+      throw new DrupalUpdateException($api->errorMsg());
     }
-    $custom_group_id = $api->id;
+  }
+  $custom_group_id = $api->id;
 
-    $success = $api->CustomField->create( array(
-        'custom_group_id' => $custom_group_id,
-        'name' => 'Name',
-        'label' => ts( 'Name' ),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_required' => 0,
-        'is_searchable' => 1,
-        'is_view' => 0,
-    ) );
-    if ( !$success ) {
-        $warnings[] = $api->errorMsg();
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group_id,
+    'name' => 'Name',
+    'label' => ts('Name'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_required' => 0,
+    'is_searchable' => 1,
+    'is_view' => 0,
+  ));
+  if (!$success) {
+    $warnings[] = $api->errorMsg();
+  }
 
-    $success = $api->CustomField->create( array(
-        'custom_group_id' => $custom_group_id,
-        'name' => 'Title',
-        'label' => ts( 'Title' ),
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_required' => 0,
-        'is_searchable' => 0,
-        'is_view' => 0,
-    ) );
-    if ( !$success ) {
-        $warnings[] = $api->errorMsg();
-    }
+  $success = $api->CustomField->create(array(
+    'custom_group_id' => $custom_group_id,
+    'name' => 'Title',
+    'label' => ts('Title'),
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_required' => 0,
+    'is_searchable' => 0,
+    'is_view' => 0,
+  ));
+  if (!$success) {
+    $warnings[] = $api->errorMsg();
+  }
 
-	return implode( "\n", $warnings );
+  return implode("\n", $warnings);
 }
 
 /**
@@ -1347,39 +1323,39 @@ function wmf_civicrm_update_7030() {
  */
 function wmf_civicrm_update_7031() {
 
-    $api = wmf_civicrm_bootstrap_civi();
-    $financialTypes = wmf_civicrm_create_financial_types(array('Stock'));
-    $stockContributionTypeId = array_search('Stock', $financialTypes);
+  $api = wmf_civicrm_bootstrap_civi();
+  $financialTypes = wmf_civicrm_create_financial_types(array('Stock'));
+  $stockContributionTypeId = array_search('Stock', $financialTypes);
 
-    $success = $api->CustomGroup->get(array(
-        'name' => 'Stock_Information',
-    ) );
-    if ( !$success || !$api->count ) {
-        $success = $api->CustomGroup->Create( array(
-            'name' => 'Stock_Information',
-            'title' => 'Stock Information',
-            'extends' => 'Contribution',
-            'extends_entity_column_value' => array( $stockContributionTypeId ),
-            'is_active' => 1,
-        ) );
-        if ( !$success ) {
-            throw new DrupalUpdateException( $api->errorMsg() );
-        }
+  $success = $api->CustomGroup->get(array(
+    'name' => 'Stock_Information',
+  ));
+  if (!$success || !$api->count) {
+    $success = $api->CustomGroup->Create(array(
+      'name' => 'Stock_Information',
+      'title' => 'Stock Information',
+      'extends' => 'Contribution',
+      'extends_entity_column_value' => array($stockContributionTypeId),
+      'is_active' => 1,
+    ));
+    if (!$success) {
+      throw new DrupalUpdateException($api->errorMsg());
     }
-    $custom_group = $api->values[0];
+  }
+  $custom_group = $api->values[0];
 
-    $success = $api->CustomField->Create( array(
-        'custom_group_id' => $custom_group->id,
-        'data_type' => 'String',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'label' => 'Description of Stock',
-        'name' => 'Description_of_Stock',
-    ) );
-    if ( !$success ) {
-        throw new DrupalUpdateException( $api->errorMsg() );
-    }
+  $success = $api->CustomField->Create(array(
+    'custom_group_id' => $custom_group->id,
+    'data_type' => 'String',
+    'html_type' => 'Text',
+    'is_active' => 1,
+    'is_searchable' => 1,
+    'label' => 'Description of Stock',
+    'name' => 'Description_of_Stock',
+  ));
+  if (!$success) {
+    throw new DrupalUpdateException($api->errorMsg());
+  }
 }
 
 /**
@@ -1387,51 +1363,51 @@ function wmf_civicrm_update_7031() {
  */
 function wmf_civicrm_update_7032() {
 
-    _link_gift_data_field_to_new_group( 'Fund', 'fund_20080709173248', array(
-        'Unrestricted - General',
-        'Restricted - Foundation',
-        'Restricted - Program',
-        'Restricted - Fiscal Sponsorship',
-    ));
+  _link_gift_data_field_to_new_group('Fund', 'fund_20080709173248', array(
+    'Unrestricted - General',
+    'Restricted - Foundation',
+    'Restricted - Program',
+    'Restricted - Fiscal Sponsorship',
+  ));
 
-    _link_gift_data_field_to_new_group( 'Campaign', 'campaign_20080709183311', array(
-        'Community Gift',
-        'Benefactor Gift',
-        'Foundation Gift',
-        'Matching Gift',
-        'Donor Advised Fund',
-        'Corporate Gift',
-        'Legacy Gift',
-        'Chapter Gift',
-        'Major Gift',
-        'Combined Federal Campaign',
-        'Payroll Deduction',
-    ));
+  _link_gift_data_field_to_new_group('Campaign', 'campaign_20080709183311', array(
+    'Community Gift',
+    'Benefactor Gift',
+    'Foundation Gift',
+    'Matching Gift',
+    'Donor Advised Fund',
+    'Corporate Gift',
+    'Legacy Gift',
+    'Chapter Gift',
+    'Major Gift',
+    'Combined Federal Campaign',
+    'Payroll Deduction',
+  ));
 
-    _link_gift_data_field_to_new_group( 'Appeal', 'appeal_20080709183729', array(
-        'White Mail',
-        'Spontaneous Donation',
-        'Facebook',
-        'Event',
-        'Mobile Giving',
-        'Corp Matching Gift',
-    ));
+  _link_gift_data_field_to_new_group('Appeal', 'appeal_20080709183729', array(
+    'White Mail',
+    'Spontaneous Donation',
+    'Facebook',
+    'Event',
+    'Mobile Giving',
+    'Corp Matching Gift',
+  ));
 }
 
 /**
  * Add "Square Cash" payment instrument.
  */
 function wmf_civicrm_update_7033() {
-    wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_option_values( 'payment_instrument', array('Square Cash') );
+  wmf_civicrm_bootstrap_civi();
+  wmf_civicrm_create_option_values('payment_instrument', array('Square Cash'));
 }
 
 /**
  * Add "Trilogy" payment instrument.
  */
 function wmf_civicrm_update_7034() {
-    wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_option_values( 'payment_instrument', array('Trilogy') );
+  wmf_civicrm_bootstrap_civi();
+  wmf_civicrm_create_option_values('payment_instrument', array('Trilogy'));
 }
 
 /**
@@ -1443,49 +1419,51 @@ function wmf_civicrm_update_7034() {
  * in master before this is merged.
  */
 function wmf_civicrm_update_7060() {
-    wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_option_values_detailed('tag_used_for', array(
-        'Contributions' => array('value' => 'civicrm_contribution'),
-    ));
+  wmf_civicrm_bootstrap_civi();
+  wmf_civicrm_create_option_values_detailed('tag_used_for', array(
+    'Contributions' => array('value' => 'civicrm_contribution'),
+  ));
 }
 
 /**
  * Append '&output=context' to all report instances.
  *
- * This 'upgrades' existing reports to not render results when opened by default.
+ * This 'upgrades' existing reports to not render results when opened by
+ * default.
  *
- * Although the GR work changed the default this isn't going to fly upstream so we
- * need to change the behaviour of all of the WMF reports in a way that won't be
- * later reverted so adding a parameter & upstreaming the meaning of that parameter provides
- * future proofing.
+ * Although the GR work changed the default this isn't going to fly upstream so
+ * we need to change the behaviour of all of the WMF reports in a way that
+ * won't be later reverted so adding a parameter & upstreaming the meaning of
+ * that parameter provides future proofing.
  *
  * CRM-17225
  */
 function wmf_civicrm_update_7061() {
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push('civicrm');
-    db_query(
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('civicrm');
+  db_query(
     "UPDATE civicrm_navigation
     SET url = CONCAT(url, '&output=criteria')
     WHERE url LIKE 'civicrm\/report\/instance%'
     AND url NOT LIKE '%output=criteria%'"
-    );
+  );
 }
 
 /**
  * Set default language for contacts to 'undefined'.
  *
- * This means a new contact created will have an empty language rather than a guessed one.
+ * This means a new contact created will have an empty language rather than a
+ * guessed one.
  *
  * CRM-14232
  *
  * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_update_7062() {
-    civicrm_initialize();
-    civicrm_api3('Setting', 'create', array(
-        'contact_default_language' => "undefined",
-    ));
+  civicrm_initialize();
+  civicrm_api3('Setting', 'create', array(
+    'contact_default_language' => "undefined",
+  ));
 }
 
 /**
@@ -1496,10 +1474,10 @@ function wmf_civicrm_update_7062() {
  * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_update_7063() {
-    civicrm_initialize();
-    civicrm_api3('Navigation', 'reset', array(
-      'for' => "report",
-    ));
+  civicrm_initialize();
+  civicrm_api3('Navigation', 'reset', array(
+    'for' => "report",
+  ));
 }
 
 /**
@@ -1512,21 +1490,24 @@ function wmf_civicrm_update_7063() {
  * T121284
  */
 function wmf_civicrm_update_7064() {
-    wmf_civicrm_fill_missing_appeal_data('2015-10-01');
+  wmf_civicrm_fill_missing_appeal_data('2015-10-01');
 }
 
 /**
  * Ensure all payments have a payment instrument id.
  *
- * Per http://wiki.civicrm.org/confluence/display/CRMDOC/Fixing+Transactions+Missing+a+Payment+Instrument+-+4.4.3+Upgrades
+ * Per
+ * http://wiki.civicrm.org/confluence/display/CRMDOC/Fixing+Transactions+Missing+a+Payment+Instrument+-+4.4.3+Upgrades
  * there is a payment instrument id set for all contributions.
  *
- * The code there basically just figures out a default & sets the empty ones to that.
+ * The code there basically just figures out a default & sets the empty ones to
+ * that.
  *
- * If we look at the first million contributions just setting the it to 'Gateway' seems a reasonable
- * choice of default.
+ * If we look at the first million contributions just setting the it to
+ * 'Gateway' seems a reasonable choice of default.
  *
- * SELECT  payment_instrument_id, count(*) FROM (SELECT * FROM civicrm_contribution LIMIT 1000000) as t GROUP BY payment_instrument_id;
+ * SELECT  payment_instrument_id, count(*) FROM (SELECT * FROM
+ * civicrm_contribution LIMIT 1000000) as t GROUP BY payment_instrument_id;
  * +-----------------------+----------+
  * | payment_instrument_id | count(*) |
  * +-----------------------+----------+
@@ -1544,7 +1525,7 @@ function wmf_civicrm_update_7064() {
 function wmf_civicrm_update_7065() {
   civicrm_initialize();
   // Ensure that 'Gateway' option exists. Will be a no-op if it's already there.
-  wmf_civicrm_create_option_values( 'payment_instrument', array( 'Gateway' ) );
+  wmf_civicrm_create_option_values('payment_instrument', array('Gateway'));
   $paymentInstruments = civicrm_api3('Contribution', 'getoptions', array('field' => 'payment_instrument_id'));
   $defaultPaymentInstrument = array_search('Gateway', $paymentInstruments['values']);
   CRM_Core_DAO::executeQuery(
@@ -1564,18 +1545,21 @@ WHERE ceft.entity_table = 'civicrm_contribution' AND cft.payment_instrument_id I
  *
  * In the 4.3 upgrade transaction records were done for statuses Completed
  * Pending and Cancelled. The status Refunded was not a core status until 4.3
- * so transactions were NOT added in the upgrade to refunded status transactions.
+ * so transactions were NOT added in the upgrade to refunded status
+ * transactions.
  *
  * The original upgrade code is in the function
  * CRM_Upgrade_Incremental_php_FourThree::createFinancialRecords
  *
- * I tried re-editing it for use here but the sql was just too slow and we don't
- * want another long-outage. It's probably slower for this section than on the main
- * upgrade as the financial_trxn table has been populated in the meantime. The main
- * upgrade sql included adding and dropping columns on tables whereas here I
- * have used LAST_INSERT_ID() to get the inserted row ids.
+ * I tried re-editing it for use here but the sql was just too slow and we
+ * don't
+ * want another long-outage. It's probably slower for this section than on the
+ * main upgrade as the financial_trxn table has been populated in the meantime.
+ * The main upgrade sql included adding and dropping columns on tables whereas
+ * here I have used LAST_INSERT_ID() to get the inserted row ids.
  *
- * OTOH we only need to deal with ~16k records to php parsing is a reasonable option
+ * OTOH we only need to deal with ~16k records to php parsing is a reasonable
+ * option
  * (it might take a little while but it won't lock the tables so I don't think
  * the site would need to come down to run it).
  */
@@ -1584,13 +1568,14 @@ function wmf_civicrm_update_7070() {
   _wmf_civicrm_update_7070_fill_refund_transaction_data();
 }
 
- /**
+/**
  * Remove any duplication of the 'Refunded' Contribution status.
  *
  * This status was added to WMF & then added to core - resulting in
  * 2 on WMF. The retained one should be set to reserved.
  *
- * NB I didn't add this to the install as I don't think it should be relevant there.
+ * NB I didn't add this to the install as I don't think it should be relevant
+ * there.
  *
  * T116317
  *
@@ -1598,14 +1583,17 @@ function wmf_civicrm_update_7070() {
  */
 function wmf_civicrm_update_7075() {
   civicrm_initialize();
-  if ((civicrm_api3('OptionValue', 'getcount', array('name' => 'Refunded', 'option_group_id' => 'contribution_status'))) == 1) {
+  if ((civicrm_api3('OptionValue', 'getcount', array(
+      'name' => 'Refunded',
+      'option_group_id' => 'contribution_status',
+    ))) == 1) {
     // Nothing to do here, move along.
     return;
   }
   $options = civicrm_api3('OptionValue', 'get', array(
     'name' => 'Refunded',
     'option_group_id' =>
-    'contribution_status',
+      'contribution_status',
     'sequential' => 1,
     'options' => array('sort' => 'id ASC'),
   ));
@@ -1618,14 +1606,22 @@ function wmf_civicrm_update_7075() {
   $refundValueToKeep = $options['values'][0]['value'];
 
   if (civicrm_api3('Contribution', 'getcount', array('contribution_status_id' => $expectedRedundantType['value']))) {
-      CRM_Core_DAO::executeQuery("DELETE FROM civicrm_financial_trxn WHERE status_id = %1", array(1 => array($expectedRedundantType['value'], 'Integer')));
-      CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution SET contribution_status_id = %1 WHERE contribution_status_id = %2", array(
-          1 => array($refundValueToKeep, 'Integer'),
-          2 => array($expectedRedundantType['value'], 'Integer'),
-      ));
+    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_financial_trxn WHERE status_id = %1", array(
+      1 => array(
+        $expectedRedundantType['value'],
+        'Integer',
+      ),
+    ));
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution SET contribution_status_id = %1 WHERE contribution_status_id = %2", array(
+      1 => array($refundValueToKeep, 'Integer'),
+      2 => array($expectedRedundantType['value'], 'Integer'),
+    ));
   }
   civicrm_api3('OptionValue', 'delete', array('id' => $expectedRedundantType['id']));
-  civicrm_api3('OptionValue', 'create', array('id' => $options['values'][0]['id'], 'is_reserved' => TRUE));
+  civicrm_api3('OptionValue', 'create', array(
+    'id' => $options['values'][0]['id'],
+    'is_reserved' => TRUE,
+  ));
 }
 
 /**
@@ -1634,7 +1630,8 @@ function wmf_civicrm_update_7075() {
  * These indexes have been added to 4.7 using the same php function.
  *
  * This function checks the index does not already exist before adding it.
- * This ensures that we will not hit a problem on upgrade as a result of adding them now.
+ * This ensures that we will not hit a problem on upgrade as a result of adding
+ * them now.
  *
  * Note this could be a slow update.
  *
@@ -1658,9 +1655,9 @@ function wmf_civicrm_update_7080() {
  * entity_table dont' use it. It is also logically the wrong way around as the
  * one with more variation should lead.
  *
- * The upstream patch (CRM-17775) removes indexes as well. I have not ported that part
- * back at this stage as I'm viewing it as tidy up rather than a performance
- * fix and leaving 4.7.2 upgrade to catch it.
+ * The upstream patch (CRM-17775) removes indexes as well. I have not ported
+ * that part back at this stage as I'm viewing it as tidy up rather than a
+ * performance fix and leaving 4.7.2 upgrade to catch it.
  */
 function wmf_civicrm_update_7090() {
   civicrm_initialize();
@@ -1670,9 +1667,11 @@ function wmf_civicrm_update_7090() {
 }
 
 /**
- * T124979 add Chargeback refund status and chargeback & contra account relationships.
+ * T124979 add Chargeback refund status and chargeback & contra account
+ * relationships.
  *
- * This is the same code in 4.7.2 to add these options and is written to be upgrade safe.
+ * This is the same code in 4.7.2 to add these options and is written to be
+ * upgrade safe.
  */
 function wmf_civicrm_update_7100() {
   civicrm_initialize();
@@ -1707,7 +1706,8 @@ function wmf_civicrm_update_7110() {
 }
 
 /**
- * T124979 add a Financial Account to each Financial Type for Chargeback & Refund.
+ * T124979 add a Financial Account to each Financial Type for Chargeback &
+ * Refund.
  */
 function wmf_civicrm_update_7120() {
   civicrm_initialize();
@@ -1730,12 +1730,14 @@ function wmf_civicrm_update_7120() {
 }
 
 /**
- * T122946 fix financial trxn record for upgraded contributions missing to_financial_account_id.
+ * T122946 fix financial trxn record for upgraded contributions missing
+ * to_financial_account_id.
  *
- * These came about in the upgrade (this update does not need to run on install) and affect the
- * same contributions as update 7065.
+ * These came about in the upgrade (this update does not need to run on
+ * install) and affect the same contributions as update 7065.
  *
- * My queries suggest they all have financial_type = 'Cash' so I explicitly limited to that.
+ * My queries suggest they all have financial_type = 'Cash' so I explicitly
+ * limited to that.
  */
 function wmf_civicrm_update_7130() {
   civicrm_initialize();
@@ -1749,7 +1751,7 @@ function wmf_civicrm_update_7130() {
     'name' => 'Cash',
   ));
   CRM_Core_DAO::executeQuery(
-   "UPDATE
+    "UPDATE
      civicrm_contribution con
      LEFT JOIN civicrm_entity_financial_trxn eft ON (eft.entity_id = con.id AND eft.entity_table = 'civicrm_contribution')
      INNER JOIN civicrm_financial_trxn ft ON ft.id = eft.financial_trxn_id
@@ -1757,11 +1759,11 @@ function wmf_civicrm_update_7130() {
      SET ft.to_financial_account_id = %1
 
      WHERE ft.to_financial_account_id IS NULL AND con.financial_type_id = %2",
-     array(
-       1 => array($depositFinancialAccountID, 'Integer'),
-       2 => array($cashFinancialTypeID, 'Integer'),
-     )
-   );
+    array(
+      1 => array($depositFinancialAccountID, 'Integer'),
+      2 => array($cashFinancialTypeID, 'Integer'),
+    )
+  );
 }
 
 /**
@@ -1775,7 +1777,10 @@ function wmf_civicrm_update_7141() {
   foreach ($fields['values'] as $field) {
     $fieldNameParts = explode('_', $field['name']);
     if ($fieldNameParts[0] == 'is' && $fieldNameParts[2] == 'donor') {
-      civicrm_api3('CustomField', 'create', array('id' => $field['id'], 'label' => 'Is FY ' . $fieldNameParts[1] . '-' . ($fieldNameParts[1] + 1) . ' donor'));
+      civicrm_api3('CustomField', 'create', array(
+        'id' => $field['id'],
+        'label' => 'Is FY ' . $fieldNameParts[1] . '-' . ($fieldNameParts[1] + 1) . ' donor',
+      ));
     }
   }
 }
@@ -1783,13 +1788,15 @@ function wmf_civicrm_update_7141() {
 /**
  * Fix financial item records with null financial_account.
  *
- * Incredibly we have only 4 of these in our database & Elliott picked up this problem through spot
- * checks!.
+ * Incredibly we have only 4 of these in our database & Elliott picked up this
+ * problem through spot checks!.
  *
- * Reference contact is civicrm/contact/view?reset=1&cid=11346599 - before this update
- * one of the contact's transactions does not display financial details when expanded in the UI.
+ * Reference contact is civicrm/contact/view?reset=1&cid=11346599 - before this
+ * update one of the contact's transactions does not display financial details
+ * when expanded in the UI.
  *
- *  [civicrm]> SELECT count(*) FROM civicrm_financial_item WHERE financial_account_id IS NULL;
+ *  [civicrm]> SELECT count(*) FROM civicrm_financial_item WHERE
+ * financial_account_id IS NULL;
  * +----------+
  * | count(*) |
  * +----------+
@@ -1798,15 +1805,16 @@ function wmf_civicrm_update_7141() {
  *
  * These relate to line items with no financial_type_id of which we have 74.
  *
- * SELECT count(*) FROM civicrm_line_item li LEFT JOIN civicrm_contribution c ON c.id = li.contribution_id WHERE li.financial_type_id IS NULL;
+ * SELECT count(*) FROM civicrm_line_item li LEFT JOIN civicrm_contribution c
+ * ON c.id = li.contribution_id WHERE li.financial_type_id IS NULL;
  * +----------+
  * | count(*) |
  * +----------+
  * |       74 |
  * +----------+
  *
- * Of those 74 rows 70 are orphans - ie line items with no contributions. It appears the contributions
- * were deleted at some point in the past.
+ * Of those 74 rows 70 are orphans - ie line items with no contributions. It
+ * appears the contributions were deleted at some point in the past.
  *
  * This relates to T122946 & is a follow up fix.
  */
@@ -1842,10 +1850,11 @@ function wmf_civicrm_update_7150() {
 /**
  * Further refund financial data fix.
  *
- * This is an extra record that was missing in 7070. It was obvious until the patch for
- * CRM-17951 was merged:
+ * This is an extra record that was missing in 7070. It was obvious until the
+ * patch for CRM-17951 was merged:
  *
- * CRM-17951 (merged into 4.7) modify transaction view to show the financial account of the transaction
+ * CRM-17951 (merged into 4.7) modify transaction view to show the financial
+ * account of the transaction
  */
 function wmf_civicrm_update_7160() {
   civicrm_initialize();
@@ -1865,7 +1874,8 @@ function wmf_civicrm_update_7160() {
 /**
  * Further refund financial data fix.
  *
- * This is a change Elliott made on live to reflect these accounts as Expenses not Income.
+ * This is a change Elliott made on live to reflect these accounts as Expenses
+ * not Income.
  *
  * Added here to ensure dev sites have the same info.
  */
@@ -1908,8 +1918,9 @@ function wmf_civicrm_update_7180() {
 /**
  * T128221 add index to civicrm_contribution.total_amount.
  *
- * Note that I made this a combined index with receive_date because the ticket included
- * both criteria and they seemed likely to be used in conjunction to me in other cases.
+ * Note that I made this a combined index with receive_date because the ticket
+ * included both criteria and they seemed likely to be used in conjunction to
+ * me in other cases.
  *
  * I ran the offending search on staging afterwards and it was fast.
  */
@@ -1924,43 +1935,43 @@ function wmf_civicrm_update_7190() {
  * Add Latin American payment methods for AstroPay
  */
 function wmf_civicrm_update_7195() {
-    $payment_instruments = array(
-        'Credit Card: Elo',
-        'Credit Card: HiperCard',
-        'Credit Card: MercadoLivre',
-        'Credit Card: Cabal',
-        'Credit Card: Naranja',
-        'Credit Card: Tarjeta Shopping',
-        'Credit Card: Nativa',
-        'Credit Card: Cencosud',
-        'Credit Card: Argencard',
-        'Credit Card: Webpay',
-        'Banamex',
-        'Bancomer',
-        'Davivienda',
-        'Efecty',
-        'OXXO',
-        'Pago Facil',
-        'Provencia Pagos',
-        'Red Pagos',
-        'Rapi Pago',
-        'Santander',
-    );
-    wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
+  $payment_instruments = array(
+    'Credit Card: Elo',
+    'Credit Card: HiperCard',
+    'Credit Card: MercadoLivre',
+    'Credit Card: Cabal',
+    'Credit Card: Naranja',
+    'Credit Card: Tarjeta Shopping',
+    'Credit Card: Nativa',
+    'Credit Card: Cencosud',
+    'Credit Card: Argencard',
+    'Credit Card: Webpay',
+    'Banamex',
+    'Bancomer',
+    'Davivienda',
+    'Efecty',
+    'OXXO',
+    'Pago Facil',
+    'Provencia Pagos',
+    'Red Pagos',
+    'Rapi Pago',
+    'Santander',
+  );
+  wmf_civicrm_bootstrap_civi();
+  wmf_civicrm_create_option_values('payment_instrument', $payment_instruments);
 }
 
 /**
  * Add a few more Chilean credit cards
  */
 function wmf_civicrm_update_7196() {
-    $payment_instruments = array(
-        'Credit Card: CMR Falabella',
-        'Credit Card: Magna',
-        'Credit Card: Presto',
-    );
-    wmf_civicrm_bootstrap_civi();
-    wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
+  $payment_instruments = array(
+    'Credit Card: CMR Falabella',
+    'Credit Card: Magna',
+    'Credit Card: Presto',
+  );
+  wmf_civicrm_bootstrap_civi();
+  wmf_civicrm_create_option_values('payment_instrument', $payment_instruments);
 }
 
 /**
@@ -2040,7 +2051,7 @@ function wmf_civicrm_update_7230() {
   civicrm_initialize();
   CRM_Core_BAO_OptionValue::ensureOptionValueExists(array(
     'name' => 'Endowment Gift',
-    'value' =>  'Endowment Gift',
+    'value' => 'Endowment Gift',
     'option_group_id' => 'campaign_20080709183311',
   ));
 }
@@ -2064,27 +2075,29 @@ function wmf_civicrm_update_7235() {
  *
  * These 8 failed to re-process on their second attempt so were not reset.
  *
- * The others all re-processed within the affected time period and their dates were pushed out
+ * The others all re-processed within the affected time period and their dates
+ * were pushed out
  *
  * SQL to view these 8.
  *
- * SELECT count(*) as c, contribution_recur_id, cr.contact_id, group_concat(receive_date) as rdate,
- * next_sched_contribution_date, c.contribution_status_id, cr.contribution_status_id
- * FROM civicrm_contribution c LEFT JOIN civicrm_contribution_recur cr ON cr.id = c.contribution_recur_id
- * WHERE receive_date > '2016-08-31'
- * AND contribution_recur_id IS NOT NULL
- * AND c.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
- * AND next_sched_contribution_date < '2016-09-30' GROUP BY contribution_recur_id having c = 1 AND rdate < '2016-09-01';
+ * SELECT count(*) as c, contribution_recur_id, cr.contact_id,
+ * group_concat(receive_date) as rdate, next_sched_contribution_date,
+ * c.contribution_status_id, cr.contribution_status_id FROM
+ * civicrm_contribution c LEFT JOIN civicrm_contribution_recur cr ON cr.id =
+ * c.contribution_recur_id WHERE receive_date > '2016-08-31' AND
+ * contribution_recur_id IS NOT NULL AND c.trxn_id LIKE 'RECURRING
+ * GLOBALCOLLECT%' AND next_sched_contribution_date < '2016-09-30' GROUP BY
+ * contribution_recur_id having c = 1 AND rdate < '2016-09-01';
  *
  * To view the others:
  *
- * SELECT count(*) as c, contribution_recur_id, c.contact_id, group_concat(receive_date) as dates,
- * next_sched_contribution_date, GROUP_CONCAT(c.trxn_id)
- * FROM civicrm_contribution c
- * Left JOIN civicrm_contribution_recur cr ON cr.id = c.contribution_recur_id
- * WHERE receive_date > '2016-08-30' AND contribution_recur_id IS NOT NULL
- * AND c.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
- * GROUP BY contribution_recur_id having c > 1;
+ * SELECT count(*) as c, contribution_recur_id, c.contact_id,
+ * group_concat(receive_date) as dates, next_sched_contribution_date,
+ * GROUP_CONCAT(c.trxn_id) FROM civicrm_contribution c Left JOIN
+ * civicrm_contribution_recur cr ON cr.id = c.contribution_recur_id WHERE
+ * receive_date > '2016-08-30' AND contribution_recur_id IS NOT NULL AND
+ * c.trxn_id LIKE 'RECURRING GLOBALCOLLECT%' GROUP BY contribution_recur_id
+ * having c > 1;
  *
  * T144489
  */
@@ -2114,8 +2127,8 @@ function wmf_civicrm_update_7240() {
 /**
  * Remove placeholder email addresses.
  *
- * In the past nobody@wikimedia.org was used as a placeholder email. This is no longer required
- * and causes performance load & UI confusion on deduping.
+ * In the past nobody@wikimedia.org was used as a placeholder email. This is no
+ * longer required and causes performance load & UI confusion on deduping.
  *
  * Bug: T143062
  */
@@ -2128,7 +2141,8 @@ function wmf_civicrm_update_7245() {
  * Fix contacts who have no primary - this has arisen from the dedupes.
  *
  * I'll probably run this again once I've fixed dedupe to stop creating them
- * but this fixes the ~10000 contacts who currently don't have an address marked as primary.
+ * but this fixes the ~10000 contacts who currently don't have an address
+ * marked as primary.
  *
  * Staging : (9 min 16.83 sec)
  *
@@ -2164,10 +2178,11 @@ function wmf_civicrm_update_7255() {
 }
 
 /**
- * Update the preferred_language field in civicrm_contact based on tracking data.
+ * Update the preferred_language field in civicrm_contact based on tracking
+ * data.
  *
  * Bug: T96410
-*/
+ */
 function wmf_civicrm_update_7260() {
   civicrm_initialize();
   require_once('update_7260.php');
@@ -2249,14 +2264,19 @@ function wmf_civicrm_update_7275() {
  *
  * The template is cut down from our standard thank you in the following ways
  *
- * 1) I pretty much by-passed translation - I’m thinking this is mostly for a small number of English language receipts
- * to be manually generated. I’d need to do something more complex to get it translating well
- * 2) I ditched the RecurringRestarted & UnrecordedCharge logic. I figured you would be sending these on request.
- * 3)I have assumed we have a first name & not done the fall-back to donor (on assumption manual sends know the name).
- * 4) I did not include "{% if recurring %}<p> This donation is part of a recurring subscription.
- * Monthly payments will be debited by the Wikimedia Foundation until you notify us to stop.
- * If you’d like to cancel the payments please see our
- * <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payment..
+ * 1) I pretty much by-passed translation - I’m thinking this is mostly for a
+ * small number of English language receipts to be manually generated. I’d need
+ * to do something more complex to get it translating well
+ * 2) I ditched the RecurringRestarted & UnrecordedCharge logic. I figured you
+ * would be sending these on request.
+ * 3)I have assumed we have a first name & not done the fall-back to donor (on
+ * assumption manual sends know the name).
+ * 4) I did not include "{% if recurring %}<p> This donation is part of a
+ * recurring subscription. Monthly payments will be debited by the Wikimedia
+ * Foundation until you notify us to stop. If you’d like to cancel the payments
+ * please see our
+ * <a
+ * href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payment..
  *
  * In other words this is a pretty-simple English language solution.
  *
@@ -2264,7 +2284,7 @@ function wmf_civicrm_update_7275() {
  */
 function wmf_civicrm_update_7280() {
   require_once 'update_receipt.php';
-    _wmf_civicrm_update_offline_receipt();
+  _wmf_civicrm_update_offline_receipt();
 }
 
 /**
@@ -2282,12 +2302,13 @@ function wmf_civicrm_update_7280() {
  * BUG: T137496
  */
 function wmf_civicrm_update_7285() {
-    require_once 'update_receipt.php';
-    _wmf_civicrm_update_offline_receipt();
+  require_once 'update_receipt.php';
+  _wmf_civicrm_update_offline_receipt();
 }
 
 /**
- * Update the currency display setting to not have a space between currency & amount.
+ * Update the currency display setting to not have a space between currency &
+ * amount.
  *
  * (based on feedback from Leanne on receipt).
  *
@@ -2315,7 +2336,8 @@ function wmf_civicrm_update_7300() {
 /**
  * Remove invalid address na@na.com.
  *
- * I put this before update 7305 in case it leaves any contacts without a primary.
+ * I put this before update 7305 in case it leaves any contacts without a
+ * primary.
  *
  * Only a small number of emails involved.
  *
@@ -2350,7 +2372,8 @@ function wmf_civicrm_update_7310() {
 /**
  * Fix contacts who have no primary address- this has arisen from the dedupes.
  *
- * I did this on emails before and but I just checked and there are around 7000 addresses
+ * I did this on emails before and but I just checked and there are around 7000
+ * addresses
  *
  * Bug: T143062
  */
@@ -2405,7 +2428,7 @@ function wmf_civicrm_update_7320() {
   ");
 
   $batch = 100000;
-  for($startId = 0; $startId < 21000000; $startId += $batch) {
+  for ($startId = 0; $startId < 21000000; $startId += $batch) {
     $endId = $startId + $batch;
     CRM_Core_DAO::executeQuery("
       UPDATE civicrm_address a
@@ -2429,8 +2452,14 @@ function wmf_civicrm_update_7320() {
  */
 function wmf_civicrm_update_7325() {
   civicrm_initialize();
-  $customGroup = civicrm_api3('CustomGroup', 'getsingle', array('name' => 'Gift_Data', 'return' => 'table_name'));
-  $customField = civicrm_api3('CustomField', 'getsingle', array('name' => 'Campaign', 'return' => 'column_name'));
+  $customGroup = civicrm_api3('CustomGroup', 'getsingle', array(
+    'name' => 'Gift_Data',
+    'return' => 'table_name',
+  ));
+  $customField = civicrm_api3('CustomField', 'getsingle', array(
+    'name' => 'Campaign',
+    'return' => 'column_name',
+  ));
 
   CRM_Core_DAO::executeQuery("INSERT INTO {$customGroup['table_name']} (entity_id, {$customField['column_name']})
     SELECT c.id as entity_id, 'Benefactor Gift' as {$customField['column_name']}
@@ -2473,7 +2502,10 @@ function wmf_civicrm_update_7335() {
  */
 function wmf_civicrm_update_7440() {
   civicrm_initialize();
-  $tagID = civicrm_api3('Tag', 'getvalue', array('name' => 'Review', 'return' => 'id'));
+  $tagID = civicrm_api3('Tag', 'getvalue', array(
+    'name' => 'Review',
+    'return' => 'id',
+  ));
   CRM_Core_DAO::executeQuery("
     DELETE FROM civicrm_entity_tag
     WHERE tag_id = $tagID
@@ -2496,8 +2528,9 @@ function wmf_civicrm_update_7450() {
  *
  * We have decided the Benevity Import should accept org matches on nick_name
  * or organization_name in order to provide the option to refer to them with
- * 2 names. In order to use it it must be indexed. Note that I believe the index size
- * is relative to the number of values in it (currently a few hundred).
+ * 2 names. In order to use it it must be indexed. Note that I believe the
+ * index size is relative to the number of values in it (currently a few
+ * hundred).
  *
  * Bug: T115044
  */
@@ -2580,10 +2613,10 @@ function wmf_civicrm_update_7475() {
  * Bug: T159455
  */
 function wmf_civicrm_update_7480() {
-	civicrm_initialize();
-	// First the easy ones
-	CRM_Core_DAO::executeQuery(
-		"UPDATE civicrm_contact
+  civicrm_initialize();
+  // First the easy ones
+  CRM_Core_DAO::executeQuery(
+    "UPDATE civicrm_contact
 		SET last_name = SUBSTRING_INDEX(sort_name, ', ', 1),
 			first_name = SUBSTRING_INDEX(sort_name, ', ', -1)
 		WHERE created_date BETWEEN '2017-02-28' AND '2017-03-03'
@@ -2592,9 +2625,9 @@ function wmf_civicrm_update_7480() {
 		AND last_name IS NULL
 		AND sort_name LIKE '%, %'
     ");
-	// Some of the contacts have been touched since creation, and Civi has helpfully
-	// destroyed the sort_name. log_civicrm_contact to the rescue!
-	CRM_Core_DAO::executeQuery("
+  // Some of the contacts have been touched since creation, and Civi has helpfully
+  // destroyed the sort_name. log_civicrm_contact to the rescue!
+  CRM_Core_DAO::executeQuery("
 create temporary table tmp_T159455
 select
     id,
@@ -2609,7 +2642,7 @@ where
     and last_name is null
 		");
 
-	CRM_Core_DAO::executeQuery("
+  CRM_Core_DAO::executeQuery("
 update tmp_T159455 t
 inner join log_civicrm_contact l
     on t.id = l.id
@@ -2620,20 +2653,20 @@ where
     l.sort_name like '%, %'
 		");
 
-	// Set the names using the API in order to refresh calculations.
-	$query = "
+  // Set the names using the API in order to refresh calculations.
+  $query = "
 		select * from tmp_T159455
 		where first_name is not null
 			and last_name is not null
 	";
-	$dao = CRM_Core_DAO::executeQuery($query);
-	while ($dao->fetch()) {
-		civicrm_api3('Contact', 'create', array(
-			'id' => $dao->id,
-			'first_name' => $dao->first_name,
-			'last_name' => $dao->last_name,
-		));
-	}
+  $dao = CRM_Core_DAO::executeQuery($query);
+  while ($dao->fetch()) {
+    civicrm_api3('Contact', 'create', array(
+      'id' => $dao->id,
+      'first_name' => $dao->first_name,
+      'last_name' => $dao->last_name,
+    ));
+  }
 }
 
 /**
@@ -2717,7 +2750,8 @@ function wmf_civicrm_update_7485() {
  * a merge. However, we know the record has been deleted and never had any
  * retrievable data on it.
  *
- * In other words we don't need to track these as they were fully resolved already.
+ * In other words we don't need to track these as they were fully resolved
+ * already.
  *
  * 21590 rows so we don't need to batch.
  *
@@ -2764,7 +2798,8 @@ function wmf_civicrm_update_7490() {
  * Remove blank addresses relating to bulk updates from tracking table.
  *
  * There is a small number of addresses (only 130) which were only updated
- * as part of the geocoding updates, some more are affected by primary address fixes
+ * as part of the geocoding updates, some more are affected by primary address
+ * fixes
  *
  * . Remove these to be less confusing.
  *
@@ -2784,7 +2819,7 @@ function wmf_civicrm_update_7495() {
  * @return array
  */
 function wmf_civicrm_get_log_conn_bulk_update() {
-  return array (
+  return array(
     // Bulk update on 2017-02-07 involving 11712 records.
     // Consistent with the fix to primary addresses.
     // I committed the relevant fix on
@@ -2824,9 +2859,9 @@ function wmf_civicrm_update_7500() {
 /**
  * Rerun 7845 & 7490 with a slightly bigger catchment.
  *
- * This means that addresses with updates that only affect bulk updates on things
- * like geocode & is_primary will also be treated as 'non-updated' & removed
- * from the db if blank.
+ * This means that addresses with updates that only affect bulk updates on
+ * things like geocode & is_primary will also be treated as 'non-updated' &
+ * removed from the db if blank.
  */
 function wmf_civicrm_update_7505() {
   wmf_civicrm_update_7485();
@@ -2930,42 +2965,49 @@ function wmf_civicrm_update_7520() {
   $logDir = wmf_audit_get_log_archive_dir();
   $lines = array();
   // These lines will have the gateway_trxn_id and the ct_id
-  $files = implode( ' ', glob( "$logDir/fundraising-drupal-201704*" ) );
+  $files = implode(' ', glob("$logDir/fundraising-drupal-201704*"));
   $cmd = "/bin/zgrep subscr_payment $files";
-  exec( $cmd, $lines );
-  foreach ( $lines as $line ) {
-    $parsed = wmf_civicrm_parse_watchdog_array( $line );
+  exec($cmd, $lines);
+  foreach ($lines as $line) {
+    $parsed = wmf_civicrm_parse_watchdog_array($line);
     if (
-      !empty( $parsed['gateway_txn_id'] ) &&
-      !empty( $parsed['contribution_tracking_id'] )
+      !empty($parsed['gateway_txn_id']) &&
+      !empty($parsed['contribution_tracking_id'])
     ) {
       // Normalized lines
       $found[$parsed['gateway_txn_id']] = $parsed['contribution_tracking_id'];
-    } else if ( !empty( $parsed['txn_id'] ) ) {
-      // Raw PayPal IPNs
-      if (
-        !empty( $parsed['transaction_subject'] ) &&
-        is_numeric( $parsed['transaction_subject'] )
-      ) {
-        $found[$parsed['txn_id']] = $parsed['transaction_subject'];
-      } else if (
-        !empty( $parsed['custom'] ) &&
-		is_numeric( $parsed['custom'] )
-      ) {
-        $found[$parsed['txn_id']] = $parsed['custom'];
+    }
+    else {
+      if (!empty($parsed['txn_id'])) {
+        // Raw PayPal IPNs
+        if (
+          !empty($parsed['transaction_subject']) &&
+          is_numeric($parsed['transaction_subject'])
+        ) {
+          $found[$parsed['txn_id']] = $parsed['transaction_subject'];
+        }
+        else {
+          if (
+            !empty($parsed['custom']) &&
+            is_numeric($parsed['custom'])
+          ) {
+            $found[$parsed['txn_id']] = $parsed['custom'];
+          }
+        }
       }
     }
   }
   $fixed = 0;
   $missing = 0;
-  while( $affected->fetch() ) {
+  while ($affected->fetch()) {
     $gatewayTxnId = $affected->gateway_txn_id;
-    if ( empty( $found[$gatewayTxnId] ) ) {
+    if (empty($found[$gatewayTxnId])) {
       $missing++;
-    } else {
+    }
+    else {
       wmf_civicrm_message_update_contribution_tracking(
-        array( 'contribution_tracking_id' => $found[$gatewayTxnId] ),
-        array( 'id' => $affected->id )
+        array('contribution_tracking_id' => $found[$gatewayTxnId]),
+        array('id' => $affected->id)
       );
       $fixed++;
     }
@@ -2980,7 +3022,7 @@ function wmf_civicrm_update_7521() {
     'Credit Card: Bijenkorf',
   );
   wmf_civicrm_bootstrap_civi();
-  wmf_civicrm_create_option_values( 'payment_instrument', $payment_instruments );
+  wmf_civicrm_create_option_values('payment_instrument', $payment_instruments);
 }
 
 /**
@@ -2990,7 +3032,7 @@ function wmf_civicrm_update_7522() {
   civicrm_initialize();
   $maxId = CRM_CORE_DAO::singleValueQuery("SELECT max(id) FROM civicrm_phone");
   $batch = 100000;
-  for($startId = 0; $startId < $maxId; $startId += $batch) {
+  for ($startId = 0; $startId < $maxId; $startId += $batch) {
     $endId = $startId + $batch;
     CRM_Core_DAO::executeQuery("
       UPDATE civicrm_phone
@@ -3009,8 +3051,8 @@ function wmf_civicrm_update_7523() {
 }
 
 /**
-  * Add duplicate contribution tag
-  */
+ * Add duplicate contribution tag
+ */
 function wmf_civicrm_update_7524() {
   civicrm_initialize();
   $tag = array(
@@ -3045,9 +3087,9 @@ function wmf_civicrm_update_7525() {
  * Bug: T168499
  */
 function wmf_civicrm_update_7526() {
-    civicrm_initialize();
-    $tables = array('civicrm_campaign' => array('name'));
-    CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+  civicrm_initialize();
+  $tables = array('civicrm_campaign' => array('name'));
+  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
 
 /**
@@ -3059,15 +3101,20 @@ function wmf_civicrm_update_7530() {
   // set in civicrm.settings etc. That will override any attempt to set it here.
   civicrm_api3('setting', 'create', array('extensionsDir' => 'sites/default/civicrm/extensions'));
   civicrm_api3('extension', 'refresh', array());
-  civicrm_api3('extension', 'install',  array('key' => 'org.wikimedia.omnimail'));
-  civicrm_api3('extension', 'install',  array('key' => 'au.org.greens.extendedmailingstats'));
+  civicrm_api3('extension', 'install', array('key' => 'org.wikimedia.omnimail'));
+  civicrm_api3('extension', 'install', array('key' => 'au.org.greens.extendedmailingstats'));
 }
 
 /**
  * Remove void data from city field & tidy name field data.
  */
 function wmf_civicrm_update_7540() {
-  wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'city', array('city', '0', 'City/Town', 'NoCity'));
+  wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'city', array(
+    'city',
+    '0',
+    'City/Town',
+    'NoCity',
+  ));
   wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'postal_code', array('0'));
   $replacements = array(
     array(
@@ -3116,7 +3163,7 @@ function wmf_civicrm_update_7540() {
       wmf_civicrm_batch_update_data(
         'civicrm_contact',
         "WHERE $field LIKE BINARY $likeClause",
-      "SET a.{$field} = REPLACE({$field}, {$findString}, '{$replacement['replace_with']}')"
+        "SET a.{$field} = REPLACE({$field}, {$findString}, '{$replacement['replace_with']}')"
       );
     }
   }
@@ -3194,28 +3241,32 @@ function wmf_civicrm_update_7560() {
       'get',
       array(
         'contact_id' => $contactIds->contact_id,
-        'is_primary' => 1
+        'is_primary' => 1,
       )
     );
-    $bestAddress = null;
+    $bestAddress = NULL;
     $addressesToDelete = array();
     $addressesToDemote = array();
     foreach ($addresses['values'] as $address) {
-      if ($bestAddress === null) {
+      if ($bestAddress === NULL) {
         $bestAddress = $address;
-      } else {
+      }
+      else {
         if (_wmf_civicrm_is_this_address_better($address, $bestAddress)) {
           // previous best address is a subset of current address
           $addressesToDelete[] = $bestAddress;
           $bestAddress = $address;
-        } elseif(_wmf_civicrm_is_this_address_better($bestAddress, $address)) {
+        }
+        elseif (_wmf_civicrm_is_this_address_better($bestAddress, $address)) {
           // current address is a subset of previous best address
           $addressesToDelete[] = $address;
-        } elseif($address['id'] > $bestAddress['id']) {
+        }
+        elseif ($address['id'] > $bestAddress['id']) {
           // neither is a subset, current is newer than previous best
           $addressesToDemote[] = $bestAddress;
           $bestAddress = $address;
-        } else {
+        }
+        else {
           // neither is a subset, previous best is newer
           $addressesToDemote[] = $address;
         }
@@ -3237,26 +3288,33 @@ function wmf_civicrm_update_7560() {
  * Update Contact Deleted by Merge activies
  */
 function wmf_civicrm_update_7565() {
-   civicrm_initialize();
-   $batch = 100;
-   $maxId = CRM_Core_DAO::singleValueQuery("SELECT max(id) FROM civicrm_activity");
-   $activity_type_id = civicrm_api3('OptionValue', 'getSingle', array('label' => 'Contact Deleted by Merge', 'return' => 'value'));
-   $query = "SELECT ca.id as activity_id, cap.contact_id as new_contact_id
+  civicrm_initialize();
+  $batch = 100;
+  $maxId = CRM_Core_DAO::singleValueQuery("SELECT max(id) FROM civicrm_activity");
+  $activity_type_id = civicrm_api3('OptionValue', 'getSingle', array(
+    'label' => 'Contact Deleted by Merge',
+    'return' => 'value',
+  ));
+  $query = "SELECT ca.id as activity_id, cap.contact_id as new_contact_id
              FROM civicrm_activity ca
              JOIN civicrm_activity_contact cap ON ca.parent_id=cap.activity_id AND cap.record_type_id=3
              WHERE (SELECT count(*) FROM civicrm_activity_contact WHERE record_type_id=1 AND activity_id=ca.id)=0
              AND ca.activity_type_id=%1 AND ca.id BETWEEN %2 AND %3";
-   $params = array(1 => array($activity_type_id['value'], 'Integer'));
-   for($startId = 0; $startId < $maxId; $startId += $batch) {
-      $endId = $startId + $batch;
-      $params[2] = array($startId, 'Integer');
-      $params[3] = array($endId, 'Integer');
-      $activities = CRM_Core_DAO::executeQuery($query, $params);
-      while ($activities->fetch()) {
-        civicrm_api3('ActivityContact', 'create', array( 'activity_id' => $activities->activity_id, 'contact_id' => $activities->new_contact_id, 'record_type_id' => 1 ));
-      }
+  $params = array(1 => array($activity_type_id['value'], 'Integer'));
+  for ($startId = 0; $startId < $maxId; $startId += $batch) {
+    $endId = $startId + $batch;
+    $params[2] = array($startId, 'Integer');
+    $params[3] = array($endId, 'Integer');
+    $activities = CRM_Core_DAO::executeQuery($query, $params);
+    while ($activities->fetch()) {
+      civicrm_api3('ActivityContact', 'create', array(
+        'activity_id' => $activities->activity_id,
+        'contact_id' => $activities->new_contact_id,
+        'record_type_id' => 1,
+      ));
     }
- }
+  }
+}
 
 /**
  * Tidy up our dedupe rules.
@@ -3321,14 +3379,15 @@ function wmf_civicrm_update_7570() {
 /**
  * Enable dedupe tools.
  *
- * This extension is intended to be where our custom dedupe code gets transferred to.
+ * This extension is intended to be where our custom dedupe code gets
+ * transferred to.
  *
  * Bug: T177999
  */
 function wmf_civicrm_update_7575() {
   civicrm_initialize();
   civicrm_api3('extension', 'refresh', array());
-  civicrm_api3('extension', 'install',  array('key' => 'org.wikimedia.dedupetools'));
+  civicrm_api3('extension', 'install', array('key' => 'org.wikimedia.dedupetools'));
 }
 
 /**
@@ -3341,7 +3400,7 @@ function wmf_civicrm_update_7575() {
 function wmf_civicrm_update_7580() {
   civicrm_initialize();
   civicrm_api3('extension', 'refresh', array());
-  civicrm_api3('extension', 'install',  array('key' => 'nz.co.fuzion.extendedreport'));
+  civicrm_api3('extension', 'install', array('key' => 'nz.co.fuzion.extendedreport'));
 }
 
 /**
