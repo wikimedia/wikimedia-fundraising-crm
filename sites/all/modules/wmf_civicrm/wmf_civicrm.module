@@ -2543,7 +2543,7 @@ function _wmf_civicrm_merge_is_communication_boolean($moveField) {
  * @return bool
  */
 function _wmf_civicrm_merge_resolve_casing_conflict($fieldName, &$moveFieldValue, &$valueToKeep, &$valueToOverwrite) {
-  $fieldsToResolveCasingFor = array('last_name', 'first_name');
+  $fieldsToResolveCasingFor = array('last_name', 'first_name', 'organization_name');
   if (!in_array(str_replace('move_', '', $fieldName), $fieldsToResolveCasingFor)) {
     return FALSE;
   }

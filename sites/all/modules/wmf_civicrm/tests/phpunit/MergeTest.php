@@ -915,6 +915,31 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test that a conflict on casing in first names is handled for organization_name.
+   */
+  public function testBatchMergeConflictNameCasingOrgs() {
+    $rule_group_id = civicrm_api3('RuleGroup', 'getvalue', array(
+      'contact_type' => 'Organization',
+      'used' => 'Unsupervised',
+      'return' => 'id',
+      'options' => array('limit' => 1),
+    ));
+
+    // Do a pre-merge to get us to a known 'no mergeable contacts' state.
+    $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe', 'rule_group_id' => $rule_group_id));
+
+    $org1 = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'donald duck', 'contact_type' => 'Organization'));
+    $org2 = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Donald Duck', 'contact_type' => 'Organization'));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe', 'rule_group_id' => $rule_group_id));
+    $this->assertEquals(0, count($result['values']['skipped']));
+    $this->assertEquals(1, count($result['values']['merged']));
+
+    $contact = $this->callAPISuccess('Contact', 'get', array('id' => $org1['id'], 'sequential' => 1));
+    $this->assertEquals('Donald Duck', $contact['values'][0]['organization_name']);
+  }
+
+  /**
    * Make sure José whomps Jose.
    *
    * Test diacritic matches are resolved to the one using 'authentic' characters.
