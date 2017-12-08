@@ -189,15 +189,19 @@ class WmfException extends Exception {
 
     function isRequeue()
     {
-    	if ( $this->extra && !empty( $this->extra['trace'] ) ) {
-    		// We want to retry later if the problem was a lock wait timeout
-			// or a deadlock. Unfortunately we have to do string parsing to
-			// figure that out.
-    		if ( preg_match( '/\'12(05|13) \*\* /', $this->extra['trace'] ) ) {
-    			return TRUE;
-			}
-		}
-        return $this->getErrorCharacteristic('requeue', FALSE);
+      if ($this->extra) {
+        // We want to retry later if the problem was a lock wait timeout
+        // or a deadlock. Unfortunately we have to do string parsing to
+        // figure that out.
+        $flattened = print_r($this->extra, TRUE);
+        if (
+          preg_match('/\'12(05|13) \*\* /', $flattened) ||
+          preg_match('/Database lock encountered/', $flattened)
+        ) {
+          return TRUE;
+        }
+      }
+      return $this->getErrorCharacteristic('requeue', FALSE);
     }
 
     function isFatal()
