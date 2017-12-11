@@ -88,7 +88,7 @@
                 "payment",
                 "payments"
             ],
-            "time": "2016-02-17T00:53:20+00:00"
+            "time": "2016-02-17T00:44:20+00:00"
         },
         {
             "name": "clio/clio",
@@ -2237,25 +2237,27 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "0.5.0",
+            "version": "v0.5.1",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "def9c6f3cfc8e3878aa74cf94ebb8287b08ac2cc"
+                "reference": "268799f492e3548006e13d28ffe14df0124edd28"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
                 "coderkungfu/php-queue": "^1.0",
                 "corneltek/getoptionkit": "^2.5",
-                "php": ">=5.3.3",
+                "php": ">=5.4",
                 "phpmailer/phpmailer": "^5.2",
                 "predis/predis": "^1.1",
                 "psr/cache": "^1.0",
+                "psr/log": "^1.0",
                 "symfony/event-dispatcher": "^2.1",
                 "symfony/http-foundation": "^2.1",
                 "symfony/yaml": "^2.8"
             },
             "require-dev": {
+                "ext-sqlite3": "*",
                 "jakub-onderka/php-parallel-lint": "^0.9",
                 "mediawiki/mediawiki-codesniffer": "0.11.0",
                 "phpunit/phpunit": "^4.8"
@@ -2294,7 +2296,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2017-09-11T13:31:06+00:00"
+            "time": "2017-12-11T19:36:55+00:00"
         },
         {
             "name": "zordius/lightncandy",
