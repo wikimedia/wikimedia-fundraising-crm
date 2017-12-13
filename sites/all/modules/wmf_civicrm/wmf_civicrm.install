@@ -64,6 +64,8 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7575();
   wmf_civicrm_update_7580();
   wmf_civicrm_update_7585();
+  wmf_civicrm_update_7595();
+  wmf_civicrm_update_7605();
 }
 
 /**
@@ -3310,4 +3312,15 @@ function wmf_civicrm_update_7600() {
   while ($result->fetch()) {
     civicrm_api3('Contact', 'create', array('id' => $result->id));
   }
+}
+
+/**
+ * Add contact type editor extension.
+ *
+ * Bug: TT156193
+ */
+function wmf_civicrm_update_7605() {
+  civicrm_initialize();
+  civicrm_api3('extension', 'refresh', array());
+  civicrm_api3('extension', 'install', array('key' => 'org.wikimedia.contacteditor'));
 }
