@@ -1,10 +1,11 @@
 <?php namespace queue2civicrm;
 
-use Queue2civicrmTrxnCounter;
 use SmashPig\Core\DataStores\PendingDatabase;
+use Queue2civicrmTrxnCounter;
 use SmashPig\Core\UtcDate;
 use wmf_common\TransactionalWmfQueueConsumer;
 use WmfException;
+use DonationStats;
 
 class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 
@@ -68,12 +69,21 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 			_queue2civicrm_log( $log );
 		}
 
-		$age = UtcDate::getUtcTimestamp() - UtcDate::getUtcTimestamp( $contribution['receive_date'] );
+		$DonationStats = new DonationStats();
+		$DonationStats->recordDonationStats( $message, $contribution );
 
-		// keep count of the transactions
-		$counter = Queue2civicrmTrxnCounter::instance();
-		$counter->increment( $message['gateway'] );
-		$counter->addAgeMeasurement( $message['gateway'], $age );
+
+    /**
+     * === Legacy Donations Counter implementation ===
+     */
+    $age = UtcDate::getUtcTimestamp() - UtcDate::getUtcTimestamp( $contribution['receive_date'] );
+    $counter = Queue2civicrmTrxnCounter::instance();
+    $counter->increment( $message['gateway'] );
+    $counter->addAgeMeasurement( $message['gateway'], $age );
+    /**
+     * === End of Legacy Donations Counter implementation ===
+     */
+
 
 		// Delete any pending db entries with matching gateway and order_id
 		PendingDatabase::get()->deleteMessage( $message );

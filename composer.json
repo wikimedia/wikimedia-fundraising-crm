@@ -25,7 +25,8 @@
         "phpseclib/phpseclib":  "~2.0",
         "predis/predis": "1.*",
         "twig/twig": "1.*",
-        "wikimedia/composer-merge-plugin": "^1.4"
+        "wikimedia/composer-merge-plugin": "^1.4",
+        "jackgleeson/stats-collector": "dev-master"
     },
     "repositories": [
       {
