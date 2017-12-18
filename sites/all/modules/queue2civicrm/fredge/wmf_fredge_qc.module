@@ -136,6 +136,11 @@ function fredge_prep_data( $msg, $table, $log_identifier, $require_all = true ) 
       if (array_key_exists('mysql_type', $definition) && $definition['mysql_type'] === 'DATETIME') {
         $msg[$field] = wmf_common_date_unix_to_sql($msg[$field]);
       }
+      // e.g. 3.5848273556811E+38 breaks the db - use 100 mill as 'infinitely dubious'
+      if (!empty($msg['risk_score']) && $msg['risk_score'] > 100000000) {
+        $msg['risk_score'] = 100000000;
+      }
+
       $data[$field] = $msg[$field];
     }
   }

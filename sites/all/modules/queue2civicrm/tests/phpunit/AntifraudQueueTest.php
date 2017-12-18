@@ -32,7 +32,29 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 		$this->compareMessageWithDb( $message, $message['score_breakdown'] );
 	}
 
-	/**
+  /**
+   * If the risk score is more than 100 million it should be set to 100 mil.
+   *
+   * This is effectively 'infinite risk' and our db can't cope with
+   * real value! '3.5848273556811E+38'
+   */
+  public function testFraudMessageWithOutOfRangeScore() {
+    $message = json_decode(
+      file_get_contents(__DIR__ . '/../data/payments-antifraud-high.json'),
+      TRUE
+    );
+    $ctId = mt_rand();
+    $oId = $ctId . '.0';
+    $message['contribution_tracking_id'] = $ctId;
+    $message['order_id'] = $oId;
+    $this->consumer->processMessage($message);
+
+    $message['risk_score'] = 100000000;
+
+    $this->compareMessageWithDb($message, $message['score_breakdown']);
+  }
+
+    /**
 	 * The first message for a ct_id / order_id pair needs to be complete
 	 *
 	 * @expectedException FredgeDataValidationException
