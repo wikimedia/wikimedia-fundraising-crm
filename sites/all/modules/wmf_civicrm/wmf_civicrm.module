@@ -1089,6 +1089,10 @@ function wmf_civicrm_message_contact_insert( $msg, $contact_id=NULL ) {
         'contact_type' => $msg['contact_type'],
         'contact_source' => $msg['contact_source'],
         'debug' => TRUE,
+        // We speed up our imports by passing in this param.
+        // going forwards there is scope to a) improve the processing
+        // upstream rather than skip & b) not skip for Major Gifts contacts.
+        'skip_greeting_processing' => TRUE,
     );
     if (strtolower($msg['contact_type']) !== "organization") {
       foreach (array('first_name', 'last_name', 'middle_name') as $name) {
