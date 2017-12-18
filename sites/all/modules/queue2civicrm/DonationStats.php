@@ -103,29 +103,6 @@ class DonationStats {
   }
 
   /**
-   * Export stats data to a Prometheus .prom out file using the
-   * PrometheusStatsExporter exporter.
-   *
-   * @see PrometheusStatsExporter
-   */
-  protected function exportToPrometheus() {
-    // get the output file name and file path
-    if (isset($this->prometheusOutputFilePath)) {
-      $path = $this->prometheusOutputFilePath;
-    } else {
-      $path = variable_get(
-        'metrics_reporting_prometheus_path', '/var/spool/prometheus'
-      );
-    }
-    $filename = $this->prometheusOutputFileName;
-
-    // instantiate a Stats Collector Prometheus specific exporter and pass it the current
-    // instance of $statsCollector to then export all stats to {$path}/{$filename}.prom
-    $prometheusStatsExporter = new PrometheusStatsExporter($filename, $path);
-    $prometheusStatsExporter->export($this->statsCollector);
-  }
-
-  /**
    * Record a stat to count/increment the number of gateway specific donations
    *
    * @param string $paymentGateway
@@ -205,5 +182,40 @@ class DonationStats {
     );
   }
 
+
+  /**
+   * Export stats data to a Prometheus .prom out file using the
+   * PrometheusStatsExporter exporter.
+   *
+   * @see PrometheusStatsExporter
+   */
+  protected function exportToPrometheus() {
+    // get the output file name and file path
+    if (isset($this->prometheusOutputFilePath)) {
+      $path = $this->prometheusOutputFilePath;
+    } else {
+      $path = variable_get(
+        'metrics_reporting_prometheus_path', '/var/spool/prometheus'
+      );
+    }
+    $filename = $this->prometheusOutputFileName;
+
+    $prometheusStatsExporter = new PrometheusStatsExporter($filename, $path);
+    $donationStats = $this->getDonationStatsFromStatsCollector();
+    $prometheusStatsExporter->export($donationStats);
+  }
+
+  /**
+   * We only want to pull the *unique* summary data when exporting to Prometheus
+   *
+   * @return array|mixed
+   */
+  protected function getDonationStatsFromStatsCollector() {
+    return $this->statsCollector->getWithKey([
+      'donations.average.*',
+      'donations.overall.*',
+      'donations.gateway.*',
+    ]);
+  }
 
 }

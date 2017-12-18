@@ -121,7 +121,6 @@ class DonationStatsTest extends BaseWmfDrupalPhpUnitTestCase {
       'donations_overall_donations' => 1,
       'donations_overall_average_transaction_age' => 3600, // should be -1 hour from now (3600 secs)
       'donations_average_transaction_age_ACME_PAYMENTS' => 3600,
-      'donations_transaction_age_ACME_PAYMENTS' => 3600,
     ];
 
     $statsFileFullPath = $this->statsFilePath . $this->statsFilename . $this->statsFileExtension;
@@ -167,6 +166,4 @@ class DonationStatsTest extends BaseWmfDrupalPhpUnitTestCase {
   private function setupStatsCollector() {
     \Statistics\Collector\Collector::tearDown(TRUE);
   }
-
-
 }
