@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "f5b1e547c9865d17802925641c804265",
+    "content-hash": "32a4c6d1dba52d233ae8892c1908badf",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -353,65 +353,6 @@
             "time": "2017-06-30T14:54:48+00:00"
         },
         {
-            "name": "dflydev/dot-access-data",
-            "version": "v1.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/dflydev/dflydev-dot-access-data.git",
-                "reference": "3fbd874921ab2c041e899d044585a2ab9795df8a"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/dflydev/dflydev-dot-access-data/zipball/3fbd874921ab2c041e899d044585a2ab9795df8a",
-                "reference": "3fbd874921ab2c041e899d044585a2ab9795df8a",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.2"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Dflydev\\DotAccessData": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Dragonfly Development Inc.",
-                    "email": "info@dflydev.com",
-                    "homepage": "http://dflydev.com"
-                },
-                {
-                    "name": "Beau Simensen",
-                    "email": "beau@dflydev.com",
-                    "homepage": "http://beausimensen.com"
-                },
-                {
-                    "name": "Carlos Frutos",
-                    "email": "carlos@kiwing.it",
-                    "homepage": "https://github.com/cfrutos"
-                }
-            ],
-            "description": "Given a deep data structure, access data by dot notation.",
-            "homepage": "https://github.com/dflydev/dflydev-dot-access-data",
-            "keywords": [
-                "access",
-                "data",
-                "dot",
-                "notation"
-            ],
-            "time": "2017-01-20T21:14:22+00:00"
-        },
-        {
             "name": "geoip2/geoip2",
             "version": "v2.6.0",
             "source": {
@@ -686,46 +627,6 @@
                 "password"
             ],
             "time": "2014-11-20T16:49:30+00:00"
-        },
-        {
-            "name": "jackgleeson/stats-collector",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/jackgleeson/stats-collector.git",
-                "reference": "1c792bbeac77d4781fbb788f341b601636696df5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/jackgleeson/stats-collector/zipball/1c792bbeac77d4781fbb788f341b601636696df5",
-                "reference": "1c792bbeac77d4781fbb788f341b601636696df5",
-                "shasum": ""
-            },
-            "require": {
-                "dflydev/dot-access-data": "^1.1"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^6.4"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Statistics\\": "src/",
-                    "Samples\\": "samples/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Jack Gleeson",
-                    "email": "me@jackgleeson.co.uk"
-                }
-            ],
-            "description": "Utility to help record, analyse and export statistics across any PHP process e.g. http request, batch jobs or cli-scrpts",
-            "time": "2017-11-22T13:56:02+00:00"
         },
         {
             "name": "league/csv",
@@ -2186,7 +2087,7 @@
                 "GPL-2.0"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2017-11-16T16:31:29+00:00"
+            "time": "2017-11-16 16:31:29"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
@@ -3884,7 +3785,6 @@
     "stability-flags": {
         "amzn/login-and-pay-with-amazon-sdk-php": 20,
         "wikimedia/donation-interface": 20,
-        "jackgleeson/stats-collector": 20,
         "wikimedia/omnimail-silverpop": 20,
         "mrmarkfrench/silverpop-php-connector": 20,
         "omnimail/omnimail": 20

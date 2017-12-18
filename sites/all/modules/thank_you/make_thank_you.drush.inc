@@ -17,6 +17,7 @@ function make_thank_you_drush_command() {
 
 function drush_make_thank_you() {
     $generators = get_thank_you_generators();
+    $default_gen = get_default_thank_you_generator();
 
     if (drush_get_option('listgen', false)) {
         drush_print(t('Available thank you generators'));
