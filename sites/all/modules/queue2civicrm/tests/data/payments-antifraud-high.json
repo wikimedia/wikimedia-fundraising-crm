@@ -9,7 +9,8 @@
 		"getScoreUtmCampaignMap": "0",
 		"getScoreEmailDomainMap": "0",
 		"minfraud_filter": "0.10",
-		"IPVelocityFilter": "0"
+		"IPVelocityFilter": "0",
+		"SessionVelocity" : "4.6602755623854E+38"
 	},
 	"php-message-class": "SmashPig\\CrmLink\\Messages\\DonationInterfaceAntifraud",
 	"user_ip": "1.2.3.4",

@@ -107,7 +107,7 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 		$dbEntries = $this->getDbEntries(
 			$common['contribution_tracking_id'], $common['order_id']
 		);
-		$this->assertEquals( 8, count( $dbEntries ) );
+		$this->assertEquals( count($breakdown), count( $dbEntries ) );
 		$fields = array(
 			'gateway',  'validation_action', 'payment_method',
 			'risk_score', 'server'
@@ -121,8 +121,9 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 		);
 		foreach ( $dbEntries as $score ) {
 			$name = $score['filter_name'];
+			$expectedScore = $breakdown[$name] <= 100000000 ? $breakdown[$name] : 100000000;
 			$this->assertEquals(
-				$breakdown[$name], $score['fb_risk_score'], "Mismatched $name score"
+        $expectedScore, $score['fb_risk_score'], "Mismatched $name score"
 			);
 		}
 	}

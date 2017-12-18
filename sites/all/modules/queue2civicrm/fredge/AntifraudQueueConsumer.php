@@ -94,6 +94,9 @@ class AntifraudQueueConsumer extends WmfQueueConsumer {
 		}
 		if ( $id ) {
 			foreach ( $msg['score_breakdown'] as $test => $score ) {
+			  if ($score > 100000000) {
+			    $score = 100000000;
+        }
 				$breakdown = array(
 					'payments_fraud_id' => $id,
 					'filter_name' => $test,
