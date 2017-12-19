@@ -882,6 +882,34 @@ class BenevityTest extends BaseChecksFileTest {
   }
 
   /**
+   * Test that currency information can be handled as input.
+   */
+  function testImportSucceedCurrencyTransformExists() {
+    $mouseOrg = $this->callAPISuccess('Contact', 'create', array(
+      'organization_name' => 'Mickey Mouse Inc',
+      'contact_type' => 'Organization',
+    ));
+    $minnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie',
+      'last_name' => 'Mouse',
+      'contact_type' => 'Individual',
+      'email' => 'minnie@mouse.org',
+    ));
+    $messages = $this->importBenevityFile(array('original_currency' => 'EUR', 'original_currency_total' => 4, 'usd_total' => 8));
+    $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
+
+    $contribution = $this->callAPISuccessGetSingle('Contribution', array('contact_id' => $minnie['id']));
+    $this->assertEquals(200, $contribution['total_amount']);
+    $this->assertEquals(200, $contribution['total_amount']);
+    $this->assertEquals('EUR 100', $contribution['contribution_source']);
+
+    $contribution = $this->callAPISuccessGetSingle('Contribution', array('contact_id' => $mouseOrg['id']));
+    $this->assertEquals(200, $contribution['total_amount']);
+    $this->assertEquals(200, $contribution['total_amount']);
+    $this->assertEquals('EUR 100', $contribution['contribution_source']);
+  }
+
+  /**
    * @return array|int
    */
   protected function createAllOrgs() {
@@ -905,10 +933,14 @@ class BenevityTest extends BaseChecksFileTest {
   }
 
   /**
+   * Do the benevity file import.
+   *
+   * @param array $additionalFields
+   *
    * @return array
    */
-  protected function importBenevityFile() {
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
+  protected function importBenevityFile($additionalFields = array()) {
+    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv", $additionalFields);
     $importer->import();
     return $importer->getMessages();
   }

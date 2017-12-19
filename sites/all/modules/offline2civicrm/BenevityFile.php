@@ -2,9 +2,10 @@
 
 class BenevityFile extends ChecksFile {
 
-  function __construct($file_uri) {
-    parent::__construct($file_uri);
-  }
+  /**
+   * @var int
+   */
+  protected $conversionRate;
 
   function getRequiredColumns() {
     return array(
@@ -44,13 +45,15 @@ class BenevityFile extends ChecksFile {
    *   The normalized import parameters.
    *
    * @throws IgnoredRowException
+   * @throws \WmfException
    */
   protected function mungeMessage(&$msg) {
     $msg['gateway'] = 'benevity';
-    if (!isset($msg['gross'])) {
-      $msg['gross'] = 0;
+
+    if (!isset($msg['original_gross'])) {
+      $msg['original_gross'] = 0;
     }
-    if ($msg['gross'] >= 1000) {
+    if ($msg['original_gross'] >= 1000) {
       $msg['gift_source'] = 'Benefactor Gift';
     }
     else {
@@ -61,6 +64,8 @@ class BenevityFile extends ChecksFile {
         $msg[$field] = '';
       }
     }
+
+    $msg['gross'] = $this->getUSDAmount($msg['original_gross']);
 
     $msg['employer_id'] = $this->getOrganizationID($msg['matching_organization_name']);
     // If we let this go through the individual will be treated as an organization.
@@ -74,6 +79,28 @@ class BenevityFile extends ChecksFile {
         $msg['email_location_type_id'] = 'Work';
       }
     }
+  }
+
+  /**
+   * Get the amount in the original currency.
+   *
+   * We reverse engineer this by calculating an exchange rate from the total
+   * USD amount for the import & the total original amount from the import.
+   *
+   * @param int $original_amount
+   *
+   * @return int Original Amount.
+   */
+  protected function getUSDAmount($original_amount) {
+     if (empty($this->conversionRate)) {
+       if (!empty($this->additionalFields['usd_total']) && !empty($this->additionalFields['original_currency_total'])) {
+         $this->conversionRate = $this->additionalFields['usd_total'] / $this->additionalFields['original_currency_total'];
+       }
+       else {
+         $this->conversionRate = 1;
+       }
+     }
+     return $original_amount * $this->conversionRate;
   }
 
   /**
@@ -108,6 +135,7 @@ class BenevityFile extends ChecksFile {
       'contact_type' => 'Individual',
       'country' => 'US',
       'currency' => 'USD',
+      'original_currency' => (empty($this->additionalFields['original_currency']) ? 'USD' : $this->additionalFields['original_currency']),
       // Setting this avoids emails going out. We could set the thank_you_date
       // instead to reflect Benevity having sent them out
       // but we don't actually know what date they did that on,
@@ -139,8 +167,8 @@ class BenevityFile extends ChecksFile {
     $mapping['Transaction ID'] = 'gateway_txn_id';
     // Not sure we need this - notes currently used for comments but few of them.
     // $mapping['Donation Frequency'] = 'notes';
-    $mapping['Donation Amount'] = 'gross';
-    $mapping['Matched Amount'] = 'matching_amount';
+    $mapping['Donation Amount'] = 'original_gross';
+    $mapping['Matched Amount'] = 'original_matching_amount';
     return $mapping;
   }
 
@@ -166,11 +194,13 @@ class BenevityFile extends ChecksFile {
     }
 
 
-    if (!empty($msg['matching_amount']) && $msg['matching_amount'] > 0) {
+    if (!empty($msg['original_matching_amount']) && $msg['original_matching_amount'] > 0) {
+      $msg['matching_amount'] = $this->getUSDAmount($msg['original_matching_amount']);
       $matchedMsg = $msg;
       unset($matchedMsg['net'], $matchedMsg['fee'], $matchedMsg['email']);
       $matchedMsg['contact_id'] = $msg['employer_id'];
       $matchedMsg['soft_credit_to_id'] = ($msg['contact_id'] == $this->getAnonymousContactID() ? NULL : $msg['contact_id']);
+      $matchedMsg['original_gross'] = $msg['original_matching_amount'];
       $matchedMsg['gross'] = $msg['matching_amount'];
       $matchedMsg['gateway_txn_id'] = $msg['gateway_txn_id'] . '_matched';
       $matchedMsg['gift_source'] = 'Matching Gift';
@@ -430,7 +460,7 @@ class BenevityFile extends ChecksFile {
    */
   protected function checkForExistingContributions($msg) {
     $donorTransactionNeedsProcessing = (!empty($msg['gross']) && $msg['gross'] !== "0.00");
-    $matchingTransactionNeedsProcessing = (!empty($msg['matching_amount']) && $msg['matching_amount'] !== "0.00");
+    $matchingTransactionNeedsProcessing = (!empty($msg['original_matching_amount']) && $msg['original_matching_amount'] !== "0.00");
 
     $main = $matched = FALSE;
     if ($donorTransactionNeedsProcessing) {
@@ -450,6 +480,50 @@ class BenevityFile extends ChecksFile {
       }
     }
     return $main ? $main : $matched;
+  }
+
+  /**
+   * Get any fields that can be set on import at an import wide level.
+   */
+  public function getImportFields() {
+    return array(
+      'usd_total' => array(
+        '#title' => t('USD Total'),
+        '#type' => 'textfield',
+      ),
+      'original_currency_total' => array(
+        '#title' => t('Original Currency Total'),
+        '#type' => 'textfield',
+      ),
+      'original_currency' => array(
+        '#title' => t('Original Currency'),
+        '#type' => 'textfield',
+        '#size' => 3,
+        '#maxlength' => 3,
+        '#default_value' => 'USD',
+      ),
+    );
+  }
+
+  /**
+   * Validate the fields submitted on the import form.
+   *
+   * @param array $formFields
+   *
+   * @throws \Exception
+   */
+  public function validateFormFields($formFields) {
+    $numericFields = array('usd_total', 'original_currency_total');
+    foreach ($numericFields as $numericField) {
+      if (isset($formFields[$numericField]) && !is_numeric($formFields[$numericField])) {
+        throw new Exception(t('Invalid value for field: ' . $numericField));
+      }
+    }
+    civicrm_initialize();
+    $currencies = civicrm_api3('Contribution', 'getoptions', array('field' => 'currency'));
+    if (!empty($formFields['original_currency']) && empty($currencies['values'][$formFields['original_currency']])) {
+      throw new Exception(t('Invalid currency'));
+    }
   }
 
 }

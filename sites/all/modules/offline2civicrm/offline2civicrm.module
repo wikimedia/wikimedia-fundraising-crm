@@ -69,7 +69,7 @@ function offline2civicrm_settings() {
   return system_settings_form($form);
 }
 
-function offline2civicrm_import_checks_form() {
+function offline2civicrm_import_checks_form($form, &$form_state) {
   $dir = drupal_get_path('module', 'offline2civicrm');
   drupal_add_js($dir . '/upload_form.js');
 
@@ -92,6 +92,8 @@ function offline2civicrm_import_checks_form() {
       'colgroups' => array(),
       'sticky' => TRUE,
     )) . theme('pager');
+  $form['#tree'] = TRUE;
+  $form['#validate'] = array('offline2civicrm_import_checks_form_validate');
 
   $form['import_upload_file'] = array(
     '#title' => t('Upload checks file'),
@@ -101,7 +103,18 @@ function offline2civicrm_import_checks_form() {
     '#type' => 'submit',
     '#value' => t('Upload'),
   );
-  $form['import_upload_format'] = array(
+  // Will be replaced by import specific fields.
+  $form['offline2civicrm_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Import specific fields',
+    '#prefix' => '<div id="offline2civicrm_settings">',
+    '#suffix' => '</div>',
+  );
+  if (isset($form_state['values'])) {
+    $form['offline2civicrm_settings'] = array_merge($form['offline2civicrm_settings'], offline2civicrm_import_fields($form, $form_state));
+  }
+
+  $form['offline2civicrm_settings']['import_upload_format'] = array(
     '#title' => t('File format'),
     '#type' => 'radios',
     '#default_value' => 'generic_ind',
@@ -118,7 +131,14 @@ function offline2civicrm_import_checks_form() {
       'stripe' => t('Stripe'),
       'trilogy' => t('Trilogy'),
     ),
+    '#ajax' => array(
+      'callback' => 'offline2civicrm_import_ajax',
+      'wrapper' => 'offline2civicrm_settings',
+      'method' => 'replace',
+      'event' => 'change',
+    ),
   );
+
   $form['log'] = array(
     '#markup' => $log_html,
   );
@@ -126,6 +146,22 @@ function offline2civicrm_import_checks_form() {
   $form['#attributes'] = array('enctype' => "multipart/form-data");
 
   return $form;
+}
+
+/**
+ * Custom callback to build form fields.
+ */
+function offline2civicrm_import_ajax($form, &$form_state) {
+  return $form['offline2civicrm_settings'];
+}
+
+/**
+ * Custom callback to build form fields.
+ */
+function offline2civicrm_import_fields($form, &$form_state) {
+  $values = $form_state['values'];
+  $importer = offline2civicrm_get_importer_class($values['offline2civicrm_settings']['import_upload_format'], NULL);
+  return $importer->getImportFields();
 }
 
 /**
@@ -150,6 +186,22 @@ function offline2civicrm_download_csv($file_name) {
   }
 }
 
+/**
+ * Validate form input.
+ * @param $form
+ * @param $form_state
+ */
+function offline2civicrm_import_checks_form_validate($form, $form_state) {
+  $additionalFields = offline2civicrm_get_gateway_specific_fields($form_state);
+  $importer = offline2civicrm_get_importer_class($form_state['values']['offline2civicrm_settings']['import_upload_format'], '', $additionalFields);
+  try {
+    $importer->validateFormFields($additionalFields);
+  }
+  catch (Exception $e) {
+    form_set_error(t('Invalid form data'), $e->getMessage());
+  }
+}
+
 function offline2civicrm_import_checks_form_submit($form, $form_state) {
   wmf_common_create_smashpig_context('offline2civicrm');
   if (!empty($form_state['values']['import_upload_submit'])) {
@@ -165,47 +217,9 @@ function offline2civicrm_import_checks_form_submit($form, $form_state) {
       // This workaround... does not always work.  Will be deprecated in Civi 4.3
       civicrm_initialize();
       $smellyTmp = CRM_Core_TemporaryErrorScope::useException();
+      $additionalFields = offline2civicrm_get_gateway_specific_fields($form_state);
 
-      switch ($form_state['values']['import_upload_format']) {
-        case 'engage':
-          $importer = new EngageChecksFile($file->uri);
-          break;
-        case 'coinbase':
-          $importer = new CoinbaseFile($file->uri);
-          break;
-        case 'generic_ind':
-          $importer = new WmfImportFile($file->uri);
-          break;
-        case 'generic_org':
-          $importer = new WmfOrgImportFile($file->uri);
-          break;
-        case 'benevity':
-          $importer = new BenevityFile($file->uri);
-          break;
-
-        case 'paypal':
-          $importer = new PayPalChecksFile($file->uri);
-          break;
-        case 'jpmorgan':
-          $importer = new JpMorganFile($file->uri);
-          break;
-        case 'foreign_checks':
-          $importer = new ForeignChecksFile($file->uri);
-          break;
-        case 'square':
-          $importer = new SquareFile($file->uri);
-          break;
-
-        case 'stripe':
-          $importer = new StripeFile($file->uri);
-          break;
-
-        case 'trilogy':
-          $importer = new TrilogyFile($file->uri);
-          break;
-        default:
-          throw new Exception('Bad file format selection');
-      }
+      $importer = offline2civicrm_get_importer_class($form_state['values']['offline2civicrm_settings']['import_upload_format'], $file->uri, $additionalFields);
       $messages = $importer->import();
       drupal_set_message((implode(' ', $messages)));
     }
@@ -223,4 +237,66 @@ function offline2civicrm_import_checks_form_submit($form, $form_state) {
       file_delete($file, TRUE);
     }
   }
+}
+
+/**
+ * @param $form_state
+ *
+ * @return array
+ */
+function offline2civicrm_get_gateway_specific_fields($form_state) {
+  $additionalFields = array_diff_key($form_state['values']['offline2civicrm_settings'], array('import_upload_format' => TRUE));
+  return $additionalFields;
+}
+
+/**
+ * Get the class for the import.
+ *
+ * @param string $uploadFormat
+ * @param string $fileUri
+ * @param array $additionalFields
+ *
+ * @return \ChecksFile
+ *
+ * @throws \Exception
+ */
+function offline2civicrm_get_importer_class($uploadFormat, $fileUri, $additionalFields = array()) {
+  switch ($uploadFormat) {
+    case 'engage':
+      return new EngageChecksFile($fileUri, $additionalFields);
+
+    case 'coinbase':
+      return new CoinbaseFile($fileUri, $additionalFields);
+
+    case 'generic_ind':
+      return new WmfImportFile($fileUri, $additionalFields);
+
+    case 'generic_org':
+      return new WmfOrgImportFile($fileUri, $additionalFields);
+
+    case 'benevity':
+      return new BenevityFile($fileUri, $additionalFields);
+
+    case 'paypal':
+      return new PayPalChecksFile($fileUri, $additionalFields);
+
+    case 'jpmorgan':
+      return new JpMorganFile($fileUri, $additionalFields);
+
+    case 'foreign_checks':
+      return new ForeignChecksFile($fileUri, $additionalFields);
+
+    case 'square':
+      return new SquareFile($fileUri, $additionalFields);
+
+    case 'stripe':
+      return new StripeFile($fileUri, $additionalFields);
+
+    case 'trilogy':
+      return new TrilogyFile($fileUri, $additionalFields);
+
+    default:
+      throw new Exception('Bad file format selection');
+  }
+
 }
