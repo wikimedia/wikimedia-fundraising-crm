@@ -2501,9 +2501,6 @@ function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, 
   }
 
   if (substr($moveField, 0, 13) === 'move_location') {
-    if (!isset($refs['is_major_gift'])) {
-      $refs['is_major_gift'] = _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId);
-    }
     $fieldParts = explode('_', $moveField);
 
     if ($fieldParts[2] == 'email') {
@@ -2976,28 +2973,6 @@ function _wmf_civicrm_merge_resolve_preferred_language_conflict($fieldName, &$mo
  */
 function _wmf_civicrm_count_capital_letters($string) {
   return strlen(preg_replace('/[^A-Z]+/', '', $string));
-}
-
-/**
- * Has the combined contact given $500 or more?
- *
- * @param int $mainId
- * @param int $otherId
- *
- * @return bool
- *
- * @throws \CiviCRM_API3_Exception
- */
-function _wmf_civicrm_is_merged_contact_major_donor($mainId, $otherId) {
-  $total = 0;
-  $donations = civicrm_api3('Contribution', 'get', array(
-    'return' => 'total_amount',
-    'contact_id' => array('IN' => array($mainId, $otherId)),
-  ));
-  foreach ($donations['values'] as $donation) {
-    $total += $donation['total_amount'];
-  }
-  return ($total >= 500) ? TRUE : FALSE;
 }
 
 /**
