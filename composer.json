@@ -44,7 +44,7 @@
     ],
     "require-dev": {
         "phpunit/phpunit": "5.*",
-        "seld/jsonlint": "~1.6.0",
+        "seld/jsonlint": "1.7.0",
         "jakub-onderka/php-parallel-lint": "~0.9.2",
         "jakub-onderka/php-console-highlighter": "~0.3.2",
         "wikimedia/testing-access-wrapper": "~1.0"
@@ -54,8 +54,8 @@
     },
     "scripts": {
       "test": [
-        "parallel-lint -e php,module,install,inc --exclude vendor --exclude sites/default/civicrm/extensions/org.wikimedia.omnimail/vendor.",
-        "php bin/jsonlint.php"
+        "parallel-lint -e php,module,install,inc --exclude vendor --exclude sites/default/civicrm/extensions/org.wikimedia.omnimail/vendor .",
+        "jsonlint $(find . -type f -iname \"*.json\" ! -path \"*/vendor/*\" ! -path \"*/bower*\" -printf \"%p \")"
       ]
     },
     "minimum-stability": "dev",
