@@ -57,32 +57,31 @@
             </table>
           </div>
         </div>
-        <div ng-show="unsubscribeEmails[0]"><h3>{{ts('Emails to remove bulk email flag from (non primary)')}}</h3>
-          <p>{{ ts('These contacts have %1 as as a non-primary email. Leave them checked and click
-            unsubscribe to unset the bulk email flag on them.', {1: formVars.enteredEmail}) }}</p>
-          <div class="crm-group">
-            <table>
-              <tr>
-                <th width="50%">{{ ts('Contact') }}</th>
-                <th>{{ ts('Unset bulk email flag on email address?') }}</th>
-              </tr>
-              <tr ng-repeat="unsubscribeEmail in unsubscribeEmails">
-                <td>
-                  <a href="{{unsubscribeEmail.url}}">{{unsubscribeEmail.contact_id_display_name}}</a>
-                </td>
-                <td>
-                  <span ng-show="unsubscribeEmail.is_bulkmail == 0 && !unsubscribeEmail.opt_out_actioned">{{ ts('Email is not set as bulk email') }}</span>
-                  <span ng-show="unsubscribeEmail.is_bulkmail == 0 && unsubscribeEmail.opt_out_actioned">{{ ts('Bulk email flag has been removed from this email') }}</span>
-                      <span ng-show="unsubscribeEmail.is_bulkmail == 1">
-                        <input type="checkbox" ng-model="unsubscribeEmail.do_opt_out"/>
-                      </span>
-                </td>
-              </tr>
-            </table>
-          </div>
+      </div>
+      <div ng-show="unsubscribeEmails[0]"><h3>{{ts('Emails to remove bulk email flag from (non primary)')}}</h3>
+        <p>{{ ts('These contacts have %1 as as a non-primary email. Leave them checked and click
+          unsubscribe to unset the bulk email flag on them.', {1: formVars.enteredEmail}) }}</p>
+        <div class="crm-group">
+          <table>
+            <tr>
+              <th width="50%">{{ ts('Contact') }}</th>
+              <th>{{ ts('Unset bulk email flag on email address?') }}</th>
+            </tr>
+            <tr ng-repeat="unsubscribeEmail in unsubscribeEmails">
+              <td>
+                <a href="{{unsubscribeEmail.url}}">{{unsubscribeEmail.contact_id_display_name}}</a>
+              </td>
+              <td>
+                <span ng-show="unsubscribeEmail.is_bulkmail == 0 && !unsubscribeEmail.opt_out_actioned">{{ ts('Email is not set as bulk email') }}</span>
+                <span ng-show="unsubscribeEmail.is_bulkmail == 0 && unsubscribeEmail.opt_out_actioned">{{ ts('Bulk email flag has been removed from this email') }}</span>
+                    <span ng-show="unsubscribeEmail.is_bulkmail == 1">
+                      <input type="checkbox" ng-model="unsubscribeEmail.do_opt_out"/>
+                    </span>
+              </td>
+            </tr>
+          </table>
         </div>
       </div>
-
     </div>
     <div ng-show="!unsubscribeContacts[0] && !unsubscribeEmails[0] && searchedEmail && searchedEmail == formVars.enteredEmail">
       {{ts ('The email %1 is not used as a the primary email for any contact in your database and it is not subscribed to any bulk emails', {1:
