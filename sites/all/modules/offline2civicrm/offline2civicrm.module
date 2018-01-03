@@ -120,6 +120,7 @@ function offline2civicrm_import_checks_form($form, &$form_state) {
     '#default_value' => 'generic_ind',
     '#options' => array(
       'benevity' => t('Benevity'),
+      'citibank' => t('Citibank'),
       'engage' => t('Engage'),
       'coinbase' => t('Coinbase Merchant Orders'),
       'foreign_checks' => t('Foreign Checks'),
@@ -262,6 +263,11 @@ function offline2civicrm_get_gateway_specific_fields($form_state) {
  */
 function offline2civicrm_get_importer_class($uploadFormat, $fileUri, $additionalFields = array()) {
   switch ($uploadFormat) {
+
+    case 'citibank':
+      return new CitibankFile($fileUri, $additionalFields);
+      break;
+
     case 'engage':
       return new EngageChecksFile($fileUri, $additionalFields);
 
