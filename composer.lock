@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "bd2091c92d660d342e8926ad9516ed03",
+    "content-hash": "e351f53dce9229e4e79605f8985743ed",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -689,16 +689,16 @@
         },
         {
             "name": "jackgleeson/stats-collector",
-            "version": "v1.1.0",
+            "version": "v1.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jackgleeson/stats-collector.git",
-                "reference": "bde2aee11f4cb09a3e0c43331c50cffa5d118c19"
+                "reference": "4c2582d5e0df3926f868660d36b50b57f256ab55"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jackgleeson/stats-collector/zipball/bde2aee11f4cb09a3e0c43331c50cffa5d118c19",
-                "reference": "bde2aee11f4cb09a3e0c43331c50cffa5d118c19",
+                "url": "https://api.github.com/repos/jackgleeson/stats-collector/zipball/4c2582d5e0df3926f868660d36b50b57f256ab55",
+                "reference": "4c2582d5e0df3926f868660d36b50b57f256ab55",
                 "shasum": ""
             },
             "require": {
@@ -724,7 +724,7 @@
                 }
             ],
             "description": "Lightweight utility to record, combine, retrieve and export statistics and log data across any PHP process",
-            "time": "2017-12-31T17:09:10+00:00"
+            "time": "2018-01-12T16:15:42+00:00"
         },
         {
             "name": "league/csv",
