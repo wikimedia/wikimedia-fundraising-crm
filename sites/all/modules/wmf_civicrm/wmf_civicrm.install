@@ -64,8 +64,8 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7575();
   wmf_civicrm_update_7580();
   wmf_civicrm_update_7585();
-  wmf_civicrm_update_7595();
   wmf_civicrm_update_7605();
+  wmf_civicrm_update_7610();
 }
 
 /**
@@ -3323,4 +3323,26 @@ function wmf_civicrm_update_7605() {
   civicrm_initialize();
   civicrm_api3('extension', 'refresh', array());
   civicrm_api3('extension', 'install', array('key' => 'org.wikimedia.contacteditor'));
+}
+
+/**
+ * Add civitoken extension.
+ *
+ * We want the formatted address blocks from here.
+ *
+ * We disable most of the others to keep things clean.
+ *
+ * Bug: T184647
+ */
+function wmf_civicrm_update_7610() {
+  civicrm_initialize();
+  civicrm_api3('extension', 'refresh', array());
+  civicrm_api3('extension', 'install', array('key' => 'nz.co.fuzion.civitoken'));
+  civicrm_api3('Setting', 'create', array('civitoken_enabled_tokens' => array(
+    'address.address_block',
+    'address.address_text',
+    'address.conditional_country',
+    'date.today_format_full',
+    'date.today_format_raw',
+  )));
 }
