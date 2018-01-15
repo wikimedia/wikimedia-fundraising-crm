@@ -4113,6 +4113,10 @@ function wmf_civicrm_civicrm_validateForm($formName, &$fields, &$files, &$form, 
     if (!$fields['limit']) {
       $errors['limit'] = ts('Save the database. Use a limit');
     }
+    $ruleGroupID = $form->rgid;
+    if ($fields['limit'] > 1 && 'fishing_net' === civicrm_api3('RuleGroup', 'getvalue', ['id' => $ruleGroupID, 'return' => 'name'])) {
+      $errors['limit'] = ts('The fishing net rule should only be applied to a single contact');
+    }
   }
   if ($formName == 'CRM_Contribute_Form_Contribution') {
     $engageErrors = wmf_civicrm_validate_contribution($fields, $form);
