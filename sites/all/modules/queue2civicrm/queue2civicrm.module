@@ -133,10 +133,14 @@ function queue2civicrm_batch_process() {
     $batch_time,
     variable_get( 'queue2civicrm_batch', 0 )
   );
-  $processed = $consumer->dequeueMessages();
 
-  $DonationStats = new DonationStats();
-  $DonationStats->export();
+  $DonationStatsCollector = DonationStatsCollector::getInstance();
+
+  $DonationStatsCollector->startTimer();
+  $processed = $consumer->dequeueMessages();
+  $DonationStatsCollector->endTimer();
+
+  $DonationStatsCollector->export();
 
 
   /**
@@ -170,9 +174,7 @@ function queue2civicrm_batch_process() {
   if ($processed > 0) {
     watchdog('queue2civicrm', 'Successfully processed ' . $processed . ' contribution(s).');
     watchdog('queue2civicrm',
-      'Average Transaction age: ' . $DonationStats->getOverallAverageGatewayTransactionAge() . ' seconds.');
-    watchdog('queue2civicrm',
-      'Average Message Enqueued age: ' . $DonationStats->getOverallAverageMessageEnqueuedAge() . ' seconds.');
+      'Average Transaction age: ' . $DonationStatsCollector->getOverallAverageGatewayTransactionAge() . ' seconds.');
   } else {
     watchdog('queue2civicrm', 'No contributions processed.');
   }

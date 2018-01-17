@@ -5,7 +5,7 @@ use Queue2civicrmTrxnCounter;
 use SmashPig\Core\UtcDate;
 use wmf_common\TransactionalWmfQueueConsumer;
 use WmfException;
-use DonationStats;
+use DonationStatsCollector;
 
 class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 
@@ -69,9 +69,8 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 			_queue2civicrm_log( $log );
 		}
 
-		$DonationStats = new DonationStats();
-		$DonationStats->recordDonationStats( $message, $contribution );
-
+    $DonationStatsCollector = DonationStatsCollector::getInstance();
+    $DonationStatsCollector->recordDonationStats($message, $contribution);
 
     /**
      * === Legacy Donations Counter implementation ===
