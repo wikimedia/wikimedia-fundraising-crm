@@ -14,6 +14,7 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
   protected $contactID;
 
   public function setUp() {
+    parent::setUp();
     civicrm_initialize();
     $contact = $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org')
