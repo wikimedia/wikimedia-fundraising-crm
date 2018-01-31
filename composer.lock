@@ -2143,7 +2143,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "0b70d246f754b456d6f04180f9bb02f528910f0d"
+                "reference": "6dfe3b6c80e9331c46101e8c2c2d348d37b37cee"
             },
             "require": {
                 "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
@@ -2182,10 +2182,10 @@
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "GPL-2.0"
+                "GPL-2.0-or-later"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2017-11-16T16:31:29+00:00"
+            "time": "2018-01-31 16:14:15"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
@@ -2232,15 +2232,15 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2017-09-20T02:50:06+00:00"
+            "time": "2017-10-10 03:44:09"
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.5.1",
+            "version": "v0.5.2",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "268799f492e3548006e13d28ffe14df0124edd28"
+                "reference": "af6a9bb52291d7cdc696009ede4b3c6271ffb983"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -2295,7 +2295,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2017-12-11T19:36:55+00:00"
+            "time": "2018-01-11T20:06:34+00:00"
         },
         {
             "name": "zordius/lightncandy",
