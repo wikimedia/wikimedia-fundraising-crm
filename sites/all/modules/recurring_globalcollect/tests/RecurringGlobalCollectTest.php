@@ -1,5 +1,7 @@
 <?php
 
+use SmashPig\CrmLink\FinalStatus;
+
 /**
  * @group GlobalCollect
  */
