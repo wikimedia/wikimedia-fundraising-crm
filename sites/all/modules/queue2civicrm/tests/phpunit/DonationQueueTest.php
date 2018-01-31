@@ -369,6 +369,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 	}
 
 	public function getSparseMessages() {
+		module_load_include('php', 'queue2civicrm', 'tests/includes/Message');
 		return array(
 			array(
 				new AmazonDonationMessage(),

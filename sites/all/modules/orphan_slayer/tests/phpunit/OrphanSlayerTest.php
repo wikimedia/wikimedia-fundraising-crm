@@ -31,6 +31,8 @@ class OrphanSlayerTest extends PHPUnit_Framework_TestCase {
         $user->name = "foo_who";
         $user->uid = "321";
         $user->roles = array( DRUPAL_AUTHENTICATED_RID => 'authenticated user' );
+        module_load_include('php', 'orphan_slayer', 'OrphanSlayer');
+
     }
 
     public function tearDown() {
