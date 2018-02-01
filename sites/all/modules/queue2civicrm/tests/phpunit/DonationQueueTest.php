@@ -231,7 +231,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     civicrm_initialize();
     $optionValue = uniqid();
     $message = new TransactionMessage(array('utm_campaign' => $optionValue));
-    $appealFieldID = $this->createCustomOption('Appeal', $optionValue, FALSE);
+    $appealFieldID = $this->createCustomOption('Appeal', $optionValue);
 
     exchange_rate_cache_set('USD', $message->get('date'), 1);
     exchange_rate_cache_set($message->get('currency'), $message->get('date'), 3);
@@ -262,7 +262,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     civicrm_initialize();
     $optionValue = uniqid();
     $message = new TransactionMessage(array('utm_campaign' => $optionValue));
-    $appealFieldID = $this->createCustomOption('Appeal', $optionValue, TRUE, uniqid());
+    $appealFieldID = $this->createCustomOption('Appeal', $optionValue, uniqid());
 
     exchange_rate_cache_set('USD', $message->get('date'), 1);
     exchange_rate_cache_set($message->get('currency'), $message->get('date'), 3);
@@ -293,28 +293,24 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param string $fieldName
    *
    * @param string $optionValue
-   * @param bool $is_active
-   *   Is the option value enabled.
+   *
    * @param string $label
+   *   Optional label (otherwise value is used)
    *
    * @return mixed
    */
-  public function createCustomOption($fieldName, $optionValue, $is_active = TRUE, $label = NULL) {
-    if (!$label) {
-      $label = $optionValue;
-    }
+  public function createCustomOption($fieldName, $optionValue, $label = '') {
     $appealField = civicrm_api3('custom_field', 'getsingle', array('name' => $fieldName));
-    civicrm_api3(
-      'OptionValue',
-      'create',
-      array(
-        'name' => $label,
-        'value' => $optionValue,
+    wmf_civicrm_ensure_option_value_exists($appealField['option_group_id'], $optionValue);
+    if ($label) {
+      // This is a test specific scenario not handled by ensure_option_value_exists.
+      $this->callAPISuccess('OptionValue', 'get', [
+        'return' => 'id',
         'option_group_id' => $appealField['option_group_id'],
-        'is_active' => $is_active,
-      )
-    );
-    wmf_civicrm_flush_cached_options();
+        'value' => $optionValue,
+        'api.OptionValue.create' => ['label' => $label]
+      ]);
+    }
     return $appealField['id'];
   }
 
@@ -344,11 +340,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testDonationSparseMessages($message, $pendingMessage) {
     $pendingMessage['order_id'] = $message->get('order_id');
     $this->pendingDb->storeMessage($pendingMessage);
-    $appealFieldID = $this->createCustomOption(
-      'Appeal',
-      $pendingMessage['utm_campaign'],
-      FALSE
-    );
+    $appealFieldID = $this->createCustomOption('Appeal', $pendingMessage['utm_campaign']);
 
     exchange_rate_cache_set('USD', $message->get('date'), 1);
     exchange_rate_cache_set($message->get('currency'), $message->get('date'), 3);
