@@ -51,11 +51,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
     public function setUp() {
         parent::setUp();
-        civicrm_api3( 'OptionValue', 'create', array(
-            'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
-            'label' => ImportMessageTest_campaign,
-            'value' => ImportMessageTest_campaign,
-        ) );
+        wmf_civicrm_ensure_option_value_exists(WMF_CAMPAIGNS_OPTION_GROUP_NAME, ImportMessageTest_campaign);
     }
 
     public function tearDown() {
