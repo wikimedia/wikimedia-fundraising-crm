@@ -57,12 +57,18 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
    * Clean up transactions from previous test runs.
    */
   function doCleanUp() {
+    $contributions = array();
     if ($this->trxn_id) {
       $contributions = wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $this->trxn_id);
-      if ($contributions) {
-        foreach ($contributions as $contribution) {
-          $this->callAPISuccess('Contribution', 'delete', array('id' => $contribution['id']));
-        }
+    }
+    elseif (!empty($this->trxn_ids)) {
+      foreach ($this->trxn_ids as $trxn_id) {
+        $contributions = array_merge($contributions, wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $trxn_id));
+      }
+    }
+    if ($contributions) {
+      foreach ($contributions as $contribution) {
+        $this->callAPISuccess('Contribution', 'delete', array('id' => $contribution['id']));
       }
     }
     $this->doMouseHunt();
