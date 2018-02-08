@@ -19,6 +19,7 @@ files[] = ForeignChecksFile.php
 files[] = IgnoredRowException.php
 files[] = JpMorganFile.php
 files[] = BenevityFile.php
+files[] = CitibankFile.php
 files[] = PayPalChecksFile.php
 files[] = RefundFile.php
 files[] = SquareFile.php

@@ -47,9 +47,15 @@ abstract class ChecksFile {
   protected $allMissedFileResource = NULL;
 
   /**
-   * @param string $file_uri path to the file
+   * @var array
    */
-  function __construct($file_uri) {
+  protected $additionalFields = array();
+
+  /**
+   * @param string $file_uri path to the file
+   * @param array $additionalFields
+   */
+  function __construct($file_uri, $additionalFields = array()) {
     $this->file_uri = $file_uri;
     global $user;
     $suffix = $user->uid . '.csv';
@@ -57,9 +63,12 @@ abstract class ChecksFile {
     $this->skipped_file_uri = str_replace('.csv', '_skipped.' . $suffix, $file_uri);
     $this->ignored_file_uri = str_replace('.csv', '_ignored.' . $suffix, $file_uri);
     $this->all_missed_file_uri = str_replace('.csv', '_all_missed.' . $suffix, $file_uri);
-    wmf_common_set_smashpig_message_source(
-      'direct', 'Offline importer: ' . get_class($this)
-    );
+    $this->additionalFields = $additionalFields;
+    if ($file_uri) {
+      wmf_common_set_smashpig_message_source(
+        'direct', 'Offline importer: ' . get_class($this)
+      );
+    }
   }
 
   /**
@@ -673,5 +682,21 @@ abstract class ChecksFile {
   protected function checkForExistingContributions($msg) {
     return  wmf_civicrm_get_contributions_from_gateway_id($msg['gateway'], $msg['gateway_txn_id']);
   }
+
+  /**
+   * Get any fields that can be set on import at an import wide level.
+   */
+  public function getImportFields() {
+    return array();
+  }
+
+  /**
+   * Validate the fields submitted on the import form.
+   *
+   * @param array $formFields
+   *
+   * @throws \Exception
+   */
+  public function validateFormFields($formFields) {}
 
 }
