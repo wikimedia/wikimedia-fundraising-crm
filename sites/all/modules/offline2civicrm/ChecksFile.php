@@ -238,6 +238,7 @@ abstract class ChecksFile {
    * @return array queue message format
    *
    * @throws \EmptyRowException
+   * @throws \WmfException
    */
   protected function parseRow($data) {
     $msg = array();
@@ -646,6 +647,7 @@ abstract class ChecksFile {
    * @param array $msg
    *
    * @return array
+   * @throws \WmfException
    */
   public function doImport($msg) {
     $contribution = wmf_civicrm_contribution_message_import($msg);
@@ -678,6 +680,7 @@ abstract class ChecksFile {
    * @param $msg
    *
    * @return array|bool
+   * @throws \WmfException
    */
   protected function checkForExistingContributions($msg) {
     return  wmf_civicrm_get_contributions_from_gateway_id($msg['gateway'], $msg['gateway_txn_id']);
