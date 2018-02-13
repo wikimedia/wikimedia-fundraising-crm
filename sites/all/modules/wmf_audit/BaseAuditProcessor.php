@@ -743,16 +743,25 @@ abstract class BaseAuditProcessor {
 
                 //Now that we've made it this far: Easy check to make sure we're even looking at the right thing...
                 //I'm not totally sure this is going to be the right thing to do, though. Intended fragility.
-                if ((!$this->get_runtime_options('fakedb')) &&
-                  (!empty($contribution_tracking_data['utm_payment_method'])) &&
-                  ($contribution_tracking_data['utm_payment_method'] !== $all_data['payment_method'])) {
+                if (!$this->get_runtime_options('fakedb')) {
+                  $method = $all_data['payment_method'];
+                  // FIXME: should deal better with recurring. For now, we only
+                  // get initial recurring records for GlobalCollect via these
+                  // parsers, and we can treat those almost the same as one-time
+                  // donations, just with 'recurring' => 1 in the message.
+                  if (!empty($all_data['recurring'])) {
+                    $method = 'r' . $method;
+                  }
+                  if ((!empty($contribution_tracking_data['utm_payment_method'])) &&
+                    ($contribution_tracking_data['utm_payment_method'] !== $method)) {
 
-                  $message = 'Payment method mismatch between utm tracking data(' . $contribution_tracking_data['utm_payment_method'];
-                  $message .= ') and normalized log and recon data(' . $all_data['payment_method'] . '). Investigation required.';
-                  throw new WmfException(
-                    'DATA_INCONSISTENT',
-                    $message
-                  );
+                    $message = 'Payment method mismatch between utm tracking data(' . $contribution_tracking_data['utm_payment_method'];
+                    $message .= ') and normalized log and recon data(' . $method . '). Investigation required.';
+                    throw new WmfException(
+                      'DATA_INCONSISTENT',
+                      $message
+                    );
+                  }
                 }
                 unset($contribution_tracking_data['utm_payment_method']);
                 // On the next line, the date field from all_data will win, which we totally want.

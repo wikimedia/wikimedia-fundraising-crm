@@ -203,6 +203,39 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
           ],
         ],
       ],
+      [
+        __DIR__ . '/data/Ingenico/recurring/',
+        [
+          'main' => [
+            [
+              'contribution_tracking_id' => '55599991',
+              'country' => 'US',
+              'currency' => 'USD',
+              'date' => 1512602101,
+              'email' => 'donor123@example.net',
+              'first_name' => 'DonorFirst',
+              'gateway' => 'globalcollect',
+              // TODO: Connect donations get 'ingenico'
+              'gateway_txn_id' => '2987654321',
+              'gross' => '1.00',
+              'installment' => 1,
+              'last_name' => 'DonorLast',
+              'order_id' => '2987654321',
+              'payment_method' => 'cc',
+              'payment_submethod' => 'mc',
+              'recurring' => 1,
+              'user_ip' => '11.22.33.44',
+              'utm_campaign' => 'ingenico_audit',
+              'utm_medium' => 'ingenico_audit',
+              'utm_source' => 'ingenico_audit',
+              'street_address' => '123 Fake St',
+              'city' => 'Cityville',
+              'state_province' => 'OR',
+              'postal_code' => '12345',
+            ],
+          ],
+        ],
+      ],
     ];
   }
 
