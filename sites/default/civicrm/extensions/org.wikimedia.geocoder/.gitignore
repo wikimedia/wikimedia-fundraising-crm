@@ -1,0 +1,6 @@
+vendor/*/*/Tests/
+vendor/*/*/.gitattributes
+vendor/*/*/.gitignore
+vendor/*/*/.travis.yml
+vendor/*/*/phpunit.xml.dist
+
