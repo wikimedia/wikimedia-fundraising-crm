@@ -8,23 +8,23 @@ define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
  * Implementation of hook_menu()
  */
 function wmf_audit_menu() {
-  $items = array();
+  $items = [];
 
-  $items['admin/config/wmf_audit'] = array(
+  $items['admin/config/wmf_audit'] = [
     'title' => 'WMF Audit',
-    'access arguments' => array('administer wmf_audit'),
+    'access arguments' => ['administer wmf_audit'],
     'page callback' => 'system_admin_menu_block_page',
     'file' => 'system.admin.inc',
     'file path' => drupal_get_path('module', 'system'),
-  );
+  ];
 
-  $items['admin/config/wmf_audit/configure'] = array(
+  $items['admin/config/wmf_audit/configure'] = [
     'title' => 'WMF Audit',
     'description' => t('Configure WMF audit settings.'),
-    'access arguments' => array('administer wmf_audit'),
+    'access arguments' => ['administer wmf_audit'],
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('wmf_audit_settings'),
-  );
+    'page arguments' => ['wmf_audit_settings'],
+  ];
 
   return $items;
 }
@@ -35,16 +35,16 @@ function wmf_audit_menu() {
  * @param string $gateway name
  * @param array $options Runtime parameters
  */
-function wmf_audit_main( $gateway, $options ) {
-    wmf_common_create_smashpig_context( "{$gateway}_audit", $gateway );
-    wmf_common_set_smashpig_message_source(
-        'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor'
-    );
-    $audit = module_invoke( "{$gateway}_audit", 'create_processor', $options );
-    if ( !$audit ) {
-        throw new Exception( "Gateway [$gateway] not found" );
-    }
-    $audit->run();
+function wmf_audit_main($gateway, $options) {
+  wmf_common_create_smashpig_context("{$gateway}_audit", $gateway);
+  wmf_common_set_smashpig_message_source(
+    'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor'
+  );
+  $audit = module_invoke("{$gateway}_audit", 'create_processor', $options);
+  if (!$audit) {
+    throw new Exception("Gateway [$gateway] not found");
+  }
+  $audit->run();
 }
 
 /**
@@ -56,28 +56,29 @@ function wmf_audit_main( $gateway, $options ) {
  * @return array of exported permissions.
  */
 function wmf_audit_permission() {
-  return array(
-    'administer wmf_audit' => array(
-        'title' => 'Configure the wmf_audit module',
-    ),
-  );
+  return [
+    'administer wmf_audit' => [
+      'title' => 'Configure the wmf_audit module',
+    ],
+  ];
 }
 
 /**
  * Callback for menu
  */
 function wmf_audit_settings() {
-  $form['wmf_audit_log_archive_dir'] = array(
+  $form['wmf_audit_log_archive_dir'] = [
     '#type' => 'textfield',
     '#title' => t('Path to directory containing WMF payments logs'),
     '#required' => TRUE,
     '#default_value' => variable_get('wmf_audit_log_archive_dir', WMF_AUDIT_PAYMENTS_LOGS_DIR),
-  );
+  ];
   return system_settings_form($form);
 }
 
 /**
  * Get the payments log archive directory. Same across all gateways.
+ *
  * @return string
  */
 function wmf_audit_get_log_archive_dir() {
@@ -90,7 +91,9 @@ function wmf_audit_get_log_archive_dir() {
  * $missing[$type]=> array of transactions.
  * Naturally, we're not checking to see that $type is one of the big three that
  * we expect, so it's possible to use this badly. So, don't.
+ *
  * @param array $missing An array of missing transactions by type.
+ *
  * @return int The total missing transactions in a missing transaction array
  */
 function wmf_audit_count_missing($missing) {
@@ -108,6 +111,7 @@ function wmf_audit_count_missing($missing) {
  * Remove all distilled logs older than the oldest date ($date)
  * Not even a big deal if we overshoot and remove too many, because we'll just
  * remake them next time if they're missing.
+ *
  * @param string $date The date string for the oldest log we want to keep
  * @param array $working_logs list of working log files by date
  */
@@ -128,23 +132,25 @@ function wmf_audit_remove_old_logs($date, $working_logs) {
  * output logs.
  * Without this, the viz blocks would just ride merrily off the right end of the
  * screen and cause stupid amounts of side scrolling.
+ *
  * @staticvar int $chars The number of single chars we've already added to this
  * line.
  * @staticvar int $limit The char limit, set at the command line
+ *
  * @param string $echo The thing you want to echo. Single chars will be added to
  * the current line, while longer strings will get their own new line.
  * @param boolean $verbose If true, this message will only appear when we are
  * running in verbose mode. The verbose option is set at the command line.
+ *
  * @return null
  */
-function wmf_audit_echo($echo, $verbose = false) {
-  if (($verbose && wmf_audit_runtime_options('verbose') === false)
-    || wmf_audit_runtime_options('quiet') )
-  {
+function wmf_audit_echo($echo, $verbose = FALSE) {
+  if (($verbose && wmf_audit_runtime_options('verbose') === FALSE)
+    || wmf_audit_runtime_options('quiet')) {
     return;
   }
   static $chars = 0;
-  static $limit = null;
+  static $limit = NULL;
   if (is_null($limit)) {
     $limit = wmf_audit_runtime_options('charlimit');
   }
@@ -156,7 +162,8 @@ function wmf_audit_echo($echo, $verbose = false) {
       echo "\n";
       $chars = 0;
     }
-  } else {
+  }
+  else {
     //echo a whole line. Gets a little tricky.
     if ($chars != 0) {
       echo "\n";
@@ -168,34 +175,43 @@ function wmf_audit_echo($echo, $verbose = false) {
 
 /**
  * A confusing function for holding local runtime vars without having to goof
- * around with globals. Works as both get and set, depending on what you pass in
+ * around with globals. Works as both get and set, depending on what you pass
+ * in
  * with $confusing_thing
- * TODO: Stop that.  Some vars should be global, most should be private to the audit class.
+ * TODO: Stop that.  Some vars should be global, most should be private to the
+ * audit class.
+ *
  * @staticvar array $args The arguments set at runtime via drush command
+ *
  * @param array|string|null $confusing_thing A confusing thing.
  * * When it is an array, sets the internal static $args variable to that array
- * * When it is a string, it interprets the string to be the key for which there
+ * * When it is a string, it interprets the string to be the key for which
+ *   there
  *   should be a value in $args, and returns that value (or false if not
  *   present).
  * * When it is null, it returns the whole $args array.
+ *
  * @return mixed Either a boolean, or a specific runtime setting (if
  * $confusing_thing is neither an array nor null)
  */
-function wmf_audit_runtime_options($confusing_thing = null) {
-  static $args = array();
+function wmf_audit_runtime_options($confusing_thing = NULL) {
+  static $args = [];
   if (is_array($confusing_thing)) { //we're setting up the function for later use, and $confusing_thing is the array of current settings.
     $args = $confusing_thing;
-    return true;
-  } elseif (is_null($confusing_thing)) { //we want all the settings
+    return TRUE;
+  }
+  elseif (is_null($confusing_thing)) { //we want all the settings
     return $args;
-  } elseif (array_key_exists($confusing_thing, $args)) { //we are after a specific setting
+  }
+  elseif (array_key_exists($confusing_thing, $args)) { //we are after a specific setting
     return $args[$confusing_thing];
   }
-  return false;
+  return FALSE;
 }
 
 /**
  * Logs the errors we get in a consistent way
+ *
  * @param string $watchdog_message The message we want to log. Should be
  * descriptive enough that we can bug hunt without having to go all cowboy in
  * prod.
@@ -216,6 +232,7 @@ function wmf_audit_log_error($watchdog_message, $drush_code) {
  * Returns an array of errors that should not cause the script to blow up, but
  * which will probably still cause messages to get thrown out.
  * TODO: Use WmfException instead.
+ *
  * @return boolean true if the error code is fatal, otherwise false.
  */
 function wmf_audit_error_isfatal($error) {
@@ -223,7 +240,7 @@ function wmf_audit_error_isfatal($error) {
   //not nonfatal to the contribution itself. We hit one of these,
   //the contribution will be skipped, and we move to the next one.
   //ALL OTHER CODES will cause the process to come to a screeching halt.
-  $nonfatal = array(
+  $nonfatal = [
     'DATA_INCONSISTENT',
     'DATA_INCOMPLETE',
     'DATA_WEIRD',
@@ -231,12 +248,13 @@ function wmf_audit_error_isfatal($error) {
     'MISSING_MANDATORY_DATA',
     'UTM_DATA_MISMATCH',
     'NORMALIZE_DATA',
-  );
+  ];
 
   if (in_array($error, $nonfatal)) {
-    return false;
-  } else {
-    return true;
+    return FALSE;
+  }
+  else {
+    return TRUE;
   }
 }
 
@@ -244,8 +262,10 @@ function wmf_audit_error_isfatal($error) {
  * Returns the contribution tracking data for $record, if we can find it.
  * Sometimes even if we can't find it: If we're running in fakedb mode, it'll
  * stuff in placeholders.
+ *
  * @param array $record The re-fused and normal transaction that doesn't yet
  * exist in civicrm.
+ *
  * @return array|false An array of relevant contribution tracking fields for
  * this transaction, or false if we couldn't find any.
  */
@@ -260,11 +280,12 @@ function wmf_audit_get_contribution_tracking_data($record) {
   $dbs->push('default');
 
   $query = "SELECT * FROM contribution_tracking WHERE id = :id";
-  $result = db_query($query, array(':id' => $contribution_tracking_id));
+  $result = db_query($query, [':id' => $contribution_tracking_id]);
   if (!$result->rowCount()) {
     wmf_audit_log_error("Missing Contribution Tracking data. Supposed ID='$contribution_tracking_id'", 'DATA_INCOMPLETE');
-  } else {
-    wmf_audit_echo("Found Contribution Tracking data. ID='$contribution_tracking_id'", true);
+  }
+  else {
+    wmf_audit_echo("Found Contribution Tracking data. ID='$contribution_tracking_id'", TRUE);
   }
 
   $result = $result->fetchAssoc();
@@ -274,7 +295,8 @@ function wmf_audit_get_contribution_tracking_data($record) {
     if (!is_null($result['utm_source'])) {
       $utm_payment_method = explode('.', $result['utm_source']);
       $utm_payment_method = $utm_payment_method[2]; //...sure.
-    } else {
+    }
+    else {
       //probably one of us silly people doing things in testing...
       $utm_payment_method = NULL;
     }
@@ -286,7 +308,7 @@ function wmf_audit_get_contribution_tracking_data($record) {
       $real_timestamp['hour'], $real_timestamp['minute'], $real_timestamp['second'], $real_timestamp['month'], $real_timestamp['day'], $real_timestamp['year']
     );
 
-    $keep = array(
+    $keep = [
       'optout',
       'anonymous',
       'utm_source',
@@ -294,9 +316,9 @@ function wmf_audit_get_contribution_tracking_data($record) {
       'utm_campaign',
       'language',
       'date',
-    );
+    ];
 
-    $ret = array();
+    $ret = [];
     foreach ($keep as $thing) {
       $ret[$thing] = $result[$thing];
     }
@@ -306,28 +328,31 @@ function wmf_audit_get_contribution_tracking_data($record) {
     return $ret;
   }
 
-  return false;
+  return FALSE;
 }
 
 /**
  * Makes everything we need to fake contribution tracking data.
  * So: Mostly the timestamp.
+ *
  * @param array $record Transaction parsed into an array
+ *
  * @return array utm and date data appropriate for $record
  */
 function wmf_audit_make_contribution_tracking_data($record) {
   $utm_stuffer = wmf_audit_runtime_options('submod_prefix') . '_audit';
   //anything we don't put in here should be handled by the universal defaults on
   //import. And that's good.
-  $return = array(
+  $return = [
     'utm_source' => $utm_stuffer,
     'utm_medium' => $utm_stuffer,
     'utm_campaign' => $utm_stuffer,
-  );
+  ];
 
   if (!array_key_exists('date', $record)) {
     wmf_audit_log_error(__FUNCTION__ . ": Record has no date field. Weirdness probably ensues", 'DATA_WEIRD');
-  } else {
+  }
+  else {
     $return['date'] = $record['date'];
   }
 
@@ -345,10 +370,10 @@ function wmf_audit_make_contribution_tracking_data($record) {
  */
 function wmf_audit_send_transaction($record, $type) {
   if (wmf_audit_runtime_options('test')) {
-    wmf_audit_echo("Test mode: Would send the following message: " . print_r($record, true), true);
+    wmf_audit_echo("Test mode: Would send the following message: " . print_r($record, TRUE), TRUE);
     if (wmf_audit_runtime_options('test_callback')) {
-	$func = wmf_audit_runtime_options('test_callback');
-	$func($record, $type);
+      $func = wmf_audit_runtime_options('test_callback');
+      $func($record, $type);
     }
     return;
   }
@@ -358,62 +383,65 @@ function wmf_audit_send_transaction($record, $type) {
 
 /**
  * Send the message in $body to appropriate message queues.
+ *
  * @param array $body An array representing the transaction we're trying to
  * send.
  * @param string $type The type of transaction. 'main'|'negative'|'recurring'.
+ *
  * @throws Exception
  */
-function wmf_audit_send_queue_message( $body, $type ) {
-  $queueNames = array(
+function wmf_audit_send_queue_message($body, $type) {
+  $queueNames = [
     'main' => 'donations',
     'negative' => 'refund',
     'recurring' => 'recurring',
-  );
+  ];
 
   if (!array_key_exists($type, $queueNames)) {
     throw new Exception(__FUNCTION__ . ": Unhandled message type '$type'");
   }
 
-  QueueWrapper::push( $queueNames[$type], $body );
+  QueueWrapper::push($queueNames[$type], $body);
 }
 
 /**
  * Checks to make sure that the message we're working on, is complete enough to
  * send.
+ *
  * @param type $message
  */
 function wmf_audit_get_message_missing_fields($message) {
-  $common_fields = array(
-    'contribution_tracking_id' => true,
-    'utm_source' => true,
-    'utm_medium' => true,
-    'utm_campaign' => true,
-    'language' => true,
-    'referrer' => true,
-    'email' => true,
-    'first_name' => true,
-    'middle_name' => false,
-    'last_name' => true,
-    'street_address' => false,
-    'supplemental_address_1' => false,
-    'city' => false,
-    'state_province' => false,
-    'country' => true,
-    'postal_code' => false,
-    'gateway' => true,
-    'gateway_account' => false,
-    'gateway_txn_id' => true,
-    'payment_method' => true,
-    'payment_submethod' => true,
-    'response' => false, //but cool
-    'currency' => true,
-    'fee' => true,
-    'gross' => true,
-    'net' => true,
-    'user_ip' => true,
-    'date' => true,
-    'recurring' => true,
-  );
+  $common_fields = [
+    'contribution_tracking_id' => TRUE,
+    'utm_source' => TRUE,
+    'utm_medium' => TRUE,
+    'utm_campaign' => TRUE,
+    'language' => TRUE,
+    'referrer' => TRUE,
+    'email' => TRUE,
+    'first_name' => TRUE,
+    'middle_name' => FALSE,
+    'last_name' => TRUE,
+    'street_address' => FALSE,
+    'supplemental_address_1' => FALSE,
+    'city' => FALSE,
+    'state_province' => FALSE,
+    'country' => TRUE,
+    'postal_code' => FALSE,
+    'gateway' => TRUE,
+    'gateway_account' => FALSE,
+    'gateway_txn_id' => TRUE,
+    'payment_method' => TRUE,
+    'payment_submethod' => TRUE,
+    'response' => FALSE, //but cool
+    'currency' => TRUE,
+    'fee' => TRUE,
+    'gross' => TRUE,
+    'net' => TRUE,
+    'user_ip' => TRUE,
+    'date' => TRUE,
+    'recurring' => TRUE,
+  ];
   //but if we're a chargeback or something, we won't have all of those.
   //What's the rational subset to expect?
 }

@@ -9,19 +9,19 @@
  * Implementation of hook_drush_command()
  */
 function wmf_audit_drush_command() {
-  $items = array();
+  $items = [];
 
-  $items['parse-audit'] = array(
+  $items['parse-audit'] = [
     'description' =>
       'Audit parsing tool: Parses reconciliation files and inserts any missing transactions into the message queues.',
-    'examples' => array(
+    'examples' => [
       'drush parse-audit worldpay' => '# Run the audit for Worldpay and rebuild job',
-    ),
-    'arguments' => array(
+    ],
+    'arguments' => [
       'gateway' => 'Gateway name to process',
-    ),
-    'required-arguments' => true,
-    'options' => array(
+    ],
+    'required-arguments' => TRUE,
+    'options' => [
       'run_all' => 'Batch search for all missing transactions across all available recon files, instead of just the top three',
       'test' => 'Test the audit and rebuild job, but do not generate messages. No data will be changed.',
       'fakedb' => 'Fake the database information. This will cause the script to avoid looking up the actual contribution tracking id.',
@@ -29,8 +29,8 @@ function wmf_audit_drush_command() {
       'charlimit' => 'Will cause echoing to line break after the given number of characters',
       'verbose' => 'Verbose output',
       'recon_complete_count' => 'Number past which we should consider a recon file to be "complete", and move it out of the working dir.',
-    ),
-  );
+    ],
+  ];
 
   return $items;
 }
@@ -53,16 +53,16 @@ function drush_wmf_audit_parse_audit() {
   $args = drush_get_arguments();
   $gateway = $args[1]; // required-arguments should ensure this exists
 
-  $simple_opts = array(
+  $simple_opts = [
     'test' => 'Running in test mode: No queue messages will be sent',
     'fakedb' => 'Faking Database',
     'makemissing' => 'Making payments data for missing transactions',
     'run_all' => 'Running all recon files! This might take a while...',
     'verbose' => 'Outputting verbose.',
-    'recon_complete_count' => 'Number past which we should consider a recon file to be "complete", and move it out of the working dir.'
-  );
+    'recon_complete_count' => 'Number past which we should consider a recon file to be "complete", and move it out of the working dir.',
+  ];
 
-  $options = array();
+  $options = [];
 
   //handle our defaults first...
   $options['test'] = variable_get('wmf_audit_test_mode') || variable_get("{$gateway}_audit_test_mode");
@@ -70,7 +70,7 @@ function drush_wmf_audit_parse_audit() {
   foreach ($simple_opts as $key => $message) {
     if (drush_get_option($key)) {
       echo "$message\n";
-      $options[$key] = true;
+      $options[$key] = TRUE;
     }
   }
 
@@ -86,5 +86,5 @@ function drush_wmf_audit_parse_audit() {
     $options['recon_complete_count'] = drush_get_option('recon_complete_count');
   }
 
-  wmf_audit_main( $gateway, $options );
+  wmf_audit_main($gateway, $options);
 }

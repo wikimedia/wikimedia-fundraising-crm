@@ -4,56 +4,56 @@
  * Implementation of hook_menu()
  */
 function ingenico_audit_menu() {
-	$items = array();
+  $items = [];
 
-	$items['admin/config/wmf_audit/ingenico_audit'] = array(
-		'title' => 'Ingenico Audit',
-		'description' => t( 'Configure Ingenico audit settings.' ),
-		'access arguments' => array( 'administer wmf_audit' ),
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'ingenico_audit_settings' ),
-	);
+  $items['admin/config/wmf_audit/ingenico_audit'] = [
+    'title' => 'Ingenico Audit',
+    'description' => t('Configure Ingenico audit settings.'),
+    'access arguments' => ['administer wmf_audit'],
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['ingenico_audit_settings'],
+  ];
 
-	return $items;
+  return $items;
 }
 
 /**
  * Callback for menu
  */
 function ingenico_audit_settings() {
-	$form['ingenico_audit_recon_files_dir'] = array(
-		'#type' => 'textfield',
-		'#title' => t( 'Directory containing incoming reconciliation files' ),
-		'#required' => TRUE,
-		'#default_value' => variable_get( 'ingenico_audit_recon_files_dir' ),
-	);
-	$form['ingenico_audit_recon_completed_dir'] = array(
-		'#type' => 'textfield',
-		'#title' => t( 'Directory for completed reconciliation files' ),
-		'#required' => TRUE,
-		'#default_value' => variable_get( 'ingenico_audit_recon_completed_dir' ),
-	);
-	$form['ingenico_audit_working_log_dir'] = array(
-		'#type' => 'textfield',
-		'#title' => t( 'Working directory for payments logs (Not the source - that is defined at the wmf_audit level)' ),
-		'#required' => TRUE,
-		'#default_value' => variable_get( 'ingenico_audit_working_log_dir' ),
-	);
-	$form['ingenico_audit_test_mode'] = array(
-		'#type' => 'checkbox',
-		'#title' => t( 'When this box is checked, no queue messages will be sent.' ),
-		'#required' => FALSE,
-		'#default_value' => variable_get( 'ingenico_audit_test_mode' ),
-	);
-	$form['ingenico_audit_log_search_past_days'] = array(
-		'#type' => 'textfield',
-		'#title' => t( 'Plus or minus log search (in days)' ),
-		'#required' => TRUE,
-		'#default_value' => variable_get( 'ingenico_audit_log_search_past_days' ),
-	);
-	return system_settings_form( $form );
+  $form['ingenico_audit_recon_files_dir'] = [
+    '#type' => 'textfield',
+    '#title' => t('Directory containing incoming reconciliation files'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('ingenico_audit_recon_files_dir'),
+  ];
+  $form['ingenico_audit_recon_completed_dir'] = [
+    '#type' => 'textfield',
+    '#title' => t('Directory for completed reconciliation files'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('ingenico_audit_recon_completed_dir'),
+  ];
+  $form['ingenico_audit_working_log_dir'] = [
+    '#type' => 'textfield',
+    '#title' => t('Working directory for payments logs (Not the source - that is defined at the wmf_audit level)'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('ingenico_audit_working_log_dir'),
+  ];
+  $form['ingenico_audit_test_mode'] = [
+    '#type' => 'checkbox',
+    '#title' => t('When this box is checked, no queue messages will be sent.'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('ingenico_audit_test_mode'),
+  ];
+  $form['ingenico_audit_log_search_past_days'] = [
+    '#type' => 'textfield',
+    '#title' => t('Plus or minus log search (in days)'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('ingenico_audit_log_search_past_days'),
+  ];
+  return system_settings_form($form);
 }
 
-function ingenico_audit_create_processor( $options ) {
-	return new IngenicoAuditProcessor( $options );
+function ingenico_audit_create_processor($options) {
+  return new IngenicoAuditProcessor($options);
 }
