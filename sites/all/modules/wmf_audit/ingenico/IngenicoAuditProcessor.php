@@ -4,231 +4,241 @@ use SmashPig\PaymentProviders\Ingenico\Audit\IngenicoAudit;
 use SmashPig\PaymentProviders\Ingenico\ReferenceData;
 
 class IngenicoAuditProcessor extends BaseAuditProcessor {
-	protected $name = 'ingenico';
 
-	protected function get_audit_parser() {
-		return new IngenicoAudit();
-	}
+  protected $name = 'ingenico';
 
-	// TODO: wx2 files should supersede wx1 files of the same name
-	protected function get_recon_file_sort_key( $file ) {
-		// Example: wx1.000000123420160423.010211.xml.gz
-		// For that, we'd want to return 20160423
-		return substr( $file, 15, 8 );
-	}
+  protected function get_audit_parser() {
+    return new IngenicoAudit();
+  }
 
-	// TODO: Switch to json log parsing when caught up to 20170727
-	protected function get_log_distilling_grep_string() {
-		return 'RETURNED FROM CURL.*<ACTION>INSERT_ORDERWITHPAYMENT</ACTION>';
-	}
+  // TODO: wx2 files should supersede wx1 files of the same name
+  protected function get_recon_file_sort_key($file) {
+    // Example: wx1.000000123420160423.010211.xml.gz
+    // For that, we'd want to return 20160423
+    return substr($file, 15, 8);
+  }
 
-	protected function get_log_line_grep_string( $order_id ) {
-		return "<ORDERID>$order_id</ORDERID>";
-	}
+  // TODO: Switch to json log parsing when caught up to 20170727
+  protected function get_log_distilling_grep_string() {
+    return 'RETURNED FROM CURL.*<ACTION>INSERT_ORDERWITHPAYMENT</ACTION>';
+  }
 
-	protected function parse_log_line( $logLine ) {
-		// get the xml, and the contribution_id... and while we're at it, parse the xml.
-		$xml = null;
-		$full_xml = false;
-		$contribution_id = null;
+  protected function get_log_line_grep_string($order_id) {
+    return "<ORDERID>$order_id</ORDERID>";
+  }
 
-		// look for the raw xml.
-		$xmlstart = strpos( $logLine, '<XML>' );
-		$xmlend = strpos( $logLine, '</XML>' );
-		if ( $xmlend ){
-			$full_xml = true;
-			$xmlend += 6;
-			$xml = substr($logLine, $xmlstart, $xmlend - $xmlstart);
-		} else {
-			// this is a broken line, and it won't load... but we can still parse what's left of the thing, the slow way.
-			$xml = substr($logLine, $xmlstart);
-		}
-		// get the contribution tracking id.
-		$ctid_end = strpos( $logLine, 'RETURNED FROM CURL' );
-		$ctid_start = strpos( $logLine, '_gateway:' ) + 9;
-		$ctid = substr($logLine, $ctid_start, $ctid_end - $ctid_start);
-		$parts = explode( ':', $ctid );
-		$contribution_id = trim( $parts[0], ' :' );
-		// go on with your bad self
-		// now parse the xml...
+  protected function parse_log_line($logLine) {
+    // get the xml, and the contribution_id... and while we're at it, parse the xml.
+    $xml = NULL;
+    $full_xml = FALSE;
+    $contribution_id = NULL;
 
-		$donor_data = array();
+    // look for the raw xml.
+    $xmlstart = strpos($logLine, '<XML>');
+    $xmlend = strpos($logLine, '</XML>');
+    if ($xmlend) {
+      $full_xml = TRUE;
+      $xmlend += 6;
+      $xml = substr($logLine, $xmlstart, $xmlend - $xmlstart);
+    }
+    else {
+      // this is a broken line, and it won't load... but we can still parse what's left of the thing, the slow way.
+      $xml = substr($logLine, $xmlstart);
+    }
+    // get the contribution tracking id.
+    $ctid_end = strpos($logLine, 'RETURNED FROM CURL');
+    $ctid_start = strpos($logLine, '_gateway:') + 9;
+    $ctid = substr($logLine, $ctid_start, $ctid_end - $ctid_start);
+    $parts = explode(':', $ctid);
+    $contribution_id = trim($parts[0], ' :');
+    // go on with your bad self
+    // now parse the xml...
 
-		if ( $full_xml ){
-			$xmlobj = new DomDocument;
-			$xmlobj->loadXML($xml);
+    $donor_data = [];
 
-			$parent_nodes = array(
-				'ORDER',
-				'PAYMENT'
-			);
+    if ($full_xml) {
+      $xmlobj = new DomDocument;
+      $xmlobj->loadXML($xml);
 
-			foreach ( $parent_nodes as $parent_node ){
-				foreach ( $xmlobj->getElementsByTagName( $parent_node ) as $node ) {
-					foreach ( $node->childNodes as $childnode ) {
-						if ( trim( $childnode->nodeValue ) != '' ) {
-							$donor_data[$childnode->nodeName] = $childnode->nodeValue;
-						}
-					}
-				}
-			}
-		} else {
-			$search_for_nodes = array(
-				'ORDERID' => true,
-				'AMOUNT' => true,
-				'CURRENCYCODE' => true,
-				'PAYMENTPRODUCTID' => true,
-				'ORDERTYPE' => false,
-				'EMAIL' => true,
-				'FIRSTNAME' => false,
-				'SURNAME' => false,
-				'STREET' => false,
-				'CITY' => false,
-				'STATE' => false,
-				'COUNTRYCODE' => true,
-				'ZIP' => false,
-			);
+      $parent_nodes = [
+        'ORDER',
+        'PAYMENT',
+      ];
 
-			foreach ( $search_for_nodes as $node => $mandatory ){
-				$tmp = $this->getPartialXmlNodeValue( $node, $xml );
-				if ( !is_null( $tmp ) ){
-					$donor_data[$node] = $tmp;
-				} else {
-					if ( $mandatory ){
-						throw new WmfException(
-							'MISSING_MANDATORY_DATA',
-							"Mandatory field $node missing for $contribution_id."
-						);
-					} else {
-						$donor_data[$node] = '';
-					}
-				}
-			}
-		}
+      foreach ($parent_nodes as $parent_node) {
+        foreach ($xmlobj->getElementsByTagName($parent_node) as $node) {
+          foreach ($node->childNodes as $childnode) {
+            if (trim($childnode->nodeValue) != '') {
+              $donor_data[$childnode->nodeName] = $childnode->nodeValue;
+            }
+          }
+        }
+      }
+    }
+    else {
+      $search_for_nodes = [
+        'ORDERID' => TRUE,
+        'AMOUNT' => TRUE,
+        'CURRENCYCODE' => TRUE,
+        'PAYMENTPRODUCTID' => TRUE,
+        'ORDERTYPE' => FALSE,
+        'EMAIL' => TRUE,
+        'FIRSTNAME' => FALSE,
+        'SURNAME' => FALSE,
+        'STREET' => FALSE,
+        'CITY' => FALSE,
+        'STATE' => FALSE,
+        'COUNTRYCODE' => TRUE,
+        'ZIP' => FALSE,
+      ];
 
-		$return['contribution_tracking_id'] = $contribution_id;
-		// FIXME: move all staging/unstaging to SmashPig lib
-		$xmlMap = array(
-			'ORDERID' => 'gateway_txn_id',
-			'CURRENCYCODE' => 'currency',
-			'EMAIL' => 'email',
-			'FIRSTNAME' => 'first_name',
-			'SURNAME' => 'last_name',
-			'STREET' => 'street_address',
-			'CITY' => 'city',
-			'STATE' => 'state_province',
-			'COUNTRYCODE' => 'country',
-			'ZIP' => 'postal_code',
-			'AMOUNT' => 'gross',
-		);
-		foreach ( $xmlMap as $theirs => $ours ) {
-			if ( isset( $donor_data[$theirs] ) ) {
-				$return[$ours] = $donor_data[$theirs];
-			}
-		}
-		$return['gross'] = $return['gross'] / 100;
-		$normalizedMethod = ReferenceData::decodePaymentMethod(
-			$donor_data['PAYMENTPRODUCTID']
-		);
-		if ( !empty( $donor_data['ORDERTYPE'] ) && $donor_data['ORDERTYPE'] === '4' ) {
-			$return['recurring'] = 1;
-		}
-		$return = array_merge( $return, $normalizedMethod );
-		return $return;
-	}
+      foreach ($search_for_nodes as $node => $mandatory) {
+        $tmp = $this->getPartialXmlNodeValue($node, $xml);
+        if (!is_null($tmp)) {
+          $donor_data[$node] = $tmp;
+        }
+        else {
+          if ($mandatory) {
+            throw new WmfException(
+              'MISSING_MANDATORY_DATA',
+              "Mandatory field $node missing for $contribution_id."
+            );
+          }
+          else {
+            $donor_data[$node] = '';
+          }
+        }
+      }
+    }
 
-	function getPartialXmlNodeValue( $node, $xml ){
-		$node1 = "<$node>";
-		$node2 = "</$node>";
+    $return['contribution_tracking_id'] = $contribution_id;
+    // FIXME: move all staging/unstaging to SmashPig lib
+    $xmlMap = [
+      'ORDERID' => 'gateway_txn_id',
+      'CURRENCYCODE' => 'currency',
+      'EMAIL' => 'email',
+      'FIRSTNAME' => 'first_name',
+      'SURNAME' => 'last_name',
+      'STREET' => 'street_address',
+      'CITY' => 'city',
+      'STATE' => 'state_province',
+      'COUNTRYCODE' => 'country',
+      'ZIP' => 'postal_code',
+      'AMOUNT' => 'gross',
+    ];
+    foreach ($xmlMap as $theirs => $ours) {
+      if (isset($donor_data[$theirs])) {
+        $return[$ours] = $donor_data[$theirs];
+      }
+    }
+    $return['gross'] = $return['gross'] / 100;
+    $normalizedMethod = ReferenceData::decodePaymentMethod(
+      $donor_data['PAYMENTPRODUCTID']
+    );
+    if (!empty($donor_data['ORDERTYPE']) && $donor_data['ORDERTYPE'] === '4') {
+      $return['recurring'] = 1;
+    }
+    $return = array_merge($return, $normalizedMethod);
+    return $return;
+  }
 
-		$valstart = strpos( $xml, $node1 ) + strlen( $node1 );
-		if ( !$valstart ){
-			return null;
-		}
+  function getPartialXmlNodeValue($node, $xml) {
+    $node1 = "<$node>";
+    $node2 = "</$node>";
 
-		$valend = strpos( $xml, $node2 );
-		if ( !$valend ){ //it cut off in that node. This next thing is therefore safe(ish).
-			$valend = strpos( $xml, '</' );
-		}
+    $valstart = strpos($xml, $node1) + strlen($node1);
+    if (!$valstart) {
+      return NULL;
+    }
 
-		if ( !$valend ){
-			return null;
-		}
+    $valend = strpos($xml, $node2);
+    if (!$valend) { //it cut off in that node. This next thing is therefore safe(ish).
+      $valend = strpos($xml, '</');
+    }
 
-		$value = substr( $xml, $valstart, $valend - $valstart );
-		return $value;
+    if (!$valend) {
+      return NULL;
+    }
 
-	}
+    $value = substr($xml, $valstart, $valend - $valstart);
+    return $value;
 
-	protected function regex_for_recon() {
-		return '/wx\d\.\d{18}\.\d{6}.xml.gz/';
-	}
+  }
 
-	/**
-	 * Initial logs for the Ingenico Connect API have no gateway transaction id,
-	 * just our contribution tracking id and the hosted checkout session ID.
-	 *
-	 * @param array $transaction possibly incomplete set of transaction data
-	 * @return string|false the order_id, or false if we can't figure it out
-	 */
-	protected function get_order_id( $transaction ) {
-		if ( is_array( $transaction ) ) {
-			if ( array_key_exists( 'order_id', $transaction ) ) {
-				return $transaction['order_id'];
-			}
-			if ( array_key_exists( 'gateway_parent_id' , $transaction ) ) {
-				return $transaction['gateway_parent_id'];
-			}
-		}
-		return false;
-	}
+  protected function regex_for_recon() {
+    return '/wx\d\.\d{18}\.\d{6}.xml.gz/';
+  }
 
-	/**
-	 * Get the name of a compressed log file based on the supplied date.
-	 * TODO: transition from 'globalcollect' to 'ingenico' and stop
-	 * overriding these three functions
-	 *
-	 * @param string $date date in YYYYMMDD format
-	 * @return string Name of the file we're looking for
-	 */
-	protected function get_compressed_log_file_name( $date ) {
-		return "payments-globalcollect-{$date}.gz";
-	}
+  /**
+   * Initial logs for the Ingenico Connect API have no gateway transaction id,
+   * just our contribution tracking id and the hosted checkout session ID.
+   *
+   * @param array $transaction possibly incomplete set of transaction data
+   *
+   * @return string|false the order_id, or false if we can't figure it out
+   */
+  protected function get_order_id($transaction) {
+    if (is_array($transaction)) {
+      if (array_key_exists('order_id', $transaction)) {
+        return $transaction['order_id'];
+      }
+      if (array_key_exists('gateway_parent_id', $transaction)) {
+        return $transaction['gateway_parent_id'];
+      }
+    }
+    return FALSE;
+  }
 
-	/**
-	 * Get the name of an uncompressed log file based on the supplied date.
-	 * @param string $date date in YYYYMMDD format
-	 * @return string Name of the file we're looking for
-	 */
-	protected function get_uncompressed_log_file_name( $date ) {
-		return "payments-globalcollect-{$date}";
-	}
+  /**
+   * Get the name of a compressed log file based on the supplied date.
+   * TODO: transition from 'globalcollect' to 'ingenico' and stop
+   * overriding these three functions
+   *
+   * @param string $date date in YYYYMMDD format
+   *
+   * @return string Name of the file we're looking for
+   */
+  protected function get_compressed_log_file_name($date) {
+    return "payments-globalcollect-{$date}.gz";
+  }
 
-	/**
-	 * The regex to use to determine if a file is an uncompressed log for this
-	 * gateway.
-	 * @return string regular expression
-	 */
-	protected function regex_for_uncompressed_log() {
-		return "/globalcollect_\d{8}/";
-	}
+  /**
+   * Get the name of an uncompressed log file based on the supplied date.
+   *
+   * @param string $date date in YYYYMMDD format
+   *
+   * @return string Name of the file we're looking for
+   */
+  protected function get_uncompressed_log_file_name($date) {
+    return "payments-globalcollect-{$date}";
+  }
 
-	protected function pre_process_refund( $transaction ) {
-		// We get woefully sparse records from some audit files.
-		// Try to reconstruct missing/false-y gateway_parent_id from ct_id
-		if (
-			empty( $transaction['gateway_parent_id'] ) &&
-			empty( $transaction['gateway_txn_id'] ) &&
-			!empty( $transaction['contribution_tracking_id'] )
-		) {
-			$transaction['gateway_parent_id'] = $this->getGatewayIdFromTracking( $transaction );
-		}
-		if ( empty( $transaction['gateway_refund_id'] ) ) {
-			// This stinks, but Ingenico doesn't give refunds their own ID,
-			// and sometimes even sends '0'
-			// We'll prepend an 'RFD' in the trxn_id column later.
-			$transaction['gateway_refund_id'] = $transaction['gateway_parent_id'];
-		}
-		return $transaction;
-	}
+  /**
+   * The regex to use to determine if a file is an uncompressed log for this
+   * gateway.
+   *
+   * @return string regular expression
+   */
+  protected function regex_for_uncompressed_log() {
+    return "/globalcollect_\d{8}/";
+  }
+
+  protected function pre_process_refund($transaction) {
+    // We get woefully sparse records from some audit files.
+    // Try to reconstruct missing/false-y gateway_parent_id from ct_id
+    if (
+      empty($transaction['gateway_parent_id']) &&
+      empty($transaction['gateway_txn_id']) &&
+      !empty($transaction['contribution_tracking_id'])
+    ) {
+      $transaction['gateway_parent_id'] = $this->getGatewayIdFromTracking($transaction);
+    }
+    if (empty($transaction['gateway_refund_id'])) {
+      // This stinks, but Ingenico doesn't give refunds their own ID,
+      // and sometimes even sends '0'
+      // We'll prepend an 'RFD' in the trxn_id column later.
+      $transaction['gateway_refund_id'] = $transaction['gateway_parent_id'];
+    }
+    return $transaction;
+  }
 }

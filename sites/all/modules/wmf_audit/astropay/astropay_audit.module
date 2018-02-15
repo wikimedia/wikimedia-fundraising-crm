@@ -4,56 +4,56 @@
  * Implementation of hook_menu()
  */
 function astropay_audit_menu() {
-	$items = array();
+  $items = [];
 
-	$items['admin/config/wmf_audit/astropay_audit'] = array(
-		'title' => 'AstroPay Audit',
-		'description' => t( 'Configure WMF audit settings.' ),
-		'access arguments' => array( 'administer wmf_audit' ),
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'astropay_audit_settings' ),
-	);
+  $items['admin/config/wmf_audit/astropay_audit'] = [
+    'title' => 'AstroPay Audit',
+    'description' => t('Configure WMF audit settings.'),
+    'access arguments' => ['administer wmf_audit'],
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['astropay_audit_settings'],
+  ];
 
-	return $items;
+  return $items;
 }
 
 /**
  * Callback for menu
  */
 function astropay_audit_settings() {
-	$form['astropay_audit_recon_files_dir'] = array(
-		'#type' => 'textfield',
-		'#title' => t( 'Directory containing incoming reconciliation files' ),
-		'#required' => TRUE,
-		'#default_value' => variable_get( 'astropay_audit_recon_files_dir' ),
-	);
-	$form['astropay_audit_recon_completed_dir'] = array(
-		'#type' => 'textfield',
-		'#title' => t( 'Directory for completed reconciliation files' ),
-		'#required' => TRUE,
-		'#default_value' => variable_get( 'astropay_audit_recon_completed_dir' ),
-	);
-	$form['astropay_audit_working_log_dir'] = array(
-		'#type' => 'textfield',
-		'#title' => t( 'Working directory for payments logs (Not the source - that is defined at the wmf_audit level)' ),
-		'#required' => TRUE,
-		'#default_value' => variable_get( 'astropay_audit_working_log_dir' ),
-	);
-	$form['astropay_audit_test_mode'] = array(
-		'#type' => 'checkbox',
-		'#title' => t( 'When this box is checked, no queue messages will be sent.' ),
-		'#required' => FALSE,
-		'#default_value' => variable_get( 'astropay_audit_test_mode' ),
-	);
-	$form['astropay_audit_log_search_past_days'] = array(
-		'#type' => 'textfield',
-		'#title' => t( 'Plus or minus log search (in days)' ),
-		'#required' => TRUE,
-		'#default_value' => variable_get( 'astropay_audit_log_search_past_days' ),
-	);
-	return system_settings_form( $form );
+  $form['astropay_audit_recon_files_dir'] = [
+    '#type' => 'textfield',
+    '#title' => t('Directory containing incoming reconciliation files'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('astropay_audit_recon_files_dir'),
+  ];
+  $form['astropay_audit_recon_completed_dir'] = [
+    '#type' => 'textfield',
+    '#title' => t('Directory for completed reconciliation files'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('astropay_audit_recon_completed_dir'),
+  ];
+  $form['astropay_audit_working_log_dir'] = [
+    '#type' => 'textfield',
+    '#title' => t('Working directory for payments logs (Not the source - that is defined at the wmf_audit level)'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('astropay_audit_working_log_dir'),
+  ];
+  $form['astropay_audit_test_mode'] = [
+    '#type' => 'checkbox',
+    '#title' => t('When this box is checked, no queue messages will be sent.'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('astropay_audit_test_mode'),
+  ];
+  $form['astropay_audit_log_search_past_days'] = [
+    '#type' => 'textfield',
+    '#title' => t('Plus or minus log search (in days)'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('astropay_audit_log_search_past_days'),
+  ];
+  return system_settings_form($form);
 }
 
-function astropay_audit_create_processor( $options ) {
-	return new AstroPayAuditProcessor( $options );
+function astropay_audit_create_processor($options) {
+  return new AstroPayAuditProcessor($options);
 }
