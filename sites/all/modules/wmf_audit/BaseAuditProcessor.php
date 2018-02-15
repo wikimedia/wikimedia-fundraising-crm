@@ -750,6 +750,13 @@ abstract class BaseAuditProcessor {
                   // parsers, and we can treat those almost the same as one-time
                   // donations, just with 'recurring' => 1 in the message.
                   if (!empty($all_data['recurring'])) {
+                    // Limit the bandaid to ONLY deal with first installments
+                    if (!empty($all_data['installment']) && $all_data['installment'] > 1) {
+                      throw new WmfException(
+                        'INVALID_RECURRING',
+                        "Audit parser found recurring order $order_id with installment {$all_data['installment']}"
+                      );
+                    }
                     $method = 'r' . $method;
                   }
                   if ((!empty($contribution_tracking_data['utm_payment_method'])) &&
