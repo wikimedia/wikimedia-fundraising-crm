@@ -1687,6 +1687,19 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
         'from' => ts('From Date'),
       );
     }
+    if ($type === self::OP_STRING) {
+      return [
+        'has' => ts('Contains'),
+        'sw' => ts('Starts with'),
+        'ew' => ts('Ends with'),
+        'nhas' => ts('Does not contain'),
+        'eq' => ts('Is equal to'),
+        'neq' => ts('Is not equal to'),
+        'nll' => ts('Is empty (Null)'),
+        'nnll' => ts('Is not empty (Null)'),
+        'rlike' => ts('Regex is true')
+      ];
+    }
     return parent::getOperationPair($type, $fieldName);
 
   }
@@ -2937,16 +2950,6 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
       $this->assignSubTotalLines($rows);
     }
 
-    if (!empty($this->_rollup) && count($rows) > 1) {
-      $lastIndex = key(array_slice($rows, -1, 1, TRUE));
-      //Do not concat non-stat field in the last row.
-      foreach ($rows[$lastIndex] as $key => &$val) {
-        if (!in_array($key, $this->_statFields)) {
-          $val = NULL;
-        }
-      }
-    }
-
     if (empty($rows)) {
       return;
     }
@@ -3077,32 +3080,22 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
     if (count($this->_statFields) == 0) {
       return;
     }
-    if ($statLayers == 1) {
-      return;
-      /*we don't want to show the summary rows as they are a distraction - we will unset every second one
-      foreach (array_keys($rows)  as $rowNumber) {
-        if ($rowNumber % 2 != 0) {
-          unset ($rows[$rowNumber]);
-        }
-      }
-      */
+
+    $unsetAllRollupRows = TRUE;
+    $rowsSinceLastRollup = 0;
+    foreach ($rows as $rowNumber => $row) {
+      $this->alterRowForRollup($rows[$rowNumber], CRM_Utils_Array::value($rowNumber +1, $rows), $groupBys, $rowNumber, $statLayers, $groupByLabels, $altered, $fieldsToUnSetForSubtotalLines);
+    }
+    if (empty($row['is_rollup'])) {
+      $rowsSinceLastRollup = 0;
     }
     else {
-      $unsetAllRollupRows = TRUE;
-      $rowsSinceLastRollup = 0;
-      foreach ($rows as $rowNumber => $row) {
-        $this->alterRowForRollup($rows[$rowNumber], CRM_Utils_Array::value($rowNumber +1, $rows), $groupBys, $rowNumber, $statLayers, $groupByLabels, $altered, $fieldsToUnSetForSubtotalLines);
-      }
-      if (empty($row['is_rollup'])) {
-        $rowsSinceLastRollup = 0;
-      }
-      else {
-        $rowsSinceLastRollup++;
-      }
-      if ($rowsSinceLastRollup > 1) {
-        $unsetAllRollupRows = FALSE;
-      }
+      $rowsSinceLastRollup++;
     }
+    if ($rowsSinceLastRollup > 1) {
+      $unsetAllRollupRows = FALSE;
+    }
+
     // If every row has a rollup then is't just ugly.
     // clean them out.
     if ($unsetAllRollupRows) {
@@ -3809,6 +3802,15 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
         'is_fields' => TRUE,
         'is_filters' => TRUE,
         'type' => CRM_Utils_Type::T_INT,
+      ),
+      'contribution_id' => array(
+        'title' => ts('Contribution Count'),
+        'type' => CRM_Utils_Type::T_INT,
+        'statistics' => array(
+          'count' => ts('Count of Contributions')
+        ),
+        'is_fields' => TRUE,
+        'is_filters' => TRUE,
       ),
       'line_total' => array(
         'title' => ts('Line Total'),
@@ -5116,6 +5118,11 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
         'title' => ts($options['prefix_label'] . 'Email'),
         'name' => 'email',
         'is_fields' => TRUE,
+        'is_filters' => TRUE,
+        'is_group_bys' => TRUE,
+        'is_order_bys' => TRUE,
+        'type' => CRM_Utils_Type::T_STRING,
+        'operatorType' => CRM_Report_Form::OP_STRING,
       ),
     );
     return $this->buildColumns($fields, $options['prefix'] . 'civicrm_email', 'CRM_Core_DAO_Email', NULL, $defaults);
@@ -7081,7 +7088,7 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
     }
     $row[$selectedField . '_link'] = CRM_Utils_System::url('civicrm/contact/view/contribution', 'reset=1&action=add&cid=' . $contactID . '&context=pledge&ppid=' . $value);
     $row[$selectedField . '_hover'] = ts('Record a payment received for this pledged payment');
-    $row[$selectedField . '_class'] = "action-item crm-hover-button popup";
+    $row[$selectedField . '_class'] = "action-item crm-hover-button crm-popup";
     return ts('Record Payment');
   }
 
@@ -7580,7 +7587,11 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
         continue;
       }
       if (empty($row[$field]) && empty($row['is_rollup'])) {
-        $groupedValue = $groupByLabels[array_search($field, $groupBys) + 1];
+        $valueIndex = array_search($field, $groupBys) + 1;
+        if (!isset($groupByLabels[$valueIndex])) {
+          return;
+        }
+        $groupedValue = $groupByLabels[$valueIndex];
         if (!($nextRow) || $nextRow[$groupedValue] != $row[$groupedValue]) {
           //we set altered because we are started from the lowest grouping & working up & if both have changed only want to act on the lowest
           //(I think)
@@ -7688,6 +7699,20 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
     $this->_columnHeaders["{$tableName}_{$fieldName}"]['type'] = CRM_Utils_Array::value('type', $field);
     $this->_selectAliases[] = $alias;
     return $select;
+  }
+
+  /**
+   * Get SQL operator from form text version.
+   *
+   * @param string $operator
+   *
+   * @return string
+   */
+  public function getSQLOperator($operator = "like") {
+    if ($operator === 'rlike') {
+      return 'RLIKE';
+    }
+    return parent::getSQLOperator($operator);
   }
 
 }

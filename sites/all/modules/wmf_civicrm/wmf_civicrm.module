@@ -3670,6 +3670,7 @@ function wmf_civicrm_civicrm_alterLogTables(&$logTableSpec) {
       'index_log_date' => 'log_date',
     ), $contactIndexes);
   }
+  unset($logTableSpec['civicrm_mailing_provider_data']);
 }
 
 /**
