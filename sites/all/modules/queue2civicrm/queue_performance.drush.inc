@@ -85,7 +85,7 @@ function drush_queue_performance_profile_donation($limit, $context) {
 
     $now = strtotime('now');
     foreach ($messages as $msg) {
-      module_invoke('queue2civicrm', 'import', $msg);
+      wmf_civicrm_contribution_message_import($msg);
     }
     $timeTaken = strtotime('now') - $now;
     drush_print(t("Processed @limit messages in $timeTaken second(s)", array('@limit' => $limit)));
