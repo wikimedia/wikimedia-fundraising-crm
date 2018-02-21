@@ -169,6 +169,25 @@ function dedupetools_civicrm_alterLogTables(&$logTableSpec) {
   unset($logTableSpec['civicrm_merge_conflict']);
 }
 
+/**
+ * This hook is called to display the list of actions allowed after doing a search,
+ * allowing you to inject additional actions or to remove existing actions.
+ *
+ * @param string $objectType
+ * @param array $tasks
+ */
+function dedupetools_civicrm_searchTasks($objectType, &$tasks) {
+  if ($objectType === 'contact') {
+    $tasks[] = [
+      'title' => ts('Find duplicates for these contacts'),
+      'class' => 'CRM_Contact_Form_Task_FindDuplicates',
+      'result' => TRUE,
+    ];
+
+  }
+}
+
+
 // --- Functions below this ship commented out. Uncomment as required. ---
 
 /**
