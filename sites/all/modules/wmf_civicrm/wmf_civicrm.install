@@ -66,6 +66,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7585();
   wmf_civicrm_update_7605();
   wmf_civicrm_update_7610();
+  wmf_civicrm_update_7615();
 }
 
 /**
@@ -3345,4 +3346,18 @@ function wmf_civicrm_update_7610() {
     'date.today_format_full',
     'date.today_format_raw',
   )));
+}
+
+/**
+ * Add geocoder extension.
+ *
+ * Disable geocoders we don't want.
+ *
+ * Bug: T184830
+ */
+function wmf_civicrm_update_7615() {
+  civicrm_initialize();
+  civicrm_api3('extension', 'refresh', array());
+  civicrm_api3('extension', 'install', array('key' => 'org.wikimedia.geocoder'));
+  wmf_civicrm_ensure_correct_geocoder_enabled();
 }

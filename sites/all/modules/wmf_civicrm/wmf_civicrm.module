@@ -1703,6 +1703,11 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
     throw new WmfException("IMPORT_CONTACT", "Native txn rolled back before inserting address");
   }
   try {
+    // @todo - remove this from here & do in pre like this
+    // https://issues.civicrm.org/jira/browse/CRM-21786
+    // or don't pass fix_address= 0 (but we need to understand performance reasons
+    // why we haven't done that.
+    CRM_Core_BAO_Address::addGeocoderData($address_params);
     civicrm_api3('Address', 'Create', $address_params);
   }
   catch (CiviCRM_API3_Exception $ex) {
@@ -3383,18 +3388,6 @@ function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
   }
 }
 
-
-/**
- * Implementation of hook_civicrm_pre, used to geocode US addresses
- */
-function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
-  switch ($type) {
-    case 'Address':
-      wmf_civicrm_civicrm_pre_Address($op, $entity);
-      break;
-  }
-}
-
 /**
  * Fill in the calculated donor fields for a given donor.
  *
@@ -3433,71 +3426,6 @@ function wmf_civicrm_calculate_donor_fields($contactID) {
   };
   foreach ($queries as $query) {
     CRM_Core_DAO::executeQuery($query);
-  }
-}
-
-/**
- * Geocode US addresses using wmf_zip_geo. Adds latitude, longitude,
- * and timezone as GMT offset.
- *
- * @param string $op Type of operation being performed
- * @param array $address Values being submitted
- */
-function wmf_civicrm_civicrm_pre_Address($op, &$address) {
-  static $usId = NULL;
-  if ($usId == NULL) {
-    $usId = wmf_civicrm_get_country_id('US');
-  };
-
-  switch ($op) {
-    case 'create':
-    case 'edit':
-      $geoData = array();
-
-      // Do we have any geo info for this address?
-      if (
-        !empty($address['country_id']) && $address['country_id'] == $usId &&
-        !empty($address['postal_code'])
-      ) {
-        $sql = "SELECT city, s.id AS state_id, latitude, longitude, timezone
-					FROM wmf_zip_geo g
-					JOIN civicrm_state_province s ON s.abbreviation = g.state
-					    AND s.country_id = $usId
-					WHERE zip = %1";
-
-        $result = CRM_Core_DAO::executeQuery(
-          $sql,
-          array(
-            1 => array(
-              substr(trim($address['postal_code']), 0, 5),
-              'String',
-            ),
-          )
-        );
-        if ($result->fetch()) {
-          $geoData = array(
-            'geo_code_1' => $result->latitude,
-            'geo_code_2' => $result->longitude,
-            'timezone' => $result->timezone,
-          );
-          // Only overwrite city and state if empty
-          if (empty($address['city'])) {
-            $geoData['city'] = $result->city;
-          }
-          if (empty($address['state_province_id']) || $address['state_province_id'] == 'null') {
-            $geoData['state_province_id'] = $result->state_id;
-          }
-        }
-      }
-      if (empty($geoData) && $op == 'edit') {
-        // Blank out any outdated information on edit
-        $geoData = array(
-          'geo_code_1' => '',
-          'geo_code_2' => '',
-          'timezone' => '',
-        );
-      }
-      $address = array_merge($address, $geoData);
   }
 }
 
@@ -4251,4 +4179,30 @@ function wmf_civicrm_parse_watchdog_array($logLine) {
  */
 function wmf_civicrm_flush_cached_options() {
   \Civi::$statics['wmf_civicrm'] = array();
+}
+
+/**
+ * Ensure that our US zip geocoder (only) is enabled.
+ */
+function wmf_civicrm_ensure_correct_geocoder_enabled() {
+  // I'm feeling really sad - our tests won't do the include path properly due to
+  // some complex set up issue. Let's try just calling the hook function from here
+  // (only used in install & upgrade script).
+  $config = CRM_Core_Config::singleton();
+  geocoder_civicrm_config($config);
+  $geocoders = civicrm_api3('Geocoder', 'get', []);
+  foreach ($geocoders['values'] as $geocoder) {
+    if ($geocoder['name'] !== 'us_zip_geocoder') {
+      civicrm_api3('Geocoder', 'create', [
+        'id' => $geocoder['id'],
+        'is_active' => 0
+      ]);
+    }
+    else {
+      civicrm_api3('Geocoder', 'create', [
+        'id' => $geocoder['id'],
+        'is_active' => 1
+      ]);
+    }
+  }
 }
