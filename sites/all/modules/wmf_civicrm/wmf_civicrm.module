@@ -237,12 +237,19 @@ function wmf_civicrm_contribution_message_import(&$msg) {
     wmf_civicrm_message_create_contact($msg);
   }
   else {
+    // @todo Do not solicit appears like these fields but is a custom field. Not handled yet as not in the import
+    // this was written (& tested) in conjunction with (Engage).
+    $updateFields = ['do_not_email', 'do_not_mail', 'do_not_trade', 'do_not_phone', 'is_opt_out', 'do_not_sms'];
+    $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));;
+
     if (isset($msg['employer_id'])) {
-      civicrm_api3('Contact', 'create', array(
-        'contact_id' => $msg['contact_id'],
-        'employer_id' => $msg['employer_id'],
-      ));
+      $updateParams['employer_id'] = $msg['employer_id'];
     }
+    if (!empty($updateParams)) {
+      $updateParams['contact_id'] = $msg['contact_id'];
+      civicrm_api3('Contact', 'create', $updateParams);
+    }
+
     // We have set the bar for invoking a location update fairly high here - ie state,
     // city or postal_code is not enough, as historically this update has not occurred at
     // all & introducing it this conservatively feels like a safe strategy.
@@ -1517,6 +1524,9 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
 
   try {
     $loc_type_id = isset($msg['email_location_type_id']) ? $msg['email_location_type_id'] : wmf_civicrm_get_default_location_type_id();
+    if (!is_numeric($loc_type_id)) {
+      $loc_type_id = CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Email', 'location_type_id', $loc_type_id);
+    }
     $isPrimary = isset($msg['email_location_type_id']) ? 0 : 1;
 
     $emailParams = array(
@@ -1529,20 +1539,43 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
     // Look up contact's existing email to get the id and to determine
     // if the email has changed.
     $existingEmails = civicrm_api3("Email", 'get', array(
-      'location_type_id' => $loc_type_id,
+      'return' => ['location_type_id', 'email', 'is_primary'],
       'contact_id' => $contact_id,
       'sequential' => 1,
-    ));
+      'options' => ['sort' => 'is_primary'],
+    ))['values'];
 
-    if ($existingEmails['count']) {
-      $existingEmail = $existingEmails['values'][0];
-      if (strtolower($existingEmail['email']) === strtolower($msg['email'])) {
-        // A case could be made for ensuring isPrimary / isBilling it set
-        // but unclear if the incoming would necesarily be more primary-y/billingy
-        return;
+    if (!empty($existingEmails)) {
+      foreach ($existingEmails as $prospectiveEmail) {
+        // We will update an existing one if it has the same email or the same
+        // location type it, preferring same email+location type id over
+        // same email over same location type id.
+        if ($prospectiveEmail['email'] === $msg['email']) {
+          if (empty($existingEmail)
+            || $existingEmail['email'] !== $msg['email']
+            || $prospectiveEmail['location_type_id'] == $loc_type_id
+          )
+          $existingEmail = $prospectiveEmail;
+        }
+        elseif ($prospectiveEmail['location_type_id'] == $loc_type_id) {
+          if (empty($existingEmail)) {
+            $existingEmail = $prospectiveEmail;
+          }
+        }
       }
-      $emailParams['id'] = $existingEmail['id'];
-      $emailParams['on_hold'] = 0;
+
+      if (!empty($existingEmail)) {
+        if (strtolower($existingEmail['email']) === strtolower($msg['email'])) {
+          // If we have the email already it still may make sense
+          // to update to primary if this is (implicitly) an update of
+          // primary email
+          if (!$isPrimary || $existingEmail['is_primary']) {
+            return;
+          }
+        }
+        $emailParams['id'] = $existingEmail['id'];
+        $emailParams['on_hold'] = 0;
+      }
     }
 
     civicrm_api3("Email", "create", $emailParams);

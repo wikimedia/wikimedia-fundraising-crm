@@ -23,6 +23,7 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
 
   function setUp() {
     parent::setUp();
+    civicrm_initialize();
     $this->epochtime = wmf_common_date_parse_string('2016-09-15');
   }
 
@@ -83,4 +84,23 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_contact WHERE display_name = "Mickey Mouse"');
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_prevnext_cache');
   }
+
+  /**
+   * Make sure we have the anonymous contact - like the live DB.
+   */
+  protected function ensureAnonymousContactExists() {
+    $anonymousParams = array(
+      'first_name' => 'Anonymous',
+      'last_name' => 'Anonymous',
+      'email' => 'fakeemail@wikimedia.org',
+      'contact_type' => 'Individual',
+    );
+    $contacts = $this->callAPISuccess('Contact', 'get', $anonymousParams);
+    if ($contacts['count'] == 0) {
+      $this->callAPISuccess('Contact', 'create', $anonymousParams);
+    }
+    $contacts = $this->callAPISuccess('Contact', 'get', $anonymousParams);
+    $this->assertEquals(1, $contacts['count']);
+  }
+
 }

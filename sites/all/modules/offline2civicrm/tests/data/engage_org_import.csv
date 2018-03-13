@@ -1,0 +1,4 @@
+Batch,Contribution Type,Total Amount,Source,Postmark Date,Received Date,Payment Instrument,Check Number,Restrictions,Gift Source,Direct Mail Appeal,Organization Name,Street Address,Additional Address 1,Additional Address 2,City,State,Postal Code,Country,Phone,Email,No Thank You,Thank You Letter Date,AC Flag,Notes,Do Not Email,Do Not Phone,Do Not Mail,Do Not SMS,Is Opt Out
+10608,Engage,1000,USD 1000.00,2/14/18,2/14/18,Check,171111,Unrestricted - General,Corporate Gift,,Evil Corp,56 Wicked Ave,,,Evilville,NJ,7010,United States,9700000000,,,,Y,,,,,,
+10608,Engage,280,USD 280.00,2/14/18,2/14/18,Check,10000,Unrestricted - General,Corporate Gift,White Mail,Good Guys Inc.,100 95th St 51th Floor,,,Goodie Village,PA,19000,United States,,goodies@example.com,,,Y,,,,,,
+18653,Engage,200,USD 200.00,1/16/18,2/14/18,Check,200,Restricted - Foundation,Foundation Gift,White Mail,Villains Ltd,PO Box 666,,,Henchman City,CA,90210,United States,,,,,,,,,,,

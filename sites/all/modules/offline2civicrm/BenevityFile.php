@@ -275,7 +275,8 @@ class BenevityFile extends ChecksFile {
       && (empty($msg['first_name']) && empty($msg['last_name']))
     ) {
       try {
-        // At best we have a first name or a last name. Match this to our anonymous contact.
+        // We do not have an email or a name, match to our anonymous contact (
+        // note address details are discarded in this case).
         return $this->getAnonymousContactID();
       } catch (CiviCRM_API3_Exception $e) {
         throw new WmfException(
@@ -326,36 +327,6 @@ class BenevityFile extends ChecksFile {
     }
     catch (CiviCRM_API3_Exception $e) {
       throw new WmfException('IMPORT_CONTRIB', $e->getMessage());
-    }
-  }
-
-  /**
-   * Get the ID of our anonymous contact.
-   *
-   * @return int
-   */
-  protected function getAnonymousContactID() {
-    static $contactID = NULL;
-    if (!$contactID) {
-      $contactID = civicrm_api3('Contact', 'getvalue', array(
-        'return' => 'id',
-        'contact_type' => 'Individual',
-        'first_name' => 'Anonymous',
-        'last_name' => 'Anonymous',
-        'email' => 'fakeemail@wikimedia.org',
-      ));
-    }
-    return $contactID;
-  }
-
-  /**
-   * Set all address fields to empty to prevent an address being created or updated.
-   *
-   * @param array $msg
-   */
-  protected function unsetAddressFields(&$msg) {
-    foreach (array('city', 'street_address', 'postal_code', 'state_province', 'country') as $locationField) {
-      $msg[$locationField] = '';
     }
   }
 

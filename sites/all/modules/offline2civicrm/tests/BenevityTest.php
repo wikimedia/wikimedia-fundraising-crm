@@ -37,24 +37,6 @@ class BenevityTest extends BaseChecksFileTest {
   }
 
   /**
-   * Make sure we have the anonymous contact - like the live DB.
-   */
-  protected function ensureAnonymousContactExists() {
-    $anonymousParams = array(
-      'first_name' => 'Anonymous',
-      'last_name' => 'Anonymous',
-      'email' => 'fakeemail@wikimedia.org',
-      'contact_type' => 'Individual',
-    );
-    $contacts = $this->callAPISuccess('Contact', 'get', $anonymousParams);
-    if ($contacts['count'] == 0) {
-      $this->callAPISuccess('Contact', 'create', $anonymousParams);
-    }
-    $contacts = $this->callAPISuccess('Contact', 'get', $anonymousParams);
-    $this->assertEquals(1, $contacts['count']);
-  }
-
-  /**
    * Test that all imports fail if the organization has multiple matches.
    */
   function testImportFailOrganizationContactAmbiguous() {

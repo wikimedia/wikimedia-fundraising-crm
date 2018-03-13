@@ -10,7 +10,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
   function setUp() {
     parent::setUp();
-
+    $this->ensureAnonymousContactExists();
     require_once __DIR__ . "/includes/EngageChecksFileProbe.php";
   }
 
@@ -69,6 +69,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'state_province' => 'MA',
       'street_address' => '1000 Markdown Markov',
       'thankyou_date' => 1398902400,
+      'contact_id' => NULL,
     );
 
     $importer = new EngageChecksFileProbe("null URI");
@@ -128,6 +129,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'state_province' => 'MA',
       'street_address' => '1000 Markdown Markov',
       'thankyou_date' => 1398902400,
+      'contact_id' => NULL,
     );
 
     $importer = new EngageChecksFileProbe("null URI");
@@ -149,6 +151,337 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     ));
     $this->assertEquals('07065', $contact['values'][0]['postal_code']);
     $this->assertEquals(5, strlen($contact['values'][0]['postal_code']));
+  }
+
+  /**
+   * Test that import matches existing contact (Minnie) on single match (email present).
+   *
+   * The address is different and should result in an UPDATE on email match.
+   *
+   * Also check the anonymous contribution is matched to the existing anonymous user.
+   *
+   */
+  function testImportSucceedIndividualSingleContactExistsEmailMatch() {
+    $minnie = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Minnie',
+      'last_name' => 'Mouse',
+      'contact_type' => 'Individual',
+      'email' => 'minnie@example.com',
+      'api.address.create' => [
+        'postal_code' => 98210,
+        'street_address' => '35 Mousey Lane',
+        'location_type_id' => 'Home',
+      ],
+    ));
+
+    $this->importCheckFile();
+
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $this->assertEquals(1, $contributions['count']);
+    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $minnie['id']]);
+    $this->assertEquals('35 Squeaky Way', $address['street_address']);
+    $minnie = $this->callAPISuccessGetSingle('Contact', ['id' => $minnie['id']]);
+    $this->assertEquals(1, $minnie['do_not_email']);
+    $this->assertEquals(1, $minnie['do_not_sms']);
+    $this->assertEquals(1, $minnie['do_not_phone']);
+    $this->assertEquals(1, $minnie['is_opt_out']);
+
+    // Check anonymous contact too.
+    $anonymousContact = $anonymousContact = $this->callAPISuccessGetSingle('Contact', array('email' => 'fakeemail@wikimedia.org'));
+    $this->assertEquals('Anonymous', $anonymousContact['first_name']);
+    $this->assertEquals('Anonymous', $anonymousContact['last_name']);
+    $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $anonymousContact['id'], 'trxn_id' => 'ENGAGE 1F46761510A95FC3FFE271B928231E55']);
+  }
+
+  /**
+   * Test that import matches existing contact (Daisy) on single match on address.
+   *
+   * We are looking for a match based on ALL of the following
+   * - first_name
+   * - last_name
+   * - street_address
+   * - city
+   * - postal_code
+   *
+   * In this test there is only 1 & we choose that.
+   */
+  function testImportSucceedIndividualSingleContactExistsAddressMatch() {
+
+    $daisy = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Daisy',
+      'last_name' => 'Duck',
+      'contact_type' => 'Individual',
+      'api.address.create' => [
+        'city' => 'Duckville',
+        'postal_code' => '10210',
+        'street_address' => '1 15th Avenue.',
+        'location_type_id' => 'Home',
+      ],
+    ));
+
+    $this->importCheckFile();
+
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $daisy['id']));
+    $this->assertEquals(1, $contributions['count']);
+  }
+
+  /**
+   * Test that import matches existing contact (Daisy) on multiple match on address.
+   *
+   *  We have 4 Daisys. We should choose the one with the most recent contribution
+   *
+   * We are looking for a match based on ALL of the following
+   * - first_name
+   * - last_name
+   * - street_address
+   * - city
+   * - postal_code
+   *
+   * We choose the most recent.
+   */
+  function testImportSucceedIndividualMultipleContactExistsAddressMatchOnBestDaisy() {
+    $daisy = [];
+    for ($i = 0; $i < 4; $i++) {
+      $daisy[$i] = $this->callAPISuccess('Contact', 'create', array(
+        'first_name' => 'Daisy',
+        'last_name' => 'Duck',
+        'contact_type' => 'Individual',
+        'api.address.create' => [
+          'city' => 'Duckville',
+          'postal_code' => '10210',
+          'street_address' => '1 15th Avenue',
+          'location_type_id' => 'Home',
+        ],
+      ));
+      // The second is the most recent.
+      $dates = [0 => '2015-09-09', 1 => '2017-12-12', 2 => NULL, 3 => '2016-10-10'];
+      if ($dates[$i]) {
+        $this->callAPISuccess('Contribution', 'create', [
+          'contact_id' => $daisy[$i]['id'],
+          'financial_type_id' => 'Donation',
+          'receive_date' => $dates[$i],
+          'total_amount' => 700,
+        ]);
+      }
+    }
+
+    $this->importCheckFile();
+
+    $this->callAPISuccessGetSingle('Contribution', [
+      'contact_id' => $daisy[1]['id'],
+      'trxn_id' => 'ENGAGE 505C30160D9BD138D57A6ACE5151E0CD',
+    ]);
+  }
+
+  /**
+   * Test that import matches existing contact (Daisy) on multiple match on address.
+   *
+   * In this case the address matches a non primary address.
+   *
+   *  We have 4 Daisys. We should choose the one with the most recent contribution
+   *
+   * We are looking for a match based on ALL of the following
+   * - first_name
+   * - last_name
+   * - street_address
+   * - city
+   * - postal_code
+   *
+   * We choose the most recent.
+   */
+  function testImportSucceedIndividualMultipleContactExistsNonPrimaryAddressMatchOnBestDaisy() {
+    $daisy = [];
+    for ($i = 0; $i < 4; $i++) {
+      $daisy[$i] = $this->callAPISuccess('Contact', 'create', array(
+        'first_name' => 'Daisy',
+        'last_name' => 'Duck',
+        'contact_type' => 'Individual',
+        'api.address.create' => [
+          'city' => 'Duckville',
+          'postal_code' => '10210',
+          'street_address' => '1 15th Avenue',
+          'location_type_id' => 'Home',
+        ],
+        'api.address.create.2' => [
+          'city' => 'Waddles Rest',
+          'postal_code' => '10210',
+          'street_address' => '1 15th Avenue',
+          'location_type_id' => 'Home',
+          'is_primary' => 1,
+        ],
+      ));
+      // The second is the most recent.
+      $dates = [0 => '2015-09-09', 1 => '2017-12-12', 2 => NULL, 3 => '2016-10-10'];
+      if ($dates[$i]) {
+        $this->callAPISuccess('Contribution', 'create', [
+          'contact_id' => $daisy[$i]['id'],
+          'financial_type_id' => 'Donation',
+          'receive_date' => $dates[$i],
+          'total_amount' => 700,
+        ]);
+      }
+    }
+
+    $this->importCheckFile();
+
+    $this->callAPISuccessGetSingle('Contribution', [
+      'contact_id' => $daisy[1]['id'],
+      'trxn_id' => 'ENGAGE 505C30160D9BD138D57A6ACE5151E0CD',
+    ]);
+  }
+
+  /**
+   * Test that import matches existing contact (Villains Ltd) on multiple match on address.
+   *
+   * We are looking for a match based on ALL of the following
+   * - organization_name
+   * - street_address
+   * - city
+   * - postal_code
+   *
+   * We choose the most recent donor
+   */
+  function testImportSucceedOrganizationMultipleContactExistsAddressMatchOnBestVillain() {
+    $this->sourceFileUri = __DIR__ . "/data/engage_org_import.csv";
+
+    $villains = [];
+    for ($i = 0; $i < 4; $i++) {
+      $villains[$i] = $this->callAPISuccess('Contact', 'create', array(
+        'organization_name' => 'Villains Ltd',
+        'contact_type' => 'Organization',
+        'api.address.create' => [
+          'city' => 'Henchman City',
+          'postal_code' => '90210',
+          'street_address' => 'PO Box 666',
+          'location_type_id' => 'Home',
+        ],
+      ));
+      // The second is the most recent.
+      $dates = [0 => '2015-09-09', 1 => '2017-12-12', 2 => NULL, 3 => '2016-10-10'];
+      if ($dates[$i]) {
+        $this->callAPISuccess('Contribution', 'create', [
+          'contact_id' => $villains[$i]['id'],
+          'financial_type_id' => 'Donation',
+          'receive_date' => $dates[$i],
+          'total_amount' => 700,
+        ]);
+      }
+    }
+
+    $this->importCheckFile();
+
+    $this->callAPISuccessGetSingle('Contribution', [
+      'contact_id' => $villains[1]['id'],
+      'trxn_id' => 'ENGAGE B525137FE24A217918BE1B3AFF5AA25B',
+    ]);
+  }
+
+  /**
+   * Test that import matches existing contact (Minnie) on multiple match (email present).
+   *
+   * We have 4 Minnies. We should choose the one with the most recent contribution
+   *
+   * We should blank out any portion of the address we do not have.
+   */
+  public function testImportSucceedIndividualMultipeContactExistsEmailMatchOnBestMinnie() {
+    $minnies = $this->createContactSet([
+      'first_name' => 'Minnie',
+      'last_name' => 'Mouse',
+      'contact_type' => 'Individual',
+      'email' => 'minnie@example.com',
+      'api.address.create' => [
+        'postal_code' => 98210,
+        'street_address' => '35 Mousey Lane',
+        'location_type_id' => 'Home',
+        'city' => 'Mouseville',
+      ],
+    ]);
+
+    $this->importCheckFile();
+
+    // Check Minnie 1 has the contribution.
+    $this->callAPISuccessGetSingle('Contribution', [
+      'trxn_id' => 'ENGAGE 2FF5DCA37146BF766F8658855EA5471F',
+      'contact_id' => $minnies[1]['id']]
+    );
+
+    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $minnies[1]['id']]);
+    $this->assertEquals('35 Squeaky Way', $address['street_address']);
+    $this->assertTrue(empty($address['city']));
+  }
+
+  /**
+   * Test that import matches existing contact (Good Guys Inc.) on single match (email present).
+   *
+   * The address is different and should result in an UPDATE on email match.
+   */
+  function testImportSucceedOrganizationSingleContactExistsEmailMatch() {
+    $goodie = $this->callAPISuccess('Contact', 'create', array(
+      'organization_name' => 'Good Guys Inc.',
+      'contact_type' => 'Organization',
+      'email' => 'goodies@example.com',
+      'api.address.create' => [
+        'postal_code' => 98210,
+        'street_address' => '35 Goodies Lane',
+        'location_type_id' => 'Home',
+      ],
+    ));
+    $this->sourceFileUri = __DIR__ . "/data/engage_org_import.csv";
+    $this->importCheckFile();
+
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $goodie['id']));
+    $this->assertEquals(1, $contributions['count']);
+    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $goodie['id']]);
+    $this->assertEquals('100 95th St 51th Floor', $address['street_address']);
+  }
+
+  /**
+   * Test that import matches existing contact (Good Guys Inc.) in a multiple match (email not primary).
+   */
+  function testImportSucceedOrganizationMultipleContactsExistsEmailMatchNonPrimary() {
+    $goodies = $this->createContactSet([
+      'organization_name' => 'Good Guys Inc.',
+      'contact_type' => 'Organization',
+      'email' => 'goodish@example.com',
+      'api.address.create' => [
+        'postal_code' => 98210,
+        'street_address' => '35 Goodies Lane',
+        'location_type_id' => 'Home',
+      ],
+      'api.email.create' => [
+        'email' => 'goodies@example.com',
+        'location_type_id' => 'Work',
+      ]
+    ]);
+    $goodyID = $goodies[1]['id'];
+
+    $goody = $this->callAPISuccessGetSingle('Contact', [
+      'id' => $goodyID,
+      'return' => 'email',
+    ]);
+    // Note that goodish is primary
+    $this->assertEquals('goodish@example.com', $goody['email']);
+
+    $this->sourceFileUri = __DIR__ . "/data/engage_org_import.csv";
+    $this->importCheckFile();
+
+    $this->callAPISuccessGetSingle('Contribution', [
+      'contact_id' => $goodyID,
+      'trxn_id' => 'ENGAGE 26A0CCB4CDD020E6CFA16BFCC8A135FC',
+      'return' => 'id',
+    ]);
+
+    $goodyMail = $this->callAPISuccess('Email', 'get', [
+      'contact_id' => $goodyID,
+      'return' => ['email', 'is_primary'],
+      'options' => ['sort' => 'is_primary DESC'],
+      'sequential' => TRUE,
+    ])['values'];
+    // is primary flag should have been updated
+    $this->assertEquals('goodies@example.com', $goodyMail[0]['email']);
+    $this->assertEquals(1, $goodyMail[0]['is_primary']);
+    $this->assertEquals('goodish@example.com', $goodyMail[1]['email']);
+    $this->assertEquals(0, $goodyMail[1]['is_primary']);
   }
 
   /**
@@ -222,11 +555,34 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * transactions if we don't clean them up first.
    */
   public function purgePreviousData() {
-    $this->callAPISuccess('Contribution', 'get', array(
-      'api.Contribution.delete' => 1,
-      wmf_civicrm_get_custom_field_name('gateway_txn_id') => array('IN' => $this->getGatewayIDs()),
-      'api.contact.delete' => array('skip_undelete' => 1),
-    ));
+    $disneyFolk = $this->callAPISuccess('Contact', 'get', [
+      'last_name' => ['IN' => ['Mouse', 'Duck', 'Dog', 'Anonymous']],
+    ]);
+    $herosAndVillains = $this->callAPISuccess('Contact', 'get', [
+      'organization_name' => ['IN' => ['Evil Corp', 'Good Guys Inc.', 'Villains Ltd']],
+    ]);
+    $fantasyFolk = array_merge(array_keys($disneyFolk['values']), array_keys($herosAndVillains['values']));
+    if (!empty($fantasyFolk)) {
+      $this->callAPISuccess('Contribution', 'get', [
+        'api.Contribution.delete' => 1,
+        'contact_id' => ['IN' => $fantasyFolk],
+      ]);
+      foreach ($fantasyFolk as $id) {
+        $this->callAPISuccess('Contact', 'delete', [
+          'skip_undelete' => TRUE,
+          'id' => $id,
+        ]);
+      }
+    }
+
+    if ($this->sourceFileUri) {
+      $this->callAPISuccess('Contribution', 'get', [
+        'api.Contribution.delete' => 1,
+        wmf_civicrm_get_custom_field_name('gateway_txn_id') => array('IN' => $this->getGatewayIDs()),
+        'api.contact.delete' => array('skip_undelete' => 1),
+      ]);
+    }
+
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_contact WHERE organization_name = "Jaloo"');
   }
 
@@ -251,8 +607,9 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $file = fopen($this->sourceFileUri, 'r');
     $result = array();
     $importer = new EngageChecksFileProbe("null URI");
+    $headers = [];
     while (($row = fgetcsv($file, 0, ',', '"', '\\')) !== FALSE) {
-      if ($row[0] == 'Banner') {
+      if ($row[0] === 'Banner' || $row[0] === 'Batch') {
         // Header row.
         $headers = _load_headers($row);
         continue;
@@ -280,5 +637,57 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $fileUri = tempnam(sys_get_temp_dir(), 'Engage') . '.csv';
     copy($this->sourceFileUri, $fileUri);
     return $fileUri;
+  }
+
+  /**
+   * Clean up after test.
+   */
+  public function tearDown() {
+    $this->purgePreviousData();
+    parent::tearDown();
+  }
+
+  /**
+   * Do the check file import.
+   *
+   * @param array $additionalFields
+   *
+   * @return array
+   */
+  protected function importCheckFile($additionalFields = array()) {
+    $fileName = $this->sourceFileUri ? : __DIR__ . "/data/engage_duplicate_testing.csv";
+    $importer = new EngageChecksFile($fileName, $additionalFields);
+    $importer->import();
+    return $importer->getMessages();
+  }
+
+  /**
+   * Create a set of similar contacts with different contribution dates.
+   *
+   * @param array $contactParams
+   *
+   * @return array
+   *   array of created contacts.
+   */
+  protected function createContactSet($contactParams) {
+    for ($i = 0; $i < 4; $i++) {
+      $contacts[$i] = $this->callAPISuccess('Contact', 'create', $contactParams);
+      // The second is the most recent.
+      $dates = [
+        0 => '2015-09-09',
+        1 => '2017-12-12',
+        2 => NULL,
+        3 => '2016-10-10'
+      ];
+      if ($dates[$i]) {
+        $this->callAPISuccess('Contribution', 'create', [
+          'contact_id' => $contacts[$i]['id'],
+          'financial_type_id' => 'Donation',
+          'receive_date' => $dates[$i],
+          'total_amount' => 700,
+        ]);
+      }
+    }
+    return $contacts;
   }
 }
