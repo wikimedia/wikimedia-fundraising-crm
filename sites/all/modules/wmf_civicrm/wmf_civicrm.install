@@ -3361,3 +3361,88 @@ function wmf_civicrm_update_7615() {
   civicrm_api3('extension', 'install', array('key' => 'org.wikimedia.geocoder'));
   wmf_civicrm_ensure_correct_geocoder_enabled();
 }
+
+/**
+ * Cancel unintended Ingenico subscriptions
+ *
+ * Bug: T186833
+ */
+function wmf_civicrm_update_7620() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery(
+    "UPDATE civicrm.civicrm_contribution_recur AS cr
+     INNER JOIN civicrm.civicrm_contribution AS cc on cc.contribution_recur_id = cr.id
+     INNER JOIN drupal.contribution_tracking AS ct on ct.contribution_id = cc.id
+     INNER JOIN drupal.contribution_source AS cs on ct.id = cs.contribution_tracking_id
+     SET cr.cancel_date = '2018-3-13 01:23:45'
+     WHERE ct.ts >= '20171130000000'  and ct.ts <= '20171204213500'
+     AND cc.trxn_id LIKE '%RECURRING GLOBALCOLLECT%'
+     AND (isnull(cr.end_date) and isnull(cr.cancel_date))
+     AND cs.banner IN ('B1718_113016_en6C_ipd_p1_lg_txt_awk',
+     'B1718_113016_en6C_ipd_p1_lg_txt_awkdead',
+     'B1718_113016_en6C_ipd_p1_lg_txt_awkemb',
+     'B1718_113016_en6C_ipd_p1_lg_txt_awkembdead',
+     'B1718_113016_en6C_ipd_p1_lg_txt_cnt',
+     'B1718_113016_en6C_ipd_p1_lg_txt_dead',
+     'B1718_113016_en6C_ipd_p2_sm_txt_cnt',
+     'B1718_113016_en6C_ipd_p2_sm_txt_deadline',
+     'B1718_113016_en6C_ipd_p2_sm_txt_depend',
+     'B1718_113016_en6C_ipd_p2_sm_txt_expPP_v1',
+     'B1718_113016_en6C_mob_p1_lg_txt_awk',
+     'B1718_113016_en6C_mob_p1_lg_txt_awkdead',
+     'B1718_113016_en6C_mob_p1_lg_txt_awkemb',
+     'B1718_113016_en6C_mob_p1_lg_txt_awkembdead',
+     'B1718_113016_en6C_mob_p1_lg_txt_cnt',
+     'B1718_113016_en6C_mob_p1_lg_txt_dead',
+     'B1718_113016_en6C_mob_p2_sm_txt_cnt',
+     'B1718_113016_en6C_mob_p2_sm_txt_deadline',
+     'B1718_113016_en6C_mob_p2_sm_txt_depend',
+     'B1718_113016_en6C_mob_p2_sm_txt_expPP_v1',
+     'B1718_113021_en6C_ipd_p2_sm_txt_cnt',
+     'B1718_113021_en6C_ipd_p2_sm_txt_ddlwithmnm',
+     'B1718_113021_en6C_ipd_p2_sm_txt_expday',
+     'B1718_113021_en6C_ipd_p2_sm_txt_expday_border',
+     'B1718_113021_en6C_ipd_p2_sm_txt_expday_italic',
+     'B1718_113021_en6C_ipd_p2_sm_txt_weekday',
+     'B1718_113021_en6C_mob_p2_sm_txt_cnt',
+     'B1718_113021_en6C_mob_p2_sm_txt_ddlwithmnm',
+     'B1718_113021_en6C_mob_p2_sm_txt_expday',
+     'B1718_113021_en6C_mob_p2_sm_txt_expday_border',
+     'B1718_113021_en6C_mob_p2_sm_txt_expday_italic',
+     'B1718_113021_en6C_mob_p2_sm_txt_weekday',
+     'B1718_113023_en6C_ipd_p1_lg_txt_5paras',
+     'B1718_113023_en6C_ipd_p1_lg_txt_cbemailemb',
+     'B1718_113023_en6C_ipd_p1_lg_txt_cnt',
+     'B1718_113023_en6C_ipd_p1_lg_txt_enhancedcnt',
+     'B1718_113023_en6C_mob_p1_lg_txt_5paras',
+     'B1718_113023_en6C_mob_p1_lg_txt_cbemailemb',
+     'B1718_113023_en6C_mob_p1_lg_txt_cnt',
+     'B1718_113023_en6C_mob_p1_lg_txt_enhancedcnt',
+     'B1718_120115_en6C_ipd_p1_lg_frq_cnt',
+     'B1718_120115_en6C_ipd_p1_lg_frq_improvedtoggle',
+     'B1718_120115_en6C_ipd_p2_sm_frq_cnt',
+     'B1718_120115_en6C_ipd_p2_sm_frq_improvedtoggle',
+     'B1718_120115_en6C_mob_p1_lg_frq_cnt',
+     'B1718_120115_en6C_mob_p1_lg_frq_improvedtoggle',
+     'B1718_120115_en6C_mob_p2_sm_frq_cnt',
+     'B1718_120115_en6C_mob_p2_sm_frq_improvedtoggle',
+     'B1718_120117_en6C_ipd_p1_lg_dsn_twin1',
+     'B1718_120117_en6C_ipd_p1_lg_dsn_twin2',
+     'B1718_120117_en6C_mob_p1_lg_dsn_twin1',
+     'B1718_120117_en6C_mob_p1_lg_dsn_twin2',
+     'B1718_120121_en6C_ipd_p1_lg_frm_ccicons',
+     'B1718_120121_en6C_ipd_p1_lg_frm_cnt',
+     'B1718_120121_en6C_ipd_p1_lg_frm_scr',
+     'B1718_120121_en6C_ipd_p1_lg_frm_usrbbl',
+     'B1718_120121_en6C_ipd_p1_lg_txt_ddldate',
+     'B1718_120121_en6C_ipd_p1_lg_txt_ddldatehitourgoal',
+     'B1718_120121_en6C_mob_p1_lg_frm_ccicons',
+     'B1718_120121_en6C_mob_p1_lg_frm_cnt',
+     'B1718_120121_en6C_mob_p1_lg_frm_scr',
+     'B1718_120121_en6C_mob_p1_lg_frm_usrbbl',
+     'B1718_120121_en6C_mob_p1_lg_txt_ddldate',
+     'B1718_120121_en6C_mob_p1_lg_txt_ddldatehitourgoal',
+     'B1718_120218_en6C_mob_p1_lg_frm_cnt',
+     'B1718_120218_en6C_mob_p1_lg_frm_hrt')"
+  );
+}
