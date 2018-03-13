@@ -789,7 +789,7 @@ class BenevityTest extends BaseChecksFileTest {
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
     $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY TRXN-QUACK'));
-    $this->assertEquals(200, $contribution['total_amount']);
+    $this->assertEquals(1200, $contribution['total_amount']);
 
     $address = $this->callAPISuccess('Address', 'get', array(
       'contact_id' => $contribution['contact_id'],
