@@ -53,6 +53,7 @@ class BenevityFile extends ChecksFile {
     if (!isset($msg['original_gross'])) {
       $msg['original_gross'] = 0;
     }
+    $msg['original_gross'] = str_replace(',', '', $msg['original_gross']);
     if ($msg['original_gross'] >= 1000) {
       $msg['gift_source'] = 'Benefactor Gift';
     }
