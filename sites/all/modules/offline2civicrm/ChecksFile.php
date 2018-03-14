@@ -24,6 +24,8 @@ abstract class ChecksFile {
 
   protected $all_missed_file_uri = '';
 
+  protected $all_not_matched_to_existing_contacts_file_uri = '';
+
   protected $row_index;
 
   /**
@@ -47,6 +49,11 @@ abstract class ChecksFile {
   protected $allMissedFileResource = NULL;
 
   /**
+   * @var resource
+   */
+  protected $allNotMatchedFileResource = NULL;
+
+  /**
    * @var array
    */
   protected $additionalFields = array();
@@ -63,6 +70,7 @@ abstract class ChecksFile {
     $this->skipped_file_uri = str_replace('.csv', '_skipped.' . $suffix, $file_uri);
     $this->ignored_file_uri = str_replace('.csv', '_ignored.' . $suffix, $file_uri);
     $this->all_missed_file_uri = str_replace('.csv', '_all_missed.' . $suffix, $file_uri);
+    $this->all_not_matched_to_existing_contacts_file_uri = str_replace('.csv', '_all_not_matched.' . $suffix, $file_uri);
     $this->additionalFields = $additionalFields;
     if ($file_uri) {
       wmf_common_set_smashpig_message_source(
@@ -111,6 +119,7 @@ abstract class ChecksFile {
     $num_ignored = 0;
     $num_successful = 0;
     $num_duplicates = 0;
+    $num_new_contacts_created = 0;
     $this->row_index = -1 + $this->numSkippedRows;
     $error_streak_start = 0;
     $error_streak_count = 0;
@@ -159,11 +168,20 @@ abstract class ChecksFile {
           }
           continue;
         }
+
         // tha business.
         $contribution = WmfDatabase::transactionalCall(array(
           $this,
           'doImport',
         ), array($msg));
+
+        if (empty($msg['contact_id'])) {
+          $num_new_contacts_created ++;
+          if (!$this->allNotMatchedFileResource) {
+            $this->allNotMatchedFileResource = $this->createOutputFile($this->all_not_matched_to_existing_contacts_file_uri, 'Not Matched to existing', $headers);
+          }
+          fputcsv($this->allNotMatchedFileResource, array_merge(array('Not matched to existing' => 'Informational'), $data));
+        }
 
         watchdog('offline2civicrm',
           'Import checks: Contribution imported successfully (@id): !msg', array(
@@ -214,7 +232,7 @@ abstract class ChecksFile {
     $totalRows = $rowNum - 1;
 
     if ($error_streak_count >= $error_streak_threshold) {
-      $this->closeFilesAndSetMessage($totalRows, $num_successful, $num_errors, $num_ignored, $num_duplicates);
+      $this->closeFilesAndSetMessage($totalRows, $num_successful, $num_errors, $num_ignored, $num_duplicates, $num_new_contacts_created);
       throw new Exception("Import aborted due to {$error_streak_count} consecutive errors, last error was at row {$lastErrorRow}: {$lastError}. " . implode(' ', $this->messages)
       );
     }
@@ -225,7 +243,7 @@ abstract class ChecksFile {
 
     ChecksImportLog::record(implode(' ', $this->messages));
     watchdog('offline2civicrm', implode(' ', $this->messages), array(), WATCHDOG_INFO);
-    $this->closeFilesAndSetMessage($totalRows, $num_successful, $num_errors, $num_ignored, $num_duplicates);
+    $this->closeFilesAndSetMessage($totalRows, $num_successful, $num_errors, $num_ignored, $num_duplicates, $num_new_contacts_created);
     return $this->messages;
 
   }
@@ -578,13 +596,15 @@ abstract class ChecksFile {
    * @param int $num_errors
    * @param int $num_ignored
    * @param int $num_duplicates
+   * @param int $num_new_contacts_created
    */
-  public function closeFilesAndSetMessage($totalRows, $num_successful, $num_errors, $num_ignored, $num_duplicates) {
+  public function closeFilesAndSetMessage($totalRows, $num_successful, $num_errors, $num_ignored, $num_duplicates, $num_new_contacts_created) {
     foreach (array(
                $this->skippedFileResource,
                $this->errorFileResource,
                $this->ignoredFileResource,
                $this->allMissedFileResource,
+               $this->allNotMatchedFileResource,
              ) as $fileResource) {
       if ($fileResource) {
         fclose($fileResource);
@@ -616,6 +636,9 @@ abstract class ChecksFile {
     }
     if ($num_duplicates) {
       $this->setMessage($this->skipped_file_uri, 'Duplicate', $num_duplicates);
+    }
+    if ($this->allNotMatchedFileResource) {
+      $this->setMessage($this->all_not_matched_to_existing_contacts_file_uri, ts("Rows where new contacts were created"), $num_new_contacts_created);
     }
   }
 

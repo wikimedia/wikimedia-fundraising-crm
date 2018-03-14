@@ -222,7 +222,7 @@ function offline2civicrm_import_checks_form_submit($form, $form_state) {
 
       $importer = offline2civicrm_get_importer_class($form_state['values']['offline2civicrm_settings']['import_upload_format'], $file->uri, $additionalFields);
       $messages = $importer->import();
-      drupal_set_message((implode(' ', $messages)));
+      drupal_set_message((implode('<br>', $messages)));
     }
     catch (WmfException $ex) {
       $message = t("Import error: !err", array('!err' => $ex->getMessage()));

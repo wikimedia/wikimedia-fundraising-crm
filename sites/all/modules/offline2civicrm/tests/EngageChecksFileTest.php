@@ -513,13 +513,14 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $messages = $importer->import();
     global $user;
     $this->assertEquals(
-      array(
+      [
         0 => 'Successful import!',
         'Result' => '14 out of 18 rows were imported.',
         'not imported' => '4 not imported rows logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_all_missed.' . $user->uid, $fileUri), 12) . "'> file</a>.",
         'Duplicate' => '1 Duplicate row logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_skipped.' . $user->uid, $fileUri), 12) . "'> file</a>.",
         'Error' => '3 Error rows logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_errors.' . $user->uid, $fileUri), 12) . "'> file</a>.",
-      )
+        'Rows where new contacts were created' => '14 Rows where new contacts were created rows logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_all_not_matched.' . $user->uid, $fileUri), 12) . "'> file</a>.",
+      ]
       , $messages);
 
     $errorsURI = str_replace('.csv', '_errors.' . $user->uid . '.csv', $fileUri);
