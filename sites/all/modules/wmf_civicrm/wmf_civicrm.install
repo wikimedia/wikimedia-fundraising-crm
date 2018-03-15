@@ -3446,3 +3446,17 @@ function wmf_civicrm_update_7620() {
      'B1718_120218_en6C_mob_p1_lg_frm_hrt')"
   );
 }
+
+/**
+ * Update status on canceled unintended recurs
+ *
+ * Bug: T186833
+ */
+function wmf_civicrm_update_7625() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery(
+    "UPDATE civicrm.civicrm_contribution_recur as cr
+     SET cr.contribution_status_id = 3
+     WHERE cr.cancel_date = '2018-3-13 01:23:45'"
+  );
+}
