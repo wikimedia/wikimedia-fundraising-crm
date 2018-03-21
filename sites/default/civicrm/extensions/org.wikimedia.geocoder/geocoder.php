@@ -94,6 +94,30 @@ function geocoder_civicrm_managed(&$entities) {
 }
 
 /**
+ * Generate a list of geocoders to manage.
+ *
+ * In order to avoid having them installed when we do not wish we alter the
+ * file names & manage ourselves.
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
+ */
+function geocoder_civicrm_geo_managed(&$entities) {
+  $mgdFiles = _geocoder_civix_find_files(__DIR__, '*.mgd.geo.php');
+  foreach ($mgdFiles as $file) {
+    $es = include $file;
+    foreach ($es as $e) {
+      if (empty($e['module'])) {
+        $e['module'] = E::LONG_NAME;
+      }
+      if (empty($e['params']['version'])) {
+        $e['params']['version'] = '3';
+      }
+      $entities[] = $e;
+    }
+  }
+}
+
+/**
  * Implements hook_civicrm_caseTypes().
  *
  * Generate a list of case-types.
