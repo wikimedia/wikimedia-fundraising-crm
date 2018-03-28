@@ -3485,7 +3485,7 @@ function wmf_civicrm_update_7635() {
      INNER JOIN civicrm.civicrm_contribution AS cc on cc.contribution_recur_id = cr.id
      INNER JOIN drupal.contribution_tracking AS ct on ct.contribution_id = cc.id
      INNER JOIN drupal.contribution_source AS cs on ct.id = cs.contribution_tracking_id
-     SET cr.cancel_date = '2018-3-28 01:23:45', cr.contribution_status = 3
+     SET cr.cancel_date = '2018-3-28 01:23:45', cr.contribution_status_id = 3
      WHERE ct.ts >= '20171011000000'  and ct.ts <= '20171129000000'
      AND cc.trxn_id LIKE '%RECURRING GLOBALCOLLECT%'
      AND (isnull(cr.end_date) and isnull(cr.cancel_date))
