@@ -3369,11 +3369,13 @@ function wmf_civicrm_update_7615() {
  */
 function wmf_civicrm_update_7620() {
   civicrm_initialize();
+  global $databases;
+  $drupal = $databases['default']['default']['database'];
   CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm.civicrm_contribution_recur AS cr
-     INNER JOIN civicrm.civicrm_contribution AS cc on cc.contribution_recur_id = cr.id
-     INNER JOIN drupal.contribution_tracking AS ct on ct.contribution_id = cc.id
-     INNER JOIN drupal.contribution_source AS cs on ct.id = cs.contribution_tracking_id
+    "UPDATE civicrm_contribution_recur AS cr
+     INNER JOIN civicrm_contribution AS cc on cc.contribution_recur_id = cr.id
+     INNER JOIN {$drupal}.contribution_tracking AS ct on ct.contribution_id = cc.id
+     INNER JOIN {$drupal}.contribution_source AS cs on ct.id = cs.contribution_tracking_id
      SET cr.cancel_date = '2018-3-13 01:23:45'
      WHERE ct.ts >= '20171130000000'  and ct.ts <= '20171204213500'
      AND cc.trxn_id LIKE '%RECURRING GLOBALCOLLECT%'
@@ -3455,7 +3457,7 @@ function wmf_civicrm_update_7620() {
 function wmf_civicrm_update_7625() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm.civicrm_contribution_recur as cr
+    "UPDATE civicrm_contribution_recur as cr
      SET cr.contribution_status_id = 3
      WHERE cr.cancel_date = '2018-3-13 01:23:45'"
   );
@@ -3480,11 +3482,13 @@ function wmf_civicrm_update_7630() {
  */
 function wmf_civicrm_update_7635() {
   civicrm_initialize();
+  global $databases;
+  $drupal = $databases['default']['default']['database'];
   CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm.civicrm_contribution_recur AS cr
-     INNER JOIN civicrm.civicrm_contribution AS cc on cc.contribution_recur_id = cr.id
-     INNER JOIN drupal.contribution_tracking AS ct on ct.contribution_id = cc.id
-     INNER JOIN drupal.contribution_source AS cs on ct.id = cs.contribution_tracking_id
+    "UPDATE civicrm_contribution_recur AS cr
+     INNER JOIN civicrm_contribution AS cc on cc.contribution_recur_id = cr.id
+     INNER JOIN {$drupal}.contribution_tracking AS ct on ct.contribution_id = cc.id
+     INNER JOIN {$drupal}.contribution_source AS cs on ct.id = cs.contribution_tracking_id
      SET cr.cancel_date = '2018-3-28 01:23:45', cr.contribution_status_id = 3
      WHERE ct.ts >= '20171011000000'  and ct.ts <= '20171129000000'
      AND cc.trxn_id LIKE '%RECURRING GLOBALCOLLECT%'
