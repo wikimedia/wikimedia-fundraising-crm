@@ -3363,17 +3363,40 @@ function wmf_civicrm_update_7615() {
 }
 
 /**
+ * Create table contribution_source if not existant.
+ *
+ * Not quite sure why this would not exist locally but create it if needed to
+ * keep the script on the road.
+ *
+ * Correct answer is something like the contribution_tracking.install file.
+ */
+function wmf_civicrm_update_7617() {
+  db_query("CREATE TABLE IF NOT EXISTS `contribution_source`  (
+    `contribution_tracking_id` int(10) unsigned NOT NULL,
+    `banner` varchar(128) DEFAULT NULL,
+    `landing_page` varchar(128) DEFAULT NULL,
+    `payment_method` varchar(128) DEFAULT NULL,
+    PRIMARY KEY (`contribution_tracking_id`),
+    KEY `banner` (`banner`),
+    KEY `landing_page` (`landing_page`),
+    KEY `payment_method` (`payment_method`)
+  ) ENGINE=InnoDB"
+  );
+}
+/**
  * Cancel unintended Ingenico subscriptions
  *
  * Bug: T186833
  */
 function wmf_civicrm_update_7620() {
   civicrm_initialize();
+  global $databases;
+  $drupal = $databases['default']['default']['database'];
   CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm.civicrm_contribution_recur AS cr
-     INNER JOIN civicrm.civicrm_contribution AS cc on cc.contribution_recur_id = cr.id
-     INNER JOIN drupal.contribution_tracking AS ct on ct.contribution_id = cc.id
-     INNER JOIN drupal.contribution_source AS cs on ct.id = cs.contribution_tracking_id
+    "UPDATE civicrm_contribution_recur AS cr
+     INNER JOIN civicrm_contribution AS cc on cc.contribution_recur_id = cr.id
+     INNER JOIN {$drupal}.contribution_tracking AS ct on ct.contribution_id = cc.id
+     INNER JOIN {$drupal}.contribution_source AS cs on ct.id = cs.contribution_tracking_id
      SET cr.cancel_date = '2018-3-13 01:23:45'
      WHERE ct.ts >= '20171130000000'  and ct.ts <= '20171204213500'
      AND cc.trxn_id LIKE '%RECURRING GLOBALCOLLECT%'
@@ -3455,7 +3478,7 @@ function wmf_civicrm_update_7620() {
 function wmf_civicrm_update_7625() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm.civicrm_contribution_recur as cr
+    "UPDATE civicrm_contribution_recur as cr
      SET cr.contribution_status_id = 3
      WHERE cr.cancel_date = '2018-3-13 01:23:45'"
   );
@@ -3480,11 +3503,13 @@ function wmf_civicrm_update_7630() {
  */
 function wmf_civicrm_update_7635() {
   civicrm_initialize();
+  global $databases;
+  $drupal = $databases['default']['default']['database'];
   CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm.civicrm_contribution_recur AS cr
-     INNER JOIN civicrm.civicrm_contribution AS cc on cc.contribution_recur_id = cr.id
-     INNER JOIN drupal.contribution_tracking AS ct on ct.contribution_id = cc.id
-     INNER JOIN drupal.contribution_source AS cs on ct.id = cs.contribution_tracking_id
+    "UPDATE civicrm_contribution_recur AS cr
+     INNER JOIN civicrm_contribution AS cc on cc.contribution_recur_id = cr.id
+     INNER JOIN {$drupal}.contribution_tracking AS ct on ct.contribution_id = cc.id
+     INNER JOIN {$drupal}.contribution_source AS cs on ct.id = cs.contribution_tracking_id
      SET cr.cancel_date = '2018-3-28 01:23:45', cr.contribution_status_id = 3
      WHERE ct.ts >= '20171011000000'  and ct.ts <= '20171129000000'
      AND cc.trxn_id LIKE '%RECURRING GLOBALCOLLECT%'

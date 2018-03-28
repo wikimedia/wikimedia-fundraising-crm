@@ -292,12 +292,6 @@ abstract class ChecksFile {
           $msg['gateway'] = "merkle";
           break;
 
-        case "Engage":
-        case "Engage Direct Mail":
-          $msg['gateway'] = "engage";
-          $msg['contribution_type'] = "engage";
-          break;
-
         case "Cash":
           $msg['contribution_type'] = "cash";
           break;
@@ -701,5 +695,35 @@ abstract class ChecksFile {
    * @throws \Exception
    */
   public function validateFormFields($formFields) {}
+
+  /**
+   * Get the ID of our anonymous contact.
+   *
+   * @return int|NULL
+   */
+  protected function getAnonymousContactID() {
+    static $contactID = NULL;
+    if (!$contactID) {
+      $contactID = civicrm_api3('Contact', 'getvalue', array(
+        'return' => 'id',
+        'contact_type' => 'Individual',
+        'first_name' => 'Anonymous',
+        'last_name' => 'Anonymous',
+        'email' => 'fakeemail@wikimedia.org',
+      ));
+    }
+    return $contactID;
+  }
+
+  /**
+   * Set all address fields to empty to prevent an address being created or updated.
+   *
+   * @param array $msg
+   */
+  protected function unsetAddressFields(&$msg) {
+    foreach (array('city', 'street_address', 'postal_code', 'state_province', 'country') as $locationField) {
+      $msg[$locationField] = '';
+    }
+  }
 
 }
