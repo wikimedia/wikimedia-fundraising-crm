@@ -17,18 +17,20 @@ if (!class_exists('OAuthException')) {
   }
 }
 
-class OAuthConsumer {
-  public $key;
-  public $secret;
+if (!class_exists('OAuthConsumer')) {
+  class OAuthConsumer {
+    public $key;
+    public $secret;
 
-  function __construct($key, $secret, $callback_url=NULL) {
-    $this->key = $key;
-    $this->secret = $secret;
-    $this->callback_url = $callback_url;
-  }
+    function __construct($key, $secret, $callback_url=NULL) {
+      $this->key = $key;
+      $this->secret = $secret;
+      $this->callback_url = $callback_url;
+    }
 
-  function __toString() {
-    return "OAuthConsumer[key=$this->key,secret=$this->secret]";
+    function __toString() {
+      return "OAuthConsumer[key=$this->key,secret=$this->secret]";
+    }
   }
 }
 
@@ -54,7 +56,8 @@ class OAuthToken {
     return "oauth_token=" .
            OAuthUtil::urlencode_rfc3986($this->key) .
            "&oauth_token_secret=" .
-           OAuthUtil::urlencode_rfc3986($this->secret);
+           OAuthUtil::urlencode_rfc3986($this->secret) .
+           "&oauth_callback_confirmed=true";
   }
 
   function __toString() {
@@ -265,10 +268,9 @@ class OAuthRequest {
    * attempt to build up a request from what was passed to the server
    */
   public static function from_request($http_method=NULL, $http_url=NULL, $parameters=NULL) {
-    $local_https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on';
-    $forwarded_https = isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https';
-    $scheme = ($local_https || $forwarded_https) ? 'https' : 'http';
-
+    $scheme = (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] != "on")
+              ? 'http'
+              : 'https';
     $http_url = ($http_url) ? $http_url : $scheme .
                               '://' . $_SERVER['SERVER_NAME'] .
                               ':' .
@@ -676,6 +678,7 @@ class OAuthServer {
     $this->check_nonce($consumer, $token, $nonce, $timestamp);
 
     $signature_method = $this->get_signature_method($request);
+
     $signature = $request->get_parameter('oauth_signature');
     $valid_sig = $signature_method->check_signature(
       $request,
