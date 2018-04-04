@@ -10,6 +10,7 @@ class CiviFixtures {
     public $contact_group_name;
     public $contact_group_id;
     public $contact_id;
+    public $contact_hash;
     public $contribution_recur_id;
     public $epoch_time;
     public $org_contact_id;
@@ -19,6 +20,7 @@ class CiviFixtures {
     public $contribution_amount;
     public $contribution_invoice_id;
     public $contribution_id;
+    public $payment_processor_id;
 
     /**
      * @return CiviFixtures
@@ -27,12 +29,7 @@ class CiviFixtures {
         civicrm_initialize();
         $out = new CiviFixtures();
 
-        $individual = civicrm_api3('Contact', 'Create', array(
-          'contact_type' => 'Individual',
-          'first_name' => 'Test',
-          'last_name' => 'Es'
-        ));
-        $out->contact_id = $individual['id'];
+        static::createContact($out);
 
         $out->org_contact_name = 'Test DAF ' . mt_rand();
 
@@ -99,12 +96,74 @@ class CiviFixtures {
         return $out;
     }
 
-  /**
-   * Tear down function.
-   */
+    /**
+     * @param CiviFixtures|null $instance
+     *
+     * @return CiviFixtures
+     */
+    static function createContact($instance = NULL) {
+        if ($instance instanceof CiviFixtures) {
+            $out = $instance;
+        }
+        else {
+            civicrm_initialize();
+            $out = new CiviFixtures();
+        }
+
+        $individual = civicrm_api3( 'Contact', 'Create', [
+            'contact_type' => 'Individual',
+            'first_name' => 'Test',
+            'last_name' => 'Es',
+        ] );
+
+        $out->contact_id = $individual['id'];
+        $out->contact_hash = $individual['values'][$individual['id']]['hash'];
+        return $out;
+    }
+
+    /**
+     * @param $payment_processor payment processor name
+     * @param CiviFixtures|null $instance
+     *
+     * @return CiviFixtures
+     */
+    static function createPaymentProcessor($payment_processor, $instance = NULL) {
+        if ($instance instanceof CiviFixtures) {
+            $out = $instance;
+        }
+        else {
+            civicrm_initialize();
+            $out = new CiviFixtures();
+        }
+
+        $params = [
+            'payment_processor_type_id' => 1, //dummy value
+            'name' => $payment_processor,
+            'domain_id' => CRM_Core_Config::domainID(),
+            'is_default' => 1,
+            'is_active' => 1,
+        ];
+
+        $payment_processor_result = civicrm_api3( 'PaymentProcessor', 'create', $params );
+        $out->payment_processor_id = $payment_processor_result['id'];
+        return $out;
+    }
+
+    /**
+     * Tear down function.
+     */
     public function __destruct() {
-        civicrm_api3('ContributionRecur', 'delete', array('id' => $this->contribution_recur_id));
-		civicrm_api3('Contribution', 'delete', array('id' => $this->contribution_id));
-        civicrm_api3('Contact', 'delete', array('id' => $this->contact_id));
+        if ($this->contribution_recur_id) {
+            civicrm_api3( 'ContributionRecur', 'delete', ['id' => $this->contribution_recur_id] );
+        }
+        if ($this->contribution_id) {
+            civicrm_api3( 'Contribution', 'delete', ['id' => $this->contribution_id] );
+        }
+        if ($this->contact_id) {
+            civicrm_api3( 'Contact', 'delete', ['id' => $this->contact_id] );
+        }
+        if ($this->payment_processor_id) {
+            civicrm_api3( 'PaymentProcessor', 'delete', ['id' => $this->payment_processor_id] );
+        }
     }
 }

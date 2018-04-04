@@ -92,4 +92,53 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
             'Will match raw subscription ID' );
         $this->assertEquals( $recur_values['trxn_id'], $record->trxn_id );
     }
+
+    public function testRecurringContributionWithPaymentToken() {
+        $fixture = CiviFixtures::createContact();
+        CiviFixtures::createPaymentProcessor( "test_gateway" , $fixture);
+
+        $msg = [
+            'contact_id' => $fixture->contact_id,
+            'contact_hash' => $fixture->contact_hash,
+            'currency' => 'USD',
+            'date' => time(),
+            'gateway' => "test_gateway",
+            'gateway_txn_id' => mt_rand(),
+            'gross' => '1.23',
+            'payment_method' => 'cc',
+            // recurring contribution payment token fields below
+            'recurring_payment_token' => 'TEST-RECURRING-TOKEN-' . mt_rand(),
+            'recurring' => 1,
+        ];
+
+        //import contribution message containing populated recurring and recurring_payment_token fields
+        //this should result in a new contribution, recurring contribution and payment token record.
+        $contribution = wmf_civicrm_contribution_message_import( $msg );
+
+        $this->assertEquals( $fixture->contact_id, $contribution['contact_id'] );
+        $this->assertEquals( $msg['gross'], $contribution['total_amount'] );
+        $this->assertNotEmpty( $contribution['contribution_recur_id'] );
+        $this->assertEquals( strtoupper( "RECURRING {$msg['gateway']} {$msg['gateway_txn_id']}" ),
+            $contribution['trxn_id'] );
+
+        //confirm recurring contribution record was created with associated payment token record
+        $recurring_record = wmf_civicrm_get_gateway_subscription( "test_gateway", $msg['gateway_txn_id'] );
+        $this->assertNotEmpty( $recurring_record->payment_token_id );
+
+        //confirm payment token persisted matches original $msg token
+        $payment_token_id = $recurring_record->payment_token_id;
+        $payment_token_result = civicrm_api3( 'PaymentToken', 'getSingle', [
+            'id' => $payment_token_id,
+        ] );
+        $this->assertEquals( $msg['recurring_payment_token'], $payment_token_result['token'] );
+
+        //clean up recurring contribution records using fixture tear down destruct process
+        $fixture->contribution_id = $contribution['id'];
+        $fixture->contribution_recur_id = $recurring_record->id;
+
+        //clean up test payment token record
+        civicrm_api3( 'PaymentToken', 'delete', [
+            'id' => $payment_token_id,
+        ] );
+    }
 }

@@ -8,7 +8,7 @@
  *
  * @param array $msg
  * @param integer $contact_id
- * @param string $subscr_id
+ * @param string $subscr_id subscription_id/trnx_id
  * //FIXME: should not pass a contribution in, only subscr_id
  * @param array $contribution   The contribution record
  * @return boolean	Returns true on success
@@ -60,20 +60,34 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $subs
         throw new WmfException('IMPORT_SUBSCRIPTION', $error_message );
     }
 
-    if ( !empty( $msg['subscr_id'] ) ) {
-        $gateway_subscr_id = $msg['subscr_id'];
-    } else {
-        // trxn_id must be set.
-        // FIXME: this should always be the subscr_id.
-        if ( empty( $contribution_record[ 'trxn_id' ] ) ) {
-            $error_message = t(
-                '`trxn_id` must be set and not empty, with the contact_id [!contact_id]',
-                array("!contact_id" => $contact_id)
-            );
-            throw new WmfException('IMPORT_SUBSCRIPTION', $error_message );
-        }
+    if (!empty($msg['subscr_id'])) {
+      $gateway_subscr_id = $msg['subscr_id'];
+    }
+    elseif (!empty($msg['gateway_txn_id'])) {
+      $gateway_subscr_id = $msg['gateway_txn_id'];
+    }
+    else {
+      // trxn_id must be set.
+      // FIXME: this should always be the subscr_id.
+      if (empty($contribution_record['trxn_id'])) {
+        $error_message = t(
+          '`trxn_id` must be set and not empty, with the contact_id [!contact_id]',
+          ["!contact_id" => $contact_id]
+        );
+        throw new WmfException('IMPORT_SUBSCRIPTION', $error_message);
+      }
 
-        $gateway_subscr_id = $contribution_record['trxn_id'];
+      $gateway_subscr_id = $contribution_record['trxn_id'];
+    }
+
+    // create a recurring payment token record if token is present
+    if (!empty($msg['recurring_payment_token']) && $msg['gateway']) {
+      $payment_token_result = wmf_civicrm_recur_payment_token_create(
+        $contact_id,
+        $msg['gateway'],
+        $msg['recurring_payment_token']
+      );
+      $payment_token_id = $payment_token_result['id'];
     }
 
     $msg['cycle_day'] = wmf_civicrm_get_cycle_day( $msg['date'] );
@@ -90,8 +104,8 @@ function wmf_civicrm_message_contribution_recur_insert( $msg, $contact_id, $subs
         'start_date' => wmf_common_date_unix_to_civicrm( $msg[ 'date' ] ),
         'create_date' => wmf_common_date_unix_to_civicrm( $msg[ 'date' ] ),
         'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm( $msg['cancel'] ) : null ),
-        #FIXME:
-        'processor_id' => 1,
+        'payment_token_id' => isset( $payment_token_id ) ? $payment_token_id : null,
+        'processor_id' => $gateway_subscr_id,
         'cycle_day' => $msg[ 'cycle_day' ],
         'next_sched_contribution_date' => $next_sched_contribution,
         'trxn_id' => $gateway_subscr_id,
@@ -470,4 +484,38 @@ function wmf_civicrm_get_gateway_subscription( $gateway, $subscr_id ) {
   }
 
   return $dao;
+}
+
+/**
+ * Create a recurring payment token to be used alongside a recurring
+ * contribution record
+ *
+ * @param $contact_id
+ * @param $gateway
+ * @param $token
+ *
+ * @return array $payment_token_record
+ * @throws \WmfException
+ */
+function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token) {
+  try {
+    $payment_processor_result = civicrm_api3( 'PaymentProcessor', 'getsingle', [
+      'name' => $gateway,
+    ] );
+  } catch (CiviCRM_API3_Exception $e) {
+    throw new WmfException( 'MISSING_PREDECESSOR', 'No such Payment Processor exists, name=' . $gateway . "'', " . $e->getMessage() );
+  }
+
+  try {
+    $payment_token_result = civicrm_api3( 'PaymentToken', 'create', [
+      'contact_id' => $contact_id,
+      'payment_processor_id' => $payment_processor_result['id'],
+      'token' => $token,
+    ] );
+  } catch (CiviCRM_API3_Exception $e) {
+    throw new WmfException( 'IMPORT_SUBSCRIPTION', $e->getMessage() );
+  }
+
+  //return newly created record
+  return $payment_token_result['values'][$payment_token_result['id']];
 }
