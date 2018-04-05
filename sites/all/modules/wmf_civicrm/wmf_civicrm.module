@@ -3614,7 +3614,6 @@ EOS;
  * @param array $logTableSpec
  */
 function wmf_civicrm_civicrm_alterLogTables(&$logTableSpec) {
-  $logTableSpec['wmf_donor'] = array();
   $logTableSpec['wmf_contribution_extra'] = array();
   $contactReferences = CRM_Dedupe_Merger::cidRefs();
   foreach (array_keys($logTableSpec) as $tableName) {
@@ -3631,7 +3630,15 @@ function wmf_civicrm_civicrm_alterLogTables(&$logTableSpec) {
       'index_log_date' => 'log_date',
     ), $contactIndexes);
   }
-  unset($logTableSpec['civicrm_mailing_provider_data']);
+
+  // Where CiviCRM data entry / our queues are not the primary source (and there is a log of data)
+  // exclude from logging tables. wmf_donor contains calculated data only.
+  foreach (['civicrm_mailing_provider_data', 'wmf_donor'] as $noLoggingTable) {
+    if (isset($logTableSpec[$noLoggingTable])) {
+      unset($logTableSpec[$noLoggingTable]);
+    }
+  }
+
 }
 
 /**
