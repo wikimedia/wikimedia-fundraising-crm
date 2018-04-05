@@ -67,6 +67,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7605();
   wmf_civicrm_update_7610();
   wmf_civicrm_update_7615();
+  wmf_civicrm_update_7655();
 }
 
 /**
@@ -3629,4 +3630,70 @@ function wmf_civicrm_update_7635() {
      'B1718_1122_en6C_mob_p2_sm_dsn_cnt',
      'B1718_1122_en6C_mob_p2_sm_dsn_expday')"
   );
+}
+
+
+/**
+ * Remove 'Language' custom group (if exists).
+ *
+ * The core install has a custom group 'language'. Only 75 records have data
+ * & there is another place to store this. I sent out an email & get generalised support
+ * on this change.
+ *
+ * (note I tested this api function on staging & checked there was one less group / table
+ * afterwards).
+ */
+function wmf_civicrm_update_7640() {
+  civicrm_initialize();
+  civicrm_api3('CustomGroup', 'get', [
+    'name' => 'Language',
+    'api.CustomGroup.delete',
+  ]);
+}
+
+/**
+ * Step 1 on Move do_not_solicit from WMF donor to Communication.
+ *
+ * This is a bit tricky because we want to move the unique name :-( & move data across
+ * and update triggers.
+ *
+ * My thinking is to
+ *  1) create the new field as view only
+ *  2) deploy with ops help to reload the triggers
+ *  3) run an upgrade script to move data over
+ *  4) remove field from original table.
+ */
+function wmf_civicrm_update_7655() {
+  civicrm_initialize();
+  $commsGroup = civicrm_api3('CustomGroup', 'get', [
+    'name' => 'Communication',
+  ]);
+  if (empty($commsGroup['id'])) {
+    $commsGroup = civicrm_api3('CustomGroup', 'create', [
+      'name' => 'Communication',
+      'extends' => 'Contact',
+      'style' => 'Inline',
+      'collapse_display' => 0,
+      'title' => 'Communication',
+      'weight' => CRM_Utils_Weight::getMax('CRM_Core_BAO_CustomGroup'),
+      // Give dev instances the same table name.
+      'table_name' => 'civicrm_value_1_communication_4',
+    ]);
+  }
+
+  civicrm_api3('CustomField', 'create', [
+    'custom_group_id' => $commsGroup['id'],
+    'name' => 'do_not_solicit_new',
+    'column_name' => 'do_not_solicit',
+    'label' => ts('Do not solicit'),
+    'data_type' => 'Boolean',
+    'html_type' => 'Radio',
+    'is_active' => 1,
+    'is_required' => 1,
+    'is_searchable' => 1,
+    'weight' => CRM_Utils_Weight::getMax('CRM_Core_BAO_CustomField'),
+    // View only temporarily as there may be a period when both exist & we don't want it edited until we are ready.
+    'is_view' => 1,
+    'default_value' => 0,
+  ]);
 }
