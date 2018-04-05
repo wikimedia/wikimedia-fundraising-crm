@@ -66,6 +66,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7615();
   wmf_civicrm_update_7655();
   wmf_civicrm_update_7665();
+  wmf_civicrm_update_7670();
 }
 
 /**
@@ -3682,7 +3683,7 @@ function wmf_civicrm_update_7655() {
     'is_view' => 1,
     'default_value' => 0,
   ]);
-
+  civicrm_api3('System', 'flush', []);
 }
 
 /**
@@ -3732,4 +3733,62 @@ function wmf_civicrm_update_7665() {
     "ALTER TABLE wmf_donor " . implode(',', $clauses) . ',' . implode(',', $indexClauses)
   );
   CRM_Core_DAO::executeQuery('TRUNCATE civicrm_cache');
+}
+
+/**
+ * Move do_not solicit data from old field to new.
+ *
+ * This needs to be done AFTER triggers have been re-established.
+ *
+ * Bug: T186168
+ */
+function wmf_civicrm_update_7670() {
+  civicrm_initialize();
+  $oldFieldID = CRM_Core_BAO_CustomField::getCustomFieldID('do_not_solicit');
+  $newFieldID = CRM_Core_BAO_CustomField::getCustomFieldID('do_not_solicit_new');
+  if (!$newFieldID) {
+    throw new Exception('Field does not exist');
+  }
+  if (!$oldFieldID) {
+    // Perhaps a dev env.
+    civicrm_api3('CustomField', 'create', ['id' => $newFieldID, 'name' => 'do_not_solicit']);
+    // Clear caches of the custom fields.
+    civicrm_api3('System', 'flush', []);
+    return;
+  }
+
+  $newGroup = civicrm_api3('CustomGroup', 'getsingle', ['name' => 'Communication']);
+  $batch = 300000;
+  for ($startId = 0; $startId < 30000000; $startId += $batch) {
+    $endId = $startId + $batch;
+    CRM_Core_DAO::executeQuery("
+    UPDATE {$newGroup['table_name']} new
+    INNER JOIN wmf_donor old
+    SET new.do_not_solicit = old.do_not_solicit
+    WHERE new.entity_id = old.entity_id
+    AND old.entity_id BETWEEN $startId AND $endId
+    AND old.do_not_solicit = 1
+  ");
+
+    CRM_Core_DAO::executeQuery("
+    INSERT INTO {$newGroup['table_name']} (entity_id, do_not_solicit)
+    SELECT old.entity_id, old.do_not_solicit
+    FROM wmf_donor old
+    LEFT JOIN {$newGroup['table_name']} new ON  new.entity_id = old.entity_id
+    WHERE new.id IS NULL
+    AND old.entity_id BETWEEN $startId AND $endId
+    AND old.do_not_solicit = 1
+  ");
+  }
+
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_custom_field SET `name` = 'do_not_solicit_old', `is_view` = 1
+    WHERE id = $oldFieldID
+  ");
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_custom_field SET `name` = 'do_not_solicit', `is_view` = 0, `is_required` = 0
+    WHERE id = $newFieldID
+  ");
+  // Clear caches of the custom fields.
+  civicrm_api3('System', 'flush', []);
 }
