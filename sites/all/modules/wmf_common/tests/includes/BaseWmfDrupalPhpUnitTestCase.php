@@ -30,6 +30,16 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
     $user->uid = "321";
     $user->roles = array(DRUPAL_AUTHENTICATED_RID => 'authenticated user');
     $this->startTimestamp = time();
+    civicrm_initialize();
+    if (!Civi::settings()->get('logging')
+      && !CRM_Core_DAO::singleValueQuery("
+        SHOW triggers WHERE `Trigger` like 'civicrm_contribution_after_insert'
+      ")) {
+      civicrm_api3('Setting', 'create', array(
+        'logging_no_trigger_permission' => 0,
+      ));
+      civicrm_api3('Setting', 'create', array('logging' => 1));
+    }
   }
 
   public function tearDown() {
@@ -205,6 +215,35 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
     $this->callAPISuccess('Contact', 'delete', array(
       'id' => $contactId,
     ));
+  }
+
+  /**
+   * Assert custom values are as expected.
+   *
+   * @param int $contactID
+   * @param array $expected
+   *   Array in format name => value eg. ['total_2017_2018' => 50]
+   */
+  protected function assertCustomFieldValues($contactID, $expected) {
+    $return = [];
+    foreach (array_keys($expected) as $key) {
+      $return[] = wmf_civicrm_get_custom_field_name($key);
+    }
+
+    $contact = civicrm_api3('contact', 'getsingle', [
+      'id' => $contactID,
+      'return' => $return,
+    ]);
+
+    foreach ($expected as $key => $value) {
+      if ($key === 'last_donation_date') {
+        // Compare by date only.
+        $this->assertEquals($value, substr($contact[wmf_civicrm_get_custom_field_name($key)], 0, 10));
+      }
+      else {
+        $this->assertEquals($value, $contact[wmf_civicrm_get_custom_field_name($key)], "wrong value for $key");
+      }
+    }
   }
 
   public function onNotSuccessfulTest($e) {

@@ -26,6 +26,24 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
 
   protected $trxn_id;
 
+  /**
+   * End year of the financial year description.
+   *
+   * e.g for year 2017-2018 this will be 2018.
+   *
+   * @var int
+   **/
+  protected $financialYearEnd;
+
+  /**
+   * Name of the totals field for current financial year.
+   *
+   * e.g if today is 2018-04-18 then the field name is total_2017_2018
+   *
+   * @var string
+   */
+  protected $financialYearTotalFieldName;
+
   public function setUp() {
     parent::setUp();
     civicrm_initialize();
@@ -56,6 +74,15 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'trxn_id' => $this->trxn_id,
     ));
     $this->original_contribution_id = $results['id'];
+    $this->financialYearEnd = (date('m') > 6) ? date('Y') + 1 : date('Y');
+    $this->financialYearTotalFieldName = 'total_' . ($this->financialYearEnd - 1) . '_' . $this->financialYearEnd;
+    $this->assertCustomFieldValues($this->contact_id, [
+      'lifetime_usd_total' => 1.23,
+      'last_donation_date' => date('Y-m-d'),
+      'last_donation_amount' => 1.23,
+      'last_donation_usd' => 1.23,
+      $this->financialYearTotalFieldName => 1.23,
+    ]);
   }
 
   public function tearDown() {
@@ -78,9 +105,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testMarkRefund() {
     wmf_civicrm_mark_refund($this->original_contribution_id, 'refund', FALSE, '2015-09-09', 'my_special_ref');
 
-    $contribution = civicrm_api3('contribution', 'getsingle', array(
-      'id' => $this->original_contribution_id,
-    ));
+    $contribution = civicrm_api3('contribution', 'getsingle', ['id' => $this->original_contribution_id]);
 
     $this->assertEquals('Refunded', $contribution['contribution_status'],
       'Refunded contribution has correct status');
@@ -98,6 +123,22 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($transaction1['trxn_id'], $this->trxn_id);
     $this->assertEquals(strtotime($transaction2['trxn_date']), strtotime('2015-09-09'));
     $this->assertEquals($transaction2['trxn_id'], 'my_special_ref');
+
+    // With no valid donations we wind up with null not zero as no rows are selected
+    // in the calculation query.
+    // This seems acceptable. we would probably need a tricky union or extra IF to
+    // force to NULL. Field defaults are ignored in INSERT ON DUPLICATE UPDATE,
+    // seems an OK sacrifice. If one valid donation (in any year) exists we
+    // will get zeros in other years so only non-donors will have NULL values.
+    // not quite sure why some are zeros not null?
+    $this->assertCustomFieldValues($this->contact_id, [
+      'lifetime_usd_total' => NULL,
+      'last_donation_date' => NULL,
+      'last_donation_amount' => 0.00,
+      'last_donation_usd' => 0.00,
+      $this->financialYearTotalFieldName => NULL,
+      ]
+    );
   }
 
   /**
@@ -123,25 +164,20 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'receive_date' => '2015-12-01',
     ));
     wmf_civicrm_mark_refund($this->original_contribution_id, 'refund', FALSE, '2015-09-09', 'my_special_ref');
-    $contact = civicrm_api3('Contact', 'getsingle', array(
-      'id' => $this->contact_id,
-      'return' => array(
-        wmf_civicrm_get_custom_field_name('lifetime_usd_total'),
-        wmf_civicrm_get_custom_field_name('last_donation_date'),
-        wmf_civicrm_get_custom_field_name('last_donation_amount'),
-        wmf_civicrm_get_custom_field_name('last_donation_usd'),
-        wmf_civicrm_get_custom_field_name('is_2014_donor'),
-        wmf_civicrm_get_custom_field_name('is_' . date('Y') . '_donor'),
-        wmf_civicrm_get_custom_field_name('is_2015_donor'),
-      ),
-    ));
-    $this->assertEquals(40.00, $contact[wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
-    $this->assertEquals(50.00, $contact[wmf_civicrm_get_custom_field_name('last_donation_usd')]);
-    $this->assertEquals(50, $contact[wmf_civicrm_get_custom_field_name('last_donation_amount')]);
-    $this->assertEquals('2014-11-01 00:00:00', $contact[wmf_civicrm_get_custom_field_name('last_donation_date')]);
-    $this->assertEquals(TRUE, $contact[wmf_civicrm_get_custom_field_name('is_2014_donor')]);
-    $this->assertEquals(0, $contact[wmf_civicrm_get_custom_field_name('is_' . date('Y') . '_donor')]);
-    $this->assertEquals(0, $contact[wmf_civicrm_get_custom_field_name('is_2015_donor')]);
+
+
+    $this->assertCustomFieldValues($this->contact_id, [
+      'lifetime_usd_total' => 40,
+      'last_donation_date' => '2014-11-01',
+      'last_donation_amount' => 50,
+      'last_donation_usd' => 50,
+      'is_2014_donor' => 1,
+      'is_2015_donor' => 0,
+      'is_' . date('Y') . '_donor' => 0,
+      'total_2014_2015' => 50,
+      'total_2015_2016' => -10,
+      $this->financialYearTotalFieldName => 0,
+    ]);
   }
 
 
@@ -160,7 +196,12 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Make a refund for less than the original amount
+   * Make a refund for less than the original amount.
+   *
+   * The original contribution is refunded & a new contribution is created to represent
+   * the balance (.25 EUR or 13 cents) so the contact appears to have made a 13 cent donation.
+   *
+   * The new donation gets today's date as we have not passed a refund date.
    */
   public function testMakeLesserRefund() {
     $lesser_amount = round($this->original_amount - 0.25, 2);
@@ -188,6 +229,16 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       $refund_contribution['contribution_source'],
       'Refund contribution has correct lesser amount'
     );
+    $this->assertCustomFieldValues($this->contact_id, [
+      'lifetime_usd_total' => .13,
+      'last_donation_date' => date('Y-m-d'),
+      'last_donation_usd' => .13,
+      // legacy field - field name is correct per label in db.
+      'is_' . (date('Y') -1). '_donor' => 1,
+      $this->financialYearTotalFieldName => .13,
+      'last_donation_currency' => 'EUR',
+      'last_donation_amount' => .25,
+    ]);
   }
 
   /**

@@ -290,6 +290,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'last_donation_date' => '2012-03-01 00:00:00',
             'last_donation_usd' => '1.23',
             'lifetime_usd_total' => '1.23',
+            'total_2011_2012' => 1.23,
+            'total_2010_2011' => 0,
+            'total_2012_2013' => 0,
           ),
         ),
       );
