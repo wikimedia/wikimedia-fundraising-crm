@@ -4318,3 +4318,27 @@ function wmf_civicrm_civicrm_searchTasks($objectType, &$tasks) {
     $_GET['force'] = $_REQUEST['force'] = FALSE;
   }
 }
+
+function wmf_civicrm_ensure_payment_processor_exists($typeName, $name = NULL) {
+  if ($name === NULL) {
+    $name = $typeName;
+  }
+  $existing = civicrm_api3(
+    'PaymentProcessor', 'get', array('name' => $name)
+  );
+  if ($existing['values']) {
+    return;
+  }
+  $typeRecord = civicrm_api3(
+    'PaymentProcessorType', 'getSingle', array('name' => $typeName)
+  );
+  require_once('update_7070.php');
+  $financialAccountId = _wmf_civicrm_update_7070_helper_get_default_financial_account_id();
+  $params = [];
+  $params['payment_processor_type_id'] = $typeRecord['id'];
+  $params['name'] = $name;
+  $params['domain_id'] = CRM_Core_Config::domainID();
+  $params['is_active'] = TRUE;
+  $params['financial_account_id'] = $financialAccountId;
+  civicrm_api3('PaymentProcessor', 'create', $params);
+}

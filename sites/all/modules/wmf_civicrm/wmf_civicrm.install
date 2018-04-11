@@ -67,6 +67,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7655();
   wmf_civicrm_update_7670();
   wmf_civicrm_update_7675();
+  wmf_civicrm_update_7705();
 }
 
 /**
@@ -4189,4 +4190,42 @@ function wmf_civicrm_update_7702() {
     WHERE cov.filter IS NULL
     AND cog.name = 'activity_status'
   ");
+}
+
+/**
+ * Enable SmashPig and create processor records.
+ */
+function wmf_civicrm_update_7705() {
+  wmf_civicrm_reconcile_extensions();
+  civicrm_api3('Setting', 'create', [
+    'smashpig_recurring_use_queue' => '1',
+  ]);
+
+  $migrate = [
+    'recurring_globalcollect_failure_retry_rate' => 'smashpig_recurring_retry_delay_days',
+    'recurring_globalcollect_failures_before_cancellation' => 'smashpig_recurring_max_failures',
+    'recurring_globalcollect_run_missed_days' => 'smashpig_recurring_catch_up_days',
+    'recurring_globalcollect_batch_max' => 'smashpig_recurring_batch_size',
+  ];
+  foreach($migrate as $drupalSetting => $civiSetting) {
+    $value = variable_get($drupalSetting);
+    if ($value) {
+      civicrm_api3('Setting', 'create', [
+        $civiSetting => $value,
+      ]);
+    }
+  }
+
+  $processors = [
+    'adyen',
+    'amazon',
+    'dlocal',
+    'globalcollect',
+    'ingenico',
+    'paypal',
+    'paypal_ec'
+  ];
+  foreach ($processors as $processor) {
+    wmf_civicrm_ensure_payment_processor_exists("smashpig_$processor", $processor);
+  }
 }

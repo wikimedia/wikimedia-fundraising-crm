@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/smashpig/settings</path>
+    <page_callback>CRM_SmashPig_Form_Settings</page_callback>
+    <title>SmashPig Settings</title>
+    <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+</menu>
