@@ -187,6 +187,13 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
           'type' => CRM_Utils_Type::T_DATE,
           'pseudofield' => TRUE,
         ],
+        'email_fails_threshold' => [
+          'name' => 'email_fails_threshold',
+          'title' => E::ts('Email failure threshold (in conjunction with fail date range'),
+          'type' => CRM_Utils_Type::T_INT,
+          'pseudofield' => TRUE,
+          'default' => 1,
+        ],
       ],
       'order_bys' =>  [
         'email_fails_count' => [
@@ -474,7 +481,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
    * @return array
    */
   public function getOperationPair($type = "string", $fieldName = NULL) {
-    if ($fieldName === 'ip_fails_threshold' || $fieldName === 'ip_fails_threshold') {
+    if ($fieldName === 'ip_fails_threshold' || $fieldName === 'email_fails_threshold') {
       return ['eq' => ts('Is equal to'),];
     }
     return parent::getOperationPair($type, $fieldName);
@@ -501,7 +508,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
       FROM {$this->fredge}.payments_fraud
       WHERE validation_action = 'reject'
         AND `date` BETWEEN '{$from}' AND '{$to}'
-      GROUP BY user_ip 
+      GROUP BY user_ip
       HAVING ip_fails_count > $threshold
     ) as {$this->_aliases['ip_failure_stats']}
     ON {$this->_aliases['ip_failure_stats']}.user_ip = {$this->_aliases['payments_fraud']}.user_ip ";
@@ -543,7 +550,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
       INNER JOIN civicrm_contribution c on dt.contribution_id = c.id
       INNER JOIN civicrm_email email ON email.contact_id = c.contact_id AND email IS NOT NULL
       WHERE validation_action = 'reject'
-         AND `date` BETWEEN '{$from}' AND '{$to}' 
+         AND `date` BETWEEN '{$from}' AND '{$to}'
       GROUP BY email
       HAVING email_fails_count > $threshold
     ) as {$this->_aliases['email_failure_stats']}
@@ -552,7 +559,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
   }
 
   protected function addJoinToContactAndEmail() {
-    $this->_from .= " 
+    $this->_from .= "
       LEFT JOIN civicrm_contact {$this->_aliases['civicrm_contact']}
         ON {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_contribution']}.contact_id
       LEFT JOIN civicrm_email {$this->_aliases['civicrm_email']}
