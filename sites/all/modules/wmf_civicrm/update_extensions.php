@@ -40,6 +40,8 @@ function wmf_install_get_installed_extensions() {
     'nz.co.fuzion.civitoken',
     'nz.co.fuzion.extendedreport',
     'org.wikimedia.wmffraud',
-
+    'org.wikimedia.rip',
+    'org.wikimedia.unsubscribeemail',
+    'org.wikimedia.datachecks',
   ];
 }
