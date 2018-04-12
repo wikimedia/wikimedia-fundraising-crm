@@ -39,6 +39,7 @@ function wmf_install_get_installed_extensions() {
     'org.wikimedia.geocoder',
     'nz.co.fuzion.civitoken',
     'nz.co.fuzion.extendedreport',
+    'org.wikimedia.wmffraud',
 
   ];
 }
