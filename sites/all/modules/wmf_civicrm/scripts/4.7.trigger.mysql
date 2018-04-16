@@ -1271,6 +1271,30 @@ DROP TRIGGER IF EXISTS civicrm_financial_type_after_delete //
 DELIMITER ;
 
 DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_geocoder_before_insert //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_geocoder_before_update //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_geocoder_before_delete //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_geocoder_after_insert //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_geocoder_after_update //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_geocoder_after_delete //
+DELIMITER ;
+
+DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_grant_before_insert //
 DELIMITER ;
 
@@ -6803,7 +6827,7 @@ DROP TRIGGER IF EXISTS civicrm_value_1_communication_4_after_insert //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_value_1_communication_4_after_insert after insert ON civicrm_value_1_communication_4 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_1_communication_4 (`id`, `entity_id`, `invalid_mailing_address`, `invalid_e_mail_address`, `survey_group_73`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`invalid_mailing_address`, NEW.`invalid_e_mail_address`, NEW.`survey_group_73`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
+CREATE TRIGGER civicrm_value_1_communication_4_after_insert after insert ON civicrm_value_1_communication_4 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_1_communication_4 (`id`, `entity_id`, `invalid_mailing_address`, `invalid_e_mail_address`, `survey_group_73`, `do_not_solicit`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`invalid_mailing_address`, NEW.`invalid_e_mail_address`, NEW.`survey_group_73`, NEW.`do_not_solicit`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
 
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
 
@@ -6817,7 +6841,7 @@ DROP TRIGGER IF EXISTS civicrm_value_1_communication_4_after_update //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_value_1_communication_4_after_update after update ON civicrm_value_1_communication_4 FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`invalid_mailing_address`,'') <> IFNULL(NEW.`invalid_mailing_address`,'') OR IFNULL(OLD.`invalid_e_mail_address`,'') <> IFNULL(NEW.`invalid_e_mail_address`,'') OR IFNULL(OLD.`survey_group_73`,'') <> IFNULL(NEW.`survey_group_73`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_1_communication_4 (`id`, `entity_id`, `invalid_mailing_address`, `invalid_e_mail_address`, `survey_group_73`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`invalid_mailing_address`, NEW.`invalid_e_mail_address`, NEW.`survey_group_73`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
+CREATE TRIGGER civicrm_value_1_communication_4_after_update after update ON civicrm_value_1_communication_4 FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`invalid_mailing_address`,'') <> IFNULL(NEW.`invalid_mailing_address`,'') OR IFNULL(OLD.`invalid_e_mail_address`,'') <> IFNULL(NEW.`invalid_e_mail_address`,'') OR IFNULL(OLD.`survey_group_73`,'') <> IFNULL(NEW.`survey_group_73`,'') OR IFNULL(OLD.`do_not_solicit`,'') <> IFNULL(NEW.`do_not_solicit`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_1_communication_4 (`id`, `entity_id`, `invalid_mailing_address`, `invalid_e_mail_address`, `survey_group_73`, `do_not_solicit`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`invalid_mailing_address`, NEW.`invalid_e_mail_address`, NEW.`survey_group_73`, NEW.`do_not_solicit`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
 
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
 
