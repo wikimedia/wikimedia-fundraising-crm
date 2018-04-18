@@ -6898,33 +6898,9 @@ DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_value_1_language_after_insert //
 DELIMITER ;
 
-DELIMITER //
-CREATE TRIGGER civicrm_value_1_language_after_insert after insert ON civicrm_value_1_language FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_1_language (`id`, `entity_id`, `language`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`language`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
-
-UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
- END //
-DELIMITER ;
 
 DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_value_1_language_after_update //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER civicrm_value_1_language_after_update after update ON civicrm_value_1_language FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`language`,'') <> IFNULL(NEW.`language`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_1_language (`id`, `entity_id`, `language`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`language`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
-
-UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
- END //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_language_after_delete //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER civicrm_value_1_language_after_delete after delete ON civicrm_value_1_language FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_1_language (`id`, `entity_id`, `language`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`language`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
-
-UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.entity_id;
- END //
 DELIMITER ;
 
 DELIMITER //
