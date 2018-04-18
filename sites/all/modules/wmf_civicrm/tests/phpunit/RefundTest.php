@@ -9,94 +9,100 @@ use wmf_communication\TestMailer;
  */
 class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
 
-    /**
-     * Id of the contribution created in the setup function.
-     *
-     * @var int
-     */
-    protected $original_contribution_id;
-    protected $gateway_txn_id;
-    protected $contact_id;
-    protected $original_currency;
-    protected $original_amount;
-    protected $trxn_id;
+  /**
+   * Id of the contribution created in the setup function.
+   *
+   * @var int
+   */
+  protected $original_contribution_id;
 
-    public function setUp() {
-        parent::setUp();
-        civicrm_initialize();
-        TestMailer::setup();
+  protected $gateway_txn_id;
 
-        $results = $this->callAPISuccess( 'contact', 'create', array(
-            'contact_type' => 'Individual',
-            'first_name' => 'Test',
-            'last_name' => 'Es',
-            'debug' => 1,
-        ) );
-        $this->contact_id = $results['id'];
+  protected $contact_id;
 
-        $this->original_currency = 'EUR';
-        $this->original_amount = '1.23';
-        $this->gateway_txn_id = mt_rand();
-        $time = time();
-        $this->trxn_id = "TEST_GATEWAY {$this->gateway_txn_id} {$time}";
+  protected $original_currency;
 
-        $this->setExchangeRates( $time, array( 'USD' => 1, 'EUR' => 0.5 ) );
+  protected $original_amount;
 
-        $results = civicrm_api3( 'contribution', 'create', array(
-            'contact_id' => $this->contact_id,
-            'financial_type_id' => 'Cash',
-            'total_amount' => $this->original_amount,
-            'contribution_source' => $this->original_currency . ' ' . $this->original_amount,
-            'receive_date' => wmf_common_date_unix_to_civicrm( $time ),
-            'trxn_id' => $this->trxn_id,
-        ) );
-        $this->original_contribution_id = $results['id'];
-    }
+  protected $trxn_id;
 
-    public function tearDown() {
-        $this->cleanUpContact( $this->contact_id );
+  public function setUp() {
+    parent::setUp();
+    civicrm_initialize();
+    TestMailer::setup();
 
-        parent::tearDown();
-    }
+    $results = $this->callAPISuccess('contact', 'create', array(
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Es',
+      'debug' => 1,
+    ));
+    $this->contact_id = $results['id'];
 
-    /**
-     * Check chargeback status exists.
-     */
-    public function testStatuses() {
-      $options = $this->callAPISuccess('Contribution', 'getoptions', array('field' => 'contribution_status_id'));
-      $this->assertTrue(in_array('Chargeback', $options['values']));
-    }
+    $this->original_currency = 'EUR';
+    $this->original_amount = '1.23';
+    $this->gateway_txn_id = mt_rand();
+    $time = time();
+    $this->trxn_id = "TEST_GATEWAY {$this->gateway_txn_id} {$time}";
 
-    /**
-     * Covers wmf_civicrm_mark_refund.
-     */
-    public function testMarkRefund() {
-        wmf_civicrm_mark_refund( $this->original_contribution_id, 'refund', false, '2015-09-09', 'my_special_ref');
+    $this->setExchangeRates($time, array('USD' => 1, 'EUR' => 0.5));
 
-        $contribution = civicrm_api3( 'contribution', 'getsingle', array(
-            'id' => $this->original_contribution_id,
-        ) );
+    $results = civicrm_api3('contribution', 'create', array(
+      'contact_id' => $this->contact_id,
+      'financial_type_id' => 'Cash',
+      'total_amount' => $this->original_amount,
+      'contribution_source' => $this->original_currency . ' ' . $this->original_amount,
+      'receive_date' => wmf_common_date_unix_to_civicrm($time),
+      'trxn_id' => $this->trxn_id,
+    ));
+    $this->original_contribution_id = $results['id'];
+  }
 
-        $this->assertEquals( 'Refunded', $contribution['contribution_status'],
-            'Refunded contribution has correct status' );
+  public function tearDown() {
+    $this->cleanUpContact($this->contact_id);
 
-        $financialTransactions = civicrm_api3('EntityFinancialTrxn', 'get', array(
-            'entity_id' => $this->original_contribution_id,
-            'entity_table' => 'civicrm_contribution',
-            'api.financial_trxn.get' => 1,
-            'sequential' => TRUE,
-        ));
-        $this->assertEquals(2, $financialTransactions['count']);
-        $transaction1 = $financialTransactions['values']['0']['api.financial_trxn.get']['values'][0];
-        $transaction2 = $financialTransactions['values']['1']['api.financial_trxn.get']['values'][0];
-
-        $this->assertEquals($transaction1['trxn_id'], $this->trxn_id);
-        $this->assertEquals(strtotime($transaction2['trxn_date']), strtotime('2015-09-09'));
-        $this->assertEquals($transaction2['trxn_id'], 'my_special_ref');
-    }
+    parent::tearDown();
+  }
 
   /**
-   * Check that marking a contribution as refunded updates custom data appropriately.
+   * Check chargeback status exists.
+   */
+  public function testStatuses() {
+    $options = $this->callAPISuccess('Contribution', 'getoptions', array('field' => 'contribution_status_id'));
+    $this->assertTrue(in_array('Chargeback', $options['values']));
+  }
+
+  /**
+   * Covers wmf_civicrm_mark_refund.
+   */
+  public function testMarkRefund() {
+    wmf_civicrm_mark_refund($this->original_contribution_id, 'refund', FALSE, '2015-09-09', 'my_special_ref');
+
+    $contribution = civicrm_api3('contribution', 'getsingle', array(
+      'id' => $this->original_contribution_id,
+    ));
+
+    $this->assertEquals('Refunded', $contribution['contribution_status'],
+      'Refunded contribution has correct status');
+
+    $financialTransactions = civicrm_api3('EntityFinancialTrxn', 'get', array(
+      'entity_id' => $this->original_contribution_id,
+      'entity_table' => 'civicrm_contribution',
+      'api.financial_trxn.get' => 1,
+      'sequential' => TRUE,
+    ));
+    $this->assertEquals(2, $financialTransactions['count']);
+    $transaction1 = $financialTransactions['values']['0']['api.financial_trxn.get']['values'][0];
+    $transaction2 = $financialTransactions['values']['1']['api.financial_trxn.get']['values'][0];
+
+    $this->assertEquals($transaction1['trxn_id'], $this->trxn_id);
+    $this->assertEquals(strtotime($transaction2['trxn_date']), strtotime('2015-09-09'));
+    $this->assertEquals($transaction2['trxn_id'], 'my_special_ref');
+  }
+
+  /**
+   * Check that marking a contribution as refunded updates custom data
+   * appropriately.
    */
   public function testMarkRefundCheckCustomData() {
     civicrm_api3('contribution', 'create', array(
@@ -116,7 +122,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'contribution_source' => 'USD -10',
       'receive_date' => '2015-12-01',
     ));
-    wmf_civicrm_mark_refund( $this->original_contribution_id, 'refund', false, '2015-09-09', 'my_special_ref');
+    wmf_civicrm_mark_refund($this->original_contribution_id, 'refund', FALSE, '2015-09-09', 'my_special_ref');
     $contact = civicrm_api3('Contact', 'getsingle', array(
       'id' => $this->contact_id,
       'return' => array(
@@ -140,114 +146,114 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
 
 
   /**
-     * Make a refund with type set to "chargeback"
-     */
-    public function testMarkRefundWithType() {
-        wmf_civicrm_mark_refund( $this->original_contribution_id, 'chargeback' );
+   * Make a refund with type set to "chargeback"
+   */
+  public function testMarkRefundWithType() {
+    wmf_civicrm_mark_refund($this->original_contribution_id, 'chargeback');
 
-        $contribution = civicrm_api3('contribution', 'getsingle', array(
-          'id' => $this->original_contribution_id,
-        ));
+    $contribution = civicrm_api3('contribution', 'getsingle', array(
+      'id' => $this->original_contribution_id,
+    ));
 
-        $this->assertEquals( 'Chargeback', $contribution['contribution_status'],
-            'Refund contribution has correct type' );
-    }
+    $this->assertEquals('Chargeback', $contribution['contribution_status'],
+      'Refund contribution has correct type');
+  }
 
-    /**
-     * Make a refund for less than the original amount
-     */
-    public function testMakeLesserRefund() {
-        $lesser_amount = round( $this->original_amount - 0.25, 2 );
-        wmf_civicrm_mark_refund(
-            $this->original_contribution_id,
-            'chargeback',
-            true, null, null,
-            $this->original_currency, $lesser_amount
-        );
+  /**
+   * Make a refund for less than the original amount
+   */
+  public function testMakeLesserRefund() {
+    $lesser_amount = round($this->original_amount - 0.25, 2);
+    wmf_civicrm_mark_refund(
+      $this->original_contribution_id,
+      'chargeback',
+      TRUE, NULL, NULL,
+      $this->original_currency, $lesser_amount
+    );
 
 
-        $refund_contribution_id = CRM_Core_DAO::singleValueQuery("
+    $refund_contribution_id = CRM_Core_DAO::singleValueQuery("
           SELECT entity_id FROM wmf_contribution_extra
           WHERE
           parent_contribution_id = %1",
-          array(1 => array($this->original_contribution_id, 'Integer'))
-        );
+      array(1 => array($this->original_contribution_id, 'Integer'))
+    );
 
-        $refund_contribution = civicrm_api3('Contribution', 'getsingle', array(
-          'id' => $refund_contribution_id,
-        ));
+    $refund_contribution = civicrm_api3('Contribution', 'getsingle', array(
+      'id' => $refund_contribution_id,
+    ));
 
-        $this->assertEquals(
-            "{$this->original_currency} 0.25",
-            $refund_contribution['contribution_source'],
-            'Refund contribution has correct lesser amount'
-        );
-    }
+    $this->assertEquals(
+      "{$this->original_currency} 0.25",
+      $refund_contribution['contribution_source'],
+      'Refund contribution has correct lesser amount'
+    );
+  }
 
-    /**
-     * Make a refund in the wrong currency
-     *
-     * @expectedException WmfException
-     */
-    public function testMakeWrongCurrencyRefund() {
-        $wrong_currency = 'GBP';
-        $this->assertNotEquals( $this->original_currency, $wrong_currency );
-        wmf_civicrm_mark_refund(
-            $this->original_contribution_id, 'refund',
-            true, null, null,
-            $wrong_currency, $this->original_amount
-        );
-    }
+  /**
+   * Make a refund in the wrong currency
+   *
+   * @expectedException WmfException
+   */
+  public function testMakeWrongCurrencyRefund() {
+    $wrong_currency = 'GBP';
+    $this->assertNotEquals($this->original_currency, $wrong_currency);
+    wmf_civicrm_mark_refund(
+      $this->original_contribution_id, 'refund',
+      TRUE, NULL, NULL,
+      $wrong_currency, $this->original_amount
+    );
+  }
 
-    /**
-     * Make a refund for too much.
-     */
-    public function testMakeScammerRefund() {
-        wmf_civicrm_mark_refund(
-            $this->original_contribution_id, 'refund',
-            true, null, null,
-            $this->original_currency, $this->original_amount + 100.00
-        );
-        $mailing = TestMailer::getMailing(0);
-        $this->assertContains("<p>Refund amount mismatch for : {$this->original_contribution_id}, difference is 100. See http", $mailing['html']);
-    }
+  /**
+   * Make a refund for too much.
+   */
+  public function testMakeScammerRefund() {
+    wmf_civicrm_mark_refund(
+      $this->original_contribution_id, 'refund',
+      TRUE, NULL, NULL,
+      $this->original_currency, $this->original_amount + 100.00
+    );
+    $mailing = TestMailer::getMailing(0);
+    $this->assertContains("<p>Refund amount mismatch for : {$this->original_contribution_id}, difference is 100. See http", $mailing['html']);
+  }
 
-    /**
-     * Make a lesser refund in the wrong currency
-     */
-    public function testLesserWrongCurrencyRefund() {
-      $epochtime = time();
-      $dbtime = wmf_common_date_unix_to_civicrm( $epochtime );
-      $this->setExchangeRates( $epochtime, array('USD' => 1, 'COP' => .01 ) );
+  /**
+   * Make a lesser refund in the wrong currency
+   */
+  public function testLesserWrongCurrencyRefund() {
+    $epochtime = time();
+    $dbtime = wmf_common_date_unix_to_civicrm($epochtime);
+    $this->setExchangeRates($epochtime, array('USD' => 1, 'COP' => .01));
 
-      $result = $this->callAPISuccess('contribution', 'create', array(
-        'contact_id' => $this->contact_id,
-        'financial_type_id' => 'Cash',
-        'total_amount' => 200,
-        'currency' => 'USD',
-        'contribution_source' => 'COP 20000',
-        'trxn_id' => "TEST_GATEWAY {$this->gateway_txn_id} " . (time() + 20),
-      ));
+    $result = $this->callAPISuccess('contribution', 'create', array(
+      'contact_id' => $this->contact_id,
+      'financial_type_id' => 'Cash',
+      'total_amount' => 200,
+      'currency' => 'USD',
+      'contribution_source' => 'COP 20000',
+      'trxn_id' => "TEST_GATEWAY {$this->gateway_txn_id} " . (time() + 20),
+    ));
 
-      wmf_civicrm_mark_refund(
-        $result['id'],
-        'refund',
-        TRUE,
-        $dbtime,
-        NULL,
-        'COP',
-        5000
-      );
+    wmf_civicrm_mark_refund(
+      $result['id'],
+      'refund',
+      TRUE,
+      $dbtime,
+      NULL,
+      'COP',
+      5000
+    );
 
-      $contributions = $this->callAPISuccess('Contribution', 'get', array(
-        'contact_id' => $this->contact_id,
-        'sequential' => TRUE
-      ));
-      $this->assertEquals(3, $contributions['count'], print_r($contributions, TRUE));
-      $this->assertEquals(200, $contributions['values'][1]['total_amount']);
-      $this->assertEquals('USD', $contributions['values'][2]['currency']);
-      $this->assertEquals($contributions['values'][2]['total_amount'], 150);
-      $this->assertEquals('COP 15000', $contributions['values'][2]['contribution_source']);
-    }
+    $contributions = $this->callAPISuccess('Contribution', 'get', array(
+      'contact_id' => $this->contact_id,
+      'sequential' => TRUE,
+    ));
+    $this->assertEquals(3, $contributions['count'], print_r($contributions, TRUE));
+    $this->assertEquals(200, $contributions['values'][1]['total_amount']);
+    $this->assertEquals('USD', $contributions['values'][2]['currency']);
+    $this->assertEquals($contributions['values'][2]['total_amount'], 150);
+    $this->assertEquals('COP 15000', $contributions['values'][2]['contribution_source']);
+  }
 
 }
