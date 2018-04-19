@@ -65,8 +65,8 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7610();
   wmf_civicrm_update_7615();
   wmf_civicrm_update_7655();
-  wmf_civicrm_update_7665();
   wmf_civicrm_update_7670();
+  //wmf_civicrm_update_7675();
 }
 
 /**
@@ -3696,46 +3696,6 @@ function wmf_civicrm_update_7660() {
 }
 
 /**
- * Add donor totals fields.
- *
- * I tried adding via api but it does multiple queries each adding a field.
- *
- * Note that we are going to turn off triggers on the wmf_donor table.
- *
- * We can't do this straight away because we still have the do_not_solicit
- * field but we can remove it from the trigger reconciliations by hook.
- * That will prevent the log_table fields being added. Existing triggers
- * will not be removed until ops run their command.
- *
- * Bug: T186168.
- */
-function wmf_civicrm_update_7665() {
-  civicrm_initialize();
-
-  $groupID = civicrm_api3('CustomGroup', 'getvalue', ['name' => 'wmf_donor', 'return' => 'id']);
-  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
-    $nextYear = $year + 1;
-    $clauses[] = "ADD `total_{$year}_{$nextYear}` decimal(20,2) DEFAULT '0.00'";
-    $indexClauses[] = " ADD INDEX `total_{$year}_{$nextYear}` (total_{$year}_{$nextYear}) ";
-    // just doing something rough here to get recent years at the top.
-    // Can tweak in the UI.
-    $weight = $year > 2018 ? ($year - 2000) : (2019 - $year);
-    CRM_Core_DAO::executeQuery("
-    INSERT INTO civicrm_custom_field (
-      `custom_group_id`, `name`, `column_name`, `label`, `data_type`, `html_type`, `default_value`, `is_active`,
-      `is_required`, `is_searchable`, `is_view`, `weight`
-      )
-      values({$groupID}, 'total_{$year}_{$nextYear}', 'total_{$year}_{$nextYear}', 'FY {$year}-{$nextYear} total', 'Money', 'Text', 0, 1, 0, 1, 1, $weight)
-  ");
-  }
-
-  CRM_Core_DAO::executeQuery(
-    "ALTER TABLE wmf_donor " . implode(',', $clauses) . ',' . implode(',', $indexClauses)
-  );
-  CRM_Core_DAO::executeQuery('TRUNCATE civicrm_cache');
-}
-
-/**
  * Move do_not solicit data from old field to new.
  *
  * This needs to be done AFTER triggers have been re-established.
@@ -3792,3 +3752,44 @@ function wmf_civicrm_update_7670() {
   // Clear caches of the custom fields.
   civicrm_api3('System', 'flush', []);
 }
+
+/**
+ * Add donor totals fields.
+ *
+ * I tried adding via api but it does multiple queries each adding a field.
+ *
+ * Note that we are going to turn off triggers on the wmf_donor table.
+ *
+ * We can't do this straight away because we still have the do_not_solicit
+ * field but we can remove it from the trigger reconciliations by hook.
+ * That will prevent the log_table fields being added. Existing triggers
+ * will not be removed until ops run their command.
+ *
+ * Bug: T186168.
+
+function wmf_civicrm_update_7675() {
+  civicrm_initialize();
+
+  $groupID = civicrm_api3('CustomGroup', 'getvalue', ['name' => 'wmf_donor', 'return' => 'id']);
+  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
+    $nextYear = $year + 1;
+    $clauses[] = "ADD `total_{$year}_{$nextYear}` decimal(20,2) DEFAULT '0.00'";
+    $indexClauses[] = " ADD INDEX `total_{$year}_{$nextYear}` (total_{$year}_{$nextYear}) ";
+    // just doing something rough here to get recent years at the top.
+    // Can tweak in the UI.
+    $weight = $year > 2018 ? ($year - 2000) : (2019 - $year);
+    CRM_Core_DAO::executeQuery("
+    INSERT INTO civicrm_custom_field (
+      `custom_group_id`, `name`, `column_name`, `label`, `data_type`, `html_type`, `default_value`, `is_active`,
+      `is_required`, `is_searchable`, `is_view`, `weight`
+      )
+      values({$groupID}, 'total_{$year}_{$nextYear}', 'total_{$year}_{$nextYear}', 'FY {$year}-{$nextYear} total', 'Money', 'Text', 0, 1, 0, 1, 1, $weight)
+  ");
+  }
+
+  CRM_Core_DAO::executeQuery(
+    "ALTER TABLE wmf_donor " . implode(',', $clauses) . ',' . implode(',', $indexClauses)
+  );
+  CRM_Core_DAO::executeQuery('TRUNCATE civicrm_cache');
+}
+ */
