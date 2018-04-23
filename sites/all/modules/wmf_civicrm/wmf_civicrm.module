@@ -2534,6 +2534,10 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
               $refs['migration_info']['move_' . wmf_civicrm_get_custom_field_name('do_not_solicit')] = 1;
               $refs['migration_info']['rows']['move_' . wmf_civicrm_get_custom_field_name('do_not_solicit')]['other'] = ts('Yes');
             }
+            elseif (isset($refs['migration_info']['move_' . $wmfCalculatedField])) {
+              unset($refs['migration_info']['move_' . $wmfCalculatedField]);
+              unset($refs['migration_info']['rows']['move_' . $wmfCalculatedField]);
+            }
           }
         }
 
@@ -2548,10 +2552,6 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
         }
       }
 
-      // Only bother to calculate the totals if we are already starting to merge.
-      if (empty($refs['fields_in_conflict'])) {
-        wmf_civicrm_add_calculated_fields_to_migration_info($refs['migration_info'], $mainId, $otherId);
-      }
       break;
 
   }
@@ -3296,64 +3296,6 @@ function _wmf_civicrm_clean_duplicate_location_from_merge_blocks($blocks) {
 }
 
 /**
- * Add the calculated fields to the migration info when merging.
- *
- * The contributions have already been merged so we can query the DB for this
- * info. We are safeguarded against change by the test in our mergeTest
- * although it makes sense to add a similar test upstream too.
- *
- * Doing this here rather than post merge means there are less changes to these
- * values, meaning it is easier to revert.
- *
- * @param array $migrationInfo
- * @param int $contactID
- * @params int $otherID
- *   ID of the contact to be deleted.
- */
-function wmf_civicrm_add_calculated_fields_to_migration_info(&$migrationInfo, $contactID, $otherID) {
-  $select = "
-    SELECT
-      SUM(total_amount) AS lifetime_usd_total,
-      MAX(receive_date) AS last_donation_date,
-      SUM(COALESCE(total_amount, 0)) as total_usd_amount
-   ";
-  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
-    $nextYear = $year + 1;
-    $select .= ", MAX(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', 1, 0)) as is_{$year}_donor";
-  }
-  $query = $select . "
-    FROM
-      civicrm_contribution c
-      LEFT JOIN wmf_contribution_extra x ON x.entity_id = c.contact_id
-      WHERE contact_id  IN ($contactID, $otherID)
-  ";
-  $result = CRM_Core_DAO::executeQuery($query);
-  $migrationInfo = _wmf_civicrm_add_result_fields_to_migration_info($migrationInfo, $result);
-  if (!isset($migrationInfo['move_' . wmf_civicrm_get_custom_field_name('last_donation_date')])) {
-    return;
-  }
-  $query = "
-    SELECT
-      COALESCE(x.original_currency, currency) as last_donation_currency,
-      COALESCE(x.original_amount, total_amount) as last_donation_amount,
-      total_amount as last_donation_usd
-
-    FROM
-      civicrm_contribution c
-      LEFT JOIN wmf_contribution_extra x ON x.entity_id = c.id
-      WHERE contact_id  IN ($contactID, $otherID) AND receive_date = %1 LIMIT 1";
-
-  $lastDate = $migrationInfo['move_' . wmf_civicrm_get_custom_field_name('last_donation_date')];
-  $result = CRM_Core_DAO::executeQuery($query, array(
-    1 => array(
-      $lastDate,
-      'String',
-    ),
-  ));
-  $migrationInfo = _wmf_civicrm_add_result_fields_to_migration_info($migrationInfo, $result);
-}
-
-/**
  * @param $migrationInfo
  * @param $result
  *
@@ -3405,6 +3347,7 @@ function wmf_get_calculated_field_names() {
   );
   for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
     $fieldNames[] = 'is_' . $year . '_donor';
+    $fieldNames[] = 'total_' . $year . '_' . ($year + 1);
   }
   return $fieldNames;
 }
@@ -3495,115 +3438,6 @@ function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
         wmf_civicrm_set_custom_field_values($id, $extra);
       }
 
-      // If we're missing any of the data we need for wmf_donor, retrieve it
-      // from the database.
-      if ($contribution->contact_id
-        && $contribution->total_amount
-        && $contribution->receive_date) {
-        $receive_date = $contribution->receive_date;
-        $contact_id = $contribution->contact_id;
-        $total_amount = $contribution->total_amount;
-      }
-      else {
-        try {
-          $db_contribution = civicrm_api3('Contribution', 'getsingle', array(
-            'id' => $contribution->id,
-            'return' => array('contact_id', 'total_amount', 'receive_date'),
-          ));
-        }
-        catch (CiviCRM_API3_Exception $e) {
-          // can't get the data, skip wmf_donor updates
-          break;
-        }
-        $receive_date = $db_contribution['receive_date'];
-        $contact_id = $db_contribution['contact_id'];
-        $total_amount = $db_contribution['total_amount'];
-      }
-
-      // Update the wmf_donor data.  Set the is_YYYY_donor column to true
-      // FIXME: if this is an edit, we should review all contributions
-      $wmf_donor = array();
-      $contribution_date = new DateTime($receive_date);
-      $isNegative = (($contribution->total_amount < 0) || CRM_Contribute_BAO_Contribution::isContributionStatusNegative($contribution->contribution_status_id));
-      $fiscal_year = intval($contribution_date->format('Y'));
-      if (intval($contribution_date->format('m')) < 7) {
-        $fiscal_year = $fiscal_year - 1;
-      }
-      if ($fiscal_year >= WMF_MIN_ROLLUP_YEAR && $fiscal_year <= WMF_MAX_ROLLUP_YEAR) {
-        if (!$isNegative) {
-          $wmf_donor["is_{$fiscal_year}_donor"] = 1;
-        }
-        else {
-          $donationsCount = civicrm_api3('Contribution', 'getcount', array(
-            'contact_id' => $contact_id,
-            'contribution_status_id' => 'Completed',
-            'receive_date' => array(
-              'BETWEEN' => array(
-                $fiscal_year . '-07-01',
-                $fiscal_year + 1 . '-06-30',
-              ),
-            ),
-            'total_amount' => array('>' => 0),
-          ));
-          $wmf_donor["is_{$fiscal_year}_donor"] = $donationsCount ? 1 : 0;
-        }
-      }
-
-      // Update the latest donation data.
-      // If this is an edit, first check if it's the latest
-      $latest = TRUE;
-
-      if ($op === 'edit') {
-        $latestDate = wmf_civicrm_most_recent_completed_contribution_date($contact_id);
-        if (strtotime($latestDate) > strtotime($receive_date) || $isNegative) {
-          $latest = FALSE;
-        }
-      }
-      if ($latest) {
-        $wmf_donor['last_donation_date'] = $contribution_date->format('YmdHis');
-        $wmf_donor['last_donation_usd'] = $total_amount;
-        if (isset($extra['original_currency'])) {
-          $wmf_donor['last_donation_currency'] = $extra['original_currency'];
-        }
-        if (isset($extra['original_amount']) && $extra['original_amount'] > 0) {
-          $wmf_donor['last_donation_amount'] = $extra['original_amount'];
-        }
-      }
-      if ($isNegative && !empty($latestDate)) {
-        $latestContribution = wmf_civicrm_get_single_contribution_for_contact_by_date($contact_id, $latestDate);
-        $wmf_donor['last_donation_date'] = date('YmdHis', strtotime($latestContribution['receive_date']));
-        $wmf_donor['last_donation_usd'] = $latestContribution['total_amount'];
-        if (isset($latestContribution['contribution_source'])) {
-          $source = explode(' ', $latestContribution['contribution_source']);
-          $wmf_donor['last_donation_currency'] = $source[0];
-          $wmf_donor['last_donation_amount'] = $source[1];
-        }
-      }
-      // Get lifetime totals.
-      // Note that in 4.7 a new field is_payment is added to the financial_trxn table.
-      // We should probably switch to that at that point.
-      // For now from_financial_account_id IS NULL seems to filter out the fee lines.
-      $sql = <<<EOS
-SELECT SUM(t.total_amount) AS lifetime_usd_total
-FROM civicrm_contribution c
-LEFT JOIN `civicrm_entity_financial_trxn`eft ON eft.`entity_id` = c.id
-AND eft.entity_table = 'civicrm_contribution'
-LEFT JOIN civicrm_financial_trxn t ON t.id = eft.financial_trxn_id
-WHERE contact_id = {$contact_id}
-AND from_financial_account_id IS NULL
-GROUP BY contact_id
-EOS;
-
-      if (($lifetimeTotal = CRM_Core_DAO::singleValueQuery($sql)) !== FALSE) {
-        $wmf_donor['lifetime_usd_total'] = $lifetimeTotal;
-      }
-      if (!empty($wmf_donor)) {
-        wmf_civicrm_set_custom_field_values(
-          $contact_id,
-          $wmf_donor,
-          'wmf_donor'
-        );
-      }
       break;
   }
 }
@@ -4245,4 +4079,134 @@ function wmf_civicrm_ensure_correct_geocoder_enabled() {
       ]);
     }
   }
+}
+
+/**
+ * Implements hook_civicrm_triggerInfo().
+ *
+ * Add triggers for our calculated custom fields.
+ *
+ * Whenever a contribution is updated the fields are re-calculated provided
+ * the change is an update, a delete or an update which alters a relevant field
+ * (contribution_status_id, receive_date, total_amount, contact_id, currency).
+ *
+ * All fields in the dataset are recalculated (the performance gain on a 'normal'
+ * contact of being more selective was too little to show in testing. On our anonymous contact
+ * it was perhaps 100 ms but we don't have many contact with thousands of donations.)
+ *
+ * The wmf_contribution_extra record is saved after the contribution is inserted
+ * so we need to potentially update the fields from that record at that points,
+ * with a separate trigger.
+ **/
+function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
+  if (!$tableName || $tableName === 'civicrm_contribution') {
+    $fields = [];
+
+    for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
+      $nextYear = $year +1;
+      $fields[] = "total_{$year}_{$nextYear}";
+      $fieldSelects[] = "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as total_{$year}_{$nextYear}";
+      $updates[] = "total_{$year}_{$nextYear} = VALUES(total_{$year}_{$nextYear})";
+
+      // @todo Adding these short term. These fields will be removed medium term.
+      $fields[] = "is_{$year}_donor";
+      $fieldSelects[] = "MAX(IF(total_amount > 0 AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', 1, 0)) as is_{$year}_donor";
+      $updates[] = "is_{$year}_donor = VALUES(is_{$year}_donor)";
+      // end of short term 'is' fields.
+    }
+
+    $sql = "
+    INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
+    lifetime_usd_total, last_donation_date, " . implode(',', $fields) . ")
+
+    SELECT
+      NEW.contact_id as entity_id,
+      COALESCE(x.original_currency, currency) as last_donation_currency,
+      COALESCE(x.original_amount, total_amount, 0) as last_donation_amount,
+      COALESCE(total_amount, 0) as last_donation_usd,
+      totals.*
+
+    FROM (
+      SELECT
+        SUM(COALESCE(total_amount, 0)) AS lifetime_usd_total,
+        MAX(IF(total_amount > 0, receive_date, NULL)) AS last_donation_date,
+     " . implode(',', $fieldSelects) . "
+  FROM civicrm_contribution c
+  WHERE contact_id = NEW.contact_id
+  AND contribution_status_id = 1
+  ) as totals
+  LEFT JOIN civicrm_contribution cont ON cont.contact_id = NEW.contact_id
+  AND receive_date = totals.last_donation_date
+  AND contribution_status_id = 1
+  AND total_amount > 0
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
+  LIMIT 1
+
+  ON DUPLICATE KEY UPDATE
+    last_donation_currency = VALUES(last_donation_currency),
+    last_donation_amount = VALUES(last_donation_amount),
+    last_donation_usd = VALUES(last_donation_usd),
+    lifetime_usd_total = VALUES(lifetime_usd_total),
+    last_donation_date = VALUES(last_donation_date),
+    " . implode(',', $updates) . ";";
+
+    $updateOldSql = str_replace('NEW.', 'OLD.', $sql);
+    $significantFields = ['contribution_status_id', 'total_amount', 'contact_id', 'receive_date', 'currency'];
+    $updateConditions = [];
+    foreach ($significantFields as $significantField) {
+      $updateConditions[] = "(NEW.{$significantField} != OLD.{$significantField})";
+    }
+    // We want to fire this trigger on insert, update and delete.
+    $info[] = [
+      'table' => 'civicrm_contribution',
+      'when' => 'AFTER',
+      'event' => 'INSERT',
+      'sql' => $sql,
+    ];
+    $info[] = array(
+      'table' => 'civicrm_contribution',
+      'when' => 'AFTER',
+      'event' => 'UPDATE',
+      'sql' => " IF " . implode(' OR ', $updateConditions) . " THEN " . $sql . " END IF;",
+    );
+    $info[] = array(
+      'table' => 'civicrm_contribution',
+      'when' => 'AFTER',
+      'event' => 'UPDATE',
+      'sql' => "IF (NEW.contact_id <> OLD.contact_id) THEN " . $updateOldSql . " END IF;",
+    );
+    // For delete, we reference OLD.field instead of NEW.field
+    $info[] = array(
+      'table' => 'civicrm_contribution',
+      'when' => 'AFTER',
+      'event' => 'DELETE',
+      'sql' => $updateOldSql,
+    );
+  }
+
+  if (!$tableName || $tableName === 'wmf_contribution_extra') {
+    // Contribution extra is inserted after the record is inserted.
+    // It may provide an update to the last currency / last donation amount.
+    $sql = "
+       UPDATE civicrm_contribution cont
+       INNER JOIN wmf_donor donor ON donor.entity_id = cont.contact_id
+       SET donor.last_donation_currency = NEW.original_currency, donor.last_donation_amount = NEW.original_amount
+       WHERE cont.id = NEW.entity_id AND cont.receive_date = donor.last_donation_date
+       AND cont.contribution_status_id = 1;
+    ";
+
+    $info[] = [
+      'table' => 'wmf_contribution_extra',
+      'when' => 'AFTER',
+      'event' => 'INSERT',
+      'sql' => $sql,
+    ];
+    $info[] = [
+      'table' => 'wmf_contribution_extra',
+      'when' => 'AFTER',
+      'event' => 'UPDATE',
+      'sql' => "IF (NEW.original_currency <> OLD.original_currency) OR (NEW.original_amount <> OLD.original_amount) THEN " . $sql . " END IF;",
+    ];
+  }
+
 }
