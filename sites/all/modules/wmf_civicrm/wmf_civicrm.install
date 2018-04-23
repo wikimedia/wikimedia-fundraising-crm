@@ -3781,9 +3781,9 @@ function wmf_civicrm_update_7675() {
     CRM_Core_DAO::executeQuery("
     INSERT INTO civicrm_custom_field (
       `custom_group_id`, `name`, `column_name`, `label`, `data_type`, `html_type`, `default_value`, `is_active`,
-      `is_required`, `is_searchable`, `is_view`, `weight`
+      `is_required`, `is_searchable`, `is_view`, `weight`, `is_search_range`
       )
-      values({$groupID}, 'total_{$year}_{$nextYear}', 'total_{$year}_{$nextYear}', 'FY {$year}-{$nextYear} total', 'Money', 'Text', 0, 1, 0, 1, 1, $weight)
+      values({$groupID}, 'total_{$year}_{$nextYear}', 'total_{$year}_{$nextYear}', 'FY {$year}-{$nextYear} total', 'Money', 'Text', 0, 1, 0, 1, 1, $weight , 1)
   ");
   }
 
