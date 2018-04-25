@@ -62,8 +62,8 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->gateway_txn_id = mt_rand();
     $time = time();
     $this->trxn_id = "TEST_GATEWAY {$this->gateway_txn_id} {$time}";
-
-    $this->setExchangeRates($time, array('USD' => 1, 'EUR' => 0.5));
+    $this->setExchangeRates($time, array('USD' => 1, 'EUR' => 0.5, 'NZD' => 5));
+    $this->setExchangeRates(strtotime('1 year ago'), array('USD' => 1, 'EUR' => 0.5, 'NZD' => 5));
 
     $results = civicrm_api3('contribution', 'create', array(
       'contact_id' => $this->contact_id,
@@ -169,8 +169,8 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertCustomFieldValues($this->contact_id, [
       'lifetime_usd_total' => 40,
       'last_donation_date' => '2014-11-01',
-      'last_donation_amount' => 50,
-      'last_donation_usd' => 50,
+      'last_donation_amount' => 0,
+      'last_donation_usd' => 0,
       'is_2014_donor' => 1,
       'is_2015_donor' => 0,
       'is_' . date('Y') . '_donor' => 0,
@@ -205,13 +205,32 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testMakeLesserRefund() {
     $lesser_amount = round($this->original_amount - 0.25, 2);
+
+    $time = time();
+    // Add an earlier contribution - this will be the most recent if our contribution is
+    // deleted.
+    civicrm_api3('contribution', 'create', array(
+      'contact_id' => $this->contact_id,
+      'financial_type_id' => 'Cash',
+      'total_amount' => 40,
+      'contribution_source' => 'NZD' . ' ' . 200,
+      'receive_date' => '1 year ago',
+      'trxn_id' => "TEST_GATEWAY {$this->gateway_txn_id} " . ($time - 200),
+    ));
+    $this->assertCustomFieldValues($this->contact_id, [
+      'lifetime_usd_total' => 41.23,
+      'last_donation_date' => date('Y-m-d', $time),
+      'last_donation_amount' => 1.23,
+      'last_donation_usd' => 1.23,
+      $this->financialYearTotalFieldName => 1.23,
+    ]);
+
     wmf_civicrm_mark_refund(
       $this->original_contribution_id,
       'chargeback',
       TRUE, NULL, NULL,
       $this->original_currency, $lesser_amount
     );
-
 
     $refund_contribution_id = CRM_Core_DAO::singleValueQuery("
           SELECT entity_id FROM wmf_contribution_extra
@@ -230,14 +249,14 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'Refund contribution has correct lesser amount'
     );
     $this->assertCustomFieldValues($this->contact_id, [
-      'lifetime_usd_total' => .13,
+      'lifetime_usd_total' => 40.13,
       'last_donation_date' => date('Y-m-d'),
-      'last_donation_usd' => .13,
+      'last_donation_usd' => 40,
       // legacy field - field name is correct per label in db.
       'is_' . (date('Y') -1). '_donor' => 1,
       $this->financialYearTotalFieldName => .13,
-      'last_donation_currency' => 'EUR',
-      'last_donation_amount' => .25,
+      'last_donation_currency' => 'NZD',
+      'last_donation_amount' => 200,
     ]);
   }
 

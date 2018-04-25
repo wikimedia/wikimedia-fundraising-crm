@@ -72,7 +72,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'contact_id' => $this->contactID2,
       'financial_type_id' => 'Cash',
       'total_amount' => 9,
-      'currency' => 'NZD',
+      'currency' => 'USD',
+      'source' => 'NZD 20',
       // Should cause 'is_2015_donor to be true.
       'receive_date' => '2016-04-04',
     ));
@@ -89,7 +90,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertCustomFieldValues($this->contactID, [
       'lifetime_usd_total' => 24,
       'do_not_solicit' => 1,
-      'last_donation_amount' => 9,
+      'last_donation_amount' => 20,
       'last_donation_currency' => 'NZD',
       'last_donation_usd' => 9,
       'last_donation_date' => '2016-04-04',
