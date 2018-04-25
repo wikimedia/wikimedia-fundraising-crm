@@ -89,7 +89,7 @@
                 "payment",
                 "payments"
             ],
-            "time": "2018-02-07T02:51:30+00:00"
+            "time": "2018-02-07 02:51:30"
         },
         {
             "name": "clio/clio",
@@ -522,7 +522,7 @@
             "keywords": [
                 "http geocoder"
             ],
-            "time": "2018-01-23T02:12:05+00:00"
+            "time": "2018-01-23 02:12:05"
         },
         {
             "name": "geocoder-php/free-geoip-provider",
@@ -580,7 +580,7 @@
             ],
             "description": "Geocoder FreeGeoIp adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-01-23T02:15:37+00:00"
+            "time": "2018-01-23 02:15:37"
         },
         {
             "name": "geocoder-php/google-maps-provider",
@@ -638,7 +638,7 @@
             ],
             "description": "Geocoder GoogleMaps adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-01-23T04:49:20+00:00"
+            "time": "2018-01-23 04:49:20"
         },
         {
             "name": "geocoder-php/mapquest-provider",
@@ -696,7 +696,7 @@
             ],
             "description": "Geocoder MapQuest adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-01-19T02:21:34+00:00"
+            "time": "2018-01-19 02:21:34"
         },
         {
             "name": "geocoder-php/nominatim-provider",
@@ -754,7 +754,7 @@
             ],
             "description": "Geocoder Nominatim adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-02-12T23:19:17+00:00"
+            "time": "2018-02-12 23:19:17"
         },
         {
             "name": "geoip2/geoip2",
@@ -1402,7 +1402,7 @@
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2017-09-14T06:37:59+00:00"
+            "time": "2017-09-14 06:37:59"
         },
         {
             "name": "neitanod/forceutf8",
@@ -1508,7 +1508,7 @@
                 "sendgrid",
                 "sendinblue"
             ],
-            "time": "2018-01-05T16:56:09+00:00"
+            "time": "2018-01-05 16:56:09"
         },
         {
             "name": "paragonie/random_compat",
@@ -2733,7 +2733,7 @@
             ],
             "description": "CiviCRM datatable geocoder",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-02-21T04:05:10+00:00"
+            "time": "2018-02-21 04:05:10"
         },
         {
             "name": "wikimedia/composer-merge-plugin",
@@ -2832,7 +2832,7 @@
                 "GPL-2.0-or-later"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2018-02-13T21:25:26+00:00"
+            "time": "2018-02-13 21:25:26"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
@@ -2879,21 +2879,21 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2017-10-10T03:44:09+00:00"
+            "time": "2017-10-10 03:44:09"
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.5.2",
+            "version": "v0.5.5",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "af6a9bb52291d7cdc696009ede4b3c6271ffb983"
+                "reference": "e62b2a9970ac5fa55577e8d3f51507e9b5d0cfd6"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
                 "coderkungfu/php-queue": "^1.0",
                 "corneltek/getoptionkit": "^2.5",
-                "php": ">=5.4",
+                "php": ">=5.6",
                 "phpmailer/phpmailer": "^5.2",
                 "predis/predis": "^1.1",
                 "psr/cache": "^1.0",
@@ -2906,7 +2906,7 @@
                 "ext-sqlite3": "*",
                 "jakub-onderka/php-parallel-lint": "^0.9",
                 "mediawiki/mediawiki-codesniffer": "0.11.0",
-                "phpunit/phpunit": "^4.8"
+                "phpunit/phpunit": "^5.6"
             },
             "type": "library",
             "autoload": {
@@ -2916,7 +2916,7 @@
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "GPL-2.0"
+                "GPL-2.0-or-later"
             ],
             "authors": [
                 {
@@ -2934,6 +2934,10 @@
                 {
                     "name": "Elliott Eggleston",
                     "email": "eeggleston@wikimedia.org"
+                },
+                {
+                    "name": "Maggie Epps",
+                    "email": "mepps@wikimedia.org"
                 }
             ],
             "description": "The open source PHP flexible payments library and frontend/backend mediator.",
@@ -2942,7 +2946,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2018-01-11T20:06:34+00:00"
+            "time": "2018-04-23T15:15:23+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -3002,7 +3006,7 @@
                 "geocoding",
                 "geoip"
             ],
-            "time": "2018-02-12T23:33:59+00:00"
+            "time": "2018-02-12 23:33:59"
         },
         {
             "name": "zordius/lightncandy",
