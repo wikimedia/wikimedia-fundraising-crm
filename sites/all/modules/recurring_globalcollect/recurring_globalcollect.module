@@ -1,4 +1,6 @@
 <?php
+use SmashPig\Core\DataStores\QueueWrapper;
+
 // include common functions
 require_once(drupal_get_path('module', 'recurring_globalcollect') . '/recurring_globalcollect_common.inc');
 
@@ -352,7 +354,7 @@ function recurring_globalcollect_charge($contribution_recur_id, $options = []) {
 
   $msg = recurring_globalcollect_create_message($contribution_recur_id);
 
-  wmf_civicrm_contribution_message_import($msg);
+  QueueWrapper::push('donations', $msg);
 }
 
 /**
@@ -379,7 +381,7 @@ function recurring_globalcollect_create_message($contribution_recur_id) {
     // Copy stuff from the subscription, and increment the EFFORTID
     'amount' => $contribution_recur['amount'],
     'contact_id' => $contribution_recur['contact_id'],
-    // FIXME: should use 'installements' column, not processor_id
+    // FIXME: should use 'installments' column, not processor_id
     'effort_id' => $contribution_recur['processor_id'],
     'order_id' => $transaction->gateway_txn_id,
     'currency_code' => $contribution_recur['currency'],

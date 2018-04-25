@@ -1,6 +1,8 @@
 <?php
 
+use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\CrmLink\FinalStatus;
+use SmashPig\CrmLink\Messages\SourceFields;
 
 /**
  * @group GlobalCollect
@@ -81,19 +83,41 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
     TestingGlobalCollectAdapter::setDummyGatewayResponseCode(NULL);
   }
 
-  function testChargeRecorded() {
+  function testMessageSent() {
     recurring_globalcollect_charge($this->contributionRecurId);
 
-    $result = civicrm_api3('Contribution', 'get', [
+    $message = QueueWrapper::getQueue('donations')->pop();
+    SourceFields::removeFromMessage($message);
+    $this->assertNotNull($message);
+    $expected = [
+      'amount' => '1.12',
+      'effort_id' => '2',
+      'order_id' => $this->subscriptionId,
+      'currency_code' => 'USD',
+      'financial_type_id' => '5',
+      'contribution_type_id' => '5',
+      'payment_instrument_id' => '1',
+      'gateway' => 'globalcollect',
+      'gross' => '1.12',
+      'currency' => 'USD',
+      'gateway_txn_id' => $this->subscriptionId . '-2',
+      'payment_method' => 'cc',
+      'contribution_recur_id' => $this->contributionRecurId,
+      'recurring' => TRUE,
+    ];
+    $this->assertArraySubset($expected, $message);
+    // Now try consuming the message and make sure it looks good
+    wmf_civicrm_contribution_message_import($message);
+    $contributions = civicrm_api3('Contribution', 'get', [
       'contact_id' => $this->contactId,
     ]);
-    $this->assertEquals(2, count($result['values']));
-    foreach ($result['values'] as $contribution) {
+    // Should have 1 from setup plus the new one
+    $this->assertEquals(2, count($contributions['values']));
+    foreach ($contributions['values'] as $contribution) {
       if ($contribution['id'] == $this->contributions[0]) {
         // Skip assertions on the synthetic original contribution
         continue;
       }
-
       $this->assertEquals(1,
         preg_match("/^RECURRING GLOBALCOLLECT {$this->subscriptionId}-2\$/", $contribution['trxn_id']));
     }
