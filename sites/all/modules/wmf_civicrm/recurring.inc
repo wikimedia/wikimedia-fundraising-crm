@@ -80,8 +80,11 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
     $gateway_subscr_id = $contribution_record['trxn_id'];
   }
 
-  // create a recurring payment token record if token is present
-  if (!empty($msg['recurring_payment_token']) && $msg['gateway']) {
+  if (!empty($msg['payment_token_id'])) {
+    $payment_token_id = $msg['payment_token_id'];
+  }
+  elseif (!empty($msg['recurring_payment_token']) && $msg['gateway']) {
+    // create a recurring payment token record if token is present
     $payment_token_result = wmf_civicrm_recur_payment_token_create(
       $contact_id,
       $msg['gateway'],
@@ -497,6 +500,19 @@ function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
   return $dao;
 }
 
+function wmf_civicrm_get_recurring_payment_token($gateway, $token) {
+  $processorId = wmf_civicrm_get_payment_processor_id($gateway);
+
+  $payment_token_result = civicrm_api3('PaymentToken', 'get', [
+    'payment_processor_id' => $processorId,
+    'token' => $token,
+  ]);
+  if (empty($payment_token_result['values'])) {
+    return NULL;
+  }
+  return $payment_token_result['values'][$payment_token_result['id']];
+}
+
 /**
  * Create a recurring payment token to be used alongside a recurring
  * contribution record
@@ -509,18 +525,12 @@ function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
  * @throws \WmfException
  */
 function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token) {
-  try {
-    $payment_processor_result = civicrm_api3('PaymentProcessor', 'getsingle', [
-      'name' => $gateway,
-    ]);
-  } catch (CiviCRM_API3_Exception $e) {
-    throw new WmfException('MISSING_PREDECESSOR', 'No such Payment Processor exists, name=' . $gateway . "'', " . $e->getMessage());
-  }
+  $processorId = wmf_civicrm_get_payment_processor_id($gateway);
 
   try {
     $payment_token_result = civicrm_api3('PaymentToken', 'create', [
       'contact_id' => $contact_id,
-      'payment_processor_id' => $payment_processor_result['id'],
+      'payment_processor_id' => $processorId,
       'token' => $token,
     ]);
   } catch (CiviCRM_API3_Exception $e) {
@@ -529,4 +539,15 @@ function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token) {
 
   //return newly created record
   return $payment_token_result['values'][$payment_token_result['id']];
+}
+
+function wmf_civicrm_get_payment_processor_id($processorName) {
+  try {
+    $payment_processor_result = civicrm_api3('PaymentProcessor', 'getsingle', [
+      'name' => $processorName,
+    ]);
+  } catch (CiviCRM_API3_Exception $e) {
+    throw new WmfException('MISSING_PREDECESSOR', 'No such Payment Processor exists, name=' . $gateway . "'', " . $e->getMessage());
+  }
+  return $payment_processor_result['id'];
 }
