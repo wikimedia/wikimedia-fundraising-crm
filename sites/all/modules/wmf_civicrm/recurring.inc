@@ -80,8 +80,17 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
     $gateway_subscr_id = $contribution_record['trxn_id'];
   }
 
-  if (!empty($msg['payment_token_id'])) {
-    $payment_token_id = $msg['payment_token_id'];
+  $msg['cycle_day'] = wmf_civicrm_get_cycle_day($msg['date']);
+
+  $next_sched_contribution = wmf_civicrm_get_next_sched_contribution_date_for_month($msg);
+
+  $payment_token_params = [];
+  if (!empty($msg['payment_processor_id']) && !empty($msg['payment_token_id'])) {
+    // copy existing payment token and processor IDs from message
+    $payment_token_params = [
+      'payment_token_id' => $msg['payment_token_id'],
+      'payment_processor_id' => $msg['payment_processor_id'],
+    ];
   }
   elseif (!empty($msg['recurring_payment_token']) && $msg['gateway']) {
     // create a recurring payment token record if token is present
@@ -90,12 +99,11 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       $msg['gateway'],
       $msg['recurring_payment_token']
     );
-    $payment_token_id = $payment_token_result['id'];
+    $payment_token_params = [
+      'payment_token_id' => $payment_token_result['id'],
+      'payment_processor_id' => $payment_token_result['payment_processor_id'],
+    ];
   }
-
-  $msg['cycle_day'] = wmf_civicrm_get_cycle_day($msg['date']);
-
-  $next_sched_contribution = wmf_civicrm_get_next_sched_contribution_date_for_month($msg);
 
   $insert_params = [
     'contact_id' => $contact_id,
@@ -107,12 +115,12 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
     'start_date' => wmf_common_date_unix_to_civicrm($msg['date']),
     'create_date' => wmf_common_date_unix_to_civicrm($msg['date']),
     'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm($msg['cancel']) : NULL),
-    'payment_token_id' => isset($payment_token_id) ? $payment_token_id : NULL,
     'processor_id' => $gateway_subscr_id,
     'cycle_day' => $msg['cycle_day'],
     'next_sched_contribution_date' => $next_sched_contribution,
     'trxn_id' => $gateway_subscr_id,
-  ];
+  ] + $payment_token_params;
+
   try {
     $result = civicrm_api3('ContributionRecur', 'Create', $insert_params);
   } catch (CiviCRM_API3_Exception $e) {
