@@ -86,6 +86,7 @@ class CiviFixtures {
             'create_date' => wmf_common_date_unix_to_civicrm( $out->epoch_time ),
             'financial_type_id' => 1,
             'invoice_id' => mt_rand(),
+            'skipRecentView' => 1,
         );
         $contribution = civicrm_api3('Contribution', 'Create', $contribution_params);
 		$out->contribution_id = $contribution['id'];
