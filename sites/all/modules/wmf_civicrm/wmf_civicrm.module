@@ -4186,13 +4186,6 @@ function wmf_civicrm_ensure_correct_geocoder_enabled() {
  * The wmf_contribution_extra record is saved after the contribution is inserted
  * so we need to potentially update the fields from that record at that points,
  * with a separate trigger.
- *
- * Note that we the entries into the 'last' fields are a 'best guess'. They will be correct for
- * new USD donations but otherwise the check in the POST hook will update them.
- *
- * We can't rely on contribution_extra info to be reliable at this point. Later we check,
- * if we happen to have gotten it right we can avoid an insert query. (This all occurs in
- * the same api call so we are safe-ish.
  **/
 function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   if (!$tableName || $tableName === 'civicrm_contribution') {
@@ -4217,8 +4210,8 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
 
     SELECT
       NEW.contact_id as entity_id,
-      currency as last_donation_currency,
-      COALESCE(total_amount, 0) as last_donation_amount,
+      COALESCE(x.original_currency, currency) as last_donation_currency,
+      COALESCE(x.original_amount, total_amount, 0) as last_donation_amount,
       COALESCE(total_amount, 0) as last_donation_usd,
       totals.*
 
@@ -4236,6 +4229,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   AND contribution_status_id = 1
   AND total_amount > 0
   AND trxn_id NOT LIKE 'RFD %'
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
   LIMIT 1
 
   ON DUPLICATE KEY UPDATE
