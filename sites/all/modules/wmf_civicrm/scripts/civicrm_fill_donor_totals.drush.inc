@@ -79,6 +79,9 @@ function drush_civicrm_fill_donor_totals() {
        LEFT JOIN civicrm_contribution c ON c.contact_id = d.entity_id
        WHERE d.entity_id <= $maxId
        AND is_" . ($batchYear - 1) . "_donor = 1 AND total_" . ($batchYear - 1) . "_{$batchYear}  = 0
+       AND contribution_status_id = 1
+       AND total_amount > 0
+       AND trxn_id NOT LIKE 'RFD %'
        GROUP BY d.entity_id
      ) as totals ON totals.entity_id = donor.entity_id
      SET " . implode(',', $updates)  . "
