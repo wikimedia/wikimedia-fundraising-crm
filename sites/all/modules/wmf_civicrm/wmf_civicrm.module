@@ -3398,6 +3398,12 @@ function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
   switch ($op) {
     case 'create':
     case 'edit':
+      if (WmfDatabase::isNativeTxnRolledBack()) {
+        throw new WmfException(
+          'IMPORT_CONTRIB',
+          'Native txn rolled back before running post contribution hook'
+        );
+      }
       $extra = array();
 
       if ($contribution->trxn_id) {
