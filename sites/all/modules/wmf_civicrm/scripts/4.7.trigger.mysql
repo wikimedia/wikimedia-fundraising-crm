@@ -3239,30 +3239,6 @@ DROP TRIGGER IF EXISTS civicrm_value_1_gift_data_7_after_delete //
 DELIMITER ;
 
 DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_language_before_insert //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_language_before_update //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_language_before_delete //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_language_after_insert //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_language_after_update //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_language_after_delete //
-DELIMITER ;
-
-DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_value_1_primary_contact_name_9_before_insert //
 DELIMITER ;
 
@@ -3524,30 +3500,6 @@ DELIMITER ;
 
 DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_worldregion_after_delete //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS wmf_donor_before_insert //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS wmf_donor_before_update //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS wmf_donor_before_delete //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS wmf_donor_after_insert //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS wmf_donor_after_update //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS wmf_donor_after_delete //
 DELIMITER ;
 
 DELIMITER //
@@ -4073,7 +4025,42 @@ DROP TRIGGER IF EXISTS civicrm_contribution_after_insert //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contribution FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`contact_id`, NEW.`financial_type_id`, NEW.`contribution_page_id`, NEW.`payment_instrument_id`, NEW.`receive_date`, NEW.`non_deductible_amount`, NEW.`total_amount`, NEW.`fee_amount`, NEW.`net_amount`, NEW.`trxn_id`, NEW.`invoice_id`, NEW.`currency`, NEW.`cancel_date`, NEW.`cancel_reason`, NEW.`receipt_date`, NEW.`thankyou_date`, NEW.`source`, NEW.`amount_level`, NEW.`contribution_recur_id`, NEW.`is_test`, NEW.`is_pay_later`, NEW.`contribution_status_id`, NEW.`note`, NEW.`address_id`, NEW.`check_number`, NEW.`campaign_id`, NEW.`tax_amount`, NEW.`creditnote_id`, NEW.`revenue_recognition_date`, NEW.`invoice_number`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF; END //
+CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contribution FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`contact_id`, NEW.`financial_type_id`, NEW.`contribution_page_id`, NEW.`payment_instrument_id`, NEW.`receive_date`, NEW.`non_deductible_amount`, NEW.`total_amount`, NEW.`fee_amount`, NEW.`net_amount`, NEW.`trxn_id`, NEW.`invoice_id`, NEW.`currency`, NEW.`cancel_date`, NEW.`cancel_reason`, NEW.`receipt_date`, NEW.`thankyou_date`, NEW.`source`, NEW.`amount_level`, NEW.`contribution_recur_id`, NEW.`is_test`, NEW.`is_pay_later`, NEW.`contribution_status_id`, NEW.`note`, NEW.`address_id`, NEW.`check_number`, NEW.`campaign_id`, NEW.`tax_amount`, NEW.`creditnote_id`, NEW.`revenue_recognition_date`, NEW.`invoice_number`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
+
+    INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
+    lifetime_usd_total, last_donation_date, total_2006_2007,is_2006_donor,total_2007_2008,is_2007_donor,total_2008_2009,is_2008_donor,total_2009_2010,is_2009_donor,total_2010_2011,is_2010_donor,total_2011_2012,is_2011_donor,total_2012_2013,is_2012_donor,total_2013_2014,is_2013_donor,total_2014_2015,is_2014_donor,total_2015_2016,is_2015_donor,total_2016_2017,is_2016_donor,total_2017_2018,is_2017_donor,total_2018_2019,is_2018_donor,total_2019_2020,is_2019_donor,total_2020_2021,is_2020_donor)
+
+    SELECT
+      NEW.contact_id as entity_id,
+      COALESCE(x.original_currency, currency) as last_donation_currency,
+      COALESCE(x.original_amount, total_amount, 0) as last_donation_amount,
+      COALESCE(total_amount, 0) as last_donation_usd,
+      totals.*
+
+    FROM (
+      SELECT
+        SUM(COALESCE(total_amount, 0)) AS lifetime_usd_total,
+        MAX(IF(total_amount > 0, receive_date, NULL)) AS last_donation_date,
+     SUM(COALESCE(IF(receive_date BETWEEN '2006-07-01' AND '2007-06-30 23:59:59', c.total_amount, 0),0)) as total_2006_2007,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2006-07-01' AND '2007-06-30 23:59:59', 1, 0)) as is_2006_donor,SUM(COALESCE(IF(receive_date BETWEEN '2007-07-01' AND '2008-06-30 23:59:59', c.total_amount, 0),0)) as total_2007_2008,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2007-07-01' AND '2008-06-30 23:59:59', 1, 0)) as is_2007_donor,SUM(COALESCE(IF(receive_date BETWEEN '2008-07-01' AND '2009-06-30 23:59:59', c.total_amount, 0),0)) as total_2008_2009,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2008-07-01' AND '2009-06-30 23:59:59', 1, 0)) as is_2008_donor,SUM(COALESCE(IF(receive_date BETWEEN '2009-07-01' AND '2010-06-30 23:59:59', c.total_amount, 0),0)) as total_2009_2010,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2009-07-01' AND '2010-06-30 23:59:59', 1, 0)) as is_2009_donor,SUM(COALESCE(IF(receive_date BETWEEN '2010-07-01' AND '2011-06-30 23:59:59', c.total_amount, 0),0)) as total_2010_2011,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2010-07-01' AND '2011-06-30 23:59:59', 1, 0)) as is_2010_donor,SUM(COALESCE(IF(receive_date BETWEEN '2011-07-01' AND '2012-06-30 23:59:59', c.total_amount, 0),0)) as total_2011_2012,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2011-07-01' AND '2012-06-30 23:59:59', 1, 0)) as is_2011_donor,SUM(COALESCE(IF(receive_date BETWEEN '2012-07-01' AND '2013-06-30 23:59:59', c.total_amount, 0),0)) as total_2012_2013,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2012-07-01' AND '2013-06-30 23:59:59', 1, 0)) as is_2012_donor,SUM(COALESCE(IF(receive_date BETWEEN '2013-07-01' AND '2014-06-30 23:59:59', c.total_amount, 0),0)) as total_2013_2014,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2013-07-01' AND '2014-06-30 23:59:59', 1, 0)) as is_2013_donor,SUM(COALESCE(IF(receive_date BETWEEN '2014-07-01' AND '2015-06-30 23:59:59', c.total_amount, 0),0)) as total_2014_2015,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2014-07-01' AND '2015-06-30 23:59:59', 1, 0)) as is_2014_donor,SUM(COALESCE(IF(receive_date BETWEEN '2015-07-01' AND '2016-06-30 23:59:59', c.total_amount, 0),0)) as total_2015_2016,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2015-07-01' AND '2016-06-30 23:59:59', 1, 0)) as is_2015_donor,SUM(COALESCE(IF(receive_date BETWEEN '2016-07-01' AND '2017-06-30 23:59:59', c.total_amount, 0),0)) as total_2016_2017,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2016-07-01' AND '2017-06-30 23:59:59', 1, 0)) as is_2016_donor,SUM(COALESCE(IF(receive_date BETWEEN '2017-07-01' AND '2018-06-30 23:59:59', c.total_amount, 0),0)) as total_2017_2018,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2017-07-01' AND '2018-06-30 23:59:59', 1, 0)) as is_2017_donor,SUM(COALESCE(IF(receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', c.total_amount, 0),0)) as total_2018_2019,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', 1, 0)) as is_2018_donor,SUM(COALESCE(IF(receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', c.total_amount, 0),0)) as total_2019_2020,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', 1, 0)) as is_2019_donor,SUM(COALESCE(IF(receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', c.total_amount, 0),0)) as total_2020_2021,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', 1, 0)) as is_2020_donor
+      FROM civicrm_contribution c
+      WHERE contact_id = NEW.contact_id
+        AND contribution_status_id = 1
+    ) as totals
+  LEFT JOIN civicrm_contribution cont ON cont.contact_id = NEW.contact_id
+  AND receive_date = totals.last_donation_date
+  AND contribution_status_id = 1
+  AND total_amount > 0
+  AND trxn_id NOT LIKE 'RFD %'
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
+  LIMIT 1
+
+  ON DUPLICATE KEY UPDATE
+    last_donation_currency = VALUES(last_donation_currency),
+    last_donation_amount = VALUES(last_donation_amount),
+    last_donation_usd = VALUES(last_donation_usd),
+    lifetime_usd_total = VALUES(lifetime_usd_total),
+    last_donation_date = VALUES(last_donation_date),
+    total_2006_2007 = VALUES(total_2006_2007),is_2006_donor = VALUES(is_2006_donor),total_2007_2008 = VALUES(total_2007_2008),is_2007_donor = VALUES(is_2007_donor),total_2008_2009 = VALUES(total_2008_2009),is_2008_donor = VALUES(is_2008_donor),total_2009_2010 = VALUES(total_2009_2010),is_2009_donor = VALUES(is_2009_donor),total_2010_2011 = VALUES(total_2010_2011),is_2010_donor = VALUES(is_2010_donor),total_2011_2012 = VALUES(total_2011_2012),is_2011_donor = VALUES(is_2011_donor),total_2012_2013 = VALUES(total_2012_2013),is_2012_donor = VALUES(is_2012_donor),total_2013_2014 = VALUES(total_2013_2014),is_2013_donor = VALUES(is_2013_donor),total_2014_2015 = VALUES(total_2014_2015),is_2014_donor = VALUES(is_2014_donor),total_2015_2016 = VALUES(total_2015_2016),is_2015_donor = VALUES(is_2015_donor),total_2016_2017 = VALUES(total_2016_2017),is_2016_donor = VALUES(is_2016_donor),total_2017_2018 = VALUES(total_2017_2018),is_2017_donor = VALUES(is_2017_donor),total_2018_2019 = VALUES(total_2018_2019),is_2018_donor = VALUES(is_2018_donor),total_2019_2020 = VALUES(total_2019_2020),is_2019_donor = VALUES(is_2019_donor),total_2020_2021 = VALUES(total_2020_2021),is_2020_donor = VALUES(is_2020_donor); END //
 DELIMITER ;
 
 DELIMITER //
@@ -4081,7 +4068,77 @@ DROP TRIGGER IF EXISTS civicrm_contribution_after_update //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contribution FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') <> IFNULL(NEW.`contact_id`,'') OR IFNULL(OLD.`financial_type_id`,'') <> IFNULL(NEW.`financial_type_id`,'') OR IFNULL(OLD.`contribution_page_id`,'') <> IFNULL(NEW.`contribution_page_id`,'') OR IFNULL(OLD.`payment_instrument_id`,'') <> IFNULL(NEW.`payment_instrument_id`,'') OR IFNULL(OLD.`receive_date`,'') <> IFNULL(NEW.`receive_date`,'') OR IFNULL(OLD.`non_deductible_amount`,'') <> IFNULL(NEW.`non_deductible_amount`,'') OR IFNULL(OLD.`total_amount`,'') <> IFNULL(NEW.`total_amount`,'') OR IFNULL(OLD.`fee_amount`,'') <> IFNULL(NEW.`fee_amount`,'') OR IFNULL(OLD.`net_amount`,'') <> IFNULL(NEW.`net_amount`,'') OR IFNULL(OLD.`trxn_id`,'') <> IFNULL(NEW.`trxn_id`,'') OR IFNULL(OLD.`invoice_id`,'') <> IFNULL(NEW.`invoice_id`,'') OR IFNULL(OLD.`currency`,'') <> IFNULL(NEW.`currency`,'') OR IFNULL(OLD.`cancel_date`,'') <> IFNULL(NEW.`cancel_date`,'') OR IFNULL(OLD.`cancel_reason`,'') <> IFNULL(NEW.`cancel_reason`,'') OR IFNULL(OLD.`receipt_date`,'') <> IFNULL(NEW.`receipt_date`,'') OR IFNULL(OLD.`thankyou_date`,'') <> IFNULL(NEW.`thankyou_date`,'') OR IFNULL(OLD.`source`,'') <> IFNULL(NEW.`source`,'') OR IFNULL(OLD.`amount_level`,'') <> IFNULL(NEW.`amount_level`,'') OR IFNULL(OLD.`contribution_recur_id`,'') <> IFNULL(NEW.`contribution_recur_id`,'') OR IFNULL(OLD.`is_test`,'') <> IFNULL(NEW.`is_test`,'') OR IFNULL(OLD.`is_pay_later`,'') <> IFNULL(NEW.`is_pay_later`,'') OR IFNULL(OLD.`contribution_status_id`,'') <> IFNULL(NEW.`contribution_status_id`,'') OR IFNULL(OLD.`note`,'') <> IFNULL(NEW.`note`,'') OR IFNULL(OLD.`address_id`,'') <> IFNULL(NEW.`address_id`,'') OR IFNULL(OLD.`check_number`,'') <> IFNULL(NEW.`check_number`,'') OR IFNULL(OLD.`campaign_id`,'') <> IFNULL(NEW.`campaign_id`,'') OR IFNULL(OLD.`tax_amount`,'') <> IFNULL(NEW.`tax_amount`,'') OR IFNULL(OLD.`creditnote_id`,'') <> IFNULL(NEW.`creditnote_id`,'') OR IFNULL(OLD.`revenue_recognition_date`,'') <> IFNULL(NEW.`revenue_recognition_date`,'') OR IFNULL(OLD.`invoice_number`,'') <> IFNULL(NEW.`invoice_number`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`contact_id`, NEW.`financial_type_id`, NEW.`contribution_page_id`, NEW.`payment_instrument_id`, NEW.`receive_date`, NEW.`non_deductible_amount`, NEW.`total_amount`, NEW.`fee_amount`, NEW.`net_amount`, NEW.`trxn_id`, NEW.`invoice_id`, NEW.`currency`, NEW.`cancel_date`, NEW.`cancel_reason`, NEW.`receipt_date`, NEW.`thankyou_date`, NEW.`source`, NEW.`amount_level`, NEW.`contribution_recur_id`, NEW.`is_test`, NEW.`is_pay_later`, NEW.`contribution_status_id`, NEW.`note`, NEW.`address_id`, NEW.`check_number`, NEW.`campaign_id`, NEW.`tax_amount`, NEW.`creditnote_id`, NEW.`revenue_recognition_date`, NEW.`invoice_number`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
+CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contribution FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') <> IFNULL(NEW.`contact_id`,'') OR IFNULL(OLD.`financial_type_id`,'') <> IFNULL(NEW.`financial_type_id`,'') OR IFNULL(OLD.`contribution_page_id`,'') <> IFNULL(NEW.`contribution_page_id`,'') OR IFNULL(OLD.`payment_instrument_id`,'') <> IFNULL(NEW.`payment_instrument_id`,'') OR IFNULL(OLD.`receive_date`,'') <> IFNULL(NEW.`receive_date`,'') OR IFNULL(OLD.`non_deductible_amount`,'') <> IFNULL(NEW.`non_deductible_amount`,'') OR IFNULL(OLD.`total_amount`,'') <> IFNULL(NEW.`total_amount`,'') OR IFNULL(OLD.`fee_amount`,'') <> IFNULL(NEW.`fee_amount`,'') OR IFNULL(OLD.`net_amount`,'') <> IFNULL(NEW.`net_amount`,'') OR IFNULL(OLD.`trxn_id`,'') <> IFNULL(NEW.`trxn_id`,'') OR IFNULL(OLD.`invoice_id`,'') <> IFNULL(NEW.`invoice_id`,'') OR IFNULL(OLD.`currency`,'') <> IFNULL(NEW.`currency`,'') OR IFNULL(OLD.`cancel_date`,'') <> IFNULL(NEW.`cancel_date`,'') OR IFNULL(OLD.`cancel_reason`,'') <> IFNULL(NEW.`cancel_reason`,'') OR IFNULL(OLD.`receipt_date`,'') <> IFNULL(NEW.`receipt_date`,'') OR IFNULL(OLD.`thankyou_date`,'') <> IFNULL(NEW.`thankyou_date`,'') OR IFNULL(OLD.`source`,'') <> IFNULL(NEW.`source`,'') OR IFNULL(OLD.`amount_level`,'') <> IFNULL(NEW.`amount_level`,'') OR IFNULL(OLD.`contribution_recur_id`,'') <> IFNULL(NEW.`contribution_recur_id`,'') OR IFNULL(OLD.`is_test`,'') <> IFNULL(NEW.`is_test`,'') OR IFNULL(OLD.`is_pay_later`,'') <> IFNULL(NEW.`is_pay_later`,'') OR IFNULL(OLD.`contribution_status_id`,'') <> IFNULL(NEW.`contribution_status_id`,'') OR IFNULL(OLD.`note`,'') <> IFNULL(NEW.`note`,'') OR IFNULL(OLD.`address_id`,'') <> IFNULL(NEW.`address_id`,'') OR IFNULL(OLD.`check_number`,'') <> IFNULL(NEW.`check_number`,'') OR IFNULL(OLD.`campaign_id`,'') <> IFNULL(NEW.`campaign_id`,'') OR IFNULL(OLD.`tax_amount`,'') <> IFNULL(NEW.`tax_amount`,'') OR IFNULL(OLD.`creditnote_id`,'') <> IFNULL(NEW.`creditnote_id`,'') OR IFNULL(OLD.`revenue_recognition_date`,'') <> IFNULL(NEW.`revenue_recognition_date`,'') OR IFNULL(OLD.`invoice_number`,'') <> IFNULL(NEW.`invoice_number`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`contact_id`, NEW.`financial_type_id`, NEW.`contribution_page_id`, NEW.`payment_instrument_id`, NEW.`receive_date`, NEW.`non_deductible_amount`, NEW.`total_amount`, NEW.`fee_amount`, NEW.`net_amount`, NEW.`trxn_id`, NEW.`invoice_id`, NEW.`currency`, NEW.`cancel_date`, NEW.`cancel_reason`, NEW.`receipt_date`, NEW.`thankyou_date`, NEW.`source`, NEW.`amount_level`, NEW.`contribution_recur_id`, NEW.`is_test`, NEW.`is_pay_later`, NEW.`contribution_status_id`, NEW.`note`, NEW.`address_id`, NEW.`check_number`, NEW.`campaign_id`, NEW.`tax_amount`, NEW.`creditnote_id`, NEW.`revenue_recognition_date`, NEW.`invoice_number`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
+ IF (NEW.contribution_status_id != OLD.contribution_status_id) OR (NEW.total_amount != OLD.total_amount) OR (NEW.contact_id != OLD.contact_id) OR (NEW.receive_date != OLD.receive_date) OR (NEW.currency != OLD.currency) THEN 
+    INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
+    lifetime_usd_total, last_donation_date, total_2006_2007,is_2006_donor,total_2007_2008,is_2007_donor,total_2008_2009,is_2008_donor,total_2009_2010,is_2009_donor,total_2010_2011,is_2010_donor,total_2011_2012,is_2011_donor,total_2012_2013,is_2012_donor,total_2013_2014,is_2013_donor,total_2014_2015,is_2014_donor,total_2015_2016,is_2015_donor,total_2016_2017,is_2016_donor,total_2017_2018,is_2017_donor,total_2018_2019,is_2018_donor,total_2019_2020,is_2019_donor,total_2020_2021,is_2020_donor)
+
+    SELECT
+      NEW.contact_id as entity_id,
+      COALESCE(x.original_currency, currency) as last_donation_currency,
+      COALESCE(x.original_amount, total_amount, 0) as last_donation_amount,
+      COALESCE(total_amount, 0) as last_donation_usd,
+      totals.*
+
+    FROM (
+      SELECT
+        SUM(COALESCE(total_amount, 0)) AS lifetime_usd_total,
+        MAX(IF(total_amount > 0, receive_date, NULL)) AS last_donation_date,
+     SUM(COALESCE(IF(receive_date BETWEEN '2006-07-01' AND '2007-06-30 23:59:59', c.total_amount, 0),0)) as total_2006_2007,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2006-07-01' AND '2007-06-30 23:59:59', 1, 0)) as is_2006_donor,SUM(COALESCE(IF(receive_date BETWEEN '2007-07-01' AND '2008-06-30 23:59:59', c.total_amount, 0),0)) as total_2007_2008,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2007-07-01' AND '2008-06-30 23:59:59', 1, 0)) as is_2007_donor,SUM(COALESCE(IF(receive_date BETWEEN '2008-07-01' AND '2009-06-30 23:59:59', c.total_amount, 0),0)) as total_2008_2009,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2008-07-01' AND '2009-06-30 23:59:59', 1, 0)) as is_2008_donor,SUM(COALESCE(IF(receive_date BETWEEN '2009-07-01' AND '2010-06-30 23:59:59', c.total_amount, 0),0)) as total_2009_2010,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2009-07-01' AND '2010-06-30 23:59:59', 1, 0)) as is_2009_donor,SUM(COALESCE(IF(receive_date BETWEEN '2010-07-01' AND '2011-06-30 23:59:59', c.total_amount, 0),0)) as total_2010_2011,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2010-07-01' AND '2011-06-30 23:59:59', 1, 0)) as is_2010_donor,SUM(COALESCE(IF(receive_date BETWEEN '2011-07-01' AND '2012-06-30 23:59:59', c.total_amount, 0),0)) as total_2011_2012,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2011-07-01' AND '2012-06-30 23:59:59', 1, 0)) as is_2011_donor,SUM(COALESCE(IF(receive_date BETWEEN '2012-07-01' AND '2013-06-30 23:59:59', c.total_amount, 0),0)) as total_2012_2013,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2012-07-01' AND '2013-06-30 23:59:59', 1, 0)) as is_2012_donor,SUM(COALESCE(IF(receive_date BETWEEN '2013-07-01' AND '2014-06-30 23:59:59', c.total_amount, 0),0)) as total_2013_2014,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2013-07-01' AND '2014-06-30 23:59:59', 1, 0)) as is_2013_donor,SUM(COALESCE(IF(receive_date BETWEEN '2014-07-01' AND '2015-06-30 23:59:59', c.total_amount, 0),0)) as total_2014_2015,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2014-07-01' AND '2015-06-30 23:59:59', 1, 0)) as is_2014_donor,SUM(COALESCE(IF(receive_date BETWEEN '2015-07-01' AND '2016-06-30 23:59:59', c.total_amount, 0),0)) as total_2015_2016,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2015-07-01' AND '2016-06-30 23:59:59', 1, 0)) as is_2015_donor,SUM(COALESCE(IF(receive_date BETWEEN '2016-07-01' AND '2017-06-30 23:59:59', c.total_amount, 0),0)) as total_2016_2017,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2016-07-01' AND '2017-06-30 23:59:59', 1, 0)) as is_2016_donor,SUM(COALESCE(IF(receive_date BETWEEN '2017-07-01' AND '2018-06-30 23:59:59', c.total_amount, 0),0)) as total_2017_2018,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2017-07-01' AND '2018-06-30 23:59:59', 1, 0)) as is_2017_donor,SUM(COALESCE(IF(receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', c.total_amount, 0),0)) as total_2018_2019,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', 1, 0)) as is_2018_donor,SUM(COALESCE(IF(receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', c.total_amount, 0),0)) as total_2019_2020,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', 1, 0)) as is_2019_donor,SUM(COALESCE(IF(receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', c.total_amount, 0),0)) as total_2020_2021,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', 1, 0)) as is_2020_donor
+      FROM civicrm_contribution c
+      WHERE contact_id = NEW.contact_id
+        AND contribution_status_id = 1
+    ) as totals
+  LEFT JOIN civicrm_contribution cont ON cont.contact_id = NEW.contact_id
+  AND receive_date = totals.last_donation_date
+  AND contribution_status_id = 1
+  AND total_amount > 0
+  AND trxn_id NOT LIKE 'RFD %'
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
+  LIMIT 1
+
+  ON DUPLICATE KEY UPDATE
+    last_donation_currency = VALUES(last_donation_currency),
+    last_donation_amount = VALUES(last_donation_amount),
+    last_donation_usd = VALUES(last_donation_usd),
+    lifetime_usd_total = VALUES(lifetime_usd_total),
+    last_donation_date = VALUES(last_donation_date),
+    total_2006_2007 = VALUES(total_2006_2007),is_2006_donor = VALUES(is_2006_donor),total_2007_2008 = VALUES(total_2007_2008),is_2007_donor = VALUES(is_2007_donor),total_2008_2009 = VALUES(total_2008_2009),is_2008_donor = VALUES(is_2008_donor),total_2009_2010 = VALUES(total_2009_2010),is_2009_donor = VALUES(is_2009_donor),total_2010_2011 = VALUES(total_2010_2011),is_2010_donor = VALUES(is_2010_donor),total_2011_2012 = VALUES(total_2011_2012),is_2011_donor = VALUES(is_2011_donor),total_2012_2013 = VALUES(total_2012_2013),is_2012_donor = VALUES(is_2012_donor),total_2013_2014 = VALUES(total_2013_2014),is_2013_donor = VALUES(is_2013_donor),total_2014_2015 = VALUES(total_2014_2015),is_2014_donor = VALUES(is_2014_donor),total_2015_2016 = VALUES(total_2015_2016),is_2015_donor = VALUES(is_2015_donor),total_2016_2017 = VALUES(total_2016_2017),is_2016_donor = VALUES(is_2016_donor),total_2017_2018 = VALUES(total_2017_2018),is_2017_donor = VALUES(is_2017_donor),total_2018_2019 = VALUES(total_2018_2019),is_2018_donor = VALUES(is_2018_donor),total_2019_2020 = VALUES(total_2019_2020),is_2019_donor = VALUES(is_2019_donor),total_2020_2021 = VALUES(total_2020_2021),is_2020_donor = VALUES(is_2020_donor); END IF;
+IF (NEW.contact_id <> OLD.contact_id) THEN 
+    INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
+    lifetime_usd_total, last_donation_date, total_2006_2007,is_2006_donor,total_2007_2008,is_2007_donor,total_2008_2009,is_2008_donor,total_2009_2010,is_2009_donor,total_2010_2011,is_2010_donor,total_2011_2012,is_2011_donor,total_2012_2013,is_2012_donor,total_2013_2014,is_2013_donor,total_2014_2015,is_2014_donor,total_2015_2016,is_2015_donor,total_2016_2017,is_2016_donor,total_2017_2018,is_2017_donor,total_2018_2019,is_2018_donor,total_2019_2020,is_2019_donor,total_2020_2021,is_2020_donor)
+
+    SELECT
+      OLD.contact_id as entity_id,
+      COALESCE(x.original_currency, currency) as last_donation_currency,
+      COALESCE(x.original_amount, total_amount, 0) as last_donation_amount,
+      COALESCE(total_amount, 0) as last_donation_usd,
+      totals.*
+
+    FROM (
+      SELECT
+        SUM(COALESCE(total_amount, 0)) AS lifetime_usd_total,
+        MAX(IF(total_amount > 0, receive_date, NULL)) AS last_donation_date,
+     SUM(COALESCE(IF(receive_date BETWEEN '2006-07-01' AND '2007-06-30 23:59:59', c.total_amount, 0),0)) as total_2006_2007,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2006-07-01' AND '2007-06-30 23:59:59', 1, 0)) as is_2006_donor,SUM(COALESCE(IF(receive_date BETWEEN '2007-07-01' AND '2008-06-30 23:59:59', c.total_amount, 0),0)) as total_2007_2008,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2007-07-01' AND '2008-06-30 23:59:59', 1, 0)) as is_2007_donor,SUM(COALESCE(IF(receive_date BETWEEN '2008-07-01' AND '2009-06-30 23:59:59', c.total_amount, 0),0)) as total_2008_2009,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2008-07-01' AND '2009-06-30 23:59:59', 1, 0)) as is_2008_donor,SUM(COALESCE(IF(receive_date BETWEEN '2009-07-01' AND '2010-06-30 23:59:59', c.total_amount, 0),0)) as total_2009_2010,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2009-07-01' AND '2010-06-30 23:59:59', 1, 0)) as is_2009_donor,SUM(COALESCE(IF(receive_date BETWEEN '2010-07-01' AND '2011-06-30 23:59:59', c.total_amount, 0),0)) as total_2010_2011,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2010-07-01' AND '2011-06-30 23:59:59', 1, 0)) as is_2010_donor,SUM(COALESCE(IF(receive_date BETWEEN '2011-07-01' AND '2012-06-30 23:59:59', c.total_amount, 0),0)) as total_2011_2012,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2011-07-01' AND '2012-06-30 23:59:59', 1, 0)) as is_2011_donor,SUM(COALESCE(IF(receive_date BETWEEN '2012-07-01' AND '2013-06-30 23:59:59', c.total_amount, 0),0)) as total_2012_2013,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2012-07-01' AND '2013-06-30 23:59:59', 1, 0)) as is_2012_donor,SUM(COALESCE(IF(receive_date BETWEEN '2013-07-01' AND '2014-06-30 23:59:59', c.total_amount, 0),0)) as total_2013_2014,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2013-07-01' AND '2014-06-30 23:59:59', 1, 0)) as is_2013_donor,SUM(COALESCE(IF(receive_date BETWEEN '2014-07-01' AND '2015-06-30 23:59:59', c.total_amount, 0),0)) as total_2014_2015,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2014-07-01' AND '2015-06-30 23:59:59', 1, 0)) as is_2014_donor,SUM(COALESCE(IF(receive_date BETWEEN '2015-07-01' AND '2016-06-30 23:59:59', c.total_amount, 0),0)) as total_2015_2016,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2015-07-01' AND '2016-06-30 23:59:59', 1, 0)) as is_2015_donor,SUM(COALESCE(IF(receive_date BETWEEN '2016-07-01' AND '2017-06-30 23:59:59', c.total_amount, 0),0)) as total_2016_2017,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2016-07-01' AND '2017-06-30 23:59:59', 1, 0)) as is_2016_donor,SUM(COALESCE(IF(receive_date BETWEEN '2017-07-01' AND '2018-06-30 23:59:59', c.total_amount, 0),0)) as total_2017_2018,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2017-07-01' AND '2018-06-30 23:59:59', 1, 0)) as is_2017_donor,SUM(COALESCE(IF(receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', c.total_amount, 0),0)) as total_2018_2019,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', 1, 0)) as is_2018_donor,SUM(COALESCE(IF(receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', c.total_amount, 0),0)) as total_2019_2020,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', 1, 0)) as is_2019_donor,SUM(COALESCE(IF(receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', c.total_amount, 0),0)) as total_2020_2021,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', 1, 0)) as is_2020_donor
+      FROM civicrm_contribution c
+      WHERE contact_id = OLD.contact_id
+        AND contribution_status_id = 1
+    ) as totals
+  LEFT JOIN civicrm_contribution cont ON cont.contact_id = OLD.contact_id
+  AND receive_date = totals.last_donation_date
+  AND contribution_status_id = 1
+  AND total_amount > 0
+  AND trxn_id NOT LIKE 'RFD %'
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
+  LIMIT 1
+
+  ON DUPLICATE KEY UPDATE
+    last_donation_currency = VALUES(last_donation_currency),
+    last_donation_amount = VALUES(last_donation_amount),
+    last_donation_usd = VALUES(last_donation_usd),
+    lifetime_usd_total = VALUES(lifetime_usd_total),
+    last_donation_date = VALUES(last_donation_date),
+    total_2006_2007 = VALUES(total_2006_2007),is_2006_donor = VALUES(is_2006_donor),total_2007_2008 = VALUES(total_2007_2008),is_2007_donor = VALUES(is_2007_donor),total_2008_2009 = VALUES(total_2008_2009),is_2008_donor = VALUES(is_2008_donor),total_2009_2010 = VALUES(total_2009_2010),is_2009_donor = VALUES(is_2009_donor),total_2010_2011 = VALUES(total_2010_2011),is_2010_donor = VALUES(is_2010_donor),total_2011_2012 = VALUES(total_2011_2012),is_2011_donor = VALUES(is_2011_donor),total_2012_2013 = VALUES(total_2012_2013),is_2012_donor = VALUES(is_2012_donor),total_2013_2014 = VALUES(total_2013_2014),is_2013_donor = VALUES(is_2013_donor),total_2014_2015 = VALUES(total_2014_2015),is_2014_donor = VALUES(is_2014_donor),total_2015_2016 = VALUES(total_2015_2016),is_2015_donor = VALUES(is_2015_donor),total_2016_2017 = VALUES(total_2016_2017),is_2016_donor = VALUES(is_2016_donor),total_2017_2018 = VALUES(total_2017_2018),is_2017_donor = VALUES(is_2017_donor),total_2018_2019 = VALUES(total_2018_2019),is_2018_donor = VALUES(is_2018_donor),total_2019_2020 = VALUES(total_2019_2020),is_2019_donor = VALUES(is_2019_donor),total_2020_2021 = VALUES(total_2020_2021),is_2020_donor = VALUES(is_2020_donor); END IF; END //
 DELIMITER ;
 
 DELIMITER //
@@ -4089,7 +4146,42 @@ DROP TRIGGER IF EXISTS civicrm_contribution_after_delete //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contribution FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`contact_id`, OLD.`financial_type_id`, OLD.`contribution_page_id`, OLD.`payment_instrument_id`, OLD.`receive_date`, OLD.`non_deductible_amount`, OLD.`total_amount`, OLD.`fee_amount`, OLD.`net_amount`, OLD.`trxn_id`, OLD.`invoice_id`, OLD.`currency`, OLD.`cancel_date`, OLD.`cancel_reason`, OLD.`receipt_date`, OLD.`thankyou_date`, OLD.`source`, OLD.`amount_level`, OLD.`contribution_recur_id`, OLD.`is_test`, OLD.`is_pay_later`, OLD.`contribution_status_id`, OLD.`note`, OLD.`address_id`, OLD.`check_number`, OLD.`campaign_id`, OLD.`tax_amount`, OLD.`creditnote_id`, OLD.`revenue_recognition_date`, OLD.`invoice_number`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
+CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contribution FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`contact_id`, OLD.`financial_type_id`, OLD.`contribution_page_id`, OLD.`payment_instrument_id`, OLD.`receive_date`, OLD.`non_deductible_amount`, OLD.`total_amount`, OLD.`fee_amount`, OLD.`net_amount`, OLD.`trxn_id`, OLD.`invoice_id`, OLD.`currency`, OLD.`cancel_date`, OLD.`cancel_reason`, OLD.`receipt_date`, OLD.`thankyou_date`, OLD.`source`, OLD.`amount_level`, OLD.`contribution_recur_id`, OLD.`is_test`, OLD.`is_pay_later`, OLD.`contribution_status_id`, OLD.`note`, OLD.`address_id`, OLD.`check_number`, OLD.`campaign_id`, OLD.`tax_amount`, OLD.`creditnote_id`, OLD.`revenue_recognition_date`, OLD.`invoice_number`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
+
+    INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
+    lifetime_usd_total, last_donation_date, total_2006_2007,is_2006_donor,total_2007_2008,is_2007_donor,total_2008_2009,is_2008_donor,total_2009_2010,is_2009_donor,total_2010_2011,is_2010_donor,total_2011_2012,is_2011_donor,total_2012_2013,is_2012_donor,total_2013_2014,is_2013_donor,total_2014_2015,is_2014_donor,total_2015_2016,is_2015_donor,total_2016_2017,is_2016_donor,total_2017_2018,is_2017_donor,total_2018_2019,is_2018_donor,total_2019_2020,is_2019_donor,total_2020_2021,is_2020_donor)
+
+    SELECT
+      OLD.contact_id as entity_id,
+      COALESCE(x.original_currency, currency) as last_donation_currency,
+      COALESCE(x.original_amount, total_amount, 0) as last_donation_amount,
+      COALESCE(total_amount, 0) as last_donation_usd,
+      totals.*
+
+    FROM (
+      SELECT
+        SUM(COALESCE(total_amount, 0)) AS lifetime_usd_total,
+        MAX(IF(total_amount > 0, receive_date, NULL)) AS last_donation_date,
+     SUM(COALESCE(IF(receive_date BETWEEN '2006-07-01' AND '2007-06-30 23:59:59', c.total_amount, 0),0)) as total_2006_2007,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2006-07-01' AND '2007-06-30 23:59:59', 1, 0)) as is_2006_donor,SUM(COALESCE(IF(receive_date BETWEEN '2007-07-01' AND '2008-06-30 23:59:59', c.total_amount, 0),0)) as total_2007_2008,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2007-07-01' AND '2008-06-30 23:59:59', 1, 0)) as is_2007_donor,SUM(COALESCE(IF(receive_date BETWEEN '2008-07-01' AND '2009-06-30 23:59:59', c.total_amount, 0),0)) as total_2008_2009,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2008-07-01' AND '2009-06-30 23:59:59', 1, 0)) as is_2008_donor,SUM(COALESCE(IF(receive_date BETWEEN '2009-07-01' AND '2010-06-30 23:59:59', c.total_amount, 0),0)) as total_2009_2010,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2009-07-01' AND '2010-06-30 23:59:59', 1, 0)) as is_2009_donor,SUM(COALESCE(IF(receive_date BETWEEN '2010-07-01' AND '2011-06-30 23:59:59', c.total_amount, 0),0)) as total_2010_2011,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2010-07-01' AND '2011-06-30 23:59:59', 1, 0)) as is_2010_donor,SUM(COALESCE(IF(receive_date BETWEEN '2011-07-01' AND '2012-06-30 23:59:59', c.total_amount, 0),0)) as total_2011_2012,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2011-07-01' AND '2012-06-30 23:59:59', 1, 0)) as is_2011_donor,SUM(COALESCE(IF(receive_date BETWEEN '2012-07-01' AND '2013-06-30 23:59:59', c.total_amount, 0),0)) as total_2012_2013,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2012-07-01' AND '2013-06-30 23:59:59', 1, 0)) as is_2012_donor,SUM(COALESCE(IF(receive_date BETWEEN '2013-07-01' AND '2014-06-30 23:59:59', c.total_amount, 0),0)) as total_2013_2014,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2013-07-01' AND '2014-06-30 23:59:59', 1, 0)) as is_2013_donor,SUM(COALESCE(IF(receive_date BETWEEN '2014-07-01' AND '2015-06-30 23:59:59', c.total_amount, 0),0)) as total_2014_2015,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2014-07-01' AND '2015-06-30 23:59:59', 1, 0)) as is_2014_donor,SUM(COALESCE(IF(receive_date BETWEEN '2015-07-01' AND '2016-06-30 23:59:59', c.total_amount, 0),0)) as total_2015_2016,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2015-07-01' AND '2016-06-30 23:59:59', 1, 0)) as is_2015_donor,SUM(COALESCE(IF(receive_date BETWEEN '2016-07-01' AND '2017-06-30 23:59:59', c.total_amount, 0),0)) as total_2016_2017,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2016-07-01' AND '2017-06-30 23:59:59', 1, 0)) as is_2016_donor,SUM(COALESCE(IF(receive_date BETWEEN '2017-07-01' AND '2018-06-30 23:59:59', c.total_amount, 0),0)) as total_2017_2018,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2017-07-01' AND '2018-06-30 23:59:59', 1, 0)) as is_2017_donor,SUM(COALESCE(IF(receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', c.total_amount, 0),0)) as total_2018_2019,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', 1, 0)) as is_2018_donor,SUM(COALESCE(IF(receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', c.total_amount, 0),0)) as total_2019_2020,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', 1, 0)) as is_2019_donor,SUM(COALESCE(IF(receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', c.total_amount, 0),0)) as total_2020_2021,MAX(IF(total_amount > 0 AND receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', 1, 0)) as is_2020_donor
+      FROM civicrm_contribution c
+      WHERE contact_id = OLD.contact_id
+        AND contribution_status_id = 1
+    ) as totals
+  LEFT JOIN civicrm_contribution cont ON cont.contact_id = OLD.contact_id
+  AND receive_date = totals.last_donation_date
+  AND contribution_status_id = 1
+  AND total_amount > 0
+  AND trxn_id NOT LIKE 'RFD %'
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
+  LIMIT 1
+
+  ON DUPLICATE KEY UPDATE
+    last_donation_currency = VALUES(last_donation_currency),
+    last_donation_amount = VALUES(last_donation_amount),
+    last_donation_usd = VALUES(last_donation_usd),
+    lifetime_usd_total = VALUES(lifetime_usd_total),
+    last_donation_date = VALUES(last_donation_date),
+    total_2006_2007 = VALUES(total_2006_2007),is_2006_donor = VALUES(is_2006_donor),total_2007_2008 = VALUES(total_2007_2008),is_2007_donor = VALUES(is_2007_donor),total_2008_2009 = VALUES(total_2008_2009),is_2008_donor = VALUES(is_2008_donor),total_2009_2010 = VALUES(total_2009_2010),is_2009_donor = VALUES(is_2009_donor),total_2010_2011 = VALUES(total_2010_2011),is_2010_donor = VALUES(is_2010_donor),total_2011_2012 = VALUES(total_2011_2012),is_2011_donor = VALUES(is_2011_donor),total_2012_2013 = VALUES(total_2012_2013),is_2012_donor = VALUES(is_2012_donor),total_2013_2014 = VALUES(total_2013_2014),is_2013_donor = VALUES(is_2013_donor),total_2014_2015 = VALUES(total_2014_2015),is_2014_donor = VALUES(is_2014_donor),total_2015_2016 = VALUES(total_2015_2016),is_2015_donor = VALUES(is_2015_donor),total_2016_2017 = VALUES(total_2016_2017),is_2016_donor = VALUES(is_2016_donor),total_2017_2018 = VALUES(total_2017_2018),is_2017_donor = VALUES(is_2017_donor),total_2018_2019 = VALUES(total_2018_2019),is_2018_donor = VALUES(is_2018_donor),total_2019_2020 = VALUES(total_2019_2020),is_2019_donor = VALUES(is_2019_donor),total_2020_2021 = VALUES(total_2020_2021),is_2020_donor = VALUES(is_2020_donor); END //
 DELIMITER ;
 
 DELIMITER //
@@ -4891,6 +4983,30 @@ DELIMITER ;
 
 DELIMITER //
 CREATE TRIGGER civicrm_financial_type_after_delete after delete ON civicrm_financial_type FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_financial_type (`id`, `name`, `description`, `is_deductible`, `is_reserved`, `is_active`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`name`, OLD.`description`, OLD.`is_deductible`, OLD.`is_reserved`, OLD.`is_active`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_geocoder_after_insert //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER civicrm_geocoder_after_insert after insert ON civicrm_geocoder FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_geocoder (`id`, `name`, `title`, `class`, `is_active`, `weight`, `api_key`, `url`, `required_fields`, `retained_response_fields`, `datafill_response_fields`, `threshold_standdown`, `threshold_last_hit`, `valid_countries`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`name`, NEW.`title`, NEW.`class`, NEW.`is_active`, NEW.`weight`, NEW.`api_key`, NEW.`url`, NEW.`required_fields`, NEW.`retained_response_fields`, NEW.`datafill_response_fields`, NEW.`threshold_standdown`, NEW.`threshold_last_hit`, NEW.`valid_countries`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF; END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_geocoder_after_update //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER civicrm_geocoder_after_update after update ON civicrm_geocoder FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`name`,'') <> IFNULL(NEW.`name`,'') OR IFNULL(OLD.`title`,'') <> IFNULL(NEW.`title`,'') OR IFNULL(OLD.`class`,'') <> IFNULL(NEW.`class`,'') OR IFNULL(OLD.`is_active`,'') <> IFNULL(NEW.`is_active`,'') OR IFNULL(OLD.`weight`,'') <> IFNULL(NEW.`weight`,'') OR IFNULL(OLD.`api_key`,'') <> IFNULL(NEW.`api_key`,'') OR IFNULL(OLD.`url`,'') <> IFNULL(NEW.`url`,'') OR IFNULL(OLD.`required_fields`,'') <> IFNULL(NEW.`required_fields`,'') OR IFNULL(OLD.`retained_response_fields`,'') <> IFNULL(NEW.`retained_response_fields`,'') OR IFNULL(OLD.`datafill_response_fields`,'') <> IFNULL(NEW.`datafill_response_fields`,'') OR IFNULL(OLD.`threshold_standdown`,'') <> IFNULL(NEW.`threshold_standdown`,'') OR IFNULL(OLD.`threshold_last_hit`,'') <> IFNULL(NEW.`threshold_last_hit`,'') OR IFNULL(OLD.`valid_countries`,'') <> IFNULL(NEW.`valid_countries`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_geocoder (`id`, `name`, `title`, `class`, `is_active`, `weight`, `api_key`, `url`, `required_fields`, `retained_response_fields`, `datafill_response_fields`, `threshold_standdown`, `threshold_last_hit`, `valid_countries`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`name`, NEW.`title`, NEW.`class`, NEW.`is_active`, NEW.`weight`, NEW.`api_key`, NEW.`url`, NEW.`required_fields`, NEW.`retained_response_fields`, NEW.`datafill_response_fields`, NEW.`threshold_standdown`, NEW.`threshold_last_hit`, NEW.`valid_countries`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_geocoder_after_delete //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER civicrm_geocoder_after_delete after delete ON civicrm_geocoder FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_geocoder (`id`, `name`, `title`, `class`, `is_active`, `weight`, `api_key`, `url`, `required_fields`, `retained_response_fields`, `datafill_response_fields`, `threshold_standdown`, `threshold_last_hit`, `valid_countries`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`name`, OLD.`title`, OLD.`class`, OLD.`is_active`, OLD.`weight`, OLD.`api_key`, OLD.`url`, OLD.`required_fields`, OLD.`retained_response_fields`, OLD.`datafill_response_fields`, OLD.`threshold_standdown`, OLD.`threshold_last_hit`, OLD.`valid_countries`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
 DELIMITER ;
 
 DELIMITER //
@@ -6895,15 +7011,6 @@ CREATE TRIGGER civicrm_value_1_gift_data_7_after_delete after delete ON civicrm_
 DELIMITER ;
 
 DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_language_after_insert //
-DELIMITER ;
-
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_1_language_after_update //
-DELIMITER ;
-
-DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_value_1_primary_contact_name_9_after_insert //
 DELIMITER ;
 
@@ -7213,39 +7320,6 @@ CREATE TRIGGER civicrm_worldregion_after_delete after delete ON civicrm_worldreg
 DELIMITER ;
 
 DELIMITER //
-DROP TRIGGER IF EXISTS wmf_donor_after_insert //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER wmf_donor_after_insert after insert ON wmf_donor FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_wmf_donor (`id`, `entity_id`, `do_not_solicit`, `is_2006_donor`, `is_2007_donor`, `is_2008_donor`, `is_2009_donor`, `is_2010_donor`, `is_2011_donor`, `is_2012_donor`, `is_2013_donor`, `is_2014_donor`, `is_2015_donor`, `is_2016_donor`, `is_2017_donor`, `is_2018_donor`, `is_2019_donor`, `is_2020_donor`, `is_2021_donor`, `is_2022_donor`, `is_2023_donor`, `is_2024_donor`, `is_2025_donor`, `last_donation_date`, `last_donation_currency`, `last_donation_amount`, `last_donation_usd`, `lifetime_usd_total`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`do_not_solicit`, NEW.`is_2006_donor`, NEW.`is_2007_donor`, NEW.`is_2008_donor`, NEW.`is_2009_donor`, NEW.`is_2010_donor`, NEW.`is_2011_donor`, NEW.`is_2012_donor`, NEW.`is_2013_donor`, NEW.`is_2014_donor`, NEW.`is_2015_donor`, NEW.`is_2016_donor`, NEW.`is_2017_donor`, NEW.`is_2018_donor`, NEW.`is_2019_donor`, NEW.`is_2020_donor`, NEW.`is_2021_donor`, NEW.`is_2022_donor`, NEW.`is_2023_donor`, NEW.`is_2024_donor`, NEW.`is_2025_donor`, NEW.`last_donation_date`, NEW.`last_donation_currency`, NEW.`last_donation_amount`, NEW.`last_donation_usd`, NEW.`lifetime_usd_total`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
-
-UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
- END //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS wmf_donor_after_update //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER wmf_donor_after_update after update ON wmf_donor FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`do_not_solicit`,'') <> IFNULL(NEW.`do_not_solicit`,'') OR IFNULL(OLD.`is_2006_donor`,'') <> IFNULL(NEW.`is_2006_donor`,'') OR IFNULL(OLD.`is_2007_donor`,'') <> IFNULL(NEW.`is_2007_donor`,'') OR IFNULL(OLD.`is_2008_donor`,'') <> IFNULL(NEW.`is_2008_donor`,'') OR IFNULL(OLD.`is_2009_donor`,'') <> IFNULL(NEW.`is_2009_donor`,'') OR IFNULL(OLD.`is_2010_donor`,'') <> IFNULL(NEW.`is_2010_donor`,'') OR IFNULL(OLD.`is_2011_donor`,'') <> IFNULL(NEW.`is_2011_donor`,'') OR IFNULL(OLD.`is_2012_donor`,'') <> IFNULL(NEW.`is_2012_donor`,'') OR IFNULL(OLD.`is_2013_donor`,'') <> IFNULL(NEW.`is_2013_donor`,'') OR IFNULL(OLD.`is_2014_donor`,'') <> IFNULL(NEW.`is_2014_donor`,'') OR IFNULL(OLD.`is_2015_donor`,'') <> IFNULL(NEW.`is_2015_donor`,'') OR IFNULL(OLD.`is_2016_donor`,'') <> IFNULL(NEW.`is_2016_donor`,'') OR IFNULL(OLD.`is_2017_donor`,'') <> IFNULL(NEW.`is_2017_donor`,'') OR IFNULL(OLD.`is_2018_donor`,'') <> IFNULL(NEW.`is_2018_donor`,'') OR IFNULL(OLD.`is_2019_donor`,'') <> IFNULL(NEW.`is_2019_donor`,'') OR IFNULL(OLD.`is_2020_donor`,'') <> IFNULL(NEW.`is_2020_donor`,'') OR IFNULL(OLD.`is_2021_donor`,'') <> IFNULL(NEW.`is_2021_donor`,'') OR IFNULL(OLD.`is_2022_donor`,'') <> IFNULL(NEW.`is_2022_donor`,'') OR IFNULL(OLD.`is_2023_donor`,'') <> IFNULL(NEW.`is_2023_donor`,'') OR IFNULL(OLD.`is_2024_donor`,'') <> IFNULL(NEW.`is_2024_donor`,'') OR IFNULL(OLD.`is_2025_donor`,'') <> IFNULL(NEW.`is_2025_donor`,'') OR IFNULL(OLD.`last_donation_date`,'') <> IFNULL(NEW.`last_donation_date`,'') OR IFNULL(OLD.`last_donation_currency`,'') <> IFNULL(NEW.`last_donation_currency`,'') OR IFNULL(OLD.`last_donation_amount`,'') <> IFNULL(NEW.`last_donation_amount`,'') OR IFNULL(OLD.`last_donation_usd`,'') <> IFNULL(NEW.`last_donation_usd`,'') OR IFNULL(OLD.`lifetime_usd_total`,'') <> IFNULL(NEW.`lifetime_usd_total`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_wmf_donor (`id`, `entity_id`, `do_not_solicit`, `is_2006_donor`, `is_2007_donor`, `is_2008_donor`, `is_2009_donor`, `is_2010_donor`, `is_2011_donor`, `is_2012_donor`, `is_2013_donor`, `is_2014_donor`, `is_2015_donor`, `is_2016_donor`, `is_2017_donor`, `is_2018_donor`, `is_2019_donor`, `is_2020_donor`, `is_2021_donor`, `is_2022_donor`, `is_2023_donor`, `is_2024_donor`, `is_2025_donor`, `last_donation_date`, `last_donation_currency`, `last_donation_amount`, `last_donation_usd`, `lifetime_usd_total`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`do_not_solicit`, NEW.`is_2006_donor`, NEW.`is_2007_donor`, NEW.`is_2008_donor`, NEW.`is_2009_donor`, NEW.`is_2010_donor`, NEW.`is_2011_donor`, NEW.`is_2012_donor`, NEW.`is_2013_donor`, NEW.`is_2014_donor`, NEW.`is_2015_donor`, NEW.`is_2016_donor`, NEW.`is_2017_donor`, NEW.`is_2018_donor`, NEW.`is_2019_donor`, NEW.`is_2020_donor`, NEW.`is_2021_donor`, NEW.`is_2022_donor`, NEW.`is_2023_donor`, NEW.`is_2024_donor`, NEW.`is_2025_donor`, NEW.`last_donation_date`, NEW.`last_donation_currency`, NEW.`last_donation_amount`, NEW.`last_donation_usd`, NEW.`lifetime_usd_total`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
-
-UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
- END //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS wmf_donor_after_delete //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER wmf_donor_after_delete after delete ON wmf_donor FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_wmf_donor (`id`, `entity_id`, `do_not_solicit`, `is_2006_donor`, `is_2007_donor`, `is_2008_donor`, `is_2009_donor`, `is_2010_donor`, `is_2011_donor`, `is_2012_donor`, `is_2013_donor`, `is_2014_donor`, `is_2015_donor`, `is_2016_donor`, `is_2017_donor`, `is_2018_donor`, `is_2019_donor`, `is_2020_donor`, `is_2021_donor`, `is_2022_donor`, `is_2023_donor`, `is_2024_donor`, `is_2025_donor`, `last_donation_date`, `last_donation_currency`, `last_donation_amount`, `last_donation_usd`, `lifetime_usd_total`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`do_not_solicit`, OLD.`is_2006_donor`, OLD.`is_2007_donor`, OLD.`is_2008_donor`, OLD.`is_2009_donor`, OLD.`is_2010_donor`, OLD.`is_2011_donor`, OLD.`is_2012_donor`, OLD.`is_2013_donor`, OLD.`is_2014_donor`, OLD.`is_2015_donor`, OLD.`is_2016_donor`, OLD.`is_2017_donor`, OLD.`is_2018_donor`, OLD.`is_2019_donor`, OLD.`is_2020_donor`, OLD.`is_2021_donor`, OLD.`is_2022_donor`, OLD.`is_2023_donor`, OLD.`is_2024_donor`, OLD.`is_2025_donor`, OLD.`last_donation_date`, OLD.`last_donation_currency`, OLD.`last_donation_amount`, OLD.`last_donation_usd`, OLD.`lifetime_usd_total`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
-
-UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.entity_id;
- END //
-DELIMITER ;
-
-DELIMITER //
 DROP TRIGGER IF EXISTS wmf_contribution_extra_after_insert //
 DELIMITER ;
 
@@ -7267,4 +7341,34 @@ DELIMITER ;
 
 DELIMITER //
 CREATE TRIGGER wmf_contribution_extra_after_delete after delete ON wmf_contribution_extra FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_wmf_contribution_extra (`id`, `entity_id`, `settlement_date`, `total_usd`, `gateway_account`, `gateway`, `gateway_txn_id`, `gateway_status_raw`, `gateway_date`, `original_amount`, `original_currency`, `settlement_usd`, `settlement_currency`, `deposit_date`, `deposit_usd`, `deposit_currency`, `parent_contribution_id`, `finance_only`, `postmark_date`, `source_name`, `source_type`, `source_host`, `source_run_id`, `source_version`, `source_enqueued_time`, `no_thank_you`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`settlement_date`, OLD.`total_usd`, OLD.`gateway_account`, OLD.`gateway`, OLD.`gateway_txn_id`, OLD.`gateway_status_raw`, OLD.`gateway_date`, OLD.`original_amount`, OLD.`original_currency`, OLD.`settlement_usd`, OLD.`settlement_currency`, OLD.`deposit_date`, OLD.`deposit_usd`, OLD.`deposit_currency`, OLD.`parent_contribution_id`, OLD.`finance_only`, OLD.`postmark_date`, OLD.`source_name`, OLD.`source_type`, OLD.`source_host`, OLD.`source_run_id`, OLD.`source_version`, OLD.`source_enqueued_time`, OLD.`no_thank_you`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS wmf_donor_after_insert //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER wmf_donor_after_insert after insert ON wmf_donor FOR EACH ROW BEGIN  
+UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
+ END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS wmf_donor_after_update //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER wmf_donor_after_update after update ON wmf_donor FOR EACH ROW BEGIN  
+UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
+ END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS wmf_donor_after_delete //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER wmf_donor_after_delete after delete ON wmf_donor FOR EACH ROW BEGIN  
+UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.entity_id;
+ END //
 DELIMITER ;
