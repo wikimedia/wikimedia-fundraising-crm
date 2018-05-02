@@ -200,18 +200,30 @@ function wmf_civicrm_contribution_message_import(&$msg) {
   $msg = wmf_civicrm_verify_message_and_stage($msg);
 
   // Associate with existing recurring records
-  if ($msg['recurring']
-    && (!$msg['contribution_recur_id'] && empty($msg['recurring_payment_token']))
-  ) {
-    if ($msg['subscr_id']) {
+  if ($msg['recurring'] && !$msg['contribution_recur_id']) {
+    if (!empty($msg['recurring_payment_token'])) {
+      $token_record = wmf_civicrm_get_recurring_payment_token(
+        $msg['gateway'], $msg['recurring_payment_token']
+      );
+      if ($token_record) {
+        watchdog(
+          'queue2civicrm_import',
+          'Found matching recurring payment token: ' . $msg['recurring_payment_token'],
+          NULL,
+          WATCHDOG_INFO
+        );
+        $msg['contact_id'] = $token_record['contact_id'];
+        $msg['payment_token_id'] = $token_record['id'];
+        $msg['payment_processor_id'] = $token_record['payment_processor_id'];
+      }
+    } elseif($msg['subscr_id']) {
       $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
       if ($recur_record) {
         watchdog('queue2civicrm_import', 'Found matching recurring record for subscr_id: ' . $msg['subscr_id'], NULL, WATCHDOG_INFO);
         $msg['contribution_recur_id'] = $recur_record->id;
         $msg['contact_id'] = $recur_record->contact_id;
       }
-    }
-    else {
+    } else {
       throw new WmfException('INVALID_MESSAGE', 'Recurring donation, but no subscription ID or recurring payment token found.');
     }
   }
@@ -3398,6 +3410,12 @@ function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
   switch ($op) {
     case 'create':
     case 'edit':
+      if (WmfDatabase::isNativeTxnRolledBack()) {
+        throw new WmfException(
+          'IMPORT_CONTRIB',
+          'Native txn rolled back before running post contribution hook'
+        );
+      }
       $extra = array();
 
       if ($contribution->trxn_id) {
