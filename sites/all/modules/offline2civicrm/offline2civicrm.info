@@ -18,6 +18,7 @@ files[] = EmptyRowException.php
 files[] = ForeignChecksFile.php
 files[] = IgnoredRowException.php
 files[] = JpMorganFile.php
+files[] = BitpayFile.php
 files[] = BenevityFile.php
 files[] = CitibankFile.php
 files[] = PayPalChecksFile.php
