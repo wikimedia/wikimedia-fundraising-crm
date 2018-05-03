@@ -4246,7 +4246,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   AND receive_date = totals.last_donation_date
   AND contribution_status_id = 1
   AND total_amount > 0
-  AND trxn_id NOT LIKE 'RFD %'
+  AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
   LIMIT 1
 
