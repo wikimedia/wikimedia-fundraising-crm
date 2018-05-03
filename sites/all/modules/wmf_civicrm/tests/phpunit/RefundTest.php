@@ -169,8 +169,9 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertCustomFieldValues($this->contact_id, [
       'lifetime_usd_total' => 40,
       'last_donation_date' => '2014-11-01',
-      'last_donation_amount' => 0,
-      'last_donation_usd' => 0,
+      'last_donation_amount' => 50,
+      'last_donation_usd' => 50,
+      'last_donation_currency' => 'USD',
       'is_2014_donor' => 1,
       'is_2015_donor' => 0,
       'is_' . date('Y') . '_donor' => 0,
