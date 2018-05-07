@@ -73,5 +73,10 @@
         "merge-extra-deep": false,
         "merge-scripts": false
       }
+    },
+    "config": {
+      "platform": {
+        "php": "5.6.33"
+      }
     }
 }
