@@ -55,7 +55,7 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 				$errorMessage = "Message {$message['gateway']}-{$message['gateway_txn_id']} " .
 					"indicates a pending DB entry with order ID {$message['order_id']}, " .
 					"but none was found.  Requeueing.";
-				throw new WmfException( 'MISSING_PREDECESSOR', $errorMessage );
+				throw new WmfException( WmfException::MISSING_PREDECESSOR, $errorMessage );
 			}
 		}
 

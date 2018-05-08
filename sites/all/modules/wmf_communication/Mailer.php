@@ -128,7 +128,7 @@ abstract class MailerBase {
 
         if ( $email['plaintext'] === false ) {
             watchdog( 'thank_you', "Text rendering of template failed in {$email['locale']}.", array(), WATCHDOG_ERROR );
-            throw new WmfException( 'RENDER', "Could not render plaintext" );
+            throw new WmfException( WmfException::UNKNOWN, "Could not render plaintext" );
         }
     }
 

@@ -285,7 +285,7 @@ function thank_you_for_contribution( $contribution_id ) {
 	if( !$found ){
 		// the API result is bad
 		$msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r( $mailingData, true ) . '</pre>';
-		throw new WmfException( 'GET_CONTRIBUTION', $msg );
+		throw new WmfException( WmfException::GET_CONTRIBUTION, $msg );
 	}
 	$mailingData = $mailingData->toArray();
 
@@ -367,7 +367,7 @@ function thank_you_for_contribution( $contribution_id ) {
 		return true;
     } else {
 		$msg = "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'];
-		throw new WmfException( 'BAD_EMAIL', $msg );
+		throw new WmfException( WmfException::BAD_EMAIL, $msg );
     }
 }
 
@@ -445,7 +445,7 @@ function thank_you_send_mail( $params ) {
         $as_list = implode( ', ', $missing );
         watchdog( 'thank_you', "Missing stuff from the TY params: {$as_list} " . check_plain(print_r( $params, true )), array(), WATCHDOG_ERROR );
         $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
-        throw new WmfException( 'MISSING_MANDATORY_DATA', $msg );
+        throw new WmfException( WmfException::MISSING_MANDATORY_DATA, $msg );
     }
 
 	$email = array(
@@ -461,7 +461,7 @@ function thank_you_send_mail( $params ) {
   list($html, $subject) = thank_you_render($params);
 	if(!$html || !$subject){
 		$msg = "HTML rendering of template failed in {$params['locale']}.";
-		throw new WmfException( 'UNKNOWN', $msg, array('thank_you_params' => $params) );
+		throw new WmfException( WmfException::UNKNOWN, $msg, array('thank_you_params' => $params) );
 	}
 
   $email['html'] = $html;
@@ -514,7 +514,7 @@ function thank_you_send_mail( $params ) {
 			$msg = "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n"
 				. __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n"
 				. $e->getTraceAsString();
-			throw new WmfException( 'EMAIL_SYSTEM_FAILURE', $msg, $debug );
+			throw new WmfException( WmfException::EMAIL_SYSTEM_FAILURE, $msg, $debug );
 		}
 
         return false;
@@ -528,7 +528,7 @@ function thank_you_send_mail( $params ) {
 		$msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
 			. "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
 
-		throw new WmfException( 'EMAIL_SYSTEM_FAILURE', $msg, $debug );
+		throw new WmfException( WmfException::EMAIL_SYSTEM_FAILURE, $msg, $debug );
 	}
 }
 
@@ -828,7 +828,7 @@ EOT;
 					// Make an exception for failmail with the updated message,
 					// but avoid doubling the type prefix.
 					$logMessage = substr( $logMessage, strlen( $errName ) + 1 );
-					$mailException = new WmfException( $errName, $logMessage );
+					$mailException = new WmfException( $ex->getCode(), $logMessage );
 
 					// Failmail also logs a WATCHDOG_ERROR
 					wmf_common_failmail( 'thank_you', '', $mailException );

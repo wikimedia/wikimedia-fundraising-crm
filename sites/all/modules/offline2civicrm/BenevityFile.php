@@ -125,7 +125,7 @@ class BenevityFile extends ChecksFile {
       }
     }
     if (count($failed) === 3) {
-      throw new WmfException('CIVI_REQ_FIELD', t("Missing required fields @keys during check import", array("@keys" => implode(", ", $failed))));
+      throw new WmfException(WmfException::CIVI_REQ_FIELD, t("Missing required fields @keys during check import", array("@keys" => implode(", ", $failed))));
     }
   }
 
@@ -249,7 +249,7 @@ class BenevityFile extends ChecksFile {
       return \Civi::$statics[__CLASS__]['organization'][$organizationName];
     }
     throw new WmfException(
-      'IMPORT_CONTRIB',
+      WmfException::IMPORT_CONTRIB,
       t("Did not find exactly one Organization with the details: @organizationName. You will need to ensure a single Organization record exists for the contact first",
         array(
           '@organizationName' => $organizationName,
@@ -280,7 +280,7 @@ class BenevityFile extends ChecksFile {
         return $this->getAnonymousContactID();
       } catch (CiviCRM_API3_Exception $e) {
         throw new WmfException(
-          'IMPORT_CONTRIB',
+          WmfException::IMPORT_CONTRIB,
           t("The donation is anonymous but the anonymous contact is ambiguous. Ensure exactly one contact is in CiviCRM with the email fakeemail@wikimedia.org' and first name and last name being Anonymous "
           )
         );
@@ -326,7 +326,7 @@ class BenevityFile extends ChecksFile {
       return FALSE;
     }
     catch (CiviCRM_API3_Exception $e) {
-      throw new WmfException('IMPORT_CONTRIB', $e->getMessage());
+      throw new WmfException(WmfException::IMPORT_CONTRIB, $e->getMessage());
     }
   }
 
@@ -448,7 +448,7 @@ class BenevityFile extends ChecksFile {
       // and should throw an exception.
       $duplicates = ($main ? 1 : 0) + ($matched ? 1 : 0);
       if ($duplicates === 1) {
-        throw new WmfException('INVALID_MESSAGE', 'row has already been partially imported');
+        throw new WmfException(WmfException::INVALID_MESSAGE, 'row has already been partially imported');
       }
     }
     return $main ? $main : $matched;

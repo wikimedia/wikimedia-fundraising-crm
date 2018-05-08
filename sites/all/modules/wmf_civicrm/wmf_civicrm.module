@@ -124,7 +124,7 @@ function wmf_civicrm_settle($contribution, $settled_timestamp = NULL) {
 
     $contribution_result = civicrm_api("Contribution", "Create", $contribution);
     if (array_key_exists('is_error', $contribution_result) && $contribution_result['is_error'] != 0) {
-      throw new WmfException("IMPORT_CONTRIB", "Couldn't update contribution with new settlement info. Original error: {$contribution_result['error_message']}. txn_id: {$contribution['trxn_id']}");
+      throw new WmfException(WmfException::IMPORT_CONTRIB, "Couldn't update contribution with new settlement info. Original error: {$contribution_result['error_message']}. txn_id: {$contribution['trxn_id']}");
     }
   }
 
@@ -160,7 +160,7 @@ function wmf_civicrm_set_custom_field_values($entity_id, $map, $group_name = NUL
   }
   $result = CRM_Core_BAO_CustomValueTable::setValues($params);
   if (!empty($result['is_error'])) {
-    throw new WmfException('CIVI_CONFIG',
+    throw new WmfException(WmfException::CIVI_CONFIG,
       t('Failed to set custom values: id !id, error: !err', array(
         '!id' => $entity_id,
         '!err' => $result['error_message'],
@@ -224,7 +224,7 @@ function wmf_civicrm_contribution_message_import(&$msg) {
         $msg['contact_id'] = $recur_record->contact_id;
       }
     } else {
-      throw new WmfException('INVALID_MESSAGE', 'Recurring donation, but no subscription ID or recurring payment token found.');
+      throw new WmfException(WmfException::INVALID_MESSAGE, 'Recurring donation, but no subscription ID or recurring payment token found.');
     }
   }
   if ($msg['contact_id'] && isset($msg['contact_hash'])) {
@@ -311,7 +311,7 @@ function wmf_civicrm_contribution_message_import(&$msg) {
     ));
     if ($soft_credit_contact['count'] !== 1) {
       throw new WmfException(
-        'INVALID_MESSAGE',
+        WmfException::INVALID_MESSAGE,
         "Bad soft credit target, [${msg['soft_credit_to']}]"
       );
     }
@@ -503,14 +503,14 @@ function _wmf_civicrm_message_contribution_insert($msg) {
         // WmfQueueConsumer that will alter the invoice_id before
         // re-queueing the message.
         throw new WmfException(
-          'DUPLICATE_INVOICE',
+          WmfException::DUPLICATE_INVOICE,
           'Duplicate invoice ID, should modify and retry',
           $e->getExtraParams()
         );
       }
       else {
         throw new WmfException(
-          'INVALID_MESSAGE',
+          WmfException::INVALID_MESSAGE,
           'Cannot create contribution, civi error!',
           $e->getExtraParams()
         );
@@ -518,7 +518,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
     }
     catch (CiviCRM_API3_Exception $eInner) {
       throw new WmfException(
-        'INVALID_MESSAGE',
+        WmfException::INVALID_MESSAGE,
         'Cannot create contribution, civi error!',
         $eInner->getExtraParams()
       );
@@ -543,7 +543,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
     }
     if (!empty($stacked_ex)) {
       throw new WmfException(
-        "IMPORT_CONTRIB",
+        WmfException::IMPORT_CONTRIB,
         implode("\n", $stacked_ex)
       );
     }
@@ -597,7 +597,7 @@ function wmf_civicrm_get_civi_id($type, $name) {
       }
       $id = $civi_ids[$type][$name];
       if (empty($id)) {
-        throw new WmfException("CIVI_CONFIG",
+        throw new WmfException(WmfException::CIVI_CONFIG,
           t('Contribution Type "!name" not found!', array('!name' => $name))
         );
       }
@@ -608,7 +608,7 @@ function wmf_civicrm_get_civi_id($type, $name) {
       break;
 
     default:
-      throw new WmfException("CIVI_CONFIG", t("Civi lookup for type '!type' not implemented", array("!type" => $type)));
+      throw new WmfException(WmfException::CIVI_CONFIG, t("Civi lookup for type '!type' not implemented", array("!type" => $type)));
   }
 }
 
@@ -967,7 +967,7 @@ function wmf_civicrm_normalize_contribution_amounts($msg) {
       $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
     }
     catch (ExchangeRatesException $ex) {
-      throw new WmfException('INVALID_MESSAGE', "UNKNOWN_CURRENCY: '{$msg['original_currency']}': " . $ex->getMessage());
+      throw new WmfException(WmfException::INVALID_MESSAGE, "UNKNOWN_CURRENCY: '{$msg['original_currency']}': " . $ex->getMessage());
     }
 
     // Do exchange rate conversion
@@ -1032,7 +1032,7 @@ function wmf_civicrm_verify_message_and_stage($msg) {
   }
 
   if (!empty($err)) {
-    throw new WmfException('CIVI_REQ_FIELD', $err);
+    throw new WmfException(WmfException::CIVI_REQ_FIELD, $err);
   }
 
   $max_lengths = array(
@@ -1073,7 +1073,7 @@ function wmf_civicrm_verify_message_and_stage($msg) {
         $msg['contact_tags'][] = $truncate_tags[$key];
       }
       else {
-        throw new WmfException('INVALID_MESSAGE', "Field '{$key}' is too long.");
+        throw new WmfException(WmfException::INVALID_MESSAGE, "Field '{$key}' is too long.");
       }
     }
   }
@@ -1098,7 +1098,7 @@ function wmf_civicrm_check_for_duplicates($gateway, $gateway_txn_id) {
   );
   if ($txn) {
     throw new WmfException(
-      'DUPLICATE_CONTRIBUTION',
+      WmfException::DUPLICATE_CONTRIBUTION,
       'Contribution already exists. Ignoring message.'
     );
   }
@@ -1253,7 +1253,7 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
   }
 
   if (WmfDatabase::isNativeTxnRolledBack()) {
-    throw new WmfException("IMPORT_CONTACT", "Native txn rolled back before inserting contact");
+    throw new WmfException(WmfException::IMPORT_CONTACT, "Native txn rolled back before inserting contact");
   }
   // Attempt to insert the contact
   try {
@@ -1266,12 +1266,12 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     }
 
     if (WmfDatabase::isNativeTxnRolledBack()) {
-      throw new WmfException("IMPORT_CONTACT", "Native txn rolled back after inserting contact");
+      throw new WmfException(WmfException::IMPORT_CONTACT, "Native txn rolled back after inserting contact");
     }
   }
   catch (CiviCRM_API3_Exception $ex) {
     throw new WmfException(
-      "IMPORT_CONTACT",
+      WmfException::IMPORT_CONTACT,
       "Contact could not be added. Aborting import. Contact data was " . print_r($contact, TRUE) . " Original error: " . $ex->getMessage()
       . " Details: " . print_r($ex->getExtraParams(), TRUE)
     );
@@ -1293,7 +1293,7 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     }
     catch (CiviCRM_API3_Exception $ex) {
       throw new WmfException(
-        "IMPORT_CONTACT",
+        WmfException::IMPORT_CONTACT,
         "Failed to add phone for contact ID {$contact_id}: {$ex->getMessage()} " . print_r($ex->getExtraParams(), TRUE)
       );
     }
@@ -1318,7 +1318,7 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     }
     if (!empty($stacked_ex)) {
       throw new WmfException(
-        "IMPORT_CONTACT",
+        WmfException::IMPORT_CONTACT,
         implode("\n", $stacked_ex)
       );
     }
@@ -1342,7 +1342,7 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     }
     if (!empty($stacked_ex)) {
       throw new WmfException(
-        "IMPORT_CONTACT",
+        WmfException::IMPORT_CONTACT,
         implode("\n", $stacked_ex)
       );
     }
@@ -1354,7 +1354,7 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
       'name_a_b' => $msg['relationship_type'],
     ));
     if (!$relationship_type['count']) {
-      throw new WmfException('IMPORT_CONTACT', "Bad relationship type: {$msg['relationship_type']}");
+      throw new WmfException(WmfException::IMPORT_CONTACT, "Bad relationship type: {$msg['relationship_type']}");
     }
 
     try {
@@ -1366,11 +1366,11 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
       ));
     }
     catch (CiviCRM_API3_Exception $ex) {
-      throw new WmfException('IMPORT_CONTACT', $ex->getMessage());
+      throw new WmfException(WmfException::IMPORT_CONTACT, $ex->getMessage());
     }
   }
   if (WmfDatabase::isNativeTxnRolledBack()) {
-    throw new WmfException("IMPORT_CONTACT", "Native txn rolled back after inserting contact auxiliary fields");
+    throw new WmfException(WmfException::IMPORT_CONTACT, "Native txn rolled back after inserting contact auxiliary fields");
   }
   return $contact_result;
 }
@@ -1509,7 +1509,7 @@ function wmf_civicrm_message_contact_update($msg, $contact_id) {
 function wmf_civicrm_message_location_insert($msg, $contact) {
   wmf_civicrm_message_email_insert($msg, $contact['id']);
   if (WmfDatabase::isNativeTxnRolledBack()) {
-    throw new WmfException("IMPORT_CONTACT", "Native txn rolled back after inserting email");
+    throw new WmfException(WmfException::IMPORT_CONTACT, "Native txn rolled back after inserting email");
   }
   wmf_civicrm_message_address_insert($msg, $contact['id']);
 }
@@ -1600,7 +1600,7 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
     civicrm_api3("Email", "create", $emailParams);
   }
   catch (CiviCRM_API3_Exception $e) {
-    throw new WmfException('IMPORT_CONTACT', "Couldn't store email for the contact.", $e->getExtraParams());
+    throw new WmfException(WmfException::IMPORT_CONTACT, "Couldn't store email for the contact.", $e->getExtraParams());
   }
 }
 
@@ -1648,7 +1648,7 @@ function wmf_civicrm_message_email_insert($msg, $contact_id) {
     civicrm_api3("Email", "Create", $email_params);
   }
   catch (CiviCRM_API3_Exception $e) {
-    throw new WmfException('IMPORT_CONTACT', "Couldn't store email for the contact.", $e->getExtraParams());
+    throw new WmfException(WmfException::IMPORT_CONTACT, "Couldn't store email for the contact.", $e->getExtraParams());
   }
 }
 
@@ -1708,7 +1708,7 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
     civicrm_api3('Address', 'replace', $address_params);
   }
   catch (CiviCRM_API3_Exception $e) {
-    throw new WmfException('IMPORT_CONTACT', "Couldn't store address for the contact.", $e->getExtraParams());
+    throw new WmfException(WmfException::IMPORT_CONTACT, "Couldn't store address for the contact.", $e->getExtraParams());
   }
 }
 
@@ -1752,7 +1752,7 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
     return;
   }
   if (WmfDatabase::isNativeTxnRolledBack()) {
-    throw new WmfException("IMPORT_CONTACT", "Native txn rolled back before inserting address");
+    throw new WmfException(WmfException::IMPORT_CONTACT, "Native txn rolled back before inserting address");
   }
   try {
     // @todo - remove this from here & do in pre like this
@@ -1764,14 +1764,14 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
   }
   catch (CiviCRM_API3_Exception $ex) {
     throw new WmfException(
-      'IMPORT_CONTACT',
+      WmfException::IMPORT_CONTACT,
       'Couldn\'t store address for the contact: ' .
       $ex->getMessage()
     );
   }
 
   if (WmfDatabase::isNativeTxnRolledBack()) {
-    throw new WmfException("IMPORT_CONTACT", "Native txn rolled back after inserting address");
+    throw new WmfException(WmfException::IMPORT_CONTACT, "Native txn rolled back after inserting address");
   }
 }
 
@@ -1929,7 +1929,7 @@ function wmf_civicrm_normalize_msg($msg) {
       $msg['contribution_type'] = wmf_civicrm_get_message_contribution_type($msg);
 
       if (!$msg['contribution_type']) {
-        throw new WmfException('INVALID_MESSAGE', 'No contribution type specified');
+        throw new WmfException(WmfException::INVALID_MESSAGE, 'No contribution type specified');
       }
     }
     $msg['contribution_type_id'] = wmf_civicrm_get_civi_id('contribution_type_id', $msg['contribution_type']);
@@ -1940,7 +1940,7 @@ function wmf_civicrm_normalize_msg($msg) {
       $msg['payment_instrument'] = wmf_civicrm_get_message_payment_instrument($msg);
 
       if (!$msg['payment_instrument']) {
-        throw new WmfException('INVALID_MESSAGE', 'No payment instrument specified');
+        throw new WmfException(WmfException::INVALID_MESSAGE, 'No payment instrument specified');
       }
     }
     // CiviCRM does not require us to do this translation. It will do the same thing
@@ -1948,7 +1948,7 @@ function wmf_civicrm_normalize_msg($msg) {
     $msg['payment_instrument_id'] = wmf_civicrm_get_civi_id('payment_instrument_id', $msg['payment_instrument']);
   }
   if (!$msg['payment_instrument_id']) {
-    throw new WmfException("INVALID_MESSAGE", "No payment type found for message.");
+    throw new WmfException(WmfException::INVALID_MESSAGE, "No payment type found for message.");
   }
 
   // Convert times to Unix timestamps.
@@ -2332,7 +2332,7 @@ function wmf_civicrm_mark_refund(
   }
   catch (CiviCRM_API3_Exception $e) {
     throw new WmfException(
-      'INVALID_MESSAGE', "Could not load contribution: $contribution_id with error " . $e->getMessage()
+      WmfException::INVALID_MESSAGE, "Could not load contribution: $contribution_id with error " . $e->getMessage()
     );
   }
 
@@ -2341,14 +2341,14 @@ function wmf_civicrm_mark_refund(
   // code).
   if (CRM_Contribute_BAO_Contribution::isContributionStatusNegative($contribution['contribution_status_id'])
   ) {
-    throw new WmfException('DUPLICATE_CONTRIBUTION', "Contribution is already refunded: $contribution_id");
+    throw new WmfException(WmfException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: $contribution_id");
   }
   // Deal with any discrepancies in the refunded amount.
   list($original_currency, $original_amount) = explode(" ", $contribution['contribution_source']);
 
   if ($refund_currency !== NULL) {
     if ($refund_currency != $original_currency) {
-      throw new WmfException('INVALID_MESSAGE', "Refund was in a different currency.  Freaking out.");
+      throw new WmfException(WmfException::INVALID_MESSAGE, "Refund was in a different currency.  Freaking out.");
     }
   }
   else {
@@ -2371,7 +2371,7 @@ function wmf_civicrm_mark_refund(
   );
 
   if (!array_key_exists($refund_type, $validTypes)) {
-    throw new WmfException('IMPORT_CONTRIB', "Unknown refund type '{$refund_type}'");
+    throw new WmfException(WmfException::IMPORT_CONTRIB, "Unknown refund type '{$refund_type}'");
   }
 
   try {
@@ -2385,7 +2385,7 @@ function wmf_civicrm_mark_refund(
   }
   catch (CiviCRM_API3_Exception $e) {
     throw new WmfException(
-      'IMPORT_CONTRIB',
+      WmfException::IMPORT_CONTRIB,
       "Cannot mark original contribution as refunded:
                 $contribution_id, " . $e->getMessage() . print_r($e->getExtraParams(), TRUE)
     );
@@ -2424,7 +2424,7 @@ function wmf_civicrm_mark_refund(
       }
       catch (CiviCRM_API3_Exception $e) {
         throw new WmfException(
-          'IMPORT_CONTRIB',
+          WmfException::IMPORT_CONTRIB,
           "Cannot create new contribution for the refund difference:
                 $contribution_id, " . $e->getMessage() . print_r($e->getExtraParams(), TRUE)
         );
@@ -2468,7 +2468,7 @@ function wmf_civicrm_set_gateway_status($contribution_id, $raw_status, $normaliz
     $contribution = new CRM_Contribute_BAO_Contribution();
     $contribution->id = $contribution_id;
     if (!$contribution->find(TRUE)) {
-      throw new WmfException('INVALID_MESSAGE', "Contribution not found: $contribution_id");
+      throw new WmfException(WmfException::INVALID_MESSAGE, "Contribution not found: $contribution_id");
     }
 
     $status_id = civicrm_api_contribution_status($normalized_status);
@@ -3412,7 +3412,7 @@ function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
     case 'edit':
       if (WmfDatabase::isNativeTxnRolledBack()) {
         throw new WmfException(
-          'IMPORT_CONTRIB',
+          WmfException::IMPORT_CONTRIB,
           'Native txn rolled back before running post contribution hook'
         );
       }
@@ -3906,7 +3906,9 @@ LIMIT %4";
       );
 
       if (!$api->Contribution->Create($params)) {
-        throw new WmfException('recalculate_contributions', "Failed to update USD amount of contribution: $id, " . db_error());
+        throw new WmfException(
+          WmfException::UNKNOWN, "Failed to update USD amount of contribution: $id, " . db_error()
+        );
       }
     }
   }

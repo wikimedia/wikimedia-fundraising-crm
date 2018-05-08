@@ -715,7 +715,7 @@ abstract class BaseAuditProcessor {
                 $order_id = $this->get_order_id($transaction);
                 if (!$order_id) {
                   throw new WmfException(
-                    'MISSING_MANDATORY_DATA',
+                    WmfException::MISSING_MANDATORY_DATA,
                     'Could not get an order id for the following transaction ' . print_r($transaction, TRUE)
                   );
                 }
@@ -736,7 +736,7 @@ abstract class BaseAuditProcessor {
 
                 if (!$contribution_tracking_data) {
                   throw new WmfException(
-                    'MISSING_MANDATORY_DATA',
+                    WmfException::MISSING_MANDATORY_DATA,
                     'No contribution tracking data retrieved for transaction ' . print_r($all_data, TRUE)
                   );
                 }
@@ -753,7 +753,7 @@ abstract class BaseAuditProcessor {
                     // Limit the bandaid to ONLY deal with first installments
                     if (!empty($all_data['installment']) && $all_data['installment'] > 1) {
                       throw new WmfException(
-                        'INVALID_RECURRING',
+                        WmfException::INVALID_RECURRING,
                         "Audit parser found recurring order $order_id with installment {$all_data['installment']}"
                       );
                     }
@@ -765,7 +765,7 @@ abstract class BaseAuditProcessor {
                     $message = 'Payment method mismatch between utm tracking data(' . $contribution_tracking_data['utm_payment_method'];
                     $message .= ') and normalized log and recon data(' . $method . '). Investigation required.';
                     throw new WmfException(
-                      'DATA_INCONSISTENT',
+                      WmfException::DATA_INCONSISTENT,
                       $message
                     );
                   }
@@ -1209,7 +1209,7 @@ abstract class BaseAuditProcessor {
       }
       // We have log data, but nothing matches. This is too weird.
       throw new WmfException(
-        'DATA_INCONSISTENT',
+        WmfException::DATA_INCONSISTENT,
         'Inconsistent data. Skipping the following: ' . print_r($audit_data, TRUE) . "\n" . print_r($raw_data, TRUE)
       );
     }
@@ -1220,14 +1220,14 @@ abstract class BaseAuditProcessor {
     $matches = [];
     if (!preg_match('/[^{]*([{].*)/', $line, $matches)) {
       throw new WmfException(
-        'MISSING_MANDATORY_DATA',
+        WmfException::MISSING_MANDATORY_DATA,
         "JSON data not found in $line"
       );
     }
     $log_data = json_decode($matches[1], TRUE);
     if (!$log_data) {
       throw new WmfException(
-        'MISSING_MANDATORY_DATA',
+        WmfException::MISSING_MANDATORY_DATA,
         "Could not parse JSON data in $line"
       );
     }

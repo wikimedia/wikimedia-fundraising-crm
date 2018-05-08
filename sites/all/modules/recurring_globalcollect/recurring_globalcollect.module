@@ -276,7 +276,7 @@ function recurring_globalcollect_batch_charge($contribution_batch, $options = []
       }
     } catch (Exception $e) {
       $message = 'Batch processing aborted: ' . $e->getMessage();
-      $e = new WmfException('UNKNOWN', $message, ['contribution_recur' => $contribution_recur]);
+      $e = new WmfException(WmfException::UNKNOWN, $message, ['contribution_recur' => $contribution_recur]);
       $failed[] = $contribution_recur;
       break;
     }
@@ -303,7 +303,7 @@ function recurring_globalcollect_charge($contribution_recur_id, $options = []) {
   $gotLock = _recurring_globalcollect_update_record_in_progress($contribution_recur_id);
   if (!$gotLock) {
     $message = t('Failed to mark record as in progress');
-    throw new WmfException('CIVI_CONFIG', $message);
+    throw new WmfException(WmfException::CIVI_CONFIG, $message);
   }
 
   $subscription = recurring_globalcollect_get_payment_by_id($contribution_recur_id);
@@ -341,7 +341,7 @@ function recurring_globalcollect_charge($contribution_recur_id, $options = []) {
 
   if ($result->isFailed() || $result->getErrors()) {
     _recurring_globalcollect_update_record_failure($contribution_recur_id, $result->getErrors());
-    throw new WmfException('PAYMENT_FAILED', 'recurring charge failed', ['payment_result' => $result]);
+    throw new WmfException(WmfException::PAYMENT_FAILED, 'recurring charge failed', ['payment_result' => $result]);
   }
 
   // If success, add a record to the contribution table and send a thank you email.
@@ -368,13 +368,13 @@ function recurring_globalcollect_create_message($contribution_recur_id) {
   $contribution_recur = (array) recurring_globalcollect_get_payment_by_id($contribution_recur_id);
   $initial_contribution = wmf_civicrm_get_initial_recurring_contribution($contribution_recur_id);
   if (!$initial_contribution) {
-    throw new WmfException('INVALID_RECURRING', "No initial contribution for this subscription");
+    throw new WmfException(WmfException::INVALID_RECURRING, "No initial contribution for this subscription");
   }
 
   try {
     $transaction = WmfTransaction::from_unique_id($contribution_recur['trxn_id']);
   } catch (Exception $ex) {
-    throw new WmfException('INVALID_RECURRING', $ex->getMessage(), ['contribution_recur' => $contribution_recur]);
+    throw new WmfException(WmfException::INVALID_RECURRING, $ex->getMessage(), ['contribution_recur' => $contribution_recur]);
   }
 
   $msg = [

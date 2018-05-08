@@ -53,83 +53,83 @@ class WmfException extends Exception {
   //XXX shit we aren't using the 'rollback' attribute
   // and it's not correct in most of these cases
   static $error_types = [
-    'CIVI_CONFIG' => [
+    self::CIVI_CONFIG => [
       'fatal' => TRUE,
     ],
-    'STOMP_BAD_CONNECTION' => [
+    self::STOMP_BAD_CONNECTION => [
       'fatal' => TRUE,
     ],
-    'INVALID_MESSAGE' => [
+    self::INVALID_MESSAGE => [
       'reject' => TRUE,
     ],
-    'INVALID_RECURRING' => [
+    self::INVALID_RECURRING => [
       'reject' => TRUE,
     ],
-    'CIVI_REQ_FIELD' => [
+    self::CIVI_REQ_FIELD => [
       'reject' => TRUE,
     ],
-    'IMPORT_CONTACT' => [
+    self::IMPORT_CONTACT => [
       'reject' => TRUE,
     ],
-    'IMPORT_CONTRIB' => [
+    self::IMPORT_CONTRIB => [
       'reject' => TRUE,
     ],
-    'IMPORT_SUBSCRIPTION' => [
+    self::IMPORT_SUBSCRIPTION => [
       'reject' => TRUE,
     ],
-    'DUPLICATE_CONTRIBUTION' => [
+    self::DUPLICATE_CONTRIBUTION => [
       'drop' => TRUE,
       'no-email' => TRUE,
     ],
-    'DUPLICATE_INVOICE' => [
+    self::DUPLICATE_INVOICE => [
       'requeue' => TRUE,
       'no-email' => TRUE,
     ],
-    'GET_CONTRIBUTION' => [
+    self::GET_CONTRIBUTION => [
       'reject' => TRUE,
     ],
-    'PAYMENT_FAILED' => [
+    self::PAYMENT_FAILED => [
       'no-email' => TRUE,
     ],
-    'UNKNOWN' => [
+    self::UNKNOWN => [
       'fatal' => TRUE,
     ],
-    'UNSUBSCRIBE' => [
+    self::UNSUBSCRIBE => [
       'reject' => TRUE,
     ],
-    'MISSING_PREDECESSOR' => [
+    self::MISSING_PREDECESSOR => [
       'requeue' => TRUE,
       'no-email' => TRUE,
     ],
-    'BANNER_HISTORY' => [
+    self::BANNER_HISTORY => [
       'drop' => TRUE,
       'no-email' => TRUE,
     ],
 
     // other errors
-    'FILE_NOT_FOUND' => [
+    self::FILE_NOT_FOUND => [
       'fatal' => TRUE,
     ],
-    'INVALID_FILE_FORMAT' => [
+    self::INVALID_FILE_FORMAT => [
       'fatal' => TRUE,
     ],
 
-    'fredge' => [
+    self::fredge => [
       'reject' => TRUE,
     ],
-    'MISSING_MANDATORY_DATA' => [
+    self::MISSING_MANDATORY_DATA => [
       'reject' => TRUE,
     ],
-    'DATA_INCONSISTENT' => [
+    self::DATA_INCONSISTENT => [
       'reject' => TRUE,
     ],
-    'GET_CONTACT' => [
+    self::GET_CONTACT => [
       'fatal' => FALSE,
     ],
-    'EMAIL_SYSTEM_FAILURE' => [
+    self::EMAIL_SYSTEM_FAILURE => [
       'fatal' => TRUE,
     ],
-    'BAD_EMAIL' => [
+    self::BAD_EMAIL => [
       'no-email' => TRUE,
     ],
   ];
@@ -143,7 +143,7 @@ class WmfException extends Exception {
   /**
    * WmfException constructor.
    *
-   * @param string $type Error type
+   * @param int $code Error code
    * @param string $message A WMF constructed message.
    * @param array $extra Extra parameters.
    *   If error_message is included then it will be included in the User Error
@@ -154,13 +154,13 @@ class WmfException extends Exception {
    *   mails - but only 'error_message' is used for user messages (provided the
    *   getUserMessage function is used).
    */
-  function __construct($type, $message, $extra = []) {
-    if (!array_key_exists($type, self::$error_types)) {
-      $message .= ' -- ' . t('Warning, throwing a misspelled exception: "%type"', ['%type' => $type]);
-      $type = 'UNKNOWN';
+  function __construct($code, $message, $extra = []) {
+    if (!array_key_exists($code, self::$error_types)) {
+      $message .= ' -- ' . t('Warning, throwing an unknown exception: "%code"', ['%code' => $code]);
+      $code = self::UNKNOWN;
     }
-    $this->type = $type;
-    $this->code = constant('WmfException::' . $type);
+    $this->type = array_search($code, (new ReflectionClass($this))->getConstants());
+    $this->code = $code;
     $this->extra = $extra;
 
     if (is_array($message)) {
@@ -194,6 +194,11 @@ class WmfException extends Exception {
     return !empty($this->extra['error_message']) ? $this->extra['error_message'] : $this->userMessage;
   }
 
+  /**
+   * Get string representing category of error
+   *
+   * @return string
+   */
   function getErrorName() {
     return $this->type;
   }
@@ -244,7 +249,7 @@ class WmfException extends Exception {
   }
 
   protected function getErrorCharacteristic($property, $default) {
-    $info = self::$error_types[$this->type];
+    $info = self::$error_types[$this->code];
     if (array_key_exists($property, $info)) {
       return $info[$property];
     }

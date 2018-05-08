@@ -26,7 +26,7 @@ class UnsubscribeQueueConsumer extends TransactionalWmfQueueConsumer {
 		// Sanity checking :)
 		if ( empty( $message['email'] ) or empty( $message['contribution-id'] ) ) {
 			$error = "Required field not present! Dropping message on floor. Message: " . json_encode( $message );
-			throw new WmfException( 'UNSUBSCRIBE', $error );
+			throw new WmfException( WmfException::UNSUBSCRIBE, $error );
 		}
 
 		$emails = array( strtolower( $message['email'] ) );

@@ -102,7 +102,7 @@ abstract class ChecksFile {
 
     ini_set('auto_detect_line_endings', TRUE);
     if (($file = fopen($this->file_uri, 'r')) === FALSE) {
-      throw new WmfException('FILE_NOT_FOUND', 'Import checks: Could not open file for reading: ' . $this->file_uri);
+      throw new WmfException(WmfException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
     }
 
     if ($this->numSkippedRows) {
@@ -146,7 +146,7 @@ abstract class ChecksFile {
 
       try {
         if ($error_streak_count >= $error_streak_threshold) {
-          throw new IgnoredRowException('IMPORT_CONTRIB', 'Error limit reached');
+          throw new IgnoredRowException(WmfException::IMPORT_CONTRIB, 'Error limit reached');
         }
         $msg = $this->parseRow($data);
         $existing = $this->checkForExistingContributions($msg);
@@ -327,7 +327,7 @@ abstract class ChecksFile {
       if (!empty($msg['org_contact_name'])
         || !empty($msg['org_contact_title'])
       ) {
-        throw new WmfException('INVALID_MESSAGE', "Don't give a Name or Title unless this is an Organization contact.");
+        throw new WmfException(WmfException::INVALID_MESSAGE, "Don't give a Name or Title unless this is an Organization contact.");
       }
     }
 
@@ -340,7 +340,7 @@ abstract class ChecksFile {
       if (abs($source_amount - $msg['gross']) > .01) {
         $pretty_msg = json_encode($msg);
         watchdog('offline2civicrm', "Amount mismatch in row: " . $pretty_msg, NULL, WATCHDOG_ERROR);
-        throw new WmfException('INVALID_MESSAGE', "Amount mismatch during checks import");
+        throw new WmfException(WmfException::INVALID_MESSAGE, "Amount mismatch during checks import");
       }
 
       $msg['currency'] = $currency;
@@ -569,7 +569,7 @@ abstract class ChecksFile {
       }
     }
     if ($failed) {
-      throw new WmfException('INVALID_FILE_FORMAT', "This file is missing column headers: " . implode(", ", $failed));
+      throw new WmfException(WmfException::INVALID_FILE_FORMAT, "This file is missing column headers: " . implode(", ", $failed));
     }
   }
 
@@ -687,7 +687,7 @@ abstract class ChecksFile {
       }
     }
     if ($failed) {
-      throw new WmfException('CIVI_REQ_FIELD', t("Missing required fields @keys during check import", array("@keys" => implode(", ", $failed))));
+      throw new WmfException(WmfException::CIVI_REQ_FIELD, t("Missing required fields @keys during check import", array("@keys" => implode(", ", $failed))));
     }
   }
 

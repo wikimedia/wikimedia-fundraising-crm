@@ -100,7 +100,7 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
         else {
           if ($mandatory) {
             throw new WmfException(
-              'MISSING_MANDATORY_DATA',
+              WmfException::MISSING_MANDATORY_DATA,
               "Mandatory field $node missing for $contribution_id."
             );
           }
