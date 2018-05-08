@@ -4050,7 +4050,7 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
   AND receive_date = totals.last_donation_date
   AND contribution_status_id = 1
   AND total_amount > 0
-  AND trxn_id NOT LIKE 'RFD %'
+  AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
   LIMIT 1
 
@@ -4093,7 +4093,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
   AND receive_date = totals.last_donation_date
   AND contribution_status_id = 1
   AND total_amount > 0
-  AND trxn_id NOT LIKE 'RFD %'
+  AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
   LIMIT 1
 
@@ -4128,7 +4128,7 @@ IF (NEW.contact_id <> OLD.contact_id) THEN
   AND receive_date = totals.last_donation_date
   AND contribution_status_id = 1
   AND total_amount > 0
-  AND trxn_id NOT LIKE 'RFD %'
+  AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
   LIMIT 1
 
@@ -4171,7 +4171,7 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
   AND receive_date = totals.last_donation_date
   AND contribution_status_id = 1
   AND total_amount > 0
-  AND trxn_id NOT LIKE 'RFD %'
+  AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
   LIMIT 1
 
