@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e351f53dce9229e4e79605f8985743ed",
+    "content-hash": "f9999677d0aab2e9b9f068eb9dbe6e8a",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -89,7 +89,7 @@
                 "payment",
                 "payments"
             ],
-            "time": "2018-02-07 02:51:30"
+            "time": "2018-02-07T02:51:30+00:00"
         },
         {
             "name": "clio/clio",
@@ -522,7 +522,7 @@
             "keywords": [
                 "http geocoder"
             ],
-            "time": "2018-01-23 02:12:05"
+            "time": "2018-01-23T02:12:05+00:00"
         },
         {
             "name": "geocoder-php/free-geoip-provider",
@@ -580,7 +580,7 @@
             ],
             "description": "Geocoder FreeGeoIp adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-01-23 02:15:37"
+            "time": "2018-01-23T02:15:37+00:00"
         },
         {
             "name": "geocoder-php/google-maps-provider",
@@ -638,7 +638,7 @@
             ],
             "description": "Geocoder GoogleMaps adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-01-23 04:49:20"
+            "time": "2018-01-23T03:40:13+00:00"
         },
         {
             "name": "geocoder-php/mapquest-provider",
@@ -696,7 +696,7 @@
             ],
             "description": "Geocoder MapQuest adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-01-19 02:21:34"
+            "time": "2018-01-19T02:21:34+00:00"
         },
         {
             "name": "geocoder-php/nominatim-provider",
@@ -754,7 +754,7 @@
             ],
             "description": "Geocoder Nominatim adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-02-12 23:19:17"
+            "time": "2018-02-12T23:19:17+00:00"
         },
         {
             "name": "geoip2/geoip2",
@@ -1402,7 +1402,7 @@
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2017-09-14 06:37:59"
+            "time": "2017-09-14T06:37:59+00:00"
         },
         {
             "name": "neitanod/forceutf8",
@@ -1508,7 +1508,7 @@
                 "sendgrid",
                 "sendinblue"
             ],
-            "time": "2018-01-05 16:56:09"
+            "time": "2018-01-05T16:56:09+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -2733,7 +2733,7 @@
             ],
             "description": "CiviCRM datatable geocoder",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-02-21 04:05:10"
+            "time": "2018-02-21T04:05:10+00:00"
         },
         {
             "name": "wikimedia/composer-merge-plugin",
@@ -2832,7 +2832,7 @@
                 "GPL-2.0-or-later"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2018-02-13 21:25:26"
+            "time": "2018-02-13T21:25:26+00:00"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
@@ -2879,7 +2879,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2017-10-10 03:44:09"
+            "time": "2017-10-10T03:44:09+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -3006,7 +3006,7 @@
                 "geocoding",
                 "geoip"
             ],
-            "time": "2018-02-12 23:33:59"
+            "time": "2018-02-12T23:33:59+00:00"
         },
         {
             "name": "zordius/lightncandy",
@@ -4570,5 +4570,8 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": [],
-    "platform-dev": []
+    "platform-dev": [],
+    "platform-overrides": {
+        "php": "5.6.33"
+    }
 }

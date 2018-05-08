@@ -3792,3 +3792,228 @@ function wmf_civicrm_update_7675() {
   );
   CRM_Core_DAO::executeQuery('TRUNCATE civicrm_cache');
 }
+
+/**
+ * Update first recurring payments to non-refunded
+ */
+ function wmf_civicrm_update_7676() {
+   civicrm_initialize();
+   $contributionStatusId = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
+   $refundedStatusId = CRM_Utils_Array::key('Refunded', $contributionStatusId);
+   $completedStatusId = CRM_Utils_Array::key('Completed', $contributionStatusId);
+   $batch = 1000;
+   $sql = "SELECT ccc.id AS id
+               FROM civicrm.civicrm_contribution AS ccc
+               INNER JOIN civicrm.civicrm_contribution_recur AS ccr on ccr.id = ccc.contribution_recur_id
+               INNER JOIN drupal.contribution_tracking AS dct on dct.contribution_id = ccc.id
+               INNER JOIN drupal.contribution_source AS dcs on dct.id = dcs.contribution_tracking_id
+               WHERE dct.ts >= '20171011000000'  and dct.ts <= '20171204213500'
+               AND ccc.trxn_id LIKE '%RECURRING GLOBALCOLLECT%'
+               AND ccc.trxn_id NOT LIKE '%-%'
+               AND ccc.contribution_status_id=$refundedStatusId
+               AND dcs.banner IN
+               ('B1718_1011_en6C_ipd_p1_lg_frq_cnt',
+               'B1718_1011_en6C_ipd_p1_lg_frq_txttoggle',
+               'B1718_1011_en6C_mob_p1_lg_frq_cnt',
+               'B1718_1011_en6C_mob_p1_lg_frq_txttoggle',
+               'B1718_1018_en6C_ipd_p1_lg_frq_cnt',
+               'B1718_1018_en6C_ipd_p1_lg_frq_togunder',
+               'B1718_1018_en6C_ipd_p2_sm_frq_toggle',
+               'B1718_1018_en6C_mob_p1_lg_frq_cnt',
+               'B1718_1018_en6C_mob_p1_lg_frq_togunder',
+               'B1718_1018_en6C_mob_p2_sm_frq_toggle',
+               'B1718_1019_en6C_ipd_p1_lg_dsn_cnt',
+               'B1718_1019_en6C_ipd_p1_lg_dsn_greybknd',
+               'B1718_1019_en6C_ipd_p1_lg_dsn_legacycblinebreaks',
+               'B1718_1019_en6C_ipd_p1_lg_txt_jimmyIwaving',
+               'B1718_1019_en6C_mob_p1_lg_dsn_cnt',
+               'B1718_1019_en6C_mob_p1_lg_dsn_greybknd',
+               'B1718_1019_en6C_mob_p1_lg_dsn_legacycblinebreaks',
+               'B1718_1019_en6C_mob_p1_lg_txt_jimmyIwaving',
+               'B1718_1025_en6C_ipd_p1_lg_dsn_betterdonateux',
+               'B1718_1025_en6C_ipd_p1_lg_dsn_cnt',
+               'B1718_1025_en6C_ipd_p1_lg_dsn_stckrhello',
+               'B1718_1025_en6C_ipd_p1_lg_dsn_stckrhellocoffee',
+               'B1718_1025_en6C_ipd_p2_sm_txt_2016fus',
+               'B1718_1025_en6C_ipd_p2_sm_txt_cnt',
+               'B1718_1025_en6C_mob_p1_lg_dsn_betterdonateux',
+               'B1718_1025_en6C_mob_p1_lg_dsn_cnt',
+               'B1718_1025_en6C_mob_p1_lg_dsn_stckrhello',
+               'B1718_1025_en6C_mob_p1_lg_dsn_stckrhellocoffee',
+               'B1718_1025_en6C_mob_p2_sm_txt_2016fus',
+               'B1718_1025_en6C_mob_p2_sm_txt_cnt',
+               'B1718_1101_en6C_ipd_p1_lg_dsn_cnt',
+               'B1718_1101_en6C_ipd_p1_lg_dsn_coffee',
+               'B1718_1101_en6C_ipd_p2_sm_frq_belowamts',
+               'B1718_1101_en6C_ipd_p2_sm_frq_cnt',
+               'B1718_1101_en6C_mob_p1_lg_dsn_cnt',
+               'B1718_1101_en6C_mob_p1_lg_dsn_coffee',
+               'B1718_1101_en6C_mob_p2_sm_frq_belowamts',
+               'B1718_1101_en6C_mob_p2_sm_frq_cnt',
+               'B1718_1107_en6C_ipd_p1_lg_dsn_cnt',
+               'B1718_1107_en6C_ipd_p1_lg_dsn_refactor',
+               'B1718_1107_en6C_ipd_p2_sm_txt_cnt',
+               'B1718_1107_en6C_ipd_p2_sm_txt_usealot',
+               'B1718_1107_en6C_mob_p1_lg_dsn_cnt',
+               'B1718_1107_en6C_mob_p1_lg_dsn_refactor',
+               'B1718_1107_en6C_mob_p2_sm_txt_cnt',
+               'B1718_1107_en6C_mob_p2_sm_txt_usealot',
+               'B1718_1111_en6C_ipd_p1_lg_txt_awkwknd',
+               'B1718_1111_en6C_ipd_p1_lg_txt_awkwkndregret',
+               'B1718_1111_en6C_ipd_p1_lg_txt_cnt',
+               'B1718_1111_en6C_ipd_p1_lg_txt_happysat',
+               'B1718_1111_en6C_ipd_p2_sm_txt_cnt',
+               'B1718_1111_en6C_ipd_p2_sm_txt_thissat',
+               'B1718_1111_en6C_mob_p1_lg_txt_awkwknd',
+               'B1718_1111_en6C_mob_p1_lg_txt_awkwkndregret',
+               'B1718_1111_en6C_mob_p1_lg_txt_cnt',
+               'B1718_1111_en6C_mob_p1_lg_txt_happysat',
+               'B1718_1111_en6C_mob_p2_sm_txt_cnt',
+               'B1718_1111_en6C_mob_p2_sm_txt_thissat',
+               'B1718_1114_en6C_ipd_p1_lg_dsn_iosjim',
+               'B1718_1114_en6C_ipd_p1_lg_txt_awkv1long',
+               'B1718_1114_en6C_ipd_p1_lg_txt_awkv2short',
+               'B1718_1114_en6C_ipd_p1_lg_txt_cnt',
+               'B1718_1114_en6C_ipd_p2_sm_txt_cnt',
+               'B1718_1114_en6C_ipd_p2_sm_txt_tues',
+               'B1718_1114_en6C_mob_p1_lg_dsn_iosjim',
+               'B1718_1114_en6C_mob_p1_lg_txt_awkv1long',
+               'B1718_1114_en6C_mob_p1_lg_txt_awkv2short',
+               'B1718_1114_en6C_mob_p1_lg_txt_cnt',
+               'B1718_1114_en6C_mob_p2_sm_txt_cnt',
+               'B1718_1114_en6C_mob_p2_sm_txt_tues',
+               'B1718_1116_en6C_ipd_p1_lg_dsn_cnt',
+               'B1718_1116_en6C_ipd_p1_lg_dsn_plusminus',
+               'B1718_1116_en6C_ipd_p1_lg_dsn_redcta',
+               'B1718_1116_en6C_ipd_p1_lg_txt_thisweekdaycoffee',
+               'B1718_1116_en6C_ipd_p2_sm_dsn_cnt',
+               'B1718_1116_en6C_ipd_p2_sm_dsn_exp2ndpara',
+               'B1718_1116_en6C_mob_p1_lg_dsn_cnt',
+               'B1718_1116_en6C_mob_p1_lg_dsn_plusminus',
+               'B1718_1116_en6C_mob_p1_lg_dsn_redcta',
+               'B1718_1116_en6C_mob_p1_lg_txt_thisweekdaycoffee',
+               'B1718_1116_en6C_mob_p2_sm_dsn_cnt',
+               'B1718_1116_en6C_mob_p2_sm_dsn_exp2ndpara',
+               'B1718_1116_enGB_ipd_p1_lg_amt_250',
+               'B1718_1116_enGB_ipd_p1_lg_amt_cnt',
+               'B1718_1116_enGB_ipd_p2_sm_amt_250',
+               'B1718_1116_enGB_ipd_p2_sm_amt_cnt',
+               'B1718_1116_enGB_mob_p1_lg_amt_250',
+               'B1718_1116_enGB_mob_p1_lg_amt_cnt',
+               'B1718_1116_enGB_mob_p2_sm_amt_250',
+               'B1718_1116_enGB_mob_p2_sm_amt_cnt',
+               'B1718_1118_en6C_ipd_p1_lg_txt_awkwkdyregret',
+               'B1718_1118_en6C_ipd_p1_lg_txt_awkwkndregret',
+               'B1718_1118_en6C_ipd_p1_lg_txt_cnt',
+               'B1718_1118_en6C_ipd_p1_lg_txt_wkday',
+               'B1718_1118_en6C_ipd_p2_sm_dsn_cnt',
+               'B1718_1118_en6C_ipd_p2_sm_dsn_exp2pp',
+               'B1718_1118_en6C_mob_p1_lg_txt_awkwkdyregret',
+               'B1718_1118_en6C_mob_p1_lg_txt_awkwkndregret',
+               'B1718_1118_en6C_mob_p1_lg_txt_cnt',
+               'B1718_1118_en6C_mob_p1_lg_txt_wkday',
+               'B1718_1118_en6C_mob_p2_sm_dsn_cnt',
+               'B1718_1118_en6C_mob_p2_sm_dsn_exp2pp',
+               'B1718_1122_en6C_ipd_p1_lg_txt_cnt',
+               'B1718_1122_en6C_ipd_p1_lg_txt_dayawkbusyremind',
+               'B1718_1122_en6C_ipd_p1_lg_txt_dayawkbusyremindemb',
+               'B1718_1122_en6C_ipd_p1_lg_txt_daycoffee',
+               'B1718_1122_en6C_ipd_p2_sm_dsn_cnt',
+               'B1718_1122_en6C_ipd_p2_sm_dsn_expday',
+               'B1718_1122_en6C_mob_p1_lg_txt_cnt',
+               'B1718_1122_en6C_mob_p1_lg_txt_dayawkbusyremind',
+               'B1718_1122_en6C_mob_p1_lg_txt_dayawkbusyremindemb',
+               'B1718_1122_en6C_mob_p1_lg_txt_daycoffee',
+               'B1718_1122_en6C_mob_p2_sm_dsn_cnt',
+               'B1718_1122_en6C_mob_p2_sm_dsn_expday',
+               'B1718_113016_en6C_ipd_p1_lg_txt_awk',
+               'B1718_113016_en6C_ipd_p1_lg_txt_awkdead',
+               'B1718_113016_en6C_ipd_p1_lg_txt_awkemb',
+               'B1718_113016_en6C_ipd_p1_lg_txt_awkembdead',
+               'B1718_113016_en6C_ipd_p1_lg_txt_cnt',
+               'B1718_113016_en6C_ipd_p1_lg_txt_dead',
+               'B1718_113016_en6C_ipd_p2_sm_txt_cnt',
+               'B1718_113016_en6C_ipd_p2_sm_txt_deadline',
+               'B1718_113016_en6C_ipd_p2_sm_txt_depend',
+               'B1718_113016_en6C_ipd_p2_sm_txt_expPP_v1',
+               'B1718_113016_en6C_mob_p1_lg_txt_awk',
+               'B1718_113016_en6C_mob_p1_lg_txt_awkdead',
+               'B1718_113016_en6C_mob_p1_lg_txt_awkemb',
+               'B1718_113016_en6C_mob_p1_lg_txt_awkembdead',
+               'B1718_113016_en6C_mob_p1_lg_txt_cnt',
+               'B1718_113016_en6C_mob_p1_lg_txt_dead',
+               'B1718_113016_en6C_mob_p2_sm_txt_cnt',
+               'B1718_113016_en6C_mob_p2_sm_txt_deadline',
+               'B1718_113016_en6C_mob_p2_sm_txt_depend',
+               'B1718_113016_en6C_mob_p2_sm_txt_expPP_v1',
+               'B1718_113021_en6C_ipd_p2_sm_txt_cnt',
+               'B1718_113021_en6C_ipd_p2_sm_txt_ddlwithmnm',
+               'B1718_113021_en6C_ipd_p2_sm_txt_expday',
+               'B1718_113021_en6C_ipd_p2_sm_txt_expday_border',
+               'B1718_113021_en6C_ipd_p2_sm_txt_expday_italic',
+               'B1718_113021_en6C_ipd_p2_sm_txt_weekday',
+               'B1718_113021_en6C_mob_p2_sm_txt_cnt',
+               'B1718_113021_en6C_mob_p2_sm_txt_ddlwithmnm',
+               'B1718_113021_en6C_mob_p2_sm_txt_expday',
+               'B1718_113021_en6C_mob_p2_sm_txt_expday_border',
+               'B1718_113021_en6C_mob_p2_sm_txt_expday_italic',
+               'B1718_113021_en6C_mob_p2_sm_txt_weekday',
+               'B1718_113023_en6C_ipd_p1_lg_txt_5paras',
+               'B1718_113023_en6C_ipd_p1_lg_txt_cbemailemb',
+               'B1718_113023_en6C_ipd_p1_lg_txt_cnt',
+               'B1718_113023_en6C_ipd_p1_lg_txt_enhancedcnt',
+               'B1718_113023_en6C_mob_p1_lg_txt_5paras',
+               'B1718_113023_en6C_mob_p1_lg_txt_cbemailemb',
+               'B1718_113023_en6C_mob_p1_lg_txt_cnt',
+               'B1718_113023_en6C_mob_p1_lg_txt_enhancedcnt',
+               'B1718_120115_en6C_ipd_p1_lg_frq_cnt',
+               'B1718_120115_en6C_ipd_p1_lg_frq_improvedtoggle',
+               'B1718_120115_en6C_ipd_p2_sm_frq_cnt',
+               'B1718_120115_en6C_ipd_p2_sm_frq_improvedtoggle',
+               'B1718_120115_en6C_mob_p1_lg_frq_cnt',
+               'B1718_120115_en6C_mob_p1_lg_frq_improvedtoggle',
+               'B1718_120115_en6C_mob_p2_sm_frq_cnt',
+               'B1718_120115_en6C_mob_p2_sm_frq_improvedtoggle',
+               'B1718_120117_en6C_ipd_p1_lg_dsn_twin1',
+               'B1718_120117_en6C_ipd_p1_lg_dsn_twin2',
+               'B1718_120117_en6C_mob_p1_lg_dsn_twin1',
+               'B1718_120117_en6C_mob_p1_lg_dsn_twin2',
+               'B1718_120121_en6C_ipd_p1_lg_frm_ccicons',
+               'B1718_120121_en6C_ipd_p1_lg_frm_cnt',
+               'B1718_120121_en6C_ipd_p1_lg_frm_scr',
+               'B1718_120121_en6C_ipd_p1_lg_frm_usrbbl',
+               'B1718_120121_en6C_ipd_p1_lg_txt_ddldate',
+               'B1718_120121_en6C_ipd_p1_lg_txt_ddldatehitourgoal',
+               'B1718_120121_en6C_mob_p1_lg_frm_ccicons',
+               'B1718_120121_en6C_mob_p1_lg_frm_cnt',
+               'B1718_120121_en6C_mob_p1_lg_frm_scr',
+               'B1718_120121_en6C_mob_p1_lg_frm_usrbbl',
+               'B1718_120121_en6C_mob_p1_lg_txt_ddldate',
+               'B1718_120121_en6C_mob_p1_lg_txt_ddldatehitourgoal',
+               'B1718_120218_en6C_mob_p1_lg_frm_cnt',
+               'B1718_120218_en6C_mob_p1_lg_frm_hrt')
+          LIMIT $batch";
+   $dao = CRM_CORE_DAO::executeQuery($sql);
+   while (TRUE) {
+     $ct_ids = [];
+     while ($dao->fetch()) {
+       $ct_ids[] = $dao->ct_id;
+     }
+     $batchSize = count($ct_ids);
+     if ($batchSize == 0) {
+       break;
+     }
+     drush_print("Fixing batch of $batchSize incorrectly marked refunds");
+     foreach ($ct_ids as $id) {
+       civicrm_api3(
+         'Contribution', 'create',
+         [
+           'id' => $id,
+           'contribution_status_id' => $completedStatusId
+         ]
+       );
+     }
+     // catch breath
+     sleep(1);
+   }
+ }
