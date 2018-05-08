@@ -3796,17 +3796,21 @@ function wmf_civicrm_update_7675() {
 /**
  * Update first recurring payments to non-refunded
  */
- function wmf_civicrm_update_7676() {
+ function wmf_civicrm_update_7677() {
    civicrm_initialize();
+
+   global $databases;
+   $drupaldb = $databases['default']['default']['database'];
+   $cividb = substr($drupaldb, 0, 3) === 'dev' ? 'dev_civicrm' : 'civicrm';
    $contributionStatusId = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
    $refundedStatusId = CRM_Utils_Array::key('Refunded', $contributionStatusId);
    $completedStatusId = CRM_Utils_Array::key('Completed', $contributionStatusId);
    $batch = 1000;
-   $sql = "SELECT ccc.id AS id
-               FROM civicrm.civicrm_contribution AS ccc
-               INNER JOIN civicrm.civicrm_contribution_recur AS ccr on ccr.id = ccc.contribution_recur_id
-               INNER JOIN drupal.contribution_tracking AS dct on dct.contribution_id = ccc.id
-               INNER JOIN drupal.contribution_source AS dcs on dct.id = dcs.contribution_tracking_id
+   $sql = "SELECT ccc.id, ccc.total_amount, ccc.financial_type_id, ccc.contact_id
+               FROM $cividb.civicrm_contribution AS ccc
+               INNER JOIN $cividb.civicrm_contribution_recur AS ccr on ccr.id = ccc.contribution_recur_id
+               INNER JOIN $drupaldb.contribution_tracking AS dct on dct.contribution_id = ccc.id
+               INNER JOIN $drupaldb.contribution_source AS dcs on dct.id = dcs.contribution_tracking_id
                WHERE dct.ts >= '20171011000000'  and dct.ts <= '20171204213500'
                AND ccc.trxn_id LIKE '%RECURRING GLOBALCOLLECT%'
                AND ccc.trxn_id NOT LIKE '%-%'
@@ -3995,22 +3999,25 @@ function wmf_civicrm_update_7675() {
           LIMIT $batch";
    $dao = CRM_CORE_DAO::executeQuery($sql);
    while (TRUE) {
-     $ct_ids = [];
+     $contributions = [];
      while ($dao->fetch()) {
-       $ct_ids[] = $dao->ct_id;
+       $contributions[] = [
+         'id' => $dao->id,
+         'total_amount' => $dao->total_amount,
+         'financial_type_id' => $dao->financial_type_id,
+         'contact_id' => $dao->contact_id,
+       ];
      }
-     $batchSize = count($ct_ids);
+     $batchSize = count($contributions);
      if ($batchSize == 0) {
        break;
      }
      drush_print("Fixing batch of $batchSize incorrectly marked refunds");
-     foreach ($ct_ids as $id) {
+     foreach ($contributions as $contribution) {
+       $params = $contribution;
+       $params['contribution_status_id'] = $completedStatusId;
        civicrm_api3(
-         'Contribution', 'create',
-         [
-           'id' => $id,
-           'contribution_status_id' => $completedStatusId
-         ]
+         'Contribution', 'create', $params
        );
      }
      // catch breath
