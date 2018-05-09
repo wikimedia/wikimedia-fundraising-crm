@@ -3796,7 +3796,7 @@ function wmf_civicrm_update_7675() {
 /**
  * Update first recurring payments to non-refunded
  */
- function wmf_civicrm_update_7677() {
+ function wmf_civicrm_update_7678() {
    civicrm_initialize();
 
    global $databases;
@@ -3997,8 +3997,8 @@ function wmf_civicrm_update_7675() {
                'B1718_120218_en6C_mob_p1_lg_frm_cnt',
                'B1718_120218_en6C_mob_p1_lg_frm_hrt')
           LIMIT $batch";
-   $dao = CRM_CORE_DAO::executeQuery($sql);
    while (TRUE) {
+     $dao = CRM_CORE_DAO::executeQuery($sql);
      $contributions = [];
      while ($dao->fetch()) {
        $contributions[] = [
