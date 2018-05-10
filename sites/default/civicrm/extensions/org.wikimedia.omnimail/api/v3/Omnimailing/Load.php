@@ -67,7 +67,7 @@ function civicrm_api3_omnimailing_load($params) {
         'body_html' => !empty($mailing['body_html']) ? $mailing['body_html'] : '',
         'body_text' => !empty($mailing['body_text']) ? $mailing['body_text'] : '',
         'name' => !empty($mailing['name']) ? $mailing['name'] : 'sp' . $mailing['external_identifier'],
-        'subject' => $mailing['subject'],
+        'subject' => substr($mailing['subject'], 0, 128),
         'created_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
         'hash' => 'sp' . $mailing['external_identifier'],
         'scheduled_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
