@@ -3435,7 +3435,7 @@ function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
           $extra['original_currency'] = $original_currency;
           $extra['original_amount'] = $original_amount;
         }
-        else {
+        elseif (is_numeric($original_amount)) {
           $extra['original_currency'] = 'USD';
           $extra['original_amount'] = $contribution->total_amount;
         }
