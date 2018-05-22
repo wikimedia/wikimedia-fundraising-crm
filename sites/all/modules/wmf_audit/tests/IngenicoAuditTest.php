@@ -156,6 +156,37 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
         ],
       ],
       [
+        __DIR__ . '/data/Ingenico/lastDayOfMonth/',
+        [
+          'main' => [
+            [
+              'contribution_tracking_id' => '57123456',
+              'country' => 'NL',
+              'currency' => 'EUR',
+              'date' => 1525114284,
+              'email' => 'a.donor@example.org',
+              'first_name' => 'Wiki',
+              'gateway' => 'globalcollect',
+              // TODO: Connect donations get 'ingenico'
+              'gateway_txn_id' => '9812345678',
+              'gross' => '3.00',
+              'installment' => 1,
+              'last_name' => 'Superfan',
+              'order_id' => '9812345678',
+              'payment_method' => 'rtbt',
+              'payment_submethod' => 'rtbt_ideal',
+              'user_ip' => '11.22.33.44',
+              'utm_campaign' => 'ingenico_audit',
+              'utm_medium' => 'ingenico_audit',
+              'utm_source' => 'ingenico_audit',
+              'street_address' => 'N0NE PROVIDED',
+              'city' => 'NOCITY',
+              'postal_code' => '0',
+            ],
+          ],
+        ],
+      ],
+      [
         __DIR__ . '/data/Ingenico/refund/',
         [
           'negative' => [

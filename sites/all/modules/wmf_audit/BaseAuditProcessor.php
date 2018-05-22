@@ -663,7 +663,7 @@ abstract class BaseAuditProcessor {
       //As we're stepping backward, we should look for transactions that come
       //from the current log date, or the one before.
       foreach ($missing_by_date as $date => $data) {
-        if ($date >= ($log_date - 1)) {
+        if (wmf_common_date_add_days($date, 1) >= $log_date) {
           if (!array_key_exists($date, $tryme)) {
             wmf_audit_echo("Adding date $date to the date pool for log date $log_date");
             $tryme[$date] = $data;
