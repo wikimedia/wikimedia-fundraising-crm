@@ -98,6 +98,7 @@ class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
               'order_id' => '87654321-0',
               'payment_method' => 'amazon',
               'payment_submethod' => '',
+              'recurring' => '',
               'user_ip' => '1.2.3.4',
               'utm_campaign' => 'C13_en.wikipedia.org',
               'utm_medium' => 'sidebar',

@@ -1231,37 +1231,37 @@ abstract class BaseAuditProcessor {
         "Could not parse JSON data in $line"
       );
     }
-    // Translate and filter field names
-    // TODO: we're phasing out the non-standard front-end names
-    // We can reduce this to a filter a month or so after that.
-    $map = [
-      'amount' => 'gross',
-      'country' => 'country',
-      'currency' => 'currency',
-      'currency_code' => 'currency',
-      'email' => 'email',
-      'first_name' => 'first_name',
-      'fname' => 'first_name',
-      'gateway' => 'gateway',
-      'gateway_account' => 'gateway_account',
-      'gross' => 'gross',
-      'language' => 'language',
-      'last_name' => 'last_name',
-      'lname' => 'last_name',
-      'payment_method' => 'payment_method',
-      'payment_submethod' => 'payment_submethod',
-      'user_ip' => 'user_ip',
-      'utm_campaign' => 'utm_campaign',
-      'utm_medium' => 'utm_medium',
-      'utm_source' => 'utm_source',
+    // Filter field names
+    $filter = [
+      'gross',
+      'city',
+      'country',
+      'currency',
+      'email',
+      'first_name',
+      'gateway',
+      'gateway_account',
+      'gross',
+      'language',
+      'last_name',
+      'payment_method',
+      'payment_submethod',
+      'postal_code',
+      'recurring',
+      'state_province',
+      'street_address',
+      'user_ip',
+      'utm_campaign',
+      'utm_medium',
+      'utm_source',
     ];
-    $normal = [];
-    foreach ($map as $logName => $normalName) {
-      if (isset($log_data[$logName])) {
-        $normal[$normalName] = $log_data[$logName];
+    $filtered = [];
+    foreach ($filter as $fieldName) {
+      if (isset($log_data[$fieldName])) {
+        $filtered[$fieldName] = $log_data[$fieldName];
       }
     }
-    return $normal;
+    return $filtered;
   }
 
   /**
