@@ -62,24 +62,16 @@ class AmazonAuditProcessor extends BaseAuditProcessor {
   }
 
   /**
-   * Get the name of a compressed log file based on the supplied date.
-   *
-   * @param string $date date in YYYYMMDD format
-   *
-   * @return string Name of the file we're looking for
+   * @inheritdoc
    */
-  protected function get_compressed_log_file_name($date) {
-    return "payments-amazon_gateway-{$date}.gz";
+  protected function get_compressed_log_file_names($date) {
+    return ["payments-amazon_gateway-{$date}.gz"];
   }
 
   /**
-   * Get the name of an uncompressed log file based on the supplied date.
-   *
-   * @param string $date date in YYYYMMDD format
-   *
-   * @return string Name of the file we're looking for
+   * @inheritdoc
    */
-  protected function get_uncompressed_log_file_name($date) {
-    return "payments-amazon_gateway-{$date}";
+  protected function get_uncompressed_log_file_names($date) {
+    return ["payments-amazon_gateway-{$date}"];
   }
 }
