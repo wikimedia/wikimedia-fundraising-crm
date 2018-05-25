@@ -4024,3 +4024,29 @@ function wmf_civicrm_update_7675() {
      sleep(1);
    }
  }
+
+/**
+ * Update status on canceled unintended recurs round 3
+ *
+ * Bug: T192958
+ */
+function wmf_civicrm_update_7685() {
+  civicrm_initialize();
+  global $databases;
+  $drupal = $databases['default']['default']['database'];
+  CRM_Core_DAO::executeQuery(
+    "UPDATE civicrm_contribution_recur AS cr
+     INNER JOIN civicrm_contribution AS cc on cc.contribution_recur_id = cr.id
+     INNER JOIN {$drupal}.contribution_tracking AS ct on ct.contribution_id = cc.id
+     INNER JOIN {$drupal}.contribution_source AS cs on ct.id = cs.contribution_tracking_id
+     SET cr.cancel_date = '2018-5-24 01:23:45', cr.contribution_status_id = 3
+     WHERE ct.ts >= '20171011000000'  and ct.ts <= '20171204213500'
+     AND cc.trxn_id LIKE '%RECURRING GLOBALCOLLECT%'
+     AND (isnull(cr.end_date) and isnull(cr.cancel_date))
+     AND cs.banner in ('B1718_120318_en6C_mob_p1_lg_frm_cnt.no-LP.rcc','B1718_120318_en6C_mob_p1_lg_frm_commty',
+                      'B1718_120117_en6C_mob_p2_sm_txt_cnt','B1718_120117_en6C_mob_p2_sm_txt_weekday',
+                      'B1718_120318_en6C_ipd_p1_lg_frm_cnt.no-LP.rcc',
+                      'B1718_120318_en6C_ipd_p1_lg_frm_commty','B1718_120117_en6C_ipd_p2_sm_txt_cnt',
+                      'B1718_120117_en6C_ipd_p2_sm_txt_weekday')"
+  );
+}
