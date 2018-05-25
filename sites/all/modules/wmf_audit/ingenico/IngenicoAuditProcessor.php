@@ -36,7 +36,7 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
 
   /**
    * Initial logs for the Ingenico Connect API have no gateway transaction id,
-   * just our contribution tracking id and the hosted checkout session ID.
+   * just our invoice id and the hosted checkout session ID.
    *
    * @param array $transaction possibly incomplete set of transaction data
    *
@@ -44,6 +44,11 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
    */
   protected function get_order_id($transaction) {
     if (is_array($transaction)) {
+      if ($transaction['gateway'] === 'ingenico') {
+        if (array_key_exists('invoice_id', $transaction)) {
+          return $transaction['invoice_id'];
+        }
+      }
       if (array_key_exists('order_id', $transaction)) {
         return $transaction['order_id'];
       }
@@ -56,29 +61,45 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
 
   /**
    * TODO: transition from 'globalcollect' to 'ingenico' and stop
-   * overriding these two functions
+   * overriding these three functions
    *
    * @inheritdoc
    */
   protected function get_compressed_log_file_names($date) {
-    return ["payments-globalcollect-{$date}.gz"];
+    return [
+      "payments-globalcollect-{$date}.gz",
+      "payments-ingenico-{$date}.gz",
+    ];
   }
 
   /**
    * @inheritdoc
    */
   protected function get_uncompressed_log_file_names($date) {
-    return ["payments-globalcollect-{$date}"];
+    return [
+      "payments-globalcollect-{$date}",
+      "payments-ingenico-{$date}",
+    ];
   }
 
   /**
-   * The regex to use to determine if a file is an uncompressed log for this
+   * @inheritdoc
+   */
+  protected function get_working_log_file_names($date) {
+    return [
+      "{$date}_globalcollect.working",
+      "{$date}_ingenico.working",
+    ];
+  }
+
+  /**
+   * The regex to use to determine if a file is an working log for this
    * gateway.
    *
    * @return string regular expression
    */
-  protected function regex_for_uncompressed_log() {
-    return "/globalcollect_\d{8}/";
+  protected function regex_for_working_log() {
+    return "/\d{8}_(globalcollect|ingenico)/";
   }
 
   protected function pre_process_refund($transaction) {
