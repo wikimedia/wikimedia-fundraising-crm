@@ -130,25 +130,6 @@ abstract class BaseAuditProcessor {
   }
 
   /**
-   * The regex to use to determine if a file is a compressed payments log.
-   *
-   * @return string regular expression
-   */
-  protected function regex_for_compressed_log() {
-    return '/.gz/';
-  }
-
-  /**
-   * The regex to use to determine if a file is an uncompressed log for this
-   * gateway.
-   *
-   * @return string regular expression
-   */
-  protected function regex_for_uncompressed_log() {
-    return "/{$this->name}_\d{8}/";
-  }
-
-  /**
    * Returns the configurable number of days we want to jump back in to the
    * past, to look for transactions in the payments logs.
    *
@@ -564,7 +545,7 @@ abstract class BaseAuditProcessor {
         if (substr($file, 0, 1) == '.') {
           continue;
         }
-        if ($this->get_filetype($file) === 'recon') {
+        if (preg_match($this->regex_for_recon(), $file)) {
           $sort_key = $this->get_recon_file_sort_key($file); // report date or sequence number or something
           $files_by_sort_key[$sort_key][] = $files_directory . '/' . $file;
         }
@@ -963,7 +944,7 @@ abstract class BaseAuditProcessor {
     }
     while (($file = readdir($handle)) !== FALSE) {
       $temp_date = FALSE;
-      if ($this->get_filetype($file) === 'working_log') {
+      if (preg_match($this->regex_for_working_log(), $file)) {
         $full_path = $working_dir . '/' . $file;
         $temp_date = $this->get_working_log_file_date($file);
       }
@@ -973,37 +954,6 @@ abstract class BaseAuditProcessor {
       $working_logs[$temp_date][] = $full_path;
     }
     return $working_logs;
-  }
-
-  /**
-   * Figures out what type of file you've got there, according to what the
-   * gateway module has defined in its _regex_for_ functions.
-   *
-   * @param string $file Full path to the file of interest
-   *
-   * @return mixed 'recon'|'working_log'|'uncompressed_log'|'compressed_log'|false
-   *   if it's nothing the gateway recognizes.
-   */
-  protected function get_filetype($file) {
-    //we have three types of files, right? compressed, uncompressed, distilled, and recon file.
-    //...four. Four types.
-
-    $types = [
-      'recon',
-      'working_log',
-      'uncompressed_log',
-      'compressed_log',
-    ];
-
-    foreach ($types as $type) {
-      $function_name = 'regex_for_' . $type;
-      // TODO: map rather than functions
-      if (preg_match($this->$function_name(), $file)) {
-        return $type;
-      }
-    }
-
-    return FALSE;
   }
 
   /**
