@@ -55,5 +55,8 @@
       <testsuite name="geocoder_tests">
         <directory>sites/default/civicrm/extensions/org.wikimedia.geocoder/tests/phpunit</directory>
       </testsuite>
+      <testsuite name="forgetme_tests">
+        <directory>sites/default/civicrm/extensions/org.wikimedia.forgetme/tests/phpunit</directory>
+      </testsuite>
     </testsuites>
 </phpunit>

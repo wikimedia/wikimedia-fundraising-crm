@@ -4070,3 +4070,12 @@ function wmf_civicrm_update_7685() {
                       'B1718_120117_en6C_ipd_p2_sm_txt_weekday')"
   );
 }
+
+/**
+ * Enable forgetme.
+ *
+ * Bug: 195261
+ */
+function wmf_civicrm_update_7690() {
+  wmf_civicrm_reconcile_extensions();
+}

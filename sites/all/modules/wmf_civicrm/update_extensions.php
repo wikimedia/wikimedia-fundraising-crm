@@ -43,5 +43,6 @@ function wmf_install_get_installed_extensions() {
     'org.wikimedia.rip',
     'org.wikimedia.unsubscribeemail',
     'org.wikimedia.datachecks',
+    'org.wikimedia.forgetme',
   ];
 }
