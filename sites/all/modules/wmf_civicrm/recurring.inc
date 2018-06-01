@@ -555,7 +555,10 @@ function wmf_civicrm_get_payment_processor_id($processorName) {
       'name' => $processorName,
     ]);
   } catch (CiviCRM_API3_Exception $e) {
-    throw new WmfException(WmfException::MISSING_PREDECESSOR, 'No such Payment Processor exists, name=' . $gateway . "'', " . $e->getMessage());
+    throw new WmfException(
+      WmfException::MISSING_PREDECESSOR,
+      "No such Payment Processor exists, name='$processorName', " . $e->getMessage()
+    );
   }
   return $payment_processor_result['id'];
 }
