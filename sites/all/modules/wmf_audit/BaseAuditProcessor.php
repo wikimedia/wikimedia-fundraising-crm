@@ -715,7 +715,7 @@ abstract class BaseAuditProcessor {
                 $order_id = $this->get_order_id($transaction);
                 if (!$order_id) {
                   throw new WmfException(
-                    'MISSING_MANDATORY_DATA',
+                    WmfException::MISSING_MANDATORY_DATA,
                     'Could not get an order id for the following transaction ' . print_r($transaction, TRUE)
                   );
                 }
@@ -736,7 +736,7 @@ abstract class BaseAuditProcessor {
 
                 if (!$contribution_tracking_data) {
                   throw new WmfException(
-                    'MISSING_MANDATORY_DATA',
+                    WmfException::MISSING_MANDATORY_DATA,
                     'No contribution tracking data retrieved for transaction ' . print_r($all_data, TRUE)
                   );
                 }
@@ -753,7 +753,7 @@ abstract class BaseAuditProcessor {
                     // Limit the bandaid to ONLY deal with first installments
                     if (!empty($all_data['installment']) && $all_data['installment'] > 1) {
                       throw new WmfException(
-                        'INVALID_RECURRING',
+                        WmfException::INVALID_RECURRING,
                         "Audit parser found recurring order $order_id with installment {$all_data['installment']}"
                       );
                     }
@@ -765,7 +765,7 @@ abstract class BaseAuditProcessor {
                     $message = 'Payment method mismatch between utm tracking data(' . $contribution_tracking_data['utm_payment_method'];
                     $message .= ') and normalized log and recon data(' . $method . '). Investigation required.';
                     throw new WmfException(
-                      'DATA_INCONSISTENT',
+                      WmfException::DATA_INCONSISTENT,
                       $message
                     );
                   }
@@ -1209,7 +1209,7 @@ abstract class BaseAuditProcessor {
       }
       // We have log data, but nothing matches. This is too weird.
       throw new WmfException(
-        'DATA_INCONSISTENT',
+        WmfException::DATA_INCONSISTENT,
         'Inconsistent data. Skipping the following: ' . print_r($audit_data, TRUE) . "\n" . print_r($raw_data, TRUE)
       );
     }
@@ -1220,48 +1220,48 @@ abstract class BaseAuditProcessor {
     $matches = [];
     if (!preg_match('/[^{]*([{].*)/', $line, $matches)) {
       throw new WmfException(
-        'MISSING_MANDATORY_DATA',
+        WmfException::MISSING_MANDATORY_DATA,
         "JSON data not found in $line"
       );
     }
     $log_data = json_decode($matches[1], TRUE);
     if (!$log_data) {
       throw new WmfException(
-        'MISSING_MANDATORY_DATA',
+        WmfException::MISSING_MANDATORY_DATA,
         "Could not parse JSON data in $line"
       );
     }
-    // Translate and filter field names
-    // TODO: we're phasing out the non-standard front-end names
-    // We can reduce this to a filter a month or so after that.
-    $map = [
-      'amount' => 'gross',
-      'country' => 'country',
-      'currency' => 'currency',
-      'currency_code' => 'currency',
-      'email' => 'email',
-      'first_name' => 'first_name',
-      'fname' => 'first_name',
-      'gateway' => 'gateway',
-      'gateway_account' => 'gateway_account',
-      'gross' => 'gross',
-      'language' => 'language',
-      'last_name' => 'last_name',
-      'lname' => 'last_name',
-      'payment_method' => 'payment_method',
-      'payment_submethod' => 'payment_submethod',
-      'user_ip' => 'user_ip',
-      'utm_campaign' => 'utm_campaign',
-      'utm_medium' => 'utm_medium',
-      'utm_source' => 'utm_source',
+    // Filter field names
+    $filter = [
+      'gross',
+      'city',
+      'country',
+      'currency',
+      'email',
+      'first_name',
+      'gateway',
+      'gateway_account',
+      'gross',
+      'language',
+      'last_name',
+      'payment_method',
+      'payment_submethod',
+      'postal_code',
+      'recurring',
+      'state_province',
+      'street_address',
+      'user_ip',
+      'utm_campaign',
+      'utm_medium',
+      'utm_source',
     ];
-    $normal = [];
-    foreach ($map as $logName => $normalName) {
-      if (isset($log_data[$logName])) {
-        $normal[$normalName] = $log_data[$logName];
+    $filtered = [];
+    foreach ($filter as $fieldName) {
+      if (isset($log_data[$fieldName])) {
+        $filtered[$fieldName] = $log_data[$fieldName];
       }
     }
-    return $normal;
+    return $filtered;
   }
 
   /**

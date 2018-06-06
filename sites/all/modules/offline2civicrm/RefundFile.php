@@ -21,12 +21,12 @@ class RefundFile {
 
 	function import() {
 		if ( !file_exists( $this->file_uri ) ) {
-			throw new WmfException( 'FILE_NOT_FOUND', 'File not found: ' . $this->file_uri );
+			throw new WmfException( WmfException::FILE_NOT_FOUND, 'File not found: ' . $this->file_uri );
 		}
 
 		$file = fopen( $this->file_uri, 'r' );
 		if ( $file === false ) {
-			throw new WmfException( 'FILE_NOT_FOUND', 'Could not open file for reading: ' . $this->file_uri );
+			throw new WmfException( WmfException::FILE_NOT_FOUND, 'Could not open file for reading: ' . $this->file_uri );
 		}
 
 		$headers = _load_headers( fgetcsv( $file, 0, ',' ) );

@@ -18,151 +18,16 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
     return substr($file, 15, 8);
   }
 
-  // TODO: Switch to json log parsing when caught up to 20170727
   protected function get_log_distilling_grep_string() {
-    return 'RETURNED FROM CURL.*<ACTION>INSERT_ORDERWITHPAYMENT</ACTION>';
+    return 'Redirecting for transaction:';
   }
 
   protected function get_log_line_grep_string($order_id) {
-    return "<ORDERID>$order_id</ORDERID>";
+    return ":$order_id Redirecting for transaction:";
   }
 
-  protected function parse_log_line($logLine) {
-    // get the xml, and the contribution_id... and while we're at it, parse the xml.
-    $xml = NULL;
-    $full_xml = FALSE;
-    $contribution_id = NULL;
-
-    // look for the raw xml.
-    $xmlstart = strpos($logLine, '<XML>');
-    $xmlend = strpos($logLine, '</XML>');
-    if ($xmlend) {
-      $full_xml = TRUE;
-      $xmlend += 6;
-      $xml = substr($logLine, $xmlstart, $xmlend - $xmlstart);
-    }
-    else {
-      // this is a broken line, and it won't load... but we can still parse what's left of the thing, the slow way.
-      $xml = substr($logLine, $xmlstart);
-    }
-    // get the contribution tracking id.
-    $ctid_end = strpos($logLine, 'RETURNED FROM CURL');
-    $ctid_start = strpos($logLine, '_gateway:') + 9;
-    $ctid = substr($logLine, $ctid_start, $ctid_end - $ctid_start);
-    $parts = explode(':', $ctid);
-    $contribution_id = trim($parts[0], ' :');
-    // go on with your bad self
-    // now parse the xml...
-
-    $donor_data = [];
-
-    if ($full_xml) {
-      $xmlobj = new DomDocument;
-      $xmlobj->loadXML($xml);
-
-      $parent_nodes = [
-        'ORDER',
-        'PAYMENT',
-      ];
-
-      foreach ($parent_nodes as $parent_node) {
-        foreach ($xmlobj->getElementsByTagName($parent_node) as $node) {
-          foreach ($node->childNodes as $childnode) {
-            if (trim($childnode->nodeValue) != '') {
-              $donor_data[$childnode->nodeName] = $childnode->nodeValue;
-            }
-          }
-        }
-      }
-    }
-    else {
-      $search_for_nodes = [
-        'ORDERID' => TRUE,
-        'AMOUNT' => TRUE,
-        'CURRENCYCODE' => TRUE,
-        'PAYMENTPRODUCTID' => TRUE,
-        'ORDERTYPE' => FALSE,
-        'EMAIL' => TRUE,
-        'FIRSTNAME' => FALSE,
-        'SURNAME' => FALSE,
-        'STREET' => FALSE,
-        'CITY' => FALSE,
-        'STATE' => FALSE,
-        'COUNTRYCODE' => TRUE,
-        'ZIP' => FALSE,
-      ];
-
-      foreach ($search_for_nodes as $node => $mandatory) {
-        $tmp = $this->getPartialXmlNodeValue($node, $xml);
-        if (!is_null($tmp)) {
-          $donor_data[$node] = $tmp;
-        }
-        else {
-          if ($mandatory) {
-            throw new WmfException(
-              'MISSING_MANDATORY_DATA',
-              "Mandatory field $node missing for $contribution_id."
-            );
-          }
-          else {
-            $donor_data[$node] = '';
-          }
-        }
-      }
-    }
-
-    $return['contribution_tracking_id'] = $contribution_id;
-    // FIXME: move all staging/unstaging to SmashPig lib
-    $xmlMap = [
-      'ORDERID' => 'gateway_txn_id',
-      'CURRENCYCODE' => 'currency',
-      'EMAIL' => 'email',
-      'FIRSTNAME' => 'first_name',
-      'SURNAME' => 'last_name',
-      'STREET' => 'street_address',
-      'CITY' => 'city',
-      'STATE' => 'state_province',
-      'COUNTRYCODE' => 'country',
-      'ZIP' => 'postal_code',
-      'AMOUNT' => 'gross',
-    ];
-    foreach ($xmlMap as $theirs => $ours) {
-      if (isset($donor_data[$theirs])) {
-        $return[$ours] = $donor_data[$theirs];
-      }
-    }
-    $return['gross'] = $return['gross'] / 100;
-    $normalizedMethod = ReferenceData::decodePaymentMethod(
-      $donor_data['PAYMENTPRODUCTID']
-    );
-    if (!empty($donor_data['ORDERTYPE']) && $donor_data['ORDERTYPE'] === '4') {
-      $return['recurring'] = 1;
-    }
-    $return = array_merge($return, $normalizedMethod);
-    return $return;
-  }
-
-  function getPartialXmlNodeValue($node, $xml) {
-    $node1 = "<$node>";
-    $node2 = "</$node>";
-
-    $valstart = strpos($xml, $node1) + strlen($node1);
-    if (!$valstart) {
-      return NULL;
-    }
-
-    $valend = strpos($xml, $node2);
-    if (!$valend) { //it cut off in that node. This next thing is therefore safe(ish).
-      $valend = strpos($xml, '</');
-    }
-
-    if (!$valend) {
-      return NULL;
-    }
-
-    $value = substr($xml, $valstart, $valend - $valstart);
-    return $value;
-
+  protected function parse_log_line($logline) {
+    return $this->parse_json_log_line($logline);
   }
 
   protected function regex_for_recon() {

@@ -44,7 +44,7 @@ class SquareFile extends ChecksFile {
         // the others as of now are pending, canceled, and deposited.
 
         if (! in_array($data['Status'], array('Completed', 'Refunded'))) {
-            throw new IgnoredRowException('INVALID_MESSAGE', t('Status of @status not valid for Square import', array('@status' => $data['Status'])));
+            throw new IgnoredRowException(WmfException::INVALID_MESSAGE, t('Status of @status not valid for Square import', array('@status' => $data['Status'])));
         }
 
         return parent::parseRow( $data );

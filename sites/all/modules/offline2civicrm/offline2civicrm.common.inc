@@ -27,7 +27,7 @@ function _load_headers( $row ){
     $used[$upper] = true;
   }
   if ( $duplicates ) {
-    throw new WmfException( 'INVALID_FILE_FORMAT', 'Duplicate column headers: ' . implode( ", ", $duplicates ) );
+    throw new WmfException( WmfException::INVALID_FILE_FORMAT, 'Duplicate column headers: ' . implode( ", ", $duplicates ) );
   }
   watchdog( 'offline2civicrm', 'Import checks: Column headers loaded from file', array(), WATCHDOG_INFO );
 

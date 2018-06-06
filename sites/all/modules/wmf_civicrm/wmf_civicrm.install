@@ -4050,3 +4050,129 @@ function wmf_civicrm_update_7685() {
                       'B1718_120117_en6C_ipd_p2_sm_txt_weekday')"
   );
 }
+
+/**
+ * Re-save any contacts with a middle name.
+ *
+ * Doing a blank re-save will cause the display name to be recalculated by Civi
+ * rules.
+ *
+ * We now display middle name in the display name so this will update that.
+ *
+ * Bug: T195311
+ */
+function wmf_civicrm_update_7686() {
+  civicrm_initialize();
+  $result = CRM_Core_DAO::executeQuery(
+    "SELECT id FROM civicrm_contact WHERE (middle_name <> '') AND is_deleted= 0"
+  );
+  while ($result->fetch()) {
+    civicrm_api3('Contact', 'create', array('id' => $result->id));
+  }
+}
+
+/**
+ * Enable forgetme.
+ *
+ * Bug: 195261
+ */
+function wmf_civicrm_update_7690() {
+  wmf_civicrm_reconcile_extensions();
+}
+
+/**
+ * Create additional partner custom fields.
+ */
+function wmf_civicrm_update_7700() {
+  require_once 'update_custom_fields.php';
+  _wmf_civicrm_update_custom_fields();
+}
+
+/**
+ * Restore data lost in 'same moment merges'.
+ *
+ * For a period in May 2018 from 1 to 14 May there were 2 merge dedupe jobs that were
+ * running at the same time about every 250 minutes. When the jobs started at exactly the same time
+ * the contact wound up with no emails as they took conflicting actions.
+ *
+ * 284 contacts were affected (282 in this range)
+ *
+ * I only found 2 contacts outside this date range who this appeared to have happened to.
+ * These were major gifts donors who appeared to have hit same-moment merges earlier on.
+ * (It's more luck than good design that we only hit these same moment merges - we simply didn't have
+ * a schedule that could conflict other than on major gifts - which is lower risk) until recently.
+ * The job for fixing this before we next run more than one job concurrently is T194701)
+ *
+ * I tested for phone numbers lost (I found 0) and addresses (202).
+ *
+ * The addresses seemed a mix of ones that ALSO had email deletes & older miscellaneous.
+ *
+ * Due to the addresses being also involved & after a couple of tests I decided that it makes
+ * sense to use the revert api to revert the whole merge. Trialled on staging.
+ *
+ * Note that each merge gets it's own log_conn_id so reverting them will only revert that merge.
+ * Log_conn_id is a mandatory key so we won't get an empty causing havoc (the query should pre-clude that
+ * too).
+ *
+ * I checked the reported contact ids were included.
+ *
+ * Note on staging the following tables exist
+ * temp_t194662_emails - the selection to be reverted per below.
+ * temp_t194662_address - address losses found.
+ * temp_t194662_phones - ditto but none found
+ * temp_t194662_emails_larger - the emails search but with a broader net using
+ *   'LEFT JOIN civicrm_email email ON email.contact_id = retained_contact.contact_id AND email.email = la.email'
+ *   - the extra contacts found didn't seem relevant on cross-checking.
+ *
+ * Bug T194662
+ */
+function wmf_civicrm_update_7701() {
+  civicrm_initialize();
+  $contactsToRestore = CRM_Core_DAO::executeQuery("
+  SELECT retained_contact.contact_id, e.log_conn_id, a.activity_date_time, count(a.id) as count_rows, 
+e.email , e.location_type_id, e.is_primary, e.on_hold, e.`is_bulkmail`, deleted_contact.contact_id as deleted_contact_id
+# We are looking for duplicate merge activities at exactly the same time
+FROM civicrm_activity a
+# restrict to merge activities with merged-to contacts (these are retained)
+INNER JOIN civicrm_activity_contact retained_contact ON activity_id = a.id AND a.activity_type_id = 87 AND retained_contact.record_type_id = 1
+# join merge activity to contact merged from
+INNER JOIN civicrm_activity_contact deleted_contact ON deleted_contact.activity_id = a.id AND deleted_contact.record_type_id =3
+# join to activity log table on the insert record to get the connection 
+LEFT JOIN log_civicrm_activity la ON la.id = a.id AND la.log_action = 'Insert'
+# join that connection onto the deleted record in the email log table
+INNER JOIN log_civicrm_email e ON e.log_conn_id = la.log_conn_id AND e.log_action = 'Delete'
+# join that record onto the retained contacts existing email - we want ones where they have no email( AT ALL)
+LEFT JOIN civicrm_email email ON email.contact_id = retained_contact.contact_id
+WHERE email.id IS NULL
+# group by activity time, looking for more than one record created at the exact same time.
+GROUP BY a.activity_date_time, retained_contact.contact_id , deleted_contact.contact_id
+HAVING count_rows > 1;
+  ");
+   while ($contactsToRestore->fetch()) {
+     civicrm_api3('Logging', 'revert', ['log_conn_id' => $contactsToRestore->log_conn_id]);
+   }
+
+  /**
+   *  Address query.
+   CREATE TABLE temp_t194662_address
+  SELECT retained_contact.contact_id, count(a.id) as count_rows,
+  e.street_address , e.location_type_id, e.is_primary, deleted_contact.contact_id as deleted_contact_id,
+  e.log_conn_id, a.activity_date_time
+  # We are looking for duplicate merge activities at exactly the same time
+  FROM civicrm_activity a
+  # restrict to merge activities with merged-to contacts (these are retained)
+  INNER JOIN civicrm_activity_contact retained_contact ON activity_id = a.id AND a.activity_type_id = 87 AND retained_contact.record_type_id = 1
+  # join merge activity to contact merged from
+  INNER JOIN civicrm_activity_contact deleted_contact ON deleted_contact.activity_id = a.id AND deleted_contact.record_type_id =3
+  # join to activity log table on the insert record to get the connection
+  LEFT JOIN log_civicrm_activity la ON la.id = a.id AND la.log_action = 'Insert'
+  # join that connection onto the deleted record in the email log table
+  INNER JOIN log_civicrm_address e ON e.log_conn_id = la.log_conn_id AND e.log_action = 'Delete'
+  # join that record onto the retained contact's existing email - we want ones where they have no email( AT ALL)
+  LEFT JOIN civicrm_address phone ON phone.contact_id = retained_contact.contact_id
+  WHERE phone.id IS NULL
+  # group by activity time, looking for more than one record created at the exact same time.
+  GROUP BY a.activity_date_time, retained_contact.contact_id , deleted_contact.contact_id
+  HAVING count_rows > 1;
+   */
+}
