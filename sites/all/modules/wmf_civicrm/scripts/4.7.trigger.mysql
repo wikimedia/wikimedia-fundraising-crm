@@ -3431,6 +3431,30 @@ DROP TRIGGER IF EXISTS civicrm_value_organization_contact_14_after_delete //
 DELIMITER ;
 
 DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_partner_19_before_insert //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_partner_19_before_update //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_partner_19_before_delete //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_partner_19_after_insert //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_partner_19_after_update //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_partner_19_after_delete //
+DELIMITER ;
+
+DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_website_before_insert //
 DELIMITER ;
 
@@ -4870,7 +4894,7 @@ DROP TRIGGER IF EXISTS civicrm_file_after_insert //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_file_after_insert after insert ON civicrm_file FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_file (`id`, `file_type_id`, `mime_type`, `uri`, `document`, `description`, `upload_date`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`file_type_id`, NEW.`mime_type`, NEW.`uri`, NEW.`document`, NEW.`description`, NEW.`upload_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF; END //
+CREATE TRIGGER civicrm_file_after_insert after insert ON civicrm_file FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_file (`id`, `file_type_id`, `mime_type`, `uri`, `document`, `description`, `upload_date`, `created_id`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`file_type_id`, NEW.`mime_type`, NEW.`uri`, NEW.`document`, NEW.`description`, NEW.`upload_date`, NEW.`created_id`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF; END //
 DELIMITER ;
 
 DELIMITER //
@@ -4878,7 +4902,7 @@ DROP TRIGGER IF EXISTS civicrm_file_after_update //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_file_after_update after update ON civicrm_file FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`file_type_id`,'') <> IFNULL(NEW.`file_type_id`,'') OR IFNULL(OLD.`mime_type`,'') <> IFNULL(NEW.`mime_type`,'') OR IFNULL(OLD.`uri`,'') <> IFNULL(NEW.`uri`,'') OR IFNULL(OLD.`document`,'') <> IFNULL(NEW.`document`,'') OR IFNULL(OLD.`description`,'') <> IFNULL(NEW.`description`,'') OR IFNULL(OLD.`upload_date`,'') <> IFNULL(NEW.`upload_date`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_file (`id`, `file_type_id`, `mime_type`, `uri`, `document`, `description`, `upload_date`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`file_type_id`, NEW.`mime_type`, NEW.`uri`, NEW.`document`, NEW.`description`, NEW.`upload_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
+CREATE TRIGGER civicrm_file_after_update after update ON civicrm_file FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`file_type_id`,'') <> IFNULL(NEW.`file_type_id`,'') OR IFNULL(OLD.`mime_type`,'') <> IFNULL(NEW.`mime_type`,'') OR IFNULL(OLD.`uri`,'') <> IFNULL(NEW.`uri`,'') OR IFNULL(OLD.`document`,'') <> IFNULL(NEW.`document`,'') OR IFNULL(OLD.`description`,'') <> IFNULL(NEW.`description`,'') OR IFNULL(OLD.`upload_date`,'') <> IFNULL(NEW.`upload_date`,'') OR IFNULL(OLD.`created_id`,'') <> IFNULL(NEW.`created_id`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_file (`id`, `file_type_id`, `mime_type`, `uri`, `document`, `description`, `upload_date`, `created_id`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`file_type_id`, NEW.`mime_type`, NEW.`uri`, NEW.`document`, NEW.`description`, NEW.`upload_date`, NEW.`created_id`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
 DELIMITER ;
 
 DELIMITER //
@@ -4886,7 +4910,7 @@ DROP TRIGGER IF EXISTS civicrm_file_after_delete //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_file_after_delete after delete ON civicrm_file FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_file (`id`, `file_type_id`, `mime_type`, `uri`, `document`, `description`, `upload_date`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`file_type_id`, OLD.`mime_type`, OLD.`uri`, OLD.`document`, OLD.`description`, OLD.`upload_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
+CREATE TRIGGER civicrm_file_after_delete after delete ON civicrm_file FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_file (`id`, `file_type_id`, `mime_type`, `uri`, `document`, `description`, `upload_date`, `created_id`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`file_type_id`, OLD.`mime_type`, OLD.`uri`, OLD.`document`, OLD.`description`, OLD.`upload_date`, OLD.`created_id`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
 DELIMITER ;
 
 DELIMITER //
@@ -5633,7 +5657,7 @@ DROP TRIGGER IF EXISTS civicrm_membership_after_insert //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_membership_after_insert after insert ON civicrm_membership FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_membership (`id`, `contact_id`, `membership_type_id`, `join_date`, `start_date`, `end_date`, `source`, `status_id`, `is_override`, `owner_membership_id`, `max_related`, `is_test`, `is_pay_later`, `contribution_recur_id`, `campaign_id`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`contact_id`, NEW.`membership_type_id`, NEW.`join_date`, NEW.`start_date`, NEW.`end_date`, NEW.`source`, NEW.`status_id`, NEW.`is_override`, NEW.`owner_membership_id`, NEW.`max_related`, NEW.`is_test`, NEW.`is_pay_later`, NEW.`contribution_recur_id`, NEW.`campaign_id`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF; END //
+CREATE TRIGGER civicrm_membership_after_insert after insert ON civicrm_membership FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_membership (`id`, `contact_id`, `membership_type_id`, `join_date`, `start_date`, `end_date`, `source`, `status_id`, `is_override`, `owner_membership_id`, `max_related`, `is_test`, `is_pay_later`, `contribution_recur_id`, `campaign_id`, `status_override_end_date`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`contact_id`, NEW.`membership_type_id`, NEW.`join_date`, NEW.`start_date`, NEW.`end_date`, NEW.`source`, NEW.`status_id`, NEW.`is_override`, NEW.`owner_membership_id`, NEW.`max_related`, NEW.`is_test`, NEW.`is_pay_later`, NEW.`contribution_recur_id`, NEW.`campaign_id`, NEW.`status_override_end_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF; END //
 DELIMITER ;
 
 DELIMITER //
@@ -5641,7 +5665,7 @@ DROP TRIGGER IF EXISTS civicrm_membership_after_update //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_membership_after_update after update ON civicrm_membership FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') <> IFNULL(NEW.`contact_id`,'') OR IFNULL(OLD.`membership_type_id`,'') <> IFNULL(NEW.`membership_type_id`,'') OR IFNULL(OLD.`join_date`,'') <> IFNULL(NEW.`join_date`,'') OR IFNULL(OLD.`start_date`,'') <> IFNULL(NEW.`start_date`,'') OR IFNULL(OLD.`end_date`,'') <> IFNULL(NEW.`end_date`,'') OR IFNULL(OLD.`source`,'') <> IFNULL(NEW.`source`,'') OR IFNULL(OLD.`status_id`,'') <> IFNULL(NEW.`status_id`,'') OR IFNULL(OLD.`is_override`,'') <> IFNULL(NEW.`is_override`,'') OR IFNULL(OLD.`owner_membership_id`,'') <> IFNULL(NEW.`owner_membership_id`,'') OR IFNULL(OLD.`max_related`,'') <> IFNULL(NEW.`max_related`,'') OR IFNULL(OLD.`is_test`,'') <> IFNULL(NEW.`is_test`,'') OR IFNULL(OLD.`is_pay_later`,'') <> IFNULL(NEW.`is_pay_later`,'') OR IFNULL(OLD.`contribution_recur_id`,'') <> IFNULL(NEW.`contribution_recur_id`,'') OR IFNULL(OLD.`campaign_id`,'') <> IFNULL(NEW.`campaign_id`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_membership (`id`, `contact_id`, `membership_type_id`, `join_date`, `start_date`, `end_date`, `source`, `status_id`, `is_override`, `owner_membership_id`, `max_related`, `is_test`, `is_pay_later`, `contribution_recur_id`, `campaign_id`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`contact_id`, NEW.`membership_type_id`, NEW.`join_date`, NEW.`start_date`, NEW.`end_date`, NEW.`source`, NEW.`status_id`, NEW.`is_override`, NEW.`owner_membership_id`, NEW.`max_related`, NEW.`is_test`, NEW.`is_pay_later`, NEW.`contribution_recur_id`, NEW.`campaign_id`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
+CREATE TRIGGER civicrm_membership_after_update after update ON civicrm_membership FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') <> IFNULL(NEW.`contact_id`,'') OR IFNULL(OLD.`membership_type_id`,'') <> IFNULL(NEW.`membership_type_id`,'') OR IFNULL(OLD.`join_date`,'') <> IFNULL(NEW.`join_date`,'') OR IFNULL(OLD.`start_date`,'') <> IFNULL(NEW.`start_date`,'') OR IFNULL(OLD.`end_date`,'') <> IFNULL(NEW.`end_date`,'') OR IFNULL(OLD.`source`,'') <> IFNULL(NEW.`source`,'') OR IFNULL(OLD.`status_id`,'') <> IFNULL(NEW.`status_id`,'') OR IFNULL(OLD.`is_override`,'') <> IFNULL(NEW.`is_override`,'') OR IFNULL(OLD.`owner_membership_id`,'') <> IFNULL(NEW.`owner_membership_id`,'') OR IFNULL(OLD.`max_related`,'') <> IFNULL(NEW.`max_related`,'') OR IFNULL(OLD.`is_test`,'') <> IFNULL(NEW.`is_test`,'') OR IFNULL(OLD.`is_pay_later`,'') <> IFNULL(NEW.`is_pay_later`,'') OR IFNULL(OLD.`contribution_recur_id`,'') <> IFNULL(NEW.`contribution_recur_id`,'') OR IFNULL(OLD.`campaign_id`,'') <> IFNULL(NEW.`campaign_id`,'') OR IFNULL(OLD.`status_override_end_date`,'') <> IFNULL(NEW.`status_override_end_date`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_membership (`id`, `contact_id`, `membership_type_id`, `join_date`, `start_date`, `end_date`, `source`, `status_id`, `is_override`, `owner_membership_id`, `max_related`, `is_test`, `is_pay_later`, `contribution_recur_id`, `campaign_id`, `status_override_end_date`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`contact_id`, NEW.`membership_type_id`, NEW.`join_date`, NEW.`start_date`, NEW.`end_date`, NEW.`source`, NEW.`status_id`, NEW.`is_override`, NEW.`owner_membership_id`, NEW.`max_related`, NEW.`is_test`, NEW.`is_pay_later`, NEW.`contribution_recur_id`, NEW.`campaign_id`, NEW.`status_override_end_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
 DELIMITER ;
 
 DELIMITER //
@@ -5649,7 +5673,7 @@ DROP TRIGGER IF EXISTS civicrm_membership_after_delete //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_membership_after_delete after delete ON civicrm_membership FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_membership (`id`, `contact_id`, `membership_type_id`, `join_date`, `start_date`, `end_date`, `source`, `status_id`, `is_override`, `owner_membership_id`, `max_related`, `is_test`, `is_pay_later`, `contribution_recur_id`, `campaign_id`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`contact_id`, OLD.`membership_type_id`, OLD.`join_date`, OLD.`start_date`, OLD.`end_date`, OLD.`source`, OLD.`status_id`, OLD.`is_override`, OLD.`owner_membership_id`, OLD.`max_related`, OLD.`is_test`, OLD.`is_pay_later`, OLD.`contribution_recur_id`, OLD.`campaign_id`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
+CREATE TRIGGER civicrm_membership_after_delete after delete ON civicrm_membership FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_membership (`id`, `contact_id`, `membership_type_id`, `join_date`, `start_date`, `end_date`, `source`, `status_id`, `is_override`, `owner_membership_id`, `max_related`, `is_test`, `is_pay_later`, `contribution_recur_id`, `campaign_id`, `status_override_end_date`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`contact_id`, OLD.`membership_type_id`, OLD.`join_date`, OLD.`start_date`, OLD.`end_date`, OLD.`source`, OLD.`status_id`, OLD.`is_override`, OLD.`owner_membership_id`, OLD.`max_related`, OLD.`is_test`, OLD.`is_pay_later`, OLD.`contribution_recur_id`, OLD.`campaign_id`, OLD.`status_override_end_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
 DELIMITER ;
 
 DELIMITER //
@@ -7233,6 +7257,39 @@ DELIMITER ;
 
 DELIMITER //
 CREATE TRIGGER civicrm_value_organization_contact_14_after_delete after delete ON civicrm_value_organization_contact_14 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_organization_contact_14 (`id`, `entity_id`, `name_56`, `contact_information_57`, `title_58`, `street_address_59`, `supplimental_street_address_60`, `city_61`, `zip_code_62`, `state_63`, `country_64`, `phone_65`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`name_56`, OLD.`contact_information_57`, OLD.`title_58`, OLD.`street_address_59`, OLD.`supplimental_street_address_60`, OLD.`city_61`, OLD.`zip_code_62`, OLD.`state_63`, OLD.`country_64`, OLD.`phone_65`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
+
+UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.entity_id;
+ END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_partner_19_after_insert //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER civicrm_value_partner_19_after_insert after insert ON civicrm_value_partner_19 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_partner_19 (`id`, `entity_id`, `partner_165`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`partner_165`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
+
+UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
+ END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_partner_19_after_update //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER civicrm_value_partner_19_after_update after update ON civicrm_value_partner_19 FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`partner_165`,'') <> IFNULL(NEW.`partner_165`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_partner_19 (`id`, `entity_id`, `partner_165`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`partner_165`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
+
+UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
+ END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_partner_19_after_delete //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER civicrm_value_partner_19_after_delete after delete ON civicrm_value_partner_19 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_partner_19 (`id`, `entity_id`, `partner_165`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`partner_165`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
 
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.entity_id;
  END //
