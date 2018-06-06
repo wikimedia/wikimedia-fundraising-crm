@@ -4026,26 +4026,6 @@ function wmf_civicrm_update_7675() {
  }
 
 /**
- * Re-save any contacts with a middle name.
- *
- * Doing a blank re-save will cause the display name to be recalculated by Civi
- * rules.
- *
- * We now display middle name in the display name so this will update that.
- *
- * Bug: T195311
- */
-function wmf_civicrm_update_7680() {
-  civicrm_initialize();
-  $result = CRM_Core_DAO::executeQuery(
-    "SELECT id FROM civicrm_contact WHERE (middle_name <> '') AND is_deleted= 0"
-  );
-  while ($result->fetch()) {
-    civicrm_api3('Contact', 'create', array('id' => $result->id));
-  }
-}
-
-/**
  * Update status on canceled unintended recurs round 3
  *
  * Bug: T192958
@@ -4069,6 +4049,26 @@ function wmf_civicrm_update_7685() {
                       'B1718_120318_en6C_ipd_p1_lg_frm_commty','B1718_120117_en6C_ipd_p2_sm_txt_cnt',
                       'B1718_120117_en6C_ipd_p2_sm_txt_weekday')"
   );
+}
+
+/**
+ * Re-save any contacts with a middle name.
+ *
+ * Doing a blank re-save will cause the display name to be recalculated by Civi
+ * rules.
+ *
+ * We now display middle name in the display name so this will update that.
+ *
+ * Bug: T195311
+ */
+function wmf_civicrm_update_7686() {
+  civicrm_initialize();
+  $result = CRM_Core_DAO::executeQuery(
+    "SELECT id FROM civicrm_contact WHERE (middle_name <> '') AND is_deleted= 0"
+  );
+  while ($result->fetch()) {
+    civicrm_api3('Contact', 'create', array('id' => $result->id));
+  }
 }
 
 /**
