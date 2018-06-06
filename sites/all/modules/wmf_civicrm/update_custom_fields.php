@@ -5,28 +5,28 @@
  */
 function _wmf_civicrm_update_custom_fields() {
   civicrm_initialize();
-  $customGroupSpecs = array(
-    'Prospect' => array(
-      'group' => array(
+  $customGroupSpecs = [
+    'Prospect' => [
+      'group' => [
         'name' => 'Prospect',
         'title' => 'Prospect',
         'extends' => 'Contact',
         'style' => 'tab',
         'is_active' => 1,
-      ),
+      ],
       'fields' => _wmf_civicrm_get_prospect_fields(),
-    ),
-    'Anonymous' => array(
-      'group' => array(
+    ],
+    'Anonymous' => [
+      'group' => [
         'name' => 'Anonymous',
         'title' => 'Benefactor Page Listing',
         'extends' => 'Contact',
         'style' => 'Inline',
         'is_active' => 1,
-      ),
+      ],
       'fields' => _wmf_civicrm_get_benefactor_fields(),
-    ),
-  );
+    ],
+  ];
   foreach ($customGroupSpecs as $groupName => $customGroupSpec) {
     $customGroup = civicrm_api3('CustomGroup', 'get', array('name' => $groupName));
     if (!$customGroup['count']) {
