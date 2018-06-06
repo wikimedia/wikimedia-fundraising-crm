@@ -15,7 +15,7 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer{
 		foreach( $required_fields as $field_name ) {
 			if ( !array_key_exists( $field_name, $message ) ) {
 				$error = "Required field '$field_name' not present! Dropping message on floor.";
-				throw new WmfException( 'CIVI_REQ_FIELD', $error );
+				throw new WmfException( WmfException::CIVI_REQ_FIELD, $error );
 			}
 		}
 
@@ -50,7 +50,7 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer{
 			}
 		} else {
 			watchdog( 'refund', "$logId: Contribution not found for this transaction!", NULL, WATCHDOG_ERROR );
-			throw new WmfException( 'MISSING_PREDECESSOR', "Parent not found: $gateway $parentTxn" );
+			throw new WmfException( WmfException::MISSING_PREDECESSOR, "Parent not found: $gateway $parentTxn" );
 		}
 	}
 

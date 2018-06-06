@@ -54,7 +54,7 @@ class WmfImportFile extends ChecksFile {
 			!array_key_exists( 'Payment Instrument', $headers )
 		) {
 			throw new WmfException(
-				'INVALID_FILE_FORMAT',
+				WmfException::INVALID_FILE_FORMAT,
 				'File must contain either \'Payment Instrument\' or \'Raw Payment Instrument\''
 			);
 		}

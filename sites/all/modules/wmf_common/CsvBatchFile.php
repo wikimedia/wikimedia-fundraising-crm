@@ -9,7 +9,7 @@ class CsvBatchFile {
     function __construct( $filename ) {
         ini_set( 'auto_detect_line_endings', true );
         if( ( $this->file = fopen( $filename, 'r' )) === FALSE ){
-            throw new WmfException( 'FILE_NOT_FOUND', 'Could not open file for reading: ' . $filename );
+            throw new WmfException( WmfException::FILE_NOT_FOUND, 'Could not open file for reading: ' . $filename );
         }
 
         $this->headers = fgetcsv( $this->file, 0, ',', '"', '\\');

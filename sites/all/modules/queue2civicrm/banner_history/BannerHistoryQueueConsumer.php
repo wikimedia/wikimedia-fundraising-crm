@@ -14,7 +14,7 @@ class BannerHistoryQueueConsumer extends WmfQueueConsumer {
 	function processMessage( $message ) {
 		if ( empty( $message ) ) {
 			throw new WmfException(
-				'BANNER_HISTORY',
+				WmfException::BANNER_HISTORY,
 				'Empty banner history message.'
 			);
 		}
@@ -24,7 +24,7 @@ class BannerHistoryQueueConsumer extends WmfQueueConsumer {
 			empty( $message['contribution_tracking_id'] )
 		) {
 			throw new WmfException(
-				'BANNER_HISTORY',
+				WmfException::BANNER_HISTORY,
 				'Missing banner history or contribution tracking ID.'
 			);
 		}
@@ -37,7 +37,7 @@ class BannerHistoryQueueConsumer extends WmfQueueConsumer {
 			!preg_match( '/^[0-9a-f]{10,20}$/', $bannerHistoryId )
 		) {
 			throw new WmfException(
-				'BANNER_HISTORY',
+				WmfException::BANNER_HISTORY,
 				'Invalid data in banner history message.'
 			);
 		}
