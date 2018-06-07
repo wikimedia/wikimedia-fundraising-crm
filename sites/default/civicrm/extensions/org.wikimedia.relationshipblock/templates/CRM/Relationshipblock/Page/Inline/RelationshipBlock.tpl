@@ -4,17 +4,17 @@
     {if $existingRelationships}
       {foreach from=$existingRelationships item=existingRelationship}
         <div class="crm-summary-row">
-          <div class="crm-label">{$existingRelationship.relationship_type}</div>
+          <div class="crm-label">{$existingRelationship.relationship_type|escape}</div>
           <div class="crm-content">
             <a href="{crmURL p='civicrm/contact/view' q="reset=1&cid=`$existingRelationship.other_contact_id`"}" title="{ts}view contact{/ts}">
-              {$existingRelationship.relation_display_name}
+              {$existingRelationship.relation_display_name|escape}
             </a>
           </div>
         </div>
       {/foreach}
     {else}
       <div class="crm-summary-row">
-        <div class="crm-label">{$keyRelationshipLabel}</div>
+        <div class="crm-label">{$keyRelationshipLabel|escape}</div>
         <div class="crm-content"></div>
       </div>
     {/if}
