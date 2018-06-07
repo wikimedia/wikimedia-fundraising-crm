@@ -16,7 +16,7 @@ class CRM_Relationshipblock_Form_Inline_RelationshipBlock extends CRM_Contact_Fo
     foreach (CRM_Relationshipblock_Utils_RelationshipBlock::getDisplayedRelationshipTypes($this->_contactId) as $key => $relationshipType) {
       $params = [];
       list($a, $b) = explode('_', $relationshipType['dir']);
-      if (!empty($relationshipType["contact_type_$b"]) && in_array($relationshipType["contact_type_$b"], ['Individual', 'Household', 'Organizion'])) {
+      if (!empty($relationshipType["contact_type_$b"]) && in_array($relationshipType["contact_type_$b"], ['Individual', 'Household', 'Organization'])) {
         $params['contact_type'] = $relationshipType["contact_type_$b"];
       }
       if (!empty($relationshipType["contact_sub_type_$b"])) {
