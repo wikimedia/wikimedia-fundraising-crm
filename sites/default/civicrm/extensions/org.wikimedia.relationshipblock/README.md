@@ -1,15 +1,24 @@
-# org.wikimedia.relationshipblock
+# Relationship Block
+org.wikimedia.relationshipblock
 
-![Screenshot](/images/screenshot.png)
+![Screenshot](/images/relationship_block.gif)
 
-(*FIXME: In one or two paragraphs, describe what the extension does and why one would download it. *)
+This extension adds a block to the contact summary that allows editing of 
+any configured relationship type with a UI similar to the employer field.
+
+When the field is edited the relationship is updated.
+
+Note that this works like the employer field in that there is an expectation
+of only one relationship of this type. Do not use this field for relationships
+where you expect a contact to have many.
+
 
 The extension is licensed under [AGPL-3.0](LICENSE.txt).
 
 ## Requirements
 
-* PHP v5.4+
-* CiviCRM (*FIXME: Version number*)
+* PHP v5.6+
+* CiviCRM 5.3+
 
 ## Installation (Web UI)
 
@@ -37,8 +46,12 @@ cv en relationshipblock
 
 ## Usage
 
-(* FIXME: Where would a new user navigate to get started? What changes would they see? *)
+The configuration for which relationship types will show is in on the normal relationship type
+admin page.
+
+Once you have configured one or more types to display on the relationship type page the
+box will appear.
 
 ## Known Issues
 
-(* FIXME *)
+Per above - this is envisaged for relationships where only one is expected.
