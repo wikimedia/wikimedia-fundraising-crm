@@ -1,5 +1,6 @@
 <?php
 
+use SmashPig\Core\DataStores\DamagedDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 
 class OrphanSlayer {
@@ -17,7 +18,12 @@ class OrphanSlayer {
     public function rectify($orphan) {
         $orphan['amount'] = $orphan['gross'];
         $this->adapter = DonationInterfaceFactory::createAdapter($this->gateway, $orphan);
-        $result = $this->adapter->rectifyOrphan();
+        $result = array();
+        try {
+            $result = $this->adapter->rectifyOrphan();
+        } catch ( Exception $e ) {
+            DamagedDatabase::get()->storeMessage( $orphan, 'pending', $e->getMessage(), $e->getTraceAsString() );
+        }
         $this->delete_orphan($orphan);
         return $result;
     }

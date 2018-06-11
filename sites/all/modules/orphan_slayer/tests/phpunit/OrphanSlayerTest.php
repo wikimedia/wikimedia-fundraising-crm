@@ -1,9 +1,10 @@
 <?php
 
 use SmashPig\Core\Context;
+use SmashPig\Core\DataStores\DamagedDatabase;
+use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingGlobalConfiguration;
-use SmashPig\Core\DataStores\PendingDatabase;
 
 /**
  * @group OrphanSlayer
@@ -49,12 +50,29 @@ class OrphanSlayerTest extends PHPUnit_Framework_TestCase {
         PendingDatabase::get()->deleteMessage([$orphan]);
     }
 
-    public function testrectify() {
+    public function testRectify() {
         $slayer = new OrphanSlayer('paypal_ec');
         $orphan = $this->createTestOrphan($slayer->gateway);
         TestingPaypalExpressAdapter::setDummyGatewayResponseCode('OK');
         $result = $slayer->rectify($orphan);
         $this->assertEquals(array(), $result->getErrors(), "rectify_orphan returned errors: " . print_r($result->getErrors(), true));
+        $result = PendingDatabase::get()->fetchMessageByGatewayOrderId( 'paypal_ec', $orphan['order_id'] );
+        $this->assertEquals($result, null, "Orphan was not deleted");
+    }
+
+    public function testError() {
+        $slayer = new OrphanSlayer('paypal_ec');
+        $orphan = $this->createTestOrphan($slayer->gateway);
+        //email won't validate -> error
+        $orphan['email'] = '12345';
+        TestingPaypalExpressAdapter::setDummyGatewayResponseCode('OK');
+        $slayer->rectify($orphan);
+        $expected = $orphan;
+        $expected['damaged_id'] = '1';
+        $expected['original_queue'] = 'pending';
+        $expected['amount'] = '123';
+        $result = DamagedDatabase::get()->fetchMessageByGatewayOrderId( 'paypal_ec', $orphan['order_id'] );
+        $this->assertEquals($expected, $result, "Orphan was not stored in damaged queue");
         $result = PendingDatabase::get()->fetchMessageByGatewayOrderId( 'paypal_ec', $orphan['order_id'] );
         $this->assertEquals($result, null, "Orphan was not deleted");
     }
