@@ -683,7 +683,7 @@ abstract class BaseAuditProcessor {
           }
         }
       }
-      $log = FALSE;
+      $logs = FALSE;
       if (!empty($display_dates)) {
         $message = "Checking log $log_date for missing transactions that came in with the following dates: ";
         foreach ($display_dates as $display_date => $local_count) {
@@ -691,12 +691,12 @@ abstract class BaseAuditProcessor {
         }
         wmf_audit_echo($message);
 
-        //now actually check the log from $log_date, for the missing transactions in $tryme
-        // Get the prepped log with the current date, returning false if it's not there.
-        $log = $this->get_log_by_date($log_date);
+        // now actually check the log from $log_date, for the missing transactions in $tryme
+        // Get the prepped log(s) with the current date, returning false if it's not there.
+        $logs = $this->get_logs_by_date($log_date);
       }
 
-      if ($log) {
+      if ($logs) {
         //check to see if the missing transactions we're trying now, are in there.
         //Echochar with results for each one.
         foreach ($tryme as $date => $missing) {
@@ -719,7 +719,7 @@ abstract class BaseAuditProcessor {
                     'Could not get an order id for the following transaction ' . print_r($transaction, TRUE)
                   );
                 }
-                $data = $this->get_log_data_by_order_id($order_id, $log, $transaction);
+                $data = $this->get_log_data_by_order_id($order_id, $logs, $transaction);
 
                 if (!$data) {
                   //no data found in this log, which is expected and normal and not a problem.
@@ -841,8 +841,10 @@ abstract class BaseAuditProcessor {
    * for missing transaction data
    *
    * @param string $date The date of the log we want to grab
+   * @return string[]|false Full paths to all logs for the given date, or false
+   *  if something went wrong.
    */
-  protected function get_log_by_date($date) {
+  protected function get_logs_by_date($date) {
     //Could be distilled already.
     //Could be either in .gz format in the archive
     //check for the distilled version first
@@ -853,6 +855,9 @@ abstract class BaseAuditProcessor {
     }
 
     //simple case: It's already ready, or none are ready
+    // FIXME: for gateways where we search multiple logs, this could break if
+    // for example only globalcollect-20180501 was available the last time we
+    // ran, but now ingenico-20180501 is also available.
     if (!is_null($this->ready_files) && array_key_exists($date, $this->ready_files)) {
       return $this->ready_files[$date];
     }
@@ -911,7 +916,7 @@ abstract class BaseAuditProcessor {
       }
 
       //return
-      return $full_distilled_path;
+      return [$full_distilled_path];
     }
 
     //this happens if the archive file doesn't exist. Definitely not the end of the world, but we should probably log about it.
@@ -923,8 +928,8 @@ abstract class BaseAuditProcessor {
    * Construct an array of all the distilled working logs we have in the working
    * directory.
    *
-   * @return array Array of date => full path to file for all distilled working
-   * logs
+   * @return array Array of date => array of full paths to file for all
+   *  distilled working logs
    */
   protected function read_working_logs_dir() {
     $working_logs = [];
@@ -942,7 +947,7 @@ abstract class BaseAuditProcessor {
       if (!$temp_date) {
         continue;
       }
-      $working_logs[$temp_date] = $full_path;
+      $working_logs[$temp_date][] = $full_path;
     }
     return $working_logs;
   }
@@ -1157,18 +1162,21 @@ abstract class BaseAuditProcessor {
    *
    * @param string $order_id The order id (transaction id) of the missing
    *   payment
-   * @param string $log The full path to the log we want to search
+   * @param string[] $logs The full paths to the log we want to search
    * @param $audit_data array the data from the audit file.
    *
    * @return array|bool The data we sent to the gateway for that order id, or
    * false if we can't find it there.
    */
-  protected function get_log_data_by_order_id($order_id, $log, $audit_data) {
+  protected function get_log_data_by_order_id($order_id, $logs, $audit_data) {
     if (!$order_id) {
       return FALSE;
     }
 
-    $cmd = 'grep \'' . $this->get_log_line_grep_string($order_id) . '\' ' . $log;
+    // grep in all of the date's files at once
+    $logPaths = implode(' ', $logs);
+    // -h means don't print the file name prefix when grepping multiple files
+    $cmd = 'grep -h \'' . $this->get_log_line_grep_string($order_id) . '\' ' . $logPaths;
     wmf_audit_echo(__FUNCTION__ . ' ' . $cmd, TRUE);
 
     $ret = [];
