@@ -172,39 +172,42 @@ abstract class BaseAuditProcessor {
   }
 
   /**
-   * Get the name of a compressed log file based on the supplied date.
+   * Get the names of compressed log files based on the supplied date.
+   * Needs to return the same number of entries as the next two fns.
    *
    * @param string $date date in YYYYMMDD format
    *
-   * @return string Name of the file we're looking for
+   * @return string[] Names of the files we're looking for
    */
-  protected function get_compressed_log_file_name($date) {
+  protected function get_compressed_log_file_names($date) {
     // payments-worldpay-20140413.gz
-    return "payments-{$this->name}-{$date}.gz";
+    return ["payments-{$this->name}-{$date}.gz"];
   }
 
   /**
-   * Get the name of an uncompressed log file based on the supplied date.
+   * Get the names of uncompressed log files based on the supplied date.
+   * Needs to return the same number of entries as the above and below fns.
    *
    * @param string $date date in YYYYMMDD format
    *
-   * @return string Name of the file we're looking for
+   * @return string[] Names of the files we're looking for
    */
-  protected function get_uncompressed_log_file_name($date) {
+  protected function get_uncompressed_log_file_names($date) {
     // payments-worldpay-20140413 - no extension. Weird.
-    return "payments-{$this->name}-{$date}";
+    return ["payments-{$this->name}-{$date}"];
   }
 
   /**
-   * Get the name of a working log file based on the supplied date.
+   * Get the names of working log files based on the supplied date.
+   * Needs to return the same number of entries as the last two fns.
    *
    * @param string $date date in YYYYMMDD format
    *
-   * @return string Name of the file we're looking for
+   * @return string[] Names of the files we're looking for
    */
-  protected function get_working_log_file_name($date) {
+  protected function get_working_log_file_names($date) {
     // '/\d{8}_worldpay\.working/';
-    return "{$date}_{$this->name}.working";
+    return ["{$date}_{$this->name}.working"];
   }
 
   /**
@@ -683,7 +686,7 @@ abstract class BaseAuditProcessor {
           }
         }
       }
-      $log = FALSE;
+      $logs = FALSE;
       if (!empty($display_dates)) {
         $message = "Checking log $log_date for missing transactions that came in with the following dates: ";
         foreach ($display_dates as $display_date => $local_count) {
@@ -691,12 +694,12 @@ abstract class BaseAuditProcessor {
         }
         wmf_audit_echo($message);
 
-        //now actually check the log from $log_date, for the missing transactions in $tryme
-        // Get the prepped log with the current date, returning false if it's not there.
-        $log = $this->get_log_by_date($log_date);
+        // now actually check the log from $log_date, for the missing transactions in $tryme
+        // Get the prepped log(s) with the current date, returning false if it's not there.
+        $logs = $this->get_logs_by_date($log_date);
       }
 
-      if ($log) {
+      if ($logs) {
         //check to see if the missing transactions we're trying now, are in there.
         //Echochar with results for each one.
         foreach ($tryme as $date => $missing) {
@@ -719,7 +722,7 @@ abstract class BaseAuditProcessor {
                     'Could not get an order id for the following transaction ' . print_r($transaction, TRUE)
                   );
                 }
-                $data = $this->get_log_data_by_order_id($order_id, $log, $transaction);
+                $data = $this->get_log_data_by_order_id($order_id, $logs, $transaction);
 
                 if (!$data) {
                   //no data found in this log, which is expected and normal and not a problem.
@@ -841,8 +844,10 @@ abstract class BaseAuditProcessor {
    * for missing transaction data
    *
    * @param string $date The date of the log we want to grab
+   * @return string[]|false Full paths to all logs for the given date, or false
+   *  if something went wrong.
    */
-  protected function get_log_by_date($date) {
+  protected function get_logs_by_date($date) {
     //Could be distilled already.
     //Could be either in .gz format in the archive
     //check for the distilled version first
@@ -852,79 +857,102 @@ abstract class BaseAuditProcessor {
       $this->ready_files = $this->read_working_logs_dir();
     }
 
-    //simple case: It's already ready, or none are ready
-    if (!is_null($this->ready_files) && array_key_exists($date, $this->ready_files)) {
+    $compressed_filenames = $this->get_compressed_log_file_names($date);
+    $uncompressed_filenames = $this->get_uncompressed_log_file_names($date);
+    $distilled_filenames = $this->get_working_log_file_names($date);
+    $count = count($compressed_filenames);
+    if (
+      $count !== count($uncompressed_filenames) ||
+      $count !== count($distilled_filenames)
+    ) {
+      throw new WmfException(
+        WmfException::UNKNOWN,
+        'Bad programmer! Get_X_log_file_names return inconsistent counts'
+      );
+    }
+
+    // simple case: They're already ready, or none are ready
+    // When we can have multiple patterns for a day, make sure we've got all of
+    // them. If we just have one of two, we'll overwrite the existing one, but
+    // that's OK.
+    if (
+      !is_null($this->ready_files) &&
+      array_key_exists($date, $this->ready_files) &&
+      count($this->ready_files[$date]) == $count
+    ) {
       return $this->ready_files[$date];
     }
 
-    //This date is not ready yet. Get the zipped version from the archive, unzip
-    //to the working directory, and distill.
-    $compressed_filename = $this->get_compressed_log_file_name($date);
-    $full_archive_path = wmf_audit_get_log_archive_dir() . '/' . $compressed_filename;
-    $working_directory = $this->get_working_log_dir();
-    $cleanup = []; //add files we want to make sure aren't there anymore when we're done here.
-    if (file_exists($full_archive_path)) {
-      wmf_audit_echo("Retrieving $full_archive_path");
-      $cmd = "cp $full_archive_path " . $working_directory;
-      exec(escapeshellcmd($cmd), $ret, $errorlevel);
-      $full_compressed_path = $working_directory . '/' . $compressed_filename;
-      if (!file_exists($full_compressed_path)) {
-        wmf_audit_log_error("FILE PROBLEM: Trying to get log archives, and something went wrong with $cmd", 'FILE_MOVE');
-        return FALSE;
-      }
-      else {
-        $cleanup[] = $full_compressed_path;
-      }
-      //uncompress
-      wmf_audit_echo("Gunzipping $full_compressed_path");
-      $cmd = "gunzip -f $full_compressed_path";
-      exec(escapeshellcmd($cmd), $ret, $errorlevel);
-      //now check to make sure the file you expect, actually exists
-      $uncompressed_file = $this->get_uncompressed_log_file_name($date);
-      $full_uncompressed_path = $working_directory . '/' . $uncompressed_file;
-      if (!file_exists($full_uncompressed_path)) {
-        wmf_audit_log_error("FILE PROBLEM: Something went wrong with uncompressing logs: $cmd : $full_uncompressed_path doesn't exist.", 'FILE_UNCOMPRESS');
-      }
-      else {
-        $cleanup[] = $full_uncompressed_path;
-      }
+    // This date is not ready yet. Get the zipped versions from the archive,
+    // unzip to the working directory, and distill.
+    $full_distilled_paths = [];
+    for($i = 0; $i < $count; $i++) {
+      $compressed_filename = $compressed_filenames[$i];
+      $full_archive_path = wmf_audit_get_log_archive_dir() . '/' . $compressed_filename;
+      $working_directory = $this->get_working_log_dir();
+      $cleanup = []; //add files we want to make sure aren't there anymore when we're done here.
+      if (file_exists($full_archive_path)) {
+        wmf_audit_echo("Retrieving $full_archive_path");
+        $cmd = "cp $full_archive_path " . $working_directory;
+        exec(escapeshellcmd($cmd), $ret, $errorlevel);
+        $full_compressed_path = $working_directory . '/' . $compressed_filename;
+        if (!file_exists($full_compressed_path)) {
+          wmf_audit_log_error("FILE PROBLEM: Trying to get log archives, and something went wrong with $cmd", 'FILE_MOVE');
+          return FALSE;
+        }
+        else {
+          $cleanup[] = $full_compressed_path;
+        }
+        //uncompress
+        wmf_audit_echo("Gunzipping $full_compressed_path");
+        $cmd = "gunzip -f $full_compressed_path";
+        exec(escapeshellcmd($cmd), $ret, $errorlevel);
+        //now check to make sure the file you expect, actually exists
+        $uncompressed_file = $uncompressed_filenames[$i];
+        $full_uncompressed_path = $working_directory . '/' . $uncompressed_file;
+        if (!file_exists($full_uncompressed_path)) {
+          wmf_audit_log_error("FILE PROBLEM: Something went wrong with uncompressing logs: $cmd : $full_uncompressed_path doesn't exist.", 'FILE_UNCOMPRESS');
+        }
+        else {
+          $cleanup[] = $full_uncompressed_path;
+        }
 
-      //distill & cache locally
-      $distilled_file = $this->get_working_log_file_name($date);
-      $full_distilled_path = $working_directory . $distilled_file;
-      //Can't escape the hard-coded string we're grepping for, because it breaks terribly.
-      $cmd = "grep '" . $this->get_log_distilling_grep_string() . "' " . escapeshellcmd($full_uncompressed_path) . " > " . escapeshellcmd($full_distilled_path);
+        //distill & cache locally
+        $distilled_file = $distilled_filenames[$i];
+        $full_distilled_path = $working_directory . $distilled_file;
+        //Can't escape the hard-coded string we're grepping for, because it breaks terribly.
+        $cmd = "grep '" . $this->get_log_distilling_grep_string() . "' " . escapeshellcmd($full_uncompressed_path) . " > " . escapeshellcmd($full_distilled_path);
 
-      wmf_audit_echo($cmd);
-      $ret = [];
-      exec($cmd, $ret, $errorlevel);
-      chmod($full_distilled_path, 0770);
-      $this->ready_files[$date] = $full_distilled_path;
+        wmf_audit_echo($cmd);
+        $ret = [];
+        exec($cmd, $ret, $errorlevel);
+        chmod($full_distilled_path, 0770);
+        $this->ready_files[$date] = $full_distilled_path;
 
-      //clean up
-      if (!empty($cleanup)) {
-        foreach ($cleanup as $deleteme) {
-          if (file_exists($deleteme)) {
-            unlink($deleteme);
+        //clean up
+        if (!empty($cleanup)) {
+          foreach ($cleanup as $deleteme) {
+            if (file_exists($deleteme)) {
+              unlink($deleteme);
+            }
           }
         }
+        $full_distilled_paths[] = $full_distilled_path;
+      } else {
+        //this happens if the archive file doesn't exist. Definitely not the end of the world, but we should probably log about it.
+        wmf_audit_log_error("Archive file $full_archive_path seems not to exist\n", 'MISSING_PAYMENTS_LOG');
       }
-
-      //return
-      return $full_distilled_path;
     }
-
-    //this happens if the archive file doesn't exist. Definitely not the end of the world, but we should probably log about it.
-    wmf_audit_log_error("Archive file $full_archive_path seems not to exist\n", 'MISSING_PAYMENTS_LOG');
-    return FALSE;
+    //return
+    return $full_distilled_paths;
   }
 
   /**
    * Construct an array of all the distilled working logs we have in the working
    * directory.
    *
-   * @return array Array of date => full path to file for all distilled working
-   * logs
+   * @return array Array of date => array of full paths to file for all
+   *  distilled working logs
    */
   protected function read_working_logs_dir() {
     $working_logs = [];
@@ -942,7 +970,7 @@ abstract class BaseAuditProcessor {
       if (!$temp_date) {
         continue;
       }
-      $working_logs[$temp_date] = $full_path;
+      $working_logs[$temp_date][] = $full_path;
     }
     return $working_logs;
   }
@@ -1157,18 +1185,21 @@ abstract class BaseAuditProcessor {
    *
    * @param string $order_id The order id (transaction id) of the missing
    *   payment
-   * @param string $log The full path to the log we want to search
+   * @param string[] $logs The full paths to the log we want to search
    * @param $audit_data array the data from the audit file.
    *
    * @return array|bool The data we sent to the gateway for that order id, or
    * false if we can't find it there.
    */
-  protected function get_log_data_by_order_id($order_id, $log, $audit_data) {
+  protected function get_log_data_by_order_id($order_id, $logs, $audit_data) {
     if (!$order_id) {
       return FALSE;
     }
 
-    $cmd = 'grep \'' . $this->get_log_line_grep_string($order_id) . '\' ' . $log;
+    // grep in all of the date's files at once
+    $logPaths = implode(' ', $logs);
+    // -h means don't print the file name prefix when grepping multiple files
+    $cmd = 'grep -h \'' . $this->get_log_line_grep_string($order_id) . '\' ' . $logPaths;
     wmf_audit_echo(__FUNCTION__ . ' ' . $cmd, TRUE);
 
     $ret = [];

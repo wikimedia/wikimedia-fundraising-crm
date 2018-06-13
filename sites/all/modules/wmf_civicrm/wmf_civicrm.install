@@ -4176,3 +4176,17 @@ HAVING count_rows > 1;
   HAVING count_rows > 1;
    */
 }
+
+/**
+ * Fix some NULLs in activity status filter
+ */
+function wmf_civicrm_update_7702() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_option_value cov
+      INNER JOIN civicrm_option_group cog ON cog.id = cov.option_group_id
+    SET cov.filter = 0
+    WHERE cov.filter IS NULL
+    AND cog.name = 'activity_status'
+  ");
+}

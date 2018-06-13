@@ -117,9 +117,11 @@ function wmf_audit_count_missing($missing) {
  */
 function wmf_audit_remove_old_logs($date, $working_logs) {
   if (!empty($working_logs)) {
-    foreach ($working_logs as $logdate => $file) {
-      if ((int) $logdate < (int) $date) {
-        unlink($file);
+    foreach ($working_logs as $logdate => $files) {
+      foreach($files as $file) {
+        if ((int) $logdate < (int) $date) {
+          unlink($file);
+        }
       }
     }
   }
