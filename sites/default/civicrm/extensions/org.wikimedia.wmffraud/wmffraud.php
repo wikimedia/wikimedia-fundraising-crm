@@ -2,6 +2,8 @@
 
 require_once 'wmffraud.civix.php';
 use CRM_Wmffraud_ExtensionUtil as E;
+use SmashPig\Tests\TestingGlobalConfiguration;
+use SmashPig\Tests\TestingContext;
 
 /**
  * Implements hook_civicrm_config().
@@ -28,6 +30,12 @@ function wmffraud_civicrm_xmlMenu(&$files) {
  */
 function wmffraud_civicrm_install() {
   _wmffraud_civix_civicrm_install();
+}
+
+function wmffraud_civicrm_testSetup() {
+  // Initialize SmashPig with a fake context object
+  $config = TestingGlobalConfiguration::create();
+  TestingContext::init($config);
 }
 
 /**

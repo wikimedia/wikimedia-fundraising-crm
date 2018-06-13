@@ -22,3 +22,23 @@ function _civicrm_api3_generic_showme($apiRequest) {
   $return['showme'] = $showMe->getDisplayTiles();
   return $return;
 }
+
+/**
+ * @param $action
+ * @param null|array $apiEntities
+ *
+ * @return array
+ */
+function _civicrm_api3_showme_get_entities_with_action($action, $apiEntities = NULL) {
+  if (!$apiEntities) {
+    $apiEntities = civicrm_api3('Entity', 'get', [])['values'];
+  }
+
+  foreach ($apiEntities as $key => $entityName) {
+    $actions = civicrm_api3($entityName, 'getactions')['values'];
+    if (!in_array($action, $actions)) {
+      unset($apiEntities[$key]);
+    }
+  }
+  return $apiEntities;
+}
