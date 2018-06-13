@@ -2,19 +2,6 @@
 use CRM_Forgetme_ExtensionUtil as E;
 
 /**
- * email.Showme API specification (optional)
- * This is used for documentation and validation.
- *
- * @param array $spec description of fields supported by this API call
- * @return void
- * @see http://wiki.civicrm.org/confluence/display/CRMDOC/API+Architecture+Standards
- */
-function _civicrm_api3_generic_showme_spec(&$spec) {
-  $spec['id']['api.required'] = 1;
-  $spec['id']['type'] = CRM_Utils_Type::T_INT;
-}
-
-/**
  * generic.Showme API
  *
  * The point of this api is to get all data about a generic with some prefiltering
@@ -35,4 +22,3 @@ function _civicrm_api3_generic_showme($apiRequest) {
   $return['showme'] = $showMe->getDisplayTiles();
   return $return;
 }
-

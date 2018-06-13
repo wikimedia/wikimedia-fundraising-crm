@@ -1,6 +1,6 @@
 <?php
 use CRM_Forgetme_ExtensionUtil as E;
-require_once 'api/v3/Generic/Showme.php';
+require_once 'api/v3/ShowmeUtils.php';
 
 /**
  * email.Showme API specification (optional)

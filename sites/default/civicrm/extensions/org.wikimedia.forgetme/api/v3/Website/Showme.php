@@ -1,5 +1,5 @@
 <?php
-require_once 'api/v3/Generic/Showme.php';
+require_once 'api/v3/ShowmeUtils.php';
 /**
  * phone.Showme API specification (optional)
  * This is used for documentation and validation.
