@@ -4229,3 +4229,21 @@ function wmf_civicrm_update_7705() {
     wmf_civicrm_ensure_payment_processor_exists("smashpig_$processor", $processor);
   }
 }
+
+/**
+ * Add location_id to civicrm_group_contact table.
+ *
+ * OK so this is pretty scary - for most of recorded history the civicrm_group_contact
+ * table has been supposed to have a location_id field - but on our database it has been
+ * missing. Queue X-files music
+ *
+ * Bug: T197045
+ */
+function wmf_civicrm_update_7710() {
+  civicrm_initialize();
+  if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists("civicrm_group_contact", "location_id")) {
+    CRM_Core_DAO::executeQuery("
+    ALTER TABLE civicrm_group_contact ADD COLUMN `location_id` int(10) unsigned DEFAULT NULL COMMENT 'Optional location to associate with this membership'
+  ");
+  }
+}
