@@ -106,20 +106,20 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
   }
 
   $insert_params = [
-    'contact_id' => $contact_id,
-    'amount' => $msg['original_gross'],
-    'currency' => $msg['original_currency'],
-    'frequency_unit' => $msg['frequency_unit'],
-    'frequency_interval' => $msg['frequency_interval'],
-    'installments' => $msg['installments'],
-    'start_date' => wmf_common_date_unix_to_civicrm($msg['date']),
-    'create_date' => wmf_common_date_unix_to_civicrm($msg['date']),
-    'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm($msg['cancel']) : NULL),
-    'processor_id' => $gateway_subscr_id,
-    'cycle_day' => $msg['cycle_day'],
-    'next_sched_contribution_date' => $next_sched_contribution,
-    'trxn_id' => $gateway_subscr_id,
-  ] + $payment_token_params;
+      'contact_id' => $contact_id,
+      'amount' => $msg['original_gross'],
+      'currency' => $msg['original_currency'],
+      'frequency_unit' => $msg['frequency_unit'],
+      'frequency_interval' => $msg['frequency_interval'],
+      'installments' => $msg['installments'],
+      'start_date' => wmf_common_date_unix_to_civicrm($msg['date']),
+      'create_date' => wmf_common_date_unix_to_civicrm($msg['date']),
+      'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm($msg['cancel']) : NULL),
+      'processor_id' => $gateway_subscr_id,
+      'cycle_day' => $msg['cycle_day'],
+      'next_sched_contribution_date' => $next_sched_contribution,
+      'trxn_id' => $gateway_subscr_id,
+    ] + $payment_token_params;
 
   try {
     $result = civicrm_api3('ContributionRecur', 'Create', $insert_params);
@@ -561,4 +561,38 @@ function wmf_civicrm_get_payment_processor_id($processorName) {
     );
   }
   return $payment_processor_result['id'];
+}
+
+function wmf_civicrm_recur_tokenize_damaged($gateway) {
+  civicrm_initialize();
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('smashpig');
+  CRM_SmashPig_ContextWrapper::createContext('civicrm', $gateway);
+  $tokenized = [];
+  $query = "
+    SELECT id, message FROM damaged
+    WHERE gateway = :gateway
+    AND `error` LIKE 'INVALID_MESSAGE Recurring donation, but no subscription ID or recurring payment token found.%'
+  ";
+  $damagedDonations = db_query($query, [
+    ':gateway' => $gateway,
+  ]);
+  $provider = \SmashPig\PaymentProviders\PaymentProviderFactory::getProviderForMethod('cc');
+  foreach ($damagedDonations as $donation) {
+    $message = json_decode($donation->message, TRUE);
+    $paymentId = $message['gateway_txn_id'];
+    if (!isset($tokenized[$paymentId])) {
+      $tokenResult = $provider->tokenizePayment($paymentId);
+      if (isset($tokenResult['errors'])) {
+        drush_print("Error tokenizing $paymentId" . var_dump($tokenResult['errors'], TRUE));
+        continue;
+      }
+      $message['recurring_payment_token'] = $tokenResult['token'];
+      \SmashPig\Core\DataStores\QueueWrapper::push('donations', $message);
+      $tokenized[$paymentId] = TRUE;
+    }
+    \SmashPig\Core\DataStores\DamagedDatabase::get()->deleteMessage(
+      ['damaged_id' => $donation->id]
+    );
+  }
 }

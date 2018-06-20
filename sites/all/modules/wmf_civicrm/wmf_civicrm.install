@@ -4247,3 +4247,11 @@ function wmf_civicrm_update_7710() {
   ");
   }
 }
+
+/**
+ * Tokenize recurring payments that we were unable to tokenize up front
+ */
+function wmf_civicrm_update_7715() {
+  require_once('recurring.inc');
+  wmf_civicrm_recur_tokenize_damaged('ingenico');
+}
