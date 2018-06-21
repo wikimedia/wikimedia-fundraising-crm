@@ -1,0 +1,7 @@
+{
+    "description": "SmashPig Payment Processor extension for CiviCRM",
+    "license": "GPL-3.0",
+    "require": {
+        "wikimedia/smash-pig": "^0.5.6"
+    }
+}

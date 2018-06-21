@@ -9,7 +9,7 @@ use Civi\Test\TransactionalInterface;
  * This is a generic test class implemented with PHPUnit.
  * @group headless
  */
-class api_v3_Contact_ObfuscateTest extends \PHPUnit_Framework_TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+class api_v3_Contact_ForgetmeTest extends \PHPUnit_Framework_TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
 
   use \Civi\Test\Api3TestTrait;
 
@@ -61,7 +61,7 @@ class api_v3_Contact_ObfuscateTest extends \PHPUnit_Framework_TestCase implement
         ['location_type_id' => 'Home', 'phone' => '9887-99-99', 'is_billing' => 1],
       ]
     ]);
-    $result = civicrm_api3('Contact', 'obfuscate', array('id' => $contact['id']));
+    $result = civicrm_api3('Contact', 'forgetme', array('id' => $contact['id']));
     $this->callAPISuccessGetCount('Phone', ['contact_id' => $contact['id']], 0);
     $this->callAPISuccessGetCount('Email', ['contact_id' => $contact['id']], 0);
   }

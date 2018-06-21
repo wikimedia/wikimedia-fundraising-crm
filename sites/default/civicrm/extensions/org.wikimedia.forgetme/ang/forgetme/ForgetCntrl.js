@@ -41,7 +41,7 @@
         // Status messages. For defaults, just use "{}"
         {start: ts('Forgetting...'), success: ts('Forgotten')},
         // The save action. Note that crmApi() returns a promise.
-        crmApi('Contact', 'obfuscate', {
+        crmApi('Contact', 'forgetme', {
           id: currentContact.id,
           reference: $scope.reference
         }).then(function (result) {

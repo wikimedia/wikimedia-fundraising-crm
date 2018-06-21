@@ -57,6 +57,7 @@ function civicrm_api3_contact_showme($params) {
     $entity = CRM_Core_DAO_AllCoreTables::getBriefName(CRM_Core_DAO_AllCoreTables::getClassForTable($reference['table']));
     $additionalObjects[$entity] = $reference['count'];
   }
+
   foreach ($additionalObjects as $entity => $count) {
     $actions = civicrm_api3($entity, 'getactions', [])['values'];
     if (in_array('showme', $actions)) {

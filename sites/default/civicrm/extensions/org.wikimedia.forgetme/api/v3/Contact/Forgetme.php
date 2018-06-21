@@ -9,18 +9,15 @@ use CRM_Forgetme_ExtensionUtil as E;
  * @return void
  * @see http://wiki.civicrm.org/confluence/display/CRMDOC/API+Architecture+Standards
  */
-function _civicrm_api3_contact_obfuscate_spec(&$spec) {
+function _civicrm_api3_contact_forget_spec(&$spec) {
   $spec['id']['api.required'] = 1;
 }
 
 /**
- * Contact.obfuscate API
+ * Contact.forgetme API
  *
  * The point of this api is to get all data about a contact with some prefiltering
  * and formatting.
- *
- * SCARY NOTE - if we use 'forget' as the function name the crmApi function finds the
- * string 'get' in it & uses HTTP GET rather than POST.
  *
  * @param array $params
  * @return array API result descriptor
@@ -28,7 +25,7 @@ function _civicrm_api3_contact_obfuscate_spec(&$spec) {
  * @see civicrm_api3_create_error
  * @throws API_Exception
  */
-function civicrm_api3_contact_obfuscate($params) {
+function civicrm_api3_contact_forgetme($params) {
   $result = [];
   $entitiesToDelete = ['phone', 'email', 'website', 'im'];
   foreach ($entitiesToDelete as $entityToDelete) {
@@ -39,6 +36,7 @@ function civicrm_api3_contact_obfuscate($params) {
       }
     }
   }
+
   $loggedInUser = CRM_Core_Session::getLoggedInContactID();
 
   civicrm_api3('Activity', 'create', [

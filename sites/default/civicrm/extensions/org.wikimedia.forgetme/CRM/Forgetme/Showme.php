@@ -159,8 +159,9 @@ class CRM_Forgetme_Showme {
    * @return array
    */
   public function getDisplayTiles() {
-    $display = $return = [];
+    $return = [];
     foreach ($this->getDisplayValues() as $index => $entities) {
+      $display = [];
       foreach ($entities as $key => $value) {
         $display[] = $this->metadata[$key]['title'] . ':' . $value;
       }
