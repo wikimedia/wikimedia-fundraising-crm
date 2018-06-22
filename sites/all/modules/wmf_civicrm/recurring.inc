@@ -584,7 +584,7 @@ function wmf_civicrm_recur_tokenize_damaged($gateway) {
     if (!isset($tokenized[$paymentId])) {
       $tokenResult = $provider->tokenizePayment($paymentId);
       if (isset($tokenResult['errors'])) {
-        drush_print("Error tokenizing $paymentId" . var_dump($tokenResult['errors'], TRUE));
+        drush_print("Error tokenizing $paymentId" . print_r($tokenResult['errors'], TRUE));
         continue;
       }
       $message['recurring_payment_token'] = $tokenResult['token'];
