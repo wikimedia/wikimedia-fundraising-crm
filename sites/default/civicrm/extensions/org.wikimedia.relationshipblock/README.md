@@ -8,11 +8,6 @@ any configured relationship type with a UI similar to the employer field.
 
 When the field is edited the relationship is updated.
 
-Note that this works like the employer field in that there is an expectation
-of only one relationship of this type. Do not use this field for relationships
-where you expect a contact to have many.
-
-
 The extension is licensed under [AGPL-3.0](LICENSE.txt).
 
 ## Requirements
@@ -22,36 +17,12 @@ The extension is licensed under [AGPL-3.0](LICENSE.txt).
 
 ## Installation (Web UI)
 
-This extension has not yet been published for installation via the web UI.
-
-## Installation (CLI, Zip)
-
-Sysadmins and developers may download the `.zip` file for this extension and
-install it with the command-line tool [cv](https://github.com/civicrm/cv).
-
-```bash
-cd <extension-dir>
-cv dl org.wikimedia.relationshipblock@https://github.com/FIXME/org.wikimedia.relationshipblock/archive/master.zip
-```
-
-## Installation (CLI, Git)
-
-Sysadmins and developers may clone the [Git](https://en.wikipedia.org/wiki/Git) repo for this extension and
-install it with the command-line tool [cv](https://github.com/civicrm/cv).
-
-```bash
-git clone https://github.com/FIXME/org.wikimedia.relationshipblock.git
-cv en relationshipblock
-```
+Navigate to **Administer -> System Settings -> Extensions** and select this extension from the list.
 
 ## Usage
 
-The configuration for which relationship types will show is in on the normal relationship type
-admin page.
+Once installed the extension will do nothing until you select one or more relationship types for display on the contact summary page:
 
-Once you have configured one or more types to display on the relationship type page the
-box will appear.
-
-## Known Issues
-
-Per above - this is envisaged for relationships where only one is expected.
+- Navigate to **Administer -> Customize Data & Screens -> Relationship Types** and click edit on a desired relationship type.
+- Select "Display block on contact summary." for that relationship type.
+- Now you can visit a contact to view and edit their key relationships.

@@ -25,6 +25,7 @@ class CRM_Relationshipblock_Form_Inline_RelationshipBlock extends CRM_Contact_Fo
       $props = array(
         'api' => array('params' => $params),
         'create' => TRUE,
+        'multiple' => TRUE,
       );
       $this->addEntityRef($key, $relationshipType['label'], $props, FALSE);
     }
@@ -42,27 +43,34 @@ class CRM_Relationshipblock_Form_Inline_RelationshipBlock extends CRM_Contact_Fo
   public function postProcess() {
     $values = $this->exportValues();
     $relationshipTypes = CRM_Relationshipblock_Utils_RelationshipBlock::getDisplayedRelationshipTypes($this->_contactId);
-    $existingRelationships = CRM_Relationshipblock_Utils_RelationshipBlock::getExistingRelationships($this->_contactId);
+    $allExistingRelationships = CRM_Relationshipblock_Utils_RelationshipBlock::getExistingRelationships($this->_contactId);
     foreach ($relationshipTypes as $key => $relType) {
+      $submittedValues = !empty($values[$key]) ? explode(',', $values[$key]) : [];
+      $existingRelationships = CRM_Utils_Array::value($key, $allExistingRelationships);
       // End old relationships
-      if (!empty($existingRelationships[$key]) && $existingRelationships[$key]['other_contact_id'] != CRM_Utils_Array::value($key, $values)) {
-        civicrm_api3('Relationship', 'create', [
-          'id' => $existingRelationships[$key]['id'],
-          'end_date' => 'now',
-          'is_active' => 0,
-        ]);
+      if ($existingRelationships) {
+        foreach ($existingRelationships['contacts'] as $existingRelationship) {
+          if (!in_array($existingRelationship['contact_id'], $submittedValues)) {
+            civicrm_api3('Relationship', 'create', [
+              'id' => $existingRelationship['relationship_id'],
+              'end_date' => 'now',
+              'is_active' => 0,
+            ]);
+          }
+        }
       }
       // Create new relationships
-      $existingRelationship = CRM_Utils_Array::value($key, $existingRelationships);
-      if (!empty($values[$key]) && (!$existingRelationship || $existingRelationship['other_contact_id'] != $values[$key])) {
-        list($a, $b) = explode('_', $relType['dir']);
-        civicrm_api3('Relationship', 'create', [
-          'relationship_type_id' => $relType['id'],
-          "contact_id_$a" => $this->_contactId,
-          "contact_id_$b" => $values[$key],
-          'start_date' => 'now',
-          'is_active' => 1,
-        ]);
+      foreach ($submittedValues as $value) {
+        if (!isset($existingRelationships['contacts'][$value])) {
+          list($a, $b) = explode('_', $relType['dir']);
+          civicrm_api3('Relationship', 'create', [
+            'relationship_type_id' => $relType['id'],
+            "contact_id_$a" => $this->_contactId,
+            "contact_id_$b" => $value,
+            'start_date' => 'now',
+            'is_active' => 1,
+          ]);
+        }
       }
     }
     $this->ajaxResponse['updateTabs'] = array(
@@ -77,13 +85,9 @@ class CRM_Relationshipblock_Form_Inline_RelationshipBlock extends CRM_Contact_Fo
    */
   public function setDefaultValues() {
     $defaults = [];
-    $relationshipTypes = CRM_Relationshipblock_Utils_RelationshipBlock::getDisplayedRelationshipTypes($this->_contactId);
-    $relationshipTypes = CRM_Utils_Array::rekey($relationshipTypes, 'id');
     $existingRelationships = CRM_Relationshipblock_Utils_RelationshipBlock::getExistingRelationships($this->_contactId);
-    foreach ($existingRelationships as $existingRelationship) {
-      $relType = $relationshipTypes[$existingRelationship['relationship_type_id']];
-      $dir = $relType['bi'] ? $relType['dir'] : $existingRelationship['dir'];
-      $defaults[$relType['id'] . '_' . $dir] = $existingRelationship['other_contact_id'];
+    foreach ($existingRelationships as $key => $existingRelationship) {
+      $defaults[$key] = array_keys($existingRelationship['contacts']);
     }
     return $defaults;
   }
