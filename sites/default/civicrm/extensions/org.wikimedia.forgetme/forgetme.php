@@ -111,7 +111,13 @@ function forgetme_civicrm_caseTypes(&$caseTypes) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_angularModules
  */
 function forgetme_civicrm_angularModules(&$angularModules) {
+  $angularModules['ngPrint'] = [
+    'js' => ['bower_components/ngPrint/ngPrint.js'],
+    'css' => ['bower_components/ngPrint/ngPrint.css'],
+    'ext' => 'org.wikimedia.forgetme',
+  ];
   _forgetme_civix_civicrm_angularModules($angularModules);
+
 }
 
 /**

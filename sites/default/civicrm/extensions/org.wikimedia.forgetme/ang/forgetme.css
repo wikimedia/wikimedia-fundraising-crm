@@ -1,1 +1,31 @@
+
 /* Add any CSS rules for Angular module "forgetme" */
+@media print {
+  .crm-grid-table {
+    display: table;
+    border-collapse: collapse;
+    border: 1px solid #7A7A60;
+    background-color: #FFFFFF;
+    margin: 10px 3px 10px;
+  }
+
+  .crm-grid-row,
+  .crm-grid-header {
+    display: table-row;
+  }
+
+  .crm-grid-header {
+    white-space: nowrap;
+  }
+
+  .crm-grid-cell {
+    display: table-cell;
+    border-right: 1px solid #EFEFEF;
+    padding: 2px;
+    vertical-align: top;
+    word-wrap: break-word;
+  }
+
+  @page {size: landscape}
+
+}

@@ -4,21 +4,20 @@
 // http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_angularModules
 
 return array (
-  'js' => 
+  'js' =>
   array (
     0 => 'ang/forgetme.js',
     1 => 'ang/forgetme/*.js',
     2 => 'ang/forgetme/*/*.js',
   ),
-  'css' => 
+  'css' =>
   array (
     0 => 'ang/forgetme.css',
   ),
-  'partials' => 
+  'partials' =>
   array (
     0 => 'ang/forgetme',
   ),
-  'settings' => 
-  array (
-  ),
+  'settings' => [],
+  'requires' => ['ngPrint'],
 );
