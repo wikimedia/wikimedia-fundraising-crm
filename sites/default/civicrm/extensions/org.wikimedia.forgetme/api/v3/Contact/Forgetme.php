@@ -28,7 +28,7 @@ function _civicrm_api3_contact_forget_spec(&$spec) {
  */
 function civicrm_api3_contact_forgetme($params) {
   $result = [];
-  $entitiesToDelete = ['phone', 'email', 'website', 'im'];
+  $entitiesToDelete = CRM_Forgetme_Metadata::getEntitiesToDelete();
   $forgets = _civicrm_api3_showme_get_entities_with_action('forgetme');
   unset($forgets[array_search('Contact', $forgets)]);
 

@@ -26,7 +26,6 @@ function _civicrm_api3_email_showme_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_email_showme($params) {
-  $params['internal_fields'] = ['is_billing', 'contact_id', 'is_bulk_mail'];
   return _civicrm_api3_generic_showme(['entity' => 'Email', 'params' => $params]);
 }
 

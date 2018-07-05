@@ -28,24 +28,6 @@ function _civicrm_api3_contact_showme_spec(&$spec) {
  */
 function civicrm_api3_contact_showme($params) {
   $showMe = new CRM_Forgetme_Showme('Contact', $params);
-  $showMe->setNegativeFields([
-    'do_not_email',
-    'do_not_trade',
-    'do_not_phone',
-    'do_not_email',
-    'do_not_mail',
-    'do_not_sms',
-    'is_opt_out',
-    'is_deceased',
-    'is_deleted',
-    'contact_is_deleted',
-    'on_hold',
-  ]);
-
-  $internalFields = ['hash', 'api_key', 'sort_name', 'created_date', 'modified_date'];
-  // Phone has a showme so we can hide here.
-  $phoneFields = ['phone_id', 'phone', 'phone_type_id'];
-  $showMe->setInternalFields(array_merge($internalFields, $phoneFields));
   $metadata = $showMe->getMetadata();
 
   $contact = $showMe->getDisplayValues();

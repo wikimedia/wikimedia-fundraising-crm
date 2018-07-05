@@ -124,8 +124,8 @@ class CRM_Forgetme_Showme {
   public function __construct($entity, $filters) {
     $this->entity = $entity;
     $this->metadata = civicrm_api3($entity, 'getfields', ['action' => 'get'])['values'];
-    $acceptableFields = array_merge($this->metadata, ['debug', 'sequential', 'check_permissions']);
-    $this->filters = array_intersect_key($filters, $acceptableFields);
+    $this->setFilters($filters);
+    $this->setEntityBasedMetadataDefinitions($entity);
   }
 
   /**
@@ -136,6 +136,7 @@ class CRM_Forgetme_Showme {
   protected function getAllValuesForEntity() {
     $getParams = $this->filters;
     $getParams['return'] = array_keys($this->metadata);
+    $getParams['options']['limit'] = 0;
     return civicrm_api3($this->entity, 'get', $getParams)['values'];
   }
 
@@ -256,6 +257,22 @@ class CRM_Forgetme_Showme {
     $this->filterOutNegativeValues();
     $this->processOptionValueFields();
     $this->filterOutInternalFields();
+  }
+
+  /**
+   * @param $entity
+   */
+  protected function setEntityBasedMetadataDefinitions($entity) {
+    $this->setInternalFields(CRM_Forgetme_Metadata::getMetadataForEntity($entity, 'internal_fields'));
+    $this->setNegativeFields(CRM_Forgetme_Metadata::getMetadataForEntity($entity, 'negative_fields'));
+  }
+
+  /**
+   * @param $filters
+   */
+  protected function setFilters($filters) {
+    $acceptableFields = array_merge($this->metadata, ['debug', 'sequential', 'check_permissions']);
+    $this->filters = array_intersect_key($filters, $acceptableFields);
   }
 
 }
