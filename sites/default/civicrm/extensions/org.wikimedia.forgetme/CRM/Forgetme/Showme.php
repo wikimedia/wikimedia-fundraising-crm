@@ -160,7 +160,7 @@ class CRM_Forgetme_Showme {
     foreach ($this->getDisplayValues() as $index => $entities) {
       $display = [];
       foreach ($entities as $key => $value) {
-        $display[] = $this->metadata[$key]['title'] . ':' . $value;
+        $display[] = (isset($this->metadata[$key]['title']) ? $this->metadata[$key]['title'] : $key) . ':' . $value;
       }
       $return[$index] = implode($this->displaySeparator, $display);
     }
