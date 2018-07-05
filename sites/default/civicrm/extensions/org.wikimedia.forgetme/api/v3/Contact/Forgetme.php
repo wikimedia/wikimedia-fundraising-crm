@@ -29,24 +29,23 @@ function _civicrm_api3_contact_forget_spec(&$spec) {
 function civicrm_api3_contact_forgetme($params) {
   $result = [];
   $entitiesToDelete = ['phone', 'email', 'website', 'im'];
-  foreach ($entitiesToDelete as $entityToDelete) {
-    $delete = civicrm_api3($entityToDelete, 'showme', ['contact_id' => $params['id'], "api.{$entityToDelete}.delete" => 1]);
+  $forgets = _civicrm_api3_showme_get_entities_with_action('forgetme');
+  unset($forgets[array_search('Contact', $forgets)]);
+
+  foreach (array_merge($entitiesToDelete, $forgets) as $entityToDelete) {
+    $deleteParams = ['contact_id' => $params['id']];
+    $hasForget = TRUE;
+    if (!in_array($entityToDelete, $forgets)) {
+      $deleteParams["api.{$entityToDelete}.delete"] = 1;
+      $hasForget = FALSE;
+    }
+    $delete = civicrm_api3($entityToDelete, 'showme', $deleteParams);
     if ($delete['count']) {
+      if ($hasForget) {
+        civicrm_api3($entityToDelete, 'forgetme', ['contact_id' => $params['id']]);
+      }
       foreach ($delete['showme'] as $id => $string) {
         $result[$entityToDelete . $id] = $string;
-      }
-    }
-  }
-
-  $forgets = _civicrm_api3_showme_get_entities_with_action('forgetme');
-  foreach ($forgets as $forgettableEntity) {
-    if ($forgettableEntity !== 'Contact') {
-      $delete = civicrm_api3($forgettableEntity, 'showme', ['contact_id' => $params['id']]);
-      if ($delete['count']) {
-        civicrm_api3($forgettableEntity, 'forgetme', ['contact_id' => $params['id']]);
-        foreach ($delete['showme'] as $id => $string) {
-          $result[$forgettableEntity . $id] = $string;
-        }
       }
     }
   }
