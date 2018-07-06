@@ -134,8 +134,9 @@ class CRM_Forgetme_Showme {
    * @return array
    */
   protected function getAllValuesForEntity() {
+    $getParams = $this->filters;
     $getParams['return'] = array_keys($this->metadata);
-    return civicrm_api3($this->entity, 'get', $this->filters)['values'];
+    return civicrm_api3($this->entity, 'get', $getParams)['values'];
   }
 
   /**

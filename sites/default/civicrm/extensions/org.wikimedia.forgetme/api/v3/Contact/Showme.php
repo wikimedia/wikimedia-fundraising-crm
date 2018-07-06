@@ -77,8 +77,34 @@ function civicrm_api3_contact_showme($params) {
     }
   }
 
+  // An extension is basically allowed to register a showme function instead of declaring
+  // itself as an entity & it will be called upon.
+  $moreEntities = _civicrm_api3_contact_showme_get_entities_with_showme($contact, $metadata);
+  foreach ($moreEntities as $entity) {
+    $detail = civicrm_api3($entity, 'showme', ['contact_id' => $params['id']])['showme'];
+    foreach ($detail as $id => $row) {
+      $contact[$entity . $id] = $row;
+      $metadata[$entity . $id] = ['title' => ts($entity)];
+    }
+
+  }
+
   $return = civicrm_api3_create_success([$contact['id'] => $contact], $params);
   $return['metadata'] = $metadata;
   return $return;
+}
+
+function _civicrm_api3_contact_showme_get_entities_with_showme($contact, $metadata) {
+  $apiEntities = array_flip(civicrm_api3('Entity', 'get', [])['values']);
+  $daoEntities = CRM_Core_DAO_AllCoreTables::get();
+  foreach ($daoEntities as $daoEntity) {
+    // Convert first to fix up ones like 'Im'
+    $name = CRM_Utils_String::convertStringToCamel($daoEntity['name']);
+    if (isset($apiEntities[$name])) {
+      unset($apiEntities[$name]);
+    }
+  }
+  $apiEntities = _civicrm_api3_showme_get_entities_with_action('showme', array_keys($apiEntities));
+  return $apiEntities;
 }
 

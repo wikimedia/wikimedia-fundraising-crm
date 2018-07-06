@@ -1,5 +1,6 @@
 <?php
 use CRM_Forgetme_ExtensionUtil as E;
+require_once 'api/v3/ShowmeUtils.php';
 
 /**
  * Contact.Showme API specification (optional)
@@ -33,6 +34,19 @@ function civicrm_api3_contact_forgetme($params) {
     if ($delete['count']) {
       foreach ($delete['showme'] as $id => $string) {
         $result[$entityToDelete . $id] = $string;
+      }
+    }
+  }
+
+  $forgets = _civicrm_api3_showme_get_entities_with_action('forgetme');
+  foreach ($forgets as $forgettableEntity) {
+    if ($forgettableEntity !== 'Contact') {
+      $delete = civicrm_api3($forgettableEntity, 'showme', ['contact_id' => $params['id']]);
+      if ($delete['count']) {
+        civicrm_api3($forgettableEntity, 'forgetme', ['contact_id' => $params['id']]);
+        foreach ($delete['showme'] as $id => $string) {
+          $result[$forgettableEntity . $id] = $string;
+        }
       }
     }
   }

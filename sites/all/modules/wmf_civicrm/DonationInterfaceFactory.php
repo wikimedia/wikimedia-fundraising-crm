@@ -16,12 +16,9 @@ class DonationInterfaceFactory {
         $adapterOptions = array(
             'batch_mode' => true,
             'external_data' => $data,
-
-            // Avoid Title code in GlobalCollectAdapter::setGatewayDefaults().
-            'returnTitle' => 'dummy',
             // Unnecessary avoidance of wfAppendQuery call in stage_returnto,
             // which should never be hit anyway cos returnto is not in these APIs.
-            'returnTo' => 'dumber',
+            'returnTo' => 'dummy',
         );
 
         $className = DonationInterface::getAdapterClassForGateway( $gatewayName );

@@ -34,7 +34,7 @@ class WmfException extends Exception {
 
   const INVALID_FILE_FORMAT = 16;
 
-  const fredge = 17;
+  const FREDGE = 17;
 
   const MISSING_MANDATORY_DATA = 18;
 
@@ -114,7 +114,7 @@ class WmfException extends Exception {
       'fatal' => TRUE,
     ],
 
-    self::fredge => [
+    self::FREDGE => [
       'reject' => TRUE,
     ],
     self::MISSING_MANDATORY_DATA => [
