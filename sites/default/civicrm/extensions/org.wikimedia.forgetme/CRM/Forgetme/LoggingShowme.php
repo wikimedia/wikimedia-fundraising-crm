@@ -37,6 +37,7 @@ class CRM_Forgetme_LoggingShowme extends CRM_Forgetme_Showme {
           $entity = CRM_Forgetme_Metadata::getEntityName($tableName);
           $key = $tableName . '_' . $value['id'] . '_' . $value['log_conn_id'];
           $displayValues[$entity][$key] = $value;
+          $displayValues[$entity][$key]['table'] = $tableName;
         }
       }
     }
