@@ -32,6 +32,20 @@ function civicrm_api3_contact_forgetme($params) {
   $forgets = _civicrm_api3_showme_get_entities_with_action('forgetme');
   unset($forgets[array_search('Contact', $forgets)]);
 
+  $fieldsToForget = array_merge(
+    CRM_Forgetme_Metadata::getMetadataForEntity('Contact', 'forget_fields'),
+    CRM_Forgetme_Metadata::getMetadataForEntity('Contact', 'custom_forget_fields')
+  );
+  $forgetParams = ['id' => $params['id']];
+  foreach ($fieldsToForget as $fieldName => $fieldSpec) {
+    $nullValue = 'null';
+    if ($fieldSpec['type'] === CRM_Utils_Type::T_MONEY) {
+      $nullValue = 0;
+    }
+    $forgetParams[$fieldName] = $nullValue;
+  }
+  civicrm_api3('Contact', 'create', $forgetParams);
+
   foreach (array_merge($entitiesToDelete, $forgets) as $entityToDelete) {
     $deleteParams = ['contact_id' => $params['id']];
     $hasForget = TRUE;

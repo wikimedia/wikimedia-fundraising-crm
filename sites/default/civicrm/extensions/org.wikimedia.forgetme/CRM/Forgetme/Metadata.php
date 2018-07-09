@@ -70,7 +70,8 @@ class CRM_Forgetme_Metadata {
       'civicrm_contact' => [
         // Only delete limited contact fields, retain name data.
         'showme' => TRUE,
-        'forget_fields' => ['gender_id', 'birth_date'],
+        'forget_fields' => self::getContactFieldMetadata(['gender_id', 'birth_date']),
+        'custom_forget_fields' => self::getContactCustomFields(),
         'internal_fields' => [
           'hash',
           'api_key',
@@ -231,6 +232,37 @@ class CRM_Forgetme_Metadata {
    */
   public static function getTableName($entity) {
     return CRM_Core_DAO_AllCoreTables::getTableForClass(CRM_Core_DAO_AllCoreTables::getFullName($entity));
+  }
+
+  public static function getContactFieldMetadata($fields) {
+    return array_intersect_key(civicrm_api3('Contact', 'getfields', ['action' => 'create'])['values'], array_fill_keys($fields,1));
+  }
+  /**
+   * Get the contact custom fields to be shown / deleted.
+   *
+   * Filter out calculated wmf_donor & return the rest.
+   *
+   * @return array
+   */
+  public static function getContactCustomFields() {
+    $fields = civicrm_api3('Contact', 'getfields', ['action' => 'create'])['values'];
+    foreach ($fields as $fieldName => $field) {
+      if (!empty($field['is_core_field']) || empty($field['table_name']) || $field['table_name'] === 'wmf_donor') {
+        unset($fields[$fieldName]);
+      }
+    }
+    return $fields;
+  }
+
+  public static function getContactExtendingCustomTables() {
+    $fields = civicrm_api3('Contact', 'getfields', ['action' => 'create'])['values'];
+    $tables = [];
+    foreach ($fields as $fieldName => $field) {
+      if (empty($field['is_core_field']) && !empty($field['table_name']) && $field['table_name'] !== 'wmf_donor') {
+        $tables[$field['table_name']] = ['showme' => TRUE, 'forgetme' => TRUE, 'is_custom' => TRUE, 'internal_fields' => ['entity_id']];
+      }
+    }
+    return $tables;
   }
 
 }

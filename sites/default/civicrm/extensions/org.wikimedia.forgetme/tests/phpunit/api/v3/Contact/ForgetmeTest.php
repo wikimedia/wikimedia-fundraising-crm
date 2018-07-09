@@ -20,11 +20,15 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
    */
   public function testForget() {
 
+    $doNotSolicitFieldId = $this->callAPISuccess('CustomField', 'getvalue', ['name' => 'do_not_solicit', 'is_active' => 1, 'return' => 'id']);
+    $doNotSolicitFieldLabel = 'custom_' . $doNotSolicitFieldId;
     $contact = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Buffy',
       'last_name' => 'Vampire Slayer',
       'contact_type' => 'Individual',
       'email' => 'garlic@example.com',
+      'gender_id' => 'Female',
+      $doNotSolicitFieldLabel => 1,
       'api.phone.create' => [
         ['location_type_id' => 'Main', 'phone' => 911],
         ['location_type_id' => 'Home', 'phone' => '9887-99-99', 'is_billing' => 1],
@@ -33,6 +37,9 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
     $result = civicrm_api3('Contact', 'forgetme', array('id' => $contact['id']));
     $this->callAPISuccessGetCount('Phone', ['contact_id' => $contact['id']], 0);
     $this->callAPISuccessGetCount('Email', ['contact_id' => $contact['id']], 0);
+    $contact = civicrm_api3('Contact', 'getsingle', ['id' => $contact['id'], 'return' => ['gender_id', $doNotSolicitFieldLabel]]);
+    $this->assertEmpty($contact['gender_id']);
+    $this->assertEmpty($contact[$doNotSolicitFieldLabel]);
     $loggingEntries = $this->callAPISuccess('Logging', 'showme', ['contact_id' => $contact['id']])['values'];
     // At this stage we should have contact entries (we will selectively delete from contact rows)
     // and activity contact entries - these will be deleted by activity type.

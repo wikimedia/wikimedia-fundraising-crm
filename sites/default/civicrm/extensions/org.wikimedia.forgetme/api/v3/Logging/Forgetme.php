@@ -31,7 +31,7 @@ function civicrm_api3_logging_forgetme($params) {
     return civicrm_api3_create_success([], $params);
   }
   $deletions = [];
-  $entitiesToDelete = CRM_Forgetme_Metadata::getEntitiesToDelete();
+  $entitiesToDelete = array_merge(CRM_Forgetme_Metadata::getEntitiesToDelete(), CRM_Forgetme_Metadata::getContactExtendingCustomTables());
   foreach ($loggings as $logging) {
     if (isset($entitiesToDelete[$logging['table']])) {
       $string = CRM_Core_DAO::composeQuery('(log_conn_id = %1 AND id = %2)', [
@@ -44,5 +44,13 @@ function civicrm_api3_logging_forgetme($params) {
   foreach ($deletions as $table => $deletion) {
     CRM_Core_DAO::executeQuery("DELETE FROM log_{$table} WHERE " . implode(' OR ', $deletion));
   }
+
+  $fieldsToForget = CRM_Forgetme_Metadata::getMetadataForEntity('Contact', 'forget_fields');
+  $updateSQLs = [];
+  foreach ($fieldsToForget as $fieldName => $spec) {
+    $updateSQLs[] = "$fieldName = NULL";
+  }
+  CRM_Core_DAO::executeQuery('UPDATE log_civicrm_contact SET ' . implode(',', $updateSQLs) . ' WHERE id = ' . $params['contact_id']);
+
   return civicrm_api3_create_success($loggings, $params);
 }
