@@ -29,6 +29,25 @@ class api_v3_Contact_ShowmeTest extends api_v3_Contact_BaseTestClass implements 
     ]);
     $result = civicrm_api3('Contact', 'Showme', array('id' => $contact['id']))['values'][$contact['id']];
     $this->assertEquals('Buffy Vampire Slayer', $result['display_name']);
+    $this->assertValueFound($result, 'email:garlic@example.com|Logging Timestamp');
+  }
+
+  /**
+   * @param $result
+   * @param $expectedValue
+   */
+  protected function assertValueFound($result, $expectedValue) {
+    foreach ($result as $key => $value) {
+      if (is_array($value)) {
+        continue;
+      }
+      if (strstr($value, $expectedValue)) {
+        // Just to show a success & then return
+        $this->assertEquals(1, 1);
+        return;
+      }
+    }
+    $this->fail('string not found');
   }
 
 }
