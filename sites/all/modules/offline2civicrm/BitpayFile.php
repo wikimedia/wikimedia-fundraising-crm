@@ -72,10 +72,13 @@ class BitpayFile extends ChecksFile {
     if ($data['tx type'] === 'Invoice Refund') {
       throw new WmfException(WmfException::INVALID_MESSAGE, 'Refunds not currently handled. Please log a Phab if required');
     }
-    if ($data['tx type'] !== 'sale') {
+    $validTypes = [
+      'donation',
+      'sale',
+    ];
+    if (!in_array($data['tx type'], $validTypes)) {
       throw new EmptyRowException();
     }
-
 
     return parent::parseRow($data);
   }
