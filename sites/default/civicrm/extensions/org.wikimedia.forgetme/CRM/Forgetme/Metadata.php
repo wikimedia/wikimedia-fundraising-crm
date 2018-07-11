@@ -142,8 +142,9 @@ class CRM_Forgetme_Metadata {
       // delete activity contact records by type
       'civicrm_activity_contact' => [
         'showme' => TRUE,
+        'forgetme' => TRUE,
         'forget_filters' => [
-          'activity_type_id' => [
+          'activity_id.activity_type_id' => [
             'NOT IN' => self::getActivityTypesToKeep(),
           ],
         ]
@@ -199,16 +200,13 @@ class CRM_Forgetme_Metadata {
       'Cancel Recurring Contribution',
       'Update Recurring Contribution Billing Details',
       'Update Recurring Contribution',
-      'Grant Application Due',
-      'Grant Decision',
-      'Report Due',
-      'Grant Reminder',
       'Contact Merged',
       'Failed Payment',
       'Contact Deleted by Merge',
       'unsubscribe',
       'contact_type_changed',
-      'forget_me'
+      'forget_me',
+      'Contribution',
     ];
   }
 
