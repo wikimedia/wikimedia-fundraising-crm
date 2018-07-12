@@ -5,8 +5,10 @@
 
   <h1 crm-page-title><a href="{{currentContactViewUrl}}">{{currentContact.display_name}}</a></h1>
 
+  <button class="btn btn-primary" ng-print print-element-id="all-the-stuff"><i class="fa fa-print"></i> Print</button>
+
   <form name="myForm" crm-ui-id-scope>
-    <div class='crm-grid-table'>
+    <div class='crm-grid-table' id="all-the-stuff">
       <div ng-repeat="(currentKey, currentValue) in currentContact" class="crm-grid-row">
         <div ng-show="(currentValue !== '')" class="crm-grid-cell">{{contactMetadata[currentKey]['title']}}</div>
         <div ng-show="(currentValue !== '')" class="crm-grid-cell">{{currentValue}}</div>

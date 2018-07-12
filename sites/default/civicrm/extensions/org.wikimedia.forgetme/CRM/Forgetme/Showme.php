@@ -145,11 +145,7 @@ class CRM_Forgetme_Showme {
   public function getDisplayValues() {
     if (empty($this->displayValues)) {
       $this->displayValues = $this->getAllValuesForEntity();
-      $this->filterOutEmptyFields();
-      $this->filterOutDuplicateEntityID();
-      $this->filterOutNegativeValues();
-      $this->processOptionValueFields();
-      $this->filterOutInternalFields();
+      $this->preFormatDisplayValues();
     }
     return $this->displayValues;
   }
@@ -164,7 +160,7 @@ class CRM_Forgetme_Showme {
     foreach ($this->getDisplayValues() as $index => $entities) {
       $display = [];
       foreach ($entities as $key => $value) {
-        $display[] = $this->metadata[$key]['title'] . ':' . $value;
+        $display[] = (isset($this->metadata[$key]['title']) ? $this->metadata[$key]['title'] : $key) . ':' . $value;
       }
       $return[$index] = implode($this->displaySeparator, $display);
     }
@@ -249,6 +245,17 @@ class CRM_Forgetme_Showme {
         unset($this->displayValues[$displayIndex][$secondaryFieldName]);
       }
     }
+  }
+
+  /**
+   * Remove or alter values in conjunction with the metadata.
+   */
+  protected function preFormatDisplayValues() {
+    $this->filterOutEmptyFields();
+    $this->filterOutDuplicateEntityID();
+    $this->filterOutNegativeValues();
+    $this->processOptionValueFields();
+    $this->filterOutInternalFields();
   }
 
 }
