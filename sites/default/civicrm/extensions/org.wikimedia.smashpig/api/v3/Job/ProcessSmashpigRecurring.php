@@ -38,11 +38,14 @@ function civicrm_api3_job_process_smashpig_recurring($params) {
 }
 
 /**
- * Action Payment.
+ * Recurring payment charge job parameters.
  *
  * @param array $params
- *
- * @return array
  */
 function _civicrm_api3_job_process_smashpig_recurring_spec(&$params) {
+  $params['use_queue']['title'] = ts('Send donations to queue');
+  $params['retry_delay_days']['title'] = ts('Days to wait before retrying failed charge');
+  $params['max_failures']['title'] = ts('Number of failures at which we stop retrying');
+  $params['catch_up_days']['title'] = ts('Number of days in the past to look for charges due');
+  $params['batch_size']['title'] = ts('Batch size');
 }
