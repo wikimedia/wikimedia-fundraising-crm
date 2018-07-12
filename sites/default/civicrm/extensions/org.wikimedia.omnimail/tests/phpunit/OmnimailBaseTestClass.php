@@ -24,6 +24,16 @@ use GuzzleHttp\Psr7\Response;
  */
 class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndToEndInterface, TransactionalInterface {
 
+  use \Civi\Test\Api3TestTrait;
+
+
+  /**
+   * IDs of contacts created for the test.
+   *
+   * @var array
+   */
+  protected $contactIDs = array();
+
   public function setUp() {
     civicrm_initialize();
     if (!isset($GLOBALS['_PEAR_default_error_mode'])) {
@@ -35,6 +45,13 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
     $null = NULL;
     Civi::service('settings_manager')->flush();
     \Civi::$statics['_omnimail_settings'] = array();
+  }
+
+  public function tearDown() {
+    foreach ($this->contactIDs as $contactID) {
+      $this->callAPISuccess('Contact', 'delete', ['id' => $contactID, 'skip_undelete' => 1]);
+    }
+    parent::tearDown();
   }
 
   /**
@@ -114,6 +131,65 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
        }
      }
      return $settings;
+  }
+
+  public function createMailingProviderData() {
+    civicrm_api3('Campaign', 'create', array('name' => 'xyz', 'title' => 'Cool Campaign'));
+    civicrm_api3('Mailing', 'create', array('campaign_id' => 'xyz', 'hash' => 'xyz', 'name' => 'Mail'));
+    civicrm_api3('MailingProviderData', 'create',  array(
+      'contact_id' => $this->contactIDs[0],
+      'email' => 'charlie@example.com',
+      'event_type' => 'Opt Out',
+      'mailing_identifier' => 'xyz',
+      'recipient_action_datetime' => '2017-02-02',
+      'contact_identifier' => 'a',
+    ));
+    civicrm_api3('MailingProviderData', 'create',  array(
+      'contact_id' => $this->contactIDs[2],
+      'event_type' => 'Open',
+      'mailing_identifier' => 'xyz',
+      'recipient_action_datetime' => '2017-03-03',
+      'contact_identifier' => 'b',
+    ));
+    civicrm_api3('MailingProviderData', 'create',  array(
+      'contact_id' => $this->contactIDs[3],
+      'event_type' => 'Suppressed',
+      'mailing_identifier' => 'xyuuuz',
+      'recipient_action_datetime' => '2017-04-04',
+      'contact_identifier' => 'c',
+    ));
+  }
+
+  protected function makeScientists() {
+    $contact = civicrm_api3('Contact', 'create', array(
+      'first_name' => 'Charles',
+      'last_name' => 'Darwin',
+      'contact_type' => 'Individual'
+    ));
+    $this->contactIDs[] = $contact['id'];
+    $contact = civicrm_api3('Contact', 'create', array(
+      'first_name' => 'Charlie',
+      'last_name' => 'Darwin',
+      'contact_type' => 'Individual',
+      'api.email.create' => array(
+        'is_bulkmail' => 1,
+        'email' => 'charlie@example.com'
+      )
+    ));
+    $this->contactIDs[] = $contact['id'];
+
+    $contact = civicrm_api3('Contact', 'create', array(
+      'first_name' => 'Marie',
+      'last_name' => 'Currie',
+      'contact_type' => 'Individual'
+    ));
+    $this->contactIDs[] = $contact['id'];
+    $contact = civicrm_api3('Contact', 'create', array(
+      'first_name' => 'Isaac',
+      'last_name' => 'Newton',
+      'contact_type' => 'Individual'
+    ));
+    $this->contactIDs[] = $contact['id'];
   }
 
 }
