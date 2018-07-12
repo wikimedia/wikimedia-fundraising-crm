@@ -36,15 +36,7 @@ function civicrm_api3_activity_contact_forgetme($params) {
     $activities[$activityContactRecord['activity_id']] = $activityContactRecord['activity_id'];
   }
 
-  static $ufMatches = [];
-  if (empty($ufMatches)) {
-    // Currently only 143 - probably this will only be hit once so static caching doesn't mean that much.
-    $result = civicrm_api3('UFMatch', 'get', [
-      'return' => 'contact_id',
-      'options' => ['limit' => 0]
-    ])['values'];
-    $ufMatches = array_keys($result);
-  }
+  $ufMatches = _civicrm_api3_showme_get_get_user_contact_ids();
 
   $activitiesToKeep = civicrm_api3('ActivityContact', 'get', [
     'activity_id' => ['IN' => $activities],

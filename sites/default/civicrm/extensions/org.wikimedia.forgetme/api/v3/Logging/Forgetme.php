@@ -31,6 +31,7 @@ function civicrm_api3_logging_forgetme($params) {
     return civicrm_api3_create_success([], $params);
   }
   $deletions = [];
+  $activities = [];
   $entitiesToDelete = array_merge(CRM_Forgetme_Metadata::getEntitiesToDelete(), CRM_Forgetme_Metadata::getContactExtendingCustomTables());
   foreach ($loggings as $logging) {
     if (isset($entitiesToDelete[$logging['table']])) {
@@ -39,10 +40,25 @@ function civicrm_api3_logging_forgetme($params) {
         2 => [$logging['id'], 'Integer'],
       ]);
       $deletions[$logging['table']][$string] = $string;
+      if ($logging['table'] === 'civicrm_activity_contact') {
+        $activities[$logging['activity_id']] = $logging['activity_id'];
+      }
     }
   }
   foreach ($deletions as $table => $deletion) {
     CRM_Core_DAO::executeQuery("DELETE FROM log_{$table} WHERE " . implode(' OR ', $deletion));
+  }
+
+  if (!empty($activities)) {
+    $nonKeeperContactIds = _civicrm_api3_showme_get_get_user_contact_ids();
+    $nonKeeperContactIds[] = $params['contact_id'];
+
+    $activitiesToKeep = CRM_Core_DAO::singleValueQuery(
+      'SELECT group_concat(activity_id) FROM log_civicrm_activity_contact WHERE activity_id IN (' . implode(',', $activities) . ') AND contact_id NOT IN (' . implode(',', $nonKeeperContactIds) . ')'
+    );
+
+    $activitiesToDelete = array_diff($activities, explode(',', $activitiesToKeep));
+    CRM_Core_DAO::executeQuery("DELETE FROM log_civicrm_activity WHERE id IN (" . implode(',', $activitiesToDelete) . ")");
   }
 
   $fieldsToForget = CRM_Forgetme_Metadata::getMetadataForEntity('Contact', 'forget_fields');

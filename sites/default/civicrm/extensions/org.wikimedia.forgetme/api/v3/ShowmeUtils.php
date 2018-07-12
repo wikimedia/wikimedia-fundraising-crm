@@ -44,3 +44,23 @@ function _civicrm_api3_showme_get_entities_with_action($action, $apiEntities = N
   }
   return $apiEntities;
 }
+
+/**
+ * Get contact ids for actual users.
+ *
+ * Currently only 143 - probably this will only be hit once so static caching doesn't mean that much.
+ * Note that our Redis caching kicks in when we update to CiviCRM 5.4 & we should possibly refactor after that.
+ *
+ * @return array
+ */
+function _civicrm_api3_showme_get_get_user_contact_ids() {
+  static $ufMatches = [];
+  if (empty($ufMatches)) {
+    $result = civicrm_api3('UFMatch', 'get', [
+      'return' => 'contact_id',
+      'options' => ['limit' => 0]
+    ])['values'];
+    $ufMatches = array_keys($result);
+  }
+  return $ufMatches;
+}

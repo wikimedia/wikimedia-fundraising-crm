@@ -33,7 +33,7 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
       ],
     ]);
 
-    $result = civicrm_api3('Contact', 'forgetme', array('id' => $contact['id']));
+    $result = $this->callAPISuccess('Contact', 'forgetme', array('id' => $contact['id']));
 
     $this->callAPISuccessGetCount('Phone', ['contact_id' => $contact['id']], 0);
     $this->callAPISuccessGetCount('Email', ['contact_id' => $contact['id']], 0);
@@ -66,13 +66,25 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
       'contact_type' => 'Individual',
       'email' => 'garlicwithmushrooms@example.com',
     ]);
-    $this->callAPISuccess('Activity', 'create', ['activity_type_id' => 'Meeting', 'source_contact_id' => $contactToDelete['id']]);
-    $this->callAPISuccess('Activity', 'create', ['activity_type_id' => 'Meeting', 'source_contact_id' => $contactToDelete['id'], 'target_contact_id' => $contactToKeep['id']]);
+    $activityToDelete = $this->callAPISuccess('Activity', 'create', ['activity_type_id' => 'Meeting', 'source_contact_id' => $contactToDelete['id']]);
+    $activityToKeep = $this->callAPISuccess('Activity', 'create', ['activity_type_id' => 'Meeting', 'source_contact_id' => $contactToDelete['id'], 'target_contact_id' => $contactToKeep['id']]);
 
     civicrm_api3('Contact', 'forgetme', array('id' => $contactToDelete['id']));
 
     $this->callAPISuccessGetCount('ActivityContact', ['contact_id' => $contactToDelete['id'], 'activity_id.activity_type_id' => ['IN' => ["Meeting"]]], 0);
     $this->callAPISuccessGetCount('ActivityContact', ['contact_id' => $contactToKeep['id'], 'activity_id.activity_type_id' => ['IN' => ["Meeting"]]], 1);
+
+    $loggingEntries = $this->callAPISuccess('Logging', 'showme', ['contact_id' => $contactToDelete['id']])['values'];
+    foreach ($loggingEntries as $loggingEntry) {
+      if ($loggingEntry['table'] === 'civicrm_activity_contact') {
+        // This is a bit clumsy - basically at the end of the FORGET a new activity is created for the forget,
+        // it links to our contact as source & target -so we WILL have activity_contact records but they
+        // will be higher ids than the ones we are looking at.
+        $this->assertGreaterThan($activityToKeep['id'], $loggingEntry['activity_id']);
+      }
+    }
+    // One deleted, one kept.
+    $this->assertEquals(1, CRM_Core_DAO::singleValueQuery('SELECT count(*) FROM log_civicrm_activity WHERE id IN (%1, %2)', [1 => [$activityToDelete['id'], 'Integer'], 2 => [$activityToKeep['id'], 'Integer']]));
 
   }
 
