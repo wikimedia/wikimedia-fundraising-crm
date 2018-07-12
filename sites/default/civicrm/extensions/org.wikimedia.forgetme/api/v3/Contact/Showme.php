@@ -27,7 +27,7 @@ function _civicrm_api3_contact_showme_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_contact_showme($params) {
-  $showMe = new CRM_Forgetme_Showme('Contact', $params);
+  $showMe = new CRM_Forgetme_Showme('Contact', $params, []);
   $metadata = $showMe->getMetadata();
 
   $contact = $showMe->getDisplayValues();

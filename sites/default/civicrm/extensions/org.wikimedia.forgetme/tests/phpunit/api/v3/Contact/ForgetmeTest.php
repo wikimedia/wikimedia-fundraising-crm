@@ -54,18 +54,9 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
    * Test our activity deletion.
    */
   public function testForgetActivities() {
-    $contactToDelete = $this->callAPISuccess('Contact', 'create', [
-      'first_name' => 'Buffy',
-      'last_name' => 'Vampire Slayer',
-      'contact_type' => 'Individual',
-      'email' => 'garlic@example.com',
-    ]);
-      $contactToKeep = $this->callAPISuccess('Contact', 'create', [
-      'first_name' => 'Buffy',
-      'last_name' => 'Vampire Bat Slayer',
-      'contact_type' => 'Individual',
-      'email' => 'garlicwithmushrooms@example.com',
-    ]);
+    $buffies =  $this->bufficiseUs();
+    $contactToDelete = $buffies['contact_to_delete'];
+    $contactToKeep = $buffies['contact_to_keep'];
     $activityToDelete = $this->callAPISuccess('Activity', 'create', ['activity_type_id' => 'Meeting', 'source_contact_id' => $contactToDelete['id']]);
     $activityToKeep = $this->callAPISuccess('Activity', 'create', ['activity_type_id' => 'Meeting', 'source_contact_id' => $contactToDelete['id'], 'target_contact_id' => $contactToKeep['id']]);
 
@@ -86,6 +77,53 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
     // One deleted, one kept.
     $this->assertEquals(1, CRM_Core_DAO::singleValueQuery('SELECT count(*) FROM log_civicrm_activity WHERE id IN (%1, %2)', [1 => [$activityToDelete['id'], 'Integer'], 2 => [$activityToKeep['id'], 'Integer']]));
 
+  }
+
+  /**
+   * Test our activity relationships.
+   */
+  public function testForgetRelationships() {
+    $buffies = $this->bufficiseUs();
+    $relationshipTypes = $this->callAPISuccess('RelationshipType', 'get', ['contact_type_a' => 'Individual', 'contact_type_b' => 'Individual', 'return' => 'id', 'options' => ['limit' => 2], 'sequential' => 1])['values'];
+    // Create circular relationship :-). Key is to have contact_id_a & contact_id_b tested.
+    $this->callAPISuccess('Relationship', 'create', [
+      'relationship_type_id' => $relationshipTypes[0]['id'],
+      'contact_id_a' => $buffies['contact_to_delete']['id'],
+      'contact_id_b' => $buffies['contact_to_keep']['id'],
+    ]);
+    $this->callAPISuccess('Relationship', 'create', [
+      'relationship_type_id' => $relationshipTypes[1]['id'],
+      'contact_id_a' => $buffies['contact_to_keep']['id'],
+      'contact_id_b' => $buffies['contact_to_delete']['id'],
+    ]);
+
+    $this->callAPISuccess('Contact', 'forgetme', array('id' => $buffies['contact_to_delete']['id']));
+
+    $this->callAPISuccessGetCount('Relationship', ['contact_id_a' => $buffies['contact_to_delete']['id']], 0);
+    $this->callAPISuccessGetCount('Relationship', ['contact_id_b' => $buffies['contact_to_delete']['id']], 0);
+
+    $this->assertEquals(0, CRM_Core_DAO::singleValueQuery(
+      'SELECT count(*) FROM log_civicrm_relationship WHERE contact_id_a = %1 OR contact_id_b = %1', [1 => [$buffies['contact_to_delete']['id'], 'Integer']]
+    ));
+  }
+
+  /**
+   * @return array
+   */
+  protected function bufficiseUs() {
+    $contactToDelete = $this->callAPISuccess('Contact', 'create', [
+      'first_name' => 'Buffy',
+      'last_name' => 'Vampire Slayer',
+      'contact_type' => 'Individual',
+      'email' => 'garlic@example.com',
+    ]);
+    $contactToKeep = $this->callAPISuccess('Contact', 'create', [
+      'first_name' => 'Buffy',
+      'last_name' => 'Vampire Bat Slayer',
+      'contact_type' => 'Individual',
+      'email' => 'garlicwithmushrooms@example.com',
+    ]);
+    return ['contact_to_delete' => $contactToDelete, 'contact_to_keep' => $contactToKeep];
   }
 
 }

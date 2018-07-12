@@ -27,7 +27,7 @@ function _civicrm_api3_logging_showme_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_logging_showme($params) {
-  $showMe = new CRM_Forgetme_LoggingShowme('Logging', $params);
+  $showMe = new CRM_Forgetme_LoggingShowme('Logging', $params, []);
   $entities =  $showMe->getDisplayValues();
   $return = civicrm_api3_create_success($entities, $params);
   $return['metadata'] = $showMe->getMetadata();
