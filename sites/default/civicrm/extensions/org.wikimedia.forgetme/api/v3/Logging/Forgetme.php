@@ -26,6 +26,9 @@ function _civicrm_api3_logging_forgetme_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_logging_forgetme($params) {
+  if (is_numeric($params['contact_id'])) {
+    $params['contact_id'] = ['IN' => [$params['contact_id']]];
+  }
   $loggings = civicrm_api3('logging', 'showme', $params)['values'];
   if (empty($loggings)) {
     return civicrm_api3_create_success([], $params);
@@ -51,7 +54,7 @@ function civicrm_api3_logging_forgetme($params) {
 
   if (!empty($activities)) {
     $nonKeeperContactIds = _civicrm_api3_showme_get_get_user_contact_ids();
-    $nonKeeperContactIds[] = $params['contact_id'];
+    $nonKeeperContactIds = array_merge($nonKeeperContactIds, $params['contact_id']['IN']);
 
     $activitiesToKeep = CRM_Core_DAO::singleValueQuery(
       'SELECT group_concat(activity_id) FROM log_civicrm_activity_contact WHERE activity_id IN (' . implode(',', $activities) . ') AND contact_id NOT IN (' . implode(',', $nonKeeperContactIds) . ')'
@@ -66,7 +69,8 @@ function civicrm_api3_logging_forgetme($params) {
   foreach ($fieldsToForget as $fieldName => $spec) {
     $updateSQLs[] = "$fieldName = NULL";
   }
-  CRM_Core_DAO::executeQuery('UPDATE log_civicrm_contact SET ' . implode(',', $updateSQLs) . ' WHERE id = ' . $params['contact_id']);
+  $whereClause = CRM_Core_DAO::createSQLFilter('id', $params['contact_id']);
+  CRM_Core_DAO::executeQuery('UPDATE log_civicrm_contact SET ' . implode(',', $updateSQLs) . " WHERE $whereClause");
 
   return civicrm_api3_create_success($loggings, $params);
 }

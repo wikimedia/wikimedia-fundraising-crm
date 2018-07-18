@@ -84,29 +84,32 @@ class CRM_Forgetme_LoggingShowme extends CRM_Forgetme_Showme {
    * @throws \CRM_Core_Exception
    */
   protected function getValues($tableName, $detail) {
-    $getParams = $this->filters;
-    $params = [1 => [(int) $getParams['contact_id'], 'Integer']];
+    $contactFilter = $this->filters['contact_id'];
     if (!empty($detail['is_custom'])) {
-      return CRM_Core_DAO::executeQuery("SELECT * FROM log_{$tableName} WHERE entity_id = %1", $params)->fetchAll();
+      $whereClause = CRM_Core_DAO::createSQLFilter('entity_id', $contactFilter);
+      return CRM_Core_DAO::executeQuery("SELECT * FROM log_{$tableName} WHERE $whereClause")->fetchAll();
     }
     $daoName = CRM_Core_DAO_AllCoreTables::getClassForTable($tableName);
     $dao = new $daoName();
     $tableName = 'log_' . $tableName;
     if (property_exists($dao, 'contact_id')) {
-      return CRM_Core_DAO::executeQuery("SELECT * FROM $tableName WHERE contact_id = %1", $params)->fetchAll();
+      $whereClause = CRM_Core_DAO::createSQLFilter('contact_id', $contactFilter);
+      return CRM_Core_DAO::executeQuery("SELECT * FROM $tableName WHERE $whereClause")->fetchAll();
     }
     elseif (property_exists($dao, 'entity_table')) {
-      return  CRM_Core_DAO::executeQuery("SELECT * FROM $tableName WHERE entity_table = 'civicrm_contact' AND entity_id = %1", $params)->fetchAll();
+      $whereClause = CRM_Core_DAO::createSQLFilter('entity_id', $contactFilter);
+      return  CRM_Core_DAO::executeQuery("SELECT * FROM $tableName WHERE entity_table = 'civicrm_contact' AND $whereClause")->fetchAll();
     }
     elseif ($tableName === 'log_civicrm_contact') {
-      return CRM_Core_DAO::executeQuery("SELECT * FROM $tableName WHERE id = %1", $params)->fetchAll();
+      $whereClause = CRM_Core_DAO::createSQLFilter('id', $contactFilter);
+      return CRM_Core_DAO::executeQuery("SELECT * FROM $tableName WHERE $whereClause")->fetchAll();
     }
     elseif (isset($detail['keys'])) {
       $clauses = [];
       foreach ($detail['keys'] as $fieldName) {
-        $clauses[] = "$fieldName = %1";
+        $clauses[] = CRM_Core_DAO::createSQLFilter($fieldName, $contactFilter, CRM_Utils_Type::T_INT);
       }
-      return CRM_Core_DAO::executeQuery("SELECT * FROM $tableName WHERE " . implode(' OR ', $clauses), $params)->fetchAll();
+      return CRM_Core_DAO::executeQuery("SELECT * FROM $tableName WHERE " . implode(' OR ', $clauses), $contactFilter)->fetchAll();
     }
     else {
       throw new CRM_Core_Exception(ts('unhandled table'));

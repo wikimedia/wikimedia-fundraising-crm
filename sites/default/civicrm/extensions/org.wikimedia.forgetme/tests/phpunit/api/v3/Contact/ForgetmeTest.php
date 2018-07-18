@@ -116,14 +116,50 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
       'last_name' => 'Vampire Slayer',
       'contact_type' => 'Individual',
       'email' => 'garlic@example.com',
+      'gender_id' => 'Female',
+      'birth_date' => '2010-09-07'
     ]);
     $contactToKeep = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Buffy',
       'last_name' => 'Vampire Bat Slayer',
       'contact_type' => 'Individual',
       'email' => 'garlicwithmushrooms@example.com',
+      'gender_id' => 'Female',
+      'birth_date' => '2010-09-07'
     ]);
     return ['contact_to_delete' => $contactToDelete, 'contact_to_keep' => $contactToKeep];
+  }
+
+  /**
+   * Test that details from merged contacts are deleted  too.
+   */
+  public function testForgetPastBuffies() {
+    $buffies = $this->bufficiseUs();
+    $this->callAPISuccess('Contact', 'merge', [
+      'to_remove_id' => $buffies['contact_to_delete']['id'],
+      'to_keep_id' => $buffies['contact_to_keep']['id'],
+      'mode' => 'aggressive',
+    ]);
+    $this->callAPISuccess('Contact', 'forgetme', array('id' => $buffies['contact_to_keep']['id']));
+    $theUndead = $this->callAPISuccess('Contact', 'get', [
+      'id' => ['IN' => [$buffies['contact_to_delete']['id'], $buffies['contact_to_keep']['id']],
+      'is_deleted' => '',
+    ]])['values'];
+    // We don't remove them - we just exorcise them.
+    $this->assertEquals(2, count($theUndead));
+    foreach ($theUndead as $deadBuffy) {
+      $this->assertTrue(empty($deadBuffy['gender_id']));
+      $this->assertTrue(empty($deadBuffy['birth_date']));
+    }
+
+    $logs = CRM_Core_DAO::executeQuery("
+       SELECT * FROM log_civicrm_contact
+       WHERE id IN ({$buffies['contact_to_delete']['id']}, {$buffies['contact_to_keep']['id']})
+     ")->fetchAll();
+    foreach ($logs as $log) {
+      $this->assertTrue(empty($log['gender_id']));
+      $this->assertTrue(empty($log['birth_date']));
+    }
   }
 
 }

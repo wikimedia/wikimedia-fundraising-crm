@@ -12,6 +12,7 @@ require_once 'api/v3/ShowmeUtils.php';
  */
 function _civicrm_api3_contact_forget_spec(&$spec) {
   $spec['id']['api.required'] = 1;
+  $spec['id']['type'] = CRM_Utils_Type::T_INT;
 }
 
 /**
@@ -36,7 +37,9 @@ function civicrm_api3_contact_forgetme($params) {
     CRM_Forgetme_Metadata::getMetadataForEntity('Contact', 'forget_fields'),
     CRM_Forgetme_Metadata::getMetadataForEntity('Contact', 'custom_forget_fields')
   );
-  $forgetParams = ['id' => $params['id']];
+  $mergees = civicrm_api3('Contact', 'getmergedfrom', ['contact_id' => $params['id']])['values'];
+  $contactIDsToForget = array_merge([$params['id']], array_keys($mergees));
+
   foreach ($fieldsToForget as $fieldName => $fieldSpec) {
     $nullValue = 'null';
     if ($fieldSpec['type'] === CRM_Utils_Type::T_MONEY) {
@@ -44,10 +47,13 @@ function civicrm_api3_contact_forgetme($params) {
     }
     $forgetParams[$fieldName] = $nullValue;
   }
-  civicrm_api3('Contact', 'create', $forgetParams);
+  foreach ($contactIDsToForget as $contactID) {
+    $forgetParams['id'] = $contactID;
+    civicrm_api3('Contact', 'create', $forgetParams);
+  }
 
   foreach (array_merge($entitiesToDelete, $forgets) as $entityToDelete) {
-    $deleteParams = ['contact_id' => $params['id']];
+    $deleteParams = ['contact_id' => ['IN' => $contactIDsToForget]];
     $hasForget = TRUE;
     if (!in_array($entityToDelete, $forgets)) {
       $deleteParams["api.{$entityToDelete}.delete"] = 1;
@@ -56,7 +62,7 @@ function civicrm_api3_contact_forgetme($params) {
     $delete = civicrm_api3($entityToDelete, 'showme', $deleteParams);
     if ($delete['count']) {
       if ($hasForget) {
-        civicrm_api3($entityToDelete, 'forgetme', ['contact_id' => $params['id']]);
+        civicrm_api3($entityToDelete, 'forgetme', ['contact_id' => ['IN' => $contactIDsToForget]]);
       }
       foreach ($delete['showme'] as $id => $string) {
         $result[$entityToDelete . $id] = $string;

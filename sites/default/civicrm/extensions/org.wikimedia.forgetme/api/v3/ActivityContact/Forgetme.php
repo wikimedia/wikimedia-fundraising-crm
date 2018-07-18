@@ -27,6 +27,9 @@ function _civicrm_api3_activity_contact_forgetme_spec(&$spec) {
 function civicrm_api3_activity_contact_forgetme($params) {
   $filters = CRM_Forgetme_Metadata::getMetadataForEntity('ActivityContact', 'forget_filters');
   $params = array_merge($params, $filters);
+  if (is_numeric($params['contact_id'])) {
+    $params['contact_id'] = ['IN' => [$params['contact_id']]];
+  }
   $activityContactRecords = civicrm_api3('ActivityContact', 'get', $params)['values'];
   if (empty($activityContactRecords)) {
     return civicrm_api3_create_success([], $params);
@@ -40,7 +43,7 @@ function civicrm_api3_activity_contact_forgetme($params) {
 
   $activitiesToKeep = civicrm_api3('ActivityContact', 'get', [
     'activity_id' => ['IN' => $activities],
-    'contact_id' => ['NOT IN' => array_merge($ufMatches, [$params['contact_id']])],
+    'contact_id' => ['NOT IN' => array_merge($ufMatches, $params['contact_id']['IN'])],
     'return' => 'activity_id',
   ]);
   foreach ($activitiesToKeep['values'] as $activityToKeep) {

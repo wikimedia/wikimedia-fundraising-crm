@@ -30,8 +30,9 @@ function _civicrm_api3_omnirecipient_forget_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_omnirecipient_forgetme($params) {
+  $whereClause = CRM_Core_DAO::createSQLFilter('contact_id', $params['contact_id'], CRM_Utils_Type::T_INT);
   CRM_Core_DAO::executeQuery(
-    'DELETE FROM civicrm_mailing_provider_data WHERE contact_id = %1', [1 => [$params['contact_id'], 'Integer']]
+    'DELETE FROM civicrm_mailing_provider_data WHERE ' . $whereClause
   );
   return civicrm_api3_create_success(1);
 }

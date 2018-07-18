@@ -134,9 +134,9 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
   }
 
   public function createMailingProviderData() {
-    civicrm_api3('Campaign', 'create', array('name' => 'xyz', 'title' => 'Cool Campaign'));
-    civicrm_api3('Mailing', 'create', array('campaign_id' => 'xyz', 'hash' => 'xyz', 'name' => 'Mail'));
-    civicrm_api3('MailingProviderData', 'create',  array(
+    $this->callAPISuccess('Campaign', 'create', array('name' => 'xyz', 'title' => 'Cool Campaign'));
+    $this->callAPISuccess('Mailing', 'create', array('campaign_id' => 'xyz', 'hash' => 'xyz', 'name' => 'Mail'));
+    $this->callAPISuccess('MailingProviderData', 'create',  array(
       'contact_id' => $this->contactIDs[0],
       'email' => 'charlie@example.com',
       'event_type' => 'Opt Out',
@@ -144,14 +144,14 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
       'recipient_action_datetime' => '2017-02-02',
       'contact_identifier' => 'a',
     ));
-    civicrm_api3('MailingProviderData', 'create',  array(
+    $this->callAPISuccess('MailingProviderData', 'create',  array(
       'contact_id' => $this->contactIDs[2],
       'event_type' => 'Open',
       'mailing_identifier' => 'xyz',
       'recipient_action_datetime' => '2017-03-03',
       'contact_identifier' => 'b',
     ));
-    civicrm_api3('MailingProviderData', 'create',  array(
+    $this->callAPISuccess('MailingProviderData', 'create',  array(
       'contact_id' => $this->contactIDs[3],
       'event_type' => 'Suppressed',
       'mailing_identifier' => 'xyuuuz',
@@ -161,13 +161,13 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
   }
 
   protected function makeScientists() {
-    $contact = civicrm_api3('Contact', 'create', array(
+    $contact = $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Charles',
       'last_name' => 'Darwin',
       'contact_type' => 'Individual'
     ));
     $this->contactIDs[] = $contact['id'];
-    $contact = civicrm_api3('Contact', 'create', array(
+    $contact = $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Charlie',
       'last_name' => 'Darwin',
       'contact_type' => 'Individual',
@@ -178,13 +178,13 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
     ));
     $this->contactIDs[] = $contact['id'];
 
-    $contact = civicrm_api3('Contact', 'create', array(
+    $contact = $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Marie',
       'last_name' => 'Currie',
       'contact_type' => 'Individual'
     ));
     $this->contactIDs[] = $contact['id'];
-    $contact = civicrm_api3('Contact', 'create', array(
+    $contact = $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Isaac',
       'last_name' => 'Newton',
       'contact_type' => 'Individual'
