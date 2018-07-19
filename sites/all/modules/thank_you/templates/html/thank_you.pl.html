@@ -1,45 +1,58 @@
 {% if first_name and last_name %}
-<p>Drogi/Droga {{ first_name }},</p>
+<p>Dzień dobry, {{ first_name }},
+</p>
 
 {% else %}
 <p>Drogi darczyńco,</p>
 {%endif%}
 
-<p>Dziękujemy za pomoc na rzecz Wikipedii i Wikimedia Foundation. Twój wkład o wysokości {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} stanowi wsparcie dla Wikipedii i pomoże w zapewnieniu wszystkim ludziom dostępu do bezpłatnego źródła wiedzy w przyszłości.</p>
+<p>dziękujemy za wsparcie Wikipedii oraz Wikimedia Foundation kwotą {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Dzięki Twojemu wsparciu Wikipedia pozostaje niezależna. Pragnę wyjaśnić Ci, dlaczego Twoja darowizna jest tak ważna.
+</p>
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>Niedawno rozwiązaliśmy mały problem techniczny, który był przyczyną wstrzymania niektórych dotacji okresowych. Udało się nam w pełni uruchomić ponownie usługę dotacji okresowych, a proces przekazywania funduszy powinien przebiegać bez zakłóceń. Twoje konto, z którego pobierane były dostacje, nie zostanie obciążone wpłatami, które zostały pominięte. Dziękujemy za Twoją cierpliwość, wyrozumiałość i wsparcie. Jeżeli masz jakiekolwiek pytania, prosimy o kontakt pod adresem donate@wikimedia.org.</p>
+<p>Niedawno rozwiązaliśmy mały problem techniczny, który był przyczyną wstrzymania niektórych dotacji okresowych. Udało się nam uruchomić ponownie Twoją dotację, a proces przekazywania funduszy powinien już przebiegać bez zakłóceń. Oczywiście nie obciązymy Twojego konta wpłatami, które zostały pominięte. Dziękujemy za Twoją cierpliwość i wsparcie. Jeżeli masz jakiekolwiek pytania, prosimy o kontakt pod adresem donate@wikimedia.org.</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
-<p>Rozwiązaliśmy niedawno problem techniczny, który powodował, że niewielka liczba darczyńców okresowych nie otrzymywała potwierdzenia do celów podatkowych. Potraktuj proszę tą wiadomość jako podziękowanie za darowiznę dokonaną dnia {{ receive_date }}. Dziękujemy za Twoją cierpliwość, wyrozumiałość i wsparcie. Jeżeli masz jakiekolwiek pytania, prosimy o kontakt pod adresem donate@wikimedia.org.</p>
+<p>Rozwiązaliśmy niedawno problem techniczny, który powodował, że niewielka liczba darczyńców okresowych nie otrzymywała potwierdzenia do celów podatkowych. Potraktuj proszę tą wiadomość jako podziękowanie za darowiznę dokonaną dnia {{ receive_date }}.  Dziękujemy za wyrozumiałość i wsparcie, a listy z podziękowaniami powinny być w przyszłości wysyłane bez zakłóceń. W razie jakichkolwiek pytań prosimy o kontakt pod adresem donate@wikimedia.org.</p>
 {%endif%}
 
-<p>
-  <b>Wikipedia stała się rzeczywistością dzięki doniosłej idei: wszyscy ludzie, tacy jak Ty i ja, mogą uczestniczyć w szerzeniu wiedzy, czyniąc ją dostępną za darmo dla wszystkich ludzi, w każdym zakątku świata.</b>
+<p>Wikipedia to projekt ogólnoświatowy. Inżynierowie i pracownicy Wikimedia Foundation ciężko pracują, aby korzystanie z Wikipedii było jak najbardziej komfortowe i użyteczne. Dążymy do tego, by Wikipedia była dostępna dla każdego bez względu na rodzaj połączenia internetowego, urządzenia czy lokalizacji. Walczymy o przyszłość wolnego Internetu i chronimy Twoją prywatność. Dążymy do tego, by każdy na świecie miał dostęp do darmowej wiedzy. Jesteśmy małym zespołem, który rozpoczął wielką misję, dlatego Twoja darowizna ma dla nas ogromne znaczenie.
 </p>
 
-<p>Dzięki wsparciu milionów współpracujących z nami ochotników Wikipedię można przeglądać dziś godzinami. Ponad 40 milionów artykułów i 35 milionów obrazów udostępnionych na podstawie wolnej licencji pozwala znaleźć na Wikipedii odpowiedź na praktycznie każde pytanie, a także dowiedzieć się o miejscach, o których istnieniu nie miało się wcześniej pojęcia.</p>
-
-<p>Twoja darowizna wspiera tworzenie i propagowanie bezpłatnej wiedzy w realny i praktyczny sposób. Dzięki niej Wikipedia będzie działać jeszcze szybciej, będzie bezpieczniejsza, a dostęp do niej będzie miał każdy człowiek na Ziemi. Pomoże nam zapewnić wolny dostęp do Wikipedii w miejscach, w których wysokie koszty mobilnego przesyłania danych stanowią dla wielu barierę blokującą dostęp do Internetu. Dzięki niej będziemy mogli wspierać osoby przyczyniające się do cyfryzacji wiedzy, która do tej pory była zamknięta w analogowych archiwach. Będzie stanowić dla Wikipedii ochronę przed zagrożeniami dla bezpłatnej wiedzy i Internetu otwartego dla wszystkich.</p>
-
-<p>Twoje wsparcie oznacza, że potrzebne informacje znajdujesz natychmiast, niezależnie od tego, gdzie jesteś – pomogą Ci zarówno w wygraniu zakładu ze znajomym podczas przyjęcia, jak i w lepszym zrozumieniu otaczającego nas świata.</p>
-
 <p>
-  <b>Wspieranie Wikipedii czyni Cię bohaterem, walczącym na rzecz tej wspaniałej idei!</b>
+  <b>Z pewnością codziennie zdarza Ci się podejmować ważne decyzje w oparciu o informacje dostępne w Internecie. Wikipedia jest kluczowym źródłem wiedzy, ponieważ oferuje darmowe, obiektywne i bezstronne informacje przygotowane przez osoby z całego świata.</b>
 </p>
 
-<p>Wikipedia nie przestanie rozwijać się, ewoluować i napotykać kolejne przeszkody, których pokonania nie możemy się już doczekać! Twoja darowizna pomoże nam to osiągnąć. Nie sposób wyrazić, jak bardzo jesteśmy Ci wdzięczni za wsparcie. W imieniu Wikimedia Foundation dziękujemy za inwestycję w naszą przyszłość i naszą wspólną drogę.</p>
+<p>Wikipedia nie mogłaby istnieć, gdyby nie aktywnie tworzona społeczność, na którą składają się nasi czytelnicy, redaktorzy i tacy darczyńcy jak Ty. Dzięki Twojemu wsparciu Wikipedia pozostaje obiektywna, bezstronna i w pełni niezależna. Masz pewność, że możesz na nas polegać, ponieważ Wikipedii nie można kupić. Wspierasz nas, a my wspieramy Ciebie. 
+</p>
 
-<p>Katherine Maher<br/>
-Dyrektor wykonawczy, Wikimedia Foundation</p>
+<p>
+  <b>Dzięki darowiźnie przyczyniasz się do ochrony kompendium ludzkiej wiedzy dla nas wszystkich i dla przyszłych pokoleń.</b>
+</p>
 
-<p>Wielu pracodawców z radością podwoi datki swoich pracowników: warto porozmawiać ze swoim pracodawcą, aby dowiedzieć się, czy wdrożył <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">korporacyjny program podwajania darowizn</a>. Informacje do Twojej dokumentacji: Twoja darowizna o numerze {{ transaction_id }} została złożona dnia {{ receive_date }} w kwocie {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Dziękujemy, że wspierasz Wikipedię. Liczymy, że nadal będziesz stać po stronie wiedzy. 
+</p>
+
+<p>Dziękuję raz jeszcze<br/>
+Katherine Maher,<br/>
+dyrektorka wykonawcza Wikimedia Foundation
+</p>
+
+<p>Wielu pracodawców chętnie wynagrodzi Twoją darowiznę. Zapytaj swojego pracodawcę o stosowne firmowe zwroty <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts">finansowe i programy</a>. 
+</p>
+
+<p>Dane dotyczące Twojego wsparcia: Twoja darowizna o numerze identyfikacyjnym {{ transaction_id }}, wpłacona {{ receive_date }} , wyniosła {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+</p>
 
 {% if recurring %}
-<p>Ta wpłata jest częścią darowizny okresowej. Comiesięczne płatności będą pobierane z Twojego konta przez Wikimedia Foundation do momentu w którym poinformujesz nas o chęci rezygnacji. Jeśli chcesz anulować swoją darowiznę okresową, zapoznaj się z naszymi <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instrukcjami rezygnacji</a>.</p>
+<p>Ta wpłata jest częścią darowizny okresowej. Comiesięczne płatności będą pobierane z Twojego konta przez Wikimedia Foundation do momentu, gdy nie poinformujesz nas o chęci rezygnacji. Jeśli chcesz anulować swoją darowiznę okresową, zapoznaj się z naszymi <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">prostymi instrukcjami rezygnacji</a>.</p>
 {%endif%}
 
-<p>Ta wiadomość może stanowić potwierdzenie dokonania darowizny. W zamian za ten datek nie zostały przekazane żadne towary lub usługi, w części ani w całości. Korespondencję prosimy przesyłać na adres: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Numer telefonu w sprawach zwolnień podatkowych w USA: 20-0049703</p>
+<p>Ta wiadomość może posłużyć za dowód wpłaty. W zamian za ten datek nie zostały przekazane żadne towary lub usługi, w części ani w całości. Korespondencję prosimy przesyłać na adres: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Numer telefonu w sprawach zwolnień podatkowych w USA: 20-0049703
+</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20161128/pl&amp;oldid=16767574","name":"thank_you.pl.html","revision":16767574}TI_END -->
+<p>Jeśli nie chcesz otrzymywać e-maili o zbiórce od Wikimedia Foundation, <a href="{{ unsubscribe_link | raw }}">możesz się bezzwłocznie wypisać</a>. Jednocześnie informujemy, że w przypadku kolejnych darowizn nadal będziemy wysyłać Ci potwierdzenia.
+</p>
+
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20171019/pl&amp;oldid=18149639","name":"thank_you.pl.html","revision":18149639}TI_END -->

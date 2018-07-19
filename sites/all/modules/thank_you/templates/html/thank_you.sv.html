@@ -1,11 +1,13 @@
 {% if first_name and last_name %}
-<p>Hej {{ first_name }},</p>
+<p>Kära {{ first_name }},
+</p>
 
 {% else %}
 <p>Kära bidragsgivare,</p>
 {%endif%}
 
-<p>Tack för att du stödjer Wikipedia och Wikimedia Foundation. Ditt bidrag på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} hjälper Wikipedia att säkra framtiden för fri kunskap för alla.</p>
+<p>Tack för att du stödjer Wikipedia och Wikimedia Foundation med din gåva på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Ditt bidrag gör att Wikipedia förblir självständigt. Jag skulle vilja berätta varför din gåva är så viktig.
+</p>
 
 {% if "RecurringRestarted" in contribution_tags %}
 <p>Vi löste nyligen ett mindre tekniskt problem i vårt datasystem som stoppade vissa månadsvisa återkommande donationer. Vi har återställt dina månadsvisa bidrag, så att de förs över som vanligt igen. Du kommer inte att debiteras för de månader som uteblev. Vi tackar dig för ditt tålamod och stöd. Om du har några frågor är du välkommen att mejla oss på donate@wikimedia.org.</p>
@@ -15,31 +17,42 @@
 <p>Vi löste nyligen ett mindre tekniskt problem vilket orsakade att några månatliga bidragsgivare inte fick någon kvittens. Detta email är en bekräftelse på det bidrag du gav den {{ receive_date }}. Vi tackar dig för ditt tålamod och stöd. Om du har några frågor är du välkommen att kontakta oss via donate@wikimedia.org.</p>
 {%endif%}
 
-<p>
-  <b>Idén med Wikipedia är möjlig tack vare en stark tro på att människor som du och jag kan jobba tillsammans för att bygga upp världens kunskap och göra den tillgänglig gratis för alla, överallt.</b>
+<p>Wikipedia är ett globalt projekt. All personal på Wikipedia Foundation strävar efter att göra ditt användande av Wikipedia nyttigt och engagerande. Vi arbetar för att göra Wikipedia tillgängligt oavsett internetuppkoppling eller enhet och oavsett var du befinner dig. Vi står upp för ett öppet internets framtid och kämpar för att skydda din integritet. Vi lever för att göra kunskap tillgänglig gratis för alla i världen. Vi är ett litet team med ett desto större uppdrag, så ditt bidrag gör skillnad.
 </p>
 
-<p>Idag, tack vare stödet från miljoner frivilliga bidragsgivare och anhängare, kan du bläddra runt på Wikipedias sidor i flera timmar. Med över 40 miljoner Wikipedia-artiklar och 35 miljoner kostnadsfria licensierade bilder kan Wikipedia svara på nästan vilken fråga som helst och ta dig till platser där du aldrig varit förut.</p>
-
-<p>Ditt bidrag stödjer skapandet och delandet av gratis kunskap på ett verkligt och praktiskt sätt. Det hjälper oss att göra Wikipedia snabbt, säkert och tillgängligt för alla i hela världen. Det hjälper oss att ge kostnadsfri tillgång till Wikipedia på ställen där höga mobildatakostnader hindrar människor från att koppla upp sig på internet. Det hjälper oss att stödja människor som digitaliserar kunskap som för tillfället är inlåst i analoga arkiv. Det skyddar Wikipedia mot hot mot fri kunskap och ett öppet Internet.</p>
-
-<p>Tack vare ditt stöd kan hitta den information du söker här och nu, var du än befinner dig - allt från att få svaret på en vadslagningsfråga vid vännernas middagsbord till att förstå världen runt omkring oss.</p>
-
 <p>
-  <b>Ditt bidrag till Wikipedia gör dig till en förkämpe för ett starkt koncept.</b>
+  <b>Varje dag fattas viktiga beslut baserat på sådant som publicerats på nätet. Wikipedia är en viktig resurs eftersom vi erbjuder gratis, neutral och opartisk information skriven av personer från hela världen.</b>
 </p>
 
-<p>Wikipedia vill fortsätta att utvecklas samt växa och ta sig an nya utmaningar. Vi ser fram emot att ta oss an både de här och många andra utmaningar. Ditt bidrag kommer att hjälpa oss nå dit. Vi vill rikta ett stort tack till dig för ditt stöd. Å Wikimedia Foundations vägnar vill jag tacka dig för din investering i vår framtid och att du följer med på vår resa.</p>
+<p>Wikipedia skulle inte kunna finnas utan det samlade stödet från våra läsare, redaktörer och donatorer som du. Ditt stöd till Wikipedia gör att vi kan förbli neutrala, opartiska och helt självständiga. Du vet att du kan lita på oss eftersom Wikipedia inte går att köpa. Vi finns till för dig och du finns till för oss. 
+</p>
 
-<p>Katherine Maher<br/>
-Verkställande direktör, Wikimedia Foundation</p>
+<p>
+  <b>Genom att donera skyddar du mänsklighetens samlade kunskap nu och för framtida generationer.</b>
+</p>
 
-<p>Ibland kan det hända att vissa arbetsgivare matchar sina anställdas bidrag. Titta om din arbetsgivare har <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">ett sådant bidragsprogram för företag</a>. För dina handlingar: Ditt bidrag, nummer {{ transaction_id }}, den {{ receive_date }} var {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>Tack för ditt stöd till Wikipedia. Vi hoppas att du kommer att fortsätta att stå på kunskapens sida. Om du har vänner som använder Wikipedia kan du bjuda in dem att donera till Wikipedia med Facebook eller Twitter. 
+</p>
+
+<p>Med tacksamhet,<br/>
+Katherine Maher,<br/>
+Executive Director, Wikimedia Foundation
+</p>
+
+<p>Ibland kan det hända att vissa arbetsgivare matchar sina anställdas bidrag. Titta om din arbetsgivare har <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts">ett sådant bidragsprogram för företag</a>. 
+</p>
+
+<p>För dina handlingar: Din donation, nummer {{ transaction_id }}, den {{ receive_date }}, var på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+</p>
 
 {% if recurring %}
-<p>Du har valt att skänka pengar regelbundet. Månatliga överföringar till Wikimedia Foundation kommer att ske till dess du meddelar oss att de ska upphöra. Om du vill sluta skänka pengar läs våra <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">enkla instruktioner för att avsluta överföringarna</a>.</p>
+<p>Du har valt att skänka pengar regelbundet. Månatliga överföringar till Wikimedia Foundation kommer att ske till dess du meddelar oss att de ska upphöra. Om du vill sluta skänka pengar finns <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">enkla instruktioner för att avsluta överföringarna</a>.</p>
 {%endif%}
 
-<p>Detta brev är ett kvitto på ditt bidrag. Inga varor eller tjänster tillhandahålls, vare sig delvis eller i sin helhet, i samband med detta bidrag. Vänligen skicka brev till: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. skatteavdragsnummer: 20-0049703</p>
+<p>Detta brev är ett kvitto på ditt bidrag. Inga varor eller tjänster tillhandahålls, vare sig delvis eller i sin helhet, i samband med detta bidrag. Vänligen skicka brev till: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. skatteavdragsnummer: 20-0049703
+</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20161128/sv&amp;oldid=16768309","name":"thank_you.sv.html","revision":16768309}TI_END -->
+<p>Om du inte vill få framtida mejl om insamlingar från Wikimedia Foundation kan du <a href="{{ unsubscribe_link | raw }}">avsluta prenumerationen direkt.</a> Observera att vi kommer att fortsätta att skicka dig kvitton som detta för framtida donationer.
+</p>
+
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20171019/sv&amp;oldid=18156554","name":"thank_you.sv.html","revision":18156554}TI_END -->
