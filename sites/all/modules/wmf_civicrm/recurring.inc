@@ -48,7 +48,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       '`frequency_interval` is only allowed to be set to 1, with the contact_id [!contact_id]',
       ["!contact_id" => $contact_id]
     );
-    throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $watchdog_message);
+    throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $error_message);
   }
 
   // installments is only allowed to be 0.
