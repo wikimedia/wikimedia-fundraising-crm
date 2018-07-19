@@ -286,4 +286,28 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
       ['430357'],
     ];
   }
+
+  public function testRecurringRestartedUncharged() {
+    $recurTagId = civicrm_api3('Tag', 'getvalue', array(
+      'name' => 'RecurringRestartedUncharged',
+      'used_for' => 'civicrm_contribution_recur',
+      'return' => 'id'
+    ));
+    civicrm_api3('EntityTag', 'create', array(
+      'entity_id' => $this->contributionRecurId,
+      'tag_id' => $recurTagId,
+      'entity_table' => 'civicrm_contribution_recur'
+    ));
+    $tagNames = wmf_civicrm_get_tag_names(
+      $this->contributionRecurId, 'civicrm_contribution_recur'
+    );
+    $this->assertEquals(['RecurringRestartedUncharged'], $tagNames);
+    recurring_globalcollect_charge($this->contributionRecurId);
+    $message = QueueWrapper::getQueue('donations')->pop();
+    $this->assertEquals(['RecurringRestarted'], $message['contribution_tags']);
+    $tagNames = wmf_civicrm_get_tag_names(
+      $this->contributionRecurId, 'civicrm_contribution_recur'
+    );
+    $this->assertEmpty($tagNames);
+  }
 }
