@@ -353,7 +353,7 @@ function thank_you_for_contribution( $contribution_id ) {
         'transaction_id' => "CNTCT-{$mailingData['contact_id']}", // shown in the body of the text
 		'contribution_id' => $contribution_id, // used for the bounce header
         'unsubscribe_link' => build_unsub_link( $contribution_id, $mailingData['email'], $locale ),
-        'contribution_tags' => wmf_thank_you_get_tag_names($contribution_id),
+        'contribution_tags' => wmf_civicrm_get_tag_names($contribution_id),
     );
 
     $success = thank_you_send_mail( $params );
@@ -369,30 +369,6 @@ function thank_you_for_contribution( $contribution_id ) {
 		$msg = "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'];
 		throw new WmfException( WmfException::BAD_EMAIL, $msg );
     }
-}
-
-/**
- * Get entity tag names.
- *
- * @param int $entity_id
- * @return array
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_thank_you_get_tag_names($entity_id) {
-  $entityTags = civicrm_api3('EntityTag', 'get', array(
-    // Hard code entity table for now.
-    'entity_table' => 'civicrm_contribution',
-    'entity_id' => $entity_id
-  ));
-  static $tags = null; // FIXME: this causes test pain
-  if ( $tags === null ) {
-    $tags = civicrm_api3( 'EntityTag', 'getoptions', array( 'field' => 'tag_id' ) );
-  }
-  $tag_names = array();
-  foreach ($entityTags['values'] as $id => $entityTag) {
-    $tag_names[] = $tags['values'][$entityTag['tag_id']];
-  }
-  return $tag_names;
 }
 
 function thank_you_update_ty_date( $contribution ) {

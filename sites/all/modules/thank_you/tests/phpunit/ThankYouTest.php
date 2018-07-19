@@ -59,13 +59,10 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 	}
 
 	/**
-	 * FIXME: This test has to be first, because we have to make sure
-	 *  those tags exist before anyone calls the helper function, which
-	 *  stashes stuff in a function-level staticvar
-	 *
 	 * @throws \CiviCRM_API3_Exception
 	 */
 	public function testGetEntityTagDetail() {
+		unset (\Civi::$statics['wmf_civicrm']['tags']);
 		$tag1 = $this->ensureTagExists( 'smurfy' );
 		$tag2 = $this->ensureTagExists( 'smurfalicious' );
 
@@ -88,7 +85,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 			)
 		);
 
-		$smurfiestTags = wmf_thank_you_get_tag_names( $this->contribution_id );
+		$smurfiestTags = wmf_civicrm_get_tag_names( $this->contribution_id );
 		$this->assertEquals( array( 'smurfy', 'smurfalicious' ), $smurfiestTags );
 
 		$this->callAPISuccess( 'Tag', 'delete', array( 'id' => $tag1 ) );
