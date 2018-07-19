@@ -95,6 +95,51 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($recur_values['trxn_id'], $record->trxn_id);
   }
 
+  public function testRecurringContributionWithoutPaymentToken() {
+    // Bypass all the stuff generated in create()
+    $fixture = new CiviFixtures();
+
+    $msg = [
+      'first_name' => 'Peter',
+      'last_name' => 'Abernathy',
+      'email' => 'abernathy@sweetwater.org',
+      'currency' => 'USD',
+      'date' => time(),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'subscr_id' => 'aslkdjalksd123123',
+      'recurring' => 1,
+    ];
+
+    // import old-style recurring contribution message
+    // this should result in a new contribution and recurring contribution.
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+
+    $this->assertEquals($msg['gross'], $contribution['total_amount']);
+    $this->assertNotEmpty($contribution['contribution_recur_id']);
+    $this->assertEquals(
+      strtoupper("RECURRING {$msg['gateway']} {$msg['gateway_txn_id']}"),
+      $contribution['trxn_id']
+    );
+
+    // confirm recurring contribution record was created correctly
+    $recurring_record = wmf_civicrm_get_gateway_subscription(
+      'test_gateway', $msg['subscr_id']
+    );
+    $this->assertEquals(1, $recurring_record->processor_id);
+    $this->assertEquals($msg['subscr_id'], $recurring_record->trxn_id);
+    $this->assertEquals($contribution['contact_id'], $recurring_record->contact_id);
+    $this->assertEquals($msg['gross'], $recurring_record->amount);
+    $this->assertEquals($msg['currency'], $recurring_record->currency);
+
+    // clean up records using fixture tear down destruct process
+    $fixture->contact_id = $contribution['contact_id'];
+    $fixture->contribution_id = $contribution['id'];
+    $fixture->contribution_recur_id = $recurring_record->id;
+  }
+
   public function testRecurringContributionWithPaymentToken() {
     $fixture = CiviFixtures::createContact();
     CiviFixtures::createPaymentProcessor('test_gateway', $fixture);
