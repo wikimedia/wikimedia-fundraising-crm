@@ -1,1 +1,33 @@
 <?php
+use wmf_communication\Translation;
+
+/**
+ * Translation function to intercept ts() calls and use MediawikiMessages
+ * when 'key' and 'language' are present.
+ * $civicrm_setting['setting']['customTranslateFunction'] = 'wmf_communication_ts';
+ * 
+ * @param string $text
+ * @param array $params
+ *
+ * @return string
+ */
+function wmf_communication_ts($text, $params = []) {
+  if (!isset($params['key']) || !isset($params['language'])) {
+    static $i18n;
+    if (!$i18n) {
+      $i18n = CRM_Core_I18n::singleton();
+    }
+    return $i18n->crm_translate($text, $params);
+  }
+  // If we're doing a Mediawiki message file, just use key, language, and the
+  // rest of the params, instead of the normal ts function's $text
+  $language = $params['language'];
+  $key = $params['key'];
+  unset ($params['language']);
+  unset ($params['key']);
+  $message = Translation::get_translated_message($key, $language);
+  if (!empty($params)) {
+    $message = Translation::interpolateParams($message, $params);
+  }
+  return $message;
+}

@@ -33,6 +33,13 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
     $result = civicrm_api3('Contact', 'forgetme', array('id' => $contact['id']));
     $this->callAPISuccessGetCount('Phone', ['contact_id' => $contact['id']], 0);
     $this->callAPISuccessGetCount('Email', ['contact_id' => $contact['id']], 0);
+    $loggingEntries = $this->callAPISuccess('Logging', 'showme', ['contact_id' => $contact['id']])['values'];
+    // At this stage we should have contact entries (we will selectively delete from contact rows)
+    // and activity contact entries - these will be deleted by activity type.
+    foreach ($loggingEntries as $loggingEntry) {
+      $this->assertNotEquals('civicrm_phone', $loggingEntry['table']);
+      $this->assertNotEquals('civicrm_email', $loggingEntry['table']);
+    }
   }
 
 }

@@ -25,7 +25,6 @@ function _civicrm_api3_phone_showme_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_phone_showme($params) {
-  $params['internal_fields'] = ['phone_numeric', 'is_billing', 'contact_id'];
   return _civicrm_api3_generic_showme(['entity' => 'Phone', 'params' => $params]);
 }
 

@@ -41,10 +41,7 @@ class Translation {
       if (isset($matches[2][$i]) && $matches[2][$i] != '') {
         $m = $messages->getMsg($matches[1][$i], $language);
         $params = explode('|', trim($matches[2][$i], '|'));
-        foreach ($params as $k => $value) {
-          $k++; // params are 1-indexed
-          $m = str_replace("\$$k", $value, $m);
-        }
+        $m = self::interpolateParams($m, $params);
         $string = str_replace($matches[0][$i], $m, $string);
       }
       else {
@@ -111,6 +108,23 @@ class Translation {
     if (count($locale) == 2) {
       return $locale[0];
     }
+  }
+
+  /**
+   * @param string $message
+   * @param string[] $params
+   *
+   * @return mixed
+   */
+  public static function interpolateParams($message, $params) {
+    foreach ($params as $k => $value) {
+      if (!is_int($k)) {
+        continue;
+      }
+      $i = $k + 1; // params are 1-indexed
+      $message = str_replace("\$$i", $value, $message);
+    }
+    return $message;
   }
 }
 

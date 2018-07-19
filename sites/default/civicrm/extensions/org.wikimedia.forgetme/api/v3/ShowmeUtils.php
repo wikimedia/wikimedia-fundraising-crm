@@ -15,7 +15,9 @@ use CRM_Forgetme_ExtensionUtil as E;
  */
 function _civicrm_api3_generic_showme($apiRequest) {
   $showMe = new CRM_Forgetme_Showme($apiRequest['entity'], $apiRequest['params']);
-  $showMe->setInternalFields($apiRequest['params']['internal_fields']);
+  if (isset($apiRequest['params']['internal_fields'])) {
+    $showMe->setInternalFields($apiRequest['params']['internal_fields']);
+  }
   $entities =  $showMe->getDisplayValues();
   $return = civicrm_api3_create_success($entities, $apiRequest['params']);
   $return['metadata'] = $showMe->getMetadata();
