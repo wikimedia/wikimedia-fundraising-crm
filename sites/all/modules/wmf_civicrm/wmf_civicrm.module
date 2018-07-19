@@ -1235,6 +1235,7 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
 
   $custom_vars = array();
   $custom_field_mangle = array(
+    'opt_in' => 'opt_in',
     'do_not_solicit' => 'do_not_solicit',
     'org_contact_name' => 'Name',
     'org_contact_title' => 'Title',
