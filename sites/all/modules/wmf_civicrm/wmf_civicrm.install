@@ -68,6 +68,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7670();
   wmf_civicrm_update_7675();
   wmf_civicrm_update_7705();
+  wmf_civicrm_update_7720();
 }
 
 /**
@@ -4254,4 +4255,29 @@ function wmf_civicrm_update_7710() {
 function wmf_civicrm_update_7715() {
   require_once('recurring.inc');
   wmf_civicrm_recur_tokenize_damaged('ingenico');
+}
+
+/**
+ * Add opt_in field
+ */
+function wmf_civicrm_update_7720() {
+    $api = wmf_civicrm_bootstrap_civi();
+
+    $success = $api->CustomField->create(array(
+        'name' => 'opt_in',
+        'column_name' => 'opt_in',
+        'label' => ts('Opt In'),
+        'custom_group_id' => 'Communication',
+        'data_type' => 'Boolean',
+        'html_type' => 'Radio',
+        'is_active' => 1,
+        'is_searchable' => 0,
+        'is_view' => 0,
+    ));
+    if (!$success) {
+        throw new DrupalUpdateException($api->errorMsg());
+    }
+
+    civicrm_api3('System', 'flush', []);
+    return;
 }

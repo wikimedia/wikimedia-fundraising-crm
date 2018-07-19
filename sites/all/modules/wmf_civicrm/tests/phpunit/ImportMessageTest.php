@@ -545,6 +545,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'contribution' => $this->getBaseContribution($gateway_txn_id),
         ),
       );
+
     $cases[] =
       // US address import is geocoded
       array(
@@ -579,7 +580,56 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           ),
         ),
       );
-    return $cases;
+
+    $cases[] = // 'opt in (yes)'
+      array(
+        array_merge(
+          $this->getMinimalImportData($gateway_txn_id),
+          array(
+            'opt_in' => '1',
+          )
+        ),
+        array(
+          'contact_custom_values' => array(
+            'opt_in' => '1',
+          ),
+          'contribution' => $this->getBaseContribution($gateway_txn_id),
+        ),
+      );
+
+    $cases[] = // 'opt in (no)'
+      array(
+        array_merge(
+          $this->getMinimalImportData($gateway_txn_id),
+          array(
+            'opt_in' => '0',
+          )
+        ),
+        array(
+          'contact_custom_values' => array(
+            'opt_in' => '0',
+          ),
+          'contribution' => $this->getBaseContribution($gateway_txn_id),
+        ),
+      );
+
+    $cases[] = // 'opt in (empty)'
+      array(
+        array_merge(
+          $this->getMinimalImportData($gateway_txn_id),
+          array(
+            'opt_in' => '',
+          )
+        ),
+        array(
+          'contact_custom_values' => array(
+            'opt_in' => NULL,
+          ),
+          'contribution' => $this->getBaseContribution($gateway_txn_id),
+        ),
+      );
+
+      return $cases;
   }
 
   public function testImportContactGroups() {
