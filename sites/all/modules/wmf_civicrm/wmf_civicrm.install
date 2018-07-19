@@ -4281,3 +4281,19 @@ function wmf_civicrm_update_7720() {
     civicrm_api3('System', 'flush', []);
     return;
 }
+
+
+/**
+ * Fix processor_id for recurring donations not yet canceled.
+ * Bug: T199331
+ */
+function wmf_civicrm_update_7725() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution_recur
+    SET processor_id = '1'
+    WHERE processor_id LIKE 'RECURRING GLOBALCOLLECT%'
+    AND payment_token_id IS NULL
+    AND contribution_status_id IN (1,4) -- Completed or Failed
+  ");
+}
