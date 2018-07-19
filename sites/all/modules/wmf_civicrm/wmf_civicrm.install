@@ -69,6 +69,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7675();
   wmf_civicrm_update_7705();
   wmf_civicrm_update_7720();
+  wmf_civicrm_update_7726();
 }
 
 /**
@@ -4296,4 +4297,37 @@ function wmf_civicrm_update_7725() {
     AND payment_token_id IS NULL
     AND contribution_status_id IN (1,4) -- Completed or Failed
   ");
+}
+
+
+/**
+ * Create another RecurringRestarted tag, this one for the
+ * civicrm_contribution_recur table. It will indicate that
+ * the subscription has been cured of some malady, and that
+ * the next contribution record created from it should get
+ * the RecurringRestarted tag so the donor is thanked
+ * correctly. The recurring processor should then remove
+ * this tag from the civicrm_contribution_recur table.
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_7726() {
+  civicrm_initialize();
+  wmf_civicrm_create_option_values_detailed('tag_used_for', array(
+    'Recurring contributions' => array('value' => 'civicrm_contribution_recur'),
+  ));
+
+  $result = civicrm_api3('Tag', 'get', array(
+    'name' => 'RecurringRestartedUncharged',
+    'used_for' => 'civicrm_contribution_recur',
+  ));
+  if (empty($result['values'])) {
+    civicrm_api3('Tag', 'create', array(
+      'name' => 'RecurringRestartedUncharged',
+      'description' => 'A subscription that has been restarted but not yet charged.',
+      'is_selectable' => FALSE,
+      'is_reserved' => TRUE,
+      'used_for' => 'civicrm_contribution_recur',
+    ));
+  }
 }

@@ -4343,3 +4343,30 @@ function wmf_civicrm_ensure_payment_processor_exists($typeName, $name = NULL) {
   $params['financial_account_id'] = $financialAccountId;
   civicrm_api3('PaymentProcessor', 'create', $params);
 }
+
+
+/**
+ * Get entity tag names.
+ *
+ * @param int $entity_id
+ * @param string $entity_table which table the entity lives in
+ *
+ * @return array
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_get_tag_names($entity_id, $entity_table = 'civicrm_contribution') {
+  $entityTags = civicrm_api3('EntityTag', 'get', array(
+    'entity_table' => $entity_table,
+    'entity_id' => $entity_id
+  ));
+  if (!isset(\Civi::$statics['wmf_civicrm']['tags'])) {
+    \Civi::$statics['wmf_civicrm']['tags'] = civicrm_api3(
+      'EntityTag', 'getoptions', array( 'field' => 'tag_id' )
+    )['values'];
+  }
+  $tag_names = array();
+  foreach ($entityTags['values'] as $id => $entityTag) {
+    $tag_names[] = \Civi::$statics['wmf_civicrm']['tags'][$entityTag['tag_id']];
+  }
+  return $tag_names;
+}
