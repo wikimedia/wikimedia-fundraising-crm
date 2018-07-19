@@ -4331,3 +4331,41 @@ function wmf_civicrm_update_7726() {
     ));
   }
 }
+
+/**
+ * Fix processor_id for the rest of the misrecorded subscriptions.
+ * Also un-cancel them and add a RecurringRestartedUncharged tag
+ * to the recur records.
+ *
+ * Bug: T199331
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_7728() {
+  civicrm_initialize();
+  $recurTagId = civicrm_api3('Tag', 'getvalue', array(
+    'name' => 'RecurringRestartedUncharged',
+    'used_for' => 'civicrm_contribution_recur',
+    'return' => 'id'
+  ));
+  $contributionStatusId = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
+  $cancelledStatusId = CRM_Utils_Array::key('Cancelled', $contributionStatusId);
+  $completedStatusId = CRM_Utils_Array::key('Completed', $contributionStatusId);
+  CRM_Core_DAO::executeQuery("
+    INSERT INTO civicrm_entity_tag (entity_table, entity_id, tag_id) (
+      SELECT 'civicrm_contribution_recur', id, $recurTagId
+      FROM civicrm_contribution_recur
+      WHERE processor_id LIKE 'RECURRING GLOBALCOLLECT%'
+      AND payment_token_id IS NULL
+      AND contribution_status_id = $cancelledStatusId
+    )
+  ");
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution_recur
+    SET processor_id = '1',
+      contribution_status_id = $completedStatusId,
+      cancel_date = NULL
+    WHERE processor_id LIKE 'RECURRING GLOBALCOLLECT%'
+    AND payment_token_id IS NULL
+    AND contribution_status_id = $cancelledStatusId
+  ");
+}
