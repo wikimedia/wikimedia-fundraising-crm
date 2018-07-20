@@ -4369,3 +4369,34 @@ function wmf_civicrm_update_7728() {
     AND contribution_status_id = $cancelledStatusId
   ");
 }
+
+
+/**
+ * Fix next_sched_contribution_date for canceled subs, as found by tags added
+ * in last update. July and August both have 31 days, so we can just use the
+ * cycle_day without complications.
+ *
+ * Bug: T199331
+ */
+function wmf_civicrm_update_7730() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution_recur ccr
+    INNER JOIN civicrm_entity_tag et
+      ON et.entity_id = ccr.id AND et.entity_table = 'civicrm_contribution_recur'
+    INNER JOIN civicrm_tag t
+      ON t.id = et.tag_id and t.name = 'RecurringRestartedUncharged'
+    SET ccr.next_sched_contribution_date = CONCAT('2018-08-', ccr.cycle_day)
+    WHERE ccr.cycle_day < 20;
+  ");
+
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution_recur ccr
+    INNER JOIN civicrm_entity_tag et
+      ON et.entity_id = ccr.id AND et.entity_table = 'civicrm_contribution_recur'
+    INNER JOIN civicrm_tag t
+      ON t.id = et.tag_id and t.name = 'RecurringRestartedUncharged'
+    SET ccr.next_sched_contribution_date = CONCAT('2018-07-', ccr.cycle_day)
+    WHERE ccr.cycle_day > 19;
+  ");
+}
