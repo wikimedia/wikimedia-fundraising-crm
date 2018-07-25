@@ -29,8 +29,9 @@ class CRM_Forgetme_LoggingShowme extends CRM_Forgetme_Showme {
   protected function getAllValuesForLogging() {
 
     $tables = CRM_Forgetme_Metadata::getEntitiesMetadata();
+    $customTables = CRM_Forgetme_Metadata::getContactExtendingCustomTables();
     $displayValues = [];
-    foreach ($tables as $tableName => $detail) {
+    foreach (array_merge($tables, $customTables) as $tableName => $detail) {
       if (in_array('showme', $detail)) {
         $values = $this->getValues($tableName, $detail);
         foreach ($values as $value) {
@@ -85,6 +86,9 @@ class CRM_Forgetme_LoggingShowme extends CRM_Forgetme_Showme {
   protected function getValues($tableName, $detail) {
     $getParams = $this->filters;
     $params = [1 => [(int) $getParams['contact_id'], 'Integer']];
+    if (!empty($detail['is_custom'])) {
+      return CRM_Core_DAO::executeQuery("SELECT * FROM log_{$tableName} WHERE entity_id = %1", $params)->fetchAll();
+    }
     $daoName = CRM_Core_DAO_AllCoreTables::getClassForTable($tableName);
     $dao = new $daoName();
     $tableName = 'log_' . $tableName;
