@@ -20,7 +20,7 @@
         "coderkungfu/php-queue": "^1.0",
         "cogpowered/finediff": "0.*",
         "wikimedia/donation-interface": "dev-master",
-        "wikimedia/smash-pig": "^0.5",
+        "wikimedia/smash-pig": "^0.5.7",
         "phpmailer/phpmailer": "5.2.*",
         "phpseclib/phpseclib":  "~2.0",
         "predis/predis": "1.*",

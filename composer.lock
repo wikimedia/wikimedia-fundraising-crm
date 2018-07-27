@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f9999677d0aab2e9b9f068eb9dbe6e8a",
+    "content-hash": "98c421683e78cedd66a3bfcf2886ae2e",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -2845,7 +2845,7 @@
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "e1d3c8bc2759a4243c02a69c2189222d6f7e8d7a"
+                "reference": "1ee2fd18c0e8a236fb559468ae300b40af5bf9fd"
             },
             "require": {
                 "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
@@ -2875,6 +2875,7 @@
                     "gateway_common",
                     "gateway_forms",
                     "globalcollect_gateway",
+                    "ingenico_gateway",
                     "paypal_gateway",
                     "DonationInterface.class.php"
                 ],
@@ -2887,7 +2888,7 @@
                 "GPL-2.0-or-later"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2018-05-29T22:51:30+00:00"
+            "time": "2018-07-23T16:02:11+00:00"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
@@ -2938,11 +2939,11 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.5.6.5",
+            "version": "v0.5.7",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "d6dca86f90ec6f3a00a40eff940676b04c7ab009"
+                "reference": "dae484ae6bb0e83914f8e8502a3224c697c2f20c"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -3001,7 +3002,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2018-05-25T22:48:14+00:00"
+            "time": "2018-07-18T18:18:10+00:00"
         },
         {
             "name": "willdurand/geocoder",
