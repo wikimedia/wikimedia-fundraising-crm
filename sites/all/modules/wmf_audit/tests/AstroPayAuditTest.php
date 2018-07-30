@@ -8,9 +8,7 @@ function astropay_audit_watchdog($entry) {
  * @group AstroPay
  * @group WmfAudit
  */
-class AstroPayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
-
-  static protected $messages;
+class AstroPayAuditTest extends BaseAuditTestCase {
 
   static protected $loglines;
 
@@ -28,7 +26,6 @@ class AstroPayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function setUp() {
     parent::setUp();
-    self::$messages = [];
     $dirs = [
       'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
       'astropay_audit_recon_completed_dir' => $this->getTempDir(),
@@ -89,7 +86,7 @@ class AstroPayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/AstroPay/donation/',
         [
-          'main' => [
+          'donations' => [
             [
               'contribution_tracking_id' => '26683111',
               'country' => 'BR',
@@ -123,7 +120,7 @@ class AstroPayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/AstroPay/bt/',
         [
-          'main' => [
+          'donations' => [
             [
               'contribution_tracking_id' => '2476135999',
               'country' => 'BR',
@@ -157,7 +154,7 @@ class AstroPayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/AstroPay/refund/',
         [
-          'negative' => [
+          'refund' => [
             [
               'date' => 1434488406,
               'gateway' => 'astropay',
@@ -182,7 +179,7 @@ class AstroPayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->runAuditor();
 
-    $this->assertEquals($expectedMessages, self::$messages);
+    $this->assertMessages($expectedMessages);
     $this->assertLoglinesPresent($expectedLoglines);
   }
 
@@ -191,7 +188,6 @@ class AstroPayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       'fakedb' => TRUE,
       'quiet' => TRUE,
       'test' => TRUE,
-      'test_callback' => ['AstroPayAuditTest', 'receiveMessages'],
       #'verbose' => 'true', # Uncomment to debug.
     ];
     $audit = new AstroPayAuditProcessor($options);
@@ -215,10 +211,6 @@ class AstroPayAuditTest extends BaseWmfDrupalPhpUnitTestCase {
     if ($notFound) {
       $this->fail("Did not see these loglines, " . json_encode($notFound));
     }
-  }
-
-  static public function receiveMessages($msg, $type) {
-    self::$messages[$type][] = $msg;
   }
 
   static public function receiveLogline($entry) {

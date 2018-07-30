@@ -455,7 +455,7 @@ abstract class BaseAuditProcessor {
         //check to see if the parent exists. If it does, normalize and send.
         if ($this->main_transaction_exists_in_civi($record)) {
           $normal = $this->normalize_negative($record);
-          $this->send_transaction($normal, 'negative');
+          $this->send_queue_message($normal, 'negative');
           $neg_count += 1;
           wmf_audit_echo('!');
         }
@@ -765,8 +765,8 @@ abstract class BaseAuditProcessor {
                 // ...but not inside the char block, because it'll break the pretty.
                 $all_data = array_merge($contribution_tracking_data, $all_data);
 
-                //Send to queue. Or somewhere. Or don't (if it's test mode).
-                $this->send_transaction($all_data, 'main');
+                //Send to queue.
+                $this->send_queue_message($all_data, 'main');
                 unset($tryme[$date][$id]);
                 wmf_audit_echo('!');
               } catch (WmfException $ex) {
@@ -810,7 +810,7 @@ abstract class BaseAuditProcessor {
                 $all_data = $message;
               }
               $sendme = $this->normalize_partial($all_data);
-              $this->send_transaction($sendme, 'main');
+              $this->send_queue_message($sendme, 'main');
               $made += 1;
               wmf_audit_echo('!');
               unset($tryme[$date][$id]);
@@ -1339,31 +1339,6 @@ abstract class BaseAuditProcessor {
    */
   protected function pre_process_refund($transaction) {
     return $transaction;
-  }
-
-  /**
-   * Sends a completed transaction to... somewhere.
-   * The default is to send this thing to an appropriate queue for its type.
-   * Other possibilities are to echo the complete message (test mode).
-   *
-   * @param array $record An array representing the complete data we want to
-   *   save
-   * @param string $type The type of transaction we are. 'main', 'negative',
-   * 'recurring'... like that.
-   *
-   * @throws \Exception
-   */
-  protected function send_transaction($record, $type) {
-    if (wmf_audit_runtime_options('test')) {
-      wmf_audit_echo("Test mode: Would send the following message: " . print_r($record, TRUE), TRUE);
-      if (wmf_audit_runtime_options('test_callback')) {
-        $func = wmf_audit_runtime_options('test_callback');
-        $func($record, $type);
-      }
-      return;
-    }
-
-    $this->send_queue_message($record, $type);
   }
 
   /**

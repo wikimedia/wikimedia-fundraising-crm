@@ -4,9 +4,7 @@
  * @group Ingenico
  * @group WmfAudit
  */
-class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
-
-  static protected $messages;
+class IngenicoAuditTest extends BaseAuditTestCase {
 
   protected $contact_ids = [];
 
@@ -14,7 +12,6 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function setUp() {
     parent::setUp();
-    self::$messages = [];
 
     $dirs = [
       'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
@@ -126,7 +123,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Ingenico/donation/',
         [
-          'main' => [
+          'donations' => [
             [
               'contribution_tracking_id' => '5551212',
               'country' => 'US',
@@ -162,7 +159,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Ingenico/lastDayOfMonth/',
         [
-          'main' => [
+          'donations' => [
             [
               'contribution_tracking_id' => '57123456',
               'country' => 'NL',
@@ -196,7 +193,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Ingenico/refund/',
         [
-          'negative' => [
+          'refund' => [
             [
               'date' => 1500942220,
               'gateway' => 'globalcollect',
@@ -212,7 +209,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Ingenico/sparseRefund/',
         [
-          'negative' => [
+          'refund' => [
             [
               'date' => 1503964800,
               'gateway' => 'globalcollect',
@@ -228,7 +225,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Ingenico/chargeback/',
         [
-          'negative' => [
+          'refund' => [
             [
               'date' => 1495023569,
               'gateway' => 'globalcollect',
@@ -244,7 +241,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Ingenico/recurring/',
         [
-          'main' => [
+          'donations' => [
             [
               'contribution_tracking_id' => '55599991',
               'country' => 'US',
@@ -280,7 +277,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Ingenico/combined/',
         [
-          'main' => [
+          'donations' => [
             [
               'contribution_tracking_id' => '57123456',
               'country' => 'NL',
@@ -350,7 +347,7 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->runAuditor();
 
-    $this->assertEquals($expectedMessages, self::$messages);
+    $this->assertMessages($expectedMessages);
   }
 
   protected function runAuditor() {
@@ -358,14 +355,10 @@ class IngenicoAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       'fakedb' => TRUE,
       'quiet' => TRUE,
       'test' => TRUE,
-      'test_callback' => ['IngenicoAuditTest', 'receiveMessages'],
       #'verbose' => 'true', # Uncomment to debug.
     ];
     $audit = new IngenicoAuditProcessor($options);
     $audit->run();
   }
 
-  static public function receiveMessages($msg, $type) {
-    self::$messages[$type][] = $msg;
-  }
 }

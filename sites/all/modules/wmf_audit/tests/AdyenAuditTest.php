@@ -4,9 +4,7 @@
  * @group Adyen
  * @group WmfAudit
  */
-class AdyenAuditTest extends BaseWmfDrupalPhpUnitTestCase {
-
-  static protected $messages;
+class AdyenAuditTest extends BaseAuditTestCase {
 
   protected $contact_id;
 
@@ -14,7 +12,6 @@ class AdyenAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function setUp() {
     parent::setUp();
-    self::$messages = [];
 
     $dirs = [
       'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
@@ -97,7 +94,7 @@ class AdyenAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Adyen/donation_new/',
         [
-          'main' => [
+          'donations' => [
             [
               'contribution_tracking_id' => '43992337',
               'city' => 'asdf',
@@ -134,7 +131,7 @@ class AdyenAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Adyen/refund/',
         [
-          'negative' => [
+          'refund' => [
             [
               'date' => 1455128736,
               'gateway' => 'adyen',
@@ -150,7 +147,7 @@ class AdyenAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Adyen/chargeback/',
         [
-          'negative' => [
+          'refund' => [
             [
               'date' => 1455128736,
               'gateway' => 'adyen',
@@ -174,7 +171,7 @@ class AdyenAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->runAuditor();
 
-    $this->assertEquals($expectedMessages, self::$messages);
+    $this->assertMessages($expectedMessages);
   }
 
   protected function runAuditor() {
@@ -182,14 +179,9 @@ class AdyenAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       'fakedb' => TRUE,
       'quiet' => TRUE,
       'test' => TRUE,
-      'test_callback' => ['AdyenAuditTest', 'receiveMessages'],
       #'verbose' => 'true', # Uncomment to debug.
     ];
     $audit = new AdyenAuditProcessor($options);
     $audit->run();
-  }
-
-  static public function receiveMessages($msg, $type) {
-    self::$messages[$type][] = $msg;
   }
 }

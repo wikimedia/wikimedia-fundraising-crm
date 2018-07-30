@@ -7,9 +7,7 @@ use SmashPig\PaymentProviders\Amazon\Tests\AmazonTestConfiguration;
  * @group Amazon
  * @group WmfAudit
  */
-class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
-
-  static protected $messages;
+class AmazonAuditTest extends BaseAuditTestCase {
 
   protected $contact_id;
 
@@ -17,7 +15,6 @@ class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function setUp() {
     parent::setUp();
-    self::$messages = [];
 
     // Use the test configuration for SmashPig
     $ctx = Context::get();
@@ -80,7 +77,7 @@ class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Amazon/donation/',
         [
-          'main' => [
+          'donations' => [
             [
               'contribution_tracking_id' => '87654321',
               'country' => 'US',
@@ -110,7 +107,7 @@ class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Amazon/refund/',
         [
-          'negative' => [
+          'refund' => [
             [
               'date' => 1444087249,
               'gateway' => 'amazon',
@@ -126,7 +123,7 @@ class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         __DIR__ . '/data/Amazon/chargeback/',
         [
-          'negative' => [
+          'refund' => [
             [
               'date' => 1444087249,
               'gateway' => 'amazon',
@@ -150,7 +147,7 @@ class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->runAuditor();
 
-    $this->assertEquals($expectedMessages, self::$messages);
+    $this->assertMessages($expectedMessages);
   }
 
   protected function runAuditor() {
@@ -158,14 +155,9 @@ class AmazonAuditTest extends BaseWmfDrupalPhpUnitTestCase {
       'fakedb' => TRUE,
       'quiet' => TRUE,
       'test' => TRUE,
-      'test_callback' => ['AmazonAuditTest', 'receiveMessages'],
       #'verbose' => 'true', # Uncomment to debug.
     ];
     $audit = new AmazonAuditProcessor($options);
     $audit->run();
-  }
-
-  static public function receiveMessages($msg, $type) {
-    self::$messages[$type][] = $msg;
   }
 }
