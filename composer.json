@@ -26,7 +26,8 @@
         "predis/predis": "1.*",
         "twig/twig": "1.*",
         "wikimedia/composer-merge-plugin": "^1.4",
-        "jackgleeson/stats-collector": "^1.4"
+        "jackgleeson/stats-collector": "^1.4",
+        "google/apiclient": "^2.0"
     },
     "repositories": [
       {

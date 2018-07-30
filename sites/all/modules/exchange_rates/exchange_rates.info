@@ -7,3 +7,4 @@ dependencies[] = wmf_communication
 files[] = retrievers/EcbRetriever.php
 files[] = retrievers/ExchangeRateRetriever.php
 files[] = retrievers/OandaRetriever.php
+files[] = publishers/GoogleSheetsRatesPublisher.php
