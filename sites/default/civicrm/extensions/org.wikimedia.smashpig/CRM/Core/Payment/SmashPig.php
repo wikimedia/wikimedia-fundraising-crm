@@ -103,13 +103,6 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
   }
 
   /**
-   * support corresponding CiviCRM method
-   */
-  public function cancelSubscription(&$message = '', $params = []) {
-    throw new NotImplementedException();
-  }
-
-  /**
    * Copied this over from the corresponding Omnipay class....
    */
   public function &error($error = NULL) {

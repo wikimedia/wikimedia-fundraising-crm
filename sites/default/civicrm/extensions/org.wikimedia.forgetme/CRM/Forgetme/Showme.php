@@ -30,6 +30,27 @@ class CRM_Forgetme_Showme {
   protected $filters;
 
   /**
+   * Options from the api - notably this can contain 'OR'.
+   *
+   * @var array
+   */
+  protected $apiOptions;
+
+  /**
+   * @return array
+   */
+  public function getApiOptions() {
+    return $this->apiOptions;
+  }
+
+  /**
+   * @param array $apiOptions
+   */
+  public function setApiOptions($apiOptions) {
+    $this->apiOptions = $apiOptions;
+  }
+
+  /**
    * @var array
    */
   protected $metadata;
@@ -120,11 +141,13 @@ class CRM_Forgetme_Showme {
    *
    * @param string $entity
    * @param array $filters
+   * @param array $apiOptions
    */
-  public function __construct($entity, $filters) {
+  public function __construct($entity, $filters, $apiOptions) {
     $this->entity = $entity;
     $this->metadata = civicrm_api3($entity, 'getfields', ['action' => 'get'])['values'];
     $this->setFilters($filters);
+    $this->setApiOptions($apiOptions);
     $this->setEntityBasedMetadataDefinitions($entity);
   }
 
@@ -136,7 +159,7 @@ class CRM_Forgetme_Showme {
   protected function getAllValuesForEntity() {
     $getParams = $this->filters;
     $getParams['return'] = array_keys($this->metadata);
-    $getParams['options']['limit'] = 0;
+    $getParams['options'] = array_merge($this->getApiOptions(), ['limit' => 0]);
     return civicrm_api3($this->entity, 'get', $getParams)['values'];
   }
 
