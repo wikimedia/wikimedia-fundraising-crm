@@ -31,6 +31,18 @@ function _civicrm_api3_omnirecipient_forget_spec(&$spec) {
  */
 function civicrm_api3_omnirecipient_forgetme($params) {
   $whereClause = CRM_Core_DAO::createSQLFilter('contact_id', $params['contact_id'], CRM_Utils_Type::T_INT);
+  $emails = civicrm_api3('MailingProviderData', 'get', ['contact_id' => $params['contact_id'], 'return' => 'email'])['values'];
+
+  $eraseEmails = [];
+  foreach ($emails as $email) {
+    $eraseEmails[] = $email['email'];
+  }
+  if (!empty($eraseEmails)) {
+    civicrm_api3('Omnirecipient', 'erase', [
+      'email' => $eraseEmails,
+      'mail_provider' => 'Silverpop'
+    ]);
+  }
   CRM_Core_DAO::executeQuery(
     'DELETE FROM civicrm_mailing_provider_data WHERE ' . $whereClause
   );

@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/GuzzleTestTrait.php';
+
 use Civi\Test\EndToEndInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
@@ -25,7 +27,7 @@ use GuzzleHttp\Psr7\Response;
 class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndToEndInterface, TransactionalInterface {
 
   use \Civi\Test\Api3TestTrait;
-
+  use GuzzleTestTrait;
 
   /**
    * IDs of contacts created for the test.
@@ -147,6 +149,7 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
     $this->callAPISuccess('MailingProviderData', 'create',  array(
       'contact_id' => $this->contactIDs[2],
       'event_type' => 'Open',
+      'email' => 'bob@example.com',
       'mailing_identifier' => 'xyz',
       'recipient_action_datetime' => '2017-03-03',
       'contact_identifier' => 'b',
@@ -190,6 +193,23 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
       'contact_type' => 'Individual'
     ));
     $this->contactIDs[] = $contact['id'];
+  }
+
+  protected function setUpForErase() {
+    $this->createMockHandlerForFiles([
+      // These files consist of the Authenticate request and the 'status pending'.
+      // which is re-tried a handful of times. We never get a reply because in my tests it took
+      // > 15 mins & our process won't hang around for that.
+      '/Responses/AuthenticateRestResponse.txt',
+      '/Responses/Privacy/PrivacyRequest1.txt',
+      '/Responses/Privacy/PrivacyRequest2.txt',
+      '/Responses/Privacy/PrivacyRequest2.txt',
+      '/Responses/Privacy/PrivacyRequest2.txt',
+      '/Responses/Privacy/PrivacyRequest2.txt',
+      '/Responses/Privacy/PrivacyRequest2.txt',
+      '/Responses/Privacy/PrivacyRequest2.txt',
+    ]);
+    $this->setUpClientWithHistoryContainer();
   }
 
 }
