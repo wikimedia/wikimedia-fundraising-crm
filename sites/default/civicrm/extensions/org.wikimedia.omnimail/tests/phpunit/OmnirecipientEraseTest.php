@@ -1,7 +1,12 @@
 <?php
 
 use Civi\Test\EndToEndInterface;
+use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Response;
 
 require_once __DIR__ . '/OmnimailBaseTestClass.php';
 
@@ -19,7 +24,7 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  *
  * @group e2e
  */
-class OmnirecipientForgetmeTest extends OmnimailBaseTestClass implements EndToEndInterface, TransactionalInterface {
+class OmnirecipientEraseTest extends OmnimailBaseTestClass implements EndToEndInterface, TransactionalInterface {
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
@@ -34,21 +39,29 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass implements EndToEn
   }
 
   public function tearDown() {
-    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_mailing_provider_data WHERE contact_id IN (' . implode(',', $this->contactIDs) . ')');
     parent::tearDown();
   }
 
   /**
-   * Test forgetme function.
+   * Example: Test that a version is returned.
    */
-  public function testForgetme() {
-    $this->makeScientists();
-    $this->createMailingProviderData();
-    $this->assertEquals(1, $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs[0]]));
+  public function testOmnirecipientErase() {
+    $this->setUpForErase();
 
-    $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->contactIDs[0]]);
+    $this->callAPISuccess('Omnirecipient', 'erase', [
+      'mail_provider' => 'Silverpop',
+      'client' => $this->getGuzzleClient(),
+      'email' => 'eileen@example.com',
+      'client_id' => 'secrethandshake',
+      'client_secret' => 'waggleleftthumb',
+      'refresh_token' => 'thenrightone',
+    ])['values'];
 
-    $this->assertEquals(0, $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs[0]]));
+    $requests = $this->getRequestBodies();
+    // We check what we sent out....
+    $this->assertEquals($requests[0], trim(file_get_contents(__DIR__ . '/Requests/AuthenticateRest.txt')));
+    $this->assertEquals($requests[1], file_get_contents(__DIR__ . '/Requests/privacy_csv.txt'));
+
   }
 
 }
