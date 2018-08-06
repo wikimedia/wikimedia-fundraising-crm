@@ -1,7 +1,5 @@
 <?php
 
-use SmashPig\Core\DataStores\QueueWrapper;
-
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
 
 /**
@@ -359,91 +357,4 @@ function wmf_audit_make_contribution_tracking_data($record) {
   }
 
   return $return;
-}
-
-/**
- * Sends a completed transaction to... somewhere.
- * The default is to send this thing to an appropriate queue for its type.
- * Other possibilities are to echo the complete message (test mode).
- *
- * @param array $record An array representing the complete data we want to save
- * @param string $type The type of transaction we are. 'main', 'negative',
- * 'recurring'... like that.
- */
-function wmf_audit_send_transaction($record, $type) {
-  if (wmf_audit_runtime_options('test')) {
-    wmf_audit_echo("Test mode: Would send the following message: " . print_r($record, TRUE), TRUE);
-    if (wmf_audit_runtime_options('test_callback')) {
-      $func = wmf_audit_runtime_options('test_callback');
-      $func($record, $type);
-    }
-    return;
-  }
-
-  wmf_audit_send_queue_message($record, $type);
-}
-
-/**
- * Send the message in $body to appropriate message queues.
- *
- * @param array $body An array representing the transaction we're trying to
- * send.
- * @param string $type The type of transaction. 'main'|'negative'|'recurring'.
- *
- * @throws Exception
- */
-function wmf_audit_send_queue_message($body, $type) {
-  $queueNames = [
-    'main' => 'donations',
-    'negative' => 'refund',
-    'recurring' => 'recurring',
-  ];
-
-  if (!array_key_exists($type, $queueNames)) {
-    throw new Exception(__FUNCTION__ . ": Unhandled message type '$type'");
-  }
-
-  QueueWrapper::push($queueNames[$type], $body);
-}
-
-/**
- * Checks to make sure that the message we're working on, is complete enough to
- * send.
- *
- * @param type $message
- */
-function wmf_audit_get_message_missing_fields($message) {
-  $common_fields = [
-    'contribution_tracking_id' => TRUE,
-    'utm_source' => TRUE,
-    'utm_medium' => TRUE,
-    'utm_campaign' => TRUE,
-    'language' => TRUE,
-    'referrer' => TRUE,
-    'email' => TRUE,
-    'first_name' => TRUE,
-    'middle_name' => FALSE,
-    'last_name' => TRUE,
-    'street_address' => FALSE,
-    'supplemental_address_1' => FALSE,
-    'city' => FALSE,
-    'state_province' => FALSE,
-    'country' => TRUE,
-    'postal_code' => FALSE,
-    'gateway' => TRUE,
-    'gateway_account' => FALSE,
-    'gateway_txn_id' => TRUE,
-    'payment_method' => TRUE,
-    'payment_submethod' => TRUE,
-    'response' => FALSE, //but cool
-    'currency' => TRUE,
-    'fee' => TRUE,
-    'gross' => TRUE,
-    'net' => TRUE,
-    'user_ip' => TRUE,
-    'date' => TRUE,
-    'recurring' => TRUE,
-  ];
-  //but if we're a chargeback or something, we won't have all of those.
-  //What's the rational subset to expect?
 }

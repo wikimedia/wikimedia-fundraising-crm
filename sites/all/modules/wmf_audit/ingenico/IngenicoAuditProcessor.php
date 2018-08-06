@@ -1,7 +1,9 @@
 <?php
 
+use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\Ingenico\Audit\IngenicoAudit;
 use SmashPig\PaymentProviders\Ingenico\ReferenceData;
+use SmashPig\PaymentProviders\Ingenico\TokenizeRecurringJob;
 
 class IngenicoAuditProcessor extends BaseAuditProcessor {
 
@@ -119,5 +121,27 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
       $transaction['gateway_refund_id'] = $transaction['gateway_parent_id'];
     }
     return $transaction;
+  }
+
+  /**
+   * Override parent function to deal with recurring donations. We may need to
+   * tokenize them before sending them to Civi. If that's the case, send a job
+   * to a special-purpose queue.
+   *
+   * @param array $body
+   * @param string $type
+   *
+   * @throws \Exception
+   */
+  protected function send_queue_message($body, $type) {
+    if (
+      $body['gateway'] === 'ingenico' && // FIXME: below fn should check this
+      TokenizeRecurringJob::donationNeedsTokenizing($body)
+    ) {
+      $job = TokenizeRecurringJob::fromDonationMessage($body);
+      QueueWrapper::push('jobs-ingenico', $job);
+      return;
+    }
+    parent::send_queue_message($body, $type);
   }
 }

@@ -1,23 +1,6 @@
 <?php
 
 class CRM_Relationshipblock_Utils_RelationshipBlock {
-  /**
-   * Append detail (label & related contact name) to relationship array.
-   *
-   * @param array $existingRelationship
-   * @param int $contactID
-   * @param array $displayedRelationships
-   *
-   * @return mixed
-   */
-  protected static function appendDetailToRelationship(&$existingRelationship, $contactID, $displayedRelationships) {
-    $dir = $existingRelationship['contact_id_a'] === $contactID ? 'a_b' : 'b_a';
-    list($a, $b) = explode('_', $dir);
-    $existingRelationship['relationship_type'] = $displayedRelationships[$existingRelationship['relationship_type_id']]["label_$dir"];
-    $existingRelationship['relation_display_name'] = $existingRelationship["contact_id_$b.display_name"];
-    $existingRelationship['other_contact_id'] = $existingRelationship["contact_id_$b"];
-    $existingRelationship['dir'] = $dir;
-  }
 
   /**
    * Get existing relationships for the contact.
@@ -38,13 +21,33 @@ class CRM_Relationshipblock_Utils_RelationshipBlock {
       'is_active' => 1,
       'contact_id_a' => $contactID,
       'contact_id_b' => $contactID,
-      'return' => ['id', 'relationship_type_id', 'contact_id_a', 'contact_id_b', 'contact_id_a.display_name', 'contact_id_b.display_name'],
-      'options' => ['or' => [['contact_id_a', 'contact_id_b']]],
+      'return' => ['id', 'relationship_type_id', 'contact_id_a', 'contact_id_b',
+        'contact_id_a.display_name', 'contact_id_b.display_name', 'contact_id_a.is_deceased',
+        'contact_id_b.is_deceased'],
+      'options' => ['limit' => 0, 'or' => [['contact_id_a', 'contact_id_b']]],
     ]);
     $ret = [];
     foreach ($existingRelationships['values'] as $rel) {
-      self::appendDetailToRelationship($rel, $contactID, $displayedRelationships);
-      $ret[$rel['relationship_type_id'] . '_' . $rel['dir']] = $rel;
+      $relationshipType = $displayedRelationships[$rel['relationship_type_id']];
+      $dir = $rel['contact_id_a'] == $contactID ? 'a_b' : 'b_a';
+      list($a, $b) = explode('_', $dir);
+      // Make all bidirectional relationships appear as the A side to make the form processing simpler
+      if ($relationshipType['bi']) {
+        $dir = 'a_b';
+      }
+      $key = $rel['relationship_type_id'] . '_' . $dir;
+      $ret[$key] = isset($ret[$key]) ? $ret[$key] : [];
+      $ret[$key] += [
+        'relationship_type_id' => $rel['relationship_type_id'],
+        'relationship_type' => $displayedRelationships[$rel['relationship_type_id']]["label_$dir"],
+        'contacts' => [],
+      ];
+      $ret[$key]['contacts'][$rel["contact_id_$b"]] = [
+        'contact_id' => $rel["contact_id_$b"],
+        'relationship_id' => $rel['id'],
+        'display_name' => $rel["contact_id_$b.display_name"],
+        'is_deceased' => $rel["contact_id_$b.is_deceased"],
+      ];
     }
     return $ret;
   }
@@ -82,4 +85,5 @@ class CRM_Relationshipblock_Utils_RelationshipBlock {
     }
     return \Civi::$statics[__CLASS__]['displayed_relationship_types'][$contactId];
   }
+
 }

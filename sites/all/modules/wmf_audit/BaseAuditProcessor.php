@@ -1,5 +1,7 @@
 <?php
 
+use SmashPig\Core\DataStores\QueueWrapper;
+
 abstract class BaseAuditProcessor {
 
   protected $options;
@@ -352,6 +354,8 @@ abstract class BaseAuditProcessor {
   /**
    * The main function, intended to be called straight from the drush command
    * and nowhere else.
+   *
+   * @throws \Exception
    */
   public function run() {
     civicrm_initialize();
@@ -451,7 +455,7 @@ abstract class BaseAuditProcessor {
         //check to see if the parent exists. If it does, normalize and send.
         if ($this->main_transaction_exists_in_civi($record)) {
           $normal = $this->normalize_negative($record);
-          wmf_audit_send_transaction($normal, 'negative');
+          $this->send_queue_message($normal, 'negative');
           $neg_count += 1;
           wmf_audit_echo('!');
         }
@@ -761,8 +765,8 @@ abstract class BaseAuditProcessor {
                 // ...but not inside the char block, because it'll break the pretty.
                 $all_data = array_merge($contribution_tracking_data, $all_data);
 
-                //Send to queue. Or somewhere. Or don't (if it's test mode).
-                wmf_audit_send_transaction($all_data, 'main');
+                //Send to queue.
+                $this->send_queue_message($all_data, 'main');
                 unset($tryme[$date][$id]);
                 wmf_audit_echo('!');
               } catch (WmfException $ex) {
@@ -806,7 +810,7 @@ abstract class BaseAuditProcessor {
                 $all_data = $message;
               }
               $sendme = $this->normalize_partial($all_data);
-              wmf_audit_send_transaction($sendme, 'main');
+              $this->send_queue_message($sendme, 'main');
               $made += 1;
               wmf_audit_echo('!');
               unset($tryme[$date][$id]);
@@ -1336,4 +1340,28 @@ abstract class BaseAuditProcessor {
   protected function pre_process_refund($transaction) {
     return $transaction;
   }
+
+  /**
+   * Send the message in $body to appropriate message queues.
+   *
+   * @param array $body An array representing the transaction we're trying to
+   * send.
+   * @param string $type The type of transaction. 'main'|'negative'|'recurring'.
+   *
+   * @throws Exception
+   */
+  protected function send_queue_message($body, $type) {
+    $queueNames = [
+      'main' => 'donations',
+      'negative' => 'refund',
+      'recurring' => 'recurring',
+    ];
+
+    if (!array_key_exists($type, $queueNames)) {
+      throw new Exception(__FUNCTION__ . ": Unhandled message type '$type'");
+    }
+
+    QueueWrapper::push($queueNames[$type], $body);
+  }
+
 }

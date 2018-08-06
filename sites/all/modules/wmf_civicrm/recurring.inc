@@ -20,7 +20,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
   $msg['installments'] = isset($msg['installments']) ? (integer) $msg['installments'] : 0;
   $msg['cancel'] = isset($msg['cancel']) ? (integer) $msg['cancel'] : 0;
 
-  if (!isset($msg['recurring']) && $msg['recurring'] != 1) {
+  if (!isset($msg['recurring']) || $msg['recurring'] != 1) {
     $error_message = t(
       'Payment is not marked as recurring, with the contact_id [!contact_id]',
       ["!contact_id" => $contact_id]

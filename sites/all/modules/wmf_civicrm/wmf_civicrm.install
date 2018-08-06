@@ -4400,3 +4400,10 @@ function wmf_civicrm_update_7730() {
     WHERE ccr.cycle_day > 19;
   ");
 }
+
+/**
+ * Enable contact layout editor.
+ */
+function wmf_civicrm_update_7740() {
+  wmf_civicrm_reconcile_extensions();
+}

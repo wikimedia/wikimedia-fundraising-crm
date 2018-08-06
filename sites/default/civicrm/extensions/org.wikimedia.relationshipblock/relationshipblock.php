@@ -134,8 +134,6 @@ function relationshipblock_civicrm_entityTypes(&$entityTypes) {
   _relationshipblock_civix_civicrm_entityTypes($entityTypes);
 }
 
-// --- Functions below this ship commented out. Uncomment as required. ---
-
 /**
  * Implements hook_civicrm_postProcess().
  */
@@ -146,10 +144,7 @@ function relationshipblock_civicrm_postProcess($formName, &$form) {
 }
 
 /**
- * Implementation of hook_civicrm_managed
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
+ * Implements hook_civicrm_pageRun().
  */
 function relationshipblock_civicrm_pageRun(&$page) {
   if (get_class($page) === 'CRM_Contact_Page_View_Summary') {
@@ -158,7 +153,7 @@ function relationshipblock_civicrm_pageRun(&$page) {
         if (CRM_Relationshipblock_Utils_RelationshipBlock::getDisplayedRelationshipTypes($contactID)) {
           CRM_Relationshipblock_Page_Inline_RelationshipBlock::addKeyRelationshipsBlock($page, $contactID);
           CRM_Core_Region::instance('contact-basic-info-right')->add(array(
-            'template' => "CRM/Relationshipblock/ContactSummaryBlock.tpl"
+            'template' => "CRM/Relationshipblock/ContactSummaryBlock.tpl",
           ));
         }
       }
@@ -180,4 +175,26 @@ function relationshipblock_civicrm_pageRun(&$page) {
  */
 function relationshipblock_civicrm_navigationMenu(&$menu) {
   _relationshipblock_civix_navigationMenu($menu);
+}
+
+/**
+ * Implements hook_civicrm_contactSummaryBlocks().
+ *
+ * @link https://github.com/civicrm/org.civicrm.contactlayout
+ */
+function relationshipblock_civicrm_contactSummaryBlocks(&$blocks) {
+  // Provide our own group for this block to visually distinguish it on the contact summary editor palette.
+  $blocks += [
+    'relationshipblock' => [
+      'title' => ts('Relationships'),
+      'icon' => 'fa-user-circle',
+      'blocks' => [],
+    ]
+  ];
+  $blocks['relationshipblock']['blocks']['relationshipblock'] = [
+    'title' => ts('Key Relationships'),
+    'tpl_file' => 'CRM/Relationshipblock/Page/Inline/RelationshipBlock.tpl',
+    'sample' => [E::ts('Relationship %1', [1 => 1]), E::ts('Relationship %1', [1 => 2]), E::ts('Relationship %1', [1 => 3])],
+    'edit' => 'civicrm/admin/reltype?reset=1',
+  ];
 }
