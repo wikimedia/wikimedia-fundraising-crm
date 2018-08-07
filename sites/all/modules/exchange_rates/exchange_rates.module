@@ -3,6 +3,7 @@
 use exchange_rates\OandaRetriever;
 use exchange_rates\EcbRetriever;
 use exchange_rates\ExchangeRateUpdateException;
+use exchange_rates\GoogleSheetsRatesPublisher;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
 function exchange_rates_menu() {
@@ -62,6 +63,30 @@ function exchange_rates_credentials_form() {
 		'#required' => TRUE,
 		'#default_value' => variable_get('exchange_rates_key_oanda', ''),
 		'#description' => 'Key for OANDA API calls (found on OANDA account settings page)',
+	);
+
+	$form['exchange_rates_google_account_file_path'] = array(
+		'#type' => 'textfield',
+		'#title' => '(Finance Dept) Google Sheets Service Account File Path',
+		'#required' => TRUE,
+		'#default_value' => variable_get('exchange_rates_google_account_file_path', ''),
+		'#description' => 'File Path of Google Service Account file. File Should contain service account data in JSON format, which was downloaded within https://console.developers.google.com project credentials area',
+	);
+
+	$form['exchange_rates_google_sheet_id'] = array(
+		'#type' => 'textfield',
+		'#title' => '(Finance Dept) Google Sheets Document ID ',
+		'#required' => TRUE,
+		'#default_value' => variable_get('exchange_rates_google_sheet_id', ''),
+		'#description' => 'Google Sheets ID of the target document containing sheet to be written to, available in URL of sheet (e.g. 1vB5bwroKDYhtMZL83gT2DNDsqOTnqNLkNGYJmYg06S4)',
+	);
+
+	$form['exchange_rates_google_sheet_name'] = array(
+		'#type' => 'textfield',
+		'#title' => '(Finance Dept) Google Sheets tab/sheet name ',
+		'#required' => TRUE,
+		'#default_value' => variable_get('exchange_rates_google_sheet_name', ''),
+		'#description' => 'Google Sheets tab/sheet name to be updated with latest exchange rates',
 	);
 
 	return system_settings_form($form);
@@ -255,6 +280,35 @@ function exchange_rates_backfill( $start, $end, $recalculate ) {
 	if ( $recalculate ) {
 		wmf_civicrm_recalculate_contributions( $start, $end );
 	}
+}
+
+function exchange_rates_publish_to_google_sheets() {
+
+  $google_account_file_path = variable_get( 'exchange_rates_google_account_file_path', '' );
+  if ( $google_account_file_path === '' ) {
+    wmf_common_failmail( 'exchange_rates', '(Finance Dept) Google Sheets Service API Account file path not set!' );
+  }
+
+  $spreadsheet_id = variable_get( 'exchange_rates_google_sheet_id', '' );
+  if ( $spreadsheet_id === '' ) {
+    wmf_common_failmail( 'exchange_rates', '(Finance Dept) Google Sheets document ID not set!');
+  }
+
+  $sheet_name = variable_get( 'exchange_rates_google_sheet_name', '' );
+  if ( $sheet_name === '' ) {
+    wmf_common_failmail( 'exchange_rates', '(Finance Dept) Google Sheets sheet/tab not set!');
+  }
+
+  try {
+    $publisher = new GoogleSheetsRatesPublisher($google_account_file_path, $spreadsheet_id, $sheet_name);
+    $result = $publisher->publish();
+  } catch (\Exception $ex) {
+    wmf_common_failmail('exchange_rates', $ex->getMessage(), $ex);
+  }
+  if ($result !== true) {
+    wmf_common_failmail('exchange_rates', 'Could not publish exchange rates to Google Sheets API!');
+    return;
+  }
 }
 
 class ExchangeRatesException extends Exception {
