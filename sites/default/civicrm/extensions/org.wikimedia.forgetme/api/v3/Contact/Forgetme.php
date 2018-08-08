@@ -29,9 +29,6 @@ function _civicrm_api3_contact_forget_spec(&$spec) {
  */
 function civicrm_api3_contact_forgetme($params) {
   $result = [];
-  $entitiesToDelete = CRM_Forgetme_Metadata::getEntitiesToDelete();
-  $forgets = _civicrm_api3_showme_get_entities_with_action('forgetme');
-  unset($forgets[array_search('Contact', $forgets)]);
 
   // Gather emails to pass on to other actions - we currently only need primary email downstream as we
   // expect to only worry about deleting that in Silverpop but doing filtering in late functions makes sense.
@@ -61,10 +58,10 @@ function civicrm_api3_contact_forgetme($params) {
     civicrm_api3('Contact', 'create', $forgetParams);
   }
 
-  foreach (array_merge($entitiesToDelete, $forgets) as $entityToDelete) {
+  foreach (_contact_forgetme_get_processable_entities() as $entityToDelete) {
     $deleteParams = ['contact_id' => ['IN' => $contactIDsToForget]];
     $hasForget = TRUE;
-    if (!in_array($entityToDelete, $forgets)) {
+    if (!in_array($entityToDelete, CRM_Forgetme_Metadata::getEntitiesToForget())) {
       $deleteParams["api.{$entityToDelete}.delete"] = 1;
       $hasForget = FALSE;
     }
@@ -91,4 +88,20 @@ function civicrm_api3_contact_forgetme($params) {
     'source_contact_id' => ($loggedInUser ? : $params['id']),
   ]);
   return civicrm_api3_create_success($result, $params);
+}
+
+/**
+ * Get an array of all entities with forget actions.
+ *
+ * We cache this for mild performance gain but it's not clear php caching
+ * helps us much as this is not often called multiple times within one php call.
+ *
+ * However, once we have upgraded & switched to Redis caching we could move this
+ * over and probably get more benefit.
+ *
+ * @return array
+ */
+function _contact_forgetme_get_processable_entities() {
+  $entitiesToDelete = CRM_Forgetme_Metadata::getEntitiesToDelete();
+  return array_merge($entitiesToDelete, CRM_Forgetme_Metadata::getEntitiesToForget());
 }
