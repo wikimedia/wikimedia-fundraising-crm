@@ -11,8 +11,8 @@ class CRM_Contact_Form_Task_ContactsAndContributionsExport extends CRM_Export_Fo
 {
     function preProcess()
     {
-        CRM_Contact_Form_Task::preProcessCommon( $this, true );
-        CRM_Contribute_Form_Task::preProcessCommon( $this, true );
+        CRM_Contact_Form_Task::preProcessCommon( $this );
+        CRM_Contribute_Form_Task::preProcessCommon( $this );
 
         $params = array('name' => 'Contacts and Contributions');
         $defaults = array();

@@ -54,7 +54,7 @@ class CRM_Contact_Form_Task_FindDuplicates extends CRM_Core_Form {
    * Build all the data structures needed to build the form.
    */
   public function preProcess() {
-    CRM_Contact_Form_Task::preProcessCommon($this, TRUE);
+    CRM_Contact_Form_Task::preProcessCommon($this);
     // Some issues with how we are passing these need dealing with at some stage.
     // ie. switch to dedupe table first & load. For now limit.
     $limit = 100;
