@@ -35,6 +35,27 @@ class CRM_Forgetme_Metadata {
   }
 
   /**
+   * Get an array of all entities with forget actions.
+   *
+   * We cache this for mild performance gain but it's not clear php caching
+   * helps us much as this is not often called multiple times within one php call.
+   *
+   * However, once we have upgraded & switched to Redis caching we could move this
+   * over and probably get more benefit.
+   *
+   * @return array
+   */
+  public static function getEntitiesToForget() {
+    if (!isset(\Civi::$statics[__CLASS__]['forget_entities'])) {
+      $forgets = _civicrm_api3_showme_get_entities_with_action('forgetme');
+      unset($forgets[array_search('Contact', $forgets)]);
+      uasort($forgets, function($a, $b) { return($b !== 'Logging'); });
+      \Civi::$statics[__CLASS__]['forget_entities'] = $forgets;
+    }
+    return \Civi::$statics[__CLASS__]['forget_entities'];
+  }
+
+  /**
    * Describe what to do with the various entities.
    *
    * All entities that interact with contacts are listed for information value.
