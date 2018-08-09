@@ -33,6 +33,15 @@ function civicrm_api3_contact_forgetme($params) {
   $forgets = _civicrm_api3_showme_get_entities_with_action('forgetme');
   unset($forgets[array_search('Contact', $forgets)]);
 
+  // Gather emails to pass on to other actions - we currently only need primary email downstream as we
+  // expect to only worry about deleting that in Silverpop but doing filtering in late functions makes sense.
+  // I did think about putting this later & using $contactIDsToForget but current conversation is to focus on
+  // current is_primary
+  $emails = civicrm_api3('Email', 'get', [
+    'contact_id' => $params['id'],
+    'return' => ['email', 'is_primary', 'contact_id']
+  ])['values'];
+
   $fieldsToForget = array_merge(
     CRM_Forgetme_Metadata::getMetadataForEntity('Contact', 'forget_fields'),
     CRM_Forgetme_Metadata::getMetadataForEntity('Contact', 'custom_forget_fields')
@@ -62,7 +71,10 @@ function civicrm_api3_contact_forgetme($params) {
     $delete = civicrm_api3($entityToDelete, 'showme', $deleteParams);
     if ($delete['count']) {
       if ($hasForget) {
-        civicrm_api3($entityToDelete, 'forgetme', ['contact_id' => ['IN' => $contactIDsToForget]]);
+        civicrm_api3($entityToDelete, 'forgetme', [
+          'contact_id' => ['IN' => $contactIDsToForget],
+          'contact' => ['emails' => $emails]]
+        );
       }
       foreach ($delete['showme'] as $id => $string) {
         $result[$entityToDelete . $id] = $string;

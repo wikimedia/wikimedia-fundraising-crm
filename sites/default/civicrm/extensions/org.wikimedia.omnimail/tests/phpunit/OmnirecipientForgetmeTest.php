@@ -2,6 +2,7 @@
 
 use Civi\Test\EndToEndInterface;
 use Civi\Test\TransactionalInterface;
+use SilverpopConnector\SilverpopRestConnector;
 
 require_once __DIR__ . '/OmnimailBaseTestClass.php';
 
@@ -44,11 +45,31 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass implements EndToEn
   public function testForgetme() {
     $this->makeScientists();
     $this->createMailingProviderData();
+    $this->setUpForErase();
+    $this->addTestClientToRestSingleton();
+
     $this->assertEquals(1, $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs['charlie_clone']]));
 
     $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->contactIDs['charlie_clone']]);
 
     $this->assertEquals(0, $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs['charlie_clone']]));
+
+    // Check the request we sent out had the right email in it.
+    $requests = $this->getRequestBodies();
+    $this->assertEquals($requests[1], "Email,charlie@example.com\n");
+  }
+
+  /**
+   * Add our mock client to the rest singleton.
+   *
+   * In other places we have been passing the client in but we can't do that
+   * here so trying a new tactic  - basically setting it up on the singleton
+   * first.
+   */
+  protected function addTestClientToRestSingleton() {
+    $restConnector = SilverpopRestConnector::getInstance();
+    $this->setUpClientWithHistoryContainer();
+    $restConnector->setClient($this->getGuzzleClient());
   }
 
 }
