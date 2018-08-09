@@ -139,7 +139,7 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
     $this->callAPISuccess('Campaign', 'create', array('name' => 'xyz', 'title' => 'Cool Campaign'));
     $this->callAPISuccess('Mailing', 'create', array('campaign_id' => 'xyz', 'hash' => 'xyz', 'name' => 'Mail'));
     $this->callAPISuccess('MailingProviderData', 'create',  array(
-      'contact_id' => $this->contactIDs[0],
+      'contact_id' => $this->contactIDs['charlie_clone'],
       'email' => 'charlie@example.com',
       'event_type' => 'Opt Out',
       'mailing_identifier' => 'xyz',
@@ -147,7 +147,7 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
       'contact_identifier' => 'a',
     ));
     $this->callAPISuccess('MailingProviderData', 'create',  array(
-      'contact_id' => $this->contactIDs[2],
+      'contact_id' => $this->contactIDs['marie'],
       'event_type' => 'Open',
       'email' => 'bob@example.com',
       'mailing_identifier' => 'xyz',
@@ -155,7 +155,7 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
       'contact_identifier' => 'b',
     ));
     $this->callAPISuccess('MailingProviderData', 'create',  array(
-      'contact_id' => $this->contactIDs[3],
+      'contact_id' => $this->contactIDs['isaac'],
       'event_type' => 'Suppressed',
       'mailing_identifier' => 'xyuuuz',
       'recipient_action_datetime' => '2017-04-04',
@@ -169,30 +169,30 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
       'last_name' => 'Darwin',
       'contact_type' => 'Individual'
     ));
-    $this->contactIDs[] = $contact['id'];
+    $this->contactIDs['charlie'] = $contact['id'];
     $contact = $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Charlie',
       'last_name' => 'Darwin',
       'contact_type' => 'Individual',
       'api.email.create' => array(
         'is_bulkmail' => 1,
-        'email' => 'charlie@example.com'
+        'email' => 'charlie@example.com',
       )
     ));
-    $this->contactIDs[] = $contact['id'];
+    $this->contactIDs['charlie_clone'] = $contact['id'];
 
     $contact = $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Marie',
       'last_name' => 'Currie',
       'contact_type' => 'Individual'
     ));
-    $this->contactIDs[] = $contact['id'];
+    $this->contactIDs['marie'] = $contact['id'];
     $contact = $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Isaac',
       'last_name' => 'Newton',
       'contact_type' => 'Individual'
     ));
-    $this->contactIDs[] = $contact['id'];
+    $this->contactIDs['isaac'] = $contact['id'];
   }
 
   protected function setUpForErase() {

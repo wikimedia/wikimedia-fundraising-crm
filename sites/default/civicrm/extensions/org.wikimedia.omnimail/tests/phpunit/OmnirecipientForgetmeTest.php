@@ -44,11 +44,11 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass implements EndToEn
   public function testForgetme() {
     $this->makeScientists();
     $this->createMailingProviderData();
-    $this->assertEquals(1, $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs[0]]));
+    $this->assertEquals(1, $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs['charlie_clone']]));
 
-    $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->contactIDs[0]]);
+    $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->contactIDs['charlie_clone']]);
 
-    $this->assertEquals(0, $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs[0]]));
+    $this->assertEquals(0, $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs['charlie_clone']]));
   }
 
 }
