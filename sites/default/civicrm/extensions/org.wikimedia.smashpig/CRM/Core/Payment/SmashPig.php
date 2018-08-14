@@ -55,20 +55,11 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
 
     $provider = PaymentProviderFactory::getProviderForMethod('cc');
 
-    $request = $this->convertParams($params);
-    $createPaymentResponse = $provider->createPayment($request);
-    if (!empty($createPaymentResponse['errors'])) {
-      throw new PaymentProcessorException(
-        'CreatePayment Failed: ' . print_r($createPaymentResponse['errors'], TRUE)
-      );
-    }
-    // FIXME: SmashPig library should normalize return values, this is
-    // specific to Ingenico Connect's json response
-    $trxnId = $createPaymentResponse['payment']['id'];
+    $trxnId = $this->createPayment($params, $provider);
     $approvePaymentResponse = $provider->approvePayment($trxnId, []);
     if (!empty($approvePaymentResponse['errors'])) {
-      throw new PaymentProcessorException(
-        'ApprovePayment Failed: ' . print_r($approvePaymentResponse['errors'], TRUE)
+      $this->throwException(
+        'ApprovePayment failed', $approvePaymentResponse['errors']
       );
     }
     $allContributionStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
@@ -167,5 +158,55 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    */
   public function checkConfig() {
     return FALSE;
+  }
+
+  /**
+   * Create a payment attempt at the payment processor
+   *
+   * @param array $params
+   * @param $provider
+   *
+   * @return string The processor's ID for the payment
+   *
+   * @throws \Civi\Payment\Exception\PaymentProcessorException
+   */
+  protected function createPayment($params, $provider) {
+    $request = $this->convertParams($params);
+    $createPaymentResponse = $provider->createPayment($request);
+    if (!empty($createPaymentResponse['errors'])) {
+      $this->throwException(
+        'CreatePayment Failed', $createPaymentResponse['errors']
+      );
+    }
+    // FIXME: SmashPig library should normalize return values, this is
+    // specific to Ingenico Connect's json response
+    $trxnId = $createPaymentResponse['payment']['id'];
+    return $trxnId;
+  }
+
+
+  /**
+   * Format and throw a PaymentProcessorException, given an array of
+   * errors from the SmashPig payment call.
+   *
+   * @param string $message
+   * @param array[] $errorArray
+   *
+   * @throws \Civi\Payment\Exception\PaymentProcessorException
+   */
+  protected function throwException($message, $errorArray) {
+    $errorCode = -1;
+    if ( count( $errorArray ) === 1 ) {
+      $error = $errorArray[0];
+      if (isset($error['message'])) {
+        $message .= ': ' . $error['message'];
+      }
+      if (isset($error['code'])) {
+        $errorCode = $error['code'];
+      }
+    }
+    throw new PaymentProcessorException(
+      $message, $errorCode, $errorArray
+    );
   }
 }
