@@ -53,6 +53,10 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
           ],
           'is_test' => CRM_Utils_Array::value('is_test', $recurringPayment['is_test']),
         ]);
+        $donor = civicrm_api3('Contact', 'getsingle', [
+          'id' => $recurringPayment['contact_id'],
+          'return' => ['first_name', 'last_name', 'email']
+        ]);
         $result[$recurringPayment['id']]['previous_contribution'] = $previousContribution;
         // Mark the recurring contribution in progress
         civicrm_api3('ContributionRecur', 'create', [
@@ -66,6 +70,9 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $payment = civicrm_api3('PaymentProcessor', 'pay', [
           'amount' => $previousContribution['total_amount'],
           'currency' => $previousContribution['currency'],
+          'first_name' => $donor['first_name'],
+          'last_name' => $donor['last_name'],
+          'email' => $donor['email'],
           'invoice_id' => $currentInvoiceId,
           'payment_processor_id' => $paymentProcessorID,
           'contactID' => $previousContribution['contact_id'],

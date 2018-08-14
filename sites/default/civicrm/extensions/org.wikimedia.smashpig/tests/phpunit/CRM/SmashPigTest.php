@@ -233,6 +233,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
       'contact_type' => 'Individual',
       'first_name' => 'Harry',
       'last_name' => 'Henderson',
+      'email' => 'harry@hendersons.net',
       'preferred_language' => 'en_US',
     ]);
     $this->deleteThings['Contact'][] = $result['id'];
@@ -348,6 +349,9 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
         'recurring_payment_token' => 'abc123-456zyx-test12',
         'amount' => 12.34,
         'currency' => 'USD',
+        'first_name' => 'Harry',
+        'last_name' => 'Henderson',
+        'email' => 'harry@hendersons.net',
         'order_id' => $expectedInvoiceId,
         'installment' => 'recurring',
         'description' => $expectedDescription,
