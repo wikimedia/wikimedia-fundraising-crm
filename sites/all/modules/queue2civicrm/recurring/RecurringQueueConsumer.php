@@ -265,7 +265,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 		);
 		$cancelStatus = CRM_Contribute_BAO_ContributionRecur::cancelRecurContribution(
 			$recur_record->id,
-			CRM_Core_DAO::$_nullObject,
 			$activityParams
 		);
 		if ( !$cancelStatus ) {
