@@ -533,4 +533,86 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
     );
     $this->assertEquals('3', $newContributionRecur['failure_count']);
   }
+
+  public function testError300620() {
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id']);
+    $contributionRecur = $this->createContributionRecur($token);
+    $contribution = $this->createContribution($contributionRecur);
+    $originalInvoiceId = $contribution['invoice_id'];
+    $parts = explode('|', $originalInvoiceId);
+    list($ctId, $sequence) = explode('.', $parts[0]);
+    $expectedInvoiceId = $ctId . '.' . ($sequence + 1);
+    $nextInvoiceId = $ctId . '.' . ($sequence + 2);
+    $response = $this->createPaymentResponse;
+    $response['errors'] = [
+      [
+        'code' => '300620',
+        'requestId' => '9126465',
+        'message' => "MERCHANTREFERENCE $expectedInvoiceId ALREADY EXISTS",
+        'httpStatusCode' => 409,
+      ],
+    ];
+    $domain = CRM_Core_BAO_Domain::getDomain();
+    $expectedDescription = "Monthly donation to $domain->name";
+    $firstCallParams = [
+      'recurring_payment_token' => 'abc123-456zyx-test12',
+      'amount' => '12.34',
+      'currency' => 'USD',
+      'first_name' => 'Harry',
+      'last_name' => 'Henderson',
+      'email' => 'harry@hendersons.net',
+      'order_id' => $expectedInvoiceId,
+      'installment' => 'recurring',
+      'description' => $expectedDescription,
+      'recurring' => TRUE,
+    ];
+    $secondCallParams = [
+      'recurring_payment_token' => 'abc123-456zyx-test12',
+      'amount' => '12.34',
+      'currency' => 'USD',
+      'first_name' => 'Harry',
+      'last_name' => 'Henderson',
+      'email' => 'harry@hendersons.net',
+      'order_id' => $nextInvoiceId,
+      'installment' => 'recurring',
+      'description' => $expectedDescription,
+      'recurring' => TRUE,
+    ];
+    $this->hostedCheckoutProvider->expects($this->exactly(2))
+      ->method('createPayment')
+      ->withConsecutive(
+        [$firstCallParams],
+        [$secondCallParams]
+      )
+      ->willReturn(
+        $response,
+        $this->createPaymentResponse
+      );
+    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+      TRUE, 1, 3, 1, 1
+    );
+    $processor->run();
+    $queue = QueueWrapper::getQueue('donations');
+    $contributionMessage = $queue->pop();
+    $this->assertNull($queue->pop(), 'Queued too many donations!');
+    SourceFields::removeFromMessage($contributionMessage);
+    unset($contributionMessage['date']);
+    $this->assertEquals([
+      'contact_id' => $contact['id'],
+      'currency' => 'USD',
+      'gross' => '12.34',
+      'gateway_txn_id' => '000000850010000188130000200001',
+      'invoice_id' => $nextInvoiceId,
+      'effort_id' => 2,
+      'financial_type_id' => '1',
+      'contribution_type_id' => '1',
+      'payment_instrument_id' => '4',
+      'gateway' => 'ingenico',
+      'payment_method' => 'cc',
+      'contribution_recur_id' => $contributionRecur['id'],
+      'contribution_tracking_id' => $ctId,
+      'recurring' => TRUE,
+    ], $contributionMessage);
+  }
 }
