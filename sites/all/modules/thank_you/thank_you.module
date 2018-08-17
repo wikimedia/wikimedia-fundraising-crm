@@ -756,10 +756,7 @@ function thank_you_batch_process(){
 		WHERE
 			receive_date > :earliest AND
 			thankyou_date IS NULL AND
-			(
-			  no_thank_you IS NULL OR
-			  no_thank_you IN ('', '0')
-			)
+			no_thank_you IS NULL
 		ORDER BY receive_date ASC LIMIT {$batch};
 EOT;
 
