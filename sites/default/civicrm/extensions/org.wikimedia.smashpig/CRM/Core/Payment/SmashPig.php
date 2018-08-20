@@ -44,6 +44,20 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
   }
 
   /**
+   * Are back office payments supported.
+   *
+   * e.g paypal standard won't permit you to enter a credit card associated
+   * with someone else's login.
+   * The intention is to support off-site (other than paypal) & direct debit but that is not all working yet so to
+   * reach a 'stable' point we disable.
+   *
+   * @return bool
+   */
+  protected function supportsBackOffice() {
+     return FALSE;
+  }
+
+  /**
    * Just does a tokenized credit card payment for now.
    *
    * @param array $params requires at least token, amount, currency, invoice_id,
