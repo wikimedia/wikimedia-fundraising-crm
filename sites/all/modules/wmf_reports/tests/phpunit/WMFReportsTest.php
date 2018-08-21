@@ -5,7 +5,26 @@
  */
 class WMFReportsTest extends BaseWmfDrupalPhpUnitTestCase {
 
-   
+   public function testGatewayReconciliationReport() {
+     $params = [
+       'report_id' => 'contribute/reconciliation',
+       'fields' => [
+         'total_amount' => '1',
+         'is_negative' => '1',
+         'financial_trxn_payment_instrument_id' => '1',
+         'original_currency' => '1',
+         'gateway' => '1',
+         'gateway_account' => '1',
+       ],
+       'group_bys' =>
+         [
+           'is_negative' => '1',
+           'original_currency' => '1',
+           'gateway' => '1',
+         ],
+     ];
+     $this->callAPISuccess('report_template', 'getrows', $params);
+   }
   /**
    * Tet api to get rows from reports.
    *

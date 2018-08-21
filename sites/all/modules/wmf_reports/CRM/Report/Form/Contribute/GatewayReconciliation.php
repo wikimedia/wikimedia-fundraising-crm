@@ -69,6 +69,7 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
           'is_negative' => array(
             'title' => ts('Credit (+) or Debit (-)'),
             'required' => TRUE,
+            'dbAlias' => "IF(financial_trxn_civireport.total_amount < 0, '-', '+' )",
           ),
           'financial_trxn_payment_instrument_id' => array(
             'name' => 'payment_instrument_id',
