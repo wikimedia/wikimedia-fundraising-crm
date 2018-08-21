@@ -263,35 +263,6 @@ EOS;
     }
   }
 
-  function selectClause(&$tableName, $type, &$fieldName, &$field) {
-    switch ($fieldName) {
-      case 'is_negative':
-        $this->register_field_alias($tableName, $fieldName, $field);
-        $sql = "IF( {$this->_aliases['civicrm_financial_trxn']}.total_amount < 0, '-', '+' )";
-        if ($type === 'fields') {
-          return $sql . " AS {$field['dbAlias']}";
-        }
-        return FALSE;
-    }
-    return parent::selectClause($tableName, $type, $fieldName, $field);
-  }
-
-  function register_field_alias($tableName, $fieldName, &$field) {
-    // until the base class takes care of it:
-    //if ( !CRM_Utils_Array::value( 'dbAlias', $field ) ) {
-    $field['dbAlias'] = "{$tableName}_{$fieldName}";
-    if (array_key_exists('group_bys', $this->_columns[$tableName])
-      and array_key_exists($fieldName, $this->_columns[$tableName]['group_bys'])) {
-      $this->_columns[$tableName]['group_bys'][$fieldName]['dbAlias'] = $field['dbAlias'];
-    }
-    $this->_columns[$tableName]['fields'][$fieldName]['dbAlias'] = $field['dbAlias'];
-    $this->_columns[$tableName]['filters'][$fieldName]['dbAlias'] = $field['dbAlias'];
-
-    $this->_columnHeaders[$field['dbAlias']]['title'] = CRM_Utils_Array::value('title', $field);
-    $this->_columnHeaders[$field['dbAlias']]['type'] = CRM_Utils_Array::value('type', $field);
-    $this->_selectAliases[] = $field['dbAlias'];
-  }
-
   function storeWhereHavingClauseArray() {
     parent::storeWhereHavingClauseArray();
     $depositFinancialAccountID = civicrm_api3('FinancialAccount', 'getvalue', array(
