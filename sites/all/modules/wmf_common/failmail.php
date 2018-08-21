@@ -51,6 +51,7 @@ function _wmf_common_get_subject($error, $module, $isRemoved) {
           $subject .= ' : ' . $error->type;
       }
   }
+  $subject .= ': ' . gethostname();
   $subject .= $module ? " ({$module})" : '';
   return $subject;
 
