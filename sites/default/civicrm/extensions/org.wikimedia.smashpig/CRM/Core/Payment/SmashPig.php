@@ -9,15 +9,6 @@ require_once "CRM/SmashPig/ContextWrapper.php";
 class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
 
   /**
-   * We only need one instance of this object. So we use the singleton
-   * pattern and cache the instance in this variable.
-   *
-   * @var object
-   * @static
-   */
-  static private $_singleton = NULL;
-
-  /**
    * Constructor.
    *
    * @param string $mode
@@ -33,14 +24,17 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
   }
 
   /**
+   * Are back office payments supported.
    *
+   * e.g paypal standard won't permit you to enter a credit card associated
+   * with someone else's login.
+   * The intention is to support off-site (other than paypal) & direct debit but that is not all working yet so to
+   * reach a 'stable' point we disable.
+   *
+   * @return bool
    */
-  static public function &singleton($mode, &$paymentProcessor, &$paymentForm = NULL, $force = FALSE) {
-    $processorName = $paymentProcessor['name'];
-    if (self::$_singleton[$processorName] === NULL) {
-      self::$_singleton[$processorName] = new static($mode, $paymentProcessor);
-    }
-    return self::$_singleton[$processorName];
+  protected function supportsBackOffice() {
+     return FALSE;
   }
 
   /**

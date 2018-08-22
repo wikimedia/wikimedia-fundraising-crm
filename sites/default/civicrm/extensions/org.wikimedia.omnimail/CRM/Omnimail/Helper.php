@@ -23,15 +23,20 @@ class CRM_Omnimail_Helper {
    * @return array
    */
   public static function getCredentials($params) {
-    if (!isset($params['username']) || !isset($params['password'])) {
+    $credentialKeys = ['username', 'password', 'client_id', 'client_secret', 'refresh_token'];
+    if ((!isset($params['username']) || !isset($params['password']))
+      // The latter 3 are required for Rest.
+      && (!isset($params['client_id']) || !isset($params['client_secret']) || !isset($params['refresh_token']) )
+    ) {
       $credentials = self::getSetting('omnimail_credentials');
       $credentials = CRM_Utils_Array::value($params['mail_provider'], $credentials);
     }
     else {
-      $credentials = array(
-        'username' => $params['username'],
-        'password' => $params['password']
-      );
+      foreach ($credentialKeys as $credentialKey) {
+        if (!empty($params[$credentialKey])) {
+          $credentials[$credentialKey] = $params[$credentialKey];
+        }
+      }
     }
     $mailerCredentials = array(
       'credentials' => new Credentials($credentials)

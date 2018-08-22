@@ -1,6 +1,14 @@
 <div id="bootstrap-theme">
-  <div crm-ui-debug="layouts"></div>
   <h1 crm-page-title>{{ts('Contact Summary Editor')}}</h1>
+
+  <!--This warning will show if bootstrap is unavailable. Normally it will be hidden by the bootstrap .collapse class.-->
+  <div class="messages warning no-popup collapse">
+    <p>
+      <i class="crm-i fa-exclamation-triangle"></i>
+      <strong>{{ ts('Bootstrap theme not found.') }}</strong>
+    </p>
+    <p>{{ ts('This screen may not work correctly without a bootstrap-based theme such as Shoreditch installed.') }}</p>
+  </div>
 
   <div id="contactLayoutEditor" class="row">
 
@@ -17,7 +25,7 @@
           </h3>
         </div>
         <div class="panel-body">
-          <div class="alert alert-warning" ng-if="deletedLayout">
+          <div class="alert alert-warning cse-deleted-msg" ng-if="deletedLayout">
             {{ ts('Deleted %1', {1: deletedLayout.label}) }}
             <a href ng-click="restoreLayout()">{{ ts('Undo') }}</a>
           </div>
@@ -84,8 +92,8 @@
             </nav>
             <div class="panel-inner">
               <div id="cse-block-container">
-                <div class="cse-col" ng-repeat="col in selectedLayout.blocks" ui-sortable="{connectWith: '.cse-col', containment: '#cse-block-container'}" ng-model="col">
-                  <div class="cse-block" ng-repeat="block in col" ng-include="'~/contactlayout/contactlayoutblock.html'"></div>
+                <div class="cse-col cse-layout-col" ng-repeat="col in selectedLayout.blocks" ui-sortable="{connectWith: '.cse-col', containment: '#cse-block-container'}" ng-model="col">
+                  <div class="cse-block" ng-repeat="block in col" ng-class="{collapsible: block.collapsible, collapsed: block.collapsed, 'show-title': block.showTitle}" ng-include="'~/contactlayout/contactlayoutblock.html'"></div>
                 </div>
                 <div id="cse-palette-col">
                   <h4>
