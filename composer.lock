@@ -1,7 +1,7 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
     "content-hash": "e1ba8ef08969455fbffeca1ce3ab39c6",
@@ -682,7 +682,7 @@
             ],
             "description": "Geocoder GoogleMaps adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-01-23T04:49:20+00:00"
+            "time": "2018-01-23T03:40:13+00:00"
         },
         {
             "name": "geocoder-php/mapquest-provider",
@@ -3129,11 +3129,11 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.5.7",
+            "version": "v0.5.7.3",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "dae484ae6bb0e83914f8e8502a3224c697c2f20c"
+                "reference": "cc94374607c8c191800aa9cb2428debf64080e96"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -3192,7 +3192,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2018-07-18T18:18:10+00:00"
+            "time": "2018-08-22T03:39:34+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -3252,7 +3252,7 @@
                 "geocoding",
                 "geoip"
             ],
-            "time": "2018-02-12T23:33:59+00:00"
+            "time": "2018-01-23T01:35:43+00:00"
         },
         {
             "name": "zordius/lightncandy",
