@@ -3721,22 +3721,6 @@ function wmf_civicrm_validate_contribution($fields, $form) {
     $errors['financial_type_id'] = t("Must use the \"Engage\" contribution type.");
   }
 
-  // Gift Source (sic field named "Campaign") is limited.
-  $gift_source_field_name = wmf_civicrm_evil_get_custom_field_in_form('Campaign', $fields);
-  if ($gift_source_field_name) {
-    $allowed_sources = array(
-      'Combined Federal Campaign',
-      'Benefactor Gift',
-      'Community Gift',
-      'Donor Advised Fund',
-      'Matching Gift',
-      'Payroll Deduction',
-    );
-    if (!in_array($fields[$gift_source_field_name], $allowed_sources)) {
-      $errors[$gift_source_field_name] = t('Must choose a Gift Source from the following list: ') . implode(', ', $allowed_sources);
-    }
-  }
-
   if (wmf_civicrm_tomorrows_month() === '01') {
     $postmark_field_name = wmf_civicrm_evil_get_custom_field_in_form('postmark_date', $fields);
     // If the receive_date is in Dec or Jan, make sure we have a postmark date,
