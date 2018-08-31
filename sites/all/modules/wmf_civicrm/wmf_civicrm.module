@@ -3656,6 +3656,19 @@ function wmf_civicrm_dao_to_list($dao) {
  */
 function wmf_civicrm_civicrm_buildForm($formName, &$form) {
   switch ($formName) {
+    case 'CRM_Custom_Form_CustomDataByType':
+      if ($form->_type === 'Contribution' && empty($form->_entityId)) {
+        // New hand-entered contributions get a default for no_thank_you
+        $no_thank_you_reason_field_name = wmf_civicrm_evil_get_custom_field_in_form(
+          'no_thank_you', $form->_elementIndex
+        );
+        if ($no_thank_you_reason_field_name) {
+          $form->setDefaults(array(
+            $no_thank_you_reason_field_name => 'Manually entered',
+          ));
+        }
+      }
+      break;
     case 'CRM_Contribute_Form_Contribution':
       // Only run this validation for users having the Engage role.
       if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
