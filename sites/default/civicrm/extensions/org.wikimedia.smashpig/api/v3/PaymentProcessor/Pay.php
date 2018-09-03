@@ -9,7 +9,8 @@ use Civi\Payment\Exception\PaymentProcessorException;
  *
  * @return array
  *   API result array.
- * @throws CiviCRM_API3_Exception
+ * @throws \API_Exception
+ * @throws \CiviCRM_API3_Exception
  */
 function civicrm_api3_payment_processor_pay($params) {
   $processor = Civi\Payment\System::singleton()
@@ -22,7 +23,12 @@ function civicrm_api3_payment_processor_pay($params) {
   try {
     $result = $processor->doPayment($params);
   } catch (PaymentProcessorException $e) {
-    throw new CiviCRM_API3_Exception('Payment failed', 'EXTERNAL_FAILURE', [], $e);
+    $code = $e->getErrorCode();
+    $errorData = $e->getErrorData();
+    if (empty($code)) {
+      $code = 'EXTERNAL_FAILURE';
+    }
+    throw new API_Exception('Payment failed', $code, $errorData, $e);
   }
   return civicrm_api3_create_success([$result], $params);
 }

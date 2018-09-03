@@ -88,9 +88,16 @@
   width: 20em;
 }
 
+#contactLayoutEditor,
 #cse-block-container {
   display: flex;
-  align-items: stretch;
+}
+#contactLayoutLayouts {
+  flex: 1;
+  margin-right: 10px;
+}
+#contactLayoutEdit {
+  flex: 3;
 }
 #cse-block-container > div {
   flex: 1;
@@ -152,19 +159,24 @@
 }
 #cse-block-container .cse-block h5 {
   color: #0071bd;
-  top: -16px;
+  top: -18px;
   left: 8px;
   margin: 5px 0;
 }
 #cse-block-container .cse-layout-col .cse-block h5 {
-  padding: 1px 3px;
+  padding: 0 3px;
   position: absolute;
-  background-color: white;
-  background: linear-gradient(to bottom, #f8f8f8 0%,#f8f8f8 50%,#fff 51%,#fff 100%);
+  background: white linear-gradient(to bottom, #f8f8f8 0%,#f8f8f8 50%,#fff 65%,#fff 100%);
+}
+#contactLayoutEditor .crm-editable-enabled {
+  display: inline-block;
+}
+#cse-block-container .cse-block h5 div[contenteditable]:focus {
+  cursor: text;
 }
 #cse-block-container .cse-layout-col .cse-block:not(.collapsible):not(.show-title) h5 {
   font-weight: normal;
-  font-style: italic;
+  color: grey;
 }
 #cse-block-container .cse-block-sample {
   margin-left: 8px;
@@ -183,8 +195,11 @@
 }
 #cse-block-container .cse-block .cse-block-collapsible-toggle {
   margin-left: 5px;
-  margin-top: 4px;
+  margin-top: 6px;
   margin-bottom: 2px;
+}
+#cse-block-container .cse-block .cse-block-collapsible-toggle button {
+  background: white;
 }
 #cse-block-container .cse-block .cse-block-collapsible-toggle button:active,
 #cse-block-container .cse-block .cse-block-collapsible-toggle button:focus {
@@ -207,4 +222,30 @@
   padding: 0 10px;
   font-size: 12px;
   font-weight: 500;
+}
+
+/**
+ * Shims so the UI isn't completely broken when a Bootstrap theme is not installed
+ */
+.panel {
+  border: 1px solid grey;
+  box-sizing: border-box;
+}
+.panel-heading {
+  padding: 10px 20px;
+  color: #464354;
+  background-color: #f3f6f7;
+}
+.panel-primary>.panel-heading {
+  color: #fff;
+  background-color: #0071bd;
+}
+.panel-inner {
+  box-sizing: border-box;
+}
+.btn:not([disabled]) {
+  cursor: pointer;
+}
+#contactLayoutEditor h5 {
+  font-size: 13px;
 }
