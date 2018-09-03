@@ -3656,6 +3656,19 @@ function wmf_civicrm_dao_to_list($dao) {
  */
 function wmf_civicrm_civicrm_buildForm($formName, &$form) {
   switch ($formName) {
+    case 'CRM_Custom_Form_CustomDataByType':
+      if ($form->_type === 'Contribution' && empty($form->_entityId)) {
+        // New hand-entered contributions get a default for no_thank_you
+        $no_thank_you_reason_field_name = wmf_civicrm_evil_get_custom_field_in_form(
+          'no_thank_you', $form->_elementIndex
+        );
+        if ($no_thank_you_reason_field_name) {
+          $form->setDefaults(array(
+            $no_thank_you_reason_field_name => 'Manually entered',
+          ));
+        }
+      }
+      break;
     case 'CRM_Contribute_Form_Contribution':
       // Only run this validation for users having the Engage role.
       if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
@@ -3719,22 +3732,6 @@ function wmf_civicrm_validate_contribution($fields, $form) {
   $engage_contribution_type_id = wmf_civicrm_get_civi_id('financial_type_id', 'Engage');
   if ($fields['financial_type_id'] !== $engage_contribution_type_id) {
     $errors['financial_type_id'] = t("Must use the \"Engage\" contribution type.");
-  }
-
-  // Gift Source (sic field named "Campaign") is limited.
-  $gift_source_field_name = wmf_civicrm_evil_get_custom_field_in_form('Campaign', $fields);
-  if ($gift_source_field_name) {
-    $allowed_sources = array(
-      'Combined Federal Campaign',
-      'Benefactor Gift',
-      'Community Gift',
-      'Donor Advised Fund',
-      'Matching Gift',
-      'Payroll Deduction',
-    );
-    if (!in_array($fields[$gift_source_field_name], $allowed_sources)) {
-      $errors[$gift_source_field_name] = t('Must choose a Gift Source from the following list: ') . implode(', ', $allowed_sources);
-    }
   }
 
   if (wmf_civicrm_tomorrows_month() === '01') {
