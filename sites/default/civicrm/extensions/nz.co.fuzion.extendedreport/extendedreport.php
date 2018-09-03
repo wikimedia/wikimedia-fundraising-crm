@@ -1,6 +1,7 @@
 <?php
 
 require_once 'extendedreport.civix.php';
+use CRM_Extendedreport_ExtensionUtil as E;
 
 /**
  * Implementation of hook_civicrm_config
@@ -60,6 +61,17 @@ function extendedreport_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
 }
 
 /**
+ * Implements hook_civicrm_angularModules().
+ *
+ * Generate a list of Angular modules.
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
+ */
+function extendedreport_civicrm_angularModules(&$angularModules) {
+  _extendedreport_civix_civicrm_angularModules($angularModules);
+}
+
+/**
  * Implements hook_civicrm_managed().
  *
  * Generate a list of entities to create/deactivate/delete when this module
@@ -90,15 +102,60 @@ function extendedreport_civicrm_tabset($tabsetName, &$tabs, $context) {
   foreach ($reports['values'] as $report) {
     $tabs['report_' . $report['id']] = array(
       'title' => ts($report['title']),
-      'url' => CRM_Utils_System::url( 'civicrm/report/contact/addresshistory', array(
+      'url' => CRM_Utils_System::url( 'civicrm/report/instance/' . $report['id'], array(
           'log_civicrm_address_op' => 'in',
           'contact_id_value' => $context['contact_id'],
+          'contact_id' => $context['contact_id'],
           'output' => 'html',
           'force' => 1,
           'section' => 2,
+          'weight' => 70,
         )
       )
     );
+  }
+}
+
+/**
+ * @param $op
+ * @param $objectName
+ * @param $objectId
+ * @param $objectRef
+ */
+function extendedreport__civicrm_post($op, $objectName, $objectId, &$objectRef) {
+  if ($objectName === 'ReportInstance') {
+    CRM_Extendedreport_Page_Inline_ExtendedReportlets::flushReports();
+  }
+}
+
+/**
+ * Implements hook_civicrm_contactSummaryBlocks().
+ *
+ * @link https://github.com/civicrm/org.civicrm.contactlayout
+ */
+function extendedreport_civicrm_contactSummaryBlocks(&$blocks) {
+
+  $reports = CRM_Extendedreport_Page_Inline_ExtendedReportlets::getReportsToDisplay();
+
+  if (empty($reports)) {
+    return;
+  }
+  // Provide our own group for this block to visually distinguish it on the contact summary editor palette.
+  $blocks += [
+    'extendedreports' => [
+      'title' => ts('Extended report'),
+      'icon' => 'fa-table',
+      'blocks' => [],
+    ]
+  ];
+  foreach ($reports as $report) {
+    $blocks['extendedreports']['blocks']['report_' . $report['id']] = [
+      'title' => $report['title'],
+      'tpl_file' => 'CRM/Extendedreport/Page/Inline/ExtendedReport.tpl',
+      'edit' => FALSE,
+      'report_id' => $report['id'],
+      'collapsible' => TRUE,
+    ];
   }
 
 }

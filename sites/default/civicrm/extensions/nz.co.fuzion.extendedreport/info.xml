@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <extension key="nz.co.fuzion.extendedreport" type="module">
-    <downloadUrl>http://github.com/eileenmcnaughton/nz.co.fuzion.extendedreport/archive/v1.4.zip</downloadUrl>
     <file>extendedreport</file>
     <name>ExtendedReport</name>
     <description>Extended reports</description>
@@ -14,11 +13,11 @@
         <author>Eileen McNaughton</author>
         <email>eileen@fuzion.co.nz</email>
     </maintainer>
-    <releaseDate>2016-06-17</releaseDate>
-    <version>3.0</version>
+    <releaseDate>2018-05-01</releaseDate>
+    <version>3.5</version>
     <develStage>stable</develStage>
     <compatibility>
-        <ver>4.7</ver>
+        <ver>5.0</ver>
     </compatibility>
     <comments>Extended reports create other report options such as crosstab urls, multiple contact custom fields, price
         set reports
