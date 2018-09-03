@@ -4429,3 +4429,11 @@ function wmf_civicrm_update_7745() {
   ");
 
 }
+
+/**
+ * Uninstall 'globalcollect_audit'.
+ */
+function wmf_civicrm_update_7750() {
+  module_disable(['globalcollect_audit']);
+  drupal_uninstall_modules(['globalcollect_audit']);
+}
