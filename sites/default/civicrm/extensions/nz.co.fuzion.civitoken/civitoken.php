@@ -122,24 +122,36 @@ function civitoken_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 * implementation of CiviCRM hook
 */
 function civitoken_civicrm_tokens(&$tokens) {
-  civitoken_civicrm_tokens_all($tokens);
-  $setting = civicrm_api3('Setting', 'get', ['return' => 'civitoken_enabled_tokens', 'sequential' => 1])['values'][0];
+  $civiTokens = \Civi::cache()->get('civitoken_enabled_tokens');
+  if (!is_array($civiTokens)) {
+    $civiTokens = [];
+    civitoken_civicrm_tokens_all($civiTokens);
+    $setting = civicrm_api3('Setting', 'get', [
+      'return' => 'civitoken_enabled_tokens',
+      'sequential' => 1
+    ])['values'][0];
 
-  if (empty($setting) || empty($setting['civitoken_enabled_tokens'])) {
-    // Treat un-configured as 'all enabled'.
-    return;
-  }
+    if (empty($setting) || empty($setting['civitoken_enabled_tokens'])) {
+      // Treat un-configured as 'all enabled'.
+      \Civi::cache()->set('civitoken_enabled_tokens', $civiTokens);
+      $tokens = array_merge($tokens, $civiTokens);
+      return;
+    }
 
-  foreach ($tokens as $category => $tokenSubset) {
-    foreach ($tokenSubset as $key => $token) {
-      if (!in_array($key, $setting['civitoken_enabled_tokens'])) {
-        unset($tokens[$category][$key]);
+    foreach ($civiTokens as $category => $tokenSubset) {
+      foreach ($tokenSubset as $key => $token) {
+        if (!in_array($key, $setting['civitoken_enabled_tokens'])) {
+          unset($civiTokens[$category][$key]);
+        }
+      }
+      if (empty($civiTokens[$category])) {
+        unset($civiTokens[$category]);
       }
     }
-    if (empty($tokens[$category])) {
-      unset($tokens[$category]);
-    }
+    \Civi::cache()->set('civitoken_enabled_tokens', $civiTokens);
   }
+  $tokens = array_merge($tokens, $civiTokens);
+
 }
 
 /**
