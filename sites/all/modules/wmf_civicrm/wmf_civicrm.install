@@ -4437,3 +4437,55 @@ function wmf_civicrm_update_7750() {
   module_disable(['globalcollect_audit']);
   drupal_uninstall_modules(['globalcollect_audit']);
 }
+
+/**
+ * For all monthly donations canceled because of the repeated Merchant ID bug,
+ * un-cancel them (resetting failure count), reset their next scheduled
+ * contribution date to 2 months after start date, and add the
+ * RecurringRestartedUncharged tag. All of these failed on the first scheduled
+ * charge date, 1 month after start date.
+ *
+ * Bug: T201773
+ */
+function wmf_civicrm_update_7755() {
+  global $databases;
+  civicrm_initialize();
+  $recurTagId = civicrm_api3('Tag', 'getvalue', array(
+    'name' => 'RecurringRestartedUncharged',
+    'used_for' => 'civicrm_contribution_recur',
+    'return' => 'id'
+  ));
+  $drupal = $databases['default']['default']['database'];
+  $contributionStatusId = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
+  $cancelledStatusId = CRM_Utils_Array::key('Cancelled', $contributionStatusId);
+  $completedStatusId = CRM_Utils_Array::key('Completed', $contributionStatusId);
+  $ctIdList = '(57990533, 57991947, 57995299, 57995622, 57997242, 58006880, ' .
+    '58007549, 58112187, 58113086, 58113202, 58117262, 58215150, 58218626, ' .
+    '58221282, 58223014, 58223512, 58228479, 58229787, 58232269, 58234072, ' .
+    '58235105, 58235341, 58239642, 58242471, 58243295, 58243359, 58246799, ' .
+    '58247903)';
+  CRM_Core_DAO::executeQuery("
+    INSERT INTO civicrm_entity_tag (entity_table, entity_id, tag_id) (
+      SELECT 'civicrm_contribution_recur', cr.id, $recurTagId
+      FROM civicrm_contribution_recur cr
+      INNER JOIN civicrm_contribution c ON c.contribution_recur_id = cr.id
+      INNER JOIN {$drupal}.contribution_tracking ct ON ct.contribution_id = c.id
+      WHERE ct.id IN $ctIdList
+      AND cr.contribution_status_id = $cancelledStatusId
+    )
+  ");
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution_recur cr
+    INNER JOIN civicrm_contribution c ON c.contribution_recur_id = cr.id
+    INNER JOIN {$drupal}.contribution_tracking ct ON ct.contribution_id = c.id
+    SET cr.next_sched_contribution_date = DATE_ADD(
+      cr.start_date, INTERVAL 2 MONTH
+    ),
+    cr.failure_count = 0,
+    cr.cancel_date = NULL,
+    cr.contribution_status_id = $completedStatusId
+    WHERE ct.id IN $ctIdList
+    AND cr.contribution_status_id = $cancelledStatusId
+  ");
+
+}
