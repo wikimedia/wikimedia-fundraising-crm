@@ -154,7 +154,8 @@ function wmf_civicrm_set_custom_field_values($entity_id, $map, $group_name = NUL
   $params = array(
     'entityID' => $entity_id,
   );
-  $custom_fields = wmf_civicrm_get_custom_field_map(array_keys($map), $group_name);
+  $custom_fields =
+    wmf_civicrm_get_custom_field_map(array_keys($map), $group_name);
   foreach ($map as $field_name => $value) {
     $params[$custom_fields[$field_name]] = $value;
   }
@@ -3396,6 +3397,60 @@ function wmf_get_calculated_field_names() {
 }
 
 /**
+ * Implementation of hook_civicrm_pre
+ * @param $op
+ * @param $type
+ * @param $id
+ * @param $entity
+ */
+function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
+  switch($type) {
+    case 'Contribution':
+      wmf_civicrm_civicrm_pre_Contribution($op, $id, $entity);
+      break;
+  }
+}
+
+function wmf_civicrm_civicrm_pre_Contribution($op, $id, &$contribution) {
+  switch ($op) {
+    case 'create':
+    case 'edit':
+      // Add derived wmf_contribution_extra fields to contribution parameters
+      if (WmfDatabase::isNativeTxnRolledBack()) {
+        throw new WmfException(
+          WmfException::IMPORT_CONTRIB,
+          'Native txn rolled back before running pre contribution hook'
+        );
+      }
+      $extra = wmf_civicrm_get_wmf_contribution_extra($contribution);
+
+      if ($extra) {
+        $map = wmf_civicrm_get_custom_field_map(
+          array_keys($extra), 'contribution_extra'
+        );
+        $mapped = [];
+        foreach($extra as $key => $value) {
+          $mapped[$map[$key]] = $value;
+        }
+        $contribution += $mapped;
+        // FIXME: Seems really ugly that we have to do this, but when
+        // a contribution is created via api3, the _pre hook fires
+        // after the custom field have been transformed and copied
+        // into the 'custom' key
+        $formatted = [];
+        _civicrm_api3_custom_format_params($mapped, $formatted, 'Contribution');
+        if (isset($contribution['custom'])) {
+          $contribution['custom'] += $formatted['custom'];
+        } else {
+          $contribution['custom'] = $formatted['custom'];
+        }
+      }
+
+      break;
+  }
+}
+
+/**
  * Implementation of hook_civicrm_post, used to update contribution_extra fields
  * and wmf_donor rollup fields.
  */
@@ -3417,43 +3472,46 @@ function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
           'Native txn rolled back before running post contribution hook'
         );
       }
-      $extra = array();
-
-      if ($contribution->trxn_id) {
-        try {
-          $transaction = WmfTransaction::from_unique_id($contribution->trxn_id);
-          $extra['gateway'] = strtolower($transaction->gateway);
-          $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
-        }
-        catch (WmfException $ex) {
-          watchdog('wmf_civicrm', "Failed to parse trxn_id: {$contribution->trxn_id}, " . $ex->getMessage());
-        }
+      $extra = wmf_civicrm_get_wmf_contribution_extra($contribution);
+      $params = wmf_civicrm_getLastDonationParams($contribution, $extra);
+      if (!empty($params)) {
+        $params['id'] = $contribution->contact_id;
+        civicrm_api3('Contact', 'create', $params);
       }
 
-      if ($contribution->source) {
-        list($original_currency, $original_amount) = explode(" ", $contribution->source);
-        if (is_numeric($original_amount) && wmf_civicrm_is_valid_currency($original_currency)) {
-          $extra['original_currency'] = $original_currency;
-          $extra['original_amount'] = $original_amount;
-        }
-        elseif (is_numeric($original_amount)) {
-          $extra['original_currency'] = 'USD';
-          $extra['original_amount'] = $contribution->total_amount;
-        }
-      }
-
-    $params = wmf_civicrm_getLastDonationParams($contribution, $extra);
-    if (!empty($params)) {
-      $params['id'] = $contribution->contact_id;
-      civicrm_api3('Contact', 'create', $params);
-    }
-
-    if ($extra) {
-      wmf_civicrm_set_custom_field_values($id, $extra);
-    }
-
-    break;
+      break;
   }
+}
+
+function wmf_civicrm_get_wmf_contribution_extra($contribution) {
+  if (!is_array($contribution)) {
+    $contribution = (array)$contribution;
+  }
+  $extra = array();
+
+  if (!empty($contribution['trxn_id'])) {
+    try {
+      $transaction = WmfTransaction::from_unique_id($contribution['trxn_id']);
+      $extra['gateway'] = strtolower($transaction->gateway);
+      $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
+    }
+    catch (WmfException $ex) {
+      watchdog('wmf_civicrm', "Failed to parse trxn_id: {$contribution['trxn_id']}, " . $ex->getMessage());
+    }
+  }
+
+  if (!empty($contribution['source'])) {
+    list($original_currency, $original_amount) = explode(" ", $contribution['source']);
+    if (is_numeric($original_amount) && wmf_civicrm_is_valid_currency($original_currency)) {
+      $extra['original_currency'] = $original_currency;
+      $extra['original_amount'] = $original_amount;
+    }
+    elseif (is_numeric($original_amount)) {
+      $extra['original_currency'] = 'USD';
+      $extra['original_amount'] = $contribution['total_amount'];
+    }
+  }
+  return $extra;
 }
 
 /**
