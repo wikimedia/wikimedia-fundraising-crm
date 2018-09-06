@@ -1,0 +1,49 @@
+@import url("https://fonts.googleapis.com/css?family=Poppins:400,700");
+* {
+  font-family: "Poppins";
+  font-size: 14px; }
+
+pre, pre * {
+  font-family: monospace; }
+
+h1 {
+  font-size: 1.2em; }
+
+.tivy-grid-menu h2 {
+  font-size: 1em; }
+
+body {
+  margin: 0; }
+
+.tivy-grid-container {
+  display: grid;
+  grid-template-columns: [menu] 200px [main] auto;
+  grid-template-rows: minmax(100vh, auto);
+  margin-top: 27px; }
+
+body.toolbar .tivy-grid-container {
+  margin-top: 0px; }
+
+.tivy-grid-menu {
+  background-color: #dddddf;
+  border-right: 1px solid silver;
+  padding: 10px; }
+  .tivy-grid-menu ul.menu {
+    padding-left: 0; }
+    .tivy-grid-menu ul.menu li {
+      list-style: none;
+      margin-left: 0; }
+
+.tivy-grid-main {
+  padding: 10px; }
+
+body.page-civicrm-contact-view .tivy-grid-main #crm-container .crm-summary-display_name {
+  font-weight: 700;
+  font-size: 1.2em;
+  padding-top: 20px;
+  padding-bottom: 0; }
+
+.breadcrumb {
+  padding-bottom: 0; }
+  .breadcrumb a {
+    font-size: 12px; }
