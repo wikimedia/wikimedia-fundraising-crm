@@ -11,15 +11,15 @@ class CurrencyRates {
 	 * Supplies rough (not up-to-date) conversion rates for currencies
 	 */
 
-	static public $lastUpdated = '{{ last_updated }}';
+	public static $lastUpdated = '{{ last_updated }}';
 
-	static public function getCurrencyRates() {
+	public static function getCurrencyRates() {
 		// Not rounding numbers under 1 because I don't think that's a big issue and could cause issues with the max check.
-		$currencyRates = array(
+		$currencyRates = [
 {% for conversion in currency_rates %}
 			'{{ conversion[0] }}' => {{ conversion[1] }},
 {% endfor %}
-		);
+		];
 
 		return $currencyRates;
 	}
