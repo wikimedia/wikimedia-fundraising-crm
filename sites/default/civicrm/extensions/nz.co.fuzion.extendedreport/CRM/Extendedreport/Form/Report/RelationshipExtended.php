@@ -10,7 +10,16 @@ class CRM_Extendedreport_Form_Report_RelationshipExtended extends CRM_Extendedre
   protected $_baseTable = 'civicrm_relationship';
   protected $_primaryContactPrefix = 'contact_a_';
   protected $groupFilterNotOptimised = FALSE;
-  protected $_customGroupExtends = ['Relationship'];
+  protected $_customGroupExtends = ['Relationship', 'Contact', 'Individual', 'Household', 'Organization'];
+
+  /**
+   * Can this report be used on a contact tab.
+   *
+   * The report must support contact_id in the url for this to work.
+   *
+   * @var bool
+   */
+  protected $isSupportsContactTab = TRUE;
 
   /**
    * Class constructor.
@@ -60,7 +69,7 @@ class CRM_Extendedreport_Form_Report_RelationshipExtended extends CRM_Extendedre
       ))
       + $this->getColumns('Relationship')
       + $this->getColumns('RelationshipType')
-      + $this->getColumns('Case');
+      + $this->getColumns('Case', ['filters_defaults' => []]);
     parent::__construct();
   }
 
@@ -127,8 +136,6 @@ class CRM_Extendedreport_Form_Report_RelationshipExtended extends CRM_Extendedre
         {$this->_aliases['contact_b_civicrm_address']}.contact_id
         AND {$this->_aliases['contact_b_civicrm_address']}.is_primary = 1 )";
     }
-
-    $this->selectableCustomDataFrom();
   }
 
   /**
