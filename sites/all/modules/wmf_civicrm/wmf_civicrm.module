@@ -74,63 +74,6 @@ function wmf_civicrm_get_settlement_currency($transaction) {
   return 'USD';
 }
 
-/**
- * Given the date a payment was settled (in unix seconds), recalculate the
- * amount in USD using the exchange rate at that moment.  Put this amount in a
- * custom field.
- * Then, set the civi amounts and currencies to reflect the real settlement
- * currency and amount.
- *
- * Return the contribution array with these extra fields merged in.
- */
-function wmf_civicrm_settle($contribution, $settled_timestamp = NULL) {
-  if ($settled_timestamp === NULL) {
-    // Get the stored date
-    // FIXME wmf_civicrm_get_custom_values('settlement_date');
-    $field = wmf_civicrm_get_custom_field_name('settlement_date');
-    $params = array(
-      'entityID' => $contribution['id'],
-      $field => 1,
-    );
-    $result = CRM_Core_BAO_CustomValueTable::getValues($params);
-    $settlement_db_date = $result[$field];
-    $settled_timestamp = wmf_common_date_parse_string($settlement_db_date);
-    $settlement_db_date = wmf_common_date_unix_to_sql($settled_timestamp);
-  }
-  else {
-    $settlement_db_date = wmf_common_date_unix_to_sql($settled_timestamp);
-  }
-
-  list($original_currency, $original_amount) = explode(" ", $contribution['source']);
-  $total_usd = round(exchange_rate_convert($original_currency, $original_amount, $settled_timestamp), 2);
-
-  $custom_values = array(
-    'total_usd' => $total_usd,
-    'settlement_date' => $settlement_db_date,
-  );
-  wmf_civicrm_set_custom_field_values($contribution['id'], $custom_values);
-
-  $settled_currency = wmf_civicrm_get_settlement_currency($contribution);
-  if ($contribution['currency'] != $settled_currency) {
-    $settlement_convert =
-      exchange_rate_convert($settled_currency, 1, $settled_timestamp);
-    $contribution['total_amount'] = round($contribution['total_amount'] * $settlement_convert, 2);
-    $contribution['fee_amount'] = round($contribution['fee_amount'] * $settlement_convert, 2);
-    $contribution['net_amount'] = round($contribution['net_amount'] * $settlement_convert, 2);
-
-    $contribution['currency'] = $settled_currency;
-
-    $contribution['version'] = 3; //WTF
-
-    $contribution_result = civicrm_api("Contribution", "Create", $contribution);
-    if (array_key_exists('is_error', $contribution_result) && $contribution_result['is_error'] != 0) {
-      throw new WmfException(WmfException::IMPORT_CONTRIB, "Couldn't update contribution with new settlement info. Original error: {$contribution_result['error_message']}. txn_id: {$contribution['trxn_id']}");
-    }
-  }
-
-  return array_merge($contribution, $custom_values);
-}
-
 function wmf_civicrm_get_custom_values($entity_id, $names, $group_name = NULL) {
   $names = (array) $names;
   $params['entityID'] = $entity_id;
