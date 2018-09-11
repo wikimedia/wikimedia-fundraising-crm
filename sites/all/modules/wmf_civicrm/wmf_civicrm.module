@@ -93,6 +93,17 @@ function wmf_civicrm_get_custom_values($entity_id, $names, $group_name = NULL) {
   return $ret;
 }
 
+/**
+ * @deprecated
+ *
+ * Phase this out as it is does some unecessary queries.
+ *
+ * @param $entity_id
+ * @param $map
+ * @param null $group_name
+ *
+ * @throws \WmfException
+ */
 function wmf_civicrm_set_custom_field_values($entity_id, $map, $group_name = NULL) {
   $params = array(
     'entityID' => $entity_id,
@@ -3393,6 +3404,13 @@ function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_
 
 }
 /**
+ * Get the details of the last donation received if it differs from the current one.
+ *
+ * We use this information to update the last_donation_amount and
+ * last_donation_currency fields. They will already have been updated to hold
+ * the information about the current one in those fields so we only return the
+ * information if it differs.
+ *
  * @param \CRM_Contribute_BAO_Contribution $contribution
  * @param $extra
  * @param $params
@@ -3402,6 +3420,16 @@ function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_
 function wmf_civicrm_getLastDonationParams(&$contribution) {
   $contributionStatus = CRM_Core_PseudoConstant::getLabel('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $contribution->contribution_status_id);
   if (empty($contribution->total_amount) && (!$contributionStatus)) {
+    return [];
+  }
+  if ($contributionStatus === 'Completed'
+    && !empty($contribution->receive_date)
+    && substr($contribution->trxn_id, 0, 4) !== 'RFD '
+    && substr($contribution->receive_date, 0, 8) === date('Ymd')
+  ) {
+    // If the current donation was received today do an early return.
+    // What we lose in accuracy (perhaps 2 have come in on the same day) we
+    // gain in performance.
     return [];
   }
   if (!$contribution->contact_id || !$contribution->total_amount) {
