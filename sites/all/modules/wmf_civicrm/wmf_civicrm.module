@@ -3337,8 +3337,7 @@ function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
           'Native txn rolled back before running post contribution hook'
         );
       }
-      $extra = wmf_civicrm_get_wmf_contribution_extra($contribution);
-      $params = wmf_civicrm_getLastDonationParams($contribution, $extra);
+      $params = wmf_civicrm_getLastDonationParams($contribution);
       if (!empty($params)) {
         $params['id'] = $contribution->contact_id;
         civicrm_api3('Contact', 'create', $params);
@@ -3349,36 +3348,50 @@ function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
 }
 
 function wmf_civicrm_get_wmf_contribution_extra($contribution) {
-  if (!is_array($contribution)) {
-    $contribution = (array)$contribution;
-  }
-  $extra = array();
+  $extra = [];
 
   if (!empty($contribution['trxn_id'])) {
     try {
       $transaction = WmfTransaction::from_unique_id($contribution['trxn_id']);
       $extra['gateway'] = strtolower($transaction->gateway);
       $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
-    }
-    catch (WmfException $ex) {
+    } catch (WmfException $ex) {
       watchdog('wmf_civicrm', "Failed to parse trxn_id: {$contribution['trxn_id']}, " . $ex->getMessage());
     }
   }
 
   if (!empty($contribution['source'])) {
-    list($original_currency, $original_amount) = explode(" ", $contribution['source']);
-    if (is_numeric($original_amount) && wmf_civicrm_is_valid_currency($original_currency)) {
-      $extra['original_currency'] = $original_currency;
-      $extra['original_amount'] = $original_amount;
-    }
-    elseif (is_numeric($original_amount)) {
-      $extra['original_currency'] = 'USD';
-      $extra['original_amount'] = $contribution['total_amount'];
-    }
+    $extra = array_merge($extra, wmf_civicrm_get_original_currency_and_amount_from_source($contribution['source'], $contribution['total_amount']));
   }
   return $extra;
 }
 
+/**
+ * Get original currency & amount
+ *
+ * The source field holds the amount & currency - parse it out
+ * e.g 'USD 15.25'
+ *
+ * @param string $source
+ * @param float $usd_amount
+ *
+ * @return array
+ */
+function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_amount) {
+  if (empty($source)) {
+    return [];
+  }
+  list($original_currency, $original_amount) = explode(" ", $source);
+  if (is_numeric($original_amount) && wmf_civicrm_is_valid_currency($original_currency)) {
+    return ['original_currency' => $original_currency, 'original_amount' => $original_amount];
+  }
+
+  if (is_numeric($original_amount)) {
+    return ['original_currency' => 'USD', 'original_amount' => $usd_amount];
+  }
+  return [];
+
+}
 /**
  * @param \CRM_Contribute_BAO_Contribution $contribution
  * @param $extra
@@ -3386,7 +3399,7 @@ function wmf_civicrm_get_wmf_contribution_extra($contribution) {
  *
  * @return mixed
  */
-function wmf_civicrm_getLastDonationParams(&$contribution, $extra) {
+function wmf_civicrm_getLastDonationParams(&$contribution) {
   $contributionStatus = CRM_Core_PseudoConstant::getLabel('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $contribution->contribution_status_id);
   if (empty($contribution->total_amount) && (!$contributionStatus)) {
     return [];
@@ -3401,7 +3414,7 @@ function wmf_civicrm_getLastDonationParams(&$contribution, $extra) {
   // case we probably lose a get query & gain an 'update' query as the extra fields are likely already
   // updated by the triggers.
   $contactLastDonation = _wmf_civicrm_get_contact_last_donation_data($contribution);
-
+  $extra = wmf_civicrm_get_original_currency_and_amount_from_source($contribution->source, $contribution->total_amount);
   if ($contributionStatus === 'Completed' && substr($contribution->trxn_id, 0, 4) !== 'RFD ') {
     // This is a 'valid' transaction - it's either the latest or no update is required.
     if (strtotime($contactLastDonation['date']) === strtotime($contribution->receive_date)) {
