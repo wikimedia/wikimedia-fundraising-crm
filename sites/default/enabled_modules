@@ -19,6 +19,7 @@ orphan_slayer
 queue2civicrm
 recurring
 recurring_globalcollect
+redis
 rest_server
 services
 services_oauth
