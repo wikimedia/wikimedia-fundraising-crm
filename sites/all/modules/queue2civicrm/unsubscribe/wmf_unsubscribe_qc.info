@@ -4,4 +4,5 @@ core = 7.x
 package = queue2civicrm
 configure = admin/config/queue2civicrm/unsubscribe_qc
 dependencies[] = queue2civicrm
+files[] = OptInQueueConsumer.php
 files[] = UnsubscribeQueueConsumer.php

@@ -49,13 +49,13 @@ function thank_you_menu() {
     'page arguments' => array('thank_you_settings_form'),
   );
 
-   $items['admin/config/thank_you/test'] = array(
-     'title' => 'Send test thank-yous',
-     'description' => 'Send a test letter',
-     'access arguments' => array('access content'),
-     'page callback' => 'drupal_get_form',
-     'page arguments' => array('thank_you_send_test_form'),
-   );
+  $items['admin/config/thank_you/test'] = array(
+    'title' => 'Send test thank-yous',
+    'description' => 'Send a test letter',
+    'access arguments' => array('access content'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('thank_you_send_test_form'),
+  );
 
   return $items;
 }
@@ -64,193 +64,197 @@ function thank_you_menu() {
  * Send a test email
  */
 function thank_you_send_test_form() {
-    global $language, $user;
-    $user_lc = ( $user->language ? $user->language : $language->language );
+  global $language, $user;
+  $user_lc = ($user->language ? $user->language : $language->language);
 
-	$form['name'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Donor\'s name'),
-		'#required' => FALSE,
-		'#default_value' => 'Testy McTestersen',
-	);
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Donor\'s name'),
+    '#required' => FALSE,
+    '#default_value' => 'Testy McTestersen',
+  );
 
-	$form['recipient_address'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Send test email to'),
-        '#default_value' => $user->mail,
-		'#required' => TRUE,
-	);
+  $form['recipient_address'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Send test email to'),
+    '#default_value' => $user->mail,
+    '#required' => TRUE,
+  );
 
-	$form['from_name'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Sender\'s name'),
-        '#default_value' => 'Thank-you Testmeister',
-		'#required' => TRUE,
-	);
+  $form['from_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Sender\'s name'),
+    '#default_value' => 'Thank-you Testmeister',
+    '#required' => TRUE,
+  );
 
-	$form['from_address'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Sender\'s email address'),
-        '#default_value' => variable_get( 'thank_you_from_address', 'donate@wikimedia.org' ),
-		'#required' => TRUE,
-	);
+  $form['from_address'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Sender\'s email address'),
+    '#default_value' => variable_get('thank_you_from_address', 'donate@wikimedia.org'),
+    '#required' => TRUE,
+  );
 
-	// load the available languages to test
-	// TODO: add a staging list so that one can test before enabling
-    // TODO elsewhere: these locales should be in canonical form
-	$langs = array();
-	foreach( glob( __DIR__ . "/templates/html/thank_you.*.html") as $lang ){
-		$lang = substr( $lang, strrpos( $lang, '/' ) + 1 );
-		$lang = substr( $lang, strpos( $lang, '.' ) + 1 );
-		$lang = substr( $lang, 0, strpos( $lang, '.' ) );
-		$langs[$lang] = $lang;
-	}
-	$langs["all"] = "- ALL -";
-	ksort($langs);
+  // load the available languages to test
+  // TODO: add a staging list so that one can test before enabling
+  // TODO elsewhere: these locales should be in canonical form
+  $langs = array();
+  foreach (glob(__DIR__ . "/templates/html/thank_you.*.html") as $lang) {
+    $lang = substr($lang, strrpos($lang, '/') + 1);
+    $lang = substr($lang, strpos($lang, '.') + 1);
+    $lang = substr($lang, 0, strpos($lang, '.'));
+    $langs[$lang] = $lang;
+  }
+  $langs["all"] = "- ALL -";
+  ksort($langs);
 
-	$form['locale'] = array(
-		'#type' => 'select',
-		'#title' => t('Thank you message language or locale'),
-        # TODO: parse a locale in whatever format
-		'#description' => t('Examples: "en" or "pt-BR".  The special "all" jackpot will win you a thank-you letter in each supported language.'),
-		'#required' => TRUE,
-		'#default_value' => $user_lc,
-		'#options' => $langs,
-	);
+  $form['locale'] = array(
+    '#type' => 'select',
+    '#title' => t('Thank you message language or locale'),
+    # TODO: parse a locale in whatever format
+    '#description' => t('Examples: "en" or "pt-BR".  The special "all" jackpot will win you a thank-you letter in each supported language.'),
+    '#required' => TRUE,
+    '#default_value' => $user_lc,
+    '#options' => $langs,
+  );
 
-    $form['currency'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Donation currency'),
-		'#description' => t('Use the three-digit <a target="_blank" href="http://en.wikipedia.org/wiki/ISO_4217#Active_codes">ISO code</a>.'),
-        '#default_value' => 'EUR',
-		'#required' => TRUE,
-	);
+  $form['currency'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Donation currency'),
+    '#description' => t('Use the three-digit <a target="_blank" href="http://en.wikipedia.org/wiki/ISO_4217#Active_codes">ISO code</a>.'),
+    '#default_value' => 'EUR',
+    '#required' => TRUE,
+  );
 
-    $form['amount'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Donation amount'),
-        '#default_value' => '1.99',
-		'#required' => TRUE,
-	);
+  $form['amount'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Donation amount'),
+    '#default_value' => '1.99',
+    '#required' => TRUE,
+  );
 
-    # TODO: optional day picker added using unobtrusive js
-	$form['receive_date'] = array(
-		'#type' => 'textfield',
-		'#title' => t('When do we say this donation took place?'),
-		'#description' => t('Enter using any date format, or the day picker'),
-		'#default_value' => date( DateTime::ISO8601 ),
-	);
+  # TODO: optional day picker added using unobtrusive js
+  $form['receive_date'] = array(
+    '#type' => 'textfield',
+    '#title' => t('When do we say this donation took place?'),
+    '#description' => t('Enter using any date format, or the day picker'),
+    '#default_value' => date(DateTime::ISO8601),
+  );
 
-	$form['transaction_id'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Transaction ID'),
-		'#description' => t('ID to show in the text of the email, for example: "CNTCT-1234"'),
-		'#default_value' => 'TEST-' . mt_rand(),
-	);
+  $form['transaction_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Transaction ID'),
+    '#description' => t('ID to show in the text of the email, for example: "CNTCT-1234"'),
+    '#default_value' => 'TEST-' . mt_rand(),
+  );
 
-	$form['contribution_id'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Contribution ID'),
-		'#description' => t('Actual ID of contribution to be thanked, for example: 12345'),
-		'#default_value' => mt_rand(),
-	);
+  $form['contribution_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Contribution ID'),
+    '#description' => t('Actual ID of contribution to be thanked, for example: 12345'),
+    '#default_value' => mt_rand(),
+  );
 
-	$form['contact_id'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Contact ID'),
-		'#description' => t('Actual ID of contact to be thanked, for example: 12345'),
-		'#default_value' => mt_rand(),
-	);
+  $form['contact_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Contact ID'),
+    '#description' => t('Actual ID of contact to be thanked, for example: 12345'),
+    '#default_value' => mt_rand(),
+  );
 
-	$form['recurring'] = array(
-		'#type' => 'checkbox',
-		'#title' => t('Is a recurring donation?'),
-		'#default_value' => false,
-	);
+  $form['recurring'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Is a recurring donation?'),
+    '#default_value' => FALSE,
+  );
 
-	$form['contribution_tags'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Contribution Tags'),
-		'#description' => t('Comma or space-separated list of contribution tags, like "RecurringRestarted"'),
-		'#default_value' => '',
-	);
+  $form['contribution_tags'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Contribution Tags'),
+    '#description' => t('Comma or space-separated list of contribution tags, like "RecurringRestarted"'),
+    '#default_value' => '',
+  );
 
-	$form['submit'] = array(
-		'#value' => 'Send test email',
-		'#type' => 'submit'
-	);
+  $form['submit'] = array(
+    '#value' => 'Send test email',
+    '#type' => 'submit',
+  );
 
-	return $form;
+  return $form;
 }
 
 /**
- * TODO: document what code and configuration this test covers, and which it does not
+ * TODO: document what code and configuration this test covers, and which it
+ * does not
  */
-function thank_you_send_test_form_submit( $form_id, $form_values ) {
-	civicrm_initialize();
-	$params = $form_values['values'];
+function thank_you_send_test_form_submit($form_id, $form_values) {
+  civicrm_initialize();
+  $params = $form_values['values'];
 
-    # Massage the params a bit
-    $names = preg_split( '/ +/', $params['name'], 2, PREG_SPLIT_NO_EMPTY );
-    if (count($names) == 2) {
-        list( $params['first_name'], $params['last_name'] ) = $names;
-    } else {
-        $params['first_name'] = $params['last_name'] = '';
+  # Massage the params a bit
+  $names = preg_split('/ +/', $params['name'], 2, PREG_SPLIT_NO_EMPTY);
+  if (count($names) == 2) {
+    list($params['first_name'], $params['last_name']) = $names;
+  }
+  else {
+    $params['first_name'] = $params['last_name'] = '';
+  }
+
+  $params['unsubscribe_link'] = build_unsub_link(-1, $params['recipient_address'], $params['locale']);
+
+  // Turn a comma space separated list into an array
+  if (array_key_exists('contribution_tags', $params)) {
+    $params['contribution_tags'] = preg_split('/[\s,]+/', $params['contribution_tags']);
+  }
+
+  if ($params['locale'] === "all") {
+    $langs = array();
+    foreach (glob(__DIR__ . "/templates/html/thank_you.*.html") as $lang) {
+      $lang = substr($lang, strrpos($lang, '/') + 1);
+      $lang = substr($lang, strpos($lang, '.') + 1);
+      $lang = substr($lang, 0, strpos($lang, '.'));
+      $langs[$lang] = $lang;
     }
 
-    $params['unsubscribe_link'] = build_unsub_link( -1, $params['recipient_address'], $params['locale'] );
-
-    // Turn a comma space separated list into an array
-    if ( array_key_exists( 'contribution_tags', $params ) ) {
-        $params['contribution_tags'] = preg_split('/[\s,]+/', $params['contribution_tags']);
+    foreach ($langs as $lc) {
+      $params['locale'] = $lc;
+      thank_you_send_test($params);
     }
+  }
+  else {
+    thank_you_send_test($params);
+  }
 
-	if ( $params['locale'] === "all" ) {
-		$langs = array();
-		foreach( glob( __DIR__ . "/templates/html/thank_you.*.html") as $lang ){
-			$lang = substr( $lang, strrpos( $lang, '/' ) + 1 );
-			$lang = substr( $lang, strpos( $lang, '.' ) + 1 );
-			$lang = substr( $lang, 0, strpos( $lang, '.' ) );
-			$langs[$lang] = $lang;
-		}
-
-		foreach ( $langs as $lc ) {
-            $params['locale'] = $lc;
-            thank_you_send_test( $params );
-		}
-	} else {
-        thank_you_send_test( $params );
-    }
-
-	return true;
+  return TRUE;
 }
 
 function thank_you_get_languages() {
-    return array_map(
-        function ( $path ) {
-            return preg_replace( '/^.+[.]([^.]+)[.]html$/', '\1', $path );
-        },
-        glob( __DIR__ . '/templates/html/thank_you.*.html' )
-    );
+  return array_map(
+    function ($path) {
+      return preg_replace('/^.+[.]([^.]+)[.]html$/', '\1', $path);
+    },
+    glob(__DIR__ . '/templates/html/thank_you.*.html')
+  );
 }
 
-function thank_you_send_test( $params ) {
-    watchdog( 'thank_you', "Starting thank_you test send to {$params['recipient_address']} in {$params['locale']}", array(), WATCHDOG_INFO );
+function thank_you_send_test($params) {
+  watchdog('thank_you', "Starting thank_you test send to {$params['recipient_address']} in {$params['locale']}", array(), WATCHDOG_INFO);
 
-    if ( thank_you_send_mail( $params ) ) {
-        drupal_set_message( "Test thank you email sent to {$params['recipient_address']} in {$params['locale']}", 'info' );
-    } else {
-        drupal_set_message( "FAILED to send test thank you email to {$params['recipient_address']} in {$params['locale']}.", 'error' );
-    }
+  if (thank_you_send_mail($params)) {
+    drupal_set_message("Test thank you email sent to {$params['recipient_address']} in {$params['locale']}", 'info');
+  }
+  else {
+    drupal_set_message("FAILED to send test thank you email to {$params['recipient_address']} in {$params['locale']}.", 'error');
+  }
 }
 
 /**
  * Send a TY letter, and do bookkeeping on the Civi records
  * TODO: rewrite the civi api stuff to work like other code
  */
-function thank_you_for_contribution( $contribution_id ) {
-	civicrm_initialize();
-	$mailingData = CRM_Core_DAO::executeQuery("
+function thank_you_for_contribution($contribution_id) {
+  civicrm_initialize();
+  $mailingData = CRM_Core_DAO::executeQuery("
 		SELECT
 			cntr.id AS contribution_id,
 			cntr.currency,
@@ -274,238 +278,246 @@ function thank_you_for_contribution( $contribution_id ) {
 		INNER JOIN wmf_contribution_extra x ON cntr.id = x.entity_id
 		WHERE cntr.id = %1
 	", array(
-		1 => array(
-			$contribution_id,
-			'Int'
-		)
-	));
-	$found = $mailingData->fetch();
+    1 => array(
+      $contribution_id,
+      'Int',
+    ),
+  ));
+  $found = $mailingData->fetch();
 
-	// check that the API result is a valid contribution result
-	if( !$found ){
-		// the API result is bad
-		$msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r( $mailingData, true ) . '</pre>';
-		throw new WmfException( WmfException::GET_CONTRIBUTION, $msg );
-	}
-	$mailingData = $mailingData->toArray();
+  // check that the API result is a valid contribution result
+  if (!$found) {
+    // the API result is bad
+    $msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r($mailingData, TRUE) . '</pre>';
+    throw new WmfException(WmfException::GET_CONTRIBUTION, $msg);
+  }
+  $mailingData = $mailingData->toArray();
 
-    // don't send a Thank You email if one has already been sent
-    if ( !empty($mailingData['thankyou_date']) ) {
-        watchdog('thank_you', 'Thank you email already sent for this transaction.', array(), WATCHDOG_INFO);
-        return false;
-    }
-    // only send a Thank You email if we are within the specified window
-    $ageInSeconds = UtcDate::getUtcTimestamp() - UtcDate::getUtcTimestamp( $mailingData['receive_date'] );
-    if ($ageInSeconds > 86400 * variable_get('thank_you_days', 14)) {
-        watchdog('thank_you', 'Contribution is older than limit, ignoring.', array(), WATCHDOG_INFO);
-        return false;
-    }
+  // don't send a Thank You email if one has already been sent
+  if (!empty($mailingData['thankyou_date'])) {
+    watchdog('thank_you', 'Thank you email already sent for this transaction.', array(), WATCHDOG_INFO);
+    return FALSE;
+  }
+  // only send a Thank You email if we are within the specified window
+  $ageInSeconds = UtcDate::getUtcTimestamp() - UtcDate::getUtcTimestamp($mailingData['receive_date']);
+  if ($ageInSeconds > 86400 * variable_get('thank_you_days', 14)) {
+    watchdog('thank_you', 'Contribution is older than limit, ignoring.', array(), WATCHDOG_INFO);
+    return FALSE;
+  }
 
-    // check for contacts without an email address
-    if ( empty( $mailingData['email'] ) or $mailingData['email'] === 'nobody@wikimedia.org' ) {
-        watchdog('thank_you', 'No email address found. Processing as anonymous.', array(), WATCHDOG_INFO);
-        wmf_civicrm_set_no_thank_you( $contribution_id, 'anonymous' );
-        return false;
-    }
+  // check for contacts without an email address
+  if (empty($mailingData['email']) or $mailingData['email'] === 'nobody@wikimedia.org') {
+    watchdog('thank_you', 'No email address found. Processing as anonymous.', array(), WATCHDOG_INFO);
+    wmf_civicrm_set_no_thank_you($contribution_id, 'anonymous');
+    return FALSE;
+  }
 
-    if ( $mailingData['no_thank_you'] ) {
-        watchdog('thank_you', "Contribution has been marked no_thank_you={$mailingData['no_thank_you']}, skipping.", array(), WATCHDOG_INFO);
-        return false;
-    }
+  if ($mailingData['no_thank_you']) {
+    watchdog('thank_you', "Contribution has been marked no_thank_you={$mailingData['no_thank_you']}, skipping.", array(), WATCHDOG_INFO);
+    return FALSE;
+  }
 
-    $amount = $mailingData['original_amount'];
-    $currency = $mailingData['original_currency'];
+  $amount = $mailingData['original_amount'];
+  $currency = $mailingData['original_currency'];
 
-    // Use settlement currency if the original currency is virtual, for tax reasons.
-    if ( $mailingData['original_currency'] === 'BTC' ) {
-        $amount = $mailingData['total_amount'];
-        $currency = $mailingData['currency'];
-    }
+  // Use settlement currency if the original currency is virtual, for tax reasons.
+  if ($mailingData['original_currency'] === 'BTC') {
+    $amount = $mailingData['total_amount'];
+    $currency = $mailingData['currency'];
+  }
 
-    $is_recurring = false;
-    try {
-        $transaction = WmfTransaction::from_unique_id( $mailingData['trxn_id'] );
-        $is_recurring = $transaction->is_recurring;
-    } catch ( WmfException $ex ) {
-        watchdog( 'thank_you', $ex->getMessage(), NULL, WATCHDOG_NOTICE );
-    }
+  $is_recurring = FALSE;
+  try {
+    $transaction = WmfTransaction::from_unique_id($mailingData['trxn_id']);
+    $is_recurring = $transaction->is_recurring;
+  }
+  catch (WmfException $ex) {
+    watchdog('thank_you', $ex->getMessage(), NULL, WATCHDOG_NOTICE);
+  }
 
-    $locale = $mailingData['preferred_language'];
-    if ( !$locale ) {
-        watchdog( 'thank_you', "Donor language unknown.  Defaulting to English...", NULL, WATCHDOG_INFO );
-        $locale = 'en';
-    }
-    $locale = wmf_common_locale_civi_to_mediawiki( $locale );
+  $locale = $mailingData['preferred_language'];
+  if (!$locale) {
+    watchdog('thank_you', "Donor language unknown.  Defaulting to English...", NULL, WATCHDOG_INFO);
+    $locale = 'en';
+  }
+  $locale = wmf_common_locale_civi_to_mediawiki($locale);
 
-    $params = array(
-        'amount' => $amount,
-        'contact_id' => $mailingData['contact_id'],
-        'currency' => $currency,
-        'first_name' => $mailingData['first_name'],
-		'from_name' => variable_get( 'thank_you_from_name', 'Wikimedia Foundation' ),
-		'from_address' => variable_get( 'thank_you_from_address', 'donate@wikimedia.org' ),
-        'last_name' => $mailingData['last_name'],
-        'locale' => $locale,
-        'name' => $mailingData['display_name'],
-        'receive_date' => $mailingData['receive_date'],
-        'recipient_address' => $mailingData['email'],
-        'recurring' => $is_recurring,
-        'transaction_id' => "CNTCT-{$mailingData['contact_id']}", // shown in the body of the text
-		'contribution_id' => $contribution_id, // used for the bounce header
-        'unsubscribe_link' => build_unsub_link( $contribution_id, $mailingData['email'], $locale ),
-        'contribution_tags' => wmf_civicrm_get_tag_names($contribution_id),
-    );
+  $params = array(
+    'amount' => $amount,
+    'contact_id' => $mailingData['contact_id'],
+    'currency' => $currency,
+    'first_name' => $mailingData['first_name'],
+    'from_name' => variable_get('thank_you_from_name', 'Wikimedia Foundation'),
+    'from_address' => variable_get('thank_you_from_address', 'donate@wikimedia.org'),
+    'last_name' => $mailingData['last_name'],
+    'locale' => $locale,
+    'name' => $mailingData['display_name'],
+    'receive_date' => $mailingData['receive_date'],
+    'recipient_address' => $mailingData['email'],
+    'recurring' => $is_recurring,
+    'transaction_id' => "CNTCT-{$mailingData['contact_id']}",
+    // shown in the body of the text
+    'contribution_id' => $contribution_id,
+    // used for the bounce header
+    'unsubscribe_link' => build_unsub_link($contribution_id, $mailingData['email'], $locale),
+    'contribution_tags' => wmf_civicrm_get_tag_names($contribution_id),
+  );
 
-    $success = thank_you_send_mail( $params );
-    $counter = Queue2civicrmTrxnCounter::instance();
+  $success = thank_you_send_mail($params);
+  $counter = Queue2civicrmTrxnCounter::instance();
 
-    if ( $success ) {
-		watchdog('thank_you', "Thank you mail sent successfully for contribution id: $contribution_id to " . $params['recipient_address'], array(), WATCHDOG_INFO);
-		thank_you_update_ty_date( $mailingData );
-		$counter->increment( $mailingData['gateway'] );
-		$counter->addAgeMeasurement( $mailingData['gateway'], $ageInSeconds );
-		return true;
-    } else {
-		$msg = "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'];
-		throw new WmfException( WmfException::BAD_EMAIL, $msg );
-    }
+  if ($success) {
+    watchdog('thank_you', "Thank you mail sent successfully for contribution id: $contribution_id to " . $params['recipient_address'], array(), WATCHDOG_INFO);
+    thank_you_update_ty_date($mailingData);
+    $counter->increment($mailingData['gateway']);
+    $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
+    return TRUE;
+  }
+  else {
+    $msg = "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'];
+    throw new WmfException(WmfException::BAD_EMAIL, $msg);
+  }
 }
 
-function thank_you_update_ty_date( $contribution ) {
-	$date = wmf_common_date_unix_to_civicrm( time() );
-	watchdog('thank_you', "Updating TY send date to: $date", array(), WATCHDOG_INFO);
+function thank_you_update_ty_date($contribution) {
+  $date = wmf_common_date_unix_to_civicrm(time());
+  watchdog('thank_you', "Updating TY send date to: $date", array(), WATCHDOG_INFO);
 
-	// We go directly to the database table here to avoid setting off a cascade
-	// of line item updates and recalculations.
-	$query = "UPDATE civicrm_contribution
+  // We go directly to the database table here to avoid setting off a cascade
+  // of line item updates and recalculations.
+  $query = "UPDATE civicrm_contribution
 		SET thankyou_date = %1
 		WHERE id = %2";
 
-	try {
-		CRM_Core_DAO::executeQuery( $query, array(
-			1 => array( $date, 'String' ),
-			2 => array( $contribution[ 'contribution_id' ], 'Integer' ),
-		) );
-		return true;
-	} catch( Exception $ex ) {
-		watchdog( 'thank_you', 'Updating successful TY send failed with details: ' . print_r( $ex, true ), array(), WATCHDOG_ERROR );
-	}
-	return false;
+  try {
+    CRM_Core_DAO::executeQuery($query, array(
+      1 => array($date, 'String'),
+      2 => array($contribution['contribution_id'], 'Integer'),
+    ));
+    return TRUE;
+  }
+  catch (Exception $ex) {
+    watchdog('thank_you', 'Updating successful TY send failed with details: ' . print_r($ex, TRUE), array(), WATCHDOG_ERROR);
+  }
+  return FALSE;
 }
 
 /**
  * Just send the letter
  */
-function thank_you_send_mail( $params ) {
-    $require_params = array(
-        'amount',
-        'contribution_id',
-        'currency',
-        'from_name',
-        'from_address',
-        'locale',
-        'receive_date',
-        'recipient_address',
-        'recurring',
-        'transaction_id',
-        'unsubscribe_link',
-    );
+function thank_you_send_mail($params) {
+  $require_params = array(
+    'amount',
+    'contribution_id',
+    'currency',
+    'from_name',
+    'from_address',
+    'locale',
+    'receive_date',
+    'recipient_address',
+    'recurring',
+    'transaction_id',
+    'unsubscribe_link',
+  );
 
-    $missing = array();
-    foreach ( $require_params as $key ) {
-        if ( !isset( $params[$key] ) or $params[$key] === '' ) {
-            $missing[] = $key;
-        }
-	}
-    if ( $missing ) {
-        $as_list = implode( ', ', $missing );
-        watchdog( 'thank_you', "Missing stuff from the TY params: {$as_list} " . check_plain(print_r( $params, true )), array(), WATCHDOG_ERROR );
-        $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
-        throw new WmfException( WmfException::MISSING_MANDATORY_DATA, $msg );
+  $missing = array();
+  foreach ($require_params as $key) {
+    if (!isset($params[$key]) or $params[$key] === '') {
+      $missing[] = $key;
     }
+  }
+  if ($missing) {
+    $as_list = implode(', ', $missing);
+    watchdog('thank_you', "Missing stuff from the TY params: {$as_list} " . check_plain(print_r($params, TRUE)), array(), WATCHDOG_ERROR);
+    $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
+    throw new WmfException(WmfException::MISSING_MANDATORY_DATA, $msg);
+  }
 
-	$email = array(
-		'from_name' => $params['from_name'],
-		'from_address' => $params['from_address'],
+  $email = array(
+    'from_name' => $params['from_name'],
+    'from_address' => $params['from_address'],
 
-		'to_name' => $params['name'],
-		'to_address' => $params['recipient_address'],
+    'to_name' => $params['name'],
+    'to_address' => $params['recipient_address'],
 
-		'locale' => $params['locale'],
-	);
+    'locale' => $params['locale'],
+  );
 
   list($html, $subject) = thank_you_render($params);
-	if(!$html || !$subject){
-		$msg = "HTML rendering of template failed in {$params['locale']}.";
-		throw new WmfException( WmfException::UNKNOWN, $msg, array('thank_you_params' => $params) );
-	}
+  if (!$html || !$subject) {
+    $msg = "HTML rendering of template failed in {$params['locale']}.";
+    throw new WmfException(WmfException::UNKNOWN, $msg, array('thank_you_params' => $params));
+  }
 
   $email['html'] = $html;
-	$email['subject'] = $subject;
+  $email['subject'] = $subject;
 
-	$mailer = Mailer::getDefault();
+  $mailer = Mailer::getDefault();
 
-	$civi_queue_record = null;
-	$create_civi_mail = variable_get( 'thank_you_add_civimail_records', 'false' );
-	$rate = variable_get( 'thank_you_civimail_rate', 1.0 );
-	if ( $create_civi_mail === 'true' && mt_rand(0, 10000) <= $rate * 10000 && isset( $params['contact_id'] ) ) {
-		$civi_queue_record = thank_you_add_civi_queue(
-			$email['to_address'],
-			$params['contact_id'],
-			$email['subject'],
-			$email['html']
-		);
-	}
+  $civi_queue_record = NULL;
+  $create_civi_mail = variable_get('thank_you_add_civimail_records', 'false');
+  $rate = variable_get('thank_you_civimail_rate', 1.0);
+  if ($create_civi_mail === 'true' && mt_rand(0, 10000) <= $rate * 10000 && isset($params['contact_id'])) {
+    $civi_queue_record = thank_you_add_civi_queue(
+      $email['to_address'],
+      $params['contact_id'],
+      $email['subject'],
+      $email['html']
+    );
+  }
 
-	if ( $civi_queue_record ) {
-		$email['reply_to'] = $civi_queue_record->getVerp();
-	} else {
-		$email['reply_to'] = "ty.{$params['contact_id']}.{$params['contribution_id']}@donate.wikimedia.org";
-	}
+  if ($civi_queue_record) {
+    $email['reply_to'] = $civi_queue_record->getVerp();
+  }
+  else {
+    $email['reply_to'] = "ty.{$params['contact_id']}.{$params['contribution_id']}@donate.wikimedia.org";
+  }
 
-	try {
+  try {
 
-		watchdog("thank_you", "Sending ty email to: " . $email['to_address'], array(), WATCHDOG_INFO);
+    watchdog("thank_you", "Sending ty email to: " . $email['to_address'], array(), WATCHDOG_INFO);
 
-		$email_success = $mailer->send(
-			$email,
-			array( 'List-Unsubscribe' => '<' . $params['unsubscribe_link'] . '>' )
-		);
+    $email_success = $mailer->send(
+      $email,
+      array('List-Unsubscribe' => '<' . $params['unsubscribe_link'] . '>')
+    );
 
-		if ( $civi_queue_record ) {
-			$civi_queue_record->markDelivered();
-		}
+    if ($civi_queue_record) {
+      $civi_queue_record->markDelivered();
+    }
 
-        return $email_success;
-	} catch (phpmailerException $e) {
-        //TODO: don't assume phpmailer
-		//TODO: something with the CiviMail queue record to indicate it failed;
-		$debug = array_merge( $email, array( "html" => '', "plaintext" => '' ) );
-		watchdog('thank_you', 'Sending thank you message failed in phpmailer for contribution: ' .
-			'<pre>' . check_plain(print_r($params, TRUE)) . "\n\n" .
-			$e->errorMessage() . '</pre>', array(), WATCHDOG_ERROR);
+    return $email_success;
+  }
+  catch (phpmailerException $e) {
+    //TODO: don't assume phpmailer
+    //TODO: something with the CiviMail queue record to indicate it failed;
+    $debug = array_merge($email, array("html" => '', "plaintext" => ''));
+    watchdog('thank_you', 'Sending thank you message failed in phpmailer for contribution: ' .
+      '<pre>' . check_plain(print_r($params, TRUE)) . "\n\n" .
+      $e->errorMessage() . '</pre>', array(), WATCHDOG_ERROR);
 
-		if( strpos( $e->errorMessage(), "Invalid address:" ) === false ){
-			watchdog( 'thank_you', "PhpMailer died unexpectedly: {$e->errorMessage()} at {$e->getTraceAsString()}", array(), WATCHDOG_ERROR );
-			$msg = "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n"
-				. __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n"
-				. $e->getTraceAsString();
-			throw new WmfException( WmfException::EMAIL_SYSTEM_FAILURE, $msg, $debug );
-		}
+    if (strpos($e->errorMessage(), "Invalid address:") === FALSE) {
+      watchdog('thank_you', "PhpMailer died unexpectedly: {$e->errorMessage()} at {$e->getTraceAsString()}", array(), WATCHDOG_ERROR);
+      $msg = "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n"
+        . __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n"
+        . $e->getTraceAsString();
+      throw new WmfException(WmfException::EMAIL_SYSTEM_FAILURE, $msg, $debug);
+    }
 
-        return false;
-	} catch (Exception $e) {
-		$debug = array_merge( $email, array( "html" => '', "plaintext" => '' ) );
-		watchdog('thank_you', 'Sending thank you message failed with generic exception for contribution: ' .
-			'<pre>' . check_plain(print_r($params, TRUE)) . "\n\n" .
-			check_plain(print_r($debug, TRUE)) . "\n\n" .
-			$e->getMessage() . '</pre>', array(), WATCHDOG_ERROR);
+    return FALSE;
+  }
+  catch (Exception $e) {
+    $debug = array_merge($email, array("html" => '', "plaintext" => ''));
+    watchdog('thank_you', 'Sending thank you message failed with generic exception for contribution: ' .
+      '<pre>' . check_plain(print_r($params, TRUE)) . "\n\n" .
+      check_plain(print_r($debug, TRUE)) . "\n\n" .
+      $e->getMessage() . '</pre>', array(), WATCHDOG_ERROR);
 
-		$msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
-			. "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
+    $msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
+      . "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
 
-		throw new WmfException( WmfException::EMAIL_SYSTEM_FAILURE, $msg, $debug );
-	}
+    throw new WmfException(WmfException::EMAIL_SYSTEM_FAILURE, $msg, $debug);
+  }
 }
 
 /**
@@ -517,16 +529,16 @@ function thank_you_send_mail( $params ) {
  *
  * @throws TemplateInfoMissingException if comment is not found
  */
-function thank_you_get_template_info( $html ) {
-	$matches = array();
-	$info = null;
-	if ( preg_match( '/<!-- TI_BEGIN(.+)TI_END -->/', $html, $matches ) ) {
-		$info = json_decode( $matches[1] );
-	}
-	if ( $info === null || !is_object( $info ) ) {
-		throw new TemplateInfoMissingException();
-	}
-	return $info;
+function thank_you_get_template_info($html) {
+  $matches = array();
+  $info = NULL;
+  if (preg_match('/<!-- TI_BEGIN(.+)TI_END -->/', $html, $matches)) {
+    $info = json_decode($matches[1]);
+  }
+  if ($info === NULL || !is_object($info)) {
+    throw new TemplateInfoMissingException();
+  }
+  return $info;
 }
 
 /**
@@ -535,55 +547,58 @@ function thank_you_get_template_info( $html ) {
  * @param string $email recipient address
  * @param int $contact_id recipient contact id
  * @param string $subject subject header to insert in case of missing mailing
- * @param string $html HTML email body, which should have a template info comment
- * @return \wmf_communication\CiviMailQueueRecord mail queue record with VERP header
+ * @param string $html HTML email body, which should have a template info
+ *   comment
+ *
+ * @return \wmf_communication\CiviMailQueueRecord mail queue record with VERP
+ *   header
  */
-function thank_you_add_civi_queue( $email, $contact_id, $subject, $html ) {
-	$civi_mailing = null;
-	$civi_queue_record = null;
-	$civimail_store = new CiviMailStore();
-	try {
-		$template_info = thank_you_get_template_info( $html );
-		try {
-			$civi_mailing = $civimail_store->getMailing( 'thank_you', $template_info->name, $template_info->revision );
-		}
-		catch ( CiviMailingMissingException $e ) {
-			watchdog(
-				'thank_you',
-				'Could not find mailing record for email with subject ' . $subject,
-				array(),
-				WATCHDOG_INFO
-			);
-			$civi_mailing = $civimail_store->addMailing( 'thank_you', $template_info->name, 'missing body', $subject, $template_info->revision );
-		}
-		$civi_queue_record = $civimail_store->addQueueRecord( $civi_mailing, $email, $contact_id );
-		$civimail_store->addActivity( $civi_queue_record, $subject, $html );
-	}
-	catch ( TemplateInfoMissingException $e ) {
-		watchdog(
-			'thank_you',
-			'Could not find template info comment in thank you email template with subject ' . $subject,
-			array(),
-			WATCHDOG_INFO
-		);
-	}
-	catch ( CiviQueueInsertException $e ) {
-		watchdog(
-			'thank_you',
-			'CiviMail queue insert failed: ' . $e->getMessage(),
-			array(),
-			WATCHDOG_INFO
-		);
-	}
-	catch ( CiviMailingInsertException $e ) {
-		watchdog(
-			'thank_you',
-			'Could not insert fallback mailing: ' . $e->getMessage(),
-			array(),
-			WATCHDOG_INFO
-		);
-	}
-	return $civi_queue_record;
+function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
+  $civi_mailing = NULL;
+  $civi_queue_record = NULL;
+  $civimail_store = new CiviMailStore();
+  try {
+    $template_info = thank_you_get_template_info($html);
+    try {
+      $civi_mailing = $civimail_store->getMailing('thank_you', $template_info->name, $template_info->revision);
+    }
+    catch (CiviMailingMissingException $e) {
+      watchdog(
+        'thank_you',
+        'Could not find mailing record for email with subject ' . $subject,
+        array(),
+        WATCHDOG_INFO
+      );
+      $civi_mailing = $civimail_store->addMailing('thank_you', $template_info->name, 'missing body', $subject, $template_info->revision);
+    }
+    $civi_queue_record = $civimail_store->addQueueRecord($civi_mailing, $email, $contact_id);
+    $civimail_store->addActivity($civi_queue_record, $subject, $html);
+  }
+  catch (TemplateInfoMissingException $e) {
+    watchdog(
+      'thank_you',
+      'Could not find template info comment in thank you email template with subject ' . $subject,
+      array(),
+      WATCHDOG_INFO
+    );
+  }
+  catch (CiviQueueInsertException $e) {
+    watchdog(
+      'thank_you',
+      'CiviMail queue insert failed: ' . $e->getMessage(),
+      array(),
+      WATCHDOG_INFO
+    );
+  }
+  catch (CiviMailingInsertException $e) {
+    watchdog(
+      'thank_you',
+      'Could not insert fallback mailing: ' . $e->getMessage(),
+      array(),
+      WATCHDOG_INFO
+    );
+  }
+  return $civi_queue_record;
 }
 
 function thank_you_settings_form() {
@@ -592,26 +607,26 @@ function thank_you_settings_form() {
   $form['thank_you_enabled'] = array(
     '#type' => 'radios',
     '#title' => t('Enable Thank You send job'),
-	'#options' => array(
-	  'false' => t('Do not send Thank You emails'),
-	  'true' => t('Send Thank You emails'),
-	),
+    '#options' => array(
+      'false' => t('Do not send Thank You emails'),
+      'true' => t('Send Thank You emails'),
+    ),
     '#default_value' => variable_get('thank_you_enabled', 'true'),
   );
 
-	$form['thank_you_unsubscribe_url'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Base URL for the unsubscribe page'),
-		'#required' => TRUE,
-		'#default_value' => variable_get('thank_you_unsubscribe_url', ''),
-	);
+  $form['thank_you_unsubscribe_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Base URL for the unsubscribe page'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('thank_you_unsubscribe_url', ''),
+  );
 
   $form['thank_you_from_name'] = array(
     '#type' => 'textfield',
     '#title' => t('From name (default)'),
     '#default_value' => variable_get('thank_you_from_name', ''),
     '#required' => TRUE,
-    '#description' => t('*** This is overwritten by any translations that may exist ***')
+    '#description' => t('*** This is overwritten by any translations that may exist ***'),
   );
 
   $form['thank_you_from_address'] = array(
@@ -628,35 +643,35 @@ function thank_you_settings_form() {
     '#required' => TRUE,
   );
 
-	$form['thank_you_batch'] = array(
-		'#type' => 'select',
-		'#title' => t('Cron batch size'),
-		'#required' => TRUE,
-		'#default_value' => variable_get('thank_you_batch', 1),
-		'#options' => array(
-			1 => 1,
-			5 => 5,
-			10 => 10,
-			20 => 20,
-			30 => 30,
-			40 => 40,
-			50 => 50,
-			75 => 75,
-			100 => 100,
-			150 => 150,
-			200 => 200,
-			250 => 250,
-			300 => 300,
-			350 => 350,
-			400 => 400,
-			450 => 450,
-			500 => 500,
-			550 => 550,
-			600 => 600,
-			650 => 650,
-			700 => 700,
-		),
-	);
+  $form['thank_you_batch'] = array(
+    '#type' => 'select',
+    '#title' => t('Cron batch size'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('thank_you_batch', 1),
+    '#options' => array(
+      1 => 1,
+      5 => 5,
+      10 => 10,
+      20 => 20,
+      30 => 30,
+      40 => 40,
+      50 => 50,
+      75 => 75,
+      100 => 100,
+      150 => 150,
+      200 => 200,
+      250 => 250,
+      300 => 300,
+      350 => 350,
+      400 => 400,
+      450 => 450,
+      500 => 500,
+      550 => 550,
+      600 => 600,
+      650 => 650,
+      700 => 700,
+    ),
+  );
   $form['thank_you_batch_time'] = array(
     '#type' => 'textfield',
     '#title' => t('Job time limit (in seconds)'),
@@ -665,15 +680,15 @@ function thank_you_settings_form() {
     '#default_value' => variable_get('thank_you_batch_time', 90),
   );
 
-	// this is still in use
+  // this is still in use
   $form['thank_you_onestep_unsubscribe'] = array(
     '#type' => 'radios',
     '#title' => t('Unsubscription Confirmation'),
     '#required' => TRUE,
-	'#options' => array(
-	   "false" => t('Require confirmation'),
-	   "true" => t('Do not require confirmation'),
-	),
+    '#options' => array(
+      "false" => t('Require confirmation'),
+      "true" => t('Do not require confirmation'),
+    ),
     '#default_value' => variable_get('thank_you_onestep_unsubscribe', 'false'),
   );
 
@@ -681,10 +696,10 @@ function thank_you_settings_form() {
     '#type' => 'radios',
     '#title' => t('Track thank you emails to CiviMail'),
     '#required' => TRUE,
-	'#options' => array(
-	   "false" => t('Do not create CiviMail records'),
-	   "true" => t('Create CiviMail records'),
-	),
+    '#options' => array(
+      "false" => t('Do not create CiviMail records'),
+      "true" => t('Create CiviMail records'),
+    ),
     '#default_value' => variable_get('thank_you_add_civimail_records', 'false'),
   );
 
@@ -696,7 +711,7 @@ function thank_you_settings_form() {
   );
 
   $form['thank_you_failure_threshold'] = array(
-	'#type' => 'textfield',
+    '#type' => 'textfield',
     '#title' => t('Number of consecutive failures to allow before disabling thank you job'),
     '#default_value' => variable_get('thank_you_failure_threshold', 5),
     '#required' => TRUE,
@@ -705,50 +720,51 @@ function thank_you_settings_form() {
   return system_settings_form($form);
 }
 
-function thank_you_batch_process(){
-	civicrm_initialize();
-	// If available, use the time the drush script started as the start time
-	// This way we're less likely to run past the start of the next run.
-	if ( isset( $_SERVER['REQUEST_TIME'] ) ) {
-		$startTime = $_SERVER['REQUEST_TIME'];
-	} else {
-		$startTime = time();
-	}
-	// the following variables should be set in the module settings, not here
-	$timeLimit = variable_get('thank_you_batch_time', 90); 
-	$days = variable_get( 'thank_you_days', false );
-	$batch = variable_get( 'thank_you_batch', false );
-	$enabled = variable_get( 'thank_you_enabled', 'true' );
+function thank_you_batch_process() {
+  civicrm_initialize();
+  // If available, use the time the drush script started as the start time
+  // This way we're less likely to run past the start of the next run.
+  if (isset($_SERVER['REQUEST_TIME'])) {
+    $startTime = $_SERVER['REQUEST_TIME'];
+  }
+  else {
+    $startTime = time();
+  }
+  // the following variables should be set in the module settings, not here
+  $timeLimit = variable_get('thank_you_batch_time', 90);
+  $days = variable_get('thank_you_days', FALSE);
+  $batch = variable_get('thank_you_batch', FALSE);
+  $enabled = variable_get('thank_you_enabled', 'true');
 
-	if ( $enabled === 'false' ) {
-		watchdog( 'thank_you', 'Thank You send job is disabled', array(), WATCHDOG_INFO );
-		return;
-	}
-	if ( !$days ) {
-		watchdog( "thank_you", "Number of days to send thank you mails not configured", array(), WATCHDOG_ERROR );
-        return;
-	}
-	if ( !is_numeric( $batch ) ) {
-		watchdog( "thank_you", "Thank you mail batch size not configured", array(), WATCHDOG_ERROR );
-        return;
-	}
+  if ($enabled === 'false') {
+    watchdog('thank_you', 'Thank You send job is disabled', array(), WATCHDOG_INFO);
+    return;
+  }
+  if (!$days) {
+    watchdog("thank_you", "Number of days to send thank you mails not configured", array(), WATCHDOG_ERROR);
+    return;
+  }
+  if (!is_numeric($batch)) {
+    watchdog("thank_you", "Thank you mail batch size not configured", array(), WATCHDOG_ERROR);
+    return;
+  }
 
-	// FIXME: refactor this whole module to be more object oriented, so we can
-	// just set these properties and override during the test.
-	// This code resets the thank_you_days variable in case it's been left in
-	// a bad state by an aborted simulation run
-	if ( $days == DUMB_BIG_TY_DAYS ) {
-		$days = variable_get( 'old_thank_you_days', false );
-		variable_set( 'thank_you_days', $days );
-	}
+  // FIXME: refactor this whole module to be more object oriented, so we can
+  // just set these properties and override during the test.
+  // This code resets the thank_you_days variable in case it's been left in
+  // a bad state by an aborted simulation run
+  if ($days == DUMB_BIG_TY_DAYS) {
+    $days = variable_get('old_thank_you_days', FALSE);
+    variable_set('thank_you_days', $days);
+  }
 
-	watchdog( "thank_you", "Attempting to send $batch thank you mails for contributions from the last $days days.", array(), WATCHDOG_INFO );
+  watchdog("thank_you", "Attempting to send $batch thank you mails for contributions from the last $days days.", array(), WATCHDOG_INFO);
 
-	$dbs = wmf_civicrm_get_dbs();
-	$dbs->push( 'civicrm' );
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('civicrm');
 
-	$earliest = UtcDate::getUtcDatabaseString( "-$days days" );
-	$ty_query = <<<EOT
+  $earliest = UtcDate::getUtcDatabaseString("-$days days");
+  $ty_query = <<<EOT
 		SELECT civicrm_contribution.id, trxn_id
 		FROM civicrm_contribution
 		JOIN wmf_contribution_extra
@@ -763,100 +779,103 @@ function thank_you_batch_process(){
 		ORDER BY receive_date ASC LIMIT {$batch};
 EOT;
 
-	$result = db_query( $ty_query, array( ':earliest' => $earliest ) );
+  $result = db_query($ty_query, array(':earliest' => $earliest));
 
-	$consecutiveFailures = 0;
-	$failureThreshold = variable_get( 'thank_you_failure_threshold', 5 );
-	$abort = false;
-	$endTime = $startTime + $timeLimit;
-	foreach( $result as $contribution ) {
-		if (time() >= $endTime){
-			watchdog("thank_you", "Batch time limit ($timeLimit s) elapsed", array(), WATCHDOG_INFO);
-			break;
-		}
-		watchdog(
-			"thank_you",
-			"Attempting to send thank you mail for contribution ID [{$contribution->id}], trxn_id [{$contribution->trxn_id}]",
-			array(),
-			WATCHDOG_INFO
-		);
-		try {
-			thank_you_for_contribution( $contribution->id );
-			$consecutiveFailures = 0;
-		} catch ( WmfException $ex ) {
-			$errName = $ex->getErrorName();
-			$noThankYou = "failed: $errName";
+  $consecutiveFailures = 0;
+  $failureThreshold = variable_get('thank_you_failure_threshold', 5);
+  $abort = FALSE;
+  $endTime = $startTime + $timeLimit;
+  foreach ($result as $contribution) {
+    if (time() >= $endTime) {
+      watchdog("thank_you", "Batch time limit ($timeLimit s) elapsed", array(), WATCHDOG_INFO);
+      break;
+    }
+    watchdog(
+      "thank_you",
+      "Attempting to send thank you mail for contribution ID [{$contribution->id}], trxn_id [{$contribution->trxn_id}]",
+      array(),
+      WATCHDOG_INFO
+    );
+    try {
+      thank_you_for_contribution($contribution->id);
+      $consecutiveFailures = 0;
+    }
+    catch (WmfException $ex) {
+      $errName = $ex->getErrorName();
+      $noThankYou = "failed: $errName";
 
-			$logMessage = $ex->getMessage()
-				. "<br/>Setting no_thank_you to '$noThankYou'";
-			wmf_civicrm_set_no_thank_you( $contribution->id, $noThankYou );
+      $logMessage = $ex->getMessage()
+        . "<br/>Setting no_thank_you to '$noThankYou'";
+      wmf_civicrm_set_no_thank_you($contribution->id, $noThankYou);
 
-			$consecutiveFailures++;
-			$msg = "Disabling thank you job after $consecutiveFailures consecutive failures";
-			if ( $consecutiveFailures > $failureThreshold ) {
-				$abort = true;
-				watchdog( 'thank_you', $msg, array(), WATCHDOG_ALERT );
-				$logMessage .= "<br/>$msg";
-			}
+      $consecutiveFailures++;
+      $msg = "Disabling thank you job after $consecutiveFailures consecutive failures";
+      if ($consecutiveFailures > $failureThreshold) {
+        $abort = TRUE;
+        watchdog('thank_you', $msg, array(), WATCHDOG_ALERT);
+        $logMessage .= "<br/>$msg";
+      }
 
-			// Always email if we're disabling the job
-			if ( $ex->isNoEmail() && !$abort ) {
-				watchdog( 'thank_you', $logMessage, array(), WATCHDOG_ERROR );
-			} else {
-				try {
-					// Make an exception for failmail with the updated message,
-					// but avoid doubling the type prefix.
-					$logMessage = substr( $logMessage, strlen( $errName ) + 1 );
-					$mailException = new WmfException( $ex->getCode(), $logMessage );
+      // Always email if we're disabling the job
+      if ($ex->isNoEmail() && !$abort) {
+        watchdog('thank_you', $logMessage, array(), WATCHDOG_ERROR);
+      }
+      else {
+        try {
+          // Make an exception for failmail with the updated message,
+          // but avoid doubling the type prefix.
+          $logMessage = substr($logMessage, strlen($errName) + 1);
+          $mailException = new WmfException($ex->getCode(), $logMessage);
 
-					// Failmail also logs a WATCHDOG_ERROR
-					wmf_common_failmail( 'thank_you', '', $mailException );
-				} catch ( Exception $innerEx ) {
-					watchdog(
-						'thank_you',
-						'Can\'t even send failmail, disabling thank you job',
-						array(),
-						WATCHDOG_ALERT
-					);
-					$abort = true;
-				}
-			}
+          // Failmail also logs a WATCHDOG_ERROR
+          wmf_common_failmail('thank_you', '', $mailException);
+        }
+        catch (Exception $innerEx) {
+          watchdog(
+            'thank_you',
+            'Can\'t even send failmail, disabling thank you job',
+            array(),
+            WATCHDOG_ALERT
+          );
+          $abort = TRUE;
+        }
+      }
 
-			if ( $abort ) {
-				variable_set( 'thank_you_enabled', 'false' );
-				break;
-			}
-		}
-	}
+      if ($abort) {
+        variable_set('thank_you_enabled', 'false');
+        break;
+      }
+    }
+  }
 
-	$counter = Queue2civicrmTrxnCounter::instance();
-	$metrics = array();
-	foreach ( $counter->get_trxn_counts() as $gateway => $count ) {
-		$metrics["${gateway}_thank_you_emails"] = $count;
-	}
-	$metrics['total_thank_you_emails'] = $counter->get_count_total();
-	module_invoke(
-		'metrics_reporting',
-		'report_metrics',
-		'thank_you_emails_sent',
-		$metrics
-	);
-	$ageMetrics = array();
-	foreach ( $counter->get_average_ages() as $gateway => $age ) {
-		$ageMetrics["${gateway}_thank_you_donation_age"] = $age;
-	}
-	module_invoke(
-		'metrics_reporting',
-		'report_metrics',
-		'thank_you_donation_age',
-		$ageMetrics
-	);
-	watchdog(
-		"thank_you",
-		"Sent {$metrics['total_thank_you_emails']} thank you emails.",
-		array(),
-		WATCHDOG_INFO
-	);
+  $counter = Queue2civicrmTrxnCounter::instance();
+  $metrics = array();
+  foreach ($counter->get_trxn_counts() as $gateway => $count) {
+    $metrics["${gateway}_thank_you_emails"] = $count;
+  }
+  $metrics['total_thank_you_emails'] = $counter->get_count_total();
+  module_invoke(
+    'metrics_reporting',
+    'report_metrics',
+    'thank_you_emails_sent',
+    $metrics
+  );
+  $ageMetrics = array();
+  foreach ($counter->get_average_ages() as $gateway => $age) {
+    $ageMetrics["${gateway}_thank_you_donation_age"] = $age;
+  }
+  module_invoke(
+    'metrics_reporting',
+    'report_metrics',
+    'thank_you_donation_age',
+    $ageMetrics
+  );
+  watchdog(
+    "thank_you",
+    "Sent {$metrics['total_thank_you_emails']} thank you emails.",
+    array(),
+    WATCHDOG_INFO
+  );
 }
 
 
@@ -865,69 +884,69 @@ EOT;
  *
  * @param $params array template parameters
  */
-function thank_you_render( $params ) {
+function thank_you_render($params) {
 
-	// Format the datestamp
-	$date = strtotime( $params['receive_date'] );
+  // Format the datestamp
+  $date = strtotime($params['receive_date']);
 
-    // For tax reasons, any donation made in the US on Jan 1 UTC should have a timestring in HST.
-    // So do 'em all that way.
-    $params['receive_date'] = strftime( "%Y-%m-%d", $date - ( 60 * 60 * 10 ) );
+  // For tax reasons, any donation made in the US on Jan 1 UTC should have a timestring in HST.
+  // So do 'em all that way.
+  $params['receive_date'] = strftime("%Y-%m-%d", $date - (60 * 60 * 10));
 
-    $template = new Templating(
-        drupal_get_path( 'module', 'thank_you' ) . DIRECTORY_SEPARATOR . 'templates',
-        "thank_you",
-        $params['locale'],
-        $params
-    );
+  $template = new Templating(
+    drupal_get_path('module', 'thank_you') . DIRECTORY_SEPARATOR . 'templates',
+    "thank_you",
+    $params['locale'],
+    $params
+  );
 
-    $page_content = $template->render( 'html' );
-    $page_content = str_replace( '<p></p>', '', $page_content );
-    $subject = $template->render( 'subject' );
-    return array($page_content, $subject);
+  $page_content = $template->render('html');
+  $page_content = str_replace('<p></p>', '', $page_content);
+  $subject = $template->render('subject');
+  return array($page_content, $subject);
 }
 
-function build_unsub_link( $contributionId, $emailAddr, $language ) {
-    # TODO: transform locale to a MediaWiki language code
-	$unsub_params = array(
-		"p" => "thankyou",
-		"c" => $contributionId,
-		"e" => $emailAddr,
-		"h" => sha1( $contributionId . $emailAddr . WMF_UNSUB_SALT ),
-		"uselang" => $language,
-	);
+function build_unsub_link($contributionId, $emailAddr, $language) {
+  # TODO: transform locale to a MediaWiki language code
+  $unsub_params = array(
+    "p" => "thankyou",
+    "c" => $contributionId,
+    "e" => $emailAddr,
+    "h" => sha1($contributionId . $emailAddr . WMF_UNSUB_SALT),
+    "uselang" => $language,
+  );
 
-	return variable_get( 'thank_you_unsubscribe_url', '' ) . '?' . http_build_query( $unsub_params, '', '&' );
+  return variable_get('thank_you_unsubscribe_url', '') . '?' . http_build_query($unsub_params, '', '&');
 }
 
 function thank_you_batch_test() {
-	if ( !defined( 'WMF_UNSUB_SALT' ) ) {
-		define( 'WMF_UNSUB_SALT', 'aslkdhaslkdjasd' );
-	}
-	civicrm_initialize();
+  if (!defined('WMF_UNSUB_SALT')) {
+    define('WMF_UNSUB_SALT', 'aslkdhaslkdjasd');
+  }
+  civicrm_initialize();
 
-	$create_civi_mail = variable_get( 'thank_you_add_civimail_records', 'false' );
-	$rate = variable_get( 'thank_you_civimail_rate', 1.0 );
+  $create_civi_mail = variable_get('thank_you_add_civimail_records', 'false');
+  $rate = variable_get('thank_you_civimail_rate', 1.0);
 
-	// Don't actually send any emails
-	wmf_communication\Mailer::$defaultSystem = 'test';
+  // Don't actually send any emails
+  wmf_communication\Mailer::$defaultSystem = 'test';
 
-	// Don't want to skip anything due to age
-	$oldTyDays = variable_get('thank_you_days', 14);
-	variable_set('old_thank_you_days', $oldTyDays);
-	variable_set('thank_you_days', DUMB_BIG_TY_DAYS);
+  // Don't want to skip anything due to age
+  $oldTyDays = variable_get('thank_you_days', 14);
+  variable_set('old_thank_you_days', $oldTyDays);
+  variable_set('thank_you_days', DUMB_BIG_TY_DAYS);
 
-	watchdog( "thank_you", "Simulating up to 1000 thank you mails.", array(), WATCHDOG_INFO );
-	watchdog( "thank_you", "Civimail creation: $create_civi_mail. Sample rate: $rate", array(), WATCHDOG_INFO );
+  watchdog("thank_you", "Simulating up to 1000 thank you mails.", array(), WATCHDOG_INFO);
+  watchdog("thank_you", "Civimail creation: $create_civi_mail. Sample rate: $rate", array(), WATCHDOG_INFO);
 
-	$start = time();
-	$sent = 0;
-	
-	$dbs = wmf_civicrm_get_dbs();
-	$dbs->push( 'civicrm' );
-	try {
+  $start = time();
+  $sent = 0;
 
-		$ty_query = <<<EOT
+  $dbs = wmf_civicrm_get_dbs();
+  $dbs->push('civicrm');
+  try {
+
+    $ty_query = <<<EOT
 		SELECT civicrm_contribution.id, trxn_id
 		FROM civicrm_contribution
 		JOIN wmf_contribution_extra
@@ -941,26 +960,32 @@ function thank_you_batch_test() {
 		ORDER BY id DESC LIMIT 1000;
 EOT;
 
-		$result = db_query( $ty_query );
-		foreach ( $result as $contribution ) {
-			watchdog(
-				"thank_you",
-				"Pretending to send thank you mail for contribution ID [{$contribution->id}], trxn_id [{$contribution->trxn_id}]",
-				array(),
-				WATCHDOG_INFO
-			);
-			if ( thank_you_for_contribution( $contribution->id ) ) {
-				$sent++;
-			}
-		}
-	} catch ( Exception $ex ) {
-		// Just need to make sure we reset the TY days
-	}
-	$dbs->pop();
-	$elapsed = time() - $start;
-	variable_set('thank_you_days', $oldTyDays);
-	watchdog( "thank_you", "Simulated sending $sent emails in $elapsed seconds.", array(), WATCHDOG_INFO );
+    $result = db_query($ty_query);
+    foreach ($result as $contribution) {
+      watchdog(
+        "thank_you",
+        "Pretending to send thank you mail for contribution ID [{$contribution->id}], trxn_id [{$contribution->trxn_id}]",
+        array(),
+        WATCHDOG_INFO
+      );
+      if (thank_you_for_contribution($contribution->id)) {
+        $sent++;
+      }
+    }
+  }
+  catch (Exception $ex) {
+    // Just need to make sure we reset the TY days
+  }
+  $dbs->pop();
+  $elapsed = time() - $start;
+  variable_set('thank_you_days', $oldTyDays);
+  watchdog("thank_you", "Simulated sending $sent emails in $elapsed seconds.", array(), WATCHDOG_INFO);
 }
 
-class ThankYouException extends Exception {}
-class TemplateInfoMissingException extends Exception {}
+class ThankYouException extends Exception {
+
+}
+
+class TemplateInfoMissingException extends Exception {
+
+}

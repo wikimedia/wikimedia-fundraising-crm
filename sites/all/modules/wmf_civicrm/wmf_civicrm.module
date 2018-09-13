@@ -74,63 +74,6 @@ function wmf_civicrm_get_settlement_currency($transaction) {
   return 'USD';
 }
 
-/**
- * Given the date a payment was settled (in unix seconds), recalculate the
- * amount in USD using the exchange rate at that moment.  Put this amount in a
- * custom field.
- * Then, set the civi amounts and currencies to reflect the real settlement
- * currency and amount.
- *
- * Return the contribution array with these extra fields merged in.
- */
-function wmf_civicrm_settle($contribution, $settled_timestamp = NULL) {
-  if ($settled_timestamp === NULL) {
-    // Get the stored date
-    // FIXME wmf_civicrm_get_custom_values('settlement_date');
-    $field = wmf_civicrm_get_custom_field_name('settlement_date');
-    $params = array(
-      'entityID' => $contribution['id'],
-      $field => 1,
-    );
-    $result = CRM_Core_BAO_CustomValueTable::getValues($params);
-    $settlement_db_date = $result[$field];
-    $settled_timestamp = wmf_common_date_parse_string($settlement_db_date);
-    $settlement_db_date = wmf_common_date_unix_to_sql($settled_timestamp);
-  }
-  else {
-    $settlement_db_date = wmf_common_date_unix_to_sql($settled_timestamp);
-  }
-
-  list($original_currency, $original_amount) = explode(" ", $contribution['source']);
-  $total_usd = round(exchange_rate_convert($original_currency, $original_amount, $settled_timestamp), 2);
-
-  $custom_values = array(
-    'total_usd' => $total_usd,
-    'settlement_date' => $settlement_db_date,
-  );
-  wmf_civicrm_set_custom_field_values($contribution['id'], $custom_values);
-
-  $settled_currency = wmf_civicrm_get_settlement_currency($contribution);
-  if ($contribution['currency'] != $settled_currency) {
-    $settlement_convert =
-      exchange_rate_convert($settled_currency, 1, $settled_timestamp);
-    $contribution['total_amount'] = round($contribution['total_amount'] * $settlement_convert, 2);
-    $contribution['fee_amount'] = round($contribution['fee_amount'] * $settlement_convert, 2);
-    $contribution['net_amount'] = round($contribution['net_amount'] * $settlement_convert, 2);
-
-    $contribution['currency'] = $settled_currency;
-
-    $contribution['version'] = 3; //WTF
-
-    $contribution_result = civicrm_api("Contribution", "Create", $contribution);
-    if (array_key_exists('is_error', $contribution_result) && $contribution_result['is_error'] != 0) {
-      throw new WmfException(WmfException::IMPORT_CONTRIB, "Couldn't update contribution with new settlement info. Original error: {$contribution_result['error_message']}. txn_id: {$contribution['trxn_id']}");
-    }
-  }
-
-  return array_merge($contribution, $custom_values);
-}
-
 function wmf_civicrm_get_custom_values($entity_id, $names, $group_name = NULL) {
   $names = (array) $names;
   $params['entityID'] = $entity_id;
@@ -150,11 +93,23 @@ function wmf_civicrm_get_custom_values($entity_id, $names, $group_name = NULL) {
   return $ret;
 }
 
+/**
+ * @deprecated
+ *
+ * Phase this out as it is does some unecessary queries.
+ *
+ * @param $entity_id
+ * @param $map
+ * @param null $group_name
+ *
+ * @throws \WmfException
+ */
 function wmf_civicrm_set_custom_field_values($entity_id, $map, $group_name = NULL) {
   $params = array(
     'entityID' => $entity_id,
   );
-  $custom_fields = wmf_civicrm_get_custom_field_map(array_keys($map), $group_name);
+  $custom_fields =
+    wmf_civicrm_get_custom_field_map(array_keys($map), $group_name);
   foreach ($map as $field_name => $value) {
     $params[$custom_fields[$field_name]] = $value;
   }
@@ -2446,84 +2401,6 @@ function wmf_civicrm_mark_refund(
 }
 
 /**
- * Update civi records to track gateway status change events.
- *
- * If more recent information is in the database, ignore the event
- * unless it is a Refund.
- *
- * For refund events, mark the refund using our helper function.
- *
- * Raw gateway status is stored in a custom field.
- *
- * @param int $contribution_id
- * @param string $raw_status
- * @param string $normalized_status
- * @param int $timestamp
- *
- * @throws WmfException
- */
-function wmf_civicrm_set_gateway_status($contribution_id, $raw_status, $normalized_status = NULL, $timestamp = NULL) {
-  civicrm_initialize();
-
-  if ($normalized_status !== NULL) {
-    $contribution = new CRM_Contribute_BAO_Contribution();
-    $contribution->id = $contribution_id;
-    if (!$contribution->find(TRUE)) {
-      throw new WmfException(WmfException::INVALID_MESSAGE, "Contribution not found: $contribution_id");
-    }
-
-    $status_id = civicrm_api_contribution_status($normalized_status);
-    if ($status_id === NULL) {
-      watchdog('wmf_civicrm', "Normalized status does not exist: {$normalized_status}", array(), WATCHDOG_ERROR);
-    }
-  }
-
-  // this is sort of audit-specific logic
-  if ($normalized_status === 'Refunded') {
-    // We restore the old status id in case this refund action was less recent
-    // than current info in the db.  If the data conditional below succeeds, we
-    // set the status to 'refunded' again.
-    $old_status_id = $contribution->contribution_status_id;
-    try {
-      wmf_civicrm_mark_refund($contribution_id, 'chargeback', TRUE);
-    }
-    catch (WmfException $e) {
-      watchdog('wmf_civicrm', "Cannot create a refund for: {$contribution_id}", array(), WATCHDOG_ERROR);
-    }
-    $contribution->find(TRUE);
-    $contribution->contribution_status_id = $old_status_id;
-    $contribution->save();
-  }
-
-  if ($timestamp === NULL) {
-    $gateway_date = gmdate('YmdHis');
-  }
-  else {
-    $gateway_date = gmdate('YmdHis', $timestamp);
-  }
-
-  $original_custom_values = wmf_civicrm_get_custom_values($contribution_id, array(
-    'gateway_date',
-  ));
-  $last_timestamp = wmf_common_date_parse_string($original_custom_values['gateway_date']);
-  $last_gateway_date = wmf_common_date_unix_to_sql($last_timestamp);
-
-  if ($last_gateway_date >= $gateway_date) {
-    watchdog('wmf_civicrm', "Not updating contribution, because a more recent gateway status change has been recorded: {$contribution_id}", array(), WATCHDOG_INFO);
-    return;
-  }
-
-  $custom_values['gateway_date'] = $gateway_date;
-  $custom_values['gateway_status_raw'] = $raw_status;
-  wmf_civicrm_set_custom_field_values($contribution_id, $custom_values);
-
-  if ($normalized_status !== NULL) {
-    $contribution->contribution_status_id = $status_id;
-  }
-  $contribution->save();
-}
-
-/**
  * Implementation of hook_civicrm_merge().
  *
  * @param string $type
@@ -3396,6 +3273,60 @@ function wmf_get_calculated_field_names() {
 }
 
 /**
+ * Implementation of hook_civicrm_pre
+ * @param $op
+ * @param $type
+ * @param $id
+ * @param $entity
+ */
+function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
+  switch($type) {
+    case 'Contribution':
+      wmf_civicrm_civicrm_pre_Contribution($op, $id, $entity);
+      break;
+  }
+}
+
+function wmf_civicrm_civicrm_pre_Contribution($op, $id, &$contribution) {
+  switch ($op) {
+    case 'create':
+    case 'edit':
+      // Add derived wmf_contribution_extra fields to contribution parameters
+      if (WmfDatabase::isNativeTxnRolledBack()) {
+        throw new WmfException(
+          WmfException::IMPORT_CONTRIB,
+          'Native txn rolled back before running pre contribution hook'
+        );
+      }
+      $extra = wmf_civicrm_get_wmf_contribution_extra($contribution);
+
+      if ($extra) {
+        $map = wmf_civicrm_get_custom_field_map(
+          array_keys($extra), 'contribution_extra'
+        );
+        $mapped = [];
+        foreach($extra as $key => $value) {
+          $mapped[$map[$key]] = $value;
+        }
+        $contribution += $mapped;
+        // FIXME: Seems really ugly that we have to do this, but when
+        // a contribution is created via api3, the _pre hook fires
+        // after the custom field have been transformed and copied
+        // into the 'custom' key
+        $formatted = [];
+        _civicrm_api3_custom_format_params($mapped, $formatted, 'Contribution');
+        if (isset($contribution['custom'])) {
+          $contribution['custom'] += $formatted['custom'];
+        } else {
+          $contribution['custom'] = $formatted['custom'];
+        }
+      }
+
+      break;
+  }
+}
+
+/**
  * Implementation of hook_civicrm_post, used to update contribution_extra fields
  * and wmf_donor rollup fields.
  */
@@ -3417,55 +3348,86 @@ function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
           'Native txn rolled back before running post contribution hook'
         );
       }
-      $extra = array();
-
-      if ($contribution->trxn_id) {
-        try {
-          $transaction = WmfTransaction::from_unique_id($contribution->trxn_id);
-          $extra['gateway'] = strtolower($transaction->gateway);
-          $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
-        }
-        catch (WmfException $ex) {
-          watchdog('wmf_civicrm', "Failed to parse trxn_id: {$contribution->trxn_id}, " . $ex->getMessage());
-        }
+      $params = wmf_civicrm_getLastDonationParams($contribution);
+      if (!empty($params)) {
+        $params['id'] = $contribution->contact_id;
+        civicrm_api3('Contact', 'create', $params);
       }
 
-      if ($contribution->source) {
-        list($original_currency, $original_amount) = explode(" ", $contribution->source);
-        if (is_numeric($original_amount) && wmf_civicrm_is_valid_currency($original_currency)) {
-          $extra['original_currency'] = $original_currency;
-          $extra['original_amount'] = $original_amount;
-        }
-        elseif (is_numeric($original_amount)) {
-          $extra['original_currency'] = 'USD';
-          $extra['original_amount'] = $contribution->total_amount;
-        }
-      }
-
-    $params = wmf_civicrm_getLastDonationParams($contribution, $extra);
-    if (!empty($params)) {
-      $params['id'] = $contribution->contact_id;
-      civicrm_api3('Contact', 'create', $params);
-    }
-
-    if ($extra) {
-      wmf_civicrm_set_custom_field_values($id, $extra);
-    }
-
-    break;
+      break;
   }
 }
 
+function wmf_civicrm_get_wmf_contribution_extra($contribution) {
+  $extra = [];
+
+  if (!empty($contribution['trxn_id'])) {
+    try {
+      $transaction = WmfTransaction::from_unique_id($contribution['trxn_id']);
+      $extra['gateway'] = strtolower($transaction->gateway);
+      $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
+    } catch (WmfException $ex) {
+      watchdog('wmf_civicrm', "Failed to parse trxn_id: {$contribution['trxn_id']}, " . $ex->getMessage());
+    }
+  }
+
+  if (!empty($contribution['source'])) {
+    $extra = array_merge($extra, wmf_civicrm_get_original_currency_and_amount_from_source($contribution['source'], $contribution['total_amount']));
+  }
+  return $extra;
+}
+
 /**
+ * Get original currency & amount
+ *
+ * The source field holds the amount & currency - parse it out
+ * e.g 'USD 15.25'
+ *
+ * @param string $source
+ * @param float $usd_amount
+ *
+ * @return array
+ */
+function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_amount) {
+  if (empty($source)) {
+    return [];
+  }
+  list($original_currency, $original_amount) = explode(" ", $source);
+  if (is_numeric($original_amount) && wmf_civicrm_is_valid_currency($original_currency)) {
+    return ['original_currency' => $original_currency, 'original_amount' => $original_amount];
+  }
+
+  if (is_numeric($original_amount)) {
+    return ['original_currency' => 'USD', 'original_amount' => $usd_amount];
+  }
+  return [];
+
+}
+/**
+ * Get the details of the last donation received if it differs from the current one.
+ *
+ * We use this information to update the last_donation_amount and
+ * last_donation_currency fields. They will already have been updated to hold
+ * the information about the current one in those fields so we only return the
+ * information if it differs.
+ *
  * @param \CRM_Contribute_BAO_Contribution $contribution
- * @param $extra
- * @param $params
  *
  * @return mixed
  */
-function wmf_civicrm_getLastDonationParams(&$contribution, $extra) {
+function wmf_civicrm_getLastDonationParams(&$contribution) {
   $contributionStatus = CRM_Core_PseudoConstant::getLabel('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $contribution->contribution_status_id);
   if (empty($contribution->total_amount) && (!$contributionStatus)) {
+    return [];
+  }
+  if ($contributionStatus === 'Completed'
+    && !empty($contribution->receive_date)
+    && substr($contribution->trxn_id, 0, 4) !== 'RFD '
+    && substr($contribution->receive_date, 0, 8) === date('Ymd')
+  ) {
+    // If the current donation was received today do an early return.
+    // What we lose in accuracy (perhaps 2 have come in on the same day) we
+    // gain in performance.
     return [];
   }
   if (!$contribution->contact_id || !$contribution->total_amount) {
@@ -3478,7 +3440,7 @@ function wmf_civicrm_getLastDonationParams(&$contribution, $extra) {
   // case we probably lose a get query & gain an 'update' query as the extra fields are likely already
   // updated by the triggers.
   $contactLastDonation = _wmf_civicrm_get_contact_last_donation_data($contribution);
-
+  $extra = wmf_civicrm_get_original_currency_and_amount_from_source($contribution->source, $contribution->total_amount);
   if ($contributionStatus === 'Completed' && substr($contribution->trxn_id, 0, 4) !== 'RFD ') {
     // This is a 'valid' transaction - it's either the latest or no update is required.
     if (strtotime($contactLastDonation['date']) === strtotime($contribution->receive_date)) {
@@ -3905,7 +3867,7 @@ LIMIT %4";
 
       if (!$api->Contribution->Create($params)) {
         throw new WmfException(
-          WmfException::UNKNOWN, "Failed to update USD amount of contribution: $id, " . db_error()
+          WmfException::UNKNOWN, "Failed to update USD amount of contribution: $id, " . $api->errorMsg()
         );
       }
     }
@@ -4264,18 +4226,35 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     foreach ($significantFields as $significantField) {
       $updateConditions[] = "(NEW.{$significantField} != OLD.{$significantField})";
     }
+
+    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
+    $requiredClauses = ['(NEW.financial_type_id <> ' . $endowmentFinancialType . ')'];
+    $anonymousContact = civicrm_api3('Contact', 'get', [
+      'first_name' => 'Anonymous',
+      'last_name' => 'Anonymous',
+      'options' => ['limit' => 1, 'sort' => 'id ASC'],
+    ]);
+
+    if ($anonymousContact['count']) {
+      // On live there will always be an anonymous contact. Check is just for dev instances.
+      $requiredClauses[] = '(NEW.contact_id <> ' . $anonymousContact['id'] . ')';
+    }
+
+    $insertSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' THEN ' . $sql . ' END IF; ';
+    $updateSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN ' . $sql . ' END IF; ';
+
     // We want to fire this trigger on insert, update and delete.
     $info[] = [
       'table' => 'civicrm_contribution',
       'when' => 'AFTER',
       'event' => 'INSERT',
-      'sql' => $sql,
+      'sql' => $insertSQL,
     ];
     $info[] = array(
       'table' => 'civicrm_contribution',
       'when' => 'AFTER',
       'event' => 'UPDATE',
-      'sql' => " IF " . implode(' OR ', $updateConditions) . " THEN " . $sql . " END IF;",
+      'sql' => $updateSQL,
     );
     $info[] = array(
       'table' => 'civicrm_contribution',
