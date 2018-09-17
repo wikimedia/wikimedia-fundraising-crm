@@ -9,7 +9,7 @@
             </div>
           {/if}
           <div class="crm-summary-block">
-            {include file=$block.tpl_file blockVariables=$block.template_variables}
+            {include file=$block.tpl_file}
           </div>
         </div>
       {/foreach}
