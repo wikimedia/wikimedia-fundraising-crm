@@ -129,6 +129,9 @@ function dedupetools_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
  * @param int $contactID
  */
 function dedupetools_civicrm_summaryActions(&$actions, $contactID) {
+  if ($contactID === NULL) {
+    return;
+  }
   try {
     $ruleGroups = civicrm_api3('RuleGroup', 'get', array(
       'contact_type' => civicrm_api3('Contact', 'getvalue' , array('id' => $contactID, 'return' => 'contact_type')),
