@@ -9,7 +9,17 @@ class CRM_Contactlayout_Page_Inline_ProfileBlock extends CRM_Core_Page {
 
     $this->assign('contactId', $contactId);
     $this->assign('profileBlock', self::getProfileBlock($profileId, $contactId));
-    $this->assign('block', ['profile_id' => $profileId]);
+
+    $allBlocks = CRM_Contactlayout_BAO_ContactLayout::getAllBlocks();
+    foreach ($allBlocks['profile']['blocks'] as $block) {
+      if ($block['profile_id'] == $profileId) {
+        $this->assign('block', $block);
+      }
+    }
+
+    // Needed to display tags
+    $this->assign('contactTag', CRM_Core_BAO_EntityTag::getContactTags($contactId));
+    $this->assign('allTags', CRM_Core_BAO_Tag::getTagsUsedFor('civicrm_contact', FALSE));
 
     CRM_Contact_Page_View::checkUserPermission($this, $contactId);
     parent::run();
@@ -32,7 +42,12 @@ class CRM_Contactlayout_Page_Inline_ProfileBlock extends CRM_Core_Page {
     CRM_Core_BAO_UFGroup::getValues($contactId, $fields, $values, FALSE);
     $result = [];
     foreach ($fields as $name => $field) {
-      // Special handling for employer field
+      // Special handling for group field (profiles only show public groups by default)
+      if ($name == 'group') {
+        $groups = array_column(CRM_Contact_BAO_GroupContact::getContactGroup($contactId, 'Added'), 'title');
+        $values[$field['title']] = implode(', ', $groups);
+      }
+      // Special handling for employer field - show multiple
       if ($name == 'current_employer') {
         $employers = [];
         foreach (CRM_Contactlayout_Form_Inline_ProfileBlock::getEmployers($contactId) as $employer) {
