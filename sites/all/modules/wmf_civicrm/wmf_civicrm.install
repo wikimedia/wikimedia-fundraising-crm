@@ -4489,3 +4489,25 @@ function wmf_civicrm_update_7755() {
   ");
 
 }
+
+/**
+ * Fix opt_in values for PayPal donors cheated by form bug.
+ * Looks like 1,341 people affected
+ *
+ * Bug: T204769
+ */
+function wmf_civicrm_update_7760() {
+  global $databases;
+  civicrm_initialize();
+  $drupal = $databases['default']['default']['database'];
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_value_1_communication_4 comm
+    INNER JOIN civicrm_contribution cc ON comm.entity_id = cc.contact_id
+    INNER JOIN {$drupal}.contribution_tracking ct ON ct.contribution_id = cc.id
+    SET comm.opt_in = 0
+    WHERE comm.opt_in = 1
+      AND ct.utm_source LIKE '%optIn0%'
+      AND receive_date BETWEEN '2018-09-10' AND '2018-09-15'
+      AND trxn_id LIKE 'PAYPAL%'
+  ");
+}
