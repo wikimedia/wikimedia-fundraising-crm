@@ -85,6 +85,7 @@ class EngageChecksFile extends ChecksFile {
     $params = [
       'sequential' => TRUE,
       'contact_id.contact_type' => $msg['contact_type'],
+      'contact_id.is_deleted' => 0,
       // we need to return the custom field (for now) as a core bug is not adding the table on sort only.
       'return' => ['contact_id.id', 'contact_id.' . wmf_civicrm_get_custom_field_name('last_donation_date')],
       'options' => ['sort' => 'contact_id.' . wmf_civicrm_get_custom_field_name('last_donation_date') . ' DESC'],
