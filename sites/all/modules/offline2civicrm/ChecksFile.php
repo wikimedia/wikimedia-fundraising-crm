@@ -97,7 +97,8 @@ abstract class ChecksFile {
    * @throws \Exception
    */
   function import() {
-    ChecksImportLog::record("Beginning import of checks file {$this->file_uri}...");
+    $type = get_called_class();
+    ChecksImportLog::record("Beginning import of $type file {$this->file_uri}...");
     //TODO: $db->begin();
 
     ini_set('auto_detect_line_endings', TRUE);
