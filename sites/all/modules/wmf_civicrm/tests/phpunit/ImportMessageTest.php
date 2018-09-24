@@ -629,7 +629,65 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         ),
       );
 
-      return $cases;
+    $gateway_txn_id = mt_rand();
+    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey(
+      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift'
+    );
+    $cases[] = array( // Endowment Gift, specified in utm_medium
+      array(
+        'currency' => 'USD',
+        'date' => '2018-07-01 00:00:00',
+        'email' => 'nobody@wikimedia.org',
+        'first_name' => 'First',
+        'fee' => '0.03',
+        'language' => 'en_US',
+        'gateway' => 'test_gateway',
+        'gateway_txn_id' => $gateway_txn_id,
+        'gateway_status' => 'P',
+        'gross' => '1.23',
+        'last_name' => 'Last',
+        'middle_name' => 'Middle',
+        'payment_method' => 'cc',
+        'utm_medium' => 'endowment',
+      ),
+      array(
+        'contribution' => array(
+          'address_id' => '',
+          'amount_level' => '',
+          'campaign_id' => '',
+          'cancel_date' => '',
+          'cancel_reason' => '',
+          'check_number' => '',
+          'contribution_page_id' => '',
+          'contribution_recur_id' => '',
+          'contribution_status_id' => '1',
+          'contribution_type_id' => $endowmentFinancialType,
+          'currency' => 'USD',
+          'fee_amount' => '0.03',
+          'invoice_id' => '',
+          'is_pay_later' => '',
+          'is_test' => '',
+          'net_amount' => '1.2', # :(
+          'non_deductible_amount' => '',
+          'payment_instrument_id' => $payment_instrument_cc,
+          'receipt_date' => '',
+          'receive_date' => '20180701000000',
+          'source' => 'USD 1.23',
+          'total_amount' => '1.23',
+          'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+          'financial_type_id' => $endowmentFinancialType,
+          'creditnote_id' => '',
+          'tax_amount' => '',
+        ),
+        'contribution_custom_values' => array(
+          'gateway' => 'test_gateway',
+          'gateway_txn_id' => (string) $gateway_txn_id,
+          'gateway_status_raw' => 'P',
+          'no_thank_you' => 'Endowment Gift',
+        ),
+      )
+    );
+    return $cases;
   }
 
   public function testImportContactGroups() {

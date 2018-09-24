@@ -2026,6 +2026,11 @@ function wmf_civicrm_normalize_msg($msg) {
     }
   }
 
+  if (wmf_civicrm_is_endowment_gift($msg)) {
+    $msg['financial_type_id'] = 'Endowment Gift';
+    $msg['no_thank_you'] = 'Endowment Gift';
+  }
+
   $msg['anonymous'] = ((!empty($msg['anonymous']) && strtoupper($msg['anonymous']) !== "FALSE") ? 1 : 0);
   $msg['optout'] = ((empty($msg['optout']) || $msg['optout'] === 0 || $msg['optout'] === '0' || strtoupper($msg['optout']) === "FALSE") ? 0 : 1);
 
@@ -4345,4 +4350,13 @@ function wmf_civicrm_get_tag_names($entity_id, $entity_table = 'civicrm_contribu
     $tag_names[] = \Civi::$statics['wmf_civicrm']['tags'][$entityTag['tag_id']];
   }
   return $tag_names;
+}
+
+/**
+ * @param array $msg
+ *
+ * @return bool
+ */
+function wmf_civicrm_is_endowment_gift($msg) {
+  return isset($msg['utm_medium']) && $msg['utm_medium'] === 'endowment';
 }
