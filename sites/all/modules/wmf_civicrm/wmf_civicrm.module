@@ -4189,6 +4189,11 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       // end of short term 'is' fields.
     }
 
+    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
+    if (!$endowmentFinancialType) {
+      throw new CRM_Core_Exception('No endowment gift type');
+    }
+
     $sql = "
     INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
     lifetime_usd_total, last_donation_date, " . implode(',', $fields) . ")
@@ -4208,12 +4213,14 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       FROM civicrm_contribution c
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
+        AND financial_type_id <> $endowmentFinancialType
     ) as totals
   LEFT JOIN civicrm_contribution cont ON cont.contact_id = NEW.contact_id
   AND receive_date = totals.last_donation_date
   AND contribution_status_id = 1
   AND total_amount > 0
   AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
+  AND financial_type_id <> $endowmentFinancialType
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
   LIMIT 1
 
@@ -4225,14 +4232,12 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     last_donation_date = VALUES(last_donation_date),
     " . implode(',', $updates) . ";";
 
-    $updateOldSql = str_replace('NEW.', 'OLD.', $sql);
     $significantFields = ['contribution_status_id', 'total_amount', 'contact_id', 'receive_date', 'currency'];
     $updateConditions = [];
     foreach ($significantFields as $significantField) {
       $updateConditions[] = "(NEW.{$significantField} != OLD.{$significantField})";
     }
 
-    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
     $requiredClauses = ['(NEW.financial_type_id <> ' . $endowmentFinancialType . ')'];
     $anonymousContact = civicrm_api3('Contact', 'get', [
       'first_name' => 'Anonymous',
@@ -4247,6 +4252,14 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
 
     $insertSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' THEN ' . $sql . ' END IF; ';
     $updateSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN ' . $sql . ' END IF; ';
+    $requiredClausesForOldClause = str_replace('NEW.', 'OLD.', implode(' AND ', $requiredClauses));
+    $oldSql =  str_replace('NEW.', 'OLD.', $sql);
+    $updateOldSQL = ' IF ' . $requiredClausesForOldClause
+      . ' AND (NEW.contact_id <> OLD.contact_id) THEN '
+      . $oldSql . ' END IF; ';
+
+    $deleteSql = ' IF ' . $requiredClausesForOldClause . ' THEN ' . $oldSql . ' END IF; ';
+
 
     // We want to fire this trigger on insert, update and delete.
     $info[] = [
@@ -4265,14 +4278,14 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       'table' => 'civicrm_contribution',
       'when' => 'AFTER',
       'event' => 'UPDATE',
-      'sql' => "IF (NEW.contact_id <> OLD.contact_id) THEN " . $updateOldSql . " END IF;",
+      'sql' => $updateOldSQL,
     );
     // For delete, we reference OLD.field instead of NEW.field
     $info[] = array(
       'table' => 'civicrm_contribution',
       'when' => 'AFTER',
       'event' => 'DELETE',
-      'sql' => $updateOldSql,
+      'sql' => $deleteSql,
     );
   }
 

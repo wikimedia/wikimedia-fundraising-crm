@@ -129,6 +129,92 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test that wmf_donor calculations don't include Endowment.
+   *
+   * We set up 2 contacts
+   *  - one with an Endowment gift
+   *  - one with a cash donation
+   *
+   * We check the cash donation but not the gift is in the totals
+   *
+   * After merging we check the same again.
+   *
+   * Although a bit tangental we test calcs on deleting a contribution at the end.
+   */
+  public function testMergeEndowmentCalculation() {
+    $this->callAPISuccess('Contribution', 'create', array(
+      'contact_id' => $this->contactID,
+      'financial_type_id' => 'Endowment Gift',
+      'total_amount' => 10,
+      'currency' => 'USD',
+      'receive_date' => '2014-08-04',
+      wmf_civicrm_get_custom_field_name('original_currency') => 'NZD',
+      wmf_civicrm_get_custom_field_name('original_amount') => 8,
+    ));
+    $cashJob = $this->callAPISuccess('Contribution', 'create', array(
+      'contact_id' => $this->contactID2,
+      'financial_type_id' => 'Cash',
+      'total_amount' => 5,
+      'currency' => 'USD',
+      'receive_date' => '2013-01-04',
+    ));
+
+    $this->callAPISuccess('Contribution', 'create', array(
+      'contact_id' => $this->contactID2,
+      'financial_type_id' => 'Endowment Gift',
+      'total_amount' => 7,
+      'currency' => 'USD',
+      'receive_date' => '2015-01-04',
+    ));
+
+    $contact = $this->callAPISuccess('Contact', 'get', array(
+      'id' => $this->contactID,
+      'sequential' => 1,
+      'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total')]
+    ))['values'][0];
+
+    $this->assertEquals('', $contact[wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
+
+    $contact = $this->callAPISuccess('Contact', 'get', array(
+      'id' => $this->contactID2,
+      'sequential' => 1,
+      'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total')]
+    ))['values'][0];
+    $this->assertEquals(5, $contact[wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array(
+      'criteria' => array('contact' => array('id' => array('IN' => array($this->contactID, $this->contactID2)))),
+    ));
+    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCustomFieldValues($this->contactID, [
+      'lifetime_usd_total' => 5,
+      'last_donation_amount' => 5,
+      'last_donation_currency' => 'USD',
+      'last_donation_usd' => 5,
+      'last_donation_date' => '2013-01-04',
+      'total_2016_2017' => 0,
+      'total_2015_2016' => 0,
+      'total_2014_2015' => 0,
+      'total_2013_2014' => 0,
+      'total_2012_2013' => 5,
+    ]);
+
+    $this->callAPISuccess('Contribution', 'delete', ['id' => $cashJob['id']]);
+    $this->assertCustomFieldValues($this->contactID, [
+      'lifetime_usd_total' => '',
+      'last_donation_amount' => 0,
+      'last_donation_currency' => '',
+      'last_donation_usd' => 0,
+      'last_donation_date' => '',
+      'total_2016_2017' => '',
+      'total_2015_2016' => '',
+      'total_2014_2015' => '',
+      'total_2013_2014' => '',
+      'total_2012_2013' => '',
+    ]);
+  }
+
+  /**
    * Test altering the address decision by hook.
    *
    * I feel I did something a bit sneaky here. I actually wrote both the test and
