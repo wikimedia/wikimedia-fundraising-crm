@@ -189,48 +189,7 @@ abstract class ChecksFile {
         if ($error_streak_count >= $error_streak_threshold) {
           throw new IgnoredRowException(WmfException::IMPORT_CONTRIB, 'Error limit reached');
         }
-        $msg = $this->parseRow($data);
-        $existing = $this->checkForExistingContributions($msg);
-
-        // check to see if we have already processed this check
-        if ($existing) {
-          $skipped = $this->handleDuplicate($existing);
-          if ($skipped) {
-            if ($this->numberDuplicateRows === 0) {
-              $this->skippedFileResource = $this->createOutputFile($this->skipped_file_uri, 'Skipped', $headers);
-            }
-            $this->numberDuplicateRows++;
-            fputcsv($this->skippedFileResource, array_merge(array('Skipped' => 'Duplicate'), $data));
-            fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Duplicate'), $data));
-
-          }
-          else {
-            $this->numberSucceededRows++;
-          }
-          continue;
-        }
-
-        // tha business.
-        $contribution = WmfDatabase::transactionalCall(array(
-          $this,
-          'doImport',
-        ), array($msg));
-
-        if (empty($msg['contact_id'])) {
-          $this->numberContactsCreated ++;
-          if (!$this->allNotMatchedFileResource) {
-            $this->allNotMatchedFileResource = $this->createOutputFile($this->all_not_matched_to_existing_contacts_file_uri, 'Not Matched to existing', $headers);
-          }
-          fputcsv($this->allNotMatchedFileResource, array_merge(array('Not matched to existing' => 'Informational'), $data));
-        }
-
-        watchdog('offline2civicrm',
-          'Import checks: Contribution imported successfully (@id): !msg', array(
-            '@id' => $contribution['id'],
-            '!msg' => print_r($msg, TRUE),
-          ), WATCHDOG_INFO
-        );
-        $this->numberSucceededRows++;
+        $this->importRow($data, $headers);
       }
       catch (EmptyRowException $ex) {
         continue;
@@ -781,6 +740,55 @@ abstract class ChecksFile {
     foreach (array('city', 'street_address', 'postal_code', 'state_province', 'country') as $locationField) {
       $msg[$locationField] = '';
     }
+  }
+
+  /**
+   * @param $data
+   * @param $headers
+   */
+  protected function importRow($data, $headers) {
+    $msg = $this->parseRow($data);
+    $existing = $this->checkForExistingContributions($msg);
+
+    // check to see if we have already processed this check
+    if ($existing) {
+      $skipped = $this->handleDuplicate($existing);
+      if ($skipped) {
+        if ($this->numberDuplicateRows === 0) {
+          $this->skippedFileResource = $this->createOutputFile($this->skipped_file_uri, 'Skipped', $headers);
+        }
+        $this->numberDuplicateRows++;
+        fputcsv($this->skippedFileResource, array_merge(array('Skipped' => 'Duplicate'), $data));
+        fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Duplicate'), $data));
+
+      }
+      else {
+        $this->numberSucceededRows++;
+      }
+      return;
+    }
+
+    // tha business.
+    $contribution = WmfDatabase::transactionalCall(array(
+      $this,
+      'doImport',
+    ), array($msg));
+
+    if (empty($msg['contact_id'])) {
+      $this->numberContactsCreated++;
+      if (!$this->allNotMatchedFileResource) {
+        $this->allNotMatchedFileResource = $this->createOutputFile($this->all_not_matched_to_existing_contacts_file_uri, 'Not Matched to existing', $headers);
+      }
+      fputcsv($this->allNotMatchedFileResource, array_merge(array('Not matched to existing' => 'Informational'), $data));
+    }
+
+    watchdog('offline2civicrm',
+      'Import checks: Contribution imported successfully (@id): !msg', array(
+        '@id' => $contribution['id'],
+        '!msg' => print_r($msg, TRUE),
+      ), WATCHDOG_INFO
+    );
+    $this->numberSucceededRows++;
   }
 
 }
