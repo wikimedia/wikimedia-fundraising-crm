@@ -4,13 +4,57 @@ use SmashPig\CrmLink\Messages\SourceFields;
 
 /**
  * CSV batch format for manually-keyed donation checks
- *
- * FIXME: This currently includes stuff specific to Wikimedia Foundation
- * fundraising.
  */
 abstract class ChecksFile {
 
+  /**
+   * Number of rows skipped.
+   *
+   * @var int
+   */
   protected $numSkippedRows = 0;
+
+  /**
+   * Number of rows successfully imported.
+   *
+   * @var int
+   */
+  protected $numberSucceededRows = 0;
+
+  /**
+   * Number of rows found to be duplicates.
+   *
+   * @var int
+   */
+  protected $numberDuplicateRows = 0;
+
+  /**
+   * Number of rows found to be in error.
+   *
+   * @var int
+   */
+  protected $numberErrorRows = 0;
+
+  /**
+   * Number of rows ignored.
+   *
+   * @var int
+   */
+  protected $numberIgnoredRows = 0;
+
+  /**
+   * Number of contacts created.
+   *
+   * @var int
+   */
+  protected $numberContactsCreated = 0;
+
+  /**
+   * Number of rows in the csv.
+   *
+   * @var int
+   */
+  protected $totalNumberRows = 0;
 
   protected $messages = array();
 
@@ -27,6 +71,7 @@ abstract class ChecksFile {
   protected $all_not_matched_to_existing_contacts_file_uri = '';
 
   protected $row_index;
+
 
   /**
    * @var resource
@@ -116,11 +161,6 @@ abstract class ChecksFile {
 
     $this->validateColumns($headers);
 
-    $num_errors = 0;
-    $num_ignored = 0;
-    $num_successful = 0;
-    $num_duplicates = 0;
-    $num_new_contacts_created = 0;
     $this->row_index = -1 + $this->numSkippedRows;
     $error_streak_start = 0;
     $error_streak_count = 0;
@@ -156,16 +196,16 @@ abstract class ChecksFile {
         if ($existing) {
           $skipped = $this->handleDuplicate($existing);
           if ($skipped) {
-            if ($num_duplicates === 0) {
+            if ($this->numberDuplicateRows === 0) {
               $this->skippedFileResource = $this->createOutputFile($this->skipped_file_uri, 'Skipped', $headers);
             }
-            $num_duplicates++;
+            $this->numberDuplicateRows++;
             fputcsv($this->skippedFileResource, array_merge(array('Skipped' => 'Duplicate'), $data));
             fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Duplicate'), $data));
 
           }
           else {
-            $num_successful++;
+            $this->numberSucceededRows++;
           }
           continue;
         }
@@ -177,7 +217,7 @@ abstract class ChecksFile {
         ), array($msg));
 
         if (empty($msg['contact_id'])) {
-          $num_new_contacts_created ++;
+          $this->numberContactsCreated ++;
           if (!$this->allNotMatchedFileResource) {
             $this->allNotMatchedFileResource = $this->createOutputFile($this->all_not_matched_to_existing_contacts_file_uri, 'Not Matched to existing', $headers);
           }
@@ -190,26 +230,26 @@ abstract class ChecksFile {
             '!msg' => print_r($msg, TRUE),
           ), WATCHDOG_INFO
         );
-        $num_successful++;
+        $this->numberSucceededRows++;
       }
       catch (EmptyRowException $ex) {
         continue;
       }
       catch (IgnoredRowException $ex) {
-        if ($num_ignored === 0) {
+        if ($this->numberIgnoredRows === 0) {
           $this->ignoredFileResource = $this->createOutputFile($this->ignored_file_uri, 'Ignored', $headers);
         }
         fputcsv($this->ignoredFileResource, array_merge(array('Ignored' => $ex->getUserErrorMessage()), $data));
         fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Ignored: ' . $ex->getUserErrorMessage()), $data));
-        $num_ignored++;
+        $this->numberIgnoredRows++;
         continue;
       }
       catch (WmfException $ex) {
-        if ($num_errors === 0) {
+        if ($this->numberErrorRows === 0) {
           $this->errorFileResource = $this->createOutputFile($this->error_file_uri, 'Error', $headers);
         }
 
-        $num_errors++;
+        $this->numberErrorRows++;
         fputcsv($this->errorFileResource, array_merge(array('error' => $ex->getUserErrorMessage()), $data));
         fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Error: ' . $ex->getUserErrorMessage()), $data));
 
@@ -230,10 +270,10 @@ abstract class ChecksFile {
         $lastErrorRow = $rowNum;
       }
     }
-    $totalRows = $rowNum - 1;
+    $this->totalNumberRows = $rowNum - 1;
 
     if ($error_streak_count >= $error_streak_threshold) {
-      $this->closeFilesAndSetMessage($totalRows, $num_successful, $num_errors, $num_ignored, $num_duplicates, $num_new_contacts_created);
+      $this->closeFilesAndSetMessage($this->totalNumberRows, $this->numberSucceededRows, $this->numberErrorRows, $this->numberIgnoredRows, $this->numberDuplicateRows, $this->numberContactsCreated);
       throw new Exception("Import aborted due to {$error_streak_count} consecutive errors, last error was at row {$lastErrorRow}: {$lastError}. " . implode(' ', $this->messages)
       );
     }
@@ -244,7 +284,7 @@ abstract class ChecksFile {
 
     ChecksImportLog::record(implode(' ', $this->messages));
     watchdog('offline2civicrm', implode(' ', $this->messages), array(), WATCHDOG_INFO);
-    $this->closeFilesAndSetMessage($totalRows, $num_successful, $num_errors, $num_ignored, $num_duplicates, $num_new_contacts_created);
+    $this->closeFilesAndSetMessage($this->totalNumberRows, $this->numberSucceededRows, $this->numberErrorRows, $this->numberIgnoredRows, $this->numberDuplicateRows, $this->numberContactsCreated);
     return $this->messages;
 
   }
