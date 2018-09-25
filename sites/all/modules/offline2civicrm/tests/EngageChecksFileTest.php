@@ -226,6 +226,45 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   }
 
   /**
+   * Test that import doesn't match existing deleted contact with same info
+   */
+  function testImportSucceedIndividualSingleContactExistsDeleted() {
+
+    $daisy = $this->callAPISuccess('Contact', 'create', array(
+      'first_name' => 'Daisy',
+      'last_name' => 'Duck',
+      'contact_type' => 'Individual',
+      'is_deleted' => 1,
+      'api.address.create' => [
+        'city' => 'Duckville',
+        'postal_code' => '10210',
+        'street_address' => '1 15th Avenue.',
+        'location_type_id' => 'Home',
+      ],
+    ));
+
+    $this->importCheckFile();
+
+    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $daisy['id']));
+    $this->assertEquals(0, $contributions['count']);
+    $newDaisy = $this->callAPISuccess('Contact', 'get', array(
+      'first_name' => 'Daisy',
+      'last_name' => 'Duck',
+      'contact_type' => 'Individual',
+      'is_deleted' => 0,
+      'options' => array(
+        'sort' => 'id DESC',
+        'limit' => 1,
+      )
+    ));
+    // Should have created a new contact to attach the contribution to
+    $this->assertGreaterThan($daisy['id'], $newDaisy['id']);
+    $newContribs = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $newDaisy['id']));
+    $this->assertEquals(1, $newContribs['count']);
+
+  }
+
+  /**
    * Test that import matches existing contact (Daisy) on multiple match on address.
    *
    *  We have 4 Daisys. We should choose the one with the most recent contribution

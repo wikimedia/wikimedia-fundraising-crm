@@ -291,6 +291,7 @@ class BenevityFile extends ChecksFile {
       'email' => $msg['email'],
       'first_name' => $msg['first_name'],
       'last_name' => $msg['last_name'],
+      'is_deleted' => 0,
       'contact_type' => 'Individual',
       'return' => 'current_employer',
       'sort' => 'organization_name DESC',
@@ -396,6 +397,7 @@ class BenevityFile extends ChecksFile {
         'first_name' => $msg['first_name'],
         'last_name' => $msg['last_name'],
         'contact_type' => 'Individual',
+        'is_deleted' => 0,
         'return' => 'current_employer',
         'options' => array('limit' => 0),
       );
