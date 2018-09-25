@@ -45,17 +45,50 @@ class CRM_Contactlayout_Form_Inline_ProfileBlock extends CRM_Profile_Form_Edit {
       $cidElement->setValue($this->_id);
     }
 
+    // Special handling for groups
+    if ($this->elementExists('group')) {
+      $groupElement = $this->getElement('group');
+      $label = $groupElement->getLabel();
+      $frozen = $groupElement->isFrozen();
+      $this->removeElement('group');
+      $groups = CRM_Contact_BAO_Group::getGroupsHierarchy(CRM_Core_PseudoConstant::group(), NULL, '&nbsp;&nbsp;', TRUE);
+      $groupElement = $this->add('select', 'group', $label, $groups, FALSE, ['class' => 'crm-select2', 'multiple' => TRUE]);
+      if ($frozen) {
+        $groupElement->freeze();
+      }
+    }
+
+    // Profile forms do not add tag sets
+    if ($this->elementExists('tag')) {
+      $parentNames = CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
+      CRM_Core_Form_Tag::buildQuickForm($this, $parentNames, 'civicrm_contact', $this->_id, FALSE, TRUE);
+    }
+
     // Special handling for employer
     if ($this->elementExists('current_employer')) {
       $employerField = $this->getElement('current_employer');
+      $frozen = $employerField->isFrozen();
       $employerField = $this->addEntityRef('current_employer', $employerField->getLabel(), [
         'create' => TRUE,
         'multiple' => TRUE,
         'api' => ['params' => ['contact_type' => 'Organization']],
       ]);
-      $employers = self::getEmployers($this->_id);
-      $employerField->setValue(array_column($employers, 'contact_id'));
+      if ($frozen) {
+        $employerField->freeze();
+      }
     }
+  }
+
+  public function setDefaultValues() {
+    $defaults = parent::setDefaultValues();
+    if ($this->elementExists('group')) {
+      $defaults['group'] = array_column(CRM_Contact_BAO_GroupContact::getContactGroup($this->_id, 'Added'), 'group_id');
+    }
+    if ($this->elementExists('current_employer')) {
+      $employers = self::getEmployers($this->_id);
+      $defaults['current_employer'] = array_column($employers, 'contact_id');
+    }
+    return $defaults;
   }
 
   /**
@@ -64,13 +97,30 @@ class CRM_Contactlayout_Form_Inline_ProfileBlock extends CRM_Profile_Form_Edit {
    * @throws CiviCRM_API3_Exception
    */
   public function postProcess() {
-    $values = $this->exportValues();
+    $values = $origValues = $this->exportValues();
     // Ignore value from contact id field
     unset($values['id']);
     $values['contact_id'] = $cid = $this->_id;
     $values['profile_id'] = $this->_gid;
+
+    // Action is needed for tag postprocess
+    $this->_action = CRM_Core_Action::UPDATE;
+
     $this->processEmployer($values);
-    $result = civicrm_api3('Profile', 'submit', $values);
+    $this->processGroups($values);
+    civicrm_api3('Profile', 'submit', $values);
+
+    // Save tagsets (not handled by profile api)
+    if (!empty($values['contact_taglist'])) {
+      CRM_Core_Form_Tag::postProcess($values['contact_taglist'], $cid, 'civicrm_contact', $this);
+    }
+
+    // Refresh tabs affected by this profile
+    foreach (['tag', 'group', 'note'] as $set) {
+      if (isset($origValues[$set])) {
+        $this->ajaxResponse['updateTabs']["#tab_$set"] = CRM_Contact_BAO_Contact::getCountComponent($set, $this->_id);
+      }
+    }
 
     // These are normally performed by CRM_Contact_Form_Inline postprocessing but this form doesn't inherit from that class.
     CRM_Core_BAO_Log::register($cid,
@@ -82,12 +132,6 @@ class CRM_Contactlayout_Form_Inline_ProfileBlock extends CRM_Profile_Form_Edit {
       $this->ajaxResponse,
       CRM_Contact_Form_Inline_Lock::getResponse($cid)
     );
-    // Refresh tabs affected by this profile
-    foreach (['tag', 'group', 'note'] as $tab) {
-      if (isset($values[$tab])) {
-        $this->ajaxResponse['updateTabs']["#tab_$tab"] = CRM_Contact_BAO_Contact::getCountComponent($tab, $this->_id);
-      }
-    }
   }
 
   /**
@@ -160,6 +204,43 @@ class CRM_Contactlayout_Form_Inline_ProfileBlock extends CRM_Profile_Form_Edit {
       $this->ajaxResponse['updateTabs']['#tab_rel'] = CRM_Contact_BAO_Contact::getCountComponent('rel', $this->_id);
       unset($values['current_employer']);
     }
+  }
+
+  public function processGroups(&$values) {
+    $currentGroups = array_column(CRM_Contact_BAO_GroupContact::getContactGroup($this->_id, 'Added'), 'group_id');
+    $submitted = $values['group'] ?: [];
+    $toAdd = array_diff($submitted, $currentGroups);
+    $toRemove = array_diff($currentGroups, $submitted);
+    if ($toAdd) {
+      $updated = Civi\Api4\GroupContact::update()
+        ->setCheckPermissions(FALSE)
+        ->setReload(TRUE)
+        ->setMethod(E::ts('Admin'))
+        ->addValue('status', 'Added')
+        ->addWhere('contact_id', '=', $this->_id)
+        ->addWhere('group_id', 'IN', $toAdd)
+        ->execute();
+      $updated = array_column((array) $updated, 'group_id');
+      foreach (array_diff($toAdd, $updated) as $groupId) {
+        Civi\Api4\GroupContact::create()
+          ->setCheckPermissions(FALSE)
+          ->setMethod(E::ts('Admin'))
+          ->addValue('status', 'Added')
+          ->addValue('contact_id', $this->_id)
+          ->addValue('group_id', $groupId)
+          ->execute();
+      }
+    }
+    if ($toRemove) {
+      Civi\Api4\GroupContact::update()
+        ->setCheckPermissions(FALSE)
+        ->setMethod(E::ts('Admin'))
+        ->addValue('status', 'Removed')
+        ->addWhere('contact_id', '=', $this->_id)
+        ->addWhere('group_id', 'IN', $toRemove)
+        ->execute();
+    }
+    unset($values['group']);
   }
 
 }
