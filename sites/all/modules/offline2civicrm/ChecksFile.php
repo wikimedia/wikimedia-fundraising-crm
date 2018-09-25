@@ -273,7 +273,7 @@ abstract class ChecksFile {
     $this->totalNumberRows = $rowNum - 1;
 
     if ($error_streak_count >= $error_streak_threshold) {
-      $this->closeFilesAndSetMessage($this->totalNumberRows, $this->numberSucceededRows, $this->numberErrorRows, $this->numberIgnoredRows, $this->numberDuplicateRows, $this->numberContactsCreated);
+      $this->closeFilesAndSetMessage();
       throw new Exception("Import aborted due to {$error_streak_count} consecutive errors, last error was at row {$lastErrorRow}: {$lastError}. " . implode(' ', $this->messages)
       );
     }
@@ -284,7 +284,7 @@ abstract class ChecksFile {
 
     ChecksImportLog::record(implode(' ', $this->messages));
     watchdog('offline2civicrm', implode(' ', $this->messages), array(), WATCHDOG_INFO);
-    $this->closeFilesAndSetMessage($this->totalNumberRows, $this->numberSucceededRows, $this->numberErrorRows, $this->numberIgnoredRows, $this->numberDuplicateRows, $this->numberContactsCreated);
+    $this->closeFilesAndSetMessage();
     return $this->messages;
 
   }
@@ -631,15 +631,8 @@ abstract class ChecksFile {
 
   /**
    * Close our csv files and set the messages to display.
-   *
-   * @param int $totalRows
-   * @param int $num_successful
-   * @param int $num_errors
-   * @param int $num_ignored
-   * @param int $num_duplicates
-   * @param int $num_new_contacts_created
    */
-  public function closeFilesAndSetMessage($totalRows, $num_successful, $num_errors, $num_ignored, $num_duplicates, $num_new_contacts_created) {
+  public function closeFilesAndSetMessage() {
     foreach (array(
                $this->skippedFileResource,
                $this->errorFileResource,
@@ -652,34 +645,34 @@ abstract class ChecksFile {
       }
     }
 
-    $notImported = $totalRows - $num_successful;
+    $notImported = $this->totalNumberRows - $this->numberSucceededRows;
     if ($notImported === 0) {
       $this->messages['Result'] = ts("All rows were imported");
     }
     else {
       $this->messages['Result'] = ts("%1 out of %2 rows were imported.", array(
-        '1' => $num_successful,
-        2 => $totalRows,
+        '1' => $this->numberSucceededRows,
+        2 => $this->totalNumberRows,
       ));
 
-      if ($num_duplicates !== $notImported && $num_errors !== $notImported && $num_ignored !== $notImported) {
+      if ($this->numberDuplicateRows !== $notImported && $this->numberErrorRows !== $notImported && $this->numberIgnoredRows !== $notImported) {
         // If the number of rows not imported is the same as the number skipped, or the number of errors etc
         // then the Not Imported csv will duplicate that & it is confusing to provide a link to it.
         $this->setMessage($this->all_missed_file_uri, 'not imported', $notImported);
       }
     }
 
-    if ($num_errors) {
-      $this->setMessage($this->error_file_uri, 'Error', $num_errors);
+    if ($this->numberErrorRows) {
+      $this->setMessage($this->error_file_uri, 'Error', $this->numberErrorRows);
     }
-    if ($num_ignored) {
-      $this->setMessage($this->ignored_file_uri, 'Ignored', $num_ignored);
+    if ($this->numberIgnoredRows) {
+      $this->setMessage($this->ignored_file_uri, 'Ignored', $this->numberIgnoredRows);
     }
-    if ($num_duplicates) {
-      $this->setMessage($this->skipped_file_uri, 'Duplicate', $num_duplicates);
+    if ($this->numberDuplicateRows) {
+      $this->setMessage($this->skipped_file_uri, 'Duplicate', $this->numberDuplicateRows);
     }
     if ($this->allNotMatchedFileResource) {
-      $this->setMessage($this->all_not_matched_to_existing_contacts_file_uri, ts("Rows where new contacts were created"), $num_new_contacts_created);
+      $this->setMessage($this->all_not_matched_to_existing_contacts_file_uri, ts("Rows where new contacts were created"), $this->numberContactsCreated);
     }
   }
 
