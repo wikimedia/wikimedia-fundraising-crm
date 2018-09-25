@@ -131,7 +131,7 @@ abstract class ChecksFile {
 
     while (($row = fgetcsv($file, 0, ',', '"', '\\')) !== FALSE) {
       // Reset the PHP timeout for each row.
-      set_time_limit(10);
+      set_time_limit(30);
 
       $this->row_index++;
       // FIXME: This is odd.  Can't we just keep track of one index?
