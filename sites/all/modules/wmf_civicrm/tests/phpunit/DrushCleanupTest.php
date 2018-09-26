@@ -32,18 +32,18 @@ class DrushCleanupTest extends BaseWmfDrupalPhpUnitTestCase {
     INSERT INTO `civicrm_mailing_provider_data` (`contact_identifier`, `mailing_identifier`, `email`, `event_type`, `recipient_action_datetime`, `contact_id`, `is_civicrm_updated`)
 VALUES
 ('1', '2', NULL, 'Sent', '2016-08-07 05:51:42', NULL, 0),
-('1', '2', NULL, 'Sent', '2016-08-07 19:51:42', NULL, 0),
-('1', '2', NULL, 'Sent', '2016-08-07 2:51:42', NULL, 0),
-('1', '2', NULL, 'Sent', '2016-08-07 16:51:42', NULL, 0);
+('1', '2', NULL, 'Sent', '2016-08-07 11:51:42', NULL, 0),
+('1', '2', NULL, 'Sent', '2016-08-07 12:51:42', NULL, 0),
+('1', '2', NULL, 'Sent', '2016-08-07 18:51:42', NULL, 0);
   ");
 
     drush_civicrm_repair_process_rows('2016-08-05');
 
     $result = $this->callAPISuccess('MailingProviderData', 'get', ['sequential' => 1, 'mail_provider' => 'Silverpop']);
     $this->assertEquals(2, $result['count']);
-    // The second 2 rows above are kept with 10 hours added.
-    $this->assertEquals('2016-08-08 11:51:42', $result['values'][0]['recipient_action_datetime']);
-    $this->assertEquals('2016-08-08 14:51:42', $result['values'][1]['recipient_action_datetime']);
+    // The second 2 rows above are kept with 12 hours added.
+    $this->assertEquals('2016-08-08 00:51:42', $result['values'][0]['recipient_action_datetime']);
+    $this->assertEquals('2016-08-08 06:51:42', $result['values'][1]['recipient_action_datetime']);
   }
 
   public function tearDown() {
