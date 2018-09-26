@@ -52,12 +52,25 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
 
   /**
    * Test our activity deletion.
+   *
+   * In merge instances a child activity might be deleted by a parent being deleted
+   * & then be gone later on so we need at least one activity with a parent.
+   *
+   * See Bug T204063
    */
   public function testForgetActivities() {
     $buffies =  $this->bufficiseUs();
     $contactToDelete = $buffies['contact_to_delete'];
     $contactToKeep = $buffies['contact_to_keep'];
     $activityToDelete = $this->callAPISuccess('Activity', 'create', ['activity_type_id' => 'Meeting', 'source_contact_id' => $contactToDelete['id']]);
+
+    $this->callAPISuccess('Activity', 'create', [
+      'activity_type_id' => 'Meeting',
+      'source_contact_id' => $contactToDelete['id'],
+      'activity_id.parent_id' => $activityToDelete['id'],
+     ]
+    );
+
     $activityToKeep = $this->callAPISuccess('Activity', 'create', ['activity_type_id' => 'Meeting', 'source_contact_id' => $contactToDelete['id'], 'target_contact_id' => $contactToKeep['id']]);
 
     civicrm_api3('Contact', 'forgetme', array('id' => $contactToDelete['id']));
