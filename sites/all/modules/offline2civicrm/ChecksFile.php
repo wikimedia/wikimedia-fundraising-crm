@@ -56,6 +56,46 @@ abstract class ChecksFile {
    */
   protected $totalNumberRows = 0;
 
+  /**
+   * The row that most recently failed.
+   *
+   * If we abort we advise this in order to allow a restart.
+   *
+   * @var int
+   */
+  protected $lastErrorRowNumber = 0;
+
+  /**
+   * Most recent error message.
+   *
+   * @var string
+   */
+  protected $lastErrorMessage = '';
+
+  /**
+   * How many errors in a row we should hit before aborting.
+   *
+   * @var int
+   */
+  protected $errorStreakThreshold = 10;
+
+  /**
+   * How many errors have we had in a row.
+   *
+   * (when we hit the errorStreakThreshold we bail).
+   *
+   * @var int
+   */
+  protected $errorStreakCount = 0;
+
+  /**
+   * What row did the latest error streak start on.
+   *
+   * @var int
+   */
+  protected $errorStreakStart = 0;
+
+
   protected $messages = array();
 
   protected $file_uri = '';
@@ -101,7 +141,14 @@ abstract class ChecksFile {
   /**
    * @var array
    */
-  protected $additionalFields = array();
+  protected $additionalFields = [];
+
+  /**
+   * Header fields for the csv output.
+   *
+   * @var array
+   */
+  protected $headers = [];
 
   /**
    * @param string $file_uri path to the file
@@ -157,17 +204,12 @@ abstract class ChecksFile {
       }
     }
 
-    $headers = _load_headers(fgetcsv($file, 0, ',', '"', '\\'));
+    $this->headers = _load_headers(fgetcsv($file, 0, ',', '"', '\\'));
 
-    $this->validateColumns($headers);
+    $this->validateColumns($this->headers);
 
     $this->row_index = -1 + $this->numSkippedRows;
-    $error_streak_start = 0;
-    $error_streak_count = 0;
-    $error_streak_threshold = 10;
-    $this->allMissedFileResource = $this->createOutputFile($this->all_missed_file_uri, 'Not Imported', $headers);
-    $lastError = '';
-    $lastErrorRow = 0;
+    $this->allMissedFileResource = $this->createOutputFile($this->all_missed_file_uri, 'Not Imported', $this->headers);
 
     while (($row = fgetcsv($file, 0, ',', '"', '\\')) !== FALSE) {
       // Reset the PHP timeout for each row.
@@ -178,7 +220,7 @@ abstract class ChecksFile {
       $rowNum = $this->row_index + 2;
 
       // Zip headers and row into a dict
-      $data = array_combine(array_keys($headers), array_slice($row, 0, count($headers)));
+      $data = array_combine(array_keys($this->headers), array_slice($row, 0, count($this->headers)));
 
       // Strip whitespaces
       foreach ($data as $key => &$value) {
@@ -186,17 +228,17 @@ abstract class ChecksFile {
       }
 
       try {
-        if ($error_streak_count >= $error_streak_threshold) {
+        if ($this->errorStreakCount >= $this->errorStreakThreshold) {
           throw new IgnoredRowException(WmfException::IMPORT_CONTRIB, 'Error limit reached');
         }
-        $this->importRow($data, $headers);
+        $this->importRow($data, $this->headers);
       }
       catch (EmptyRowException $ex) {
         continue;
       }
       catch (IgnoredRowException $ex) {
         if ($this->numberIgnoredRows === 0) {
-          $this->ignoredFileResource = $this->createOutputFile($this->ignored_file_uri, 'Ignored', $headers);
+          $this->ignoredFileResource = $this->createOutputFile($this->ignored_file_uri, 'Ignored', $this->headers);
         }
         fputcsv($this->ignoredFileResource, array_merge(array('Ignored' => $ex->getUserErrorMessage()), $data));
         fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Ignored: ' . $ex->getUserErrorMessage()), $data));
@@ -205,7 +247,7 @@ abstract class ChecksFile {
       }
       catch (WmfException $ex) {
         if ($this->numberErrorRows === 0) {
-          $this->errorFileResource = $this->createOutputFile($this->error_file_uri, 'Error', $headers);
+          $this->errorFileResource = $this->createOutputFile($this->error_file_uri, 'Error', $this->headers);
         }
 
         $this->numberErrorRows++;
@@ -219,21 +261,21 @@ abstract class ChecksFile {
           '@exception' => $ex->getUserErrorMessage(),
         )));
 
-        if ($error_streak_start + $error_streak_count < $rowNum) {
+        if ($this->errorStreakStart + $this->errorStreakCount < $rowNum) {
           // The last result must have been a success.  Restart streak counts.
-          $error_streak_start = $rowNum;
-          $error_streak_count = 0;
+          $this->errorStreakStart = $rowNum;
+          $this->errorStreakCount = 0;
         }
-        $error_streak_count++;
-        $lastError = $ex->getUserErrorMessage();
-        $lastErrorRow = $rowNum;
+        $this->errorStreakCount++;
+        $this->lastErrorMessage = $ex->getUserErrorMessage();
+        $this->lastErrorRowNumber = $rowNum;
       }
     }
     $this->totalNumberRows = $rowNum - 1;
 
-    if ($error_streak_count >= $error_streak_threshold) {
+    if ($this->errorStreakCount >= $this->errorStreakThreshold) {
       $this->closeFilesAndSetMessage();
-      throw new Exception("Import aborted due to {$error_streak_count} consecutive errors, last error was at row {$lastErrorRow}: {$lastError}. " . implode(' ', $this->messages)
+      throw new Exception("Import aborted due to {$this->errorStreakCount} consecutive errors, last error was at row {$this->lastErrorRowNumber}: {$this->lastErrorMessage }. " . implode(' ', $this->messages)
       );
     }
     array_unshift($this->messages, "Successful import!");
