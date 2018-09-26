@@ -212,64 +212,7 @@ abstract class ChecksFile {
     $this->allMissedFileResource = $this->createOutputFile($this->all_missed_file_uri, 'Not Imported', $this->headers);
 
     while (($row = fgetcsv($file, 0, ',', '"', '\\')) !== FALSE) {
-      // Reset the PHP timeout for each row.
-      set_time_limit(30);
-
-      $this->row_index++;
-      // FIXME: This is odd.  Can't we just keep track of one index?
-      $rowNum = $this->row_index + 2;
-
-      // Zip headers and row into a dict
-      $data = array_combine(array_keys($this->headers), array_slice($row, 0, count($this->headers)));
-
-      // Strip whitespaces
-      foreach ($data as $key => &$value) {
-        $value = trim($value);
-      }
-
-      try {
-        if ($this->errorStreakCount >= $this->errorStreakThreshold) {
-          throw new IgnoredRowException(WmfException::IMPORT_CONTRIB, 'Error limit reached');
-        }
-        $this->importRow($data, $this->headers);
-      }
-      catch (EmptyRowException $ex) {
-        continue;
-      }
-      catch (IgnoredRowException $ex) {
-        if ($this->numberIgnoredRows === 0) {
-          $this->ignoredFileResource = $this->createOutputFile($this->ignored_file_uri, 'Ignored', $this->headers);
-        }
-        fputcsv($this->ignoredFileResource, array_merge(array('Ignored' => $ex->getUserErrorMessage()), $data));
-        fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Ignored: ' . $ex->getUserErrorMessage()), $data));
-        $this->numberIgnoredRows++;
-        continue;
-      }
-      catch (WmfException $ex) {
-        if ($this->numberErrorRows === 0) {
-          $this->errorFileResource = $this->createOutputFile($this->error_file_uri, 'Error', $this->headers);
-        }
-
-        $this->numberErrorRows++;
-        fputcsv($this->errorFileResource, array_merge(array('error' => $ex->getUserErrorMessage()), $data));
-        fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Error: ' . $ex->getUserErrorMessage()), $data));
-
-
-        ChecksImportLog::record(t("Error in line @rownum: (@exception) @row", array(
-          '@rownum' => $rowNum,
-          '@row' => implode(', ', $row),
-          '@exception' => $ex->getUserErrorMessage(),
-        )));
-
-        if ($this->errorStreakStart + $this->errorStreakCount < $rowNum) {
-          // The last result must have been a success.  Restart streak counts.
-          $this->errorStreakStart = $rowNum;
-          $this->errorStreakCount = 0;
-        }
-        $this->errorStreakCount++;
-        $this->lastErrorMessage = $ex->getUserErrorMessage();
-        $this->lastErrorRowNumber = $rowNum;
-      }
+      $rowNum = $this->processRow($row);
     }
     $this->totalNumberRows = $rowNum - 1;
 
@@ -831,6 +774,72 @@ abstract class ChecksFile {
       ), WATCHDOG_INFO
     );
     $this->numberSucceededRows++;
+  }
+
+  /**
+   * @param $row
+   * @return int
+   */
+  protected function processRow($row) {
+    // Reset the PHP timeout for each row.
+    set_time_limit(30);
+
+    $this->row_index++;
+    // FIXME: This is odd.  Can't we just keep track of one index?
+    $rowNum = $this->row_index + 2;
+
+    // Zip headers and row into a dict
+    $data = array_combine(array_keys($this->headers), array_slice($row, 0, count($this->headers)));
+
+    // Strip whitespaces
+    foreach ($data as $key => &$value) {
+      $value = trim($value);
+    }
+
+    try {
+      if ($this->errorStreakCount >= $this->errorStreakThreshold) {
+        throw new IgnoredRowException(WmfException::IMPORT_CONTRIB, 'Error limit reached');
+      }
+      $this->importRow($data, $this->headers);
+    }
+    catch (EmptyRowException $ex) {
+      return $rowNum;
+    }
+    catch (IgnoredRowException $ex) {
+      if ($this->numberIgnoredRows === 0) {
+        $this->ignoredFileResource = $this->createOutputFile($this->ignored_file_uri, 'Ignored', $this->headers);
+      }
+      fputcsv($this->ignoredFileResource, array_merge(array('Ignored' => $ex->getUserErrorMessage()), $data));
+      fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Ignored: ' . $ex->getUserErrorMessage()), $data));
+      $this->numberIgnoredRows++;
+      return $rowNum;
+    }
+    catch (WmfException $ex) {
+      if ($this->numberErrorRows === 0) {
+        $this->errorFileResource = $this->createOutputFile($this->error_file_uri, 'Error', $this->headers);
+      }
+
+      $this->numberErrorRows++;
+      fputcsv($this->errorFileResource, array_merge(array('error' => $ex->getUserErrorMessage()), $data));
+      fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Error: ' . $ex->getUserErrorMessage()), $data));
+
+
+      ChecksImportLog::record(t("Error in line @rownum: (@exception) @row", array(
+        '@rownum' => $rowNum,
+        '@row' => implode(', ', $row),
+        '@exception' => $ex->getUserErrorMessage(),
+      )));
+
+      if ($this->errorStreakStart + $this->errorStreakCount < $rowNum) {
+        // The last result must have been a success.  Restart streak counts.
+        $this->errorStreakStart = $rowNum;
+        $this->errorStreakCount = 0;
+      }
+      $this->errorStreakCount++;
+      $this->lastErrorMessage = $ex->getUserErrorMessage();
+      $this->lastErrorRowNumber = $rowNum;
+    }
+    return $rowNum;
   }
 
 }
