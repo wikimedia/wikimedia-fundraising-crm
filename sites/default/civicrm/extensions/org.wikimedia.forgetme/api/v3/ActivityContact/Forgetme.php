@@ -30,6 +30,8 @@ function civicrm_api3_activity_contact_forgetme($params) {
   if (is_numeric($params['contact_id'])) {
     $params['contact_id'] = ['IN' => [$params['contact_id']]];
   }
+  // Do activities with parents first to avoid trying to delete already deleted activities.
+  $params['options']['sort'] = 'activity_id.parent_id DESC';
   $activityContactRecords = civicrm_api3('ActivityContact', 'get', $params)['values'];
   if (empty($activityContactRecords)) {
     return civicrm_api3_create_success([], $params);

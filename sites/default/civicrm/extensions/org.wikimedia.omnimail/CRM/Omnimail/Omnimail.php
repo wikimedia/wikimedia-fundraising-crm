@@ -108,7 +108,7 @@ class CRM_Omnimail_Omnimail {
       if (isset($params['start_date'])) {
         $this->startTimeStamp = strtotime($params['start_date']);
       }
-      if (!empty($this->jobSettings['last_timestamp'])) {
+      elseif (!empty($this->jobSettings['last_timestamp'])) {
         $this->startTimeStamp = $this->jobSettings['last_timestamp'];
       }
       else {
