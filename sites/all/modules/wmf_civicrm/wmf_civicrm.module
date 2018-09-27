@@ -1,5 +1,6 @@
 <?php
 
+use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
@@ -881,6 +882,7 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
  * @param $msg
  *
  * @return array
+ * @throws \WmfException
  */
 function wmf_civicrm_normalize_contribution_amounts($msg) {
   $msg = wmf_civicrm_format_currency_fields($msg);
@@ -932,11 +934,9 @@ function wmf_civicrm_normalize_contribution_amounts($msg) {
     $msg['net'] = $msg['net'] * $settlement_convert;
   }
 
-  // TODO: Lookup by currency
-  $significantDecimals = 2;
-  $msg['fee'] = round($msg['fee'], $significantDecimals);
-  $msg['gross'] = round($msg['gross'], $significantDecimals);
-  $msg['net'] = round($msg['net'], $significantDecimals);
+  $msg['fee'] = CurrencyRoundingHelper::round($msg['fee'], $msg['currency']);
+  $msg['gross'] = CurrencyRoundingHelper::round($msg['gross'], $msg['currency']);
+  $msg['net'] = CurrencyRoundingHelper::round($msg['net'], $msg['currency']);
 
   return $msg;
 }
