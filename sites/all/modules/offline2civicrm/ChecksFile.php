@@ -195,13 +195,13 @@ abstract class ChecksFile {
 
     $this->validateColumns($this->headers);
 
-    $this->row_index = -1;
+    $this->row_index = 1;
     $this->allMissedFileResource = $this->createOutputFile($this->all_missed_file_uri, 'Not Imported', $this->headers);
 
     while (($row = fgetcsv($file, 0, ',', '"', '\\')) !== FALSE) {
-      $rowNum = $this->processRow($row);
+      $this->processRow($row);
     }
-    $this->totalNumberRows = $rowNum - 1;
+    $this->totalNumberRows = $this->row_index - 1;
 
     if ($this->errorStreakCount >= $this->errorStreakThreshold) {
       $this->closeFilesAndSetMessage();
@@ -765,15 +765,12 @@ abstract class ChecksFile {
 
   /**
    * @param $row
-   * @return int
    */
   protected function processRow($row) {
     // Reset the PHP timeout for each row.
     set_time_limit(30);
 
     $this->row_index++;
-    // FIXME: This is odd.  Can't we just keep track of one index?
-    $rowNum = $this->row_index + 2;
 
     // Zip headers and row into a dict
     $data = array_combine(array_keys($this->headers), array_slice($row, 0, count($this->headers)));
@@ -790,7 +787,7 @@ abstract class ChecksFile {
       $this->importRow($data, $this->headers);
     }
     catch (EmptyRowException $ex) {
-      return $rowNum;
+      return;
     }
     catch (IgnoredRowException $ex) {
       if ($this->numberIgnoredRows === 0) {
@@ -799,7 +796,7 @@ abstract class ChecksFile {
       fputcsv($this->ignoredFileResource, array_merge(array('Ignored' => $ex->getUserErrorMessage()), $data));
       fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Ignored: ' . $ex->getUserErrorMessage()), $data));
       $this->numberIgnoredRows++;
-      return $rowNum;
+      return;
     }
     catch (WmfException $ex) {
       if ($this->numberErrorRows === 0) {
@@ -812,21 +809,21 @@ abstract class ChecksFile {
 
 
       ChecksImportLog::record(t("Error in line @rownum: (@exception) @row", array(
-        '@rownum' => $rowNum,
+        '@rownum' => $this->row_index,
         '@row' => implode(', ', $row),
         '@exception' => $ex->getUserErrorMessage(),
       )));
 
-      if ($this->errorStreakStart + $this->errorStreakCount < $rowNum) {
+      if ($this->errorStreakStart + $this->errorStreakCount < $this->row_index) {
         // The last result must have been a success.  Restart streak counts.
-        $this->errorStreakStart = $rowNum;
+        $this->errorStreakStart = $this->row_index;
         $this->errorStreakCount = 0;
       }
       $this->errorStreakCount++;
       $this->lastErrorMessage = $ex->getUserErrorMessage();
-      $this->lastErrorRowNumber = $rowNum;
+      $this->lastErrorRowNumber = $this->row_index;
     }
-    return $rowNum;
+    return;
   }
 
 }
