@@ -8,13 +8,6 @@ use SmashPig\CrmLink\Messages\SourceFields;
 abstract class ChecksFile {
 
   /**
-   * Number of rows skipped.
-   *
-   * @var int
-   */
-  protected $numSkippedRows = 0;
-
-  /**
    * Number of rows successfully imported.
    *
    * @var int
@@ -198,17 +191,11 @@ abstract class ChecksFile {
       throw new WmfException(WmfException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
     }
 
-    if ($this->numSkippedRows) {
-      foreach (range(1, $this->numSkippedRows) as $i) {
-        fgets($file);
-      }
-    }
-
     $this->headers = _load_headers(fgetcsv($file, 0, ',', '"', '\\'));
 
     $this->validateColumns($this->headers);
 
-    $this->row_index = -1 + $this->numSkippedRows;
+    $this->row_index = -1;
     $this->allMissedFileResource = $this->createOutputFile($this->all_missed_file_uri, 'Not Imported', $this->headers);
 
     while (($row = fgetcsv($file, 0, ',', '"', '\\')) !== FALSE) {
