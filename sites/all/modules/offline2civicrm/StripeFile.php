@@ -25,7 +25,7 @@ class StripeFile extends ChecksFile {
   }
 
   protected function getFieldMapping() {
-    return array(
+    return array_merge(parent::getFieldMapping(), [
       // Is this correct? - maps to gateway_refund_id' on refund?
       'id' => 'gateway_txn_id',
       'utm_source' => 'utm_source',
@@ -44,7 +44,6 @@ class StripeFile extends ChecksFile {
       'Card Address State' => 'state_province',
       'Card Address Zip' => 'postal_code',
       'Card Address Country' => 'country',
-
 
       //id,
       //Description,
@@ -84,7 +83,7 @@ class StripeFile extends ChecksFile {
       //event_id (metadata),
       //event_name (metadata),
       //order_number (metadata)
-    );
+    ]);
   }
 
   protected function getDefaultValues() {
