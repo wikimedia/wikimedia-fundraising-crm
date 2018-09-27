@@ -12,6 +12,7 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
       'AMAZON' => 'Amazon',
       'ARIZONALOCKBOX' => 'Arizona Lockbox',
       'ASTROPAY' => 'AstroPay',
+      'BITPAY' => 'Bitpay',
       'COINBASE' => 'Coinbase',
       'ENGAGE' => 'Engage',
       'GENERIC_IMPORT' => 'Generic Import',
