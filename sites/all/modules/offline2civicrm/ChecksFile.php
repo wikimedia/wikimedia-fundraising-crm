@@ -1,6 +1,7 @@
 <?php
 
 use SmashPig\CrmLink\Messages\SourceFields;
+use League\Csv\Reader;
 
 /**
  * CSV batch format for manually-keyed donation checks
@@ -144,8 +145,17 @@ abstract class ChecksFile {
   protected $headers = [];
 
   /**
+   * Csv reader object.
+   *
+   * @var Reader
+   */
+  protected $reader;
+
+  /**
    * @param string $file_uri path to the file
    * @param array $additionalFields
+   *
+   * @throws \WmfException
    */
   function __construct($file_uri, $additionalFields = array()) {
     $this->file_uri = $file_uri;
@@ -161,6 +171,15 @@ abstract class ChecksFile {
       wmf_common_set_smashpig_message_source(
         'direct', 'Offline importer: ' . get_class($this)
       );
+    }
+    // Note this ini is still recommeded - see https://csv.thephpleague.com/8.0/instantiation/
+    ini_set('auto_detect_line_endings', TRUE);
+
+    try {
+      $this->reader = Reader::createFromPath($this->file_uri, 'r');
+    }
+    catch (Exception $e) {
+      throw new WmfException(WmfException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
     }
   }
 
@@ -184,21 +203,15 @@ abstract class ChecksFile {
   function import() {
     $type = get_called_class();
     ChecksImportLog::record("Beginning import of $type file {$this->file_uri}...");
-    //TODO: $db->begin();
 
-    ini_set('auto_detect_line_endings', TRUE);
-    if (($file = fopen($this->file_uri, 'r')) === FALSE) {
-      throw new WmfException(WmfException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
-    }
-
-    $this->headers = _load_headers(fgetcsv($file, 0, ',', '"', '\\'));
+    $this->headers = _load_headers($this->reader->fetchOne());
 
     $this->validateColumns($this->headers);
 
     $this->row_index = 1;
     $this->allMissedFileResource = $this->createOutputFile($this->all_missed_file_uri, 'Not Imported', $this->headers);
 
-    while (($row = fgetcsv($file, 0, ',', '"', '\\')) !== FALSE) {
+    while (($row = $this->reader->fetchOne($this->row_index)) !== []) {
       $this->processRow($row);
     }
     $this->doFinish();
