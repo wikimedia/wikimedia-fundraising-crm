@@ -201,21 +201,7 @@ abstract class ChecksFile {
     while (($row = fgetcsv($file, 0, ',', '"', '\\')) !== FALSE) {
       $this->processRow($row);
     }
-    $this->totalNumberRows = $this->row_index - 1;
-
-    if ($this->errorStreakCount >= $this->errorStreakThreshold) {
-      $this->closeFilesAndSetMessage();
-      throw new Exception("Import aborted due to {$this->errorStreakCount} consecutive errors, last error was at row {$this->lastErrorRowNumber}: {$this->lastErrorMessage }. " . implode(' ', $this->messages)
-      );
-    }
-    array_unshift($this->messages, "Successful import!");
-
-    // Unset time limit.
-    set_time_limit(0);
-
-    ChecksImportLog::record(implode(' ', $this->messages));
-    watchdog('offline2civicrm', implode(' ', $this->messages), array(), WATCHDOG_INFO);
-    $this->closeFilesAndSetMessage();
+    $this->doFinish();
     return $this->messages;
 
   }
@@ -824,6 +810,24 @@ abstract class ChecksFile {
       $this->lastErrorRowNumber = $this->row_index;
     }
     return;
+  }
+
+  protected function doFinish() {
+    $this->totalNumberRows = $this->row_index - 1;
+
+    if ($this->errorStreakCount >= $this->errorStreakThreshold) {
+      $this->closeFilesAndSetMessage();
+      throw new Exception("Import aborted due to {$this->errorStreakCount} consecutive errors, last error was at row {$this->lastErrorRowNumber}: {$this->lastErrorMessage }. " . implode(' ', $this->messages)
+      );
+    }
+    array_unshift($this->messages, "Successful import!");
+
+    // Unset time limit.
+    set_time_limit(0);
+
+    ChecksImportLog::record(implode(' ', $this->messages));
+    watchdog('offline2civicrm', implode(' ', $this->messages), array(), WATCHDOG_INFO);
+    $this->closeFilesAndSetMessage();
   }
 
 }
