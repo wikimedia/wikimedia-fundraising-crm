@@ -1,11 +1,16 @@
 {% if first_name and last_name %}
-<p>Dear {{ first_name }},</p>
+<p>Hi {{ first_name }}!
+</p>
 
 {% else %}
 <p>Dear donor,</p>
 {%endif%}
 
-<p>Thank you for supporting Wikipedia and the Wikimedia Foundation with your gift of {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Your contribution keeps Wikipedia independent. I’d like to tell you why your gift is so important.</p>
+<p>I love that it’s my job to thank you for your {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}monthly {%endif%}contribution to Wikipedia and the Wikimedia Foundation.
+</p>
+
+<p>The essential story of Wikipedia is the story of an individual, like you, giving a little bit of themselves to keep the doors of discovery open. Your {% if recurring %}monthly recurring {%endif%}contribution shows me that the spirit of our vision is alive and well.
+</p>
 
 {% if "RecurringRestarted" in contribution_tags %}
 <p>We recently resolved a small technical issue which paused some monthly recurring donations. We have reinstated your recurring donation, and it will process normally going forward. We will not charge you for the months that were skipped. Thank you for your patience and your support, and please feel free to email donate@wikimedia.org if you have any questions.</p>
@@ -15,35 +20,45 @@
 <p>We recently resolved a technical issue which caused a small number of donors to not receive a confirmation of their donation. Please accept this email as a thank you for your donation on {{ receive_date }}. We truly appreciate your patience and your support, and please feel free to email donate@wikimedia.org if you have any questions.</p>
 {%endif%}
 
-<p>Wikipedia is a global project. At the Wikimedia Foundation, engineers and staff strive to make your Wikipedia experience useful and engaging. We work to make Wikipedia accessible on any internet connection, across any device, no matter where you are. We stand up for the future of the open internet and fight to protect your privacy. We are passionate about making free knowledge available to everyone on the planet. We’re a small team with a big mission, so your contribution matters.</p>
-
-<p>
-  <b>Every day, you make critical decisions based on what you read on the internet. Wikipedia is a vital resource because it offers free, neutral, and unbiased information written by people from all around the world.</b>
-</p>
-
-<p>Wikipedia would not be possible without a shared commitment from our readers, our editors, and donors like you. Your support of Wikipedia allows us to stay neutral, unbiased, and entirely independent. You know you can rely on us, because Wikipedia can’t be bought. We are here for you, and you are here for us.</p>
-
-<p>
-  <b>By donating you are safeguarding the sum of human knowledge now, and for generations to come.</b>
-</p>
-
-<p>Thank you for supporting Wikipedia. We hope you will continue to stand on the side of knowledge.</p>
-
-<p>
-With gratitude,<br/>
-Katherine Maher,<br/>
-Executive Director, Wikimedia Foundation</p>
-
-<p>Many employers will generously match employee contributions: please check with your employer to see if they have a <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts">corporate matching gift program</a>.</p>
-
-<p>For your records: Your donation, number {{ transaction_id }}, on {{ receive_date }} was {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
-
 {% if recurring %}
-<p>This donation is part of a recurring subscription. Monthly payments will be debited by the Wikimedia Foundation until you notify us to stop. If you’d like to cancel the payments please see our <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">easy cancellation instructions</a>.</p>
+<p>If you ever want to cancel your monthly support, please see our <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">easy cancellation instructions</a>.</p>
 {%endif%}
 
-<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Please send mail to: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+<p>You probably donated because Wikipedia is useful to you. That’s one of the main reasons people tell me when I ask them why they support Wikipedia. But what may surprise you is that one of the top reasons people don’t give is because they can’t afford to.
+</p>
 
-<p>If you do not wish to receive any future fundraising emails from the Wikimedia Foundation, you can <a href="{{ unsubscribe_link | raw }}">unsubscribe instantly</a>. Please note we will still send you receipts, like this one, for future donations.</p>
+<p>At the Wikimedia Foundation, we believe that no one should have to pay to learn. We believe knowledge should always be free. We will never charge anyone to use Wikipedia. So how do we afford the infrastructure of one of the world’s most popular websites?
+</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20171019/en&amp;oldid=17742465","name":"thank_you.en.html","revision":17742465}TI_END -->
+<p>Because of the generosity of people like you.
+</p>
+
+<p>Wikipedia is yours: yours to read, yours to edit, yours in which to get lost. We’re not the destination, we’re the beginning.
+</p>
+
+{% if first_name and last_name %}
+<p>{{ first_name }}, thank you for helping free knowledge thrive.
+{% else %}
+Thank you for helping free knowledge thrive.</p>
+{%endif%}
+
+<p>Katherine
+</p>
+
+<p>Katherine Maher,<br/>
+Executive Director, Wikimedia Foundation
+</p>
+
+<p>Many employers will generously match employee contributions: please check with your employer to see if they have a <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">corporate matching gift program</a>.
+</p>
+
+<p>For your records: Your donation, number {{ transaction_id }}, on {{ receive_date }} was {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+</p>
+
+<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
+</p>
+
+<p>If you do not wish to receive any future fundraising emails from the Wikimedia Foundation, you can <a href="{{ unsubscribe_link | raw }}">unsubscribe instantly</a>. Please note we will still send you receipts, like this one, for future donations.
+</p>
+
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/en&amp;oldid=18434658","name":"thank_you.en.html","revision":18434658}TI_END -->
