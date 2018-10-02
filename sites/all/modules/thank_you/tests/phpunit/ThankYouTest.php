@@ -107,9 +107,14 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 			'@donate.wikimedia.org';
 		$this->assertEquals( $expectedBounce, $sent['reply_to'] );
 		$this->assertRegExp( '/\$ 1.23/', $sent['html'] );
-		$expectedSubject = file_get_contents(
+		$expectedSubjectTemplate = file_get_contents(
 		  __DIR__ .
       "/../../templates/subject/thank_you.{$this->message['language']}.subject"
+    );
+		$expectedSubject = str_replace(
+		  '{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}',
+      TwigLocalization::l10n_currency('USD 1.23'),
+		  $expectedSubjectTemplate
     );
 		$this->assertEquals( $expectedSubject, $sent['subject']);
 	}
