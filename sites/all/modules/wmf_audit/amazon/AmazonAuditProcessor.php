@@ -1,6 +1,8 @@
 <?php
 
+use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\Amazon\Audit\AmazonAudit;
+use SmashPig\PaymentProviders\Amazon\RecordPaymentJob;
 
 class AmazonAuditProcessor extends BaseAuditProcessor {
 
@@ -73,5 +75,27 @@ class AmazonAuditProcessor extends BaseAuditProcessor {
    */
   protected function get_uncompressed_log_file_names($date) {
     return ["payments-amazon_gateway-{$date}"];
+  }
+
+  /**
+   * Override parent function to send messages with no donor data to
+   * a queue where they can be looked up.
+   *
+   * @param array $body
+   * @param string $type
+   *
+   * @throws \Exception
+   */
+  protected function send_queue_message($body, $type) {
+    if (
+      $type === 'main' &&
+      empty($body['contribution_tracking_id'])
+    ) {
+      $body['order_reference_id'] = substr($body['gateway_txn_id'], 0, 19);
+      $job = RecordPaymentJob::fromAmazonMessage($body);
+      QueueWrapper::push('jobs-amazon', $job);
+      return;
+    }
+    parent::send_queue_message($body, $type);
   }
 }
