@@ -532,15 +532,13 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     civicrm_initialize();
     $fileUri = $this->setupFile('engage_multiple_errors.csv');
 
-    try {
-      $importer = new EngageChecksFile($fileUri);
-      $importer->import();
-    }
-    catch (Exception $e) {
-      $this->assertTrue(strpos($e->getMessage(), 'Import aborted due to 10 consecutive errors, last error was at row 12: \'Invalid Name\'') === 0, 'Actual error was ' . $e->getMessage());
-      return;
-    }
-    $this->fail('An exception should have been thrown');
+    $importer = new EngageChecksFile($fileUri);
+    $importer->import();
+    $this->assertFalse($importer->isSuccess());
+    $messages = $importer->getMessages();
+    $b = strlen("Import aborted due to 10 consecutive errors, last error was at row 12: 'Invalid Name' is not a valid option for field custom_");
+    $c = substr($messages[0], 0, 125);
+    $this->assertEquals("Import aborted due to 10 consecutive errors, last error was at row 12: 'Invalid Name' is not a valid option for field custom_", substr($messages[0], 0, 125));
   }
 
   public function testImporterCreatesOutputFiles() {
