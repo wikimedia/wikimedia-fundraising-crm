@@ -3131,11 +3131,11 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.5.7.8",
+            "version": "v0.5.7.9",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "e5d392c270ec073114640e02d297585088098dbb"
+                "reference": "6ad873352d554084036300edb077a5542a6b577d"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -3194,7 +3194,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2018-10-04T19:47:19+00:00"
+            "time": "2018-10-04T22:05:47+00:00"
         },
         {
             "name": "willdurand/geocoder",
