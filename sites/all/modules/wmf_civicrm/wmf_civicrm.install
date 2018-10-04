@@ -53,7 +53,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7280();
   wmf_civicrm_update_7290();
   wmf_civicrm_update_7300();
-  wmf_civicrm_update_7310();
   wmf_civicrm_update_7455();
   wmf_civicrm_update_7460();
   wmf_civicrm_update_7524();
@@ -2230,15 +2229,6 @@ function wmf_civicrm_update_7305() {
 }
 
 /**
- * Create and populate a table to geocode US addresses by zip code
- */
-function wmf_civicrm_update_7310() {
-  civicrm_initialize();
-  require_once('update_7310.php');
-  _wmf_civicrm_update_7310_add_zip_geo();
-}
-
-/**
  * Fix contacts who have no primary address- this has arisen from the dedupes.
  *
  * I did this on emails before and but I just checked and there are around 7000
@@ -2290,7 +2280,7 @@ function wmf_civicrm_update_7320() {
 
   CRM_Core_DAO::executeQuery("
     UPDATE civicrm_address_geocode c
-    INNER JOIN wmf_zip_geo g ON c.zip = g.zip
+    INNER JOIN civicrm_geocoder_zip_dataset g ON c.zip = g.zip
     SET c.latitude = g.latitude,
       c.longitude = g.longitude,
       c.timezone = g.timezone
@@ -2388,7 +2378,6 @@ function wmf_civicrm_update_7440() {
  * Bug: T155677
  */
 function wmf_civicrm_update_7450() {
-  wmf_civicrm_update_7310();
   wmf_civicrm_update_7320();
 }
 
@@ -4532,4 +4521,13 @@ function wmf_civicrm_update_7761() {
       AND receive_date BETWEEN '2018-08-07' AND '2018-09-15'
       AND trxn_id NOT LIKE 'PAYPAL%'
   ");
+}
+
+/**
+ * Drop a redundant table. All the data in this table now lives in
+ * civicrm_geocoder_zip_dataset
+ */
+function wmf_civicrm_update_7765() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS `wmf_zip_geo`');
 }
