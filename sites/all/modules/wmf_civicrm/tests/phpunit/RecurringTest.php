@@ -156,6 +156,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       // recurring contribution payment token fields below
       'recurring_payment_token' => 'TEST-RECURRING-TOKEN-' . mt_rand(),
       'recurring' => 1,
+      'user_ip' => '12.34.56.78',
     ];
 
     //import contribution message containing populated recurring and recurring_payment_token fields
@@ -183,6 +184,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       $recurring_record->payment_processor_id,
       $payment_token_result['payment_processor_id']
     );
+    $this->assertEquals($msg['user_ip'], $payment_token_result['ip_address']);
 
     //clean up recurring contribution records using fixture tear down destruct process
     $fixture->contribution_id = $contribution['id'];
