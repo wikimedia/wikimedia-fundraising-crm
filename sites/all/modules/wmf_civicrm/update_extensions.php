@@ -12,6 +12,7 @@ function wmf_install_add_missing_extensions() {
   civicrm_api3('extension', 'refresh', array());
 
   $extensionResult = civicrm_api3('Extension', 'get', [])['values'];
+  $extensions = [];
   foreach ($extensionResult as $extension) {
     if ($extension['status'] === 'installed') {
       $extensions[] = $extension['key'];
