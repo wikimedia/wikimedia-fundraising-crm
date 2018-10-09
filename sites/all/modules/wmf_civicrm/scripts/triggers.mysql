@@ -4141,12 +4141,14 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
       FROM civicrm_contribution c
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
+        AND financial_type_id <> 26
     ) as totals
   LEFT JOIN civicrm_contribution cont ON cont.contact_id = NEW.contact_id
   AND receive_date = totals.last_donation_date
   AND contribution_status_id = 1
   AND total_amount > 0
   AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
+  AND financial_type_id <> 26
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
   LIMIT 1
 
@@ -4184,12 +4186,14 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
       FROM civicrm_contribution c
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
+        AND financial_type_id <> 26
     ) as totals
   LEFT JOIN civicrm_contribution cont ON cont.contact_id = NEW.contact_id
   AND receive_date = totals.last_donation_date
   AND contribution_status_id = 1
   AND total_amount > 0
   AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
+  AND financial_type_id <> 26
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
   LIMIT 1
 
@@ -4200,7 +4204,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     total_2006_2007 = VALUES(total_2006_2007),is_2006_donor = VALUES(is_2006_donor),total_2007_2008 = VALUES(total_2007_2008),is_2007_donor = VALUES(is_2007_donor),total_2008_2009 = VALUES(total_2008_2009),is_2008_donor = VALUES(is_2008_donor),total_2009_2010 = VALUES(total_2009_2010),is_2009_donor = VALUES(is_2009_donor),total_2010_2011 = VALUES(total_2010_2011),is_2010_donor = VALUES(is_2010_donor),total_2011_2012 = VALUES(total_2011_2012),is_2011_donor = VALUES(is_2011_donor),total_2012_2013 = VALUES(total_2012_2013),is_2012_donor = VALUES(is_2012_donor),total_2013_2014 = VALUES(total_2013_2014),is_2013_donor = VALUES(is_2013_donor),total_2014_2015 = VALUES(total_2014_2015),is_2014_donor = VALUES(is_2014_donor),total_2015_2016 = VALUES(total_2015_2016),is_2015_donor = VALUES(is_2015_donor),total_2016_2017 = VALUES(total_2016_2017),is_2016_donor = VALUES(is_2016_donor),total_2017_2018 = VALUES(total_2017_2018),is_2017_donor = VALUES(is_2017_donor),total_2018_2019 = VALUES(total_2018_2019),is_2018_donor = VALUES(is_2018_donor),total_2019_2020 = VALUES(total_2019_2020),is_2019_donor = VALUES(is_2019_donor),total_2020_2021 = VALUES(total_2020_2021),is_2020_donor = VALUES(is_2020_donor); END IF; 
-IF (NEW.contact_id <> OLD.contact_id) THEN 
+ IF (OLD.financial_type_id <> 26) AND (OLD.contact_id <> 72) AND (NEW.contact_id <> OLD.contact_id) THEN 
     INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
     lifetime_usd_total, last_donation_date, total_2006_2007,is_2006_donor,total_2007_2008,is_2007_donor,total_2008_2009,is_2008_donor,total_2009_2010,is_2009_donor,total_2010_2011,is_2010_donor,total_2011_2012,is_2011_donor,total_2012_2013,is_2012_donor,total_2013_2014,is_2013_donor,total_2014_2015,is_2014_donor,total_2015_2016,is_2015_donor,total_2016_2017,is_2016_donor,total_2017_2018,is_2017_donor,total_2018_2019,is_2018_donor,total_2019_2020,is_2019_donor,total_2020_2021,is_2020_donor)
 
@@ -4219,12 +4223,14 @@ IF (NEW.contact_id <> OLD.contact_id) THEN
       FROM civicrm_contribution c
       WHERE contact_id = OLD.contact_id
         AND contribution_status_id = 1
+        AND financial_type_id <> 26
     ) as totals
   LEFT JOIN civicrm_contribution cont ON cont.contact_id = OLD.contact_id
   AND receive_date = totals.last_donation_date
   AND contribution_status_id = 1
   AND total_amount > 0
   AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
+  AND financial_type_id <> 26
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
   LIMIT 1
 
@@ -4234,7 +4240,7 @@ IF (NEW.contact_id <> OLD.contact_id) THEN
     last_donation_usd = VALUES(last_donation_usd),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
-    total_2006_2007 = VALUES(total_2006_2007),is_2006_donor = VALUES(is_2006_donor),total_2007_2008 = VALUES(total_2007_2008),is_2007_donor = VALUES(is_2007_donor),total_2008_2009 = VALUES(total_2008_2009),is_2008_donor = VALUES(is_2008_donor),total_2009_2010 = VALUES(total_2009_2010),is_2009_donor = VALUES(is_2009_donor),total_2010_2011 = VALUES(total_2010_2011),is_2010_donor = VALUES(is_2010_donor),total_2011_2012 = VALUES(total_2011_2012),is_2011_donor = VALUES(is_2011_donor),total_2012_2013 = VALUES(total_2012_2013),is_2012_donor = VALUES(is_2012_donor),total_2013_2014 = VALUES(total_2013_2014),is_2013_donor = VALUES(is_2013_donor),total_2014_2015 = VALUES(total_2014_2015),is_2014_donor = VALUES(is_2014_donor),total_2015_2016 = VALUES(total_2015_2016),is_2015_donor = VALUES(is_2015_donor),total_2016_2017 = VALUES(total_2016_2017),is_2016_donor = VALUES(is_2016_donor),total_2017_2018 = VALUES(total_2017_2018),is_2017_donor = VALUES(is_2017_donor),total_2018_2019 = VALUES(total_2018_2019),is_2018_donor = VALUES(is_2018_donor),total_2019_2020 = VALUES(total_2019_2020),is_2019_donor = VALUES(is_2019_donor),total_2020_2021 = VALUES(total_2020_2021),is_2020_donor = VALUES(is_2020_donor); END IF; END //
+    total_2006_2007 = VALUES(total_2006_2007),is_2006_donor = VALUES(is_2006_donor),total_2007_2008 = VALUES(total_2007_2008),is_2007_donor = VALUES(is_2007_donor),total_2008_2009 = VALUES(total_2008_2009),is_2008_donor = VALUES(is_2008_donor),total_2009_2010 = VALUES(total_2009_2010),is_2009_donor = VALUES(is_2009_donor),total_2010_2011 = VALUES(total_2010_2011),is_2010_donor = VALUES(is_2010_donor),total_2011_2012 = VALUES(total_2011_2012),is_2011_donor = VALUES(is_2011_donor),total_2012_2013 = VALUES(total_2012_2013),is_2012_donor = VALUES(is_2012_donor),total_2013_2014 = VALUES(total_2013_2014),is_2013_donor = VALUES(is_2013_donor),total_2014_2015 = VALUES(total_2014_2015),is_2014_donor = VALUES(is_2014_donor),total_2015_2016 = VALUES(total_2015_2016),is_2015_donor = VALUES(is_2015_donor),total_2016_2017 = VALUES(total_2016_2017),is_2016_donor = VALUES(is_2016_donor),total_2017_2018 = VALUES(total_2017_2018),is_2017_donor = VALUES(is_2017_donor),total_2018_2019 = VALUES(total_2018_2019),is_2018_donor = VALUES(is_2018_donor),total_2019_2020 = VALUES(total_2019_2020),is_2019_donor = VALUES(is_2019_donor),total_2020_2021 = VALUES(total_2020_2021),is_2020_donor = VALUES(is_2020_donor); END IF;  END //
 DELIMITER ;
 
 DELIMITER //
@@ -4243,7 +4249,7 @@ DELIMITER ;
 
 DELIMITER //
 CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contribution FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`contact_id`, OLD.`financial_type_id`, OLD.`contribution_page_id`, OLD.`payment_instrument_id`, OLD.`receive_date`, OLD.`non_deductible_amount`, OLD.`total_amount`, OLD.`fee_amount`, OLD.`net_amount`, OLD.`trxn_id`, OLD.`invoice_id`, OLD.`currency`, OLD.`cancel_date`, OLD.`cancel_reason`, OLD.`receipt_date`, OLD.`thankyou_date`, OLD.`source`, OLD.`amount_level`, OLD.`contribution_recur_id`, OLD.`is_test`, OLD.`is_pay_later`, OLD.`contribution_status_id`, OLD.`note`, OLD.`address_id`, OLD.`check_number`, OLD.`campaign_id`, OLD.`tax_amount`, OLD.`creditnote_id`, OLD.`revenue_recognition_date`, OLD.`invoice_number`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
-
+ IF (OLD.financial_type_id <> 26) AND (OLD.contact_id <> 72) THEN 
     INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
     lifetime_usd_total, last_donation_date, total_2006_2007,is_2006_donor,total_2007_2008,is_2007_donor,total_2008_2009,is_2008_donor,total_2009_2010,is_2009_donor,total_2010_2011,is_2010_donor,total_2011_2012,is_2011_donor,total_2012_2013,is_2012_donor,total_2013_2014,is_2013_donor,total_2014_2015,is_2014_donor,total_2015_2016,is_2015_donor,total_2016_2017,is_2016_donor,total_2017_2018,is_2017_donor,total_2018_2019,is_2018_donor,total_2019_2020,is_2019_donor,total_2020_2021,is_2020_donor)
 
@@ -4262,12 +4268,14 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
       FROM civicrm_contribution c
       WHERE contact_id = OLD.contact_id
         AND contribution_status_id = 1
+        AND financial_type_id <> 26
     ) as totals
   LEFT JOIN civicrm_contribution cont ON cont.contact_id = OLD.contact_id
   AND receive_date = totals.last_donation_date
   AND contribution_status_id = 1
   AND total_amount > 0
   AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
+  AND financial_type_id <> 26
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
   LIMIT 1
 
@@ -4277,7 +4285,7 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
     last_donation_usd = VALUES(last_donation_usd),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
-    total_2006_2007 = VALUES(total_2006_2007),is_2006_donor = VALUES(is_2006_donor),total_2007_2008 = VALUES(total_2007_2008),is_2007_donor = VALUES(is_2007_donor),total_2008_2009 = VALUES(total_2008_2009),is_2008_donor = VALUES(is_2008_donor),total_2009_2010 = VALUES(total_2009_2010),is_2009_donor = VALUES(is_2009_donor),total_2010_2011 = VALUES(total_2010_2011),is_2010_donor = VALUES(is_2010_donor),total_2011_2012 = VALUES(total_2011_2012),is_2011_donor = VALUES(is_2011_donor),total_2012_2013 = VALUES(total_2012_2013),is_2012_donor = VALUES(is_2012_donor),total_2013_2014 = VALUES(total_2013_2014),is_2013_donor = VALUES(is_2013_donor),total_2014_2015 = VALUES(total_2014_2015),is_2014_donor = VALUES(is_2014_donor),total_2015_2016 = VALUES(total_2015_2016),is_2015_donor = VALUES(is_2015_donor),total_2016_2017 = VALUES(total_2016_2017),is_2016_donor = VALUES(is_2016_donor),total_2017_2018 = VALUES(total_2017_2018),is_2017_donor = VALUES(is_2017_donor),total_2018_2019 = VALUES(total_2018_2019),is_2018_donor = VALUES(is_2018_donor),total_2019_2020 = VALUES(total_2019_2020),is_2019_donor = VALUES(is_2019_donor),total_2020_2021 = VALUES(total_2020_2021),is_2020_donor = VALUES(is_2020_donor); END //
+    total_2006_2007 = VALUES(total_2006_2007),is_2006_donor = VALUES(is_2006_donor),total_2007_2008 = VALUES(total_2007_2008),is_2007_donor = VALUES(is_2007_donor),total_2008_2009 = VALUES(total_2008_2009),is_2008_donor = VALUES(is_2008_donor),total_2009_2010 = VALUES(total_2009_2010),is_2009_donor = VALUES(is_2009_donor),total_2010_2011 = VALUES(total_2010_2011),is_2010_donor = VALUES(is_2010_donor),total_2011_2012 = VALUES(total_2011_2012),is_2011_donor = VALUES(is_2011_donor),total_2012_2013 = VALUES(total_2012_2013),is_2012_donor = VALUES(is_2012_donor),total_2013_2014 = VALUES(total_2013_2014),is_2013_donor = VALUES(is_2013_donor),total_2014_2015 = VALUES(total_2014_2015),is_2014_donor = VALUES(is_2014_donor),total_2015_2016 = VALUES(total_2015_2016),is_2015_donor = VALUES(is_2015_donor),total_2016_2017 = VALUES(total_2016_2017),is_2016_donor = VALUES(is_2016_donor),total_2017_2018 = VALUES(total_2017_2018),is_2017_donor = VALUES(is_2017_donor),total_2018_2019 = VALUES(total_2018_2019),is_2018_donor = VALUES(is_2018_donor),total_2019_2020 = VALUES(total_2019_2020),is_2019_donor = VALUES(is_2019_donor),total_2020_2021 = VALUES(total_2020_2021),is_2020_donor = VALUES(is_2020_donor); END IF;  END //
 DELIMITER ;
 
 DELIMITER //
