@@ -97,7 +97,8 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
     $payment_token_result = wmf_civicrm_recur_payment_token_create(
       $contact_id,
       $msg['gateway'],
-      $msg['recurring_payment_token']
+      $msg['recurring_payment_token'],
+      isset($msg['user_ip']) ? $msg['user_ip'] : null
     );
     $extra_recurring_params = [
       'payment_token_id' => $payment_token_result['id'],
@@ -530,14 +531,15 @@ function wmf_civicrm_get_recurring_payment_token($gateway, $token) {
  * Create a recurring payment token to be used alongside a recurring
  * contribution record
  *
- * @param $contact_id
- * @param $gateway
- * @param $token
+ * @param int $contact_id
+ * @param string $gateway Short gateway identifier
+ * @param string $token Token provided by payment processor
+ * @param string $ip Donor's IP address
  *
  * @return array $payment_token_record
  * @throws \WmfException
  */
-function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token) {
+function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token, $ip) {
   $processorId = wmf_civicrm_get_payment_processor_id($gateway);
 
   try {
@@ -545,6 +547,7 @@ function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token) {
       'contact_id' => $contact_id,
       'payment_processor_id' => $processorId,
       'token' => $token,
+      'ip_address' => $ip,
     ]);
   } catch (CiviCRM_API3_Exception $e) {
     throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $e->getMessage());
