@@ -141,6 +141,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       'installment' => 'installment',
       'description' => 'description',
       'is_recur' => 'recurring',
+      'ip_address' => 'user_ip',
     ];
     foreach ($convert as $civiName => $smashPigName) {
       if (array_key_exists($civiName, $params)) {
