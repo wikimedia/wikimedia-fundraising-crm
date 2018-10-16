@@ -62,7 +62,7 @@ class ForeignChecksFileTest extends BaseChecksFileTest {
       'gateway_txn_id' => '3333f8fd5703c6a319c4a9d2b5a2d8c6',
     );
 
-    $importer = new ForeignChecksFileProbe("null URI");
+    $importer = new ForeignChecksFileProbe();
     $output = $importer->_parseRow($data);
 
     $this->stripSourceData($output);

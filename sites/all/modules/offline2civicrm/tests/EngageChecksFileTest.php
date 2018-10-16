@@ -72,7 +72,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'contact_id' => NULL,
     );
 
-    $importer = new EngageChecksFileProbe("null URI");
+    $importer = new EngageChecksFileProbe();
     $output = $importer->_parseRow($data);
 
     $this->stripSourceData($output);
@@ -132,7 +132,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'contact_id' => NULL,
     );
 
-    $importer = new EngageChecksFileProbe("null URI");
+    $importer = new EngageChecksFileProbe();
     $output = $importer->_parseRow($data);
 
     $this->stripSourceData($output);
@@ -646,7 +646,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   public function getParsedData() {
     $file = fopen($this->sourceFileUri, 'r');
     $result = array();
-    $importer = new EngageChecksFileProbe("null URI");
+    $importer = new EngageChecksFileProbe();
     $headers = [];
     while (($row = fgetcsv($file, 0, ',', '"', '\\')) !== FALSE) {
       if ($row[0] === 'Banner' || $row[0] === 'Batch') {

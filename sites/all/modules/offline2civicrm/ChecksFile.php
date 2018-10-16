@@ -2,6 +2,7 @@
 
 use SmashPig\CrmLink\Messages\SourceFields;
 use League\Csv\Reader;
+use SmashPig\Core\Context;
 
 /**
  * CSV batch format for manually-keyed donation checks
@@ -157,7 +158,7 @@ abstract class ChecksFile {
    *
    * @throws \WmfException
    */
-  function __construct($file_uri, $additionalFields = array()) {
+  function __construct($file_uri = NULL, $additionalFields = array()) {
     $this->file_uri = $file_uri;
     global $user;
     $suffix = $user->uid . '.csv';
@@ -167,19 +168,23 @@ abstract class ChecksFile {
     $this->all_missed_file_uri = str_replace('.csv', '_all_missed.' . $suffix, $file_uri);
     $this->all_not_matched_to_existing_contacts_file_uri = str_replace('.csv', '_all_not_matched.' . $suffix, $file_uri);
     $this->additionalFields = $additionalFields;
-    if ($file_uri) {
+
+    if (Context::get()) {
       wmf_common_set_smashpig_message_source(
         'direct', 'Offline importer: ' . get_class($this)
       );
     }
-    // Note this ini is still recommeded - see https://csv.thephpleague.com/8.0/instantiation/
-    ini_set('auto_detect_line_endings', TRUE);
 
-    try {
-      $this->reader = Reader::createFromPath($this->file_uri, 'r');
-    }
-    catch (Exception $e) {
-      throw new WmfException(WmfException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
+    if ($file_uri) {
+      // Note this ini is still recommeded - see https://csv.thephpleague.com/8.0/instantiation/
+      ini_set('auto_detect_line_endings', TRUE);
+
+      try {
+        $this->reader = Reader::createFromPath($this->file_uri, 'r');
+      }
+      catch (Exception $e) {
+        throw new WmfException(WmfException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
+      }
     }
   }
 

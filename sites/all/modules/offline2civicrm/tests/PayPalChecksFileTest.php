@@ -56,7 +56,7 @@ class PayPalChecksFileTest extends BaseChecksFileTest {
       'restrictions' => 'Unrestricted - General',
     );
 
-    $importer = new PayPalChecksFileProbe("no URI");
+    $importer = new PayPalChecksFileProbe();
     $output = $importer->_parseRow($data);
 
     $this->stripSourceData($output);

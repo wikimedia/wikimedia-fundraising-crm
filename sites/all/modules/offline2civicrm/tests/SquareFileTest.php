@@ -45,7 +45,7 @@ class SquareFileTest extends BaseChecksFileTest {
       'postal_code' => '94103',
     );
 
-    $importer = new SquareFileProbe("no URI");
+    $importer = new SquareFileProbe();
     $output = $importer->_parseRow($data);
 
     $this->stripSourceData($output);
@@ -85,7 +85,7 @@ class SquareFileTest extends BaseChecksFileTest {
       'postal_code' => '94103',
     );
 
-    $importer = new SquareFileProbe("no URI");
+    $importer = new SquareFileProbe();
     $output = $importer->_parseRow($data);
 
     $this->stripSourceData($output);

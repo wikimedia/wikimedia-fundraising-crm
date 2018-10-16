@@ -41,7 +41,7 @@ class WmfImportTest extends BaseChecksFileTest {
       'Street Address' => '123 Sunset Boulevard',
       'Transaction ID' => $this->trxn_id,
     );
-    $importer = new WmfImportFile("no URI");
+    $importer = new WmfImportFile();
     $exposed = TestingAccessWrapper::newFromObject($importer);
     $message = $exposed->parseRow($data);
     $exposed->doImport($message);

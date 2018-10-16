@@ -49,7 +49,7 @@ class JpMorganFileTest extends BaseChecksFileTest {
       'settlement_date' => $this->epochtime,
     );
 
-    $importer = new JpMorganFileProbe("no URI");
+    $importer = new JpMorganFileProbe();
     $output = $importer->_parseRow($data);
 
     $this->stripSourceData($output);

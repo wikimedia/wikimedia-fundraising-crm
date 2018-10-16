@@ -23,7 +23,7 @@ class ChecksFileTest extends BaseChecksFileTest {
       '' => '',
     );
 
-    $importer = new ChecksFileProbe("no URI");
+    $importer = new ChecksFileProbe();
     $output = $importer->_parseRow($data);
   }
 
@@ -52,7 +52,7 @@ class ChecksFileTest extends BaseChecksFileTest {
       'Transaction ID' => mt_rand(),
     );
 
-    $importer = new ChecksFileProbe("no URI");
+    $importer = new ChecksFileProbe();
     $message = $importer->_parseRow($data);
     $importer->doImport($message);
     $contribution = $this->callAPISuccessGetSingle(
