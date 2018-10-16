@@ -730,13 +730,7 @@ abstract class ChecksFile {
     if ($existing) {
       $skipped = $this->handleDuplicate($existing);
       if ($skipped) {
-        if ($this->numberDuplicateRows === 0) {
-          $this->skippedFileResource = $this->createOutputFile($this->skipped_file_uri, 'Skipped');
-        }
-        $this->numberDuplicateRows++;
-        fputcsv($this->skippedFileResource, array_merge(array('Skipped' => 'Duplicate'), $data));
-        fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Duplicate'), $data));
-
+        $this->markRowSkipped($data);
       }
       else {
         $this->numberSucceededRows++;
@@ -751,11 +745,7 @@ abstract class ChecksFile {
     ), array($msg));
 
     if (empty($msg['contact_id'])) {
-      $this->numberContactsCreated++;
-      if (!$this->allNotMatchedFileResource) {
-        $this->allNotMatchedFileResource = $this->createOutputFile($this->all_not_matched_to_existing_contacts_file_uri, 'Not Matched to existing');
-      }
-      fputcsv($this->allNotMatchedFileResource, array_merge(array('Not matched to existing' => 'Informational'), $data));
+      $this->markRowNotMatched($data);
     }
 
     watchdog('offline2civicrm',
@@ -794,38 +784,11 @@ abstract class ChecksFile {
       return;
     }
     catch (IgnoredRowException $ex) {
-      if ($this->numberIgnoredRows === 0) {
-        $this->ignoredFileResource = $this->createOutputFile($this->ignored_file_uri, 'Ignored');
-      }
-      fputcsv($this->ignoredFileResource, array_merge(array('Ignored' => $ex->getUserErrorMessage()), $data));
-      fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Ignored: ' . $ex->getUserErrorMessage()), $data));
-      $this->numberIgnoredRows++;
+      $this->markRowIgnored($data, $ex->getUserErrorMessage());
       return;
     }
     catch (WmfException $ex) {
-      if ($this->numberErrorRows === 0) {
-        $this->errorFileResource = $this->createOutputFile($this->error_file_uri, 'Error');
-      }
-
-      $this->numberErrorRows++;
-      fputcsv($this->errorFileResource, array_merge(array('error' => $ex->getUserErrorMessage()), $data));
-      fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Error: ' . $ex->getUserErrorMessage()), $data));
-
-
-      ChecksImportLog::record(t("Error in line @rownum: (@exception) @row", array(
-        '@rownum' => $this->row_index,
-        '@row' => implode(', ', $row),
-        '@exception' => $ex->getUserErrorMessage(),
-      )));
-
-      if ($this->errorStreakStart + $this->errorStreakCount < $this->row_index) {
-        // The last result must have been a success.  Restart streak counts.
-        $this->errorStreakStart = $this->row_index;
-        $this->errorStreakCount = 0;
-      }
-      $this->errorStreakCount++;
-      $this->lastErrorMessage = $ex->getUserErrorMessage();
-      $this->lastErrorRowNumber = $this->row_index;
+      $this->markRowError($row, $ex->getUserErrorMessage(), $data);
     }
     return;
   }
@@ -846,6 +809,82 @@ abstract class ChecksFile {
     ChecksImportLog::record(implode(' ', $this->messages));
     watchdog('offline2civicrm', implode(' ', $this->messages), array(), WATCHDOG_INFO);
     $this->closeFilesAndSetMessage();
+  }
+
+  /**
+   * Mark the row as skipped.
+   *
+   * @param array $data
+   */
+  protected function markRowSkipped($data) {
+    if ($this->numberDuplicateRows === 0) {
+      $this->skippedFileResource = $this->createOutputFile($this->skipped_file_uri, 'Skipped');
+    }
+    $this->numberDuplicateRows++;
+    fputcsv($this->skippedFileResource, array_merge(array('Skipped' => 'Duplicate'), $data));
+    fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Duplicate'), $data));
+  }
+
+  /**
+   * Mark the row as ignored.
+   *
+   * @param array $data
+   * @param string $errorMessage
+   */
+  protected function markRowIgnored($data, $errorMessage) {
+    if ($this->numberIgnoredRows === 0) {
+      $this->ignoredFileResource = $this->createOutputFile($this->ignored_file_uri, 'Ignored');
+    }
+    fputcsv($this->ignoredFileResource, array_merge(array('Ignored' => $errorMessage), $data));
+    fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Ignored: ' . $errorMessage), $data));
+    $this->numberIgnoredRows++;
+  }
+
+  /**
+   * Mark the row as not matched.
+   *
+   * @param array $data
+   */
+  protected function markRowNotMatched($data) {
+    $this->numberContactsCreated++;
+    if (!$this->allNotMatchedFileResource) {
+      $this->allNotMatchedFileResource = $this->createOutputFile($this->all_not_matched_to_existing_contacts_file_uri, 'Not Matched to existing');
+    }
+    fputcsv($this->allNotMatchedFileResource, array_merge(array('Not matched to existing' => 'Informational'), $data));
+  }
+
+  /**
+   * Mark row as an error.
+   *
+   * @param array $row Original row data.
+   * @param string $errorMessage
+   * @param array $data Processed data.
+   * @todo we are outputting 'data' but perhaps 'row' is better as it is the input.
+   */
+  protected function markRowError($row, $errorMessage, $data) {
+    if ($this->numberErrorRows === 0) {
+      $this->errorFileResource = $this->createOutputFile($this->error_file_uri, 'Error');
+    }
+
+    $this->numberErrorRows++;
+    fputcsv($this->errorFileResource, array_merge(array('error' => $errorMessage), $data));
+    fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Error: ' . $errorMessage), $data));
+
+
+    ChecksImportLog::record(t("Error in line @rownum: (@exception) @row", array(
+      '@rownum' => $this->row_index,
+      '@row' => implode(', ', $row),
+      '@exception' => $errorMessage,
+    )));
+
+    if ($this->errorStreakStart + $this->errorStreakCount < $this->row_index) {
+      // The last result must have been a success.  Restart streak counts.
+      $this->errorStreakStart = $this->row_index;
+      $this->errorStreakCount = 0;
+    }
+    $this->errorStreakCount++;
+    $this->lastErrorMessage = $errorMessage;
+    $this->lastErrorRowNumber = $this->row_index;
   }
 
 }
