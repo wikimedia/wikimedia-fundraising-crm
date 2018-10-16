@@ -586,35 +586,7 @@ abstract class ChecksFile {
       }
     }
 
-    $notImported = $this->totalNumberRows - $this->numberSucceededRows;
-    if ($notImported === 0) {
-      $this->messages['Result'] = ts("All rows were imported");
-    }
-    else {
-      $this->messages['Result'] = ts("%1 out of %2 rows were imported.", array(
-        '1' => $this->numberSucceededRows,
-        2 => $this->totalNumberRows,
-      ));
-
-      if ($this->numberDuplicateRows !== $notImported && $this->numberErrorRows !== $notImported && $this->numberIgnoredRows !== $notImported) {
-        // If the number of rows not imported is the same as the number skipped, or the number of errors etc
-        // then the Not Imported csv will duplicate that & it is confusing to provide a link to it.
-        $this->setMessage($this->all_missed_file_uri, 'not imported', $notImported);
-      }
-    }
-
-    if ($this->numberErrorRows) {
-      $this->setMessage($this->error_file_uri, 'Error', $this->numberErrorRows);
-    }
-    if ($this->numberIgnoredRows) {
-      $this->setMessage($this->ignored_file_uri, 'Ignored', $this->numberIgnoredRows);
-    }
-    if ($this->numberDuplicateRows) {
-      $this->setMessage($this->skipped_file_uri, 'Duplicate', $this->numberDuplicateRows);
-    }
-    if ($this->allNotMatchedFileResource) {
-      $this->setMessage($this->all_not_matched_to_existing_contacts_file_uri, ts("Rows where new contacts were created"), $this->numberContactsCreated);
-    }
+    $this->setMessages();
   }
 
   /**
@@ -890,6 +862,38 @@ abstract class ChecksFile {
     $this->errorStreakCount++;
     $this->lastErrorMessage = $errorMessage;
     $this->lastErrorRowNumber = $this->row_index;
+  }
+
+  protected function setMessages() {
+    $notImported = $this->totalNumberRows - $this->numberSucceededRows;
+    if ($notImported === 0) {
+      $this->messages['Result'] = ts("All rows were imported");
+    }
+    else {
+      $this->messages['Result'] = ts("%1 out of %2 rows were imported.", array(
+        '1' => $this->numberSucceededRows,
+        2 => $this->totalNumberRows,
+      ));
+
+      if ($this->numberDuplicateRows !== $notImported && $this->numberErrorRows !== $notImported && $this->numberIgnoredRows !== $notImported) {
+        // If the number of rows not imported is the same as the number skipped, or the number of errors etc
+        // then the Not Imported csv will duplicate that & it is confusing to provide a link to it.
+        $this->setMessage($this->all_missed_file_uri, 'not imported', $notImported);
+      }
+    }
+
+    if ($this->numberErrorRows) {
+      $this->setMessage($this->error_file_uri, 'Error', $this->numberErrorRows);
+    }
+    if ($this->numberIgnoredRows) {
+      $this->setMessage($this->ignored_file_uri, 'Ignored', $this->numberIgnoredRows);
+    }
+    if ($this->numberDuplicateRows) {
+      $this->setMessage($this->skipped_file_uri, 'Duplicate', $this->numberDuplicateRows);
+    }
+    if ($this->allNotMatchedFileResource) {
+      $this->setMessage($this->all_not_matched_to_existing_contacts_file_uri, ts("Rows where new contacts were created"), $this->numberContactsCreated);
+    }
   }
 
 }
