@@ -803,8 +803,8 @@ abstract class ChecksFile {
    */
   protected function markRowSkipped($data) {
     $this->numberDuplicateRows++;
-    fputcsv($this->skippedFileResource, array_merge(array('Skipped' => 'Duplicate'), $data));
-    fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Duplicate'), $data));
+    $this->outputResultRow('skipped', array_merge(['Skipped' => 'Duplicate'], $data));
+    $this->outputResultRow('all_missed', array_merge(['Not Imported' => 'Duplicate'], $data));
   }
 
   /**
@@ -814,8 +814,8 @@ abstract class ChecksFile {
    * @param string $errorMessage
    */
   protected function markRowIgnored($data, $errorMessage) {
-    fputcsv($this->ignoredFileResource, array_merge(array('Ignored' => $errorMessage), $data));
-    fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Ignored: ' . $errorMessage), $data));
+    $this->outputResultRow('ignored', array_merge(['Ignored' => $errorMessage], $data));
+    $this->outputResultRow('all_missed', array_merge(['Not Imported' => 'Ignored: ' . $errorMessage], $data));
     $this->numberIgnoredRows++;
   }
 
@@ -826,7 +826,7 @@ abstract class ChecksFile {
    */
   protected function markRowNotMatched($data) {
     $this->numberContactsCreated++;
-    fputcsv($this->allNotMatchedFileResource, array_merge(array('Not matched to existing' => 'Informational'), $data));
+    $this->outputResultRow('all_not_matched_to_existing_contacts', array_merge(['Not matched to existing' => 'Informational'], $data));
   }
 
   /**
@@ -839,8 +839,8 @@ abstract class ChecksFile {
    */
   protected function markRowError($row, $errorMessage, $data) {
     $this->numberErrorRows++;
-    fputcsv($this->errorFileResource, array_merge(array('error' => $errorMessage), $data));
-    fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Error: ' . $errorMessage), $data));
+    $this->outputResultRow('error', array_merge(['error' => $errorMessage], $data));
+    $this->outputResultRow('all_missed', array_merge(['Not Imported' => 'Error: ' . $errorMessage], $data));
 
 
     ChecksImportLog::record(t("Error in line @rownum: (@exception) @row", array(
@@ -889,6 +889,43 @@ abstract class ChecksFile {
     if ($this->allNotMatchedFileResource) {
       $this->setMessage($this->all_not_matched_to_existing_contacts_file_uri, ts("Rows where new contacts were created"), $this->numberContactsCreated);
     }
+  }
+
+  /**
+   * Write a row to the relevant output file.
+   *
+   * @param string $type Type of output file
+   *  - skipped
+   *  - error
+   *  - ignored
+   *  - all_not_matched_to_contact
+   *  - all_missed
+   *  -
+   * @param $data
+   */
+  protected function outputResultRow($type, $data) {
+    $resource = $this->getResourceName($type);
+    fputcsv($this->$resource, $data);
+  }
+
+  /**
+   * Get the name of the related resource.
+   *
+   * Of course it might have been easier not to mix camel & lc underscore - just saying.
+   *
+   * @param $string
+   *
+   * @return string
+   */
+  protected function getResourceName($string) {
+    $mappings = [
+      'error' => 'errorFileResource',
+      'all_missed' => 'allMissedFileResource',
+      'all_not_matched_to_existing_contacts' => 'allNotMatchedFileResource',
+      'skipped' => 'skippedFileResource',
+      'ignored' => 'ignoredFileResource',
+    ];
+    return $mappings[$string];
   }
 
 }
