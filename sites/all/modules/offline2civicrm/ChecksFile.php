@@ -175,12 +175,20 @@ abstract class ChecksFile {
       );
     }
 
+    // If we have the file_uri we are constructing this to do an import. Without a file uri we are on the
+    // user form & just getting field information.
     if ($file_uri) {
       // Note this ini is still recommeded - see https://csv.thephpleague.com/8.0/instantiation/
       ini_set('auto_detect_line_endings', TRUE);
 
       try {
         $this->reader = Reader::createFromPath($this->file_uri, 'r');
+        $this->headers = _load_headers($this->reader->fetchOne());
+        $this->validateColumns();
+      }
+      catch (WmfException $e) {
+        // Validate columns throws a WmfException - we just want to re-throw that one unchanged.
+        throw $e;
       }
       catch (Exception $e) {
         throw new WmfException(WmfException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
@@ -207,10 +215,6 @@ abstract class ChecksFile {
    */
   function import() {
     ChecksImportLog::record("Beginning import of " . $this->getImportType() . " file {$this->file_uri}...");
-
-    $this->headers = _load_headers($this->reader->fetchOne());
-
-    $this->validateColumns();
 
     $this->row_index = 1;
     $this->allMissedFileResource = $this->createOutputFile($this->all_missed_file_uri, 'Not Imported');
