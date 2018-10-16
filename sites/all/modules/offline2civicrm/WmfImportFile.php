@@ -48,16 +48,16 @@ class WmfImportFile extends ChecksFile {
         );
     }
 
-	protected function validateColumns( $headers ) {
+	protected function validateColumns() {
 		if (
-			!array_key_exists( 'Raw Payment Instrument', $headers ) &&
-			!array_key_exists( 'Payment Instrument', $headers )
+			!array_key_exists('Raw Payment Instrument', $this->headers) &&
+			!array_key_exists('Payment Instrument', $this->headers)
 		) {
 			throw new WmfException(
 				WmfException::INVALID_FILE_FORMAT,
 				'File must contain either \'Payment Instrument\' or \'Raw Payment Instrument\''
 			);
 		}
-		parent::validateColumns( $headers );
+		parent::validateColumns();
 	}
 }
