@@ -4547,7 +4547,7 @@ function wmf_civicrm_update_7770() {
  *
  * Bug: T206343
  */
-function wmf_civicrm_update_7771() {
+function wmf_civicrm_update_7772() {
   require_once('paypal_fixes.php');
   wmf_civicrm_undo_bogus_paypal_cancel('2018-10-16 04:00:00', '2018-10-16 15:00:00');
 }
