@@ -223,6 +223,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
       'contact_id' => $contactId,
       'payment_processor_id' => $this->processorId,
       'token' => 'abc123-456zyx-test12',
+      'ip_address' => '12.34.56.78',
     ]);
     $this->deleteThings['PaymentToken'][] = $result['id'];
     return $result['values'][$result['id']];
@@ -293,6 +294,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
       'description' => 'wonderful happy fun money',
       'token' => 'abc123-456zyx-test12',
       'installment' => 'recurring',
+      'ip_address' => '33.22.33.11',
     ];
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
@@ -304,6 +306,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
         'installment' => 'recurring',
         'description' => 'wonderful happy fun money',
         'recurring' => TRUE,
+        'user_ip' => '33.22.33.11',
       ])
       ->willReturn(
         $this->createPaymentResponse
@@ -356,6 +359,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
         'installment' => 'recurring',
         'description' => $expectedDescription,
         'recurring' => TRUE,
+        'user_ip' => '12.34.56.78',
       ])
       ->willReturn(
         $this->createPaymentResponse
@@ -566,6 +570,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
       'installment' => 'recurring',
       'description' => $expectedDescription,
       'recurring' => TRUE,
+      'user_ip' => '12.34.56.78',
     ];
     $secondCallParams = [
       'recurring_payment_token' => 'abc123-456zyx-test12',
@@ -578,6 +583,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
       'installment' => 'recurring',
       'description' => $expectedDescription,
       'recurring' => TRUE,
+      'user_ip' => '12.34.56.78',
     ];
     $this->hostedCheckoutProvider->expects($this->exactly(2))
       ->method('createPayment')

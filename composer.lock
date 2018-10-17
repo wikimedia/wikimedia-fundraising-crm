@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "227878ad362a7103e383173b28adc7bd",
+    "content-hash": "e8c9e7d05060dd2bda36e740e91c188f",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -3131,11 +3131,11 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.5.8",
+            "version": "v0.5.8.1",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "ca90486af20e147723b148db1b0a00d6c886c68f"
+                "reference": "bde71ea47d2b92229dd67a52344a1abd6e441e49"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -3194,7 +3194,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2018-10-08T22:00:04+00:00"
+            "time": "2018-10-10T02:17:02+00:00"
         },
         {
             "name": "willdurand/geocoder",

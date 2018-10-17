@@ -282,9 +282,9 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       $previousContribution['invoice_id']
     );
     $description = $this->getDescription($donor['preferred_language']);
-    $token = civicrm_api3('PaymentToken', 'getvalue', [
+    $tokenData = civicrm_api3('PaymentToken', 'getsingle', [
       'id' => $recurringPayment['payment_token_id'],
-      'return' => 'token',
+      'return' => ['token', 'ip_address'],
     ]);
 
     return [
@@ -299,7 +299,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'is_recur' => TRUE,
       'contributionRecurID' => $recurringPayment['id'],
       'description' => $description,
-      'token' => $token,
+      'token' => $tokenData['token'],
+      'ip_address' => $tokenData['ip_address'],
       // FIXME: SmashPig should choose 'first' or 'recurring' based on seq #
       'installment' => 'recurring',
     ];
