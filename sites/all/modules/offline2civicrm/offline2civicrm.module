@@ -3,6 +3,7 @@
 require_once 'offline2civicrm.common.inc';
 
 use wmf_communication\Templating;
+use SmashPig\Core\UtcDate;
 
 /**
  * Implementation of hook_menu().
@@ -95,6 +96,10 @@ function offline2civicrm_import_checks_form($form, &$form_state) {
   $form['#tree'] = TRUE;
   $form['#validate'] = array('offline2civicrm_import_checks_form_validate');
 
+  $form['load_info_text'] = array(
+    '#markup' => '<p>' . t('CiviCRM server load: In the last 5 minutes ' . offline2civicrm_get_contribution_load() . ' contributions have been added to CiviCRM') . '</p>'
+  );
+
   $form['import_upload_file'] = array(
     '#title' => t('Upload checks file'),
     '#type' => 'file',
@@ -158,6 +163,21 @@ function offline2civicrm_import_checks_form($form, &$form_state) {
   $form['#attributes'] = array('enctype' => "multipart/form-data");
 
   return $form;
+}
+
+/**
+ * Get the number of contributions added to CiviCRM in the last 5 minutes.
+ *
+ * This is presented to users to help them decide whether it is a good time
+ * to do an import. (hint if the server is under a lot of load & donations are
+ * crashing in the answer may be no).
+ */
+function offline2civicrm_get_contribution_load() {
+  civicrm_initialize();
+  $sinceDateTime = date('YmdHis', UtcDate::getUtcTimestamp('- 5 minutes'));
+  return CRM_Core_DAO::singleValueQuery('SELECT count(*) FROM civicrm_contribution WHERE receive_date > %1',
+    array(1 => array($sinceDateTime, 'Timestamp'))
+  );
 }
 
 /**
