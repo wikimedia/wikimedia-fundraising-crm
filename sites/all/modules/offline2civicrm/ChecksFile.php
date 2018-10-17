@@ -1,6 +1,8 @@
 <?php
 
 use SmashPig\CrmLink\Messages\SourceFields;
+use League\Csv\Reader;
+use SmashPig\Core\Context;
 
 /**
  * CSV batch format for manually-keyed donation checks
@@ -144,10 +146,19 @@ abstract class ChecksFile {
   protected $headers = [];
 
   /**
+   * Csv reader object.
+   *
+   * @var Reader
+   */
+  protected $reader;
+
+  /**
    * @param string $file_uri path to the file
    * @param array $additionalFields
+   *
+   * @throws \WmfException
    */
-  function __construct($file_uri, $additionalFields = array()) {
+  function __construct($file_uri = NULL, $additionalFields = array()) {
     $this->file_uri = $file_uri;
     global $user;
     $suffix = $user->uid . '.csv';
@@ -157,10 +168,23 @@ abstract class ChecksFile {
     $this->all_missed_file_uri = str_replace('.csv', '_all_missed.' . $suffix, $file_uri);
     $this->all_not_matched_to_existing_contacts_file_uri = str_replace('.csv', '_all_not_matched.' . $suffix, $file_uri);
     $this->additionalFields = $additionalFields;
-    if ($file_uri) {
+
+    if (Context::get()) {
       wmf_common_set_smashpig_message_source(
         'direct', 'Offline importer: ' . get_class($this)
       );
+    }
+
+    if ($file_uri) {
+      // Note this ini is still recommeded - see https://csv.thephpleague.com/8.0/instantiation/
+      ini_set('auto_detect_line_endings', TRUE);
+
+      try {
+        $this->reader = Reader::createFromPath($this->file_uri, 'r');
+      }
+      catch (Exception $e) {
+        throw new WmfException(WmfException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
+      }
     }
   }
 
@@ -182,28 +206,31 @@ abstract class ChecksFile {
    * @throws \Exception
    */
   function import() {
-    $type = get_called_class();
-    ChecksImportLog::record("Beginning import of $type file {$this->file_uri}...");
-    //TODO: $db->begin();
+    ChecksImportLog::record("Beginning import of " . $this->getImportType() . " file {$this->file_uri}...");
 
-    ini_set('auto_detect_line_endings', TRUE);
-    if (($file = fopen($this->file_uri, 'r')) === FALSE) {
-      throw new WmfException(WmfException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
-    }
+    $this->headers = _load_headers($this->reader->fetchOne());
 
-    $this->headers = _load_headers(fgetcsv($file, 0, ',', '"', '\\'));
-
-    $this->validateColumns($this->headers);
+    $this->validateColumns();
 
     $this->row_index = 1;
-    $this->allMissedFileResource = $this->createOutputFile($this->all_missed_file_uri, 'Not Imported', $this->headers);
+    $this->allMissedFileResource = $this->createOutputFile($this->all_missed_file_uri, 'Not Imported');
 
-    while (($row = fgetcsv($file, 0, ',', '"', '\\')) !== FALSE) {
+    while (($row = $this->reader->fetchOne($this->row_index)) !== []) {
       $this->processRow($row);
     }
     $this->doFinish();
     return $this->messages;
 
+  }
+
+
+  /**
+   * Get the type for log messages.
+   *
+   * @return string
+   */
+  protected function getImportType() {
+    return get_called_class();
   }
 
   /**
@@ -515,14 +542,12 @@ abstract class ChecksFile {
   /**
    * Ensure the file contains all the data we need.
    *
-   * @param array $headers Column names
-   *
    * @throws WmfException if required columns are missing
    */
-  protected function validateColumns($headers) {
+  protected function validateColumns() {
     $failed = array();
     foreach ($this->getRequiredColumns() as $name) {
-      if (!array_key_exists($name, $headers)) {
+      if (!array_key_exists($name, $this->headers)) {
         $failed[] = $name;
       }
     }
@@ -536,13 +561,12 @@ abstract class ChecksFile {
    *
    * @param string $uri
    * @param string $type
-   * @param array $headers
    *
    * @return resource
    */
-  public function createOutputFile($uri, $type, $headers) {
+  public function createOutputFile($uri, $type) {
     $file = fopen($uri, 'w');
-    fputcsv($file, array_merge(array($type => $type), array_flip($headers)));
+    fputcsv($file, array_merge(array($type => $type), array_flip($this->headers)));
     return $file;
   }
 
@@ -702,9 +726,8 @@ abstract class ChecksFile {
 
   /**
    * @param $data
-   * @param $headers
    */
-  protected function importRow($data, $headers) {
+  protected function importRow($data) {
     $msg = $this->parseRow($data);
     $existing = $this->checkForExistingContributions($msg);
 
@@ -712,13 +735,7 @@ abstract class ChecksFile {
     if ($existing) {
       $skipped = $this->handleDuplicate($existing);
       if ($skipped) {
-        if ($this->numberDuplicateRows === 0) {
-          $this->skippedFileResource = $this->createOutputFile($this->skipped_file_uri, 'Skipped', $headers);
-        }
-        $this->numberDuplicateRows++;
-        fputcsv($this->skippedFileResource, array_merge(array('Skipped' => 'Duplicate'), $data));
-        fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Duplicate'), $data));
-
+        $this->markRowSkipped($data);
       }
       else {
         $this->numberSucceededRows++;
@@ -733,11 +750,7 @@ abstract class ChecksFile {
     ), array($msg));
 
     if (empty($msg['contact_id'])) {
-      $this->numberContactsCreated++;
-      if (!$this->allNotMatchedFileResource) {
-        $this->allNotMatchedFileResource = $this->createOutputFile($this->all_not_matched_to_existing_contacts_file_uri, 'Not Matched to existing', $headers);
-      }
-      fputcsv($this->allNotMatchedFileResource, array_merge(array('Not matched to existing' => 'Informational'), $data));
+      $this->markRowNotMatched($data);
     }
 
     watchdog('offline2civicrm',
@@ -770,44 +783,17 @@ abstract class ChecksFile {
       if ($this->errorStreakCount >= $this->errorStreakThreshold) {
         throw new IgnoredRowException(WmfException::IMPORT_CONTRIB, 'Error limit reached');
       }
-      $this->importRow($data, $this->headers);
+      $this->importRow($data);
     }
     catch (EmptyRowException $ex) {
       return;
     }
     catch (IgnoredRowException $ex) {
-      if ($this->numberIgnoredRows === 0) {
-        $this->ignoredFileResource = $this->createOutputFile($this->ignored_file_uri, 'Ignored', $this->headers);
-      }
-      fputcsv($this->ignoredFileResource, array_merge(array('Ignored' => $ex->getUserErrorMessage()), $data));
-      fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Ignored: ' . $ex->getUserErrorMessage()), $data));
-      $this->numberIgnoredRows++;
+      $this->markRowIgnored($data, $ex->getUserErrorMessage());
       return;
     }
     catch (WmfException $ex) {
-      if ($this->numberErrorRows === 0) {
-        $this->errorFileResource = $this->createOutputFile($this->error_file_uri, 'Error', $this->headers);
-      }
-
-      $this->numberErrorRows++;
-      fputcsv($this->errorFileResource, array_merge(array('error' => $ex->getUserErrorMessage()), $data));
-      fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Error: ' . $ex->getUserErrorMessage()), $data));
-
-
-      ChecksImportLog::record(t("Error in line @rownum: (@exception) @row", array(
-        '@rownum' => $this->row_index,
-        '@row' => implode(', ', $row),
-        '@exception' => $ex->getUserErrorMessage(),
-      )));
-
-      if ($this->errorStreakStart + $this->errorStreakCount < $this->row_index) {
-        // The last result must have been a success.  Restart streak counts.
-        $this->errorStreakStart = $this->row_index;
-        $this->errorStreakCount = 0;
-      }
-      $this->errorStreakCount++;
-      $this->lastErrorMessage = $ex->getUserErrorMessage();
-      $this->lastErrorRowNumber = $this->row_index;
+      $this->markRowError($row, $ex->getUserErrorMessage(), $data);
     }
     return;
   }
@@ -828,6 +814,82 @@ abstract class ChecksFile {
     ChecksImportLog::record(implode(' ', $this->messages));
     watchdog('offline2civicrm', implode(' ', $this->messages), array(), WATCHDOG_INFO);
     $this->closeFilesAndSetMessage();
+  }
+
+  /**
+   * Mark the row as skipped.
+   *
+   * @param array $data
+   */
+  protected function markRowSkipped($data) {
+    if ($this->numberDuplicateRows === 0) {
+      $this->skippedFileResource = $this->createOutputFile($this->skipped_file_uri, 'Skipped');
+    }
+    $this->numberDuplicateRows++;
+    fputcsv($this->skippedFileResource, array_merge(array('Skipped' => 'Duplicate'), $data));
+    fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Duplicate'), $data));
+  }
+
+  /**
+   * Mark the row as ignored.
+   *
+   * @param array $data
+   * @param string $errorMessage
+   */
+  protected function markRowIgnored($data, $errorMessage) {
+    if ($this->numberIgnoredRows === 0) {
+      $this->ignoredFileResource = $this->createOutputFile($this->ignored_file_uri, 'Ignored');
+    }
+    fputcsv($this->ignoredFileResource, array_merge(array('Ignored' => $errorMessage), $data));
+    fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Ignored: ' . $errorMessage), $data));
+    $this->numberIgnoredRows++;
+  }
+
+  /**
+   * Mark the row as not matched.
+   *
+   * @param array $data
+   */
+  protected function markRowNotMatched($data) {
+    $this->numberContactsCreated++;
+    if (!$this->allNotMatchedFileResource) {
+      $this->allNotMatchedFileResource = $this->createOutputFile($this->all_not_matched_to_existing_contacts_file_uri, 'Not Matched to existing');
+    }
+    fputcsv($this->allNotMatchedFileResource, array_merge(array('Not matched to existing' => 'Informational'), $data));
+  }
+
+  /**
+   * Mark row as an error.
+   *
+   * @param array $row Original row data.
+   * @param string $errorMessage
+   * @param array $data Processed data.
+   * @todo we are outputting 'data' but perhaps 'row' is better as it is the input.
+   */
+  protected function markRowError($row, $errorMessage, $data) {
+    if ($this->numberErrorRows === 0) {
+      $this->errorFileResource = $this->createOutputFile($this->error_file_uri, 'Error');
+    }
+
+    $this->numberErrorRows++;
+    fputcsv($this->errorFileResource, array_merge(array('error' => $errorMessage), $data));
+    fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Error: ' . $errorMessage), $data));
+
+
+    ChecksImportLog::record(t("Error in line @rownum: (@exception) @row", array(
+      '@rownum' => $this->row_index,
+      '@row' => implode(', ', $row),
+      '@exception' => $errorMessage,
+    )));
+
+    if ($this->errorStreakStart + $this->errorStreakCount < $this->row_index) {
+      // The last result must have been a success.  Restart streak counts.
+      $this->errorStreakStart = $this->row_index;
+      $this->errorStreakCount = 0;
+    }
+    $this->errorStreakCount++;
+    $this->lastErrorMessage = $errorMessage;
+    $this->lastErrorRowNumber = $this->row_index;
   }
 
 }
