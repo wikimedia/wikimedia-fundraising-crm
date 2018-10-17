@@ -185,11 +185,11 @@ abstract class ChecksFile {
         $this->reader = Reader::createFromPath($this->file_uri, 'r');
         $this->headers = _load_headers($this->reader->fetchOne());
         $this->validateColumns();
-        $this->skippedFileResource = $this->createOutputFile($this->skipped_file_uri, 'Skipped');
-        $this->allMissedFileResource = $this->createOutputFile($this->all_missed_file_uri, 'Not Imported');
-        $this->allNotMatchedFileResource = $this->createOutputFile($this->all_not_matched_to_existing_contacts_file_uri, 'Not Matched to existing');
-        $this->ignoredFileResource = $this->createOutputFile($this->ignored_file_uri, 'Ignored');
-        $this->errorFileResource = $this->createOutputFile($this->error_file_uri, 'Error');
+        $this->createOutputFile($this->skipped_file_uri, 'Skipped');
+        $this->createOutputFile($this->all_missed_file_uri, 'Not Imported');
+        $this->createOutputFile($this->all_not_matched_to_existing_contacts_file_uri, 'Not Matched to existing');
+        $this->createOutputFile($this->ignored_file_uri, 'Ignored');
+        $this->createOutputFile($this->error_file_uri, 'Error');
       }
       catch (WmfException $e) {
         // Validate columns throws a WmfException - we just want to re-throw that one unchanged.
@@ -923,8 +923,31 @@ abstract class ChecksFile {
    * @param $data
    */
   protected function outputResultRow($type, $data) {
-    $resource = $this->getResourceName($type);
-    $this->$resource->insertOne($data);
+    $resource = $this->getResource($type);
+    $resource->insertOne($data);
+  }
+
+  /**
+   * Get the file resource, if instantiated.
+   *
+   * When using the batch api this object is instantiated at the start and the
+   * original object is passed around, not the processed object. If a new batch
+   * has been kicked off we will need to fire up the resource again.
+   *
+   * Note that the batch runs in separate php processes and only objects that
+   * can be serialised can be passed around. File objects are not serialisable.
+   *
+   * @param $type
+   *
+   * @return Writer
+   */
+  protected function getResource($type) {
+    $resourceName = $this->getResourceName($type);
+    if (!$this->$resourceName) {
+      $uri = $type . '_file_uri';
+      $this->$resourceName = $this->openFile($this->$uri);
+    }
+    return $this->$resourceName;
   }
 
   /**
