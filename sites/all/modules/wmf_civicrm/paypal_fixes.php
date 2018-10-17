@@ -15,6 +15,6 @@ function wmf_civicrm_undo_bogus_paypal_cancel($start, $end) {
       trxn_id LIKE 'I-%' OR trxn_id LIKE 'S-%'
     )
     AND contribution_status_id = $cancelledStatusId
-    AND cancel_date BETWEEN '2018-10-03 09:46:00' AND '2018-10-03 13:39:00'
+    AND cancel_date BETWEEN '$start' AND '$end'
   ");
 }
