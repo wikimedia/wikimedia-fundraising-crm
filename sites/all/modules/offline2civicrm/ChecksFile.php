@@ -3,6 +3,7 @@
 use SmashPig\CrmLink\Messages\SourceFields;
 use League\Csv\Reader;
 use SmashPig\Core\Context;
+use League\Csv\Writer;
 
 /**
  * CSV batch format for manually-keyed donation checks
@@ -107,29 +108,28 @@ abstract class ChecksFile {
 
   protected $row_index;
 
-
   /**
-   * @var resource
+   * @var Writer
    */
   protected $ignoredFileResource = NULL;
 
   /**
-   * @var resource
+   * @var Writer
    */
   protected $skippedFileResource = NULL;
 
   /**
-   * @var resource
+   * @var Writer
    */
   protected $errorFileResource = NULL;
 
   /**
-   * @var resource
+   * @var Writer
    */
   protected $allMissedFileResource = NULL;
 
   /**
-   * @var resource
+   * @var Writer
    */
   protected $allNotMatchedFileResource = NULL;
 
@@ -570,31 +570,16 @@ abstract class ChecksFile {
    * @param string $uri
    * @param string $type
    *
-   * @return resource
+   * @return Writer
    */
   public function createOutputFile($uri, $type) {
-    $file = fopen($uri, 'w');
-    fputcsv($file, array_merge(array($type => $type), array_flip($this->headers)));
-    return $file;
-  }
-
-  /**
-   * Close our csv files and set the messages to display.
-   */
-  public function closeFilesAndSetMessage() {
-    foreach (array(
-               $this->skippedFileResource,
-               $this->errorFileResource,
-               $this->ignoredFileResource,
-               $this->allMissedFileResource,
-               $this->allNotMatchedFileResource,
-             ) as $fileResource) {
-      if ($fileResource) {
-        fclose($fileResource);
-      }
-    }
-
-    $this->setMessages();
+    // This fopen & fclose is clunky - I was just having trouble getting 'better looking'
+    // variants to work.
+    $file = fopen($uri, 'a');
+    fclose($file);
+    $writer = $this->openFile($uri);
+    $writer->insertOne(array_merge([$type => $type], array_flip($this->headers)));
+    return $writer;
   }
 
   /**
@@ -782,7 +767,7 @@ abstract class ChecksFile {
     $this->totalNumberRows = $this->row_index - 1;
 
     if ($this->errorStreakCount >= $this->errorStreakThreshold) {
-      $this->closeFilesAndSetMessage();
+      $this->setMessages();
       throw new Exception("Import aborted due to {$this->errorStreakCount} consecutive errors, last error was at row {$this->lastErrorRowNumber}: {$this->lastErrorMessage }. " . implode(' ', $this->messages)
       );
     }
@@ -793,7 +778,7 @@ abstract class ChecksFile {
 
     ChecksImportLog::record(implode(' ', $this->messages));
     watchdog('offline2civicrm', implode(' ', $this->messages), array(), WATCHDOG_INFO);
-    $this->closeFilesAndSetMessage();
+    $this->setMessages();
   }
 
   /**
@@ -842,7 +827,6 @@ abstract class ChecksFile {
     $this->outputResultRow('error', array_merge(['error' => $errorMessage], $data));
     $this->outputResultRow('all_missed', array_merge(['Not Imported' => 'Error: ' . $errorMessage], $data));
 
-
     ChecksImportLog::record(t("Error in line @rownum: (@exception) @row", array(
       '@rownum' => $this->row_index,
       '@row' => implode(', ', $row),
@@ -857,6 +841,18 @@ abstract class ChecksFile {
     $this->errorStreakCount++;
     $this->lastErrorMessage = $errorMessage;
     $this->lastErrorRowNumber = $this->row_index;
+  }
+
+  /**
+   * Open file for writing.
+   *
+   * @param path $uri
+   *
+   * @return Writer
+   */
+  protected function openFile($uri) {
+    $writer = Writer::createFromPath($uri, 'a');
+    return $writer;
   }
 
   protected function setMessages() {
@@ -905,7 +901,7 @@ abstract class ChecksFile {
    */
   protected function outputResultRow($type, $data) {
     $resource = $this->getResourceName($type);
-    fputcsv($this->$resource, $data);
+    $this->$resource->insertOne($data);
   }
 
   /**
