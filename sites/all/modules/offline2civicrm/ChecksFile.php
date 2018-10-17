@@ -213,24 +213,30 @@ abstract class ChecksFile {
   /**
    * Read checks from a file and save to the database.
    *
+   * @param int $offset
+   * @param int $limit
+   *
    * @return array
    *   Output messages to display to the user.
-   *
-   * @throws \Exception
    */
-  function import() {
-    ChecksImportLog::record("Beginning import of " . $this->getImportType() . " file {$this->file_uri}...");
-
-    $this->row_index = 1;
-
-    while (($row = $this->reader->fetchOne($this->row_index)) !== []) {
-      $this->processRow($row);
+  function import($offset = 1, $limit = 0) {
+    if ($limit === 0) {
+      $limit = $this->getRowCount();
     }
+    ChecksImportLog::record("Beginning import of " . $this->getImportType() . " file {$this->file_uri}...");
+    $this->row_index = $offset;
+
+    $processed = 0;
+    while ($processed < $limit) {
+      $row = $this->reader->fetchOne($offset);
+      $this->processRow($row);
+      $processed++;
+      $offset ++;
+    }
+
     $this->doFinish();
     return $this->messages;
-
   }
-
 
   /**
    * Get the type for log messages.
@@ -239,6 +245,23 @@ abstract class ChecksFile {
    */
   protected function getImportType() {
     return get_called_class();
+  }
+
+  /**
+   * Get the number of rows in the csv
+   *
+   * https://csv.thephpleague.com/8.0/reading/
+   *
+   * @return int
+   */
+  public function getRowCount() {
+    $count = $this->reader->each(
+      function ($row) {
+        return true;
+      }
+    );
+    // return rows not including header.
+    return $count - 1;
   }
 
   /**

@@ -19,7 +19,7 @@ class RefundFile {
 		$this->file_uri = $file_uri;
 	}
 
-	function import() {
+	function import($offset = 1, $limit = 0) {
 		if ( !file_exists( $this->file_uri ) ) {
 			throw new WmfException( WmfException::FILE_NOT_FOUND, 'File not found: ' . $this->file_uri );
 		}
