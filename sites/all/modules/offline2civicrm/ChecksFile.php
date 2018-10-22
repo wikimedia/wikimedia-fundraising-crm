@@ -3,6 +3,7 @@
 use SmashPig\CrmLink\Messages\SourceFields;
 use League\Csv\Reader;
 use SmashPig\Core\Context;
+use League\Csv\Writer;
 
 /**
  * CSV batch format for manually-keyed donation checks
@@ -107,29 +108,28 @@ abstract class ChecksFile {
 
   protected $row_index;
 
-
   /**
-   * @var resource
+   * @var Writer
    */
   protected $ignoredFileResource = NULL;
 
   /**
-   * @var resource
+   * @var Writer
    */
   protected $skippedFileResource = NULL;
 
   /**
-   * @var resource
+   * @var Writer
    */
   protected $errorFileResource = NULL;
 
   /**
-   * @var resource
+   * @var Writer
    */
   protected $allMissedFileResource = NULL;
 
   /**
-   * @var resource
+   * @var Writer
    */
   protected $allNotMatchedFileResource = NULL;
 
@@ -175,12 +175,25 @@ abstract class ChecksFile {
       );
     }
 
+    // If we have the file_uri we are constructing this to do an import. Without a file uri we are on the
+    // user form & just getting field information.
     if ($file_uri) {
       // Note this ini is still recommeded - see https://csv.thephpleague.com/8.0/instantiation/
       ini_set('auto_detect_line_endings', TRUE);
 
       try {
         $this->reader = Reader::createFromPath($this->file_uri, 'r');
+        $this->headers = _load_headers($this->reader->fetchOne());
+        $this->validateColumns();
+        $this->createOutputFile($this->skipped_file_uri, 'Skipped');
+        $this->createOutputFile($this->all_missed_file_uri, 'Not Imported');
+        $this->createOutputFile($this->all_not_matched_to_existing_contacts_file_uri, 'Not Matched to existing');
+        $this->createOutputFile($this->ignored_file_uri, 'Ignored');
+        $this->createOutputFile($this->error_file_uri, 'Error');
+      }
+      catch (WmfException $e) {
+        // Validate columns throws a WmfException - we just want to re-throw that one unchanged.
+        throw $e;
       }
       catch (Exception $e) {
         throw new WmfException(WmfException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
@@ -200,29 +213,30 @@ abstract class ChecksFile {
   /**
    * Read checks from a file and save to the database.
    *
+   * @param int $offset
+   * @param int $limit
+   *
    * @return array
    *   Output messages to display to the user.
-   *
-   * @throws \Exception
    */
-  function import() {
-    ChecksImportLog::record("Beginning import of " . $this->getImportType() . " file {$this->file_uri}...");
-
-    $this->headers = _load_headers($this->reader->fetchOne());
-
-    $this->validateColumns();
-
-    $this->row_index = 1;
-    $this->allMissedFileResource = $this->createOutputFile($this->all_missed_file_uri, 'Not Imported');
-
-    while (($row = $this->reader->fetchOne($this->row_index)) !== []) {
-      $this->processRow($row);
+  function import($offset = 1, $limit = 0) {
+    if ($limit === 0) {
+      $limit = $this->getRowCount();
     }
+    ChecksImportLog::record("Beginning import of " . $this->getImportType() . " file {$this->file_uri}...");
+    $this->row_index = $offset;
+
+    $processed = 0;
+    while ($processed < $limit) {
+      $row = $this->reader->fetchOne($offset);
+      $this->processRow($row);
+      $processed++;
+      $offset ++;
+    }
+
     $this->doFinish();
     return $this->messages;
-
   }
-
 
   /**
    * Get the type for log messages.
@@ -231,6 +245,23 @@ abstract class ChecksFile {
    */
   protected function getImportType() {
     return get_called_class();
+  }
+
+  /**
+   * Get the number of rows in the csv
+   *
+   * https://csv.thephpleague.com/8.0/reading/
+   *
+   * @return int
+   */
+  public function getRowCount() {
+    $count = $this->reader->each(
+      function ($row) {
+        return true;
+      }
+    );
+    // return rows not including header.
+    return $count - 1;
   }
 
   /**
@@ -562,31 +593,16 @@ abstract class ChecksFile {
    * @param string $uri
    * @param string $type
    *
-   * @return resource
+   * @return Writer
    */
   public function createOutputFile($uri, $type) {
-    $file = fopen($uri, 'w');
-    fputcsv($file, array_merge(array($type => $type), array_flip($this->headers)));
-    return $file;
-  }
-
-  /**
-   * Close our csv files and set the messages to display.
-   */
-  public function closeFilesAndSetMessage() {
-    foreach (array(
-               $this->skippedFileResource,
-               $this->errorFileResource,
-               $this->ignoredFileResource,
-               $this->allMissedFileResource,
-               $this->allNotMatchedFileResource,
-             ) as $fileResource) {
-      if ($fileResource) {
-        fclose($fileResource);
-      }
-    }
-
-    $this->setMessages();
+    // This fopen & fclose is clunky - I was just having trouble getting 'better looking'
+    // variants to work.
+    $file = fopen($uri, 'a');
+    fclose($file);
+    $writer = $this->openFile($uri);
+    $writer->insertOne(array_merge([$type => $type], array_flip($this->headers)));
+    return $writer;
   }
 
   /**
@@ -774,7 +790,7 @@ abstract class ChecksFile {
     $this->totalNumberRows = $this->row_index - 1;
 
     if ($this->errorStreakCount >= $this->errorStreakThreshold) {
-      $this->closeFilesAndSetMessage();
+      $this->setMessages();
       throw new Exception("Import aborted due to {$this->errorStreakCount} consecutive errors, last error was at row {$this->lastErrorRowNumber}: {$this->lastErrorMessage }. " . implode(' ', $this->messages)
       );
     }
@@ -785,7 +801,7 @@ abstract class ChecksFile {
 
     ChecksImportLog::record(implode(' ', $this->messages));
     watchdog('offline2civicrm', implode(' ', $this->messages), array(), WATCHDOG_INFO);
-    $this->closeFilesAndSetMessage();
+    $this->setMessages();
   }
 
   /**
@@ -794,12 +810,9 @@ abstract class ChecksFile {
    * @param array $data
    */
   protected function markRowSkipped($data) {
-    if ($this->numberDuplicateRows === 0) {
-      $this->skippedFileResource = $this->createOutputFile($this->skipped_file_uri, 'Skipped');
-    }
     $this->numberDuplicateRows++;
-    fputcsv($this->skippedFileResource, array_merge(array('Skipped' => 'Duplicate'), $data));
-    fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Duplicate'), $data));
+    $this->outputResultRow('skipped', array_merge(['Skipped' => 'Duplicate'], $data));
+    $this->outputResultRow('all_missed', array_merge(['Not Imported' => 'Duplicate'], $data));
   }
 
   /**
@@ -809,11 +822,8 @@ abstract class ChecksFile {
    * @param string $errorMessage
    */
   protected function markRowIgnored($data, $errorMessage) {
-    if ($this->numberIgnoredRows === 0) {
-      $this->ignoredFileResource = $this->createOutputFile($this->ignored_file_uri, 'Ignored');
-    }
-    fputcsv($this->ignoredFileResource, array_merge(array('Ignored' => $errorMessage), $data));
-    fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Ignored: ' . $errorMessage), $data));
+    $this->outputResultRow('ignored', array_merge(['Ignored' => $errorMessage], $data));
+    $this->outputResultRow('all_missed', array_merge(['Not Imported' => 'Ignored: ' . $errorMessage], $data));
     $this->numberIgnoredRows++;
   }
 
@@ -824,10 +834,7 @@ abstract class ChecksFile {
    */
   protected function markRowNotMatched($data) {
     $this->numberContactsCreated++;
-    if (!$this->allNotMatchedFileResource) {
-      $this->allNotMatchedFileResource = $this->createOutputFile($this->all_not_matched_to_existing_contacts_file_uri, 'Not Matched to existing');
-    }
-    fputcsv($this->allNotMatchedFileResource, array_merge(array('Not matched to existing' => 'Informational'), $data));
+    $this->outputResultRow('all_not_matched_to_existing_contacts', array_merge(['Not matched to existing' => 'Informational'], $data));
   }
 
   /**
@@ -839,14 +846,9 @@ abstract class ChecksFile {
    * @todo we are outputting 'data' but perhaps 'row' is better as it is the input.
    */
   protected function markRowError($row, $errorMessage, $data) {
-    if ($this->numberErrorRows === 0) {
-      $this->errorFileResource = $this->createOutputFile($this->error_file_uri, 'Error');
-    }
-
     $this->numberErrorRows++;
-    fputcsv($this->errorFileResource, array_merge(array('error' => $errorMessage), $data));
-    fputcsv($this->allMissedFileResource, array_merge(array('Not Imported' => 'Error: ' . $errorMessage), $data));
-
+    $this->outputResultRow('error', array_merge(['error' => $errorMessage], $data));
+    $this->outputResultRow('all_missed', array_merge(['Not Imported' => 'Error: ' . $errorMessage], $data));
 
     ChecksImportLog::record(t("Error in line @rownum: (@exception) @row", array(
       '@rownum' => $this->row_index,
@@ -862,6 +864,18 @@ abstract class ChecksFile {
     $this->errorStreakCount++;
     $this->lastErrorMessage = $errorMessage;
     $this->lastErrorRowNumber = $this->row_index;
+  }
+
+  /**
+   * Open file for writing.
+   *
+   * @param path $uri
+   *
+   * @return Writer
+   */
+  protected function openFile($uri) {
+    $writer = Writer::createFromPath($uri, 'a');
+    return $writer;
   }
 
   protected function setMessages() {
@@ -894,6 +908,66 @@ abstract class ChecksFile {
     if ($this->allNotMatchedFileResource) {
       $this->setMessage($this->all_not_matched_to_existing_contacts_file_uri, ts("Rows where new contacts were created"), $this->numberContactsCreated);
     }
+  }
+
+  /**
+   * Write a row to the relevant output file.
+   *
+   * @param string $type Type of output file
+   *  - skipped
+   *  - error
+   *  - ignored
+   *  - all_not_matched_to_contact
+   *  - all_missed
+   *  -
+   * @param $data
+   */
+  protected function outputResultRow($type, $data) {
+    $resource = $this->getResource($type);
+    $resource->insertOne($data);
+  }
+
+  /**
+   * Get the file resource, if instantiated.
+   *
+   * When using the batch api this object is instantiated at the start and the
+   * original object is passed around, not the processed object. If a new batch
+   * has been kicked off we will need to fire up the resource again.
+   *
+   * Note that the batch runs in separate php processes and only objects that
+   * can be serialised can be passed around. File objects are not serialisable.
+   *
+   * @param $type
+   *
+   * @return Writer
+   */
+  protected function getResource($type) {
+    $resourceName = $this->getResourceName($type);
+    if (!$this->$resourceName) {
+      $uri = $type . '_file_uri';
+      $this->$resourceName = $this->openFile($this->$uri);
+    }
+    return $this->$resourceName;
+  }
+
+  /**
+   * Get the name of the related resource.
+   *
+   * Of course it might have been easier not to mix camel & lc underscore - just saying.
+   *
+   * @param $string
+   *
+   * @return string
+   */
+  protected function getResourceName($string) {
+    $mappings = [
+      'error' => 'errorFileResource',
+      'all_missed' => 'allMissedFileResource',
+      'all_not_matched_to_existing_contacts' => 'allNotMatchedFileResource',
+      'skipped' => 'skippedFileResource',
+      'ignored' => 'ignoredFileResource',
+    ];
+    return $mappings[$string];
   }
 
 }

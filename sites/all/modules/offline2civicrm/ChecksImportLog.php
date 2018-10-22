@@ -30,7 +30,7 @@ class CheckImportLogEvent {
     $event = new CheckImportLogEvent();
     $event->time = $data['time'];
     $event->who = $data['who'];
-    $event->done = check_plain( $data['done'] );
+    $event->done = filter_xss($data['done'], ['a']);
     return $event;
   }
 }
