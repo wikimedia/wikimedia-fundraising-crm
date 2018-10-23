@@ -234,8 +234,55 @@ abstract class ChecksFile {
       $offset ++;
     }
 
-    $this->doFinish();
+    $this->totalNumberRows = $this->row_index - 1;
+    $this->setMessages();
+    // This is brought forward from previous iterations. I think it might not have been put in with
+    // full understanding but without it our tests can't complete in the time they have so need to keep
+    // for now.
+    set_time_limit(0);
     return $this->messages;
+  }
+
+  /**
+   * Get progress.
+   *
+   * We get all the information about where the import is up to.
+   *
+   * This is passed back to the batch api which serialises it & stores it,
+   * and then unserialises it & passes it to the next batch.
+   *
+   * Only information that can be serialised can be passed between batches.
+   *
+   * @return array
+   */
+  public function getProgress() {
+    return [
+      'errorStreakCount' => $this->errorStreakCount,
+      'errorStreakStart' => $this->errorStreakStart,
+      'row_index' => $this->row_index,
+      'messages' => $this->messages,
+      'lastErrorMessage' => $this->lastErrorMessage,
+      'lastErrorRowNumber' => $this->lastErrorRowNumber,
+      'numberIgnoredRows' => $this->numberIgnoredRows,
+      'numberContactsCreated' => $this->numberContactsCreated,
+      'numberErrorRows' => $this->numberErrorRows,
+      'numberSucceededRows' => $this->numberSucceededRows,
+      'numberDuplicateRows' => $this->numberDuplicateRows,
+      'isSuccess' => $this->isSuccess(),
+    ];
+  }
+
+  /**
+   * Set the values in the progress array on the class.
+   *
+   * @param $progress
+   */
+  public function setProgress($progress) {
+    foreach ($progress as $key => $value) {
+      if (property_exists($this, $key)) {
+        $this->$key = $value;
+      }
+    }
   }
 
   /**
@@ -598,7 +645,7 @@ abstract class ChecksFile {
   public function createOutputFile($uri, $type) {
     // This fopen & fclose is clunky - I was just having trouble getting 'better looking'
     // variants to work.
-    $file = fopen($uri, 'a');
+    $file = fopen($uri, 'w');
     fclose($file);
     $writer = $this->openFile($uri);
     $writer->insertOne(array_merge([$type => $type], array_flip($this->headers)));
@@ -618,7 +665,6 @@ abstract class ChecksFile {
     // We stick to this rigid assumption because if it changes we might want to re-evaluate the security aspects of
     // allowing people to download csv files from the temp directory based on role.
     $this->messages[$type] = "$count $type $row logged to <a href='/import_output/" . substr($uri, 12, -4) . "'> file</a>.";
-    ChecksImportLog::record($this->messages[$type]);
   }
 
   /**
@@ -786,22 +832,20 @@ abstract class ChecksFile {
     return;
   }
 
-  protected function doFinish() {
-    $this->totalNumberRows = $this->row_index - 1;
-
+  /**
+   * Has the import successfully completed.
+   *
+   * Successful means all rows have been processed (even if not all have
+   * succeeded). This would be false if the importer had stopped processing due
+   * to 10 successive errors.
+   *
+   * @return bool
+   */
+  public function isSuccess() {
     if ($this->errorStreakCount >= $this->errorStreakThreshold) {
-      $this->setMessages();
-      throw new Exception("Import aborted due to {$this->errorStreakCount} consecutive errors, last error was at row {$this->lastErrorRowNumber}: {$this->lastErrorMessage }. " . implode(' ', $this->messages)
-      );
+      return FALSE;
     }
-    array_unshift($this->messages, "Successful import!");
-
-    // Unset time limit.
-    set_time_limit(0);
-
-    ChecksImportLog::record(implode(' ', $this->messages));
-    watchdog('offline2civicrm', implode(' ', $this->messages), array(), WATCHDOG_INFO);
-    $this->setMessages();
+    return TRUE;
   }
 
   /**
@@ -880,6 +924,7 @@ abstract class ChecksFile {
 
   protected function setMessages() {
     $notImported = $this->totalNumberRows - $this->numberSucceededRows;
+    $this->messages[0] = $this->isSuccess() ? ts("Successful import!") : "Import aborted due to {$this->errorStreakCount} consecutive errors, last error was at row {$this->lastErrorRowNumber}: {$this->lastErrorMessage }. ";
     if ($notImported === 0) {
       $this->messages['Result'] = ts("All rows were imported");
     }
