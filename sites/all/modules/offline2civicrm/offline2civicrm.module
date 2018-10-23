@@ -99,6 +99,16 @@ function offline2civicrm_import_checks_form($form, &$form_state) {
     '#title' => t('Upload checks file'),
     '#type' => 'file',
   );
+  $form['import_batch_limit'] = array(
+    '#title' => t('Number of items to process each batch'),
+    '#description' => t('Higher values perform somewhat better, lower values have less risk of timeout'),
+    '#type' => 'textfield',
+    '#attributes' => array(
+      ' type' => 'number', // insert space before attribute name :)
+    ),
+    '#required' => TRUE,
+    '#default_value' => 100,
+  );
   $form['import_upload_submit'] = array(
     '#type' => 'submit',
     '#value' => t('Upload'),
@@ -171,7 +181,7 @@ function offline2civicrm_import_fields($form, &$form_state) {
  *
  * @param $file_name
  */
-function offline2civicrm_download_csv($file_name) {
+  function offline2civicrm_download_csv($file_name) {
   global $user;
   if (!preg_match('/\.' . $user->uid . '$/', $file_name)) {
     return drupal_access_denied();
@@ -218,12 +228,41 @@ function offline2civicrm_import_checks_form_submit($form, $form_state) {
 
       // This workaround... does not always work.  Will be deprecated in Civi 4.3
       civicrm_initialize();
-      $smellyTmp = CRM_Core_TemporaryErrorScope::useException();
+      CRM_Core_TemporaryErrorScope::useException();
       $additionalFields = offline2civicrm_get_gateway_specific_fields($form_state);
 
       $importer = offline2civicrm_get_importer_class($form_state['values']['offline2civicrm_settings']['import_upload_format'], $file->uri, $additionalFields);
-      $messages = $importer->import();
-      drupal_set_message((implode('<br>', $messages)));
+
+      $batch = array(
+        'operations' => [],
+        'finished' => 'offline2civicrm_import_batch_finished', // runs after batch is finished
+        'title' => t('Processing Import'),
+        'init_message' => t('Import is starting.'),
+        // https://www.drupal.org/docs/7/api/batch-api/overview
+        // "Placeholders note the progression by operation, i.e. if there are"
+        // so we can use @current & @total but that will be the number of
+        // batches not rows which might be confusing.
+        'progress_message' => t('Processed @percentage%'),
+        'error_message' => t('OMG OMG something has gone wrong.'),
+      );
+      $progress = 0;
+      // how many to process for each run
+      $limit = $form_state['values']['import_batch_limit'];
+      $max = $importer->getRowCount();
+      while ($progress < $max) {
+        // For clarity - the offset we are after is + 1, to skip headings.
+        $offset = $progress + 1;
+        $batchSize = (($max - $progress) > $limit) ? $limit : ($max - $progress);
+        // We pass the $importer here - this is the original importer instance that we have just
+        // instantiated. Any changes to this object are not retained between batches. The $context object
+        // can be used to pass information between batches - but only information that can be serialised,
+        // not file resources.
+        $batch['operations'][] = array('offline2civicrm_import_batch', [$offset, $batchSize, $importer]);
+        $progress = $progress + $batchSize;
+      }
+      batch_set($batch);
+      batch_process('admin/import_checks'); // page to return to after complete
+
     }
     catch (WmfException $ex) {
       $message = t("Import error: !err", array('!err' => $ex->getMessage()));
@@ -239,6 +278,35 @@ function offline2civicrm_import_checks_form_submit($form, $form_state) {
       file_delete($file, TRUE);
     }
   }
+}
+
+/**
+ * @param $offset
+ * @param $limit
+ * @param $importer
+ * @param $context
+ *
+ * @return mixed
+ */
+function offline2civicrm_import_batch($offset, $limit, $importer, &$context) {
+  civicrm_initialize();
+  wmf_common_create_smashpig_context('offline2civicrm');
+
+  $context['message'] = t('Be very excited - we are doing your thing');
+  $importer->setProgress($context['results']);
+
+  $messages = $importer->import($offset, $limit);
+  $context['results'] = $importer->getProgress();
+  $context['message'] = implode($messages, '<br>');
+}
+
+function offline2civicrm_import_batch_finished($success, $results, $operations, $timeTaken) {
+  $status = $results['isSuccess'] ? ($results['numberErrorRows'] ? 'warning' : 'status') : 'error';
+  drupal_set_message((implode('<br>', $results['messages'])), $status);
+  foreach ($results['messages'] as $message) {
+    ChecksImportLog::record($message);
+  }
+  watchdog('offline2civicrm', implode(' ', $results['messages']), array(), WATCHDOG_INFO);
 }
 
 /**
