@@ -25,6 +25,12 @@ function _civicrm_api3_omnirecipient_showme_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_omnirecipient_showme($params) {
-  return _civicrm_api3_generic_showme(['entity' => 'MailingProviderData', 'params' => $params]);
+  $result = _civicrm_api3_generic_showme(['entity' => 'MailingProviderData', 'params' => $params]);
+  if (empty($result['count'])) {
+    // Add 'something' to showme so it will still call forgetme.
+    $result['count'] = 1;
+    $result['values'][0] = ts('No bulk emails have been sent');
+  }
+  return $result;
 }
 

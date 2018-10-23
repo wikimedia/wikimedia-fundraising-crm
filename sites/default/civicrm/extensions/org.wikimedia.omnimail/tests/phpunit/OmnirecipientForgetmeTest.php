@@ -36,6 +36,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass implements EndToEn
 
   public function tearDown() {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_mailing_provider_data WHERE contact_id IN (' . implode(',', $this->contactIDs) . ')');
+    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_omnimail_job_progress WHERE job_identifier = \'["charlie@example.com"]\'');
     parent::tearDown();
   }
 
@@ -52,12 +53,26 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass implements EndToEn
 
     $settings = $this->setDatabaseID([50]);
     $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->contactIDs['charlie_clone']]);
+    $this->callAPISuccess('Omnirecipient', 'process_forgetme', ['mail_provider' => 'Silverpop']);
 
     $this->assertEquals(0, $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs['charlie_clone']]));
 
-    // Check the request we sent out had the right email in it.
-    $requests = $this->getRequestBodies();
-    $this->assertEquals($requests[1], "Email,charlie@example.com\n");
+    // Check the job has retrieval parameters to try again later.
+    $omniJobParams = ['job' => 'omnimail_privacy_erase', 'job_identifier' => '["charlie@example.com"]', 'mailing_provider' => 'Silverpop'];
+    $omniJob = $this->callAPISuccessGetSingle('OmnimailJobProgress', $omniJobParams);
+    $this->assertEquals('{"fetch_url":"https:\/\/api4.ibmmarketingcloud.com\/rest\/gdpr_jobs\/662\/status","database_id":"50"}', $omniJob['retrieval_parameters']);
+
+    $this->setUpForEraseFollowUpSuccess();
+    $this->addTestClientToRestSingleton();
+    // This time it was complete - entry should be gone.
+    $this->callAPISuccess('Omnirecipient', 'process_forgetme', ['mail_provider' => 'Silverpop']);
+    $this->callAPISuccessGetCount('OmnimailJobProgress', $omniJobParams, 0);
+
+    // Check the request retried our url
+    $requests = $this->getRequestUrls();
+    $this->assertEquals('https://api4.ibmmarketingcloud.com/rest/gdpr_jobs/662/status', $requests[1]);
+    // The job should be deleted due to having succeeded
+    $this->callAPISuccessGetCount('OmnimailJobProgress', $omniJobParams, 0);
     Civi::settings()->set('omnimail_credentials', $settings);
   }
 
@@ -73,6 +88,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass implements EndToEn
     $settings = $this->setDatabaseID([50]);
 
     $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->contactIDs['charlie_clone']]);
+    $this->callAPISuccess('Omnirecipient', 'process_forgetme', ['mail_provider' => 'Silverpop']);
 
     // Check the request we sent out had the right email in it.
     $requests = $this->getRequestBodies();

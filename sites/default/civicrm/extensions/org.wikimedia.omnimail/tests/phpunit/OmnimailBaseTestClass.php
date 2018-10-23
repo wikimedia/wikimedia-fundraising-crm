@@ -235,4 +235,18 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
     $this->setUpClientWithHistoryContainer();
   }
 
+  /**
+   * Set up the mock handler for an erase request.
+   */
+  protected function setUpForEraseFollowUpSuccess() {
+    $files = [
+      '/Responses/AuthenticateRestResponse.txt',
+      '/Responses/Privacy/EraseInProgressResponse.txt',
+      '/Responses/Privacy/EraseSuccessResponse.txt'
+    ];
+
+    $this->createMockHandlerForFiles($files);
+    $this->setUpClientWithHistoryContainer();
+  }
+
 }

@@ -150,6 +150,19 @@ trait GuzzleTestTrait {
   }
 
   /**
+   * Get the bodies of the requests sent via Guzzle.
+   *
+   * @return array
+   */
+  protected function getRequestUrls() {
+    $requests = [];
+    foreach ($this->getContainer() as $guzzle) {
+      $requests[] = (string) $guzzle['request']->getUri();
+    }
+    return $requests;
+  }
+
+  /**
    * Get the bodies of the responses returned via Guzzle.
    *
    * @return array

@@ -33,7 +33,7 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
       ],
     ]);
 
-    $result = $this->callAPISuccess('Contact', 'forgetme', array('id' => $contact['id'], 'no_omnimail_hack' => TRUE));
+    $result = $this->callAPISuccess('Contact', 'forgetme', array('id' => $contact['id']));
 
     $this->callAPISuccessGetCount('Phone', ['contact_id' => $contact['id']], 0);
     $this->callAPISuccessGetCount('Email', ['contact_id' => $contact['id']], 0);
@@ -74,7 +74,7 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
 
     $activityToKeep = $this->callAPISuccess('Activity', 'create', ['activity_type_id' => 'Meeting', 'source_contact_id' => $contactToDelete['id'], 'target_contact_id' => $contactToKeep['id']]);
 
-    civicrm_api3('Contact', 'forgetme', array('id' => $contactToDelete['id'], 'no_omnimail_hack' => TRUE));
+    civicrm_api3('Contact', 'forgetme', array('id' => $contactToDelete['id']));
 
     $this->callAPISuccessGetCount('ActivityContact', ['contact_id' => $contactToDelete['id'], 'activity_id.activity_type_id' => ['IN' => ["Meeting"]]], 0);
     $this->callAPISuccessGetCount('ActivityContact', ['contact_id' => $contactToKeep['id'], 'activity_id.activity_type_id' => ['IN' => ["Meeting"]]], 1);
@@ -111,7 +111,7 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
       'contact_id_b' => $buffies['contact_to_delete']['id'],
     ]);
 
-    $this->callAPISuccess('Contact', 'forgetme', array('id' => $buffies['contact_to_delete']['id'], 'no_omnimail_hack' => TRUE));
+    $this->callAPISuccess('Contact', 'forgetme', array('id' => $buffies['contact_to_delete']['id']));
 
     $this->callAPISuccessGetCount('Relationship', ['contact_id_a' => $buffies['contact_to_delete']['id']], 0);
     $this->callAPISuccessGetCount('Relationship', ['contact_id_b' => $buffies['contact_to_delete']['id']], 0);
@@ -154,7 +154,7 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
       'to_keep_id' => $buffies['contact_to_keep']['id'],
       'mode' => 'aggressive',
     ]);
-    $this->callAPISuccess('Contact', 'forgetme', array('id' => $buffies['contact_to_keep']['id'], 'no_omnimail_hack' => TRUE));
+    $this->callAPISuccess('Contact', 'forgetme', array('id' => $buffies['contact_to_keep']['id']));
     $theUndead = $this->callAPISuccess('Contact', 'get', [
       'id' => ['IN' => [$buffies['contact_to_delete']['id'], $buffies['contact_to_keep']['id']],
       'is_deleted' => '',
@@ -205,7 +205,7 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
     $this->assertNotEmpty($paymentToken['ip_address']);
     $this->assertNotEmpty($paymentToken['masked_account_number']);
 
-    $this->callAPISuccess('Contact', 'forgetme', ['id' => $contact['id'], 'no_omnimail_hack' => TRUE]);
+    $this->callAPISuccess('Contact', 'forgetme', ['id' => $contact['id']]);
 
     $theForgottenAPIResult = $this->callAPISuccess('PaymentToken', 'get', [
       'id' => $paymentToken['id'],

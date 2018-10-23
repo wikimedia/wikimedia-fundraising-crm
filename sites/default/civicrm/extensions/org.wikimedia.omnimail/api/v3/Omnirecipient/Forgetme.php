@@ -39,9 +39,11 @@ function civicrm_api3_omnirecipient_forgetme($params) {
         $eraseEmails[] = $email['email'];
       }
     }
-    civicrm_api3('Omnirecipient', 'erase', [
-      'email' => $eraseEmails,
-      'mail_provider' => 'Silverpop'
+    // Create an entry to trigger erasure. A separate job is needed to process these.
+    civicrm_api3('OmnimailJobProgress', 'create', [
+      'mailing_provider' => 'Silverpop',
+      'job_identifier' => json_encode($eraseEmails),
+      'job' => 'omnimail_privacy_erase',
     ]);
   }
   CRM_Core_DAO::executeQuery(

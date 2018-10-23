@@ -66,14 +66,7 @@ function civicrm_api3_contact_forgetme($params) {
       $hasForget = FALSE;
     }
     $delete = civicrm_api3($entityToDelete, 'showme', $deleteParams);
-    // @todo fix this hacky exception method here.
-    // We need to call Omnirecipient forget regardless of the presence
-    // of any Mailing / Omnirecipient entries as we need to message
-    // Silverpop about it. We don't like to just hack in an entity name
-    // but I have added a test so we can clean up later.
-    // Am thinking we need to write the emails to a table & do some follow up before deleting them
-    // T212382
-    if ($delete['count'] || ($entityToDelete === 'Omnirecipient' && empty($params['no_omnimail_hack']))) {
+    if ($delete['count']) {
       if ($hasForget) {
         civicrm_api3($entityToDelete, 'forgetme', [
           'contact_id' => ['IN' => $contactIDsToForget],
