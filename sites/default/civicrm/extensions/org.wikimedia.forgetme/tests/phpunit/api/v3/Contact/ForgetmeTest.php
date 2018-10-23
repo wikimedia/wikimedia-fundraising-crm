@@ -67,6 +67,7 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
     $this->callAPISuccess('Activity', 'create', [
       'activity_type_id' => 'Meeting',
       'source_contact_id' => $contactToDelete['id'],
+      'target_contact_id' => $contactToDelete['id'],
       'activity_id.parent_id' => $activityToDelete['id'],
      ]
     );
