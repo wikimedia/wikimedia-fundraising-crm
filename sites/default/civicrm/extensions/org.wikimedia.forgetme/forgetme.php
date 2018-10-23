@@ -151,7 +151,7 @@ function forgetme_civicrm_summaryActions(&$actions, $contactID) {
     'weight' => 0,
     'class' => 'no-popup',
     'href' => str_replace('^', '#', CRM_Utils_System::url('civicrm/a/^/forgetme/forget/' . (int) $contactID)),
-    'permissions' => array('administer CiviCRM')
+    'permissions' => array('edit all contacts')
   );
 }
 
