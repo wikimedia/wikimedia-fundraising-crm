@@ -36,6 +36,40 @@ function civicrm_api3_activity_contact_forgetme($params) {
   if (empty($activityContactRecords)) {
     return civicrm_api3_create_success([], $params);
   }
+  $activities = _civicrm_api3_activity_forget_getActivitiesToDelete($params['contact_id']['IN'], $activityContactRecords);
+
+  foreach ($activityContactRecords as $activityContactRecord) {
+    // Where the activity is associated with many contacts we only want to delink the forgotten contact
+    // without deleting the activity.
+    if (!isset($activities[$activityContactRecord['activity_id']])) {
+      civicrm_api3('ActivityContact', 'delete', ['id' => $activityContactRecord['id']]);
+    }
+  }
+  foreach ($activities as $activityID) {
+    civicrm_api3('Activity', 'delete', ['id' => $activityID]);
+  }
+
+  return civicrm_api3_create_success($activityContactRecord, $params);
+}
+
+/**
+ * Get a list of activities that can be deleted when forgetting the given contact IDs.
+ *
+ * We have a list of activity contact records. Where other the activity involves multiple contacts
+ * we want to keep the activity and just delink the contact.
+ *
+ * If the activity only affects the contacts to be forgotten it can be fully deleted. Note
+ * that where the other contacts involved have user ids then their involvement is understood to
+ * be part of maintaining the contact record so we check for activities that have no other donors
+ * involved.
+ *
+ * @param array $contactIDsToForget
+ * @param array $activityContactRecords
+ *
+ * @return array
+ *   Array of activity ids to fully delete.
+ */
+function _civicrm_api3_activity_forget_getActivitiesToDelete($contactIDsToForget, $activityContactRecords) {
   $activities = [];
   foreach ($activityContactRecords as $activityContactRecord) {
     $activities[$activityContactRecord['activity_id']] = $activityContactRecord['activity_id'];
@@ -45,7 +79,7 @@ function civicrm_api3_activity_contact_forgetme($params) {
 
   $activitiesToKeep = civicrm_api3('ActivityContact', 'get', [
     'activity_id' => ['IN' => $activities],
-    'contact_id' => ['NOT IN' => array_merge($ufMatches, $params['contact_id']['IN'])],
+    'contact_id' => ['NOT IN' => array_merge($ufMatches, $contactIDsToForget)],
     'return' => 'activity_id',
   ]);
   foreach ($activitiesToKeep['values'] as $activityToKeep) {
@@ -54,16 +88,6 @@ function civicrm_api3_activity_contact_forgetme($params) {
       unset($activities[$activityID]);
     }
   }
-
-  foreach ($activityContactRecords as $activityContactRecord) {
-    if (!isset($activities[$activityContactRecord['activity_id']])) {
-      civicrm_api3('ActivityContact', 'delete', ['id' => $activityContactRecord['id']]);
-    }
-    else {
-      civicrm_api3('Activity', 'delete', ['id' => $activityContactRecord['activity_id']]);
-    }
-  }
-
-  return civicrm_api3_create_success($activityContactRecord, $params);
+  return $activities;
 }
 
