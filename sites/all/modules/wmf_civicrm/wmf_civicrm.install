@@ -4551,3 +4551,33 @@ function wmf_civicrm_update_7772() {
   require_once('paypal_fixes.php');
   wmf_civicrm_undo_bogus_paypal_cancel('2018-10-16 04:00:00', '2018-10-16 15:00:00');
 }
+
+/**
+ * One last fix for opt_in null folks
+ *
+ * Bug: T204769
+ */
+function wmf_civicrm_update_7773() {
+  global $databases;
+  civicrm_initialize();
+  $drupal = $databases['default']['default']['database'];
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_value_1_communication_4 comm
+    INNER JOIN civicrm_contribution cc ON comm.entity_id = cc.contact_id
+    INNER JOIN {$drupal}.contribution_tracking ct ON ct.contribution_id = cc.id
+    SET comm.opt_in = 0
+    WHERE comm.opt_in IS NULL
+      AND ct.utm_source LIKE '%optIn0%'
+      AND receive_date > '2018-08-01'
+  ");
+
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_value_1_communication_4 comm
+    INNER JOIN civicrm_contribution cc ON comm.entity_id = cc.contact_id
+    INNER JOIN {$drupal}.contribution_tracking ct ON ct.contribution_id = cc.id
+    SET comm.opt_in = 1
+    WHERE comm.opt_in IS NULL
+      AND ct.utm_source LIKE '%optIn1%'
+      AND receive_date > '2018-08-01'
+  ");
+}
