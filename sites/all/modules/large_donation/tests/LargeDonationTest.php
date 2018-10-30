@@ -6,67 +6,68 @@ use wmf_communication\TestMailer;
  * @group LargeDonation
  */
 class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
-    function setUp() {
-        parent::setUp();
-        civicrm_initialize();
 
-        TestMailer::setup();
+  function setUp() {
+    parent::setUp();
+    civicrm_initialize();
 
-        $this->threshold = 100;
+    TestMailer::setup();
 
-        db_delete( 'large_donation_notification' )
-            ->execute();
+    $this->threshold = 100;
 
-        db_insert( 'large_donation_notification' )
-            ->fields( array(
-                'addressee' => 'notifee@localhost.net',
-                'threshold' => $this->threshold,
-            ) )
-            ->execute();
+    db_delete('large_donation_notification')
+      ->execute();
 
-        $result = $this->callAPISuccess('Contact', 'create', array(
-            'contact_type' => 'Individual',
-            'first_name' => 'Testes',
-        ));
-        $this->contact_id = $result['id'];
-    }
+    db_insert('large_donation_notification')
+      ->fields(array(
+        'addressee' => 'notifee@localhost.net',
+        'threshold' => $this->threshold,
+      ))
+      ->execute();
 
-    function tearDown() {
-        db_delete( 'large_donation_notification' )
-            ->execute();
+    $result = $this->callAPISuccess('Contact', 'create', array(
+      'contact_type' => 'Individual',
+      'first_name' => 'Testes',
+    ));
+    $this->contact_id = $result['id'];
+  }
 
-        parent::tearDown();
-    }
+  function tearDown() {
+    db_delete('large_donation_notification')
+      ->execute();
 
-    function testUnderThreshold() {
-        $result = civicrm_api3( 'Contribution', 'create', array(
-            'contact_id' => $this->contact_id,
-            'contribution_type' => 'Cash',
-            'currency' => 'USD',
-            'payment_instrument' => 'Credit Card',
-            'total_amount' => $this->threshold - 0.01,
-            'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
-        ) );
+    parent::tearDown();
+  }
 
-        $this->assertEquals( 0, TestMailer::countMailings() );
-    }
+  function testUnderThreshold() {
+    $result = civicrm_api3('Contribution', 'create', array(
+      'contact_id' => $this->contact_id,
+      'contribution_type' => 'Cash',
+      'currency' => 'USD',
+      'payment_instrument' => 'Credit Card',
+      'total_amount' => $this->threshold - 0.01,
+      'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
+    ));
 
-    function testAboveThreshold() {
-        $amount = $this->threshold + 0.01;
-        $this->callAPISuccess('Contribution', 'create', array(
-            'contact_id' => $this->contact_id,
-            'contribution_type' => 'Cash',
-            'currency' => 'USD',
-            'payment_instrument' => 'Credit Card',
-            'total_amount' => $amount,
-            'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
-            'source' => 'EUR 2020',
-        ) );
+    $this->assertEquals(0, TestMailer::countMailings());
+  }
 
-        $this->assertEquals( 1, TestMailer::countMailings() );
+  function testAboveThreshold() {
+    $amount = $this->threshold + 0.01;
+    $this->callAPISuccess('Contribution', 'create', array(
+      'contact_id' => $this->contact_id,
+      'contribution_type' => 'Cash',
+      'currency' => 'USD',
+      'payment_instrument' => 'Credit Card',
+      'total_amount' => $amount,
+      'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
+      'source' => 'EUR 2020',
+    ));
 
-        $mailing = TestMailer::getMailing( 0 );
-        $this->assertEquals( 1, preg_match( "/{$amount}/", $mailing['html'] ),
-            'Found amount in the notification email body.' );
-    }
+    $this->assertEquals(1, TestMailer::countMailings());
+
+    $mailing = TestMailer::getMailing(0);
+    $this->assertEquals(1, preg_match("/{$amount}/", $mailing['html']),
+      'Found amount in the notification email body.');
+  }
 }
