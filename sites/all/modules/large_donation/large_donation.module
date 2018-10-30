@@ -44,6 +44,7 @@ function large_donation_permission() {
  * Callback for menu path "admin/config/large_donation".
  */
 function large_donation_settings($formId, $formState) {
+  civicrm_initialize();
   $form = array();
 
   // Should we display a blank new entry for adding a threshold level?
@@ -105,6 +106,16 @@ function large_donation_settings($formId, $formState) {
       '#description' => t('Donations over this amount (USD) will trigger an email.'),
     );
 
+    $form["group_{$row['id']}"]["financial_types_excluded_{$row['id']}"] = array(
+      '#type' => 'select',
+      '#multiple' => TRUE,
+      '#title' => t('Financial types to be excluded'),
+      '#required' => FALSE,
+      '#options' => civicrm_api3('Contribution', 'getoptions', ['field' => 'financial_type_id'])['values'],
+      '#size' => 5,
+      '#default_value' => explode(',', $row['financial_types_excluded']),
+    );
+
     $form["group_{$row['id']}"]["addressee_{$row['id']}"] = array(
       '#type' => 'textarea',
       '#title' => t('Email Notification Addresses !index', array('!index' => $uiIndex)),
@@ -137,6 +148,7 @@ function large_donation_settings_submit($form, $formState) {
     if (preg_match('/^threshold_(\d+|NEW)$/', $field, $matches)) {
       $id = $matches[1];
       $addressee = $formState['values']["addressee_{$id}"];
+      $financialTypesExcluded = implode(',', $formState['values']["financial_types_excluded_{$id}"]);
 
       if ($id === 'NEW') {
         drupal_set_message("Added a new threshold level.");
@@ -147,6 +159,7 @@ function large_donation_settings_submit($form, $formState) {
         ->fields(array(
           'threshold' => $value,
           'addressee' => $addressee,
+          'financial_types_excluded' => $financialTypesExcluded,
         ))
         ->execute();
     }
@@ -162,30 +175,61 @@ function large_donation_civicrm_post($action, $type, $id, &$contribution) {
   switch ($action) {
     case 'create':
       if ($type === 'Contribution') {
-        $dbs = wmf_civicrm_get_dbs();
-        $dbs->push('default');
 
-        $result = db_select('large_donation_notification')
-          ->fields('large_donation_notification')
-          ->condition('threshold', (float) $contribution->total_amount, '<=')
-          ->condition('enabled', TRUE, '=')
-          ->execute();
-
-        $count = 0;
-        while ($notification = $result->fetch()) {
-          $count++;
-          watchdog('large_donation', "Notifying of large donation, contribution: {$contribution->id} above threshold {$notification->threshold}");
-
-          large_donation_notification_send($contribution, $notification);
+        if ($contribution->total_amount < large_donation_get_minimum_threshold()) {
+          // do we really want to log this?
+          watchdog('large_donation', "Donation amount {$contribution->total_amount} was not above the lowest notification threshold.");
+          return;
         }
 
-        if (!$count) {
-          watchdog('large_donation', "Donation amount {$contribution->total_amount} was not above the lowest notification threshold.");
+        foreach (large_donation_get_notification_thresholds() as $notification) {
+          $excludedFinancialTypes = explode(',' , $notification['financial_types_excluded']);
+          if (!in_array($contribution->financial_type_id, $excludedFinancialTypes)) {
+            watchdog('large_donation', "Notifying of large donation, contribution: {$contribution->id} above threshold {$notification['threshold']}");
+            large_donation_notification_send($contribution, $notification);
+          }
         }
       }
       break;
     default:
   }
+}
+
+/**
+ * Get large donation thresholds.
+ */
+function large_donation_get_notification_thresholds() {
+  $notifications = &drupal_static(__FUNCTION__);
+  if (!isset($notifications)) {
+    $dbs = wmf_civicrm_get_dbs();
+    $dbs->push('default');
+
+    $notifications = db_select('large_donation_notification')
+      ->fields('large_donation_notification')
+      ->condition('enabled', TRUE, '=')
+      ->execute()
+      ->fetchAllAssoc('id', PDO::FETCH_ASSOC);
+  }
+  return $notifications;
+}
+
+/**
+ * Get the minimum amount that could trigger a notification..
+ *
+ * @return float
+ */
+function large_donation_get_minimum_threshold() {
+  $minThreshold = &drupal_static(__FUNCTION__);
+  if (!isset($minimum)) {
+    $minThreshold = 100000000000000;
+    $notifications = large_donation_get_notification_thresholds();
+    foreach ($notifications as $threshold) {
+      if ($threshold['threshold'] < $minThreshold) {
+        $minThreshold = $threshold['threshold'];
+      }
+    }
+  }
+  return $minThreshold;
 }
 
 /**
@@ -197,7 +241,7 @@ function large_donation_civicrm_post($action, $type, $id, &$contribution) {
  * No personally identifiable information should be included.
  *
  * @param CRM_Contribute_BAO_Contribution $contribution
- * @param stdClass $notification
+ * @param array $notification
  */
 function large_donation_notification_send($contribution, $notification) {
   $contact_link = CRM_Utils_System::url(
@@ -221,10 +265,10 @@ function large_donation_notification_send($contribution, $notification) {
     TRUE
   );
 
-  $to = $notification->addressee;
+  $to = $notification['addressee'];
 
   $params = array(
-    'threshold' => floatval($notification->threshold),
+    'threshold' => floatval($notification['threshold']),
     'contribution' => $contribution,
     'contact_link' => $contact_link,
     'contribution_link' => $contribution_link,
