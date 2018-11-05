@@ -155,6 +155,19 @@ function forgetme_civicrm_summaryActions(&$actions, $contactID) {
   );
 }
 
+/**
+ * Implements hook_alterAPIPermissions().
+ *
+ * @param string $entity
+ * @param string $action
+ * @param array $params
+ * @param array $permissions
+ */
+function forgetme_civicrm_alterAPIPermissions($entity, $action, &$params, &$permissions) {
+  $permissions['default']['showme'] = ['view all contacts'];
+  $permissions['default']['forget'] = ['edit all contacts'];
+}
+
 // --- Functions below this ship commented out. Uncomment as required. ---
 
 /**
