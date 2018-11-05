@@ -176,7 +176,7 @@ function large_donation_civicrm_post($action, $type, $id, &$contribution) {
     case 'create':
       if ($type === 'Contribution') {
 
-        if ($contribution->total_amount < large_donation_get_minimum_threshold()) {
+        if ($contribution->total_amount <= large_donation_get_minimum_threshold()) {
           // do we really want to log this?
           watchdog('large_donation', "Donation amount {$contribution->total_amount} was not above the lowest notification threshold.");
           return;
@@ -185,8 +185,10 @@ function large_donation_civicrm_post($action, $type, $id, &$contribution) {
         foreach (large_donation_get_notification_thresholds() as $notification) {
           $excludedFinancialTypes = explode(',' , $notification['financial_types_excluded']);
           if (!in_array($contribution->financial_type_id, $excludedFinancialTypes)) {
-            watchdog('large_donation', "Notifying of large donation, contribution: {$contribution->id} above threshold {$notification['threshold']}");
-            large_donation_notification_send($contribution, $notification);
+            if ($contribution->total_amount > $notification['threshold']) {
+              watchdog('large_donation', "Notifying of large donation, contribution: {$contribution->id} above threshold {$notification['threshold']}");
+              large_donation_notification_send($contribution, $notification);
+            }
           }
         }
       }
