@@ -125,7 +125,14 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     if (!isset($msg['subscr_id'])) {
       throw new WmfException(WmfException::INVALID_RECURRING, 'Msg missing the subscr_id; cannot process.');
     }
-    elseif (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) { // check for parent record in civicrm_contribution_recur and fetch its id
+    // check for parent record in civicrm_contribution_recur and fetch its id
+    $recur_record = wmf_civicrm_get_recur_record($msg['subscr_id']);
+    // Fall back to searching by email in case the processor is pulling some
+    // horrible subscription ID swap shenanigans
+    if (!$recur_record && !empty($msg['email'])) {
+      $recur_record = wmf_civicrm_get_subscription_by_email($msg['email']);
+    }
+    if (!$recur_record) {
       watchdog('recurring', 'Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');
       throw new WmfException(WmfException::MISSING_PREDECESSOR, "Missing the initial recurring record for subscr_id {$msg['subscr_id']}");
     }

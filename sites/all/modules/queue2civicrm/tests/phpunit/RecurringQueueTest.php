@@ -209,11 +209,48 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 		$message = new RecurringPaymentMessage(
 			array(
 				'subscr_id' => mt_rand(),
+        'email' => 'notinthedb@example.com',
 			)
 		);
 
 		$this->importMessage( $message );
 	}
+
+  /**
+   * We should fall back to matching by email if the subscr ID is off
+   */
+  public function testScrewySubscrId() {
+    civicrm_initialize();
+    $email = 'test_recur_' . mt_rand() . '@example.org';
+    $subscr_id = mt_rand();
+    $values = $this->processRecurringSignup( $subscr_id, [ 'email' => $email ] );
+
+    $new_subscr_id = mt_rand();
+    $values['subscr_id'] = $new_subscr_id;
+    $values['email'] = $email;
+    $message = new RecurringPaymentMessage( $values );
+
+    $this->addContributionTracking( $message->get( 'contribution_tracking_id' ) );
+
+    $contributions = $this->importMessage( $message );
+
+    $recur_record = wmf_civicrm_get_subscription_by_email( $email );
+    $this->assertNotEquals( false, $recur_record );
+
+    $this->assertEquals( 1, count( $contributions ) );
+    $this->assertEquals( $recur_record->id, $contributions[0]['contribution_recur_id'] );
+
+    $addresses = $this->callAPISuccess(
+      'Address',
+      'get',
+      array( 'contact_id' => $contributions[0]['contact_id'] )
+    );
+    $this->assertEquals( 1, $addresses['count'] );
+
+    $emails = $this->callAPISuccess( 'Email', 'get', array( 'contact_id' => $contributions[0]['contact_id'] ) );
+    $this->assertEquals( 1, $addresses['count'] );
+    $this->assertEquals( $email, $emails['values'][$emails['id']]['email'] );
+  }
 
 	/**
 	 * @expectedException WmfException
@@ -235,8 +272,8 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 	 * @param string $subscr_id
 	 * @return array
 	 */
-	private function processRecurringSignup( $subscr_id ) {
-		$values = array( 'subscr_id' => $subscr_id );
+	private function processRecurringSignup( $subscr_id, $overrides = [] ) {
+		$values = $overrides + array( 'subscr_id' => $subscr_id );
 		$signup_message = new RecurringSignupMessage( $values );
 		$subscr_time = $signup_message->get( 'date' );
 		exchange_rate_cache_set( 'USD', $subscr_time, 1 );
