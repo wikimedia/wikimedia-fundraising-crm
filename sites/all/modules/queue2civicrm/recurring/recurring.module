@@ -168,7 +168,8 @@ function recurring_get_contribution_tracking_id( $msg ) {
       // if we already have previous contributions, we should create a contrib id connected with the first contrib
       sort( $contrib_ids, SORT_NUMERIC );
       $contrib_id = array_shift( $contrib_ids ); // this should return null if $contrib_ids is empty
-      $date = wmf_common_date_unix_to_sql( strtotime( $msg[ 'payment_date' ] ));
+      $rawDate = empty( $msg['payment_date'] ) ? $msg['date'] : $msg['payment_date'];
+      $date = wmf_common_date_unix_to_sql( strtotime( $rawDate ));
       $tracking = array(
         'utm_source' => '..rpp',
         'utm_medium' => 'civicrm',
