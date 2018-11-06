@@ -277,7 +277,10 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
   protected function importSubscriptionCancel($msg) {
     // ensure we have a record of the subscription
     if (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
-      throw new WmfException(WmfException::INVALID_RECURRING, 'Subscription account does not exist');
+      // PayPal has recently been sending lots of invalid cancel and fail notifications
+      // Revert this patch when that's resolved
+      return;
+      // throw new WmfException(WmfException::INVALID_RECURRING, 'Subscription account does not exist');
     }
     $activityParams = [
       'subject' => ts('Recurring contribution cancelled'),
@@ -316,7 +319,10 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
   protected function importSubscriptionExpired($msg) {
     // ensure we have a record of the subscription
     if (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
-      throw new WmfException(WmfException::INVALID_RECURRING, 'Subscription account does not exist');
+      // PayPal has recently been sending lots of invalid cancel and fail notifications
+      // Revert this patch when that's resolved
+      return;
+      // throw new WmfException(WmfException::INVALID_RECURRING, 'Subscription account does not exist');
     }
 
     $api = civicrm_api_classapi();
@@ -386,7 +392,10 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
   protected function importSubscriptionPaymentFailed($msg) {
     // ensure we have a record of the subscription
     if (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
-      throw new WmfException(WmfException::INVALID_RECURRING, 'Subscription account does not exist for subscription id: ' . print_r($msg['subscr_id'], TRUE));
+      // PayPal has recently been sending lots of invalid cancel and fail notifications
+      // Revert this patch when that's resolved
+      return;
+      // throw new WmfException(WmfException::INVALID_RECURRING, 'Subscription account does not exist for subscription id: ' . print_r($msg['subscr_id'], TRUE));
     }
 
     $api = civicrm_api_classapi();
