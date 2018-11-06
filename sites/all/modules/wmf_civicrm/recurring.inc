@@ -98,17 +98,18 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       $contact_id,
       $msg['gateway'],
       $msg['recurring_payment_token'],
-      isset($msg['user_ip']) ? $msg['user_ip'] : null
+      isset($msg['user_ip']) ? $msg['user_ip'] : NULL
     );
     $extra_recurring_params = [
       'payment_token_id' => $payment_token_result['id'],
       'payment_processor_id' => $payment_token_result['payment_processor_id'],
       'processor_id' => $gateway_subscr_id,
     ];
-  } else {
+  }
+  else {
     // Old-style recurring, initialize processor_id to 1 for use as effort ID
     $extra_recurring_params = [
-      'processor_id' => 1
+      'processor_id' => 1,
     ];
   }
 
@@ -505,6 +506,33 @@ function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
   $dao = CRM_Core_DAO::executeQuery($query, [
     1 => [$subscr_id, 'String'],
     2 => [$full_trxn_id, 'String'],
+  ]);
+
+  if (!$dao->fetch()) {
+    return FALSE;
+  }
+
+  return $dao;
+}
+
+/**
+ * Get an active subscription associated with the given email address
+ *
+ * @param string $email
+ *
+ * @return object|false
+ */
+function wmf_civicrm_get_subscription_by_email($email) {
+  $query = "SELECT ccr.*
+    FROM civicrm_contribution_recur ccr
+    INNER JOIN civicrm_email e ON ccr.contact_id = e.contact_id
+    WHERE cancel_date IS NULL
+    AND end_date IS NULL
+    AND email = %1
+    ORDER BY ccr.id DESC
+    LIMIT 1";
+  $dao = CRM_Core_DAO::executeQuery($query, [
+    1 => [$email, 'String'],
   ]);
 
   if (!$dao->fetch()) {
