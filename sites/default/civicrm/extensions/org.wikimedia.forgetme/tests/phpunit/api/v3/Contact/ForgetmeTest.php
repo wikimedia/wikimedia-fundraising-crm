@@ -176,4 +176,90 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
     }
   }
 
+  /**
+   * Test payment token PII details are cleared
+   */
+  public function testForgetPaymentToken() {
+
+    $contactAPIResult = $this->callAPISuccess('Contact', 'create', [
+      'first_name' => 'Buffy',
+      'last_name' => 'Vampire Slayer',
+      'contact_type' => 'Individual',
+      'email' => 'garlic@example.com',
+      'gender_id' => 'Female',
+      'birth_date' => '2010-09-07',
+    ]);
+    $contact = $contactAPIResult['values'][$contactAPIResult['id']];;
+
+    $paymentProcessor = $this->createPaymentProcessorFixture();
+
+    $paymentTokenAPIResult = civicrm_api3('PaymentToken', 'create', [
+      'contact_id' => $contact['id'],
+      'payment_processor_id' => $paymentProcessor['id'],
+      'token' => "TEST-TOKEN",
+      'email' => "garlic@example.com",
+      'billing_first_name' => "Buffy",
+      'billing_middle_name' => "Vampire",
+      'billing_last_name' => "Slayer",
+      'ip_address' => "123.456.789.0",
+      'masked_account_number' => "666999666",
+    ]);
+
+    $paymentToken = $paymentTokenAPIResult['values'][$paymentTokenAPIResult['id']];
+
+    // confirm values exist for the soon to be forgotten fields
+    $this->assertNotEmpty($paymentToken['email']);
+    $this->assertNotEmpty($paymentToken['billing_first_name']);
+    $this->assertNotEmpty($paymentToken['billing_middle_name']);
+    $this->assertNotEmpty($paymentToken['billing_last_name']);
+    $this->assertNotEmpty($paymentToken['ip_address']);
+    $this->assertNotEmpty($paymentToken['masked_account_number']);
+
+    $this->callAPISuccess('Contact', 'forgetme', ['id' => $contact['id']]);
+
+    $theForgottenAPIResult = $this->callAPISuccess('PaymentToken', 'get', [
+      'id' => $paymentToken['id'],
+    ]);
+
+    $theForgotten = $theForgottenAPIResult['values'][$theForgottenAPIResult['id']];
+
+    // check forgotten values no longer exist
+    $this->assertNotTrue(isset($theForgotten['email']));
+    $this->assertNotTrue(isset($theForgotten['billing_first_name']));
+    $this->assertNotTrue(isset($theForgotten['billing_middle_name']));
+    $this->assertNotTrue(isset($theForgotten['billing_last_name']));
+    $this->assertNotTrue(isset($theForgotten['ip_address']));
+    $this->assertNotTrue(isset($theForgotten['masked_account_number']));
+
+    //clean up
+    civicrm_api3('Contact', 'delete', ['contact_id' => $contact['id']]);
+    civicrm_api3('PaymentToken', 'delete', ['id' => $paymentToken['id']]);
+    civicrm_api3('PaymentProcessor', 'delete',
+      ['id' => $paymentProcessor['id']]);
+  }
+
+  private function createPaymentProcessorFixture() {
+    // the type hard coding makes this a pretty frail test...
+    $accountType = key(CRM_Core_PseudoConstant::accountOptionValues(
+        'financial_account_type',
+        NULL,
+        " AND v.name = 'Asset' "
+      ));
+    $query = "
+        SELECT id
+        FROM   civicrm_financial_account
+        WHERE  is_default = 1
+        AND    financial_account_type_id = {$accountType}
+      ";
+    $financialAccountId = CRM_Core_DAO::singleValueQuery($query);
+    $params = [];
+    $params['payment_processor_type_id'] = 'smashpig_ingenico';
+    $params['name'] = 'test_processor';
+    $params['domain_id'] = CRM_Core_Config::domainID();
+    $params['is_active'] = TRUE;
+    $params['financial_account_id'] = $financialAccountId;
+    $result = civicrm_api3('PaymentProcessor', 'create', $params);
+    return $result['values'][$result['id']];
+  }
+
 }
