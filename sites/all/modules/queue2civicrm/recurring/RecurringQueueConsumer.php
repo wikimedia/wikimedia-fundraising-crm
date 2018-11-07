@@ -127,10 +127,39 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     }
     // check for parent record in civicrm_contribution_recur and fetch its id
     $recur_record = wmf_civicrm_get_recur_record($msg['subscr_id']);
-    // Fall back to searching by email in case the processor is pulling some
-    // horrible subscription ID swap shenanigans
-    if (!$recur_record && !empty($msg['email'])) {
-      $recur_record = wmf_civicrm_get_subscription_by_email($msg['email']);
+    // Since October 2018 or so, PayPal has been doing two things that really
+    // mess with us.
+    // 1) Sending mass cancellations for old-style subscriptions (i.e. ones we
+    //    record with gateway=paypal and trxn_id LIKE S-%)
+    // 2) Sending payment messages for those subscriptions with new-style
+    //    subscr_ids (I-%, which we associate with paypal_ec), without first
+    //    sending us notice that a new subscription is starting.
+    // This next conditional tries to associate a paypal* message that has a
+    // new-style subscr_id which isn't found in the contribution_recur table,
+    // by associating it with an existing (possible canceled) old-style PayPal
+    // recurring donation for the same email address. If PayPal gives us better
+    // advice on how to deal with their ID migration, delete this.
+    if (
+      !$recur_record &&
+      !empty($msg['email']) &&
+      strpos($msg['gateway'], 'paypal') === 0 &&
+      strpos($msg['subscr_id'], 'I-') === 0
+    ) {
+      $recur_record = wmf_civicrm_get_legacy_paypal_subscription_by_email($msg['email']);
+      if ($recur_record) {
+        // We found an existing legacy PayPal recurring record for the email.
+        // Update it to make sure it's not mistakenly canceled, and while we're
+        // at it, stash the new subscr_id in unused field processor_id, in case
+        // we need it later.
+        wmf_civicrm_update_legacy_paypal_subscription($recur_record, $msg);
+        // Make the message look like it should be associated with that record.
+        // There is some code in wmf_civicrm_contribution_message_import that
+        // might look the recur record up again (FIXME, but not now). This
+        // mutation here will make sure the payment doesn't create a second
+        // recurring record.
+        $msg['subscr_id'] = $recur_record->id;
+        $msg['gateway'] = 'paypal';
+      }
     }
     if (!$recur_record) {
       watchdog('recurring', 'Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');

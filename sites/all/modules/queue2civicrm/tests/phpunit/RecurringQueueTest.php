@@ -217,39 +217,60 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 	}
 
   /**
-   * We should fall back to matching by email if the subscr ID is off
+   * Deal with a bad situation caused by PayPal's botched subscr_id migration.
+   * See comment on RecurringQueueConsumer::importSubscriptionPayment.
    */
   public function testScrewySubscrId() {
     civicrm_initialize();
     $email = 'test_recur_' . mt_rand() . '@example.org';
-    $subscr_id = mt_rand();
-    $values = $this->processRecurringSignup( $subscr_id, [ 'email' => $email ] );
+    // Set up an old-style PayPal recurring subscription with S-XXXX subscr_id
+    $subscr_id = 'S-' . mt_rand();
+    $values = $this->processRecurringSignup( $subscr_id, [
+      'gateway' => 'paypal',
+      'email' => $email
+    ] );
 
-    $new_subscr_id = mt_rand();
-    $values['subscr_id'] = $new_subscr_id;
+    // Import an initial payment with consistent gateway and subscr_id
     $values['email'] = $email;
-    $message = new RecurringPaymentMessage( $values );
+    $values['gateway'] = 'paypal';
+    $oldStyleMessage = new RecurringPaymentMessage( $values );
+    $this->addContributionTracking( $oldStyleMessage->get( 'contribution_tracking_id' ) );
+    $this->importMessage( $oldStyleMessage );
 
-    $this->addContributionTracking( $message->get( 'contribution_tracking_id' ) );
+    // New payment comes in with subscr ID format that we associate
+    // with paypal_ec, so we mis-tag the gateway.
+    $new_subscr_id = 'I-' . mt_rand();
+    $values['subscr_id'] = $new_subscr_id;
+    $values['gateway'] = 'paypal_ec';
+    $newStyleMessage = new RecurringPaymentMessage( $values );
 
-    $contributions = $this->importMessage( $message );
-
-    $recur_record = wmf_civicrm_get_subscription_by_email( $email );
-    $this->assertNotEquals( false, $recur_record );
-
-    $this->assertEquals( 1, count( $contributions ) );
-    $this->assertEquals( $recur_record->id, $contributions[0]['contribution_recur_id'] );
-
-    $addresses = $this->callAPISuccess(
-      'Address',
-      'get',
-      array( 'contact_id' => $contributions[0]['contact_id'] )
+    $this->consumer->processMessage( $newStyleMessage->getBody() );
+    // It should be imported as a paypal donation, not paypal_ec
+    $contributions = wmf_civicrm_get_contributions_from_gateway_id(
+      'paypal',
+      $newStyleMessage->getGatewayTxnId()
     );
-    $this->assertEquals( 1, $addresses['count'] );
+    // New record should have created a new contribution
+    $this->assertEquals( 1, count( $contributions ) );
 
-    $emails = $this->callAPISuccess( 'Email', 'get', array( 'contact_id' => $contributions[0]['contact_id'] ) );
-    $this->assertEquals( 1, $addresses['count'] );
-    $this->assertEquals( $email, $emails['values'][$emails['id']]['email'] );
+    // Add the contribution to our tearDown array, since we didn't go through
+    // $this->importMessage for this one.
+    $this->contributions[] = $contributions[0];
+
+    // There should still only be one contribution_recur record
+    $recur_records = wmf_civicrm_dao_to_list(CRM_Core_DAO::executeQuery("
+      SELECT ccr.*
+      FROM civicrm_contribution_recur ccr
+      INNER JOIN civicrm_email e on ccr.contact_id = e.contact_id
+      WHERE e.email = '$email'
+    "));
+    $this->assertEquals( 1, count( $recur_records ) );
+
+    // ...and it should be associated with the contribution
+    $this->assertEquals( $recur_records[0]['id'], $contributions[0]['contribution_recur_id'] );
+
+    // Finally, we should have stuck the new ID in the processor_id field
+    $this->assertEquals( $new_subscr_id, $recur_records[0]['processor_id']);
   }
 
 	/**
