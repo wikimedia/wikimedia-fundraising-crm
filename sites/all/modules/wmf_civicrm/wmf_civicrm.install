@@ -4584,3 +4584,29 @@ function wmf_civicrm_update_7773() {
       AND receive_date > '2018-08-01'
   ");
 }
+
+/**
+ * Fix some PayPal donations that were mistakenly associated
+ * with non-PayPal recurring records.
+ *
+ * Bug: T209008
+ */
+function wmf_civicrm_update_7780() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution c
+    INNER JOIN civicrm_contribution_recur cr_wrong
+      ON cr_wrong.id = c.contribution_recur_id
+      AND (cr_wrong.trxn_id NOT LIKE 'I-%' AND cr_wrong.trxn_id NOT LIKE 'S-%')
+    INNER JOIN wmf_contribution_extra x ON x.entity_id = c.id
+    INNER JOIN civicrm_contribution_recur cr_right
+      ON cr_right.contact_id = c.contact_id
+      AND cr_right.amount = x.original_amount
+      AND (cr_right.end_date IS NULL OR cr_right.end_date > '2018-09-01')
+      AND (cr_right.trxn_id LIKE 'S-%')
+    SET c.contribution_recur_id = cr_right.id,
+      c.note = 'T209008'
+    WHERE c.trxn_id LIKE 'RECURRING PAYPAL%'
+    AND c.id BETWEEN 31850000 AND 31860000
+  ");
+}
