@@ -516,20 +516,34 @@ function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
 }
 
 /**
- * Get an active subscription associated with the given email address
+ * Get a legacy PayPal subscription associated with the given email address.
+ * This and the code that calls it in
+ * RecurringQueueConsumer::importSubscriptionPayment should be destroyed when
+ * PayPal gives us better guidance on T209008.
  *
  * @param string $email
  *
- * @return object|false
+ * @return CRM_Core_DAO|false
  */
-function wmf_civicrm_get_subscription_by_email($email) {
+function wmf_civicrm_get_legacy_paypal_subscription_by_email($email) {
+  // We include recently-canceled donations because PayPal has apparently
+  // not communicated about their ID migration to the team that makes their
+  // audit files, leading a ton of subscriptions to be mistakenly canceled
+  // starting around October 2018.
+  // civicrm_contribution.trxn_id is the individual payment ID prefixed with
+  // RECURRING PAYPAL
+  // civicrm_contribution_recur.trxn_id is what PayPal sends as the subscr_id
+  // field. For legacy subscriptions that was always S-%.
   $query = "SELECT ccr.*
     FROM civicrm_contribution_recur ccr
     INNER JOIN civicrm_email e ON ccr.contact_id = e.contact_id
-    WHERE cancel_date IS NULL
-    AND end_date IS NULL
-    AND email = %1
-    ORDER BY ccr.id DESC
+    INNER JOIN civicrm_contribution c ON c.contribution_recur_id = ccr.id
+    WHERE email = %1
+    AND c.trxn_id LIKE 'RECURRING PAYPAL %'
+    AND ccr.trxn_id LIKE 'S-%'
+    AND (ccr.cancel_date IS NULL OR ccr.cancel_date > '2018-09-01')
+    AND (ccr.end_date IS NULL OR ccr.end_date > '2018-09-01')
+    ORDER BY c.receive_date DESC
     LIMIT 1";
   $dao = CRM_Core_DAO::executeQuery($query, [
     1 => [$email, 'String'],
@@ -540,6 +554,32 @@ function wmf_civicrm_get_subscription_by_email($email) {
   }
 
   return $dao;
+}
+
+/**
+ * Note the new ID for an old subscription, and make sure it's not listed as
+ * canceled. This and the code that calls it in
+ * RecurringQueueConsumer::importSubscriptionPayment should be destroyed when
+ * PayPal gives us better guidance on T209008.
+ *
+ * @param CRM_Core_DAO $recur_record
+ * @param array $msg
+ */
+function wmf_civicrm_update_legacy_paypal_subscription($recur_record, $msg) {
+  $query = "UPDATE civicrm_contribution_recur
+    SET contribution_status_id = %1,
+      cancel_date = NULL,
+      end_date = NULL,
+      processor_id = %2
+    WHERE id = %3";
+  $completedStatusId = CRM_Contribute_PseudoConstant::getKey(
+    'CRM_Contribute_BAO_Contribution','contribution_status_id', 'Completed'
+  );
+  CRM_Core_DAO::executeQuery($query, [
+    1 => [$completedStatusId, 'Int'],
+    2 => [$msg['subscr_id'], 'String'],
+    3 => [$recur_record->id, 'Int']
+  ]);
 }
 
 function wmf_civicrm_get_recurring_payment_token($gateway, $token) {
