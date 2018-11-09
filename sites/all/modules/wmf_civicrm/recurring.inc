@@ -521,11 +521,11 @@ function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
  * RecurringQueueConsumer::importSubscriptionPayment should be destroyed when
  * PayPal gives us better guidance on T209008.
  *
- * @param string $email
+ * @param array $msg
  *
  * @return CRM_Core_DAO|false
  */
-function wmf_civicrm_get_legacy_paypal_subscription_by_email($email) {
+function wmf_civicrm_get_legacy_paypal_subscription($msg) {
   // We include recently-canceled donations because PayPal has apparently
   // not communicated about their ID migration to the team that makes their
   // audit files, leading a ton of subscriptions to be mistakenly canceled
@@ -534,6 +534,8 @@ function wmf_civicrm_get_legacy_paypal_subscription_by_email($email) {
   // RECURRING PAYPAL
   // civicrm_contribution_recur.trxn_id is what PayPal sends as the subscr_id
   // field. For legacy subscriptions that was always S-%.
+  // In case someone has multiple legacy PayPal subscriptions, prefer the one
+  // with the closest amount, then the most recent.
   $query = "SELECT ccr.*
     FROM civicrm_contribution_recur ccr
     INNER JOIN civicrm_email e ON ccr.contact_id = e.contact_id
@@ -543,10 +545,11 @@ function wmf_civicrm_get_legacy_paypal_subscription_by_email($email) {
     AND ccr.trxn_id LIKE 'S-%'
     AND (ccr.cancel_date IS NULL OR ccr.cancel_date > '2018-09-01')
     AND (ccr.end_date IS NULL OR ccr.end_date > '2018-09-01')
-    ORDER BY c.receive_date DESC
+    ORDER BY ABS(ccr.amount - %2) ASC, c.receive_date DESC
     LIMIT 1";
   $dao = CRM_Core_DAO::executeQuery($query, [
-    1 => [$email, 'String'],
+    1 => [$msg['email'], 'String'],
+    2 => [$msg['gross'], 'Float'],
   ]);
 
   if (!$dao->fetch()) {
