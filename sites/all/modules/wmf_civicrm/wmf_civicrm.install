@@ -4610,3 +4610,37 @@ function wmf_civicrm_update_7781() {
     AND c.id > 31850000
   ");
 }
+
+function wmf_civicrm_update_7782() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    CREATE TEMPORARY TABLE rgoff AS 
+    SELECT id FROM (
+      SELECT cr.id,
+      DATEDIFF(DATE_ADD(DATE(max(receive_date) ), INTERVAL 1 month) , DATE(next_sched_contribution_date)) as date_diff
+      FROM civicrm_contribution_recur cr
+      LEFT JOIN civicrm_contribution c  on c.contribution_recur_id = cr.id
+      WHERE end_date IS NULL
+      AND cr.contribution_status_id <> 3
+      AND cr.contribution_status_id <> 4
+      AND c.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
+      AND next_sched_contribution_date > '2016-01-01'
+      AND frequency_unit = 'month' AND frequency_interval = 1
+      GROUP BY cr.id DESC
+     ) AS inn
+    WHERE date_diff NOT BETWEEN -5 AND 5 AND date_diff > -28
+  ");
+  CRM_Core_DAO::executeQuery("
+    CREATE TEMPORARY TABLE rgright AS
+    SELECT rgoff.id, MAX(lcr.next_sched_contribution_date) AS correct_next_date
+    FROM rgoff
+    INNER JOIN log_civicrm_contribution_recur lcr ON lcr.id = rgoff.id
+    WHERE lcr.log_date < '2018-11-06'
+    GROUP BY rgoff.id
+  ");
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution_recur cr
+    INNER JOIN rgright ON cr.id = rgright.id
+    SET cr.next_sched_contribution_date = rgright.correct_next_date
+  ");
+}
