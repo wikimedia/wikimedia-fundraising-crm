@@ -567,7 +567,7 @@
             "keywords": [
                 "http geocoder"
             ],
-            "time": "2018-04-11T17:38:42+00:00"
+            "time": "2018-01-23T02:12:05+00:00"
         },
         {
             "name": "geocoder-php/free-geoip-provider",
@@ -624,7 +624,7 @@
             ],
             "description": "Geocoder FreeGeoIp adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-03-03T14:18:18+00:00"
+            "time": "2018-01-23T02:15:37+00:00"
         },
         {
             "name": "geocoder-php/google-maps-provider",
@@ -682,7 +682,7 @@
             ],
             "description": "Geocoder GoogleMaps adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-01-23T03:40:13+00:00"
+            "time": "2018-01-23T04:49:20+00:00"
         },
         {
             "name": "geocoder-php/mapquest-provider",
@@ -739,7 +739,7 @@
             ],
             "description": "Geocoder MapQuest adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2017-12-14T10:46:36+00:00"
+            "time": "2018-01-19T02:21:34+00:00"
         },
         {
             "name": "geocoder-php/nominatim-provider",
@@ -796,7 +796,7 @@
             ],
             "description": "Geocoder Nominatim adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-02-15T12:58:08+00:00"
+            "time": "2018-02-12T23:19:17+00:00"
         },
         {
             "name": "geoip2/geoip2",
@@ -3131,11 +3131,11 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.5.8.1",
+            "version": "v0.5.8.3",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "bde71ea47d2b92229dd67a52344a1abd6e441e49"
+                "reference": "5c7ca2110dc7a882609ca5a091a5020e57ab4d74"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -3194,7 +3194,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2018-10-10T02:17:02+00:00"
+            "time": "2018-11-06T20:36:23+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -3254,7 +3254,7 @@
                 "geocoding",
                 "geoip"
             ],
-            "time": "2018-01-23T01:35:43+00:00"
+            "time": "2018-02-12T23:33:59+00:00"
         },
         {
             "name": "zordius/lightncandy",
