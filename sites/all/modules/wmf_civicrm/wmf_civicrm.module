@@ -4217,6 +4217,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
         MAX(IF(total_amount > 0, receive_date, NULL)) AS last_donation_date,
      " . implode(',', $fieldSelects) . "
       FROM civicrm_contribution c
+      USE INDEX(FK_civicrm_contribution_contact_id)
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
         AND financial_type_id <> $endowmentFinancialType
