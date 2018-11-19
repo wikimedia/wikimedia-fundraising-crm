@@ -392,7 +392,7 @@ class OAuthRequest {
     );
 
     $parts = OAuthUtil::urlencode_rfc3986($parts);
-
+    watchdog('OAUTH provider', 'OAUTH signed parts: ' . implode('&', $parts));
     return implode('&', $parts);
   }
 
