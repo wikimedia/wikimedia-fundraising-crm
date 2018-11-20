@@ -268,9 +268,11 @@ class OAuthRequest {
    * attempt to build up a request from what was passed to the server
    */
   public static function from_request($http_method=NULL, $http_url=NULL, $parameters=NULL) {
+
     $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== "off")
               ? 'https'
               : 'http';
+    watchdog('OAUTH provider', "from_request - arg method $http_method, arg url $http_url, detected scheme $scheme");
     $http_url = ($http_url) ? $http_url : $scheme .
                               '://' . $_SERVER['SERVER_NAME'] .
                               ':' .
