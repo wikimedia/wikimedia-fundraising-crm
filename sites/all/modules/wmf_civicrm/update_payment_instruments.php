@@ -85,7 +85,8 @@ function wmf_install_get_payment_instruments() {
     'Credit Card: Tarjeta Shopping',
     'Credit Card: Nativa',
     'Credit Card: Cencosud',
-
+    'Credit Card: Lider',
+    'Credit Card: OCA',
     'Credit Card: Webpay',
     'Banamex',
     'Bancomer',

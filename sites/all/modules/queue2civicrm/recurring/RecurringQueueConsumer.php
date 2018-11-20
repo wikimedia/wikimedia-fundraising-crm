@@ -145,7 +145,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       strpos($msg['gateway'], 'paypal') === 0 &&
       strpos($msg['subscr_id'], 'I-') === 0
     ) {
-      $recur_record = wmf_civicrm_get_legacy_paypal_subscription_by_email($msg['email']);
+      $recur_record = wmf_civicrm_get_legacy_paypal_subscription($msg);
       if ($recur_record) {
         // We found an existing legacy PayPal recurring record for the email.
         // Update it to make sure it's not mistakenly canceled, and while we're

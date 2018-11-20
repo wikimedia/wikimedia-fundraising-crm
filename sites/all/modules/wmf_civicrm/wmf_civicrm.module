@@ -699,6 +699,12 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
           case 'bij':
             $payment_instrument .= ': Bijenkorf';
             break;
+          case 'lider':
+            $payment_instrument .= ': Lider';
+            break;
+          case 'oca':
+            $payment_instrument .= ': OCA';
+            break;
         }
         break;
       case 'dd':
