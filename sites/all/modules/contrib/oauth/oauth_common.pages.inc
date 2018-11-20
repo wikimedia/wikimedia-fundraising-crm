@@ -365,7 +365,6 @@ function oauth_common_callback_request_token() {
     print $server->fetch_request_token($req);
   }
   catch (OAuthException $e) {
-    watchdog('OAUTH provider', 'OAUTH request_token error: ' . $e->getMessage());
     drupal_add_http_header('Status', '401 Unauthorized: ' . $e->getMessage());
     drupal_add_http_header('WWW-Authenticate', sprintf('OAuth realm="%s"', url('', array('absolute' => TRUE))));
   }
