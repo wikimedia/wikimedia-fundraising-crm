@@ -178,6 +178,10 @@ class CRM_Forgetme_Metadata {
       'civicrm_subscription_history' => [],
       'civicrm_entity_tag' => [],
       'civicrm_financial_item' => [],
+      'civicrm_payment_token' => [
+        'showme' => TRUE,
+        'forgetme' => TRUE,
+      ],
       // We don't really use open id.
       //'civicrm_openid' => ['showme' => TRUE, 'forgetme' => TRUE,],
       /* I believe the tables below are not relevant to individual contacts.
@@ -200,7 +204,6 @@ class CRM_Forgetme_Metadata {
       'civicrm_group',
       'civicrm_group_organization',
       'civicrm_contribution_page',
-      'civicrm_payment_token',
       'civicrm_membership_type',
       'civicrm_case_contact',
       'civicrm_pledge',
