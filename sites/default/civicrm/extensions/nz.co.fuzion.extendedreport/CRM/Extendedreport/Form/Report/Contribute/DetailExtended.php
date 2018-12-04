@@ -74,8 +74,7 @@ class CRM_Extendedreport_Form_Report_Contribute_DetailExtended extends CRM_Exten
       'fields_defaults' => array('receive_date', 'id', 'total_amount'),
       'filters_defaults' => array('contribution_status_id' => array(1), 'is_test' => 0),
       'group_bys_defaults' => ['id' => TRUE],
-    ))
-    + $this->getColumns('Address');
+    ));
 
     $this->_columns['civicrm_contribution']['fields']['id']['required'] = TRUE;
     $this->_columns['civicrm_contribution']['fields']['currency']['required'] = TRUE;
@@ -90,7 +89,10 @@ class CRM_Extendedreport_Form_Report_Contribute_DetailExtended extends CRM_Exten
         'is_fields' => FALSE,
         'is_group_bys' => FALSE,
         'is_order_bys' => FALSE,
+        'type' => CRM_Utils_Type::T_INT,
+        'alias' => 'cordinality_cordinality'
       ]],
+      'group_title' => ts('Contribution Ordinality'),
 
       'filters' => [
         'ordinality' => [
@@ -104,6 +106,7 @@ class CRM_Extendedreport_Form_Report_Contribute_DetailExtended extends CRM_Exten
         ],
       ],
     );
+    $this->_columns += $this->getColumns('Address');
     $this->_columns += $this->getColumns('Note');
 
     $this->_groupFilter = TRUE;
@@ -137,15 +140,10 @@ class CRM_Extendedreport_Form_Report_Contribute_DetailExtended extends CRM_Exten
   }
 
   function from() {
-    $this->_from = "
-        FROM  civicrm_contact      {$this->_aliases['civicrm_contact']} {$this->_aclFrom}
+    $this->setFromBase('civicrm_contact');
+    $this->_from .= "
               INNER JOIN civicrm_contribution {$this->_aliases['civicrm_contribution']}
                       ON {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_contribution']}.contact_id AND {$this->_aliases['civicrm_contribution']}.is_test = 0";
-    if (CRM_Utils_Array::value('contribution_or_soft_value', $this->_params) == 'soft_credits_only') {
-      $this->_from .= "
-               INNER JOIN civicrm_contribution_soft contribution_soft_civireport
-                       ON contribution_soft_civireport.contribution_id = {$this->_aliases['civicrm_contribution']}.id";
-    }
 
     if (!empty($this->_params['ordinality_value'])) {
       $this->_from .= "
@@ -158,9 +156,7 @@ class CRM_Extendedreport_Form_Report_Contribute_DetailExtended extends CRM_Exten
     $this->joinEmailFromContact();
 
     // include contribution note
-    if (CRM_Utils_Array::value('contribution_note', $this->_params['fields']) ||
-      CRM_Utils_Array::value('note_value', $this->_params)
-    ) {
+    if ($this->isTableSelected('civicrm_note')) {
       $this->_from .= "
             LEFT JOIN civicrm_note {$this->_aliases['civicrm_note']}
                       ON ( {$this->_aliases['civicrm_note']}.entity_table = 'civicrm_contribution' AND
@@ -429,7 +425,7 @@ WHERE  civicrm_contribution_contribution_id={$row['civicrm_contribution_contribu
       $sectionAliases = array_keys($this->_sections);
 
       $ifnulls = array();
-      foreach (array_merge($sectionAliases, $this->_selectAliases) as $alias) {
+      foreach (array_merge($sectionAliases, array_keys($this->_selectAliases)) as $alias) {
         $ifnulls[] = "ifnull($alias, '') as $alias";
       }
 
@@ -440,7 +436,7 @@ WHERE  civicrm_contribution_contribution_id={$row['civicrm_contribution_contribu
 
       $addtotals = '';
 
-      if (array_search("civicrm_contribution_total_amount_sum", $this->_selectAliases) !== FALSE) {
+      if (empty($this->_selectAliases["civicrm_contribution_total_amount_sum"]) !== FALSE) {
         $addtotals = ", sum(civicrm_contribution_total_amount_sum) as sumcontribs";
         $showsumcontribs = TRUE;
       }

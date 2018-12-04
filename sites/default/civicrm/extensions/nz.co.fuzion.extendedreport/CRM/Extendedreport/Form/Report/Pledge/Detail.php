@@ -7,6 +7,7 @@
  *            $Id$
  *
  */
+use CRM_Extendedreport_ExtensionUtil as E;
 
 class CRM_Extendedreport_Form_Report_Pledge_Detail extends CRM_Extendedreport_Form_Report_ExtendedReport {
   protected $_summary = NULL;
@@ -27,14 +28,22 @@ class CRM_Extendedreport_Form_Report_Pledge_Detail extends CRM_Extendedreport_Fo
       + $this->getColumns('Pledge', array('group_bys' => FALSE))
       + $this->getColumns('PledgePayment', array('fields_defaults' => array('actual_amount')))
       + $this->getColumns('FinancialType');
-    $this->_columns['civicrm_pledge_payment']['fields']['balance_amount'] = array(
+    unset($this->_columns['civicrm_pledge_payment']['fields']['status_id']);
+    $this->_columns['civicrm_pledge_payment']['metadata']['balance_amount'] = [
       'title' => ts('Balance to Pay'),
       'statistics' => array('sum' => ts('Balance')),
       'type' => CRM_Utils_Type::T_MONEY,
-    );
-    $this->_columns['civicrm_contribution']['filters']['effective_date'] = array(
-      'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
-      'title' => ts('Do not consider payments after...'),
+      'is_fields' => TRUE,
+      'is_filters' => FALSE,
+      'is_order_bys' => FALSE,
+      'is_group_bys' => FALSE,
+      'is_join_filters' => FALSE,
+      'alias' => 'pledge_balance_amount'
+    ];
+    $this->_columns['civicrm_contribution']['group_title'] = E::ts('Report Date');
+    $this->_columns['civicrm_contribution']['metadata']['effective_date'] = array(
+      'type' => CRM_Utils_Type::T_DATE,
+      'title' => ts('Do not consider payments or pledges after...'),
       'operatorType' => self::OP_SINGLEDATE,
       'pseudofield' => TRUE,
       'is_fields' => FALSE,
@@ -42,7 +51,10 @@ class CRM_Extendedreport_Form_Report_Pledge_Detail extends CRM_Extendedreport_Fo
       'is_group_bys' => FALSE,
       'is_order_bys' => FALSE,
       'is_join_filters' => FALSE,
+      'operations' => ['to' => E::ts('Date')],
+      'alias' => 'contribution_effective_date',
     );
+
     $this->_groupFilter = TRUE;
     $this->_tagFilter = TRUE;
     $defaults = array(

@@ -4,6 +4,8 @@ use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
 
+require_once __DIR__ . '/../../extendedreport.php';
+
 /**
  * FIXME - Add test description.
  *
@@ -27,7 +29,6 @@ class BaseTestClass extends \PHPUnit_Framework_TestCase implements HeadlessInter
    */
   protected $customFieldID;
 
-
   /**
    * @var int
    */
@@ -47,14 +48,17 @@ class BaseTestClass extends \PHPUnit_Framework_TestCase implements HeadlessInter
    */
   protected $sql;
 
+  protected $labels = [];
+
   /**
    * @param $params
    * @return array|int
    */
   protected function getRows($params) {
-    $params['options']['metadata'] = array('title', 'label', 'sql');
+    $params['options']['metadata'] = array('title', 'labels', 'sql');
     $rows = $this->callAPISuccess('ReportTemplate', 'getrows', $params);
     $this->sql = $rows['metadata']['sql'];
+    $this->labels = isset($rows['metadata']['labels']) ? $rows['metadata']['labels'] : [];
     $rows = $rows['values'];
     return $rows;
   }
@@ -76,12 +80,15 @@ class BaseTestClass extends \PHPUnit_Framework_TestCase implements HeadlessInter
     $params['extends'] = $entity;
     CRM_Core_PseudoConstant::flush();
 
-    // cleanup first to save misery.
-    $fields = $this->callAPISuccess('CustomField', 'get', array('name' => $entity));
-    foreach ($fields['values'] as $field) {
-      $this->callAPISuccess('CustomField', 'delete', array('id' => $field['id']));
-    }
     $groups = $this->callAPISuccess('CustomGroup', 'get', array('name' => $entity));
+    // cleanup first to save misery.
+    $customGroupParams = empty($groups['count']) ? ['custom_group_id' => ['IS NULL' => 1]] : ['custom_group_id' => ['IN' => array_keys($groups['values'])]];
+    $fields = $this->callAPISuccess('CustomField', 'get', $customGroupParams, print_r($groups, 1));
+    foreach ($fields['values'] as $field) {
+      // delete from the table as it may be an orphan & if not the group drop will sort out.
+      CRM_Core_DAO::executeQuery('DELETE FROM civicrm_custom_field WHERE id = ' . (int) $field['id']);
+    }
+
     foreach ($groups['values'] as $group) {
       if (CRM_Core_DAO::singleValueQuery("SHOW TABLES LIKE '" . $group['table_name'] . "'")) {
         $this->callAPISuccess('CustomGroup', 'delete', array('id' => $group['id']));
@@ -234,6 +241,146 @@ class BaseTestClass extends \PHPUnit_Framework_TestCase implements HeadlessInter
       ['organization_name' => 'Rascals Group'],
       ['organization_name' => 'Cheats Ltd'],
     ];
+  }
+
+  /**
+   * Enable all components.
+   */
+  protected function enableAllComponents() {
+    $components = [];
+    $dao = CRM_Core_DAO::executeQuery("SELECT id, name FROM civicrm_component");
+    while ($dao->fetch()) {
+      $components[$dao->id] = $dao->name;
+    }
+    civicrm_api3('Setting', 'create', ['enable_components' => $components]);
+  }
+
+  /**
+   * Get all extended reports reports except for ones involving log tables.
+   *
+   * @return array
+   */
+  public function getAllNonLoggingReports() {
+    $reports = $this->getAllReports();
+    $return = [];
+    foreach ($reports as $report) {
+      $return[] = [$report['params']['report_url']];
+    }
+    return $return;
+  }
+
+  /**
+   * Get all extended reports reports.
+   *
+   * @return array
+   */
+  public function getAllReports() {
+    $reports = array();
+    extendedreport_civicrm_managed($reports);
+    return $reports;
+  }
+
+  /**
+   * @return array|int
+   */
+  protected function createContacts($quantity = 1, $type = 'Individual') {
+    $data = $this->getContactData($type, $quantity);
+    $contacts = [];
+    foreach ($data as $params) {
+      $contact = $this->callAPISuccess('Contact', 'create', $params);
+      $contacts[$contact['id']] = $contact['values'][$contact['id']];
+    }
+    return $contacts;
+  }
+
+  /**
+   * Create a pledge dataset.
+   *
+   * We create 3 pledges
+   *  - started one year ago $40,000 for Wonder Woman, 2 $10000 payments made (12 months & 6 months ago).
+   *  - started just now $80,000 for Cat Woman, no payments made
+   *  - started one month ago $100000 for Heros Inc, no payments made
+   */
+  public function setUpPledgeData() {
+    $contacts = array(
+      array(
+        'first_name' => 'Wonder',
+        'last_name' => 'Woman',
+        'contact_type' => 'Individual',
+        'api.pledge.create' => array(
+          'installments' => 4,
+          'financial_type_id' => 'Donation',
+          'amount' => 40000,
+          'start_date' => '1 year ago',
+          'create_date' => '1 year ago',
+          'original_installment_amount' => 10000,
+          'frequency_unit' => 'month',
+          'frequency_interval' => 3,
+        ),
+        'api.contribution.create' => array(
+          array(
+            'financial_type_id' => 'Donation',
+            'total_amount' => 10000,
+            'receive_date' => '1 year ago',
+          ),
+          array(
+            'financial_type_id' => 'Donation',
+            'total_amount' => 10000,
+            'receive_date' => '6 months ago',
+          ),
+        ),
+      ),
+      array(
+        'first_name' => 'Cat',
+        'last_name' => 'Woman',
+        'contact_type' => 'Individual',
+        'api.pledge.create' => array(
+          'installments' => 1,
+          'financial_type_id' => 'Donation',
+          'amount' => 80000,
+          'start_date' => 'now',
+          'create_date' => 'now',
+          'original_installment_amount' => 80000,
+        ),
+      ),
+      array(
+        'organization_name' => 'Heros Inc.',
+        'contact_type' => 'Organization',
+        'api.pledge.create' => array(
+          'installments' => 7,
+          'financial_type_id' => 'Donation',
+          'start_date' => '1 month ago',
+          'create_date' => '1 month ago',
+          'original_installment_amount' => 14285.71,
+          'amount' => 100000,
+        ),
+      ),
+    );
+    // Store the ids for later cleanup.
+    $pledges = $this->callAPISuccess('Pledge', 'get', [])['values'];
+    $this->ids['Pledge'] = array_keys($pledges);
+
+    foreach ($contacts as $params) {
+      $contact = $this->callAPISuccess('Contact', 'create', $params);
+      $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $contact['id']));
+      $pledges = $this->callAPISuccess('Pledge', 'get', array('contact_id' => $contact['id']));
+      foreach ($contributions['values'] as $contribution) {
+        $this->callAPISuccess('PledgePayment', 'create', array(
+          'contribution_id' => $contribution['id'],
+          'pledge_id' => $pledges['id'],
+          'status_id' => 'Completed',
+          'actual_amount' => $contribution['total_amount'],
+        ));
+      }
+      if (CRM_Utils_Array::value('organization_name', $params) == 'Heros Inc.') {
+        $this->callAPISuccess('PledgePayment', 'get', array(
+          'pledge_id' => $pledges['id'],
+          'options' => array('limit' => 1, 'sort' => 'scheduled_date DESC'),
+          'api.PledgePayment.create' => array('scheduled_amount' => 14285.74, 'scheduled_date' => '2 years ago'),
+        ));
+      }
+    }
+
   }
 
 }

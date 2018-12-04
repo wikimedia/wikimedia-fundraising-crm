@@ -43,9 +43,14 @@ class ContributionContributionsTest extends BaseTestClass implements HeadlessInt
 
   /**
    * Test rows retrieval.
+   *
+   * @param array $overrides
+   *   array to override function parameters
+   *
+   * @dataProvider getRowVariants
    */
-  public function testGetRows() {
-    $params = [
+  public function testGetRows($overrides) {
+    $params = array_merge([
       'report_id' => 'contribution/contributions',
       'fields' => [
         'contribution_id' => '1',
@@ -53,10 +58,78 @@ class ContributionContributionsTest extends BaseTestClass implements HeadlessInt
         'contribution_campaign_id' => '1',
         'contribution_source' => '1',
       ],
-      'group_bys' => ['contribution_campaign_id' => '1'],
-      'order_bys' => [['column' => 'contribution_check_number', 'order' => 'ASC']],
-    ];
+    ], $overrides);
     $this->callAPISuccess('ReportTemplate', 'getrows', $params)['values'];
+  }
+
+  /**
+   * Get variations of data to test against the report.
+   *
+   * @return array
+   */
+  public function getRowVariants() {
+    return [
+      [
+        [
+          'order_bys' => [['column' => 'contribution_check_number', 'order' => 'ASC']],
+          'group_bys' => ['contribution_campaign_id' => '1'],
+        ]
+      ],
+      [
+        [
+          'order_bys' => [['column' => 'contribution_check_number', 'order' => 'DESC']],
+          'group_bys' => ['contribution_campaign_id' => '1'],
+        ]
+      ],
+      [
+        [
+          'order_bys' => [['column' => 'contribution_check_number', 'order' => 'DESC', 'section' => 1]],
+          'group_bys' => ['contribution_campaign_id' => '1'],
+        ]
+      ],
+      [
+        [
+          'order_bys' => [['column' => 'contribution_check_number', 'order' => 'DESC', 'section' => 1, 'pageBreak' => 1]],
+          'group_bys' => ['contribution_campaign_id' => '1'],
+        ]
+      ],
+      [
+        [
+          'order_bys' => [['column' => 'contribution_check_number', 'order' => 'ASC']],
+        ]
+      ],
+      [
+        [
+          'order_bys' => [['column' => 'contribution_check_number', 'order' => 'DESC']],
+        ]
+      ],
+      [
+        [
+          'order_bys' => [['column' => 'contribution_check_number', 'order' => 'DESC', 'section' => 1]],
+        ]
+      ],
+      [
+        [
+          'order_bys' => [['column' => 'contribution_check_number', 'order' => 'DESC', 'section' => 1, 'pageBreak' => 1]],
+        ]
+      ],
+      [
+        [
+          'extended_order_bys' => [['column' => 'contribution_check_number', 'order' => 'DESC', 'title' => 'special']],
+        ]
+      ],
+      [
+        [
+          'fields' => [
+            'contribution_financial_type_id' => '1',
+            'contribution_receive_date' => '1',
+            'contribution_total_amount' => '1',
+            'civicrm_contact_display_name' => '1',
+          ],
+          'order_bys' => [1 => ['column' => 'civicrm_contact_sort_name', 'order' => 'DESC', 'section' => 1]],
+        ]
+      ]
+    ];
   }
 
   /**
@@ -74,6 +147,32 @@ class ContributionContributionsTest extends BaseTestClass implements HeadlessInt
       'order_bys' => [['column' => 'contribution_source', 'order' => 'ASC']],
     ];
     $this->callAPISuccess('ReportTemplate', 'getrows', $params)['values'];
+  }
+
+  /**
+   * Test that is doesn't matter if the having filter is selected.
+   */
+  public function testGetRowsFilterCustomData() {
+    $this->enableAllComponents();
+    $ids = $this->createCustomGroupWithField([]);
+    $contacts = $this->createContacts(2);
+    foreach ($contacts as $contact) {
+      $contribution = $this->callAPISuccess('Contribution', 'create', [
+        'total_amount' => 4,
+        'financial_type_id' => 'Donation',
+        'contact_id' => $contact['id'],
+      ]);
+      $this->callAPISuccess('Contact', 'create', ['id' => $contact['id'], 'custom_' . $ids['custom_field_id'] => $contribution['id']]);
+    }
+
+    $params = [
+      'report_id' => 'contribution/contributions',
+      'fields' => ['contribution_id'],
+      'custom_' . $ids['custom_field_id'] . '_op' => 'eq',
+      'custom_' . $ids['custom_field_id'] . '_value' => $contribution['id'],
+    ];
+    $rows = $this->callAPISuccess('ReportTemplate', 'getrows', $params)['values'];
+    $this->assertEquals(1, count($rows));
   }
 
 }

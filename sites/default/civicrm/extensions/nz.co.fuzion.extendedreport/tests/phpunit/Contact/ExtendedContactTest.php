@@ -30,19 +30,13 @@ class Contact_ExtendedContactTest extends BaseTestClass implements HeadlessInter
     $env = \Civi\Test::headless()
       ->installMe(__DIR__)
       ->apply();
-    $this->createCustomGroupWithField(['CustomField' => ['html_type' => 'CheckBox', 'option_values' => ['two' => 'A couple', 'three' => 'A few', 'four' => 'Too Many']]]);
     return $env;
   }
 
   public function setUp() {
     parent::setUp();
-    $components = array();
-    $dao = new CRM_Core_DAO_Component();
-    while ($dao->fetch()) {
-      $components[$dao->id] = $dao->name;
-    }
-    civicrm_api3('Setting', 'create', array('enable_components' => $components));
-
+    $this->enableAllComponents();
+    $this->createCustomGroupWithField(['CustomField' => ['html_type' => 'CheckBox', 'option_values' => ['two' => 'A couple', 'three' => 'A few', 'four' => 'Too Many']]]);
     $contact = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Amazons', 'last_name' => 'Woman', 'contact_type' => 'Organization', 'custom_' . $this->customFieldID => 'three'));
 
     $this->contacts[] = $contact['id'];

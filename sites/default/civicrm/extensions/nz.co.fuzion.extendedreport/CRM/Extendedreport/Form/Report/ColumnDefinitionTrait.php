@@ -42,9 +42,10 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
 
     $spec = array(
       'id' => array(
-        'no_display' => TRUE,
-        'required' => TRUE,
+        'name' => 'id',
+        'title' => ts('Activity ID'),
         'is_group_bys' => $options['group_by'],
+        'is_fields' => TRUE,
       ),
       'source_record_id' => array(
         'no_display' => TRUE,
@@ -73,11 +74,6 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         ),
 
       ),
-      'source_contact_id' => array(
-        'no_display' => TRUE,
-        'required' => FALSE,
-        'is_fields' => TRUE,
-      ),
       'activity_date_time' => array(
         'title' => ts('Activity Date'),
         'default' => TRUE,
@@ -92,7 +88,7 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'title' => ts('Activity Status'),
         'name' => 'status_id',
         'type' => CRM_Utils_Type::T_STRING,
-        'alter_display' => 'alterActivityStatus',
+        'alter_display' => 'alterPseudoConstant',
         'is_fields' => TRUE,
         'is_filters' => TRUE,
         'is_order_bys' => TRUE,
@@ -225,13 +221,6 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
             'operatorType' => CRM_Report_Form::OP_DATE,
             'type' => CRM_Utils_Type::T_DATE,
           ),
-          'duration' => array(
-            'name' => 'duration',
-            'title' => ts('Duration (Days)'),
-            'is_fields' => TRUE,
-            'is_filters' => TRUE,
-            'type' => CRM_Utils_Type::T_INT,
-          ),
           'is_deleted' => array(
             'name' => 'is_deleted',
             'title' => ts('Case Deleted?'),
@@ -282,6 +271,8 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'name' => 'display_name',
         'title' => ts($options['prefix_label'] . 'Contact Name'),
         'is_fields' => TRUE,
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ),
       $options['prefix'] . 'contact_id' => array(
         'name' => 'id',
@@ -342,13 +333,16 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
       $options['prefix'] . 'last_name' => array(
         'name' => 'last_name',
         'title' => ts($options['prefix_label'] . 'Last Name'),
-        'default_order' => 'ASC',
         'is_fields' => TRUE,
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ),
       $options['prefix'] . 'nick_name' => array(
         'name' => 'nick_name',
         'title' => ts($options['prefix_label'] . 'Nick Name'),
         'is_fields' => TRUE,
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ),
       $options['prefix'] . 'gender_id' => array(
         'name' => 'gender_id',

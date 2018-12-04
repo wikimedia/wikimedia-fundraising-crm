@@ -7,7 +7,7 @@ use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
 
 /**
- * Test contribution DetailExtended class.
+ * FIXME - Add test description.
  *
  * Tips:
  *  - With HookInterface, you may implement CiviCRM hooks directly in the test class.
@@ -20,9 +20,9 @@ use Civi\Test\TransactionalInterface;
  *
  * @group headless
  */
-class ContributionBasedTest extends BaseTestClass implements HeadlessInterface, HookInterface, TransactionalInterface {
+class Pledge_DetailTest extends BaseTestClass implements HeadlessInterface, HookInterface {
 
-  protected $contacts = array();
+  protected $ids = [];
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
@@ -34,37 +34,33 @@ class ContributionBasedTest extends BaseTestClass implements HeadlessInterface, 
 
   public function setUp() {
     parent::setUp();
-    $this->enableAllComponents();
-    $contact = $this->callAPISuccess('Contact', 'create', array('first_name' => 'Wonder', 'last_name' => 'Woman', 'contact_type' => 'Individual'));
-    $this->contacts[] = $contact['id'];
+  }
+
+  public function tearDown() {
+    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_pledge');
+    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_group');
+    parent::tearDown();
   }
 
   /**
-   * Test the report runs.
-   *
-   * @dataProvider getReportParameters
-   *
-   * @param array $params
-   *   Parameters to pass to the report
+   * Test the future income report with some data.
    */
-  public function testReport($params) {
-    $this->callAPISuccess('Order', 'create', array('contact_id' => $this->contacts[0], 'total_amount' => 5, 'financial_type_id' => 2));
-    // Just checking no error at the moment.
-    $this->getRows($params);
-  }
-
-  /**
-   * Get datasets for testing the report
-   */
-  public function getReportParameters() {
-    return array(
-      'basic' => array(array(
-        'report_id' => 'price/contributionbased',
-        'fields' => array(
-          'campaign_id' => '1',
-          'total_amount' => '1',
-        ),
-      )),
+  public function testPledgeDetailReport() {
+    $this->setUpPledgeData();
+    $params = array(
+      'report_id' => 'pledge/details',
+      'fields' => [
+        'civicrm_contact_display_name' => '1',
+        'civicrm_contact_contact_id' => '1',
+        'pledge_amount' => '1',
+        'balance_amount' => 1,
+      ],
+      'effective_date_op' => 'to',
+      'effective_date_value' => date('Y-m-d', strtotime('3 weeks ago')),
     );
+    $rows = $this->getRows($params);
+    $this->assertEquals(3, count($rows));
+    $this->assertEquals(20000, $rows[0]['civicrm_pledge_payment_balance_amount_sum']);
   }
+
 }

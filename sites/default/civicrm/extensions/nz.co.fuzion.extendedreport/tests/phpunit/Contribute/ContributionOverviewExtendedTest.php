@@ -34,30 +34,25 @@ class ContributionOverviewExtendedTest extends BaseTestClass implements Headless
 
   public function setUp() {
     parent::setUp();
-    $components = array();
-    $dao = new CRM_Core_DAO_Component();
-    while ($dao->fetch()) {
-      $components[$dao->id] = $dao->name;
-    }
-    civicrm_api3('Setting', 'create', array('enable_components' => $components));
+    $this->enableAllComponents();
     $contact = $this->callAPISuccess('Contact', 'create', array('first_name' => 'Wonder', 'last_name' => 'Woman', 'contact_type' => 'Individual'));
     $this->contacts[] = $contact['id'];
 
     $contribution = $this->callAPISuccess('Contribution', 'create', array(
       'contact_id' => $contact['id'],
-      'received_date' => '2 months ago',
+      'receive_date' => '2017-08-09',
       'total_amount' => 5,
       'financial_type_id' => 'Donation',
     ));
     $contribution = $this->callAPISuccess('Contribution', 'create', array(
       'contact_id' => $contact['id'],
-      'received_date' => '1 month ago',
+      'receive_date' => '1 month ago',
       'total_amount' => 500,
       'financial_type_id' => 'Donation',
     ));
     $contribution = $this->callAPISuccess('Contribution', 'create', array(
       'contact_id' => $contact['id'],
-      'received_date' => '1 month ago',
+      'receive_date' => '1 month ago',
       'total_amount' => 10,
       'financial_type_id' => 'Member Dues',
     ));
@@ -89,6 +84,22 @@ class ContributionOverviewExtendedTest extends BaseTestClass implements Headless
     );
     $rows = $this->getRows($params);
     $this->assertEquals('Member Dues', $rows[1]['civicrm_contribution_contribution_financial_type_id'], print_r($this->sql, TRUE) . print_r($rows, TRUE));
+  }
+
+  /**
+   * Test the ContributionOverviewExtended report with to filter.
+   */
+  public function testContributionExtendedReportFilterReceiveDate() {
+    $rows = $this->getRows([
+      'report_id' => 'contribution/overview',
+      'fields' => ['civicrm_contact_display_name' => '1'],
+      'contribution_receive_date_relative' => '0',
+      'contribution_receive_date_from' => '',
+      'contribution_receive_date_from_time' => '',
+      'contribution_receive_date_to' => '12/31/2017',
+      'contribution_receive_date_to_time' => '',
+    ]);
+    $this->assertEquals(1, count($rows));
   }
 
 }

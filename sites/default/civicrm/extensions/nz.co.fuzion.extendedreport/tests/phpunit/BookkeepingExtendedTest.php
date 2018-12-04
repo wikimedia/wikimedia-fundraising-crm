@@ -24,6 +24,9 @@ class BookkeepingExtendedTest extends BaseTestClass implements HeadlessInterface
 
   protected $contacts = array();
 
+  /**
+   * @return \Civi\Test\CiviEnvBuilder
+   */
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
     // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
@@ -34,12 +37,7 @@ class BookkeepingExtendedTest extends BaseTestClass implements HeadlessInterface
 
   public function setUp() {
     parent::setUp();
-    $components = array();
-    $dao = new CRM_Core_DAO_Component();
-    while ($dao->fetch()) {
-      $components[$dao->id] = $dao->name;
-    }
-    civicrm_api3('Setting', 'create', array('enable_components' => $components));
+    $this->enableAllComponents();
     $contact = $this->callAPISuccess('Contact', 'create', array('first_name' => 'Wonder', 'last_name' => 'Woman', 'contact_type' => 'Individual'));
     $this->contacts[] = $contact['id'];
   }
@@ -68,13 +66,13 @@ class BookkeepingExtendedTest extends BaseTestClass implements HeadlessInterface
         'contribution_receive_date' => '1',
         'contribution_receipt_date' => '1',
         'financial_trxn_currency' => '1',
-        'amount' => '1',
+        'entity_financial_trxn_amount' => '1',
       ),
     );
     $rows = $this->getRows($params);
     $this->assertEquals(date('Y-m-d'), date('Y-m-d', strtotime($rows[0]['civicrm_contribution_contribution_receive_date'])));
     $this->assertEquals('USD', $rows[0]['civicrm_financial_trxn_financial_trxn_currency']);
-    $this->assertEquals('$ 5.00', $rows[0]['civicrm_entity_financial_trxn_amount']);
+    $this->assertEquals('5.00', $rows[0]['civicrm_entity_financial_trxn_entity_financial_trxn_amount_sum']);
   }
 
 }
