@@ -95,6 +95,11 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
           'title' => E::ts('IP Address'),
           'type' => CRM_Utils_Type::T_STRING,
         ],
+        'order_id' => [
+          'title' => E::ts('Order ID'),
+          'name' => 'order_id',
+          'type' => CRM_Utils_Type::T_STRING,
+        ],
         'validation_action' => [
           'title' => E::ts('Action'),
           'type' => CRM_Utils_Type::T_STRING,

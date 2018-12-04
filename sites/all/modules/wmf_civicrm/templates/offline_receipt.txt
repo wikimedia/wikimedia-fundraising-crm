@@ -1,5 +1,4 @@
-Dear {contact.first_name},
-{assign var="amount" value=$formValues.total_amount}
+{strip}{assign var="amount" value=$formValues.total_amount}
 {foreach from=$customGroup item=value key=customName}
   {if $customName === "Contribution Extra"}
     {foreach from=$value item=v key=n}
@@ -12,26 +11,37 @@ Dear {contact.first_name},
     {/foreach}
   {/if}
 {/foreach}
+
+{assign var="greeting" value="{contact.email_greeting}"}
+{/strip}
+{if $greeting}{$greeting}{else}Dear donor{/if},
+
 Thank you for your support of Wikipedia and the Wikimedia Foundation. Your contribution of {$amount|crmMoney:$currency} supports Wikipedia and helps secure the future of free knowledge for everyone.
 
-Wikipedia is possible because of a powerful idea: that people, like you and me, can participate in building the world’s knowledge and making it freely available to everyone, everywhere.
+I love that it’s my job to thank you for your {$amount|crmMoney:$currency} contribution to Wikipedia and the Wikimedia Foundation.
 
-Today, thanks to the support of millions of volunteer contributors and supporters, you can wander Wikipedia for hours. With more than 40 million Wikipedia articles and 35 million freely licensed images, Wikipedia can answer almost any question, and take you places you’ve never been.
+The essential story of Wikipedia is the story of an individual, like you, giving a little bit of themselves to keep the doors of discovery open. Your contribution shows me that the spirit of our vision is alive and well.
 
-Your donation supports the creation and sharing of free knowledge in real, practical ways. It helps us make Wikipedia fast, secure, and accessible to everyone in the world. It helps us bring free access to Wikipedia in places where high mobile data costs prevent people from going online. It helps us support people who are digitizing knowledge currently locked away in analog archives. It protects Wikipedia from threats to free knowledge and the open internet.
+You probably donated because Wikipedia is useful to you. That’s one of the main reasons people tell me when I ask them why they support Wikipedia. But what may surprise you is that one of the top reasons people don’t give is because they can’t afford to.
 
-Your support means that you can find the information you need now, wherever you may be -- to settle a bet with a friend at a dinner party, or to understand the world around us.
+At the Wikimedia Foundation, we believe that no one should have to pay to learn. We believe knowledge should always be free. We will never charge anyone to use Wikipedia. So how do we afford the infrastructure of one of the world’s most popular websites?
 
-Donating to Wikipedia makes you the champion of a powerful idea.
+Because of the generosity of people like you.
 
-Wikipedia will continue to evolve, grow, and meet new challenges. We’re excited and eager to meet these and more. Your donation will help us get there. We can’t thank you enough for your support.
+Wikipedia is yours: yours to read, yours to edit, yours in which to get lost. We’re not the destination, we’re the beginning.
 
-On behalf of the Wikimedia Foundation, thank you for investing in our future and taking this journey with us.
+Thank you for helping free knowledge thrive.
+
+Katherine
+
+
 
 Katherine Maher
 Executive Director, Wikimedia Foundation
 
-Many employers will match employee contributions: please check with your company to see if they have a corporate matching gift program (https://wikimediafoundation.org/wiki/Matching_Gifts/form). For your records: Your donation, number CNT-{$contactID}, on {$receive_date|truncate:10:\'\'|crmDate} was {$amount|crmMoney:$currency}.
+Many employers will generously match employee contributions: please check with your employer to see if they have a corporate matching gift program (https://donate.wikimedia.org/wiki/Matching_Gifts).
 
+For your records: Your donation, number CNT-{$contactID}, on {$receive_date|truncate:10:\'\'|crmDate} was {$amount|crmMoney:$currency}.
 
-This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. The Wikimedia Foundation, Inc. is a non-profit charitable corporation with 501(c)(3) tax exempt status in the United States. Our address is 149 New Montgomery, 6th Floor, San Francisco, CA, 94105. U.S. tax-exempt number: 20-0049703
+This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
+

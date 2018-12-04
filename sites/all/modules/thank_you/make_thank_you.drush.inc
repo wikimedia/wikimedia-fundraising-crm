@@ -34,6 +34,7 @@ function drush_make_thank_you() {
         $generator = new $generators[$genname]();
         $generator->execute($langs);
     }
+    drush_print('CiviCRM also has thank you templates for US donors - please check the template in modules/wmf_civicrm/templates/ is up to date. Search wmf_civicrm.install for _wmf_civicrm_update_offline_receipt() to see how to deploy an update to this template');
 }
 
 /**

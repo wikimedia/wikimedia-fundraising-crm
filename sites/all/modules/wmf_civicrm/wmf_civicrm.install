@@ -4652,3 +4652,15 @@ function wmf_civicrm_update_7785() {
   require_once 'update_payment_instruments.php';
   wmf_install_add_missing_payment_instruments();
 }
+
+/**
+ * Update offline message template to match thank you letter.
+ *
+ * Notes in wmf_civicrm_update_7280 / T137496 still apply
+ *
+ * Bug T209895
+ */
+function wmf_civicrm_update_7790() {
+  require_once 'update_receipt.php';
+  _wmf_civicrm_update_offline_receipt();
+}
