@@ -683,7 +683,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'gateway' => 'test_gateway',
           'gateway_txn_id' => (string) $gateway_txn_id,
           'gateway_status_raw' => 'P',
-          'no_thank_you' => 'Endowment Gift',
         ),
       )
     );

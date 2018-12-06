@@ -107,6 +107,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 			'@donate.wikimedia.org';
 		$this->assertEquals( $expectedBounce, $sent['reply_to'] );
 		$this->assertRegExp( '/\$ 1.23/', $sent['html'] );
+    $this->assertNotRegExp( '/Wikimedia Endowment/', $sent['html'] );
 		$expectedSubjectTemplate = file_get_contents(
 		  __DIR__ .
       "/../../templates/subject/thank_you.{$this->message['language']}.subject"
@@ -140,6 +141,44 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 		$sent = TestMailer::getMailing( 0 );
 		$this->assertEquals( $activity['details'], $sent['html'] );
 	}
+
+  public function testSendEndowmentThankYou() {
+    variable_set( 'thank_you_add_civimail_records', 'false' );
+    variable_set( 'thank_you_endowment_from_name', 'Endowment TY Sender' );
+    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_contribution SET financial_type_id = $endowmentFinancialType
+      WHERE id = {$this->contribution_id} 
+    ");
+    $result = thank_you_for_contribution( $this->contribution_id );
+    $this->assertTrue( $result );
+    $this->assertEquals( 1, TestMailer::countMailings() );
+    $sent = TestMailer::getMailing( 0 );
+    $this->assertEquals( $this->message['email'], $sent['to_address'] );
+    $this->assertEquals(
+      "{$this->message['first_name']} {$this->message['last_name']}",
+      $sent['to_name']
+    );
+    $this->assertEquals(
+      'Endowment TY Sender',
+      $sent['from_name']
+    );
+    $expectedBounce = "ty.{$this->contact_id}.{$this->contribution_id}" .
+      '@donate.wikimedia.org';
+    $this->assertEquals( $expectedBounce, $sent['reply_to'] );
+    $this->assertRegExp( '/\$ 1.23/', $sent['html'] );
+    $this->assertRegExp( '/Wikimedia Endowment/', $sent['html'] );
+    $expectedSubjectTemplate = file_get_contents(
+      __DIR__ .
+      "/../../templates/subject/thank_you.{$this->message['language']}.subject"
+    );
+    $expectedSubject = str_replace(
+      '{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}',
+      TwigLocalization::l10n_currency('USD 1.23'),
+      $expectedSubjectTemplate
+    );
+    $this->assertEquals( $expectedSubject, $sent['subject']);
+  }
 
 	/**
 	 * Helper function to protect test against cleanup issues.

@@ -2034,7 +2034,6 @@ function wmf_civicrm_normalize_msg($msg) {
 
   if (wmf_civicrm_is_endowment_gift($msg)) {
     $msg['financial_type_id'] = 'Endowment Gift';
-    $msg['no_thank_you'] = 'Endowment Gift';
   }
 
   $msg['anonymous'] = ((!empty($msg['anonymous']) && strtoupper($msg['anonymous']) !== "FALSE") ? 1 : 0);

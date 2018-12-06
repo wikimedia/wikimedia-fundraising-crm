@@ -64,6 +64,7 @@ function thank_you_menu() {
  * Send a test email
  */
 function thank_you_send_test_form() {
+  civicrm_initialize();
   global $language, $user;
   $user_lc = ($user->language ? $user->language : $language->language);
 
@@ -116,6 +117,17 @@ function thank_you_send_test_form() {
     '#required' => TRUE,
     '#default_value' => $user_lc,
     '#options' => $langs,
+  );
+
+  $types = array_values(CRM_Financial_BAO_FinancialType::buildOptions('name'));
+
+  $form['financial_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Financial Type'),
+    '#description' => t('Endowment Gift gets special treatment'),
+    '#required' => TRUE,
+    '#default_value' => 'Cash',
+    '#options' => array_combine($types, $types),
   );
 
   $form['currency'] = array(
@@ -267,6 +279,7 @@ function thank_you_for_contribution($contribution_id) {
 			cntc.first_name,
 			cntc.last_name,
 			cntc.preferred_language,
+			f.name AS financial_type,
 			e.email,
 			x.gateway,
 			x.no_thank_you,
@@ -274,6 +287,7 @@ function thank_you_for_contribution($contribution_id) {
 			x.original_currency
 		FROM civicrm_contribution cntr
 		INNER JOIN civicrm_contact cntc ON cntr.contact_id = cntc.id
+		LEFT JOIN civicrm_financial_type f ON f.id = cntr.financial_type_id
 		LEFT JOIN civicrm_email e ON e.contact_id = cntc.id AND e.is_primary = 1
 		INNER JOIN wmf_contribution_extra x ON cntr.id = x.entity_id
 		WHERE cntr.id = %1
@@ -346,8 +360,9 @@ function thank_you_for_contribution($contribution_id) {
     'amount' => $amount,
     'contact_id' => $mailingData['contact_id'],
     'currency' => $currency,
+    'financial_type' => $mailingData['financial_type'],
     'first_name' => $mailingData['first_name'],
-    'from_name' => variable_get('thank_you_from_name', 'Wikimedia Foundation'),
+    'from_name' => thank_you_get_from_name($mailingData),
     'from_address' => variable_get('thank_you_from_address', 'donate@wikimedia.org'),
     'last_name' => $mailingData['last_name'],
     'locale' => $locale,
@@ -377,6 +392,14 @@ function thank_you_for_contribution($contribution_id) {
     $msg = "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'];
     throw new WmfException(WmfException::BAD_EMAIL, $msg);
   }
+}
+
+function thank_you_get_from_name($mailingData) {
+  $setting = 'thank_you_from_name';
+  if ($mailingData['financial_type'] === 'Endowment Gift') {
+    $setting = 'thank_you_endowment_from_name';
+  }
+  return variable_get($setting, 'Wikimedia Foundation');
 }
 
 function thank_you_update_ty_date($contribution) {
@@ -627,6 +650,14 @@ function thank_you_settings_form() {
     '#default_value' => variable_get('thank_you_from_name', ''),
     '#required' => TRUE,
     '#description' => t('*** This is overwritten by any translations that may exist ***'),
+  );
+
+  $form['thank_you_endowment_from_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('From name (endowment)'),
+    '#default_value' => variable_get('thank_you_endowment_from_name', ''),
+    '#required' => TRUE,
+    '#description' => t('Used when financial type is Endowment Gift'),
   );
 
   $form['thank_you_from_address'] = array(
