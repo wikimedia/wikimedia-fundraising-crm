@@ -536,8 +536,6 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $importer->import();
     $this->assertFalse($importer->isSuccess());
     $messages = $importer->getMessages();
-    $b = strlen("Import aborted due to 10 consecutive errors, last error was at row 12: 'Invalid Name' is not a valid option for field custom_");
-    $c = substr($messages[0], 0, 125);
     $this->assertEquals("Import aborted due to 10 consecutive errors, last error was at row 12: 'Invalid Name' is not a valid option for field custom_", substr($messages[0], 0, 125));
   }
 
