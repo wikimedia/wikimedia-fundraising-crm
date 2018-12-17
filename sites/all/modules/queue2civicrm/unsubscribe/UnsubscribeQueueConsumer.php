@@ -122,8 +122,13 @@ EOS;
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push('civicrm');
 
-    $result = db_query($query);
-    return $result->rowCount();
+    try {
+      $result = db_query($query);
+      return $result->rowCount();
+    }
+    catch(Exception $ex) {
+      throw new WmfException(WmfException::UNSUBSCRIBE, $ex->getMessage());
+    }
   }
 
 }

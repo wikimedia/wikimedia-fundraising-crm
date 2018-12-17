@@ -12,7 +12,19 @@ use WmfException;
 abstract class WmfQueueConsumer extends BaseQueueConsumer {
 
   protected function handleError($message, Exception $ex) {
-    $logId = "{$message['gateway']}-{$message['order_id']}";
+    if (isset($message['gateway']) && isset($message['order_id'])) {
+      $logId = "{$message['gateway']}-{$message['order_id']}";
+    } else {
+      foreach($message as $key => $value) {
+        if (substr($key, -2, 2) === 'id') {
+          $logId = "$key-$value";
+          break;
+        }
+      }
+      if (!isset($logId)) {
+        $logId = 'Odd message type';
+      }
+    }
     if ($ex instanceof WmfException) {
       watchdog(
         'wmf_common',
