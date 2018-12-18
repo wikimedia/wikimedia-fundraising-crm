@@ -14,8 +14,33 @@
 
 {assign var="greeting" value="{contact.email_greeting}"}
 {/strip}
-{if $greeting}{$greeting}{else}Dear donor{/if},
+{if $greeting && $greeting !== \'Dear\'}{$greeting}{else}Dear donor{/if},
 
+{if $formValues.contributionType_name === \'Endowment Gift\'}
+I love that it’s my job to thank you for your {$amount|crmMoney:$currency} contribution to Wikipedia and the Wikimedia Endowment.
+
+Wikipedia is possible because of a powerful idea: that people, like you and me, can participate in building the world’s knowledge and making it freely available to everyone, everywhere.
+
+Today, thanks to the support of millions of volunteer contributors and supporters, you can wander Wikipedia for hours. With more than 40 million articles, Wikipedia can answer almost any question, and take you places you’ve never been. The Wikimedia Endowment will make sure future generations have access to Wikipedia like we do today, for years to come.
+
+The essential story of Wikipedia is the story of an individual, like you, giving a little bit of themselves to keep the doors of discovery open. Wikipedia will continue to evolve, grow, and meet new challenges because of the generosity of people like you.
+
+Wikipedia is yours: yours to read, yours to edit, yours in which to get lost. We’re not the destination, we’re the beginning.
+
+Thank you for helping free knowledge thrive.
+
+Jimmy
+
+Jimmy Wales
+Wikipedia Founder
+
+Many employers will generously match employee contributions: please check with your employer to see if they have a corporate matching gift program (https://donate.wikimedia.org/wiki/Matching_Gifts).
+
+For your records: Your donation, number CNT-{$contactID}, on {$receive_date|truncate:10:\'\'|crmDate} was {$amount|crmMoney:$currency}.
+
+This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
+
+{else}
 Thank you for your support of Wikipedia and the Wikimedia Foundation. Your contribution of {$amount|crmMoney:$currency} supports Wikipedia and helps secure the future of free knowledge for everyone.
 
 I love that it’s my job to thank you for your {$amount|crmMoney:$currency} contribution to Wikipedia and the Wikimedia Foundation.
@@ -44,4 +69,4 @@ Many employers will generously match employee contributions: please check with y
 For your records: Your donation, number CNT-{$contactID}, on {$receive_date|truncate:10:\'\'|crmDate} was {$amount|crmMoney:$currency}.
 
 This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
-
+{/if}

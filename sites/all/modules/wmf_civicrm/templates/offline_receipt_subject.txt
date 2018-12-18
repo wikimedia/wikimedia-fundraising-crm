@@ -1,1 +1,1 @@
-Your {$amount|crmMoney:$currency} gift = free knowledge for billions
+Your gift = free knowledge for billions

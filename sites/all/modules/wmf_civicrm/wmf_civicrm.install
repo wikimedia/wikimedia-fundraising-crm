@@ -4658,9 +4658,9 @@ function wmf_civicrm_update_7785() {
  *
  * Notes in wmf_civicrm_update_7280 / T137496 still apply
  *
- * Bug T209895
+ * Bug T209895/ T211797 (running again for Endowment changes)
  */
-function wmf_civicrm_update_7790() {
+function wmf_civicrm_update_7795() {
   require_once 'update_receipt.php';
   _wmf_civicrm_update_offline_receipt();
 }
