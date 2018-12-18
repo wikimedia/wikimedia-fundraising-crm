@@ -126,7 +126,7 @@ EOS;
       $result = db_query($query);
       return $result->rowCount();
     }
-    catch(Exception $ex) {
+    catch(\Exception $ex) {
       throw new WmfException(WmfException::UNSUBSCRIBE, $ex->getMessage());
     }
   }
