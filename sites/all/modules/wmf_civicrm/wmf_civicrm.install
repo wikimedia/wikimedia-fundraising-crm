@@ -4664,3 +4664,24 @@ function wmf_civicrm_update_7800() {
   require_once 'update_receipt.php';
   _wmf_civicrm_update_offline_receipt();
 }
+
+/**
+ * Clean up duplicate transactions added by PayPal audit
+ *
+ * Bug: T209294
+ */
+function wmf_civicrm_update_7805() {
+  civicrm_initialize();
+  $donationsToDelete = CRM_Core_DAO::executeQuery("SELECT dupe.entity_id
+FROM wmf_contribution_extra orig
+INNER JOIN wmf_contribution_extra dupe
+  ON orig.gateway='paypal'
+  AND orig.gateway_txn_id = dupe.gateway_txn_id
+  AND dupe.gateway='paypal_ec'
+WHERE dupe.source_enqueued_time > '2018-10-01'
+AND orig.source_enqueued_time > '2018-10-01'
+AND dupe.source_type='audit'");
+  while ($donationsToDelete->fetch()) {
+    civicrm_api3('Contribution', 'delete', ['id' => $donationsToDelete->entity_id]);
+  }
+}
