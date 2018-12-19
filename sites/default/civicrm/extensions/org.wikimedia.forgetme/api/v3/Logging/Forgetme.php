@@ -61,7 +61,9 @@ function civicrm_api3_logging_forgetme($params) {
     );
 
     $activitiesToDelete = array_diff($activities, explode(',', $activitiesToKeep));
-    CRM_Core_DAO::executeQuery("DELETE FROM log_civicrm_activity WHERE id IN (" . implode(',', $activitiesToDelete) . ")");
+    if (!empty($activitiesToDelete)) {
+      CRM_Core_DAO::executeQuery("DELETE FROM log_civicrm_activity WHERE id IN (" . implode(',', $activitiesToDelete) . ")");
+    }
   }
 
   $fieldsToForget = CRM_Forgetme_Metadata::getMetadataForEntity('Contact', 'forget_fields');
