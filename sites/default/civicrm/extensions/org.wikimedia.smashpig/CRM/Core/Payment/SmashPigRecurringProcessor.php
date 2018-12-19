@@ -286,6 +286,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'id' => $recurringPayment['payment_token_id'],
       'return' => ['token', 'ip_address'],
     ]);
+    $ipAddress = isset($tokenData['ip_address']) ? $tokenData['ip_address'] : NULL;
 
     return [
       'amount' => $previousContribution['total_amount'],
@@ -300,7 +301,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'contributionRecurID' => $recurringPayment['id'],
       'description' => $description,
       'token' => $tokenData['token'],
-      'ip_address' => $tokenData['ip_address'],
+      'ip_address' => $ipAddress,
       // FIXME: SmashPig should choose 'first' or 'recurring' based on seq #
       'installment' => 'recurring',
     ];
