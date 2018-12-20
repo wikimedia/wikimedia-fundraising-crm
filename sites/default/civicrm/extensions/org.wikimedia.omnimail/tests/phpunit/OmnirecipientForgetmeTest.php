@@ -60,6 +60,23 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass implements EndToEn
   }
 
   /**
+   * Test forgetme function when there is no recipient data.
+   *
+   * We should still send a rest request.
+   */
+  public function testForgetmeNoRecipientData() {
+    $this->makeScientists();
+    $this->setUpForErase();
+    $this->addTestClientToRestSingleton();
+
+    $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->contactIDs['charlie_clone']]);
+
+    // Check the request we sent out had the right email in it.
+    $requests = $this->getRequestBodies();
+    $this->assertEquals($requests[1], "Email,charlie@example.com\n");
+  }
+
+  /**
    * Add our mock client to the rest singleton.
    *
    * In other places we have been passing the client in but we can't do that
