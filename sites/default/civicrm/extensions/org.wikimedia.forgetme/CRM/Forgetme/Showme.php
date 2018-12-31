@@ -145,7 +145,7 @@ class CRM_Forgetme_Showme {
    */
   public function __construct($entity, $filters, $apiOptions) {
     $this->entity = $entity;
-    $this->metadata = civicrm_api3($entity, 'getfields', ['action' => 'get'])['values'];
+    $this->setMetadataForEntity($entity);
     $this->setFilters($filters);
     $this->setApiOptions($apiOptions);
     $this->setEntityBasedMetadataDefinitions($entity);
@@ -296,6 +296,21 @@ class CRM_Forgetme_Showme {
   protected function setFilters($filters) {
     $acceptableFields = array_merge($this->metadata, ['debug', 'sequential', 'check_permissions']);
     $this->filters = array_intersect_key($filters, $acceptableFields);
+  }
+
+  /**
+   * @param $entity
+   */
+  protected function setMetadataForEntity($entity) {
+    $this->metadata = civicrm_api3($entity, 'getfields', ['action' => 'get'])['values'];
+    foreach ($this->metadata as $key => $value) {
+      if ($value['name'] !== $key) {
+        // in some cases CiviCRM keys by 'uniqueName' instead of 'name'.
+        // key by both so we don't miss any important params - esp not 'id' vs payment_token_id
+        // on payment token! T212705
+        $this->metadata[$value['name']] = $value;
+      }
+    }
   }
 
 }

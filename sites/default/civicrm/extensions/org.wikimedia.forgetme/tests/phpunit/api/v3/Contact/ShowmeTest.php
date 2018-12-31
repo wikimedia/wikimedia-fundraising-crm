@@ -27,9 +27,28 @@ class api_v3_Contact_ShowmeTest extends api_v3_Contact_BaseTestClass implements 
         ['location_type_id' => 'Home', 'phone' => '9887-99-99', 'is_billing' => 1],
       ]
     ]);
+    $contact2 = $this->callAPISuccess('Contact', 'create', [
+      'first_name' => 'Buffy',
+      'last_name' => 'Vampire Hugger',
+      'contact_type' => 'Individual',
+      'email' => 'garlicless@example.com',
+     ]);
+    $paymentToken = $this->createPaymentToken([
+        'contact_id' => $contact['id']]
+    );
+    $paymentToken2 = $this->createPaymentToken([
+        'contact_id' => $contact2['id']]
+    );
+
     $result = civicrm_api3('Contact', 'Showme', array('id' => $contact['id']))['values'][$contact['id']];
+    $this->assertEquals(1, count($result['PaymentToken' . $paymentToken['id']]));
+    $this->assertArrayNotHasKey('PaymentToken' . $paymentToken2['id'], $result);
     $this->assertEquals('Buffy Vampire Slayer', $result['display_name']);
     $this->assertValueFound($result, 'email:garlic@example.com|Logging Timestamp');
+
+    $this->callAPISuccess('PaymentToken', 'delete', ['id' => $paymentToken['id']]);
+    $this->callAPISuccess('PaymentToken', 'delete', ['id' => $paymentToken2['id']]);
+    $this->callAPISuccess('PaymentProcessor', 'delete', ['id' => $this->paymentProcessor['id']]);
   }
 
   /**

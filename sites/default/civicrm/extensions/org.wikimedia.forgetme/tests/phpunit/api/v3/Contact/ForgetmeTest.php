@@ -191,19 +191,9 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
     ]);
     $contact = $contactAPIResult['values'][$contactAPIResult['id']];;
 
-    $paymentProcessor = $this->createPaymentProcessorFixture();
-
-    $paymentTokenAPIResult = civicrm_api3('PaymentToken', 'create', [
-      'contact_id' => $contact['id'],
-      'payment_processor_id' => $paymentProcessor['id'],
-      'token' => "TEST-TOKEN",
-      'email' => "garlic@example.com",
-      'billing_first_name' => "Buffy",
-      'billing_middle_name' => "Vampire",
-      'billing_last_name' => "Slayer",
-      'ip_address' => "123.456.789.0",
-      'masked_account_number' => "666999666",
-    ]);
+    $paymentTokenAPIResult = $this->createPaymentToken([
+      'contact_id' => $contact['id']]
+    );
 
     $paymentToken = $paymentTokenAPIResult['values'][$paymentTokenAPIResult['id']];
 
@@ -232,34 +222,10 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
     $this->assertNotTrue(isset($theForgotten['masked_account_number']));
 
     //clean up
-    civicrm_api3('Contact', 'delete', ['contact_id' => $contact['id']]);
-    civicrm_api3('PaymentToken', 'delete', ['id' => $paymentToken['id']]);
-    civicrm_api3('PaymentProcessor', 'delete',
-      ['id' => $paymentProcessor['id']]);
-  }
-
-  private function createPaymentProcessorFixture() {
-    // the type hard coding makes this a pretty frail test...
-    $accountType = key(CRM_Core_PseudoConstant::accountOptionValues(
-        'financial_account_type',
-        NULL,
-        " AND v.name = 'Asset' "
-      ));
-    $query = "
-        SELECT id
-        FROM   civicrm_financial_account
-        WHERE  is_default = 1
-        AND    financial_account_type_id = {$accountType}
-      ";
-    $financialAccountId = CRM_Core_DAO::singleValueQuery($query);
-    $params = [];
-    $params['payment_processor_type_id'] = 'smashpig_ingenico';
-    $params['name'] = 'test_processor';
-    $params['domain_id'] = CRM_Core_Config::domainID();
-    $params['is_active'] = TRUE;
-    $params['financial_account_id'] = $financialAccountId;
-    $result = civicrm_api3('PaymentProcessor', 'create', $params);
-    return $result['values'][$result['id']];
+    $this->callAPISuccess('Contact', 'delete', ['contact_id' => $contact['id']]);
+    $this->callAPISuccess('PaymentToken', 'delete', ['id' => $paymentToken['id']]);
+    $this->callAPISuccess('PaymentProcessor', 'delete',
+      ['id' => $this->paymentProcessor['id']]);
   }
 
 }
