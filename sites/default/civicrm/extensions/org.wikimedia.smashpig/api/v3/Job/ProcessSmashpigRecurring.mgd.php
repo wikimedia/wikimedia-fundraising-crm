@@ -8,6 +8,7 @@ return [
     [
       'name' => 'ProcessSmashPigRecurring',
       'entity' => 'Job',
+      'update' => 'never',
       'params' =>
         [
           'version' => 3,
