@@ -215,9 +215,9 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
 
     // check forgotten values no longer exist
     $this->assertNotTrue(isset($theForgotten['email']));
-    $this->assertNotTrue(isset($theForgotten['billing_first_name']));
-    $this->assertNotTrue(isset($theForgotten['billing_middle_name']));
-    $this->assertNotTrue(isset($theForgotten['billing_last_name']));
+    $this->assertTrue(isset($theForgotten['billing_first_name']));
+    $this->assertTrue(isset($theForgotten['billing_middle_name']));
+    $this->assertTrue(isset($theForgotten['billing_last_name']));
     $this->assertNotTrue(isset($theForgotten['ip_address']));
     $this->assertNotTrue(isset($theForgotten['masked_account_number']));
 
