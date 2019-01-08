@@ -241,9 +241,9 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
     return $result['values'][$result['id']];
   }
 
-  private function createContributionRecur($token) {
+  private function createContributionRecur($token, $overrides = []) {
     gmdate('Y-m-d H:i:s', strtotime('-12 hours'));
-    $result = civicrm_api3('ContributionRecur', 'create', [
+    $params = $overrides + [
       'contact_id' => $token['contact_id'],
       'amount' => 12.34,
       'currency' => 'USD',
@@ -259,14 +259,16 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
       'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
       'trxn_id' => 'RECURRING INGENICO ' . mt_rand(10000, 100000000),
       'contribution_status_id' => 'Completed',
-    ]);
+    ];
+    $result = civicrm_api3('ContributionRecur', 'create', $params);
     $this->deleteThings['ContributionRecur'][] = $result['id'];
     return $result['values'][$result['id']];
   }
 
-  private function createContribution($contributionRecur) {
-    $result = civicrm_api3('Contribution', 'create', [
+  private function createContribution($contributionRecur, $overrides = []) {
+    $params = $overrides + [
       'contact_id' => $contributionRecur['contact_id'],
+      'currency' => 'USD',
       'total_amount' => 12.34,
       'contribution_recur_id' => $contributionRecur['id'],
       'receive_date' => date('Y-m-d H:i:s', strtotime('-1 month')),
@@ -274,7 +276,8 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
       'financial_type_id' => 1,
       'invoice_id' => mt_rand(10000, 10000000) . '.' . mt_rand(1, 20) . '|recur-' . mt_rand(100000, 100000000),
       'skipRecentView' => 1,
-    ]);
+    ];
+    $result = civicrm_api3('Contribution', 'create', $params);
     $this->deleteThings['Contribution'][] = $result['id'];
     return $result['values'][$result['id']];
   }
@@ -338,13 +341,9 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
     $contributionRecur = $this->createContributionRecur($token);
     $contribution = $this->createContribution($contributionRecur);
 
-    $originalInvoiceId = $contribution['invoice_id'];
-    $parts = explode('|', $originalInvoiceId);
-    list($ctId, $sequence) = explode('.', $parts[0]);
-    $expectedInvoiceId = $ctId . '.' . ($sequence + 1);
+    list($ctId, $expectedInvoiceId, $next) = $this->getExpectedIds($contribution);
 
-    $domain = CRM_Core_BAO_Domain::getDomain();
-    $expectedDescription = "Monthly donation to $domain->name";
+    $expectedDescription = $this->getExpectedDescription();
 
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
@@ -419,10 +418,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token);
     $contribution = $this->createContribution($contributionRecur);
-    $originalInvoiceId = $contribution['invoice_id'];
-    $parts = explode('|', $originalInvoiceId);
-    list($ctId, $sequence) = explode('.', $parts[0]);
-    $expectedInvoiceId = $ctId . '.' . ($sequence + 1);
+    list($ctId, $expectedInvoiceId, $next) = $this->getExpectedIds($contribution);
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
       ->willReturn(
@@ -446,6 +442,85 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
       'contact_id' => $contact['id'],
       'currency' => 'USD',
       'gross' => '12.34',
+      'gateway_txn_id' => '000000850010000188130000200001',
+      'invoice_id' => $expectedInvoiceId,
+      'effort_id' => 2,
+      'financial_type_id' => '1',
+      'contribution_type_id' => '1',
+      'payment_instrument_id' => '4',
+      'gateway' => 'ingenico',
+      'payment_method' => 'cc',
+      'contribution_recur_id' => $contributionRecur['id'],
+      'contribution_tracking_id' => $ctId,
+      'recurring' => TRUE,
+    ], $contributionMessage);
+  }
+
+  public function testRecurringChargeNonUsd() {
+    // Make sure we charge in original currency
+    \Civi::settings()->set(
+      'smashpig_recurring_use_queue', '1'
+    );
+    \Civi::settings()->set(
+      'smashpig_recurring_catch_up_days', '1'
+    );
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id']);
+    // Recurring records gets original-currency amount
+    $contributionRecur = $this->createContributionRecur($token, [
+      'currency' => 'EUR',
+      'amount' => '11.22',
+    ]);
+    // Contribution table gets converted USD amount
+    $contribution = $this->createContribution($contributionRecur);
+    list($ctId, $expectedInvoiceId, $next) = $this->getExpectedIds($contribution);
+    $expectedDescription = $this->getExpectedDescription();
+    $createResponse = $this->createPaymentResponse;
+    $createResponse['payment']['paymentOutput']['amountOfMoney'] = [
+      'amount' => 1122,
+      'currencyCode' => 'EUR',
+    ];
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->with([
+        'recurring_payment_token' => 'abc123-456zyx-test12',
+        'amount' => 11.22,
+        'currency' => 'EUR',
+        'first_name' => 'Harry',
+        'last_name' => 'Henderson',
+        'email' => 'harry@hendersons.net',
+        'order_id' => $expectedInvoiceId,
+        'installment' => 'recurring',
+        'description' => $expectedDescription,
+        'recurring' => TRUE,
+        'user_ip' => '12.34.56.78',
+      ])
+      ->willReturn(
+        $createResponse
+      );
+    $approveResponse = $this->approvePaymentResponse;
+    $approveResponse['payment']['paymentOutput']['amountOfMoney'] = [
+      'amount' => 1122,
+      'currencyCode' => 'EUR',
+    ];
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('approvePayment')
+      ->willReturn(
+        $approveResponse
+      );
+    civicrm_api3('Job', 'process_smashpig_recurring', []);
+    $queue = QueueWrapper::getQueue('donations');
+    $contributionMessage = $queue->pop();
+    $this->assertNull($queue->pop(), 'Queued too many donations!');
+    SourceFields::removeFromMessage($contributionMessage);
+    $expectedDate = UtcDate::getUtcTimestamp();
+    $actualDate = $contributionMessage['date'];
+    $this->assertLessThan(100, abs($actualDate - $expectedDate));
+    unset($contributionMessage['date']);
+    $this->assertEquals([
+      'contact_id' => $contact['id'],
+      'currency' => 'EUR',
+      'gross' => '11.22',
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
       'effort_id' => 2,
@@ -543,11 +618,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token);
     $contribution = $this->createContribution($contributionRecur);
-    $originalInvoiceId = $contribution['invoice_id'];
-    $parts = explode('|', $originalInvoiceId);
-    list($ctId, $sequence) = explode('.', $parts[0]);
-    $expectedInvoiceId = $ctId . '.' . ($sequence + 1);
-    $nextInvoiceId = $ctId . '.' . ($sequence + 2);
+    list($ctId, $expectedInvoiceId, $nextInvoiceId) = $this->getExpectedIds($contribution);
     $response = $this->createPaymentResponse;
     $response['errors'] = [
       [
@@ -557,8 +628,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
         'httpStatusCode' => 409,
       ],
     ];
-    $domain = CRM_Core_BAO_Domain::getDomain();
-    $expectedDescription = "Monthly donation to $domain->name";
+    $expectedDescription = $this->getExpectedDescription();
     $firstCallParams = [
       'recurring_payment_token' => 'abc123-456zyx-test12',
       'amount' => '12.34',
@@ -620,5 +690,29 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
     ], $contributionMessage);
+  }
+
+  /**
+   * @param $contribution
+   *
+   * @return array
+   */
+  protected function getExpectedIds($contribution) {
+    $originalInvoiceId = $contribution['invoice_id'];
+    $parts = explode('|', $originalInvoiceId);
+    list($ctId, $sequence) = explode('.', $parts[0]);
+    $expectedInvoiceId = $ctId . '.' . ($sequence + 1);
+    $nextInvoiceId = $ctId . '.' . ($sequence + 2);
+    return [$ctId, $expectedInvoiceId, $nextInvoiceId];
+  }
+
+  /**
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  protected function getExpectedDescription() {
+    $domain = CRM_Core_BAO_Domain::getDomain();
+    $expectedDescription = "Monthly donation to $domain->name";
+    return $expectedDescription;
   }
 }

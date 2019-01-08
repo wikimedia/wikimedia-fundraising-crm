@@ -289,8 +289,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $ipAddress = isset($tokenData['ip_address']) ? $tokenData['ip_address'] : NULL;
 
     return [
-      'amount' => $previousContribution['total_amount'],
-      'currency' => $previousContribution['currency'],
+      'amount' => $recurringPayment['amount'],
+      'currency' => $recurringPayment['currency'],
       'first_name' => $donor['first_name'],
       'last_name' => $donor['last_name'],
       'email' => $donor['email'],
