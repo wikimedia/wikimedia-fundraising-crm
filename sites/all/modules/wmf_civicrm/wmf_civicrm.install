@@ -4705,3 +4705,40 @@ function wmf_civicrm_update_7810() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery("UPDATE civicrm_job SET is_active = 0 WHERE name = 'ProcessSmashPigRecurring'");
 }
+
+/**
+ * Fix records for recurring donations mistakenly charged in USD.
+ *
+ * Until 2019-01-09, we had been charging recurring Ingenico donations in
+ * USD, even when the original charge was in a foreign currency. And worse,
+ * we were recording the donation as if we had charged them in the foreign
+ * currency. This mismatch means the refund processor was freaking out
+ * when it saw a refund for these donations.
+ *
+ * We filter for only installments 2+ by looking at the last 10 digits of
+ * the transaction ID, which are 0000100001 for the first installment,
+ * 0000200001 for the second, etc. Initial payments were charged in the
+ * correct currency.
+ *
+ * Bug: T201473
+ */
+function wmf_civicrm_update_7815() {
+  civicrm_initialize();
+  $donationsToFix = CRM_Core_DAO::executeQuery("
+    SELECT id, total_amount FROM civicrm_contribution
+    WHERE trxn_id LIKE 'RECURRING INGENICO %'
+    AND receive_date < '2019-01-09'
+    AND LEFT(source, 3) <> 'USD'
+    AND RIGHT(trxn_id, 10) <> '0000100001'
+  ");
+  $origCurrencyField = wmf_civicrm_get_custom_field_name('original_currency');
+  $origAmountField = wmf_civicrm_get_custom_field_name('original_amount');
+  while ($donationsToFix->fetch()) {
+    civicrm_api3('Contribution', 'create', [
+      'id' => $donationsToFix->id,
+      'source' => "USD {$donationsToFix->total_amount}",
+      $origCurrencyField => 'USD',
+      $origAmountField => $donationsToFix->total_amount
+    ]);
+  }
+}
