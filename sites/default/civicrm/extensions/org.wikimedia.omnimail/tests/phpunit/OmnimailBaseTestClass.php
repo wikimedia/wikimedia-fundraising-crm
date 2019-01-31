@@ -138,9 +138,11 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
   public function createMailingProviderData() {
     $this->callAPISuccess('Campaign', 'create', array('name' => 'xyz', 'title' => 'Cool Campaign'));
     $this->callAPISuccess('Mailing', 'create', array('campaign_id' => 'xyz', 'hash' => 'xyz', 'name' => 'Mail'));
-    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_mailing_provider_data WHERE email IN (
-      'charlie@example.com', 'bob@example.com'
+
+    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_mailing_provider_data WHERE mailing_identifier IN (
+      'xyz', 'xyuuuz'
    )");
+
     $this->callAPISuccess('MailingProviderData', 'create',  array(
       'contact_id' => $this->contactIDs['charlie_clone'],
       'email' => 'charlie@example.com',
