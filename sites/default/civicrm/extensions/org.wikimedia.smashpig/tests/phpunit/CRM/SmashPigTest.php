@@ -398,7 +398,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
       new DateTime($contributionRecur['next_sched_contribution_date']),
       new DateTime($newContributionRecur['next_sched_contribution_date'])
     );
-    $this->assertGreaterThanOrEqual(28, $dateDiff->days);
+    $this->assertGreaterThanOrEqual(27, $dateDiff->days);
     $this->assertEquals(2, $newContributionRecur['installments']);
     $this->assertEquals(
       $contributionRecur['contribution_status_id'],
