@@ -43,11 +43,7 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals(1, count($contributions));
 
     $this->consumer->processMessage($refund_message->getBody());
-    $contributions = wmf_civicrm_get_contributions_from_gateway_id(
-      $refund_message->getGateway(),
-      $refund_message->getGatewayTxnId()
-    );
-    $this->assertEquals(1, count($contributions));
+    $this->callAPISuccessGetSingle('Contribution', ['id' => $contributions[0]['id'], 'contribution_status_id' => 'Chargeback']);
   }
 
   /**

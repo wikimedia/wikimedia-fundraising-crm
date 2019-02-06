@@ -3287,7 +3287,7 @@ function wmf_get_calculated_field_names() {
  * @param $op
  * @param $type
  * @param $id
- * @param $entity
+ * @param array $entity
  */
 function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
   switch($type) {
@@ -3297,6 +3297,13 @@ function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
   }
 }
 
+/**
+ * @param $op
+ * @param $id
+ * @param array $contribution
+ *
+ * @throws \WmfException
+ */
 function wmf_civicrm_civicrm_pre_Contribution($op, $id, &$contribution) {
   switch ($op) {
     case 'create':
