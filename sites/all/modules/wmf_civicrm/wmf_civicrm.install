@@ -4742,3 +4742,10 @@ function wmf_civicrm_update_7815() {
     ]);
   }
 }
+
+/**
+ * Enable Kam toolbar, civitutorial.
+ */
+function wmf_civicrm_update_7820() {
+  wmf_civicrm_reconcile_extensions();
+}
