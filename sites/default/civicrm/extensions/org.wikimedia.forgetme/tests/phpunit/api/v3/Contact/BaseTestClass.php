@@ -16,6 +16,13 @@ class api_v3_Contact_BaseTestClass extends \PHPUnit_Framework_TestCase implement
   protected $paymentProcessor = [];
 
   /**
+   * Ids created for test purposes.
+   *
+   * @var array
+   */
+  protected $ids = [];
+
+  /**
    * Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
    * See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
    */
@@ -44,6 +51,23 @@ class api_v3_Contact_BaseTestClass extends \PHPUnit_Framework_TestCase implement
    * This can be used for cleanup.
    */
   public function tearDown() {
+    foreach ($this->ids as $entity => $entityIDs) {
+      foreach ($entityIDs as $entityID) {
+        try {
+          if ($entity === 'Contact') {
+            $this->cleanUpContact($entityID);
+          }
+          else {
+            civicrm_api3($entity, 'delete', [
+              'id' => $entityID,
+            ]);
+          }
+        }
+        catch (CiviCRM_API3_Exception $e) {
+          // No harm done - it was a best effort cleanup
+        }
+      }
+    }
     parent::tearDown();
   }
 
@@ -97,6 +121,41 @@ class api_v3_Contact_BaseTestClass extends \PHPUnit_Framework_TestCase implement
     $params['financial_account_id'] = $financialAccountId;
     $result = civicrm_api3('PaymentProcessor', 'create', $params);
     return $result['values'][$result['id']];
+  }
+
+  /**
+   * Create a test contact and store the id to the $ids array.
+   *
+   * @param array $params
+   *
+   * @return int
+   */
+  public function createTestContact($params) {
+    $id = $this->callAPISuccess('Contact', 'create', $params)['id'];
+    $this->ids['Contact'][] = $id;
+    return $id;
+  }
+
+  /**
+   * Delete a contact fully.
+   *
+   * @param int $contactId
+   */
+  public function cleanUpContact($contactId) {
+    $contributions = $this->callAPISuccess('Contribution', 'get', array(
+      'contact_id' => $contactId,
+    ));
+    if (!empty($contributions['values'])) {
+      foreach ($contributions['values'] as $id => $details) {
+        $this->callAPISuccess('Contribution', 'delete', array(
+          'id' => $id,
+        ));
+      }
+    }
+    $this->callAPISuccess('Contact', 'delete', array(
+      'id' => $contactId,
+      'skip_undelete' => 1,
+    ));
   }
 
 }

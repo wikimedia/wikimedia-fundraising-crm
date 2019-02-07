@@ -17,7 +17,7 @@ class api_v3_Contact_ShowmeTest extends api_v3_Contact_BaseTestClass implements 
    */
   public function testApiShowme() {
 
-    $contact = $this->callAPISuccess('Contact', 'create', [
+    $contactID = $this->createTestContact([
       'first_name' => 'Buffy',
       'last_name' => 'Vampire Slayer',
       'contact_type' => 'Individual',
@@ -25,22 +25,22 @@ class api_v3_Contact_ShowmeTest extends api_v3_Contact_BaseTestClass implements 
       'api.phone.create' => [
         ['location_type_id' => 'Main', 'phone' => 911],
         ['location_type_id' => 'Home', 'phone' => '9887-99-99', 'is_billing' => 1],
-      ]
-    ]);
-    $contact2 = $this->callAPISuccess('Contact', 'create', [
+      ]]
+    );
+    $contact2ID = $this->createTestContact( [
       'first_name' => 'Buffy',
       'last_name' => 'Vampire Hugger',
       'contact_type' => 'Individual',
       'email' => 'garlicless@example.com',
      ]);
     $paymentToken = $this->createPaymentToken([
-        'contact_id' => $contact['id']]
+        'contact_id' => $contactID]
     );
     $paymentToken2 = $this->createPaymentToken([
-        'contact_id' => $contact2['id']]
+        'contact_id' => $contact2ID]
     );
 
-    $result = civicrm_api3('Contact', 'Showme', array('id' => $contact['id']))['values'][$contact['id']];
+    $result = civicrm_api3('Contact', 'Showme', array('id' => $contactID))['values'][$contactID];
     $this->assertEquals(1, count($result['PaymentToken' . $paymentToken['id']]));
     $this->assertArrayNotHasKey('PaymentToken' . $paymentToken2['id'], $result);
     $this->assertEquals('Buffy Vampire Slayer', $result['display_name']);
