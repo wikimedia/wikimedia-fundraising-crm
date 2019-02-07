@@ -24,7 +24,7 @@ class CRM_Relationshipblock_Utils_RelationshipBlock {
       'return' => ['id', 'relationship_type_id', 'contact_id_a', 'contact_id_b',
         'contact_id_a.display_name', 'contact_id_b.display_name', 'contact_id_a.is_deceased',
         'contact_id_b.is_deceased'],
-      'options' => ['limit' => 0, 'or' => [['contact_id_a', 'contact_id_b']]],
+      'options' => ['limit' => 0, 'sort' => 'relationship_type_id.label_a_b ASC', 'or' => [['contact_id_a', 'contact_id_b']]],
     ]);
     $ret = [];
     foreach ($existingRelationships['values'] as $rel) {

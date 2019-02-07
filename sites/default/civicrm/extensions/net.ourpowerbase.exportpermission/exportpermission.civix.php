@@ -453,8 +453,6 @@ function _exportpermission_civix_civicrm_alterSettingsFolders(&$metaDataFolders 
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_entityTypes
  */
-
 function _exportpermission_civix_civicrm_entityTypes(&$entityTypes) {
-  $entityTypes = array_merge($entityTypes, array (
-  ));
+  $entityTypes = array_merge($entityTypes, array());
 }

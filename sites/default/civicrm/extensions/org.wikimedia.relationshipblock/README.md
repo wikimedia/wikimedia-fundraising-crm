@@ -13,7 +13,7 @@ The extension is licensed under [AGPL-3.0](LICENSE.txt).
 ## Requirements
 
 * PHP v5.6+
-* CiviCRM 5.3+
+* CiviCRM 5.7+
 
 ## Installation (Web UI)
 
@@ -26,3 +26,7 @@ Once installed the extension will do nothing until you select one or more relati
 - Navigate to **Administer -> Customize Data & Screens -> Relationship Types** and click edit on a desired relationship type.
 - Select "Display block on contact summary." for that relationship type.
 - Now you can visit a contact to view and edit their key relationships.
+
+### Extras
+
+- To change the position of the block on the contact summary screen, install the [Contact Layout Editor](https://github.com/civicrm/org.civicrm.contactlayout) extension.

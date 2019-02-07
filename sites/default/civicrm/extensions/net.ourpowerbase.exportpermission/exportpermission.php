@@ -7,8 +7,8 @@ require_once 'exportpermission.civix.php';
 function exportpermission_civicrm_permission(&$permissions) {
   $prefix = ts('CiviCRM Export Permissions') . ': ';
   $permissions[EXPORT_PERMISSION_NAME] = array(
-    $prefix . ts('access export menu'),                     // label
-    ts('Access export drop down menu item from actions menu after search'),  // description
+    $prefix . ts('access export menu'),
+    ts('Access export drop down menu item from actions menu after search'),
   );
 }
 
