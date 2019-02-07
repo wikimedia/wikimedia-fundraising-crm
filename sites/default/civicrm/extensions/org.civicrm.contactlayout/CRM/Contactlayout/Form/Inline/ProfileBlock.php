@@ -58,7 +58,7 @@ class CRM_Contactlayout_Form_Inline_ProfileBlock extends CRM_Profile_Form_Edit {
       }
     }
 
-    // Profile forms do not add tag sets
+    // Add tag sets (profiles in core don't support this)
     if ($this->elementExists('tag')) {
       $parentNames = CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
       CRM_Core_Form_Tag::buildQuickForm($this, $parentNames, 'civicrm_contact', $this->_id, FALSE, TRUE);
@@ -97,7 +97,7 @@ class CRM_Contactlayout_Form_Inline_ProfileBlock extends CRM_Profile_Form_Edit {
    * @throws CiviCRM_API3_Exception
    */
   public function postProcess() {
-    $values = $origValues = $this->exportValues();
+    $values = $origValues = $this->controller->exportValues($this->_name);
     // Ignore value from contact id field
     unset($values['id']);
     $values['contact_id'] = $cid = $this->_id;
@@ -109,6 +109,10 @@ class CRM_Contactlayout_Form_Inline_ProfileBlock extends CRM_Profile_Form_Edit {
     $this->processEmployer($values);
     if (isset($values['group'])) {
       $this->processGroups($values);
+    }
+    // Process image
+    if (!empty($values['image_URL'])) {
+      CRM_Contact_BAO_Contact::processImageParams($values);
     }
     civicrm_api3('Profile', 'submit', $values);
 
