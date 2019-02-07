@@ -55,6 +55,7 @@ class OmnirecipientEraseTest extends OmnimailBaseTestClass implements EndToEndIn
       'client_id' => 'secrethandshake',
       'client_secret' => 'waggleleftthumb',
       'refresh_token' => 'thenrightone',
+      'database_id' => 50,
     ])['values'];
 
     $requests = $this->getRequestBodies();
