@@ -53,6 +53,7 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
     foreach ($this->contactIDs as $contactID) {
       $this->callAPISuccess('Contact', 'delete', ['id' => $contactID, 'skip_undelete' => 1]);
     }
+    $this->cleanupMailingData();
     parent::tearDown();
   }
 
@@ -137,11 +138,7 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
 
   public function createMailingProviderData() {
     $this->callAPISuccess('Campaign', 'create', array('name' => 'xyz', 'title' => 'Cool Campaign'));
-    $this->callAPISuccess('Mailing', 'create', array('campaign_id' => 'xyz', 'hash' => 'xyz', 'name' => 'Mail'));
-
-    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_mailing_provider_data WHERE mailing_identifier IN (
-      'xyz', 'xyuuuz'
-   )");
+    $this->callAPISuccess('Mailing', 'create', array('campaign_id' => 'xyz', 'hash' => 'xyz', 'name' => 'Mail Unit Test'));
 
     $this->callAPISuccess('MailingProviderData', 'create',  array(
       'contact_id' => $this->contactIDs['charlie_clone'],
@@ -166,6 +163,16 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
       'recipient_action_datetime' => '2017-04-04',
       'contact_identifier' => 'c',
     ));
+  }
+
+  /**
+   * Cleanup test setup data.
+   */
+  protected function cleanupMailingData() {
+    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_mailing_provider_data WHERE mailing_identifier IN (
+      'xyz', 'xyuuuz'
+   )");
+    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_mailing WHERE name = 'Mail Unit Test'");
   }
 
   protected function makeScientists() {
