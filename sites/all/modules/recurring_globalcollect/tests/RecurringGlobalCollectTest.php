@@ -38,11 +38,11 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->contributions = [];
 
-    $result = civicrm_api3('Contact', 'create', [
+    $contactID = $this->createTestContact( [
       'first_name' => 'Testes',
       'contact_type' => 'Individual',
     ]);
-    $this->contactId = $result['id'];
+    $this->contactId = $contactID;
 
     $result = civicrm_api3('ContributionRecur', 'create', [
       'contact_id' => $this->contactId,

@@ -57,12 +57,11 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   public function testGetGatewaySubscription() {
-    // TODO: fixtures
-    $result = civicrm_api3('Contact', 'create', [
+    $contactID = $this->createTestContact([
       'first_name' => 'Testes',
       'contact_type' => 'Individual',
     ]);
-    $this->contact_id = $result['id'];
+    $this->contact_id = $contactID;
 
     $subscription_id_1 = 'SUB_FOO-' . mt_rand();
     $recur_values = [
@@ -76,7 +75,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'currency' => 'USD',
       'trxn_id' => "RECURRING TESTGATEWAY {$subscription_id_1}",
     ];
-    $result = civicrm_api3('ContributionRecur', 'create', $recur_values);
+    $this->callAPISuccess('ContributionRecur', 'create', $recur_values);
 
     $record = wmf_civicrm_get_gateway_subscription('TESTGATEWAY', $subscription_id_1);
 

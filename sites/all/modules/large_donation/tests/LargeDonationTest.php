@@ -41,11 +41,11 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
       ))
       ->execute();
 
-    $result = $this->callAPISuccess('Contact', 'create', array(
+    $contactID = $this->createTestContact([
       'contact_type' => 'Individual',
       'first_name' => 'Testes',
-    ));
-    $this->contact_id = $result['id'];
+    ]);
+    $this->contact_id = $contactID;
     // https://api.drupal.org/api/drupal/includes%21bootstrap.inc/function/drupal_static_reset/7.x
     drupal_static_reset('large_donation_get_minimum_threshold');
     drupal_static_reset('large_donation_get_notification_thresholds');

@@ -22,11 +22,11 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->campaign_key = 'fooCamp' . mt_rand();
         $this->notification_email = 'notifee@localhost.net';
 
-        $result = civicrm_api3( 'Contact', 'create', array(
-            'contact_type' => 'Individual',
-            'first_name' => 'Testes',
-        ) );
-        $this->contact_id = $result['id'];
+       $contactID = $this->createTestContact( [
+          'contact_type' => 'Individual',
+          'first_name' => 'Testes',
+        ]);
+        $this->contact_id = $contactID;
 
         db_merge( 'wmf_campaigns_campaign' )
             ->key( array( 'campaign_key' => $this->campaign_key ) )

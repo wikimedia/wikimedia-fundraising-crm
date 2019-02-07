@@ -208,7 +208,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
         'last_name' => 'Strange',
         'external_identifier' => 'oh so strange',
       );
-      $this->callAPISuccess('Contact', 'create', $contact);
+      $this->createTestContact($contact);
       try {
         civicrm_api3('Contact', 'create', $contact);
       }

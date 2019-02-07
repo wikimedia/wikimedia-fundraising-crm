@@ -9,6 +9,13 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
 
   protected $startTimestamp;
 
+  /**
+   * Ids created for test purposes.
+   *
+   * @var array
+   */
+  protected $ids = [];
+
   public function setUp() {
     parent::setUp();
 
@@ -43,9 +50,39 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
   }
 
   public function tearDown() {
+    foreach ($this->ids as $entity => $entityIDs) {
+      foreach ($entityIDs as $entityID) {
+        try {
+          if ($entity === 'Contact') {
+            $this->cleanUpContact($entityID);
+          }
+          else {
+            civicrm_api3($entity, 'delete', [
+              'id' => $entityID,
+            ]);
+          }
+        }
+        catch (CiviCRM_API3_Exception $e) {
+          // No harm done - it was a best effort cleanup
+        }
+      }
+    }
     TestingDatabase::clearStatics();
     Context::set(NULL); // Nullify any SmashPig context for the next run
     parent::tearDown();
+  }
+
+  /**
+   * Create a test contact and store the id to the $ids array.
+   *
+   * @param array $params
+   *
+   * @return int
+   */
+  public function createTestContact($params) {
+    $id = $this->callAPISuccess('Contact', 'create', $params)['id'];
+    $this->ids['Contact'][] = $id;
+    return $id;
   }
 
   /**
