@@ -174,7 +174,7 @@ function drush_civicrm_repair_process_rows($startDate, $batch_size = 5000) {
         AND mp.event_type = mp2.event_type  AND mp.recipient_action_datetime < mp2.recipient_action_datetime
 
       WHERE mp2.`contact_identifier` IS NOT NULL
-      AND TIMESTAMPDIFF(MINUTE,mp.recipient_action_datetime , mp2.recipient_action_datetime) = 480 #8 hours exactly after daylight savings
+      AND TIMESTAMPDIFF(MINUTE,mp.recipient_action_datetime , mp2.recipient_action_datetime) = 300 #5 hours exactly after daylight savings
       AND mp.event_type = 'Sent'
       AND mp.recipient_action_datetime BETWEEN %1 AND %2
     ";
@@ -196,7 +196,7 @@ function drush_civicrm_repair_process_rows($startDate, $batch_size = 5000) {
          ";
       $sqls[] = "
          UPDATE civicrm_mailing_provider_data 
-         SET recipient_action_datetime = DATE_ADD(recipient_action_datetime, INTERVAL 13 HOUR)
+         SET recipient_action_datetime = DATE_ADD(recipient_action_datetime, INTERVAL 10 HOUR)
          WHERE
            contact_identifier = {$result->ci2}
            AND recipient_action_datetime = '{$result->date_time2}'
