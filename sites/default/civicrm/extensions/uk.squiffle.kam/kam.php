@@ -31,9 +31,13 @@ function kam_civicrm_coreResourceList(&$list, $region) {
         ->addScriptFile('uk.squiffle.kam', $path . 'addons/keyboard/jquery.smartmenus.keyboard.js', -98, 'html-header')
         ->addScriptFile('uk.squiffle.kam', 'js/crm.menubar.js', -97, 'html-header');
       $list[] = [
-        'config' => ['locale' => CRM_Core_I18n::getLocale()],
+        'config' => [
+          'locale' => CRM_Core_I18n::getLocale(),
+          'cid' => $contactID,
+        ],
         'menubar' => [
-          'position' => $position,
+          // FIXME: Providing the default explicitly should not be necessary but sometimes the 'menubar_position' setting seems to disappear
+          'position' => $position ?: 'over-cms-menu',
           'qfKey' => CRM_Core_Key::get('CRM_Contact_Controller_Search', TRUE),
         ],
       ];
