@@ -149,6 +149,8 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
  * @param array $msg
  *
  * @return array Contribution as inserted
+ *
+ * @throws \WmfException
  */
 function wmf_civicrm_contribution_message_import(&$msg) {
   civicrm_initialize();

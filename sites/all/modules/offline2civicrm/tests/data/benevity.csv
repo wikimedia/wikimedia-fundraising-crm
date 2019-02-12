@@ -1,5 +1,5 @@
-Participating Corporation,Project,Date of Donation,Donor First Name,Donor Last Name,Email,Address,City,State/Province,Postal Code,Comment,Transaction ID,Donation Frequency,Donation Amount,Matched Amount,Total
-Donald Duck Inc,,2015-11-01,Hewey,Duck,hewey@duck.org,2 Quacker Road,Duckville,CA,90210,,trxn-QUACK,One-time,"1,200",0.00,"1,200"
-Mickey Mouse Inc,WIKIPEDIA,2015-11-02,Minnie,Mouse,minnie@mouse.org,2 Cheesey Place,Mouseville,CA,90210,,trxn-SQUEAK,One-time,100,100,200
-Goofy Inc,,2015-11-02,Pluto,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,90210,,trxn-WOOF,One-time,22.00,25.00,47
-Uncle Scrooge Inc,,2015-11-02,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,90210,Very stingy,trxn-AARF,Recurring,0.00,0.5,0.5
+Company,Project,Donation Date,Donor First Name,Donor Last Name,Email,Address,City,State/Province,Postal Code,Activity,Comment,Transaction ID,Donation Frequency,Currency,Donation Amount,Donation Fee,Match Amount,Match Fee,Merchant Fee,Net total
+Donald Duck Inc,,2015-11-01T23:09:28Z,Hewey,Duck,hewey@duck.org,2 Quacker Road,Duckville,CA,90210,,,trxn-QUACK,One Time,USD,1200,5.5,0,0,5.5,1189
+Mickey Mouse Inc,WIKIPEDIA,2015-11-02T00:07:05Z,Minnie,Mouse,minnie@mouse.org,2 Cheesey Place,Mouseville,CA,90210,,,trxn-SQUEAK,Recurring,USD,100,0.05,100,0.05,0,199
+Goofy Inc,,2015-11-02T00:09:36Z,Pluto,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,90210,,,trxn-WOOF,Unspecified,USD,22,0,25,0,1.59,45.31
+Uncle Scrooge Inc,,2015-11-02T00:18:07Z,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,90210,,Very stingy,trxn-AARF,Recurring,USD,0,0.05,.5,0.28,0,11.42

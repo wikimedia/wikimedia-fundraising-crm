@@ -804,9 +804,14 @@ class BenevityTest extends BaseChecksFileTest {
     $messages = $this->importBenevityFile();
     $this->assertEquals('All rows were imported', $messages['Result']);
 
+    $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY trxn-QUACK'));
+    $this->assertEquals(11, $contribution['fee_amount']);
+    $this->assertEquals(1189, $contribution['net_amount']);
+
     $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY trxn-WOOF'));
     $this->assertEquals(22, $contribution['total_amount']);
-    $this->assertEquals(22, $contribution['net_amount']);
+    $this->assertEquals(20.41, $contribution['net_amount']);
+    $this->assertEquals(1.59, $contribution['fee_amount']);
 
     // Our dog has very little details, a new contact will have been created for Pluto.
     // It should have an address & a relationship & be soft-credited.
@@ -823,23 +828,29 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals(1, $relationships['count']);
 
     $orgContributions = $this->callAPISuccess('Contribution', 'get', array('trxn_id' => 'BENEVITY TRXN-WOOF_MATCHED'));
+    $goofyIncContribution = $orgContributions['values'][$orgContributions['id']];
     // The first row has a matching contribution.
     $this->assertEquals(1, $orgContributions['count']);
-    $this->assertEquals(25, $orgContributions['values'][$orgContributions['id']]['total_amount']);
-    $this->assertEquals(25, $orgContributions['values'][$orgContributions['id']]['net_amount']);
-    $this->assertEquals('Goofy Inc', $orgContributions['values'][$orgContributions['id']]['display_name']);
-    $this->assertEquals($dogContact['id'], $orgContributions['values'][$orgContributions['id']]['soft_credit_to']);
+    $this->assertEquals(25, $goofyIncContribution['total_amount']);
+    $this->assertEquals(0, $goofyIncContribution['fee_amount']);
+    $this->assertEquals(25, $goofyIncContribution['net_amount']);
+    $this->assertEquals('Goofy Inc', $goofyIncContribution['display_name']);
+    $this->assertEquals($dogContact['id'], $goofyIncContribution['soft_credit_to']);
 
     $contribution = $this->callAPISuccess('Contribution', 'get', array('trxn_id' => 'BENEVITY TRXN-AARF'));
     $this->assertEquals(0, $contribution['count']);
 
     $orgContributions = $this->callAPISuccess('Contribution', 'get', array('trxn_id' => 'BENEVITY TRXN-AARF_MATCHED'));
+    $mcScrougeGift = $orgContributions['values'][$orgContributions['id']];
     $this->assertEquals(1, $orgContributions['count']);
-    $this->assertEquals(.5, $orgContributions['values'][$orgContributions['id']]['total_amount']);
+    $this->assertEquals(.5, $mcScrougeGift['total_amount']);
+    $this->assertEquals('2015-11-02 00:18:07', $mcScrougeGift['receive_date']);
+    $this->assertEquals(.28, $mcScrougeGift['fee_amount']);
+    $this->assertEquals(.22, $mcScrougeGift['net_amount']);
 
     // No address should have been created for the organization.
     $organizationAddress = $this->callAPISuccess('Address', 'get', array(
-        'contact_id' => $orgContributions['values'][$orgContributions['id']]['contact_id'],
+        'contact_id' => $mcScrougeGift['contact_id'],
       )
     );
     $this->assertEquals(0, $organizationAddress['count']);
