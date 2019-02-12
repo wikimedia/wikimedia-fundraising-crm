@@ -207,20 +207,31 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
     $this->contactIDs['isaac'] = $contact['id'];
   }
 
-  protected function setUpForErase() {
-    $this->createMockHandlerForFiles([
+  /**
+   * Set up the mock handler for an erase request.
+   *
+   * @param int $connectionCount
+   */
+  protected function setUpForErase($connectionCount = 1) {
+    $files = ['/Responses/AuthenticateRestResponse.txt'];
+    $i = 0;
+    while ($i < $connectionCount) {
       // These files consist of the Authenticate request and the 'status pending'.
       // which is re-tried a handful of times. We never get a reply because in my tests it took
       // > 15 mins & our process won't hang around for that.
-      '/Responses/AuthenticateRestResponse.txt',
-      '/Responses/Privacy/PrivacyRequest1.txt',
-      '/Responses/Privacy/PrivacyRequest2.txt',
-      '/Responses/Privacy/PrivacyRequest2.txt',
-      '/Responses/Privacy/PrivacyRequest2.txt',
-      '/Responses/Privacy/PrivacyRequest2.txt',
-      '/Responses/Privacy/PrivacyRequest2.txt',
-      '/Responses/Privacy/PrivacyRequest2.txt',
-    ]);
+      array_push($files,
+        '/Responses/Privacy/EraseInitialResponse.txt',
+        '/Responses/Privacy/EraseInProgressResponse.txt',
+        '/Responses/Privacy/EraseInProgressResponse.txt',
+        '/Responses/Privacy/EraseInProgressResponse.txt',
+        '/Responses/Privacy/EraseInProgressResponse.txt',
+        '/Responses/Privacy/EraseInProgressResponse.txt',
+        '/Responses/Privacy/EraseInProgressResponse.txt'
+      );
+      $i++;
+    }
+
+    $this->createMockHandlerForFiles($files);
     $this->setUpClientWithHistoryContainer();
   }
 

@@ -46,7 +46,7 @@ class OmnirecipientEraseTest extends OmnimailBaseTestClass implements EndToEndIn
    * Example: Test that a version is returned.
    */
   public function testOmnirecipientErase() {
-    $this->setUpForErase();
+    $this->setUpForErase(2);
 
     $this->callAPISuccess('Omnirecipient', 'erase', [
       'mail_provider' => 'Silverpop',
@@ -55,7 +55,7 @@ class OmnirecipientEraseTest extends OmnimailBaseTestClass implements EndToEndIn
       'client_id' => 'secrethandshake',
       'client_secret' => 'waggleleftthumb',
       'refresh_token' => 'thenrightone',
-      'database_id' => 50,
+      'database_id' => [1, 2],
     ])['values'];
 
     $requests = $this->getRequestBodies();

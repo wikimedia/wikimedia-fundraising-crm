@@ -1,0 +1,1 @@
+{ "meta":{"attributes":{},"generalErrors":[],"fieldErrors":{},"links":[],"nextPageUrl":null},"data":{"databaseId":50,"timestamp":"2019-02-05T16:03:52.658Z","contacts":[{"contactFound":false,"gdprIdentifiers":[{"name":"Email","value":"demo@example.com"}]}]}}

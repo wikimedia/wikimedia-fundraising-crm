@@ -50,6 +50,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass implements EndToEn
 
     $this->assertEquals(1, $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs['charlie_clone']]));
 
+    $settings = $this->setDatabaseID([50]);
     $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->contactIDs['charlie_clone']]);
 
     $this->assertEquals(0, $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs['charlie_clone']]));
@@ -57,6 +58,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass implements EndToEn
     // Check the request we sent out had the right email in it.
     $requests = $this->getRequestBodies();
     $this->assertEquals($requests[1], "Email,charlie@example.com\n");
+    Civi::settings()->set('omnimail_credentials', $settings);
   }
 
   /**
@@ -68,12 +70,14 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass implements EndToEn
     $this->makeScientists();
     $this->setUpForErase();
     $this->addTestClientToRestSingleton();
+    $settings = $this->setDatabaseID([50]);
 
     $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->contactIDs['charlie_clone']]);
 
     // Check the request we sent out had the right email in it.
     $requests = $this->getRequestBodies();
-    $this->assertEquals($requests[1], "Email,charlie@example.com\n");
+    $this->assertEquals($requests[1], "Email,charlie@example.com\n", print_r($requests, 1));
+    Civi::settings()->set('omnimail_credentials', $settings);
   }
 
   /**
@@ -87,6 +91,23 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass implements EndToEn
     $restConnector = SilverpopRestConnector::getInstance();
     $this->setUpClientWithHistoryContainer();
     $restConnector->setClient($this->getGuzzleClient());
+  }
+
+  /**
+   * Ensure there is a database id setting.
+   *
+   * @param array $databaseIDs
+   *
+   * @return array
+   *   Settings prior to change
+   */
+  protected function setDatabaseID($databaseIDs = [50]) {
+    $settings = Civi::settings()->get('omnimail_credentials');
+    // This won't actually work if settings is set in civicrm.settings.php but will be used by CI
+    // which now will skip erase if it doesn't have any database_id
+    Civi::settings()
+      ->set('omnimail_credentials', ['Silverpop' => array_merge(CRM_Utils_Array::value('Silverpop', $settings, []), ['database_id' => $databaseIDs])]);
+    return $settings;
   }
 
 }
