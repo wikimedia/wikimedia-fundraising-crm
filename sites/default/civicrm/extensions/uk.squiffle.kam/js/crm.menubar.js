@@ -11,14 +11,14 @@
     attachTo: (CRM.menubar && CRM.menubar.position === 'above-crm-container') ? '#crm-container' : 'body',
     initialize: function() {
       var cache = CRM.cache.get('menubar');
-      if (cache && cache.code === CRM.config.menuCacheCode && cache.locale === CRM.config.locale && localStorage.civiMenubar) {
+      if (cache && cache.code === CRM.config.menuCacheCode && cache.locale === CRM.config.locale && cache.cid === CRM.config.cid && localStorage.civiMenubar) {
         CRM.menubar.data = cache.data;
         insert(localStorage.civiMenubar);
       } else {
-        $.getJSON(CRM.url('civicrm/ajax/navmenu', {c: CRM.config.menuCacheCode, l: CRM.config.locale}))
+        $.getJSON(CRM.url('civicrm/ajax/navmenu', {code: CRM.config.menuCacheCode, locale: CRM.config.locale, cid: CRM.config.cid}))
           .done(function(data) {
             var markup = getTpl('tree')(data);
-            CRM.cache.set('menubar', {code: CRM.config.menuCacheCode, locale: CRM.config.locale, data: data});
+            CRM.cache.set('menubar', {code: CRM.config.menuCacheCode, locale: CRM.config.locale, cid: CRM.config.cid, data: data});
             CRM.menubar.data = data;
             localStorage.setItem('civiMenubar', markup);
             insert(markup);
@@ -352,10 +352,14 @@
         $('#crm-qsearch-input').attr({name: value, placeholder: '\uf002 ' + label});
       }
       $('.crm-quickSearchField').click(function() {
-        $('input', this).prop('checked', true);
-        CRM.cache.set('quickSearchField', $('input', this).val());
-        setQuickSearchValue();
-        $('#crm-qsearch-input').focus().autocomplete("search");
+        var input = $('input', this);
+        // Wait for event - its default was prevented by our link handler which interferes with checking the radio input
+        window.setTimeout(function() {
+          input.prop('checked', true);
+          CRM.cache.set('quickSearchField', input.val());
+          setQuickSearchValue();
+          $('#crm-qsearch-input').focus().autocomplete("search");
+        }, 1);
       });
       $('.crm-quickSearchField input[value="' + CRM.cache.get('quickSearchField', 'sort_name') + '"]').prop('checked', true);
       setQuickSearchValue();

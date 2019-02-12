@@ -40,9 +40,6 @@ function civicrm_api3_payment_token_forgetme($params) {
       'contact_id' => $params['contact_id'],
       'payment_processor_id' => $paymentToken['payment_processor_id'],
       'email' => '',
-      'billing_first_name' => '',
-      'billing_middle_name' => '',
-      'billing_last_name' => '',
       'masked_account_number' => '',
       'ip_address' => '',
     ]);

@@ -4604,8 +4604,7 @@ function wmf_civicrm_update_7781() {
       AND cr_right.amount = x.original_amount
       AND (cr_right.end_date IS NULL OR cr_right.end_date > '2018-09-01')
       AND (cr_right.trxn_id LIKE 'S-%')
-    SET c.contribution_recur_id = cr_right.id,
-      c.note = 'T209008'
+    SET c.contribution_recur_id = cr_right.id
     WHERE c.trxn_id LIKE 'RECURRING PAYPAL%'
     AND c.id > 31850000
   ");

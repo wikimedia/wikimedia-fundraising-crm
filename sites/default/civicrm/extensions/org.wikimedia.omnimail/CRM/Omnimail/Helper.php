@@ -23,7 +23,7 @@ class CRM_Omnimail_Helper {
    * @return array
    */
   public static function getCredentials($params) {
-    $credentialKeys = ['username', 'password', 'client_id', 'client_secret', 'refresh_token'];
+    $credentialKeys = ['username', 'password', 'client_id', 'client_secret', 'refresh_token', 'database_id'];
     if ((!isset($params['username']) || !isset($params['password']))
       // The latter 3 are required for Rest.
       && (!isset($params['client_id']) || !isset($params['client_secret']) || !isset($params['refresh_token']) )
