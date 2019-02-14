@@ -272,6 +272,82 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
   }
 
+/**
+   * Test no_thank_you field being set for recurring after first payment
+   *
+   * @group nothankyou
+   */
+  public function testRecurringNoThankYou() {
+    // setup
+    $fixture = CiviFixtures::createContact();
+    CiviFixtures::createPaymentProcessor('test_gateway', $fixture);
+    $token = 'TEST-RECURRING-TOKEN-' . mt_rand();
+
+    // create the recurring payment
+    $firstMessage = [
+      'contact_id' => $fixture->contact_id,
+      'currency' => 'USD',
+      'date' => time(),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      // recurring contribution payment token fields below
+      'recurring_payment_token' => $token,
+      'recurring' => 1,
+    ];
+
+    //import contribution message containing populated recurring and recurring_payment_token fields
+    //this should result in a new contribution, recurring contribution and payment token record.
+    $firstContribution = wmf_civicrm_contribution_message_import($firstMessage);
+
+    $firstContributionExtra =
+      wmf_civicrm_get_contributions_from_contribution_id($firstContribution['id']);
+
+    //check that no_thank_you is not set to recurring for the first payment
+    $this->assertNotEquals($firstContributionExtra[0]['no_thank_you'],
+      'recurring');
+
+    $firstRecurringRecord =
+      wmf_civicrm_get_gateway_subscription('test_gateway',
+        $firstMessage['gateway_txn_id']);
+
+    //charge the second payment
+    $secondMessage = [
+      'currency' => 'USD',
+      'date' => time(),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '2.34',
+      'payment_method' => 'cc',
+      'contribution_recur_id' => $firstRecurringRecord->id,
+      'recurring' => 1,
+    ];
+
+    $secondContribution =
+      wmf_civicrm_contribution_message_import($secondMessage);
+
+    $secondContributionExtra =
+      wmf_civicrm_get_contributions_from_contribution_id($secondContribution['id']);
+
+    //check that no_thank_you is set to recurring for the second payment
+    $this->assertEquals($secondContributionExtra[0]['no_thank_you'],
+      'recurring');
+
+    //clean up recurring contribution records using fixture tear down destruct process
+    $fixture->contribution_id = $firstContribution['id'];
+    $fixture->contribution_recur_id = $firstRecurringRecord->id;
+
+    civicrm_api3('Contribution', 'delete', [
+      'id' => $secondContribution['id'],
+    ]);
+
+    //clean up test payment token record
+    civicrm_api3('PaymentToken', 'delete', [
+      'id' => $firstRecurringRecord->payment_token_id,
+    ]);
+  }
+
   /**
    * @param $fixture
    */

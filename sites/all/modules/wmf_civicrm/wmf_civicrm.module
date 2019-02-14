@@ -262,6 +262,19 @@ function wmf_civicrm_contribution_message_import(&$msg) {
     $msg['soft_credit_to_id'] = $soft_credit_contact['id'];
   }
 
+  // Set no_thank_you to recurring if its the 2nd+ of any recurring payments
+  if (!$initial_recurring && $msg['contribution_recur_id']) {
+    //check for previous recurring payments
+    $recurring_check = civicrm_api3('Contribution', 'getcount', [
+      'contribution_recur_id' => $msg['contribution_recur_id'],
+    ]);
+
+    //If there's at least 1, set no_thank_you to recurring
+    if ($recurring_check >= 1) {
+      $msg['no_thank_you'] = 'recurring';
+    }
+  }
+
   // Insert the contribution record.
   $contribution = _wmf_civicrm_message_contribution_insert($msg);
 
