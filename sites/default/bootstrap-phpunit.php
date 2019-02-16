@@ -1,5 +1,8 @@
 <?php
-
+$templateDir = tempnam(sys_get_temp_dir(), 'crmunit');
+unlink($templateDir);
+mkdir($templateDir);
+define('CIVICRM_TEMPLATE_COMPILEDIR', $templateDir);
 define('WMF_CRM_PHPUNIT', TRUE);
 define('DRUPAL_ROOT', realpath(__DIR__) . "/../../drupal");
 require_once(DRUPAL_ROOT . "/sites/all/modules/wmf_common/tests/includes/BaseWmfDrupalPhpUnitTestCase.php");
