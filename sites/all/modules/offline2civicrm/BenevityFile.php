@@ -9,13 +9,13 @@ class BenevityFile extends ChecksFile {
 
   function getRequiredColumns() {
     return array(
-      'Participating Corporation',
-      'Date of Donation',
+      'Company',
+      'Donation Date',
       'Donor First Name',
       'Donor Last Name',
       'Email',
       'Donation Amount',
-      'Matched Amount',
+      'Match Amount',
       'Transaction ID',
     );
   }
@@ -67,6 +67,9 @@ class BenevityFile extends ChecksFile {
     }
 
     $msg['gross'] = $this->getUSDAmount($msg['original_gross']);
+    if (!empty($msg['merchant_fee_amount'])) {
+      $msg['fee'] = $msg['merchant_fee_amount'] + (empty($msg['fee']) ? 0 : $msg['fee']);
+    }
 
     $msg['employer_id'] = $this->getOrganizationID($msg['matching_organization_name']);
     // If we let this go through the individual will be treated as an organization.
@@ -154,9 +157,9 @@ class BenevityFile extends ChecksFile {
    */
   protected function getFieldMapping() {
     $mapping = parent::getFieldMapping();
-    $mapping['Participating Corporation'] = 'matching_organization_name';
+    $mapping['Company'] = 'matching_organization_name';
     // $mapping['Project'] = field just contains 'Wikimedia' intermittantly. Ignore.
-    $mapping['Date of Donation'] = 'date';
+    $mapping['Donation Date'] = 'date';
     $mapping['Donor First Name'] = 'first_name';
     $mapping['Donor Last Name'] = 'last_name';
     $mapping['Email'] = 'email';
@@ -169,10 +172,13 @@ class BenevityFile extends ChecksFile {
     // Not sure we need this - notes currently used for comments but few of them.
     // $mapping['Donation Frequency'] = 'notes';
     $mapping['Donation Amount'] = 'original_gross';
-    $mapping['Matched Amount'] = 'original_matching_amount';
+    $mapping['Match Amount'] = 'original_matching_amount';
+    $mapping['Currency'] = 'currency';
+    $mapping['Donation Fee'] = 'fee';
+    $mapping['Match Fee'] = 'matching_fee_amount';
+    $mapping['Merchant Fee'] = 'merchant_fee_amount';
     return $mapping;
   }
-
   /**
    * Do the actual import.
    *
@@ -206,6 +212,7 @@ class BenevityFile extends ChecksFile {
       $matchedMsg['gateway_txn_id'] = $msg['gateway_txn_id'] . '_matched';
       $matchedMsg['gift_source'] = 'Matching Gift';
       $matchedMsg['restrictions'] = 'Restricted - Foundation';
+      $matchedMsg['fee'] = (isset($msg['matching_fee_amount']) ? $msg['matching_fee_amount'] : 0);
       $this->unsetAddressFields($matchedMsg);
       $matchingContribution = wmf_civicrm_contribution_message_import($matchedMsg);
     }
