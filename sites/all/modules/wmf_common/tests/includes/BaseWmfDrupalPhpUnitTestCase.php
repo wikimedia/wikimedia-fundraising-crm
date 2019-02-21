@@ -56,6 +56,9 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
           if ($entity === 'Contact') {
             $this->cleanUpContact($entityID);
           }
+          elseif ($entity === 'PaymentProcessor') {
+            $this->cleanupPaymentProcessor($entityID);
+          }
           else {
             civicrm_api3($entity, 'delete', [
               'id' => $entityID,
@@ -240,18 +243,45 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
     ));
     if (!empty($contributions['values'])) {
       foreach ($contributions['values'] as $id => $details) {
-        $this->callAPISuccess('Contribution', 'delete', array(
-          'id' => $id,
-        ));
-
-        db_delete('contribution_tracking')
-          ->condition('contribution_id', $id)
-          ->execute();
+        $this->cleanupContribution($id);
       }
     }
     $this->callAPISuccess('Contact', 'delete', array(
       'id' => $contactId,
     ));
+  }
+
+  /**
+   * Clean up any payment processor rows
+   *
+   * @param int $processorID
+   */
+  public function cleanupPaymentProcessor($processorID) {
+    $contributionRecurs = $this->callAPISuccess('ContributionRecur', 'get', [
+      'payment_processor_id' => $processorID,
+    ])['values'];
+    if (!empty($contributionRecurs)) {
+      foreach ($contributionRecurs as $id => $details) {
+        $contributions = $this->callAPISuccess('Contribution', 'get', [
+          'contribution_recur_id' => $id,
+        ])['values'];
+        if (!empty($contributions)) {
+          foreach (array_keys($contributions) as $contributionID) {
+            $this->cleanupContribution($contributionID);
+          }
+        }
+        $this->callAPISuccess('ContributionRecur', 'delete', ['id' => $id]);
+      }
+    }
+    $paymentTokens = $this->callAPISuccess('PaymentToken', 'get', [
+      'payment_processor_id' => $processorID,
+    ])['values'];
+    if (!empty($paymentTokens)) {
+      foreach ($paymentTokens as $id => $details) {
+        $this->callAPISuccess('PaymentToken', 'delete', ['id' => $id]);
+      }
+    }
+    $this->callAPISuccess('PaymentProcessor', 'delete', ['id' => $processorID]);
   }
 
   /**
@@ -321,4 +351,20 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
 
     throw $e;
   }
+
+  /**
+   * Clean up a contribution
+   *
+   * @param int $id
+   */
+  protected function cleanupContribution($id) {
+    $this->callAPISuccess('Contribution', 'delete', [
+      'id' => $id,
+    ]);
+
+    db_delete('contribution_tracking')
+      ->condition('contribution_id', $id)
+      ->execute();
+  }
+
 }
