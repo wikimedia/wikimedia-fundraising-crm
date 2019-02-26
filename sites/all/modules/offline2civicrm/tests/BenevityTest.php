@@ -897,9 +897,9 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals('EUR 100', $contribution['contribution_source']);
 
     $contribution = $this->callAPISuccessGetSingle('Contribution', array('contact_id' => $mouseOrg['id']));
-    $this->assertEquals(200, $contribution['total_amount']);
-    $this->assertEquals(200, $contribution['total_amount']);
-    $this->assertEquals('EUR 100', $contribution['contribution_source']);
+    $this->assertEquals(2000, $contribution['total_amount']);
+    $this->assertEquals(2000, $contribution['total_amount']);
+    $this->assertEquals('EUR 1000', $contribution['contribution_source']);
   }
 
   /**

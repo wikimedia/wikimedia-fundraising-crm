@@ -50,10 +50,11 @@ class BenevityFile extends ChecksFile {
   protected function mungeMessage(&$msg) {
     $msg['gateway'] = 'benevity';
 
-    if (!isset($msg['original_gross'])) {
-      $msg['original_gross'] = 0;
+    $moneyFields = ['original_gross', 'fee', 'merchant_fee_amount', 'original_matching_amount', 'matching_fee_amount'];
+    foreach ($moneyFields as $moneyField) {
+      $msg[$moneyField] = isset($msg[$moneyField]) ? (str_replace(',', '', $msg[$moneyField])) : 0;
     }
-    $msg['original_gross'] = str_replace(',', '', $msg['original_gross']);
+
     if ($msg['original_gross'] >= 1000) {
       $msg['gift_source'] = 'Benefactor Gift';
     }
@@ -61,7 +62,7 @@ class BenevityFile extends ChecksFile {
       $msg['gift_source'] = 'Community Gift';
     }
     foreach ($msg as $field => $value) {
-      if ($value == 'Not shared by donor') {
+      if ($value === 'Not shared by donor') {
         $msg[$field] = '';
       }
     }
