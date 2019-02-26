@@ -1550,7 +1550,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/silverpop-php-connector",
-                "reference": "f8e78aa7eba9011680e2e827759311bdeba0006c"
+                "reference": "c7cc6c2b6ec47f517e6550388606b9240b87cb17"
             },
             "require": {
                 "ext-curl": "*",
@@ -1586,7 +1586,7 @@
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2018-08-02T06:25:22+00:00"
+            "time": "2019-02-05T02:40:26+00:00"
         },
         {
             "name": "neitanod/forceutf8",
@@ -3088,7 +3088,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "d1811a86f5bf0a8ff57164e3ccce020ff2aff1b6"
+                "reference": "84ef15edf7fc24e226360fbd2296867f589e3980"
             },
             "require": {
                 "league/csv": "^8.0",
@@ -3127,7 +3127,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2018-10-23T23:11:23+00:00"
+            "time": "2019-02-12T02:41:47+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -4135,6 +4135,7 @@
                 "mock",
                 "xunit"
             ],
+            "abandoned": true,
             "time": "2017-06-30T09:13:00+00:00"
         },
         {
