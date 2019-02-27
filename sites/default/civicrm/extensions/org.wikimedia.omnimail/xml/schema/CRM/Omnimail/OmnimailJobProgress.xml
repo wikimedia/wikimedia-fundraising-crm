@@ -21,7 +21,7 @@
         <name>mailing_provider</name>
         <type>varchar</type>
         <comment>Mailing provider name</comment>
-        <length>32</length>
+        <length>512</length>
     </field>
     <field>
         <name>job</name>

@@ -31,11 +31,9 @@ class CRM_Omnimail_Helper {
       $credentials = self::getSetting('omnimail_credentials');
       $credentials = CRM_Utils_Array::value($params['mail_provider'], $credentials);
     }
-    else {
-      foreach ($credentialKeys as $credentialKey) {
-        if (!empty($params[$credentialKey])) {
-          $credentials[$credentialKey] = $params[$credentialKey];
-        }
+    foreach ($credentialKeys as $credentialKey) {
+      if (!empty($params[$credentialKey])) {
+        $credentials[$credentialKey] = $params[$credentialKey];
       }
     }
     $mailerCredentials = array(

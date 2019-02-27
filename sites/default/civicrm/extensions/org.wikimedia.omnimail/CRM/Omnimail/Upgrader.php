@@ -96,6 +96,23 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
 
     return TRUE;
   }
+
+  /**
+   * Extend job_identifier table as it needs to store emails with a json outer wrapper.
+   *
+   * Email in theory could be 255 so 512
+   *
+   * @return TRUE on success
+   * @throws Exception
+   */
+  public function upgrade_1001() {
+    $this->ctx->log->info('Applying update 1001, increasing length of job_identifier');
+    CRM_Core_DAO::executeQuery('
+      ALTER TABLE civicrm_omnimail_job_progress
+      MODIFY job_identifier VARCHAR(512)
+    ');
+    return TRUE;
+  }
    /*
 
 

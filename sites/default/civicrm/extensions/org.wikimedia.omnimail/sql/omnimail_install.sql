@@ -19,7 +19,7 @@ CREATE TABLE civicrm_omnimail_job_progress (
  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
  `mailing_provider` VARCHAR(32) NOT NULL,
  `job` VARCHAR(32) NULL,
- `job_identifier` VARCHAR(32) NULL,
+ `job_identifier` VARCHAR(512) NULL,
  `last_timestamp` timestamp NULL,
  `progress_end_timestamp` timestamp NULL,
  `retrieval_parameters` VARCHAR(255) NULL,
