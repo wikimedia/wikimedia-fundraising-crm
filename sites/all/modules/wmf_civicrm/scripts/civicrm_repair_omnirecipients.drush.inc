@@ -175,7 +175,7 @@ function drush_civicrm_repair_process_rows($startDate, $batch_size = 5000) {
 
       WHERE mp2.`contact_identifier` IS NOT NULL
       AND TIMESTAMPDIFF(MINUTE,mp.recipient_action_datetime , mp2.recipient_action_datetime) = 840 #14 hours exactly after daylight savings
-      AND mp.event_type = 'Sent'
+      AND mp.event_type = mp2.event_type
       AND mp.recipient_action_datetime BETWEEN %1 AND %2
     ";
 
