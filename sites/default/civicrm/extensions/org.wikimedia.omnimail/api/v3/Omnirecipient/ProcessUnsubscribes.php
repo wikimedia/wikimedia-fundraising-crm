@@ -22,6 +22,10 @@ function civicrm_api3_omnirecipient_process_unsubscribes($params) {
   $result = civicrm_api3('MailingProviderData', 'get', $params);
 
   foreach ($result['values'] as $unsubscribes) {
+    if (!is_numeric($unsubscribes['contact_id'])) {
+      // Some rows have 'Prospect' in this column. Nothing we can do for them.
+      continue;
+    }
     CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(
       1 => array(
         uniqid() . CRM_Utils_String::createRandom(CRM_Utils_String::ALPHANUMERIC, 4),
