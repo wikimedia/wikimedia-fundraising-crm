@@ -18,14 +18,10 @@ require_once 'vendor/autoload.php';
 function civicrm_api3_omnirecipient_process_unsubscribes($params) {
   $params['return'] = array('mailing_identifier.campaign_id.name', 'email', 'contact_identifier', 'contact_id', 'mailing_identifier', 'recipient_action_datetime', 'event_type');
   $params['is_civicrm_updated'] = 0;
-  $params['contact_id'] = array('>' => 0);
+  $params['contact_id'] = array('BETWEEN' => [1, 999999999]);
   $result = civicrm_api3('MailingProviderData', 'get', $params);
 
   foreach ($result['values'] as $unsubscribes) {
-    if (!is_numeric($unsubscribes['contact_id'])) {
-      // Some rows have 'Prospect' in this column. Nothing we can do for them.
-      continue;
-    }
     CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(
       1 => array(
         uniqid() . CRM_Utils_String::createRandom(CRM_Utils_String::ALPHANUMERIC, 4),
