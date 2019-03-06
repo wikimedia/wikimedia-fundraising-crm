@@ -1,42 +1,42 @@
 <?php
 
-if ( function_exists( "module_load_include" ) and module_exists( "wmf_civicrm" ) ) {
-    module_load_include( "inc", "wmf_civicrm", "bootstrap" );
+if (function_exists("module_load_include") and module_exists("wmf_civicrm")) {
+  module_load_include("inc", "wmf_civicrm", "bootstrap");
 }
 
 function offline2civicrm_install() {
-    offline2civicrm_update_7000();
+  offline2civicrm_update_7000();
 }
 
 function offline2civicrm_schema() {
-  $schema['offline2civicrm_log'] = array(
-    'fields' => array(
-      'id' => array(
+  $schema['offline2civicrm_log'] = [
+    'fields' => [
+      'id' => [
         'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
-      ),
-      'time' => array(
+      ],
+      'time' => [
         // Too bad, this only has 1s resolution
         'mysql_type' => 'timestamp',
         // FIXME: will drupal one day add a stupidly redundant and breaking null check?
         'not null' => TRUE,
-      ),
-      'who' => array(
+      ],
+      'who' => [
         'type' => 'char',
         'length' => 255,
         'not null' => TRUE,
-      ),
-      'done' => array(
+      ],
+      'done' => [
         'type' => 'text',
         'not null' => TRUE,
-      ),
-    ),
-    'primary key' => array( 'id' ),
-    'indexes' => array(
-      'time' => array( 'time' ),
-    ),
-  );
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'time' => ['time'],
+    ],
+  ];
   return $schema;
 }
 
@@ -44,48 +44,48 @@ function offline2civicrm_schema() {
  * Create the Batch Number field
  */
 function offline2civicrm_update_7000() {
-    $api = wmf_civicrm_bootstrap_civi();
+  $api = wmf_civicrm_bootstrap_civi();
 
-    $success = $api->CustomGroup->get(array(
-        'name' => 'Gift_Information',
-    ));
-    if ( !$success || !count( $api->values ) ) {
-        $success = $api->CustomGroup->create(array(
-            'extends' => 'Contribution',
-            'name' => 'Gift_Information',
-            'title' => ts('Gift Information'),
-            'is_active' => 1,
-        ));
-        if (!$success) {
-			throw new Exception($api->errorMsg());
-        }
-        $result = $api->values();
+  $success = $api->CustomGroup->get([
+    'name' => 'Gift_Information',
+  ]);
+  if (!$success || !count($api->values)) {
+    $success = $api->CustomGroup->create([
+      'extends' => 'Contribution',
+      'name' => 'Gift_Information',
+      'title' => ts('Gift Information'),
+      'is_active' => 1,
+    ]);
+    if (!$success) {
+      throw new Exception($api->errorMsg());
     }
-    $custom_group = array_pop($result);
-    if (!$success || !$custom_group) {
-        throw new Exception("Missing custom group 'Gift Information', " . $api->errorMsg());
-    }
-
-    $api->CustomField->Get( array(
-        'custom_group_id' => $custom_group->id,
-        'name' => 'import_batch_number',
-        'version' => 3,
-    ) );
     $result = $api->values();
+  }
+  $custom_group = array_pop($result);
+  if (!$success || !$custom_group) {
+    throw new Exception("Missing custom group 'Gift Information', " . $api->errorMsg());
+  }
 
-    if ( empty($result) ) {
-        $success = $api->CustomField->create(array(
-            'custom_group_id' => $custom_group->id,
-            'name' => 'import_batch_number',
-            'column_name' => 'import_batch_number',
-            'label' => ts('Batch Number'),
-            'data_type' => 'String',
-            'html_type' => 'Text',
-            'is_active' => 1,
-            'is_searchable' => 1,
-        ));
-        if (!$success) {
-            throw new Exception($api->errorMsg());
-        }
+  $api->CustomField->Get([
+    'custom_group_id' => $custom_group->id,
+    'name' => 'import_batch_number',
+    'version' => 3,
+  ]);
+  $result = $api->values();
+
+  if (empty($result)) {
+    $success = $api->CustomField->create([
+      'custom_group_id' => $custom_group->id,
+      'name' => 'import_batch_number',
+      'column_name' => 'import_batch_number',
+      'label' => ts('Batch Number'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+    ]);
+    if (!$success) {
+      throw new Exception($api->errorMsg());
     }
+  }
 }
