@@ -195,7 +195,7 @@ function drush_civicrm_repair_process_rows($startDate, $batch_size = 5000) {
            AND event_type = '{$result->event_type}'
          ";
       $sqls[] = "
-         UPDATE civicrm_mailing_provider_data 
+         UPDATE IGNORE civicrm_mailing_provider_data
          SET recipient_action_datetime = DATE_ADD(recipient_action_datetime, INTERVAL 19 HOUR)
          WHERE
            contact_identifier = {$result->ci2}
