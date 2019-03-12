@@ -266,13 +266,22 @@ function _wmf_civicrm_get_prospect_fields() {
     ],
     'Stage' => [
       'name' => 'Stage',
-      'label' => 'Stage',
+      'label' => 'MG Stage',
       'data_type' => 'String',
       'html_type' => 'Select',
       'is_searchable' => 1,
       'note_columns' => 60,
       'note_rows' => 4,
       // "option_group_id":"32",
+    ],
+    'Endowment_Stage' => [
+      'name' => 'Endowment_Stage',
+      'label' => 'Endowment Stage',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_searchable' => 1,
+      'note_columns' => 60,
+      'note_rows' => 4,
     ],
     'On Hold' => [
       'name' => 'On_Hold',
