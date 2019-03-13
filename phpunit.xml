@@ -62,5 +62,8 @@
       <testsuite name="smashpig_tests">
         <directory>sites/default/civicrm/extensions/org.wikimedia.smashpig/tests/phpunit</directory>
       </testsuite>
+      <testsuite name="dedupetools_tests">
+        <directory>sites/default/civicrm/extensions/org.wikimedia.dedupetools/tests/phpunit</directory>
+      </testsuite>
     </testsuites>
 </phpunit>
