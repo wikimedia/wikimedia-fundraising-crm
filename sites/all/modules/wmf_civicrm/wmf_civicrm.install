@@ -4748,3 +4748,34 @@ function wmf_civicrm_update_7815() {
 function wmf_civicrm_update_7820() {
   wmf_civicrm_reconcile_extensions();
 }
+
+/**
+ * Redo merges on contacts who have data not transferred across.
+ *
+ * (these are basically the result of merge jobs colliding & half-merging).
+ *
+ * Bug: T218061
+ */
+function wmf_civicrm_update_7830() {
+  civicrm_initialize();
+  $result = CRM_Core_DAO::executeQuery('
+    SELECT DISTINCT contact_id
+    FROM civicrm_contact c
+    INNER JOIN civicrm_contribution cont ON contact_id = c.id
+    WHERE c.is_deleted = 1
+  ');
+  $skippedContacts = [];
+  while ($result->fetch()) {
+    try {
+      civicrm_api3('Merge', 'Redo', ['contact_id' => $result->contact_id]);
+    } catch (Exception $e) {
+      // I'm not necessarily expecting any to fail but who knows.
+      $skippedContacts[] = $result->contact_id;
+    }
+  }
+  // You can return a message but it only shows in the online update we don't use.
+  if (function_exists('drush_print')) {
+    drush_print(empty($skippedContacts) ? ts('OMG OMG it worked') : ts('Massive fail dude - contacts are' . implode(',', $skippedContacts)));
+  }
+
+}
