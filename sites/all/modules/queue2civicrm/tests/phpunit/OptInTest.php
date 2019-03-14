@@ -60,6 +60,18 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
     ];
   }
 
+  protected function getContactMessage() {
+    return [
+      'email' => $this->email,
+      'first_name' => 'Christine',
+      'last_name' => 'Test',
+      'street_address' => '1 Test Street',
+      'city'=> 'Testland',
+      'postal_code' => '13126',
+      'country' => 'US',
+    ];
+  }
+
   protected function createEmail($params = []) {
     $params += [
       'email' => $this->email,
@@ -83,9 +95,20 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   public function testNonExistantEmail() {
-    $this->consumer->processMessage($this->getMessage());
+    $this->consumer->processMessage($this->getContactMessage());
     $contact = $this->getContact();
     $this->assertEquals('', $contact[$this->optInCustomFieldName]);
+
+    //check that the contact was created
+    $newContactCheck = $this->callApiSuccessGetSingle('Contact', ['email' => $this->email]);
+    $this->contactId = $newContactCheck['id'];
+    $custom = $this->getContact();
+
+    //check that there is a new contact id
+    $this->assertNotEquals($contact['id'],$newContactCheck['id']);
+
+    //check that the opt_in field was set
+    $this->assertEquals('1', $custom[$this->optInCustomFieldName]);
   }
 
   public function testNonPrimaryEmail() {
