@@ -363,7 +363,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     &$paymentParams
   ) {
     switch ($exception->getErrorCode()) {
-      case '300620':
+      case 300620:
         // FIXME: this is currently dealing with an Ingenico-specific code.
         // SmashPig should eventually normalize these error codes.
         // If we get an error that means the merchant reference has already

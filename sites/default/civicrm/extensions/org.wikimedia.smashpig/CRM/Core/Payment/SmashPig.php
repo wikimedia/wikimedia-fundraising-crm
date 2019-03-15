@@ -203,7 +203,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
         $message .= ': ' . $error['message'];
       }
       if (isset($error['code'])) {
-        $errorCode = $error['code'];
+        $errorCode = intval($error['code']);
       }
     }
     throw new PaymentProcessorException(
