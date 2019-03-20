@@ -4,6 +4,7 @@ use CRM_Wmffraud_ExtensionUtil as E;
 class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
 
   protected $_customGroupExtends = [];
+
   protected $_customGroupGroupBy = FALSE;
 
   /**
@@ -20,40 +21,41 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
 
     global $databases;
     $this->drupal = $databases['default']['default']['database'];
-    $this->fredge = substr($this->drupal, 0, 3 ) === 'dev' ? 'dev_fredge' : 'fredge';
+    $this->fredge = substr($this->drupal, 0,
+      3) === 'dev' ? 'dev_fredge' : 'fredge';
 
     $this->_columns = [];
     $this->_columns['civicrm_contact'] = [
       'dao' => 'CRM_Contact_DAO_Contact',
       'fields' => [
-        'sort_name' => array(
+        'sort_name' => [
           'title' => E::ts('Contact Name'),
           'required' => TRUE,
           'default' => TRUE,
           'no_repeat' => TRUE,
-        ),
-        'id' => array(
+        ],
+        'id' => [
           'no_display' => TRUE,
           'required' => TRUE,
-        ),
-        'first_name' => array(
+        ],
+        'first_name' => [
           'title' => E::ts('First Name'),
           'no_repeat' => TRUE,
-        ),
+        ],
         'last_name' => [
           'title' => E::ts('Last Name'),
           'no_repeat' => TRUE,
         ],
       ],
-      'filters' => array(
-        'sort_name' => array(
+      'filters' => [
+        'sort_name' => [
           'title' => E::ts('Contact Name'),
           'operator' => 'like',
-        ),
-        'id' => array(
+        ],
+        'id' => [
           'title' => E::ts('Contact ID')
-        ),
-      ),
+        ],
+      ],
     ];
 
     $this->_columns['payments_fraud'] = [
@@ -110,7 +112,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
           'type' => CRM_Utils_Type::T_DATE,
         ],
       ],
-      'order_bys' =>  [
+      'order_bys' => [
         'fredge_date' => [
           'title' => E::ts('Payment attempt date'),
           'name' => 'date',
@@ -134,16 +136,20 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
           'name' => 'filter_name',
           'title' => ts('Fraud filter'),
           'type' => CRM_Utils_Type::T_STRING,
-          'dbAlias' => "GROUP_CONCAT(_fraud_breakdown_civireport.filter_name)",
+          'dbAlias' => "GROUP_CONCAT(CONCAT(_fraud_breakdown_civireport.filter_name, _fraud_breakdown_civireport.risk_score) SEPARATOR \"-\")",
         ],
       ],
       'filters' => [
-        'filter_name' => ['name' => 'filter_name', 'title' => ts('Fraud filter'), 'type' => CRM_Utils_Type::T_STRING],
+        'filter_name' => [
+          'name' => 'filter_name',
+          'title' => ts('Fraud filter'),
+          'type' => CRM_Utils_Type::T_STRING
+        ],
       ],
     ];
 
     $this->_columns['ip_failure_stats'] = [
-      'fields' =>  [
+      'fields' => [
         'ip_fails_count' => [
           'name' => 'ip_fails_count',
           'title' => E::ts('Rejects for IP in the specified date range'),
@@ -151,7 +157,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
           'pseudofield' => TRUE,
         ],
       ],
-      'filters' =>  [
+      'filters' => [
         'ip_fails_date' => [
           'name' => 'ip_fails_date',
           'title' => E::ts('IP has had rejects in this date range (min number based on ip failure threshold field'),
@@ -167,7 +173,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
           'default' => 1,
         ],
       ],
-      'order_bys' =>  [
+      'order_bys' => [
         'ip_fails_count' => [
           'name' => 'ip_fails_count',
           'title' => E::ts('IP rejects in the specified date range'),
@@ -178,14 +184,14 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
     ];
 
     $this->_columns['email_failure_stats'] = [
-      'fields' =>  [
+      'fields' => [
         'email_fails_count' => [
           'name' => 'email_fails_count',
           'title' => E::ts('Email rejects in the specified date range'),
           'type' => CRM_Utils_Type::T_DATE,
         ],
       ],
-      'filters' =>  [
+      'filters' => [
         'email_fails_date' => [
           'name' => 'email_fails_date',
           'title' => E::ts('Email has had more than one failure in this date range'),
@@ -200,7 +206,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
           'default' => 1,
         ],
       ],
-      'order_bys' =>  [
+      'order_bys' => [
         'email_fails_count' => [
           'name' => 'email_fails_count',
           'title' => E::ts('Email rejects in the specified date range'),
@@ -220,10 +226,10 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
         ],
       ],
       'filters' => [
-        'email' => array(
+        'email' => [
           'title' => E::ts('Email'),
           'operator' => 'like',
-        ),
+        ],
       ],
     ];
 
@@ -247,10 +253,10 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
           'type' => CRM_Utils_Type::T_MONEY,
           'default' => TRUE,
         ],
-        'contribution_status_id' => array(
+        'contribution_status_id' => [
           'title' => ts('Contribution Status'),
           'default' => 1,
-        ),
+        ],
       ],
       'filters' => [
         'receive_date' => [
@@ -288,7 +294,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
     ];
 
     $this->_columns['contribution_tracking'] = [
-      'fields' => array(
+      'fields' => [
         'contribution_tracking_id' => [
           'title' => E::ts('Contribution Tracking ID'),
           'name' => 'id',
@@ -302,8 +308,8 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
         'utm_campaign' => [
           'title' => E::ts('UTM Campaign'),
         ],
-      ),
-      'filters' => array(
+      ],
+      'filters' => [
         'utm_source' => [
           'title' => E::ts('UTM Source'),
           'type' => CRM_Utils_Type::T_STRING,
@@ -316,7 +322,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
           'title' => E::ts('UTM Campaign'),
           'type' => CRM_Utils_Type::T_STRING,
         ],
-      ),
+      ],
     ];
 
     parent::__construct();
@@ -341,7 +347,8 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
           // for ip_fails it seems reasonable & moderately intuitive to use that for both.
           return FALSE;
         }
-        CRM_Core_Session::setStatus(E::ts('Cannot show %1 without a date range', [$specialFilterFieldName]));
+        CRM_Core_Session::setStatus(E::ts('Cannot show %1 without a date range',
+          [$specialFilterFieldName]));
         return 1;
       }
     }
@@ -432,9 +439,11 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
     }
   }
 
-  protected function  alterContributionStatus($value, &$row, $selectedField) {
-    $row[$selectedField] = CRM_Core_PseudoConstant::getLabel('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $value);
+  protected function alterContributionStatus($value, &$row, $selectedField) {
+    $row[$selectedField] = CRM_Core_PseudoConstant::getLabel('CRM_Contribute_BAO_Contribution',
+      'contribution_status_id', $value);
   }
+
   /**
    * @param $value
    * @param $row
@@ -449,7 +458,8 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
         'reset' => 1,
         'cid' => $row['civicrm_contact_id'],
         'force' => 1,
-        'selectedChild' => 'contribute']
+        'selectedChild' => 'contribute'
+      ]
     );
 
     $row[$selectedField . '_hover'] = ts('Show contact');
@@ -460,7 +470,8 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
     // field name looks like payments_fraud_user_ip but for the url we just use
     // user IP. This is a bit quick & dirty. Better would be to cycle through & figure
     // out which table name to strip.
-    $urlField = str_replace(['payments_fraud_', 'civicrm_email_' ], '', $selectedField);
+    $urlField = str_replace(['payments_fraud_', 'civicrm_email_'], '',
+      $selectedField);
     if ($urlField === 'user_ip') {
       $value = ip2long($value);
     }
@@ -489,6 +500,24 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
     if ($fieldName === 'ip_fails_threshold' || $fieldName === 'email_fails_threshold') {
       return ['eq' => ts('Is equal to'),];
     }
+
+    // type is string
+    if ($type == NULL) {
+      $result = [
+        'has' => ts('Contains'),
+        'sw' => ts('Starts with'),
+        'ew' => ts('Ends with'),
+        'nhas' => ts('Does not contain'),
+        'eq' => ts('Is equal to'),
+        'neq' => ts('Is not equal to'),
+        'nll' => ts('Is4 empty (Null)'),
+        'nnll' => ts('Is not empty (Null)'),
+        'in' => ts('Is one of') // add 'in' support for string filters
+      ];
+      return $result;
+    }
+
+
     return parent::getOperationPair($type, $fieldName);
   }
 
@@ -505,7 +534,8 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
     else {
       return;
     }
-    $threshold = (int) CRM_Utils_Array::value('ip_fails_threshold_value', $this->_params, 1);
+    $threshold = (int) CRM_Utils_Array::value('ip_fails_threshold_value',
+      $this->_params, 1);
     list($from, $to) = $this->getToFromForField('ip_fails_date');
     $this->_from .= " $join JOIN
       (
@@ -545,7 +575,8 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
       return;
     }
 
-    $threshold = (int) CRM_Utils_Array::value('email_fails_threshold_value', $this->_params, 1);
+    $threshold = (int) CRM_Utils_Array::value('email_fails_threshold_value',
+      $this->_params, 1);
 
     $this->_from .= " $join JOIN
       (
@@ -605,7 +636,6 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
       CRM_Utils_Array::value("{$fieldName}_from_time", $this->_params),
       CRM_Utils_Array::value("{$fieldName}_to_time", $this->_params)
     );
-    return array($from, $to);
+    return [$from, $to];
   }
-
 }
