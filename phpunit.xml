@@ -65,5 +65,8 @@
       <testsuite name="dedupetools_tests">
         <directory>sites/default/civicrm/extensions/org.wikimedia.dedupetools/tests/phpunit</directory>
       </testsuite>
+      <testsuite name="datachecks_tests">
+        <directory>sites/default/civicrm/extensions/org.wikimedia.datachecks/tests/phpunit</directory>
+      </testsuite>
     </testsuites>
 </phpunit>
