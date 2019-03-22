@@ -1,0 +1,23 @@
+{
+  "id": "12345",
+  "contribution_id": "678910",
+  "note": "This is a test note",
+  "referrer": "payments.wiki.local.wmftest.net/wiki/Main_Page",
+  "form_amount": "GBP 35.00",
+  "payments_form": "ingenico.JimmyQuote",
+  "source_name": "DonationInterface",
+  "source_type": "payments",
+  "source_host": "mwdebian9",
+  "source_run_id": "682",
+  "source_version": "unknown",
+  "source_enqueued_time": "1554215582",
+  "utm_source": "Blah_source",
+  "utm_medium": "civicrm",
+  "utm_campaign": "test_campaign",
+  "utm_key": "",
+  "anonymous": "5",
+  "language": "en",
+  "country": "UK",
+  "optout": "1",
+  "ts": "20190322114558"
+}
