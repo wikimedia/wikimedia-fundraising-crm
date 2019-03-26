@@ -163,6 +163,14 @@ class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndTo
       'recipient_action_datetime' => '2017-04-04',
       'contact_identifier' => 'c',
     ));
+    $this->callAPISuccess('MailingProviderData', 'create',  array(
+      'contact_id' => $this->contactIDs['isaac'],
+      'email' => 'charlie@example.com',
+      'event_type' => 'Hard Bounce',
+      'mailing_identifier' => 'xyuuuz',
+      'recipient_action_datetime' => '2017-05-04',
+      'contact_identifier' => 'c',
+    ));
   }
 
   /**
