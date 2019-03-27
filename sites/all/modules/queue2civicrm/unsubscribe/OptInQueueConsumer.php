@@ -39,11 +39,23 @@ class OptInQueueConsumer extends WmfQueueConsumer {
     // Find the contact from the contribution ID
     $contacts = $this->getContactsFromEmail($email);
 
+    // Create the contact if it doesn't already exist
     if (count($contacts) === 0) {
-      watchdog('opt_in',
-        "$email: No contacts returned for email. Dropping message.",
-        [],
-        WATCHDOG_NOTICE);
+
+      if (!empty($message['last_name'])) {
+        $message['opt_in'] = TRUE;
+        wmf_civicrm_message_create_contact($message);
+
+        $contact_id = $message['contact_id'];
+        watchdog('opt_in', "New contact created on opt-in: $contact_id", [],
+          WATCHDOG_INFO);
+      } else {
+        // Not enough information to create the contact
+        watchdog('opt_in',
+          "$email: No contacts returned for email. Dropping message.",
+          [],
+          WATCHDOG_NOTICE);
+      }
     }
     else {
       $optUsIn = [];
@@ -51,8 +63,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
       foreach ($contacts as $id => $contact) {
         if ($contact[$this->optInCustomFieldName] == TRUE) {
           watchdog('opt_in',
-            "$email: Contact with ID {$contact['id']} already opted in.",
-            [],
+            "$email: Contact with ID {$contact['id']} already opted in.", [],
             WATCHDOG_NOTICE);
           continue;
         }
