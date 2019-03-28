@@ -5,7 +5,7 @@
  *
  * Class to do checks to ensure people do not have duplicates of a particular location type.
  */
-class CRM_Datachecks_DuplicateLocation {
+class CRM_Datachecks_DuplicateLocation extends  CRM_Datachecks_LocationBase {
 
   /**
    * Name of the temporary table for generating the data.
@@ -13,15 +13,9 @@ class CRM_Datachecks_DuplicateLocation {
    * @var string
    */
   protected $temporaryTable;
-  /**
-   * List of entities to check.
-   *
-   * @var array
-   */
-  protected $entities = ['email', 'phone', 'address', 'im'];
 
   /**
-   * Do data integrity check on primary locations.
+   * Do data integrity check on duplicate locations.
    */
   public function check() {
     $result = array();
@@ -210,20 +204,6 @@ class CRM_Datachecks_DuplicateLocation {
       'is_bulkmail',
       'provider_id',
     ], 1));
-  }
-
-  /**
-   * Get the available location types with a light re-order to make our preferences for reassignment (in order)
-   *  - Other
-   *  - Main
-   *  - Home
-   *  - Mailing
-   *  - Billing
-   */
-  protected function getLocationTypes() {
-    $locationTypes = civicrm_api3('Address', 'getoptions', ['field' => 'location_type_id'])['values'];
-    $preferredOrder = array_intersect_key(['Other' => 0, 'Main' => 1, 'Home' => 2, 'Mailing' => 3, 'Billing' => 4], array_flip($locationTypes));
-    return array_merge($preferredOrder, array_flip($locationTypes));
   }
 
   /**
