@@ -73,7 +73,8 @@ class CRM_Datachecks_DuplicateLocation {
     // different location types? For phones it compares to the count of location type / phone combos.
     $this->temporaryTable = CRM_Utils_SQL_TempTable::build()->createWithQuery("
       SELECT contact_id,
-      IF(count(*) > COUNT(DISTINCT location_type_id $phoneClause), 1, 0) as is_duplicate
+      # The COALESCE here is a hack to avoid it not counting empty-location-type rows.
+      IF(count(*) > COUNT(DISTINCT COALESCE(location_type_id, 999) $phoneClause), 1, 0) as is_duplicate
       FROM civicrm_{$entity}
       WHERE contact_id IS NOT NULL
       GROUP BY contact_id
