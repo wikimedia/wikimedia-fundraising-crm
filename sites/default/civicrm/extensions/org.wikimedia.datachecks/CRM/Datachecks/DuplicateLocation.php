@@ -118,7 +118,7 @@ class CRM_Datachecks_DuplicateLocation {
         }
         foreach ($byLocation as $locationTypeID => $entitiesArray) {
           if ($entity === 'phone') {
-            $this->filterOutPhonesWhereTypeIsDifferentButLocationISame($entitiesArray);
+            $this->filterOutPhonesWhereTypeIsDifferentButLocationIsSame($entitiesArray);
           }
           if (count($entitiesArray) === 1) {
             continue;
@@ -230,7 +230,7 @@ class CRM_Datachecks_DuplicateLocation {
    *
    * @param $entitiesArray
    */
-  protected function filterOutPhonesWhereTypeIsDifferentButLocationISame(&$entitiesArray) {
+  protected function filterOutPhonesWhereTypeIsDifferentButLocationIsSame(&$entitiesArray) {
 
     $phonesByTypeArray = [];
     foreach ($entitiesArray as $index => $entityArray) {
