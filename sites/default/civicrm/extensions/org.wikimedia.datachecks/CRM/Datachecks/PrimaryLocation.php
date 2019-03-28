@@ -75,15 +75,14 @@ class CRM_Datachecks_PrimaryLocation {
    */
   protected function createTemporaryTable($entity) {
 
-    CRM_Core_DAO::executeQuery("
-      CREATE TEMPORARY TABLE {$this->temporaryTable} (
-      SELECT contact_id, min(id) as id, count(id) as count_entities, sum(is_primary) as c
+    $this->temporaryTable = CRM_Utils_SQL_TempTable::build()->createWithQuery("
+      SELECT contact_id, min(id) as id, sum(is_primary) as c
       FROM civicrm_{$entity}
       WHERE contact_id IS NOT NULL
       GROUP BY contact_id
       HAVING c = 0
-      )"
-    );
+    ")->getName();
+
     CRM_Core_DAO::executeQuery("
       ALTER TABLE {$this->temporaryTable}
       ADD INDEX contact_id(contact_id),
@@ -111,10 +110,8 @@ class CRM_Datachecks_PrimaryLocation {
    * contacts with no primary but if we are doing a fix we will fix them as well
    * as if they are ever restored they should have a primary marked.
    *
-   * This will actually only update contacts with only 1 location (e.g
-   * 1 email etc) rather than those where it is not clear which should be selected.
-   *
-   * @todo add functionality for choosing.
+   * If there is more than one primary the one with the lowest id will be chosen.
+   * I thought about a more complex mechanism but wasn't sure the benefit was clear enough.
    */
   public function fix() {
     foreach ($this->entities as $entity) {
@@ -123,9 +120,10 @@ class CRM_Datachecks_PrimaryLocation {
         UPDATE civicrm_{$entity} e
         INNER JOIN $matchesTable u ON e.id = u.id
         SET e.is_primary = 1
-        WHERE u.count_entities = 1
       ");
       $this->dropTemporaryTable();
     }
+
+
   }
 }
