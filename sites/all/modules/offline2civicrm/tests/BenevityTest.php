@@ -96,6 +96,8 @@ class BenevityTest extends BaseChecksFileTest {
       'contact_id_b' => $thaMouseMeister['id'],
     ));
     $this->assertEquals(1, $relationships['count']);
+    $email = $this->callAPISuccessGetSingle('Email', ['contact_id' => $minnie['id']]);
+    $this->assertTrue(!empty($email['location_type_id']));
   }
 
   /**
@@ -126,6 +128,8 @@ class BenevityTest extends BaseChecksFileTest {
       'return' => 'email',
     ));
     $this->assertEquals('minnie@mouse.org', $minnie['email']);
+    $email = $this->callAPISuccessGetSingle('Email', ['contact_id' => $minnie['id']]);
+    $this->assertTrue(!empty($email['location_type_id']));
   }
 
   /**
