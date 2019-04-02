@@ -43,7 +43,7 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
     );
 
     $id = CRM_Core_BAO_CustomField::getCustomFieldID(
-      'opt_in', 'Communications'
+      'opt_in', 'Communication'
     );
     $this->optInCustomFieldName = "custom_{$id}";
   }
