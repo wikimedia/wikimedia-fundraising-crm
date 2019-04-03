@@ -141,7 +141,10 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function testRecurringContributionWithPaymentToken() {
     $fixture = CiviFixtures::createContact();
-    CiviFixtures::createPaymentProcessor('test_gateway', $fixture);
+    $existing = $this->callAPISuccess('PaymentProcessor', 'get', ['name' => 'test_gateway']);
+    if (!$existing['count']) {
+      CiviFixtures::createPaymentProcessor('test_gateway', $fixture);
+    }
 
     $msg = [
       'contact_id' => $fixture->contact_id,
