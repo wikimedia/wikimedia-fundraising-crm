@@ -141,6 +141,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
       $GLOBALS['_PEAR_default_error_mode'] = NULL;
       $GLOBALS['_PEAR_default_error_options'] = NULL;
     }
+    civicrm_initialize();
     $smashPigSettings = civicrm_api3('setting', 'getfields', [
       'filters' => ['group' => 'smashpig'],
     ]);
@@ -152,7 +153,6 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
     $globalConfig = TestingGlobalConfiguration::create();
     TestingContext::init($globalConfig);
 
-    civicrm_initialize();
     $existing = civicrm_api3(
       'PaymentProcessor', 'get', ['name' => $this->processorName]
     );
