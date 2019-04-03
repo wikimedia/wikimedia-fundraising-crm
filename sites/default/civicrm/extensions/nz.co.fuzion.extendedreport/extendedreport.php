@@ -100,6 +100,9 @@ function extendedreport_version_at_least($version) {
 function extendedreport_civicrm_tabset($tabsetName, &$tabs, $context) {
   $reports = civicrm_api3('ReportInstance', 'get', ['form_values' => ['LIKE' => '%contact_dashboard_tab";s:1:"1";%']]);
 
+  if (!isset($context['contact_id'])) {
+    return;
+  }
   foreach ($reports['values'] as $report) {
     $tabs['report_' . $report['id']] = [
       'title' => ts($report['title']),
@@ -163,6 +166,8 @@ function extendedreport_civicrm_contactSummaryBlocks(&$blocks) {
   ];
   foreach ($reports as $report) {
     $blocks['extendedreports']['blocks']['report_' . $report['id']] = [
+      'id' => 'report_' . $report['id'],
+      'icon' => 'crm-i fa-bar-chart',
       'title' => $report['title'],
       'tpl_file' => 'CRM/Extendedreport/Page/Inline/ExtendedReport.tpl',
       'edit' => FALSE,
