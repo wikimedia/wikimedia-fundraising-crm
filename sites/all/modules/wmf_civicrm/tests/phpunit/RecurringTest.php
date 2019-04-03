@@ -141,10 +141,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function testRecurringContributionWithPaymentToken() {
     $fixture = CiviFixtures::createContact();
-    $existing = $this->callAPISuccess('PaymentProcessor', 'get', ['name' => 'test_gateway']);
-    if (!$existing['count']) {
-      CiviFixtures::createPaymentProcessor('test_gateway', $fixture);
-    }
+    $this->createPaymentProcessor($fixture);
 
     $msg = [
       'contact_id' => $fixture->contact_id,
@@ -200,7 +197,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function testSecondRecurringContributionWithPaymentToken() {
     $fixture = CiviFixtures::createContact();
-    CiviFixtures::createPaymentProcessor('test_gateway', $fixture);
+    $this->createPaymentProcessor($fixture);
     $token = 'TEST-RECURRING-TOKEN-' . mt_rand();
 
     $firstMessage = [
@@ -273,5 +270,15 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
     civicrm_api3('PaymentToken', 'delete', [
       'id' => $firstRecurringRecord->payment_token_id,
     ]);
+  }
+
+  /**
+   * @param $fixture
+   */
+  protected function createPaymentProcessor($fixture) {
+    $existing = $this->callAPISuccess('PaymentProcessor', 'get', ['name' => 'test_gateway']);
+    if (!$existing['count']) {
+      CiviFixtures::createPaymentProcessor('test_gateway', $fixture);
+    }
   }
 }
