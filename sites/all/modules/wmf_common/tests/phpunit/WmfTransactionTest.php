@@ -193,6 +193,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
     }
     catch (RuntimeException $e) {
       // We were expecting this :-)
+      unset($this->ids['Contact']);
     }
 
     $this->assertEquals('WMF', CRM_Core_DAO::singleValueQuery('SELECT description FROM civicrm_domain LIMIT 1'));

@@ -79,7 +79,6 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function tearDown() {
     parent::tearDown();
-    $this->cleanUpContact($this->contactId);
     TestingGlobalCollectAdapter::setDummyGatewayResponseCode(NULL);
   }
 
