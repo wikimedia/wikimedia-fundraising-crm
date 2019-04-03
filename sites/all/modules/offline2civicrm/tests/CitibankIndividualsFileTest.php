@@ -8,6 +8,15 @@ class CitibankIndividualsFileTest extends BaseChecksFileTest {
 
   function setUp() {
     parent::setUp();
+    $params = [
+      'contact_type' => 'Individual',
+      'last_name' => 'Citibank',
+      'email' => 'fakecitibankemail@wikimedia.org',
+    ];
+    $citibankContact = $this->callAPISuccess('Contact', 'get', $params);
+    if (!$citibankContact['count']) {
+      $this->callAPISuccess('Contact', 'create', $params);
+    }
     $this->setExchangeRates(wmf_common_date_parse_string('2019-01-02'), ['USD' => 1, 'EUR' => 3]);
   }
 
