@@ -30,6 +30,8 @@ use SmashPig\Tests\TestingProviderConfiguration;
  */
 class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessInterface, TransactionalInterface {
 
+  use \Civi\Test\Api3TestTrait;
+
   private $oldSettings = [];
 
   /**
@@ -260,7 +262,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
       'trxn_id' => 'RECURRING INGENICO ' . mt_rand(10000, 100000000),
       'contribution_status_id' => 'Completed',
     ];
-    $result = civicrm_api3('ContributionRecur', 'create', $params);
+    $result = $this->callAPISuccess('ContributionRecur', 'create', $params);
     $this->deleteThings['ContributionRecur'][] = $result['id'];
     return $result['values'][$result['id']];
   }
