@@ -152,6 +152,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $recur_record = wmf_civicrm_get_recur_record($subscr_id);
     $this->assertNotEquals(FALSE, $recur_record);
+    $this->assertTrue(is_numeric($recur_record->payment_processor_id));
 
     $this->assertEquals(1, count($contributions));
     $this->assertEquals($recur_record->id, $contributions[0]['contribution_recur_id']);
