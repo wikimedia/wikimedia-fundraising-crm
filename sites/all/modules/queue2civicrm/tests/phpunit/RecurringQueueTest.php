@@ -74,7 +74,9 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $message->getGateway(),
       $message->getGatewayTxnId()
     );
-    $this->contributions[] = $contributions[0];
+    if (!empty($contributions[0])) {
+      $this->contributions[] = $contributions[0];
+    }
     return $contributions;
   }
 
@@ -137,6 +139,41 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $emails = $this->callAPISuccess('Email', 'get', ['contact_id' => $contributions2[0]['contact_id']]);
     $this->assertEquals(1, $addresses['count']);
     $this->assertEquals('test+fr@wikimedia.org', $emails['values'][$emails['id']]['email']);
+  }
+
+  /**
+   * Test function that cancels recurrings.
+   */
+  public function testCancelContributions() {
+    $subscr_id = mt_rand();
+    $values = $this->processRecurringSignup($subscr_id);
+    $this->importMessage(new RecurringCancelMessage($values));
+
+    $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
+    $this->assertEquals('(auto) User Cancelled via Gateway', $recur_record['cancel_reason']);
+    $this->assertEquals('2013-11-01 23:07:05', $recur_record['cancel_date']);
+    $this->assertEquals('2013-11-01 23:07:05', $recur_record['end_date']);
+    $this->assertNotEmpty($recur_record['payment_processor_id']);
+    $this->assertTrue(empty($recur_record['failure_retry_date']));
+    $this->assertTrue(empty($recur_record['next_sched_contribution_date']));
+    $this->assertEquals('Cancelled', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recur_record['contribution_status_id']));
+  }
+
+  /**
+   * Test function that expires recurrings.
+   */
+  public function testExpireContributions() {
+    $subscr_id = mt_rand();
+    $values = $this->processRecurringSignup($subscr_id);
+    $this->importMessage(new RecurringEOTMessage($values));
+
+    $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
+    $this->assertEquals('(auto) Expiration notification', $recur_record['cancel_reason']);
+    $this->assertEquals(date('Y-m-d'), date('Y-m-d', strtotime($recur_record['end_date'])));
+    $this->assertNotEmpty($recur_record['payment_processor_id']);
+    $this->assertTrue(empty($recur_record['failure_retry_date']));
+    $this->assertTrue(empty($recur_record['next_sched_contribution_date']));
+    $this->assertEquals('Completed', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recur_record['contribution_status_id']));
   }
 
   public function testNormalizedMessages() {

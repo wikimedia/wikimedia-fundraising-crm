@@ -608,6 +608,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
     $cancelDate = UtcDate::getUtcTimestamp(
       $newContributionRecur['cancel_date']
     );
+    $this->assertEquals('(auto) maximum failures reached', $newContributionRecur['cancel_reason']);
     $this->assertLessThan(100, abs($cancelDate - $expectedCancelDate));
     $this->assertEquals(
       $cancelledStatus, $newContributionRecur['contribution_status_id']

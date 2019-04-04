@@ -124,6 +124,26 @@ class RecurringPaymentMessage extends TransactionMessage {
     }
 }
 
+class RecurringCancelMessage extends TransactionMessage {
+  function __construct( $values = array() ) {
+    $this->loadDefaults( "recurring_cancel" );
+
+    $this->txn_id_key = 'gateway_txn_id';
+
+    parent::__construct( $values );
+  }
+}
+
+class RecurringEOTMessage extends TransactionMessage {
+  function __construct( $values = array() ) {
+    $this->loadDefaults( "recurring_eot" );
+
+    $this->txn_id_key = 'gateway_txn_id';
+
+    parent::__construct( $values );
+  }
+}
+
 class RecurringSignupMessage extends TransactionMessage {
     function __construct( $values = array() ) {
         $this->loadDefaults( "recurring_signup" );
