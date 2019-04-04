@@ -4779,3 +4779,52 @@ function wmf_civicrm_update_7830() {
   }
 
 }
+
+/**
+ * Add test processors.
+ *
+ * Each processor should have a live row & a test row.
+ *
+ * This fix should resolve the bug I saw
+ * https://github.com/civicrm/civicrm-core/pull/13947
+ *
+ * But I think we should also fix our data.
+ *
+ * Bug: T218754
+ */
+function wmf_civicrm_update_7835() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+
+  INSERT INTO civicrm_payment_processor
+
+  (`domain_id` ,
+    `name` ,
+    `description` ,
+    `payment_processor_type_id` ,
+    `is_active` ,
+    `is_default`,
+    `is_test`,
+    `class_name`,
+    `billing_mode`,
+    `is_recur` ,
+    `payment_type`,
+    `payment_instrument_id`)
+
+SELECT
+
+  `domain_id` ,
+  `name` ,
+  `description` ,
+  `payment_processor_type_id` ,
+  `is_active` ,
+  `is_default`,
+  1 as `is_test`,
+  `class_name`,
+  `billing_mode`,
+  `is_recur` ,
+  `payment_type`,
+  `payment_instrument_id`
+
+ FROM civicrm_payment_processor");
+}
