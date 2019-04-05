@@ -632,6 +632,7 @@ function wmf_civicrm_get_payment_processor_id($processorName) {
   try {
     $payment_processor_result = civicrm_api3('PaymentProcessor', 'getsingle', [
       'name' => $processorName,
+      'is_test' => 0,
     ]);
   } catch (CiviCRM_API3_Exception $e) {
     throw new WmfException(
