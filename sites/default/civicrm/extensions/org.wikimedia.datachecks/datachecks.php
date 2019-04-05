@@ -130,6 +130,14 @@ function datachecks_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
  * @param $checks
  */
 function datachecks_civicrm_datacheck_checks(&$checks) {
+
+  $checks['BlankLocation'] = array(
+    'name' => 'BlankLocation',
+    'class' => 'CRM_Datachecks_BlankLocation',
+    'description' => ts('Contacts who have one or more address (or email etc) with no location type'),
+    'label' => ts('Blank location fix'),
+    'module' => 'org.wikimedia.datachecks',
+  );
   $checks['PrimaryLocation'] = array(
     'name' => 'PrimaryLocation',
     'class' => 'CRM_Datachecks_PrimaryLocation',

@@ -159,6 +159,8 @@ function omnimail_civicrm_tabset($tabsetName, &$tabs, $context) {
       //add a new Volunteer tab along with url
       $tab['mailing_data'] = array(
         'title' => ts('Mailing Events'),
+        'id' => 'omnimail',
+        'icon' => 'crm-i fa-envelope-open-o',
         'url' => $url,
         'valid' => 1,
         'active' => 1,

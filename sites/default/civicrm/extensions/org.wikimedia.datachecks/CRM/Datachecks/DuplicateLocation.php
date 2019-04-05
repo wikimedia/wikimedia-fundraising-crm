@@ -5,7 +5,7 @@
  *
  * Class to do checks to ensure people do not have duplicates of a particular location type.
  */
-class CRM_Datachecks_DuplicateLocation {
+class CRM_Datachecks_DuplicateLocation extends  CRM_Datachecks_LocationBase {
 
   /**
    * Name of the temporary table for generating the data.
@@ -13,15 +13,9 @@ class CRM_Datachecks_DuplicateLocation {
    * @var string
    */
   protected $temporaryTable;
-  /**
-   * List of entities to check.
-   *
-   * @var array
-   */
-  protected $entities = ['email', 'phone', 'address', 'im'];
 
   /**
-   * Do data integrity check on primary locations.
+   * Do data integrity check on duplicate locations.
    */
   public function check() {
     $result = array();
@@ -73,7 +67,8 @@ class CRM_Datachecks_DuplicateLocation {
     // different location types? For phones it compares to the count of location type / phone combos.
     $this->temporaryTable = CRM_Utils_SQL_TempTable::build()->createWithQuery("
       SELECT contact_id,
-      IF(count(*) > COUNT(DISTINCT location_type_id $phoneClause), 1, 0) as is_duplicate
+      # The COALESCE here is a hack to avoid it not counting empty-location-type rows.
+      IF(count(*) > COUNT(DISTINCT COALESCE(location_type_id, 999) $phoneClause), 1, 0) as is_duplicate
       FROM civicrm_{$entity}
       WHERE contact_id IS NOT NULL
       GROUP BY contact_id
@@ -118,7 +113,7 @@ class CRM_Datachecks_DuplicateLocation {
         }
         foreach ($byLocation as $locationTypeID => $entitiesArray) {
           if ($entity === 'phone') {
-            $this->filterOutPhonesWhereTypeIsDifferentButLocationISame($entitiesArray);
+            $this->filterOutPhonesWhereTypeIsDifferentButLocationIsSame($entitiesArray);
           }
           if (count($entitiesArray) === 1) {
             continue;
@@ -212,25 +207,11 @@ class CRM_Datachecks_DuplicateLocation {
   }
 
   /**
-   * Get the available location types with a light re-order to make our preferences for reassignment (in order)
-   *  - Other
-   *  - Main
-   *  - Home
-   *  - Mailing
-   *  - Billing
-   */
-  protected function getLocationTypes() {
-    $locationTypes = civicrm_api3('Address', 'getoptions', ['field' => 'location_type_id'])['values'];
-    $preferredOrder = array_intersect_key(['Other' => 0, 'Main' => 1, 'Home' => 2, 'Mailing' => 3, 'Billing' => 4], array_flip($locationTypes));
-    return array_merge($preferredOrder, array_flip($locationTypes));
-  }
-
-  /**
    * Filter out phones that are not true duplicates as they have different types.
    *
    * @param $entitiesArray
    */
-  protected function filterOutPhonesWhereTypeIsDifferentButLocationISame(&$entitiesArray) {
+  protected function filterOutPhonesWhereTypeIsDifferentButLocationIsSame(&$entitiesArray) {
 
     $phonesByTypeArray = [];
     foreach ($entitiesArray as $index => $entityArray) {
