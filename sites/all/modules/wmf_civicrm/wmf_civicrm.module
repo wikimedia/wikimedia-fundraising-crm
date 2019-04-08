@@ -4351,6 +4351,7 @@ function wmf_civicrm_ensure_payment_processor_exists($typeName, $name = NULL) {
   $params['is_active'] = TRUE;
   $params['financial_account_id'] = $financialAccountId;
   civicrm_api3('PaymentProcessor', 'create', $params);
+  civicrm_api3('PaymentProcessor', 'create', array_merge($params, ['is_test' => TRUE]));
 }
 
 
