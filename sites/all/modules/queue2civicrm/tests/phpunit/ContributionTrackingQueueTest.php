@@ -40,7 +40,7 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * $messages should ALWAYS contain the field 'contribution_id'
+   * $messages should ALWAYS contain the field 'id'
    *
    * @expectedException ContributionTrackingDataValidationException
    */
