@@ -1438,10 +1438,15 @@ function wmf_civicrm_ensure_option_exists($option_value, $field_name, $option_gr
     'field' => $field_name,
   ));
   if ($option_value && empty($available_options['values'][$option_value])) {
-    civicrm_api3('OptionValue', 'create', array_merge(array(
+    $uniqueParams = [
       'option_group_id' => $option_group_name,
-      'name' => $option_value,
-    ), $spec));
+      'name' => $option_value
+    ];
+    $checkForInactive = civicrm_api3('OptionValue', 'get', array_merge(['is_active' => 0], $uniqueParams));
+    if (!empty($checkForInactive['id'])) {
+      $uniqueParams['id'] = $checkForInactive['id'];
+    }
+    civicrm_api3('OptionValue', 'create', array_merge($uniqueParams, $spec));
   }
 }
 

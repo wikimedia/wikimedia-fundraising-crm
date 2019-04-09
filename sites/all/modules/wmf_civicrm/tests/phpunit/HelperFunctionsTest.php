@@ -9,8 +9,6 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
     /**
      * Test wmf_ensure_language_exists
      *
-     * Maintenance note: the civicrm entity_tag get api returns an odd syntax.
-     *
      * If that ever gets fixed it may break this test - but only the test would
      * need to be altered to adapt.
      *
@@ -19,11 +17,18 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
     public function testEnsureLanguageExists() {
         civicrm_initialize();
         wmf_civicrm_ensure_language_exists('en_IL');
-        $languages = civicrm_api3('OptionValue', 'get', array(
-            'option_group_name' => 'languages',
-            'name' => 'en_IL',
-        ));
-        $this->assertEquals(1, $languages['count']);
+        $language = $this->callAPISuccessGetSingle('OptionValue', [
+          'option_group_name' => 'languages',
+          'name' => 'en_IL',
+        ]);
+
+        $this->callAPISuccess('OptionValue', 'create', ['id' => $language['id'], 'is_active' => 0]);
+        wmf_civicrm_ensure_language_exists('en_IL');
+
+        $this->callAPISuccessGetSingle('OptionValue', [
+          'option_group_name' => 'languages',
+          'name' => 'en_IL',
+        ]);
     }
 
   /**
