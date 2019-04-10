@@ -50,6 +50,8 @@ class WmfException extends Exception {
 
   const DUPLICATE_INVOICE = 24;
 
+  const CONTRIBUTION_TRACKING = 25;
+
   //XXX shit we aren't using the 'rollback' attribute
   // and it's not correct in most of these cases
   static $error_types = [

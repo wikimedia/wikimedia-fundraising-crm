@@ -1,0 +1,7 @@
+name = WMF Contribution Tracking Queue Consumer
+description = Picks up messages from the contribution-tracking queue and inserts them into the contribution tracking db table.
+core = 7.x
+package = queue2civicrm
+configure = admin/config/queue2civicrm/contribution_tracking_qc
+dependencies[] = queue2civicrm
+files[] = ContributionTrackingQueueConsumer.php

@@ -1,0 +1,85 @@
+<?php
+
+use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
+
+
+/**
+ * Implements hook_menu
+ */
+function wmf_ct_qc_menu() {
+  $items[ 'admin/config/queue2civicrm/contribution_tracking_qc' ] = array(
+    'title'            => 'Contribution Tracking',
+    'description'      => t('Configure Contribution Tracking queue consumers'),
+    'access arguments' => array( 'administer queue2civicrm' ),
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array( 'ct_qc_settings' ),
+  );
+  return $items;
+}
+
+/**
+ * Constructs the settings page for this module.
+ *
+ * @return array Of form components.
+ */
+function ct_qc_settings() {
+  $form = array();
+
+  $form['ct_qc_disable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable Contribution Tracking queue consumer'),
+    '#description' => t('If checked, no message processing will be performed for the contribution-tracking queue.'),
+    '#default_value' => variable_get('ct_qc_disable', false),
+  );
+
+  $form['ct_batch_time'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Job time limit (in seconds)'),
+    '#description' => t('Maximum elapsed duration of an contribution queue consumer job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  Either a time limit or batch size limit is required.'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('ct_batch_time', 90),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Callback for drush. Sets up the queue consumer and pulls messages off the
+ * queue to be processed.
+ *
+ * @see \queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer::processMessage()
+ */
+function ct_batch_process() {
+
+  if (variable_get( "ct_qc_disable", false )){
+    watchdog('contriution_tracking_qc', 'ct_qc is disabled. No contributions processed.');
+    return 0;
+  }
+
+  //smashpig config is a dependency of our ContributionTrackingQueueConsumer
+  wmf_common_create_smashpig_context('ct_batch_process');
+
+  $cycle_time = variable_get('ct_batch_time', 0);
+
+  $ContributionTrackingQueueConsumer = new ContributionTrackingQueueConsumer(
+    'contribution-tracking',
+    $cycle_time
+  );
+
+  $processed = $ContributionTrackingQueueConsumer->dequeueMessages();
+
+  if ($processed > 0) {
+    watchdog('ct', 'Successfully processed ' . $processed . ' contribution tracking message(s).');
+  }
+  else {
+    watchdog('ct', 'No contribution tracking messages processed.');
+  }
+}
+
+
+class ContributionTrackingDataValidationException extends WmfException {
+
+  public function __construct($message) {
+    parent::__construct(parent::CONTRIBUTION_TRACKING, $message);
+  }
+}
