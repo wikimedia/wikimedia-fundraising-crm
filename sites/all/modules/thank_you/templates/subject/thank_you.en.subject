@@ -1,1 +1,1 @@
-Your {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} gift = free knowledge for billions
+Your gift = free knowledge for billions
