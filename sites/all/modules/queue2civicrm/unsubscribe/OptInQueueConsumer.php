@@ -8,13 +8,15 @@ use WmfException;
 class OptInQueueConsumer extends WmfQueueConsumer {
 
   protected $optInCustomFieldName;
+  protected $doNotSolicitCustomFieldName;
 
   function __construct($queueName, $timeLimit = 0, $messageLimit = 0) {
     parent::__construct($queueName, $timeLimit, $messageLimit);
-    $id = CRM_Core_BAO_CustomField::getCustomFieldID(
-      'opt_in', 'Communication'
+    $commsMap = wmf_civicrm_get_custom_field_map(
+      [ 'opt_in', 'do_not_solicit' ], 'Communication'
     );
-    $this->optInCustomFieldName = "custom_{$id}";
+    $this->optInCustomFieldName = $commsMap['opt_in'];
+    $this->doNotSolicitCustomFieldName = $commsMap['do_not_solicit'];
   }
 
   /**
@@ -112,6 +114,9 @@ class OptInQueueConsumer extends WmfQueueConsumer {
       civicrm_api3('Contact', 'create', [
         'id' => $contact['id'],
         $this->optInCustomFieldName => TRUE,
+        $this->doNotSolicitCustomFieldName => FALSE,
+        'do_not_email' => FALSE,
+        'is_opt_out' => FALSE
       ]);
     }
   }

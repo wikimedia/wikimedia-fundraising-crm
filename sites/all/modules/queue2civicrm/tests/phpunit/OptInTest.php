@@ -28,6 +28,11 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
   protected $optInCustomFieldName;
 
   /**
+   * @var string
+   */
+  protected $doNotSolicitCustomFieldName;
+
+  /**
    * @var \CiviFixtures
    */
   protected $fixtures;
@@ -46,6 +51,11 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
       'opt_in', 'Communication'
     );
     $this->optInCustomFieldName = "custom_{$id}";
+
+    $id = CRM_Core_BAO_CustomField::getCustomFieldID(
+      'do_not_solicit', 'Communication'
+    );
+    $this->doNotSolicitCustomFieldName = "custom_{$id}";
   }
 
   public function tearDown() {
@@ -83,7 +93,12 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
   protected function getContact() {
     return civicrm_api3('Contact', 'getSingle', [
       'id' => $this->contactId,
-      'return' => [$this->optInCustomFieldName],
+      'return' => [
+        $this->optInCustomFieldName,
+        $this->doNotSolicitCustomFieldName,
+        'is_opt_out',
+        'do_not_email',
+        ],
     ]);
   }
 
@@ -92,6 +107,22 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->consumer->processMessage($this->getMessage());
     $contact = $this->getContact();
     $this->assertEquals('1', $contact[$this->optInCustomFieldName]);
+  }
+
+  public function testOptedOutContact() {
+    $this->createEmail(['is_primary' => '1']);
+    civicrm_api3('Contact', 'create', [
+      'id' => $this->contactId,
+      'is_opt_out' => TRUE,
+      'do_not_email' => TRUE,
+      $this->doNotSolicitCustomFieldName => TRUE,
+    ]);
+    $this->consumer->processMessage($this->getMessage());
+    $contact = $this->getContact();
+    $this->assertEquals('1', $contact[$this->optInCustomFieldName]);
+    $this->assertEquals('0', $contact['is_opt_out']);
+    $this->assertEquals('0', $contact['do_not_email']);
+    $this->assertEquals('', $contact[$this->doNotSolicitCustomFieldName]);
   }
 
   public function testNonExistantEmail() {
