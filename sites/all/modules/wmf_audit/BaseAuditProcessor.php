@@ -4,6 +4,11 @@ use SmashPig\Core\DataStores\QueueWrapper;
 
 abstract class BaseAuditProcessor {
 
+  /**
+   * @var int number of days of log to search in before transaction date
+   */
+  const LOG_SEARCH_WINDOW = 30;
+
   protected $options;
 
   protected $name;
@@ -575,8 +580,11 @@ abstract class BaseAuditProcessor {
    * processor-intensive part, but we have some timesaving new near-givens to
    * work with. Things to remember: The date on the payments log, probably
    * doesn't contain much of that actual date. It's going to be the previous
-   * day, mostly. Also, remember logrotate exists, so it might be the next day
-   * before we get the payments log we would be most interested in today.
+   * day, mostly. For some offline payment methods, the log entry might be from
+   * a month or so before the posted transaction date, so we search logs up to
+   * LOG_SEARCH_WINDOW days before. Also, remember logrotate exists, so it
+   * might be the next day before we get the payments log we would be most
+   * interested in today.
    *
    * @param array $missing_by_date An array of all the missing transactions we
    * have pulled out of the nightlies, indexed by the standard WMF date format.
@@ -649,9 +657,11 @@ abstract class BaseAuditProcessor {
       //(which may or may not be when it was initiated, but that's the past-iest
       //option), and it hasn't already been added to the pool, add it to the pool.
       //As we're stepping backward, we should look for transactions that come
-      //from the current log date, or the one before.
+      //from the current log date, or LOG_SEARCH_WINDOW days before.
       foreach ($missing_by_date as $audit_date => $data) {
-        if (wmf_common_date_add_days($audit_date, 1) >= $log_date) {
+        $window_end = wmf_common_date_add_days($audit_date, 1);
+        $window_start = wmf_common_date_add_days($audit_date, -1 * self::LOG_SEARCH_WINDOW);
+        if ($window_end >= $log_date && $window_start <= $log_date) {
           if (!array_key_exists($audit_date, $tryme)) {
             wmf_audit_echo("Adding date $audit_date to the date pool for log date $log_date");
             $tryme[$audit_date] = $data;
