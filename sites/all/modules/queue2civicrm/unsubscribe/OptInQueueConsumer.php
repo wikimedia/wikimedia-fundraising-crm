@@ -40,10 +40,8 @@ class OptInQueueConsumer extends WmfQueueConsumer {
     $email = $message['email'];
     // Find the contact from the contribution ID
     $contacts = $this->getContactsFromEmail($email);
-
-    // Create the contact if it doesn't already exist
-    if (count($contacts) === 0) {
-
+    $new_contact = count($contacts) === 0;
+    if ( $new_contact ) {
       if (!empty($message['last_name'])) {
         $message['opt_in'] = TRUE;
         wmf_civicrm_message_create_contact($message);
@@ -51,12 +49,29 @@ class OptInQueueConsumer extends WmfQueueConsumer {
         $contact_id = $message['contact_id'];
         watchdog('opt_in', "New contact created on opt-in: $contact_id", [],
           WATCHDOG_INFO);
-      } else {
-        // Not enough information to create the contact
-        watchdog('opt_in',
-          "$email: No contacts returned for email. Dropping message.",
-          [],
-          WATCHDOG_NOTICE);
+      }
+      else {
+        // look for non-primary email, if found, don't update opt-in
+        $civiEmail = civicrm_api3('Email', 'get', array('email' => $email));
+        $new_email = $civiEmail['count'] == 0;
+        if ( $new_email ) {
+          // Not enough information for create_contact, create with just email
+          $contactParams = array(
+            'contact_type' => 'Individual',
+             'email' => $email,
+             $this->optInCustomFieldName => TRUE,
+             'source' => 'opt-in',
+          );
+
+          $contact = civicrm_api3('Contact', 'create', $contactParams);
+          watchdog('opt_in', "New contact created on opt-in: {$contact['id']}", [],
+            WATCHDOG_INFO);
+        }
+        else {
+          // TODO: They entered an already existing non-primary email, opt them in and make the entered email primary
+          watchdog('opt_in', "Email already exists with no associated contacts: {$email}", [],
+            WATCHDOG_INFO);
+        }
       }
     }
     else {
@@ -93,7 +108,6 @@ class OptInQueueConsumer extends WmfQueueConsumer {
   function getContactsFromEmail($email) {
     $result = civicrm_api3('Contact', 'get', [
       'email' => $email,
-      'email.is_primary',
       'return' => ['id', $this->optInCustomFieldName],
     ]);
     if (empty($result['values'])) {
