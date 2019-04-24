@@ -3336,6 +3336,17 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
         'name' => 'id',
         'type' => CRM_Utils_Type::T_INT,
       ],
+      'participant_registered_by_id' => [
+        'title' => 'Registered by ID',
+        'is_fields' => TRUE,
+        'name' => 'registered_by_id',
+      ],
+      'participant_registered_by_name' => [
+        'title' => 'Registered by Name',
+        'is_fields' => TRUE,
+        'name' => 'registered_by_id',
+        'alter_display' => 'alterRegisteredName',
+      ],
       'participant_event_id' => [
         'title' => ts('Event ID'),
         'name' => 'event_id',
@@ -4995,6 +5006,11 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
         'rightTable' => 'civicrm_contact',
         'callback' => 'joinContactFromContribution',
       ],
+      'contact_from_contribution_recur' => [
+        'leftTable' => 'civicrm_contribution_recur',
+        'rightTable' => 'civicrm_contact',
+        'callback' => 'joinContactFromContributionRecur',
+      ],
       'contact_from_pledge' => [
         'leftTable' => 'civicrm_pledge',
         'rightTable' => 'civicrm_contact',
@@ -5636,6 +5652,14 @@ ON {$this->_aliases['civicrm_contribution']}.contact_id = {$this->_aliases['civi
   }
 
   /**
+   * Join contact in from civicrm_contribution_recur table.
+   */
+  function joinContactFromContributionRecur() {
+    $this->_from .= " LEFT JOIN civicrm_contact {$this->_aliases['civicrm_contact']}
+ON {$this->_aliases['civicrm_contribution_recur']}.contact_id = {$this->_aliases['civicrm_contact']}.id";
+  }
+
+  /**
    * Define join from pledge table to contact table.
    */
   function joinContactFromPledge() {
@@ -5958,6 +5982,26 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
       return '';
     }
     return CRM_Event_PseudoConstant::eventType($value);
+  }
+
+  /**
+   * @param int|null $value
+   * @param array $row
+   * @param string $selectedfield
+   *
+   * @return string
+   *   Name of primary participant.
+   */
+  function alterRegisteredName($value, &$row, $selectedField) {
+    if (empty($value)) {
+      return '';
+    }
+
+    $registeredByContactId = CRM_Core_DAO::getFieldValue('CRM_Event_DAO_Participant', $value, 'contact_id', 'id');
+    $row[$selectedField . '_link'] = CRM_Utils_System::url('civicrm/contact/view', 'reset=1&cid=' . $registeredByContactId);
+    $row[$selectedField . '_hover']  = ts('View Contact Summary for Contact that registered the participant.');
+
+    return CRM_Contact_BAO_Contact::displayName($registeredByContactId);
   }
 
   /**
@@ -7807,7 +7851,7 @@ WHERE cg.extends IN ('" . $extendsString . "') AND
           }
           $this->metaData['order_bys'][$extendedOrderBy['name']]['title'] .= '(' . implode(', ', $nullString) . ')';
           $this->metaData['order_bys'][$extendedOrderBy['name']]['field_on_null'] = $extendedOrderBy['field_on_null'];
-
+          $this->metaData['order_bys'][$extendedOrderBy['name']]['field_on_null_usage'] = CRM_Utils_Array::value('field_on_null_usage', $extendedOrderBy, 'on_null');
         }
       }
     }
@@ -7899,11 +7943,14 @@ WHERE cg.extends IN ('" . $extendsString . "') AND
   }
 
   /**
-   * @param $params
-   * @return mixed
+   * Get configured extended order by fields.
+   *
+   * @param array $params
+   *
+   * @return array
    */
   protected function getExtendedOrderBysSelection($params) {
-    return CRM_Utils_Array::value('extended_order_bys', $params, []);
+    return CRM_Utils_Array::value('extended_order_bys', $params, CRM_Utils_Array::value('extended_order_bys', $this->_formValues, CRM_Utils_Array::value('extended_order_bys', $this->_params, [])));
   }
 
   /**
