@@ -4,6 +4,11 @@ use SmashPig\Core\DataStores\QueueWrapper;
 
 abstract class BaseAuditProcessor {
 
+  /**
+   * @var int number of days of log to search in before transaction date
+   */
+  const LOG_SEARCH_WINDOW = 30;
+
   protected $options;
 
   protected $name;
@@ -575,8 +580,11 @@ abstract class BaseAuditProcessor {
    * processor-intensive part, but we have some timesaving new near-givens to
    * work with. Things to remember: The date on the payments log, probably
    * doesn't contain much of that actual date. It's going to be the previous
-   * day, mostly. Also, remember logrotate exists, so it might be the next day
-   * before we get the payments log we would be most interested in today.
+   * day, mostly. For some offline payment methods, the log entry might be from
+   * a month or so before the posted transaction date, so we search logs up to
+   * LOG_SEARCH_WINDOW days before. Also, remember logrotate exists, so it
+   * might be the next day before we get the payments log we would be most
+   * interested in today.
    *
    * @param array $missing_by_date An array of all the missing transactions we
    * have pulled out of the nightlies, indexed by the standard WMF date format.
@@ -596,12 +604,12 @@ abstract class BaseAuditProcessor {
     //output the initial counts for each index...
     $earliest = NULL;
     $latest = NULL;
-    foreach ($missing_by_date as $date => $data) {
+    foreach ($missing_by_date as $audit_date => $data) {
       if (is_null($earliest)) {
-        $earliest = $date;
+        $earliest = $audit_date;
       }
-      $latest = $date;
-      wmf_audit_echo($date . " : " . count($data));
+      $latest = $audit_date;
+      wmf_audit_echo($audit_date . " : " . count($data));
     }
     wmf_audit_echo("\n");
 
@@ -649,12 +657,14 @@ abstract class BaseAuditProcessor {
       //(which may or may not be when it was initiated, but that's the past-iest
       //option), and it hasn't already been added to the pool, add it to the pool.
       //As we're stepping backward, we should look for transactions that come
-      //from the current log date, or the one before.
-      foreach ($missing_by_date as $date => $data) {
-        if (wmf_common_date_add_days($date, 1) >= $log_date) {
-          if (!array_key_exists($date, $tryme)) {
-            wmf_audit_echo("Adding date $date to the date pool for log date $log_date");
-            $tryme[$date] = $data;
+      //from the current log date, or LOG_SEARCH_WINDOW days before.
+      foreach ($missing_by_date as $audit_date => $data) {
+        $window_end = wmf_common_date_add_days($audit_date, 1);
+        $window_start = wmf_common_date_add_days($audit_date, -1 * self::LOG_SEARCH_WINDOW);
+        if ($window_end >= $log_date && $window_start <= $log_date) {
+          if (!array_key_exists($audit_date, $tryme)) {
+            wmf_audit_echo("Adding date $audit_date to the date pool for log date $log_date");
+            $tryme[$audit_date] = $data;
           }
         }
         else {
@@ -665,9 +675,9 @@ abstract class BaseAuditProcessor {
       //log something sensible out for what we're about to do
       $display_dates = [];
       if (!empty($tryme)) {
-        foreach ($tryme as $date => $thing) {
+        foreach ($tryme as $audit_date => $thing) {
           if (count($thing) > 0) {
-            $display_dates[$date] = count($thing);
+            $display_dates[$audit_date] = count($thing);
           }
         }
       }
@@ -687,9 +697,9 @@ abstract class BaseAuditProcessor {
       if ($logs) {
         //check to see if the missing transactions we're trying now, are in there.
         //Echochar with results for each one.
-        foreach ($tryme as $date => $missing) {
+        foreach ($tryme as $audit_date => $missing) {
           if (!empty($missing)) {
-            wmf_audit_echo("Log Date: $log_date: About to check " . count($missing) . " missing transactions from $date", TRUE);
+            wmf_audit_echo("Log Date: $log_date: About to check " . count($missing) . " missing transactions from $audit_date", TRUE);
             $checked = 0;
             $found = 0;
             foreach ($missing as $id => $transaction) {
@@ -767,7 +777,7 @@ abstract class BaseAuditProcessor {
 
                 //Send to queue.
                 $this->send_queue_message($all_data, 'main');
-                unset($tryme[$date][$id]);
+                unset($tryme[$audit_date][$id]);
                 wmf_audit_echo('!');
               } catch (WmfException $ex) {
                 // End of the transaction search/destroy loop. If we're here and have
@@ -775,11 +785,11 @@ abstract class BaseAuditProcessor {
                 // Handle consistently, and definitely don't try looking in other
                 // logs.
                 wmf_audit_log_error($ex->getMessage(), $ex->getErrorName());
-                unset($tryme[$date][$id]);
+                unset($tryme[$audit_date][$id]);
                 wmf_audit_echo('X');
               }
             }
-            wmf_audit_echo("Log Date: $log_date: Checked $checked missing transactions from $date, and found $found\n");
+            wmf_audit_echo("Log Date: $log_date: Checked $checked missing transactions from $audit_date, and found $found\n");
           }
         }
       }
@@ -799,8 +809,8 @@ abstract class BaseAuditProcessor {
         wmf_audit_echo("Making up to $missing_count missing transactions:");
         $made = 0;
         $cutoff = wmf_common_date_add_days(wmf_common_date_get_today_string(), -3);
-        foreach ($tryme as $date => $missing) {
-          if ((int) $date <= (int) $cutoff) {
+        foreach ($tryme as $audit_date => $missing) {
+          if ((int) $audit_date <= (int) $cutoff) {
             foreach ($missing as $id => $message) {
               if (empty($message['contribution_tracking_id'])) {
                 $contribution_tracking_data = wmf_audit_make_contribution_tracking_data($message);
@@ -813,7 +823,7 @@ abstract class BaseAuditProcessor {
               $this->send_queue_message($sendme, 'main');
               $made += 1;
               wmf_audit_echo('!');
-              unset($tryme[$date][$id]);
+              unset($tryme[$audit_date][$id]);
             }
           }
         }
