@@ -1249,6 +1249,7 @@ abstract class BaseAuditProcessor {
       'utm_campaign',
       'utm_medium',
       'utm_source',
+      'opt_in',
     ];
     $filtered = [];
     foreach ($filter as $fieldName) {
