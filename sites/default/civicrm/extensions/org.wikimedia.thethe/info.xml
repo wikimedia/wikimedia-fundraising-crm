@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<extension key="org.wikimedia.thethe" type="module">
+  <file>thethe</file>
+  <name>The the</name>
+  <description>This extension eliminates the The from the sort name of organisations. Other strings by configuration</description>
+  <license>AGPL-3.0</license>
+  <maintainer>
+    <author>eileen</author>
+    <email>emcnaughton@wikimedia.org</email>
+  </maintainer>
+  <urls>
+    <url desc="Main Extension Page">https://github.com/eileenmcnaughton/org.wikimedia.thethe</url>
+    <url desc="Documentation">https://github.com/eileenmcnaughton/org.wikimedia.thethe</url>
+    <url desc="Support">http://chat.civicrm.org</url>
+    <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
+  </urls>
+  <releaseDate>2019-03-19</releaseDate>
+  <version>1.0</version>
+  <develStage>stable</develStage>
+  <compatibility>
+    <ver>5.13</ver>
+  </compatibility>
+  <comments>By tweaking the sort name we make it easier to find duplicates and search for orgs when we are not sure if the The would have been entered. This is especially helpful on sites that have turned off 'automatic wildcard' - which gives a huge performance boost at the loss of some convenience. Another benefit is being able to dedupe organisations with differently entered names (using sort_name as a search key)</comments>
+  <civix>
+    <namespace>CRM/Thethe</namespace>
+  </civix>
+</extension>

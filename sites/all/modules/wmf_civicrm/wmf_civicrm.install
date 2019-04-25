@@ -4777,7 +4777,6 @@ function wmf_civicrm_update_7830() {
   if (function_exists('drush_print')) {
     drush_print(empty($skippedContacts) ? ts('OMG OMG it worked') : ts('Massive fail dude - contacts are' . implode(',', $skippedContacts)));
   }
-
 }
 
 /**
@@ -4827,4 +4826,18 @@ SELECT
   `payment_instrument_id`
 
  FROM civicrm_payment_processor");
+}
+
+/**
+ * Enable thethe & remove the from existing sort names.
+ *
+ * Bug: T115536
+ */
+function wmf_civicrm_update_7840() {
+  wmf_civicrm_reconcile_extensions();
+  CRM_Core_DAO::executeQuery('
+    UPDATE civicrm_contact
+    SET sort_name = RIGHT(sort_name, LENGTH(sort_name) -4)
+    WHERE sort_name LIKE "the %" AND contact_type = "Organization"
+  ');
 }
