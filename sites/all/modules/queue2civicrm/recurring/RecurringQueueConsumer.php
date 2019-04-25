@@ -279,7 +279,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     wmf_civicrm_message_location_insert($msg, $contact);
 
     try {
-      $result = civicrm_api3('ContributionRecur', 'create', [
+      $params = [
         'contact_id' => $contact['id'],
         'currency' => $msg['original_currency'],
         'amount' => $msg['original_gross'],
@@ -289,8 +289,20 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         'start_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
         'create_date' => wmf_common_date_unix_to_civicrm($msg['create_date']),
         'trxn_id' => $msg['subscr_id'],
-      ]);
-    } catch (\CiviCRM_API3_Exception $e) {
+      ];
+      $processors = \Civi::cache()->get('queue2civicrm_civicrm_payment_processors');
+      if (!$processors) {
+        $processors = array_flip(civicrm_api3('ContributionRecur', 'getoptions', ['field' => 'payment_processor_id'])['values']);
+        \Civi::cache()->set('queue2civicrm_civicrm_payment_processors', $processors);
+      }
+      if (isset($processors[$msg['gateway']])) {
+        // We could pass the gateway name to the api for resolution but it would reject
+        // any gateway values with no valid processor mapping so we do this ourselves.
+        $params['payment_processor_id'] = $processors[$msg['gateway']];
+      }
+      civicrm_api3('ContributionRecur', 'create', $params);
+    }
+    catch (\CiviCRM_API3_Exception $e) {
       throw new WmfException(WmfException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());
     }
     watchdog('recurring', 'Succesfully inserted subscription signup for subscriber id: %subscr_id ', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
