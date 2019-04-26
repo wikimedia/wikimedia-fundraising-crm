@@ -156,7 +156,7 @@ class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessIn
     TestingContext::init($globalConfig);
 
     $existing = civicrm_api3(
-      'PaymentProcessor', 'get', ['name' => $this->processorName]
+      'PaymentProcessor', 'get', ['name' => $this->processorName, 'is_test' => 0]
     );
     if ($existing['values']) {
       $this->processorId = $existing['id'];
