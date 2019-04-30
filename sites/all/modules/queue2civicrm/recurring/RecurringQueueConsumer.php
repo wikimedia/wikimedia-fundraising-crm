@@ -40,7 +40,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
     // define the subscription txn types that affect the subscription account
     $txn_subscr_acct = [
-      'subscr_cancel', // subscription canceled
+      'subscr_cancel', // subscription canceled by user at the gateway.
       'subscr_eot', // subscription expired
       'subscr_failed', // failed signup
       //'subscr_modify', // subscription modification
@@ -323,14 +323,14 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       return;
       // throw new WmfException(WmfException::INVALID_RECURRING, 'Subscription account does not exist');
     }
-    $activityParams = [
-      'subject' => ts('Recurring contribution cancelled'),
-    ];
-    $cancelStatus = CRM_Contribute_BAO_ContributionRecur::cancelRecurContribution(
-      $recur_record->id,
-      $activityParams
-    );
-    if (!$cancelStatus) {
+
+    $cancelStatus = civicrm_api3('ContributionRecur', 'cancel', [
+      'id' => $recur_record->id,
+      // This line of code is only reachable if the txn type is 'subscr_cancel'
+      // Which I believe always means the user has initiated the cancellation outside our process.
+      'cancel_reason' => '(auto) User Cancelled via Gateway',
+    ]);
+    if ($cancelStatus['is_error']) {
       throw new WmfException(WmfException::INVALID_RECURRING, 'There was a problem cancelling the subscription for subscriber id: ' . print_r($msg['subscr_id'], TRUE));
     }
 
@@ -366,19 +366,20 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       // throw new WmfException(WmfException::INVALID_RECURRING, 'Subscription account does not exist');
     }
 
-    $api = civicrm_api_classapi();
-    $update_params = [
-      'id' => $recur_record->id,
-      'end_date' => wmf_common_date_unix_to_civicrm(time()),
-
-      'version' => 3,
-    ];
-    if (!$api->ContributionRecur->Create($update_params)) {
-      throw new WmfException(WmfException::INVALID_RECURRING, 'There was a problem updating the subscription for EOT for subscription id: %subscr_id' . print_r($msg['subscr_id'], TRUE) . ": " . $api->errorMsg());
+    try {
+      \civicrm_api3('ContributionRecur', 'create', [
+        'id' => $recur_record->id,
+        'end_date' => 'now',
+        'contribution_status_id' => 'Completed',
+        'cancel_reason' => '(auto) Expiration notification',
+        'next_sched_contribution_date' => 'null',
+        'failure_retry_date' => 'null',
+      ]);
     }
-    else {
-      watchdog('recurring', 'Succesfuly ended subscription for subscriber id: %subscr_id ', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
+    catch (\CiviCRM_API3_Exception $e) {
+      throw new WmfException(WmfException::INVALID_RECURRING, 'There was a problem updating the subscription for EOT for subscription id: %subscr_id' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
     }
+    watchdog('recurring', 'Succesfuly ended subscription for subscriber id: %subscr_id ', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
   }
 
   /**

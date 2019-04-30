@@ -194,23 +194,22 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
   protected function recordFailedPayment($recurringPayment) {
     $newFailureCount = $recurringPayment['failure_count'] + 1;
-    $extraParams = [];
+    $params = [
+      'id' => $recurringPayment['id'],
+      'failure_count' => $newFailureCount,
+    ];
     if ($newFailureCount >= $this->maxFailures) {
-      $status = 'Cancelled';
-      $extraParams['cancel_date'] = UtcDate::getUtcDatabaseString();
+      $params['contribution_status_id'] = 'Cancelled';
+      $params['cancel_date'] = UtcDate::getUtcDatabaseString();
+      $params['cancel_reason'] = '(auto) maximum failures reached';
     }
     else {
-      $status = 'Failed';
-      $retryDate = UtcDate::getUtcDatabaseString(
+      $params['contribution_status_id'] = 'Failed';
+      $params['next_sched_contribution_date'] = UtcDate::getUtcDatabaseString(
         "+$this->retryDelayDays days"
       );
-      $extraParams['next_sched_contribution_date'] = $retryDate;
     }
-    civicrm_api3('ContributionRecur', 'create', [
-        'id' => $recurringPayment['id'],
-        'contribution_status_id' => $status,
-        'failure_count' => $newFailureCount,
-      ] + $extraParams);
+    civicrm_api3('ContributionRecur', 'create', $params);
   }
 
   /**
