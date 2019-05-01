@@ -1,4 +1,4 @@
-0<?php
+<?php
 
 /**
  * Implementation of hook_drush_command()
