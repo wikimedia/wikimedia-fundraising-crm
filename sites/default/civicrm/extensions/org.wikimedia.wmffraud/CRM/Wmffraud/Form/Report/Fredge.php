@@ -8,12 +8,15 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
     'AVS' => 'getAVSResult',
     'CVV' => 'getCVVResult',
     'ScoreCountryMap' => 'getScoreCountryMap',
+    'ScoreName' => 'getScoreName',
     'ScoreEmailDomainMap' => 'getScoreEmailDomainMap',
     'ScoreUtmCampaignMap' => 'getScoreUtmCampaignMap',
     'initial' => 'initial',
     'IPVelocity' => 'IPVelocityFilter',
     'minfraud' => 'minfraud_filter',
     'SessionVelocity' => 'SessionVelocity',
+    'donationInterfaceEmailPattern' => 'donation_interface_fraud_email_pattern',
+    'IPBlacklist' => 'IPBlacklist',
   ];
 
   function __construct() {
