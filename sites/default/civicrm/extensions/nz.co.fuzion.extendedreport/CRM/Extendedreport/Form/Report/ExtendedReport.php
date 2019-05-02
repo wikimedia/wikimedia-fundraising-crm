@@ -224,7 +224,7 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
    *
    * @var bool
    */
-  protected $isSupportsContactTab = FALSE;
+  protected $isSupportsContactTab = TRUE;
 
   /**
    * DAOs for custom data fields to use.
@@ -1961,7 +1961,7 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
 
       //$templatesDir = str_replace('CRM/Extendedreport', 'templates/CRM/Extendedreport', __DIR__);
       $this->add('select', 'templates', ts('Select Alternate Template'), $this->_templates, FALSE,
-        ['id' => 'templates', 'title' => ts('- select -'),]
+        ['id' => 'templates', 'title' => ts('- select -'), 'class' => 'crm-select2']
       );
 
       $this->tabs['Template'] = [
@@ -2334,6 +2334,17 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
     }
     parent::alterDisplay($rows);
 
+    if (isset($this->_params['delete_null'])) {
+      if ($this->_params['delete_null'] == '1') {
+        foreach ($rows[0] as $rowName => $rowValue) {
+          if($rowValue != ''&& is_numeric($rowValue)) {
+            if ($rowValue == 0) {
+              unset ($this->_columnHeaders[$rowName]);
+            }
+          }
+        }
+      }
+    }
     //THis is all generic functionality which can hopefully go into the parent class
     // it introduces the option of defining an alter display function as part of the column definition
     // @todo tidy up the iteration so it happens in this function
@@ -2387,7 +2398,7 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
         if (empty($this->_groupByArray) || $this->_groupByArray == $idKeyArray) {
           $alterFunctions[$fieldAlias] = 'alterCrmEditable';
           $alterMap[$fieldAlias] = $fieldAlias;
-          $alterSpecs[$fieldAlias] = $specs['crm_editable'];
+          $alterSpecs[$fieldAlias] = $specs;
           $alterSpecs[$fieldAlias]['field_name'] = $specs['name'];
         }
       }
@@ -4864,6 +4875,41 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
   }
 
   /**
+   * Get billing address columns to add to array.
+   *
+   * @param array $options
+   *
+   * @return array billing address columns definition
+   */
+  function getBillingAddressColumns($options = array()) {
+    $options['prefix'] = 'billing';
+    $spec = array(
+      $options['prefix'] . 'name' => array(
+        'title' => ts($options['prefix_label'] . 'Billing Name'),
+        'name' => 'name',
+        'is_fields' => TRUE,
+        'alter_display' => 'alterBillingName',
+      ),
+    );
+    //FIX THIS
+    return $this->buildColumns($spec, $options['prefix'] . 'civicrm_address', 'CRM_Core_DAO_Address', NULL);
+  }
+
+  /**
+   * @param $value
+   * @param $row
+   *
+   * @return string
+   */
+  function alterBillingName($value, &$row, $selectedField) {
+    if (empty($value)) {
+      return '';
+    }
+
+    return str_replace(CRM_Core_DAO::VALUE_SEPARATOR, ' ', $value);
+  }
+
+  /**
    * Get Specification
    * for tag columns.
    * @param array $options
@@ -5036,6 +5082,11 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
         'rightTable' => 'civicrm_address',
         'callback' => 'joinAddressFromContact',
       ],
+      'address_from_contribution' => [
+        'leftTable' => 'civicrm_contact',
+        'rightTable' => 'civicrm_address',
+        'callback' => 'joinAddressFromContribution',
+      ],
       'contact_from_address' => [
         'leftTable' => 'civicrm_address',
         'rightTable' => 'civicrm_contact',
@@ -5177,6 +5228,25 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
     ON {$this->_aliases[$prefix . 'civicrm_address']}.contact_id = {$this->_aliases[$prefix . 'civicrm_contact']}.id
     AND {$this->_aliases[$prefix . 'civicrm_address']}.is_primary = 1
     ";
+    return TRUE;
+  }
+
+  /**
+   * Add join from contribution table to address.
+   *
+   * Prefix will be added to both tables as it's assumed you are using it to get address of a secondary contact
+   *
+   * @param string $prefix prefix to add to table names
+   * @param array $extra extra join parameters
+   *
+   * @return bool true or false to denote whether extra filters can be appended to join
+   */
+  protected function joinAddressFromContribution($prefix = 'billingaddress', $extra = array()) {
+    $this->_from .= " LEFT JOIN civicrm_address billingaddress
+    ON billingaddress.id = {$this->_aliases[$prefix . 'civicrm_contribution']}.address_id
+    AND billingaddress.is_billing = 1
+    ";
+
     return TRUE;
   }
 
@@ -5852,11 +5922,12 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
    * @param array $row
    * @param string $selectedField
    * @param $criteriaFieldName
-   * @param array $specs
+   * @param array $fullSpec
    *
    * @return string
    */
-  function alterCrmEditable($value, &$row, $selectedField, $criteriaFieldName, $specs) {
+  function alterCrmEditable($value, &$row, $selectedField, $criteriaFieldName, $fullSpec) {
+    $specs = $fullSpec['crm_editable'];
     $id_field = $specs['id_table'] . '_' . $specs['id_field'];
     if (empty($row[$id_field])) {
       // Check one more possible field...
@@ -5877,12 +5948,16 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
     if (!empty($specs['options'])) {
       $specs['options']['selected'] = $value;
       $extra = "data-type='select'";
-      $value = $specs['options'][$value];
+      $value = isset($specs['options'][$value]) ? $specs['options'][$value] : $value;
       $class = 'editable_select';
     }
+    elseif (!empty($specs['data-type'])) {
+      $extra = "data-type='{$specs['data-type']}'";
+    }
+
     //nodeName == "INPUT" && this.type=="checkbox"
     $editableDiv = "<div data-id='{$entityID}' data-entity='{$entity}' class='crm-entity'>" .
-      "<span class='crm-editable crmf-{$specs['field_name']} $class ' data-action='create' $extra>" . $value . "</span></div>";
+      "<span class='crm-editable crmf-{$fullSpec['field_name']} $class' data-action='create' $extra>" . $value . "</span></div>";
     return $editableDiv;
   }
 
@@ -6732,11 +6807,13 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
 
     }
     $this->add('select', 'aggregate_column_headers', ts('Aggregate Report Column Headers'), $aggregateColumnHeaderFields, FALSE,
-      ['id' => 'aggregate_column_headers', 'title' => ts('- select -')]
+      ['id' => 'aggregate_column_headers',  'class' => 'crm-select2', 'title' => ts('- select -')]
     );
     $this->add('select', 'aggregate_row_headers', ts('Row Fields'), $aggregateRowHeaderFields, FALSE,
-      ['id' => 'aggregate_row_headers', 'title' => ts('- select -')]
+      ['id' => 'aggregate_row_headers',  'class' => 'crm-select2', 'title' => ts('- select -')]
     );
+    $this->add('advcheckbox', 'delete_null',  ts('Hide columns with zero count'));
+
     $this->_columns[$this->_baseTable]['fields']['include_null'] = [
       'title' => 'Show column for unknown',
       'pseudofield' => TRUE,

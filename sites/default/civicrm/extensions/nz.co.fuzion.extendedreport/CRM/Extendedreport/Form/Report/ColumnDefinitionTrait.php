@@ -61,9 +61,15 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'is_filters' => TRUE,
         'is_order_bys' => TRUE,
         'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-        'options' => CRM_Core_PseudoConstant::activityType(TRUE, TRUE),
+        'options' => $this->_getOptions('activity', 'activity_type_id'),
         'name' => 'activity_type_id',
         'type' => CRM_Utils_Type::T_INT,
+        'crm_editable' => [
+          'id_table' => 'civicrm_activity',
+          'id_field' => 'id',
+          'entity' => 'activity',
+          'options' => $this->_getOptions('activity', 'activity_type_id'),
+        ],
       ],
       'subject' => [
         'title' => E::ts('Subject'),
@@ -117,6 +123,11 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'name' => 'duration',
         'type' => CRM_Utils_Type::T_INT,
         'is_fields' => TRUE,
+        'crm_editable' => [
+          'id_table' => 'civicrm_activity',
+          'id_field' => 'id',
+          'entity' => 'activity',
+        ],
       ],
       'details' => [
         'title' => E::ts('Activity Details'),
@@ -134,17 +145,28 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'type' => CRM_Utils_Type::T_STRING,
         'is_filters' => TRUE,
         'is_fields' => TRUE,
+        'crm_editable' => [
+          'id_table' => 'civicrm_activity',
+          'id_field' => 'id',
+          'entity' => 'activity',
+        ],
       ],
       'priority_id' => [
         'title' => E::ts('Priority'),
         'type' => CRM_Utils_Type::T_STRING,
         'operatorType' => CRM_Report_Form::OP_MULTISELECT,
         'alter_display' => 'alterPseudoConstant',
-        'options' => CRM_Activity_BAO_Activity::buildOptions('priority_id'),
+        'options' => $this->_getOptions('activity', 'priority_id'),
         'is_filters' => TRUE,
         'is_fields' => TRUE,
         'is_group_bys' => TRUE,
         'is_order_bys' => TRUE,
+        'crm_editable' => [
+          'id_table' => 'civicrm_activity',
+          'id_field' => 'id',
+          'entity' => 'activity',
+          'options' => $this->_getOptions('activity', 'priority_id'),
+        ],
       ],
       'result' => [
         'title' => E::ts('Activity Result'),
@@ -450,6 +472,7 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
       'id' => [
         'is_fields' => TRUE,
         'is_filters' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
         'statistics' => ['count' => E::ts('Numer of recurring profiles')],
       ],
       'payment_processor_id' => [
@@ -521,6 +544,7 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
       'create_date' => [
         'title' => E::ts('Create Date'),
         'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
         'is_filters' => TRUE,
       ],
       'modified_date' => [
@@ -533,11 +557,13 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
       'cancel_date' => [
         'title' => E::ts('Cancel Date'),
         'is_fields' => TRUE,
+        'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
         'is_filters' => TRUE,
       ],
       'cancel_reason' => [
         'title' => E::ts('Cancellation Reason'),
         'operatorType' => CRM_Report_Form::OP_STRING,
+        'type' => CRM_Utils_Type::T_STRING,
         'is_fields' => TRUE,
         'is_filters' => TRUE,
         'is_group_bys' =>  TRUE,
@@ -561,11 +587,13 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'title' => E::ts('Failure Count'),
         'is_fields' => TRUE,
         'is_filters' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
       ],
       'failure_retry_date' => [
         'title' => E::ts('Failure Retry Date'),
         'is_fields' => TRUE,
         'is_filters' => TRUE,
+        'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
       ],
       'financial_type_id' => [
         'title' => E::ts('Financial Type'),
