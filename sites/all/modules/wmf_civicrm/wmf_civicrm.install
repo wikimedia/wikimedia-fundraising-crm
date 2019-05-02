@@ -4873,11 +4873,15 @@ function wmf_civicrm_update_7855() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery('ALTER TABLE log_civicrm_contribution_recur ADD index(contribution_status_id)');
 
-  // Most likely these are either
-  // - smash pig max failures reached or
-  // - paypal user initiated cancel.
-  // We could put in more data based on that assumption but it feels like implying more certainty than we have.
-  CRM_Core_DAO::executeQuery("
+  $maxId = CRM_CORE_DAO::singleValueQuery("SELECT max(id) FROM civicrm_contribution_recur");
+  $batch = 5000;
+  for ($startId = 0; $startId < $maxId; $startId += $batch) {
+    $endId = $startId + $batch;
+    // Most likely these are either
+    // - smash pig max failures reached or
+    // - paypal user initiated cancel.
+    // We could put in more data based on that assumption but it feels like implying more certainty than we have.
+    CRM_Core_DAO::executeQuery("
     UPDATE civicrm_contribution_recur cr INNER JOIN (
 
       SELECT cr.id, '(auto) backfilled automated cancel' as cancel_reason
@@ -4889,7 +4893,9 @@ function wmf_civicrm_update_7855() {
         INNER JOIN civicrm_contribution_recur cr ON cr.id = crlog.id
         # Cancelled
         WHERE crlog.contribution_status_id = 3
-        AND crlog.log_action = 'Update' GROUP BY id
+        AND crlog.log_action = 'Update'
+        AND cr.id BETWEEN $startId AND $endId
+        GROUP BY id
       ) as cancel_action
       ON crlog.id = cancel_action.id
       AND crlog.log_date = cancelled_date
@@ -4902,10 +4908,10 @@ function wmf_civicrm_update_7855() {
     SET cr.cancel_reason = src.cancel_reason
   ");
 
-  // This second query looks for anything with an end date.
-  // I have some reservations about this - can we make this judgement - or should we
-  // a) leave blank of b) restricted to '(auto) backfilled automated end'
-  CRM_Core_DAO::executeQuery("
+    // This second query looks for anything with an end date.
+    // I have some reservations about this - can we make this judgement - or should we
+    // a) leave blank of b) restricted to '(auto) backfilled automated end'
+    CRM_Core_DAO::executeQuery("
 
     UPDATE civicrm_contribution_recur cr INNER JOIN (
 
@@ -4919,7 +4925,9 @@ function wmf_civicrm_update_7855() {
         # Completed, but with an end date
         WHERE crlog.end_date IS NOT NULL
         # Other than the 2 lines between the 2 comments & the message this is the same as the original.
-        AND crlog.log_action = 'Update' GROUP BY id
+        AND crlog.log_action = 'Update'
+        AND cr.id BETWEEN $startId AND $endId
+        GROUP BY id
       ) as cancel_action
       ON crlog.id = cancel_action.id
       AND crlog.log_date = cancelled_date
@@ -4931,5 +4939,7 @@ function wmf_civicrm_update_7855() {
 
     SET cr.cancel_reason = src.cancel_reason
   ");
+  }
   CRM_Core_DAO::executeQuery('ALTER TABLE log_civicrm_contribution_recur DROP index contribution_status_id');
+
 }
