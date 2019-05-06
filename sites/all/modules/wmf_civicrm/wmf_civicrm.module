@@ -186,22 +186,7 @@ function wmf_civicrm_contribution_message_import(&$msg) {
     }
   }
   if ($msg['contact_id'] && isset($msg['contact_hash'])) {
-    // This message came from the donations front-end. We need to verify
-    // the hash before using the existing contact.
-    $existing = civicrm_api3('Contact', 'getSingle', array(
-      'id' => $msg['contact_id'],
-      'return' => array('hash', 'email'),
-    ));
-    // If the contact doesn't exist, or the hash or email doesn't match, make it
-    // look like it's a new-donor message.
-    if (
-      !$existing ||
-      $existing['hash'] !== $msg['contact_hash'] ||
-      $existing['email'] !== $msg['email']
-    ) {
-      $msg['contact_id'] = NULL;
-      unset($msg['contact_hash']);
-    }
+    wmf_civicrm_set_null_id_on_hash_mismatch($msg, TRUE);
   }
   if (!$msg['contact_id']) {
     wmf_civicrm_message_create_contact($msg);
@@ -296,6 +281,27 @@ function wmf_civicrm_contribution_message_import(&$msg) {
   }
 
   return $contribution;
+}
+
+/**
+ * Checks for contact ID and hash match.  If mismatched unset
+ * ID and hash so message is treated as a new contact.
+ *
+ * @param $msg
+ * @param $matchEmail
+ * @throws CiviCRM_API3_Exception
+ */
+function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = False) {
+  $existing = civicrm_api3( 'Contact', 'getSingle', array(
+    'id' => $msg['contact_id'],
+    'return' => array('hash', 'email'),
+  ) );
+
+  if (!$existing || $existing['hash'] !== $msg['contact_hash'] ||
+      ($existing['email'] !== $msg['email'] && $matchEmail)) {
+    $msg['contact_id'] = NULL;
+    unset($msg['contact_hash']);
+  }
 }
 
 /**
