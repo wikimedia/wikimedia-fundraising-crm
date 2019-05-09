@@ -351,7 +351,14 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
   }
 
   /**
-   * Process an expired subscription
+   * Process an expired subscription.
+   *
+   * Based on the reviewing the resulting records we can see that no
+   * recurrings have the status (auto) Expiration notification without having a
+   * cancel_date. In each case the cancel_date precedes the end date - it seems that we
+   * receive this notification from paypal after some other type of cancellation has already been
+   * received. I WAS going to suggest we ALSO set cancel_date in this call but that seems
+   * unnecessary given the 100% overlap seemingly with already cancelled recurrings.
    *
    * @param array $msg
    *
@@ -367,6 +374,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     }
 
     try {
+      // See function comment block for discussion.
       \civicrm_api3('ContributionRecur', 'create', [
         'id' => $recur_record->id,
         'end_date' => 'now',
