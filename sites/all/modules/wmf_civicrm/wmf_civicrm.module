@@ -1125,6 +1125,10 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
   elseif (!empty($msg['employer_id'])) {
     $contact['employer_id'] = $msg['employer_id'];
   }
+  // mapping employer field to organization_name (deliberately not doing anything with employer_id at this point).
+  if (!empty($msg['employer']) && $msg['contact_type'] == "Individual") {
+    $contact['organization_name'] = wmf_civicrm_string_clean($msg['employer'], 128);
+  }
   if (!empty($msg['name_prefix'])) {
     $contact['prefix_id'] = $msg['name_prefix'];
     wmf_civicrm_ensure_option_exists($msg['name_prefix'], 'prefix_id', 'individual_prefix');
