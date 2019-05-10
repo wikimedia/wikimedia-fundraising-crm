@@ -1,6 +1,5 @@
 <?php namespace queue2civicrm\unsubscribe;
 
-use CRM_Core_BAO_CustomField;
 use wmf_common\WmfQueueConsumer;
 use WmfException;
 
@@ -8,12 +7,13 @@ use WmfException;
 class OptInQueueConsumer extends WmfQueueConsumer {
 
   protected $optInCustomFieldName;
+
   protected $doNotSolicitCustomFieldName;
 
   function __construct($queueName, $timeLimit = 0, $messageLimit = 0) {
     parent::__construct($queueName, $timeLimit, $messageLimit);
     $commsMap = wmf_civicrm_get_custom_field_map(
-      [ 'opt_in', 'do_not_solicit' ], 'Communication'
+      ['opt_in', 'do_not_solicit'], 'Communication'
     );
     $this->optInCustomFieldName = $commsMap['opt_in'];
     $this->doNotSolicitCustomFieldName = $commsMap['do_not_solicit'];
@@ -41,7 +41,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
     // Find the contact from the contribution ID
     $contacts = $this->getContactsFromEmail($email);
     $new_contact = count($contacts) === 0;
-    if ( $new_contact ) {
+    if ($new_contact) {
       if (!empty($message['last_name'])) {
         $message['opt_in'] = TRUE;
         wmf_civicrm_message_create_contact($message);
@@ -52,16 +52,16 @@ class OptInQueueConsumer extends WmfQueueConsumer {
       }
       else {
         // look for non-primary email, if found, don't update opt-in
-        $civiEmail = civicrm_api3('Email', 'get', array('email' => $email));
+        $civiEmail = civicrm_api3('Email', 'get', ['email' => $email]);
         $new_email = $civiEmail['count'] == 0;
-        if ( $new_email ) {
+        if ($new_email) {
           // Not enough information for create_contact, create with just email
-          $contactParams = array(
+          $contactParams = [
             'contact_type' => 'Individual',
-             'email' => $email,
-             $this->optInCustomFieldName => TRUE,
-             'source' => 'opt-in',
-          );
+            'email' => $email,
+            $this->optInCustomFieldName => TRUE,
+            'source' => 'opt-in',
+          ];
 
           $contact = civicrm_api3('Contact', 'create', $contactParams);
           watchdog('opt_in', "New contact created on opt-in: {$contact['id']}", [],
@@ -130,7 +130,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
         $this->optInCustomFieldName => TRUE,
         $this->doNotSolicitCustomFieldName => FALSE,
         'do_not_email' => FALSE,
-        'is_opt_out' => FALSE
+        'is_opt_out' => FALSE,
       ]);
     }
   }
