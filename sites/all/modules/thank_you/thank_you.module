@@ -933,7 +933,7 @@ function thank_you_render($params) {
 
   $page_content = $template->render('html');
   $page_content = str_replace('<p></p>', '', $page_content);
-  $subject = $template->render('subject');
+  $subject = trim($template->render('subject'));
   return array($page_content, $subject);
 }
 
