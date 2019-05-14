@@ -1,53 +1,60 @@
 {% if first_name and last_name %}
-<p>Kjære {{ first_name }}
-</p>
-
-{% else %}
-<p>Kjære giver</p>
+<p>Hei {{ first_name }}!
+</p>{% else %}<p>
+Kjære giver,</p>
 {%endif%}
 
-<p>Takk for at du støttet Wikipedia og Wikimedia Foundation med din gave på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Ditt bidrag holder Wikipedia uavhengig. Jeg vil gjerne fortelle deg hvorfor din gave er så viktig.
+<p>Jeg liker at det er min jobb å takke deg for ditt {% if recurring %}
+månedlige
+{%endif%}bidrag på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} til Wikipedia og Wikimedia Foundation. 
+</p>
+
+<p>Wikipedias historie er historien til individer, som deg selv, som gir av seg selv for å holde dørene til oppdagelse åpne. Ditt {% if recurring %}
+månedlige
+{%endif%}bidrag viser meg at ånden bak visjonen vår lever i beste velgående.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>Vi løste nylig et lite teknisk problem som midlertidig stoppet noen månedlige donasjoner. Din månedlige donasjon har blitt satt igang igjen, og den vil trekkes som vanlig fremover. Vi kommer ikke til å trekke penger for de månedene du ikke har blitt trukket pga. dette problemet. Takk for tålmodigheten og støtten din, og ikke nøl med å sende en epost til donate@wikimedia.org om du har noen spørsmål.</p>
+<p>Nylig løste vi et mindre teknisk problem som midlertidig stanset noen månedlige bidrag. Vi har gjenopptatt ditt månedlige trekk og det vil bli behandlet som normalt i tiden som kommer. Vi vil ikke belaste deg for de foregående månedene. Takk for tålmodigheten og for støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
-<p>Vi har nylig løst et teknisk problem som førte til at noen få givere ikke mottok bekreftelse på sin donasjon. Ta vennligst i mot denne e-posten som en takk for donasjonen din den {{ receive_date }}. Vi setter stor pris på din tålmodighet og støtte, og kontakt oss gjerne via e-post på donate@wikimedia.org hvis du har noen spørsmål.</p>
+<p>Nylig løste vi et teknisk problem som gjorde at en rekke små givere ikke fikk bekreftelse på sine donasjoner. Du mottar denne e-posten som en takk for din donasjon {{ receive_date }}. Vi setter virkelig pris på tålmodigheten og støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.</p>
 {%endif%}
 
-<p>Wikipedia er et globalt prosjekt. De ansatte og ingeniørene i Wikimedia Foundation jobber hardt for å gjøre din Wikipedia-opplevelse nyttig og engasjerende. Vi jobber for å gjøre Wikipedia tilgjengelig på alle typer oppkoblinger og på alle enheter, uansett hvor du er. Vi forsvarer det åpne nettets fremtid og kjemper for ditt personvern. Vi er lidenskapelig opptatt av å gjøre kunnskap gratis og fritt tilgjengelig over hele verden. Vi er et lite arbeidslag med en stor oppgave, så ditt bidrag er viktig!
+{% if recurring %}
+<p>Donasjonen din holder Wikipedia uavhengig, og din månedlige støtte er avgjørende for vår langsiktige planlegging, og for å hjelpe oss med å se hva Wikipedia kan oppnå i årene fremover. Hver måned vil et trekk på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} bli debitert til Wikimedia Foundation inntil du gir oss beskjed om å stoppe. <b>Vi sender deg et sammendrag i januar over dine bidrage for det foregående året.</b> Hvis du av en eller annen grunn ønsker å kansellere donasjonen, følger du disse <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">enkle kanselleringsinstruksjonene</a>.</p>
+{%endif%}
+
+<p>Du ga sannsynligvis fordi Wikipedia er nyttig for deg. Det er en av hovedgrunnene folk gir meg når jeg spør dem om hvorfor de støtter Wikipedia. Kanskje det vil overraske deg, men en av hovedgrunnene til at folk ikke gir er at de ikke har råd til det.
 </p>
 
-<p>
-  <b>Hver eneste dag tar du beslutninger basert på informasjon fra internett. Wikipedia er livsviktig fordi den byr på fri, nøytral og upartisk informasjon, skrevet av folk fra hele verden.</b>
+<p>Her hos Wikimedia Foundation mener vi at ingen skal måtte betale for å lære. Vi mener at all kunnskap bør være gratis. Vi kommer aldri til å ta betalt for bruk av Wikipedia. Så hvordan har vi råd til infrastrukturen til et av verdens mest populære nettsteder?
 </p>
 
-<p>Wikipedia er ikke mulig uten et felles engasjement fra vår lesere, våre skribenter og givere som deg. Din støtte til Wikipedia gjør at vi kan holde oss nøytrale, upartiske og helt uavhengige. Du vet at du kan stole på oss, siden Wikipedia ikke kan kjøpes. Vi er her for deg, og du er her for oss. 
+<p>På grunn av gavmilde mennesker som deg.
 </p>
 
-<p>
-  <b>Ved å støtte oss verner du om summen av menneskelig kunnskap nå, og for flere generasjoner framover.</b>
+<p>Wikipedia er ditt: ditt å lese, ditt å redigere, ditt å fordype deg i. Vi er ikke målet, vi er starten.
 </p>
 
-<p>Takk for at du støttet Wikipedia.  Vi håper du fortsetter å støtte opp om fri kunnskap! 
-</p>
+{% if first_name and last_name %}
+<p>{{ first_name }}, takk for at du hjelper fri kunnskap å blomstre.
+</p>{% else %}<p>
+Takk for at du hjelper fri kunnskap å blomstre.</p>
+{%endif%}
 
-<p>Takknemlig hilsen<br/>
+<p>Katherine<br/><br/>
+<br/><br/>
 Katherine Maher,<br/>
-direktør, Wikimedia Foundation
+Administrerende direktør, Wikimedia Foundation
 </p>
 
-<p>Mange arbeidsgivere matcher gaver fra de ansatte, så sjekk gjerne med din bedrift om de har et <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts">bedriftsprogram for å matche ansattes gaver</a>. 
+<p>Mange arbeidsgivere matcher gaver fra de ansatte, så sjekk gjerne med din bedrift om de har et <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">bedriftsprogram for å matche ansattes gaver</a>.
 </p>
 
 <p>Til informasjon: Din gave, nummer {{ transaction_id }}, den {{ receive_date }} var {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 </p>
-
-{% if recurring %}
-<p>Denne donasjonen er del av et løpende abonnement. Månedlige betalinger vil bli innbetalt til Wikimedia Foundation til du gir oss beskjed om annet. Dersom du ønsker å stanse betalingen, vennligst se vår <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">enkle avmeldingsinstruks</a>.</p>
-{%endif%}
 
 <p>Dette brevet er en bekreftelse på gaven. Det ble ikke levert noen varer eller tjenester, helt eller delvis, for dette bidraget. Send post til: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Amerikansk skattefritaksnummer: 20-0049703
 </p>
@@ -55,4 +62,4 @@ direktør, Wikimedia Foundation
 <p>Ønsker du ikke å få e-poster om innsamlinger fra Wikimedia Foundation i fremtiden, <a href="{{ unsubscribe_link | raw }}">kan du melde deg av umiddelbart</a>. Merk at vi fremdeles vil sende deg kvitteringer, som denne, for fremtidige donasjoner.
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20171019/nb&amp;oldid=18149623","name":"thank_you.nb.html","revision":18149623}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/nb&amp;oldid=19073510","name":"thank_you.nb.html","revision":19073510}TI_END -->

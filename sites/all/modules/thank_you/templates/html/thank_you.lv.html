@@ -1,53 +1,60 @@
 {% if first_name and last_name %}
-<p>Sveiki, {{ first_name }}!
-</p>
-
-{% else %}
-<p>Cienījamais ziedotāj!</p>
+<p>Sveicināti, {{ first_name }}!
+</p>{% else %}<p>
+Cienījamais ziedotāj!</p>
 {%endif%}
 
-<p>Pateicamies, ka atbalstīji Wikipedia un Wikimedia Foundation ar dāvinājumu {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Jūsu ieguldījums palīdz nodrošināt Wikipedia neatkarību. Es vēlos pastāstīt, kāpēc jūsu dāvinājums ir tik svarīgs.
+<p>Man ir patiess prieks pateikties Jums par {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}
+ikmēneša
+{%endif%}ieguldījumu Vikipēdijā un Wikimedia Foundation. 
+</p>
+
+<p>Vikipēdijas būtiskais stāsts ir stāsts par indivīdiem, tādiem kā Jūs, kuri, ieguldot nedaudz no sevis, atver durvis uz atklājumiem. Jūsu {% if recurring %}
+ikmēneša atkārtotais
+{%endif%}ieguldījums parāda, ka mūsu vīzijas gars ir dzīvs un krietns.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>Mēs nesen novērsām nelielu tehnisku problēmu, kuras dēļ daži ikmēneša ziedojumi tika apturēti. Mēs esam atjaunojuši Jūsu regulāro ziedojumu, un turpmāk tas tiks apstrādāts ierastajā veidā. Par mēnešiem, kas tika izlaisti, nauda netiks iekasēta. Pateicamies par Jūsu pacietību un sniegto atbalstu. Ja Jums ir kādi jautājumi, lūdzu, nosūtiet e-pasta ziņojumu uz adresi donate@wikimedia.org.</p>
+<p>Nesen mēs atrisinājām nelielu tehnisku problēmu, kas apturēja dažus ikmēneša periodiskos ziedojumus. Esam atjaunojuši Jūsu atkārtoto ziedojumu, un turpmāk tas darbosies kā parasti. Mēs neiekasēsim no Jums līdzekļus par izlaistajiem mēnešiem. Paldies par pacietību un atbalstu, un, ja Jums ir kādi jautājumi, lūdzu, rakstiet uz e-pastu donate@wikimedia.org.</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
-<p>Mēs nesen novērsām nelielu tehnisku problēmu, kuras dēļ daži ziedotāji nesaņēma apstiprinājumu par veikto ziedojumu. Lūdzu, pieņemiet šo e-pasta ziņojumu kā pateicību par ziedojumu, ko veicāt {{ receive_date }}. Pateicamies par Jūsu pacietību un sniegto atbalstu. Ja Jums ir kādi jautājumi, lūdzu, nosūtiet e-pasta ziņojumu uz adresi donate@wikimedia.org.</p>
+<p>Nesen mēs atrisinājām tehnisku problēmu, kuras dēļ daži ziedotāji nesaņēma apstiprinājumu par ziedojumu. Lūdzu, pieņemiet šo e-pasta ziņojumu kā pateicību par ziedojumu šajā datumā: {{ receive_date }}. Mēs patiesi novērtējam Jūsu pacietību un atbalstu, un, ja Jums ir kādi jautājumi, lūdzu, rakstiet uz e-pastu donate@wikimedia.org.</p>
 {%endif%}
 
-<p>Wikipedia ir vispasaules projekts. Wikimedia Foundation inženieri un personāls dara visu, lai jūsu Wikipedia pieredze būtu noderīga un saistoša. Mēs strādājam, lai nodrošinātu Wikipedia pieejamību, izmantojot jebkādu interneta savienojumu, jebkurā ierīcē, neatkarīgi no jūsu atrašanās vietas. Mēs esam par brīvu internetu nākotnē un cīnāmies par jūsu privātuma aizsardzību. Mēs aizrautīgi vēlamies, lai zināšanas būtu brīvi pieejamas ikvienam uz mūsu planētas. Mēs esam neliela komanda, ko vieno liela misija. Tāpēc jūsu ieguldījums ir nozīmīgs.
+{% if recurring %}
+<p>Jūsu ziedojums padara Vikipēdiju neatkarīgu, un Jūsu ikmēneša atbalsts ir būtisks ilgtermiņa plānošanai, palīdzot mums redzēt, ko Vikipēdija varētu sasniegt turpmākajos gados. Reizi mēnesī Wikimedia Foundation iekasēs ziedojumu {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} apmērā, līdz Jūs lūgsiet mums to apturēt. <b>Katra gada janvārī mēs nosūtīsim kopsavilkumu par iepriekšējo gadu.</b> Ja kāda iemesla dēļ vēlaties atcelt ziedojumu, skatiet šīs <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">vienkāršās atcelšanas instrukcijas</a>.</p>
+{%endif%}
+
+<p>Visticamāk, Jūs ziedojāt, jo Vikipēdija Jums ir noderīga. Tas ir viens no galvenajiem iemesliem, ko cilvēki min, kad es viņiem jautāju, kāpēc viņi atbalsta Vikipēdiju. Taču, kas varbūt Jūs pārsteigs, — viens no galvenajiem iemesliem, kādēļ cilvēki neziedo, ir tas, ka viņi to nevar atļauties.
 </p>
 
-<p>
-  <b>Ik dienu jūs pieņemat kritiskus lēmumus, pamatojoties uz informāciju, ko lasāt internetā. Wikipedia ir nozīmīgs avots, jo tajā tiek piedāvāta bezmaksas, neitrāla un objektīva informācija, ko sagatavojuši cilvēki no visas pasaules.</b>
+<p>Organizācijā Wikimedia Foundation mēs uzskatām, ka nevienam nebūtu jāmaksā, lai mācītos. Mēs uzskatām, ka zināšanām vienmēr jābūt ir bezmaksas. Mēs nekad nevienam neprasām samaksu par Vikipēdijas izmantošanu. Tad kā mēs varam atļauties infrastruktūru vienai no pasaules populārākajām tīmekļa vietnēm?
 </p>
 
-<p>Wikipedia pastāv, pateicoties mūsu lasītāju, redaktoru un tādu ziedotāju, kā jūs, kopīgai līdzdalībai. Jūsu atbalsts Wikipedia ļauj mums saglabāt neitralitāti, objektivitāti un pilnīgu neatkarību. Jūs zināt, ka varat paļauties uz mums, jo Wikipedia nevar uzpirkt. Mēs esam jums un jūs esat mums. 
+<p>Pateicoties tādiem lieliskiem cilvēkiem kā Jūs!
 </p>
 
-<p>
-  <b>Ziedojot, jūs nodrošināt cilvēces zināšanu apkopojumu tagad un nākamajām paaudzēm.</b>
+<p>Vikipēdija ir Jūsu: lai lasītu, lai labotu un lai tajā iegrimtu. Mēs neesam mērķis, mēs esam sākums.
 </p>
 
-<p>Pateicamies, ka atbalstāt Wikipedia. Mēs ceram, ka arī turpmāk atbalstīsiet zināšanas. 
-</p>
+{% if first_name and last_name %}
+<p>{{ first_name }}, paldies, ka palīdzat zelt bezmaksas zināšanām!
+</p>{% else %}<p>
+Paldies, ka palīdzat zelt bezmaksas zināšanām!</p>
+{%endif%}
 
-<p>Pateicībā<br/>
+<p>Katherine<br/><br/>
+<br/><br/>
 Katherine Maher,<br/>
 Wikimedia Foundation izpilddirektore
 </p>
 
-<p>Daudzi darba devēja dāsni atbalsta darba ņēmēju ziedojumus: lūdzu, precizējiet pie sava darba devēja, vai uzņēmumā ir <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts">korporatīvā atbilstīgu dāvinājumu programma</a>. 
+<p>Daudzi darba devēja dāsni atbalsta darba ņēmēju ziedojumus: lūdzu, precizējiet pie sava darba devēja, vai uzņēmumā ir <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">korporatīvā atbilstīgu dāvinājumu programma</a>.
 </p>
 
 <p>Jūsu uzskaitei: Jūsu ziedojums, numurs {{ transaction_id }}, {{ receive_date }} bija {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 </p>
-
-{% if recurring %}
-<p>Šis ziedojums ir daļa no periodiska ziedojuma. Wikimedia Foundation piereģistrēs ikmēneša maksājumus līdz brīdim, kad Jūs mūs informēsiet par to pārtraukšanu.Ja Jūs vēlaties maksājumus pārtraukt, tad lūdzu iepazīstaties ar mūsu <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">easy cancellation instructions</a>.</p>
-{%endif%}
 
 <p>Šo vēstuli varat izmantot kā oficiālu ziedojumu apliecinošu dokumentu. Par šo ieguldījumu ne pilnībā, ne daļēji netika piešķirtas preces vai pakalpojumi. Lūdzu, rakstiet: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, ASV. ASV nodokļu atvieglojuma numurs: 20-0049703
 </p>
@@ -55,4 +62,4 @@ Wikimedia Foundation izpilddirektore
 <p>Ja vairs nevēlaties saņemt Wikimedia Foundation e-pasta ziņojumus saistībā ar līdzekļu vākšanu, <a href="{{ unsubscribe_link | raw }}">jūs varat anulēt abonementu</a>. Lūdzu, ņemiet vērā, ka saistībā ar turpmākiem ziedojumiem, mēs nosūtīsim tādu pašu apstiprinājuma paziņojumu, kā šis.
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20171019/lv&amp;oldid=18149608","name":"thank_you.lv.html","revision":18149608}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/lv&amp;oldid=19073509","name":"thank_you.lv.html","revision":19073509}TI_END -->

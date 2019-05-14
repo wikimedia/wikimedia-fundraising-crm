@@ -1,53 +1,56 @@
 {% if first_name and last_name %}
-<p>Dzień dobry, {{ first_name }},
-</p>
-
-{% else %}
-<p>Drogi darczyńco,</p>
+<p>Drogi/Droga {{ first_name }}!
+</p>{% else %}<p>
+Drogi Darczyńco,</p>
 {%endif%}
 
-<p>dziękujemy za wsparcie Wikipedii oraz Wikimedia Foundation kwotą {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Dzięki Twojemu wsparciu Wikipedia pozostaje niezależna. Pragnę wyjaśnić Ci, dlaczego Twoja darowizna jest tak ważna.
+<p>Cieszę się, że mam pracę, w której mogę podziękować Ci za Twoją wpłatę w wysokości {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} na rzecz Wikipedii i Fundacji Wikimedia. 
+</p>
+
+<p>Historia Wikipedii to historia osoby takiej jak Ty, która daje cząstkę siebie, aby bramy do nauki pozostały otwarte. Dzięki Twoim wpłatom widzę, że idea naszej wizji żyje i ma się dobrze.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>Niedawno rozwiązaliśmy mały problem techniczny, który był przyczyną wstrzymania niektórych dotacji okresowych. Udało się nam uruchomić ponownie Twoją dotację, a proces przekazywania funduszy powinien już przebiegać bez zakłóceń. Oczywiście nie obciązymy Twojego konta wpłatami, które zostały pominięte. Dziękujemy za Twoją cierpliwość i wsparcie. Jeżeli masz jakiekolwiek pytania, prosimy o kontakt pod adresem donate@wikimedia.org.</p>
+<p>W ostatnim czasie rozwiązaliśmy niewielki problem techniczny, przez który realizacja pewnych comiesięcznych datków była wstrzymana. Przywróciliśmy Twoją miesięczną darowiznę i od teraz będzie ona przetwarzana tak, jak dotychczas. Nie pobierzemy od Ciebie opłaty za pominięte miesiące. Dziękujemy za Twoją cierpliwość i wsparcie, a w przypadku jakichkolwiek pytań zachęcamy do kontaktu pod adresem e-mail donate@wikimedia.org.</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
-<p>Rozwiązaliśmy niedawno problem techniczny, który powodował, że niewielka liczba darczyńców okresowych nie otrzymywała potwierdzenia do celów podatkowych. Potraktuj proszę tą wiadomość jako podziękowanie za darowiznę dokonaną dnia {{ receive_date }}.  Dziękujemy za wyrozumiałość i wsparcie, a listy z podziękowaniami powinny być w przyszłości wysyłane bez zakłóceń. W razie jakichkolwiek pytań prosimy o kontakt pod adresem donate@wikimedia.org.</p>
+<p>W ostatnim czasie rozwiązaliśmy problem techniczny, przez który niewielka liczba darczyńców nie otrzymywała potwierdzenia przekazania datku. Prosimy przyjąć niniejszą wiadomość e-mail jako podziękowanie za datek z dnia {{ receive_date }}. Dziękujemy za Twoją cierpliwość i wsparcie, a w przypadku jakichkolwiek pytań zachęcamy do kontaktu pod adresem e-mail donate@wikimedia.org.</p>
 {%endif%}
 
-<p>Wikipedia to projekt ogólnoświatowy. Inżynierowie i pracownicy Wikimedia Foundation ciężko pracują, aby korzystanie z Wikipedii było jak najbardziej komfortowe i użyteczne. Dążymy do tego, by Wikipedia była dostępna dla każdego bez względu na rodzaj połączenia internetowego, urządzenia czy lokalizacji. Walczymy o przyszłość wolnego Internetu i chronimy Twoją prywatność. Dążymy do tego, by każdy na świecie miał dostęp do darmowej wiedzy. Jesteśmy małym zespołem, który rozpoczął wielką misję, dlatego Twoja darowizna ma dla nas ogromne znaczenie.
+{% if recurring %}
+<p>Dzięki Twoim datkom Wikipedia pozostaje niezależna, a Twoje comiesięczne wsparcie ma zasadnicze znaczenie dla planowania długoterminowego, pomagając nam dostrzec możliwości, jakie będą pojawiały się przed Wikipedią w kolejnych latach. Każdego miesiąca, Fundacja Wikimedia będzie pobierała datek w wysokości {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, chyba że powiadomisz nas, abyśmy zaprzestali tych działań. <b>W styczniu każdego roku prześlemy Ci zestawienie wpłat za poprzedni rok.</b> Jeżeli z jakiegokolwiek powodu zechcesz anulować swoje datki, zobacz <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instrukcję łatwego anulowania zobowiązania</a>.</p>
+{%endif%}
+
+<p>Zapewne przekazujesz datki dlatego, że Wikipedia jest dla Ciebie przydatna. To jeden z głównych powodów, które ludzie podają, gdy pytam ich, dlaczego wspierają Wikipedię. Ale, i tu mogę Cię zaskoczyć - jednym z głównych powodów, dla których ludzie nie przekazują datków, jest to, że ich na to nie stać.
 </p>
 
-<p>
-  <b>Z pewnością codziennie zdarza Ci się podejmować ważne decyzje w oparciu o informacje dostępne w Internecie. Wikipedia jest kluczowym źródłem wiedzy, ponieważ oferuje darmowe, obiektywne i bezstronne informacje przygotowane przez osoby z całego świata.</b>
+<p>W Fundacji Wikimedia uważamy, że nikt nie powinien płacić za naukę. Uważamy, że wiedza zawsze powinna być bezpłatna. Nigdy nie będziemy naliczać opłat za korzystanie z Wikipedii. Skąd zatem mamy środki na utrzymywanie infrastruktury jednej z najpopularniejszych stron internetowych na świecie?
 </p>
 
-<p>Wikipedia nie mogłaby istnieć, gdyby nie aktywnie tworzona społeczność, na którą składają się nasi czytelnicy, redaktorzy i tacy darczyńcy jak Ty. Dzięki Twojemu wsparciu Wikipedia pozostaje obiektywna, bezstronna i w pełni niezależna. Masz pewność, że możesz na nas polegać, ponieważ Wikipedii nie można kupić. Wspierasz nas, a my wspieramy Ciebie. 
+<p>Dzięki szczodrości ludzi takich jak Ty.
 </p>
 
-<p>
-  <b>Dzięki darowiźnie przyczyniasz się do ochrony kompendium ludzkiej wiedzy dla nas wszystkich i dla przyszłych pokoleń.</b>
+<p>Wikipedii należy do Ciebie: możesz czytać, edytować, a także zatracić się w dostępnych w niej materiałach. Nie jesteśmy punktem docelowym, lecz początkiem.
 </p>
 
-<p>Dziękujemy, że wspierasz Wikipedię. Liczymy, że nadal będziesz stać po stronie wiedzy. 
+{% if first_name and last_name %}
+<p>{{ first_name }}, dziękuję Ci za wspieranie rozkwitu darmowej wiedzy.
+</p>{% else %}<p>
+Dziękuję Ci za wspieranie rozkwitu darmowej wiedzy.</p>
+{%endif%}
+
+<p>Katherine<br/><br/>
+<br/><br/>
+Katherine Maher<br/>
+dyrektorka wykonawcza Fundacji Wikimedia
 </p>
 
-<p>Dziękuję raz jeszcze<br/>
-Katherine Maher,<br/>
-dyrektorka wykonawcza Wikimedia Foundation
-</p>
-
-<p>Wielu pracodawców chętnie wynagrodzi Twoją darowiznę. Zapytaj swojego pracodawcę o stosowne firmowe zwroty <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts">finansowe i programy</a>. 
+<p>Wielu pracodawców chętnie wynagrodzi Twoją darowiznę. Zapytaj swojego pracodawcę o stosowne firmowe zwroty <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">finansowe i programy</a>.
 </p>
 
 <p>Dane dotyczące Twojego wsparcia: Twoja darowizna o numerze identyfikacyjnym {{ transaction_id }}, wpłacona {{ receive_date }} , wyniosła {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 </p>
-
-{% if recurring %}
-<p>Ta wpłata jest częścią darowizny okresowej. Comiesięczne płatności będą pobierane z Twojego konta przez Wikimedia Foundation do momentu, gdy nie poinformujesz nas o chęci rezygnacji. Jeśli chcesz anulować swoją darowiznę okresową, zapoznaj się z naszymi <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">prostymi instrukcjami rezygnacji</a>.</p>
-{%endif%}
 
 <p>Ta wiadomość może posłużyć za dowód wpłaty. W zamian za ten datek nie zostały przekazane żadne towary lub usługi, w części ani w całości. Korespondencję prosimy przesyłać na adres: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Numer telefonu w sprawach zwolnień podatkowych w USA: 20-0049703
 </p>
@@ -55,4 +58,4 @@ dyrektorka wykonawcza Wikimedia Foundation
 <p>Jeśli nie chcesz otrzymywać e-maili o zbiórce od Wikimedia Foundation, <a href="{{ unsubscribe_link | raw }}">możesz się bezzwłocznie wypisać</a>. Jednocześnie informujemy, że w przypadku kolejnych darowizn nadal będziemy wysyłać Ci potwierdzenia.
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20171019/pl&amp;oldid=18149639","name":"thank_you.pl.html","revision":18149639}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/pl&amp;oldid=19073506","name":"thank_you.pl.html","revision":19073506}TI_END -->
