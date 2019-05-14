@@ -924,9 +924,16 @@ function thank_you_render($params) {
   // So do 'em all that way.
   $params['receive_date'] = strftime("%Y-%m-%d", $date - (60 * 60 * 10));
 
+  // Use different template for endowment emails
+  if ($params['financial_type'] == 'Endowment Gift') {
+    $filename = 'endowment_thank_you';
+  } else {
+    $filename = 'thank_you';
+  }
+
   $template = new Templating(
     drupal_get_path('module', 'thank_you') . DIRECTORY_SEPARATOR . 'templates',
-    "thank_you",
+    $filename,
     $params['locale'],
     $params
   );
