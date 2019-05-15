@@ -74,7 +74,7 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
       'contribution_id' => $result['id'],
     ];
     TestingGlobalCollectAdapter::setDummyGatewayResponseCode('recurring-OK');
-    wmf_civicrm_insert_contribution_tracking($tracking);
+    $this->addContributionTracking($tracking);
   }
 
   public function tearDown() {

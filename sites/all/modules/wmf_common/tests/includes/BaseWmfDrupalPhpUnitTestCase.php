@@ -4,8 +4,9 @@
 // include path is not yet fixed so otherwise the require_once in that file will fail.
 set_include_path(__DIR__ . '/../../../civicrm' . PATH_SEPARATOR . get_include_path());
 require_once __DIR__ . '/../../../civicrm/Civi/Test/Api3TestTrait.php';
-
+use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
 use SmashPig\Core\Context;
+use SmashPig\Core\SequenceGenerators\Factory;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
@@ -33,6 +34,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     // Initialize SmashPig with a fake context object
     $config = TestingGlobalConfiguration::create();
     TestingContext::init($config);
+    $this->setUpCtSequence();
 
     if (!defined('DRUPAL_ROOT')) {
       throw new Exception("Define DRUPAL_ROOT somewhere before running unit tests.");
@@ -67,6 +69,11 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
           }
           elseif ($entity === 'PaymentProcessor') {
             $this->cleanupPaymentProcessor($entityID);
+          }
+          elseif ($entity === 'ContributionTracking') {
+            db_delete('contribution_tracking')
+              ->condition('id', $entityID)
+              ->execute();
           }
           else {
             civicrm_api3($entity, 'delete', [
@@ -292,4 +299,21 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
       ->execute();
   }
 
+  protected function setUpCtSequence() {
+    $ctInitial = db_query('SELECT MAX(id) as maxId from contribution_tracking')->fetchField();
+    $generator = Factory::getSequenceGenerator('contribution-tracking');
+    $generator->initializeSequence($ctInitial);
+  }
+
+  protected function consumeCtQueue() {
+    $consumer = new ContributionTrackingQueueConsumer('contribution-tracking');
+    $consumer->dequeueMessages();
+  }
+
+  protected function addContributionTracking($values = []) {
+    $ctId = wmf_civicrm_insert_contribution_tracking($values);
+    $this->ids['ContributionTracking'][] = $ctId;
+    $this->consumeCtQueue();
+    return $ctId;
+  }
 }

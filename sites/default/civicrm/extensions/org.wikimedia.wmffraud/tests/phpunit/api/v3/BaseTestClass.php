@@ -4,6 +4,7 @@ use CRM_Wmffraud_ExtensionUtil as E;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
+use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
 use queue2civicrm\fredge\AntifraudQueueConsumer;
 
 /**
@@ -92,6 +93,8 @@ class api_v3_BaseTestClass extends \PHPUnit\Framework\TestCase implements Headle
     $contribution = $this->createContributionEntries($contributionParams);
     // Ideally we wouldn't call a function in a module from an extension - but this extension is    very much a WMF special.
     $tracking = wmf_civicrm_insert_contribution_tracking(['contribution_id' => $contribution['id']]);
+    $ctQueueConsumer = new ContributionTrackingQueueConsumer('contribution-tracking');
+    $ctQueueConsumer->dequeueMessages();
     $this->createdValues['contribution_tracking'] = $tracking;
 
     $orderID = isset($contributionParams['order_id']) ? $contributionParams['order_id'] : uniqid();

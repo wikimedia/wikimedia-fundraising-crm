@@ -87,6 +87,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testMessageInsert($msg, $expected) {
     $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->consumeCtQueue();
     $this->contribution_id = $contribution['id'];
 
     // Ignore contact_id if we have no expectation.
@@ -134,6 +135,15 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         array_keys($expected['contact_custom_values'])
       );
       $this->assertEquals($expected['contact_custom_values'], $actual_contact_custom_values);
+    }
+
+    if (!empty($msg['contribution_tracking_id'])) {
+      $tracking = db_select('contribution_tracking', 'contribution_tracking')
+        ->fields('contribution_tracking')
+        ->condition('contribution_id', $contribution['id'])
+        ->execute()
+        ->fetchAssoc();
+      $this->assertEquals($tracking['id'], $msg['contribution_tracking_id']);
     }
   }
 

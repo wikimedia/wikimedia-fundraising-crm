@@ -55,6 +55,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->queueConsumer->processMessage($message->getBody());
     $this->queueConsumer->processMessage($message2->getBody());
+    $this->consumeCtQueue();
 
     $campaignField = wmf_civicrm_get_custom_field_name('campaign');
 
@@ -77,6 +78,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $campaignField => '',
     );
     $returnFields = array_keys($expected);
+    $returnFields[] = 'id';
 
     $contribution = civicrm_api3(
       'Contribution',
@@ -120,6 +122,12 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     );
     $this->assertArraySubset($expected, $contribution2);
     $this->assertNotEquals($contribution['contact_id'], $contribution2['contact_id']);
+    $tracking = db_select('contribution_tracking', 'contribution_tracking')
+      ->fields('contribution_tracking')
+      ->condition('contribution_id', $contribution['id'])
+      ->execute()
+      ->fetchAssoc();
+    $this->assertEquals($tracking['id'], $message->get('contribution_tracking_id'));
   }
 
   /**

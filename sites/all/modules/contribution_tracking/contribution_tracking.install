@@ -5,7 +5,7 @@ function contribution_tracking_schema() {
     'description' => t( 'Tracks user experience through donation pipeline.' ),
     'fields' => array(
       'id' => array(
-        'type' => 'serial',
+        'type' => 'int',
         'size' => 'normal',
         'unsigned' => true,
         'not null' => true
@@ -162,5 +162,16 @@ function contribution_tracking_update_7010() {
     OR language LIKE '8%'
     OR language LIKE '9%'
     OR language LIKE 'Donat%'
+  ");
+}
+
+
+/**
+ * Quit autoincrementing contribution_tracking.id
+ */
+function contribution_tracking_update_7020() {
+  db_query("
+    ALTER TABLE contribution_tracking
+    MODIFY COLUMN `id` INT(10) UNSIGNED NOT NULL
   ");
 }

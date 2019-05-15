@@ -14,8 +14,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $consumer;
 
-  protected $ctIds = [];
-
   public function setUp() {
     parent::setUp();
     $this->consumer = new RecurringQueueConsumer(
@@ -26,23 +24,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     if ( !defined( 'WMF_UNSUB_SALT' ) ) {
       define( 'WMF_UNSUB_SALT', 'abc123' );
     }
-  }
-
-  // TODO: other tests could also clean up contribution_tracking
-  public function tearDown() {
-    foreach ($this->ctIds as $ctId) {
-      db_delete('contribution_tracking')
-        ->condition('id', $ctId)
-        ->execute();
-    }
-    parent::tearDown();
-  }
-
-  protected function addContributionTracking($ctId) {
-    $this->ctIds[] = $ctId;
-    db_insert('contribution_tracking')
-      ->fields(['id' => $ctId])
-      ->execute();
   }
 
   protected function importMessage(TransactionMessage $message) {
@@ -66,15 +47,20 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testCreateDistinctContributions() {
     civicrm_initialize();
     $subscr_id = mt_rand();
-    $values = $this->processRecurringSignup($subscr_id);
+    $ctId = $this->addContributionTracking();
+
+    $values = $this->processRecurringSignup(
+      $subscr_id,
+      ['contribution_tracking_id' => $ctId]
+    );
 
     $message = new RecurringPaymentMessage($values);
     $message2 = new RecurringPaymentMessage($values);
 
     $msg = $message->getBody();
-    $this->addContributionTracking($msg['contribution_tracking_id']);
 
     $contributions = $this->importMessage($message);
+    $this->consumeCtQueue();
     $ctRecord = db_select('contribution_tracking', 'ct')
       ->fields('ct')
       ->condition('id', $msg['contribution_tracking_id'], '=')
@@ -86,6 +72,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $ctRecord['contribution_id']
     );
     $contributions2 = $this->importMessage($message2);
+    $this->consumeCtQueue();
 
     $ctRecord2 = db_select('contribution_tracking', 'ct')
       ->fields('ct')
@@ -162,11 +149,13 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testNormalizedMessages() {
     civicrm_initialize();
     $subscr_id = mt_rand();
-    $values = $this->processRecurringSignup($subscr_id);
+    $ctId = $this->addContributionTracking();
+    $values = $this->processRecurringSignup(
+      $subscr_id,
+      ['contribution_tracking_id' => $ctId]
+    );
 
     $message = new RecurringPaymentMessage($values);
-
-    $this->addContributionTracking($message->get('contribution_tracking_id'));
 
     $contributions = $this->importMessage($message);
 
@@ -195,8 +184,11 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testBlankEmail() {
     civicrm_initialize();
     $subscr_id = mt_rand();
-    $values = $this->processRecurringSignup($subscr_id);
-
+    $ctId = $this->addContributionTracking();
+    $values = $this->processRecurringSignup(
+      $subscr_id,
+      ['contribution_tracking_id' => $ctId]
+    );
     $message = new RecurringPaymentMessage($values);
     $messageBody = $message->getBody();
 
@@ -210,8 +202,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     foreach ($addressFields as $addressField) {
       $messageBody[$addressField] = '';
     }
-
-    $this->addContributionTracking($messageBody['contribution_tracking_id']);
 
     $this->consumer->processMessage($messageBody);
 
@@ -254,16 +244,18 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $email = 'test_recur_' . mt_rand() . '@example.org';
     // Set up an old-style PayPal recurring subscription with S-XXXX subscr_id
     $subscr_id = 'S-' . mt_rand();
+    $ctId = $this->addContributionTracking();
     $values = $this->processRecurringSignup($subscr_id, [
       'gateway' => 'paypal',
       'email' => $email,
+      'contribution_tracking_id' => $ctId
     ]);
 
     // Import an initial payment with consistent gateway and subscr_id
     $values['email'] = $email;
     $values['gateway'] = 'paypal';
     $oldStyleMessage = new RecurringPaymentMessage($values);
-    $this->addContributionTracking($oldStyleMessage->get('contribution_tracking_id'));
+
     $this->importMessage($oldStyleMessage);
 
     // New payment comes in with subscr ID format that we associate
@@ -325,7 +317,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $subscr_id = mt_rand();
 
     // Create the first donation
-    $ct_id = wmf_civicrm_insert_contribution_tracking([
+    $ct_id = $this->addContributionTracking([
         'form_amount' => 4,
         'utm_source' => 'testytest',
         'language' => 'en',
@@ -345,6 +337,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     exchange_rate_cache_set('USD', $messageBody['date'], 1);
     $firstContribution = wmf_civicrm_contribution_message_import($messageBody);
     $this->addToCleanup($firstContribution);
+    $this->consumeCtQueue();
 
     // Set up token specific values
     $overrides['recurring_payment_token']= mt_rand();
@@ -386,7 +379,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testRecurringSignupAfterOneTime() {
     // Subscr_id is the same as gateway_txn_id
     $subscr_id = mt_rand();
-    $ct_id = wmf_civicrm_insert_contribution_tracking([
+    $ct_id = $this->addContributionTracking([
       'form_amount' => 4,
       'utm_source' => 'testytest',
       'language' => 'en',
@@ -406,6 +399,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     exchange_rate_cache_set('USD', $messageBody['date'], 1);
     $firstContribution = wmf_civicrm_contribution_message_import($messageBody);
     $this->addToCleanup($firstContribution);
+    $this->consumeCtQueue();
 
     // Set up token specific values
     $overrides['currency'] = 'USD';
@@ -444,7 +438,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $subscr_id = mt_rand();
 
     // Create the first donation
-    $ct_id = wmf_civicrm_insert_contribution_tracking([
+    $ct_id = $this->addContributionTracking([
         'form_amount' => 4,
         'utm_source' => 'testytest',
         'language' => 'en',
@@ -465,6 +459,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     exchange_rate_cache_set('CAD', $messageBody['date'], 2);
     $firstContribution = wmf_civicrm_contribution_message_import($messageBody);
     $this->addToCleanup($firstContribution);
+    $this->consumeCtQueue();
 
     // Setup here to only generate a notification email
     TestMailer::setup();

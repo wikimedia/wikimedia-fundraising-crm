@@ -1,6 +1,7 @@
 <?php
 
 use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
+use SmashPig\Core\SequenceGenerators\Factory;
 
 /**
  * @group Queue2Civicrm
@@ -12,8 +13,6 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $consumer;
 
-  protected $ctId;
-
   public function setUp() {
     parent::setUp();
     $this->consumer = new ContributionTrackingQueueConsumer(
@@ -23,7 +22,7 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function testCanProcessContributionTrackingMessage() {
     $message = $this->getMessage('contribution-tracking.json');
-    $this->ctId = $this->consumer->processMessage($message);
+    $this->consumer->processMessage($message);
     $this->compareMessageWithDb($message);
   }
 
@@ -52,16 +51,20 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
 
   /**
-   * @return build a queue message from our fixture file and drop in a random
+   * build a queue message from our fixture file and drop in a random
    * contribution tracking id
+   *
+   * @return array
    */
   protected function getMessage() {
     $message = json_decode(
       file_get_contents(__DIR__ . '/../data/contribution-tracking.json'),
       TRUE
     );
-    $ctId = mt_rand();
+    $generator = Factory::getSequenceGenerator('contribution-tracking');
+    $ctId = $generator->getNext();
     $message['id'] = $ctId; // overwrite to make unique
+    $this->ids['ContributionTracking'][] = $ctId;
     return $message;
   }
 
@@ -123,18 +126,5 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       ->condition('id', $cId)
       ->execute()
       ->fetchAll(PDO::FETCH_ASSOC);
-  }
-
-
-  /**
-   * Clean up our mess
-   */
-  public function tearDown() {
-    if ($this->ctId !== NULL) {
-      db_delete('contribution_tracking')
-        ->condition('id', $this->ctId)
-        ->execute();
-    }
-    parent::tearDown();
   }
 }

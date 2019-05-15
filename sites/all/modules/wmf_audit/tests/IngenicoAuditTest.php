@@ -109,6 +109,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
+    $this->consumeCtQueue();
     $this->contact_ids[] = $contribution['contact_id'];
   }
 

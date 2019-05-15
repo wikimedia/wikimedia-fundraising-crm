@@ -19,6 +19,7 @@ class CoinBaseTest extends BaseChecksFileTest {
 
     $importer = new CoinbaseFile(__DIR__ . "/data/coinbase.csv");
     $importer->import();
+    $this->consumeCtQueue();
 
     $contribution = wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $this->trxn_id);
     $this->assertEquals(1, count($contribution));

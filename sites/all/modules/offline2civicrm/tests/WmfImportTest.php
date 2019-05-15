@@ -12,12 +12,12 @@ class WmfImportTest extends BaseChecksFileTest {
    * Existing contribution_tracking row is updated with contribution_id
    */
   function testImportExistingTracking() {
-    $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking(array(
+    $contribution_tracking_id = $this->addContributionTracking([
       'utm_source' => 'Blah_source',
       'utm_medium' => 'civicrm',
       'utm_campaign' => 'test_campaign',
       'ts' => wmf_common_date_unix_to_sql(time()),
-    ));
+    ]);
 
     $this->trxn_id = mt_rand();
     $this->gateway = 'globalcollect';
@@ -45,6 +45,8 @@ class WmfImportTest extends BaseChecksFileTest {
     $exposed = TestingAccessWrapper::newFromObject($importer);
     $message = $exposed->parseRow($data);
     $exposed->doImport($message);
+    $this->consumeCtQueue();
+
     $contributions = wmf_civicrm_get_contributions_from_gateway_id(
       $this->gateway, $this->trxn_id
     );

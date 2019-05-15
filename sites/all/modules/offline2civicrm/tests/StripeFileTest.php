@@ -19,6 +19,8 @@ class StripeTest extends BaseChecksFileTest {
 
     $importer = new StripeFile(__DIR__ . "/data/stripe.csv");
     $messages = $importer->import();
+    $this->consumeCtQueue();
+
     $this->assertEquals('2 out of 3 rows were imported.', $messages['Result']);
     $firstGateWayID = 'ch_1Al1231231231231231231123';
     $contribution = wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $firstGateWayID);

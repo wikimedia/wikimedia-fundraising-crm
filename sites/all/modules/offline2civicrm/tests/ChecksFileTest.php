@@ -58,6 +58,8 @@ class ChecksFileTest extends BaseChecksFileTest {
     $importer = new ChecksFileProbe();
     $message = $importer->_parseRow($data);
     $importer->doImport($message);
+    $this->consumeCtQueue();
+
     $contribution = $this->callAPISuccessGetSingle(
       'Contribution', array('trxn_id' => "GENERIC_IMPORT {$data['Transaction ID']}")
     );
