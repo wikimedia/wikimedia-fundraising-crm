@@ -119,7 +119,8 @@ function thank_you_send_test_form() {
     '#options' => $langs,
   );
 
-  $types = array_values(CRM_Financial_BAO_FinancialType::buildOptions('name'));
+  $ftResult = civicrm_api3('Contribution', 'getoptions', ['field' => 'financial_type_id']);
+  $types = array_values($ftResult['values']);
 
   $form['financial_type'] = array(
     '#type' => 'select',
@@ -924,16 +925,23 @@ function thank_you_render($params) {
   // So do 'em all that way.
   $params['receive_date'] = strftime("%Y-%m-%d", $date - (60 * 60 * 10));
 
+  // Use different template for endowment emails
+  if ($params['financial_type'] == 'Endowment Gift') {
+    $filename = 'endowment_thank_you';
+  } else {
+    $filename = 'thank_you';
+  }
+
   $template = new Templating(
     drupal_get_path('module', 'thank_you') . DIRECTORY_SEPARATOR . 'templates',
-    "thank_you",
+    $filename,
     $params['locale'],
     $params
   );
 
   $page_content = $template->render('html');
   $page_content = str_replace('<p></p>', '', $page_content);
-  $subject = $template->render('subject');
+  $subject = trim($template->render('subject'));
   return array($page_content, $subject);
 }
 

@@ -1,6 +1,5 @@
 <?php namespace queue2civicrm\unsubscribe;
 
-use CRM_Core_BAO_CustomField;
 use wmf_common\WmfQueueConsumer;
 use WmfException;
 
@@ -9,12 +8,15 @@ class OptInQueueConsumer extends WmfQueueConsumer {
 
   protected $optInCustomFieldName;
 
+  protected $doNotSolicitCustomFieldName;
+
   function __construct($queueName, $timeLimit = 0, $messageLimit = 0) {
     parent::__construct($queueName, $timeLimit, $messageLimit);
-    $id = CRM_Core_BAO_CustomField::getCustomFieldID(
-      'opt_in', 'Communication'
+    $commsMap = wmf_civicrm_get_custom_field_map(
+      ['opt_in', 'do_not_solicit'], 'Communication'
     );
-    $this->optInCustomFieldName = "custom_{$id}";
+    $this->optInCustomFieldName = $commsMap['opt_in'];
+    $this->doNotSolicitCustomFieldName = $commsMap['do_not_solicit'];
   }
 
   /**
@@ -35,12 +37,21 @@ class OptInQueueConsumer extends WmfQueueConsumer {
       throw new WmfException(WmfException::UNSUBSCRIBE, $error);
     }
 
-    $email = $message['email'];
-    // Find the contact from the contribution ID
-    $contacts = $this->getContactsFromEmail($email);
+    if ( isset( $message['contact_id'] ) && isset($message['contact_hash'] ) ) {
+      wmf_civicrm_set_null_id_on_hash_mismatch( $message );
+    }
 
-    // Create the contact if it doesn't already exist
-    if (count($contacts) === 0) {
+    $email = $message['email'];
+
+    if ( isset( $message['contact_id'] ) ){
+      $this->updateContactById( $message['contact_id'], $email );
+      return;
+    } else {
+      $contacts = $this->getContactsFromEmail($email);
+    }
+
+    $new_contact = count($contacts) === 0;
+    if ($new_contact) {
 
       if (!empty($message['last_name'])) {
         $message['opt_in'] = TRUE;
@@ -49,12 +60,29 @@ class OptInQueueConsumer extends WmfQueueConsumer {
         $contact_id = $message['contact_id'];
         watchdog('opt_in', "New contact created on opt-in: $contact_id", [],
           WATCHDOG_INFO);
-      } else {
-        // Not enough information to create the contact
-        watchdog('opt_in',
-          "$email: No contacts returned for email. Dropping message.",
-          [],
-          WATCHDOG_NOTICE);
+      }
+      else {
+        // look for non-primary email, if found, don't update opt-in
+        $civiEmail = civicrm_api3('Email', 'get', ['email' => $email]);
+        $new_email = $civiEmail['count'] == 0;
+        if ($new_email) {
+          // Not enough information for create_contact, create with just email
+          $contactParams = [
+            'contact_type' => 'Individual',
+            'email' => $email,
+            $this->optInCustomFieldName => TRUE,
+            'source' => 'opt-in',
+          ];
+
+          $contact = civicrm_api3('Contact', 'create', $contactParams);
+          watchdog('opt_in', "New contact created on opt-in: {$contact['id']}", [],
+            WATCHDOG_INFO);
+        }
+        else {
+          // TODO: They entered an already existing non-primary email, opt them in and make the entered email primary
+          watchdog('opt_in', "Email already exists with no associated contacts: {$email}", [],
+            WATCHDOG_INFO);
+        }
       }
     }
     else {
@@ -91,13 +119,57 @@ class OptInQueueConsumer extends WmfQueueConsumer {
   function getContactsFromEmail($email) {
     $result = civicrm_api3('Contact', 'get', [
       'email' => $email,
-      'email.is_primary',
       'return' => ['id', $this->optInCustomFieldName],
     ]);
     if (empty($result['values'])) {
       return [];
     }
     return $result['values'];
+  }
+
+  /**
+   * Updates the Civi database with an opt in record for the specified contact,
+   * and adds new primary email if different from existing.
+   *
+   * @param string $id Contacts to opt in
+   * @param string $email updated email
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  function updateContactById( $id, $email ) {
+
+    civicrm_api3('Contact', 'create', [
+      'id' => $id,
+      $this->optInCustomFieldName => TRUE,
+    ]);
+
+    $existingEmails = civicrm_api3('Email', 'get', ['contact_id' => $id])['values'];
+    $isFound = FALSE;
+    foreach($existingEmails as $existingEmail) {
+      if ($existingEmail['email'] === $email) {
+        $isFound = TRUE;
+        break;
+      }
+    }
+
+    if (!$isFound){
+      $existingEmails += [
+        '0' => [
+          'location_type_id' => 4,
+          'email' => $email,
+          'is_primary' => 1,
+          ],
+        ];
+
+      $params = [
+        'contact_id' => $id,
+        'values' => $existingEmails,
+      ];
+      civicrm_api3('Email', 'replace', $params );
+    }
+
+    watchdog('opt_in', "Contact updated for opt-in: $id", [],
+      WATCHDOG_INFO);
   }
 
   /**
@@ -112,6 +184,9 @@ class OptInQueueConsumer extends WmfQueueConsumer {
       civicrm_api3('Contact', 'create', [
         'id' => $contact['id'],
         $this->optInCustomFieldName => TRUE,
+        $this->doNotSolicitCustomFieldName => FALSE,
+        'do_not_email' => FALSE,
+        'is_opt_out' => FALSE,
       ]);
     }
   }

@@ -4955,3 +4955,22 @@ function wmf_civicrm_update_7860() {
     ALTER TABLE civicrm_option_group MODIFY COLUMN  is_locked TINYINT(4) NOT NULL DEFAULT 0 COMMENT 'A lock to remove the ability to add new options via the UI.'
   ");
 }
+
+/**
+ * Null out some backfilled cancel reasons.
+ *
+ * The backfill looked at the 'act' of cancelling when determining what to do.
+ * This relected our need to determine the 'user' but some were later uncancelled
+ * due to data issues last year & this removes the cancel_reason from those.
+ *
+ * Bug: T218616
+ */
+function wmf_civicrm_update_7865() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+  UPDATE civicrm_contribution_recur cr
+SET cancel_reason = NULL
+WHERE cancel_reason IS NOT NULL and cancel_date IS NULL
+  AND cancel_reason LIKE '%backfill%'
+  AND contribution_status_id = 1");
+}
