@@ -119,7 +119,8 @@ function thank_you_send_test_form() {
     '#options' => $langs,
   );
 
-  $types = array_values(CRM_Financial_BAO_FinancialType::buildOptions('name'));
+  $ftResult = civicrm_api3('Contribution', 'getoptions', ['field' => 'financial_type_id']);
+  $types = array_values($ftResult['values']);
 
   $form['financial_type'] = array(
     '#type' => 'select',
