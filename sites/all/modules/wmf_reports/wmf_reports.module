@@ -1,14 +1,13 @@
 <?php
 
-function wmf_reports_civicrm_config(&$config)
-{
-    $templates_dir = dirname(__FILE__).DIRECTORY_SEPARATOR."templates";
-    $config->templateDir = array_merge(
-        (array)$templates_dir,
-        (array)$config->templateDir
-    );
-    // XXX will be different with civi 4.2 autoloader
-    set_include_path(get_include_path().PATH_SEPARATOR.dirname(__FILE__));
+function wmf_reports_civicrm_config(&$config) {
+  $templates_dir = dirname(__FILE__) . DIRECTORY_SEPARATOR . "templates";
+  $config->templateDir = array_merge(
+    (array) $templates_dir,
+    (array) $config->templateDir
+  );
+  // XXX will be different with civi 4.2 autoloader
+  set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__));
 }
 
 /*
@@ -16,7 +15,7 @@ function wmf_reports_civicrm_config(&$config)
  * pending further work.  Original features are outlined here,
  * https://wikimedia.mingle.thoughtworks.com/projects/online_fundraiser/cards/525
  * https://wikimedia.mingle.thoughtworks.com/projects/online_fundraiser/cards/529
- * 
+ *
  * ==========
  *
  * function wmf_reports_civicrm_advancedSearchModes(&$search_modes)
@@ -31,7 +30,7 @@ function wmf_reports_civicrm_config(&$config)
  *         'resultContext' => 'Search',
  *     );
  * }
- * 
+ *
  * function wmf_reports_civicrm_searchTasks($type, &$tasks)
  * {
  *     if ($type == 'contact')
@@ -44,13 +43,13 @@ function wmf_reports_civicrm_config(&$config)
  *         );
  *     }
  * }
- * 
+ *
  * function wmf_reports_civicrm_export(&$table, &$headerRows, &$sqlColumns, &$exportMode)
  * {
  *     //XXX this will break all other exports if our export dies
  *     $export_type = variable_get('wmf_reports_export_inprogress', null);
  *     variable_del('wmf_reports_export_inprogress');
- * 
+ *
  *     if ($export_type == 'Contacts and Contributions') {
  *         require_once 'CRM/Contact/ContactsAndContributionsExport.php';
  *         CRM_Contact_ContactsAndContributionsExport::alterExport($table, $headerRows, $sqlColumns, $exportMode);
