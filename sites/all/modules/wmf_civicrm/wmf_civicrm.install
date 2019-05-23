@@ -980,23 +980,6 @@ function wmf_civicrm_update_7023() {
   if (!$success) {
     throw new DrupalUpdateException('Could not create custom group');
   }
-  $values = $api->values();
-  $custom_group = array_pop($values);
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group->id,
-    'name' => 'do_not_solicit',
-    'column_name' => 'do_not_solicit',
-    'label' => ts('Do not solicit'),
-    'data_type' => 'Boolean',
-    'html_type' => 'Radio',
-    'is_active' => 1,
-    'is_required' => 1,
-    'is_searchable' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException('Failed to create custom field.');
-  }
 }
 
 /**
