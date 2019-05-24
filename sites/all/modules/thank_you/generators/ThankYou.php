@@ -12,7 +12,7 @@ class ThankYou extends RenderTranslatedPage {
 			// robust here.
 			"/\xc2\xa0/" => ' ', // no-break spaces confuse the rest of the replacements
 			'/(<p>)?\[ifFirstnameAndLastname\]\s*/' => "{% if first_name and last_name %}\n\\1",
-			'/(<p>)?\[elseifFirstnameAndLastname\]\s*/' => "{% else %}\n\\1",
+			'/(<\/p>|(<\/p>\s*)|(<\/p>\s*<p>))?\[elseifFirstnameAndLastname\]\s*/' => "</p>{% else %}<p>\n",
 			'/\s*\[endifFirstnameAndLastname\](<\/p>)?/' => "\\1\n{% endif %}",
 
 			'/\[given name\]/' => '{{ first_name }}',
