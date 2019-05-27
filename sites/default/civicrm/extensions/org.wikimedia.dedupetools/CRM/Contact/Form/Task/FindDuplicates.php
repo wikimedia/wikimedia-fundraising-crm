@@ -58,14 +58,18 @@ class CRM_Contact_Form_Task_FindDuplicates extends CRM_Core_Form {
     // Some issues with how we are passing these need dealing with at some stage.
     // ie. switch to dedupe table first & load. For now limit.
     $limit = 100;
-    $contactIDs = CRM_Core_DAO::singleValueQuery('SELECT GROUP_CONCAT(contact_id) FROM (SELECT contact_id FROM ' . $this->_componentTable . " LIMIT {$limit}) as d");
-    $contactType = CRM_Core_DAO::singleValueQuery(
-      "SELECT GROUP_CONCAT(DISTINCT contact_type) FROM civicrm_contact WHERE id IN ({$contactIDs}) "
-    );
-
-    if (CRM_Core_DAO::singleValueQuery("SELECT count(*) FROM {$this->_componentTable}") > $limit) {
+    $contactIDs = $this->_contactIds;
+    if (count($contactIDs) > $limit) {
+      $chunked = array_chunk($contactIDs, $limit);
       CRM_Core_Session::setStatus(ts("Only the first $limit have been selected for deduping"));
+      $contactIDs = $chunked[0];
     }
+    $contactType = CRM_Core_DAO::singleValueQuery(
+      "SELECT GROUP_CONCAT(DISTINCT contact_type) FROM civicrm_contact WHERE id IN (%1)", [
+      1 => [implode(',', $contactIDs), 'CommaSeparatedIntegers'],
+      2 => [$limit, 'Integer']
+    ]);
+
     try {
       $rule_group_id = civicrm_api3('RuleGroup', 'getvalue', array(
         'contact_type' => $contactType,
@@ -78,13 +82,12 @@ class CRM_Contact_Form_Task_FindDuplicates extends CRM_Core_Form {
       CRM_Core_Error::statusBounce(ts('It was not possible to identify a default rule that was applicable to all selected contacts. You must choose only one contact type. You chose %1', array($contactType)));
     }
 
-    $contactIDArray = explode(',', $contactIDs);
     CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/contact/dedupefind', array(
       'reset' => 1,
       'action' => 'update',
       'rgid' => $rule_group_id,
-      'criteria' => json_encode(array('contact' => array('id' => array('IN' => $contactIDArray)))),
-      'limit' => count($contactIDArray),
+      'criteria' => json_encode(array('contact' => array('id' => array('IN' => $contactIDs)))),
+      'limit' => count($contactIDs),
     )));
   }
 }
