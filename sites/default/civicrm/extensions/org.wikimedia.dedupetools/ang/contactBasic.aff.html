@@ -1,0 +1,51 @@
+  <div ng-if="!options.contact_id">
+    {{ts('No contact id provided')}}
+  </div>
+  <div ng-if="options.contact_id"
+       afform-api3="['Contact', 'getsingle', {id: options.contact_id, return: 'first_name,last_name,email, middle_name, display_name, contact_type'}]"
+       afform-api3-ctrl="contact">
+    <form name="basicContact"
+      onaftersave="crmApi4('Contact','update', {
+        'where' :[['id','=', options.contact_id]],
+        'values' : {
+          last_name: contact['result'].last_name,
+          first_name: contact['result'].first_name,
+          middle_name: contact['result'].middle_name,
+          email: contact['result'].email
+        }
+     })"
+     onhide="contact.refresh()"
+     editable-form crm-ui-id-scope>
+    <h1 class="basic-contact-heading" ng-show="!contact['result'].display_name">{{options.display_name}}</h1>
+    <div><h1 class="basic-contact-heading" ng-bind="contact['result'].display_name">{{contact['result'].display_name}}</h1></div>
+    <div>
+    </div>
+    <div><strong class="basic-contact-field">{{ ts('First Name') }}</strong>: <span editable-text="contact['result'].first_name">{{contact['result'].first_name || ".."}}</span></div>
+    <div><strong class="basic-contact-field">{{ ts('Middle Name') }}</strong>:<a href='#' editable-text="contact['result'].middle_name">{{contact['result'].middle_name || ".."}}</a></div>
+    <div><strong class="basic-contact-field">{{ ts('Last Name') }}</strong>: <span editable-text="contact['result'].last_name">{{contact['result'].last_name || ".."}}</span></div>
+
+    <div><strong class="basic-contact-field">{{ts('Email')}}</strong>: <span editable-text="contact['result'].email">{{contact['result'].email || ".."}}</span></div>
+    <div><strong class="basic-contact-field">{{ts('Contact ID')}}</strong>: <a target="_blank" ng-if="options.contact_url" href="{{options.contact_url}}{{contact['result'].contact_id}}">{{contact['result'].id}}</a></div>
+
+    <p></p>
+
+    <div class="buttons">
+      <!-- button to show form -->
+      <button type="button" class="btn btn-default" ng-click="basicContact.$show()" ng-show="!basicContact.$visible">
+        Edit
+      </button>
+      <!-- buttons to submit / cancel form -->
+      <span ng-show="basicContact.$visible">
+        <button ng-disabled="basicContact.$waiting" class="btn btn-secondary">{{ts('Save')}}</button>
+        <button type="button" class="btn btn-default" ng-disabled="basicContact.$waiting" ng-click="basicContact.$cancel()">
+          Cancel
+        </button>
+      </span>
+    </div>
+    <div ng-if="options.contact_id"
+       afform-api3="['Contribution', 'get', {contact_id: options.contact_id, 'sequential': 1, return : 'receive_date', options: {limit: 1, sort: 'receive_date DESC'}}]"
+       afform-api3-ctrl="contribution">
+    <div ng-show="contribution.result.values[0]"><div>{{ ts('Last Contributed on')}}</div><div></div><strong>{{contribution.result.values[0].receive_date}}</strong></div></div>
+  </form>
+</div>
+

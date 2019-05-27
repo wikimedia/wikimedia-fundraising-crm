@@ -1,0 +1,61 @@
+/* Add any CSS rules for Angular module "dedupetools" */
+
+.dedupe-column-left {
+  position: relative;
+  background-color: white;
+  padding: 20px;
+  float: left;
+  clear: left;
+  vertical-align: top;
+  width: 45%;
+  text-align: left;
+}
+.dedupe-column-right {
+  position: relative;
+  background-color: white;
+  padding: 20px;
+  float: right;
+  clear: right;
+  vertical-align: top;
+  width: 45%;
+  text-align: left;
+}
+.dedupe-block-left {
+  position: relative;
+  background-color: white;
+  padding: 20px;
+  float: left;
+  vertical-align: top;
+  text-align: left;
+}
+.dedupe-block-right {
+  float: right;
+  vertical-align: top;
+  text-align: left;
+  margin: 0;
+}
+.basic-contact-field {
+  text-align: left;
+  margin: 2px 2px 2px 22px;
+}
+.basic-contact-heading {
+  text-align: left;
+  margin: 14px 25px 2px 25px;
+}
+
+.crm-contact-editable {
+  display: inline-block;
+  padding: 0 !important;
+  border: 2px solid transparent !important;
+}
+
+.crm-contact-editable-enabled:hover:not(:focus) {
+  border: 2px dashed grey !important;
+}
+
+.crm-contact-editable-enabled:before,
+.crm-contact-editable-enabled:after {
+  content: '';
+  display: none;
+}
+

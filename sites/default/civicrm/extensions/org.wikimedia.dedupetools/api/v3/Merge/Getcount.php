@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * Get duplicates metadata.
+ *
+ * This is intended as a transitional / experimental function - I'm working
+ * to improve api access upstream.
+ *
+ * @param array $spec description of fields supported by this API call
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC/API+Architecture+Standards
+ */
+function _civicrm_api3_merge_getcount_spec(&$spec) {
+  $spec['rule_group_id']['api.required'] = 1;
+  $spec['group_id'] =['title' => ts('CiviCRM Group')];
+  $spec['criteria'] = ['title' => ts('Dedupe criteria')];
+}
+
+/**
+ * Get duplicates metadata.
+ *
+ * This is intended as a transitional / experimental function - I'm working
+ * to improve api access upstream.
+ *
+ * @param array $params
+ * @return int
+ *
+ * @throws API_Exception
+ * @throws CiviCRM_API3_Exception
+ */
+function civicrm_api3_merge_getcount($params) {
+  $cacheKeyString = CRM_Dedupe_Merger::getMergeCacheKeyString($params['rule_group_id'], CRM_Utils_Array::value('group_id', $params), $params['criteria'], CRM_Utils_Array::value('check_permissions', $params));
+  return CRM_Core_DAO::singleValueQuery("
+    SELECT count(*) FROM civicrm_prevnext_cache pn
+    LEFT JOIN civicrm_dedupe_exception de 
+    ON (pn.entity_id1 = de.contact_id1 AND pn.entity_id2 = de.contact_id2 )
+    LEFT JOIN civicrm_dedupe_exception de2 
+    ON (pn.entity_id2 = de.contact_id1 AND pn.entity_id1 = de.contact_id2 )
+    WHERE (pn.cacheKey = %1 OR pn.cacheKey = %2) AND de.id IS NULL AND de2.id IS NULL  
+", [1 => [$cacheKeyString, 'String'], 2 => [$cacheKeyString . '_conflicts', 'String']]);
+}

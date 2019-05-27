@@ -1,0 +1,64 @@
+<div id="bootstrap-theme" class="crm-container">
+  <div crm-ui-debug="duplicatePairs"></div>
+  <div crm-ui-debug="skippedCount"></div>
+
+  <form name="deduperForm" editable-form crm-ui-id-scope>
+
+    <div class="help">
+      <div>{{ ts('Dedupe Rule') }}
+        <input ng-model="ruleGroupID" title="Dedupe rule" crm-ui-select="{placeholder: ts('Select rule'), width: 300, data: ruleGroups, allowClear: false}" />
+        {{ ts(' will be used to find matches for the first ')}} <a href="#" e-single e-clickable="true" editable-text="limit">{{limit}}</a> {{ ts(' contacts found matching the criteria below:') }}
+      </div>
+    </div>
+
+    <div>
+
+    <div class="clearfix" ng-repeat="(index, clause) in criteria">
+      <input ng-model="clause[0]" ng-disabled="!fieldList.length" ng-class="{loading: !fieldList.length}" crm-ui-select="{placeholder: ts('Select criteria'), allowClear: true, data: fieldList}" />
+      <input ng-model="clause[1]" ng-disabled="!fieldList.length" ng-class="{loading: !fieldList.length}" crm-ui-select="{placeholder: ts('Select criteria'), data: operators}" />
+      <input ng-model="clause[2]" crm-search-selector="{entity: 'contact', field: clause[0], op: clause[1], isExtra: false, field_spec: contactFields}" />
+      <span ng-show="(clause[1] === 'BETWEEN' || clause[1] === 'NOT BETWEEN')"> {{ ts('And')}}
+      <input ng-model="clause[3]"  /></span>
+    </div>
+    <div class="clearfix">
+      <input ng-model="newClause" title="Add a single clause" crm-ui-select="{data: fieldList, placeholder: 'Add clause'}" />
+    </div>
+  </div>
+
+  <div>
+    <button class="btn btn-primary" ng-show=!isMerging ng-disabled="!ruleGroupID || !limit || hasSearched || isSearching" ng-click="getDuplicates()">{{ ts('Find duplicates') }}</button>
+    <button class="btn btn-info" crm-icon="fa-bolt" ng-show=!isMerging ng-disabled="!ruleGroupID || !limit" ng-click="batchMerge()">{{ ts('Batch Merge') }}</button>
+    <button class="btn btn-info" ng-show="!isMerging && foundCount" ng-disabled="!ruleGroupID || !limit" ng-click="notDuplicates()">{{ ts('Mark all not duplicates') }}</button>
+    <button ng-show=isMerging>{{ ts('Bulk operation in progress - this could take a while.... enough time for you to stand up & do some stretches....') }}</button>
+    <a href="{{url}}" target="_blank" class="btn btn-link" role="button">{{ts('Go To Merge screen')}}</a>
+  </div>
+  <div ng-show="!isMerging">
+    <div ng-show="foundCount || hasSearched">{{ ts('Duplicate pairs matching criteria') }}: {{foundCount}}. The first <a href="#" e-single e-clickable="true" editable-text="tilesToShow">{{tilesToShow}}</a> are showing as merge tiles</div>
+    <div ng-show="mergedCount">{{ ts('Contacts merged') }}: {{mergedCount}}</div>
+    <div ng-show="skippedCount">{{ ts('Skipped in automated merge attempt') }}: {{skippedCount}}</div>
+    <div ng-show="exceptedCount">{{ ts('Contacts marked as exceptions') }}: {{exceptedCount}}</div>
+  </div>
+
+  <div ng-repeat="mergePair in duplicatePairs|limitTo:tilesToShow track by ((mergePair.dstID * 1000) +  mergePair.srcID)">
+    <div class='panel panel-default'>
+      <div class="panel-heading">{{mergePair['dstName']}} vs {{mergePair['srcName']}}
+
+      </div>
+      <div class='panel-body'>
+        <div class='col-md-4'  contact-basic="{contact_id: mergePair['dstID'], display_name : mergePair['dstName'], 'contact_url' : contactURL}"></div>
+        <div class='col-md-4'>
+          <div conflict-basic="{conflicts: mergePair['conflicts'], main_id : mergePair['dstID'], other_id : mergePair['srcID'], other_display_name : mergePair['srcName'],  main_display_name : mergePair['dstName'], fieldSpec : contactFields}">
+          </div>
+          <button class="btn btn-success btn-block" id="retry-merge" ng-disabled=isRowMerging ng-click="retryMerge(mergePair['dstID'], mergePair['srcID'], mergePair)">Safe Merge</button>
+          <button class="btn btn-primary btn-block" id="dedupe-exception" ng-disabled=isRowMerging ng-click="dedupeException(mergePair['dstID'], mergePair['srcID'])">Mark non-dupe</button>
+          <button class="btn btn-danger btn-block" id="force-merge" ng-show="mergePair['conflicts']" ng-disabled=isRowMerging ng-click="forceMerge(mergePair['dstID'], mergePair['srcID'], mergePair)">Force Merge</button>
+          <div><a target="_blank" class="btn btn-link btn-block" href="{{mergeURL}}&cid={{mergePair['dstID']}}&oid={{mergePair['srcID']}}">Manual Merge</a></div>
+        </div>
+        <div class='col-md-4' contact-basic="{contact_id: mergePair['srcID'], display_name : mergePair['srcName'], 'contact_url' : contactURL}"></div>
+    </div>
+  </div>
+  </div>
+    <div class="clear"></div>
+  </form>
+
+</div>

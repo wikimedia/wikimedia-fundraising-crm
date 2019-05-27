@@ -2,7 +2,7 @@
 <extension key="org.wikimedia.dedupetools" type="module">
   <file>dedupetools</file>
   <name>Dedupe tools</name>
-  <description>FIXME</description>
+  <description>Various tools to help with deduping</description>
   <license>AGPL-3.0</license>
   <maintainer>
     <author>eileen</author>
@@ -16,11 +16,11 @@
   </urls>
   <releaseDate>2017-08-24</releaseDate>
   <version>1.0</version>
-  <develStage>alpha</develStage>
+  <develStage>stable</develStage>
   <compatibility>
-    <ver>4.7</ver>
+    <ver>5.13</ver>
   </compatibility>
-  <comments>This is a new, undeveloped module</comments>
+  <comments>Tools to help with deduping</comments>
   <civix>
     <namespace>CRM/Dedupetools</namespace>
   </civix>

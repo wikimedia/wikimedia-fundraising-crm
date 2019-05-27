@@ -36,6 +36,7 @@ function wmf_install_get_installed_extensions() {
     'org.wikimedia.omnimail',
     'au.org.greens.extendedmailingstats',
     'org.wikimedia.contacteditor',
+    'org.civicrm.afform',
     'org.wikimedia.dedupetools',
     'org.wikimedia.geocoder',
     'nz.co.fuzion.civitoken',
