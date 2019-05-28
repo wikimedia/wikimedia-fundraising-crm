@@ -1,45 +1,65 @@
 {% if first_name and last_name %}
-<p>Estimado(a) {{ first_name }},</p>
-
-{% else %}
-<p>Querido(a) doador(a),</p>
+<p>Olá {{ first_name }}!
+</p>{% else %}<p>
+Prezado(a) doador(a),</p>
 {%endif%}
 
-<p>Obrigada por apoiar a Wikipédia e a Fundação Wikimedia. Sua contribuição de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} apoia a Wikipédia e ajuda a garantir o futuro do livre conhecimento para todos.</p>
+<p>Adoro o fato de que faz parte do meu trabalho agradecer-lhe por sua contribuição {% if recurring %}
+mensal
+{%endif%}de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} para a Wikipédia e a Fundação Wikimedia. 
+</p>
+
+<p>A verdadeira história da Wikipédia, é a história de um indivíduo, como você, que compartilha um pouco do que tem para manter abertas as portas do descobrimento. Sua contribuição {% if recurring %}
+mensal
+{%endif%}recorrente comprova que o espírito da nossa visão está mais vivo do que nunca.
+</p>
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>Nós recentemente resolvemos um pequeno problema técnico que interrompeu algumas doações mensais recorrentes. Nós já restabelecemos a sua doação recorrente, e vamos processá-las normalmente daqui para frente. Não iremos cobrar os meses que foram ignorados. Obrigado pela sua paciência e apoio, e não hesite em enviar-nos um e-mail para donate@wikimedia.org se você tiver qualquer outra pergunta.</p>
+<p>Recentemente, resolvemos um problema técnico que interrompeu algumas doações mensais recorrentes. Reintegramos sua doação recorrente, e ela será processada normalmente a partir de agora. Não iremos cobrá-lo (la) pelos meses que foram ignorados. Obrigado pela sua paciência e apoio. Fique a vontade para enviar um e-email para donate@wikimedia.org em caso de dúvidas.</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
-<p>Recentemente resolvemos um problema técnico que causou com que um pequeno número de doadores não recebessem a confirmação de sua doação. Por favor, aceite este e-mail como forma de agradecimento pela sua doação de {{ receive_date }}. Nós realmente apreciamos a sua paciência e seu apoio, e não hesite em contactar-nos via donate@wikimedia.org se você tiver qualquer dúvida.</p>
+<p>Recentemente, resolvemos um problema técnico que impedia que alguns doadores recebessem uma confirmação de sua doação. Aceite este e-mail como um agradecimento por sua doação feita em {{ receive_date }}. Agradecemos sua paciência e apoio. Fique a vontade para enviar um e-email para donate@wikimedia.org em caso de dúvidas.</p>
 {%endif%}
-
-<p>
-  <b>A Wikipédia é o resultado de uma ideia poderosa: que pessoas como você e eu podem participar na construção do conhecimento mundial e em torná-lo livremente disponível para todos, estejam onde estiverem.</b>
-</p>
-
-<p>Hoje, graças ao apoio de milhões de colaboradores e apoiadores voluntários, você pode navegar horas e horas na Wikipédia. Com mais de 40 milhões de artigos e 35 milhões de imagens com licença livre, a Wikipédia é capaz de responder a praticamente qualquer pergunta e levar você a lugares onde nunca esteve.</p>
-
-<p>Sua doação ajuda a criar e compartilhar o livre conhecimento de forma real e prática. Ela nos permite fazer com que a Wikipédia seja rápida, segura e acessível às pessoas do mundo todo. Ela nos ajuda a oferecer livre acesso à Wikipédia em lugares onde os altos preços dos dados móveis poderiam impedir que as pessoas usassem a internet. Ela nos ajuda a prestar apoio àqueles que estão digitalizando conhecimentos atualmente limitados a arquivos analógicos. E ela protege a Wikipédia de ameaças ao livre conhecimento e à internet aberta.</p>
-
-<p>Graças ao seu apoio, você pode encontrar as informações de que precisa em qualquer momento e lugar, ganhar aquela aposta feita com um amigo durante um jantar ou compreender melhor o mundo à nossa volta.</p>
-
-<p>
-  <b>Doar para a Wikipédia faz de você defensor de uma ideia poderosa.</b>
-</p>
-
-<p>A Wikipédia continuará evoluindo, crescendo e superando novos desafios. Queremos conquistar isso e muito mais, e sua doação nos ajudará a chegar lá. Temos muito a agradecer pelo seu apoio. Em nome da Fundação Wikimedia, muito obrigada por investir no nosso futuro e nos acompanhar nesta caminhada.</p>
-
-<p>Katherine Maher<br/>
-Diretora executiva, Fundação Wikimedia</p>
-
-<p>Muitos empregadores podem generosamente coincidir com a contribuição dos seus funcionários; confirme com seu patrão para saber se sua empresa tem um <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">programa de doações</a>. Para os seus registos: A sua doação, número {{ transaction_id }}, em {{ receive_date }} foi de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
 
 {% if recurring %}
-<p>Esta doação é parte de uma doação recorrente. Serão debitados pela Fundação Wikimedia pagamentos mensais até que nos notifique a fim de parar. Se desejar cancelar os pagamentos, por favor veja nossas instruções em <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">Instruções cancelamento fácil</a>.</p>
+<p>Sua doação mantém a Wikipédia independente, e seu auxílio mensal é essencial para o planejamento de longo prazo, nos ajudando a ver o que a Wikipédia pode alcançar nos próximos anos. Uma vez por mês, uma doação de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} será debitada pela Fundação Wikimedia até que você solicite o cancelamento. <b>Todo mês de janeiro, iremos lhe enviar um resumo de suas contribuições feitas no ano anterior.</b> Se por algum motivo você quiser cancelar sua doação, siga estas <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instruções de cancelamento fácil</a>.</p>
 {%endif%}
 
-<p>Esta carta pode servir como comprovante da sua doação. Nesta contribuição, não foram fornecidos bens ou serviços, seja integral ou parcialmente. Escreva para: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, EUA. Número de isenção fiscal nos EUA: 20-0049703</p>
+<p>Você provavelmente fez a doação porque a Wikipédia lhe é útil. Esse é um dos principais motivos que as pessoas me dizem quando pergunto por que elas apoiam a Wikipédia. Mas o que pode ser surpresa para você é que um dos principais motivos pelos quais as pessoas não doam é porque não podem arcar com a doação.
+</p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20161128/pt-br&amp;oldid=17171692","name":"thank_you.pt-br.html","revision":17171692}TI_END -->
+<p>Na Fundação Wikimedia, acreditamos que ninguém deve precisar pagar para aprender. Acreditamos que o conhecimento deve ser sempre gratuito. Nunca cobraremos ninguém por usar a Wikipédia. Então, como arcamos com a infraestrutura de um dos sites mais populares do mundo?
+</p>
+
+<p>Graças à generosidade de pessoas como você.
+</p>
+
+<p>A Wikipédia é sua: para ler, editar e navegar o quanto quiser. Não somos o destino, somos a partida.
+</p>
+
+{% if first_name and last_name %}
+<p>{{ first_name }}, obrigado por auxiliar no sucesso do conhecimento gratuito.
+</p>{% else %}<p>
+Obrigado por auxiliar no sucesso do conhecimento gratuito.</p>
+{%endif%}
+
+<p>Katherine<br/><br/>
+<br/><br/>
+Katherine Maher<br/>
+Diretora executiva, Fundação Wikimedia
+</p>
+
+<p>Muitos empregadores equipararão com generosidade a contribuição feita por seus funcionários. Confira com o seu empregador se ele possui um <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">programa corporativo de equiparação de doações</a>.
+</p>
+
+<p>Para os seus registros: sua doação número {{ transaction_id }}, realizada em {{ receive_date }}, foi de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+</p>
+
+<p>Esta carta pode servir como um comprovante da sua doação. Nessa contribuição, não foram fornecidos bens ou serviços, seja integral ou parcialmente. Escreva para: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, EUA. Número de isenção fiscal nos Estados Unidos: 20-0049703
+</p>
+
+<p>Se não quiser mais que lhe enviemos e-mails de arrecadação de recursos da Wikimedia Foundation, você pode <a href="{{ unsubscribe_link | raw }}">cancelar o recebimento agora mesmo</a>. Mesmo se você cancelar, continuaremos lhe enviando recibos como este quando você fizer outras doações.
+</p>
+
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/pt-br&amp;oldid=19073535","name":"thank_you.pt-br.html","revision":19073535}TI_END -->

@@ -1,58 +1,65 @@
 {% if first_name and last_name %}
-<p>Kära {{ first_name }},
-</p>
-
-{% else %}
-<p>Kära bidragsgivare,</p>
+<p>Hej {{ first_name }}!
+</p>{% else %}<p>
+Bästa bidragsgivare,</p>
 {%endif%}
 
-<p>Tack för att du stödjer Wikipedia och Wikimedia Foundation med din gåva på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Ditt bidrag gör att Wikipedia förblir självständigt. Jag skulle vilja berätta varför din gåva är så viktig.
+<p>Jag älskar att det är mitt jobb att tacka dig för ditt {% if recurring %}
+månatliga
+{%endif%}bidrag på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} till Wikipedia och Wikimedia Foundation. 
+</p>
+
+<p>Den grundläggande historien om Wikipedia är historien om en individ som likt dig gav en liten bit av sig själv för att hålla dörren till upptäckter öppen. Ditt {% if recurring %}
+månatligt återkommande
+{%endif%}bidrag visar mig att andan i vår vision lever och frodas.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>Vi löste nyligen ett mindre tekniskt problem i vårt datasystem som stoppade vissa månadsvisa återkommande donationer. Vi har återställt dina månadsvisa bidrag, så att de förs över som vanligt igen. Du kommer inte att debiteras för de månader som uteblev. Vi tackar dig för ditt tålamod och stöd. Om du har några frågor är du välkommen att mejla oss på donate@wikimedia.org.</p>
+<p>Vi löste nyligen ett litet tekniskt problem som pausade några månatliga donationer. Vi har återställt din återkommande donation och den kommer att fungera som vanligt framöver. Vi kommer inte att ta betalt av dig för de månader vi hoppade över. Tack för ditt tålamod och stöd, och tveka inte att skicka ett e-postmeddelande till donate@wikimedia.org om du har några frågor.</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
-<p>Vi löste nyligen ett mindre tekniskt problem vilket orsakade att några månatliga bidragsgivare inte fick någon kvittens. Detta email är en bekräftelse på det bidrag du gav den {{ receive_date }}. Vi tackar dig för ditt tålamod och stöd. Om du har några frågor är du välkommen att kontakta oss via donate@wikimedia.org.</p>
+<p>Vi har nyligen löst ett tekniskt problem som gjorde att ett litet antal bidragsgivare inte fick en bekräftelse på sina donationer. Vi skickar detta e-postmeddelande som ett tack för din donation den {{ receive_date }}. Vi uppskattar verkligen ditt tålamod och stöd och tveka inte att skicka ett e-postmeddelande till donate@wikimedia.org om du har några frågor.</p>
 {%endif%}
 
-<p>Wikipedia är ett globalt projekt. All personal på Wikipedia Foundation strävar efter att göra ditt användande av Wikipedia nyttigt och engagerande. Vi arbetar för att göra Wikipedia tillgängligt oavsett internetuppkoppling eller enhet och oavsett var du befinner dig. Vi står upp för ett öppet internets framtid och kämpar för att skydda din integritet. Vi lever för att göra kunskap tillgänglig gratis för alla i världen. Vi är ett litet team med ett desto större uppdrag, så ditt bidrag gör skillnad.
+{% if recurring %}
+<p>Din donation håller Wikipedia självständigt och ditt månatliga stöd är viktigt för vår långtidsplanering som hjälper oss att se vad Wikipedia kan åstadkomma under de kommande åren. En gång i månade, kommer en donation på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} att debiteras av Wikimedia Foundation tills du ber oss att sluta. <b>I januari varje år kommer vi att skicka dig en sammanfattning över dina bidrag under föregående år.</b> Om du av någon anledning vill säga upp din donation, följ dessa <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instruktioner för enkel uppsägning</a>.</p>
+{%endif%}
+
+<p>Du donerade troligen för att Wikipedia är användbart för dig. Det är en av de vanligaste anledningarna som människor uppger när jag frågar dem varför de stödjer Wikipedia. Men vad som kanske kommer att förvåna dig är att en av de vanligaste anledningarna till att människor inte donerar är att de inte har råd.
 </p>
 
-<p>
-  <b>Varje dag fattas viktiga beslut baserat på sådant som publicerats på nätet. Wikipedia är en viktig resurs eftersom vi erbjuder gratis, neutral och opartisk information skriven av personer från hela världen.</b>
+<p>På Wikimedia Foundation anser vi att ingen ska behöva betala för kunskap. Vi anser att kunskap alltid ska vara gratis. Vi kommer aldrig att ta betalt av någon för att de använder Wikipedia. Så hur har vi råd med infrastrukturen för en av världens populäraste webbplatser?
 </p>
 
-<p>Wikipedia skulle inte kunna finnas utan det samlade stödet från våra läsare, redaktörer och donatorer som du. Ditt stöd till Wikipedia gör att vi kan förbli neutrala, opartiska och helt självständiga. Du vet att du kan lita på oss eftersom Wikipedia inte går att köpa. Vi finns till för dig och du finns till för oss. 
+<p>Tack vare generösa människor som du.
 </p>
 
-<p>
-  <b>Genom att donera skyddar du mänsklighetens samlade kunskap nu och för framtida generationer.</b>
+<p>Wikipedia är ditt: ditt att läsa, ditt att redigera, ditt att fördjupa dig i. Vi är inte en destination, vi är början.
 </p>
 
-<p>Tack för ditt stöd till Wikipedia. Vi hoppas att du kommer att fortsätta att stå på kunskapens sida. Om du har vänner som använder Wikipedia kan du bjuda in dem att donera till Wikipedia med Facebook eller Twitter. 
-</p>
+{% if first_name and last_name %}
+<p>{{ first_name }}, tack för att du hjälper gratis kunskap att frodas.
+</p>{% else %}<p>
+Tack för att du hjälper gratis kunskap att frodas.</p>
+{%endif%}
 
-<p>Med tacksamhet,<br/>
-Katherine Maher,<br/>
+<p>Katherine<br/><br/>
+<br/><br/>
+Katherine Maher<br/>
 Executive Director, Wikimedia Foundation
 </p>
 
-<p>Ibland kan det hända att vissa arbetsgivare matchar sina anställdas bidrag. Titta om din arbetsgivare har <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts">ett sådant bidragsprogram för företag</a>. 
+<p>Ibland kan det hända att vissa arbetsgivare matchar sina anställdas bidrag. Titta om din arbetsgivare har <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">ett sådant bidragsprogram för företag</a>.
 </p>
 
-<p>För dina handlingar: Din donation, nummer {{ transaction_id }}, den {{ receive_date }}, var på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+<p>Din donation, nummer {{ transaction_id }}, den {{ receive_date }}, var på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 </p>
 
-{% if recurring %}
-<p>Du har valt att skänka pengar regelbundet. Månatliga överföringar till Wikimedia Foundation kommer att ske till dess du meddelar oss att de ska upphöra. Om du vill sluta skänka pengar finns <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">enkla instruktioner för att avsluta överföringarna</a>.</p>
-{%endif%}
-
-<p>Detta brev är ett kvitto på ditt bidrag. Inga varor eller tjänster tillhandahålls, vare sig delvis eller i sin helhet, i samband med detta bidrag. Vänligen skicka brev till: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. skatteavdragsnummer: 20-0049703
+<p>Detta brev är ett kvitto på ditt bidrag. Inga varor eller tjänster tillhandahålls, vare sig delvis eller i sin helhet, i samband med detta bidrag. Vår postadress är: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA.  skatteavdragsnummer i USA: 20-0049703
 </p>
 
 <p>Om du inte vill få framtida mejl om insamlingar från Wikimedia Foundation kan du <a href="{{ unsubscribe_link | raw }}">avsluta prenumerationen direkt.</a> Observera att vi kommer att fortsätta att skicka dig kvitton som detta för framtida donationer.
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20171019/sv&amp;oldid=18156554","name":"thank_you.sv.html","revision":18156554}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/sv&amp;oldid=19084804","name":"thank_you.sv.html","revision":19084804}TI_END -->

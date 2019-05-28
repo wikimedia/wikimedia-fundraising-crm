@@ -1,53 +1,60 @@
 {% if first_name and last_name %}
-<p>Dobrý deň, {{ first_name }},
-</p>
-
-{% else %}
-<p>Vážená darkyňa, vážený darca,</p>
+<p>Ahoj, {{ first_name }}!
+</p>{% else %}<p>
+Vážený darca,</p>
 {%endif%}
 
-<p>ďakujeme Vám za podporu Wikipedie a nadácie Wikimedia Foundation Vaším darom {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Váš príspevok udrží nezávislosť Wikipedie. Chceme vám povedať, prečo je Váš dar taký dôležitý.
+<p>je mi potešením poďakovať Vám za Váš {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}
+mesačný
+{%endif%}príspevok Wikipédii a Wikimedia Foundation. 
+</p>
+
+<p>Príbeh jednotlivca ako ste Vy, ktorý dáva trochu seba, aby dvere k objavovaniu ostali otvorené je zásadným príbehom Wikipédie. Váš {% if recurring %}
+mesačný
+{%endif%}príspevok dokazuje, že podstata našej vízie je stále živá a zdravá.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>Nedávno sme vyriešili malý technický problém, ktorý pozastavil niektoré pravidelné mesačné dary. Možnosť pravidelných darov sa nám podarilo obnoviť a budú sa naďalej spracúvať bežným spôsobom. Nebudeme si účtovať poplatok za vynechané mesiace. Ďakujeme Vám za trpezlivosť a podporu. V prípade akýchkoľvek otázok nám bez váhania napíšte na adresu donate@wikimedia.org.</p>
+<p>Nedávno sme vyriešili malý technický problém, ktorý dočasne pozastavil niektoré mesačné príspevky. Váš mesačný príspevok sme obnovili: bude spracovaný ako obvykle. Za vynechané mesiace Vám samozrejme nebudeme nič účtovať. Ďakujeme Vám za Vašu trpezlivosť a podporu, a ak máte akékoľvek otázky, neváhajte a napíšte nám na adresu donate@wikimedia.org.</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
-<p>Nedávno sme vyriešili technický problém, ktorý spôsobil, že niekoľko darcov nedostalo potvrdenie o svojom príspevku. Prijmite prosím tento email ako poďakovanie za Váš dar zo dňa {{ receive_date }}. Skutočne si ceníme Vašu trpezlivosť a podporu. V prípade akýchkoľvek otázok nám bez váhania napíšte na adresu donate@wikimedia.org.</p>
+<p>Nedávno sme vyriešili technický problém, ktorý spôsobil, že niektorí darcovia nedostali potvrdenie o svojom príspevku. Prijmite, prosím, tento e-mail ako poďakovanie za Váš príspevok dňa {{ receive_date }}. Vážime si Vašu trpezlivosť a podporu, a ak máte akékoľvek otázky, neváhajte a napíšte nám na adresu donate@wikimedia.org.</p>
 {%endif%}
-
-<p>Wikipedia je globálny projekt. V nadácii Wikimedia Foundation sa inžinieri aj personál snažia, aby bola Vaša skúsenosť s Wikipediou užitočná a pútavá. Pracujeme na tom, aby bola Wikipedia prístupná pomocou akéhokoľvek internetového pripojenia na akomkoľvek zariadení bez ohľadu na to, kde ste. Staviame sa za budúcnosť otvoreného internetu a bojujeme za ochranu Vášho súkromia. Sme zanietení pre sprístupnenie bezplatných vedomostí každému na planéte. Sme malý tím s veľkým poslaním, takže na Vašom príspevku záleží.
-</p>
-
-<p>
-  <b>Každý deň robíte zásadné rozhodnutia na základe toho, čo si prečítate na internete. Wikipedia je užitočný zdroj, pretože ponúka bezplatné, neutrálne a nezaujaté informácie napísané ľuďmi z celého sveta.</b>
-</p>
-
-<p>Wikipedia by nebola užitočná bez spoločného zanietenia našich čitateľov, našich redaktorov a darcov, ako ste Vy. Vaša podpora Wikipedii nám umožňuje zostať neutrálnymi, nezaujatými a úplne nezávislými. Viete, že sa na nás môžete spoľahnúť, pretože Wikipediu si nemožno kúpiť. Sme tu pre Vás a Vy ste tu pre nás. 
-</p>
-
-<p>
-  <b>Darom zabezpečujete súhrn ľudských vedomostí teraz a pre budúce generácie.</b>
-</p>
-
-<p>Ďakujeme za Vašu podporu Wikipedie. Dúfame, že budete aj naďalej stáť na strane vedomostí. 
-</p>
-
-<p>S úctou<br/>
-Katherine Maher<br/>
-výkonná riaditeľka, Wikimedia Foundation
-</p>
-
-<p>Mnohí zamestnávatelia štedro podporia príspevky svojich zamestnancov: opýtajte sa svojho zamestnávateľa a zistite, či máte <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts">podnikový program darov</a>. 
-</p>
-
-<p>Pre Vaše záznamy: Váš dar číslo {{ transaction_id }} zo dňa {{ receive_date }} bol {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
-</p>
 
 {% if recurring %}
-<p>Tento dar je súčasťou pravidelne sa opakujúcich príspevkov. Mesačné platby budú pripisované na účet nadácie Wikimedia Foundation dovtedy, kým nepožiadate o ich zastavenie. Ak už nechcete ďalej prispievať, prečítajte si <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">naše jednoduché pokyny na zrušenie platieb</a>.</p>
+<p>Váš príspevok pomáha udržať Wikipédiu nezávislou a Vaša mesačná podpora je nevyhnutná pre dlhodobé plánovanie, ktoré nám umožňuje vidieť, čo Wikipédia môže dosiahnuť v nasledujúcich rokoch. Raz do mesiaca, sa Váš príspevok vo výške {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} pripíše na Wikimedia Foundation, kým nás neupozorníte, že chcete prestať prispievať. <b>Každý rok Vám zašleme zhrnutie Vašich príspevkov za predchádzajúci rok.</b> Ak si želáte z akéhokoľvek dôvodu zrušiť svoje prispievanie, postupujte podľa týchto <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">jednoduchých pokynov na zrušenie</a>.</p>
 {%endif%}
+
+<p>Váš príspevok ste pravdepodobne poslali pretože je pre Vás Wikipédia užitočná. To je jedna z hlavných odpovedí, keď sa opýtam na dôvod, prečo ľudia podporujú Wikipédiu. Ale môže Vás prekvapiť, že jedným z hlavných dôvodov, prečo ľudia neprispievajú, je to, že si to nemôžu dovoliť.
+</p>
+
+<p>Vo Wikimedia Foundation veríme, že za vzdelávanie by nikto nemal platiť. Veríme, že vedomosti by vždy mali byť bezplatné. Za použitie Wikipédie nikdy nebudeme nič účtovať. Ako si môžeme dovoliť financovať infraštruktúru jednej z najpopulárnejších webových stránok na svete?
+</p>
+
+<p>Je to vďaka štedrosti ľudí ako Vy.
+</p>
+
+<p>Wikipédia patrí Vám: Vy ju čítate, Vy ju editujete, Vy sa do nej ponárate. Nie sme cieľ, ale začiatok.
+</p>
+
+{% if first_name and last_name %}
+<p>{{ first_name }}, ďakujeme Vám za Vašu pomoc bezplatným vedomostiam.
+</p>{% else %}<p>
+Ďakujeme Vám za Vašu pomoc bezplatným vedomostiam.</p>
+{%endif%}
+
+<p>Katherine<br/><br/>
+<br/><br/>
+Katherine Maher<br/>
+Vedúci výkonný pracovník a výkonný riaditeľ nadácie Wikimedia Foundation
+</p>
+
+<p>Mnohí zamestnávatelia štedro podporia príspevky svojich zamestnancov: opýtajte sa svojho zamestnávateľa a zistite, či máte <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">podnikový program darov</a>.
+</p>
+
+<p>Pre Vaše záznamy: Váš dar číslo {{ transaction_id }}, zo dňa {{ receive_date }} bol {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+</p>
 
 <p>Tento list môže slúžiť ako záznam o Vašom dare. Za tento príspevok nebol poskytnutý žiadny tovar ani služby, a to ani čiastočne. Poštu môžete posielať na adresu: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Číslo daňového oslobodenia v USA: 20-0049703
 </p>
@@ -55,4 +62,4 @@ výkonná riaditeľka, Wikimedia Foundation
 <p>Ak nechcete dostávať žiadne e-maily o akejkoľvek finančnej zbierke od nadácie Wikimedia Foundation, <a href="{{ unsubscribe_link | raw }}">môžete sa okamžite odhlásiť</a>. Upozorňujeme, že v prípade budúcich darov Vám aj naďalej budeme posielať takéto potvrdenia o príjme.
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20171019/sk&amp;oldid=18156529","name":"thank_you.sk.html","revision":18156529}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/sk&amp;oldid=19073517","name":"thank_you.sk.html","revision":19073517}TI_END -->

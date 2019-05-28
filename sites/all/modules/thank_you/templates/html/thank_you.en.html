@@ -1,58 +1,17 @@
 {% if first_name and last_name %}
 <p>Hi {{ first_name }}!
-</p>
-
-{% else %}
-<p>Dear donor,</p>
+</p>{% else %}<p>
+Dear donor,</p>
 {%endif%}
 
-{% if financial_type == "Endowment Gift" %}
-<p>I love that it’s my job to thank you for your {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} contribution to Wikipedia and the Wikimedia Endowment.
+<p>I love that it’s my job to thank you for your {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}
+monthly
+{%endif%}contribution to Wikipedia and the Wikimedia Foundation. 
 </p>
 
-<p><b>Wikipedia is possible because of a powerful idea: that people, like you and me, can participate in building the world’s knowledge and making it freely available to everyone, everywhere.</b>
-</p>
-
-<p>Today, thanks to the support of millions of volunteer contributors and supporters, you can wander Wikipedia for hours. With more than 40 million articles, Wikipedia can answer almost any question, and take you places you’ve never been. The Wikimedia Endowment will make sure future generations have access to Wikipedia like we do today, for years to come.
-</p>
-
-<p>The essential story of Wikipedia is the story of an individual, like you, giving a little bit of themselves to keep the doors of discovery open. Wikipedia will continue to evolve, grow, and meet new challenges because of the generosity of people like you.
-</p>
-
-<p>Wikipedia is yours: yours to read, yours to edit, yours in which to get lost. We’re not the destination, we’re the beginning.
-</p>
-
-<p>{% if first_name and last_name %}
-{{ first_name }}, thank you for helping free knowledge thrive.
-{% else %}
-Thank you for helping free knowledge thrive.
-{%endif%}
-</p>
-
-<p>Jimmy
-</p>
-
-<p>Jimmy Wales<br/>
-Wikipedia Founder
-</p>
-
-<p>Many employers will generously match employee contributions: please check with your employer to see if they have a <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">corporate matching gift program</a>.
-</p>
-
-<p>For your records: Your donation, number {{ transaction_id }}, on {{ receive_date }} was {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
-</p>
-
-<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
-</p>
-
-<p>If you do not wish to receive any future fundraising emails from the Wikimedia Endowment or the Wikimedia Foundation, you can <a href="{{ unsubscribe_link | raw }}">unsubscribe instantly</a>. Please note we will still send you receipts, like this one, for future donations.
-</p>
-
-{% else %}
-<p>I love that it’s my job to thank you for your {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}monthly {%endif%}contribution to Wikipedia and the Wikimedia Foundation.
-</p>
-
-<p>The essential story of Wikipedia is the story of an individual, like you, giving a little bit of themselves to keep the doors of discovery open. Your {% if recurring %}monthly recurring {%endif%}contribution shows me that the spirit of our vision is alive and well.
+<p>The essential story of Wikipedia is the story of an individual, like you, giving a little bit of themselves to keep the doors of discovery open. Your {% if recurring %}
+monthly recurring
+{%endif%}contribution shows me that the spirit of our vision is alive and well.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}
@@ -64,7 +23,7 @@ Wikipedia Founder
 {%endif%}
 
 {% if recurring %}
-<p>If you ever want to cancel your monthly support, please see our <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">easy cancellation instructions</a>.</p>
+<p>Your donation keeps Wikipedia independent, and your monthly support is essential for long-term planning, helping us see what Wikipedia can achieve in the years ahead. Once a month, a donation of {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} will be debited by the Wikimedia Foundation until you notify us to stop. <b>We will send you a summary each January of your contributions for the previous year.</b> If for whatever reason you wish to cancel your donation, follow these <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">easy cancellation instructions</a>.</p>
 {%endif%}
 
 <p>You probably donated because Wikipedia is useful to you. That’s one of the main reasons people tell me when I ask them why they support Wikipedia. But what may surprise you is that one of the top reasons people don’t give is because they can’t afford to.
@@ -79,17 +38,15 @@ Wikipedia Founder
 <p>Wikipedia is yours: yours to read, yours to edit, yours in which to get lost. We’re not the destination, we’re the beginning.
 </p>
 
-<p>{% if first_name and last_name %}
-{{ first_name }}, thank you for helping free knowledge thrive.
-{% else %}
-Thank you for helping free knowledge thrive.
+{% if first_name and last_name %}
+<p>{{ first_name }}, thank you for helping free knowledge thrive.
+</p>{% else %}<p>
+Thank you for helping free knowledge thrive.</p>
 {%endif%}
-</p>
 
 <p>Katherine
-</p>
-
-<p>Katherine Maher,<br/>
+<br/><br/>
+Katherine Maher<br/>
 Executive Director, Wikimedia Foundation
 </p>
 
@@ -104,5 +61,5 @@ Executive Director, Wikimedia Foundation
 
 <p>If you do not wish to receive any future fundraising emails from the Wikimedia Foundation, you can <a href="{{ unsubscribe_link | raw }}">unsubscribe instantly</a>. Please note we will still send you receipts, like this one, for future donations.
 </p>
-{% endif %}
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/en&amp;oldid=18434658","name":"thank_you.en.html","revision":18434658}TI_END -->
+
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/en&amp;oldid=19073550","name":"thank_you.en.html","revision":19073550}TI_END -->

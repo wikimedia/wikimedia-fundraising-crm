@@ -1,53 +1,60 @@
 {% if first_name and last_name %}
-<p>Dragă {{ first_name }},
-</p>
-
-{% else %}
-<p>Stimate donator,</p>
+<p>Bună, {{ first_name }}!
+</p>{% else %}<p>
+Stimate donator,</p>
 {%endif%}
 
-<p>Îți mulțumim că sprijini Wikipedia și Fundația Wikimedia prin donația ta de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Contribuția ta păstrează independența Wikipediei. Aș vrea să îți spun de ce donația ta este atât de importantă.
+<p>Am plăcerea să îți mulțumesc pentru contribuția ta {% if recurring %}
+lunară
+{%endif%}de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} pentru Wikipedia și Fundația Wikimedia. 
+</p>
+
+<p>Povestea Wikipedia este povestea unor oameni obișnuiți, ca tine, care au decis să dea ceva de la ei pentru a păstra deschise ușile cunoașterii. Contribuția ta {% if recurring %}
+lunară recurentă
+{%endif%}îmi arată că spiritul viziunii noastre este viu și puternic.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>De curând, am rezolvat o mică problemă tehnică, din cauza căreia au fost întrerupte câteva donaţii recurente lunare. Am restabilit donaţia dumneavoastră curentă, astfel încât aceasta va fi prelucrată în mod obişnuit de acum înainte. Nu vă vom percepe suma aferentă lunilor de întrerupere. Vă mulţumim pentru răbdare şi pentru sprijin. Dacă aveţi întrebări, nu ezitaţi să ne contactaţi prin e-mail la adresa donate@wikimedia.org.</p>
+<p>Recent, am rezolvat o mică problemă tehnică care a blocat unele donații lunare recurente. Am reactivat donația ta recurentă care va fi procesată în mod normal de acum înainte. Nu îți vom percepe taxa pentru lunile care au fost omise. Îți mulțumim pentru răbdare și sprijin și te rugăm să ne trimiți orice eventuale întrebări la adresa donate@wikimedia.org.</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
-<p>De curând, am rezolvat o problemă tehnică, din cauza căreia câţiva donatori nu au primit confirmarea efectuării donaţiei. Vă rugăm să acceptaţi acest e-mail în semn de mulţumire pentru donaţia dumneavoastră din data de {{ receive_date }}. Vă mulţumim pentru răbdare şi pentru sprijin. Dacă aveţi întrebări, nu ezitaţi să ne contactaţi prin e-mail la adresa donate@wikimedia.org.</p>
+<p>Recent, am rezolvat o problemă tehnică care a făcut ca un mic număr de donatori să nu primească nicio confirmare în urma donației realizate. Te rugăm să accepți acest e-mail ca mulțumire pentru donația ta. {{ receive_date }}. Îți apreciem răbdarea și sprijinul și te rugăm să ne trimiți orice eventuale întrebări la adresa donate@wikimedia.org.</p>
 {%endif%}
 
-<p>Wikipedia este un proiect global. La Fundația Wikimedia, inginerii și personalul se străduiesc să îți facă Wikipedia utilă și captivantă. Lucrăm pentru a face Wikipedia accesibilă pe orice conexiune la internet, pe orice dispozitiv, indiferent unde te afli. Susținem viitorul internetului liber și luptăm pentru a-ți proteja intimitatea. Suntem pasionați de a face informațiile gratuite disponibile pentru toată lumea de pe planetă. Suntem o echipă mică cu o misiune mare, deci contribuția ta contează.
+{% if recurring %}
+<p>Donația ta ne ajută să asigurăm independența proiectului Wikipedia, iar sprijinul tău lunar este esențial pentru planificarea pe termen lung, deoarece ne va ajuta să organizăm evoluția Wikipedia în anii următori. O dată pe lună, din contul tău va fi debitată o donație în valoare de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} către Fundația Wikimedia, până când ne vei notifica faptul că nu îți mai dorești acest lucru. <b>În luna ianuarie a fiecărui an, îți vom trimite un rezumat al contribuțiilor tale din anul precedent.</b> Dacă, din orice motiv, dorești să îți anulezi donația, urmează aceste <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instrucțiuni pentru anularea rapidă a donației</a>.</p>
+{%endif%}
+
+<p>Probabil că motivul donației tale este faptul că apreciezi utilitatea Wikipedia. Acesta este unul dintre principalele motive pe care oamenii ni le oferă atunci când îi întrebăm de ce susțin Wikipedia. Dar ceea ce te-ar putea surprinde este că unul dintre principalele motive pentru care oamenii nu fac donații este faptul că nu-și permit acest lucru.
 </p>
 
-<p>
-  <b>În fiecare zi, iei decizii critice bazate pe ceea ce citești pe internet. Wikipedia este o resursă vitală deoarece oferă informații gratuite, neutre și imparțiale, scrise de oameni din întreaga lume.</b>
+<p>Noi, cei de la Wikimedia Foundation, credem că nimeni nu ar trebui să plătească pentru a învăța. Cunoștințele ar trebui să fie întotdeauna accesibile tuturor. Nu vom taxa niciodată pe nimeni pentru a utiliza Wikipedia. Așadar, cum ne permitem să asigurăm infrastructura unuia dintre cele mai populare site-uri web din lume?
 </p>
 
-<p>Wikipedia nu ar fi posibilă fără un angajament comun al cititorilor, editorilor și donatorilor noștri, ca tine. Sprijinul tău pentru Wikipedia ne permite să rămânem neutri, imparțiali și complet independenți. Știi că te puteți baza pe noi, deoarece Wikipedia nu poate fi cumpărată. Suntem aici pentru tine și tu ești aici pentru noi. 
+<p>Datorită generozității unor oameni ca tine.
 </p>
 
-<p>
-  <b>Donând, protejezi suma cunoștințelor omenirii și pentru generațiile viitoare.</b>
+<p>Wikipedia este a ta: ca să o citești, ca să o editezi, ca să te pierzi în ea. Noi nu suntem destinația, ci punctul de pornire.
 </p>
 
-<p>Îți mulțumim pentru că sprijini Wikipedia. Sperăm că vei continua să fii de partea cunoașterii. 
-</p>
+{% if first_name and last_name %}
+<p>{{ first_name }}, îți mulțumim că sprijini cunoașterea gratuită.
+</p>{% else %}<p>
+Îți mulțumim că sprijini cunoașterea gratuită.</p>
+{%endif%}
 
-<p>Cu recunoștință,<br/>
-Katherine Maher,<br/>
+<p>Katherine<br/><br/>
+<br/><br/>
+Katherine Maher<br/>
 Director executiv, Wikimedia Foundation
 </p>
 
-<p>Mulți angajatori vor egala cu generozitate contribuțiile angajaților: te rugăm să îți consulți angajatorul pentru a vedea dacă există un <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts">program corporativ de egalare a donațiilor</a>. 
+<p>Mulți angajatori vor egala cu generozitate contribuțiile angajaților: te rugăm să îți consulți angajatorul pentru a vedea dacă există un <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">program corporativ de egalare a donațiilor</a>.
 </p>
 
 <p>Pentru evidența ta: Donația ta, numărul {{ transaction_id }}, la {{ receive_date }} a fost {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 </p>
-
-{% if recurring %}
-<p>Această donaţie este o plată recurentă. Plăţile lunare vor fi încasate de către Fundaţia Wikimedia până în momentul în care ne veţi solicita întreruperea acestora. Dacă doriţi să anulaţi plăţile, vă rugăm să consultaţi <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instrucţiunile noastre privind anularea cu uşurinţă</a>.</p>
-{%endif%}
 
 <p>Această scrisoare poate servi ca o înregistrare a donării. Nu au fost furnizate bunuri sau servicii, integral sau parțial, pentru această contribuție. Te rugăm să trimiți corespondența la adresa: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Număr scutire de taxe SUA: 20-0049703
 </p>
@@ -55,4 +62,4 @@ Director executiv, Wikimedia Foundation
 <p>Dacă nu doriți să primiți pe viitor niciun email de colectare de fonduri de la Fundația Wikimedia, <a href="{{ unsubscribe_link | raw }}">vă puteți dezabona instantaneu</a>. Vă rugăm să rețineți că vă vom mai trimite chitanțe, ca aceasta, pentru viitoarele donații.
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20171019/ro&amp;oldid=18156516","name":"thank_you.ro.html","revision":18156516}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/ro&amp;oldid=19073515","name":"thank_you.ro.html","revision":19073515}TI_END -->

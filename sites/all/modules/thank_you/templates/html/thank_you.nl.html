@@ -1,53 +1,61 @@
 {% if first_name and last_name %}
-<p>Beste {{ first_name }},
-</p>
-
-{% else %}
-<p>Beste donateur,</p>
+<p>Hi {{ first_name }}!
+</p>{% else %}<p>
+Beste donateur,</p>
 {%endif%}
 
-<p>Bedankt voor je donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} aan Wikimedia Foundation. Door jouw bijdrage kan Wikipedia onafhankelijk zijn. In deze e-mail leg ik uit waarom dat zo belangrijk is.
+<p>Ik ben blij dat ik je mag bedanken voor jouw {% if recurring %}
+maandelijkse
+{%endif%}bijdrage van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} aan Wikipedia en de Wikimedia Foundation. 
+</p>
+
+<p>Het verhaal van Wikipedia is het verhaal van mensen als jij die door iets van zichzelf te geven de deur naar ontdekkingen open houdt. Jouw {% if recurring %}
+maandelijkse
+{%endif%}bijdrage laat zien dat onze visie nog altijd volop leeft.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>Kort geleden hebben we een klein probleem opgelost waarbij maandelijkse donaties werden gepauzeerd. We hebben uw terugkerende donatie hervat. Voor de maanden die overgeslagen zijn, zullen we niet alsnog geld innen. Bedankt voor uw geduld en uw ondersteuning. Als u nog vragen heeft, voel u vrij om een email te sturen naar donate@wikimedia.org.</p>
+<p>Onlangs hebben we een kleine technische storing opgelost, die ervoor zorgde dat sommige maandelijkse donaties tijdelijk waren stopgezet. We hebben de betaling van jouw periodieke bijdrage hersteld, waardoor het betalingsproces weer normaal verloopt. We zullen de donaties die zijn overgeslagen niet alsnog innen. Hartelijk dank voor je geduld, en mail gerust naar donate@wikimedia.org als je nog vragen hebt.</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
-<p>Onlangs hebben we een technisch probleem opgelost dat ervoor zorgde dat een klein aantal donateurs geen bevestiging heeft gekregen voor hun donatie. Daarom willen we u vragen deze e-mail als dank te beschouwen voor uw donatie die op {{ receive_date }} is overgemaakt. We waarderen uw geduld en steun enorm, en mocht u nog vragen hebben dan kunt u gerust een e-mail sturen naar donate@wikimedia.org.</p>
+<p>Onlangs hebben we een kleine technische storing opgelost die ervoor zorgde dat enkele donateurs geen bevestiging van hun donatie ontvingen. Zie deze e-mail als een bedankje voor je donatie van {{ receive_date }}.
+We waarderen je geduld en steun, en mail gerust naar donate@wikimedia.org als je nog vragen hebt.</p>
 {%endif%}
 
-<p>Wikipedia is internationaal. De medewerkers van Wikimedia Foundation zorgen ervoor dat Wikipedia via elke internetconnectie en op elk apparaat te lezen is, waar je ook bent. Wij zijn voor een open internet en vinden dat je privacy beschermd moet worden. Ons doel: kennis voor iedereen ter wereld gratis toegankelijk maken. We zijn een klein team met grote ambities, dus jouw bijdrage telt.
+{% if recurring %}
+<p>Jouw maandelijkse donatie houdt Wikipedia onafhankelijk en jouw steun is essentieel voor de lange termijn, zodat wij vooruit kunnen kijken naar wat Wikipedia de komende jaren kan bereiken. Eens per maand, zal een donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} afgeschreven worden door de Wikimedia Foundation, totdat jij ons verzoekt je donaties te beëindigen. <b>Elk jaar sturen we je in januari een overzicht van jouw donaties van het afgelopen jaar.</b> Als je om wat voor reden dan ook je donatie wilt beëindigen, ga dan naar <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">eenvoudig donaties beëindigen</a>.</p>
+{%endif%}
+
+<p>Je doneert waarschijnlijk omdat Wikipedia nuttig voor je is. Dat is een van de belangrijkste redenen die mensen me geven als ik ze vraag waarom ze Wikipedia steunen. Wat je zal verbazen is dat een van de belangrijkste redenen dat mensen ons niet sponsoren is dat ze het zich niet kunnen veroorloven.
 </p>
 
-<p>
-  <b>Elke dag maak je belangrijke beslissingen gebaseerd op wat je online leest. Wikipedia vormt daarbij een essentiële informatiebron want het biedt gratis, neutrale en onpartijdige informatie, geschreven door mensen van over de hele wereld.</b>
+<p>Bij de Wikimedia Foundation vinden we dat niemand zou moeten betalen om te leren. We geloven dat kennis altijd gratis moet zijn. We zullen nooit iemand vragen te betalen om Wikipedia te raadplegen. De vraag is hoe wij de infrastructuur van een van de populairste websites ter wereld financieren.
 </p>
 
-<p>Wikipedia zou niet kunnen bestaan zonder het commitment van onze lezers, schrijvers en donoren als jij. Wij zijn er voor je, en jij bent er voor ons. 
+<p>Dat kan door de gulheid van mensen als jij.
 </p>
 
-<p>
-  <b>Door te doneren help je bij de verspreiding van kennis. Voor nu en voor de toekomstige generaties.</b>
+<p>Wikipedia is van jou: om te lezen, te schrijven, je erin te verliezen. We zijn niet de bestemming, we zijn de reis.
 </p>
 
-<p>Nogmaals bedankt! 
-</p>
+{% if first_name and last_name %}
+<p>{{ first_name }}, bedankt dat je gratis kennis helpt verspreiden.
+</p>{% else %}<p>
+Bedankt dat je gratis kennis helpt verspreiden.</p>
+{%endif%}
 
-<p>Met hartelijke groet,<br/>
-Katherine Maher,<br/>
+<p>Katherine<br/><br/>
+<br/><br/>
+Katherine Maher<br/>
 Executive Director, Wikimedia Foundation
 </p>
 
-<p>Veel werkgevers matchen de donaties van hun werknemers graag; je kunt aan je werkgever vragen of er bij jullie een <a rel="nofollow" class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts">‘matching gift’-programma is</a>. 
+<p>Veel werkgevers matchen de donaties van hun werknemers graag; je kunt aan je werkgever vragen of er bij jullie een <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">‘matching gift’-programma is</a>.
 </p>
 
 <p>Voor je eigen administratie: op {{ receive_date }} heb je {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} gedoneerd. Je donatienummer: {{ transaction_id }}.
 </p>
-
-{% if recurring %}
-<p>Deze gift maakt deel uit van een periodieke afschrijving. Maandelijkse betalingen worden geïncasseerd door de Wikimedia Foundation tot u ons verzoekt te stoppen. Als u de betalingen wenst te annuleren, zie onze <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">eenvoudige annuleringsinstructies</a>.</p>
-{%endif%}
 
 <p>Deze brief kan dienst doen als bewijs van je donatie. Er zijn geen goederen of diensten geleverd als tegenprestatie voor deze bijdrage. Het adres van de Wikipedia Foundation is P.O. Box 98204, Washington, DC 20090-8204, USA. Donaties aan de Wikimedia Foundation komen in aanmerking voor belastingvermindering volgens de Nederlandse belastingwetten. Raadpleeg je accountant of belastingadviseur voor individueel advies en kijk op <a rel="nofollow" class="external free" href="https://wikimediafoundation.org/wiki/Tax_Deductibility/nl">https://wikimediafoundation.org/wiki/Tax_Deductibility/nl</a> voor meer informatie.
 </p>
@@ -55,4 +63,4 @@ Executive Director, Wikimedia Foundation
 <p>Als je geen fundraising e-mails van Wikimedia Foundation meer wilt ontvangen meld je dan af. Als je in de toekomst weer doneert sturen we je nog wel een <a href="{{ unsubscribe_link | raw }}">ontvangstbewijs zoals deze.</a>
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_20171019/nl&amp;oldid=18545497","name":"thank_you.nl.html","revision":18545497}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/nl&amp;oldid=19073519","name":"thank_you.nl.html","revision":19073519}TI_END -->
