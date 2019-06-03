@@ -26,7 +26,7 @@
   </div>
 
   <div>
-    <button class="btn btn-primary" ng-show=!isMerging ng-disabled="!ruleGroupID || !limit || hasSearched || isSearching" ng-click="getDuplicates()">{{ ts('Find duplicates') }}</button>
+    <button class="btn btn-primary" ng-show=!isMerging ng-disabled="!ruleGroupID || !limit || isSearching" ng-click="getDuplicates()">{{ ts('Find duplicates') }}</button>
     <button class="btn btn-info" crm-icon="fa-bolt" ng-show=!isMerging ng-disabled="!ruleGroupID || !limit" ng-click="batchMerge()">{{ ts('Batch Merge') }}</button>
     <button class="btn btn-info" ng-show="!isMerging && foundCount" ng-disabled="!ruleGroupID || !limit" ng-click="notDuplicates()">{{ ts('Mark all not duplicates') }}</button>
     <button ng-show=isMerging>{{ ts('Bulk operation in progress - this could take a while.... enough time for you to stand up & do some stretches....') }}</button>
