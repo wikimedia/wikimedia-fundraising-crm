@@ -1,0 +1,13 @@
+<div ng-if="!options.conflicts">
+
+</div>
+<div ng-if="options.conflicts">
+
+  <h3>{{options.main_display_name}} vs {{options.other_display_name}}</h3>
+  <div ng-repeat="(key, conflict) in options.conflicts">
+    <span ng-if="options.fieldSpec[key]">{{options.fieldSpec[key]['title']}}</span>
+    <span ng-if="!options.fieldSpec[key]">{{key}}</span>
+    <strong>{{conflict[options.main_id]}}</strong> <del>{{conflict[options.other_id]}}</del>
+  </div>
+
+</div>

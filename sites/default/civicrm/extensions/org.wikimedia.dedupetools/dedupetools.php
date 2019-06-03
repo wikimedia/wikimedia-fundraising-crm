@@ -111,6 +111,12 @@ function dedupetools_civicrm_caseTypes(&$caseTypes) {
  */
 function dedupetools_civicrm_angularModules(&$angularModules) {
   _dedupetools_civix_civicrm_angularModules($angularModules);
+  $angularModules['xeditable'] = [
+    'ext' => 'org.wikimedia.dedupetools',
+    'js' => ['bower_components/angular-xeditable/dist/js/xeditable.js'],
+    'css' => ['bower_components/angular-xeditable/dist/css/xeditable.css'],
+  ];
+
 }
 
 /**
@@ -214,15 +220,15 @@ function dedupetools_civicrm_preProcess($formName, &$form) {
  * Implements hook_civicrm_navigationMenu().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
- *
+ */
 function dedupetools_civicrm_navigationMenu(&$menu) {
-  _dedupetools_civix_insert_navigation_menu($menu, NULL, array(
-    'label' => ts('The Page', array('domain' => 'org.wikimedia.dedupetools')),
-    'name' => 'the_page',
-    'url' => 'civicrm/the-page',
-    'permission' => 'access CiviReport,access CiviContribute',
+  _dedupetools_civix_insert_navigation_menu($menu, 'Contacts', [
+    'label' => ts('Deduper', array('domain' => 'org.wikimedia.dedupetools')),
+    'name' => 'deduper',
+    'url' => 'civicrm/a/#/dupefinder/Contact',
+    'permission' => 'access CiviCRM',
     'operator' => 'OR',
     'separator' => 0,
-  ));
+  ]);
   _dedupetools_civix_navigationMenu($menu);
-} // */
+}
