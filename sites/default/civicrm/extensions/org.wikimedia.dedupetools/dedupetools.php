@@ -116,6 +116,10 @@ function dedupetools_civicrm_angularModules(&$angularModules) {
     'js' => ['bower_components/angular-xeditable/dist/js/xeditable.js'],
     'css' => ['bower_components/angular-xeditable/dist/css/xeditable.css'],
   ];
+  $angularModules['angularUtils.directives.dirPagination'] = [
+    'ext' => 'org.wikimedia.dedupetools',
+    'js' => ['bower_components/angularUtils-pagination/dirPagination.js'],
+  ];
 
 }
 
