@@ -31,29 +31,31 @@
   // The controller uses *injection*. This default injects a few things:
   //   $scope -- This is the set of variables shared between JS and HTML.
   //   crmApi, crmStatus, crmUiHelp -- These are services provided by civicrm-core.
-  //   myContact -- The current contact, defined above in config().
+
+
+//   myContact -- The current contact, defined above in config().
   angular.module('dedupetools').controller('DedupetoolsdupefindCntrl', function($scope, $routeParams, $timeout, crmApi, crmStatus, crmUiHelp, crmApi4, contactFields, ruleGroups) {
     // Main angular function.
     // The ts() and hs() functions help load strings for this module.
     var ts = $scope.ts = CRM.ts('dedupetools');
     var hs = $scope.hs = crmUiHelp({file: 'CRM/dedupetools/dupefindCntrl'});// See: templates/CRM/dedupetools/dupefindCntrl.hlp
-    var self = this;
+    var vm = this;
     $scope.operators = arrayToSelect2([
       '=',
-        '<=',
-        '>=',
-        '>',
-        '<',
-        'LIKE',
-        "<>",
-        "!=",
-        "NOT LIKE",
-        'IN',
-        'NOT IN',
-        'BETWEEN',
-        'NOT BETWEEN',
-        'IS NOT NULL',
-        'IS NULL'
+      '<=',
+      '>=',
+      '>',
+      '<',
+      "<>",
+      "!=",
+      'LIKE',
+      "NOT LIKE",
+      'IN',
+      'NOT IN',
+      'BETWEEN',
+      'NOT BETWEEN',
+      'IS NOT NULL',
+      'IS NULL'
     ]);
     $scope.entities = entities;
     // We have myContact available in JS. We also want to reference it in HTML.
@@ -72,15 +74,18 @@
     $scope.foundCount = 0;
     $scope.exceptedCount = 0;
     $scope.duplicatePairs = [];
+    $scope.pagedPairs = [];
     $scope.contactsToMerge = [];
+    $scope.currentPage = 1;
     $scope.hasSearched = false;
     $scope.contactURL = CRM.url('civicrm/contact/view', $.param({'reset': 1, 'cid' : ''}));
     $scope.mergeURL = CRM.url('civicrm/contact/merge', $.param({'reset': 1, 'action' : 'update'}));
     $scope.isRowMerging = false;
     // Number of matches to fetch at once..
     // We might expose this.
-    $scope.numberMatchesToFetch = 25;
-    $scope.tilesToShow = 2;
+    $scope.numberMatchesToFetch = 250;
+    $scope.tilesToShow = 4;
+    $scope.showTiles = true;
 
     _.each(ruleGroups['values'], function(spec) {
       $scope.ruleGroups .push({id : spec.id, text : spec.contact_type + ' (' + spec.used + ') ' + spec.title});
@@ -125,6 +130,20 @@
       writeUrl();
     });
 
+    $scope.$watchCollection(
+      "duplicatePairs",
+      function(newValue, oldValue, vm ) {
+        if (newValue !== oldValue) {
+          if ($scope.currentPage === 1) {
+            $scope.pagedPairs = newValue;
+          }
+          else {
+            updatePagedPairs(newValue, $scope.currentPage);
+          }
+        }
+      }
+    );
+
     writeUrl();
 
 
@@ -156,6 +175,36 @@
         return {};
       }
       return {'contact': contactCriteria};
+    }
+
+    $scope.pageChanged = function(duplicatePairs, newPage) {
+      $scope.currentPage = newPage;
+      updatePagedPairs(duplicatePairs, newPage);
+    };
+
+    function updatePagedPairs(duplicatePairs, currentPage) {
+      var rowStartIndex = ((currentPage - 1) * $scope.tilesToShow);
+      // Add an extra one because
+      var rowsNeededCount = rowStartIndex + $scope.tilesToShow;
+      if (duplicatePairs.length >= rowsNeededCount) {
+        // We have enough rows loaded -just select it.
+        $scope.pagedPairs = duplicatePairs.slice(rowStartIndex, (rowStartIndex + $scope.tilesToShow));
+      }
+      else if ($scope.numberMatchesToFetch === rowsNeededCount) {
+        $scope.pagedPairs = duplicatePairs.slice(rowStartIndex, duplicatePairs.length);
+      }
+      else if ($scope.foundCount > (rowStartIndex)) {
+        // Refresh our loaded rows. We refresh if there are more rows to get than the row number
+        // of the first number on the page but we also check if the numberMatchesToFetch has
+        // already been set to our needed amount to avoid a loop when the amount is between the
+        // 2 numbers or just stuff I haven't thought of. Loops are bad. Even fruit loops. They are full of sugar
+        // and not much like fruit at all.
+        // Ideally we would pass an offset here rather than just get the new amount but
+        // I'm not confident the underlying mechanics of offset work well enough yet
+        // and this is probably an edge usage at this stage..
+        $scope.numberMatchesToFetch = rowsNeededCount;
+        $scope.getDuplicates();
+      }
     }
 
     function getCachedMergeInfo(contactCriteria) {
@@ -212,13 +261,16 @@
       getCachedMergeInfo(contactCriteria);
     }
 
-    $scope.forceMerge = function (mainID, otherID) {
+    $scope.forceMerge = function (mainID, otherID, currentPage) {
+      $scope.currentPage = currentPage;
       merge(mainID, otherID, 'aggressive');
     };
-    $scope.retryMerge = function retryMerge(mainID, otherID, pair) {
+    $scope.retryMerge = function retryMerge(mainID, otherID, pair, currentPage) {
+      $scope.currentPage = currentPage;
       merge(mainID, otherID, 'safe', pair);
     };
-    $scope.dedupeException = function dedupeException(mainID, otherID) {
+    $scope.dedupeException = function dedupeException(mainID, otherID, currentPage) {
+      $scope.currentPage = currentPage;
       $scope.isRowMerging = true;
       crmApi('Exception', 'create', {
         'contact_id1' : mainID,
@@ -227,6 +279,16 @@
         $scope.isRowMerging = false;
           removeMergedMatch(mainID, otherID);
       });
+    };
+
+    /**
+     * Move a pair out of the current set of matches.
+     *
+     * Currently this will just come back when the underlying data is refreshed.
+     */
+    $scope.delayPair = function delayPair(mainID, otherID, currentPage) {
+      $scope.currentPage = currentPage;
+      removeMergedMatch(mainID, otherID);
     };
 
     $scope.notDuplicates = function notDuplicates() {
@@ -324,7 +386,7 @@
         'search_limit' : $scope.limit,
         'criteria' : formatCriteria()
       }).then(function (data) {
-        $scope.duplicatePairs = data['values'];
+        $scope.duplicatePairs = vm.duplicatePairs = data['values'];
         $scope.hasSearched = true;
         $scope.isSearching = false;
         crmApi('Merge', 'getcount', {
@@ -335,7 +397,6 @@
         });
       });
     };
-
   });
 
 
