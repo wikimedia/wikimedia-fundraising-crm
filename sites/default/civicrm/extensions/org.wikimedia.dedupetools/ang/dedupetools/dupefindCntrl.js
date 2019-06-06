@@ -6,6 +6,7 @@
   angular.module('dedupetools').config(function($routeProvider) {
       $routeProvider.when('/dupefinder/:api4entity?', {
         controller: 'DedupetoolsdupefindCntrl',
+        controllerAs : 'deduperCntrl',
         templateUrl: '~/dedupetools/dupefindCntrl.html',
         title: 'Dedupe url generator',
 
@@ -85,7 +86,7 @@
     // We might expose this.
     $scope.numberMatchesToFetch = 250;
     $scope.tilesToShow = 4;
-    $scope.showTiles = true;
+    vm.showTiles = true;
 
     _.each(ruleGroups['values'], function(spec) {
       $scope.ruleGroups .push({id : spec.id, text : spec.contact_type + ' (' + spec.used + ') ' + spec.title});

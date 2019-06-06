@@ -34,7 +34,7 @@
     <a href="{{url}}" target="_blank" class="btn btn-link" role="button">{{ts('Go To Merge screen')}}</a>
   </div>
   <div ng-show="!isMerging">
-    <div ng-show="foundCount || hasSearched">{{ ts('Duplicate pairs matching criteria') }}: {{foundCount}}. Showing <a href="#" e-single e-clickable="true" editable-number="tilesToShow">{{tilesToShow}}</a> pairs at a time as <a href="#" e-title="Show merge tiles?" e-single editable-checkbox="showTiles">{{ showTiles && "merge tiles" || "Rows" }}</a>. </div>
+    <div ng-show="foundCount || hasSearched">{{ ts('Duplicate pairs matching criteria') }}: {{foundCount}}. Showing <a href="#" e-single e-clickable="true" editable-number="tilesToShow">{{tilesToShow}}</a> pairs at a time as <a href="#" e-title="Show merge tiles?" e-single editable-checkbox="deduperCntrl.showTiles">{{ deduperCntrl.showTiles && "merge tiles" || "Rows" }}</a>. </div>
     <div ng-show="mergedCount">{{ ts('Contacts merged') }}: {{mergedCount}}</div>
     <div ng-show="skippedCount">{{ ts('Skipped in automated merge attempt') }}: {{skippedCount}}</div>
     <div ng-show="exceptedCount">{{ ts('Contacts marked as exceptions') }}: {{exceptedCount}}</div>
@@ -56,7 +56,7 @@
       <div class="panel-heading">{{mergePair['dstName']}} vs {{mergePair['srcName']}}
 
       </div>
-      <div class='panel-body' ng-show="showTiles">
+      <div class='panel-body' ng-show="deduperCntrl.showTiles">
       <div class='col-md-4'  contact-basic="{contact_id: mergePair['dstID'], display_name : mergePair['dstName'], 'contact_url' : contactURL}"></div>
         <div class='col-md-4'>
           <div conflict-basic="{conflicts: mergePair['conflicts'], main_id : mergePair['dstID'], other_id : mergePair['srcID'], other_display_name : mergePair['srcName'],  main_display_name : mergePair['dstName'], fieldSpec : contactFields}">
