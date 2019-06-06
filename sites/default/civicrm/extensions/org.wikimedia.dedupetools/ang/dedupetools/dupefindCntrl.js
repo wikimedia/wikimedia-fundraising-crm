@@ -258,7 +258,6 @@
       $scope.exceptedCount = 0;
       // We could do this second but maybe the next bit is slow...
       updateUrl(contactCriteria);
-      getCachedMergeInfo(contactCriteria);
     }
 
     $scope.forceMerge = function (mainID, otherID, currentPage) {
