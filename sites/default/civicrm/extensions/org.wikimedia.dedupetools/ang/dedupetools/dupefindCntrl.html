@@ -47,17 +47,22 @@
     on-page-change="pageChanged(duplicatePairs, newPageNumber)"
   >
   </dir-pagination-controls>
+    <div class="container">
   <div
     dir-paginate="mergePair in pagedPairs|itemsPerPage:tilesToShow track by ((mergePair.dstID * 1000) +  mergePair.srcID)"
     total-items="foundCount"
     current-page="currentPage"
   >
-    <div class='panel panel-default'>
-      <div class="panel-heading">{{mergePair['dstName']}} vs {{mergePair['srcName']}}
+    <div class="row" ng-show="!deduperCntrl.showTiles">
+      <div class='col-md-2'>{{mergePair['dstName']}}</div>
+      <div class='col-md-2'>{{mergePair['srcName']}}</div>
+      <div><a target="_blank" class="btn btn-link btn-sml" href="{{mergeURL}}&cid={{mergePair['dstID']}}&oid={{mergePair['srcID']}}">{{ ts('Manual Merge') }}</a></div>
+    </div>
 
-      </div>
+    <div class='panel panel-default' ng-show="deduperCntrl.showTiles">
+      <div class="panel-heading">{{mergePair['dstName']}} vs {{mergePair['srcName']}}</div>
       <div class='panel-body' ng-show="deduperCntrl.showTiles">
-      <div class='col-md-4'  contact-basic="{contact_id: mergePair['dstID'], display_name : mergePair['dstName'], 'contact_url' : contactURL}"></div>
+        <div class='col-md-4'  contact-basic="{contact_id: mergePair['dstID'], display_name : mergePair['dstName'], 'contact_url' : contactURL}"></div>
         <div class='col-md-4'>
           <div conflict-basic="{conflicts: mergePair['conflicts'], main_id : mergePair['dstID'], other_id : mergePair['srcID'], other_display_name : mergePair['srcName'],  main_display_name : mergePair['dstName'], fieldSpec : contactFields}">
           </div>
@@ -69,6 +74,8 @@
         </div>
         <div class='col-md-4' contact-basic="{contact_id: mergePair['srcID'], display_name : mergePair['srcName'], 'contact_url' : contactURL}"></div>
       </div>
+    </div>
+
   </div>
   </div>
   <div class="clear"></div>
