@@ -7,7 +7,17 @@ BASEDIR=$(dirname "$0")
 echo "Populating databases with the prefix '${CIVICRM_SCHEMA_PREFIX}'"
 
 export PRECREATED_DSN_PATTERN="mysql://${CIVICRM_MYSQL_USERNAME}:${CIVICRM_MYSQL_PASSWORD}@${CIVICRM_MYSQL_CLIENT}:/${CIVICRM_SCHEMA_PREFIX}{{db_seq}}"
-export AMPHOME="${WORKSPACE}/.amp-${BUILD_NUMBER}"
+
+if [ "${WORKSPACE}" != "" ]; then
+  AMPHOME="${WORKSPACE}/.amp-${BUILD_NUMBER}"
+else
+  # CI with Docker container. Does not use WORKSPACE, lacks a user home
+  # directory and does not need to vary on BUILD_NUMBER.
+  AMPHOME="${XDG_CONFIG_HOME}/amp"
+fi
+echo "AMPHOME set to: '${AMPHOME}'"
+export AMPHOME
+
 export NO_SAMPLE_DATA=1
 
 # CI lacks sendmail and Drupal install would fails without it. drush can pass
