@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ea7842ba51f246a74ae61fc0b1d5b7b8",
+    "content-hash": "774945386b2619fbbac7f9622a62190f",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -567,7 +567,7 @@
             "keywords": [
                 "http geocoder"
             ],
-            "time": "2018-04-11T17:38:42+00:00"
+            "time": "2018-01-23T02:12:05+00:00"
         },
         {
             "name": "geocoder-php/free-geoip-provider",
@@ -624,7 +624,7 @@
             ],
             "description": "Geocoder FreeGeoIp adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-03-03T14:18:18+00:00"
+            "time": "2018-01-23T02:15:37+00:00"
         },
         {
             "name": "geocoder-php/google-maps-provider",
@@ -682,7 +682,7 @@
             ],
             "description": "Geocoder GoogleMaps adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-01-23T03:40:13+00:00"
+            "time": "2018-01-23T04:49:20+00:00"
         },
         {
             "name": "geocoder-php/mapquest-provider",
@@ -739,7 +739,7 @@
             ],
             "description": "Geocoder MapQuest adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2017-12-14T10:46:36+00:00"
+            "time": "2018-01-19T02:21:34+00:00"
         },
         {
             "name": "geocoder-php/nominatim-provider",
@@ -796,7 +796,7 @@
             ],
             "description": "Geocoder Nominatim adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-02-15T12:58:08+00:00"
+            "time": "2018-02-12T23:19:17+00:00"
         },
         {
             "name": "geoip2/geoip2",
@@ -3254,7 +3254,7 @@
                 "geocoding",
                 "geoip"
             ],
-            "time": "2018-01-23T01:35:43+00:00"
+            "time": "2018-02-12T23:33:59+00:00"
         },
         {
             "name": "zordius/lightncandy",
@@ -4817,7 +4817,9 @@
     },
     "prefer-stable": true,
     "prefer-lowest": false,
-    "platform": [],
+    "platform": {
+        "ext-intl": "*"
+    },
     "platform-dev": [],
     "platform-overrides": {
         "php": "5.6.33"

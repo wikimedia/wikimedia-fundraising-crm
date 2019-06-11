@@ -19,6 +19,7 @@
         "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
         "coderkungfu/php-queue": "^1.0",
         "cogpowered/finediff": "0.*",
+        "ext-intl": "*",
         "wikimedia/donation-interface": "^2.3",
         "wikimedia/smash-pig": "^0.5.9",
         "phpmailer/phpmailer": "5.2.*",
