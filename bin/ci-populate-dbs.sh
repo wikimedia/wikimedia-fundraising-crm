@@ -27,15 +27,21 @@ export PHP_OPTIONS
 
 #FIXME: --web-root="$WORKSPACE/src/crm"
 
-"$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/bin/civi-download-tools
+CIVICRM_BUILDKIT="${WORKSPACE}/src/wikimedia/fundraising/civicrm-buildkit"
+if [ -d /src/wikimedia/fundraising/crm/civicrm-buildkit ]; then
+  # For CI Docker container
+  CIVICRM_BUILDKIT=/src/wikimedia/fundraising/crm/civicrm-buildkit
+fi
 
-"$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/bin/amp config:set \
+"$CIVICRM_BUILDKIT"/bin/civi-download-tools
+
+"$CIVICRM_BUILDKIT"/bin/amp config:set \
 	--db_type=mysql_precreated \
 	--httpd_type=none \
 	--perm_type=none
 
-rm -rf "$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/build/wmff
-mkdir -p "$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/build
-ln -s "$WORKSPACE"/src/wikimedia/fundraising/crm "$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/build/wmff
+rm -rf "$CIVICRM_BUILDKIT"/build/wmff
+mkdir -p "$CIVICRM_BUILDKIT"/build
+ln -s "$WORKSPACE"/src/wikimedia/fundraising/crm "$CIVICRM_BUILDKIT"/build/wmff
 
-"$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/bin/civibuild reinstall wmff
+"$CIVICRM_BUILDKIT"/bin/civibuild reinstall wmff
