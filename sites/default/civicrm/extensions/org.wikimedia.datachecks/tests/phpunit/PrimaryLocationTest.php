@@ -19,7 +19,7 @@ use Civi\Test\TransactionalInterface;
  *
  * @group headless
  */
-class PrimaryLocationTest extends \PHPUnit_Framework_TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+class PrimaryLocationTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
   use \Civi\Test\Api3TestTrait;
 
   protected $addressParams = [

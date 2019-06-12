@@ -24,7 +24,7 @@ use GuzzleHttp\Psr7\Response;
  *
  * @group e2e
  */
-class OmnimailBaseTestClass extends \PHPUnit_Framework_TestCase implements EndToEndInterface, TransactionalInterface {
+class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements EndToEndInterface, TransactionalInterface {
 
   use \Civi\Test\Api3TestTrait;
   use GuzzleTestTrait;

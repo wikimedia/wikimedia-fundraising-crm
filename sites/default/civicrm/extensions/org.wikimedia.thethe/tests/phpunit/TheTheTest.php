@@ -19,10 +19,17 @@ use Civi\Test\TransactionalInterface;
  *
  * @group headless
  */
-class TheTheTest extends \PHPUnit_Framework_TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+class TheTheTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
 
   use Civi\Test\Api3TestTrait;
 
+  /**
+   * Set up for headless tests.
+   *
+   * @return \Civi\Test\CiviEnvBuilder
+   *
+   * @throws \CRM_Extension_Exception_ParseException
+   */
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
     // See: https://docs.civicrm.org/dev/en/latest/testing/phpunit/#civitest

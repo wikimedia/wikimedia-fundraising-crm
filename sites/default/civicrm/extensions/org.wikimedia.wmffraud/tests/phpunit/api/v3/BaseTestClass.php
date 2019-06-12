@@ -20,7 +20,7 @@ use queue2civicrm\fredge\AntifraudQueueConsumer;
  *
  * @group headless
  */
-class api_v3_BaseTestClass extends \PHPUnit_Framework_TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+class api_v3_BaseTestClass extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
 
   use \Civi\Test\Api3TestTrait;
 

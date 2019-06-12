@@ -28,7 +28,7 @@ use SmashPig\Tests\TestingProviderConfiguration;
  * @group SmashPig
  * @group headless
  */
-class CRM_SmashPigTest extends \PHPUnit_Framework_TestCase implements HeadlessInterface, TransactionalInterface {
+class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, TransactionalInterface {
 
   use \Civi\Test\Api3TestTrait;
 

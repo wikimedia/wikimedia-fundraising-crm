@@ -18,7 +18,7 @@ use Civi\Test\TransactionalInterface;
  *
  * @group headless
  */
-class CRM_RipTest extends \PHPUnit_Framework_TestCase implements HeadlessInterface, TransactionalInterface {
+class CRM_RipTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, TransactionalInterface {
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().

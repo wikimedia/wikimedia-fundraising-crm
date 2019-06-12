@@ -20,7 +20,7 @@ use Civi\Test\Api3TestTrait;
  *
  * @group headless
  */
-class CRM_DedupeTools_Merge_RedoTest extends \PHPUnit_Framework_TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+class CRM_DedupeTools_Merge_RedoTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
 
   use Api3TestTrait;
 

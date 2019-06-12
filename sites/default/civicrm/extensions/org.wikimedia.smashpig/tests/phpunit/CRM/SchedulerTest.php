@@ -20,7 +20,7 @@ use Civi\Test\TransactionalInterface;
  * @group SmashPig
  * @group headless
  */
-class CRM_SchedulerTest extends \PHPUnit_Framework_TestCase implements HeadlessInterface, TransactionalInterface {
+class CRM_SchedulerTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, TransactionalInterface {
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
