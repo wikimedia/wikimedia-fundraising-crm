@@ -6,6 +6,17 @@
 function _wmf_civicrm_update_custom_fields() {
   civicrm_initialize();
   $customGroupSpecs = [
+    'wmf_donor' => [
+      'group' => [
+        'extends' => 'Contact',
+        'name' => 'wmf_donor',
+        'table_name' => 'wmf_donor',
+        'title' => ts('WMF Donor'),
+        'is_active' => 1,
+        'style' => 'inline',
+      ],
+      'fields' => _wmf_civicrm_get_wmf_donor_fields(),
+    ],
     'Gift_Data' => [
       'group' => [
         'name' => 'Gift_Data',
@@ -509,4 +520,15 @@ function _wmf_civicrm_get_partner_fields() {
       'note_rows' => 4,
     ],
   ];
+}
+
+/**
+ * Get fields for wmf_donor custom group.
+ *
+ * This is the group with the custom fields for calculated donor data.
+ *
+ * @return array
+ */
+function _wmf_civicrm_get_wmf_donor_fields() {
+  return [];
 }

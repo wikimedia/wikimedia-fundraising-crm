@@ -36,7 +36,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7017();
   wmf_civicrm_update_7021();
   wmf_civicrm_update_7022();
-  wmf_civicrm_update_7023();
   wmf_civicrm_update_7024();
   wmf_civicrm_update_7025();
   wmf_civicrm_update_7027();
@@ -903,31 +902,6 @@ function wmf_civicrm_update_7021() {
 function wmf_civicrm_update_7022() {
   require_once 'update_custom_fields.php';
   _wmf_civicrm_update_custom_fields();
-}
-
-/**
- * Add custom donor data group.
- */
-function wmf_civicrm_update_7023() {
-  $api = wmf_civicrm_bootstrap_civi();
-  $api->CustomGroup->get(array(
-    'name' => 'WMF_Donor',
-  ));
-  $result = $api->values();
-  if ($result) {
-    return;
-  }
-
-  $success = $api->CustomGroup->create(array(
-    'extends' => 'Contact',
-    'name' => 'wmf_donor',
-    'table_name' => 'wmf_donor',
-    'title' => ts('WMF Donor'),
-    'is_active' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException('Could not create custom group');
-  }
 }
 
 /**
