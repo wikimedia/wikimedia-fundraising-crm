@@ -2,6 +2,19 @@
 
 require_once(__DIR__ . "/bootstrap.inc");
 
+/**
+ * On new install call these functions.
+ *
+ * Some things need to run on update but not on new installs in which case they won't be below.
+ *
+ * A good example is that we have update functions to 'enable all the extensions we need' - on
+ * new installs we need to run this only once as the list is dynamic so we don't need to call
+ * each update function that does that. Another e.g is datacleanup tasks.
+ *
+ * @throws \CiviCRM_API3_Exception
+ * @throws \DrupalUpdateException
+ * @throws \Exception
+ */
 function wmf_civicrm_install() {
   wmf_civicrm_update_7000();
   wmf_civicrm_update_7001();
