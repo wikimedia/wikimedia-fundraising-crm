@@ -98,5 +98,10 @@ function wmf_install_get_payment_instruments() {
     'Red Pagos',
     'Rapi Pago',
     'Santander',
+    // India
+    'Bank Transfer: Netbanking',
+    'Bank Transfer: PayTM Wallet',
+    'Credit Card: RuPay',
+    'Bank Transfer: UPI'
   );
 }
