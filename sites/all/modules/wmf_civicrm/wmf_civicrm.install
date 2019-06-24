@@ -65,7 +65,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7235();
   wmf_civicrm_update_7280();
   wmf_civicrm_update_7290();
-  wmf_civicrm_update_7300();
   wmf_civicrm_update_7455();
   wmf_civicrm_update_7460();
   wmf_civicrm_update_7524();
@@ -899,75 +898,11 @@ function wmf_civicrm_update_7021() {
 }
 
 /**
- * DO NOT RUN ON PRODUCTION Add gift data group.
+ * Add gift data group.
  */
 function wmf_civicrm_update_7022() {
-  $api = wmf_civicrm_bootstrap_civi();
-  $success = $api->CustomGroup->get(array(
-    'name' => 'Gift_Data',
-  ));
-  if (!$success || !count($api->values)) {
-    $success = $api->CustomGroup->create(array(
-      'extends' => 'Contribution',
-      'name' => 'Gift_Data',
-      'title' => ts('Gift Data'),
-      'is_active' => 1,
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
-  $custom_group_id = $api->values[0]->id;
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group_id,
-    'name' => 'Fund',
-    'column_name' => 'fund',
-    'label' => ts('Restrictions'),
-    'data_type' => 'String',
-    'html_type' => 'Select',
-    'default_value' => 'Unrestricted - General',
-    'is_active' => 1,
-    'is_required' => 1,
-    'is_searchable' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group_id,
-    'name' => 'Campaign',
-    'column_name' => 'campaign',
-    'label' => ts('Gift Source'),
-    'data_type' => 'String',
-    'html_type' => 'Select',
-    'default_value' => 'Community Gift',
-    'is_active' => 1,
-    'is_required' => 1,
-    'is_searchable' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group_id,
-    'name' => 'Appeal',
-    'column_name' => 'appeal',
-    'label' => ts('Direct Mail Appeal'),
-    'data_type' => 'String',
-    'html_type' => 'Select',
-    'default_value' => 'spontaneousdonation',
-    'is_active' => 1,
-    'is_required' => 1,
-    'is_searchable' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-
-  // TODO: define option groups in another migration if necessary
+  require_once 'update_custom_fields.php';
+  _wmf_civicrm_update_custom_fields();
 }
 
 /**

@@ -6,6 +6,16 @@
 function _wmf_civicrm_update_custom_fields() {
   civicrm_initialize();
   $customGroupSpecs = [
+    'Gift_Data' => [
+      'group' => [
+        'name' => 'Gift_Data',
+        'title' => ts('Gift Data'),
+        'extends' => 'Contribution',
+        'style' => 'inline',
+        'is_active' => 1,
+      ],
+      'fields' => _wmf_civicrm_get_gift_data_fields(),
+    ],
     'Prospect' => [
       'group' => [
         'name' => 'Prospect',
@@ -102,6 +112,49 @@ function _wmf_civicrm_get_benefactor_fields() {
       'text_length' => 255,
       'note_columns' => 60,
       'note_rows' => 4,
+    ],
+  ];
+}
+
+/**
+ * Get fields for gift data custom group.
+ *
+ * @return array
+ */
+function _wmf_civicrm_get_gift_data_fields() {
+  return [
+    'Fund' => [
+      'name' => 'Fund',
+      'column_name' => 'fund',
+      'label' => ts('Restrictions'),
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'default_value' => 'Unrestricted - General',
+      'is_active' => 1,
+      'is_required' => 1,
+      'is_searchable' => 1,
+    ],
+    'Campaign' => [
+      'name' => 'Campaign',
+      'column_name' => 'campaign',
+      'label' => ts('Gift Source'),
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'default_value' => 'Community Gift',
+      'is_active' => 1,
+      'is_required' => 1,
+      'is_searchable' => 1,
+    ],
+    'Appeal' => [
+      'name' => 'Appeal',
+      'column_name' => 'appeal',
+      'label' => ts('Direct Mail Appeal'),
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'default_value' => 'spontaneousdonation',
+      'is_active' => 1,
+      'is_required' => 1,
+      'is_searchable' => 1,
     ],
   ];
 }
