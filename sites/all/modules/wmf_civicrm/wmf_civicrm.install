@@ -37,7 +37,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7021();
   wmf_civicrm_update_7022();
   wmf_civicrm_update_7025();
-  wmf_civicrm_update_7027();
   wmf_civicrm_update_7028();
   wmf_civicrm_update_7029();
   wmf_civicrm_update_7030();
@@ -910,31 +909,6 @@ function wmf_civicrm_update_7022() {
  */
 function wmf_civicrm_update_7025() {
 
-}
-
-/**
- * Fix year rollup HTML type
- */
-function wmf_civicrm_update_7027() {
-  $api = wmf_civicrm_bootstrap_civi();
-  $api->CustomGroup->get(array(
-    'name' => 'wmf_donor',
-  ));
-  $result = $api->values();
-  if (!$result) {
-    throw new DrupalUpdateException('Could not find custom group wmf_donor.  Please run update 7023 first.');
-  }
-
-  $custom_group = array_pop($result);
-
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-
-  db_query("UPDATE civicrm_custom_field
-        SET html_type = 'Radio'
-        WHERE custom_group_id = {$custom_group->id}
-        AND column_name LIKE 'is%donor'
-        AND html_type = 'CheckBox'");
 }
 
 /**
