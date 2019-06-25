@@ -7,7 +7,17 @@ BASEDIR=$(dirname "$0")
 echo "Populating databases with the prefix '${CIVICRM_SCHEMA_PREFIX}'"
 
 export PRECREATED_DSN_PATTERN="mysql://${CIVICRM_MYSQL_USERNAME}:${CIVICRM_MYSQL_PASSWORD}@${CIVICRM_MYSQL_CLIENT}:/${CIVICRM_SCHEMA_PREFIX}{{db_seq}}"
-export AMPHOME="${WORKSPACE}/.amp-${BUILD_NUMBER}"
+
+if [ "${WORKSPACE}" != "" ]; then
+  AMPHOME="${WORKSPACE}/.amp-${BUILD_NUMBER}"
+else
+  # CI with Docker container. Does not use WORKSPACE, lacks a user home
+  # directory and does not need to vary on BUILD_NUMBER.
+  AMPHOME="${XDG_CONFIG_HOME}/amp"
+fi
+echo "AMPHOME set to: '${AMPHOME}'"
+export AMPHOME
+
 export NO_SAMPLE_DATA=1
 
 # CI lacks sendmail and Drupal install would fails without it. drush can pass
@@ -17,15 +27,21 @@ export PHP_OPTIONS
 
 #FIXME: --web-root="$WORKSPACE/src/crm"
 
-"$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/bin/civi-download-tools
+CIVICRM_BUILDKIT="${WORKSPACE}/src/wikimedia/fundraising/civicrm-buildkit"
+if [ -d /src/wikimedia/fundraising/crm/civicrm-buildkit ]; then
+  # For CI Docker container
+  CIVICRM_BUILDKIT=/src/wikimedia/fundraising/crm/civicrm-buildkit
+fi
 
-"$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/bin/amp config:set \
+"$CIVICRM_BUILDKIT"/bin/civi-download-tools
+
+"$CIVICRM_BUILDKIT"/bin/amp config:set \
 	--db_type=mysql_precreated \
 	--httpd_type=none \
 	--perm_type=none
 
-rm -rf "$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/build/wmff
-mkdir -p "$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/build
-ln -s "$WORKSPACE"/src/wikimedia/fundraising/crm "$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/build/wmff
+rm -rf "$CIVICRM_BUILDKIT"/build/wmff
+mkdir -p "$CIVICRM_BUILDKIT"/build
+ln -s "$WORKSPACE"/src/wikimedia/fundraising/crm "$CIVICRM_BUILDKIT"/build/wmff
 
-"$WORKSPACE"/src/wikimedia/fundraising/civicrm-buildkit/bin/civibuild reinstall wmff
+"$CIVICRM_BUILDKIT"/bin/civibuild reinstall wmff

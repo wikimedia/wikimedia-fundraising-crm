@@ -2,6 +2,19 @@
 
 require_once(__DIR__ . "/bootstrap.inc");
 
+/**
+ * On new install call these functions.
+ *
+ * Some things need to run on update but not on new installs in which case they won't be below.
+ *
+ * A good example is that we have update functions to 'enable all the extensions we need' - on
+ * new installs we need to run this only once as the list is dynamic so we don't need to call
+ * each update function that does that. Another e.g is datacleanup tasks.
+ *
+ * @throws \CiviCRM_API3_Exception
+ * @throws \DrupalUpdateException
+ * @throws \Exception
+ */
 function wmf_civicrm_install() {
   wmf_civicrm_update_7000();
   wmf_civicrm_update_7001();
@@ -23,10 +36,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7017();
   wmf_civicrm_update_7021();
   wmf_civicrm_update_7022();
-  wmf_civicrm_update_7023();
-  wmf_civicrm_update_7024();
   wmf_civicrm_update_7025();
-  wmf_civicrm_update_7027();
   wmf_civicrm_update_7028();
   wmf_civicrm_update_7029();
   wmf_civicrm_update_7030();
@@ -52,7 +62,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7235();
   wmf_civicrm_update_7280();
   wmf_civicrm_update_7290();
-  wmf_civicrm_update_7300();
   wmf_civicrm_update_7455();
   wmf_civicrm_update_7460();
   wmf_civicrm_update_7524();
@@ -886,216 +895,11 @@ function wmf_civicrm_update_7021() {
 }
 
 /**
- * DO NOT RUN ON PRODUCTION Add gift data group.
+ * Add gift data group.
  */
 function wmf_civicrm_update_7022() {
-  $api = wmf_civicrm_bootstrap_civi();
-  $success = $api->CustomGroup->get(array(
-    'name' => 'Gift_Data',
-  ));
-  if (!$success || !count($api->values)) {
-    $success = $api->CustomGroup->create(array(
-      'extends' => 'Contribution',
-      'name' => 'Gift_Data',
-      'title' => ts('Gift Data'),
-      'is_active' => 1,
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
-  $custom_group_id = $api->values[0]->id;
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group_id,
-    'name' => 'Fund',
-    'column_name' => 'fund',
-    'label' => ts('Restrictions'),
-    'data_type' => 'String',
-    'html_type' => 'Select',
-    'default_value' => 'Unrestricted - General',
-    'is_active' => 1,
-    'is_required' => 1,
-    'is_searchable' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group_id,
-    'name' => 'Campaign',
-    'column_name' => 'campaign',
-    'label' => ts('Gift Source'),
-    'data_type' => 'String',
-    'html_type' => 'Select',
-    'default_value' => 'Community Gift',
-    'is_active' => 1,
-    'is_required' => 1,
-    'is_searchable' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group_id,
-    'name' => 'Appeal',
-    'column_name' => 'appeal',
-    'label' => ts('Direct Mail Appeal'),
-    'data_type' => 'String',
-    'html_type' => 'Select',
-    'default_value' => 'spontaneousdonation',
-    'is_active' => 1,
-    'is_required' => 1,
-    'is_searchable' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-
-  // TODO: define option groups in another migration if necessary
-}
-
-/**
- * Add custom donor data group.
- */
-function wmf_civicrm_update_7023() {
-  $api = wmf_civicrm_bootstrap_civi();
-  $api->CustomGroup->get(array(
-    'name' => 'WMF_Donor',
-  ));
-  $result = $api->values();
-  if ($result) {
-    return;
-  }
-
-  $success = $api->CustomGroup->create(array(
-    'extends' => 'Contact',
-    'name' => 'wmf_donor',
-    'table_name' => 'wmf_donor',
-    'title' => ts('WMF Donor'),
-    'is_active' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException('Could not create custom group');
-  }
-}
-
-/**
- * Add yearly contribution rollup and last donation data
- */
-function wmf_civicrm_update_7024() {
-  $api = wmf_civicrm_bootstrap_civi();
-  $api->CustomGroup->get(array(
-    'name' => 'wmf_donor',
-  ));
-  $result = $api->values();
-  if (!$result) {
-    throw new DrupalUpdateException('Could not find custom group wmf_donor.  Please run update 7023 first.');
-  }
-
-  $custom_group = array_pop($result);
-
-  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
-    $nextYear = $year + 1;
-    $success = $api->CustomField->create(array(
-      'custom_group_id' => $custom_group->id,
-      'name' => "is_{$year}_donor",
-      'column_name' => "is_{$year}_donor",
-      'label' => ts("Is FY {$year}-{$nextYear} donor"),
-      'data_type' => 'Boolean',
-      'html_type' => 'Radio',
-      'default_value' => 0,
-      'is_active' => 1,
-      'is_required' => 0,
-      'is_searchable' => 1,
-      'is_view' => 1,
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group->id,
-    'name' => 'last_donation_date',
-    'column_name' => 'last_donation_date',
-    'label' => ts('Last donation date'),
-    'data_type' => 'Date',
-    'html_type' => 'Select Date',
-    'is_active' => 1,
-    'is_searchable' => 1,
-    'is_search_range' => 1,
-    'is_view' => 1,
-    'date_format' => 'M d, yy',
-    'time_format' => 2,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group->id,
-    'name' => 'last_donation_currency',
-    'column_name' => 'last_donation_currency',
-    'label' => ts('Last Donation Currency'),
-    'data_type' => 'String',
-    'html_type' => 'Text',
-    'is_active' => 1,
-    'is_searchable' => 1,
-    'is_view' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group->id,
-    'name' => 'last_donation_amount',
-    'column_name' => 'last_donation_amount',
-    'label' => ts('Last Donation Amount (unconverted)'),
-    'data_type' => 'Money',
-    'html_type' => 'Text',
-    'is_active' => 1,
-    'is_searchable' => 1,
-    'is_search_range' => 1,
-    'is_view' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group->id,
-    'name' => 'last_donation_usd',
-    'column_name' => 'last_donation_usd',
-    'label' => ts('Last Donation Amount (USD)'),
-    'data_type' => 'Money',
-    'html_type' => 'Text',
-    'is_active' => 1,
-    'is_searchable' => 1,
-    'is_search_range' => 1,
-    'is_view' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group->id,
-    'name' => 'lifetime_usd_total',
-    'column_name' => 'lifetime_usd_total',
-    'label' => ts('Lifetime Donations (USD)'),
-    'data_type' => 'Money',
-    'html_type' => 'Text',
-    'is_active' => 1,
-    'is_searchable' => 1,
-    'is_search_range' => 1,
-    'is_view' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
+  require_once 'update_custom_fields.php';
+  _wmf_civicrm_update_custom_fields();
 }
 
 /**
@@ -1105,31 +909,6 @@ function wmf_civicrm_update_7024() {
  */
 function wmf_civicrm_update_7025() {
 
-}
-
-/**
- * Fix year rollup HTML type
- */
-function wmf_civicrm_update_7027() {
-  $api = wmf_civicrm_bootstrap_civi();
-  $api->CustomGroup->get(array(
-    'name' => 'wmf_donor',
-  ));
-  $result = $api->values();
-  if (!$result) {
-    throw new DrupalUpdateException('Could not find custom group wmf_donor.  Please run update 7023 first.');
-  }
-
-  $custom_group = array_pop($result);
-
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-
-  db_query("UPDATE civicrm_custom_field
-        SET html_type = 'Radio'
-        WHERE custom_group_id = {$custom_group->id}
-        AND column_name LIKE 'is%donor'
-        AND html_type = 'CheckBox'");
 }
 
 /**
@@ -1658,25 +1437,6 @@ function wmf_civicrm_update_7130() {
       2 => array($cashFinancialTypeID, 'Integer'),
     )
   );
-}
-
-/**
- * T126543 adjust donor field labels to indicate they are fiscal year.
- *
- * 'Is 2016 Donor' actually means 'Is FY 2016-2017 Donor'
- */
-function wmf_civicrm_update_7141() {
-  civicrm_initialize();
-  $fields = civicrm_api3('CustomField', 'get', array('custom_group_id' => 'wmf_donor'));
-  foreach ($fields['values'] as $field) {
-    $fieldNameParts = explode('_', $field['name']);
-    if ($fieldNameParts[0] == 'is' && $fieldNameParts[2] == 'donor') {
-      civicrm_api3('CustomField', 'create', array(
-        'id' => $field['id'],
-        'label' => 'Is FY ' . $fieldNameParts[1] . '-' . ($fieldNameParts[1] + 1) . ' donor',
-      ));
-    }
-  }
 }
 
 /**
@@ -4956,4 +4716,14 @@ SET cancel_reason = NULL
 WHERE cancel_reason IS NOT NULL and cancel_date IS NULL
   AND cancel_reason LIKE '%backfill%'
   AND contribution_status_id = 1");
+}
+
+/**
+ * Update dlocal payment methods to support India
+ *
+ * Bug: T224514
+ */
+function wmf_civicrm_update_7870() {
+  require_once 'update_payment_instruments.php';
+  wmf_install_add_missing_payment_instruments();
 }

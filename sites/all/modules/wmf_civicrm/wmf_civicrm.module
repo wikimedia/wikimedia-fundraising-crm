@@ -615,6 +615,18 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
         break;
       case 'bt':
         $payment_instrument = 'Bank Transfer';
+        switch (strtolower($msg['payment_submethod'])) {
+          // India
+          case 'netbanking':
+            $payment_instrument .= ': Netbanking';
+            break;
+          case 'paytmwallet':
+            $payment_instrument .= ': PayTM Wallet';
+            break;
+          case 'upi':
+            $payment_instrument .= ': UPI';
+            break;
+        }
         break;
       case 'cc':
         $payment_instrument = 'Credit Card';
@@ -712,6 +724,10 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
             break;
           case 'oca':
             $payment_instrument .= ': OCA';
+            break;
+            // India
+          case 'rupay':
+            $payment_instrument .= ': RuPay';
             break;
         }
         break;
