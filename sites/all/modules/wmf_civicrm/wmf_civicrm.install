@@ -1440,25 +1440,6 @@ function wmf_civicrm_update_7130() {
 }
 
 /**
- * T126543 adjust donor field labels to indicate they are fiscal year.
- *
- * 'Is 2016 Donor' actually means 'Is FY 2016-2017 Donor'
- */
-function wmf_civicrm_update_7141() {
-  civicrm_initialize();
-  $fields = civicrm_api3('CustomField', 'get', array('custom_group_id' => 'wmf_donor'));
-  foreach ($fields['values'] as $field) {
-    $fieldNameParts = explode('_', $field['name']);
-    if ($fieldNameParts[0] == 'is' && $fieldNameParts[2] == 'donor') {
-      civicrm_api3('CustomField', 'create', array(
-        'id' => $field['id'],
-        'label' => 'Is FY ' . $fieldNameParts[1] . '-' . ($fieldNameParts[1] + 1) . ' donor',
-      ));
-    }
-  }
-}
-
-/**
  * Fix financial item records with null financial_account.
  *
  * Incredibly we have only 4 of these in our database & Elliott picked up this
