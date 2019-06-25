@@ -530,5 +530,78 @@ function _wmf_civicrm_get_partner_fields() {
  * @return array
  */
 function _wmf_civicrm_get_wmf_donor_fields() {
-  return [];
+  $fields = [
+    'last_donation_date' => [
+      'name' => 'last_donation_date',
+      'column_name' => 'last_donation_date',
+      'label' => ts('Last donation date'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'date_format' => 'M d, yy',
+      'time_format' => 2,
+    ],
+    'last_donation_currency' => [
+      'name' => 'last_donation_currency',
+      'column_name' => 'last_donation_currency',
+      'label' => ts('Last Donation Currency'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 1,
+    ],
+    'last_donation_amount' => [
+      'name' => 'last_donation_amount',
+      'column_name' => 'last_donation_amount',
+      'label' => ts('Last Donation Amount (unconverted)'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+    ],
+    'last_donation_usd' => [
+        'name' => 'last_donation_usd',
+        'column_name' => 'last_donation_usd',
+        'label' => ts('Last Donation Amount (USD)'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+    ],
+    'lifetime_usd_total' => [
+      'name' => 'lifetime_usd_total',
+      'column_name' => 'lifetime_usd_total',
+      'label' => ts('Lifetime Donations (USD)'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+    ],
+  ];
+  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
+    $nextYear = $year + 1;
+    $fields["is_{$year}_donor"] = [
+      'name' => "is_{$year}_donor",
+      'column_name' => "is_{$year}_donor",
+      'label' => ts("Is FY {$year}-{$nextYear} donor"),
+      'data_type' => 'Boolean',
+      'html_type' => 'Radio',
+      'default_value' => 0,
+      'is_active' => 1,
+      'is_required' => 0,
+      'is_searchable' => 1,
+      'is_view' => 1,
+    ];
+  }
+  return $fields;
 }
