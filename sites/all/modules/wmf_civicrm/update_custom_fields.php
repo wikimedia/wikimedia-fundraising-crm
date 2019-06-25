@@ -2,6 +2,8 @@
 
 /**
  * Create WMF specific custom fields.
+ *
+ * @throws \CiviCRM_API3_Exception
  */
 function _wmf_civicrm_update_custom_fields() {
   civicrm_initialize();
