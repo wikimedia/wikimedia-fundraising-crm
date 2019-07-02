@@ -32,7 +32,6 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
         'user_ip' => [
           'name' => 'user_ip',
           'title' => E::ts('IP Address'),
-          'default' => TRUE,
           'dbAlias' => "INET_NTOA(payments_fraud_civireport.user_ip)",
         ],
         'validation_action' => [
@@ -41,6 +40,7 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
         'fredge_date' => [
           'title' => E::ts('Payment attempt date'),
           'name' => 'date',
+          'default' => TRUE,
         ],
         'gateway' => [
           'title' => E::ts('Payment gateway'),
@@ -87,6 +87,7 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
           'title' => E::ts('Payment attempt date'),
           'name' => 'date',
           'type' => CRM_Utils_Type::T_DATE,
+          'default_order' => 'DESC',
         ],
         'user_ip' => [
           'name' => 'user_ip',
