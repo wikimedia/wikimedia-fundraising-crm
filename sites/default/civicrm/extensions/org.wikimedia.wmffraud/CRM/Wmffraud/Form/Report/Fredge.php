@@ -87,6 +87,7 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
           'title' => E::ts('Payment attempt date'),
           'name' => 'date',
           'type' => CRM_Utils_Type::T_DATE,
+          'default_order' => 'DESC',
         ],
         'user_ip' => [
           'name' => 'user_ip',
