@@ -6,17 +6,14 @@ use WmfException;
 
 class OptInQueueConsumer extends WmfQueueConsumer {
 
-  protected $optInCustomFieldName;
-
-  protected $doNotSolicitCustomFieldName;
+   protected $commsMap;
 
   function __construct($queueName, $timeLimit = 0, $messageLimit = 0) {
     parent::__construct($queueName, $timeLimit, $messageLimit);
-    $commsMap = wmf_civicrm_get_custom_field_map(
-      ['opt_in', 'do_not_solicit'], 'Communication'
+    $this->commsMap = wmf_civicrm_get_custom_field_map(
+      ['opt_in', 'do_not_solicit', 'optin_source', 'optin_medium', 'optin_campaign'], 'Communication'
     );
-    $this->optInCustomFieldName = $commsMap['opt_in'];
-    $this->doNotSolicitCustomFieldName = $commsMap['do_not_solicit'];
+
   }
 
   /**
@@ -44,7 +41,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
     $email = $message['email'];
 
     if ( isset( $message['contact_id'] ) ){
-      $this->updateContactById( $message['contact_id'], $email );
+      $this->updateContactById( $message['contact_id'], $email, $message );
       return;
     } else {
       $contacts = $this->getContactsFromEmail($email);
@@ -70,9 +67,11 @@ class OptInQueueConsumer extends WmfQueueConsumer {
           $contactParams = [
             'contact_type' => 'Individual',
             'email' => $email,
-            $this->optInCustomFieldName => TRUE,
+            $this->commsMap['opt_in'] => TRUE,
             'source' => 'opt-in',
           ];
+
+          $contactParams = array_merge($contactParams, $this->getTrackingFields($message));
 
           $contact = civicrm_api3('Contact', 'create', $contactParams);
           watchdog('opt_in', "New contact created on opt-in: {$contact['id']}", [],
@@ -89,7 +88,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
       $optUsIn = [];
       // Excellent -- we have a collection of contacts to opt in now! :)
       foreach ($contacts as $id => $contact) {
-        if ($contact[$this->optInCustomFieldName] == TRUE) {
+        if ($contact[$this->commsMap['opt_in']] == TRUE) {
           watchdog('opt_in',
             "$email: Contact with ID {$contact['id']} already opted in.", [],
             WATCHDOG_NOTICE);
@@ -100,7 +99,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
         }
 
         // And opt them in
-        $this->optInContacts($optUsIn);
+        $this->optInContacts($optUsIn, $message);
         $count = count($optUsIn);
         watchdog('opt_in', "$email: Successfully updated $count rows.");
       }
@@ -119,7 +118,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
   function getContactsFromEmail($email) {
     $result = civicrm_api3('Contact', 'get', [
       'email' => $email,
-      'return' => ['id', $this->optInCustomFieldName],
+      'return' => ['id', $this->commsMap['opt_in']],
     ]);
     if (empty($result['values'])) {
       return [];
@@ -136,12 +135,16 @@ class OptInQueueConsumer extends WmfQueueConsumer {
    *
    * @throws \CiviCRM_API3_Exception
    */
-  function updateContactById( $id, $email ) {
+  function updateContactById( $id, $email, $message ) {
 
-    civicrm_api3('Contact', 'create', [
+    $contactParams = [
       'id' => $id,
-      $this->optInCustomFieldName => TRUE,
-    ]);
+      $this->commsMap['opt_in'] => TRUE,
+      ];
+
+    $contactParams = array_merge($contactParams, $this->getTrackingFields($message));
+
+    civicrm_api3('Contact', 'create', $contactParams);
 
     $existingEmails = civicrm_api3('Email', 'get', ['contact_id' => $id])['values'];
     $isFound = FALSE;
@@ -179,16 +182,45 @@ class OptInQueueConsumer extends WmfQueueConsumer {
    *
    * @throws \CiviCRM_API3_Exception
    */
-  function optInContacts($contacts) {
+  function optInContacts($contacts, $message) {
     foreach ($contacts as $contact) {
-      civicrm_api3('Contact', 'create', [
+      $contactParams = [
         'id' => $contact['id'],
-        $this->optInCustomFieldName => TRUE,
-        $this->doNotSolicitCustomFieldName => FALSE,
+        $this->commsMap['opt_in'] => TRUE,
+        $this->commsMap['do_not_solicit'] => FALSE,
         'do_not_email' => FALSE,
         'is_opt_out' => FALSE,
-      ]);
+        ];
+
+      $contactParams = array_merge($contactParams, $this->getTrackingFields($message));
+      civicrm_api3('Contact', 'create', $contactParams);
     }
+  }
+
+  /**
+   * Extracts tracking fields from opt-in message, if they exist.
+   *
+   * @param array $message Message to extract fields from.
+   *
+   * @return array
+   */
+  function getTrackingFields($message) {
+
+    $trackingFields = [];
+
+    if (array_key_exists('utm_source', $message)) {
+      $trackingFields[$this->commsMap['optin_source']] = $message['utm_source'];
+    }
+
+    if (array_key_exists('utm_medium', $message)) {
+      $trackingFields[$this->commsMap['optin_medium']] = $message['utm_medium'];
+    }
+
+    if (array_key_exists('utm_campaign', $message)) {
+      $trackingFields[$this->commsMap['optin_campaign']] = $message['utm_campaign'];
+    }
+
+    return $trackingFields;
   }
 
 }
