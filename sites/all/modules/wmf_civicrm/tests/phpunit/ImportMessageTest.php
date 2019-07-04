@@ -629,6 +629,20 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         ),
       );
 
+    $cases[] = // 'employer' field populated and mapped correctly
+      [
+        array_merge(
+          $this->getMinimalImportData($gateway_txn_id),
+          [
+            'employer' => 'Wikimedia Foundation',
+          ]
+        ),
+        [
+          'contact_custom_values' => ['Employer_Name' => 'Wikimedia Foundation'],
+          'contribution' => $this->getBaseContribution($gateway_txn_id),
+        ],
+    ];
+
     $gateway_txn_id = mt_rand();
     $endowmentFinancialType = CRM_Core_PseudoConstant::getKey(
       'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift'
