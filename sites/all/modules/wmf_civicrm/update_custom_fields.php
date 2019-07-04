@@ -19,6 +19,17 @@ function _wmf_civicrm_update_custom_fields() {
       ],
       'fields' => _wmf_civicrm_get_wmf_donor_fields(),
     ],
+    'Communication' => [
+      'group' => [
+        'name' => 'Communication',
+        'extends' => 'Contact',
+        'style' => 'Inline',
+        'collapse_display' => 0,
+        'title' => 'Communication',
+        'table_name' => 'civicrm_value_1_communication_4',
+      ],
+      'fields' => _wmf_civicrm_get_communication_fields(),
+    ],
     'Gift_Data' => [
       'group' => [
         'name' => 'Gift_Data',
@@ -607,4 +618,32 @@ function _wmf_civicrm_get_wmf_donor_fields() {
     ];
   }
   return $fields;
+}
+
+/**
+ * Get fields for communication custom group.
+ *
+ * @return array
+ */
+function _wmf_civicrm_get_communication_fields() {
+  return [
+    'opt_in' => [
+      'name' => 'opt_in',
+      'column_name' => 'opt_in',
+      'label' => ts('Opt In'),
+      'data_type' => 'Boolean',
+      'html_type' => 'Radio',
+      'is_active' => 1,
+      'is_searchable' => 0,
+    ],
+    'Employer_Name' => [
+      'name' => 'Employer_Name',
+      'label' => ts('Employer Name'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+    ],
+  ];
+
 }
