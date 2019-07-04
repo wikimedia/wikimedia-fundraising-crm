@@ -602,8 +602,24 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'is_view' => 1,
     ],
   ];
+
   for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
     $nextYear = $year + 1;
+    $weight = $year > 2018 ? ($year - 2000) : (2019 - $year);
+    $fields["total_{$year}_{$nextYear}"] = [
+      'name' => "total_{$year}_{$nextYear}",
+      'column_name' => "total_{$year}_{$nextYear}",
+      'label' => ts("FY {$year}-{$nextYear} total"),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'default_value' => 0,
+      'is_active' => 1,
+      'is_required' => 0,
+      'is_searchable' => 1,
+      'is_view' => 1,
+      'weight' => $weight,
+      'is_search_range' => 1,
+    ];
     $fields["is_{$year}_donor"] = [
       'name' => "is_{$year}_donor",
       'column_name' => "is_{$year}_donor",
