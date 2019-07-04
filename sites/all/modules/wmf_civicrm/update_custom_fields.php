@@ -74,23 +74,24 @@ function _wmf_civicrm_update_custom_fields() {
       [1 => [$customGroup['id'], 'Integer']]
     );
 
-    foreach ($customGroupSpec['fields'] as $field) {
-      if (!civicrm_api3('CustomField', 'getcount', [
+    foreach ($customGroupSpec['fields'] as $index => $field) {
+      if (civicrm_api3('CustomField', 'getcount', [
         'custom_group_id' => $customGroup['id'],
         'name' => $field['name'],
       ])
       ) {
+        unset($customGroupSpec['fields'][$index]);
+      }
+      else {
         $weight++;
-        civicrm_api3('CustomField', 'create', array_merge(
-          $field,
-          [
-            'custom_group_id' => $customGroup['id'],
-            'weight' => $weight,
-          ]
-        ));
+        $customGroupSpec['fields'][$index]['weight'] = $weight;
       }
     }
+    if ($customGroupSpec['fields']) {
+      CRM_Core_BAO_CustomField::bulkCreate($customGroupSpec['fields'], ['custom_group_id' => $customGroup['id']]);
+    }
   }
+  civicrm_api3('System', 'flush', ['triggers' => 0, 'session' => 0]);
 }
 
 /**
@@ -472,7 +473,7 @@ function _wmf_civicrm_get_prospect_fields() {
     'likelihood' => [
       'name' => 'likelihood',
       'label' => 'Likelihood (%)',
-      'data_type' => 'Integer',
+      'data_type' => 'Int',
       'html_type' => 'Text',
       'is_searchable' => 1,
       'is_search_range' => 1,
