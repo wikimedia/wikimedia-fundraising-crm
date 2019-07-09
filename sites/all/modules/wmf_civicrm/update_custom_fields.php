@@ -660,6 +660,30 @@ function _wmf_civicrm_get_communication_fields() {
       'is_active' => 1,
       'is_searchable' => 1,
     ],
+    'optin_source' => [
+      'name' => 'optin_source',
+      'label' => ts('Opt-in Source'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+    ],
+    'optin_medium' => [
+      'name' => 'optin_medium',
+      'label' => ts('Opt-in Medium'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+    ],
+    'optin_campaign' => [
+      'name' => 'optin_campaign',
+      'label' => ts('Opt-in Campaign'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+    ],
   ];
 
 }
