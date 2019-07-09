@@ -4227,11 +4227,9 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       $fieldSelects[] = "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as total_{$year}_{$nextYear}";
       $updates[] = "total_{$year}_{$nextYear} = VALUES(total_{$year}_{$nextYear})";
 
-      // @todo Adding these short term. These fields will be removed medium term.
-      $fields[] = "is_{$year}_donor";
-      $fieldSelects[] = "MAX(IF(total_amount > 0 AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', 1, 0)) as is_{$year}_donor";
-      $updates[] = "is_{$year}_donor = VALUES(is_{$year}_donor)";
-      // end of short term 'is' fields.
+      $fields[] = "total_{$year}";
+      $fieldSelects[] = "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as total_{$year}";
+      $updates[] = "total_{$year} = VALUES(total_{$year})";
     }
 
     $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
@@ -4241,7 +4239,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
 
     $sql = "
     INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-    lifetime_usd_total, last_donation_date, " . implode(',', $fields) . ")
+    lifetime_usd_total, last_donation_date, first_donation_date, number_donations," . implode(',', $fields) . ")
 
     SELECT
       NEW.contact_id as entity_id,
@@ -4254,6 +4252,8 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       SELECT
         SUM(COALESCE(total_amount, 0)) AS lifetime_usd_total,
         MAX(IF(total_amount > 0, receive_date, NULL)) AS last_donation_date,
+        MIN(IF(total_amount > 0, receive_date, NULL)) AS first_donation_date,
+        COUNT(IF(total_amount > 0, receive_date, NULL)) AS number_donations,
      " . implode(',', $fieldSelects) . "
       FROM civicrm_contribution c
       USE INDEX(FK_civicrm_contribution_contact_id)
@@ -4276,6 +4276,8 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     last_donation_usd = VALUES(last_donation_usd),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
+    first_donation_date = VALUES(first_donation_date),
+    number_donations = VALUES(number_donations),
     " . implode(',', $updates) . ";";
 
     $significantFields = ['contribution_status_id', 'total_amount', 'contact_id', 'receive_date', 'currency'];
