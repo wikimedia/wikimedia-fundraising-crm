@@ -175,7 +175,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total')]
     ))['values'][0];
 
-    $this->assertEquals('', $contact[wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
+    $this->assertEquals(0, $contact[wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
 
     $contact = $this->callAPISuccess('Contact', 'get', array(
       'id' => $this->contactID2,
@@ -203,16 +203,16 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->callAPISuccess('Contribution', 'delete', ['id' => $cashJob['id']]);
     $this->assertCustomFieldValues($this->contactID, [
-      'lifetime_usd_total' => '',
+      'lifetime_usd_total' => 0,
       'last_donation_amount' => 0,
       'last_donation_currency' => '',
       'last_donation_usd' => 0,
       'last_donation_date' => '',
-      'total_2016_2017' => '',
-      'total_2015_2016' => '',
-      'total_2014_2015' => '',
-      'total_2013_2014' => '',
-      'total_2012_2013' => '',
+      'total_2016_2017' => 0,
+      'total_2015_2016' => 0,
+      'total_2014_2015' => 0,
+      'total_2013_2014' => 0,
+      'total_2012_2013' => 0,
     ]);
   }
 
