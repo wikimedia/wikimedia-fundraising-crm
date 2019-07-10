@@ -4238,14 +4238,16 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     }
 
     $sql = "
-    INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-    lifetime_usd_total, last_donation_date, first_donation_date, number_donations," . implode(',', $fields) . ")
+    INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, first_donation_amount, last_donation_usd,
+    first_donation_usd, lifetime_usd_total, last_donation_date, first_donation_date, number_donations," . implode(',', $fields) . ")
 
     SELECT
       NEW.contact_id as entity_id,
-      COALESCE(x.original_currency, currency) as last_donation_currency,
-      COALESCE(x.original_amount, total_amount, 0) as last_donation_amount,
-      COALESCE(total_amount, 0) as last_donation_usd,
+      COALESCE(x.original_currency, latest.currency) as last_donation_currency,
+      COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
+      COALESCE(earliest_x.original_amount, earliest.total_amount, 0) as first_donation_amount,
+      COALESCE(latest.total_amount, 0) as last_donation_usd,
+      COALESCE(earliest.total_amount, 0) as first_donation_usd,
       totals.*
 
     FROM (
@@ -4261,19 +4263,28 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
         AND contribution_status_id = 1
         AND financial_type_id <> $endowmentFinancialType
     ) as totals
-  LEFT JOIN civicrm_contribution cont ON cont.contact_id = NEW.contact_id
-  AND receive_date = totals.last_donation_date
-  AND contribution_status_id = 1
-  AND total_amount > 0
-  AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
-  AND financial_type_id <> $endowmentFinancialType
-  LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
+  LEFT JOIN civicrm_contribution latest ON latest.contact_id = NEW.contact_id
+    AND latest.receive_date = totals.last_donation_date
+    AND latest.contribution_status_id = 1
+    AND latest.total_amount > 0
+    AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
+    AND latest.financial_type_id <> $endowmentFinancialType
+  LEFT JOIN civicrm_contribution earliest ON earliest.contact_id = NEW.contact_id
+    AND earliest.receive_date = totals.first_donation_date
+    AND earliest.contribution_status_id = 1
+    AND earliest.total_amount > 0
+    AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
+    AND earliest.financial_type_id <> $endowmentFinancialType
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
+  LEFT JOIN wmf_contribution_extra earliest_x ON earliest_x.entity_id = earliest.id
   LIMIT 1
 
   ON DUPLICATE KEY UPDATE
     last_donation_currency = VALUES(last_donation_currency),
     last_donation_amount = VALUES(last_donation_amount),
+    first_donation_amount = VALUES(first_donation_amount),
     last_donation_usd = VALUES(last_donation_usd),
+    first_donation_usd = VALUES(first_donation_usd),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),
