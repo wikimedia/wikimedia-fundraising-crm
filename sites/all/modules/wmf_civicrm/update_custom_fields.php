@@ -585,5 +585,18 @@ function _wmf_civicrm_get_communication_fields() {
       'is_searchable' => 1,
     ],
   ];
+}
 
+/**
+ * Get the legacy wmf donor fields we want to remove.
+ *
+ * @return array
+ */
+function _wmf_civicrm_get_wmf_donor_fields_to_remove() {
+  $fields = [];
+  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
+    $fields["is_{$year}_donor"] = "is_{$year}_donor";
+  }
+  $fields['do_not_solicit_old'] = 'do_not_solicit_old';
+  return $fields;
 }

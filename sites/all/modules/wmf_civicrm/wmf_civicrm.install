@@ -4673,3 +4673,28 @@ function wmf_civicrm_update_7880() {
   _wmf_civicrm_update_custom_fields();
 
 }
+
+/**
+ * Remove old calculated fields.
+ *
+ * Bug: T170972
+ * Bug: T222958
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_7885() {
+  civicrm_initialize();
+  require_once 'update_custom_fields.php';
+  $fields = _wmf_civicrm_get_wmf_donor_fields_to_remove();
+  CRM_Core_DAO::executeQuery('DELETE FROM civicrm_custom_field WHERE name IN ("' . implode('", "', $fields) . '")');
+  $alters = [];
+  foreach ($fields as $index => $field) {
+    if (CRM_Core_BAO_SchemaHandler::checkIfFieldExists('wmf_donor', $field)) {
+      $alters[] = 'DROP COLUMN ' . $field;
+    }
+  }
+  if (!empty($alters)) {
+    CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor ' . implode(',',  $alters));
+  }
+  civicrm_api3('System', 'flush', ['triggers' => 0, 'session' => 0]);
+}

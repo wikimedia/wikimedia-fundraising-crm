@@ -4579,18 +4579,6 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'weight' => $weight,
       'is_search_range' => 1,
     ];
-    $fields["is_{$year}_donor"] = [
-      'name' => "is_{$year}_donor",
-      'column_name' => "is_{$year}_donor",
-      'label' => ts("Is FY {$year}-{$nextYear} donor"),
-      'data_type' => 'Boolean',
-      'html_type' => 'Radio',
-      'default_value' => 0,
-      'is_active' => 1,
-      'is_required' => 0,
-      'is_searchable' => 1,
-      'is_view' => 1,
-    ];
   }
   return $fields;
 }
