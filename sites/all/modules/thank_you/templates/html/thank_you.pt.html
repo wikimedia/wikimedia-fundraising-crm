@@ -4,14 +4,10 @@
 Caro(a) dador(a),</p>
 {%endif%}
 
-<p>É com enorme prazer que agradeço a tua contribuição de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}
-mensal
-{%endif%}para a Wikipédia e a Fundação Wikimedia. 
+<p>É com enorme prazer que agradeço a tua contribuição de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}mensal {%endif%}para a Wikipédia e a Fundação Wikimedia.
 </p>
 
-<p>A história essencial da Wikipédia é a história de uma pessoa, como tu, que dá um pouco de si para manter abertas as portas da descoberta. A tua contribuição {% if recurring %}
-mensal recorrente
-{%endif%}mostra-me que o espírito da nossa visão está vivo e bem.
+<p>A história essencial da Wikipédia é a história de uma pessoa, como tu, que dá um pouco de si para manter abertas as portas da descoberta. A tua contribuição {% if recurring %}mensal recorrente {%endif%}mostra-me que o espírito da nossa visão está vivo e bem.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

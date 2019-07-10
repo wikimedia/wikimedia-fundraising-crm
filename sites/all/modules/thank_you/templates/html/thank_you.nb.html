@@ -4,14 +4,10 @@
 Kjære giver,</p>
 {%endif%}
 
-<p>Jeg liker at det er min jobb å takke deg for ditt {% if recurring %}
-månedlige
-{%endif%}bidrag på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} til Wikipedia og Wikimedia Foundation. 
+<p>Jeg liker at det er min jobb å takke deg for ditt {% if recurring %}månedlige {%endif%}bidrag på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} til Wikipedia og Wikimedia Foundation.
 </p>
 
-<p>Wikipedias historie er historien til individer, som deg selv, som gir av seg selv for å holde dørene til oppdagelse åpne. Ditt {% if recurring %}
-månedlige
-{%endif%}bidrag viser meg at ånden bak visjonen vår lever i beste velgående.
+<p>Wikipedias historie er historien til individer, som deg selv, som gir av seg selv for å holde dørene til oppdagelse åpne. Ditt {% if recurring %}månedlige {%endif%}bidrag viser meg at ånden bak visjonen vår lever i beste velgående.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

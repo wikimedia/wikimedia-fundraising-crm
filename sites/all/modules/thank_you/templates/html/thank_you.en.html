@@ -4,14 +4,10 @@
 Dear donor,</p>
 {%endif%}
 
-<p>I love that it’s my job to thank you for your {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}
-monthly
-{%endif%}contribution to Wikipedia and the Wikimedia Foundation. 
+<p>I love that it’s my job to thank you for your {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}monthly {%endif%}contribution to Wikipedia and the Wikimedia Foundation.
 </p>
 
-<p>The essential story of Wikipedia is the story of an individual, like you, giving a little bit of themselves to keep the doors of discovery open. Your {% if recurring %}
-monthly recurring
-{%endif%}contribution shows me that the spirit of our vision is alive and well.
+<p>The essential story of Wikipedia is the story of an individual, like you, giving a little bit of themselves to keep the doors of discovery open. Your {% if recurring %}monthly recurring {%endif%}contribution shows me that the spirit of our vision is alive and well.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

@@ -4,14 +4,10 @@
 Liebe/r Spender/in,</p>
 {%endif%}
 
-<p>ich freue mich sehr, dir für deinen {% if recurring %}
-monatlichen
-{%endif%}Beitrag von {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} an Wikipedia und die Wikimedia Foundation danken zu dürfen. 
+<p>ich freue mich sehr, dir für deinen {% if recurring %}monatlichen {%endif%}Beitrag von {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} an Wikipedia und die Wikimedia Foundation danken zu dürfen.
 </p>
 
-<p>Die Geschichte von Wikipedia ist im Grunde die einer einzelnen Person wie dir, die etwas von sich gibt, um Wissen für jeden zugänglich zu machen. An deiner {% if recurring %}
-regelmäßigen monatlichen
-{%endif%}Spende sehe ich, dass der Geist unserer Vision lebendig ist und fortbesteht.
+<p>Die Geschichte von Wikipedia ist im Grunde die einer einzelnen Person wie dir, die etwas von sich gibt, um Wissen für jeden zugänglich zu machen. An deiner {% if recurring %}regelmäßigen monatlichen {%endif%}Spende sehe ich, dass der Geist unserer Vision lebendig ist und fortbesteht.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

@@ -4,14 +4,10 @@
 Cienījamais ziedotāj!</p>
 {%endif%}
 
-<p>Man ir patiess prieks pateikties Jums par {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}
-ikmēneša
-{%endif%}ieguldījumu Vikipēdijā un Wikimedia Foundation. 
+<p>Man ir patiess prieks pateikties Jums par {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}ikmēneša {%endif%}ieguldījumu Vikipēdijā un Wikimedia Foundation.
 </p>
 
-<p>Vikipēdijas būtiskais stāsts ir stāsts par indivīdiem, tādiem kā Jūs, kuri, ieguldot nedaudz no sevis, atver durvis uz atklājumiem. Jūsu {% if recurring %}
-ikmēneša atkārtotais
-{%endif%}ieguldījums parāda, ka mūsu vīzijas gars ir dzīvs un krietns.
+<p>Vikipēdijas būtiskais stāsts ir stāsts par indivīdiem, tādiem kā Jūs, kuri, ieguldot nedaudz no sevis, atver durvis uz atklājumiem. Jūsu {% if recurring %}ikmēneša atkārtotais {%endif%}ieguldījums parāda, ka mūsu vīzijas gars ir dzīvs un krietns.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

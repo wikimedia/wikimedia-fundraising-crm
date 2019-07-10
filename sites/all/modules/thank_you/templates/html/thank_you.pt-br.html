@@ -4,14 +4,10 @@
 Prezado(a) doador(a),</p>
 {%endif%}
 
-<p>Adoro o fato de que faz parte do meu trabalho agradecer-lhe por sua contribuição {% if recurring %}
-mensal
-{%endif%}de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} para a Wikipédia e a Fundação Wikimedia. 
+<p>Adoro o fato de que faz parte do meu trabalho agradecer-lhe por sua contribuição {% if recurring %}mensal {%endif%}de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} para a Wikipédia e a Fundação Wikimedia.
 </p>
 
-<p>A verdadeira história da Wikipédia, é a história de um indivíduo, como você, que compartilha um pouco do que tem para manter abertas as portas do descobrimento. Sua contribuição {% if recurring %}
-mensal
-{%endif%}recorrente comprova que o espírito da nossa visão está mais vivo do que nunca.
+<p>A verdadeira história da Wikipédia, é a história de um indivíduo, como você, que compartilha um pouco do que tem para manter abertas as portas do descobrimento. Sua contribuição {% if recurring %}mensal {%endif%}recorrente comprova que o espírito da nossa visão está mais vivo do que nunca.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

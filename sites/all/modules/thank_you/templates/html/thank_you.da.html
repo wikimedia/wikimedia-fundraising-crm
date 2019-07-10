@@ -4,14 +4,10 @@
 Kære donor</p>
 {%endif%}
 
-<p>Jeg elsker, at det er mit job at takke dig for dit {% if recurring %}
-månedlige
-{%endif%}bidrag på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} til Wikipedia og Wikimedia Foundation. 
+<p>Jeg elsker, at det er mit job at takke dig for dit {% if recurring %}månedlige {%endif%}bidrag på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} til Wikipedia og Wikimedia Foundation.
 </p>
 
-<p>Den grundlæggende historie om Wikipedia er historien om en enkeltperson, ligesom dig, der giver lidt af sig selv for at holde døren til opdagelser åben. Dit {% if recurring %}
-månedlige
-{%endif%}bidrag viser, at ånden i vores vision er i live og god behold.
+<p>Den grundlæggende historie om Wikipedia er historien om en enkeltperson, ligesom dig, der giver lidt af sig selv for at holde døren til opdagelser åben. Dit {% if recurring %}månedlige {%endif%}bidrag viser, at ånden i vores vision er i live og god behold.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

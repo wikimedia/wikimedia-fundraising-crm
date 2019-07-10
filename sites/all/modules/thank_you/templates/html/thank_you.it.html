@@ -4,14 +4,10 @@
 Caro/a donatore/trice,</p>
 {%endif%}
 
-<p>sono estremamente felice che sia mio compito ringraziarti per il tuo contributo {% if recurring %}
-mensile
-{%endif%}di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a Wikipedia e alla Wikimedia Foundation. 
+<p>sono estremamente felice che sia mio compito ringraziarti per il tuo contributo {% if recurring %}mensile {%endif%}di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a Wikipedia e alla Wikimedia Foundation.
 </p>
 
-<p>La storia in breve di Wikipedia è la storia di un individuo, proprio come te, che dedica una piccola parte di se stesso per mantenere aperte le porte della scoperta. Il tuo contributo {% if recurring %}
-mensile ricorrente
-{%endif%}dimostra che lo spirito della nostra visione è vivo e vegeto.
+<p>La storia in breve di Wikipedia è la storia di un individuo, proprio come te, che dedica una piccola parte di se stesso per mantenere aperte le porte della scoperta. Il tuo contributo {% if recurring %}mensile ricorrente {%endif%}dimostra che lo spirito della nostra visione è vivo e vegeto.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}
