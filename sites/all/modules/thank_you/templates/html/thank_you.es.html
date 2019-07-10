@@ -4,14 +4,10 @@
 Estimado/a donante:</p>
 {%endif%}
 
-<p>Me gustaría darte las gracias por tu contribución de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}
-al mes
-{%endif%}a Wikipedia y Wikimedia Foundation. 
+<p>Me gustaría darte las gracias por tu contribución de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}al mes {%endif%}a Wikipedia y Wikimedia Foundation.
 </p>
 
-<p>La historia principal de Wikipedia es la historia de una persona que, como tú, comparte algo personal para mantener abiertas las puertas del descubrimiento. Tu contribución {% if recurring %}
-periódica mensual
-{%endif%}me confirma que el espíritu de nuestra visión sigue vivo y en buen estado.
+<p>La historia principal de Wikipedia es la historia de una persona que, como tú, comparte algo personal para mantener abiertas las puertas del descubrimiento. Tu contribución {% if recurring %}periódica mensual {%endif%}me confirma que el espíritu de nuestra visión sigue vivo y en buen estado.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

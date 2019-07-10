@@ -4,14 +4,10 @@
 Vážený darca,</p>
 {%endif%}
 
-<p>je mi potešením poďakovať Vám za Váš {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}
-mesačný
-{%endif%}príspevok Wikipédii a Wikimedia Foundation. 
+<p>je mi potešením poďakovať Vám za Váš {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}mesačný {%endif%}príspevok Wikipédii a Wikimedia Foundation.
 </p>
 
-<p>Príbeh jednotlivca ako ste Vy, ktorý dáva trochu seba, aby dvere k objavovaniu ostali otvorené je zásadným príbehom Wikipédie. Váš {% if recurring %}
-mesačný
-{%endif%}príspevok dokazuje, že podstata našej vízie je stále živá a zdravá.
+<p>Príbeh jednotlivca ako ste Vy, ktorý dáva trochu seba, aby dvere k objavovaniu ostali otvorené je zásadným príbehom Wikipédie. Váš {% if recurring %}mesačný {%endif%}príspevok dokazuje, že podstata našej vízie je stále živá a zdravá.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}
