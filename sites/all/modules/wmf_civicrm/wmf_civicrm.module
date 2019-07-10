@@ -3298,18 +3298,8 @@ function wmf_civicrm_get_calculated_fields() {
  * @return array
  */
 function wmf_get_calculated_field_names() {
-  $fieldNames = array(
-    'last_donation_date',
-    'last_donation_currency',
-    'last_donation_amount',
-    'last_donation_usd',
-    'lifetime_usd_total',
-  );
-  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
-    $fieldNames[] = 'is_' . $year . '_donor';
-    $fieldNames[] = 'total_' . $year . '_' . ($year + 1);
-  }
-  return $fieldNames;
+  $fields = _wmf_civicrm_get_wmf_donor_fields();
+  return array_keys($fields);
 }
 
 /**
@@ -4416,4 +4406,104 @@ function wmf_civicrm_get_tag_names($entity_id, $entity_table = 'civicrm_contribu
  */
 function wmf_civicrm_is_endowment_gift($msg) {
   return isset($msg['utm_medium']) && $msg['utm_medium'] === 'endowment';
+}
+
+/**
+ * Get fields for wmf_donor custom group.
+ *
+ * This is the group with the custom fields for calculated donor data.
+ *
+ * @return array
+ */
+function _wmf_civicrm_get_wmf_donor_fields() {
+  $fields = [
+    'last_donation_date' => [
+      'name' => 'last_donation_date',
+      'column_name' => 'last_donation_date',
+      'label' => ts('Last donation date'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'date_format' => 'M d, yy',
+      'time_format' => 2,
+    ],
+    'last_donation_currency' => [
+      'name' => 'last_donation_currency',
+      'column_name' => 'last_donation_currency',
+      'label' => ts('Last Donation Currency'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 1,
+    ],
+    'last_donation_amount' => [
+      'name' => 'last_donation_amount',
+      'column_name' => 'last_donation_amount',
+      'label' => ts('Last Donation Amount (unconverted)'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+    ],
+    'last_donation_usd' => [
+      'name' => 'last_donation_usd',
+      'column_name' => 'last_donation_usd',
+      'label' => ts('Last Donation Amount (USD)'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+    ],
+    'lifetime_usd_total' => [
+      'name' => 'lifetime_usd_total',
+      'column_name' => 'lifetime_usd_total',
+      'label' => ts('Lifetime Donations (USD)'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+    ],
+  ];
+
+  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
+    $nextYear = $year + 1;
+    $weight = $year > 2018 ? ($year - 2000) : (2019 - $year);
+    $fields["total_{$year}_{$nextYear}"] = [
+      'name' => "total_{$year}_{$nextYear}",
+      'column_name' => "total_{$year}_{$nextYear}",
+      'label' => ts("FY {$year}-{$nextYear} total"),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'default_value' => 0,
+      'is_active' => 1,
+      'is_required' => 0,
+      'is_searchable' => 1,
+      'is_view' => 1,
+      'weight' => $weight,
+      'is_search_range' => 1,
+    ];
+    $fields["is_{$year}_donor"] = [
+      'name' => "is_{$year}_donor",
+      'column_name' => "is_{$year}_donor",
+      'label' => ts("Is FY {$year}-{$nextYear} donor"),
+      'data_type' => 'Boolean',
+      'html_type' => 'Radio',
+      'default_value' => 0,
+      'is_active' => 1,
+      'is_required' => 0,
+      'is_searchable' => 1,
+      'is_view' => 1,
+    ];
+  }
+  return $fields;
 }
