@@ -4,14 +4,10 @@
 Bästa bidragsgivare,</p>
 {%endif%}
 
-<p>Jag älskar att det är mitt jobb att tacka dig för ditt {% if recurring %}
-månatliga
-{%endif%}bidrag på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} till Wikipedia och Wikimedia Foundation. 
+<p>Jag älskar att det är mitt jobb att tacka dig för ditt {% if recurring %}månatliga {%endif%}bidrag på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} till Wikipedia och Wikimedia Foundation.
 </p>
 
-<p>Den grundläggande historien om Wikipedia är historien om en individ som likt dig gav en liten bit av sig själv för att hålla dörren till upptäckter öppen. Ditt {% if recurring %}
-månatligt återkommande
-{%endif%}bidrag visar mig att andan i vår vision lever och frodas.
+<p>Den grundläggande historien om Wikipedia är historien om en individ som likt dig gav en liten bit av sig själv för att hålla dörren till upptäckter öppen. Ditt {% if recurring %}månatligt återkommande {%endif%}bidrag visar mig att andan i vår vision lever och frodas.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

@@ -4,14 +4,10 @@
 Estimat/da donant,</p>
 {%endif%}
 
-<p>És tot un plaer que la meva feina sigui agrair-te la teva contribució {% if recurring %}
-mensual
-{%endif%}de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a la Viquipèdia i a la Fundació Wikimedia. 
+<p>És tot un plaer que la meva feina sigui agrair-te la teva contribució {% if recurring %}mensual {%endif%}de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a la Viquipèdia i a la Fundació Wikimedia.
 </p>
 
-<p>En essència, la història de la Viquipèdia és la d’una persona com tu, que dona una mica de sí mateixa per mantenir obertes les portes del coneixement. La teva contribució {% if recurring %}
-mensual
-{%endif%}em demostra que l’esperit de la nostra visió segueix en plena forma.
+<p>En essència, la història de la Viquipèdia és la d’una persona com tu, que dona una mica de sí mateixa per mantenir obertes les portes del coneixement. La teva contribució {% if recurring %}mensual {%endif%}em demostra que l’esperit de la nostra visió segueix en plena forma.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

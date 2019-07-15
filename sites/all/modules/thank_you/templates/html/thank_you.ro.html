@@ -4,14 +4,10 @@
 Stimate donator,</p>
 {%endif%}
 
-<p>Am plăcerea să îți mulțumesc pentru contribuția ta {% if recurring %}
-lunară
-{%endif%}de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} pentru Wikipedia și Fundația Wikimedia. 
+<p>Am plăcerea să îți mulțumesc pentru contribuția ta {% if recurring %}lunară {%endif%}de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} pentru Wikipedia și Fundația Wikimedia.
 </p>
 
-<p>Povestea Wikipedia este povestea unor oameni obișnuiți, ca tine, care au decis să dea ceva de la ei pentru a păstra deschise ușile cunoașterii. Contribuția ta {% if recurring %}
-lunară recurentă
-{%endif%}îmi arată că spiritul viziunii noastre este viu și puternic.
+<p>Povestea Wikipedia este povestea unor oameni obișnuiți, ca tine, care au decis să dea ceva de la ei pentru a păstra deschise ușile cunoașterii. Contribuția ta {% if recurring %}lunară recurentă {%endif%}îmi arată că spiritul viziunii noastre este viu și puternic.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

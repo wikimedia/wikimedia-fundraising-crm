@@ -19,6 +19,17 @@ function _wmf_civicrm_update_custom_fields() {
       ],
       'fields' => _wmf_civicrm_get_wmf_donor_fields(),
     ],
+    'Communication' => [
+      'group' => [
+        'name' => 'Communication',
+        'extends' => 'Contact',
+        'style' => 'Inline',
+        'collapse_display' => 0,
+        'title' => 'Communication',
+        'table_name' => 'civicrm_value_1_communication_4',
+      ],
+      'fields' => _wmf_civicrm_get_communication_fields(),
+    ],
     'Gift_Data' => [
       'group' => [
         'name' => 'Gift_Data',
@@ -74,23 +85,24 @@ function _wmf_civicrm_update_custom_fields() {
       [1 => [$customGroup['id'], 'Integer']]
     );
 
-    foreach ($customGroupSpec['fields'] as $field) {
-      if (!civicrm_api3('CustomField', 'getcount', [
+    foreach ($customGroupSpec['fields'] as $index => $field) {
+      if (civicrm_api3('CustomField', 'getcount', [
         'custom_group_id' => $customGroup['id'],
         'name' => $field['name'],
       ])
       ) {
+        unset($customGroupSpec['fields'][$index]);
+      }
+      else {
         $weight++;
-        civicrm_api3('CustomField', 'create', array_merge(
-          $field,
-          [
-            'custom_group_id' => $customGroup['id'],
-            'weight' => $weight,
-          ]
-        ));
+        $customGroupSpec['fields'][$index]['weight'] = $weight;
       }
     }
+    if ($customGroupSpec['fields']) {
+      CRM_Core_BAO_CustomField::bulkCreate($customGroupSpec['fields'], ['custom_group_id' => $customGroup['id']]);
+    }
   }
+  civicrm_api3('System', 'flush', ['triggers' => 0, 'session' => 0]);
 }
 
 /**
@@ -472,7 +484,7 @@ function _wmf_civicrm_get_prospect_fields() {
     'likelihood' => [
       'name' => 'likelihood',
       'label' => 'Likelihood (%)',
-      'data_type' => 'Integer',
+      'data_type' => 'Int',
       'html_type' => 'Text',
       'is_searchable' => 1,
       'is_search_range' => 1,
@@ -525,85 +537,53 @@ function _wmf_civicrm_get_partner_fields() {
 }
 
 /**
- * Get fields for wmf_donor custom group.
- *
- * This is the group with the custom fields for calculated donor data.
+ * Get fields for communication custom group.
  *
  * @return array
  */
-function _wmf_civicrm_get_wmf_donor_fields() {
-  $fields = [
-    'last_donation_date' => [
-      'name' => 'last_donation_date',
-      'column_name' => 'last_donation_date',
-      'label' => ts('Last donation date'),
-      'data_type' => 'Date',
-      'html_type' => 'Select Date',
+function _wmf_civicrm_get_communication_fields() {
+  return [
+    'opt_in' => [
+      'name' => 'opt_in',
+      'column_name' => 'opt_in',
+      'label' => ts('Opt In'),
+      'data_type' => 'Boolean',
+      'html_type' => 'Radio',
       'is_active' => 1,
-      'is_searchable' => 1,
-      'is_search_range' => 1,
-      'is_view' => 1,
-      'date_format' => 'M d, yy',
-      'time_format' => 2,
+      'is_searchable' => 0,
     ],
-    'last_donation_currency' => [
-      'name' => 'last_donation_currency',
-      'column_name' => 'last_donation_currency',
-      'label' => ts('Last Donation Currency'),
+    'Employer_Name' => [
+      'name' => 'Employer_Name',
+      'label' => ts('Employer Name'),
       'data_type' => 'String',
       'html_type' => 'Text',
       'is_active' => 1,
       'is_searchable' => 1,
-      'is_view' => 1,
     ],
-    'last_donation_amount' => [
-      'name' => 'last_donation_amount',
-      'column_name' => 'last_donation_amount',
-      'label' => ts('Last Donation Amount (unconverted)'),
-      'data_type' => 'Money',
+    'optin_source' => [
+      'name' => 'optin_source',
+      'label' => ts('Opt-in Source'),
+      'data_type' => 'String',
       'html_type' => 'Text',
       'is_active' => 1,
       'is_searchable' => 1,
-      'is_search_range' => 1,
-      'is_view' => 1,
     ],
-    'last_donation_usd' => [
-        'name' => 'last_donation_usd',
-        'column_name' => 'last_donation_usd',
-        'label' => ts('Last Donation Amount (USD)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-    ],
-    'lifetime_usd_total' => [
-      'name' => 'lifetime_usd_total',
-      'column_name' => 'lifetime_usd_total',
-      'label' => ts('Lifetime Donations (USD)'),
-      'data_type' => 'Money',
+    'optin_medium' => [
+      'name' => 'optin_medium',
+      'label' => ts('Opt-in Medium'),
+      'data_type' => 'String',
       'html_type' => 'Text',
       'is_active' => 1,
       'is_searchable' => 1,
-      'is_search_range' => 1,
-      'is_view' => 1,
+    ],
+    'optin_campaign' => [
+      'name' => 'optin_campaign',
+      'label' => ts('Opt-in Campaign'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
     ],
   ];
-  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
-    $nextYear = $year + 1;
-    $fields["is_{$year}_donor"] = [
-      'name' => "is_{$year}_donor",
-      'column_name' => "is_{$year}_donor",
-      'label' => ts("Is FY {$year}-{$nextYear} donor"),
-      'data_type' => 'Boolean',
-      'html_type' => 'Radio',
-      'default_value' => 0,
-      'is_active' => 1,
-      'is_required' => 0,
-      'is_searchable' => 1,
-      'is_view' => 1,
-    ];
-  }
-  return $fields;
+
 }

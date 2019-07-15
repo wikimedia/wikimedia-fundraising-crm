@@ -21,7 +21,7 @@
         "cogpowered/finediff": "0.*",
         "ext-intl": "*",
         "wikimedia/donation-interface": "^2.3",
-        "wikimedia/smash-pig": "^0.5.9",
+        "wikimedia/smash-pig": "^0.5.10",
         "phpmailer/phpmailer": "5.2.*",
         "phpseclib/phpseclib":  "~2.0",
         "predis/predis": "1.*",

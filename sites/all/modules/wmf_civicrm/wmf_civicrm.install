@@ -16,6 +16,7 @@ require_once(__DIR__ . "/bootstrap.inc");
  * @throws \Exception
  */
 function wmf_civicrm_install() {
+  _wmf_civicrm_escalate_permissions();
   wmf_civicrm_update_7000();
   wmf_civicrm_update_7001();
   wmf_civicrm_update_7002();
@@ -74,10 +75,25 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7615();
   wmf_civicrm_update_7655();
   wmf_civicrm_update_7670();
-  wmf_civicrm_update_7675();
   wmf_civicrm_update_7705();
-  wmf_civicrm_update_7720();
   wmf_civicrm_update_7726();
+}
+
+/**
+ * Escalate permissions.
+ *
+ * In general we do api calls from php with check_permissions = FALSE so this doesn't matter.
+ *
+ * However, when there is an error the debug output is affected by permissions -ie
+ *
+ * if (CRM_Core_Permission::check('Administer CiviCRM') || CIVICRM_UF == 'UnitTests') {
+ *
+ * For core tests the UF is UnitTests so the extra debug is returned but we are running
+ * under Drupal so we need to be more aggressive.
+ */
+function _wmf_civicrm_escalate_permissions() {
+  CRM_Core_Config::singleton()->userPermissionTemp = new CRM_Core_Permission_Temp();
+  CRM_Core_Config::singleton()->userPermissionTemp->grant('administer CiviCRM');
 }
 
 /**
@@ -91,24 +107,12 @@ function wmf_civicrm_install() {
 function _link_gift_data_field_to_new_group($field_name, $group_name, $values) {
   $api = wmf_civicrm_bootstrap_civi();
 
-  // Get the custom group.
-  $success = $api->CustomGroup->get(array(
-    'name' => 'Gift_Data',
-  ));
-  if (!$success || !count($api->values)) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-  $custom_group_id = $api->values[0]->id;
-
-  // Get the field.
-  $success = $api->CustomField->get(array(
-    'custom_group_id' => $custom_group_id,
+  $params = [
+    'custom_group_id' => 'Gift_Data',
     'name' => $field_name,
-  ));
-  if (!$success || !count($api->values)) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-  $custom_field_id = $api->values[0]->id;
+    'return' => 'id',
+  ];
+  $custom_field_id = civicrm_api3('CustomField', 'getvalue', $params);
 
   // Make the options.
   $success = $api->OptionGroup->get(array(
@@ -144,20 +148,18 @@ function _link_gift_data_field_to_new_group($field_name, $group_name, $values) {
     }
   }
 
-  // Link the options to this field.
-  $success = $api->CustomField->create(array(
-    'id' => $custom_field_id,
-    'option_group_id' => $option_group_id,
-    // TODO why do i have to reset these fields here?
-    // they are set when the row is created but come
-    // out as 0 after this update.
-    'is_active' => 1,
-    'is_required' => 1,
-    'is_searchable' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
+  try {
+    $params = [
+      'id' => $custom_field_id,
+      'option_group_id' => $option_group_id,
+      'debug' => 1,
+    ];
+    civicrm_api3('CustomField', 'create', $params);
   }
+  catch (CiviCRM_API3_Exception $e) {
+    throw new DrupalUpdateException($e->getMessage() .  "\n" . print_r($params, TRUE) . "\n" . $e->getTraceAsString() . "\n" . print_r($e->getExtraParams(), TRUE));
+  }
+
 }
 
 /**
@@ -1052,12 +1054,12 @@ function wmf_civicrm_update_7031() {
  */
 function wmf_civicrm_update_7032() {
 
-  _link_gift_data_field_to_new_group('Fund', 'fund_20080709173248', array(
+  _link_gift_data_field_to_new_group('Fund', 'fund_20080709173248', [
     'Unrestricted - General',
     'Restricted - Foundation',
     'Restricted - Program',
     'Restricted - Fiscal Sponsorship',
-  ));
+  ]);
 
   _link_gift_data_field_to_new_group('Campaign', 'campaign_20080709183311', array(
     'Community Gift',
@@ -3390,18 +3392,6 @@ function wmf_civicrm_update_7655() {
   $commsGroup = civicrm_api3('CustomGroup', 'get', [
     'name' => 'Communication',
   ]);
-  if (empty($commsGroup['id'])) {
-    $commsGroup = civicrm_api3('CustomGroup', 'create', [
-      'name' => 'Communication',
-      'extends' => 'Contact',
-      'style' => 'Inline',
-      'collapse_display' => 0,
-      'title' => 'Communication',
-      'weight' => CRM_Utils_Weight::getMax('CRM_Core_BAO_CustomGroup'),
-      // Give dev instances the same table name.
-      'table_name' => 'civicrm_value_1_communication_4',
-    ]);
-  }
 
   civicrm_api3('CustomField', 'create', [
     'custom_group_id' => $commsGroup['id'],
@@ -3486,46 +3476,6 @@ function wmf_civicrm_update_7670() {
   ");
   // Clear caches of the custom fields.
   civicrm_api3('System', 'flush', []);
-}
-
-/**
- * Add donor totals fields.
- *
- * I tried adding via api but it does multiple queries each adding a field.
- *
- * Note that we are going to turn off triggers on the wmf_donor table.
- *
- * We can't do this straight away because we still have the do_not_solicit
- * field but we can remove it from the trigger reconciliations by hook.
- * That will prevent the log_table fields being added. Existing triggers
- * will not be removed until ops run their command.
- *
- * Bug: T186168.
- */
-function wmf_civicrm_update_7675() {
-  civicrm_initialize();
-
-  $groupID = civicrm_api3('CustomGroup', 'getvalue', ['name' => 'wmf_donor', 'return' => 'id']);
-  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
-    $nextYear = $year + 1;
-    $clauses[] = "ADD `total_{$year}_{$nextYear}` decimal(20,2) DEFAULT '0.00'";
-    $indexClauses[] = " ADD INDEX `total_{$year}_{$nextYear}` (total_{$year}_{$nextYear}) ";
-    // just doing something rough here to get recent years at the top.
-    // Can tweak in the UI.
-    $weight = $year > 2018 ? ($year - 2000) : (2019 - $year);
-    CRM_Core_DAO::executeQuery("
-    INSERT INTO civicrm_custom_field (
-      `custom_group_id`, `name`, `column_name`, `label`, `data_type`, `html_type`, `default_value`, `is_active`,
-      `is_required`, `is_searchable`, `is_view`, `weight`, `is_search_range`
-      )
-      values({$groupID}, 'total_{$year}_{$nextYear}', 'total_{$year}_{$nextYear}', 'FY {$year}-{$nextYear} total', 'Money', 'Text', 0, 1, 0, 1, 1, $weight , 1)
-  ");
-  }
-
-  CRM_Core_DAO::executeQuery(
-    "ALTER TABLE wmf_donor " . implode(',', $clauses) . ',' . implode(',', $indexClauses)
-  );
-  CRM_Core_DAO::executeQuery('TRUNCATE civicrm_cache');
 }
 
 /**
@@ -3989,32 +3939,6 @@ function wmf_civicrm_update_7715() {
   require_once('recurring.inc');
   wmf_civicrm_recur_tokenize_damaged('ingenico');
 }
-
-/**
- * Add opt_in field
- */
-function wmf_civicrm_update_7720() {
-    $api = wmf_civicrm_bootstrap_civi();
-
-    $success = $api->CustomField->create(array(
-        'name' => 'opt_in',
-        'column_name' => 'opt_in',
-        'label' => ts('Opt In'),
-        'custom_group_id' => 'Communication',
-        'data_type' => 'Boolean',
-        'html_type' => 'Radio',
-        'is_active' => 1,
-        'is_searchable' => 0,
-        'is_view' => 0,
-    ));
-    if (!$success) {
-        throw new DrupalUpdateException($api->errorMsg());
-    }
-
-    civicrm_api3('System', 'flush', []);
-    return;
-}
-
 
 /**
  * Fix processor_id for recurring donations not yet canceled.
@@ -4726,4 +4650,12 @@ WHERE cancel_reason IS NOT NULL and cancel_date IS NULL
 function wmf_civicrm_update_7870() {
   require_once 'update_payment_instruments.php';
   wmf_install_add_missing_payment_instruments();
+}
+
+/**
+ * Add opt-in tracking fields.
+ */
+function wmf_civicrm_update_7875() {
+  require_once 'update_custom_fields.php';
+  _wmf_civicrm_update_custom_fields();
 }

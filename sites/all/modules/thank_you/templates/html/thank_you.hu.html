@@ -4,14 +4,10 @@
 Tisztelt Támogató!</p>
 {%endif%}
 
-<p>Örömömre szolgál, hogy megköszönjem Önnek {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összegű, {% if recurring %}
-havonta nyújtott
-{%endif%}hozzájárulását Wikipédia és a Wikimédia Alapítványt működéséhez. 
+<p>Örömömre szolgál, hogy megköszönjem Önnek {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összegű, {% if recurring %}havonta nyújtott {%endif%}hozzájárulását Wikipédia és a Wikimédia Alapítványt működéséhez.
 </p>
 
-<p>A Wikipédia története alapvetően arról szól, hogy egy olyan magánszemély, mint például Ön is, egy kis hozzájárulást tesz a felfedezés kapujának nyitva tartásához. Az Ön {% if recurring %}
-havonta ismétlődő
-{%endif%}hozzájárulása azt mutatja számomra, hogy küldetésünk szellemisége továbbra is él és virul.
+<p>A Wikipédia története alapvetően arról szól, hogy egy olyan magánszemély, mint például Ön is, egy kis hozzájárulást tesz a felfedezés kapujának nyitva tartásához. Az Ön {% if recurring %}havonta ismétlődő {%endif%}hozzájárulása azt mutatja számomra, hogy küldetésünk szellemisége továbbra is él és virul.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

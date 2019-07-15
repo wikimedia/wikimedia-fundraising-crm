@@ -4,14 +4,10 @@
 Cher donateur, chère donatrice,</p>
 {%endif%}
 
-<p>Je tiens à vous remercier chaleureusement pour votre contribution {% if recurring %}
-mensuelle
-{%endif%}de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} à Wikipédia et à la Wikimedia Foundation. 
+<p>Je tiens à vous remercier chaleureusement pour votre contribution {% if recurring %}mensuelle {%endif%}de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} à Wikipédia et à la Wikimedia Foundation.
 </p>
 
-<p>L’histoire essentielle de Wikipédia est l’histoire d’une personne, comme vous, qui donne un peu de son temps pour que les portes de la découverte restent ouvertes. Votre contribution {% if recurring %}
-mensuelle récurrente
-{%endif%}me prouve que l’esprit de notre vision est bel et bien vivant.
+<p>L’histoire essentielle de Wikipédia est l’histoire d’une personne, comme vous, qui donne un peu de son temps pour que les portes de la découverte restent ouvertes. Votre contribution {% if recurring %}mensuelle récurrente {%endif%}me prouve que l’esprit de notre vision est bel et bien vivant.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

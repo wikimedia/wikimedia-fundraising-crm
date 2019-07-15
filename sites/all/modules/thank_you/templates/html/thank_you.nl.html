@@ -4,14 +4,10 @@
 Beste donateur,</p>
 {%endif%}
 
-<p>Ik ben blij dat ik je mag bedanken voor jouw {% if recurring %}
-maandelijkse
-{%endif%}bijdrage van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} aan Wikipedia en de Wikimedia Foundation. 
+<p>Ik ben blij dat ik je mag bedanken voor jouw {% if recurring %}maandelijkse {%endif%}bijdrage van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} aan Wikipedia en de Wikimedia Foundation.
 </p>
 
-<p>Het verhaal van Wikipedia is het verhaal van mensen als jij die door iets van zichzelf te geven de deur naar ontdekkingen open houdt. Jouw {% if recurring %}
-maandelijkse
-{%endif%}bijdrage laat zien dat onze visie nog altijd volop leeft.
+<p>Het verhaal van Wikipedia is het verhaal van mensen als jij die door iets van zichzelf te geven de deur naar ontdekkingen open houdt. Jouw {% if recurring %}maandelijkse {%endif%}bijdrage laat zien dat onze visie nog altijd volop leeft.
 </p>
 
 {% if "RecurringRestarted" in contribution_tags %}

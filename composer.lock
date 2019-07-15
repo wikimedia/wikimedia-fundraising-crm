@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "774945386b2619fbbac7f9622a62190f",
+    "content-hash": "a8ff505be372ac73c94ec989686044d9",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -3088,7 +3088,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "84ef15edf7fc24e226360fbd2296867f589e3980"
+                "reference": "62c0c7d6aa972d9440fe5a40d99410496c8f029f"
             },
             "require": {
                 "league/csv": "^8.0",
@@ -3127,11 +3127,11 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2019-02-12T02:41:47+00:00"
+            "time": "2019-05-15T01:25:25+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.5.9",
+            "version": "v0.5.10",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
