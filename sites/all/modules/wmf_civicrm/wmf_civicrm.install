@@ -4698,3 +4698,14 @@ function wmf_civicrm_update_7885() {
   }
   civicrm_api3('System', 'flush', ['triggers' => 0, 'session' => 0]);
 }
+
+/**
+ * Add index to civicrm_activity.location.
+ *
+ * Bug: T228106
+ */
+function wmf_civicrm_update_7890() {
+  civicrm_initialize();
+  $tables = ['civicrm_activity' => ['location']];
+  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+}
