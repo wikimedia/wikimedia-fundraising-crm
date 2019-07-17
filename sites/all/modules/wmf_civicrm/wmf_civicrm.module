@@ -4453,10 +4453,10 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'date_format' => 'M d, yy',
       'time_format' => 2,
     ],
-    'first_donation_date' => [
-      'name' => 'first_donation_date',
-      'column_name' => 'first_donation_date',
-      'label' => ts('First donation date'),
+    'endowment_last_donation_date' => [
+      'name' => 'endowment_last_donation_date',
+      'column_name' => 'endowment_last_donation_date',
+      'label' => ts('Endowment Last donation date'),
       'data_type' => 'Date',
       'html_type' => 'Select Date',
       'is_active' => 1,
@@ -4466,6 +4466,34 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'date_format' => 'M d, yy',
       'time_format' => 2,
     ],
+    'first_donation_date' => [
+      'name' => 'first_donation_date',
+      'column_name' => 'first_donation_date',
+      'label' => ts('First donation date (Incl Endowments)'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'date_format' => 'M d, yy',
+      'time_format' => 2,
+    ],
+    'endowment_first_donation_date' => [
+      'name' => 'endowment_first_donation_date',
+      'column_name' => 'endowment_first_donation_date',
+      'label' => ts('Endowment First donation date'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'date_format' => 'M d, yy',
+      'time_format' => 2,
+    ],
+    // Per https://phabricator.wikimedia.org/T222958#5323233
+    // This is used in emails - and needs to not mix endowments & non-endowments
     'last_donation_currency' => [
       'name' => 'last_donation_currency',
       'column_name' => 'last_donation_currency',
@@ -4485,17 +4513,19 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'is_active' => 1,
       'is_searchable' => 1,
       'is_search_range' => 1,
+      'default_value' => 0,
       'is_view' => 1,
     ],
-    'first_donation_usd' => [
+   'first_donation_usd' => [
       'name' => 'first_donation_usd',
       'column_name' => 'first_donation_usd',
-      'label' => ts('First Donation Amount (USD)'),
+      'label' => ts('First Donation Amount (USD) (Incl Endowments)'),
       'data_type' => 'Money',
       'html_type' => 'Text',
       'is_active' => 1,
       'is_searchable' => 1,
       'is_search_range' => 1,
+      'default_value' => 0,
       'is_view' => 1,
     ],
     'last_donation_usd' => [
@@ -4507,6 +4537,7 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'is_active' => 1,
       'is_searchable' => 1,
       'is_search_range' => 1,
+      'default_value' => 0,
       'is_view' => 1,
     ],
     'lifetime_usd_total' => [
@@ -4518,12 +4549,37 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'is_active' => 1,
       'is_searchable' => 1,
       'is_search_range' => 1,
+      'default_value' => 0,
+      'is_view' => 1,
+    ],
+    'lifetime_including_endowment' => [
+      'name' => 'lifetime_including_endowment',
+      'column_name' => 'lifetime_including_endowment',
+      'label' => ts('Lifetime Donations (USD) (Incl Endowments)'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'default_value' => 0,
+      'is_view' => 1,
+    ],
+    'endowment_lifetime_usd_total' => [
+      'name' => 'endowment_lifetime_usd_total',
+      'column_name' => 'endowment_lifetime_usd_total',
+      'label' => ts('Endowment Lifetime Donations (USD)'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'default_value' => 0,
       'is_view' => 1,
     ],
     'number_donations' => [
       'name' => 'number_donations',
       'column_name' => 'number_donations',
-      'label' => ts('Number of Donations'),
+      'label' => ts('Number of Donations (Incl Endowments)'),
       'data_type' => 'Int',
       'html_type' => 'Text',
       'is_active' => 1,
@@ -4531,6 +4587,55 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'is_search_range' => 1,
       'is_view' => 1,
       'default_value' => 0,
+    ],
+    'endowment_number_donations' => [
+      'name' => 'endowment_number_donations',
+      'column_name' => 'endowment_number_donations',
+      'label' => ts('Endowment Number of Donations'),
+      'data_type' => 'Int',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'default_value' => 0,
+    ],
+    'largest_donation' => [
+      'name' => 'largest_donation',
+      'column_name' => 'largest_donation',
+      'label' => ts('Largest Donation (incl Endowment)'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'default_value' => 0,
+    ],
+    'endowment_largest_donation' => [
+      'name' => 'endowment_largest_donation',
+      'column_name' => 'endowment_largest_donation',
+      'label' => ts('Endowment Largest Donation'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'default_value' => 0,
+    ],
+    'date_of_largest_donation' => [
+      'name' => 'date_of_largest_donation',
+      'column_name' => 'date_of_largest_donation',
+      'label' => ts('Date of Largest Donation (incl Endowment)'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'date_format' => 'M d, yy',
+      'time_format' => 2,
     ],
   ];
 
@@ -4565,6 +4670,31 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'weight' => $weight,
       'is_search_range' => 1,
     ];
+    if ($year >= 2017) {
+      $fields["endowment_total_{$year}"]  = array_merge(
+        $fields["total_{$year}"],
+        ['name' => "endowment_total_{$year}",'column_name' => "endowment_total_{$year}", 'label'  => 'Endowment ' . ts("CY {$year} total")]
+      );
+      $fields["endowment_total_{$year}_{$nextYear}"]  = array_merge(
+        $fields["total_{$year}_{$nextYear}"],
+        ['name' => "endowment_total_{$year}_{$nextYear}",'column_name' => "endowment_total_{$year}_{$nextYear}", 'label'  => 'Endowment ' . ts("FY {$year}-{$nextYear} total")]
+      );
+      $fields["change_{$year}_{$nextYear}"] = [
+        'name' => "change_{$year}_{$nextYear}",
+        'column_name' => "change_{$year}_{$nextYear}",
+        'label' => ts("Change {$year}-{$nextYear} total"),
+        'data_type' => 'Float',
+        'html_type' => 'Text',
+        'default_value' => 0,
+        'is_active' => 1,
+        'is_required' => 0,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'weight' => $weight,
+        'is_search_range' => 1,
+      ];
+    }
   }
+
   return $fields;
 }
