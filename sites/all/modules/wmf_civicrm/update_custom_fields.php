@@ -513,6 +513,28 @@ function _wmf_civicrm_get_prospect_fields() {
       'note_columns' => 60,
       'note_rows' => 4,
     ],
+    'PG_Stage' => [
+      'name' => 'PG_Stage',
+      'label' => 'PG Stage',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'is_searchable' => 1,
+      'option_values' => [
+        '1' => 'Cultivation',
+        '2' => "Cont'd Cultivation",
+      ],
+    ],
+    'Survey_Responses' => [
+      'name' => 'Survey_Responses',
+      'label' => 'Survey Responses',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'help_pre' => 'Data field to store any MGF survey related data for future reference.  Please date appropriately and do not overwrite previous responses.',
+    ],
   ];
 }
 
