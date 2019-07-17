@@ -552,6 +552,17 @@ function _wmf_civicrm_get_communication_fields() {
       'is_active' => 1,
       'is_searchable' => 0,
     ],
+    'do_not_solicit' => [
+      'name' => 'do_not_solicit',
+      'column_name' => 'do_not_solicit',
+      'label' => ts('Do not solicit'),
+      'data_type' => 'Boolean',
+      'html_type' => 'Radio',
+      'is_active' => 1,
+      'is_required' => 1,
+      'is_searchable' => 1,
+      'default_value' => 0,
+    ],
     'Employer_Name' => [
       'name' => 'Employer_Name',
       'label' => ts('Employer Name'),
