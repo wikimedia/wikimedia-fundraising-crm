@@ -4238,14 +4238,13 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     }
 
     $sql = "
-    INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, first_donation_amount, last_donation_usd,
+    INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
     first_donation_usd, lifetime_usd_total, last_donation_date, first_donation_date, number_donations," . implode(',', $fields) . ")
 
     SELECT
       NEW.contact_id as entity_id,
       COALESCE(x.original_currency, latest.currency) as last_donation_currency,
       COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
-      COALESCE(earliest_x.original_amount, earliest.total_amount, 0) as first_donation_amount,
       COALESCE(latest.total_amount, 0) as last_donation_usd,
       COALESCE(earliest.total_amount, 0) as first_donation_usd,
       totals.*
@@ -4276,13 +4275,11 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
     AND earliest.financial_type_id <> $endowmentFinancialType
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
-  LEFT JOIN wmf_contribution_extra earliest_x ON earliest_x.entity_id = earliest.id
   LIMIT 1
 
   ON DUPLICATE KEY UPDATE
     last_donation_currency = VALUES(last_donation_currency),
     last_donation_amount = VALUES(last_donation_amount),
-    first_donation_amount = VALUES(first_donation_amount),
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     lifetime_usd_total = VALUES(lifetime_usd_total),
@@ -4483,17 +4480,6 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'name' => 'last_donation_amount',
       'column_name' => 'last_donation_amount',
       'label' => ts('Last Donation Amount (Original Currency)'),
-      'data_type' => 'Money',
-      'html_type' => 'Text',
-      'is_active' => 1,
-      'is_searchable' => 1,
-      'is_search_range' => 1,
-      'is_view' => 1,
-    ],
-    'first_donation_amount' => [
-      'name' => 'first_donation_amount',
-      'column_name' => 'first_donation_amount',
-      'label' => ts('First Donation Amount (Original Currency)'),
       'data_type' => 'Money',
       'html_type' => 'Text',
       'is_active' => 1,
