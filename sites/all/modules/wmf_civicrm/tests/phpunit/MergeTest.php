@@ -48,10 +48,15 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that the merge hook causes our custom fields to not be treated as conflicts.
    *
    * We also need to check the custom data fields afterwards.
+   *
+   * @param bool $isReverse
+   *   Should we reverse the contact order for more test cover.
+   *
+   * @dataProvider isReverse
    */
-  public function testMergeHook() {
+  public function testMergeHook($isReverse) {
     $this->callAPISuccess('Contribution', 'create', array(
-      'contact_id' => $this->contactID,
+      'contact_id' => $isReverse ? $this->contactID2 : $this->contactID,
       'financial_type_id' => 'Cash',
       'total_amount' => 10,
       'currency' => 'USD',
@@ -61,7 +66,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       wmf_civicrm_get_custom_field_name('original_amount') => 8,
     ));
     $this->callAPISuccess('Contribution', 'create', array(
-      'contact_id' => $this->contactID2,
+      'contact_id' => $isReverse ? $this->contactID : $this->contactID2,
       'financial_type_id' => 'Cash',
       'total_amount' => 5,
       'currency' => 'USD',
@@ -69,7 +74,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'receive_date' => '2013-01-04',
     ));
     $this->callAPISuccess('Contribution', 'create', array(
-      'contact_id' => $this->contactID2,
+      'contact_id' => $isReverse ? $this->contactID : $this->contactID2,
       'financial_type_id' => 'Cash',
       'total_amount' => 9,
       'currency' => 'USD',
@@ -78,7 +83,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'receive_date' => '2016-04-04',
     ));
     $contact = $this->callAPISuccess('Contact', 'get', array(
-      'id' => $this->contactID,
+      'id' => $isReverse ? $this->contactID2 : $this->contactID,
       'sequential' => 1,
       'return' => array(wmf_civicrm_get_custom_field_name('lifetime_usd_total'), wmf_civicrm_get_custom_field_name('do_not_solicit')),
     ));
@@ -94,7 +99,9 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'last_donation_currency' => 'NZD',
       'last_donation_usd' => 9,
       'last_donation_date' => '2016-04-04',
+      'first_donation_usd' => 5,
       'first_donation_date' => '2013-01-04 00:00:00',
+      'date_of_largest_donation' => '2014-08-04 00:00:00',
       'number_donations' => 3,
       'total_2011' => 0,
       'total_2012' => 0,
@@ -128,6 +135,18 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'return' => array(wmf_civicrm_get_custom_field_name('lifetime_usd_total'), wmf_civicrm_get_custom_field_name('do_not_solicit')),
     ));
     $this->assertEquals(1, $contact['values'][0][wmf_civicrm_get_custom_field_name('do_not_solicit')]);
+  }
+
+  /**
+   * Data provider for merge hook to do both ways around.
+   *
+   * @return array
+   */
+  public function isReverse() {
+    return [
+      [FALSE],
+      [TRUE],
+    ];
   }
 
   /**
