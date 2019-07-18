@@ -262,6 +262,19 @@ function wmf_civicrm_contribution_message_import(&$msg) {
     $msg['soft_credit_to_id'] = $soft_credit_contact['id'];
   }
 
+  // Set no_thank_you to recurring if its the 2nd+ of any recurring payments
+  if (!$initial_recurring && $msg['contribution_recur_id']) {
+    //check for previous recurring payments
+    $recurring_check = civicrm_api3('Contribution', 'getcount', [
+      'contribution_recur_id' => $msg['contribution_recur_id'],
+    ]);
+
+    //If there's at least 1, set no_thank_you to recurring
+    if ($recurring_check >= 1) {
+      $msg['no_thank_you'] = 'recurring';
+    }
+  }
+
   // Insert the contribution record.
   $contribution = _wmf_civicrm_message_contribution_insert($msg);
 
@@ -4208,61 +4221,109 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   if (!$tableName || $tableName === 'civicrm_contribution') {
     $fields = [];
 
-    for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
-      $nextYear = $year +1;
-      $fields[] = "total_{$year}_{$nextYear}";
-      $fieldSelects[] = "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as total_{$year}_{$nextYear}";
-      $updates[] = "total_{$year}_{$nextYear} = VALUES(total_{$year}_{$nextYear})";
-
-      // @todo Adding these short term. These fields will be removed medium term.
-      $fields[] = "is_{$year}_donor";
-      $fieldSelects[] = "MAX(IF(total_amount > 0 AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', 1, 0)) as is_{$year}_donor";
-      $updates[] = "is_{$year}_donor = VALUES(is_{$year}_donor)";
-      // end of short term 'is' fields.
-    }
-
     $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
     if (!$endowmentFinancialType) {
       throw new CRM_Core_Exception('No endowment gift type');
     }
+    for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
+      $nextYear = $year +1;
+      $fields[] = "total_{$year}_{$nextYear}";
+      $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as total_{$year}_{$nextYear}";
+      $updates[] = "total_{$year}_{$nextYear} = VALUES(total_{$year}_{$nextYear})";
 
-    $sql = "
-    INSERT INTO wmf_donor (entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-    lifetime_usd_total, last_donation_date, " . implode(',', $fields) . ")
+      $fields[] = "total_{$year}";
+      $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as total_{$year}";
+      $updates[] = "total_{$year} = VALUES(total_{$year})";
+
+      if ($year >= 2017) {
+        if ($year >= 2018) {
+          $fields[] = "endowment_total_{$year}_{$nextYear}";
+          $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}";
+          $updates[] = "endowment_total_{$year}_{$nextYear} = VALUES(endowment_total_{$year}_{$nextYear})";
+
+          $fields[] = "endowment_total_{$year}";
+          $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}";
+          $updates[] = "endowment_total_{$year} = VALUES(endowment_total_{$year})";
+        }
+
+        $fields[] = "change_{$year}_{$nextYear}";
+        $fieldSelects[] = "
+          SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
+           as change_{$year}_{$nextYear}";
+        $updates[] = "change_{$year}_{$nextYear} = VALUES(change_{$year}_{$nextYear})";
+      }
+    }
+
+    $sql = '
+    INSERT INTO wmf_donor (
+      entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
+      first_donation_usd, largest_donation,
+      endowment_largest_donation, lifetime_including_endowment,
+      lifetime_usd_total, endowment_lifetime_usd_total,
+      last_donation_date, endowment_last_donation_date, first_donation_date,
+      endowment_first_donation_date, number_donations,
+      endowment_number_donations, ' . implode(', ', $fields) . "
+    )
 
     SELECT
       NEW.contact_id as entity_id,
-      COALESCE(x.original_currency, currency) as last_donation_currency,
-      COALESCE(x.original_amount, total_amount, 0) as last_donation_amount,
-      COALESCE(total_amount, 0) as last_donation_usd,
+      COALESCE(x.original_currency, latest.currency) as last_donation_currency,
+      COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
+      COALESCE(latest.total_amount, 0) as last_donation_usd,
+      COALESCE(earliest.total_amount, 0) as first_donation_usd,
       totals.*
 
     FROM (
       SELECT
-        SUM(COALESCE(total_amount, 0)) AS lifetime_usd_total,
-        MAX(IF(total_amount > 0, receive_date, NULL)) AS last_donation_date,
+        MAX(IF(financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS largest_donation,
+        MAX(IF(financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation,
+        SUM(COALESCE(total_amount, 0)) AS lifetime_including_endowment,
+        SUM(IF(financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS lifetime_usd_total,
+        SUM(IF(financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_lifetime_usd_total,
+        MAX(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS last_donation_date,
+        MAX(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_last_donation_date,
+        MIN(IF(financial_type_id <> $endowmentFinancialType AND total_amount, receive_date, NULL)) AS first_donation_date,
+        MIN(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_first_donation_date,
+        COUNT(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS number_donations,
+        COUNT(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_number_donations,
      " . implode(',', $fieldSelects) . "
       FROM civicrm_contribution c
       USE INDEX(FK_civicrm_contribution_contact_id)
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
-        AND financial_type_id <> $endowmentFinancialType
     ) as totals
-  LEFT JOIN civicrm_contribution cont ON cont.contact_id = NEW.contact_id
-  AND receive_date = totals.last_donation_date
-  AND contribution_status_id = 1
-  AND total_amount > 0
-  AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
-  AND financial_type_id <> $endowmentFinancialType
-  LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
+  LEFT JOIN civicrm_contribution latest ON latest.contact_id = NEW.contact_id
+    AND latest.receive_date = totals.last_donation_date
+    AND latest.contribution_status_id = 1
+    AND latest.total_amount > 0
+    AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
+    AND latest.financial_type_id <> $endowmentFinancialType
+  LEFT JOIN civicrm_contribution earliest ON earliest.contact_id = NEW.contact_id
+    AND earliest.receive_date = totals.first_donation_date
+    AND earliest.contribution_status_id = 1
+    AND earliest.total_amount > 0
+    AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
+    AND earliest.financial_type_id <> $endowmentFinancialType
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
   LIMIT 1
 
   ON DUPLICATE KEY UPDATE
     last_donation_currency = VALUES(last_donation_currency),
     last_donation_amount = VALUES(last_donation_amount),
     last_donation_usd = VALUES(last_donation_usd),
+    first_donation_usd = VALUES(first_donation_usd),
+    largest_donation = VALUES(largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
+    first_donation_date = VALUES(first_donation_date),
+    number_donations = VALUES(number_donations),
+    endowment_largest_donation = VALUES(endowment_largest_donation),
+    lifetime_including_endowment = VALUES(lifetime_including_endowment),
+    endowment_lifetime_usd_total = VALUES(endowment_lifetime_usd_total),
+    endowment_last_donation_date = VALUES(endowment_last_donation_date),
+    endowment_first_donation_date = VALUES(endowment_first_donation_date),
+    endowment_number_donations = VALUES(endowment_number_donations),
     " . implode(',', $updates) . ";";
 
     $significantFields = ['contribution_status_id', 'total_amount', 'contact_id', 'receive_date', 'currency'];
@@ -4271,7 +4332,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       $updateConditions[] = "(NEW.{$significantField} != OLD.{$significantField})";
     }
 
-    $requiredClauses = ['(NEW.financial_type_id <> ' . $endowmentFinancialType . ')'];
+    $requiredClauses = [1];
     $anonymousContact = civicrm_api3('Contact', 'get', [
       'first_name' => 'Anonymous',
       'last_name' => 'Anonymous',
@@ -4430,6 +4491,47 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'date_format' => 'M d, yy',
       'time_format' => 2,
     ],
+    'endowment_last_donation_date' => [
+      'name' => 'endowment_last_donation_date',
+      'column_name' => 'endowment_last_donation_date',
+      'label' => ts('Endowment Last donation date'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'date_format' => 'M d, yy',
+      'time_format' => 2,
+    ],
+    'first_donation_date' => [
+      'name' => 'first_donation_date',
+      'column_name' => 'first_donation_date',
+      'label' => ts('First donation date'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'date_format' => 'M d, yy',
+      'time_format' => 2,
+    ],
+    'endowment_first_donation_date' => [
+      'name' => 'endowment_first_donation_date',
+      'column_name' => 'endowment_first_donation_date',
+      'label' => ts('Endowment First donation date'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'date_format' => 'M d, yy',
+      'time_format' => 2,
+    ],
+    // Per https://phabricator.wikimedia.org/T222958#5323233
+    // This is used in emails - and needs to not mix endowments & non-endowments
     'last_donation_currency' => [
       'name' => 'last_donation_currency',
       'column_name' => 'last_donation_currency',
@@ -4443,12 +4545,25 @@ function _wmf_civicrm_get_wmf_donor_fields() {
     'last_donation_amount' => [
       'name' => 'last_donation_amount',
       'column_name' => 'last_donation_amount',
-      'label' => ts('Last Donation Amount (unconverted)'),
+      'label' => ts('Last Donation Amount (Original Currency)'),
       'data_type' => 'Money',
       'html_type' => 'Text',
       'is_active' => 1,
       'is_searchable' => 1,
       'is_search_range' => 1,
+      'default_value' => 0,
+      'is_view' => 1,
+    ],
+   'first_donation_usd' => [
+      'name' => 'first_donation_usd',
+      'column_name' => 'first_donation_usd',
+      'label' => ts('First Donation Amount (USD)'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'default_value' => 0,
       'is_view' => 1,
     ],
     'last_donation_usd' => [
@@ -4460,6 +4575,7 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'is_active' => 1,
       'is_searchable' => 1,
       'is_search_range' => 1,
+      'default_value' => 0,
       'is_view' => 1,
     ],
     'lifetime_usd_total' => [
@@ -4471,7 +4587,93 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'is_active' => 1,
       'is_searchable' => 1,
       'is_search_range' => 1,
+      'default_value' => 0,
       'is_view' => 1,
+    ],
+    'lifetime_including_endowment' => [
+      'name' => 'lifetime_including_endowment',
+      'column_name' => 'lifetime_including_endowment',
+      'label' => ts('Lifetime Donations (USD) (Incl Endowments)'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'default_value' => 0,
+      'is_view' => 1,
+    ],
+    'endowment_lifetime_usd_total' => [
+      'name' => 'endowment_lifetime_usd_total',
+      'column_name' => 'endowment_lifetime_usd_total',
+      'label' => ts('Endowment Lifetime Donations (USD)'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'default_value' => 0,
+      'is_view' => 1,
+    ],
+    'number_donations' => [
+      'name' => 'number_donations',
+      'column_name' => 'number_donations',
+      'label' => ts('Number of Donations'),
+      'data_type' => 'Int',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'default_value' => 0,
+    ],
+    'endowment_number_donations' => [
+      'name' => 'endowment_number_donations',
+      'column_name' => 'endowment_number_donations',
+      'label' => ts('Endowment Number of Donations'),
+      'data_type' => 'Int',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'default_value' => 0,
+    ],
+    'largest_donation' => [
+      'name' => 'largest_donation',
+      'column_name' => 'largest_donation',
+      'label' => ts('Largest Donation'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'default_value' => 0,
+    ],
+    'endowment_largest_donation' => [
+      'name' => 'endowment_largest_donation',
+      'column_name' => 'endowment_largest_donation',
+      'label' => ts('Endowment Largest Donation'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'default_value' => 0,
+    ],
+    'date_of_largest_donation' => [
+      'name' => 'date_of_largest_donation',
+      'column_name' => 'date_of_largest_donation',
+      'label' => ts('Date of Largest Donation'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'date_format' => 'M d, yy',
+      'time_format' => 2,
     ],
   ];
 
@@ -4492,18 +4694,47 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'weight' => $weight,
       'is_search_range' => 1,
     ];
-    $fields["is_{$year}_donor"] = [
-      'name' => "is_{$year}_donor",
-      'column_name' => "is_{$year}_donor",
-      'label' => ts("Is FY {$year}-{$nextYear} donor"),
-      'data_type' => 'Boolean',
-      'html_type' => 'Radio',
+    $fields["total_{$year}"] = [
+      'name' => "total_{$year}",
+      'column_name' => "total_{$year}",
+      'label' => ts("CY {$year} total"),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
       'default_value' => 0,
       'is_active' => 1,
       'is_required' => 0,
       'is_searchable' => 1,
       'is_view' => 1,
+      'weight' => $weight,
+      'is_search_range' => 1,
     ];
+    if ($year >= 2017) {
+      if ($year >= 2018) {
+        $fields["endowment_total_{$year}"] = array_merge(
+          $fields["total_{$year}"],
+          ['name' => "endowment_total_{$year}", 'column_name' => "endowment_total_{$year}", 'label' => 'Endowment ' . ts("CY {$year} total")]
+        );
+        $fields["endowment_total_{$year}_{$nextYear}"] = array_merge(
+          $fields["total_{$year}_{$nextYear}"],
+          ['name' => "endowment_total_{$year}_{$nextYear}", 'column_name' => "endowment_total_{$year}_{$nextYear}", 'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total")]
+        );
+      }
+      $fields["change_{$year}_{$nextYear}"] = [
+        'name' => "change_{$year}_{$nextYear}",
+        'column_name' => "change_{$year}_{$nextYear}",
+        'label' => ts("Change {$year}-{$nextYear} total"),
+        'data_type' => 'Float',
+        'html_type' => 'Text',
+        'default_value' => 0,
+        'is_active' => 1,
+        'is_required' => 0,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'weight' => $weight,
+        'is_search_range' => 1,
+      ];
+    }
   }
+
   return $fields;
 }

@@ -513,6 +513,28 @@ function _wmf_civicrm_get_prospect_fields() {
       'note_columns' => 60,
       'note_rows' => 4,
     ],
+    'PG_Stage' => [
+      'name' => 'PG_Stage',
+      'label' => 'PG Stage',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'is_searchable' => 1,
+      'option_values' => [
+        '1' => 'Cultivation',
+        '2' => "Cont'd Cultivation",
+      ],
+    ],
+    'Survey_Responses' => [
+      'name' => 'Survey_Responses',
+      'label' => 'Survey Responses',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'help_pre' => 'Data field to store any MGF survey related data for future reference.  Please date appropriately and do not overwrite previous responses.',
+    ],
   ];
 }
 
@@ -552,6 +574,17 @@ function _wmf_civicrm_get_communication_fields() {
       'is_active' => 1,
       'is_searchable' => 0,
     ],
+    'do_not_solicit' => [
+      'name' => 'do_not_solicit',
+      'column_name' => 'do_not_solicit',
+      'label' => ts('Do not solicit'),
+      'data_type' => 'Boolean',
+      'html_type' => 'Radio',
+      'is_active' => 1,
+      'is_required' => 1,
+      'is_searchable' => 1,
+      'default_value' => 0,
+    ],
     'Employer_Name' => [
       'name' => 'Employer_Name',
       'label' => ts('Employer Name'),
@@ -585,5 +618,18 @@ function _wmf_civicrm_get_communication_fields() {
       'is_searchable' => 1,
     ],
   ];
+}
 
+/**
+ * Get the legacy wmf donor fields we want to remove.
+ *
+ * @return array
+ */
+function _wmf_civicrm_get_wmf_donor_fields_to_remove() {
+  $fields = [];
+  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
+    $fields["is_{$year}_donor"] = "is_{$year}_donor";
+  }
+  $fields['do_not_solicit_old'] = 'do_not_solicit_old';
+  return $fields;
 }
