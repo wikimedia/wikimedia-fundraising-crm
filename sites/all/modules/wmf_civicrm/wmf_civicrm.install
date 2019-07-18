@@ -4726,4 +4726,5 @@ function wmf_civicrm_update_7895() {
     ALTER COLUMN last_donation_usd SET DEFAULT 0,
     ALTER COLUMN last_donation_amount SET DEFAULT 0
   ');
+
 }
