@@ -4258,8 +4258,8 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     $sql = '
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd, largest_donation,
-      endowment_largest_donation, lifetime_including_endowment,
+      first_donation_usd, date_of_largest_donation,
+      largest_donation, endowment_largest_donation, lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
       last_donation_date, endowment_last_donation_date, first_donation_date,
       endowment_first_donation_date, number_donations,
@@ -4267,11 +4267,15 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     )
 
     SELECT
+      # note that all totals are calculated in the totals subquery and only join values
+      # in the main query. This is important as the left joins could catch more than one donation at 
+      # exactly the same time or more than one max donation amount & throw out the totals.
       NEW.contact_id as entity_id,
       COALESCE(x.original_currency, latest.currency) as last_donation_currency,
       COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
       COALESCE(latest.total_amount, 0) as last_donation_usd,
       COALESCE(earliest.total_amount, 0) as first_donation_usd,
+      largest.receive_date as date_of_largest_donation,
       totals.*
 
     FROM (
@@ -4293,19 +4297,32 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
     ) as totals
-  LEFT JOIN civicrm_contribution latest ON latest.contact_id = NEW.contact_id
+  LEFT JOIN civicrm_contribution latest 
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON latest.contact_id = NEW.contact_id
     AND latest.receive_date = totals.last_donation_date
     AND latest.contribution_status_id = 1
     AND latest.total_amount > 0
     AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
     AND latest.financial_type_id <> $endowmentFinancialType
-  LEFT JOIN civicrm_contribution earliest ON earliest.contact_id = NEW.contact_id
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
+  
+  LEFT JOIN civicrm_contribution earliest 
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON earliest.contact_id = NEW.contact_id
     AND earliest.receive_date = totals.first_donation_date
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-    AND earliest.financial_type_id <> $endowmentFinancialType
-  LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
+    
+  LEFT JOIN civicrm_contribution largest 
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON largest.contact_id = NEW.contact_id
+    AND largest.total_amount = totals.largest_donation
+    AND largest.contribution_status_id = 1
+    AND largest.total_amount > 0
+    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
+  ORDER BY largest.receive_date DESC
   LIMIT 1
 
   ON DUPLICATE KEY UPDATE
@@ -4314,6 +4331,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     largest_donation = VALUES(largest_donation),
+    date_of_largest_donation = VALUES(date_of_largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),
