@@ -4236,13 +4236,15 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       $updates[] = "total_{$year} = VALUES(total_{$year})";
 
       if ($year >= 2017) {
-        $fields[] = "endowment_total_{$year}_{$nextYear}";
-        $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}";
-        $updates[] = "endowment_total_{$year}_{$nextYear} = VALUES(endowment_total_{$year}_{$nextYear})";
+        if ($year >= 2018) {
+          $fields[] = "endowment_total_{$year}_{$nextYear}";
+          $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}";
+          $updates[] = "endowment_total_{$year}_{$nextYear} = VALUES(endowment_total_{$year}_{$nextYear})";
 
-        $fields[] = "endowment_total_{$year}";
-        $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}";
-        $updates[] = "endowment_total_{$year} = VALUES(endowment_total_{$year})";
+          $fields[] = "endowment_total_{$year}";
+          $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}";
+          $updates[] = "endowment_total_{$year} = VALUES(endowment_total_{$year})";
+        }
 
         $fields[] = "change_{$year}_{$nextYear}";
         $fieldSelects[] = "
@@ -4707,14 +4709,16 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'is_search_range' => 1,
     ];
     if ($year >= 2017) {
-      $fields["endowment_total_{$year}"]  = array_merge(
-        $fields["total_{$year}"],
-        ['name' => "endowment_total_{$year}",'column_name' => "endowment_total_{$year}", 'label'  => 'Endowment ' . ts("CY {$year} total")]
-      );
-      $fields["endowment_total_{$year}_{$nextYear}"]  = array_merge(
-        $fields["total_{$year}_{$nextYear}"],
-        ['name' => "endowment_total_{$year}_{$nextYear}",'column_name' => "endowment_total_{$year}_{$nextYear}", 'label'  => 'Endowment ' . ts("FY {$year}-{$nextYear} total")]
-      );
+      if ($year >= 2018) {
+        $fields["endowment_total_{$year}"] = array_merge(
+          $fields["total_{$year}"],
+          ['name' => "endowment_total_{$year}", 'column_name' => "endowment_total_{$year}", 'label' => 'Endowment ' . ts("CY {$year} total")]
+        );
+        $fields["endowment_total_{$year}_{$nextYear}"] = array_merge(
+          $fields["total_{$year}_{$nextYear}"],
+          ['name' => "endowment_total_{$year}_{$nextYear}", 'column_name' => "endowment_total_{$year}_{$nextYear}", 'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total")]
+        );
+      }
       $fields["change_{$year}_{$nextYear}"] = [
         'name' => "change_{$year}_{$nextYear}",
         'column_name' => "change_{$year}_{$nextYear}",

@@ -4678,6 +4678,7 @@ function wmf_civicrm_update_7885() {
       $alters[] = 'DROP COLUMN ' . $field;
     }
   }
+
   if (!empty($alters)) {
     CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor ' . implode(',',  $alters));
   }
