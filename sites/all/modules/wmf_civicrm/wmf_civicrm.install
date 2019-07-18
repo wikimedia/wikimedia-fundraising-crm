@@ -4660,20 +4660,6 @@ function wmf_civicrm_update_7875() {
 }
 
 /**
- * Add new calculated fields.
- *
- * Bug: T170972
- * Bug: T222958
- *
- * @throws \CiviCRM_API3_Exception
-*/
-function wmf_civicrm_update_7880() {
-  require_once 'update_custom_fields.php';
-  _wmf_civicrm_update_custom_fields();
-
-}
-
-/**
  * Remove old calculated fields.
  *
  * Bug: T170972
@@ -4696,6 +4682,20 @@ function wmf_civicrm_update_7885() {
     CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor ' . implode(',',  $alters));
   }
   civicrm_api3('System', 'flush', ['triggers' => 0, 'session' => 0]);
+}
+
+/**
+ * Add new calculated fields.
+ *
+ * Bug: T170972
+ * Bug: T222958
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_7886() {
+  require_once 'update_custom_fields.php';
+  _wmf_civicrm_update_custom_fields();
+
 }
 
 /**
