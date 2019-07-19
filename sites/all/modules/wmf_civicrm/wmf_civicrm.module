@@ -4298,7 +4298,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
     ) as totals
-  LEFT JOIN civicrm_contribution latest 
+  LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON latest.contact_id = NEW.contact_id
     AND latest.receive_date = totals.last_donation_date
@@ -4307,16 +4307,16 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
     AND latest.financial_type_id <> $endowmentFinancialType
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
-  
-  LEFT JOIN civicrm_contribution earliest 
+
+  LEFT JOIN civicrm_contribution earliest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON earliest.contact_id = NEW.contact_id
     AND earliest.receive_date = totals.first_donation_date
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-    
-  LEFT JOIN civicrm_contribution largest 
+
+  LEFT JOIN civicrm_contribution largest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON largest.contact_id = NEW.contact_id
     AND largest.total_amount = totals.largest_donation
