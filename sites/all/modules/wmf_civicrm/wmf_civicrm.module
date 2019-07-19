@@ -2475,6 +2475,15 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
         ),
       ));
       if (isset($refs['fields_in_conflict'])) {
+        if (array_key_exists('move_' . wmf_civicrm_get_custom_field_name('do_not_solicit'), $refs['fields_in_conflict'])
+        ) {
+          $keyString = 'move_' . wmf_civicrm_get_custom_field_name('do_not_solicit');
+          // At least one contact has a 1 for do_not_solicit, YES wins.
+          $refs['migration_info'][$keyString] = 1;
+          $refs['migration_info']['rows'][$keyString]['other'] = ts('Yes');
+          unset($refs['fields_in_conflict'][$keyString]);
+        }
+
         $wmfCalculatedFields = wmf_civicrm_get_calculated_fields();
 
         $overwriteLatestContributionFields = FALSE;
@@ -2494,14 +2503,7 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
 
         foreach ($wmfCalculatedFields as $wmfCalculatedField) {
           $keyString = 'move_' . $wmfCalculatedField;
-          if ($wmfCalculatedField == wmf_civicrm_get_custom_field_name('do_not_solicit') &&
-            array_key_exists($keyString, $refs['fields_in_conflict'])
-          ) {
-            // At least one contact has a 1 for do_not_solicit, YES wins.
-            $refs['migration_info']['move_' . wmf_civicrm_get_custom_field_name('do_not_solicit')] = 1;
-            $refs['migration_info']['rows']['move_' . wmf_civicrm_get_custom_field_name('do_not_solicit')]['other'] = ts('Yes');
-          }
-          elseif ($overwriteLatestContributionFields && in_array($wmfCalculatedField, $latestDonationFields)
+          if ($overwriteLatestContributionFields && in_array($wmfCalculatedField, $latestDonationFields)
             && isset($refs['migration_info']['rows']['move_' . $wmfCalculatedField])) {
             $refs['migration_info']['move_' . $wmfCalculatedField] = $refs['migration_info']['rows']['move_' . $wmfCalculatedField]['other'];
           }
@@ -3297,7 +3299,6 @@ function _wmf_civicrm_add_result_fields_to_migration_info($migrationInfo, $resul
  */
 function wmf_civicrm_get_calculated_fields() {
   $fieldNames = wmf_get_calculated_field_names();
-  $fieldNames[] = 'do_not_solicit';
   $customFields = array();
   foreach ($fieldNames as $fieldName) {
     $customFields[] = wmf_civicrm_get_custom_field_name($fieldName);
