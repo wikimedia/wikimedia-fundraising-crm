@@ -4729,3 +4729,27 @@ function wmf_civicrm_update_7895() {
   ');
 
 }
+
+/**
+ * Update contacts with no completed contributions to have 0 for lifetime donations.
+ *
+ * The drush script to update the new fields looks for a non-zero value here & updates but
+ * the calculation in the drush script is not updating the largest donation to be > 0 & the way
+ * the script runs it is getting 'stuck' on ~300 with lifetime_usd_total > 0 despite having no
+ * contributions or them all being refunded.
+ *
+ * I feel like a bigger dig doesn't feel warranted in terms of effort here.
+ *
+ * Bug: T222958
+ *
+ */
+function wmf_civicrm_update_7900() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('
+    UPDATE wmf_donor
+    LEFT JOIN civicrm_contribution c ON c.contact_id = wmf_donor.entity_id AND contribution_status_id = 1
+    SET lifetime_usd_total = 0
+    WHERE lifetime_usd_total > 0 AND largest_donation = 0 AND c.id IS NULL
+  ');
+
+}
