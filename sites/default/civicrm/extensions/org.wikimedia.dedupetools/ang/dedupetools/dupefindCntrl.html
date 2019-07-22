@@ -54,17 +54,18 @@
     current-page="currentPage"
   >
     <div class="row" ng-show="!deduperCntrl.showTiles">
-      <div class='col-md-2'>{{mergePair['dstName']}}</div>
       <div class='col-md-2'>{{mergePair['srcName']}}</div>
+      <div class='col-md-2'>{{mergePair['dstName']}}</div>
       <div><a target="_blank" class="btn btn-link btn-sml" href="{{mergeURL}}&cid={{mergePair['dstID']}}&oid={{mergePair['srcID']}}">{{ ts('Manual Merge') }}</a></div>
     </div>
 
     <div class='panel panel-default' ng-show="deduperCntrl.showTiles">
-      <div class="panel-heading">{{mergePair['dstName']}} vs {{mergePair['srcName']}}</div>
+      <div class="panel-heading">{{mergePair['srcName']}} vs {{mergePair['dstName']}}</div>
       <div class='panel-body' ng-show="deduperCntrl.showTiles">
-        <div class='col-md-4'  contact-basic="{contact_id: mergePair['dstID'], display_name : mergePair['dstName'], 'contact_url' : contactURL}"></div>
+        <div class='col-md-4' contact-basic="{contact_id: mergePair['srcID'], display_name : mergePair['srcName'], 'contact_url' : contactURL}"></div>
+
         <div class='col-md-4'>
-          <div conflict-basic="{conflicts: mergePair['conflicts'], main_id : mergePair['dstID'], other_id : mergePair['srcID'], other_display_name : mergePair['srcName'],  main_display_name : mergePair['dstName'], fieldSpec : contactFields}">
+          <div conflict-basic="{conflicts: mergePair['conflicts'], main_id : mergePair['srcID'], other_id : mergePair['dstID'], other_display_name : mergePair['dstName'],  main_display_name : mergePair['srcName'], fieldSpec : contactFields}">
           </div>
           <button class="btn btn-success btn-block" id="retry-merge" ng-disabled=isRowMerging ng-click="retryMerge(mergePair['dstID'], mergePair['srcID'], mergePair, currentPage)">{{ ts('Safe Merge') }}</button>
           <button class="btn btn-primary btn-block" id="dedupe-exception" ng-disabled=isRowMerging ng-click="dedupeException(mergePair['dstID'], mergePair['srcID'], currentPage)">{{ ts('Mark non-dupe') }}</button>
@@ -72,8 +73,8 @@
           <button class="btn btn-danger btn-block" id="force-merge" ng-show="mergePair['conflicts']" ng-disabled=isRowMerging ng-click="forceMerge(mergePair['dstID'], mergePair['srcID'], currentPage)">{{ ts('Force Merge') }}</button>
           <div><a target="_blank" class="btn btn-link btn-block" href="{{mergeURL}}&cid={{mergePair['dstID']}}&oid={{mergePair['srcID']}}">{{ ts('Manual Merge') }}</a></div>
         </div>
-        <div class='col-md-4' contact-basic="{contact_id: mergePair['srcID'], display_name : mergePair['srcName'], 'contact_url' : contactURL}"></div>
-      </div>
+        <div class='col-md-4'  contact-basic="{contact_id: mergePair['dstID'], display_name : mergePair['dstName'], 'contact_url' : contactURL}"></div>
+     </div>
     </div>
 
   </div>
