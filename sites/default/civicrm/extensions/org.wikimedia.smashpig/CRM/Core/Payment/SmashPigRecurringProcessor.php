@@ -167,7 +167,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'gateway' => 'ingenico', // TODO: generalize
         'gross' => $recurringPayment['amount'],
         'currency' => $recurringPayment['currency'],
-        'gateway_txn_id' => $payment['trxn_id'],
+        'gateway_txn_id' => $payment['processor_id'],
         'payment_method' => 'cc',
         'date' => UtcDate::getUtcTimestamp(),
         'contribution_recur_id' => $recurringPayment['id'],
@@ -187,7 +187,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'contribution_status_id' => 'Completed',
         'invoice_id' => $invoiceId,
         'contact_id' => $recurringPayment['contact_id'],
-        'trxn_id' => $payment['trxn_id'],
+        'trxn_id' => $payment['processor_id'],
       ]);
     }
   }

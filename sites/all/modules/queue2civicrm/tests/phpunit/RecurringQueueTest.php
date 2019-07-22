@@ -14,6 +14,8 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
   protected $contributions = [];
 
+  protected $recurring_contributions = [];
+
   protected $ctIds = [];
 
   public function setUp() {
@@ -50,6 +52,15 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       DELETE FROM civicrm_contact
       WHERE id = %1",
         [1 => [$contribution['contact_id'], 'Positive']]
+      );
+    }
+
+    foreach ($this->recurring_contributions as $recurring) {
+      CRM_Core_DAO::executeQuery(
+        "
+      DELETE FROM civicrm_contact
+      WHERE id = %1",
+        [1 => [$recurring->contact_id, 'Positive']]
       );
     }
     parent::tearDown();
@@ -331,6 +342,42 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     );
 
     $this->importMessage($message);
+  }
+
+  /**
+   *  Test that a token is created for a new ingenico recurring donation and a recurring contribution
+   *  is created correctly
+   */
+  public function testRecurringTokenIngenico() {
+    // Subscr_id is the same as gateway_txn_id
+    $subscr_id = mt_rand();
+
+    // Set up token specific values
+    $overrides['recurring_payment_token']= mt_rand();
+    $overrides['gateway_txn_id'] = $subscr_id;
+    $overrides['user_ip'] = '1.1.1.1';
+    $overrides['gateway'] = 'ingenico';
+    $overrides['payment_method'] = 'cc';
+    $overrides['create_date'] = 1564068649;
+    $overrides['start_date'] = 1566732720;
+
+    $this->processRecurringSignup($subscr_id,$overrides);
+
+    // Get the new token
+    $token = wmf_civicrm_get_recurring_payment_token($overrides['gateway'],$overrides['recurring_payment_token']);
+    // Check the token was created successfully
+    $this->assertEquals($token['token'], $overrides['recurring_payment_token']);
+
+    // Create matching trxn_id
+    $trxn_id = 'RECURRING ' . strtoupper(($overrides['gateway'])) . ' ' . $subscr_id;
+    $recur_record = wmf_civicrm_get_recur_record($trxn_id);
+    // Check the record was created successfully
+    $this->assertEquals($recur_record->trxn_id, $trxn_id);
+    // The first contribution should be on the start_date
+    $this->assertEquals($recur_record->next_sched_contribution_date,$recur_record->start_date);
+
+    // Clean up
+    $this->recurring_contributions[] = $recur_record;
   }
 
   /**

@@ -245,6 +245,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
 
   private function createContributionRecur($token, $overrides = []) {
     gmdate('Y-m-d H:i:s', strtotime('-12 hours'));
+    $processor_id = mt_rand(10000, 100000000);
     $params = $overrides + [
       'contact_id' => $token['contact_id'],
       'amount' => 12.34,
@@ -259,7 +260,8 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'cycle_day' => gmdate('d', strtotime('-12 hours')),
       'payment_processor_id' => $this->processorId,
       'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
-      'trxn_id' => 'RECURRING INGENICO ' . mt_rand(10000, 100000000),
+      'trxn_id' => 'RECURRING INGENICO ' . $processor_id,
+      'processor_id' => $processor_id,
       'contribution_status_id' => 'Completed',
     ];
     $result = $this->callAPISuccess('ContributionRecur', 'create', $params);
@@ -324,7 +326,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       );
     $result = $processor->doPayment($params);
     $this->assertEquals(
-      '000000850010000188130000200001', $result['trxn_id']
+      '000000850010000188130000200001', $result['processor_id']
     );
     $status = CRM_Contribute_PseudoConstant::contributionStatus($result['payment_status_id']);
     $this->assertEquals('Completed', $status);
