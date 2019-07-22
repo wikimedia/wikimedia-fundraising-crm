@@ -72,6 +72,10 @@ function drush_civicrm_fill_donor_totals() {
     SELECT max(entity_id) FROM wmf_donor
       WHERE lifetime_usd_total > 0 AND largest_donation = 0
   ");
+  if (!$maxId) {
+    // Finished - let's not have a barrage of failmail when we get here. Once every 2 mins.....
+    return;
+  }
   $startID = $maxId - $batch_size;
   $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
 
