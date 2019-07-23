@@ -7,7 +7,7 @@
   <div ng-repeat="(key, conflict) in options.conflicts">
     <span ng-if="options.fieldSpec[key]">{{options.fieldSpec[key]['title']}}</span>
     <span ng-if="!options.fieldSpec[key]">{{key}}</span>
-    <strong>{{conflict[options.main_id]}}</strong> <del>{{conflict[options.other_id]}}</del>
+    <del>{{conflict[options.main_id]}}</del> <strong>{{conflict[options.other_id]}}</strong>
   </div>
 
 </div>
