@@ -91,10 +91,85 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       ],
     ],
   ];
+  private $createPaymentResponse2 = [
+    'creationOutput' => [
+      'additionalReference' => '123455.2',
+      'externalReference' => '123455.2',
+    ],
+    'payment' => [
+      'id' => '000000850010000188140000200001',
+      'paymentOutput' => [
+        'amountOfMoney' => [
+          'amount' => 1234,
+          'currencyCode' => 'USD',
+        ],
+        'references' => [
+          'merchantReference' => '123455.2',
+          'paymentReference' => '0',
+        ],
+        'paymentMethod' => 'card',
+        'cardPaymentMethodSpecificOutput' => [
+          'paymentProductId' => 1,
+          'authorisationCode' => '726747',
+          'card' => [
+            'cardNumber' => '************7977',
+            'expiryDate' => '1220',
+          ],
+          'fraudResults' => [
+            'avsResult' => '0',
+            'cvvResult' => '0',
+            'fraudServiceResult' => 'no-advice',
+          ],
+        ],
+      ],
+      'status' => 'PENDING_APPROVAL',
+      'statusOutput' => [
+        'isCancellable' => TRUE,
+        'statusCode' => 600,
+        'statusCodeChangeDateTime' => '20180522154830',
+        'isAuthorized' => TRUE,
+      ],
+    ],
+  ];
 
   private $approvePaymentResponse = [
     'payment' => [
       'id' => '000000850010000188130000200001',
+      'paymentOutput' => [
+        'amountOfMoney' => [
+          'amount' => 1234,
+          'currencyCode' => 'USD',
+        ],
+        'references' => [
+          'paymentReference' => '0',
+        ],
+        'paymentMethod' => 'card',
+        'cardPaymentMethodSpecificOutput' => [
+          'paymentProductId' => 1,
+          'authorisationCode' => '123456',
+          'card' => [
+            'cardNumber' => '************7977',
+            'expiryDate' => '1220',
+          ],
+          'fraudResults' => [
+            'avsResult' => '0',
+            'cvvResult' => 'M',
+            'fraudServiceResult' => 'no-advice',
+          ],
+        ],
+      ],
+      'status' => 'CAPTURE_REQUESTED',
+      'statusOutput' => [
+        'isCancellable' => FALSE,
+        'statusCode' => 800,
+        'statusCodeChangeDateTime' => '20180627140735',
+        'isAuthorized' => TRUE,
+      ],
+    ],
+  ];
+  private $approvePaymentResponse2 = [
+    'payment' => [
+      'id' => '000000850010000188140000200001',
       'paymentOutput' => [
         'amountOfMoney' => [
           'amount' => 1234,
@@ -262,6 +337,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
       'trxn_id' => 'RECURRING INGENICO ' . $processor_id,
       'processor_id' => $processor_id,
+      'invoice_id' => mt_rand(10000, 10000000) . '.' . mt_rand(1, 20) . '|recur-' . mt_rand(100000, 100000000),
       'contribution_status_id' => 'Completed',
     ];
     $result = $this->callAPISuccess('ContributionRecur', 'create', $params);
@@ -410,6 +486,256 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     );
   }
 
+  /**
+   * Confirm that the first payment of a newly created recurring subscription
+   * is processed as expected. Initially, recurring subscription payments were
+   * treated as second (follow-on) payments in the series after the initial
+   * payment and matched the amount of the first payment. The code should now
+   * support an independent recurring subscription with its own payment amount
+   * unconstrained by an earlier "first" donation.
+   *
+   * @throws CRM_Core_Exception
+   * @throws CiviCRM_API3_Exception
+   */
+  public function testRecurringChargeJobFirstPayment() {
+    \Civi::settings()->set(
+      'smashpig_recurring_use_queue', '0'
+    );
+    \Civi::settings()->set(
+      'smashpig_recurring_catch_up_days', '1'
+    );
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id']);
+
+    $contributionRecur = $this->createContributionRecur($token, [
+      'installments' => 0,
+      // I think this means installments taken so far?
+      'amount' => 9.00
+      // this is deliberately different from the below contribution amount
+    ]);
+
+    $contribution = $this->createContribution($contributionRecur, [
+      'invoice_id' => $contributionRecur['invoice_id'],
+      'contribution_recur_id' => NULL,
+      'amount' => 12.00,
+    ]);
+
+    list($ctId, $expectedInvoiceId, $next) = $this->getExpectedIds($contribution);
+
+    $expectedDescription = $this->getExpectedDescription();
+
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->with([
+        'recurring_payment_token' => 'abc123-456zyx-test12',
+        'amount' => 9.00,
+        'currency' => 'USD',
+        'first_name' => 'Harry',
+        'last_name' => 'Henderson',
+        'email' => 'harry@hendersons.net',
+        'order_id' => $expectedInvoiceId,
+        'installment' => 'recurring',
+        'description' => $expectedDescription,
+        'recurring' => TRUE,
+        'user_ip' => '12.34.56.78',
+      ])
+      ->willReturn(
+        $this->createPaymentResponse
+      );
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('approvePayment')
+      ->with('000000850010000188130000200001')
+      ->willReturn(
+        $this->approvePaymentResponse
+      );
+    $result = civicrm_api3('Job', 'process_smashpig_recurring', ['debug' => 1]);
+    $this->assertEquals(
+      ['ids' => [$contributionRecur['id']]],
+      $result['values']['success']
+    );
+    $contributions = civicrm_api3('Contribution', 'get', [
+      'contribution_recur_id' => $contributionRecur['id'],
+      'options' => ['sort' => 'id ASC'],
+    ]);
+    $this->assertEquals(1, count($contributions['values']));
+    $contributionIds = array_keys($contributions['values']);
+    $this->deleteThings['Contribution'][] = $contributionIds[0];
+    $newContribution = $contributions['values'][$contributionIds[0]];
+    $this->assertArraySubset([
+      'contact_id' => $contact['id'],
+      'currency' => 'USD',
+      'total_amount' => '9.00',
+      'trxn_id' => '000000850010000188130000200001',
+      'contribution_status' => 'Completed',
+      'invoice_id' => $expectedInvoiceId,
+    ], $newContribution);
+    // Check the updated date is at least 28 days further along
+    $newContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', [
+      'id' => $contributionRecur['id'],
+    ]);
+    $dateDiff = date_diff(
+      new DateTime($contributionRecur['next_sched_contribution_date']),
+      new DateTime($newContributionRecur['next_sched_contribution_date'])
+    );
+    $this->assertGreaterThanOrEqual(27, $dateDiff->days);
+    $this->assertEquals(1, $newContributionRecur['installments']);
+    $this->assertEquals(
+      $contributionRecur['contribution_status_id'],
+      $newContributionRecur['contribution_status_id']
+    );
+  }
+
+  /**
+   * Confirm that a recurring payment job can find the previous contribution
+   * using either contribution_recur_id or invoice_id. In some scenarios only
+   * one of these values is present e.g. upsell vs standard recurring
+   *
+   * @see sites/default/civicrm/extensions/org.wikimedia.smashpig/CRM/Core/Payment/SmashPigRecurringProcessor.php:233
+   */
+  public function testRecurringChargeJobPreviousContributionLookupFallback() {
+    \Civi::settings()->set(
+      'smashpig_recurring_use_queue', '0'
+    );
+    \Civi::settings()->set(
+      'smashpig_recurring_catch_up_days', '1'
+    );
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id']);
+
+    // create the new recurring subscription
+    $contributionRecur = $this->createContributionRecur($token, [
+      'installments' => 0,
+      // i think this means installments taken so far?
+      'amount' => 9.00
+      // this is deliberately different from the below contribution amount
+    ]);
+
+    // create the original contribution that relates to the recurring subscription
+    $contribution = $this->createContribution($contributionRecur, [
+      'invoice_id' => $contributionRecur['invoice_id'],
+      'contribution_recur_id' => NULL,
+      'amount' => 12.00,
+    ]);
+
+    list($ctId, $firstInvoiceId, $secondInvoiceId) = $this->getExpectedIds($contribution);
+
+    $expectedDescription = $this->getExpectedDescription();
+
+    $this->hostedCheckoutProvider->expects($this->exactly(2))
+      ->method('createPayment')
+      ->withConsecutive([
+        [
+          'recurring_payment_token' => 'abc123-456zyx-test12',
+          'amount' => 9.00,
+          'currency' => 'USD',
+          'first_name' => 'Harry',
+          'last_name' => 'Henderson',
+          'email' => 'harry@hendersons.net',
+          'order_id' => $firstInvoiceId,
+          'installment' => 'recurring',
+          'description' => $expectedDescription,
+          'recurring' => TRUE,
+          'user_ip' => '12.34.56.78',
+        ],
+      ], [
+        [
+          'recurring_payment_token' => 'abc123-456zyx-test12',
+          'amount' => 9.00,
+          'currency' => 'USD',
+          'first_name' => 'Harry',
+          'last_name' => 'Henderson',
+          'email' => 'harry@hendersons.net',
+          'order_id' => $secondInvoiceId,
+          'installment' => 'recurring',
+          'description' => $expectedDescription,
+          'recurring' => TRUE,
+          'user_ip' => '12.34.56.78',
+        ],
+      ])
+      ->will(
+        $this->onConsecutiveCalls(
+          $this->createPaymentResponse,
+          $this->createPaymentResponse2
+        )
+      );
+
+    $this->hostedCheckoutProvider->expects($this->exactly(2))
+      ->method('approvePayment')
+      ->withConsecutive(
+        ['000000850010000188130000200001'],
+        ['000000850010000188140000200001',])
+      ->will(
+        $this->onConsecutiveCalls(
+          $this->approvePaymentResponse,
+          $this->approvePaymentResponse2
+        )
+      );
+
+    // trigger the recurring payment job to create the first payment
+    // for the new subscription. this first payment will use `invoice_id`
+    // internally to find the original contribution.
+    $result = civicrm_api3('Job', 'process_smashpig_recurring', ['debug' => 1]);
+    $this->assertEquals(
+      ['ids' => [$contributionRecur['id']]],
+      $result['values']['success']
+    );
+
+    // update the contribution_recur record to take the next payment now which
+    // will confirm the previous contribution lookup by  kicks in.
+    $params = [
+      'id' => $contributionRecur['id'],
+      'payment_processor_id' => $this->processorId,
+      'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
+    ];
+    $this->callAPISuccess('ContributionRecur', 'create', $params);
+
+
+    // trigger the recurring payment job to create the second payment
+    // this second payment will use `contribution_recur_id` internally to find
+    // the previous contribution.
+    $result = civicrm_api3('Job', 'process_smashpig_recurring', ['debug' => 1]);
+    $this->assertEquals(
+      ['ids' => [$contributionRecur['id']]],
+      $result['values']['success']
+    );
+
+    // confirm we have two successful contributions relating to the
+    // recurring subscription
+    $contributions = civicrm_api3('Contribution', 'get', [
+      'contribution_recur_id' => $contributionRecur['id'],
+      'options' => ['sort' => 'id ASC'],
+    ]);
+
+    $this->assertEquals(2, count($contributions['values']));
+    $contributionIds = array_keys($contributions['values']);
+    $this->deleteThings['Contribution'][] = $contributionIds[0];
+    $this->deleteThings['Contribution'][] = $contributionIds[1];
+
+    $latestContribution = $contributions['values'][$contributionIds[1]];
+    $this->assertArraySubset([
+      'contact_id' => $contact['id'],
+      'currency' => 'USD',
+      'total_amount' => '9.00',
+      'trxn_id' => '000000850010000188140000200001',
+      'contribution_status' => 'Completed',
+      'invoice_id' => $secondInvoiceId,
+    ], $latestContribution);
+
+
+    // check the next contribution date is at least 28 days further along
+    $newContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', [
+      'id' => $contributionRecur['id'],
+    ]);
+    $dateDiff = date_diff(
+      new DateTime($contributionRecur['next_sched_contribution_date']),
+      new DateTime($newContributionRecur['next_sched_contribution_date'])
+    );
+    $this->assertGreaterThanOrEqual(27, $dateDiff->days);
+
+    // confirm that the current recurring series installment count is 2
+    $this->assertEquals(2, $newContributionRecur['installments']);
+  }
+
   public function testRecurringChargeJobQueue() {
     // Now test it sending the donation to the queue
     \Civi::settings()->set(
@@ -449,6 +775,69 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
       'effort_id' => 2,
+      'financial_type_id' => '1',
+      'contribution_type_id' => '1',
+      'payment_instrument_id' => '4',
+      'gateway' => 'ingenico',
+      'payment_method' => 'cc',
+      'contribution_recur_id' => $contributionRecur['id'],
+      'contribution_tracking_id' => $ctId,
+      'recurring' => TRUE,
+    ], $contributionMessage);
+  }
+
+  public function testRecurringChargeJobFirstPaymentJobQueue() {
+    // Now test it sending the donation to the queue
+    \Civi::settings()->set(
+      'smashpig_recurring_use_queue', '1'
+    );
+    \Civi::settings()->set(
+      'smashpig_recurring_catch_up_days', '1'
+    );
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id']);
+
+    $contributionRecur = $this->createContributionRecur($token, [
+      'installments' => 0,
+      //installments taken so far (in this context)?
+      'amount' => 9.00
+      // this is deliberately different from the below contribution amount
+    ]);
+
+    $contribution = $this->createContribution($contributionRecur, [
+      'invoice_id' => $contributionRecur['invoice_id'],
+      'contribution_recur_id' => NULL,
+      'amount' => 12.00,
+    ]);
+
+
+    list($ctId, $expectedInvoiceId, $next) = $this->getExpectedIds($contribution);
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->willReturn(
+        $this->createPaymentResponse
+      );
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('approvePayment')
+      ->willReturn(
+        $this->approvePaymentResponse
+      );
+    civicrm_api3('Job', 'process_smashpig_recurring', []);
+    $queue = QueueWrapper::getQueue('donations');
+    $contributionMessage = $queue->pop();
+    $this->assertNull($queue->pop(), 'Queued too many donations!');
+    SourceFields::removeFromMessage($contributionMessage);
+    $expectedDate = UtcDate::getUtcTimestamp();
+    $actualDate = $contributionMessage['date'];
+    $this->assertLessThan(100, abs($actualDate - $expectedDate));
+    unset($contributionMessage['date']);
+    $this->assertEquals([
+      'contact_id' => $contact['id'],
+      'currency' => 'USD',
+      'gross' => '9.00',
+      'gateway_txn_id' => '000000850010000188130000200001',
+      'invoice_id' => $expectedInvoiceId,
+      'effort_id' => 1,
       'financial_type_id' => '1',
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
