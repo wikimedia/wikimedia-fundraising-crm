@@ -1,12 +1,12 @@
 {% if first_name and last_name %}
-<p>{{ last_name }}さま
+<p>{{ last_name }}様
 </p>{% else %}<p>
 寄付者の皆さま、</p>
 {%endif%}
 
 <p>この度はウィキペディアならびにウィキメディア財団のために{% if recurring %}
 毎月継続して
-{%endif%}{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}をご寄付くださるとのこと、心から感謝申し上げます。 
+{%endif%}{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}をご寄付くださるとのこと、心から感謝申し上げます。
 </p>
 
 <p>新たな知識の扉を開くウィキペディアは、世の中のために少しでも何かしたいとお考えのあなたのような方の貢献なしに語ることはできません。皆さまからのご寄付は、私たちのビジョンと精神が健在であることの証です。
@@ -60,4 +60,4 @@
 <p>ご寄付に関するウィキメディア財団からの通知がご不用の場合は、<a href="{{ unsubscribe_link | raw }}">今すぐに配信停止の手続きをしていただけます</a>。その場合もこの通信のような受領通知は、今後もご寄付をいただいたときにご送付致します。
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/ja&amp;oldid=19116514","name":"thank_you.ja.html","revision":19116514}TI_END -->
+<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/ja&amp;oldid=19226261","name":"thank_you.ja.html","revision":19226261}TI_END -->
