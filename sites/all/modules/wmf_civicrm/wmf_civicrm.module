@@ -4259,7 +4259,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     $sql = '
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd, date_of_largest_donation,
+      first_donation_usd,
       largest_donation, endowment_largest_donation, lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
       last_donation_date, endowment_last_donation_date, first_donation_date,
@@ -4276,7 +4276,6 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
       COALESCE(latest.total_amount, 0) as last_donation_usd,
       COALESCE(earliest.total_amount, 0) as first_donation_usd,
-      largest.receive_date as date_of_largest_donation,
       totals.*
 
     FROM (
@@ -4315,15 +4314,6 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-
-  LEFT JOIN civicrm_contribution largest
-    USE INDEX(FK_civicrm_contribution_contact_id)
-    ON largest.contact_id = NEW.contact_id
-    AND largest.total_amount = totals.largest_donation
-    AND largest.contribution_status_id = 1
-    AND largest.total_amount > 0
-    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
-  ORDER BY largest.receive_date DESC
   LIMIT 1
 
   ON DUPLICATE KEY UPDATE
@@ -4332,7 +4322,6 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     largest_donation = VALUES(largest_donation),
-    date_of_largest_donation = VALUES(date_of_largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),

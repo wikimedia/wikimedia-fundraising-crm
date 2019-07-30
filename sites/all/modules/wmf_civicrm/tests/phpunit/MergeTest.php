@@ -101,7 +101,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'last_donation_date' => '2016-04-04',
       'first_donation_usd' => 5,
       'first_donation_date' => '2013-01-04 00:00:00',
-      'date_of_largest_donation' => '2014-08-04 00:00:00',
+      //'date_of_largest_donation' => '2014-08-04 00:00:00',
       'number_donations' => 3,
       'total_2011' => 0,
       'total_2012' => 0,
