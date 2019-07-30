@@ -2475,6 +2475,15 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
         ),
       ));
       if (isset($refs['fields_in_conflict'])) {
+        if (array_key_exists('move_' . wmf_civicrm_get_custom_field_name('do_not_solicit'), $refs['fields_in_conflict'])
+        ) {
+          $keyString = 'move_' . wmf_civicrm_get_custom_field_name('do_not_solicit');
+          // At least one contact has a 1 for do_not_solicit, YES wins.
+          $refs['migration_info'][$keyString] = 1;
+          $refs['migration_info']['rows'][$keyString]['other'] = ts('Yes');
+          unset($refs['fields_in_conflict'][$keyString]);
+        }
+
         $wmfCalculatedFields = wmf_civicrm_get_calculated_fields();
 
         $overwriteLatestContributionFields = FALSE;
@@ -2494,14 +2503,7 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
 
         foreach ($wmfCalculatedFields as $wmfCalculatedField) {
           $keyString = 'move_' . $wmfCalculatedField;
-          if ($wmfCalculatedField == wmf_civicrm_get_custom_field_name('do_not_solicit') &&
-            array_key_exists($keyString, $refs['fields_in_conflict'])
-          ) {
-            // At least one contact has a 1 for do_not_solicit, YES wins.
-            $refs['migration_info']['move_' . wmf_civicrm_get_custom_field_name('do_not_solicit')] = 1;
-            $refs['migration_info']['rows']['move_' . wmf_civicrm_get_custom_field_name('do_not_solicit')]['other'] = ts('Yes');
-          }
-          elseif ($overwriteLatestContributionFields && in_array($wmfCalculatedField, $latestDonationFields)
+          if ($overwriteLatestContributionFields && in_array($wmfCalculatedField, $latestDonationFields)
             && isset($refs['migration_info']['rows']['move_' . $wmfCalculatedField])) {
             $refs['migration_info']['move_' . $wmfCalculatedField] = $refs['migration_info']['rows']['move_' . $wmfCalculatedField]['other'];
           }
@@ -3297,7 +3299,6 @@ function _wmf_civicrm_add_result_fields_to_migration_info($migrationInfo, $resul
  */
 function wmf_civicrm_get_calculated_fields() {
   $fieldNames = wmf_get_calculated_field_names();
-  $fieldNames[] = 'do_not_solicit';
   $customFields = array();
   foreach ($fieldNames as $fieldName) {
     $customFields[] = wmf_civicrm_get_custom_field_name($fieldName);
@@ -4258,7 +4259,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     $sql = '
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd, date_of_largest_donation,
+      first_donation_usd,
       largest_donation, endowment_largest_donation, lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
       last_donation_date, endowment_last_donation_date, first_donation_date,
@@ -4275,7 +4276,6 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
       COALESCE(latest.total_amount, 0) as last_donation_usd,
       COALESCE(earliest.total_amount, 0) as first_donation_usd,
-      largest.receive_date as date_of_largest_donation,
       totals.*
 
     FROM (
@@ -4297,7 +4297,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
     ) as totals
-  LEFT JOIN civicrm_contribution latest 
+  LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON latest.contact_id = NEW.contact_id
     AND latest.receive_date = totals.last_donation_date
@@ -4306,23 +4306,14 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
     AND latest.financial_type_id <> $endowmentFinancialType
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
-  
-  LEFT JOIN civicrm_contribution earliest 
+
+  LEFT JOIN civicrm_contribution earliest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON earliest.contact_id = NEW.contact_id
     AND earliest.receive_date = totals.first_donation_date
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-    
-  LEFT JOIN civicrm_contribution largest 
-    USE INDEX(FK_civicrm_contribution_contact_id)
-    ON largest.contact_id = NEW.contact_id
-    AND largest.total_amount = totals.largest_donation
-    AND largest.contribution_status_id = 1
-    AND largest.total_amount > 0
-    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
-  ORDER BY largest.receive_date DESC
   LIMIT 1
 
   ON DUPLICATE KEY UPDATE
@@ -4331,7 +4322,6 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     largest_donation = VALUES(largest_donation),
-    date_of_largest_donation = VALUES(date_of_largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),
