@@ -1,0 +1,379 @@
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_contribution_after_insert //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contribution FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`contact_id`, NEW.`financial_type_id`, NEW.`contribution_page_id`, NEW.`payment_instrument_id`, NEW.`receive_date`, NEW.`non_deductible_amount`, NEW.`total_amount`, NEW.`fee_amount`, NEW.`net_amount`, NEW.`trxn_id`, NEW.`invoice_id`, NEW.`currency`, NEW.`cancel_date`, NEW.`cancel_reason`, NEW.`receipt_date`, NEW.`thankyou_date`, NEW.`source`, NEW.`amount_level`, NEW.`contribution_recur_id`, NEW.`is_test`, NEW.`is_pay_later`, NEW.`contribution_status_id`, NEW.`note`, NEW.`address_id`, NEW.`check_number`, NEW.`campaign_id`, NEW.`tax_amount`, NEW.`creditnote_id`, NEW.`revenue_recognition_date`, NEW.`invoice_number`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
+ IF 1 AND (NEW.contact_id <> 72) THEN
+    INSERT INTO wmf_donor (
+      entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
+      first_donation_usd,
+      largest_donation, endowment_largest_donation, lifetime_including_endowment,
+      lifetime_usd_total, endowment_lifetime_usd_total,
+      last_donation_date, endowment_last_donation_date, first_donation_date,
+      endowment_first_donation_date, number_donations,
+      endowment_number_donations, total_2006_2007, total_2006, total_2007_2008, total_2007, total_2008_2009, total_2008, total_2009_2010, total_2009, total_2010_2011, total_2010, total_2011_2012, total_2011, total_2012_2013, total_2012, total_2013_2014, total_2013, total_2014_2015, total_2014, total_2015_2016, total_2015, total_2016_2017, total_2016, total_2017_2018, total_2017, change_2017_2018, total_2018_2019, total_2018, endowment_total_2018_2019, endowment_total_2018, change_2018_2019, total_2019_2020, total_2019, endowment_total_2019_2020, endowment_total_2019, change_2019_2020, total_2020_2021, total_2020, endowment_total_2020_2021, endowment_total_2020, change_2020_2021
+    )
+
+    SELECT
+      # note that all totals are calculated in the totals subquery and only join values
+      # in the main query. This is important as the left joins could catch more than one donation at
+      # exactly the same time or more than one max donation amount & throw out the totals.
+      NEW.contact_id as entity_id,
+      COALESCE(x.original_currency, latest.currency) as last_donation_currency,
+      COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
+      COALESCE(latest.total_amount, 0) as last_donation_usd,
+      COALESCE(earliest.total_amount, 0) as first_donation_usd,
+      totals.*
+
+    FROM (
+      SELECT
+        MAX(IF(financial_type_id <> 26, COALESCE(total_amount, 0), 0)) AS largest_donation,
+        MAX(IF(financial_type_id = 26, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation,
+        SUM(COALESCE(total_amount, 0)) AS lifetime_including_endowment,
+        SUM(IF(financial_type_id <> 26, COALESCE(total_amount, 0), 0)) AS lifetime_usd_total,
+        SUM(IF(financial_type_id = 26, COALESCE(total_amount, 0), 0)) AS endowment_lifetime_usd_total,
+        MAX(IF(financial_type_id <> 26 AND total_amount > 0, receive_date, NULL)) AS last_donation_date,
+        MAX(IF(financial_type_id = 26 AND total_amount > 0, receive_date, NULL)) AS endowment_last_donation_date,
+        MIN(IF(financial_type_id <> 26 AND total_amount, receive_date, NULL)) AS first_donation_date,
+        MIN(IF(financial_type_id = 26 AND total_amount > 0, receive_date, NULL)) AS endowment_first_donation_date,
+        COUNT(IF(financial_type_id <> 26 AND total_amount > 0, receive_date, NULL)) AS number_donations,
+        COUNT(IF(financial_type_id = 26 AND total_amount > 0, receive_date, NULL)) AS endowment_number_donations,
+     SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2006-07-01' AND '2007-06-30 23:59:59', c.total_amount, 0),0)) as total_2006_2007,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2006-01-01' AND '2006-12-31 23:59:59', c.total_amount, 0),0)) as total_2006,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2007-07-01' AND '2008-06-30 23:59:59', c.total_amount, 0),0)) as total_2007_2008,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2007-01-01' AND '2007-12-31 23:59:59', c.total_amount, 0),0)) as total_2007,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2008-07-01' AND '2009-06-30 23:59:59', c.total_amount, 0),0)) as total_2008_2009,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2008-01-01' AND '2008-12-31 23:59:59', c.total_amount, 0),0)) as total_2008,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2009-07-01' AND '2010-06-30 23:59:59', c.total_amount, 0),0)) as total_2009_2010,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2009-01-01' AND '2009-12-31 23:59:59', c.total_amount, 0),0)) as total_2009,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2010-07-01' AND '2011-06-30 23:59:59', c.total_amount, 0),0)) as total_2010_2011,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2010-01-01' AND '2010-12-31 23:59:59', c.total_amount, 0),0)) as total_2010,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2011-07-01' AND '2012-06-30 23:59:59', c.total_amount, 0),0)) as total_2011_2012,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2011-01-01' AND '2011-12-31 23:59:59', c.total_amount, 0),0)) as total_2011,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2012-07-01' AND '2013-06-30 23:59:59', c.total_amount, 0),0)) as total_2012_2013,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2012-01-01' AND '2012-12-31 23:59:59', c.total_amount, 0),0)) as total_2012,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2013-07-01' AND '2014-06-30 23:59:59', c.total_amount, 0),0)) as total_2013_2014,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2013-01-01' AND '2013-12-31 23:59:59', c.total_amount, 0),0)) as total_2013,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2014-07-01' AND '2015-06-30 23:59:59', c.total_amount, 0),0)) as total_2014_2015,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2014-01-01' AND '2014-12-31 23:59:59', c.total_amount, 0),0)) as total_2014,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2015-07-01' AND '2016-06-30 23:59:59', c.total_amount, 0),0)) as total_2015_2016,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2015-01-01' AND '2015-12-31 23:59:59', c.total_amount, 0),0)) as total_2015,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2016-07-01' AND '2017-06-30 23:59:59', c.total_amount, 0),0)) as total_2016_2017,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2016-01-01' AND '2016-12-31 23:59:59', c.total_amount, 0),0)) as total_2016,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2017-07-01' AND '2018-06-30 23:59:59', c.total_amount, 0),0)) as total_2017_2018,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2017-01-01' AND '2017-12-31 23:59:59', c.total_amount, 0),0)) as total_2017,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2017-01-01' AND '2017-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2017_2018,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', c.total_amount, 0),0)) as total_2018_2019,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0)) as total_2018,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_2018_2019,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_2018,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2018_2019,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', c.total_amount, 0),0)) as total_2019_2020,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0)) as total_2019,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_2019_2020,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_2019,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2019_2020,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', c.total_amount, 0),0)) as total_2020_2021,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0)) as total_2020,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_2020_2021,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_2020,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2021-01-01' AND '2021-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2020_2021
+      FROM civicrm_contribution c
+      USE INDEX(FK_civicrm_contribution_contact_id)
+      WHERE contact_id = NEW.contact_id
+        AND contribution_status_id = 1
+    ) as totals
+  LEFT JOIN civicrm_contribution latest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON latest.contact_id = NEW.contact_id
+    AND latest.receive_date = totals.last_donation_date
+    AND latest.contribution_status_id = 1
+    AND latest.total_amount > 0
+    AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
+    AND latest.financial_type_id <> 26
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
+
+  LEFT JOIN civicrm_contribution earliest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON earliest.contact_id = NEW.contact_id
+    AND earliest.receive_date = totals.first_donation_date
+    AND earliest.contribution_status_id = 1
+    AND earliest.total_amount > 0
+    AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
+  LIMIT 1
+
+  ON DUPLICATE KEY UPDATE
+    last_donation_currency = VALUES(last_donation_currency),
+    last_donation_amount = VALUES(last_donation_amount),
+    last_donation_usd = VALUES(last_donation_usd),
+    first_donation_usd = VALUES(first_donation_usd),
+    largest_donation = VALUES(largest_donation),
+    lifetime_usd_total = VALUES(lifetime_usd_total),
+    last_donation_date = VALUES(last_donation_date),
+    first_donation_date = VALUES(first_donation_date),
+    number_donations = VALUES(number_donations),
+    endowment_largest_donation = VALUES(endowment_largest_donation),
+    lifetime_including_endowment = VALUES(lifetime_including_endowment),
+    endowment_lifetime_usd_total = VALUES(endowment_lifetime_usd_total),
+    endowment_last_donation_date = VALUES(endowment_last_donation_date),
+    endowment_first_donation_date = VALUES(endowment_first_donation_date),
+    endowment_number_donations = VALUES(endowment_number_donations),
+    total_2006_2007 = VALUES(total_2006_2007),total_2006 = VALUES(total_2006),total_2007_2008 = VALUES(total_2007_2008),total_2007 = VALUES(total_2007),total_2008_2009 = VALUES(total_2008_2009),total_2008 = VALUES(total_2008),total_2009_2010 = VALUES(total_2009_2010),total_2009 = VALUES(total_2009),total_2010_2011 = VALUES(total_2010_2011),total_2010 = VALUES(total_2010),total_2011_2012 = VALUES(total_2011_2012),total_2011 = VALUES(total_2011),total_2012_2013 = VALUES(total_2012_2013),total_2012 = VALUES(total_2012),total_2013_2014 = VALUES(total_2013_2014),total_2013 = VALUES(total_2013),total_2014_2015 = VALUES(total_2014_2015),total_2014 = VALUES(total_2014),total_2015_2016 = VALUES(total_2015_2016),total_2015 = VALUES(total_2015),total_2016_2017 = VALUES(total_2016_2017),total_2016 = VALUES(total_2016),total_2017_2018 = VALUES(total_2017_2018),total_2017 = VALUES(total_2017),change_2017_2018 = VALUES(change_2017_2018),total_2018_2019 = VALUES(total_2018_2019),total_2018 = VALUES(total_2018),endowment_total_2018_2019 = VALUES(endowment_total_2018_2019),endowment_total_2018 = VALUES(endowment_total_2018),change_2018_2019 = VALUES(change_2018_2019),total_2019_2020 = VALUES(total_2019_2020),total_2019 = VALUES(total_2019),endowment_total_2019_2020 = VALUES(endowment_total_2019_2020),endowment_total_2019 = VALUES(endowment_total_2019),change_2019_2020 = VALUES(change_2019_2020),total_2020_2021 = VALUES(total_2020_2021),total_2020 = VALUES(total_2020),endowment_total_2020_2021 = VALUES(endowment_total_2020_2021),endowment_total_2020 = VALUES(endowment_total_2020),change_2020_2021 = VALUES(change_2020_2021); END IF;  END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_contribution_after_update //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contribution FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') <> IFNULL(NEW.`contact_id`,'') OR IFNULL(OLD.`financial_type_id`,'') <> IFNULL(NEW.`financial_type_id`,'') OR IFNULL(OLD.`contribution_page_id`,'') <> IFNULL(NEW.`contribution_page_id`,'') OR IFNULL(OLD.`payment_instrument_id`,'') <> IFNULL(NEW.`payment_instrument_id`,'') OR IFNULL(OLD.`receive_date`,'') <> IFNULL(NEW.`receive_date`,'') OR IFNULL(OLD.`non_deductible_amount`,'') <> IFNULL(NEW.`non_deductible_amount`,'') OR IFNULL(OLD.`total_amount`,'') <> IFNULL(NEW.`total_amount`,'') OR IFNULL(OLD.`fee_amount`,'') <> IFNULL(NEW.`fee_amount`,'') OR IFNULL(OLD.`net_amount`,'') <> IFNULL(NEW.`net_amount`,'') OR IFNULL(OLD.`trxn_id`,'') <> IFNULL(NEW.`trxn_id`,'') OR IFNULL(OLD.`invoice_id`,'') <> IFNULL(NEW.`invoice_id`,'') OR IFNULL(OLD.`currency`,'') <> IFNULL(NEW.`currency`,'') OR IFNULL(OLD.`cancel_date`,'') <> IFNULL(NEW.`cancel_date`,'') OR IFNULL(OLD.`cancel_reason`,'') <> IFNULL(NEW.`cancel_reason`,'') OR IFNULL(OLD.`receipt_date`,'') <> IFNULL(NEW.`receipt_date`,'') OR IFNULL(OLD.`thankyou_date`,'') <> IFNULL(NEW.`thankyou_date`,'') OR IFNULL(OLD.`source`,'') <> IFNULL(NEW.`source`,'') OR IFNULL(OLD.`amount_level`,'') <> IFNULL(NEW.`amount_level`,'') OR IFNULL(OLD.`contribution_recur_id`,'') <> IFNULL(NEW.`contribution_recur_id`,'') OR IFNULL(OLD.`is_test`,'') <> IFNULL(NEW.`is_test`,'') OR IFNULL(OLD.`is_pay_later`,'') <> IFNULL(NEW.`is_pay_later`,'') OR IFNULL(OLD.`contribution_status_id`,'') <> IFNULL(NEW.`contribution_status_id`,'') OR IFNULL(OLD.`note`,'') <> IFNULL(NEW.`note`,'') OR IFNULL(OLD.`address_id`,'') <> IFNULL(NEW.`address_id`,'') OR IFNULL(OLD.`check_number`,'') <> IFNULL(NEW.`check_number`,'') OR IFNULL(OLD.`campaign_id`,'') <> IFNULL(NEW.`campaign_id`,'') OR IFNULL(OLD.`tax_amount`,'') <> IFNULL(NEW.`tax_amount`,'') OR IFNULL(OLD.`creditnote_id`,'') <> IFNULL(NEW.`creditnote_id`,'') OR IFNULL(OLD.`revenue_recognition_date`,'') <> IFNULL(NEW.`revenue_recognition_date`,'') OR IFNULL(OLD.`invoice_number`,'') <> IFNULL(NEW.`invoice_number`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`contact_id`, NEW.`financial_type_id`, NEW.`contribution_page_id`, NEW.`payment_instrument_id`, NEW.`receive_date`, NEW.`non_deductible_amount`, NEW.`total_amount`, NEW.`fee_amount`, NEW.`net_amount`, NEW.`trxn_id`, NEW.`invoice_id`, NEW.`currency`, NEW.`cancel_date`, NEW.`cancel_reason`, NEW.`receipt_date`, NEW.`thankyou_date`, NEW.`source`, NEW.`amount_level`, NEW.`contribution_recur_id`, NEW.`is_test`, NEW.`is_pay_later`, NEW.`contribution_status_id`, NEW.`note`, NEW.`address_id`, NEW.`check_number`, NEW.`campaign_id`, NEW.`tax_amount`, NEW.`creditnote_id`, NEW.`revenue_recognition_date`, NEW.`invoice_number`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
+ IF 1 AND (NEW.contact_id <> 72) AND ((NEW.contribution_status_id != OLD.contribution_status_id) OR (NEW.total_amount != OLD.total_amount) OR (NEW.contact_id != OLD.contact_id) OR (NEW.receive_date != OLD.receive_date) OR (NEW.currency != OLD.currency) ) THEN
+    INSERT INTO wmf_donor (
+      entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
+      first_donation_usd,
+      largest_donation, endowment_largest_donation, lifetime_including_endowment,
+      lifetime_usd_total, endowment_lifetime_usd_total,
+      last_donation_date, endowment_last_donation_date, first_donation_date,
+      endowment_first_donation_date, number_donations,
+      endowment_number_donations, total_2006_2007, total_2006, total_2007_2008, total_2007, total_2008_2009, total_2008, total_2009_2010, total_2009, total_2010_2011, total_2010, total_2011_2012, total_2011, total_2012_2013, total_2012, total_2013_2014, total_2013, total_2014_2015, total_2014, total_2015_2016, total_2015, total_2016_2017, total_2016, total_2017_2018, total_2017, change_2017_2018, total_2018_2019, total_2018, endowment_total_2018_2019, endowment_total_2018, change_2018_2019, total_2019_2020, total_2019, endowment_total_2019_2020, endowment_total_2019, change_2019_2020, total_2020_2021, total_2020, endowment_total_2020_2021, endowment_total_2020, change_2020_2021
+    )
+
+    SELECT
+      # note that all totals are calculated in the totals subquery and only join values
+      # in the main query. This is important as the left joins could catch more than one donation at
+      # exactly the same time or more than one max donation amount & throw out the totals.
+      NEW.contact_id as entity_id,
+      COALESCE(x.original_currency, latest.currency) as last_donation_currency,
+      COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
+      COALESCE(latest.total_amount, 0) as last_donation_usd,
+      COALESCE(earliest.total_amount, 0) as first_donation_usd,
+      totals.*
+
+    FROM (
+      SELECT
+        MAX(IF(financial_type_id <> 26, COALESCE(total_amount, 0), 0)) AS largest_donation,
+        MAX(IF(financial_type_id = 26, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation,
+        SUM(COALESCE(total_amount, 0)) AS lifetime_including_endowment,
+        SUM(IF(financial_type_id <> 26, COALESCE(total_amount, 0), 0)) AS lifetime_usd_total,
+        SUM(IF(financial_type_id = 26, COALESCE(total_amount, 0), 0)) AS endowment_lifetime_usd_total,
+        MAX(IF(financial_type_id <> 26 AND total_amount > 0, receive_date, NULL)) AS last_donation_date,
+        MAX(IF(financial_type_id = 26 AND total_amount > 0, receive_date, NULL)) AS endowment_last_donation_date,
+        MIN(IF(financial_type_id <> 26 AND total_amount, receive_date, NULL)) AS first_donation_date,
+        MIN(IF(financial_type_id = 26 AND total_amount > 0, receive_date, NULL)) AS endowment_first_donation_date,
+        COUNT(IF(financial_type_id <> 26 AND total_amount > 0, receive_date, NULL)) AS number_donations,
+        COUNT(IF(financial_type_id = 26 AND total_amount > 0, receive_date, NULL)) AS endowment_number_donations,
+     SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2006-07-01' AND '2007-06-30 23:59:59', c.total_amount, 0),0)) as total_2006_2007,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2006-01-01' AND '2006-12-31 23:59:59', c.total_amount, 0),0)) as total_2006,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2007-07-01' AND '2008-06-30 23:59:59', c.total_amount, 0),0)) as total_2007_2008,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2007-01-01' AND '2007-12-31 23:59:59', c.total_amount, 0),0)) as total_2007,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2008-07-01' AND '2009-06-30 23:59:59', c.total_amount, 0),0)) as total_2008_2009,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2008-01-01' AND '2008-12-31 23:59:59', c.total_amount, 0),0)) as total_2008,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2009-07-01' AND '2010-06-30 23:59:59', c.total_amount, 0),0)) as total_2009_2010,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2009-01-01' AND '2009-12-31 23:59:59', c.total_amount, 0),0)) as total_2009,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2010-07-01' AND '2011-06-30 23:59:59', c.total_amount, 0),0)) as total_2010_2011,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2010-01-01' AND '2010-12-31 23:59:59', c.total_amount, 0),0)) as total_2010,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2011-07-01' AND '2012-06-30 23:59:59', c.total_amount, 0),0)) as total_2011_2012,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2011-01-01' AND '2011-12-31 23:59:59', c.total_amount, 0),0)) as total_2011,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2012-07-01' AND '2013-06-30 23:59:59', c.total_amount, 0),0)) as total_2012_2013,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2012-01-01' AND '2012-12-31 23:59:59', c.total_amount, 0),0)) as total_2012,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2013-07-01' AND '2014-06-30 23:59:59', c.total_amount, 0),0)) as total_2013_2014,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2013-01-01' AND '2013-12-31 23:59:59', c.total_amount, 0),0)) as total_2013,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2014-07-01' AND '2015-06-30 23:59:59', c.total_amount, 0),0)) as total_2014_2015,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2014-01-01' AND '2014-12-31 23:59:59', c.total_amount, 0),0)) as total_2014,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2015-07-01' AND '2016-06-30 23:59:59', c.total_amount, 0),0)) as total_2015_2016,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2015-01-01' AND '2015-12-31 23:59:59', c.total_amount, 0),0)) as total_2015,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2016-07-01' AND '2017-06-30 23:59:59', c.total_amount, 0),0)) as total_2016_2017,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2016-01-01' AND '2016-12-31 23:59:59', c.total_amount, 0),0)) as total_2016,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2017-07-01' AND '2018-06-30 23:59:59', c.total_amount, 0),0)) as total_2017_2018,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2017-01-01' AND '2017-12-31 23:59:59', c.total_amount, 0),0)) as total_2017,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2017-01-01' AND '2017-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2017_2018,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', c.total_amount, 0),0)) as total_2018_2019,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0)) as total_2018,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_2018_2019,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_2018,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2018_2019,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', c.total_amount, 0),0)) as total_2019_2020,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0)) as total_2019,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_2019_2020,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_2019,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2019_2020,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', c.total_amount, 0),0)) as total_2020_2021,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0)) as total_2020,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_2020_2021,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_2020,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2021-01-01' AND '2021-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2020_2021
+      FROM civicrm_contribution c
+      USE INDEX(FK_civicrm_contribution_contact_id)
+      WHERE contact_id = NEW.contact_id
+        AND contribution_status_id = 1
+    ) as totals
+  LEFT JOIN civicrm_contribution latest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON latest.contact_id = NEW.contact_id
+    AND latest.receive_date = totals.last_donation_date
+    AND latest.contribution_status_id = 1
+    AND latest.total_amount > 0
+    AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
+    AND latest.financial_type_id <> 26
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
+
+  LEFT JOIN civicrm_contribution earliest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON earliest.contact_id = NEW.contact_id
+    AND earliest.receive_date = totals.first_donation_date
+    AND earliest.contribution_status_id = 1
+    AND earliest.total_amount > 0
+    AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
+  LIMIT 1
+
+  ON DUPLICATE KEY UPDATE
+    last_donation_currency = VALUES(last_donation_currency),
+    last_donation_amount = VALUES(last_donation_amount),
+    last_donation_usd = VALUES(last_donation_usd),
+    first_donation_usd = VALUES(first_donation_usd),
+    largest_donation = VALUES(largest_donation),
+    lifetime_usd_total = VALUES(lifetime_usd_total),
+    last_donation_date = VALUES(last_donation_date),
+    first_donation_date = VALUES(first_donation_date),
+    number_donations = VALUES(number_donations),
+    endowment_largest_donation = VALUES(endowment_largest_donation),
+    lifetime_including_endowment = VALUES(lifetime_including_endowment),
+    endowment_lifetime_usd_total = VALUES(endowment_lifetime_usd_total),
+    endowment_last_donation_date = VALUES(endowment_last_donation_date),
+    endowment_first_donation_date = VALUES(endowment_first_donation_date),
+    endowment_number_donations = VALUES(endowment_number_donations),
+    total_2006_2007 = VALUES(total_2006_2007),total_2006 = VALUES(total_2006),total_2007_2008 = VALUES(total_2007_2008),total_2007 = VALUES(total_2007),total_2008_2009 = VALUES(total_2008_2009),total_2008 = VALUES(total_2008),total_2009_2010 = VALUES(total_2009_2010),total_2009 = VALUES(total_2009),total_2010_2011 = VALUES(total_2010_2011),total_2010 = VALUES(total_2010),total_2011_2012 = VALUES(total_2011_2012),total_2011 = VALUES(total_2011),total_2012_2013 = VALUES(total_2012_2013),total_2012 = VALUES(total_2012),total_2013_2014 = VALUES(total_2013_2014),total_2013 = VALUES(total_2013),total_2014_2015 = VALUES(total_2014_2015),total_2014 = VALUES(total_2014),total_2015_2016 = VALUES(total_2015_2016),total_2015 = VALUES(total_2015),total_2016_2017 = VALUES(total_2016_2017),total_2016 = VALUES(total_2016),total_2017_2018 = VALUES(total_2017_2018),total_2017 = VALUES(total_2017),change_2017_2018 = VALUES(change_2017_2018),total_2018_2019 = VALUES(total_2018_2019),total_2018 = VALUES(total_2018),endowment_total_2018_2019 = VALUES(endowment_total_2018_2019),endowment_total_2018 = VALUES(endowment_total_2018),change_2018_2019 = VALUES(change_2018_2019),total_2019_2020 = VALUES(total_2019_2020),total_2019 = VALUES(total_2019),endowment_total_2019_2020 = VALUES(endowment_total_2019_2020),endowment_total_2019 = VALUES(endowment_total_2019),change_2019_2020 = VALUES(change_2019_2020),total_2020_2021 = VALUES(total_2020_2021),total_2020 = VALUES(total_2020),endowment_total_2020_2021 = VALUES(endowment_total_2020_2021),endowment_total_2020 = VALUES(endowment_total_2020),change_2020_2021 = VALUES(change_2020_2021); END IF;
+ IF 1 AND (OLD.contact_id <> 72) AND (NEW.contact_id <> OLD.contact_id) THEN
+    INSERT INTO wmf_donor (
+      entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
+      first_donation_usd,
+      largest_donation, endowment_largest_donation, lifetime_including_endowment,
+      lifetime_usd_total, endowment_lifetime_usd_total,
+      last_donation_date, endowment_last_donation_date, first_donation_date,
+      endowment_first_donation_date, number_donations,
+      endowment_number_donations, total_2006_2007, total_2006, total_2007_2008, total_2007, total_2008_2009, total_2008, total_2009_2010, total_2009, total_2010_2011, total_2010, total_2011_2012, total_2011, total_2012_2013, total_2012, total_2013_2014, total_2013, total_2014_2015, total_2014, total_2015_2016, total_2015, total_2016_2017, total_2016, total_2017_2018, total_2017, change_2017_2018, total_2018_2019, total_2018, endowment_total_2018_2019, endowment_total_2018, change_2018_2019, total_2019_2020, total_2019, endowment_total_2019_2020, endowment_total_2019, change_2019_2020, total_2020_2021, total_2020, endowment_total_2020_2021, endowment_total_2020, change_2020_2021
+    )
+
+    SELECT
+      # note that all totals are calculated in the totals subquery and only join values
+      # in the main query. This is important as the left joins could catch more than one donation at
+      # exactly the same time or more than one max donation amount & throw out the totals.
+      OLD.contact_id as entity_id,
+      COALESCE(x.original_currency, latest.currency) as last_donation_currency,
+      COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
+      COALESCE(latest.total_amount, 0) as last_donation_usd,
+      COALESCE(earliest.total_amount, 0) as first_donation_usd,
+      totals.*
+
+    FROM (
+      SELECT
+        MAX(IF(financial_type_id <> 26, COALESCE(total_amount, 0), 0)) AS largest_donation,
+        MAX(IF(financial_type_id = 26, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation,
+        SUM(COALESCE(total_amount, 0)) AS lifetime_including_endowment,
+        SUM(IF(financial_type_id <> 26, COALESCE(total_amount, 0), 0)) AS lifetime_usd_total,
+        SUM(IF(financial_type_id = 26, COALESCE(total_amount, 0), 0)) AS endowment_lifetime_usd_total,
+        MAX(IF(financial_type_id <> 26 AND total_amount > 0, receive_date, NULL)) AS last_donation_date,
+        MAX(IF(financial_type_id = 26 AND total_amount > 0, receive_date, NULL)) AS endowment_last_donation_date,
+        MIN(IF(financial_type_id <> 26 AND total_amount, receive_date, NULL)) AS first_donation_date,
+        MIN(IF(financial_type_id = 26 AND total_amount > 0, receive_date, NULL)) AS endowment_first_donation_date,
+        COUNT(IF(financial_type_id <> 26 AND total_amount > 0, receive_date, NULL)) AS number_donations,
+        COUNT(IF(financial_type_id = 26 AND total_amount > 0, receive_date, NULL)) AS endowment_number_donations,
+     SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2006-07-01' AND '2007-06-30 23:59:59', c.total_amount, 0),0)) as total_2006_2007,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2006-01-01' AND '2006-12-31 23:59:59', c.total_amount, 0),0)) as total_2006,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2007-07-01' AND '2008-06-30 23:59:59', c.total_amount, 0),0)) as total_2007_2008,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2007-01-01' AND '2007-12-31 23:59:59', c.total_amount, 0),0)) as total_2007,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2008-07-01' AND '2009-06-30 23:59:59', c.total_amount, 0),0)) as total_2008_2009,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2008-01-01' AND '2008-12-31 23:59:59', c.total_amount, 0),0)) as total_2008,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2009-07-01' AND '2010-06-30 23:59:59', c.total_amount, 0),0)) as total_2009_2010,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2009-01-01' AND '2009-12-31 23:59:59', c.total_amount, 0),0)) as total_2009,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2010-07-01' AND '2011-06-30 23:59:59', c.total_amount, 0),0)) as total_2010_2011,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2010-01-01' AND '2010-12-31 23:59:59', c.total_amount, 0),0)) as total_2010,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2011-07-01' AND '2012-06-30 23:59:59', c.total_amount, 0),0)) as total_2011_2012,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2011-01-01' AND '2011-12-31 23:59:59', c.total_amount, 0),0)) as total_2011,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2012-07-01' AND '2013-06-30 23:59:59', c.total_amount, 0),0)) as total_2012_2013,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2012-01-01' AND '2012-12-31 23:59:59', c.total_amount, 0),0)) as total_2012,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2013-07-01' AND '2014-06-30 23:59:59', c.total_amount, 0),0)) as total_2013_2014,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2013-01-01' AND '2013-12-31 23:59:59', c.total_amount, 0),0)) as total_2013,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2014-07-01' AND '2015-06-30 23:59:59', c.total_amount, 0),0)) as total_2014_2015,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2014-01-01' AND '2014-12-31 23:59:59', c.total_amount, 0),0)) as total_2014,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2015-07-01' AND '2016-06-30 23:59:59', c.total_amount, 0),0)) as total_2015_2016,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2015-01-01' AND '2015-12-31 23:59:59', c.total_amount, 0),0)) as total_2015,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2016-07-01' AND '2017-06-30 23:59:59', c.total_amount, 0),0)) as total_2016_2017,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2016-01-01' AND '2016-12-31 23:59:59', c.total_amount, 0),0)) as total_2016,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2017-07-01' AND '2018-06-30 23:59:59', c.total_amount, 0),0)) as total_2017_2018,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2017-01-01' AND '2017-12-31 23:59:59', c.total_amount, 0),0)) as total_2017,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2017-01-01' AND '2017-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2017_2018,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', c.total_amount, 0),0)) as total_2018_2019,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0)) as total_2018,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_2018_2019,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_2018,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2018_2019,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', c.total_amount, 0),0)) as total_2019_2020,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0)) as total_2019,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_2019_2020,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_2019,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2019_2020,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', c.total_amount, 0),0)) as total_2020_2021,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0)) as total_2020,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_2020_2021,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_2020,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2021-01-01' AND '2021-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2020_2021
+      FROM civicrm_contribution c
+      USE INDEX(FK_civicrm_contribution_contact_id)
+      WHERE contact_id = OLD.contact_id
+        AND contribution_status_id = 1
+    ) as totals
+  LEFT JOIN civicrm_contribution latest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON latest.contact_id = OLD.contact_id
+    AND latest.receive_date = totals.last_donation_date
+    AND latest.contribution_status_id = 1
+    AND latest.total_amount > 0
+    AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
+    AND latest.financial_type_id <> 26
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
+
+  LEFT JOIN civicrm_contribution earliest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON earliest.contact_id = OLD.contact_id
+    AND earliest.receive_date = totals.first_donation_date
+    AND earliest.contribution_status_id = 1
+    AND earliest.total_amount > 0
+    AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
+  LIMIT 1
+
+  ON DUPLICATE KEY UPDATE
+    last_donation_currency = VALUES(last_donation_currency),
+    last_donation_amount = VALUES(last_donation_amount),
+    last_donation_usd = VALUES(last_donation_usd),
+    first_donation_usd = VALUES(first_donation_usd),
+    largest_donation = VALUES(largest_donation),
+    lifetime_usd_total = VALUES(lifetime_usd_total),
+    last_donation_date = VALUES(last_donation_date),
+    first_donation_date = VALUES(first_donation_date),
+    number_donations = VALUES(number_donations),
+    endowment_largest_donation = VALUES(endowment_largest_donation),
+    lifetime_including_endowment = VALUES(lifetime_including_endowment),
+    endowment_lifetime_usd_total = VALUES(endowment_lifetime_usd_total),
+    endowment_last_donation_date = VALUES(endowment_last_donation_date),
+    endowment_first_donation_date = VALUES(endowment_first_donation_date),
+    endowment_number_donations = VALUES(endowment_number_donations),
+    total_2006_2007 = VALUES(total_2006_2007),total_2006 = VALUES(total_2006),total_2007_2008 = VALUES(total_2007_2008),total_2007 = VALUES(total_2007),total_2008_2009 = VALUES(total_2008_2009),total_2008 = VALUES(total_2008),total_2009_2010 = VALUES(total_2009_2010),total_2009 = VALUES(total_2009),total_2010_2011 = VALUES(total_2010_2011),total_2010 = VALUES(total_2010),total_2011_2012 = VALUES(total_2011_2012),total_2011 = VALUES(total_2011),total_2012_2013 = VALUES(total_2012_2013),total_2012 = VALUES(total_2012),total_2013_2014 = VALUES(total_2013_2014),total_2013 = VALUES(total_2013),total_2014_2015 = VALUES(total_2014_2015),total_2014 = VALUES(total_2014),total_2015_2016 = VALUES(total_2015_2016),total_2015 = VALUES(total_2015),total_2016_2017 = VALUES(total_2016_2017),total_2016 = VALUES(total_2016),total_2017_2018 = VALUES(total_2017_2018),total_2017 = VALUES(total_2017),change_2017_2018 = VALUES(change_2017_2018),total_2018_2019 = VALUES(total_2018_2019),total_2018 = VALUES(total_2018),endowment_total_2018_2019 = VALUES(endowment_total_2018_2019),endowment_total_2018 = VALUES(endowment_total_2018),change_2018_2019 = VALUES(change_2018_2019),total_2019_2020 = VALUES(total_2019_2020),total_2019 = VALUES(total_2019),endowment_total_2019_2020 = VALUES(endowment_total_2019_2020),endowment_total_2019 = VALUES(endowment_total_2019),change_2019_2020 = VALUES(change_2019_2020),total_2020_2021 = VALUES(total_2020_2021),total_2020 = VALUES(total_2020),endowment_total_2020_2021 = VALUES(endowment_total_2020_2021),endowment_total_2020 = VALUES(endowment_total_2020),change_2020_2021 = VALUES(change_2020_2021); END IF;  END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_contribution_after_delete //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contribution FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`contact_id`, OLD.`financial_type_id`, OLD.`contribution_page_id`, OLD.`payment_instrument_id`, OLD.`receive_date`, OLD.`non_deductible_amount`, OLD.`total_amount`, OLD.`fee_amount`, OLD.`net_amount`, OLD.`trxn_id`, OLD.`invoice_id`, OLD.`currency`, OLD.`cancel_date`, OLD.`cancel_reason`, OLD.`receipt_date`, OLD.`thankyou_date`, OLD.`source`, OLD.`amount_level`, OLD.`contribution_recur_id`, OLD.`is_test`, OLD.`is_pay_later`, OLD.`contribution_status_id`, OLD.`note`, OLD.`address_id`, OLD.`check_number`, OLD.`campaign_id`, OLD.`tax_amount`, OLD.`creditnote_id`, OLD.`revenue_recognition_date`, OLD.`invoice_number`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
+ IF 1 AND (OLD.contact_id <> 72) THEN
+    INSERT INTO wmf_donor (
+      entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
+      first_donation_usd,
+      largest_donation, endowment_largest_donation, lifetime_including_endowment,
+      lifetime_usd_total, endowment_lifetime_usd_total,
+      last_donation_date, endowment_last_donation_date, first_donation_date,
+      endowment_first_donation_date, number_donations,
+      endowment_number_donations, total_2006_2007, total_2006, total_2007_2008, total_2007, total_2008_2009, total_2008, total_2009_2010, total_2009, total_2010_2011, total_2010, total_2011_2012, total_2011, total_2012_2013, total_2012, total_2013_2014, total_2013, total_2014_2015, total_2014, total_2015_2016, total_2015, total_2016_2017, total_2016, total_2017_2018, total_2017, change_2017_2018, total_2018_2019, total_2018, endowment_total_2018_2019, endowment_total_2018, change_2018_2019, total_2019_2020, total_2019, endowment_total_2019_2020, endowment_total_2019, change_2019_2020, total_2020_2021, total_2020, endowment_total_2020_2021, endowment_total_2020, change_2020_2021
+    )
+
+    SELECT
+      # note that all totals are calculated in the totals subquery and only join values
+      # in the main query. This is important as the left joins could catch more than one donation at
+      # exactly the same time or more than one max donation amount & throw out the totals.
+      OLD.contact_id as entity_id,
+      COALESCE(x.original_currency, latest.currency) as last_donation_currency,
+      COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
+      COALESCE(latest.total_amount, 0) as last_donation_usd,
+      COALESCE(earliest.total_amount, 0) as first_donation_usd,
+      totals.*
+
+    FROM (
+      SELECT
+        MAX(IF(financial_type_id <> 26, COALESCE(total_amount, 0), 0)) AS largest_donation,
+        MAX(IF(financial_type_id = 26, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation,
+        SUM(COALESCE(total_amount, 0)) AS lifetime_including_endowment,
+        SUM(IF(financial_type_id <> 26, COALESCE(total_amount, 0), 0)) AS lifetime_usd_total,
+        SUM(IF(financial_type_id = 26, COALESCE(total_amount, 0), 0)) AS endowment_lifetime_usd_total,
+        MAX(IF(financial_type_id <> 26 AND total_amount > 0, receive_date, NULL)) AS last_donation_date,
+        MAX(IF(financial_type_id = 26 AND total_amount > 0, receive_date, NULL)) AS endowment_last_donation_date,
+        MIN(IF(financial_type_id <> 26 AND total_amount, receive_date, NULL)) AS first_donation_date,
+        MIN(IF(financial_type_id = 26 AND total_amount > 0, receive_date, NULL)) AS endowment_first_donation_date,
+        COUNT(IF(financial_type_id <> 26 AND total_amount > 0, receive_date, NULL)) AS number_donations,
+        COUNT(IF(financial_type_id = 26 AND total_amount > 0, receive_date, NULL)) AS endowment_number_donations,
+     SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2006-07-01' AND '2007-06-30 23:59:59', c.total_amount, 0),0)) as total_2006_2007,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2006-01-01' AND '2006-12-31 23:59:59', c.total_amount, 0),0)) as total_2006,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2007-07-01' AND '2008-06-30 23:59:59', c.total_amount, 0),0)) as total_2007_2008,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2007-01-01' AND '2007-12-31 23:59:59', c.total_amount, 0),0)) as total_2007,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2008-07-01' AND '2009-06-30 23:59:59', c.total_amount, 0),0)) as total_2008_2009,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2008-01-01' AND '2008-12-31 23:59:59', c.total_amount, 0),0)) as total_2008,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2009-07-01' AND '2010-06-30 23:59:59', c.total_amount, 0),0)) as total_2009_2010,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2009-01-01' AND '2009-12-31 23:59:59', c.total_amount, 0),0)) as total_2009,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2010-07-01' AND '2011-06-30 23:59:59', c.total_amount, 0),0)) as total_2010_2011,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2010-01-01' AND '2010-12-31 23:59:59', c.total_amount, 0),0)) as total_2010,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2011-07-01' AND '2012-06-30 23:59:59', c.total_amount, 0),0)) as total_2011_2012,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2011-01-01' AND '2011-12-31 23:59:59', c.total_amount, 0),0)) as total_2011,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2012-07-01' AND '2013-06-30 23:59:59', c.total_amount, 0),0)) as total_2012_2013,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2012-01-01' AND '2012-12-31 23:59:59', c.total_amount, 0),0)) as total_2012,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2013-07-01' AND '2014-06-30 23:59:59', c.total_amount, 0),0)) as total_2013_2014,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2013-01-01' AND '2013-12-31 23:59:59', c.total_amount, 0),0)) as total_2013,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2014-07-01' AND '2015-06-30 23:59:59', c.total_amount, 0),0)) as total_2014_2015,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2014-01-01' AND '2014-12-31 23:59:59', c.total_amount, 0),0)) as total_2014,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2015-07-01' AND '2016-06-30 23:59:59', c.total_amount, 0),0)) as total_2015_2016,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2015-01-01' AND '2015-12-31 23:59:59', c.total_amount, 0),0)) as total_2015,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2016-07-01' AND '2017-06-30 23:59:59', c.total_amount, 0),0)) as total_2016_2017,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2016-01-01' AND '2016-12-31 23:59:59', c.total_amount, 0),0)) as total_2016,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2017-07-01' AND '2018-06-30 23:59:59', c.total_amount, 0),0)) as total_2017_2018,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2017-01-01' AND '2017-12-31 23:59:59', c.total_amount, 0),0)) as total_2017,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2017-01-01' AND '2017-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2017_2018,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', c.total_amount, 0),0)) as total_2018_2019,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0)) as total_2018,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2018-07-01' AND '2019-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_2018_2019,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_2018,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2018-01-01' AND '2018-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2018_2019,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', c.total_amount, 0),0)) as total_2019_2020,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0)) as total_2019,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2019-07-01' AND '2020-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_2019_2020,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_2019,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2019-01-01' AND '2019-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2019_2020,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', c.total_amount, 0),0)) as total_2020_2021,SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0)) as total_2020,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2020-07-01' AND '2021-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_2020_2021,SUM(COALESCE(IF(financial_type_id = 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_2020,
+          SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2021-01-01' AND '2021-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id <> 26 AND receive_date BETWEEN '2020-01-01' AND '2020-12-31 23:59:59', c.total_amount, 0),0))
+           as change_2020_2021
+      FROM civicrm_contribution c
+      USE INDEX(FK_civicrm_contribution_contact_id)
+      WHERE contact_id = OLD.contact_id
+        AND contribution_status_id = 1
+    ) as totals
+  LEFT JOIN civicrm_contribution latest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON latest.contact_id = OLD.contact_id
+    AND latest.receive_date = totals.last_donation_date
+    AND latest.contribution_status_id = 1
+    AND latest.total_amount > 0
+    AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
+    AND latest.financial_type_id <> 26
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
+
+  LEFT JOIN civicrm_contribution earliest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON earliest.contact_id = OLD.contact_id
+    AND earliest.receive_date = totals.first_donation_date
+    AND earliest.contribution_status_id = 1
+    AND earliest.total_amount > 0
+    AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
+  LIMIT 1
+
+  ON DUPLICATE KEY UPDATE
+    last_donation_currency = VALUES(last_donation_currency),
+    last_donation_amount = VALUES(last_donation_amount),
+    last_donation_usd = VALUES(last_donation_usd),
+    first_donation_usd = VALUES(first_donation_usd),
+    largest_donation = VALUES(largest_donation),
+    lifetime_usd_total = VALUES(lifetime_usd_total),
+    last_donation_date = VALUES(last_donation_date),
+    first_donation_date = VALUES(first_donation_date),
+    number_donations = VALUES(number_donations),
+    endowment_largest_donation = VALUES(endowment_largest_donation),
+    lifetime_including_endowment = VALUES(lifetime_including_endowment),
+    endowment_lifetime_usd_total = VALUES(endowment_lifetime_usd_total),
+    endowment_last_donation_date = VALUES(endowment_last_donation_date),
+    endowment_first_donation_date = VALUES(endowment_first_donation_date),
+    endowment_number_donations = VALUES(endowment_number_donations),
+    total_2006_2007 = VALUES(total_2006_2007),total_2006 = VALUES(total_2006),total_2007_2008 = VALUES(total_2007_2008),total_2007 = VALUES(total_2007),total_2008_2009 = VALUES(total_2008_2009),total_2008 = VALUES(total_2008),total_2009_2010 = VALUES(total_2009_2010),total_2009 = VALUES(total_2009),total_2010_2011 = VALUES(total_2010_2011),total_2010 = VALUES(total_2010),total_2011_2012 = VALUES(total_2011_2012),total_2011 = VALUES(total_2011),total_2012_2013 = VALUES(total_2012_2013),total_2012 = VALUES(total_2012),total_2013_2014 = VALUES(total_2013_2014),total_2013 = VALUES(total_2013),total_2014_2015 = VALUES(total_2014_2015),total_2014 = VALUES(total_2014),total_2015_2016 = VALUES(total_2015_2016),total_2015 = VALUES(total_2015),total_2016_2017 = VALUES(total_2016_2017),total_2016 = VALUES(total_2016),total_2017_2018 = VALUES(total_2017_2018),total_2017 = VALUES(total_2017),change_2017_2018 = VALUES(change_2017_2018),total_2018_2019 = VALUES(total_2018_2019),total_2018 = VALUES(total_2018),endowment_total_2018_2019 = VALUES(endowment_total_2018_2019),endowment_total_2018 = VALUES(endowment_total_2018),change_2018_2019 = VALUES(change_2018_2019),total_2019_2020 = VALUES(total_2019_2020),total_2019 = VALUES(total_2019),endowment_total_2019_2020 = VALUES(endowment_total_2019_2020),endowment_total_2019 = VALUES(endowment_total_2019),change_2019_2020 = VALUES(change_2019_2020),total_2020_2021 = VALUES(total_2020_2021),total_2020 = VALUES(total_2020),endowment_total_2020_2021 = VALUES(endowment_total_2020_2021),endowment_total_2020 = VALUES(endowment_total_2020),change_2020_2021 = VALUES(change_2020_2021); END IF;  END //
+DELIMITER ;
