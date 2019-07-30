@@ -4125,7 +4125,7 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
  IF 1 AND (NEW.contact_id <> 72) THEN 
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd, date_of_largest_donation,
+      first_donation_usd,
       largest_donation, endowment_largest_donation, lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
       last_donation_date, endowment_last_donation_date, first_donation_date,
@@ -4142,7 +4142,6 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
       COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
       COALESCE(latest.total_amount, 0) as last_donation_usd,
       COALESCE(earliest.total_amount, 0) as first_donation_usd,
-      largest.receive_date as date_of_largest_donation,
       totals.*
 
     FROM (
@@ -4176,7 +4175,7 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
     ) as totals
-  LEFT JOIN civicrm_contribution latest 
+  LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON latest.contact_id = NEW.contact_id
     AND latest.receive_date = totals.last_donation_date
@@ -4185,23 +4184,14 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
     AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
     AND latest.financial_type_id <> 26
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
-  
-  LEFT JOIN civicrm_contribution earliest 
+
+  LEFT JOIN civicrm_contribution earliest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON earliest.contact_id = NEW.contact_id
     AND earliest.receive_date = totals.first_donation_date
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-    
-  LEFT JOIN civicrm_contribution largest 
-    USE INDEX(FK_civicrm_contribution_contact_id)
-    ON largest.contact_id = NEW.contact_id
-    AND largest.total_amount = totals.largest_donation
-    AND largest.contribution_status_id = 1
-    AND largest.total_amount > 0
-    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
-  ORDER BY largest.receive_date DESC
   LIMIT 1
 
   ON DUPLICATE KEY UPDATE
@@ -4210,7 +4200,6 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     largest_donation = VALUES(largest_donation),
-    date_of_largest_donation = VALUES(date_of_largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),
@@ -4233,7 +4222,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
  IF 1 AND (NEW.contact_id <> 72) AND ((NEW.contribution_status_id != OLD.contribution_status_id) OR (NEW.total_amount != OLD.total_amount) OR (NEW.contact_id != OLD.contact_id) OR (NEW.receive_date != OLD.receive_date) OR (NEW.currency != OLD.currency) ) THEN 
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd, date_of_largest_donation,
+      first_donation_usd,
       largest_donation, endowment_largest_donation, lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
       last_donation_date, endowment_last_donation_date, first_donation_date,
@@ -4250,7 +4239,6 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
       COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
       COALESCE(latest.total_amount, 0) as last_donation_usd,
       COALESCE(earliest.total_amount, 0) as first_donation_usd,
-      largest.receive_date as date_of_largest_donation,
       totals.*
 
     FROM (
@@ -4284,7 +4272,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
     ) as totals
-  LEFT JOIN civicrm_contribution latest 
+  LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON latest.contact_id = NEW.contact_id
     AND latest.receive_date = totals.last_donation_date
@@ -4293,23 +4281,14 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
     AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
     AND latest.financial_type_id <> 26
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
-  
-  LEFT JOIN civicrm_contribution earliest 
+
+  LEFT JOIN civicrm_contribution earliest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON earliest.contact_id = NEW.contact_id
     AND earliest.receive_date = totals.first_donation_date
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-    
-  LEFT JOIN civicrm_contribution largest 
-    USE INDEX(FK_civicrm_contribution_contact_id)
-    ON largest.contact_id = NEW.contact_id
-    AND largest.total_amount = totals.largest_donation
-    AND largest.contribution_status_id = 1
-    AND largest.total_amount > 0
-    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
-  ORDER BY largest.receive_date DESC
   LIMIT 1
 
   ON DUPLICATE KEY UPDATE
@@ -4318,7 +4297,6 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     largest_donation = VALUES(largest_donation),
-    date_of_largest_donation = VALUES(date_of_largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),
@@ -4333,7 +4311,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
  IF 1 AND (OLD.contact_id <> 72) AND (NEW.contact_id <> OLD.contact_id) THEN 
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd, date_of_largest_donation,
+      first_donation_usd,
       largest_donation, endowment_largest_donation, lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
       last_donation_date, endowment_last_donation_date, first_donation_date,
@@ -4350,7 +4328,6 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
       COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
       COALESCE(latest.total_amount, 0) as last_donation_usd,
       COALESCE(earliest.total_amount, 0) as first_donation_usd,
-      largest.receive_date as date_of_largest_donation,
       totals.*
 
     FROM (
@@ -4384,7 +4361,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
       WHERE contact_id = OLD.contact_id
         AND contribution_status_id = 1
     ) as totals
-  LEFT JOIN civicrm_contribution latest 
+  LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON latest.contact_id = OLD.contact_id
     AND latest.receive_date = totals.last_donation_date
@@ -4393,23 +4370,14 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
     AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
     AND latest.financial_type_id <> 26
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
-  
-  LEFT JOIN civicrm_contribution earliest 
+
+  LEFT JOIN civicrm_contribution earliest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON earliest.contact_id = OLD.contact_id
     AND earliest.receive_date = totals.first_donation_date
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-    
-  LEFT JOIN civicrm_contribution largest 
-    USE INDEX(FK_civicrm_contribution_contact_id)
-    ON largest.contact_id = OLD.contact_id
-    AND largest.total_amount = totals.largest_donation
-    AND largest.contribution_status_id = 1
-    AND largest.total_amount > 0
-    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
-  ORDER BY largest.receive_date DESC
   LIMIT 1
 
   ON DUPLICATE KEY UPDATE
@@ -4418,7 +4386,6 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     largest_donation = VALUES(largest_donation),
-    date_of_largest_donation = VALUES(date_of_largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),
@@ -4441,7 +4408,7 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
  IF 1 AND (OLD.contact_id <> 72) THEN 
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd, date_of_largest_donation,
+      first_donation_usd,
       largest_donation, endowment_largest_donation, lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
       last_donation_date, endowment_last_donation_date, first_donation_date,
@@ -4458,7 +4425,6 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
       COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
       COALESCE(latest.total_amount, 0) as last_donation_usd,
       COALESCE(earliest.total_amount, 0) as first_donation_usd,
-      largest.receive_date as date_of_largest_donation,
       totals.*
 
     FROM (
@@ -4492,7 +4458,7 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
       WHERE contact_id = OLD.contact_id
         AND contribution_status_id = 1
     ) as totals
-  LEFT JOIN civicrm_contribution latest 
+  LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON latest.contact_id = OLD.contact_id
     AND latest.receive_date = totals.last_donation_date
@@ -4501,23 +4467,14 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
     AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
     AND latest.financial_type_id <> 26
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
-  
-  LEFT JOIN civicrm_contribution earliest 
+
+  LEFT JOIN civicrm_contribution earliest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON earliest.contact_id = OLD.contact_id
     AND earliest.receive_date = totals.first_donation_date
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-    
-  LEFT JOIN civicrm_contribution largest 
-    USE INDEX(FK_civicrm_contribution_contact_id)
-    ON largest.contact_id = OLD.contact_id
-    AND largest.total_amount = totals.largest_donation
-    AND largest.contribution_status_id = 1
-    AND largest.total_amount > 0
-    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
-  ORDER BY largest.receive_date DESC
   LIMIT 1
 
   ON DUPLICATE KEY UPDATE
@@ -4526,7 +4483,6 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     largest_donation = VALUES(largest_donation),
-    date_of_largest_donation = VALUES(date_of_largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),
