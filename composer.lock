@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a8ff505be372ac73c94ec989686044d9",
+    "content-hash": "3220c71420066a3bf33dd3df92807350",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -134,16 +134,16 @@
         },
         {
             "name": "clue/stream-filter",
-            "version": "v1.4.0",
+            "version": "v1.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/clue/php-stream-filter.git",
-                "reference": "d80fdee9b3a7e0d16fc330a22f41f3ad0eeb09d0"
+                "reference": "5a58cc30a8bd6a4eb8f856adf61dd3e013f53f71"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/clue/php-stream-filter/zipball/d80fdee9b3a7e0d16fc330a22f41f3ad0eeb09d0",
-                "reference": "d80fdee9b3a7e0d16fc330a22f41f3ad0eeb09d0",
+                "url": "https://api.github.com/repos/clue/php-stream-filter/zipball/5a58cc30a8bd6a4eb8f856adf61dd3e013f53f71",
+                "reference": "5a58cc30a8bd6a4eb8f856adf61dd3e013f53f71",
                 "shasum": ""
             },
             "require": {
@@ -158,7 +158,7 @@
                     "Clue\\StreamFilter\\": "src/"
                 },
                 "files": [
-                    "src/functions.php"
+                    "src/functions_include.php"
                 ]
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -182,7 +182,7 @@
                 "stream_filter_append",
                 "stream_filter_register"
             ],
-            "time": "2017-08-18T09:54:01+00:00"
+            "time": "2019-04-09T12:31:48+00:00"
         },
         {
             "name": "coderkungfu/php-queue",
@@ -509,23 +509,23 @@
         },
         {
             "name": "geocoder-php/common-http",
-            "version": "dev-master",
+            "version": "4.2.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/eileenmcnaughton/php-common-http.git",
-                "reference": "b90942009517719849642a"
+                "url": "https://github.com/geocoder-php/php-common-http.git",
+                "reference": "8e666f89d0b87121595ec2f5134a9f54bf4b0cd2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/geocoder-php/php-common-http/zipball/b90942009517719849642a",
-                "reference": "b90942009517719849642a",
+                "url": "https://api.github.com/repos/geocoder-php/php-common-http/zipball/8e666f89d0b87121595ec2f5134a9f54bf4b0cd2",
+                "reference": "8e666f89d0b87121595ec2f5134a9f54bf4b0cd2",
                 "shasum": ""
             },
             "require": {
-                "php": "^5.5",
+                "php": "^7.0",
                 "php-http/client-implementation": "^1.0",
-                "php-http/discovery": "^1.0",
-                "php-http/httplug": "^1.0",
+                "php-http/discovery": "^1.4",
+                "php-http/httplug": "^1.0 || ^2.0",
                 "php-http/message-factory": "^1.0.2",
                 "psr/http-message": "^1.0",
                 "psr/http-message-implementation": "^1.0",
@@ -567,25 +567,25 @@
             "keywords": [
                 "http geocoder"
             ],
-            "time": "2018-01-23T02:12:05+00:00"
+            "time": "2018-11-15T22:27:27+00:00"
         },
         {
             "name": "geocoder-php/free-geoip-provider",
-            "version": "dev-master",
+            "version": "4.1.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/eileenmcnaughton/free-geoip-provider.git",
-                "reference": "6a5c7d2"
+                "url": "https://github.com/geocoder-php/free-geoip-provider.git",
+                "reference": "b0798674957d7066010a6f918fa8dea2de6d844f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/geocoder-php/free-geoip-provider/zipball/6a5c7d2",
-                "reference": "6a5c7d2",
+                "url": "https://api.github.com/repos/geocoder-php/free-geoip-provider/zipball/b0798674957d7066010a6f918fa8dea2de6d844f",
+                "reference": "b0798674957d7066010a6f918fa8dea2de6d844f",
                 "shasum": ""
             },
             "require": {
-                "geocoder-php/common-http": "^4.0",
-                "php": "^5.5",
+                "geocoder-php/common-http": "^4.1",
+                "php": "^7.0",
                 "willdurand/geocoder": "^4.0"
             },
             "provide": {
@@ -618,25 +618,31 @@
             ],
             "authors": [
                 {
-                    "name": "William Durand",
+                    "name": "William DURAND",
                     "email": "william.durand1@gmail.com"
                 }
             ],
             "description": "Geocoder FreeGeoIp adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-01-23T02:15:37+00:00"
+            "time": "2018-06-28T14:34:11+00:00"
         },
         {
             "name": "geocoder-php/google-maps-provider",
-            "version": "dev-phpcompat",
+            "version": "4.4.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/eileenmcnaughton/google-maps-provider.git",
-                "reference": "b9ae8b0e642a99c2ed298a548"
+                "url": "https://github.com/geocoder-php/google-maps-provider.git",
+                "reference": "307ca3590b67d23d0658808bb3615f2be3154eee"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/geocoder-php/google-maps-provider/zipball/307ca3590b67d23d0658808bb3615f2be3154eee",
+                "reference": "307ca3590b67d23d0658808bb3615f2be3154eee",
+                "shasum": ""
             },
             "require": {
                 "geocoder-php/common-http": "^4.0",
-                "php": ">=5.5",
+                "php": "^7.0",
                 "willdurand/geocoder": "^4.0"
             },
             "provide": {
@@ -644,10 +650,9 @@
             },
             "require-dev": {
                 "geocoder-php/provider-integration-tests": "^1.0",
-                "nyholm/psr7": "^0.2.2",
                 "php-http/curl-client": "^1.7",
                 "php-http/message": "^1.0",
-                "phpunit/phpunit": "6.3.*"
+                "phpunit/phpunit": "^6.5 || ^7.5"
             },
             "type": "library",
             "extra": {
@@ -663,14 +668,7 @@
                     "/Tests/"
                 ]
             },
-            "scripts": {
-                "test": [
-                    "vendor/bin/phpunit"
-                ],
-                "test-ci": [
-                    "vendor/bin/phpunit --coverage-text --coverage-clover=build/coverage.xml"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -682,36 +680,35 @@
             ],
             "description": "Geocoder GoogleMaps adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-01-23T04:49:20+00:00"
+            "time": "2019-04-26T20:17:17+00:00"
         },
         {
             "name": "geocoder-php/mapquest-provider",
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/eileenmcnaughton/mapquest-provider.git",
-                "reference": "782d90f95e4520add"
+                "url": "https://github.com/geocoder-php/mapquest-provider.git",
+                "reference": "92d39fb0e4ab425e37c4f489ecea34168d3b2522"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/geocoder-php/mapquest-provider/zipball/782d90f95e4520add",
-                "reference": "782d90f95e4520add",
+                "url": "https://api.github.com/repos/geocoder-php/mapquest-provider/zipball/92d39fb0e4ab425e37c4f489ecea34168d3b2522",
+                "reference": "92d39fb0e4ab425e37c4f489ecea34168d3b2522",
                 "shasum": ""
             },
             "require": {
                 "geocoder-php/common-http": "^4.0",
-                "php": "^5.5",
+                "php": "^7.0",
                 "willdurand/geocoder": "^4.0"
             },
             "provide": {
                 "geocoder-php/provider-implementation": "1.0"
             },
             "require-dev": {
-                "geocoder-php/provider-integration-tests": "^1.0",
-                "nyholm/psr7": "^0.2.2",
+                "geocoder-php/provider-integration-tests": "^1.1",
                 "php-http/curl-client": "^1.7",
                 "php-http/message": "^1.0",
-                "phpunit/phpunit": "6.3.*"
+                "phpunit/phpunit": "^6.5 || ^7.5"
             },
             "type": "library",
             "extra": {
@@ -739,25 +736,25 @@
             ],
             "description": "Geocoder MapQuest adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-01-19T02:21:34+00:00"
+            "time": "2019-02-06T12:18:09+00:00"
         },
         {
             "name": "geocoder-php/nominatim-provider",
-            "version": "dev-master",
+            "version": "5.1.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/eileenmcnaughton/nominatim-provider.git",
-                "reference": "9cdaba82bab4d635f2df7e"
+                "url": "https://github.com/geocoder-php/nominatim-provider.git",
+                "reference": "85e8a063754011484d31778bb371c444bbf313ed"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/geocoder-php/nominatim-provider/zipball/9cdaba82bab4d635f2df7e",
-                "reference": "9cdaba82bab4d635f2df7e",
+                "url": "https://api.github.com/repos/geocoder-php/nominatim-provider/zipball/85e8a063754011484d31778bb371c444bbf313ed",
+                "reference": "85e8a063754011484d31778bb371c444bbf313ed",
                 "shasum": ""
             },
             "require": {
-                "geocoder-php/common-http": "^4.0",
-                "php": "^5.6",
+                "geocoder-php/common-http": "^4.1",
+                "php": "^7.0",
                 "willdurand/geocoder": "^4.0"
             },
             "provide": {
@@ -765,10 +762,9 @@
             },
             "require-dev": {
                 "geocoder-php/provider-integration-tests": "^1.0",
-                "nyholm/psr7": "^0.2.2",
                 "php-http/curl-client": "^1.7",
                 "php-http/message": "^1.0",
-                "phpunit/phpunit": "6.3.*"
+                "phpunit/phpunit": "^6.5 || ^7.5"
             },
             "type": "library",
             "extra": {
@@ -796,7 +792,7 @@
             ],
             "description": "Geocoder Nominatim adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-02-12T23:19:17+00:00"
+            "time": "2019-02-06T12:18:09+00:00"
         },
         {
             "name": "geoip2/geoip2",
@@ -2924,16 +2920,16 @@
         },
         {
             "name": "wikimedia/civicrm-data-table-provider",
-            "version": "dev-master",
+            "version": "4.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/civicrm-data-table-provider.git",
-                "reference": "9f6b1ba3e7f0ec12befedcdac4d1fcfc7d66e40a"
+                "reference": "45bb6ee2152b930594203ef637621dc7cc996718"
             },
             "require": {
-                "geocoder-php/common-http": "^4.0",
-                "php": ">=5.5",
-                "willdurand/geocoder": "^4.0"
+                "geocoder-php/common-http": "^4",
+                "php": ">=7.0",
+                "willdurand/geocoder": "^4"
             },
             "provide": {
                 "geocoder-php/provider-implementation": "1.0"
@@ -2978,7 +2974,7 @@
             ],
             "description": "CiviCRM datatable geocoder",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2018-02-21T04:05:10+00:00"
+            "time": "2019-07-31T02:22:21+00:00"
         },
         {
             "name": "wikimedia/composer-merge-plugin",
@@ -3201,15 +3197,21 @@
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/eileenmcnaughton/php-common.git",
-                "reference": "d1cbff78003dede05dda13d543b872001c0cc50f"
+                "url": "https://github.com/geocoder-php/php-common.git",
+                "reference": "a85267c6de0fdbb3cf649aca60c8bcce4fd74379"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/geocoder-php/php-common/zipball/a85267c6de0fdbb3cf649aca60c8bcce4fd74379",
+                "reference": "a85267c6de0fdbb3cf649aca60c8bcce4fd74379",
+                "shasum": ""
             },
             "require": {
-                "php": "^5.6"
+                "php": "^7.0"
             },
             "require-dev": {
                 "nyholm/nsa": "^1.1",
-                "phpunit/phpunit": "^6.1",
+                "phpunit/phpunit": "^6.5 || ^7.5",
                 "symfony/stopwatch": "~2.5"
             },
             "suggest": {
@@ -3229,20 +3231,13 @@
                     "/Tests/"
                 ]
             },
-            "scripts": {
-                "test": [
-                    "vendor/bin/phpunit"
-                ],
-                "test-ci": [
-                    "vendor/bin/phpunit --coverage-text --coverage-clover=build/coverage.xml"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
             "authors": [
                 {
-                    "name": "William Durand",
+                    "name": "William DURAND",
                     "email": "william.durand1@gmail.com"
                 }
             ],
@@ -3254,7 +3249,7 @@
                 "geocoding",
                 "geoip"
             ],
-            "time": "2018-02-12T23:33:59+00:00"
+            "time": "2019-02-06T12:18:09+00:00"
         },
         {
             "name": "zordius/lightncandy",
@@ -4805,11 +4800,6 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "amzn/login-and-pay-with-amazon-sdk-php": 20,
-        "geocoder-php/free-geoip-provider": 20,
-        "geocoder-php/nominatim-provider": 20,
-        "geocoder-php/mapquest-provider": 20,
-        "geocoder-php/common-http": 20,
-        "geocoder-php/google-maps-provider": 20,
         "wikimedia/civicrm-data-table-provider": 20,
         "wikimedia/omnimail-silverpop": 20,
         "mrmarkfrench/silverpop-php-connector": 20,
@@ -4822,6 +4812,6 @@
     },
     "platform-dev": [],
     "platform-overrides": {
-        "php": "5.6.33"
+        "php": "7.0.33"
     }
 }
