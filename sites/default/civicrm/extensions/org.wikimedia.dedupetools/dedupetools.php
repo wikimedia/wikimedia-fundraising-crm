@@ -236,3 +236,28 @@ function dedupetools_civicrm_navigationMenu(&$menu) {
   ]);
   _dedupetools_civix_navigationMenu($menu);
 }
+
+/**
+ * Do not require administer CiviCRM to use deduper.
+ *
+ * @param string $entity
+ * @param string $action
+ * @param array $params
+ * @param array $permissions
+ */
+function dedupetools_civicrm_alterAPIPermissions($entity, $action, &$params, &$permissions) {
+  // Set permission for all deduping actions to 'merge duplicate contacts'
+  $permissions['merge'] = [
+    'getcacheinfo' => ['merge duplicate contacts'],
+    'get_conflicts' => ['merge duplicate contacts'],
+    'get_duplicates' => ['merge duplicate contacts'],
+    'mark_duplicate_exception' => ['merge duplicate contacts'],
+  ];
+  $permissions['rule_group']['get'] = ['merge duplicate contacts'];
+  // This isn't really exposed at the moment but it would have the same perms if it were.
+  // It would be to allow conflicts to be marked as skip-handlable.
+  $permissions['merge_conflict'] = [
+    'get' => ['merge duplicate contacts'],
+    'create' => ['merge duplicate contacts'],
+  ];
+}
