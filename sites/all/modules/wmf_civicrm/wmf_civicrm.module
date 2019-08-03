@@ -4296,6 +4296,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       USE INDEX(FK_civicrm_contribution_contact_id)
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
+        AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
     ) as totals
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
