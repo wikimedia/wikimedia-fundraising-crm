@@ -203,6 +203,10 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    * the balance (.25 EUR or 13 cents) so the contact appears to have made a 13 cent donation.
    *
    * The new donation gets today's date as we have not passed a refund date.
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \ExchangeRatesException
+   * @throws \WmfException
    */
   public function testMakeLesserRefund() {
     $lesser_amount = round($this->original_amount - 0.25, 2);
@@ -250,11 +254,11 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'Refund contribution has correct lesser amount'
     );
     $this->assertCustomFieldValues($this->contact_id, [
-      'lifetime_usd_total' => 40.13,
-      'last_donation_date' => date('Y-m-d'),
+      'lifetime_usd_total' => 40,
+      'last_donation_date' => date('Y-m-d', strtotime('1 year ago')),
       'last_donation_usd' => 40,
       'total_' . (date('Y') -1) => 40,
-      $this->financialYearTotalFieldName => .13,
+      $this->financialYearTotalFieldName => 0,
       'last_donation_currency' => 'NZD',
       'last_donation_amount' => 200,
     ]);
