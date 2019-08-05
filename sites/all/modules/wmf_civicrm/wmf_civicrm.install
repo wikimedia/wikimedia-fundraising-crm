@@ -4753,3 +4753,94 @@ function wmf_civicrm_update_7900() {
   ');
 
 }
+
+/**
+ * Update contacts with wmf_donor information but only refunded or no contributions.
+ *
+ * Per https://gerrit.wikimedia.org/r/#/c/wikimedia/fundraising/crm/+/527706/ we are now excluding refund adjustments
+ * from calculations. In addition some contacts whose contributions were merged to another donor while triggers were off
+ * incorrectly show an amount.
+ *
+ * Bug: T229273
+ *
+ * SELECT count(*), min(entity_id), max(entity_id)
+ * FROM wmf_donor d
+ * LEFT JOIN civicrm_contribution cont
+ *   ON d.entity_id = cont.contact_id
+ *   AND (cont.trxn_id NOT LIKE 'RFD%' OR cont.trxn_id IS NULL) AND contribution_status_id = 1
+ * WHERE cont.id IS NULL and d.last_donation_date IS NOT NULL ;
+ * +----------+----------------+----------------+
+ * | count(*) | min(entity_id) | max(entity_id) |
+ * +----------+----------------+----------------+
+ * |    16750 |          98371 |       34696854 |
+ */
+function wmf_civicrm_update_7905() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("
+    UPDATE wmf_donor d
+        LEFT JOIN civicrm_contribution cont
+        ON
+            d.entity_id = cont.contact_id
+            AND (cont.trxn_id NOT LIKE 'RFD%' OR cont.trxn_id IS NULL)
+            AND contribution_status_id = 1
+    SET
+         last_donation_date = NULL,
+         last_donation_currency = NULL,
+         last_donation_amount = 0,
+         last_donation_usd = 0,
+         lifetime_usd_total = 0,
+         total_2006_2007 = 0,
+         total_2007_2008 = 0,
+         total_2008_2009 = 0,
+         total_2009_2010 = 0,
+         total_2010_2011 = 0,
+         total_2011_2012 = 0,
+         total_2012_2013 = 0,
+         total_2013_2014 = 0,
+         total_2014_2015 = 0,
+         total_2015_2016 = 0,
+         total_2016_2017 = 0,
+         total_2017_2018 = 0,
+         total_2018_2019 = 0,
+         total_2019_2020 = 0,
+         total_2020_2021 = 0,
+         endowment_last_donation_date = NULL,
+         first_donation_date = NULL,
+         endowment_first_donation_date = NULL,
+         first_donation_usd = 0,
+         lifetime_including_endowment = 0,
+         endowment_lifetime_usd_total = 0,
+         number_donations = 0,
+         endowment_number_donations = 0,
+         largest_donation = 0,
+         endowment_largest_donation = 0,
+         date_of_largest_donation = NULL,
+         total_2006 = 0,
+         total_2007 = 0,
+         total_2008 = 0,
+         total_2009 = 0,
+         total_2010 = 0,
+         total_2011 = 0,
+         total_2012 = 0,
+         total_2013 = 0,
+         total_2014 = 0,
+         total_2015 = 0,
+         total_2016 = 0,
+         total_2017 = 0,
+         change_2017_2018 = 0,
+         total_2018 = 0,
+         endowment_total_2018 = 0,
+         endowment_total_2018_2019 = 0,
+         change_2018_2019 = 0,
+         total_2019 = 0,
+         endowment_total_2019 = 0,
+         endowment_total_2019_2020 = 0,
+         change_2019_2020 = 0,
+         total_2020 = 0,
+         endowment_total_2020 = 0,
+         endowment_total_2020_2021 = 0,
+         change_2020_2021 = 0
+
+    WHERE cont.id IS NULL and d.last_donation_date IS NOT NULL
+  ");
+}
