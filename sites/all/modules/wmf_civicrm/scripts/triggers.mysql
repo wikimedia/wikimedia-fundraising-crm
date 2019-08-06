@@ -4174,6 +4174,7 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
       USE INDEX(FK_civicrm_contribution_contact_id)
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
+        AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
     ) as totals
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
@@ -4271,6 +4272,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
       USE INDEX(FK_civicrm_contribution_contact_id)
       WHERE contact_id = NEW.contact_id
         AND contribution_status_id = 1
+        AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
     ) as totals
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
@@ -4360,6 +4362,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
       USE INDEX(FK_civicrm_contribution_contact_id)
       WHERE contact_id = OLD.contact_id
         AND contribution_status_id = 1
+        AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
     ) as totals
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
@@ -4457,6 +4460,7 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
       USE INDEX(FK_civicrm_contribution_contact_id)
       WHERE contact_id = OLD.contact_id
         AND contribution_status_id = 1
+        AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
     ) as totals
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
@@ -7456,7 +7460,7 @@ DROP TRIGGER IF EXISTS civicrm_value_anonymous__after_insert //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_value_anonymous__after_insert after insert ON civicrm_value_anonymous_ FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_anonymous_ (`id`, `entity_id`, `listed_as_anonymous`, `listed_on_benefactor_page_as_142`, `benefactor_order_as_168`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`listed_as_anonymous`, NEW.`listed_on_benefactor_page_as_142`, NEW.`benefactor_order_as_168`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
+CREATE TRIGGER civicrm_value_anonymous__after_insert after insert ON civicrm_value_anonymous_ FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_anonymous_ (`id`, `entity_id`, `listed_as_anonymous`, `listed_on_benefactor_page_as_142`, `benefactor_order_as_168`, `endowment_site_listed_as_218`, `wls_listed_as_219`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`listed_as_anonymous`, NEW.`listed_on_benefactor_page_as_142`, NEW.`benefactor_order_as_168`, NEW.`endowment_site_listed_as_218`, NEW.`wls_listed_as_219`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
 
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
  END //
@@ -7467,7 +7471,7 @@ DROP TRIGGER IF EXISTS civicrm_value_anonymous__after_update //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_value_anonymous__after_update after update ON civicrm_value_anonymous_ FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`listed_as_anonymous`,'') <> IFNULL(NEW.`listed_as_anonymous`,'') OR IFNULL(OLD.`listed_on_benefactor_page_as_142`,'') <> IFNULL(NEW.`listed_on_benefactor_page_as_142`,'') OR IFNULL(OLD.`benefactor_order_as_168`,'') <> IFNULL(NEW.`benefactor_order_as_168`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_anonymous_ (`id`, `entity_id`, `listed_as_anonymous`, `listed_on_benefactor_page_as_142`, `benefactor_order_as_168`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`listed_as_anonymous`, NEW.`listed_on_benefactor_page_as_142`, NEW.`benefactor_order_as_168`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
+CREATE TRIGGER civicrm_value_anonymous__after_update after update ON civicrm_value_anonymous_ FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`listed_as_anonymous`,'') <> IFNULL(NEW.`listed_as_anonymous`,'') OR IFNULL(OLD.`listed_on_benefactor_page_as_142`,'') <> IFNULL(NEW.`listed_on_benefactor_page_as_142`,'') OR IFNULL(OLD.`benefactor_order_as_168`,'') <> IFNULL(NEW.`benefactor_order_as_168`,'') OR IFNULL(OLD.`endowment_site_listed_as_218`,'') <> IFNULL(NEW.`endowment_site_listed_as_218`,'') OR IFNULL(OLD.`wls_listed_as_219`,'') <> IFNULL(NEW.`wls_listed_as_219`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_anonymous_ (`id`, `entity_id`, `listed_as_anonymous`, `listed_on_benefactor_page_as_142`, `benefactor_order_as_168`, `endowment_site_listed_as_218`, `wls_listed_as_219`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`listed_as_anonymous`, NEW.`listed_on_benefactor_page_as_142`, NEW.`benefactor_order_as_168`, NEW.`endowment_site_listed_as_218`, NEW.`wls_listed_as_219`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
 
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
  END //
@@ -7478,7 +7482,7 @@ DROP TRIGGER IF EXISTS civicrm_value_anonymous__after_delete //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_value_anonymous__after_delete after delete ON civicrm_value_anonymous_ FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_anonymous_ (`id`, `entity_id`, `listed_as_anonymous`, `listed_on_benefactor_page_as_142`, `benefactor_order_as_168`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`listed_as_anonymous`, OLD.`listed_on_benefactor_page_as_142`, OLD.`benefactor_order_as_168`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
+CREATE TRIGGER civicrm_value_anonymous__after_delete after delete ON civicrm_value_anonymous_ FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_anonymous_ (`id`, `entity_id`, `listed_as_anonymous`, `listed_on_benefactor_page_as_142`, `benefactor_order_as_168`, `endowment_site_listed_as_218`, `wls_listed_as_219`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`listed_as_anonymous`, OLD.`listed_on_benefactor_page_as_142`, OLD.`benefactor_order_as_168`, OLD.`endowment_site_listed_as_218`, OLD.`wls_listed_as_219`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
 
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.entity_id;
  END //
