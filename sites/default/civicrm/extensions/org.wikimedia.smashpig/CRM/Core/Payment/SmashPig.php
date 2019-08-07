@@ -43,7 +43,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    * @param array $params requires at least token, amount, currency, invoice_id,
    *  is_recur, and description
    *
-   * @return array with trxn_id set to the processor's payment ID
+   * @return array with processor_id set to the processor's payment ID
    * @throws \Civi\Payment\Exception\PaymentProcessorException
    */
   public function doDirectPayment(&$params) {
@@ -55,8 +55,8 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
 
     $provider = PaymentProviderFactory::getProviderForMethod('cc');
 
-    $trxnId = $this->createPayment($params, $provider);
-    $approvePaymentResponse = $provider->approvePayment($trxnId, []);
+    $processorId = $this->createPayment($params, $provider);
+    $approvePaymentResponse = $provider->approvePayment($processorId, []);
     if (!empty($approvePaymentResponse['errors'])) {
       $this->throwException(
         'ApprovePayment failed', $approvePaymentResponse['errors']
@@ -65,7 +65,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     $allContributionStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
     $status = array_search('Completed', $allContributionStatus);
     return [
-      'trxn_id' => $trxnId,
+      'processor_id' => $processorId,
       'invoice_id' => $params['invoice_id'],
       'payment_status_id' => $status,
     ];

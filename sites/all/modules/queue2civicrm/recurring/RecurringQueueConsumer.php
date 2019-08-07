@@ -300,6 +300,22 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         // any gateway values with no valid processor mapping so we do this ourselves.
         $params['payment_processor_id'] = $processors[$msg['gateway']];
       }
+
+      // Create a new recurring donation with a token
+      if (isset($msg['recurring_payment_token'])) {
+        // Create a token
+        $payment_token_result = wmf_civicrm_recur_payment_token_create($contact['id'],$msg['gateway'],$msg['recurring_payment_token'],$msg['user_ip']);
+        // Set up the params to have the token
+        $params['payment_token_id'] = $payment_token_result['id'];
+        // Create a non paypal style trxn_id
+        $params['trxn_id'] = \WmfTransaction::from_message($msg)->get_unique_id();
+        $params['processor_id'] = $msg['gateway_txn_id'];
+        $params['invoice_id'] = $msg['order_id'];
+        // Set installments to 0 for non paypal recurring contributions
+        $params['installments'] = 0;
+        $params['next_sched_contribution_date'] = wmf_common_date_unix_to_civicrm($msg['start_date']);
+      }
+
       civicrm_api3('ContributionRecur', 'create', $params);
     }
     catch (\CiviCRM_API3_Exception $e) {

@@ -167,7 +167,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'gateway' => 'ingenico', // TODO: generalize
         'gross' => $recurringPayment['amount'],
         'currency' => $recurringPayment['currency'],
-        'gateway_txn_id' => $payment['trxn_id'],
+        'gateway_txn_id' => $payment['processor_id'],
         'payment_method' => 'cc',
         'date' => UtcDate::getUtcTimestamp(),
         'contribution_recur_id' => $recurringPayment['id'],
@@ -187,7 +187,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'contribution_status_id' => 'Completed',
         'invoice_id' => $invoiceId,
         'contact_id' => $recurringPayment['contact_id'],
-        'trxn_id' => $payment['trxn_id'],
+        'trxn_id' => $payment['processor_id'],
       ]);
     }
   }
@@ -213,8 +213,16 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   }
 
   /**
-   * Given a recurring contribution record, get the most recent contribution
-   * in the series.
+   * Given a recurring contribution record, try to find the most recent
+   * contribution relating to it via either the contribution_recur_id
+   * or invoice_id.
+   *
+   * For newer recurring subscriptions, we do not add a contribution_recur_id
+   * record to the original contribution as in some cases the recurring subscription
+   * is independent of the earlier original contribution. At this point you're likely thinking
+   * so why are we looking up the previous contribution?!?!? ... and the answer
+   * is that the original contribution has foreign keys to other required data elements that we
+   * rely when processing the payment so we call on it for those.
    *
    * TODO: use ContributionRecur::getTemplateContribution ?
    * @param array $recurringPayment
@@ -223,16 +231,35 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @throws \CiviCRM_API3_Exception
    */
   protected function getPreviousContribution($recurringPayment) {
-    return civicrm_api3('Contribution', 'getsingle', [
-      'contribution_recur_id' => $recurringPayment['id'],
-      'options' => [
-        'limit' => 1,
-        'sort' => 'receive_date DESC',
-      ],
-      'is_test' => CRM_Utils_Array::value(
-        'is_test', $recurringPayment['is_test']
-      ),
-    ]);
+
+    try {
+      // first try to match on contribution_recur_id
+      return civicrm_api3('Contribution', 'getsingle', [
+        'contribution_recur_id' => $recurringPayment['id'],
+        'options' => [
+          'limit' => 1,
+          'sort' => 'receive_date DESC',
+        ],
+        'is_test' => CRM_Utils_Array::value(
+          'is_test', $recurringPayment['is_test']
+        ),
+      ]);
+    } catch (CiviCRM_API3_Exception $e) {
+      // if the above call yields no result we check to see if a previous contribution
+      // can be found using the invoice_id. If we don't find one here, we let the
+      // CiviCRM_API3_Exception exception bubble up.
+      return  civicrm_api3('Contribution', 'getsingle', [
+          'invoice_id' => $recurringPayment['invoice_id'],
+          'options' => [
+            'limit' => 1,
+            'sort' => 'receive_date DESC',
+          ],
+          'is_test' => CRM_Utils_Array::value(
+            'is_test', $recurringPayment['is_test']
+          ),
+        ]);
+    }
+
   }
 
   /**
