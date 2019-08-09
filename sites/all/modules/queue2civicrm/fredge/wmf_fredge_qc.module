@@ -24,17 +24,31 @@ function wmf_fredge_qc_menu() {
 function fredge_qc_settings() {
   $form = array();
 
-  $form['fredge_qc_disable'] = array(
+  $form['fredge_antifraud_qc_disable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable antifraud job'),
+    '#description' => t('If checked, no message processing will be performed for the antifraud queue.'),
+    '#default_value' => variable_get('fredge_antifraud_qc_disable', false),
+  );
+
+  $form['fredge_antifraud_batch_time'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Job time limit (in seconds)'),
+    '#description' => t('Maximum elapsed duration of an antifraud job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  Either a time limit or batch size limit is required.'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('fredge_antifraud_batch_time', 90),
+  );
+  $form['fredge_paymentsinit_qc_disable'] = array(
     '#type' => 'checkbox',
     '#title' => t('Disable payments-init job'),
     '#description' => t('If checked, no message processing will be performed for the payments-init queue.'),
     '#default_value' => variable_get('fredge_qc_disable', false),
   );
 
-  $form['fredge_batch_time'] = array(
+  $form['fredge_paymentsinit_batch_time'] = array(
     '#type' => 'textfield',
     '#title' => t('Job time limit (in seconds)'),
-    '#description' => t('Maximum elapsed duration of an fredge job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  Either a time limit or batch size limit is required.'),
+    '#description' => t('Maximum elapsed duration of an payments-init job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  Either a time limit or batch size limit is required.'),
     '#required' => TRUE,
     '#default_value' => variable_get('fredge_batch_time', 90),
   );
@@ -44,17 +58,53 @@ function fredge_qc_settings() {
 
 /**
  * Callback from Drush that actually executes the loop for processing messages in the queue.
- * @ref fredge_process_message
- * @ref drush_fredge_queue_consume
+ * @see fredge_antifraud_queue_consume_drush_command()
+ * @see AntifraudQueueConsumer::processMessage()
  */
-function fredge_batch_process() {
-  watchdog('fredge', 'Executing: fredge_batch_process');
+function fredge_antifraud_batch_process() {
+  if (variable_get( "fredge_antifraud_qc_disable", false )){
+    watchdog('fredge_antifraud_qc_disable', 'fredge_antifraud_qc is disabled. No contributions processed.');
+    return 0;
+  }
+
+  watchdog('fredge', 'Executing: fredge_antifraud_batch_process');
 
   civicrm_initialize();
-  wmf_common_create_smashpig_context( 'fredge_batch_process');
+  wmf_common_create_smashpig_context( 'fredge_antifraud_batch_process');
 
-  //Let's start with the simplest possible division of labor
-  $cycle_time = variable_get('fredge_batch_time', 0) / 2;
+  $cycle_time = variable_get('fredge_antifraud_batch_time', 0);
+
+  $fraudQueueConsumer = new AntifraudQueueConsumer(
+    'payments-antifraud',
+    $cycle_time
+  );
+
+  $processed = $fraudQueueConsumer->dequeueMessages();
+
+  if ($processed > 0) {
+    watchdog('fredge', 'Successfully processed ' . $processed . ' antifraud message(s).');
+  }
+  else {
+    watchdog('fredge', 'No antifraud messages processed.');
+  }
+}
+/**
+ * Callback from Drush that actually executes the loop for processing messages in the queue.
+ * @see \fredge_paymentsinit_queue_consume_drush_command()
+ * @see PaymentsInitQueueConsumer::processMessage()
+ */
+function fredge_paymentsinit_batch_process() {
+  if (variable_get( "fredge_paymentsinit_qc_disable", false )){
+    watchdog('fredge_paymentsinit_qc_disable', 'fredge_paymentsinit_qc is disabled. No contributions processed.');
+    return 0;
+  }
+
+  watchdog('fredge', 'Executing: fredge_paymentsinit_batch_process');
+
+  civicrm_initialize();
+  wmf_common_create_smashpig_context( 'fredge_paymentsinit_batch_process');
+
+  $cycle_time = variable_get('fredge_paymentsinit_batch_time', 0);
 
   $paymentsInitConsumer = new PaymentsInitQueueConsumer(
     'payments-init',
@@ -63,18 +113,12 @@ function fredge_batch_process() {
 
   $processed = $paymentsInitConsumer->dequeueMessages();
 
-  $fraudQueueConsumer = new AntifraudQueueConsumer(
-    'payments-antifraud',
-    $cycle_time
-  );
-
-  $processed += $fraudQueueConsumer->dequeueMessages();
 
   if ($processed > 0) {
-    watchdog('fredge', 'Successfully processed ' . $processed . ' fredge message(s).');
+    watchdog('fredge', 'Successfully processed ' . $processed . ' paymentsinit message(s).');
   }
   else {
-    watchdog('fredge', 'No fredge messages processed.');
+    watchdog('fredge', 'No paymentsinit messages processed.');
   }
 }
 

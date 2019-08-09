@@ -1,4 +1,4 @@
-<?php namespace queue2civicrm\unsubscribe;
+<?php namespace queue2civicrm\opt_in;
 
 use wmf_common\WmfQueueConsumer;
 use WmfException;

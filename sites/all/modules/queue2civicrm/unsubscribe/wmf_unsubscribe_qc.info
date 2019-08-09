@@ -1,8 +1,7 @@
 name = WMF Unsubscribe Queue Consumer
-description = Raids a queue (dedicated to unsubscribes) for new messages. It will opt-out any contacts in Civi with the requested emails.
+description = Raids a queue (dedicated to unsubscribe) for new messages. It will opt-out any contacts in Civi with the requested emails.
 core = 7.x
 package = queue2civicrm
 configure = admin/config/queue2civicrm/unsubscribe_qc
 dependencies[] = queue2civicrm
-files[] = OptInQueueConsumer.php
 files[] = UnsubscribeQueueConsumer.php

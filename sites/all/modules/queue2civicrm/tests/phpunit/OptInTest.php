@@ -1,6 +1,6 @@
 <?php
 
-use queue2civicrm\unsubscribe\OptInQueueConsumer;
+use queue2civicrm\opt_in\OptInQueueConsumer;
 
 /**
  * @group Queue2Civicrm
@@ -64,10 +64,13 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   protected function getMessage() {
-    return [
-      'email' => $this->email,
-      'process' => 'opt_in',
-    ];
+    $message = json_decode(
+      file_get_contents( __DIR__ . '/../data/optin.json' ),
+      true
+    );
+
+    $message['email'] = $this->email;
+    return $message;
   }
 
   protected function getContactMessage() {
