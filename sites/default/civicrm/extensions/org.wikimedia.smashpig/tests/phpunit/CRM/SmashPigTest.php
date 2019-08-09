@@ -1087,14 +1087,87 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
   }
 
   /**
+   * When a payment sent to the merchant fails, check that the amount of failures are taken into account when generating
+   * the next InvoiceID
+   */
+  public function testRecurringChargeWithPreviousFailedAttempts() {
+    \Civi::settings()->set(
+      'smashpig_recurring_use_queue', '0'
+    );
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id']);
+
+    // Have one previous payment failed
+    $overrides['failure_count'] = 1;
+
+    $contributionRecur = $this->createContributionRecur($token,$overrides);
+    $contribution = $this->createContribution($contributionRecur);
+
+    // Get the expected invoice ids taking into account the failures
+    list($ctId, $expectedInvoiceId, $next) = $this->getExpectedIds($contribution,$contributionRecur['failure_count']);
+
+    $expectedDescription = $this->getExpectedDescription();
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->with([
+        'recurring_payment_token' => 'abc123-456zyx-test12',
+        'amount' => 12.34,
+        'currency' => 'USD',
+        'first_name' => 'Harry',
+        'last_name' => 'Henderson',
+        'email' => 'harry@hendersons.net',
+        'order_id' => $expectedInvoiceId,
+        'installment' => 'recurring',
+        'description' => $expectedDescription,
+        'recurring' => TRUE,
+        'user_ip' => '12.34.56.78',
+      ])
+      ->willReturn(
+        $this->createPaymentResponse
+      );
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('approvePayment')
+      ->with('000000850010000188130000200001')
+      ->willReturn(
+        $this->approvePaymentResponse
+      );
+    $result = civicrm_api3('Job', 'process_smashpig_recurring', []);
+    $this->assertEquals(
+      ['ids' => [$contributionRecur['id']]],
+      $result['values']['success']
+    );
+    $contributions = civicrm_api3('Contribution', 'get', [
+      'contribution_recur_id' => $contributionRecur['id'],
+      'options' => ['sort' => 'id ASC'],
+    ]);
+    $this->assertEquals(2, count($contributions['values']));
+    $contributionIds = array_keys($contributions['values']);
+    $this->deleteThings['Contribution'][] = $contributionIds[1];
+    $newContribution = $contributions['values'][$contributionIds[1]];
+    $this->assertArraySubset([
+      'contact_id' => $contact['id'],
+      'currency' => 'USD',
+      'total_amount' => '12.34',
+      'trxn_id' => '000000850010000188130000200001',
+      'contribution_status' => 'Completed',
+      'invoice_id' => $expectedInvoiceId,
+    ], $newContribution);
+
+    // Check the invoice Ids
+    $this->assertEquals($expectedInvoiceId, $newContribution['invoice_id']);
+  }
+
+  /**
    * @param $contribution
+   * @param $failures
    *
    * @return array
    */
-  protected function getExpectedIds($contribution) {
+  protected function getExpectedIds($contribution,$failures = 0) {
     $originalInvoiceId = $contribution['invoice_id'];
     $parts = explode('|', $originalInvoiceId);
     list($ctId, $sequence) = explode('.', $parts[0]);
+    $sequence = $sequence + $failures;
     $expectedInvoiceId = $ctId . '.' . ($sequence + 1);
     $nextInvoiceId = $ctId . '.' . ($sequence + 2);
     return [$ctId, $expectedInvoiceId, $nextInvoiceId];
