@@ -73,7 +73,7 @@ class TwigLocalization extends Twig_Extension  {
 		'MKD' => 'ден',
 		'MNT' => '₮',
 		'MUR' => '₨',
-		'MXN' => 'MXN$',
+		'MXN' => 'Mex$',
 		'MYR' => 'RM',
 		'MZN' => 'MT',
 		'NAD' => 'N$',
