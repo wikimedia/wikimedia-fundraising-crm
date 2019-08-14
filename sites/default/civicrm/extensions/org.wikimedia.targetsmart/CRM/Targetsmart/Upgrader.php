@@ -46,185 +46,190 @@ class CRM_Targetsmart_Upgrader extends CRM_Targetsmart_Upgrader_Base {
       ],*/
       [
         // first_name
-        'name' => 'First Name',
+        'name' => 'Contact ID',
         'column_number' => 1,
+      ],
+      [
+        // first_name
+        'name' => 'First Name',
+        'column_number' => 2,
       ],
       [
         // last_name
         'name' => 'Last Name',
-        'column_number' => 2,
+        'column_number' => 3,
       ],
       [
         // nick_name
         'name' => 'Nickname',
-        'column_number' => 3,
+        'column_number' => 4,
       ],
       [
         // street_address
         'name' => 'Street Address',
-        'column_number' => 4,
-        'location_type_id' => 'Old 2019',
-      ],
-      [
-        // supplemental_address_1
-        'name' => 'Supplemental Address 1',
         'column_number' => 5,
         'location_type_id' => 'Old 2019',
       ],
       [
         // supplemental_address_1
-        'name' => 'Supplemental Address 2',
+        'name' => 'Supplemental Address 1',
         'column_number' => 6,
+        'location_type_id' => 'Old 2019',
+      ],
+      [
+        // supplemental_address_1
+        'name' => 'Supplemental Address 2',
+        'column_number' => 7,
         'location_type_id' => 'Old 2019',
       ],
       [
         // city
         'name' => 'City',
-        'column_number' => 7,
+        'column_number' => 8,
         'location_type_id' => 'Old 2019',
       ],
       [
         // state_province
         'name' => 'State',
-        'column_number' => 8,
+        'column_number' => 9,
         'location_type_id' => 'Old 2019',
       ],
       [
         // postal code
         'name' => 'Postal Code',
-        'column_number' => 9,
+        'column_number' => 10,
         'location_type_id' => 'Old 2019',
       ],
       [
         // country
         'name' => 'Country',
-        'column_number' => 10,
+        'column_number' => 11,
         'location_type_id' => 'Old 2019',
       ],
       [
         // voterbase_id
         'name' => '- do not import -',
-        'column_number' => 11,
+        'column_number' => 12,
       ],
       [
         // tsmart_sample_id
         'name' => '- do not import -',
-        'column_number' => 12,
+        'column_number' => 13,
       ],
       [
         // tsmart_full_address
         'name' => 'Street Address',
-        'column_number' => 13,
+        'column_number' => 14,
       ],
       [
         // tsmart_city
         'name' => 'City',
-        'column_number' => 14,
+        'column_number' => 15,
       ],
       [
         // tsmart_state
         'name' => 'State',
-        'column_number' => 15,
+        'column_number' => 16,
       ],
       [
         // tsmart_zip
         'name' => 'Postal Code',
-        'column_number' => 16,
+        'column_number' => 17,
       ],
       [
         // tsmart_zip4
         'name' => 'Postal Code Suffix',
-        'column_number' => 17,
+        'column_number' => 18,
       ],
       [
         //tb.new_mover_flg
         'name' => '- do not import -',
-        'column_number' => 18,
+        'column_number' => 19,
       ],
       [
         // voterbase_dob
         'name' => 'Birth Date',
-        'column_number' => 19,
+        'column_number' => 20,
       ],
       [
         // deceased_flag_date_of_death
         'name' => 'Deceased Date',
-        'column_number' => 20,
+        'column_number' => 21,
       ],
       [
         // Household Income Range
         'name' => 'Income Range :: Prospect',
-        'column_number' => 21,
+        'column_number' => 22,
       ],
       [
         // Household Income Range_key
         'name' => '- do not import -',
-        'column_number' => 22,
+        'column_number' => 23,
       ],
       [
         // Household Net Worth
         'name' => 'Estimated Net Worth :: Prospect',
-        'column_number' => 23,
+        'column_number' => 24,
       ],
       [
         // Household Net Worth Key
         'name' => '- do not import -',
-        'column_number' => 24,
+        'column_number' => 25,
       ],
       [
         //xpg.donor_contributes_to_charities
         'name' => '- do not import -',
-        'column_number' => 25,
+        'column_number' => 26,
       ],
       [
         // tb.charitable_contrib_decile
         'name' => 'Charitable Contributions Decile :: Prospect',
-        'column_number' => 26,
+        'column_number' => 27,
       ],
       [
         // Discretionary Income Amount
         'name' => '- do not import -',
-        'column_number' => 27,
+        'column_number' => 28,
       ],
       [
         // Discretionary Income Decile
         'name' => 'Disc Income Decile :: Prospect',
-        'column_number' => 28,
+        'column_number' => 29,
       ],
       [
         // Family Composition Code - use next field.
         'name' => '- do not import -',
-        'column_number' => 29,
+        'column_number' => 30,
       ],
       [
         // Family Composition.
         'name' => 'Family Composition :: Prospect',
-        'column_number' => 30,
+        'column_number' => 31,
       ],
       [
         // vf_party.
         'name' => 'Voter Party :: Prospect',
-        'column_number' => 31,
+        'column_number' => 32,
       ],
       [
         //party_score_rollup. (how does this related to vf_party?)
         'name' => '- do not import -',
-        'column_number' => 32,
+        'column_number' => 33,
       ],
       [
         // Occupation.
         'name' => 'Occupation :: Prospect',
-        'column_number' => 33,
+        'column_number' => 34,
       ],
       [
         // Occupation_key - assume same data as ^^ in diff format
         'name' => '- do not import -',
-        'column_number' => 34,
+        'column_number' => 35,
       ],
       [
         // voterbase_gender.
         'name' => 'Gender',
-        'column_number' => 35,
+        'column_number' => 36,
       ],
     ];
     $mapping = Mapping::create()
