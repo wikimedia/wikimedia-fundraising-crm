@@ -2,6 +2,7 @@
 use CRM_Targetsmart_ExtensionUtil as E;
 use Civi\Api4\Mapping;
 use Civi\Api4\MappingField;
+use Civi\Api4\Group;
 use Civi\Api4\LocationType;
 
 /**
@@ -61,7 +62,7 @@ class CRM_Targetsmart_Upgrader extends CRM_Targetsmart_Upgrader_Base {
       ],
       [
         // nick_name
-        'name' => 'Nickname',
+        'name' => '- do not import -',
         'column_number' => 4,
       ],
       [
@@ -231,6 +232,16 @@ class CRM_Targetsmart_Upgrader extends CRM_Targetsmart_Upgrader_Base {
         'name' => 'Gender',
         'column_number' => 36,
       ],
+      [
+        // We will pass in NULL for this
+        'name' => 'Supplemental Address 1',
+        'column_number' => 37,
+      ],
+      [
+        // We will pass in NULL for this
+        'name' => 'Supplemental Address 2',
+        'column_number' => 38,
+      ],
     ];
     $mapping = Mapping::create()
       ->addValue('name', '2019_targetsmart_bulkimport')
@@ -248,6 +259,10 @@ class CRM_Targetsmart_Upgrader extends CRM_Targetsmart_Upgrader_Base {
       }
       $mappingFieldAPI->execute();
     }
+    $group = Group::create()
+      ->addValue('name', 'TargetSmart2019')
+      ->addValue('title', 'TargetSmart2019')
+      ->execute();
 
     CRM_Core_BAO_OptionValue::ensureOptionValueExists(['option_group_id' => 'Gender', 'label' => 'Unknown', 'name' => 'Unknown']);
   }
