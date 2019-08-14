@@ -86,11 +86,31 @@ function _wmf_civicrm_update_custom_fields() {
     );
 
     foreach ($customGroupSpec['fields'] as $index => $field) {
-      if (civicrm_api3('CustomField', 'getcount', [
+      $existingField = civicrm_api3('CustomField', 'get', [
         'custom_group_id' => $customGroup['id'],
         'name' => $field['name'],
-      ])
-      ) {
+      ]);
+
+      if ($existingField['count']) {
+        if (isset($field['option_values'])) {
+          // If we are on a developer site then sync up the option values. Don't do this on live
+          // because we could get into trouble if we are not up-to-date with the options - which
+          // we don't really aspire to be - or not enough to let this code run on prod.
+          $env = civicrm_api3('Setting', 'getvalue', ['name' => 'environment']);
+          if ($env === 'Development' && empty($existingField['option_group_id'])) {
+            $field['id'] = $existingField['id'];
+            // This is a hack because they made a change to the BAO to restrict editing
+            // custom field options based on a form value - when they probably should
+            // have made the change in the form. Without this existing fields don't
+            // get option group updates. See https://issues.civicrm.org/jira/browse/CRM-16659 for
+            // original sin.
+            $field['option_type'] = 1;
+            // When we next upgrade bulkCreate is renamed to bulkSave & handles updates too.
+            // but in the meantime special-handle them.
+            // Also this shouldn't really ever affect prod fields - or not at the moment.
+            civicrm_api3('CustomField', 'create', $field);
+          }
+        }
         unset($customGroupSpec['fields'][$index]);
       }
       else {
@@ -99,6 +119,9 @@ function _wmf_civicrm_update_custom_fields() {
       }
     }
     if ($customGroupSpec['fields']) {
+      // We created the bulkCreate function in core to help us & ported it. But, in the final
+      // version merged to core it was renamed to bulkSave & adapted to support update as well.
+      // Next upgrade of Civi we'll need to adjust here & a few lines above we can save some lines.
       CRM_Core_BAO_CustomField::bulkCreate($customGroupSpec['fields'], ['custom_group_id' => $customGroup['id']]);
     }
   }
@@ -314,6 +337,7 @@ function _wmf_civicrm_get_prospect_fields() {
       'note_rows' => 4,
     ],
     'University_Affiliation' => [
+      'name' => 'University_Affiliation',
       'label' => 'University Affiliation',
       'data_type' => 'String',
       'html_type' => 'Multi-Select',
@@ -322,7 +346,15 @@ function _wmf_civicrm_get_prospect_fields() {
       'text_length' => 255,
       'note_columns' => 60,
       'note_rows' => 4,
-      // "option_group_id":"116",
+      'option_values' => [
+        'Stanford' => 'Stanford',
+        'CAL - Berkeley' => 'CAL__Berkeley',
+        'MIT' => 'MIT',
+        'Carnegie Mellon' => 'Carnegie Mellon',
+        'Harvard' => 'Harvard',
+        1 => 'University of Chicago',
+        2 => 'Yale',
+      ],
     ],
     'Board_Affiliations' => [
       'name' => 'Board_Affiliations',
@@ -382,7 +414,13 @@ function _wmf_civicrm_get_prospect_fields() {
       'default_value' => 'Unknown',
       'note_columns' => 60,
       'note_rows' => 4,
-      // "option_group_id":"46",
+      'option_values' => [
+        1 => '(0) Neutral ',
+        2 => '(+) Positive',
+        3 => '(-) Negative',
+        'On Hold' => 'On Hold',
+        'Unknown' => 'Unknown',
+      ],
     ],
 
     'Capacity' => [
@@ -394,7 +432,20 @@ function _wmf_civicrm_get_prospect_fields() {
       'help_post' => 'Low = <$5k\r\nMedium = $5k to $99,999\r\nHigh = >$100k and over',
       'note_columns' => 60,
       'note_rows' => 4,
-      // "option_group_id":"34",
+      'option_values' => [
+        1 => '$0 - $999',
+        2 => '$1,000 - $4,999',
+        3 => '$5,000 - $9,999',
+        4 => '$10,000 - $49,000',
+        5 => '$50,000 - $99,999',
+        6 => '$100,000 - $250,000',
+        7 => '$250,000 to $500,000',
+        8 => '$500,000 +',
+        'Connector' => 'Connector ',
+        'Low' => 'Low',
+        'Medium' => 'Medium',
+        'High  ' => 'High',
+      ],
     ],
     'Reviewed' => [
       'name' => 'Reviewed',
@@ -418,7 +469,21 @@ function _wmf_civicrm_get_prospect_fields() {
       'text_length' => 255,
       'note_columns' => 60,
       'note_rows' => 4,
-      // "option_group_id":"111",
+      'option_values' => [
+        'a' => 'Below $30,000',
+        'b ' => '$30,000 - $39,999',
+        'c' => '$40,000 - $49,999',
+        'd' => '$50,000 - $59,999',
+        'e' => '$60,000 - $74,999',
+        'f' => '$75,000 - $99,999',
+        'g' => '$100,000 - $124,999',
+        'h' => '$125,000 - $149,999',
+        'i' => '$150,000 - $199,999',
+        'j' => '$200,000 - $249,999',
+        'k' => '$250,000 - $299,999',
+        'l' => '$300,000 - $499,999',
+        'm' => 'Above $500,000',
+      ],
     ],
     'Charitable_Contributions_Decile' => [
       'name' => 'Charitable_Contributions_Decile',
@@ -429,7 +494,19 @@ function _wmf_civicrm_get_prospect_fields() {
       'text_length' => 255,
       'note_columns' => 60,
       'note_rows' => 4,
-      // "option_group_id":"112",
+      'option_values' => [
+        '1' => '1',
+        '2' => '2',
+        '3' => '3',
+        '4' => '4',
+        '5 ' => '5',
+        '6' => '6',
+        '7' => '7',
+        '8' => '8',
+        '9' => '9',
+        '10' => '10',
+        '11' => '11',
+      ],
     ],
     'Disc_Income_Decile' => [
       'name' => 'Disc_Income_Decile',
@@ -463,7 +540,19 @@ function _wmf_civicrm_get_prospect_fields() {
       'text_length' => 255,
       'note_columns' => 60,
       'note_rows' => 4,
-      //"option_group_id":"114",
+      'option_values' => [
+        'democrat ' => 'Democrat',
+        'republican' => 'Republican',
+        'green' => 'Green',
+        'independent' => 'Independent',
+        'libertarian' => 'Libertarian',
+        'no_party' => 'No Party',
+        'other' => 'Other',
+        'unaffiliated' => 'Unaffiliated',
+        'unregistered' => 'Unregistered',
+        'working_fam' => 'Working Fam',
+        'conservative' => 'Conservative',
+      ],
     ],
     'ask_amount' => [
       'name' => 'ask_amount',
@@ -534,6 +623,46 @@ function _wmf_civicrm_get_prospect_fields() {
       'note_columns' => 60,
       'note_rows' => 4,
       'help_pre' => 'Data field to store any MGF survey related data for future reference.  Please date appropriately and do not overwrite previous responses.',
+    ],
+    'Family_Composition' => [
+      'name' => 'Family_Composition',
+      'label' => 'Family Composition',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_searchable' => 1,
+      'option_values' => [
+        1  => 'Single',
+        2 => 'Single with Children',
+        3 => 'Couple',
+        4 => 'Couple with children',
+        5 => 'Multiple Generations',
+        6 => 'Multiple Surnames (3+)',
+        7 => 'Other',
+      ],
+    ],
+    'Occupation' => [
+      'name' => 'Occupation',
+      'label' => 'Occupation',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_searchable' => 1,
+      'option_values' => [
+        1 => 'Professional/Technical',
+        2 => 'Upper Management/Executive',
+        3 => 'Sales/Service',
+        4  => 'Office/Clerical',
+        5 => 'Skilled Trade',
+        6 => 'Retired',
+        7 => 'Administrative/Management',
+        8 => 'Self Employed',
+        9 => 'Military',
+        10 => 'Farming/Agriculture',
+        11 => 'Medical/Health Services',
+        12 => 'Financial Services',
+        13 => 'Teacher/Educator',
+        14 => 'Legal Services',
+        15 => 'Religious',
+      ],
     ],
   ];
 }
