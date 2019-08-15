@@ -131,10 +131,11 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * TODO: hook? this logic is specific to the WMF's invoice ID format
    *
    * @param string $previousInvoiceId
+   * @param int $failures
    *
    * @return string
    */
-  protected static function getNextInvoiceId($previousInvoiceId) {
+  protected static function getNextInvoiceId($previousInvoiceId,$failures = 0) {
     $invoiceParts = explode('|', $previousInvoiceId);
     $previousInvoiceId = $invoiceParts[0];
     $invoiceParts = explode('.', $previousInvoiceId);
@@ -145,7 +146,9 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     else {
       $previousSequenceNum = 0;
     }
-    $currentSequenceNum = $previousSequenceNum + 1;
+
+    // Include failed attempts in the sequence number
+    $currentSequenceNum = $previousSequenceNum + $failures + 1;
     return "$ctId.$currentSequenceNum";
   }
 
@@ -305,7 +308,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'return' => ['first_name', 'last_name', 'email', 'preferred_language']
     ]);
     $currentInvoiceId = self::getNextInvoiceId(
-      $previousContribution['invoice_id']
+      $previousContribution['invoice_id'],
+      $recurringPayment['failure_count']
     );
     $description = $this->getDescription($donor['preferred_language']);
     $tokenData = civicrm_api3('PaymentToken', 'getsingle', [
