@@ -39,6 +39,8 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass implements EndToEndI
 
   /**
    * Example: Test that a version is returned.
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   public function testOmnigroupmemberLoad() {
     $client = $this->setupSuccessfulDownloadClient();

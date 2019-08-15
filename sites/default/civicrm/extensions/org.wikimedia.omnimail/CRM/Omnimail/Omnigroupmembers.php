@@ -2,6 +2,7 @@
 
 use Omnimail\Silverpop\Responses\RecipientsResponse;
 use Omnimail\Omnimail;
+use Omnimail\Silverpop\Responses\Contact;
 
 /**
  * Created by IntelliJ IDEA.
@@ -13,7 +14,7 @@ use Omnimail\Omnimail;
 class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
 
   /**
-   * @var 
+   * @var
    */
   protected $request;
 
@@ -29,6 +30,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
    *
    * @throws \CRM_Omnimail_IncompleteDownloadException
    * @throws \API_Exception
+   * @throws \League\Csv\Exception
    */
   public function getResult($params) {
     $settings = CRM_Omnimail_Helper::getSettings();
@@ -42,6 +44,9 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     /* @var \Omnimail\Silverpop\Requests\ExportListRequest $request */
     $request = Omnimail::create($params['mail_provider'], $mailerCredentials)->getGroupMembers($jobParameters);
     $request->setOffset((int) $this->offset);
+    if ($this->getLimit($params)) {
+      $request->setLimit($this->getLimit($params));
+    }
 
     $startTimestamp = $this->getStartTimestamp($params);
     $this->endTimeStamp = self::getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
@@ -59,8 +64,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     $this->setRetrievalParameters($result->getRetrievalParameters());
     for ($i = 0; $i < $settings['omnimail_job_retry_number']; $i++) {
       if ($result->isCompleted()) {
-        $data = $result->getData();
-        return $data;
+        return $result->getData();
       }
       else {
         sleep($settings['omnimail_job_retry_interval']);
@@ -82,14 +86,18 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
    * @param \Omnimail\Silverpop\Responses\Contact $result
    *
    * @return array
+   * @throws \API_Exception
    */
   public function formatResult($params, $result) {
     $options = _civicrm_api3_get_options_from_params($params);
     $values = array();
-    foreach ($result as $groupMember) {
+    foreach ($result as $row) {
+      $groupMember = new Contact($row);
+      $groupMember->setContactReferenceField('ContactID');
       $value = $this->formatRow($groupMember, $params['custom_data_map']);
       $values[] = $value;
       if ($options['limit'] > 0 && count($values) === (int) $options['limit']) {
+        // IN theory no longer required as limit is done in library
         break;
       }
     }
@@ -97,9 +105,22 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
   }
 
   /**
+   * Get the requested limit.
+   *
+   * @param array $params
+   *
+   * @return int
+   * @throws \API_Exception
+   */
+  public function getLimit($params) {
+    $options = _civicrm_api3_get_options_from_params($params);
+    return (int) $options['limit'];
+  }
+
+  /**
    * Format a single row of the result.
    *
-   * @param $groupMember
+   * @param Contact $groupMember
    * @param array $customDataMap
    *   - Mapping of provider fields to desired output fields.
    *

@@ -302,11 +302,7 @@ abstract class ChecksFile {
    * @return int
    */
   public function getRowCount() {
-    $count = $this->reader->each(
-      function ($row) {
-        return true;
-      }
-    );
+    $count = count($this->reader);
     // return rows not including header.
     return $count - 1;
   }
