@@ -210,4 +210,8 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       $message, $errorCode, $errorArray
     );
   }
+
+  public function getEditableRecurringScheduleFields() {
+    return ['amount', 'cycle_day', 'next_sched_contribution_date'];
+  }
 }
