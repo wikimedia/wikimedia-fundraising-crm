@@ -28,13 +28,13 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    *
    * e.g paypal standard won't permit you to enter a credit card associated
    * with someone else's login.
-   * The intention is to support off-site (other than paypal) & direct debit but that is not all working yet so to
-   * reach a 'stable' point we disable.
+   * The intention is to support off-site (other than paypal) & direct debit
+   * but that is not all working yet so to reach a 'stable' point we disable.
    *
    * @return bool
    */
   protected function supportsBackOffice() {
-     return FALSE;
+    return FALSE;
   }
 
   /**
@@ -197,7 +197,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    */
   protected function throwException($message, $errorArray) {
     $errorCode = -1;
-    if ( count( $errorArray ) === 1 ) {
+    if (count($errorArray) === 1) {
       $error = $errorArray[0];
       if (isset($error['message'])) {
         $message .= ': ' . $error['message'];
