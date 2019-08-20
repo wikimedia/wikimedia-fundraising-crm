@@ -6,12 +6,18 @@
  * Time: 12:46 PM
  */
 
+use Omnimail\Silverpop\Responses\Contact;
+
 /**
  * Get details about Omnimails.
  *
  * @param $params
  *
  * @return array
+ *
+ * @throws \API_Exception
+ * @throws \CiviCRM_API3_Exception
+ * @throws \League\Csv\Exception
  */
 function civicrm_api3_omnigroupmember_load($params) {
   $values = array();
@@ -42,7 +48,8 @@ function civicrm_api3_omnigroupmember_load($params) {
   $limit = (isset($params['options']['limit'])) ? $params['options']['limit'] : NULL;
   $count = 0;
 
-  foreach ($contacts as $contact) {
+  foreach ($contacts as $row) {
+    $contact = new Contact($row);
     if ($count === $limit) {
       $job->saveJobSetting(array(
         'last_timestamp' => $jobSettings['last_timestamp'],
@@ -204,7 +211,7 @@ function _civicrm_api3_omnigroupmember_load_spec(&$params) {
     'api.default' => array(
       'language' => 'rml_language',
       'source' => 'rml_source',
-      'created_date' => 'rml_submitdate',
+      'created_date' => 'rml_submitDate',
       'country' => 'rml_country',
     ),
   );

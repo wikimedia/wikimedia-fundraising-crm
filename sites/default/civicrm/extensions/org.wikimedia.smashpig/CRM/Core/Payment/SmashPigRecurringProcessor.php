@@ -135,7 +135,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    *
    * @return string
    */
-  protected static function getNextInvoiceId($previousInvoiceId,$failures = 0) {
+  protected static function getNextInvoiceId($previousInvoiceId, $failures = 0) {
     $invoiceParts = explode('|', $previousInvoiceId);
     $previousInvoiceId = $invoiceParts[0];
     $invoiceParts = explode('.', $previousInvoiceId);
@@ -221,13 +221,15 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * or invoice_id.
    *
    * For newer recurring subscriptions, we do not add a contribution_recur_id
-   * record to the original contribution as in some cases the recurring subscription
-   * is independent of the earlier original contribution. At this point you're likely thinking
-   * so why are we looking up the previous contribution?!?!? ... and the answer
-   * is that the original contribution has foreign keys to other required data elements that we
-   * rely when processing the payment so we call on it for those.
+   * record to the original contribution as in some cases the recurring
+   * subscription is independent of the earlier original contribution. At this
+   * point you're likely thinking so why are we looking up the previous
+   * contribution?!?!? ... and the answer is that the original contribution has
+   * foreign keys to other required data elements that we rely when processing
+   * the payment so we call on it for those.
    *
    * TODO: use ContributionRecur::getTemplateContribution ?
+   *
    * @param array $recurringPayment
    *
    * @return array
@@ -251,16 +253,16 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       // if the above call yields no result we check to see if a previous contribution
       // can be found using the invoice_id. If we don't find one here, we let the
       // CiviCRM_API3_Exception exception bubble up.
-      return  civicrm_api3('Contribution', 'getsingle', [
-          'invoice_id' => $recurringPayment['invoice_id'],
-          'options' => [
-            'limit' => 1,
-            'sort' => 'receive_date DESC',
-          ],
-          'is_test' => CRM_Utils_Array::value(
-            'is_test', $recurringPayment['is_test']
-          ),
-        ]);
+      return civicrm_api3('Contribution', 'getsingle', [
+        'invoice_id' => $recurringPayment['invoice_id'],
+        'options' => [
+          'limit' => 1,
+          'sort' => 'receive_date DESC',
+        ],
+        'is_test' => CRM_Utils_Array::value(
+          'is_test', $recurringPayment['is_test']
+        ),
+      ]);
     }
 
   }
@@ -305,7 +307,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   ) {
     $donor = civicrm_api3('Contact', 'getsingle', [
       'id' => $recurringPayment['contact_id'],
-      'return' => ['first_name', 'last_name', 'email', 'preferred_language']
+      'return' => ['first_name', 'last_name', 'email', 'preferred_language'],
     ]);
     $currentInvoiceId = self::getNextInvoiceId(
       $previousContribution['invoice_id'],

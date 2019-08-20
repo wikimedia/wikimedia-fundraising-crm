@@ -60,7 +60,7 @@ function _civicrm_api3_omnigroupmember_get_spec(&$params) {
     'api.default' => array(
       'language' => 'rml_language',
       'source' => 'rml_source',
-      'created_date' => 'rml_submitdate',
+      'created_date' => 'rml_submitDate',
       'country' => 'rml_country',
     ),
   );

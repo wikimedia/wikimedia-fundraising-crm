@@ -49,7 +49,8 @@ function civicrm_api3_omnirecipient_load($params) {
       'progress_end_timestamp' => $omnimail->endTimeStamp,
     );
 
-    foreach ($recipients as $recipient) {
+    foreach ($recipients as $row) {
+      $recipient = new  \Omnimail\Silverpop\Responses\Recipient($row);
       if ($count === $limit) {
         // Do this here - ie. before processing a new row rather than at the end of the last row
         // to avoid thinking a job is incomplete if the limit co-incides with available rows.
