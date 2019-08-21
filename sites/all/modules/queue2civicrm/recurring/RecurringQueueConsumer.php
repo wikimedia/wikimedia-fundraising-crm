@@ -271,16 +271,25 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     if ($recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
       throw new WmfException(WmfException::DUPLICATE_CONTRIBUTION, 'Subscription account already exists');
     }
+    $ctRecord = wmf_civicrm_get_contribution_tracking($msg);
+    if (empty($ctRecord['contribution_id'])) {
+      // create contact record
+      $contact = wmf_civicrm_message_contact_insert($msg);
 
-    // create contact record
-    $contact = wmf_civicrm_message_contact_insert($msg);
+      // Insert the location record
+      wmf_civicrm_message_location_insert($msg, $contact);
 
-    // Insert the location record
-    wmf_civicrm_message_location_insert($msg, $contact);
+      $contactId = $contact['id'];
+    } else {
+      $contactId = civicrm_api3('Contribution', 'getvalue', [
+        'id' => $ctRecord['contribution_id'],
+        'return' => 'contact_id'
+      ]);
+    }
 
     try {
       $params = [
-        'contact_id' => $contact['id'],
+        'contact_id' => $contactId,
         'currency' => $msg['original_currency'],
         'amount' => $msg['original_gross'],
         'frequency_unit' => $msg['frequency_unit'],
@@ -304,7 +313,9 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       // Create a new recurring donation with a token
       if (isset($msg['recurring_payment_token'])) {
         // Create a token
-        $payment_token_result = wmf_civicrm_recur_payment_token_create($contact['id'],$msg['gateway'],$msg['recurring_payment_token'],$msg['user_ip']);
+        $payment_token_result = wmf_civicrm_recur_payment_token_create(
+          $contactId, $msg['gateway'], $msg['recurring_payment_token'], $msg['user_ip']
+        );
         // Set up the params to have the token
         $params['payment_token_id'] = $payment_token_result['id'];
         // Create a non paypal style trxn_id
