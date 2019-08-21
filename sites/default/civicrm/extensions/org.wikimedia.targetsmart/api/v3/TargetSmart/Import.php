@@ -12,7 +12,7 @@ use League\Csv\Statement;
  * @return void
  * @see https://docs.civicrm.org/dev/en/latest/framework/api-architecture/
  */
-function _civicrm_api3_target_smart_Import_spec(&$spec) {
+function _civicrm_api3_target_smart_import_spec(&$spec) {
   $spec['csv']['api.required'] = 1;
   $spec['offset']['api.required'] = 1;
   $spec['batch_size'] = [
