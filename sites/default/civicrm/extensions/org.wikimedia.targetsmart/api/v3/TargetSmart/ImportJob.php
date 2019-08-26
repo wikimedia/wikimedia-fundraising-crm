@@ -15,6 +15,7 @@ function _civicrm_api3_target_smart_import_job_spec(&$spec) {
     'title' => E::ts('Number to parse per batch'),
     'api.default' => 1000,
   ];
+  $spec['identifier'] = ['title' => ts('Identifier for job - 1 to 8'), 'type' => CRM_Utils_Type::T_INT];
 }
 
 /**
@@ -27,12 +28,12 @@ function _civicrm_api3_target_smart_import_job_spec(&$spec) {
  * @throws \CiviCRM_API3_Exception
  */
 function civicrm_api3_target_smart_import_job($params) {
-  $offset = Civi::settings()->get('targetsmart_progress') ?? 0;
+  $offset = Civi::settings()->get('targetsmart_progress' . $params['identifier']) ?? 0;
   $result = civicrm_api3('TargetSmart', 'import', [
     'csv' => $params['csv'],
     'batch_size' => $params['batch_size'],
     'offset' => $offset,
   ]);
-  Civi::settings()->set('targetsmart_progress', $offset + $params['batch_size']);
+  Civi::settings()->set('targetsmart_progress' . $params['identifier'], $offset + $params['batch_size']);
   return $result;
 }
