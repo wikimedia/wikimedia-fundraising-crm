@@ -34,16 +34,18 @@
 /**
  * Settings metadata file
  */
-return [
-  'targetsmart_progress' => [
+$tsSettings = [];
+for ($i = 1; $i < 9; $i++) {
+  $tsSettings['targetsmart_progress' . $i] = [
     'group_name' => 'TargetSmart Preferences',
     'group' => 'targetsmart',
-    'name' => 'targetsmart_progress',
+    'name' => 'targetsmart_progress'. $i,
     'type' => 'int',
-    'title' => 'TargetSmart Progress',
+    'title' => 'TargetSmart Progress ' . $i,
     'is_domain' => '1',
     'is_contact' => 0,
     'description' => 'settings to hold what row the import is up to',
     'help_text' => 'this will be managed programmatically',
-  ],
-];
+  ];
+}
+return $tsSettings;

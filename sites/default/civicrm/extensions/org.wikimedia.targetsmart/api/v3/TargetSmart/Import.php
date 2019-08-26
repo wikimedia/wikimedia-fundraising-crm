@@ -29,6 +29,7 @@ function _civicrm_api3_target_smart_import_spec(&$spec) {
  * @return array API result descriptor
  * @throws \League\Csv\Exception
  * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  *
  * @see civicrm_api3_create_success
  * @see civicrm_api3_create_error
