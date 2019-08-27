@@ -66,6 +66,7 @@ class CRM_Targetsmart_ImportWrapper {
 
     try {
       $this->importSingle($importObj, $values);
+      civicrm_api3('GroupContact', 'create', ['contact_id' => $contactID, 'group_id' => 'TargetSmart2019']);
     }
     catch (Exception $e) {
       // The exception is different in unit tests than 'live' so catch a generic Exception & check
@@ -78,12 +79,12 @@ class CRM_Targetsmart_ImportWrapper {
       if ('Individual' !==  $contactType) {
         $importObj = $this->getImporter($contactType);
         $this->importSingle($importObj, $values);
+        civicrm_api3('GroupContact', 'create', ['contact_id' => $contactID, 'group_id' => 'TargetSmart2019']);
       }
       else {
         throw new CRM_Core_Exception($e->getMessage() . ' blah ' . print_r($values, TRUE));
       }
     }
-    civicrm_api3('GroupContact', 'create', ['contact_id' => $contactID, 'group_id' => 'TargetSmart2019']);
   }
 
   /**
