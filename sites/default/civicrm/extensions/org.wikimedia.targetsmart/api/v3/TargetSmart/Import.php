@@ -43,8 +43,13 @@ function civicrm_api3_target_smart_import($params) {
   $importer = new CRM_Targetsmart_ImportWrapper();
   $importer->setHeaders($reader->getHeader());
 
-  foreach ($records as $record) {
-    $importer->importRow($record);
+  try {
+    foreach ($records as $record) {
+      $importer->importRow($record);
+    }
+  }
+  catch (Exception $e) {
+    throw new CRM_Core_Exception($e->getMessage() . ' tada ' . print_r($record, TRUE));
   }
   return civicrm_api3_create_success(1);
 }
