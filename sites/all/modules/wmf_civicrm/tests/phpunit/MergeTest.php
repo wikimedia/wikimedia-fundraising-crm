@@ -21,6 +21,9 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $contactID2;
 
+  /**
+   * @throws \Exception
+   */
   public function setUp() {
     parent::setUp();
     civicrm_initialize();
@@ -463,6 +466,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that a conflict on communication preferences is handled.
    *
    * @dataProvider getLanguageCombos
+   * @throws \CiviCRM_API3_Exception
    */
   public function testBatchMergeConflictPreferredLanguage($dataSet) {
     // Can't use api if we are trying to use invalid data.
@@ -1851,6 +1855,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * In this case an email existed during merge that held no data. It was used
    * on the merge, but now we want the lost data.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testRepairBlankedAddressOnMerge() {
     $this->prepareForBlankAddressTests();
@@ -1871,6 +1877,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * In this case an email existed during merge that held no data. It was used
    * on the merge, but now we want the lost data. It underwent 2 merges.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testRepairBlankedAddressOnMergeDoubleWhammy() {
     $this->prepareForBlankAddressTests();
@@ -1893,12 +1901,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->cleanupFromBlankAddressRepairTests();
   }
 
-
   /**
    * Test recovery where an always-blank email has been transferred to another contact on merge.
    *
    * We have established the address was always blank and still exists. Lets
    * anihilate it.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testRemoveEternallyBlankMergedAddress() {
     $this->prepareForBlankAddressTests();
@@ -1924,6 +1933,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * We have established the address was always blank and still exists, and there is
    * a valid other address. Lets annihilate it.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testRemoveEternallyBlankNonPrimaryMergedAddress() {
     $this->prepareForBlankAddressTests();
@@ -1981,6 +1992,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * Common code for testing blank address repairs.
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   protected function prepareForBlankAddressTests() {
     civicrm_api3('Setting', 'create', array(
@@ -1994,6 +2007,9 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     wmf_civicrm_update_7475();
   }
 
+  /**
+   * @throws \CiviCRM_API3_Exception
+   */
   protected function cleanupFromBlankAddressRepairTests() {
     CRM_Core_DAO::executeQuery('DROP TABLE blank_addresses');
 

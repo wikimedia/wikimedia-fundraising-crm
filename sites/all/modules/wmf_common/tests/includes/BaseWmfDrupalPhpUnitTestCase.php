@@ -16,6 +16,10 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
    */
   protected $ids = [];
 
+  /**
+   * @throws \CiviCRM_API3_Exception
+   * @throws \Exception
+   */
   public function setUp() {
     parent::setUp();
 
@@ -186,7 +190,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
    * @param string $entity
    * @param array $params
    *
-   * @throws Exception
+   * @throws CRM_Core_Exception
    * @return array|int
    */
   public function callAPISuccessGetSingle($entity, $params) {
@@ -196,7 +200,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
     );
     $result = civicrm_api($entity, 'getsingle', $params);
     if (!is_array($result) || !empty($result['is_error']) || isset($result['values'])) {
-      throw new Exception('Invalid getsingle result' . print_r($result, TRUE));
+      throw new CRM_Core_Exception('Invalid getsingle result' . print_r($result, TRUE));
     }
     return $result;
   }
