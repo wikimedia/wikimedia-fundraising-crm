@@ -71,13 +71,16 @@ class CRM_Targetsmart_ImportWrapper {
       // The exception is different in unit tests than 'live' so catch a generic Exception & check
       // if it is an org. We could have checked first but we'd check millions for just a
       // few hits.
+      if (empty($values['contact_id'])) {
+        throw new CRM_Core_Exception($e->getMessage() . print_r($values, TRUE));
+      }
       $contactType = (string) civicrm_api3('Contact', 'getvalue', ['id' => $values['contact_id'], 'return' => 'contact_type']);
       if ('Individual' !==  $contactType) {
         $importObj = $this->getImporter($contactType);
         $this->importSingle($importObj, $values);
       }
       else {
-        throw $e;
+        throw new CRM_Core_Exception($e->getMessage() . print_r($values, TRUE));
       }
     }
     civicrm_api3('GroupContact', 'create', ['contact_id' => $contactID, 'group_id' => 'TargetSmart2019']);
