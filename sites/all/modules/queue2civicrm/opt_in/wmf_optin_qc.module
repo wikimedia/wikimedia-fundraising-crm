@@ -9,7 +9,7 @@ function wmf_optin_qc_menu() {
   $items[ 'admin/config/queue2civicrm/optin_qc' ] = array(
     'title'            => 'Opt In',
     'description'      => t('Configure Opt In queue'),
-    'access arguments' => array( 'administer optin' ),
+    'access arguments' => array( 'administer queue2civicrm' ),
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array( 'optin_qc_settings' ),
   );
