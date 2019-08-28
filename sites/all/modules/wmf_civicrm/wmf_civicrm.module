@@ -2559,8 +2559,10 @@ function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, 
   if (_wmf_civicrm_merge_resolve_preferred_language_conflict(
     $dbFieldName,
     $refs['migration_info'][$moveField],
-    $refs['migration_info']['rows'][$moveField]['other'],
-    $refs['migration_info']['rows'][$moveField]['main'],
+     // The $refs['migration_info']['rows']['move_preferred_language'] values
+     // are blank for non-valid values (like we use). This has test cover though :-)
+    $refs['migration_info']['other_details'][$dbFieldName],
+    $refs['migration_info']['main_details'][$dbFieldName],
     $mainId,
     $otherId
   )) {
@@ -3058,6 +3060,8 @@ function _wmf_civicrm_merge_resolve_preferred_language_conflict($fieldName, &$mo
   if ($fieldName !== 'preferred_language') {
     return FALSE;
   }
+  $valueToKeep = wmf_civicrm_get_language_db_value($valueToKeep);
+  $valueToOverwrite = wmf_civicrm_get_language_db_value($valueToOverwrite);
 
   if (substr($valueToKeep, 0, 2) != substr($valueToOverwrite, 0, 2)) {
     $lastDonor = civicrm_api3('Contribution', 'getvalue', array(
@@ -3102,6 +3106,36 @@ function _wmf_civicrm_merge_resolve_preferred_language_conflict($fieldName, &$mo
   }
 
   return TRUE;
+}
+
+/**
+ * Get the value for language that is stored in the db.
+ *
+ * In CiviCRM 5.17 an improvement means that the display renders the
+ * UI string - eg. 'English (United States)' on the merge screen instead of 'en_US'.
+ *
+ * However, as we have previously griped about, the values passed out to the hook
+ * are stupidly tied to the form - resulting in the change flowing through.
+ *
+ * This handling copes with either the db value or the form value - although the db value might
+ * be irrelevant after we do our next update (OTOH it's just an early return so 'cheap').
+ *
+ * @param string $value
+ *
+ * @return string
+ */
+function wmf_civicrm_get_language_db_value($value): string {
+  if (!$value) {
+    return '';
+  }
+  $languages = wmf_civicrm_get_valid_languages();
+  if (isset($languages[$value])) {
+    return $value;
+  }
+  if (in_array($value, $languages)) {
+    return array_search($value, $languages);
+  }
+  return $value;
 }
 
 /**

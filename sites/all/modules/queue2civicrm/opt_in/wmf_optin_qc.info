@@ -1,0 +1,7 @@
+name = WMF OptIn Queue Consumer
+description = Raids a queue (dedicated to opt ins) for new messages.
+core = 7.x
+package = queue2civicrm
+configure = admin/config/queue2civicrm/optin_qc
+dependencies[] = queue2civicrm
+files[] = OptInQueueConsumer.php

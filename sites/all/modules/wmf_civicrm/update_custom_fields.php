@@ -122,7 +122,7 @@ function _wmf_civicrm_update_custom_fields() {
       // We created the bulkCreate function in core to help us & ported it. But, in the final
       // version merged to core it was renamed to bulkSave & adapted to support update as well.
       // Next upgrade of Civi we'll need to adjust here & a few lines above we can save some lines.
-      CRM_Core_BAO_CustomField::bulkCreate($customGroupSpec['fields'], ['custom_group_id' => $customGroup['id']]);
+      CRM_Core_BAO_CustomField::bulkSave($customGroupSpec['fields'], ['custom_group_id' => $customGroup['id']]);
     }
   }
   civicrm_api3('System', 'flush', ['triggers' => 0, 'session' => 0]);
