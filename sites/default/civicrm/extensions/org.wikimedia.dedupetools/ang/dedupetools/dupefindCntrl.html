@@ -27,14 +27,14 @@
   </div>
 
   <div>
-    <button class="btn btn-primary" ng-show=!isMerging ng-disabled="!ruleGroupID || !limit || isSearching" ng-click="getDuplicates()">{{ ts('Find duplicates') }}</button>
-    <button class="btn btn-info" crm-icon="fa-bolt" ng-show=!isMerging ng-disabled="!ruleGroupID || !limit" ng-click="batchMerge()">{{ ts('Batch Merge') }}</button>
-    <button class="btn btn-info" ng-show="!isMerging && foundCount" ng-disabled="!ruleGroupID || !limit" ng-click="notDuplicates()">{{ ts('Mark all not duplicates') }}</button>
+    <button class="btn btn-primary" ng-show=!isMerging ng-disabled="!ruleGroupID || !limit || isSearching" ng-click="getDuplicates(hasSearched)"><span ng-show="hasSearched">{{ ts('Refresh results') }}</span><span ng-show="!hasSearched">{{ ts('Find duplicates') }}</span></button>
+    <button class="btn btn-info" crm-icon="fa-bolt" ng-show="!isMerging && !hasSuppressedPairs" ng-disabled="!ruleGroupID || !limit" ng-click="batchMerge()">{{ ts('Batch Merge') }}</button>
+    <button class="btn btn-info" ng-show="!isMerging && foundCount && !hasSuppressedPairs" ng-disabled="!ruleGroupID || !limit" ng-click="notDuplicates()">{{ ts('Mark all not duplicates') }}</button>
     <button ng-show=isMerging>{{ ts('Bulk operation in progress - this could take a while.... enough time for you to stand up & do some stretches....') }}</button>
     <a href="{{url}}" target="_blank" class="btn btn-link" role="button">{{ts('Go To Merge screen')}}</a>
   </div>
   <div ng-show="!isMerging">
-    <div ng-show="foundCount || hasSearched">{{ ts('Duplicate pairs matching criteria') }}: {{foundCount}}. Showing <a href="#" e-single e-clickable="true" editable-number="tilesToShow">{{tilesToShow}}</a> pairs at a time as <a href="#" e-title="Show merge tiles?" e-single editable-checkbox="deduperCntrl.showTiles">{{ deduperCntrl.showTiles && "merge tiles" || "Rows" }}</a>. </div>
+    <div ng-show="foundCount || hasSearched">{{ ts('Duplicate pairs matching criteria') }}: {{foundCount}}. Showing up to <a href="#" e-single e-clickable="true" editable-number="tilesToShow">{{tilesToShow}}</a> pairs at a time as <a href="#" e-title="Show merge tiles?" e-single editable-checkbox="deduperCntrl.showTiles">{{ deduperCntrl.showTiles && "merge tiles" || "Rows" }}</a>. </div>
     <div ng-show="mergedCount">{{ ts('Contacts merged') }}: {{mergedCount}}</div>
     <div ng-show="skippedCount">{{ ts('Skipped in automated merge attempt') }}: {{skippedCount}}</div>
     <div ng-show="exceptedCount">{{ ts('Contacts marked as exceptions') }}: {{exceptedCount}}</div>
@@ -65,12 +65,12 @@
         <div class='col-md-4' contact-basic="{contact_id: mergePair['srcID'], display_name : mergePair['srcName'], 'contact_url' : contactURL}"></div>
 
         <div class='col-md-4'>
-          <div conflict-basic="{conflicts: mergePair['conflicts'], main_id : mergePair['srcID'], other_id : mergePair['dstID'], other_display_name : mergePair['dstName'],  main_display_name : mergePair['srcName'], fieldSpec : contactFields}">
+          <div conflict-basic="{conflicts: mergePair['safe']['conflicts'], main_id : mergePair['srcID'], other_id : mergePair['dstID'], other_display_name : mergePair['dstName'],  main_display_name : mergePair['srcName'], fieldSpec : contactFields}">
           </div>
           <button class="btn btn-success btn-block" id="retry-merge" ng-disabled=isRowMerging ng-click="retryMerge(mergePair['dstID'], mergePair['srcID'], mergePair, currentPage)">{{ ts('Safe Merge') }}</button>
           <button class="btn btn-primary btn-block" id="dedupe-exception" ng-disabled=isRowMerging ng-click="dedupeException(mergePair['dstID'], mergePair['srcID'], currentPage)">{{ ts('Mark non-dupe') }}</button>
           <button class="btn btn-primary btn-block" id="delay-pair" ng-disabled=isRowMerging ng-click="delayPair(mergePair['dstID'], mergePair['srcID'], currentPage)">{{ ts('Ask me Later') }}</button>
-          <button class="btn btn-danger btn-block" id="force-merge" ng-show="mergePair['conflicts']" ng-disabled=isRowMerging ng-click="forceMerge(mergePair['dstID'], mergePair['srcID'], currentPage)">{{ ts('Force Merge') }}</button>
+          <button class="btn btn-danger btn-block" id="force-merge" ng-show="mergePair['safe']['conflicts']" ng-disabled=isRowMerging ng-click="forceMerge(mergePair['dstID'], mergePair['srcID'], currentPage)">{{ ts('Force Merge') }}</button>
           <div><a target="_blank" class="btn btn-link btn-block" href="{{mergeURL}}&cid={{mergePair['dstID']}}&oid={{mergePair['srcID']}}">{{ ts('Manual Merge') }}</a></div>
         </div>
         <div class='col-md-4'  contact-basic="{contact_id: mergePair['dstID'], display_name : mergePair['dstName'], 'contact_url' : contactURL}"></div>

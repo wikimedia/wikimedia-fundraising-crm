@@ -1,1 +1,4 @@
-{"server_route": "civicrm/conflict-basic"}
+{
+  "server_route": "civicrm/conflict-basic",
+  "title": "Basic conflict block"
+}

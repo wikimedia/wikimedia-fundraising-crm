@@ -1,1 +1,4 @@
-{"server_route": "civicrm/contact-basic"}
+{
+  "server_route": "civicrm/contact-basic",
+  "title": "Basic contact tile"
+}
