@@ -2467,6 +2467,7 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
     case 'batch' :
     case 'form' :
 
+      watchdog("civicrm_merge_debug", "Deduping contacts $mainId and $otherId");
       $refs['migration_info']['context'] = $type;
       CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(
         1 => array(
