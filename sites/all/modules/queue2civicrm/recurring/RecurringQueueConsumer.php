@@ -312,6 +312,11 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
       // Create a new recurring donation with a token
       if (isset($msg['recurring_payment_token'])) {
+        // Check that the original contribution has processed first
+        if(empty($ctRecord['contribution_id'])) {
+         throw new WmfException(WmfException::MISSING_PREDECESSOR, 'Recurring queue processed before donations queue');
+        }
+
         // Create a token
         $payment_token_result = wmf_civicrm_recur_payment_token_create(
           $contactId, $msg['gateway'], $msg['recurring_payment_token'], $msg['user_ip']
@@ -327,7 +332,59 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         $params['next_sched_contribution_date'] = wmf_common_date_unix_to_civicrm($msg['start_date']);
       }
 
-      civicrm_api3('ContributionRecur', 'create', $params);
+      $newContributionRecur = civicrm_api3('ContributionRecur', 'create', $params);
+
+      // Send an email that the recurring donation has been created
+      if (isset($msg['recurring_payment_token']) && isset($newContributionRecur['id'])) {
+        // Get the contact information if not already there
+        if (empty($contact)) {
+          $contact = civicrm_api3('Contact', 'getsingle', array('id' => $contactId));
+        } else {
+          $contact = $contact['values'][$contactId];
+          $contact['email'] = $msg['email'];
+        }
+
+        // Set up the language for the email
+        $locale = $contact['preferred_language'];
+        if (!$locale) {
+          watchdog('recurring_notification', "Donor language unknown.  Defaulting to English...", NULL, WATCHDOG_INFO);
+          $locale = 'en';
+        }
+        $locale = wmf_common_locale_civi_to_mediawiki($locale);
+
+        // Using the same params sent through in thank_you.module thank_you_for_contribution
+        $template = 'recurring_notification';
+
+        $params = array(
+          'template' => $template,
+          'amount' => $msg['gross'],
+          'contact_id' => $contactId,
+          'currency' => $msg['currency'],
+          'first_name' => $contact['first_name'],
+          'from_name' => thank_you_get_from_name($template),
+          'from_address' => variable_get('thank_you_from_address', 'donate@wikimedia.org'),
+          'last_name' => $contact['last_name'],
+          'locale' => $locale,
+          'name' => $contact['display_name'],
+          'receive_date' => $newContributionRecur['values'][$newContributionRecur['id']]['create_date'],
+          'recipient_address' => $contact['email'],
+          'recurring' => TRUE,
+          'transaction_id' => "CNTCT-{$contactId}",
+          // shown in the body of the text
+          'contribution_id' => $ctRecord['contribution_id'],
+          // used for the bounce header
+          'unsubscribe_link' => build_unsub_link($ctRecord['contribution_id'], $contact['email'], $locale),
+          'contribution_tags' => '',
+        );
+
+        $success = thank_you_send_mail($params);
+        if ($success) {
+          watchdog('recurring_notification', "Recurring notification sent successfully for recurring contribution id: " . $newContributionRecur['id'] . " to " . $params['recipient_address'], array(), WATCHDOG_INFO);
+        }
+        else {
+          watchdog('recurring_notification', "Recurring notification mail failed for recurring contribution id: " . $newContributionRecur['id'] . " to " . $params['recipient_address'], array(), WATCHDOG_ERROR);
+        }
+      }
     }
     catch (\CiviCRM_API3_Exception $e) {
       throw new WmfException(WmfException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());

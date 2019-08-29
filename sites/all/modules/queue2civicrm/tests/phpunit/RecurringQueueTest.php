@@ -1,6 +1,7 @@
 <?php
 
 use queue2civicrm\recurring\RecurringQueueConsumer;
+use wmf_communication\TestMailer;
 
 /**
  * @group Queue2Civicrm
@@ -24,6 +25,11 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->consumer = new RecurringQueueConsumer(
       'recurring'
     );
+
+    // Set up for TestMailer
+    if ( !defined( 'WMF_UNSUB_SALT' ) ) {
+      define( 'WMF_UNSUB_SALT', 'abc123' );
+    }
   }
 
   // TODO: other queue import tests need to clean up like this!
@@ -353,6 +359,28 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     // Subscr_id is the same as gateway_txn_id
     $subscr_id = mt_rand();
 
+    // Create the first donation
+    $ct_id = wmf_civicrm_insert_contribution_tracking([
+        'form_amount' => 4,
+        'utm_source' => 'testytest',
+        'language' => 'en',
+        'country' => 'US'
+    ]);
+
+    $message = new TransactionMessage([
+            'gateway' => 'ingenico',
+            'gross' => 400,
+            'original_gross' => 400,
+            'original_currency' => 'USD',
+            'contribution_tracking_id' => $ct_id,
+        ]
+    );
+
+    $messageBody = $message->getBody();
+    exchange_rate_cache_set('USD', $messageBody['date'], 1);
+    $firstContribution = wmf_civicrm_contribution_message_import($messageBody);
+    $this->contributions[] = $firstContribution;
+
     // Set up token specific values
     $overrides['recurring_payment_token']= mt_rand();
     $overrides['gateway_txn_id'] = $subscr_id;
@@ -361,6 +389,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $overrides['payment_method'] = 'cc';
     $overrides['create_date'] = 1564068649;
     $overrides['start_date'] = 1566732720;
+    $overrides['contribution_tracking_id'] = $ct_id;
 
     $this->processRecurringSignup($subscr_id,$overrides);
 
@@ -433,6 +462,72 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Clean up
     $this->recurring_contributions[] = $recurRecord;
+  }
+
+  /**
+   * Test that the notification email is sent when a updonate recurring subscription is started
+   */
+  public function testRecurringNotificationEmailSend() {
+    variable_set( 'thank_you_add_civimail_records', 'false' );
+      
+    // Subscr_id is the same as gateway_txn_id
+    $subscr_id = mt_rand();
+
+    // Create the first donation
+    $ct_id = wmf_civicrm_insert_contribution_tracking([
+        'form_amount' => 4,
+        'utm_source' => 'testytest',
+        'language' => 'en',
+        'country' => 'US'
+    ]);
+
+    $message = new TransactionMessage([
+            'gateway' => 'ingenico',
+            'gross' => 400,
+            'original_gross' => 400,
+            'original_currency' => 'USD',
+            'contribution_tracking_id' => $ct_id,
+        ]
+    );
+
+    $messageBody = $message->getBody();
+    exchange_rate_cache_set('USD', $messageBody['date'], 1);
+    $firstContribution = wmf_civicrm_contribution_message_import($messageBody);
+    $this->contributions[] = $firstContribution;
+
+    // Setup here to only generate a notification email
+    TestMailer::setup();
+
+    // Set up token specific values
+    $overrides['recurring_payment_token']= mt_rand();
+    $overrides['gateway_txn_id'] = $subscr_id;
+    $overrides['user_ip'] = '1.1.1.1';
+    $overrides['gateway'] = 'ingenico';
+    $overrides['payment_method'] = 'cc';
+    $overrides['create_date'] = 1564068649;
+    $overrides['start_date'] = 1566732720;
+    $overrides['contribution_tracking_id'] = $ct_id;
+
+    $this->processRecurringSignup($subscr_id,$overrides);
+
+    $this->assertEquals( 1, TestMailer::countMailings() );
+    $sent = TestMailer::getMailing( 0 );
+
+    // Check the right email
+    $this->assertEquals( $messageBody['email'], $sent['to_address'] );
+
+    // Check right email content
+    $this->assertRegExp( '/Wow. You did something that so few people do: you donated/', $sent['html'] );
+
+    // Check the right donation amount
+    $this->assertRegExp( '/6.00/', $sent['html'] );
+
+    // Check the subject
+    $expectedSubject = trim(file_get_contents(
+        __DIR__ .
+        "/../../../thank_you/templates/subject/recurring_notification.en.subject"
+    ));
+    $this->assertEquals( $expectedSubject, $sent['subject']);
   }
 
   /**
