@@ -234,7 +234,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
     $session->set('userID', $contactID);
     CRM_Core_Config::singleton()->userPermissionClass = new CRM_Core_Permission_UnitTests();
     CRM_Core_Config::singleton()->userPermissionClass->permissions = array(
-      'Edit All Contacts',
+      'edit all contacts',
       'Access CiviCRM',
       'Administer CiviCRM',
     );
