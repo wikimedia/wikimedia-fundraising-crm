@@ -4,6 +4,7 @@ use SmashPig\CrmLink\Messages\SourceFields;
 use League\Csv\Reader;
 use SmashPig\Core\Context;
 use League\Csv\Writer;
+use League\Csv\Statement;
 
 /**
  * CSV batch format for manually-keyed donation checks
@@ -153,6 +154,23 @@ abstract class ChecksFile {
   protected $reader;
 
   /**
+   * @return \League\Csv\Reader
+   */
+  public function getReader(): \League\Csv\Reader {
+    return $this->reader;
+  }
+
+  /**
+   * Set up the reader object.
+   *
+   * @throws \League\Csv\Exception
+   */
+  public function setUpReader() {
+    $this->reader = Reader::createFromPath($this->file_uri, 'r');
+    $this->reader->setHeaderOffset(0);
+  }
+
+  /**
    * @param string $file_uri path to the file
    * @param array $additionalFields
    *
@@ -182,8 +200,8 @@ abstract class ChecksFile {
       ini_set('auto_detect_line_endings', TRUE);
 
       try {
-        $this->reader = Reader::createFromPath($this->file_uri, 'r');
-        $this->headers = _load_headers($this->reader->fetchOne());
+        $this->setUpReader();
+        $this->headers = _load_headers($this->reader->getHeader());
         $this->validateColumns();
         $this->createOutputFile($this->skipped_file_uri, 'Skipped');
         $this->createOutputFile($this->all_missed_file_uri, 'Not Imported');
@@ -218,23 +236,29 @@ abstract class ChecksFile {
    *
    * @return array
    *   Output messages to display to the user.
+   *
+   * @throws \League\Csv\Exception
    */
-  function import($offset = 1, $limit = 0) {
+  function import($offset = 0, $limit = 0) {
     if ($limit === 0) {
       $limit = $this->getRowCount();
     }
     ChecksImportLog::record("Beginning import of " . $this->getImportType() . " file {$this->file_uri}...");
-    $this->row_index = $offset;
 
-    $processed = 0;
-    while ($processed < $limit) {
-      $row = $this->reader->fetchOne($offset);
+    $stmt = (new Statement())
+      ->offset($offset);
+    if ($limit) {
+      $stmt = $stmt->limit((int) $limit);
+    }
+    $this->setUpReader();
+    $records = $stmt->process($this->getReader());
+
+    $this->row_index = $offset;
+    foreach ($records as $row) {
       $this->processRow($row);
-      $processed++;
-      $offset ++;
     }
 
-    $this->totalNumberRows = $this->row_index - 1;
+    $this->totalNumberRows = $this->row_index;
     $this->setMessages();
     // This is brought forward from previous iterations. I think it might not have been put in with
     // full understanding but without it our tests can't complete in the time they have so need to keep
@@ -297,14 +321,12 @@ abstract class ChecksFile {
   /**
    * Get the number of rows in the csv
    *
-   * https://csv.thephpleague.com/8.0/reading/
+   * https://csv.thephpleague.com/9.0/reading/
    *
    * @return int
    */
   public function getRowCount() {
-    $count = count($this->reader);
-    // return rows not including header.
-    return $count - 1;
+    return count($this->reader);
   }
 
   /**
@@ -903,7 +925,8 @@ abstract class ChecksFile {
     }
     $this->errorStreakCount++;
     $this->lastErrorMessage = $errorMessage;
-    $this->lastErrorRowNumber = $this->row_index;
+    // Add one because this is for human's to read & they start from one not Zero
+    $this->lastErrorRowNumber = $this->row_index + 1;
   }
 
   /**

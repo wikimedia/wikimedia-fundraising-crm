@@ -4,6 +4,7 @@ require_once 'offline2civicrm.common.inc';
 
 use wmf_communication\Templating;
 use SmashPig\Core\UtcDate;
+use League\Csv\Reader;
 
 /**
  * Implementation of hook_menu().
@@ -271,14 +272,12 @@ function offline2civicrm_import_checks_form_submit($form, $form_state) {
       $limit = $form_state['values']['import_batch_limit'];
       $max = $importer->getRowCount();
       while ($progress < $max) {
-        // For clarity - the offset we are after is + 1, to skip headings.
-        $offset = $progress + 1;
         $batchSize = (($max - $progress) > $limit) ? $limit : ($max - $progress);
         // We pass the $importer here - this is the original importer instance that we have just
         // instantiated. Any changes to this object are not retained between batches. The $context object
         // can be used to pass information between batches - but only information that can be serialised,
         // not file resources.
-        $batch['operations'][] = array('offline2civicrm_import_batch', [$offset, $batchSize, $importer]);
+        $batch['operations'][] = array('offline2civicrm_import_batch', [$progress, $batchSize, $importer]);
         $progress = $progress + $batchSize;
       }
       batch_set($batch);
@@ -302,12 +301,14 @@ function offline2civicrm_import_checks_form_submit($form, $form_state) {
 }
 
 /**
- * @param $offset
- * @param $limit
- * @param $importer
- * @param $context
+ * Import batch of rows from csv file.
  *
- * @return mixed
+ * @param int $offset
+ * @param int $limit
+ * @param \ChecksFile $importer
+ * @param array $context
+ *
+ * @throws \League\Csv\Exception
  */
 function offline2civicrm_import_batch($offset, $limit, $importer, &$context) {
   civicrm_initialize();

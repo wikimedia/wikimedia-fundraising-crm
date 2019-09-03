@@ -527,6 +527,9 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * Test valid output files are created when an error streak is encountered.
    *
    * An error streak is 10 or more invalid rows in a row.
+   *
+   * @throws \WmfException
+   * @throws \League\Csv\Exception
    */
   public function testImporterErrorStreak() {
     civicrm_initialize();
