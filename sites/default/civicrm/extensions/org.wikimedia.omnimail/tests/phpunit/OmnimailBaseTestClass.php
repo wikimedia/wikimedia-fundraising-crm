@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/GuzzleTestTrait.php';
 
-use Civi\Test\EndToEndInterface;
+use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
 use GuzzleHttp\Client;
@@ -22,9 +22,9 @@ use GuzzleHttp\Psr7\Response;
  *       a. Do all that using setupHeadless() and Civi\Test.
  *       b. Disable TransactionalInterface, and handle all setup/teardown yourself.
  *
- * @group e2e
+ * @group headless
  */
-class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements EndToEndInterface, TransactionalInterface {
+class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements HeadlessInterface, TransactionalInterface {
 
   use \Civi\Test\Api3TestTrait;
   use GuzzleTestTrait;
@@ -38,7 +38,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements EndTo
    * @throws \CRM_Extension_Exception_ParseException
    */
   public function setUpHeadless() {
-    return \Civi\Test::e2e()
+    return \Civi\Test::headless()
       ->installMe(__DIR__)
       ->apply();
   }
@@ -51,16 +51,9 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements EndTo
   protected $contactIDs = array();
 
   public function setUp() {
-    civicrm_initialize();
-    if (!isset($GLOBALS['_PEAR_default_error_mode'])) {
-      // This is simply to protect against e-notices if globals have been reset by phpunit.
-      $GLOBALS['_PEAR_default_error_mode'] = NULL;
-      $GLOBALS['_PEAR_default_error_options'] = NULL;
-    }
     parent::setUp();
-    $null = NULL;
     Civi::service('settings_manager')->flush();
-    \Civi::$statics['_omnimail_settings'] = array();
+    \Civi::$statics['_omnimail_settings'] = [];
   }
 
   public function tearDown() {

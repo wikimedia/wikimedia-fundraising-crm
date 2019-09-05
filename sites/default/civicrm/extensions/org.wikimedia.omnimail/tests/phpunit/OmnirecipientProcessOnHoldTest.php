@@ -21,7 +21,7 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  *       a. Do all that using setupHeadless() and Civi\Test.
  *       b. Disable TransactionalInterface, and handle all setup/teardown yourself.
  *
- * @group e2e
+ * @group headless
  */
 class OmnirecipientProcessOnHoldTest extends OmnimailBaseTestClass  {
 
