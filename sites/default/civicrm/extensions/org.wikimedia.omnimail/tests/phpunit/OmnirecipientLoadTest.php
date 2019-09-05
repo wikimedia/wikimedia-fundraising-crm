@@ -23,19 +23,7 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  *
  * @group e2e
  */
-class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInterface, TransactionalInterface {
-
-  public function setUpHeadless() {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
-    return \Civi\Test::e2e()
-      ->installMe(__DIR__)
-      ->apply();
-  }
-
-  public function setUp() {
-    parent::setUp();
-  }
+class OmnirecipientLoadTest extends OmnimailBaseTestClass {
 
   public function tearDown() {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_mailing_provider_data');
@@ -139,7 +127,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
   public function testOmnirecipientLoadLimitAndOffset() {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
 
-    civicrm_api3('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'debug' => 1, 'client' => $client, 'options' => array('limit' => 2, 'offset' => 1)));
+    $this->callAPISuccess('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'debug' => 1, 'client' => $client, 'options' => array('limit' => 2, 'offset' => 1)));
     $providers = CRM_Core_DAO::executeQuery('SELECT * FROM civicrm_mailing_provider_data')->fetchAll();
     $this->assertEquals(array(
       0 => array(
@@ -189,8 +177,8 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
     for ($i = 0; $i < 15; $i++) {
       $responses[] = file_get_contents(__DIR__ . '/Responses/JobStatusWaitingResponse.txt');
     }
-    civicrm_api3('setting', 'create', array('omnimail_job_retry_interval' => 0.01));
-    civicrm_api3('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $this->getMockRequest($responses)));
+    $this->callAPISuccess('setting', 'create', array('omnimail_job_retry_interval' => 0.01));
+    $this->callAPISuccess('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $this->getMockRequest($responses)));
     $this->assertEquals(0, CRM_Core_DAO::singleValueQuery('SELECT  count(*) FROM civicrm_mailing_provider_data'));
 
     $this->assertEquals(array(
@@ -219,7 +207,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
       'progress_end_timestamp' => '1488495600',
     ));
 
-    civicrm_api3('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $client));
+    $this->callAPISuccess('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $client));
     $this->assertEquals(4, CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_mailing_provider_data'));
     $this->assertEquals(array(
       'last_timestamp' => '2017-03-02 23:00:00',
@@ -228,6 +216,8 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
 
   /**
    * Test the suffix works for multiple jobs..
+   *
+   * @throws \API_Exception
    */
   public function testCompleteIncompleteUseSuffix() {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
@@ -249,7 +239,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
     ));
     $settings = $this->getJobSettings(array('mail_provider' => 'Silverpop'));
 
-    civicrm_api3('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $client, 'job_identifier' => '_woot'));
+    $this->callAPISuccess('Omnirecipient', 'load', array('mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $client, 'job_identifier' => '_woot'));
     $this->assertEquals(4, CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_mailing_provider_data'));
     $this->assertEquals(array(
       'last_timestamp' => '2017-03-02 23:00:00',
@@ -265,6 +255,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
    * This is because the incomplete download will continue, and we will incorrectly
    * think it is taking our parameters.
    *
+   * @throws \API_Exception
    */
   public function testIncompleteRejectTimestamps() {
     $this->createSetting(array(
@@ -299,6 +290,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass implements EndToEndInt
    * @param array $params
    *
    * @return array
+   * @throws \API_Exception
    */
   public function getJobSettings($params = array('mail_provider' => 'Silverpop')) {
     $omnimail = new CRM_Omnimail_Omnirecipients($params);

@@ -23,23 +23,11 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  *
  * @group e2e
  */
-class OmnirecipientProcessUnsubscribesTest extends OmnimailBaseTestClass implements EndToEndInterface, TransactionalInterface {
-
-  public function setUpHeadless() {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
-    return \Civi\Test::e2e()
-      ->installMe(__DIR__)
-      ->apply();
-  }
+class OmnirecipientProcessUnsubscribesTest extends OmnimailBaseTestClass {
 
   public function setUp() {
     parent::setUp();
     $this->makeScientists();
-  }
-
-  public function tearDown() {
-    parent::tearDown();
   }
 
   /**
@@ -48,20 +36,20 @@ class OmnirecipientProcessUnsubscribesTest extends OmnimailBaseTestClass impleme
   public function testOmnirecipientProcessUnsubscribes() {
 
     $this->createMailingProviderData();
-    civicrm_api3('Omnirecipient', 'process_unsubscribes', array('mail_provider' => 'Silverpop'));
-    $data = civicrm_api3('MailingProviderData', 'get', array('sequential' => 1));
+    $this->callAPISuccess('Omnirecipient', 'process_unsubscribes', array('mail_provider' => 'Silverpop'));
+    $data = $this->callAPISuccess('MailingProviderData', 'get', array('sequential' => 1));
     $this->assertEquals(1, $data['values'][0]['is_civicrm_updated']);
-    $contact = civicrm_api3('Contact', 'getsingle', array('id' => $this->contactIDs['charlie_clone']));
+    $contact = $this->callAPISuccess('Contact', 'getsingle', array('id' => $this->contactIDs['charlie_clone']));
     $this->assertEquals(1, $contact['is_opt_out']);
-    $email = civicrm_api3('Email', 'getsingle', array('email' => 'charlie@example.com'));
+    $email = $this->callAPISuccess('Email', 'getsingle', array('email' => 'charlie@example.com'));
     $this->assertEquals(0, $email['is_bulkmail']);
-    $activity = civicrm_api3('Activity', 'getsingle', array('contact_id' => $this->contactIDs['charlie_clone']));
+    $activity = $this->callAPISuccess('Activity', 'getsingle', array('contact_id' => $this->contactIDs['charlie_clone']));
     $this->assertEquals('Unsubscribed via Silverpop', $activity['subject']);
 
-    $contact = civicrm_api3('Contact', 'getsingle', array('id' => $this->contactIDs['marie']));
+    $contact = $this->callAPISuccess('Contact', 'getsingle', array('id' => $this->contactIDs['marie']));
     $this->assertEquals(0, $contact['is_opt_out']);
 
-    $contact = civicrm_api3('Contact', 'getsingle', array('id' => $this->contactIDs['isaac']));
+    $contact = $this->callAPISuccess('Contact', 'getsingle', array('id' => $this->contactIDs['isaac']));
     $this->assertEquals(1, $contact['is_opt_out']);
 
   }

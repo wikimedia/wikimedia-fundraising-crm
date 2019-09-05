@@ -24,23 +24,7 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  *
  * @group e2e
  */
-class OmnirecipientEraseTest extends OmnimailBaseTestClass implements EndToEndInterface, TransactionalInterface {
-
-  public function setUpHeadless() {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
-    return \Civi\Test::e2e()
-      ->installMe(__DIR__)
-      ->apply();
-  }
-
-  public function setUp() {
-    parent::setUp();
-  }
-
-  public function tearDown() {
-    parent::tearDown();
-  }
+class OmnirecipientEraseTest extends OmnimailBaseTestClass {
 
   /**
    * Example: Test that a version is returned.

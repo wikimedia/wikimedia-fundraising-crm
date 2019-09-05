@@ -23,23 +23,7 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  *
  * @group e2e
  */
-class OmnirecipientGetTest extends OmnimailBaseTestClass implements EndToEndInterface, TransactionalInterface {
-
-  public function setUpHeadless() {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
-    return \Civi\Test::e2e()
-      ->installMe(__DIR__)
-      ->apply();
-  }
-
-  public function setUp() {
-    parent::setUp();
-  }
-
-  public function tearDown() {
-    parent::tearDown();
-  }
+class OmnirecipientGetTest extends OmnimailBaseTestClass {
 
   /**
    * Example: Test that a version is returned.
@@ -47,7 +31,7 @@ class OmnirecipientGetTest extends OmnimailBaseTestClass implements EndToEndInte
   public function testOmnirecipientGet() {
     $client = $this->setupSuccessfulDownloadClient();
 
-    $result = civicrm_api3('Omnirecipient', 'get', array('mail_provider' => 'Silverpop', 'username' => 'Shrek', 'password' => 'Fiona', 'options' => array('limit' => 3), 'client' => $client));
+    $result = $this->callAPISuccess('Omnirecipient', 'get', array('mail_provider' => 'Silverpop', 'username' => 'Shrek', 'password' => 'Fiona', 'options' => array('limit' => 3), 'client' => $client));
     $this->assertEquals(3, $result['count']);
     $this->assertEquals('bob@example.com', $result['values'][0]['email']);
     $this->assertEquals('123', $result['values'][0]['contact_id']);

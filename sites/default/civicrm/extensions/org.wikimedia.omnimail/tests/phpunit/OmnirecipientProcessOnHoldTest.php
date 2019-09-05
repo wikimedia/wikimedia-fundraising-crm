@@ -23,23 +23,11 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  *
  * @group e2e
  */
-class OmnirecipientProcessOnHoldTest extends OmnimailBaseTestClass implements EndToEndInterface, TransactionalInterface {
-
-  public function setUpHeadless() {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
-    return \Civi\Test::e2e()
-      ->installMe(__DIR__)
-      ->apply();
-  }
+class OmnirecipientProcessOnHoldTest extends OmnimailBaseTestClass  {
 
   public function setUp() {
     parent::setUp();
     $this->makeScientists();
-  }
-
-  public function tearDown() {
-    parent::tearDown();
   }
 
   /**
@@ -48,10 +36,10 @@ class OmnirecipientProcessOnHoldTest extends OmnimailBaseTestClass implements En
   public function testOmnirecipientProcessOnHold() {
 
     $this->createMailingProviderData();
-    civicrm_api3('Omnirecipient', 'process_onhold', array('mail_provider' => 'Silverpop'));
-    $data = civicrm_api3('MailingProviderData', 'get', array('sequential' => 1));
+    $this->callAPISuccess('Omnirecipient', 'process_onhold', array('mail_provider' => 'Silverpop'));
+    $data = $this->callAPISuccess('MailingProviderData', 'get', array('sequential' => 1));
     $this->assertEquals(1, $data['values'][3]['is_civicrm_updated']);
-    $email = civicrm_api3('Email', 'getsingle', ['email' => 'charlie@example.com']);
+    $email = $this->callAPISuccess('Email', 'getsingle', ['email' => 'charlie@example.com']);
     $this->assertEquals(1, $email['on_hold']);
   }
 

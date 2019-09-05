@@ -19,23 +19,7 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  *
  * @group e2e
  */
-class OmnimailingLoadTest extends OmnimailBaseTestClass implements EndToEndInterface, TransactionalInterface {
-
-  public function setUpHeadless() {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
-    return \Civi\Test::e2e()
-      ->installMe(__DIR__)
-      ->apply();
-  }
-
-  public function setUp() {
-    parent::setUp();
-  }
-
-  public function tearDown() {
-    parent::tearDown();
-  }
+class OmnimailingLoadTest extends OmnimailBaseTestClass {
 
   /**
    * Example: Test that a version is returned.
@@ -43,15 +27,15 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass implements EndToEndInter
   public function testOmnimailingLoad() {
     $mailings = $this->loadMailings();
     $this->assertEquals(2, $mailings['count']);
-    $mailing = civicrm_api3('Mailing', 'getsingle', array('hash' => 'sp7877'));
+    $mailing = $this->callAPISuccess('Mailing', 'getsingle', array('hash' => 'sp7877'));
     $this->assertEquals(1, $mailing['is_completed']);
 
     $this->loadMailings();
 
-    $mailingReloaded = civicrm_api3('Mailing', 'getsingle', array('hash' => 'sp7877'));
+    $mailingReloaded = $this->callAPISuccess('Mailing', 'getsingle', array('hash' => 'sp7877'));
 
     $this->assertEquals($mailingReloaded['id'], $mailing['id']);
-    $mailingJobs = civicrm_api3('MailingJob', 'get', array('mailing_id' => $mailing['id']));
+    $mailingJobs = $this->callAPISuccess('MailingJob', 'get', array('mailing_id' => $mailing['id']));
     $this->assertEquals(0, $mailingJobs['count']);
 
   }
@@ -67,7 +51,7 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass implements EndToEndInter
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
     );
-    $mailings = civicrm_api3('Omnimailing', 'load', array(
+    $mailings = $this->callAPISuccess('Omnimailing', 'load', array(
       'mail_provider' => 'Silverpop',
       'client' => $this->getMockRequest($responses),
       'username' => 'Donald',

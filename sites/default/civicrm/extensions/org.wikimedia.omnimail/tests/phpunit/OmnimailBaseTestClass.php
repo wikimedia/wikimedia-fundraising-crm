@@ -30,6 +30,20 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements EndTo
   use GuzzleTestTrait;
 
   /**
+   * Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
+   *
+   * See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
+   *
+   * @return \Civi\Test\CiviEnvBuilder
+   * @throws \CRM_Extension_Exception_ParseException
+   */
+  public function setUpHeadless() {
+    return \Civi\Test::e2e()
+      ->installMe(__DIR__)
+      ->apply();
+  }
+
+  /**
    * IDs of contacts created for the test.
    *
    * @var array
