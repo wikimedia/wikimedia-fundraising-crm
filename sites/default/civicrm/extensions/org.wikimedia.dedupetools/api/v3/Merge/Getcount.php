@@ -14,6 +14,8 @@ function _civicrm_api3_merge_getcount_spec(&$spec) {
   $spec['rule_group_id']['api.required'] = 1;
   $spec['group_id'] =['title' => ts('CiviCRM Group')];
   $spec['criteria'] = ['title' => ts('Dedupe criteria')];
+  $spec['search_limit'] = ['title' => ts('Limit of contacts to find matches for'), 'api.required' => TRUE];
+
 }
 
 /**
@@ -29,7 +31,9 @@ function _civicrm_api3_merge_getcount_spec(&$spec) {
  * @throws CiviCRM_API3_Exception
  */
 function civicrm_api3_merge_getcount($params) {
-  $cacheKeyString = CRM_Dedupe_Merger::getMergeCacheKeyString($params['rule_group_id'], CRM_Utils_Array::value('group_id', $params), $params['criteria'], CRM_Utils_Array::value('check_permissions', $params));
+  $cacheKeyString = CRM_Dedupe_Merger::getMergeCacheKeyString($params['rule_group_id'], CRM_Utils_Array::value('group_id', $params), $params['criteria'], CRM_Utils_Array::value('check_permissions', $params), $params['search_limit']);
+  // @todo - pretty sure these joins are no longer required as we remove from the cache once they have
+  // been marked duplicates now.
   return CRM_Core_DAO::singleValueQuery("
     SELECT count(*) FROM civicrm_prevnext_cache pn
     LEFT JOIN civicrm_dedupe_exception de 

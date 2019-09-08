@@ -71,6 +71,9 @@ function drush_civicrm_merge() {
     'criteria' => array(
       'contact' => array('id' => array('BETWEEN' => array($start, $end))),
     ),
+    // Use a zero limit as we are limiting by id range.
+    // per https://github.com/civicrm/civicrm-core/pull/15185
+    'search_limit' => 0,
   );
   if ($groupID) {
     $mergeParams['gid'] = $groupID;

@@ -14,7 +14,7 @@ function _afform_fields() {
  * @return array
  */
 function _afform_fields_filter($params) {
-  $result = array();
+  $result = [];
   foreach (_afform_fields() as $field) {
     if (isset($params[$field])) {
       $result[$field] = $params[$field];
@@ -33,12 +33,12 @@ function _afform_fields_filter($params) {
 }
 
 /**
- * @param ContainerBuilder $container
+ * @param \Symfony\Component\DependencyInjection\ContainerBuilder $container
  */
 function afform_civicrm_container($container) {
   $container->setDefinition('afform_scanner', new \Symfony\Component\DependencyInjection\Definition(
     'CRM_Afform_AfformScanner',
-    array()
+    []
   ));
 }
 
@@ -165,9 +165,61 @@ function afform_civicrm_angularModules(&$angularModules) {
 
     // FIXME: The HTML layout template is embedded in the JS asset.
     // This works at runtime for basic usage, but it bypasses
-    // the hook_alterAngular infrastructure, and I'm not sure translation works.
+    // the normal workflow for templates (e.g. translation).
     // We should update core so that 'partials' can be specified more dynamically.
   }
+}
+
+/**
+ * @param \Civi\Angular\Manager $angular
+ * @see CRM_Utils_Hook::alterAngular()
+ */
+function afform_civicrm_alterAngular($angular) {
+  $fieldMetadata = \Civi\Angular\ChangeSet::create('fieldMetadata')
+    ->alterHtml(';^~afform/;', function($doc, $path) {
+      $entities = _afform_getMetadata($doc);
+
+      foreach (pq('af-field', $doc) as $afField) {
+        /** @var DOMElement $afField */
+        $fieldName = $afField->getAttribute('field-name');
+        $entityName = pq($afField)->parent('[af-name]')->attr('af-name');
+        if (!preg_match(';^[a-zA-Z0-9\_\-\. ]+$;', $entityName)) {
+          throw new \CRM_Core_Exception("Cannot process $path: malformed entity name ($entityName)");
+        }
+        $entityType = $entities[$entityName]['type'];
+        $getFields = civicrm_api4($entityType, 'getFields', [
+          'where' => [['name', '=', $fieldName]],
+          'select' => ['title', 'input_type', 'input_attrs', 'options'],
+          'loadOptions' => TRUE,
+        ]);
+        // Merge field definition data with whatever's already in the markup
+        foreach ($getFields as $field) {
+          $existingFieldDefn = trim(pq($afField)->attr('field-defn') ?: '');
+          if ($existingFieldDefn && $existingFieldDefn[0] != '{') {
+            // If it's not an object, don't mess with it.
+            continue;
+          }
+          foreach ($field as &$prop) {
+            $prop = json_encode($prop, JSON_UNESCAPED_SLASHES);
+          }
+          if ($existingFieldDefn) {
+            $field = array_merge($field, CRM_Utils_JS::getRawProps($existingFieldDefn));
+          }
+          pq($afField)->attr('field-defn', CRM_Utils_JS::writeObject($field));
+        }
+      }
+    });
+  $angular->add($fieldMetadata);
+}
+
+function _afform_getMetadata(phpQueryObject $doc) {
+  $entities = [];
+  foreach ($doc->find('af-model-prop') as $afmModelProp) {
+    $entities[$afmModelProp->getAttribute('af-name')] = [
+      'type' => $afmModelProp->getAttribute('af-type'),
+    ];
+  }
+  return $entities;
 }
 
 /**
@@ -211,12 +263,18 @@ function afform_civicrm_buildAsset($asset, $params, &$mimeType, &$content) {
   $meta = $scanner->getMeta($name);
   // Hmm?? $scanner = new CRM_Afform_AfformScanner();
 
+  $fileName = '~afform/' . _afform_angular_module_name($name, 'camel');
+  $htmls = [
+    $fileName => file_get_contents($scanner->findFilePath($name, 'aff.html')),
+  ];
+  $htmls = \Civi\Angular\ChangeSet::applyResourceFilters(Civi::service('angular')->getChangeSets(), 'partials', $htmls);
+
   $smarty = CRM_Core_Smarty::singleton();
   $smarty->assign('afform', [
     'camel' => _afform_angular_module_name($name, 'camel'),
     'meta' => $meta,
     'metaJson' => json_encode($meta),
-    'layout' => file_get_contents($scanner->findFilePath($name, 'aff.html'))
+    'layout' => $htmls[$fileName],
   ]);
   $mimeType = 'text/javascript';
   $content = $smarty->fetch('afform/AfformAngularModule.tpl');
@@ -238,7 +296,7 @@ function afform_civicrm_alterMenu(&$items) {
       $items[$meta['server_route']] = [
         'page_callback' => 'CRM_Afform_Page_AfformBase',
         'page_arguments' => 'afform=' . urlencode($name),
-        'title' => CRM_Utils_Array::value('title', $meta, ''),
+        'title' => $meta['title'] ?? '',
         'access_arguments' => [['access CiviCRM'], 'and'], // FIXME
         'is_public' => $meta['is_public'],
       ];
@@ -253,6 +311,7 @@ function afform_civicrm_alterMenu(&$items) {
  *   'camel' or 'dash'.
  * @return string
  *   Ex: 'FooBar' or 'foo-bar'.
+ * @throws \Exception
  */
 function _afform_angular_module_name($fileBaseName, $format = 'camel') {
   switch ($format) {
@@ -270,29 +329,3 @@ function _afform_angular_module_name($fileBaseName, $format = 'camel') {
       throw new \Exception("Unrecognized format");
   }
 }
-
-/**
- * Implements hook_civicrm_preProcess().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
- *
-function afform_civicrm_preProcess($formName, &$form) {
-
-} // */
-
-/**
- * Implements hook_civicrm_navigationMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
- *
-function afform_civicrm_navigationMenu(&$menu) {
-  _afform_civix_insert_navigation_menu($menu, 'Mailings', array(
-    'label' => E::ts('New subliminal message'),
-    'name' => 'mailing_subliminal_message',
-    'url' => 'civicrm/mailing/subliminal',
-    'permission' => 'access CiviMail',
-    'operator' => 'OR',
-    'separator' => 0,
-  ));
-  _afform_civix_navigationMenu($menu);
-} // */

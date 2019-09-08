@@ -76,6 +76,7 @@
     $scope.exceptedCount = 0;
     $scope.duplicatePairs = [];
     $scope.pagedPairs = [];
+    $scope.hasSuppressedPairs = false;
     $scope.contactsToMerge = [];
     $scope.currentPage = 1;
     $scope.hasSearched = false;
@@ -208,35 +209,15 @@
       }
     }
 
-    function getCachedMergeInfo(contactCriteria) {
-      crmApi('Merge', 'getcacheinfo', {
-        'rule_group_id': $scope.ruleGroupID,
-        'criteria': contactCriteria
-      }).then(function (data) {
-          var results = data.values[0];
-          $scope.duplicatePairs = results.skipped;
-          if (results.stats.skipped !== undefined) {
-            $scope.skippedCount = results.stats.skipped;
-          }
-          else {
-            $scope.skippedCount = 0;
-          }
-          $scope.foundCount = parseInt(results.found);
-          // We might have just merged, or we might have reloaded earlier results.
-          $scope.hasMerged = (data['values'][0]['skipped'].length > 0 || data.values[0].stats.length);
-        }
-      );
-    }
-
     function getConflicts(to_keep_id, to_remove_id,contactCriteria, pair) {
-      crmApi('Merge', 'get_conflicts', {
+      crmApi('Contact', 'get_merge_conflicts', {
         'rule_group_id': $scope.ruleGroupID,
+        'search_limit' : $scope.limit,
         'criteria': contactCriteria,
         'to_remove_id' : to_remove_id,
         'to_keep_id' : to_keep_id
       }).then(function (data) {
-          var results = data.values[0];
-          pair['conflicts'] = results;
+          pair['safe'] = data.values['safe'];
         }
       );
     }
@@ -288,18 +269,22 @@
      */
     $scope.delayPair = function delayPair(mainID, otherID, currentPage) {
       $scope.currentPage = currentPage;
+      $scope.hasSuppressedPairs = true;
       removeMergedMatch(mainID, otherID);
     };
 
     $scope.notDuplicates = function notDuplicates() {
       $scope.isMerging = true;
+      $scope.duplicatePairs = [];
       crmApi('Merge', 'mark_duplicate_exception', {
         'rule_group_id': $scope.ruleGroupID,
+        'search_limit' : $scope.limit,
         'criteria': formatCriteria(),
       }).then (function(result) {
-        getCachedMergeInfo(formatCriteria());
+        $scope.foundCount = 0;
         $scope.exceptedCount = result.count;
         $scope.isMerging = false;
+        $scope.duplicatePairs = [];
       });
     };
 
@@ -337,6 +322,7 @@
     function updateFoundCount() {
       crmApi('Merge', 'getcount', {
         'rule_group_id': $scope.ruleGroupID,
+        'search_limit' : $scope.limit,
         'criteria': formatCriteria()
       }).then(function (data) {
         $scope.foundCount = data.result;
@@ -366,31 +352,35 @@
       $scope.duplicatePairs = [];
       crmApi('Job', 'process_batch_merge', {
         'rule_group_id' : $scope.ruleGroupID,
-        'limit' : $scope.limit,
+        'search_limit' : $scope.limit,
         'criteria' : formatCriteria()
       }).then(function (data) {
         $scope.isMerging = false;
-        getCachedMergeInfo(formatCriteria());
         $scope.mergedCount = data['values']['merged'].length;
         $scope.skippedCount = data['values']['skipped'].length;
-        $scope.duplicatePairs = data['values']['skipped'];
         $scope.hasMerged = true;
+        $scope.getDuplicates();
       });
     };
 
-    $scope.getDuplicates = function () {
+    $scope.getDuplicates = function (is_force_reload) {
+      $scope.duplicatePairs = [];
       $scope.isSearching = true;
-      crmApi('Merge', 'get_duplicates', {
+      $scope.hasSuppressedPairs = false;
+      $scope.exceptedCount = 0;
+      crmApi('Dedupe', 'getduplicates', {
         'rule_group_id' : $scope.ruleGroupID,
         'options': {'limit' : $scope.numberMatchesToFetch},
         'search_limit' : $scope.limit,
-        'criteria' : formatCriteria()
+        'criteria' : formatCriteria(),
+        'is_force_new_search' : is_force_reload
       }).then(function (data) {
         $scope.duplicatePairs = vm.duplicatePairs = data['values'];
         $scope.hasSearched = true;
         $scope.isSearching = false;
         crmApi('Merge', 'getcount', {
           'rule_group_id' : $scope.ruleGroupID,
+          'search_limit' : $scope.limit,
           'criteria' : formatCriteria()
         }).then(function (data) {
           $scope.foundCount = data.result;
