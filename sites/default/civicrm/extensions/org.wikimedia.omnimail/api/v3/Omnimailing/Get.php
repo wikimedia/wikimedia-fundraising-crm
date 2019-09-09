@@ -17,6 +17,7 @@ if (file_exists( __DIR__ . '/../../../vendor/autoload.php')) {
  * @param $params
  *
  * @return array
+ * @throws \CiviCRM_API3_Exception
  */
 function civicrm_api3_omnimailing_get($params) {
   $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
@@ -29,7 +30,7 @@ function civicrm_api3_omnimailing_get($params) {
   $results = array();
   foreach ($mailings as $mailing) {
     try {
-      $result = array(
+      $result = [
         'subject' => $mailing->getSubject(),
         'external_identifier' => $mailing->getMailingIdentifier(),
         'name' => $mailing->getName(),
@@ -47,7 +48,8 @@ function civicrm_api3_omnimailing_get($params) {
         'number_blocked' => $mailing->getNumberBlocked(),
         // 'clicked_total' => $stats['NumGrossClick'],
         'number_abuse_complaints' => $mailing->getNumberAbuseReports(),
-      );
+        'list_id' => $mailing->getListId(),
+      ];
 
       foreach ($result as $key => $value) {
         // Assuming we might change provider and they might not return
@@ -61,6 +63,16 @@ function civicrm_api3_omnimailing_get($params) {
     catch (Exception $e) {
       // Continue. It seems we sometimes get back deleted emails which
       // should not derail the process.
+    }
+  }
+  // We want these to fail hard (I think) so not in the try catch block.
+    foreach ($results as $index => $result) {
+      if (!empty($result['list_id'])) {
+        // This is kinda just hacked in because it doesn't feel generic at the
+        // moment .. pondering....
+        $results[$index]['list_criteria'] = civicrm_api3('Omnihell', 'get', array_merge($params, [
+          'list_id' => $result['list_id'],
+        ]))['values'][0];
     }
   }
   return civicrm_api3_create_success($results);

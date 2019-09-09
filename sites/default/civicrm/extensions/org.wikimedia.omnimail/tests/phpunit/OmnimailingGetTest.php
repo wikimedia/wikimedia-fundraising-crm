@@ -35,9 +35,18 @@ class OmnimailingGetTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
+      file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
+      '',
+      file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
+      file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
+      '',
+      file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
     );
     $mailings = $this->callAPISuccess('Omnimailing', 'get', array('mail_provider' => 'Silverpop', 'client' => $this->getMockRequest($responses), 'username' => 'Donald', 'password' => 'quack'));
     $this->assertEquals(2, $mailings['count']);
+    $firstMailing = $mailings['values'][0];
+    $this->assertEquals('cool email', $firstMailing['subject']);
+    $this->assertEquals('WHEN  (country is equal to ILAND IsoLang is equal to heAND latest_donation_date is before Jan 1, 2019AND EMAIL_DOMAIN_PART is not equal to one of the following (aol.com | netscape.com | netscape.net | cs.com | aim.com | wmconnect.com | verizon.net)OR  (Email is equal to fundraisingemail-jajp+heIL@wikimedia.orgAND country is equal to IL))AND Segment is equal to 2', $firstMailing['list_criteria']);
   }
 
 }
