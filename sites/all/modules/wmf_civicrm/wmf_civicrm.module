@@ -4101,6 +4101,7 @@ function wmf_civicrm_civicrm_permission_check($permission, &$granted) {
       !CRM_Utils_Request::retrieve('limit', 'Integer') &&
       ($action != CRM_Core_Action::PREVIEW)
     ) {
+      CRM_Core_Session::setStatus(ts('Not permitted for WMF without a limit - this is a setting (dedupe_default_limit) configured on administer->system settings -> misc'));
       $granted = FALSE;
     }
   }
