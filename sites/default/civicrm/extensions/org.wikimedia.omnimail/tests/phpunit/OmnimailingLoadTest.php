@@ -34,7 +34,9 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
 
     $mailingReloaded = $this->callAPISuccess('Mailing', 'getsingle', array('hash' => 'sp7877'));
 
+    $customFieldID = civicrm_api3('CustomField', 'getvalue', ['name' => 'query_criteria', 'return' => 'id']);
     $this->assertEquals($mailingReloaded['id'], $mailing['id']);
+    $this->assertEquals('WHEN  (country is equal to ILAND IsoLang is equal to heAND latest_donation_date is before Jan 1, 2019AND EMAIL_DOMAIN_PART is not equal to one of the following (aol.com | netscape.com | netscape.net | cs.com | aim.com | wmconnect.com | verizon.net)OR  (Email is equal to fundraisingemail-jajp+heIL@wikimedia.orgAND country is equal to IL))AND Segment is equal to 2', $mailingReloaded['custom_' . $customFieldID]);
     $mailingJobs = $this->callAPISuccess('MailingJob', 'get', array('mailing_id' => $mailing['id']));
     $this->assertEquals(0, $mailingJobs['count']);
 

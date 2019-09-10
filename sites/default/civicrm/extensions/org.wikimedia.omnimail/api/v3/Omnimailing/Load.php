@@ -12,6 +12,7 @@
  * @param $params
  *
  * @return array
+ * @throws \CiviCRM_API3_Exception
  */
 function civicrm_api3_omnimailing_load($params) {
   $values = array();
@@ -46,6 +47,7 @@ function civicrm_api3_omnimailing_load($params) {
   }
   $mailings = civicrm_api3('Omnimailing', 'get', $getParams);
 
+  $customFieldID = civicrm_api3('CustomField', 'getvalue', ['name' => 'query_criteria', 'return' => 'id']);
   foreach ($mailings['values']  as $mailing) {
     $campaign = _civicrm_api3_omnimailing_load_api_replace(
       'Campaign',
@@ -72,6 +74,7 @@ function civicrm_api3_omnimailing_load($params) {
         'hash' => 'sp' . $mailing['external_identifier'],
         'scheduled_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
         'campaign_id' => $campaign['id'],
+        'custom_' . $customFieldID => $mailing['list_criteria'],
       ),
       array(
         'is_completed' => 1,
