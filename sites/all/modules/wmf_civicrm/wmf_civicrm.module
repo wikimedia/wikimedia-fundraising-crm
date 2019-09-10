@@ -4255,7 +4255,7 @@ function wmf_civicrm_ensure_correct_geocoder_enabled() {
  **/
 function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   if (!$tableName || $tableName === 'civicrm_contribution') {
-    $fields = [];
+    $fields = $aggregateFieldStrings = [];
 
     $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
     if (!$endowmentFinancialType) {
@@ -4264,25 +4264,30 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
       $nextYear = $year +1;
       $fields[] = "total_{$year}_{$nextYear}";
+      $aggregateFieldStrings[] = "MAX(total_{$year}_{$nextYear}) as total_{$year}_{$nextYear}";
       $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as total_{$year}_{$nextYear}";
       $updates[] = "total_{$year}_{$nextYear} = VALUES(total_{$year}_{$nextYear})";
 
       $fields[] = "total_{$year}";
+      $aggregateFieldStrings[] = "MAX(total_{$year}) as total_{$year}";
       $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as total_{$year}";
       $updates[] = "total_{$year} = VALUES(total_{$year})";
 
       if ($year >= 2017) {
         if ($year >= 2018) {
           $fields[] = "endowment_total_{$year}_{$nextYear}";
+          $aggregateFieldStrings[] = "MAX(endowment_total_{$year}_{$nextYear}) as endowment_total_{$year}_{$nextYear}";
           $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}";
           $updates[] = "endowment_total_{$year}_{$nextYear} = VALUES(endowment_total_{$year}_{$nextYear})";
 
           $fields[] = "endowment_total_{$year}";
+          $aggregateFieldStrings[] = "MAX(endowment_total_{$year}) as endowment_total_{$year}";
           $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}";
           $updates[] = "endowment_total_{$year} = VALUES(endowment_total_{$year})";
         }
 
         $fields[] = "change_{$year}_{$nextYear}";
+        $aggregateFieldStrings[] = "MAX(change_{$year}_{$nextYear}) as change_{$year}_{$nextYear}";
         $fieldSelects[] = "
           SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
@@ -4294,24 +4299,37 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     $sql = '
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd,
+      first_donation_usd, date_of_largest_donation,
       largest_donation, endowment_largest_donation, lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
       last_donation_date, endowment_last_donation_date, first_donation_date,
       endowment_first_donation_date, number_donations,
-      endowment_number_donations, ' . implode(', ', $fields) . "
+      endowment_number_donations, ' . implode(', ', $fields) . '
     )
 
     SELECT
-      # note that all totals are calculated in the totals subquery and only join values
-      # in the main query. This is important as the left joins could catch more than one donation at 
-      # exactly the same time or more than one max donation amount & throw out the totals.
       NEW.contact_id as entity_id,
-      COALESCE(x.original_currency, latest.currency) as last_donation_currency,
-      COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
-      COALESCE(latest.total_amount, 0) as last_donation_usd,
-      COALESCE(earliest.total_amount, 0) as first_donation_usd,
-      totals.*
+       # to honour FULL_GROUP_BY mysql mode we need an aggregate command for each
+      # field - even though we know we just want `the value from the subquery`
+      # MAX is a safe wrapper for that
+      # https://www.percona.com/blog/2019/05/13/solve-query-failures-regarding-only_full_group_by-sql-mode/
+      MAX(COALESCE(x.original_currency, latest.currency)) as last_donation_currency,
+      MAX(COALESCE(x.original_amount, latest.total_amount, 0)) as last_donation_amount,
+      MAX(COALESCE(latest.total_amount, 0)) as last_donation_usd,
+      MAX(COALESCE(earliest.total_amount, 0)) as first_donation_usd,
+      MAX(largest.receive_date) as date_of_largest_donation,
+      MAX(largest_donation) as largest_donation,
+      MAX(endowment_largest_donation) as endowment_largest_donation,
+      MAX(lifetime_including_endowment) as lifetime_including_endowment,
+      MAX(lifetime_usd_total) as lifetime_usd_total,
+      MAX(endowment_lifetime_usd_total) as endowment_lifetime_usd_total,
+      MAX(last_donation_date) as last_donation_date,
+      MAX(endowment_last_donation_date) as endowment_last_donation_date,
+      MIN(first_donation_date) as first_donation_date,
+      MIN(endowment_first_donation_date) as endowment_first_donation_date,
+      MAX(number_donations) as number_donations,
+      MAX(endowment_number_donations) as endowment_number_donations,
+      ' . implode(',', $aggregateFieldStrings) . "
 
     FROM (
       SELECT
@@ -4350,7 +4368,14 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-  LIMIT 1
+  LEFT JOIN civicrm_contribution largest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON largest.contact_id = NEW.contact_id
+    AND largest.total_amount = totals.largest_donation
+    AND largest.contribution_status_id = 1
+    AND largest.total_amount > 0
+    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
+  GROUP BY NEW.contact_id
 
   ON DUPLICATE KEY UPDATE
     last_donation_currency = VALUES(last_donation_currency),
@@ -4358,6 +4383,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     largest_donation = VALUES(largest_donation),
+    date_of_largest_donation = VALUES(date_of_largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),
