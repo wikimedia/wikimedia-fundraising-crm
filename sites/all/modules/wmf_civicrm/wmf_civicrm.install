@@ -4844,3 +4844,22 @@ function wmf_civicrm_update_7905() {
     WHERE cont.id IS NULL and d.last_donation_date IS NOT NULL
   ");
 }
+
+/**
+ * Replace any spaces in email addresses.
+ *
+ * I searched for emails with leading  & trailing emails & only found about 1200
+ * so this seems unlikely to be the  full problem but fixing makes sense since
+ * it would always be invalid.
+ *
+ * Bug: T231330
+ */
+function wmf_civicrm_update_7910() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('
+    UPDATE civicrm_email
+    SET email = REPLACE(email, " ", "")
+    WHERE email LIKE "% %"
+  ');
+
+}
