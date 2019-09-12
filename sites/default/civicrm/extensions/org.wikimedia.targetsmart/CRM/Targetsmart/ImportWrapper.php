@@ -11,6 +11,74 @@ class CRM_Targetsmart_ImportWrapper {
   use CRM_Contact_Import_MetadataTrait;
 
   /**
+   * Name of mapping to use.
+   *
+   * @var string
+   */
+  protected $mappingName;
+
+  /**
+   * Name of group to add the contacts to.
+   *
+   * @var string
+   */
+  protected $groupName;
+
+  /**
+   * Number of columns to fill with 'null' to blank out data at the end.
+   *
+   * This is useful if importing an address & we want to make sure
+   * we clear out 'supplemental address 1' because it's not provided
+   * and the old data would be obsolete with the new street_address.
+   *
+   * @var int
+   */
+  protected $nullColumns = 0;
+
+  /**
+   * @return string
+   */
+  public function getMappingName(): string {
+    return $this->mappingName;
+  }
+
+  /**
+   * @param string $mappingName
+   */
+  public function setMappingName(string $mappingName) {
+    $this->mappingName = $mappingName;
+  }
+
+  /**
+   * @return int
+   */
+  public function getNullColumns(): int {
+    return $this->nullColumns;
+  }
+
+  /**
+   * @param int $nullColumns
+   */
+  public function setNullColumns(int $nullColumns) {
+    $this->nullColumns = $nullColumns;
+  }
+
+
+  /**
+   * @return string
+   */
+  public function getGroupName(): string {
+    return $this->groupName;
+  }
+
+  /**
+   * @param string $groupName
+   */
+  public function setGroupName(string $groupName) {
+    $this->groupName = $groupName;
+  }
+
+  /**
    * CSV headers.
    *
    * @var array
@@ -66,7 +134,9 @@ class CRM_Targetsmart_ImportWrapper {
 
     try {
       $this->importSingle($importObj, $values);
-      civicrm_api3('GroupContact', 'create', ['contact_id' => $contactID, 'group_id' => 'TargetSmart2019']);
+      if ($this->getGroupName()) {
+        civicrm_api3('GroupContact', 'create', ['contact_id' => $contactID, 'group_id' => $this->getGroupName()]);
+      }
     }
     catch (Exception $e) {
       // The exception is different in unit tests than 'live' so catch a generic Exception & check
@@ -79,7 +149,7 @@ class CRM_Targetsmart_ImportWrapper {
       if ('Individual' !==  $contactType) {
         $importObj = $this->getImporter($contactType);
         $this->importSingle($importObj, $values);
-        civicrm_api3('GroupContact', 'create', ['contact_id' => $contactID, 'group_id' => 'TargetSmart2019']);
+        civicrm_api3('GroupContact', 'create', ['contact_id' => $contactID, 'group_id' => $this->getGroupName()]);
       }
       else {
         throw new CRM_Core_Exception($e->getMessage() . ' blah ' . print_r($values, TRUE));
@@ -97,7 +167,7 @@ class CRM_Targetsmart_ImportWrapper {
    */
   protected function getImporter($contactType): \CRM_Contact_Import_Parser_Contact {
     $importer = new CRM_Import_ImportProcessor();
-    $importer->setMappingID((int) civicrm_api3('Mapping', 'getvalue', ['name' => '2019_targetsmart_bulkimport', 'return' => 'id']));
+    $importer->setMappingID((int) civicrm_api3('Mapping', 'getvalue', ['name' => $this->getMappingName(), 'return' => 'id']));
     $importer->setContactType($contactType);
     $importer->setMetadata($this->getContactImportMetadata());
     return $importer->getImporterObject();
@@ -113,14 +183,6 @@ class CRM_Targetsmart_ImportWrapper {
    * @throws \CiviCRM_API3_Exception
    */
   protected function importSingle(CRM_Contact_Import_Parser_Contact $importObj, $values) {
-    $contactsToSkip = [505553, 1744665, 903672, 1852398, 2029637, 2436960];
-    if  (in_array($values['contact_id'], $contactsToSkip)) {
-      // For now we will skip this known problem record by id.
-      // later we can get more sophisticated - or not if it really is just a tiny  list.
-      // The ones above have been manually fixed in civi... as they do not really have US addresses
-      return;
-    }
-
     foreach ($values as $index => $value) {
       // We don't need to worry about prospecting data being invalid - this will be old address data - it's low volume
       // & low value so let is go....
@@ -135,11 +197,14 @@ class CRM_Targetsmart_ImportWrapper {
     }
 
     $values = array_values($values);
-    $values[] = 'null';
-    $values[] = 'null';
+    for ($i =0; $i < $this->getNullColumns(); $i++) {
+      $values[] = 'null';
+    }
+
     $result = $importObj->import(CRM_Import_Parser::DUPLICATE_UPDATE, $values);
     if ($result !== CRM_Import_Parser::VALID) {
       throw new CRM_Core_Exception('Row failed to import ' . $values[0] . print_r($values, TRUE));
     }
   }
+
 }
