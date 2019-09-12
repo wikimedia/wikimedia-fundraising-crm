@@ -128,7 +128,7 @@ class CRM_Targetsmart_ImportWrapper {
   public function importRow($values) {
     // Really? A session var? 1 = Ymd - which is us.
     CRM_Core_Session::singleton()->set('dateTypes', 1);
-    $contactID = $values['contact_id'];
+    $contactID = $values['Contact ID'];
 
     $importObj = $this->getImporter('Individual');
 
@@ -142,10 +142,10 @@ class CRM_Targetsmart_ImportWrapper {
       // The exception is different in unit tests than 'live' so catch a generic Exception & check
       // if it is an org. We could have checked first but we'd check millions for just a
       // few hits.
-      if (empty($values['contact_id'])) {
+      if (!$contactID) {
         throw new CRM_Core_Exception($e->getMessage() . 'boo' . print_r($values, TRUE));
       }
-      $contactType = (string) civicrm_api3('Contact', 'getvalue', ['id' => $values['contact_id'], 'return' => 'contact_type']);
+      $contactType = (string) civicrm_api3('Contact', 'getvalue', ['id' => $contactID, 'return' => 'contact_type']);
       if ('Individual' !==  $contactType) {
         $importObj = $this->getImporter($contactType);
         $this->importSingle($importObj, $values);
@@ -191,7 +191,7 @@ class CRM_Targetsmart_ImportWrapper {
       // above).
       $validUTF8 = mb_check_encoding($value, 'UTF-8');
       if (!$validUTF8) {
-        Civi::log()->debug('skipped ' . $index . ' for contact ' . $values['contact_id'] . ' value is ' . $value);
+        Civi::log()->debug('skipped ' . $index . ' for contact ' . $values['Contact ID'] . ' value is ' . $value);
         $values[$index] = '';
       }
     }
