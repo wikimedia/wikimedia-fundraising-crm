@@ -56,7 +56,7 @@ function civicrm_api3_target_smart_import($params) {
   $importer = new CRM_Targetsmart_ImportWrapper();
   $importer->setHeaders($reader->getHeader());
   $importer->setMappingName((string) $params['mapping_name']);
-  $importer->setGroupName($params['group_name'] ?? '');
+  $importer->setGroupName($params['add_to_group_name'] ?? '');
   $importer->setNullColumns($params['null_rows_at_end_count']);
 
   try {
