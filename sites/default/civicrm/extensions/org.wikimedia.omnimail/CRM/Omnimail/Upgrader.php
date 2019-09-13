@@ -1,5 +1,7 @@
 <?php
 
+use CRM_Omnimail_ExtensionUtil as E;
+
 /**
  * Collection of upgrade steps.
  */
@@ -10,9 +12,9 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
 
   /**
    * Example: Run an external SQL script when the module is installed.
-   *
+   */
   public function install() {
-    $this->executeSqlFile('sql/myinstall.sql');
+    $this->addCustomFields();
   }
 
   /**
@@ -113,8 +115,19 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
     ');
     return TRUE;
   }
-   /*
-
+  /**
+   * Extend job_identifier table as it needs to store emails with a json outer wrapper.
+   *
+   * Email in theory could be 255 so 512
+   *
+   * @return TRUE on success
+   * @throws Exception
+   */
+  public function upgrade_1002() {
+    $this->ctx->log->info('Applying update 1002, adding custom fields');
+    $this->addCustomFields();
+    return TRUE;
+  }
 
   /**
    * Example: Run an external SQL script.
@@ -178,4 +191,39 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
     return TRUE;
   } // */
 
+  /**
+   * Add our custom fields.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  public function addCustomFields() {
+    CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+      'option_group_id' => 'cg_extend_objects',
+      'name' => 'civicrm_mailing',
+      'label' => ts('Mailing'),
+      'value' => 'Mailing',
+    ]);
+
+    $customGroupDetail = [
+      'extends' => 'Mailing',
+      'name' => 'mailing_metadata',
+    ];
+    $customGroups = civicrm_api3('CustomGroup', 'get',  $customGroupDetail );
+    if (!$customGroups['count']) {
+      $customGroupDetail['title']  = E::ts('Mailing data');
+      $customGroups = civicrm_api3('CustomGroup', 'create',$customGroupDetail);
+    }
+    $customFields = civicrm_api3('CustomField', 'get', [
+      'custom_group_id' => $customGroups['id'],
+    ]);
+    if (!$customFields['count']) {
+      civicrm_api3('CustomField', 'create', [
+        'custom_group_id' => $customGroups['id'],
+        'name' => 'query_criteria',
+        'label' => E::ts('Query Criteria'),
+        'data_type' => 'Memo',
+        'html_type' => 'TextArea',
+      ]);
+    }
+  }
 }
