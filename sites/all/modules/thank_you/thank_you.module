@@ -119,16 +119,13 @@ function thank_you_send_test_form() {
     '#options' => $langs,
   );
 
-  $ftResult = civicrm_api3('Contribution', 'getoptions', ['field' => 'financial_type_id']);
-  $types = array_values($ftResult['values']);
-
-  $form['financial_type'] = array(
+  $form['template'] = array(
     '#type' => 'select',
-    '#title' => t('Financial Type'),
-    '#description' => t('Endowment Gift gets special treatment'),
+    '#title' => t('Template'),
+    '#description' => t('Template of the thank you email'),
     '#required' => TRUE,
-    '#default_value' => 'Cash',
-    '#options' => array_combine($types, $types),
+    '#default_value' => 'thank_you',
+    '#options' => ['thank_you'=>'thank_you','endowment_thank_you'=>'endowment_thank_you'],
   );
 
   $form['currency'] = array(
@@ -357,11 +354,17 @@ function thank_you_for_contribution($contribution_id) {
   }
   $locale = wmf_common_locale_civi_to_mediawiki($locale);
 
+  // Select the email template
+  if ($mailingData['financial_type'] == 'Endowment Gift') {
+    $template = 'endowment_thank_you';
+  } else {
+    $template = 'thank_you';
+  }
+
   $params = array(
     'amount' => $amount,
     'contact_id' => $mailingData['contact_id'],
     'currency' => $currency,
-    'financial_type' => $mailingData['financial_type'],
     'first_name' => $mailingData['first_name'],
     'from_name' => thank_you_get_from_name($mailingData),
     'from_address' => variable_get('thank_you_from_address', 'donate@wikimedia.org'),
@@ -377,6 +380,7 @@ function thank_you_for_contribution($contribution_id) {
     // used for the bounce header
     'unsubscribe_link' => build_unsub_link($contribution_id, $mailingData['email'], $locale),
     'contribution_tags' => wmf_civicrm_get_tag_names($contribution_id),
+    'template' => $template
   );
 
   $success = thank_you_send_mail($params);
@@ -925,16 +929,9 @@ function thank_you_render($params) {
   // So do 'em all that way.
   $params['receive_date'] = strftime("%Y-%m-%d", $date - (60 * 60 * 10));
 
-  // Use different template for endowment emails
-  if ($params['financial_type'] == 'Endowment Gift') {
-    $filename = 'endowment_thank_you';
-  } else {
-    $filename = 'thank_you';
-  }
-
   $template = new Templating(
     drupal_get_path('module', 'thank_you') . DIRECTORY_SEPARATOR . 'templates',
-    $filename,
+    $params['template'],
     $params['locale'],
     $params
   );
