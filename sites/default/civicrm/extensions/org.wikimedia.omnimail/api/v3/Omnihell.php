@@ -29,7 +29,9 @@ function civicrm_api3_omnihell_get($params) {
   $result = [];
   $elementWrapper = CRM_Omnimail_Helper::getValueFromResponseWithXPath($response, '//*[@id="newQueryEnglish"]');
   foreach ($elementWrapper  as $element) {
-    $result[] = $element->nodeValue;
+    $parentDom = $element->ownerDocument;
+    $query = CRM_Utils_String::htmlToText($parentDom->saveHtml($element));
+    $result[] = trim(str_replace("\n", ' ', $query));
   }
 
   // Figure out how to catch & handle exceptions - the above doesn't reach here.
