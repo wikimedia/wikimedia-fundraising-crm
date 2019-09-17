@@ -36,32 +36,32 @@
 /**
  * Settings metadata file
  */
-return array(
-  'omnimail_omnirecipient_load' => array(
+return [
+  'omnimail_omnirecipient_load' => [
     'group_name' => 'Omnimail Preferences',
     'group' => 'omnimail',
     'name' => 'omnimail_omnirecipient_load',
     'type' => 'Array',
-    'default' => array(),
+    'default' => [],
     'title' => 'Omnimail Recipient Load settings',
     'is_domain' => '1',
-    'is_contact' => 0, 
+    'is_contact' => 0,
     'description' => 'settings to inform the Omnimail job',
     'help_text' => 'this will be managed programmatically',
-  ),
-  'omnimail_omnigroupmembers_load' => array(
+  ],
+  'omnimail_omnigroupmembers_load' => [
     'group_name' => 'Omnimail Preferences',
     'group' => 'omnimail',
     'name' => 'omnimail_omnigroupmembers_load',
     'type' => 'Array',
-    'default' => array(),
+    'default' => [],
     'title' => 'Omnimail Group Members Load settings',
     'is_domain' => '1',
     'is_contact' => 0,
     'description' => 'settings to inform the Omnimail job',
     'help_text' => 'this will be managed programmatically',
-  ),
-  'omnimail_job_retry_number' => array(
+  ],
+  'omnimail_job_retry_number' => [
     'group_name' => 'Omnimail Preferences',
     'group' => 'omnimail',
     'name' => 'omnimail_job_retry_number',
@@ -72,8 +72,8 @@ return array(
     'is_contact' => 0,
     'description' => 'default number of retry attempts within a process',
     'help_text' => 'As there may be a delay the job will try a few times to see if the file is available before exiting',
-  ),
-  'omnimail_job_retry_interval' => array(
+  ],
+  'omnimail_job_retry_interval' => [
     'group_name' => 'Omnimail Preferences',
     'group' => 'omnimail',
     'name' => 'omnimail_job_retry_interval',
@@ -84,8 +84,8 @@ return array(
     'is_contact' => 0,
     'description' => 'How long to wait between retries',
     'help_text' => 'As there may be a delay the job will try a few times to see if the file is available before exiting',
-  ),
-  'omnimail_job_default_time_interval' => array(
+  ],
+  'omnimail_job_default_time_interval' => [
     'group_name' => 'Omnimail Preferences',
     'group' => 'omnimail',
     'name' => 'omnimail_job_default_time_interval',
@@ -96,17 +96,17 @@ return array(
     'is_contact' => 0,
     'description' => 'Length of date range to use, if not passed in',
     'help_text' => 'If start date & end date are not passed in then choose dates this far apart. Format is for strtotime - eg. 1 Day, 2 weeks',
-  ),
-  'omnimail_credentials' => array(
+  ],
+  'omnimail_credentials' => [
     'group_name' => 'Omnimail Preferences',
     'group' => 'omnimail',
     'name' => 'omnimail_credentials',
     'type' => 'Array',
-    'default' => array(),
+    'default' => [],
     'title' => 'Omnimail Credentials',
     'is_domain' => '1',
     'is_contact' => 0,
     'description' => 'Credentials for omnimail',
     'help_text' => 'You can set these using the $civicrm_settings global',
-  ),
-);
+  ],
+];
