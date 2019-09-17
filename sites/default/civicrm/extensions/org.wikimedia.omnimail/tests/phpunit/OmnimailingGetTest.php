@@ -42,6 +42,7 @@ class OmnimailingGetTest extends OmnimailBaseTestClass {
       '',
       file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
     );
+    Civi::settings()->set('omnimail_omnihell_enabled', 1);
     $mailings = $this->callAPISuccess('Omnimailing', 'get', array('mail_provider' => 'Silverpop', 'client' => $this->getMockRequest($responses), 'username' => 'Donald', 'password' => 'quack'));
     $this->assertEquals(2, $mailings['count']);
     $firstMailing = $mailings['values'][0];

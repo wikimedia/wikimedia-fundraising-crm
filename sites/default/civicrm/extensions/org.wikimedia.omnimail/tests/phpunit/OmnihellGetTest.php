@@ -30,7 +30,7 @@ class OmnihellGetTest extends OmnimailBaseTestClass {
    */
   public function testOmnihellGet() {
     $client = $this->setupSuccessfulBrowserClient();
-
+    Civi::settings()->set('omnimail_omnihell_enabled', 1);
     $hell = $this->callApiSuccess('Omnihell', 'get', [
       'mail_provider' => 'Silverpop',
       'username' => 'Silver',
