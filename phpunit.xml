@@ -71,5 +71,8 @@
       <testsuite name="datachecks_tests">
         <directory>sites/default/civicrm/extensions/org.wikimedia.datachecks/tests/phpunit</directory>
       </testsuite>
+      <testsuite name="email_amender_tests">
+        <directory>sites/default/civicrm/extensions/Email-Amender/tests/phpunit</directory>
+      </testsuite>
     </testsuites>
 </phpunit>
