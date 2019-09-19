@@ -165,13 +165,6 @@ function thank_you_send_test_form() {
     '#default_value' => mt_rand(),
   );
 
-  $form['contact_id'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Contact ID'),
-    '#description' => t('Actual ID of contact to be thanked, for example: 12345'),
-    '#default_value' => mt_rand(),
-  );
-
   $form['recurring'] = array(
     '#type' => 'checkbox',
     '#title' => t('Is a recurring donation?'),
@@ -200,6 +193,7 @@ function thank_you_send_test_form() {
 function thank_you_send_test_form_submit($form_id, $form_values) {
   civicrm_initialize();
   $params = $form_values['values'];
+  $params['contact_id'] = -1;
 
   # Massage the params a bit
   $names = preg_split('/ +/', $params['name'], 2, PREG_SPLIT_NO_EMPTY);
@@ -219,7 +213,7 @@ function thank_you_send_test_form_submit($form_id, $form_values) {
 
   if ($params['locale'] === "all") {
     $langs = array();
-    foreach (glob(__DIR__ . "/templates/html/thank_you.*.html") as $lang) {
+    foreach (glob(__DIR__ . "/templates/html/{$params['template']}.*.html") as $lang) {
       $lang = substr($lang, strrpos($lang, '/') + 1);
       $lang = substr($lang, strpos($lang, '.') + 1);
       $lang = substr($lang, 0, strpos($lang, '.'));
@@ -485,7 +479,7 @@ function thank_you_send_mail($params) {
   $civi_queue_record = NULL;
   $create_civi_mail = variable_get('thank_you_add_civimail_records', 'false');
   $rate = variable_get('thank_you_civimail_rate', 1.0);
-  if ($create_civi_mail === 'true' && mt_rand(0, 10000) <= $rate * 10000 && isset($params['contact_id'])) {
+  if ($create_civi_mail === 'true' && mt_rand(0, 10000) <= $rate * 10000 && isset($params['contact_id']) && $params['contact_id'] > 0) {
     $civi_queue_record = thank_you_add_civi_queue(
       $email['to_address'],
       $params['contact_id'],

@@ -1,38 +1,36 @@
 {% if first_name and last_name %}
-<p>Hi {{ first_name }}!
-</p>
-
+<p>Dear {{ first_name }},</p>
 {% else %}
 <p>Dear donor,</p>
-{%endif%}
+{% endif %}
 
-<p>I love that it’s my job to thank you for your {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} contribution to Wikipedia and the Wikimedia Endowment.
+<p>I spent a lot of time thinking about how to express my gratitude for your {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} gift to the Wikimedia Endowment. You did something that so few people do – made a gift – and it’s important I tell you how special that is to us.
 </p>
 
-<p><b>Wikipedia is possible because of a powerful idea: that people, like you and me, can participate in building the world’s knowledge and making it freely available to everyone, everywhere.</b>
+<p>But in the end, I realized the best thing I could do is just say it: thanks, {% if first_name and last_name %}{{ first_name }}, {% endif %}from all of us at Wikipedia. Thank you for ensuring the future of free knowledge.
 </p>
 
-<p>Today, thanks to the support of millions of volunteer contributors and supporters, you can wander Wikipedia for hours. With more than 40 million articles, Wikipedia can answer almost any question, and take you places you’ve never been. The Wikimedia Endowment will make sure future generations have access to Wikipedia like we do today, for years to come.
+<p>Today, thanks to the support of millions of volunteer editors and donors, you can wander Wikipedia for hours. With more than 50 million articles, Wikipedia can answer almost any question, and take you places you’ve never been. We started the Wikimedia Endowment to make sure future generations have access to Wikipedia like we do today, for years to come.
 </p>
 
-<p>The essential story of Wikipedia is the story of an individual, like you, giving a little bit of themselves to keep the doors of discovery open. Wikipedia will continue to evolve, grow, and meet new challenges because of the generosity of people like you.
+<p>Your donation ensures that new generations will have this free gift of knowledge available at the touch of a button. There is no greater legacy you can leave to the future than knowledge of the present and the past.
 </p>
 
-<p>Wikipedia is yours: yours to read, yours to edit, yours in which to get lost. We’re not the destination, we’re the beginning.
+<p>The essential story of Wikipedia is the story of an individual, like you, giving a little bit of themselves to keep the doors of discovery open. Wikipedia will continue to evolve, grow, and meet new challenges because of because of generosity just like yours.
 </p>
 
-<p>{% if first_name and last_name %}
-    {{ first_name }}, thank you for helping free knowledge thrive.
-    {% else %}
-    Thank you for helping free knowledge thrive.
-    {%endif%}
+<p>You helped us build this. And I'm committed to making sure Wikipedia is here for the long-term, for you.
 </p>
 
-<p>Jimmy
-</p>
+{% if first_name and last_name %}
+<p>{{ first_name }}, thank you for making sure Wikipedia has a bright future.</p>
+{% else %}
+<p>Thank you for making sure Wikipedia has a bright future.</p>
+{% endif %}
 
-<p>Jimmy Wales<br/>
-    Wikipedia Founder
+<p>With gratitude,<br>
+Jimmy Wales<br>
+Wikipedia Founder
 </p>
 
 <p>Many employers will generously match employee contributions: please check with your employer to see if they have a <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">corporate matching gift program</a>.
@@ -46,4 +44,3 @@
 
 <p>If you do not wish to receive any future fundraising emails from the Wikimedia Endowment or the Wikimedia Foundation, you can <a href="{{ unsubscribe_link | raw }}">unsubscribe instantly</a>. Please note we will still send you receipts, like this one, for future donations.
 </p>
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/en&amp;oldid=18434658","name":"thank_you.en.html","revision":18434658}TI_END -->
