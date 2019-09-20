@@ -104,4 +104,105 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('-.5', $contributions['values'][1]['total_amount']);
   }
 
+  /*
+   * Refunds raised by Paypal do not indicate whether the initial
+   * payment was taken using the paypal express checkout (paypal_ec) integration or
+   * the legacy paypal integration (paypal). We try to work this out by checking for
+   * the presence of specific values in messages sent over, but it appears this
+   * isn't watertight as we've seen refunds failing due to incorrect mappings
+   * on some occasions.
+   *
+   * To mitigate this we now fall back to the alternative gateway if no match is
+   * found for the gateway supplied.
+   *
+   */
+  public function testPaypalExpressFallback() {
+    // add a paypal_ec donation
+    $donation_message = new TransactionMessage(
+      [
+        'gateway' => 'paypal_ec',
+        'gateway_txn_id' => mt_rand(),
+      ]
+    );
+
+    $this->setExchangeRates($donation_message->get('date'), [
+      'USD' => 1,
+      'PLN' => 0.5,
+    ]);
+
+    $body = $donation_message->getBody();
+    wmf_civicrm_contribution_message_import($body);
+
+    // simulate a mismapped paypal legacy refund
+    $refund_message = new RefundMessage(
+      [
+        'gateway' => 'paypal',
+        'gateway_parent_id' => $donation_message->getGatewayTxnId(),
+        'gateway_refund_id' => mt_rand(),
+        'gross' => $donation_message->get('original_gross') + 1,
+        'gross_currency' => $donation_message->get('original_currency'),
+      ]
+    );
+
+    $contributions = wmf_civicrm_get_contributions_from_gateway_id(
+      $donation_message->getGateway(),
+      $donation_message->getGatewayTxnId()
+    );
+    $this->assertEquals(1, count($contributions));
+
+    $this->consumer->processMessage($refund_message->getBody());
+
+    $this->callAPISuccessGetSingle('Contribution', [
+      'id' => $contributions[0]['id'],
+      'contribution_status_id' => 'Chargeback',
+    ]);
+
+  }
+
+  /**
+   * @see testPaypalExpressFallback
+   */
+  public function testPaypalLegacyFallback() {
+    // add a paypal legacy donation
+    $donation_message = new TransactionMessage(
+      [
+        'gateway' => 'paypal',
+        'gateway_txn_id' => mt_rand(),
+      ]
+    );
+
+    $this->setExchangeRates($donation_message->get('date'), [
+      'USD' => 1,
+      'PLN' => 0.5,
+    ]);
+
+    $body = $donation_message->getBody();
+    wmf_civicrm_contribution_message_import($body);
+
+    // simulate a mismapped paypal_ec refund
+    $refund_message = new RefundMessage(
+      [
+        'gateway' => 'paypal_ec',
+        'gateway_parent_id' => $donation_message->getGatewayTxnId(),
+        'gateway_refund_id' => mt_rand(),
+        'gross' => $donation_message->get('original_gross') + 1,
+        'gross_currency' => $donation_message->get('original_currency'),
+      ]
+    );
+
+    $contributions = wmf_civicrm_get_contributions_from_gateway_id(
+      $donation_message->getGateway(),
+      $donation_message->getGatewayTxnId()
+    );
+    $this->assertEquals(1, count($contributions));
+
+    $this->consumer->processMessage($refund_message->getBody());
+
+    $this->callAPISuccessGetSingle('Contribution', [
+      'id' => $contributions[0]['id'],
+      'contribution_status_id' => 'Chargeback',
+    ]);
+
+  }
+
 }
