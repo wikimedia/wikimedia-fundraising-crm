@@ -257,7 +257,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
   public function tearDown() {
     foreach ($this->deleteThings as $type => $ids) {
       foreach ($ids as $id) {
-        civicrm_api3($type, 'delete', ['id' => $id]);
+        civicrm_api3($type, 'delete', ['id' => $id, 'skip_undelete' => TRUE]);
       }
     }
     foreach ($this->oldSettings as $setting => $value) {
