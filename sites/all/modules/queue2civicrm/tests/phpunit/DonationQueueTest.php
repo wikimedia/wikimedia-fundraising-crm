@@ -366,8 +366,8 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $pendingMessage['order_id']
     );
     $this->assertNull($pendingEntry, 'Should have deleted pending DB entry');
-    civicrm_api3('Contribution', 'delete', array('id' => $contributions[0]['id']));
-    civicrm_api3('Contact', 'delete', array('id' => $contributions[0]['contact_id']));
+    civicrm_api3('Contribution', 'delete', ['id' => $contributions[0]['id']]);
+    civicrm_api3('Contact', 'delete', ['id' => $contributions[0]['contact_id'], 'skip_undelete' => TRUE]);
   }
 
   public function getSparseMessages() {

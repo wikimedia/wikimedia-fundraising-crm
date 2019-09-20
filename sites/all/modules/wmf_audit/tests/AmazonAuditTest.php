@@ -68,7 +68,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
 
   public function tearDown() {
     $this->callAPISuccess('Contribution', 'delete', ['id' => $this->contribution_id]);
-    $this->callAPISuccess('Contact', 'delete', ['id' => $this->contact_id]);
+    $this->callAPISuccess('Contact', 'delete', ['id' => $this->contact_id, 'skip_undelete' => TRUE]);
     parent::tearDown();
   }
 

@@ -42,8 +42,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'contact_id' => array('IN' => array($this->contactID, $this->contactID2)),
       'api.Contribution.delete' => 1,
     ));
-    $this->callAPISuccess('Contact', 'delete', array('id' => $this->contactID));
-    $this->callAPISuccess('Contact', 'delete', array('id' => $this->contactID2));
+    $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID, 'skip_undelete' => TRUE]);
+    $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID2, 'skip_undelete' => TRUE]);
     parent::tearDown();
   }
 

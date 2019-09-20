@@ -49,7 +49,7 @@ class Contact_ExtendedContactTest extends BaseTestClass implements HeadlessInter
     $this->callAPISuccess('CustomField', 'delete', array('id' => $this->customFieldID));
     $this->callAPISuccess('CustomGroup', 'delete', array('id' => $this->customGroupID));
     foreach ($this->contacts as $contact) {
-      $this->callAPISuccess('Contact', 'delete', ['id' => $contact]);
+      $this->callAPISuccess('Contact', 'delete', ['id' => $contact, 'skip_undelete' => TRUE]);
     }
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_cache');
     CRM_Core_PseudoConstant::flush();

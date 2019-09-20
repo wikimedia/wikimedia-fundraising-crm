@@ -161,7 +161,7 @@ class CiviFixtures {
             civicrm_api3( 'Contribution', 'delete', ['id' => $this->contribution_id] );
         }
         if ($this->contact_id) {
-            civicrm_api3( 'Contact', 'delete', ['id' => $this->contact_id] );
+            civicrm_api3( 'Contact', 'delete', ['id' => $this->contact_id, 'skip_undelete' => TRUE]);
         }
         if ($this->payment_processor_id) {
             civicrm_api3( 'PaymentProcessor', 'delete', ['id' => $this->payment_processor_id] );

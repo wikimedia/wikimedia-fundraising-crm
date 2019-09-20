@@ -222,7 +222,7 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
     $this->assertNotTrue(isset($theForgotten['masked_account_number']));
 
     //clean up
-    $this->callAPISuccess('Contact', 'delete', ['contact_id' => $contact['id']]);
+    $this->callAPISuccess('Contact', 'delete', ['contact_id' => $contact['id'], 'skip_undelete' => TRUE]);
     $this->callAPISuccess('PaymentToken', 'delete', ['id' => $paymentToken['id']]);
     $this->callAPISuccess('PaymentProcessor', 'delete',
       ['id' => $this->paymentProcessor['id']]);
