@@ -177,7 +177,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
       $this->assertEquals(1, $contact['count']);
 
       // Cleanup
-      $this->callAPISuccess('Contact', 'delete', array('id' => $contact['id']));
+      $this->callAPISuccess('Contact', 'delete', ['id' => $contact['id']]);
       CRM_Core_DAO::executeQuery("UPDATE civicrm_domain SET description = 'WMF'");
     }
 

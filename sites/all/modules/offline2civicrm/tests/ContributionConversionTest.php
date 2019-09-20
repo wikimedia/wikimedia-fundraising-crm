@@ -38,8 +38,8 @@ class ContributionConversionTest extends BaseChecksFileTest {
 
   public function tearDown() {
     parent::tearDown();
-    $this->callAPISuccess('Contribution', 'delete', array('id' => $this->contribution_id));
-    $this->callAPISuccess('Contact', 'delete', array('id' => $this->contact_id));
+    $this->callAPISuccess('Contribution', 'delete', ['id' => $this->contribution_id]);
+    $this->callAPISuccess('Contact', 'delete', ['id' => $this->contact_id, 'skip_undelete' => TRUE]);
   }
 
   public function testMakeRecurring() {

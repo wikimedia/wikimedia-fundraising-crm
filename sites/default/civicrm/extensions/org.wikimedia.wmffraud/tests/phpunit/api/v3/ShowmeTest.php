@@ -39,7 +39,7 @@ class api_v3_ShowmeTest extends api_v3_BaseTestClass implements HeadlessInterfac
     $row = array_pop($showMe);
     $this->assertEquals('Gateway:test|Order ID:your-order|Validation:accept|IP Address:192.168.1.1|Payment Method:tooth-fairy|Risk Score:10|Date:2017-05-19 22:00:00', $row);
 
-    $this->callAPISuccess('Contact', 'delete', ['id' => $contact['id']]);
+    $this->callAPISuccess('Contact', 'delete', ['id' => $contact['id'], 'skip_undelete' => TRUE]);
   }
 
   /**

@@ -82,10 +82,10 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
   public function tearDown() {
     foreach ($this->contribution_ids as $id) {
-      $this->callAPISuccess('Contribution', 'delete', ['id' => $id]);
+      $this->callAPISuccess('Contribution', 'delete', ['id' => $id, 'skip_undelete' => TRUE]);
     }
 
-    $this->callAPISuccess('Contact', 'delete', ['id' => $this->contact_id]);
+    $this->callAPISuccess('Contact', 'delete', ['id' => $this->contact_id, 'skip_undelete' => TRUE]);
     parent::tearDown();
   }
 
