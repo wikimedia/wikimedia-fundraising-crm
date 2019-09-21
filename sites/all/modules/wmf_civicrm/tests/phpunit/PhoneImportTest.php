@@ -24,6 +24,7 @@ class PhoneImportTest extends BaseWmfDrupalPhpUnitTestCase {
 
         $contribution = wmf_civicrm_contribution_message_import( $msg );
 
+        $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
         $phones = $this->callAPISuccess('Phone', 'get', array('contact_id' => $contribution['contact_id'], 'sequential' => 1));
         $phone = $phones['values'][0];
 
