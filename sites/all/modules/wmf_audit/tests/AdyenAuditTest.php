@@ -54,7 +54,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
-    $this->contact_id = $contribution['contact_id'];
+    $this->contact_id = $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->contribution_ids[] = $contribution['id'];
 
     // and another for the chargeback
@@ -76,16 +76,11 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
-    $this->contact_id = $contribution['contact_id'];
-    $this->contribution_ids[] = $contribution['id'];
+    $this->contact_id = $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
+    $this->contribution_ids[] = $this->ids['Contribution'][] = $contribution['id'];
   }
 
   public function tearDown() {
-    foreach ($this->contribution_ids as $id) {
-      $this->callAPISuccess('Contribution', 'delete', ['id' => $id, 'skip_undelete' => TRUE]);
-    }
-
-    $this->callAPISuccess('Contact', 'delete', ['id' => $this->contact_id, 'skip_undelete' => TRUE]);
     parent::tearDown();
   }
 
