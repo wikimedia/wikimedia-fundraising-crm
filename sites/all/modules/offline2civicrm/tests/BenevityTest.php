@@ -12,11 +12,21 @@
 class BenevityTest extends BaseChecksFileTest {
 
   function setUp() {
+    civicrm_initialize();
+    $this->ensureAnonymousContactExists();
     parent::setUp();
 
     $this->setExchangeRates($this->epochtime, array('USD' => 1, 'BTC' => 3));
     $this->gateway = 'benevity';
-    civicrm_initialize();
+
+    \Civi::$statics = array();
+    $countries = $this->callAPISuccess('Country', 'get', array('options' => array('limit' => 0)));
+    $this->callAPISuccess('Setting', 'create', array('countryLimit' => array_keys($countries['values'])));
+    $this->callAPISuccess('Setting', 'create', array('provinceLimit' => array()));
+
+  }
+
+  public function tearDown() {
     CRM_Core_DAO::executeQuery("
       DELETE FROM civicrm_contribution
       WHERE trxn_id LIKE 'BENEVITY%'
@@ -27,13 +37,9 @@ class BenevityTest extends BaseChecksFileTest {
       OR nick_name IN('Donald Duck Inc', 'Mickey Mouse Inc', 'Goofy Inc', 'Uncle Scrooge Inc')
       OR first_name = 'Minnie' AND last_name = 'Mouse'
       OR first_name = 'Pluto'
+      OR first_name = 'Hewey' AND last_name = 'Duck'
     ");
-    $this->ensureAnonymousContactExists();
-    \Civi::$statics = array();
-    $countries = $this->callAPISuccess('Country', 'get', array('options' => array('limit' => 0)));
-    $this->callAPISuccess('Setting', 'create', array('countryLimit' => array_keys($countries['values'])));
-    $this->callAPISuccess('Setting', 'create', array('provinceLimit' => array()));
-
+    parent::tearDown();
   }
 
   /**
