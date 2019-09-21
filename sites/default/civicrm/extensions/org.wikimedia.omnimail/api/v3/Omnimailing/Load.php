@@ -20,6 +20,7 @@ function civicrm_api3_omnimailing_load($params) {
     'mail_provider' => $params['mail_provider'],
     'start_date' => $params['start_date'],
     'end_date' => $params['end_date'],
+    'debug' => !empty($params['debug']),
     'return' => array(
       'external_identifier',
       'subject',

@@ -131,7 +131,7 @@ class CRM_Omnimail_Helper {
     // We accept client as an input to support unit tests.
     $client = $params['client'] ?? new Client([
       'cookies' => true,
-      // 'debug' => 1,
+      'debug' => $params['debug'] ?? FALSE,
       'headers' => [
         // This is set in Trilogy sample code. Perhaps the reason is you have to
         // log in from a new device - this is from mine.
