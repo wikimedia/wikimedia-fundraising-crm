@@ -14,6 +14,10 @@ class CitibankFileTest extends BaseChecksFileTest {
 
   /**
    * Test basic import.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
   function testImport() {
     civicrm_initialize();
