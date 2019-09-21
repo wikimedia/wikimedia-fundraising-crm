@@ -86,6 +86,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
         'return' => $returnFields,
       )
     );
+    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
 
     $this->assertArraySubset($expected, $contribution);
 
@@ -97,6 +98,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
         'return' => $returnFields,
       )
     );
+    $this->ids['Contact'][$contribution2['contact_id']] = $contribution2['contact_id'];
 
     $expected = array(
       'contact_type' => 'Individual',
@@ -198,6 +200,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
         'return' => 'custom_' . $appealFieldID,
       )
     );
+    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->assertEquals('EmailCampaign1', $contribution['custom_' . $appealFieldID]);
     $this->deleteCustomOption('Appeal', 'EmailCampaign1');
   }
@@ -232,6 +235,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
         'return' => 'custom_' . $appealField['id'],
       )
     );
+    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->assertEquals($optionValue, $contribution['custom_' . $appealField['id']]);
     $this->deleteCustomOption('Appeal', $optionValue);
   }
@@ -266,6 +270,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
         'return' => 'custom_' . $appealFieldID,
       )
     );
+    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->assertEquals($optionValue, $contribution['custom_' . $appealFieldID]);
     $this->deleteCustomOption('Appeal', $optionValue);
   }
@@ -300,6 +305,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
         'return' => 'custom_' . $appealFieldID,
       )
     );
+    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->assertEquals($optionValue, $contribution['custom_' . $appealFieldID]);
     $values = $this->callAPISuccess('OptionValue', 'get', array('value' => $optionValue));
     $this->assertEquals(1, $values['count']);
@@ -436,9 +442,10 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->queueConsumer->dequeueMessages();
 
-    $this->callAPISuccessGetSingle('Contribution', array(
+    $contribution = $this->callAPISuccessGetSingle('Contribution', array(
       'invoice_id' => $message->get('order_id'),
     ));
+    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $originalOrderId = $message2->get('order_id');
     $damagedPDO = $this->damagedDb->getDatabase();
     $result = $damagedPDO->query("
