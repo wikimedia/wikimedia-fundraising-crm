@@ -1,11 +1,16 @@
 <?php
 
+// Need this to use the trais as Civi otherwise not bootstrapped.
+require_once __DIR__ . '/../../../civicrm/Civi/Test/Api3TestTrait.php';
+
 use SmashPig\Core\Context;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 
 class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
+
+  use \Civi\Test\Api3TestTrait;
 
   protected $startTimestamp;
 
@@ -32,8 +37,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
     }
 
     global $user, $_exchange_rate_cache;
-    $GLOBALS['_PEAR_default_error_mode'] = NULL;
-    $GLOBALS['_PEAR_default_error_options'] = NULL;
     $_exchange_rate_cache = array();
 
     $user = new stdClass();
@@ -118,91 +121,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
       return $tempFile . '/';
     }
     return FALSE;
-  }
-
-  /**
-   * API wrapper function from core (more or less).
-   *
-   * so we can ensure they succeed & throw exceptions without littering the
-   * test with checks.
-   *
-   * This is not the full function but it we think it'w worth keeping a copy it
-   * should maybe go in the parent.
-   *
-   * @param string $entity
-   * @param string $action
-   * @param array $params
-   * @param mixed $checkAgainst
-   *   Optional value to check result against, implemented for getvalue,.
-   *   getcount, getsingle. Note that for getvalue the type is checked rather
-   *   than the value for getsingle the array is compared against an array
-   *   passed in - the id is not compared (for better or worse )
-   *
-   * @return array|int
-   */
-  public function callAPISuccess($entity, $action, $params, $checkAgainst = NULL) {
-    $params = array_merge(array(
-      'version' => 3,
-      'debug' => 1,
-    ),
-      $params
-    );
-    try {
-      $result = civicrm_api3($entity, $action, $params);
-    }
-    catch (CiviCRM_API3_Exception $e) {
-      $this->assertEquals(0, $e->getMessage() . print_r($e->getExtraParams(), TRUE));
-    }
-    $this->assertAPISuccess($result, "Failure in api call for $entity $action");
-    return $result;
-  }
-
-  /**
-   * Check that api returned 'is_error' => 0.
-   *
-   * @param array $apiResult
-   *   Api result.
-   * @param string $prefix
-   *   Extra test to add to message.
-   */
-  public function assertAPISuccess($apiResult, $prefix = '') {
-    if (!empty($prefix)) {
-      $prefix .= ': ';
-    }
-    $errorMessage = empty($apiResult['error_message']) ? '' : " " . $apiResult['error_message'];
-
-    if (!empty($apiResult['debug_information'])) {
-      $errorMessage .= "\n " . print_r($apiResult['debug_information'], TRUE);
-    }
-    if (!empty($apiResult['trace'])) {
-      $errorMessage .= "\n" . print_r($apiResult['trace'], TRUE);
-    }
-    $this->assertEquals(0, $apiResult['is_error'], $prefix . $errorMessage);
-  }
-
-  /**
-   * Getsingle test function from civicrm core codebase test suite.
-   *
-   * This function exists to wrap api getsingle function & check the result
-   * so we can ensure they succeed & throw exceptions without litterering the
-   * test with checks
-   *
-   * @param string $entity
-   * @param array $params
-   *
-   * @throws CRM_Core_Exception
-   * @return array|int
-   */
-  public function callAPISuccessGetSingle($entity, $params) {
-    $params += array(
-      'version' => 3,
-      'debug' => 1,
-    );
-    $result = civicrm_api($entity, 'getsingle', $params);
-    if (!is_array($result) || !empty($result['is_error']) || isset($result['values'])) {
-      throw new CRM_Core_Exception('Invalid getsingle result' . print_r($result, TRUE));
-    }
-    return $result;
   }
 
   /**
