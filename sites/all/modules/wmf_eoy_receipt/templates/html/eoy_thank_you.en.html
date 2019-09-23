@@ -10,27 +10,22 @@ Thank you for your donations during {{year}}.
 For your records, your contributions were as follows:
 </p>
 
-<p>
 <table>
 <thead>
 <tr>
 <th>Date</th><th>Amount</th>
 </tr>
 </thead>
-{#
-<tfoot>
-<tr>
-<td>&nbsp;</td>
-<td>Total: {{total}}</td>
-</tr>
-</tfoot>
-#}
 <tbody>
 {% for contribution in contributions %}
 <tr>
 <td>{{contribution.date}}</td><td width="100%">{{contribution.amount}} {{contribution.currency}}</td>
 </tr>
 {% endfor %}
+{% for total in totals %}
+<tr>
+  <td>Total {{total.currency}}</td><td width="100%">{{total.amount}}</td>
+</tr>
+{% endfor %}
 <tbody>
 </table>
-</p>

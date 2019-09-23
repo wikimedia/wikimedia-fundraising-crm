@@ -177,29 +177,35 @@ EOS;
 
   function render_letter($row) {
     $language = Translation::normalize_language_code($row->preferred_language);
-    $subject = Translation::get_translated_message('donate_interface-email-subject', $language);
-    $contributions = array_map(
-      function ($contribution) {
-        $terms = explode(' ', $contribution);
-        return [
-          'date' => $terms[0],
-          'amount' => round($terms[1], 2),
-          'currency' => $terms[2],
+    $totals = [];
+    $contributions = [];
+    foreach ($row->contributions_rollup as $contribution_string) {
+      $terms = explode(' ', $contribution_string);
+      $contribution = [
+        'date' => $terms[0],
+        // FIXME not every currency uses 2 sig digs
+        'amount' => round($terms[1], 2),
+        'currency' => $terms[2],
+      ];
+      $contributions[] = $contribution;
+      if (!isset($totals[$contribution['currency']])) {
+        $totals[$contribution['currency']] = [
+          'amount' => 0.0,
+          'currency' => $contribution['currency'],
         ];
-      },
-      explode(',', $row->contributions_rollup)
-    );
-    $total = array_reduce($contributions,
-      function ($sum, $contribution) {
-        return $sum + $contribution['amount'];
-      },
-      0
-    );
+      }
+      $totals[$contribution['currency']]['amount'] += $contribution['amount'];
+    }
+    // Sort contributions by date
+    usort($contributions, function($c1, $c2) {
+      return $c1['date'] <=> $c2['date'];
+    });
 
     $template_params = [
-      'name' => 'name',
+      'name' => $row->name,
       'contributions' => $contributions,
-      'total' => $total,
+      'totals' => $totals,
+      'year' => $this->year,
     ];
     $template = $this->get_template($language, $template_params);
     $email = [
@@ -207,7 +213,7 @@ EOS;
       'from_address' => $this->from_address,
       'to_name' => $row->name,
       'to_address' => $row->email,
-      'subject' => $subject,
+      'subject' => $template->render('subject'),
       'plaintext' => $template->render('txt'),
       'html' => $template->render('html'),
     ];
