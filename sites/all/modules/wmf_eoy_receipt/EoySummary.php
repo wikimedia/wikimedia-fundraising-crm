@@ -21,6 +21,21 @@ class EoySummary {
 
   protected $batch_max = 100;
 
+  protected $year;
+
+  protected $test;
+
+  protected $from_address;
+
+  protected $from_name;
+
+  /**
+   * @var string
+   */
+  protected $civi_prefix = '';
+
+  protected $job_id;
+
   function __construct($options = []) {
     $this->year = variable_get('wmf_eoy_target_year', NULL);
     $this->batch_max = variable_get('wmf_eoy_batch_max', 100);
