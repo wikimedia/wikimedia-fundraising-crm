@@ -91,7 +91,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
    */
   public function createTestContact($params) {
     $id = $this->callAPISuccess('Contact', 'create', $params)['id'];
-    $this->ids['Contact'][] = $id;
+    $this->ids['Contact'][$id] = $id;
     return $id;
   }
 

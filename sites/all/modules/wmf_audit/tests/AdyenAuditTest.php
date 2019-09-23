@@ -6,10 +6,6 @@
  */
 class AdyenAuditTest extends BaseAuditTestCase {
 
-  protected $contact_id;
-
-  protected $contribution_ids = [];
-
   public function setUp() {
     parent::setUp();
 
@@ -54,8 +50,8 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
-    $this->contact_id = $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-    $this->contribution_ids[] = $contribution['id'];
+    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
+    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
 
     // and another for the chargeback
     $existing = wmf_civicrm_get_contributions_from_gateway_id('adyen', '4555568860022701');
@@ -76,12 +72,8 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
-    $this->contact_id = $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-    $this->contribution_ids[] = $this->ids['Contribution'][] = $contribution['id'];
-  }
-
-  public function tearDown() {
-    parent::tearDown();
+    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
+    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
   }
 
   public function auditTestProvider() {
