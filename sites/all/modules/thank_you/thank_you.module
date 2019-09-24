@@ -360,7 +360,7 @@ function thank_you_for_contribution($contribution_id) {
     'contact_id' => $mailingData['contact_id'],
     'currency' => $currency,
     'first_name' => $mailingData['first_name'],
-    'from_name' => thank_you_get_from_name($mailingData),
+    'from_name' => thank_you_get_from_name($template),
     'from_address' => variable_get('thank_you_from_address', 'donate@wikimedia.org'),
     'last_name' => $mailingData['last_name'],
     'locale' => $locale,
@@ -393,9 +393,9 @@ function thank_you_for_contribution($contribution_id) {
   }
 }
 
-function thank_you_get_from_name($mailingData) {
+function thank_you_get_from_name($template) {
   $setting = 'thank_you_from_name';
-  if ($mailingData['financial_type'] === 'Endowment Gift') {
+  if ($template === 'endowment_thank_you') {
     $setting = 'thank_you_endowment_from_name';
   }
   return variable_get($setting, 'Wikimedia Foundation');

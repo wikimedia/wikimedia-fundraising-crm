@@ -1558,17 +1558,17 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/silverpop-php-connector",
-                "reference": "c7cc6c2b6ec47f517e6550388606b9240b87cb17"
+                "reference": "63980619f88faca3d2f9e04cd9950eec7619b873"
             },
             "require": {
                 "ext-curl": "*",
                 "ext-xml": "*",
                 "guzzlehttp/guzzle": "*",
-                "php": "^5.5 || ^7.0",
+                "php": ">7.0",
                 "phpseclib/phpseclib": "~2.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "~4.4 || ^6.1"
+                "phpunit/phpunit": "*"
             },
             "type": "library",
             "autoload": {
@@ -1589,12 +1589,12 @@
                     "name": "Mark French"
                 }
             ],
-            "description": "A connector SDK library for applications integrating with Silverpop, including the Silverpop Universal Behavior API",
+            "description": "A connector SDK lcd ibrary for applications integrating with Silverpop, including the Silverpop Universal Behavior API",
             "homepage": "https://github.com/mrmarkfrench/silverpop-php-connector",
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2019-02-05T02:40:26+00:00"
+            "time": "2019-07-25T06:55:53+00:00"
         },
         {
             "name": "neitanod/forceutf8",
@@ -4821,7 +4821,9 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "ext-intl": "*"
+        "ext-intl": "*",
+        "ext-dom": "*",
+        "ext-libxml": "*"
     },
     "platform-dev": [],
     "platform-overrides": {

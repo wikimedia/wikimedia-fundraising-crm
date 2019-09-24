@@ -1,0 +1,11 @@
+{% if first_name and last_name %}
+<p>Hi {{ first_name }}!</p>
+{% else %}
+<p>Dear donor,</p>
+{%endif%}
+<p>Wow. You did something that so few people do: you donated, and then decided to set up an additional {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} recurring gift. It’s important to me that you know how valuable that is for the Wikimedia movement.</p>
+<p>An idea as big as Wikipedia can only work because people like you are committed to working with us, for the long term, to meet the ever growing needs of a world that is hungry for free, independent knowledge.</p>
+<p>Your donation today will keep us thriving. Your gift next month, and in the months that follow, will help us achieve our ambitious goals for growth and continued excellence, with the security that comes from knowing we have your support along the way.</p>
+<p>Thank you so much.</p>
+<p>Katherine</p>
+<!-- TI_BEGIN{"version":1,"sourceUrl":"","name":"recurring_notification.en.html","revision":19073550}TI_END -->
