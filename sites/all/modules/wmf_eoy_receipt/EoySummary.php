@@ -66,8 +66,8 @@ class EoySummary {
   //FIXME rename
   function calculate_year_totals() {
     $job_timestamp = date("YmdHis");
-    $year_start = strtotime("{$this->year}-01-01 00:00:01");
-    $year_end = strtotime("{$this->year}-12-31 23:59:59");
+    $year_start = "{$this->year}-01-01 00:00:01";
+    $year_end = "{$this->year}-12-31 23:59:59";
 
     $select_query = <<<EOS
 SELECT
@@ -91,7 +91,7 @@ LEFT JOIN {$this->civi_prefix}civicrm_email primary_email
 JOIN {$this->civi_prefix}civicrm_contact contact
     ON contribution.contact_id = contact.id
 WHERE
-    UNIX_TIMESTAMP( receive_date ) BETWEEN '{$year_start}' AND '{$year_end}'
+    receive_date BETWEEN '{$year_start}' AND '{$year_end}'
 GROUP BY
     email
 EOS;
