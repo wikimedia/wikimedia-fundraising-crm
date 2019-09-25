@@ -2,6 +2,9 @@
 
 namespace wmf_eoy_receipt;
 
+use CRM_Contribute_PseudoConstant;
+use CRM_Core_PseudoConstant;
+use db_switcher;
 use wmf_communication\Mailer;
 use wmf_communication\Templating;
 use wmf_communication\Translation;
@@ -50,11 +53,7 @@ class EoySummary {
     $this->from_address = variable_get('thank_you_from_address', NULL);
     $this->from_name = variable_get('thank_you_from_name', NULL);
 
-    // FIXME: this is not required on the production configuration.
-    // However, it will require code changes if the databases are
-    // actually hosted on separate servers.  You will need to specify
-    // the database name: 'wmf_civi.' if you are isolating for dev.
-    $this->civi_prefix = '';
+    $this->civi_prefix = db_switcher::get_prefix('civicrm');
 
     self::$templates_dir = __DIR__ . '/templates';
     self::$template_name = 'eoy_thank_you';
@@ -63,36 +62,6 @@ class EoySummary {
   //FIXME rename
   function calculate_year_totals() {
     $job_timestamp = date("YmdHis");
-    $year_start = "{$this->year}-01-01 00:00:01";
-    $year_end = "{$this->year}-12-31 23:59:59";
-
-    $select_query = <<<EOS
-SELECT
-    {$this->job_id} AS job_id,
-    COALESCE( billing_email.email, primary_email.email ) AS email,
-    contact.first_name,
-    contact.preferred_language,
-    'queued',
-    GROUP_CONCAT( CONCAT(
-        DATE_FORMAT( contribution.receive_date, '%%Y-%%m-%%d' ),
-        ' ',
-        contribution.total_amount,
-        ' ',
-        contribution.currency
-    ) )
-FROM {$this->civi_prefix}civicrm_contribution contribution
-LEFT JOIN {$this->civi_prefix}civicrm_email billing_email
-    ON billing_email.contact_id = contribution.contact_id AND billing_email.is_billing
-LEFT JOIN {$this->civi_prefix}civicrm_email primary_email
-    ON primary_email.contact_id = contribution.contact_id AND primary_email.is_primary
-JOIN {$this->civi_prefix}civicrm_contact contact
-    ON contribution.contact_id = contact.id
-WHERE
-    receive_date BETWEEN '{$year_start}' AND '{$year_end}'
-GROUP BY
-    email
-EOS;
-
     db_insert('wmf_eoy_receipt_job')->fields([
       'start_time' => $job_timestamp,
       'year' => $this->year,
@@ -106,9 +75,54 @@ EOS;
     $row = $result->fetch();
     $this->job_id = $row->job_id;
 
+    $year_start = "{$this->year}-01-01 00:00:01";
+    $year_end = "{$this->year}-12-31 23:59:59";
+    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey(
+      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift'
+    );
+    $completedStatusId = CRM_Contribute_PseudoConstant::getKey(
+      'CRM_Contribute_BAO_Contribution','contribution_status_id', 'Completed'
+    );
+
+    $select_query = <<<EOS
+SELECT
+    {$this->job_id} AS job_id,
+    email.email,
+    contact.first_name,
+    contact.preferred_language,
+    'queued',
+    GROUP_CONCAT(CONCAT(
+        DATE_FORMAT(contribution.receive_date, '%Y-%m-%d'),
+        ' ',
+        COALESCE(original_amount, total_amount),
+        ' ',
+        COALESCE(original_currency, currency)
+    ))
+FROM {$this->civi_prefix}civicrm_contribution contribution
+JOIN {$this->civi_prefix}wmf_contribution_extra extra
+    ON extra.entity_id = contribution.id
+JOIN {$this->civi_prefix}civicrm_email email
+    ON email.contact_id = contribution.contact_id AND email.is_primary
+JOIN {$this->civi_prefix}civicrm_contact contact
+    ON contribution.contact_id = contact.id
+WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
+AND financial_type_id <> $endowmentFinancialType
+AND contribution_status_id = $completedStatusId
+AND contact.id IN (
+    SELECT contact_id
+    FROM {$this->civi_prefix}civicrm_contribution
+    WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
+    AND financial_type_id <> $endowmentFinancialType
+    AND contribution_status_id = $completedStatusId
+    AND contribution_recur_id IS NOT NULL
+)
+GROUP BY
+    email
+EOS;
+
     $sql = <<<EOS
 INSERT INTO {wmf_eoy_receipt_donor}
-  ( job_id, email, name, preferred_language, status, contributions_rollup )
+  (job_id, email, name, preferred_language, status, contributions_rollup)
   {$select_query}
 EOS;
     $result = db_query($sql);
@@ -122,6 +136,7 @@ EOS;
         ]
       )
     );
+    return $this->job_id;
   }
 
   function send_letters() {
