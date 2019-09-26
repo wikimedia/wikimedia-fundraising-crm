@@ -320,10 +320,6 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
     ];
   }
 
-  public function tearDown() {
-    parent::tearDown();
-  }
-
   private function setUpStatsOutFileProperties() {
     $this->statsFilename = "test_stats";
     $this->statsFilePath = CRM_Utils_File::tempdir();
