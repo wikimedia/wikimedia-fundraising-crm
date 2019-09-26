@@ -47,6 +47,9 @@
         <directory>sites/all/modules/wmf_communication/tests/phpunit</directory>
         <exclude>sites/all/modules/wmf_communication/tests/phpunit/CiviMailTestBase.php</exclude>
       </testsuite>
+      <testsuite name="wmf_eoy_summary tests">
+        <directory>sites/all/modules/wmf_eoy_receipt/tests/phpunit</directory>
+      </testsuite>
       <testsuite name="omnimail_tests">
         <directory>sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit</directory>
       </testsuite>
