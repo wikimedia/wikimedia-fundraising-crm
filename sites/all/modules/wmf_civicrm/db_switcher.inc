@@ -144,20 +144,13 @@ class db_switcher {
   }
 
   /**
-   * Utility to make a db prefix string of the form "SCHEMA.TABLEPREFIX"
+   * Utility to make a db prefix string of the form "SCHEMA."
    */
-  function get_prefix($name) {
-    global $db_url, $db_prefix;
-
-    $prefix = "";
-
-    $url = $db_url[$name];
-    if (preg_match("/^(?:[^:]+):\/\/(?:[^:]+):(?:[^@]+)@(?:[^\/]+)\/(?P<schema>.+)$/", $url, $matches)) {
-      $prefix = $matches['schema'] . ".";
+  public static function get_prefix($name) {
+    global $databases;
+    if (empty($databases[$name])) {
+      throw new Exception($name . ' database is not defined.');
     }
-    if ($name === 'default') {
-      $prefix .= $db_prefix;
-    }
-    return $prefix;
+    return $databases[$name]['default']['database'] . '.';
   }
 }
