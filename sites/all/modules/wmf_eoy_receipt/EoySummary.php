@@ -39,7 +39,7 @@ class EoySummary {
 
   protected $job_id;
 
-  function __construct($options = []) {
+  public function __construct($options = []) {
     $this->year = variable_get('wmf_eoy_target_year', NULL);
     $this->batch_max = variable_get('wmf_eoy_batch_max', 100);
     $this->test = variable_get('wmf_eoy_test_mode', TRUE);
@@ -60,7 +60,7 @@ class EoySummary {
   }
 
   //FIXME rename
-  function calculate_year_totals() {
+  public function calculate_year_totals() {
     $job_timestamp = date("YmdHis");
     db_insert('wmf_eoy_receipt_job')->fields([
       'start_time' => $job_timestamp,
@@ -139,7 +139,7 @@ EOS;
     return $this->job_id;
   }
 
-  function send_letters() {
+  public function send_letters() {
     $mailer = Mailer::getDefault();
 
     $sql = <<<EOS
@@ -187,7 +187,7 @@ EOS;
     );
   }
 
-  function render_letter($row) {
+  public function render_letter($row) {
     if (!$this->from_address || !$this->from_name) {
       throw new \Exception("Must configure a valid return address in the Thank-you module");
     }
@@ -236,7 +236,7 @@ EOS;
     return $email;
   }
 
-  function get_template($language, $template_params) {
+  protected function get_template($language, $template_params) {
     return new Templating(
       self::$templates_dir,
       self::$template_name,
