@@ -191,7 +191,7 @@ EOS;
       'preferred_language' => NULL,
       'name' => 'Bob',
       'status' => 'queued',
-      'contributions_rollup' => explode(',', '%Y-%m-%d 50.00 USD,%Y-%m-%d 800.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 100.00 USD,%Y-%m-%d 800.00 USD,%Y-%m-%d 800.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 800.00 USD,%Y-%m-%d 1200.00 USD,%Y-%m-%d 800.00 USD,%Y-%m-%d 800.00 USD,%Y-%m-%d 800.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 800.00 USD,%Y-%m-%d 100.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 800.00 USD,%Y-%m-%d 800.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 800.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 50.00 USD,%Y-%m-%d 100.00 USD,%Y-%m-%d 1200.00 USD,%Y-%m-%d 100.00 USD,%Y-%m-%d 50.00 USD'),
+      'contributions_rollup' => '2019-02-01 50.00 USD,2019-03-02 800.00 USD,2019-05-03 50.00 USD,2019-10-20 50.00 USD,2019-07-12 50.00 USD,2019-01-26 50.00 USD,2019-10-11 100.00 USD,2019-05-11 800.00 USD,2019-10-12 800.00 USD,2019-10-14 50.00 USD,2019-09-02 800.00 USD,2019-12-09 1200.00 USD,2019-12-22 800.00 USD,2019-11-22 800.00 USD,2019-05-05 800.00 USD,2019-06-06 50.00 USD,2019-07-07 50.00 USD,2019-08-08 50.00 USD,2019-06-08 50.00 USD,2019-08-08 50.00 USD,2019-03-03 800.00 USD,2019-06-04 50.00 USD,2019-10-22 50.00 USD,2019-10-03 100.00 USD,2019-10-09 1200.00 USD,2019-10-12 100.00 USD,2019-10-15 50.00 USD',
     ]);
     $this->assertEquals([
       'from_name' => 'Bobita',
@@ -206,41 +206,35 @@ Thank you for your donations during 2018.
 For your records, your contributions were as follows:
 
 Date        Amount
-%Y-%m-%d  50 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  100 USD
-%Y-%m-%d  1200 USD
-%Y-%m-%d  100 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  800 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  800 USD
-%Y-%m-%d  800 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  100 USD
-%Y-%m-%d  800 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  800 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  800 USD
-%Y-%m-%d  800 USD
-%Y-%m-%d  800 USD
-%Y-%m-%d  1200 USD
-%Y-%m-%d  800 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  800 USD
-%Y-%m-%d  800 USD
-%Y-%m-%d  100 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  50 USD
-%Y-%m-%d  50 USD
+2019-01-26  50 USD
+2019-02-01  50 USD
+2019-03-02  800 USD
+2019-03-03  800 USD
+2019-05-03  50 USD
+2019-05-05  800 USD
+2019-05-11  800 USD
+2019-06-04  50 USD
+2019-06-06  50 USD
+2019-06-08  50 USD
+2019-07-07  50 USD
+2019-07-12  50 USD
+2019-08-08  50 USD
+2019-08-08  50 USD
+2019-09-02  800 USD
+2019-10-03  100 USD
+2019-10-09  1200 USD
+2019-10-11  100 USD
+2019-10-12  100 USD
+2019-10-12  800 USD
+2019-10-14  50 USD
+2019-10-15  50 USD
+2019-10-20  50 USD
+2019-10-22  50 USD
+2019-11-22  800 USD
+2019-12-09  1200 USD
+2019-12-22  800 USD
 
-Total USD:  12400
+Total USD:  9800
 ',
       'html' => '<p>
 Dear Bob,
@@ -262,106 +256,88 @@ For your records, your contributions were as follows:
 </thead>
 <tbody>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
+<td>2019-01-26</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
+<td>2019-02-01</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">100 USD</td>
+<td>2019-03-02</td><td width="100%">800 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">1200 USD</td>
+<td>2019-03-03</td><td width="100%">800 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">100 USD</td>
+<td>2019-05-03</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
+<td>2019-05-05</td><td width="100%">800 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
+<td>2019-05-11</td><td width="100%">800 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">800 USD</td>
+<td>2019-06-04</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
+<td>2019-06-06</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">800 USD</td>
+<td>2019-06-08</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">800 USD</td>
+<td>2019-07-07</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
+<td>2019-07-12</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">100 USD</td>
+<td>2019-08-08</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">800 USD</td>
+<td>2019-08-08</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
+<td>2019-09-02</td><td width="100%">800 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
+<td>2019-10-03</td><td width="100%">100 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
+<td>2019-10-09</td><td width="100%">1200 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">800 USD</td>
+<td>2019-10-11</td><td width="100%">100 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
+<td>2019-10-12</td><td width="100%">100 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">800 USD</td>
+<td>2019-10-12</td><td width="100%">800 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">800 USD</td>
+<td>2019-10-14</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">800 USD</td>
+<td>2019-10-15</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">1200 USD</td>
+<td>2019-10-20</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">800 USD</td>
+<td>2019-10-22</td><td width="100%">50 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
+<td>2019-11-22</td><td width="100%">800 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">800 USD</td>
+<td>2019-12-09</td><td width="100%">1200 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">800 USD</td>
+<td>2019-12-22</td><td width="100%">800 USD</td>
 </tr>
 <tr>
-<td>%Y-%m-%d</td><td width="100%">100 USD</td>
-</tr>
-<tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
-</tr>
-<tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
-</tr>
-<tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
-</tr>
-<tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
-</tr>
-<tr>
-<td>%Y-%m-%d</td><td width="100%">50 USD</td>
-</tr>
-<tr>
-  <td>Total USD</td><td width="100%">12400</td>
+  <td>Total USD</td><td width="100%">9800</td>
 </tr>
 <tbody>
 </table>

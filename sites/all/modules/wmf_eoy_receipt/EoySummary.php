@@ -194,7 +194,7 @@ EOS;
     $language = Translation::normalize_language_code($row->preferred_language);
     $totals = [];
     $contributions = [];
-    foreach ($row->contributions_rollup as $contribution_string) {
+    foreach (explode(',', $row->contributions_rollup) as $contribution_string) {
       $terms = explode(' ', $contribution_string);
       $contribution = [
         'date' => $terms[0],
