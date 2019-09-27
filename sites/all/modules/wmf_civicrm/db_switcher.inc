@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * Class to facilitate switching of db access between CiviCRM, Drupal,
@@ -37,7 +37,7 @@ class db_switcher {
    * Previous db connections, beginning with the context before we
    * changed anything.
    */
-  protected $db_stack = array();
+  protected $db_stack = [];
 
   /**
    * Configure drupal with the civicrm database settings if necessary.
@@ -48,57 +48,59 @@ class db_switcher {
     /**
      * Dynamically configure the CiviCRM database url
      */
-    if ( !Database::getConnectionInfo( 'civicrm' ) ) {
-        require_once conf_path() . '/civicrm.settings.php';
-        $databases[ 'civicrm' ][ 'default' ] = static::parse_dbi_url( str_replace( '?new_link=true', '', CIVICRM_DSN ) );
+    if (!Database::getConnectionInfo('civicrm')) {
+      require_once conf_path() . '/civicrm.settings.php';
+      $databases['civicrm']['default'] = static::parse_dbi_url(str_replace('?new_link=true', '', CIVICRM_DSN));
 
-        Database::parseConnectionInfo();
+      Database::parseConnectionInfo();
     }
   }
 
-  static function parse_dbi_url( $url ) {
-    if (!preg_match( '/^([a-z]+):\/\/([^:]+):([^@]+)@([^\/:]+)(:([0-9]+))?\/(.+)$/', $url, $matches )) {
-        throw new Exception("Failed to parse dbi url: $url");
+  static function parse_dbi_url($url) {
+    if (!preg_match('/^([a-z]+):\/\/([^:]+):([^@]+)@([^\/:]+)(:([0-9]+))?\/(.+)$/', $url, $matches)) {
+      throw new Exception("Failed to parse dbi url: $url");
     }
 
-    $r = array(
-        'driver' => str_replace( 'mysqli', 'mysql', $matches[1] ),
-        'username' => $matches[2],
-        'password' => $matches[3],
-        'host' => $matches[4],
-        'database' => $matches[7],
-    );
+    $r = [
+      'driver' => str_replace('mysqli', 'mysql', $matches[1]),
+      'username' => $matches[2],
+      'password' => $matches[3],
+      'host' => $matches[4],
+      'database' => $matches[7],
+    ];
     if ($matches[6]) {
-        $r['port'] = $matches[6];
+      $r['port'] = $matches[6];
     }
     return $r;
   }
-    
+
   /**
    * Set the currently active db and push the previous db to a stack.
    * Not necessary to pop(), that will happen by default when this object
    * is destructed.
    *
    * @param string $cur_db
+   *
    * @throws Exception
    */
-  public function push( $db_name ) {
-      $previous_db = $this->set_db( $db_name );
+  public function push($db_name) {
+    $previous_db = $this->set_db($db_name);
 
-      $this->db_stack[] = $previous_db;
+    $this->db_stack[] = $previous_db;
   }
 
   /**
    * Restore the previously active db connection.
+   *
    * @throws Exception
    *   when the stack is empty
    */
   public function pop() {
-      if ( !$this->db_stack ) {
-          throw new Exception( "No db context to pop!" );
-      }
+    if (!$this->db_stack) {
+      throw new Exception("No db context to pop!");
+    }
 
-      $this->set_db( array_pop( $this->db_stack ) );
+    $this->set_db(array_pop($this->db_stack));
   }
 
   /**
@@ -110,23 +112,23 @@ class db_switcher {
    *   previous db name
    * @throws Exception
    */
-  protected function set_db( $db_name ) {
-      if ( $db_name === self::$cur_db ) {
-          return $db_name;
-      }
+  protected function set_db($db_name) {
+    if ($db_name === self::$cur_db) {
+      return $db_name;
+    }
 
-      if ( !Database::getConnectionInfo( $db_name ) ) {
-          throw new Exception( $db_name . ' database is not defined.' );
-      }
+    if (!Database::getConnectionInfo($db_name)) {
+      throw new Exception($db_name . ' database is not defined.');
+    }
 
-      $previous_db = db_set_active( $db_name );
+    $previous_db = db_set_active($db_name);
 
-      if ( self::$cur_db && $previous_db !== self::$cur_db ) {
-          throw new Exception( "DB switcher got very confused! Surprised to be connected to db $previous_db, expected " . self::$cur_db );
-      }
-      self::$cur_db = $db_name;
+    if (self::$cur_db && $previous_db !== self::$cur_db) {
+      throw new Exception("DB switcher got very confused! Surprised to be connected to db $previous_db, expected " . self::$cur_db);
+    }
+    self::$cur_db = $db_name;
 
-      return $previous_db;
+    return $previous_db;
   }
 
   /**
@@ -135,27 +137,27 @@ class db_switcher {
    * no push() has happened, do nothing.
    */
   public function __destruct() {
-      if ( $this->db_stack ) {
-          // this time, grab the *original* db connection
-          $this->set_db( array_shift( $this->db_stack ) );
-      }
+    if ($this->db_stack) {
+      // this time, grab the *original* db connection
+      $this->set_db(array_shift($this->db_stack));
+    }
   }
 
   /**
    * Utility to make a db prefix string of the form "SCHEMA.TABLEPREFIX"
    */
   function get_prefix($name) {
-      global $db_url, $db_prefix;
+    global $db_url, $db_prefix;
 
-      $prefix = "";
+    $prefix = "";
 
-      $url = $db_url[$name];
-      if (preg_match( "/^(?:[^:]+):\/\/(?:[^:]+):(?:[^@]+)@(?:[^\/]+)\/(?P<schema>.+)$/", $url, $matches )) {
-          $prefix = $matches['schema'] . ".";
-      }
-      if ( $name === 'default' ) {
-          $prefix .= $db_prefix;
-      }
-      return $prefix;
+    $url = $db_url[$name];
+    if (preg_match("/^(?:[^:]+):\/\/(?:[^:]+):(?:[^@]+)@(?:[^\/]+)\/(?P<schema>.+)$/", $url, $matches)) {
+      $prefix = $matches['schema'] . ".";
+    }
+    if ($name === 'default') {
+      $prefix .= $db_prefix;
+    }
+    return $prefix;
   }
 }
