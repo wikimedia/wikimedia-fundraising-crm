@@ -49,9 +49,6 @@ class EoySummary {
 
     $this->from_address = variable_get('thank_you_from_address', NULL);
     $this->from_name = variable_get('thank_you_from_name', NULL);
-    if (!$this->from_address || !$this->from_name) {
-      throw new \Exception("Must configure a valid return address in the Thank-you module");
-    }
 
     // FIXME: this is not required on the production configuration.
     // However, it will require code changes if the databases are
@@ -176,6 +173,9 @@ EOS;
   }
 
   function render_letter($row) {
+    if (!$this->from_address || !$this->from_name) {
+      throw new \Exception("Must configure a valid return address in the Thank-you module");
+    }
     $language = Translation::normalize_language_code($row->preferred_language);
     $totals = [];
     $contributions = [];
