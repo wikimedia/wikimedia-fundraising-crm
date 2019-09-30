@@ -146,7 +146,7 @@ class db_switcher {
   /**
    * Utility to make a db prefix string of the form "SCHEMA."
    */
-  public static function get_prefix($name) {
+  public function get_prefix($name) {
     global $databases;
     if (empty($databases[$name])) {
       throw new Exception($name . ' database is not defined.');

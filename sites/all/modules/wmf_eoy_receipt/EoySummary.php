@@ -53,7 +53,7 @@ class EoySummary {
     $this->from_address = variable_get('thank_you_from_address', NULL);
     $this->from_name = variable_get('thank_you_from_name', NULL);
 
-    $this->civi_prefix = db_switcher::get_prefix('civicrm');
+    $this->civi_prefix = (new db_switcher())->get_prefix('civicrm');
 
     self::$templates_dir = __DIR__ . '/templates';
     self::$template_name = 'eoy_thank_you';
