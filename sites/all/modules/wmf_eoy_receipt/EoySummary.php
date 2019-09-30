@@ -84,13 +84,58 @@ EOS;
       'CRM_Contribute_BAO_Contribution','contribution_status_id', 'Completed'
     );
 
-    $select_query = <<<EOS
+    $email_temp = <<<EOS
+CREATE TEMPORARY TABLE wmf_eoy_receipt_email (
+    email VARCHAR(254) COLLATE utf8_unicode_ci PRIMARY KEY
+)
+EOS;
+    db_query($email_temp);
+
+    $email_insert = <<<EOS
+INSERT INTO wmf_eoy_receipt_email
+SELECT email
+FROM {$this->civi_prefix}civicrm_contribution contribution
+JOIN {$this->civi_prefix}civicrm_email email
+  ON email.contact_id = contribution.contact_id
+  AND email.is_primary
+WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
+  AND financial_type_id <> $endowmentFinancialType
+  AND contribution_status_id = $completedStatusId
+  AND contribution_recur_id IS NOT NULL
+  AND email <> 'nobody@wikimedia.org'
+ON DUPLICATE KEY UPDATE email = email.email
+EOS;
+    $result = db_query($email_insert);
+    $num_emails = $result->rowCount();
+    watchdog('wmf_eoy_receipt',
+      t("Found !num distinct emails with recurring giving during !year",
+        [
+          "!num" => $num_emails,
+          "!year" => $this->year,
+        ]
+      )
+    );
+
+    $contact_temp = <<<EOS
+CREATE TEMPORARY TABLE wmf_eoy_receipt_contact (
+    contact_id INT(10) unsigned PRIMARY KEY,
+    email VARCHAR(254) COLLATE utf8_unicode_ci,
+    preferred_language VARCHAR(16),
+    name VARCHAR(255),
+    contact_contributions TEXT
+)
+EOS;
+    db_query($contact_temp);
+
+    db_query('SET session group_concat_max_len = 5000');
+    // Build a table of contribution and contact data, grouped by contact
+    $contact_insert = <<<EOS
+INSERT INTO {wmf_eoy_receipt_contact}
 SELECT
-    {$this->job_id} AS job_id,
+    contact.id,
     email.email,
-    contact.first_name,
     contact.preferred_language,
-    'queued',
+    contact.first_name,
     GROUP_CONCAT(CONCAT(
         DATE_FORMAT(contribution.receive_date, '%Y-%m-%d'),
         ' ',
@@ -98,44 +143,63 @@ SELECT
         ' ',
         COALESCE(original_currency, currency)
     ))
-FROM {$this->civi_prefix}civicrm_contribution contribution
-JOIN {$this->civi_prefix}wmf_contribution_extra extra
-    ON extra.entity_id = contribution.id
+FROM {wmf_eoy_receipt_email} eoy_email
 JOIN {$this->civi_prefix}civicrm_email email
-    ON email.contact_id = contribution.contact_id AND email.is_primary
+    ON email.email = eoy_email.email AND email.is_primary
 JOIN {$this->civi_prefix}civicrm_contact contact
-    ON contribution.contact_id = contact.id
+    ON email.contact_id = contact.id
+JOIN {$this->civi_prefix}civicrm_contribution contribution
+    ON email.contact_id = contribution.contact_id AND email.is_primary
+LEFT JOIN {$this->civi_prefix}wmf_contribution_extra extra
+    ON extra.entity_id = contribution.id
 WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
-AND financial_type_id <> $endowmentFinancialType
-AND contribution_status_id = $completedStatusId
-AND contact.id IN (
-    SELECT contact_id
-    FROM {$this->civi_prefix}civicrm_contribution
-    WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
     AND financial_type_id <> $endowmentFinancialType
     AND contribution_status_id = $completedStatusId
-    AND contribution_recur_id IS NOT NULL
-)
-GROUP BY
-    email
+GROUP BY email.email, contact.id, contact.preferred_language, contact.first_name
 EOS;
 
-    $sql = <<<EOS
-INSERT INTO {wmf_eoy_receipt_donor}
-  (job_id, email, name, preferred_language, status, contributions_rollup)
-  {$select_query}
-EOS;
-    $result = db_query($sql);
-
-    $num_rows = $result->rowCount();
+    $result = db_query($contact_insert);
+    $num_contacts = $result->rowCount();
     watchdog('wmf_eoy_receipt',
-      t("Compiled summaries for !num donors giving during !year",
+      t("Found !num contact records for emails with recurring giving during !year",
         [
-          "!num" => $num_rows,
+          "!num" => $num_contacts,
           "!year" => $this->year,
         ]
       )
     );
+    db_query('DROP TEMPORARY TABLE {wmf_eoy_receipt_email}');
+
+    // Insert data into the persistent table. We start inserting from the most
+    // recent contact ID so in case of two records sharing an email address, we
+    // use the more recent name and preferred language.
+    $persist_insert = <<<EOS
+INSERT INTO {wmf_eoy_receipt_donor}
+  (job_id, email, preferred_language, name, status, contributions_rollup)
+SELECT
+    {$this->job_id} AS job_id,
+    email,
+    preferred_language,
+    name,
+    'queued',
+    contact_contributions
+FROM {wmf_eoy_receipt_contact}
+ORDER BY contact_id DESC
+ON DUPLICATE KEY UPDATE contributions_rollup = CONCAT(
+    contributions_rollup, ',', contact_contributions
+)
+EOS;
+    db_query($persist_insert);
+
+    watchdog('wmf_eoy_receipt',
+      t("Calculated summaries for !num recurring donors giving during !year",
+        [
+          "!num" => $num_emails,
+          "!year" => $this->year,
+        ]
+      )
+    );
+    db_query('DROP TEMPORARY TABLE {wmf_eoy_receipt_contact}');
     return $this->job_id;
   }
 

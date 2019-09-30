@@ -177,6 +177,114 @@ EOS;
   }
 
   /**
+   * Test that we include contributions from two contact records with the same
+   * email when one of them has a recurring contribution.
+   */
+  public function testCalculateDedupe() {
+    $olderContact = $this->callAPISuccess('Contact', 'create', [
+      'first_name' => 'Cassius',
+      'last_name' => 'Clay',
+      'contact_type' => 'Individual',
+      'email' => 'goat@wbaboxing.com',
+      'preferred_language' => 'en_US',
+    ]);
+    $newerContact = $this->callAPISuccess('Contact', 'create', [
+      'first_name' => 'Muhammad',
+      'last_name' => 'Ali',
+      'contact_type' => 'Individual',
+      'email' => 'goat@wbaboxing.com',
+      'preferred_language' => 'ar_EG',
+    ]);
+    $this->ids['Contact'][$olderContact['id']] = $olderContact['id'];
+    $this->ids['Contact'][$newerContact['id']] = $newerContact['id'];
+    $processor = $this->callAPISuccessGetSingle('PaymentProcessor', [
+      'name' => 'ingenico',
+      'is_test' => 1,
+    ]);
+    $recurring = $this->callAPISuccess('ContributionRecur', 'create', [
+      'contact_id' => $olderContact['id'],
+      'amount' => 200,
+      'currency' => 'PLN',
+      'frequency_interval' => 1,
+      'frequency_unit' => 'month',
+      'trxn_id' => mt_rand(),
+      'payment_processor_id' => $processor['id'],
+    ]);
+    $this->ids['ContributionRecur'][$recurring['id']] = $recurring['id'];
+    $financialTypeCash = CRM_Core_PseudoConstant::getKey(
+      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash'
+    );
+    $completedStatusId = CRM_Contribute_PseudoConstant::getKey(
+      'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
+    );
+    $originalCurrencyField = wmf_civicrm_get_custom_field_name('original_currency');
+    $originalAmountField = wmf_civicrm_get_custom_field_name('original_amount');
+    $contribCashOlder = $this->callAPISuccess('Contribution', 'create', [
+      'receive_date' => '2018-02-02',
+      'contact_id' => $olderContact['id'],
+      'total_amount' => '40',
+      'currency' => 'USD',
+      $originalCurrencyField => 'PLN',
+      $originalAmountField => '400',
+      'contribution_status_id' => $completedStatusId,
+      'financial_type_id' => $financialTypeCash,
+    ]);
+    $contribCashRecurringOlder = $this->callAPISuccess('Contribution', 'create', [
+      'receive_date' => '2018-03-03',
+      'contact_id' => $olderContact['id'],
+      'total_amount' => '3',
+      'currency' => 'USD',
+      $originalCurrencyField => 'PLN',
+      $originalAmountField => '30',
+      'contribution_recur_id' => $recurring['id'],
+      'contribution_status_id' => $completedStatusId,
+      'financial_type_id' => $financialTypeCash,
+    ]);
+    $contribCashNewer = $this->callAPISuccess('Contribution', 'create', [
+      'receive_date' => '2018-04-04',
+      'contact_id' => $newerContact['id'],
+      'total_amount' => '20',
+      'currency' => 'USD',
+      $originalCurrencyField => 'PLN',
+      $originalAmountField => '200',
+      'contribution_status_id' => $completedStatusId,
+      'financial_type_id' => $financialTypeCash,
+    ]);
+    foreach ([
+               $contribCashOlder,
+               $contribCashNewer,
+               $contribCashRecurringOlder
+           ] as $contrib) {
+      $this->ids['Contribution'][$contrib['id']] = $contrib['id'];
+    }
+    $summaryObject = new EoySummary(['year' => 2018]);
+    $jobId = $summaryObject->calculate_year_totals();
+    $this->jobIds[] = $jobId;
+    $sql = <<<EOS
+SELECT *
+FROM {wmf_eoy_receipt_donor}
+WHERE
+  status = 'queued'
+  AND job_id = $jobId
+  AND email = :email
+EOS;
+    $result = db_query($sql, [':email' => 'goat@wbaboxing.com'])->fetchAssoc();
+    $rollup = explode(',', $result['contributions_rollup']);
+    sort($rollup);
+    unset($result['contributions_rollup']);
+    $this->assertEquals(['name' => 'Muhammad',
+      'job_id' => $jobId,
+      'email' => 'goat@wbaboxing.com',
+      'preferred_language' => 'ar_EG',
+      'status' => 'queued',
+    ], $result);
+    $this->assertEquals([
+      '2018-02-02 400.00 PLN',
+      '2018-03-03 30.00 PLN',
+      '2018-04-04 200.00 PLN'], $rollup);
+  }
+
+  /**
    * Test the render function.
    *
    * @throws \Exception
