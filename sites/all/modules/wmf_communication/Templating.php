@@ -220,6 +220,7 @@ class RestrictiveSecurityPolicy extends Twig_Sandbox_SecurityPolicy {
     $filters = [
       'escape',
       'l10n_currency',
+      'l10n_number',
       'raw',
     ];
     $methods = [];
