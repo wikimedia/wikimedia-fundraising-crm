@@ -46,7 +46,11 @@ function drush_wmf_eoy_receipt_wmf_eoy_receipts() {
 
 function drush_wmf_eoy_receipt_wmf_eoy_calculate_summaries() {
   $options = drush_get_merged_options();
-  module_invoke('wmf_eoy_receipt', 'calculate_summaries', $options);
+  $job_id = module_invoke('wmf_eoy_receipt', 'calculate_summaries', $options);
+  drush_print(
+    'Calculation successful - now you can send the letters with ' .
+    "'drush wmf-eoy-send-letters --job_id=$job_id'"
+  );
 }
 
 function drush_wmf_eoy_receipt_wmf_eoy_send_letters() {
