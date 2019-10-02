@@ -3,6 +3,7 @@
 function wmf_eoy_receipt_install() {
   wmf_eoy_receipt_update_7000();
   wmf_eoy_receipt_update_7001();
+  wmf_eoy_receipt_update_7002();
 }
 
 function wmf_eoy_receipt_update_7000() {
@@ -45,4 +46,18 @@ MODIFY email VARCHAR(254) COLLATE utf8_unicode_ci,
 ADD CONSTRAINT wmf_eoy_receipt_donor_job_id_email UNIQUE (job_id, email)
 EOS;
   db_query($sql);
+}
+
+/**
+ * Add "Sent end of year reciept" activity type
+ */
+function wmf_eoy_receipt_update_7002() {
+  civicrm_initialize();
+  CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+    'label' => 'Sent year-end summary receipt',
+    'name' => 'wmf_eoy_receipt_sent',
+    'weight' => '1',
+    'description' => 'Sent an email receipt summarizing all donations in a given year',
+    'option_group_id' => 'activity_type',
+  ]);
 }

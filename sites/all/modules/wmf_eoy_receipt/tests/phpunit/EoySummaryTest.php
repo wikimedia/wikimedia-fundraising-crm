@@ -1,5 +1,6 @@
 <?php
 
+use wmf_communication\TestMailer;
 use wmf_eoy_receipt\EoySummary;
 
 require_once __DIR__ . '/../../EoySummary.php';
@@ -12,6 +13,13 @@ require_once __DIR__ . '/../../EoySummary.php';
 class EoySummaryTest extends BaseWmfDrupalPhpUnitTestCase {
 
   protected $jobIds = [];
+
+  public function setUp() {
+    parent::setUp();
+    variable_set('thank_you_from_address', 'bobita@example.org');
+    variable_set('thank_you_from_name', 'Bobita');
+    TestMailer::setup();
+  }
 
   public function tearDown() {
     if ($this->jobIds) {
@@ -181,82 +189,7 @@ EOS;
    * email when one of them has a recurring contribution.
    */
   public function testCalculateDedupe() {
-    $olderContact = $this->callAPISuccess('Contact', 'create', [
-      'first_name' => 'Cassius',
-      'last_name' => 'Clay',
-      'contact_type' => 'Individual',
-      'email' => 'goat@wbaboxing.com',
-      'preferred_language' => 'en_US',
-    ]);
-    $newerContact = $this->callAPISuccess('Contact', 'create', [
-      'first_name' => 'Muhammad',
-      'last_name' => 'Ali',
-      'contact_type' => 'Individual',
-      'email' => 'goat@wbaboxing.com',
-      'preferred_language' => 'ar_EG',
-    ]);
-    $this->ids['Contact'][$olderContact['id']] = $olderContact['id'];
-    $this->ids['Contact'][$newerContact['id']] = $newerContact['id'];
-    $processor = $this->callAPISuccessGetSingle('PaymentProcessor', [
-      'name' => 'ingenico',
-      'is_test' => 1,
-    ]);
-    $recurring = $this->callAPISuccess('ContributionRecur', 'create', [
-      'contact_id' => $olderContact['id'],
-      'amount' => 200,
-      'currency' => 'PLN',
-      'frequency_interval' => 1,
-      'frequency_unit' => 'month',
-      'trxn_id' => mt_rand(),
-      'payment_processor_id' => $processor['id'],
-    ]);
-    $this->ids['ContributionRecur'][$recurring['id']] = $recurring['id'];
-    $financialTypeCash = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash'
-    );
-    $completedStatusId = CRM_Contribute_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
-    );
-    $originalCurrencyField = wmf_civicrm_get_custom_field_name('original_currency');
-    $originalAmountField = wmf_civicrm_get_custom_field_name('original_amount');
-    $contribCashOlder = $this->callAPISuccess('Contribution', 'create', [
-      'receive_date' => '2018-02-02',
-      'contact_id' => $olderContact['id'],
-      'total_amount' => '40',
-      'currency' => 'USD',
-      $originalCurrencyField => 'PLN',
-      $originalAmountField => '400',
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeCash,
-    ]);
-    $contribCashRecurringOlder = $this->callAPISuccess('Contribution', 'create', [
-      'receive_date' => '2018-03-03',
-      'contact_id' => $olderContact['id'],
-      'total_amount' => '3',
-      'currency' => 'USD',
-      $originalCurrencyField => 'PLN',
-      $originalAmountField => '30',
-      'contribution_recur_id' => $recurring['id'],
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeCash,
-    ]);
-    $contribCashNewer = $this->callAPISuccess('Contribution', 'create', [
-      'receive_date' => '2018-04-04',
-      'contact_id' => $newerContact['id'],
-      'total_amount' => '20',
-      'currency' => 'USD',
-      $originalCurrencyField => 'PLN',
-      $originalAmountField => '200',
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeCash,
-    ]);
-    foreach ([
-               $contribCashOlder,
-               $contribCashNewer,
-               $contribCashRecurringOlder
-           ] as $contrib) {
-      $this->ids['Contribution'][$contrib['id']] = $contrib['id'];
-    }
+    $this->setUpContactsSharingEmail();
     $summaryObject = new EoySummary(['year' => 2018]);
     $jobId = $summaryObject->calculate_year_totals();
     $this->jobIds[] = $jobId;
@@ -285,13 +218,38 @@ EOS;
   }
 
   /**
+   * Test that we create activity records for each contact with a
+   * shared email.
+   */
+  public function testCreateActivityRecords() {
+    $contactIds = $this->setUpContactsSharingEmail();
+    $summaryObject = new EoySummary(['year' => 2018]);
+    $this->jobIds[] = $summaryObject->calculate_year_totals();
+    $summaryObject->send_letters();
+    $this->assertEquals(1, TestMailer::countMailings());
+    $mailing = TestMailer::getMailing(0);
+    foreach($contactIds as $contactId) {
+      $activity = $this->callAPISuccessGetSingle('Activity', [
+        'activity_type_id' => 'wmf_eoy_receipt_sent',
+        'target_contact_id' => $contactId
+      ]);
+      $this->assertEquals(
+        'Sent contribution summary receipt for year 2018 to goat@wbaboxing.com',
+        $activity['subject']
+      );
+      $this->assertEquals(
+        $mailing['plaintext'],
+        $activity['details']
+      );
+    }
+  }
+
+  /**
    * Test the render function.
    *
    * @throws \Exception
    */
   public function testRender() {
-    variable_set('thank_you_from_address', 'bobita@example.org');
-    variable_set('thank_you_from_name', 'Bobita');
     $eoyClass = new EoySummary(['year' => 2018]);
     $email = $eoyClass->render_letter((object) [
       'job_id' => '132',
@@ -470,8 +428,6 @@ If for whatever reason you wish to cancel your donation, follow these <a href="h
    * @throws \Exception
    */
   public function testRenderMultiCurrency() {
-    variable_set('thank_you_from_address', 'bobita@example.org');
-    variable_set('thank_you_from_name', 'Bobita');
     $eoyClass = new EoySummary(['year' => 2018]);
     $email = $eoyClass->render_letter((object) [
       'job_id' => '132',
@@ -554,5 +510,85 @@ If for whatever reason you wish to cancel your donation, follow these <a href="h
 </p>
 ',
     ], $email);
+  }
+
+  public function setUpContactsSharingEmail() {
+    $olderContact = $this->callAPISuccess('Contact', 'create', [
+      'first_name' => 'Cassius',
+      'last_name' => 'Clay',
+      'contact_type' => 'Individual',
+      'email' => 'goat@wbaboxing.com',
+      'preferred_language' => 'en_US',
+    ]);
+    $newerContact = $this->callAPISuccess('Contact', 'create', [
+      'first_name' => 'Muhammad',
+      'last_name' => 'Ali',
+      'contact_type' => 'Individual',
+      'email' => 'goat@wbaboxing.com',
+      'preferred_language' => 'ar_EG',
+    ]);
+    $this->ids['Contact'][$olderContact['id']] = $olderContact['id'];
+    $this->ids['Contact'][$newerContact['id']] = $newerContact['id'];
+    $processor = $this->callAPISuccessGetSingle('PaymentProcessor', [
+      'name' => 'ingenico',
+      'is_test' => 1,
+    ]);
+    $recurring = $this->callAPISuccess('ContributionRecur', 'create', [
+      'contact_id' => $olderContact['id'],
+      'amount' => 200,
+      'currency' => 'PLN',
+      'frequency_interval' => 1,
+      'frequency_unit' => 'month',
+      'trxn_id' => mt_rand(),
+      'payment_processor_id' => $processor['id'],
+    ]);
+    $this->ids['ContributionRecur'][$recurring['id']] = $recurring['id'];
+    $financialTypeCash = CRM_Core_PseudoConstant::getKey(
+      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash'
+    );
+    $completedStatusId = CRM_Contribute_PseudoConstant::getKey(
+      'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
+    );
+    $originalCurrencyField = wmf_civicrm_get_custom_field_name('original_currency');
+    $originalAmountField = wmf_civicrm_get_custom_field_name('original_amount');
+    $contribCashOlder = $this->callAPISuccess('Contribution', 'create', [
+      'receive_date' => '2018-02-02',
+      'contact_id' => $olderContact['id'],
+      'total_amount' => '40',
+      'currency' => 'USD',
+      $originalCurrencyField => 'PLN',
+      $originalAmountField => '400',
+      'contribution_status_id' => $completedStatusId,
+      'financial_type_id' => $financialTypeCash,
+    ]);
+    $contribCashRecurringOlder = $this->callAPISuccess('Contribution', 'create', [
+      'receive_date' => '2018-03-03',
+      'contact_id' => $olderContact['id'],
+      'total_amount' => '3',
+      'currency' => 'USD',
+      $originalCurrencyField => 'PLN',
+      $originalAmountField => '30',
+      'contribution_recur_id' => $recurring['id'],
+      'contribution_status_id' => $completedStatusId,
+      'financial_type_id' => $financialTypeCash,
+    ]);
+    $contribCashNewer = $this->callAPISuccess('Contribution', 'create', [
+      'receive_date' => '2018-04-04',
+      'contact_id' => $newerContact['id'],
+      'total_amount' => '20',
+      'currency' => 'USD',
+      $originalCurrencyField => 'PLN',
+      $originalAmountField => '200',
+      'contribution_status_id' => $completedStatusId,
+      'financial_type_id' => $financialTypeCash,
+    ]);
+    foreach ([
+               $contribCashOlder,
+               $contribCashNewer,
+               $contribCashRecurringOlder
+             ] as $contrib) {
+      $this->ids['Contribution'][$contrib['id']] = $contrib['id'];
+    }
+    return [$olderContact['id'], $newerContact['id']];
   }
 }
