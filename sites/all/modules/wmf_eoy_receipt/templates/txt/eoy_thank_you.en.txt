@@ -8,6 +8,6 @@ Date        Amount
 {{contribution.date}}  {{contribution.amount}} {{contribution.currency}}
 {% endfor %}
 
-{#
-Total: {{total}}
-#}
+{% for total in totals %}
+Total {{total.currency}}:  {{total.amount}}
+{% endfor %}
