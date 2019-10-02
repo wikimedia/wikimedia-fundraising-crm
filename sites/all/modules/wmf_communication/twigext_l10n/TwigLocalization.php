@@ -36,7 +36,7 @@ class TwigLocalization extends Twig_Extension  {
 		'DKK' => 'kr',
 		'DOP' => 'RD$',
 		'EEK' => 'kr',
-		'EGP' => '£',
+		'EGP' => 'E£',
 		'EUR' => '€',
 		'FJD' => 'FJ$',
 		'FKP' => '£',
