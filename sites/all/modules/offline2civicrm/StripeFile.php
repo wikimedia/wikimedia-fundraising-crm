@@ -40,7 +40,7 @@ class StripeFile extends ChecksFile {
       'Customer Email' => 'email',
       'Converted Currency' => 'currency',
       'Currency' => 'original_currency',
-      'Card Name' => 'full_name',
+      'Customer Description' => 'full_name',
       'Card Address State' => 'state_province',
       'Card Address Zip' => 'postal_code',
       'Card Address Country' => 'country',
@@ -57,7 +57,7 @@ class StripeFile extends ChecksFile {
       //Status,
       //Statement Descriptor,
       //Customer ID,
-      //Customer Description,,
+      //Card Name - see T230513
       //Captured,Card ID,
       //Card Last4,
       //Card Brand,
