@@ -517,7 +517,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals( $messageBody['email'], $sent['to_address'] );
 
     // Check right email content
-    $this->assertRegExp( '/Wow. You did something that so few people do: you donated/', $sent['html'] );
+    $this->assertRegExp( '/you donated, and then decided to set up an additional/', $sent['html'] );
 
     // Check the right donation amount
     $this->assertRegExp( '/6.00/', $sent['html'] );

@@ -2,6 +2,7 @@
 
 use CRM_Contribute_BAO_ContributionRecur;
 use CRM_Core_DAO;
+use PhpOffice\PhpWord\SimpleType\NumberFormat;
 use wmf_common\TransactionalWmfQueueConsumer;
 use WmfException;
 
@@ -354,6 +355,13 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
         // Using the same params sent through in thank_you.module thank_you_for_contribution
         $template = 'recurring_notification';
+        $start_date = $newContributionRecur['values'][$newContributionRecur['id']]['start_date'];
+        $day_of_month = date('j',$start_date);
+
+        // Format the day of month
+        // TODO: This should probably be in the TwigLocalization logic
+        $ordinal = new \NumberFormatter($locale, \NumberFormatter::ORDINAL);
+        $day_of_month = $ordinal->format($day_of_month);
 
         $params = array(
           'template' => $template,
@@ -366,7 +374,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           'last_name' => $contact['last_name'],
           'locale' => $locale,
           'name' => $contact['display_name'],
-          'receive_date' => $newContributionRecur['values'][$newContributionRecur['id']]['create_date'],
+          'receive_date' => $start_date,
+          'day_of_month' => $day_of_month,
           'recipient_address' => $contact['email'],
           'recurring' => TRUE,
           'transaction_id' => "CNTCT-{$contactId}",
