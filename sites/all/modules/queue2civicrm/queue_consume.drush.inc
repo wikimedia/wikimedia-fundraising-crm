@@ -13,19 +13,25 @@ function queue_consume_drush_command() {
   $items = array();
 
   $items['queue-consume'] = array(
-    'description' => 
+    'description' =>
       'Consumes items from a specified queue and processes them into CiviCRM',
-    'examples' => array( 'drush queue-consume' => '# Consume the queue' ), 
+    'examples' => array(
+      'drush queue-consume' => '# Consume the queue',
+      'drush qc --batch=10' => '# Process up to 10 contributions'
+    ),
+    'options' => array(
+      'batch' => 'Number of contributions to process. If set to zero, it will be treated as unlimited'
+    ),
     'aliases' => array( 'qc' ),
   );
   $items['donations-process-messagefile'] = array(
-    'description' => 
+    'description' =>
       'Feeds messages directly into the import pipeline, bypassing the queue.',
     'arguments' => array(
         'path' => 'The JSON file containing the message(s)'
     ),
     'required-arguments' => true,
-    'examples' => array( 'drush dpm /tmp/blurr.json' => '# process the file' ), 
+    'examples' => array( 'drush dpm /tmp/blurr.json' => '# process the file' ),
     'aliases' => array( 'dpm' ),
   );
 
@@ -36,21 +42,44 @@ function queue_consume_drush_command() {
  * Implementation of hook_drush_help()
  */
 function queue_consume_drush_help( $section ) {
-  switch ( $section ) {
+  switch ($section) {
     case 'drush:queue-consume':
-      return dt( "Pulls items from a message queue and processes them into CiviCRM" );
+      return dt("Pulls items from a message queue and processes them into CiviCRM");
     case 'drush:donations-process-messagefile':
-      return dt( "Feeds messages directly into the import pipeline, bypassing the queue." );
+      return dt("Feeds messages directly into the import pipeline, bypassing the queue.");
   }
+}
+
+
+function drush_queue_consume_validate() {
+  $batch = drush_get_option('batch');
+  if (!empty ($batch)) {
+    if (!is_numeric($batch)) {
+      $message = '--batch must be a number';
+      drush_set_error('QUEUE_CONSUMER_BATCH', dt($message));
+      return FALSE;
+    }
+    if ($batch < 0) {
+      $message = 'You specified a negative batch number, please use 0 or above';
+      drush_set_error('QUEUE_CONSUMER_BATCH', dt($message));
+      return FALSE;
+    }
+  }
+  return TRUE;
 }
 
 /**
  * Fires the 'batch_process' method in the queue2civicrm module.
  *
- * This simply executes the code necessary to pull and process items from 
+ * This simply executes the code necessary to pull and process items from
  * a queue.  All configurations happen in the module.
  */
 function drush_queue_consume() {
+  // Set the number of contributions to batch
+  $batch = drush_get_option('batch');
+  if ( !empty( $batch ) ) {
+    variable_set( 'queue2civicrm_batch', $batch );
+  }
   module_invoke( 'queue2civicrm', 'batch_process' );
   $errors = drush_get_error_log();
   if (!empty($errors)){
