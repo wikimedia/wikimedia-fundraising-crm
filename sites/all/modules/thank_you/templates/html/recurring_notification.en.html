@@ -1,11 +1,11 @@
 {% if first_name and last_name %}
-<p>Hi {{ first_name }}!</p>
+<p>Dear {{ first_name }}!</p>
 {% else %}
 <p>Dear donor,</p>
 {%endif%}
-<p>Wow. You did something that so few people do: you donated, and then decided to set up an additional {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} recurring gift. It’s important to me that you know how valuable that is for the Wikimedia movement.</p>
-<p>An idea as big as Wikipedia can only work because people like you are committed to working with us, for the long term, to meet the ever growing needs of a world that is hungry for free, independent knowledge.</p>
-<p>Your donation today will keep us thriving. Your gift next month, and in the months that follow, will help us achieve our ambitious goals for growth and continued excellence, with the security that comes from knowing we have your support along the way.</p>
+<p>I’m so impressed by you, I had to email you twice. You did something extraordinary: you donated, and then decided to set up an additional {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} sustaining gift on top of that. This donation will be debited on or around the {{ day_of_month }} of the month, until you ask us to stop.</p>
+<p>Your ongoing support will sustain us, at an unprecedented moment of growth for Wikipedia and its sister projects. Your gift shows me that you understand how valuable this free knowledge resource that we’ve nurtured together really is.</p>
+<p>And your commitment to us is matched by our commitment to you. We will always be free. We will always be neutral. And we will always treat your donation as an investment, putting it to work so that Wikipedia will be a resource you can count on forever.</p>
 <p>Thank you so much.</p>
 <p>Katherine</p>
 <!-- TI_BEGIN{"version":1,"sourceUrl":"","name":"recurring_notification.en.html","revision":19073550}TI_END -->
