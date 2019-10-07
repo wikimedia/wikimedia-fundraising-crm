@@ -356,7 +356,9 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         // Using the same params sent through in thank_you.module thank_you_for_contribution
         $template = 'recurring_notification';
         $start_date = $newContributionRecur['values'][$newContributionRecur['id']]['start_date'];
-        $day_of_month = date('j',$start_date);
+
+        // Get the day of the month
+        $day_of_month = \DateTime::createFromFormat('YmdHis', $start_date, new \DateTimeZone('UTC'))->format('j');
 
         // Format the day of month
         // TODO: This should probably be in the TwigLocalization logic
