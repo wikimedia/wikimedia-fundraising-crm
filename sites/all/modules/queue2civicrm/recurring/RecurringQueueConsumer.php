@@ -1,8 +1,5 @@
 <?php namespace queue2civicrm\recurring;
 
-use CRM_Contribute_BAO_ContributionRecur;
-use CRM_Core_DAO;
-use PhpOffice\PhpWord\SimpleType\NumberFormat;
 use wmf_common\TransactionalWmfQueueConsumer;
 use WmfException;
 
