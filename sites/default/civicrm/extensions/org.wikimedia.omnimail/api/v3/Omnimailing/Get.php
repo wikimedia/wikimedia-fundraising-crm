@@ -33,7 +33,7 @@ function civicrm_api3_omnimailing_get($params) {
       $result = [
         'subject' => $mailing->getSubject(),
         'external_identifier' => $mailing->getMailingIdentifier(),
-        'name' => $mailing->getName(),
+        'name' => substr($mailing->getName(), 0, 128),
         'scheduled_date' => $mailing->getScheduledDate(),
         'start_date' => $mailing->getSendStartDate(),
         'number_sent' => $mailing->getNumberSent(),
