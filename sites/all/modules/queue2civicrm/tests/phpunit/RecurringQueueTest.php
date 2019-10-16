@@ -522,6 +522,9 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     // Check the right donation amount
     $this->assertRegExp( '/6.00/', $sent['html'] );
 
+    // Check the right donation currency, original currency is CAD
+    $this->assertRegExp('/C\$/',$sent['html']);
+
     // Check the subject
     $expectedSubject = trim(file_get_contents(
         __DIR__ .
