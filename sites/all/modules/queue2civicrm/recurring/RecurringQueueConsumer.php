@@ -369,7 +369,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           'template' => $template,
           'amount' => $msg['gross'],
           'contact_id' => $contactId,
-          'currency' => $msg['currency'],
+          'currency' => $msg['original_currency'],
           'first_name' => $contact['first_name'],
           'from_name' => thank_you_get_from_name($template),
           'from_address' => variable_get('thank_you_from_address', 'donate@wikimedia.org'),
