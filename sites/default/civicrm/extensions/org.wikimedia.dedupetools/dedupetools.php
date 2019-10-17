@@ -235,6 +235,15 @@ function dedupetools_civicrm_navigationMenu(&$menu) {
     'separator' => 0,
   ]);
   _dedupetools_civix_navigationMenu($menu);
+  _dedupetools_civix_insert_navigation_menu($menu, 'Administer/Customize Data and Screens', [
+    'label' => ts('Deduper Conflict Resolution', array('domain' => 'org.wikimedia.dedupetools')),
+    'name' => 'dedupe_settings',
+    'url' => 'civicrm/admin/setting/deduper',
+    'permission' => 'administer CiviCRM',
+    'operator' => 'OR',
+    'separator' => 0,
+  ]);
+  _dedupetools_civix_navigationMenu($menu);
 }
 
 /**
@@ -261,4 +270,33 @@ function dedupetools_civicrm_alterAPIPermissions($entity, $action, &$params, &$p
   ];
 
 
+}
+
+/**
+ * Implementation of hook_civicrm_merge().
+ *
+ * @param string $type
+ * @param array $refs
+ * @param int $mainId
+ * @param int $otherId
+ * @param array $tables
+ */
+function dedupetools_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
+  switch ($type) {
+    case 'batch' :
+    case 'form' :
+      // Randomise log connection id. This ensures reverts can be done without reverting the whole batch if logging is enabled.
+      CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(
+        1 => array(
+          uniqid('rand', FALSE) . CRM_Utils_String::createRandom(CRM_Utils_String::ALPHANUMERIC, 4),
+          'String',
+        ),
+      ));
+
+      if ($type === 'batch') {
+        $merger = new CRM_Dedupetools_BAO_MergeHandler($refs, $mainId, $otherId, $type);
+        $merger->resolve();
+        $refs = $merger->getDedupeData();
+      }
+  }
 }

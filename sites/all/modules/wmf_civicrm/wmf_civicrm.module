@@ -2546,13 +2546,6 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
 function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, $otherId) {
   $dbFieldName = str_replace('move_', '', $moveField);
 
-  if (_wmf_civicrm_merge_is_communication_boolean($moveField)) {
-    unset($refs['fields_in_conflict'][$moveField]);
-    $refs['migration_info'][$moveField] = 1;
-    $refs['migration_info']['rows'][$moveField]['other'] = ts('Yes');
-    return;
-  }
-
   if ($moveField == 'move_contact_source') {
     unset($refs['fields_in_conflict'][$moveField]);
     return;
@@ -2620,29 +2613,6 @@ function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, 
     }
     unset($refs['fields_in_conflict'][$moveField]);
   }
-}
-
-/**
- * Is this one of the communication boolean fields.
- *
- * If it is we will give 'opt out' precedence as that indicates a conscious
- * choice.
- *
- * @param string $moveField
- *
- * @return bool
- */
-function _wmf_civicrm_merge_is_communication_boolean($moveField) {
-  if (in_array($moveField, array(
-    'move_do_not_email',
-    'move_is_opt_out',
-    'move_do_not_mail',
-    'move_do_not_phone',
-    'move_do_not_sms',
-  ))) {
-    return TRUE;
-  }
-  return FALSE;
 }
 
 /**

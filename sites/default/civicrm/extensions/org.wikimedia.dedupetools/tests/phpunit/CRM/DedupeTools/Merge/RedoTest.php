@@ -6,6 +6,7 @@ use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
 use Civi\Test\Api3TestTrait;
 
+require_once __DIR__ . '/../DedupeBaseTestClass.php';
 /**
  * FIXME - Add test description.
  *
@@ -20,38 +21,7 @@ use Civi\Test\Api3TestTrait;
  *
  * @group headless
  */
-class CRM_DedupeTools_Merge_RedoTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
-
-  use Api3TestTrait;
-
-  protected $ids = [];
-
-  public function setUpHeadless() {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://docs.civicrm.org/dev/en/latest/testing/phpunit/#civitest
-    return \Civi\Test::headless()
-      ->installMe(__DIR__)
-      ->apply();
-  }
-
-  public function setUp() {
-    parent::setUp();
-    civicrm_initialize();
-  }
-
-  public function tearDown() {
-    foreach ($this->ids as $entity => $ids) {
-      foreach ($ids as $id) {
-        if ($entity === 'contact') {
-          foreach ($this->callAPISuccess('Contribution', 'get', ['contact_id' => $id])['values'] as $contribution) {
-            civicrm_api3('Contribution', 'delete', ['id' => $contribution['id']]);
-          }
-        }
-        civicrm_api3($entity, 'delete', ['id' => $id, 'skip_undelete' => TRUE]);
-      }
-    }
-    parent::tearDown();
-  }
+class CRM_DedupeTools_Merge_RedoTest extends DedupeBaseTestClass {
 
   /**
    * Test redo-ing a merge.
