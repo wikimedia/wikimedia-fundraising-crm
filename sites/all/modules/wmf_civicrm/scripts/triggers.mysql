@@ -3431,6 +3431,30 @@ DROP TRIGGER IF EXISTS civicrm_value_assistant_15_after_delete //
 DELIMITER ;
 
 DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_mailing_data_21_before_insert //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_mailing_data_21_before_update //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_mailing_data_21_before_delete //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_mailing_data_21_after_insert //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_mailing_data_21_after_update //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_mailing_data_21_after_delete //
+DELIMITER ;
+
+DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_value_organization_contact_14_before_insert //
 DELIMITER ;
 
@@ -4125,7 +4149,7 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
  IF 1 AND (NEW.contact_id <> 72) THEN 
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd,
+      first_donation_usd, date_of_largest_donation,
       largest_donation, endowment_largest_donation, lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
       last_donation_date, endowment_last_donation_date, first_donation_date,
@@ -4134,15 +4158,28 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
     )
 
     SELECT
-      # note that all totals are calculated in the totals subquery and only join values
-      # in the main query. This is important as the left joins could catch more than one donation at 
-      # exactly the same time or more than one max donation amount & throw out the totals.
       NEW.contact_id as entity_id,
-      COALESCE(x.original_currency, latest.currency) as last_donation_currency,
-      COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
-      COALESCE(latest.total_amount, 0) as last_donation_usd,
-      COALESCE(earliest.total_amount, 0) as first_donation_usd,
-      totals.*
+       # to honour FULL_GROUP_BY mysql mode we need an aggregate command for each
+      # field - even though we know we just want `the value from the subquery`
+      # MAX is a safe wrapper for that
+      # https://www.percona.com/blog/2019/05/13/solve-query-failures-regarding-only_full_group_by-sql-mode/
+      MAX(COALESCE(x.original_currency, latest.currency)) as last_donation_currency,
+      MAX(COALESCE(x.original_amount, latest.total_amount, 0)) as last_donation_amount,
+      MAX(COALESCE(latest.total_amount, 0)) as last_donation_usd,
+      MAX(COALESCE(earliest.total_amount, 0)) as first_donation_usd,
+      MAX(largest.receive_date) as date_of_largest_donation,
+      MAX(largest_donation) as largest_donation,
+      MAX(endowment_largest_donation) as endowment_largest_donation,
+      MAX(lifetime_including_endowment) as lifetime_including_endowment,
+      MAX(lifetime_usd_total) as lifetime_usd_total,
+      MAX(endowment_lifetime_usd_total) as endowment_lifetime_usd_total,
+      MAX(last_donation_date) as last_donation_date,
+      MAX(endowment_last_donation_date) as endowment_last_donation_date,
+      MIN(first_donation_date) as first_donation_date,
+      MIN(endowment_first_donation_date) as endowment_first_donation_date,
+      MAX(number_donations) as number_donations,
+      MAX(endowment_number_donations) as endowment_number_donations,
+      MAX(total_2006_2007) as total_2006_2007,MAX(total_2006) as total_2006,MAX(total_2007_2008) as total_2007_2008,MAX(total_2007) as total_2007,MAX(total_2008_2009) as total_2008_2009,MAX(total_2008) as total_2008,MAX(total_2009_2010) as total_2009_2010,MAX(total_2009) as total_2009,MAX(total_2010_2011) as total_2010_2011,MAX(total_2010) as total_2010,MAX(total_2011_2012) as total_2011_2012,MAX(total_2011) as total_2011,MAX(total_2012_2013) as total_2012_2013,MAX(total_2012) as total_2012,MAX(total_2013_2014) as total_2013_2014,MAX(total_2013) as total_2013,MAX(total_2014_2015) as total_2014_2015,MAX(total_2014) as total_2014,MAX(total_2015_2016) as total_2015_2016,MAX(total_2015) as total_2015,MAX(total_2016_2017) as total_2016_2017,MAX(total_2016) as total_2016,MAX(total_2017_2018) as total_2017_2018,MAX(total_2017) as total_2017,MAX(change_2017_2018) as change_2017_2018,MAX(total_2018_2019) as total_2018_2019,MAX(total_2018) as total_2018,MAX(endowment_total_2018_2019) as endowment_total_2018_2019,MAX(endowment_total_2018) as endowment_total_2018,MAX(change_2018_2019) as change_2018_2019,MAX(total_2019_2020) as total_2019_2020,MAX(total_2019) as total_2019,MAX(endowment_total_2019_2020) as endowment_total_2019_2020,MAX(endowment_total_2019) as endowment_total_2019,MAX(change_2019_2020) as change_2019_2020,MAX(total_2020_2021) as total_2020_2021,MAX(total_2020) as total_2020,MAX(endowment_total_2020_2021) as endowment_total_2020_2021,MAX(endowment_total_2020) as endowment_total_2020,MAX(change_2020_2021) as change_2020_2021
 
     FROM (
       SELECT
@@ -4193,7 +4230,14 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-  LIMIT 1
+  LEFT JOIN civicrm_contribution largest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON largest.contact_id = NEW.contact_id
+    AND largest.total_amount = totals.largest_donation
+    AND largest.contribution_status_id = 1
+    AND largest.total_amount > 0
+    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
+  GROUP BY NEW.contact_id
 
   ON DUPLICATE KEY UPDATE
     last_donation_currency = VALUES(last_donation_currency),
@@ -4201,6 +4245,7 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     largest_donation = VALUES(largest_donation),
+    date_of_largest_donation = VALUES(date_of_largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),
@@ -4223,7 +4268,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
  IF 1 AND (NEW.contact_id <> 72) AND ((NEW.contribution_status_id != OLD.contribution_status_id) OR (NEW.total_amount != OLD.total_amount) OR (NEW.contact_id != OLD.contact_id) OR (NEW.receive_date != OLD.receive_date) OR (NEW.currency != OLD.currency) ) THEN 
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd,
+      first_donation_usd, date_of_largest_donation,
       largest_donation, endowment_largest_donation, lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
       last_donation_date, endowment_last_donation_date, first_donation_date,
@@ -4232,15 +4277,28 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
     )
 
     SELECT
-      # note that all totals are calculated in the totals subquery and only join values
-      # in the main query. This is important as the left joins could catch more than one donation at 
-      # exactly the same time or more than one max donation amount & throw out the totals.
       NEW.contact_id as entity_id,
-      COALESCE(x.original_currency, latest.currency) as last_donation_currency,
-      COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
-      COALESCE(latest.total_amount, 0) as last_donation_usd,
-      COALESCE(earliest.total_amount, 0) as first_donation_usd,
-      totals.*
+       # to honour FULL_GROUP_BY mysql mode we need an aggregate command for each
+      # field - even though we know we just want `the value from the subquery`
+      # MAX is a safe wrapper for that
+      # https://www.percona.com/blog/2019/05/13/solve-query-failures-regarding-only_full_group_by-sql-mode/
+      MAX(COALESCE(x.original_currency, latest.currency)) as last_donation_currency,
+      MAX(COALESCE(x.original_amount, latest.total_amount, 0)) as last_donation_amount,
+      MAX(COALESCE(latest.total_amount, 0)) as last_donation_usd,
+      MAX(COALESCE(earliest.total_amount, 0)) as first_donation_usd,
+      MAX(largest.receive_date) as date_of_largest_donation,
+      MAX(largest_donation) as largest_donation,
+      MAX(endowment_largest_donation) as endowment_largest_donation,
+      MAX(lifetime_including_endowment) as lifetime_including_endowment,
+      MAX(lifetime_usd_total) as lifetime_usd_total,
+      MAX(endowment_lifetime_usd_total) as endowment_lifetime_usd_total,
+      MAX(last_donation_date) as last_donation_date,
+      MAX(endowment_last_donation_date) as endowment_last_donation_date,
+      MIN(first_donation_date) as first_donation_date,
+      MIN(endowment_first_donation_date) as endowment_first_donation_date,
+      MAX(number_donations) as number_donations,
+      MAX(endowment_number_donations) as endowment_number_donations,
+      MAX(total_2006_2007) as total_2006_2007,MAX(total_2006) as total_2006,MAX(total_2007_2008) as total_2007_2008,MAX(total_2007) as total_2007,MAX(total_2008_2009) as total_2008_2009,MAX(total_2008) as total_2008,MAX(total_2009_2010) as total_2009_2010,MAX(total_2009) as total_2009,MAX(total_2010_2011) as total_2010_2011,MAX(total_2010) as total_2010,MAX(total_2011_2012) as total_2011_2012,MAX(total_2011) as total_2011,MAX(total_2012_2013) as total_2012_2013,MAX(total_2012) as total_2012,MAX(total_2013_2014) as total_2013_2014,MAX(total_2013) as total_2013,MAX(total_2014_2015) as total_2014_2015,MAX(total_2014) as total_2014,MAX(total_2015_2016) as total_2015_2016,MAX(total_2015) as total_2015,MAX(total_2016_2017) as total_2016_2017,MAX(total_2016) as total_2016,MAX(total_2017_2018) as total_2017_2018,MAX(total_2017) as total_2017,MAX(change_2017_2018) as change_2017_2018,MAX(total_2018_2019) as total_2018_2019,MAX(total_2018) as total_2018,MAX(endowment_total_2018_2019) as endowment_total_2018_2019,MAX(endowment_total_2018) as endowment_total_2018,MAX(change_2018_2019) as change_2018_2019,MAX(total_2019_2020) as total_2019_2020,MAX(total_2019) as total_2019,MAX(endowment_total_2019_2020) as endowment_total_2019_2020,MAX(endowment_total_2019) as endowment_total_2019,MAX(change_2019_2020) as change_2019_2020,MAX(total_2020_2021) as total_2020_2021,MAX(total_2020) as total_2020,MAX(endowment_total_2020_2021) as endowment_total_2020_2021,MAX(endowment_total_2020) as endowment_total_2020,MAX(change_2020_2021) as change_2020_2021
 
     FROM (
       SELECT
@@ -4291,7 +4349,14 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-  LIMIT 1
+  LEFT JOIN civicrm_contribution largest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON largest.contact_id = NEW.contact_id
+    AND largest.total_amount = totals.largest_donation
+    AND largest.contribution_status_id = 1
+    AND largest.total_amount > 0
+    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
+  GROUP BY NEW.contact_id
 
   ON DUPLICATE KEY UPDATE
     last_donation_currency = VALUES(last_donation_currency),
@@ -4299,6 +4364,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     largest_donation = VALUES(largest_donation),
+    date_of_largest_donation = VALUES(date_of_largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),
@@ -4313,7 +4379,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
  IF 1 AND (OLD.contact_id <> 72) AND (NEW.contact_id <> OLD.contact_id) THEN 
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd,
+      first_donation_usd, date_of_largest_donation,
       largest_donation, endowment_largest_donation, lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
       last_donation_date, endowment_last_donation_date, first_donation_date,
@@ -4322,15 +4388,28 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
     )
 
     SELECT
-      # note that all totals are calculated in the totals subquery and only join values
-      # in the main query. This is important as the left joins could catch more than one donation at 
-      # exactly the same time or more than one max donation amount & throw out the totals.
       OLD.contact_id as entity_id,
-      COALESCE(x.original_currency, latest.currency) as last_donation_currency,
-      COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
-      COALESCE(latest.total_amount, 0) as last_donation_usd,
-      COALESCE(earliest.total_amount, 0) as first_donation_usd,
-      totals.*
+       # to honour FULL_GROUP_BY mysql mode we need an aggregate command for each
+      # field - even though we know we just want `the value from the subquery`
+      # MAX is a safe wrapper for that
+      # https://www.percona.com/blog/2019/05/13/solve-query-failures-regarding-only_full_group_by-sql-mode/
+      MAX(COALESCE(x.original_currency, latest.currency)) as last_donation_currency,
+      MAX(COALESCE(x.original_amount, latest.total_amount, 0)) as last_donation_amount,
+      MAX(COALESCE(latest.total_amount, 0)) as last_donation_usd,
+      MAX(COALESCE(earliest.total_amount, 0)) as first_donation_usd,
+      MAX(largest.receive_date) as date_of_largest_donation,
+      MAX(largest_donation) as largest_donation,
+      MAX(endowment_largest_donation) as endowment_largest_donation,
+      MAX(lifetime_including_endowment) as lifetime_including_endowment,
+      MAX(lifetime_usd_total) as lifetime_usd_total,
+      MAX(endowment_lifetime_usd_total) as endowment_lifetime_usd_total,
+      MAX(last_donation_date) as last_donation_date,
+      MAX(endowment_last_donation_date) as endowment_last_donation_date,
+      MIN(first_donation_date) as first_donation_date,
+      MIN(endowment_first_donation_date) as endowment_first_donation_date,
+      MAX(number_donations) as number_donations,
+      MAX(endowment_number_donations) as endowment_number_donations,
+      MAX(total_2006_2007) as total_2006_2007,MAX(total_2006) as total_2006,MAX(total_2007_2008) as total_2007_2008,MAX(total_2007) as total_2007,MAX(total_2008_2009) as total_2008_2009,MAX(total_2008) as total_2008,MAX(total_2009_2010) as total_2009_2010,MAX(total_2009) as total_2009,MAX(total_2010_2011) as total_2010_2011,MAX(total_2010) as total_2010,MAX(total_2011_2012) as total_2011_2012,MAX(total_2011) as total_2011,MAX(total_2012_2013) as total_2012_2013,MAX(total_2012) as total_2012,MAX(total_2013_2014) as total_2013_2014,MAX(total_2013) as total_2013,MAX(total_2014_2015) as total_2014_2015,MAX(total_2014) as total_2014,MAX(total_2015_2016) as total_2015_2016,MAX(total_2015) as total_2015,MAX(total_2016_2017) as total_2016_2017,MAX(total_2016) as total_2016,MAX(total_2017_2018) as total_2017_2018,MAX(total_2017) as total_2017,MAX(change_2017_2018) as change_2017_2018,MAX(total_2018_2019) as total_2018_2019,MAX(total_2018) as total_2018,MAX(endowment_total_2018_2019) as endowment_total_2018_2019,MAX(endowment_total_2018) as endowment_total_2018,MAX(change_2018_2019) as change_2018_2019,MAX(total_2019_2020) as total_2019_2020,MAX(total_2019) as total_2019,MAX(endowment_total_2019_2020) as endowment_total_2019_2020,MAX(endowment_total_2019) as endowment_total_2019,MAX(change_2019_2020) as change_2019_2020,MAX(total_2020_2021) as total_2020_2021,MAX(total_2020) as total_2020,MAX(endowment_total_2020_2021) as endowment_total_2020_2021,MAX(endowment_total_2020) as endowment_total_2020,MAX(change_2020_2021) as change_2020_2021
 
     FROM (
       SELECT
@@ -4381,7 +4460,14 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-  LIMIT 1
+  LEFT JOIN civicrm_contribution largest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON largest.contact_id = OLD.contact_id
+    AND largest.total_amount = totals.largest_donation
+    AND largest.contribution_status_id = 1
+    AND largest.total_amount > 0
+    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
+  GROUP BY OLD.contact_id
 
   ON DUPLICATE KEY UPDATE
     last_donation_currency = VALUES(last_donation_currency),
@@ -4389,6 +4475,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     largest_donation = VALUES(largest_donation),
+    date_of_largest_donation = VALUES(date_of_largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),
@@ -4411,7 +4498,7 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
  IF 1 AND (OLD.contact_id <> 72) THEN 
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd,
+      first_donation_usd, date_of_largest_donation,
       largest_donation, endowment_largest_donation, lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
       last_donation_date, endowment_last_donation_date, first_donation_date,
@@ -4420,15 +4507,28 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
     )
 
     SELECT
-      # note that all totals are calculated in the totals subquery and only join values
-      # in the main query. This is important as the left joins could catch more than one donation at 
-      # exactly the same time or more than one max donation amount & throw out the totals.
       OLD.contact_id as entity_id,
-      COALESCE(x.original_currency, latest.currency) as last_donation_currency,
-      COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount,
-      COALESCE(latest.total_amount, 0) as last_donation_usd,
-      COALESCE(earliest.total_amount, 0) as first_donation_usd,
-      totals.*
+       # to honour FULL_GROUP_BY mysql mode we need an aggregate command for each
+      # field - even though we know we just want `the value from the subquery`
+      # MAX is a safe wrapper for that
+      # https://www.percona.com/blog/2019/05/13/solve-query-failures-regarding-only_full_group_by-sql-mode/
+      MAX(COALESCE(x.original_currency, latest.currency)) as last_donation_currency,
+      MAX(COALESCE(x.original_amount, latest.total_amount, 0)) as last_donation_amount,
+      MAX(COALESCE(latest.total_amount, 0)) as last_donation_usd,
+      MAX(COALESCE(earliest.total_amount, 0)) as first_donation_usd,
+      MAX(largest.receive_date) as date_of_largest_donation,
+      MAX(largest_donation) as largest_donation,
+      MAX(endowment_largest_donation) as endowment_largest_donation,
+      MAX(lifetime_including_endowment) as lifetime_including_endowment,
+      MAX(lifetime_usd_total) as lifetime_usd_total,
+      MAX(endowment_lifetime_usd_total) as endowment_lifetime_usd_total,
+      MAX(last_donation_date) as last_donation_date,
+      MAX(endowment_last_donation_date) as endowment_last_donation_date,
+      MIN(first_donation_date) as first_donation_date,
+      MIN(endowment_first_donation_date) as endowment_first_donation_date,
+      MAX(number_donations) as number_donations,
+      MAX(endowment_number_donations) as endowment_number_donations,
+      MAX(total_2006_2007) as total_2006_2007,MAX(total_2006) as total_2006,MAX(total_2007_2008) as total_2007_2008,MAX(total_2007) as total_2007,MAX(total_2008_2009) as total_2008_2009,MAX(total_2008) as total_2008,MAX(total_2009_2010) as total_2009_2010,MAX(total_2009) as total_2009,MAX(total_2010_2011) as total_2010_2011,MAX(total_2010) as total_2010,MAX(total_2011_2012) as total_2011_2012,MAX(total_2011) as total_2011,MAX(total_2012_2013) as total_2012_2013,MAX(total_2012) as total_2012,MAX(total_2013_2014) as total_2013_2014,MAX(total_2013) as total_2013,MAX(total_2014_2015) as total_2014_2015,MAX(total_2014) as total_2014,MAX(total_2015_2016) as total_2015_2016,MAX(total_2015) as total_2015,MAX(total_2016_2017) as total_2016_2017,MAX(total_2016) as total_2016,MAX(total_2017_2018) as total_2017_2018,MAX(total_2017) as total_2017,MAX(change_2017_2018) as change_2017_2018,MAX(total_2018_2019) as total_2018_2019,MAX(total_2018) as total_2018,MAX(endowment_total_2018_2019) as endowment_total_2018_2019,MAX(endowment_total_2018) as endowment_total_2018,MAX(change_2018_2019) as change_2018_2019,MAX(total_2019_2020) as total_2019_2020,MAX(total_2019) as total_2019,MAX(endowment_total_2019_2020) as endowment_total_2019_2020,MAX(endowment_total_2019) as endowment_total_2019,MAX(change_2019_2020) as change_2019_2020,MAX(total_2020_2021) as total_2020_2021,MAX(total_2020) as total_2020,MAX(endowment_total_2020_2021) as endowment_total_2020_2021,MAX(endowment_total_2020) as endowment_total_2020,MAX(change_2020_2021) as change_2020_2021
 
     FROM (
       SELECT
@@ -4479,7 +4579,14 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
-  LIMIT 1
+  LEFT JOIN civicrm_contribution largest
+    USE INDEX(FK_civicrm_contribution_contact_id)
+    ON largest.contact_id = OLD.contact_id
+    AND largest.total_amount = totals.largest_donation
+    AND largest.contribution_status_id = 1
+    AND largest.total_amount > 0
+    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
+  GROUP BY OLD.contact_id
 
   ON DUPLICATE KEY UPDATE
     last_donation_currency = VALUES(last_donation_currency),
@@ -4487,6 +4594,7 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
     last_donation_usd = VALUES(last_donation_usd),
     first_donation_usd = VALUES(first_donation_usd),
     largest_donation = VALUES(largest_donation),
+    date_of_largest_donation = VALUES(date_of_largest_donation),
     lifetime_usd_total = VALUES(lifetime_usd_total),
     last_donation_date = VALUES(last_donation_date),
     first_donation_date = VALUES(first_donation_date),
@@ -7355,7 +7463,7 @@ DROP TRIGGER IF EXISTS civicrm_value_1_prospect_5_after_insert //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_value_1_prospect_5_after_insert after insert ON civicrm_value_1_prospect_5 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_1_prospect_5 (`id`, `entity_id`, `reviewed`, `stage`, `type`, `capacity`, `readiness`, `stewardship`, `solicitor`, `inclination`, `philanthropic`, `philanthropic_history_51`, `biography_66`, `interests_67`, `origin_68`, `on_hold_72`, `income_range`, `charitable_contributions_decile`, `disc_income_decile`, `voter_party`, `subject_area_interest`, `university_affiliation`, `ask_amount_136`, `expected_amount_137`, `likelihood__138`, `expected_close_date_139`, `close_date_140`, `next_step_141`, `prior_wmf_giving_143`, `estimated_net_worth_144`, `notes_147`, `board_affiliations_148`, `endowment_stage_169`, `net_worth_170`, `family_composition_173`, `occupation_175`, `pg_stage_177`, `survey_responses_178`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`reviewed`, NEW.`stage`, NEW.`type`, NEW.`capacity`, NEW.`readiness`, NEW.`stewardship`, NEW.`solicitor`, NEW.`inclination`, NEW.`philanthropic`, NEW.`philanthropic_history_51`, NEW.`biography_66`, NEW.`interests_67`, NEW.`origin_68`, NEW.`on_hold_72`, NEW.`income_range`, NEW.`charitable_contributions_decile`, NEW.`disc_income_decile`, NEW.`voter_party`, NEW.`subject_area_interest`, NEW.`university_affiliation`, NEW.`ask_amount_136`, NEW.`expected_amount_137`, NEW.`likelihood__138`, NEW.`expected_close_date_139`, NEW.`close_date_140`, NEW.`next_step_141`, NEW.`prior_wmf_giving_143`, NEW.`estimated_net_worth_144`, NEW.`notes_147`, NEW.`board_affiliations_148`, NEW.`endowment_stage_169`, NEW.`net_worth_170`, NEW.`family_composition_173`, NEW.`occupation_175`, NEW.`pg_stage_177`, NEW.`survey_responses_178`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
+CREATE TRIGGER civicrm_value_1_prospect_5_after_insert after insert ON civicrm_value_1_prospect_5 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_1_prospect_5 (`id`, `entity_id`, `reviewed`, `stage`, `type`, `capacity`, `readiness`, `stewardship`, `solicitor`, `inclination`, `philanthropic`, `philanthropic_history_51`, `biography_66`, `interests_67`, `origin_68`, `on_hold_72`, `income_range`, `charitable_contributions_decile`, `disc_income_decile`, `voter_party`, `subject_area_interest`, `university_affiliation`, `ask_amount_136`, `expected_amount_137`, `likelihood__138`, `expected_close_date_139`, `close_date_140`, `next_step_141`, `estimated_net_worth_144`, `notes_147`, `board_affiliations_148`, `endowment_stage_169`, `net_worth_170`, `family_composition_173`, `occupation_175`, `pg_stage_177`, `survey_responses_178`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`reviewed`, NEW.`stage`, NEW.`type`, NEW.`capacity`, NEW.`readiness`, NEW.`stewardship`, NEW.`solicitor`, NEW.`inclination`, NEW.`philanthropic`, NEW.`philanthropic_history_51`, NEW.`biography_66`, NEW.`interests_67`, NEW.`origin_68`, NEW.`on_hold_72`, NEW.`income_range`, NEW.`charitable_contributions_decile`, NEW.`disc_income_decile`, NEW.`voter_party`, NEW.`subject_area_interest`, NEW.`university_affiliation`, NEW.`ask_amount_136`, NEW.`expected_amount_137`, NEW.`likelihood__138`, NEW.`expected_close_date_139`, NEW.`close_date_140`, NEW.`next_step_141`, NEW.`estimated_net_worth_144`, NEW.`notes_147`, NEW.`board_affiliations_148`, NEW.`endowment_stage_169`, NEW.`net_worth_170`, NEW.`family_composition_173`, NEW.`occupation_175`, NEW.`pg_stage_177`, NEW.`survey_responses_178`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
 
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
  END //
@@ -7366,7 +7474,7 @@ DROP TRIGGER IF EXISTS civicrm_value_1_prospect_5_after_update //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_value_1_prospect_5_after_update after update ON civicrm_value_1_prospect_5 FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`reviewed`,'') <> IFNULL(NEW.`reviewed`,'') OR IFNULL(OLD.`stage`,'') <> IFNULL(NEW.`stage`,'') OR IFNULL(OLD.`type`,'') <> IFNULL(NEW.`type`,'') OR IFNULL(OLD.`capacity`,'') <> IFNULL(NEW.`capacity`,'') OR IFNULL(OLD.`readiness`,'') <> IFNULL(NEW.`readiness`,'') OR IFNULL(OLD.`stewardship`,'') <> IFNULL(NEW.`stewardship`,'') OR IFNULL(OLD.`solicitor`,'') <> IFNULL(NEW.`solicitor`,'') OR IFNULL(OLD.`inclination`,'') <> IFNULL(NEW.`inclination`,'') OR IFNULL(OLD.`philanthropic`,'') <> IFNULL(NEW.`philanthropic`,'') OR IFNULL(OLD.`philanthropic_history_51`,'') <> IFNULL(NEW.`philanthropic_history_51`,'') OR IFNULL(OLD.`biography_66`,'') <> IFNULL(NEW.`biography_66`,'') OR IFNULL(OLD.`interests_67`,'') <> IFNULL(NEW.`interests_67`,'') OR IFNULL(OLD.`origin_68`,'') <> IFNULL(NEW.`origin_68`,'') OR IFNULL(OLD.`on_hold_72`,'') <> IFNULL(NEW.`on_hold_72`,'') OR IFNULL(OLD.`income_range`,'') <> IFNULL(NEW.`income_range`,'') OR IFNULL(OLD.`charitable_contributions_decile`,'') <> IFNULL(NEW.`charitable_contributions_decile`,'') OR IFNULL(OLD.`disc_income_decile`,'') <> IFNULL(NEW.`disc_income_decile`,'') OR IFNULL(OLD.`voter_party`,'') <> IFNULL(NEW.`voter_party`,'') OR IFNULL(OLD.`subject_area_interest`,'') <> IFNULL(NEW.`subject_area_interest`,'') OR IFNULL(OLD.`university_affiliation`,'') <> IFNULL(NEW.`university_affiliation`,'') OR IFNULL(OLD.`ask_amount_136`,'') <> IFNULL(NEW.`ask_amount_136`,'') OR IFNULL(OLD.`expected_amount_137`,'') <> IFNULL(NEW.`expected_amount_137`,'') OR IFNULL(OLD.`likelihood__138`,'') <> IFNULL(NEW.`likelihood__138`,'') OR IFNULL(OLD.`expected_close_date_139`,'') <> IFNULL(NEW.`expected_close_date_139`,'') OR IFNULL(OLD.`close_date_140`,'') <> IFNULL(NEW.`close_date_140`,'') OR IFNULL(OLD.`next_step_141`,'') <> IFNULL(NEW.`next_step_141`,'') OR IFNULL(OLD.`prior_wmf_giving_143`,'') <> IFNULL(NEW.`prior_wmf_giving_143`,'') OR IFNULL(OLD.`estimated_net_worth_144`,'') <> IFNULL(NEW.`estimated_net_worth_144`,'') OR IFNULL(OLD.`notes_147`,'') <> IFNULL(NEW.`notes_147`,'') OR IFNULL(OLD.`board_affiliations_148`,'') <> IFNULL(NEW.`board_affiliations_148`,'') OR IFNULL(OLD.`endowment_stage_169`,'') <> IFNULL(NEW.`endowment_stage_169`,'') OR IFNULL(OLD.`net_worth_170`,'') <> IFNULL(NEW.`net_worth_170`,'') OR IFNULL(OLD.`family_composition_173`,'') <> IFNULL(NEW.`family_composition_173`,'') OR IFNULL(OLD.`occupation_175`,'') <> IFNULL(NEW.`occupation_175`,'') OR IFNULL(OLD.`pg_stage_177`,'') <> IFNULL(NEW.`pg_stage_177`,'') OR IFNULL(OLD.`survey_responses_178`,'') <> IFNULL(NEW.`survey_responses_178`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_1_prospect_5 (`id`, `entity_id`, `reviewed`, `stage`, `type`, `capacity`, `readiness`, `stewardship`, `solicitor`, `inclination`, `philanthropic`, `philanthropic_history_51`, `biography_66`, `interests_67`, `origin_68`, `on_hold_72`, `income_range`, `charitable_contributions_decile`, `disc_income_decile`, `voter_party`, `subject_area_interest`, `university_affiliation`, `ask_amount_136`, `expected_amount_137`, `likelihood__138`, `expected_close_date_139`, `close_date_140`, `next_step_141`, `prior_wmf_giving_143`, `estimated_net_worth_144`, `notes_147`, `board_affiliations_148`, `endowment_stage_169`, `net_worth_170`, `family_composition_173`, `occupation_175`, `pg_stage_177`, `survey_responses_178`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`reviewed`, NEW.`stage`, NEW.`type`, NEW.`capacity`, NEW.`readiness`, NEW.`stewardship`, NEW.`solicitor`, NEW.`inclination`, NEW.`philanthropic`, NEW.`philanthropic_history_51`, NEW.`biography_66`, NEW.`interests_67`, NEW.`origin_68`, NEW.`on_hold_72`, NEW.`income_range`, NEW.`charitable_contributions_decile`, NEW.`disc_income_decile`, NEW.`voter_party`, NEW.`subject_area_interest`, NEW.`university_affiliation`, NEW.`ask_amount_136`, NEW.`expected_amount_137`, NEW.`likelihood__138`, NEW.`expected_close_date_139`, NEW.`close_date_140`, NEW.`next_step_141`, NEW.`prior_wmf_giving_143`, NEW.`estimated_net_worth_144`, NEW.`notes_147`, NEW.`board_affiliations_148`, NEW.`endowment_stage_169`, NEW.`net_worth_170`, NEW.`family_composition_173`, NEW.`occupation_175`, NEW.`pg_stage_177`, NEW.`survey_responses_178`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
+CREATE TRIGGER civicrm_value_1_prospect_5_after_update after update ON civicrm_value_1_prospect_5 FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`reviewed`,'') <> IFNULL(NEW.`reviewed`,'') OR IFNULL(OLD.`stage`,'') <> IFNULL(NEW.`stage`,'') OR IFNULL(OLD.`type`,'') <> IFNULL(NEW.`type`,'') OR IFNULL(OLD.`capacity`,'') <> IFNULL(NEW.`capacity`,'') OR IFNULL(OLD.`readiness`,'') <> IFNULL(NEW.`readiness`,'') OR IFNULL(OLD.`stewardship`,'') <> IFNULL(NEW.`stewardship`,'') OR IFNULL(OLD.`solicitor`,'') <> IFNULL(NEW.`solicitor`,'') OR IFNULL(OLD.`inclination`,'') <> IFNULL(NEW.`inclination`,'') OR IFNULL(OLD.`philanthropic`,'') <> IFNULL(NEW.`philanthropic`,'') OR IFNULL(OLD.`philanthropic_history_51`,'') <> IFNULL(NEW.`philanthropic_history_51`,'') OR IFNULL(OLD.`biography_66`,'') <> IFNULL(NEW.`biography_66`,'') OR IFNULL(OLD.`interests_67`,'') <> IFNULL(NEW.`interests_67`,'') OR IFNULL(OLD.`origin_68`,'') <> IFNULL(NEW.`origin_68`,'') OR IFNULL(OLD.`on_hold_72`,'') <> IFNULL(NEW.`on_hold_72`,'') OR IFNULL(OLD.`income_range`,'') <> IFNULL(NEW.`income_range`,'') OR IFNULL(OLD.`charitable_contributions_decile`,'') <> IFNULL(NEW.`charitable_contributions_decile`,'') OR IFNULL(OLD.`disc_income_decile`,'') <> IFNULL(NEW.`disc_income_decile`,'') OR IFNULL(OLD.`voter_party`,'') <> IFNULL(NEW.`voter_party`,'') OR IFNULL(OLD.`subject_area_interest`,'') <> IFNULL(NEW.`subject_area_interest`,'') OR IFNULL(OLD.`university_affiliation`,'') <> IFNULL(NEW.`university_affiliation`,'') OR IFNULL(OLD.`ask_amount_136`,'') <> IFNULL(NEW.`ask_amount_136`,'') OR IFNULL(OLD.`expected_amount_137`,'') <> IFNULL(NEW.`expected_amount_137`,'') OR IFNULL(OLD.`likelihood__138`,'') <> IFNULL(NEW.`likelihood__138`,'') OR IFNULL(OLD.`expected_close_date_139`,'') <> IFNULL(NEW.`expected_close_date_139`,'') OR IFNULL(OLD.`close_date_140`,'') <> IFNULL(NEW.`close_date_140`,'') OR IFNULL(OLD.`next_step_141`,'') <> IFNULL(NEW.`next_step_141`,'') OR IFNULL(OLD.`estimated_net_worth_144`,'') <> IFNULL(NEW.`estimated_net_worth_144`,'') OR IFNULL(OLD.`notes_147`,'') <> IFNULL(NEW.`notes_147`,'') OR IFNULL(OLD.`board_affiliations_148`,'') <> IFNULL(NEW.`board_affiliations_148`,'') OR IFNULL(OLD.`endowment_stage_169`,'') <> IFNULL(NEW.`endowment_stage_169`,'') OR IFNULL(OLD.`net_worth_170`,'') <> IFNULL(NEW.`net_worth_170`,'') OR IFNULL(OLD.`family_composition_173`,'') <> IFNULL(NEW.`family_composition_173`,'') OR IFNULL(OLD.`occupation_175`,'') <> IFNULL(NEW.`occupation_175`,'') OR IFNULL(OLD.`pg_stage_177`,'') <> IFNULL(NEW.`pg_stage_177`,'') OR IFNULL(OLD.`survey_responses_178`,'') <> IFNULL(NEW.`survey_responses_178`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_1_prospect_5 (`id`, `entity_id`, `reviewed`, `stage`, `type`, `capacity`, `readiness`, `stewardship`, `solicitor`, `inclination`, `philanthropic`, `philanthropic_history_51`, `biography_66`, `interests_67`, `origin_68`, `on_hold_72`, `income_range`, `charitable_contributions_decile`, `disc_income_decile`, `voter_party`, `subject_area_interest`, `university_affiliation`, `ask_amount_136`, `expected_amount_137`, `likelihood__138`, `expected_close_date_139`, `close_date_140`, `next_step_141`, `estimated_net_worth_144`, `notes_147`, `board_affiliations_148`, `endowment_stage_169`, `net_worth_170`, `family_composition_173`, `occupation_175`, `pg_stage_177`, `survey_responses_178`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`reviewed`, NEW.`stage`, NEW.`type`, NEW.`capacity`, NEW.`readiness`, NEW.`stewardship`, NEW.`solicitor`, NEW.`inclination`, NEW.`philanthropic`, NEW.`philanthropic_history_51`, NEW.`biography_66`, NEW.`interests_67`, NEW.`origin_68`, NEW.`on_hold_72`, NEW.`income_range`, NEW.`charitable_contributions_decile`, NEW.`disc_income_decile`, NEW.`voter_party`, NEW.`subject_area_interest`, NEW.`university_affiliation`, NEW.`ask_amount_136`, NEW.`expected_amount_137`, NEW.`likelihood__138`, NEW.`expected_close_date_139`, NEW.`close_date_140`, NEW.`next_step_141`, NEW.`estimated_net_worth_144`, NEW.`notes_147`, NEW.`board_affiliations_148`, NEW.`endowment_stage_169`, NEW.`net_worth_170`, NEW.`family_composition_173`, NEW.`occupation_175`, NEW.`pg_stage_177`, NEW.`survey_responses_178`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
 
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
  END //
@@ -7377,7 +7485,7 @@ DROP TRIGGER IF EXISTS civicrm_value_1_prospect_5_after_delete //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER civicrm_value_1_prospect_5_after_delete after delete ON civicrm_value_1_prospect_5 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_1_prospect_5 (`id`, `entity_id`, `reviewed`, `stage`, `type`, `capacity`, `readiness`, `stewardship`, `solicitor`, `inclination`, `philanthropic`, `philanthropic_history_51`, `biography_66`, `interests_67`, `origin_68`, `on_hold_72`, `income_range`, `charitable_contributions_decile`, `disc_income_decile`, `voter_party`, `subject_area_interest`, `university_affiliation`, `ask_amount_136`, `expected_amount_137`, `likelihood__138`, `expected_close_date_139`, `close_date_140`, `next_step_141`, `prior_wmf_giving_143`, `estimated_net_worth_144`, `notes_147`, `board_affiliations_148`, `endowment_stage_169`, `net_worth_170`, `family_composition_173`, `occupation_175`, `pg_stage_177`, `survey_responses_178`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`reviewed`, OLD.`stage`, OLD.`type`, OLD.`capacity`, OLD.`readiness`, OLD.`stewardship`, OLD.`solicitor`, OLD.`inclination`, OLD.`philanthropic`, OLD.`philanthropic_history_51`, OLD.`biography_66`, OLD.`interests_67`, OLD.`origin_68`, OLD.`on_hold_72`, OLD.`income_range`, OLD.`charitable_contributions_decile`, OLD.`disc_income_decile`, OLD.`voter_party`, OLD.`subject_area_interest`, OLD.`university_affiliation`, OLD.`ask_amount_136`, OLD.`expected_amount_137`, OLD.`likelihood__138`, OLD.`expected_close_date_139`, OLD.`close_date_140`, OLD.`next_step_141`, OLD.`prior_wmf_giving_143`, OLD.`estimated_net_worth_144`, OLD.`notes_147`, OLD.`board_affiliations_148`, OLD.`endowment_stage_169`, OLD.`net_worth_170`, OLD.`family_composition_173`, OLD.`occupation_175`, OLD.`pg_stage_177`, OLD.`survey_responses_178`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
+CREATE TRIGGER civicrm_value_1_prospect_5_after_delete after delete ON civicrm_value_1_prospect_5 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_1_prospect_5 (`id`, `entity_id`, `reviewed`, `stage`, `type`, `capacity`, `readiness`, `stewardship`, `solicitor`, `inclination`, `philanthropic`, `philanthropic_history_51`, `biography_66`, `interests_67`, `origin_68`, `on_hold_72`, `income_range`, `charitable_contributions_decile`, `disc_income_decile`, `voter_party`, `subject_area_interest`, `university_affiliation`, `ask_amount_136`, `expected_amount_137`, `likelihood__138`, `expected_close_date_139`, `close_date_140`, `next_step_141`, `estimated_net_worth_144`, `notes_147`, `board_affiliations_148`, `endowment_stage_169`, `net_worth_170`, `family_composition_173`, `occupation_175`, `pg_stage_177`, `survey_responses_178`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`reviewed`, OLD.`stage`, OLD.`type`, OLD.`capacity`, OLD.`readiness`, OLD.`stewardship`, OLD.`solicitor`, OLD.`inclination`, OLD.`philanthropic`, OLD.`philanthropic_history_51`, OLD.`biography_66`, OLD.`interests_67`, OLD.`origin_68`, OLD.`on_hold_72`, OLD.`income_range`, OLD.`charitable_contributions_decile`, OLD.`disc_income_decile`, OLD.`voter_party`, OLD.`subject_area_interest`, OLD.`university_affiliation`, OLD.`ask_amount_136`, OLD.`expected_amount_137`, OLD.`likelihood__138`, OLD.`expected_close_date_139`, OLD.`close_date_140`, OLD.`next_step_141`, OLD.`estimated_net_worth_144`, OLD.`notes_147`, OLD.`board_affiliations_148`, OLD.`endowment_stage_169`, OLD.`net_worth_170`, OLD.`family_composition_173`, OLD.`occupation_175`, OLD.`pg_stage_177`, OLD.`survey_responses_178`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
 
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.entity_id;
  END //
@@ -7519,6 +7627,30 @@ CREATE TRIGGER civicrm_value_assistant_15_after_delete after delete ON civicrm_v
 
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.entity_id;
  END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_mailing_data_21_after_insert //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER civicrm_value_mailing_data_21_after_insert after insert ON civicrm_value_mailing_data_21 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_mailing_data_21 (`id`, `entity_id`, `query_criteria_220`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`query_criteria_220`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF; END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_mailing_data_21_after_update //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER civicrm_value_mailing_data_21_after_update after update ON civicrm_value_mailing_data_21 FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`query_criteria_220`,'') <> IFNULL(NEW.`query_criteria_220`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_mailing_data_21 (`id`, `entity_id`, `query_criteria_220`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`query_criteria_220`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
+DELIMITER ;
+
+DELIMITER //
+DROP TRIGGER IF EXISTS civicrm_value_mailing_data_21_after_delete //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER civicrm_value_mailing_data_21_after_delete after delete ON civicrm_value_mailing_data_21 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_mailing_data_21 (`id`, `entity_id`, `query_criteria_220`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`query_criteria_220`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
 DELIMITER ;
 
 DELIMITER //
