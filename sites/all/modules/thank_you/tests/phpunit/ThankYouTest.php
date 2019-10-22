@@ -118,6 +118,9 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 		  $expectedSubjectTemplate
     );
 		$this->assertEquals( $expectedSubject, $sent['subject']);
+
+		// Check for tax information, DAF emails have this removed
+		$this->assertRegExp( '/tax-exempt number/', $sent['html'] );
 	}
 
 	public function testSendThankYouAddCiviMailActivity() {
@@ -179,6 +182,38 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
     );
     $this->assertEquals($expectedSubject, $sent['subject']);
   }
+
+  /**
+   * Test that DAF (Donor Advised Fund) thank you mails do not have tax information
+   */
+  public function testSendDAFThankYou() {
+    variable_set( 'thank_you_add_civimail_records', 'false' );
+
+    // Set the gift source to Donor Advised Fund
+    $custom_field_name = wmf_civicrm_get_custom_field_name( 'Gift Source' );
+    civicrm_api3( 'Contribution', 'create', array(
+        'id' => $this->contribution_id,
+        $custom_field_name => 'Donor Advised Fund',
+    ) );
+
+    $result = thank_you_for_contribution( $this->contribution_id );
+    $this->assertTrue( $result );
+    $this->assertEquals( 1, TestMailer::countMailings() );
+    $sent = TestMailer::getMailing( 0 );
+    $this->assertEquals( $this->message['email'], $sent['to_address'] );
+    $this->assertEquals(
+        "{$this->message['first_name']} {$this->message['last_name']}",
+        $sent['to_name']
+    );
+    $expectedBounce = "ty.{$this->contact_id}.{$this->contribution_id}" .
+                      '@donate.wikimedia.org';
+    $this->assertEquals( $expectedBounce, $sent['reply_to'] );
+    $this->assertRegExp( '/\$ 1.23/', $sent['html'] );
+
+    // Check that tax information has been removed
+    $this->assertNotRegExp( '/tax-exempt number/', $sent['html'] );
+  }
+
 
 	/**
 	 * Helper function to protect test against cleanup issues.
