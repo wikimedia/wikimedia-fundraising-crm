@@ -394,6 +394,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     CiviCRM_API3_Exception $exception,
     &$paymentParams
   ) {
+    Civi::log()->info('Error: '.$exception->getErrorCode().' invoice_id:'.$paymentParams['invoice_id']);
     switch ($exception->getErrorCode()) {
       case 300620:
         // FIXME: this is currently dealing with an Ingenico-specific code.
@@ -403,6 +404,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $currentInvoiceId = $paymentParams['invoice_id'];
         $nextInvoiceId = self::getNextInvoiceId($currentInvoiceId);
         $paymentParams['invoice_id'] = $nextInvoiceId;
+        Civi::log()->info('Error 300620: Current invoice_id: '.$currentInvoiceId.' Next invoice_id: '.$nextInvoiceId);
         return TRUE;
       default:
         return FALSE;
