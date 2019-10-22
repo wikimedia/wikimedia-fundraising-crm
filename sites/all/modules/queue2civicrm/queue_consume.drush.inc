@@ -77,10 +77,12 @@ function drush_queue_consume_validate() {
 function drush_queue_consume() {
   // Set the number of contributions to batch
   $batch = drush_get_option('batch');
+  $options = [];
   if ( !empty( $batch ) ) {
-    variable_set( 'queue2civicrm_batch', $batch );
+    $options['batch'] = $batch;
   }
-  module_invoke( 'queue2civicrm', 'batch_process' );
+
+  module_invoke( 'queue2civicrm', 'batch_process', $options );
   $errors = drush_get_error_log();
   if (!empty($errors)){
 	  echo "\n***ERRORS***";
