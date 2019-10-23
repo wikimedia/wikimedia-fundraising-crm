@@ -297,6 +297,32 @@ function dedupetools_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
         $merger = new CRM_Dedupetools_BAO_MergeHandler($refs, $mainId, $otherId, $type);
         $merger->resolve();
         $refs = $merger->getDedupeData();
+        $refs['migration_info']['merge_handler'] = $merger;
       }
   }
+}
+
+/**
+ * Alter location data 'planned' for merge.
+ *
+ * @param array $blocksDAO
+ *   Array of location DAO to be saved. These are arrays in 2 keys 'update' &
+ *   'delete'.
+ * @param int $mainId
+ *   Contact_id of the contact that survives the merge.
+ * @param int $otherId
+ *   Contact_id of the contact that will be absorbed and deleted.
+ * @param array $migrationInfo
+ *   Calculated migration info, informational only.
+ */
+function dedupetools_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $otherId, $migrationInfo) {
+  // Do not override form mode.
+  if ($migrationInfo['context'] !== 'form' && isset($migrationInfo['merge_handler'])) {
+    /* @var CRM_Dedupetools_BAO_MergeHandler $merger */
+    $merger = $migrationInfo['merge_handler'];
+    $merger->setLocationBlocks($blocksDAO);
+    $merger->resolveLocations();
+    $blocksDAO = $merger->getLocationBlocks();
+  }
+
 }

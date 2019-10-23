@@ -17,7 +17,15 @@ class CRM_Dedupetools_BAO_Resolver_BooleanYesResolver extends CRM_Dedupetools_BA
     foreach ($fieldsAffected as $field) {
       $this->setResolvedValue($field, 1);
     }
-
+    foreach ($conflictedFields as $conflictedField) {
+      if (strpos($conflictedField, 'location_email') === 0) {
+        $emailBlockNumber = str_replace('location_email_', '', $conflictedField);
+        $emailDifferences = $this->getEmailConflicts($emailBlockNumber);
+        foreach ($emailDifferences as $fieldName => $emailDifference) {
+          $this->setResolvedLocationValue($fieldName, 'email', $emailBlockNumber, 1);
+        }
+      }
+    }
   }
 
 }

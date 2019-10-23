@@ -71,6 +71,39 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test the boolean field resolver resolves emails on hold.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact has on_hold set to true.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testResolveEmailOnHold($isReverse) {
+    $this->createDuplicateIndividuals();
+    // Conveniently our 2 contacts are 0 & 1 in the $this->ids['Contact'] array so we can abuse the boolean var like this.
+    $contactIDOnHold = $isReverse;
+
+    $email1 = $this->callAPISuccess('Email', 'get', ['contact_id' => $this->ids['Contact'][$contactIDOnHold]])['id'];
+    $this->callAPISuccess('Email', 'create', ['id' => $email1, 'on_hold' => 1]);
+
+    $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['Contact'][0], 'to_remove_id' => $this->ids['Contact'][1]])['values'];
+    $this->assertCount(1, $mergeResult['merged']);
+    $email0 = $this->callAPISuccessGetSingle('Email', ['contact_id' => ['IN' => [$this->ids['Contact'][0]]]]);
+    $this->assertEquals(1, $email0['on_hold']);
+  }
+
+  /**
+   * Data provider for tests with 2 options
+   *
+   * @return array
+   */
+  public function booleanDataProvider() {
+    return [[0], [1]];
+  }
+
+  /**
    * Create individuals to dedupe.
    *
    * @param array $contactParams

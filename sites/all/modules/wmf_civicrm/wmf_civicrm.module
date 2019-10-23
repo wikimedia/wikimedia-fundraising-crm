@@ -3163,6 +3163,12 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
   if (!$lastDonor['count']) {
     return;
   }
+  // The merge handler is in dedupe tools - we are migrating this code over to that extension.
+  // for now our goal is NOT to touch any merges being managed by that extension. That extension will
+  // currently ONLY manage emails which are blocked as merge conflicts due on_hold being different.
+  // This code has never handled that so the goal is to not touch any emails IF that extension is touching them.
+  /* var CRM_Dedupetools_BAO_MergeHandler */
+  $mergeHandler = $migrationInfo['merge_handler'];
   $lastDonorID = $lastDonor['values'][$lastDonor['id']]['contact_id'];
   $contactIDToBeKeptIsMostRecentDonor = ($lastDonorID == $mainId) ? TRUE : FALSE;
   // Since the last donor is not the main ID we are prioritising info from the last donor.
@@ -3179,7 +3185,14 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
   $primaryAddressCandidates = array();
 
   foreach ($higherPriorityLocationBlocks as $blockType => $blocks) {
-    foreach ($blocks as $block) {
+    foreach ($blocks as $blockIndex => $block) {
+      if ($mergeHandler->isResolvingLocationConflictFor($blockType)) {
+        // We are not going to deal with conflict resolution here because the merge handler is on it.
+        // In practice this could currently only mean that there is a conflict on an email address
+        // where they only differ in their on_hold handling & the mergeHandler has that in hand.
+        // Any other form of conflict is location currently handled in this section & not handled there.
+        continue;
+      }
       if ($block['is_primary'] == 1 && isset($blocksDAO[$blockType]['update'][$block['id']])) {
         unset($blocksDAO[$blockType]['update'][$block['id']]->is_primary);
       }

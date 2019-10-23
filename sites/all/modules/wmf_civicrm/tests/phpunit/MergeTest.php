@@ -58,33 +58,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * @dataProvider isReverse
    */
   public function testMergeHook($isReverse) {
-    $this->callAPISuccess('Contribution', 'create', array(
-      'contact_id' => $isReverse ? $this->contactID2 : $this->contactID,
-      'financial_type_id' => 'Cash',
-      'total_amount' => 10,
-      'currency' => 'USD',
-      // Should cause 'is_2014 to be true.
-      'receive_date' => '2014-08-04',
-      wmf_civicrm_get_custom_field_name('original_currency') => 'NZD',
-      wmf_civicrm_get_custom_field_name('original_amount') => 8,
-    ));
-    $this->callAPISuccess('Contribution', 'create', array(
-      'contact_id' => $isReverse ? $this->contactID : $this->contactID2,
-      'financial_type_id' => 'Cash',
-      'total_amount' => 5,
-      'currency' => 'USD',
-      // Should cause 'is_2012_donor to be true.
-      'receive_date' => '2013-01-04',
-    ));
-    $this->callAPISuccess('Contribution', 'create', array(
-      'contact_id' => $isReverse ? $this->contactID : $this->contactID2,
-      'financial_type_id' => 'Cash',
-      'total_amount' => 9,
-      'currency' => 'USD',
-      'source' => 'NZD 20',
-      // Should cause 'is_2015_donor to be true.
-      'receive_date' => '2016-04-04',
-    ));
+    $this->giveADuckADonation($isReverse);
     $contact = $this->callAPISuccess('Contact', 'get', array(
       'id' => $isReverse ? $this->contactID2 : $this->contactID,
       'sequential' => 1,
@@ -423,26 +397,32 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * Test that a conflict on 'on_hold' is handled.
+   *
+   * This is now handled in the dedupetools extension with resolution being
+   * 'keep the YES'. We continue to test here for good measure.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeConflictOnHold() {
     $emailDuck1 = $this->callAPISuccess('Email', 'get', array('contact_id' => $this->contactID, 'return' => 'id'));
-    $emailDuck2 = $this->callAPISuccess('Email', 'get', array('contact_id' => $this->contactID2, 'return' => 'id'));
-
-    $this->callAPISuccess('Email', 'create', array('id' => $emailDuck1['id'], 'on_hold' => 1));
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
-    $this->assertEquals(1, count($result['values']['skipped']));
-    $this->assertEquals(0, count($result['values']['merged']));
-
-    $this->callAPISuccess('Email', 'create', array('id' => $emailDuck1['id'], 'on_hold' => 0));
-    $this->callAPISuccess('Email', 'create', array('id' => $emailDuck2['id'], 'on_hold' => 1));
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
-    $this->assertEquals(1, count($result['values']['skipped']));
-    $this->assertEquals(0, count($result['values']['merged']));
-
+    $this->giveADuckADonation(FALSE);
     $this->callAPISuccess('Email', 'create', array('id' => $emailDuck1['id'], 'on_hold' => 1));
     $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
     $this->assertEquals(0, count($result['values']['skipped']));
     $this->assertEquals(1, count($result['values']['merged']));
+    $email = $this->callAPISuccessGetSingle('Email', ['contact_id' => $this->contactID]);
+    $this->assertEquals(1, $email['on_hold']);
+
+    $this->callAPISuccess('Email', 'create', ['id' => $email['id'], 'on_hold' => 0]);
+    $duck2 = $this->breedDuck(array(wmf_civicrm_get_custom_field_name('do_not_solicit') => 1));
+    $emailDuck2 = $this->callAPISuccess('Email', 'get', array('contact_id' => $duck2, 'return' => 'id'));
+    $this->callAPISuccess('Email', 'create', array('id' => $emailDuck2['id'], 'on_hold' => 1));
+
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->assertEquals(0, count($result['values']['skipped']));
+    $this->assertEquals(1, count($result['values']['merged']));
+    $email = $this->callAPISuccessGetSingle('Email', ['contact_id' => $this->contactID]);
+    $this->assertEquals(1, $email['on_hold']);
   }
 
   /**
@@ -2031,6 +2011,42 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'invoice_id' => 2,
       'trxn_id' => 2
     ));
+  }
+
+  /**
+   * Add some donations to our ducks
+   *
+   * @param bool $isReverse
+   *   Reverse which duck is the most recent donor?
+   */
+  private function giveADuckADonation($isReverse) {
+    $this->callAPISuccess('Contribution', 'create', [
+      'contact_id' => $isReverse ? $this->contactID2 : $this->contactID,
+      'financial_type_id' => 'Cash',
+      'total_amount' => 10,
+      'currency' => 'USD',
+      // Should cause 'is_2014 to be true.
+      'receive_date' => '2014-08-04',
+      wmf_civicrm_get_custom_field_name('original_currency') => 'NZD',
+      wmf_civicrm_get_custom_field_name('original_amount') => 8,
+    ]);
+    $this->callAPISuccess('Contribution', 'create', [
+      'contact_id' => $isReverse ? $this->contactID : $this->contactID2,
+      'financial_type_id' => 'Cash',
+      'total_amount' => 5,
+      'currency' => 'USD',
+      // Should cause 'is_2012_donor to be true.
+      'receive_date' => '2013-01-04',
+    ]);
+    $this->callAPISuccess('Contribution', 'create', [
+      'contact_id' => $isReverse ? $this->contactID : $this->contactID2,
+      'financial_type_id' => 'Cash',
+      'total_amount' => 9,
+      'currency' => 'USD',
+      'source' => 'NZD 20',
+      // Should cause 'is_2015_donor to be true.
+      'receive_date' => '2016-04-04',
+    ]);
   }
 
 }
