@@ -279,6 +279,9 @@ EOS;
     usort($contributions, function($c1, $c2) {
       return $c1['date'] <=> $c2['date'];
     });
+    foreach($contributions as $index=>$contribution) {
+      $contributions[$index]['index'] = $index + 1;
+    }
 
     $template_params = [
       'name' => $row->name,
@@ -305,7 +308,7 @@ EOS;
       self::$templates_dir,
       self::$template_name,
       $language,
-      $template_params
+      $template_params + ['language' => $language]
     );
   }
 }

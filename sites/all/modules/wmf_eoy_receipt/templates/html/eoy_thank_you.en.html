@@ -3,29 +3,33 @@ Dear {{name}},
 </p>
 
 <p>
-Thank you for your donations during {{year}}.
+I am thrilled that this email to you is one of the first things on my to-do list in {{year + 1}}. Granted, that to-do list is long--Wikipedia has so many amazing projects on the horizon--but thanking you is at the very top.
 </p>
 
 <p>
-For your records, your contributions were as follows:
+Your hard earned money pays our bills, runs our servers, and helps us recruit the world's smartest people to ensure that Wikipedia will always be a resilient, neutral source for learning.
 </p>
 
-<table>
-<thead>
-<tr>
-<th>Date</th><th>Amount</th>
-</tr>
-</thead>
-<tbody>
-{% for contribution in contributions %}
-<tr>
-<td>{{contribution.date}}</td><td width="100%">{{contribution.amount}} {{contribution.currency}}</td>
-</tr>
-{% endfor %}
+<p>
+Outside of those practical details, your donations are deeply meaningful to we who work to serve you. Your donations show us that our work matters, and is worth supporting. Thank you.
+</p>
+
+<p>
+Here’s a summary of all the donations you made to the Wikimedia Foundation in {{year}}.
+</p>
+
 {% for total in totals %}
-<tr>
-  <td>Total {{total.currency}}</td><td width="100%">{{total.amount}}</td>
-</tr>
+<p>
+Your {{year}} total was {{total.currency}} {{total.amount}}.
+</p>
 {% endfor %}
-<tbody>
-</table>
+
+{% for contribution in contributions %}
+<p>
+Donation {{contribution.index}}: {{contribution.amount}} {{contribution.currency}} {{contribution.date}}
+</p>
+{% endfor %}
+
+<p>
+If for whatever reason you wish to cancel your donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">easy cancellation instructions</a>.
+</p>
