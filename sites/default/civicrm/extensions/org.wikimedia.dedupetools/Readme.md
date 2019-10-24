@@ -19,11 +19,16 @@ These fields can't be used on large databases for a group dedupe for performance
  a John Smith we want to compare him with contacts with the same first & last name and at least one
  address field in common.
 
+ - merge resolvers - adds merge resolvers so some conflicts can be resolved in safe mode.
+ Currently only the Yes resolverr which allows to choose yes-no fields to resolve as 'YES'  - useful
+ for things like is_opt_out.
+ ![Resolvers](docs/images/Settings.png?raw=true "Deduper screen")
+
 - merge conflicts api - does anaylsis on current conflicted merges to look for patterns.
 
 **Note**
 
-There are a bunch of other api in there that I see as transitional. These should be
+The apis Merge.getcount & Merge.mark_duplicates should be
 seen as internal use only I'm working to get the logic out of the form layer in code & to expose if via an api so this & other extensions
  can interact with the deduping subsystem
 
