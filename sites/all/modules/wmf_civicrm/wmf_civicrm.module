@@ -3056,6 +3056,8 @@ function wmf_civicrm_normalizeUtf8String($original_string) {
  *
  * @return bool
  *   Has the conflict been resolved?
+ *
+ * @throws \CiviCRM_API3_Exception
  */
 function _wmf_civicrm_merge_resolve_preferred_language_conflict($fieldName, &$moveFieldValue, &$valueToKeep, &$valueToOverwrite, $contactToKeepID, $contactToDeleteID) {
   if ($fieldName !== 'preferred_language') {
@@ -3065,7 +3067,7 @@ function _wmf_civicrm_merge_resolve_preferred_language_conflict($fieldName, &$mo
   $valueToOverwrite = wmf_civicrm_get_language_db_value($valueToOverwrite);
 
   if (substr($valueToKeep, 0, 2) != substr($valueToOverwrite, 0, 2)) {
-    $lastDonor = civicrm_api3('Contribution', 'getvalue', array(
+    $lastDonor = civicrm_api3('Contribution', 'get', [
       'return' => 'contact_id',
       'contact_id' => array(
         'IN' => array(
@@ -3073,9 +3075,13 @@ function _wmf_civicrm_merge_resolve_preferred_language_conflict($fieldName, &$mo
           $contactToDeleteID,
         ),
       ),
+      'sequential' => 1,
       'options' => array('sort' => 'receive_date DESC', 'limit' => 1),
-    ));
-    if ($lastDonor == $contactToKeepID) {
+    ])['values'];
+    if (empty($lastDonor[0])) {
+      return TRUE;
+    }
+    if ($lastDonor[0]['contact_id'] == $contactToKeepID) {
       // We are resolving the conflict by keeping the language unchanged from our 'keeper' contact.
       // By default it will be trying to overwrite that value with the 'to-delete' contact
       // (and it would block that through the conflict process).
