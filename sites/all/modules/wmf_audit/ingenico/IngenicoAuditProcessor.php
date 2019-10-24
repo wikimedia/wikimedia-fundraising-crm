@@ -2,7 +2,6 @@
 
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\Ingenico\Audit\IngenicoAudit;
-use SmashPig\PaymentProviders\Ingenico\ReferenceData;
 use SmashPig\PaymentProviders\Ingenico\TokenizeRecurringJob;
 
 class IngenicoAuditProcessor extends BaseAuditProcessor {

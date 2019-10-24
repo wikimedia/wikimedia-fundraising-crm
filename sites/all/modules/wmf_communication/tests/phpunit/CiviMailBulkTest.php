@@ -1,9 +1,7 @@
 <?php
 namespace wmf_communication;
 
-use \CRM_Activity_BAO_Activity;
 use \CRM_Activity_BAO_ActivityTarget;
-use \CRM_Core_OptionGroup;
 use \CRM_Mailing_BAO_Recipients;
 use \CRM_Mailing_Event_BAO_Queue;
 use \CRM_Mailing_Event_BAO_Delivered;
