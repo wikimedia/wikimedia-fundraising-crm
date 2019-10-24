@@ -2,9 +2,7 @@
 
 require_once 'offline2civicrm.common.inc';
 
-use wmf_communication\Templating;
 use SmashPig\Core\UtcDate;
-use League\Csv\Reader;
 
 /**
  * Implementation of hook_menu().

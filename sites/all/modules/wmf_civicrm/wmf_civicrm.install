@@ -4948,3 +4948,15 @@ function wmf_civicrm_update_7915() {
     }
   }
 }
+
+/**
+ * Add indexes - these are present for new installs from 5.18.
+ *
+ * This will open up some much better deduping options - ie  dedupe
+ * recently modified.
+ */
+function wmf_civicrm_update_7920() {
+  civicrm_initialize();
+  $tables = ['civicrm_contact' => ['created_date', 'modified_date']];
+  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+}
