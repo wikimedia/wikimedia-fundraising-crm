@@ -21,7 +21,7 @@ class EoySummary {
     'job_id',
   ];
 
-  protected $batch_max = 100;
+  protected $batch = 100;
 
   protected $year;
 
@@ -38,7 +38,7 @@ class EoySummary {
 
   public function __construct($options = []) {
     $this->year = variable_get('wmf_eoy_target_year', NULL);
-    $this->batch_max = variable_get('wmf_eoy_batch_max', 100);
+    $this->batch = variable_get('wmf_eoy_batch', 100);
 
     foreach (self::$option_keys as $key) {
       if (array_key_exists($key, $options)) {
@@ -208,7 +208,7 @@ FROM {wmf_eoy_receipt_donor}
 WHERE
     status = 'queued'
     AND job_id = :id
-LIMIT {$this->batch_max}
+LIMIT {$this->batch}
 EOS;
     $result = db_query($sql, [':id' => $this->job_id]);
     $succeeded = 0;
