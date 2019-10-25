@@ -17,7 +17,6 @@ class EoySummary {
 
   static protected $option_keys = [
     'year',
-    'test',
     'batch',
     'job_id',
   ];
@@ -25,8 +24,6 @@ class EoySummary {
   protected $batch_max = 100;
 
   protected $year;
-
-  protected $test;
 
   protected $from_address;
 
@@ -42,7 +39,6 @@ class EoySummary {
   public function __construct($options = []) {
     $this->year = variable_get('wmf_eoy_target_year', NULL);
     $this->batch_max = variable_get('wmf_eoy_batch_max', 100);
-    $this->test = variable_get('wmf_eoy_test_mode', TRUE);
 
     foreach (self::$option_keys as $key) {
       if (array_key_exists($key, $options)) {
@@ -220,10 +216,6 @@ EOS;
 
     foreach ($result as $row) {
       $email = $this->render_letter($row);
-
-      if ($this->test) {
-        $email['to_address'] = variable_get('wmf_eoy_test_email', NULL);
-      }
 
       $success = $mailer->send($email);
 
