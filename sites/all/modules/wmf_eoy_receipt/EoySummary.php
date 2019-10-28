@@ -59,7 +59,12 @@ class EoySummary {
     self::$template_name = 'eoy_thank_you';
   }
 
-  //FIXME rename
+  /**
+   * FIXME rename
+   *
+   * @return int the job ID for use in scheduling email sends
+   * @throws \Exception
+   */
   public function calculate_year_totals() {
     $job_timestamp = date("YmdHis");
     db_insert('wmf_eoy_receipt_job')->fields([
