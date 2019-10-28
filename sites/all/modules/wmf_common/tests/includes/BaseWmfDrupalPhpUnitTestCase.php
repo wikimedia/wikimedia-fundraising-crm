@@ -8,7 +8,7 @@ use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 
-class BaseWmfDrupalPhpUnitTestCase extends PHPUnit_Framework_TestCase {
+class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
 
   use \Civi\Test\Api3TestTrait;
 
