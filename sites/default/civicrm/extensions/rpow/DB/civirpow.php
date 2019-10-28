@@ -125,7 +125,7 @@ class DB_civirpow extends DB_mysqli {
   public function tableInfo($result, $mode = NULL) {
     // Not sure if this is needed, but it's a fair precaution.
     $this->forceWriteMode();
-    return parent::tableInfo();
+    return parent::tableInfo($result, $mode);
   }
 
   /**
