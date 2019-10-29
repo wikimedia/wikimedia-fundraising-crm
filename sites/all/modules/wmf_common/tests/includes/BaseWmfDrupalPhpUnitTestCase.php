@@ -236,9 +236,9 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     }
   }
 
-  public function onNotSuccessfulTest($e) {
+  public function onNotSuccessfulTest(Throwable $t) {
     if (!PRINT_WATCHDOG_ON_TEST_FAIL) {
-      throw $e;
+      throw $t;
     }
     $output = "\nWatchdog messages:\n";
 
@@ -264,15 +264,15 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
       $output .= "{$result['timestamp']}, lvl {$result['severity']}, {$result['type']}: $message\n";
     }
 
-    if (method_exists($e, 'getMessage')) {
-      $accessible = \Wikimedia\TestingAccessWrapper::newFromObject($e);
-      $accessible->message = $e->getMessage() . $output;
+    if (method_exists($t, 'getMessage')) {
+      $accessible = \Wikimedia\TestingAccessWrapper::newFromObject($t);
+      $accessible->message = $t->getMessage() . $output;
     }
     else {
       echo $output;
     }
 
-    throw $e;
+    throw $t;
   }
 
   /**
