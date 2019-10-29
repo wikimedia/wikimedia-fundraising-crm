@@ -82,7 +82,7 @@ EOS;
       'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift'
     );
     $completedStatusId = CRM_Contribute_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution','contribution_status_id', 'Completed'
+      'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
     );
 
     $email_temp = <<<EOS
@@ -225,6 +225,7 @@ EOS;
       $success = $mailer->send($email);
 
       if ($success) {
+        $this->record_activities($email);
         $status = 'sent';
         $succeeded += 1;
       }
@@ -307,5 +308,22 @@ EOS;
       $language,
       $template_params + ['language' => $language]
     );
+  }
+
+  public function record_activities(array $email) {
+    $emailRecords = civicrm_api3('Email', 'get', [
+      'email' => $email['to_address'],
+      'is_primary' => TRUE,
+    ]);
+    foreach ($emailRecords['values'] as $emailRecord) {
+      civicrm_api3('Activity', 'create', [
+        'activity_type_id' => 'wmf_eoy_receipt_sent',
+        'source_contact_id' => $emailRecord['contact_id'],
+        'target_contact_id' => $emailRecord['contact_id'],
+        'assignee_contact_id' => $emailRecord['contact_id'],
+        'subject' => "Sent contribution summary receipt for year $this->year to {$email['to_address']}",
+        'details' => $email['plaintext'],
+      ]);
+    }
   }
 }
