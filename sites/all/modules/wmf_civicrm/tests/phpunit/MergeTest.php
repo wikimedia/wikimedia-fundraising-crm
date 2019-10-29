@@ -598,6 +598,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that punctuation conflicts are ignored.
    *
    * Bug T175748
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeResolvableConflictPunctuation() {
     $this->breedDuck(array('id' => $this->contactID, 'first_name' => 'alter. ego'));
@@ -605,7 +607,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
     $this->assertEquals(1, count($result['values']['merged']));
     $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
-    $this->assertEquals('alter. ego', $contact['first_name']);
+    $this->assertEquals('alter ego', $contact['first_name']);
   }
 
   /**

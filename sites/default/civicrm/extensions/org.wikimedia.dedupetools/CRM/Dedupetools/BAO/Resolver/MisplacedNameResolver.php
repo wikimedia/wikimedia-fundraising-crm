@@ -3,7 +3,7 @@
 use CRM_Dedupetools_ExtensionUtil as E;
 
 /**
- * Class CRM_Dedupetools_BAO_Resolver_BooleanYesResolver
+ * Class CRM_Dedupetools_BAO_Resolver_MisplacedNameResolver
  */
 class CRM_Dedupetools_BAO_Resolver_MisplacedNameResolver extends CRM_Dedupetools_BAO_Resolver {
 
