@@ -6,7 +6,6 @@ function wmf_eoy_receipt_drush_command() {
       'description' => 'Run end-of-year receipts generation, and send letters.  This is equivalent to running the following tasks in succession: wmf-eoy-calculate-summaries, wmf-eoy-send-letters',
       'options' => [
         'year' => 'Report year',
-        'test' => 'Test mode',
         'batch' => 'Batch size',
       ],
     ],
@@ -19,7 +18,6 @@ function wmf_eoy_receipt_drush_command() {
     'wmf-eoy-send-letters' => [
       'description' => 'Check job queue and send letters',
       'options' => [
-        'test' => 'Test mode',
         'job_id' => [
           'description' => 'Force reuse of an old job',
           'required' => TRUE,
