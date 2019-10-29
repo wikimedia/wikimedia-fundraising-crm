@@ -115,11 +115,7 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   public function testInitialResolution($isReverse) {
     $this->createDuplicateIndividuals([['first_name' => 'Bob M'], []]);
-    $toKeepContactID = $isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0];
-    $toDeleteContactID = $isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1];
-    $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $toKeepContactID, 'to_remove_id' => $toDeleteContactID])['values'];
-    $this->assertCount(1, $mergeResult['merged']);
-    $mergedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $toKeepContactID]);
+    $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Bob', $mergedContact['first_name']);
     $this->assertEquals('M', $mergedContact['middle_name']);
   }
@@ -136,11 +132,7 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   public function testInitialResolutionInLast($isReverse) {
     $this->createDuplicateIndividuals([['last_name' => 'M Smith'], []]);
-    $toKeepContactID = $isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0];
-    $toDeleteContactID = $isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1];
-    $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $toKeepContactID, 'to_remove_id' => $toDeleteContactID])['values'];
-    $this->assertCount(1, $mergeResult['merged']);
-    $mergedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $toKeepContactID]);
+    $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Bob', $mergedContact['first_name']);
     $this->assertEquals('M', $mergedContact['middle_name']);
     $this->assertEquals('Smith', $mergedContact['last_name']);
@@ -158,13 +150,45 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   public function testInitialResolutionNameIsInitial($isReverse) {
     $this->createDuplicateIndividuals([['last_name' => 'S', 'first_name' => 'B'], []]);
-    $toKeepContactID = $isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0];
-    $toDeleteContactID = $isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1];
-    $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $toKeepContactID, 'to_remove_id' => $toDeleteContactID])['values'];
-    $this->assertCount(1, $mergeResult['merged']);
-    $mergedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $toKeepContactID]);
+    $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Bob', $mergedContact['first_name']);
     $this->assertEquals('Smith', $mergedContact['last_name']);
+  }
+
+  /**
+   * Test resolving an initial in the first name.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMisplacedNameResolutionFullNameInFirstName($isReverse) {
+    $this->createDuplicateIndividuals([['last_name' => 'null', 'first_name' => 'Bob M Smith'], []]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Bob', $mergedContact['first_name']);
+    $this->assertEquals('Smith', $mergedContact['last_name']);
+    $this->assertEquals('M', $mergedContact['middle_name']);
+  }
+
+  /**
+   * Test resolving an initial in the first name.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMisplacedNameResolutionFullNameInLastName($isReverse) {
+    $this->createDuplicateIndividuals([['first_name' => 'null', 'last_name' => 'Bob M Smith'], []]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Bob', $mergedContact['first_name']);
+    $this->assertEquals('Smith', $mergedContact['last_name']);
+    $this->assertEquals('M', $mergedContact['middle_name']);
   }
 
   /**
@@ -184,6 +208,21 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
       $contactParam = array_merge($params, $contactParam);
       $this->ids['Contact'][$index] = $this->callAPISuccess('Contact', 'create', $contactParam)['id'];
     }
+  }
+
+  /**
+   * @param $isReverse
+   *
+   * @return array|int
+   * @throws \CRM_Core_Exception
+   */
+  protected function doMerge($isReverse) {
+    $toKeepContactID = $isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0];
+    $toDeleteContactID = $isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1];
+    $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $toKeepContactID, 'to_remove_id' => $toDeleteContactID])['values'];
+    $this->assertCount(1, $mergeResult['merged']);
+    $mergedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $toKeepContactID]);
+    return $mergedContact;
   }
 
 }

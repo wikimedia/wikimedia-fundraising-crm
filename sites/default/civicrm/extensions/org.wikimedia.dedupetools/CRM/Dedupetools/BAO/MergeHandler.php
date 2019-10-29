@@ -257,6 +257,9 @@ class CRM_Dedupetools_BAO_MergeHandler {
     $resolver = new CRM_Dedupetools_BAO_Resolver_BooleanYesResolver($this);
     $resolver->resolveConflicts();
 
+    $resolver = new CRM_Dedupetools_BAO_Resolver_MisplacedNameResolver($this);
+    $resolver->resolveConflicts();
+
     $resolver = new CRM_Dedupetools_BAO_Resolver_InitialResolver($this);
     $resolver->resolveConflicts();
   }
@@ -447,11 +450,31 @@ class CRM_Dedupetools_BAO_MergeHandler {
    *
    * @param string $fieldName
    * @param mixed $value
+   * @param $isForContactToBeKept
+   */
+  public function setContactValue(string $fieldName, $value, $isForContactToBeKept) {
+    $moveField = 'move_' . $fieldName;
+    $contactField = $isForContactToBeKept ? 'main' : 'other';
+    $otherContactField = $isForContactToBeKept ? 'other' : 'main';
+    $this->dedupeData['migration_info']['rows'][$moveField][$contactField] = $value;
+    $this->dedupeData['migration_info'][$contactField . '_details'][$fieldName] = $value;
+
+    if ($value === $this->dedupeData['migration_info']['rows'][$moveField][$otherContactField]) {
+      $this->setResolvedValue($fieldName, $value);
+    }
+  }
+
+  /**
+   * Set the specified value as the one to use during merge.
+   *
+   * Note that if this resolves a conflict setResolvedValue should be used.
+   *
+   * @param string $fieldName
+   * @param mixed $value
    */
   public function setValue(string $fieldName, $value) {
     $moveField = 'move_' . $fieldName;
     $this->dedupeData['migration_info'][$moveField] = $value;
-    $this->dedupeData['rows'][$moveField]['other'] = $value;
+    $this->dedupeData['migration_info']['rows'][$moveField]['other'] = $value;
   }
-
 }
