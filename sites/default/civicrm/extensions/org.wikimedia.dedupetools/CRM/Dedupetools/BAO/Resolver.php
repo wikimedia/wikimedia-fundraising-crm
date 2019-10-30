@@ -4,6 +4,7 @@ use CRM_Dedupetools_ExtensionUtil as E;
 
 abstract class CRM_Dedupetools_BAO_Resolver {
 
+  abstract public function resolveConflicts();
   /**
    * Object to prover merge handling.
    *
