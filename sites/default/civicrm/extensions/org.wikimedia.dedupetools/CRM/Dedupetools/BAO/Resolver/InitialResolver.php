@@ -35,7 +35,8 @@ class CRM_Dedupetools_BAO_Resolver_InitialResolver extends CRM_Dedupetools_BAO_R
     $firstNameParts = explode(' ', $contact1['first_name']);
     if (isset($firstNameParts[1]) && strlen($firstNameParts[1]) === 1) {
       // First name is 'Bob M' - let's try M as an initial.
-      if ($firstNameParts[0] === $contact2['first_name'] && empty($contact2['middle_name'])) {
+      if ($firstNameParts[0] === $contact2['first_name']
+        && (empty($contact2['middle_name']) || $contact2['middle_name'] === $firstNameParts[1])) {
         $this->setResolvedValue('first_name', $firstNameParts[0]);
         $this->setValue('middle_name', $firstNameParts[1]);
       }
