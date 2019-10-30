@@ -76,7 +76,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7705();
   wmf_civicrm_update_7726();
   wmf_civicrm_update_7890();
-  wmf_civicrm_update_7915();
 }
 
 /**
