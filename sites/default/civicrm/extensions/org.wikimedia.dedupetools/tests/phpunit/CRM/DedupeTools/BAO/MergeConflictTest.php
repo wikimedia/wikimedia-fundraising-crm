@@ -192,6 +192,23 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test resolving an initial in the first name.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMisplacedNameResolutionFullRepeatedInLastName($isReverse) {
+    $this->createDuplicateIndividuals([['first_name' => 'Bob', 'last_name' => 'Bob Max Smith'], ['last_name' => 'Max Smith']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Bob', $mergedContact['first_name']);
+    $this->assertEquals('Max Smith', $mergedContact['last_name']);
+  }
+
+  /**
    * Test resolving an initial in the first name with punctuation.
    *
    * @param bool $isReverse
