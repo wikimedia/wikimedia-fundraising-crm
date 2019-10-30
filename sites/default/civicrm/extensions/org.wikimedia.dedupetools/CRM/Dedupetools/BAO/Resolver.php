@@ -2,7 +2,7 @@
 
 use CRM_Dedupetools_ExtensionUtil as E;
 
-class CRM_Dedupetools_BAO_Resolver {
+abstract class CRM_Dedupetools_BAO_Resolver {
 
   /**
    * Object to prover merge handling.
