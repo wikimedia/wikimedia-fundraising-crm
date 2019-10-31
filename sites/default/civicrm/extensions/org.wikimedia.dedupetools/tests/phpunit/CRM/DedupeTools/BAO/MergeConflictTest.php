@@ -51,7 +51,7 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * Test that a boolean field is resolved if set.
    */
   public function testResolveBooleanFields() {
-   $this->createDuplicateIndividuals([['do_not_mail' => 0], ['do_not_mail' => 1]]);
+    $this->createDuplicateIndividuals([['do_not_mail' => 0], ['do_not_mail' => 1]]);
     $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['Contact'][0], 'to_remove_id' => $this->ids['Contact'][1]]);
     $mergedContacts = $this->callAPISuccess('Contact', 'get', ['id' => ['IN' => $this->ids['Contact']]])['values'];
 
@@ -104,6 +104,27 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test resolving an initial in the first name.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testInitialResolution($isReverse) {
+    $this->createDuplicateIndividuals([['first_name' => 'Bob M'], []]);
+    $toKeepContactID = $isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0];
+    $toDeleteContactID = $isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1];
+    $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $toKeepContactID, 'to_remove_id' => $toDeleteContactID])['values'];
+    $this->assertCount(1, $mergeResult['merged']);
+    $mergedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $toKeepContactID]);
+    $this->assertEquals('Bob', $mergedContact['first_name']);
+    $this->assertEquals('M', $mergedContact['middle_name']);
+  }
+
+  /**
    * Create individuals to dedupe.
    *
    * @param array $contactParams
@@ -111,7 +132,7 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   private function createDuplicateIndividuals($contactParams = [[], []]) {
     $params = [
-      'first_name' => 'bob',
+      'first_name' => 'Bob',
       'last_name' => 'Smith',
       'contact_type' => 'Individual',
       'email' => 'bob@example.com',

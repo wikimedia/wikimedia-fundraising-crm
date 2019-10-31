@@ -41,9 +41,23 @@ abstract class CRM_Dedupetools_BAO_Resolver {
   }
 
   /**
+   * Set the specified value as the one to use during merge.
+   *
+   * Note that if this resolves a conflict setResolvedValue should be used.
+   *
+   * @param string $fieldName
+   * @param mixed $value
+   */
+  protected function setValue($fieldName, $value) {
+    $this->mergeHandler->setValue($fieldName, $value);
+  }
+
+  /**
    * Set the given value as the value to resolve the conflict with.
    *
    * @param string $fieldName
+   * @param string $location
+   * @param string $block
    * @param mixed $value
    */
   protected function setResolvedLocationValue($fieldName, $location, $block, $value) {
@@ -57,8 +71,27 @@ abstract class CRM_Dedupetools_BAO_Resolver {
    *
    * @return array
    */
-  protected function getEmailConflicts($emailBlockNumber) {
+  protected function getEmailConflicts($emailBlockNumber):array {
     return $this->mergeHandler->getEmailConflicts($emailBlockNumber);
+  }
+
+  /**
+   * Is there a conflict in a field used to name an individual.
+   */
+  protected function hasIndividualNameFieldConflict():bool {
+    return $this->mergeHandler->hasIndividualNameFieldConflict();
+  }
+
+  /**
+   * Get the fields that make up the name of an individual.
+   *
+   * @param bool $isForContactToBeKept
+   *   Is the value for the contact to be retained.
+   *
+   * @return array
+   */
+  protected function getIndividualNameFieldValues($isForContactToBeKept): array {
+    return $this->mergeHandler->getIndividualNameFieldValues($isForContactToBeKept);
   }
 
 }
