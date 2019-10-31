@@ -133,6 +133,59 @@ class CRM_Dedupetools_BAO_MergeHandler {
   }
 
   /**
+   * Get the fields that make up the name of an individual.
+   *
+   * @return array
+   */
+  public function getIndividualNameFields():array {
+    return ['first_name', 'last_name', 'middle_name'];
+  }
+
+  /**
+   * Get the fields that make up the name of an individual.
+   *
+   * @param bool $isForContactToBeKept
+   *   Is the value for the contact to be retained.
+   *
+   * @return array
+   */
+  public function getIndividualNameFieldValues($isForContactToBeKept):array {
+    $return = [];
+    foreach ($this->getIndividualNameFields() as $fieldName) {
+      $return[$fieldName] = $this->getValueForField($fieldName, $isForContactToBeKept);
+    }
+    return $return ;
+  }
+
+  /**
+   * Get the value for the given field.
+   *
+   * @param string $fieldName
+   * @param bool $isForContactToBeKept
+   *   Is the value for the contact to be retained.
+   *
+   * @return mixed
+   */
+  public function getValueForField($fieldName, $isForContactToBeKept) {
+    $contactDetail = $isForContactToBeKept ? $this->dedupeData['migration_info']['main_details'] : $this->dedupeData['migration_info']['other_details'];
+    return $contactDetail[$fieldName];
+  }
+
+  /**
+   * Is there a conflict in a field used to name an individual.
+   *
+   * @return bool
+   */
+  public function hasIndividualNameFieldConflict():bool {
+    foreach ($this->getIndividualNameFields() as $nameField) {
+      if ($this->isFieldInConflict($nameField)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
    * @return array
    */
   public function getLocationBlocks(): array {
@@ -203,6 +256,9 @@ class CRM_Dedupetools_BAO_MergeHandler {
     // already-determined conflicts.
     $resolver = new CRM_Dedupetools_BAO_Resolver_BooleanYesResolver($this);
     $resolver->resolveConflicts();
+
+    $resolver = new CRM_Dedupetools_BAO_Resolver_InitialResolver($this);
+    $resolver->resolveConflicts();
   }
 
   /**
@@ -219,7 +275,7 @@ class CRM_Dedupetools_BAO_MergeHandler {
    *
    * @return array of keys of conflicted fields.
    */
-  public function getFieldsInConflict() {
+  public function getFieldsInConflict():array {
     $fields = [];
     foreach (array_keys($this->dedupeData['fields_in_conflict']) as $key) {
       $fields[] = str_replace('move_', '', $key);
@@ -228,15 +284,27 @@ class CRM_Dedupetools_BAO_MergeHandler {
   }
 
   /**
+   * Is there a conflict on the specified field.
+   *
+   * @param string $fieldName
+   *
+   * @return bool
+   */
+  public function isFieldInConflict($fieldName):bool {
+    $conflictFields = $this->getFieldsInConflict();
+    return in_array($fieldName, $conflictFields, TRUE);
+  }
+
+  /**
    * Resolve conflict on field using the specified value.
+   *
    * @param string $fieldName
    * @param mixed $value
    */
   public function setResolvedValue($fieldName, $value) {
     $moveField = 'move_' . $fieldName;
     unset($this->dedupeData['fields_in_conflict'][$moveField]);
-    $this->dedupeData['migration_info'][$moveField] = $value;
-    $this->dedupeData['rows'][$moveField]['other'] = $value;
+    $this->setValue($fieldName, $value);
   }
 
   /**
@@ -370,6 +438,20 @@ class CRM_Dedupetools_BAO_MergeHandler {
       $this->locationBlocksToDelete[$location][$block] = $this->getLocationBlockValue($location, $block, FALSE, 'id');
     }
     unset($this->dedupeData['fields_in_conflict']['move_location_' . $location . '_' . $block]);
+  }
+
+  /**
+   * Set the specified value as the one to use during merge.
+   *
+   * Note that if this resolves a conflict setResolvedValue should be used.
+   *
+   * @param string $fieldName
+   * @param mixed $value
+   */
+  public function setValue(string $fieldName, $value) {
+    $moveField = 'move_' . $fieldName;
+    $this->dedupeData['migration_info'][$moveField] = $value;
+    $this->dedupeData['rows'][$moveField]['other'] = $value;
   }
 
 }
