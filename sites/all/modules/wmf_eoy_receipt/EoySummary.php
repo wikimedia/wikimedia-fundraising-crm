@@ -17,16 +17,13 @@ class EoySummary {
 
   static protected $option_keys = [
     'year',
-    'test',
     'batch',
     'job_id',
   ];
 
-  protected $batch_max = 100;
+  protected $batch = 100;
 
   protected $year;
-
-  protected $test;
 
   protected $from_address;
 
@@ -41,8 +38,7 @@ class EoySummary {
 
   public function __construct($options = []) {
     $this->year = variable_get('wmf_eoy_target_year', NULL);
-    $this->batch_max = variable_get('wmf_eoy_batch_max', 100);
-    $this->test = variable_get('wmf_eoy_test_mode', TRUE);
+    $this->batch = variable_get('wmf_eoy_batch', 100);
 
     foreach (self::$option_keys as $key) {
       if (array_key_exists($key, $options)) {
@@ -59,7 +55,12 @@ class EoySummary {
     self::$template_name = 'eoy_thank_you';
   }
 
-  //FIXME rename
+  /**
+   * FIXME rename
+   *
+   * @return int the job ID for use in scheduling email sends
+   * @throws \Exception
+   */
   public function calculate_year_totals() {
     $job_timestamp = date("YmdHis");
     db_insert('wmf_eoy_receipt_job')->fields([
@@ -81,7 +82,7 @@ EOS;
       'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift'
     );
     $completedStatusId = CRM_Contribute_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution','contribution_status_id', 'Completed'
+      'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
     );
 
     $email_temp = <<<EOS
@@ -212,7 +213,7 @@ FROM {wmf_eoy_receipt_donor}
 WHERE
     status = 'queued'
     AND job_id = :id
-LIMIT {$this->batch_max}
+LIMIT {$this->batch}
 EOS;
     $result = db_query($sql, [':id' => $this->job_id]);
     $succeeded = 0;
@@ -221,13 +222,10 @@ EOS;
     foreach ($result as $row) {
       $email = $this->render_letter($row);
 
-      if ($this->test) {
-        $email['to_address'] = variable_get('wmf_eoy_test_email', NULL);
-      }
-
       $success = $mailer->send($email);
 
       if ($success) {
+        $this->record_activities($email);
         $status = 'sent';
         $succeeded += 1;
       }
@@ -279,6 +277,9 @@ EOS;
     usort($contributions, function($c1, $c2) {
       return $c1['date'] <=> $c2['date'];
     });
+    foreach($contributions as $index=>$contribution) {
+      $contributions[$index]['index'] = $index + 1;
+    }
 
     $template_params = [
       'name' => $row->name,
@@ -305,7 +306,24 @@ EOS;
       self::$templates_dir,
       self::$template_name,
       $language,
-      $template_params
+      $template_params + ['language' => $language]
     );
+  }
+
+  public function record_activities(array $email) {
+    $emailRecords = civicrm_api3('Email', 'get', [
+      'email' => $email['to_address'],
+      'is_primary' => TRUE,
+    ]);
+    foreach ($emailRecords['values'] as $emailRecord) {
+      civicrm_api3('Activity', 'create', [
+        'activity_type_id' => 'wmf_eoy_receipt_sent',
+        'source_contact_id' => $emailRecord['contact_id'],
+        'target_contact_id' => $emailRecord['contact_id'],
+        'assignee_contact_id' => $emailRecord['contact_id'],
+        'subject' => "Sent contribution summary receipt for year $this->year to {$email['to_address']}",
+        'details' => $email['plaintext'],
+      ]);
+    }
   }
 }

@@ -2546,13 +2546,6 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
 function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, $otherId) {
   $dbFieldName = str_replace('move_', '', $moveField);
 
-  if (_wmf_civicrm_merge_is_communication_boolean($moveField)) {
-    unset($refs['fields_in_conflict'][$moveField]);
-    $refs['migration_info'][$moveField] = 1;
-    $refs['migration_info']['rows'][$moveField]['other'] = ts('Yes');
-    return;
-  }
-
   if ($moveField == 'move_contact_source') {
     unset($refs['fields_in_conflict'][$moveField]);
     return;
@@ -2620,29 +2613,6 @@ function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, 
     }
     unset($refs['fields_in_conflict'][$moveField]);
   }
-}
-
-/**
- * Is this one of the communication boolean fields.
- *
- * If it is we will give 'opt out' precedence as that indicates a conscious
- * choice.
- *
- * @param string $moveField
- *
- * @return bool
- */
-function _wmf_civicrm_merge_is_communication_boolean($moveField) {
-  if (in_array($moveField, array(
-    'move_do_not_email',
-    'move_is_opt_out',
-    'move_do_not_mail',
-    'move_do_not_phone',
-    'move_do_not_sms',
-  ))) {
-    return TRUE;
-  }
-  return FALSE;
 }
 
 /**
@@ -3193,6 +3163,12 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
   if (!$lastDonor['count']) {
     return;
   }
+  // The merge handler is in dedupe tools - we are migrating this code over to that extension.
+  // for now our goal is NOT to touch any merges being managed by that extension. That extension will
+  // currently ONLY manage emails which are blocked as merge conflicts due on_hold being different.
+  // This code has never handled that so the goal is to not touch any emails IF that extension is touching them.
+  /* var CRM_Dedupetools_BAO_MergeHandler */
+  $mergeHandler = $migrationInfo['merge_handler'];
   $lastDonorID = $lastDonor['values'][$lastDonor['id']]['contact_id'];
   $contactIDToBeKeptIsMostRecentDonor = ($lastDonorID == $mainId) ? TRUE : FALSE;
   // Since the last donor is not the main ID we are prioritising info from the last donor.
@@ -3209,7 +3185,14 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
   $primaryAddressCandidates = array();
 
   foreach ($higherPriorityLocationBlocks as $blockType => $blocks) {
-    foreach ($blocks as $block) {
+    foreach ($blocks as $blockIndex => $block) {
+      if ($mergeHandler->isResolvingLocationConflictFor($blockType)) {
+        // We are not going to deal with conflict resolution here because the merge handler is on it.
+        // In practice this could currently only mean that there is a conflict on an email address
+        // where they only differ in their on_hold handling & the mergeHandler has that in hand.
+        // Any other form of conflict is location currently handled in this section & not handled there.
+        continue;
+      }
       if ($block['is_primary'] == 1 && isset($blocksDAO[$blockType]['update'][$block['id']])) {
         unset($blocksDAO[$blockType]['update'][$block['id']]->is_primary);
       }

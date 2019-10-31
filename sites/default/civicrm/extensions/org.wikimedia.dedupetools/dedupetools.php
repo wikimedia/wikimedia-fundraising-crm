@@ -235,6 +235,15 @@ function dedupetools_civicrm_navigationMenu(&$menu) {
     'separator' => 0,
   ]);
   _dedupetools_civix_navigationMenu($menu);
+  _dedupetools_civix_insert_navigation_menu($menu, 'Administer/Customize Data and Screens', [
+    'label' => ts('Deduper Conflict Resolution', array('domain' => 'org.wikimedia.dedupetools')),
+    'name' => 'dedupe_settings',
+    'url' => 'civicrm/admin/setting/deduper',
+    'permission' => 'administer CiviCRM',
+    'operator' => 'OR',
+    'separator' => 0,
+  ]);
+  _dedupetools_civix_navigationMenu($menu);
 }
 
 /**
@@ -260,5 +269,60 @@ function dedupetools_civicrm_alterAPIPermissions($entity, $action, &$params, &$p
     'create' => ['merge duplicate contacts'],
   ];
 
+
+}
+
+/**
+ * Implementation of hook_civicrm_merge().
+ *
+ * @param string $type
+ * @param array $refs
+ * @param int $mainId
+ * @param int $otherId
+ * @param array $tables
+ */
+function dedupetools_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
+  switch ($type) {
+    case 'batch' :
+    case 'form' :
+      // Randomise log connection id. This ensures reverts can be done without reverting the whole batch if logging is enabled.
+      CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(
+        1 => array(
+          uniqid('rand', FALSE) . CRM_Utils_String::createRandom(CRM_Utils_String::ALPHANUMERIC, 4),
+          'String',
+        ),
+      ));
+
+      if ($type === 'batch') {
+        $merger = new CRM_Dedupetools_BAO_MergeHandler($refs, $mainId, $otherId, $type);
+        $merger->resolve();
+        $refs = $merger->getDedupeData();
+        $refs['migration_info']['merge_handler'] = $merger;
+      }
+  }
+}
+
+/**
+ * Alter location data 'planned' for merge.
+ *
+ * @param array $blocksDAO
+ *   Array of location DAO to be saved. These are arrays in 2 keys 'update' &
+ *   'delete'.
+ * @param int $mainId
+ *   Contact_id of the contact that survives the merge.
+ * @param int $otherId
+ *   Contact_id of the contact that will be absorbed and deleted.
+ * @param array $migrationInfo
+ *   Calculated migration info, informational only.
+ */
+function dedupetools_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $otherId, $migrationInfo) {
+  // Do not override form mode.
+  if ($migrationInfo['context'] !== 'form' && isset($migrationInfo['merge_handler'])) {
+    /* @var CRM_Dedupetools_BAO_MergeHandler $merger */
+    $merger = $migrationInfo['merge_handler'];
+    $merger->setLocationBlocks($blocksDAO);
+    $merger->resolveLocations();
+    $blocksDAO = $merger->getLocationBlocks();
+  }
 
 }

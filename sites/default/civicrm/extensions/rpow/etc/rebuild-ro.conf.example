@@ -1,0 +1,22 @@
+#!/bin/bash
+
+## If you need to frequently call "rebuild-ro", then it may be easier to
+## create the file "defaults.sh" with a list of preferences.
+
+## Location of the temporary dump file
+# TMP_SQL_FILE=/tmp/full-data.mysql
+
+## Location of the default site-root
+# SITE_ROOT=/home/myuser/buildkit/build/dmaster
+
+## Relative path for the settings file
+# DEV_SETTINGS_PHP=sites/default/civicrm.settings.d/pre.d/100-civirpow.php
+# DEV_SETTINGS_PHP=wp-content/uploads/civicrm/civicrm.settings.d/pre.d/100-civirpow.php
+
+## When creating a read-only user, set the username+password to:
+# CIVIRO_USER=civiro
+# CIVIRO_PASS=r3ad0n1yt0ps3cr3t
+
+## Specify which tables should be writeable by civiro
+# WRITE_TABLES=
+# NO_WRITEABLE_TABLES=1

@@ -1,0 +1,16 @@
+#!/usr/bin/env php
+<?php
+
+if (PHP_SAPI !== 'cli') {
+  throw new \RuntimException("classify.php can only be run from command line.");
+}
+
+require_once dirname(__DIR__) . '/autoload.php';
+
+$parts = $argv;
+array_shift($parts);
+$expr = implode(' ', $parts);
+
+$c = new CRM_Rpow_Classifier();
+
+printf("EXPRESSION: %s\nCLASSIFICATION:%s\n", $expr, $c->classify($expr));

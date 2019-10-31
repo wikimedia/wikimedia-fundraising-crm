@@ -1,0 +1,220 @@
+#!/bin/bash
+
+CIVIRPOWBIN="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+CIVIRPOWDIR="$(dirname $CIVIRPOWBIN)"
+CMS_SETTINGS_UPHP=sites/default/drupal.settings.d/post.d/500-rpow-cms.php
+CIVI_SETTINGS_UPHP=sites/default/civicrm.settings.d/pre.d/100-rpow-civi.php
+SITE_ROOT=
+RUNDB_TMP=/tmp
+#RUNDB_URL=https://github.com/totten/rundb/archive/master.tar.gz
+RUNDB_URL=https://github.com/totten/rundb/archive/401d9f80f26d47cf6b739f07439846456d362c48.tar.gz
+
+CIVI_DRIVER_TYPE=civirpow
+CIVI_MASTER_CRED='root:@127.0.0.1:3330/civi'
+CIVI_SLAVE_CRED='reader:@127.0.0.1:3331/civi'
+CMS_MASTER_CRED='root;;127.0.0.1;3330;cms'
+CMS_SLAVE_CRED='reader;;127.0.0.1;3331;cms'
+
+######################################################
+## Helpers
+
+function echo_step() {
+  echo "[[ $@ ]]"
+}
+
+function echo_error() {
+  echo "Error: $@" >&2
+}
+
+function echo_fatal() {
+  echo_error "$@"
+  exit 1
+}
+
+function show_help() {
+  PROG=$(basename "$0")
+  echo "usage: $PROG [-r <site-root>] [-d <mysql|civirpow>] [--tmp <path>] [actions...]"
+  echo
+  echo "actions:"
+  echo "  fg       Run DBMS on a temp folder in foreground"
+  echo "  on       Create config files in ($CIVI_SETTINGS_UPHP, $CMS_SETTINGS_UPHP)."
+  echo "  off      Remove config files"
+  echo "  copy     Copy data from AMP to rundb"
+  echo
+  echo "examples:"
+
+  local exSite='~/buildkit/build/dmaster'
+  [ -d "$HOME/bknix/build/" ] && exSite='~/bknix/build/dmaster'
+  echo "  $PROG -r $exSite fg"
+  echo "  $PROG -r $exSite copy on"
+}
+
+function render_rpow_civi_settings() {
+  cat <<EOSETTING
+<?php
+require_once '$CIVIRPOWDIR/autoload.php';
+rpow_init([
+  'masters' => ['mysql://${CIVI_MASTER_CRED}?new_link=true'],
+  'slaves' => ['mysql://${CIVI_SLAVE_CRED}?new_link=true'],
+]);
+EOSETTING
+}
+
+function render_mysql_civi_settings() {
+  cat <<EOSETTING
+<?php
+define('CIVICRM_DSN', 'mysql://${CIVI_MASTER_CRED}?new_link=true');
+EOSETTING
+}
+
+function render_drupal_settings() {
+  cat <<EOSETTING
+<?php
+\$_database_parts = explode(";", "$CMS_MASTER_CRED");
+\$databases['default']['default'] =  array(
+      'database' => \$_database_parts[4],
+      'username' => \$_database_parts[0],
+      'password' => \$_database_parts[1],
+      'host' =>  \$_database_parts[2],
+      'port' =>  \$_database_parts[3],
+      'driver' => 'mysql',
+      'prefix' => '',
+);
+EOSETTING
+}
+
+function cmd_config() {
+  [ -n "$SITE_ROOT" -a -d "$SITE_ROOT" ] || echo_fatal "Could not find site root: $SITE_ROOT"
+  pushd "$SITE_ROOT" >> /dev/null
+
+    echo_step "Create $CIVI_SETTINGS_UPHP"
+    mkdir -p $(dirname "$CIVI_SETTINGS_UPHP")
+    case "$CIVI_DRIVER_TYPE" in
+      civirpow|rpow) render_rpow_civi_settings > "$CIVI_SETTINGS_UPHP" ;;
+      mysql|mysqli) render_mysql_civi_settings > "$CIVI_SETTINGS_UPHP" ;;
+      *) echo_fatal "Unrecognized driver type" ;;
+    esac
+
+    echo_step "Create $CMS_SETTINGS_UPHP"
+    mkdir -p $(dirname "$CMS_SETTINGS_UPHP")
+    render_drupal_settings > "$CMS_SETTINGS_UPHP"
+
+  popd >> /dev/null
+}
+
+function cmd_enable() {
+  [ -n "$SITE_ROOT" -a -d "$SITE_ROOT" ] || echo_fatal "Could not find site root: $SITE_ROOT"
+  pushd "$SITE_ROOT" >> /dev/null
+    echo_step "Enable rpow module"
+    set -x
+      cv en rpow
+    set +x
+  popd >> /dev/null
+}
+
+function cmd_fg() {
+  pushd "$RUNDB_TMP" >> /dev/null
+    echo_step "Launching MySQL daemons in $RUNDB_TMP..."
+    set -x
+      nix-shell --pure "$RUNDB_URL" --command clean-start
+    set +x
+  popd  >> /dev/null
+}
+
+function cmd_copy() {
+  [ -n "$SITE_ROOT" -a -d "$SITE_ROOT" ] || echo_fatal "Could not find site root: $SITE_ROOT"
+  pushd "$RUNDB_TMP" >> /dev/null
+    echo_step "Copy Civi DB from amp to rundb"
+    set -x
+      amp sql:dump -r "$SITE_ROOT" -N civi | nix-shell --pure "$RUNDB_URL" --command 'load-db civi'
+    set +x
+    echo_step "Copy CMS DB from amp to rundb"
+    set -x
+      amp sql:dump -r "$SITE_ROOT" -N cms | nix-shell --pure "$RUNDB_URL" --command 'load-db cms'
+    set +x
+  popd  >> /dev/null
+}
+
+function cmd_clean() {
+  [ -n "$SITE_ROOT" -a -d "$SITE_ROOT" ] || echo_fatal "Could not find site root: $SITE_ROOT"
+  pushd "$SITE_ROOT" >> /dev/null
+
+    for FILE in "$CIVI_SETTINGS_UPHP" "$CMS_SETTINGS_UPHP" ; do
+      if [ -f "$FILE" ]; then
+        echo_step "Remove $FILE"
+        rm -f "$FILE"
+      else
+        echo_step "Skip $FILE - Does not exist"
+      fi
+    done
+
+  popd >> /dev/null
+}
+
+function check_preconditions() {
+  if [ -z "$(which nix-shell)" ]; then
+    echo_error "Command not found: nix-shell"
+    echo_error "Please install nix package manager: https://nixos.org/nix/"
+    exit 1
+  fi
+  if [ -z "$(which amp)" ]; then
+    echo_error "Command not found: amp"
+    exit 1
+  fi
+}
+
+######################################################
+## Parse
+
+function main() {
+  check_preconditions
+
+  local value=
+  local has_action=
+
+  while [ -n "$1" ]; do
+    value="$1"
+    shift
+
+    case "$value" in
+      -r|--root)
+        SITE_ROOT="$1"
+        shift
+        ;;
+
+      -d|--driver)
+        CIVI_DRIVER_TYPE="$1"
+        shift
+        ;;
+
+      --tmp)
+        RUNDB_TMP="$1"
+        shift
+        ;;
+
+      -h|--help|-?|help)
+        show_help
+        exit
+        ;;
+
+      on)		has_action=1; cmd_config ;;
+      off)		has_action=1; cmd_clean ;;
+      fg)		has_action=1; cmd_fg ;;
+      copy) 		has_action=1; cmd_copy ;;
+
+      *)
+        echo "unrecognized option: $value"
+        show_help
+        exit 1
+        ;;
+    esac
+  done
+
+  if [ -z "$has_action" ]; then
+    show_help
+    exit 1
+  fi
+}
+
+######################################################
+main "$@"
