@@ -43,6 +43,20 @@ abstract class CRM_Dedupetools_BAO_Resolver {
   /**
    * Set the specified value as the one to use during merge.
    *
+   * Note that if this resolves a conflict then the conflict
+   * will be removed.
+   *
+   * @param string $fieldName
+   * @param mixed $value
+   * @param bool $isContactToKeep
+   */
+  protected function setContactValue($fieldName, $value, $isContactToKeep) {
+    $this->mergeHandler->setContactValue($fieldName, $value, $isContactToKeep);
+  }
+
+  /**
+   * Set the specified value as the one to use during merge.
+   *
    * Note that if this resolves a conflict setResolvedValue should be used.
    *
    * @param string $fieldName
@@ -73,6 +87,17 @@ abstract class CRM_Dedupetools_BAO_Resolver {
    */
   protected function getEmailConflicts($emailBlockNumber):array {
     return $this->mergeHandler->getEmailConflicts($emailBlockNumber);
+  }
+
+  /**
+   * Is there a conflict on the specified field.
+   *
+   * @param string $fieldName
+   *
+   * @return bool
+   */
+  protected function isFieldInConflict($fieldName):bool {
+    return $this->mergeHandler->isFieldInConflict($fieldName);
   }
 
   /**
