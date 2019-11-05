@@ -4,6 +4,7 @@ function wmf_eoy_receipt_install() {
   wmf_eoy_receipt_update_7000();
   wmf_eoy_receipt_update_7001();
   wmf_eoy_receipt_update_7002();
+  wmf_eoy_receipt_update_7003();
 }
 
 function wmf_eoy_receipt_update_7000() {
@@ -60,4 +61,12 @@ function wmf_eoy_receipt_update_7002() {
     'description' => 'Sent an email receipt summarizing all donations in a given year',
     'option_group_id' => 'activity_type',
   ]);
+}
+
+/**
+ * Set our default from name and address for the EOY summary
+ */
+function wmf_eoy_receipt_update_7003() {
+  variable_set('wmf_eoy_from_name', 'Katherine Maher, Wikimedia Foundation');
+  variable_set('wmf_eoy_from_address', 'donate@wikimedia.org');
 }
