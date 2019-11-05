@@ -1812,30 +1812,6 @@ function wmf_civicrm_get_country_id($raw) {
   return FALSE;
 }
 
-/**
- * Find correct state for insertion
- *
- * When passing CiviCRM a state abbreviation, odd things can happen - like
- * getting the right abbreviation, but the wrong state So we'll pull back the
- * correct state/province name based off of a user's country/state abbreviation
- */
-function wmf_civicrm_get_state($country, $state) {
-  if (strlen($country) == 2) {
-    $query = "SELECT s.name AS state_name FROM civicrm_country c, civicrm_state_province s WHERE s.country_id=c.id AND c.iso_code = :country AND s.abbreviation = :state";
-  }
-  else {
-    $query = "SELECT s.name AS state_name FROM civicrm_country c, civicrm_state_province s WHERE s.country_id=c.id AND c.name = :country AND s.abbreviation = :state";
-  }
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-  $result = db_query($query, array(':country' => $country, ':state' => $state));
-  if ($result->rowCount() === 1) {
-    $state = $result->fetch()->state_name;
-  }
-
-  return $state;
-}
-
 function wmf_civicrm_get_state_id($country_id, $state) {
   $query = <<<EOS
 SELECT id
