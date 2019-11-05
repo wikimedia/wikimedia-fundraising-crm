@@ -1812,26 +1812,33 @@ function wmf_civicrm_get_country_id($raw) {
   return FALSE;
 }
 
+/**
+ * Get the state id for the named state in the given country.
+ *
+ * @param int $country_id
+ * @param string $state
+ *
+ * @return int|null
+ */
 function wmf_civicrm_get_state_id($country_id, $state) {
-  $query = <<<EOS
-SELECT id
+  $stateID = CRM_Core_DAO::singleValueQuery('
+  SELECT id
 FROM civicrm_state_province s
 WHERE
-    s.country_id = :country_id
-    AND ( s.abbreviation = :state OR s.name = :state )
-EOS;
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-  $result = db_query($query, array(
-    ':country_id' => $country_id,
-    ':state' => $state,
-  ));
-  if ($result->rowCount() === 1) {
-    return $result->fetch()->id;
+    s.country_id = %1
+    AND ( s.abbreviation = %2 OR s.name = %3)
+  ', [
+    1 => [$country_id, 'String'],
+    2 => [$state, 'String'],
+    3 => [$state, 'String'],
+  ]);
+  if ($stateID) {
+    return (int) $stateID;
   }
+
   watchdog('wmf_civicrm',
     "Cannot find state: [%state] (country %country)",
-    array('%state' => $state, '%country' => $country_id),
+    ['%state' => $state, '%country' => $country_id],
     WATCHDOG_NOTICE
   );
 }
