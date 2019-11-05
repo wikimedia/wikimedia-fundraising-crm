@@ -7,6 +7,30 @@
 function wmf_install_add_missing_payment_instruments() {
   civicrm_initialize();
   wmf_civicrm_create_option_values('payment_instrument', wmf_install_get_payment_instruments());
+  $depositFinancialAccountID = civicrm_api3('FinancialAccount', 'getvalue', [
+    'return' => 'id',
+    'name' => 'Deposit Bank Account',
+  ]);
+  if (!$depositFinancialAccountID) {
+    throw new Exception("Couldn't find Deposit Bank Account");
+  }
+  foreach(wmf_install_get_payment_instruments() as $instrument) {
+    $result = civicrm_api3('OptionValue', 'getSingle', [
+      'option_group_id' => 'payment_instrument',
+      'name' => $instrument,
+      'return' => 'id',
+    ]);
+    $params = [
+      'entity_id' => $result['id'],
+      'entity_table' => 'civicrm_option_value',
+      'account_relationship' => 'Asset Account is',
+    ];
+    $count = civicrm_api3('EntityFinancialAccount', 'getCount', $params);
+    if ($count === 0) {
+      $params['financial_account_id'] = $depositFinancialAccountID;
+      civicrm_api3('EntityFinancialAccount', 'create', $params);
+    }
+  }
 }
 
 /**
