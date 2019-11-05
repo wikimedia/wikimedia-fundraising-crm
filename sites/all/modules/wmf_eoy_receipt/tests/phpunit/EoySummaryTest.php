@@ -264,7 +264,7 @@ EOS;
       'from_address' => 'bobita@example.org',
       'to_name' => 'Bob',
       'to_address' => 'bob@example.com',
-      'subject' => 'Your 2018 contributions to Wikipedia
+      'subject' => 'This is a receipt, but it\'s also so much more
 ',
       'plaintext' => 'Dear Bob,
 
@@ -306,7 +306,7 @@ Donation 25: 800 USD 2018-11-22
 Donation 26: 1200 USD 2018-12-09
 Donation 27: 800 USD 2018-12-22
 
-If for whatever reason you wish to cancel your donation, follow these easy cancellation instructions:
+If for whatever reason you wish to cancel your monthly donation, follow these easy cancellation instructions:
 https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en
 ',
       'html' => '<p>
@@ -416,7 +416,7 @@ Donation 27: 800 USD 2018-12-22
 </p>
 
 <p>
-If for whatever reason you wish to cancel your donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en">easy cancellation instructions</a>.
+If for whatever reason you wish to cancel your monthly donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en">easy cancellation instructions</a>.
 </p>
 ',
     ], $email);
@@ -442,7 +442,7 @@ If for whatever reason you wish to cancel your donation, follow these <a href="h
       'from_address' => 'bobita@example.org',
       'to_name' => 'Bob',
       'to_address' => 'bob@example.com',
-      'subject' => 'Your 2018 contributions to Wikipedia
+      'subject' => 'This is a receipt, but it\'s also so much more
 ',
       'plaintext' => 'Dear Bob,
 
@@ -462,7 +462,7 @@ Donation 2: 800 CAD 2018-03-02
 Donation 3: 20 USD 2018-05-03
 Donation 4: 50 CAD 2018-10-20
 
-If for whatever reason you wish to cancel your donation, follow these easy cancellation instructions:
+If for whatever reason you wish to cancel your monthly donation, follow these easy cancellation instructions:
 https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en
 ',
       'html' => '<p>
@@ -506,7 +506,7 @@ Donation 4: 50 CAD 2018-10-20
 </p>
 
 <p>
-If for whatever reason you wish to cancel your donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en">easy cancellation instructions</a>.
+If for whatever reason you wish to cancel your monthly donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en">easy cancellation instructions</a>.
 </p>
 ',
     ], $email);
