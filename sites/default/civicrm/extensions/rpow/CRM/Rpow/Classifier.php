@@ -146,7 +146,7 @@ class CRM_Rpow_Classifier {
         case $BACK:
           if ($char === $ESCAPE) {
             $esc = TRUE;
-            continue;
+            break;
           }
           elseif ($char === $mode && !$esc) {
             $mode = $PLAIN;

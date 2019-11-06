@@ -16,5 +16,5 @@ Your {{year}} total was {{total.currency}} {{total.amount}}.
 Donation {{contribution.index}}: {{contribution.amount}} {{contribution.currency}} {{contribution.date}}
 {% endfor %}
 
-If for whatever reason you wish to cancel your donation, follow these easy cancellation instructions:
+If for whatever reason you wish to cancel your monthly donation, follow these easy cancellation instructions:
 https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}
