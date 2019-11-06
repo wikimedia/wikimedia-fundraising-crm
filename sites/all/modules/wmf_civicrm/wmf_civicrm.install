@@ -4973,3 +4973,57 @@ function wmf_civicrm_update_7925() {
     'deduper_resolver_bool_prefer_yes' => ['on_hold', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'is_opt_out'],
   ]);
 }
+
+
+/**
+ * T235212 fix financial trxn record for contributions missing
+ * to_financial_account_id, and create account associations for payment
+ * methods missing them.
+ *
+ * TODO: fix wmf_install_add_missing_payment_instruments
+ */
+function wmf_civicrm_update_7930() {
+  civicrm_initialize();
+  $depositFinancialAccountID = civicrm_api3('FinancialAccount', 'getvalue', array(
+    'return' => 'id',
+    'name' => 'Deposit Bank Account',
+  ));
+
+  $cashFinancialTypeID = civicrm_api3('FinancialType', 'getvalue', array(
+    'return' => 'id',
+    'name' => 'Cash',
+  ));
+  CRM_Core_DAO::executeQuery(
+    "UPDATE
+     civicrm_contribution con
+     LEFT JOIN civicrm_entity_financial_trxn eft ON (eft.entity_id = con.id AND eft.entity_table = 'civicrm_contribution')
+     INNER JOIN civicrm_financial_trxn ft ON ft.id = eft.financial_trxn_id
+
+     SET ft.to_financial_account_id = %1
+
+     WHERE ft.to_financial_account_id IS NULL AND con.financial_type_id = %2",
+    array(
+      1 => array($depositFinancialAccountID, 'Integer'),
+      2 => array($cashFinancialTypeID, 'Integer'),
+    )
+  );
+  $methodsMissingMaps = CRM_Core_DAO::executeQuery(
+    "SELECT ov.*
+     FROM civicrm_option_group og
+     INNER JOIN civicrm_option_value ov
+        ON og.name='payment_instrument'
+        AND ov.option_group_id = og.id
+     LEFT JOIN civicrm_entity_financial_account efa
+        ON efa.entity_id = ov.id
+        AND efa.entity_table='civicrm_option_value'
+     WHERE efa.id IS NULL"
+  );
+  while($methodsMissingMaps->fetch()) {
+    civicrm_api3('EntityFinancialAccount', 'create', array(
+      'entity_id' => $methodsMissingMaps->id,
+      'entity_table' => 'civicrm_option_value',
+      'account_relationship' => 'Asset Account is',
+      'financial_account_id' => 'Deposit Bank Account',
+    ));
+  }
+}
