@@ -439,6 +439,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributions[] = $firstContribution;
 
     // Set up token specific values
+    $overrides['currency'] = 'USD';
     $overrides['recurring_payment_token']= mt_rand();
     $overrides['gateway_txn_id'] = $subscr_id;
     $overrides['user_ip'] = '1.1.1.1';
@@ -469,7 +470,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testRecurringNotificationEmailSend() {
     variable_set( 'thank_you_add_civimail_records', 'false' );
-      
+
     // Subscr_id is the same as gateway_txn_id
     $subscr_id = mt_rand();
 
@@ -485,13 +486,14 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
             'gateway' => 'ingenico',
             'gross' => 400,
             'original_gross' => 400,
-            'original_currency' => 'USD',
+            'original_currency' => 'CAD',
             'contribution_tracking_id' => $ct_id,
         ]
     );
 
     $messageBody = $message->getBody();
     exchange_rate_cache_set('USD', $messageBody['date'], 1);
+    exchange_rate_cache_set('CAD', $messageBody['date'], 2);
     $firstContribution = wmf_civicrm_contribution_message_import($messageBody);
     $this->contributions[] = $firstContribution;
 
@@ -500,6 +502,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Set up token specific values
     $overrides['recurring_payment_token']= mt_rand();
+    $overrides['currency'] = 'CAD';
     $overrides['gateway_txn_id'] = $subscr_id;
     $overrides['user_ip'] = '1.1.1.1';
     $overrides['gateway'] = 'ingenico';
@@ -520,7 +523,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertRegExp( '/you donated, and then decided to set up an additional/', $sent['html'] );
 
     // Check the right donation amount
-    $this->assertRegExp( '/6.00/', $sent['html'] );
+    $this->assertRegExp( '/3.00/', $sent['html'] );
 
     // Check the right donation currency, original currency is CAD
     $this->assertRegExp('/C\$/',$sent['html']);
