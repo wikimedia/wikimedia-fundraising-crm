@@ -260,6 +260,9 @@ class CRM_Dedupetools_BAO_MergeHandler {
     $resolver = new CRM_Dedupetools_BAO_Resolver_UninformativeCharactersResolver($this);
     $resolver->resolveConflicts();
 
+    $resolver = new CRM_Dedupetools_BAO_Resolver_SillyNameResolver($this);
+    $resolver->resolveConflicts();
+
     $resolver = new CRM_Dedupetools_BAO_Resolver_MisplacedNameResolver($this);
     $resolver->resolveConflicts();
 
