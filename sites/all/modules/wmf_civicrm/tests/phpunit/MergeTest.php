@@ -570,15 +570,41 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * We don't care enough about source it seems to do much with it.
    *
+   * Update - source is now handled by the deduper - which prioritises
+   * our preferred contact.
+   *
    * Bug T146946
    */
   public function testBatchMergeConflictSource() {
-    $this->breedDuck(array('id' => $this->contactID, 'source' => 'egg'));
-    $this->breedDuck(array('id' => $this->contactID2, 'source' => 'chicken'));
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
-    $this->assertEquals(0, count($result['values']['skipped']));
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->breedDuck(['id' => $this->contactID, 'source' => 'egg']);
+    $this->breedDuck(['id' => $this->contactID2, 'source' => 'chicken']);
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
+    $this->assertCount(0, $result['values']['skipped']);
+    $this->assertCount(1, $result['values']['merged']);
   }
+
+  /**
+   * Test that we keep the opt in from the most recent donor.
+   *
+   * The handling for this is in the dedupe tools. Testing in our code checks
+   * our settings have been added.
+   *
+   * @param bool $isReverse
+   *
+   * @dataProvider isReverse
+   * @throws \CRM_Core_Exception
+  // @todo - commented out to resolve all the 'big' stuff on the easy field - contact-source
+   - as there is some weirdness to fix around this custom field & how it is presented to the
+   * // merge handler
+  public function testBatchMergeConflictOptIn($isReverse) {
+    $this->breedGenerousDuck($this->contactID, [wmf_civicrm_get_custom_field_name('opt_in') => 1], !$isReverse);
+    $this->breedGenerousDuck($this->contactID2, [wmf_civicrm_get_custom_field_name('opt_in') => 0], $isReverse);
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
+    $this->assertCount(0, $result['values']['skipped']);
+    $this->assertCount(1, $result['values']['merged']);
+    $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->contactID]);
+    $this->assertEquals($isReverse ? 0 : 1, $contact[wmf_civicrm_get_custom_field_name('opt_in')]);
+  }   */
 
   /**
    * Test that whitespace conflicts are resolved.
@@ -2048,6 +2074,25 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'source' => 'NZD 20',
       // Should cause 'is_2015_donor to be true.
       'receive_date' => '2016-04-04',
+    ]);
+  }
+
+  /**
+   * Breed a donor duck.
+   *
+   * @param int $contactID
+   * @param array $duckOverrides
+   * @param bool $isLatestDonor
+   */
+  protected function breedGenerousDuck($contactID, $duckOverrides, $isLatestDonor) {
+    $params = array_merge(['id' => $contactID], $duckOverrides);
+    $this->breedDuck($params);
+    $this->callAPISuccess('Contribution', 'create', [
+      'contact_id' => $contactID,
+      'financial_type_id' => 'Donation',
+      'total_amount' => 5,
+      'receive_date' => $isLatestDonor ? '2018-09-08' : '2015-12-20',
+      'contribution_status_id' => 'Completed',
     ]);
   }
 

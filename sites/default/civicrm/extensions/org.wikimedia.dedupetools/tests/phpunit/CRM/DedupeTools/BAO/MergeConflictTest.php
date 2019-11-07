@@ -48,6 +48,17 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test the boolean resolver works.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  public function testGetContactFields() {
+    $fields = CRM_Dedupetools_BAO_MergeConflict::getContactFields();
+    $this->assertTrue(isset($fields['contact_source']));
+    $this->assertFalse(isset($fields['source'], $fields['street_address']));
+  }
+
+  /**
    * Test that a boolean field is resolved if set.
    */
   public function testResolveBooleanFields() {
@@ -304,6 +315,88 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test resolving a field where we resolve by preferred contact.
+   *
+   * Use earliest created contact resolver.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testResolvePreferredContactField($isReverse) {
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['earliest_created_contact']]);
+    $this->createDuplicateIndividuals([['contact_source' => 'keep me'], ['contact_source' => 'ditch me']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('keep me', $this->callAPISuccessGetValue('Contact', ['return' => 'contact_source', 'id' => $mergedContact['id']]));
+  }
+
+  /**
+   * Test resolving a field where we resolve by preferred contact.
+   *
+   * Use most recently created contact resolver.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testResolvePreferredContactFieldChooseLatest($isReverse) {
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recently_created_contact']]);
+    $this->createDuplicateIndividuals([['contact_source' => 'ditch me'], ['contact_source' => 'keep me']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('keep me', $this->callAPISuccessGetValue('Contact', ['return' => 'contact_source', 'id' => $mergedContact['id']]));
+  }
+
+  /**
+ * Test resolving a field where we resolve by preferred contact.
+ *
+ * Use most recent donor resolver.
+ *
+ * @param bool $isReverse
+ *   Should we reverse which contact we merge into.
+ *
+ * @dataProvider booleanDataProvider
+ *
+ * @throws \CRM_Core_Exception
+ */
+  public function testResolvePreferredContactFieldChooseMostRecentDonor($isReverse) {
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor']]);
+    $this->createDuplicateDonors();
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('keep me', $this->callAPISuccessGetValue('Contact', ['return' => 'contact_source', 'id' => $mergedContact['id']]));
+  }
+
+  /**
+   * Test resolving a field where we resolve by preferred contact.
+   *
+   * Use most prolific donor contact resolver.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testResolvePreferredContactFieldChooseMostProlific($isReverse) {
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_prolific_contributor']]);
+    $this->createDuplicateDonors();
+    // Add a second contribution to the first donor - making it more prolific.
+    $this->callAPISuccess('Contribution', 'create', ['financial_type_id' => 'Donation', 'total_amount' => 5, 'contact_id' => $this->ids['contact'][0], 'receive_date' => '2019-08-08']);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('keep me', $this->callAPISuccessGetValue('Contact', ['return' => 'contact_source', 'id' => $mergedContact['id']]));
+  }
+
+  /**
    * Create individuals to dedupe.
    *
    * @param array $contactParams
@@ -323,7 +416,12 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
-   * @param $isReverse
+   * Action the merge of the 2 created contacts.
+   *
+   * @param bool $isReverse
+   *   Is the order to be reversed - ie. merge contact 0 into 1 rather than 1 into 0.
+   *   It is good practice to do all dedupe tests twice using this reversal to cover
+   *   both scenarios.
    *
    * @return array|int
    * @throws \CRM_Core_Exception
@@ -335,6 +433,20 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $this->assertCount(1, $mergeResult['merged']);
     $mergedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $toKeepContactID]);
     return $mergedContact;
+  }
+
+  /**
+   * Create 2 donor contacts, differing in their source value.
+   *
+   * The first donor ($this->ids['contact'][0] is the more recent donor.
+   */
+  protected function createDuplicateDonors() {
+    $this->createDuplicateIndividuals([['contact_source' => 'keep me'], ['contact_source' => 'ditch me']]);
+    $receiveDate = '2017-08-09';
+    foreach ($this->ids['contact'] as $contactID) {
+      $this->callAPISuccess('Contribution', 'create', ['financial_type_id' => 'Donation', 'total_amount' => 5, 'contact_id' => $contactID, 'receive_date' => $receiveDate]);
+      $receiveDate = '2016-08-09';
+    }
   }
 
 }
