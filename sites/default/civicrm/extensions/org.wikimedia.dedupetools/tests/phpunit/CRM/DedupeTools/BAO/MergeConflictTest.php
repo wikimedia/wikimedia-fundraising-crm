@@ -174,7 +174,11 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
-   * Test resolving an initial in the first name.
+   *  Test resolving a situation where the first name is duplicated in the full name.
+   *
+   * e.g
+   * ['first_name' => 'Bob', 'last_name' => 'Bob Max Smith'],
+   * ['first_name' => 'Bob', 'last_name' => 'Max Smith']
    *
    * @param bool $isReverse
    *   Should we reverse which contact we merge into.
@@ -264,7 +268,7 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * Create individuals to dedupe.
    *
    * @param array $contactParams
-   *   Arrays of parameters.
+   *   Arrays of parameters, one per contact.
    */
   private function createDuplicateIndividuals($contactParams = [[], []]) {
     $params = [
