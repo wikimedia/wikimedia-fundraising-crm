@@ -5039,7 +5039,7 @@ function wmf_civicrm_update_7935() {
   civicrm_initialize();
   // We want to set this to contact_source AND opt_in. For now we need to resolve some custom field wrangling, so just contact_source.
   // civicrm_api3('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source', wmf_civicrm_get_custom_field_name('opt_in')]]);
-  civicrm_api3('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+  civicrm_api3('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source', wmf_civicrm_get_custom_field_name('opt_in')]]);
   civicrm_api3('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor']]);
   civicrm_api3('Setting', 'create', ['deduper_resolver_preferred_contact_last_resort' => 'most_recently_created_contact']);
 }

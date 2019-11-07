@@ -593,18 +593,16 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @dataProvider isReverse
    * @throws \CRM_Core_Exception
-  // @todo - commented out to resolve all the 'big' stuff on the easy field - contact-source
-   - as there is some weirdness to fix around this custom field & how it is presented to the
-   * // merge handler
+   */
   public function testBatchMergeConflictOptIn($isReverse) {
     $this->breedGenerousDuck($this->contactID, [wmf_civicrm_get_custom_field_name('opt_in') => 1], !$isReverse);
     $this->breedGenerousDuck($this->contactID2, [wmf_civicrm_get_custom_field_name('opt_in') => 0], $isReverse);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertCount(0, $result['values']['skipped']);
     $this->assertCount(1, $result['values']['merged']);
-    $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->contactID]);
+    $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->contactID, 'return' => wmf_civicrm_get_custom_field_name('opt_in')]);
     $this->assertEquals($isReverse ? 0 : 1, $contact[wmf_civicrm_get_custom_field_name('opt_in')]);
-  }   */
+  }
 
   /**
    * Test that whitespace conflicts are resolved.

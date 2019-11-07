@@ -167,8 +167,19 @@ class CRM_Dedupetools_BAO_MergeHandler {
    * @return mixed
    */
   public function getValueForField($fieldName, $isForContactToBeKept) {
-    $contactDetail = $isForContactToBeKept ? $this->dedupeData['migration_info']['main_details'] : $this->dedupeData['migration_info']['other_details'];
-    return $contactDetail[$fieldName];
+    if (strpos($fieldName, 'custom_') !== 0) {
+      $contactDetail = $isForContactToBeKept ? $this->dedupeData['migration_info']['main_details'] : $this->dedupeData['migration_info']['other_details'];
+      return $contactDetail[$fieldName];
+    }
+    // You are now entering hell. The information you want is buried... somewhere.
+    if (!$isForContactToBeKept) {
+      // This is what would be 'just used' if we unset the conflict & leave 'move_custom_x' in the array
+      // so if should be safe-ish.
+      return $this->dedupeData['migration_info']['move_' . $fieldName];
+    }
+    // Honestly let's try passing back this formatted value .... because it IS deformatted at the other end.
+    // We relying on unit tests & magic here.
+    return $this->dedupeData['migration_info']['rows']['move_' . $fieldName]['main'];
   }
 
   /**
@@ -239,8 +250,8 @@ class CRM_Dedupetools_BAO_MergeHandler {
    */
   public function __construct($dedupeData, $mainID, $otherID, $context) {
     $this->setDedupeData($dedupeData);
-    $this->setMainID($mainID);
-    $this->setOtherID($otherID);
+    $this->setMainID((int) $mainID);
+    $this->setOtherID((int) $otherID);
     $this->setContext($context);
   }
 
@@ -502,11 +513,7 @@ class CRM_Dedupetools_BAO_MergeHandler {
    */
   public function getPreferredContact() {
     $preferredContact = new CRM_Dedupetools_BAO_PreferredContact($this->mainID, $this->otherID);
-    $preferredID = $preferredContact->getPreferredContactID();
-    if ($preferredID === $this->mainID) {
-      return $this->dedupeData['migration_info']['main_details'];
-    }
-    return $this->dedupeData['migration_info']['other_details'];
+    return $preferredContact->getPreferredContactID();
   }
 
   /**
@@ -517,7 +524,7 @@ class CRM_Dedupetools_BAO_MergeHandler {
    * @throws \CiviCRM_API3_Exception
    */
   public function getPreferredContactValue($fieldName) {
-    return $this->getPreferredContact()[$fieldName];
+    return $this->getValueForField($fieldName, ($this->getPreferredContact() === $this->mainID));
   }
 
 }
