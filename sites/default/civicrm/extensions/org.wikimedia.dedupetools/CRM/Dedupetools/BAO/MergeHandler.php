@@ -351,7 +351,7 @@ class CRM_Dedupetools_BAO_MergeHandler {
    * @param int $isForContactToBeKept
    * @param string $field
    *
-   * @return string
+   * @return mixed
    */
   public function getLocationBlockValue($location, $block, $isForContactToBeKept, $field) {
     return $this->getLocationBlock($location, $block, $isForContactToBeKept)[$field];
