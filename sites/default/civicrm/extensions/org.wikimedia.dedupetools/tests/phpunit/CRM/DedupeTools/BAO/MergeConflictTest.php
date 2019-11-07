@@ -52,22 +52,22 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   public function testResolveBooleanFields() {
     $this->createDuplicateIndividuals([['do_not_mail' => 0], ['do_not_mail' => 1]]);
-    $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['Contact'][0], 'to_remove_id' => $this->ids['Contact'][1]]);
-    $mergedContacts = $this->callAPISuccess('Contact', 'get', ['id' => ['IN' => $this->ids['Contact']]])['values'];
+    $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['contact'][0], 'to_remove_id' => $this->ids['contact'][1]]);
+    $mergedContacts = $this->callAPISuccess('Contact', 'get', ['id' => ['IN' => $this->ids['contact']]])['values'];
 
-    $this->assertEquals(1, $mergedContacts[$this->ids['Contact'][1]]['contact_is_deleted']);
-    $this->assertEquals(0, $mergedContacts[$this->ids['Contact'][0]]['contact_is_deleted']);
-    $this->assertEquals(1, $mergedContacts[$this->ids['Contact'][0]]['do_not_mail']);
+    $this->assertEquals(1, $mergedContacts[$this->ids['contact'][1]]['contact_is_deleted']);
+    $this->assertEquals(0, $mergedContacts[$this->ids['contact'][0]]['contact_is_deleted']);
+    $this->assertEquals(1, $mergedContacts[$this->ids['contact'][0]]['do_not_mail']);
 
     // Now try merging a contact with 0 in that field into our retained contact.
-    $this->ids['Contact'][2] = $this->callAPISuccess('Contact', 'create', ['first_name' => 'bob', 'do_not_mail' => 0, 'contact_type' => 'Individual'])['id'];
-    $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['Contact'][0], 'to_remove_id' => $this->ids['Contact'][2]]);
-    $mergedContacts = $this->callAPISuccess('Contact', 'get', ['id' => ['IN' => $this->ids['Contact'], 'is_deleted' => 0]])['values'];
+    $this->ids['contact'][2] = $this->callAPISuccess('Contact', 'create', ['first_name' => 'bob', 'do_not_mail' => 0, 'contact_type' => 'Individual'])['id'];
+    $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['contact'][0], 'to_remove_id' => $this->ids['contact'][2]]);
+    $mergedContacts = $this->callAPISuccess('Contact', 'get', ['id' => ['IN' => $this->ids['contact'], 'is_deleted' => 0]])['values'];
 
-    $this->assertEquals(1, $mergedContacts[$this->ids['Contact'][0]]['do_not_mail']);
+    $this->assertEquals(1, $mergedContacts[$this->ids['contact'][0]]['do_not_mail']);
 
-    $this->assertEquals(1, $mergedContacts[$this->ids['Contact'][2]]['contact_is_deleted']);
-    $this->assertEquals(0, $mergedContacts[$this->ids['Contact'][0]]['contact_is_deleted']);
+    $this->assertEquals(1, $mergedContacts[$this->ids['contact'][2]]['contact_is_deleted']);
+    $this->assertEquals(0, $mergedContacts[$this->ids['contact'][0]]['contact_is_deleted']);
   }
 
   /**
@@ -82,15 +82,15 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   public function testResolveEmailOnHold($isReverse) {
     $this->createDuplicateIndividuals();
-    // Conveniently our 2 contacts are 0 & 1 in the $this->ids['Contact'] array so we can abuse the boolean var like this.
+    // Conveniently our 2 contacts are 0 & 1 in the $this->ids['contact'] array so we can abuse the boolean var like this.
     $contactIDOnHold = $isReverse;
 
-    $email1 = $this->callAPISuccess('Email', 'get', ['contact_id' => $this->ids['Contact'][$contactIDOnHold]])['id'];
+    $email1 = $this->callAPISuccess('Email', 'get', ['contact_id' => $this->ids['contact'][$contactIDOnHold]])['id'];
     $this->callAPISuccess('Email', 'create', ['id' => $email1, 'on_hold' => 1]);
 
-    $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['Contact'][0], 'to_remove_id' => $this->ids['Contact'][1]])['values'];
+    $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['contact'][0], 'to_remove_id' => $this->ids['contact'][1]])['values'];
     $this->assertCount(1, $mergeResult['merged']);
-    $email0 = $this->callAPISuccessGetSingle('Email', ['contact_id' => ['IN' => [$this->ids['Contact'][0]]]]);
+    $email0 = $this->callAPISuccessGetSingle('Email', ['contact_id' => ['IN' => [$this->ids['contact'][0]]]]);
     $this->assertEquals(1, $email0['on_hold']);
   }
 
@@ -275,7 +275,7 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
     ];
     foreach ($contactParams as $index => $contactParam) {
       $contactParam = array_merge($params, $contactParam);
-      $this->ids['Contact'][$index] = $this->callAPISuccess('Contact', 'create', $contactParam)['id'];
+      $this->ids['contact'][$index] = $this->callAPISuccess('Contact', 'create', $contactParam)['id'];
     }
   }
 
@@ -286,8 +286,8 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   protected function doMerge($isReverse) {
-    $toKeepContactID = $isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0];
-    $toDeleteContactID = $isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1];
+    $toKeepContactID = $isReverse ? $this->ids['contact'][1] : $this->ids['contact'][0];
+    $toDeleteContactID = $isReverse ? $this->ids['contact'][0] : $this->ids['contact'][1];
     $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $toKeepContactID, 'to_remove_id' => $toDeleteContactID])['values'];
     $this->assertCount(1, $mergeResult['merged']);
     $mergedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $toKeepContactID]);
