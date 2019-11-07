@@ -351,7 +351,7 @@ class CRM_Dedupetools_BAO_MergeHandler {
    * @param int $isForContactToBeKept
    * @param string $field
    *
-   * @return string
+   * @return mixed
    */
   public function getLocationBlockValue($location, $block, $isForContactToBeKept, $field) {
     return $this->getLocationBlock($location, $block, $isForContactToBeKept)[$field];
@@ -384,7 +384,10 @@ class CRM_Dedupetools_BAO_MergeHandler {
       'display',
     ];
     foreach ($otherContactEmail as $field => $value) {
-      if (!in_array($field, $keysToIgnore) && isset($mainContactEmail[$field]) && $mainContactEmail[$field] !== $value) {
+      if (
+      isset($mainContactEmail[$field])
+      && $mainContactEmail[$field] !== $value
+      && !in_array($field, $keysToIgnore, TRUE) ) {
         $this->emailConflicts[$field] = $value;
       }
     }
