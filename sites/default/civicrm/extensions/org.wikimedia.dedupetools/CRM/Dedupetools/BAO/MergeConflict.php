@@ -20,7 +20,7 @@ class CRM_Dedupetools_BAO_MergeConflict extends CRM_Dedupetools_DAO_MergeConflic
       if (!in_array($fieldName, $ignoreList)
         && isset($fieldSpec['type'])
         && (
-          // As on CiviCRM 5.20 on_hold is a boolean field unless civimail_multiple_bulk_emails
+          // As of CiviCRM 5.20 on_hold is a boolean field unless civimail_multiple_bulk_emails
           // is enabled, at which point it becomes a 3-way toggle (with theory being that opt_out is
           // set per email rather than per contact so we get 0 = no, 1 = bounce (regardless)
           // and then 2 = opt out IF the setting is in play.
