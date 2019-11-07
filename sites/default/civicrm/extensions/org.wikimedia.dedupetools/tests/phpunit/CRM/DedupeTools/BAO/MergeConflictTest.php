@@ -174,6 +174,26 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test resolving an initial in the first name when the other contact already has the same value as an initial with a dot.
+   *
+   * ie. [first_name => 'Bob J'] vs ['first_name' => 'Bob', 'middle_name' => 'J.']
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testInitialResolutionNameInitialExistsDotted($isReverse) {
+    $this->createDuplicateIndividuals([['first_name' => 'Bob J.'], ['middle_name' => 'J.']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Bob', $mergedContact['first_name']);
+    $this->assertEquals('Smith', $mergedContact['last_name']);
+    $this->assertEquals('J', $mergedContact['middle_name']);
+  }
+
+  /**
    *  Test resolving a situation where the first name is duplicated in the full name.
    *
    * e.g

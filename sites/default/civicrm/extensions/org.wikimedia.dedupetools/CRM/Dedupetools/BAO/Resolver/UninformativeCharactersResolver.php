@@ -23,7 +23,7 @@ class CRM_Dedupetools_BAO_Resolver_UninformativeCharactersResolver extends CRM_D
       $contact1 = $this->getIndividualNameFieldValues($isContactToKeep);
       $contact2 = $this->getIndividualNameFieldValues(!$isContactToKeep);
       foreach ($contact1 as $fieldName => $value) {
-        if ($this->isFieldInConflict($fieldName)) {
+        if ($this->isStripPunctuationForField($fieldName, $contact1, $contact2)) {
           $value = str_replace($this->getWhiteSpaceCharacters(), ' ', $value);
           // Get rid of any double spaces now created. Perhaps a preg_replace would be better
           // but ... later.
@@ -108,6 +108,32 @@ class CRM_Dedupetools_BAO_Resolver_UninformativeCharactersResolver extends CRM_D
       // ideographic space.
       "\xE3\x80\x80",
     ];
+  }
+
+  /**
+   * Should we strip the punctuation for this field.
+   *
+   * The current thinking is that we would strip out punctuation if the fields are in conflict OR
+   * either one is empty.
+   *
+   * In the latter case we are thinking about situations where the middle name might
+   * not be in conflict but is J. whereas the first name is Bob J. In order to resolve the initial
+   * later on we need both fields to have lost their dots.
+   *
+   * @param string $fieldName
+   * @param array $contact1
+   * @param array $contact2
+   *
+   * @return bool
+   */
+  protected function isStripPunctuationForField($fieldName, array $contact1, array $contact2): bool {
+    if (!empty($contact1[$fieldName]) && !empty($contact2[$fieldName])) {
+      return $this->isFieldInConflict($fieldName);
+    }
+    if (empty($contact1[$fieldName]) && empty($contact2[$fieldName])) {
+      return FALSE;
+    }
+    return TRUE;
   }
 
 }
