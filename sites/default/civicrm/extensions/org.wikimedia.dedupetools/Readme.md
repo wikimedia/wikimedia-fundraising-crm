@@ -33,8 +33,13 @@ These fields can't be used on large databases for a group dedupe for performance
  or last name field.
  - The Initials resolver. This addresses the situation where it can determine the Initial is in the first or
  last name field.
+ - The silly names resolver. The ensures that a number in a name field or a known 'silly' name
+ does not block a merge (currently 'first', 'last' & 'blah').
+ - The preferred contact field resolver. This allows you set fields as being 'use whatever my preferred contact uses'.
+ Preferred contact is determined by a setting - current options are most recently created, least recently created,
+ most recently modified, least recently modified, most recent donor, most prolific donor.
 
-- merge conflicts api - does anaylsis on current conflicted merges to look for patterns.
+- merge conflicts api - does analysis on current conflicted merges to look for patterns.
 
 **Note**
 
