@@ -77,7 +77,7 @@ class EoySummaryTest extends BaseWmfDrupalPhpUnitTestCase {
     $originalCurrencyField = wmf_civicrm_get_custom_field_name('original_currency');
     $originalAmountField = wmf_civicrm_get_custom_field_name('original_amount');
     $contribCashTooEarly = $this->callAPISuccess('Contribution', 'create', [
-      'receive_date' => '2017-12-31',
+      'receive_date' => '2017-12-31 22:59:00',
       'contact_id' => $contactRecur['id'],
       'total_amount' => '10',
       'currency' => 'USD',
@@ -97,7 +97,7 @@ class EoySummaryTest extends BaseWmfDrupalPhpUnitTestCase {
       'financial_type_id' => $financialTypeCash,
     ]);
     $contribCashRecurring = $this->callAPISuccess('Contribution', 'create', [
-      'receive_date' => '2018-08-08',
+      'receive_date' => '2018-08-08 22:00:00',
       'contact_id' => $contactRecur['id'],
       'total_amount' => '3',
       'currency' => 'USD',
@@ -118,7 +118,7 @@ class EoySummaryTest extends BaseWmfDrupalPhpUnitTestCase {
       'financial_type_id' => $financialTypeCash,
     ]);
     $contribCashUSD = $this->callAPISuccess('Contribution', 'create', [
-      'receive_date' => '2018-02-02',
+      'receive_date' => '2018-02-02 08:10:00',
       'contact_id' => $contactRecur['id'],
       'total_amount' => '20',
       'currency' => 'USD',
@@ -181,7 +181,7 @@ EOS;
       'preferred_language' => 'pt_BR',
       'status' => 'queued',
     ], $result);
-    $this->assertEquals(['2018-02-02 20.00 USD','2018-08-08 30.00 PLN'], $rollup);
+    $this->assertEquals(['2018-02-01 20.00 USD','2018-08-08 30.00 PLN'], $rollup);
   }
 
   /**
@@ -212,9 +212,9 @@ EOS;
       'status' => 'queued',
     ], $result);
     $this->assertEquals([
-      '2018-02-02 400.00 PLN',
-      '2018-03-03 30.00 PLN',
-      '2018-04-04 200.00 PLN'], $rollup);
+      '2018-02-01 400.00 PLN',
+      '2018-03-02 30.00 PLN',
+      '2018-04-03 200.00 PLN'], $rollup);
   }
 
   /**

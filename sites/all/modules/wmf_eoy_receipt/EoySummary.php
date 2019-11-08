@@ -76,8 +76,12 @@ EOS;
     $row = $result->fetch();
     $this->job_id = $row->job_id;
 
-    $year_start = "{$this->year}-01-01 00:00:01";
-    $year_end = "{$this->year}-12-31 23:59:59";
+    // Do the date calculations in Hawaii time, so that people trying to
+    // get in under the wire are credited on the earlier date, following
+    // similar logic in our standard thank you mailer.
+    $next_year = $this->year + 1;
+    $year_start = "{$this->year}-01-01 10:00:00";
+    $year_end = "{$next_year}-01-01 09:59:59";
     $endowmentFinancialType = CRM_Core_PseudoConstant::getKey(
       'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift'
     );
@@ -138,7 +142,8 @@ SELECT
     contact.preferred_language,
     contact.first_name,
     GROUP_CONCAT(CONCAT(
-        DATE_FORMAT(contribution.receive_date, '%Y-%m-%d'),
+        -- Calculate dates in Hawaii timezone (UTC-10) as per standard TY email logic
+        DATE_FORMAT(DATE_SUB(contribution.receive_date, INTERVAL 10 HOUR), '%Y-%m-%d'),
         ' ',
         COALESCE(original_amount, total_amount),
         ' ',
