@@ -473,6 +473,12 @@ function _dedupetools_civix_civicrm_alterSettingsFolders(&$metaDataFolders = NUL
 
 function _dedupetools_civix_civicrm_entityTypes(&$entityTypes) {
   $entityTypes = array_merge($entityTypes, array (
+    'CRM_Dedupetools_DAO_ContactNamePair' =>
+    array (
+      'name' => 'ContactNamePair',
+      'class' => 'CRM_Dedupetools_DAO_ContactNamePair',
+      'table' => 'civicrm_contact_name_pair',
+    ),
     'CRM_Dedupetools_DAO_MergeConflict' =>
     array (
       'name' => 'MergeConflict',

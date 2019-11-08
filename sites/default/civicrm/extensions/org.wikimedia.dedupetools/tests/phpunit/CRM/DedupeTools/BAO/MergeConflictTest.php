@@ -224,6 +224,97 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test that contacts with known better options are merged.
+   *
+   * Here we rely on a table of contacts to identify which are matches - e.g
+   * 'Benjamain' is a misspelling of Benjamin. The pair is in the table
+   * AND we know Benjamin is preferred.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMergeMisspeltContacts($isReverse) {
+    $this->createDuplicateIndividuals([['first_name' => 'Benjamin'], ['first_name' => 'Benjamain']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Benjamin', $mergedContact['first_name']);
+  }
+
+  /**
+   * Test that contacts can be resolved to the nick name, setting dependent.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMergePreferNickName($isReverse) {
+    $this->callAPISuccess('Setting', 'create', ['deduper_equivalent_name_handling' => 'prefer_nick_name']);
+    $this->createDuplicateIndividuals([['first_name' => 'Theodore'], ['first_name' => 'Ted']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Ted', $mergedContact['first_name']);
+  }
+
+  /**
+   * Test that contacts can be resolved to the non nick name, setting dependent.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMergePreferNonNickName($isReverse) {
+    $this->callAPISuccess('Setting', 'create', ['deduper_equivalent_name_handling' => 'prefer_non_nick_name']);
+    $this->createDuplicateIndividuals([['first_name' => 'Theodore'], ['first_name' => 'Ted']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Theodore', $mergedContact['first_name']);
+  }
+
+  /**
+   * Test that contacts can be resolved to the non nick name, setting dependent.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMergePreferNonNickNameKeepNickName($isReverse) {
+    $this->callAPISuccess('Setting', 'create', ['deduper_equivalent_name_handling' => 'prefer_non_nick_name_keep_nick_name']);
+    $this->createDuplicateIndividuals([['first_name' => 'Theodore'], ['first_name' => 'Ted']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Theodore', $mergedContact['first_name']);
+    $this->assertEquals('Ted', $mergedContact['nick_name'], 'Nick name should be set');
+  }
+
+  /**
+   * Test that contacts can be resolved to the non nick name, setting dependent.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMergePreferredContactNonNickNameKeepNickName($isReverse) {
+    $this->callAPISuccess('Setting', 'create', ['deduper_equivalent_name_handling' => 'prefer_preferred_contact_value_keep_nick_name']);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor']]);
+    $this->createDuplicateDonors([['first_name' => 'Theodore'], ['first_name' => 'Ted']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Theodore', $mergedContact['first_name']);
+    $this->assertEquals('Ted', $mergedContact['nick_name']);
+  }
+
+  /**
    *  Test resolving a situation where the first name is duplicated in the full name.
    *
    * e.g
@@ -439,9 +530,11 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * Create 2 donor contacts, differing in their source value.
    *
    * The first donor ($this->ids['contact'][0] is the more recent donor.
+   *
+   * @param array $overrides
    */
-  protected function createDuplicateDonors() {
-    $this->createDuplicateIndividuals([['contact_source' => 'keep me'], ['contact_source' => 'ditch me']]);
+  protected function createDuplicateDonors($overrides = [['contact_source' => 'keep me'], ['contact_source' => 'ditch me']]) {
+    $this->createDuplicateIndividuals($overrides);
     $receiveDate = '2017-08-09';
     foreach ($this->ids['contact'] as $contactID) {
       $this->callAPISuccess('Contribution', 'create', ['financial_type_id' => 'Donation', 'total_amount' => 5, 'contact_id' => $contactID, 'receive_date' => $receiveDate]);

@@ -125,8 +125,20 @@ abstract class CRM_Dedupetools_BAO_Resolver {
    * @param string $fieldName
    *
    * @return mixed
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   protected function getPreferredContactValue($fieldName) {
     return $this->mergeHandler->getPreferredContactValue($fieldName);
+  }
+
+  /**
+   * Get setting.
+   *
+   * @return string|int|array
+   */
+  protected function getSetting($setting) {
+    return $this->mergeHandler->getSetting($setting);
   }
 }

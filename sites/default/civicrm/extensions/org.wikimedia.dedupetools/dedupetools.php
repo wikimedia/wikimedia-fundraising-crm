@@ -1,6 +1,7 @@
 <?php
 
 require_once 'dedupetools.civix.php';
+use Symfony\Component\DependencyInjection\Definition;
 
 /**
  * Implements hook_civicrm_config().
@@ -325,4 +326,44 @@ function dedupetools_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
     $blocksDAO = $merger->getLocationBlocks();
   }
 
+}
+
+/**
+ * Set up a cache for saving dedupe pairs in.
+ *
+ * We want to be able to save dedupe name match info into an efficient cache - this equates to
+ * caching in php for the duration of a process & Redis / MemCache (if available) for longer.
+ *
+ * Using 'withArray' => 'fast' means that if we access a value from Redis it's help in a php
+ * cache for the rest of the process - so if we look up 'Tom' a lot we will usually be able to use
+ * memory, sometimes Redis & rarely have to look up the table. If Redis is not available we will
+ * use mysql to look up the table more.
+ *
+ * In latest CiviCRM there is a pre-defined 'metadata' cache with similar definitions & in the
+ * future we will consider switching to it.
+ *
+ * https://docs.civicrm.org/dev/en/latest/framework/cache/
+ *
+ * @param \Symfony\Component\DependencyInjection\ContainerBuilder $container
+ */
+function dedupetools_civicrm_container($container) {
+  $container->setDefinition('cache.dedupe_pairs', new Definition(
+    'CRM_Utils_Cache_Interface',
+    [[
+      'type' => ['*memory*', 'ArrayCache'],
+      'name' => 'dedupe_pairs',
+      'withArray' => 'fast',
+    ]]
+  ))->setFactory('CRM_Utils_Cache::create');
+}
+
+/**
+ * Implements hook_civicrm_entityTypes().
+ *
+ * Declare entity types provided by this module.
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_entityTypes
+ */
+function dedupetools_civicrm_entityTypes(&$entityTypes) {
+  _dedupetools_civix_civicrm_entityTypes($entityTypes);
 }

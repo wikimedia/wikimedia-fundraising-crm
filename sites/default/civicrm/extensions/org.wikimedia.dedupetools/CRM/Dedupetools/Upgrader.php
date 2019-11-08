@@ -1,5 +1,6 @@
 <?php
 use CRM_Dedupetools_ExtensionUtil as E;
+use League\Csv\Reader;
 
 /**
  * Collection of upgrade steps.
@@ -13,7 +14,8 @@ class CRM_Dedupetools_Upgrader extends CRM_Dedupetools_Upgrader_Base {
    * Example: Run an external SQL script when the module is installed.
    */
   public function install() {
-    $this->executeSqlFile('sql/install.sql');
+    $this->executeSqlFile('sql/auto_install.sql');
+    $this->prePopulateNameMatchTable();
   }
 
   /**
@@ -38,7 +40,7 @@ class CRM_Dedupetools_Upgrader extends CRM_Dedupetools_Upgrader_Base {
    * Example: Run an external SQL script when the module is uninstalled.
    */
   public function uninstall() {
-   $this->executeSqlFile('sql/uninstall.sql');
+   $this->executeSqlFile('sql/auto_uninstall.sql');
   }
 
   /**
@@ -60,14 +62,49 @@ class CRM_Dedupetools_Upgrader extends CRM_Dedupetools_Upgrader_Base {
    *
    * @return TRUE on success
    * @throws Exception
-   *
+   */
   public function upgrade_4200() {
     $this->ctx->log->info('Applying update 4200');
-    CRM_Core_DAO::executeQuery('UPDATE foo SET bar = "whiz"');
-    CRM_Core_DAO::executeQuery('DELETE FROM bang WHERE willy = wonka(2)');
-    return TRUE;
-  } // */
+    CRM_Core_DAO::executeQuery("
+CREATE TABLE IF NOT EXISTS `civicrm_contact_name_pair` (
+  `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Unique ID',
+  `name_a` varchar(64) NOT NULL DEFAULT '',
+  `name_b` varchar(64) NOT NULL DEFAULT '',
+  `is_name_b_nickname` tinyint(10) NOT NULL DEFAULT '0',
+  `is_name_b_inferior` tinyint(10) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `name_a` (`name_a`),
+  KEY `name_b` (`name_b`),
+  KEY `is_name_b_nickname` (`is_name_b_nickname`),
+  KEY `is_name_b_inferior` (`is_name_b_inferior`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+");
+
+    $this->prePopulateNameMatchTable();
+    return TRUE;
+  }
+
+  /**
+   * Pre-populate name match table with common mis-spellings & alternatives.
+   */
+  public function prePopulateNameMatchTable() {
+    $reader = Reader::createFromPath(__DIR__ . '/name_matches.csv', 'r');
+    $reader->setHeaderOffset(0);
+    foreach ($reader as $row) {
+      CRM_Core_DAO::executeQuery(
+        'INSERT INTO civicrm_contact_name_pair
+        (name_a, name_b, is_name_b_nickname, is_name_b_inferior)
+         VALUES (%1, %2, %3, %4)
+      ', [
+        1 => [$row['name_a'], 'String'],
+        2 => [$row['name_b'], 'String'],
+        3 => [$row['is_name_b_nickname'], 'Integer'],
+        4 => [$row['is_name_b_inferior'], 'Integer'],
+      ]);
+    }
+
+  }
 
   /**
    * Example: Run an external SQL script.
