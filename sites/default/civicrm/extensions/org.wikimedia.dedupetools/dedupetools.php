@@ -295,7 +295,7 @@ function dedupetools_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
       ));
 
       if ($type === 'batch') {
-        $merger = new CRM_Dedupetools_BAO_MergeHandler($refs, $mainId, $otherId, $type);
+        $merger = new CRM_Dedupetools_BAO_MergeHandler($refs, $mainId, $otherId, $type, ($refs['mode'] === 'safe'));
         $merger->resolve();
         $refs = $merger->getDedupeData();
         $refs['migration_info']['merge_handler'] = $merger;

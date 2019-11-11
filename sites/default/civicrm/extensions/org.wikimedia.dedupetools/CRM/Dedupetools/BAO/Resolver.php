@@ -141,4 +141,13 @@ abstract class CRM_Dedupetools_BAO_Resolver {
   protected function getSetting($setting) {
     return $this->mergeHandler->getSetting($setting);
   }
+
+  /**
+   * Get the array of fields for which the preferred contact's value should be preferred.
+   *
+   * @return array
+   */
+  protected function getFieldsToResolveOnPreferredContact(): array {
+    return $this->mergeHandler->getFieldsToResolveOnPreferredContact();
+  }
 }

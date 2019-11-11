@@ -82,6 +82,44 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+ * Test that in aggressive mode we keep the values of the most preferred contact.
+ *
+ * We use most recently created contact as our resolver as that is the opposite to the default
+ * behaviour without our hook.
+ *
+ * @param bool $isReverse
+ *   Should we reverse which contact we merge into.
+ *
+ * @dataProvider booleanDataProvider
+ *
+ * @throws \CRM_Core_Exception
+ */
+  public function testResolveAggressivePreferredContact($isReverse) {
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recently_created_contact']]);
+    $this->createDuplicateDonors([['first_name' => 'Sally'], []]);
+    $mergedContact = $this->doMerge($isReverse, TRUE);
+    $this->assertEquals('Bob', $mergedContact['first_name']);
+  }
+
+  /**
+   * Test that in safe mode we do not merge unresolved conflicts.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testSafeModeDoesNotOverrideConflict($isReverse) {
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recently_created_contact']]);
+    $this->createDuplicateDonors([['first_name' => 'Sally'], []]);
+    $this->doNotDoMerge($isReverse);
+  }
+
+  /**
    * Test the boolean field resolver resolves emails on hold.
    *
    * @param bool $isReverse
@@ -514,15 +552,35 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *   It is good practice to do all dedupe tests twice using this reversal to cover
    *   both scenarios.
    *
-   * @return array|int
-   * @throws \CRM_Core_Exception
+   * @return void
    */
-  protected function doMerge($isReverse) {
+  protected function doNotDoMerge($isReverse) {
     $toKeepContactID = $isReverse ? $this->ids['contact'][1] : $this->ids['contact'][0];
     $toDeleteContactID = $isReverse ? $this->ids['contact'][0] : $this->ids['contact'][1];
     $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $toKeepContactID, 'to_remove_id' => $toDeleteContactID])['values'];
-    $this->assertCount(1, $mergeResult['merged']);
+    $this->assertCount(1, $mergeResult['skipped']);
+    $this->assertCount(0, $mergeResult['merged']);
+  }
+
+  /**
+   * Action the merge of the 2 created contacts.
+   *
+   * @param bool $isReverse
+   *   Is the order to be reversed - ie. merge contact 0 into 1 rather than 1 into 0.
+   *   It is good practice to do all dedupe tests twice using this reversal to cover
+   *   both scenarios.
+   * @param bool $isAggressiveMode
+   *   Should aggressive mode be used.
+   *
+   * @return array|int
+   * @throws \CRM_Core_Exception
+   */
+  protected function doMerge($isReverse, $isAggressiveMode = FALSE) {
+    $toKeepContactID = $isReverse ? $this->ids['contact'][1] : $this->ids['contact'][0];
+    $toDeleteContactID = $isReverse ? $this->ids['contact'][0] : $this->ids['contact'][1];
+    $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $toKeepContactID, 'to_remove_id' => $toDeleteContactID, 'mode' => ($isAggressiveMode ? 'aggressive' : 'safe')])['values'];
     $mergedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $toKeepContactID]);
+    $this->assertCount(1, $mergeResult['merged']);
     return $mergedContact;
   }
 

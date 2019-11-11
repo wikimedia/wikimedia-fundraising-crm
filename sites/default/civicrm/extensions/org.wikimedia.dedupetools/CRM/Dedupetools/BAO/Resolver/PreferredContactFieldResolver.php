@@ -12,9 +12,7 @@ class CRM_Dedupetools_BAO_Resolver_PreferredContactFieldResolver extends CRM_Ded
    * @throws \CiviCRM_API3_Exception
    */
   public function resolveConflicts() {
-    $fieldsToResolve = (array) Civi::settings()->get('deduper_resolver_field_prefer_preferred_contact');
-    $conflictedFields = (array) $this->getFieldsInConflict();
-    $fieldsAffected = array_intersect($fieldsToResolve, $conflictedFields);
+    $fieldsAffected = $this->getFieldsToResolveOnPreferredContact();
     foreach ($fieldsAffected as $field) {
       $this->setResolvedValue($field, $this->getPreferredContactValue($field));
     }

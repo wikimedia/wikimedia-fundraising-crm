@@ -49,6 +49,27 @@ class CRM_Dedupetools_BAO_MergeHandler {
   protected $context;
 
   /**
+   * Is the dedupe in safe mode.
+   *
+   * @var bool
+   */
+  protected $safeMode;
+
+  /**
+   * @return bool
+   */
+  public function isSafeMode(): bool {
+    return $this->safeMode;
+  }
+
+  /**
+   * @param bool $safeMode
+   */
+  public function setSafeMode(bool $safeMode) {
+    $this->safeMode = $safeMode;
+  }
+
+  /**
    * @var array
    */
   protected $emailConflicts;
@@ -271,12 +292,14 @@ class CRM_Dedupetools_BAO_MergeHandler {
    *  Contact ID to be merged and deleted.
    * @param string $context
    *  Merge context passed in from core -usually form or batch.
+   * @param bool $isSafeMode
    */
-  public function __construct($dedupeData, $mainID, $otherID, $context) {
+  public function __construct($dedupeData, $mainID, $otherID, $context, $isSafeMode) {
     $this->setDedupeData($dedupeData);
     $this->setMainID((int) $mainID);
     $this->setOtherID((int) $otherID);
     $this->setContext($context);
+    $this->setSafeMode($isSafeMode);
   }
 
   /**
@@ -361,7 +384,12 @@ class CRM_Dedupetools_BAO_MergeHandler {
    */
   public function setResolvedValue($fieldName, $value) {
     $moveField = 'move_' . $fieldName;
-    unset($this->dedupeData['fields_in_conflict'][$moveField]);
+    if ($this->isSafeMode()) {
+      unset($this->dedupeData['fields_in_conflict'][$moveField]);
+    }
+    else {
+      $this->dedupeData['fields_in_conflict'][$moveField] = $value;
+    }
     $this->setValue($fieldName, $value);
   }
 
@@ -558,6 +586,21 @@ class CRM_Dedupetools_BAO_MergeHandler {
    */
   public function getPreferredContactValue($fieldName) {
     return $this->getValueForField($fieldName, ($this->getPreferredContact() === $this->mainID));
+  }
+
+  /**
+   * Get the array of fields for which the preferred contact is the best resolution.
+   *
+   * @return array
+   */
+  public function getFieldsToResolveOnPreferredContact(): array {
+    $conflictedFields = $this->getFieldsInConflict();
+    if (!$this->isSafeMode()) {
+      // In aggressive mode we are resolving all remaining fields.
+      return $conflictedFields;
+    }
+    $fieldsToResolve = (array) $this->getSetting('deduper_resolver_field_prefer_preferred_contact');
+    return array_intersect($fieldsToResolve, $conflictedFields);
   }
 
 }
