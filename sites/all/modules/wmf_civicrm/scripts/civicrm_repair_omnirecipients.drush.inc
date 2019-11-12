@@ -104,7 +104,9 @@ function civicrm_repair_omnirecipients_drush_command() {
   $items['civicrm-repair-omnirecipients'] = array(
     'description' => 'Repair omnirecipients with timestamp related duplication',
     'options' => array(
-      'batch' => "Batch size",
+      'batch' => 'Batch size',
+      'hour_gap' => 'Number of hours between "right" and "wrong" values (default is 8)',
+      'hours_to_add' => 'Number of hours to add to get the right time for the second value',
       'threshold' => 'Threshold for aborting. If there are more than this number of contributions in the threshold period then abort.',
       'threshold_period' => 'Number of minutes in the threshold period',
     ),
@@ -142,9 +144,11 @@ function drush_civicrm_repair_omnirecipients() {
     }
   }
   $batch_size = (integer) drush_get_option('batch', 5000);
+  $hourGap = (integer) drush_get_option('hour_gap', 8);
+  $hoursToAdd = (integer) drush_get_option('hours_to_add', NULL);
   $startVariableName = 'civicrm_repair_omnirecipient_last_processed_timestamp';
   $startDate = variable_get($startVariableName, '2016-06-26');
-  $endDate = drush_civicrm_repair_process_rows($startDate, $batch_size);
+  $endDate = drush_civicrm_repair_process_rows($startDate, $batch_size, $hourGap, $hoursToAdd);
   variable_set($startVariableName, $endDate);
   drush_print("Processed omnirecipient fixes to $endDate");
 }
@@ -152,13 +156,30 @@ function drush_civicrm_repair_omnirecipients() {
 /**
  * @param string $startDate
  * @param int $batch_size
+ * @param int $hour_gap
+ *   Number of hours between 'right' & 'wrong' values, varies depending on
+ *   user time & system time gap - ie daylight savings.
+ * @param int $hours_to_add
+ *   Number of hours to add to the greater value to get the right time.
+ *   In the first iteration of the script this was set at hour_gap + 5.
+ *   However, I'm looking at a row in the csv like
+ *   62729501729,Normal,57255129,1463654577,"",email@example.com,Sent,08/28/2018 03:01:02,"","","","","","","","",3717079
+ *   which has 2 entries in the table for
+ *   - 2018-08-27 13:01:02 (which would be deleted)
+ *   - 2018-08-27 20:01:02  which needs to be increased by 7 hours to get the 08/28/2018 03:01:0 value above.
  *
  * @return false|null|string
  */
-function drush_civicrm_repair_process_rows($startDate, $batch_size = 5000) {
+function drush_civicrm_repair_process_rows($startDate, $batch_size = 5000, $hour_gap = 8, $hours_to_add = NULL) {
   $increment = '+ 5 days';
   $count = 0;
   $isHitLimit = FALSE;
+  $minutes = 60 * $hour_gap;
+  if ($hours_to_add === NULL) {
+    // See comment block.
+    $hours_to_add = $hour_gap + 5;
+  }
+
   while (strtotime($startDate) < strtotime('now') && !$isHitLimit) {
     $endDate = date('Y-m-d H:i:s', strtotime($increment, strtotime($startDate)));
     $sql = "
@@ -174,7 +195,7 @@ function drush_civicrm_repair_process_rows($startDate, $batch_size = 5000) {
         AND mp.event_type = mp2.event_type  AND mp.recipient_action_datetime < mp2.recipient_action_datetime
 
       WHERE mp2.`contact_identifier` IS NOT NULL
-      AND TIMESTAMPDIFF(MINUTE,mp.recipient_action_datetime , mp2.recipient_action_datetime) = 480 #8 hours exactly after daylight savings
+      AND TIMESTAMPDIFF(MINUTE,mp.recipient_action_datetime , mp2.recipient_action_datetime) = $minutes # $hour_gap hours exactly after daylight savings
       AND mp.event_type = mp2.event_type
       AND mp.recipient_action_datetime BETWEEN %1 AND %2
     ";
@@ -196,7 +217,7 @@ function drush_civicrm_repair_process_rows($startDate, $batch_size = 5000) {
          ";
       $sqls[] = "
          UPDATE IGNORE civicrm_mailing_provider_data
-         SET recipient_action_datetime = DATE_ADD(recipient_action_datetime, INTERVAL 13 HOUR)
+         SET recipient_action_datetime = DATE_ADD(recipient_action_datetime, INTERVAL $hours_to_add HOUR)
          WHERE
            contact_identifier = {$result->ci2}
            AND recipient_action_datetime = '{$result->date_time2}'

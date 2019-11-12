@@ -205,5 +205,10 @@ function _civicrm_api3_omnirecipient_load_spec(&$params) {
     'type' => CRM_Utils_Type::T_INT,
     'api.default' => 1,
   );
+  $params['php_only_offset'] = [
+    'title' => ts('Force the php timezone'),
+    'description' => ts('Permit forcing of the php offset timezone separately from the mysql offset'),
+    'type' => CRM_Utils_Type::T_INT,
+  ];
 
 }
