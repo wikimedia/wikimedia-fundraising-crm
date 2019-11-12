@@ -21,7 +21,7 @@
     <div>
     </div>
     <div><strong class="basic-contact-field">{{ ts('First Name') }}</strong>: <span editable-text="contact['result'].first_name">{{contact['result'].first_name || ".."}}</span></div>
-    <div><strong class="basic-contact-field">{{ ts('Middle Name') }}</strong>:<a href='#' editable-text="contact['result'].middle_name">{{contact['result'].middle_name || ".."}}</a></div>
+    <div><strong class="basic-contact-field">{{ ts('Middle Name') }}</strong>:<span editable-text="contact['result'].middle_name">{{contact['result'].middle_name || ".."}}</span></div>
     <div><strong class="basic-contact-field">{{ ts('Last Name') }}</strong>: <span editable-text="contact['result'].last_name">{{contact['result'].last_name || ".."}}</span></div>
 
     <div><strong class="basic-contact-field">{{ts('Email')}}</strong>: <span editable-text="contact['result'].email">{{contact['result'].email || ".."}}</span></div>

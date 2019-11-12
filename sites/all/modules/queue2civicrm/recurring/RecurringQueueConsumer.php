@@ -364,7 +364,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
         $params = array(
           'template' => $template,
-          'amount' => $msg['gross'],
+          'amount' => $msg['original_gross'],
           'contact_id' => $contactId,
           'currency' => $msg['original_currency'],
           'first_name' => $contact['first_name'],

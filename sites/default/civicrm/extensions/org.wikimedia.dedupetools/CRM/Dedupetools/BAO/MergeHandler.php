@@ -260,6 +260,9 @@ class CRM_Dedupetools_BAO_MergeHandler {
     $resolver = new CRM_Dedupetools_BAO_Resolver_UninformativeCharactersResolver($this);
     $resolver->resolveConflicts();
 
+    $resolver = new CRM_Dedupetools_BAO_Resolver_SillyNameResolver($this);
+    $resolver->resolveConflicts();
+
     $resolver = new CRM_Dedupetools_BAO_Resolver_MisplacedNameResolver($this);
     $resolver->resolveConflicts();
 
@@ -452,7 +455,10 @@ class CRM_Dedupetools_BAO_MergeHandler {
   /**
    * Set the specified value as the one to use during merge.
    *
-   * Note that if this resolves a conflict setResolvedValue should be used.
+   * If by doing this the fields then match then the conflict will be marked as resolved.
+   *
+   * Otherwise this is basically just a 'working copy' of the information, which
+   * might help a later resolver reach resolution.
    *
    * @param string $fieldName
    * @param mixed $value
