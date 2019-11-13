@@ -381,3 +381,12 @@ function dedupetools_civicrm_container($container) {
 function dedupetools_civicrm_entityTypes(&$entityTypes) {
   _dedupetools_civix_civicrm_entityTypes($entityTypes);
 }
+
+/**
+ * Implements hook_civicrm_themes().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_themes
+ */
+function dedupetools_civicrm_themes(&$themes) {
+  _dedupetools_civix_civicrm_themes($themes);
+}
