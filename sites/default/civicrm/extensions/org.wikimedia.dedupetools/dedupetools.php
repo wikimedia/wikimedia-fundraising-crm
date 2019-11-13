@@ -230,7 +230,7 @@ function dedupetools_civicrm_preProcess($formName, &$form) {
 /**
  * Implements hook_civicrm_navigationMenu().
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu
  */
 function dedupetools_civicrm_navigationMenu(&$menu) {
   _dedupetools_civix_insert_navigation_menu($menu, 'Contacts', [
@@ -255,6 +255,8 @@ function dedupetools_civicrm_navigationMenu(&$menu) {
 
 /**
  * Do not require administer CiviCRM to use deduper.
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_alterAPIPermissions
  *
  * @param string $entity
  * @param string $action
@@ -281,6 +283,8 @@ function dedupetools_civicrm_alterAPIPermissions($entity, $action, &$params, &$p
 
 /**
  * Implementation of hook_civicrm_merge().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_merge
  *
  * @param string $type
  * @param array $refs
@@ -312,6 +316,8 @@ function dedupetools_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
 /**
  * Alter location data 'planned' for merge.
  *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterLocationMergeData
+ *
  * @param array $blocksDAO
  *   Array of location DAO to be saved. These are arrays in 2 keys 'update' &
  *   'delete'.
@@ -336,6 +342,8 @@ function dedupetools_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
 
 /**
  * Set up a cache for saving dedupe pairs in.
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_container
  *
  * We want to be able to save dedupe name match info into an efficient cache - this equates to
  * caching in php for the duration of a process & Redis / MemCache (if available) for longer.
@@ -368,7 +376,7 @@ function dedupetools_civicrm_container($container) {
  *
  * Declare entity types provided by this module.
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_entityTypes
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
  */
 function dedupetools_civicrm_entityTypes(&$entityTypes) {
   _dedupetools_civix_civicrm_entityTypes($entityTypes);
