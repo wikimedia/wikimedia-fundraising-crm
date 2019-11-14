@@ -2546,10 +2546,6 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
 function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, $otherId) {
   $dbFieldName = str_replace('move_', '', $moveField);
 
-  if ($moveField == 'move_contact_source') {
-    unset($refs['fields_in_conflict'][$moveField]);
-    return;
-  }
   if (_wmf_civicrm_merge_resolve_preferred_language_conflict(
     $dbFieldName,
     $refs['migration_info'][$moveField],

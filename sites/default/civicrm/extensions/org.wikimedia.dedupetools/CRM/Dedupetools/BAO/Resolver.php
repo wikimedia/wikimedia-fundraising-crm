@@ -119,4 +119,14 @@ abstract class CRM_Dedupetools_BAO_Resolver {
     return $this->mergeHandler->getIndividualNameFieldValues($isForContactToBeKept);
   }
 
+  /**
+   * Get the value for the given field for the preferred conflict, using rules.
+   *
+   * @param string $fieldName
+   *
+   * @return mixed
+   */
+  protected function getPreferredContactValue($fieldName) {
+    return $this->mergeHandler->getPreferredContactValue($fieldName);
+  }
 }
