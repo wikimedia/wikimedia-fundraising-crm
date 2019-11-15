@@ -136,10 +136,10 @@ function _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $j
  */
 function _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $insertBatchSize, $job, $jobSettings, $newOffSet) {
   if (count($valueStrings) === $insertBatchSize) {
-    CRM_Core_DAO::executeQuery("
+    CRM_Core_DAO::executeQuery('
          INSERT IGNORE INTO civicrm_mailing_provider_data
          (`contact_identifier`, `mailing_identifier`, `email`, `event_type`, `recipient_action_datetime`, `contact_id`)
-         values" . implode(',', $valueStrings)
+         values' . implode(',', $valueStrings)
     );
     $job->saveJobSetting(array_merge($jobSettings, array('offset' => $newOffSet)));
     $valueStrings = array();
