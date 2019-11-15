@@ -43,7 +43,7 @@ function civicrm_api3_omnirecipient_load($params) {
     $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . ' seconds');
     $throttleCount = (int) CRM_Utils_Array::value('throttle_number', $params);
     $rowsLeftBeforeThrottle = $throttleCount;
-    $limit = (isset($params['options']['limit'])) ? $params['options']['limit'] : NULL;
+    $limit = $params['options']['limit'] ?? NULL;
     $count = 0;
     $insertBatchSize = CRM_Utils_Array::value('insert_batch_size', $params, 1);
     $valueStrings = array();
