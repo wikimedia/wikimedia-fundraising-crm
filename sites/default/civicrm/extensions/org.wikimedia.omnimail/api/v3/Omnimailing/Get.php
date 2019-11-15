@@ -21,13 +21,13 @@ if (file_exists( __DIR__ . '/../../../vendor/autoload.php')) {
  */
 function civicrm_api3_omnimailing_get($params) {
   $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
-  $mailerParameters = array(
+  $mailerParameters = [
     'StartTimeStamp' => strtotime($params['start_date']),
     'EndTimeStamp' => strtotime($params['end_date']),
-  );
+  ];
 
   $mailings = $mailer->getMailings($mailerParameters)->getResponse();
-  $results = array();
+  $results = [];
   foreach ($mailings as $mailing) {
     try {
       $result = [
@@ -84,25 +84,25 @@ function civicrm_api3_omnimailing_get($params) {
  * @param $params
  */
 function _civicrm_api3_omnimailing_get_spec(&$params) {
-  $params['username'] = array(
+  $params['username'] = [
     'title' => ts('User name'),
-  );
-  $params['password'] = array(
+  ];
+  $params['password'] = [
     'title' => ts('Password'),
-  );
-  $params['mail_provider'] = array(
+  ];
+  $params['mail_provider'] = [
     'title' => ts('Name of Mailer'),
     'api.required' => TRUE,
-  );
-  $params['start_date'] = array(
+  ];
+  $params['start_date'] = [
     'title' => ts('Date to fetch from'),
     'api.default' => '1 week ago',
     'type' => CRM_Utils_Type::T_TIMESTAMP,
-  );
-  $params['end_date'] = array(
+  ];
+  $params['end_date'] = [
     'title' => ts('Date to fetch to'),
     'type' => CRM_Utils_Type::T_TIMESTAMP,
     'api.default' => 'now',
-  );
+  ];
 
 }
