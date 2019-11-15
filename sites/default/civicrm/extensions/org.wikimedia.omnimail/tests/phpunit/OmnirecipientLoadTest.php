@@ -42,7 +42,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
     $this->assertEquals(array(
       0 => array(
         'contact_identifier' => '126312673126',
-        'mailing_identifier' => '54132674',
+        'mailing_identifier' => 'sp54132674',
         'email' => 'sarah@example.com',
         'event_type' => 'Open',
         'recipient_action_datetime' => '2017-06-30 23:32:00',
@@ -51,7 +51,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
       ),
       1 => array(
         'contact_identifier' => '15915939159',
-        'mailing_identifier' => '54132674',
+        'mailing_identifier' => 'sp54132674',
         'email' => 'cliff@example.com',
         'event_type' => 'Open',
         'recipient_action_datetime' => '2017-06-30 23:32:00',
@@ -60,7 +60,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
       ),
       2 => array(
         'contact_identifier' => '248248624848',
-        'mailing_identifier' => '54132674',
+        'mailing_identifier' => 'sp54132674',
         'email' => 'bob@example.com',
         'event_type' => 'Open',
         'recipient_action_datetime' => '2017-06-30 23:32:00',
@@ -69,7 +69,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
       ),
       3 => array(
         'contact_identifier' => '508505678505',
-        'mailing_identifier' => '54132674',
+        'mailing_identifier' => 'sp54132674',
         'email' => 'steve@example.com',
         'event_type' => 'Open',
         'recipient_action_datetime' => '2017-07-01 17:28:00',
@@ -132,7 +132,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
     $this->assertEquals(array(
       0 => array(
         'contact_identifier' => '126312673126',
-        'mailing_identifier' => '54132674',
+        'mailing_identifier' => 'sp54132674',
         'email' => 'sarah@example.com',
         'event_type' => 'Open',
         'recipient_action_datetime' => date('Y-m-d H:i:s', strtotime('2017-06-30 23:32:00 GMT')),
@@ -141,7 +141,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
       ),
       1 => array(
         'contact_identifier' => '15915939159',
-        'mailing_identifier' => '54132674',
+        'mailing_identifier' => 'sp54132674',
         'email' => 'cliff@example.com',
         'event_type' => 'Open',
         'recipient_action_datetime' => date('Y-m-d H:i:s', strtotime('2017-06-30 23:32:00 GMT')),
