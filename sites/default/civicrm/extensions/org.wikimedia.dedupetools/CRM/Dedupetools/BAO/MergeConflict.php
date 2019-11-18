@@ -86,4 +86,19 @@ class CRM_Dedupetools_BAO_MergeConflict extends CRM_Dedupetools_DAO_MergeConflic
       ], 1)
     );
   }
+
+  /**
+   * Get the criteria for determining the contact whose data should be preferred.
+   *
+   * @return array
+   */
+  public static function getEquivalentNameOptions(): array {
+    return [
+      'prefer_nick_name' => E::ts('Prefer nick name, discard conflicting name'),
+      'prefer_non_nick_name' => E::ts('Prefer non-nick name, discard conflicting name'),
+      'prefer_non_nick_name_keep_nick_name' => E::ts('Prefer non-nick name, put nick-name in nick name field'),
+      'prefer_preferred_contact_value' => E::ts('Prefer value from preferred contact (eg most recent donor), discard conflicting value'),
+      'prefer_preferred_contact_value_keep_nick_name' => E::ts('Prefer value from preferred contact, put nick name, if exists in nick name field'),
+    ];
+  }
 }

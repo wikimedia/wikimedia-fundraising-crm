@@ -49,6 +49,27 @@ class CRM_Dedupetools_BAO_MergeHandler {
   protected $context;
 
   /**
+   * Is the dedupe in safe mode.
+   *
+   * @var bool
+   */
+  protected $safeMode;
+
+  /**
+   * @return bool
+   */
+  public function isSafeMode(): bool {
+    return $this->safeMode;
+  }
+
+  /**
+   * @param bool $safeMode
+   */
+  public function setSafeMode(bool $safeMode) {
+    $this->safeMode = $safeMode;
+  }
+
+  /**
    * @var array
    */
   protected $emailConflicts;
@@ -59,6 +80,13 @@ class CRM_Dedupetools_BAO_MergeHandler {
    * @var array
    */
   protected $locationBlocksToDelete = [];
+
+  /**
+   * Temporary stash of settings.
+   *
+   * @var array
+   */
+  protected $settings = [];
 
   /**
    * Getter for dedupe Data.
@@ -76,6 +104,23 @@ class CRM_Dedupetools_BAO_MergeHandler {
    */
   public function setDedupeData(array $dedupeData) {
     $this->dedupeData = $dedupeData;
+  }
+
+  /**
+   * Helper for getting settings.
+   *
+   * This doesn't do much but it saves falling into questions as to whether a property
+   * would be faster than the cached settings.get call.
+   *
+   * @param string $setting
+   *
+   * @return mixed
+   */
+  public function getSetting($setting) {
+    if (!isset($this->settings[$setting])) {
+      $this->settings[$setting] = \Civi::settings()->get($setting);
+    }
+    return $this->settings[$setting];
   }
 
   /**
@@ -138,7 +183,7 @@ class CRM_Dedupetools_BAO_MergeHandler {
    * @return array
    */
   public function getIndividualNameFields():array {
-    return ['first_name', 'last_name', 'middle_name'];
+    return ['first_name', 'last_name', 'middle_name', 'nick_name'];
   }
 
   /**
@@ -247,16 +292,23 @@ class CRM_Dedupetools_BAO_MergeHandler {
    *  Contact ID to be merged and deleted.
    * @param string $context
    *  Merge context passed in from core -usually form or batch.
+   * @param bool $isSafeMode
    */
-  public function __construct($dedupeData, $mainID, $otherID, $context) {
+  public function __construct($dedupeData, $mainID, $otherID, $context, $isSafeMode) {
     $this->setDedupeData($dedupeData);
     $this->setMainID((int) $mainID);
     $this->setOtherID((int) $otherID);
     $this->setContext($context);
+    $this->setSafeMode($isSafeMode);
   }
 
   /**
    * Resolve merge.
+   *
+   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function resolve() {
     // @todo we'll build out how we manage resolvers later.
@@ -272,6 +324,9 @@ class CRM_Dedupetools_BAO_MergeHandler {
     $resolver->resolveConflicts();
 
     $resolver = new CRM_Dedupetools_BAO_Resolver_SillyNameResolver($this);
+    $resolver->resolveConflicts();
+
+    $resolver = new CRM_Dedupetools_BAO_Resolver_EquivalentNameResolver($this);
     $resolver->resolveConflicts();
 
     $resolver = new CRM_Dedupetools_BAO_Resolver_MisplacedNameResolver($this);
@@ -329,7 +384,12 @@ class CRM_Dedupetools_BAO_MergeHandler {
    */
   public function setResolvedValue($fieldName, $value) {
     $moveField = 'move_' . $fieldName;
-    unset($this->dedupeData['fields_in_conflict'][$moveField]);
+    if ($this->isSafeMode()) {
+      unset($this->dedupeData['fields_in_conflict'][$moveField]);
+    }
+    else {
+      $this->dedupeData['fields_in_conflict'][$moveField] = $value;
+    }
     $this->setValue($fieldName, $value);
   }
 
@@ -488,7 +548,8 @@ class CRM_Dedupetools_BAO_MergeHandler {
     $this->dedupeData['migration_info']['rows'][$moveField][$contactField] = $value;
     $this->dedupeData['migration_info'][$contactField . '_details'][$fieldName] = $value;
 
-    if ($value === $this->dedupeData['migration_info']['rows'][$moveField][$otherContactField]) {
+    if (!isset($this->dedupeData['migration_info']['rows'][$moveField][$otherContactField])
+    || ($value === $this->dedupeData['migration_info']['rows'][$moveField][$otherContactField])) {
       $this->setResolvedValue($fieldName, $value);
     }
   }
@@ -525,6 +586,21 @@ class CRM_Dedupetools_BAO_MergeHandler {
    */
   public function getPreferredContactValue($fieldName) {
     return $this->getValueForField($fieldName, ($this->getPreferredContact() === $this->mainID));
+  }
+
+  /**
+   * Get the array of fields for which the preferred contact is the best resolution.
+   *
+   * @return array
+   */
+  public function getFieldsToResolveOnPreferredContact(): array {
+    $conflictedFields = $this->getFieldsInConflict();
+    if (!$this->isSafeMode()) {
+      // In aggressive mode we are resolving all remaining fields.
+      return $conflictedFields;
+    }
+    $fieldsToResolve = (array) $this->getSetting('deduper_resolver_field_prefer_preferred_contact');
+    return array_intersect($fieldsToResolve, $conflictedFields);
   }
 
 }

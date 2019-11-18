@@ -91,4 +91,24 @@ return [
       'callback' => 'CRM_Dedupetools_BAO_MergeConflict::getPreferredContactCriteriaFallback',
     ],
   ],
+  'deduper_equivalent_name_handling' => [
+    'group_name' => 'Deduper Settings',
+    'group' => 'deduper',
+    'name' => 'deduper_equivalent_name_handling',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('If an option is selected then 2 contacts with equivalent names will be merged. (e.g Robert & Bob)'),
+    'default' => '',
+    'title' => E::ts('Resolution for contacts with known alternative names'),
+    'help_text' => '',
+    'html_type' => 'select',
+    'html_attributes' => [
+      'class' => 'crm-select2',
+    ],
+    'settings_pages' => ['deduper' => ['weight' => 60]],
+    'pseudoconstant' => [
+      'callback' => 'CRM_Dedupetools_BAO_MergeConflict::getEquivalentNameOptions',
+    ],
+  ],
 ];
