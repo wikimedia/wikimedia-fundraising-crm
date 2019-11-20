@@ -5,6 +5,7 @@ function wmf_eoy_receipt_drush_command() {
     'wmf-eoy-receipts' => [
       'description' => 'Run end-of-year receipts generation, and send letters.  This is equivalent to running the following tasks in succession: wmf-eoy-calculate-summaries, wmf-eoy-send-letters',
       'options' => [
+        'contact_id' => 'ID of donor to receive receipt',
         'year' => 'Report year',
         'batch' => 'Batch size',
       ],
@@ -12,6 +13,7 @@ function wmf_eoy_receipt_drush_command() {
     'wmf-eoy-calculate-summaries' => [
       'description' => 'Sum contributions for the given year.',
       'options' => [
+        'contact_id' => 'ID of donor to receive receipt',
         'year' => 'Report year',
       ],
     ],
