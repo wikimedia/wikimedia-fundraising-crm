@@ -3150,11 +3150,11 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.5.11",
+            "version": "v0.5.11.1",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "8bbd0d47aad4174a9c2138e3b4ae5a62ef83fde4"
+                "reference": "6e5aa8b2cb1b1004f804a4155ad5d7f3c809edfb"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -3213,7 +3213,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2019-11-15T23:01:18+00:00"
+            "time": "2019-11-20T20:34:58+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -3965,8 +3965,8 @@
             "authors": [
                 {
                     "name": "Sebastian Bergmann",
-                    "role": "lead",
-                    "email": "sb@sebastian-bergmann.de"
+                    "email": "sb@sebastian-bergmann.de",
+                    "role": "lead"
                 }
             ],
             "description": "FilterIterator implementation that filters files based on a list of suffixes.",
@@ -4007,8 +4007,8 @@
             "authors": [
                 {
                     "name": "Sebastian Bergmann",
-                    "role": "lead",
-                    "email": "sebastian@phpunit.de"
+                    "email": "sebastian@phpunit.de",
+                    "role": "lead"
                 }
             ],
             "description": "Simple template engine.",
@@ -4056,8 +4056,8 @@
             "authors": [
                 {
                     "name": "Sebastian Bergmann",
-                    "role": "lead",
-                    "email": "sb@sebastian-bergmann.de"
+                    "email": "sb@sebastian-bergmann.de",
+                    "role": "lead"
                 }
             ],
             "description": "Utility class for timing",
@@ -4811,8 +4811,8 @@
             "authors": [
                 {
                     "name": "Sebastian Bergmann",
-                    "role": "lead",
-                    "email": "sebastian@phpunit.de"
+                    "email": "sebastian@phpunit.de",
+                    "role": "lead"
                 }
             ],
             "description": "Library that helps with managing the version number of Git-hosted PHP projects",
