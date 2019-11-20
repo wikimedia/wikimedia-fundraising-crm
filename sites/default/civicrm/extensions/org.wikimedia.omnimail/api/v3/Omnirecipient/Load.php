@@ -25,9 +25,13 @@
  * (`' . implode('`,`', $columns) . '`)';
  * CRM_Core_DAO::executeQuery($query);
  * ````
+ *
  * @param $params
  *
  * @return array
+ *
+ * @throws \API_Exception
+ * @throws \CiviCRM_API3_Exception
  */
 function civicrm_api3_omnirecipient_load($params) {
   try {

@@ -203,9 +203,6 @@ function large_donation_civicrm_post($action, $type, $id, &$contribution) {
 function large_donation_get_notification_thresholds() {
   $notifications = &drupal_static(__FUNCTION__);
   if (!isset($notifications)) {
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push('default');
-
     $notifications = db_select('large_donation_notification')
       ->fields('large_donation_notification')
       ->condition('enabled', TRUE, '=')
