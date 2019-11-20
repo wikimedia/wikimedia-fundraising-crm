@@ -1,14 +1,22 @@
 {% if first_name and last_name %}
-<p>Hei {{ first_name }}!
+<p>Hei {{ first_name }},
 </p>{% else %}<p>
 Kjære giver,</p>
 {%endif%}
 
-<p>Jeg liker at det er min jobb å takke deg for ditt {% if recurring %}månedlige {%endif%}bidrag på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} til Wikipedia og Wikimedia Foundation.
+{% if recurring %}
+
+<p>JJeg er svært glad for gaven din på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} per måned, og jeg vil takke deg på vegne av alle som ønsker fri kunnskap.
 </p>
 
-<p>Wikipedias historie er historien til individer, som deg selv, som gir av seg selv for å holde dørene til oppdagelse åpne. Ditt {% if recurring %}månedlige {%endif%}bidrag viser meg at ånden bak visjonen vår lever i beste velgående.
+<p>Donasjonen din holder Wikipedia uavhengig, og din månedlige støtte er avgjørende for langsiktig planlegging og for å hjelpe oss med å se hva Wikipedia kan oppnå i årene fremover. Hver måned vil en donasjon pålydende {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} bli debitert til Wikimedia Foundation inntil du gir oss beskjed om å stoppe.<b>Vi sender deg et sammendrag hver januar over bidragene dine for det foregående året.</b> Hvis du av en eller annen grunn ønsker å kansellere donasjonen, følger du disse <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">enkle kanselleringsinstruksjonene</a>.</p>
+
+{% else %}
+
+<p>JJeg er svært glad for gaven din på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} og jeg vil takke deg på vegne av alle som ønsker fri kunnskap.
 </p>
+
+{% endif %}
 
 {% if "RecurringRestarted" in contribution_tags %}
 <p>Nylig løste vi et mindre teknisk problem som midlertidig stanset noen månedlige bidrag. Vi har gjenopptatt ditt månedlige trekk og det vil bli behandlet som normalt i tiden som kommer. Vi vil ikke belaste deg for de foregående månedene. Takk for tålmodigheten og for støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.</p>
@@ -18,27 +26,15 @@ Kjære giver,</p>
 <p>Nylig løste vi et teknisk problem som gjorde at en rekke små givere ikke fikk bekreftelse på sine donasjoner. Du mottar denne e-posten som en takk for din donasjon {{ receive_date }}. Vi setter virkelig pris på tålmodigheten og støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.</p>
 {%endif%}
 
-{% if recurring %}
-<p>Donasjonen din holder Wikipedia uavhengig, og din månedlige støtte er avgjørende for vår langsiktige planlegging, og for å hjelpe oss med å se hva Wikipedia kan oppnå i årene fremover. Hver måned vil et trekk på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} bli debitert til Wikimedia Foundation inntil du gir oss beskjed om å stoppe. <b>Vi sender deg et sammendrag i januar over dine bidrage for det foregående året.</b> Hvis du av en eller annen grunn ønsker å kansellere donasjonen, følger du disse <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">enkle kanselleringsinstruksjonene</a>.</p>
-{%endif%}
-
-<p>Du ga sannsynligvis fordi Wikipedia er nyttig for deg. Det er en av hovedgrunnene folk gir meg når jeg spør dem om hvorfor de støtter Wikipedia. Kanskje det vil overraske deg, men en av hovedgrunnene til at folk ikke gir er at de ikke har råd til det.
+<p>Når du nå bruker Wikipedia, håper jeg du får en enda sterkere følelse av det også tilhører deg. For uten deg og uten støtte fra millioner av mennesker som kommer tilbake til oss hver dag, ville ikke det være mulig å drive Wikipedia.
 </p>
 
-<p>Her hos Wikimedia Foundation mener vi at ingen skal måtte betale for å lære. Vi mener at all kunnskap bør være gratis. Vi kommer aldri til å ta betalt for bruk av Wikipedia. Så hvordan har vi råd til infrastrukturen til et av verdens mest populære nettsteder?
+<p>Donasjonen din gir oss vind i seilene og gjør det mulig for oss å nå vårt mål. Takk for at du setter av plass til Wikipedia i ditt liv.
 </p>
 
-<p>På grunn av gavmilde mennesker som deg.
-</p>
 
-<p>Wikipedia er ditt: ditt å lese, ditt å redigere, ditt å fordype deg i. Vi er ikke målet, vi er starten.
-</p>
+<p>Hjertelig takk,</p>
 
-{% if first_name and last_name %}
-<p>{{ first_name }}, takk for at du hjelper fri kunnskap å blomstre.
-</p>{% else %}<p>
-Takk for at du hjelper fri kunnskap å blomstre.</p>
-{%endif%}
 
 <p>Katherine<br/><br/>
 <br/><br/>
@@ -58,4 +54,4 @@ Administrerende direktør, Wikimedia Foundation
 <p>Ønsker du ikke å få e-poster om innsamlinger fra Wikimedia Foundation i fremtiden, <a href="{{ unsubscribe_link | raw }}">kan du melde deg av umiddelbart</a>. Merk at vi fremdeles vil sende deg kvitteringer, som denne, for fremtidige donasjoner.
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/nb&amp;oldid=19073510","name":"thank_you.nb.html","revision":19073510}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.nb.html","revision":20200220}TI_END -->
