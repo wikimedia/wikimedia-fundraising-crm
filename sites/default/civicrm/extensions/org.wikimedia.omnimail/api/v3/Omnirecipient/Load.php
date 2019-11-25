@@ -43,7 +43,7 @@ function civicrm_api3_omnirecipient_load($params) {
     $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . ' seconds');
     $throttleCount = (int) CRM_Utils_Array::value('throttle_number', $params);
     $rowsLeftBeforeThrottle = $throttleCount;
-    $limit = (isset($params['options']['limit'])) ? $params['options']['limit'] : NULL;
+    $limit = $params['options']['limit'] ?? NULL;
     $count = 0;
     $insertBatchSize = CRM_Utils_Array::value('insert_batch_size', $params, 1);
     $valueStrings = array();
@@ -166,6 +166,7 @@ function _civicrm_api3_omnirecipient_load_spec(&$params) {
   $params['mail_provider'] = array(
     'title' => ts('Name of Mailer'),
     'api.required' => TRUE,
+    'api.default' => 'Silverpop',
   );
   $params['start_date'] = array(
     'title' => ts('Date to fetch from'),
@@ -178,6 +179,7 @@ function _civicrm_api3_omnirecipient_load_spec(&$params) {
   $params['mailing_prefix'] = array(
     'title' => ts('A prefix to prepend to the mailing_identifier when storing'),
     'type' => CRM_Utils_Type::T_STRING,
+    'api.default' => 'sp',
   );
   $params['retrieval_parameters'] = array(
     'title' => ts('Additional information for retrieval of pre-stored requests'),

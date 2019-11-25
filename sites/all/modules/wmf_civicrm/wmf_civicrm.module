@@ -1813,49 +1813,32 @@ function wmf_civicrm_get_country_id($raw) {
 }
 
 /**
- * Find correct state for insertion
+ * Get the state id for the named state in the given country.
  *
- * When passing CiviCRM a state abbreviation, odd things can happen - like
- * getting the right abbreviation, but the wrong state So we'll pull back the
- * correct state/province name based off of a user's country/state abbreviation
+ * @param int $country_id
+ * @param string $state
+ *
+ * @return int|null
  */
-function wmf_civicrm_get_state($country, $state) {
-  if (strlen($country) == 2) {
-    $query = "SELECT s.name AS state_name FROM civicrm_country c, civicrm_state_province s WHERE s.country_id=c.id AND c.iso_code = :country AND s.abbreviation = :state";
-  }
-  else {
-    $query = "SELECT s.name AS state_name FROM civicrm_country c, civicrm_state_province s WHERE s.country_id=c.id AND c.name = :country AND s.abbreviation = :state";
-  }
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-  $result = db_query($query, array(':country' => $country, ':state' => $state));
-  if ($result->rowCount() === 1) {
-    $state = $result->fetch()->state_name;
-  }
-
-  return $state;
-}
-
 function wmf_civicrm_get_state_id($country_id, $state) {
-  $query = <<<EOS
-SELECT id
+  $stateID = CRM_Core_DAO::singleValueQuery('
+  SELECT id
 FROM civicrm_state_province s
 WHERE
-    s.country_id = :country_id
-    AND ( s.abbreviation = :state OR s.name = :state )
-EOS;
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-  $result = db_query($query, array(
-    ':country_id' => $country_id,
-    ':state' => $state,
-  ));
-  if ($result->rowCount() === 1) {
-    return $result->fetch()->id;
+    s.country_id = %1
+    AND ( s.abbreviation = %2 OR s.name = %3)
+  ', [
+    1 => [$country_id, 'String'],
+    2 => [$state, 'String'],
+    3 => [$state, 'String'],
+  ]);
+  if ($stateID) {
+    return (int) $stateID;
   }
+
   watchdog('wmf_civicrm',
     "Cannot find state: [%state] (country %country)",
-    array('%state' => $state, '%country' => $country_id),
+    ['%state' => $state, '%country' => $country_id],
     WATCHDOG_NOTICE
   );
 }

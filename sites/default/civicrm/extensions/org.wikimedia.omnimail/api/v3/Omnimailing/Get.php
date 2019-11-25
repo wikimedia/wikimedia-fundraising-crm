@@ -20,6 +20,12 @@ if (file_exists( __DIR__ . '/../../../vendor/autoload.php')) {
  * @throws \CiviCRM_API3_Exception
  */
 function civicrm_api3_omnimailing_get($params) {
+  // @todo - we should leverage the same code to do this as the Omnirecipient job.
+  // I don't really want to do a restructure right now so a quick hack but a bit todo.
+  date_default_timezone_set('UTC');
+  CRM_Core_DAO::executeQuery("SET TIME_ZONE='+00:00'");
+
+  /* @var \Omnimail\Silverpop\Mailer $mailer */
   $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
   $mailerParameters = [
     'StartTimeStamp' => strtotime($params['start_date']),

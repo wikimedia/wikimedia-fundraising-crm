@@ -50,7 +50,8 @@ class db_switcher {
      */
     if (!Database::getConnectionInfo('civicrm')) {
       require_once conf_path() . '/civicrm.settings.php';
-      $databases['civicrm']['default'] = static::parse_dbi_url(str_replace('?new_link=true', '', CIVICRM_DSN));
+      $url = CIVICRM_DSN === 'civirpow://' ? $GLOBALS['civirpow']['masters'][0] : CIVICRM_DSN;
+      $databases['civicrm']['default'] = static::parse_dbi_url(str_replace('?new_link=true', '', $url));
 
       Database::parseConnectionInfo();
     }
