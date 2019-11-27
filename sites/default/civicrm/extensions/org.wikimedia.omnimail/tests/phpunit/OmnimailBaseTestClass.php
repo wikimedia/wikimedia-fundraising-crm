@@ -52,6 +52,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
 
   public function setUp() {
     parent::setUp();
+    civicrm_initialize();
     Civi::service('settings_manager')->flush();
     \Civi::$statics['_omnimail_settings'] = [];
   }

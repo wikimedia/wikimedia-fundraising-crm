@@ -55,7 +55,7 @@ function civicrm_api3_omnimailing_load($params) {
       ['name' => 'sp' . $mailing['external_identifier']],
       [
         'title' => 'sp' . $mailing['external_identifier'],
-        'description' => $mailing['subject'],
+        'description' => _omnimailing_strip_emojis($mailing['subject']),
         'campaign_type_id' => 'Email',
         'start_date' => date('Y-m-d H:i:s', $mailing['start_date']),
         'status_id' => 'Completed',
@@ -67,10 +67,10 @@ function civicrm_api3_omnimailing_load($params) {
       'Mailing',
       ['hash' => 'sp' . $mailing['external_identifier']],
       [
-        'body_html' => !empty($mailing['body_html']) ? $mailing['body_html'] : '',
-        'body_text' => !empty($mailing['body_text']) ? $mailing['body_text'] : '',
+        'body_html' => !empty($mailing['body_html']) ? _omnimailing_strip_emojis($mailing['body_html']) : '',
+        'body_text' => !empty($mailing['body_text']) ? _omnimailing_strip_emojis($mailing['body_text']) : '',
         'name' => !empty($mailing['name']) ? $mailing['name'] : 'sp' . $mailing['external_identifier'],
-        'subject' => substr($mailing['subject'], 0, 128),
+        'subject' => substr(_omnimailing_strip_emojis($mailing['subject']), 0, 128),
         'created_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
         'hash' => 'sp' . $mailing['external_identifier'],
         'scheduled_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
@@ -177,4 +177,28 @@ function _civicrm_api3_omnimailing_load_api_replace($entity, $retrieveParams, $u
   }
   $created = civicrm_api3($entity, 'create', array_merge($updateParams, $extraParams));
   return $created['values'][$created['id']];
+}
+
+
+/**
+ * Strip emojis from string.
+ *
+ * Currently our database does not support utfmb8. Our MariaDb level does but we would need
+ * to convert all tables or at least the mailing ones - which would include the
+ * huge mailing_provider_data table. For now let's hack it here.
+ *
+ * Main discussion taking place on https://github.com/civicrm/civicrm-core/pull/13633/files
+ *
+ * This code taken from http://scriptsof.com/php-remove-emojis-or-4-byte-characters-19
+ *
+ * @param string $string
+ *
+ * @return string|string[]|null
+ */
+function _omnimailing_strip_emojis($string) {
+  return preg_replace('%(?:
+          \xF0[\x90-\xBF][\x80-\xBF]{2}      # planes 1-3
+        | [\xF1-\xF3][\x80-\xBF]{3}          # planes 4-15
+        | \xF4[\x80-\x8F][\x80-\xBF]{2}      # plane 16
+    )%xs', '', $string);
 }

@@ -13,7 +13,7 @@
       <UserName>Donald Duck</UserName>
       <SentTS>2017-06-02 08:01:39.0</SentTS>
       <NumSent>6047</NumSent>
-      <Subject><![CDATA[cool email]]></Subject>
+      <Subject><![CDATA[cool email 🌻]]></Subject>
       <Visibility>Shared</Visibility>
       <ParentTemplateId>419</ParentTemplateId>
     </Mailing>

@@ -46,7 +46,7 @@ class OmnimailingGetTest extends OmnimailBaseTestClass {
     $mailings = $this->callAPISuccess('Omnimailing', 'get', array('mail_provider' => 'Silverpop', 'client' => $this->getMockRequest($responses), 'username' => 'Donald', 'password' => 'quack'));
     $this->assertEquals(2, $mailings['count']);
     $firstMailing = $mailings['values'][0];
-    $this->assertEquals('cool email', $firstMailing['subject']);
+    $this->assertEquals('cool email 🌻', $firstMailing['subject']);
     $this->assertEquals('WHEN (COUNTRY is equal to IL AND ISOLANG is equal to HE AND LATEST_DONATION_DATE is before JAN 1, 2019 AND EMAIL_DOMAIN_PART is not equal to one of the following (AOL.COM | NETSCAPE.COM | NETSCAPE.NET | CS.COM | AIM.COM | WMCONNECT.COM | VERIZON.NET) OR (EMAIL is equal to FUNDRAISINGEMAIL-JAJP+HEIL@WIKIMEDIA.ORG AND COUNTRY is equal to IL)) AND SEGMENT is equal to 2', $firstMailing['list_criteria']);
   }
 
