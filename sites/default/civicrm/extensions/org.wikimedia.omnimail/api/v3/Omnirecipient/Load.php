@@ -46,12 +46,12 @@ function civicrm_api3_omnirecipient_load($params) {
     $limit = $params['options']['limit'] ?? NULL;
     $count = 0;
     $insertBatchSize = CRM_Utils_Array::value('insert_batch_size', $params, 1);
-    $valueStrings = array();
-    $progressSettings = array(
+    $valueStrings = [];
+    $progressSettings = [
       'last_timestamp' => CRM_Utils_Array::value('last_timestamp', $jobSettings),
       'retrieval_parameters' => $omnimail->getRetrievalParameters(),
       'progress_end_timestamp' => $omnimail->endTimeStamp,
-    );
+    ];
 
     foreach ($recipients as $row) {
       $recipient = new  \Omnimail\Silverpop\Responses\Recipient($row);
@@ -62,20 +62,20 @@ function civicrm_api3_omnirecipient_load($params) {
         _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $omnimail, $progressSettings, $omnimail->getOffset() + $count);
         return civicrm_api3_create_success(1);
       }
-      $insertValues = array(
-        1 => array((string) $recipient->getContactIdentifier(), 'String'),
-        2 => array(
+      $insertValues = [
+        1 => [(string) $recipient->getContactIdentifier(), 'String'],
+        2 => [
           (string) CRM_Utils_Array::value('mailing_prefix', $params, '') . $recipient->getMailingIdentifier(),
-          'String'
-        ),
-        3 => array((string) $recipient->getEmail(), 'String'),
-        4 => array((string) $recipient->getRecipientAction(), 'String'),
-        5 => array(
+          'String',
+        ],
+        3 => [(string) $recipient->getEmail(), 'String'],
+        4 => [(string) $recipient->getRecipientAction(), 'String'],
+        5 => [
           (string) $recipient->getRecipientActionIsoDateTime(),
-          'String'
-        ),
-        6 => array((string) $recipient->getContactReference(), 'String'),
-      );
+          'String',
+        ],
+        6 => [(string) $recipient->getContactReference(), 'String'],
+      ];
       $rowsLeftBeforeThrottle--;
       $count++;
 
@@ -91,20 +91,20 @@ function civicrm_api3_omnirecipient_load($params) {
       }
     }
     _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $omnimail, $progressSettings, $omnimail->getOffset() + $count);
-    $omnimail->saveJobSetting(array(
+    $omnimail->saveJobSetting([
       'last_timestamp' => $omnimail->endTimeStamp,
       'progress_end_timestamp' => 'null',
       'offset' => 'null',
       'retrieval_parameters' => 'null',
-    ));
+    ]);
     return civicrm_api3_create_success(1);
   }
   catch (CRM_Omnimail_IncompleteDownloadException $e) {
-    $omnimail->saveJobSetting(array(
+    $omnimail->saveJobSetting([
       'last_timestamp' => $omnimail->getStartTimestamp($params),
       'retrieval_parameters' => $e->getRetrievalParameters(),
       'progress_end_timestamp' => $e->getEndTimestamp(),
-    ));
+    ]);
     return civicrm_api3_create_success(1);
   }
 
@@ -145,8 +145,8 @@ function _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $inse
          (`contact_identifier`, `mailing_identifier`, `email`, `event_type`, `recipient_action_datetime`, `contact_id`)
          values' . implode(',', $valueStrings)
     );
-    $job->saveJobSetting(array_merge($jobSettings, array('offset' => $newOffSet)));
-    $valueStrings = array();
+    $job->saveJobSetting(array_merge($jobSettings, ['offset' => $newOffSet]));
+    $valueStrings = [];
   }
   return $valueStrings;
 }
@@ -157,60 +157,60 @@ function _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $inse
  * @param $params
  */
 function _civicrm_api3_omnirecipient_load_spec(&$params) {
-  $params['username'] = array(
+  $params['username'] = [
     'title' => ts('User name'),
-  );
-  $params['password'] = array(
+  ];
+  $params['password'] = [
     'title' => ts('Password'),
-  );
-  $params['mail_provider'] = array(
+  ];
+  $params['mail_provider'] = [
     'title' => ts('Name of Mailer'),
     'api.required' => TRUE,
     'api.default' => 'Silverpop',
-  );
-  $params['start_date'] = array(
+  ];
+  $params['start_date'] = [
     'title' => ts('Date to fetch from'),
     'type' => CRM_Utils_Type::T_TIMESTAMP,
-  );
-  $params['end_date'] = array(
+  ];
+  $params['end_date'] = [
     'title' => ts('Date to fetch to'),
     'type' => CRM_Utils_Type::T_TIMESTAMP,
-  );
-  $params['mailing_prefix'] = array(
+  ];
+  $params['mailing_prefix'] = [
     'title' => ts('A prefix to prepend to the mailing_identifier when storing'),
     'type' => CRM_Utils_Type::T_STRING,
     'api.default' => 'sp',
-  );
-  $params['retrieval_parameters'] = array(
+  ];
+  $params['retrieval_parameters'] = [
     'title' => ts('Additional information for retrieval of pre-stored requests'),
-  );
-  $params['table_name'] = array(
+  ];
+  $params['table_name'] = [
     'title' => ts('Name of table to store to'),
     'type' => CRM_Utils_Type::T_STRING,
-  );
-  $params['throttle_number'] = array(
+  ];
+  $params['throttle_number'] = [
     'title' => ts('Number of inserts to throttle after'),
     'type' => CRM_Utils_Type::T_INT,
     'api.default' => 100000,
-  );
-  $params['throttle_seconds'] = array(
+  ];
+  $params['throttle_seconds'] = [
     'title' => ts('Throttle after the number has been reached in this number of seconds'),
     'description' => ts('If the throttle limit is passed before this number of seconds is reached php will sleep until it hits it.'),
     'type' => CRM_Utils_Type::T_INT,
     'api.default' => 300,
-  );
-  $params['job_identifier'] = array(
+  ];
+  $params['job_identifier'] = [
     'title' => ts('A string to identify this job.'),
     'description' => ts('The identifier allows for multiple settings to be stored for one job. For example if wishing to run an up-top-date job and a catch-up job'),
     'type' => CRM_Utils_Type::T_STRING,
     'api.default' => '',
-  );
-  $params['insert_batch_size'] = array(
+  ];
+  $params['insert_batch_size'] = [
     'title' => ts('Number of rows to insert in each DB write'),
     'description' => ts('Set this to increase row batching.'),
     'type' => CRM_Utils_Type::T_INT,
     'api.default' => 1,
-  );
+  ];
   $params['php_only_offset'] = [
     'title' => ts('Force the php timezone'),
     'description' => ts('Permit forcing of the php offset timezone separately from the mysql offset'),
