@@ -1,8 +1,5 @@
 <?php
 
-use Civi\Test\EndToEndInterface;
-use Civi\Test\TransactionalInterface;
-
 require_once __DIR__ . '/OmnimailBaseTestClass.php';
 
 /**
@@ -23,6 +20,8 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
 
   /**
    * Example: Test that a version is returned.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testOmnimailingLoad() {
     $mailings = $this->loadMailings();
@@ -34,7 +33,7 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
 
     $mailingReloaded = $this->callAPISuccess('Mailing', 'getsingle', array('hash' => 'sp7877'));
 
-    $customFieldID = civicrm_api3('CustomField', 'getvalue', ['name' => 'query_criteria', 'return' => 'id']);
+    $customFieldID = $this->callAPISuccessGetValue('CustomField', ['name' => 'query_criteria', 'return' => 'id']);
     $this->assertEquals($mailingReloaded['id'], $mailing['id']);
     $this->assertEquals('WHEN (COUNTRY is equal to IL AND ISOLANG is equal to HE AND LATEST_DONATION_DATE is before JAN 1, 2019 AND EMAIL_DOMAIN_PART is not equal to one of the following (AOL.COM | NETSCAPE.COM | NETSCAPE.NET | CS.COM | AIM.COM | WMCONNECT.COM | VERIZON.NET) OR (EMAIL is equal to FUNDRAISINGEMAIL-JAJP+HEIL@WIKIMEDIA.ORG AND COUNTRY is equal to IL)) AND SEGMENT is equal to 2', $mailingReloaded['custom_' . $customFieldID]);
     $mailingJobs = $this->callAPISuccess('MailingJob', 'get', array('mailing_id' => $mailing['id']));
@@ -43,9 +42,11 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
   }
 
   /**
+   * Load mailings for test.
+   *
    * @return array
    */
-  protected function loadMailings() {
+  protected function loadMailings(): array {
     $responses = array(
       file_get_contents(__DIR__ . '/Responses/MailingGetResponse1.txt'),
       file_get_contents(__DIR__ . '/Responses/AggregateGetResponse1.txt'),
