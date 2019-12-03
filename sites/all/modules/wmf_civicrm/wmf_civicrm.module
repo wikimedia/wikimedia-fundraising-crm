@@ -1257,13 +1257,12 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
   }
   // Attempt to insert the contact
   try {
-    $contact_result = civicrm_api3("Contact", "Create", $contact);
+    $contact_result = civicrm_api3('Contact', "Create", $contact);
     if ($contact_id == NULL) {
-      watchdog('wmf_civicrm', 'Result for adding contact: %contact', array('%contact' => print_r($contact_result, TRUE)), WATCHDOG_DEBUG);
+      watchdog('wmf_civicrm', 'Successfully created contact: %id', ['%id' => $contact_result['id']], WATCHDOG_DEBUG);
     }
     else {
-      watchdog('wmf_civicrm', 'Result for updating contact: %contact', array('%contact' => print_r($contact_result, TRUE)), WATCHDOG_DEBUG);
-    }
+      watchdog('wmf_civicrm', 'Successfully updated contact: %id', ['%id' => $contact_result['id']], WATCHDOG_DEBUG);    }
 
     if (WmfDatabase::isNativeTxnRolledBack()) {
       throw new WmfException(WmfException::IMPORT_CONTACT, "Native txn rolled back after inserting contact");
