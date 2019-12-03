@@ -257,13 +257,13 @@ function thank_you_send_test($params) {
  */
 function thank_you_for_contribution($contribution_id) {
   civicrm_initialize();
-  if (!isset(Civi::$statics['giftTableName'])) {
-    Civi::$statics['giftTableName'] = civicrm_api3('CustomGroup', 'getvalue', [
+  if (!isset(Civi::$statics['thank_you']['giftTableName'])) {
+    Civi::$statics['thank_you']['giftTableName'] = civicrm_api3('CustomGroup', 'getvalue', [
       'name' => 'Gift_Data',
       'return' => 'table_name'
     ]);
   }
-  $giftTable = Civi::$statics['giftTableName'];
+  $giftTable = Civi::$statics['thank_you']['giftTableName'];
   $mailingData = CRM_Core_DAO::executeQuery("
 		SELECT
 			cntr.id AS contribution_id,
