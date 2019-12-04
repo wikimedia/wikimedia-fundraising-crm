@@ -253,6 +253,7 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
       }
 
       if ((int) $groupId !== Civi::$statics['wmf_campaigns']['giftDataGroupId']) {
+        // We're not editing/creating a gift data record, so do nothing
         return;
       }
       $campaignKey = NULL;
@@ -267,19 +268,16 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
       }
 
       if (!$campaignKey) {
-        watchdog('wmf_campaigns', "No campaign for message", NULL, WATCHDOG_INFO);
+        // The gift data record has no appeal/campaign set, so we have no key to
+        // look up notifications by.
         return;
       }
 
-      try {
-        $campaign = WmfCampaign::fromKey($campaignKey);
-      } catch (CampaignNotFoundException $ex) {
+      $notificationEmail = WmfCampaign::getNotificationAddressesFromKey($campaignKey);
+
+      if (!$notificationEmail) {
         // Most campaigns have no notifications configured - no need to do
         // anything special.
-        return;
-      }
-      if (!$campaign->getNotificationEmail()) {
-        watchdog('wmf_campaigns', "No special behaviors configured for campaign {$campaignKey}", NULL, WATCHDOG_INFO);
         return;
       }
 
@@ -288,8 +286,7 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
       ]);
       $contribution = array_pop($result['values']);
 
-      $email = $campaign->getNotificationEmail();
-      watchdog('wmf_campaigns', "Notifying {$email} about match on campaign {$campaignKey}", NULL, WATCHDOG_INFO);
+      watchdog('wmf_campaigns', "Notifying {$notificationEmail} about match on campaign {$campaignKey}", NULL, WATCHDOG_INFO);
 
       //TODO: addresses should come from GUI config.
       $letter = [
@@ -297,7 +294,7 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
         'from_name' => "Campaign notifer",
         'reply_to' => "fr-tech+wmf_campaigns-bounce@wikimedia.org",
         'subject' => "Campaign donation: {$campaignKey}",
-        'to' => $campaign->getNotificationEmail(),
+        'to' => $notificationEmail,
       ];
       $civiUrl = CRM_Utils_System::url('civicrm/contact/view/contribution',
         [
