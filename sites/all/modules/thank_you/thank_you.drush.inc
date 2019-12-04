@@ -4,30 +4,30 @@
  * Implementation of hook_drush_command()
  */
 function thank_you_drush_command() {
-  $items = array();
+  $items = [];
 
-  $items['thank-you-send'] = array(
-    'description' => 
+  $items['thank-you-send'] = [
+    'description' =>
       'Sends thank you emails for donations',
-    'examples' => array( 'drush thank-you' => '# Send thank you emails' ),
-    'aliases' => array( 'ty' ),
-  );
+    'examples' => ['drush thank-you' => '# Send thank you emails'],
+    'aliases' => ['ty'],
+  ];
 
-  $items['thank-you-send-test'] = array(
+  $items['thank-you-send-test'] = [
     'description' =>
       'Simulates sending 1000 thank you emails for donations, to test DB performance',
-    'aliases' => array( 'tyt' ),
-  );
+    'aliases' => ['tyt'],
+  ];
   return $items;
 }
 
 /**
  * Implementation of hook_drush_help()
  */
-function thank_you_drush_help( $section ) {
-  switch ( $section ) {
+function thank_you_drush_help($section) {
+  switch ($section) {
     case 'drush:thank-you-send':
-      return dt( "Send thank you emails for donations " );
+      return dt("Send thank you emails for donations ");
   }
 }
 
@@ -38,18 +38,18 @@ function thank_you_drush_help( $section ) {
  * All configuration happens in the module.
  */
 function drush_thank_you_send() {
-  module_invoke( 'thank_you', 'batch_process' );
+  module_invoke('thank_you', 'batch_process');
   $errors = drush_get_error_log();
-  if (!empty($errors)){
-	  echo "\n***ERRORS***";
-	  foreach($errors as $error=>$msgarray){
-		  echo "\n$error: ";
-		  foreach ($msgarray as $count=>$message){
-			  echo "\n    $message";
-		  }
-	  }
-	  echo "\n\n";
-	  exit(drush_get_error());
+  if (!empty($errors)) {
+    echo "\n***ERRORS***";
+    foreach ($errors as $error => $msgarray) {
+      echo "\n$error: ";
+      foreach ($msgarray as $count => $message) {
+        echo "\n    $message";
+      }
+    }
+    echo "\n\n";
+    exit(drush_get_error());
   }
 }
 
@@ -61,5 +61,5 @@ function drush_thank_you_send() {
  * All configuration happens in the module.
  */
 function drush_thank_you_send_test() {
-	module_invoke( 'thank_you', 'batch_test' );
+  module_invoke('thank_you', 'batch_test');
 }
