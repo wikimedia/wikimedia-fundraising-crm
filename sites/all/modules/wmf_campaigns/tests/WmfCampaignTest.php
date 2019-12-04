@@ -15,12 +15,14 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public $contact_id;
 
+  public $option_value_id;
+
   function setUp() {
     parent::setUp();
     civicrm_initialize();
 
     TestMailer::setup();
-
+    unset (Civi::$statics['wmf_campaigns']['campaigns']);
     $this->campaign_custom_field_name = wmf_civicrm_get_custom_field_name('Appeal');
 
     $this->campaign_key = 'fooCamp' . mt_rand();
@@ -40,11 +42,23 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
       ])
       ->execute();
 
-    civicrm_api3('OptionValue', 'create', [
+    $result = civicrm_api3('OptionValue', 'create', [
       'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
       'label' => $this->campaign_key,
       'value' => $this->campaign_key,
     ]);
+    $this->option_value_id = $result['id'];
+  }
+
+  function tearDown() {
+    civicrm_api3('OptionValue', 'delete', [
+      'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+      'id' => $this->option_value_id,
+    ]);
+    db_delete('wmf_campaigns_campaign')
+      ->condition('campaign_key', $this->campaign_key)
+      ->execute();
+    parent::tearDown();
   }
 
   function testMatchingDonation() {
@@ -57,6 +71,7 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
       'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
       $this->campaign_custom_field_name => $this->campaign_key,
     ]);
+    $this->ids['Contribution'][$result['id']] = $result['id'];
 
     $this->assertEquals(1, TestMailer::countMailings(),
       'Exactly one email was sent.');
@@ -80,6 +95,7 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
       'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
       $this->campaign_custom_field_name => $this->campaign_key . "NOT",
     ]);
+    $this->ids['Contribution'][$result['id']] = $result['id'];
 
     $this->fail('Should have exceptioned out already.');
   }
@@ -93,6 +109,7 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
       'total_amount' => '1.23',
       'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
     ]);
+    $this->ids['Contribution'][$result['id']] = $result['id'];
 
     $this->assertEquals(0, TestMailer::countMailings());
   }

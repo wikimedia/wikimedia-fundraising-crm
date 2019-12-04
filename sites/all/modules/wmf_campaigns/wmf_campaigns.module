@@ -253,6 +253,7 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
       }
 
       if ((int) $groupId !== Civi::$statics['wmf_campaigns']['giftDataGroupId']) {
+        // We're not editing/creating a gift data record, so do nothing
         return;
       }
       $campaignKey = NULL;
@@ -267,7 +268,8 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
       }
 
       if (!$campaignKey) {
-        watchdog('wmf_campaigns', "No campaign for message", NULL, WATCHDOG_INFO);
+        // The gift data record has no appeal/campaign set, so we have no key to
+        // look up notifications by.
         return;
       }
 

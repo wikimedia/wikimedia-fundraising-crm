@@ -10,22 +10,25 @@ class WmfCampaign {
   }
 
   /**
+   * @param string $key
+   *
    * @return WmfCampaign
    */
   public static function fromKey($key) {
-    static $campaigns = [];
-    if (empty($campaigns[$key])) {
-      $result = db_select('wmf_campaigns_campaign')
-        ->fields('wmf_campaigns_campaign')
-        ->condition('campaign_key', $key)
-        ->execute()
-        ->fetchAssoc();
-      if ($result === FALSE) {
-        throw new CampaignNotFoundException("Campaign {$key} is missing WMF Campaign info.");
+    if (!isset(Civi::$statics['wmf_campaigns']['campaigns'])) {
+      Civi::$statics['wmf_campaigns']['campaigns'] = [];
+      $result = db_select('wmf_campaigns_campaign', 'c', ['fetch' => PDO::FETCH_ASSOC])
+        ->fields('c')
+        ->execute();
+      foreach ($result as $record) {
+        Civi::$statics['wmf_campaigns']['campaigns'][$record['campaign_key']] = self::fromDbRecord($record);
       }
-      $campaigns[$key] = WmfCampaign::fromDbRecord($result);
     }
-    return $campaigns[$key];
+    if (!isset(Civi::$statics['wmf_campaigns']['campaigns'][$key])) {
+      // FIXME not exceptional - this is the case more often than not
+      throw new CampaignNotFoundException("Campaign {$key} is missing WMF Campaign info.");
+    }
+    return Civi::$statics['wmf_campaigns']['campaigns'][$key];
   }
 
   protected static function fromDbRecord($record) {
