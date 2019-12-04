@@ -177,8 +177,6 @@ function large_donation_civicrm_post($action, $type, $id, &$contribution) {
       if ($type === 'Contribution') {
 
         if ($contribution->total_amount <= large_donation_get_minimum_threshold()) {
-          // do we really want to log this?
-          watchdog('large_donation', "Donation amount {$contribution->total_amount} was not above the lowest notification threshold.");
           return;
         }
 
