@@ -21,21 +21,15 @@ class WmfCampaign {
         ->fields('c')
         ->execute();
       foreach ($result as $record) {
-        Civi::$statics['wmf_campaigns']['campaigns'][$record['campaign_key']] = self::fromDbRecord($record);
+        Civi::$statics['wmf_campaigns']['campaigns'][$record['campaign_key']] = $record['notification_email'];
       }
     }
     if (!isset(Civi::$statics['wmf_campaigns']['campaigns'][$key])) {
       // FIXME not exceptional - this is the case more often than not
+      // maybe just return NULL .... just sayin'
       throw new CampaignNotFoundException("Campaign {$key} is missing WMF Campaign info.");
     }
     return Civi::$statics['wmf_campaigns']['campaigns'][$key];
-  }
-
-  protected static function fromDbRecord($record) {
-    $camp = new WmfCampaign();
-    $camp->key = $record['campaign_key'];
-    $camp->notification_email = $record['notification_email'];
-    return $camp;
   }
 
   public function getKey() {

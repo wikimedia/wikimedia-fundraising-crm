@@ -274,14 +274,13 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
       }
 
       try {
-        $campaign = WmfCampaign::fromKey($campaignKey);
+        $notificationEmail = WmfCampaign::fromKey($campaignKey);
       } catch (CampaignNotFoundException $ex) {
         // Most campaigns have no notifications configured - no need to do
         // anything special.
         return;
       }
-      if (!$campaign->getNotificationEmail()) {
-        watchdog('wmf_campaigns', "No special behaviors configured for campaign {$campaignKey}", NULL, WATCHDOG_INFO);
+      if (!$notificationEmail) {
         return;
       }
 
@@ -290,8 +289,7 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
       ]);
       $contribution = array_pop($result['values']);
 
-      $email = $campaign->getNotificationEmail();
-      watchdog('wmf_campaigns', "Notifying {$email} about match on campaign {$campaignKey}", NULL, WATCHDOG_INFO);
+      watchdog('wmf_campaigns', "Notifying {$notificationEmail} about match on campaign {$campaignKey}", NULL, WATCHDOG_INFO);
 
       //TODO: addresses should come from GUI config.
       $letter = [
@@ -299,7 +297,7 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
         'from_name' => "Campaign notifer",
         'reply_to' => "fr-tech+wmf_campaigns-bounce@wikimedia.org",
         'subject' => "Campaign donation: {$campaignKey}",
-        'to' => $campaign->getNotificationEmail(),
+        'to' => $notificationEmail,
       ];
       $civiUrl = CRM_Utils_System::url('civicrm/contact/view/contribution',
         [
