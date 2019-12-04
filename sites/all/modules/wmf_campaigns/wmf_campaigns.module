@@ -273,14 +273,11 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
         return;
       }
 
-      try {
-        $notificationEmail = WmfCampaign::fromKey($campaignKey);
-      } catch (CampaignNotFoundException $ex) {
+      $notificationEmail = WmfCampaign::getNotificationAddressesFromKey($campaignKey);
+
+      if (!$notificationEmail) {
         // Most campaigns have no notifications configured - no need to do
         // anything special.
-        return;
-      }
-      if (!$notificationEmail) {
         return;
       }
 

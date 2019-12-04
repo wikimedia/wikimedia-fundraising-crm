@@ -2,19 +2,12 @@
 
 class WmfCampaign {
 
-  protected $key;
-
-  protected $notification_email;
-
-  protected function __construct() {
-  }
-
   /**
    * @param string $key
    *
-   * @return WmfCampaign
+   * @return string comma-separated list of email addresses to notify
    */
-  public static function fromKey($key) {
+  public static function getNotificationAddressesFromKey($key) {
     if (!isset(Civi::$statics['wmf_campaigns']['campaigns'])) {
       Civi::$statics['wmf_campaigns']['campaigns'] = [];
       $result = db_select('wmf_campaigns_campaign', 'c', ['fetch' => PDO::FETCH_ASSOC])
@@ -25,22 +18,8 @@ class WmfCampaign {
       }
     }
     if (!isset(Civi::$statics['wmf_campaigns']['campaigns'][$key])) {
-      // FIXME not exceptional - this is the case more often than not
-      // maybe just return NULL .... just sayin'
-      throw new CampaignNotFoundException("Campaign {$key} is missing WMF Campaign info.");
+      return NULL;
     }
     return Civi::$statics['wmf_campaigns']['campaigns'][$key];
   }
-
-  public function getKey() {
-    return $this->key;
-  }
-
-  public function getNotificationEmail() {
-    return $this->notification_email;
-  }
-}
-
-class CampaignNotFoundException extends RuntimeException {
-
 }
