@@ -460,8 +460,8 @@ function _wmf_civicrm_message_contribution_insert($msg) {
 
   watchdog('wmf_civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), NULL, WATCHDOG_DEBUG);
   try {
-    $contribution_result = civicrm_api3("Contribution", "Create", array_merge($contribution, ['skipRecentView' => 1]));
-    watchdog('wmf_civicrm', 'Contribution result from civicrm_contribution_add(): ' . print_r($contribution_result, TRUE), NULL, WATCHDOG_DEBUG);
+    $contribution_result = civicrm_api3('Contribution', 'Create', array_merge($contribution, ['skipRecentView' => 1]));
+    watchdog('wmf_civicrm', "Successfully created contribution {$contribution_result['id']} for contact  {$contribution['contact_id']}", NULL, WATCHDOG_DEBUG);
   }
   catch (CiviCRM_API3_Exception $e) {
     watchdog('wmf_civicrm', 'Error inserting contribution: ' . $e->getMessage(), NULL, WATCHDOG_INFO);
