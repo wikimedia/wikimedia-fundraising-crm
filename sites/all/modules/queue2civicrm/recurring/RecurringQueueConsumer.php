@@ -328,6 +328,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         // Set installments to 0 for non paypal recurring contributions
         $params['installments'] = 0;
         $params['next_sched_contribution_date'] = wmf_common_date_unix_to_civicrm($msg['start_date']);
+        $params['cycle_day'] = date('j', strtotime($params['start_date']));
       }
 
       $newContributionRecur = civicrm_api3('ContributionRecur', 'create', $params);
