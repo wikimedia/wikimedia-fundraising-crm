@@ -406,6 +406,9 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     // The first contribution should be on the start_date
     $this->assertEquals($recur_record->next_sched_contribution_date,$recur_record->start_date);
 
+    // Check cycle_day matches the start date
+    $this->assertEquals($recur_record->cycle_day, date('j',$overrides['start_date']));
+
     // Clean up
     $this->recurring_contributions[] = $recur_record;
   }
