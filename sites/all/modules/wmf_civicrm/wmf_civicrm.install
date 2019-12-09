@@ -5059,3 +5059,21 @@ function wmf_civicrm_update_7940() {
   $tables = ['civicrm_mailing_stats' => ['mailing_id'], 'civicrm_group' => ['cache_date', 'refresh_date']];
   CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
+
+/**
+ * Fix cycle day for monthly conversions
+ *
+ * Monthly convert was inappropriately setting cycle day to 1.  Set it to the same day of the month
+ * as the start date per intended functionality.
+ *
+ * Bug: T239627
+ */
+function wmf_civicrm_update_7950() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('
+    UPDATE civicrm_contribution_recur
+    SET cycle_day = day(start_date)
+    WHERE start_date > "2019-09-01" AND cycle_day <> day(start_date) AND trxn_id like "%INGENICO%"
+    AND cycle_day = 1 AND start_date = DATE_ADD(create_date, INTERVAL 1 MONTH)
+  ');
+}
