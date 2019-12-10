@@ -73,7 +73,16 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test importing messages using variations form messagerProvider dataprovider.
+   *
    * @dataProvider messageProvider
+   *
+   * @param array $msg
+   * @param array $expected
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   * @throws \WmfException
    */
   public function testMessageInsert($msg, $expected) {
     $contribution = wmf_civicrm_contribution_message_import($msg);
@@ -127,7 +136,14 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
   }
 
-  public function messageProvider() {
+  /**
+   * Data provider for import test.
+   *
+   * @return array
+   *
+   * @throws \WmfException
+   */
+  public function messageProvider(): array {
     // Make static so it isn't destroyed until class cleanup.
     self::$fixtures = CiviFixtures::create();
 
@@ -430,9 +446,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'cancel_date' => '',
             'cancel_reason' => '',
             'check_number' => '',
-            'contact_id' => strval(self::$fixtures->contact_id),
+            'contact_id' => (string) self::$fixtures->contact_id,
             'contribution_page_id' => '',
-            'contribution_recur_id' => strval(self::$fixtures->contribution_recur_id),
+            'contribution_recur_id' => (string) self::$fixtures->contribution_recur_id,
             'contribution_status_id' => '1',
             'contribution_type_id' => $contribution_type_cash,
             'currency' => 'USD',
@@ -503,20 +519,20 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             // However, I've had second thoughts about my earlier update change to
             // convert them as they are formatted differently & the issue was not the
             // existance of them but the strings of several of them in a row.
-            'first_name' => 'Baa   baa' . html_entity_decode("&#x3000;") . html_entity_decode(
-                "&#x3000;"
-              ) . 'black sheep' . html_entity_decode("&#x3000;"),
+            'first_name' => 'Baa   baa' . html_entity_decode('&#x3000;') . html_entity_decode(
+                '&#x3000;'
+              ) . 'black sheep' . html_entity_decode('&#x3000;'),
             'middle_name' => '  Have &nbsp; you any wool',
             'last_name' => ' Yes sir yes sir ' . html_entity_decode('&nbsp;') . ' three bags full',
           )
         ),
         array(
           'contact' => array(
-            'first_name' => 'Baa baa' . html_entity_decode("&#x3000;") . 'black sheep',
+            'first_name' => 'Baa baa' . html_entity_decode('&#x3000;') . 'black sheep',
             'middle_name' => 'Have you any wool',
             'last_name' => 'Yes sir yes sir three bags full',
             'display_name' => 'Baa baa' . html_entity_decode(
-                "&#x3000;"
+                '&#x3000;'
               ) . 'black sheep Yes sir yes sir three bags full',
           ),
           'contribution' => $this->getBaseContribution($gateway_txn_id),
@@ -705,6 +721,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     return $cases;
   }
 
+  /**
+   * Test importing to a group.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \WmfException
+   */
   public function testImportContactGroups() {
     $fixtures = CiviFixtures::create();
 
@@ -725,6 +747,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * Test that existing on hold setting is retained.
+   *
+   * @throws \WmfException
    */
   public function testKeepOnHold() {
     self::$fixtures = CiviFixtures::create();
@@ -763,6 +787,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * Test that existing on hold setting is removed if the email changes.
+   *
+   * @throws \WmfException
    */
   public function testRemoveOnHoldWhenUpdating() {
     self::$fixtures = CiviFixtures::create();
@@ -827,9 +853,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * When we get a contact ID and matching hash and email, update instead of
    * creating new contact.
+   *
+   * @throws \WmfException
+   * @throws \CRM_Core_Exception
    */
   public function testImportWithContactIdAndHash() {
-    $existingContact = civicrm_api3('Contact', 'Create', array(
+    $existingContact = $this->callAPISuccess('Contact', 'Create', array(
       'contact_type' => 'Individual',
       'first_name' => 'Test',
       'last_name' => 'Es' . mt_rand(),
@@ -837,12 +866,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contact_id = $existingContact['id'];
     $existingContact = $existingContact['values'][$existingContact['id']];
     $email = 'booboo' . mt_rand() . '@example.org';
-    civicrm_api3('Email', 'Create', array(
+    $this->callAPISuccess('Email', 'Create', array(
       'contact_id' => $this->contact_id,
       'email' => $email,
       'location_type_id' => 1,
     ));
-    civicrm_api3('Address', 'Create', array(
+    $this->callAPISuccess('Address', 'Create', array(
       'contact_id' => $this->contact_id,
       'country' => wmf_civicrm_get_country_id('FR'),
       'street_address' => '777 Trompe L\'Oeil Boulevard',
@@ -875,9 +904,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * If we get a contact ID and a bad hash, leave the existing contact alone
+   *
+   * @throws \WmfException
+   * @throws \CRM_Core_Exception
    */
   public function testImportWithContactIdAndBadHash() {
-    $existingContact = civicrm_api3('Contact', 'Create', array(
+    $existingContact = $this->callAPISuccess('Contact', 'Create', array(
       'contact_type' => 'Individual',
       'first_name' => 'Test',
       'last_name' => 'Es' . mt_rand(),
@@ -885,12 +917,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $email = 'booboo' . mt_rand() . '@example.org';
     $this->contact_id = $existingContact['id'];
     $existingContact = $existingContact['values'][$existingContact['id']];
-    civicrm_api3('Email', 'Create', array(
+    $this->callAPISuccess('Email', 'Create', array(
       'contact_id' => $this->contact_id,
       'email' => $email,
       'location_type_id' => 1,
     ));
-    civicrm_api3('Address', 'Create', array(
+    $this->callAPISuccess('Address', 'Create', array(
       'contact_id' => $this->contact_id,
       'country' => wmf_civicrm_get_country_id('FR'),
       'street_address' => '777 Trompe L\'Oeil Boulevard',
@@ -924,9 +956,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * If we get a contact ID and a bad email, leave the existing contact alone
+   *
+   * @throws \WmfException
+   * @throws \CRM_Core_Exception
    */
   public function testImportWithContactIdAndBadEmail() {
-    $existingContact = civicrm_api3('Contact', 'Create', array(
+    $existingContact = $this->callAPISuccess('Contact', 'Create', array(
       'contact_type' => 'Individual',
       'first_name' => 'Test',
       'last_name' => 'Es' . mt_rand(),
@@ -934,12 +969,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $email = 'booboo' . mt_rand() . '@example.org';
     $this->contact_id = $existingContact['id'];
     $existingContact = $existingContact['values'][$existingContact['id']];
-    civicrm_api3('Email', 'Create', array(
+    $this->callAPISuccess('Email', 'Create', array(
       'contact_id' => $this->contact_id,
       'email' => $email,
       'location_type_id' => 1,
     ));
-    civicrm_api3('Address', 'Create', array(
+    $this->callAPISuccess('Address', 'Create', array(
       'contact_id' => $this->contact_id,
       'country' => wmf_civicrm_get_country_id('FR'),
       'street_address' => '777 Trompe L\'Oeil Boulevard',
@@ -989,7 +1024,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   }
 
-  protected function getMinimalImportData($gateway_txn_id) {
+  protected function getMinimalImportData($gateway_txn_id): array {
     return array(
       'currency' => 'USD',
       'date' => '2012-05-01 00:00:00',
@@ -1007,8 +1042,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param string $gateway_txn_id
    *
    * @return array
+   * @throws \WmfException
    */
-  protected function getBaseContribution($gateway_txn_id) {
+  protected function getBaseContribution($gateway_txn_id): array {
     $contribution_type_cash = wmf_civicrm_get_civi_id('contribution_type_id', 'Cash');
     $payment_instrument_cc = wmf_civicrm_get_civi_id('payment_instrument_id', 'Credit Card');
     return array(
@@ -1049,7 +1085,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function reformatMoneyFields(&$array) {
     foreach ($array as $field => $value) {
-      if (in_array($field, $this->moneyFields)) {
+      if (in_array($field, $this->moneyFields, TRUE)) {
         $array[$field] = str_replace(',', '', $value);
       }
     }
@@ -1062,7 +1098,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    */
-  public function filterIgnoredFieldsFromArray($array) {
+  public function filterIgnoredFieldsFromArray($array): array {
     return array_diff_key($array, array_flip($this->fieldsToIgnore));
   }
 
