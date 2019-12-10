@@ -49,7 +49,10 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    */
   public function run() {
     $recurringPayments = $this->getPaymentsToCharge();
-    $result = [];
+    $result = [
+      'success' => ['ids' => []],
+      'failed' => ['ids' => []],
+    ];
     foreach ($recurringPayments as $recurringPayment) {
       try {
         $previousContribution = $this->getPreviousContribution($recurringPayment);
@@ -87,6 +90,10 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $result['failed']['ids'][] = $recurringPayment['id'];
       }
     }
+    CRM_SmashPig_Hook::smashpigOutputStats([
+      'Completed' => count($result['success']['ids']),
+      'Failed' => count($result['failed']['ids'])
+    ]);
     return $result;
   }
 

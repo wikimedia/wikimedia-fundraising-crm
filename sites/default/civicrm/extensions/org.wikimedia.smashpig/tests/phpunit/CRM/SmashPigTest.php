@@ -34,6 +34,8 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
 
   private $oldSettings = [];
 
+  private $oldPromPath = 'metrics_reporting_prometheus_path';
+
   /**
    * @var PHPUnit_Framework_MockObject_MockObject
    */
@@ -219,6 +221,8 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       $GLOBALS['_PEAR_default_error_options'] = NULL;
     }
     civicrm_initialize();
+    $oldPromPath = variable_get('metrics_reporting_prometheus_path');
+    variable_set('metrics_reporting_prometheus_path', '/tmp/');
     $smashPigSettings = civicrm_api3('setting', 'getfields', [
       'filters' => ['group' => 'smashpig'],
     ]);
@@ -265,6 +269,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
         $setting, $value
       );
     }
+    variable_set('metrics_reporting_prometheus_path', $this->oldPromPath);
     // Reset some SmashPig-specific things
     TestingDatabase::clearStatics();
     Context::set(); // Nullify the context for next run.

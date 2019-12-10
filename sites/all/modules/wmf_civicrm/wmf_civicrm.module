@@ -6,6 +6,7 @@ use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
+require_once 'wmf_civicrm.hooks.php';
 
 /**
  * Ensure the specified option value exists.
