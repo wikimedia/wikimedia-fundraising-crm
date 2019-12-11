@@ -1098,10 +1098,13 @@ function wmf_civicrm_verify_message_and_stage($msg) {
  * @throws WmfException
  */
 function wmf_civicrm_check_for_duplicates($gateway, $gateway_txn_id) {
-  $txn = wmf_civicrm_get_contributions_from_gateway_id(
-    $gateway, $gateway_txn_id
-  );
-  if ($txn) {
+  if (CRM_Core_DAO::singleValueQuery(
+    'SELECT count(*)
+    FROM wmf_contribution_extra cx
+    WHERE gateway = %1 AND gateway_txn_id = %2', [
+    1 => [$gateway, 'String'],
+    2 => [$gateway_txn_id, 'String'],
+  ])) {
     throw new WmfException(
       WmfException::DUPLICATE_CONTRIBUTION,
       'Contribution already exists. Ignoring message.'
