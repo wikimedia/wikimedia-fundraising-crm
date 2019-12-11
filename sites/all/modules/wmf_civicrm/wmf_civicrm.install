@@ -5077,3 +5077,31 @@ function wmf_civicrm_update_7950() {
     AND cycle_day = 1 AND start_date = DATE_ADD(create_date, INTERVAL 1 MONTH)
   ');
 }
+
+/**
+ * Fix recurring dates
+ *
+ * Set close ones so they are charged immediately, further away ones to next month
+ *
+ * Bug: T240272
+ */
+function wmf_civicrm_update_7960() {
+  civicrm_initialize();
+  // Ones for this month
+  CRM_Core_DAO::executeQuery('
+    UPDATE civicrm_contribution_recur
+    SET cancel_date = NULL,cancel_reason = NULL, end_date = NULL, contribution_status_id = 1, failure_count = 0, next_sched_contribution_date = "2019-12-11 00:00"
+    WHERE payment_processor_id = 5 AND contribution_status_id = 3
+    AND cancel_reason = "(auto) maximum failures reached"
+    AND cancel_date > "2019-12-06"
+  ');
+
+  // Ones that are just being charged next month
+  CRM_Core_DAO::executeQuery('
+    UPDATE civicrm_contribution_recur
+    SET cancel_date = NULL,cancel_reason = NULL, end_date = NULL, contribution_status_id = 1, failure_count = 0, next_sched_contribution_date = DATE_SUB(DATE_ADD(next_sched_contribution_date, INTERVAL 1 MONTH), INTERVAL 2 DAY)
+    WHERE payment_processor_id = 5 AND contribution_status_id = 3
+    AND cancel_reason = "(auto) maximum failures reached"
+    AND cancel_date > "2019-11-20" AND cancel_date < "2019-12-06"
+  ');
+}
