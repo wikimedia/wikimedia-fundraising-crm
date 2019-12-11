@@ -298,9 +298,8 @@ EOS;
       'from_address' => $this->from_address,
       'to_name' => $row->name,
       'to_address' => $row->email,
-      'subject' => $template->render('subject'),
-      'plaintext' => $template->render('txt'),
-      'html' => $template->render('html'),
+      'subject' => trim($template->render('subject')),
+      'html' => str_replace('<p></p>', '', $template->render('html')),
     ];
 
     return $email;
@@ -327,7 +326,7 @@ EOS;
         'target_contact_id' => $emailRecord['contact_id'],
         'assignee_contact_id' => $emailRecord['contact_id'],
         'subject' => "Sent contribution summary receipt for year $this->year to {$email['to_address']}",
-        'details' => $email['plaintext'],
+        'details' => $email['html'],
       ]);
     }
   }

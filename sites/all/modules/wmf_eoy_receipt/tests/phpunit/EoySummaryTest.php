@@ -238,7 +238,7 @@ EOS;
         $activity['subject']
       );
       $this->assertEquals(
-        $mailing['plaintext'],
+        $mailing['html'],
         $activity['details']
       );
     }
@@ -264,51 +264,7 @@ EOS;
       'from_address' => 'bobita@example.org',
       'to_name' => 'Bob',
       'to_address' => 'bob@example.com',
-      'subject' => 'This is a receipt, but it\'s also so much more
-',
-      'plaintext' => 'Dear Bob,
-
-I am thrilled that this email to you is one of the first things on my to-do list in 2019. Granted, that to-do list is long--Wikipedia has so many amazing projects on the horizon--but thanking you is at the very top.
-
-Your hard earned money pays our bills, runs our servers, and helps us recruit the world\'s smartest people to ensure that Wikipedia will always be a resilient, neutral source for learning.
-
-Outside of those practical details, your donations are deeply meaningful to we who work to serve you. Your donations show us that our work matters, and is worth supporting. Thank you.
-
-Here’s a summary of all the donations you made to the Wikimedia Foundation in 2018.
-
-Your 2018 total was USD 9800.
-
-Donation 1: 50 USD 2018-01-26
-Donation 2: 50 USD 2018-02-01
-Donation 3: 800 USD 2018-03-02
-Donation 4: 800 USD 2018-03-03
-Donation 5: 50 USD 2018-05-03
-Donation 6: 800 USD 2018-05-05
-Donation 7: 800 USD 2018-05-11
-Donation 8: 50 USD 2018-06-04
-Donation 9: 50 USD 2018-06-06
-Donation 10: 50 USD 2018-06-08
-Donation 11: 50 USD 2018-07-07
-Donation 12: 50 USD 2018-07-12
-Donation 13: 50 USD 2018-08-08
-Donation 14: 50 USD 2018-08-08
-Donation 15: 800 USD 2018-09-02
-Donation 16: 100 USD 2018-10-03
-Donation 17: 1200 USD 2018-10-09
-Donation 18: 100 USD 2018-10-11
-Donation 19: 100 USD 2018-10-12
-Donation 20: 800 USD 2018-10-12
-Donation 21: 50 USD 2018-10-14
-Donation 22: 50 USD 2018-10-15
-Donation 23: 50 USD 2018-10-20
-Donation 24: 50 USD 2018-10-22
-Donation 25: 800 USD 2018-11-22
-Donation 26: 1200 USD 2018-12-09
-Donation 27: 800 USD 2018-12-22
-
-If for whatever reason you wish to cancel your monthly donation, follow these easy cancellation instructions:
-https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en
-',
+      'subject' => 'This is a receipt, but it\'s also so much more',
       'html' => '<p>
 Dear Bob,
 </p>
@@ -442,29 +398,7 @@ If for whatever reason you wish to cancel your monthly donation, follow these <a
       'from_address' => 'bobita@example.org',
       'to_name' => 'Bob',
       'to_address' => 'bob@example.com',
-      'subject' => 'This is a receipt, but it\'s also so much more
-',
-      'plaintext' => 'Dear Bob,
-
-I am thrilled that this email to you is one of the first things on my to-do list in 2019. Granted, that to-do list is long--Wikipedia has so many amazing projects on the horizon--but thanking you is at the very top.
-
-Your hard earned money pays our bills, runs our servers, and helps us recruit the world\'s smartest people to ensure that Wikipedia will always be a resilient, neutral source for learning.
-
-Outside of those practical details, your donations are deeply meaningful to we who work to serve you. Your donations show us that our work matters, and is worth supporting. Thank you.
-
-Here’s a summary of all the donations you made to the Wikimedia Foundation in 2018.
-
-Your 2018 total was USD 70.
-Your 2018 total was CAD 850.
-
-Donation 1: 50 USD 2018-02-01
-Donation 2: 800 CAD 2018-03-02
-Donation 3: 20 USD 2018-05-03
-Donation 4: 50 CAD 2018-10-20
-
-If for whatever reason you wish to cancel your monthly donation, follow these easy cancellation instructions:
-https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en
-',
+      'subject' => 'This is a receipt, but it\'s also so much more',
       'html' => '<p>
 Dear Bob,
 </p>
