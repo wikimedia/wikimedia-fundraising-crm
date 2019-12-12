@@ -4092,7 +4092,11 @@ function wmf_civicrm_ensure_correct_geocoder_enabled() {
  * The wmf_contribution_extra record is saved after the contribution is inserted
  * so we need to potentially update the fields from that record at that points,
  * with a separate trigger.
- **/
+ **
+ *
+ * @throws \CRM_Core_Exception
+ * @throws \CiviCRM_API3_Exception
+ */
 function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   if (!$tableName || $tableName === 'civicrm_contribution') {
     $fields = $aggregateFieldStrings = [];
@@ -4243,15 +4247,20 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     }
 
     $requiredClauses = [1];
+
+    $matchingGiftDonors = civicrm_api3('Contact', 'get', ['nick_name' => ['IN' => ['Microsoft', 'Google']]])['values'];
+    $excludedContacts = array_keys($matchingGiftDonors);
     $anonymousContact = civicrm_api3('Contact', 'get', [
       'first_name' => 'Anonymous',
       'last_name' => 'Anonymous',
       'options' => ['limit' => 1, 'sort' => 'id ASC'],
     ]);
-
     if ($anonymousContact['count']) {
+      $excludedContacts[] = $anonymousContact['id'];
+    }
+    if (!empty($excludedContacts)) {
       // On live there will always be an anonymous contact. Check is just for dev instances.
-      $requiredClauses[] = '(NEW.contact_id <> ' . $anonymousContact['id'] . ')';
+      $requiredClauses[] = '(NEW.contact_id NOT IN (' . implode(',', $excludedContacts) . '))';
     }
 
     $insertSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' THEN ' . $sql . ' END IF; ';
@@ -4294,6 +4303,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   }
 
 }
+
 /**
  * Intercede in searches to unset 'force' when it appears to be accidentally set.
  *
@@ -4309,6 +4319,8 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
  *
  * @param string $objectType
  * @param array $tasks
+ *
+ * @throws \CRM_Core_Exception
  */
 function wmf_civicrm_civicrm_searchTasks($objectType, &$tasks) {
   if (CRM_Utils_Request::retrieve('context', 'String', $form, FALSE, 'search') === 'search'
