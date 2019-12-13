@@ -44,8 +44,11 @@ class BenevityTest extends BaseChecksFileTest {
 
   /**
    * Test that all imports fail if the organization has multiple matches.
+   *
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportFailOrganizationContactAmbiguous() {
+  public function testImportFailOrganizationContactAmbiguous() {
     $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
@@ -60,16 +63,22 @@ class BenevityTest extends BaseChecksFileTest {
 
   /**
    * Test that all imports fail if the organization does not pre-exist.
+   *
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportFailNoOrganizationContactExists() {
+  public function testImportFailNoOrganizationContactExists() {
     $messages = $this->importBenevityFile();
     $this->assertEquals('0 out of 4 rows were imported.', $messages['Result']);
   }
 
   /**
    * Test that import passes for the contact if a single match is found.
+   *
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedOrganizationSingleContactExists() {
+  public function testImportSucceedOrganizationSingleContactExists() {
     $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
@@ -81,8 +90,12 @@ class BenevityTest extends BaseChecksFileTest {
   /**
    * Test that import passes for the Individual contact if a single match is
    * found.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedIndividualSingleContactExists() {
+  public function testImportSucceedIndividualSingleContactExists() {
     $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -113,8 +126,12 @@ class BenevityTest extends BaseChecksFileTest {
    * In this scenario an email exists so a contact is created. The
    * origanization exists and can be matched, however the individual does not
    * exist & should be created.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedIndividualNoExistingMatch() {
+  public function testImportSucceedIndividualNoExistingMatch() {
     $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -143,8 +160,12 @@ class BenevityTest extends BaseChecksFileTest {
    *
    * In this scenario an email exists so a contact is created. The contact does
    * not make a donation but is soft credited the organisation's donation.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedIndividualNoExistingMatchOnlyMatchingGift() {
+  public function testImportSucceedIndividualNoExistingMatchOnlyMatchingGift() {
     $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -179,8 +200,12 @@ class BenevityTest extends BaseChecksFileTest {
    * organisation's donation.
    *
    * We are checking the relationship is created.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedIndividualSofCreditMatchMatchingGiftNoDonorGift() {
+  public function testImportSucceedIndividualSofCreditMatchMatchingGiftNoDonorGift() {
     $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -215,7 +240,7 @@ class BenevityTest extends BaseChecksFileTest {
    * Test that import resolves ambiguous individuals by choosing based on the
    * employer.
    */
-  function testImportSucceedIndividualDismabiguateByEmployer() {
+  public function testImportSucceedIndividualDismabiguateByEmployer() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -250,8 +275,10 @@ class BenevityTest extends BaseChecksFileTest {
   /**
    * Test that import resolves ambiguous individuals by choosing based on the
    * employer.
+   *
+   * @throws \CRM_Core_Exception
    */
-  function testImportSucceedIndividualDisambiguateByEmployerEmailAdded() {
+  public function testImportSucceedIndividualDisambiguateByEmployerEmailAdded() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -285,8 +312,12 @@ class BenevityTest extends BaseChecksFileTest {
   /**
    * Test that import creates new contacts when it can't resolve to a single
    * contact.
+   *
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
+   * @throws \CRM_Core_Exception
    */
-  function testImportSucceedIndividualTooManyChoicesCantDecideSpamTheDB() {
+  public function testImportSucceedIndividualTooManyChoicesCantDecideSpamTheDB() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -327,7 +358,7 @@ class BenevityTest extends BaseChecksFileTest {
    * Test that import resolves ambiguous individuals by choosing based on the
    * employer where nick_name match in play.
    */
-  function testImportSucceedIndividualDismabiguateByEmployerNickName() {
+  public function testImportSucceedIndividualDismabiguateByEmployerNickName() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Micey',
       'nick_name' => 'Mickey Mouse Inc',
@@ -365,7 +396,7 @@ class BenevityTest extends BaseChecksFileTest {
    * Probably longer term the employment relationships will exist and this will
    * be redundant.
    */
-  function testImportSucceedIndividualDismabiguateByPreviousSoftCredit() {
+  public function testImportSucceedIndividualDismabiguateByPreviousSoftCredit() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -410,8 +441,10 @@ class BenevityTest extends BaseChecksFileTest {
    * If we try to disambiguate our contact using soft credit history and there
    * is more than one match, we give up & create a new one. In future this one
    * should get used as it will have an employee relationship.
+   *
+   * @throws \CRM_Core_Exception
    */
-  function testImportSucceedIndividualCreateIfAmbiguousPreviousSoftCredit() {
+  public function testImportSucceedIndividualCreateIfAmbiguousPreviousSoftCredit() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -472,8 +505,10 @@ class BenevityTest extends BaseChecksFileTest {
    * employer. If there is more than one that is linked by 'is employed by' or
    * 'has been previously soft credited' then we prefer the one with an
    * employee relationship.
+   *
+   * @throws \CRM_Core_Exception
    */
-  function testImportSucceedIndividualPreferRelationshipOverPreviousSoftCredit() {
+  public function testImportSucceedIndividualPreferRelationshipOverPreviousSoftCredit() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -520,7 +555,7 @@ class BenevityTest extends BaseChecksFileTest {
    * been related to the organization (by an employer relationship or a
    * previous soft credit) we should accept them.
    */
-  function testImportSucceedIndividualMatchToEmployerDisregardingEmail() {
+  public function testImportSucceedIndividualMatchToEmployerDisregardingEmail() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -557,8 +592,10 @@ class BenevityTest extends BaseChecksFileTest {
    * Check that without an email the match is accepted with an employer
    * connection.
    *
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedIndividualOneMatchNoEmailEmployerMatch() {
+  public function testImportSucceedIndividualOneMatchNoEmailEmployerMatch() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -627,8 +664,11 @@ class BenevityTest extends BaseChecksFileTest {
    * Check that without an email & no employer connection a match is not made.
    *
    * If there is no employer connection a new contact should be created.
+   *
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedIndividualOneMatchNoEmailNoEmployerMatch() {
+  public function testImportSucceedIndividualOneMatchNoEmailNoEmployerMatch() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -664,8 +704,11 @@ class BenevityTest extends BaseChecksFileTest {
    * If part of the transaction fails it should be fully rolled back. Here we
    * ensure the second transaction fails and the created individual and created
    * contribution have also been rolled back.
+   *
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportDuplicateFullRollback() {
+  public function testImportDuplicateFullRollback() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -693,8 +736,11 @@ class BenevityTest extends BaseChecksFileTest {
    * Import the same file twice, checking all are seen as duplicates on round 2.
    *
    * We check this by making sure none are reported as errors.
+   *
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testDuplicateDetection() {
+  public function testDuplicateDetection() {
     $this->createAllOrgs();
 
     $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
@@ -711,8 +757,11 @@ class BenevityTest extends BaseChecksFileTest {
    * Import a transaction where half the transaction has already been imported.
    *
    * This should throw an error rather be treated as a valid duplicate.
+   *
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testDuplicateDetectionInvalidState() {
+  public function testDuplicateDetectionInvalidState() {
     list ($mouseOrg) =$this->createAllOrgs();
 
     $existing = $this->callAPISuccess('Contribution', 'create', array(
@@ -756,14 +805,19 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertTrue(!isset($messages['Error']));
 
   }
+
   /**
    * Test import succeeds if there is exactly one organization with the name as
    * a nick name.
    *
    * If this is the case then the presence of other organizations with that
    * name as a name should not be a problem.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedOrganizationDisambiguatedBySingleNickName() {
+  public function testImportSucceedOrganizationDisambiguatedBySingleNickName() {
     $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
@@ -799,8 +853,12 @@ class BenevityTest extends BaseChecksFileTest {
 
   /**
    * Test a successful import run.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedAll() {
+  public function testImportSucceedAll() {
     list($mouseOrg) = $this->createAllOrgs();
 
     $this->callAPISuccess('Contact', 'create', array(
@@ -886,8 +944,12 @@ class BenevityTest extends BaseChecksFileTest {
 
   /**
    * Test that currency information can be handled as input.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedCurrencyTransformExists() {
+  public function testImportSucceedCurrencyTransformExists() {
     $mouseOrg = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -941,8 +1003,10 @@ class BenevityTest extends BaseChecksFileTest {
    * @param array $additionalFields
    *
    * @return array
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  protected function importBenevityFile($additionalFields = array()) {
+  protected function importBenevityFile($additionalFields = []) {
     $importer = new BenevityFile(__DIR__ . "/data/benevity.csv", $additionalFields);
     $importer->import();
     return $importer->getMessages();
