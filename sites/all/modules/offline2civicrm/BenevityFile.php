@@ -180,11 +180,16 @@ class BenevityFile extends ChecksFile {
     $mapping['Merchant Fee'] = 'merchant_fee_amount';
     return $mapping;
   }
+
   /**
    * Do the actual import.
    *
    * @param array $msg
+   *
    * @return array
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \WmfException
    */
   public function doImport($msg) {
     $contribution = array();
@@ -495,16 +500,25 @@ class BenevityFile extends ChecksFile {
    * @throws \Exception
    */
   public function validateFormFields($formFields) {
-    $numericFields = array('usd_total', 'original_currency_total');
-    foreach ($numericFields as $numericField) {
-      if (isset($formFields[$numericField]) && !is_numeric($formFields[$numericField])) {
-        throw new Exception(t('Invalid value for field: ' . $numericField));
-      }
+    if (empty($formFields)) {
+      // The first time this is called no fields are passed.
+      return;
     }
-    civicrm_initialize();
-    $currencies = civicrm_api3('Contribution', 'getoptions', array('field' => 'currency'));
-    if (!empty($formFields['original_currency']) && empty($currencies['values'][$formFields['original_currency']])) {
-      throw new Exception(t('Invalid currency'));
+    if ($formFields['original_currency'] !== 'USD') {
+      if (empty($formFields['usd_total']) || empty($formFields['original_currency_total'])) {
+        throw new Exception(t('Total fields must be set if currency is not USD'));
+      }
+      $numericFields = ['usd_total', 'original_currency_total'];
+      foreach ($numericFields as $numericField) {
+        if (!empty($formFields[$numericField]) && !is_numeric($formFields[$numericField])) {
+          throw new Exception(t('Invalid value for field: ' . $numericField));
+        }
+      }
+      civicrm_initialize();
+      $currencies = civicrm_api3('Contribution', 'getoptions', array('field' => 'currency'));
+      if (!empty($formFields['original_currency']) && empty($currencies['values'][$formFields['original_currency']])) {
+        throw new Exception(t('Invalid currency'));
+      }
     }
   }
 
