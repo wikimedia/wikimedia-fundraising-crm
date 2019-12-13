@@ -913,8 +913,8 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals(1, $orgContributions['count']);
     $this->assertEquals(.5, $mcScrougeGift['total_amount']);
     $this->assertEquals('2015-11-02 00:18:07', $mcScrougeGift['receive_date']);
-    $this->assertEquals(.28, $mcScrougeGift['fee_amount']);
-    $this->assertEquals(.22, $mcScrougeGift['net_amount']);
+    $this->assertEquals(.33, $mcScrougeGift['fee_amount']);
+    $this->assertEquals(.17, $mcScrougeGift['net_amount']);
 
     // No address should have been created for the organization.
     $organizationAddress = $this->callAPISuccess('Address', 'get', array(
