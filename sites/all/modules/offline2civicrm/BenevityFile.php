@@ -7,7 +7,10 @@ class BenevityFile extends ChecksFile {
    */
   protected $conversionRate;
 
-  function getRequiredColumns() {
+  /**
+   * @return array
+   */
+  protected function getRequiredColumns() {
     return [
       'Company',
       'Donation Date',
@@ -44,8 +47,8 @@ class BenevityFile extends ChecksFile {
    * @param array $msg
    *   The normalized import parameters.
    *
-   * @throws IgnoredRowException
    * @throws \WmfException
+   * @throws \CiviCRM_API3_Exception
    */
   protected function mungeMessage(&$msg) {
     $msg['gateway'] = 'benevity';
@@ -241,6 +244,7 @@ class BenevityFile extends ChecksFile {
    *
    * @return array
    *
+   * @throws \CiviCRM_API3_Exception
    * @throws \WmfException
    */
   protected function getOrganizationID($organizationName) {
@@ -352,6 +356,9 @@ class BenevityFile extends ChecksFile {
    * @param array $contact
    *
    * @return bool
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \WmfException
    */
   protected function isContactEmployedByOrganization($organization_name, $contact) {
     if ($contact['current_employer'] == $this->getOrganizationResolvedName($organization_name)) {
@@ -379,7 +386,7 @@ class BenevityFile extends ChecksFile {
    *   The name of an organization that matches the nick_name if one exists, otherwise the
    *   passed in name.
    *
-   * @throws \WmfException
+   * @throws \CiviCRM_API3_Exception
    */
   protected function getOrganizationResolvedName($organizationName) {
     if (!isset(\Civi::$statics[__CLASS__]['organization_resolved_name'][$organizationName])) {
@@ -403,6 +410,9 @@ class BenevityFile extends ChecksFile {
    * @param array $msg
    *
    * @return mixed
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \WmfException
    */
   protected function getNameMatchedEmployedIndividualID($msg) {
     $matches = [];
