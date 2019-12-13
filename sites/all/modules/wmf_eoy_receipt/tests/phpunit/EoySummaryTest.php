@@ -310,102 +310,98 @@ I am thrilled that this email to you is one of the first things on my to-do list
 </p>
 
 <p>
-Your hard earned money pays our bills, runs our servers, and helps us recruit the world\'s smartest people to ensure that Wikipedia will always be a resilient, neutral source for learning.
+Your continuing support shows us that our work matters, and is worth supporting. Thank you.
 </p>
 
 <p>
-Outside of those practical details, your donations are deeply meaningful to we who work to serve you. Your donations show us that our work matters, and is worth supporting. Thank you.
+Here’s a summary of all the donations you made to the Wikimedia Foundation in 2018:
 </p>
 
-<p>
-Here’s a summary of all the donations you made to the Wikimedia Foundation in 2018.
-</p>
-
-<p>
+<p><b>
 Your 2018 total was USD 9800.
-</p>
+</b></p>
 
-<p>
+<p><b>
 Donation 1: 50 USD 2018-01-26
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 2: 50 USD 2018-02-01
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 3: 800 USD 2018-03-02
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 4: 800 USD 2018-03-03
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 5: 50 USD 2018-05-03
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 6: 800 USD 2018-05-05
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 7: 800 USD 2018-05-11
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 8: 50 USD 2018-06-04
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 9: 50 USD 2018-06-06
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 10: 50 USD 2018-06-08
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 11: 50 USD 2018-07-07
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 12: 50 USD 2018-07-12
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 13: 50 USD 2018-08-08
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 14: 50 USD 2018-08-08
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 15: 800 USD 2018-09-02
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 16: 100 USD 2018-10-03
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 17: 1200 USD 2018-10-09
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 18: 100 USD 2018-10-11
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 19: 100 USD 2018-10-12
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 20: 800 USD 2018-10-12
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 21: 50 USD 2018-10-14
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 22: 50 USD 2018-10-15
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 23: 50 USD 2018-10-20
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 24: 50 USD 2018-10-22
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 25: 800 USD 2018-11-22
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 26: 1200 USD 2018-12-09
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 27: 800 USD 2018-12-22
-</p>
+</b></p>
 
 <p>
 If for whatever reason you wish to cancel your monthly donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en">easy cancellation instructions</a>.
@@ -444,36 +440,32 @@ I am thrilled that this email to you is one of the first things on my to-do list
 </p>
 
 <p>
-Your hard earned money pays our bills, runs our servers, and helps us recruit the world\'s smartest people to ensure that Wikipedia will always be a resilient, neutral source for learning.
+Your continuing support shows us that our work matters, and is worth supporting. Thank you.
 </p>
 
 <p>
-Outside of those practical details, your donations are deeply meaningful to we who work to serve you. Your donations show us that our work matters, and is worth supporting. Thank you.
+Here’s a summary of all the donations you made to the Wikimedia Foundation in 2018:
 </p>
 
-<p>
-Here’s a summary of all the donations you made to the Wikimedia Foundation in 2018.
-</p>
-
-<p>
+<p><b>
 Your 2018 total was USD 70.
-</p>
-<p>
+</b></p>
+<p><b>
 Your 2018 total was CAD 850.
-</p>
+</b></p>
 
-<p>
+<p><b>
 Donation 1: 50 USD 2018-02-01
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 2: 800 CAD 2018-03-02
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 3: 20 USD 2018-05-03
-</p>
-<p>
+</b></p>
+<p><b>
 Donation 4: 50 CAD 2018-10-20
-</p>
+</b></p>
 
 <p>
 If for whatever reason you wish to cancel your monthly donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en">easy cancellation instructions</a>.

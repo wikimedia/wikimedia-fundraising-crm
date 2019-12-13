@@ -1,0 +1,31 @@
+<p>
+Здравствуйте, {{name}}!
+</p>
+
+<p>
+Я рада, что это письмо — это один из первых пунктов в моем списке дел в {{year + 1}} году. Несмотря на то что список дел длинный и у Википедии много замечательных проектов на горизонте, выражение благодарности вам — это приоритет.
+</p>
+
+<p>
+Ваши пожертвования показывают нам, что наша работа важна, и ее стоит поддерживать. Спасибо!
+</p>
+
+<p>
+Вот сводка всех пожертвований, сделанных вами в фонд Wikimedia Foundation в {{year}} г.
+</p>
+
+{% for total in totals %}
+<p><b>
+Ваша общая сумма за {{year}} г. составила {{total.amount}} {{total.currency}}.
+</b></p>
+{% endfor %}
+
+{% for contribution in contributions %}
+<p><b>
+Пожертвование {{contribution.index}}: {{contribution.amount}} {{contribution.currency}} {{contribution.date}}
+</b></p>
+{% endfor %}
+
+<p>
+Если по какой-либо причине вы хотите отменить ежемесячный взнос, то следуйте этим <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">простым инструкциям по отмене</a>.
+</p>

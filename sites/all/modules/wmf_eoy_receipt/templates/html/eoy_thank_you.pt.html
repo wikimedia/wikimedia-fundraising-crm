@@ -1,0 +1,31 @@
+<p>
+Olá {{name}},
+</p>
+
+<p>
+Estou entusiasmada por este e-mail ser uma das primeiras coisas na minha lista de tarefas em {{year + 1}}. Certo, a lista de tarefas é longa – A Wikipédia tem muitos projetos fantásticos no horizonte – mas este agradecimento a si vem primeiro.
+</p>
+
+<p>
+Os seus donativos mostram-nos que o nosso trabalho é importante e digno de apoio. Obrigado.
+</p>
+
+<p>
+Aqui está um resumo de todos os donativos que fez à Wikimedia Foundation em {{year}}.
+</p>
+
+{% for total in totals %}
+<p><b>
+O seu total de {{year}} foi {{total.amount}} {{total.currency}}.
+</b></p>
+{% endfor %}
+
+{% for contribution in contributions %}
+<p><b>
+Donativo {{contribution.index}}: {{contribution.amount}} {{contribution.currency}} {{contribution.date}}
+</b></p>
+{% endfor %}
+
+<p>
+Se, por qualquer motivo, pretender cancelar o seu donativo mensal, siga estas <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">simples instruções de cancelamento</a>.
+</p>

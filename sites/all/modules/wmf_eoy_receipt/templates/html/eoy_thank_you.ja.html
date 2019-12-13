@@ -1,0 +1,31 @@
+<p>
+{{name}}様
+</p>
+
+<p>
+{{year + 1}}年にまずやらなくてはいけないことが、あなたにこのメールをお送りすることであることを嬉しく思います。 やるべきことのリストにはきりがありません。ウィキペディアは数々の素晴らしいプロジェクトを手掛けようとしていますが、あなたに感謝の気持ちを伝えることは最も優先順位の高いことなのです。
+</p>
+
+<p>
+あなたが汗水流して得たお金によって、私たちは必要経費を支払い、サーバーを稼働させ、世界で最も優秀な人材を採用することができます。これによって、ウィキペディアは常に中立的な学びの源泉であり続けられるのです。 あなたからのご寄付は、私たちの仕事に価値があり、それが支援するに値することを示してくれます。 ありがとうございます。
+</p>
+
+<p><b>
+以下は、あなたが{{year}}年にウィキメディア財団にお寄せくださったご寄付の概要です。
+</b></p>
+
+{% for total in totals %}
+<p>
+{{year}}年のご寄付総額：  {{total.currency}} {{total.amount}}
+</p>
+{% endfor %}
+
+{% for contribution in contributions %}
+<p>
+ご寄付 {{contribution.index}}: {{contribution.date}} {{contribution.amount}} {{contribution.currency}} 
+</p>
+{% endfor %}
+
+<p>
+何らかの理由で毎月のご寄付を停止したい場合は、以下の <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">簡単な手順に従ってお手続きください</a>。
+</p>

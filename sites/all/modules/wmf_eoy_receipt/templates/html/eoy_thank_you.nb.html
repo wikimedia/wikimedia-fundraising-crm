@@ -1,0 +1,31 @@
+<p>
+Hei {{name}},
+</p>
+
+<p>
+Jeg er kjempeglad for at denne e-posten til deg er en av de første tingene på min gjøremålsliste i {{year + 1}}. Sant nok, listen over gjøremål er lang – Wikipedia har mange fantastiske prosjekter på horisonten – men du prioriteres først.
+</p>
+
+<p>
+Din pengegave viser oss at arbeidet vårt betyr noe, og at er det verdt å støtte. Tusen takk.
+</p>
+
+<p>
+Her er en oppsummering av donasjonene dine til Wikimedia Foundation i {{year}}.
+</p>
+
+{% for total in totals %}
+<p><b>
+Totalt for {{year}} har du bidratt med {{total.currency}} {{total.amount}}.
+</b></p>
+{% endfor %}
+
+{% for contribution in contributions %}
+<p><b>
+Donasjon {{contribution.index}}: {{contribution.amount}} {{contribution.currency}} {{contribution.date}}
+</b></p>
+{% endfor %}
+
+<p>
+Hvis du likevel ønsker å kansellere det månedlige bidraget ditt, må du følge disse <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">enkle kanselleringsinstruksene</a>.
+</p>
