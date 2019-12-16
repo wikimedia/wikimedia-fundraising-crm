@@ -7,8 +7,11 @@ class BenevityFile extends ChecksFile {
    */
   protected $conversionRate;
 
-  function getRequiredColumns() {
-    return array(
+  /**
+   * @return array
+   */
+  protected function getRequiredColumns() {
+    return [
       'Company',
       'Donation Date',
       'Donor First Name',
@@ -17,15 +20,15 @@ class BenevityFile extends ChecksFile {
       'Donation Amount',
       'Match Amount',
       'Transaction ID',
-    );
+    ];
   }
 
   function getRequiredData() {
-    return array(
+    return [
       'matching_organization_name',
       'currency',
       'date',
-    );
+    ];
   }
 
   /**
@@ -44,8 +47,8 @@ class BenevityFile extends ChecksFile {
    * @param array $msg
    *   The normalized import parameters.
    *
-   * @throws IgnoredRowException
    * @throws \WmfException
+   * @throws \CiviCRM_API3_Exception
    */
   protected function mungeMessage(&$msg) {
     $msg['gateway'] = 'benevity';
@@ -97,15 +100,15 @@ class BenevityFile extends ChecksFile {
    * @return int Original Amount.
    */
   protected function getUSDAmount($original_amount) {
-     if (empty($this->conversionRate)) {
-       if (!empty($this->additionalFields['usd_total']) && !empty($this->additionalFields['original_currency_total'])) {
-         $this->conversionRate = $this->additionalFields['usd_total'] / $this->additionalFields['original_currency_total'];
-       }
-       else {
-         $this->conversionRate = 1;
-       }
-     }
-     return $original_amount * $this->conversionRate;
+    if (empty($this->conversionRate)) {
+      if (!empty($this->additionalFields['usd_total']) && !empty($this->additionalFields['original_currency_total'])) {
+        $this->conversionRate = $this->additionalFields['usd_total'] / $this->additionalFields['original_currency_total'];
+      }
+      else {
+        $this->conversionRate = 1;
+      }
+    }
+    return $original_amount * $this->conversionRate;
   }
 
   /**
@@ -118,10 +121,10 @@ class BenevityFile extends ChecksFile {
    * @throws \WmfException
    */
   protected function validateRequiredFields($msg) {
-    $failed = array();
+    $failed = [];
     $requiredFields = $this->getRequiredData();
     if (empty($msg['contact_id'])) {
-      $requiredFields = array_merge($requiredFields, array('first_name', 'last_name', 'email'));
+      $requiredFields = array_merge($requiredFields, ['first_name', 'last_name', 'email']);
     }
     foreach ($requiredFields as $key) {
       if (!array_key_exists($key, $msg) or empty($msg[$key])) {
@@ -129,12 +132,12 @@ class BenevityFile extends ChecksFile {
       }
     }
     if (count($failed) === 3) {
-      throw new WmfException(WmfException::CIVI_REQ_FIELD, t("Missing required fields @keys during check import", array("@keys" => implode(", ", $failed))));
+      throw new WmfException(WmfException::CIVI_REQ_FIELD, t("Missing required fields @keys during check import", ["@keys" => implode(", ", $failed)]));
     }
   }
 
   protected function getDefaultValues() {
-    return array(
+    return [
       'source' => 'Matched gift',
       'payment_method' => 'EFT',
       'contact_type' => 'Individual',
@@ -148,7 +151,7 @@ class BenevityFile extends ChecksFile {
       // sure it happened (as opposed to Benevity says it happens).
       'no_thank_you' => 1,
       'financial_type_id' => "Benevity",
-    );
+    ];
   }
 
   /**
@@ -180,14 +183,19 @@ class BenevityFile extends ChecksFile {
     $mapping['Merchant Fee'] = 'merchant_fee_amount';
     return $mapping;
   }
+
   /**
    * Do the actual import.
    *
    * @param array $msg
+   *
    * @return array
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \WmfException
    */
   public function doImport($msg) {
-    $contribution = array();
+    $contribution = [];
     if (!empty($msg['gross']) && $msg['gross'] > 0) {
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
@@ -198,7 +206,7 @@ class BenevityFile extends ChecksFile {
     }
     if (isset($msg['employer_id']) && $msg['contact_id'] != $this->getAnonymousContactID()) {
       // This is done in the import but if we have no donation let's still do this update.
-      civicrm_api3('Contact', 'create', array('contact_id' => $msg['contact_id'],'employer_id' => $msg['employer_id']));
+      civicrm_api3('Contact', 'create', ['contact_id' => $msg['contact_id'], 'employer_id' => $msg['employer_id']]);
     }
 
 
@@ -236,14 +244,15 @@ class BenevityFile extends ChecksFile {
    *
    * @return array
    *
+   * @throws \CiviCRM_API3_Exception
    * @throws \WmfException
    */
   protected function getOrganizationID($organizationName) {
     // Using the Civi Statics pattern for php caching makes it easier to reset in unit tests.
     if (!isset(\Civi::$statics[__CLASS__]['organization'][$organizationName])) {
-      $contacts = civicrm_api3('Contact', 'get', array('nick_name' => $organizationName, 'contact_type' => 'Organization'));
+      $contacts = civicrm_api3('Contact', 'get', ['nick_name' => $organizationName, 'contact_type' => 'Organization']);
       if ($contacts['count'] == 0) {
-        $contacts = civicrm_api3('Contact', 'get', array('organization_name' => $organizationName, 'contact_type' => 'Organization'));
+        $contacts = civicrm_api3('Contact', 'get', ['organization_name' => $organizationName, 'contact_type' => 'Organization']);
       }
       if ($contacts['count'] == 1) {
         \Civi::$statics[__CLASS__]['organization'][$organizationName] = $contacts['id'];
@@ -259,9 +268,9 @@ class BenevityFile extends ChecksFile {
     throw new WmfException(
       WmfException::IMPORT_CONTRIB,
       t("Did not find exactly one Organization with the details: @organizationName. You will need to ensure a single Organization record exists for the contact first",
-        array(
+        [
           '@organizationName' => $organizationName,
-        )
+        ]
       )
     );
   }
@@ -286,7 +295,8 @@ class BenevityFile extends ChecksFile {
         // We do not have an email or a name, match to our anonymous contact (
         // note address details are discarded in this case).
         return $this->getAnonymousContactID();
-      } catch (CiviCRM_API3_Exception $e) {
+      }
+      catch (CiviCRM_API3_Exception $e) {
         throw new WmfException(
           WmfException::IMPORT_CONTRIB,
           t("The donation is anonymous but the anonymous contact is ambiguous. Ensure exactly one contact is in CiviCRM with the email fakeemail@wikimedia.org' and first name and last name being Anonymous "
@@ -295,7 +305,7 @@ class BenevityFile extends ChecksFile {
       }
     }
 
-    $params = array(
+    $params = [
       'email' => $msg['email'],
       'first_name' => $msg['first_name'],
       'last_name' => $msg['last_name'],
@@ -303,17 +313,17 @@ class BenevityFile extends ChecksFile {
       'contact_type' => 'Individual',
       'return' => 'current_employer',
       'sort' => 'organization_name DESC',
-    );
+    ];
     try {
       $contacts = civicrm_api3('Contact', 'get', $params);
       if ($contacts['count'] == 1) {
         if (!empty($params['email']) || $this->isContactEmployedByOrganization($msg['matching_organization_name'], $contacts['values'][$contacts['id']])) {
           return $contacts['id'];
         }
-        return false;
+        return FALSE;
       }
       elseif ($contacts['count'] > 1) {
-        $possibleContacts = array();
+        $possibleContacts = [];
         $contactID = NULL;
         foreach ($contacts['values'] as $contact) {
           if ($this->isContactEmployedByOrganization($msg['matching_organization_name'], $contact)) {
@@ -346,12 +356,15 @@ class BenevityFile extends ChecksFile {
    * @param array $contact
    *
    * @return bool
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \WmfException
    */
   protected function isContactEmployedByOrganization($organization_name, $contact) {
     if ($contact['current_employer'] == $this->getOrganizationResolvedName($organization_name)) {
       return TRUE;
     }
-    $softCredits = civicrm_api3('ContributionSoft', 'get', array('contact_id' => $contact['id'], 'api.Contribution.get' => array('return' => 'contact_id')));
+    $softCredits = civicrm_api3('ContributionSoft', 'get', ['contact_id' => $contact['id'], 'api.Contribution.get' => ['return' => 'contact_id']]);
     if ($softCredits['count'] == 0) {
       return FALSE;
     }
@@ -373,11 +386,11 @@ class BenevityFile extends ChecksFile {
    *   The name of an organization that matches the nick_name if one exists, otherwise the
    *   passed in name.
    *
-   * @throws \WmfException
+   * @throws \CiviCRM_API3_Exception
    */
   protected function getOrganizationResolvedName($organizationName) {
     if (!isset(\Civi::$statics[__CLASS__]['organization_resolved_name'][$organizationName])) {
-      $contacts = civicrm_api3('Contact', 'get', array('nick_name' => $organizationName, 'contact_type' => 'Organization', 'return' => 'id,organization_name', 'sequential' => 1));
+      $contacts = civicrm_api3('Contact', 'get', ['nick_name' => $organizationName, 'contact_type' => 'Organization', 'return' => 'id,organization_name', 'sequential' => 1]);
       if ($contacts['count'] == 1) {
         \Civi::$statics[__CLASS__]['organization_resolved_name'][$organizationName] = $contacts['values'][0]['organization_name'];
       }
@@ -397,18 +410,21 @@ class BenevityFile extends ChecksFile {
    * @param array $msg
    *
    * @return mixed
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \WmfException
    */
   protected function getNameMatchedEmployedIndividualID($msg) {
-    $matches = array();
+    $matches = [];
     if (isset($msg['first_name']) && isset($msg['last_name']) && isset($msg['email'])) {
-      $params = array(
+      $params = [
         'first_name' => $msg['first_name'],
         'last_name' => $msg['last_name'],
         'contact_type' => 'Individual',
         'is_deleted' => 0,
         'return' => 'current_employer',
-        'options' => array('limit' => 0),
-      );
+        'options' => ['limit' => 0],
+      ];
       unset($params['email']);
       $contacts = civicrm_api3('Contact', 'get', $params);
       foreach ($contacts['values'] as $contact) {
@@ -468,23 +484,23 @@ class BenevityFile extends ChecksFile {
    * Get any fields that can be set on import at an import wide level.
    */
   public function getImportFields() {
-    return array(
-      'usd_total' => array(
+    return [
+      'usd_total' => [
         '#title' => t('USD Total'),
         '#type' => 'textfield',
-      ),
-      'original_currency_total' => array(
+      ],
+      'original_currency_total' => [
         '#title' => t('Original Currency Total'),
         '#type' => 'textfield',
-      ),
-      'original_currency' => array(
+      ],
+      'original_currency' => [
         '#title' => t('Original Currency'),
         '#type' => 'textfield',
         '#size' => 3,
         '#maxlength' => 3,
         '#default_value' => 'USD',
-      ),
-    );
+      ],
+    ];
   }
 
   /**
@@ -495,16 +511,25 @@ class BenevityFile extends ChecksFile {
    * @throws \Exception
    */
   public function validateFormFields($formFields) {
-    $numericFields = array('usd_total', 'original_currency_total');
-    foreach ($numericFields as $numericField) {
-      if (isset($formFields[$numericField]) && !is_numeric($formFields[$numericField])) {
-        throw new Exception(t('Invalid value for field: ' . $numericField));
-      }
+    if (empty($formFields)) {
+      // The first time this is called no fields are passed.
+      return;
     }
-    civicrm_initialize();
-    $currencies = civicrm_api3('Contribution', 'getoptions', array('field' => 'currency'));
-    if (!empty($formFields['original_currency']) && empty($currencies['values'][$formFields['original_currency']])) {
-      throw new Exception(t('Invalid currency'));
+    if ($formFields['original_currency'] !== 'USD') {
+      if (empty($formFields['usd_total']) || empty($formFields['original_currency_total'])) {
+        throw new Exception(t('Total fields must be set if currency is not USD'));
+      }
+      $numericFields = ['usd_total', 'original_currency_total'];
+      foreach ($numericFields as $numericField) {
+        if (!empty($formFields[$numericField]) && !is_numeric($formFields[$numericField])) {
+          throw new Exception(t('Invalid value for field: ' . $numericField));
+        }
+      }
+      civicrm_initialize();
+      $currencies = civicrm_api3('Contribution', 'getoptions', ['field' => 'currency']);
+      if (!empty($formFields['original_currency']) && empty($currencies['values'][$formFields['original_currency']])) {
+        throw new Exception(t('Invalid currency'));
+      }
     }
   }
 

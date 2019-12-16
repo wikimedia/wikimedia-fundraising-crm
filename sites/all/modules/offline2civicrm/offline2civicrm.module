@@ -189,6 +189,8 @@ function offline2civicrm_import_ajax($form, &$form_state) {
 
 /**
  * Custom callback to build form fields.
+ *
+ * @throws \Exception
  */
 function offline2civicrm_import_fields($form, &$form_state) {
   $values = $form_state['values'];
@@ -220,8 +222,11 @@ function offline2civicrm_import_fields($form, &$form_state) {
 
 /**
  * Validate form input.
+ *
  * @param $form
  * @param $form_state
+ *
+ * @throws \Exception
  */
 function offline2civicrm_import_checks_form_validate($form, $form_state) {
   $additionalFields = offline2civicrm_get_gateway_specific_fields($form_state);
