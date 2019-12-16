@@ -17,7 +17,7 @@ class BenevityFile extends ChecksFile {
       'Donor First Name',
       'Donor Last Name',
       'Email',
-      'Donation Amount',
+      'Total Donation to be Acknowledged',
       'Match Amount',
       'Transaction ID',
     ];
@@ -53,7 +53,7 @@ class BenevityFile extends ChecksFile {
   protected function mungeMessage(&$msg) {
     $msg['gateway'] = 'benevity';
 
-    $moneyFields = ['original_gross', 'fee', 'merchant_fee_amount', 'original_matching_amount', 'matching_fee_amount'];
+    $moneyFields = ['original_gross', 'fee', 'merchant_fee_amount', 'original_matching_amount'];
     foreach ($moneyFields as $moneyField) {
       $msg[$moneyField] = isset($msg[$moneyField]) ? (str_replace(',', '', $msg[$moneyField])) : 0;
     }
@@ -175,11 +175,10 @@ class BenevityFile extends ChecksFile {
     $mapping['Transaction ID'] = 'gateway_txn_id';
     // Not sure we need this - notes currently used for comments but few of them.
     // $mapping['Donation Frequency'] = 'notes';
-    $mapping['Donation Amount'] = 'original_gross';
+    $mapping['Total Donation to be Acknowledged'] = 'original_gross';
     $mapping['Match Amount'] = 'original_matching_amount';
     $mapping['Currency'] = 'currency';
-    $mapping['Donation Fee'] = 'fee';
-    $mapping['Match Fee'] = 'matching_fee_amount';
+    $mapping['Cause Support Fee'] = 'fee';
     $mapping['Merchant Fee'] = 'merchant_fee_amount';
     return $mapping;
   }
@@ -221,7 +220,13 @@ class BenevityFile extends ChecksFile {
       $matchedMsg['gateway_txn_id'] = $msg['gateway_txn_id'] . '_matched';
       $matchedMsg['gift_source'] = 'Matching Gift';
       $matchedMsg['restrictions'] = 'Restricted - Foundation';
-      $matchedMsg['fee'] = (isset($msg['matching_fee_amount']) ? $msg['matching_fee_amount'] : 0);
+      if (empty($msg['gross'])) {
+        // We no longer get separate values for the fee for the matching donation vs the main one.
+        // So, now we assign the whole fee to the main donation, if there is one. Otherwise
+        // it goes to the matched donation.
+        $matchedMsg['fee'] = $msg['fee'];
+      }
+
       $this->unsetAddressFields($matchedMsg);
       $matchingContribution = wmf_civicrm_contribution_message_import($matchedMsg);
     }
