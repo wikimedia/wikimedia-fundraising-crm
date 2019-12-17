@@ -41,6 +41,11 @@ class WmfDatabase {
       $native_civi_transaction->rollback();
       $crm_transaction->rollback();
       $drupal_transaction->rollback();
+      if ($ex->getCode() === 'deadlock') {
+        throw new WmfException(WmfException::DATABASE_CONTENTION,
+          'Civi Transaction failed due to deadlock'
+        );
+      }
 
       throw $ex;
     }

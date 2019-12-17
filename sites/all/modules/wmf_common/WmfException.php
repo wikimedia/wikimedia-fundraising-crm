@@ -52,8 +52,20 @@ class WmfException extends Exception {
 
   const CONTRIBUTION_TRACKING = 25;
 
+  const DATABASE_CONTENTION = 26;
+
   //XXX shit we aren't using the 'rollback' attribute
   // and it's not correct in most of these cases
+  /**
+   * Array of error types with information as to how to respond.
+   *   - fatal
+   *   - reject
+   *   - requeue - Put the message back in the queue & retry later
+   *   - drop
+   *   - no-email - Do not send failmail to fr-tech
+   *
+   * @var array
+   */
   static $error_types = [
     self::CIVI_CONFIG => [
       'fatal' => TRUE,
@@ -133,6 +145,14 @@ class WmfException extends Exception {
     ],
     self::BAD_EMAIL => [
       'no-email' => TRUE,
+    ],
+    self::DATABASE_CONTENTION => [
+      'requeue' => TRUE,
+      // Ideally we would like to be notified only if these exceed some sort of threshold.
+      // Not having done that work yet we'd rather ignore a bit of failmail than not notice
+      // a server-killing query. Also note that grafana might be able to monitor deadlocks on a more
+      // mysql-y level.
+      'no-email' => FALSE,
     ],
   ];
 
