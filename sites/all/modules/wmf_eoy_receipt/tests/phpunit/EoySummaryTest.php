@@ -175,13 +175,17 @@ EOS;
     $rollup = explode(',', $result['contributions_rollup']);
     sort($rollup);
     unset($result['contributions_rollup']);
-    $this->assertEquals(['name' => 'Recurring',
+    $this->assertEquals([
+      'name' => 'Recurring',
       'job_id' => $jobId,
       'email' => 'recurring@rabbit.org',
       'preferred_language' => 'pt_BR',
       'status' => 'queued',
     ], $result);
-    $this->assertEquals(['2018-02-01 20.00 USD','2018-08-08 30.00 PLN'], $rollup);
+    $this->assertEquals([
+      '2018-02-01 20.00 USD',
+      '2018-08-08 30.00 PLN',
+    ], $rollup);
   }
 
   /**
@@ -205,7 +209,8 @@ EOS;
     $rollup = explode(',', $result['contributions_rollup']);
     sort($rollup);
     unset($result['contributions_rollup']);
-    $this->assertEquals(['name' => 'Muhammad',
+    $this->assertEquals([
+      'name' => 'Muhammad',
       'job_id' => $jobId,
       'email' => 'goat@wbaboxing.com',
       'preferred_language' => 'ar_EG',
@@ -214,7 +219,38 @@ EOS;
     $this->assertEquals([
       '2018-02-01 400.00 PLN',
       '2018-03-02 30.00 PLN',
-      '2018-04-03 200.00 PLN'], $rollup);
+      '2018-04-03 200.00 PLN',
+    ], $rollup);
+  }
+
+  public function testCalculateSingleContactId() {
+    $contact = $this->addTestContact(['email' => 'jimmysingle@example.com',]);
+    $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-27 22:59:00']);
+    $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-28 22:59:00']);
+
+    $summaryObject = new EoySummary([
+      'year' => 2019,
+      'contact_id' => $contact['id'],
+    ]);
+    $jobId = $summaryObject->calculate_year_totals();
+    $this->jobIds[] = $jobId;
+    $sql = <<<EOS
+SELECT *
+FROM {wmf_eoy_receipt_donor}
+WHERE
+    status = 'queued'
+    AND job_id = $jobId
+    AND email = :email
+EOS;
+    $result = db_query($sql, [':email' => 'jimmysingle@example.com'])->fetchAssoc();
+    $this->assertEquals([
+      'name' => 'Jimmy',
+      'job_id' => $jobId,
+      'email' => 'jimmysingle@example.com',
+      'preferred_language' => 'en_US',
+      'status' => 'queued',
+      'contributions_rollup' => '2019-11-27 10.00 USD,2019-11-28 10.00 USD',
+    ], $result);
   }
 
   /**
@@ -228,10 +264,10 @@ EOS;
     $summaryObject->send_letters();
     $this->assertEquals(1, TestMailer::countMailings());
     $mailing = TestMailer::getMailing(0);
-    foreach($contactIds as $contactId) {
+    foreach ($contactIds as $contactId) {
       $activity = $this->callAPISuccessGetSingle('Activity', [
         'activity_type_id' => 'wmf_eoy_receipt_sent',
-        'target_contact_id' => $contactId
+        'target_contact_id' => $contactId,
       ]);
       $this->assertEquals(
         'Sent contribution summary receipt for year 2018 to goat@wbaboxing.com',
@@ -519,10 +555,43 @@ If for whatever reason you wish to cancel your monthly donation, follow these <a
     foreach ([
                $contribCashOlder,
                $contribCashNewer,
-               $contribCashRecurringOlder
+               $contribCashRecurringOlder,
              ] as $contrib) {
       $this->ids['Contribution'][$contrib['id']] = $contrib['id'];
     }
     return [$olderContact['id'], $newerContact['id']];
+  }
+
+  protected function addTestContact($params = []) {
+    $contact = $this->callAPISuccess('Contact', 'create', array_merge([
+      'first_name' => 'Jimmy',
+      'last_name' => 'Walrus',
+      'contact_type' => 'Individual',
+      'email' => 'jimmy@example.com',
+      'preferred_language' => 'en_US',
+    ], $params));
+    $this->ids['Contact'][$contact['id']] = $contact['id'];
+    return $contact;
+  }
+
+  protected function addTestContactContribution($contact_id, $params = []) {
+    $financialTypeCash = CRM_Core_PseudoConstant::getKey(
+      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash'
+    );
+    $completedStatusId = CRM_Contribute_PseudoConstant::getKey(
+      'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
+    );
+
+    $contribution = $this->callAPISuccess('Contribution', 'create', array_merge([
+      'receive_date' => date("Y-m-d H:i:s"),
+      'contact_id' => $contact_id,
+      'total_amount' => '10',
+      'currency' => 'USD',
+      'contribution_status_id' => $completedStatusId,
+      'financial_type_id' => $financialTypeCash,
+    ], $params));
+
+    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
+    return $contribution;
   }
 }
