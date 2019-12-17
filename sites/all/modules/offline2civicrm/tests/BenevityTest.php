@@ -176,7 +176,7 @@ class BenevityTest extends BaseChecksFileTest {
     );
     $this->assertEquals(0, $relationships['count']);
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity_only_match.csv");
+    $importer = new BenevityFile(__DIR__ . "/data/benevity_only_match.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
@@ -224,7 +224,7 @@ class BenevityTest extends BaseChecksFileTest {
       'contact_id' => $thaMouseMeister['id'],
     ));
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity_only_match.csv");
+    $importer = new BenevityFile(__DIR__ . "/data/benevity_only_match.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
@@ -334,7 +334,7 @@ class BenevityTest extends BaseChecksFileTest {
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
     ));
-    $importer = new BenevityFile(__DIR__ . "/data/benevity_mice_no_email.csv");
+    $importer = new BenevityFile(__DIR__ . "/data/benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
@@ -615,7 +615,7 @@ class BenevityTest extends BaseChecksFileTest {
       'employer_id' => $organization['id'],
     ));
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity_mice_no_email.csv");
+    $importer = new BenevityFile(__DIR__ . "/data/benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
@@ -680,7 +680,7 @@ class BenevityTest extends BaseChecksFileTest {
       'email' => 'minnie@mouse.org',
     ));
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity_mice_no_email.csv");
+    $importer = new BenevityFile(__DIR__ . "/data/benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
@@ -743,7 +743,7 @@ class BenevityTest extends BaseChecksFileTest {
   public function testDuplicateDetection() {
     $this->createAllOrgs();
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv");
+    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
 
     $messages = $this->importBenevityFile();
@@ -912,7 +912,7 @@ class BenevityTest extends BaseChecksFileTest {
     $mcScrougeGift = $orgContributions['values'][$orgContributions['id']];
     $this->assertEquals(1, $orgContributions['count']);
     $this->assertEquals(.5, $mcScrougeGift['total_amount']);
-    $this->assertEquals('2015-11-02 00:18:07', $mcScrougeGift['receive_date']);
+    $this->assertEquals('2019-09-12 00:00:00', $mcScrougeGift['receive_date']);
     $this->assertEquals(.33, $mcScrougeGift['fee_amount']);
     $this->assertEquals(.17, $mcScrougeGift['net_amount']);
 
@@ -960,7 +960,7 @@ class BenevityTest extends BaseChecksFileTest {
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
     ));
-    $messages = $this->importBenevityFile(array('original_currency' => 'EUR', 'original_currency_total' => 4, 'usd_total' => 8));
+    $messages = $this->importBenevityFile(['date' => ['year' => 2019, 'month' => 9, 'day' => 12], 'original_currency' => 'EUR', 'original_currency_total' => 4, 'usd_total' => 8]);
     $this->assertEquals('1 out of 4 rows were imported.', $messages['Result']);
 
     $contribution = $this->callAPISuccessGetSingle('Contribution', array('contact_id' => $minnie['id']));
@@ -1006,7 +1006,7 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \League\Csv\Exception
    * @throws \WmfException
    */
-  protected function importBenevityFile($additionalFields = []) {
+  protected function importBenevityFile($additionalFields = ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]) {
     $importer = new BenevityFile(__DIR__ . "/data/benevity.csv", $additionalFields);
     $importer->import();
     return $importer->getMessages();
