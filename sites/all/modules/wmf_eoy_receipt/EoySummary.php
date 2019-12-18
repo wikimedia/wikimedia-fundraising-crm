@@ -32,6 +32,15 @@ class EoySummary {
   protected $from_name;
 
   /**
+   * Temporary tables.
+   *
+   * These are instances of CRM_Utils_SQL_TempTable and are dropped when the object deconstructs.
+   *
+   * @var \CRM_Utils_SQL_TempTable[]
+   */
+  protected $temporaryTables = [];
+
+  /**
    * The name of the CMS database.
    *
    * @var string
@@ -100,7 +109,6 @@ class EoySummary {
 
     // if no email addresses exist for the period lets jump out here
     if($num_emails === 0 ) {
-      $this->drop_tmp_email_recipients_table();
       watchdog('wmf_eoy_receipt',
         t('Calculated summaries for !num donors giving during !year',
           [
@@ -116,7 +124,6 @@ class EoySummary {
     $this->create_tmp_contact_contributions_table();
     $this->populate_tmp_contact_contributions_table($year_start, $year_end);
 
-    $this->drop_tmp_email_recipients_table();
 
     $job_timestamp = date("YmdHis");
     $this->create_send_letters_job($job_timestamp);
@@ -125,7 +132,6 @@ class EoySummary {
     // recent contact ID so in case of two records sharing an email address, we
     // use the more recent name and preferred language.
     $this->populate_donor_recipients_table();
-    $this->drop_tmp_contact_contributions_table();
 
     watchdog('wmf_eoy_receipt',
       t('Calculated summaries for !num donors giving during !year',
@@ -254,28 +260,22 @@ EOS;
    * Create the table to store the emails of contacts to receive summaries.
    */
   protected function create_tmp_email_recipients_table() {
-    $email_temp_sql = <<<EOS
-CREATE TEMPORARY TABLE wmf_eoy_receipt_email (
-    email VARCHAR(254) COLLATE utf8_unicode_ci PRIMARY KEY
-)
-EOS;
-    \CRM_Core_DAO::executeQuery($email_temp_sql);
+    $this->temporaryTables['email_recipients'] = \CRM_Utils_SQL_TempTable::build()->setAutodrop()->createWithColumns(
+      'email VARCHAR(254) PRIMARY KEY'
+    );
   }
 
   /**
    * Create a temporary details for more detailed contact information.
    */
   protected function create_tmp_contact_contributions_table() {
-    $contact_temp_sql = <<<EOS
-CREATE TEMPORARY TABLE wmf_eoy_receipt_contact (
-    contact_id INT(10) unsigned PRIMARY KEY,
-    email VARCHAR(254) COLLATE utf8_unicode_ci,
-    preferred_language VARCHAR(16),
-    name VARCHAR(255),
-    contact_contributions TEXT
-)
-EOS;
-    \CRM_Core_DAO::executeQuery($contact_temp_sql);
+    $this->temporaryTables['contact_details'] = \CRM_Utils_SQL_TempTable::build()->setAutodrop()->createWithColumns(
+      '    contact_id INT(10) unsigned PRIMARY KEY,
+      email VARCHAR(254),
+      preferred_language VARCHAR(16),
+      name VARCHAR(255),
+      contact_contributions TEXT'
+    );
   }
 
   /**
@@ -421,14 +421,6 @@ EOS;
     \CRM_Core_DAO::executeQuery($donor_recipients_insert_sql);
   }
 
-  protected function drop_tmp_email_recipients_table() {
-    \CRM_Core_DAO::executeQuery('DROP TEMPORARY TABLE ' . $this->getTemporaryTableNameForEmailRecipients());
-  }
-
-  protected function drop_tmp_contact_contributions_table() {
-    \CRM_Core_DAO::executeQuery('DROP TEMPORARY TABLE ' . $this->getTemporaryTableNameForContactSummary());
-  }
-
   protected function get_template($language, $template_params) {
     return new Templating(
       self::$templates_dir,
@@ -465,7 +457,7 @@ EOS;
    * @return string
    */
   protected function getTemporaryTableNameForContactSummary(): string {
-    return 'wmf_eoy_receipt_contact';
+    return $this->temporaryTables['contact_details']->getName();
   }
 
   /**
@@ -478,7 +470,7 @@ EOS;
    * @return string
    */
   protected function getTemporaryTableNameForEmailRecipients(): string {
-    return 'wmf_eoy_receipt_email';
+    return $this->temporaryTables['email_recipients']->getName();
   }
 
 }
