@@ -275,9 +275,10 @@ EOS;
       // we want to pull in _ALL_ recurring donors for the period
       $recur_filter_sql = "AND contribution_recur_id IS NOT NULL";
     }
+    $emailTableName = $this->getTemporaryTableNameForEmailRecipients();
 
     $email_insert_sql = <<<EOS
-INSERT INTO wmf_eoy_receipt_email
+INSERT INTO $emailTableName
 SELECT email
 FROM {$this->civi_prefix}civicrm_contribution contribution
 JOIN {$this->civi_prefix}civicrm_email email
@@ -315,9 +316,11 @@ EOS;
     );
 
     db_query('SET session group_concat_max_len = 5000');
+    $contactSummaryTable = $this->getTemporaryTableNameForContactSummary();
+    $emailTableName = $this->getTemporaryTableNameForEmailRecipients();
     // Build a table of contribution and contact data, grouped by contact
     $contact_insert_sql = <<<EOS
-INSERT INTO {wmf_eoy_receipt_contact}
+INSERT INTO $contactSummaryTable
 SELECT
     contact.id,
     email.email,
@@ -331,7 +334,7 @@ SELECT
         ' ',
         COALESCE(original_currency, currency)
     ))
-FROM {wmf_eoy_receipt_email} eoy_email
+FROM $emailTableName eoy_email
 JOIN {$this->civi_prefix}civicrm_email email
     ON email.email = eoy_email.email AND email.is_primary
 JOIN {$this->civi_prefix}civicrm_contact contact
@@ -360,6 +363,7 @@ EOS;
   }
 
   protected function populate_donor_recipients_table() {
+    $contactSummaryTable = $this->getTemporaryTableNameForContactSummary();
     $donor_recipients_insert_sql = <<<EOS
 INSERT INTO {wmf_eoy_receipt_donor}
   (job_id, email, preferred_language, name, status, contributions_rollup)
@@ -370,7 +374,7 @@ SELECT
     name,
     'queued',
     contact_contributions
-FROM {wmf_eoy_receipt_contact}
+FROM $contactSummaryTable
 ORDER BY contact_id DESC
 ON DUPLICATE KEY UPDATE contributions_rollup = CONCAT(
     contributions_rollup, ',', contact_contributions
@@ -380,11 +384,11 @@ EOS;
   }
 
   protected function drop_tmp_email_recipients_table() {
-    db_query('DROP TEMPORARY TABLE {wmf_eoy_receipt_email}');
+    db_query('DROP TEMPORARY TABLE ' . $this->getTemporaryTableNameForEmailRecipients());
   }
 
   protected function drop_tmp_contact_contributions_table() {
-    db_query('DROP TEMPORARY TABLE {wmf_eoy_receipt_contact}');
+    db_query('DROP TEMPORARY TABLE ' . $this->getTemporaryTableNameForContactSummary());
   }
 
   protected function get_template($language, $template_params) {
@@ -412,4 +416,31 @@ EOS;
       ]);
     }
   }
+
+  /**
+   * Get the string for the temporary table with summarised information ready to insert in the mails.
+   *
+   * The intention is to swap this over to use the CiviCRM query class to take advantage of the temp table helper
+   * and in recognition of our intention to end usage of db_switcher & migrate this Civi integration (over time)
+   * to the next extension.
+   *
+   * @return string
+   */
+  protected function getTemporaryTableNameForContactSummary(): string {
+    return '{wmf_eoy_receipt_contact}';
+  }
+
+  /**
+   * Get the string for the temporary table with a list of emails to send to.
+   *
+   * The intention is to swap this over to use the CiviCRM query class to take advantage of the temp table helper
+   * and in recognition of our intention to end usage of db_switcher & migrate this Civi integration (over time)
+   * to the next extension.
+   *
+   * @return string
+   */
+  protected function getTemporaryTableNameForEmailRecipients(): string {
+    return '{wmf_eoy_receipt_email}';
+  }
+
 }
