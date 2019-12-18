@@ -4,7 +4,6 @@ namespace wmf_eoy_receipt;
 
 use CRM_Contribute_PseudoConstant;
 use CRM_Core_PseudoConstant;
-use db_switcher;
 use wmf_communication\Mailer;
 use wmf_communication\Templating;
 use wmf_communication\Translation;
@@ -33,12 +32,21 @@ class EoySummary {
   protected $from_name;
 
   /**
+   * The name of the CMS database.
+   *
    * @var string
    */
-  protected $civi_prefix = '';
+  protected $cms_prefix = '';
 
   protected $job_id;
 
+  /**
+   * EoySummary constructor.
+   *
+   * @param array $options
+   *
+   * @throws \CRM_Core_Exception
+   */
   public function __construct($options = []) {
     $this->year = variable_get('wmf_eoy_target_year', NULL);
     $this->batch = variable_get('wmf_eoy_batch', 100);
@@ -52,10 +60,25 @@ class EoySummary {
     $this->from_address = variable_get('wmf_eoy_from_address', NULL);
     $this->from_name = variable_get('wmf_eoy_from_name', NULL);
 
-    $this->civi_prefix = (new db_switcher())->get_prefix('civicrm');
+    $this->cms_prefix = $this->getCMSDatabaseName();
 
     self::$templates_dir = __DIR__ . '/templates';
     self::$template_name = 'eoy_thank_you';
+  }
+
+  /**
+   * Get the name of the CMS Database.
+   *
+   * @return string
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function getCMSDatabaseName(): string {
+    $url = str_replace('?new_link=true', '', CIVICRM_UF_DSN);
+    if (!preg_match('/^([a-z]+):\/\/([^:]+):([^@]+)@([^\/:]+)(:([0-9]+))?\/(.+)$/', $url, $matches)) {
+      throw new \CRM_Core_Exception("Failed to parse dbi url: $url");
+    }
+    return $matches[7];
   }
 
   /**
@@ -227,15 +250,21 @@ EOS;
     $this->job_id = $row->job_id;
   }
 
+  /**
+   * Create the table to store the emails of contacts to receive summaries.
+   */
   protected function create_tmp_email_recipients_table() {
     $email_temp_sql = <<<EOS
 CREATE TEMPORARY TABLE wmf_eoy_receipt_email (
     email VARCHAR(254) COLLATE utf8_unicode_ci PRIMARY KEY
 )
 EOS;
-    db_query($email_temp_sql);
+    \CRM_Core_DAO::executeQuery($email_temp_sql);
   }
 
+  /**
+   * Create a temporary details for more detailed contact information.
+   */
   protected function create_tmp_contact_contributions_table() {
     $contact_temp_sql = <<<EOS
 CREATE TEMPORARY TABLE wmf_eoy_receipt_contact (
@@ -246,7 +275,7 @@ CREATE TEMPORARY TABLE wmf_eoy_receipt_contact (
     contact_contributions TEXT
 )
 EOS;
-    db_query($contact_temp_sql);
+    \CRM_Core_DAO::executeQuery($contact_temp_sql);
   }
 
   /**
@@ -255,7 +284,7 @@ EOS;
    * @param $year_start
    * @param $year_end
    *
-   * @return mixed
+   * @return int
    */
   protected function populate_tmp_email_recipients_table($year_start, $year_end) {
     $endowmentFinancialType = CRM_Core_PseudoConstant::getKey(
@@ -275,13 +304,14 @@ EOS;
       // we want to pull in _ALL_ recurring donors for the period
       $recur_filter_sql = "AND contribution_recur_id IS NOT NULL";
     }
+
     $emailTableName = $this->getTemporaryTableNameForEmailRecipients();
 
     $email_insert_sql = <<<EOS
 INSERT INTO $emailTableName
 SELECT email
-FROM {$this->civi_prefix}civicrm_contribution contribution
-JOIN {$this->civi_prefix}civicrm_email email
+FROM civicrm_contribution contribution
+JOIN civicrm_email email
   ON email.contact_id = contribution.contact_id
   AND email.is_primary
 WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
@@ -292,8 +322,8 @@ WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
   $contact_filter_sql
 ON DUPLICATE KEY UPDATE email = email.email
 EOS;
-    $result = db_query($email_insert_sql);
-    $num_emails = $result->rowCount();
+    \CRM_Core_DAO::executeQuery($email_insert_sql);
+    $num_emails = \CRM_Core_DAO::singleValueQuery("SELECT count(*) FROM $emailTableName");
 
     watchdog('wmf_eoy_receipt',
       t('Found !num distinct emails with donations during !year',
@@ -304,9 +334,15 @@ EOS;
       )
     );
 
-    return $num_emails;
+    return (int) $num_emails;
   }
 
+  /**
+   * Populate data into the temporary table to prepare for mailings.
+   *
+   * @param string $year_start
+   * @param string $year_end
+   */
   protected function populate_tmp_contact_contributions_table($year_start, $year_end) {
     $endowmentFinancialType = CRM_Core_PseudoConstant::getKey(
       'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift'
@@ -315,9 +351,10 @@ EOS;
       'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
     );
 
-    db_query('SET session group_concat_max_len = 5000');
     $contactSummaryTable = $this->getTemporaryTableNameForContactSummary();
     $emailTableName = $this->getTemporaryTableNameForEmailRecipients();
+
+    \CRM_Core_DAO::executeQuery('SET session group_concat_max_len = 5000');
     // Build a table of contribution and contact data, grouped by contact
     $contact_insert_sql = <<<EOS
 INSERT INTO $contactSummaryTable
@@ -335,13 +372,14 @@ SELECT
         COALESCE(original_currency, currency)
     ))
 FROM $emailTableName eoy_email
-JOIN {$this->civi_prefix}civicrm_email email
+JOIN civicrm_email email
+
     ON email.email = eoy_email.email AND email.is_primary
-JOIN {$this->civi_prefix}civicrm_contact contact
+JOIN civicrm_contact contact
     ON email.contact_id = contact.id
-JOIN {$this->civi_prefix}civicrm_contribution contribution
+JOIN civicrm_contribution contribution
     ON email.contact_id = contribution.contact_id AND email.is_primary
-LEFT JOIN {$this->civi_prefix}wmf_contribution_extra extra
+LEFT JOIN wmf_contribution_extra extra
     ON extra.entity_id = contribution.id
 WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
     AND financial_type_id <> $endowmentFinancialType
@@ -349,8 +387,8 @@ WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
 GROUP BY email.email, contact.id, contact.preferred_language, contact.first_name
 EOS;
 
-    $result = db_query($contact_insert_sql);
-    $num_contacts = $result->rowCount();
+    \CRM_Core_DAO::executeQuery($contact_insert_sql);
+    $num_contacts = \CRM_Core_DAO::singleValueQuery("SELECT count(*) FROM $contactSummaryTable");
 
     watchdog('wmf_eoy_receipt',
       t('Found !num contact records for emails with donations during !year',
@@ -365,7 +403,7 @@ EOS;
   protected function populate_donor_recipients_table() {
     $contactSummaryTable = $this->getTemporaryTableNameForContactSummary();
     $donor_recipients_insert_sql = <<<EOS
-INSERT INTO {wmf_eoy_receipt_donor}
+INSERT INTO {$this->cms_prefix}.wmf_eoy_receipt_donor
   (job_id, email, preferred_language, name, status, contributions_rollup)
 SELECT
     {$this->job_id} AS job_id,
@@ -380,15 +418,15 @@ ON DUPLICATE KEY UPDATE contributions_rollup = CONCAT(
     contributions_rollup, ',', contact_contributions
 )
 EOS;
-    db_query($donor_recipients_insert_sql);
+    \CRM_Core_DAO::executeQuery($donor_recipients_insert_sql);
   }
 
   protected function drop_tmp_email_recipients_table() {
-    db_query('DROP TEMPORARY TABLE ' . $this->getTemporaryTableNameForEmailRecipients());
+    \CRM_Core_DAO::executeQuery('DROP TEMPORARY TABLE ' . $this->getTemporaryTableNameForEmailRecipients());
   }
 
   protected function drop_tmp_contact_contributions_table() {
-    db_query('DROP TEMPORARY TABLE ' . $this->getTemporaryTableNameForContactSummary());
+    \CRM_Core_DAO::executeQuery('DROP TEMPORARY TABLE ' . $this->getTemporaryTableNameForContactSummary());
   }
 
   protected function get_template($language, $template_params) {
@@ -427,7 +465,7 @@ EOS;
    * @return string
    */
   protected function getTemporaryTableNameForContactSummary(): string {
-    return '{wmf_eoy_receipt_contact}';
+    return 'wmf_eoy_receipt_contact';
   }
 
   /**
@@ -440,7 +478,7 @@ EOS;
    * @return string
    */
   protected function getTemporaryTableNameForEmailRecipients(): string {
-    return '{wmf_eoy_receipt_email}';
+    return 'wmf_eoy_receipt_email';
   }
 
 }
