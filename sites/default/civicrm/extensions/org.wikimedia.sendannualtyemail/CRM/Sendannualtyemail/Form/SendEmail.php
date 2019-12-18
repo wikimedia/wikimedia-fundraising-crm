@@ -50,7 +50,7 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
     }
     else {
       // FIXME: better message
-      CRM_Core_Form::errorMessage("Email not sent. Contact ID missing?!?!");
+      CRM_Core_Form::errorMessage('Email not sent. Contact ID missing?!?!');
     }
     parent::postProcess();
   }
@@ -59,7 +59,7 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
     $options = array(
       '' => E::ts('- select -'),
     );
-    $current_year = date("Y");
+    $current_year = date('Y');
     $last_seven_years = array_reverse(range($current_year - 7, $current_year));
     foreach ($last_seven_years as $year) {
         $options[$year] = $year;
