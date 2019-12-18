@@ -180,6 +180,9 @@ class BenevityFile extends ChecksFile {
     $mapping['Currency'] = 'currency';
     $mapping['Cause Support Fee'] = 'fee';
     $mapping['Merchant Fee'] = 'merchant_fee_amount';
+    // The parent sets this mapping - but it's expected to be in the format USD 15.15 - which it isn't.
+    // We should find & rework the reason for this source-handling (if any). But for now just handle in Benevity.
+    unset($mapping['Source']);
     return $mapping;
   }
 
@@ -479,7 +482,7 @@ class BenevityFile extends ChecksFile {
       // and should throw an exception.
       $duplicates = ($main ? 1 : 0) + ($matched ? 1 : 0);
       if ($duplicates === 1) {
-        throw new WmfException(WmfException::INVALID_MESSAGE, 'row has already been partially imported');
+        throw new WmfException(WmfException::INVALID_MESSAGE, 'Row has already been partially imported. Try searching for, and potentially deleting, a contribution with a Transaction ID of ' . (!$matched ? $msg['gateway_txn_id'] : $msg['gateway_txn_id'] . '_matched'));
       }
     }
     return $main ? $main : $matched;
