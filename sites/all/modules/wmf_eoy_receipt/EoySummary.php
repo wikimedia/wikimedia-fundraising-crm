@@ -128,9 +128,6 @@ class EoySummary {
     $job_timestamp = date("YmdHis");
     $this->create_send_letters_job($job_timestamp);
 
-    // Insert data into the persistent table. We start inserting from the most
-    // recent contact ID so in case of two records sharing an email address, we
-    // use the more recent name and preferred language.
     $this->populate_donor_recipients_table();
 
     watchdog('wmf_eoy_receipt',
@@ -400,6 +397,12 @@ EOS;
     );
   }
 
+  /**
+   * Insert data into the persistent table.
+   *
+   * We start inserting from the most recent contact ID so in case of two records sharing an email address, we
+   * use the more recent name and preferred language.
+   */
   protected function populate_donor_recipients_table() {
     $contactSummaryTable = $this->getTemporaryTableNameForContactSummary();
     $donor_recipients_insert_sql = <<<EOS
