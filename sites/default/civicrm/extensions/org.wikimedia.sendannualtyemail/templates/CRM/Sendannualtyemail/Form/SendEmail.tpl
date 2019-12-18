@@ -21,7 +21,7 @@ CRM.$(function($) {
 {include file="CRM/common/formButtons.tpl" location="top"}
 </div>
 
-{* FIELD EXAMPLE: OPTION 1 (AUTOMATIC LAYOUT) *}
+
 
 {foreach from=$elementNames item=elementName}
   <div class="crm-section">
@@ -31,12 +31,11 @@ CRM.$(function($) {
   </div>
 {/foreach}
 
-{* FIELD EXAMPLE: OPTION 2 (MANUAL LAYOUT)
-
-  <div>
-    <span>{$form.favorite_color.label}</span>
-    <span>{$form.favorite_color.html}</span>
-  </div>
+<div>
+    {ts}Submitting this form will send an end of year summary email to the email of the contact you are viewing.{/ts}
+    {ts}All contributions associated with contacts with this primary email address will be included.{/ts}
+    {ts}The name & language from the contact with the highest contact ID will be used.{/ts}
+</div>
 
 {* FOOTER *}
 <div class="crm-submit-buttons">
