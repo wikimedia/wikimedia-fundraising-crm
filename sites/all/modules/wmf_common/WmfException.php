@@ -213,6 +213,11 @@ class WmfException extends Exception {
    * @return string
    */
   function getUserErrorMessage() {
+    if ($this->type === self::DATABASE_CONTENTION) {
+      // Add a user-friendly message for database contention as it happens during manual imports & turns out to be the
+      // underlying error for the message 'financial_type_id is not valid: Benevity'
+      return ts('The database is under heavy load and failed to process this row. Try again when it is quieter');
+    }
     return !empty($this->extra['error_message']) ? $this->extra['error_message'] : $this->userMessage;
   }
 
@@ -245,7 +250,11 @@ class WmfException extends Exception {
       $flattened = print_r($this->extra, TRUE);
       if (
         preg_match('/\'12(05|13) \*\* /', $flattened) ||
-        preg_match('/Database lock encountered/', $flattened)
+        preg_match('/Database lock encountered/', $flattened
+          // @todo not treating constraints as deadlocks here at this stage - doing that
+          // more specifically but something to keep considering.
+        || $this->extra['error_code'] === 'deadlock'
+        )
       ) {
         return TRUE;
       }
