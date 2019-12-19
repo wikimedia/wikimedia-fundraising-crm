@@ -1619,10 +1619,12 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
       }
     }
 
-    civicrm_api3("Email", "create", $emailParams);
+    civicrm_api3('Email', 'create', $emailParams);
   }
   catch (CiviCRM_API3_Exception $e) {
-    throw new WmfException(WmfException::IMPORT_CONTACT, "Couldn't store email for the contact.", $e->getExtraParams());
+    // Constraint violations occur when data is rolled back to resolve a deadlock.
+    $code = (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout']))  ? WmfException::DATABASE_CONTENTION: WmfException::IMPORT_CONTACT;
+    throw new WmfException($code, "Couldn't store email for the contact.", $e->getExtraParams());
   }
 }
 
