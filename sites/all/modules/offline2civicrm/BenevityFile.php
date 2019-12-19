@@ -13,7 +13,6 @@ class BenevityFile extends ChecksFile {
   protected function getRequiredColumns() {
     return [
       'Company',
-      'Donation Date',
       'Donor First Name',
       'Donor Last Name',
       'Email',
@@ -87,6 +86,8 @@ class BenevityFile extends ChecksFile {
         $msg['email_location_type_id'] = 'Work';
       }
     }
+    $msg['date'] = $this->additionalFields['date']['year'] . '-' . $this->additionalFields['date']['month'] . '-' . $this->additionalFields['date']['day'];
+
   }
 
   /**
@@ -143,6 +144,7 @@ class BenevityFile extends ChecksFile {
       'contact_type' => 'Individual',
       'country' => 'US',
       'currency' => 'USD',
+      'date' => $this->additionalFields['date']['year'] . '-' . $this->additionalFields['date']['month'] . '-' . $this->additionalFields['date']['day'],
       'original_currency' => (empty($this->additionalFields['original_currency']) ? 'USD' : $this->additionalFields['original_currency']),
       // Setting this avoids emails going out. We could set the thank_you_date
       // instead to reflect Benevity having sent them out
@@ -507,6 +509,11 @@ class BenevityFile extends ChecksFile {
         '#size' => 3,
         '#maxlength' => 3,
         '#default_value' => 'USD',
+      ],
+      'date' => [
+        '#title' => t('Date'),
+        '#type' => 'date',
+        '#description' => t('Date money received'),
       ],
     ];
   }

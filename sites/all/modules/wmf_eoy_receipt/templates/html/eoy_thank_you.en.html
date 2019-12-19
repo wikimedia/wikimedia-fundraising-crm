@@ -7,27 +7,23 @@ I am thrilled that this email to you is one of the first things on my to-do list
 </p>
 
 <p>
-Your hard earned money pays our bills, runs our servers, and helps us recruit the world's smartest people to ensure that Wikipedia will always be a resilient, neutral source for learning.
+Your continuing support shows us that our work matters, and is worth supporting. Thank you.
 </p>
 
 <p>
-Outside of those practical details, your donations are deeply meaningful to we who work to serve you. Your donations show us that our work matters, and is worth supporting. Thank you.
-</p>
-
-<p>
-Here’s a summary of all the donations you made to the Wikimedia Foundation in {{year}}.
+Here’s a summary of all the donations you made to the Wikimedia Foundation in {{year}}:
 </p>
 
 {% for total in totals %}
-<p>
+<p><b>
 Your {{year}} total was {{total.currency}} {{total.amount}}.
-</p>
+</b></p>
 {% endfor %}
 
 {% for contribution in contributions %}
-<p>
+<p><b>
 Donation {{contribution.index}}: {{contribution.amount}} {{contribution.currency}} {{contribution.date}}
-</p>
+</b></p>
 {% endfor %}
 
 <p>

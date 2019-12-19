@@ -1,0 +1,32 @@
+<p>
+Hej! {{name}},
+</p>
+
+<p>
+Jag är glad över att detta e-postmeddelande till dig är en av de första sakerna på min att-göra-lista för {{year + 1}}. Att-göra-listan är som tur är lång – Wikipedia har så många fantastiska projekt på horisonten – men att tacka dig är allra viktigast.
+</p>
+
+<p>
+Dina donationer visar oss att vårt arbete spelar roll och är värt stöd.
+Varmt tack!
+</p>
+
+<p>
+Här är en sammanfattning av alla donationer du har gjort till Wikimedia Foundation år {{year}}.
+</p>
+
+{% for total in totals %}
+<p><b>
+Din totalsumma för {{year}} var {{total.amount}} {{total.currency}}.
+</b></p>
+{% endfor %}
+
+{% for contribution in contributions %}
+<p><b>
+Donation {{contribution.index}}: {{contribution.amount}} {{contribution.currency}} {{contribution.date}}
+</b></p>
+{% endfor %}
+
+<p>
+Om du av någon anledning vill avbryta din månatliga donation ska du följa dessa <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">enkla annuleringsinstruktioner</a>.
+</p>

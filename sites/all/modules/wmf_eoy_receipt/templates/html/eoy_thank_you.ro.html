@@ -1,0 +1,31 @@
+<p>
+Dragă {{name}},
+</p>
+
+<p>
+Sunt încântată că acest e-mail este unul dintre primele lucruri pe lista mea de activități în {{year + 1}}. Este adevărat că lista respectivă este lungă - Wikipedia are atât de multe proiecte uimitoare la orizont - dar a vă mulțumi dumneavoastră reprezintă o prioritate de top.
+</p>
+
+<p>
+Donațiile tale ne demonstrează că activitatea noastră contează și că merită susținută. Mulțumesc!
+</p>
+
+<p>
+Iată un centralizator al tuturor donațiilor pe care le-ați făcut către Wikimedia Foundation în {{year}}.
+</p>
+
+{% for total in totals %}
+<p><b>
+Totalul pentru anul {{year}} a fost de {{total.currency}} {{total.amount}}.
+</b></p>
+{% endfor %}
+
+{% for contribution in contributions %}
+<p><b>
+Donația {{contribution.index}}: {{contribution.amount}} {{contribution.currency}} {{contribution.date}}
+</b></p>
+{% endfor %}
+
+<p>
+Dacă din orice motiv doriți să anulați donația lunară, <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">urmați aceste instrucțiuni</a>, pentru o anulare facilă.
+</p>

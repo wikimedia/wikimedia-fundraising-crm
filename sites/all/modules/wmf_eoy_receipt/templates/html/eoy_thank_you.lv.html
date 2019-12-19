@@ -1,0 +1,31 @@
+<p>
+Sveiki, {{name}}!
+</p>
+
+<p>
+Es priecājos, ka šis e-pasta ziņojums Jums, ir viena no pirmajām lietām manā {{year + 1}}. gada paveicamo darbu sarakstā. Jāatzīst, ka šis paveicamo darbu saraksts ir garš – Wikipedia tuvākajā nākotnē ir tik daudz lielisku projektu – taču pateicība Jums ir šī saraksta pašā augšā.
+</p>
+
+<p>
+Jūsu ziedojumi mums parāda, ka mūsu darbs ir svarīgs un ir vērts to atbalstīt. Paldies!
+</p>
+
+<p>
+Šeit ir visu ziedojumu kopsavilkums, ko {{year}}. gadā veicāt Wikimedia Foundation.
+</p>
+
+{% for total in totals %}
+<p><b>
+Jūsu {{year}}. gada kopsumma bija {{total.amount}} {{total.currency}}.
+</b></p>
+{% endfor %}
+
+{% for contribution in contributions %}
+<p><b>
+{{contribution.index}}. ziedojums {{contribution.amount}} {{contribution.currency}} {{contribution.date}}
+</b></p>
+{% endfor %}
+
+<p>
+Ja kāda iemesla dēļ vēlaties atcelt savu ikmēneša ziedojumu, izpildiet šos <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">vienkāršos atcelšanas norādījumus</a>.
+</p>

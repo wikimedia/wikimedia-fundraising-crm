@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/send-annual-ty-email</path>
+    <page_callback>CRM_Sendannualtyemail_Form_SendEmail</page_callback>
+    <title>SendEmail</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>

@@ -1,0 +1,31 @@
+<p>
+Beste {{name}},
+</p>
+
+<p>
+Ik ben blij dat deze e-mail aan u één van de eerste dingen op mijn takenlijst in {{year + 1}} is. Zeker, die takenlijst is lang - Wikipedia heeft zo veel geweldige projecten in het verschiet - maar u bedanken staat bovenaan de lijst.
+</p>
+
+<p>
+Uw donaties tonen aan dat ons werk belangrijk is en het waard is om ondersteund te worden. Dank u wel.
+</p>
+
+<p>
+Hier is een overzicht van alle donaties die u in {{year}} aan de Wikimedia Foundation heeft gedaan.
+</p>
+
+{% for total in totals %}
+<p><b>
+Uw totaal in {{year}} was {{total.amount}} {{total.currency}}.
+</b></p>
+{% endfor %}
+
+{% for contribution in contributions %}
+<p><b>
+Donatie {{contribution.index}}: {{contribution.amount}} {{contribution.currency}} {{contribution.date}}
+</b></p>
+{% endfor %}
+
+<p>
+Als u om welke reden dan ook uw maandelijkse donatie wilt annuleren, volg dan deze <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">eenvoudige annuleringsinstructies</a>.
+</p>
