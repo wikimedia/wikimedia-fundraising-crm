@@ -79,10 +79,10 @@ class EoySummary {
     if($num_emails === 0 ) {
       $this->drop_tmp_email_recipients_table();
       watchdog('wmf_eoy_receipt',
-        t("Calculated summaries for !num donors giving during !year",
+        t('Calculated summaries for !num donors giving during !year',
           [
-            "!num" => 0,
-            "!year" => $this->year,
+            '!num' => 0,
+            '!year' => $this->year,
           ]
         )
       );
@@ -105,10 +105,10 @@ class EoySummary {
     $this->drop_tmp_contact_contributions_table();
 
     watchdog('wmf_eoy_receipt',
-      t("Calculated summaries for !num donors giving during !year",
+      t('Calculated summaries for !num donors giving during !year',
         [
-          "!num" => $num_emails,
-          "!year" => $this->year,
+          '!num' => $num_emails,
+          '!year' => $this->year,
         ]
       )
     );
@@ -152,10 +152,10 @@ EOS;
     }
 
     watchdog('wmf_eoy_receipt',
-      t("Successfully sent !succeeded messages, failed to send !failed messages.",
+      t('Successfully sent !succeeded messages, failed to send !failed messages.',
         [
-          "!succeeded" => $succeeded,
-          "!failed" => $failed,
+          '!succeeded' => $succeeded,
+          '!failed' => $failed,
         ]
       )
     );
@@ -163,7 +163,7 @@ EOS;
 
   public function render_letter($row) {
     if (!$this->from_address || !$this->from_name) {
-      throw new \Exception("Must configure a valid return address in the Thank-you module");
+      throw new \Exception('Must configure a valid return address in the Thank-you module');
     }
     $language = Translation::normalize_language_code($row->preferred_language);
     $totals = [];
@@ -295,10 +295,10 @@ EOS;
     $num_emails = $result->rowCount();
 
     watchdog('wmf_eoy_receipt',
-      t("Found !num distinct emails with donations during !year",
+      t('Found !num distinct emails with donations during !year',
         [
-          "!num" => $num_emails,
-          "!year" => $this->year,
+          '!num' => $num_emails,
+          '!year' => $this->year,
         ]
       )
     );
@@ -350,10 +350,10 @@ EOS;
     $num_contacts = $result->rowCount();
 
     watchdog('wmf_eoy_receipt',
-      t("Found !num contact records for emails with donations during !year",
+      t('Found !num contact records for emails with donations during !year',
         [
-          "!num" => $num_contacts,
-          "!year" => $this->year,
+          '!num' => $num_contacts,
+          '!year' => $this->year,
         ]
       )
     );

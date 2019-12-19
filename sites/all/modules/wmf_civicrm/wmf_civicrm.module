@@ -336,11 +336,13 @@ function wmf_civicrm_message_create_contact(&$msg) {
  *
  * This is an internal method, you must be looking for
  *
- * @see wmf_civicrm_contribution_message_import.
- *
  * @param array $msg
  *
  * @return array
+ *
+ * @throws \WmfException
+ * @see wmf_civicrm_contribution_message_import.
+ *
  */
 function _wmf_civicrm_message_contribution_insert($msg) {
   $transaction = WmfTransaction::from_message($msg);
@@ -464,7 +466,12 @@ function _wmf_civicrm_message_contribution_insert($msg) {
     watchdog('wmf_civicrm', "Successfully created contribution {$contribution_result['id']} for contact  {$contribution['contact_id']}", NULL, WATCHDOG_DEBUG);
   }
   catch (CiviCRM_API3_Exception $e) {
-    watchdog('wmf_civicrm', 'Error inserting contribution: ' . $e->getMessage(), NULL, WATCHDOG_INFO);
+    watchdog('wmf_civicrm', 'Error inserting contribution: ' . $e->getMessage() . ' ' . $e->getCode(), NULL, WATCHDOG_INFO);
+    // Constraint violations occur when data is rolled back to resolve a deadlock.
+    if (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) {
+      throw new WmfException(WmfException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getExtraParams());
+    }
+
     $duplicate = 0;
 
     try {
@@ -1269,10 +1276,18 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     }
   }
   catch (CiviCRM_API3_Exception $ex) {
+    if (in_array($ex->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) {
+      throw new WmfException(
+        WmfException::DATABASE_CONTENTION,
+        'Contact could not be added due to database contention',
+        $ex->getExtraParams()
+      );
+    }
     throw new WmfException(
       WmfException::IMPORT_CONTACT,
-      "Contact could not be added. Aborting import. Contact data was " . print_r($contact, TRUE) . " Original error: " . $ex->getMessage()
-      . " Details: " . print_r($ex->getExtraParams(), TRUE)
+      'Contact could not be added. Aborting import. Contact data was ' . print_r($contact, TRUE) . ' Original error: ' . $ex->getMessage()
+      . ' Details: ' . print_r($ex->getExtraParams(), TRUE),
+      $ex->getExtraParams()
     );
   }
   $contact_id = $contact_result['id'];
@@ -1649,11 +1664,13 @@ function wmf_civicrm_message_email_insert($msg, $contact_id) {
   );
 
   try {
-    civicrm_api3("Email", "Create", $email_params);
+    civicrm_api3('Email', 'Create', $email_params);
   }
   catch (CiviCRM_API3_Exception $e) {
-    throw new WmfException(WmfException::IMPORT_CONTACT, "Couldn't store email for the contact.", $e->getExtraParams());
-  }
+    // Constraint violations occur when data is rolled back to resolve a deadlock.
+    $code = $e->getErrorCode() === 'constraint violation' ? WmfException::DATABASE_CONTENTION: WmfException::IMPORT_CONTACT;
+    throw new WmfException($code, "Couldn't store email for the contact.", $e->getExtraParams());
+   }
 }
 
 /**
@@ -1712,7 +1729,9 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
     civicrm_api3('Address', 'replace', $address_params);
   }
   catch (CiviCRM_API3_Exception $e) {
-    throw new WmfException(WmfException::IMPORT_CONTACT, "Couldn't store address for the contact.", $e->getExtraParams());
+    // Constraint violations occur when data is rolled back to resolve a deadlock.
+    $code = $e->getErrorCode() === 'constraint violation' ? WmfException::DATABASE_CONTENTION: WmfException::IMPORT_CONTACT;
+    throw new WmfException($code, "Couldn't store address for the contact.", $e->getExtraParams());
   }
 }
 

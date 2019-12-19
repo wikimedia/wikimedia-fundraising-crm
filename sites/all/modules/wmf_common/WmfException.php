@@ -52,8 +52,20 @@ class WmfException extends Exception {
 
   const CONTRIBUTION_TRACKING = 25;
 
+  const DATABASE_CONTENTION = 26;
+
   //XXX shit we aren't using the 'rollback' attribute
   // and it's not correct in most of these cases
+  /**
+   * Array of error types with information as to how to respond.
+   *   - fatal
+   *   - reject
+   *   - requeue - Put the message back in the queue & retry later
+   *   - drop
+   *   - no-email - Do not send failmail to fr-tech
+   *
+   * @var array
+   */
   static $error_types = [
     self::CIVI_CONFIG => [
       'fatal' => TRUE,
@@ -134,6 +146,14 @@ class WmfException extends Exception {
     self::BAD_EMAIL => [
       'no-email' => TRUE,
     ],
+    self::DATABASE_CONTENTION => [
+      'requeue' => TRUE,
+      // Ideally we would like to be notified only if these exceed some sort of threshold.
+      // Not having done that work yet we'd rather ignore a bit of failmail than not notice
+      // a server-killing query. Also note that grafana might be able to monitor deadlocks on a more
+      // mysql-y level.
+      'no-email' => FALSE,
+    ],
   ];
 
   var $extra;
@@ -193,6 +213,11 @@ class WmfException extends Exception {
    * @return string
    */
   function getUserErrorMessage() {
+    if ($this->type === self::DATABASE_CONTENTION) {
+      // Add a user-friendly message for database contention as it happens during manual imports & turns out to be the
+      // underlying error for the message 'financial_type_id is not valid: Benevity'
+      return ts('The database is under heavy load and failed to process this row. Try again when it is quieter');
+    }
     return !empty($this->extra['error_message']) ? $this->extra['error_message'] : $this->userMessage;
   }
 
@@ -225,7 +250,11 @@ class WmfException extends Exception {
       $flattened = print_r($this->extra, TRUE);
       if (
         preg_match('/\'12(05|13) \*\* /', $flattened) ||
-        preg_match('/Database lock encountered/', $flattened)
+        preg_match('/Database lock encountered/', $flattened
+          // @todo not treating constraints as deadlocks here at this stage - doing that
+          // more specifically but something to keep considering.
+        || $this->extra['error_code'] === 'deadlock'
+        )
       ) {
         return TRUE;
       }
