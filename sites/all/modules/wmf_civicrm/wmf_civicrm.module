@@ -1098,10 +1098,13 @@ function wmf_civicrm_verify_message_and_stage($msg) {
  * @throws WmfException
  */
 function wmf_civicrm_check_for_duplicates($gateway, $gateway_txn_id) {
-  $txn = wmf_civicrm_get_contributions_from_gateway_id(
-    $gateway, $gateway_txn_id
-  );
-  if ($txn) {
+  if (CRM_Core_DAO::singleValueQuery(
+    'SELECT count(*)
+    FROM wmf_contribution_extra cx
+    WHERE gateway = %1 AND gateway_txn_id = %2', [
+    1 => [$gateway, 'String'],
+    2 => [$gateway_txn_id, 'String'],
+  ])) {
     throw new WmfException(
       WmfException::DUPLICATE_CONTRIBUTION,
       'Contribution already exists. Ignoring message.'
@@ -1616,10 +1619,12 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
       }
     }
 
-    civicrm_api3("Email", "create", $emailParams);
+    civicrm_api3('Email', 'create', $emailParams);
   }
   catch (CiviCRM_API3_Exception $e) {
-    throw new WmfException(WmfException::IMPORT_CONTACT, "Couldn't store email for the contact.", $e->getExtraParams());
+    // Constraint violations occur when data is rolled back to resolve a deadlock.
+    $code = (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout']))  ? WmfException::DATABASE_CONTENTION: WmfException::IMPORT_CONTACT;
+    throw new WmfException($code, "Couldn't store email for the contact.", $e->getExtraParams());
   }
 }
 
