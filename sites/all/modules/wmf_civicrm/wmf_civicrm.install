@@ -5105,3 +5105,23 @@ function wmf_civicrm_update_7960() {
     AND cancel_date > "2019-11-20" AND cancel_date < "2019-12-06"
   ');
 }
+
+/**
+ * Add indexes to civicrm_acl_cache.modified_date.
+ *
+ * Despite being basically empty this table is involved in deadlocks
+ * frequently.
+ *
+ * I've added this index upstream
+ * https://github.com/civicrm/civicrm-core/pull/16144
+ * It should be super quick to run so won't require an outage.
+ *
+ * I'm looking into further ways to improve contention on this table
+ * https://lab.civicrm.org/dev/core/issues/1486
+ *
+ */
+function wmf_civicrm_update_7965() {
+  civicrm_initialize();
+  $tables = ['civicrm_acl_cache' => ['modified_date']];
+  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+}
