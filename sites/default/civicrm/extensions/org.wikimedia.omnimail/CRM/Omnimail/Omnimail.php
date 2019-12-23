@@ -213,15 +213,21 @@ class CRM_Omnimail_Omnimail {
    * Save the job settings.
    *
    * @param array $setting
+   *
+   * @throws \CiviCRM_API3_Exception
    */
-  function saveJobSetting($setting) {
-    $this->jobSettings = $setting = array_merge($this->jobSettings, $setting);
+  public function saveJobSetting($setting) {
+    $setting = array_merge($this->jobSettings, $setting);
     foreach (array('last_timestamp', 'progress_end_timestamp') as $dateField) {
       if (isset($setting[$dateField]) && $setting[$dateField] !== 'null') {
         $setting[$dateField] = date('Y-m-d H:i:s', $setting[$dateField]);
       }
     }
-    civicrm_api3('OmnimailJobProgress', 'create', $setting);
+    $this->jobSettings = $setting;
+    $progress = civicrm_api3('OmnimailJobProgress', 'create', $setting);
+    if (empty($this->jobSettings['id'])) {
+      $this->jobSettings['id'] = $progress['id'];
+    }
   }
 
   /**
