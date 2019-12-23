@@ -14,10 +14,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $consumer;
 
-  protected $contributions = [];
-
-  protected $recurring_contributions = [];
-
   protected $ctIds = [];
 
   public function setUp() {
@@ -32,43 +28,12 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     }
   }
 
-  // TODO: other queue import tests need to clean up like this!
+  // TODO: other tests could also clean up contribution_tracking
   public function tearDown() {
     foreach ($this->ctIds as $ctId) {
       db_delete('contribution_tracking')
         ->condition('id', $ctId)
         ->execute();
-    }
-    foreach ($this->contributions as $contribution) {
-      if (!empty($contribution['contribution_recur_id'])) {
-        CRM_Core_DAO::executeQuery(
-          "
-        DELETE FROM civicrm_contribution_recur
-        WHERE id = %1",
-          [1 => [$contribution['contribution_recur_id'], 'Positive']]
-        );
-      }
-      CRM_Core_DAO::executeQuery(
-        "
-      DELETE FROM civicrm_contribution
-      WHERE id = %1",
-        [1 => [$contribution['id'], 'Positive']]
-      );
-      CRM_Core_DAO::executeQuery(
-        "
-      DELETE FROM civicrm_contact
-      WHERE id = %1",
-        [1 => [$contribution['contact_id'], 'Positive']]
-      );
-    }
-
-    foreach ($this->recurring_contributions as $recurring) {
-      CRM_Core_DAO::executeQuery(
-        "
-      DELETE FROM civicrm_contact
-      WHERE id = %1",
-        [1 => [$recurring->contact_id, 'Positive']]
-      );
     }
     parent::tearDown();
   }
@@ -93,7 +58,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $message->getGatewayTxnId()
     );
     if (!empty($contributions[0])) {
-      $this->contributions[] = $contributions[0];
+      $this->addToCleanup($contributions[0]);
     }
     return $contributions;
   }
@@ -254,7 +219,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $message->getGateway(),
       $message->getGatewayTxnId()
     );
-    $this->contributions[] = $contributions[0];
+    $this->addToCleanup($contributions[0]);
     $addresses = $this->callAPISuccess(
       'Address',
       'get',
@@ -319,7 +284,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Add the contribution to our tearDown array, since we didn't go through
     // $this->importMessage for this one.
-    $this->contributions[] = $contributions[0];
+    $this->addToCleanup($contributions[0]);
 
     // There should still only be one contribution_recur record
     $recur_records = wmf_civicrm_dao_to_list(CRM_Core_DAO::executeQuery("
@@ -379,7 +344,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $messageBody = $message->getBody();
     exchange_rate_cache_set('USD', $messageBody['date'], 1);
     $firstContribution = wmf_civicrm_contribution_message_import($messageBody);
-    $this->contributions[] = $firstContribution;
+    $this->addToCleanup($firstContribution);
 
     // Set up token specific values
     $overrides['recurring_payment_token']= mt_rand();
@@ -410,7 +375,8 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($recur_record->cycle_day, date('j',$overrides['start_date']));
 
     // Clean up
-    $this->recurring_contributions[] = $recur_record;
+    $this->ids['ContributionRecur'][$recur_record->id] = $recur_record->id;
+    $this->ids['Contact'][$recur_record->contact_id] = $recur_record->contact_id;
   }
 
   /**
@@ -439,7 +405,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $messageBody = $message->getBody();
     exchange_rate_cache_set('USD', $messageBody['date'], 1);
     $firstContribution = wmf_civicrm_contribution_message_import($messageBody);
-    $this->contributions[] = $firstContribution;
+    $this->addToCleanup($firstContribution);
 
     // Set up token specific values
     $overrides['currency'] = 'USD';
@@ -498,7 +464,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     exchange_rate_cache_set('USD', $messageBody['date'], 1);
     exchange_rate_cache_set('CAD', $messageBody['date'], 2);
     $firstContribution = wmf_civicrm_contribution_message_import($messageBody);
-    $this->contributions[] = $firstContribution;
+    $this->addToCleanup($firstContribution);
 
     // Setup here to only generate a notification email
     TestMailer::setup();
@@ -554,5 +520,13 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     exchange_rate_cache_set($signup_message->get('currency'), $subscr_time, 2);
     $this->consumer->processMessage($signup_message->getBody());
     return $values;
+  }
+
+  private function addToCleanup($contribution) {
+    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
+    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
+    if (!empty($contribution['contribution_recur_id'])) {
+      $this->ids['ContributionRecur'][$contribution['contribution_recur_id']] = $contribution['contribution_recur_id'];
+    }
   }
 }
