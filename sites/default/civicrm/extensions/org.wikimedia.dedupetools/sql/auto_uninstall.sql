@@ -34,6 +34,6 @@
 SET FOREIGN_KEY_CHECKS=0;
 
 DROP TABLE IF EXISTS `civicrm_mergeconflict`;
-DROP TABLE IF EXISTS `civicrm_contact_name_pairs`;
+DROP TABLE IF EXISTS `civicrm_contact_name_pair`;
 
 SET FOREIGN_KEY_CHECKS=1;

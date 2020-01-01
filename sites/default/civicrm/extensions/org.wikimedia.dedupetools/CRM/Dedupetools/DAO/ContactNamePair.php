@@ -241,7 +241,7 @@ class CRM_Dedupetools_DAO_ContactNamePair extends CRM_Core_DAO {
         'sig' => 'civicrm_contact_name_pair::0::is_name_b_nickname',
       ],
       'is_name_b_inferior' => [
-        'name' => 'is_name_b_minferior',
+        'name' => 'is_name_b_inferior',
         'field' => [
           0 => 'is_name_b_inferior',
         ],
