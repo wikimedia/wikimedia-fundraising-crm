@@ -398,16 +398,34 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @param bool $isReverse
    *   Should we reverse which contact we merge into.
    *
-   * @dataProvider booleanDataProvider
+   * @dataProvider mergeConflictProvider
    *
    * @throws \CRM_Core_Exception
    */
-  public function testMisplacedNameResolutionFullNameInLastName($isReverse) {
-    $this->createDuplicateIndividuals([['first_name' => 'null', 'last_name' => 'Bob M Smith'], []]);
+  public function testMisplacedNameResolutionFullNameInLastName($isReverse, $data) {
+    $this->createDuplicateIndividuals([$data['contact_1'], $data['contact_2']]);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Bob', $mergedContact['first_name']);
     $this->assertEquals('Smith', $mergedContact['last_name']);
     $this->assertEquals('M', $mergedContact['middle_name']);
+  }
+
+  /**
+   * Get data to test merge conflicts on.
+   *
+   * Returns an  array with the reverse boolean plus contact inputs.
+   */
+  public function mergeConflictProvider(): array {
+    $dataset['MisplacedNameResolutionFullNameInLastName'] = [
+      'contact_1' => ['first_name' => 'null', 'last_name' => 'Bob M Smith'],
+      'contact_2' => [],
+    ];
+    $return = [];
+    foreach ($dataset as $data) {
+      $return[] = [0, $data];
+      $return[] = [1, $data];
+    }
+    return $return;
   }
 
   /**
