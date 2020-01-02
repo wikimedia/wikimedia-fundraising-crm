@@ -170,7 +170,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
-   * Test resolving an initial in the first name.
+   * Test resolving an initial in the last name.
    *
    * @param bool $isReverse
    *   Should we reverse which contact we merge into.

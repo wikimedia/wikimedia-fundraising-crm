@@ -197,7 +197,7 @@ class CRM_Deduper_BAO_MergeHandler {
   public function getIndividualNameFieldValues($isForContactToBeKept):array {
     $return = [];
     foreach ($this->getIndividualNameFields() as $fieldName) {
-      $return[$fieldName] = $this->getValueForField($fieldName, $isForContactToBeKept);
+      $return[$fieldName] = trim($this->getValueForField($fieldName, $isForContactToBeKept));
     }
     return $return ;
   }

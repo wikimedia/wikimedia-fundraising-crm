@@ -24,7 +24,7 @@ class CRM_Deduper_BAO_Resolver_MisplacedNameResolver extends CRM_Deduper_BAO_Res
       $contact1 = $this->getIndividualNameFieldValues($isContactToKeep);
       $contact2  = $this->getIndividualNameFieldValues(!$isContactToKeep);
       if ($this->isFieldInConflict('last_name')) {
-        if (empty(trim($contact1['first_name']))) {
+        if (empty($contact1['first_name'])) {
           // First is empty - but perhaps if we assume the first name is the first
           // part of the last name field the contact disappears.
           $lastNameParts = explode(' ', $contact1['last_name']);
@@ -55,7 +55,7 @@ class CRM_Deduper_BAO_Resolver_MisplacedNameResolver extends CRM_Deduper_BAO_Res
         }
       }
       if ($this->isFieldInConflict('first_name')) {
-        if (empty(trim($contact1['last_name']))) {
+        if (empty($contact1['last_name'])) {
           $firstNameParts = explode(' ', $contact1['first_name']);
           if (array_pop($firstNameParts) === $contact2['last_name']) {
             $this->setValue('last_name', $contact2['last_name']);
