@@ -164,7 +164,7 @@ EOS;
 
       try {
         $success = $mailer->send($email);
-      } catch(phpmailerException $e) {
+      } catch (\phpmailerException $e) {
         // Invalid email address or something
         watchdog('wmf_eoy_receipt', $e->getMessage(), [], WATCHDOG_INFO);
         $success = FALSE;
