@@ -1,4 +1,4 @@
-Package: org.wikimedia.dedupetools
+Package: deduper
 Copyright (C) 2019, eileenmcnaughton <emcnaughton@wikimedia.org>
 Licensed under the GNU Affero Public License 3.0 (below).
 

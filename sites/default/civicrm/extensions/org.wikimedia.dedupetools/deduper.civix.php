@@ -7,7 +7,7 @@
  * extension.
  */
 class CRM_Deduper_ExtensionUtil {
-  const SHORT_NAME = 'dedupetools';
+  const SHORT_NAME = 'deduper';
   const LONG_NAME = 'org.wikimedia.dedupetools';
   const CLASS_PREFIX = 'CRM_Deduper';
   /**

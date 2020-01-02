@@ -1,6 +1,6 @@
 # Use mkdocs to generate a manual for this extension. For more information about
 # mkdocs, see https://docs.civicrm.org/dev/en/latest/documentation/#mkdocs
-site_name: dedupetools
+site_name: deduper
 repo_url: https://lab.civicrm.org/extensions/FIXME
 theme: material
 

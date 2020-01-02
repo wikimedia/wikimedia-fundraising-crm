@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <extension key="org.wikimedia.dedupetools" type="module">
-  <file>dedupetools</file>
-  <name>Dedupe tools</name>
+  <file>deduper</file>
+  <name>Deduper</name>
   <description>Various tools to help with deduping</description>
   <license>AGPL-3.0</license>
   <maintainer>

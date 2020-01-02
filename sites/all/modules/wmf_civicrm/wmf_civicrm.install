@@ -5125,3 +5125,15 @@ function wmf_civicrm_update_7965() {
   $tables = ['civicrm_acl_cache' => ['modified_date']];
   CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
+
+/**
+ * Change short-name of wmf deduper extension.
+ *
+ * The long name still needs changing but this should continue to work without
+ * problems if we were to just push out this much. Goal is that each of the renaming changes
+ * is complete in itself.
+ */
+function wmf_civicrm_update_7970() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('UPDATE civicrm_extension SET name = "Deduper", label = "Deduper", file = "deduper" WHERE full_name = "org.wikimedia.dedupetools"');
+}
