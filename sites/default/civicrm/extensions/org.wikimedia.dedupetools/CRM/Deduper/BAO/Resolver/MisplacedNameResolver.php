@@ -3,9 +3,9 @@
 use CRM_Deduper_ExtensionUtil as E;
 
 /**
- * Class CRM_Dedupetools_BAO_Resolver_MisplacedNameResolver
+ * Class CRM_Deduper_BAO_Resolver_MisplacedNameResolver
  */
-class CRM_Dedupetools_BAO_Resolver_MisplacedNameResolver extends CRM_Dedupetools_BAO_Resolver {
+class CRM_Deduper_BAO_Resolver_MisplacedNameResolver extends CRM_Deduper_BAO_Resolver {
 
   /**
    * Resolve conflicts if possible.

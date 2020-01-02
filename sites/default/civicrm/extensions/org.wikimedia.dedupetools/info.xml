@@ -25,7 +25,7 @@
   </compatibility>
   <comments>Tools to help with deduping</comments>
   <civix>
-    <namespace>CRM/Dedupetools</namespace>
+    <namespace>CRM/Deduper</namespace>
   </civix>
   <classloader>
     <psr4 prefix="Civi\" path="Civi" />

@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Class CRM_Dedupetools_BAO_Resolver_InitialResolver
+ * Class CRM_Deduper_BAO_Resolver_InitialResolver
  */
-class CRM_Dedupetools_BAO_Resolver_InitialResolver extends CRM_Dedupetools_BAO_Resolver {
+class CRM_Deduper_BAO_Resolver_InitialResolver extends CRM_Deduper_BAO_Resolver {
 
   /**
    * Resolve conflicts if possible.

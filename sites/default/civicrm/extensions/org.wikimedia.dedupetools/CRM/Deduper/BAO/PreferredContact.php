@@ -1,6 +1,6 @@
 <?php
 
-class CRM_Dedupetools_BAO_PreferredContact  {
+class CRM_Deduper_BAO_PreferredContact  {
 
   /**
    * Contact 1.
@@ -17,7 +17,7 @@ class CRM_Dedupetools_BAO_PreferredContact  {
   protected $contact2;
 
   /**
-   * CRM_Dedupetools_BAO_PreferredContact constructor.
+   * CRM_Deduper_BAO_PreferredContact constructor.
    *
    * @param int $contact1
    * @param int $contact2

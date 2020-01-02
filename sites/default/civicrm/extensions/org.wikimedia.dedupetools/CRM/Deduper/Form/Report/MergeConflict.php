@@ -1,7 +1,7 @@
 <?php
 use CRM_Deduper_ExtensionUtil as E;
 
-class CRM_Dedupetools_Form_Report_MergeConflict extends CRM_Report_Form {
+class CRM_Deduper_Form_Report_MergeConflict extends CRM_Report_Form {
 
   protected $_addressField = FALSE;
 

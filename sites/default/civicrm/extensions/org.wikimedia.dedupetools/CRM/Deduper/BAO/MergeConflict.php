@@ -2,7 +2,7 @@
 
 use CRM_Deduper_ExtensionUtil as E;
 
-class CRM_Dedupetools_BAO_MergeConflict extends CRM_Dedupetools_DAO_MergeConflict {
+class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
 
   /**
    * Get boolean fields that may be involved in merges.

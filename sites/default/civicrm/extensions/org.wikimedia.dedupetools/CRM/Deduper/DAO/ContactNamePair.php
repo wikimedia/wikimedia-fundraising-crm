@@ -12,7 +12,7 @@
 /**
  * Database access object for the ContactNamePair entity.
  */
-class CRM_Dedupetools_DAO_ContactNamePair extends CRM_Core_DAO {
+class CRM_Deduper_DAO_ContactNamePair extends CRM_Core_DAO {
 
   /**
    * Static instance to hold the table name.
@@ -83,7 +83,7 @@ class CRM_Dedupetools_DAO_ContactNamePair extends CRM_Core_DAO {
           'where' => 'civicrm_contact_name_pair.id',
           'table_name' => 'civicrm_contact_name_pair',
           'entity' => 'ContactNamePair',
-          'bao' => 'CRM_Dedupetools_DAO_ContactNamePair',
+          'bao' => 'CRM_Deduper_DAO_ContactNamePair',
           'localizable' => 0,
         ],
         'name_a' => [
@@ -96,7 +96,7 @@ class CRM_Dedupetools_DAO_ContactNamePair extends CRM_Core_DAO {
           'where' => 'civicrm_contact_name_pair.name_a',
           'table_name' => 'civicrm_contact_name_pair',
           'entity' => 'ContactNamePair',
-          'bao' => 'CRM_Dedupetools_DAO_ContactNamePair',
+          'bao' => 'CRM_Deduper_DAO_ContactNamePair',
           'localizable' => 0,
           'html' => [
             'type' => 'Text',
@@ -112,7 +112,7 @@ class CRM_Dedupetools_DAO_ContactNamePair extends CRM_Core_DAO {
           'where' => 'civicrm_contact_name_pair.name_b',
           'table_name' => 'civicrm_contact_name_pair',
           'entity' => 'ContactNamePair',
-          'bao' => 'CRM_Dedupetools_DAO_ContactNamePair',
+          'bao' => 'CRM_Deduper_DAO_ContactNamePair',
           'localizable' => 0,
           'html' => [
             'type' => 'Text',
@@ -126,7 +126,7 @@ class CRM_Dedupetools_DAO_ContactNamePair extends CRM_Core_DAO {
           'default' => '0',
           'table_name' => 'civicrm_contact_name_pair',
           'entity' => 'ContactNamePair',
-          'bao' => 'CRM_Dedupetools_DAO_ContactNamePair',
+          'bao' => 'CRM_Deduper_DAO_ContactNamePair',
           'localizable' => 0,
           'html' => [
             'type' => 'CheckBox',
@@ -140,7 +140,7 @@ class CRM_Dedupetools_DAO_ContactNamePair extends CRM_Core_DAO {
           'default' => '0',
           'table_name' => 'civicrm_contact_name_pair',
           'entity' => 'ContactNamePair',
-          'bao' => 'CRM_Dedupetools_DAO_ContactNamePair',
+          'bao' => 'CRM_Deduper_DAO_ContactNamePair',
           'localizable' => 0,
           'html' => [
             'type' => 'CheckBox',

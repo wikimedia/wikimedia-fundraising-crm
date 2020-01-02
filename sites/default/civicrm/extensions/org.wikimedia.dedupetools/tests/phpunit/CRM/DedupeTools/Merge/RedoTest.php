@@ -21,7 +21,7 @@ require_once __DIR__ . '/../DedupeBaseTestClass.php';
  *
  * @group headless
  */
-class CRM_DedupeTools_Merge_RedoTest extends DedupeBaseTestClass {
+class CRM_Deduper_Merge_RedoTest extends DedupeBaseTestClass {
 
   /**
    * Test redo-ing a merge.

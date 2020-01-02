@@ -2,10 +2,10 @@
 // This file declares a new entity type. For more details, see "hook_civicrm_entityTypes" at:
 // http://wiki.civicrm.org/confluence/display/CRMDOC/Hook+Reference
 return array (
-  0 => 
+  0 =>
   array (
     'name' => 'MergeConflict',
-    'class' => 'CRM_Dedupetools_DAO_MergeConflict',
+    'class' => 'CRM_Deduper_DAO_MergeConflict',
     'table' => 'civicrm_mergeconflict',
   ),
 );

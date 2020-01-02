@@ -1,16 +1,16 @@
 <?php
 use CRM_Deduper_ExtensionUtil as E;
 
-class CRM_Dedupetools_BAO_ContactNamePair extends CRM_Dedupetools_DAO_ContactNamePair {
+class CRM_Deduper_BAO_ContactNamePair extends CRM_Deduper_DAO_ContactNamePair {
 
   /**
    * Create a new ContactNamePair based on array-data
    *
    * @param array $params key-value pairs
-   * @return CRM_Dedupetools_DAO_ContactNamePair|NULL
+   * @return CRM_Deduper_DAO_ContactNamePair|NULL
    *
   public static function create($params) {
-    $className = 'CRM_Dedupetools_DAO_ContactNamePair';
+    $className = 'CRM_Deduper_DAO_ContactNamePair';
     $entityName = 'ContactNamePair';
     $hook = empty($params['id']) ? 'create' : 'edit';
 

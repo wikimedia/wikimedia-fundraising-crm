@@ -26,7 +26,7 @@ return [
     ],
     'settings_pages' => ['deduper' => ['weight' => 20]],
     'pseudoconstant' => [
-      'callback' => 'CRM_Dedupetools_BAO_MergeConflict::getBooleanFields',
+      'callback' => 'CRM_Deduper_BAO_MergeConflict::getBooleanFields',
     ],
   ],
   'deduper_resolver_field_prefer_preferred_contact' => [
@@ -47,7 +47,7 @@ return [
     ],
     'settings_pages' => ['deduper' => ['weight' => 30]],
     'pseudoconstant' => [
-      'callback' => 'CRM_Dedupetools_BAO_MergeConflict::getContactFields',
+      'callback' => 'CRM_Deduper_BAO_MergeConflict::getContactFields',
     ],
   ],
   'deduper_resolver_preferred_contact_resolution' => [
@@ -68,7 +68,7 @@ return [
     ],
     'settings_pages' => ['deduper' => ['weight' => 40]],
     'pseudoconstant' => [
-      'callback' => 'CRM_Dedupetools_BAO_MergeConflict::getPreferredContactCriteria',
+      'callback' => 'CRM_Deduper_BAO_MergeConflict::getPreferredContactCriteria',
     ],
   ],
   'deduper_resolver_preferred_contact_last_resort' => [
@@ -88,7 +88,7 @@ return [
     ],
     'settings_pages' => ['deduper' => ['weight' => 50]],
     'pseudoconstant' => [
-      'callback' => 'CRM_Dedupetools_BAO_MergeConflict::getPreferredContactCriteriaFallback',
+      'callback' => 'CRM_Deduper_BAO_MergeConflict::getPreferredContactCriteriaFallback',
     ],
   ],
   'deduper_equivalent_name_handling' => [
@@ -108,7 +108,7 @@ return [
     ],
     'settings_pages' => ['deduper' => ['weight' => 60]],
     'pseudoconstant' => [
-      'callback' => 'CRM_Dedupetools_BAO_MergeConflict::getEquivalentNameOptions',
+      'callback' => 'CRM_Deduper_BAO_MergeConflict::getEquivalentNameOptions',
     ],
   ],
 ];

@@ -1,9 +1,9 @@
 <?php
 
 /**
- * CRM_Dedupetools_BAO_Resolver_EquivalentNameResolver
+ * CRM_Deduper_BAO_Resolver_EquivalentNameResolver
  */
-class CRM_Dedupetools_BAO_Resolver_EquivalentNameResolver extends CRM_Dedupetools_BAO_Resolver {
+class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Resolver {
 
   /**
    * Potential alternatives for name.

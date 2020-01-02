@@ -4,16 +4,16 @@
 // database as appropriate. For more details, see "hook_civicrm_managed" at:
 // http://wiki.civicrm.org/confluence/display/CRMDOC42/Hook+Reference
 return array (
-  0 => 
+  0 =>
   array (
-    'name' => 'CRM_Dedupetools_Form_Report_MergeConflict',
+    'name' => 'CRM_Deduper_Form_Report_MergeConflict',
     'entity' => 'ReportTemplate',
-    'params' => 
+    'params' =>
     array (
       'version' => 3,
       'label' => 'MergeConflict',
       'description' => 'MergeConflict (org.wikimedia.dedupetools)',
-      'class_name' => 'CRM_Dedupetools_Form_Report_MergeConflict',
+      'class_name' => 'CRM_Deduper_Form_Report_MergeConflict',
       'report_url' => 'org.wikimedia.dedupetools/mergeconflict',
       'component' => '',
     ),

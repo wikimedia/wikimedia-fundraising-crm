@@ -12,7 +12,7 @@
 /**
  * Database access object for the MergeConflict entity.
  */
-class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
+class CRM_Deduper_DAO_MergeConflict extends CRM_Core_DAO {
 
   /**
    * Static instance to hold the table name.
@@ -100,7 +100,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
           'where' => 'civicrm_mergeconflict.id',
           'table_name' => 'civicrm_mergeconflict',
           'entity' => 'MergeConflict',
-          'bao' => 'CRM_Dedupetools_DAO_MergeConflict',
+          'bao' => 'CRM_Deduper_DAO_MergeConflict',
           'localizable' => 0,
         ],
         'contact_1' => [
@@ -111,7 +111,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
           'where' => 'civicrm_mergeconflict.contact_1',
           'table_name' => 'civicrm_mergeconflict',
           'entity' => 'MergeConflict',
-          'bao' => 'CRM_Dedupetools_DAO_MergeConflict',
+          'bao' => 'CRM_Deduper_DAO_MergeConflict',
           'localizable' => 0,
         ],
         'contact_2' => [
@@ -122,7 +122,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
           'where' => 'civicrm_mergeconflict.contact_2',
           'table_name' => 'civicrm_mergeconflict',
           'entity' => 'MergeConflict',
-          'bao' => 'CRM_Dedupetools_DAO_MergeConflict',
+          'bao' => 'CRM_Deduper_DAO_MergeConflict',
           'localizable' => 0,
         ],
         'group_id' => [
@@ -132,7 +132,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
           'where' => 'civicrm_mergeconflict.group_id',
           'table_name' => 'civicrm_mergeconflict',
           'entity' => 'MergeConflict',
-          'bao' => 'CRM_Dedupetools_DAO_MergeConflict',
+          'bao' => 'CRM_Deduper_DAO_MergeConflict',
           'localizable' => 0,
         ],
         'conflicted_field' => [
@@ -143,7 +143,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
           'where' => 'civicrm_mergeconflict.conflicted_field',
           'table_name' => 'civicrm_mergeconflict',
           'entity' => 'MergeConflict',
-          'bao' => 'CRM_Dedupetools_DAO_MergeConflict',
+          'bao' => 'CRM_Deduper_DAO_MergeConflict',
           'localizable' => 0,
         ],
         'value_1' => [
@@ -154,7 +154,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
           'where' => 'civicrm_mergeconflict.value_1',
           'table_name' => 'civicrm_mergeconflict',
           'entity' => 'MergeConflict',
-          'bao' => 'CRM_Dedupetools_DAO_MergeConflict',
+          'bao' => 'CRM_Deduper_DAO_MergeConflict',
           'localizable' => 0,
         ],
         'value_2' => [
@@ -165,7 +165,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
           'where' => 'civicrm_mergeconflict.value_2',
           'table_name' => 'civicrm_mergeconflict',
           'entity' => 'MergeConflict',
-          'bao' => 'CRM_Dedupetools_DAO_MergeConflict',
+          'bao' => 'CRM_Deduper_DAO_MergeConflict',
           'localizable' => 0,
         ],
         'analysis' => [
@@ -176,7 +176,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
           'where' => 'civicrm_mergeconflict.analysis',
           'table_name' => 'civicrm_mergeconflict',
           'entity' => 'MergeConflict',
-          'bao' => 'CRM_Dedupetools_DAO_MergeConflict',
+          'bao' => 'CRM_Deduper_DAO_MergeConflict',
           'localizable' => 0,
         ],
       ];

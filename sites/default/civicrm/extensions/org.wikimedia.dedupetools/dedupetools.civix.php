@@ -9,7 +9,7 @@
 class CRM_Deduper_ExtensionUtil {
   const SHORT_NAME = 'dedupetools';
   const LONG_NAME = 'org.wikimedia.dedupetools';
-  const CLASS_PREFIX = 'CRM_Dedupetools';
+  const CLASS_PREFIX = 'CRM_Deduper';
   /**
    * Translate a string using the extension's domain.
    *
@@ -204,14 +204,14 @@ function _dedupetools_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) 
 }
 
 /**
- * @return CRM_Dedupetools_Upgrader
+ * @return CRM_Deduper_Upgrader
  */
 function _dedupetools_civix_upgrader() {
-  if (!file_exists(__DIR__ . '/CRM/Dedupetools/Upgrader.php')) {
+  if (!file_exists(__DIR__ . '/CRM/Deduper/Upgrader.php')) {
     return NULL;
   }
   else {
-    return CRM_Dedupetools_Upgrader_Base::instance();
+    return CRM_Deduper_Upgrader_Base::instance();
   }
 }
 
@@ -472,16 +472,16 @@ function _dedupetools_civix_civicrm_alterSettingsFolders(&$metaDataFolders = NUL
 
 function _dedupetools_civix_civicrm_entityTypes(&$entityTypes) {
   $entityTypes = array_merge($entityTypes, array (
-    'CRM_Dedupetools_DAO_ContactNamePair' =>
+    'CRM_Deduper_DAO_ContactNamePair' =>
     array (
       'name' => 'ContactNamePair',
-      'class' => 'CRM_Dedupetools_DAO_ContactNamePair',
+      'class' => 'CRM_Deduper_DAO_ContactNamePair',
       'table' => 'civicrm_contact_name_pair',
     ),
-    'CRM_Dedupetools_DAO_MergeConflict' =>
+    'CRM_Deduper_DAO_MergeConflict' =>
     array (
       'name' => 'MergeConflict',
-      'class' => 'CRM_Dedupetools_DAO_MergeConflict',
+      'class' => 'CRM_Deduper_DAO_MergeConflict',
       'table' => 'civicrm_mergeconflict',
     ),
   ));

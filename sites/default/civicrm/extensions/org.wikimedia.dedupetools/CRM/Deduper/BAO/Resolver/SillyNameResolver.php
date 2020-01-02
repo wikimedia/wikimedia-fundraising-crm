@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Class CRM_Dedupetools_BAO_Resolver_SillyNameResolver
+ * Class CRM_Deduper_BAO_Resolver_SillyNameResolver
  */
-class CRM_Dedupetools_BAO_Resolver_SillyNameResolver extends CRM_Dedupetools_BAO_Resolver {
+class CRM_Deduper_BAO_Resolver_SillyNameResolver extends CRM_Deduper_BAO_Resolver {
 
   /**
    * Resolve conflicts where the issue is a silly name (ie. one that we can reasonably assume not to be real).

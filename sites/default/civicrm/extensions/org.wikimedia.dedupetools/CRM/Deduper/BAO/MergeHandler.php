@@ -2,7 +2,7 @@
 
 use CRM_Deduper_ExtensionUtil as E;
 
-class CRM_Dedupetools_BAO_MergeHandler {
+class CRM_Deduper_BAO_MergeHandler {
 
   /**
    * Various dedupe data as passed in from core in a mystical ugly format.
@@ -282,7 +282,7 @@ class CRM_Dedupetools_BAO_MergeHandler {
   }
 
   /**
-   * CRM_Dedupetools_BAO_MergeHandler constructor.
+   * CRM_Deduper_BAO_MergeHandler constructor.
    *
    * @param array $dedupeData
    *   Various dedupe data as passed in from core in a mystical ugly format.
@@ -317,28 +317,28 @@ class CRM_Dedupetools_BAO_MergeHandler {
     // There is a fundamental difference in that his resolvers run BEFORE a merge not in the hook
     // so they do updates prior to a merge attempt. Ours are running as a merge hook and alter
     // already-determined conflicts.
-    $resolver = new CRM_Dedupetools_BAO_Resolver_BooleanYesResolver($this);
+    $resolver = new CRM_Deduper_BAO_Resolver_BooleanYesResolver($this);
     $resolver->resolveConflicts();
 
-    $resolver = new CRM_Dedupetools_BAO_Resolver_UninformativeCharactersResolver($this);
+    $resolver = new CRM_Deduper_BAO_Resolver_UninformativeCharactersResolver($this);
     $resolver->resolveConflicts();
 
-    $resolver = new CRM_Dedupetools_BAO_Resolver_SillyNameResolver($this);
+    $resolver = new CRM_Deduper_BAO_Resolver_SillyNameResolver($this);
     $resolver->resolveConflicts();
 
-    $resolver = new CRM_Dedupetools_BAO_Resolver_EquivalentNameResolver($this);
+    $resolver = new CRM_Deduper_BAO_Resolver_EquivalentNameResolver($this);
     $resolver->resolveConflicts();
 
-    $resolver = new CRM_Dedupetools_BAO_Resolver_MisplacedNameResolver($this);
+    $resolver = new CRM_Deduper_BAO_Resolver_MisplacedNameResolver($this);
     $resolver->resolveConflicts();
 
-    $resolver = new CRM_Dedupetools_BAO_Resolver_InitialResolver($this);
+    $resolver = new CRM_Deduper_BAO_Resolver_InitialResolver($this);
     $resolver->resolveConflicts();
 
     // Let's do this one last - that way if someone wants to try to resolve names first they
     // can & then fall back on 'just use the value from the preferred contact.
     // @todo - should we make the resolvers sortable / re-order-able?
-    $resolver = new CRM_Dedupetools_BAO_Resolver_PreferredContactFieldResolver($this);
+    $resolver = new CRM_Deduper_BAO_Resolver_PreferredContactFieldResolver($this);
     $resolver->resolveConflicts();
   }
 
@@ -573,7 +573,7 @@ class CRM_Dedupetools_BAO_MergeHandler {
    * @throws \CiviCRM_API3_Exception
    */
   public function getPreferredContact() {
-    $preferredContact = new CRM_Dedupetools_BAO_PreferredContact($this->mainID, $this->otherID);
+    $preferredContact = new CRM_Deduper_BAO_PreferredContact($this->mainID, $this->otherID);
     return $preferredContact->getPreferredContactID();
   }
 

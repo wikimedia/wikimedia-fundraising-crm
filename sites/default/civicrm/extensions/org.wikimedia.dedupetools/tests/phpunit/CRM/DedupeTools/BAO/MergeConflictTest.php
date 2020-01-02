@@ -21,7 +21,7 @@ require_once __DIR__  .'/../DedupeBaseTestClass.php';
  *
  * @group headless
  */
-class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
+class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
 
   use Api3TestTrait;
 
@@ -41,7 +41,7 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @throws \CiviCRM_API3_Exception
    */
   public function testGetBooleanFields() {
-    $fields = CRM_Dedupetools_BAO_MergeConflict::getBooleanFields();
+    $fields = CRM_Deduper_BAO_MergeConflict::getBooleanFields();
     $this->assertTrue(isset($fields['do_not_mail'], $fields['on_hold']));
     $this->assertFalse(isset($fields['contact_type']));
     $this->assertFalse(isset($fields['is_deleted']));
@@ -53,7 +53,7 @@ class CRM_DedupeTools_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @throws \CiviCRM_API3_Exception
    */
   public function testGetContactFields() {
-    $fields = CRM_Dedupetools_BAO_MergeConflict::getContactFields();
+    $fields = CRM_Deduper_BAO_MergeConflict::getContactFields();
     $this->assertTrue(isset($fields['contact_source']));
     $this->assertFalse(isset($fields['source'], $fields['street_address']));
   }

@@ -2,20 +2,20 @@
 
 use CRM_Deduper_ExtensionUtil as E;
 
-abstract class CRM_Dedupetools_BAO_Resolver {
+abstract class CRM_Deduper_BAO_Resolver {
 
   abstract public function resolveConflicts();
   /**
    * Object to prover merge handling.
    *
-   * @var \CRM_Dedupetools_BAO_MergeHandler
+   * @var \CRM_Deduper_BAO_MergeHandler
    */
   protected $mergeHandler;
 
   /**
-   * CRM_Dedupetools_BAO_Resolver constructor.
+   * CRM_Deduper_BAO_Resolver constructor.
    *
-   * @param CRM_Dedupetools_BAO_MergeHandler $mergeHandler
+   * @param CRM_Deduper_BAO_MergeHandler $mergeHandler
    */
   public function __construct($mergeHandler) {
     $this->mergeHandler = $mergeHandler;
