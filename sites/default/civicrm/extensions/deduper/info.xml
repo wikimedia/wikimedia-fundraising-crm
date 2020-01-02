@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<extension key="org.wikimedia.dedupetools" type="module">
+<extension key="deduper" type="module">
   <file>deduper</file>
   <name>Deduper</name>
   <description>Various tools to help with deduping</description>
@@ -9,9 +9,9 @@
     <email>emcnaughton@wikimedia.org</email>
   </maintainer>
   <urls>
-    <url desc="Main Extension Page">https://github.com/eileenmcnaughton/org.wikimedia.dedupetools</url>
-    <url desc="Documentation">https://github.com/eileenmcnaughton/org.wikimedia.dedupetools/blob/master/Readme.md</url>
-    <url desc="Support">https://github.com/eileenmcnaughton/org.wikimedia.dedupetools/issues</url>
+    <url desc="Main Extension Page">https://github.com/eileenmcnaughton/deduper</url>
+    <url desc="Documentation">https://github.com/eileenmcnaughton/deduper/blob/master/Readme.md</url>
+    <url desc="Support">https://github.com/eileenmcnaughton/deduper/issues</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
   <releaseDate>2019-09-02</releaseDate>

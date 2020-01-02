@@ -37,7 +37,7 @@ function wmf_install_get_installed_extensions() {
     'au.org.greens.extendedmailingstats',
     'org.wikimedia.contacteditor',
     'org.civicrm.afform',
-    'org.wikimedia.dedupetools',
+    'deduper',
     'org.wikimedia.geocoder',
     'nz.co.fuzion.civitoken',
     'nz.co.fuzion.extendedreport',

@@ -46,7 +46,7 @@ class CRM_Deduper_Upgrader_Base {
     if (!self::$instance) {
       // FIXME auto-generate
       self::$instance = new CRM_Deduper_Upgrader(
-        'org.wikimedia.dedupetools',
+        'deduper',
         realpath(__DIR__ . '/../../../')
       );
     }

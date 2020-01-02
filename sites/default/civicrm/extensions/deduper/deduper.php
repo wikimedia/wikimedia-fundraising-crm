@@ -116,12 +116,12 @@ function deduper_civicrm_caseTypes(&$caseTypes) {
 function deduper_civicrm_angularModules(&$angularModules) {
   _deduper_civix_civicrm_angularModules($angularModules);
   $angularModules['xeditable'] = [
-    'ext' => 'org.wikimedia.dedupetools',
+    'ext' => 'deduper',
     'js' => ['bower_components/angular-xeditable/dist/js/xeditable.js'],
     'css' => ['bower_components/angular-xeditable/dist/css/xeditable.css'],
   ];
   $angularModules['angularUtils.directives.dirPagination'] = [
-    'ext' => 'org.wikimedia.dedupetools',
+    'ext' => 'deduper',
     'js' => ['bower_components/angularUtils-pagination/dirPagination.js'],
   ];
 

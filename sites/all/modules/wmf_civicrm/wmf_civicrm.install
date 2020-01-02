@@ -5127,13 +5127,10 @@ function wmf_civicrm_update_7965() {
 }
 
 /**
- * Change short-name of wmf deduper extension.
- *
- * The long name still needs changing but this should continue to work without
- * problems if we were to just push out this much. Goal is that each of the renaming changes
- * is complete in itself.
+ * Change name of wmf deduper extension.
  */
-function wmf_civicrm_update_7970() {
+function wmf_civicrm_update_7972() {
   civicrm_initialize();
-  CRM_Core_DAO::executeQuery('UPDATE civicrm_extension SET name = "Deduper", label = "Deduper", file = "deduper" WHERE full_name = "org.wikimedia.dedupetools"');
+  CRM_Core_DAO::executeQuery('UPDATE civicrm_extension SET name = "Deduper", full_name = "deduper", label = "Deduper", file = "deduper" WHERE full_name = "org.wikimedia.dedupetools"');
+  civicrm_api3('Extension', 'refresh', []);
 }

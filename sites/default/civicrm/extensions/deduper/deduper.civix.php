@@ -8,7 +8,7 @@
  */
 class CRM_Deduper_ExtensionUtil {
   const SHORT_NAME = 'deduper';
-  const LONG_NAME = 'org.wikimedia.dedupetools';
+  const LONG_NAME = 'deduper';
   const CLASS_PREFIX = 'CRM_Deduper';
   /**
    * Translate a string using the extension's domain.
