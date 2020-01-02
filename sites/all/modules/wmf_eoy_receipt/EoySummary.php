@@ -381,6 +381,7 @@ LEFT JOIN wmf_contribution_extra extra
 WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
     AND financial_type_id <> $endowmentFinancialType
     AND contribution_status_id = $completedStatusId
+    AND contact.is_deleted = 0
 GROUP BY email.email, contact.id, contact.preferred_language, contact.first_name
 EOS;
 
@@ -437,6 +438,7 @@ EOS;
     $emailRecords = civicrm_api3('Email', 'get', [
       'email' => $email['to_address'],
       'is_primary' => TRUE,
+      'contact_id.is_deleted' => FALSE
     ]);
     foreach ($emailRecords['values'] as $emailRecord) {
       civicrm_api3('Activity', 'create', [
