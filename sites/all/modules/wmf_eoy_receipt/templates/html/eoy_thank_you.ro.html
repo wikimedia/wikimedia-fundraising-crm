@@ -26,6 +26,8 @@ Donația {{contribution.index}}: {{contribution.amount}} {{contribution.currency
 </b></p>
 {% endfor %}
 
+{% if active_recurring %}
 <p>
 Dacă din orice motiv doriți să anulați donația lunară, <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">urmați aceste instrucțiuni</a>, pentru o anulare facilă.
 </p>
+{% endif %}

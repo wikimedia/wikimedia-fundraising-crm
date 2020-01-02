@@ -26,6 +26,8 @@ Donation {{contribution.index}}: {{contribution.amount}} {{contribution.currency
 </b></p>
 {% endfor %}
 
+{% if active_recurring %}
 <p>
 Hvis du af den ene eller anden grund vil annullere din månedlige donation, skal du følge disse <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">enkle instruktioner for annullering</a>.
 </p>
+{% endif %}

@@ -264,6 +264,7 @@ EOS;
     $summaryObject->send_letters();
     $this->assertEquals(1, TestMailer::countMailings());
     $mailing = TestMailer::getMailing(0);
+    $this->assertRegExp('/Cancel_or_change_recurring_giving/', $mailing['html']);
     foreach ($contactIds as $contactId) {
       $activity = $this->callAPISuccessGetSingle('Activity', [
         'activity_type_id' => 'wmf_eoy_receipt_sent',
@@ -281,6 +282,27 @@ EOS;
   }
 
   /**
+   * Test that we don't include cancellation instructions for
+   * donors whose donation is already cancelled.
+   */
+  public function testSendWithRecurringDonationsCancelled() {
+    $this->setUpContactsSharingEmail();
+    // the above call sets some recurring contribution IDs
+    foreach ($this->ids['ContributionRecur'] as $recurId) {
+      civicrm_api3('ContributionRecur', 'create', [
+        'id' => $recurId,
+        'contribution_status_id' => 'Cancelled',
+      ]);
+    }
+    $summaryObject = new EoySummary(['year' => 2018]);
+    $this->jobIds[] = $summaryObject->calculate_year_totals();
+    $summaryObject->send_letters();
+    $this->assertEquals(1, TestMailer::countMailings());
+    $mailing = TestMailer::getMailing(0);
+    $this->assertNotRegExp('/Cancel_or_change_recurring_giving/', $mailing['html']);
+  }
+
+  /**
    * Test the render function.
    *
    * @throws \Exception
@@ -294,7 +316,7 @@ EOS;
       'name' => 'Bob',
       'status' => 'queued',
       'contributions_rollup' => '2018-02-01 50.00 USD,2018-03-02 800.00 USD,2018-05-03 50.00 USD,2018-10-20 50.00 USD,2018-07-12 50.00 USD,2018-01-26 50.00 USD,2018-10-11 100.00 USD,2018-05-11 800.00 USD,2018-10-12 800.00 USD,2018-10-14 50.00 USD,2018-09-02 800.00 USD,2018-12-09 1200.00 USD,2018-12-22 800.00 USD,2018-11-22 800.00 USD,2018-05-05 800.00 USD,2018-06-06 50.00 USD,2018-07-07 50.00 USD,2018-08-08 50.00 USD,2018-06-08 50.00 USD,2018-08-08 50.00 USD,2018-03-03 800.00 USD,2018-06-04 50.00 USD,2018-10-22 50.00 USD,2018-10-03 100.00 USD,2018-10-09 1200.00 USD,2018-10-12 100.00 USD,2018-10-15 50.00 USD',
-    ]);
+    ], TRUE);
     $this->assertEquals([
       'from_name' => 'Bobita',
       'from_address' => 'bobita@example.org',
@@ -424,7 +446,7 @@ If for whatever reason you wish to cancel your monthly donation, follow these <a
       'name' => 'Bob',
       'status' => 'queued',
       'contributions_rollup' => '2018-02-01 50.00 USD,2018-03-02 800.00 CAD,2018-05-03 20.00 USD,2018-10-20 50.00 CAD',
-    ]);
+    ], TRUE);
     $this->assertEquals([
       'from_name' => 'Bobita',
       'from_address' => 'bobita@example.org',

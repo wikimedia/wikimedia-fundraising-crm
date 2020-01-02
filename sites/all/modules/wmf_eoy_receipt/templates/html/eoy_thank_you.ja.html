@@ -22,10 +22,12 @@
 
 {% for contribution in contributions %}
 <p>
-ご寄付 {{contribution.index}}: {{contribution.date}} {{contribution.amount}} {{contribution.currency}} 
+ご寄付 {{contribution.index}}: {{contribution.date}} {{contribution.amount}} {{contribution.currency}}
 </p>
 {% endfor %}
 
+{% if active_recurring %}
 <p>
 何らかの理由で毎月のご寄付を停止したい場合は、以下の <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">簡単な手順に従ってお手続きください</a>。
 </p>
+{% endif %}
