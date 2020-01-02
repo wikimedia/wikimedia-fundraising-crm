@@ -413,12 +413,20 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   /**
    * Get data to test merge conflicts on.
    *
+   * Note that the default for first_name is Bob & for last name Smith - only
+   * overrides are set.
+   *
    * Returns an  array with the reverse boolean plus contact inputs.
    */
   public function mergeConflictProvider(): array {
-    $dataset['MisplacedNameResolutionFullNameInLastName'] = [
+    $dataset = [];
+    $dataset[] = [
       'contact_1' => ['first_name' => 'null', 'last_name' => 'Bob M Smith'],
       'contact_2' => [],
+    ];
+    $dataset[] = [
+      'contact_1' => ['first_name' => 'null', 'last_name' => 'Bob M Smith'],
+      'contact_2' => ['middle_name' => 'M'],
     ];
     $return = [];
     foreach ($dataset as $data) {
