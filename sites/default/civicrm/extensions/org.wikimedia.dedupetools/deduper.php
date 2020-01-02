@@ -2,6 +2,7 @@
 
 require_once 'deduper.civix.php';
 use Symfony\Component\DependencyInjection\Definition;
+use CRM_Deduper_ExtensionUtil as E;
 
 /**
  * Implements hook_civicrm_config().
@@ -236,7 +237,7 @@ function deduper_civicrm_preProcess($formName, &$form) {
  */
 function deduper_civicrm_navigationMenu(&$menu) {
   _deduper_civix_insert_navigation_menu($menu, 'Contacts', [
-    'label' => ts('Deduper', array('domain' => 'org.wikimedia.dedupetools')),
+    'label' => E::ts('Deduper'),
     'name' => 'deduper',
     'url' => 'civicrm/a/#/dupefinder/Contact',
     'permission' => 'access CiviCRM',
@@ -245,7 +246,7 @@ function deduper_civicrm_navigationMenu(&$menu) {
   ]);
   _deduper_civix_navigationMenu($menu);
   _deduper_civix_insert_navigation_menu($menu, 'Administer/Customize Data and Screens', [
-    'label' => ts('Deduper Conflict Resolution', array('domain' => 'org.wikimedia.dedupetools')),
+    'label' => E::ts('Deduper Conflict Resolution'),
     'name' => 'dedupe_settings',
     'url' => 'civicrm/admin/setting/deduper',
     'permission' => 'administer CiviCRM',
