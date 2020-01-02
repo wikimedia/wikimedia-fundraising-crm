@@ -162,7 +162,13 @@ EOS;
       $hasActiveRecurring = $this->doContactsHaveActiveRecurring($contactIds);
       $email = $this->render_letter($row, $hasActiveRecurring);
 
-      $success = $mailer->send($email);
+      try {
+        $success = $mailer->send($email);
+      } catch(phpmailerException $e) {
+        // Invalid email address or something
+        watchdog('wmf_eoy_receipt', $e->getMessage(), [], WATCHDOG_INFO);
+        $success = FALSE;
+      }
 
       if ($success) {
         $this->record_activities($email, $contactIds);
