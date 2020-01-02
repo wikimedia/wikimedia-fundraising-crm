@@ -78,7 +78,7 @@ class CRM_Dedupetools_DAO_ContactNamePair extends CRM_Core_DAO {
         'id' => [
           'name' => 'id',
           'type' => CRM_Utils_Type::T_INT,
-          'description' => CRM_Dedupetools_ExtensionUtil::ts('Unique ContactNamePair ID'),
+          'description' => CRM_Deduper_ExtensionUtil::ts('Unique ContactNamePair ID'),
           'required' => TRUE,
           'where' => 'civicrm_contact_name_pair.id',
           'table_name' => 'civicrm_contact_name_pair',
@@ -89,8 +89,8 @@ class CRM_Dedupetools_DAO_ContactNamePair extends CRM_Core_DAO {
         'name_a' => [
           'name' => 'name_a',
           'type' => CRM_Utils_Type::T_STRING,
-          'title' => CRM_Dedupetools_ExtensionUtil::ts('Name A'),
-          'description' => CRM_Dedupetools_ExtensionUtil::ts('First name (this is the master, if that matters)'),
+          'title' => CRM_Deduper_ExtensionUtil::ts('Name A'),
+          'description' => CRM_Deduper_ExtensionUtil::ts('First name (this is the master, if that matters)'),
           'maxlength' => 64,
           'size' => 30,
           'where' => 'civicrm_contact_name_pair.name_a',
@@ -105,8 +105,8 @@ class CRM_Dedupetools_DAO_ContactNamePair extends CRM_Core_DAO {
         'name_b' => [
           'name' => 'name_b',
           'type' => CRM_Utils_Type::T_STRING,
-          'title' => CRM_Dedupetools_ExtensionUtil::ts('Name B'),
-          'description' => CRM_Dedupetools_ExtensionUtil::ts('Second name (if one name is a nickname or a mis-spelling it will be this one)'),
+          'title' => CRM_Deduper_ExtensionUtil::ts('Name B'),
+          'description' => CRM_Deduper_ExtensionUtil::ts('Second name (if one name is a nickname or a mis-spelling it will be this one)'),
           'maxlength' => 64,
           'size' => 30,
           'where' => 'civicrm_contact_name_pair.name_b',
@@ -121,7 +121,7 @@ class CRM_Dedupetools_DAO_ContactNamePair extends CRM_Core_DAO {
         'is_name_b_nickname' => [
           'name' => 'is_name_b_nickname',
           'type' => CRM_Utils_Type::T_BOOLEAN,
-          'title' => CRM_Dedupetools_ExtensionUtil::ts('Is Name B a Nickname of Name A?'),
+          'title' => CRM_Deduper_ExtensionUtil::ts('Is Name B a Nickname of Name A?'),
           'where' => 'civicrm_contact_name_pair.is_name_b_nickname',
           'default' => '0',
           'table_name' => 'civicrm_contact_name_pair',
@@ -135,7 +135,7 @@ class CRM_Dedupetools_DAO_ContactNamePair extends CRM_Core_DAO {
         'is_name_b_inferior' => [
           'name' => 'is_name_b_inferior',
           'type' => CRM_Utils_Type::T_BOOLEAN,
-          'title' => CRM_Dedupetools_ExtensionUtil::ts('Is Name B Inferior to Name A?'),
+          'title' => CRM_Deduper_ExtensionUtil::ts('Is Name B Inferior to Name A?'),
           'where' => 'civicrm_contact_name_pair.is_name_b_inferior',
           'default' => '0',
           'table_name' => 'civicrm_contact_name_pair',

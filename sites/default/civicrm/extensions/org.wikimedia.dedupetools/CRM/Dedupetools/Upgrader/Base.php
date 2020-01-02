@@ -1,7 +1,7 @@
 <?php
 
 // AUTO-GENERATED FILE -- Civix may overwrite any changes made to this file
-use CRM_Dedupetools_ExtensionUtil as E;
+use CRM_Deduper_ExtensionUtil as E;
 
 /**
  * Base class which provides helpers to execute upgrade logic

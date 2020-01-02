@@ -1,5 +1,5 @@
 <?php
-use CRM_Dedupetools_ExtensionUtil as E;
+use CRM_Deduper_ExtensionUtil as E;
 
 class CRM_Dedupetools_Form_Report_MergeConflict extends CRM_Report_Form {
 

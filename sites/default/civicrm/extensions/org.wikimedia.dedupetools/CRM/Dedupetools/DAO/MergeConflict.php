@@ -95,7 +95,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
         'id' => [
           'name' => 'id',
           'type' => CRM_Utils_Type::T_INT,
-          'description' => CRM_Dedupetools_ExtensionUtil::ts('Unique MergeConflict ID'),
+          'description' => CRM_Deduper_ExtensionUtil::ts('Unique MergeConflict ID'),
           'required' => TRUE,
           'where' => 'civicrm_mergeconflict.id',
           'table_name' => 'civicrm_mergeconflict',
@@ -106,8 +106,8 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
         'contact_1' => [
           'name' => 'contact_1',
           'type' => CRM_Utils_Type::T_INT,
-          'title' => CRM_Dedupetools_ExtensionUtil::ts('Contact 1'),
-          'description' => CRM_Dedupetools_ExtensionUtil::ts('FK to Contact'),
+          'title' => CRM_Deduper_ExtensionUtil::ts('Contact 1'),
+          'description' => CRM_Deduper_ExtensionUtil::ts('FK to Contact'),
           'where' => 'civicrm_mergeconflict.contact_1',
           'table_name' => 'civicrm_mergeconflict',
           'entity' => 'MergeConflict',
@@ -117,8 +117,8 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
         'contact_2' => [
           'name' => 'contact_2',
           'type' => CRM_Utils_Type::T_INT,
-          'title' => CRM_Dedupetools_ExtensionUtil::ts('Contact 2'),
-          'description' => CRM_Dedupetools_ExtensionUtil::ts('FK to Contact'),
+          'title' => CRM_Deduper_ExtensionUtil::ts('Contact 2'),
+          'description' => CRM_Deduper_ExtensionUtil::ts('FK to Contact'),
           'where' => 'civicrm_mergeconflict.contact_2',
           'table_name' => 'civicrm_mergeconflict',
           'entity' => 'MergeConflict',
@@ -128,7 +128,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
         'group_id' => [
           'name' => 'group_id',
           'type' => CRM_Utils_Type::T_INT,
-          'description' => CRM_Dedupetools_ExtensionUtil::ts('FK to Group'),
+          'description' => CRM_Deduper_ExtensionUtil::ts('FK to Group'),
           'where' => 'civicrm_mergeconflict.group_id',
           'table_name' => 'civicrm_mergeconflict',
           'entity' => 'MergeConflict',
@@ -138,7 +138,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
         'conflicted_field' => [
           'name' => 'conflicted_field',
           'type' => CRM_Utils_Type::T_STRING,
-          'title' => CRM_Dedupetools_ExtensionUtil::ts('Conflicted Field'),
+          'title' => CRM_Deduper_ExtensionUtil::ts('Conflicted Field'),
           'size' => CRM_Utils_Type::TWO,
           'where' => 'civicrm_mergeconflict.conflicted_field',
           'table_name' => 'civicrm_mergeconflict',
@@ -149,7 +149,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
         'value_1' => [
           'name' => 'value_1',
           'type' => CRM_Utils_Type::T_STRING,
-          'title' => CRM_Dedupetools_ExtensionUtil::ts('Value 1'),
+          'title' => CRM_Deduper_ExtensionUtil::ts('Value 1'),
           'size' => CRM_Utils_Type::TWO,
           'where' => 'civicrm_mergeconflict.value_1',
           'table_name' => 'civicrm_mergeconflict',
@@ -160,7 +160,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
         'value_2' => [
           'name' => 'value_2',
           'type' => CRM_Utils_Type::T_STRING,
-          'title' => CRM_Dedupetools_ExtensionUtil::ts('Value 2'),
+          'title' => CRM_Deduper_ExtensionUtil::ts('Value 2'),
           'size' => CRM_Utils_Type::TWO,
           'where' => 'civicrm_mergeconflict.value_2',
           'table_name' => 'civicrm_mergeconflict',
@@ -171,7 +171,7 @@ class CRM_Dedupetools_DAO_MergeConflict extends CRM_Core_DAO {
         'analysis' => [
           'name' => 'analysis',
           'type' => CRM_Utils_Type::T_STRING,
-          'title' => CRM_Dedupetools_ExtensionUtil::ts('Analysis'),
+          'title' => CRM_Deduper_ExtensionUtil::ts('Analysis'),
           'size' => CRM_Utils_Type::TWO,
           'where' => 'civicrm_mergeconflict.analysis',
           'table_name' => 'civicrm_mergeconflict',

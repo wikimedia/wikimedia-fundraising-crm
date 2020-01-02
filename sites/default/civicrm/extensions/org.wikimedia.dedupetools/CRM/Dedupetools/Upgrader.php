@@ -1,5 +1,5 @@
 <?php
-use CRM_Dedupetools_ExtensionUtil as E;
+use CRM_Deduper_ExtensionUtil as E;
 use League\Csv\Reader;
 
 /**

@@ -6,11 +6,10 @@
  * The ExtensionUtil class provides small stubs for accessing resources of this
  * extension.
  */
-class CRM_Dedupetools_ExtensionUtil {
-  const SHORT_NAME = "dedupetools";
-  const LONG_NAME = "org.wikimedia.dedupetools";
-  const CLASS_PREFIX = "CRM_Dedupetools";
-
+class CRM_Deduper_ExtensionUtil {
+  const SHORT_NAME = 'dedupetools';
+  const LONG_NAME = 'org.wikimedia.dedupetools';
+  const CLASS_PREFIX = 'CRM_Dedupetools';
   /**
    * Translate a string using the extension's domain.
    *
@@ -77,7 +76,7 @@ class CRM_Dedupetools_ExtensionUtil {
 
 }
 
-use CRM_Dedupetools_ExtensionUtil as E;
+use CRM_Deduper_ExtensionUtil as E;
 
 /**
  * (Delegated) Implements hook_civicrm_config().

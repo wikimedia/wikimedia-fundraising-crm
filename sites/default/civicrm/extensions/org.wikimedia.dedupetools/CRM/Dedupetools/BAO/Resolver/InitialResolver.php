@@ -1,7 +1,5 @@
 <?php
 
-use CRM_Dedupetools_ExtensionUtil as E;
-
 /**
  * Class CRM_Dedupetools_BAO_Resolver_InitialResolver
  */

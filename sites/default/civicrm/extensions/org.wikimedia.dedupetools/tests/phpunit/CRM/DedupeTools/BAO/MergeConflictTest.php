@@ -1,6 +1,6 @@
 <?php
 
-use CRM_Dedupetools_ExtensionUtil as E;
+use CRM_Deduper_ExtensionUtil as E;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
