@@ -83,7 +83,7 @@ use CRM_Deduper_ExtensionUtil as E;
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_config
  */
-function _dedupetools_civix_civicrm_config(&$config = NULL) {
+function _deduper_civix_civicrm_config(&$config = NULL) {
   static $configured = FALSE;
   if ($configured) {
     return;
@@ -113,8 +113,8 @@ function _dedupetools_civix_civicrm_config(&$config = NULL) {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_xmlMenu
  */
-function _dedupetools_civix_civicrm_xmlMenu(&$files) {
-  foreach (_dedupetools_civix_glob(__DIR__ . '/xml/Menu/*.xml') as $file) {
+function _deduper_civix_civicrm_xmlMenu(&$files) {
+  foreach (_deduper_civix_glob(__DIR__ . '/xml/Menu/*.xml') as $file) {
     $files[] = $file;
   }
 }
@@ -124,9 +124,9 @@ function _dedupetools_civix_civicrm_xmlMenu(&$files) {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_install
  */
-function _dedupetools_civix_civicrm_install() {
-  _dedupetools_civix_civicrm_config();
-  if ($upgrader = _dedupetools_civix_upgrader()) {
+function _deduper_civix_civicrm_install() {
+  _deduper_civix_civicrm_config();
+  if ($upgrader = _deduper_civix_upgrader()) {
     $upgrader->onInstall();
   }
 }
@@ -136,9 +136,9 @@ function _dedupetools_civix_civicrm_install() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_postInstall
  */
-function _dedupetools_civix_civicrm_postInstall() {
-  _dedupetools_civix_civicrm_config();
-  if ($upgrader = _dedupetools_civix_upgrader()) {
+function _deduper_civix_civicrm_postInstall() {
+  _deduper_civix_civicrm_config();
+  if ($upgrader = _deduper_civix_upgrader()) {
     if (is_callable([$upgrader, 'onPostInstall'])) {
       $upgrader->onPostInstall();
     }
@@ -150,9 +150,9 @@ function _dedupetools_civix_civicrm_postInstall() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_uninstall
  */
-function _dedupetools_civix_civicrm_uninstall() {
-  _dedupetools_civix_civicrm_config();
-  if ($upgrader = _dedupetools_civix_upgrader()) {
+function _deduper_civix_civicrm_uninstall() {
+  _deduper_civix_civicrm_config();
+  if ($upgrader = _deduper_civix_upgrader()) {
     $upgrader->onUninstall();
   }
 }
@@ -162,9 +162,9 @@ function _dedupetools_civix_civicrm_uninstall() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_enable
  */
-function _dedupetools_civix_civicrm_enable() {
-  _dedupetools_civix_civicrm_config();
-  if ($upgrader = _dedupetools_civix_upgrader()) {
+function _deduper_civix_civicrm_enable() {
+  _deduper_civix_civicrm_config();
+  if ($upgrader = _deduper_civix_upgrader()) {
     if (is_callable([$upgrader, 'onEnable'])) {
       $upgrader->onEnable();
     }
@@ -177,9 +177,9 @@ function _dedupetools_civix_civicrm_enable() {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_disable
  * @return mixed
  */
-function _dedupetools_civix_civicrm_disable() {
-  _dedupetools_civix_civicrm_config();
-  if ($upgrader = _dedupetools_civix_upgrader()) {
+function _deduper_civix_civicrm_disable() {
+  _deduper_civix_civicrm_config();
+  if ($upgrader = _deduper_civix_upgrader()) {
     if (is_callable([$upgrader, 'onDisable'])) {
       $upgrader->onDisable();
     }
@@ -197,8 +197,8 @@ function _dedupetools_civix_civicrm_disable() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_upgrade
  */
-function _dedupetools_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  if ($upgrader = _dedupetools_civix_upgrader()) {
+function _deduper_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
+  if ($upgrader = _deduper_civix_upgrader()) {
     return $upgrader->onUpgrade($op, $queue);
   }
 }
@@ -206,7 +206,7 @@ function _dedupetools_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) 
 /**
  * @return CRM_Deduper_Upgrader
  */
-function _dedupetools_civix_upgrader() {
+function _deduper_civix_upgrader() {
   if (!file_exists(__DIR__ . '/CRM/Deduper/Upgrader.php')) {
     return NULL;
   }
@@ -226,7 +226,7 @@ function _dedupetools_civix_upgrader() {
  *
  * @return array(string)
  */
-function _dedupetools_civix_find_files($dir, $pattern) {
+function _deduper_civix_find_files($dir, $pattern) {
   if (is_callable(['CRM_Utils_File', 'findFiles'])) {
     return CRM_Utils_File::findFiles($dir, $pattern);
   }
@@ -235,7 +235,7 @@ function _dedupetools_civix_find_files($dir, $pattern) {
   $result = [];
   while (!empty($todos)) {
     $subdir = array_shift($todos);
-    foreach (_dedupetools_civix_glob("$subdir/$pattern") as $match) {
+    foreach (_deduper_civix_glob("$subdir/$pattern") as $match) {
       if (!is_dir($match)) {
         $result[] = $match;
       }
@@ -261,8 +261,8 @@ function _dedupetools_civix_find_files($dir, $pattern) {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_managed
  */
-function _dedupetools_civix_civicrm_managed(&$entities) {
-  $mgdFiles = _dedupetools_civix_find_files(__DIR__, '*.mgd.php');
+function _deduper_civix_civicrm_managed(&$entities) {
+  $mgdFiles = _deduper_civix_find_files(__DIR__, '*.mgd.php');
   sort($mgdFiles);
   foreach ($mgdFiles as $file) {
     $es = include $file;
@@ -287,12 +287,12 @@ function _dedupetools_civix_civicrm_managed(&$entities) {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_caseTypes
  */
-function _dedupetools_civix_civicrm_caseTypes(&$caseTypes) {
+function _deduper_civix_civicrm_caseTypes(&$caseTypes) {
   if (!is_dir(__DIR__ . '/xml/case')) {
     return;
   }
 
-  foreach (_dedupetools_civix_glob(__DIR__ . '/xml/case/*.xml') as $file) {
+  foreach (_deduper_civix_glob(__DIR__ . '/xml/case/*.xml') as $file) {
     $name = preg_replace('/\.xml$/', '', basename($file));
     if ($name != CRM_Case_XMLProcessor::mungeCaseType($name)) {
       $errorMessage = sprintf("Case-type file name is malformed (%s vs %s)", $name, CRM_Case_XMLProcessor::mungeCaseType($name));
@@ -315,12 +315,12 @@ function _dedupetools_civix_civicrm_caseTypes(&$caseTypes) {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_angularModules
  */
-function _dedupetools_civix_civicrm_angularModules(&$angularModules) {
+function _deduper_civix_civicrm_angularModules(&$angularModules) {
   if (!is_dir(__DIR__ . '/ang')) {
     return;
   }
 
-  $files = _dedupetools_civix_glob(__DIR__ . '/ang/*.ang.php');
+  $files = _deduper_civix_glob(__DIR__ . '/ang/*.ang.php');
   foreach ($files as $file) {
     $name = preg_replace(':\.ang\.php$:', '', basename($file));
     $module = include $file;
@@ -336,8 +336,8 @@ function _dedupetools_civix_civicrm_angularModules(&$angularModules) {
  *
  * Find any and return any files matching "*.theme.php"
  */
-function _dedupetools_civix_civicrm_themes(&$themes) {
-  $files = _dedupetools_civix_glob(__DIR__ . '/*.theme.php');
+function _deduper_civix_civicrm_themes(&$themes) {
+  $files = _deduper_civix_glob(__DIR__ . '/*.theme.php');
   foreach ($files as $file) {
     $themeMeta = include $file;
     if (empty($themeMeta['name'])) {
@@ -363,7 +363,7 @@ function _dedupetools_civix_civicrm_themes(&$themes) {
  *
  * @return array, possibly empty
  */
-function _dedupetools_civix_glob($pattern) {
+function _deduper_civix_glob($pattern) {
   $result = glob($pattern);
   return is_array($result) ? $result : [];
 }
@@ -379,7 +379,7 @@ function _dedupetools_civix_glob($pattern) {
  *
  * @return bool
  */
-function _dedupetools_civix_insert_navigation_menu(&$menu, $path, $item) {
+function _deduper_civix_insert_navigation_menu(&$menu, $path, $item) {
   // If we are done going down the path, insert menu
   if (empty($path)) {
     $menu[] = [
@@ -400,7 +400,7 @@ function _dedupetools_civix_insert_navigation_menu(&$menu, $path, $item) {
         if (!isset($entry['child'])) {
           $entry['child'] = [];
         }
-        $found = _dedupetools_civix_insert_navigation_menu($entry['child'], implode('/', $path), $item);
+        $found = _deduper_civix_insert_navigation_menu($entry['child'], implode('/', $path), $item);
       }
     }
     return $found;
@@ -410,9 +410,9 @@ function _dedupetools_civix_insert_navigation_menu(&$menu, $path, $item) {
 /**
  * (Delegated) Implements hook_civicrm_navigationMenu().
  */
-function _dedupetools_civix_navigationMenu(&$nodes) {
+function _deduper_civix_navigationMenu(&$nodes) {
   if (!is_callable(['CRM_Core_BAO_Navigation', 'fixNavigationMenu'])) {
-    _dedupetools_civix_fixNavigationMenu($nodes);
+    _deduper_civix_fixNavigationMenu($nodes);
   }
 }
 
@@ -420,17 +420,17 @@ function _dedupetools_civix_navigationMenu(&$nodes) {
  * Given a navigation menu, generate navIDs for any items which are
  * missing them.
  */
-function _dedupetools_civix_fixNavigationMenu(&$nodes) {
+function _deduper_civix_fixNavigationMenu(&$nodes) {
   $maxNavID = 1;
   array_walk_recursive($nodes, function($item, $key) use (&$maxNavID) {
     if ($key === 'navID') {
       $maxNavID = max($maxNavID, $item);
     }
   });
-  _dedupetools_civix_fixNavigationMenuItems($nodes, $maxNavID, NULL);
+  _deduper_civix_fixNavigationMenuItems($nodes, $maxNavID, NULL);
 }
 
-function _dedupetools_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentID) {
+function _deduper_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentID) {
   $origKeys = array_keys($nodes);
   foreach ($origKeys as $origKey) {
     if (!isset($nodes[$origKey]['attributes']['parentID']) && $parentID !== NULL) {
@@ -445,7 +445,7 @@ function _dedupetools_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentI
       $origKey = $newKey;
     }
     if (isset($nodes[$origKey]['child']) && is_array($nodes[$origKey]['child'])) {
-      _dedupetools_civix_fixNavigationMenuItems($nodes[$origKey]['child'], $maxNavID, $nodes[$origKey]['attributes']['navID']);
+      _deduper_civix_fixNavigationMenuItems($nodes[$origKey]['child'], $maxNavID, $nodes[$origKey]['attributes']['navID']);
     }
   }
 }
@@ -455,7 +455,7 @@ function _dedupetools_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentI
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterSettingsFolders
  */
-function _dedupetools_civix_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
+function _deduper_civix_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
   $settingsDir = __DIR__ . DIRECTORY_SEPARATOR . 'settings';
   if (!in_array($settingsDir, $metaDataFolders) && is_dir($settingsDir)) {
     $metaDataFolders[] = $settingsDir;
@@ -470,7 +470,7 @@ function _dedupetools_civix_civicrm_alterSettingsFolders(&$metaDataFolders = NUL
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
  */
 
-function _dedupetools_civix_civicrm_entityTypes(&$entityTypes) {
+function _deduper_civix_civicrm_entityTypes(&$entityTypes) {
   $entityTypes = array_merge($entityTypes, array (
     'CRM_Deduper_DAO_ContactNamePair' =>
     array (

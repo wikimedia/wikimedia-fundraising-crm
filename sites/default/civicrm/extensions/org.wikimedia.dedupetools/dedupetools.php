@@ -9,7 +9,7 @@ use Symfony\Component\DependencyInjection\Definition;
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_config/
  */
 function dedupetools_civicrm_config(&$config) {
-  _dedupetools_civix_civicrm_config($config);
+  _deduper_civix_civicrm_config($config);
 }
 
 /**
@@ -18,7 +18,7 @@ function dedupetools_civicrm_config(&$config) {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_xmlMenu
  */
 function dedupetools_civicrm_xmlMenu(&$files) {
-  _dedupetools_civix_civicrm_xmlMenu($files);
+  _deduper_civix_civicrm_xmlMenu($files);
 }
 
 /**
@@ -27,7 +27,7 @@ function dedupetools_civicrm_xmlMenu(&$files) {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_install
  */
 function dedupetools_civicrm_install() {
-  _dedupetools_civix_civicrm_install();
+  _deduper_civix_civicrm_install();
 }
 
 /**
@@ -36,7 +36,7 @@ function dedupetools_civicrm_install() {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_postInstall
  */
 function dedupetools_civicrm_postInstall() {
-  _dedupetools_civix_civicrm_postInstall();
+  _deduper_civix_civicrm_postInstall();
 }
 
 /**
@@ -45,7 +45,7 @@ function dedupetools_civicrm_postInstall() {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_uninstall
  */
 function dedupetools_civicrm_uninstall() {
-  _dedupetools_civix_civicrm_uninstall();
+  _deduper_civix_civicrm_uninstall();
 }
 
 /**
@@ -54,7 +54,7 @@ function dedupetools_civicrm_uninstall() {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_enable
  */
 function dedupetools_civicrm_enable() {
-  _dedupetools_civix_civicrm_enable();
+  _deduper_civix_civicrm_enable();
 }
 
 /**
@@ -63,7 +63,7 @@ function dedupetools_civicrm_enable() {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_disable
  */
 function dedupetools_civicrm_disable() {
-  _dedupetools_civix_civicrm_disable();
+  _deduper_civix_civicrm_disable();
 }
 
 /**
@@ -72,7 +72,7 @@ function dedupetools_civicrm_disable() {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_upgrade
  */
 function dedupetools_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  return _dedupetools_civix_civicrm_upgrade($op, $queue);
+  return _deduper_civix_civicrm_upgrade($op, $queue);
 }
 
 /**
@@ -84,7 +84,7 @@ function dedupetools_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_managed
  */
 function dedupetools_civicrm_managed(&$entities) {
-  _dedupetools_civix_civicrm_managed($entities);
+  _deduper_civix_civicrm_managed($entities);
 }
 
 /**
@@ -97,7 +97,7 @@ function dedupetools_civicrm_managed(&$entities) {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_caseTypes
  */
 function dedupetools_civicrm_caseTypes(&$caseTypes) {
-  _dedupetools_civix_civicrm_caseTypes($caseTypes);
+  _deduper_civix_civicrm_caseTypes($caseTypes);
 }
 
 /**
@@ -111,7 +111,7 @@ function dedupetools_civicrm_caseTypes(&$caseTypes) {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_angularModules
  */
 function dedupetools_civicrm_angularModules(&$angularModules) {
-  _dedupetools_civix_civicrm_angularModules($angularModules);
+  _deduper_civix_civicrm_angularModules($angularModules);
   $angularModules['xeditable'] = [
     'ext' => 'org.wikimedia.dedupetools',
     'js' => ['bower_components/angular-xeditable/dist/js/xeditable.js'],
@@ -130,7 +130,7 @@ function dedupetools_civicrm_angularModules(&$angularModules) {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterSettingsFolders
  */
 function dedupetools_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  _dedupetools_civix_civicrm_alterSettingsFolders($metaDataFolders);
+  _deduper_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
 /**
@@ -233,7 +233,7 @@ function dedupetools_civicrm_preProcess($formName, &$form) {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu
  */
 function dedupetools_civicrm_navigationMenu(&$menu) {
-  _dedupetools_civix_insert_navigation_menu($menu, 'Contacts', [
+  _deduper_civix_insert_navigation_menu($menu, 'Contacts', [
     'label' => ts('Deduper', array('domain' => 'org.wikimedia.dedupetools')),
     'name' => 'deduper',
     'url' => 'civicrm/a/#/dupefinder/Contact',
@@ -241,8 +241,8 @@ function dedupetools_civicrm_navigationMenu(&$menu) {
     'operator' => 'OR',
     'separator' => 0,
   ]);
-  _dedupetools_civix_navigationMenu($menu);
-  _dedupetools_civix_insert_navigation_menu($menu, 'Administer/Customize Data and Screens', [
+  _deduper_civix_navigationMenu($menu);
+  _deduper_civix_insert_navigation_menu($menu, 'Administer/Customize Data and Screens', [
     'label' => ts('Deduper Conflict Resolution', array('domain' => 'org.wikimedia.dedupetools')),
     'name' => 'dedupe_settings',
     'url' => 'civicrm/admin/setting/deduper',
@@ -250,7 +250,7 @@ function dedupetools_civicrm_navigationMenu(&$menu) {
     'operator' => 'OR',
     'separator' => 0,
   ]);
-  _dedupetools_civix_navigationMenu($menu);
+  _deduper_civix_navigationMenu($menu);
 }
 
 /**
@@ -379,7 +379,7 @@ function dedupetools_civicrm_container($container) {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
  */
 function dedupetools_civicrm_entityTypes(&$entityTypes) {
-  _dedupetools_civix_civicrm_entityTypes($entityTypes);
+  _deduper_civix_civicrm_entityTypes($entityTypes);
 }
 
 /**
@@ -388,5 +388,5 @@ function dedupetools_civicrm_entityTypes(&$entityTypes) {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_themes
  */
 function dedupetools_civicrm_themes(&$themes) {
-  _dedupetools_civix_civicrm_themes($themes);
+  _deduper_civix_civicrm_themes($themes);
 }
