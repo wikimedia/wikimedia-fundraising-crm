@@ -1,6 +1,6 @@
 <?php
 
-require_once 'dedupetools.civix.php';
+require_once 'deduper.civix.php';
 use Symfony\Component\DependencyInjection\Definition;
 
 /**
