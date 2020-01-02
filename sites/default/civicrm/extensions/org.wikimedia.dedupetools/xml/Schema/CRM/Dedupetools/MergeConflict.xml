@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
 
 <table>
-  <base>CRM/Dedupetools</base>
+  <base>CRM/Deduper</base>
   <class>MergeConflict</class>
   <name>civicrm_mergeconflict</name>
   <comment>Table for tracking and viewing merge conflicts.</comment>

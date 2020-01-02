@@ -156,7 +156,7 @@ class CRM_Deduper_Form_Report_MergeConflict extends CRM_Report_Form {
       }
       if (array_key_exists('civicrm_merge_conflict_analysis', $row)) {
         $value = $row['civicrm_merge_conflict_analysis'];
-        $url = CRM_Report_Utils_Report::getNextUrl('org.wikimedia.dedupetools/mergeconflict',
+        $url = CRM_Report_Utils_Report::getNextUrl('deduper/mergeconflict',
           "reset=1&force=1&{$criteriaQueryParams}&" .
           "analysis_value={$value}",
           FALSE, NULL
@@ -166,7 +166,7 @@ class CRM_Deduper_Form_Report_MergeConflict extends CRM_Report_Form {
       }
       if (array_key_exists('civicrm_merge_conflict_analysis', $row)) {
         $value = $row['civicrm_merge_conflict_analysis'];
-        $url = CRM_Report_Utils_Report::getNextUrl('org.wikimedia.dedupetools/mergeconflict',
+        $url = CRM_Report_Utils_Report::getNextUrl('deduper/mergeconflict',
           "reset=1&force=1&{$criteriaQueryParams}&" .
           "analysis_value={$value}",
           FALSE, NULL

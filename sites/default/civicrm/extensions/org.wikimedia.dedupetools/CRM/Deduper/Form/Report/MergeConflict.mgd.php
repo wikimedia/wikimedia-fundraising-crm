@@ -12,9 +12,9 @@ return array (
     array (
       'version' => 3,
       'label' => 'MergeConflict',
-      'description' => 'MergeConflict (org.wikimedia.dedupetools)',
+      'description' => 'MergeConflict (deduper)',
       'class_name' => 'CRM_Deduper_Form_Report_MergeConflict',
-      'report_url' => 'org.wikimedia.dedupetools/mergeconflict',
+      'report_url' => 'deduper/mergeconflict',
       'component' => '',
     ),
   ),
