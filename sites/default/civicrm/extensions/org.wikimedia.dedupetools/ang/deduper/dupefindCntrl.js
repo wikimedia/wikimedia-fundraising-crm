@@ -3,11 +3,11 @@
   // Cache list of entities
   var entities = [];
 
-  angular.module('dedupetools').config(function($routeProvider) {
+  angular.module('deduper').config(function($routeProvider) {
       $routeProvider.when('/dupefinder/:api4entity?', {
-        controller: 'DedupetoolsdupefindCntrl',
+        controller: 'DeduperdupefindCntrl',
         controllerAs : 'deduperCntrl',
-        templateUrl: '~/dedupetools/dupefindCntrl.html',
+        templateUrl: '~/deduper/dupefindCntrl.html',
         title: 'Dedupe url generator',
 
         // If you need to look up data when opening the page, list it out
@@ -35,11 +35,11 @@
 
 
 //   myContact -- The current contact, defined above in config().
-  angular.module('dedupetools').controller('DedupetoolsdupefindCntrl', function($scope, $routeParams, $timeout, crmApi, crmStatus, crmUiHelp, crmApi4, contactFields, ruleGroups) {
+  angular.module('deduper').controller('DeduperdupefindCntrl', function($scope, $routeParams, $timeout, crmApi, crmStatus, crmUiHelp, crmApi4, contactFields, ruleGroups) {
     // Main angular function.
     // The ts() and hs() functions help load strings for this module.
-    var ts = $scope.ts = CRM.ts('dedupetools');
-    var hs = $scope.hs = crmUiHelp({file: 'CRM/dedupetools/dupefindCntrl'});// See: templates/CRM/dedupetools/dupefindCntrl.hlp
+    var ts = $scope.ts = CRM.ts('deduper');
+    var hs = $scope.hs = crmUiHelp({file: 'CRM/deduper/dupefindCntrl'});// See: templates/CRM/deduper/dupefindCntrl.hlp
     var vm = this;
     $scope.operators = arrayToSelect2([
       '=',

@@ -6,17 +6,17 @@
 return [
   'js' =>
     [
-      0 => 'ang/dedupetools.js',
-      1 => 'ang/dedupetools/*.js',
-      2 => 'ang/dedupetools/*/*.js',
+      0 => 'ang/deduper.js',
+      1 => 'ang/deduper/*.js',
+      2 => 'ang/deduper/*/*.js',
     ],
   'css' =>
     [
-      0 => 'ang/dedupetools.css',
+      0 => 'ang/deduper.css',
     ],
   'partials' =>
     [
-      0 => 'ang/dedupetools',
+      0 => 'ang/deduper',
     ],
   'requires' =>
     [

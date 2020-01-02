@@ -32,10 +32,10 @@
    * @todo most of the above + move all the search fields into the template & make the search
    * directive provide the whole search block.
    */
-  angular.module('dedupetools').directive('crmSearchSelector', function() {
+  angular.module('deduper').directive('crmSearchSelector', function() {
     // Cache schema metadata
     return {
-      templateUrl: '~/dedupetools/crmSearchSelector.html',
+      templateUrl: '~/deduper/crmSearchSelector.html',
       scope: {
         data: '=crmSearchSelector'
       },
