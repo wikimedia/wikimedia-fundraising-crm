@@ -158,12 +158,14 @@ EOS;
     $failed = 0;
 
     foreach ($result as $row) {
-      $email = $this->render_letter($row);
+      $contactIds = $this->getContactIdsForEmail($row->email);
+      $hasActiveRecurring = $this->doContactsHaveActiveRecurring($contactIds);
+      $email = $this->render_letter($row, $hasActiveRecurring);
 
       $success = $mailer->send($email);
 
       if ($success) {
-        $this->record_activities($email);
+        $this->record_activities($email, $contactIds);
         $status = 'sent';
         $succeeded += 1;
       }
@@ -187,7 +189,7 @@ EOS;
     );
   }
 
-  public function render_letter($row) {
+  public function render_letter($row, $activeRecurring) {
     if (!$this->from_address || !$this->from_name) {
       throw new \Exception('Must configure a valid return address in the Thank-you module');
     }
@@ -224,6 +226,7 @@ EOS;
       'contributions' => $contributions,
       'totals' => $totals,
       'year' => $this->year,
+      'active_recurring' => $activeRecurring
     ];
     $template = $this->get_template($language, $template_params);
     $email = [
@@ -434,18 +437,13 @@ EOS;
     );
   }
 
-  protected function record_activities(array $email) {
-    $emailRecords = civicrm_api3('Email', 'get', [
-      'email' => $email['to_address'],
-      'is_primary' => TRUE,
-      'contact_id.is_deleted' => FALSE
-    ]);
-    foreach ($emailRecords['values'] as $emailRecord) {
+  protected function record_activities(array $email, array $contactIds) {
+    foreach ($contactIds as $contactId) {
       civicrm_api3('Activity', 'create', [
         'activity_type_id' => 'wmf_eoy_receipt_sent',
-        'source_contact_id' => $emailRecord['contact_id'],
-        'target_contact_id' => $emailRecord['contact_id'],
-        'assignee_contact_id' => $emailRecord['contact_id'],
+        'source_contact_id' => $contactId,
+        'target_contact_id' => $contactId,
+        'assignee_contact_id' => $contactId,
         'subject' => "Sent contribution summary receipt for year $this->year to {$email['to_address']}",
         'details' => $email['html'],
       ]);
@@ -478,4 +476,46 @@ EOS;
     return $this->temporaryTables['email_recipients']->getName();
   }
 
+  /**
+   * Get contact IDs associated with an email address
+   *
+   * @param string $email
+   *
+   * @return int[] IDs of non-deleted contacts with that email
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected function getContactIdsForEmail($email): array {
+    $contactIds = [];
+    $emailRecords = civicrm_api3('Email', 'get', [
+      'email' => $email,
+      'is_primary' => TRUE,
+      'contact_id.is_deleted' => FALSE,
+      'return' => 'contact_id',
+    ]);
+    foreach ($emailRecords['values'] as $emailRecord) {
+      $contactIds[] = $emailRecord['contact_id'];
+    }
+    return $contactIds;
+  }
+
+  /**
+   * Determine whether any of an array of contact IDs have an active recurring
+   * donation associated.
+   *
+   * @param array $contactIds
+   *
+   * @return bool
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected function doContactsHaveActiveRecurring(array $contactIds) {
+    $recurringCount = civicrm_api3('ContributionRecur', 'getCount', [
+      'contact_id' => [
+        'IN' => $contactIds
+      ],
+      'contribution_status_id' => [
+        'IN' => ['Completed', 'Pending']
+      ],
+    ]);
+    return $recurringCount > 0;
+  }
 }

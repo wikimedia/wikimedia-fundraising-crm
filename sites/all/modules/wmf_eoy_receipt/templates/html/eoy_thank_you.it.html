@@ -26,6 +26,8 @@ Donazione {{contribution.index}}: {{contribution.amount}} {{contribution.currenc
 </b></p>
 {% endfor %}
 
+{% if active_recurring %}
 <p>
 Se per qualunque ragione desiderassi cancellare la tua donazione mensile, segui queste <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">semplici istruzioni</a>.
 </p>
+{% endif %}

@@ -26,6 +26,8 @@ Príspevok č. {{contribution.index}}: {{contribution.amount}} {{contribution.cu
 </b></p>
 {% endfor %}
 
+{% if active_recurring %}
 <p>
 Ak si z akéhokoľvek dôvodu želáte zrušiť svoj mesačný príspevok, postupujte podľa týchto <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{language}}">jednoduchých pokynov na zrušenie</a>.
 </p>
+{% endif %}
