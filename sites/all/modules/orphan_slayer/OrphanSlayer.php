@@ -23,6 +23,7 @@ class OrphanSlayer {
             $result = $this->adapter->rectifyOrphan();
         } catch ( Exception $e ) {
             DamagedDatabase::get()->storeMessage( $orphan, 'pending', $e->getMessage(), $e->getTraceAsString() );
+            $result['error'] = $e->getMessage();
         }
         $this->delete_orphan($orphan);
         return $result;
