@@ -514,6 +514,9 @@ EOS;
    * @throws \CiviCRM_API3_Exception
    */
   protected function doContactsHaveActiveRecurring(array $contactIds) {
+    if (empty($contactIds)) {
+      return FALSE;
+    }
     $recurringCount = civicrm_api3('ContributionRecur', 'getCount', [
       'contact_id' => [
         'IN' => $contactIds
