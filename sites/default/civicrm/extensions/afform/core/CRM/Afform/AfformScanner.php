@@ -16,7 +16,7 @@ class CRM_Afform_AfformScanner {
 
   const FILE_REGEXP = '/\.aff\.(json|html)$/';
 
-  const DEFAULT_REQUIRES = 'afformCore';
+  const DEFAULT_REQUIRES = 'afCore';
 
   /**
    * @var CRM_Utils_Cache_Interface
@@ -27,12 +27,7 @@ class CRM_Afform_AfformScanner {
    * CRM_Afform_AfformScanner constructor.
    */
   public function __construct() {
-    // TODO Manage this is a service, and inject the cache service.
-    $this->cache = new CRM_Utils_Cache_SqlGroup([
-      'group' => md5('afform_' . CRM_Core_Config_Runtime::getId() . $this->getSiteLocalPath()),
-      'prefetch' => FALSE,
-    ]);
-    // $this->cache = new CRM_Utils_Cache_Arraycache([]);
+    $this->cache = Civi::cache('long');
   }
 
   /**
@@ -44,7 +39,7 @@ class CRM_Afform_AfformScanner {
   public function findFilePaths() {
     if (!CRM_Core_Config::singleton()->debug) {
       // FIXME: Use a separate setting. Maybe use the asset-builder cache setting?
-      $paths = $this->cache->get('allPaths');
+      $paths = $this->cache->get('afformAllPaths');
       if ($paths !== NULL) {
         return $paths;
       }
@@ -67,7 +62,7 @@ class CRM_Afform_AfformScanner {
 
     $this->appendFilePaths($paths, $this->getSiteLocalPath(), 10);
 
-    $this->cache->set('allPaths', $paths);
+    $this->cache->set('afformAllPaths', $paths);
     return $paths;
   }
 
@@ -111,7 +106,7 @@ class CRM_Afform_AfformScanner {
   }
 
   public function clear() {
-    $this->cache->flush();
+    $this->cache->delete('afformAllPaths');
   }
 
   /**
@@ -120,7 +115,7 @@ class CRM_Afform_AfformScanner {
    * @param string $name
    *   Ex: 'view-individual'
    * @return array
-   *   An array with some mix of the following keys: name, title, description, client_route, server_route, requires.
+   *   An array with some mix of the following keys: name, title, description, server_route, requires, is_public.
    *   NOTE: This is only data available in *.aff.json. It does *NOT* include layout.
    *   Ex: [
    *     'name' => 'view-individual',
@@ -134,10 +129,11 @@ class CRM_Afform_AfformScanner {
 
     $defaults = [
       'name' => $name,
-      'requires' => explode(',', self::DEFAULT_REQUIRES),
+      'requires' => [],
       'title' => '',
       'description' => '',
       'is_public' => FALSE,
+      'permission' => 'access CiviCRM',
     ];
 
     $metaFile = $this->findFilePath($name, self::METADATA_FILE);
@@ -150,6 +146,39 @@ class CRM_Afform_AfformScanner {
     else {
       return NULL;
     }
+  }
+
+  /**
+   * Adds has_local & has_base to an afform metadata record
+   *
+   * @param array $record
+   */
+  public function addComputedFields(&$record) {
+    $name = $record['name'];
+    // Ex: $allPaths['viewIndividual'][0] == '/var/www/foo/afform/view-individual'].
+    $allPaths = $this->findFilePaths()[$name];
+    // $activeLayoutPath = $this->findFilePath($name, self::LAYOUT_FILE);
+    // $activeMetaPath = $this->findFilePath($name, self::METADATA_FILE);
+    $localLayoutPath = $this->createSiteLocalPath($name, self::LAYOUT_FILE);
+    $localMetaPath = $this->createSiteLocalPath($name, self::METADATA_FILE);
+
+    $record['has_local'] = file_exists($localLayoutPath) || file_exists($localMetaPath);
+    if (!isset($record['has_base'])) {
+      $record['has_base'] = ($record['has_local'] && count($allPaths) > 1)
+        || (!$record['has_local'] && count($allPaths) > 0);
+    }
+  }
+
+  /**
+   * @param string $formName
+   *   Ex: 'view-individual'
+   * @return string|NULL
+   *   Ex: '<em>Hello world!</em>'
+   *   NULL if no layout exists
+   */
+  public function getLayout($formName) {
+    $filePath = $this->findFilePath($formName, self::LAYOUT_FILE);
+    return $filePath === NULL ? NULL : file_get_contents($filePath);
   }
 
   /**
@@ -182,7 +211,7 @@ class CRM_Afform_AfformScanner {
 
     foreach ($files as $file) {
       $fileBase = preg_replace(self::FILE_REGEXP, '', $file);
-      $name = _afform_angular_module_name(basename($fileBase));
+      $name = basename($fileBase);
       $formPaths[$name][$priority] = $fileBase;
       ksort($formPaths[$name]);
     }

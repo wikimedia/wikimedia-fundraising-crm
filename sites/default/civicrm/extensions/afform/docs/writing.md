@@ -8,7 +8,7 @@ creates a scope with these variables:
 
 * `routeParams`: This is a reference to the [$routeParams](https://docs.angularjs.org/api/ngRoute/service/$routeParams)
   service. In the example, we used `routeParams` to get a reference to a `name` from the URL.
-* `meta`: The stored meta data (`*.aff.json`) for this form.
+* `meta`: Object which for now contains just the form name but could potentially have other metadata if needed.
 * `ts`: This is a utility function which translates strings, as in `{{ts('Hello world')}}`.
 
 Additionally, AngularJS allows *directives* -- these are extensions to HTML (custom tags and attributes) which create behavior. For example:
@@ -30,15 +30,15 @@ http://dmaster.localhost/civicrm/hello-world/#/?cid=123
 ```
 
 How do we use the `cid` to get information about the contact?  Update `helloWorld.aff.html` to fetch data with
-`Contact.get` API and call the [afform-api3](https://github.com/totten/afform/blob/master/ang/afformCore/Api3Ctrl.md) utility:
+`Contact.get` API and call the [af-api3](https://github.com/totten/afform/blob/master/ang/afCore/Api3Ctrl.md) utility:
 
 ```html
 <div ng-if="!routeParams.cid">
   {{ts('Please provide the "cid"')}}
 </div>
 <div ng-if="routeParams.cid"
-  afform-api3="['Contact', 'get', {id: routeParams.cid}]"
-  afform-api3-ctrl="apiData">
+  af-api3="['Contact', 'get', {id: routeParams.cid}]"
+  af-api3-ctrl="apiData">
 
   <div ng-repeat="contact in apiData.result.values">
     <h1 crm-page-title="">{{contact.display_name}}</h1>

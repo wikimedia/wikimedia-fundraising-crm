@@ -7,13 +7,13 @@ validator to catch. Loosely/informally:
 
 * HTML partials should be well-formed/parseable XML
 * Warnings about any unrecognized tags/attributes/classes.
-* `<af-model-list>`, `<af-model-prop>`, `<af-model>`, `<af-field>` should have suitable relationships.
-* `<af-model-prop>` should reference legit entities.
+* `<af-form>`, `<af-entity>`, `<af-fieldset>`, `<af-field>` should have suitable relationships.
+* `<af-entity>` should reference legit entities.
 * `<af-field>` should reference legit fields.
     * Future consideration: how to validate when it's part of a subform?
-* `<af-model>` should reference a declared model.
-* `<af-field field-defn="...">` should contain an object.
-* `<a>` should have `href` or `ng-click` or `aff-api4-action`
+* `<af-fieldset>` should reference a declared model.
+* `<af-field defn="...">` should contain an object.
+* `<a>` should have `href` or `ng-click` or `af-api4-action`
 * Accept a restricted subset of HTML (e.g. `p h1 h2 h3` but not `script` or `[onclick]`)
 * Accept a restricted subset of BootstrapCSS
 * Accept a restricted subset of Angular HTML

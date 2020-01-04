@@ -1,0 +1,5 @@
+<af-form ctrl="modelListCtrl">
+  <af-entity data='{name_a : options.name_a,  name_b : options.name_b, is_name_b_nickname: options.is_name_b_nickname, is_name_b_inferior: options.is_name_b_inferior}' autofill=1 type="ContactNamePair" name="NamePair" label="NamePair" />
+  <fieldset af-fieldset="NamePair" class="af-container af-layout-cols">
+  </fieldset><button class="af-button btn btn-success btn-sm" crm-icon="fa-check" ng-click="modelListCtrl.submit()">Save</button>
+</af-form>

@@ -1,16 +1,75 @@
 <div ng-if="!options.conflicts">
 
 </div>
-<div ng-if="options.conflicts">
 
+<div ng-if="options.conflicts">
   <h3>{{options.main_display_name}} vs {{options.other_display_name}}</h3>
   <div ng-repeat="(entity, conflicts) in options.conflicts">
     <div ng-repeat="(key, conflict) in conflicts">
+      <div ng-if="(key !== 'first_name' || !conflict.isNamePairSaved)">
       <span ng-if="conflict['title']">{{conflict['title']}}</span>
       <span ng-if="!conflict['title']">{{key}}</span>
       <span ng-if="!conflict['display']"><del>{{conflict[options.main_id]}}</del> <strong>{{conflict[options.other_id]}}</strong></span>
-      <div ng-if="conflict['display']"><div></div><del>{{conflict['display'][options.main_id]}}</del></div><div> <strong>{{conflict['display'][options.other_id]}}</strong></div></div>
+      <div ng-if="conflict['display']">
+        <div></div>
+        <del>{{conflict['display'][options.main_id]}}</del>
+      </div>
+      <div><strong>{{conflict['display'][options.other_id]}}</strong></div>
+
+      <div ng-if="(key === 'first_name')" class="accordion"
+           id="outer-accordion-{{conflict[options.other_id]}}-{{conflict[options.main_id]}}">
+        <div class="card">
+          <div class="card-header" id="display-{{options[options.other_id]}}-{{options[options.main_id]}}">
+            <span class="mb-0">
+              <button class="btn btn-link btn-lg collapsed" type="button" data-toggle="collapse"
+                      data-target="#collapseOuter-{{conflict[options.other_id]}}-{{conflict[options.main_id]}}"
+                      aria-expanded="false"
+                      aria-controls="collapseOuter-{{conflict[options.other_id]}}-{{conflict[options.main_id]}}">
+                Save equivalent name pair `{{conflict[options.other_id]}}` and `{{conflict[options.main_id]}}`
+              </button>
+            </span>
+          </div>
+          <div>
+            <div id="collapseOuter-{{conflict[options.other_id]}}-{{conflict[options.main_id]}}" class="collapse"
+                 aria-labelledby="display-{{conflict[options.other_id]}}-{{conflict[options.main_id]}}"
+                 data-parent="#outer-accordion-{{conflict[options.other_id]}}-{{conflict[options.main_id]}}">
+
+              <div>
+                <div>Saved name pairs can be saved and automatically resolved during safe merges based on your site setting:
+                  <em><span ng-show="!options.equivalentNameSetting">{{ts('Only resolve inferior names - e.g misspellings')}}</span>{{options.equivalentNameSetting}}</em>
+                </div>
+
+                <label ng-show="options.equivalentNameSetting">
+                  <input type="radio"  ng-model="namePair" ng-value="{name_a: conflict[options.main_id], name_b: conflict[options.other_id], is_name_b_nickname: 1}">
+                  `{{conflict[options.other_id]}}` is a nickname of `{{conflict[options.main_id]}}`
+                </label><br/>
+                <label ng-show="options.equivalentNameSetting">
+                  <input type="radio" ng-model="namePair" ng-value="{name_a: conflict[options.other_id], name_b: conflict[options.main_id], is_name_b_nickname: 1}">
+                  `{{conflict[options.main_id]}}` is a nickname of `{{conflict[options.other_id]}}`
+                </label><br/>
+                <label>
+                  <input type="radio" ng-model="namePair" ng-value="{name_a: conflict[options.main_id], name_b: conflict[options.other_id], is_name_b_inferior: 1}">
+                  `{{conflict[options.other_id]}}` is a misspelling or less correct version of `{{conflict[options.main_id]}}`
+                </label><br/>
+                <label>
+                  <input type="radio" ng-model="namePair" ng-value="{name_a: conflict[options.other_id], name_b: conflict[options.main_id], is_name_b_inferior: 1}">
+                  `{{conflict[options.main_id]}}` is a misspelling or less correct version of `{{conflict[options.other_id]}}`
+                </label><br/>
+                <label ng-show="options.equivalentNameSetting">
+                  <input type="radio"  ng-model="namePair" ng-value="{name_a: conflict[options.main_id], name_b: conflict[options.other_id]}">
+                  `{{conflict[options.main_id]}}` is interchangeable with `{{conflict[options.other_id]}}`
+                </label><br/>
+              </div>
+              <div ng-show="namePair">
+                <button class="btn btn-secondary btn-block" ng-click="crmApi4('ContactNamePair','create', {
+                  values : namePair
+                }).then(conflict['isNamePairSaved'] = true)">{{ts('Save Name Pair')}}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
     </div>
   </div>
-
 </div>

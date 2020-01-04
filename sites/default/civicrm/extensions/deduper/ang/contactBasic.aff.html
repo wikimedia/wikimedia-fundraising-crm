@@ -2,8 +2,8 @@
     {{ts('No contact id provided')}}
   </div>
   <div ng-if="options.contact_id"
-       afform-api3="['Contact', 'getsingle', {id: options.contact_id, return: 'first_name,last_name,email, middle_name, display_name, contact_type'}]"
-       afform-api3-ctrl="contact">
+      af-api3="['Contact','getsingle', {id: options.contact_id, return: 'first_name,last_name,email, middle_name, display_name, contact_type'}]"
+      af-api3-ctrl="contact">
     <form name="basicContact"
       onaftersave="crmApi4('Contact','update', {
         'where' :[['id','=', options.contact_id]],
@@ -43,8 +43,8 @@
       </span>
     </div>
     <div ng-if="options.contact_id"
-       afform-api3="['Contribution', 'get', {contact_id: options.contact_id, 'sequential': 1, return : 'receive_date', options: {limit: 1, sort: 'receive_date DESC'}}]"
-       afform-api3-ctrl="contribution">
+       af-api3="['Contribution', 'get', {contact_id: options.contact_id, 'sequential': 1, return : 'receive_date', options: {limit: 1, sort: 'receive_date DESC'}}]"
+       af-api3-ctrl="contribution">
     <div ng-show="contribution.result.values[0]"><div>{{ ts('Last Contributed on')}}</div><div></div><strong>{{contribution.result.values[0].receive_date}}</strong></div></div>
   </form>
 </div>

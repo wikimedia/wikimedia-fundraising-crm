@@ -317,6 +317,24 @@ function deduper_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
 }
 
 /**
+ * Implement post hook to clear cache for any changes to NamePair table.
+ *
+ * @param string $op
+ * @param string $objectName
+ * @param int $objectId
+ * @param \CRM_Core_DAO $objectRef
+ */
+function deduper_civicrm_post($op, $objectName, $objectId, &$objectRef) {
+  if ($objectName === 'ContactNamePair') {
+    foreach ([$objectRef->name_b, $objectRef->name_a] as $value) {
+      if ($value && \Civi::cache('dedupe_pairs')->has('name_alternatives_' . $value)) {
+        \Civi::cache('dedupe_pairs')->delete('name_alternatives_' . $value);
+      }
+    }
+  }
+}
+
+/**
  * Alter location data 'planned' for merge.
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterLocationMergeData

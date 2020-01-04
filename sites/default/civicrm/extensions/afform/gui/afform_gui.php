@@ -134,30 +134,174 @@ function afform_gui_civicrm_entityTypes(&$entityTypes) {
   _afform_gui_civix_civicrm_entityTypes($entityTypes);
 }
 
-// --- Functions below this ship commented out. Uncomment as required. ---
+/**
+ * Implements hook_civicrm_themes().
+ */
+function afform_gui_civicrm_themes(&$themes) {
+  _afform_gui_civix_civicrm_themes($themes);
+}
 
 /**
- * Implements hook_civicrm_preProcess().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
- *
-function afform_gui_civicrm_preProcess($formName, &$form) {
-
-} // */
+ * Implements hook_civicrm_pageRun().
+ */
+function afform_gui_civicrm_pageRun(&$page) {
+  if (get_class($page) == 'CRM_Afform_Page_AfformBase' && $page->get('afModule') == 'afGuiAdmin') {
+    Civi::resources()->addScriptUrl(Civi::service('asset_builder')->getUrl('af-gui-vars.js'));
+  }
+}
 
 /**
- * Implements hook_civicrm_navigationMenu().
+ * Implements hook_civicrm_buildAsset().
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
+ * Loads metadata to send to the gui editor.
  *
-function afform_gui_civicrm_navigationMenu(&$menu) {
-  _afform_gui_civix_insert_navigation_menu($menu, 'Mailings', array(
-    'label' => E::ts('New subliminal message'),
-    'name' => 'mailing_subliminal_message',
-    'url' => 'civicrm/mailing/subliminal',
-    'permission' => 'access CiviMail',
-    'operator' => 'OR',
-    'separator' => 0,
-  ));
-  _afform_gui_civix_navigationMenu($menu);
-} // */
+ * FIXME: This is a prototype and should get broken out into separate callbacks with hooks, events, etc.
+ */
+function afform_gui_civicrm_buildAsset($asset, $params, &$mimeType, &$content) {
+  if ($asset !== 'af-gui-vars.js') {
+    return;
+  }
+
+  $getFieldParams = [
+    'checkPermissions' => FALSE,
+    'includeCustom' => TRUE,
+    'loadOptions' => TRUE,
+    'action' => 'create',
+    'select' => ['name', 'title', 'input_type', 'input_attrs', 'required', 'options', 'help_pre', 'help_post', 'serialize', 'data_type'],
+    'where' => [['input_type', 'IS NOT NULL']],
+  ];
+
+  $data = [
+    'entities' => [
+      'Contact' => [
+        'entity' => 'Contact',
+        'label' => ts('Contact'),
+        'fields' => (array) civicrm_api4('Contact', 'getFields', $getFieldParams, 'name'),
+      ],
+    ],
+    'blocks' => [],
+  ];
+
+  $contactTypes = CRM_Contact_BAO_ContactType::basicTypeInfo();
+
+  // Scan all extensions for our list of supported entities
+  foreach (CRM_Extension_System::singleton()->getMapper()->getActiveModuleFiles() as $ext) {
+    $dir = CRM_Utils_File::addTrailingSlash(dirname($ext['filePath'])) . 'afformEntities';
+    if (is_dir($dir)) {
+      foreach (glob($dir . '/*.php') as $file) {
+        $entity = include $file;
+        // Skip disabled contact types
+        if (!empty($entity['contact_type']) && !isset($contactTypes[$entity['contact_type']])) {
+          continue;
+        }
+        if (!empty($entity['contact_type'])) {
+          $entity['label'] = $contactTypes[$entity['contact_type']]['label'];
+        }
+        // For Contact pseudo-entities (Individual, Organization, Household)
+        $values = array_intersect_key($entity, ['contact_type' => NULL]);
+        $afformEntity = $entity['contact_type'] ?? $entity['entity'];
+        $entity['fields'] = (array) civicrm_api4($entity['entity'], 'getFields', $getFieldParams + ['values' => $values], 'name');
+        $data['entities'][$afformEntity] = $entity;
+      }
+    }
+  }
+
+  // Load fields from entity joins
+  $blockData = \Civi\Api4\Afform::get()
+    ->setCheckPermissions(FALSE)
+    ->addWhere('join', 'IS NOT NULL')
+    ->setSelect(['join'])
+    ->execute();
+  foreach ($blockData as $block) {
+    if (!isset($data['entities'][$block['join']]['fields'])) {
+      $data['entities'][$block['join']]['entity'] = $block['join'];
+      // Normally you shouldn't pass variables to ts() but very common strings like "Email" should already exist
+      $data['entities'][$block['join']]['label'] = ts($block['join']);
+      $data['entities'][$block['join']]['fields'] = (array) civicrm_api4($block['join'], 'getFields', $getFieldParams, 'name');
+    }
+  }
+
+  // Todo: scan for other elements
+  $data['elements'] = [
+    'container' => [
+      'title' => ts('Container'),
+      'element' => [
+        '#tag' => 'div',
+        'class' => 'af-container',
+        '#children' => [],
+      ],
+    ],
+    'text' => [
+      'title' => ts('Text box'),
+      'element' => [
+        '#tag' => 'p',
+        'class' => 'af-text',
+        '#children' => [
+          ['#text' => ts('Enter text')],
+        ],
+      ],
+    ],
+    'markup' => [
+      'title' => ts('Rich content'),
+      'element' => [
+        '#tag' => 'div',
+        'class' => 'af-markup',
+        '#markup' => FALSE,
+      ],
+    ],
+    'submit' => [
+      'title' => ts('Submit Button'),
+      'element' => [
+        '#tag' => 'button',
+        'class' => 'af-button btn-primary',
+        'crm-icon' => 'fa-check',
+        'ng-click' => 'afform.submit()',
+        '#children' => [
+          ['#text' => ts('Submit')],
+        ],
+      ],
+    ],
+  ];
+
+  // Reformat options
+  // TODO: Teach the api to return options in this format
+  foreach ($data['entities'] as $entityName => $entity) {
+    foreach ($entity['fields'] as $name => $field) {
+      if (!empty($field['options'])) {
+        $data['entities'][$entityName]['fields'][$name]['options'] = CRM_Utils_Array::makeNonAssociative($field['options'], 'key', 'label');
+      }
+      else {
+        unset($data['entities'][$entityName]['fields'][$name]['options']);
+      }
+    }
+  }
+
+  // Scan for input types
+  // FIXME: Need a way to load this from other extensions too
+  foreach (glob(__DIR__ . '/ang/afGuiEditor/inputType/*.html') as $file) {
+    $matches = [];
+    preg_match('/([-a-z_A-Z0-9]*).html/', $file, $matches);
+    $data['inputType'][$matches[1]] = $matches[1];
+  }
+
+  $data['styles'] = [
+    'default' => ts('Default'),
+    'primary' => ts('Primary'),
+    'success' => ts('Success'),
+    'info' => ts('Info'),
+    'warning' => ts('Warning'),
+    'danger' => ts('Danger'),
+  ];
+
+  $data['permissions'] = [];
+  foreach (CRM_Core_Permission::basicPermissions(TRUE, TRUE) as $name => $perm) {
+    $data['permissions'][] = [
+      'id' => $name,
+      'text' => $perm[0],
+      'description' => $perm[1] ?? NULL,
+    ];
+  }
+
+  $mimeType = 'text/javascript';
+  $content = "CRM.afformAdminData=" . json_encode($data, JSON_UNESCAPED_SLASHES) . ';';
+}

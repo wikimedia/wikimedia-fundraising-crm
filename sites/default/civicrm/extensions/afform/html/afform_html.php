@@ -3,6 +3,10 @@
 require_once 'afform_html.civix.php';
 use CRM_AfformHtml_ExtensionUtil as E;
 
+if (!defined('AFFORM_HTML_MONACO')) {
+  define('AFFORM_HTML_MONACO', 'node_modules/monaco-editor/min/vs');
+}
+
 /**
  * Implements hook_civicrm_config().
  *
@@ -134,6 +138,13 @@ function afform_html_civicrm_entityTypes(&$entityTypes) {
   _afform_html_civix_civicrm_entityTypes($entityTypes);
 }
 
+/**
+ * Implements hook_civicrm_themes().
+ */
+function afform_html_civicrm_themes(&$themes) {
+  _afform_html_civix_civicrm_themes($themes);
+}
+
 // --- Functions below this ship commented out. Uncomment as required. ---
 
 /**
@@ -166,7 +177,7 @@ function afform_html_civicrm_navigationMenu(&$menu) {
  * Implements hook_civicrm_check().
  */
 function afform_html_civicrm_check(&$messages) {
-  $dir = E::path(CRM_AfformHtml_Page_HtmlEditor::MONACO_DIR);
+  $dir = E::path(AFFORM_HTML_MONACO);
   if (!file_exists($dir)) {
     $messages[] = new CRM_Utils_Check_Message(
       'afform_html_monaco',
