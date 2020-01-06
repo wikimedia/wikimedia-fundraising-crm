@@ -5125,3 +5125,12 @@ function wmf_civicrm_update_7965() {
   $tables = ['civicrm_acl_cache' => ['modified_date']];
   CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
+
+/**
+ * Change name of wmf deduper extension.
+ */
+function wmf_civicrm_update_7972() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('UPDATE civicrm_extension SET name = "Deduper", full_name = "deduper", label = "Deduper", file = "deduper" WHERE full_name = "org.wikimedia.dedupetools"');
+  civicrm_api3('Extension', 'refresh', []);
+}

@@ -6,6 +6,7 @@ use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
+require_once 'wmf_civicrm.hooks.php';
 
 /**
  * Ensure the specified option value exists.
@@ -2447,7 +2448,7 @@ function wmf_civicrm_mark_refund(
     }
   }
 
-  if ($amount_scammed > 0) {
+  if ($amount_scammed > 0.02 * $original_amount) {
     wmf_common_failmail('wmf_civicrm', "Refund amount mismatch for : $contribution_id, difference is {$amount_scammed}. See "
       . CRM_Utils_System::url('civicrm/contact/view/contribution', array(
         'reset' => 1,
