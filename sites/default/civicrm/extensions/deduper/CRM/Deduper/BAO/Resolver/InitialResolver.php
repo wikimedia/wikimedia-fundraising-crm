@@ -60,16 +60,21 @@ class CRM_Deduper_BAO_Resolver_InitialResolver extends CRM_Deduper_BAO_Resolver 
     }
     $lastNameParts = explode(' ', $contact1['last_name']);
     if (isset($lastNameParts[1]) && strlen($lastNameParts[0]) === 1) {
-      // Last name is 'M Smith' - let's try M as an initial.
-      if ($lastNameParts[1] === $contact2['last_name']
-        && (empty($contact2['middle_name']) || $contact2['middle_name'] === $lastNameParts[0])
-      ) {
-        $this->setResolvedValue('last_name', $lastNameParts[1]);
-        $this->setValue('middle_name', $lastNameParts[0]);
+      $lastNamePart = array_pop($lastNameParts);
+      if ($lastNamePart === $contact2['last_name']) {
+        // Last name starts with a single letter - could be an initial.
+        // Let's see if we have a case where the last name includes one or more initials.
+        // Note it's possible the last name could also include a suffix - that's a headache for next round.
+        if (empty($contact2['middle_name'])
+          || $contact2['middle_name'] === implode(' ', $lastNameParts)
+        ) {
+          $this->setResolvedValue('last_name', $lastNamePart);
+          $this->setValue('middle_name', implode(' ', $lastNameParts));
+        }
       }
     }
     elseif (isset($lastNameParts[0]) && strlen($lastNameParts[0]) === 1) {
-      // First name is 'B' let's accept it as a match with 'Bob'
+      // Last name is 'B' let's accept it as a match with 'Bob'
       if (stripos(strtolower($contact2['last_name']), strtolower($lastNameParts[0])) === 0) {
         $this->setResolvedValue('last_name', $contact2['last_name']);
       }
