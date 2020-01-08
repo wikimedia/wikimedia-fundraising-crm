@@ -5142,6 +5142,7 @@ function wmf_civicrm_update_7972() {
  */
 function wmf_civicrm_update_7980() {
   civicrm_initialize();
+  $contributionStatusId = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
   $cancelledStatusId = CRM_Utils_Array::key('Cancelled', $contributionStatusId);
   $completedStatusId = CRM_Utils_Array::key('Completed', $contributionStatusId);
 
