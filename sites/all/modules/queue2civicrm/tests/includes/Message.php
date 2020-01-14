@@ -44,8 +44,6 @@ class Message {
 
         $message = array(
             'contribution_tracking_id' => '',
-            'optout' => mt_rand( 0, 1 ),
-            'anonymous' => mt_rand( 0, 1 ),
             'comment' => mt_rand(),
             'utm_source' => mt_rand(),
             'utm_medium' => mt_rand(),

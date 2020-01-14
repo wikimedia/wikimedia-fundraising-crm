@@ -1138,11 +1138,6 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     $msg['contact_source'] = "online donation";
   }
 
-  // Honor the opt-out checkbox, if present, else, set default
-  if (!array_key_exists('optout', $msg)) {
-    $msg['optout'] = 0;
-  }
-
   // Create the contact record
   $contact = [
     'id' => $contact_id,
@@ -1952,9 +1947,6 @@ function wmf_civicrm_normalize_msg($msg) {
     ) {
 
       watchdog('wmf_civicrm', 'Contribution missing contribution_tracking_id', [], WATCHDOG_DEBUG);
-      //@fixme: For the regular transactions, this has been moved to the staging function. This needs to happen in recurring also, and then it can be removed here.
-      $anonymous = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == TRUE && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
-      $optout = (array_key_exists('optout', $msg) && $msg['optout'] == TRUE && strtoupper($msg['optout']) != "FALSE") ? 1 : 0;
 
       $source = isset($msg['utm_source']) ? $msg['utm_source'] : '..' . $msg['payment_method'];
       $medium = isset($msg['utm_medium']) ? $msg['utm_medium'] : 'civicrm';
@@ -1964,8 +1956,6 @@ function wmf_civicrm_normalize_msg($msg) {
         'utm_source' => $source,
         'utm_medium' => $medium,
         'utm_campaign' => $campaign,
-        'optout' => $optout,
-        'anonymous' => $anonymous,
         'ts' => wmf_common_date_unix_to_sql($msg['date']),
       ];
       if (
@@ -2057,9 +2047,6 @@ function wmf_civicrm_normalize_msg($msg) {
   if (wmf_civicrm_is_endowment_gift($msg)) {
     $msg['financial_type_id'] = 'Endowment Gift';
   }
-
-  $msg['anonymous'] = ((!empty($msg['anonymous']) && strtoupper($msg['anonymous']) !== "FALSE") ? 1 : 0);
-  $msg['optout'] = ((empty($msg['optout']) || $msg['optout'] === 0 || $msg['optout'] === '0' || strtoupper($msg['optout']) === "FALSE") ? 0 : 1);
 
   $list_fields = [
     'contact_groups',
