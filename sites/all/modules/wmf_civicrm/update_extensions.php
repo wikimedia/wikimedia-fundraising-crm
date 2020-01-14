@@ -49,7 +49,6 @@ function wmf_install_get_installed_extensions() {
     'org.wikimedia.forgetme',
     'org.wikimedia.relationshipblock',
     'org.civicrm.shoreditch',
-    'org.civicrm.api4',
     'org.civicrm.angularprofiles',
     'org.civicrm.contactlayout',
     'org.wikimedia.thethe',
