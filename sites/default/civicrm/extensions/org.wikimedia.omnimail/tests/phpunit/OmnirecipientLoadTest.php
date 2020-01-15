@@ -38,7 +38,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
   public function testOmnirecipientLoad() {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
 
-    civicrm_api3('Omnirecipient', 'load', ['mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'debug' => 1, 'client' => $client]);
+    $this->callAPISuccess('Omnirecipient', 'load', ['mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'debug' => 1, 'client' => $client]);
     $providers = CRM_Core_DAO::executeQuery('SELECT * FROM civicrm_mailing_provider_data')->fetchAll();
     $this->assertEquals([
       0 => [
@@ -91,7 +91,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
   public function testOmnirecipientLoadIncreasedBatchInsert() {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
 
-    civicrm_api3('Omnirecipient', 'load', [
+    $this->callAPISuccess('Omnirecipient', 'load', [
       'mail_provider' => 'Silverpop',
       'username' => 'Donald',
       'password' => 'Duck',
@@ -111,7 +111,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
   public function testOmnirecipientLoadIncreasedBatchInsertExceedsAvailable() {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
 
-    civicrm_api3('Omnirecipient', 'load', [
+    $this->callAPISuccess('Omnirecipient', 'load', [
       'mail_provider' => 'Silverpop',
       'username' => 'Donald',
       'password' => 'Duck',
@@ -263,7 +263,6 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
    * This is because the incomplete download will continue, and we will incorrectly
    * think it is taking our parameters.
    *
-   * @throws \API_Exception
    */
   public function testIncompleteRejectTimestamps() {
     $this->createSetting([
@@ -298,9 +297,11 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
    * @param array $params
    *
    * @return array
+   *
    * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
    */
-  public function getJobSettings($params = ['mail_provider' => 'Silverpop']) {
+  public function getJobSettings($params = ['mail_provider' => 'Silverpop']): array {
     $omnimail = new CRM_Omnimail_Omnirecipients($params);
     $result = $omnimail->getJobSettings();
     unset($result['id'], $result['mailing_provider'], $result['job'], $result['job_identifier']);
