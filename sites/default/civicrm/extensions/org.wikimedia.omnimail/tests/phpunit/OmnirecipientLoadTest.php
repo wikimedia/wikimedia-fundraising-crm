@@ -28,7 +28,6 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
 
   public function tearDown() {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_mailing_provider_data');
-    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_omnimail_job_progress');
     parent::tearDown();
   }
 

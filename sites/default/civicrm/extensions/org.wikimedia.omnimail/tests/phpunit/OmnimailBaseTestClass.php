@@ -62,6 +62,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
       $this->callAPISuccess('Contact', 'delete', ['id' => $contactID, 'skip_undelete' => 1]);
     }
     $this->cleanupMailingData();
+    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_omnimail_job_progress');
     parent::tearDown();
   }
 
