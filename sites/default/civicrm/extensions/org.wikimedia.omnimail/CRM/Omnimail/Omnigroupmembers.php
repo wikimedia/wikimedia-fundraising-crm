@@ -49,7 +49,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     }
 
     $startTimestamp = $this->getStartTimestamp($params);
-    $this->endTimeStamp = self::getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
+    $this->endTimeStamp = $this->getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
 
     if ($this->getRetrievalParameters()) {
       $request->setRetrievalParameters($this->getRetrievalParameters());

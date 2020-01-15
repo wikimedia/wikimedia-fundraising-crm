@@ -130,7 +130,7 @@ class CRM_Omnimail_Omnimail {
    *
    * @return false|int
    */
-  protected static function getEndTimestamp($passedInEndDate, $settings, $startTimestamp) {
+  protected function getEndTimestamp($passedInEndDate, $settings, $startTimestamp) {
     if ($passedInEndDate) {
       $endTimeStamp = strtotime($passedInEndDate);
     }
