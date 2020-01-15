@@ -27,15 +27,13 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
 class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
 
   /**
-   * Example: Test that a version is returned.
-   *
-   * @throws \CiviCRM_API3_Exception
+   * Example: the groupMember load fn works.
    */
   public function testOmnigroupmemberLoad() {
     $client = $this->setupSuccessfulDownloadClient();
-    $group = civicrm_api3('Group', 'create', ['name' => 'Omnimailers', 'title' => 'Omni']);
+    $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers', 'title' => 'Omni']);
 
-    civicrm_api3('Omnigroupmember', 'load', [
+    $this->callAPISuccess('Omnigroupmember', 'load', [
       'mail_provider' => 'Silverpop',
       'username' => 'Shrek',
       'password' => 'Fiona',
@@ -44,7 +42,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'group_identifier' => 123,
       'group_id' => $group['id'],
     ]);
-    $groupMembers = civicrm_api3('GroupContact', 'get', ['group_id' => $group['id']]);
+    $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(3, $groupMembers['count']);
     $contacts = $this->getGroupMemberDetails($groupMembers);
     $this->assertEquals('fr_FR', $contacts['values'][0]['preferred_language']);
@@ -62,9 +60,9 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    */
   public function testOmnigroupmemberLoadOffset() {
     $client = $this->setupSuccessfulDownloadClient();
-    $group = civicrm_api3('Group', 'create', ['name' => 'Omnimailers', 'title' => 'Omni']);
+    $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers', 'title' => 'Omni']);
 
-    civicrm_api3('Omnigroupmember', 'load', [
+    $this->callAPISuccess('Omnigroupmember', 'load', [
       'mail_provider' => 'Silverpop',
       'username' => 'Shrek',
       'password' => 'Fiona',
@@ -73,7 +71,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'group_identifier' => 123,
       'group_id' => $group['id'],
     ]);
-    $groupMembers = civicrm_api3('GroupContact', 'get', ['group_id' => $group['id']]);
+    $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(2, $groupMembers['count']);
     $contacts = $this->getGroupMemberDetails($groupMembers);
     $this->assertEquals('sarah@example.com', $contacts['values'][0]['email']);
@@ -86,9 +84,9 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    */
   public function testOmnigroupmemberLoadUseOffsetSetting() {
     $client = $this->setupSuccessfulDownloadClient();
-    $group = civicrm_api3('Group', 'create', ['name' => 'Omnimailers', 'title' => 'Omni']);
+    $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers', 'title' => 'Omni']);
 
-    civicrm_api3('Omnigroupmember', 'load', [
+    $this->callAPISuccess('Omnigroupmember', 'load', [
       'mail_provider' => 'Silverpop',
       'username' => 'Shrek',
       'password' => 'Fiona',
@@ -97,14 +95,14 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'group_identifier' => 123,
       'group_id' => $group['id'],
     ]);
-    $groupMembers = civicrm_api3('GroupContact', 'get', ['group_id' => $group['id']]);
+    $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(1, $groupMembers['count']);
     $contacts = $this->getGroupMemberDetails($groupMembers);
     $this->assertEquals('eric@example.com', $contacts['values'][0]['email']);
 
     // Re-run. Offset is now 1 in settings & we are passing in limit =1. Sarah should be created.
     $client = $this->setupSuccessfulDownloadClient(FALSE);
-    civicrm_api3('Omnigroupmember', 'load', [
+    $this->callAPISuccess('Omnigroupmember', 'load', [
       'mail_provider' => 'Silverpop',
       'username' => 'Shrek',
       'password' => 'Fiona',
@@ -113,7 +111,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'group_identifier' => 123,
       'group_id' => $group['id'],
     ]);
-    $groupMembers = civicrm_api3('GroupContact', 'get', ['group_id' => $group['id']]);
+    $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(2, $groupMembers['count']);
     $contacts = $this->getGroupMemberDetails($groupMembers);
     $this->assertEquals('sarah@example.com', $contacts['values'][1]['email']);
@@ -146,10 +144,10 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     for ($i = 0; $i < 15; $i++) {
       $responses[] = file_get_contents(__DIR__ . '/Responses/JobStatusWaitingResponse.txt');
     }
-    civicrm_api3('setting', 'create', ['omnimail_job_retry_interval' => 0.01]);
-    $group = civicrm_api3('Group', 'create', ['name' => 'Omnimailers2', 'title' => 'Omni2']);
+    $this->callAPISuccess('setting', 'create', ['omnimail_job_retry_interval' => 0.01]);
+    $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers2', 'title' => 'Omni2']);
 
-    civicrm_api3('Omnigroupmember', 'load', [
+    $this->callAPISuccess('Omnigroupmember', 'load', [
       'mail_provider' => 'Silverpop',
       'username' => 'Donald',
       'password' => 'Duck',
@@ -158,7 +156,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'group_id' => $group['id'],
     ]);
 
-    $groupMembers = civicrm_api3('GroupContact', 'get', ['group_id' => $group['id']]);
+    $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(0, $groupMembers['count']);
 
     $this->assertEquals([
@@ -189,10 +187,10 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     for ($i = 0; $i < 15; $i++) {
       $responses[] = file_get_contents(__DIR__ . '/Responses/JobStatusWaitingResponse.txt');
     }
-    civicrm_api3('setting', 'create', ['omnimail_job_retry_interval' => 0.01]);
-    $group = civicrm_api3('Group', 'create', ['name' => 'Omnimailers2', 'title' => 'Omni2']);
+    $this->callAPISuccess('setting', 'create', ['omnimail_job_retry_interval' => 0.01]);
+    $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers2', 'title' => 'Omni2']);
 
-    civicrm_api3('Omnigroupmember', 'load', [
+    $this->callAPISuccess('Omnigroupmember', 'load', [
       'mail_provider' => 'Silverpop',
       'username' => 'Donald',
       'password' => 'Duck',
@@ -202,7 +200,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'job_identifier' => '_woot',
     ]);
 
-    $groupMembers = civicrm_api3('GroupContact', 'get', ['group_id' => $group['id']]);
+    $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(0, $groupMembers['count']);
 
     $this->assertEquals([
@@ -222,7 +220,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    */
   public function testCompleteIncomplete() {
     $client = $this->setupSuccessfulDownloadClient(FALSE);
-    $group = civicrm_api3('Group', 'create', ['name' => 'Omnimailers3', 'title' => 'Omni3']);
+    $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers3', 'title' => 'Omni3']);
     $this->createSetting([
       'job' => 'omnimail_omnigroupmembers_load',
       'mailing_provider' => 'Silverpop',
@@ -234,7 +232,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'progress_end_timestamp' => '1488150000',
     ]);
 
-    civicrm_api3('Omnigroupmember', 'load', [
+    $this->callAPISuccess('Omnigroupmember', 'load', [
       'mail_provider' => 'Silverpop',
       'username' => 'Shrek',
       'password' => 'Fiona',
@@ -244,7 +242,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'group_id' => $group['id'],
     ]);
 
-    $groupMembers = civicrm_api3('GroupContact', 'get', ['group_id' => $group['id']]);
+    $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(3, $groupMembers['count']);
 
     $this->assertEquals([
@@ -271,8 +269,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       $this->createSetting(['job' => 'omnimail_omnigroupmembers_load', 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800']);
     }
 
-    $client = $this->getMockRequest($responses);
-    return $client;
+    return $this->getMockRequest($responses);
   }
 
   /**
@@ -281,8 +278,10 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    * @param array $params
    *
    * @return array
+   * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
    */
-  public function getJobSettings($params = ['mail_provider' => 'Silverpop']) {
+  public function getJobSettings($params = ['mail_provider' => 'Silverpop']): array {
     $omnimail = new CRM_Omnimail_Omnigroupmembers($params);
     $result = $omnimail->getJobSettings();
     unset($result['id'], $result['mailing_provider'], $result['job'], $result['job_identifier']);
@@ -293,11 +292,11 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    * @param $group
    */
   protected function cleanupGroup($group) {
-    civicrm_api3('GroupContact', 'get', [
+    $this->callAPISuccess('GroupContact', 'get', [
       'group_id' => $group['id'],
       'api.contact.delete' => ['skip_undelete' => 1],
     ]);
-    civicrm_api3('Group', 'delete', ['id' => $group['id']]);
+    $this->callAPISuccess('Group', 'delete', ['id' => $group['id']]);
 
   }
 
@@ -306,12 +305,12 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    *
    * @return array
    */
-  protected function getGroupMemberDetails($groupMembers) {
+  protected function getGroupMemberDetails($groupMembers): array {
     $contactIDs = ['IN' => []];
     foreach ($groupMembers['values'] as $groupMember) {
       $contactIDs['IN'][] = $groupMember['contact_id'];
     }
-    $contacts = civicrm_api3('Contact', 'get', [
+    $contacts = $this->callAPISuccess('Contact', 'get', [
       'contact_id' => $contactIDs,
       'sequential' => 1,
       'return' => [
