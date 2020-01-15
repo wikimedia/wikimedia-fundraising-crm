@@ -145,6 +145,8 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'mailing_provider' => 'Silverpop',
       'last_timestamp' => '1487890800',
     ]);
+
+    $this->callAPISuccess('Setting', 'create',  ['omnimail_job_default_time_interval' => '7 days']);
     $responses = [
       file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
     ];
