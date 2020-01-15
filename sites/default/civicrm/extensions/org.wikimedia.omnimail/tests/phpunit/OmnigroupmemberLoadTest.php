@@ -26,6 +26,13 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  */
 class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
 
+  public function tearDown() {
+    $this->cleanupGroup(NULL, 'Omnimailers');
+    $this->cleanupGroup(NULL, 'Omnimailers2');
+    $this->cleanupGroup(NULL, 'Omnimailers3');
+    parent::tearDown();
+  }
+
   /**
    * Example: the groupMember load fn works.
    */
@@ -168,7 +175,6 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'progress_end_timestamp' => '2017-03-02 23:00:00',
       'offset' => 0,
     ], $this->getUtcDateFormattedJobSettings());
-    $this->cleanupGroup($group);
   }
 
   /**
@@ -290,8 +296,17 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
 
   /**
    * @param $group
+   *
+   * @param null|string $name
    */
-  protected function cleanupGroup($group) {
+  protected function cleanupGroup($group, $name = NULL) {
+    if ($name) {
+      $group = $this->callAPISuccess('Group', 'get', ['name' => $name])['values'];
+      if (empty($group)) {
+        return;
+      }
+      $group = reset($group);
+    }
     $this->callAPISuccess('GroupContact', 'get', [
       'group_id' => $group['id'],
       'api.contact.delete' => ['skip_undelete' => 1],
