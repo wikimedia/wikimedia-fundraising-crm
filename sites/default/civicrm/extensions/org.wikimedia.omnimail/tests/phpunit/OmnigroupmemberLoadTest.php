@@ -237,6 +237,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
         'jobId' => '101719657',
         'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
       ],
+      // This is 26 Feb 2017 at 23:00. Further down we see last_timestamp is set to this.
       'progress_end_timestamp' => '1488150000',
     ]);
 
@@ -254,7 +255,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     $this->assertEquals(3, $groupMembers['count']);
 
     $this->assertEquals([
-      'last_timestamp' => '2017-03-02 23:00:00',
+      'last_timestamp' => '2017-02-26 23:00:00',
     ], $this->getUtcDateFormattedJobSettings(['mail_provider' => 'Silverpop']));
     $this->cleanupGroup($group);
   }

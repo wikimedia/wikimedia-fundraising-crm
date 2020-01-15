@@ -203,21 +203,25 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
    */
   public function testCompleteIncomplete() {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
+    $now = time();
     $this->createSetting([
       'job' => 'omnimail_omnirecipient_load',
       'mailing_provider' => 'Silverpop',
-      'last_timestamp' => '1487890800',
+      'last_timestamp' => strtotime('-1 hour', $now),
       'retrieval_parameters' => [
         'jobId' => '101569750',
         'filePath' => 'Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.zip',
       ],
-      'progress_end_timestamp' => '1488495600',
+      'progress_end_timestamp' => $now,
     ]);
 
+    // We set $now above & then sleep because we want to check that last_time_stamp is set to $now not
+    // a slightly later time that might evaluate to now().
+    sleep(1);
     $this->callAPISuccess('Omnirecipient', 'load', ['mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $client]);
     $this->assertEquals(4, CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_mailing_provider_data'));
     $this->assertEquals([
-      'last_timestamp' => '2017-03-02 23:00:00',
+      'last_timestamp' => date('Y-m-d H:i:s', $now),
     ], $this->getUtcDateFormattedJobSettings(['mail_provider' => 'Silverpop']));
   }
 
@@ -225,6 +229,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
    * Test the suffix works for multiple jobs..
    *
    * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testCompleteIncompleteUseSuffix() {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
