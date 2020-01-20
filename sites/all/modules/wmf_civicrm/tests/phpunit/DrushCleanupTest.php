@@ -19,12 +19,6 @@ class DrushCleanupTest extends BaseWmfDrupalPhpUnitTestCase {
     civicrm_initialize();
     $this->mysqlTimeZone = CRM_Core_DAO::singleValueQuery('SELECT @@TIME_ZONE');
     CRM_Core_DAO::singleValueQuery("SET TIME_ZONE='+00:00'");
-
-    if (!isset($GLOBALS['_PEAR_default_error_mode'])) {
-      // This is simply to protect against e-notices if globals have been reset by phpunit.
-      $GLOBALS['_PEAR_default_error_mode'] = NULL;
-      $GLOBALS['_PEAR_default_error_options'] = NULL;
-    }
   }
 
   public function testDrushOmnirecipientRepair() {
