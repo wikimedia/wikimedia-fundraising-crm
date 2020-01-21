@@ -56,7 +56,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   public function tearDown() {
-    parent::cleanUpContact($this->contact_id);
+    $this->cleanUpContact($this->contact_id);
     variable_set('thank_you_add_civimail_records', $this->old_civimail);
     variable_get('thank_you_civimail_rate', $this->old_civimail_rate);
     parent::tearDown();
@@ -64,6 +64,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testGetEntityTagDetail() {
     unset (\Civi::$statics['wmf_civicrm']['tags']);
@@ -96,6 +97,9 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->callAPISuccess('Tag', 'delete', ['id' => $tag2]);
   }
 
+  /**
+   * @throws \WmfException
+   */
   public function testSendThankYou() {
     variable_set('thank_you_add_civimail_records', 'false');
     $result = thank_you_for_contribution($this->contribution_id);
@@ -127,12 +131,16 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertRegExp('/tax-exempt number/', $sent['html']);
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \WmfException
+   */
   public function testSendThankYouAddCiviMailActivity() {
     variable_set('thank_you_add_civimail_records', 'true');
     variable_set('thank_you_civimail_rate', 1.0);
     $result = thank_you_for_contribution($this->contribution_id);
     $this->assertTrue($result);
-    $activity = civicrm_api3(
+    $activity = $this->callAPISuccess(
       'Activity',
       'getSingle',
       [
@@ -149,6 +157,9 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($activity['details'], $sent['html']);
   }
 
+  /**
+   * @throws \WmfException
+   */
   public function testSendEndowmentThankYou() {
     variable_set('thank_you_add_civimail_records', 'false');
     variable_set('thank_you_endowment_from_name', 'Endowment TY Sender');
@@ -189,13 +200,16 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * Test that DAF (Donor Advised Fund) thank you mails do not have tax information
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \WmfException
    */
   public function testSendDAFThankYou() {
     variable_set('thank_you_add_civimail_records', 'false');
 
     // Set the gift source to Donor Advised Fund
     $custom_field_name = wmf_civicrm_get_custom_field_name('Gift Source');
-    civicrm_api3('Contribution', 'create', [
+    $this->callAPISuccess('Contribution', 'create', [
       'id' => $this->contribution_id,
       $custom_field_name => 'Donor Advised Fund',
     ]);
@@ -225,8 +239,10 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param string $name
    *
    * @return int
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function ensureTagExists($name) {
+  public function ensureTagExists($name): int {
     $tags = $this->callAPISuccess('EntityTag', 'getoptions', [
       'field' => 'tag_id',
     ]);
@@ -242,6 +258,6 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
       ]
     );
     $this->callAPISuccess('Tag', 'getfields', ['cache_clear' => 1]);
-    return $tag['id'];
+    return (int) $tag['id'];
   }
 }
