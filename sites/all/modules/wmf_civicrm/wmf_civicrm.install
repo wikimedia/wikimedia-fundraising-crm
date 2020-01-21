@@ -5188,3 +5188,19 @@ function wmf_civicrm_update_7985() {
     AND receive_date > '2019-11-01'
   ");
 }
+
+/**
+ * Move any prospecting records from deleted contacts to contacts they were merged to with none.
+ *
+ * This is a re-run from wmf_civicrm_update_7915 and there are comments on that one.
+ *
+ * My analysis in https://phabricator.wikimedia.org/T232636#5818528
+ * suggests we can catch another 443 records doing this & the others might not be worth it.
+ *
+ * UI changes should mean unintentional prospect data loss is no longer occurring.
+ *
+ * Bug: T232636
+ */
+function wmf_civicrm_update_7990() {
+  wmf_civicrm_update_7915();
+}
