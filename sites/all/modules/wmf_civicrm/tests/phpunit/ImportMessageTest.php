@@ -45,6 +45,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     'tax_amount',
     'revenue_recognition_date',
     'invoice_number',
+    'is_template',
   ];
 
   protected $moneyFields = [
