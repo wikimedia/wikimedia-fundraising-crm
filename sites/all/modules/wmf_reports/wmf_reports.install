@@ -12,16 +12,13 @@ function wmf_reports_install() {
  * Add a default mapping to support Contacts and Contributions export
  */
 function wmf_reports_update_7000() {
-  $api = wmf_reports_bootstrap_civi();
+  civicrm_initialize();
 
-  $success = $api->OptionValue->Get([
+  $values  = civicrm_api3('OptionValue', 'get', [
     'option_group_name' => 'mapping_type',
     'name' => 'Export Contribution',
-  ]);
-  if (!$success) {
-    throw new Exception($api->errorMsg());
-  }
-  $values = $api->values();
+  ])['values'];
+
   $mapping_type = array_pop($values);
 
   $mapping = [
@@ -130,9 +127,12 @@ function wmf_reports_get_options($entity, $field) {
 /**
  * Remove some of the mapping fields thanks to a hard mysql limit of
  * 61 join tables.
+ *
+ * @throws \CRM_Core_Exception
+ * @throws \CiviCRM_API3_Exception
  */
 function wmf_reports_update_7001() {
-  wmf_reports_bootstrap_civi();
+  civicrm_initialize();
 
   $params = [
     'name' => 'Contacts and Contributions',
@@ -140,7 +140,7 @@ function wmf_reports_update_7001() {
   $defaults = [];
   $mapping = CRM_Core_BAO_Mapping::retrieve($params, $defaults);
   if (!$mapping) {
-    throw new Exception("No mapping yet, try running the db updates in order.");
+    throw new CRM_Core_Exception('No mapping yet, try running the db updates in order.');
   }
 
   $drop_phone_types = [
@@ -175,11 +175,11 @@ function wmf_reports_update_7001() {
 
 /**
  * Install custom report templates
+ *
+ * @throws \CiviCRM_API3_Exception
  */
 function wmf_reports_update_7002() {
-  wmf_reports_bootstrap_civi();
-
-  $groupParams = ['name' => ('report_template')];
+  civicrm_initialize();
   $params = [
     'label' => 'Contribution Trends',
     'name' => 'CRM_Report_Form_Contribute_Trends',
@@ -187,11 +187,9 @@ function wmf_reports_update_7002() {
     'description' => 'Contribution Trends',
     'component_id' => CRM_Core_Component::getComponentID('CiviContribute'),
     'is_active' => TRUE,
+    'option_group_id' => 'report_template',
   ];
-  $action = NULL;
-  $id = NULL;
-  CRM_Core_OptionValue::addOptionValue($params, $groupParams, $action, $id);
-
+  civicrm_api3('OptionValue', 'create', $params);
   return [];
 }
 
@@ -229,32 +227,12 @@ function wmf_report_compact_mapping_fields($mapping_id) {
 }
 
 /**
- * Load civi api, only for use from within .install code
- */
-function wmf_reports_bootstrap_civi() {
-  //XXX XXX REALLY?
-  $civi_base = implode(DIRECTORY_SEPARATOR, [drupal_get_path('module', 'civicrm'), '..']);
-  set_include_path(
-    implode(
-      PATH_SEPARATOR,
-      [
-        get_include_path(),
-        $civi_base,
-        $civi_base . DIRECTORY_SEPARATOR . 'packages',
-      ]
-    )
-  );
-  require_once "api/class.api.php";
-  return new civicrm_api3(['conf_path' => conf_path()]);
-}
-
-/**
  * Install gateway reconciliation report template
+ *
+ * @throws \CiviCRM_API3_Exception
  */
 function wmf_reports_update_7003() {
-  wmf_reports_bootstrap_civi();
-
-  $groupParams = ['name' => ('report_template')];
+  civicrm_initialize();
   $params = [
     'label' => 'Gateway Reconciliation',
     'name' => 'CRM_Report_Form_Contribute_GatewayReconciliation',
@@ -262,19 +240,19 @@ function wmf_reports_update_7003() {
     'description' => 'Gateway Reconciliation',
     'component_id' => CRM_Core_Component::getComponentID('CiviContribute'),
     'is_active' => TRUE,
+    'option_group_id' => 'report_template',
   ];
-  CRM_Core_OptionValue::addOptionValue($params, $groupParams, $nullAction, $nullId);
-
+  civicrm_api3('OptionValue', 'create', $params);
   return [];
 }
 
 /**
  * Install customized LYBUNT report template
+ *
+ * @throws \CiviCRM_API3_Exception
  */
 function wmf_reports_update_7004() {
-  wmf_reports_bootstrap_civi();
-
-  $groupParams = ['name' => ('report_template')];
+  civicrm_initialize();
   $params = [
     'label' => 'WMF LYBUNT',
     'name' => 'CRM_Report_Form_Contribute_WmfLybunt',
@@ -282,8 +260,9 @@ function wmf_reports_update_7004() {
     'description' => 'WMF-customized LYBUNT',
     'component_id' => CRM_Core_Component::getComponentID('CiviContribute'),
     'is_active' => TRUE,
+    'option_group_id' => 'report_template',
   ];
-  CRM_Core_OptionValue::addOptionValue($params, $groupParams, $nullAction, $nullId);
+  civicrm_api3('OptionValue', 'create', $params);
 
   return [];
 }
