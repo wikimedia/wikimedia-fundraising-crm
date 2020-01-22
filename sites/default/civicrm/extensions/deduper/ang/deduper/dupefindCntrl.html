@@ -3,12 +3,12 @@
   <div crm-ui-debug="pagedPairs"></div>
   <div crm-ui-debug="skippedCount"></div>
 
-  <form name="deduperForm" editable-form crm-ui-id-scope>
+
 
     <div class="help">
       <div>{{ ts('Dedupe Rule') }}
         <input ng-model="ruleGroupID" title="Dedupe rule" crm-ui-select="{placeholder: ts('Select rule'), width: 300, data: ruleGroups, allowClear: false}" />
-        {{ ts(' will be used to find matches for the first ')}} <a href="#" e-single e-clickable="true" editable-text="limit">{{limit}}</a> {{ ts(' contacts found matching the criteria below:') }}
+         {{ ts(' will be used to find matches for the first ')}} <a href="#" e-single e-clickable="true" editable-text="limit">{{limit}}</a> {{ ts(' contacts found matching the criteria below:') }}
       </div>
     </div>
 
@@ -65,12 +65,12 @@
         <div class='col-md-4' contact-basic="{contact_id: mergePair['srcID'], display_name : mergePair['srcName'], 'contact_url' : contactURL}"></div>
 
         <div class='col-md-4'>
-          <div conflict-basic="{conflicts: mergePair['safe']['conflicts'], main_id : mergePair['srcID'], other_id : mergePair['dstID'], other_display_name : mergePair['dstName'],  main_display_name : mergePair['srcName'], fieldSpec : contactFields}">
+          <div conflict-basic="{conflicts: mergePair['safe']['conflicts'], main_id : mergePair['srcID'], other_id : mergePair['dstID'], other_display_name : mergePair['dstName'],  main_display_name : mergePair['srcName'], fieldSpec : contactFields, equivalentNameSetting: equivalentNameSetting }">
           </div>
-          <button class="btn btn-success btn-block" id="retry-merge" ng-disabled=isRowMerging ng-click="retryMerge(mergePair['dstID'], mergePair['srcID'], mergePair, currentPage)">{{ ts('Safe Merge') }}</button>
-          <button class="btn btn-primary btn-block" id="dedupe-exception" ng-disabled=isRowMerging ng-click="dedupeException(mergePair['dstID'], mergePair['srcID'], currentPage)">{{ ts('Mark non-dupe') }}</button>
-          <button class="btn btn-primary btn-block" id="delay-pair" ng-disabled=isRowMerging ng-click="delayPair(mergePair['dstID'], mergePair['srcID'], currentPage)">{{ ts('Ask me Later') }}</button>
-          <button class="btn btn-danger btn-block" id="force-merge" ng-show="mergePair['safe']['conflicts']" ng-disabled=isRowMerging ng-click="forceMerge(mergePair['dstID'], mergePair['srcID'], currentPage)">{{ ts('Force Merge') }}</button>
+          <button class="btn btn-success btn-block" id="retry-merge-{{mergePair['dstID']}}-{{mergePair['srcID']}}" ng-disabled=isRowMerging ng-click="retryMerge(mergePair['dstID'], mergePair['srcID'], mergePair, currentPage)">{{ ts('Safe Merge') }}</button>
+          <button class="btn btn-primary btn-block" id="dedupe-exception-{{mergePair['dstID']}}-{{mergePair['srcID']}}" ng-disabled=isRowMerging ng-click="dedupeException(mergePair['dstID'], mergePair['srcID'], currentPage)">{{ ts('Mark non-dupe') }}</button>
+          <button class="btn btn-primary btn-block" id="delay-pair-{{mergePair['dstID']}}-{{mergePair['srcID']}}" ng-disabled=isRowMerging ng-click="delayPair(mergePair['dstID'], mergePair['srcID'], currentPage)">{{ ts('Ask me Later') }}</button>
+          <button class="btn btn-danger btn-block" id="force-merge-{{mergePair['dstID']}}-{{mergePair['srcID']}}" ng-show="mergePair['safe']['conflicts']" ng-disabled=isRowMerging ng-click="forceMerge(mergePair['dstID'], mergePair['srcID'], currentPage)">{{ ts('Force Merge') }}</button>
           <div><a target="_blank" class="btn btn-link btn-block" href="{{mergeURL}}&cid={{mergePair['dstID']}}&oid={{mergePair['srcID']}}">{{ ts('Manual Merge') }}</a></div>
         </div>
         <div class='col-md-4'  contact-basic="{contact_id: mergePair['dstID'], display_name : mergePair['dstName'], 'contact_url' : contactURL}"></div>
@@ -80,6 +80,5 @@
   </div>
   </div>
   <div class="clear"></div>
-  </form>
 
 </div>

@@ -23,6 +23,15 @@
           ruleGroups: function(crmApi) {
             return crmApi('ruleGroup', 'get', {
             });
+          },
+          setting: function(crmApi) {
+            return crmApi('setting', 'get', {
+              'return': 'deduper_equivalent_name_handling'
+            });
+          },
+          settingLabels: function(crmApi) {
+            return crmApi('setting', 'getoptions', {'field' : 'deduper_equivalent_name_handling'
+          });
           }
         }
       });
@@ -35,7 +44,7 @@
 
 
 //   myContact -- The current contact, defined above in config().
-  angular.module('deduper').controller('DeduperdupefindCntrl', function($scope, $routeParams, $timeout, crmApi, crmStatus, crmUiHelp, crmApi4, contactFields, ruleGroups) {
+  angular.module('deduper').controller('DeduperdupefindCntrl', function($scope, $routeParams, $timeout, crmApi, crmStatus, crmUiHelp, crmApi4, contactFields, ruleGroups, setting, settingLabels) {
     // Main angular function.
     // The ts() and hs() functions help load strings for this module.
     var ts = $scope.ts = CRM.ts('deduper');
@@ -87,6 +96,8 @@
     // We might expose this.
     $scope.numberMatchesToFetch = 250;
     $scope.tilesToShow = 4;
+    // @todo - the 1 below assumes domain id 1.
+    $scope.equivalentNameSetting = settingLabels['values'][setting['values'][1]['deduper_equivalent_name_handling']];
     vm.showTiles = true;
 
     _.each(ruleGroups['values'], function(spec) {

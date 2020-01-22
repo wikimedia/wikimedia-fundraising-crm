@@ -1,0 +1,4 @@
+{
+  "server_route": "civicrm/name-pair",
+  "title": "Name pairs to treat as equivalent in deduping."
+}

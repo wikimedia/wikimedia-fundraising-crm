@@ -18,7 +18,7 @@ class CRM_Afform_UtilTest extends \PHPUnit\Framework\TestCase implements Headles
   public function setUpHeadless() {
     return \Civi\Test::headless()
       ->installMe(__DIR__)
-      ->install(['org.civicrm.api4'])
+      ->install(version_compare(CRM_Utils_System::version(), '5.19.alpha1', '<') ? ['org.civicrm.api4'] : [])
       ->apply();
   }
 
@@ -37,6 +37,13 @@ class CRM_Afform_UtilTest extends \PHPUnit\Framework\TestCase implements Headles
     $exs[] = ['ab-cd23', 'dash', 'ab-cd23'];
     $exs[] = ['abCd23', 'dash', 'ab-cd23'];
     $exs[] = ['AbCd23', 'dash', 'ab-cd23'];
+
+    $exs[] = ['Custom_fooBar', 'camel', 'customFooBar'];
+    $exs[] = ['Custom_Foo__Bar', 'camel', 'customFooBar'];
+    $exs[] = ['Custom Foo_ _Bar', 'camel', 'customFooBar'];
+    $exs[] = ['Custom_fooBar', 'dash', 'custom-foo-bar'];
+    $exs[] = ['Custom_Foo__Bar', 'dash', 'custom-foo-bar'];
+    $exs[] = ['Custom Foo_ _Bar', 'dash', 'custom-foo-bar'];
 
     return $exs;
   }

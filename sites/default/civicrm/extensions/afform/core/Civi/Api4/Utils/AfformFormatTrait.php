@@ -7,14 +7,33 @@ namespace Civi\Api4\Utils;
  *
  * @method $this setLayoutFormat(string $layoutFormat)
  * @method string getLayoutFormat()
+ * @method $this setFormatWhitespace(string $formatWhitespace)
+ * @method string getFormatWhitespace()
  */
 trait AfformFormatTrait {
 
   /**
+   * Controls the return format of the "layout" property
+   *  - html will return layout html as-is.
+   *  - shallow will convert most html to an array, but leave tag attributes and af-markup containers alone.
+   *  - deep will attempt to convert all html to an array, including tag attributes.
+   *
    * @var string
-   *   Either 'array' or 'html'.
+   * @options html,shallow,deep
    */
-  protected $layoutFormat = 'array';
+  protected $layoutFormat = 'deep';
+
+  /**
+   * Optionally manage whitespace for the "layout" property
+   *
+   * This option will strip whitepace from the returned layout array for "get" actions,
+   * and will auto-indent the aff.html for "save" actions.
+   *
+   * Note: currently this has no affect on "get" with "html" return format, which returns html as-is.
+   *
+   * @var bool
+   */
+  protected $formatWhitespace = FALSE;
 
   /**
    * @param string $html
@@ -22,18 +41,11 @@ trait AfformFormatTrait {
    * @throws \API_Exception
    */
   protected function convertHtmlToOutput($html) {
-    switch ($this->layoutFormat) {
-      case 'html':
-        return $html;
-
-      case 'array':
-      case NULL:
-        $converter = new \CRM_Afform_ArrayHtml();
-        return $converter->convertHtmlToArray($html);
-
-      default:
-        throw new \API_Exception("Requested format is unrecognized");
+    if ($this->layoutFormat === 'html') {
+      return $html;
     }
+    $converter = new \CRM_Afform_ArrayHtml($this->layoutFormat !== 'shallow', $this->formatWhitespace);
+    return $converter->convertHtmlToArray($html);
   }
 
   /**
@@ -42,18 +54,11 @@ trait AfformFormatTrait {
    * @throws \API_Exception
    */
   protected function convertInputToHtml($mixed) {
-    switch ($this->layoutFormat) {
-      case 'html':
-        return $mixed;
-
-      case 'array':
-      case NULL:
-        $converter = new \CRM_Afform_ArrayHtml();
-        return $converter->convertArrayToHtml($mixed);
-
-      default:
-        throw new \API_Exception("Requested format is unrecognized");
+    if ($this->layoutFormat === 'html') {
+      return $mixed;
     }
+    $converter = new \CRM_Afform_ArrayHtml($this->layoutFormat !== 'shallow', $this->formatWhitespace);
+    return $converter->convertTreeToHtml($mixed);
   }
 
 }

@@ -21,7 +21,7 @@ if you already have a basic understanding of CiviCRM API and AngularJS.  It is l
 
 ## Requirements
 
-* PHP v5.6+
+* PHP v7.0+
 * CiviCRM v5.7+
 
 <!--
@@ -46,7 +46,7 @@ Sysadmins and developers may clone the [Git](https://en.wikipedia.org/wiki/Git) 
 install it with the command-line tool [cv](https://github.com/civicrm/cv).
 
 ```bash
-git clone https://github.com/totten/afform.git
+git clone https://lab.civicrm.org/extensions/afform.git
 cv en afform
 ```
 

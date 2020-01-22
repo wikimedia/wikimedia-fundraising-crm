@@ -1,12 +1,11 @@
 This extension contains some tools to help with duplicates (in various states of maturity)
 
-Requires CiviCRM 5.18
+Requires CiviCRM 5.22
 
 - Deduper screen - this is an angular screen that allows you to search for duplicates using nuanced criteria. You can dedupe from this screen.
 This can be found under the contacts menu.
 ![Deduper Screen](docs/images/Deduper.png?raw=true "Deduper screen")
 
-See [the planning doc](docs/Planning.md) for thoughts about where I see this going
 
 - api Merge.redo - undeletes a contact deleted by merge & re-merges - useful if contributions etc got added to the deleted contact.
 
@@ -38,6 +37,8 @@ These fields can't be used on large databases for a group dedupe for performance
  - The preferred contact field resolver. This allows you set fields as being 'use whatever my preferred contact uses'.
  Preferred contact is determined by a setting - current options are most recently created, least recently created,
  most recently modified, least recently modified, most recent donor, most prolific donor.
+See [the resolvers doc](docs/resolvers.md) for details about the conflict resolutions
+documented so far.
 
 - merge conflicts api - does analysis on current conflicted merges to look for patterns.
 
