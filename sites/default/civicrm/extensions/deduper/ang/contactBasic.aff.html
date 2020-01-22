@@ -2,7 +2,7 @@
     {{ts('No contact id provided')}}
   </div>
   <div ng-if="options.contact_id"
-      af-api3="['Contact','getsingle', {id: options.contact_id, return: 'first_name,last_name,email, middle_name, display_name, contact_type'}]"
+      af-api3="['Contact','getsingle', {id: options.contact_id, return: 'first_name,last_name,email, middle_name, display_name, contact_type, nick_name'}]"
       af-api3-ctrl="contact">
     <form name="basicContact"
       onaftersave="crmApi4('Contact','update', {
@@ -11,6 +11,7 @@
           last_name: contact['result'].last_name,
           first_name: contact['result'].first_name,
           middle_name: contact['result'].middle_name,
+          nick_name: contact['result'].nick_name,
           email: contact['result'].email
         }
      })"
@@ -23,7 +24,7 @@
     <div><strong class="basic-contact-field">{{ ts('First Name') }}</strong>: <span editable-text="contact['result'].first_name">{{contact['result'].first_name || ".."}}</span></div>
     <div><strong class="basic-contact-field">{{ ts('Middle Name') }}</strong>:<span editable-text="contact['result'].middle_name">{{contact['result'].middle_name || ".."}}</span></div>
     <div><strong class="basic-contact-field">{{ ts('Last Name') }}</strong>: <span editable-text="contact['result'].last_name">{{contact['result'].last_name || ".."}}</span></div>
-
+    <div><strong class="basic-contact-field">{{ ts('Nick Name') }}</strong>: <span editable-text="contact['result'].nick_name">{{contact['result'].nick_name || ".."}}</span></div>
     <div><strong class="basic-contact-field">{{ts('Email')}}</strong>: <span editable-text="contact['result'].email">{{contact['result'].email || ".."}}</span></div>
     <div><strong class="basic-contact-field">{{ts('Contact ID')}}</strong>: <a target="_blank" ng-if="options.contact_url" href="{{options.contact_url}}{{contact['result'].contact_id}}">{{contact['result'].id}}</a></div>
 
