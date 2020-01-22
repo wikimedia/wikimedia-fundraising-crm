@@ -28,7 +28,8 @@
         "twig/twig": "1.*",
         "wikimedia/composer-merge-plugin": "^1.4",
         "jackgleeson/stats-collector": "^1.4",
-        "google/apiclient": "^2.0"
+        "google/apiclient": "^2.0",
+        "ext-json": "*"
     },
     "repositories": [
       {
@@ -38,10 +39,6 @@
       {
         "type": "git",
         "url": "https://github.com/eileenmcnaughton/omnimail-silverpop"
-      },
-      {
-        "type": "git",
-        "url": "https://github.com/eileenmcnaughton/silverpop-php-connector"
       }
     ],
     "require-dev": {

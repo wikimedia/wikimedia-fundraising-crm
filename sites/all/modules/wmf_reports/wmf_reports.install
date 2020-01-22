@@ -1,117 +1,113 @@
 <?php
 
-function wmf_reports_install()
-{
-    wmf_reports_update_7000();
-    wmf_reports_update_7001();
-    wmf_reports_update_7002();
-    wmf_reports_update_7003();
-    wmf_reports_update_7004();
+function wmf_reports_install() {
+  wmf_reports_update_7000();
+  wmf_reports_update_7001();
+  wmf_reports_update_7002();
+  wmf_reports_update_7003();
+  wmf_reports_update_7004();
 }
 
 /**
  * Add a default mapping to support Contacts and Contributions export
  */
-function wmf_reports_update_7000()
-{
-    $api = wmf_reports_bootstrap_civi();
+function wmf_reports_update_7000() {
+  civicrm_initialize();
 
-    $success = $api->OptionValue->Get(array(
-        'option_group_name' => 'mapping_type',
-        'name' => 'Export Contribution',
-    ));
-    if (!$success)
-    {
-        throw new Exception($api->errorMsg());
+  $values  = civicrm_api3('OptionValue', 'get', [
+    'option_group_name' => 'mapping_type',
+    'name' => 'Export Contribution',
+  ])['values'];
+
+  $mapping_type = array_pop($values);
+
+  $mapping = [
+    'name' => 'Contacts and Contributions',
+    'description' => '',
+    'mapping_type_id' => $mapping_type->value,
+  ];
+  $mapping = CRM_Core_BAO_Mapping::add($mapping);
+
+  $contact_fields = [
+    'sort_name',
+    'id',
+
+    'do_not_email',
+    'do_not_phone',
+    'do_not_mail',
+    'do_not_sms',
+    'do_not_trade',
+    'is_opt_out',
+  ];
+  $location_fields = [
+    'street_address',
+    'supplemental_address_1',
+    'supplemental_address_2',
+    'city',
+    'state_province',
+    'country',
+    'postal_code',
+    'postal_code_suffix',
+    'geo_code_1',
+    'geo_code_2',
+
+    'email',
+  ];
+  $contribution_fields = [
+    'contribution_id',
+    'total_amount',
+    'receive_date',
+  ];
+
+  foreach ($contact_fields as $field) {
+    $mapping_fields[] = ['0' => 'Individual', '1' => $field];
+  }
+
+  $location_type = new CRM_Core_BAO_LocationType();
+  $location_type->is_active = 1;
+  $location_type->find();
+  while ($location_type->fetch()) {
+    foreach ($location_fields as $field) {
+      $mapping_fields[] = [
+        '0' => 'Individual',
+        '1' => $field,
+        '2' => $location_type->id,
+      ];
     }
-    $values = $api->values();
-    $mapping_type = array_pop($values);
 
-    $mapping = array(
-        'name' => 'Contacts and Contributions',
-        'description' => '',
-        'mapping_type_id' => $mapping_type->value,
-    );
-    $mapping = CRM_Core_BAO_Mapping::add($mapping);
-
-    $contact_fields = array(
-        'sort_name',
-        'id',
-
-        'do_not_email',
-        'do_not_phone',
-        'do_not_mail',
-        'do_not_sms',
-        'do_not_trade',
-        'is_opt_out',
-    );
-    $location_fields = array(
-        'street_address',
-        'supplemental_address_1',
-        'supplemental_address_2',
-        'city',
-        'state_province',
-        'country',
-        'postal_code',
-        'postal_code_suffix',
-        'geo_code_1',
-        'geo_code_2',
-
-        'email',
-    );
-    $contribution_fields = array(
-        'contribution_id',
-        'total_amount',
-        'receive_date',
-    );
-
-    foreach ($contact_fields as $field)
-    {
-        $mapping_fields[] = array('0' => 'Individual', '1' => $field);
+    $phone_types = array_keys(wmf_reports_get_options('Phone', 'phone_type_id'));
+    foreach ($phone_types as $phone_type) {
+      $mapping_fields[] = [
+        '0' => 'Individual',
+        '1' => 'phone',
+        '2' => $location_type->id,
+        '3' => $phone_type,
+      ];
     }
+    //XXX weird, this field is not selected by phone_type:
+    $mapping_fields[] = [
+      '0' => 'Individual',
+      '1' => 'phone_ext',
+      '2' => $location_type->id,
+    ];
+  }
+  foreach ($contribution_fields as $field) {
+    $mapping_fields[] = ['0' => 'Contribution', '1' => $field];
+  }
+  $mapping_description = [
+    'mapper' => [
+      1 => $mapping_fields,
+    ],
+    'operator' => [
+      1 => NULL,
+    ],
+    'value' => [
+      1 => NULL,
+    ],
+  ];
+  CRM_Core_BAO_Mapping::saveMappingFields($mapping_description, $mapping->id);
 
-    $location_type = new CRM_Core_BAO_LocationType();
-    $location_type->is_active = 1;
-    $location_type->find();
-    while ($location_type->fetch())
-    {
-        foreach ($location_fields as $field)
-        {
-            $mapping_fields[] = array(
-                '0' => 'Individual', '1' => $field, '2' => $location_type->id,
-            );
-        }
-
-        $phone_types = array_keys(wmf_reports_get_options('Phone', 'phone_type_id'));
-        foreach ($phone_types as $phone_type)
-        {
-            $mapping_fields[] = array(
-                '0' => 'Individual', '1' => 'phone', '2' => $location_type->id, '3' => $phone_type,
-            );
-        }
-        //XXX weird, this field is not selected by phone_type:
-        $mapping_fields[] = array(
-            '0' => 'Individual', '1' => 'phone_ext', '2' => $location_type->id,
-        );
-    }
-    foreach ($contribution_fields as $field)
-    {
-        $mapping_fields[] = array('0' => 'Contribution', '1' => $field);
-    }
-    $mapping_description = array(
-        'mapper' => array(
-            1 => $mapping_fields,
-        ),
-        'operator' => array(
-            1 => null,
-        ),
-        'value' => array(
-            1 => null,
-        ),
-    );
-    CRM_Core_BAO_Mapping::saveMappingFields($mapping_description, $mapping->id);
-
-    return array();
+  return [];
 }
 
 /**
@@ -124,179 +120,149 @@ function wmf_reports_update_7000()
  * @throws \CiviCRM_API3_Exception
  */
 function wmf_reports_get_options($entity, $field) {
-    $options = civicrm_api3($entity, 'getoptions', array('field' => $field));
-    return $options['values'];
+  $options = civicrm_api3($entity, 'getoptions', ['field' => $field]);
+  return $options['values'];
 }
 
 /**
  * Remove some of the mapping fields thanks to a hard mysql limit of
  * 61 join tables.
+ *
+ * @throws \CRM_Core_Exception
+ * @throws \CiviCRM_API3_Exception
  */
-function wmf_reports_update_7001()
-{
-    wmf_reports_bootstrap_civi();
+function wmf_reports_update_7001() {
+  civicrm_initialize();
 
-    $params = array(
-        'name' => 'Contacts and Contributions',
-    );
-    $defaults = array();
-    $mapping = CRM_Core_BAO_Mapping::retrieve($params, $defaults);
-    if (!$mapping)
-    {
-        throw new Exception("No mapping yet, try running the db updates in order.");
-    }
+  $params = [
+    'name' => 'Contacts and Contributions',
+  ];
+  $defaults = [];
+  $mapping = CRM_Core_BAO_Mapping::retrieve($params, $defaults);
+  if (!$mapping) {
+    throw new CRM_Core_Exception('No mapping yet, try running the db updates in order.');
+  }
 
-    $drop_phone_types = array(
-        'Pager',
-        'Voicemail',
-    );
-    $all_phone_types = wmf_reports_get_options('Phone', 'phone_type_id');
-    foreach ($drop_phone_types as $name)
-    {
-        $id = array_search($name, $all_phone_types);
-        $params = array(
-            'name' => 'phone',
-            'phone_type_id' => $id,
-            'mapping_id' => $mapping->id,
-        );
-        wmf_report_drop_mapping_fields($params);
-    }
+  $drop_phone_types = [
+    'Pager',
+    'Voicemail',
+  ];
+  $all_phone_types = wmf_reports_get_options('Phone', 'phone_type_id');
+  foreach ($drop_phone_types as $name) {
+    $id = array_search($name, $all_phone_types);
+    $params = [
+      'name' => 'phone',
+      'phone_type_id' => $id,
+      'mapping_id' => $mapping->id,
+    ];
+    wmf_report_drop_mapping_fields($params);
+  }
 
-    $drop_fields = array(
-        'geo_code_1',
-        'geo_code_2',
-    );
-    foreach ($drop_fields as $name) {
-        $params = array(
-            'name' => $name,
-            'mapping_id' => $mapping->id,
-        );
-        wmf_report_drop_mapping_fields($params);
-    }
+  $drop_fields = [
+    'geo_code_1',
+    'geo_code_2',
+  ];
+  foreach ($drop_fields as $name) {
+    $params = [
+      'name' => $name,
+      'mapping_id' => $mapping->id,
+    ];
+    wmf_report_drop_mapping_fields($params);
+  }
 
-    wmf_report_compact_mapping_fields($mapping->id);
+  wmf_report_compact_mapping_fields($mapping->id);
 }
 
 /**
  * Install custom report templates
+ *
+ * @throws \CiviCRM_API3_Exception
  */
-function wmf_reports_update_7002()
-{
-    wmf_reports_bootstrap_civi();
-
-    $groupParams = array( 'name' => ('report_template') );
-    $params = array(
-        'label' => 'Contribution Trends',
-        'name' => 'CRM_Report_Form_Contribute_Trends',
-        'value' => 'contribute/trends',
-        'description' => 'Contribution Trends',
-        'component_id' => CRM_Core_Component::getComponentID( 'CiviContribute' ),
-        'is_active' => true,
-    );
-    $action = null;
-    $id = null;
-    CRM_Core_OptionValue::addOptionValue( $params, $groupParams, $action, $id );
-
-    return array();
+function wmf_reports_update_7002() {
+  civicrm_initialize();
+  $params = [
+    'label' => 'Contribution Trends',
+    'name' => 'CRM_Report_Form_Contribute_Trends',
+    'value' => 'contribute/trends',
+    'description' => 'Contribution Trends',
+    'component_id' => CRM_Core_Component::getComponentID('CiviContribute'),
+    'is_active' => TRUE,
+    'option_group_id' => 'report_template',
+  ];
+  civicrm_api3('OptionValue', 'create', $params);
+  return [];
 }
 
-function wmf_report_drop_mapping_fields($criteria)
-{
-    $mapping_field = new CRM_Core_DAO_MappingField();
-    $mapping_field->copyValues($criteria);
-    $mapping_field->find();
-    while ($mapping_field->fetch())
-    {
-        $mapping_field->delete();
-    }
+function wmf_report_drop_mapping_fields($criteria) {
+  $mapping_field = new CRM_Core_DAO_MappingField();
+  $mapping_field->copyValues($criteria);
+  $mapping_field->find();
+  while ($mapping_field->fetch()) {
+    $mapping_field->delete();
+  }
 }
 
 /**
  * Annoying workaround for broken mapping field :: delete.
  * The 'column_number' field must be made sequential again.
  */
-function wmf_report_compact_mapping_fields($mapping_id)
-{
-    $field = new CRM_Core_DAO_MappingField();
-    $field->mapping_id = $mapping_id;
-    $field->orderBy('column_number');
-    $field->find();
+function wmf_report_compact_mapping_fields($mapping_id) {
+  $field = new CRM_Core_DAO_MappingField();
+  $field->mapping_id = $mapping_id;
+  $field->orderBy('column_number');
+  $field->find();
 
-    $sequence = 0;
-    while ($field->fetch())
-    {
-        $gap = $field->column_number - $sequence;
-        if ($gap > 0)
-        {
-            $modify = new CRM_Core_DAO_MappingField();
-            $modify->id = $field->id;
-            $modify->find(TRUE);
-            $modify->column_number -= $gap;
-            $modify->save();
-        }
-        $sequence++;
+  $sequence = 0;
+  while ($field->fetch()) {
+    $gap = $field->column_number - $sequence;
+    if ($gap > 0) {
+      $modify = new CRM_Core_DAO_MappingField();
+      $modify->id = $field->id;
+      $modify->find(TRUE);
+      $modify->column_number -= $gap;
+      $modify->save();
     }
-}
-
-/**
- * Load civi api, only for use from within .install code
- */
-function wmf_reports_bootstrap_civi()
-{
-    //XXX XXX REALLY?
-    $civi_base = implode(DIRECTORY_SEPARATOR, array(drupal_get_path('module', 'civicrm'), '..'));
-    set_include_path(
-        implode(
-            PATH_SEPARATOR,
-            array(
-                get_include_path(),
-                $civi_base,
-                $civi_base.DIRECTORY_SEPARATOR.'packages',
-            )
-        )
-    );
-    require_once "api/class.api.php";
-    return new civicrm_api3(array('conf_path' => conf_path()));
+    $sequence++;
+  }
 }
 
 /**
  * Install gateway reconciliation report template
+ *
+ * @throws \CiviCRM_API3_Exception
  */
-function wmf_reports_update_7003()
-{
-    wmf_reports_bootstrap_civi();
-
-    $groupParams = array( 'name' => ('report_template') );
-    $params = array(
-        'label' => 'Gateway Reconciliation',
-        'name' => 'CRM_Report_Form_Contribute_GatewayReconciliation',
-        'value' => 'contribute/reconciliation',
-        'description' => 'Gateway Reconciliation',
-        'component_id' => CRM_Core_Component::getComponentID( 'CiviContribute' ),
-        'is_active' => true,
-    );
-    CRM_Core_OptionValue::addOptionValue( $params, $groupParams, $nullAction, $nullId );
-
-    return array();
+function wmf_reports_update_7003() {
+  civicrm_initialize();
+  $params = [
+    'label' => 'Gateway Reconciliation',
+    'name' => 'CRM_Report_Form_Contribute_GatewayReconciliation',
+    'value' => 'contribute/reconciliation',
+    'description' => 'Gateway Reconciliation',
+    'component_id' => CRM_Core_Component::getComponentID('CiviContribute'),
+    'is_active' => TRUE,
+    'option_group_id' => 'report_template',
+  ];
+  civicrm_api3('OptionValue', 'create', $params);
+  return [];
 }
 
 /**
  * Install customized LYBUNT report template
+ *
+ * @throws \CiviCRM_API3_Exception
  */
-function wmf_reports_update_7004()
-{
-    wmf_reports_bootstrap_civi();
+function wmf_reports_update_7004() {
+  civicrm_initialize();
+  $params = [
+    'label' => 'WMF LYBUNT',
+    'name' => 'CRM_Report_Form_Contribute_WmfLybunt',
+    'value' => 'contribute/wmf_lybunt',
+    'description' => 'WMF-customized LYBUNT',
+    'component_id' => CRM_Core_Component::getComponentID('CiviContribute'),
+    'is_active' => TRUE,
+    'option_group_id' => 'report_template',
+  ];
+  civicrm_api3('OptionValue', 'create', $params);
 
-    $groupParams = array( 'name' => ('report_template') );
-    $params = array(
-        'label' => 'WMF LYBUNT',
-        'name' => 'CRM_Report_Form_Contribute_WmfLybunt',
-        'value' => 'contribute/wmf_lybunt',
-        'description' => 'WMF-customized LYBUNT',
-        'component_id' => CRM_Core_Component::getComponentID( 'CiviContribute' ),
-        'is_active' => true,
-    );
-    CRM_Core_OptionValue::addOptionValue( $params, $groupParams, $nullAction, $nullId );
-
-    return array();
+  return [];
 }

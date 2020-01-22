@@ -53,6 +53,7 @@ function civicrm_api3_omnirecipient_load($params) {
       'retrieval_parameters' => $omnimail->getRetrievalParameters(),
       'progress_end_timestamp' => $omnimail->endTimeStamp,
     ];
+    $omnimail->debug('omnirecipient_retrieval_initiated', $progressSettings);
 
     foreach ($recipients as $row) {
       $recipient = new  \Omnimail\Silverpop\Responses\Recipient($row);
@@ -60,7 +61,7 @@ function civicrm_api3_omnirecipient_load($params) {
         // Do this here - ie. before processing a new row rather than at the end of the last row
         // to avoid thinking a job is incomplete if the limit co-incides with available rows.
         // Also write any remaining rows to the DB before exiting.
-        _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $omnimail, $progressSettings, $omnimail->getOffset() + $count);
+        _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $omnimail, $progressSettings, $omnimail->getOffset() + $count, 'omnirecipient_batch_limit_reached');
         return civicrm_api3_create_success(1);
       }
       $insertValues = [
@@ -97,7 +98,7 @@ function civicrm_api3_omnirecipient_load($params) {
       'progress_end_timestamp' => 'null',
       'offset' => 'null',
       'retrieval_parameters' => 'null',
-    ]);
+    ], 'omnirecipient_file_fully_processed');
     return civicrm_api3_create_success(1);
   }
   catch (CRM_Omnimail_IncompleteDownloadException $e) {
@@ -105,7 +106,7 @@ function civicrm_api3_omnirecipient_load($params) {
       'last_timestamp' => $omnimail->getStartTimestamp($params),
       'retrieval_parameters' => $e->getRetrievalParameters(),
       'progress_end_timestamp' => $e->getEndTimestamp(),
-    ]);
+    ], 'omnirecipient_incomplete_download');
     return civicrm_api3_create_success(1);
   }
 
@@ -118,10 +119,13 @@ function civicrm_api3_omnirecipient_load($params) {
  * @param \CRM_Omnimail_Omnirecipients $job
  * @param array $jobSettings
  * @param int $newOffSet
+ * @param string $loggingContext
+ *
+ * @throws \CiviCRM_API3_Exception
  */
-function _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $job, $jobSettings, $newOffSet) {
+function _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $job, $jobSettings, $newOffSet, string $loggingContext = '') {
   if (count($valueStrings)) {
-    _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, count($valueStrings), $job, $jobSettings, $newOffSet);
+    _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, count($valueStrings), $job, $jobSettings, $newOffSet, $loggingContext);
   }
 }
 
@@ -136,17 +140,19 @@ function _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $j
  * @param \CRM_Omnimail_Omnirecipients $job
  * @param array $jobSettings
  * @param int $newOffSet
+ * @param string $loggingContext
  *
  * @return array
+ * @throws \CiviCRM_API3_Exception
  */
-function _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $insertBatchSize, $job, $jobSettings, $newOffSet) {
+function _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $insertBatchSize, $job, $jobSettings, $newOffSet, string $loggingContext = '') {
   if (count($valueStrings) === $insertBatchSize) {
     CRM_Core_DAO::executeQuery('
          INSERT IGNORE INTO civicrm_mailing_provider_data
          (`contact_identifier`, `mailing_identifier`, `email`, `event_type`, `recipient_action_datetime`, `contact_id`)
          values' . implode(',', $valueStrings)
     );
-    $job->saveJobSetting(array_merge($jobSettings, ['offset' => $newOffSet]));
+    $job->saveJobSetting(array_merge($jobSettings, ['offset' => $newOffSet]), $loggingContext);
     $valueStrings = [];
   }
   return $valueStrings;

@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b25ddd4f34748e382ab4e00d390134b8",
+    "content-hash": "0f6faf71a208077b1718f74e1dd83ecd",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -1557,8 +1557,14 @@
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/eileenmcnaughton/silverpop-php-connector",
-                "reference": "63980619f88faca3d2f9e04cd9950eec7619b873"
+                "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
+                "reference": "318ff74e6564d1c251b1df41ef4001f7b472bf6f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/318ff74e6564d1c251b1df41ef4001f7b472bf6f",
+                "reference": "318ff74e6564d1c251b1df41ef4001f7b472bf6f",
+                "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
@@ -1576,11 +1582,7 @@
                     "SilverpopConnector\\": "src/SilverpopConnector"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "SilverpopConnector\\Tests\\": "test/tests"
-                }
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -1594,7 +1596,7 @@
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2019-07-25T06:55:53+00:00"
+            "time": "2019-09-17T18:21:41+00:00"
         },
         {
             "name": "neitanod/forceutf8",
@@ -3106,7 +3108,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "4168abec7c7c05712180b11c692a07cd7b78f91e"
+                "reference": "d12b5d2e1221c09134c1cc9bde7d9d7b29ae11f2"
             },
             "require": {
                 "league/csv": "^9.0",
@@ -3146,7 +3148,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2019-09-09T06:23:22+00:00"
+            "time": "2020-01-15T01:27:13+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -5022,6 +5024,7 @@
     "prefer-lowest": false,
     "platform": {
         "ext-intl": "*",
+        "ext-json": "*",
         "ext-dom": "*",
         "ext-libxml": "*"
     },

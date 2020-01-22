@@ -130,7 +130,7 @@ class CRM_Omnimail_Omnimail {
    *
    * @return false|int
    */
-  protected static function getEndTimestamp($passedInEndDate, $settings, $startTimestamp) {
+  protected function getEndTimestamp($passedInEndDate, $settings, $startTimestamp) {
     if ($passedInEndDate) {
       $endTimeStamp = strtotime($passedInEndDate);
     }
@@ -214,9 +214,13 @@ class CRM_Omnimail_Omnimail {
    *
    * @param array $setting
    *
+   * @param string $loggingContext
+   *   Logging context - if this is not empty a debug row will be logged with the progress details.
+   *   (it is good to log at the start & end of jobs, less so when we are just incrementing offset).
+   *
    * @throws \CiviCRM_API3_Exception
    */
-  public function saveJobSetting($setting) {
+  public function saveJobSetting($setting, string $loggingContext = '') {
     $setting = array_merge($this->jobSettings, $setting);
     foreach (array('last_timestamp', 'progress_end_timestamp') as $dateField) {
       if (isset($setting[$dateField]) && $setting[$dateField] !== 'null') {
@@ -227,6 +231,9 @@ class CRM_Omnimail_Omnimail {
     $progress = civicrm_api3('OmnimailJobProgress', 'create', $setting);
     if (empty($this->jobSettings['id'])) {
       $this->jobSettings['id'] = $progress['id'];
+    }
+    if ($loggingContext) {
+      $this->debug($loggingContext, $this->jobSettings);
     }
   }
 
@@ -262,6 +269,19 @@ class CRM_Omnimail_Omnimail {
       date_default_timezone_set('UTC');
       CRM_Core_DAO::executeQuery("SET TIME_ZONE='+00:00'");
     }
+  }
+
+  /**
+   * Debug information about omnimail.
+   *
+   * I would have preferred to use the Civi::log format but hit limitations - see
+   * https://lab.civicrm.org/dev/core/issues/1527 - perhaps in future we can switch to that.
+   *
+   * @param string $message
+   * @param array $variables
+   */
+  public function debug(string $message, $variables) {
+    CRM_Core_Error::debug_log_message($message . "\n" . print_r($variables, TRUE), FALSE, 'omnimail', PEAR_LOG_DEBUG);
   }
 
 }

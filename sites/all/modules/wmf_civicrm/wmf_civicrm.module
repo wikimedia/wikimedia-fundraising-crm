@@ -15,18 +15,18 @@ require_once 'wmf_civicrm.hooks.php';
  * @param string $value
  */
 function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
-  $params = array(
+  $params = [
     'option_group_id' => $group_name,
     'name' => $value,
     'label' => $value,
     'value' => $value,
     'is_active' => 1,
-  );
-  $existingValues = civicrm_api3('OptionValue', 'get', array(
+  ];
+  $existingValues = civicrm_api3('OptionValue', 'get', [
     'option_group_id' => $params['option_group_id'],
     'name' => $params['name'],
     'sequential' => 1,
-  ));
+  ]);
   $createRequired = FALSE;
   if ($existingValues['count'] == 0) {
     $createRequired = TRUE;
@@ -45,9 +45,9 @@ function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
 
 function civicrm_option_group_id($group_name) {
   $api = civicrm_api_classapi();
-  $success = $api->OptionGroup->Get(array(
+  $success = $api->OptionGroup->Get([
     'name' => $group_name,
-  ));
+  ]);
   if ($success && $api->values) {
     return $api->values[0]->id;
   }
@@ -60,7 +60,7 @@ function civicrm_api_contribution_status($key = NULL) {
 function civicrm_api_classapi() {
   civicrm_initialize();
   if (module_load_include('php', 'civicrm', '../api/class.api') === FALSE) {
-    watchdog('civicrm_api', t('Failed to load civicrm api classes'), array(), WATCHDOG_ERROR);
+    watchdog('civicrm_api', t('Failed to load civicrm api classes'), [], WATCHDOG_ERROR);
   }
   else {
     return new civicrm_api3();
@@ -86,7 +86,7 @@ function wmf_civicrm_get_custom_values($entity_id, $names, $group_name = NULL) {
     $field_map[$field] = $name;
   }
   $result = CRM_Core_BAO_CustomValueTable::getValues($params);
-  $ret = array();
+  $ret = [];
   foreach ($result as $field => $value) {
     if (array_key_exists($field, $field_map)) {
       $ret[$field_map[$field]] = $value;
@@ -96,20 +96,20 @@ function wmf_civicrm_get_custom_values($entity_id, $names, $group_name = NULL) {
 }
 
 /**
- * @deprecated
- *
- * Phase this out as it is does some unecessary queries.
- *
  * @param $entity_id
  * @param $map
  * @param null $group_name
  *
  * @throws \WmfException
+ * @deprecated
+ *
+ * Phase this out as it is does some unecessary queries.
+ *
  */
 function wmf_civicrm_set_custom_field_values($entity_id, $map, $group_name = NULL) {
-  $params = array(
+  $params = [
     'entityID' => $entity_id,
-  );
+  ];
   $custom_fields =
     wmf_civicrm_get_custom_field_map(array_keys($map), $group_name);
   foreach ($map as $field_name => $value) {
@@ -118,16 +118,16 @@ function wmf_civicrm_set_custom_field_values($entity_id, $map, $group_name = NUL
   $result = CRM_Core_BAO_CustomValueTable::setValues($params);
   if (!empty($result['is_error'])) {
     throw new WmfException(WmfException::CIVI_CONFIG,
-      t('Failed to set custom values: id !id, error: !err', array(
+      t('Failed to set custom values: id !id, error: !err', [
         '!id' => $entity_id,
         '!err' => $result['error_message'],
-      ))
+      ])
     );
   }
 }
 
 function wmf_civicrm_get_custom_field_map($field_names, $group_name = NULL) {
-  static $custom_fields = array();
+  static $custom_fields = [];
   foreach ($field_names as $name) {
     if (empty($custom_fields[$name])) {
       $id = CRM_Core_BAO_CustomField::getCustomFieldID($name, $group_name);
@@ -139,7 +139,7 @@ function wmf_civicrm_get_custom_field_map($field_names, $group_name = NULL) {
 }
 
 function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
-  $custom_fields = wmf_civicrm_get_custom_field_map(array($field_name), $group_name);
+  $custom_fields = wmf_civicrm_get_custom_field_map([$field_name], $group_name);
   return $custom_fields[$field_name];
 }
 
@@ -175,14 +175,16 @@ function wmf_civicrm_contribution_message_import(&$msg) {
         $msg['payment_token_id'] = $token_record['id'];
         $msg['payment_processor_id'] = $token_record['payment_processor_id'];
       }
-    } elseif($msg['subscr_id']) {
+    }
+    elseif ($msg['subscr_id']) {
       $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
       if ($recur_record) {
         watchdog('queue2civicrm_import', 'Found matching recurring record for subscr_id: ' . $msg['subscr_id'], NULL, WATCHDOG_INFO);
         $msg['contribution_recur_id'] = $recur_record->id;
         $msg['contact_id'] = $recur_record->contact_id;
       }
-    } else {
+    }
+    else {
       throw new WmfException(WmfException::INVALID_MESSAGE, 'Recurring donation, but no subscription ID or recurring payment token found.');
     }
   }
@@ -210,7 +212,7 @@ function wmf_civicrm_contribution_message_import(&$msg) {
     // city or postal_code is not enough, as historically this update has not occurred at
     // all & introducing it this conservatively feels like a safe strategy.
     if (!empty($msg['street_address'])) {
-      wmf_civicrm_message_location_update($msg, array('id' => $msg['contact_id']));
+      wmf_civicrm_message_location_update($msg, ['id' => $msg['contact_id']]);
     }
     elseif (!empty($msg['email'])) {
       // location_update updates email, if set and address, if set.
@@ -224,7 +226,7 @@ function wmf_civicrm_contribution_message_import(&$msg) {
   // Make new recurring record if necessary
   $initial_recurring = ($msg['recurring'] && !$msg['contribution_recur_id']);
   if ($initial_recurring) {
-    $recurring_transaction_id="";
+    $recurring_transaction_id = "";
     if ($msg['subscr_id']) {
       // FIXME: level across processors
       if ($msg['gateway'] === 'globalcollect') {
@@ -248,11 +250,11 @@ function wmf_civicrm_contribution_message_import(&$msg) {
   // Look up soft credit contact.
   if (!empty($msg['soft_credit_to'])) {
 
-    $soft_credit_contact = civicrm_api3('Contact', 'Get', array(
+    $soft_credit_contact = civicrm_api3('Contact', 'Get', [
       'organization_name' => $msg['soft_credit_to'],
       'sequential' => 1,
       'return' => 'id',
-    ));
+    ]);
     if ($soft_credit_contact['count'] !== 1) {
       throw new WmfException(
         WmfException::INVALID_MESSAGE,
@@ -287,11 +289,11 @@ function wmf_civicrm_contribution_message_import(&$msg) {
 
   if (!empty($msg['notes'])) {
     // TODO: Handle failure.
-    civicrm_api3("Note", "Create", array(
+    civicrm_api3("Note", "Create", [
       'entity_table' => 'civicrm_contact',
       'entity_id' => $msg['contact_id'],
       'note' => $msg['notes'],
-    ));
+    ]);
   }
 
   return $contribution;
@@ -303,16 +305,17 @@ function wmf_civicrm_contribution_message_import(&$msg) {
  *
  * @param $msg
  * @param $matchEmail
+ *
  * @throws CiviCRM_API3_Exception
  */
-function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = False) {
-  $existing = civicrm_api3( 'Contact', 'getSingle', array(
+function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = FALSE) {
+  $existing = civicrm_api3('Contact', 'getSingle', [
     'id' => $msg['contact_id'],
-    'return' => array('hash', 'email'),
-  ) );
+    'return' => ['hash', 'email'],
+  ]);
 
   if (!$existing || $existing['hash'] !== $msg['contact_hash'] ||
-      ($existing['email'] !== $msg['email'] && $matchEmail)) {
+    ($existing['email'] !== $msg['email'] && $matchEmail)) {
     $msg['contact_id'] = NULL;
     unset($msg['contact_hash']);
   }
@@ -350,7 +353,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
   $trxn_id = $transaction->get_unique_id();
 
 
-  $contribution = array(
+  $contribution = [
     'contact_id' => $msg['contact_id'],
     'total_amount' => $msg['gross'],
     // CiviCRM supports financial_type_id rather than contribution_type_id now. Handling both here
@@ -367,7 +370,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
     'check_number' => $msg['check_number'],
     'soft_credit_to' => $msg['soft_credit_to_id'],
     'debug' => TRUE,
-  );
+  ];
 
   // Add the thank you date when it exists and is not null (e.g.: we're importing from a check)
   if (array_key_exists('thankyou_date', $msg) && is_numeric($msg['thankyou_date'])) {
@@ -375,7 +378,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
   }
 
   // Store the identifier we generated on payments
-  $invoice_fields = array('invoice_id', 'order_id');
+  $invoice_fields = ['invoice_id', 'order_id'];
   foreach ($invoice_fields as $invoice_field) {
     if (!empty($msg[$invoice_field])) {
       $contribution['invoice_id'] = $msg[$invoice_field];
@@ -393,17 +396,17 @@ function _wmf_civicrm_message_contribution_insert($msg) {
    *
    * NOTE: the custom field for "Gift_Information" indicates that check number is stored here.  It is not.
    */
-  $custom_field_defaults = array(
+  $custom_field_defaults = [
     // Contribution_comments field does not appear to exist & is quietly ignored I believe.
     'Contribution_Comments' => '',
     'gateway_account' => '',
-  );
+  ];
   if ($contribution['total_amount'] >= 1000) {
     $custom_field_defaults['Campaign'] = 'Benefactor Gift';
   }
 
   // Legacy field names which do not match the message field names
-  $custom_name_mangle = array(
+  $custom_name_mangle = [
     'comment' => 'Contribution_Comments',
     'direct_mail_appeal' => 'Appeal',
     'gift_source' => 'Campaign',
@@ -411,10 +414,10 @@ function _wmf_civicrm_message_contribution_insert($msg) {
     'restrictions' => 'Fund',
     'stock_description' => 'Description_of_Stock',
     'gateway_status' => 'gateway_status_raw',
-  );
+  ];
 
   // Custom fields with names that match the message fields.
-  $custom_name_passthrough = array(
+  $custom_name_passthrough = [
     'gateway_account',
     'import_batch_number',
     'no_thank_you',
@@ -424,12 +427,12 @@ function _wmf_civicrm_message_contribution_insert($msg) {
     'source_run_id',
     'source_version',
     'source_enqueued_time',
-  );
+  ];
 
   $custom_fields = $custom_name_mangle
     + array_combine($custom_name_passthrough, $custom_name_passthrough);
 
-  $custom_vars = array();
+  $custom_vars = [];
   foreach ($custom_fields as $msg_key => $custom_key) {
     if (array_key_exists($msg_key, $msg)) {
       $custom_vars[$custom_key] = $msg[$msg_key];
@@ -439,10 +442,10 @@ function _wmf_civicrm_message_contribution_insert($msg) {
   // Transform any unix timestamps into an unambiguous MySQL datetime literal.
   // If the date is already in mysql format, it will be 14 characters long:
   // YYYYmmddHHiiss :-/
-  $date_mangle = array(
+  $date_mangle = [
     'Postmark_Date',
     'source_enqueued_time',
-  );
+  ];
   foreach ($date_mangle as $field) {
     if (array_key_exists($field, $custom_vars)
       && is_numeric($custom_vars[$field])
@@ -479,7 +482,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
       if (array_key_exists('invoice_id', $contribution)) {
         watchdog('wmf_civicrm', 'Checking for duplicate on invoice ID ' . $contribution['invoice_id'], NULL, WATCHDOG_INFO);
         $invoice_id = $contribution['invoice_id'];
-        $duplicate = civicrm_api3("Contribution", "getcount", array("invoice_id" => $invoice_id));
+        $duplicate = civicrm_api3("Contribution", "getcount", ["invoice_id" => $invoice_id]);
       }
       if ($duplicate > 0) {
         // We can't retry the insert here because the original API
@@ -513,14 +516,14 @@ function _wmf_civicrm_message_contribution_insert($msg) {
   // Create any required tags on the contribution
   if ($msg['contribution_tags']) {
     $supported_tags = array_flip(CRM_Core_BAO_Tag::getTags('civicrm_contribution'));
-    $stacked_ex = array();
+    $stacked_ex = [];
     foreach (array_unique($msg['contribution_tags']) as $tag) {
       try {
-        $tag_result = civicrm_api3("EntityTag", "Create", array(
+        $tag_result = civicrm_api3("EntityTag", "Create", [
           'entity_table' => 'civicrm_contribution',
           'entity_id' => $contribution_result['id'],
           'tag_id' => $supported_tags[$tag],
-        ));
+        ]);
       }
       catch (CiviCRM_API3_Exception $ex) {
         $stacked_ex[] = "Failed to add tag {$tag} to contribution ID {$contribution_result['id']}. Error: " . $ex->getMessage();
@@ -550,9 +553,9 @@ function _wmf_civicrm_message_contribution_insert($msg) {
  * @return bool
  */
 function wmf_civicrm_get_civi_id($type, $name) {
-  static $civi_ids = array();
-  $params = array('name' => $name);
-  $dummy = array();
+  static $civi_ids = [];
+  $params = ['name' => $name];
+  $dummy = [];
 
   if (array_key_exists($type, $civi_ids) && array_key_exists($name, $civi_ids[$type])) {
     return $civi_ids[$type][$name];
@@ -583,17 +586,17 @@ function wmf_civicrm_get_civi_id($type, $name) {
       $id = $civi_ids[$type][$name];
       if (empty($id)) {
         throw new WmfException(WmfException::CIVI_CONFIG,
-          t('Contribution Type "!name" not found!', array('!name' => $name))
+          t('Contribution Type "!name" not found!', ['!name' => $name])
         );
       }
       return $id;
     case 'payment_instrument_id':
-      $instruments = civicrm_api3('Contribution', 'getoptions', array('field' => 'payment_instrument_id'));
+      $instruments = civicrm_api3('Contribution', 'getoptions', ['field' => 'payment_instrument_id']);
       return array_search($name, $instruments['values']);
       break;
 
     default:
-      throw new WmfException(WmfException::CIVI_CONFIG, t("Civi lookup for type '!type' not implemented", array("!type" => $type)));
+      throw new WmfException(WmfException::CIVI_CONFIG, t("Civi lookup for type '!type' not implemented", ["!type" => $type]));
   }
 }
 
@@ -746,7 +749,7 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
           case 'oca':
             $payment_instrument .= ': OCA';
             break;
-            // India
+          // India
           case 'rupay':
             $payment_instrument .= ': RuPay';
             break;
@@ -868,10 +871,10 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
       case 'amazon':
         $payment_instrument = 'Amazon';
         if (array_key_exists('payment_method', $msg) and strtolower($msg['payment_method']) !== 'amazon') {
-          watchdog('wmf_civicrm', 'payment_method constraint violated: gateway Amazon, but method=@method ; gateway_txn_id=@id', array(
+          watchdog('wmf_civicrm', 'payment_method constraint violated: gateway Amazon, but method=@method ; gateway_txn_id=@id', [
             '@method' => $msg['payment_method'],
             '@id' => $msg['gateway_txn_id'],
-          ), WATCHDOG_DEBUG);
+          ], WATCHDOG_DEBUG);
         }
         break;
       case 'paypal':
@@ -885,28 +888,28 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
 
         // Validate method if provided.
         if (array_key_exists('payment_method', $msg) and strtolower($msg['payment_method']) !== 'paypal') {
-          watchdog('wmf_civicrm', 'payment_method constraint violated: gateway Paypal, but method=@method ; gateway_txn_id=@id', array(
+          watchdog('wmf_civicrm', 'payment_method constraint violated: gateway Paypal, but method=@method ; gateway_txn_id=@id', [
             '@method' => $msg['payment_method'],
             '@id' => $msg['gateway_txn_id'],
-          ), WATCHDOG_DEBUG);
+          ], WATCHDOG_DEBUG);
         }
         break;
       case 'square':
         $payment_instrument = 'Square Cash';
         if (array_key_exists('payment_method', $msg) and strtolower($msg['payment_method']) !== 'square') {
-          watchdog('wmf_civicrm', 'payment_method constraint violated: gateway Square, but method=@method ; gateway_txn_id=@id', array(
+          watchdog('wmf_civicrm', 'payment_method constraint violated: gateway Square, but method=@method ; gateway_txn_id=@id', [
             '@method' => $msg['payment_method'],
             '@id' => $msg['gateway_txn_id'],
-          ), WATCHDOG_DEBUG);
+          ], WATCHDOG_DEBUG);
         }
         break;
       case 'trilogy':
         $payment_instrument = 'Trilogy';
         if (array_key_exists('payment_method', $msg) and strtolower($msg['payment_method']) !== 'trilogy') {
-          watchdog('wmf_civicrm', 'payment_method constraint violated: gateway Trilogy, but method=@method ; gateway_txn_id=@id', array(
+          watchdog('wmf_civicrm', 'payment_method constraint violated: gateway Trilogy, but method=@method ; gateway_txn_id=@id', [
             '@method' => $msg['payment_method'],
             '@id' => $msg['gateway_txn_id'],
-          ), WATCHDOG_DEBUG);
+          ], WATCHDOG_DEBUG);
         }
         break;
     }
@@ -969,7 +972,7 @@ function wmf_civicrm_normalize_contribution_amounts($msg) {
   $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
   if ($msg['currency'] !== $settlement_currency) {
     watchdog('wmf_civicrm', 'Converting to settlement currency: %old -> %new',
-      array('%old' => $msg['currency'], '%new' => $settlement_currency),
+      ['%old' => $msg['currency'], '%new' => $settlement_currency],
       WATCHDOG_INFO);
     try {
       $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
@@ -1003,11 +1006,11 @@ function wmf_civicrm_normalize_contribution_amounts($msg) {
  *
  * @return array
  */
-function wmf_civicrm_format_currency_fields($values, $currencyFields = array(
+function wmf_civicrm_format_currency_fields($values, $currencyFields = [
   'gross',
   'fee',
   'net',
-)) {
+]) {
   foreach ($currencyFields as $field) {
     if (isset($values[$field])) {
       $values[$field] = str_replace(',', '', $values[$field]);
@@ -1019,14 +1022,14 @@ function wmf_civicrm_format_currency_fields($values, $currencyFields = array(
 function wmf_civicrm_verify_message_and_stage($msg) {
   $msg = wmf_civicrm_normalize_msg($msg);
 
-  $required = array(
+  $required = [
     'gross',
     'currency',
     'gateway',
     'gateway_txn_id',
-  );
+  ];
 
-  $err = array();
+  $err = [];
   foreach ($required as $key) {
     if (empty($msg[$key])) {
       $err[] = "Required Field '$key' not found in message.";
@@ -1041,7 +1044,7 @@ function wmf_civicrm_verify_message_and_stage($msg) {
     throw new WmfException(WmfException::CIVI_REQ_FIELD, $err);
   }
 
-  $max_lengths = array(
+  $max_lengths = [
     'check_number' => 255,
     'city' => 64,
     'email' => 254,
@@ -1053,26 +1056,26 @@ function wmf_civicrm_verify_message_and_stage($msg) {
     'street_address' => 96,
     'supplemental_address_1' => 96,
     'supplemental_address_2' => 96,
-  );
-  $truncate_tags = array(
+  ];
+  $truncate_tags = [
     'postal_code' => 'AddressTruncated',
     'street_address' => 'AddressTruncated',
     'supplemental_address_1' => 'AddressTruncated',
     'supplemental_address_2' => 'AddressTruncated',
     'city' => 'AddressTruncated',
-  );
+  ];
   foreach ($max_lengths as $key => $limit) {
     if (strlen($msg[$key]) > $limit) {
       if (array_key_exists($key, $truncate_tags)) {
         watchdog(
           'wmf_civicrm',
           'Truncating key !key to !len chars. Original: "!val". Applying tag !tag',
-          array(
+          [
             '!key' => $key,
             '!len' => $limit,
             '!val' => $msg[$key],
             '!tag' => $truncate_tags[$key],
-          ),
+          ],
           WATCHDOG_WARNING
         );
         $msg[$key] = substr($msg[$key], 0, $limit);
@@ -1131,7 +1134,7 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
   }
   elseif ($msg['contact_type'] != "Individual" && $msg['contact_type'] != "Organization") {
     // looks like an unsupported type was sent, revert to default
-    watchdog('wmf_civicrm', 'Non-supported contact_type received: %type', array('%type' => print_r($msg['contact_type'], TRUE)), WATCHDOG_INFO);
+    watchdog('wmf_civicrm', 'Non-supported contact_type received: %type', ['%type' => print_r($msg['contact_type'], TRUE)], WATCHDOG_INFO);
     $msg['contact_type'] = "Individual";
   }
 
@@ -1145,7 +1148,7 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
   }
 
   // Create the contact record
-  $contact = array(
+  $contact = [
     'id' => $contact_id,
     'contact_type' => $msg['contact_type'],
     'contact_source' => $msg['contact_source'],
@@ -1154,9 +1157,9 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     // going forwards there is scope to a) improve the processing
     // upstream rather than skip & b) not skip for Major Gifts contacts.
     'skip_greeting_processing' => TRUE,
-  );
+  ];
   if (strtolower($msg['contact_type']) !== "organization") {
-    foreach (array('first_name', 'last_name', 'middle_name') as $name) {
+    foreach (['first_name', 'last_name', 'middle_name'] as $name) {
       if (isset($msg[$name])) {
         $contact[$name] = wmf_civicrm_string_clean($msg[$name], 64);
       }
@@ -1224,16 +1227,16 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
   }
 
   // Copy some fields, if they exist
-  $direct_fields = array(
+  $direct_fields = [
     'do_not_email',
     'do_not_mail',
     'do_not_phone',
     'do_not_sms',
     'is_opt_out',
-  );
+  ];
   foreach ($direct_fields as $field) {
     if (isset($msg[$field])) {
-      if (in_array($msg[$field], array(0, 1, '0', '1', TRUE, FALSE), TRUE)) {
+      if (in_array($msg[$field], [0, 1, '0', '1', TRUE, FALSE], TRUE)) {
         $contact[$field] = $msg[$field];
       }
       elseif (strtoupper($msg[$field]) === 'Y') {
@@ -1242,14 +1245,14 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     }
   }
 
-  $custom_vars = array();
-  $custom_field_mangle = array(
+  $custom_vars = [];
+  $custom_field_mangle = [
     'opt_in' => 'opt_in',
     'do_not_solicit' => 'do_not_solicit',
     'org_contact_name' => 'Name',
     'org_contact_title' => 'Title',
     'employer' => 'Employer_Name',
-  );
+  ];
   foreach ($custom_field_mangle as $msgField => $customField) {
     if (isset($msg[$msgField])) {
       $custom_vars[$customField] = $msg[$msgField];
@@ -1273,7 +1276,8 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
       watchdog('wmf_civicrm', 'Successfully created contact: %id', ['%id' => $contact_result['id']], WATCHDOG_DEBUG);
     }
     else {
-      watchdog('wmf_civicrm', 'Successfully updated contact: %id', ['%id' => $contact_result['id']], WATCHDOG_DEBUG);    }
+      watchdog('wmf_civicrm', 'Successfully updated contact: %id', ['%id' => $contact_result['id']], WATCHDOG_DEBUG);
+    }
 
     if (WmfDatabase::isNativeTxnRolledBack()) {
       throw new WmfException(WmfException::IMPORT_CONTACT, "Native txn rolled back after inserting contact");
@@ -1299,7 +1303,7 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
   // Add phone number
   if (isset($msg['phone'])) {
     try {
-      $phone_result = civicrm_api3('Phone', 'Create', array(
+      $phone_result = civicrm_api3('Phone', 'Create', [
         // XXX all the fields are nullable, should we set any others?
         'contact_id' => $contact_id,
         'location_type_id' => wmf_civicrm_get_default_location_type_id(),
@@ -1307,7 +1311,7 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
         'phone_type_id' => 'Phone',
         'is_primary' => 1,
         'debug' => TRUE,
-      ));
+      ]);
     }
     catch (CiviCRM_API3_Exception $ex) {
       throw new WmfException(
@@ -1322,13 +1326,13 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     // TODO: Use CRM_Contact_GroupContact::buildOptions in Civi 4.4, also
     // in place of ::tag below.
     $supported_groups = array_flip(CRM_Core_PseudoConstant::allGroup());
-    $stacked_ex = array();
+    $stacked_ex = [];
     foreach (array_unique($msg['contact_groups']) as $group) {
       try {
-        $tag_result = civicrm_api3("GroupContact", "Create", array(
+        $tag_result = civicrm_api3("GroupContact", "Create", [
           'contact_id' => $contact_id,
           'group_id' => $supported_groups[$group],
-        ));
+        ]);
       }
       catch (CiviCRM_API3_Exception $ex) {
         $stacked_ex[] = "Failed to add group {$group} to contact ID {$contact_id}. Error: " . $ex->getMessage();
@@ -1345,14 +1349,14 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
   // Do we have any tags we need to add to this contact?
   if (!empty($msg['contact_tags'])) {
     $supported_tags = array_flip(CRM_Core_BAO_Tag::getTags('civicrm_contact'));
-    $stacked_ex = array();
+    $stacked_ex = [];
     foreach (array_unique($msg['contact_tags']) as $tag) {
       try {
-        $tag_result = civicrm_api3("EntityTag", "Create", array(
+        $tag_result = civicrm_api3("EntityTag", "Create", [
           'entity_table' => 'civicrm_contact',
           'entity_id' => $contact_id,
           'tag_id' => $supported_tags[$tag],
-        ));
+        ]);
       }
       catch (CiviCRM_API3_Exception $ex) {
         $stacked_ex[] = "Failed to add tag {$tag} to contact ID {$contact_id}. Error: " . $ex->getMessage();
@@ -1368,20 +1372,20 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
 
   // Create a relationship to an existing contact?
   if (!empty($msg['relationship_target_contact_id'])) {
-    $relationship_type = civicrm_api3("RelationshipType", "Get", array(
+    $relationship_type = civicrm_api3("RelationshipType", "Get", [
       'name_a_b' => $msg['relationship_type'],
-    ));
+    ]);
     if (!$relationship_type['count']) {
       throw new WmfException(WmfException::IMPORT_CONTACT, "Bad relationship type: {$msg['relationship_type']}");
     }
 
     try {
-      civicrm_api3("Relationship", "Create", array(
+      civicrm_api3("Relationship", "Create", [
         'contact_id_a' => $contact_id,
         'contact_id_b' => $msg['relationship_target_contact_id'],
         'relationship_type_id' => $relationship_type['id'],
         'is_active' => 1,
-      ));
+      ]);
     }
     catch (CiviCRM_API3_Exception $ex) {
       throw new WmfException(WmfException::IMPORT_CONTACT, $ex->getMessage());
@@ -1404,7 +1408,7 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
  * @return string
  */
 function wmf_civicrm_string_clean($string, $length) {
-  $replacements = array(
+  $replacements = [
     // Hex for &nbsp;
     '/\xC2\xA0/' => ' ',
     '/&nbsp;/' => ' ',
@@ -1418,7 +1422,7 @@ function wmf_civicrm_string_clean($string, $length) {
     // And html ampersands with normal ones.
     '/&amp;/' => '&',
     '/&Amp;/' => '&',
-  );
+  ];
   return substr(trim(preg_replace(array_keys($replacements), $replacements, $string)), 0, $length);
 }
 
@@ -1443,7 +1447,7 @@ function wmf_civicrm_string_clean($string, $length) {
  * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_ensure_language_exists($languageAbbreviation) {
-  wmf_civicrm_ensure_option_exists($languageAbbreviation, 'preferred_language', 'languages', array('value' => substr($languageAbbreviation, 0, 2)));
+  wmf_civicrm_ensure_option_exists($languageAbbreviation, 'preferred_language', 'languages', ['value' => substr($languageAbbreviation, 0, 2)]);
 }
 
 /**
@@ -1466,9 +1470,9 @@ function wmf_civicrm_check_language_exists($languageAbbreviation) {
 function wmf_civicrm_get_valid_languages() {
   static $languages;
   if (empty($languages)) {
-    $available_options = civicrm_api3('Contact', 'getoptions', array(
+    $available_options = civicrm_api3('Contact', 'getoptions', [
       'field' => 'preferred_language',
-    ));
+    ]);
     $languages = $available_options['values'];
   }
   return $languages;
@@ -1487,14 +1491,14 @@ function wmf_civicrm_get_valid_languages() {
  *
  * @throws \CiviCRM_API3_Exception
  */
-function wmf_civicrm_ensure_option_exists($option_value, $field_name, $option_group_name, $spec = array(), $entity = 'Contact') {
-  $available_options = civicrm_api3($entity, 'getoptions', array(
+function wmf_civicrm_ensure_option_exists($option_value, $field_name, $option_group_name, $spec = [], $entity = 'Contact') {
+  $available_options = civicrm_api3($entity, 'getoptions', [
     'field' => $field_name,
-  ));
+  ]);
   if ($option_value && empty($available_options['values'][$option_value])) {
     $uniqueParams = [
       'option_group_id' => $option_group_name,
-      'name' => $option_value
+      'name' => $option_value,
     ];
     $checkForInactive = civicrm_api3('OptionValue', 'get', array_merge(['is_active' => 0], $uniqueParams));
     if (!empty($checkForInactive['id'])) {
@@ -1571,21 +1575,21 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
     }
     $isPrimary = isset($msg['email_location_type_id']) ? 0 : 1;
 
-    $emailParams = array(
+    $emailParams = [
       'email' => $msg['email'],
       'is_primary' => $isPrimary,
       'is_billing' => $isPrimary,
       'contact_id' => $contact_id,
-    );
+    ];
 
     // Look up contact's existing email to get the id and to determine
     // if the email has changed.
-    $existingEmails = civicrm_api3("Email", 'get', array(
+    $existingEmails = civicrm_api3("Email", 'get', [
       'return' => ['location_type_id', 'email', 'is_primary'],
       'contact_id' => $contact_id,
       'sequential' => 1,
       'options' => ['sort' => 'is_primary'],
-    ))['values'];
+    ])['values'];
 
     if (!empty($existingEmails)) {
       foreach ($existingEmails as $prospectiveEmail) {
@@ -1596,8 +1600,9 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
           if (empty($existingEmail)
             || $existingEmail['email'] !== $msg['email']
             || $prospectiveEmail['location_type_id'] == $loc_type_id
-          )
-          $existingEmail = $prospectiveEmail;
+          ) {
+            $existingEmail = $prospectiveEmail;
+          }
         }
         elseif ($prospectiveEmail['location_type_id'] == $loc_type_id) {
           if (empty($existingEmail)) {
@@ -1624,7 +1629,7 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
   }
   catch (CiviCRM_API3_Exception $e) {
     // Constraint violations occur when data is rolled back to resolve a deadlock.
-    $code = (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout']))  ? WmfException::DATABASE_CONTENTION: WmfException::IMPORT_CONTACT;
+    $code = (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) ? WmfException::DATABASE_CONTENTION : WmfException::IMPORT_CONTACT;
     throw new WmfException($code, "Couldn't store email for the contact.", $e->getExtraParams());
   }
 }
@@ -1660,23 +1665,23 @@ function wmf_civicrm_message_email_insert($msg, $contact_id) {
 
   $loc_type_id = wmf_civicrm_get_default_location_type_id();
 
-  $email_params = array(
+  $email_params = [
     'contact_id' => $contact_id,
     'email' => $msg['email'],
     'is_primary' => 1,
     'is_billing' => 1,
     'location_type_id' => $loc_type_id,
     'debug' => 1,
-  );
+  ];
 
   try {
     civicrm_api3('Email', 'Create', $email_params);
   }
   catch (CiviCRM_API3_Exception $e) {
     // Constraint violations occur when data is rolled back to resolve a deadlock.
-    $code = $e->getErrorCode() === 'constraint violation' ? WmfException::DATABASE_CONTENTION: WmfException::IMPORT_CONTACT;
+    $code = $e->getErrorCode() === 'constraint violation' ? WmfException::DATABASE_CONTENTION : WmfException::IMPORT_CONTACT;
     throw new WmfException($code, "Couldn't store email for the contact.", $e->getExtraParams());
-   }
+  }
 }
 
 /**
@@ -1706,7 +1711,7 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
   // CiviCRM does a DB lookup instead of checking the pseudoconstant.
   // @todo fix Civi to use the pseudoconstant.
   $country_id = wmf_civicrm_get_country_id($msg['country']);
-  $address = array(
+  $address = [
     'is_primary' => 1,
     'street_address' => $msg['street_address'],
     'supplemental_address_1' => !empty($msg['supplemental_address_1']) ? $msg['supplemental_address_1'] : '',
@@ -1716,7 +1721,7 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
     'country' => $msg['country'],
     'is_billing' => 1,
     'debug' => 1,
-  );
+  ];
   if (!empty($msg['state_province'])) {
     $address['state_province'] = $msg['state_province'];
     $address['state_province_id'] = wmf_civicrm_get_state_id($country_id, $msg['state_province']);
@@ -1725,18 +1730,18 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
     return;
   }
 
-  $address_params = array(
+  $address_params = [
     'contact_id' => $contact_id,
     'location_type_id' => wmf_civicrm_get_default_location_type_id(),
-    'values' => array($address),
-  );
+    'values' => [$address],
+  ];
 
   try {
     civicrm_api3('Address', 'replace', $address_params);
   }
   catch (CiviCRM_API3_Exception $e) {
     // Constraint violations occur when data is rolled back to resolve a deadlock.
-    $code = $e->getErrorCode() === 'constraint violation' ? WmfException::DATABASE_CONTENTION: WmfException::IMPORT_CONTACT;
+    $code = $e->getErrorCode() === 'constraint violation' ? WmfException::DATABASE_CONTENTION : WmfException::IMPORT_CONTACT;
     throw new WmfException($code, "Couldn't store address for the contact.", $e->getExtraParams());
   }
 }
@@ -1757,7 +1762,7 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
   // We can do these lookups a bit more efficiently than Civi
   $country_id = wmf_civicrm_get_country_id($msg['country']);
 
-  $address_params = array(
+  $address_params = [
     'contact_id' => $contact_id,
     'location_type_id' => $loc_type_id,
     'is_primary' => 1,
@@ -1770,7 +1775,7 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
     'fix_address' => isset($msg['fix_address']) ? $msg['fix_address'] : FALSE,
     'is_billing' => 1,
     'version' => 3,
-  );
+  ];
 
   if (!empty($msg['state_province'])) {
     $address_params['state_province'] = $msg['state_province'];
@@ -1830,7 +1835,7 @@ function wmf_civicrm_get_country_id($raw) {
 
   watchdog('wmf_civicrm',
     "Cannot find country: [%txt]",
-    array('%txt' => $raw),
+    ['%txt' => $raw],
     WATCHDOG_NOTICE
   );
   return FALSE;
@@ -1900,7 +1905,7 @@ function wmf_civicrm_normalize_msg($msg) {
   //defaults: Keys that aren't actually required, but which will cause some portion of the code to complain
   //if they don't exist (even if they're blank).
   // FIXME: don't use defaults.  Access msg properties using a functional interface.
-  $defaults = array(
+  $defaults = [
     // FIXME: Default to now. If you can think of a better thing to do in
     // the name of historical exchange rates.  Searching ts and
     // source_enqueued_time is a good start.
@@ -1926,12 +1931,12 @@ function wmf_civicrm_normalize_msg($msg) {
     'contribution_recur_id' => NULL,
     'effort_id' => NULL,
     'subscr_id' => NULL,
-    'contact_groups' => array(),
-    'contact_tags' => array(),
-    'contribution_tags' => array(),
+    'contact_groups' => [],
+    'contact_tags' => [],
+    'contribution_tags' => [],
     'soft_credit_to' => NULL,
     'soft_credit_to_id' => NULL,
-  );
+  ];
   $msg = $msg + $defaults;
 
   wmf_civicrm_removeKnownBadStringsFromAddressFields($msg);
@@ -1984,7 +1989,7 @@ function wmf_civicrm_normalize_msg($msg) {
       || (array_key_exists('payment_method', $msg) && strtoupper($msg['payment_method']) != "CHECK")
     ) {
 
-      watchdog('wmf_civicrm', 'Contribution missing contribution_tracking_id', array(), WATCHDOG_DEBUG);
+      watchdog('wmf_civicrm', 'Contribution missing contribution_tracking_id', [], WATCHDOG_DEBUG);
       //@fixme: For the regular transactions, this has been moved to the staging function. This needs to happen in recurring also, and then it can be removed here.
       $anonymous = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == TRUE && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
       $optout = (array_key_exists('optout', $msg) && $msg['optout'] == TRUE && strtoupper($msg['optout']) != "FALSE") ? 1 : 0;
@@ -1993,14 +1998,14 @@ function wmf_civicrm_normalize_msg($msg) {
       $medium = isset($msg['utm_medium']) ? $msg['utm_medium'] : 'civicrm';
       $campaign = isset($msg['utm_campaign']) ? $msg['utm_campaign'] : NULL;
 
-      $tracking = array(
+      $tracking = [
         'utm_source' => $source,
         'utm_medium' => $medium,
         'utm_campaign' => $campaign,
         'optout' => $optout,
         'anonymous' => $anonymous,
         'ts' => wmf_common_date_unix_to_sql($msg['date']),
-      );
+      ];
       if (
         !empty($msg['country']) &&
         array_search($msg['country'], CRM_Core_PseudoConstant::countryIsoCode()) !== FALSE
@@ -2008,7 +2013,7 @@ function wmf_civicrm_normalize_msg($msg) {
         $tracking['country'] = $msg['country'];
       }
       $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking($tracking);
-      watchdog('wmf_civicrm', 'Newly inserted contribution tracking id: @id', array('@id' => $contribution_tracking_id), WATCHDOG_DEBUG);
+      watchdog('wmf_civicrm', 'Newly inserted contribution tracking id: @id', ['@id' => $contribution_tracking_id], WATCHDOG_DEBUG);
       $msg['contribution_tracking_id'] = $contribution_tracking_id;
     }
   }
@@ -2039,10 +2044,10 @@ function wmf_civicrm_normalize_msg($msg) {
         $msg['thankyou_date'] = $unix_time;
       }
       else {
-        watchdog('wmf_civicrm', 'Could not parse thankyou date: @date from @id', array(
+        watchdog('wmf_civicrm', 'Could not parse thankyou date: @date from @id', [
           '@date' => $msg['thankyou_date'],
           '@id' => $msg['contribution_tracking_id'],
-        ), WATCHDOG_DEBUG);
+        ], WATCHDOG_DEBUG);
         unset($msg['thankyou_date']);
       }
     }
@@ -2089,11 +2094,11 @@ function wmf_civicrm_normalize_msg($msg) {
   $msg['anonymous'] = ((!empty($msg['anonymous']) && strtoupper($msg['anonymous']) !== "FALSE") ? 1 : 0);
   $msg['optout'] = ((empty($msg['optout']) || $msg['optout'] === 0 || $msg['optout'] === '0' || strtoupper($msg['optout']) === "FALSE") ? 0 : 1);
 
-  $list_fields = array(
+  $list_fields = [
     'contact_groups',
     'contact_tags',
     'contribution_tags',
-  );
+  ];
   foreach ($list_fields as $field) {
     if (is_string($msg[$field])) {
       $msg[$field] = preg_split('/[\s,]+/', $msg[$field], NULL, PREG_SPLIT_NO_EMPTY);
@@ -2123,8 +2128,8 @@ function wmf_civicrm_removeKnownBadStringsFromAddressFields(&$msg) {
     $msg['street_address'] = '';
   }
 
-  $invalidAddressStrings = array('0', 'City/Town', 'NoCity', 'City');
-  foreach (array('postal_code', 'city') as $fieldName) {
+  $invalidAddressStrings = ['0', 'City/Town', 'NoCity', 'City'];
+  foreach (['postal_code', 'city'] as $fieldName) {
     if (in_array($msg[$fieldName], $invalidAddressStrings)) {
       $msg[$fieldName] = '';
     }
@@ -2165,10 +2170,10 @@ function wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id
 		ON cc.id = cx.entity_id
 		WHERE gateway = %1 AND gateway_txn_id = %2";
 
-  $dao = CRM_Core_DAO::executeQuery($query, array(
-    1 => array($gateway, 'String'),
-    2 => array($gateway_txn_id, 'String'),
-  ));
+  $dao = CRM_Core_DAO::executeQuery($query, [
+    1 => [$gateway, 'String'],
+    2 => [$gateway_txn_id, 'String'],
+  ]);
   return wmf_civicrm_dao_to_list($dao);
 }
 
@@ -2186,9 +2191,9 @@ function wmf_civicrm_get_contributions_from_contribution_id($contribution_id) {
 		ON cc.id = cx.entity_id
 		WHERE cc.id = %1";
 
-  $dao = CRM_Core_DAO::executeQuery($query, array(
-    1 => array($contribution_id, 'Integer'),
-  ));
+  $dao = CRM_Core_DAO::executeQuery($query, [
+    1 => [$contribution_id, 'Integer'],
+  ]);
   return wmf_civicrm_dao_to_list($dao);
 }
 
@@ -2224,10 +2229,10 @@ function wmf_civicrm_is_refunded_by_gateway_id($gateway, $gateway_txn_id) {
  */
 function wmf_civicrm_is_refunded_by_contribution_id($contribution_id) {
   try {
-    $statusId = civicrm_api3('Contribution', 'getvalue', array(
+    $statusId = civicrm_api3('Contribution', 'getvalue', [
       'id' => $contribution_id,
       'return' => 'contribution_status_id',
-    ));
+    ]);
   }
   catch (CiviCRM_API3_Exception $e) {
     return FALSE;
@@ -2242,15 +2247,15 @@ function wmf_civicrm_boost_performance() {
 }
 
 function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
-  watchdog('wmf_civicrm', "Preventing thank-you for contribution {$contribution_id} because: {$reason}", array(), WATCHDOG_INFO);
+  watchdog('wmf_civicrm', "Preventing thank-you for contribution {$contribution_id} because: {$reason}", [], WATCHDOG_INFO);
 
   try {
-    wmf_civicrm_set_custom_field_values($contribution_id, array(
+    wmf_civicrm_set_custom_field_values($contribution_id, [
       'no_thank_you' => $reason,
-    ));
+    ]);
   }
   catch (WmfException $ex) {
-    watchdog('wmf_civicrm', "Updating with no-thank-you failed with details: {$ex->getMessage()}", array(), WATCHDOG_ERROR);
+    watchdog('wmf_civicrm', "Updating with no-thank-you failed with details: {$ex->getMessage()}", [], WATCHDOG_ERROR);
   }
 }
 
@@ -2334,17 +2339,17 @@ function wmf_civicrm_mark_refund(
   $amount_scammed = 0;
 
   try {
-    $contribution = civicrm_api3('Contribution', 'getsingle', array(
+    $contribution = civicrm_api3('Contribution', 'getsingle', [
       'id' => $contribution_id,
-      'return' => array(
+      'return' => [
         'total_amount',
         'trxn_id',
         'contribution_source',
         'contact_id',
         'receive_date',
         'contribution_status_id',
-      ),
-    ));
+      ],
+    ]);
   }
   catch (CiviCRM_API3_Exception $e) {
     throw new WmfException(
@@ -2378,26 +2383,26 @@ function wmf_civicrm_mark_refund(
   }
 
   // TODO: Normalize earlier.
-  $validTypes = array(
+  $validTypes = [
     'refund' => 'Refunded',
     'chargeback' => 'Chargeback',
     'cancel' => 'Cancelled',
     'reversal' => 'Chargeback', // from the audit processor
     'admin_fraud_reversal' => 'Chargeback', // raw IPN code
-  );
+  ];
 
   if (!array_key_exists($refund_type, $validTypes)) {
     throw new WmfException(WmfException::IMPORT_CONTRIB, "Unknown refund type '{$refund_type}'");
   }
 
   try {
-    civicrm_api3('Contribution', 'create', array(
+    civicrm_api3('Contribution', 'create', [
       'id' => $contribution_id,
       'debug' => 1,
       'contribution_status_id' => $validTypes[$refund_type],
       'cancel_date' => wmf_common_date_unix_to_civicrm($refund_date),
       'refund_trxn_id' => $refund_gateway_txn_id,
-    ));
+    ]);
   }
   catch (CiviCRM_API3_Exception $e) {
     throw new WmfException(
@@ -2419,7 +2424,7 @@ function wmf_civicrm_mark_refund(
       $refund_unique_id = $transaction->get_unique_id();
 
       try {
-        civicrm_api3('Contribution', 'create', array(
+        civicrm_api3('Contribution', 'create', [
           'total_amount' => round(
             exchange_rate_convert(
               $refund_currency,
@@ -2436,7 +2441,7 @@ function wmf_civicrm_mark_refund(
           'debug' => 1,
           wmf_civicrm_get_custom_field_name('parent_contribution_id') => $contribution_id,
           wmf_civicrm_get_custom_field_name('no_thank_you') => 1,
-        ));
+        ]);
       }
       catch (CiviCRM_API3_Exception $e) {
         throw new WmfException(
@@ -2450,11 +2455,11 @@ function wmf_civicrm_mark_refund(
 
   if ($amount_scammed > 0.02 * $original_amount) {
     wmf_common_failmail('wmf_civicrm', "Refund amount mismatch for : $contribution_id, difference is {$amount_scammed}. See "
-      . CRM_Utils_System::url('civicrm/contact/view/contribution', array(
+      . CRM_Utils_System::url('civicrm/contact/view/contribution', [
         'reset' => 1,
         'id' => $contribution_id,
         'action' => 'view',
-      ), TRUE));
+      ], TRUE));
   }
 
   return $contribution_id;
@@ -2476,12 +2481,12 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
 
       watchdog("civicrm_merge_debug", "Deduping contacts $mainId and $otherId");
       $refs['migration_info']['context'] = $type;
-      CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(
-        1 => array(
+      CRM_Core_DAO::executeQuery('SET @uniqueID = %1', [
+        1 => [
           uniqid() . CRM_Utils_String::createRandom(CRM_Utils_String::ALPHANUMERIC, 4),
           'String',
-        ),
-      ));
+        ],
+      ]);
       if (isset($refs['fields_in_conflict'])) {
         if (array_key_exists('move_' . wmf_civicrm_get_custom_field_name('do_not_solicit'), $refs['fields_in_conflict'])
         ) {
@@ -2499,8 +2504,7 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
         if (
           isset($refs['migration_info']['rows']['move_' . $latestDonationField])
           && strtotime($refs['migration_info']['rows']['move_' . $latestDonationField]['other']) >
-             strtotime( $refs['migration_info']['rows']['move_' . $latestDonationField]['main']))
-        {
+          strtotime($refs['migration_info']['rows']['move_' . $latestDonationField]['main'])) {
           $overwriteLatestContributionFields = TRUE;
         }
         $latestDonationFields = [
@@ -2556,8 +2560,8 @@ function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, 
   if (_wmf_civicrm_merge_resolve_preferred_language_conflict(
     $dbFieldName,
     $refs['migration_info'][$moveField],
-     // The $refs['migration_info']['rows']['move_preferred_language'] values
-     // are blank for non-valid values (like we use). This has test cover though :-)
+    // The $refs['migration_info']['rows']['move_preferred_language'] values
+    // are blank for non-valid values (like we use). This has test cover though :-)
     $refs['migration_info']['other_details'][$dbFieldName],
     $refs['migration_info']['main_details'][$dbFieldName],
     $mainId,
@@ -2627,11 +2631,11 @@ function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, 
  * @return bool
  */
 function _wmf_civicrm_merge_resolve_casing_conflict($fieldName, &$moveFieldValue, &$valueToKeep, &$valueToOverwrite) {
-  $fieldsToResolveCasingFor = array(
+  $fieldsToResolveCasingFor = [
     'last_name',
     'first_name',
     'organization_name',
-  );
+  ];
   if (!in_array(str_replace('move_', '', $fieldName), $fieldsToResolveCasingFor)) {
     return FALSE;
   }
@@ -2678,7 +2682,7 @@ function _wmf_civicrm_merge_resolve_casing_conflict($fieldName, &$moveFieldValue
  * @return bool
  */
 function _wmf_civicrm_merge_resolve_diacritic_conflict($fieldName, &$moveFieldValue, &$valueToKeep, &$valueToOverwrite) {
-  $fieldsToResolve = array('last_name', 'first_name');
+  $fieldsToResolve = ['last_name', 'first_name'];
   if (!in_array(str_replace('move_', '', $fieldName), $fieldsToResolve)) {
     return FALSE;
   }
@@ -2729,9 +2733,9 @@ function _wmf_civicrm_merge_is_address_conflict_resolvable($valueToKeep, $valueT
   if (!stristr($valueToKeep, $valueToOverwrite) && !stristr($valueToOverwrite, $valueToKeep)) {
     return FALSE;
   }
-  static $countries = array();
+  static $countries = [];
   if (empty($countries)) {
-    $countries = civicrm_api3('Address', 'getoptions', array('field' => 'country_id'));
+    $countries = civicrm_api3('Address', 'getoptions', ['field' => 'country_id']);
     $countries = $countries['values'];
   }
   if ((in_array($valueToOverwrite, $countries) || in_array($valueToKeep, $countries))
@@ -2757,11 +2761,11 @@ function _wmf_civicrm_merge_is_address_conflict_resolvable($valueToKeep, $valueT
 function _wmf_civicrm_merge_is_only_extra_postal_code_suffix($valueToKeep, $valueToOverwrite, $blockToKeep, $blockToOverwrite) {
   $fieldsInBlockToKeepOnly = array_diff_key($blockToKeep, $blockToOverwrite);
   $fieldsInBlockToOverwriteOnly = array_diff_key($blockToOverwrite, $blockToKeep);
-  if (array_keys($fieldsInBlockToKeepOnly) === array('postal_code_suffix')
+  if (array_keys($fieldsInBlockToKeepOnly) === ['postal_code_suffix']
     && str_replace('-' . $blockToKeep['postal_code_suffix'], '', $valueToKeep) === $valueToOverwrite) {
     return TRUE;
   }
-  if (array_keys($fieldsInBlockToOverwriteOnly) === array('postal_code_suffix')
+  if (array_keys($fieldsInBlockToOverwriteOnly) === ['postal_code_suffix']
     && str_replace('-' . $blockToOverwrite['postal_code_suffix'], '', $valueToOverwrite) === $valueToKeep
   ) {
     return TRUE;
@@ -2914,14 +2918,14 @@ function _wmf_civicrm_merge_resolve_preferred_language_conflict($fieldName, &$mo
   if (substr($valueToKeep, 0, 2) != substr($valueToOverwrite, 0, 2)) {
     $lastDonor = civicrm_api3('Contribution', 'get', [
       'return' => 'contact_id',
-      'contact_id' => array(
-        'IN' => array(
+      'contact_id' => [
+        'IN' => [
           $contactToKeepID,
           $contactToDeleteID,
-        ),
-      ),
+        ],
+      ],
       'sequential' => 1,
-      'options' => array('sort' => 'receive_date DESC', 'limit' => 1),
+      'options' => ['sort' => 'receive_date DESC', 'limit' => 1],
     ])['values'];
     if (empty($lastDonor[0])) {
       return TRUE;
@@ -3030,11 +3034,11 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
   if ($migrationInfo['context'] == 'form') {
     return;
   }
-  $lastDonor = civicrm_api3('Contribution', 'get', array(
+  $lastDonor = civicrm_api3('Contribution', 'get', [
     'return' => 'contact_id',
-    'contact_id' => array('IN' => array($mainId, $otherId)),
-    'options' => array('sort' => 'receive_date DESC', 'limit' => 1),
-  ));
+    'contact_id' => ['IN' => [$mainId, $otherId]],
+    'options' => ['sort' => 'receive_date DESC', 'limit' => 1],
+  ]);
   if (!$lastDonor['count']) {
     return;
   }
@@ -3057,7 +3061,7 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
     $higherPriorityLocationBlocks = _wmf_civicrm_clean_duplicate_location_from_merge_blocks($migrationInfo['main_details']['location_blocks']);
     $lowerPriorityLocationBlocks = $migrationInfo['other_details']['location_blocks'];
   }
-  $primaryAddressCandidates = array();
+  $primaryAddressCandidates = [];
 
   foreach ($higherPriorityLocationBlocks as $blockType => $blocks) {
     foreach ($blocks as $blockIndex => $block) {
@@ -3147,7 +3151,7 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
  */
 function _wmf_civicrm_clean_duplicate_location_from_merge_blocks($blocks) {
   foreach ($blocks as $entity => $locationBlocks) {
-    $locations = array();
+    $locations = [];
     $primaryID = NULL;
     foreach ($locationBlocks as $index => $locationBlock) {
       $locations[$locationBlock['location_type_id']][$index] = $locationBlock['id'];
@@ -3198,7 +3202,7 @@ function _wmf_civicrm_add_result_fields_to_migration_info($migrationInfo, $resul
  */
 function wmf_civicrm_get_calculated_fields() {
   $fieldNames = wmf_get_calculated_field_names();
-  $customFields = array();
+  $customFields = [];
   foreach ($fieldNames as $fieldName) {
     $customFields[] = wmf_civicrm_get_custom_field_name($fieldName);
   }
@@ -3217,13 +3221,14 @@ function wmf_get_calculated_field_names() {
 
 /**
  * Implementation of hook_civicrm_pre
+ *
  * @param $op
  * @param $type
  * @param $id
  * @param array $entity
  */
 function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
-  switch($type) {
+  switch ($type) {
     case 'Contribution':
       wmf_civicrm_civicrm_pre_Contribution($op, $id, $entity);
       break;
@@ -3255,7 +3260,7 @@ function wmf_civicrm_civicrm_pre_Contribution($op, $id, &$contribution) {
           array_keys($extra), 'contribution_extra'
         );
         $mapped = [];
-        foreach($extra as $key => $value) {
+        foreach ($extra as $key => $value) {
           $mapped[$map[$key]] = $value;
         }
         $contribution += $mapped;
@@ -3267,7 +3272,8 @@ function wmf_civicrm_civicrm_pre_Contribution($op, $id, &$contribution) {
         _civicrm_api3_custom_format_params($mapped, $formatted, 'Contribution');
         if (isset($contribution['custom'])) {
           $contribution['custom'] += $formatted['custom'];
-        } else {
+        }
+        else {
           $contribution['custom'] = $formatted['custom'];
         }
       }
@@ -3316,7 +3322,8 @@ function wmf_civicrm_get_wmf_contribution_extra($contribution) {
       $transaction = WmfTransaction::from_unique_id($contribution['trxn_id']);
       $extra['gateway'] = strtolower($transaction->gateway);
       $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
-    } catch (WmfException $ex) {
+    }
+    catch (WmfException $ex) {
       watchdog('wmf_civicrm', "Failed to parse trxn_id: {$contribution['trxn_id']}, " . $ex->getMessage());
     }
   }
@@ -3353,6 +3360,7 @@ function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_
   return [];
 
 }
+
 /**
  * Get the details of the last donation received if it differs from the current one.
  *
@@ -3418,7 +3426,7 @@ function wmf_civicrm_getLastDonationParams(&$contribution) {
       wmf_civicrm_get_custom_field_name('original_currency'),
       wmf_civicrm_get_custom_field_name('original_amount'),
       'total_amount',
-    ]
+    ],
   ]);
   if (!$existing['count']) {
     return $params;
@@ -3452,7 +3460,7 @@ function _wmf_civicrm_get_contact_last_donation_data(&$contribution) {
       wmf_civicrm_get_custom_field_name('last_donation_amount'),
       wmf_civicrm_get_custom_field_name('last_donation_date'),
       wmf_civicrm_get_custom_field_name('last_donation_usd'),
-    ]
+    ],
   ]);
   return [
     'amount' => CRM_Utils_Array::value(wmf_civicrm_get_custom_field_name('last_donation_amount'), $contactExistingCustomData),
@@ -3468,21 +3476,21 @@ function _wmf_civicrm_get_contact_last_donation_data(&$contribution) {
  * @param array $logTableSpec
  */
 function wmf_civicrm_civicrm_alterLogTables(&$logTableSpec) {
-  $logTableSpec['wmf_contribution_extra'] = array();
+  $logTableSpec['wmf_contribution_extra'] = [];
   $contactReferences = CRM_Dedupe_Merger::cidRefs();
   foreach (array_keys($logTableSpec) as $tableName) {
-    $contactIndexes = array();
+    $contactIndexes = [];
     $logTableSpec[$tableName]['engine'] = 'INNODB';
     $logTableSpec[$tableName]['engine_config'] = 'ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4';
-    $contactRefsForTable = CRM_Utils_Array::value($tableName, $contactReferences, array());
+    $contactRefsForTable = CRM_Utils_Array::value($tableName, $contactReferences, []);
     foreach ($contactRefsForTable as $fieldName) {
       $contactIndexes['index_' . $fieldName] = $fieldName;
     }
-    $logTableSpec[$tableName]['indexes'] = array_merge(array(
+    $logTableSpec[$tableName]['indexes'] = array_merge([
       'index_id' => 'id',
       'index_log_conn_id' => 'log_conn_id',
       'index_log_date' => 'log_date',
-    ), $contactIndexes);
+    ], $contactIndexes);
   }
 
   // Where CiviCRM data entry / our queues are not the primary source (and there is a log of data)
@@ -3523,13 +3531,13 @@ function wmf_civicrm_most_recent_completed_contribution_date($contact_id) {
  * @return string $contribution_date
  */
 function wmf_civicrm_get_single_contribution_for_contact_by_date($contact_id, $contribution_date) {
-  return civicrm_api3('Contribution', 'getsingle', array(
+  return civicrm_api3('Contribution', 'getsingle', [
     'contact_id' => $contact_id,
     'receive_date' => $contribution_date,
     'contribution_status_id' => 'Completed',
-    'total_amount' => array('>' => 0),
-    'return' => array('receive_date', 'total_amount', 'source'),
-  ));
+    'total_amount' => ['>' => 0],
+    'return' => ['receive_date', 'total_amount', 'source'],
+  ]);
 }
 
 /**
@@ -3552,7 +3560,7 @@ function wmf_civicrm_dao_to_list($dao) {
   if (PEAR::isError($dao)) {
     throw new Exception($dao->getMessage());
   }
-  $result = array();
+  $result = [];
   while ($dao->fetch()) {
     $result[] = $dao->toArray();
   }
@@ -3565,6 +3573,11 @@ function wmf_civicrm_dao_to_list($dao) {
 
 /**
  * Implements hook_civicrm_buildForm
+ *
+ * @param string $formName
+ * @param CRM_Core_Form $form
+ *
+ * @throws \WmfException
  */
 function wmf_civicrm_civicrm_buildForm($formName, &$form) {
   switch ($formName) {
@@ -3575,9 +3588,7 @@ function wmf_civicrm_civicrm_buildForm($formName, &$form) {
           'no_thank_you', $form->_elementIndex
         );
         if ($no_thank_you_reason_field_name) {
-          $form->setDefaults(array(
-            $no_thank_you_reason_field_name => 'Manually entered',
-          ));
+          $form->setDefaults([$no_thank_you_reason_field_name => 'Manually entered']);
         }
       }
       break;
@@ -3590,9 +3601,9 @@ function wmf_civicrm_civicrm_buildForm($formName, &$form) {
       // Default to the Engage contribution type, if this is a new contribution.
       if ($form->_action & CRM_Core_Action::ADD) {
         $engage_contribution_type_id = wmf_civicrm_get_civi_id('contribution_type_id', 'Engage');
-        $form->setDefaults(array(
+        $form->setDefaults([
           'financial_type_id' => $engage_contribution_type_id,
-        ));
+        ]);
         $form->assign('customDataSubType', $engage_contribution_type_id);
       }
 
@@ -3617,7 +3628,7 @@ function wmf_civicrm_civicrm_buildForm($formName, &$form) {
  * @return array of any errors in the form
  */
 function wmf_civicrm_validate_contribution($fields, $form) {
-  $errors = array();
+  $errors = [];
 
   // Only run on add or update
   if (!($form->_action & (CRM_Core_Action::UPDATE | CRM_Core_Action::ADD))) {
@@ -3753,12 +3764,12 @@ ORDER BY c.id ASC
 LIMIT %4";
   $last_id = 0;
   while (TRUE) {
-    $dao = CRM_Core_DAO::executeQuery($query, array(
-      1 => array($start->format('Ymd'), 'Date'),
-      2 => array($end->format('Ymd'), 'Date'),
-      3 => array($last_id, 'Integer'),
-      4 => array($batch_size, 'Integer'),
-    ));
+    $dao = CRM_Core_DAO::executeQuery($query, [
+      1 => [$start->format('Ymd'), 'Date'],
+      2 => [$end->format('Ymd'), 'Date'],
+      3 => [$last_id, 'Integer'],
+      4 => [$batch_size, 'Integer'],
+    ]);
     $batch = wmf_civicrm_dao_to_list($dao);
     if (empty($batch)) {
       break;
@@ -3796,12 +3807,12 @@ LIMIT %4";
       $recalculated_fee = round($contribution['fee_amount'] / $rate_used * $correct_rate, 2);
       $recalculated_net = $recalculated_total - $recalculated_fee;
 
-      $params = array(
+      $params = [
         'id' => $contribution['id'],
         'total_amount' => $recalculated_total,
         'fee_amount' => $recalculated_fee,
         'net_amount' => $recalculated_net,
-      );
+      ];
 
       watchdog(
         'recalculate_contributions',
@@ -3835,7 +3846,7 @@ LIMIT %4";
  */
 function wmf_civicrm_get_options($entity, $field) {
   if (!isset(\Civi::$statics['wmf_civicrm'][$entity][$field])) {
-    $options = civicrm_api3($entity, 'getoptions', array('field' => $field));
+    $options = civicrm_api3($entity, 'getoptions', ['field' => $field]);
     \Civi::$statics['wmf_civicrm'][$entity][$field] = $options['values'];
   }
   return \Civi::$statics['wmf_civicrm'][$entity][$field];
@@ -3863,11 +3874,11 @@ function wmf_civicrm_get_option($entity, $field, $key) {
  */
 function wmf_civicrm_fill_missing_appeal_data($startDate) {
   civicrm_initialize();
-  $customGroup = civicrm_api3('CustomGroup', 'getsingle', array('name' => 'Gift_Data'));
-  $optionGroupID = civicrm_api3('OptionGroup', 'getvalue', array(
+  $customGroup = civicrm_api3('CustomGroup', 'getsingle', ['name' => 'Gift_Data']);
+  $optionGroupID = civicrm_api3('OptionGroup', 'getvalue', [
     'name' => wmf_civicrm_get_direct_mail_field_option_name(),
     'return' => 'id',
-  ));
+  ]);
   global $databases;
   $drupalDbName = $databases['default']['default']['database'];
   CRM_Core_DAO::executeQuery("
@@ -4014,7 +4025,7 @@ function _wmf_civicrm_is_delete_location_in_favour_of_higher_priority_one($block
  * @return bool
  */
 function _wmf_civicrm_is_this_address_better($mainAddress, $comparisonAddress) {
-  $keysToIgnore = array(
+  $keysToIgnore = [
     'id',
     'is_primary',
     'is_billing',
@@ -4024,7 +4035,7 @@ function _wmf_civicrm_is_this_address_better($mainAddress, $comparisonAddress) {
     'hold_date',
     'display',
     'location_type_id',
-  );
+  ];
   $comparisonAddress = array_diff_key($comparisonAddress, array_flip($keysToIgnore));
   $mainAddress = array_diff_key($mainAddress, array_flip($keysToIgnore));
   if ($mainAddress === $comparisonAddress) {
@@ -4043,7 +4054,7 @@ function _wmf_civicrm_is_this_address_better($mainAddress, $comparisonAddress) {
   // If the only difference that main address has postal_code_suffix &
   // the other doesn't? This is a common faux-conflict.
   $keysInMainAddressOnly = array_diff_key($mainAddress, $comparisonAddress);
-  if (array_keys($keysInMainAddressOnly) === array('postal_code_suffix')) {
+  if (array_keys($keysInMainAddressOnly) === ['postal_code_suffix']) {
     unset($mainAddress['postal_code_suffix']);
     if ($mainAddress === $comparisonAddress) {
       return TRUE;
@@ -4072,7 +4083,7 @@ function wmf_civicrm_parse_watchdog_array($logLine) {
  * Flush statically cached option values.
  */
 function wmf_civicrm_flush_cached_options() {
-  \Civi::$statics['wmf_civicrm'] = array();
+  \Civi::$statics['wmf_civicrm'] = [];
 }
 
 /**
@@ -4089,13 +4100,13 @@ function wmf_civicrm_ensure_correct_geocoder_enabled() {
     if ($geocoder['name'] !== 'us_zip_geocoder') {
       civicrm_api3('Geocoder', 'create', [
         'id' => $geocoder['id'],
-        'is_active' => 0
+        'is_active' => 0,
       ]);
     }
     else {
       civicrm_api3('Geocoder', 'create', [
         'id' => $geocoder['id'],
-        'is_active' => 1
+        'is_active' => 1,
       ]);
     }
   }
@@ -4131,7 +4142,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       throw new CRM_Core_Exception('No endowment gift type');
     }
     for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
-      $nextYear = $year +1;
+      $nextYear = $year + 1;
       $fields[] = "total_{$year}_{$nextYear}";
       $aggregateFieldStrings[] = "MAX(total_{$year}_{$nextYear}) as total_{$year}_{$nextYear}";
       $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as total_{$year}_{$nextYear}";
@@ -4291,7 +4302,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     $insertSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' THEN ' . $sql . ' END IF; ';
     $updateSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN ' . $sql . ' END IF; ';
     $requiredClausesForOldClause = str_replace('NEW.', 'OLD.', implode(' AND ', $requiredClauses));
-    $oldSql =  str_replace('NEW.', 'OLD.', $sql);
+    $oldSql = str_replace('NEW.', 'OLD.', $sql);
     $updateOldSQL = ' IF ' . $requiredClausesForOldClause
       . ' AND (NEW.contact_id <> OLD.contact_id) THEN '
       . $oldSql . ' END IF; ';
@@ -4306,25 +4317,25 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       'event' => 'INSERT',
       'sql' => $insertSQL,
     ];
-    $info[] = array(
+    $info[] = [
       'table' => 'civicrm_contribution',
       'when' => 'AFTER',
       'event' => 'UPDATE',
       'sql' => $updateSQL,
-    );
-    $info[] = array(
+    ];
+    $info[] = [
       'table' => 'civicrm_contribution',
       'when' => 'AFTER',
       'event' => 'UPDATE',
       'sql' => $updateOldSQL,
-    );
+    ];
     // For delete, we reference OLD.field instead of NEW.field
-    $info[] = array(
+    $info[] = [
       'table' => 'civicrm_contribution',
       'when' => 'AFTER',
       'event' => 'DELETE',
       'sql' => $deleteSql,
-    );
+    ];
   }
 
 }
@@ -4360,13 +4371,13 @@ function wmf_civicrm_ensure_payment_processor_exists($typeName, $name = NULL) {
     $name = $typeName;
   }
   $existing = civicrm_api3(
-    'PaymentProcessor', 'get', array('name' => $name)
+    'PaymentProcessor', 'get', ['name' => $name]
   );
   if ($existing['values']) {
     return;
   }
   $typeRecord = civicrm_api3(
-    'PaymentProcessorType', 'getSingle', array('name' => $typeName)
+    'PaymentProcessorType', 'getSingle', ['name' => $typeName]
   );
   require_once('update_7070.php');
   $financialAccountId = _wmf_civicrm_update_7070_helper_get_default_financial_account_id();
@@ -4391,16 +4402,16 @@ function wmf_civicrm_ensure_payment_processor_exists($typeName, $name = NULL) {
  * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_get_tag_names($entity_id, $entity_table = 'civicrm_contribution') {
-  $entityTags = civicrm_api3('EntityTag', 'get', array(
+  $entityTags = civicrm_api3('EntityTag', 'get', [
     'entity_table' => $entity_table,
-    'entity_id' => $entity_id
-  ));
+    'entity_id' => $entity_id,
+  ]);
   if (!isset(\Civi::$statics['wmf_civicrm']['tags'])) {
     \Civi::$statics['wmf_civicrm']['tags'] = civicrm_api3(
-      'EntityTag', 'getoptions', array( 'field' => 'tag_id' )
+      'EntityTag', 'getoptions', ['field' => 'tag_id']
     )['values'];
   }
-  $tag_names = array();
+  $tag_names = [];
   foreach ($entityTags['values'] as $id => $entityTag) {
     $tag_names[] = \Civi::$statics['wmf_civicrm']['tags'][$entityTag['tag_id']];
   }
@@ -4501,7 +4512,7 @@ function _wmf_civicrm_get_wmf_donor_fields() {
       'default_value' => 0,
       'is_view' => 1,
     ],
-   'first_donation_usd' => [
+    'first_donation_usd' => [
       'name' => 'first_donation_usd',
       'column_name' => 'first_donation_usd',
       'label' => ts('First Donation Amount (USD)'),
