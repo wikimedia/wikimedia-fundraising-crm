@@ -265,6 +265,9 @@ function thank_you_send_test($params) {
  * Send a TY letter, and do bookkeeping on the Civi records
  * TODO: rewrite the civi api stuff to work like other code
  *
+ * @param int $contribution_id
+ *
+ * @return bool
  * @throws \CiviCRM_API3_Exception
  * @throws \WmfException
  */
@@ -523,7 +526,7 @@ function thank_you_send_mail($params) {
 
   try {
 
-    watchdog("thank_you", "Sending ty email to: " . $email['to_address'], [], WATCHDOG_INFO);
+    watchdog('thank_you', "Sending ty email to: " . $email['to_address'], [], WATCHDOG_INFO);
 
     $email_success = $mailer->send(
       $email,
@@ -750,6 +753,9 @@ function thank_you_settings_form() {
   return system_settings_form($form);
 }
 
+/**
+ * @throws \CiviCRM_API3_Exception
+ */
 function thank_you_batch_process() {
   civicrm_initialize();
   // If available, use the time the drush script started as the start time
@@ -788,7 +794,7 @@ function thank_you_batch_process() {
     variable_set('thank_you_days', $days);
   }
 
-  watchdog("thank_you", "Attempting to send $batch thank you mails for contributions from the last $days days.", [], WATCHDOG_INFO);
+  watchdog('thank_you', "Attempting to send $batch thank you mails for contributions from the last $days days.", [], WATCHDOG_INFO);
 
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push('civicrm');
@@ -821,7 +827,7 @@ EOT;
       break;
     }
     watchdog(
-      "thank_you",
+      'thank_you',
       "Attempting to send thank you mail for contribution ID [{$contribution->id}], trxn_id [{$contribution->trxn_id}]",
       [],
       WATCHDOG_INFO
