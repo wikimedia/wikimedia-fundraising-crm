@@ -72,7 +72,10 @@
         <directory>sites/default/civicrm/extensions/org.wikimedia.datachecks/tests/phpunit</directory>
       </testsuite>
       <testsuite name="email_amender_tests">
-        <directory>sites/default/civicrm/extensions/Email-Amender/tests/phpunit</directory>
+      <directory>sites/default/civicrm/extensions/Email-Amender/tests/phpunit</directory>
+    </testsuite>
+      <testsuite name="thank_you_tests">
+        <directory>sites/default/civicrm/extensions/wmf-thankyou/tests/phpunit</directory>
       </testsuite>
     </testsuites>
 </phpunit>

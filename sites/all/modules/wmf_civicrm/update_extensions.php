@@ -53,5 +53,6 @@ function wmf_install_get_installed_extensions() {
     'org.civicrm.contactlayout',
     'org.wikimedia.thethe',
     'uk.org.futurefirst.networks.emailamender',
+    'wmf-thankyou',
   ];
 }
