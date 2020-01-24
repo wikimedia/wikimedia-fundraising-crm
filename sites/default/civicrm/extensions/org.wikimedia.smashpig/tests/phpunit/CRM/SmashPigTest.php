@@ -602,7 +602,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'smashpig_recurring_use_queue', '0'
     );
     \Civi::settings()->set(
-      'smashpig_recurring_catch_up_days', '1'
+      'smashpig_recurring_catch_up_days', '30'
     );
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
@@ -690,7 +690,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $params = [
       'id' => $contributionRecur['id'],
       'payment_processor_id' => $this->processorId,
-      'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
+      'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-28  days')),
     ];
     $this->callAPISuccess('ContributionRecur', 'create', $params);
 
