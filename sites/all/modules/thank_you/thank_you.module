@@ -19,7 +19,7 @@ use wmf_communication\Templating;
 const DUMB_BIG_TY_DAYS = 100000;
 
 /**
- * Implements hook_permission
+ * Implements hook_permission().
  */
 function thank_you_permission() {
   return [
@@ -99,13 +99,13 @@ function thank_you_send_test_form() {
   // TODO: add a staging list so that one can test before enabling
   // TODO elsewhere: these locales should be in canonical form
   $langs = [];
-  foreach (glob(__DIR__ . "/templates/html/thank_you.*.html") as $lang) {
+  foreach (glob(__DIR__ . '/templates/html/thank_you.*.html') as $lang) {
     $lang = substr($lang, strrpos($lang, '/') + 1);
     $lang = substr($lang, strpos($lang, '.') + 1);
     $lang = substr($lang, 0, strpos($lang, '.'));
     $langs[$lang] = $lang;
   }
-  $langs["all"] = "- ALL -";
+  $langs['all'] = '- ALL -';
   ksort($langs);
 
   $form['locale'] = [
@@ -243,6 +243,13 @@ function thank_you_get_languages() {
   );
 }
 
+/**
+ * Test thank you.
+ *
+ * @param $params
+ *
+ * @throws \WmfException
+ */
 function thank_you_send_test($params) {
   watchdog('thank_you', "Starting thank_you test send to {$params['recipient_address']} in {$params['locale']}", [], WATCHDOG_INFO);
 
@@ -257,6 +264,12 @@ function thank_you_send_test($params) {
 /**
  * Send a TY letter, and do bookkeeping on the Civi records
  * TODO: rewrite the civi api stuff to work like other code
+ *
+ * @param int $contribution_id
+ *
+ * @return bool
+ * @throws \CiviCRM_API3_Exception
+ * @throws \WmfException
  */
 function thank_you_for_contribution($contribution_id) {
   civicrm_initialize();
@@ -353,13 +366,13 @@ function thank_you_for_contribution($contribution_id) {
 
   $locale = $mailingData['preferred_language'];
   if (!$locale) {
-    watchdog('thank_you', "Donor language unknown.  Defaulting to English...", NULL, WATCHDOG_INFO);
+    watchdog('thank_you', 'Donor language unknown.  Defaulting to English...', NULL, WATCHDOG_INFO);
     $locale = 'en';
   }
   $locale = wmf_common_locale_civi_to_mediawiki($locale);
 
   // Select the email template
-  if ($mailingData['financial_type'] == 'Endowment Gift') {
+  if ($mailingData['financial_type'] === 'Endowment Gift') {
     $template = 'endowment_thank_you';
   }
   else {
@@ -418,9 +431,9 @@ function thank_you_update_ty_date($contribution) {
 
   // We go directly to the database table here to avoid setting off a cascade
   // of line item updates and recalculations.
-  $query = "UPDATE civicrm_contribution
+  $query = 'UPDATE civicrm_contribution
 		SET thankyou_date = %1
-		WHERE id = %2";
+		WHERE id = %2';
 
   try {
     CRM_Core_DAO::executeQuery($query, [
@@ -436,6 +449,12 @@ function thank_you_update_ty_date($contribution) {
 
 /**
  * Just send the letter
+ *
+ * @param array $params
+ *
+ * @return bool
+ * @throws \WmfException
+ * @throws \Exception
  */
 function thank_you_send_mail($params) {
   $require_params = [
@@ -454,7 +473,7 @@ function thank_you_send_mail($params) {
 
   $missing = [];
   foreach ($require_params as $key) {
-    if (!isset($params[$key]) or $params[$key] === '') {
+    if (!isset($params[$key]) || $params[$key] === '') {
       $missing[] = $key;
     }
   }
@@ -507,7 +526,7 @@ function thank_you_send_mail($params) {
 
   try {
 
-    watchdog("thank_you", "Sending ty email to: " . $email['to_address'], [], WATCHDOG_INFO);
+    watchdog('thank_you', "Sending ty email to: " . $email['to_address'], [], WATCHDOG_INFO);
 
     $email_success = $mailer->send(
       $email,
@@ -556,6 +575,8 @@ function thank_you_send_mail($params) {
  * @param string $html HTML source of the thank you email
  *
  * @returns stdClass, 'revision' contains rev no, 'name' contains template name
+ *
+ * @return mixed|null
  *
  * @throws TemplateInfoMissingException if comment is not found
  */
@@ -698,8 +719,8 @@ function thank_you_settings_form() {
     '#title' => t('Unsubscription Confirmation'),
     '#required' => TRUE,
     '#options' => [
-      "false" => t('Require confirmation'),
-      "true" => t('Do not require confirmation'),
+      'false' => t('Require confirmation'),
+      'true' => t('Do not require confirmation'),
     ],
     '#default_value' => variable_get('thank_you_onestep_unsubscribe', 'false'),
   ];
@@ -709,8 +730,8 @@ function thank_you_settings_form() {
     '#title' => t('Track thank you emails to CiviMail'),
     '#required' => TRUE,
     '#options' => [
-      "false" => t('Do not create CiviMail records'),
-      "true" => t('Create CiviMail records'),
+      'false' => t('Do not create CiviMail records'),
+      'true' => t('Create CiviMail records'),
     ],
     '#default_value' => variable_get('thank_you_add_civimail_records', 'false'),
   ];
@@ -732,6 +753,9 @@ function thank_you_settings_form() {
   return system_settings_form($form);
 }
 
+/**
+ * @throws \CiviCRM_API3_Exception
+ */
 function thank_you_batch_process() {
   civicrm_initialize();
   // If available, use the time the drush script started as the start time
@@ -753,11 +777,11 @@ function thank_you_batch_process() {
     return;
   }
   if (!$days) {
-    watchdog("thank_you", "Number of days to send thank you mails not configured", [], WATCHDOG_ERROR);
+    watchdog('thank_you', 'Number of days to send thank you mails not configured', [], WATCHDOG_ERROR);
     return;
   }
   if (!is_numeric($batch)) {
-    watchdog("thank_you", "Thank you mail batch size not configured", [], WATCHDOG_ERROR);
+    watchdog('thank_you', 'Thank you mail batch size not configured', [], WATCHDOG_ERROR);
     return;
   }
 
@@ -770,7 +794,7 @@ function thank_you_batch_process() {
     variable_set('thank_you_days', $days);
   }
 
-  watchdog("thank_you", "Attempting to send $batch thank you mails for contributions from the last $days days.", [], WATCHDOG_INFO);
+  watchdog('thank_you', "Attempting to send $batch thank you mails for contributions from the last $days days.", [], WATCHDOG_INFO);
 
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push('civicrm');
@@ -803,7 +827,7 @@ EOT;
       break;
     }
     watchdog(
-      "thank_you",
+      'thank_you',
       "Attempting to send thank you mail for contribution ID [{$contribution->id}], trxn_id [{$contribution->trxn_id}]",
       [],
       WATCHDOG_INFO
@@ -881,7 +905,7 @@ EOT;
     $ageMetrics
   );
   watchdog(
-    "thank_you",
+    'thank_you',
     "Sent {$metrics['total_thank_you_emails']} thank you emails.",
     [],
     WATCHDOG_INFO
@@ -890,9 +914,12 @@ EOT;
 
 
 /**
- *
+ * Render thank you mails.
  *
  * @param $params array template parameters
+ *
+ * @return array
+ * @throws \Exception
  */
 function thank_you_render($params) {
 
@@ -901,7 +928,7 @@ function thank_you_render($params) {
 
   // For tax reasons, any donation made in the US on Jan 1 UTC should have a timestring in HST.
   // So do 'em all that way.
-  $params['receive_date'] = strftime("%Y-%m-%d", $date - (60 * 60 * 10));
+  $params['receive_date'] = strftime('%Y-%m-%d', $date - (60 * 60 * 10));
 
   $template = new Templating(
     drupal_get_path('module', 'thank_you') . DIRECTORY_SEPARATOR . 'templates',
@@ -919,11 +946,11 @@ function thank_you_render($params) {
 function build_unsub_link($contributionId, $emailAddr, $language) {
   # TODO: transform locale to a MediaWiki language code
   $unsub_params = [
-    "p" => "thankyou",
-    "c" => $contributionId,
-    "e" => $emailAddr,
-    "h" => sha1($contributionId . $emailAddr . WMF_UNSUB_SALT),
-    "uselang" => $language,
+    'p' => 'thankyou',
+    'c' => $contributionId,
+    'e' => $emailAddr,
+    'h' => sha1($contributionId . $emailAddr . WMF_UNSUB_SALT),
+    'uselang' => $language,
   ];
 
   return variable_get('thank_you_unsubscribe_url', '') . '?' . http_build_query($unsub_params, '', '&');
@@ -946,8 +973,8 @@ function thank_you_batch_test() {
   variable_set('old_thank_you_days', $oldTyDays);
   variable_set('thank_you_days', DUMB_BIG_TY_DAYS);
 
-  watchdog("thank_you", "Simulating up to 1000 thank you mails.", [], WATCHDOG_INFO);
-  watchdog("thank_you", "Civimail creation: $create_civi_mail. Sample rate: $rate", [], WATCHDOG_INFO);
+  watchdog('thank_you', 'Simulating up to 1000 thank you mails.', [], WATCHDOG_INFO);
+  watchdog('thank_you', "Civimail creation: $create_civi_mail. Sample rate: $rate", [], WATCHDOG_INFO);
 
   $start = time();
   $sent = 0;
@@ -973,7 +1000,7 @@ EOT;
     $result = db_query($ty_query);
     foreach ($result as $contribution) {
       watchdog(
-        "thank_you",
+        'thank_you',
         "Pretending to send thank you mail for contribution ID [{$contribution->id}], trxn_id [{$contribution->trxn_id}]",
         [],
         WATCHDOG_INFO
@@ -988,7 +1015,7 @@ EOT;
   $dbs->pop();
   $elapsed = time() - $start;
   variable_set('thank_you_days', $oldTyDays);
-  watchdog("thank_you", "Simulated sending $sent emails in $elapsed seconds.", [], WATCHDOG_INFO);
+  watchdog('thank_you', "Simulated sending $sent emails in $elapsed seconds.", [], WATCHDOG_INFO);
 }
 
 class ThankYouException extends Exception {

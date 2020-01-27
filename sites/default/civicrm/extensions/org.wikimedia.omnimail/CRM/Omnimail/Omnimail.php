@@ -134,11 +134,14 @@ class CRM_Omnimail_Omnimail {
     if ($passedInEndDate) {
       $endTimeStamp = strtotime($passedInEndDate);
     }
+    elseif (!empty($this->jobSettings['progress_end_timestamp'])) {
+      $endTimeStamp = $this->jobSettings['progress_end_timestamp'];
+    }
     else {
       $adjustment = CRM_Utils_Array::value('omnimail_job_default_time_interval', $settings, ' + 1 day');
       $endTimeStamp = strtotime($adjustment, $startTimestamp);
     }
-    return ($endTimeStamp > strtotime('now') ? strtotime('now') : $endTimeStamp);
+    return ($endTimeStamp > time() ? time() : $endTimeStamp);
   }
 
   /**
