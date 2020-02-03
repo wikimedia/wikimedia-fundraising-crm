@@ -4,50 +4,56 @@
 Estimado/a donante:</p>
 {%endif%}
 
-<p>Me gustaría darte las gracias por tu contribución de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}al mes {%endif%}a Wikipedia y Wikimedia Foundation.
+
+
+{% if recurring %}
+<p>
+Me siento afortunada de ser la persona que te dé las gracias por tu donación mensual de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, en nombre de un mundo de personas que buscan el conocimiento libre.
 </p>
 
-<p>La historia principal de Wikipedia es la historia de una persona que, como tú, comparte algo personal para mantener abiertas las puertas del descubrimiento. Tu contribución {% if recurring %}periódica mensual {%endif%}me confirma que el espíritu de nuestra visión sigue vivo y en buen estado.
+<p>
+Tu donación permite mantener la independencia de Wikipedia, y tu contribución mensual es esencial para la planificación a largo plazo, que nos ayuda a ver lo que Wikipedia puede lograr en los próximos años. Una vez al mes, Wikimedia Foundation te cobrará una donación de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} hasta que nos notifiques que ya no quieres seguir haciéndolo. <b>Cada mes de enero te enviaremos un resumen de las aportaciones hechas el año anterior.</b> Si por cualquier motivo quieres cancelar tu donación, sigue <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">estas sencillas instrucciones de cancelación</a>.
 </p>
+
+{% else %}
+
+<p>
+Me siento afortunada de ser la persona que te dé las gracias por tu donación de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, en nombre de un mundo de personas que buscan el conocimiento libre.
+</p>
+{% endif %}
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>Acabamos de resolver un pequeño problema técnico que ha interrumpido algunas donaciones periódicas mensuales. Hemos rehabilitado tu donación periódica que se volverá a procesar con normalidad de ahora en adelante. No te cobraremos los meses que se han omitido. Agradecemos tu paciencia y tu colaboración. Si tienes alguna pregunta, no dudes en enviarnos un correo electrónico a donate@wikimedia.org.</p>
+<p>Acabamos de resolver un pequeño problema técnico que ha interrumpido algunas donaciones periódicas mensuales. Hemos rehabilitado tu donación periódica, que se volverá a procesar con normalidad de ahora en adelante. No te cobraremos los meses que se han omitido. Agradecemos tu paciencia y tu colaboración. Si tienes alguna pregunta, no dudes en enviarnos un correo electrónico a donate@wikimedia.org.</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
 <p>Acabamos de resolver un problema técnico que causó la falta de confirmación de donaciones a un reducido número de donantes. Acepta este correo como agradecimiento por tu donación del {{ receive_date }}. Agradecemos tu paciencia y tu colaboración. Si tienes alguna pregunta, no dudes en enviarnos un correo electrónico a donate@wikimedia.org.</p>
 {%endif%}
 
-{% if recurring %}
-<p>Tu donación permite mantener la independencia de Wikipedia, y tu contribución mensual es esencial para la planificación a largo plazo, que nos ayuda a ver lo que Wikipedia puede lograr en los años venideros. Una vez al mes, Wikimedia Foundation te cobrará una donación de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} hasta que nos notifiques que ya no quieres seguir haciéndolo. <b>Cada mes de enero te enviaremos un resumen de tus contribuciones del año anterior.</b> Si por cualquier motivo quieres cancelar tu donación, sigue estas sencillas <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instrucciones de cancelación</a>.</p>
-{%endif%}
-
-<p>Probablemente hayas hecho una donación porque Wikipedia te resulta útil. Esta es una de las principales razones que nos da la gente cuando les preguntamos por qué colaboran con Wikipedia. Aunque quizás te sorprenda saber que uno de los principales motivos por los que algunas personas no realizan ninguna aportación es porque no pueden permitírselo.
+<p>
+Cuanto más hago este trabajo, más me doy cuenta de que no existe una experiencia única en Wikipedia. La curiosidad es tan diversa como lo son las personas y parece un poco diferente para cada una de ellas.
 </p>
 
-<p>En Wikimedia Foundation creemos que nadie debería pagar para aprender. Creemos que la información debería ser siempre gratuita. Nunca cobraremos a nadie por utilizar Wikipedia. Entonces, ¿cómo podemos costear la infraestructura de uno de los sitios web más populares del mundo?
+<p>
+Cuando utilices Wikipedia la próxima vez, espero que la sientas como algo que te pertenece cada vez más. Porque sin ti y sin el cariño y el apoyo de millones de personas que nos consultan cada día, no seríamos nada.
 </p>
 
-<p>Gracias a la generosidad de personas como tú.
+<p>
+<b>Tu donación nos da impulso y nos permite llevar a cabo nuestro objetivo. Gracias por hacer que Wikipedia ocupe un espacio en tu vida.</b>
 </p>
 
-<p>Wikipedia es tuya, para leerla, para editarla y para perderte en ella. No somos el destino, somos el punto de partida.
+<p>Muchísimas gracias,</p>
+<p>
+Katherine <br><br>
+Katherine Maher, directora ejecutiva<br>
+Wikimedia Foundation
 </p>
 
-{% if first_name and last_name %}
-<p>{{ first_name }}, muchas gracias por contribuir al crecimiento de la información gratuita.
-</p>{% else %}<p>
-Muchas gracias por contribuir al crecimiento de la información gratuita.</p>
-{%endif%}
-
-<p>Katherine<br/><br/>
-<br/><br/>
-Katherine Maher<br/>
-Directora ejecutiva, Wikimedia Foundation<br/>
-</p>
 
 <p>Muchos empleadores tendrán la generosidad de complementar los aportes de sus empleados; habla con tu empleador para saber si tiene un <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">programa corporativo de donativos complementarios.</a>
 </p>
+
+{% if gift_source != "Donor Advised Fund" %}
 
 <p>Para tus registros: tu donación número {{ transaction_id }}, del {{ receive_date }}, fue de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 </p>
@@ -55,7 +61,13 @@ Directora ejecutiva, Wikimedia Foundation<br/>
 <p>Esta carta sirve como registro de tu donación. No se entregaron mercancías ni servicios, de forma total ni parcial, a cambio de esta donación. Envía tu correspondencia a la siguiente dirección: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, EE. UU. Número de exención fiscal de los EE. UU.: 20-0049703
 </p>
 
+{%endif%}
+
 <p>Si no deseas recibir ningún tipo de correo electrónico sobre recaudación de fondos de la Fundación Wikimedia en el futuro, puedes <a href="{{ unsubscribe_link | raw }}">darte de baja ahora</a>. Ten en cuenta que seguiremos enviándote recibos como este por futuras donaciones.
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/es&amp;oldid=19112948","name":"thank_you.es.html","revision":19112948}TI_END -->
+
+
+
+
+<!-- TI_BEGIN{"version":1,"name":"thank_you.es.html","revision":20200103}TI_END →
