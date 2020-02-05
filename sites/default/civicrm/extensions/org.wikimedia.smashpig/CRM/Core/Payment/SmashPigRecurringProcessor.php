@@ -56,6 +56,17 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     foreach ($recurringPayments as $recurringPayment) {
       try {
         $previousContribution = $this->getPreviousContribution($recurringPayment);
+
+        // Catch for double recurring payments in one month (23 days of one another)
+        $days = date_diff(
+            new DateTime($recurringPayment['next_sched_contribution_date']),
+            new DateTime($previousContribution['receive_date'])
+        )->days;
+
+        if ($days < 24) {
+            throw new CRM_Extension_Exception('Two recurring charges within 23 days. recurring_id: '.$recurringPayment['id']);
+        }
+
         $result[$recurringPayment['id']]['previous_contribution'] = $previousContribution;
         // Mark the recurring contribution in progress
         civicrm_api3('ContributionRecur', 'create', [
