@@ -182,8 +182,9 @@ function omnimail_civicrm_tabset($tabsetName, &$tabs, $context) {
  * @param array $logTableSpec
  */
 function omnimail_civicrm_alterLogTables(&$logTableSpec) {
-  unset($logTableSpec['civicrm_mailing_provider_data']);
+  unset($logTableSpec['civicrm_mailing_provider_data'], $logTableSpec['civicrm_omnimail_job_progress']);
 }
+
 // --- Functions below this ship commented out. Uncomment as required. ---
 
 /**
