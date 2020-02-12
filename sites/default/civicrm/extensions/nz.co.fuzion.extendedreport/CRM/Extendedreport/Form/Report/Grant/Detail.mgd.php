@@ -5,15 +5,15 @@
 // http://wiki.civicrm.org/confluence/display/CRMDOC42/Hook+Reference
 return [
   0 => [
-    'name' => 'Extended Report - Pledge LYBUNT Report',
+    'name' => 'Extended Report - Grant Detail',
     'entity' => 'ReportTemplate',
     'params' => [
       'version' => 3,
-      'label' => 'Extended Report - Pledge LYBUNT',
-      'description' => 'Extended Report - Pledge Last Year but not This Year',
-      'class_name' => 'CRM_Extendedreport_Form_Report_Pledge_Lybunt',
-      'report_url' => 'pledge/lybnt',
-      'component' => 'CiviPledge',
+      'label' => 'Extended Report - Grant Detail',
+      'description' => 'Extended Report - Grant Detail',
+      'class_name' => 'CRM_Extendedreport_Form_Report_Grant_Detail',
+      'report_url' => 'grant/detailextended',
+      'component' => 'CiviGrant',
     ],
   ],
 ];

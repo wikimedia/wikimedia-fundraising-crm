@@ -22,7 +22,7 @@ use Civi\Test\TransactionalInterface;
  */
 class ContributionDetailExtendedTest extends BaseTestClass implements HeadlessInterface, HookInterface, TransactionalInterface {
 
-  protected $contacts = array();
+  protected $contacts = [];
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
@@ -45,24 +45,31 @@ class ContributionDetailExtendedTest extends BaseTestClass implements HeadlessIn
 
   /**
    * Test the ContributionDetailExtended report with order by.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testContributionExtendedReport() {
     $this->setupData();
-    $params = array(
+    $params = [
       'report_id' => 'contribution/detailextended',
-      'fields' => array (
+      'fields' => [
         'civicrm_contact_display_name' => '1',
         'contribution_currency' => '1',
-      ),
-      'order_bys' => array(
+      ],
+      'order_bys' => [
         1 => ['column' => 'contribution_financial_type_id', 'order' => 'ASC'],
         2 => ['column' => 'contribution_total_amount', 'order' => 'DESC'],
-      ),
-    );
+      ],
+    ];
     $rows = $this->getRows($params);
     $this->assertEquals('USD', $rows[0]['civicrm_contribution_contribution_currency']);
   }
 
+  /**
+   * Test Detail Extended report, grouping by contact.
+   *
+   * @throws \CRM_Core_Exception
+   */
   public function testDetailExtendedGroupByContact() {
     $this->setupData();
     $params = [
@@ -75,18 +82,26 @@ class ContributionDetailExtendedTest extends BaseTestClass implements HeadlessIn
         'contribution_total_amount' => '1',
         'id' => '1',
       ],
-      'group_bys' =>['civicrm_contact_contact_id' => '1'],
-      'order_bys' => [['column' => '-'],
+      'group_bys' => ['civicrm_contact_contact_id' => '1'],
+      'order_bys' => [
+        ['column' => '-'],
       ],
     ];
     $this->getRows($params);
   }
 
+  /**
+   * Set up for test.
+   *
+   * @throws \CRM_Core_Exception
+   */
   protected function setupData() {
     $this->callAPISuccess('Order', 'create', [
       'contact_id' => $this->contacts[0],
       'total_amount' => 5,
-      'financial_type_id' => 2
+      'financial_type_id' => 2,
+      'contribution_status_id' => 'Pending',
+      'api.Payment.create' => ['total_amount' => 5],
     ]);
   }
 

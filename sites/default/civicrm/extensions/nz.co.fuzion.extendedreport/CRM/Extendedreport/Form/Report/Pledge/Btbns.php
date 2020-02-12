@@ -4,15 +4,19 @@
  * Class CRM_Extendedreport_Form_Report_Pledge_Btbns
  */
 class CRM_Extendedreport_Form_Report_Pledge_Btbns extends CRM_Extendedreport_Form_Report_ExtendedReport {
-  protected $_charts = array(
+
+  protected $_charts = [
     '' => 'Tabular',
     'barChart' => 'Bar Chart',
     'pieChart' => 'Pie Chart',
-  );
-  protected $_customGroupExtends = array(
+  ];
+
+  protected $_customGroupExtends = [
     'Pledge',
-  );
+  ];
+
   protected $lifeTime_from = NULL;
+
   protected $lifeTime_where = NULL;
 
   /**
@@ -54,6 +58,7 @@ class CRM_Extendedreport_Form_Report_Pledge_Btbns extends CRM_Extendedreport_For
       'is_group_bys' => FALSE,
       'is_order_bys' => FALSE,
       'default' => date('Y'),
+      'table_key' => 'civicrm_pledge',
     ];
     $this->_groupFilter = TRUE;
     $this->_tagFilter = TRUE;
@@ -62,7 +67,7 @@ class CRM_Extendedreport_Form_Report_Pledge_Btbns extends CRM_Extendedreport_For
   }
 
   function select() {
-    $this->_columnHeaders = $select = array();
+    $this->_columnHeaders = $select = [];
     $current_year = isset($this->_params['yid_value']) ? $this->_params['yid_value'] : date('Y');
     $previous_year = $current_year - 1;
 
@@ -119,9 +124,9 @@ class CRM_Extendedreport_Form_Report_Pledge_Btbns extends CRM_Extendedreport_For
   }
 
   function groupBy() {
-    $this->_groupByArray = array(
+    $this->_groupByArray = [
       $this->_aliases['civicrm_pledge'] . '.contact_id',
-    );
+    ];
     $this->_groupBy = CRM_Contact_BAO_Query::getGroupByFromSelectColumns($this->_selectClauses, $this->_groupByArray) . ',Year(' . $this->_aliases['civicrm_pledge'] . '.start_date) WITH ROLLUP';
     $this->assign('chartSupported', TRUE);
   }
@@ -141,11 +146,11 @@ class CRM_Extendedreport_Form_Report_Pledge_Btbns extends CRM_Extendedreport_For
       $sql = "{$select} {$this->_from } {$this->_where}";
       $dao = CRM_Core_DAO::executeQuery($sql);
       if ($dao->fetch()) {
-        $statistics['counts']['amount'] = array(
+        $statistics['counts']['amount'] = [
           'value' => $dao->amount,
           'title' => 'Total LifeTime',
-          'type' => CRM_Utils_Type::T_MONEY
-        );
+          'type' => CRM_Utils_Type::T_MONEY,
+        ];
       }
     }
 
@@ -164,10 +169,10 @@ class CRM_Extendedreport_Form_Report_Pledge_Btbns extends CRM_Extendedreport_For
     $this->extendedCustomDataFrom();
     $this->where();
     $this->groupBy();
-    $rows = $contactIds = array();
+    $rows = $contactIds = [];
     if (!CRM_Utils_Array::value('charts', $this->_params)) {
       $this->limit();
-      $getContacts = "SELECT SQL_CALC_FOUND_ROWS {$this->_aliases['civicrm_contact']}.id as cid {$this->_from} {$this->_where}  GROUP BY {$this->_aliases['civicrm_contact']}.id {$this->_limit}";
+      $getContacts = "SELECT {$this->_aliases['civicrm_contact']}.id as cid {$this->_from} {$this->_where}  GROUP BY {$this->_aliases['civicrm_contact']}.id {$this->_limit}";
       $dao = CRM_Core_DAO::executeQuery($getContacts);
       while ($dao->fetch()) {
         $contactIds[] = $dao->cid;
@@ -221,8 +226,8 @@ class CRM_Extendedreport_Form_Report_Pledge_Btbns extends CRM_Extendedreport_For
    * @param $rows
    */
   function buildChart(&$rows) {
-    $graphRows = array();
-    $display = array();
+    $graphRows = [];
+    $display = [];
 
     $current_year = $this->_params['yid_value'];
     $previous_year = $current_year - 1;
@@ -236,13 +241,13 @@ class CRM_Extendedreport_Form_Report_Pledge_Btbns extends CRM_Extendedreport_For
 
     $config = CRM_Core_Config::Singleton();
     $graphRows['value'] = $display;
-    $chartInfo = array(
+    $chartInfo = [
       'legend' => ts('Lybunt Report'),
       'xname' => ts('Year'),
-      'yname' => ts('Amount (%1)', array(
-        1 => $config->defaultCurrency
-      ))
-    );
+      'yname' => ts('Amount (%1)', [
+        1 => $config->defaultCurrency,
+      ]),
+    ];
     if ($this->_params['charts']) {
       // build chart.
       require_once 'CRM/Utils/OpenFlashChart.php';

@@ -20,7 +20,7 @@ use Civi\Test\TransactionalInterface;
  *
  * @group headless
  */
-class Contact_ExtendedContactTest extends BaseTestClass implements HeadlessInterface, HookInterface, TransactionalInterface {
+class Contact_BasicContactTest extends BaseTestClass implements HeadlessInterface, HookInterface, TransactionalInterface {
 
   protected $contacts = [];
 
@@ -35,7 +35,6 @@ class Contact_ExtendedContactTest extends BaseTestClass implements HeadlessInter
 
   public function setUp() {
     parent::setUp();
-    $this->enableAllComponents();
     $this->createCustomGroupWithField(['CustomField' => ['html_type' => 'CheckBox', 'option_values' => ['two' => 'A couple', 'three' => 'A few', 'four' => 'Too Many']]]);
     $contact = $this->callAPISuccess('Contact', 'create', ['organization_name' => 'Amazons', 'last_name' => 'Woman', 'contact_type' => 'Organization', 'custom_' . $this->customFieldID => 'three']);
 
@@ -51,40 +50,50 @@ class Contact_ExtendedContactTest extends BaseTestClass implements HeadlessInter
     $this->contacts[] = $contact['id'];
   }
 
-  /**
-   * Clean up after test.
-   *
-   * @throws \CRM_Core_Exception
-   */
   public function tearDown() {
     parent::tearDown();
-    $this->callAPISuccess('CustomField', 'delete', ['id' => $this->customFieldID]);
+    $fields = $this->callAPISuccess('CustomField', 'get', ['custom_group_id' => $this->customGroupID])['values'];
+    foreach ($fields as $field) {
+      $this->callAPISuccess('CustomField', 'delete', ['id' => $field['id']]);
+    }
+
     $this->callAPISuccess('CustomGroup', 'delete', ['id' => $this->customGroupID]);
     foreach ($this->contacts as $contact) {
-      $this->callAPISuccess('Contact', 'delete', ['id' => $contact, 'skip_undelete' => TRUE]);
+      $this->callAPISuccess('Contact', 'delete', ['id' => $contact]);
     }
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_cache');
     CRM_Core_PseudoConstant::flush();
   }
 
   /**
-   * Test rows retrieval.
+   * Test custom field filter works.
    */
-  public function testGetRows() {
+  public function testCustomFieldFilter() {
+    $customField = $this->customFieldCreate(['html_type' => 'Autocomplete-Select', 'data_type' => 'ContactReference', 'default_value' => '', 'custom_group_id' => $this->customGroupID]);
+    $this->callAPISuccess('Contact', 'create', ['custom_' . $customField['id'] => $this->contacts[0], 'id' => $this->contacts['1']]);
     $params = [
-      'report_id' => 'contact/contactextended',
-      'aggregate_column_headers' => 'civicrm_contact_gender_id',
-      'aggregate_row_headers' => 'custom_' . $this->customFieldID,
+      'report_id' => 'contact/contactbasic',
+      'custom_' . $customField['id'] . '_value' => 'Amaz',
+      'custom_' . $customField['id'] . '_op' => 'has',
+      'fields' => [
+        'civicrm_contact_display_name' => '1',
+        'civicrm_contact_contact_id' => '1',
+        'custom_' . $customField['id'] => '1',
+      ],
     ];
-    $this->callAPISuccess('ReportTemplate', 'getrows', $params)['values'];
-
-    $params = [
-      'report_id' => 'contact/contactextended',
-      'aggregate_column_headers' => 'custom_' . $this->customFieldID,
-      'aggregate_row_headers' => 'civicrm_contact_gender_id',
-    ];
-    $rows = $this->callAPISuccess('ReportTemplate', 'getrows', $params)['values'];
-    $this->assertEquals('Female', $rows[1]['civicrm_contact_civicrm_contact_gender_id']);
+    $rows = $this->getRows($params);
+    $this->assertEquals([
+      0 =>
+        [
+          'civicrm_contact_civicrm_contact_display_name' => 'Wonder Woman',
+          'civicrm_contact_civicrm_contact_contact_id' => $this->contacts[1],
+          'contact_custom_' . $customField['id'] . '_civireport' => 'Amazons',
+          'civicrm_contact_civicrm_contact_contact_id_link' => '/index.php?q=civicrm/contact/view&amp;reset=1&amp;cid=' . $this->contacts[1],
+        ],
+    ], $rows);
+    $params['custom_' . $customField['id'] . '_value'] = 'Wonder';
+    $rows = $this->getRows($params);
+    $this->assertEmpty($rows);
   }
 
 }

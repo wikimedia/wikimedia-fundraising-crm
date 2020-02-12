@@ -17,6 +17,7 @@ use CRM_Extendedreport_ExtensionUtil as E;
  * It is for code organisation & may or may not make the most sense long term.
  */
 trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
+
   /*
  * Function to get Activity Columns
  * @param array $options column options
@@ -365,6 +366,27 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'is_filters' => TRUE,
         'is_group_bys' => TRUE,
       ],
+      $options['prefix'] . 'email_greeting_display' => [
+        'name' => 'email_greeting_display',
+        'title' => E::ts($options['prefix_label'] . 'Email Greeting'),
+        'is_fields' => TRUE,
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+      ],
+      $options['prefix'] . 'postal_greeting_display' => [
+        'name' => 'postal_greeting_display',
+        'title' => E::ts($options['prefix_label'] . 'Postal Greeting'),
+        'is_fields' => TRUE,
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+      ],
+      $options['prefix'] . 'addressee_display' => [
+        'name' => 'addressee_display',
+        'title' => E::ts($options['prefix_label'] . 'Addressee'),
+        'is_fields' => TRUE,
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+      ],
     ];
     $individualFields = [
       $options['prefix'] . 'first_name' => [
@@ -482,6 +504,7 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'is_filters' => TRUE,
         'type' => CRM_Utils_Type::T_INT,
         'statistics' => ['count' => E::ts('Numer of recurring profiles')],
+        'is_order_bys' => TRUE,
       ],
       'payment_processor_id' => [
         'title' => E::ts('Payment Processor'),
@@ -491,7 +514,7 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'type' => CRM_Utils_Type::T_INT,
         'is_fields' => TRUE,
         'is_filters' => TRUE,
-        'is_group_bys' =>  TRUE,
+        'is_group_bys' => TRUE,
         'is_order_bys' => TRUE,
       ],
       'currency' => [
@@ -502,23 +525,26 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'type' => CRM_Utils_Type::T_STRING,
         'is_fields' => TRUE,
         'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ],
       'contribution_status_id' => [
         'title' => E::ts('Recurring Contribution Status'),
         'is_fields' => TRUE,
         'is_filters' => TRUE,
         'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-        'options' => CRM_Contribute_PseudoConstant::contributionStatus(),
+        'options' => CRM_Contribute_BAO_ContributionRecur::buildOptions('contribution_status_id'),
         'default' => [5],
+        'alter_display' => 'alterByOptions',
         'type' => CRM_Utils_Type::T_INT,
-        'is_group_bys' =>  TRUE,
+        'is_group_bys' => TRUE,
         'is_order_bys' => TRUE,
       ],
       'frequency_interval' => [
         'title' => E::ts('Frequency interval'),
         'type' => CRM_Utils_Type::T_INT,
         'is_fields' => TRUE,
-        'is_filters' => TRUE
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ],
       'frequency_unit' => [
         'title' => E::ts('Frequency unit'),
@@ -527,13 +553,14 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'type' => CRM_Utils_Type::T_STRING,
         'is_fields' => TRUE,
         'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ],
       'amount' => [
         'title' => E::ts('Installment Amount'),
         'type' => CRM_Utils_Type::T_MONEY,
         'is_fields' => TRUE,
         'is_filters' => TRUE,
-        'is_group_bys' =>  TRUE,
+        'is_group_bys' => TRUE,
         'is_order_bys' => TRUE,
       ],
       'installments' => [
@@ -541,6 +568,7 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'type' => CRM_Utils_Type::T_INT,
         'is_fields' => TRUE,
         'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ],
       'start_date' => [
         'title' => E::ts('Start Date'),
@@ -548,12 +576,14 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
         'is_fields' => TRUE,
         'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ],
       'create_date' => [
         'title' => E::ts('Create Date'),
         'is_fields' => TRUE,
         'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
         'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ],
       'modified_date' => [
         'title' => E::ts('Modified Date'),
@@ -561,12 +591,14 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
         'is_fields' => TRUE,
         'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ],
       'cancel_date' => [
         'title' => E::ts('Cancel Date'),
         'is_fields' => TRUE,
         'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
         'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ],
       'cancel_reason' => [
         'title' => E::ts('Cancellation Reason'),
@@ -574,7 +606,7 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'type' => CRM_Utils_Type::T_STRING,
         'is_fields' => TRUE,
         'is_filters' => TRUE,
-        'is_group_bys' =>  TRUE,
+        'is_group_bys' => TRUE,
         'is_order_bys' => TRUE,
       ],
       'end_date' => [
@@ -583,6 +615,7 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
         'is_fields' => TRUE,
         'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ],
       'next_sched_contribution_date' => [
         'title' => E::ts('Next Scheduled Contribution Date'),
@@ -590,27 +623,186 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
         'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
         'is_fields' => TRUE,
         'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
       ],
       'failure_count' => [
         'title' => E::ts('Failure Count'),
         'is_fields' => TRUE,
         'is_filters' => TRUE,
         'type' => CRM_Utils_Type::T_INT,
+        'is_order_bys' => TRUE,
       ],
       'failure_retry_date' => [
         'title' => E::ts('Failure Retry Date'),
         'is_fields' => TRUE,
         'is_filters' => TRUE,
         'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
+        'is_order_bys' => TRUE,
       ],
       'financial_type_id' => [
         'title' => E::ts('Financial Type'),
         'operatorType' => CRM_Report_Form::OP_MULTISELECT,
         'options' => CRM_Financial_BAO_FinancialType::getAvailableFinancialTypes(),
         'type' => CRM_Utils_Type::T_INT,
+        'is_order_bys' => TRUE,
       ],
     ];
     return $this->buildColumns($spec, $options['prefix'] . 'civicrm_contribution_recur', 'CRM_Contribute_BAO_ContributionRecur', NULL, $this->getDefaultsFromOptions($options), $options);
+  }
+
+  /**
+   * Function to get ContributionSoft columns
+   *
+   * @param array $options
+   *
+   * @return array
+   */
+  function getContributionSoftColumns($options = []) {
+    $spec = [
+      'id' => [
+        'is_fields' => FALSE,
+        'is_filters' => FALSE,
+        'type' => CRM_Utils_Type::T_INT,
+        'is_order_bys' => FALSE,
+      ],
+      'contribution_id' => [
+        'is_fields' => FALSE,
+        'is_filters' => FALSE,
+        'type' => CRM_Utils_Type::T_INT,
+        'is_order_bys' => FALSE,
+        'default' => TRUE,
+      ],
+      'amount' => [
+        'default' => TRUE,
+        'type' => CRM_Utils_Type::T_MONEY,
+        'is_fields' => TRUE,
+        'is_filters' => TRUE,
+        'is_group_bys' => TRUE,
+        'is_order_bys' => TRUE,
+      ],
+      'soft_credit_type_id' => [
+        'is_fields' => TRUE,
+        'is_filters' => TRUE,
+        'is_group_bys' => TRUE,
+        'type' => CRM_Utils_Type::T_INT,
+        'operatorType' => CRM_Report_Form::OP_MULTISELECT,
+        'options' => CRM_Contribute_BAO_ContributionSoft::buildOptions('soft_credit_type_id'),
+        'alter_display' => 'alterPseudoConstant',
+        'is_order_bys' => TRUE,
+      ],
+      'currency' => [
+        'operatorType' => CRM_Report_Form::OP_MULTISELECT,
+        'options' => CRM_Core_OptionGroup::values('currencies_enabled'),
+        'default' => NULL,
+        'type' => CRM_Utils_Type::T_STRING,
+        'is_fields' => TRUE,
+        'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
+      ],
+    ];
+    return $this->buildColumns($spec, $options['prefix'] . 'civicrm_contribution_soft', 'CRM_Contribute_BAO_ContributionSoft', NULL, $this->getDefaultsFromOptions($options), $options);
+  }
+
+  /**
+   * Function to get Grant columns.
+   *
+   * @param array $options column options
+   *
+   * @return array
+   */
+  protected function getGrantColumns($options = []) {
+    $defaultOptions = [
+      'prefix' => '',
+      'prefix_label' => '',
+      'group_by' => FALSE,
+      'order_by' => TRUE,
+      'filters' => TRUE,
+      'fields_defaults' => [],
+      'filters_defaults' => [],
+      'group_bys_defaults' => [],
+      'order_by_defaults' => ['sort_name ASC'],
+    ];
+
+    $options = array_merge($defaultOptions, $options);
+    $defaults = $this->getDefaultsFromOptions($options);
+    $specs = [
+      'grant_type_id' => [
+        'title' => ts('Grant Type'),
+        'is_fields' => 1,
+        'is_filters' => 1,
+        'is_group_bys' => 1,
+        'is_order_bys' => 1,
+        'operatorType' => CRM_Report_Form::OP_MULTISELECT,
+        'options' => CRM_Core_PseudoConstant::get('CRM_Grant_DAO_Grant', 'grant_type_id'),
+        'alter_display' => 'alterPseudoConstant',
+      ],
+      'status_id' => [
+        'title' => ts('Grant Status'),
+        'is_fields' => 1,
+        'is_filters' => 1,
+        'is_group_bys' => 1,
+        'is_order_bys' => 1,
+        'operatorType' => CRM_Report_Form::OP_MULTISELECT,
+        'options' => CRM_Core_PseudoConstant::get('CRM_Grant_DAO_Grant', 'status_id'),
+        'alter_display' => 'alterPseudoConstant',
+      ],
+      'amount_total' => [
+        'title' => ts('Amount Requested'),
+        'type' => CRM_Utils_Type::T_MONEY,
+        'is_fields' => 1,
+        'is_filters' => 1,
+        'is_order_bys' => 1,
+      ],
+      'amount_granted' => [
+        'title' => ts('Amount Granted'),
+        'is_fields' => 1,
+        'is_filters' => 1,
+        'is_order_bys' => 1,
+      ],
+      'application_received_date' => [
+        'title' => ts('Application Received'),
+        'default' => TRUE,
+        'type' => CRM_Utils_Type::T_DATE,
+        'is_fields' => 1,
+        'is_filters' => 1,
+        'is_group_bys' => 1,
+        'is_order_bys' => 1,
+      ],
+      'money_transfer_date' => [
+        'title' => ts('Money Transfer Date'),
+        'type' => CRM_Utils_Type::T_DATE,
+        'is_fields' => 1,
+        'is_filters' => 1,
+        'is_group_bys' => 1,
+        'is_order_bys' => 1,
+      ],
+      'grant_due_date' => [
+        'title' => ts('Grant Report Due'),
+        'type' => CRM_Utils_Type::T_DATE,
+        'is_fields' => 1,
+        'is_filters' => 1,
+        'is_group_bys' => 1,
+        'is_order_bys' => 1,
+      ],
+      'decision_date' => [
+        'title' => ts('Grant Decision Date'),
+        'type' => CRM_Utils_Type::T_DATE,
+        'is_fields' => 1,
+        'is_filters' => 1,
+        'is_group_bys' => 1,
+        'is_order_bys' => 1,
+      ],
+      'rationale' => [
+        'title' => ts('Rationale'),
+        'is_fields' => 1,
+      ],
+      'grant_report_received' => [
+        'title' => ts('Grant Report Received'),
+        'is_fields' => 1,
+        'is_filters' => 1,
+      ],
+    ];
+    return $this->buildColumns($specs, 'civicrm_grant', 'CRM_Grant_BAO_Grant', 'grants', $defaults);
   }
 
 }
