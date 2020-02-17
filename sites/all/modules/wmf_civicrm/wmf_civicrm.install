@@ -5269,3 +5269,21 @@ function wmf_civicrm_update_8005() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS log_wmf_donor');
 }
+
+/**
+ * Truncate log_civicrm table.
+ *
+ * The data in this table adds  no value  over & above  the log tables.
+ * It's 32 GB. I'm not sure it will build back up fast enough to warrant us doing anything
+ * to prevent that - I think getting rid of what is there might be enough for now.
+ *
+ * Upstream https://lab.civicrm.org/dev/core/issues/1586
+ *
+ * Also we want to action this in conjunction with measuring db size changes.
+ *
+ * Bug: T245085
+ */
+function wmf_civicrm_update_8010() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('TRUNCATE TABLE civicrm_log');
+}
