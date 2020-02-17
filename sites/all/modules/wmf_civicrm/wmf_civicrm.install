@@ -5251,3 +5251,21 @@ function wmf_civicrm_update_8000() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS log_civicrm_omnimail_job_progress');
 }
+
+/**
+ * Drop log of wmf_donor table.
+ *
+ * We exclude wmf_donor form logging but we still have data from when we didn't.
+ *
+ * Note searching our trigger file DOES show that we reference wmf_donor but only for
+ * purposes of updating civicrm_contact.modified_date - which is probably is a good thing.
+ * The string log_wmf_donor is not present.
+ *
+ * Also we want to action this in conjunction with measuring db size changes.
+ *
+ * Bug: T245086
+ */
+function wmf_civicrm_update_8005() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS log_wmf_donor');
+}
