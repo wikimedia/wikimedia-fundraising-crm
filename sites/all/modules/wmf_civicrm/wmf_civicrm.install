@@ -5237,3 +5237,17 @@ function wmf_civicrm_update_7995() {
     CRM_Core_DAO::executeQuery("UPDATE civicrm_activity SET activity_type_id = $oldID WHERE activity_type_id = $newID");
   }
 }
+
+/**
+ * Drop log of omnimail progress.
+ *
+ * This needs to be done after https://gerrit.wikimedia.org/r/#/c/wikimedia/fundraising/crm/+/571845/
+ * is deployed & in conjunction with a before and after db size check. (we can bundle the
+ * db size check with the next few updates.
+ *
+ * Bug: T244934
+ */
+function wmf_civicrm_update_8000() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS log_civicrm_omnimail_job_progress');
+}
