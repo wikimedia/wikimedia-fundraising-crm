@@ -5443,6 +5443,8 @@ function wmf_civicrm_update_8015() {
     // were already cached - they DO rely on crossing the firewall
     'checkVersion',
     'checkExtensions',
+    // Let's disable this too as we are deliberately not running cron.
+    'checkLastCron',
   ];
   foreach ($slowChecks as $slowCheck) {
     \Civi\Api4\StatusPreference::create()
