@@ -239,7 +239,9 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now', $run
 
   date_default_timezone_set($oldTimezone);
 
-  $contribution_status_id = civicrm_api_contribution_status('Completed');
+  // We included completed status for historical reasons - at some point we can probably remove.
+  $completedStatusID = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+  $inProgressStatusID = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'In Progress');
 
   watchdog(
     'recurring_globalcollect',
@@ -253,7 +255,7 @@ WHERE
     civicrm_contribution_recur.next_sched_contribution_date BETWEEN :start AND :end
     AND civicrm_contribution_recur.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
     AND ( civicrm_contribution_recur.end_date IS NULL )
-    AND civicrm_contribution_recur.contribution_status_id = :status_id
+    AND civicrm_contribution_recur.contribution_status_id IN ({$completedStatusID} , {$inProgressStatusID} )
 LIMIT {$limit}
 EOS;
 
@@ -263,7 +265,6 @@ EOS;
   $res = db_query($query, [
     ':start' => $start_day,
     ':end' => $end_day,
-    ':status_id' => $contribution_status_id,
   ]);
 
   return $res->fetchAll();

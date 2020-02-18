@@ -300,9 +300,9 @@ function recurring_globalcollect_batch_charge($contribution_batch, $options = []
 function recurring_globalcollect_charge($contribution_recur_id, $options = []) {
   watchdog('recurring_globalcollect', "Processing recurring charge: {$contribution_recur_id}");
 
-  $gotLock = _recurring_globalcollect_update_record_in_progress($contribution_recur_id);
+  $gotLock = _recurring_globalcollect_update_record_to_processing($contribution_recur_id);
   if (!$gotLock) {
-    $message = t('Failed to mark record as in progress');
+    $message = t('Failed to mark record as processing');
     throw new WmfException(WmfException::CIVI_CONFIG, $message);
   }
 
@@ -503,8 +503,7 @@ function is_found_globalcollect_invalid_next_sched_dates() {
     FROM civicrm_contribution_recur cr
     LEFT JOIN civicrm_contribution c  on c.contribution_recur_id = cr.id
     WHERE end_date IS NULL
-    AND cr.contribution_status_id <> 3
-    AND cr.contribution_status_id <> 4
+    AND cr.contribution_status_id NOT IN (3, 4, 15)
     AND c.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
     AND next_sched_contribution_date > '2016-01-01'
     AND frequency_unit = 'month' AND frequency_interval = 1

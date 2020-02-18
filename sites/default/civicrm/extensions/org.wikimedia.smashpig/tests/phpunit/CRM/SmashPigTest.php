@@ -343,7 +343,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'trxn_id' => 'RECURRING INGENICO ' . $processor_id,
       'processor_id' => $processor_id,
       'invoice_id' => mt_rand(10000, 10000000) . '.' . mt_rand(1, 20) . '|recur-' . mt_rand(100000, 100000000),
-      'contribution_status_id' => 'Completed',
+      'contribution_status_id' => 'Pending',
     ];
     $result = $this->callAPISuccess('ContributionRecur', 'create', $params);
     $this->deleteThings['ContributionRecur'][] = $result['id'];
@@ -486,8 +486,8 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $this->assertGreaterThanOrEqual(27, $dateDiff->days);
     $this->assertEquals(2, $newContributionRecur['installments']);
     $this->assertEquals(
-      $contributionRecur['contribution_status_id'],
-      $newContributionRecur['contribution_status_id']
+      'In Progress',
+      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
   }
 
@@ -585,8 +585,8 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $this->assertGreaterThanOrEqual(27, $dateDiff->days);
     $this->assertEquals(1, $newContributionRecur['installments']);
     $this->assertEquals(
-      $contributionRecur['contribution_status_id'],
-      $newContributionRecur['contribution_status_id']
+      'In Progress',
+      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
   }
 
@@ -961,14 +961,22 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       $newContributionRecur['next_sched_contribution_date']
     );
     $this->assertLessThan(100, abs($retryDate - $expectedRetryDate));
-    $statuses = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
-    $failedStatus = CRM_Utils_Array::key('Failed', $statuses);
+
     $this->assertEquals(
-      $failedStatus, $newContributionRecur['contribution_status_id']
+      'Failing',
+      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
+
     );
     $this->assertEquals('1', $newContributionRecur['failure_count']);
   }
 
+  /**
+   * Test that the recurring is cancelled after maximum retries.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   */
   public function testMaxFailures() {
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
