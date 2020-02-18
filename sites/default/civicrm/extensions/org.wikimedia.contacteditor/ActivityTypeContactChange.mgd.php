@@ -10,6 +10,7 @@ return array(
       'name' => 'contact_type_changed',
       'description' => 'Contact type changed',
       'filter' => 1,
+      'cleanup' => 'never',
     ),
   ),
 );

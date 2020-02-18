@@ -21,6 +21,7 @@ return [
           'name' => 'unsubscribe',
           'is_reserved' => TRUE,
           'is_active' => TRUE,
+          'cleanup' => 'never',
         ],
     ],
 ];
