@@ -1,9 +1,9 @@
 <?php
-return array(
-  0 => array(
+return [
+  0 => [
     'name' => 'Contact Type Changed',
     'entity' => 'OptionValue',
-    'params' => array(
+    'params' => [
       'version' => 3,
       'option_group_id' => 'activity_type',
       'label' => 'Contact Type Changed',
@@ -11,6 +11,6 @@ return array(
       'description' => 'Contact type changed',
       'filter' => 1,
       'cleanup' => 'never',
-    ),
-  ),
-);
+    ],
+  ],
+];
