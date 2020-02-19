@@ -2159,30 +2159,6 @@ DROP TRIGGER IF EXISTS civicrm_note_after_delete //
 DELIMITER ;
 
 DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_omnimail_job_progress_before_insert //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_omnimail_job_progress_before_update //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_omnimail_job_progress_before_delete //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_omnimail_job_progress_after_insert //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_omnimail_job_progress_after_update //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_omnimail_job_progress_after_delete //
-DELIMITER ;
-
-DELIMITER //
 DROP TRIGGER IF EXISTS civicrm_openid_before_insert //
 DELIMITER ;
 
@@ -6314,30 +6290,6 @@ DELIMITER ;
 
 DELIMITER //
 CREATE TRIGGER civicrm_note_after_delete after delete ON civicrm_note FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_note (`id`, `entity_table`, `entity_id`, `note`, `contact_id`, `modified_date`, `subject`, `privacy`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_table`, OLD.`entity_id`, OLD.`note`, OLD.`contact_id`, OLD.`modified_date`, OLD.`subject`, OLD.`privacy`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_omnimail_job_progress_after_insert //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER civicrm_omnimail_job_progress_after_insert after insert ON civicrm_omnimail_job_progress FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_omnimail_job_progress (`id`, `mailing_provider`, `job`, `job_identifier`, `last_timestamp`, `progress_end_timestamp`, `retrieval_parameters`, `offset`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`mailing_provider`, NEW.`job`, NEW.`job_identifier`, NEW.`last_timestamp`, NEW.`progress_end_timestamp`, NEW.`retrieval_parameters`, NEW.`offset`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF; END //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_omnimail_job_progress_after_update //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER civicrm_omnimail_job_progress_after_update after update ON civicrm_omnimail_job_progress FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`mailing_provider`,'') <> IFNULL(NEW.`mailing_provider`,'') OR IFNULL(OLD.`job`,'') <> IFNULL(NEW.`job`,'') OR IFNULL(OLD.`job_identifier`,'') <> IFNULL(NEW.`job_identifier`,'') OR IFNULL(OLD.`last_timestamp`,'') <> IFNULL(NEW.`last_timestamp`,'') OR IFNULL(OLD.`progress_end_timestamp`,'') <> IFNULL(NEW.`progress_end_timestamp`,'') OR IFNULL(OLD.`retrieval_parameters`,'') <> IFNULL(NEW.`retrieval_parameters`,'') OR IFNULL(OLD.`offset`,'') <> IFNULL(NEW.`offset`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_omnimail_job_progress (`id`, `mailing_provider`, `job`, `job_identifier`, `last_timestamp`, `progress_end_timestamp`, `retrieval_parameters`, `offset`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`mailing_provider`, NEW.`job`, NEW.`job_identifier`, NEW.`last_timestamp`, NEW.`progress_end_timestamp`, NEW.`retrieval_parameters`, NEW.`offset`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
-DELIMITER ;
-
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_omnimail_job_progress_after_delete //
-DELIMITER ;
-
-DELIMITER //
-CREATE TRIGGER civicrm_omnimail_job_progress_after_delete after delete ON civicrm_omnimail_job_progress FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_omnimail_job_progress (`id`, `mailing_provider`, `job`, `job_identifier`, `last_timestamp`, `progress_end_timestamp`, `retrieval_parameters`, `offset`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`mailing_provider`, OLD.`job`, OLD.`job_identifier`, OLD.`last_timestamp`, OLD.`progress_end_timestamp`, OLD.`retrieval_parameters`, OLD.`offset`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
 DELIMITER ;
 
 DELIMITER //

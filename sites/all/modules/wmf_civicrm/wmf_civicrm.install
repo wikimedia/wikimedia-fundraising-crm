@@ -5204,3 +5204,36 @@ function wmf_civicrm_update_7985() {
 function wmf_civicrm_update_7990() {
   wmf_civicrm_update_7915();
 }
+
+/**
+ * Fix re-numbering of activity types.
+ *
+ * Our last update suffered from https://lab.civicrm.org/dev/core/issues/1498
+ *
+ * In digging log_civicrm_managed I find that we lost a handle of entities which were re-created.
+ *
+ * 1) A bunch of report templates - these are referenced in civicrm_report_instance by path
+ * so it doesn't matter
+ *
+ * 2) 2 activity types
+ *   - unsubscribe value 99 was deleted & 155 created
+ *   - contact_type_changed from 109 to 156
+ *
+ * Useful queries:
+ *
+ * SELECT entity_id FROM log_civicrm_managed WHERE log_action='Delete' AND log_date > '2020-02-01'
+ * SELECT DISTINCT value, name, label FROM log_civicrm_option_value  WHERE id IN (SELECT entity_id FROM log_civicrm_managed WHERE log_action='Delete' AND log_date > '2020-02-01');
+ *
+ * Bug: T245090
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_7995() {
+  civicrm_initialize();
+  $ids = [99 => 155, 109 => 156];
+  $optionGroupID = civicrm_api3('OptionGroup', 'getvalue', ['return' => 'id', 'name' => 'activity_type']);
+  foreach ($ids as $oldID => $newID) {
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_option_value SET value = $oldID WHERE value = $newID AND option_group_id = $optionGroupID");
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_activity SET activity_type_id = $oldID WHERE activity_type_id = $newID");
+  }
+}
