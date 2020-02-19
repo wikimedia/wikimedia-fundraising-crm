@@ -5237,3 +5237,221 @@ function wmf_civicrm_update_7995() {
     CRM_Core_DAO::executeQuery("UPDATE civicrm_activity SET activity_type_id = $oldID WHERE activity_type_id = $newID");
   }
 }
+
+/**
+ * Drop log of omnimail progress.
+ *
+ * This needs to be done after https://gerrit.wikimedia.org/r/#/c/wikimedia/fundraising/crm/+/571845/
+ * is deployed & in conjunction with a before and after db size check. (we can bundle the
+ * db size check with the next few updates.
+ *
+ * Bug: T244934
+ */
+function wmf_civicrm_update_8000() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS log_civicrm_omnimail_job_progress');
+}
+
+/**
+ * Drop log of wmf_donor table.
+ *
+ * We exclude wmf_donor form logging but we still have data from when we didn't.
+ *
+ * Note searching our trigger file DOES show that we reference wmf_donor but only for
+ * purposes of updating civicrm_contact.modified_date - which is probably is a good thing.
+ * The string log_wmf_donor is not present.
+ *
+ * Also we want to action this in conjunction with measuring db size changes.
+ *
+ * Bug: T245086
+ */
+function wmf_civicrm_update_8005() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS log_wmf_donor');
+}
+
+/**
+ * Truncate log_civicrm table.
+ *
+ * The data in this table adds  no value  over & above  the log tables.
+ * It's 32 GB. I'm not sure it will build back up fast enough to warrant us doing anything
+ * to prevent that - I think getting rid of what is there might be enough for now.
+ *
+ * Upstream https://lab.civicrm.org/dev/core/issues/1586
+ *
+ * Also we want to action this in conjunction with measuring db size changes.
+ *
+ * Bug: T245085
+ */
+function wmf_civicrm_update_8010() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('TRUNCATE TABLE civicrm_log');
+}
+
+/**
+ * Disable slow system checks.
+ *
+ * This allows us to remove the code that hacks the whole subsystem out & just
+ * run the ones that don't hurt performance. I ran them all with logging on to pick what to
+ * disable. Output:
+ *
+ * Feb 18 14:43:19  [info] calling checkLocaleSupportsAddressParsing
+ *
+ * Feb 18 14:43:19  [info] finished checkLocaleSupportsAddressParsing
+ *
+ * Feb 18 14:43:19  [info] calling checkPhpVersion
+ *
+ * Feb 18 14:43:19  [info] finished checkPhpVersion
+ *
+ * Feb 18 14:43:19  [info] calling checkPhpMysqli
+ *
+ * Feb 18 14:43:19  [info] finished checkPhpMysqli
+ *
+ * Feb 18 14:43:19  [info] calling checkMysqlTime
+ *
+ * Feb 18 14:43:19  [info] finished checkMysqlTime
+ *
+ * Feb 18 14:43:19  [info] calling checkDebug
+ *
+ * Feb 18 14:43:19  [info] finished checkDebug
+ *
+ * Feb 18 14:43:19  [info] calling checkOutboundMail
+ *
+ * Feb 18 14:43:19  [info] finished checkOutboundMail
+ *
+ * Feb 18 14:43:19  [info] calling checkDomainNameEmail
+ *
+ * Feb 18 14:43:19  [info] finished checkDomainNameEmail
+ *
+ * Feb 18 14:43:19  [info] calling checkDefaultMailbox
+ *
+ * Feb 18 14:43:19  [info] finished checkDefaultMailbox
+ *
+ * Feb 18 14:43:19  [info] calling checkLastCron
+ *
+ * Feb 18 14:43:19  [info] finished checkLastCron
+ *
+ * Feb 18 14:43:19  [info] calling checkUrlVariables
+ *
+ * Feb 18 14:43:19  [info] finished checkUrlVariables
+ *
+ * Feb 18 14:43:19  [info] calling checkDirVariables
+ *
+ * Feb 18 14:43:19  [info] finished checkDirVariables
+ *
+ * Feb 18 14:43:19  [info] calling checkDirsWritable
+ *
+ * Feb 18 14:43:19  [info] finished checkDirsWritable
+ *
+ * Feb 18 14:43:19  [info] calling checkVersion
+ *
+ * Feb 18 14:43:19  [info] finished checkVersion
+ *
+ * Feb 18 14:43:19  [info] calling checkExtensionUpgrades
+ *
+ * Feb 18 14:43:19  [info] finished checkExtensionUpgrades
+ *
+ * Feb 18 14:43:19  [info] calling checkDbVersion
+ *
+ * Feb 18 14:43:19  [info] finished checkDbVersion
+ *
+ * Feb 18 14:43:19  [info] calling checkDbEngine
+ *
+ * Feb 18 14:43:19  [info] finished checkDbEngine
+ *
+ * Feb 18 14:43:19  [info] calling checkReplyIdForMailing
+ *
+ * Feb 18 14:43:19  [info] finished checkReplyIdForMailing
+ *
+ * Feb 18 14:43:19  [info] calling checkMbstring
+ *
+ * Feb 18 14:43:19  [info] finished checkMbstring
+ *
+ * Feb 18 14:43:19  [info] calling checkEnvironment
+ *
+ * Feb 18 14:43:19  [info] finished checkEnvironment
+ *
+ * Feb 18 14:43:19  [info] calling checkResourceUrl
+ *
+ ****** Feb 18 14:43:24  [info] finished checkResourceUrl
+ *
+ * Feb 18 14:43:24  [info] calling checkMysqlUtf8mb4
+ *
+ * Feb 18 14:43:24  [info] finished checkMysqlUtf8mb4
+ *
+ * Feb 18 14:43:24  [info] calling checkFinancialAclReport
+ *
+ * Feb 18 14:43:24  [info] finished checkFinancialAclReport
+ *
+ * Feb 18 14:43:24  [info] calling checkOptionGroupValues
+ *
+ * Feb 18 14:43:24  [info] finished checkOptionGroupValues
+ *
+ * Feb 18 14:43:24  [info] calling checkPriceFields
+ *
+ * Feb 18 14:43:24  [info] finished checkPriceFields
+ *
+ * Feb 18 14:43:24  [info] calling checkIndices
+ *
+ * Feb 18 14:43:24  [info] finished checkIndices
+ *
+ * Feb 18 14:43:24  [info] calling checkMissingLogTables
+ *
+ * Feb 18 14:43:24  [info] finished checkMissingLogTables
+ *
+ * Feb 18 14:43:24  [info] calling checkLogFileIsNotAccessible
+ *
+ * Feb 18 14:43:24  [info] finished checkLogFileIsNotAccessible
+ *
+ * Feb 18 14:43:24  [info] calling checkUploadsAreNotAccessible
+ *
+ ***** Feb 18 14:43:34  [info] finished checkUploadsAreNotAccessible
+ *
+ * Feb 18 14:43:34  [info] calling checkDirectoriesAreNotBrowseable
+ *
+ ***** Feb 18 14:44:34  [info] finished checkDirectoriesAreNotBrowseable
+ *
+ * Feb 18 14:44:34  [info] calling checkFilesAreNotPresent
+ *
+ * Feb 18 14:44:34  [info] finished checkFilesAreNotPresent
+ *
+ * Feb 18 14:44:34  [info] calling checkRemoteProfile
+ *
+ * Feb 18 14:44:34  [info] finished checkRemoteProfile
+ *
+ * Feb 18 14:44:34  [info] calling checkCxnOverrides
+ *
+ * Feb 18 14:44:34  [info] finished checkCxnOverrides
+ *
+ * Feb 18 14:44:34  [info] calling checkOrphans
+ *
+ * Feb 18 14:44:34  [info] finished checkOrphans
+ *
+ * Feb 18 14:44:34  [info] calling checkSchema
+ *
+ * Feb 18 14:44:34  [info] finished checkSchema
+ *
+ * @throws \Civi\API\Exception\UnauthorizedException
+ */
+function wmf_civicrm_update_8015() {
+  civicrm_initialize();
+  $slowChecks = [
+    'checkResourceUrl',
+    'checkUploadsAreNotAccessible',
+    'checkDirectoriesAreNotBrowseable',
+    // These 2 did not show up as slow above but I'm pretty sure it's because the results
+    // were already cached - they DO rely on crossing the firewall
+    'checkVersion',
+    'checkExtensions',
+    // Let's disable this too as we are deliberately not running cron.
+    'checkLastCron',
+  ];
+  foreach ($slowChecks as $slowCheck) {
+    \Civi\Api4\StatusPreference::create()
+      ->addValue('name', $slowCheck)
+      ->addValue('is_active', 0)
+      ->setCheckPermissions(FALSE)
+      ->execute();
+  }
+
+}
