@@ -4,11 +4,22 @@
 Stimate donator,</p>
 {%endif%}
 
-<p>Am plăcerea să îți mulțumesc pentru contribuția ta {% if recurring %}lunară {%endif%}de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} pentru Wikipedia și Fundația Wikimedia.
+
+{% if recurring %}
+<p>
+Mă simt atât de norocoasă să fiu persoana care îți mulțumește pentru darul tău lunar de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, în numele unei lumi a oamenilor în căutarea cunoașterii libere.
 </p>
 
-<p>Povestea Wikipedia este povestea unor oameni obișnuiți, ca tine, care au decis să dea ceva de la ei pentru a păstra deschise ușile cunoașterii. Contribuția ta {% if recurring %}lunară recurentă {%endif%}îmi arată că spiritul viziunii noastre este viu și puternic.
+<p>
+Donația ta ne ajută să asigurăm independența proiectului Wikipedia, iar sprijinul tău lunar este esențial pentru planificarea pe termen lung, deoarece ne ajută să previzionăm evoluția Wikipedia în anii următori. O dată pe lună, din contul tău va fi debitată o donație în valoare de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} către Wikimedia Foundation, până când ne vei notifica faptul că nu îți mai dorești acest lucru. <b>În luna ianuarie a fiecărui an, îți vom trimite un centralizator al contribuțiilor tale din anul precedent.</b> Dacă, din orice motiv, dorești să îți anulezi donația, urmează aceste <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">instrucțiuni pentru anularea rapidă a donației</a>.
 </p>
+
+{% else %}
+
+<p>
+Mă simt atât de norocoasă să fiu persoana care îți mulțumește pentru darul de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, în numele unei lumi a oamenilor în căutarea cunoașterii libere.
+</p>
+{% endif %}
 
 {% if "RecurringRestarted" in contribution_tags %}
 <p>Recent, am rezolvat o mică problemă tehnică care a blocat unele donații lunare recurente. Am reactivat donația ta recurentă care va fi procesată în mod normal de acum înainte. Nu îți vom percepe taxa pentru lunile care au fost omise. Îți mulțumim pentru răbdare și sprijin și te rugăm să ne trimiți orice eventuale întrebări la adresa donate@wikimedia.org.</p>
@@ -18,36 +29,30 @@ Stimate donator,</p>
 <p>Recent, am rezolvat o problemă tehnică care a făcut ca un mic număr de donatori să nu primească nicio confirmare în urma donației realizate. Te rugăm să accepți acest e-mail ca mulțumire pentru donația ta. {{ receive_date }}. Îți apreciem răbdarea și sprijinul și te rugăm să ne trimiți orice eventuale întrebări la adresa donate@wikimedia.org.</p>
 {%endif%}
 
-{% if recurring %}
-<p>Donația ta ne ajută să asigurăm independența proiectului Wikipedia, iar sprijinul tău lunar este esențial pentru planificarea pe termen lung, deoarece ne va ajuta să organizăm evoluția Wikipedia în anii următori. O dată pe lună, din contul tău va fi debitată o donație în valoare de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} către Fundația Wikimedia, până când ne vei notifica faptul că nu îți mai dorești acest lucru. <b>În luna ianuarie a fiecărui an, îți vom trimite un rezumat al contribuțiilor tale din anul precedent.</b> Dacă, din orice motiv, dorești să îți anulezi donația, urmează aceste <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instrucțiuni pentru anularea rapidă a donației</a>.</p>
-{%endif%}
-
-<p>Probabil că motivul donației tale este faptul că apreciezi utilitatea Wikipedia. Acesta este unul dintre principalele motive pe care oamenii ni le oferă atunci când îi întrebăm de ce susțin Wikipedia. Dar ceea ce te-ar putea surprinde este că unul dintre principalele motive pentru care oamenii nu fac donații este faptul că nu-și permit acest lucru.
+<p>
+Cu cât fac acest lucru mai mult, cu atât îmi dau seama că nu există un singur model al interacțiunii personale cu Wikipedia. Curiozitatea este la fel de diversă ca și noi, și se manifestă puțin diferit pentru fiecare dintre noi.
 </p>
 
-<p>Noi, cei de la Wikimedia Foundation, credem că nimeni nu ar trebui să plătească pentru a învăța. Cunoștințele ar trebui să fie întotdeauna accesibile tuturor. Nu vom taxa niciodată pe nimeni pentru a utiliza Wikipedia. Așadar, cum ne permitem să asigurăm infrastructura unuia dintre cele mai populare site-uri web din lume?
+<p>
+Data viitoare când vei folosi Wikipedia, sper că vei avea și mai mult sentimentul că îți aparține. Deoarece fără tine și fără dragostea și susținerea milioanelor de oameni care revin la noi în fiecare zi, nu am fi nimic.
 </p>
 
-<p>Datorită generozității unor oameni ca tine.
+<p>
+<b>Donația ta ne oferă un imbold și ne susține în îndeplinirea scopului nostru. Îți mulțumim pentru că faci loc pentru Wikipedia în viața ta.</b>
 </p>
 
-<p>Wikipedia este a ta: ca să o citești, ca să o editezi, ca să te pierzi în ea. Noi nu suntem destinația, ci punctul de pornire.
-</p>
-
-{% if first_name and last_name %}
-<p>{{ first_name }}, îți mulțumim că sprijini cunoașterea gratuită.
-</p>{% else %}<p>
-Îți mulțumim că sprijini cunoașterea gratuită.</p>
-{%endif%}
-
-<p>Katherine<br/><br/>
-<br/><br/>
-Katherine Maher<br/>
-Director executiv, Wikimedia Foundation
+<p>Cu imensă recunoștință,</p>
+<p>
+Katherine <br><br>
+Katherine Maher, Director Executiv<br>
+Wikimedia Foundation
 </p>
 
 <p>Mulți angajatori vor egala cu generozitate contribuțiile angajaților: te rugăm să îți consulți angajatorul pentru a vedea dacă există un <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">program corporativ de egalare a donațiilor</a>.
 </p>
+
+{% if gift_source != "Donor Advised Fund" %}
+
 
 <p>Pentru evidența ta: Donația ta, numărul {{ transaction_id }}, la {{ receive_date }} a fost {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
 </p>
@@ -55,7 +60,10 @@ Director executiv, Wikimedia Foundation
 <p>Această scrisoare poate servi ca o înregistrare a donării. Nu au fost furnizate bunuri sau servicii, integral sau parțial, pentru această contribuție. Te rugăm să trimiți corespondența la adresa: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Număr scutire de taxe SUA: 20-0049703
 </p>
 
+{%endif%}
+
 <p>Dacă nu doriți să primiți pe viitor niciun email de colectare de fonduri de la Fundația Wikimedia, <a href="{{ unsubscribe_link | raw }}">vă puteți dezabona instantaneu</a>. Vă rugăm să rețineți că vă vom mai trimite chitanțe, ca aceasta, pentru viitoarele donații.
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/ro&amp;oldid=19073515","name":"thank_you.ro.html","revision":19073515}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.ro.html","revision":20200106}TI_END →
+
