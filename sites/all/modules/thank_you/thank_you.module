@@ -103,6 +103,11 @@ function thank_you_send_test_form() {
     $lang = substr($lang, strrpos($lang, '/') + 1);
     $lang = substr($lang, strpos($lang, '.') + 1);
     $lang = substr($lang, 0, strpos($lang, '.'));
+    // Special case: localization needs Portuguese (Portugal) to be passed in as
+    // pt_PT but our filename is just thank_you.pt.html.
+    if ($lang === 'pt') {
+      $lang = 'pt_PT';
+    }
     $langs[$lang] = $lang;
   }
   $langs['all'] = '- ALL -';
