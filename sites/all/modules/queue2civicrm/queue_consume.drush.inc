@@ -10,38 +10,37 @@
  * Implementation of hook_drush_command()
  */
 function queue_consume_drush_command() {
-  $items = array();
+  $items = [];
 
-  $items['queue-consume'] = array(
+  $items['queue-consume'] = [
     'description' =>
       'Consumes items from a specified queue and processes them into CiviCRM',
-    'examples' => array(
+    'examples' => [
       'drush queue-consume' => '# Consume the queue',
-      'drush qc --batch=10' => '# Process up to 10 contributions'
-    ),
-    'options' => array(
-      'batch' => 'Number of contributions to process. If set to zero, it will be treated as unlimited'
-    ),
-    'aliases' => array( 'qc' ),
-  );
-  $items['donations-process-messagefile'] = array(
+      'drush qc --batch=10' => '# Process up to 10 contributions',
+    ],
+    'options' => [
+      'batch' => 'Number of contributions to process. If set to zero, it will be treated as unlimited',
+    ],
+    'aliases' => ['qc'],
+  ];
+  $items['donations-process-messagefile'] = [
     'description' =>
       'Feeds messages directly into the import pipeline, bypassing the queue.',
-    'arguments' => array(
-        'path' => 'The JSON file containing the message(s)'
-    ),
-    'required-arguments' => true,
-    'examples' => array( 'drush dpm /tmp/blurr.json' => '# process the file' ),
-    'aliases' => array( 'dpm' ),
-  );
-
+    'arguments' => [
+      'path' => 'The JSON file containing the message(s)',
+    ],
+    'required-arguments' => TRUE,
+    'examples' => ['drush dpm /tmp/blurr.json' => '# process the file'],
+    'aliases' => ['dpm'],
+  ];
   return $items;
 }
 
 /**
  * Implementation of hook_drush_help()
  */
-function queue_consume_drush_help( $section ) {
+function queue_consume_drush_help($section) {
   switch ($section) {
     case 'drush:queue-consume':
       return dt("Pulls items from a message queue and processes them into CiviCRM");
@@ -78,40 +77,46 @@ function drush_queue_consume() {
   // Set the number of contributions to batch
   $batch = drush_get_option('batch');
   $options = [];
-  if ( !empty( $batch ) ) {
+  if (!empty($batch)) {
     $options['batch'] = $batch;
   }
 
-  module_invoke( 'queue2civicrm', 'batch_process', $options );
+  module_invoke('queue2civicrm', 'batch_process', $options);
   $errors = drush_get_error_log();
-  if (!empty($errors)){
-	  echo "\n***ERRORS***";
-	  foreach($errors as $error=>$msgarray){
-		  echo "\n$error: ";
-		  foreach ($msgarray as $count=>$message){
-			  echo "\n    $message";
-		  }
-	  }
-	  echo "\n\n";
-	  exit(drush_get_error());
+  if (!empty($errors)) {
+    echo "\n***ERRORS***";
+    foreach ($errors as $error => $msgarray) {
+      echo "\n$error: ";
+      foreach ($msgarray as $count => $message) {
+        echo "\n    $message";
+      }
+    }
+    echo "\n\n";
+    exit(drush_get_error());
   }
 }
 
-function drush_queue_consume_donations_process_messagefile( $path ) {
-    watchdog( 'queue2civicrm', "Processing input file @path and feeding to queue2civicrm_import.",
-        array( '@path' => realpath( $path ) ), WATCHDOG_INFO );
-    $contents = file_get_contents( $path );
-    $messages = json_decode( $contents, true );
-    if ( !is_array( $messages ) ) {
-      throw new Exception("Error decoding JSON in '$path'.");
-    }
-    if ( !isset( $messages[0] ) || !is_array( $messages[0] ) ) {
-      $messages = array( $messages );
-    }
-    foreach( $messages as $msg ) {
-    	// FIXME: this bypasses pending database handling. Currently only good
-		// for inserting test data that has no matching pending messages.
-		// Could call DonationQueueConsumer::processMessage
-		wmf_civicrm_contribution_message_import( $msg );
-    }
+/**
+ * @param $path string Full path to a JSON file containing messages to import
+ *
+ * @throws \WmfException
+ * @throws \Exception
+ */
+function drush_queue_consume_donations_process_messagefile($path) {
+  watchdog('queue2civicrm', "Processing input file @path and feeding to queue2civicrm_import.",
+    ['@path' => realpath($path)], WATCHDOG_INFO);
+  $contents = file_get_contents($path);
+  $messages = json_decode($contents, TRUE);
+  if (!is_array($messages)) {
+    throw new Exception("Error decoding JSON in '$path'.");
+  }
+  if (!isset($messages[0]) || !is_array($messages[0])) {
+    $messages = [$messages];
+  }
+  foreach ($messages as $msg) {
+    // FIXME: this bypasses pending database handling. Currently only good
+    // for inserting test data that has no matching pending messages.
+    // Could call DonationQueueConsumer::processMessage
+    wmf_civicrm_contribution_message_import($msg);
+  }
 }
