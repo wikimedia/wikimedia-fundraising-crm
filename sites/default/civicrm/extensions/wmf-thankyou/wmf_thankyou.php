@@ -154,6 +154,35 @@ function wmf_thankyou_civicrm_links($op, $objectName, $objectId, &$links, &$mask
   }
 }
 
+/**
+ * Add send summary actions email to available actions.
+ *
+ * @param array $actions
+ * @param int $contactID
+ */
+function wmf_thankyou_civicrm_summaryActions(&$actions, $contactID) {
+  if ($contactID === NULL) {
+    return;
+  }
+  try {
+    $weight = 510;
+    $actions['otherActions']['sendannutaltyemail'] = [
+      'title' => ts('Send Annual Thank You letter'),
+      'name' => ts('Send Annual Thank You letter'),
+      'weight' => $weight,
+      'ref' => 'crm-contact_actions-list',
+      'key' => 'sendannutaltyemail',
+      'class' => 'crm-popup small-popup',
+      'href' =>  CRM_Utils_System::url('civicrm/send-annual-ty-email', array(
+        'reset' => 1
+      )),
+    ];
+  } catch (CiviCRM_API3_Exception $e) {
+    // This would most likely happen if viewing a deleted contact since we are not forcing
+    // them to be returned. Keep calm & carry on.
+  }
+}
+
 // --- Functions below this ship commented out. Uncomment as required. ---
 
 /**

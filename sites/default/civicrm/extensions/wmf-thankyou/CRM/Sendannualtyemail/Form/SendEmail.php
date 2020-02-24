@@ -1,6 +1,6 @@
 <?php
 
-use CRM_Sendannualtyemail_ExtensionUtil as E;
+use CRM_WmfThankyou_ExtensionUtil as E;
 use CRM_Sendannualtyemail_AnnualThankYou as AnnualThankYou;
 
 /**

@@ -2,11 +2,11 @@
 <extension key="wmf-thankyou" type="module">
   <file>wmf_thankyou</file>
   <name>WMF Thank you extension</name>
-  <description>Custom WMF thank you functionality</description>
+  <description>Custom WMF thank you functionality, includes Add a link to the contact actions list which sends an annual thank you receipt to the user</description>
   <license>AGPL-3.0</license>
   <maintainer>
-    <author>eileenmcnaughton</author>
-    <email>emcnaughton@wikimedia.org</email>
+    <author>Jack Gleeson, Eileen Mcnaughton</author>
+    <email>jgleeson@wikimedia.org</email>
   </maintainer>
   <urls>
     <url desc="Main Extension Page">http://FIXME</url>
