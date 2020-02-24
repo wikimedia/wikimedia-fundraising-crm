@@ -4,11 +4,22 @@
 Tisztelt Támogató!</p>
 {%endif%}
 
-<p>Örömömre szolgál, hogy megköszönjem Önnek {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összegű, {% if recurring %}havonta nyújtott {%endif%}hozzájárulását Wikipédia és a Wikimédia Alapítványt működéséhez.
+
+{% if recurring %}
+<p>
+Szerencsésnek érzem magam, hogy köszönetet mondhatok a havi {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} adományért, mindazok nevében is, akik világszerte felhasználják a szabad tudást.
 </p>
 
-<p>A Wikipédia története alapvetően arról szól, hogy egy olyan magánszemély, mint például Ön is, egy kis hozzájárulást tesz a felfedezés kapujának nyitva tartásához. Az Ön {% if recurring %}havonta ismétlődő {%endif%}hozzájárulása azt mutatja számomra, hogy küldetésünk szellemisége továbbra is él és virul.
+<p>
+Támogatásod segít fenntartani a Wikipédia függetlenségét, havi rendszeres támogatásod pedig rendkívül fontos a hosszú távú tervezés érdekében, hiszen így előre láthatjuk, mi mindent valósíthat meg a Wikipédia az elkövetkező években. Havonta egy alkalommal, a Wikimedia Foundation {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összeggel megterheli számládat mindaddig, amíg nem értesítesz bennünket lemondási szándékodról. <b>Minden év januárjában elküldjük az előző évben nyújtott támogatásaid összesítését.</b> Amennyiben a támogatás folyósítását bármilyen okból szeretnéd megszüntetni, kövesd az <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">egyszerű lemondást segítő útmutatónkat</a>.
 </p>
+
+{% else %}
+
+<p>
+Szerencsésnek érzem magam, hogy köszönetet mondhatok az {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} adományért, mindazok nevében is, akik világszerte felhasználják a szabad tudást.
+</p>
+{% endif %}
 
 {% if "RecurringRestarted" in contribution_tags %}
 <p>Nemrégiben megoldottunk egy kisebb műszaki jellegű problémát, amely egy időre megakadályozta egyes havi rendszeres hozzájárulások beérkezését.  Visszaállítottuk havi rendszeres támogatásai fogadásának lehetőségét, így a folyamat a jövőben megfelelően fog működni. A kimaradt hónapokra eső összeget nem számítjuk fel Önnek. Köszönjük türelmét és támogatását, és amennyiben bármilyen kérdése van, kérjük, lépjen velünk kapcsolatba a donate@wikimedia.org e-mail-címen.</p>
@@ -18,36 +29,29 @@ Tisztelt Támogató!</p>
 <p>Nemrégiben megoldottunk egy kisebb műszaki jellegű hibát, aminek következtében, néhány támogatónk nem kapott megerősítést támogatása beérkezéséről. Kérjük, fogadja ezt az e-mailt köszönetünk jeléül a(z) {{ receive_date }}. napján nyújtott támogatásáért. Nagyra értékeljük türelmét és támogatását, és amennyiben bármilyen kérdése van, kérjük, lépjen velünk kapcsolatba a donate@wikimedia.org e-mail-címen.</p>
 {%endif%}
 
-{% if recurring %}
-<p>Támogatásával segít fenntartani a Wikipédia függetlenségét, és havi rendszeres támogatása rendkívül fontos a hosszú távú tervezés érdekében, hiszen így előrevetíthetjük, mi mindent valósíthat meg a Wikipédia az elkövetkező években. Havonta egy alkalommal, Wikimédia Alapítvány {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összeggel megterheli számláját mindaddig, amíg nem értesít minket lemondási szándékáról. <b>Minden év januárjában eljuttatjuk Önhöz az előző évben nyújtott támogatásai összesítését.</b> Amennyiben támogatásának folyósítását bármilyen okból szeretné megszüntetni, kövesse az <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">egyszerű lemondást segítő útmutatónkat</a>.</p>
-{%endif%}
-
-<p>Vélhetően azért támogatott minket, mert hasznos dolognak tartja a Wikipédiát. Általában ez az egyik legfőbb ok, amit az emberek említenek, ha megkérdezem őket, miért támogatják a Wikipédiát. Ami azonban meglepheti Önt, hogy a legfőbb ok, ami miatt sokan nem támogatják a Wikipédiát, mert nem engedhetik meg maguknak.
+<p>
+Minél tovább gondolkodom ezen, annál egyértelműbb számomra, hogy a Wikipédia nem pusztán egyetlen tapasztalatra épül. A kíváncsiság épp oly sokszínű, mint mi magunk, és mindannyiunk számára mást és mást jelent.
 </p>
 
-<p>Mi, a Wikimédia Alapítványnál úgy gondoljuk, hogy az ismeretszerzésért senkinek nem kell fizetnie. Úgy véljük, hogy a tudásnak ingyenesen kell elérhetőnek lennie. A Wikipédia használatáért soha nem fogunk díjat szedni senkitől. Hogyan tudjuk akkor fenntartani a világ egyik legnépszerűbb internetes oldalának infrastruktúráját?
+<p>
+Reméljük, hogy amikor legközelebb ellátogatsz a Wikipédia oldalára, még inkább érezni fogod, hogy egy kicsit a tiéd is. Mert nélküled, és azon sok millió emberek szeretete és támogatása nélkül, akik minden nap visszatérnek hozzánk, nem tarthatnánk itt.
 </p>
 
-<p>Az Önhöz hasonló emberek nagylelkűségének köszönhetően.
+<p>
+<b>Adományod erőt ad számunkra, és lehetővé teszi célunk megvalósítását. Köszönjük, hogy helyet adtál a Wikipédia számára az életedben!</b>
 </p>
 
-<p>A Wikipédia az Önöké: olvashatják, szerkeszthetik, és elmerülhetnek benne. Nem a célállomás vagyunk, hanem a kezdetek.
-</p>
-
-{% if first_name and last_name %}
-<p>{{ first_name }}, köszönjük, hogy segítette az ingyenes tudásszerzés folyamatát.
-</p>{% else %}<p>
-Köszönjük, hogy segítette az ingyenes tudásszerzés folyamatát.</p>
-{%endif%}
-
-<p>Katherine<br/><br/>
-<br/><br/>
-Katherine Maher<br/>
-ügyvezető igazgató, Wikimédia Alapítvány
+<p>Hálás köszönettel:</p>
+<p>
+Katherine <br><br>
+Katherine Maher, ügyvezető igazgató<br>
+Wikimedia Foundation
 </p>
 
 <p>Számos munkaadó nagyvonalúan megduplázza az alkalmazottak adományait: kérjük, érdeklődd meg munkaadódnál, hogy van-e <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">vállalati adománymegduplázó programjuk</a>.
 </p>
+
+{% if gift_source != "Donor Advised Fund" %}
 
 <p>Az adományozás adatai: {{ receive_date }} napon tett, {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} adományod száma {{ transaction_id }}.
 </p>
@@ -55,7 +59,11 @@ Katherine Maher<br/>
 <p>Ez a levél az adományozásod visszaigazolásának tekinthető. A hozzájárulásod ellentételezéseként semmilyen árut vagy szolgáltatást – egészében vagy részleteiben – nem adtunk át. Címünk: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, Amerikai Egyesült Államok. Amerikai egyesült államokbeli adómentességi szám: 20-0049703
 </p>
 
-<p>Ha nem szeretnél a jövőben adománygyűjtéssel kapcsolatos e-maileket kapni a Wikimedia Foundationtől, <a href="{{ unsubscribe_link | raw }}">azonnal leiratkozhatsz</a>. Kérjük, vedd figyelembe, hogy ennek ellenére küldünk neked ehhez hasonló visszaigazolásokata jövőbeli adományozásaid esetén.
+{%endif%}
+
+<p>Ha nem szeretnél a jövőben adománygyűjtéssel kapcsolatos e-maileket kapni a Wikimedia Foundationtől, <a href="{{ unsubscribe_link | raw }}">azonnal leiratkozhatsz</a>. Kérjük, vedd figyelembe, hogy ennek ellenére küldünk neked ehhez hasonló visszaigazolásokat a jövőbeli adományozásaid esetén.
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/hu&amp;oldid=19073514","name":"thank_you.hu.html","revision":19073514}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.he.html","revision":20200103}TI_END →
+
+

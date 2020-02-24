@@ -4,11 +4,22 @@
 Estimat/da donant,</p>
 {%endif%}
 
-<p>És tot un plaer que la meva feina sigui agrair-te la teva contribució {% if recurring %}mensual {%endif%}de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a la Viquipèdia i a la Fundació Wikimedia.
+
+{% if recurring %}
+<p>
+Tinc la sort de ser qui t’agraeix la teva donació mensual de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} en nom de tot un món de persones que volen rebre coneixement gratuït.
 </p>
 
-<p>En essència, la història de la Viquipèdia és la d’una persona com tu, que dona una mica de sí mateixa per mantenir obertes les portes del coneixement. La teva contribució {% if recurring %}mensual {%endif%}em demostra que l’esperit de la nostra visió segueix en plena forma.
+<p>
+La teva donació fa que la Viquipèdia segueixi sent independent, i el teu suport mensual és essencial per a la planificació a llarg termini, perquè ens ajuda a veure què pot assolir la Viquipèdia en els propers anys. Un cop al mes, la Wikimedia Foundation carregarà una donació de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} al teu compte fins que ens notifiquis que parem. <b>Cada gener t’enviarem un resum de les teves contribucions de l’any anterior.</b> Si vols cancel·lar la donació per algun motiu, segueix aquestes <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">senzilles instruccions de cancel·lació</a>.
 </p>
+
+{% else %}
+
+<p>
+Tinc la sort de ser qui t’agraeix la donació de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} en nom de tot un món de persones que volen rebre coneixement gratuït.
+</p>
+{% endif %}
 
 {% if "RecurringRestarted" in contribution_tags %}
 <p>Fa poc hem resolt un petit problema tècnic que va posar en pausa algunes donacions mensuals. Hem reinstaurat la teva donació periòdica i d’ara en endavantes processarà amb normalitat. No et cobrarem els mesos que no s’ha fet la donació. Gràcies per la teva paciència i suport i, en cas que tinguis preguntes, no dubtis a enviar un correu electrònic a donate@wikimedia.org.</p>
@@ -18,32 +29,23 @@ Estimat/da donant,</p>
 <p>Fa poc hem resolt un problema tècnic que va fer que un petit nombre de donants no rebessin la confirmació de la seva donació. Et preguem que acceptis aquest correu electrònic com un agraïment per la teva donació del {{ receive_date }}. Apreciem molt la teva paciència i suport i, en cas que tinguis preguntes, no dubtis a enviar un correu electrònic a donate@wikimedia.org.</p>
 {%endif%}
 
-{% if recurring %}
-<p>La teva donació fa que la Viquipèdia segueixi sent independent, i el teu suport mensual és essencial per a la planificació a llarg termini, perquè ens ajuda a veure què pot assolir la Viquipèdia en els propers anys. Un cop al mes, la Fundació Wikimedia cobrarà un donatiu de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} del teu compte corrent fins que ens notifiquis que parem. <b>Cada gener t’enviarem un resum de les teves contribucions de l’any anterior.</b> Si vols cancel·lar la teva donació per algun motiu, segueix aquestes <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instruccions de cancel·lació fàcil</a>.</p>
-{%endif%}
-
-<p>Segurament has fet una donació perquè la Viquipèdia t’és útil. És una de les principals raons que m’explica la gent quan els pregunto per què donen suport a la Viquipèdia. Però el que potser et sorprèn és que una de les principals raons per les quals la gent no realitza cap donatiu és que no s’ho poden permetre.
+<p>
+Com més temps dedico a aquesta tasca, més m’adono que no hi ha una única experiència amb la Viquipèdia. La curiositat és tan diversa com nosaltres mateixos, i és una mica diferent per a cadascú de nosaltres.
 </p>
 
-<p>A la Fundació Wikimedia creiem que ningú no hauria de pagar per aprendre. Creiem que el coneixement sempre hauria de ser gratuït. Mai no cobrarem ningú per fer servir la Viquipèdia. Llavors, com ens podem permetre la infraestructura d’un dels llocs web més populars del món?
+<p>
+El proper cop que facis servir la Viquipèdia, espero que sentis que et pertany encara més. Perquè, sense tu, i sense l’estima i el suport de milions de persones que tornen a visitar-nos cada dia, no seríem res.
 </p>
 
-<p>Gràcies a la generositat de persones com tu.
+<p>
+<b>La teva donació ens dona força i ens permet complir el nostre propòsit. Moltes gràcies per incloure la Viquipèdia a la teva vida.</b>
 </p>
 
-<p>La Viquipèdia és teva: ja sigui per llegir-la, editar-la o perdre-t’hi. No som el final del camí, som l’inici.
-</p>
-
-{% if first_name and last_name %}
-<p>{{ first_name }}, gràcies per ajudar a fer prosperar el coneixement gratuït.
-</p>{% else %}<p>
-Gràcies per ajudar a fer prosperar el coneixement gratuït.</p>
-{%endif%}
-
-<p>Katherine<br/><br/>
-<br/><br/>
-Katherine Maher,
-Directora executica, Fundació Wikimedia
+<p>Moltes gràcies,</p>
+<p>
+Katherine <br><br>
+Katherine Maher, directora executiva<br>
+Wikimedia Foundation
 </p>
 
 <p>Moltes empreses doblen la donació que fan els seus treballadors: per favor, comproveu si la vostra empresa té <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">un programa similar</a>.
@@ -58,4 +60,6 @@ Directora executica, Fundació Wikimedia
 <p>Si no desitgeu rebre propers corrers electrònics sobre donacions de la Fundació Wikimèdia, podeu <a href="{{ unsubscribe_link | raw }}">cancel·lar la subscripció instantàniament</a>. Si us plau verifiqueu si encara us enviem informacions, per a donacions futures.
 </p>
 
-<!-- TI_BEGIN{"version":1,"sourceUrl":"https://meta.wikimedia.org/w/index.php?title=Fundraising/Translation/Thank_you_email_2018-10-01/ca&amp;oldid=19096058","name":"thank_you.ca.html","revision":19096058}TI_END -->
+
+
+

@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
  * CLDR data file, CLDR date: $Revision: 7846 $ - $Date: 2012-10-15 10:23:41 -0700 (Mon, 15 Oct 2012) $
  */
@@ -100,7 +100,7 @@ class CldrData {
         'brx' => array(array(2, 3), '$1 $2', '-$1 $2'),
         'bs_Cyrl' => array(array(3), '$2 $1', '-$2 $1'),
         'byn' => array(array(3), '$1$2', '-$1$2'),
-        'ca' => array(array(3), '$1$2', '($1$2)'),
+        'ca' => array(array(3), '$2 $1', '($2 $1)'),
         'cgg' => array(array(3), '$1$2', '-$2$1'),
         'chr' => array(array(3), '$1$2', '($1$2)'),
         'cs' => array(array(3), '$2 $1', '-$2 $1'),
