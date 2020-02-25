@@ -69,7 +69,9 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
 
   date_default_timezone_set( $oldTimezone );
 
-  $contribution_status_id = civicrm_api_contribution_status('Failed');
+  $failingStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Failing');
+  // We will also handle Failed temporarily.
+  $failedStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Failed');
 
   watchdog(
     'recurring_globalcollect',
@@ -81,7 +83,7 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
 SELECT civicrm_contribution_recur.* FROM civicrm_contribution_recur
 WHERE
     civicrm_contribution_recur.failure_retry_date BETWEEN :start AND :now
-    AND civicrm_contribution_recur.contribution_status_id = :failed_status
+    AND civicrm_contribution_recur.contribution_status_id = IN ({$failedStatusID} , {$failingStatusID})
     AND civicrm_contribution_recur.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
     AND ( civicrm_contribution_recur.end_date IS NULL )
 EOS;
@@ -94,7 +96,6 @@ EOS;
   $result = db_query( $query, array(
     ':start' => "{$start_date} 00:00:00",
     ':now' => "{$date} 23:59:59",
-    ':failed_status' => $contribution_status_id,
   ) );
 
   return $result->fetchAll();
@@ -197,14 +198,14 @@ function _recurring_globalcollect_update_record_failure($id, $errors) {
   $dbs->push( 'civicrm' );
 
   $cancel = false;
-  $contribution_status_id = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failing');
+  $contribution_status_id = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Failing');
 
   // If there have been too many failures, cancel this payment permanently.
   if (
     $record['failure_count'] >= ( $failures_before_cancellation - 1 )
     || recurring_globalcollect_should_force_cancel( $errors )
   ) {
-    $contribution_status_id = civicrm_api_contribution_status('Cancelled');
+    $contribution_status_id = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Cancelled');
     $end_date = 'NULL';
     $failure_retry_date = 'NULL';
     $next_sched_contribution = 'NULL';
@@ -286,7 +287,7 @@ function _recurring_globalcollect_update_record_to_processing($id) {
   $result = recurring_globalcollect_get_payment_by_id($id);
   $record = (array) $result;
 
-  $contributionStatus = CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $record['contribution_status_id']);
+  $contributionStatus = CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $record['contribution_status_id']);
 
   if (!in_array($contributionStatus, ['Completed', 'In Progress', 'Failing', 'Failed']) ) {
     throw new WmfException( WmfException::INVALID_RECURRING, t( 'The subscription is supposed to be in progress or failing before it can be processed. However for legacy reasons we keep processing Completed & Failed too' ), array('contribution_recur' => $record) );
@@ -295,7 +296,7 @@ function _recurring_globalcollect_update_record_to_processing($id) {
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
 
-  $processingStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Processing');
+  $processingStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Processing');
   $affected_rows = db_update( 'civicrm_contribution_recur' )
       ->fields( array(
           'contribution_status_id' => $processingStatusID,
@@ -338,7 +339,7 @@ function _recurring_globalcollect_update_record_success($id) {
       ->fields( array(
           'failure_count' => 0,
           'failure_retry_date' => null,
-          'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'In Progress'),
+          'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'In Progress'),
           'next_sched_contribution_date' => $next_sched_contribution,
       ) )
       // FIXME: misuse of processor_id - it should indicate which payment

@@ -111,7 +111,7 @@ function rgcrm_get_contributions( $limit, $grace, $batch ) {
     $start_day_of_month = date('j');
     $end_day_of_month = (date('t') == $start_day_of_month ) ? 31 : $start_day_of_month;
 
-    $contribution_status_id = civicrm_api_contribution_status('Completed');
+    $contribution_status_id = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Completed');
 
     watchdog(
         'recurring_globalcollect',
