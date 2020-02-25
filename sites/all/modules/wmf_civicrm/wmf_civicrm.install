@@ -5521,3 +5521,20 @@ function wmf_civicrm_update_8025() {
   ];
   CRM_Core_DAO::executeQuery('DELETE FROM civicrm_tag WHERE name IN ("' . implode('","', $tagsToDelete) . '")');
 }
+
+/**
+ * Remove defunct contribution recur statuses
+ *
+ * Bug: T245326
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_8030() {
+  civicrm_initialize();
+  civicrm_api3('OptionValue', 'get', [
+    'sequential' => 1,
+    'option_group_id' => "contribution_recur_status",
+    'name' => ['IN' => ["Settled", "Paid", "Refunded", "Partially paid", "Chargeback", "Pending refund"]],
+    'api.OptionValue.delete' => [],
+  ]);
+}
