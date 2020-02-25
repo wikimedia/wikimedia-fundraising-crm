@@ -68,10 +68,10 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         }
 
         $result[$recurringPayment['id']]['previous_contribution'] = $previousContribution;
-        // Mark the recurring contribution in progress
+        // Mark the recurring contribution Processing
         civicrm_api3('ContributionRecur', 'create', [
           'id' => $recurringPayment['id'],
-          'contribution_status_id' => 'In Progress',
+          'contribution_status_id' => 'Processing',
         ]);
 
         $paymentParams = $this->getPaymentParams(
@@ -87,7 +87,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
           'id' => $recurringPayment['id'],
           'failure_count' => 0,
           'failure_retry_date' => NULL,
-          'contribution_status_id' => 'Completed',
+          'contribution_status_id' => 'In Progress',
           // FIXME: set this to 1 instead of 0 for initial insert
           'installments' => $recurringPayment['installments'] + 1,
           'next_sched_contribution_date' => CRM_Core_Payment_Scheduler::getNextDateForMonth(
@@ -130,6 +130,10 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'IN' => [
           'Pending',
           'Overdue',
+          'In Progress',
+          'Failing',
+          // @todo - remove Completed once our In Progress payments
+          // all have an IN Progress status. Ditto Failed vs Failing.
           'Completed',
           'Failed',
         ],
@@ -225,7 +229,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       $params['cancel_reason'] = '(auto) maximum failures reached';
     }
     else {
-      $params['contribution_status_id'] = 'Failed';
+      $params['contribution_status_id'] = 'Failing';
       $params['next_sched_contribution_date'] = UtcDate::getUtcDatabaseString(
         "+$this->retryDelayDays days"
       );

@@ -155,20 +155,31 @@ EOS;
  * There are two different queries in this function.
  * - payments need to be marked as failure
  * - payments need to be marked as cancelled if there have been two prior failures for this EFFORTID (`processor_id`)
- * FIXME: should use 'installements' column, not processor_id
+ * FIXME: should use 'installments' column, not processor_id
+ *
  * These are the possible values for `contribution_status_id`:
  * XXX actually the ids are determined by querying the db
- * - [1] => Completed (previous donation succeeded, or new donation that has never been recurred before)
- * - [2] => Pending (not used by this module)
+ *
+ * - [1] => Completed - we have historically misused this but this should be the status when a recurring series has 'played out' - all
+ * intended donations are received. For us this is a bit 'grey' as we don't allow the number of payments to be specified so what
+ * does Completed vs Cancelled mean?
+ * - [2] => Pending (we have historically misused this but this is the correct status when a recurring has started but no contribution is yet received)
  * - [3] => Cancelled (too many failures in the past, don't try to process this any more)
- * - [4] => Failed (previous donation attempt failed, retry later)
- * - [5] => In Progress (there is a process actively trying to process this donation right now; used to avoid race conditions, if a contribution is stuck in this state it'll need manual intervention and reconciliation)
- * - [6] => Overdue (not used by this module)
+ * - [4] => Failed - too many failures no longer trying - however in the past this was misused as 'Failing'
+ * - [5] => In Progress - the Recurring series has started & is in progress
+ * - [6] => Not used, arguably should be removed as not part of the agreed flow - but still on new installs in core.
+ * - [14] => Processing (there is a process actively trying to process this donation right now; used to avoid race conditions, if a contribution is stuck in this state it'll need manual intervention
+ * and reconciliation)
+ * - [15] => Failing (previous donation attempt failed, retry later)
+ *
+ * Completed, Failed and Cancelled should be inactive statuses if we follow the core expectations.
  *
  * @param integer $id The primary key of the record.
  *
  * @param array $errors
+ *
  * @return int Returns the number of affected rows.
+ * @throws \WmfException
  */
 function _recurring_globalcollect_update_record_failure($id, $errors) {
 
@@ -186,7 +197,7 @@ function _recurring_globalcollect_update_record_failure($id, $errors) {
   $dbs->push( 'civicrm' );
 
   $cancel = false;
-  $contribution_status_id = civicrm_api_contribution_status('Failed');
+  $contribution_status_id = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failing');
 
   // If there have been too many failures, cancel this payment permanently.
   if (
@@ -260,34 +271,34 @@ function recurring_globalcollect_should_force_cancel( $errors ) {
 }
 
 /**
- * Update recurring payment as in progress.
+ * Update recurring payment to Processing status.
  *
- * @todo Implement $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus( null, 'name' );
+ * The processing status indicates active processing of a transaction.
  *
- * @param integer $id     The primary key of the record.
+ * @param integer $id The primary key of the record.
  *
  * @return integer  Returns the number of affected rows.
+ *
+ * @throws \WmfException
  */
-function _recurring_globalcollect_update_record_in_progress($id) {
+function _recurring_globalcollect_update_record_to_processing($id) {
 
   $result = recurring_globalcollect_get_payment_by_id($id);
   $record = (array) $result;
 
-  $working_statuses = array(
-      civicrm_api_contribution_status( 'Completed' ),
-      civicrm_api_contribution_status( 'Failed' ),
-  );
-  if ( !in_array( $record['contribution_status_id'], $working_statuses ) ) {
-    throw new WmfException( WmfException::INVALID_RECURRING, t( 'The subscription is supposed to be in a completed or failed state before it can be processed.' ), array('contribution_recur' => $record) );
+  $contributionStatus = CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $record['contribution_status_id']);
+
+  if (!in_array($contributionStatus, ['Completed', 'In Progress', 'Failing', 'Failed']) ) {
+    throw new WmfException( WmfException::INVALID_RECURRING, t( 'The subscription is supposed to be in progress or failing before it can be processed. However for legacy reasons we keep processing Completed & Failed too' ), array('contribution_recur' => $record) );
   }
 
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'civicrm' );
 
-  $in_progress_id = civicrm_api_contribution_status('In Progress');
+  $processingStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Processing');
   $affected_rows = db_update( 'civicrm_contribution_recur' )
       ->fields( array(
-          'contribution_status_id' => $in_progress_id,
+          'contribution_status_id' => $processingStatusID,
       ) )
       ->condition( 'id', $id )
       ->execute();
@@ -295,7 +306,7 @@ function _recurring_globalcollect_update_record_in_progress($id) {
   $dbs->pop();
 
   if ( !$affected_rows ) {
-    throw new WmfException( WmfException::INVALID_RECURRING, t( 'The subscription was not marked as in progress.' ), array('contribution_recur' => $record) );
+    throw new WmfException( WmfException::INVALID_RECURRING, t( 'The subscription was not marked as in processing.' ), array('contribution_recur' => $record) );
   }
 
   return $affected_rows;
@@ -327,7 +338,7 @@ function _recurring_globalcollect_update_record_success($id) {
       ->fields( array(
           'failure_count' => 0,
           'failure_retry_date' => null,
-          'contribution_status_id' => civicrm_api_contribution_status('Completed'),
+          'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'In Progress'),
           'next_sched_contribution_date' => $next_sched_contribution,
       ) )
       // FIXME: misuse of processor_id - it should indicate which payment
