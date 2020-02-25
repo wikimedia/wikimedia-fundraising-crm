@@ -263,9 +263,9 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
     $contributionRecur = civicrm_api3('ContributionRecur', 'getSingle',
       ['contact_id' => $this->contactId]
     );
-    $cancelledStatus = civicrm_api_contribution_status('Cancelled');
+
     $this->assertEquals(
-      $cancelledStatus, $contributionRecur['contribution_status_id']
+      'Cancelled', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $contributionRecur['contribution_status_id'])
     );
     $this->assertNotEmpty($contributionRecur['cancel_date']);
     $this->assertTrue(empty($contributionRecur['next_sched_contribution_date']));

@@ -53,10 +53,6 @@ function civicrm_option_group_id($group_name) {
   }
 }
 
-function civicrm_api_contribution_status($key = NULL) {
-  return wmf_civicrm_get_option('Contribution', 'contribution_status_id', $key);
-}
-
 function civicrm_api_classapi() {
   civicrm_initialize();
   if (module_load_include('php', 'civicrm', '../api/class.api') === FALSE) {
@@ -3512,7 +3508,7 @@ function wmf_civicrm_civicrm_alterLogTables(&$logTableSpec) {
  * @return string $contribution_date
  */
 function wmf_civicrm_most_recent_completed_contribution_date($contact_id) {
-  $completedStatusID = civicrm_api_contribution_status('Completed');
+  $completedStatusID = CRM_Core_Pseudoconstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
   return CRM_Core_DAO::singleValueQuery("
     SELECT max(receive_date) FROM civicrm_contribution
     WHERE contact_id = {$contact_id}

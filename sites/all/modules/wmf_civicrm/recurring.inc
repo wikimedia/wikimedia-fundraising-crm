@@ -240,8 +240,8 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now', $run
   date_default_timezone_set($oldTimezone);
 
   // We included completed status for historical reasons - at some point we can probably remove.
-  $completedStatusID = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
-  $inProgressStatusID = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'In Progress');
+  $completedStatusID = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Completed');
+  $inProgressStatusID = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'In Progress');
 
   watchdog(
     'recurring_globalcollect',
