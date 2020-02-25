@@ -83,7 +83,7 @@ function recurring_globalcollect_get_failure_retry_batch($limit = 1, $date = 'no
 SELECT civicrm_contribution_recur.* FROM civicrm_contribution_recur
 WHERE
     civicrm_contribution_recur.failure_retry_date BETWEEN :start AND :now
-    AND civicrm_contribution_recur.contribution_status_id = IN ({$failedStatusID} , {$failingStatusID})
+    AND civicrm_contribution_recur.contribution_status_id IN ({$failedStatusID} , {$failingStatusID})
     AND civicrm_contribution_recur.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
     AND ( civicrm_contribution_recur.end_date IS NULL )
 EOS;
