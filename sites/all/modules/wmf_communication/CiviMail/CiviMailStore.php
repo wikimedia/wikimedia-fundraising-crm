@@ -233,7 +233,8 @@ VALUES ( %1, %2, %3 )";
 		}
 		$job = new CRM_Mailing_DAO_MailingJob();
 		$job->mailing_id = $mailingId;
-		if ( !$job->find() || !$job->fetch() ) {
+
+		if (!$job->fetch() || $job->N == 0) {
 			return null;
 		}
 		self::$jobs[$mailingId] = $job;

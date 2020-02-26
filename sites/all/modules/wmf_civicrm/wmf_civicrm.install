@@ -5485,3 +5485,56 @@ function wmf_civicrm_update_8020() {
     WHERE contribution_status_id = {$statuses['Failed']}"
   );
 }
+
+/**
+ * Get rid of old review tags.
+ *
+ * See https://phabricator.wikimedia.org/T245577#5895651 for analysis
+ *
+ * Bug: T245577
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_8025() {
+  civicrm_initialize();
+  // https://www.namasteui.com/mysql-group_concat-maximum-length/
+  CRM_Core_DAO::executeQuery('SET SESSION group_concat_max_len = 10000000');
+  $autoReviewTagID = CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_tag WHERE name = "Quick autoreviewed"');
+  $batchLimit = 500;
+  while (CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_entity_tag WHERE tag_id = ' . $autoReviewTagID . ' LIMIT 1')) {
+
+    $ids = CRM_Core_DAO::singleValueQuery(
+      "SELECT GROUP_CONCAT(id) FROM (SELECT id FROM civicrm_entity_tag WHERE tag_id = $autoReviewTagID LIMIT $batchLimit) as t"
+    );
+    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_entity_tag WHERE id IN (' . $ids . ')');
+    CRM_Core_DAO::executeQuery('DELETE FROM log_civicrm_entity_tag WHERE id IN (' . $ids . ')');
+  }
+
+  $tagsToDelete = [
+    'Quick autoreviewed',
+    'Autoreviewed - Unique',
+    'Manually reviewed - Revert address',
+    'Manually reviewed - Revert name',
+    'Manually reviewed - Revert email',
+    'Manually reviewed - Perform action',
+    'Manually reviewed - Revert language',
+  ];
+  CRM_Core_DAO::executeQuery('DELETE FROM civicrm_tag WHERE name IN ("' . implode('","', $tagsToDelete) . '")');
+}
+
+/**
+ * Remove defunct contribution recur statuses
+ *
+ * Bug: T245326
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_8030() {
+  civicrm_initialize();
+  civicrm_api3('OptionValue', 'get', [
+    'sequential' => 1,
+    'option_group_id' => "contribution_recur_status",
+    'name' => ['IN' => ["Settled", "Paid", "Refunded", "Partially paid", "Chargeback", "Pending refund"]],
+    'api.OptionValue.delete' => [],
+  ]);
+}
