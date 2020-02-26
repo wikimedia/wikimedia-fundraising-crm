@@ -371,7 +371,6 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       new DateTime($newContributionRecur['next_sched_contribution_date'])
     );
     $this->assertGreaterThanOrEqual(27, $dateDiff->days);
-    $this->assertEquals(2, $newContributionRecur['installments']);
     $this->assertEquals(
       'In Progress',
       CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
@@ -474,7 +473,6 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       new DateTime($newContributionRecur['next_sched_contribution_date'])
     );
     $this->assertGreaterThanOrEqual(27, $dateDiff->days);
-    $this->assertEquals(1, $newContributionRecur['installments']);
     $this->assertEquals(
       'In Progress',
       CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
@@ -639,9 +637,6 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       new DateTime($newContributionRecur['next_sched_contribution_date'])
     );
     $this->assertGreaterThanOrEqual(27, $dateDiff->days);
-
-    // confirm that the current recurring series installment count is 2
-    $this->assertEquals(2, $newContributionRecur['installments']);
   }
 
   public function testRecurringChargeJobQueue() {
@@ -682,7 +677,6 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'gross' => '12.34',
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
-      'effort_id' => 2,
       'financial_type_id' => '1',
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
@@ -745,7 +739,6 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'gross' => '9.00',
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
-      'effort_id' => 1,
       'financial_type_id' => '1',
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
@@ -814,7 +807,6 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'gross' => '11.22',
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
-      'effort_id' => 2,
       'financial_type_id' => '1',
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
@@ -1036,7 +1028,6 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'gross' => '12.34',
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $nextInvoiceId,
-      'effort_id' => 2,
       'financial_type_id' => '1',
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
