@@ -2,6 +2,7 @@
 
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
+use SmashPig\PaymentData\ErrorCode;
 use CRM_SmashPig_ExtensionUtil as E;
 
 class CRM_Core_Payment_SmashPigRecurringProcessor {
@@ -15,6 +16,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   protected $catchUpDays;
 
   protected $batchSize;
+
+  protected $smashPigProcessors;
 
   const MAX_MERCHANT_REFERENCE_RETRIES = 3;
 
@@ -38,6 +41,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $this->maxFailures = $maxFailures;
     $this->catchUpDays = $catchUpDays;
     $this->batchSize = $batchSize;
+    $processorsApiResult = civicrm_api3('PaymentProcessor', 'get', ['class_name' => 'Payment_SmashPig']);
+    $this->smashPigProcessors = $processorsApiResult['values'];
   }
 
   /**
@@ -64,7 +69,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         )->days;
 
         if ($days < 24) {
-            throw new CRM_Extension_Exception('Two recurring charges within 23 days. recurring_id: '.$recurringPayment['id']);
+            throw new UnexpectedValueException('Two recurring charges within 23 days. recurring_id: '.$recurringPayment['id']);
         }
 
         $result[$recurringPayment['id']]['previous_contribution'] = $previousContribution;
@@ -96,7 +101,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         ]);
         $result['success']['ids'][] = $recurringPayment['id'];
       } catch (CiviCRM_API3_Exception $e) {
-        $this->recordFailedPayment($recurringPayment);
+        $this->recordFailedPayment($recurringPayment, $e);
         $result[$recurringPayment['id']]['error'] = $e->getMessage();
         $result['failed']['ids'][] = $recurringPayment['id'];
       }
@@ -116,7 +121,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @throws \CiviCRM_API3_Exception
    */
   protected function getPaymentsToCharge() {
-    $smashpigProcessors = civicrm_api3('PaymentProcessor', 'get', ['class_name' => 'Payment_SmashPig']);
     $earliest = "-$this->catchUpDays days";
     $recurringPayments = civicrm_api3('ContributionRecur', 'get', [
       'next_sched_contribution_date' => [
@@ -125,7 +129,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
           UtcDate::getUtcDatabaseString(),
         ],
       ],
-      'payment_processor_id' => ['IN' => array_keys($smashpigProcessors['values'])],
+      'payment_processor_id' => ['IN' => array_keys($this->smashPigProcessors)],
       'contribution_status_id' => [
         'IN' => [
           'Pending',
@@ -180,6 +184,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $invoiceId = $payment['invoice_id'];
     if ($this->useQueue) {
       $ctId = explode('.', $invoiceId)[0];
+      $pid = $recurringPayment['payment_processor_id'];
+      $processorName = $this->smashPigProcessors[$pid]['name'];
       $queueMessage = [
         'contact_id' => $recurringPayment['contact_id'],
         'effort_id' => $recurringPayment['installments'] + 1,
@@ -189,7 +195,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'contribution_type_id' => $previousPayment['financial_type_id'],
         'payment_instrument_id' => $previousPayment['payment_instrument_id'],
         'invoice_id' => $invoiceId,
-        'gateway' => 'ingenico', // TODO: generalize
+        'gateway' => $processorName,
         'gross' => $recurringPayment['amount'],
         'currency' => $recurringPayment['currency'],
         'gateway_txn_id' => $payment['processor_id'],
@@ -206,6 +212,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       // Create the contribution
       civicrm_api3('Contribution', 'create', [
         'financial_type_id' => $previousPayment['financial_type_id'],
+        'payment_instrument_id' => $previousPayment['payment_instrument_id'],
         'total_amount' => $recurringPayment['amount'],
         'currency' => $recurringPayment['currency'],
         'contribution_recur_id' => $recurringPayment['id'],
@@ -217,15 +224,19 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     }
   }
 
-  protected function recordFailedPayment($recurringPayment) {
+  protected function recordFailedPayment($recurringPayment, CiviCRM_API3_Exception $exception) {
     $newFailureCount = $recurringPayment['failure_count'] + 1;
     $params = [
       'id' => $recurringPayment['id'],
       'failure_count' => $newFailureCount,
     ];
+    $cancelRecurringDonation = false;
+    if ($exception->getErrorCode() === ErrorCode::DECLINED_DO_NOT_RETRY) {
+      $cancelRecurringDonation = true;
+      $params['cancel_reason'] = '(auto) un-retryable card decline reason code';
+    }
     if ($newFailureCount >= $this->maxFailures) {
-      $params['contribution_status_id'] = 'Cancelled';
-      $params['cancel_date'] = UtcDate::getUtcDatabaseString();
+      $cancelRecurringDonation = true;
       $params['cancel_reason'] = '(auto) maximum failures reached';
     }
     else {
@@ -233,6 +244,10 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       $params['next_sched_contribution_date'] = UtcDate::getUtcDatabaseString(
         "+$this->retryDelayDays days"
       );
+    }
+    if ($cancelRecurringDonation) {
+      $params['contribution_status_id'] = 'Cancelled';
+      $params['cancel_date'] = UtcDate::getUtcDatabaseString();
     }
     civicrm_api3('ContributionRecur', 'create', $params);
   }
@@ -418,15 +433,13 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   ) {
     Civi::log()->info('Error: '.$exception->getErrorCode().' invoice_id:'.$paymentParams['invoice_id']);
     switch ($exception->getErrorCode()) {
-      case 300620:
-        // FIXME: this is currently dealing with an Ingenico-specific code.
-        // SmashPig should eventually normalize these error codes.
+      case ErrorCode::DUPLICATE_ORDER_ID:
         // If we get an error that means the merchant reference has already
         // been used, increment it and try again.
         $currentInvoiceId = $paymentParams['invoice_id'];
         $nextInvoiceId = self::getNextInvoiceId($currentInvoiceId);
         $paymentParams['invoice_id'] = $nextInvoiceId;
-        Civi::log()->info('Error 300620: Current invoice_id: '.$currentInvoiceId.' Next invoice_id: '.$nextInvoiceId);
+        Civi::log()->info('Duplicate invoice ID: Current invoice_id: '.$currentInvoiceId.' Next invoice_id: '.$nextInvoiceId);
         return TRUE;
       default:
         return FALSE;

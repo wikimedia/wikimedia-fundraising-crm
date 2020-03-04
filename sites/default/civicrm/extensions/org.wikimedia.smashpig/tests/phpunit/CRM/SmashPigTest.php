@@ -2,10 +2,16 @@
 
 use Civi\Test\HeadlessInterface;
 use Civi\Test\TransactionalInterface;
+use Psr\Log\LogLevel;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
+use SmashPig\Core\PaymentError;
 use SmashPig\Core\UtcDate;
 use SmashPig\CrmLink\Messages\SourceFields;
+use SmashPig\PaymentData\ErrorCode;
+use SmashPig\PaymentData\FinalStatus;
+use SmashPig\PaymentProviders\ApprovePaymentResponse;
+use SmashPig\PaymentProviders\CreatePaymentResponse;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
@@ -53,157 +59,17 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     'Contact' => [],
   ];
 
-  private $createPaymentResponse = [
-    'creationOutput' => [
-      'additionalReference' => '123455.2',
-      'externalReference' => '123455.2',
-    ],
-    'payment' => [
-      'id' => '000000850010000188130000200001',
-      'paymentOutput' => [
-        'amountOfMoney' => [
-          'amount' => 1234,
-          'currencyCode' => 'USD',
-        ],
-        'references' => [
-          'merchantReference' => '123455.2',
-          'paymentReference' => '0',
-        ],
-        'paymentMethod' => 'card',
-        'cardPaymentMethodSpecificOutput' => [
-          'paymentProductId' => 1,
-          'authorisationCode' => '726747',
-          'card' => [
-            'cardNumber' => '************7977',
-            'expiryDate' => '1220',
-          ],
-          'fraudResults' => [
-            'avsResult' => '0',
-            'cvvResult' => '0',
-            'fraudServiceResult' => 'no-advice',
-          ],
-        ],
-      ],
-      'status' => 'PENDING_APPROVAL',
-      'statusOutput' => [
-        'isCancellable' => TRUE,
-        'statusCode' => 600,
-        'statusCodeChangeDateTime' => '20180522154830',
-        'isAuthorized' => TRUE,
-      ],
-    ],
-  ];
-  private $createPaymentResponse2 = [
-    'creationOutput' => [
-      'additionalReference' => '123455.2',
-      'externalReference' => '123455.2',
-    ],
-    'payment' => [
-      'id' => '000000850010000188140000200001',
-      'paymentOutput' => [
-        'amountOfMoney' => [
-          'amount' => 1234,
-          'currencyCode' => 'USD',
-        ],
-        'references' => [
-          'merchantReference' => '123455.2',
-          'paymentReference' => '0',
-        ],
-        'paymentMethod' => 'card',
-        'cardPaymentMethodSpecificOutput' => [
-          'paymentProductId' => 1,
-          'authorisationCode' => '726747',
-          'card' => [
-            'cardNumber' => '************7977',
-            'expiryDate' => '1220',
-          ],
-          'fraudResults' => [
-            'avsResult' => '0',
-            'cvvResult' => '0',
-            'fraudServiceResult' => 'no-advice',
-          ],
-        ],
-      ],
-      'status' => 'PENDING_APPROVAL',
-      'statusOutput' => [
-        'isCancellable' => TRUE,
-        'statusCode' => 600,
-        'statusCodeChangeDateTime' => '20180522154830',
-        'isAuthorized' => TRUE,
-      ],
-    ],
-  ];
+  /** @var \SmashPig\PaymentProviders\CreatePaymentResponse */
+  private $createPaymentResponse;
 
-  private $approvePaymentResponse = [
-    'payment' => [
-      'id' => '000000850010000188130000200001',
-      'paymentOutput' => [
-        'amountOfMoney' => [
-          'amount' => 1234,
-          'currencyCode' => 'USD',
-        ],
-        'references' => [
-          'paymentReference' => '0',
-        ],
-        'paymentMethod' => 'card',
-        'cardPaymentMethodSpecificOutput' => [
-          'paymentProductId' => 1,
-          'authorisationCode' => '123456',
-          'card' => [
-            'cardNumber' => '************7977',
-            'expiryDate' => '1220',
-          ],
-          'fraudResults' => [
-            'avsResult' => '0',
-            'cvvResult' => 'M',
-            'fraudServiceResult' => 'no-advice',
-          ],
-        ],
-      ],
-      'status' => 'CAPTURE_REQUESTED',
-      'statusOutput' => [
-        'isCancellable' => FALSE,
-        'statusCode' => 800,
-        'statusCodeChangeDateTime' => '20180627140735',
-        'isAuthorized' => TRUE,
-      ],
-    ],
-  ];
-  private $approvePaymentResponse2 = [
-    'payment' => [
-      'id' => '000000850010000188140000200001',
-      'paymentOutput' => [
-        'amountOfMoney' => [
-          'amount' => 1234,
-          'currencyCode' => 'USD',
-        ],
-        'references' => [
-          'paymentReference' => '0',
-        ],
-        'paymentMethod' => 'card',
-        'cardPaymentMethodSpecificOutput' => [
-          'paymentProductId' => 1,
-          'authorisationCode' => '123456',
-          'card' => [
-            'cardNumber' => '************7977',
-            'expiryDate' => '1220',
-          ],
-          'fraudResults' => [
-            'avsResult' => '0',
-            'cvvResult' => 'M',
-            'fraudServiceResult' => 'no-advice',
-          ],
-        ],
-      ],
-      'status' => 'CAPTURE_REQUESTED',
-      'statusOutput' => [
-        'isCancellable' => FALSE,
-        'statusCode' => 800,
-        'statusCodeChangeDateTime' => '20180627140735',
-        'isAuthorized' => TRUE,
-      ],
-    ],
-  ];
+  /** @var \SmashPig\PaymentProviders\CreatePaymentResponse */
+  private $createPaymentResponse2;
+
+  /** @var \SmashPig\PaymentProviders\ApprovePaymentResponse */
+  private $approvePaymentResponse;
+
+  /** @var \SmashPig\PaymentProviders\ApprovePaymentResponse */
+  private $approvePaymentResponse2;
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
@@ -215,6 +81,19 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
 
   public function setUp() {
     parent::setUp();
+    $this->createPaymentResponse = (new CreatePaymentResponse())
+      ->setGatewayTxnId('000000850010000188130000200001')
+      ->setStatus(FinalStatus::PENDING_POKE);
+    $this->createPaymentResponse2 = (new CreatePaymentResponse())
+      ->setGatewayTxnId('000000850010000188140000200001')
+      ->setStatus(FinalStatus::PENDING_POKE);
+    $this->approvePaymentResponse = (new ApprovePaymentResponse())
+      ->setGatewayTxnId('000000850010000188130000200001')
+      ->setStatus(FinalStatus::COMPLETE);
+    $this->approvePaymentResponse2 = (new ApprovePaymentResponse())
+      ->setGatewayTxnId('000000850010000188140000200001')
+      ->setStatus(FinalStatus::COMPLETE);
+
     if (!isset($GLOBALS['_PEAR_default_error_mode'])) {
       // This is simply to protect against e-notices if globals have been reset by phpunit.
       $GLOBALS['_PEAR_default_error_mode'] = NULL;
@@ -401,7 +280,11 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       );
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('approvePayment')
-      ->with('000000850010000188130000200001')
+      ->with([
+        'amount' => 12.34,
+        'currency' => 'USD',
+        'gateway_txn_id' => '000000850010000188130000200001',
+      ])
       ->willReturn(
         $this->approvePaymentResponse
       );
@@ -450,7 +333,11 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       );
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('approvePayment')
-      ->with('000000850010000188130000200001')
+      ->with([
+        'amount' => 12.34,
+        'currency' => 'USD',
+        'gateway_txn_id' => '000000850010000188130000200001',
+      ])
       ->willReturn(
         $this->approvePaymentResponse
       );
@@ -549,7 +436,11 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       );
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('approvePayment')
-      ->with('000000850010000188130000200001')
+      ->with([
+        'amount' => 9.00,
+        'currency' => 'USD',
+        'gateway_txn_id' => '000000850010000188130000200001',
+      ])
       ->willReturn(
         $this->approvePaymentResponse
       );
@@ -667,8 +558,16 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $this->hostedCheckoutProvider->expects($this->exactly(2))
       ->method('approvePayment')
       ->withConsecutive(
-        ['000000850010000188130000200001'],
-        ['000000850010000188140000200001',])
+        [[
+          'amount' => 9.00,
+          'currency' => 'USD',
+          'gateway_txn_id' => '000000850010000188130000200001',
+        ]],
+        [[
+          'amount' => 9.00,
+          'currency' => 'USD',
+          'gateway_txn_id' => '000000850010000188140000200001',
+        ]])
       ->will(
         $this->onConsecutiveCalls(
           $this->approvePaymentResponse,
@@ -690,6 +589,10 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $params = [
       'id' => $contributionRecur['id'],
       'payment_processor_id' => $this->processorId,
+      // FIXME: We're putting this 28 days in the past to fool the too-soon
+      // contribution filter. Instead we should set this to now and update
+      // the contribution record created in the previous run to set it to
+      // 28 days earlier.
       'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-28  days')),
     ];
     $this->callAPISuccess('ContributionRecur', 'create', $params);
@@ -783,7 +686,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'financial_type_id' => '1',
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
-      'gateway' => 'ingenico',
+      'gateway' => 'testSmashPig',
       'payment_method' => 'cc',
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
@@ -846,7 +749,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'financial_type_id' => '1',
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
-      'gateway' => 'ingenico',
+      'gateway' => 'testSmashPig',
       'payment_method' => 'cc',
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
@@ -873,11 +776,6 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $contribution = $this->createContribution($contributionRecur);
     list($ctId, $expectedInvoiceId, $next) = $this->getExpectedIds($contribution);
     $expectedDescription = $this->getExpectedDescription();
-    $createResponse = $this->createPaymentResponse;
-    $createResponse['payment']['paymentOutput']['amountOfMoney'] = [
-      'amount' => 1122,
-      'currencyCode' => 'EUR',
-    ];
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
       ->with([
@@ -894,17 +792,12 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
         'user_ip' => '12.34.56.78',
       ])
       ->willReturn(
-        $createResponse
+        $this->createPaymentResponse
       );
-    $approveResponse = $this->approvePaymentResponse;
-    $approveResponse['payment']['paymentOutput']['amountOfMoney'] = [
-      'amount' => 1122,
-      'currencyCode' => 'EUR',
-    ];
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('approvePayment')
       ->willReturn(
-        $approveResponse
+        $this->approvePaymentResponse
       );
     civicrm_api3('Job', 'process_smashpig_recurring', []);
     $queue = QueueWrapper::getQueue('donations');
@@ -925,7 +818,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'financial_type_id' => '1',
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
-      'gateway' => 'ingenico',
+      'gateway' => 'testSmashPig',
       'payment_method' => 'cc',
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
@@ -938,10 +831,13 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token);
     $this->createContribution($contributionRecur);
-    $response = $this->createPaymentResponse;
-    $response['errors'] = [
-      'blahblah',
-    ];
+    $response = (new CreatePaymentResponse())->addErrors(
+      new PaymentError(
+        ErrorCode::DECLINED,
+        'No doughnuts for you!',
+        LogLevel::ERROR
+      )
+    );
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
       ->willReturn(
@@ -965,9 +861,50 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $this->assertEquals(
       'Failing',
       CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
-
     );
     $this->assertEquals('1', $newContributionRecur['failure_count']);
+  }
+
+  /**
+   * When we get a DO_NOT_RETRY error code, we should cancel the subscription
+   * immediately without waiting for 3 retries.
+   */
+  public function testPaymentFailsNoRetry() {
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id']);
+    $contributionRecur = $this->createContributionRecur($token);
+    $this->createContribution($contributionRecur);
+    $response = (new CreatePaymentResponse())->addErrors(
+      new PaymentError(
+        ErrorCode::DECLINED_DO_NOT_RETRY,
+        'Better not try me again!',
+        LogLevel::ERROR
+      )
+    );
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->willReturn(
+        $response
+      );
+    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+      TRUE, 1, 3, 1, 1
+    );
+    $processor->run();
+    $queue = QueueWrapper::getQueue('donations');
+    $this->assertNull($queue->pop(), 'Should not have queued a donation!');
+    $newContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', [
+      'id' => $contributionRecur['id'],
+    ]);
+    $expectedCancelDate = UtcDate::getUtcTimestamp();
+    $cancelDate = UtcDate::getUtcTimestamp(
+      $newContributionRecur['cancel_date']
+    );
+    $this->assertEquals('(auto) un-retryable card decline reason code', $newContributionRecur['cancel_reason']);
+    $this->assertLessThan(100, abs($cancelDate - $expectedCancelDate));
+    $this->assertEquals(
+      'Cancelled',
+      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
+    );
   }
 
   /**
@@ -990,10 +927,13 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'failure_count' => 2,
     ]);
     $this->createContribution($contributionRecur);
-    $response = $this->createPaymentResponse;
-    $response['errors'] = [
-      'blahblah',
-    ];
+    $response = (new CreatePaymentResponse())->addErrors(
+      new PaymentError(
+        ErrorCode::DECLINED,
+        'No doughnuts for you!',
+        LogLevel::ERROR
+      )
+    );
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
       ->willReturn(
@@ -1020,21 +960,25 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $this->assertEquals('3', $newContributionRecur['failure_count']);
   }
 
-  public function testError300620() {
+  /**
+   * If the payment processor rejects our attempt because we're repeating the
+   * order ID (aka merchant reference or invoice ID), we should retry with a
+   * new ID.
+   */
+  public function testDuplicateOrderId() {
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token);
     $contribution = $this->createContribution($contributionRecur);
     list($ctId, $expectedInvoiceId, $nextInvoiceId) = $this->getExpectedIds($contribution);
-    $response = $this->createPaymentResponse;
-    $response['errors'] = [
-      [
-        'code' => '300620',
-        'requestId' => '9126465',
-        'message' => "MERCHANTREFERENCE $expectedInvoiceId ALREADY EXISTS",
-        'httpStatusCode' => 409,
-      ],
-    ];
+    $response = (new CreatePaymentResponse())->addErrors(
+      new PaymentError(
+        ErrorCode::DUPLICATE_ORDER_ID,
+        '{"code":"300620","requestId":"9126465":"message":"MERCHANTREFERENCE ' .
+        $expectedInvoiceId . ' ALREADY EXISTS","httpStatusCode":409',
+        LogLevel::ERROR
+      )
+    );
     $expectedDescription = $this->getExpectedDescription();
     $firstCallParams = [
       'recurring_payment_token' => 'abc123-456zyx-test12',
@@ -1072,6 +1016,11 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
         $response,
         $this->createPaymentResponse
       );
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('approvePayment')
+      ->willReturn(
+        $this->approvePaymentResponse
+      );
     $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
       TRUE, 1, 3, 1, 1
     );
@@ -1091,7 +1040,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'financial_type_id' => '1',
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
-      'gateway' => 'ingenico',
+      'gateway' => 'testSmashPig',
       'payment_method' => 'cc',
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
@@ -1100,8 +1049,8 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
   }
 
   /**
-   * When a payment sent to the merchant fails, check that the amount of failures are taken into account when generating
-   * the next InvoiceID
+   * When a payment sent to the merchant fails, check that the amount of
+   * failures are taken into account when generating the next InvoiceID
    */
   public function testRecurringChargeWithPreviousFailedAttempts() {
     \Civi::settings()->set(
@@ -1140,7 +1089,11 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       );
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('approvePayment')
-      ->with('000000850010000188130000200001')
+      ->with([
+        'amount' => 12.34,
+        'currency' => 'USD',
+        'gateway_txn_id' => '000000850010000188130000200001',
+      ])
       ->willReturn(
         $this->approvePaymentResponse
       );
