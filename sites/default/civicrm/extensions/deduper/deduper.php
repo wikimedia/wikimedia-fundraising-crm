@@ -281,6 +281,12 @@ function deduper_civicrm_alterAPIPermissions($entity, $action, &$params, &$permi
     'create' => ['merge duplicate contacts'],
   ];
 
+  if ($entity === 'setting' &&
+    (($action === 'get' && isset($params['return']) && $params['return'] === 'deduper_equivalent_name_handling')
+    || ($action === 'getoptions' && $params['field'] === 'deduper_equivalent_name_handling'))
+  ) {
+    $permissions['setting']['get'] = [['merge duplicate contacts', 'administer CiviCRM']];
+  }
 
 }
 
