@@ -281,6 +281,9 @@ function deduper_civicrm_alterAPIPermissions($entity, $action, &$params, &$permi
     'create' => ['merge duplicate contacts'],
   ];
 
+  // This is a fairly brittle approach to allowing users without Administer CiviCRM
+  // to access the deduper screen. See https://lab.civicrm.org/dev/core/issues/1633
+  // for thoughts on a future approach.
   if ($entity === 'setting' &&
     (($action === 'get' && isset($params['return']) && $params['return'] === 'deduper_equivalent_name_handling')
     || ($action === 'getoptions' && $params['field'] === 'deduper_equivalent_name_handling'))
