@@ -1,0 +1,9 @@
+{
+  "extra": {
+    "downloads": {
+      "ckeditor5": {
+        "url": "https://download.cksource.com/CKEditor/CKEditor5/16.0.0/ckeditor5-build-classic-16.0.0.zip"
+      }
+    }
+  }
+}
