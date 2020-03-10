@@ -54,5 +54,6 @@ function wmf_install_get_installed_extensions() {
     'org.wikimedia.thethe',
     'uk.org.futurefirst.networks.emailamender',
     'wmf-thankyou',
+    'ckeditor5',
   ];
 }
