@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0f6faf71a208077b1718f74e1dd83ecd",
+    "content-hash": "44c0e91b377533d32ba66667d84faa71",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -3050,11 +3050,11 @@
         },
         {
             "name": "wikimedia/donation-interface",
-            "version": "v2.4",
+            "version": "v2.5.0",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "a7160001ab6fe266884409c94ee0b7061b0f9166"
+                "reference": "09f8790d2892fc01c745d1a69e246e3896526b8e"
             },
             "require": {
                 "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
@@ -3067,17 +3067,20 @@
                 "predis/predis": "^1.1",
                 "psr/log": "^1.0",
                 "symfony/yaml": "^3",
-                "wikimedia/smash-pig": "^0.5",
+                "wikimedia/smash-pig": "^0.6",
                 "zordius/lightncandy": "0.23"
             },
             "require-dev": {
-                "jakub-onderka/php-console-highlighter": "0.3.2",
+                "jakub-onderka/php-console-highlighter": "0.4.0",
                 "jakub-onderka/php-parallel-lint": "1.0.0",
                 "mediawiki/mediawiki-codesniffer": "26.0.0",
-                "mediawiki/minus-x": "0.3.1",
+                "mediawiki/minus-x": "0.3.2",
                 "wikimedia/testing-access-wrapper": "~1.0"
             },
             "type": "library",
+            "extra": {
+                "phan-taint-check-plugin": "2.0.2"
+            },
             "autoload": {
                 "classmap": [
                     "adyen_gateway",
@@ -3100,7 +3103,7 @@
                 "GPL-2.0-or-later"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2019-09-23T07:25:20+00:00"
+            "time": "2020-03-10T19:10:18+00:00"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
@@ -3152,17 +3155,18 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.5.11.3",
+            "version": "v0.6.0",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "d52d203263b17f8d2a8537ebb22bf30c58018f9f"
+                "reference": "c5b83e222ba9399ba3bb9f348cd78e05b35c50e1"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
                 "coderkungfu/php-queue": "^1.0",
                 "corneltek/getoptionkit": "^2.5",
-                "php": ">=5.6",
+                "ext-json": "*",
+                "php": ">=7.0",
                 "phpmailer/phpmailer": "^5.2",
                 "predis/predis": "^1.1",
                 "psr/cache": "^1.0",
@@ -3175,7 +3179,7 @@
                 "ext-sqlite3": "*",
                 "jakub-onderka/php-parallel-lint": "^0.9",
                 "mediawiki/mediawiki-codesniffer": "0.11.0",
-                "phpunit/phpunit": "^5.6"
+                "phpunit/phpunit": "^6"
             },
             "type": "library",
             "autoload": {
@@ -3207,6 +3211,18 @@
                 {
                     "name": "Maggie Epps",
                     "email": "mepps@wikimedia.org"
+                },
+                {
+                    "name": "Jack Gleeson",
+                    "email": "jgleeson@wikimedia.org"
+                },
+                {
+                    "name": "Christine Stone",
+                    "email": "cstone@wikimedia.org"
+                },
+                {
+                    "name": "Andrew Russell Green",
+                    "email": "agreen@wikimedia.org"
                 }
             ],
             "description": "The open source PHP flexible payments library and frontend/backend mediator.",
@@ -3215,7 +3231,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2019-12-09T21:53:34+00:00"
+            "time": "2020-03-06T22:45:13+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -4058,8 +4074,8 @@
             "authors": [
                 {
                     "name": "Sebastian Bergmann",
-                    "email": "sb@sebastian-bergmann.de",
-                    "role": "lead"
+                    "role": "lead",
+                    "email": "sb@sebastian-bergmann.de"
                 }
             ],
             "description": "Utility class for timing",

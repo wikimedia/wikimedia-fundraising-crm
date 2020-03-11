@@ -2,7 +2,10 @@
 
 use Civi\API\Exception\NotImplementedException;
 use Civi\Payment\Exception\PaymentProcessorException;
+use SmashPig\PaymentData\ErrorCode;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
+use SmashPig\PaymentProviders\CreatePaymentResponse;
+use SmashPig\PaymentProviders\ApprovePaymentResponse;
 
 require_once "CRM/SmashPig/ContextWrapper.php";
 
@@ -55,17 +58,29 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
 
     $provider = PaymentProviderFactory::getProviderForMethod('cc');
 
-    $processorId = $this->createPayment($params, $provider);
-    $approvePaymentResponse = $provider->approvePayment($processorId, []);
-    if (!empty($approvePaymentResponse['errors'])) {
-      $this->throwException(
-        'ApprovePayment failed', $approvePaymentResponse['errors']
-      );
+    $request = $this->convertParams( $params );
+    /** @var CreatePaymentResponse $createPaymentResponse */
+    $createPaymentResponse = $provider->createPayment( $request );
+
+    if ( !$createPaymentResponse->isSuccessful() ) {
+      $this->throwException( 'CreatePayment failed', $createPaymentResponse );
     }
+
+    /** @var ApprovePaymentResponse $approvePaymentResponse */
+    $approvePaymentResponse = $provider->approvePayment([
+      'amount' => $params['amount'],
+      'currency' => $params['currency'],
+      'gateway_txn_id' => $createPaymentResponse->getGatewayTxnId(),
+    ]);
+
+    if ( !$approvePaymentResponse->isSuccessful() ) {
+      $this->throwException( 'ApprovePayment failed', $approvePaymentResponse );
+    }
+
     $allContributionStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
     $status = array_search('Completed', $allContributionStatus);
     return [
-      'processor_id' => $processorId,
+      'processor_id' => $approvePaymentResponse->getgatewayTxnId(),
       'invoice_id' => $params['invoice_id'],
       'payment_status_id' => $status,
     ];
@@ -162,52 +177,29 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
   }
 
   /**
-   * Create a payment attempt at the payment processor
-   *
-   * @param array $params
-   * @param $provider
-   *
-   * @return string The processor's ID for the payment
-   *
-   * @throws \Civi\Payment\Exception\PaymentProcessorException
-   */
-  protected function createPayment($params, $provider) {
-    $request = $this->convertParams($params);
-    $createPaymentResponse = $provider->createPayment($request);
-    if (!empty($createPaymentResponse['errors'])) {
-      $this->throwException(
-        'CreatePayment Failed', $createPaymentResponse['errors']
-      );
-    }
-    // FIXME: SmashPig library should normalize return values, this is
-    // specific to Ingenico Connect's json response
-    $trxnId = $createPaymentResponse['payment']['id'];
-    return $trxnId;
-  }
-
-
-  /**
    * Format and throw a PaymentProcessorException, given an array of
    * errors from the SmashPig payment call.
    *
-   * @param string $message
-   * @param array[] $errorArray
+   * @param string $errorMessage
+   * @param CreatePaymentResponse $processorResponse
    *
    * @throws \Civi\Payment\Exception\PaymentProcessorException
    */
-  protected function throwException($message, $errorArray) {
-    $errorCode = -1;
-    if (count($errorArray) === 1) {
-      $error = $errorArray[0];
-      if (isset($error['message'])) {
-        $message .= ': ' . $error['message'];
-      }
-      if (isset($error['code'])) {
-        $errorCode = intval($error['code']);
-      }
+  protected function throwException( $errorMessage, CreatePaymentResponse $processorResponse ) {
+    if (!$processorResponse->hasErrors()) {
+      $errorCode = ErrorCode::UNKNOWN;
     }
+    elseif ($processorResponse->hasError(ErrorCode::DECLINED_DO_NOT_RETRY)) {
+      $errorCode = ErrorCode::DECLINED_DO_NOT_RETRY;
+    }
+    else {
+      $errorCode = $processorResponse->getErrors()[0]->getErrorCode();
+    }
+    $errorData = [
+      'smashpig_processor_response' => $processorResponse
+    ];
     throw new PaymentProcessorException(
-      $message, $errorCode, $errorArray
+      $errorMessage, $errorCode, $errorData
     );
   }
 
