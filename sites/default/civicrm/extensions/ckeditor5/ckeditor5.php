@@ -157,11 +157,11 @@ function ckeditor5_civicrm_coreResourceList(&$items, $region) {
           // Note that I am just using 'classic build' at the moment - not a configured
           // build so no build in the path.
           'CKEditor5Location' => CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/ckeditor5/ckeditor-classic-build/ckeditor.js'),
-          'ELFinderLocation' => CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/js/elFinder.min.js'),
+          'ELFinderLocation' => CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/js/elfinder.min.js'),
           'ELFinderConnnector' => CRM_Utils_System::url('civicrm/image/access'),
         ],
       ];
-      CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/css/elFinder.min.css'));
+      CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/css/elfinder.min.css'));
     }
 
     if (Civi::settings()->get('editor_id') === 'CKEditor5-base64') {
@@ -175,7 +175,7 @@ function ckeditor5_civicrm_coreResourceList(&$items, $region) {
           'ELFinderConnnector' => NULL,
         ],
       ];
-      CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/css/elFinder.min.css'));
+      CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/css/elfinder.min.css'));
     }
 
   }
