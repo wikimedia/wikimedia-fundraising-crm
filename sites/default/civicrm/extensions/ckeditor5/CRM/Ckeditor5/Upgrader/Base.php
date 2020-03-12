@@ -47,7 +47,7 @@ class CRM_Ckeditor5_Upgrader_Base {
       // FIXME auto-generate
       self::$instance = new CRM_Ckeditor5_Upgrader(
         'ckeditor5',
-        realpath(__DIR__ . '/../../ckeditor5/')
+        realpath(__DIR__ . '/../../../')
       );
     }
     return self::$instance;
