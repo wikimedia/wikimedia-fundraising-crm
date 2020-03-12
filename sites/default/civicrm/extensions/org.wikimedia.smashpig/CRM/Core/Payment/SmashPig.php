@@ -1,6 +1,5 @@
 <?php
 
-use Civi\API\Exception\NotImplementedException;
 use Civi\Payment\Exception\PaymentProcessorException;
 use SmashPig\PaymentData\ErrorCode;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
@@ -93,13 +92,6 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     CRM_SmashPig_ContextWrapper::createContext("processor_$tag", $tag);
     // TOTHINKABOUT: here we could override ProcessorConfiguration values to use
     // credentials from the Civi UI.
-  }
-
-  /**
-   * support corresponding CiviCRM method
-   */
-  public function changeSubscriptionAmount(&$message = '', $params = []) {
-    throw new NotImplementedException();
   }
 
   /**
@@ -205,5 +197,9 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
 
   public function getEditableRecurringScheduleFields() {
     return ['amount', 'cycle_day', 'next_sched_contribution_date'];
+  }
+
+  public function supportsEditRecurringContribution() {
+    return true;
   }
 }
