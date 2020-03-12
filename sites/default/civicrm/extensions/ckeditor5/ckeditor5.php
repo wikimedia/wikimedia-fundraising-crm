@@ -144,9 +144,12 @@ function ckeditor5_civicrm_themes(&$themes) {
 /**
  * Implements hook_civicrm_coreResourceList
  *
- * Add TinyMCE javascript.
+ * Add ckeditor5.
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_coreResourceList
+ *
+ * @param array $items
+ * @param array $region
  */
 function ckeditor5_civicrm_coreResourceList(&$items, $region) {
   if ($region === 'html-header') {
@@ -162,6 +165,7 @@ function ckeditor5_civicrm_coreResourceList(&$items, $region) {
         ],
       ];
       CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/css/elfinder.min.css'));
+      CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'css/ckeditor.css'));
     }
 
     if (Civi::settings()->get('editor_id') === 'CKEditor5-base64') {
@@ -175,7 +179,7 @@ function ckeditor5_civicrm_coreResourceList(&$items, $region) {
           'ELFinderConnnector' => NULL,
         ],
       ];
-      CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/css/elfinder.min.css'));
+      CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'css/ckeditor.css'));
     }
 
   }

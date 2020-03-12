@@ -238,6 +238,11 @@
       // has no toolbar by default (as opposed to the elfinder which leverages the classic-build')
       ClassicEditor.create($(item)[0], {
           toolbar: {
+            // With this it wraps rather than offering a drop down for more.
+            // I'm on the fence about which is better but this is consistent with
+            // ckeditor4. If we added configurability we could expose this.
+            // https://ckeditor.com/docs/ckeditor5/latest/api/module_core_editor_editorconfig-EditorConfig.html#member-toolbar
+            shouldNotGroupWhenFull: true,
             items: [
               'heading',
               '|',
@@ -248,12 +253,14 @@
               'superscript',
               'subscript',
               'highlight',
+              '|',
               'removeFormat',
               'specialCharacters',
               'fontFamily',
               'fontColor',
               'fontBackgroundColor',
               'fontSize',
+              '|',
               'bulletedList',
               'numberedList',
               '|',
