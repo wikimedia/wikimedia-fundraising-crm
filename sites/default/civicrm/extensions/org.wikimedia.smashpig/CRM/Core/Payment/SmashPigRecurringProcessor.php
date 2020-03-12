@@ -93,8 +93,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
           'failure_count' => 0,
           'failure_retry_date' => NULL,
           'contribution_status_id' => 'In Progress',
-          // FIXME: set this to 1 instead of 0 for initial insert
-          'installments' => $recurringPayment['installments'] + 1,
           'next_sched_contribution_date' => CRM_Core_Payment_Scheduler::getNextDateForMonth(
             $recurringPayment
           ),
@@ -188,7 +186,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       $processorName = $this->smashPigProcessors[$pid]['name'];
       $queueMessage = [
         'contact_id' => $recurringPayment['contact_id'],
-        'effort_id' => $recurringPayment['installments'] + 1,
         'financial_type_id' => $previousPayment['financial_type_id'],
         // Setting both until we are sure contribution_type_id is not being
         // used anywhere.

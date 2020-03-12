@@ -315,7 +315,6 @@ function recurring_globalcollect_charge($contribution_recur_id, $options = []) {
   ]);
   $values = [
     'amount' => $subscription->amount,
-    // FIXME: should use 'installments' column, not processor_id
     'effort_id' => $subscription->processor_id + 1,
     'order_id' => $transaction->gateway_txn_id,
     'currency' => $subscription->currency,
@@ -329,7 +328,6 @@ function recurring_globalcollect_charge($contribution_recur_id, $options = []) {
 
   // FIXME hack.  This is getting overriden by sad.
   $adapter->addRequestData([
-    // FIXME: should use 'installments' column, not processor_id
     'effort_id' => $subscription->processor_id + 1,
   ]);
 
