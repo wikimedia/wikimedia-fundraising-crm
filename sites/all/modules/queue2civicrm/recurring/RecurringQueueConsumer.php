@@ -269,9 +269,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       // create contact record
       $contact = wmf_civicrm_message_contact_insert($msg);
 
-      // Insert the location record
-      wmf_civicrm_message_location_insert($msg, $contact);
-
       $contactId = $contact['id'];
     } else {
       $contactId = civicrm_api3('Contribution', 'getvalue', [
