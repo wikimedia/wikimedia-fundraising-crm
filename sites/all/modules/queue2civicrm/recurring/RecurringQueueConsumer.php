@@ -292,7 +292,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         'amount' => $msg['original_gross'],
         'frequency_unit' => $msg['frequency_unit'],
         'frequency_interval' => $msg['frequency_interval'],
-        'installments' => $msg['installments'],
+        // Set installments to 0 - they should all be open ended
+        'installments' => 0,
         'start_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
         'create_date' => wmf_common_date_unix_to_civicrm($msg['create_date']),
         'trxn_id' => $msg['subscr_id'],
@@ -325,8 +326,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         $params['trxn_id'] = \WmfTransaction::from_message($msg)->get_unique_id();
         $params['processor_id'] = $msg['gateway_txn_id'];
         $params['invoice_id'] = $msg['order_id'];
-        // Set installments to 0 for non paypal recurring contributions
-        $params['installments'] = 0;
         $params['next_sched_contribution_date'] = wmf_common_date_unix_to_civicrm($msg['start_date']);
         $params['cycle_day'] = date('j', strtotime($params['start_date']));
       }

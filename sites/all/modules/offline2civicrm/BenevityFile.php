@@ -47,7 +47,6 @@ class BenevityFile extends ChecksFile {
    *   The normalized import parameters.
    *
    * @throws \WmfException
-   * @throws \CiviCRM_API3_Exception
    */
   protected function mungeMessage(&$msg) {
     $msg['gateway'] = 'benevity';
@@ -74,17 +73,22 @@ class BenevityFile extends ChecksFile {
       $msg['fee'] = $msg['merchant_fee_amount'] + (empty($msg['fee']) ? 0 : $msg['fee']);
     }
 
-    $msg['employer_id'] = $this->getOrganizationID($msg['matching_organization_name']);
-    // If we let this go through the individual will be treated as an organization.
-    parent::mungeMessage($msg);
-    $msg['contact_id'] = $this->getIndividualID($msg);
-    if ($msg['contact_id'] == $this->getAnonymousContactID()) {
-      $this->unsetAddressFields($msg);
-    }
-    if ($msg['contact_id'] === FALSE) {
-      if (($msg['contact_id'] = $this->getNameMatchedEmployedIndividualID($msg)) != FALSE) {
-        $msg['email_location_type_id'] = 'Work';
+    try {
+      $msg['employer_id'] = $this->getOrganizationID($msg['matching_organization_name']);
+      // If we let this go through the individual will be treated as an organization.
+      parent::mungeMessage($msg);
+      $msg['contact_id'] = $this->getIndividualID($msg);
+      if ($msg['contact_id'] == $this->getAnonymousContactID()) {
+        $this->unsetAddressFields($msg);
       }
+      if ($msg['contact_id'] === FALSE) {
+        if (($msg['contact_id'] = $this->getNameMatchedEmployedIndividualID($msg)) != FALSE) {
+          $msg['email_location_type_id'] = 'Work';
+        }
+      }
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      throw new WmfException(WmfException::INVALID_MESSAGE, $e->getMessage());
     }
     $msg['date'] = $this->additionalFields['date']['year'] . '-' . $this->additionalFields['date']['month'] . '-' . $this->additionalFields['date']['day'];
 

@@ -5497,18 +5497,6 @@ function wmf_civicrm_update_8020() {
  */
 function wmf_civicrm_update_8025() {
   civicrm_initialize();
-  // https://www.namasteui.com/mysql-group_concat-maximum-length/
-  CRM_Core_DAO::executeQuery('SET SESSION group_concat_max_len = 10000000');
-  $autoReviewTagID = CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_tag WHERE name = "Quick autoreviewed"');
-  $batchLimit = 500;
-  while (CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_entity_tag WHERE tag_id = ' . $autoReviewTagID . ' LIMIT 1')) {
-
-    $ids = CRM_Core_DAO::singleValueQuery(
-      "SELECT GROUP_CONCAT(id) FROM (SELECT id FROM civicrm_entity_tag WHERE tag_id = $autoReviewTagID LIMIT $batchLimit) as t"
-    );
-    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_entity_tag WHERE id IN (' . $ids . ')');
-    CRM_Core_DAO::executeQuery('DELETE FROM log_civicrm_entity_tag WHERE id IN (' . $ids . ')');
-  }
 
   $tagsToDelete = [
     'Quick autoreviewed',
@@ -5519,7 +5507,31 @@ function wmf_civicrm_update_8025() {
     'Manually reviewed - Perform action',
     'Manually reviewed - Revert language',
   ];
-  CRM_Core_DAO::executeQuery('DELETE FROM civicrm_tag WHERE name IN ("' . implode('","', $tagsToDelete) . '")');
+
+  // these tags don't exist across all environments so let's add some checks.
+  $quickAutoReviewTagExists = CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_tag WHERE name = "' . $tagsToDelete[0] . '"');
+  $otherTagsInSQL = implode('","', array_slice($tagsToDelete, 1, 6));
+  $otherTagsExists = CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_tag WHERE name IN ("' . $otherTagsInSQL . '")');
+
+  if ($quickAutoReviewTagExists !== NULL) {
+    // https://www.namasteui.com/mysql-group_concat-maximum-length/
+    CRM_Core_DAO::executeQuery('SET SESSION group_concat_max_len = 10000000');
+    $autoReviewTagID = CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_tag WHERE name = "Quick autoreviewed"');
+    $batchLimit = 500;
+
+    while (CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_entity_tag WHERE tag_id = ' . $autoReviewTagID . ' LIMIT 1')) {
+
+      $ids = CRM_Core_DAO::singleValueQuery(
+        "SELECT GROUP_CONCAT(id) FROM (SELECT id FROM civicrm_entity_tag WHERE tag_id = $autoReviewTagID LIMIT $batchLimit) as t"
+      );
+      CRM_Core_DAO::executeQuery('DELETE FROM civicrm_entity_tag WHERE id IN (' . $ids . ')');
+      CRM_Core_DAO::executeQuery('DELETE FROM log_civicrm_entity_tag WHERE id IN (' . $ids . ')');
+    }
+  }
+
+  if ($otherTagsExists !== NULL) {
+    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_tag WHERE name IN ("' . implode('","', $tagsToDelete) . '")');
+  }
 }
 
 /**

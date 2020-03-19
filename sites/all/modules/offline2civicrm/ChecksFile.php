@@ -750,11 +750,12 @@ abstract class ChecksFile {
    * Get the ID of our anonymous contact.
    *
    * @return int|NULL
+   * @throws \CiviCRM_API3_Exception
    */
   protected function getAnonymousContactID() {
     static $contactID = NULL;
     if (!$contactID) {
-      $contactID = civicrm_api3('Contact', 'getvalue', array(
+      $contactID = (int) civicrm_api3('Contact', 'getvalue', array(
         'return' => 'id',
         'contact_type' => 'Individual',
         'first_name' => 'Anonymous',
