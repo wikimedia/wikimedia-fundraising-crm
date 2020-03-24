@@ -11,6 +11,8 @@
  *  into the contribution tracking table
  *
  * @return int the contribution_tracking id
+ *
+ * @throws \Exception
  */
 function wmf_civicrm_insert_contribution_tracking($values) {
   // make sure we're using the default (drupal) db
@@ -20,7 +22,7 @@ function wmf_civicrm_insert_contribution_tracking($values) {
   $contribution_tracking_id = db_insert('contribution_tracking')
     ->fields($values)
     ->execute();
-  watchdog('wmf_civicrm', "Created new contribution_tracking entry %id", ['%id' => $contribution_tracking_id], WATCHDOG_INFO);
+  watchdog('wmf_civicrm', 'Created new contribution_tracking entry %id', ['%id' => $contribution_tracking_id], WATCHDOG_INFO);
 
   return $contribution_tracking_id;
 }
