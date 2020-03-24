@@ -5618,3 +5618,38 @@ function wmf_civicrm_update_8035() {
   ");
 
 }
+
+/**
+ * Remove activities relating to deleted-by-merge contacts.
+ *
+ * See https://lab.civicrm.org/dev/core/-/issues/1644
+ * for longer term plan.
+ *
+ * Also note we are not yet cleaning up log records but we
+ * could revisit that. Generally I didn't clean up log records
+ * when we deleted our contacts & thought that would be a later round (
+ * maybe a policy could be 6 months later).
+ *
+ * Bug T245088
+ */
+function wmf_civicrm_update_8040() {
+  civicrm_initialize();
+  // 87
+  $activityTypeID = CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Contact Deleted by Merge');
+  // 3
+  $recordTypeID = CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_ActivityContact', 'record_type_id', 'Activity Targets');
+  $limit = 5000;
+  while (CRM_Core_DAO::singleValueQuery(
+"SELECT a.id FROM civicrm_activity a LEFT JOIN civicrm_activity_contact ac
+       ON a.id = ac.activity_id AND record_type_id = $recordTypeID
+       WHERE ac.id IS NULL AND activity_type_id =  $activityTypeID LIMIT 1")
+  ) {
+    // https://www.namasteui.com/mysql-group_concat-maximum-length/
+    CRM_Core_DAO::executeQuery('SET SESSION group_concat_max_len = 10000000');
+    $ids = CRM_Core_DAO::singleValueQuery("SELECT GROUP_CONCAT(id) FROM (SELECT a.id FROM civicrm_activity a LEFT JOIN civicrm_activity_contact ac
+       ON a.id = ac.activity_id AND record_type_id = $recordTypeID
+       WHERE ac.id IS NULL AND activity_type_id =  $activityTypeID LIMIT $limit) as q");
+    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_activity WHERE id IN ($ids)");
+  }
+
+}
