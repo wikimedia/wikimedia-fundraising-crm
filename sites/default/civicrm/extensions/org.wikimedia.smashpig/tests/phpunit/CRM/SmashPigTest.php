@@ -262,6 +262,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'token' => 'abc123-456zyx-test12',
       'installment' => 'recurring',
       'ip_address' => '33.22.33.11',
+      'payment_instrument' => 'Credit Card: MasterCard',
     ];
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')

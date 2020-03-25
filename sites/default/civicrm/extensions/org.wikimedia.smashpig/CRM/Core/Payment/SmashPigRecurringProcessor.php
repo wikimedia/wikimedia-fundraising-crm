@@ -368,6 +368,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'description' => $description,
       'token' => $tokenData['token'],
       'ip_address' => $ipAddress,
+      'payment_instrument' => $previousContribution['payment_instrument'],
       // FIXME: SmashPig should choose 'first' or 'recurring' based on seq #
       'installment' => 'recurring',
     ];
