@@ -94,11 +94,6 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       ->setGatewayTxnId('000000850010000188140000200001')
       ->setStatus(FinalStatus::COMPLETE);
 
-    if (!isset($GLOBALS['_PEAR_default_error_mode'])) {
-      // This is simply to protect against e-notices if globals have been reset by phpunit.
-      $GLOBALS['_PEAR_default_error_mode'] = NULL;
-      $GLOBALS['_PEAR_default_error_options'] = NULL;
-    }
     civicrm_initialize();
     $this->oldPromPath = variable_get('metrics_reporting_prometheus_path');
     variable_set('metrics_reporting_prometheus_path', '/tmp/');
