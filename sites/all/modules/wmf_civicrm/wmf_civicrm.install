@@ -5550,3 +5550,71 @@ function wmf_civicrm_update_8030() {
     'api.OptionValue.delete' => [],
   ]);
 }
+
+/**
+ * Create ts 2020 export group.
+ *
+ * This creates a group for the contacts to be updated in the 2020
+ * ts export. From testing on staging it is possible to actually export this many rows
+ * and by putting them in a group we give MG a chance to dedupe first if they wish.
+ *
+ * Bug: T247624
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_8035() {
+  civicrm_initialize();
+  $groupID = (int) civicrm_api3('Group', 'create', [
+    'name' => 'targetsmart_export_2020',
+    'title' => 'Target smart export 2020',
+    'description' => 'Contacts to be exported for target smart this year',
+  ])['id'];
+  $communicationPreferencesTableName = civicrm_api3('CustomGroup', 'getvalue', ['return' => 'table_name', 'name' => 'Communication']);
+  CRM_Core_DAO::executeQuery(
+    "INSERT INTO civicrm_group_contact (group_id, status, contact_id)
+    SELECT $groupID, 'Added', wmf.entity_id
+    FROM wmf_donor AS wmf
+    INNER JOIN civicrm_contact AS c ON c.id = wmf.entity_id
+    INNER JOIN civicrm_address AS a ON (c.id = a.contact_id AND a.is_primary = 1)
+    LEFT JOIN $communicationPreferencesTableName cv ON cv.entity_id = wmf.entity_id
+    INNER JOIN civicrm_email e ON e.contact_id = c.id AND e.is_primary = 1 AND e.on_hold IS NOT NULL
+
+    WHERE
+      c.contact_type = 'Individual'
+      AND a.country_id = 1228
+      AND a.street_address IS NOT NULL
+      # This complex clause gets the earliest of endowment_first_donation_date & first_donation_date
+      # and ensures it is greater than 1 Jul 2019
+      # effectively 'first gave this financial year'
+      AND IF(wmf.first_donation_date IS NULL OR wmf.endowment_first_donation_date IS NULL,
+         COALESCE(wmf.first_donation_date, wmf.endowment_first_donation_date),
+         LEAST(wmf.first_donation_date,wmf.endowment_first_donation_date)) >= '2019-07-01'
+      AND c.is_deleted = 0
+
+      # Yep 3 forms of opt in / out & we have to be careful about NULL
+      AND c.is_opt_out = 0
+      AND (cv.do_not_solicit = 0 OR cv.do_not_solicit IS NULL)
+      AND (cv.opt_in = 1 OR cv.opt_in IS NULL)
+
+      # total of the 2 fields is greater than 5.
+      AND (wmf.total_2019_2020 + wmf.endowment_total_2019_2020 ) >= 5
+
+      # I took a look to see if there were many that needed deduping and
+      # this list stood out as being intentionally invalid addresses.
+      AND email NOT IN (
+        'na@na.com',
+        'name@domain.com',
+        'no@gmail.com',
+        'no@no.com',
+        'noemail@gmail.com',
+        'noemail@noemail.com',
+        'noemail@yahoo.com',
+        'none@none.com',
+        'noneofyourbusiness@gmail.com',
+        'nope@nope.com',
+        'nothanks@gmail.com',
+        'a@b.com'
+      )
+  ");
+
+}
