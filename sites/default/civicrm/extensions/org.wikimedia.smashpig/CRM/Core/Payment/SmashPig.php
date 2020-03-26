@@ -2,6 +2,7 @@
 
 use Civi\Payment\Exception\PaymentProcessorException;
 use SmashPig\PaymentData\ErrorCode;
+use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 use SmashPig\PaymentProviders\CreatePaymentResponse;
 use SmashPig\PaymentProviders\ApprovePaymentResponse;
@@ -55,31 +56,38 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       throw new RuntimeException('Can only handle recurring payments');
     }
 
-    $provider = PaymentProviderFactory::getProviderForMethod('cc');
+    $paymentMethod = $this->getPaymentMethod($params);
+
+    $provider = PaymentProviderFactory::getProviderForMethod($paymentMethod);
 
     $request = $this->convertParams( $params );
     /** @var CreatePaymentResponse $createPaymentResponse */
     $createPaymentResponse = $provider->createPayment( $request );
 
-    if ( !$createPaymentResponse->isSuccessful() ) {
+    if (!$createPaymentResponse->isSuccessful()) {
       $this->throwException( 'CreatePayment failed', $createPaymentResponse );
     }
+    $gatewayTxnId = $createPaymentResponse->getGatewayTxnId();
 
-    /** @var ApprovePaymentResponse $approvePaymentResponse */
-    $approvePaymentResponse = $provider->approvePayment([
-      'amount' => $params['amount'],
-      'currency' => $params['currency'],
-      'gateway_txn_id' => $createPaymentResponse->getGatewayTxnId(),
-    ]);
+    if ($createPaymentResponse->getStatus() === FinalStatus::PENDING_POKE) {
+      /** @var ApprovePaymentResponse $approvePaymentResponse */
+      $approvePaymentResponse = $provider->approvePayment([
+        'amount' => $params['amount'],
+        'currency' => $params['currency'],
+        'gateway_txn_id' => $gatewayTxnId,
+      ]);
 
-    if ( !$approvePaymentResponse->isSuccessful() ) {
-      $this->throwException( 'ApprovePayment failed', $approvePaymentResponse );
+      if (!$approvePaymentResponse->isSuccessful()) {
+        $this->throwException('ApprovePayment failed', $approvePaymentResponse);
+      }
+
+      $gatewayTxnId = $approvePaymentResponse->getGatewayTxnId();
     }
 
     $allContributionStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
     $status = array_search('Completed', $allContributionStatus);
     return [
-      'processor_id' => $approvePaymentResponse->getgatewayTxnId(),
+      'processor_id' => $gatewayTxnId,
       'invoice_id' => $params['invoice_id'],
       'payment_status_id' => $status,
     ];
@@ -201,5 +209,21 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
 
   public function supportsEditRecurringContribution() {
     return true;
+  }
+
+  /**
+   * Get the SmashPig payment method corresponding to the payment attempt.
+   *
+   * @param array $params
+   *
+   * @return string
+   */
+  protected function getPaymentMethod(array $params) {
+    switch ($params['payment_instrument']) {
+      case 'iDeal':
+        return 'rtbt';
+      default:
+        return 'cc';
+    }
   }
 }

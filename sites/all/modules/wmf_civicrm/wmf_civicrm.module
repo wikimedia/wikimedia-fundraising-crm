@@ -1882,6 +1882,9 @@ WHERE
  * @param mixed $msg
  *
  * @return array
+ *
+ * @throws \WmfException
+ * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_normalize_msg($msg) {
   // Decode the message body.
@@ -2008,7 +2011,12 @@ function wmf_civicrm_normalize_msg($msg) {
       ) {
         $tracking['country'] = $msg['country'];
       }
-      $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking($tracking);
+      try {
+        $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking($tracking);
+      }
+      catch (Exception $e) {
+        throw new WmfException(WmfException::INVALID_MESSAGE, $e->getMessage());
+      }
       watchdog('wmf_civicrm', 'Newly inserted contribution tracking id: @id', ['@id' => $contribution_tracking_id], WATCHDOG_DEBUG);
       $msg['contribution_tracking_id'] = $contribution_tracking_id;
     }
