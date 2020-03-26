@@ -55,5 +55,6 @@ function wmf_install_get_installed_extensions() {
     'uk.org.futurefirst.networks.emailamender',
     'wmf-thankyou',
     'ckeditor5',
+    'uk.squiffle.assignee',
   ];
 }
