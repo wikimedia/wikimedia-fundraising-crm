@@ -327,7 +327,6 @@ function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = FALSE) {
  */
 function wmf_civicrm_message_create_contact(&$msg) {
   $contact = wmf_civicrm_message_contact_insert($msg);
-  wmf_civicrm_message_location_insert($msg, $contact);
   $msg['contact_id'] = $contact['id'];
 }
 
@@ -1124,6 +1123,7 @@ function wmf_civicrm_check_for_duplicates($gateway, $gateway_txn_id) {
  * @return array
  */
 function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
+  $isCreate = !$contact_id;
   // Set defaults for optional fields in the message
   if (!array_key_exists('contact_type', $msg)) {
     $msg['contact_type'] = "Individual";
@@ -1160,6 +1160,12 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
         $contact[$name] = wmf_civicrm_string_clean($msg[$name], 64);
       }
     }
+  }
+
+  if (!$contact_id && isset($msg['email']) && wmf_civicrm_is_email_valid($msg['email'])) {
+    // For updates we are still using our own process which may or may not confer benefits
+    // For inserts however we can rely on the core api.
+    $contact['email'] = $msg['email'];
   }
   if (strtolower($msg['contact_type']) == "organization") {
     // @todo probably can remove handling for sort name and display name now.
@@ -1387,6 +1393,11 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
       throw new WmfException(WmfException::IMPORT_CONTACT, $ex->getMessage());
     }
   }
+  if ($isCreate) {
+    // Insert the location records if this is being called as a create.
+    // For update it's handled in the update routing.
+    wmf_civicrm_message_address_insert($msg, $contact_id);
+  }
   if (WmfDatabase::isNativeTxnRolledBack()) {
     throw new WmfException(WmfException::IMPORT_CONTACT, "Native txn rolled back after inserting contact auxiliary fields");
   }
@@ -1517,24 +1528,12 @@ function wmf_civicrm_ensure_option_exists($option_value, $field_name, $option_gr
  */
 function wmf_civicrm_message_contact_update($msg, $contact_id) {
   //FIXME: reverse the way these functions delegate.  Or eliminate -_insert.
-  return wmf_civicrm_message_contact_insert($msg, $contact_id);
-}
-
-/**
- * Insert the location record
- *
- * Serves as a standard way for message processors to handle location
- * insertion.
- *
- * @param array $msg
- * @param array $contact
- */
-function wmf_civicrm_message_location_insert($msg, $contact) {
-  wmf_civicrm_message_email_insert($msg, $contact['id']);
-  if (WmfDatabase::isNativeTxnRolledBack()) {
-    throw new WmfException(WmfException::IMPORT_CONTACT, "Native txn rolled back after inserting email");
-  }
-  wmf_civicrm_message_address_insert($msg, $contact['id']);
+  $contact = wmf_civicrm_message_contact_insert($msg, $contact_id);
+  // Insert the location record
+  // This will be duplicated in some cases in the main message_import, but should
+  // not have a negative impact. Longer term it should be removed from here in favour of there.
+  wmf_civicrm_message_location_update($msg, $contact);
+  return $contact;
 }
 
 /**
@@ -1642,42 +1641,6 @@ function wmf_civicrm_is_email_valid($email) {
     return FALSE;
   }
   return TRUE;
-}
-
-/**
- * Updates the email for a contact.
- *
- * If updating or unsure use the marginally slower update function.
- *
- * @param string $msg
- * @param int $contact_id
- *
- * @throws \WmfException
- */
-function wmf_civicrm_message_email_insert($msg, $contact_id) {
-  if (!wmf_civicrm_is_email_valid(CRM_Utils_Array::value('email', $msg))) {
-    return;
-  }
-
-  $loc_type_id = wmf_civicrm_get_default_location_type_id();
-
-  $email_params = [
-    'contact_id' => $contact_id,
-    'email' => $msg['email'],
-    'is_primary' => 1,
-    'is_billing' => 1,
-    'location_type_id' => $loc_type_id,
-    'debug' => 1,
-  ];
-
-  try {
-    civicrm_api3('Email', 'Create', $email_params);
-  }
-  catch (CiviCRM_API3_Exception $e) {
-    // Constraint violations occur when data is rolled back to resolve a deadlock.
-    $code = $e->getErrorCode() === 'constraint violation' ? WmfException::DATABASE_CONTENTION : WmfException::IMPORT_CONTACT;
-    throw new WmfException($code, "Couldn't store email for the contact.", $e->getExtraParams());
-  }
 }
 
 /**

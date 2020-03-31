@@ -187,12 +187,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       wmf_civicrm_message_update_contribution_tracking($msg, $contribution);
 
       // update the contact
-      $contact = wmf_civicrm_message_contact_update($msg, $recur_record->contact_id);
-
-      // Insert the location record
-      // This will be duplicated in some cases in the main message_import, but should
-      // not have a negative impact. Longer term it should be removed from here in favour of there.
-      wmf_civicrm_message_location_update($msg, $contact);
+      wmf_civicrm_message_contact_update($msg, $recur_record->contact_id);
     }
 
     // update subscription record with next payment date
@@ -273,9 +268,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     if (empty($ctRecord['contribution_id'])) {
       // create contact record
       $contact = wmf_civicrm_message_contact_insert($msg);
-
-      // Insert the location record
-      wmf_civicrm_message_location_insert($msg, $contact);
 
       $contactId = $contact['id'];
     } else {
@@ -516,10 +508,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     }
 
     // update the contact
-    $contact = wmf_civicrm_message_contact_update($msg, $recur_record->contact_id);
-
-    // Insert the location record
-    wmf_civicrm_message_location_insert($msg, $contact);
+    wmf_civicrm_message_contact_update($msg, $recur_record->contact_id);
 
     watchdog('recurring', 'Subscription succesfully modified for subscription id: %subscr_id', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
   }
