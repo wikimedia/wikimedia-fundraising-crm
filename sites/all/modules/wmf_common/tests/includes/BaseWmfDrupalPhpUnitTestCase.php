@@ -1,6 +1,8 @@
 <?php
 
-// Need this to use the trais as Civi otherwise not bootstrapped.
+// Need this to use the traits as Civi otherwise not bootstrapped and
+// include path is not yet fixed so otherwise the require_once in that file will fail.
+set_include_path(__DIR__ . '/../../../civicrm' . PATH_SEPARATOR . get_include_path());
 require_once __DIR__ . '/../../../civicrm/Civi/Test/Api3TestTrait.php';
 
 use SmashPig\Core\Context;
