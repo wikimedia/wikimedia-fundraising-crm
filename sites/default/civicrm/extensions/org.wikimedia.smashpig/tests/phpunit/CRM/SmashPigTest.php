@@ -79,6 +79,12 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       ->apply();
   }
 
+  /**
+   * Setup for test.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   */
   public function setUp() {
     parent::setUp();
     $this->createPaymentResponse = (new CreatePaymentResponse())

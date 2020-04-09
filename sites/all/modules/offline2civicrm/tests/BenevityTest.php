@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\Contribution;
+
 /**
  * @group Import
  * @group Offline2Civicrm
@@ -26,11 +28,17 @@ class BenevityTest extends BaseChecksFileTest {
 
   }
 
+  /**
+   * Delete created Benevity contributions and contacts.
+   *
+   * @throws \API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
   public function tearDown() {
-    CRM_Core_DAO::executeQuery("
-      DELETE FROM civicrm_contribution
-      WHERE trxn_id LIKE 'BENEVITY%'
-    ");
+    $benevityContributions = Contribution::get()->addWhere('trxn_id', 'LIKE', 'BENEVITY%')->setCheckPermissions(FALSE)->setSelect(['id'])->execute();
+    foreach ($benevityContributions as $contribution) {
+      $this->cleanupContribution($contribution['id']);
+    }
     CRM_Core_DAO::executeQuery("
       DELETE c FROM civicrm_contact c LEFT JOIN civicrm_email e ON c.id = e.contact_id
       WHERE organization_name IN('Donald Duck Inc', 'Mickey Mouse Inc', 'Goofy Inc', 'Uncle Scrooge Inc')
@@ -79,6 +87,7 @@ class BenevityTest extends BaseChecksFileTest {
    *
    * @throws \League\Csv\Exception
    * @throws \WmfException
+   * @throws \CRM_Core_Exception
    */
   public function testImportSucceedOrganizationSingleContactExists() {
     $this->callAPISuccess('Contact', 'create', array(
