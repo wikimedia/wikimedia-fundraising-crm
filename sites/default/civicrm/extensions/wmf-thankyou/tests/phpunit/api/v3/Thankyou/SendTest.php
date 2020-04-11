@@ -47,7 +47,8 @@ class api_v3_Thankyou_SendTest extends \PHPUnit\Framework\TestCase implements He
    * @throws \CRM_Core_Exception
    */
   public function tearDown() {
-    $this->callAPISuccess('Contribution', 'get', ['contact_id' => $this->ids['Contact'][0], 'api.Contact.delete' => ['skip_undelete' => 1]]);
+    $this->callAPISuccess('Contribution', 'get', ['contact_id' => $this->ids['Contact'][0], 'api.Contribution.delete' => 1]);
+    $this->callAPISuccess('Contact', 'delete', ['skip_undelete' => 1, 'id' => $this->ids['Contact'][0]]);
     parent::tearDown();
   }
 
