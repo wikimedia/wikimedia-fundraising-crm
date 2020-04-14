@@ -95,6 +95,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'gateway_account' => 'TestMerchant',
               'gateway_txn_id' => '5364893193133131',
               'gross' => '1.00',
+              'invoice_id' => '43992337.0',
               'language' => 'en',
               'last_name' => 'asdff',
               'order_id' => '43992337.0',

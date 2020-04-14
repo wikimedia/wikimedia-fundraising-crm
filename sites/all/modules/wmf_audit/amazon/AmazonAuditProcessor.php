@@ -36,20 +36,12 @@ class AmazonAuditProcessor extends BaseAuditProcessor {
     return $this->parse_json_log_line($logline);
   }
 
-  protected function merge_data($log_data, $audit_file_data) {
-    $merged = parent::merge_data($log_data, $audit_file_data);
-    if ($merged) {
-      unset($merged['log_id']);
-    }
-    return $merged;
-  }
-
   protected function regex_for_recon() {
     return '/SETTLEMENT_DATA|REFUND_DATA/';
   }
 
   /**
-   * Amazon audit parser should add our reference id as log_id.  This will
+   * Amazon audit parser should add our reference id as invoice_id.  This will
    * be the contribution tracking id, a dash, and the attempt number.
    *
    * @param array $transaction possibly incomplete set of transaction data
@@ -57,8 +49,8 @@ class AmazonAuditProcessor extends BaseAuditProcessor {
    * @return string|false the order_id, or false if we can't figure it out
    */
   protected function get_order_id($transaction) {
-    if (is_array($transaction) && array_key_exists('log_id', $transaction)) {
-      return $transaction['log_id'];
+    if (is_array($transaction) && array_key_exists('invoice_id', $transaction)) {
+      return $transaction['invoice_id'];
     }
     return FALSE;
   }
