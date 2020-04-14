@@ -90,6 +90,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
               'gateway_account' => 'default',
               'gateway_txn_id' => 'P01-1488694-1234567-C034811',
               'gross' => '10.00',
+              'invoice_id' => '87654321-0',
               'language' => 'en',
               'last_name' => 'Person',
               'order_id' => '87654321-0',

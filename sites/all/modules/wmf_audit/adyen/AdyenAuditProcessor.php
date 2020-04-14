@@ -39,14 +39,6 @@ class AdyenAuditProcessor extends BaseAuditProcessor {
     return $this->parse_json_log_line($logline);
   }
 
-  protected function merge_data($log_data, $audit_file_data) {
-    $merged = parent::merge_data($log_data, $audit_file_data);
-    if ($merged) {
-      unset($merged['log_id']);
-    }
-    return $merged;
-  }
-
   protected function regex_for_recon() {
     return '/settlement_detail_report_batch_/';
   }
@@ -60,8 +52,8 @@ class AdyenAuditProcessor extends BaseAuditProcessor {
    * @return string|false the order_id, or false if we can't figure it out
    */
   protected function get_order_id($transaction) {
-    if (is_array($transaction) && array_key_exists('log_id', $transaction)) {
-      return $transaction['log_id'];
+    if (is_array($transaction) && array_key_exists('invoice_id', $transaction)) {
+      return $transaction['invoice_id'];
     }
     return FALSE;
   }
