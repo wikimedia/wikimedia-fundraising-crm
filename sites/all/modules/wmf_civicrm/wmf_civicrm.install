@@ -5688,7 +5688,9 @@ function wmf_civicrm_update_8050() {
   ];
   foreach ( $fields as $field ){
     $query = "ALTER TABLE {$field['table']} CHANGE {$field['name']} {$field['name']} TIMESTAMP NULL DEFAULT {$field['default']}";
+    drush_print( "Converting field {$field['table']}.{$field['name']} to TIMESTAMP\n" );
     CRM_Core_DAO::executeQuery($query);
+    drush_print( "Converted field {$field['table']}.{$field['name']} to TIMESTAMP\n" );
   }
 }
 
