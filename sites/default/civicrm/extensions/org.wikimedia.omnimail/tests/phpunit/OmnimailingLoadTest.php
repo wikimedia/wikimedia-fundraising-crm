@@ -18,8 +18,10 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  */
 class OmnimailingLoadTest extends OmnimailBaseTestClass {
 
+  protected $isOmniHellEnabled = TRUE;
+
   /**
-   * Example: Test that a version is returned.
+   * Test that Mailings load using the Omnimailing.load api.
    *
    * @throws \CRM_Core_Exception
    */
@@ -38,6 +40,15 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
     $this->assertEquals('WHEN (COUNTRY is equal to IL AND ISOLANG is equal to HE AND LATEST_DONATION_DATE is before JAN 1, 2019 AND EMAIL_DOMAIN_PART is not equal to one of the following (AOL.COM | NETSCAPE.COM | NETSCAPE.NET | CS.COM | AIM.COM | WMCONNECT.COM | VERIZON.NET) OR (EMAIL is equal to FUNDRAISINGEMAIL-JAJP+HEIL@WIKIMEDIA.ORG AND COUNTRY is equal to IL)) AND SEGMENT is equal to 2', $mailingReloaded['custom_' . $customFieldID]);
     $mailingJobs = $this->callAPISuccess('MailingJob', 'get', array('mailing_id' => $mailing['id']));
     $this->assertEquals(0, $mailingJobs['count']);
+
+    // Reload with omnihell disabled. This means no query criteria will be retrieved.
+    // We want to check that what was already there remains.
+    $this->isOmniHellEnabled = FALSE;
+    $this->loadMailings();
+    $mailingReloaded = $this->callAPISuccess('Mailing', 'getsingle', array('hash' => 'sp7877'));
+    $this->assertEquals('WHEN (COUNTRY is equal to IL AND ISOLANG is equal to HE AND LATEST_DONATION_DATE is before JAN 1, 2019 AND EMAIL_DOMAIN_PART is not equal to one of the following (AOL.COM | NETSCAPE.COM | NETSCAPE.NET | CS.COM | AIM.COM | WMCONNECT.COM | VERIZON.NET) OR (EMAIL is equal to FUNDRAISINGEMAIL-JAJP+HEIL@WIKIMEDIA.ORG AND COUNTRY is equal to IL)) AND SEGMENT is equal to 2', $mailingReloaded['custom_' . $customFieldID]);
+
+
 
   }
 
@@ -60,7 +71,7 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
       '',
       file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
     );
-    Civi::settings()->set('omnimail_omnihell_enabled', 1);
+    Civi::settings()->set('omnimail_omnihell_enabled', $this->isOmniHellEnabled);
     $mailings = $this->callAPISuccess('Omnimailing', 'load', array(
       'mail_provider' => 'Silverpop',
       'client' => $this->getMockRequest($responses),

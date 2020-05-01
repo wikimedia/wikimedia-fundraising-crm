@@ -63,20 +63,23 @@ function civicrm_api3_omnimailing_load($params) {
 
     CRM_Core_PseudoConstant::flush();
 
+    $mailingParams = [
+      'body_html' => !empty($mailing['body_html']) ? _omnimailing_strip_emojis($mailing['body_html']) : '',
+      'body_text' => !empty($mailing['body_text']) ? _omnimailing_strip_emojis($mailing['body_text']) : '',
+      'name' => !empty($mailing['name']) ? $mailing['name'] : 'sp' . $mailing['external_identifier'],
+      'subject' => substr(_omnimailing_strip_emojis($mailing['subject']), 0, 128),
+      'created_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
+      'hash' => 'sp' . $mailing['external_identifier'],
+      'scheduled_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
+      'campaign_id' => $campaign['id'],
+    ];
+    if (!empty(trim($mailing['list_criteria']))) {
+      $mailingParams['custom_' . $customFieldID] = $mailing['list_criteria'];
+    }
     $result = _civicrm_api3_omnimailing_load_api_replace(
       'Mailing',
       ['hash' => 'sp' . $mailing['external_identifier']],
-      [
-        'body_html' => !empty($mailing['body_html']) ? _omnimailing_strip_emojis($mailing['body_html']) : '',
-        'body_text' => !empty($mailing['body_text']) ? _omnimailing_strip_emojis($mailing['body_text']) : '',
-        'name' => !empty($mailing['name']) ? $mailing['name'] : 'sp' . $mailing['external_identifier'],
-        'subject' => substr(_omnimailing_strip_emojis($mailing['subject']), 0, 128),
-        'created_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
-        'hash' => 'sp' . $mailing['external_identifier'],
-        'scheduled_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
-        'campaign_id' => $campaign['id'],
-        'custom_' . $customFieldID => $mailing['list_criteria'],
-      ],
+      $mailingParams,
       [
         'is_completed' => 1,
         '_skip_evil_bao_auto_recipients_' => 1,
