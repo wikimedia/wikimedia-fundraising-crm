@@ -116,6 +116,44 @@ class AdyenAuditTest extends BaseAuditTestCase {
           ],
         ],
       ],
+      // The corresponding log file for the following is missing a
+      // payment_submethod. We should take the submethod from the
+      // audit parser.
+      [
+        __DIR__ . '/data/Adyen/donation_ideal/',
+        [
+          'donations' => [
+            [
+              'contribution_tracking_id' => '80188432',
+              'country' => 'NL',
+              'currency' => 'EUR',
+              'date' => 1582488844,
+              'email' => 'testy@wikimedia.org',
+              'fee' => '0.25',
+              'first_name' => 'Testy',
+              'gateway' => 'adyen',
+              'gateway_account' => 'TestMerchant',
+              'gateway_txn_id' => '1515876691993221',
+              'gross' => '5.35',
+              'invoice_id' => '80188432.1',
+              'language' => 'nl',
+              'last_name' => 'McTesterson',
+              'order_id' => '80188432.1',
+              'payment_method' => 'rtbt',
+              'payment_submethod' => 'rtbt_ideal',
+              'recurring' => '',
+              'user_ip' => '123.45.67.89',
+              'utm_campaign' => 'C1920_Email1',
+              'utm_medium' => 'email',
+              'utm_source' => 'sp1234567.default~default~JimmyQuote~default~control.rtbt.rtbt_ideal',
+              'settled_gross' => '5.43',
+              'settled_currency' => 'USD',
+              'settled_fee' => '0.27',
+              'opt_in' => '0',
+            ],
+          ],
+        ],
+      ],
       [
         __DIR__ . '/data/Adyen/refund/',
         [
