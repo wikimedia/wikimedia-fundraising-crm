@@ -73,6 +73,7 @@ function civicrm_api3_omnimailing_get($params) {
   }
   // We want these to fail hard (I think) so not in the try catch block.
   foreach ($results as $index => $result) {
+    $results[$index]['list_criteria'] = '';
     if (!empty($result['list_id']) && Civi::settings()->get('omnimail_omnihell_enabled')) {
       // This is kinda just hacked in because it doesn't feel generic at the
       // moment .. pondering....
