@@ -96,8 +96,25 @@ abstract class BaseAuditProcessor {
     return TRUE;
   }
 
+  /**
+   * A slight twist on array_merge - don't overwrite non-blank data with blank strings.
+   *
+   * @param array $log_data
+   * @param array $audit_file_data
+   *
+   * @return array
+   */
   protected function merge_data($log_data, $audit_file_data) {
-    return array_merge($audit_file_data, $log_data);
+    $merged = $audit_file_data;
+    foreach ($log_data as $key => $value) {
+      $absentFromMerged = !array_key_exists($key, $merged);
+      $logDataNotBlank = ($value !== '');
+      if ($absentFromMerged || $logDataNotBlank || $merged[$key] === '') {
+        $merged[$key] = $value;
+      }
+    }
+
+    return $merged;
   }
 
   /**
@@ -140,7 +157,7 @@ abstract class BaseAuditProcessor {
    * Returns the configurable number of days we want to jump back in to the
    * past, to look for transactions in the payments logs.
    *
-   * @return in Number of days
+   * @return int Number of days
    */
   protected function get_log_days_in_past() {
     return variable_get($this->name . '_audit_log_search_past_days');
