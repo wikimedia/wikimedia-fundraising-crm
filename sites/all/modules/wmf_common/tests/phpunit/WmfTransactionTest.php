@@ -197,8 +197,8 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     $this->assertEquals('WMF', CRM_Core_DAO::singleValueQuery('SELECT description FROM civicrm_domain LIMIT 1'));
-    $contact = $this->callAPISuccess('Contact', 'getcount', array('external_identifier' => 'oh so strange'));
-    $this->assertEquals(0, $contact['count']);
+    $count = $this->callAPISuccess('Contact', 'getcount', array('external_identifier' => 'oh so strange'));
+    $this->assertEquals(0, $count);
   }
 
     public function callbackFunction() {

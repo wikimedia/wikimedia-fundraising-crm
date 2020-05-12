@@ -93,6 +93,7 @@ function wmf_civicrm_install() {
  * under Drupal so we need to be more aggressive.
  */
 function _wmf_civicrm_escalate_permissions() {
+  civicrm_initialize();
   CRM_Core_Config::singleton()->userPermissionTemp = new CRM_Core_Permission_Temp();
   CRM_Core_Config::singleton()->userPermissionTemp->grant('administer CiviCRM');
 }
