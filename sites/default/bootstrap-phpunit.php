@@ -32,7 +32,11 @@ require_once(DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface/tests/phpuni
 putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php');
 require_once DRUPAL_ROOT . '/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit/bootstrap.php';
 
+// Uncomment this if you would like to see all of the
+// watchdog messages when a test fails. Can be useful
+// to debug tests in CI where you can't see the syslog.
+/*
 if (!defined('PRINT_WATCHDOG_ON_TEST_FAIL')) {
   define('PRINT_WATCHDOG_ON_TEST_FAIL', TRUE);
 }
-
+*/
