@@ -8,6 +8,7 @@ define('DRUPAL_ROOT', realpath(__DIR__) . "/../../drupal");
 require_once(DRUPAL_ROOT . "/sites/all/modules/wmf_common/tests/includes/BaseWmfDrupalPhpUnitTestCase.php");
 require_once(DRUPAL_ROOT . "/sites/all/modules/wmf_audit/tests/includes/BaseAuditTestCase.php");
 require_once(DRUPAL_ROOT . "/sites/all/modules/offline2civicrm/tests/includes/BaseChecksFileTest.php");
+require_once(DRUPAL_ROOT . "/sites/all/modules/wmf_communication/tests/phpunit/CiviMailTestBase.php");
 
 // Argh.  Crib from _drush_bootstrap_drupal_site_validate
 $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
@@ -31,7 +32,11 @@ require_once(DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface/tests/phpuni
 putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php');
 require_once DRUPAL_ROOT . '/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit/bootstrap.php';
 
+// Uncomment this if you would like to see all of the
+// watchdog messages when a test fails. Can be useful
+// to debug tests in CI where you can't see the syslog.
+/*
 if (!defined('PRINT_WATCHDOG_ON_TEST_FAIL')) {
   define('PRINT_WATCHDOG_ON_TEST_FAIL', TRUE);
 }
-
+*/
