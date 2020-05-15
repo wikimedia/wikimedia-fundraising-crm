@@ -5721,3 +5721,10 @@ function wmf_civicrm_update_8055() {
   CRM_Core_BAO_SchemaHandler::dropIndexIfExists('civicrm_contact', 'dedupe_index_last_name_7');
   CRM_Core_BAO_SchemaHandler::dropIndexIfExists('civicrm_contact', 'dedupe_index_household_name_5');
 }
+
+/**
+ * Enable Matching Gifts extension.
+ */
+function wmf_civicrm_update_8060() {
+  wmf_civicrm_reconcile_extensions();
+}
