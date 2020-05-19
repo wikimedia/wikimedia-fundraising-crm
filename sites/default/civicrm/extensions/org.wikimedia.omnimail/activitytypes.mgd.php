@@ -13,6 +13,7 @@ return [
     [
       'name' => 'unsubscribe',
       'entity' => 'option_value',
+      'cleanup' => 'never',
       'params' =>
         [
           'version' => 3,
