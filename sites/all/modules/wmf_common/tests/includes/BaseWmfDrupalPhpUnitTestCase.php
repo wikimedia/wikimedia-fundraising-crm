@@ -239,7 +239,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
   }
 
   public function onNotSuccessfulTest(Throwable $t) {
-    if (!PRINT_WATCHDOG_ON_TEST_FAIL) {
+    if (!defined('PRINT_WATCHDOG_ON_TEST_FAIL') || !PRINT_WATCHDOG_ON_TEST_FAIL) {
       throw $t;
     }
     $output = "\nWatchdog messages:\n";
