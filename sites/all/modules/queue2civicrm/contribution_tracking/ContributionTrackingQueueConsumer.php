@@ -4,6 +4,7 @@ namespace queue2civicrm\contribution_tracking;
 
 use ContributionTrackingDataValidationException;
 use wmf_common\WmfQueueConsumer;
+use WmfException;
 
 class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
 
@@ -54,14 +55,14 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
   /**
    * Insert or update a contribution tracking entry.
    *
-   * @param $ctData data to be written to contribution tracking tbl
+   * @param array $ctData data to be written to contribution tracking tbl
    *
    * @return \DatabaseStatementInterface|int
    * @throws \Exception
    */
   protected function persistContributionTrackingData($ctData) {
     $checkSql = "
-SELECT id FROM contribution_tracking
+SELECT id, contribution_id FROM contribution_tracking
 WHERE id = :ct_id
 LIMIT 1";
 
@@ -69,7 +70,31 @@ LIMIT 1";
       ':ct_id' => $ctData['id'],
     ]);
 
-    if ($checkResult->rowCount() === 1) {
+    if ($checkResult->rowCount() > 0) {
+      $extraCtData = $ctData;
+      unset($extraCtData['id']);
+      unset($extraCtData['contribution_id']);
+      if (!empty($extraCtData)) {
+        throw new WmfException(
+          WmfException::DATA_INCONSISTENT,
+          'Contribution tracking message with existing ID and more than just ' .
+          'a contribution_id update.',
+          $ctData
+        );
+      }
+      $existingRow = $checkResult->fetchAssoc();
+      if (
+        !empty($existingRow['contribution_id']) &&
+        (int)$existingRow['contribution_id'] !== (int)$ctData['contribution_id']
+      ) {
+        throw new WmfException(
+          WmfException::DATA_INCONSISTENT,
+          "Trying to update contribution tracking row {$ctData['id']} that " .
+          "already has contribution_id {$existingRow['contribution_id']} " .
+          "with new contribution id {$ctData['contribution_id']}.",
+          $ctData
+        );
+      }
       return db_update('contribution_tracking')
         ->fields($ctData)
         ->condition('id', $ctData['id'])

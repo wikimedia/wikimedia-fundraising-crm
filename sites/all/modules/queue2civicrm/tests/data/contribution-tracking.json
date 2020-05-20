@@ -1,6 +1,5 @@
 {
   "id": "12345",
-  "contribution_id": "678910",
   "note": "This is a test note",
   "referrer": "payments.wiki.local.wmftest.net/wiki/Main_Page",
   "form_amount": "GBP 35.00",
