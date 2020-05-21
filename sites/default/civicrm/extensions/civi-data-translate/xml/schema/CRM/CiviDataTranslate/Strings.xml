@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/CiviDataTranslate</base>
+  <class>Strings</class>
+  <name>civicrm_strings</name>
+  <comment>FIXME</comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique Strings ID</comment>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>entity_table</name>
+    <type>varchar</type>
+    <length>64</length>
+    <required>true</required>
+    <comment>Table where referenced item is stored</comment>
+  </field>
+  <field>
+    <name>entity_field</name>
+    <type>varchar</type>
+    <length>64</length>
+    <required>true</required>
+    <comment>Field where referenced item is stored</comment>
+  </field>
+  <field>
+    <name>entity_id</name>
+    <type>int</type>
+    <length>64</length>
+    <required>true</required>
+    <comment>ID of the relevant entity.</comment>
+  </field>
+  <field>
+    <name>string</name>
+    <type>longtext</type>
+    <required>true</required>
+    <comment>Translated strinng</comment>
+  </field>
+  <field>
+    <name>language</name>
+    <type>varchar</type>
+    <length>16</length>
+    <required>true</required>
+    <comment>Relevant language</comment>
+    <html>
+      <type>Select</type>
+    </html>
+    <pseudoconstant>
+      <optionGroupName>languages</optionGroupName>
+      <keyColumn>name</keyColumn>
+      <optionEditPath>civicrm/admin/options/languages</optionEditPath>
+    </pseudoconstant>
+  </field>
+  <field>
+    <name>is_active</name>
+    <type>boolean</type>
+    <comment>Is this string active?</comment>
+  </field>
+  <field>
+    <name>is_default</name>
+    <type>boolean</type>
+    <comment>Is this the default string for the given locale?</comment>
+  </field>
+</table>

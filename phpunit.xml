@@ -79,5 +79,8 @@
     <testsuite name="matchinggift_tests">
       <directory>sites/default/civicrm/extensions/matching-gifts/tests/phpunit</directory>
     </testsuite>
+    <testsuite name="civi-data-strings">
+      <directory>sites/default/civicrm/extensions/civi-data-translate/tests/phpunit</directory>
+    </testsuite>
   </testsuites>
 </phpunit>

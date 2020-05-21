@@ -57,5 +57,6 @@ function wmf_install_get_installed_extensions() {
     'ckeditor5',
     'uk.squiffle.assignee',
     'matching-gifts',
+    'civi-data-translate',
   ];
 }
