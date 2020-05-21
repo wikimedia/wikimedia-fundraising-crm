@@ -28,7 +28,7 @@ class WmfImportTest extends BaseChecksFileTest {
       'Email' => 'email@phony.com',
       'External Batch Number' => mt_rand(),
       'First Name' => 'Test_first_name',
-      'Gift Source' => 'Community GIft',
+      'Gift Source' => 'Community Gift',
       'Last Name' => 'Test_last_name',
       'Original Amount' => '123',
       'Original Currency' => 'USD',

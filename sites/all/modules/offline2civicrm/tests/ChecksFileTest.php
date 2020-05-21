@@ -29,8 +29,11 @@ class ChecksFileTest extends BaseChecksFileTest {
 
   /**
    * Populate contribution_tracking.country
+   *
+   * @throws \WmfException
+   * @throws \CRM_Core_Exception
    */
-  function testImportCountry() {
+  public function testImportCountry() {
     // A few kinds of empty.
     $data = array(
       'Check Number' => mt_rand(),
@@ -39,7 +42,7 @@ class ChecksFileTest extends BaseChecksFileTest {
       'Email' => 'email@phony.com',
       'External Batch Number' => mt_rand(),
       'First Name' => 'Test_first_name',
-      'Gift Source' => 'Community GIft',
+      'Gift Source' => 'Community Gift',
       'Last Name' => 'Test_last_name',
       'Original Amount' => '123',
       'Original Currency' => 'USD',
