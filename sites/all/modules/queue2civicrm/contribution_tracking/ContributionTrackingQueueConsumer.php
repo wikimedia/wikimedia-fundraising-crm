@@ -71,17 +71,6 @@ LIMIT 1";
     ]);
 
     if ($checkResult->rowCount() > 0) {
-      $extraCtData = $ctData;
-      unset($extraCtData['id']);
-      unset($extraCtData['contribution_id']);
-      if (!empty($extraCtData)) {
-        throw new WmfException(
-          WmfException::DATA_INCONSISTENT,
-          'Contribution tracking message with existing ID and more than just ' .
-          'a contribution_id update.',
-          $ctData
-        );
-      }
       $existingRow = $checkResult->fetchAssoc();
       if (
         !empty($existingRow['contribution_id']) &&
