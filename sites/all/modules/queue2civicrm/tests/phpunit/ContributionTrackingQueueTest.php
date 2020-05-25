@@ -34,10 +34,11 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $updateMessage = [
       'id' => $message['id'],
       'contribution_id' => '1234',
+      'form_amount' => 'GBP 10.00', // updated from 35
     ];
     $this->consumer->processMessage($updateMessage);
 
-    $expectedData = $message + $updateMessage;
+    $expectedData = $updateMessage + $message;
     $this->compareMessageWithDb($expectedData);
   }
 
@@ -48,17 +49,6 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $message = $this->getMessage();
     unset($message['id']);
     $this->expectException(ContributionTrackingDataValidationException::class);
-    $this->consumer->processMessage($message);
-  }
-
-  /**
-   * Update messages can only contain the id and contribution_id
-   */
-  public function testExceptionThrowOnInvalidUpdateMessage() {
-    $message = $this->getMessage();
-    $this->consumer->processMessage($message);
-    $this->expectException(WmfException::class);
-    $message['utm_medium'] = 'UpdatedMedium';
     $this->consumer->processMessage($message);
   }
 
