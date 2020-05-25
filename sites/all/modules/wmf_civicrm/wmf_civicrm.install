@@ -5693,5 +5693,32 @@ function wmf_civicrm_update_8050() {
     CRM_Core_DAO::executeQuery($query);
     drush_print( "Converted field {$field['table']}.{$field['name']} to TIMESTAMP\n" );
   }
-}
 
+  /**
+   * Update is_deceased to be required and =0.
+   *
+   * This is a core update. It's kinda slow so better to run at our convenience during the outage.
+   *
+   * In addition I identified 3 indexes that seemed clear cut to drop. Note doing them as separate drop statements
+   * will avoid dev environment issues - but it might slow down the running.
+   */
+  function wmf_civicrm_update_8055() {
+    civicrm_initialize();
+    CRM_Core_DAO::executeQuery('UPDATE civicrm_contact SET is_deceased = 0 WHERE is_deceased IS NULL');
+    CRM_Core_DAO::executeQuery('
+     ALTER TABLE civicrm_contact
+     MODIFY COLUMN is_deceased TINYINT NOT NULL DEFAULT 0'
+    );
+    // This index is not described in the schema do would not exist on new installs (probably by omission
+    // since it was added in an upgrade script, but it's also an index that is not really helpful
+    // and each index takes hundreds of MB on the disk on these large tables (even absent any data to
+    // index)
+    CRM_Core_BAO_SchemaHandler::dropIndexIfExists('civicrm_contact', 'index_image_url');
+    // These indexes are created when dedupe rules use 'length' as a match criteria. However, we tell people
+    // never to do that as the queries bypass all indexes due to them using LENGTH() in the query.
+    // These are relics of a bygone dedupe effort.
+    CRM_Core_BAO_SchemaHandler::dropIndexIfExists('civicrm_contact', 'dedupe_index_last_name_7');
+    CRM_Core_BAO_SchemaHandler::dropIndexIfExists('civicrm_contact', 'dedupe_index_household_name_5');
+  }
+
+}
