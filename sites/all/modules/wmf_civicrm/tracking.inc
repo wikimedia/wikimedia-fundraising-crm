@@ -1,5 +1,7 @@
 <?php
 
+use SmashPig\Core\DataStores\QueueWrapper;
+use SmashPig\Core\SequenceGenerators\Factory;
 /**
  * Insert a record into contribution_tracking table
  *
@@ -15,15 +17,11 @@
  * @throws \Exception
  */
 function wmf_civicrm_insert_contribution_tracking($values) {
-  // make sure we're using the default (drupal) db
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('default');
-
-  $contribution_tracking_id = db_insert('contribution_tracking')
-    ->fields($values)
-    ->execute();
-  watchdog('wmf_civicrm', 'Created new contribution_tracking entry %id', ['%id' => $contribution_tracking_id], WATCHDOG_INFO);
-
+  $generator = Factory::getSequenceGenerator('contribution-tracking');
+  $contribution_tracking_id = $generator->getNext();
+  $values['id'] = $contribution_tracking_id;
+  QueueWrapper::push('contribution-tracking', $values);
+  watchdog('wmf_civicrm', "Queued new contribution_tracking entry %id", ['%id' => $contribution_tracking_id], WATCHDOG_INFO);
   return $contribution_tracking_id;
 }
 
@@ -34,21 +32,14 @@ function wmf_civicrm_insert_contribution_tracking($values) {
  * @param array $contribution
  */
 function wmf_civicrm_message_update_contribution_tracking($msg, $contribution) {
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('default');
 
   if (array_key_exists('contribution_tracking_id', $msg)) {
-    $result = db_update('contribution_tracking')->fields([
+    QueueWrapper::push('contribution-tracking', [
+      'id' => $msg['contribution_tracking_id'],
       'contribution_id' => $contribution['id'],
-    ])->condition('id', $msg['contribution_tracking_id'])->execute();
-    if (!$result) {
-      watchdog('wmf_civicrm', "There was a problem updating contribution_tracking for %id", ['%id' => $msg['contribution_tracking_id']], WATCHDOG_ERROR);
-      return FALSE;
-    }
-    else {
-      watchdog('wmf_civicrm', 'Successfully updated contribution_tracking for %id', ['%id' => $msg['contribution_tracking_id']], WATCHDOG_INFO);
+    ]);
+    watchdog('wmf_civicrm', 'Queued update to contribution_tracking for %id', ['%id' => $msg['contribution_tracking_id']], WATCHDOG_INFO);
       return TRUE;
-    }
   }
 }
 
