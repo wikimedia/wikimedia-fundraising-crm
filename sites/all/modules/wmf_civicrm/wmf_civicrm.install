@@ -5722,3 +5722,25 @@ function wmf_civicrm_update_8055() {
 function wmf_civicrm_update_8060() {
   wmf_civicrm_reconcile_extensions();
 }
+
+/**
+ * Add message Template for recurring failures
+ *
+ * @throws \API_Exception
+ *
+ * Bug: T230064
+ */
+function wmf_civicrm_update_8065() {
+  civicrm_initialize();
+  $subject = file_get_contents(__DIR__ . '/templates/recurring_failed_message.subject.txt');
+  $msgText = file_get_contents(__DIR__ . '/templates/recurring_failed_message.text.txt');
+  $htmlText = file_get_contents(__DIR__ . '/templates/recurring_failed_message.html.txt');
+
+  \Civi\Api4\MessageTemplate::create()->setCheckPermissions(FALSE)->setValues([
+    'msg_text' => $msgText,
+    'msg_html' => $htmlText,
+    'msg_subject' => $subject,
+    'workflow_name' => 'recurring_failed_message',
+  ])->execute();
+
+}
