@@ -133,7 +133,7 @@ function _civicrm_api3_omnimailing_load_spec(&$params) {
   ];
   $params['mail_provider'] = [
     'title' => ts('Name of Mailer'),
-    'api.required' => TRUE,
+    'api.default' => 'Silverpop',
   ];
   $params['start_date'] = [
     'title' => ts('Date to fetch from'),
