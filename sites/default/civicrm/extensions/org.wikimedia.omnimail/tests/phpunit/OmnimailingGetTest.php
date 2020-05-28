@@ -27,6 +27,8 @@ class OmnimailingGetTest extends OmnimailBaseTestClass {
 
   /**
    * Example: Test that a version is returned.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testOmnimailingGet() {
     $responses = array(
@@ -38,16 +40,21 @@ class OmnimailingGetTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
       '',
       file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
+      file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
       '',
       file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
+      file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
     );
     Civi::settings()->set('omnimail_omnihell_enabled', 1);
-    $mailings = $this->callAPISuccess('Omnimailing', 'get', array('mail_provider' => 'Silverpop', 'client' => $this->getMockRequest($responses), 'username' => 'Donald', 'password' => 'quack'));
+    $mailings = $this->callAPISuccess('Omnimailing', 'get', ['mail_provider' => 'Silverpop', 'client' => $this->getMockRequest($responses), 'username' => 'Donald', 'password' => 'quack']);
     $this->assertEquals(2, $mailings['count']);
     $firstMailing = $mailings['values'][0];
     $this->assertEquals('cool email 🌻', $firstMailing['subject']);
     $this->assertEquals('WHEN (COUNTRY is equal to IL AND ISOLANG is equal to HE AND LATEST_DONATION_DATE is before JAN 1, 2019 AND EMAIL_DOMAIN_PART is not equal to one of the following (AOL.COM | NETSCAPE.COM | NETSCAPE.NET | CS.COM | AIM.COM | WMCONNECT.COM | VERIZON.NET) OR (EMAIL is equal to FUNDRAISINGEMAIL-JAJP+HEIL@WIKIMEDIA.ORG AND COUNTRY is equal to IL)) AND SEGMENT is equal to 2', $firstMailing['list_criteria']);
+    $this->assertEquals('( is in contact list 1234567 AND Segment is equal to 328 AND latest_donation_date is before 01/01/2019 ) OR Email is equal to info@examplee.org', $firstMailing['list_string']);
   }
 
 }

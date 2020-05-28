@@ -56,21 +56,11 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
    * Load mailings for test.
    *
    * @return array
+   *
+   * @throws \CRM_Core_Exception
    */
   protected function loadMailings(): array {
-    $responses = array(
-      file_get_contents(__DIR__ . '/Responses/MailingGetResponse1.txt'),
-      file_get_contents(__DIR__ . '/Responses/AggregateGetResponse1.txt'),
-      file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse.txt'),
-      file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
-      file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
-      file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
-      '',
-      file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
-      file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
-      '',
-      file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
-    );
+    $responses = $this->isOmniHellEnabled ? $this->getWithHell() : $this->getWithoutHell();
     Civi::settings()->set('omnimail_omnihell_enabled', $this->isOmniHellEnabled);
     $mailings = $this->callAPISuccess('Omnimailing', 'load', array(
       'mail_provider' => 'Silverpop',
@@ -79,6 +69,50 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
       'password' => 'quack'
     ));
     return $mailings;
+  }
+
+  /**
+   * Get the responses with Omnihell enabled.
+   *
+   * @return array
+   */
+  protected function getWithoutHell(): array {
+    return [
+      file_get_contents(__DIR__ . '/Responses/MailingGetResponse1.txt'),
+      file_get_contents(__DIR__ . '/Responses/AggregateGetResponse1.txt'),
+      file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
+      file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
+      file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
+    ];
+  }
+
+  /**
+   * Get the responses with Omnihell enabled.
+   *
+   * @return array
+   */
+  protected function getWithHell(): array {
+    return [
+      file_get_contents(__DIR__ . '/Responses/MailingGetResponse1.txt'),
+      file_get_contents(__DIR__ . '/Responses/AggregateGetResponse1.txt'),
+      file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
+      file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
+      file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
+      '',
+      file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
+      file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
+      '',
+      file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
+      file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
+    ];
   }
 
 }

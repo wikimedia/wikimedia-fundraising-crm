@@ -48,7 +48,15 @@ function civicrm_api3_omnimailing_load($params) {
   }
   $mailings = civicrm_api3('Omnimailing', 'get', $getParams);
 
-  $customFieldID = civicrm_api3('CustomField', 'getvalue', ['name' => 'query_criteria', 'return' => 'id']);
+  $customFields = civicrm_api3('CustomField', 'get', ['name' => ['IN' => ['query_criteria', 'query_string']], 'return' => ['id', 'name']])['values'];
+  foreach ($customFields as $field) {
+    if ($field['name'] === 'query_criteria') {
+      $criteriaField = 'custom_' . $field['id'];
+    }
+    else {
+      $listField = 'custom_' . $field['id'];
+    }
+  }
   foreach ($mailings['values'] as $mailing) {
     $campaign = _civicrm_api3_omnimailing_load_api_replace(
       'Campaign',
@@ -74,7 +82,10 @@ function civicrm_api3_omnimailing_load($params) {
       'campaign_id' => $campaign['id'],
     ];
     if (!empty(trim($mailing['list_criteria']))) {
-      $mailingParams['custom_' . $customFieldID] = $mailing['list_criteria'];
+      $mailingParams[$criteriaField] = $mailing['list_criteria'];
+    }
+    if (!empty(trim($mailing['list_string']))) {
+      $mailingParams[$listField] = $mailing['list_string'];
     }
     $result = _civicrm_api3_omnimailing_load_api_replace(
       'Mailing',

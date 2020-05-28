@@ -130,6 +130,14 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
   }
 
   /**
+   * @throws \CiviCRM_API3_Exception
+   */
+  public function upgrade_1003() {
+    $this->addCustomFields();
+    return TRUE;
+  }
+
+  /**
    * Example: Run an external SQL script.
    *
    * @return TRUE on success
@@ -215,15 +223,32 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
     }
     $customFields = civicrm_api3('CustomField', 'get', [
       'custom_group_id' => $customGroups['id'],
-    ]);
-    if (!$customFields['count']) {
-      civicrm_api3('CustomField', 'create', [
+    ])['values'];
+    $fieldsToCreate = [
+      'query_criteria' => [
         'custom_group_id' => $customGroups['id'],
         'name' => 'query_criteria',
         'label' => E::ts('Query Criteria'),
         'data_type' => 'Memo',
         'html_type' => 'TextArea',
-      ]);
+      ],
+      'query_string' => [
+        'custom_group_id' => $customGroups['id'],
+        'name' => 'query_string',
+        'label' => E::ts('Query String'),
+        'data_type' => 'Memo',
+        'html_type' => 'TextArea',
+        'column_name' => 'query_string'
+      ],
+    ];
+
+    foreach ($customFields as $customField) {
+      if (isset($fieldsToCreate[$customField['name']])) {
+        unset($fieldsToCreate[$customField['name']]);
+      }
+    }
+    foreach ($fieldsToCreate as $field) {
+      civicrm_api3('CustomField', 'create', $field);
     }
   }
 }
