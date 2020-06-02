@@ -27,6 +27,17 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->compareMessageWithDb($message);
   }
 
+  public function testTruncatesOverlongFields() {
+    $message = $this->getMessage();
+    $message['utm_source'] = 'Blah_source-this-donor-came-in-from-a-search-' .
+      'engine-and-they-were-looking-for-how-to-donate-to-wikipedia.' .
+      'default~default~jimmywantscash.paypal';
+    $this->consumer->processMessage($message);
+    $truncatedMessage = $message;
+    $truncatedMessage['utm_source'] = substr($message['utm_source'], 0, 128);
+    $this->compareMessageWithDb($truncatedMessage);
+  }
+
   public function testCanProcessUpdateMessage() {
     $message = $this->getMessage();
     $this->consumer->processMessage($message);
