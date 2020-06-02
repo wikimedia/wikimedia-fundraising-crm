@@ -49,6 +49,8 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
       ]);
     }, ARRAY_FILTER_USE_KEY);
 
+    $ctData = $this->truncateFields($ctData);
+
     return $this->persistContributionTrackingData($ctData);
   }
 
@@ -94,5 +96,17 @@ LIMIT 1";
         ->fields($ctData)
         ->execute();
     }
+  }
+
+  protected function truncateFields($msg) {
+    include_once(__DIR__ . '/../../contribution_tracking/contribution_tracking.install');
+    $schema = contribution_tracking_schema();
+    $truncated = $msg;
+    foreach ($schema['contribution_tracking']['fields'] as $name => $field) {
+      if (isset($field['length']) && isset($msg[$name])) {
+        $truncated[$name] = substr($msg[$name], 0, $field['length']);
+      }
+    }
+    return $truncated;
   }
 }
