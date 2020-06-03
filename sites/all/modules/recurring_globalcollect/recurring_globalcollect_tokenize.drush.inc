@@ -252,7 +252,7 @@ function _recurring_globalcollect_tokenize($oldRecurring) {
         'failure_retry_date' => NULL,
         'contribution_status_id' => 'In Progress',
         'next_sched_contribution_date' => CRM_Core_Payment_Scheduler::getNextDateForMonth(
-          $newRecurring
+          $createrecurring
         ),
       ]);
 
