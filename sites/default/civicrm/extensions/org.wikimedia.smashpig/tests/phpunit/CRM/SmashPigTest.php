@@ -1,7 +1,6 @@
 <?php
 
-use Civi\Test\HeadlessInterface;
-use Civi\Test\TransactionalInterface;
+require_once(__DIR__ . '/SmashPigBaseTestClass.php');
 use Psr\Log\LogLevel;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
@@ -34,9 +33,7 @@ use SmashPig\Tests\TestingProviderConfiguration;
  * @group SmashPig
  * @group headless
  */
-class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, TransactionalInterface {
-
-  use \Civi\Test\Api3TestTrait;
+class CRM_SmashPigTest extends SmashPigBaseTestClass {
 
   private $oldSettings = [];
 
@@ -46,18 +43,6 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
    * @var PHPUnit_Framework_MockObject_MockObject
    */
   private $hostedCheckoutProvider;
-
-  private $processorName = 'testSmashPig';
-
-  private $processorId;
-
-  private $deleteThings = [
-    'Contribution' => [],
-    'ContributionRecur' => [],
-    'PaymentToken' => [],
-    'PaymentProcessor' => [],
-    'Contact' => [],
-  ];
 
   /** @var \SmashPig\PaymentProviders\CreatePaymentResponse */
   private $createPaymentResponse;
@@ -71,19 +56,12 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
   /** @var \SmashPig\PaymentProviders\ApprovePaymentResponse */
   private $approvePaymentResponse2;
 
-  public function setUpHeadless() {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
-    return \Civi\Test::headless()
-      ->installMe(__DIR__)
-      ->apply();
-  }
-
   /**
    * Setup for test.
    *
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
+   * @throws \API_Exception
    */
   public function setUp() {
     parent::setUp();
@@ -100,7 +78,6 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       ->setGatewayTxnId('000000850010000188140000200001')
       ->setStatus(FinalStatus::COMPLETE);
 
-    civicrm_initialize();
     $this->oldPromPath = variable_get('metrics_reporting_prometheus_path');
     variable_set('metrics_reporting_prometheus_path', '/tmp/');
     $smashPigSettings = civicrm_api3('setting', 'getfields', [
@@ -114,16 +91,6 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $globalConfig = TestingGlobalConfiguration::create();
     TestingContext::init($globalConfig);
 
-    $existing = civicrm_api3(
-      'PaymentProcessor', 'get', ['name' => $this->processorName, 'is_test' => 0]
-    );
-    if ($existing['values']) {
-      $this->processorId = $existing['id'];
-    }
-    else {
-      $processor = $this->createPaymentProcessor();
-      $this->processorId = $processor['id'];
-    }
     $ctx = TestingContext::get();
 
     $providerConfig = TestingProviderConfiguration::createForProvider(
@@ -138,12 +105,14 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $providerConfig->overrideObjectInstance('payment-provider/cc', $this->hostedCheckoutProvider);
   }
 
+  /**
+   * Post test cleanup.
+   *
+   * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
+   */
   public function tearDown() {
-    foreach ($this->deleteThings as $type => $ids) {
-      foreach ($ids as $id) {
-        civicrm_api3($type, 'delete', ['id' => $id, 'skip_undelete' => TRUE]);
-      }
-    }
     foreach ($this->oldSettings as $setting => $value) {
       \Civi::settings()->set(
         $setting, $value
@@ -156,99 +125,11 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     parent::tearDown();
   }
 
-  private function createPaymentProcessor() {
-    $typeRecord = civicrm_api3(
-      'PaymentProcessorType', 'getSingle', ['name' => 'smashpig_ingenico']
-    );
-    $accountType = key(CRM_Core_PseudoConstant::accountOptionValues('financial_account_type', NULL,
-      " AND v.name = 'Asset' "));
-    $query = "
-        SELECT id
-        FROM   civicrm_financial_account
-        WHERE  is_default = 1
-        AND    financial_account_type_id = {$accountType}
-      ";
-    $financialAccountId = CRM_Core_DAO::singleValueQuery($query);
-    $params = [];
-    $params['payment_processor_type_id'] = $typeRecord['id'];
-    $params['name'] = $this->processorName;
-    $params['domain_id'] = CRM_Core_Config::domainID();
-    $params['is_active'] = TRUE;
-    $params['financial_account_id'] = $financialAccountId;
-    $result = civicrm_api3('PaymentProcessor', 'create', $params);
-    $this->deleteThings['PaymentProcessor'][] = $result['id'];
-    return $result['values'][$result['id']];
-  }
-
-  private function createToken($contactId) {
-    $result = civicrm_api3('PaymentToken', 'create', [
-      'contact_id' => $contactId,
-      'payment_processor_id' => $this->processorId,
-      'token' => 'abc123-456zyx-test12',
-      'ip_address' => '12.34.56.78',
-    ]);
-    $this->deleteThings['PaymentToken'][] = $result['id'];
-    return $result['values'][$result['id']];
-  }
-
-  private function createContact() {
-    $result = civicrm_api3('Contact', 'create', [
-      'contact_type' => 'Individual',
-      'first_name' => 'Harry',
-      'last_name' => 'Henderson',
-      'email' => 'harry@hendersons.net',
-      'preferred_language' => 'en_US',
-    ]);
-    $this->deleteThings['Contact'][] = $result['id'];
-    return $result['values'][$result['id']];
-  }
-
-  private function createContributionRecur($token, $overrides = []) {
-    gmdate('Y-m-d H:i:s', strtotime('-12 hours'));
-    $processor_id = mt_rand(10000, 100000000);
-    $params = $overrides + [
-      'contact_id' => $token['contact_id'],
-      'amount' => 12.34,
-      'currency' => 'USD',
-      'frequency_unit' => 'month',
-      'frequency_interval' => 1,
-      'installments' => 1,
-      'start_date' => gmdate('Y-m-d H:i:s', strtotime('-1 month')),
-      'create_date' => gmdate('Y-m-d H:i:s', strtotime('-1 month')),
-      'payment_token_id' => $token['id'],
-      'cancel_date' => NULL,
-      'cycle_day' => gmdate('d', strtotime('-12 hours')),
-      'payment_processor_id' => $this->processorId,
-      'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
-      'trxn_id' => 'RECURRING INGENICO ' . $processor_id,
-      'processor_id' => $processor_id,
-      'invoice_id' => mt_rand(10000, 10000000) . '.' . mt_rand(1, 20) . '|recur-' . mt_rand(100000, 100000000),
-      'contribution_status_id' => 'Pending',
-    ];
-    $result = $this->callAPISuccess('ContributionRecur', 'create', $params);
-    $this->deleteThings['ContributionRecur'][] = $result['id'];
-    return $result['values'][$result['id']];
-  }
-
-  private function createContribution($contributionRecur, $overrides = []) {
-    $params = $overrides + [
-      'contact_id' => $contributionRecur['contact_id'],
-      'currency' => 'USD',
-      'total_amount' => 12.34,
-      'contribution_recur_id' => $contributionRecur['id'],
-      'receive_date' => date('Y-m-d H:i:s', strtotime('-1 month')),
-      'trxn_id' => $contributionRecur['trxn_id'],
-      'financial_type_id' => 1,
-      'invoice_id' => mt_rand(10000, 10000000) . '.' . mt_rand(1, 20) . '|recur-' . mt_rand(100000, 100000000),
-      'skipRecentView' => 1,
-    ];
-    $result = civicrm_api3('Contribution', 'create', $params);
-    $this->deleteThings['Contribution'][] = $result['id'];
-    return $result['values'][$result['id']];
-  }
-
   /**
    * Test that doDirectPayment makes the right API calls
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \Civi\Payment\Exception\PaymentProcessorException
    */
   public function testDoDirectPayment() {
     $processor = Civi\Payment\System::singleton()
@@ -298,6 +179,10 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $this->assertEquals('Completed', $status);
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   */
   public function testRecurringChargeJob() {
     // First test it directly inserting the new contribution
     \Civi::settings()->set(
@@ -821,10 +706,7 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
   }
 
   public function testPaymentFails() {
-    $contact = $this->createContact();
-    $token = $this->createToken($contact['id']);
-    $contributionRecur = $this->createContributionRecur($token);
-    $this->createContribution($contributionRecur);
+    $contributionRecur = $this->setupRecurring();
     $response = (new CreatePaymentResponse())->addErrors(
       new PaymentError(
         ErrorCode::DECLINED,
@@ -862,28 +744,13 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
   /**
    * When we get a DO_NOT_RETRY error code, we should cancel the subscription
    * immediately without waiting for 3 retries.
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   * @throws \CRM_Core_Exception
    */
   public function testPaymentFailsNoRetry() {
-    $contact = $this->createContact();
-    $token = $this->createToken($contact['id']);
-    $contributionRecur = $this->createContributionRecur($token);
-    $this->createContribution($contributionRecur);
-    $response = (new CreatePaymentResponse())->addErrors(
-      new PaymentError(
-        ErrorCode::DECLINED_DO_NOT_RETRY,
-        'Better not try me again!',
-        LogLevel::ERROR
-      )
-    );
-    $this->hostedCheckoutProvider->expects($this->once())
-      ->method('createPayment')
-      ->willReturn(
-        $response
-      );
-    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1
-    );
-    $processor->run();
+    $contributionRecur = $this->setupAndFailRecurring();
     $queue = QueueWrapper::getQueue('donations');
     $this->assertNull($queue->pop(), 'Should not have queued a donation!');
     $newContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', [
@@ -899,6 +766,24 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       'Cancelled',
       CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
+  }
+
+  /**
+   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   */
+  public function testCancelMessage() {
+    $this->setupFailureTemplate();
+    $contributionRecur = $this->setupAndFailRecurring();
+    $activity = $this->getLatestFailureMailActivity((int) $contributionRecur['id']);
+    $month = date('F');
+    $expectedMessage = "Dear Harry,
+      We cancelled your recur of USD 12.34
+      and we are sending you this at harry@hendersons.net
+      this month of $month
+      $12.34";
+    $this->assertEquals($expectedMessage, $activity['details']);
   }
 
   /**
@@ -1141,4 +1026,34 @@ class CRM_SmashPigTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
     $expectedDescription = "Monthly donation to $domain->name";
     return $expectedDescription;
   }
+
+  /**
+   * Set up a recurring payment and process a failed payment.
+   *
+   * @return array
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected function setupAndFailRecurring() {
+    $contributionRecur = $this->setupRecurring();
+    $response = (new CreatePaymentResponse())->addErrors(
+      new PaymentError(
+        ErrorCode::DECLINED_DO_NOT_RETRY,
+        'Better not try me again!',
+        LogLevel::ERROR
+      )
+    );
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->willReturn(
+        $response
+      );
+    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+      TRUE, 1, 3, 1, 1
+    );
+    $processor->run();
+    return $contributionRecur;
+  }
+
 }
