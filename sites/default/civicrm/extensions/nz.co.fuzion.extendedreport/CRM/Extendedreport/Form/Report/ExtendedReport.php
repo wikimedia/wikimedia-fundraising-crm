@@ -2422,12 +2422,18 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
   /**
    * Build custom data from clause.
    *
-   * Overridden to support custom data for multiple entities of the same type.
+   * Overridden to support custom data for multiple entities of the same type and pivot fields.
    */
   public function extendedCustomDataFrom() {
-    foreach ($this->getMetadataByType('metadata') as $prop) {
+    $pivotColumn = $this->_params['aggregate_column_headers'] ?? NULL;
+    $rowColumn = $this->_params['aggregate_row_headers'] ?? NULL;
+    foreach ($this->getMetadataByType('metadata') as $fieldName => $prop) {
       $table = $prop['table_name'];
-      if (empty($prop['extends']) || !$this->isCustomTableSelected($table)) {
+      if (empty($prop['extends']) ||
+          !$this->isCustomTableSelected($table) ||
+          !$this->isTableSelected($prop['extends_table']) &&
+          ($pivotColumn !== $fieldName && $rowColumn !== $fieldName)
+      ) {
         continue;
       }
 
@@ -3100,8 +3106,14 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
       $entity_table = $this->_aliases[strtolower('civicrm_' . $entity)];
       $idKeyArray = [$entity_table . '.id'];
       if (empty($this->_groupByArray) || $this->_groupByArray == $idKeyArray) {
-        $entity_field = $entity_table . '_id';
-        $entityID = $row[$this->getMetadataByType('fields')[$entity_field]['alias']];
+        foreach ($this->getMetadataByType('fields') as $fieldName => $field) {
+          if ($field['name'] === 'id') {
+            $entity_field = $fieldName;
+            $alias = $field['alias'];
+            break;
+          }
+        }
+        $entityID = $row[$alias];
       }
     }
     if (CRM_Utils_System::isNull($value) && !in_array($customField['data_type'], [
@@ -3825,6 +3837,7 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
             'title' => ts($options['prefix_label'] . ' Membership Cycle End Date'),
             'include_null' => TRUE,
             'is_group_bys' => TRUE,
+            'is_filters' => TRUE,
             'type' => CRM_Utils_Type::T_DATE,
             'operatorType' => CRM_Report_Form::OP_DATE,
           ],
@@ -7106,12 +7119,12 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
 
       case CRM_Report_Form::OP_DATE:
         // build datetime fields
-        CRM_Core_Form_Date::buildDateRange($this, $prefix . $fieldName, $count, '_from', '_to', 'From:', FALSE, $operations);
+        $this->addDatePickerRange($prefix . $fieldName, $field['title'], FALSE, FALSE, 'From', 'To', $operations, '_to', '_from');
         break;
 
       case CRM_Report_Form::OP_DATETIME:
         // build datetime fields
-        CRM_Core_Form_Date::buildDateRange($this, $prefix . $fieldName, $count, '_from', '_to', 'From:', FALSE, $operations, 'searchDate', TRUE);
+        $this->addDatePickerRange($prefix . $fieldName, $field['title'], TRUE, FALSE, 'From', 'To', $operations, '_to', '_from');
         break;
       case self::OP_SINGLEDATE:
         // build single datetime field
@@ -7157,11 +7170,9 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
         return $clause;
       }
       else {
-        $relative = CRM_Utils_Array::value("{$prefix}{$fieldName}_relative", $this->_params);
-        $from = CRM_Utils_Array::value("{$prefix}{$fieldName}_from", $this->_params);
-        $to = CRM_Utils_Array::value("{$prefix}{$fieldName}_to", $this->_params);
-        $fromTime = CRM_Utils_Array::value("{$prefix}{$fieldName}_from_time", $this->_params);
-        $toTime = CRM_Utils_Array::value("{$prefix}{$fieldName}_to_time", $this->_params);
+        $relative = $this->_params["{$prefix}{$fieldName}_relative"] ?? NULL;
+        $from = $this->_params["{$prefix}{$fieldName}_from"] ?? NULL;
+        $to = $this->_params["{$prefix}{$fieldName}_to"] ?? NULL;
         // next line is the changed one
         if (!empty($field['clause'])) {
           $clause = '';
@@ -7172,7 +7183,7 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
           }
           return NULL;
         }
-        $clause = $this->dateClause($field['dbAlias'], $relative, $from, $to, $field, $fromTime, $toTime);
+        $clause = $this->dateClause($field['dbAlias'], $relative, $from, $to, $field['type']);
         return $clause;
       }
     }
@@ -8264,21 +8275,20 @@ WHERE cg.extends IN ('" . $extendsString . "') AND
       CRM_Utils_Array::value('operatorType', $field) !=
       CRM_Report_Form::OP_MONTH
     ) {
-      list($from, $to)
-        = CRM_Utils_Date::getFromTo(
-        CRM_Utils_Array::value("{$prefix}{$fieldName}_relative", $this->_params),
-        CRM_Utils_Array::value("{$prefix}{$fieldName}_from", $this->_params),
-        CRM_Utils_Array::value("{$prefix}{$fieldName}_to", $this->_params),
-        CRM_Utils_Array::value("{$prefix}{$fieldName}_from_time", $this->_params),
-        CRM_Utils_Array::value("{$prefix}{$fieldName}_to_time", $this->_params, '235959')
-      );
-      $from_time_format = !empty($this->_params["{$prefix}{$fieldName}_from_time"]) ? 'h' : 'd';
-      $from = CRM_Utils_Date::customFormat($from, NULL, [$from_time_format]);
 
-      $to_time_format = !empty($this->_params["{$prefix}{$fieldName}_to_time"]) ? 'h' : 'd';
-      $to = CRM_Utils_Date::customFormat($to, NULL, [$to_time_format]);
+      $from = $this->_params["{$prefix}{$fieldName}_from"] ?? NULL;
+      $to = $this->_params["{$prefix}{$fieldName}_to"] ?? NULL;
+      if (!empty($this->_params["{$prefix}{$fieldName}_relative"])) {
+        list($from, $to) = CRM_Utils_Date::getFromTo($this->_params["{$prefix}{$fieldName}_relative"], NULL, NULL);
+      }
 
       if ($from || $to) {
+        if ($from) {
+          $from = date('l j F Y, g:iA', strtotime($from));
+        }
+        if ($to) {
+          $to = date('l j F Y, g:iA', strtotime($to));
+        }
         return [
           'title' => $field['title'],
           'value' => ts("Between %1 and %2", [1 => $from, 2 => $to]),
