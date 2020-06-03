@@ -50,6 +50,17 @@ class CRM_SchedulerTest extends \PHPUnit\Framework\TestCase implements HeadlessI
     $this->assertEquals('2018-02-01 00:00:00', $nextChargeDate);
   }
 
+  public function testThirdDuringDayOfMonth() {
+    $record = [
+      'cycle_day' => '3',
+      'frequency_interval' => '1',
+    ];
+    $nextChargeDate = CRM_Core_Payment_Scheduler::getNextDateForMonth(
+      $record, gmmktime(18, 13, 56, 6, 3, 2020)
+    );
+    $this->assertEquals('2020-07-03 00:00:00', $nextChargeDate);
+  }
+
   /**
    * If someone's cycle date is the 31st, schedule their February
    * donation for the 28th
