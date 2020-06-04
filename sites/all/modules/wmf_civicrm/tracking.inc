@@ -43,6 +43,26 @@ function wmf_civicrm_message_update_contribution_tracking($msg, $contribution) {
   }
 }
 
+/**
+ * Confirm that we wanna update the contribution tracking record.
+ *
+ * @param array $msg
+ * @param bool $isInitialRecurring
+ *
+ * @return bool
+ */
+function wmf_civicrm_should_update_contribution_tracking($msg, $isInitialRecurring) {
+  if (stristr($msg['gateway_txn_id'], '_matched')) {
+    return FALSE;
+  }
+  elseif (!$msg['recurring'] || $isInitialRecurring) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
 function wmf_civicrm_get_contribution_tracking($msg) {
   if (array_key_exists('contribution_tracking_id', $msg)) {
     return db_select('contribution_tracking', 'contribution_tracking')

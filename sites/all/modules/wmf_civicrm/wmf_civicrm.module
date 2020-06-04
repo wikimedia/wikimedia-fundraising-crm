@@ -277,7 +277,7 @@ function wmf_civicrm_contribution_message_import(&$msg) {
   // Insert the contribution record.
   $contribution = _wmf_civicrm_message_contribution_insert($msg);
 
-  if (!$msg['recurring'] || $initial_recurring) {
+  if (wmf_civicrm_should_update_contribution_tracking($msg, $initial_recurring)) {
     // Map the tracking record to the CiviCRM contribution
     // @FIXME what do we do if this returns false?  nothing at the moment...
     wmf_civicrm_message_update_contribution_tracking($msg, $contribution);
