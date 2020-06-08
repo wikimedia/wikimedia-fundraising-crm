@@ -68,7 +68,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7524();
   wmf_civicrm_update_7525();
   wmf_civicrm_update_7526();
-  wmf_civicrm_update_7530();
   wmf_civicrm_update_7570();
   wmf_civicrm_update_7585();
   wmf_civicrm_update_7610();
@@ -78,6 +77,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7890();
   wmf_civicrm_update_7935();
   wmf_civicrm_update_7940();
+  wmf_civicrm_update_8055();
 }
 
 /**
@@ -2684,13 +2684,6 @@ function wmf_civicrm_update_7526() {
   civicrm_initialize();
   $tables = array('civicrm_campaign' => array('name'));
   CRM_Core_BAO_SchemaHandler::createIndexes($tables);
-}
-
-/**
- * Enable Omnimail.
- */
-function wmf_civicrm_update_7530() {
-  wmf_civicrm_reconcile_extensions();
 }
 
 /**
@@ -5720,4 +5713,12 @@ function wmf_civicrm_update_8055() {
   // These are relics of a bygone dedupe effort.
   CRM_Core_BAO_SchemaHandler::dropIndexIfExists('civicrm_contact', 'dedupe_index_last_name_7');
   CRM_Core_BAO_SchemaHandler::dropIndexIfExists('civicrm_contact', 'dedupe_index_household_name_5');
+}
+
+/**
+ * Enable Matching Gifts extension.
+ * Enable cividatatranslate.
+ */
+function wmf_civicrm_update_8060() {
+  wmf_civicrm_reconcile_extensions();
 }

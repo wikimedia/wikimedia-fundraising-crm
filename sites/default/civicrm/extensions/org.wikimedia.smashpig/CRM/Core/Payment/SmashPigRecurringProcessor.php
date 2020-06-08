@@ -4,6 +4,10 @@ use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ErrorCode;
 use CRM_SmashPig_ExtensionUtil as E;
+use Civi\Api4\Activity;
+use Civi\Api4\Message;
+use Civi\Api4\FailureEmail;
+use Civi\Api4\Email;
 
 class CRM_Core_Payment_SmashPigRecurringProcessor {
 
@@ -176,6 +180,13 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     return "$ctId.$currentSequenceNum";
   }
 
+  /**
+   * @param array $payment
+   * @param array $recurringPayment
+   * @param array $previousPayment
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
   protected function recordPayment(
     $payment, $recurringPayment, $previousPayment
   ) {
@@ -221,6 +232,13 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     }
   }
 
+  /**
+   * @param array $recurringPayment
+   * @param \CiviCRM_API3_Exception $exception
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \Exception
+   */
   protected function recordFailedPayment($recurringPayment, CiviCRM_API3_Exception $exception) {
     $newFailureCount = $recurringPayment['failure_count'] + 1;
     $params = [
@@ -243,10 +261,28 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       );
     }
     if ($cancelRecurringDonation) {
+      // @todo note the core terminology would moe accurately set this to Failed
+      // leaving cancelled for something where a user or staff member made a choice.
       $params['contribution_status_id'] = 'Cancelled';
       $params['cancel_date'] = UtcDate::getUtcDatabaseString();
+      $this->sendFailureEmail($recurringPayment['id'], $recurringPayment['contact_id']);
     }
     civicrm_api3('ContributionRecur', 'create', $params);
+  }
+
+  /**
+   * Send an email notifing of cancellation.
+   *
+   * @param int $contributionRecurID
+   * @param int $contactID
+   *
+   * @throws \API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function sendFailureEmail(int $contributionRecurID, int $contactID) {
+    if ( Civi::settings()->get('smashpig_recurring_send_failure_email') ) {
+        FailureEmail::send()->setCheckPermissions(FALSE)->setContactID($contactID)->setContributionRecurID($contributionRecurID)->execute();
+    }
   }
 
   /**

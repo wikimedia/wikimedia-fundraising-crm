@@ -83,4 +83,21 @@ return [
     'is_contact' => 0,
     'description' => 'The job will attempt to charge up to this many recurring contributions each run before stopping.',
   ],
+  'smashpig_recurring_send_failure_email' => [
+    'group_name' => 'SmashPig Preferences',
+    'group' => 'smashpig',
+    'name' => 'smashpig_recurring_send_cancel_email',
+    'type' => 'Boolean',
+    'quick_form_type' => 'Element',
+    'html_type' => 'radio',
+    'html_attributes' => [
+       'size' => 4,
+       'maxlength' => 4,
+    ],
+    'default' => 0,
+    'title' => 'Whether to send email on failed recurring contributions',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'description' => 'Once the job has run the set number of recurring contribution retries, send an email to the donor about cancellation.',
+  ],
 ];

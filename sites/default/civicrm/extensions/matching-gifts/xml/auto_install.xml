@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<CustomData>
+  <CustomGroups>
+    <CustomGroup>
+      <name>matching_gift_policies</name>
+      <title>Matching Gift Policies</title>
+      <extends>Organization</extends>
+      <style>Inline</style>
+      <collapse_display>1</collapse_display>
+      <help_pre>Fields describing an organization's matching gift policies. Managed by the Matching Gifts extension</help_pre>
+      <help_post></help_post>
+      <weight>26</weight>
+      <is_active>1</is_active>
+      <table_name>civicrm_value_matching_gift</table_name>
+      <is_multiple>0</is_multiple>
+      <collapse_adv_display>0</collapse_adv_display>
+      <created_date>2020-05-19 08:23:55</created_date>
+      <is_reserved>0</is_reserved>
+      <is_public>1</is_public>
+    </CustomGroup>
+  </CustomGroups>
+  <CustomFields>
+    <CustomField>
+      <name>matching_gifts_provider_id</name>
+      <label>Matching gifts provider ID</label>
+      <data_type>String</data_type>
+      <html_type>Text</html_type>
+      <is_search_range>0</is_search_range>
+      <weight>1</weight>
+      <help_pre>This organization's primary key in the matching gift info provider's database. Usually an integer.</help_pre>
+      <is_active>1</is_active>
+      <is_view>1</is_view>
+      <text_length>255</text_length>
+      <note_columns>60</note_columns>
+      <note_rows>4</note_rows>
+      <column_name>matching_gifts_provider_id</column_name>
+      <in_selector>0</in_selector>
+      <custom_group_name>matching_gift_policies</custom_group_name>
+    </CustomField>
+    <CustomField>
+      <name>matching_gifts_provider_info_url</name>
+      <label>Matching gifts provider info URL</label>
+      <data_type>Link</data_type>
+      <html_type>Link</html_type>
+      <is_search_range>0</is_search_range>
+      <weight>2</weight>
+      <help_pre>Link to a page hosted by the matching gift provider with further information about the organization's policies.</help_pre>
+      <is_active>1</is_active>
+      <text_length>255</text_length>
+      <note_columns>60</note_columns>
+      <note_rows>4</note_rows>
+      <column_name>matching_gifts_provider_info_url</column_name>
+      <in_selector>0</in_selector>
+      <custom_group_name>matching_gift_policies</custom_group_name>
+    </CustomField>
+    <CustomField>
+      <name>name_from_matching_gift_db</name>
+      <label>Name from matching gift DB</label>
+      <data_type>String</data_type>
+      <html_type>Text</html_type>
+      <is_search_range>0</is_search_range>
+      <weight>3</weight>
+      <help_pre>May be the same as the organization name.</help_pre>
+      <is_active>1</is_active>
+      <is_view>1</is_view>
+      <text_length>255</text_length>
+      <note_columns>60</note_columns>
+      <note_rows>4</note_rows>
+      <column_name>name_from_matching_gift_db</column_name>
+      <in_selector>0</in_selector>
+      <custom_group_name>matching_gift_policies</custom_group_name>
+    </CustomField>
+    <CustomField>
+      <name>guide_url</name>
+      <label>Guide URL</label>
+      <data_type>Link</data_type>
+      <html_type>Link</html_type>
+      <is_search_range>0</is_search_range>
+      <weight>4</weight>
+      <help_pre>Link to a document donors can read to learn more about their employer's matching gift policies.</help_pre>
+      <is_active>1</is_active>
+      <text_length>255</text_length>
+      <note_columns>60</note_columns>
+      <note_rows>4</note_rows>
+      <column_name>guide_url</column_name>
+      <in_selector>0</in_selector>
+      <custom_group_name>matching_gift_policies</custom_group_name>
+    </CustomField>
+    <CustomField>
+      <name>online_form_url</name>
+      <label>Online form URL</label>
+      <data_type>Link</data_type>
+      <html_type>Link</html_type>
+      <is_search_range>0</is_search_range>
+      <weight>5</weight>
+      <help_pre>Link to a form donors can fill out online to get their donation matched by their employer.</help_pre>
+      <is_active>1</is_active>
+      <text_length>255</text_length>
+      <note_columns>60</note_columns>
+      <note_rows>4</note_rows>
+      <column_name>online_form_url</column_name>
+      <in_selector>0</in_selector>
+      <custom_group_name>matching_gift_policies</custom_group_name>
+    </CustomField>
+    <CustomField>
+      <name>minimum_gift_matched_usd</name>
+      <label>Minimum gift matched (USD)</label>
+      <data_type>Money</data_type>
+      <html_type>Text</html_type>
+      <is_search_range>0</is_search_range>
+      <weight>6</weight>
+      <help_pre>Minimum donation amount (in USD) that the organization will match. Used to determine whether to send donors an instructional email.</help_pre>
+      <is_active>1</is_active>
+      <text_length>255</text_length>
+      <note_columns>60</note_columns>
+      <note_rows>4</note_rows>
+      <column_name>minimum_gift_matched_usd</column_name>
+      <in_selector>0</in_selector>
+      <custom_group_name>matching_gift_policies</custom_group_name>
+    </CustomField>
+    <CustomField>
+      <name>match_policy_last_updated</name>
+      <label>Match policy last updated</label>
+      <data_type>Date</data_type>
+      <html_type>Select Date</html_type>
+      <is_search_range>0</is_search_range>
+      <weight>7</weight>
+      <help_pre>Last updated date from matching gift info provider</help_pre>
+      <is_active>1</is_active>
+      <text_length>255</text_length>
+      <date_format>yy-mm-dd</date_format>
+      <note_columns>60</note_columns>
+      <note_rows>4</note_rows>
+      <column_name>match_policy_last_updated</column_name>
+      <in_selector>0</in_selector>
+      <custom_group_name>matching_gift_policies</custom_group_name>
+    </CustomField>
+    <CustomField>
+      <name>suppress_from_employer_field</name>
+      <label>Suppress from employer field</label>
+      <data_type>Boolean</data_type>
+      <html_type>Radio</html_type>
+      <default_value>0</default_value>
+      <is_search_range>0</is_search_range>
+      <weight>8</weight>
+      <help_pre>Set this to 'Yes' if the organization does not match gifts to us. The organization will not be exported for use in donation forms.</help_pre>
+      <is_active>1</is_active>
+      <text_length>255</text_length>
+      <note_columns>60</note_columns>
+      <note_rows>4</note_rows>
+      <column_name>suppress_from_employer_field</column_name>
+      <in_selector>0</in_selector>
+      <custom_group_name>matching_gift_policies</custom_group_name>
+    </CustomField>
+    <CustomField>
+      <name>subsidiaries</name>
+      <label>Subsidiaries</label>
+      <data_type>Memo</data_type>
+      <html_type>TextArea</html_type>
+      <is_search_range>0</is_search_range>
+      <weight>9</weight>
+      <help_pre>List of subsidiary names sharing this company's matching gift policies. All will appear in the front end donation forms with this company's id. Stored as a JSON array.</help_pre>
+      <attributes>rows=4, cols=60</attributes>
+      <is_active>1</is_active>
+      <is_view>1</is_view>
+      <note_columns>60</note_columns>
+      <note_rows>4</note_rows>
+      <column_name>subsidiaries</column_name>
+      <in_selector>0</in_selector>
+      <custom_group_name>matching_gift_policies</custom_group_name>
+    </CustomField>
+  </CustomFields>
+</CustomData>
