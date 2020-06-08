@@ -6,4 +6,10 @@
     <title>SmashPig Settings</title>
     <access_arguments>administer CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/smashpig/notification</path>
+    <page_callback>CRM_SmashPig_Form_Notification</page_callback>
+    <title>Notification</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>
