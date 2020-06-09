@@ -82,9 +82,15 @@ function civicrm_api3_omnimailing_get($params) {
           'list_id' => $result['list_id'],
         ]))['values'][0];
       }
-      // There are still some mysteries around the data retrievable this way.
-      // Lets get & store both while both work. We can consolidate when we are comfortable.
-      $results[$index]['list_string'] = $mailer->getQueryCriteria(['QueryIdentifier' => $result['list_id']])->getResponse()->getQueryCriteria();
+      try {
+        // There are still some mysteries around the data retrievable this way.
+        // Lets get & store both while both work. We can consolidate when we are comfortable.
+        $results[$index]['list_string'] = $mailer->getQueryCriteria(['QueryIdentifier' => $result['list_id']])->getResponse()->getQueryCriteria();
+      }
+      catch (Exception $e) {
+        // I saw a fail like Request failed: Query Id is not valid.
+        // we should skip rather than crash the job
+      }
     }
   }
   return civicrm_api3_create_success($results);
