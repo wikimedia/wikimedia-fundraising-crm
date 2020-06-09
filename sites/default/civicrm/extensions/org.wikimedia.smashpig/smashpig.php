@@ -155,7 +155,7 @@ function smashpig_civicrm_navigationMenu(&$menu) {
   _smashpig_civix_insert_navigation_menu($menu, 'Administer/System Settings', [
     'label' => E::ts('SmashPig Settings'),
     'name' => 'SmashPig Settings',
-    'url' => 'civicrm/smashpig/settings',
+    'url' => 'civicrm/settings/smashpig',
     'permission' => 'administer CiviCRM',
     'operator' => 'AND',
     'separator' => 0,
