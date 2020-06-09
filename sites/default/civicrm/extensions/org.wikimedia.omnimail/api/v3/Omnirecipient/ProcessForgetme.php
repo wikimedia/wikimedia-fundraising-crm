@@ -11,6 +11,8 @@ require_once 'vendor/autoload.php';
  * @param $params
  *
  * @return array
+ *
+ * @throws \CiviCRM_API3_Exception
  */
 function civicrm_api3_omnirecipient_process_forgetme($params) {
   $forgets = civicrm_api3('OmnimailJobProgress', 'get', ['job' => 'omnimail_privacy_erase', 'mailing_provider' => $params['mail_provider']]);
@@ -45,4 +47,5 @@ function civicrm_api3_omnirecipient_process_forgetme($params) {
  * @param $params
  */
 function _civicrm_api3_omnirecipient_process_forgetme_spec(&$params) {
+  $params['mail_provider']['api.default'] = 'Silverpop';
 }
