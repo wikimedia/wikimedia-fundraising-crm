@@ -1,0 +1,25 @@
+Hi {contact.first_name},
+
+Thank you for your continued support of the Wikimedia Foundation and free knowledge. In {now.MMMM}, we were unable to process your monthly donation of {contributionRecur.amount__format_money} to Wikipedia.
+
+Your support is very important to us. If you would like to renew your support for Wikipedia on a monthly basis, please take one minute to start a new recurring donation, and keep Wikipedia online and ad-free.
+
+Wikipedia exists thanks to contributions from readers like you.
+
+Thank you again for your support of this mission.
+
+https://donate.wikimedia.org
+
+Sincerely,
+Michael Beattie
+Wikimedia Foundation Fundraising Team
+
+
+You are receiving this email at {contact.email} as a valued donor of the Wikimedia Foundation. If you do not wish to receive any future emails from the Wikimedia Foundation, unsubscribe now. If you've already donated recently, we may have an alternate email address on file for you. Please let us know it! We'll be happy to unsubscribe any old email addresses.
+
+Wikimedia Foundation, Inc.
+P.O. Box 98204
+Washington, DC 20090-8204
+United States of America
+
+Ref CiviRec{contact.preferred_language} {contributionRecur.id}
