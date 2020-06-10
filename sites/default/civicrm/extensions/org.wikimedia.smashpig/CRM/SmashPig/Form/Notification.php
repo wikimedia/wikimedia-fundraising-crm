@@ -27,14 +27,18 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
       $this->getNotificationType()
 
     );
-    $this->addButtons(array(
-      array(
+    $this->addButtons([
+      [
         'type' => 'submit',
         'name' => E::ts('Send'),
         'class' => 'notification-send-submit',
         'isDefault' => TRUE,
-     ),
-    ));
+      ],
+      [
+        'type' => 'cancel',
+        'name' => ts('Cancel'),
+      ]
+    ]);
 
     // export form elements
     $this->assign('elementNames', $this->getRenderableElementNames());
