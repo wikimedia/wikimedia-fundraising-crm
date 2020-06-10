@@ -1,21 +1,3 @@
-<script>
-  {literal}
-  CRM.$(function($) {
-    $('.notification').on('click', function(e) {
-      e.preventDefault();
-      CRM.confirm({
-        title: "Send Failure Notification Email?",
-        message: CRM.ts("Are you sure want to send this email"?")
-      })
-              .on(
-                      'crmConfirm:yes', function () {
-                        $('#Notification').submit();
-                      });
-    });
-  });
-  {/literal}
-</script>
-
 {* HEADER *}
 
 <div class="crm-submit-buttons">
