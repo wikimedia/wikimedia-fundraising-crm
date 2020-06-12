@@ -25,13 +25,8 @@ class CRM_MatchingGifts_SsbInfoProviderTest extends PHPUnit\Framework\TestCase
   public function setUp() {
     parent::setUp();
     civicrm_initialize();
-    $this->setUpMockResponse([
-      file_get_contents(__DIR__ . '/Responses/searchResult.json'),
-      file_get_contents(__DIR__ . '/Responses/detail01.json'),
-      file_get_contents(__DIR__ . '/Responses/detail02.json'),
-    ]);
     $this->provider = new CRM_MatchingGifts_SsbinfoProvider([
-      'api_key' => 'blahDeBlah'
+      'api_key' => 'blahDeBlah',
     ]);
   }
 
@@ -63,14 +58,24 @@ class CRM_MatchingGifts_SsbInfoProviderTest extends PHPUnit\Framework\TestCase
     CRM_MatchingGifts_SsbinfoProvider::setClient($httpClient);
   }
 
-  public function testFetch() {
-    $this->provider->fetchMatchingGiftPolicies([]);
+  public function testFetchOneCategory() {
+    $this->setUpMockResponse([
+      file_get_contents(__DIR__ . '/Responses/searchResult01.json'),
+      file_get_contents(__DIR__ . '/Responses/detail01.json'),
+      file_get_contents(__DIR__ . '/Responses/detail02.json'),
+    ]);
+
+    $result = $this->provider->fetchMatchingGiftPolicies([
+      'matchedCategories' => [
+        'educational_services',
+      ]
+    ]);
 
     $this->assertEquals(3, count($this->requests));
     $searchRequest = $this->requests[0]['request'];
     $this->assertEquals(
       'https://gpc.matchinggifts.com/api/V2/company_name_search_list_result/?' .
-      'key=blahDeBlah&format=json&parent_only=yes',
+      'key=blahDeBlah&format=json&parent_only=yes&educational_services=yes',
       (string)$searchRequest->getUri()
     );
 
@@ -87,6 +92,67 @@ class CRM_MatchingGifts_SsbInfoProviderTest extends PHPUnit\Framework\TestCase
       'key=blahDeBlah&format=json',
       (string)$detailsRequest2->getUri()
     );
+
+    $this->assertCount(2, $result);
+    $this->assertEquals('Yoyodyne Corporation', $result[12340000]['name']);
+    $this->assertEquals('Advanced Idea Mechanics', $result[56780404]['name']);
   }
 
+  public function testFetchMultipleCategories() {
+    $this->setUpMockResponse([
+      file_get_contents(__DIR__ . '/Responses/searchResult01.json'),
+      file_get_contents(__DIR__ . '/Responses/searchResult02.json'),
+      file_get_contents(__DIR__ . '/Responses/detail01.json'),
+      file_get_contents(__DIR__ . '/Responses/detail02.json'),
+      file_get_contents(__DIR__ . '/Responses/detail03.json'),
+    ]);
+
+    $result = $this->provider->fetchMatchingGiftPolicies([
+      'matchedCategories' => [
+        'educational_services',
+        'zoos',
+      ]
+    ]);
+
+    $this->assertEquals(5, count($this->requests));
+    $searchRequest1 = $this->requests[0]['request'];
+    $this->assertEquals(
+      'https://gpc.matchinggifts.com/api/V2/company_name_search_list_result/?' .
+      'key=blahDeBlah&format=json&parent_only=yes&educational_services=yes',
+      (string)$searchRequest1->getUri()
+    );
+
+    $searchRequest2 = $this->requests[1]['request'];
+    $this->assertEquals(
+      'https://gpc.matchinggifts.com/api/V2/company_name_search_list_result/?' .
+      'key=blahDeBlah&format=json&parent_only=yes&zoos=yes',
+      (string)$searchRequest2->getUri()
+    );
+
+    $detailsRequest1 = $this->requests[2]['request'];
+    $this->assertEquals(
+      'https://gpc.matchinggifts.com/api/V2/company_details_by_id/12340000/?' .
+      'key=blahDeBlah&format=json',
+      (string)$detailsRequest1->getUri()
+    );
+
+    $detailsRequest2 = $this->requests[3]['request'];
+    $this->assertEquals(
+      'https://gpc.matchinggifts.com/api/V2/company_details_by_id/56780404/?' .
+      'key=blahDeBlah&format=json',
+      (string)$detailsRequest2->getUri()
+    );
+
+    $detailsRequest3 = $this->requests[4]['request'];
+    $this->assertEquals(
+      'https://gpc.matchinggifts.com/api/V2/company_details_by_id/75751100/?' .
+      'key=blahDeBlah&format=json',
+      (string)$detailsRequest3->getUri()
+    );
+
+    $this->assertCount(3, $result);
+    $this->assertEquals('Yoyodyne Corporation', $result[12340000]['name']);
+    $this->assertEquals('Advanced Idea Mechanics', $result[56780404]['name']);
+    $this->assertEquals('Aperture Science, Inc.', $result[75751100]['name']);
+  }
 }

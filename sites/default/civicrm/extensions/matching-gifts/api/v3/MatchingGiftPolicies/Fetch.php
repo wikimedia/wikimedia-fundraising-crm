@@ -13,12 +13,20 @@ function _civicrm_api3_matching_gift_policies_fetch_spec(&$params) {
  */
 function civicrm_api3_matching_gift_policies_fetch($params) {
   $providerName = $params['provider'];
-  $credentials = CRM_Core_BAO_Setting::getItem('Matching Gifts Data Preferences', "{$providerName}_credentials");
+  $settings = Civi::settings();
+
+  $credentials = $settings->get(
+    "matchinggifts.{$providerName}_credentials"
+  );
   $fetchParams = $params;
   if (!isset($fetchParams['lastUpdated'])) {
-    $fetchParams['lastUpdated'] = CRM_Core_BAO_Setting::getItem(
-      'Matching Gifts Data Preferences',
-      "{$providerName}_last_updated"
+    $fetchParams['lastUpdated'] = $settings->get(
+      "matchinggifts.{$providerName}_last_updated"
+    );
+  }
+  if (!isset($fetchParams['matchedCategories'])) {
+    $fetchParams['matchedCategories'] = $settings->get(
+      "matchinggifts.{$providerName}_matched_categories"
     );
   }
   $className = 'CRM_MatchingGifts_' . ucfirst($providerName) . 'Provider';
