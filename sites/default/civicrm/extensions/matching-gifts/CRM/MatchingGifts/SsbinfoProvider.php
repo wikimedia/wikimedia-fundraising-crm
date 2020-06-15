@@ -1,6 +1,7 @@
 <?php
 
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 
 class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInterface{
 
@@ -9,29 +10,32 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
   protected $credentials;
 
   /**
-   * @var \GuzzleHttp\ClientInterface
+   * @var ClientInterface
    */
   protected static $client;
 
-  public function __construct($credentials) {
+  public function __construct(array $credentials) {
     $this->credentials = $credentials;
   }
 
   /**
    * Get HTTP client.
    *
-   * @return \GuzzleHttp\ClientInterface
+   * @return ClientInterface
    */
-  public static function getClient() {
+  public static function getClient(): ClientInterface {
+    if (self::$client === null) {
+      self::setClient(new Client());
+    }
     return self::$client;
   }
 
   /**
    * Set HTTP client.
    *
-   * @param \GuzzleHttp\ClientInterface $client
+   * @param ClientInterface $client
    */
-  public static function setClient($client) {
+  public static function setClient(ClientInterface $client) {
     self::$client = $client;
   }
 
@@ -41,10 +45,7 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
    * @return array
    * @throws \GuzzleHttp\Exception\GuzzleException
    */
-  public function fetchMatchingGiftPolicies($fetchParams): array {
-    if (!self::getClient()) {
-      self::setClient(new Client());
-    }
+  public function fetchMatchingGiftPolicies(array $fetchParams): array {
     $searchResults = $this->getSearchResults($fetchParams);
     $policies = [];
     foreach ($searchResults as $companyId => $searchResult) {
@@ -53,7 +54,7 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
     return $policies;
   }
 
-  protected function getBaseParams() {
+  protected function getBaseParams(): array {
     return [
       'key' => $this->credentials['api_key'],
       'format' => 'json'
@@ -66,7 +67,7 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
    * @return array
    * @throws \GuzzleHttp\Exception\GuzzleException
    */
-  public function getSearchResults($searchParams): array {
+  public function getSearchResults(array $searchParams): array {
     $queryData = $this->getBaseParams() + [
       'parent_only' => 'yes',
     ];
@@ -94,14 +95,14 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
    * @return array
    * @throws \GuzzleHttp\Exception\GuzzleException
    */
-  public function getPolicyDetails($companyId) {
+  public function getPolicyDetails(string $companyId): array {
     $url = self::BASE_URL . 'company_details_by_id/' . $companyId . '/?' .
       http_build_query($this->getBaseParams());
     $response = self::getClient()->request('GET', $url);
     return json_decode($response->getBody(), true);
   }
 
-  protected function searchByCategory(array $queryData, $category) {
+  protected function searchByCategory(array $queryData, string $category): array {
     if ($category) {
       $queryData[$category] = 'yes';
     }
