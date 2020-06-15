@@ -13,6 +13,8 @@
  * @param array $contribution The contribution record
  *
  * @return boolean  Returns true on success
+ * @throws \WmfException
+ *
  */
 function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subscr_id, $contribution_record = NULL) {
   $msg['frequency_unit'] = isset($msg['frequency_unit']) ? $msg['frequency_unit'] : 'month';
@@ -128,6 +130,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       'cycle_day' => $msg['cycle_day'],
       'next_sched_contribution_date' => $next_sched_contribution,
       'trxn_id' => $gateway_subscr_id,
+      'contribution_status_id' => 'Pending',
     ] + $extra_recurring_params;
 
   try {
