@@ -6,7 +6,7 @@ use CRM_MatchingGifts_ExtensionUtil as E;
 /**
  * Implements hook_civicrm_config().
  *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_config/ 
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_config/
  */
 function matching_gifts_civicrm_config(&$config) {
   _matching_gifts_civix_civicrm_config($config);
@@ -168,3 +168,9 @@ function matching_gifts_civicrm_navigationMenu(&$menu) {
   ));
   _matching_gifts_civix_navigationMenu($menu);
 } // */
+
+function matching_gifts_civicrm_alterLogTables(&$logTableSpec) {
+  if (isset($logTableSpec['civicrm_matching_gift_job_progress'])) {
+    unset($logTableSpec['civicrm_matching_gift_job_progress']);
+  }
+}

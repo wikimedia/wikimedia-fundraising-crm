@@ -18,6 +18,10 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
     $this->credentials = $credentials;
   }
 
+  public function getName(): string {
+    return 'ssbinfo';
+  }
+
   /**
    * Get HTTP client.
    *
@@ -42,7 +46,12 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
   /**
    * @param array $fetchParams
    *
-   * @return array
+   * @return array keys are identifiers from the matching gift provider, and
+   *  values are arrays with keys for each of the custom fields in the
+   *  matching_gift_policies group except for suppress_from_employer_field:
+   *  matching_gifts_provider_id, matching_gifts_provider_info_url,
+   *  name_from_matching_gift_db, guide_url, online_form_url
+   *  minimum_gift_matched_usd, match_policy_last_updated, and subsidiaries
    * @throws \GuzzleHttp\Exception\GuzzleException
    */
   public function fetchMatchingGiftPolicies(array $fetchParams): array {
@@ -92,7 +101,11 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
   /**
    * @param string $companyId
    *
-   * @return array
+   * @return array with keys for each of the custom fields in the
+   *  matching_gift_policies group except for suppress_from_employer_field:
+   *  matching_gifts_provider_id, matching_gifts_provider_info_url,
+   *  name_from_matching_gift_db, guide_url, online_form_url
+   *  minimum_gift_matched_usd, match_policy_last_updated, and subsidiaries
    * @throws \GuzzleHttp\Exception\GuzzleException
    */
   public function getPolicyDetails(string $companyId): array {
@@ -102,7 +115,7 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
     return self::normalizeResponse(json_decode($response->getBody(), true));
   }
 
-  protected function searchByCategory(array $queryData, string $category): array {
+  protected function searchByCategory(array $queryData, $category): array {
     if ($category) {
       $queryData[$category] = 'yes';
     }
