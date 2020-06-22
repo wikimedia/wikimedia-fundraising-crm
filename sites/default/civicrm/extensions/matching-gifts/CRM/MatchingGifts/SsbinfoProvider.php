@@ -49,7 +49,7 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
     $searchResults = $this->getSearchResults($fetchParams);
     $policies = [];
     foreach ($searchResults as $companyId => $searchResult) {
-      $policies[$companyId] = $this->getPolicyDetails($searchResult['company_id']);
+      $policies[$companyId] = $this->getPolicyDetails($companyId);
     }
     return $policies;
   }
@@ -99,7 +99,7 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
     $url = self::BASE_URL . 'company_details_by_id/' . $companyId . '/?' .
       http_build_query($this->getBaseParams());
     $response = self::getClient()->request('GET', $url);
-    return json_decode($response->getBody(), true);
+    return self::normalizeResponse(json_decode($response->getBody(), true));
   }
 
   protected function searchByCategory(array $queryData, string $category): array {
@@ -113,8 +113,45 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
     $rawResults = json_decode($response->getBody(), true);
     $keyedResults = [];
     foreach($rawResults as $rawResult) {
-      $keyedResults[$rawResult['company_id']] = $rawResult;
+      $keyedResults[$rawResult['company_id']] = [
+        'matching_gifts_provider_id' => $rawResult['company_id'],
+        'name_from_matching_gift_db' => $rawResult['name'],
+        'match_policy_last_updated' => self::normalizeSsbDate(
+          $rawResult['last_updated']
+        )
+      ];
     }
     return $keyedResults;
+  }
+
+  protected static function normalizeResponse($rawResponse) {
+    $minAmount = null;
+    foreach($rawResponse['giftratios'] as $ratio) {
+      if ($minAmount == null || $minAmount > (float)$ratio['min_amt']) {
+        $minAmount = $ratio['min_amt'];
+      }
+    }
+    $oRes = $rawResponse['online_resources'][0];
+    $lastUpdated = self::normalizeSsbDate($rawResponse['last_updated']);
+    return [
+      'matching_gifts_provider_id' => $rawResponse['company_id'],
+      // FIXME link has 'wikimedia' in it, use some kind of setting?
+      'matching_gifts_provider_info_url' =>
+      'https://javamatch.matchinggifts.com/search/companyprofile/wikimedia_iframe/' . $oRes['id'],
+      'name_from_matching_gift_db' => $rawResponse['name'],
+      'guide_url' => $oRes['guideurl'],
+      'online_form_url' => $oRes['online_formurl'],
+      'minimum_gift_matched_usd' => $minAmount,
+      'match_policy_last_updated' => $lastUpdated,
+      'subsidiaries' => json_encode($rawResponse['subsidiaries'])
+    ];
+  }
+
+  protected static function normalizeSsbDate($usaDateString) {
+    // Transform MM/DD/YYYY to non-ambiguous date format
+    $lastUpdateYear = substr($usaDateString, 6, 4);
+    $lastUpdateMonth = substr($usaDateString, 0, 2);
+    $lastUpdateDay = substr($usaDateString, 3, 2);
+    return "$lastUpdateYear-$lastUpdateMonth-$lastUpdateDay";
   }
 }

@@ -50,7 +50,7 @@
       "id": 92922,
       "display": 1,
       "max_amt": 1000.0,
-      "min_amt": 25.0,
+      "min_amt": 35.0,
       "version": 6,
       "deadline": "one yr. from date of gift",
       "giftratio": "1.0:1.0",
@@ -60,7 +60,7 @@
       "fiscal_year": "1-12",
       "right_ratio": 1.0,
       "maximum_amount_matched": 1100.0,
-      "minimum_amount_matched": 25.0,
+      "minimum_amount_matched": 35.0,
       "additional_instructions": "Regular Active Employees",
       "total_amount_per_employee": 1100.0,
       "match_gift_from_prior_giving_cycle": true
@@ -189,7 +189,7 @@
     ]
   },
   "comments": "A trusted friend in science.",
-  "last_updated": "01/04/2018",
+  "last_updated": "08/24/2018",
   "subsidiaries": [
     "Aperture Laboratories",
     "Aperture Fixtures",
