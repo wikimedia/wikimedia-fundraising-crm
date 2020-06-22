@@ -505,6 +505,7 @@ function _wmf_civicrm_get_prospect_fields() {
     ],
     'Charitable_Contributions_Decile' => [
       'name' => 'Charitable_Contributions_Decile',
+      'column_name' => 'charitable_contributions_decile',
       'label' => 'Charitable Contributions Decile',
       'data_type' => 'String',
       'html_type' => 'Select',
@@ -529,6 +530,7 @@ function _wmf_civicrm_get_prospect_fields() {
     'Disc_Income_Decile' => [
       'name' => 'Disc_Income_Decile',
       'label' => 'Disc Income Decile',
+      'column_name' => 'disc_income_decile',
       'data_type' => 'String',
       'html_type' => 'Select',
       'is_searchable' => 1,
@@ -552,6 +554,7 @@ function _wmf_civicrm_get_prospect_fields() {
     'Voter_Party' => [
       'name' => 'Voter_Party',
       'label' => 'Voter Party',
+      'column_name' => 'voter_party',
       'data_type' => 'String',
       'html_type' => 'Select',
       'is_searchable' => 1,
@@ -661,6 +664,7 @@ function _wmf_civicrm_get_prospect_fields() {
     'Occupation' => [
       'name' => 'Occupation',
       'label' => 'Occupation',
+      'column_name' => 'occupation_175',
       'data_type' => 'String',
       'html_type' => 'Select',
       'is_searchable' => 1,
