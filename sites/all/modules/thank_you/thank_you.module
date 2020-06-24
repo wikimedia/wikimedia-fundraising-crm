@@ -132,6 +132,7 @@ function thank_you_send_test_form() {
     '#options' => [
       'thank_you' => 'thank_you',
       'endowment_thank_you' => 'endowment_thank_you',
+      'recurring_notification' => 'recurring_notification',
     ],
   ];
 
