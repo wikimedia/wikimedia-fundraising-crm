@@ -5762,3 +5762,16 @@ function wmf_civicrm_update_8068() {
   ])->execute();
 
 }
+
+/**
+ * Add index to civicrm_country.iso_code.
+ *
+ * To hone the silverpop queries we really want to join on this so we need an index.
+ *
+ * Bug: T253152
+ */
+function wmf_civicrm_update_8070() {
+  civicrm_initialize();
+  $tables = ['civicrm_country' => ['iso_code']];
+  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+}
