@@ -47,8 +47,8 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
     }
     $searchResults = $this->getSearchResults($fetchParams);
     $policies = [];
-    foreach ($searchResults as $searchResult) {
-      $policies[] = $this->getPolicyDetails($searchResult['company_id']);
+    foreach ($searchResults as $companyId => $searchResult) {
+      $policies[$companyId] = $this->getPolicyDetails($searchResult['company_id']);
     }
     return $policies;
   }
@@ -77,11 +77,15 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
     if (!empty($searchParams['name'])) {
       $queryData['name'] = $searchParams['name'];
     }
-    $url = self::BASE_URL . 'company_name_search_list_result/?' .
-      http_build_query($queryData);
-    $response = self::getClient()->request('GET', $url);
-    // TODO error handling for non-200 response code
-    return json_decode($response->getBody(), true);
+    if (empty($searchParams['matchedCategories'])) {
+      $searchResult = $this->searchByCategory($queryData, null);
+    } else {
+      $searchResult = [];
+      foreach($searchParams['matchedCategories'] as $category) {
+        $searchResult += $this->searchByCategory($queryData, $category);
+      }
+    }
+    return $searchResult;
   }
 
   /**
@@ -95,5 +99,21 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
       http_build_query($this->getBaseParams());
     $response = self::getClient()->request('GET', $url);
     return json_decode($response->getBody(), true);
+  }
+
+  protected function searchByCategory(array $queryData, $category) {
+    if ($category) {
+      $queryData[$category] = 'yes';
+    }
+    $url = self::BASE_URL . 'company_name_search_list_result/?' .
+      http_build_query($queryData);
+    $response = self::getClient()->request('GET', $url);
+    // TODO error handling for non-200 response code
+    $rawResults = json_decode($response->getBody(), true);
+    $keyedResults = [];
+    foreach($rawResults as $rawResult) {
+      $keyedResults[$rawResult['company_id']] = $rawResult;
+    }
+    return $keyedResults;
   }
 }

@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Advanced Idea Mechanics",
+    "subsidiary": false,
+    "subsidiary_id": null,
+    "company_id": "56780404",
+    "city": "Black Mesa",
+    "state": "CO",
+    "last_updated": "01/04/2018"
+  },
+  {
+    "name": "Aperture Science, Inc.",
+    "subsidiary": false,
+    "subsidiary_id": null,
+    "company_id": "75751100",
+    "city": "Mackinaw City",
+    "state": "MI",
+    "last_updated": "01/04/2018"
+  }
+]
