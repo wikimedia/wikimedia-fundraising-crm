@@ -15,7 +15,7 @@ Michael Beattie<br>
 Wikimedia Foundation Fundraising Team</p>
 
 
-<p>You are receiving this email at {contact.email} as a valued donor of the Wikimedia Foundation. If you do not wish to receive any future emails from the Wikimedia Foundation, unsubscribe now. If you've already donated recently, we may have an alternate email address on file for you. Please let us know it! We'll be happy to unsubscribe any old email addresses.</p>
+<p>You are receiving this email at {contact.email} as a valued donor of the Wikimedia Foundation. If you do not wish to receive any future emails from the Wikimedia Foundation, <a href='https://www.pages04.net/wikimedia/WMFUnsubscribe/Unsubscribe'>unsubscribe now</a>. If you've already donated recently, we may have an alternate email address on file for you. Please let us know it! We'll be happy to unsubscribe any old email addresses.</p>
 <p>Wikimedia Foundation, Inc.<br>
 P.O. Box 98204<br>
 Washington, DC 20090-8204<br>
