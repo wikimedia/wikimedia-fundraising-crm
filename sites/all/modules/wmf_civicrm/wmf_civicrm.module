@@ -8,6 +8,49 @@ require_once 'recurring.inc';
 require_once 'tracking.inc';
 require_once 'wmf_civicrm.hooks.php';
 
+function wmf_civicrm_menu() {
+  $items = [];
+
+  $items['admin/config/wmf_civicrm/matching_gifts'] = array(
+    'title' => t('Matching Gifts Employer Data'),
+    'description' => t('Set matching gifts employer data config'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('wmf_civicrm_matching_gifts_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+function wmf_civicrm_matching_gifts_form() {
+  $form = array();
+
+  $form['matching_gifts_employer_data_file_path'] = array(
+    '#type' => 'textfield',
+    '#title' => 'File path for matching gifts employer data file',
+    '#required' => TRUE,
+    '#default_value' => variable_get(
+      'matching_gifts_employer_data_file_path',
+      '/srv/matching_gifts/employers.csv'
+    ),
+    '#description' => 'File path for matching gifts employer data file',
+  );
+
+
+  $form['matching_gifts_employer_data_update_email'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Email address to send updates to',
+    '#required' => TRUE,
+    '#default_value' => variable_get(
+      'matching_gifts_employer_data_update_email', 'fr-tech@wikimedia.org'
+    ),
+    '#description' => 'Email address to send matching gifts employer data updates to',
+  );
+
+  return system_settings_form($form);
+}
+
 /**
  * Ensure the specified option value exists.
  *
