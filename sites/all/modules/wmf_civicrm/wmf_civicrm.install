@@ -5744,3 +5744,34 @@ function wmf_civicrm_update_8065() {
   ])->execute();
 
 }
+
+/**
+ * Edit message Template for recurring failures
+ * Adds link to acoustic unsubscribe page
+ *
+ * @throws \API_Exception
+ *
+ * Bug: T256162
+ */
+function wmf_civicrm_update_8068() {
+  civicrm_initialize();
+  $htmlText = file_get_contents(__DIR__ . '/templates/recurring_failed_message.html.txt');
+
+  \Civi\Api4\MessageTemplate::update()->setCheckPermissions(FALSE)->addWhere('workflow_name', '=', 'recurring_failed_message')->setValues([
+    'msg_html' => $htmlText,
+  ])->execute();
+
+}
+
+/**
+ * Add index to civicrm_country.iso_code.
+ *
+ * To hone the silverpop queries we really want to join on this so we need an index.
+ *
+ * Bug: T253152
+ */
+function wmf_civicrm_update_8070() {
+  civicrm_initialize();
+  $tables = ['civicrm_country' => ['iso_code']];
+  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+}

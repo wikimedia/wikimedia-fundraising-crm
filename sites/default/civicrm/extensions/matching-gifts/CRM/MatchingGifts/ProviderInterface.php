@@ -7,5 +7,9 @@ interface CRM_MatchingGifts_ProviderInterface {
    *
    * @return array of companies with policies
    */
-  public function fetchMatchingGiftPolicies($fetchParams);
+  public function fetchMatchingGiftPolicies(array $fetchParams): array;
+
+  public function getSearchResults(array $searchParams): array;
+
+  public function getPolicyDetails(string $companyId): array;
 }

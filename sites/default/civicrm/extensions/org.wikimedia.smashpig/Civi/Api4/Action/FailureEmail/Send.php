@@ -79,16 +79,17 @@ class Send extends AbstractAction {
       'toName' => $email['display_name'],
       'from' => "$domainEmailName <$domainEmailAddress>",
     ];
-    \CRM_Utils_Mail::send($params);
-    Activity::create()->setCheckPermissions(FALSE)->setValues([
-      'target_contact_id' => $this->getContactID(),
-      'source_contact_id' => \CRM_Core_Session::getLoggedInContactID() ?? $this->getContactID(),
-      'subject' => 'Recur fail message : ' . $email['msg_subject'],
-      'details' => $email['msg_text'],
-      'activity_type_id:name' => 'Email',
-      'activity_date_time' => 'now',
-      'source_record_id' => $this->contributionRecurID,
-    ])->execute();
+    if (\CRM_Utils_Mail::send($params)) {
+      Activity::create()->setCheckPermissions(FALSE)->setValues([
+        'target_contact_id' => $this->getContactID(),
+        'source_contact_id' => \CRM_Core_Session::getLoggedInContactID() ?? $this->getContactID(),
+        'subject' => 'Recur fail message : ' . $email['msg_subject'],
+        'details' => $email['msg_text'],
+        'activity_type_id:name' => 'Email',
+        'activity_date_time' => 'now',
+        'source_record_id' => $this->contributionRecurID,
+      ])->execute();
+    }
 
     foreach ($email as $key => $value) {
       $result[$this->getContributionRecurID()][$key] = $value;

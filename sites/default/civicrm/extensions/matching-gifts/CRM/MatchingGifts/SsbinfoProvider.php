@@ -1,6 +1,7 @@
 <?php
 
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 
 class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInterface{
 
@@ -9,29 +10,32 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
   protected $credentials;
 
   /**
-   * @var \GuzzleHttp\ClientInterface
+   * @var ClientInterface
    */
   protected static $client;
 
-  public function __construct($credentials) {
+  public function __construct(array $credentials) {
     $this->credentials = $credentials;
   }
 
   /**
    * Get HTTP client.
    *
-   * @return \GuzzleHttp\ClientInterface
+   * @return ClientInterface
    */
-  public static function getClient() {
+  public static function getClient(): ClientInterface {
+    if (self::$client === null) {
+      self::setClient(new Client());
+    }
     return self::$client;
   }
 
   /**
    * Set HTTP client.
    *
-   * @param \GuzzleHttp\ClientInterface $client
+   * @param ClientInterface $client
    */
-  public static function setClient($client) {
+  public static function setClient(ClientInterface $client) {
     self::$client = $client;
   }
 
@@ -41,19 +45,16 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
    * @return array
    * @throws \GuzzleHttp\Exception\GuzzleException
    */
-  public function fetchMatchingGiftPolicies($fetchParams): array {
-    if (!self::getClient()) {
-      self::setClient(new Client());
-    }
+  public function fetchMatchingGiftPolicies(array $fetchParams): array {
     $searchResults = $this->getSearchResults($fetchParams);
     $policies = [];
-    foreach ($searchResults as $searchResult) {
-      $policies[] = $this->getPolicyDetails($searchResult['company_id']);
+    foreach ($searchResults as $companyId => $searchResult) {
+      $policies[$companyId] = $this->getPolicyDetails($companyId);
     }
     return $policies;
   }
 
-  protected function getBaseParams() {
+  protected function getBaseParams(): array {
     return [
       'key' => $this->credentials['api_key'],
       'format' => 'json'
@@ -66,7 +67,7 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
    * @return array
    * @throws \GuzzleHttp\Exception\GuzzleException
    */
-  public function getSearchResults($searchParams): array {
+  public function getSearchResults(array $searchParams): array {
     $queryData = $this->getBaseParams() + [
       'parent_only' => 'yes',
     ];
@@ -77,11 +78,15 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
     if (!empty($searchParams['name'])) {
       $queryData['name'] = $searchParams['name'];
     }
-    $url = self::BASE_URL . 'company_name_search_list_result/?' .
-      http_build_query($queryData);
-    $response = self::getClient()->request('GET', $url);
-    // TODO error handling for non-200 response code
-    return json_decode($response->getBody(), true);
+    if (empty($searchParams['matchedCategories'])) {
+      $searchResult = $this->searchByCategory($queryData, null);
+    } else {
+      $searchResult = [];
+      foreach($searchParams['matchedCategories'] as $category) {
+        $searchResult += $this->searchByCategory($queryData, $category);
+      }
+    }
+    return $searchResult;
   }
 
   /**
@@ -90,10 +95,63 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
    * @return array
    * @throws \GuzzleHttp\Exception\GuzzleException
    */
-  public function getPolicyDetails($companyId) {
+  public function getPolicyDetails(string $companyId): array {
     $url = self::BASE_URL . 'company_details_by_id/' . $companyId . '/?' .
       http_build_query($this->getBaseParams());
     $response = self::getClient()->request('GET', $url);
-    return json_decode($response->getBody(), true);
+    return self::normalizeResponse(json_decode($response->getBody(), true));
+  }
+
+  protected function searchByCategory(array $queryData, string $category): array {
+    if ($category) {
+      $queryData[$category] = 'yes';
+    }
+    $url = self::BASE_URL . 'company_name_search_list_result/?' .
+      http_build_query($queryData);
+    $response = self::getClient()->request('GET', $url);
+    // TODO error handling for non-200 response code
+    $rawResults = json_decode($response->getBody(), true);
+    $keyedResults = [];
+    foreach($rawResults as $rawResult) {
+      $keyedResults[$rawResult['company_id']] = [
+        'matching_gifts_provider_id' => $rawResult['company_id'],
+        'name_from_matching_gift_db' => $rawResult['name'],
+        'match_policy_last_updated' => self::normalizeSsbDate(
+          $rawResult['last_updated']
+        )
+      ];
+    }
+    return $keyedResults;
+  }
+
+  protected static function normalizeResponse($rawResponse) {
+    $minAmount = null;
+    foreach($rawResponse['giftratios'] as $ratio) {
+      if ($minAmount == null || $minAmount > (float)$ratio['min_amt']) {
+        $minAmount = $ratio['min_amt'];
+      }
+    }
+    $oRes = $rawResponse['online_resources'][0];
+    $lastUpdated = self::normalizeSsbDate($rawResponse['last_updated']);
+    return [
+      'matching_gifts_provider_id' => $rawResponse['company_id'],
+      // FIXME link has 'wikimedia' in it, use some kind of setting?
+      'matching_gifts_provider_info_url' =>
+      'https://javamatch.matchinggifts.com/search/companyprofile/wikimedia_iframe/' . $oRes['id'],
+      'name_from_matching_gift_db' => $rawResponse['name'],
+      'guide_url' => $oRes['guideurl'],
+      'online_form_url' => $oRes['online_formurl'],
+      'minimum_gift_matched_usd' => $minAmount,
+      'match_policy_last_updated' => $lastUpdated,
+      'subsidiaries' => json_encode($rawResponse['subsidiaries'])
+    ];
+  }
+
+  protected static function normalizeSsbDate($usaDateString) {
+    // Transform MM/DD/YYYY to non-ambiguous date format
+    $lastUpdateYear = substr($usaDateString, 6, 4);
+    $lastUpdateMonth = substr($usaDateString, 0, 2);
+    $lastUpdateDay = substr($usaDateString, 3, 2);
+    return "$lastUpdateYear-$lastUpdateMonth-$lastUpdateDay";
   }
 }
