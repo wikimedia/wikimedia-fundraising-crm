@@ -51,7 +51,7 @@ class CRM_FailureEmailTest extends SmashPigBaseTestClass {
     $this->assertEquals('Dear Harry,
       We cancelled your recur of USD 12.34
       and we are sending you this at harry@hendersons.net
-      this month of June
+      this month of ' . (new DateTime())->format('F') . '
       $12.34', $email['msg_text']);
     $this->assertEquals('Hey Harry', $email['msg_subject']);
   }
@@ -74,7 +74,7 @@ class CRM_FailureEmailTest extends SmashPigBaseTestClass {
     $this->assertEquals('Dear Harry,
       We cancelled your recur of USD 12.34
       and we are sending you this at harry@hendersons.net
-      this month of June
+      this month of ' . (new DateTime())->format('F') . '
       $12.34', $activity['details']);
   }
 
