@@ -1,0 +1,1 @@
+DROP TABLE civicrm_matching_gift_job_progress;

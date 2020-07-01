@@ -12,4 +12,6 @@ interface CRM_MatchingGifts_ProviderInterface {
   public function getSearchResults(array $searchParams): array;
 
   public function getPolicyDetails(string $companyId): array;
+
+  public function getName(): string;
 }
