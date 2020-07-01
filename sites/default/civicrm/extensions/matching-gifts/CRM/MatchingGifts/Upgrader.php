@@ -9,11 +9,15 @@ class CRM_MatchingGifts_Upgrader extends CRM_MatchingGifts_Upgrader_Base {
   // By convention, functions that look like "function upgrade_NNNN()" are
   // upgrade tasks. They are executed in order (like Drupal's hook_update_N).
 
+  public function upgrade_1001() {
+    return $this->executeSqlFile('sql/create_job_progress.sql');
+  }
+
   /**
    * Example: Run an external SQL script when the module is installed.
-   *
+   */
   public function install() {
-    $this->executeSqlFile('sql/myinstall.sql');
+    $this->executeSqlFile('sql/create_job_progress.sql');
   }
 
   /**
@@ -36,9 +40,9 @@ class CRM_MatchingGifts_Upgrader extends CRM_MatchingGifts_Upgrader_Base {
 
   /**
    * Example: Run an external SQL script when the module is uninstalled.
-   *
+   */
   public function uninstall() {
-   $this->executeSqlFile('sql/myuninstall.sql');
+   $this->executeSqlFile('sql/drop_job_progress.sql');
   }
 
   /**
