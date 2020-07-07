@@ -219,6 +219,10 @@ function thank_you_send_test_form_submit($form_id, $form_values) {
     $params['contribution_tags'] = preg_split('/[\s,]+/', $params['contribution_tags']);
   }
 
+  // Day of month for recurring notification template
+  $ordinal = new \NumberFormatter($params['locale'], \NumberFormatter::ORDINAL);
+  $params['day_of_month'] = $ordinal->format(date('j'));
+
   if ($params['locale'] === "all") {
     $langs = [];
     foreach (glob(__DIR__ . "/templates/html/{$params['template']}.*.html") as $lang) {
