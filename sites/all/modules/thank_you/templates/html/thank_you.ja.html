@@ -5,10 +5,9 @@
 {%endif%}
 
 {% if recurring %}
-<p>自由な知識を求める世界中の人たちを代表してあなたにお礼が言えることを心から嬉しく思います。あなたからの毎月{{ (currency ~ " " ~ amount) | l10n_currency(locale) }} 円の贈り物に心から感謝しています。
-</p>
+<p>自由な知識を求める世界中の人たちを代表してあなたにお礼が言えることを心から嬉しく思います。あなたからの毎月{{ (currency ~ " " ~ amount) | l10n_currency(locale) }} の贈り物に心から感謝しています。</p>
 
-<p>あなたのご寄付によってウィキペディアは独立性を保つことができます。あなたの毎月のご支援は、ウィキペディアの長期計画の実現に不可欠なのです。毎月、{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}円のご寄付がウィキメディア財団によって引き落としされます。これは、停止希望の連絡をいただかない限り継続されます。
+<p>あなたのご寄付によってウィキペディアは独立性を保つことができます。あなたの毎月のご支援は、ウィキペディアの長期計画の実現に不可欠なのです。毎月、{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}のご寄付がウィキメディア財団によって引き落とされます。これは、停止希望の連絡をいただかない限り継続されます。
 
 
   <b>毎年1月に前年分のご寄付の概要をお送りします。</b>
@@ -18,7 +17,7 @@
 </p>
 {% else %}
 
-<p>自由な知識を求める世界中の人たちを代表してあなたにお礼が言えることを心から嬉しく思います。あなたからの{{ (currency ~ " " ~ amount) | l10n_currency(locale) }} 円の贈り物に心から感謝しています。
+<p>自由な知識を求める世界中の人たちを代表してあなたにお礼が言えることを心から嬉しく思います。あなたからの{{ (currency ~ " " ~ amount) | l10n_currency(locale) }} の贈り物に心から感謝しています。
 </p>
 {% endif %}
 {% if "RecurringRestarted" in contribution_tags %}
@@ -50,14 +49,14 @@
 
 {% if gift_source != "Donor Advised Fund" %}
 
-<p>受領記録：寄付番号{{ transaction_id }}、{{ receive_date }}付 {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}。
+<p>受領記録：寄付番号{{ transaction_id }}、{{ receive_date }}付 {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}
 </p>
 
 <p>この手紙は寄付の領収書代わりとなります。この寄付の全部または一部に対する見返りとして、物品やサービスは一切提供されていません。郵送先住所：Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. 米国国内税免税番号：20-0049703
 </p>
 
 {%endif%}
-<p>ご寄付に関するウィキメディア財団からの通知がご不用の場合は、<a href="{{ unsubscribe_link | raw }}">今すぐに配信停止の手続きをしていただけます</a>。その場合もこの通信のような受領通知は、今後もご寄付をいただいたときにご送付致します。
+<p>ご寄付に関するウィキメディア財団からの通知がご不用の場合は、<a href="{{ unsubscribe_link | raw }}">今すぐに配信停止の手続きをしていただけます</a>。その場合もこのメールのような受領通知は、今後もご寄付をいただいたときにご送付いたします。
 </p>
 
 <!-- TI_BEGIN{"version":1,"name":"thank_you.ja.html","revision":20200529}TI_END →
