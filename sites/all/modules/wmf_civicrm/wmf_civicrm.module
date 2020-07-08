@@ -3460,9 +3460,25 @@ function wmf_civicrm_civicrm_alterLogTables(&$logTableSpec) {
     ], $contactIndexes);
   }
 
-  // Where CiviCRM data entry / our queues are not the primary source (and there is a log of data)
-  // exclude from logging tables. wmf_donor contains calculated data only.
-  foreach (['civicrm_mailing_provider_data', 'wmf_donor'] as $noLoggingTable) {
+  // Exclude from logging tables to save disk given low value.
+  $tablesNotToLog = [
+    // financial tables that don't add much to forensics
+    'civicrm_entity_financial_trxn',
+    'civicrm_financial_item',
+    'civicrm_financial_trxn',
+    'civicrm_line_item',
+    // our queues are not the primary source for these silverpop based tables (and there is a log of data)
+    'civicrm_mailing',
+    'civicrm_mailing_provider_data',
+    // this table is not important because we don't send from civi / need to link back
+    // mailing events within civi.
+    'civicrm_mailing_job',
+    // this table logs group membership & largely repeats log_civicrm_group_contact.
+    'civicrm_subscription_history',
+    // wmf_donor contains calculated data only.
+    'wmf_donor',
+  ];
+  foreach ($tablesNotToLog  as $noLoggingTable) {
     if (isset($logTableSpec[$noLoggingTable])) {
       unset($logTableSpec[$noLoggingTable]);
     }
