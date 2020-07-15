@@ -27,8 +27,10 @@ function civicrm_api3_merge_conflict_create($params) {
  * MergeConflict.delete API
  *
  * @param array $params
+ *
  * @return array API result descriptor
  * @throws API_Exception
+ * @throws \CiviCRM_API3_Exception
  */
 function civicrm_api3_merge_conflict_delete($params) {
   return _civicrm_api3_basic_delete(_civicrm_api3_get_BAO(__FUNCTION__), $params);
@@ -38,8 +40,10 @@ function civicrm_api3_merge_conflict_delete($params) {
  * MergeConflict.get API
  *
  * @param array $params
+ *
  * @return array API result descriptor
- * @throws API_Exception
+ *
+ * @throws \CiviCRM_API3_Exception
  */
 function civicrm_api3_merge_conflict_get($params) {
 
@@ -103,7 +107,7 @@ function civicrm_api3_merge_conflict_get($params) {
     $analysis = mergeconflict_get_analysis($value1, $value2, $comparisonValue1, $comparisonValue2, $conflictedField);
 
     CRM_Core_DAO::executeQuery("
-    UPDATE civicrm_merge_conflict 
+    UPDATE civicrm_merge_conflict
     SET conflicted_field = %1,
     value_1 = %2, value_2 = %3, group_id = %4,
     analysis = %7
@@ -155,13 +159,13 @@ function mergeconflict_get_analysis($value1, $value2, $comparisonValue1, $compar
     return 'wierd_amp_yankovitch';
   }
 
-  $comparisonValue1 = str_replace(array(".", '-', "'", '&', '#'), '', $comparisonValue1);
-  $comparisonValue2 = str_replace(array(".", '-', "'", '&', '#'), '', $comparisonValue2);
+  $comparisonValue1 = str_replace(array('.', '-', "'", '&', '#'), '', $comparisonValue1);
+  $comparisonValue2 = str_replace(array('.', '-', "'", '&', '#'), '', $comparisonValue2);
   if ($comparisonValue1 === $comparisonValue2) {
     return 'punctuation';
   }
 
-  if ($conflictedField == 'Last Name' || $conflictedField == 'First Name') {
+  if ($conflictedField === 'Last Name' || $conflictedField === 'First Name') {
     if (is_numeric($comparisonValue1) || is_numeric($comparisonValue2)) {
       return 'you_are_not_a_number';
     }

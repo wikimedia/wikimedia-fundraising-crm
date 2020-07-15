@@ -27,6 +27,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
 
   /**
    * Setup for class.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function setUp() {
     parent::setUp();
@@ -60,6 +62,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
 
   /**
    * Test that a boolean field is resolved if set.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testResolveBooleanFields() {
     $this->createDuplicateIndividuals([['do_not_mail' => 0], ['do_not_mail' => 1]]);
@@ -148,7 +152,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *
    * @return array
    */
-  public function booleanDataProvider() {
+  public function booleanDataProvider(): array {
     return [[0], [1]];
   }
 
@@ -398,9 +402,11 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @param bool $isReverse
    *   Should we reverse which contact we merge into.
    *
-   * @dataProvider mergeConflictProvider
+   * @param array $data
    *
    * @throws \CRM_Core_Exception
+   * @dataProvider mergeConflictProvider
+   *
    */
   public function testMisplacedNameResolutions($isReverse, $data) {
     $this->createDuplicateIndividuals([$data['contact_1'], $data['contact_2']]);
@@ -582,6 +588,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *
    * @param array $contactParams
    *   Arrays of parameters, one per contact.
+   *
+   * @throws \CRM_Core_Exception
    */
   private function createDuplicateIndividuals($contactParams = [[], []]) {
     $params = [
@@ -604,7 +612,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *   It is good practice to do all dedupe tests twice using this reversal to cover
    *   both scenarios.
    *
-   * @return void
+   * @throws \CRM_Core_Exception
    */
   protected function doNotDoMerge($isReverse) {
     $toKeepContactID = $isReverse ? $this->ids['contact'][1] : $this->ids['contact'][0];
@@ -642,6 +650,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * The first donor ($this->ids['contact'][0] is the more recent donor.
    *
    * @param array $overrides
+   *
+   * @throws \CRM_Core_Exception
    */
   protected function createDuplicateDonors($overrides = [['contact_source' => 'keep me'], ['contact_source' => 'ditch me']]) {
     $this->createDuplicateIndividuals($overrides);
