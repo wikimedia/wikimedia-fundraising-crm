@@ -17,6 +17,7 @@ class CRM_Forgetme_Upgrader extends CRM_Forgetme_Upgrader_Base {
     if (!$activityTypes['count']) {
       civicrm_api3('OptionValue', 'create', ['option_group_id' => 'activity_type', 'name' => 'forget_me', 'label' => ts('Forget me request')]);
     }
+    $this->executeSqlFile( 'sql/auto_install.sql' );
   }
 
   /**
@@ -40,9 +41,9 @@ class CRM_Forgetme_Upgrader extends CRM_Forgetme_Upgrader_Base {
   /**
    * Example: Run an external SQL script when the module is uninstalled.
    *
-  public function uninstall() {
-   $this->executeSqlFile('sql/myuninstall.sql');
-  }
+//  public function uninstall() {
+//   $this->executeSqlFile('sql/myuninstall.sql');
+//  }
 
   /**
    * Example: Run a simple query when a module is enabled.
@@ -133,5 +134,17 @@ class CRM_Forgetme_Upgrader extends CRM_Forgetme_Upgrader_Base {
     }
     return TRUE;
   } // */
+
+	/**
+	 *
+	 * Rerun install script to create deleted emails table
+	 *
+	 * @return TRUE on success
+	 * @throws Exception
+	 */
+	public function upgrade_1001() {
+	  $this->executeSqlFile( 'sql/auto_install.sql' );
+  	  return TRUE;
+  }
 
 }

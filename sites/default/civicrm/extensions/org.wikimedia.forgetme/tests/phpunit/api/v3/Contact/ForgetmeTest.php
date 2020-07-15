@@ -176,6 +176,31 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
     }
   }
 
+  /*
+  * Test that we are storing ids of deleted emails
+  */
+  public function testStoreEmailsDeleted() {
+  	$contactAPIResult = $this->callAPISuccess('Contact', 'create', [
+  	  'first_name' => 'Buffy',
+	  'last_name' => 'Vampire Slayer',
+	  'contact_type' => 'Individual',
+	  'email' => 'garlic@example.com',
+	  'gender_id' => 'Female',
+	  'birth_date' => '2010-09-07',
+	]);
+  	$contact = $contactAPIResult['values'][$contactAPIResult['id']];
+  	$email = $this->callAPISuccess('Email', 'get', [ 'contact_id' => $contact['id'] ]);
+  	$this->callAPISuccess('Contact', 'forgetme', ['id' => $contact['id']]);
+  	$sql = "Select id from civicrm_deleted_email where id =" . $email['id'] . ";";
+  	$result = CRM_Core_DAO::singleValueQuery( $sql );
+  	$this->assertEquals( $email['id'], $result );
+
+	//clean up
+	$this->callAPISuccess('Contact', 'delete', ['contact_id' => $contact['id'], 'skip_undelete' => TRUE]);
+	$sql = "DELETE from civicrm_deleted_email where id =" . $email['id'] . ";";
+	CRM_Core_DAO::executeQuery( $sql );
+  }
+
   /**
    * Test payment token PII details are cleared
    */
