@@ -74,9 +74,9 @@ LIMIT 1";
 
     if ($checkResult->rowCount() > 0) {
       $existingRow = $checkResult->fetchAssoc();
-      if (
-        !empty($existingRow['contribution_id']) &&
-        (int)$existingRow['contribution_id'] !== (int)$ctData['contribution_id']
+      if (!empty($existingRow['contribution_id'])
+        && !empty($ctData['contribution_id'])
+        && ((int) $existingRow['contribution_id'] !== (int) $ctData['contribution_id'])
       ) {
         throw new WmfException(
           WmfException::DATA_INCONSISTENT,
