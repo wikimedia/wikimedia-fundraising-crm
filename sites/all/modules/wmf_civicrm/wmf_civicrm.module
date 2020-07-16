@@ -2568,15 +2568,6 @@ function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, 
     return;
   }
 
-  if (_wmf_civicrm_merge_resolve_casing_conflict(
-    $dbFieldName,
-    $refs['migration_info'][$moveField],
-    $refs['migration_info']['rows'][$moveField]['other'],
-    $refs['migration_info']['rows'][$moveField]['main'])) {
-    unset($refs['fields_in_conflict'][$moveField]);
-    return;
-  }
-
   if (substr($moveField, 0, 13) === 'move_location') {
     $fieldParts = explode('_', $moveField);
 
@@ -2831,17 +2822,6 @@ function wmf_civicrm_get_language_db_value($value): string {
     return array_search($value, $languages);
   }
   return $value;
-}
-
-/**
- * Count the number of capital letters in a string.
- *
- * @param $string
- *
- * @return int
- */
-function _wmf_civicrm_count_capital_letters($string) {
-  return strlen(preg_replace('/[^A-Z]+/', '', $string));
 }
 
 /**

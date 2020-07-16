@@ -89,18 +89,18 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
- * Test that in aggressive mode we keep the values of the most preferred contact.
- *
- * We use most recently created contact as our resolver as that is the opposite to the default
- * behaviour without our hook.
- *
- * @param bool $isReverse
- *   Should we reverse which contact we merge into.
- *
- * @dataProvider booleanDataProvider
- *
- * @throws \CRM_Core_Exception
- */
+   * Test that in aggressive mode we keep the values of the most preferred contact.
+   *
+   * We use most recently created contact as our resolver as that is the opposite to the default
+   * behaviour without our hook.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
   public function testResolveAggressivePreferredContact($isReverse) {
     $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
     $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recently_created_contact']]);
@@ -432,7 +432,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $dataset[] = [
       'contact_1' => ['last_name' => 'M J Smith'],
       'contact_2' => ['middle_name' => 'null'],
-      'expected' => ['middle_name' =>  'M J'],
+      'expected' => ['middle_name' => 'M J'],
     ];
     $dataset[] = [
       'contact_1' => ['first_name' => 'null', 'last_name' => 'Bob M Smith'],
@@ -584,6 +584,32 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $this->callAPISuccess('Contribution', 'create', ['financial_type_id' => 'Donation', 'total_amount' => 5, 'contact_id' => $this->ids['contact'][0], 'receive_date' => '2019-08-08']);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('keep me', $this->callAPISuccessGetValue('Contact', ['return' => 'contact_source', 'id' => $mergedContact['id']]));
+  }
+
+  /**
+   * Test that a conflict on casing in first names is handled.
+   *
+   * We do a best effort on this to get the more correct on assuming that 1 capital letter in a
+   * name is most likely to be deliberate. We prioritise less capital letters over more, except that
+   * all lower case is at the end of the queue.
+   *
+   * This won't necessarily give us the best results for 'La Plante' vs 'la Plante' but we should bear in mind
+   * - both variants have been entered by the user at some point so they have not 'chosen' one.
+   * - having 2 variants of the spelling of a name with more than one upper case letter in our
+   * db is an edge case.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testCasingConflicts() {
+    $this->createDuplicateIndividuals([
+      ['first_name' => 'donald', 'last_name' => 'Duck'],
+      ['first_name' => 'Donald', 'last_name' => 'duck'],
+      ['first_name' => 'DONALD', 'last_name' => 'DUCK'],
+      ['first_name' => 'DonalD', 'last_name' => 'DUck'],
+    ]);
+    $mergedContact = $this->doBatchMerge($this->ids['contact'][0], ['skipped' => 0, 'merged' => 3]);
+    $this->assertEquals('Donald', $mergedContact['first_name']);
+    $this->assertEquals('Duck', $mergedContact['last_name']);
   }
 
   /**
