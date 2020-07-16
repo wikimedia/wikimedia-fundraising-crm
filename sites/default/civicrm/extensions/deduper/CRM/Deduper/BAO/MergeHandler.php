@@ -187,6 +187,33 @@ class CRM_Deduper_BAO_MergeHandler {
   }
 
   /**
+   * Get the fields that make up the name of an Organization.
+   *
+   * @return array
+   */
+  public function getOrganizationNameFields():array {
+    return ['organization_name'];
+  }
+
+  /**
+   * Get the fields that make up the name of a Household.
+   *
+   * @return array
+   */
+  public function getHouseholdNameFields():array {
+    return ['household_name'];
+  }
+
+  /**
+   * Get the fields that make up the name of a Contact.
+   *
+   * @return array
+   */
+  public function getNameFields():array {
+    return array_merge($this->getIndividualNameFields(), $this->getOrganizationNameFields(), $this->getHouseholdNameFields());
+  }
+
+  /**
    * Get the fields that make up the name of an individual.
    *
    * @param bool $isForContactToBeKept
@@ -197,6 +224,22 @@ class CRM_Deduper_BAO_MergeHandler {
   public function getIndividualNameFieldValues($isForContactToBeKept):array {
     $return = [];
     foreach ($this->getIndividualNameFields() as $fieldName) {
+      $return[$fieldName] = trim($this->getValueForField($fieldName, $isForContactToBeKept));
+    }
+    return $return ;
+  }
+
+  /**
+   * Get the fields that make up the name of a contact.
+   *
+   * @param bool $isForContactToBeKept
+   *   Is the value for the contact to be retained.
+   *
+   * @return array
+   */
+  public function getNameFieldValues($isForContactToBeKept):array {
+    $return = [];
+    foreach ($this->getNameFields() as $fieldName) {
       $return[$fieldName] = trim($this->getValueForField($fieldName, $isForContactToBeKept));
     }
     return $return ;
@@ -239,6 +282,33 @@ class CRM_Deduper_BAO_MergeHandler {
       }
     }
     return FALSE;
+  }
+
+  /**
+   * Is there a conflict in a field used to name an Organization.
+   *
+   * @return bool
+   */
+  public function hasOrganizationNameFieldConflict():bool {
+    return $this->isFieldInConflict('organization_name');
+  }
+
+  /**
+   * Is there a conflict in a field used to name a household.
+   *
+   * @return bool
+   */
+  public function hasHouseholdNameFieldConflict():bool {
+    return $this->isFieldInConflict('household_name');
+  }
+
+  /**
+   * Is there a conflict in a name field.
+   *
+   * @return bool
+   */
+  public function hasNameFieldConflict(): bool {
+    return $this->hasOrganizationNameFieldConflict() || $this->hasIndividualNameFieldConflict() || $this->hasHouseholdNameFieldConflict();
   }
 
   /**
@@ -321,6 +391,9 @@ class CRM_Deduper_BAO_MergeHandler {
     $resolver->resolveConflicts();
 
     $resolver = new CRM_Deduper_BAO_Resolver_UninformativeCharactersResolver($this);
+    $resolver->resolveConflicts();
+
+    $resolver = new CRM_Deduper_BAO_Resolver_DiacriticResolver($this);
     $resolver->resolveConflicts();
 
     $resolver = new CRM_Deduper_BAO_Resolver_SillyNameResolver($this);

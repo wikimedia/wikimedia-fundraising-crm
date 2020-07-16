@@ -6,7 +6,8 @@ use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
 use Civi\Test\Api3TestTrait;
 
-require_once __DIR__  .'/../DedupeBaseTestClass.php';
+require_once __DIR__ . '/../DedupeBaseTestClass.php';
+
 /**
  * FIXME - Add test description.
  *
@@ -35,6 +36,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $this->callAPISuccess('Setting', 'create', [
       'deduper_resolver_bool_prefer_yes' => ['on_hold', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'is_opt_out'],
     ]);
+    // Make sure we don't have any lingering batch-mergeable contacts in the db.
+    $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
   }
 
   /**
@@ -584,6 +587,98 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Make sure José whomps Jose.
+   *
+   * Test diacritic matches are resolved to the one using 'authentic' characters.
+   *
+   * @param array $names
+   * @param bool $isMatch
+   * @param string $preferredName
+   *
+   * @dataProvider getDiacriticData
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testDiacriticConflicts($names, $isMatch, $preferredName) {
+    $this->createDuplicateIndividuals([
+      ['first_name' => $names[0]],
+      ['first_name' => $names[1]],
+    ]);
+    $mergedContact = $this->doBatchMerge($this->ids['contact'][0], ['skipped' => (int) !$isMatch, 'merged' => (int) $isMatch]);
+    if ($isMatch) {
+      $this->assertEquals($preferredName, $mergedContact['first_name']);
+    }
+  }
+
+  /**
+   * Get names with different character sets.
+   */
+  public function getDiacriticData(): array {
+    $dataSet = [];
+    $dataSet['cyrilic_dissimilar_hyphenated'] = [
+      'pair' => ['Леони-́дович', 'ни́-тский'],
+      'is_match' => FALSE,
+      'choose' => NULL,
+    ];
+    $dataSet['germanic'] = [
+      'pair' => ['Boß', 'Boss'],
+      'is_match' => TRUE,
+      'choose' => 'Boß',
+    ];
+    $dataSet['germanic_reverse'] = [
+      'pair' => ['Boss', 'Boß'],
+      'is_match' => TRUE,
+      'choose' => 'Boß',
+    ];
+    $dataSet['accent_vs_no_accent'] = [
+      'pair' => ['Jose', 'Josè'],
+      'is_match' => TRUE,
+      'choose' => 'Josè',
+    ];
+    $dataSet['accent_vs_no_accent_revese'] = [
+      'pair' => ['José', 'Jose'],
+      'is_match' => TRUE,
+      'choose' => 'José',
+    ];
+    $dataSet['different_direction_accent'] = [
+      'pair' => ['Josè', 'José'],
+      'is_match' => TRUE,
+      // No preference applied, first wins.
+      'choose' => 'Josè',
+    ];
+    $dataSet['no_way_jose'] = [
+      'pair' => ['Jose', 'Josà'],
+      'is_match' => FALSE,
+      'choose' => NULL,
+    ];
+    $dataSet['cyric_sergei'] = [
+      'pair' => ['Серге́й', 'Sergei'],
+      // Actually this is a real translation but will not
+      // match at our level of sophistication.
+      'is_match' => FALSE,
+      'choose' => NULL,
+    ];
+    $dataSet['cyric_sergai'] = [
+      'pair' => ['Серге́й', 'Sergi'],
+      // Actually this is a real translation but will not
+      // match at our level of sophistication.
+      'is_match' => FALSE,
+      'choose' => NULL,
+    ];
+    $dataSet['cyrilic_different_length'] = [
+      'pair' => ['Серге́й', 'Серге'],
+      'is_match' => FALSE,
+      'choose' => NULL,
+    ];
+    $dataSet['cyrilic_dissimilar'] = [
+      'pair' => ['Леони́дович', 'ни́тский'],
+      'is_match' => FALSE,
+      'choose' => NULL,
+    ];
+    return $dataSet;
+  }
+
+  /**
    * Create individuals to dedupe.
    *
    * @param array $contactParams
@@ -641,6 +736,27 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $toKeepContactID, 'to_remove_id' => $toDeleteContactID, 'mode' => ($isAggressiveMode ? 'aggressive' : 'safe')])['values'];
     $mergedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $toKeepContactID]);
     $this->assertCount(1, $mergeResult['merged']);
+    return $mergedContact;
+  }
+
+  /**
+   * Action to batch merge contacts.
+   *
+   * @param int $toKeepContactID
+   *   Id of contact to be kept.
+   * @param array $expected
+   * @param bool $isAggressiveMode
+   *   Should aggressive mode be used.
+   *
+   * @return array|int
+   * @throws \CRM_Core_Exception
+   */
+  protected function doBatchMerge($toKeepContactID, $expected = [], $isAggressiveMode = FALSE) {
+    $mergeResult = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => ($isAggressiveMode ? 'aggressive' : 'safe')])['values'];
+    $mergedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $toKeepContactID]);
+    foreach ($expected as $key => $value) {
+      $this->assertCount($value, $mergeResult[$key], $key . print_r($mergeResult, TRUE));
+    }
     return $mergedContact;
   }
 
