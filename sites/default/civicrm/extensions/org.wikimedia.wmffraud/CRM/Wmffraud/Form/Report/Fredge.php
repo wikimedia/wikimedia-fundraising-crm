@@ -33,6 +33,7 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
           'name' => 'user_ip',
           'title' => E::ts('IP Address'),
           'dbAlias' => "INET_NTOA(payments_fraud_civireport.user_ip)",
+          'default' => TRUE,
         ],
         'validation_action' => [
           'title' => E::ts('Payment Action'),
@@ -101,6 +102,22 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
       ],
     ];
 
+    $this->_columns['contribution_tracking'] = [
+      'alias' => 'ct',
+      'fields' => [
+        'country' => [
+          'title' => E::ts('Country'),
+          'default' => TRUE,
+          'type' => CRM_Utils_Type::T_STRING,
+        ],
+        'form_amount' => [
+          'title' => E::ts('Form amount'),
+          'default' => TRUE,
+          'type' => CRM_Utils_Type::T_STRING,
+        ]
+      ]
+    ];
+
     foreach (self::FRAUD_FILTERS as $columnName => $value) {
       $this->_columns["payments_fraud_breakdown_" . $columnName] = [
         'alias' => "payments_fraud_breakdown_{$columnName}",
@@ -131,7 +148,11 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
   }
 
   function from() {
-    $this->_from = "FROM {$this->fredge}.payments_fraud {$this->_aliases['payments_fraud']} ";
+    $this->_from = "
+      FROM {$this->fredge}.payments_fraud {$this->_aliases['payments_fraud']}
+      LEFT JOIN {$this->drupal}.contribution_tracking {$this->_aliases['contribution_tracking']}
+        ON {$this->_aliases['contribution_tracking']}.id = {$this->_aliases['payments_fraud']}.contribution_tracking_id ";
+
     foreach (self::FRAUD_FILTERS as $columnName => $value) {
       $tblAlias = "payments_fraud_breakdown_" . $columnName;
       $this->_from .= "LEFT JOIN {$this->fredge}.payments_fraud_breakdown {$this->_aliases[$tblAlias]}
