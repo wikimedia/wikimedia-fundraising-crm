@@ -150,7 +150,7 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
       'matching_gifts_provider_id' => $rawResponse['company_id'],
       // FIXME link has 'wikimedia' in it, use some kind of setting?
       'matching_gifts_provider_info_url' =>
-      'https://javamatch.matchinggifts.com/search/companyprofile/wikimedia_iframe/' . $oRes['id'],
+      'https://javamatch.matchinggifts.com/search/companyprofile/wikimedia_iframe/' . $rawResponse['raw_id'],
       'name_from_matching_gift_db' => $rawResponse['name'],
       'guide_url' => $oRes['guideurl'],
       'online_form_url' => $oRes['online_formurl'],
