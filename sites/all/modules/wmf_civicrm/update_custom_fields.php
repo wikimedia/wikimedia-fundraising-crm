@@ -47,6 +47,7 @@ function _wmf_civicrm_update_custom_fields() {
         'extends' => 'Contact',
         'style' => 'tab',
         'is_active' => 1,
+        'table_name' => 'civicrm_value_1_prospect_5',
       ],
       'fields' => _wmf_civicrm_get_prospect_fields(),
     ],
@@ -270,6 +271,7 @@ function _wmf_civicrm_get_prospect_fields() {
     'Estimated_Net_Worth' => [
       'name' => 'Estimated_Net_Worth',
       'label' => 'Estimated Net Worth',
+      'column_name' => 'estimated_net_worth_144',
       'data_type' => 'String',
       'html_type' => 'Select',
       'text_length' => 255,
@@ -481,6 +483,7 @@ function _wmf_civicrm_get_prospect_fields() {
     'Income_Range' => [
       'name' => 'Income_Range',
       'label' => 'Income Range',
+      'column_name' => 'income_range',
       'data_type' => 'String',
       'html_type' => 'Select',
       'is_searchable' => 1,
@@ -650,6 +653,7 @@ function _wmf_civicrm_get_prospect_fields() {
       'label' => 'Family Composition',
       'data_type' => 'String',
       'html_type' => 'Select',
+      'column_name' => 'family_composition_173',
       'is_searchable' => 1,
       'option_values' => [
         1  => 'Single',

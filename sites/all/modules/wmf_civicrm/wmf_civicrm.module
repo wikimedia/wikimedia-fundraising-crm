@@ -8,6 +8,49 @@ require_once 'recurring.inc';
 require_once 'tracking.inc';
 require_once 'wmf_civicrm.hooks.php';
 
+function wmf_civicrm_menu() {
+  $items = [];
+
+  $items['admin/config/wmf_civicrm/matching_gifts'] = array(
+    'title' => t('Matching Gifts Employer Data'),
+    'description' => t('Set matching gifts employer data config'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('wmf_civicrm_matching_gifts_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+function wmf_civicrm_matching_gifts_form() {
+  $form = array();
+
+  $form['matching_gifts_employer_data_file_path'] = array(
+    '#type' => 'textfield',
+    '#title' => 'File path for matching gifts employer data file',
+    '#required' => TRUE,
+    '#default_value' => variable_get(
+      'matching_gifts_employer_data_file_path',
+      '/srv/matching_gifts/employers.csv'
+    ),
+    '#description' => 'File path for matching gifts employer data file',
+  );
+
+
+  $form['matching_gifts_employer_data_update_email'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Email address to send updates to',
+    '#required' => TRUE,
+    '#default_value' => variable_get(
+      'matching_gifts_employer_data_update_email', 'fr-tech@wikimedia.org'
+    ),
+    '#description' => 'Email address to send matching gifts employer data updates to',
+  );
+
+  return system_settings_form($form);
+}
+
 /**
  * Ensure the specified option value exists.
  *
@@ -1138,11 +1181,6 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     $msg['contact_source'] = "online donation";
   }
 
-  // Honor the opt-out checkbox, if present, else, set default
-  if (!array_key_exists('optout', $msg)) {
-    $msg['optout'] = 0;
-  }
-
   // Create the contact record
   $contact = [
     'id' => $contact_id,
@@ -1952,9 +1990,6 @@ function wmf_civicrm_normalize_msg($msg) {
     ) {
 
       watchdog('wmf_civicrm', 'Contribution missing contribution_tracking_id', [], WATCHDOG_DEBUG);
-      //@fixme: For the regular transactions, this has been moved to the staging function. This needs to happen in recurring also, and then it can be removed here.
-      $anonymous = (array_key_exists('anonymous', $msg) && $msg['anonymous'] == TRUE && strtoupper($msg['anonymous']) != "FALSE") ? 1 : 0;
-      $optout = (array_key_exists('optout', $msg) && $msg['optout'] == TRUE && strtoupper($msg['optout']) != "FALSE") ? 1 : 0;
 
       $source = isset($msg['utm_source']) ? $msg['utm_source'] : '..' . $msg['payment_method'];
       $medium = isset($msg['utm_medium']) ? $msg['utm_medium'] : 'civicrm';
@@ -1964,8 +1999,6 @@ function wmf_civicrm_normalize_msg($msg) {
         'utm_source' => $source,
         'utm_medium' => $medium,
         'utm_campaign' => $campaign,
-        'optout' => $optout,
-        'anonymous' => $anonymous,
         'ts' => wmf_common_date_unix_to_sql($msg['date']),
       ];
       if (
@@ -2057,9 +2090,6 @@ function wmf_civicrm_normalize_msg($msg) {
   if (wmf_civicrm_is_endowment_gift($msg)) {
     $msg['financial_type_id'] = 'Endowment Gift';
   }
-
-  $msg['anonymous'] = ((!empty($msg['anonymous']) && strtoupper($msg['anonymous']) !== "FALSE") ? 1 : 0);
-  $msg['optout'] = ((empty($msg['optout']) || $msg['optout'] === 0 || $msg['optout'] === '0' || strtoupper($msg['optout']) === "FALSE") ? 0 : 1);
 
   $list_fields = [
     'contact_groups',
@@ -3460,9 +3490,25 @@ function wmf_civicrm_civicrm_alterLogTables(&$logTableSpec) {
     ], $contactIndexes);
   }
 
-  // Where CiviCRM data entry / our queues are not the primary source (and there is a log of data)
-  // exclude from logging tables. wmf_donor contains calculated data only.
-  foreach (['civicrm_mailing_provider_data', 'wmf_donor'] as $noLoggingTable) {
+  // Exclude from logging tables to save disk given low value.
+  $tablesNotToLog = [
+    // financial tables that don't add much to forensics
+    'civicrm_entity_financial_trxn',
+    'civicrm_financial_item',
+    'civicrm_financial_trxn',
+    'civicrm_line_item',
+    // our queues are not the primary source for these silverpop based tables (and there is a log of data)
+    'civicrm_mailing',
+    'civicrm_mailing_provider_data',
+    // this table is not important because we don't send from civi / need to link back
+    // mailing events within civi.
+    'civicrm_mailing_job',
+    // this table logs group membership & largely repeats log_civicrm_group_contact.
+    'civicrm_subscription_history',
+    // wmf_donor contains calculated data only.
+    'wmf_donor',
+  ];
+  foreach ($tablesNotToLog  as $noLoggingTable) {
     if (isset($logTableSpec[$noLoggingTable])) {
       unset($logTableSpec[$noLoggingTable]);
     }

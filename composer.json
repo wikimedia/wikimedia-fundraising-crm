@@ -60,7 +60,7 @@
     "scripts": {
       "test": [
         "parallel-lint -e php,module,install,inc --exclude vendor --exclude civicrm/vendor --exclude sites/default/civicrm/extensions/org.wikimedia.omnimail/vendor .",
-        "jsonlint $(find . -type f -iname \"*.json\" ! -path \"*/vendor/*\" ! -path \"*/bower*\" ! -path \"*/tests/data/*\" -printf \"%p \")"
+        "jsonlint $(find . -type f -iname \"*.json\" ! -path \"*/vendor/*\" ! -path \"*/bower*\" ! -path \"*/tests/data/*\" ! -path \"*/civicrm/extensions/afform*\" -printf \"%p \")"
       ]
     },
     "minimum-stability": "dev",
