@@ -1,6 +1,6 @@
 <?php
 
-use Civi\API\Provider\ProviderInterface;
+use Civi\Api4\Contact;
 
 /**
  * @group MatchingGifts
@@ -124,9 +124,19 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
       });
   }
 
+  /**
+   * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
   public function testSyncFromStart() {
     $this->setUpMockSearch();
     $this->setUpMockDetails();
+    $contact = Contact::create()->setCheckPermissions(FALSE)->setValues([
+      'contact_type' => 'Organization',
+      'nick_name' => 'Advanced Idea Mechanics',
+      'matching_gift_policies.match_policy_last_updated' => '2017-09-09',
+    ])->execute()->first();
 
     $result = $this->synchronizer->synchronize([
       'matchedCategories' => [
@@ -150,9 +160,10 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
     $result = civicrm_api3('Contact', 'get', [
       $companyIdField => ['IN' => array_keys($this->mockDetails)],
       'return' => array_values($mappedFieldNames),
-    ]);
-    $this->assertEquals(3, count($result['values']));
-    foreach($result['values'] as $contactId => $contact) {
+    ])['values'];
+    $this->assertArrayHasKey($contact['id'], $result);
+    $this->assertCount(3, $result);
+    foreach($result as $contactId => $contact) {
       $companyId = $contact[$companyIdField];
       $expected = $this->mockDetails[$companyId];
       foreach ($expected as $expectedFieldName => $expectedFieldValue) {
