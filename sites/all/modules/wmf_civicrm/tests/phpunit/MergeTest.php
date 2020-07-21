@@ -37,6 +37,11 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contactID2 = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 1]);
   }
 
+  /**
+   * Clean up after test.
+   *
+   * @throws \CRM_Core_Exception
+   */
   public function tearDown() {
     $this->callAPISuccess('Contribution', 'get', [
       'contact_id' => ['IN' => [$this->contactID, $this->contactID2]],
@@ -56,6 +61,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *   Should we reverse the contact order for more test cover.
    *
    * @dataProvider isReverse
+   * @throws \CRM_Core_Exception
    */
   public function testMergeHook($isReverse) {
     $this->giveADuckADonation($isReverse);
@@ -68,7 +74,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $result = $this->callAPISuccess('Job', 'process_batch_merge', [
       'criteria' => ['contact' => ['id' => ['IN' => [$this->contactID, $this->contactID2]]]],
     ]);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $this->assertCustomFieldValues($this->contactID, [
       'lifetime_usd_total' => 24,
       'do_not_solicit' => 1,
@@ -105,7 +111,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $result = $this->callAPISuccess('Job', 'process_batch_merge', [
       'criteria' => ['contact' => ['id' => $this->contactID]],
     ]);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccess('Contact', 'get', [
       'id' => $this->contactID,
       'sequential' => 1,
@@ -119,7 +125,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    */
-  public function isReverse() {
+  public function isReverse(): array {
     return [
       [FALSE],
       [TRUE],
@@ -138,6 +144,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * After merging we check the same again.
    *
    * Although a bit tangental we test calcs on deleting a contribution at the end.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testMergeEndowmentCalculation() {
     $this->callAPISuccess('Contribution', 'create', [
@@ -183,7 +191,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $result = $this->callAPISuccess('Job', 'process_batch_merge', [
       'criteria' => ['contact' => ['id' => ['IN' => [$this->contactID, $this->contactID2]]]],
     ]);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $this->assertCustomFieldValues($this->contactID, [
       'lifetime_usd_total' => 5,
       'last_donation_amount' => 5,
@@ -289,6 +297,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * @dataProvider getMergeLocationData
    *
    * @param array $dataSet
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergesAddressesHook($dataSet) {
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1]);
@@ -305,14 +315,14 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
 
-    $this->assertEquals($dataSet['skipped'], count($result['values']['skipped']));
-    $this->assertEquals($dataSet['merged'], count($result['values']['merged']));
+    $this->assertCount($dataSet['skipped'], $result['values']['skipped']);
+    $this->assertCount($dataSet['merged'], $result['values']['merged']);
     $addresses = $this->callAPISuccess($dataSet['entity'], 'get', ['contact_id' => $this->contactID, 'sequential' => 1]);
     $this->assertEquals(count($dataSet['expected_hook']), $addresses['count']);
     $locationTypes = $this->callAPISuccess($dataSet['entity'], 'getoptions', ['field' => 'location_type_id']);
     foreach ($dataSet['expected_hook'] as $index => $expectedAddress) {
       foreach ($expectedAddress as $key => $value) {
-        if ($key == 'location_type_id') {
+        if ($key === 'location_type_id') {
           $this->assertEquals($locationTypes['values'][$addresses['values'][$index][$key]], $value);
         }
         else {
@@ -332,6 +342,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * @dataProvider getMergeLocationData
    *
    * @param array $dataSet
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergesAddressesHookLowerIDMoreRecentDonor($dataSet) {
     // here the lower contact ID has the higher receive_date as opposed to the previous test.
@@ -349,8 +361,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
 
-    $this->assertEquals($dataSet['skipped'], count($result['values']['skipped']));
-    $this->assertEquals($dataSet['merged'], count($result['values']['merged']));
+    $this->assertCount($dataSet['skipped'], $result['values']['skipped']);
+    $this->assertCount($dataSet['merged'], $result['values']['merged']);
     if ($dataSet['merged']) {
       // higher contact merged into this so we are interested in this contact.
       $keptContact = $this->contactID;
@@ -369,17 +381,18 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     }
     $this->assertEquals(count($dataSet['expected_hook']), $addresses['count']);
     $locationTypes = $this->callAPISuccess($dataSet['entity'], 'getoptions', ['field' => 'location_type_id']);
-    foreach ($dataSet['expected_hook'] as $index => $expectedAddress) {
+    foreach ($dataSet['expected_hook'] as $expectedAddress) {
       foreach ($addresses['values'] as $index => $address) {
         // compared to the previous test the addresses are in a different order (for some datasets.
         // so, first find the matching address and then check it fully matches.
         // by unsetting afterwards we should find them all gone by the end.
-        if (!empty($address['street_address']) && $address['street_address'] == $expectedAddress['street_address']
-          || !empty($address['phone']) && $address['phone'] == $expectedAddress['phone']
-          || !empty($address['email']) && $address['email'] == $expectedAddress['email']
+        if (
+        (!empty($address['street_address']) && $address['street_address'] === $expectedAddress['street_address'])
+          || (!empty($address['phone']) && $address['phone'] === $expectedAddress['phone'])
+          || (!empty($address['email']) && $address['email'] === $expectedAddress['email'])
         ) {
           foreach ($expectedAddress as $key => $value) {
-            if ($key == 'location_type_id') {
+            if ($key === 'location_type_id') {
               $this->assertEquals($locationTypes['values'][$addresses['values'][$index][$key]], $value);
             }
             else {
@@ -408,8 +421,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->giveADuckADonation(FALSE);
     $this->callAPISuccess('Email', 'create', ['id' => $emailDuck1['id'], 'on_hold' => 1]);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(0, count($result['values']['skipped']));
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(0, $result['values']['skipped']);
+    $this->assertCount(1, $result['values']['merged']);
     $email = $this->callAPISuccessGetSingle('Email', ['contact_id' => $this->contactID]);
     $this->assertEquals(1, $email['on_hold']);
 
@@ -419,22 +432,24 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->callAPISuccess('Email', 'create', ['id' => $emailDuck2['id'], 'on_hold' => 1]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(0, count($result['values']['skipped']));
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(0, $result['values']['skipped']);
+    $this->assertCount(1, $result['values']['merged']);
     $email = $this->callAPISuccessGetSingle('Email', ['contact_id' => $this->contactID]);
     $this->assertEquals(1, $email['on_hold']);
   }
 
   /**
    * Test that a conflict on communication preferences is handled.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeConflictCommunicationPreferences() {
     $this->callAPISuccess('Contact', 'create', ['id' => $this->contactID, 'do_not_email' => FALSE, 'is_opt_out' => TRUE]);
     $this->callAPISuccess('Contact', 'create', ['id' => $this->contactID2, 'do_not_email' => TRUE, 'is_opt_out' => FALSE]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(0, count($result['values']['skipped']));
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(0, $result['values']['skipped']);
+    $this->assertCount(1, $result['values']['merged']);
 
     $contact = $this->callAPISuccess('Contact', 'get', ['id' => $this->contactID, 'sequential' => 1]);
     $this->assertEquals(1, $contact['values'][0]['is_opt_out']);
@@ -446,6 +461,10 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that a conflict on communication preferences is handled.
    *
    * @dataProvider getLanguageCombos
+   *
+   * @param array $dataSet
+   *
+   * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
   public function testBatchMergeConflictPreferredLanguage($dataSet) {
@@ -457,10 +476,10 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     if ($dataSet['is_conflict']) {
-      $this->assertEquals(1, count($result['values']['skipped']));
+      $this->assertCount(1, $result['values']['skipped']);
     }
     else {
-      $this->assertEquals(1, count($result['values']['merged']));
+      $this->assertCount(1, $result['values']['merged']);
       $contact = $this->callAPISuccess('Contact', 'get', [
         'id' => $this->contactID,
         'sequential' => 1,
@@ -476,6 +495,9 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @param string $language1
    * @param string $language2
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testBatchMergeConflictDifferentPreferredLanguage($language1, $language2) {
     // Can't use api if we are trying to use invalid data.
@@ -488,7 +510,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language2' WHERE id = $this->contactID2");
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccess('Contact', 'get', [
       'id' => $this->contactID,
       'sequential' => 1,
@@ -506,6 +528,9 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @param string $language1
    * @param string $language2
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testBatchMergeConflictDifferentPreferredLanguageReverse($language1, $language2) {
     // Can't use api if we are trying to use invalid data.
@@ -518,7 +543,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language2' WHERE id = $this->contactID2");
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccess('Contact', 'get', [
       'id' => $this->contactID,
       'sequential' => 1,
@@ -531,8 +556,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    */
-  public function getLanguageCombos() {
-    $dataSet = [
+  public function getLanguageCombos(): array {
+    return [
       // Choose longer.
       [['languages' => ['en', 'en_US'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
       [['languages' => ['en_US', 'en'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
@@ -548,7 +573,6 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       [['languages' => ['en_GB', 'en_US'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
       [['languages' => ['en_US', 'en_GB'], 'is_conflict' => FALSE, 'selected' => 'en_GB']],
     ];
-    return $dataSet;
   }
 
   /**
@@ -556,13 +580,12 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    */
-  public function getDifferentLanguageCombos() {
-    $dataSet = [
+  public function getDifferentLanguageCombos(): array {
+    return [
       // Choose longer.
       ['fr_FR', 'en_US'],
       ['en_US', 'fr_FR'],
     ];
-    return $dataSet;
   }
 
   /**
@@ -574,6 +597,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * our preferred contact.
    *
    * Bug T146946
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeConflictSource() {
     $this->breedDuck(['id' => $this->contactID, 'source' => 'egg']);
@@ -608,12 +633,14 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that whitespace conflicts are resolved.
    *
    * Bug T146946
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeResolvableConflictWhiteSpace() {
     $this->breedDuck(['id' => $this->contactID, 'first_name' => 'alter ego']);
     $this->breedDuck(['id' => $this->contactID2, 'first_name' => 'alterego']);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('alter ego', $contact['first_name']);
   }
@@ -629,7 +656,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->breedDuck(['id' => $this->contactID, 'first_name' => 'alter. ego']);
     $this->breedDuck(['id' => $this->contactID2, 'first_name' => 'alterego']);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('alter ego', $contact['first_name']);
   }
@@ -638,12 +665,14 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that we ignore numbers as names.
    *
    * Bug T175747
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeResolvableConflictNumbersAreNotPeople() {
     $this->breedDuck(['id' => $this->contactID, 'first_name' => 'alter. ego']);
     $this->breedDuck(['id' => $this->contactID2, 'first_name' => '1']);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('alter ego', $contact['first_name']);
   }
@@ -652,6 +681,9 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that we don't see country only as conflicting with country plus.
    *
    * Bug T176699
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testBatchMergeResolvableConflictCountryVsFullAddress() {
     $this->callAPISuccess('Address', 'create', [
@@ -676,7 +708,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('Mexico', $contact['country']);
     $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
@@ -694,6 +726,9 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * perhaps after some merging in strange orders it could happen.
    *
    * Bug T176699
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testBatchMergeResolvableConflictCountryVsFullAddressOutOfOrder() {
     $this->callAPISuccess('Address', 'create', [
@@ -719,7 +754,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('Mexico', $contact['country']);
     $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
@@ -735,6 +770,9 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * In this case the 'keeper' is against the second contact.
    *
    * Bug T176699
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testBatchMergeResolvableConflictCountryVsFullAddressReverse() {
     $this->callAPISuccess('Address', 'create', [
@@ -759,7 +797,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('Mexico', $contact['country']);
     $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
@@ -775,6 +813,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * In this case the 'keeper' is against the second contact.
    *
    * Bug T176699
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeResolvableConflictCountryVsFullAddressReverseOutOfOrder() {
     $this->callAPISuccess('Address', 'create', [
@@ -799,13 +839,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('Mexico', $contact['country']);
     $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
     $address = $this->callAPISuccessGetSingle('Address', ['street_address' => 'A different address']);
     $this->assertEquals($contact['id'], $address['contact_id']);
-    $numPrimaries = civicrm_api3('Address', 'getcount', ['contact_id' => $contact['id'], 'is_primary' => 1]);
+    $numPrimaries = $this->callAPISuccessGetCount('Address', ['contact_id' => $contact['id'], 'is_primary' => 1]);
     $this->assertEquals(1, $numPrimaries);
   }
 
@@ -816,6 +856,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * that is the only one with a donation.
    *
    * Bug T176699
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeUnResolvableConflictCityLooksCountryishWithCounty() {
     $this->callAPISuccess('Address', 'create', [
@@ -833,13 +875,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(0, count($result['values']['skipped']));
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(0, $result['values']['skipped']);
+    $this->assertCount(1, $result['values']['merged']);
 
     $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertEquals('First on the left after you cross the border', $address['street_address']);
     $this->assertEquals('MX', CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
-    $this->assertTrue(!isset($address['city']));
+    $this->assertNotTrue(isset($address['city']));
 
   }
 
@@ -851,6 +893,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * that is the only one with a donation.
    *
    * Bug T176699
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeUnResolvableConflictCityLooksCountryishNoCountry() {
     $this->callAPISuccess('Address', 'create', [
@@ -867,19 +911,21 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(0, count($result['values']['skipped']));
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(0, $result['values']['skipped']);
+    $this->assertCount(1, $result['values']['merged']);
 
     $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertEquals('First on the left after you cross the border', $address['street_address']);
     $this->assertEquals('MX', CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
-    $this->assertTrue(!isset($address['city']));
+    $this->assertNotTrue(isset($address['city']));
   }
 
   /**
    * Test that we still cope when there is no address conflict....
    *
    * Bug T176699
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeNoRealConflictOnAddressButAnotherConflictResolved() {
     $this->callAPISuccess('Address', 'create', [
@@ -895,8 +941,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(0, count($result['values']['skipped']));
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(0, $result['values']['skipped']);
+    $this->assertCount(1, $result['values']['merged']);
   }
 
   /**
@@ -907,6 +953,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * that is the only one with a donation.
    *
    * Bug T176699
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeUnResolvableConflictRealConflict() {
     $this->callAPISuccess('Address', 'create', [
@@ -924,18 +972,20 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(0, count($result['values']['skipped']));
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(0, $result['values']['skipped']);
+    $this->assertCount(1, $result['values']['merged']);
 
     $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertEquals('PL', CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
-    $this->assertTrue(!isset($address['city']));
+    $this->assertNotTrue(isset($address['city']));
   }
 
   /**
    * Test that we don't the addition of a postal suffix only as a conflict.
    *
    * Bug T177807
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeResolvableConflictPostalSuffixExists() {
     $this->callAPISuccess('Address', 'create', [
@@ -956,7 +1006,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('Mexico', $contact['country']);
     $this->assertEquals('6666', $contact['postal_code_suffix']);
@@ -968,6 +1018,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that we don't the addition of a postal suffix only as a conflict.
    *
    * Bug T177807
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeResolvableConflictPostalSuffixExistsReverse() {
     $this->callAPISuccess('Address', 'create', [
@@ -988,7 +1040,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('Mexico', $contact['country']);
     $this->assertEquals('6666', $contact['postal_code_suffix']);
@@ -998,9 +1050,11 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * Test that a conflict on casing in first names is handled for organization_name.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeConflictNameCasingOrgs() {
-    $rule_group_id = civicrm_api3('RuleGroup', 'getvalue', [
+    $rule_group_id = (int) $this->callAPISuccessGetValue('RuleGroup', [
       'contact_type' => 'Organization',
       'used' => 'Unsupervised',
       'return' => 'id',
@@ -1011,11 +1065,11 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe', 'rule_group_id' => $rule_group_id]);
 
     $org1 = $this->callAPISuccess('Contact', 'create', ['organization_name' => 'donald duck', 'contact_type' => 'Organization']);
-    $org2 = $this->callAPISuccess('Contact', 'create', ['organization_name' => 'Donald Duck', 'contact_type' => 'Organization']);
+    $this->callAPISuccess('Contact', 'create', ['organization_name' => 'Donald Duck', 'contact_type' => 'Organization']);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe', 'rule_group_id' => $rule_group_id]);
-    $this->assertEquals(0, count($result['values']['skipped']));
-    $this->assertEquals(1, count($result['values']['merged']));
+    $this->assertCount(0, $result['values']['skipped']);
+    $this->assertCount(1, $result['values']['merged']);
 
     $contact = $this->callAPISuccess('Contact', 'get', ['id' => $org1['id'], 'sequential' => 1]);
     $this->assertEquals('Donald Duck', $contact['values'][0]['organization_name']);
@@ -1026,7 +1080,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    */
-  public function getMergeLocationData() {
+  public function getMergeLocationData(): array {
     $address1 = ['street_address' => 'Buckingham Palace', 'city' => 'London'];
     $address2 = ['street_address' => 'The Doghouse', 'supplemental_address_1' => 'under the blanket'];
     $address3 = ['street_address' => 'Downton Abbey'];
@@ -1058,13 +1112,14 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @param array $locationParams1
    * @param array $locationParams2
+   * @param array $locationParams3
    * @param string $entity
    * @param array $additionalExpected
    *
    * @return array
    */
-  public function getMergeLocations($locationParams1, $locationParams2, $locationParams3, $entity, $additionalExpected = []) {
-    $data = [
+  public function getMergeLocations($locationParams1, $locationParams2, $locationParams3, $entity, $additionalExpected = []): array {
+    return [
       'matching_primary' => [
         'matching_primary' => [
           'merged' => 1,
@@ -1158,7 +1213,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
               'location_type_id' => 'Home',
               // When dealing with email we don't have a clean slate - the existing
               // primary will be primary.
-              'is_primary' => ($entity == 'Email' ? 0 : 1),
+              'is_primary' => ($entity === 'Email' ? 0 : 1),
             ], $locationParams1),
             array_merge([
               'location_type_id' => 'Mailing',
@@ -1665,7 +1720,6 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
         ],
       ],
     ];
-    return $data;
   }
 
 
@@ -1675,11 +1729,11 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Also get rid of the nest.
    */
   protected function doDuckHunt() {
-    CRM_Core_DAO::executeQuery('
+    CRM_Core_DAO::executeQuery("
       DELETE c, e
       FROM civicrm_contact c
       LEFT JOIN civicrm_email e ON e.contact_id = c.id
-      WHERE display_name = "Donald Duck" OR email = "the_don@duckland.com"');
+      WHERE display_name = 'Donald Duck' OR email = 'the_don@duckland.com'");
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_prevnext_cache');
   }
 
@@ -1691,9 +1745,9 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return int
    *   id of created contribution
+   * @throws \CRM_Core_Exception
    */
-  public function contributionCreate($params) {
-
+  public function contributionCreate($params): int {
     $params = array_merge([
       'receive_date' => date('Ymd'),
       'total_amount' => 100.00,
@@ -1705,8 +1759,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'contribution_status_id' => 1,
     ], $params);
 
-    $result = $this->callAPISuccess('contribution', 'create', $params);
-    return $result['id'];
+    return (int) $this->callAPISuccess('contribution', 'create', $params)['id'];
   }
 
   /**
@@ -1716,8 +1769,9 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *   Any overrides to be added to the create call.
    *
    * @return int
+   * @throws \CRM_Core_Exception
    */
-  public function breedDuck($extraParams = []) {
+  public function breedDuck($extraParams = []): int {
     $contact = $this->callAPISuccess('Contact', 'create', array_merge([
       'contact_type' => 'Individual',
       'first_name' => 'Donald',
@@ -1727,7 +1781,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
         'location_type_id' => 'Work',
       ],
     ], $extraParams));
-    return $contact['id'];
+    return (int) $contact['id'];
   }
 
   /**
@@ -1737,6 +1791,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * on the merge, but now we want the lost data.
    *
    * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testRepairBlankedAddressOnMerge() {
     $this->prepareForBlankAddressTests();
@@ -1759,10 +1814,11 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * on the merge, but now we want the lost data. It underwent 2 merges.
    *
    * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testRepairBlankedAddressOnMergeDoubleWhammy() {
     $this->prepareForBlankAddressTests();
-    $contact3 = $this->breedDuck(
+    $this->breedDuck(
       [
         'api.address.create' => [
           'street_address' => '25 Ducky Way',
@@ -1790,6 +1846,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * anihilate it.
    *
    * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testRemoveEternallyBlankMergedAddress() {
     $this->prepareForBlankAddressTests();
@@ -1817,6 +1874,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * a valid other address. Lets annihilate it.
    *
    * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testRemoveEternallyBlankNonPrimaryMergedAddress() {
     $this->prepareForBlankAddressTests();
@@ -1855,6 +1913,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Replicate the merge that would result in a blanked address.
    *
    * @param array $overrides
+   *
+   * @throws \CRM_Core_Exception
    */
   protected function replicateBlankedAddress($overrides = []) {
     $this->createContributions();
@@ -1900,6 +1960,14 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
   }
 
+
+  /**
+   * Create a contribution against contact 1 & 2.
+   *
+   * Contact 2 gets the later receive date.
+   *
+   * @throws \CRM_Core_Exception
+   */
   protected function createContributions() {
     $this->contributionCreate([
       'contact_id' => $this->contactID,
@@ -1920,6 +1988,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @param bool $isReverse
    *   Reverse which duck is the most recent donor?
+   *
+   * @throws \CRM_Core_Exception
    */
   private function giveADuckADonation($isReverse) {
     $this->callAPISuccess('Contribution', 'create', [
@@ -1957,6 +2027,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param int $contactID
    * @param array $duckOverrides
    * @param bool $isLatestDonor
+   *
+   * @throws \CRM_Core_Exception
    */
   protected function breedGenerousDuck($contactID, $duckOverrides, $isLatestDonor) {
     $params = array_merge(['id' => $contactID], $duckOverrides);
