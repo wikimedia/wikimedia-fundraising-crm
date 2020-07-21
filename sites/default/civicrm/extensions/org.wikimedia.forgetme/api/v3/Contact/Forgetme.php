@@ -79,6 +79,8 @@ function civicrm_api3_contact_forgetme($params) {
     }
   }
 
+  storeEmailsDeleted( $emails );
+
   $loggedInUser = CRM_Core_Session::getLoggedInContactID();
 
   civicrm_api3('Activity', 'create', [
@@ -88,6 +90,14 @@ function civicrm_api3_contact_forgetme($params) {
     'source_contact_id' => ($loggedInUser ? : $params['id']),
   ]);
   return civicrm_api3_create_success($result, $params);
+}
+
+function storeEmailsDeleted( $emails ) {
+	$ids = array_keys( $emails );
+  foreach ( $ids as $id ) {
+    $sql = "INSERT INTO civicrm_deleted_email ( id ) VALUES (" . $id . ");";
+    CRM_Core_DAO::executeQuery( $sql );
+  }
 }
 
 /**
