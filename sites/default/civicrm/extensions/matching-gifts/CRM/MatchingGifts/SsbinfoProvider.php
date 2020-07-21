@@ -144,20 +144,25 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
         $minAmount = $ratio['min_amt'];
       }
     }
-    $oRes = $rawResponse['online_resources'][0];
     $lastUpdated = self::normalizeSsbDate($rawResponse['last_updated']);
-    return [
+    $normalized = [
       'matching_gifts_provider_id' => $rawResponse['company_id'],
       // FIXME link has 'wikimedia' in it, use some kind of setting?
       'matching_gifts_provider_info_url' =>
       'https://javamatch.matchinggifts.com/search/companyprofile/wikimedia_iframe/' . $rawResponse['raw_id'],
       'name_from_matching_gift_db' => $rawResponse['name'],
-      'guide_url' => $oRes['guideurl'],
-      'online_form_url' => $oRes['online_formurl'],
       'minimum_gift_matched_usd' => $minAmount,
       'match_policy_last_updated' => $lastUpdated,
+      'guide_url' => '',
+      'online_form_url' => '',
       'subsidiaries' => json_encode($rawResponse['subsidiaries'])
     ];
+    if (!empty($rawResponse['online_resources'])) {
+      $oRes = $rawResponse['online_resources'][0];
+      $normalized['guide_url'] = $oRes['guideurl'];
+      $normalized['online_form_url'] = $oRes['online_formurl'];
+    }
+    return $normalized;
   }
 
   protected static function normalizeSsbDate($usaDateString) {
