@@ -31,17 +31,17 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->doDuckHunt();
     // Run through the merge first to make sure there aren't pre-existing contacts in the DB
     // that will ruin the tests.
-    $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
 
-    $this->contactID = $this->breedDuck(array(wmf_civicrm_get_custom_field_name('do_not_solicit') => 0));
-    $this->contactID2 = $this->breedDuck(array(wmf_civicrm_get_custom_field_name('do_not_solicit') => 1));
+    $this->contactID = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 0]);
+    $this->contactID2 = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 1]);
   }
 
   public function tearDown() {
-    $this->callAPISuccess('Contribution', 'get', array(
-      'contact_id' => array('IN' => array($this->contactID, $this->contactID2)),
+    $this->callAPISuccess('Contribution', 'get', [
+      'contact_id' => ['IN' => [$this->contactID, $this->contactID2]],
       'api.Contribution.delete' => 1,
-    ));
+    ]);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID, 'skip_undelete' => TRUE]);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID2, 'skip_undelete' => TRUE]);
     parent::tearDown();
@@ -59,15 +59,15 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testMergeHook($isReverse) {
     $this->giveADuckADonation($isReverse);
-    $contact = $this->callAPISuccess('Contact', 'get', array(
+    $contact = $this->callAPISuccess('Contact', 'get', [
       'id' => $isReverse ? $this->contactID2 : $this->contactID,
       'sequential' => 1,
-      'return' => array(wmf_civicrm_get_custom_field_name('lifetime_usd_total'), wmf_civicrm_get_custom_field_name('do_not_solicit')),
-    ));
+      'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total'), wmf_civicrm_get_custom_field_name('do_not_solicit')],
+    ]);
     $this->assertEquals(10, $contact['values'][0][wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array(
-      'criteria' => array('contact' => array('id' => array('IN' => array($this->contactID, $this->contactID2)))),
-    ));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', [
+      'criteria' => ['contact' => ['id' => ['IN' => [$this->contactID, $this->contactID2]]]],
+    ]);
     $this->assertEquals(1, count($result['values']['merged']));
     $this->assertCustomFieldValues($this->contactID, [
       'lifetime_usd_total' => 24,
@@ -95,22 +95,22 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
 
     // Now lets check the one to be deleted has a do_not_solicit = 0.
-    $this->callAPISuccess('Contact', 'create', array(
+    $this->callAPISuccess('Contact', 'create', [
       'contact_type' => 'Individual',
       'first_name' => 'Donald',
       'last_name' => 'Duck',
       'email' => 'the_don@duckland.com',
       wmf_civicrm_get_custom_field_name('do_not_solicit') => 0,
-    ));
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array(
-      'criteria' => array('contact' => array('id' => $this->contactID)),
-    ));
+    ]);
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', [
+      'criteria' => ['contact' => ['id' => $this->contactID]],
+    ]);
     $this->assertEquals(1, count($result['values']['merged']));
-    $contact = $this->callAPISuccess('Contact', 'get', array(
+    $contact = $this->callAPISuccess('Contact', 'get', [
       'id' => $this->contactID,
       'sequential' => 1,
-      'return' => array(wmf_civicrm_get_custom_field_name('lifetime_usd_total'), wmf_civicrm_get_custom_field_name('do_not_solicit')),
-    ));
+      'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total'), wmf_civicrm_get_custom_field_name('do_not_solicit')],
+    ]);
     $this->assertEquals(1, $contact['values'][0][wmf_civicrm_get_custom_field_name('do_not_solicit')]);
   }
 
@@ -140,7 +140,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Although a bit tangental we test calcs on deleting a contribution at the end.
    */
   public function testMergeEndowmentCalculation() {
-    $this->callAPISuccess('Contribution', 'create', array(
+    $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contactID,
       'financial_type_id' => 'Endowment Gift',
       'total_amount' => 10,
@@ -148,41 +148,41 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'receive_date' => '2014-08-04',
       wmf_civicrm_get_custom_field_name('original_currency') => 'NZD',
       wmf_civicrm_get_custom_field_name('original_amount') => 8,
-    ));
-    $cashJob = $this->callAPISuccess('Contribution', 'create', array(
+    ]);
+    $cashJob = $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contactID2,
       'financial_type_id' => 'Cash',
       'total_amount' => 5,
       'currency' => 'USD',
       'receive_date' => '2013-01-04',
-    ));
+    ]);
 
-    $this->callAPISuccess('Contribution', 'create', array(
+    $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contactID2,
       'financial_type_id' => 'Endowment Gift',
       'total_amount' => 7,
       'currency' => 'USD',
       'receive_date' => '2015-01-04',
-    ));
+    ]);
 
-    $contact = $this->callAPISuccess('Contact', 'get', array(
+    $contact = $this->callAPISuccess('Contact', 'get', [
       'id' => $this->contactID,
       'sequential' => 1,
-      'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total')]
-    ))['values'][0];
+      'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total')],
+    ])['values'][0];
 
     $this->assertEquals(0, $contact[wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
 
-    $contact = $this->callAPISuccess('Contact', 'get', array(
+    $contact = $this->callAPISuccess('Contact', 'get', [
       'id' => $this->contactID2,
       'sequential' => 1,
-      'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total')]
-    ))['values'][0];
+      'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total')],
+    ])['values'][0];
     $this->assertEquals(5, $contact[wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array(
-      'criteria' => array('contact' => array('id' => array('IN' => array($this->contactID, $this->contactID2)))),
-    ));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', [
+      'criteria' => ['contact' => ['id' => ['IN' => [$this->contactID, $this->contactID2]]]],
+    ]);
     $this->assertEquals(1, count($result['values']['merged']));
     $this->assertCustomFieldValues($this->contactID, [
       'lifetime_usd_total' => 5,
@@ -291,25 +291,25 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param array $dataSet
    */
   public function testBatchMergesAddressesHook($dataSet) {
-    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1));
-    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2012-01-01', 'invoice_id' => 2, 'trxn_id' => 2));
+    $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1]);
+    $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2012-01-01', 'invoice_id' => 2, 'trxn_id' => 2]);
     if ($dataSet['is_major_gifts']) {
-      $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2012-01-01', 'total_amount' => 300));
+      $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2012-01-01', 'total_amount' => 300]);
     }
     foreach ($dataSet['earliest_donor'] as $address) {
-      $this->callAPISuccess($dataSet['entity'], 'create', array_merge(array('contact_id' => $this->contactID), $address));
+      $this->callAPISuccess($dataSet['entity'], 'create', array_merge(['contact_id' => $this->contactID], $address));
     }
     foreach ($dataSet['most_recent_donor'] as $address) {
-      $this->callAPISuccess($dataSet['entity'], 'create', array_merge(array('contact_id' => $this->contactID2), $address));
+      $this->callAPISuccess($dataSet['entity'], 'create', array_merge(['contact_id' => $this->contactID2], $address));
     }
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
 
     $this->assertEquals($dataSet['skipped'], count($result['values']['skipped']));
     $this->assertEquals($dataSet['merged'], count($result['values']['merged']));
-    $addresses = $this->callAPISuccess($dataSet['entity'], 'get', array('contact_id' => $this->contactID, 'sequential' => 1));
+    $addresses = $this->callAPISuccess($dataSet['entity'], 'get', ['contact_id' => $this->contactID, 'sequential' => 1]);
     $this->assertEquals(count($dataSet['expected_hook']), $addresses['count']);
-    $locationTypes = $this->callAPISuccess($dataSet['entity'], 'getoptions', array('field' => 'location_type_id'));
+    $locationTypes = $this->callAPISuccess($dataSet['entity'], 'getoptions', ['field' => 'location_type_id']);
     foreach ($dataSet['expected_hook'] as $index => $expectedAddress) {
       foreach ($expectedAddress as $key => $value) {
         if ($key == 'location_type_id') {
@@ -335,19 +335,19 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testBatchMergesAddressesHookLowerIDMoreRecentDonor($dataSet) {
     // here the lower contact ID has the higher receive_date as opposed to the previous test.
-    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1));
-    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2012-01-01', 'invoice_id' => 2, 'trxn_id' => 2));
+    $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1]);
+    $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2012-01-01', 'invoice_id' => 2, 'trxn_id' => 2]);
     if ($dataSet['is_major_gifts']) {
-      $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2012-01-01', 'total_amount' => 300));
+      $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2012-01-01', 'total_amount' => 300]);
     }
     foreach ($dataSet['earliest_donor'] as $address) {
-      $this->callAPISuccess($dataSet['entity'], 'create', array_merge(array('contact_id' => $this->contactID2), $address));
+      $this->callAPISuccess($dataSet['entity'], 'create', array_merge(['contact_id' => $this->contactID2], $address));
     }
     foreach ($dataSet['most_recent_donor'] as $address) {
-      $this->callAPISuccess($dataSet['entity'], 'create', array_merge(array('contact_id' => $this->contactID), $address));
+      $this->callAPISuccess($dataSet['entity'], 'create', array_merge(['contact_id' => $this->contactID], $address));
     }
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
 
     $this->assertEquals($dataSet['skipped'], count($result['values']['skipped']));
     $this->assertEquals($dataSet['merged'], count($result['values']['merged']));
@@ -359,24 +359,24 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       // ie. no merge has taken place, so we just going to check our contact2 is unchanged.
       $keptContact = $this->contactID2;
     }
-    $addresses = $this->callAPISuccess($dataSet['entity'], 'get', array(
+    $addresses = $this->callAPISuccess($dataSet['entity'], 'get', [
       'contact_id' => $keptContact,
       'sequential' => 1,
-    ));
+    ]);
 
     if (!empty($dataSet['fix_required_for_reverse'])) {
       return;
     }
     $this->assertEquals(count($dataSet['expected_hook']), $addresses['count']);
-    $locationTypes = $this->callAPISuccess($dataSet['entity'], 'getoptions', array('field' => 'location_type_id'));
+    $locationTypes = $this->callAPISuccess($dataSet['entity'], 'getoptions', ['field' => 'location_type_id']);
     foreach ($dataSet['expected_hook'] as $index => $expectedAddress) {
       foreach ($addresses['values'] as $index => $address) {
         // compared to the previous test the addresses are in a different order (for some datasets.
         // so, first find the matching address and then check it fully matches.
         // by unsetting afterwards we should find them all gone by the end.
         if (!empty($address['street_address']) && $address['street_address'] == $expectedAddress['street_address']
-        || !empty($address['phone']) && $address['phone'] == $expectedAddress['phone']
-        || !empty($address['email']) && $address['email'] == $expectedAddress['email']
+          || !empty($address['phone']) && $address['phone'] == $expectedAddress['phone']
+          || !empty($address['email']) && $address['email'] == $expectedAddress['email']
         ) {
           foreach ($expectedAddress as $key => $value) {
             if ($key == 'location_type_id') {
@@ -404,21 +404,21 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testBatchMergeConflictOnHold() {
-    $emailDuck1 = $this->callAPISuccess('Email', 'get', array('contact_id' => $this->contactID, 'return' => 'id'));
+    $emailDuck1 = $this->callAPISuccess('Email', 'get', ['contact_id' => $this->contactID, 'return' => 'id']);
     $this->giveADuckADonation(FALSE);
-    $this->callAPISuccess('Email', 'create', array('id' => $emailDuck1['id'], 'on_hold' => 1));
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->callAPISuccess('Email', 'create', ['id' => $emailDuck1['id'], 'on_hold' => 1]);
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(0, count($result['values']['skipped']));
     $this->assertEquals(1, count($result['values']['merged']));
     $email = $this->callAPISuccessGetSingle('Email', ['contact_id' => $this->contactID]);
     $this->assertEquals(1, $email['on_hold']);
 
     $this->callAPISuccess('Email', 'create', ['id' => $email['id'], 'on_hold' => 0]);
-    $duck2 = $this->breedDuck(array(wmf_civicrm_get_custom_field_name('do_not_solicit') => 1));
-    $emailDuck2 = $this->callAPISuccess('Email', 'get', array('contact_id' => $duck2, 'return' => 'id'));
-    $this->callAPISuccess('Email', 'create', array('id' => $emailDuck2['id'], 'on_hold' => 1));
+    $duck2 = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 1]);
+    $emailDuck2 = $this->callAPISuccess('Email', 'get', ['contact_id' => $duck2, 'return' => 'id']);
+    $this->callAPISuccess('Email', 'create', ['id' => $emailDuck2['id'], 'on_hold' => 1]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(0, count($result['values']['skipped']));
     $this->assertEquals(1, count($result['values']['merged']));
     $email = $this->callAPISuccessGetSingle('Email', ['contact_id' => $this->contactID]);
@@ -429,14 +429,14 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that a conflict on communication preferences is handled.
    */
   public function testBatchMergeConflictCommunicationPreferences() {
-    $this->callAPISuccess('Contact', 'create', array('id' => $this->contactID, 'do_not_email' => FALSE, 'is_opt_out' => TRUE));
-    $this->callAPISuccess('Contact', 'create', array('id' => $this->contactID2, 'do_not_email' => TRUE, 'is_opt_out' => FALSE));
+    $this->callAPISuccess('Contact', 'create', ['id' => $this->contactID, 'do_not_email' => FALSE, 'is_opt_out' => TRUE]);
+    $this->callAPISuccess('Contact', 'create', ['id' => $this->contactID2, 'do_not_email' => TRUE, 'is_opt_out' => FALSE]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(0, count($result['values']['skipped']));
     $this->assertEquals(1, count($result['values']['merged']));
 
-    $contact = $this->callAPISuccess('Contact', 'get', array('id' => $this->contactID, 'sequential' => 1));
+    $contact = $this->callAPISuccess('Contact', 'get', ['id' => $this->contactID, 'sequential' => 1]);
     $this->assertEquals(1, $contact['values'][0]['is_opt_out']);
     $this->assertEquals(1, $contact['values'][0]['do_not_email']);
   }
@@ -455,16 +455,16 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '{$dataSet['languages'][0]}' WHERE id = $this->contactID");
     CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '{$dataSet['languages'][1]}' WHERE id = $this->contactID2");
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     if ($dataSet['is_conflict']) {
       $this->assertEquals(1, count($result['values']['skipped']));
     }
     else {
       $this->assertEquals(1, count($result['values']['merged']));
-      $contact = $this->callAPISuccess('Contact', 'get', array(
+      $contact = $this->callAPISuccess('Contact', 'get', [
         'id' => $this->contactID,
-        'sequential' => 1
-      ));
+        'sequential' => 1,
+      ]);
       $this->assertEquals($dataSet['selected'], $contact['values'][0]['preferred_language']);
     }
   }
@@ -479,20 +479,20 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testBatchMergeConflictDifferentPreferredLanguage($language1, $language2) {
     // Can't use api if we are trying to use invalid data.
-    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1));
-    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2012-01-01', 'invoice_id' => 2, 'trxn_id' => 2));
+    $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1]);
+    $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2012-01-01', 'invoice_id' => 2, 'trxn_id' => 2]);
 
     wmf_civicrm_ensure_language_exists('en_US');
     wmf_civicrm_ensure_language_exists('fr_FR');
     CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language1' WHERE id = $this->contactID");
     CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language2' WHERE id = $this->contactID2");
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(1, count($result['values']['merged']));
-    $contact = $this->callAPISuccess('Contact', 'get', array(
+    $contact = $this->callAPISuccess('Contact', 'get', [
       'id' => $this->contactID,
-      'sequential' => 1
-    ));
+      'sequential' => 1,
+    ]);
     $this->assertEquals($language2, $contact['values'][0]['preferred_language']);
   }
 
@@ -509,20 +509,20 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testBatchMergeConflictDifferentPreferredLanguageReverse($language1, $language2) {
     // Can't use api if we are trying to use invalid data.
-    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2012-01-01', 'invoice_id' => 1, 'trxn_id' => 1));
-    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'invoice_id' => 2, 'trxn_id' => 2));
+    $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2012-01-01', 'invoice_id' => 1, 'trxn_id' => 1]);
+    $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'invoice_id' => 2, 'trxn_id' => 2]);
 
     wmf_civicrm_ensure_language_exists('en_US');
     wmf_civicrm_ensure_language_exists('fr_FR');
     CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language1' WHERE id = $this->contactID");
     CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language2' WHERE id = $this->contactID2");
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(1, count($result['values']['merged']));
-    $contact = $this->callAPISuccess('Contact', 'get', array(
+    $contact = $this->callAPISuccess('Contact', 'get', [
       'id' => $this->contactID,
-      'sequential' => 1
-    ));
+      'sequential' => 1,
+    ]);
     $this->assertEquals($language1, $contact['values'][0]['preferred_language']);
   }
 
@@ -532,22 +532,22 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * @return array
    */
   public function getLanguageCombos() {
-    $dataSet = array(
+    $dataSet = [
       // Choose longer.
-      array(array('languages' => array('en', 'en_US'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
-      array(array('languages' => array('en_US', 'en'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
+      [['languages' => ['en', 'en_US'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
+      [['languages' => ['en_US', 'en'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
       // Choose valid.
-      array(array('languages' => array('en_XX', 'en_US'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
-      array(array('languages' => array('en_US', 'en_XX'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
+      [['languages' => ['en_XX', 'en_US'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
+      [['languages' => ['en_US', 'en_XX'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
       // Chose one with a 'real' label  (more valid).
-      array(array('languages' => array('en_US', 'en_NZ'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
-      array(array('languages' => array('en_NZ', 'en_US'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
+      [['languages' => ['en_US', 'en_NZ'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
+      [['languages' => ['en_NZ', 'en_US'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
       // Chose either - feels like the return on coding any decision making now is negligible.
       // Could go for most recent donor but feels like no return on effort.
       // we will usually get the most recent donor anyway by default - as it merges higher number to smaller.
-      array(array('languages' => array('en_GB', 'en_US'), 'is_conflict' => FALSE, 'selected' => 'en_US')),
-      array(array('languages' => array('en_US', 'en_GB'), 'is_conflict' => FALSE, 'selected' => 'en_GB'))
-    );
+      [['languages' => ['en_GB', 'en_US'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
+      [['languages' => ['en_US', 'en_GB'], 'is_conflict' => FALSE, 'selected' => 'en_GB']],
+    ];
     return $dataSet;
   }
 
@@ -557,11 +557,11 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * @return array
    */
   public function getDifferentLanguageCombos() {
-    $dataSet = array(
+    $dataSet = [
       // Choose longer.
-      array('fr_FR', 'en_US'),
-      array('en_US', 'fr_FR'),
-    );
+      ['fr_FR', 'en_US'],
+      ['en_US', 'fr_FR'],
+    ];
     return $dataSet;
   }
 
@@ -610,11 +610,11 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Bug T146946
    */
   public function testBatchMergeResolvableConflictWhiteSpace() {
-    $this->breedDuck(array('id' => $this->contactID, 'first_name' => 'alter ego'));
-    $this->breedDuck(array('id' => $this->contactID2, 'first_name' => 'alterego'));
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->breedDuck(['id' => $this->contactID, 'first_name' => 'alter ego']);
+    $this->breedDuck(['id' => $this->contactID2, 'first_name' => 'alterego']);
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(1, count($result['values']['merged']));
-    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('alter ego', $contact['first_name']);
   }
 
@@ -626,11 +626,11 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testBatchMergeResolvableConflictPunctuation() {
-    $this->breedDuck(array('id' => $this->contactID, 'first_name' => 'alter. ego'));
-    $this->breedDuck(array('id' => $this->contactID2, 'first_name' => 'alterego'));
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->breedDuck(['id' => $this->contactID, 'first_name' => 'alter. ego']);
+    $this->breedDuck(['id' => $this->contactID2, 'first_name' => 'alterego']);
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(1, count($result['values']['merged']));
-    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('alter ego', $contact['first_name']);
   }
 
@@ -640,11 +640,11 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Bug T175747
    */
   public function testBatchMergeResolvableConflictNumbersAreNotPeople() {
-    $this->breedDuck(array('id' => $this->contactID, 'first_name' => 'alter. ego'));
-    $this->breedDuck(array('id' => $this->contactID2, 'first_name' => '1'));
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $this->breedDuck(['id' => $this->contactID, 'first_name' => 'alter. ego']);
+    $this->breedDuck(['id' => $this->contactID2, 'first_name' => '1']);
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(1, count($result['values']['merged']));
-    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('alter ego', $contact['first_name']);
   }
 
@@ -654,35 +654,35 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Bug T176699
    */
   public function testBatchMergeResolvableConflictCountryVsFullAddress() {
-    $this->callAPISuccess('Address', 'create', array(
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'location_type_id' => 1,
       'is_primary' => 1,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID2,
       'street_address' => 'First on the left after you cross the border',
       'location_type_id' => 1,
       'is_primary' => 1,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID2,
       'street_address' => 'A different address',
       'location_type_id' => 2,
-    ));
-    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+    ]);
+    $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(1, count($result['values']['merged']));
-    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('Mexico', $contact['country']);
     $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
-    $address = $this->callAPISuccessGetSingle('Address', array('street_address' => 'A different address'));
+    $address = $this->callAPISuccessGetSingle('Address', ['street_address' => 'A different address']);
     $this->assertEquals($contact['id'], $address['contact_id']);
-    $numPrimaries = civicrm_api3('Address', 'getcount', array('contact_id' => $contact['id'], 'is_primary' => 1));
+    $numPrimaries = civicrm_api3('Address', 'getcount', ['contact_id' => $contact['id'], 'is_primary' => 1]);
     $this->assertEquals(1, $numPrimaries);
   }
 
@@ -696,36 +696,36 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Bug T176699
    */
   public function testBatchMergeResolvableConflictCountryVsFullAddressOutOfOrder() {
-    $this->callAPISuccess('Address', 'create', array(
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'location_type_id' => 1,
       'is_primary' => 1,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID2,
       'street_address' => 'First on the left after you cross the border',
       'location_type_id' => 1,
       'is_primary' => 1,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID2,
       'street_address' => 'A different address',
       'location_type_id' => 2,
-    ));
+    ]);
     // this is the change.
-    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+    $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(1, count($result['values']['merged']));
-    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('Mexico', $contact['country']);
     $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
-    $address = $this->callAPISuccessGetSingle('Address', array('street_address' => 'A different address'));
+    $address = $this->callAPISuccessGetSingle('Address', ['street_address' => 'A different address']);
     $this->assertEquals($contact['id'], $address['contact_id']);
-    $numPrimaries = civicrm_api3('Address', 'getcount', array('contact_id' => $contact['id'], 'is_primary' => 1));
+    $numPrimaries = civicrm_api3('Address', 'getcount', ['contact_id' => $contact['id'], 'is_primary' => 1]);
     $this->assertEquals(1, $numPrimaries);
   }
 
@@ -737,35 +737,35 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Bug T176699
    */
   public function testBatchMergeResolvableConflictCountryVsFullAddressReverse() {
-    $this->callAPISuccess('Address', 'create', array(
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID2,
       'location_type_id' => 1,
       'is_primary' => 1,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'street_address' => 'First on the left after you cross the border',
       'location_type_id' => 1,
       'is_primary' => 1,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'street_address' => 'A different address',
       'location_type_id' => 2,
-    ));
-    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+    ]);
+    $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(1, count($result['values']['merged']));
-    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('Mexico', $contact['country']);
     $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
-    $address = $this->callAPISuccessGetSingle('Address', array('street_address' => 'A different address'));
+    $address = $this->callAPISuccessGetSingle('Address', ['street_address' => 'A different address']);
     $this->assertEquals($contact['id'], $address['contact_id']);
-    $numPrimaries = civicrm_api3('Address', 'getcount', array('contact_id' => $contact['id'], 'is_primary' => 1));
+    $numPrimaries = civicrm_api3('Address', 'getcount', ['contact_id' => $contact['id'], 'is_primary' => 1]);
     $this->assertEquals(1, $numPrimaries);
   }
 
@@ -777,35 +777,35 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Bug T176699
    */
   public function testBatchMergeResolvableConflictCountryVsFullAddressReverseOutOfOrder() {
-    $this->callAPISuccess('Address', 'create', array(
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID2,
       'location_type_id' => 1,
       'is_primary' => 1,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'street_address' => 'First on the left after you cross the border',
       'location_type_id' => 1,
       'is_primary' => 1,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'street_address' => 'A different address',
       'location_type_id' => 2,
-    ));
-    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+    ]);
+    $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(1, count($result['values']['merged']));
-    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('Mexico', $contact['country']);
     $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
-    $address = $this->callAPISuccessGetSingle('Address', array('street_address' => 'A different address'));
+    $address = $this->callAPISuccessGetSingle('Address', ['street_address' => 'A different address']);
     $this->assertEquals($contact['id'], $address['contact_id']);
-    $numPrimaries = civicrm_api3('Address', 'getcount', array('contact_id' => $contact['id'], 'is_primary' => 1));
+    $numPrimaries = civicrm_api3('Address', 'getcount', ['contact_id' => $contact['id'], 'is_primary' => 1]);
     $this->assertEquals(1, $numPrimaries);
   }
 
@@ -818,25 +818,25 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Bug T176699
    */
   public function testBatchMergeUnResolvableConflictCityLooksCountryishWithCounty() {
-    $this->callAPISuccess('Address', 'create', array(
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'US',
       'contact_id' => $this->contactID2,
       'city' => 'Mexico',
       'location_type_id' => 1,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'street_address' => 'First on the left after you cross the border',
       'location_type_id' => 1,
-    ));
-    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+    ]);
+    $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(0, count($result['values']['skipped']));
     $this->assertEquals(1, count($result['values']['merged']));
 
-    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertEquals('First on the left after you cross the border', $address['street_address']);
     $this->assertEquals('MX', CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
     $this->assertTrue(!isset($address['city']));
@@ -853,24 +853,24 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Bug T176699
    */
   public function testBatchMergeUnResolvableConflictCityLooksCountryishNoCountry() {
-    $this->callAPISuccess('Address', 'create', array(
+    $this->callAPISuccess('Address', 'create', [
       'contact_id' => $this->contactID2,
       'city' => 'Mexico',
       'location_type_id' => 1,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'street_address' => 'First on the left after you cross the border',
       'location_type_id' => 1,
-    ));
-    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+    ]);
+    $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(0, count($result['values']['skipped']));
     $this->assertEquals(1, count($result['values']['merged']));
 
-    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertEquals('First on the left after you cross the border', $address['street_address']);
     $this->assertEquals('MX', CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
     $this->assertTrue(!isset($address['city']));
@@ -882,19 +882,19 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Bug T176699
    */
   public function testBatchMergeNoRealConflictOnAddressButAnotherConflictResolved() {
-    $this->callAPISuccess('Address', 'create', array(
+    $this->callAPISuccess('Address', 'create', [
       'contact_id' => $this->contactID2,
       'country' => 'Korea, Republic of',
       'location_type_id' => 1,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'contact_id' => $this->contactID,
       'country' => 'Korea, Republic of',
       'location_type_id' => 1,
-    ));
-    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+    ]);
+    $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(0, count($result['values']['skipped']));
     $this->assertEquals(1, count($result['values']['merged']));
   }
@@ -909,25 +909,25 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Bug T176699
    */
   public function testBatchMergeUnResolvableConflictRealConflict() {
-    $this->callAPISuccess('Address', 'create', array(
+    $this->callAPISuccess('Address', 'create', [
       'contact_id' => $this->contactID2,
       'city' => 'Poland',
       'country_id' => 'US',
       'state_province' => 'ME',
       'location_type_id' => 1,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country' => 'Poland',
       'contact_id' => $this->contactID,
       'location_type_id' => 1,
-    ));
-    $this->contributionCreate(array('contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+    ]);
+    $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(0, count($result['values']['skipped']));
     $this->assertEquals(1, count($result['values']['merged']));
 
-    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertEquals('PL', CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
     $this->assertTrue(!isset($address['city']));
   }
@@ -938,26 +938,26 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Bug T177807
    */
   public function testBatchMergeResolvableConflictPostalSuffixExists() {
-    $this->callAPISuccess('Address', 'create', array(
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID2,
       'location_type_id' => 1,
       'street_address' => 'First on the left after you cross the border',
       'postal_code' => 90210,
       'postal_code_suffix' => 6666,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'street_address' => 'First on the left after you cross the border',
       'postal_code' => 90210,
       'location_type_id' => 1,
-    ));
-    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+    ]);
+    $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(1, count($result['values']['merged']));
-    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('Mexico', $contact['country']);
     $this->assertEquals('6666', $contact['postal_code_suffix']);
     $this->assertEquals('90210', $contact['postal_code']);
@@ -970,26 +970,26 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Bug T177807
    */
   public function testBatchMergeResolvableConflictPostalSuffixExistsReverse() {
-    $this->callAPISuccess('Address', 'create', array(
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID2,
       'location_type_id' => 1,
       'street_address' => 'First on the left after you cross the border',
       'postal_code' => 90210,
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $this->contactID,
       'street_address' => 'First on the left after you cross the border',
       'postal_code' => 90210,
       'location_type_id' => 1,
       'postal_code_suffix' => 6666,
-    ));
-    $this->contributionCreate(array('contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500));
+    ]);
+    $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertEquals(1, count($result['values']['merged']));
-    $contact = $this->callAPISuccessGetSingle('Contact', array('email' => 'the_don@duckland.com'));
+    $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
     $this->assertEquals('Mexico', $contact['country']);
     $this->assertEquals('6666', $contact['postal_code_suffix']);
     $this->assertEquals('90210', $contact['postal_code']);
@@ -1000,24 +1000,24 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that a conflict on casing in first names is handled for organization_name.
    */
   public function testBatchMergeConflictNameCasingOrgs() {
-    $rule_group_id = civicrm_api3('RuleGroup', 'getvalue', array(
+    $rule_group_id = civicrm_api3('RuleGroup', 'getvalue', [
       'contact_type' => 'Organization',
       'used' => 'Unsupervised',
       'return' => 'id',
-      'options' => array('limit' => 1),
-    ));
+      'options' => ['limit' => 1],
+    ]);
 
     // Do a pre-merge to get us to a known 'no mergeable contacts' state.
-    $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe', 'rule_group_id' => $rule_group_id));
+    $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe', 'rule_group_id' => $rule_group_id]);
 
-    $org1 = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'donald duck', 'contact_type' => 'Organization'));
-    $org2 = $this->callAPISuccess('Contact', 'create', array('organization_name' => 'Donald Duck', 'contact_type' => 'Organization'));
+    $org1 = $this->callAPISuccess('Contact', 'create', ['organization_name' => 'donald duck', 'contact_type' => 'Organization']);
+    $org2 = $this->callAPISuccess('Contact', 'create', ['organization_name' => 'Donald Duck', 'contact_type' => 'Organization']);
 
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe', 'rule_group_id' => $rule_group_id));
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe', 'rule_group_id' => $rule_group_id]);
     $this->assertEquals(0, count($result['values']['skipped']));
     $this->assertEquals(1, count($result['values']['merged']));
 
-    $contact = $this->callAPISuccess('Contact', 'get', array('id' => $org1['id'], 'sequential' => 1));
+    $contact = $this->callAPISuccess('Contact', 'get', ['id' => $org1['id'], 'sequential' => 1]);
     $this->assertEquals('Donald Duck', $contact['values'][0]['organization_name']);
   }
 
@@ -1027,26 +1027,28 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * @return array
    */
   public function getMergeLocationData() {
-    $address1 = array('street_address' => 'Buckingham Palace', 'city' => 'London');
-    $address2 = array('street_address' => 'The Doghouse', 'supplemental_address_1' => 'under the blanket');
-    $address3 = array('street_address' => 'Downton Abbey');
+    $address1 = ['street_address' => 'Buckingham Palace', 'city' => 'London'];
+    $address2 = ['street_address' => 'The Doghouse', 'supplemental_address_1' => 'under the blanket'];
+    $address3 = ['street_address' => 'Downton Abbey'];
     $data = $this->getMergeLocations($address1, $address2, $address3, 'Address');
     $data = array_merge($data, $this->getMergeLocations(
-      array('phone' => '12345', 'phone_type_id' => 1),
-      array('phone' => '678910', 'phone_type_id' => 1),
-      array('phone' => '999888', 'phone_type_id' => 1),
+      ['phone' => '12345', 'phone_type_id' => 1],
+      ['phone' => '678910', 'phone_type_id' => 1],
+      ['phone' => '999888', 'phone_type_id' => 1],
       'Phone')
     );
-    $data = array_merge($data, $this->getMergeLocations(array('phone' => '12345'), array('phone' => '678910'), array('phone' => '678999'), 'Phone'));
+    $data = array_merge($data, $this->getMergeLocations(['phone' => '12345'], ['phone' => '678910'], ['phone' => '678999'], 'Phone'));
     $data = array_merge($data, $this->getMergeLocations(
-      array('email' => 'mini@me.com'),
-      array('email' => 'mini@me.org'),
-      array('email' => 'mini@me.co.nz'),
+      ['email' => 'mini@me.com'],
+      ['email' => 'mini@me.org'],
+      ['email' => 'mini@me.co.nz'],
       'Email',
-      array(array(
-        'email' => 'the_don@duckland.com',
-        'location_type_id' => 'Work',
-    ))));
+      [
+        [
+          'email' => 'the_don@duckland.com',
+          'location_type_id' => 'Work',
+        ],
+      ]));
     return $data;
 
   }
@@ -1061,303 +1063,272 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    */
-  public function getMergeLocations($locationParams1, $locationParams2, $locationParams3, $entity, $additionalExpected = array()) {
-    $data = array(
-      'matching_primary' => array(
-        'matching_primary' => array(
+  public function getMergeLocations($locationParams1, $locationParams2, $locationParams3, $entity, $additionalExpected = []) {
+    $data = [
+      'matching_primary' => [
+        'matching_primary' => [
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 1,
           'description' => 'Same behaviour with & without the hook, matching primary AND other address maintained',
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
-            ), $locationParams2),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
-            ), $locationParams2),
-            array_merge(array(
+            ], $locationParams2),
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-          )),
-        ),
-      ),
-      'matching_primary_reverse' => array(
-        'matching_primary_reverse' => array(
+            ], $locationParams1),
+          ]),
+        ],
+      ],
+      'matching_primary_reverse' => [
+        'matching_primary_reverse' => [
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 1,
           'description' => 'Same behaviour with & without the hook, matching primary AND other address maintained',
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
-            ), $locationParams2),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
-            ), $locationParams2),
-          )),
-        ),
-      ),
-      'only_one_has_address' => array(
-        'only_one_has_address' => array(
+            ], $locationParams2),
+          ]),
+        ],
+      ],
+      'only_one_has_address' => [
+        'only_one_has_address' => [
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 1,
           'description' => 'Same behaviour with & without the hook, address is maintained',
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
-            ), $locationParams2),
-          ),
-          'most_recent_donor' => array(),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'most_recent_donor' => [],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               // When dealing with email we don't have a clean slate - the existing
               // primary will be primary.
               'is_primary' => ($entity == 'Email' ? 0 : 1),
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
-            ), $locationParams2),
-          )),
-        ),
-      ),
-      'only_one_has_address_reverse' => array(
-        'only_one_has_address_reverse' => array(
+            ], $locationParams2),
+          ]),
+        ],
+      ],
+      'only_one_has_address_reverse' => [
+        'only_one_has_address_reverse' => [
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 1,
           'description' => 'Same behaviour with & without the hook, address is maintained',
           'entity' => $entity,
-          'earliest_donor' => array(),
-          'most_recent_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
-            ), $locationParams2),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
-            ), $locationParams2),
-          )),
-        ),
-      ),
-      'different_primaries_with_different_location_type' => array(
-        'different_primaries_with_different_location_type' => array(
+            ], $locationParams2),
+          ]),
+        ],
+      ],
+      'different_primaries_with_different_location_type' => [
+        'different_primaries_with_different_location_type' => [
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 1,
           'description' => 'Primaries are different with different location. Keep both addresses. Set primary to be that of more recent donor',
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams2),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams2),
-          )),
-        ),
-      ),
-      'different_primaries_with_different_location_type_reverse' => array(
-        'different_primaries_with_different_location_type_reverse' => array(
+            ], $locationParams2),
+          ]),
+        ],
+      ],
+      'different_primaries_with_different_location_type_reverse' => [
+        'different_primaries_with_different_location_type_reverse' => [
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams2),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
-            ), $locationParams2),
-            array_merge(array(
+            ], $locationParams2),
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-          )),
-        ),
-      ),
-      'different_primaries_location_match_only_one_address' => array(
-        'different_primaries_location_match_only_one_address' => array(
+            ], $locationParams1),
+          ]),
+        ],
+      ],
+      'different_primaries_location_match_only_one_address' => [
+        'different_primaries_location_match_only_one_address' => [
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
-            ), $locationParams2),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams2),
+            ], $locationParams2),
 
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams2),
-          )),
-        ),
-      ),
-      'different_primaries_location_match_only_one_address_reverse' => array(
-        'different_primaries_location_match_only_one_address_reverse' => array(
+            ], $locationParams2),
+          ]),
+        ],
+      ],
+      'different_primaries_location_match_only_one_address_reverse' => [
+        'different_primaries_location_match_only_one_address_reverse' => [
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams2),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
-            ), $locationParams2),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
-            ), $locationParams2),
-          )),
-        ),
-      ),
-      'same_primaries_different_location' => array(
-        'same_primaries_different_location' => array(
-          'fix_required_for_reverse' => 1,
-          'comment' => 'core is not identifying this as an address conflict in reverse order'
-          . ' this is not an issue at the moment as it only happens in reverse from the'
-          . 'form merge - where we do not intervene',
-          'merged' => 1,
-          'skipped' => 0,
-          'is_major_gifts' => 1,
-          'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
-              'location_type_id' => 'Home',
-              'is_primary' => 1,
-            ), $locationParams1),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
-              'location_type_id' => 'Mailing',
-              'is_primary' => 1,
-            ), $locationParams1),
-
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
-              'location_type_id' => 'Mailing',
-              'is_primary' => 1,
-            ), $locationParams1),
-          )),
-        ),
-      ),
-      'same_primaries_different_location_reverse' => array(
-        'same_primaries_different_location_reverse' => array(
+            ], $locationParams2),
+          ]),
+        ],
+      ],
+      'same_primaries_different_location' => [
+        'same_primaries_different_location' => [
           'fix_required_for_reverse' => 1,
           'comment' => 'core is not identifying this as an address conflict in reverse order'
             . ' this is not an issue at the moment as it only happens in reverse from the'
@@ -1366,54 +1337,85 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
+              'location_type_id' => 'Home',
+              'is_primary' => 1,
+            ], $locationParams1),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams1),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
-              'location_type_id' => 'Home',
+            ], $locationParams1),
+
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
+              'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams1),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
-              'location_type_id' => 'Home',
-              'is_primary' => 1,
-            ), $locationParams1),
-          )),
-        ),
-      ),
-      'conflicting_home_address_major_gifts' => array(
-        'conflicting_home_address_major_gifts' => array(
+            ], $locationParams1),
+          ]),
+        ],
+      ],
+      'same_primaries_different_location_reverse' => [
+        'same_primaries_different_location_reverse' => [
+          'fix_required_for_reverse' => 1,
+          'comment' => 'core is not identifying this as an address conflict in reverse order'
+            . ' this is not an issue at the moment as it only happens in reverse from the'
+            . 'form merge - where we do not intervene',
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
+              'location_type_id' => 'Mailing',
+              'is_primary' => 1,
+            ], $locationParams1),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams2),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams1),
+          ]),
+        ],
+      ],
+      'conflicting_home_address_major_gifts' => [
+        'conflicting_home_address_major_gifts' => [
+          'merged' => 1,
+          'skipped' => 0,
+          'is_major_gifts' => 1,
+          'entity' => $entity,
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams2),
-          )),
-        ),
-      ),
-      'conflicting_home_address_not_major_gifts' => array(
-        'conflicting_home_address_not_major_gifts' => array(
+            ], $locationParams1),
+          ],
+          'most_recent_donor' => [
+            array_merge([
+              'location_type_id' => 'Home',
+              'is_primary' => 1,
+            ], $locationParams2),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
+              'location_type_id' => 'Home',
+              'is_primary' => 1,
+            ], $locationParams2),
+          ]),
+        ],
+      ],
+      'conflicting_home_address_not_major_gifts' => [
+        'conflicting_home_address_not_major_gifts' => [
           'fix_required_for_reverse' => 1,
           'comment' => 'our code needs an update as both are being kept'
             . ' this is not an issue at the moment as it only happens in reverse from the'
@@ -1422,66 +1424,66 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 0,
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams2),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams2),
-          )),
-        ),
-      ),
-      'conflicting_home_address_one_more_major_gifts' => array(
-        'conflicting_home_address_one_more_major_gifts' => array(
+            ], $locationParams2),
+          ]),
+        ],
+      ],
+      'conflicting_home_address_one_more_major_gifts' => [
+        'conflicting_home_address_one_more_major_gifts' => [
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 1,
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams2),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams3),
-            array_merge(array(
+            ], $locationParams3),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams2),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams3),
-            array_merge(array(
+            ], $locationParams3),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams2),
-          )),
-        ),
-      ),
-      'conflicting_home_address__one_more_not_major_gifts' => array(
-        'conflicting_home_address__one_more_not_major_gifts' => array(
+            ], $locationParams2),
+          ]),
+        ],
+      ],
+      'conflicting_home_address__one_more_not_major_gifts' => [
+        'conflicting_home_address__one_more_not_major_gifts' => [
           'fix_required_for_reverse' => 1,
           'comment' => 'our code needs an update as an extra 1 is being kept'
             . ' this is not an issue at the moment as it only happens in reverse from the'
@@ -1490,40 +1492,40 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 0,
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams2),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams3),
-            array_merge(array(
+            ], $locationParams3),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams2),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams2),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams3),
-            array_merge(array(
+            ], $locationParams3),
+            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
-            ), $locationParams2),
-          )),
-        ),
-      ),
-      'duplicate_home_address_on_one_contact' => array(
-        'duplicate_home_address_on_one_contact' => array(
+            ], $locationParams2),
+          ]),
+        ],
+      ],
+      'duplicate_home_address_on_one_contact' => [
+        'duplicate_home_address_on_one_contact' => [
           'fix_required_for_reverse' => 1,
           'comment' => 'our code needs an update as an extra 1 is being kept'
             . ' this is not an issue at the moment as it only happens in reverse from the'
@@ -1532,32 +1534,32 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 0,
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-          )),
-        ),
-      ),
-      'duplicate_home_address_on_one_contact_second_primary' => array(
-        'duplicate_home_address_on_one_contact_second_primary' => array(
+            ], $locationParams1),
+          ]),
+        ],
+      ],
+      'duplicate_home_address_on_one_contact_second_primary' => [
+        'duplicate_home_address_on_one_contact_second_primary' => [
           'fix_required_for_reverse' => 1,
           'comment' => 'our code needs an update as an extra 1 is being kept'
             . ' this is not an issue at the moment as it only happens in reverse from the'
@@ -1566,32 +1568,32 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           'skipped' => 0,
           'is_major_gifts' => 0,
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
-            ), $locationParams1),
-          )),
-        ),
-      ),
-      'duplicate_mixed_address_on_one_contact' => array(
-        'duplicate_mixed_address_on_one_contact' => array(
+            ], $locationParams1),
+          ]),
+        ],
+      ],
+      'duplicate_mixed_address_on_one_contact' => [
+        'duplicate_mixed_address_on_one_contact' => [
           'merged' => 1,
           'skipped' => 0,
           'comment' => 'We want to be sure we still have a primary. Ideally we would squash
@@ -1599,70 +1601,70 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
           (no high priority improvement)',
           'is_major_gifts' => 0,
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Main',
               'is_primary' => 1,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Main',
               'is_primary' => 1,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-          )),
-        ),
-      ),
-      'duplicate_mixed_address_on_one_contact_second_primary' => array(
-        'duplicate_mixedaddress_on_one_contact_second_primary' => array(
+            ], $locationParams1),
+          ]),
+        ],
+      ],
+      'duplicate_mixed_address_on_one_contact_second_primary' => [
+        'duplicate_mixedaddress_on_one_contact_second_primary' => [
           'comment' => 'check we do not lose the primary. Matching addresses are squashed.',
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 0,
           'entity' => $entity,
-          'earliest_donor' => array(
-            array_merge(array(
+          'earliest_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-          ),
-          'most_recent_donor' => array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'most_recent_donor' => [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Main',
               'is_primary' => 1,
-            ), $locationParams1),
-          ),
-          'expected_hook' => array_merge($additionalExpected, array(
-            array_merge(array(
+            ], $locationParams1),
+          ],
+          'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 0,
-            ), $locationParams1),
-            array_merge(array(
+            ], $locationParams1),
+            array_merge([
               'location_type_id' => 'Main',
               'is_primary' => 1,
-            ), $locationParams1),
-          )),
-        ),
-      ),
-    );
+            ], $locationParams1),
+          ]),
+        ],
+      ],
+    ];
     return $data;
   }
 
@@ -1692,7 +1694,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function contributionCreate($params) {
 
-    $params = array_merge(array(
+    $params = array_merge([
       'receive_date' => date('Ymd'),
       'total_amount' => 100.00,
       'fee_amount' => 5.00,
@@ -1701,7 +1703,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'payment_instrument_id' => 1,
       'non_deductible_amount' => 10.00,
       'contribution_status_id' => 1,
-    ), $params);
+    ], $params);
 
     $result = $this->callAPISuccess('contribution', 'create', $params);
     return $result['id'];
@@ -1715,16 +1717,16 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return int
    */
-  public function breedDuck($extraParams = array()) {
-    $contact = $this->callAPISuccess('Contact', 'create', array_merge(array(
+  public function breedDuck($extraParams = []) {
+    $contact = $this->callAPISuccess('Contact', 'create', array_merge([
       'contact_type' => 'Individual',
       'first_name' => 'Donald',
       'last_name' => 'Duck',
-      'api.email.create' => array(
+      'api.email.create' => [
         'email' => 'the_don@duckland.com',
-        'location_type_id' => 'Work'
-      ),
-    ), $extraParams));
+        'location_type_id' => 'Work',
+      ],
+    ], $extraParams));
     return $contact['id'];
   }
 
@@ -1740,11 +1742,11 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->prepareForBlankAddressTests();
     $this->replicateBlankedAddress();
 
-    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertTrue(empty($address['street_address']));
 
     wmf_civicrm_fix_blanked_address($address['id']);
-    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertEquals('25 Mousey Way', $address['street_address']);
 
     $this->cleanupFromBlankAddressRepairTests();
@@ -1761,19 +1763,21 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testRepairBlankedAddressOnMergeDoubleWhammy() {
     $this->prepareForBlankAddressTests();
     $contact3 = $this->breedDuck(
-      array('api.address.create' => array(
-        'street_address' => '25 Ducky Way',
-        'country_id' => 'US',
-        'contact_id' => $this->contactID,
-        'location_type_id' => 'Main',
-      )));
+      [
+        'api.address.create' => [
+          'street_address' => '25 Ducky Way',
+          'country_id' => 'US',
+          'contact_id' => $this->contactID,
+          'location_type_id' => 'Main',
+        ],
+      ]);
     $this->replicateBlankedAddress();
 
-    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertTrue(empty($address['street_address']));
 
     wmf_civicrm_fix_blanked_address($address['id']);
-    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertEquals('25 Mousey Way', $address['street_address']);
 
     $this->cleanupFromBlankAddressRepairTests();
@@ -1790,17 +1794,17 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testRemoveEternallyBlankMergedAddress() {
     $this->prepareForBlankAddressTests();
 
-    $this->replicateBlankedAddress(array(
+    $this->replicateBlankedAddress([
       'street_address' => NULL,
       'country_id' => NULL,
       'location_type_id' => 'Main',
-    ));
+    ]);
 
-    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertTrue(empty($address['street_address']));
 
     wmf_civicrm_fix_blanked_address($address['id']);
-    $address = $this->callAPISuccess('Address', 'get', array('contact_id' => $this->contactID));
+    $address = $this->callAPISuccess('Address', 'get', ['contact_id' => $this->contactID]);
     $this->assertEquals(0, $address['count']);
 
     $this->cleanupFromBlankAddressRepairTests();
@@ -1818,30 +1822,30 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->prepareForBlankAddressTests();
     $this->createContributions();
 
-    $this->callAPISuccess('Address', 'create', array(
+    $this->callAPISuccess('Address', 'create', [
       'street_address' => '25 Mousey Way',
       'country_id' => 'US',
       'contact_id' => $this->contactID,
       'location_type_id' => 'Main',
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'street_address' => 'something',
       'contact_id' => $this->contactID2,
       'location_type_id' => 'Main',
-    ));
-    $this->callAPISuccess('Address', 'create', array(
+    ]);
+    $this->callAPISuccess('Address', 'create', [
       'street_address' => '',
       'contact_id' => $this->contactID2,
       'location_type_id' => 'Main',
-    ));
-    $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    ]);
+    $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
 
-    $address = $this->callAPISuccess('Address', 'get', array('contact_id' => $this->contactID, 'sequential' => 1));
+    $address = $this->callAPISuccess('Address', 'get', ['contact_id' => $this->contactID, 'sequential' => 1]);
     $this->assertEquals(2, $address['count']);
     $this->assertTrue(empty($address['values'][1]['street_address']));
 
     wmf_civicrm_fix_blanked_address($address['values'][1]['id']);
-    $address = $this->callAPISuccessGetSingle('Address', array('contact_id' => $this->contactID));
+    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertEquals('something', $address['street_address']);
 
     $this->cleanupFromBlankAddressRepairTests();
@@ -1852,20 +1856,20 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @param array $overrides
    */
-  protected function replicateBlankedAddress($overrides = array()) {
+  protected function replicateBlankedAddress($overrides = []) {
     $this->createContributions();
-    $this->callAPISuccess('Address', 'create', array_merge(array(
+    $this->callAPISuccess('Address', 'create', array_merge([
       'street_address' => '25 Mousey Way',
       'country_id' => 'US',
       'contact_id' => $this->contactID,
       'location_type_id' => 'Main',
-    ), $overrides));
-    $this->callAPISuccess('Address', 'create', array(
+    ], $overrides));
+    $this->callAPISuccess('Address', 'create', [
       'street_address' => NULL,
       'contact_id' => $this->contactID2,
       'location_type_id' => 'Main',
-    ));
-    $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
+    ]);
+    $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
   }
 
   /**
@@ -1874,10 +1878,10 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CiviCRM_API3_Exception
    */
   protected function prepareForBlankAddressTests() {
-    civicrm_api3('Setting', 'create', array(
+    civicrm_api3('Setting', 'create', [
       'logging_no_trigger_permission' => 0,
-    ));
-    civicrm_api3('Setting', 'create', array('logging' => 1));
+    ]);
+    civicrm_api3('Setting', 'create', ['logging' => 1]);
 
     CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS blank_addresses');
     require_once __DIR__ . '/../../wmf_civicrm.install';
@@ -1891,24 +1895,24 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   protected function cleanupFromBlankAddressRepairTests() {
     CRM_Core_DAO::executeQuery('DROP TABLE blank_addresses');
 
-    civicrm_api3('Setting', 'create', array(
+    civicrm_api3('Setting', 'create', [
       'logging_no_trigger_permission' => 1,
-    ));
+    ]);
   }
 
   protected function createContributions() {
-    $this->contributionCreate(array(
+    $this->contributionCreate([
       'contact_id' => $this->contactID,
       'receive_date' => '2010-01-01',
       'invoice_id' => 1,
-      'trxn_id' => 1
-    ));
-    $this->contributionCreate(array(
+      'trxn_id' => 1,
+    ]);
+    $this->contributionCreate([
       'contact_id' => $this->contactID2,
       'receive_date' => '2012-01-01',
       'invoice_id' => 2,
-      'trxn_id' => 2
-    ));
+      'trxn_id' => 2,
+    ]);
   }
 
   /**
