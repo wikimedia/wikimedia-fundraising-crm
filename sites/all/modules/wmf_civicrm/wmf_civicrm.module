@@ -2993,22 +2993,6 @@ function _wmf_civicrm_clean_duplicate_location_from_merge_blocks($blocks) {
 }
 
 /**
- * @param $migrationInfo
- * @param $result
- *
- * @return mixed
- */
-function _wmf_civicrm_add_result_fields_to_migration_info($migrationInfo, $result) {
-  $result->fetch();
-  foreach (wmf_get_calculated_field_names() as $field) {
-    if (isset($result->$field)) {
-      $migrationInfo['move_' . wmf_civicrm_get_custom_field_name($field)] = $result->$field;
-    }
-  }
-  return $migrationInfo;
-}
-
-/**
  * Get the field ids of the wmf fields that are determined by calculation.
  *
  * Differences in these fields should not block a merge activity as they
