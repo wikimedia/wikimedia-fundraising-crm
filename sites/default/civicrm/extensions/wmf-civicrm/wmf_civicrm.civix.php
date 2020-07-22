@@ -6,10 +6,10 @@
  * The ExtensionUtil class provides small stubs for accessing resources of this
  * extension.
  */
-class CRM_WmfCivicrm_ExtensionUtil {
+class CRM_Wmf_ExtensionUtil {
   const SHORT_NAME = "wmf_civicrm";
   const LONG_NAME = "wmf-civicrm";
-  const CLASS_PREFIX = "CRM_WmfCivicrm";
+  const CLASS_PREFIX = "CRM_Wmf";
 
   /**
    * Translate a string using the extension's domain.
@@ -77,7 +77,7 @@ class CRM_WmfCivicrm_ExtensionUtil {
 
 }
 
-use CRM_WmfCivicrm_ExtensionUtil as E;
+use CRM_Wmf_ExtensionUtil as E;
 
 /**
  * (Delegated) Implements hook_civicrm_config().
@@ -206,14 +206,14 @@ function _wmf_civicrm_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) 
 }
 
 /**
- * @return CRM_WmfCivicrm_Upgrader
+ * @return CRM_Wmf_Upgrader
  */
 function _wmf_civicrm_civix_upgrader() {
   if (!file_exists(__DIR__ . '/CRM/Wmf/Upgrader.php')) {
     return NULL;
   }
   else {
-    return CRM_WmfCivicrm_Upgrader_Base::instance();
+    return CRM_Wmf_Upgrader_Base::instance();
   }
 }
 

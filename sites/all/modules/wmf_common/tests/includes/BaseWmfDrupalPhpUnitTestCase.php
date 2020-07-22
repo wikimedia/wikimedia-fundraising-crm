@@ -132,42 +132,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     return FALSE;
   }
 
-  /**
-   * Emulate a logged in user since certain functions use that.
-   * value to store a record in the DB (like activity)
-   * CRM-8180
-   *
-   * @return int
-   *   Contact ID of the created user.
-   */
-  public function imitateAdminUser() {
-    $result = $this->callAPISuccess('UFMatch', 'get', array(
-      'uf_id' => 1,
-      'sequential' => 1,
-    ));
-    if (empty($result['id'])) {
-      $contact = $this->callAPISuccess('Contact', 'create', array(
-        'first_name' => 'Super',
-        'last_name' => 'Duper',
-        'contact_type' => 'Individual',
-        'api.UFMatch.create' => array('uf_id' => 1, 'uf_name' => 'Wizard'),
-      ));
-      $contactID = $contact['id'];
-    }
-    else {
-      $contactID = $result['values'][0]['contact_id'];
-    }
-    $session = CRM_Core_Session::singleton();
-    $session->set('userID', $contactID);
-    CRM_Core_Config::singleton()->userPermissionClass = new CRM_Core_Permission_UnitTests();
-    CRM_Core_Config::singleton()->userPermissionClass->permissions = array(
-      'edit all contacts',
-      'Access CiviCRM',
-      'Administer CiviCRM',
-    );
-    return $contactID;
-  }
-
   public function cleanUpContact($contactId) {
     $contributions = $this->callAPISuccess('Contribution', 'get', array(
       'contact_id' => $contactId,

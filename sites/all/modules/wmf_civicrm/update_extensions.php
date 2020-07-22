@@ -58,5 +58,6 @@ function wmf_install_get_installed_extensions() {
     'uk.squiffle.assignee',
     'matching-gifts',
     'civi-data-translate',
+    'wmf-civicrm',
   ];
 }

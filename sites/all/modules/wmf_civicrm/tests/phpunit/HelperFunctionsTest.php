@@ -35,6 +35,8 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that the payment instrument is converted to an id.
    *
    * Use a high number to ensure the default 25 limit does not hurt us.
+   *
+   * @throws \WmfException
    */
     public function testGetCiviID() {
       civicrm_initialize();
@@ -46,6 +48,8 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that the payment instrument is converted to an id.
    *
    * Use a high number to ensure the default 25 limit does not hurt us.
+   *
+   * @throws \WmfException
    */
   public function testGetInvalidCiviID() {
     civicrm_initialize();

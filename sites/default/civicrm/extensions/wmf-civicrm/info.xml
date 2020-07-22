@@ -24,10 +24,10 @@
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
   </classloader>
+  <requires>
+    <ext>deduper</ext>
+  </requires>
   <civix>
     <namespace>CRM/Wmf</namespace>
   </civix>
-  <classloader>
-    <psr4 prefix="Civi\Wmf\" path="src"/>
-  </classloader>
 </extension>

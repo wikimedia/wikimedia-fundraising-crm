@@ -1,11 +1,29 @@
 <?php
 
+namespace Civi;
+
+use Civi\Api4\Contact;
+use Civi\Test\HeadlessInterface;
+use Civi\Test\HookInterface;
+use Civi\Test\TransactionalInterface;
+
 /**
- * @group Pipeline
- * @group WmfCivicrm
- * @group Merge
+ * FIXME - Add test description.
+ *
+ * Tips:
+ *  - With HookInterface, you may implement CiviCRM hooks directly in the test class.
+ *    Simply create corresponding functions (e.g. "hook_civicrm_post(...)" or similar).
+ *  - With TransactionalInterface, any data changes made by setUp() or test****() functions will
+ *    rollback automatically -- as long as you don't manipulate schema or truncate tables.
+ *    If this test needs to manipulate schema or truncate tables, then either:
+ *       a. Do all that using setupHeadless() and Civi\Test.
+ *       b. Disable TransactionalInterface, and handle all setup/teardown yourself.
+ *
+ * @group headless
  */
-class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
+class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+
+  use \Civi\Test\Api3TestTrait;
 
   /**
    * Id of the contact created in the setup function.
@@ -22,13 +40,37 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   protected $contactID2;
 
   /**
+   * Logged in admin user id.
+   *
+   * @var int
+   */
+  protected $adminUserID;
+
+  /**
+   * @var int
+   */
+  protected $intitalContactCount;
+
+  /**
+   * @return \Civi\Test\CiviEnvBuilder
+   * @throws \CRM_Extension_Exception_ParseException
+   */
+  public function setUpHeadless() {
+    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
+    // See: https://docs.civicrm.org/dev/en/latest/testing/phpunit/#civitest
+    return \Civi\Test::headless()
+      ->installMe(__DIR__)
+      ->apply();
+  }
+
+  /**
    * @throws \Exception
    */
   public function setUp() {
     parent::setUp();
     civicrm_initialize();
-    $this->imitateAdminUser();
-    $this->doDuckHunt();
+    $this->intitalContactCount = $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']);
+    $this->adminUserID = $this->imitateAdminUser();
     // Run through the merge first to make sure there aren't pre-existing contacts in the DB
     // that will ruin the tests.
     $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
@@ -47,9 +89,13 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'contact_id' => ['IN' => [$this->contactID, $this->contactID2]],
       'api.Contribution.delete' => 1,
     ]);
+    \CRM_Core_Session::singleton()->set('userID', NULL);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID, 'skip_undelete' => TRUE]);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID2, 'skip_undelete' => TRUE]);
+    $this->callAPISuccess('Contact', 'delete', ['id' => $this->adminUserID, 'skip_undelete' => TRUE]);
+    $this->doDuckHunt();
     parent::tearDown();
+    $this->assertEquals($this->intitalContactCount, $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']));
   }
 
   /**
@@ -62,6 +108,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @dataProvider isReverse
    * @throws \CRM_Core_Exception
+   * @throws \API_Exception
    */
   public function testMergeHook($isReverse) {
     $this->giveADuckADonation($isReverse);
@@ -69,35 +116,36 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'id' => $isReverse ? $this->contactID2 : $this->contactID,
       'sequential' => 1,
       'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total'), wmf_civicrm_get_custom_field_name('do_not_solicit')],
-    ]);
-    $this->assertEquals(10, $contact['values'][0][wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
+    ])['values'][0];
+    $this->assertEquals(10, $contact[wmf_civicrm_get_custom_field_name('lifetime_usd_total')],
+      'logging is ' . \Civi::settings()->get('logging')
+    );
     $result = $this->callAPISuccess('Job', 'process_batch_merge', [
       'criteria' => ['contact' => ['id' => ['IN' => [$this->contactID, $this->contactID2]]]],
     ]);
     $this->assertCount(1, $result['values']['merged']);
-    $this->assertCustomFieldValues($this->contactID, [
-      'lifetime_usd_total' => 24,
-      'do_not_solicit' => 1,
-      'last_donation_amount' => 20,
-      'last_donation_currency' => 'NZD',
-      'last_donation_usd' => 9,
-      'last_donation_date' => '2016-04-04',
-      'first_donation_usd' => 5,
-      'first_donation_date' => '2013-01-04 00:00:00',
-      'date_of_largest_donation' => '2014-08-04 00:00:00',
-      'number_donations' => 3,
-      'total_2011' => 0,
-      'total_2012' => 0,
-      'total_2013' => 5,
-      'total_2014' => 10,
-      'total_2015' => 0,
-      'total_2016' => 9,
-      'total_2016_2017' => 0,
-      'total_2015_2016' => 9,
-      'total_2014_2015' => 10,
-      'total_2013_2014' => 0,
-      'total_2012_2013' => 5,
-
+    $this->assertContactValues($this->contactID, [
+      'wmf_donor.lifetime_usd_total' => 24,
+      'Communication.do_not_solicit' => 1,
+      'wmf_donor.last_donation_amount' => 20,
+      'wmf_donor.last_donation_currency' => 'NZD',
+      'wmf_donor.last_donation_usd' => 9,
+      'wmf_donor.last_donation_date' => '2016-04-04 00:00:00',
+      'wmf_donor.first_donation_usd' => 5,
+      'wmf_donor.first_donation_date' => '2013-01-04 00:00:00',
+      'wmf_donor.date_of_largest_donation' => '2014-08-04 00:00:00',
+      'wmf_donor.number_donations' => 3,
+      'wmf_donor.total_2011' => 0,
+      'wmf_donor.total_2012' => 0,
+      'wmf_donor.total_2013' => 5,
+      'wmf_donor.total_2014' => 10,
+      'wmf_donor.total_2015' => 0,
+      'wmf_donor.total_2016' => 9,
+      'wmf_donor.total_2016_2017' => 0,
+      'wmf_donor.total_2015_2016' => 9,
+      'wmf_donor.total_2014_2015' => 10,
+      'wmf_donor.total_2013_2014' => 0,
+      'wmf_donor.total_2012_2013' => 5,
     ]);
 
     // Now lets check the one to be deleted has a do_not_solicit = 0.
@@ -192,31 +240,31 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'criteria' => ['contact' => ['id' => ['IN' => [$this->contactID, $this->contactID2]]]],
     ]);
     $this->assertCount(1, $result['values']['merged']);
-    $this->assertCustomFieldValues($this->contactID, [
-      'lifetime_usd_total' => 5,
-      'last_donation_amount' => 5,
-      'last_donation_currency' => 'USD',
-      'last_donation_usd' => 5,
-      'last_donation_date' => '2013-01-04',
-      'total_2016_2017' => 0,
-      'total_2015_2016' => 0,
-      'total_2014_2015' => 0,
-      'total_2013_2014' => 0,
-      'total_2012_2013' => 5,
+    $this->assertContactValues($this->contactID, [
+      'wmf_donor.lifetime_usd_total' => 5,
+      'wmf_donor.last_donation_amount' => 5,
+      'wmf_donor.last_donation_currency' => 'USD',
+      'wmf_donor.last_donation_usd' => 5,
+      'wmf_donor.last_donation_date' => '2013-01-04 00:00:00',
+      'wmf_donor.total_2016_2017' => 0,
+      'wmf_donor.total_2015_2016' => 0,
+      'wmf_donor.total_2014_2015' => 0,
+      'wmf_donor.total_2013_2014' => 0,
+      'wmf_donor.total_2012_2013' => 5,
     ]);
 
     $this->callAPISuccess('Contribution', 'delete', ['id' => $cashJob['id']]);
-    $this->assertCustomFieldValues($this->contactID, [
-      'lifetime_usd_total' => 0,
-      'last_donation_amount' => 0,
-      'last_donation_currency' => '',
-      'last_donation_usd' => 0,
-      'last_donation_date' => '',
-      'total_2016_2017' => 0,
-      'total_2015_2016' => 0,
-      'total_2014_2015' => 0,
-      'total_2013_2014' => 0,
-      'total_2012_2013' => 0,
+    $this->assertContactValues($this->contactID, [
+      'wmf_donor.lifetime_usd_total' => 0,
+      'wmf_donor.last_donation_amount' => 0,
+      'wmf_donor.last_donation_currency' => '',
+      'wmf_donor.last_donation_usd' => 0,
+      'wmf_donor.last_donation_date' => '',
+      'wmf_donor.total_2016_2017' => 0,
+      'wmf_donor.total_2015_2016' => 0,
+      'wmf_donor.total_2014_2015' => 0,
+      'wmf_donor.total_2013_2014' => 0,
+      'wmf_donor.total_2012_2013' => 0,
     ]);
   }
 
@@ -387,7 +435,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
         // so, first find the matching address and then check it fully matches.
         // by unsetting afterwards we should find them all gone by the end.
         if (
-        (!empty($address['street_address']) && $address['street_address'] === $expectedAddress['street_address'])
+          (!empty($address['street_address']) && $address['street_address'] === $expectedAddress['street_address'])
           || (!empty($address['phone']) && $address['phone'] === $expectedAddress['phone'])
           || (!empty($address['email']) && $address['email'] === $expectedAddress['email'])
         ) {
@@ -471,8 +519,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     // Can't use api if we are trying to use invalid data.
     wmf_civicrm_ensure_language_exists('en');
     wmf_civicrm_ensure_language_exists('en_NZ');
-    CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '{$dataSet['languages'][0]}' WHERE id = $this->contactID");
-    CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '{$dataSet['languages'][1]}' WHERE id = $this->contactID2");
+    \CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '{$dataSet['languages'][0]}' WHERE id = $this->contactID");
+    \CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '{$dataSet['languages'][1]}' WHERE id = $this->contactID2");
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     if ($dataSet['is_conflict']) {
@@ -506,8 +554,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
 
     wmf_civicrm_ensure_language_exists('en_US');
     wmf_civicrm_ensure_language_exists('fr_FR');
-    CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language1' WHERE id = $this->contactID");
-    CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language2' WHERE id = $this->contactID2");
+    \CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language1' WHERE id = $this->contactID");
+    \CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language2' WHERE id = $this->contactID2");
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertCount(1, $result['values']['merged']);
@@ -539,8 +587,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
 
     wmf_civicrm_ensure_language_exists('en_US');
     wmf_civicrm_ensure_language_exists('fr_FR');
-    CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language1' WHERE id = $this->contactID");
-    CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language2' WHERE id = $this->contactID2");
+    \CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language1' WHERE id = $this->contactID");
+    \CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language2' WHERE id = $this->contactID2");
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertCount(1, $result['values']['merged']);
@@ -623,8 +671,8 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->breedGenerousDuck($this->contactID, [wmf_civicrm_get_custom_field_name('opt_in') => 1], !$isReverse);
     $this->breedGenerousDuck($this->contactID2, [wmf_civicrm_get_custom_field_name('opt_in') => 0], $isReverse);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertCount(0, $result['values']['skipped']);
-    $this->assertCount(1, $result['values']['merged']);
+    $this->assertCount(0, $result['values']['skipped'], 'skipped count is wrong');
+    $this->assertCount(1, $result['values']['merged'], 'merged count is wrong');
     $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->contactID, 'return' => wmf_civicrm_get_custom_field_name('opt_in')]);
     $this->assertEquals($isReverse ? 0 : 1, $contact[wmf_civicrm_get_custom_field_name('opt_in')]);
   }
@@ -880,7 +928,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertEquals('First on the left after you cross the border', $address['street_address']);
-    $this->assertEquals('MX', CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
+    $this->assertEquals('MX', \CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
     $this->assertNotTrue(isset($address['city']));
 
   }
@@ -916,7 +964,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
     $this->assertEquals('First on the left after you cross the border', $address['street_address']);
-    $this->assertEquals('MX', CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
+    $this->assertEquals('MX', \CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
     $this->assertNotTrue(isset($address['city']));
   }
 
@@ -976,7 +1024,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertCount(1, $result['values']['merged']);
 
     $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
-    $this->assertEquals('PL', CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
+    $this->assertEquals('PL', \CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
     $this->assertNotTrue(isset($address['city']));
   }
 
@@ -1729,12 +1777,12 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
    * Also get rid of the nest.
    */
   protected function doDuckHunt() {
-    CRM_Core_DAO::executeQuery("
+    \CRM_Core_DAO::executeQuery("
       DELETE c, e
       FROM civicrm_contact c
       LEFT JOIN civicrm_email e ON e.contact_id = c.id
       WHERE display_name = 'Donald Duck' OR email = 'the_don@duckland.com'");
-    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_prevnext_cache');
+    \CRM_Core_DAO::executeQuery('DELETE FROM civicrm_prevnext_cache');
   }
 
   /**
@@ -1752,7 +1800,7 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'receive_date' => date('Ymd'),
       'total_amount' => 100.00,
       'fee_amount' => 5.00,
-      'net_ammount' => 95.00,
+      'net_amount' => 95.00,
       'financial_type_id' => 1,
       'payment_instrument_id' => 1,
       'non_deductible_amount' => 10.00,
@@ -1782,205 +1830,6 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       ],
     ], $extraParams));
     return (int) $contact['id'];
-  }
-
-  /**
-   * Test recovery where a blank email has overwritten a non-blank email on merge.
-   *
-   * In this case an email existed during merge that held no data. It was used
-   * on the merge, but now we want the lost data.
-   *
-   * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
-   */
-  public function testRepairBlankedAddressOnMerge() {
-    $this->prepareForBlankAddressTests();
-    $this->replicateBlankedAddress();
-
-    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
-    $this->assertTrue(empty($address['street_address']));
-
-    wmf_civicrm_fix_blanked_address($address['id']);
-    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
-    $this->assertEquals('25 Mousey Way', $address['street_address']);
-
-    $this->cleanupFromBlankAddressRepairTests();
-  }
-
-  /**
-   * Test recovery where a blank email has overwritten a non-blank email on merge.
-   *
-   * In this case an email existed during merge that held no data. It was used
-   * on the merge, but now we want the lost data. It underwent 2 merges.
-   *
-   * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
-   */
-  public function testRepairBlankedAddressOnMergeDoubleWhammy() {
-    $this->prepareForBlankAddressTests();
-    $this->breedDuck(
-      [
-        'api.address.create' => [
-          'street_address' => '25 Ducky Way',
-          'country_id' => 'US',
-          'contact_id' => $this->contactID,
-          'location_type_id' => 'Main',
-        ],
-      ]);
-    $this->replicateBlankedAddress();
-
-    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
-    $this->assertTrue(empty($address['street_address']));
-
-    wmf_civicrm_fix_blanked_address($address['id']);
-    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
-    $this->assertEquals('25 Mousey Way', $address['street_address']);
-
-    $this->cleanupFromBlankAddressRepairTests();
-  }
-
-  /**
-   * Test recovery where an always-blank email has been transferred to another contact on merge.
-   *
-   * We have established the address was always blank and still exists. Lets
-   * anihilate it.
-   *
-   * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
-   */
-  public function testRemoveEternallyBlankMergedAddress() {
-    $this->prepareForBlankAddressTests();
-
-    $this->replicateBlankedAddress([
-      'street_address' => NULL,
-      'country_id' => NULL,
-      'location_type_id' => 'Main',
-    ]);
-
-    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
-    $this->assertTrue(empty($address['street_address']));
-
-    wmf_civicrm_fix_blanked_address($address['id']);
-    $address = $this->callAPISuccess('Address', 'get', ['contact_id' => $this->contactID]);
-    $this->assertEquals(0, $address['count']);
-
-    $this->cleanupFromBlankAddressRepairTests();
-  }
-
-  /**
-   * Test recovery where a secondary always-blank email has been transferred to another contact on merge.
-   *
-   * We have established the address was always blank and still exists, and there is
-   * a valid other address. Lets annihilate it.
-   *
-   * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
-   */
-  public function testRemoveEternallyBlankNonPrimaryMergedAddress() {
-    $this->prepareForBlankAddressTests();
-    $this->createContributions();
-
-    $this->callAPISuccess('Address', 'create', [
-      'street_address' => '25 Mousey Way',
-      'country_id' => 'US',
-      'contact_id' => $this->contactID,
-      'location_type_id' => 'Main',
-    ]);
-    $this->callAPISuccess('Address', 'create', [
-      'street_address' => 'something',
-      'contact_id' => $this->contactID2,
-      'location_type_id' => 'Main',
-    ]);
-    $this->callAPISuccess('Address', 'create', [
-      'street_address' => '',
-      'contact_id' => $this->contactID2,
-      'location_type_id' => 'Main',
-    ]);
-    $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-
-    $address = $this->callAPISuccess('Address', 'get', ['contact_id' => $this->contactID, 'sequential' => 1]);
-    $this->assertEquals(2, $address['count']);
-    $this->assertTrue(empty($address['values'][1]['street_address']));
-
-    wmf_civicrm_fix_blanked_address($address['values'][1]['id']);
-    $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $this->contactID]);
-    $this->assertEquals('something', $address['street_address']);
-
-    $this->cleanupFromBlankAddressRepairTests();
-  }
-
-  /**
-   * Replicate the merge that would result in a blanked address.
-   *
-   * @param array $overrides
-   *
-   * @throws \CRM_Core_Exception
-   */
-  protected function replicateBlankedAddress($overrides = []) {
-    $this->createContributions();
-    $this->callAPISuccess('Address', 'create', array_merge([
-      'street_address' => '25 Mousey Way',
-      'country_id' => 'US',
-      'contact_id' => $this->contactID,
-      'location_type_id' => 'Main',
-    ], $overrides));
-    $this->callAPISuccess('Address', 'create', [
-      'street_address' => NULL,
-      'contact_id' => $this->contactID2,
-      'location_type_id' => 'Main',
-    ]);
-    $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-  }
-
-  /**
-   * Common code for testing blank address repairs.
-   *
-   * @throws \CiviCRM_API3_Exception
-   */
-  protected function prepareForBlankAddressTests() {
-    civicrm_api3('Setting', 'create', [
-      'logging_no_trigger_permission' => 0,
-    ]);
-    civicrm_api3('Setting', 'create', ['logging' => 1]);
-
-    CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS blank_addresses');
-    require_once __DIR__ . '/../../wmf_civicrm.install';
-    require_once __DIR__ . '/../../update_restore_addresses.php';
-    wmf_civicrm_update_7475();
-  }
-
-  /**
-   * @throws \CiviCRM_API3_Exception
-   */
-  protected function cleanupFromBlankAddressRepairTests() {
-    CRM_Core_DAO::executeQuery('DROP TABLE blank_addresses');
-
-    civicrm_api3('Setting', 'create', [
-      'logging_no_trigger_permission' => 1,
-    ]);
-  }
-
-
-  /**
-   * Create a contribution against contact 1 & 2.
-   *
-   * Contact 2 gets the later receive date.
-   *
-   * @throws \CRM_Core_Exception
-   */
-  protected function createContributions() {
-    $this->contributionCreate([
-      'contact_id' => $this->contactID,
-      'receive_date' => '2010-01-01',
-      'invoice_id' => 1,
-      'trxn_id' => 1,
-    ]);
-    $this->contributionCreate([
-      'contact_id' => $this->contactID2,
-      'receive_date' => '2012-01-01',
-      'invoice_id' => 2,
-      'trxn_id' => 2,
-    ]);
   }
 
   /**
@@ -2040,6 +1889,60 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
       'receive_date' => $isLatestDonor ? '2018-09-08' : '2015-12-20',
       'contribution_status_id' => 'Completed',
     ]);
+  }
+
+  /**
+   * Emulate a logged in user since certain functions use that.
+   * value to store a record in the DB (like activity)
+   * CRM-8180
+   *
+   * @return int
+   *   Contact ID of the created user.
+   * @throws \CRM_Core_Exception
+   */
+  public function imitateAdminUser(): int {
+    $result = $this->callAPISuccess('UFMatch', 'get', array(
+      'uf_id' => 1,
+      'sequential' => 1,
+    ));
+    if (empty($result['id'])) {
+      $contact = $this->callAPISuccess('Contact', 'create', array(
+        'first_name' => 'Super',
+        'last_name' => 'Duper',
+        'contact_type' => 'Individual',
+        'api.UFMatch.create' => array('uf_id' => 1, 'uf_name' => 'Wizard'),
+      ));
+      $contactID = $contact['id'];
+    }
+    else {
+      $contactID = $result['values'][0]['contact_id'];
+    }
+    \CRM_Core_Session::singleton()->set('userID', $contactID);
+    \CRM_Core_Config::singleton()->userPermissionClass = new \CRM_Core_Permission_UnitTests();
+    \CRM_Core_Config::singleton()->userPermissionClass->permissions = array(
+      'edit all contacts',
+      'Access CiviCRM',
+      'Administer CiviCRM',
+    );
+    return $contactID;
+  }
+
+  /**
+   * Asset the specified fields match those on the given contact.
+   *
+   * @param int $contactID
+   * @param array $expected
+   *
+   * @throws \API_Exception
+   */
+  protected function assertContactValues($contactID, $expected) {
+    $contact = Contact::get()->setSelect(
+      array_keys($expected)
+    )->addWhere('id', '=', $contactID)->execute()->first();
+
+    foreach ($expected as $key => $value) {
+      $this->assertEquals($value, $contact[$key], "wrong value for $key");
+    }
   }
 
 }

@@ -5,6 +5,9 @@
   backupGlobals="false">
 
   <testsuites>
+    <testsuite name="wmf-civicrm">
+      <directory>sites/default/civicrm/extensions/wmf-civicrm/tests/phpunit</directory>
+    </testsuite>
     <testsuite name="large_donation tests">
       <directory>sites/all/modules/large_donation/tests</directory>
     </testsuite>
