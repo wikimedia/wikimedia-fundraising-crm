@@ -3009,10 +3009,12 @@ function wmf_get_calculated_field_names() {
 /**
  * Implementation of hook_civicrm_pre
  *
- * @param $op
- * @param $type
- * @param $id
+ * @param string $op
+ * @param string $type
+ * @param int $id
  * @param array $entity
+ *
+ * @throws \WmfException
  */
 function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
   switch ($type) {
@@ -3023,8 +3025,8 @@ function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
 }
 
 /**
- * @param $op
- * @param $id
+ * @param string $op
+ * @param int $id
  * @param array $contribution
  *
  * @throws \WmfException
@@ -3072,6 +3074,14 @@ function wmf_civicrm_civicrm_pre_Contribution($op, $id, &$contribution) {
 /**
  * Implementation of hook_civicrm_post, used to update contribution_extra fields
  * and wmf_donor rollup fields.
+ *
+ * @param string $op
+ * @param string $type
+ * @param int $id
+ * @param \CRM_Contribute_BAO_Contribution $entity
+ *
+ * @throws \WmfException
+ * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
   switch ($type) {
@@ -3081,6 +3091,14 @@ function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
   }
 }
 
+/**
+ * @param string $op
+ * @param int $id
+ * @param \CRM_Contribute_BAO_Contribution $contribution
+ *
+ * @throws \CiviCRM_API3_Exception
+ * @throws \WmfException
+ */
 function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
   switch ($op) {
     case 'create':
@@ -3101,6 +3119,11 @@ function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
   }
 }
 
+/**
+ * @param array $contribution
+ *
+ * @return array
+ */
 function wmf_civicrm_get_wmf_contribution_extra($contribution) {
   $extra = [];
 
@@ -3159,6 +3182,7 @@ function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_
  * @param \CRM_Contribute_BAO_Contribution $contribution
  *
  * @return mixed
+ * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_getLastDonationParams(&$contribution) {
   $contributionStatus = CRM_Core_PseudoConstant::getLabel('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $contribution->contribution_status_id);
@@ -3238,6 +3262,7 @@ function wmf_civicrm_getLastDonationParams(&$contribution) {
  * @param $contribution
  *
  * @return array
+ * @throws \CiviCRM_API3_Exception
  */
 function _wmf_civicrm_get_contact_last_donation_data(&$contribution) {
   $contactExistingCustomData = civicrm_api3('Contact', 'getsingle', [
@@ -3332,6 +3357,7 @@ function wmf_civicrm_most_recent_completed_contribution_date($contact_id) {
  * @param string $contribution_date
  *
  * @return string $contribution_date
+ * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_get_single_contribution_for_contact_by_date($contact_id, $contribution_date) {
   return civicrm_api3('Contribution', 'getsingle', [
@@ -3358,6 +3384,7 @@ function wmf_civicrm_get_dbs() {
  * @param $dao CRM_Core_DAO
  *
  * @return array
+ * @throws \Exception
  */
 function wmf_civicrm_dao_to_list($dao) {
   if (PEAR::isError($dao)) {
@@ -3618,6 +3645,8 @@ function wmf_civicrm_janky_split_name($full_name) {
  * @param DateTime $start the date from which to start recalculation
  * @param DateTime $end the cutoff date
  * @param int $batch_size number of contributions to recalculate at once
+ *
+ * @throws \WmfException
  */
 function wmf_civicrm_recalculate_contributions($start, $end, $batch_size = 1000) {
   $api = civicrm_api_classapi();
