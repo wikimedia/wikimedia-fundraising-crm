@@ -997,32 +997,6 @@ class MergeTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Test that a conflict on casing in first names is handled.
-   *
-   * We do a best effort on this to get the more correct on assuming that 1 capital letter in a
-   * name is most likely to be deliberate. We prioritise less capital letters over more, except that
-   * all lower case is at the end of the queue.
-   *
-   * This won't necessarily give us the best results for 'La Plante' vs 'la Plante' but we should bear in mind
-   * - both variants have been entered by the user at some point so they have not 'chosen' one.
-   * - having 2 variants of the spelling of a name with more than one upper case letter in our
-   * db is an edge case.
-   */
-  public function testBatchMergeConflictNameCasing() {
-    $this->callAPISuccess('Contact', 'create', array('id' => $this->contactID, 'first_name' => 'donald', 'last_name' => 'Duck'));
-    $this->callAPISuccess('Contact', 'create', array('id' => $this->contactID2, 'first_name' => 'Donald', 'last_name' => 'duck'));
-    $this->breedDuck(array('first_name' => 'DONALD', 'last_name' => 'DUCK'));
-    $this->breedDuck(array('first_name' => 'DonalD', 'last_name' => 'DUck'));
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', array('mode' => 'safe'));
-    $this->assertEquals(0, count($result['values']['skipped']));
-    $this->assertEquals(3, count($result['values']['merged']));
-
-    $contact = $this->callAPISuccess('Contact', 'get', array('id' => $this->contactID, 'sequential' => 1));
-    $this->assertEquals('Donald', $contact['values'][0]['first_name']);
-    $this->assertEquals('Duck', $contact['values'][0]['last_name']);
-  }
-
-  /**
    * Test that a conflict on casing in first names is handled for organization_name.
    */
   public function testBatchMergeConflictNameCasingOrgs() {

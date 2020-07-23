@@ -393,6 +393,9 @@ class CRM_Deduper_BAO_MergeHandler {
     $resolver = new CRM_Deduper_BAO_Resolver_UninformativeCharactersResolver($this);
     $resolver->resolveConflicts();
 
+    $resolver = new CRM_Deduper_BAO_Resolver_CasingResolver($this);
+    $resolver->resolveConflicts();
+
     $resolver = new CRM_Deduper_BAO_Resolver_DiacriticResolver($this);
     $resolver->resolveConflicts();
 
