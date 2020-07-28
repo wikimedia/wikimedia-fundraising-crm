@@ -5,6 +5,7 @@ use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
 use Civi\Test\Api3TestTrait;
+use Civi\Api4\Email;
 
 require_once __DIR__ . '/../DedupeBaseTestClass.php';
 
@@ -584,6 +585,45 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $this->callAPISuccess('Contribution', 'create', ['financial_type_id' => 'Donation', 'total_amount' => 5, 'contact_id' => $this->ids['contact'][0], 'receive_date' => '2019-08-08']);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('keep me', $this->callAPISuccessGetValue('Contact', ['return' => 'contact_source', 'id' => $mergedContact['id']]));
+  }
+
+  /**
+   * Test that we don't treat the addition of a postal suffix only as a conflict.
+   *
+   * Bug T177807
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testBatchMergeResolvableConflictPostalSuffixExists($isReverse) {
+    $this->createDuplicateDonors();
+    $contactIDWithPostalSuffix = ($isReverse ? $this->ids['contact'][1] : $this->ids['contact'][0]);
+    $contactIDWithOutPostalSuffix = ($isReverse ? $this->ids['contact'][0] : $this->ids['contact'][1]);
+    $this->callAPISuccess('Address', 'create', [
+      'country_id' => 'MX',
+      'contact_id' => $contactIDWithPostalSuffix,
+      'location_type_id' => 1,
+      'street_address' => 'First on the left after you cross the border',
+      'postal_code' => 90210,
+      'postal_code_suffix' => 6666,
+    ]);
+    $this->callAPISuccess('Address', 'create', [
+      'country_id' => 'MX',
+      'contact_id' => $contactIDWithOutPostalSuffix,
+      'street_address' => 'First on the left after you cross the border',
+      'postal_code' => 90210,
+      'location_type_id' => 1,
+    ]);
+
+    $contact = $this->doMerge($isReverse);
+    $this->assertEquals('Mexico', $contact['country']);
+    $this->assertEquals('6666', $contact['postal_code_suffix']);
+    $this->assertEquals('90210', $contact['postal_code']);
+    $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
   }
 
   /**
