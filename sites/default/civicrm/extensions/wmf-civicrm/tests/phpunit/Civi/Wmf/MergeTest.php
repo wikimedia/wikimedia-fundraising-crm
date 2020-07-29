@@ -728,47 +728,6 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
   /**
    * Test that we don't see country only as conflicting with country plus.
    *
-   * Bug T176699
-   *
-   * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
-   */
-  public function testBatchMergeResolvableConflictCountryVsFullAddress() {
-    $this->callAPISuccess('Address', 'create', [
-      'country_id' => 'MX',
-      'contact_id' => $this->contactID,
-      'location_type_id' => 1,
-      'is_primary' => 1,
-    ]);
-    $this->callAPISuccess('Address', 'create', [
-      'country_id' => 'MX',
-      'contact_id' => $this->contactID2,
-      'street_address' => 'First on the left after you cross the border',
-      'location_type_id' => 1,
-      'is_primary' => 1,
-    ]);
-    $this->callAPISuccess('Address', 'create', [
-      'country_id' => 'MX',
-      'contact_id' => $this->contactID2,
-      'street_address' => 'A different address',
-      'location_type_id' => 2,
-    ]);
-    $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
-
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertCount(1, $result['values']['merged']);
-    $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
-    $this->assertEquals('Mexico', $contact['country']);
-    $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
-    $address = $this->callAPISuccessGetSingle('Address', ['street_address' => 'A different address']);
-    $this->assertEquals($contact['id'], $address['contact_id']);
-    $numPrimaries = civicrm_api3('Address', 'getcount', ['contact_id' => $contact['id'], 'is_primary' => 1]);
-    $this->assertEquals(1, $numPrimaries);
-  }
-
-  /**
-   * Test that we don't see country only as conflicting with country plus.
-   *
    * In this variant the most recent donor is the one with the lower contact
    * ID (the one we are going to keep). Real world this is pretty rare but
    * perhaps after some merging in strange orders it could happen.
@@ -800,49 +759,6 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
     ]);
     // this is the change.
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
-
-    $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    $this->assertCount(1, $result['values']['merged']);
-    $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
-    $this->assertEquals('Mexico', $contact['country']);
-    $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
-    $address = $this->callAPISuccessGetSingle('Address', ['street_address' => 'A different address']);
-    $this->assertEquals($contact['id'], $address['contact_id']);
-    $numPrimaries = civicrm_api3('Address', 'getcount', ['contact_id' => $contact['id'], 'is_primary' => 1]);
-    $this->assertEquals(1, $numPrimaries);
-  }
-
-  /**
-   * Test that we don't see country only as conflicting with country plus.
-   *
-   * In this case the 'keeper' is against the second contact.
-   *
-   * Bug T176699
-   *
-   * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
-   */
-  public function testBatchMergeResolvableConflictCountryVsFullAddressReverse() {
-    $this->callAPISuccess('Address', 'create', [
-      'country_id' => 'MX',
-      'contact_id' => $this->contactID2,
-      'location_type_id' => 1,
-      'is_primary' => 1,
-    ]);
-    $this->callAPISuccess('Address', 'create', [
-      'country_id' => 'MX',
-      'contact_id' => $this->contactID,
-      'street_address' => 'First on the left after you cross the border',
-      'location_type_id' => 1,
-      'is_primary' => 1,
-    ]);
-    $this->callAPISuccess('Address', 'create', [
-      'country_id' => 'MX',
-      'contact_id' => $this->contactID,
-      'street_address' => 'A different address',
-      'location_type_id' => 2,
-    ]);
-    $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'total_amount' => 500]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertCount(1, $result['values']['merged']);
