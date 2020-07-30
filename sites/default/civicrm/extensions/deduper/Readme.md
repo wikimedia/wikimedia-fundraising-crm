@@ -28,6 +28,7 @@ These fields can't be used on large databases for a group dedupe for performance
  list of characters that it will strip only if that resolves the conflict. For example a '.' is stripped in the
  uninformative characters resolver as that will mean later the initial resolver has a better chance of working.
  By contract the "'" preferred in.
+ - The diacritics resolver - chooses José over Jose
  - The Misplaced Name resolver. This addresses the situation where it can determine the full name is in the first
  or last name field.
  - The Initials resolver. This addresses the situation where it can determine the Initial is in the first or

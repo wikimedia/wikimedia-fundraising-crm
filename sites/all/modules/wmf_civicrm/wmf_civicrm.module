@@ -2568,35 +2568,29 @@ function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, 
     return;
   }
 
-  if (_wmf_civicrm_merge_resolve_casing_conflict(
-    $dbFieldName,
-    $refs['migration_info'][$moveField],
-    $refs['migration_info']['rows'][$moveField]['other'],
-    $refs['migration_info']['rows'][$moveField]['main'])) {
-    unset($refs['fields_in_conflict'][$moveField]);
-    return;
-  }
-
-  if (_wmf_civicrm_merge_resolve_diacritic_conflict(
-    $dbFieldName,
-    $refs['migration_info'][$moveField],
-    $refs['migration_info']['rows'][$moveField]['other'],
-    $refs['migration_info']['rows'][$moveField]['main'])) {
-    unset($refs['fields_in_conflict'][$moveField]);
-    return;
-  }
-
   if (substr($moveField, 0, 13) === 'move_location') {
     $fieldParts = explode('_', $moveField);
+    $mainContactBlocks = $refs['migration_info']['main_details']['location_blocks'];
+    $otherContactBlocks = $refs['migration_info']['other_details']['location_blocks'];
 
-    if ($fieldParts[2] == 'email') {
-      $mainIsOnHold = $refs['migration_info']['main_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
-      $otherIsOnHold = $refs['migration_info']['other_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+    if ($fieldParts[2] === 'email') {
+      $mainIsOnHold = $mainContactBlocks['email'][$fieldParts[3]]['on_hold'];
+      $otherIsOnHold = $otherContactBlocks['email'][$fieldParts[3]]['on_hold'];
       if ($mainIsOnHold + $otherIsOnHold === 1) {
         // One is one hold & the other isn't - conflict.
         return;
       }
     }
+    if ($fieldParts[2] === 'address') {
+      // See if this has been handed off to deduper yet - if so don't handle here
+      // We are working to move everything to the deduper but it's taking some unravelling.
+      $mainAddress = $mainContactBlocks['address'][$fieldParts[3]] ?? NULL;
+      $otherAddress = $otherContactBlocks['address'][$fieldParts[3]] ?? NULL;
+      if ($mainAddress && $otherAddress && _wmf_civicrm_merge_is_only_extra_postal_code_suffix($mainAddress['display'], $otherAddress['display'], $mainAddress, $otherAddress)) {
+        return;
+      }
+    }
+
     unset($refs['fields_in_conflict'][$moveField]);
   }
 }
@@ -2650,51 +2644,6 @@ function _wmf_civicrm_merge_resolve_casing_conflict($fieldName, &$moveFieldValue
   if ($capitalsInToOverwriteValue === 0 || ($capitalsInToKeepValue > 0 && $capitalsInToKeepValue < $capitalsInToOverwriteValue)) {
     // We have a conflict to resolve and we are going to resolve it
     // by keeping the default copy behaviour.
-    return TRUE;
-  }
-  // We have a conflict to resolve and we are going to resolve it by keeping
-  //the value that was to be overwritten.
-  $moveFieldValue = $valueToOverwrite;
-  $valueToKeep = $valueToOverwrite;
-  return TRUE;
-}
-
-/**
- * Resolve conflicts that are only about diacritic vs english characters
- * casing.
- *
- * If we have a conflict of 'Jose' vs 'José' chose the one with a diacritic
- * character.
- *
- * If we find a match we need to alter the $moveFieldValue & $valueToKeep vars.
- * That is not hugely logical but unfortunately the hook interaction has been
- * organic and until we started using batch merge was not actually tested in
- * core.
- *
- * @param string $fieldName
- * @param string $moveFieldValue
- * @param string $valueToKeep
- * @param string $valueToOverwrite
- *
- * @return bool
- */
-function _wmf_civicrm_merge_resolve_diacritic_conflict($fieldName, &$moveFieldValue, &$valueToKeep, &$valueToOverwrite) {
-  $fieldsToResolve = ['last_name', 'first_name'];
-  if (!in_array(str_replace('move_', '', $fieldName), $fieldsToResolve)) {
-    return FALSE;
-  }
-  // Let's get rid of any preceding or trailing spaces.
-  $valueToKeep = trim($valueToKeep);
-  $valueToOverwrite = trim($valueToOverwrite);
-  $moveFieldValue = trim($moveFieldValue);
-  if (strtoupper(wmf_civicrm_normalizeUtf8String($valueToKeep)) != strtoupper(wmf_civicrm_normalizeUtf8String($valueToOverwrite))) {
-    return FALSE;
-  }
-
-  if (wmf_civicrm_is_utf_normalised($valueToOverwrite)) {
-    // We have a conflict to resolve and we are going to resolve it
-    // by keeping the default copy behaviour, since the value to overwrite is the one without diacritics
-    // (AKA isNormalised).
     return TRUE;
   }
   // We have a conflict to resolve and we are going to resolve it by keeping
@@ -2768,110 +2717,6 @@ function _wmf_civicrm_merge_is_only_extra_postal_code_suffix($valueToKeep, $valu
     return TRUE;
   }
   return FALSE;
-}
-
-/**
- * Check for special characters (none latin) in the string.
- *
- * @param string $string
- *
- * @return bool
- */
-function wmf_civicrm_is_utf_normalised($string) {
-  if (!Normalizer::isNormalized($string, Normalizer::FORM_D)) {
-    return FALSE;
-  }
-  $s = preg_replace('@[^\0-\x80]@u', "", $string);
-  if ($s !== $string) {
-    return FALSE;
-  }
-  return TRUE;
-
-}
-
-/**
- * From http://nz2.php.net/manual/en/normalizer.normalize.php
- *
- * I have since found
- * https://core.trac.wordpress.org/browser/trunk/src/wp-includes/formatting.php#L1127
- * & packages
- * https://packagist.org/packages/neitanod/forceutf8
- * & https://packagist.org/packages/patchwork/utf8
- *
- * My feeling after viewing them is that with the change below this is safe but
- * it could be more complete. There are a few tests implemented & my
- * inclination is to deploy & iterate depending on the results.
- *
- * & perhaps might try in a second iteration taking more from that.
- *
- * @param $original_string
- *
- * @return mixed
- */
-function wmf_civicrm_normalizeUtf8String($original_string) {
-
-  // maps German (umlauts) and other European characters onto two characters before just removing diacritics
-  $s = preg_replace('@\x{00c4}@u', "AE", $original_string);    // umlaut Ä => AE
-  $s = preg_replace('@\x{00d6}@u', "OE", $s);    // umlaut Ö => OE
-  $s = preg_replace('@\x{00dc}@u', "UE", $s);    // umlaut Ü => UE
-  $s = preg_replace('@\x{00e4}@u', "ae", $s);    // umlaut ä => ae
-  $s = preg_replace('@\x{00f6}@u', "oe", $s);    // umlaut ö => oe
-  $s = preg_replace('@\x{00fc}@u', "ue", $s);    // umlaut ü => ue
-  $s = preg_replace('@\x{00f1}@u', "ny", $s);    // ñ => ny
-  $s = preg_replace('@\x{00ff}@u', "yu", $s);    // ÿ => yu
-
-
-  // maps special characters (characters with diacritics) on their base-character followed by the diacritical mark
-  // exmaple:  Ú => U´,  á => a`
-  $s = Normalizer::normalize($s, Normalizer::FORM_D);
-
-
-  $s = preg_replace('@\pM@u', "", $s);    // removes diacritics
-
-
-  $s = preg_replace('@\x{00df}@u', "ss", $s);    // maps German ß onto ss
-  $s = preg_replace('@\x{00c6}@u', "AE", $s);    // Æ => AE
-  $s = preg_replace('@\x{00e6}@u', "ae", $s);    // æ => ae
-  $s = preg_replace('@\x{0132}@u', "IJ", $s);    // ? => IJ
-  $s = preg_replace('@\x{0133}@u', "ij", $s);    // ? => ij
-  $s = preg_replace('@\x{0152}@u', "OE", $s);    // Œ => OE
-  $s = preg_replace('@\x{0153}@u', "oe", $s);    // œ => oe
-
-  $s = preg_replace('@\x{00d0}@u', "D", $s);    // Ð => D
-  $s = preg_replace('@\x{0110}@u', "D", $s);    // Ð => D
-  $s = preg_replace('@\x{00f0}@u', "d", $s);    // ð => d
-  $s = preg_replace('@\x{0111}@u', "d", $s);    // d => d
-  $s = preg_replace('@\x{0126}@u', "H", $s);    // H => H
-  $s = preg_replace('@\x{0127}@u', "h", $s);    // h => h
-  $s = preg_replace('@\x{0131}@u', "i", $s);    // i => i
-  $s = preg_replace('@\x{0138}@u', "k", $s);    // ? => k
-  $s = preg_replace('@\x{013f}@u', "L", $s);    // ? => L
-  $s = preg_replace('@\x{0141}@u', "L", $s);    // L => L
-  $s = preg_replace('@\x{0140}@u', "l", $s);    // ? => l
-  $s = preg_replace('@\x{0142}@u', "l", $s);    // l => l
-  $s = preg_replace('@\x{014a}@u', "N", $s);    // ? => N
-  $s = preg_replace('@\x{0149}@u', "n", $s);    // ? => n
-  $s = preg_replace('@\x{014b}@u', "n", $s);    // ? => n
-  $s = preg_replace('@\x{00d8}@u', "O", $s);    // Ø => O
-  $s = preg_replace('@\x{00f8}@u', "o", $s);    // ø => o
-  $s = preg_replace('@\x{017f}@u', "s", $s);    // ? => s
-  $s = preg_replace('@\x{00de}@u', "T", $s);    // Þ => T
-  $s = preg_replace('@\x{0166}@u', "T", $s);    // T => T
-  $s = preg_replace('@\x{00fe}@u', "t", $s);    // þ => t
-  $s = preg_replace('@\x{0167}@u', "t", $s);    // t => t
-
-  // remove all non-ASCii characters
-  // This is in the original function but is too broad. There is a test that will fail
-  // if you remove this.
-  // $s    = preg_replace( '@[^\0-\x80]@u'    , "",    $s );
-
-  // possible errors in UTF8-regular-expressions
-  if (empty($s)) {
-    return $original_string;
-  }
-  else {
-    return $s;
-  }
 }
 
 /**
@@ -2992,17 +2837,6 @@ function wmf_civicrm_get_language_db_value($value): string {
 }
 
 /**
- * Count the number of capital letters in a string.
- *
- * @param $string
- *
- * @return int
- */
-function _wmf_civicrm_count_capital_letters($string) {
-  return strlen(preg_replace('/[^A-Z]+/', '', $string));
-}
-
-/**
  *
  * We are testing a nuanced real life situation where the address data of the
  * most recent donor gets priority - resulting in the primary address being set
@@ -3024,6 +2858,8 @@ function _wmf_civicrm_count_capital_letters($string) {
  *   Calculated migration info, informational only.
  *
  * @return mixed
+ * @throws \CRM_Core_Exception
+ * @throws \CiviCRM_API3_Exception
  */
 function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $otherId, $migrationInfo) {
 
@@ -3031,21 +2867,14 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
   if ($migrationInfo['context'] == 'form') {
     return;
   }
-  $lastDonor = civicrm_api3('Contribution', 'get', [
-    'return' => 'contact_id',
-    'contact_id' => ['IN' => [$mainId, $otherId]],
-    'options' => ['sort' => 'receive_date DESC', 'limit' => 1],
-  ]);
-  if (!$lastDonor['count']) {
-    return;
-  }
+
   // The merge handler is in dedupe tools - we are migrating this code over to that extension.
   // for now our goal is NOT to touch any merges being managed by that extension. That extension will
   // currently ONLY manage emails which are blocked as merge conflicts due on_hold being different.
   // This code has never handled that so the goal is to not touch any emails IF that extension is touching them.
-  /* var CRM_Dedupetools_BAO_MergeHandler */
+  /* @var CRM_Deduper_BAO_MergeHandler $mergeHandler*/
   $mergeHandler = $migrationInfo['merge_handler'];
-  $lastDonorID = $lastDonor['values'][$lastDonor['id']]['contact_id'];
+  $lastDonorID = $mergeHandler->getPreferredContact();
   $contactIDToBeKeptIsMostRecentDonor = ($lastDonorID == $mainId) ? TRUE : FALSE;
   // Since the last donor is not the main ID we are prioritising info from the last donor.
   // In the test this should always be true - but keep the check in case
@@ -3168,22 +2997,6 @@ function _wmf_civicrm_clean_duplicate_location_from_merge_blocks($blocks) {
     }
   }
   return $blocks;
-}
-
-/**
- * @param $migrationInfo
- * @param $result
- *
- * @return mixed
- */
-function _wmf_civicrm_add_result_fields_to_migration_info($migrationInfo, $result) {
-  $result->fetch();
-  foreach (wmf_get_calculated_field_names() as $field) {
-    if (isset($result->$field)) {
-      $migrationInfo['move_' . wmf_civicrm_get_custom_field_name($field)] = $result->$field;
-    }
-  }
-  return $migrationInfo;
 }
 
 /**
@@ -4128,16 +3941,6 @@ function _wmf_civicrm_is_this_address_better($mainAddress, $comparisonAddress) {
   ) {
     // Comparison address is not up to snuff. Main address rocks.
     return TRUE;
-  }
-
-  // If the only difference that main address has postal_code_suffix &
-  // the other doesn't? This is a common faux-conflict.
-  $keysInMainAddressOnly = array_diff_key($mainAddress, $comparisonAddress);
-  if (array_keys($keysInMainAddressOnly) === ['postal_code_suffix']) {
-    unset($mainAddress['postal_code_suffix']);
-    if ($mainAddress === $comparisonAddress) {
-      return TRUE;
-    }
   }
 
   return FALSE;

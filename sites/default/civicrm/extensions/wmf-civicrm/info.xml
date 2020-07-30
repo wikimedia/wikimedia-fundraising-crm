@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<extension key="wmf-civicrm" type="module">
+  <file>wmf_civicrm</file>
+  <name>WMF CiviCRM</name>
+  <description>Generic wmf extension</description>
+  <license>AGPL-3.0</license>
+  <maintainer>
+    <author>eileen</author>
+    <email>emcnaughton@wikimedia.org</email>
+  </maintainer>
+  <urls>
+    <url desc="Main Extension Page">http://FIXME</url>
+    <url desc="Documentation">http://FIXME</url>
+    <url desc="Support">http://FIXME</url>
+    <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
+  </urls>
+  <releaseDate>2020-07-21</releaseDate>
+  <version>1.0</version>
+  <develStage>stable</develStage>
+  <compatibility>
+    <ver>5.27</ver>
+  </compatibility>
+  <comments>This is a intended as something of a catchall for wmf functionality. It is intended to replace the wmf_civicrm module over time</comments>
+  <classloader>
+    <psr4 prefix="Civi\" path="Civi"/>
+  </classloader>
+  <requires>
+    <ext>deduper</ext>
+  </requires>
+  <civix>
+    <namespace>CRM/Wmf</namespace>
+  </civix>
+</extension>

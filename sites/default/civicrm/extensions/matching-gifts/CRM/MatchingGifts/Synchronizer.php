@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\Contact;
+
 class CRM_MatchingGifts_Synchronizer {
 
   /**
@@ -28,7 +30,9 @@ class CRM_MatchingGifts_Synchronizer {
    *  be passed to CRM_MatchingGifts_ProviderInterface::getSearchResults
    *
    * @return array
+   *
    * @throws \CiviCRM_API3_Exception
+   * @throws \API_Exception
    */
   public function synchronize(array $syncParams): array {
     $this->populateCurrentJobSettings();
@@ -134,63 +138,69 @@ class CRM_MatchingGifts_Synchronizer {
    *  minimum_gift_matched_usd, match_policy_last_updated, and subsidiaries
    *
    * @throws \CiviCRM_API3_Exception
+   * @throws \API_Exception
    */
   protected static function addOrUpdatePolicy(array $policyDetails) {
     // Search for an existing org WITH matching gift data using
     // $policyDetails['matching_gifts_provider_id'] matching
     // matching_gifts_provider_id
-    // We pass the third param TRUE so it's already prefixed with "custom_"
-    $providerCompanyIdFieldId = CRM_Core_BAO_CustomField::getCustomFieldID(
-      'matching_gifts_provider_id', 'matching_gift_policies', TRUE
-    );
-    $orgContacts = civicrm_api3(
-      'Contact', 'get', [
-        'contact_type' => 'Organization',
-        $providerCompanyIdFieldId => $policyDetails['matching_gifts_provider_id']
-      ]
-    );
-    if ($orgContacts['count'] === 0) {
+    $orgContact = Contact::get()
+      ->setCheckPermissions(FALSE)
+      ->addSelect('id')
+      ->addWhere('contact_type', '=', 'Organization')
+      ->addWhere(
+        'matching_gift_policies.matching_gifts_provider_id',
+        '=',
+        $policyDetails['matching_gifts_provider_id']
+      )
+      ->execute()
+      ->first();
+    if ($orgContact === NULL) {
       // if not found, search for an existing org whose name matches
       // $policyDetails['name_from_matching_gift_db']
-      $orgContacts = civicrm_api3(
-        'Contact', 'get', [
-          'organization_name' => $policyDetails['name_from_matching_gift_db'],
-          'contact_type' => 'Organization'
-        ]
-      );
+      $orgContact = Contact::get()
+        ->setCheckPermissions(FALSE)
+        ->addSelect('id')
+        ->addWhere('contact_type', '=', 'Organization')
+        ->addWhere('organization_name', '=', $policyDetails['name_from_matching_gift_db'])
+        ->execute()
+        ->first();
     }
-    if ($orgContacts['count'] === 0) {
+    if ($orgContact === NULL) {
       // The nick_name field also might have a matching company name
-      $orgContacts = civicrm_api3('Contact', 'get', [
-        'nick_name' => $policyDetails['name_from_matching_gift_db'],
-        'contact_type' => 'Organization'
-        ]
-      );
+      $orgContact = Contact::get()
+        ->setCheckPermissions(FALSE)
+        ->addSelect('id')
+        ->addWhere('contact_type', '=', 'Organization')
+        ->addWhere('nick_name', '=', $policyDetails['name_from_matching_gift_db'])
+        ->execute()
+        ->first();
     }
 
-    if ($orgContacts['count'] === 0) {
+    if ($orgContact === NULL) {
       // Base params for creating a new organizational contact
       $createParams = [
         'contact_type' => 'Organization',
-        'contact_source' => 'Matching Gifts Extension',
+        'source' => 'Matching Gifts Extension',
         'organization_name' => $policyDetails['name_from_matching_gift_db'],
       ];
+      Contact::create()
+        ->setValues($createParams + self::getCustomFieldParams($policyDetails))
+        ->setCheckPermissions(FALSE)
+        ->execute();
     } else {
-      // Base params for updating an existing org contact
-      $createParams = [
-        'id' => array_keys($orgContacts['values'])[0],
-      ];
+      Contact::update()
+        ->addWhere('id', '=', $orgContact['id'])
+        ->setValues(self::getCustomFieldParams($policyDetails))
+        ->setCheckPermissions(FALSE)
+        ->execute();
     }
-    $createParams = $createParams + self::getCustomFieldParams($policyDetails);
-    civicrm_api3('Contact', 'Create', $createParams);
   }
 
   protected static function getCustomFieldParams(array $policyDetails): array {
     $params = [];
     foreach($policyDetails as $fieldName => $value) {
-      $paramName = CRM_Core_BAO_CustomField::getCustomFieldID(
-        $fieldName, 'matching_gift_policies', TRUE
-      );
+      $paramName = 'matching_gift_policies.' . $fieldName;
       $params[$paramName] = $value;
     }
     return $params;

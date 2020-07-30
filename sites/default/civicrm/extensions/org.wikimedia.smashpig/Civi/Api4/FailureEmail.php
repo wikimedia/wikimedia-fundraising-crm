@@ -50,7 +50,7 @@ class FailureEmail extends Generic\AbstractEntity {
    * @return array
    */
   public static function permissions():array {
-    return ['render' => 'access CiviCRM'];
+    return ['render' => 'access CiviCRM', 'send' => 'access CiviCRM'];
   }
 
   /**

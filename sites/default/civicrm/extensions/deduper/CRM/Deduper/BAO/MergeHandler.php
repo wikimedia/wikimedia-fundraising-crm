@@ -75,6 +75,11 @@ class CRM_Deduper_BAO_MergeHandler {
   protected $emailConflicts;
 
   /**
+   * @var array
+   */
+  protected $addressConflicts;
+
+  /**
    * Location blocks that should be deleted on merge.
    *
    * @var array
@@ -187,6 +192,33 @@ class CRM_Deduper_BAO_MergeHandler {
   }
 
   /**
+   * Get the fields that make up the name of an Organization.
+   *
+   * @return array
+   */
+  public function getOrganizationNameFields():array {
+    return ['organization_name'];
+  }
+
+  /**
+   * Get the fields that make up the name of a Household.
+   *
+   * @return array
+   */
+  public function getHouseholdNameFields():array {
+    return ['household_name'];
+  }
+
+  /**
+   * Get the fields that make up the name of a Contact.
+   *
+   * @return array
+   */
+  public function getNameFields():array {
+    return array_merge($this->getIndividualNameFields(), $this->getOrganizationNameFields(), $this->getHouseholdNameFields());
+  }
+
+  /**
    * Get the fields that make up the name of an individual.
    *
    * @param bool $isForContactToBeKept
@@ -197,6 +229,49 @@ class CRM_Deduper_BAO_MergeHandler {
   public function getIndividualNameFieldValues($isForContactToBeKept):array {
     $return = [];
     foreach ($this->getIndividualNameFields() as $fieldName) {
+      $return[$fieldName] = trim($this->getValueForField($fieldName, $isForContactToBeKept));
+    }
+    return $return ;
+  }
+
+  /**
+   * Get the address blocks for the contact.
+   *
+   * @param bool $isForContactToBeKept
+   *
+   * @return array
+   */
+  public function getAddresses($isForContactToBeKept):array {
+    if ($isForContactToBeKept) {
+      return $this->dedupeData['migration_info']['main_details']['location_blocks']['address'];
+    }
+    return $this->dedupeData['migration_info']['other_details']['location_blocks']['address'];
+  }
+
+  /**
+   * Get the indexed address block for the contact.
+   *
+   * @param bool $isForContactToBeKept
+   *
+   * @param int $blockNumber
+   *
+   * @return array
+   */
+  public function getAddressBlock($isForContactToBeKept, $blockNumber):array {
+    return $this->getAddresses($isForContactToBeKept)[$blockNumber];
+  }
+
+  /**
+   * Get the fields that make up the name of a contact.
+   *
+   * @param bool $isForContactToBeKept
+   *   Is the value for the contact to be retained.
+   *
+   * @return array
+   */
+  public function getNameFieldValues($isForContactToBeKept):array {
+    $return = [];
+    foreach ($this->getNameFields() as $fieldName) {
       $return[$fieldName] = trim($this->getValueForField($fieldName, $isForContactToBeKept));
     }
     return $return ;
@@ -239,6 +314,33 @@ class CRM_Deduper_BAO_MergeHandler {
       }
     }
     return FALSE;
+  }
+
+  /**
+   * Is there a conflict in a field used to name an Organization.
+   *
+   * @return bool
+   */
+  public function hasOrganizationNameFieldConflict():bool {
+    return $this->isFieldInConflict('organization_name');
+  }
+
+  /**
+   * Is there a conflict in a field used to name a household.
+   *
+   * @return bool
+   */
+  public function hasHouseholdNameFieldConflict():bool {
+    return $this->isFieldInConflict('household_name');
+  }
+
+  /**
+   * Is there a conflict in a name field.
+   *
+   * @return bool
+   */
+  public function hasNameFieldConflict(): bool {
+    return $this->hasOrganizationNameFieldConflict() || $this->hasIndividualNameFieldConflict() || $this->hasHouseholdNameFieldConflict();
   }
 
   /**
@@ -320,7 +422,16 @@ class CRM_Deduper_BAO_MergeHandler {
     $resolver = new CRM_Deduper_BAO_Resolver_BooleanYesResolver($this);
     $resolver->resolveConflicts();
 
+    $resolver = new CRM_Deduper_BAO_Resolver_EquivalentAddressResolver($this);
+    $resolver->resolveConflicts();
+
     $resolver = new CRM_Deduper_BAO_Resolver_UninformativeCharactersResolver($this);
+    $resolver->resolveConflicts();
+
+    $resolver = new CRM_Deduper_BAO_Resolver_CasingResolver($this);
+    $resolver->resolveConflicts();
+
+    $resolver = new CRM_Deduper_BAO_Resolver_DiacriticResolver($this);
     $resolver->resolveConflicts();
 
     $resolver = new CRM_Deduper_BAO_Resolver_SillyNameResolver($this);
@@ -394,17 +505,43 @@ class CRM_Deduper_BAO_MergeHandler {
   }
 
   /**
-   * Resolve conflict on field using the specified value.
+ * Resolve conflict on field using the specified value.
+ *
+ * @param string $fieldName
+ * @param string $location
+ * @param string $block
+ * @param string $value
+ */
+  public function setResolvedLocationValue($fieldName, $location, $block, $value) {
+    unset($this->emailConflicts[$fieldName]);
+    $this->locationConflictResolutions[$location][$block][$fieldName] = $value;
+    if (empty($this->emailConflicts[$block])) {
+      $this->resolveConflictsOnLocationBlock($location, $block);
+    }
+  }
+
+  /**
+   * Update an resolved address value, resolving the entire address if it is no longer in conflict.
    *
    * @param string $fieldName
    * @param string $location
    * @param string $block
    * @param string $value
    */
-  public function setResolvedLocationValue($fieldName, $location, $block, $value) {
-    unset($this->emailConflicts[$fieldName]);
+  public function setResolvedAddressValue($fieldName, $location, $block, $value) {
     $this->locationConflictResolutions[$location][$block][$fieldName] = $value;
-    if (empty($this->emailConflicts[$block])) {
+    $mainBlock = &$this->dedupeData['migration_info']['main_details']['location_blocks']['address'][$block];
+    $otherBlock = &$this->dedupeData['migration_info']['other_details']['location_blocks']['address'][$block];
+
+    if (!empty($this->addressConflicts[$block]['display'])) {
+      $mainDisplay = CRM_Utils_Address::format(array_merge($mainBlock, [$fieldName => $value]));
+      $otherDisplay = CRM_Utils_Address::format(array_merge($otherBlock, [$fieldName => $value]));
+      if ($mainDisplay === $otherDisplay) {
+        unset($this->addressConflicts[$block]['display']);
+      }
+    }
+
+    if (empty($this->addressConflicts[$block])) {
       $this->resolveConflictsOnLocationBlock($location, $block);
     }
   }
@@ -434,7 +571,7 @@ class CRM_Deduper_BAO_MergeHandler {
    * @return mixed
    */
   public function getLocationBlockValue($location, $block, $isForContactToBeKept, $field) {
-    return $this->getLocationBlock($location, $block, $isForContactToBeKept)[$field];
+    return $this->getLocationBlock($location, $block, $isForContactToBeKept)[$field] ?? NULL;
   }
 
   /**
@@ -472,6 +609,56 @@ class CRM_Deduper_BAO_MergeHandler {
       }
     }
     return $this->emailConflicts;
+  }
+
+  /**
+   * Get conflicts on all address blocks.
+   *
+   * @return array
+   */
+  public function getAllAddressConflicts(): array {
+    $conflicts = [];
+    foreach ($this->getFieldsInConflict() as $conflictedField) {
+      if (strpos($conflictedField, 'location_address') === 0) {
+        $blockNumber = str_replace('location_address_', '', $conflictedField);
+        $conflicts[$blockNumber] = $this->getAddressConflicts($blockNumber);
+      }
+    }
+    return $conflicts;
+  }
+
+  /**
+   * Get conflicts for the  address of the given block.
+   *
+   * @param int $blockNumber
+   *
+   * @return array
+   *   Conflicts in emails.
+   */
+  public function getAddressConflicts($blockNumber):array {
+    if (isset($this->addressConflicts[$blockNumber])) {
+      return $this->addressConflicts[$blockNumber];
+    }
+    $mainContactAddress = $this->dedupeData['migration_info']['main_details']['location_blocks']['address'][$blockNumber];
+    $otherContactAddress = $this->dedupeData['migration_info']['other_details']['location_blocks']['address'][$blockNumber];
+    $this->addressConflicts = [];
+    // As defined in CRM_Dedupe_Merger::ignoredFields + display which is for the form layer.
+    $keysToIgnore = [
+      'id',
+      'is_primary',
+      'is_billing',
+      'manual_geo_code',
+      'contact_id',
+    ];
+    foreach ($otherContactAddress as $field => $value) {
+      if (
+        isset($mainContactAddress[$field])
+        && $mainContactAddress[$field] !== $value
+        && !in_array($field, $keysToIgnore, TRUE) ) {
+        $this->addressConflicts[$blockNumber][$field] = $value;
+      }
+    }
+    return $this->addressConflicts[$blockNumber];
   }
 
   /**
