@@ -627,6 +627,50 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test that we don't see country only as conflicting with country plus.
+   *
+   * Bug T176699
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testBatchMergeResolvableConflictCountryVsFullAddress($isReverse) {
+    $this->createDuplicateDonors();
+    $contactIDWithCountryOnlyAddress = ($isReverse ? $this->ids['contact'][1] : $this->ids['contact'][0]);
+    $contactIDWithFullAddress = ($isReverse ? $this->ids['contact'][0] : $this->ids['contact'][1]);
+    $this->callAPISuccess('Address', 'create', [
+      'country_id' => 'MX',
+      'contact_id' => $contactIDWithCountryOnlyAddress,
+      'location_type_id' => 1,
+      'is_primary' => 1,
+    ]);
+    $this->callAPISuccess('Address', 'create', [
+      'country_id' => 'MX',
+      'contact_id' => $contactIDWithFullAddress,
+      'street_address' => 'First on the left after you cross the border',
+      'location_type_id' => 1,
+      'is_primary' => 1,
+    ]);
+    $this->callAPISuccess('Address', 'create', [
+      'country_id' => 'MX',
+      'contact_id' => $contactIDWithFullAddress,
+      'street_address' => 'A different address',
+      'location_type_id' => 2,
+    ]);
+
+    $contact = $this->doMerge($isReverse);
+    $this->assertEquals('Mexico', $contact['country']);
+    $this->assertEquals('First on the left after you cross the border', $contact['street_address']);
+    $address = $this->callAPISuccessGetSingle('Address', ['street_address' => 'A different address']);
+    $this->assertEquals($contact['id'], $address['contact_id']);
+    $this->callAPISuccessGetCount('Address', ['contact_id' => $contact['id'], 'is_primary' => 1], 1);
+  }
+
+  /**
    * Test that a conflict on casing in first names is handled.
    *
    * We do a best effort on this to get the more correct on assuming that 1 capital letter in a
