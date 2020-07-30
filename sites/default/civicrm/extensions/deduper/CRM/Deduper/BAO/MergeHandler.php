@@ -532,6 +532,7 @@ class CRM_Deduper_BAO_MergeHandler {
     $this->locationConflictResolutions[$location][$block][$fieldName] = $value;
     $mainBlock = &$this->dedupeData['migration_info']['main_details']['location_blocks']['address'][$block];
     $otherBlock = &$this->dedupeData['migration_info']['other_details']['location_blocks']['address'][$block];
+    unset($this->addressConflicts[$block][$fieldName]);
 
     if (!empty($this->addressConflicts[$block]['display'])) {
       $mainDisplay = CRM_Utils_Address::format(array_merge($mainBlock, [$fieldName => $value]));
