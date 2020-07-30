@@ -2570,15 +2570,27 @@ function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, 
 
   if (substr($moveField, 0, 13) === 'move_location') {
     $fieldParts = explode('_', $moveField);
+    $mainContactBlocks = $refs['migration_info']['main_details']['location_blocks'];
+    $otherContactBlocks = $refs['migration_info']['other_details']['location_blocks'];
 
-    if ($fieldParts[2] == 'email') {
-      $mainIsOnHold = $refs['migration_info']['main_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
-      $otherIsOnHold = $refs['migration_info']['other_details']['location_blocks']['email'][$fieldParts[3]]['on_hold'];
+    if ($fieldParts[2] === 'email') {
+      $mainIsOnHold = $mainContactBlocks['email'][$fieldParts[3]]['on_hold'];
+      $otherIsOnHold = $otherContactBlocks['email'][$fieldParts[3]]['on_hold'];
       if ($mainIsOnHold + $otherIsOnHold === 1) {
         // One is one hold & the other isn't - conflict.
         return;
       }
     }
+    if ($fieldParts[2] === 'address') {
+      // See if this has been handed off to deduper yet - if so don't handle here
+      // We are working to move everything to the deduper but it's taking some unravelling.
+      $mainAddress = $mainContactBlocks['address'][$fieldParts[3]] ?? NULL;
+      $otherAddress = $otherContactBlocks['address'][$fieldParts[3]] ?? NULL;
+      if ($mainAddress && $otherAddress && _wmf_civicrm_merge_is_only_extra_postal_code_suffix($mainAddress['display'], $otherAddress['display'], $mainAddress, $otherAddress)) {
+        return;
+      }
+    }
+
     unset($refs['fields_in_conflict'][$moveField]);
   }
 }
@@ -3929,16 +3941,6 @@ function _wmf_civicrm_is_this_address_better($mainAddress, $comparisonAddress) {
   ) {
     // Comparison address is not up to snuff. Main address rocks.
     return TRUE;
-  }
-
-  // If the only difference that main address has postal_code_suffix &
-  // the other doesn't? This is a common faux-conflict.
-  $keysInMainAddressOnly = array_diff_key($mainAddress, $comparisonAddress);
-  if (array_keys($keysInMainAddressOnly) === ['postal_code_suffix']) {
-    unset($mainAddress['postal_code_suffix']);
-    if ($mainAddress === $comparisonAddress) {
-      return TRUE;
-    }
   }
 
   return FALSE;

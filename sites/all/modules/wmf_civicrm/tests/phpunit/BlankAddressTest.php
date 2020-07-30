@@ -206,6 +206,7 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
    * a valid other address. Lets annihilate it.
    *
    * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testRemoveEternallyBlankNonPrimaryMergedAddress() {
     $this->prepareForBlankAddressTests();

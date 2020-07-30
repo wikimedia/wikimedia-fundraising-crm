@@ -79,6 +79,18 @@ abstract class CRM_Deduper_BAO_Resolver {
   }
 
   /**
+   * Set the given value as the value to resolve the conflict with.
+   *
+   * @param string $fieldName
+   * @param string $location
+   * @param string $block
+   * @param mixed $value
+   */
+  protected function setResolvedAddressValue($fieldName, $location, $block, $value) {
+    $this->mergeHandler->setResolvedAddressValue($fieldName, $location, $block, $value);
+  }
+
+  /**
    * Get conflicts for the email address of the given block.
    *
    * @param int $emailBlockNumber
@@ -87,6 +99,38 @@ abstract class CRM_Deduper_BAO_Resolver {
    */
   protected function getEmailConflicts($emailBlockNumber):array {
     return $this->mergeHandler->getEmailConflicts($emailBlockNumber);
+  }
+
+  /**
+   * Get conflicts for the email address of the given block.
+   *
+   * @param int $blockNumber
+   *
+   * @return array
+   */
+  protected function getAddressConflicts($blockNumber):array {
+    return $this->mergeHandler->getAddressConflicts($blockNumber);
+  }
+
+  /**
+   * Get conflicts for the email address of the given block.
+   *
+   * @return array
+   */
+  protected function getAllAddressConflicts():array {
+    return $this->mergeHandler->getAllAddressConflicts();
+  }
+
+  /**
+   * Get conflicts for the email address of the given block.
+   *
+   * @param $isForContactToBeKept
+   * @param $blockNumber
+   *
+   * @return array
+   */
+  protected function getAddressBlock($isForContactToBeKept, $blockNumber):array {
+    return $this->mergeHandler->getAddressBlock($isForContactToBeKept, $blockNumber);
   }
 
   /**
