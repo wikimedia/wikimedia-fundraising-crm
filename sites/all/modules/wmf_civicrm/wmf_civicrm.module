@@ -86,16 +86,6 @@ function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
   }
 }
 
-function civicrm_option_group_id($group_name) {
-  $api = civicrm_api_classapi();
-  $success = $api->OptionGroup->Get([
-    'name' => $group_name,
-  ]);
-  if ($success && $api->values) {
-    return $api->values[0]->id;
-  }
-}
-
 function civicrm_api_classapi() {
   civicrm_initialize();
   if (module_load_include('php', 'civicrm', '../api/class.api') === FALSE) {
