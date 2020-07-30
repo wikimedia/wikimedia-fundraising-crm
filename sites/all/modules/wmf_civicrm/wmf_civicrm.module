@@ -2204,29 +2204,6 @@ function wmf_civicrm_is_refunded_by_gateway_id($gateway, $gateway_txn_id) {
   );
 }
 
-
-/**
- * Checks to see whether a contribution is refunded or charged back by
- * contribution id.
- *
- * @param string $contribution_id
- *
- * @return true if contribution exists and is refunded or charged back, else
- *   false
- */
-function wmf_civicrm_is_refunded_by_contribution_id($contribution_id) {
-  try {
-    $statusId = civicrm_api3('Contribution', 'getvalue', [
-      'id' => $contribution_id,
-      'return' => 'contribution_status_id',
-    ]);
-  }
-  catch (CiviCRM_API3_Exception $e) {
-    return FALSE;
-  }
-  return CRM_Contribute_BAO_Contribution::isContributionStatusNegative($statusId);
-}
-
 function wmf_civicrm_boost_performance() {
   civicrm_initialize();
   $config = CRM_Core_Config::singleton();
@@ -3261,44 +3238,6 @@ function wmf_civicrm_civicrm_alterLogTables(&$logTableSpec) {
     }
   }
 
-}
-
-/**
- * Check if any completed contributions exist for the contact after the
- * provided date.
- *
- * @param int $contact_id
- *
- * @return string $contribution_date
- */
-function wmf_civicrm_most_recent_completed_contribution_date($contact_id) {
-  $completedStatusID = CRM_Core_Pseudoconstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
-  return CRM_Core_DAO::singleValueQuery("
-    SELECT max(receive_date) FROM civicrm_contribution
-    WHERE contact_id = {$contact_id}
-    AND contribution_status_id = $completedStatusID
-    AND total_amount > 0
-  ");
-}
-
-/**
- * Check if any completed contributions exist for the contact after the
- * provided date.
- *
- * @param int $contact_id
- * @param string $contribution_date
- *
- * @return string $contribution_date
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_get_single_contribution_for_contact_by_date($contact_id, $contribution_date) {
-  return civicrm_api3('Contribution', 'getsingle', [
-    'contact_id' => $contact_id,
-    'receive_date' => $contribution_date,
-    'contribution_status_id' => 'Completed',
-    'total_amount' => ['>' => 0],
-    'return' => ['receive_date', 'total_amount', 'source'],
-  ]);
 }
 
 /**
