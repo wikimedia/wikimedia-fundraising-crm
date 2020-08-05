@@ -365,19 +365,24 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
 
     $this->assertCount($dataSet['skipped'], $result['values']['skipped']);
     $this->assertCount($dataSet['merged'], $result['values']['merged']);
-    $addresses = $this->callAPISuccess($dataSet['entity'], 'get', ['contact_id' => $this->contactID, 'sequential' => 1]);
-    $this->assertEquals(count($dataSet['expected_hook']), $addresses['count']);
-    $locationTypes = $this->callAPISuccess($dataSet['entity'], 'getoptions', ['field' => 'location_type_id']);
+    $addresses = $this->callAPISuccess($dataSet['entity'], 'get', ['contact_id' => $this->contactID, 'sequential' => 1])['values'];
+    $this->assertEquals(count($dataSet['expected_hook']), count($addresses));
+    $locationTypes = $this->callAPISuccess($dataSet['entity'], 'getoptions', ['field' => 'location_type_id'])['values'];
     foreach ($dataSet['expected_hook'] as $index => $expectedAddress) {
       foreach ($expectedAddress as $key => $value) {
         if ($key === 'location_type_id') {
-          $this->assertEquals($locationTypes['values'][$addresses['values'][$index][$key]], $value);
+          $this->assertEquals($locationTypes[$addresses[$index][$key]], $value);
         }
         else {
-          $this->assertEquals($value, $addresses['values'][$index][$key], $dataSet['entity'] . ': Unexpected value for ' . $key . (!empty($dataSet['description']) ? " on dataset {$dataSet['description']}" : ''));
+          $this->assertEquals($value, $addresses[$index][$key], $dataSet['entity'] . ': Unexpected value for ' . $key . (!empty($dataSet['description']) ? " on dataset {$dataSet['description']}" : ''));
         }
       }
     }
+    $primaryCount = 0;
+    foreach ($addresses as $address) {
+      $primaryCount += $address['is_primary'];
+    }
+    $this->assertEquals(1, $primaryCount);
   }
 
   /**
