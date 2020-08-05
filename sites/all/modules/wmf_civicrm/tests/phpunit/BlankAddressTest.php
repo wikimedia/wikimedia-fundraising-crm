@@ -36,6 +36,9 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contactID2 = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 1]);
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   */
   public function tearDown() {
     $this->callAPISuccess('Contribution', 'get', [
       'contact_id' => ['IN' => [$this->contactID, $this->contactID2]],
@@ -51,7 +54,7 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    */
-  public function isReverse() {
+  public function isReverse(): array {
     return [
       [FALSE],
       [TRUE],
@@ -80,14 +83,15 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return int
    *   id of created contribution
+   * @throws \CRM_Core_Exception
    */
-  public function contributionCreate($params) {
+  public function contributionCreate($params): int {
 
     $params = array_merge([
       'receive_date' => date('Ymd'),
       'total_amount' => 100.00,
       'fee_amount' => 5.00,
-      'net_ammount' => 95.00,
+      'net_amount' => 95.00,
       'financial_type_id' => 1,
       'payment_instrument_id' => 1,
       'non_deductible_amount' => 10.00,
@@ -95,7 +99,7 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
     ], $params);
 
     $result = $this->callAPISuccess('contribution', 'create', $params);
-    return $result['id'];
+    return (int) $result['id'];
   }
 
   /**
@@ -105,8 +109,9 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
    *   Any overrides to be added to the create call.
    *
    * @return int
+   * @throws \CRM_Core_Exception
    */
-  public function breedDuck($extraParams = []) {
+  public function breedDuck($extraParams = []): int {
     $contact = $this->callAPISuccess('Contact', 'create', array_merge([
       'contact_type' => 'Individual',
       'first_name' => 'Donald',
@@ -116,7 +121,7 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
         'location_type_id' => 'Work',
       ],
     ], $extraParams));
-    return $contact['id'];
+    return (int) $contact['id'];
   }
 
   /**
@@ -126,6 +131,7 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
    * on the merge, but now we want the lost data.
    *
    * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testRepairBlankedAddressOnMerge() {
     $this->prepareForBlankAddressTests();
@@ -148,10 +154,11 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
    * on the merge, but now we want the lost data. It underwent 2 merges.
    *
    * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testRepairBlankedAddressOnMergeDoubleWhammy() {
     $this->prepareForBlankAddressTests();
-    $contact3 = $this->breedDuck(
+    $this->breedDuck(
       [
         'api.address.create' => [
           'street_address' => '25 Ducky Way',
@@ -179,6 +186,7 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
    * anihilate it.
    *
    * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function testRemoveEternallyBlankMergedAddress() {
     $this->prepareForBlankAddressTests();
@@ -245,6 +253,8 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
    * Replicate the merge that would result in a blanked address.
    *
    * @param array $overrides
+   *
+   * @throws \CRM_Core_Exception
    */
   protected function replicateBlankedAddress($overrides = []) {
     $this->createContributions();
@@ -290,6 +300,9 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   */
   protected function createContributions() {
     $this->contributionCreate([
       'contact_id' => $this->contactID,
@@ -311,6 +324,8 @@ class BlankAddressTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param int $contactID
    * @param array $duckOverrides
    * @param bool $isLatestDonor
+   *
+   * @throws \CRM_Core_Exception
    */
   protected function breedGenerousDuck($contactID, $duckOverrides, $isLatestDonor) {
     $params = array_merge(['id' => $contactID], $duckOverrides);

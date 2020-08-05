@@ -5774,3 +5774,28 @@ function wmf_civicrm_update_8070() {
   $tables = ['civicrm_country' => ['iso_code']];
   CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
+
+/**
+ * Drop foreign keys on acl cache tables.
+ *
+ * These tables are always empty on our site but they show up in locking queries when truncated.
+ * I believe the foreign key means that the contact table gets involved in ways it would
+ * not without the key.
+ *
+ * Bug: T258661
+ */
+function wmf_civicrm_update_8075() {
+  civicrm_initialize();
+  $constraintsToDrop = [
+    'FK_civicrm_acl_cache_contact_id' => 'civicrm_acl_cache',
+    'FK_civicrm_acl_contact_cache_contact_id' => 'civicrm_acl_contact_cache',
+    'FK_civicrm_acl_contact_cache_user_id' => 'civicrm_acl_contact_cache',
+  ];
+  foreach ($constraintsToDrop as $key => $table) {
+    $tableSQL = CRM_Core_DAO::executeQuery('SHOW CREATE TABLE ' . $table);
+    $tableSQL->fetch();
+    if (stripos($tableSQL->Create_Table, 'CONSTRAINT `' . $key) !== FALSE) {
+      CRM_Core_DAO::executeQuery("ALTER TABLE $table DROP FOREIGN KEY $key");
+    }
+  }
+}
