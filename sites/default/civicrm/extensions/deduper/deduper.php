@@ -3,6 +3,9 @@
 require_once 'deduper.civix.php';
 use Symfony\Component\DependencyInjection\Definition;
 use CRM_Deduper_ExtensionUtil as E;
+use Civi\Api4\Email;
+use Civi\Api4\Phone;
+use Civi\Api4\Address;
 
 /**
  * Implements hook_civicrm_config().
@@ -303,9 +306,23 @@ function deduper_civicrm_alterAPIPermissions($entity, $action, &$params, &$permi
  * @param int $mainId
  * @param int $otherId
  * @param array $tables
+ *
+ * @throws \API_Exception
+ * @throws \CRM_Core_Exception
+ * @throws \CiviCRM_API3_Exception
+ * @throws \Civi\API\Exception\UnauthorizedException
  */
 function deduper_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
   switch ($type) {
+    case 'flip' :
+      // This is the closest we have to a pre-hook. It is called in batch mode
+      // and since duplicate locations mess up merges this is our chance to fix any before
+      // the merge starts.
+      Email::clean()->setContactIDs([$mainId, $otherId])->execute();
+      Phone::clean()->setContactIDs([$mainId, $otherId])->execute();
+      Address::clean()->setContactIDs([$mainId, $otherId])->execute();
+      return;
+
     case 'batch' :
     case 'form' :
       // Randomise log connection id. This ensures reverts can be done without reverting the whole batch if logging is enabled.

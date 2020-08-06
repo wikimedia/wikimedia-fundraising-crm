@@ -7,6 +7,12 @@ This can be found under the contacts menu.
 ![Deduper Screen](docs/images/Deduper.png?raw=true "Deduper screen")
 
 
+- apis email.clean, phone.clean, address.clean - these run before deduping ensuring that
+  each contact has exactly one primary of each of the above and only one of each location type.
+  This latter could be argued as the UI permits multiple home emails but the dedupe (and I believe
+  export) is unreliable in that scenario. THe UI enforces a single address per location. For
+  phones it is unique as a location-type combo.
+
 - api Merge.redo - undeletes a contact deleted by merge & re-merges - useful if contributions etc got added to the deleted contact.
 
 - search tasks - adds a task to search to find duplicates for selected contacts
@@ -40,6 +46,8 @@ These fields can't be used on large databases for a group dedupe for performance
  most recently modified, least recently modified, most recent donor, most prolific donor.
 See [the resolvers doc](docs/resolvers.md) for details about the conflict resolutions
 documented so far.
+- The equivalent address resolver. Resolves (some) cases where the addresses are the same
+ but one has more detail (eg. one is just the country & the other is a full address in that country)
 
 - merge conflicts api - does analysis on current conflicted merges to look for patterns.
 

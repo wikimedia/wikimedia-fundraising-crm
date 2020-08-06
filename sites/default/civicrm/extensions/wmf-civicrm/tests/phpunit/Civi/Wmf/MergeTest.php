@@ -1559,9 +1559,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
         'duplicate_mixed_address_on_one_contact' => [
           'merged' => 1,
           'skipped' => 0,
-          'comment' => 'We want to be sure we still have a primary. Ideally we would squash
-          matching addresses here too but currently that only happens on the to-merge contact.
-          (no high priority improvement)',
+          'comment' => 'We want to be sure we still have a primary. The duplicate (Home) address is squashed',
           'is_major_gifts' => 0,
           'entity' => $entity,
           'earliest_donor' => [
@@ -1585,16 +1583,12 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
               'location_type_id' => 'Main',
               'is_primary' => 1,
             ], $locationParams1),
-            array_merge([
-              'location_type_id' => 'Home',
-              'is_primary' => 0,
-            ], $locationParams1),
           ]),
         ],
       ],
       'duplicate_mixed_address_on_one_contact_second_primary' => [
         'duplicate_mixed_address_on_one_contact_second_primary' => [
-          'comment' => 'check we do not lose the primary. Matching addresses are squashed.',
+          'comment' => 'check we do not lose the primary. The home address is deleted as it matches the (main) Primary.',
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 0,
@@ -1616,10 +1610,6 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
             ], $locationParams1),
           ],
           'expected_hook' => array_merge($additionalExpected, [
-            array_merge([
-              'location_type_id' => 'Home',
-              'is_primary' => 0,
-            ], $locationParams1),
             array_merge([
               'location_type_id' => 'Main',
               'is_primary' => 1,

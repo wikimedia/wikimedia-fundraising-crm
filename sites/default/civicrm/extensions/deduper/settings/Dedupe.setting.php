@@ -111,4 +111,30 @@ return [
       'callback' => 'CRM_Deduper_BAO_MergeConflict::getEquivalentNameOptions',
     ],
   ],
+  // This doesn't work very well in the UI but we can set it via the api for now which I figure that out.
+  'deduper_location_priority_order' => [
+    'name' => 'deduper_location_priority_order',
+    'type' => 'Array',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('Location priority order. This is used to resolve data issues if a contact has, for example, 2 home emails. One would be moved to the highest priority available location'),
+    'default' => array_keys(CRM_Deduper_BAO_MergeConflict::getLocationTypes()),
+    'title' => E::ts('Priority order for locations'),
+    'help_text' => 'This is only used in conjunction with other options',
+    'html_type' => 'select',
+    'html_attributes' => [
+      'class' => 'crm-select2',
+      'multiple' => 1,
+      // @todo sortable doesn't work yet - https://lab.civicrm.org/dev/core/-/issues/1925
+      // for now only really api-alterable.
+      'sortable' => 1,
+    ],
+    'settings_pages' => ['deduper' => ['weight' => 70]],
+    'pseudoconstant' => [
+      'table' => 'civicrm_location_type',
+      'keyColumn' => 'id',
+      'labelColumn' => 'display_name',
+    ]
+  ],
+
 ];
