@@ -75,9 +75,14 @@ class CRM_Deduper_BAO_MergeHandler {
   protected $emailConflicts;
 
   /**
+ * @var array
+ */
+  protected $addressConflicts;
+
+  /**
    * @var array
    */
-  protected $addressConflicts;
+  protected $phoneConflicts;
 
   /**
    * Location blocks that should be deleted on merge.
@@ -246,6 +251,21 @@ class CRM_Deduper_BAO_MergeHandler {
       return $this->dedupeData['migration_info']['main_details']['location_blocks']['address'];
     }
     return $this->dedupeData['migration_info']['other_details']['location_blocks']['address'];
+  }
+
+  /**
+   * Get the location blocks for the contact for the given entity.
+   *
+   * @param string[address|phone|email] $entity
+   * @param bool $isForContactToBeKept
+   *
+   * @return array
+   */
+  public function getLocationEntities($entity, $isForContactToBeKept):array {
+    if ($isForContactToBeKept) {
+      return $this->dedupeData['migration_info']['main_details']['location_blocks'][$entity];
+    }
+    return $this->dedupeData['migration_info']['other_details']['location_blocks'][$entity];
   }
 
   /**
@@ -446,6 +466,9 @@ class CRM_Deduper_BAO_MergeHandler {
     $resolver = new CRM_Deduper_BAO_Resolver_InitialResolver($this);
     $resolver->resolveConflicts();
 
+    $resolver = new CRM_Deduper_BAO_Resolver_PreferredContactLocationResolver($this);
+    $resolver->resolveConflicts();
+
     // Let's do this one last - that way if someone wants to try to resolve names first they
     // can & then fall back on 'just use the value from the preferred contact.
     // @todo - should we make the resolvers sortable / re-order-able?
@@ -505,18 +528,19 @@ class CRM_Deduper_BAO_MergeHandler {
   }
 
   /**
- * Resolve conflict on field using the specified value.
- *
- * @param string $fieldName
- * @param string $location
- * @param string $block
- * @param string $value
- */
-  public function setResolvedLocationValue($fieldName, $location, $block, $value) {
-    unset($this->emailConflicts[$fieldName]);
-    $this->locationConflictResolutions[$location][$block][$fieldName] = $value;
-    if (empty($this->emailConflicts[$block])) {
-      $this->resolveConflictsOnLocationBlock($location, $block);
+   * Resolve conflict on field using the specified value.
+   *
+   * @param string $fieldName
+   * @param string[ $entity
+   * @param string $block
+   * @param string $value
+   */
+  public function setResolvedLocationValue($fieldName, $entity, $block, $value) {
+    $key = $entity . 'Conflicts';
+    unset($this->$key[$fieldName]);
+    $this->locationConflictResolutions[$entity][$block][$fieldName] = $value;
+    if (empty($this->$key[$block])) {
+      $this->resolveConflictsOnLocationBlock($entity, $block);
     }
   }
 
@@ -548,6 +572,119 @@ class CRM_Deduper_BAO_MergeHandler {
   }
 
   /**
+   * Assign location to a new available location and block so it is retained.
+   *
+   * @param string $locationEntity
+   * @param int $block
+   * @param bool $isContactToKeep
+   *   Does the location belong to the contact to keep.
+   * @param bool|null $isPrimary
+   *   If not null the primary will be forced to this.
+   */
+  public function relocateLocation($locationEntity, $block, $isContactToKeep = FALSE, $isPrimary = NULL) {
+    $locationTypeID =  $this->getNextAvailableLocationType($locationEntity);
+    $nextBlock = $this->getNextAvailableLocationBlock($locationEntity);
+    $blockToKeep = $this->getLocationBlock($locationEntity, $block, TRUE);
+    $blockToKeep['location_type_id'] = $locationTypeID;
+    if ($isPrimary !== NULL) {
+      $blockToKeep['is_primary'] = $isPrimary;
+    }
+    $this->dedupeData['migration_info'][($isContactToKeep ? 'main_details' : 'other_details')]['location_blocks'][$locationEntity][$nextBlock] = $blockToKeep;
+    $this->dedupeData['migration_info']['move_location_' . $locationEntity . '_' . $nextBlock] = TRUE;
+    $this->dedupeData['migration_info']['location_blocks'][$locationEntity][$nextBlock] = ['locTypeId' => $locationTypeID, 'operation' => 1];
+  }
+
+  /**
+   * Set primary location to that of the contact to be deleted
+   * @param string $locationEntity
+   * @param int $block
+   */
+  public function setPrimaryLocationToDeleteContact($locationEntity, $block) {
+    $blockOnContactToKeep = $this->getLocationBlock($locationEntity, $block, TRUE);
+    $blockToBePrimary = $this->getLocationBlock($locationEntity, $block, FALSE);
+    if (!empty($blockOnContactToKeep) && $blockOnContactToKeep['is_primary'] && $this->isBlockEquivalent($locationEntity, $blockOnContactToKeep, $blockToBePrimary)
+      && $blockOnContactToKeep['location_type_id'] === $blockToBePrimary['location_type_id']
+    ) {
+      // No action required - it already is the primary.
+      return;
+    }
+    $this->dedupeData['migration_info']['location_blocks'][$locationEntity][$block]['set_other_primary'] = 1;
+    $this->dedupeData['migration_info']['location_blocks'][$locationEntity][$block]['operation'] = 2;
+    $this->dedupeData['migration_info']['move_location_' . $locationEntity . '_' . $block] = TRUE;
+
+    foreach ($this->getLocationEntities($locationEntity, TRUE) as $blockNumber => $toKeepBlock) {
+      if ($this->isBlockEquivalent($locationEntity, $toKeepBlock, $blockToBePrimary)) {
+        $this->dedupeData['migration_info']['location_blocks'][$locationEntity][$block]['mainContactBlockId'] = $toKeepBlock['id'];
+      }
+    }
+  }
+
+  /**
+   * Is the second block functionally the same as the second.
+   *
+   * For example if they both have the same phone number they are functionally
+   * the same information.
+   *
+   * @param string[address|phone|email] $locationEntity
+   * @param array $entity1
+   * @param array $entity2
+   *
+   * @return bool
+   */
+  public function isBlockEquivalent($locationEntity, $entity1, $entity2) {
+    return $entity1['display'] === $entity2['display'];
+  }
+
+  /**
+   * Does this block hold unique information ot otherwise replicated in other blocks.
+   *
+   * @param string[address|phone|email] $locationEntity
+   * @param array $entityToConsiderRehoming
+   * @param int $blockNumber
+   *
+   * @return bool
+   */
+  public function isBlockUnique($locationEntity, array $entityToConsiderRehoming, $blockNumber): bool {
+    foreach ($this->getAllLocationBlocks($locationEntity) as $existingEntity) {
+      if ($existingEntity !== $blockNumber && $this->isBlockEquivalent($locationEntity, $existingEntity, $entityToConsiderRehoming)) {
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Get all blocks for the given location, from both contacts.
+   *
+   * @param string $locationEntity
+   *
+   * @return array
+   */
+  public function getAllLocationBlocks($locationEntity): array {
+    $blocks = [];
+    foreach ($this->dedupeData['migration_info']['main_details']['location_blocks'][$locationEntity] as $block => $detail) {
+      $detail['block'] = $block;
+      $blocks[] = $detail;
+    }
+    foreach ($this->dedupeData['migration_info']['other_details']['location_blocks'][$locationEntity] as $block => $detail) {
+      $detail['block'] = $block;
+      $blocks[] = $detail;
+    }
+    return $blocks;
+  }
+
+  public function getNextAvailableLocationBlock($locationEntity) {
+    $blocksInUse = [];
+    foreach (array_merge(
+      array_keys($this->dedupeData['migration_info']['main_details']['location_blocks'][$locationEntity]),
+      array_keys($this->dedupeData['migration_info']['other_details']['location_blocks'][$locationEntity])
+    ) as $block) {
+      $blocksInUse[$block] = $block;
+    }
+    return array_pop($blocksInUse) + 1;
+  }
+
+  /**
    * Get the specified block.
    *
    * @param string $location
@@ -558,7 +695,7 @@ class CRM_Deduper_BAO_MergeHandler {
    */
   public function getLocationBlock($location, $block, $isForContactToBeKept):array {
     $contactString = $isForContactToBeKept ? 'main_details' : 'other_details';
-    return $this->dedupeData['migration_info'][$contactString]['location_blocks'][$location][$block];
+    return $this->dedupeData['migration_info'][$contactString]['location_blocks'][$location][$block] ?? [];
   }
 
   /**
@@ -613,6 +750,40 @@ class CRM_Deduper_BAO_MergeHandler {
   }
 
   /**
+   * Get conflicts for the phone of the given block.
+   *
+   * @param int $blockNumber
+   *
+   * @return array
+   *   Conflicts in emails.
+   */
+  public function getPhoneConflicts($blockNumber):array {
+    if (isset($this->phoneConflicts[$blockNumber])) {
+      return $this->phoneConflicts[$blockNumber];
+    }
+    $mainContactEntity = $this->dedupeData['migration_info']['main_details']['location_blocks']['phone'][$blockNumber];
+    $otherContactEntity = $this->dedupeData['migration_info']['other_details']['location_blocks']['phone'][$blockNumber];
+    $this->phoneConflicts = [];
+    // As defined in CRM_Dedupe_Merger::ignoredFields + display which is for the form layer.
+    $keysToIgnore = [
+      'id',
+      'is_primary',
+      'is_billing',
+      'contact_id',
+      'display',
+    ];
+    foreach ($otherContactEntity as $field => $value) {
+      if (
+        isset($mainContactEntity[$field])
+        && $mainContactEntity[$field] !== $value
+        && !in_array($field, $keysToIgnore, TRUE) ) {
+        $this->phoneConflicts[$field] = $value;
+      }
+    }
+    return $this->phoneConflicts;
+  }
+
+  /**
    * Get conflicts on all address blocks.
    *
    * @return array
@@ -623,6 +794,32 @@ class CRM_Deduper_BAO_MergeHandler {
       if (strpos($conflictedField, 'location_address') === 0) {
         $blockNumber = str_replace('location_address_', '', $conflictedField);
         $conflicts[$blockNumber] = $this->getAddressConflicts($blockNumber);
+      }
+    }
+    return $conflicts;
+  }
+
+  /**
+   * Get conflicts on all address blocks.
+   *
+   * @param string $entity
+   *
+   * @return array
+   */
+  public function getAllConflictsForEntity($entity): array {
+    $conflicts = [];
+    foreach ($this->getFieldsInConflict() as $conflictedField) {
+      if (strpos($conflictedField, 'location_' . $entity) === 0) {
+        $blockNumber = str_replace('location_' .  $entity . '_', '', $conflictedField);
+        if ($entity === 'email') {
+          $conflicts[$blockNumber] = $this->getEmailConflicts($blockNumber);
+        }
+        if ($entity === 'address') {
+          $conflicts[$blockNumber] = $this->getAddressConflicts($blockNumber);
+        }
+        if ($entity === 'phone') {
+          $conflicts[$blockNumber] = $this->getPhoneConflicts($blockNumber);
+        }
       }
     }
     return $conflicts;
@@ -677,6 +874,19 @@ class CRM_Deduper_BAO_MergeHandler {
   }
 
   /**
+   * Is the second block functionally the same as the second.
+   *
+   * For example if they both have the same phone number they are functionally
+   * the same information.
+   *
+   * @param string[address|phone|email] $locationEntity
+   * @param int $block
+   */
+  public function setDoNotMoveBlock($locationEntity, $block) {
+    unset($this->dedupeData['migration_info']['move_location_' . $locationEntity . '_' . $block]);
+  }
+
+  /**
    * Is the merge handle handling conflict resolution for the given entity.
    *
    * @param string $locationEntity
@@ -707,11 +917,15 @@ class CRM_Deduper_BAO_MergeHandler {
     if (!empty($otherContactValuesToKeep)) {
       // We want to keep at least one value from the other contact so set it to override.
       $this->setLocationAddressFromOtherContactToOverwriteMainContact($location, $block);
-      if (!empty($mainContactValuesToKeep)) {
-        // We need to ensure this value is not lost - do something.
-      }
     }
     else {
+      if (!empty($mainContactValuesToKeep)) {
+        // Do not copy the value over from the other contact.
+        unset($this->dedupeData['migration_info']['move_location_' . $location . '_' . $block]);
+      }
+      // This whole locationBlocksToDelete idea is actually not being pursued. Leaving for now but
+      // I think it only 'sends a message' to tell wmf_civicrm.module not to handle so it can go once
+      // we fully remove from there.
       $this->locationBlocksToDelete[$location][$block] = $this->getLocationBlockValue($location, $block, FALSE, 'id');
     }
     unset($this->dedupeData['fields_in_conflict']['move_location_' . $location . '_' . $block]);
@@ -773,7 +987,7 @@ class CRM_Deduper_BAO_MergeHandler {
    * @throws \CiviCRM_API3_Exception
    */
   public function getPreferredContactValue($fieldName) {
-    return $this->getValueForField($fieldName, ($this->getPreferredContact() === $this->mainID));
+    return $this->getValueForField($fieldName, $this->isContactToKeepPreferred());
   }
 
   /**
@@ -789,6 +1003,54 @@ class CRM_Deduper_BAO_MergeHandler {
     }
     $fieldsToResolve = (array) $this->getSetting('deduper_resolver_field_prefer_preferred_contact');
     return array_intersect($fieldsToResolve, $conflictedFields);
+  }
+
+  /**
+   * Is the contact to be kept the preferred contact.
+   *
+   * @return bool
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   */
+  public function isContactToKeepPreferred(): bool {
+    return $this->getPreferredContact() === $this->mainID;
+  }
+
+  /**
+   * Get all locations in use for this entity.
+   *
+   * @param string $entity
+   *
+   * @return array
+   *   Array of location ids in use by at least one of the 2 contacts.
+   */
+  protected function getLocationsInUse($entity): array {
+    $locationsInUse = [];
+    foreach ($this->getAllLocationBlocks($entity) as $block) {
+      $locationsInUse[$block['location_type_id']] = (int) $block['location_type_id'];
+    }
+    return $locationsInUse;
+  }
+
+  /**
+   * Get next available location type.
+   *
+   * Find a location type not currently in user. Get the priority order from setting deduper_location_priority_order.
+   *
+   * @param string[address|email|phone|website|im] $locationEntity
+   *
+   * @return int
+   */
+  protected function getNextAvailableLocationType($locationEntity): int {
+    $locationsToChooseFrom = Civi::settings()->get('deduper_location_priority_order');
+    if (!is_array($locationsToChooseFrom)) {
+      // I'm having some trouble with this setting on save & retrieve as an array - for now, handle here.
+      // I'd rather dig further after the next civi update.
+      $locationsToChooseFrom = explode(CRM_Core_DAO::VALUE_SEPARATOR, $locationsToChooseFrom);
+    }
+    $availableOrderedLocations = array_diff($locationsToChooseFrom, $this->getLocationsInUse($locationEntity));
+    return (int) ($availableOrderedLocations[0] ?? 0);
   }
 
 }

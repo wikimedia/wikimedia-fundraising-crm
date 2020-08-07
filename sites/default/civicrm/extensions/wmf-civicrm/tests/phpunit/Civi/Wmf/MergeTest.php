@@ -3,6 +3,7 @@
 namespace Civi\Wmf;
 
 use Civi\Api4\Contact;
+use Civi\Api4\Email;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
@@ -71,9 +72,6 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
     civicrm_initialize();
     $this->adminUserID = $this->imitateAdminUser();
     $this->intitalContactCount = $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']);
-    // Run through the merge first to make sure there aren't pre-existing contacts in the DB
-    // that will ruin the tests.
-    $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
 
     $this->contactID = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 0]);
     $this->contactID2 = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 1]);
@@ -191,6 +189,67 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
   }
 
   /**
+   * Test the handling when the match is between a primary and a non-primary email.
+   *
+   * What I witnessed on live was a case where the higher contact id was a less recent donor,
+   * and was merged into the more recent donor with the lower contact_id
+   *
+   * Before
+   * | id       | email            | contact_id | location_type_id | is_primary | on_hold |
+   * +----------+---------------------------+------------+------------------+------------+---------+
+   * |  4995727 | 1@example.com    |      123   |                3 |          0 |       1 |
+   * | 12970851 | 2@example.com    |      123   |                5 |          0 |       1 |
+   * | 36741158 | 3@example.com    |      123   |                1 |          1 |       0 |
+   * |  1068509 | 1@example.com    |      456   |                1 |          1 |       1 |
+   *
+   * After
+   * | id       | email            | contact_id | location_type_id | is_primary | on_hold |
+   * +----------+---------------------------+------------+------------------+------------+---------+
+   * |  4995727 | 1@example.com    |      123   |                3 |          0 |       1 |
+   * | 12970851 | 2@example.com    |      123   |                5 |          0 |       1 |
+   *
+   * What it should be
+   * | id       | email            | contact_id | location_type_id | is_primary | on_hold |
+   * +----------+---------------------------+------------+------------------+------------+---------+
+   * |  4995727 | 1@example.com    |      123   |                3 |          0 |       1 |
+   * | 12970851 | 2@example.com    |      123   |                5 |          0 |       1 |
+   * | 36741158 | 3@example.com    |      123   |                1 |          1 |       0 |
+   *
+   * Note that the test only uses 2 emails as 2@example.com above seems extraneous to the issue
+   *
+   * @param bool $isReverse
+   *   Should we reverse the contact order for more test cover.
+   *
+   * @dataProvider isReverse
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \API_Exception
+   */
+  public function testMergeEmailNonPrimary($isReverse) {
+    $this->giveADuckADonation($isReverse);
+    $moreRecentlyGenerousDuck = $isReverse ? $this->contactID : $this->contactID2;
+     Email::replace()
+      ->setCheckPermissions(FALSE)
+      ->setRecords([
+        ['email' => 'the_don@duckland.com', 'location_type_id:name' => 'Other'],
+        ['email' => 'better_duck@duckland.com', 'is_primary' => TRUE, 'location_type_id:name' => 'Work'],
+     ])
+      ->setWhere([['contact_id', '=', $moreRecentlyGenerousDuck]])
+      ->addDefault('contact_id', $moreRecentlyGenerousDuck)
+      ->execute();
+    $result = $this->callAPISuccess('Job', 'process_batch_merge', [
+      'criteria' => ['contact' => ['id' => $this->contactID]],
+    ])['values'];
+    $this->assertCount(1, $result['merged']);
+    $emails = Email::get()->addSelect('*')->addWhere('contact_id', '=', $this->contactID)->setOrderBy([ 'is_primary' => 'DESC'])->execute();
+    $this->assertCount(2, $emails);
+    $primary = $emails->first();
+    $this->assertEquals('better_duck@duckland.com', $primary['email']);
+    $this->assertEquals(TRUE, $primary['is_primary']);
+    $this->assertOnePrimary($emails);
+  }
+
+  /**
    * Test that wmf_donor calculations don't include Endowment.
    *
    * We set up 2 contacts
@@ -204,6 +263,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
    * Although a bit tangental we test calcs on deleting a contribution at the end.
    *
    * @throws \CRM_Core_Exception
+   * @throws \API_Exception
    */
   public function testMergeEndowmentCalculation() {
     $this->callAPISuccess('Contribution', 'create', [
@@ -1052,13 +1112,13 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
           ],
           'expected_hook' => array_merge($additionalExpected, [
             array_merge([
-              'location_type_id' => 'Mailing',
-              'is_primary' => 0,
-            ], $locationParams2),
-            array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
             ], $locationParams1),
+            array_merge([
+              'location_type_id' => 'Mailing',
+              'is_primary' => 0,
+            ], $locationParams2),
           ]),
         ],
       ],
@@ -1279,13 +1339,13 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
           ],
           'expected_hook' => array_merge($additionalExpected, [
             array_merge([
-              'location_type_id' => 'Home',
-              'is_primary' => 1,
-            ], $locationParams1),
-            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 0,
             ], $locationParams2),
+            array_merge([
+              'location_type_id' => 'Home',
+              'is_primary' => 1,
+            ], $locationParams1),
           ]),
         ],
       ],
@@ -1434,13 +1494,13 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
           ],
           'expected_hook' => array_merge($additionalExpected, [
             array_merge([
-              'location_type_id' => 'Home',
-              'is_primary' => 0,
-            ], $locationParams3),
-            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
             ], $locationParams2),
+            array_merge([
+              'location_type_id' => 'Home',
+              'is_primary' => 0,
+            ], $locationParams3),
           ]),
         ],
       ],
@@ -1476,13 +1536,13 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
           ],
           'expected_hook' => array_merge($additionalExpected, [
             array_merge([
-              'location_type_id' => 'Home',
-              'is_primary' => 0,
-            ], $locationParams3),
-            array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
             ], $locationParams2),
+            array_merge([
+              'location_type_id' => 'Home',
+              'is_primary' => 0,
+            ], $locationParams3),
           ]),
         ],
       ],
