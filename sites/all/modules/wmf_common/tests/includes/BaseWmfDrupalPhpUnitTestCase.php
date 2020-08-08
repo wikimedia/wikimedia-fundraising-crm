@@ -49,15 +49,8 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     $user->roles = array(DRUPAL_AUTHENTICATED_RID => 'authenticated user');
     $this->startTimestamp = time();
     civicrm_initialize();
-    if (!Civi::settings()->get('logging')
-      && !CRM_Core_DAO::singleValueQuery("
-        SHOW triggers WHERE `Trigger` like 'civicrm_contribution_after_insert'
-      ")) {
-      civicrm_api3('Setting', 'create', array(
-        'logging_no_trigger_permission' => 0,
-      ));
-      civicrm_api3('Setting', 'create', array('logging' => 1));
-    }
+    Civi::settings()->set( 'logging_no_trigger_permission', FALSE);
+    Civi::settings()->set( 'logging', TRUE);
   }
 
   public function tearDown() {
@@ -97,6 +90,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    * @param array $params
    *
    * @return int
+   * @throws \CRM_Core_Exception
    */
   public function createTestContact($params) {
     $id = $this->callAPISuccess('Contact', 'create', $params)['id'];
