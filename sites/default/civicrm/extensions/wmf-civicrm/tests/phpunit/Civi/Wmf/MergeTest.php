@@ -1,6 +1,6 @@
 <?php
 
-namespace Civi;
+namespace Civi\Wmf;
 
 use Civi\Api4\Contact;
 use Civi\Test\HeadlessInterface;
@@ -77,6 +77,17 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
 
     $this->contactID = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 0]);
     $this->contactID2 = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 1]);
+    $locationTypes = array_flip(\CRM_Core_BAO_Address::buildOptions('location_type_id', 'validate'));
+    $types = [];
+    foreach (['Main', 'Other', 'Home', 'Mailing', 'Billing', 'Work'] as $type) {
+      $types[] = $locationTypes[$type];
+    }
+
+    \Civi::settings()->set('deduper_location_priority_order', $types);
+    \Civi::settings()->set('deduper_resolver_email', 'preferred_contact_with_re-assign');
+    \Civi::settings()->set('deduper_resolver_field_prefer_preferred_contact', ['contact_source', wmf_civicrm_get_custom_field_name('opt_in')]);
+    \Civi::settings()->set('deduper_resolver_preferred_contact_resolution', ['most_recent_contributor']);
+    \Civi::settings()->set('deduper_resolver_preferred_contact_last_resort', 'most_recently_created_contact');
   }
 
   /**
@@ -95,7 +106,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->adminUserID, 'skip_undelete' => TRUE]);
     $this->doDuckHunt();
     parent::tearDown();
-    $this->assertEquals($this->intitalContactCount, $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']));
+    $this->assertEquals($this->intitalContactCount, $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']), 'contact cleanup incomplete');
   }
 
   /**
@@ -366,7 +377,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
     $this->assertCount($dataSet['skipped'], $result['values']['skipped']);
     $this->assertCount($dataSet['merged'], $result['values']['merged']);
     $addresses = $this->callAPISuccess($dataSet['entity'], 'get', ['contact_id' => $this->contactID, 'sequential' => 1])['values'];
-    $this->assertEquals(count($dataSet['expected_hook']), count($addresses));
+    $this->assertCount(count($dataSet['expected_hook']), $addresses);
     $locationTypes = $this->callAPISuccess($dataSet['entity'], 'getoptions', ['field' => 'location_type_id'])['values'];
     foreach ($dataSet['expected_hook'] as $index => $expectedAddress) {
       foreach ($expectedAddress as $key => $value) {
@@ -378,11 +389,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
         }
       }
     }
-    $primaryCount = 0;
-    foreach ($addresses as $address) {
-      $primaryCount += $address['is_primary'];
-    }
-    $this->assertEquals(1, $primaryCount);
+    $this->assertOnePrimary($addresses);
   }
 
   /**
@@ -427,15 +434,15 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
     $addresses = $this->callAPISuccess($dataSet['entity'], 'get', [
       'contact_id' => $keptContact,
       'sequential' => 1,
-    ]);
+    ])['values'];
 
     if (!empty($dataSet['fix_required_for_reverse'])) {
       return;
     }
-    $this->assertEquals(count($dataSet['expected_hook']), $addresses['count']);
+    $this->assertCount(count($dataSet['expected_hook']), $addresses);
     $locationTypes = $this->callAPISuccess($dataSet['entity'], 'getoptions', ['field' => 'location_type_id']);
     foreach ($dataSet['expected_hook'] as $expectedAddress) {
-      foreach ($addresses['values'] as $index => $address) {
+      foreach ($addresses as $index => $address) {
         // compared to the previous test the addresses are in a different order (for some datasets.
         // so, first find the matching address and then check it fully matches.
         // by unsetting afterwards we should find them all gone by the end.
@@ -446,19 +453,19 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
         ) {
           foreach ($expectedAddress as $key => $value) {
             if ($key === 'location_type_id') {
-              $this->assertEquals($locationTypes['values'][$addresses['values'][$index][$key]], $value);
+              $this->assertEquals($locationTypes['values'][$addresses[$index][$key]], $value);
             }
             else {
-              $this->assertEquals($value, $addresses['values'][$index][$key], $dataSet['entity'] . ': Unexpected value for ' . $key . (!empty($dataSet['description']) ? " on dataset {$dataSet['description']}" : ''));
+              $this->assertEquals($value, $addresses[$index][$key], $dataSet['entity'] . ': Unexpected value for ' . $key . (!empty($dataSet['description']) ? " on dataset {$dataSet['description']}" : ''));
             }
           }
-          unset($addresses['values'][$index]);
+          unset($addresses[$index]);
           // break to find a match for the next $expected address.
           continue 2;
         }
       }
     }
-    $this->assertEmpty($addresses['values']);
+    $this->assertEmpty($addresses);
   }
 
   /**
@@ -1586,7 +1593,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
         ],
       ],
       'duplicate_mixed_address_on_one_contact_second_primary' => [
-        'duplicate_mixedaddress_on_one_contact_second_primary' => [
+        'duplicate_mixed_address_on_one_contact_second_primary' => [
           'comment' => 'check we do not lose the primary. Matching addresses are squashed.',
           'merged' => 1,
           'skipped' => 0,
@@ -1689,7 +1696,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
    * Add some donations to our ducks
    *
    * @param bool $isReverse
-   *   Reverse which duck is the most recent donor?
+   *   Reverse which duck is the most recent donor? ie. make duck 1 more recent.
    *
    * @throws \CRM_Core_Exception
    */
@@ -1796,6 +1803,18 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
     foreach ($expected as $key => $value) {
       $this->assertEquals($value, $contact[$key], "wrong value for $key");
     }
+  }
+
+  /**
+   * Assert exactly one of the entities arraay hhas a key is_primary equal to 1.
+   * @param array $entities
+   */
+  protected function assertOnePrimary($entities) {
+    $primaryCount = 0;
+    foreach ($entities as $entity) {
+      $primaryCount += $entity['is_primary'];
+    }
+    $this->assertEquals(1, $primaryCount);
   }
 
 }
