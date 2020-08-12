@@ -1,6 +1,16 @@
 # CiviCRM Replay-on-Write: Installation
 
-## General/Abstract
+The "General" section gives a general overview of the install process. Many specifics can depend on your
+organization/deployment, iso t is a bit light on MySQL details - and only gives details that are specific to `rpow`.
+
+The subsequent sections provide more specific, concrete install options. These are geared toward local development
+and experimentation:
+
+* "Using civibuild and harvey-dent" provides the lightest simulation. It uses the existing DB and sets up a split personality, with two users (RO user and RW user).
+* "Using civibuild and rundb" provides the most realistic simulation. It launches two new instances of `mysqld` and automatically syncs between their databases.
+* "Using rebuild-ro" provides a more manual simulation. It uses your existing `mysqld` and makes a read-only copy of the Civi DB. It does *not* sync automatically - you must run `rebuild-ro` whenever you want to sync. (*This is useful for carefully inspecting/playing each step or edge-case manually.*)
+
+## General
 
 * [Setup CiviCRM to store caches in Redis.](https://docs.civicrm.org/sysadmin/en/latest/setup/cache/)
 
@@ -12,7 +22,7 @@
   ```
 
 * Setup the MySQL read-write and read-only databases -- and determine their
-  DSNs.  That process is outside the scope of this README. See also: [MySQL 5.7 Reference Manual: Replication Howto](https://dev.mysql.com/doc/refman/5.7/en/replication-howto.html):
+  DSNs.  That process is outside the scope of this README. See also: [MySQL 5.7 Reference Manual: Replication Howto](https://dev.mysql.com/doc/refman/5.7/en/replication-howto.html)
 
 * Edit `civicrm.settings.php`. In lieu of setting `define('CIVICRM_DSN', '...')`, call this:
 
@@ -23,6 +33,35 @@
     'slaves' => ['mysql://ro_user:ro_pass@ro_host/ro_db?new_link=true'],
   ]);
   ```
+
+## Using civibuild and harvey-dent
+
+If you're doing local development on a `civibuild` site, then you can simulate a master/slave topology using the script
+`harvey-dent`.  This will create a split between two *user accounts* which have access to the same DB.  The original
+MySQL account has read-write access -- and the new secondary account has read-only access.
+
+This is handy for quick-and-dirty experiments without having a proper MySQL replication environment.
+
+* [Setup CiviCRM to store caches in Redis.](https://docs.civicrm.org/sysadmin/en/latest/setup/cache/)
+
+* Download the `rpow` extension, e.g.
+
+  ```
+  cd ~/buildkit/build/dmaster/web/sites/default/civicrm/ext
+  git clone https://github.com/totten/rpow
+  ```
+
+* Create the read-only user and register DSNs.
+
+  ```
+  ./bin/harvey-dent -r ~/buildkit/build/dmaster/web/
+  ```
+
+The `harvey-dent` script will:
+
+* Add a user with read-only permission for the existing Civi database.
+* Create a file `civicrm.settings.d/pre.d/100-civirpow.php` to call `rpow_init()` with the appropriate credentials
+  for the `masters` and `slaves`.
 
 ## Using civibuild and rundb
 

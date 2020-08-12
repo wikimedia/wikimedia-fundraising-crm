@@ -760,7 +760,7 @@ class CRM_Deduper_BAO_MergeHandler {
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  public function getPreferredContact() {
+  public function getPreferredContact(): int {
     $preferredContact = new CRM_Deduper_BAO_PreferredContact($this->mainID, $this->otherID);
     return $preferredContact->getPreferredContactID();
   }

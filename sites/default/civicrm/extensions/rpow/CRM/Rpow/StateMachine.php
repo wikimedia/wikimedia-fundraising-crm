@@ -104,6 +104,10 @@ class CRM_Rpow_StateMachine {
     return $oldBuffer;
   }
 
+  /**
+   * @return string
+   *   Ex: READ_ONLY (ro) or READ_WRITE (rw)
+   */
   public function getState() {
     return $this->state;
   }

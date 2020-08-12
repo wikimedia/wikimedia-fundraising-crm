@@ -378,7 +378,7 @@ function _rpow_civix_insert_navigation_menu(&$menu, $path, $item) {
         if (!isset($entry['child'])) {
           $entry['child'] = array();
         }
-        $found = _rpow_civix_insert_navigation_menu($entry['child'], implode('/', $path), $item, $key);
+        $found = _rpow_civix_insert_navigation_menu($entry['child'], implode('/', $path), $item);
       }
     }
     return $found;

@@ -26,7 +26,7 @@ abstract class CRM_Deduper_BAO_Resolver {
    *
    * @return array
    */
-  protected function getFieldsInConflict() {
+  protected function getFieldsInConflict(): array {
     return $this->mergeHandler->getFieldsInConflict();
   }
 
@@ -70,7 +70,7 @@ abstract class CRM_Deduper_BAO_Resolver {
    * Set the given value as the value to resolve the conflict with.
    *
    * @param string $fieldName
-   * @param string $location
+   * @param string[email|address|phone|website|im] $location
    * @param string $block
    * @param mixed $value
    */

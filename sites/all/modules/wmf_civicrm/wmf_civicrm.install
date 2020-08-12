@@ -5799,3 +5799,20 @@ function wmf_civicrm_update_8075() {
     }
   }
 }
+
+/*
+ * Edit message Template for recurring failures
+ * Updates Ways to Give link with utm medium
+ *
+ * @throws \API_Exception
+ *
+ * Bug: T256184
+ */
+function wmf_civicrm_update_8080() {
+  civicrm_initialize();
+  $htmlText = file_get_contents(__DIR__ . '/templates/recurring_failed_message.html.txt');
+
+  \Civi\Api4\MessageTemplate::update()->setCheckPermissions(FALSE)->addWhere('workflow_name', '=', 'recurring_failed_message')->setValues([
+    'msg_html' => $htmlText,
+  ])->execute();
+}

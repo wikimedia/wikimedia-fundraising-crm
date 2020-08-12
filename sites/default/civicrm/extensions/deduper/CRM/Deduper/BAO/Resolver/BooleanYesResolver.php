@@ -22,7 +22,9 @@ class CRM_Deduper_BAO_Resolver_BooleanYesResolver extends CRM_Deduper_BAO_Resolv
         $emailBlockNumber = str_replace('location_email_', '', $conflictedField);
         $emailDifferences = $this->getEmailConflicts($emailBlockNumber);
         foreach ($emailDifferences as $fieldName => $emailDifference) {
-          $this->setResolvedLocationValue($fieldName, 'email', $emailBlockNumber, 1);
+          if (in_array($fieldName, $fieldsToResolve, TRUE)) {
+            $this->setResolvedLocationValue($fieldName, 'email', $emailBlockNumber, 1);
+          }
         }
       }
     }

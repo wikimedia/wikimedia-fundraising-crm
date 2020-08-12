@@ -9,11 +9,17 @@ RUNDB_TMP=/tmp
 #RUNDB_URL=https://github.com/totten/rundb/archive/master.tar.gz
 RUNDB_URL=https://github.com/totten/rundb/archive/401d9f80f26d47cf6b739f07439846456d362c48.tar.gz
 
+LOCALHOST=${LOCALHOST:-127.0.0.1}
+MYSQL1_PORT=${MYSQL1_PORT:-3330}
+MYSQL2_PORT=${MYSQL2_PORT:-3331}
+CIVI_DB_NAME=${CIVI_DB_NAME:-civi}
+CMS_DB_NAME=${CIVI_DB_NAME:-cms}
+
 CIVI_DRIVER_TYPE=civirpow
-CIVI_MASTER_CRED='root:@127.0.0.1:3330/civi'
-CIVI_SLAVE_CRED='reader:@127.0.0.1:3331/civi'
-CMS_MASTER_CRED='root;;127.0.0.1;3330;cms'
-CMS_SLAVE_CRED='reader;;127.0.0.1;3331;cms'
+CIVI_MASTER_CRED="root:@${LOCALHOST}:${MYSQL1_PORT}/${CIVI_DB_NAME}"
+CIVI_SLAVE_CRED="reader:@${LOCALHOST}:${MYSQL2_PORT}/${CIVI_DB_NAME}"
+CMS_MASTER_CRED="root;;${LOCALHOST};${MYSQL1_PORT};${CMS_DB_NAME}"
+CMS_SLAVE_CRED="reader;;${LOCALHOST};${MYSQL2_PORT};${CMS_DB_NAME}"
 
 ######################################################
 ## Helpers
