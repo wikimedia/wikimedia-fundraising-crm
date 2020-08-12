@@ -7,7 +7,7 @@ investigate how rpow works. I suggest enabling it.
 
 ## Usage Example (Development)
 
-Here are some example steps to see it working in development:
+One way to see it working is to use an exaggeratedly-slow replication process where you can watch the steps. The [install.md](install.md) describes an approach using `rebuild-ro` in which synchronization is only done manually. Here are  few steps to try in the `rebuild-ro` config:
 
 * In the browser
     * Navigate to your CiviCRM dev site
@@ -30,7 +30,7 @@ Here are some example steps to see it working in development:
       ./bin/rebuild-ro
       ```
 
-TIP: When you are done doing development, delete the file
+TIP: After you finish doing development, delete the file
 `civicrm.settings.d/pre.d/100-civirpow.php`.  This will put your dev site back
 into a normal configuration with a single MySQL DSN.
 

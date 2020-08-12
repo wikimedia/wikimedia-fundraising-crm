@@ -2,7 +2,7 @@
 
 use CRM_Rpow_Classifier as Classifier;
 
-class CRM_Rpow_ClassifierTest extends \PHPUnit_Framework_TestCase {
+class CRM_Rpow_ClassifierTest extends \PHPUnit\Framework\TestCase {
 
   public function getExampleFiles() {
     $files = [
