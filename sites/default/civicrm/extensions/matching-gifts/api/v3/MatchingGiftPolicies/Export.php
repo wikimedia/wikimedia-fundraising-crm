@@ -48,19 +48,20 @@ function civicrm_api3_matching_gift_policies_export($params) {
 
   $writer = Writer::createFromPath($outputPath, 'w');
   foreach ($orgContacts['values'] as $contact) {
-    $parentCompanyName = $contact[$mgNameFieldId];
+    $parentCompanyName = trim($contact[$mgNameFieldId]);
     $writer->insertOne([$contact['contact_id'], $parentCompanyName]);
     $subsidiaries = json_decode($contact[$subsidiariesFieldId]);
     foreach ($subsidiaries as $subsidiary) {
+      $trimmedSub = trim($subsidiary);
       // Skip if the subsidiary name is basically equal to the parent co name.
       if (
-        $subsidiary === $parentCompanyName ||
-        $subsidiary === 'The ' . $parentCompanyName ||
-        'The ' . $subsidiary === $parentCompanyName
+        $trimmedSub === $parentCompanyName ||
+        $trimmedSub === 'The ' . $parentCompanyName ||
+        'The ' . $trimmedSub === $parentCompanyName
       ) {
         continue;
       }
-      $writer->insertOne([$contact['contact_id'], $subsidiary]);
+      $writer->insertOne([$contact['contact_id'], $trimmedSub]);
     }
   }
   return civicrm_api3_create_success();
