@@ -71,8 +71,12 @@ class Render extends AbstractAction {
       return FALSE;
     }
 
-    if (!empty($email['contact.preferred_language']) && strpos($email['contact.preferred_language'], 'en') !== 0) {
-      // Temporary early return for non English languages while we test them.
+    $supportedLanguages = ['ja_JP', 'fr_FR', 'sv_SE'];
+    if (!empty($email['contact.preferred_language'])
+      && strpos($email['contact.preferred_language'], 'en') !== 0
+      && !in_array($email['contact.preferred_language'], $supportedLanguages, TRUE)
+    ) {
+      // Temporary early return for non translated languages while we test them.
       // The goal is to create a template for a bunch of languages - the
       // syntax to create is
       // \Civi\Api\MessageTemplate::create()->setLanguage('fr_FR')
