@@ -54,7 +54,7 @@ CREATE TABLE `civicrm_strings` (
      `entity_field` varchar(64) NOT NULL   COMMENT 'Field where referenced item is stored',
      `entity_id` int NOT NULL   COMMENT 'ID of the relevant entity.',
      `string` longtext NOT NULL   COMMENT 'Translated strinng',
-     `language` varchar(16) NOT NULL   COMMENT 'Translated string',
+     `language` varchar(16) NOT NULL   COMMENT 'Relevant language',
      `is_active` tinyint    COMMENT 'Is this string active?',
      `is_default` tinyint    COMMENT 'Is this the default string for the given locale?'
 ,
