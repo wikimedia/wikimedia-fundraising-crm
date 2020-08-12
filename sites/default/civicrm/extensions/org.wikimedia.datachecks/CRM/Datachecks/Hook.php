@@ -13,7 +13,7 @@ class CRM_Datachecks_Hook {
    */
   public static function dataCheckGetChecks(&$checks) {
       return CRM_Utils_Hook::singleton()->invoke(
-        1,
+        ['checks'],
         $checks,
         CRM_Core_DAO::$_nullObject,
         CRM_Core_DAO::$_nullObject,

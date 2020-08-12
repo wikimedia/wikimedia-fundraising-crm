@@ -12,7 +12,7 @@ class CRM_Forgetme_Hook {
    *   Ignored value.
    */
   public static function testSetup() {
-    return CRM_Utils_Hook::singleton()->invoke(0, CRM_Core_DAO::$_nullObject, CRM_Core_DAO::$_nullObject, CRM_Core_DAO::$_nullObject, CRM_Core_DAO::$_nullObject, CRM_Core_DAO::$_nullObject, CRM_Core_DAO::$_nullObject, 'civicrm_testSetup');
+    return CRM_Utils_Hook::singleton()->invoke([], CRM_Core_DAO::$_nullObject, CRM_Core_DAO::$_nullObject, CRM_Core_DAO::$_nullObject, CRM_Core_DAO::$_nullObject, CRM_Core_DAO::$_nullObject, CRM_Core_DAO::$_nullObject, 'civicrm_testSetup');
   }
 
 }
