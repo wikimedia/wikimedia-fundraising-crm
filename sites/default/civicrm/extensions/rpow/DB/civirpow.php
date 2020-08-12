@@ -37,7 +37,8 @@ class DB_civirpow extends DB_mysqli {
   public function connect($dsn, $persistent = FALSE) {
     $config = $this->getConfig();
 
-    switch ($this->stateMachine->getState()) {
+    $state = $this->stateMachine->getState();
+    switch ($state) {
       case StateMachine::READ_ONLY:
         $dsns = $config['slaves'];
         break;
@@ -50,7 +51,9 @@ class DB_civirpow extends DB_mysqli {
       shuffle($dsns);
     }
 
-    return parent::connect(DB::parseDSN($dsns[0]), $persistent);
+    $chosenDsn = $dsns[0];
+    // If you want to inspect the connection+reconnection process, this is a handy place for a breakpoint. Note $state and $chosenDsn.
+    return parent::connect(DB::parseDSN($chosenDsn), $persistent);
   }
 
   public function simpleQuery($query) {
