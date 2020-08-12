@@ -1,6 +1,6 @@
 This extension contains some tools to help with duplicates (in various states of maturity)
 
-Requires CiviCRM 5.22
+Requires CiviCRM 5.28
 
 - Deduper screen - this is an angular screen that allows you to search for duplicates using nuanced criteria. You can dedupe from this screen.
 This can be found under the contacts menu.
