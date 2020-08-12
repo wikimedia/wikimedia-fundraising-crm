@@ -40,6 +40,21 @@ function rpow_init($config = []) {
   }
 
   define('CIVICRM_DSN', 'civirpow://');
+  switch (getenv('RPOW') ?: '') {
+    case 'ro':
+    case 'slave':
+      define('CIVICRM_CLI_DSN', $config['slaves'][0] ?? $config['masters'][0]);
+      break;
+    case 'rw':
+    case 'master':
+    case '':
+      define('CIVICRM_CLI_DSN', $config['masters'][0]);
+      break;
+
+    default:
+      throw new \Exception("Unrecognized RPOW");
+  }
+
   // define('CIVICRM_DSN', $config['masters'][0]);
   // define('CIVICRM_DSN', $config['slaves'][0]);
 }
