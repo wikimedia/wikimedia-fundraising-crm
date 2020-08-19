@@ -190,7 +190,12 @@ function civi_data_translate_civicrm_apiWrappers(&$wrappers, $apiRequest) {
   }
   if ($apiRequest['action'] === 'get') {
     if (!isset(\Civi::$statics['cividatatranslate']['translate_fields'][$apiRequest['entity']][$apiRequest->getLanguage()])) {
-      $fields = Strings::get()->addWhere('entity_table', '=', CRM_Core_DAO_AllCoreTables::getTableForEntityName($apiRequest['entity']))->setCheckPermissions(FALSE)->setSelect(['entity_field', 'entity_id', 'string'])->execute();
+      $fields = Strings::get()
+        ->addWhere('entity_table', '=', CRM_Core_DAO_AllCoreTables::getTableForEntityName($apiRequest['entity']))
+        ->addWhere('language', '=', $apiRequest->getLanguage())
+        ->setCheckPermissions(FALSE)
+        ->setSelect(['entity_field', 'entity_id', 'string'])
+        ->execute();
       foreach ($fields as $field) {
         \Civi::$statics['cividatatranslate']['translate_fields'][$apiRequest['entity']][$apiRequest->getLanguage()][$field['entity_id']][$field['entity_field']] = $field['string'];
       }

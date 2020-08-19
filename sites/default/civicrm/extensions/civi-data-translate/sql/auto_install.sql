@@ -47,20 +47,17 @@ SET FOREIGN_KEY_CHECKS=1;
 -- *
 -- *******************************************************/
 CREATE TABLE `civicrm_strings` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique Strings ID',
+  `entity_table` varchar(64) NOT NULL COMMENT 'Table where referenced item is stored',
+  `entity_field` varchar(64) NOT NULL COMMENT 'Field where referenced item is stored',
+  `entity_id` int(11) NOT NULL COMMENT 'ID of the relevant entity.',
+  -- We can make string utf8mb4 (supports emojis, kanji) because we know it is never used
+  -- to join on another table (that might not be the same collation).
+  `string` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Translated string',
+  `language` varchar(16) NOT NULL COMMENT 'Language',
+  `is_active` tinyint(4) DEFAULT NULL COMMENT 'Is this string active?',
+  `is_default` tinyint(4) DEFAULT NULL COMMENT 'Is this the default string for the given locale?',
+ PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 
-
-     `id` int unsigned NOT NULL AUTO_INCREMENT  COMMENT 'Unique Strings ID',
-     `entity_table` varchar(64) NOT NULL   COMMENT 'Table where referenced item is stored',
-     `entity_field` varchar(64) NOT NULL   COMMENT 'Field where referenced item is stored',
-     `entity_id` int NOT NULL   COMMENT 'ID of the relevant entity.',
-     `string` longtext NOT NULL   COMMENT 'Translated strinng',
-     `language` varchar(16) NOT NULL   COMMENT 'Relevant language',
-     `is_active` tinyint    COMMENT 'Is this string active?',
-     `is_default` tinyint    COMMENT 'Is this the default string for the given locale?'
-,
-        PRIMARY KEY (`id`)
-
-
-
-)    ;
 

@@ -1,0 +1,23 @@
+Bonjour {contact.first_name},
+
+Merci de votre soutien pour la Wikimedia Foundation et le savoir gratuit.
+
+Nous avons remarqué que le traitement le plus récent de votre don mensuel avait échoué. Par conséquent, votre don récurrent a été annulé et aucun montant ne sera désormais prélevé de votre compte. Veuillez nous excuser pour ce désagrément.
+
+Si vous souhaitez continuer à soutenir la fondation, vous pouvez à nouveau configurer un don récurrent ici.
+
+N’hésitez pas à nous contacter en cas de questions ou de commentaires.
+
+https://donate.wikimedia.org
+
+Cordialement,
+l'Équipe Service aux Donateurs de la Wikimedia Foundation
+
+
+Depuis votre don à la fondation Wikimédia, votre adresse {contact.email} fait partie de notre liste. Si vous ne désirez plus recevoir d’emails de notre part, vous pouvez vous, désabonner maintenant. Si vous avez fait un don récemment, nous avons peut-être une autre adresse email enregistrée pour vous : signalez-le et nous supprimerons toute adresse non valide.
+Wikimedia Foundation, Inc.
+P.O. Box 98204
+Washington, DC 20090-8204
+United States of America
+
+Ref CiviRec{contact.preferred_language} {contributionRecur.id}
