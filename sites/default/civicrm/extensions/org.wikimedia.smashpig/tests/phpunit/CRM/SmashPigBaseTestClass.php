@@ -227,7 +227,7 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
         'currency' => 'USD',
         'frequency_unit' => 'month',
         'frequency_interval' => 1,
-        'installments' => 1,
+        'installments' => 0,
         'start_date' => gmdate('Y-m-d H:i:s', strtotime('-1 month')),
         'create_date' => gmdate('Y-m-d H:i:s', strtotime('-1 month')),
         'payment_token_id' => $token['id'],
