@@ -2792,11 +2792,11 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
   // In the test this should always be true - but keep the check in case
   // something changes that we need to detect.
   if (!$contactIDToBeKeptIsMostRecentDonor) {
-    $higherPriorityLocationBlocks = _wmf_civicrm_clean_duplicate_location_from_merge_blocks($migrationInfo['other_details']['location_blocks']);
+    $higherPriorityLocationBlocks = $migrationInfo['other_details']['location_blocks'];
     $lowerPriorityLocationBlocks = $migrationInfo['main_details']['location_blocks'];
   }
   else {
-    $higherPriorityLocationBlocks = _wmf_civicrm_clean_duplicate_location_from_merge_blocks($migrationInfo['main_details']['location_blocks']);
+    $higherPriorityLocationBlocks = $migrationInfo['main_details']['location_blocks'];
     $lowerPriorityLocationBlocks = $migrationInfo['other_details']['location_blocks'];
   }
 
@@ -2843,46 +2843,6 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
     }
   }
 
-}
-
-/**
- * Clean up any instances of 2 identical home addresses before processing.
- *
- * It's not valid to have 2 addresses of the same location type in CiviCRM.
- * However, they seem to still be coming in so for now ensure they don't cause
- * issues when deduping, with the is_primary flag being lost.
- *
- * T145873
- *
- * @param array $blocks
- *   An array of locations associated with a contact. These are keyed by entity
- *   (email, address, phone) and under that an array of db entries.
- *
- * @return array
- *   Blocks, possibly with some removed.
- */
-function _wmf_civicrm_clean_duplicate_location_from_merge_blocks($blocks) {
-  foreach ($blocks as $entity => $locationBlocks) {
-    $locations = [];
-    $primaryID = NULL;
-    foreach ($locationBlocks as $index => $locationBlock) {
-      $locations[$locationBlock['location_type_id']][$index] = $locationBlock['id'];
-      if ($locationBlock['is_primary']) {
-        $primaryID = $locationBlock['id'];
-      }
-    }
-    foreach ($locations as $locationsOfType) {
-      if (count($locationsOfType) > 1) {
-        // We have a duplicate.
-        foreach ($locationsOfType as $index => $locationID) {
-          if ($locationID <> $primaryID) {
-            unset($blocks[$entity][$index]);
-          }
-        }
-      }
-    }
-  }
-  return $blocks;
 }
 
 /**

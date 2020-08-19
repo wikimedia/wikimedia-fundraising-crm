@@ -101,4 +101,22 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
       'prefer_preferred_contact_value_keep_nick_name' => E::ts('Prefer value from preferred contact, put nick name, if exists in nick name field'),
     ];
   }
+
+  /**
+   * Get available location types.
+   *
+   * @return array
+   *
+   * @throws \API_Exception
+   */
+  public static function getLocationTypes() : array {
+    return \Civi\Api4\Email::getFields()
+      ->setCheckPermissions(FALSE)
+      ->setIncludeCustom(FALSE)
+      ->setLoadOptions(TRUE)
+      ->addSelect('options')
+      ->addWhere('name', '=', 'location_type_id')
+      ->execute()->first()['options'];
+  }
+
 }
