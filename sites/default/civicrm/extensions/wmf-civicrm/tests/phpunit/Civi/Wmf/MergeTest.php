@@ -1750,17 +1750,17 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
    * @throws \CRM_Core_Exception
    */
   public function imitateAdminUser(): int {
-    $result = $this->callAPISuccess('UFMatch', 'get', array(
+    $result = $this->callAPISuccess('UFMatch', 'get', [
       'uf_id' => 1,
       'sequential' => 1,
-    ));
+    ]);
     if (empty($result['id'])) {
-      $contact = $this->callAPISuccess('Contact', 'create', array(
+      $contact = $this->callAPISuccess('Contact', 'create', [
         'first_name' => 'Super',
         'last_name' => 'Duper',
         'contact_type' => 'Individual',
-        'api.UFMatch.create' => array('uf_id' => 1, 'uf_name' => 'Wizard'),
-      ));
+        'api.UFMatch.create' => ['uf_id' => 1, 'uf_name' => 'Wizard'],
+      ]);
       $contactID = $contact['id'];
     }
     else {
@@ -1768,11 +1768,11 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
     }
     \CRM_Core_Session::singleton()->set('userID', $contactID);
     \CRM_Core_Config::singleton()->userPermissionClass = new \CRM_Core_Permission_UnitTests();
-    \CRM_Core_Config::singleton()->userPermissionClass->permissions = array(
+    \CRM_Core_Config::singleton()->userPermissionClass->permissions = [
       'edit all contacts',
       'Access CiviCRM',
       'Administer CiviCRM',
-    );
+    ];
     return $contactID;
   }
 
@@ -1796,6 +1796,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
 
   /**
    * Assert exactly one of the entities arraay hhas a key is_primary equal to 1.
+   *
    * @param array $entities
    */
   protected function assertOnePrimary($entities) {
