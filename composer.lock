@@ -1647,9 +1647,9 @@
             "authors": [
                 {
                     "name": "Ignace Nyamagana Butera",
-                    "role": "Developer",
                     "email": "nyamsprod@gmail.com",
-                    "homepage": "https://github.com/nyamsprod/"
+                    "homepage": "https://github.com/nyamsprod/",
+                    "role": "Developer"
                 }
             ],
             "description": "Csv data manipulation made easy in PHP",
@@ -2030,12 +2030,12 @@
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/gabrielbull/omnimail.git",
+                "url": "https://github.com/omnimail/omnimail.git",
                 "reference": "ad24ded13122eb00ae2e180c7e7a1fc4e22018a9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gabrielbull/omnimail/zipball/ad24ded13122eb00ae2e180c7e7a1fc4e22018a9",
+                "url": "https://api.github.com/repos/omnimail/omnimail/zipball/ad24ded13122eb00ae2e180c7e7a1fc4e22018a9",
                 "reference": "ad24ded13122eb00ae2e180c7e7a1fc4e22018a9",
                 "shasum": ""
             },
@@ -2725,12 +2725,12 @@
             "version": "v1.1.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/nrk/predis.git",
+                "url": "https://github.com/predis/predis.git",
                 "reference": "f0210e38881631afeafb56ab43405a92cafd9fd1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nrk/predis/zipball/f0210e38881631afeafb56ab43405a92cafd9fd1",
+                "url": "https://api.github.com/repos/predis/predis/zipball/f0210e38881631afeafb56ab43405a92cafd9fd1",
                 "reference": "f0210e38881631afeafb56ab43405a92cafd9fd1",
                 "shasum": ""
             },
@@ -5037,6 +5037,7 @@
             "keywords": [
                 "tokenizer"
             ],
+            "abandoned": true,
             "time": "2017-11-27T05:48:46+00:00"
         },
         {
