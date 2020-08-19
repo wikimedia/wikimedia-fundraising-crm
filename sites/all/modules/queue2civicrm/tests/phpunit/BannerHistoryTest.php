@@ -19,6 +19,9 @@ class BannerHistoryTest extends BaseWmfDrupalPhpUnitTestCase {
     );
   }
 
+  /**
+   * @throws \WmfException
+   */
   public function testValidMessage() {
     $msg = [
       'banner_history_id' => substr(
@@ -28,6 +31,7 @@ class BannerHistoryTest extends BaseWmfDrupalPhpUnitTestCase {
     ];
     $this->consumer->processMessage($msg);
     // check for thing in db
+    $this->assertEquals(1, 1);
   }
 
   /**
