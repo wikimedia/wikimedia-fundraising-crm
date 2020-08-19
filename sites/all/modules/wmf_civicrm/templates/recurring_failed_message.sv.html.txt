@@ -1,0 +1,14 @@
+<p>Hej {contact.first_name}</p>
+
+<p>Tack för att du stödjer Wikimedia Foundation och den fria kunskapen.</p>
+
+<p>Vi har noterat att den senaste behandlingen av din månadsdonation tyvärr misslyckades. Till följd av detta har din återkommande donation avbrutits, och vi kan inte ta emot fler betalningar. Jag ber om ursäkt för denna olägenhet.</p>
+<p>Om du vill fortsätta att stödja Wikimedia Foundation kan du skapa en ny återkommande donation <a href="https://donate.wikimedia.org/wiki/Ways_to_Give/sv#monthly?utm_medium=civi-mail&utm_campaign=FailedRecur&utm_source=FY2021_FailedRecur">här</a></p>
+<p>Du är välkommen att kontakta oss om du har andra frågor eller kommentarer.</p>
+
+<p>Bästa hälsningar,<br>
+https://donate.wikimedia.org/wiki/Ways_to_Give/sv#monthly</p>
+
+<p>Du får detta e-postmeddelande till {contact.email} i egenskap av en högt värderad bidragsgivare till Wikimedia Foundation. Om du inte vill få mejl från Wikimedia Foundation i framtiden kan du <a href='https://www.pages04.net/wikimedia/WMFUnsubscribe/Unsubscribe'>avsluta prenumerationen nu</a>. Om du redan skänkt en gåva nyligen kan det vara så att vi har en annan e-postadress registrerad på dig. Berätta vilken! Vi avprenumererar gärna eventuella gamla e-postadresser.</p>
+
+<p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>
