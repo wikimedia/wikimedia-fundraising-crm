@@ -65,8 +65,9 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
   /**
    * Set up for test.
    *
+   * @throws \API_Exception
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function setUp() {
     civicrm_initialize();
@@ -93,7 +94,9 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
   /**
    * Post test cleanup.
    *
+   * @throws \API_Exception
    * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function tearDown() {
     if ($this->originalFailureMessageTemplate) {
@@ -159,8 +162,8 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * Create a payment processor instance.
    *
    * @return array
+   *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   protected function createPaymentProcessor(): array {
     $typeRecord = $this->callAPISuccess(
@@ -181,7 +184,7 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     $params['domain_id'] = CRM_Core_Config::domainID();
     $params['is_active'] = TRUE;
     $params['financial_account_id'] = $financialAccountId;
-    $result = civicrm_api3('PaymentProcessor', 'create', $params);
+    $result = $this->callAPISuccess('PaymentProcessor', 'create', $params);
     $this->deleteThings['PaymentProcessor'][] = $result['id'];
     return $result['values'][$result['id']];
   }
