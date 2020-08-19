@@ -69,8 +69,8 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
   public function setUp() {
     parent::setUp();
     civicrm_initialize();
-    $this->intitalContactCount = $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']);
     $this->adminUserID = $this->imitateAdminUser();
+    $this->intitalContactCount = $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']);
     // Run through the merge first to make sure there aren't pre-existing contacts in the DB
     // that will ruin the tests.
     $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
@@ -103,7 +103,6 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
     \CRM_Core_Session::singleton()->set('userID', NULL);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID, 'skip_undelete' => TRUE]);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID2, 'skip_undelete' => TRUE]);
-    $this->callAPISuccess('Contact', 'delete', ['id' => $this->adminUserID, 'skip_undelete' => TRUE]);
     $this->doDuckHunt();
     parent::tearDown();
     $this->assertEquals($this->intitalContactCount, $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']), 'contact cleanup incomplete');
