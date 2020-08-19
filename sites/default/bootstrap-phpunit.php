@@ -31,7 +31,13 @@ require_once(DRUPAL_ROOT . '/../vendor/wikimedia/donation-interface/tests/phpuni
 
 putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php');
 require_once DRUPAL_ROOT . '/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit/bootstrap.php';
-
+civicrm_initialize();
+// This causes errors to be thrown rather than the user-oriented html being presented on a fatal error.
+// Note that the CRM_Core_TemporaryErrorScope reverts the scope on _deconstruct so
+// the scope lasts until the variable is unset (by the script finishing)
+// or some other process alters it (which it shouldn't). Even though the $errorScope variable
+// is unused it needs to be set or the _deconstruct will take place instantly.
+$errorScope = \CRM_Core_TemporaryErrorScope::useException();
 // Uncomment this if you would like to see all of the
 // watchdog messages when a test fails. Can be useful
 // to debug tests in CI where you can't see the syslog.
