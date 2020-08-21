@@ -49,7 +49,7 @@ class OandaRetrieverTestCase extends BaseWmfDrupalPhpUnitTestCase {
 				$that->assertEquals( 'Bearer mzplx', $options['headers']['Authorization'] );
 				$urlParts = parse_url( $url );
 				$that->assertEquals( 'https', $urlParts['scheme'] );
-				$that->assertEquals( 'web-services.oanda.com', $urlParts['host'] );
+				$that->assertEquals( 'www.oanda.com', $urlParts['host'] );
 				$that->assertEquals( '/rates/api/v1/rates/USD.json', $urlParts['path'] );
 				$jsonResponse = '{
    "base_currency" : "USD",
