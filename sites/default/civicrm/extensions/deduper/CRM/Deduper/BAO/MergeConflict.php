@@ -103,6 +103,17 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
   }
 
   /**
+   * @return array
+   */
+  public static function getLocationResolvers() {
+    return [
+      'none' => E::ts('Do not resolve'),
+      'preferred_contact' => E::ts('If emails/phones/addresses are in conflict for a given location choose the one from the preferred contact'),
+      'preferred_contact_with_re-assign' => E::ts('If emails/phones/addresses are in conflict for a given location prefer the one from the preferred contact, assign the other to a new location (preferred contact primary remains primary'),
+    ];
+  }
+
+  /**
    * Get available location types.
    *
    * @return array

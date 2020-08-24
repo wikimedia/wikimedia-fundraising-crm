@@ -2541,12 +2541,8 @@ function _wmf_civicrm_merge_resolve_field_conflict(&$refs, $moveField, $mainId, 
     $otherContactBlocks = $refs['migration_info']['other_details']['location_blocks'];
 
     if ($fieldParts[2] === 'email') {
-      $mainIsOnHold = $mainContactBlocks['email'][$fieldParts[3]]['on_hold'];
-      $otherIsOnHold = $otherContactBlocks['email'][$fieldParts[3]]['on_hold'];
-      if ($mainIsOnHold + $otherIsOnHold === 1) {
-        // One is one hold & the other isn't - conflict.
-        return;
-      }
+      // Now fully handled in the deduper.
+      return;
     }
     if ($fieldParts[2] === 'address') {
       // See if this has been handed off to deduper yet - if so don't handle here
@@ -2801,6 +2797,9 @@ function wmf_civicrm_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $other
   }
 
   foreach ($higherPriorityLocationBlocks as $blockType => $blocks) {
+    if ($blockType === 'email') {
+      continue;
+    }
     foreach ($blocks as $blockIndex => $block) {
       if ($mergeHandler->isResolvingLocationConflictFor($blockType)) {
         // We are not going to deal with conflict resolution here because the merge handler is on it.

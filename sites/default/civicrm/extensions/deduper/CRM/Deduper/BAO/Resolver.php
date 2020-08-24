@@ -69,6 +69,7 @@ abstract class CRM_Deduper_BAO_Resolver {
   /**
    * Set the given value as the value to resolve the conflict with.
    *
+   * @param string $entity
    * @param string $fieldName
    * @param string[email|address|phone|website|im] $location
    * @param string $block
@@ -76,6 +77,29 @@ abstract class CRM_Deduper_BAO_Resolver {
    */
   protected function setResolvedLocationValue($fieldName, $location, $block, $value) {
     $this->mergeHandler->setResolvedLocationValue($fieldName, $location, $block, $value);
+  }
+
+  /**
+   * Designate the primary location o the contact to be deleted as the one to be the primary.
+   *
+   * @param string $locationEntity
+   * @param int $block
+   */
+  public function setPrimaryLocationToDeleteContact($locationEntity, $block) {
+    $this->mergeHandler->setPrimaryLocationToDeleteContact($locationEntity, $block);
+  }
+
+  /**
+   * Does this block hold unique information to otherwise replicated in other blocks.
+   *
+   * @param string[address|phone|email] $locationEntity
+   * @param array $entityToConsiderRehoming
+   * @param int $blockNumber
+   *
+   * @return bool
+   */
+  protected function isBlockUnique($locationEntity, array $entityToConsiderRehoming, $blockNumber): bool {
+    return $this->mergeHandler->isBlockUnique($locationEntity, $entityToConsiderRehoming, $blockNumber);
   }
 
   /**
@@ -88,6 +112,20 @@ abstract class CRM_Deduper_BAO_Resolver {
    */
   protected function setResolvedAddressValue($fieldName, $location, $block, $value) {
     $this->mergeHandler->setResolvedAddressValue($fieldName, $location, $block, $value);
+  }
+
+  /**
+   * Assign location to a new available location and block so it is retained.
+   *
+   * @param string $location
+   * @param int $block
+   * @param bool $isContactToKeep
+   *   Does the location belong to the contact to keep.
+   * @param bool|null $isPrimary
+   *   If not null the primary will be forced to this.
+   */
+  public function relocateLocation($location, $block, $isContactToKeep, $isPrimary = NULL) {
+    $this->mergeHandler->relocateLocation($location, $block, $isContactToKeep, $isPrimary);
   }
 
   /**
@@ -104,12 +142,22 @@ abstract class CRM_Deduper_BAO_Resolver {
   /**
    * Get conflicts for the email address of the given block.
    *
-   * @param int $blockNumber
+   * @return array
+   */
+  protected function getAllConflictsForEntity($entity):array {
+    return $this->mergeHandler->getAllConflictsForEntity($entity);
+  }
+
+  /**
+   * Get the location blocks for the contact for the given entity.
+   *
+   * @param $entity
+   * @param bool $isForContactToBeKept
    *
    * @return array
    */
-  protected function getAddressConflicts($blockNumber):array {
-    return $this->mergeHandler->getAddressConflicts($blockNumber);
+  protected function getLocationEntities($entity, $isForContactToBeKept):array {
+    return $this->mergeHandler->getLocationEntities($entity, $isForContactToBeKept);
   }
 
   /**
@@ -122,6 +170,35 @@ abstract class CRM_Deduper_BAO_Resolver {
   }
 
   /**
+   * Is the second block functionally the same as the second.
+   *
+   * For example if they both have the same phone number they are functionally
+   * the same information.
+   *
+   * @param string[address|phone|email] $locationEntity
+   * @param array $entity1
+   * @param array $entity2
+   *
+   * @return bool
+   */
+  public function isBlockEquivalent($locationEntity, $entity1, $entity2) {
+    return $this->mergeHandler->isBlockEquivalent($locationEntity, $entity1, $entity2);
+  }
+
+  /**
+   * Is the second block functionally the same as the second.
+   *
+   * For example if they both have the same phone number they are functionally
+   * the same information.
+   *
+   * @param string[address|phone|email] $locationEntity
+   * @param int $block
+   */
+  public function setDoNotMoveBlock($locationEntity, $block) {
+    $this->mergeHandler->setDoNotMoveBlock($locationEntity, $block);
+  }
+
+  /**
    * Get conflicts for the email address of the given block.
    *
    * @param $isForContactToBeKept
@@ -131,6 +208,17 @@ abstract class CRM_Deduper_BAO_Resolver {
    */
   protected function getAddressBlock($isForContactToBeKept, $blockNumber):array {
     return $this->mergeHandler->getAddressBlock($isForContactToBeKept, $blockNumber);
+  }
+
+  /**
+   * Get all blocks for the given location, from both contacts.
+   *
+   * @param string $locationEntity
+   *
+   * @return array
+   */
+  public function getAllLocationBlocks($locationEntity): array {
+    return $this->mergeHandler->getAllLocationBlocks($locationEntity);
   }
 
   /**
@@ -149,13 +237,6 @@ abstract class CRM_Deduper_BAO_Resolver {
    */
   protected function hasIndividualNameFieldConflict():bool {
     return $this->mergeHandler->hasIndividualNameFieldConflict();
-  }
-
-  /**
-   * Is there a conflict in a field used to name an individual.
-   */
-  protected function hasOrganizationNameFieldConflict():bool {
-    return $this->mergeHandler->hasOrganizationNameFieldConflict();
   }
 
   /**
@@ -204,7 +285,21 @@ abstract class CRM_Deduper_BAO_Resolver {
   }
 
   /**
+   * Is the contact to be kept the preferred contact.
+   *
+   * @return bool
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected function isContactToKeepPreferred(): bool {
+    return $this->mergeHandler->isContactToKeepPreferred();
+  }
+
+  /**
    * Get setting.
+   *
+   * @param string $setting
    *
    * @return string|int|array
    */
