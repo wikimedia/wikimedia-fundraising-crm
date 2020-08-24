@@ -50,8 +50,12 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
     }, ARRAY_FILTER_USE_KEY);
 
     $ctData = $this->truncateFields($ctData);
+    $result =  $this->persistContributionTrackingData($ctData);
 
-    return $this->persistContributionTrackingData($ctData);
+    $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
+    $ContributionTrackingStatsCollector->recordContributionTrackingRecord();
+
+    return $result;
   }
 
   /**
@@ -59,7 +63,7 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $ctData data to be written to contribution tracking tbl
    *
-   * @return \DatabaseStatementInterface|int
+   * @return \DatabaseStatementInterface|int|void
    * @throws \Exception
    */
   protected function persistContributionTrackingData($ctData) {
@@ -78,14 +82,21 @@ LIMIT 1";
         && !empty($ctData['contribution_id'])
         && ((int) $existingRow['contribution_id'] !== (int) $ctData['contribution_id'])
       ) {
-        throw new WmfException(
-          WmfException::DATA_INCONSISTENT,
+
+        watchdog(
+          'contribution-tracking',
           "Trying to update contribution tracking row {$ctData['id']} that " .
           "already has contribution_id {$existingRow['contribution_id']} " .
           "with new contribution id {$ctData['contribution_id']}.",
-          $ctData
+          [],
+          WATCHDOG_INFO
         );
+
+        $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
+        $ContributionTrackingStatsCollector->recordChangeOfContributionIdError();
+        return;
       }
+
       return db_update('contribution_tracking')
         ->fields($ctData)
         ->condition('id', $ctData['id'])

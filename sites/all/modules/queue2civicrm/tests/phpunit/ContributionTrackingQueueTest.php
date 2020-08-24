@@ -1,6 +1,7 @@
 <?php
 
 use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
+use queue2civicrm\contribution_tracking\ContributionTrackingStatsCollector;
 use SmashPig\Core\SequenceGenerators\Factory;
 
 /**
@@ -63,24 +64,92 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->consumer->processMessage($message);
   }
 
-  public function testExceptionOnUpdateExistingContributionId() {
-    $message = $this->getMessage();
-    $this->consumer->processMessage($message);
+  public function testExceptionNotThrownOnChangeOfContributionId() {
+    $firstMessage = [
+      'id' => '12345',
+      'contribution_id' => '11111',
+    ] + $this->getMessage();
 
-    $updateMessage = [
-      'id' => $message['id'],
-      'contribution_id' => '1234',
-    ];
-    $this->consumer->processMessage($updateMessage);
+    $this->consumer->processMessage($firstMessage);
 
-    $extraUpdateMessage = [
-      'id' => $message['id'],
-      'contribution_id' => '99999999',
-    ];
-    $this->expectException(WmfException::class);
-    $this->consumer->processMessage($extraUpdateMessage);
+    $secondMessage = [
+      'id' => '12345',
+      'contribution_id' => '22222',
+    ] + $firstMessage;
+
+    $this->consumer->processMessage($secondMessage);
+
+    // the second message when processed previously resulted in an exception
+    // being thrown. Now these types of errors fail silently and instead we
+    // track them via statscollector/prometheus and logging.
+    $expectedData = $firstMessage;
+    $this->compareMessageWithDb($expectedData);
   }
 
+  public function testChangeOfContributionIdErrorsAreCountedInStatsCollector() {
+    $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
+    // should be a clean slate.
+    $this->assertEquals(0, $ContributionTrackingStatsCollector->get('change_cid_errors'));
+
+    $firstMessage = [
+        'id' => '12345',
+        'contribution_id' => '11111',
+      ] + $this->getMessage();
+
+    $this->consumer->processMessage($firstMessage);
+
+    $secondMessage = [
+        'id' => '12345',
+        'contribution_id' => '22222',
+      ] + $firstMessage;
+
+    $this->consumer->processMessage($secondMessage);
+
+    // we updated the contribution_id from '11111' to '22222' which shouldn't happen.
+    // let's see if the error stat was incremented as expected
+    $this->assertEquals(1, $ContributionTrackingStatsCollector->get('change_cid_errors'));
+  }
+
+  public function testChangeOfContributionIdErrorsAreWrittenToPrometheusOutputFile() {
+    $firstMessage = [
+        'id' => '12345',
+        'contribution_id' => '11111',
+      ] + $this->getMessage();
+
+    $this->consumer->processMessage($firstMessage);
+
+    $secondMessage = [
+        'id' => '12345',
+        'contribution_id' => '22222',
+      ] + $firstMessage;
+
+    $this->consumer->processMessage($secondMessage);
+
+    // set the prometheus file output location that
+    // ContributionTrackingStatsCollector will write to
+    $tmpPrometheusFilePath = '/tmp/';
+    variable_set(
+      'metrics_reporting_prometheus_path',
+      $tmpPrometheusFilePath
+    );
+
+    // ask the stats collector to export stats captured so far
+    $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
+    $ContributionTrackingStatsCollector->export();
+
+    $expectedStatsOutput = [
+      'contribution_tracking_change_cid_errors' => 1,
+      'contribution_tracking_count' => 2 // count of records processed
+    ];
+
+    $statsWrittenAssocArray = $this->buildArrayFromPrometheusOutputFile(
+      $tmpPrometheusFilePath . 'contribution_tracking.prom'
+    );
+
+    //compare written stats data with expected
+    $this->assertEquals($expectedStatsOutput, $statsWrittenAssocArray);
+
+  }
   /**
    * build a queue message from our fixture file and drop in a random
    * contribution tracking id
@@ -160,4 +229,47 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       ->execute()
       ->fetchAll(PDO::FETCH_ASSOC);
   }
+
+  /**
+   * Test helper method to convert Prometheus outfile files to associative arrays
+   *
+   * @param $prometheusFileLocation
+   *
+   * @return array|string
+   */
+  private function buildArrayFromPrometheusOutputFile($prometheusFileLocation) {
+    $statsWrittenAssocArray = [];
+    if (file_exists($prometheusFileLocation)) {
+      $statsFileFullPath = $prometheusFileLocation;
+      $statsWritten = rtrim(file_get_contents($statsFileFullPath)); // remove trailing \n
+      $statsWrittenLinesArray = explode("\n", $statsWritten);
+      foreach ($statsWrittenLinesArray as $statsLine) {
+        [$name, $value] = explode(" ", $statsLine);
+        if (array_key_exists($name, $statsWrittenAssocArray)) {
+          if (is_array($statsWrittenAssocArray[$name])) {
+            $statsWrittenAssocArray[$name][] = $value;
+          }
+          else {
+            $statsWrittenAssocArray[$name] = [$statsWrittenAssocArray[$name], $value];
+          }
+        }
+        else {
+          $statsWrittenAssocArray[$name] = $value;
+        }
+      }
+    }
+    else {
+      return "Prometheus file does not exist";
+    }
+
+    return $statsWrittenAssocArray;
+  }
+
+  public function tearDown() {
+    parent::tearDown();
+    // reset the ContributionTrackingStatsCollector state after each test
+    ContributionTrackingStatsCollector::tearDown(TRUE);
+  }
+
+
 }
