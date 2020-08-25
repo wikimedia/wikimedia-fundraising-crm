@@ -136,5 +136,58 @@ return [
       'labelColumn' => 'display_name',
     ]
   ],
-
+  'deduper_resolver_email' => [
+    'name' => 'deduper_resolver_email',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('What method should be used to resolve email conflicts'),
+    'default' => 'preferred_contact_with_re-assign',
+    'title' => E::ts('Method to resolve email conflicts?'),
+    'help_text' => '',
+    'html_type' => 'select',
+    'html_attributes' => [
+      'class' => 'crm-select2',
+    ],
+    'settings_pages' => ['deduper' => ['weight' => 140]],
+    'pseudoconstant' => [
+      'callback' => 'CRM_Deduper_BAO_MergeConflict::getLocationResolvers',
+    ],
+  ],
+  'deduper_resolver_phone' => [
+    'name' => 'deduper_resolver_phone',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('What method should be used to resolve phone conflicts'),
+    'default' => 'none',
+    'title' => E::ts('Method to resolve phone conflicts?'),
+    'help_text' => '',
+    'html_type' => 'select',
+    'html_attributes' => [
+      'class' => 'crm-select2',
+    ],
+    'settings_pages' => ['deduper' => ['weight' => 140]],
+    'pseudoconstant' => [
+      'callback' => 'CRM_Deduper_BAO_MergeConflict::getLocationResolvers',
+    ],
+  ],
+  'deduper_resolver_address' => [
+    'name' => 'deduper_resolver_address',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('What method should be used to resolve address conflicts'),
+    'default' => 'none',
+    'title' => E::ts('Method to resolve address conflicts?'),
+    'help_text' => '',
+    'html_type' => 'select',
+    'html_attributes' => [
+      'class' => 'crm-select2',
+    ],
+    'settings_pages' => ['deduper' => ['weight' => 140]],
+    'pseudoconstant' => [
+      'callback' => 'CRM_Deduper_BAO_MergeConflict::getLocationResolvers',
+    ],
+  ],
 ];
