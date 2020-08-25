@@ -59,5 +59,6 @@ function wmf_install_get_installed_extensions() {
     'matching-gifts',
     'civi-data-translate',
     'wmf-civicrm',
+    'rpow',
   ];
 }
