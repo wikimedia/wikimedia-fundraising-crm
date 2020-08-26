@@ -57,6 +57,9 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     \Civi::$statics['_omnimail_settings'] = [];
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   */
   public function tearDown() {
     foreach ($this->contactIDs as $contactID) {
       $this->callAPISuccess('Contact', 'delete', ['id' => $contactID, 'skip_undelete' => 1]);
