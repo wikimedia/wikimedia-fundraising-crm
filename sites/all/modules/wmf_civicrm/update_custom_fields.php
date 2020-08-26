@@ -736,7 +736,7 @@ function _wmf_civicrm_get_communication_fields() {
       'data_type' => 'Boolean',
       'html_type' => 'Radio',
       'is_active' => 1,
-      'is_required' => 1,
+      'is_required' => 0,
       'is_searchable' => 1,
       'default_value' => 0,
     ],
