@@ -185,6 +185,38 @@ function omnimail_civicrm_alterLogTables(&$logTableSpec) {
   unset($logTableSpec['civicrm_mailing_provider_data'], $logTableSpec['civicrm_omnimail_job_progress']);
 }
 
+/**
+ * Ensure any missed omnimail dedupes are sorted before a contact is permanently deleted.
+ *
+ * Note this is required because we were not updating the contact id when merging contacts in the past.
+ *
+ * Doing it via a pre-hook on delete does not fix all the missed moves of this data - but it ensures we don't lose
+ * our last chance to do so & leaves the data just a bit better.
+ *
+ * Later we might have fixed it all & not need this.
+ *
+ * @param \CRM_Core_DAO $op
+ * @param string $objectName
+ * @param int|null $id
+ * @param array $params
+ *
+ * @throws \CiviCRM_API3_Exception
+ * @throws \API_Exception
+ */
+function omnimail_civicrm_pre($op, $objectName, $id, &$params) {
+  if ($op === 'delete' && in_array($objectName, ['Individual', 'Organization', 'Household', 'Contact'])) {
+    if (CRM_Core_DAO::singleValueQuery('SELECT 1 FROM civicrm_mailing_provider_data WHERE contact_id = ' . (int) $id)) {
+      $mergedTo = civicrm_api3('Contact', 'getmergedto', ['contact_id' => $id])['values'];
+      if (!empty($mergedTo)) {
+        CRM_Core_DAO::executeQuery('
+          UPDATE civicrm_mailing_provider_data SET contact_id = '  . (int) key($mergedTo)
+          . ' WHERE contact_id = ' . (int) $id
+        );
+      }
+    }
+  }
+}
+
 // --- Functions below this ship commented out. Uncomment as required. ---
 
 /**
