@@ -1,0 +1,21 @@
+Add code and test to move over mailing provider data when we permanently delete a contact
+
+Once we permanently delete a contact we lose the information that would allow us to transfer mailing provider data to a new contact.
+
+This fix is intended to allow us to start deleting deleted contacts again knowing we will be not be losing this data and in fact will be
+making it more correct as we delete. At some point in the future we may not need this if our new code is moving on merge reliably
+
+Bug: T220149
+
+Change-Id: I75992a17b57661be9e00962c4f618371d162bc23
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Date:      Wed Aug 26 16:30:46 2020 +1200
+#
+# HEAD detached from FETCH_HEAD
+# Changes to be committed:
+#	modified:   sites/default/civicrm/extensions/org.wikimedia.omnimail/omnimail.php
+#	modified:   sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit/MergeTest.php
+#
