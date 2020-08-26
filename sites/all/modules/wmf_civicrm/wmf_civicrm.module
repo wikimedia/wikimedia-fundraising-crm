@@ -1106,7 +1106,7 @@ function wmf_civicrm_verify_message_and_stage($msg) {
           ],
           WATCHDOG_WARNING
         );
-        $msg[$key] = substr($msg[$key], 0, $limit);
+        $msg[$key] = mb_substr($msg[$key], 0, $limit);
         $msg['contact_tags'][] = $truncate_tags[$key];
       }
       else {
