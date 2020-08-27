@@ -220,18 +220,35 @@
       }
     }
 
+    /**
+     * Get the key correlating to the given value.
+     *
+     * @param object
+     * @param value
+     * @returns {string}
+     */
+    function getKeyByValue(object, value) {
+      return Object.keys(object).find(key => object[key] === value);
+    }
+
     function getConflicts(to_keep_id, to_remove_id,contactCriteria, pair) {
       crmApi('Contact', 'get_merge_conflicts', {
         'rule_group_id': $scope.ruleGroupID,
         'search_limit' : $scope.limit,
         'criteria': contactCriteria,
         'to_remove_id' : to_remove_id,
-        'to_keep_id' : to_keep_id
+        'to_keep_id' : to_keep_id,
+        'mode': ['safe', 'aggressive']
       }).then(function (data) {
-          pair['safe'] = data.values['safe'];
+        pair['safe'] = data.values['safe'];
+        for (let [fieldKey, fieldValue] of Object.entries(data.values['aggressive']['resolved']))  {
+          var key = fieldKey.substring(5);
+          if (pair['safe']['conflicts']['contact'].hasOwnProperty(key)) {
+            pair['safe']['conflicts']['contact'][key]['resolved'] = fieldValue;
+            pair['safe']['conflicts']['contact'][key]['resolved_id'] = getKeyByValue(pair['safe']['conflicts']['contact'][key], fieldValue);
+          }
         }
-      );
-    }
+    })}
 
     function updateUrl(contactCriteria) {
       $scope.url = CRM.url('civicrm/contact/dedupefind', $.param({

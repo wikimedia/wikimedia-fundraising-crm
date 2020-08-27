@@ -9,7 +9,10 @@
       <div ng-if="(key !== 'first_name' || !conflict.isNamePairSaved)">
       <span ng-if="conflict['title']">{{conflict['title']}}</span>
       <span ng-if="!conflict['title']">{{key}}</span>
-      <span ng-if="!conflict['display']"><del>{{conflict[options.main_id]}}</del> <strong>{{conflict[options.other_id]}}</strong></span>
+      <span ng-if="!conflict['display']">
+        <span ng-if="conflict['resolved_id'] != options.main_id"><del>{{conflict[options.main_id]}}</del> <strong>{{conflict[options.other_id]}}</strong></span>
+        <span ng-if="conflict['resolved_id'] == options.main_id"><strong>{{conflict[options.main_id]}}</strong> <del>{{conflict[options.other_id]}}</del></span>
+      </span>
       <div ng-if="conflict['display']">
         <div></div>
         <del>{{conflict['display'][options.main_id]}}</del>
