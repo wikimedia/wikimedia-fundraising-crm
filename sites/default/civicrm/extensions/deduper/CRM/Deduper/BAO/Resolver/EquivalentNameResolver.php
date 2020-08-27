@@ -91,7 +91,7 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
     if (isset($this->alternatives[$value])) {
       return;
     }
-    if (!\Civi::cache('dedupe_pairs')->has('name_alternatives_' . $value)) {
+    if (!\Civi::cache('dedupe_pairs')->has('name_alternatives_' . md5($value))) {
       $namePair = \Civi\Api4\ContactNamePair::get()
         ->addClause('OR', ['name_a', '=', $value], ['name_b', '=', $value])
         ->setCheckPermissions(FALSE)
@@ -113,9 +113,9 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
           $alternatives['alternative_of'][] = $pair['name_b'];
         }
       }
-      \Civi::cache('dedupe_pairs')->set('name_alternatives_' . $value, $alternatives);
+      \Civi::cache('dedupe_pairs')->set('name_alternatives_' . md5($value), $alternatives);
     }
-    $this->alternatives[$value] = \Civi::cache('dedupe_pairs')->get('name_alternatives_' . $value);
+    $this->alternatives[$value] = \Civi::cache('dedupe_pairs')->get('name_alternatives_' . md5($value));
   }
 
   /**

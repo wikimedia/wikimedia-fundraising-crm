@@ -47,6 +47,12 @@
         <type>int</type>
         <comment>Contact in CiviCRM</comment>
     </field>
+    <foreignKey>
+      <name>contact_id</name>
+      <table>civicrm_contact</table>
+      <comment>Key is declared for civi handling, but not actually included in the table sql. Facilitates merging, searching</comment>
+      <key>id</key>
+    </foreignKey>
     <field>
         <name>is_civicrm_updated</name>
         <type>boolean</type>
