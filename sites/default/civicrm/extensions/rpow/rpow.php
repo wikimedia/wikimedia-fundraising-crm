@@ -93,6 +93,11 @@ function _rpow_update_cookie($config, $db) {
     'sig' => $signer->sign(['exp' => $expires]),
     'cause' => $buffer,
   ]);
+  if (defined('CIVICRM_TEST') && CIVICRM_TEST) {
+    // Return before setting a cookie in the test context as it can
+    // cause test mischief - ie. https://github.com/totten/rpow/issues/8
+    return;
+  }
   setcookie($config['cookieName'], $value, $expires, '/');
 }
 
