@@ -205,12 +205,13 @@ function omnimail_civicrm_alterLogTables(&$logTableSpec) {
  */
 function omnimail_civicrm_pre($op, $objectName, $id, &$params) {
   if ($op === 'delete' && in_array($objectName, ['Individual', 'Organization', 'Household', 'Contact'])) {
-    if (CRM_Core_DAO::singleValueQuery('SELECT 1 FROM civicrm_mailing_provider_data WHERE contact_id = ' . (int) $id)) {
+    // Argh on prod contact_id is a varchar - put in quotes - aim to change to an int.
+    if (CRM_Core_DAO::singleValueQuery('SELECT 1 FROM civicrm_mailing_provider_data WHERE contact_id = "' . (int) $id . '"')) {
       $mergedTo = civicrm_api3('Contact', 'getmergedto', ['contact_id' => $id])['values'];
       if (!empty($mergedTo)) {
         CRM_Core_DAO::executeQuery('
-          UPDATE civicrm_mailing_provider_data SET contact_id = '  . (int) key($mergedTo)
-          . ' WHERE contact_id = ' . (int) $id
+          UPDATE civicrm_mailing_provider_data SET contact_id = "'  . (int) key($mergedTo)
+          . '" WHERE contact_id = "' . (int) $id . '"'
         );
       }
     }
