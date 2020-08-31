@@ -13,7 +13,6 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $message contribution-tracking queue message
    *
-   * @return \DatabaseStatementInterface|int
    * @throws \ContributionTrackingDataValidationException
    */
   function processMessage($message) {
@@ -50,12 +49,10 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
     }, ARRAY_FILTER_USE_KEY);
 
     $ctData = $this->truncateFields($ctData);
-    $result =  $this->persistContributionTrackingData($ctData);
+    $this->persistContributionTrackingData($ctData);
 
     $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
     $ContributionTrackingStatsCollector->recordContributionTrackingRecord();
-
-    return $result;
   }
 
   /**
@@ -63,7 +60,6 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $ctData data to be written to contribution tracking tbl
    *
-   * @return \DatabaseStatementInterface|int|void
    * @throws \Exception
    */
   protected function persistContributionTrackingData($ctData) {
@@ -97,13 +93,13 @@ LIMIT 1";
         return;
       }
 
-      return db_update('contribution_tracking')
+      db_update('contribution_tracking')
         ->fields($ctData)
         ->condition('id', $ctData['id'])
         ->execute();
     }
     else {
-      return db_insert('contribution_tracking')
+      db_insert('contribution_tracking')
         ->fields($ctData)
         ->execute();
     }

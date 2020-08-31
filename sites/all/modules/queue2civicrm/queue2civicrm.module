@@ -144,9 +144,9 @@ function queue2civicrm_batch_process($options=[]) {
 
   $DonationStatsCollector = DonationStatsCollector::getInstance();
 
-  $DonationStatsCollector->startTimer();
+  $DonationStatsCollector->startDefaultTimer();
   $processed = $consumer->dequeueMessages();
-  $DonationStatsCollector->endTimer();
+  $DonationStatsCollector->endDefaultTimer();
 
   $DonationStatsCollector->export();
 

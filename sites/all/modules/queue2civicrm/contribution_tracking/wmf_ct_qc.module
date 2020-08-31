@@ -69,9 +69,9 @@ function ct_batch_process() {
 
   $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
 
-  $ContributionTrackingStatsCollector->startTimer();
+  $ContributionTrackingStatsCollector->startDefaultTimer();
   $processed = $ContributionTrackingQueueConsumer->dequeueMessages();
-  $ContributionTrackingStatsCollector->endTimer();
+  $ContributionTrackingStatsCollector->endDefaultTimer();
 
   $ContributionTrackingStatsCollector->export();
 

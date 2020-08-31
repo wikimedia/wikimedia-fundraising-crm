@@ -79,33 +79,20 @@ class DonationStatsCollector extends AbstractCollector {
   }
 
   /**
-   * Override parent startTimer() to inject default namespace
-   *
-   * @param $namespace
-   * @param null $customTimestamp
-   * @param bool $useTimerNamespacePrefix
+   * Call parent startTimer() with default namespace
+   * TODO: upstream to parent class
    */
-  public function startTimer($namespace = NULL, $customTimestamp = NULL, $useTimerNamespacePrefix = TRUE) {
-    if ($namespace === NULL) {
-      $namespace = $this->timerNamespace;
-    }
-    parent::startTimer($namespace, $customTimestamp, $useTimerNamespacePrefix);
+  public function startDefaultTimer() {
+    parent::startTimer($this->timerNamespace);
   }
 
   /**
-   * Override parent endTimer() to inject default namespace
-   *
-   * @param $namespace
-   * @param null $customTimestamp
-   * @param bool $useTimerNamespacePrefix
+   * Call parent endTimer() with default namespace
    *
    * @throws \Statistics\Exception\StatisticsCollectorException
    */
-  public function endTimer($namespace = NULL, $customTimestamp = NULL, $useTimerNamespacePrefix = TRUE) {
-    if ($namespace === NULL) {
-      $namespace = $this->timerNamespace;
-    }
-    parent::endTimer($namespace, $customTimestamp, $useTimerNamespacePrefix);
+  public function endDefaultTimer() {
+    parent::endTimer($this->timerNamespace);
   }
 
   /**

@@ -87,8 +87,8 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
 
     //simulate the tracking with supplied timestamps
     $this->donationStatsCollector->timerNamespace = "test";
-    $this->donationStatsCollector->startTimer(NULL, $start);
-    $this->donationStatsCollector->endTimer(NULL, $end);
+    $this->donationStatsCollector->startTimer("test", $start);
+    $this->donationStatsCollector->endTimer("test", $end);
 
     // call generateAggregateStats() && purgeSuperfluousStats()
     $reflectionMethodAggregates->invoke($this->donationStatsCollector);
