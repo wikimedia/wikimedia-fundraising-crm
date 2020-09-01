@@ -164,13 +164,13 @@ function queue2civicrm_batch_process($options=[]) {
    */
   $counter = Queue2civicrmTrxnCounter::instance();
   $metrics = array();
-  foreach ( $counter->get_trxn_counts() as $gateway => $count ) {
+  foreach ($counter->getTrxnCounts() as $gateway => $count ) {
     $metrics["${gateway}_donations"] = $count;
   }
-  $metrics['total_donations'] = $counter->get_count_total();
+  $metrics['total_donations'] = $counter->getCountTotal();
   module_invoke( 'metrics_reporting', 'report_metrics', 'queue2civicrm', $metrics );
   $ageMetrics = array();
-  foreach ( $counter->get_average_ages() as $gateway => $age ) {
+  foreach ($counter->getAverageAges() as $gateway => $age ) {
     $ageMetrics["${gateway}_message_age"] = $age;
   }
   module_invoke( 'metrics_reporting', 'report_metrics', 'donation_message_age', $ageMetrics );

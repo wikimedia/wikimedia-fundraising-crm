@@ -897,10 +897,10 @@ EOT;
 
   $counter = Queue2civicrmTrxnCounter::instance();
   $metrics = [];
-  foreach ($counter->get_trxn_counts() as $gateway => $count) {
+  foreach ($counter->getTrxnCounts() as $gateway => $count) {
     $metrics["${gateway}_thank_you_emails"] = $count;
   }
-  $metrics['total_thank_you_emails'] = $counter->get_count_total();
+  $metrics['total_thank_you_emails'] = $counter->getCountTotal();
   module_invoke(
     'metrics_reporting',
     'report_metrics',
@@ -908,7 +908,7 @@ EOT;
     $metrics
   );
   $ageMetrics = [];
-  foreach ($counter->get_average_ages() as $gateway => $age) {
+  foreach ($counter->getAverageAges() as $gateway => $age) {
     $ageMetrics["${gateway}_thank_you_donation_age"] = $age;
   }
   module_invoke(
