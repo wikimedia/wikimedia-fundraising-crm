@@ -83,9 +83,7 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
-      file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
-      file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
     ];
   }
@@ -105,12 +103,10 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
       '',
       file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
-      file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
       '',
       file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
-      file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
     ];
   }

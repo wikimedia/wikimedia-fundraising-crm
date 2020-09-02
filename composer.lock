@@ -1908,8 +1908,14 @@
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/eileenmcnaughton/silverpop-php-connector",
-                "reference": "812bc127f5eb6d0b9ebae134fdeaea64dabf3da7"
+                "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
+                "reference": "cb252dd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/cb252dd",
+                "reference": "cb252dd",
+                "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
@@ -1927,11 +1933,7 @@
                     "SilverpopConnector\\": "src/SilverpopConnector"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "SilverpopConnector\\Tests\\": "test/tests"
-                }
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -1945,7 +1947,7 @@
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2020-05-28T02:21:01+00:00"
+            "time": "2020-09-02T19:07:33+00:00"
         },
         {
             "name": "neitanod/forceutf8",
@@ -4321,11 +4323,11 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "e73cd9d8a4467644cfa6d8037af7bdc9adc61441"
+                "reference": "6122b31dd1e1de4995ae4a27d914312c2c760635"
             },
             "require": {
                 "league/csv": "^9.0",
-                "mrmarkfrench/silverpop-php-connector": "dev-master",
+                "mrmarkfrench/silverpop-php-connector": "dev-master#cb252dd",
                 "omnimail/omnimail": "dev-master",
                 "phpseclib/phpseclib": "~2.0"
             },
@@ -4361,7 +4363,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2020-05-28T04:46:46+00:00"
+            "time": "2020-09-02T22:41:43+00:00"
         },
         {
             "name": "wikimedia/smash-pig",

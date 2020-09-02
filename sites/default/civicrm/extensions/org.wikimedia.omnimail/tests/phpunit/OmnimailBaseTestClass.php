@@ -9,6 +9,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use Omnimail\Omnimail;
+use Omnimail\Silverpop\Credentials;
 
 /**
  * FIXME - Add test description.
@@ -81,7 +83,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
 
     $responses = [];
     if ($authenticateFirst) {
-      $responses[] = new Response(200, [], file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'));
+      $this->authenticate();
     }
     foreach ($body as $responseBody) {
       $responses[] = new Response(200, [], $responseBody);
@@ -91,6 +93,20 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     return new Client(['handler' => $handler]);
   }
 
+  /**
+   * Authenticate with silverpop.
+   *
+   * It's possible we are already authenticated so we just want to fill up our mock responses and
+   * try anyway. That way when the actual command runs we know it is done and the number of responses
+   * used won't depend on whether a previous test authenticated earlier.
+   */
+  protected function authenticate() {
+    $responses[] = new Response(200, [], file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'));
+    $mock = new MockHandler($responses);
+    $handler = HandlerStack::create($mock);
+    $client = new Client(['handler' => $handler]);
+    Omnimail::create('Silverpop', ['client' => $client, 'credentials' => new Credentials(['username' => 'Shrek', 'password' => 'Fiona'])])->getMailings();
+  }
 
   /**
    * Set up the mock client to imitate a success result.
@@ -108,8 +124,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     copy(__DIR__ . '/Responses/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv', sys_get_temp_dir() . '/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv');
     fopen(sys_get_temp_dir() . '/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv.complete', 'c');
     $this->createSetting(['job' => $job, 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800']);
-    $client = $this->getMockRequest($responses);
-    return $client;
+    return $this->getMockRequest($responses);
   }
 
   /**
