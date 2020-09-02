@@ -79,6 +79,41 @@ class AdyenAuditTest extends BaseAuditTestCase {
   public function auditTestProvider() {
     return [
       [
+        __DIR__ . '/data/Adyen/donation_recur/',
+        [
+          'donations' => [
+            [
+              'utm_source' => 'B2021_0730_nlNL_m_p2_sm_twin2_optIn1.no-LP.rrtbt.rtbt_ideal',
+              'utm_medium' => 'sitenotice',
+              'utm_campaign' => 'C2017_nlNL_m_FR',
+              'date' => 1487484651,
+              'gateway' => 'adyen',
+              'invoice_id' => '82431234.1',
+              'gateway_txn_id' => '5364893193133131',
+              'currency' => 'EUR',
+              'gross' => '2.35',
+              'fee' => 0.24,
+              'settled_gross' => '0.76',
+              'settled_currency' => 'USD',
+              'settled_fee' => 0.24,
+              'payment_method' => 'rtbt',
+              'payment_submethod' => 'rtbt_ideal',
+              'country' => 'NL',
+              'first_name' => 'Bob',
+              'gateway_account' => 'WikimediaDonations',
+              'language' => 'nl',
+              'last_name' => 'Bobby Bobbiest',
+              'recurring' => '1',
+              'recurring_payment_token' => '82431234.1',
+              'user_ip' => '127.0.0.1',
+              'opt_in' => '1',
+              'order_id' => '82431234.1',
+              'contribution_tracking_id' => '82431234',
+            ],
+          ],
+        ],
+      ],
+      [
         __DIR__ . '/data/Adyen/donation_new/',
         [
           'donations' => [

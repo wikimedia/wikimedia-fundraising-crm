@@ -1260,6 +1260,7 @@ abstract class BaseAuditProcessor {
       'payment_submethod',
       'postal_code',
       'recurring',
+      'recurring_payment_token',
       'state_province',
       'street_address',
       'user_ip',
