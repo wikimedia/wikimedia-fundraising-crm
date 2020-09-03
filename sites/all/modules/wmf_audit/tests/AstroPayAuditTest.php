@@ -16,14 +16,6 @@ class AstroPayAuditTest extends BaseAuditTestCase {
 
   protected $contribution_id;
 
-  public static function getInfo() {
-    return [
-      'name' => 'AstroPay Audit',
-      'group' => 'Audit',
-      'description' => 'Parse audit files and match with logs.',
-    ];
-  }
-
   public function setUp() {
     parent::setUp();
     $dirs = [
@@ -75,6 +67,11 @@ class AstroPayAuditTest extends BaseAuditTestCase {
     $this->contribution_id = $contribution['id'];
   }
 
+  /**
+   * Cleanup after tests.
+   *
+   * @throws \CRM_Core_Exception
+   */
   public function tearDown() {
     $this->callAPISuccess('Contribution', 'delete', ['id' => $this->contribution_id]);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contact_id, 'skip_undelete' => TRUE]);

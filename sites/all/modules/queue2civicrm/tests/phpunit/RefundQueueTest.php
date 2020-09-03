@@ -63,6 +63,9 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * exception could be thrown in this fn $this->queueConsumer->processMessage
    * if the exchange rate does not exist - which is not what we are testing
    * for.
+   *
+   * @throws \WmfException
+   * @throws \CRM_Core_Exception
    */
   public function testRefundMismatched() {
     $this->setExchangeRates(1234567, ['USD' => 1, 'PLN' => 0.5]);
@@ -88,7 +91,7 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $donation_message->getGateway(),
       $donation_message->getGatewayTxnId()
     );
-    $this->assertEquals(1, count($contributions));
+    $this->assertCount(1, $contributions);
 
     $this->consumer->processMessage($refund_message->getBody());
     $contributions = $this->callAPISuccess(
@@ -96,7 +99,7 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'get',
       ['contact_id' => $contributions[0]['contact_id'], 'sequential' => 1]
     );
-    $this->assertEquals(2, count($contributions['values']));
+    $this->assertCount(2, $contributions['values']);
     $this->assertEquals(
       'Chargeback',
       CRM_Contribute_PseudoConstant::contributionStatus($contributions['values'][0]['contribution_status_id'])
