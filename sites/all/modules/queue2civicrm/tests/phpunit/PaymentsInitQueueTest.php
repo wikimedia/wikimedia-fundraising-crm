@@ -65,7 +65,7 @@ class PaymentsInitQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $dbEntries = $this->getDbEntries(
       $message['contribution_tracking_id'], $message['order_id']
     );
-    $this->assertEquals(1, count($dbEntries));
+    $this->assertCount(1, $dbEntries);
     $fields = [
       'gateway',
       'gateway_txn_id',
@@ -122,6 +122,7 @@ class PaymentsInitQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $oId = $ctId . '.0';
     $message['contribution_tracking_id'] = $ctId;
     $message['order_id'] = $oId;
+    $message['amount'] = (float) $message['amount'];
     return $message;
   }
 }
