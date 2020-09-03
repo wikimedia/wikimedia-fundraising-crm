@@ -26,7 +26,7 @@ class StripeTest extends BaseChecksFileTest {
     $contribution = wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $firstGateWayID);
     $this->assertEquals(1, count($contribution));
     $this->assertEquals('STRIPE CH_1AL1231231231231231231123', $contribution[0]['trxn_id']);
-    $this->assertEquals('500', $contribution[0]['total_amount']);
+    $this->assertEquals(500, $contribution[0]['total_amount']);
     $this->assertEquals('USD', $contribution[0]['currency']);
     $this->assertEquals('big campaign', db_query("SELECT {utm_campaign} from {contribution_tracking} WHERE contribution_id = {$contribution[0]['id']}")->fetchField());
 

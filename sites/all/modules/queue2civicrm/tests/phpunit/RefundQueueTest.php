@@ -101,7 +101,7 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'Chargeback',
       CRM_Contribute_PseudoConstant::contributionStatus($contributions['values'][0]['contribution_status_id'])
     );
-    $this->assertEquals('-.5', $contributions['values'][1]['total_amount']);
+    $this->assertEquals(-.5, $contributions['values'][1]['total_amount']);
   }
 
   /*
