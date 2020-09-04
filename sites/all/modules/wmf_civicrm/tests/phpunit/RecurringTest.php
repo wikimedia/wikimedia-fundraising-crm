@@ -211,6 +211,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       // recurring contribution payment token fields below
       'recurring_payment_token' => $token,
       'recurring' => 1,
+      'user_ip' => '12.34.56.78',
     ];
 
     //import contribution message containing populated recurring and recurring_payment_token fields
@@ -225,7 +226,8 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'gross' => '2.34',
       'payment_method' => 'cc',
       'recurring_payment_token' => $token,
-      'recurring' => 1
+      'recurring' => 1,
+      'user_ip' => '12.34.56.78',
     ];
 
     $secondContribution = wmf_civicrm_contribution_message_import($secondMessage);
@@ -295,6 +297,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       // recurring contribution payment token fields below
       'recurring_payment_token' => $token,
       'recurring' => 1,
+      'user_ip' => '12.34.56.78',
     ];
 
     //import contribution message containing populated recurring and recurring_payment_token fields
