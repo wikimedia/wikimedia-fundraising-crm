@@ -743,6 +743,16 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields() {
       'date_format' => 'M d, yy',
       'time_format' => 2,
     ],
+    'no_thank_you' => [
+      'name' => 'no_thank_you',
+      'column_name' => 'no_thank_you',
+      'label' => ts('No Thank-you Reason'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 0,
+    ],
   ];
 }
 
