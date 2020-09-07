@@ -21,7 +21,6 @@ function wmf_civicrm_install() {
   _wmf_civicrm_escalate_permissions();
   _wmf_civicrm_update_custom_fields();
   wmf_civicrm_update_7000();
-  wmf_civicrm_update_7001();
   wmf_civicrm_update_7002();
   wmf_civicrm_update_7003();
   wmf_civicrm_update_7004();
@@ -173,50 +172,6 @@ function wmf_civicrm_update_7000() {
   require_once 'update_payment_instruments.php';
   wmf_install_add_missing_payment_instruments();
   wmf_civicrm_create_financial_types($financial_types);
-}
-
-/**
- * Add settlement date field
- */
-function wmf_civicrm_update_7001() {
-  $api = wmf_civicrm_bootstrap_civi();
-  $api->CustomGroup->get(array(
-    'name' => 'contribution_extra',
-  ));
-  $result = $api->values();
-  if (empty($result)) {
-    $success = $api->CustomGroup->create(array(
-      'extends' => 'Contribution',
-      'name' => 'contribution_extra',
-      'table_name' => 'wmf_contribution_extra',
-      'title' => ts('Contribution Extra'),
-      'is_active' => 1,
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-    $result = $api->values();
-  }
-  $values = $api->values();
-  $custom_group = array_pop($values);
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group->id,
-    'name' => 'settlement_date',
-    'column_name' => 'settlement_date',
-    'label' => ts('Settlement Date'),
-    'data_type' => 'Date',
-    'html_type' => 'Select Date',
-    'is_active' => 1,
-    'is_searchable' => 1,
-    'is_search_range' => 1,
-    'is_view' => 1,
-    'date_format' => 'M d, yy',
-    'time_format' => 2,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
 }
 
 /**
