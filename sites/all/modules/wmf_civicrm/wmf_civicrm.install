@@ -1,6 +1,7 @@
 <?php
 
 require_once(__DIR__ . "/bootstrap.inc");
+require_once 'update_custom_fields.php';
 
 /**
  * On new install call these functions.
@@ -16,7 +17,9 @@ require_once(__DIR__ . "/bootstrap.inc");
  * @throws \Exception
  */
 function wmf_civicrm_install() {
+  civicrm_initialize();
   _wmf_civicrm_escalate_permissions();
+  _wmf_civicrm_update_custom_fields();
   wmf_civicrm_update_7000();
   wmf_civicrm_update_7001();
   wmf_civicrm_update_7002();
@@ -33,8 +36,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7016();
   wmf_civicrm_update_7017();
   wmf_civicrm_update_7021();
-  wmf_civicrm_update_7022();
-  wmf_civicrm_update_7025();
   wmf_civicrm_update_7028();
   wmf_civicrm_update_7029();
   wmf_civicrm_update_7030();
@@ -846,23 +847,6 @@ function wmf_civicrm_update_7021() {
       throw new DrupalUpdateException($api->errorMsg());
     }
   }
-}
-
-/**
- * Add gift data group.
- */
-function wmf_civicrm_update_7022() {
-  require_once 'update_custom_fields.php';
-  _wmf_civicrm_update_custom_fields();
-}
-
-/**
- * Add indexes to the civicrm_prevnext_cache table.
- *
- * In CiviCRM 4.6 these are in core.
- */
-function wmf_civicrm_update_7025() {
-
 }
 
 /**
