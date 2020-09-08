@@ -19,6 +19,11 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     );
   }
 
+  /**
+   * Test the message is not rejected.
+   *
+   * @throws \WmfException
+   */
   public function testValidMessage() {
     $message = json_decode(
       file_get_contents(__DIR__ . '/../data/payments-antifraud.json'),
@@ -59,6 +64,7 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * The first message for a ct_id / order_id pair needs to be complete
    *
    * @expectedException FredgeDataValidationException
+   * @throws \WmfException
    */
   public function testIncompleteMessage() {
     $message = json_decode(
@@ -108,7 +114,7 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $dbEntries = $this->getDbEntries(
       $common['contribution_tracking_id'], $common['order_id']
     );
-    $this->assertEquals(count($breakdown), count($dbEntries));
+    $this->assertCount(count($breakdown), $dbEntries);
     $fields = [
       'gateway',
       'validation_action',
@@ -127,7 +133,7 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $name = $score['filter_name'];
       $expectedScore = $breakdown[$name] <= 100000000 ? $breakdown[$name] : 100000000;
       $this->assertEquals(
-        $expectedScore, $score['fb_risk_score'], "Mismatched $name score"
+        (float) $expectedScore, (float) $score['fb_risk_score'], "Mismatched $name score"
       );
     }
   }
