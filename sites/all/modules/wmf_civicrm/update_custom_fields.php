@@ -19,6 +19,16 @@ function _wmf_civicrm_update_custom_fields() {
       ],
       'fields' => _wmf_civicrm_get_wmf_donor_fields(),
     ],
+    'contribution_extra' => [
+        'group' => [
+        'extends' => 'Contribution',
+        'name' => 'contribution_extra',
+        'table_name' => 'wmf_contribution_extra',
+        'title' => ts('Contribution Extra'),
+        'is_active' => 1,
+      ],
+      'fields' => _wmf_civicrm_get_wmf_contribution_extra_fields(),
+    ],
     'Communication' => [
       'group' => [
         'name' => 'Communication',
@@ -714,6 +724,39 @@ function _wmf_civicrm_get_partner_fields() {
 }
 
 /**
+ * Get fields for _wmf_contribution_extra.
+ *
+ * @return array
+ */
+function _wmf_civicrm_get_wmf_contribution_extra_fields() {
+  return [
+    'settlement_date' => [
+      'name' => 'settlement_date',
+      'column_name' => 'settlement_date',
+      'label' => ts('Settlement Date'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'date_format' => 'M d, yy',
+      'time_format' => 2,
+    ],
+    'no_thank_you' => [
+      'name' => 'no_thank_you',
+      'column_name' => 'no_thank_you',
+      'label' => ts('No Thank-you Reason'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 0,
+    ],
+  ];
+}
+
+/**
  * Get fields for communication custom group.
  *
  * @return array
@@ -736,7 +779,7 @@ function _wmf_civicrm_get_communication_fields() {
       'data_type' => 'Boolean',
       'html_type' => 'Radio',
       'is_active' => 1,
-      'is_required' => 1,
+      'is_required' => 0,
       'is_searchable' => 1,
       'default_value' => 0,
     ],

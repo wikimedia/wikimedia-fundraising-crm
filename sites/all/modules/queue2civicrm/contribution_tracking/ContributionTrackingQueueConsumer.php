@@ -13,7 +13,6 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $message contribution-tracking queue message
    *
-   * @return \DatabaseStatementInterface|int
    * @throws \ContributionTrackingDataValidationException
    */
   function processMessage($message) {
@@ -50,8 +49,10 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
     }, ARRAY_FILTER_USE_KEY);
 
     $ctData = $this->truncateFields($ctData);
+    $this->persistContributionTrackingData($ctData);
 
-    return $this->persistContributionTrackingData($ctData);
+    $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
+    $ContributionTrackingStatsCollector->recordContributionTrackingRecord();
   }
 
   /**
@@ -59,7 +60,6 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $ctData data to be written to contribution tracking tbl
    *
-   * @return \DatabaseStatementInterface|int
    * @throws \Exception
    */
   protected function persistContributionTrackingData($ctData) {
@@ -78,21 +78,28 @@ LIMIT 1";
         && !empty($ctData['contribution_id'])
         && ((int) $existingRow['contribution_id'] !== (int) $ctData['contribution_id'])
       ) {
-        throw new WmfException(
-          WmfException::DATA_INCONSISTENT,
+
+        watchdog(
+          'contribution-tracking',
           "Trying to update contribution tracking row {$ctData['id']} that " .
           "already has contribution_id {$existingRow['contribution_id']} " .
           "with new contribution id {$ctData['contribution_id']}.",
-          $ctData
+          [],
+          WATCHDOG_INFO
         );
+
+        $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
+        $ContributionTrackingStatsCollector->recordChangeOfContributionIdError();
+        return;
       }
-      return db_update('contribution_tracking')
+
+      db_update('contribution_tracking')
         ->fields($ctData)
         ->condition('id', $ctData['id'])
         ->execute();
     }
     else {
-      return db_insert('contribution_tracking')
+      db_insert('contribution_tracking')
         ->fields($ctData)
         ->execute();
     }

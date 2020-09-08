@@ -1,6 +1,7 @@
 <?php
 
 require_once(__DIR__ . "/bootstrap.inc");
+require_once 'update_custom_fields.php';
 
 /**
  * On new install call these functions.
@@ -16,9 +17,10 @@ require_once(__DIR__ . "/bootstrap.inc");
  * @throws \Exception
  */
 function wmf_civicrm_install() {
+  civicrm_initialize();
   _wmf_civicrm_escalate_permissions();
+  _wmf_civicrm_update_custom_fields();
   wmf_civicrm_update_7000();
-  wmf_civicrm_update_7001();
   wmf_civicrm_update_7002();
   wmf_civicrm_update_7003();
   wmf_civicrm_update_7004();
@@ -26,25 +28,17 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7006();
   wmf_civicrm_update_7007();
   wmf_civicrm_update_7008();
-  wmf_civicrm_update_7009();
-  wmf_civicrm_update_7010();
-  wmf_civicrm_update_7011();
   wmf_civicrm_update_7012();
   wmf_civicrm_update_7013();
-  wmf_civicrm_update_7014();
-  wmf_civicrm_update_7015();
   wmf_civicrm_update_7016();
   wmf_civicrm_update_7017();
   wmf_civicrm_update_7021();
-  wmf_civicrm_update_7022();
-  wmf_civicrm_update_7025();
   wmf_civicrm_update_7028();
   wmf_civicrm_update_7029();
   wmf_civicrm_update_7030();
   wmf_civicrm_update_7031();
   wmf_civicrm_update_7032();
   wmf_civicrm_update_7060();
-  wmf_civicrm_update_7061();
   wmf_civicrm_update_7062();
   wmf_civicrm_update_7063();
   wmf_civicrm_update_7064();
@@ -175,50 +169,6 @@ function wmf_civicrm_update_7000() {
   require_once 'update_payment_instruments.php';
   wmf_install_add_missing_payment_instruments();
   wmf_civicrm_create_financial_types($financial_types);
-}
-
-/**
- * Add settlement date field
- */
-function wmf_civicrm_update_7001() {
-  $api = wmf_civicrm_bootstrap_civi();
-  $api->CustomGroup->get(array(
-    'name' => 'contribution_extra',
-  ));
-  $result = $api->values();
-  if (empty($result)) {
-    $success = $api->CustomGroup->create(array(
-      'extends' => 'Contribution',
-      'name' => 'contribution_extra',
-      'table_name' => 'wmf_contribution_extra',
-      'title' => ts('Contribution Extra'),
-      'is_active' => 1,
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-    $result = $api->values();
-  }
-  $values = $api->values();
-  $custom_group = array_pop($values);
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group->id,
-    'name' => 'settlement_date',
-    'column_name' => 'settlement_date',
-    'label' => ts('Settlement Date'),
-    'data_type' => 'Date',
-    'html_type' => 'Select Date',
-    'is_active' => 1,
-    'is_searchable' => 1,
-    'is_search_range' => 1,
-    'is_view' => 1,
-    'date_format' => 'M d, yy',
-    'time_format' => 2,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
 }
 
 /**
@@ -589,52 +539,6 @@ function wmf_civicrm_update_7008() {
 }
 
 /**
- * Extend some CiviCRM column maximum lengths
- */
-function wmf_civicrm_update_7009() {
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-
-  db_query("ALTER TABLE civicrm_email
-            MODIFY email varchar(254) DEFAULT NULL");
-
-  db_query("ALTER TABLE civicrm_address
-            MODIFY postal_code varchar(64) DEFAULT NULL");
-}
-
-/**
- * Improve civicrm_entity_tag indexing--DO NOT RUN ON PRODUCTION
- */
-function wmf_civicrm_update_7010() {
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-
-  try {
-    db_query("ALTER TABLE civicrm_entity_tag
-            ADD KEY entity_id (entity_id)");
-  }
-  catch (PDOException $ex) {
-    drupal_set_message("Key already exists?: " + $ex->getMessage());
-  }
-}
-
-/**
- * Improve civicrm_entity_tag indexing
- */
-function wmf_civicrm_update_7011() {
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-
-  try {
-    db_query("ALTER TABLE civicrm_entity_tag
-            ADD KEY entity_table (entity_table)");
-  }
-  catch (PDOException $ex) {
-    drupal_set_message("Key already exists?: " + $ex->getMessage());
-  }
-}
-
-/**
  * Add source metadata fields
  */
 function wmf_civicrm_update_7012() {
@@ -771,57 +675,6 @@ function wmf_civicrm_update_7013() {
 }
 
 /**
- * Add no_thank_you field
- */
-function wmf_civicrm_update_7014() {
-  $ret = array();
-  $api = wmf_civicrm_bootstrap_civi();
-  $api->CustomGroup->get(array(
-    'name' => 'contribution_extra',
-  ));
-  $values = $api->values();
-  $custom_group = array_pop($values);
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group->id,
-    'name' => 'no_thank_you',
-    'column_name' => 'no_thank_you',
-    'label' => ts('No Thank-you Reason'),
-    'data_type' => 'String',
-    'html_type' => 'Text',
-    'is_active' => 1,
-    'is_searchable' => 1,
-    'is_view' => 0,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-
-  db_query("
-UPDATE wmf_contribution_extra, civicrm_contribution
-SET
-    no_thank_you = 'legacy'
-WHERE
-    wmf_contribution_extra.entity_id = civicrm_contribution.id
-    AND thankyou_date = '1970-01-01 00:00:00'
-");
-}
-
-/**
- * Extend contact.preferred_language column maximum length
- */
-function wmf_civicrm_update_7015() {
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-
-  db_query("ALTER TABLE civicrm_contact
-            MODIFY preferred_language varchar(32) DEFAULT NULL");
-}
-
-/**
  * Create recurring restarted contribution tag
  */
 function wmf_civicrm_update_7016() {
@@ -895,23 +748,6 @@ function wmf_civicrm_update_7021() {
       throw new DrupalUpdateException($api->errorMsg());
     }
   }
-}
-
-/**
- * Add gift data group.
- */
-function wmf_civicrm_update_7022() {
-  require_once 'update_custom_fields.php';
-  _wmf_civicrm_update_custom_fields();
-}
-
-/**
- * Add indexes to the civicrm_prevnext_cache table.
- *
- * In CiviCRM 4.6 these are in core.
- */
-function wmf_civicrm_update_7025() {
-
 }
 
 /**
@@ -1099,30 +935,6 @@ function wmf_civicrm_update_7060() {
   wmf_civicrm_create_option_values_detailed('tag_used_for', array(
     'Contributions' => array('value' => 'civicrm_contribution'),
   ));
-}
-
-/**
- * Append '&output=context' to all report instances.
- *
- * This 'upgrades' existing reports to not render results when opened by
- * default.
- *
- * Although the GR work changed the default this isn't going to fly upstream so
- * we need to change the behaviour of all of the WMF reports in a way that
- * won't be later reverted so adding a parameter & upstreaming the meaning of
- * that parameter provides future proofing.
- *
- * CRM-17225
- */
-function wmf_civicrm_update_7061() {
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-  db_query(
-    "UPDATE civicrm_navigation
-    SET url = CONCAT(url, '&output=criteria')
-    WHERE url LIKE 'civicrm\/report\/instance%'
-    AND url NOT LIKE '%output=criteria%'"
-  );
 }
 
 /**
@@ -3370,106 +3182,12 @@ function wmf_civicrm_update_7640() {
 }
 
 /**
- * Step 1 on Move do_not_solicit from WMF donor to Communication.
- *
- * This is a bit tricky because we want to move the unique name :-( & move data across
- * and update triggers.
- *
- * My thinking is to
- *  1) create the new field as view only
- *  2) deploy with ops help to reload the triggers
- *  3) run an upgrade script to move data over
- *  4) remove field from original table.
- */
-function wmf_civicrm_update_7655() {
-  civicrm_initialize();
-  $commsGroup = civicrm_api3('CustomGroup', 'get', [
-    'name' => 'Communication',
-  ]);
-
-  civicrm_api3('CustomField', 'create', [
-    'custom_group_id' => $commsGroup['id'],
-    'name' => 'do_not_solicit_new',
-    'column_name' => 'do_not_solicit',
-    'label' => ts('Do not solicit'),
-    'data_type' => 'Boolean',
-    'html_type' => 'Radio',
-    'is_active' => 1,
-    'is_required' => 1,
-    'is_searchable' => 1,
-    'weight' => CRM_Utils_Weight::getMax('CRM_Core_BAO_CustomField'),
-    // View only temporarily as there may be a period when both exist & we don't want it edited until we are ready.
-    'is_view' => 1,
-    'default_value' => 0,
-  ]);
-  civicrm_api3('System', 'flush', []);
-}
-
-/**
  * Enable fraud report.
  *
  * Bug: T187262
  */
 function wmf_civicrm_update_7660() {
   wmf_civicrm_reconcile_extensions();
-}
-
-/**
- * Move do_not solicit data from old field to new.
- *
- * This needs to be done AFTER triggers have been re-established.
- *
- * Bug: T186168
- */
-function wmf_civicrm_update_7670() {
-  civicrm_initialize();
-  $oldFieldID = CRM_Core_BAO_CustomField::getCustomFieldID('do_not_solicit');
-  $newFieldID = CRM_Core_BAO_CustomField::getCustomFieldID('do_not_solicit_new');
-  if (!$newFieldID) {
-    throw new Exception('Field does not exist');
-  }
-  if (!$oldFieldID) {
-    // Perhaps a dev env.
-    civicrm_api3('CustomField', 'create', ['id' => $newFieldID, 'name' => 'do_not_solicit']);
-    // Clear caches of the custom fields.
-    civicrm_api3('System', 'flush', []);
-    return;
-  }
-
-  $newGroup = civicrm_api3('CustomGroup', 'getsingle', ['name' => 'Communication']);
-  $batch = 300000;
-  for ($startId = 0; $startId < 30000000; $startId += $batch) {
-    $endId = $startId + $batch;
-    CRM_Core_DAO::executeQuery("
-    UPDATE {$newGroup['table_name']} new
-    INNER JOIN wmf_donor old
-    SET new.do_not_solicit = old.do_not_solicit
-    WHERE new.entity_id = old.entity_id
-    AND old.entity_id BETWEEN $startId AND $endId
-    AND old.do_not_solicit = 1
-  ");
-
-    CRM_Core_DAO::executeQuery("
-    INSERT INTO {$newGroup['table_name']} (entity_id, do_not_solicit)
-    SELECT old.entity_id, old.do_not_solicit
-    FROM wmf_donor old
-    LEFT JOIN {$newGroup['table_name']} new ON  new.entity_id = old.entity_id
-    WHERE new.id IS NULL
-    AND old.entity_id BETWEEN $startId AND $endId
-    AND old.do_not_solicit = 1
-  ");
-  }
-
-  CRM_Core_DAO::executeQuery("
-    UPDATE civicrm_custom_field SET `name` = 'do_not_solicit_old', `is_view` = 1
-    WHERE id = $oldFieldID
-  ");
-  CRM_Core_DAO::executeQuery("
-    UPDATE civicrm_custom_field SET `name` = 'do_not_solicit', `is_view` = 0, `is_required` = 0
-    WHERE id = $newFieldID
-  ");
-  // Clear caches of the custom fields.
-  civicrm_api3('System', 'flush', []);
 }
 
 /**

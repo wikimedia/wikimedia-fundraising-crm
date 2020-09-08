@@ -1,267 +1,200 @@
 <?php
-
-function wmf_fredge_qc_install() {
-  wmf_fredge_qc_update_7001();
-  wmf_fredge_qc_update_7002();
-  wmf_fredge_qc_update_7003();
-}
-
 /**
- * Not so much an update as the actual schema. This is weird because I don't
- * want it landed in the drupal db.
+ * Implements schema hook.
+ *
+ * https://api.drupal.org/api/drupal/modules%21system%21system.api.php/function/hook_schema/7.x
  */
-function wmf_fredge_qc_update_7001() {
-  //this is going to blow up spectacularly if we don't have the fredge db
-  //defined, but it should at least tell you about it in specific terms.
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('fredge');
-
-  $tables = wmf_fredge_qc_get_schema_7001();
-
-  //If they're not there, create all 7001 tables
-  foreach ($tables as $table => $schema) {
-    if (!db_table_exists($table)) {
-      db_create_table($table, $schema);
-    }
-  }
-}
-
-/**
- * Add a unique index to payments_fraud_breakdown
- */
-function wmf_fredge_qc_update_7002() {
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('fredge');
-
-  try {
-    db_query("ALTER TABLE payments_fraud_breakdown
-      ADD UNIQUE INDEX fraud_id_name (payments_fraud_id, name)");
-  } catch (PDOException $ex) {
-    drupal_set_message("Index already exists?: " + $ex->getMessage());
-  }
-}
-
-/**
- * Extend payment_submethod field to 32 characters.
- */
-function wmf_fredge_qc_update_7003() {
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('fredge');
-
-  db_change_field('payments_initial', 'payment_submethod', 'payment_submethod',
-    array('type' => 'varchar',
-          'length' => 32,
-          'not null' => false,
-    )
-  );
-}
-
-/**
- * This is for use by the actual fredge qc, so we don't have to duplicate code
- * all over the place. Could get tricky down the road, because I'm just sort of
- * guessing about what isn't going to suck later. If I guessed wrong, change it.
- * @return array tablename => schema
- */
-function wmf_fredge_qc_get_current_schema() {
-  return wmf_fredge_qc_get_schema_7001();
-}
-
-/**
- * Return an array of tablename => schema.
- */
-function wmf_fredge_qc_get_schema_7001() {
-  $tables = array(
+function wmf_fredge_qc_schema() {
+  return [
     /**
      * payments_initial table
      **/
-    'payments_initial' => array(
+    'payments_initial' => [
       'description' => t('Tracks user experience through donation pipeline.'),
-      'fields' => array(
-        'id' => array(
+      'fields' => [
+        'id' => [
           'type' => 'serial',
           'size' => 'big',
-          'unsigned' => true,
-          'not null' => true
-        ),
-        'contribution_tracking_id' => array(
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'contribution_tracking_id' => [
           'type' => 'int',
           'size' => 'normal',
-          'not null' => false
-        ),
-        'gateway' => array(
+          'not null' => FALSE,
+        ],
+        'gateway' => [
           'type' => 'varchar',
           'length' => 255,
-          'not null' => false,
-        ),
-        'order_id' => array(
+          'not null' => FALSE,
+        ],
+        'order_id' => [
           'type' => 'varchar',
           'length' => 255,
-          'not null' => false,
-        ),
-        'gateway_txn_id' => array(
+          'not null' => FALSE,
+        ],
+        'gateway_txn_id' => [
           'type' => 'varchar',
           'length' => 255,
-          'not null' => false,
-        ),
-        'validation_action' => array(
+          'not null' => FALSE,
+        ],
+        'validation_action' => [
           'type' => 'varchar',
           'length' => 16,
-          'not null' => false,
-        ),
-        'payments_final_status' => array(
+          'not null' => FALSE,
+        ],
+        'payments_final_status' => [
           'type' => 'varchar',
           'length' => 16,
-          'not null' => false,
-        ),
-        'payment_method' => array(
+          'not null' => FALSE,
+        ],
+        'payment_method' => [
           'type' => 'varchar',
           'length' => 16,
-          'not null' => false,
-        ),
-        'payment_submethod' => array(
+          'not null' => FALSE,
+        ],
+        'payment_submethod' => [
           'type' => 'varchar',
           'length' => 32,
-          'not null' => false,
-        ),
-        'country' => array(
+          'not null' => FALSE,
+        ],
+        'country' => [
           'type' => 'varchar',
           'length' => 2,
-          'not null' => false,
-        ),
-        'amount' => array(
+          'not null' => FALSE,
+        ],
+        'amount' => [
           'type' => 'float',
-          'not null' => false,
-        ),
-        'currency_code' => array(
+          'not null' => FALSE,
+        ],
+        'currency_code' => [
           'type' => 'varchar',
           'length' => 3,
-          'not null' => false,
-        ),
-        'server' => array(
+          'not null' => FALSE,
+        ],
+        'server' => [
           'type' => 'varchar',
           'length' => 64,
-          'not null' => false,
-        ),
-        'date' => array(
+          'not null' => FALSE,
+        ],
+        'date' => [
           'mysql_type' => 'DATETIME',
-          'not null' => false,
-        ),
-      ),
-      'indexes' => array(
-        'contribution_tracking_id' => array('contribution_tracking_id'),
-        'order_id' => array('order_id'),
-        'gateway' => array('gateway'),
-        'date' => array('date'),
-      ),
-      'primary key' => array('id'),
-    ),
+          'not null' => FALSE,
+        ],
+      ],
+      'indexes' => [
+        'contribution_tracking_id' => ['contribution_tracking_id'],
+        'order_id' => ['order_id'],
+        'gateway' => ['gateway'],
+        'date' => ['date'],
+      ],
+      'primary key' => ['id'],
+    ],
     /**
      * payments_fraud table
      **/
-    'payments_fraud' => array(
+    'payments_fraud' => [
       'description' => t('Tracks donation fraud scores for all donations.'),
-      'fields' => array(
-        'id' => array(
+      'fields' => [
+        'id' => [
           'type' => 'serial',
           'size' => 'big',
-          'unsigned' => true,
-          'not null' => true
-        ),
-        'contribution_tracking_id' => array(
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'contribution_tracking_id' => [
           'type' => 'int',
           'size' => 'normal',
-          'unsigned' => true,
-          'not null' => false
-        ),
-        'gateway' => array(
+          'unsigned' => TRUE,
+          'not null' => FALSE,
+        ],
+        'gateway' => [
           'type' => 'varchar',
           'length' => 255,
-          'not null' => false,
-        ),
-        'order_id' => array(
+          'not null' => FALSE,
+        ],
+        'order_id' => [
           'type' => 'varchar',
           'length' => 255,
-          'not null' => false,
-        ),
-        'validation_action' => array(
+          'not null' => FALSE,
+        ],
+        'validation_action' => [
           'type' => 'varchar',
           'length' => 16,
-          'not null' => false,
-        ),
-        
+          'not null' => FALSE,
+        ],
+
         //try varbinary 16
-        'user_ip' => array(
+        'user_ip' => [
           'mysql_type' => 'VARBINARY(16)',
-//          'length' => 16,
-//          'not null' => false,
-        ),
-        'payment_method' => array(
+          //          'length' => 16,
+          //          'not null' => false,
+        ],
+        'payment_method' => [
           'type' => 'varchar',
           'length' => 16,
-          'not null' => false,
-        ),
-        'risk_score' => array(
+          'not null' => FALSE,
+        ],
+        'risk_score' => [
           'type' => 'float',
-          'not null' => false,
-        ),
-        'server' => array(
+          'not null' => FALSE,
+        ],
+        'server' => [
           'type' => 'varchar',
           'length' => 64,
-          'not null' => false,
-        ),
-        'date' => array(
+          'not null' => FALSE,
+        ],
+        'date' => [
           'mysql_type' => 'DATETIME',
-          'not null' => false,
-        ),
-      ),
-      'indexes' => array(
-        'contribution_tracking_id' => array('contribution_tracking_id'),
-        'order_id' => array('order_id'),
-        'gateway' => array('gateway'),
-        'date' => array('date'),
-        'user_ip' => array('user_ip'),
-        'risk_score' => array('risk_score'),
-        'payment_method' => array('payment_method'),
-      ),
-      'primary key' => array('id'),
-    ),
+          'not null' => FALSE,
+        ],
+      ],
+      'indexes' => [
+        'contribution_tracking_id' => ['contribution_tracking_id'],
+        'order_id' => ['order_id'],
+        'gateway' => ['gateway'],
+        'date' => ['date'],
+        'user_ip' => ['user_ip'],
+        'risk_score' => ['risk_score'],
+        'payment_method' => ['payment_method'],
+      ],
+      'primary key' => ['id'],
+    ],
     /**
      * payments_fraud_breakdown table
      **/
-    'payments_fraud_breakdown' => array(
+    'payments_fraud_breakdown' => [
       'description' => t('Tracks breakdown of donation fraud scores for all donations.'),
-      'fields' => array(
-        'id' => array(
+      'fields' => [
+        'id' => [
           'type' => 'serial',
           'size' => 'big',
-          'unsigned' => true,
-          'not null' => true
-        ),
-        'payments_fraud_id' => array(
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'payments_fraud_id' => [
           'type' => 'int',
           'size' => 'big',
-          'unsigned' => true,
-          'not null' => false
-        ),
-        'filter_name' => array(
+          'unsigned' => TRUE,
+          'not null' => FALSE,
+        ],
+        'filter_name' => [
           'type' => 'varchar',
           'length' => 64,
-          'not null' => false,
-        ),
-        'risk_score' => array(
+          'not null' => FALSE,
+        ],
+        'risk_score' => [
           'type' => 'float',
-          'not null' => false,
-        ),
-      ),
-      'indexes' => array(
-        'payments_fraud_id' => array('payments_fraud_id'),
-        'filter_name' => array('filter_name'),
-      ),
-      'primary key' => array('id'),
-    ),
-  );
-
-  return $tables;
+          'not null' => FALSE,
+        ],
+      ],
+      'indexes' => [
+        'payments_fraud_id' => ['payments_fraud_id'],
+        'filter_name' => ['filter_name'],
+      ],
+      'primary key' => ['id'],
+    ],
+  ];
 }
 
 

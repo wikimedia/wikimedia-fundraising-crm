@@ -1,6 +1,7 @@
 <?php
 
 use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
+use queue2civicrm\contribution_tracking\ContributionTrackingStatsCollector;
 
 
 /**
@@ -66,7 +67,14 @@ function ct_batch_process() {
     $cycle_time
   );
 
+  $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
+
+  $ContributionTrackingStatsCollector->startDefaultTimer();
   $processed = $ContributionTrackingQueueConsumer->dequeueMessages();
+  $ContributionTrackingStatsCollector->endDefaultTimer();
+
+  $ContributionTrackingStatsCollector->export();
+
 
   if ($processed > 0) {
     watchdog('ct', 'Successfully processed ' . $processed . ' contribution tracking message(s).');
