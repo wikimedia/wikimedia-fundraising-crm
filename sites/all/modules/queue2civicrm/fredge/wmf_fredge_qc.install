@@ -2,8 +2,6 @@
 
 function wmf_fredge_qc_install() {
   wmf_fredge_qc_update_7001();
-  wmf_fredge_qc_update_7002();
-  wmf_fredge_qc_update_7003();
 }
 
 /**
@@ -24,36 +22,6 @@ function wmf_fredge_qc_update_7001() {
       db_create_table($table, $schema);
     }
   }
-}
-
-/**
- * Add a unique index to payments_fraud_breakdown
- */
-function wmf_fredge_qc_update_7002() {
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('fredge');
-
-  try {
-    db_query("ALTER TABLE payments_fraud_breakdown
-      ADD UNIQUE INDEX fraud_id_name (payments_fraud_id, name)");
-  } catch (PDOException $ex) {
-    drupal_set_message("Index already exists?: " + $ex->getMessage());
-  }
-}
-
-/**
- * Extend payment_submethod field to 32 characters.
- */
-function wmf_fredge_qc_update_7003() {
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('fredge');
-
-  db_change_field('payments_initial', 'payment_submethod', 'payment_submethod',
-    array('type' => 'varchar',
-          'length' => 32,
-          'not null' => false,
-    )
-  );
 }
 
 /**
