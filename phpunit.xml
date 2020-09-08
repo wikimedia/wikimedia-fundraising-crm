@@ -27,9 +27,6 @@
     <testsuite name="queue2civicrm tests">
       <directory>sites/all/modules/queue2civicrm/tests/phpunit</directory>
     </testsuite>
-    <testsuite name="recurring_globalcollect tests">
-      <directory>sites/all/modules/recurring_globalcollect/tests</directory>
-    </testsuite>
     <testsuite name="thank_you tests">
       <directory>sites/all/modules/thank_you/tests/phpunit</directory>
     </testsuite>
