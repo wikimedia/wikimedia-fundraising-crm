@@ -119,12 +119,9 @@ UPDATE civicrm_contact con, civicrm_email e
     WHERE con.id = e.contact_id AND {$email_condition}
 EOS;
 
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push('civicrm');
-
     try {
-      $result = db_query($query);
-      return $result->rowCount();
+      $result = CRM_Core_DAO::executeQuery($query);
+      return $result->N;
     }
     catch(\Exception $ex) {
       throw new WmfException(WmfException::UNSUBSCRIBE, $ex->getMessage());
