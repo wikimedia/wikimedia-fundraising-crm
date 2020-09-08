@@ -3,29 +3,23 @@
  * Common functions for recurring_globalcollect modules
  */
 
+use Civi\Api4\ContributionRecur;
 
 /**
  * Select one payment by the primary key.
  *
- * @return false|object
+ * @param int $id
+ *
+ * @return array
+ * @throws \API_Exception
+ * @throws \Civi\API\Exception\UnauthorizedException
  */
-function recurring_globalcollect_get_payment_by_id($id)
-{
-  require_once( drupal_get_path( 'module', 'wmf_civicrm' ) . '/db_switcher.inc' );
-
-  // make sure we're using the default (civicrm) db
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push( 'civicrm' );
-
-  $query = 'SELECT civicrm_contribution_recur.* FROM civicrm_contribution_recur WHERE civicrm_contribution_recur.id = :id LIMIT 1';
-
-  $result = db_query( $query, array( ':id' => $id ) )->fetch();
-
-  if ( empty( $result ) ) {
-    throw new WmfException( WmfException::INVALID_RECURRING, t( 'No record was found with the id: [!id].', array( '!id' => $id ) ) );
-  }
-
-  return $result;
+function recurring_globalcollect_get_payment_by_id($id) {
+  return (array) ContributionRecur::get()
+    ->setCheckPermissions(FALSE)
+    ->addWhere('id', '=', (int) $id)
+    ->addSelect('*')
+    ->execute()->first();
 }
 
 /**
