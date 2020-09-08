@@ -306,18 +306,18 @@ function recurring_globalcollect_charge($contribution_recur_id, $options = []) {
     throw new WmfException(WmfException::CIVI_CONFIG, $message);
   }
 
-  $subscription = recurring_globalcollect_get_payment_by_id($contribution_recur_id);
-  $transaction = WmfTransaction::from_unique_id($subscription->trxn_id);
+  $subscription = (array) recurring_globalcollect_get_payment_by_id($contribution_recur_id);
+  $transaction = WmfTransaction::from_unique_id($subscription['trxn_id']);
   $contribution_tracking_id = recurring_get_contribution_tracking_id([
     'txn_type' => 'subscr_payment',
-    'subscr_id' => $subscription->trxn_id,
+    'subscr_id' => $subscription['trxn_id'],
     'payment_date' => strtotime("now"),
   ]);
   $values = [
-    'amount' => $subscription->amount,
-    'effort_id' => $subscription->processor_id + 1,
+    'amount' => $subscription['amount'],
+    'effort_id' => $subscription['processor_id'] + 1,
     'order_id' => $transaction->gateway_txn_id,
-    'currency' => $subscription->currency,
+    'currency' => $subscription['currency'],
     'payment_product' => '',
     'language' => 'en',
     'contribution_tracking_id' => $contribution_tracking_id,
@@ -328,7 +328,7 @@ function recurring_globalcollect_charge($contribution_recur_id, $options = []) {
 
   // FIXME hack.  This is getting overriden by sad.
   $adapter->addRequestData([
-    'effort_id' => $subscription->processor_id + 1,
+    'effort_id' => $subscription['processor_id'] + 1,
   ]);
 
   $transactionResponse = $adapter->do_transaction('Recurring_Charge');
