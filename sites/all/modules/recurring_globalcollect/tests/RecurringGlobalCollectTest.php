@@ -221,15 +221,12 @@ class RecurringGlobalCollectTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testBackfillContributionTracking() {
     $id_list = implode(',', $this->contributions);
-
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push('default');
     $query = "DELETE FROM {contribution_tracking} WHERE contribution_id IN( $id_list )";
     db_query($query);
     $contribution_tracking_id = recurring_get_contribution_tracking_id([
       'txn_type' => 'subscr_payment',
       'subscr_id' => $this->subscriptionId,
-      'payment_date' => strtotime("now"),
+      'payment_date' => time(),
     ]);
     $this->assertNotEmpty($contribution_tracking_id);
   }
