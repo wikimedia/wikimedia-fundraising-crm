@@ -158,9 +158,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     // Make static so it isn't destroyed until class cleanup.
     self::$fixtures = CiviFixtures::create();
 
-    $contribution_type_cash = wmf_civicrm_get_civi_id('contribution_type_id', 'Cash');
-    $payment_instrument_cc = wmf_civicrm_get_civi_id('payment_instrument_id', 'Credit Card');
-    $payment_instrument_check = wmf_civicrm_get_civi_id('payment_instrument_id', 'Check');
+    $contribution_type_cash = (string) wmf_civicrm_get_civi_id('contribution_type_id', 'Cash');
+    $payment_instrument_cc = (string) wmf_civicrm_get_civi_id('payment_instrument_id', 'Credit Card');
+    $payment_instrument_check = (string) wmf_civicrm_get_civi_id('payment_instrument_id', 'Check');
 
     $gateway_txn_id = mt_rand();
     $check_number = (string) mt_rand();
@@ -194,7 +194,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'contribution_status_id' => '1',
             'contribution_type_id' => $contribution_type_cash,
             'currency' => 'USD',
-            'fee_amount' => '0',
+            'fee_amount' => '0.00',
             'total_amount' => '1,000.23',
             'net_amount' => '1,000.23',
             'non_deductible_amount' => '',
@@ -238,7 +238,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'do_not_solicit' => 'Y',
           'email' => 'nobody@wikimedia.org',
           'first_name' => 'First',
-          'fee' => '0.03',
+          'fee' => 0.03,
           'language' => 'en_US',
           'gateway' => 'test_gateway',
           'gateway_txn_id' => $gateway_txn_id,
@@ -282,11 +282,11 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'contribution_status_id' => '1',
             'contribution_type_id' => $contribution_type_cash,
             'currency' => 'USD',
-            'fee_amount' => '0.03',
+            'fee_amount' => 0.03,
             'invoice_id' => '',
             'is_pay_later' => '',
             'is_test' => '',
-            'net_amount' => '1.2', # :(
+            'net_amount' => '1.20', # :(
             'non_deductible_amount' => '',
             'payment_instrument_id' => $payment_instrument_check,
             'receipt_date' => '',
@@ -409,7 +409,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'contribution_status_id' => '1',
             'contribution_type_id' => $contribution_type_cash,
             'currency' => 'USD',
-            'fee_amount' => '0',
+            'fee_amount' => '0.00',
             'invoice_id' => '',
             'is_pay_later' => '',
             'is_test' => '',
@@ -463,7 +463,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'contribution_status_id' => '1',
             'contribution_type_id' => $contribution_type_cash,
             'currency' => 'USD',
-            'fee_amount' => '0',
+            'fee_amount' => '0.00',
             'invoice_id' => '',
             'is_pay_later' => '',
             'is_test' => '',
@@ -529,7 +529,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             // Internally I have set it to reduce multiple ideographic space to only one.
             // However, I've had second thoughts about my earlier update change to
             // convert them as they are formatted differently & the issue was not the
-            // existance of them but the strings of several of them in a row.
+            // existence of them but the strings of several of them in a row.
             'first_name' => 'Baa   baa' . html_entity_decode('&#x3000;') . html_entity_decode(
                 '&#x3000;'
               ) . 'black sheep' . html_entity_decode('&#x3000;'),
@@ -673,7 +673,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       ];
 
     $gateway_txn_id = mt_rand();
-    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey(
+    $endowmentFinancialType = (string) CRM_Core_PseudoConstant::getKey(
       'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift'
     );
     $cases[] = [ // Endowment Gift, specified in utm_medium
@@ -706,11 +706,11 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'contribution_status_id' => '1',
           'contribution_type_id' => $endowmentFinancialType,
           'currency' => 'USD',
-          'fee_amount' => '0.03',
+          'fee_amount' => 0.03,
           'invoice_id' => '',
           'is_pay_later' => '',
           'is_test' => '',
-          'net_amount' => '1.2', # :(
+          'net_amount' => '1.20', # :(
           'non_deductible_amount' => '',
           'payment_instrument_id' => $payment_instrument_cc,
           'receipt_date' => '',
@@ -1057,7 +1057,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected function getBaseContribution($gateway_txn_id): array {
     $contribution_type_cash = wmf_civicrm_get_civi_id('contribution_type_id', 'Cash');
-    $payment_instrument_cc = wmf_civicrm_get_civi_id('payment_instrument_id', 'Credit Card');
+    $payment_instrument_cc = (string) wmf_civicrm_get_civi_id('payment_instrument_id', 'Credit Card');
     return [
       'address_id' => '',
       'amount_level' => '',
@@ -1070,7 +1070,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'contribution_status_id' => '1',
       'contribution_type_id' => $contribution_type_cash,
       'currency' => 'USD',
-      'fee_amount' => '0',
+      'fee_amount' => '0.00',
       'invoice_id' => '',
       'is_pay_later' => '',
       'is_test' => '',
