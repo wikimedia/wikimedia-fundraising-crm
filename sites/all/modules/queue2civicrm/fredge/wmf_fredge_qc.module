@@ -183,7 +183,7 @@ function fredge_prep_data( $msg, $table, $log_identifier, $require_all = true ) 
   static $schemata = null;
   if (is_null($schemata)) {
     require_once('wmf_fredge_qc.install'); //annoyed I have to do this, but this seems the cleanest way from here
-    $schemata = wmf_fredge_qc_get_current_schema();
+    $schemata = wmf_fredge_qc_schema();
     //and then, because we only care about the stuff we're inserting, remove the 'type' => 'serial' fields, because autonumber
     foreach ($schemata as $schema_table => $schema) {
       foreach ($schema['fields'] as $field => $definition) {
