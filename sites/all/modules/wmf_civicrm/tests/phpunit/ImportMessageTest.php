@@ -1017,6 +1017,29 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertNotEquals($msg['street_address'], $address['street_address']);
   }
 
+  public function testRecurringNoToken() {
+    // need to set up a recurring message recurring=1 but there is no entry in the token DB
+    $msg = [
+      'first_name' => 'Lex',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'totally.different@example.com',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'Ingenico',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'recurring' => 1,
+      'recurring_payment_token' => mt_rand(),
+      'user_ip' => '123.232.232'
+    ];
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+
+  }
+
+
   /**
    * Assert that 2 arrays are the same in all the ways that matter :-).
    *
