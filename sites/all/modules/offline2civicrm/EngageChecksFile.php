@@ -43,8 +43,8 @@ class EngageChecksFile extends ChecksFile {
    */
   protected function mungeMessage(&$msg) {
     parent::mungeMessage($msg);
-    $msg['gateway'] = "engage";
-    $msg['contribution_type'] = "engage";
+    $msg['gateway'] = 'engage';
+    $msg['contribution_type'] = 'engage';
     $msg['contact_id'] = $this->getContactID($msg);
     if ($msg['contact_type'] === 'Individual' && $msg['contact_id'] == $this->getAnonymousContactID()) {
       $this->unsetAddressFields($msg);
@@ -62,6 +62,7 @@ class EngageChecksFile extends ChecksFile {
    *   Contact ID to use, if no integer is returned a new contact will be created
    *
    * @throws \WmfException
+   * @throws \CiviCRM_API3_Exception
    */
   protected function getContactID($msg) {
     if ($msg['contact_type'] === 'Individual' &&
