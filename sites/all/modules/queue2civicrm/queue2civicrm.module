@@ -1,5 +1,6 @@
 <?php
 use queue2civicrm\DonationQueueConsumer;
+use wmf_civicrm\ImportStatsCollector;
 
 // include common functions
 require_once( drupal_get_path( 'module', 'queue2civicrm' ) . '/queue2civicrm_common.inc' );
@@ -150,6 +151,8 @@ function queue2civicrm_batch_process($options=[]) {
 
   $DonationStatsCollector->export();
 
+  // export civicrm import timer stats
+  ImportStatsCollector::getInstance()->export();
 
   /**
    * === Legacy Donations Counter implementation ===
