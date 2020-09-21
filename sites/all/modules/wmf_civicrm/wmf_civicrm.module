@@ -3220,21 +3220,6 @@ function wmf_civicrm_civicrm_alterLogTables(&$logTableSpec) {
 /**
  * Get a grip on multiple database connections.
  *
- * @deprecated
- *
- * This is legacy code in general we should
- * 1) if it's a Civi db call, use the api
- * 2) if it's a Civi db call that is not doable with the api use CRM_Core_DAO::executeQuery().
- * 3) to interact with fredge - drupal can do this directly - we just need to remove the call &
- *   it will translate payments_initial to fredge.payments_initial based on settings.php prefix
- *   definition - eg.
- *   $databases['default']['default']['prefix'] = [
- *     'default' => '',
- *     'payments_initial' => '`fredge`.',
- *     'payments_fraud' => '`fredge`.',
- *     'payments_fraud_breakdown' => '`fredge`.',
- *   ];
- *
  * @return db_switcher
  */
 function wmf_civicrm_get_dbs() {
