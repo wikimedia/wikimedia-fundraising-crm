@@ -40,6 +40,8 @@ class PaymentsInitQueueConsumer extends WmfQueueConsumer {
 			PendingDatabase::get()->deleteMessage( $message );
 		}
 
+		$dbs = wmf_civicrm_get_dbs();
+		$dbs->push( 'fredge' );
 		$query = 'SELECT id FROM payments_initial
                   WHERE contribution_tracking_id = :ct_id
                   AND order_id = :order_id LIMIT 1';
