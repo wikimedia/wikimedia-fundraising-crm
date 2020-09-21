@@ -1,3 +1,6 @@
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">even if only from our homes.</span>
+<div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+
 <p>
 {% if first_name and last_name %}
 Dear {{ first_name }},
@@ -6,10 +9,14 @@ Dear donor,
 {% endif %}
 </p>
 
-<p>I feel so lucky to get to be the person to thank you for your {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} {% if recurring %}monthly{% else %}one-time{% endif %} gift, on behalf of a world of people seeking free knowledge.</p>
+<p>Thank you for your {% if recurring %}monthly{% else %}one-time{% endif %} gift of {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Your support of Wikipedia’s mission means everything right now.</p>
+
+<p>This letter feels very personal this year. I’m writing to you from my home, which has also become my office. Perhaps you can relate. It seems like so much has been upended in one way or another over the past year—pandemic, school closures, economic strain, the list goes on. But I take comfort in knowing that Wikipedia’s purpose remains steady: to make knowledge available to you. We’re here no matter what life throws your way.</p>
+
+<p>Slowly and steadily, we’re building knowledge for the world, whatever that world looks like. We’re here every day, as a resource for whatever questions you might have. We’re here so you can keep exploring, even if your exploring these days happens mostly from home.</p>
 
 {% if recurring %}
-<p>Your donation keeps Wikipedia independent, and your monthly support is essential for long-term planning, helping us see what Wikipedia can achieve in the years ahead. Once a month, a donation of {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} will be debited by the Wikimedia Foundation until you notify us to stop. <b>We will send you a summary each January of your contributions for the previous year.</b> If for whatever reason you wish to cancel your donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">easy cancellation instructions</a>.</p>
+<p>Your monthly support plays a crucial role in Wikipedia's constancy. It gives us the ability to plan for the years ahead.  Once a month, a donation of {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} will be debited by the Wikimedia Foundation until you notify us to stop. We will send you a summary each January of your contributions for the previous year. If for whatever reason you wish to cancel your donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">easy cancellation instructions</a>.</p>
 {% endif %}
 
 {% if "RecurringRestarted" in contribution_tags %}
@@ -20,13 +27,13 @@ Dear donor,
 <p>We recently resolved a technical issue which caused a small number of donors to not receive a confirmation of their donation. Please accept this email as a thank you for your donation on {{ receive_date }}. We truly appreciate your patience and your support, and please feel free to email donate@wikimedia.org if you have any questions.</p>
 {% endif %}
 
-<p>I used to try to guess what motivated you to give, but the longer I do this work, the more I realize I can’t put your curiosity in a box. There is no one singular experience of Wikipedia. Curiosity is as diverse as we all are, and it looks a little different for each of us.</p>
-
-<p>When you use Wikipedia next, I hope you feel that it belongs to you. Because without you, and without the millions of people who come back to us every day, we would be nothing.</p>
-
-<p><b>Thank you for giving Wikipedia shape, and purpose, and momentum. Thank you for fitting us into your life.</b></p>
-
-<p>With immense gratitude,</p>
+<p>
+{% if first_name and last_name %}
+{{ first_name }}, thank you for helping Wikipedia continue to grow and be here for the world. I'm grateful and deeply honored to be on this journey with you.
+{% else %}
+Thank you for helping Wikipedia continue to grow and be here for the world. I'm grateful and deeply honored to be on this journey with you.
+{% endif %}
+</p>
 
 <p>
 Katherine
@@ -35,17 +42,14 @@ Katherine Maher, Executive Director<br>
 Wikimedia Foundation
 </p>
 
-<p>Many employers will generously match employee contributions: please check with your employer to see if they have a <a href="https://donate.wikimedia.org/wiki/Matching_Gifts">corporate matching gift program</a>.
-</p>
+<p>Many employers will generously match employee contributions: please check with your employer to see if they have a <a href="https://donate.wikimedia.org/wiki/Matching_Gifts">corporate matching gift program</a>.</p>
+
 {% if gift_source != "Donor Advised Fund" %}
 <p>For your records: Your donation, number {{ transaction_id }}, on {{ receive_date }} was {{ currency }} {{ amount }}.</p>
 
-<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
-</p>
-{%endif%}
+<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+{% endif %}
 
-<p>If you do not wish to receive any future fundraising emails from the Wikimedia Foundation, you can <a href="{{ unsubscribe_link | raw }}">unsubscribe instantly</a>. Please note we will still send you receipts, like this one, for future donations.
-</p>
+<p>If you do not wish to receive any future fundraising emails from the Wikimedia Foundation, you can <a href="{{ unsubscribe_link | raw }}">unsubscribe instantly</a>. Please note we will still send you receipts, like this one, for future donations.</p>
 
-<!-- TI_BEGIN{"name":"Thank you email 2019","revision":1}TI_END -->
-
+<!-- TI_BEGIN{"name":"Thank you email 2020","revision":1}TI_END -->
