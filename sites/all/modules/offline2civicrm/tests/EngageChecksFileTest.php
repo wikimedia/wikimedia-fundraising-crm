@@ -11,11 +11,11 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   function setUp() {
     parent::setUp();
     $this->ensureAnonymousContactExists();
-    require_once __DIR__ . "/includes/EngageChecksFileProbe.php";
+    require_once __DIR__ . '/includes/EngageChecksFileProbe.php';
   }
 
   function testParseRow_Individual() {
-    $data = array(
+    $data = [
       'Batch' => '1234',
       'Contribution Type' => 'Engage',
       'Total Amount' => '50',
@@ -42,8 +42,8 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'Email' => '',
       'Thank You Letter Date' => '5/1/14',
       'AC Flag' => 'Y',
-    );
-    $expected_normal = array(
+    ];
+    $expected_normal = [
       'check_number' => '2020',
       'city' => 'Best St. Louis',
       'contact_source' => 'check',
@@ -70,7 +70,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'street_address' => '1000 Markdown Markov',
       'thankyou_date' => 1398902400,
       'contact_id' => NULL,
-    );
+    ];
 
     $importer = new EngageChecksFileProbe();
     $output = $importer->_parseRow($data);
@@ -80,7 +80,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   }
 
   function testParseRow_Organization() {
-    $data = array(
+    $data = [
       'Batch' => '1235',
       'Contribution Type' => 'Engage',
       'Total Amount' => '51.23',
@@ -104,8 +104,8 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'Email' => '',
       'Thank You Letter Date' => '5/1/14',
       'AC Flag' => '',
-    );
-    $expected_normal = array(
+    ];
+    $expected_normal = [
       'check_number' => '202000001',
       'city' => 'Best St. Louis',
       'contact_source' => 'check',
@@ -130,7 +130,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'street_address' => '1000 Markdown Markov',
       'thankyou_date' => 1398902400,
       'contact_id' => NULL,
-    );
+    ];
 
     $importer = new EngageChecksFileProbe();
     $output = $importer->_parseRow($data);
@@ -145,10 +145,10 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     $importer = new EngageChecksFile($fileUri);
     $importer->import();
-    $contact = $this->callAPISuccess('Contact', 'get', array(
+    $contact = $this->callAPISuccess('Contact', 'get', [
       'email' => 'rsimpson4@unblog.fr',
       'sequential' => 1,
-    ));
+    ]);
     $this->assertEquals('07065', $contact['values'][0]['postal_code']);
     $this->assertEquals(5, strlen($contact['values'][0]['postal_code']));
   }
@@ -162,7 +162,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    */
   function testImportSucceedIndividualSingleContactExistsEmailMatch() {
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
+    $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
@@ -172,11 +172,11 @@ class EngageChecksFileTest extends BaseChecksFileTest {
         'street_address' => '35 Mousey Lane',
         'location_type_id' => 'Home',
       ],
-    ));
+    ]);
 
     $this->importCheckFile();
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $minnie['id']]);
     $this->assertEquals(1, $contributions['count']);
     $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $minnie['id']]);
     $this->assertEquals('35 Squeaky Way', $address['street_address']);
@@ -187,7 +187,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $this->assertEquals(1, $minnie['is_opt_out']);
 
     // Check anonymous contact too.
-    $anonymousContact = $anonymousContact = $this->callAPISuccessGetSingle('Contact', array('email' => 'fakeemail@wikimedia.org'));
+    $anonymousContact = $anonymousContact = $this->callAPISuccessGetSingle('Contact', ['email' => 'fakeemail@wikimedia.org']);
     $this->assertEquals('Anonymous', $anonymousContact['first_name']);
     $this->assertEquals('Anonymous', $anonymousContact['last_name']);
     $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $anonymousContact['id'], 'trxn_id' => 'ENGAGE 1F46761510A95FC3FFE271B928231E55']);
@@ -207,7 +207,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    */
   function testImportSucceedIndividualSingleContactExistsAddressMatch() {
 
-    $daisy = $this->callAPISuccess('Contact', 'create', array(
+    $daisy = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Daisy',
       'last_name' => 'Duck',
       'contact_type' => 'Individual',
@@ -217,11 +217,11 @@ class EngageChecksFileTest extends BaseChecksFileTest {
         'street_address' => '1 15th Avenue.',
         'location_type_id' => 'Home',
       ],
-    ));
+    ]);
 
     $this->importCheckFile();
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $daisy['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $daisy['id']]);
     $this->assertEquals(1, $contributions['count']);
   }
 
@@ -230,7 +230,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    */
   function testImportSucceedIndividualSingleContactExistsDeleted() {
 
-    $daisy = $this->callAPISuccess('Contact', 'create', array(
+    $daisy = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Daisy',
       'last_name' => 'Duck',
       'contact_type' => 'Individual',
@@ -241,25 +241,25 @@ class EngageChecksFileTest extends BaseChecksFileTest {
         'street_address' => '1 15th Avenue.',
         'location_type_id' => 'Home',
       ],
-    ));
+    ]);
 
     $this->importCheckFile();
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $daisy['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $daisy['id']]);
     $this->assertEquals(0, $contributions['count']);
-    $newDaisy = $this->callAPISuccess('Contact', 'get', array(
+    $newDaisy = $this->callAPISuccess('Contact', 'get', [
       'first_name' => 'Daisy',
       'last_name' => 'Duck',
       'contact_type' => 'Individual',
       'is_deleted' => 0,
-      'options' => array(
+      'options' => [
         'sort' => 'id DESC',
         'limit' => 1,
-      )
-    ));
+      ],
+    ]);
     // Should have created a new contact to attach the contribution to
     $this->assertGreaterThan($daisy['id'], $newDaisy['id']);
-    $newContribs = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $newDaisy['id']));
+    $newContribs = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $newDaisy['id']]);
     $this->assertEquals(1, $newContribs['count']);
 
   }
@@ -281,7 +281,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   function testImportSucceedIndividualMultipleContactExistsAddressMatchOnBestDaisy() {
     $daisy = [];
     for ($i = 0; $i < 4; $i++) {
-      $daisy[$i] = $this->callAPISuccess('Contact', 'create', array(
+      $daisy[$i] = $this->callAPISuccess('Contact', 'create', [
         'first_name' => 'Daisy',
         'last_name' => 'Duck',
         'contact_type' => 'Individual',
@@ -291,7 +291,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
           'street_address' => '1 15th Avenue',
           'location_type_id' => 'Home',
         ],
-      ));
+      ]);
       // The second is the most recent.
       $dates = [0 => '2015-09-09', 1 => '2017-12-12', 2 => NULL, 3 => '2016-10-10'];
       if ($dates[$i]) {
@@ -331,7 +331,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   function testImportSucceedIndividualMultipleContactExistsNonPrimaryAddressMatchOnBestDaisy() {
     $daisy = [];
     for ($i = 0; $i < 4; $i++) {
-      $daisy[$i] = $this->callAPISuccess('Contact', 'create', array(
+      $daisy[$i] = $this->callAPISuccess('Contact', 'create', [
         'first_name' => 'Daisy',
         'last_name' => 'Duck',
         'contact_type' => 'Individual',
@@ -348,7 +348,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
           'location_type_id' => 'Home',
           'is_primary' => 1,
         ],
-      ));
+      ]);
       // The second is the most recent.
       $dates = [0 => '2015-09-09', 1 => '2017-12-12', 2 => NULL, 3 => '2016-10-10'];
       if ($dates[$i]) {
@@ -385,7 +385,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     $villains = [];
     for ($i = 0; $i < 4; $i++) {
-      $villains[$i] = $this->callAPISuccess('Contact', 'create', array(
+      $villains[$i] = $this->callAPISuccess('Contact', 'create', [
         'organization_name' => 'Villains Ltd',
         'contact_type' => 'Organization',
         'api.address.create' => [
@@ -394,7 +394,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
           'street_address' => 'PO Box 666',
           'location_type_id' => 'Home',
         ],
-      ));
+      ]);
       // The second is the most recent.
       $dates = [0 => '2015-09-09', 1 => '2017-12-12', 2 => NULL, 3 => '2016-10-10'];
       if ($dates[$i]) {
@@ -440,8 +440,9 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     // Check Minnie 1 has the contribution.
     $this->callAPISuccessGetSingle('Contribution', [
-      'trxn_id' => 'ENGAGE 2FF5DCA37146BF766F8658855EA5471F',
-      'contact_id' => $minnies[1]['id']]
+        'trxn_id' => 'ENGAGE 2FF5DCA37146BF766F8658855EA5471F',
+        'contact_id' => $minnies[1]['id'],
+      ]
     );
 
     $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $minnies[1]['id']]);
@@ -455,7 +456,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * The address is different and should result in an UPDATE on email match.
    */
   function testImportSucceedOrganizationSingleContactExistsEmailMatch() {
-    $goodie = $this->callAPISuccess('Contact', 'create', array(
+    $goodie = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Good Guys Inc.',
       'contact_type' => 'Organization',
       'email' => 'goodies@example.com',
@@ -464,11 +465,11 @@ class EngageChecksFileTest extends BaseChecksFileTest {
         'street_address' => '35 Goodies Lane',
         'location_type_id' => 'Home',
       ],
-    ));
+    ]);
     $this->sourceFileUri = __DIR__ . "/data/engage_org_import.csv";
     $this->importCheckFile();
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $goodie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $goodie['id']]);
     $this->assertEquals(1, $contributions['count']);
     $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $goodie['id']]);
     $this->assertEquals('100 95th St 51th Floor', $address['street_address']);
@@ -490,7 +491,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'api.email.create' => [
         'email' => 'goodies@example.com',
         'location_type_id' => 'Work',
-      ]
+      ],
     ]);
     $goodyID = $goodies[1]['id'];
 
@@ -617,8 +618,8 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     if ($this->sourceFileUri) {
       $this->callAPISuccess('Contribution', 'get', [
         'api.Contribution.delete' => 1,
-        wmf_civicrm_get_custom_field_name('gateway_txn_id') => array('IN' => $this->getGatewayIDs()),
-        'api.contact.delete' => array('skip_undelete' => 1),
+        wmf_civicrm_get_custom_field_name('gateway_txn_id') => ['IN' => $this->getGatewayIDs()],
+        'api.contact.delete' => ['skip_undelete' => 1],
       ]);
     }
 
@@ -629,7 +630,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * Get the gateway IDS from the source file.
    */
   public function getGatewayIDs() {
-    $gatewayIDs = array();
+    $gatewayIDs = [];
     $data = $this->getParsedData();
     foreach ($data as $record) {
       $gatewayIDs[] = $record['gateway_txn_id'];
@@ -644,7 +645,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    */
   public function getParsedData() {
     $file = fopen($this->sourceFileUri, 'r');
-    $result = array();
+    $result = [];
     $importer = new EngageChecksFileProbe();
     $headers = [];
     while (($row = fgetcsv($file, 0, ',', '"', '\\')) !== FALSE) {
@@ -693,8 +694,8 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @return array
    */
-  protected function importCheckFile($additionalFields = array()) {
-    $fileName = $this->sourceFileUri ? : __DIR__ . "/data/engage_duplicate_testing.csv";
+  protected function importCheckFile($additionalFields = []) {
+    $fileName = $this->sourceFileUri ?: __DIR__ . "/data/engage_duplicate_testing.csv";
     $importer = new EngageChecksFile($fileName, $additionalFields);
     $importer->import();
     return $importer->getMessages();
@@ -716,7 +717,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
         0 => '2015-09-09',
         1 => '2017-12-12',
         2 => NULL,
-        3 => '2016-10-10'
+        3 => '2016-10-10',
       ];
       if ($dates[$i]) {
         $this->callAPISuccess('Contribution', 'create', [
