@@ -3952,7 +3952,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     endowment_number_donations = VALUES(endowment_number_donations),
     " . implode(',', $updates) . ";";
 
-    $significantFields = ['contribution_status_id', 'total_amount', 'contact_id', 'receive_date', 'currency'];
+    $significantFields = ['contribution_status_id', 'total_amount', 'contact_id', 'receive_date', 'currency', 'financial_type_id'];
     $updateConditions = [];
     foreach ($significantFields as $significantField) {
       $updateConditions[] = "(NEW.{$significantField} != OLD.{$significantField})";
