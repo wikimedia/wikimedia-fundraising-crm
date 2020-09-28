@@ -49,6 +49,7 @@ function drush_queue_performance_profile_donation($limit, $context) {
     if ($limit > 4000) {
       throw new Exception('Not enough data in same data set');
     }
+    wmf_common_create_smashpig_context('q-perf', 'ingenico');
     $sourceDataFile = __DIR__ . '/tests/data/donation_performance_profile_data.json';
     $outputFile = __DIR__ . '/tests/logs/perf.log';
     drush_print("Processing input file tests/data/donation_performance_test_data.json and feeding to queue2civicrm_import.");
