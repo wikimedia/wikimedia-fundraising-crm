@@ -12,3 +12,4 @@ files[] = DonationInterfaceFactory.php
 files[] = WmfTransaction.php
 files[] = civicrm_api_check.inc
 files[] = tests/includes/CiviFixtures.php
+files[] = ImportStatsCollector.php
