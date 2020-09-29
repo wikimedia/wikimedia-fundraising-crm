@@ -166,12 +166,14 @@ class ImportStatsCollector extends AbstractCollector {
           // create a new stat which stores all processing times of the import
           // step recorded (e.g. message_contribution_insert) that we will
           // then average later
-          $this->add(
-            $stat . "_process_times",
-            // we prefix the namespace with a dot to tell StatsCollector it's
-            // an absolute namespace.
-            $this->getTimerDiff("." . $absoluteStatNamespace, FALSE)
-          );
+          if ($this->hasTimerDiff("." . $absoluteStatNamespace)) {
+            $this->add(
+              $stat . "_process_times",
+              // we prefix the namespace with a dot to tell StatsCollector it's
+              // an absolute namespace.
+              $this->getTimerDiff("." . $absoluteStatNamespace, FALSE)
+            );
+          }
         }
 
         if ($this->exists($stat . "_process_times")) {
