@@ -6,6 +6,8 @@
  * This is intended to be run before and after changes anticipated to affect performance.
  */
 
+use wmf_civicrm\ImportStatsCollector;
+
 /**
  * Implementation of hook_drush_command()
  */
@@ -49,6 +51,7 @@ function drush_queue_performance_profile_donation($limit, $context) {
     if ($limit > 4000) {
       throw new Exception('Not enough data in same data set');
     }
+    wmf_common_create_smashpig_context('q-perf', 'ingenico');
     $sourceDataFile = __DIR__ . '/tests/data/donation_performance_profile_data.json';
     $outputFile = __DIR__ . '/tests/logs/perf.log';
     drush_print("Processing input file tests/data/donation_performance_test_data.json and feeding to queue2civicrm_import.");
@@ -90,6 +93,7 @@ function drush_queue_performance_profile_donation($limit, $context) {
     $timeTaken = strtotime('now') - $now;
     drush_print(t("Processed @limit messages in $timeTaken second(s)", array('@limit' => $limit)));
 
+    ImportStatsCollector::getInstance()->export();
     fwrite($outputFileResource, date('Y-m-d H:i:s') . t(" Donation queue performance profile took $timeTaken second(s) for @limit donations.\n Context is : @context \n", array(
       '@limit' => $limit,
       '@context' => $context,

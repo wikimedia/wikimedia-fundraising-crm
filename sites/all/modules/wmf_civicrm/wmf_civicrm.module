@@ -1222,6 +1222,17 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     // going forwards there is scope to a) improve the processing
     // upstream rather than skip & b) not skip for Major Gifts contacts.
     'skip_greeting_processing' => TRUE,
+    // Adding updateBlankLocInfo bypasses some unnecessary queries.
+    // The queries are intended to ensure that no contact's are without a
+    // primary email/address etc. The bug only ever affects updates, not new creates
+    // I've been working to remove this bug & the subsequent check
+    // entirely (https://lab.civicrm.org/dev/core/-/issues/2039 )
+    // but this seems like a quick safe way to remove 10 queries per contact create.
+    // see https://github.com/civicrm/civicrm-core/pull/18477/files#diff-a6c74f5d526f1e30491d903548bbc388L67
+    // for what it does. If should be temporary as I will keep working on a core fix.
+    // It's probably conservative not putting on update as well but create should get most of them
+    // without any risk
+   'updateBlankLocInfo' => $isCreate,
   ];
   if (strtolower($msg['contact_type']) !== "organization") {
     foreach (['first_name', 'last_name', 'middle_name'] as $name) {
