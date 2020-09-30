@@ -18,7 +18,7 @@ class BenevityTest extends BaseChecksFileTest {
     $this->ensureAnonymousContactExists();
     parent::setUp();
 
-    $this->setExchangeRates($this->epochtime, array('USD' => 1, 'BTC' => 3));
+    $this->setExchangeRates($this->epochtime, ['USD' => 1, 'BTC' => 3]);
     $this->gateway = 'benevity';
 
     \Civi::$statics = array();
@@ -961,17 +961,8 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \League\Csv\Exception
    * @throws \WmfException
    */
-  public function testImportSucceedCurrencyTransformExists() {
-    $mouseOrg = $this->callAPISuccess('Contact', 'create', array(
-      'organization_name' => 'Mickey Mouse Inc',
-      'contact_type' => 'Organization',
-    ));
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
-      'first_name' => 'Minnie',
-      'last_name' => 'Mouse',
-      'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
-    ));
+  public function testImportSucceedCurrencyTransformExists(): void {
+    [$mouseOrg, $minnie] = $this->spawnMice();
     $messages = $this->importBenevityFile(['date' => ['year' => 2019, 'month' => 9, 'day' => 12], 'original_currency' => 'EUR', 'original_currency_total' => 4, 'usd_total' => 8]);
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
 
@@ -987,7 +978,27 @@ class BenevityTest extends BaseChecksFileTest {
   }
 
   /**
+   * Test that currency information can be handled as input.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
+   */
+  public function testImportSucceedCurrencyWithOriginalCurrencyFee(): void {
+    $this->setExchangeRates(strtotime('2019-09-12'), ['USD' => 1, 'JPY' => 100]);
+    [$mouseOrg, $minnie] = $this->spawnMice();
+    global $_exchange_rate_cache;
+    $messages = $this->importBenevityFile(['date' => ['year' => 2019, 'month' => 9, 'day' => 12], 'original_currency' => 'JPY', 'original_currency_total' => 4000, 'usd_total' => 40], 'benevity.jpy');
+    global $user;
+    $suffix = $user->uid . '.csv';
+    $this->assertEquals('All rows were imported', $messages['Result'], "\n" . print_r(file_get_contents(__DIR__ . '/data/benevity.jpy_errors.' . $suffix), TRUE)  . "\n" . print_r($_exchange_rate_cache, TRUE));
+    $contribution = $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $minnie['id']]);
+    $this->assertEquals((464 + 254) / 100, $contribution['fee_amount']);
+  }
+
+  /**
    * @return array|int
+   * @throws \CRM_Core_Exception
    */
   protected function createAllOrgs() {
     $mouseOrg = $this->callAPISuccess('Contact', 'create', array(
@@ -1014,14 +1025,34 @@ class BenevityTest extends BaseChecksFileTest {
    *
    * @param array $additionalFields
    *
+   * @param string $csv
+   *
    * @return array
    * @throws \League\Csv\Exception
    * @throws \WmfException
    */
-  protected function importBenevityFile($additionalFields = ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]) {
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv", $additionalFields);
+  protected function importBenevityFile($additionalFields = ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]], $csv = 'benevity'): array {
+    $importer = new BenevityFile(__DIR__ . '/data/' . $csv . '.csv', $additionalFields);
     $importer->import();
     return $importer->getMessages();
+  }
+
+  /**
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  protected function spawnMice(): array {
+    $mouseOrg = $this->callAPISuccess('Contact', 'create', [
+      'organization_name' => 'Mickey Mouse Inc',
+      'contact_type' => 'Organization',
+    ]);
+    $minnie = $this->callAPISuccess('Contact', 'create', [
+      'first_name' => 'Minnie',
+      'last_name' => 'Mouse',
+      'contact_type' => 'Individual',
+      'email' => 'minnie@mouse.org',
+    ]);
+    return [$mouseOrg, $minnie];
   }
 
 }

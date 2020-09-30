@@ -68,9 +68,15 @@ class BenevityFile extends ChecksFile {
       }
     }
 
+    // Ensure currency is USD as we have done currency calculations within the Benevity import with the
+    // import specific conversion rate.
+    $msg['currency'] = 'USD';
+    if (!empty($this->additionalFields['original_currency'])) {
+      $msg['original_currency'] = $this->additionalFields['original_currency'];
+    }
     $msg['gross'] = $this->getUSDAmount($msg['original_gross']);
     if (!empty($msg['merchant_fee_amount'])) {
-      $msg['fee'] = $msg['merchant_fee_amount'] + (empty($msg['fee']) ? 0 : $msg['fee']);
+      $msg['fee'] = $this->getUSDAmount($msg['merchant_fee_amount']) + (empty($msg['fee']) ? 0 : $this->getUSDAmount($msg['fee']));
     }
 
     try {
@@ -183,7 +189,7 @@ class BenevityFile extends ChecksFile {
     // $mapping['Donation Frequency'] = 'notes';
     $mapping['Total Donation to be Acknowledged'] = 'original_gross';
     $mapping['Match Amount'] = 'original_matching_amount';
-    $mapping['Currency'] = 'currency';
+    $mapping['Currency'] = 'original_currency';
     $mapping['Cause Support Fee'] = 'fee';
     $mapping['Merchant Fee'] = 'merchant_fee_amount';
     // The parent sets this mapping - but it's expected to be in the format USD 15.15 - which it isn't.
