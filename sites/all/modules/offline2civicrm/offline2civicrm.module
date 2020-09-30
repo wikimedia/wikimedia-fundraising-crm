@@ -113,10 +113,6 @@ function offline2civicrm_import_checks_form($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => 100,
   );
-  $form['import_upload_submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Upload'),
-  );
   // Will be replaced by import specific fields.
   $form['offline2civicrm_settings'] = array(
     '#type' => 'fieldset',
@@ -155,7 +151,10 @@ function offline2civicrm_import_checks_form($form, &$form_state) {
       'event' => 'change',
     ),
   );
-
+  $form['import_upload_submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Upload'),
+  );
   $form['log'] = array(
     '#markup' => $log_html,
   );
