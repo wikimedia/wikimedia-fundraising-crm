@@ -143,7 +143,8 @@ class ImportStatsCollector extends AbstractCollector {
     // in working out how long each step within that method takes and we also
     // record the overall time of the main method for convenience.
     $statsOfInterest = [
-      'wmf_civicrm_contribution_message_import', // main method
+      'wmf_civicrm_contribution_message_import', // overall timing, one-time
+      'wmf_civicrm_recurring_message_import', // overall timing, recurring
       'verify_and_stage',
       'get_recurring_payment_token', // recurring only
       'get_gateway_subscription',
