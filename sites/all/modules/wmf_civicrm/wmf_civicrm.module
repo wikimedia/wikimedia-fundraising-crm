@@ -187,7 +187,13 @@ function wmf_civicrm_contribution_message_import(&$msg) {
   $timer = ImportStatsCollector::getInstance();
   $timer->init();
 
-  $timer->startImportTimer( "wmf_civicrm_contribution_message_import" );
+  if (empty($msg['recurring'])) {
+    $overallTimerName = "wmf_civicrm_contribution_message_import";
+  }
+  else {
+    $overallTimerName = "wmf_civicrm_recurring_message_import";
+  }
+  $timer->startImportTimer($overallTimerName);
   civicrm_initialize();
 
   $timer->startImportTimer("verify_and_stage");
@@ -364,7 +370,7 @@ function wmf_civicrm_contribution_message_import(&$msg) {
     ]);
   }
 
-  $timer->endImportTimer( "wmf_civicrm_contribution_message_import" );
+  $timer->endImportTimer($overallTimerName);
   $timer->deinit();
   return $contribution;
 }
