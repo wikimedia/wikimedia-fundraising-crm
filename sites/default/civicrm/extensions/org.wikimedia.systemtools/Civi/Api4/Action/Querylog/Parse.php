@@ -64,7 +64,7 @@ class Parse extends AbstractAction {
             $writer->insertOne($parsed[$currentIndex]);
           }
          // this is the low hanging fruit of data sanitising - get rid of emails.
-          $query = preg_replace('/([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})/', $currentIndex . '@example.com', $query);
+          $query = preg_replace('/([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})/', $currentIndex . '@example.com', substr($line, 34));
           $parsed[$index] = [
             'timestamp' => $date,
             'query' => $query,

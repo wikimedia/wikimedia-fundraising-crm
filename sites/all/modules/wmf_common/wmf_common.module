@@ -132,9 +132,15 @@ function wmf_common_get_my_revision() {
     return $sourceRevision;
 }
 
+function wmf_common_legacy_locale_civi_to_template( $locale ) {
+	// FIXME: temporary hack to keep currency translations working
+	return strtolower( str_replace( '_', '-', $locale ) );
+}
+
 function wmf_common_locale_civi_to_mediawiki( $locale ) {
-    // LOL
-    return strtolower( str_replace( '_', '-', $locale ) );
+    // FIXME: This may prevent some localization but will allow more donors
+	// to see translated pages
+    return strtolower( substr( $locale, 0, 2 ) );
 }
 
 function wmf_common_damaged_search_form( $form, &$form_state ) {
