@@ -157,6 +157,44 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         // recurring record.
         $msg['subscr_id'] = $recur_record->id;
         $msg['gateway'] = 'paypal';
+      } else {
+        // PayPal has just not been sending subscr_signup messages for a lot of
+        // messages lately. Insert a whole new contribution_recur record.
+        $startMessage = [
+          'txn_type' => 'subscr_signup',
+          'subscr_id' => $msg['subscr_id'],
+          'contribution_tracking_id' => $msg['contribution_tracking_id'],
+          'email' => $msg['email'],
+          'first_name' => $msg['first_name'],
+          'middle_name' => $msg['middle_name'],
+          'last_name' => $msg['last_name'],
+          'street_address' => $msg['street_address'],
+          'city' => $msg['city'],
+          'state_province' => $msg['state_province'],
+          'country' => $msg['country'],
+          'postal_code' => $msg['postal_code'],
+          // Assuming monthly donation
+          'frequency_interval' => '1',
+          'frequency_unit' => 'month',
+          'installments' => 0,
+          'gross' => $msg['gross'],
+          'currency' => $msg['currency'],
+          'create_date' => $msg['date'],
+          'start_date' => $msg['date'],
+          'date' => $msg['date'],
+          'gateway' => $msg['gateway'],
+          'recurring' => true
+        ];
+        $startMessage = $this->normalizeMessage($startMessage);
+        $this->importSubscriptionSignup($startMessage);
+        $recur_record = wmf_civicrm_get_recur_record($msg['subscr_id']);
+        if (!$recur_record) {
+          watchdog('recurring', 'Fallback contribution_recur record creation failed.');
+          throw new WmfException(
+            WmfException::IMPORT_SUBSCRIPTION,
+            "Could not create the initial recurring record for subscr_id {$msg['subscr_id']}"
+          );
+        }
       }
     }
     if (!$recur_record) {
