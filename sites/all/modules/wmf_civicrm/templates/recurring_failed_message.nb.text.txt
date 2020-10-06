@@ -1,0 +1,21 @@
+Hei {contact.first_name},
+
+Mange takk for at du støtter Wikimedia Foundation og fri kunnskap.
+
+Vi har oppdaget at det skjedde en feil under behandlingen av den siste månedlige donasjonen din. Resultatet er at den faste donasjonen din er avbrutt, og du vil ikke lengre bli belastet. Jeg beklager bryderiet.
+
+Hvis du vil fortsette å støtte Wikimedia Foundation, kan du opprette en ny fast donasjon [her].
+
+Hvis du har flere spørsmål eller kommentarer, er det bare å ta kontakt med oss.
+
+Med vennlig hilsen,
+Wikimedia Foundation Giverservice-teamet
+
+Du får denne e-posten på {contact.email} som en verdifull donor for Wikimedia Foundation. Hvis du ikke ønsker å få e-post fra Wikimedia Foundation i fremtiden, kan du melde deg av umiddelbart. Hvis du allerede har donert nylig, kan vi ha en alternativ e-postadresse for deg. Gi oss beskjed! Vi vil gjerne melde av alle gamle e-postadresser.
+
+Wikimedia Foundation, Inc.
+P.O. Box 98204
+Washington, DC 20090-8204
+United States of America
+
+Ref CiviRec{contact.preferred_language} {contributionRecur.id}

@@ -1,0 +1,21 @@
+<p>Sz.P. {contact.first_name},</p>
+
+<p>Dziękuję za wspieranie Wikimedia Foundation oraz świata bezpłatnej wiedzy.</p>
+
+<p>Zauważyliśmy, że ostatnia płatność Państwa miesięcznej darowizny nie powiodła się. Państwa cykliczne darowizny zostały anulowane. Przepraszam za niedogodności.</p>
+
+<p>Jeżeli chcą Państwo nadal wspierać naszą Fundację, proszę o utworzenie nowej cyklicznej darowizny [<a href="https://donate.wikimedia.org/wiki/Ways_to_Give/pl#Monthly">tutaj</a>].</p>
+
+<p>W razie pytań lub uwag proszę o kontakt.</p>
+
+<p>Z wyrazami szacunku,<br>
+Ekipa Obsługi Donatorów od Wikimedia Foundation</p>
+
+<p>Otrzymujesz tę wiadomość na adres {contact.email} jako doceniany darczyńca Wikimedia Foundation. Jeśli nie chcesz już otrzymywać wiadomości e-mail od Wikimedia Foundation, <a href='https://www.pages04.net/wikimedia/WMFUnsubscribe/Unsubscribe'>możesz teraz się wypisać</a>. Jeśli niedawno otrzymaliśmy od Ciebie darowiznę, możemy mieć w bazie Twój alternatywny adres e-mail. Daj nam znać! Z przyjemnością wypiszemy z bazy wszystkie stare adresy e-mail.</p>
+
+<p>Wikimedia Foundation, Inc.<br>
+  P.O. Box 98204<br>
+  Washington, DC 20090-8204<br>
+  United States of America</p>
+
+<p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>

@@ -1,0 +1,21 @@
+Olá {contact.first_name},
+
+Obrigado por apoiar a Wikimedia Foundation e o livre conhecimento.
+
+Observamos que o último processamento de sua doação mensal falhou. Consequentemente, sua doação recorrente foi cancelada, e você não verá futuras cobranças. Lamento pelo inconveniente.
+
+Caso deseje continuar apoiando a Wikimedia Foundation, você pode criar uma nova doação recorrente [aqui].
+
+Caso tenha outras dúvidas ou comentários, não hesite em entrar em contato conosco.
+
+Atenciosamente,
+Equipe de atendimento ao doador da Fundação Wikimedia
+
+Você está recebendo este e-mail no {contact.email} por ser um valioso doador da Wikimedia Foundation. Se você não deseja receber mais emails da Wikimedia Foundation, cancele sua inscrição aqui. Se você doou recentemente, podemos ter um endereço de e-mail alternativo registrado para você. Por favor, nos avise! Teremos o prazer de cancelar qualquer inscrição de e-mail antigos.
+
+Wikimedia Foundation, Inc.
+P.O. Box 98204
+Washington, DC 20090-8204
+United States of America
+
+Ref CiviRec{contact.preferred_language} {contributionRecur.id}
