@@ -4,43 +4,31 @@
 <p>Dear donor,</p>
 {% endif %}
 
-<p>I spent a lot of time thinking about how to express my gratitude for your {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} gift to the Wikimedia Endowment. You did something that so few people do – made a gift – and it’s important I tell you how special that is to us.
+<p>If recent months are teaching us anything, it’s that life can take wildly unexpected turns. We at Wikimedia hope you and your loved ones are supported to take care of yourselves now in whatever ways might be best, and we offer an especially heartfelt thank you for remembering us at this time with your gift of {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} to the Wikimedia Endowment.</p>
+
+<p>This moment will pass – but it reminds us of the importance of being prepared for the uncertain. At Wikimedia, your support has <em>everything</em> to do with that. While all gifts to Wikimedia help us provide free knowledge to the world, your Endowment gift holds a special place in our hearts because it shows you're invested in sustaining our work well into the future, whatever it may hold. That is vital. Thank you.
 </p>
 
-<p>But in the end, I realized the best thing I could do is just say it: thanks, {% if first_name and last_name %}{{ first_name }}, {% endif %}from all of us at Wikipedia. Thank you for ensuring the future of free knowledge.
-</p>
+Right now, thanks to donors and volunteers like you, the Wikimedia Foundation provides:
+<ul style="margin-top:0px">
+    <li>More than 50 million articles across 300 languages on Wikipedia;</li>
+    <li>63 million media files on Wikimedia Commons;</li>
+    <li>More than 5,200 articles produced in response to the COVID-19 pandemic;</li>
+    <li>Content across our sites viewed by more than 6,000 visitors per second and accessed by over 1 billion devices every month.</li>
+</ul>
 
-<p>Today, thanks to the support of millions of volunteer editors and donors, you can wander Wikipedia for hours. With more than 50 million articles, Wikipedia can answer almost any question, and take you places you’ve never been. We started the Wikimedia Endowment to make sure future generations have access to Wikipedia like we do today, for years to come.
-</p>
+<p>It’s clear: We are seeing a strong desire – a strong need – for an unbiased, free, reliable source of knowledge. Through your support of the Wikimedia Endowment, you are making that possible, now and tomorrow. And we are so grateful.</p>
 
-<p>Your donation ensures that new generations will have this free gift of knowledge available at the touch of a button. There is no greater legacy you can leave to the future than knowledge of the present and the past.
-</p>
-
-<p>The essential story of Wikipedia is the story of an individual, like you, giving a little bit of themselves to keep the doors of discovery open. Wikipedia will continue to evolve, grow, and meet new challenges because of generosity just like yours.
-</p>
-
-<p>You helped us build this. And I'm committed to making sure Wikipedia is here for the long-term, for you.
-</p>
-
-{% if first_name and last_name %}
-<p>{{ first_name }}, thank you for making sure Wikipedia has a bright future.</p>
-{% else %}
-<p>Thank you for making sure Wikipedia has a bright future.</p>
-{% endif %}
-
-<p>With gratitude,<br>
-Jimmy Wales<br>
+<p>Warmly,<br>
+Jimmy Wales,<br>
 Wikipedia Founder
 </p>
 
-<p>Many employers will generously match employee contributions: please check with your employer to see if they have a <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">corporate matching gift program</a>.
+<p>P.S. Many employers will generously match employee contributions. Please check with your employer to see if they have a <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">corporate matching gift program</a>.
 </p>
 
-<p>For your records: Your donation, number {{ transaction_id }}, on {{ receive_date }} was {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
-</p>
+<p style="font-size:80%"><strong><em>This letter serves as a record of your gift {{ transaction_id }}, {{ receive_date }} for tax purposes, where applicable. No goods or services were provided, in whole or in part, for this contribution. The Wikimedia Endowment has been established, with an initial contribution by the Wikimedia Foundation (tax-exempt no: 51-0198509), as a Collective Action Fund at Tides Foundation. Tides is a public charity with a 40-year track record of holding and managing charitable funds for nonprofit organizations.
+</em></strong></p>
 
-<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
-</p>
-
-<p>If you do not wish to receive any future fundraising emails from the Wikimedia Endowment or the Wikimedia Foundation, you can <a href="{{ unsubscribe_link | raw }}">unsubscribe instantly</a>. Please note we will still send you receipts, like this one, for future donations.
-</p>
+<p style="font-size:80%"><strong><em>If you do not wish to receive future fundraising emails from the Wikimedia Endowment or the Wikimedia Foundation, you can <a href="{{ unsubscribe_link | raw }}">unsubscribe instantly</a>. Please note we will still send you receipts for future donations.
+</em></strong></p>
