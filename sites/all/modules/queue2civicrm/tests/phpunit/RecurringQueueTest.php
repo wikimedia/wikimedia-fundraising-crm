@@ -236,6 +236,40 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * With PayPal, we don't reliably get subscr_signup messages before the
+   * first payment message. Fortunately the payment messages have enough
+   * data to insert the recur record.
+   */
+  public function testPayPalMissingPredecessor() {
+    $email = 'notinthedb' . (string)mt_rand() . '@example.com';
+    $message = new RecurringPaymentMessage(
+      [
+        'gateway' => 'paypal_ec',
+        'subscr_id' => 'I-' . (string)mt_rand(),
+        'email' => $email,
+      ]
+    );
+
+    $contributions = $this->importMessage($message);
+
+    // We should have inserted one contribution_recur record
+    $recur_records = wmf_civicrm_dao_to_list(CRM_Core_DAO::executeQuery("
+      SELECT ccr.*
+      FROM civicrm_contribution_recur ccr
+      INNER JOIN civicrm_email e on ccr.contact_id = e.contact_id
+      WHERE e.email = '$email'
+    "));
+    $this->assertEquals(1, count($recur_records));
+
+    // ...and it should be associated with the contribution
+    $this->assertEquals(
+      $recur_records[0]['id'],
+      $contributions[0]['contribution_recur_id'],
+      'New recurring record not associated with newly inserted payment.'
+    );
+  }
+
+  /**
    * Deal with a bad situation caused by PayPal's botched subscr_id migration.
    * See comment on RecurringQueueConsumer::importSubscriptionPayment.
    */
