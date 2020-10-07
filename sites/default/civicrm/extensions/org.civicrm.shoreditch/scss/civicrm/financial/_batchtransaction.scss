@@ -18,12 +18,12 @@
       }
 
       .crm-submit-buttons {
-        padding: 20px 0 0;
+        padding: 20px 0;
       }
     }
 
     .form-layout-compressed {
-      input.crm-form-submit {
+      button.crm-form-submit {
         margin-left: 5px;
         padding: 4px 10px;
         vertical-align: middle;
@@ -31,12 +31,6 @@
     }
 
     #ltype {
-      .dataTables_length { 
-        .select2-container {
-          width: auto !important;
-        } 
-      }
-
       .dataTables_wrapper {
         margin-bottom: 0;
       }

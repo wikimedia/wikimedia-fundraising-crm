@@ -15,12 +15,19 @@
   vertical-align: top;
 }
 
-.crm-summary-contactphoto {
-  border-radius: 50%;
+#crm-contact-thumbnail {
   float: left;
-  height: $contact-avatar;
   margin: 10px $contact-avatar/2 0;
   padding-top: 5px;
+}
+
+.crm-image-popup {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  border-radius: 50%;
+  display: block;
+  height: $contact-avatar;
   width: $contact-avatar;
 }
 
@@ -46,8 +53,9 @@
   div.crm-summary-contactname-block {
     background: $crm-page-topbar-bg;
     color: $crm-white;
-    min-height: 110px; // min-height is needed as we use float inside
-    padding-left: 20px;
+    min-height: $crm-contact-info-block-min-height;
+    padding-bottom: $crm-contact-info-block-padding-bottom;
+    padding-top: $crm-contact-info-block-padding-top;
     position: relative;
   }
 
@@ -111,12 +119,5 @@
         font-size: $font-size-h1 !important;
       }
     }
-  }
-}
-
-.crm-inline-edit-field {
-  .select2-drop,
-  .select2-choice {
-    width: auto !important;
   }
 }

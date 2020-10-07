@@ -7,12 +7,12 @@
   padding-top: 10px !important;
 
   // Remove the space from the angular's container
-  > div {
+  > div:not(.messages.status) {
     padding: 0 !important;
   }
 
-  > div.crm-contact-contribute-contributions {
-    padding-top: 20px !important;
+  div.crm-contact-contribute-contributions {
+    margin-bottom: 20px;
   }
 
   .crm-summary-block {
@@ -52,12 +52,16 @@
 
   div.crm-summary-row {
     div.crm-label {
-      font-weight: 600;
+      font-weight: $crm-font-weight-bold;
 
       &,
       a {
         color: $gray-darker !important;
       }
+    }
+
+    &.primary .crm-label::after {
+      content: '*';
     }
   }
 
@@ -73,11 +77,6 @@
     width: auto;
   }
 
-  // Hide the user photo from the panels
-  #crm-contact-thumbnail {
-    display: none;
-  }
-
   .float-left {
     float: none !important;
     padding: 0 !important;
@@ -89,15 +88,21 @@
       line-height: normal;
     }
 
-    .select2-choice {
-      border-color: $crm-grayblue-darker;
-      border-radius: $border-radius-base;
-      box-shadow: $crm-select2-box-shadow-inset;
-    }
+    .crm-contact-contribute-softcredit {
+      > p {
+        margin: 0;
+      }
 
-    .select2-dropdown-open .select2-choice {
-      border-color: $brand-primary;
-      box-shadow: none;
+      .form-layout-compressed {
+        tr:first-child {
+          height: 50px;
+          line-height: 50px;
+
+          th {
+            padding-top: 0;
+          }
+        }
+      }
     }
 
     .form-layout-compressed {
@@ -273,11 +278,13 @@
   }
 
   #crm-contactname-content {
+    background-color: $crm-gray-clay;
     border: 0 !important;
     max-height: 70px;
 
     .crm-summary-display_name {
       float: left;
+      margin-left: $crm-standard-gap;
       padding: 22px 0; // centering name vertically
     }
 
@@ -326,17 +333,6 @@
   form.CRM_Contact_Form_Inline_ContactName {
     border: 0;
 
-    .select2-choice {
-      .select2-search-choice-close {
-        right: 30px;
-        top: 8px;
-      }
-
-      .select2-chosen {
-        margin-right: 26px;
-      }
-    }
-
     .crm-inline-edit-form {
       background-color: transparent !important;
       border: 0;
@@ -366,10 +362,6 @@
           margin-top: 2px;
           padding: 1px 10px;
         }
-      }
-
-      .select2-container.eight {
-        width: 120px !important;
       }
 
       .crm-inline-button {
@@ -419,14 +411,6 @@
           }
         }
       }
-    }
-  }
-
-  table.crm-inline-edit-form:not(.form-layout),
-  .CRM_Contact_Form_Inline_CommunicationPreferences {
-    .select2-container .select2-choice abbr {
-      right: 30px;
-      top: 8px;
     }
   }
 
@@ -501,21 +485,6 @@
         }
       }
 
-      .select2-container {
-        .select2-choice {
-          box-shadow: $crm-input-shadow;
-          min-width: $crm-sm-input-width !important;
-
-          .select2-arrow {
-            padding-top: 1px;
-          }
-        }
-
-        &.select2-dropdown-open {
-          box-shadow: none;
-        }
-      }
-
       .crm-button {
         border: 0;
 
@@ -527,14 +496,6 @@
           padding-left: 0;
           padding-right: 0;
         }
-      }
-
-      .select2-arrow b {
-        background-position: -41px -27px;
-        height: 15px;
-        margin-left: 1px;
-        margin-top: 7px;
-        width: 16px;
       }
 
       .delete-button {
@@ -699,10 +660,6 @@
       .big.crm-form-text {
         max-width: 155px;
       }
-
-      .select2-container {
-        width: 8.6em !important;
-      }
     }
 
     &.CRM_Contact_Form_Inline_Phone {
@@ -714,9 +671,8 @@
         max-width: 39px;
       }
 
-      .select2-container {
-        max-width: 16em;
-        width: 9em !important;
+      a.crm-hover-button {
+        padding: 4px 11px;
       }
     }
 
@@ -739,7 +695,6 @@
         }
       }
 
-      .select2-container,
       .crm-form-text {
         margin-right: 10px;
       }
@@ -786,11 +741,6 @@
   }
 }
 
-.select2-arrow {
-  background: none !important;
-  padding: 0 4px;
-}
-
 #CustomData {
   .custom_20_1-row {
     .label {
@@ -825,10 +775,6 @@
     }
   }
 
-  table {
-    width: 100%;
-  }
-
   .crm-button_qf_Contribution_upload {
     margin-left: 0;
   }
@@ -851,10 +797,6 @@
         label {
           line-height: 20px;
           padding: 0;
-        }
-
-        .select2-container {
-          margin-right: 0 !important;
         }
 
         .soft-credit-delete-link {
@@ -892,8 +834,4 @@
       width: 185px;
     }
   }
-}
-
-.ui-dialog-buttonpane {
-  display: none;
 }
