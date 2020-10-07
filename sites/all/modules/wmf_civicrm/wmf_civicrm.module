@@ -2179,6 +2179,18 @@ function wmf_civicrm_removeKnownBadStringsFromAddressFields(&$msg) {
       $msg[$fieldName] = '';
     }
   }
+
+  // Filter out unexpected characters from postal codes.
+  // This filter should allow through all postal code formats
+  // listed here https://github.com/unicode-org/cldr/blob/release-26-0-1/common/supplemental/postalCodeData.xml
+  if (isset($msg['postal_code'])) {
+    $msg['postal_code'] = preg_replace(
+      '/[^a-z0-9\s\-]+/i',
+      '',
+      $msg['postal_code']
+    );
+  }
+
 }
 
 /**
