@@ -5558,3 +5558,37 @@ function wmf_civicrm_update_8081() {
     wmf_civicrm_insert_failure_message_translation($language);
   }
 }
+
+/*
+ * Reset next_sched_contribution date for ingenio recurrings with installments
+ * Also set installments=0 and payment_status_id=5 (In Progress)
+ *
+ * @throws \API_Exception
+ *
+ * Bug: T264954
+ */
+function wmf_civicrm_update_8085() {
+  civicrm_initialize();
+
+  // From 9/2 to 9/20
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution_recur
+    SET installments=0, contribution_status_id=5, next_sched_contribution_date = DATE_ADD(modified_date, INTERVAL 1 MONTH)
+    WHERE payment_processor_id = 5
+    AND installments > 0
+    AND next_sched_contribution_date IS NULL
+    AND contribution_status_id = 1
+    AND modified_date > '2020-09-02'
+  ");
+
+  // From 8/20 to 9/1
+  CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution_recur
+    SET installments=0, contribution_status_id=5, next_sched_contribution_date = DATE_ADD(modified_date, INTERVAL 2 MONTH)
+    WHERE payment_processor_id = 5
+    AND installments > 0
+    AND next_sched_contribution_date IS NULL
+    AND contribution_status_id = 1
+    AND modified_date < '2020-09-02'
+  ");
+}
