@@ -83,7 +83,7 @@ class EoySummary {
    * @throws \CRM_Core_Exception
    */
   protected function getCMSDatabaseName(): string {
-    $url = str_replace('?new_link=true', '', CIVICRM_UF_DSN);
+    $url = str_replace(['?new_link=true', '%%CMSdbSSL%%'], '', CIVICRM_UF_DSN);
     if (!preg_match('/^([a-z]+):\/\/([^:]+):([^@]+)@([^\/:]+)(:([0-9]+))?\/(.+)$/', $url, $matches)) {
       throw new \CRM_Core_Exception("Failed to parse dbi url: $url");
     }
