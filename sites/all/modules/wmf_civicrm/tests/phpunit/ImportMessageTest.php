@@ -971,6 +971,42 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \WmfException
    * @throws \CRM_Core_Exception
    */
+  public function testImportWithContactExisting() {
+    variable_set('match_on_import', TRUE);
+    $existingContact = $this->callAPISuccess('Contact', 'Create', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Dupey',
+      'email' => 'dupe@example.org',
+    ]);
+
+    $this->contact_id = $existingContact['id'];
+
+    $msg = [
+      'first_name' => 'Test',
+      'last_name' => 'Dupey',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'dupe@example.org',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+    ];
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->assertEquals($existingContact['id'], $contribution['contact_id']);
+    variable_set('match_on_import', FALSE);
+  }
+
+  /**
+   * If we get a contact ID and a bad email, leave the existing contact alone
+   *
+   * @throws \WmfException
+   * @throws \CRM_Core_Exception
+   */
   public function testImportWithContactIdAndBadEmail() {
     $existingContact = $this->callAPISuccess('Contact', 'Create', [
       'contact_type' => 'Individual',
