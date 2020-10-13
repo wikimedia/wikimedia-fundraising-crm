@@ -10,7 +10,7 @@ This can be found under the contacts menu.
 - apis email.clean, phone.clean, address.clean - these run before deduping ensuring that
   each contact has exactly one primary of each of the above and only one of each location type.
   This latter could be argued as the UI permits multiple home emails but the dedupe (and I believe
-  export) is unreliable in that scenario. THe UI enforces a single address per location. For
+  export) is unreliable in that scenario. The UI enforces a single address per location. For
   phones it is unique as a location-type combo.
 
 - api Merge.redo - undeletes a contact deleted by merge & re-merges - useful if contributions etc got added to the deleted contact.
@@ -54,6 +54,6 @@ documented so far.
 **Note**
 
 The apis Merge.getcount & Merge.mark_duplicates should be
-seen as internal use only I'm working to get the logic out of the form layer in code & to expose if via an api so this & other extensions
+seen as internal use only I'm working to get the logic out of the form layer in code & to expose it via an api so this & other extensions
  can interact with the deduping subsystem
 
