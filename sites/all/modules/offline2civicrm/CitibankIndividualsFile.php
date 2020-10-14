@@ -8,30 +8,30 @@
 class CitibankIndividualsFile extends ChecksFile {
 
   protected function getRequiredColumns() {
-    return array(
+    return [
       'Entry Date',
       'Amount',
       'Bank Reference',
       'Currency',
       'Posted Time',
-    );
+    ];
   }
 
   protected function getFieldMapping() {
-    return array(
+    return [
       'Bank Reference' => 'gateway_txn_id',
       'Amount' => 'gross',
       'Posted Time' => 'settlement_date',
       'Entry Date' => 'date',
       'Currency' => 'currency',
-    );
+    ];
   }
 
   protected function getDatetimeFields() {
-    return array(
+    return [
       'date',
       'settlement_date',
-    );
+    ];
   }
 
   protected function mungeMessage(&$msg) {
@@ -42,13 +42,13 @@ class CitibankIndividualsFile extends ChecksFile {
   }
 
   protected function getDefaultValues() {
-    return array_merge(parent::getDefaultValues(), array(
+    return array_merge(parent::getDefaultValues(), [
       'contact_source' => 'citibank import',
       'gateway' => 'citibank',
       'no_thank_you' => 'No Contact Details',
       'payment_instrument' => 'Citibank International',
       'restrictions' => 'Unrestricted - General',
-    ));
+    ]);
   }
 
   /**
@@ -61,12 +61,12 @@ class CitibankIndividualsFile extends ChecksFile {
   protected function getCitiBankContactID() {
     static $contactID = NULL;
     if (!$contactID) {
-      $contactID = (int) civicrm_api3('Contact', 'getvalue', array(
+      $contactID = (int) civicrm_api3('Contact', 'getvalue', [
         'return' => 'id',
         'contact_type' => 'Individual',
         'last_name' => 'Citibank',
         'email' => 'fakecitibankemail@wikimedia.org',
-      ));
+      ]);
     }
     return $contactID;
   }
