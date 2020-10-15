@@ -9,21 +9,22 @@ class CitibankIndividualsFile extends ChecksFile {
 
   protected function getRequiredColumns() {
     return [
-      'Entry Date',
-      'Amount',
-      'Bank Reference',
-      'Currency',
-      'Posted Time',
+      'Posted Dt.',
+      'Doc',
+      'Curr',
+      'Txn Amt',
+      'Debit',
     ];
   }
 
   protected function getFieldMapping() {
     return [
-      'Bank Reference' => 'gateway_txn_id',
-      'Amount' => 'gross',
-      'Posted Time' => 'settlement_date',
-      'Entry Date' => 'date',
-      'Currency' => 'currency',
+      'Doc' => 'gateway_txn_id',
+      'Debit' => 'gross',
+      'Txn Amt' => 'original_gross',
+      'Posted Dt.' => 'settlement_date',
+      'Doc Dt.' => 'date',
+      'Curr' => 'original_currency',
     ];
   }
 
@@ -48,6 +49,7 @@ class CitibankIndividualsFile extends ChecksFile {
       'no_thank_you' => 'No Contact Details',
       'payment_instrument' => 'Citibank International',
       'restrictions' => 'Unrestricted - General',
+      'currency' => 'USD',
     ]);
   }
 
@@ -80,8 +82,8 @@ class CitibankIndividualsFile extends ChecksFile {
    *
    * @return string
    */
-  protected function getGiftSource(&$msg) {
-    return (exchange_rate_convert($msg['currency'], $msg['gross'], $msg['date']) >= 1000) ? 'Benefactor Gift' : 'Community Gift';
+  protected function getGiftSource($msg): string {
+    return $msg['gross'] >= 1000 ? 'Benefactor Gift' : 'Community Gift';
   }
 
 }
