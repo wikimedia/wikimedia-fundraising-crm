@@ -1,0 +1,21 @@
+<p>Gentile {contact.first_name},</p>
+
+<p>Grazie per il Suo supporto nei confronti di Wikimedia Foundation e della conoscenza libera.</p>
+
+<p>Abbiamo notato che l’ultima elaborazione della Sua donazione mensile non è stata eseguita. Di conseguenza, la Sua donazione ricorrente è stata cancellata e non riceverà ulteriori addebiti. Mi scuso per l’inconveniente.</p>
+
+<p>Se desidera continuare a fornire supporto alla Foundation, può creare una donazione ricorrente [<a href="https://donate.wikimedia.org/wiki/Ways_to_Give/it#monthly">qui</a>].</p>
+
+<p>Qualora avesse ulteriori domande o commenti, La preghiamo di contattarci.</p>
+
+<p>Cordialmente,<br>
+  Team di servizi per donatori della Wikimedia Foundation</p>
+
+<p>Hai ricevuto questa e-mail all’indirizzo {contact.email} perché ci hai chiesto di inviarti un promemoria su Wikipedia. Se non desideri ricevere e-mail in futuro dalla Wikimedia Foundation, <a href='https://www.pages04.net/wikimedia/WMFUnsubscribe/Unsubscribe'>annulla immediatamente l’iscrizione</a>. Se recentemente hai già fatto una donazione potremmo aver conservato un tuo indirizzo e-mail alternativo. Comunicacelo, saremo felici di annullare l’iscrizione per gli indirizzi più vecchi. </p>
+
+<p>Wikimedia Foundation, Inc.<br>
+  P.O. Box 98204<br>
+  Washington, DC 20090-8204<br>
+  United States of America</p>
+
+<p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>

@@ -1,0 +1,21 @@
+<p>Bună ziua {contact.first_name},</p>
+
+<p>Vă mulțumim pentru sprijinul manifestat față de Wikimedia Foundation și accesul gratuit la cunoaștere.</p>
+
+<p>Am observat că cea mai recentă procesare a donației dvs. lunare a eșuat. Ca rezultat, donația dvs. recurentă a fost anulată și nu vor mai exista taxări viitoare. Ne cerem scuze pentru eventuala neplăcere creată.</p>
+
+<p>Dacă doriți să sprijini în continuare fundația, puteți iniția o nouă donație recurentă [<a href="https://donate.wikimedia.org/wiki/Ways_to_Give/ro#monthly">aici</a>].</p>
+
+<p>În cazul în care aveți întrebări sau comentarii suplimentare, vă rugăm să ne contactați.</p>
+
+<p>Cu stimă,<br>
+Echipa de servicii pentru donatori la Wikimedia Foundation</p>
+
+<p>Acest e-mail este trimis la adresa {contact.email} deoarece ești un donator prețuit al Wikimedia Foundation. Dacă nu vrei să mai primești niciun e-mail din partea Wikimedia Foundation, te poți <a href='https://www.pages04.net/wikimedia/WMFUnsubscribe/Unsubscribe'>dezabona acum</a>. Dacă ai donat deja recent, este posibil să avem înregistrată o altă adresă de e-mail pentru tine. Te rugăm să ne-o comunici! Vom elimina imediat orice adresă de e-mail care nu mai este de actualitate.</p>
+
+<p>Wikimedia Foundation, Inc.<br>
+  P.O. Box 98204<br>
+  Washington, DC 20090-8204<br>
+  United States of America</p>
+
+<p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>
