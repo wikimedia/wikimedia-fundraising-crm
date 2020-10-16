@@ -1,21 +1,8 @@
 /* stylelint-disable max-nesting-depth, selector-max-compound-selectors, selector-no-qualifying-type, selector-max-id */
 
-body {
-  // Ensures that there is the same top padding regardless whether
-  // the user can see the admin toolbar or not
-
-  &:not(.toolbar) {
-    padding-top: $crm-main-menu-height !important;
-  }
-
-  .toolbar-menu {
-    height: $crm-main-menu-height !important;
-    padding-bottom: 0 !important;
-    padding-top: 0 !important;
-  }
-}
-
 .crm-container {
+  font-family: $font-family-base;
+
   a,
   a:link {
     color: $brand-primary;
@@ -107,45 +94,6 @@ body {
     }
   }
 
-  .select2-container {
-    .select2-choice {
-      background: $crm-white;
-      border-color: $crm-grayblue-darker;
-      border-radius: $border-radius-base;
-      box-shadow: none;
-
-      .select2-arrow {
-        background: $crm-white;
-        padding: 0 4px;
-      }
-
-      .select2-arrow b {
-        height: 18px;
-        margin-top: 2px;
-      }
-
-      abbr {
-        right: 28px;
-        top: 8px;
-      }
-    }
-
-    .select2-default {
-      color: $input-color-placeholder !important;
-    }
-
-    &.select2-dropdown-open {
-      .select2-choice {
-        border-color: $brand-primary;
-      }
-
-      &.select2-drop-above .select2-choice {
-        border-color: $crm-blue-light-color;
-        border-top: 0;
-      }
-    }
-  }
-
   .crm-section {
     color: $crm-copy;
     font-family: $font-family-base;
@@ -177,7 +125,9 @@ body {
     &::after {
       @include fa-icon($font-size-base, $fa-var-ellipsis-v, $gray-darker);
       background: none;
+      position: absolute;
       right: -2px;
+      text-align: center;
       text-indent: 0;
       top: 0;
       width: 5px;
@@ -200,6 +150,12 @@ body {
     border-radius: $border-radius-child;
     box-shadow: $box-shadow;
     margin-bottom: 20px;
+
+    // Sometimes there are .dataTables_wrapper > .dataTables_wrapper
+    // blocks that produce double shadows.
+    > .dataTables_wrapper {
+      box-shadow: none;
+    }
 
     table.dataTable {
       box-shadow: none !important;
@@ -239,10 +195,11 @@ body {
     }
 
     .crm-datatable-pager-bottom {
+      @include clearfix;
       background: $crm-gray-lightest;
       border-radius: 0 0 $border-radius-child $border-radius-child;
       line-height: 1.8em;
-      padding-bottom: 39px;
+      padding-bottom: 10px;
       padding-top: 10px;
 
       .dataTables_info,
@@ -254,37 +211,24 @@ body {
 
     .dataTables_info {
       color: $crm-copy;
+      line-height: 25px;
+      margin: 5px 0;
       padding-left: 20px;
       width: 50%;
     }
   }
-}
 
-.page-civicrm {
-  #branding {
-    padding: 20px 0 0 !important;
-
-    .breadcrumb {
-      padding: 0 40px;
-    }
-
-    .breadcrumb a {
-      padding: 0 !important;
-    }
-
-    .add-shortcut {
-      display: none;
-    }
-
-    h1 {
-      &.page-title {
-        background: $crm-white;
-        color: $gray-darker;
-        margin-bottom: 20px !important;
-        margin-top: -20px !important;
-        padding: 0 40px !important;
-      }
-    }
+  /**
+   * @NOTE the table that goes straight after <h3> does not
+   * need a shadow because in that case the shadow falls onto the <h3>.
+   * The shadow instead is applied
+   * to the *container* of the <h3> and <table>.dataTables_wrapper
+   *
+   * @TODO remove all the .dataTables_wrapper { box-shadow: none; }
+   * from "per-page" styles and other files
+   */
+  h3 + .dataTables_wrapper {
+    box-shadow: none;
   }
 }
 
@@ -307,14 +251,14 @@ body {
   .font-size12pt {
     color: $gray-darker;
     font-size: $font-size-h2;
-    font-weight: 600;
+    font-weight: $crm-font-weight-bold;
     padding-bottom: 10px;
   }
 
   .font-size11pt {
     color: $gray-darker;
     font-size: $font-size-base;
-    font-weight: 600;
+    font-weight: $crm-font-weight-bold;
   }
 }
 
@@ -333,7 +277,12 @@ a.sorting_desc {
   &::after {
     position: absolute;
     right: 0;
-    top: 3px;
+  }
+
+  &:not(.sorting) {
+    &::after {
+      top: 3px;
+    }
   }
 }
 
@@ -347,4 +296,8 @@ a.sorting_asc::after {
 
 a.sorting_desc::after {
   @include fa-icon($font-size-base, $fa-var-sort-desc, $brand-primary);
+}
+
+.crm-expand-row {
+  line-height: 1em;
 }

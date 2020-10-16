@@ -1,0 +1,21 @@
+<p>Hallo {contact.first_name},</p>
+
+<p>Bedankt voor uw steun aan de Wikimedia Foundation en aan vrije kennis.</p>
+
+<p>We hebben opgemerkt dat de meest recente verwerking van uw maandelijkse donatie mislukt is. Uw maandelijkse donatie is daarom geannuleerd, en er zullen verder geen betalingen uitgevoerd worden. Mijn excuses voor het eventuele ongemak.</p>
+
+<p>Mocht u de Foundation willen blijven ondersteunen, dan moet u [<a href="https://donate.wikimedia.org/wiki/Ways_to_Give/nl#monthly">hier</a>]  een nieuwe maandelijkse donatie creëren.</p>
+
+<p>Neem gerust contact met ons op als u nog vragen of opmerkingen heeft.</p>
+
+<p>Met vriendelijke groeten,<br>
+Het Wikimedia Foundation Donateursservice Team</p>
+
+<p>U ontvangt deze e-mail aan {contact.email} omdat u ons heeft gevraagd u te herinneren aan Wikipedia. Als u in de toekomst geen mail meer wilt ontvangen van de Wikimedia Foundation, kunt u zich <a href='https://www.pages04.net/wikimedia/WMFUnsubscribe/Unsubscribe'>direct uitschrijven</a>. Als u recentelijk heeft gedoneerd, hebben wij wellicht een ander emailadres van u. Als u dat aan ons doorgeeft, schrijven wij u graag uit voor uw oude emailadres(sen).</p>
+
+<p>Wikimedia Foundation, Inc.<br>
+P.O. Box 98204<br>
+Washington, DC 20090-8204<br>
+United States of America</p>
+
+<p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>

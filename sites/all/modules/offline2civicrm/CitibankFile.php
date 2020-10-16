@@ -8,23 +8,23 @@
 class CitibankFile extends ChecksFile {
 
   protected function getRequiredColumns() {
-    return array(
+    return [
       'Date Received',
       'Date Posted',
       'Amount',
       'Originator Name',
       'Global Reference Number',
-    );
+    ];
   }
 
   protected function getRequiredData() {
-    return parent::getRequiredData() + array(
+    return parent::getRequiredData() + [
         'gateway_txn_id',
-      );
+      ];
   }
 
   protected function getFieldMapping() {
-    return array(
+    return [
       'Account Name' => 'gateway_account',
       'Global Reference Number' => 'gateway_txn_id',
       'Amount' => 'gross',
@@ -33,14 +33,14 @@ class CitibankFile extends ChecksFile {
       'Originator Name' => 'organization_name',
       // Should we map this anywhere - not super informative but?
       //'Special Instructions Line 1' => 'source',
-    );
+    ];
   }
 
   protected function getDatetimeFields() {
-    return array(
+    return [
       'date',
       'settlement_date',
-    );
+    ];
   }
 
   protected function mungeMessage(&$msg) {
@@ -53,7 +53,7 @@ class CitibankFile extends ChecksFile {
   }
 
   protected function getDefaultValues() {
-    return array_merge(parent::getDefaultValues(), array(
+    return array_merge(parent::getDefaultValues(), [
       'contact_type' => 'Organization',
       'contact_source' => 'citibank import',
       'gateway' => 'citibank',
@@ -62,7 +62,7 @@ class CitibankFile extends ChecksFile {
       'payment_instrument' => 'Citibank International',
       'restrictions' => 'Unrestricted - General',
       'currency' => 'USD',
-    ));
+    ]);
   }
 
 }

@@ -2,21 +2,6 @@
 
 #{civi-page('contact')} {
   #GroupContact {
-    h3 {
-      @include box-shadow($box-shadow);
-      @include panel-header;
-      background: $brand-primary;
-      border: 0;
-      color: $crm-white;
-      margin: 0;
-
-      &.status-removed {
-        background: $brand-danger;
-        border-color: $brand-danger;
-        color: $crm-white !important;
-      }
-    }
-
     .dataTables_wrapper table tbody tr td:last-child {
       text-align: right;
     }
@@ -132,14 +117,6 @@
       }
     }
 
-    .crm-action-menu .select2-default span.select2-chosen {
-      color: $crm-copy;
-
-      .crm-i {
-        display: none;
-      }
-    }
-
     .description {
       @include box-shadow($box-shadow);
       background: $crm-white;
@@ -156,39 +133,33 @@
       text-shadow: none;
       vertical-align: middle;
     }
-
-    .select2-container {
-      background: $crm-white;
-
-      .select2-choice {
-        background: none;
-        border: 1px solid $crm-grayblue-darker;
-        border-radius: $border-radius-base;
-        box-shadow: $crm-select2-box-shadow-inset;
-        font-family: $font-family-base;
-        line-height: 28px;
-      }
-
-      &.select2-dropdown-open .select2-choice {
-        border-color: $brand-primary;
-        box-shadow: none;
-      }
-
-      .select2-arrow {
-        background: none;
-        padding: 0 5px;
-      }
-
-      .select2-search-choice-close {
-        right: 35px;
-      }
-    }
   }
 }
 
 #{civi-page('group')} {
+  #searchForm {
+    border: solid 1px $crm-grayblue-dark;
+    border-radius: 0 0 $panel-border-radius $panel-border-radius;
+    border-top: 0;
+    margin-bottom: $crm-standard-gap / 2;
+    padding: $crm-standard-gap;
+    width: auto !important;
+  }
+
+  .crm-group-search-form-block #DataTables_Table_0_wrapper {
+    box-shadow: none;
+    margin-left: -#{$crm-standard-gap};
+    margin-right: -#{$crm-standard-gap};
+    margin-top: $crm-standard-gap * 2;
+
+    .crm-datatable-pager-top {
+      background-color: transparent;
+      border-radius: 0;
+    }
+  }
+
   .help {
-    margin: 20px 0;
+    margin: 0 0 20px;
 
     + .crm-submit-buttons {
       display: none;
@@ -196,14 +167,16 @@
   }
 
   .crm-submit-buttons {
+    border-top: 0 !important;
     margin-bottom: 20px;
-    padding: 0;
+    padding: 0 !important;
 
     a.newGroup.button {
       @extend %btn-civi-primary;
 
       .crm-i {
         bottom: 1px;
+        margin: 0;
         position: relative;
       }
     }
@@ -215,8 +188,7 @@
     padding: 20px !important;
 
     h3 {
-      @include panel-header;
-      margin: -20px -20px 20px;
+      margin: -20px -20px 20px !important;
     }
 
     > table td {
@@ -231,12 +203,6 @@
       .font-italic {
         font-style: normal;
       }
-    }
-  }
-
-  .crm-group-form-block-description {
-    br {
-      display: none;
     }
   }
 
@@ -295,22 +261,6 @@
   #crm-main-content-wrapper div[id*='DataTables_Table_'] {
     div[id*='s2id_autogen'] {
       background: $crm-white;
-
-      .select2-choice {
-        background: none;
-        border: 1px solid $crm-grayblue-darker;
-        border-radius: $border-radius-base;
-        box-shadow: $crm-select2-box-shadow-inset;
-      }
-
-      .select2-arrow {
-        background: none;
-        padding: 0 5px;
-      }
-    }
-
-    .dataTables_length .select2-choice .select2-arrow b {
-      margin-top: 0;
     }
 
     .dataTable thead tr {
@@ -337,21 +287,6 @@
   }
 
   .ui-dialog .CRM_Group_Form_Edit .crm-form-block {
-    margin: 0 -20px;
-
-    h3 {
-      @include section-title;
-      margin: 0 0 10px;
-    }
-
-    .action-link {
-      margin-left: 20px;
-    }
-
-    .help {
-      margin: 10px 20px 20px;
-    }
-
     table tr {
       border-bottom: 0 !important;
 
@@ -365,14 +300,6 @@
           padding: 8px 0;
         }
       }
-    }
-
-    .crm-submit-buttons {
-      margin: 20px 0 0 !important;
-    }
-
-    .crm-form-textarea {
-      min-height: 70px;
     }
 
     #s2id_visibility::after {
@@ -390,10 +317,6 @@
         display: block;
         line-height: 1.5em;
       }
-    }
-
-    textarea {
-      line-height: 1.5em;
     }
   }
 
@@ -458,16 +381,8 @@
   }
 
   .CRM_Group_Form_Edit .crm-group-form-block {
-    .crm-form-textarea {
-      min-height: 70px;
-    }
-
-    h3 {
-      @extend .collapsible-title;
-      margin-top: 20px;
-    }
-
     .crm-submit-buttons {
+      border-top: 0;
       margin: 20px 0 0 !important;
     }
   }
@@ -481,14 +396,17 @@
   }
 }
 
-#{civi-page('group-add')} .CRM_Group_Form_Edit .crm-group-form-block {
-  padding: 15px;
+#{civi-page('group-add')} {
+  .CRM_Group_Form_Edit .crm-group-form-block {
+    padding: 15px;
 
-  textarea {
-    line-height: 1.5em;
+    #s2id_visibility::after {
+      display: none;
+    }
   }
 
-  #s2id_visibility::after {
-    display: none;
+  .custom-group.crm-accordion-wrapper {
+    margin-left: -#{$crm-standard-gap - 1px};
+    margin-right: -#{$crm-standard-gap - 1px};
   }
 }

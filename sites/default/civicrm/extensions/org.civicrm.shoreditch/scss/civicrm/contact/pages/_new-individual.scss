@@ -18,7 +18,7 @@
       .contact_basic_information-section tr {
         &:first-child td {
           &:last-child {
-            min-width: 150px;
+            min-width: $crm-table-label-column-width;
           }
 
           &:first-child {
@@ -32,17 +32,7 @@
         }
 
         td {
-          > input[type='text'] {
-            min-width: 100% !important;
-            width: 100% !important;
-          }
-
           &:last-child {
-            > .select2-container {
-              min-width: auto !important;
-              width: auto !important;
-            }
-
             #s2id_suffix_id {
               min-width: 80px !important;
               width: 80px !important;
@@ -51,14 +41,9 @@
         }
       }
 
-      .select2-container,
       .crm-form-select {
         min-width: 120px !important;
         width: 120px !important;
-      }
-
-      input[type='text'] {
-        width: auto !important;
       }
     }
   }
@@ -101,12 +86,6 @@
       border: 0;
     }
 
-    .select2-choice {
-      > .select2-chosen {
-        font-size: 13px;
-      }
-    }
-
     #customFields {
       width: auto !important;
     }
@@ -124,14 +103,6 @@
 
       #s2id_contact_sub_type {
         max-width: 180px;
-
-        .select2-search-field {
-          width: 20%;
-        }
-
-        .select2-choices {
-          padding-right: 20px;
-        }
       }
 
       #s2id_group {
@@ -141,6 +112,7 @@
   }
 
   .contact_information-section {
+    position: relative;
     table-layout: fixed;
 
     tr {
@@ -154,6 +126,26 @@
         }
       }
     }
+
+    .email-signature {
+      // Position the "> Signature" button to the right side of the table
+      > .collapsible-title {
+        position: absolute;
+        // Discard paddings
+        right: -#{$crm-standard-gap * 2};
+        top: $crm-standard-gap;
+        // We need to discard the width to attach the "button"
+        // to the very right edge of the table. Because it is not overflown,
+        // it still we be visible and clickable.
+        width: 0;
+      }
+
+      #signatureBlock1 {
+        margin-top: $crm-standard-gap / 2;
+      }
+    }
+
+
   }
 
   #commPrefs {
@@ -222,11 +214,6 @@
 
     #Address-Primary-html {
       padding-bottom: 10px;
-
-      .select2-container {
-        margin-right: 10px;
-        min-width: 90px;
-      }
     }
 
     label[for*='[use_shared_address]'] {
@@ -281,5 +268,24 @@
         margin-top: 20px !important;
       }
     }
+  }
+
+  #contactDetails {
+    tr:not([id]) {
+      // Makes labels bold. We cannot use a specific selector because
+      // labels are just text inside <td>s. We also ignore <tr>s with "id"
+      // attributes because those definitely do not contain labels.
+      font-weight: $crm-font-weight-bold;
+
+      // Discarding bold font for links
+      a {
+        font-weight: $crm-font-weight-normal;
+      }
+    }
+  }
+
+  .email-signature > .collapsible-title {
+    font-size: $font-size-base;
+    font-weight: $crm-font-weight-bold;
   }
 }

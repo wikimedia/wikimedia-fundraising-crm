@@ -8,30 +8,31 @@
 class CitibankIndividualsFile extends ChecksFile {
 
   protected function getRequiredColumns() {
-    return array(
-      'Entry Date',
-      'Amount',
-      'Bank Reference',
-      'Currency',
-      'Posted Time',
-    );
+    return [
+      'Posted Dt.',
+      'Doc',
+      'Curr',
+      'Txn Amt',
+      'Debit',
+    ];
   }
 
   protected function getFieldMapping() {
-    return array(
-      'Bank Reference' => 'gateway_txn_id',
-      'Amount' => 'gross',
-      'Posted Time' => 'settlement_date',
-      'Entry Date' => 'date',
-      'Currency' => 'currency',
-    );
+    return [
+      'Doc' => 'gateway_txn_id',
+      'Debit' => 'gross',
+      'Txn Amt' => 'original_gross',
+      'Posted Dt.' => 'settlement_date',
+      'Doc Dt.' => 'date',
+      'Curr' => 'original_currency',
+    ];
   }
 
   protected function getDatetimeFields() {
-    return array(
+    return [
       'date',
       'settlement_date',
-    );
+    ];
   }
 
   protected function mungeMessage(&$msg) {
@@ -42,13 +43,14 @@ class CitibankIndividualsFile extends ChecksFile {
   }
 
   protected function getDefaultValues() {
-    return array_merge(parent::getDefaultValues(), array(
+    return array_merge(parent::getDefaultValues(), [
       'contact_source' => 'citibank import',
       'gateway' => 'citibank',
       'no_thank_you' => 'No Contact Details',
       'payment_instrument' => 'Citibank International',
       'restrictions' => 'Unrestricted - General',
-    ));
+      'currency' => 'USD',
+    ]);
   }
 
   /**
@@ -61,12 +63,12 @@ class CitibankIndividualsFile extends ChecksFile {
   protected function getCitiBankContactID() {
     static $contactID = NULL;
     if (!$contactID) {
-      $contactID = (int) civicrm_api3('Contact', 'getvalue', array(
+      $contactID = (int) civicrm_api3('Contact', 'getvalue', [
         'return' => 'id',
         'contact_type' => 'Individual',
         'last_name' => 'Citibank',
         'email' => 'fakecitibankemail@wikimedia.org',
-      ));
+      ]);
     }
     return $contactID;
   }
@@ -80,8 +82,8 @@ class CitibankIndividualsFile extends ChecksFile {
    *
    * @return string
    */
-  protected function getGiftSource(&$msg) {
-    return (exchange_rate_convert($msg['currency'], $msg['gross'], $msg['date']) >= 1000) ? 'Benefactor Gift' : 'Community Gift';
+  protected function getGiftSource($msg): string {
+    return $msg['gross'] >= 1000 ? 'Benefactor Gift' : 'Community Gift';
   }
 
 }
