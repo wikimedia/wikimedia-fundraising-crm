@@ -48,6 +48,11 @@ class MailFactory {
         $this->activeMailer = new MailerPHPMailer();
         break;
 
+      case 'smtp':
+        $this->activeMailer = new SMTPMailer();
+        $this->activeMailer->setSmtpHost(CIVICRM_SMTP_HOST);
+        break;
+
       case 'test':
         $this->activeMailer =  new TestMailer();
         break;
@@ -62,7 +67,16 @@ class MailFactory {
    */
   public function getMailer() {
     if (!$this->activeMailer) {
-      $this->setActiveMailer('phpmailer');
+      // Short term huckery config - this can be set in civicrm.settings.php
+      if (getenv('CIVICRM_SMTP_HOST')) {
+        if (!defined('CIVICRM_SMTP_HOST')) {
+          define('CIVICRM_SMTP_HOST', getenv('CIVICRM_SMTP_HOST'));
+        }
+        $this->setActiveMailer('smtp');
+      }
+      else {
+        $this->setActiveMailer('phpmailer');
+      }
     }
     return $this->activeMailer;
   }
