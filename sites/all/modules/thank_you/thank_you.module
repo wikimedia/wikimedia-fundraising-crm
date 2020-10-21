@@ -532,10 +532,8 @@ function thank_you_send_mail($params) {
   ];
 
   try {
-    $mailer = MailFactory::singleton()->getMailer();
     watchdog('thank_you', "Sending ty email to: " . $email['to_address'], [], WATCHDOG_INFO);
-
-    $email_success = $mailer->send(
+    $email_success = MailFactory::singleton()->send(
       $email,
       ['List-Unsubscribe' => '<' . $params['unsubscribe_link'] . '>']
     );

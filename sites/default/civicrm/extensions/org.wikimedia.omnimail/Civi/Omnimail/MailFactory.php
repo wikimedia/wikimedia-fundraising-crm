@@ -67,4 +67,19 @@ class MailFactory {
     return $this->activeMailer;
   }
 
+  /**
+   * Send a mail using the active mailler.
+   *
+   * @param array $email
+   * @param array $headers
+   *
+   * @return bool
+   */
+  public function send($email, $headers): bool {
+    return (bool) $this->getMailer()->send(
+      $email,
+      $headers
+    );
+  }
+
 }
