@@ -49,7 +49,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'contact_source' => 'check',
       'contact_type' => 'Individual',
       'contribution_source' => 'USD 50.00',
-      'contribution_type' => 'engage',
+      'contribution_type' => 'Engage',
       'country' => 'US',
       'currency' => 'USD',
       'date' => 1396310400,
@@ -111,7 +111,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'contact_source' => 'check',
       'contact_type' => 'Organization',
       'contribution_source' => 'USD 51.23',
-      'contribution_type' => 'engage',
+      'contribution_type' => 'Engage',
       'country' => 'FR',
       'currency' => 'USD',
       'date' => 1396310400,
@@ -543,13 +543,21 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $this->assertEquals("Import aborted due to 10 consecutive errors, last error was at row 12: 'Invalid Name' is not a valid option for field custom_", substr($messages[0], 0, 125));
   }
 
-  public function testImporterCreatesOutputFiles() {
+  /**
+   * Test our error reporting.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
+   */
+  public function testImporterCreatesOutputFiles(): void {
     civicrm_initialize();
     $this->sourceFileUri = __DIR__ . '/../tests/data/engage_reduced.csv';
     $fileUri = $this->setupFile('engage_reduced.csv');
 
     $importer = new EngageChecksFile($fileUri);
     $messages = $importer->import();
+    $this->callAPISuccessGetSingle('Contribution', ['financial_type_id' => 'Endowment Gift', 'total_amount' => 26, 'receive_date' => '2014-07-29']);
     global $user;
     $this->assertEquals(
       [

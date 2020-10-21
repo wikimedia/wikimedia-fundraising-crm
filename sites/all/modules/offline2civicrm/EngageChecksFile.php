@@ -36,6 +36,15 @@ class EngageChecksFile extends ChecksFile {
   }
 
   /**
+   * Get the defaults to use if not in the csv.
+   *
+   * @return array|string[]
+   */
+  protected function getDefaultValues() {
+    return array_merge(parent::getDefaultValues(), ['raw_contribution_type' => 'engage']);
+  }
+
+  /**
    * Do any final transformation on a normalized queue message.
    *
    * @param array $msg
@@ -46,7 +55,6 @@ class EngageChecksFile extends ChecksFile {
   protected function mungeMessage(&$msg) {
     parent::mungeMessage($msg);
     $msg['gateway'] = 'engage';
-    $msg['contribution_type'] = 'engage';
     $msg['contact_id'] = $this->getContactID($msg);
     if ($msg['contact_type'] === 'Individual' && $msg['contact_id'] == $this->getAnonymousContactID()) {
       $this->unsetAddressFields($msg);
