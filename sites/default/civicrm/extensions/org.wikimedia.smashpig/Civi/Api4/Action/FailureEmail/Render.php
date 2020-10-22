@@ -71,7 +71,7 @@ class Render extends AbstractAction {
       return FALSE;
     }
 
-    $supportedLanguages = ['ja_JP', 'fr_FR', 'sv_SE'];
+    $supportedLanguages = $this->getSupportedLanguages();
     if (!empty($email['contact.preferred_language'])
       && strpos($email['contact.preferred_language'], 'en') !== 0
       && !in_array($email['contact.preferred_language'], $supportedLanguages, TRUE)
@@ -99,6 +99,23 @@ class Render extends AbstractAction {
       $result[$index] = $value;
     }
 
+  }
+
+  /**
+   * @return string[]
+   */
+  protected function getSupportedLanguages(): array {
+    if (!isset(Civi::$statics[__CLASS__]['languages'])) {
+      $templateID = Civi\Api4\MessageTemplate::get(FALSE)->addWhere('workflow_name', '=', 'recurring_failed_message')->addSelect('id')->execute()->first()['id'];
+      $supportedLanguages = (array) Civi\Api4\Strings::get(FALSE)
+        ->setWhere([
+          ['entity_id', '=', $templateID],
+          ['entity_table', '=', 'civicrm_msg_template'],
+          ['is_active', '=', TRUE],
+        ])->addSelect('language')->execute()->indexBy('language');
+      Civi::$statics[__CLASS__]['languages'] = array_keys($supportedLanguages);
+    }
+    return Civi::$statics[__CLASS__]['languages'];
   }
 
 }
