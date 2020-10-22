@@ -33,6 +33,24 @@ class Message extends Generic\AbstractEntity {
   }
 
   /**
+   * @return \Civi\Api4\Action\Message\UpdateFromFile
+   *
+   * @throws \API_Exception
+   */
+  public static function updatefromfile() {
+    return new Action\Message\UpdateFromFile(__CLASS__, __FUNCTION__);
+  }
+
+  /**
+   * @return \Civi\Api4\Action\Message\RenderFromFile
+   *
+   * @throws \API_Exception
+   */
+  public static function renderfromfile() {
+    return new Action\Message\RenderFromFile(__CLASS__, __FUNCTION__);
+  }
+
+  /**
    * Get permissions.
    *
    * It may be that we don't need a permission check on this api at all at there is a check on the entity
