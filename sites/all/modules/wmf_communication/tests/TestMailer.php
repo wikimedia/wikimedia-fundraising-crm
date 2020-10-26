@@ -1,5 +1,6 @@
 <?php
 namespace wmf_communication;
+use Civi\Omnimail\IMailer;
 
 class TestMailer implements IMailer {
     static protected $mailings;
