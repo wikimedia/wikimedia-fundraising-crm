@@ -13,3 +13,10 @@ for i in 1 2 3; do
 	grant all on ${CIVICRM_SCHEMA_PREFIX}${i}.* to '${CIVICRM_MYSQL_USERNAME}'@'${CIVICRM_MYSQL_CLIENT}' identified by '${CIVICRM_MYSQL_PASSWORD}';
 EOS
 done
+
+echo "Creating fredge database"
+
+mysql -u root <<EOS
+create database fredge;
+grant all on fredge.* to '${CIVICRM_MYSQL_USERNAME}'@'${CIVICRM_MYSQL_CLIENT}' identified by '${CIVICRM_MYSQL_PASSWORD}';
+EOS
