@@ -84,6 +84,19 @@ function _wmf_civicrm_update_custom_fields() {
       ],
       'fields' => _wmf_civicrm_get_partner_fields(),
     ],
+    'Stock_Information' => [
+      'group' => [
+        'name' => 'Stock_Information',
+        'title' => 'Stock Information',
+        'extends' => 'Contribution',
+        'style' => 'Inline',
+        'is_active' => 1,
+        // Setting weight here is a bit hit & miss but one day the api
+        // will do the right thing...
+        'weight' => 1,
+      ],
+      'fields' => _wmf_civicrm_get_stock_fields(),
+    ],
   ];
   foreach ($customGroupSpecs as $groupName => $customGroupSpec) {
     $customGroup = civicrm_api3('CustomGroup', 'get', ['name' => $groupName]);
@@ -830,4 +843,34 @@ function _wmf_civicrm_get_wmf_donor_fields_to_remove() {
   }
   $fields['do_not_solicit_old'] = 'do_not_solicit_old';
   return $fields;
+}
+
+/**
+ * Get fields for stock info
+ *
+ * @return array[]
+ */
+function _wmf_civicrm_get_stock_fields() {
+  return [
+    'description_of_stock' => [
+      'name' => 'Description_of_Stock',
+      'column_name' => 'description_of_stock',
+      'label' => ts('Description of Stock'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 0,
+    ],
+    'stock_value' => [
+      'name' => 'Stock Value',
+      'column_name' => 'stock_value',
+      'label' => ts('Stock Value'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 0,
+    ]
+  ];
 }

@@ -166,7 +166,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
     $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
     CRM_Core_DAO::executeQuery("
       UPDATE civicrm_contribution SET financial_type_id = $endowmentFinancialType
-      WHERE id = {$this->contribution_id} 
+      WHERE id = {$this->contribution_id}
     ");
     $result = thank_you_for_contribution($this->contribution_id);
     $this->assertTrue($result);
@@ -230,6 +230,40 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Check that tax information has been removed
     $this->assertNotRegExp('/tax-exempt number/', $sent['html']);
+  }
+
+
+  /**
+   * Test that Stock gift thank you mails use the stock value amount
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \WmfException
+   */
+  public function testSendStockThankYou() {
+    variable_set('thank_you_add_civimail_records', 'false');
+
+    $custom_field_name = wmf_civicrm_get_custom_field_name('Stock Value');
+    $contribution_type_stock = wmf_civicrm_get_civi_id('contribution_type_id', 'Stock');
+    $this->callAPISuccess('Contribution', 'create', [
+      'id' => $this->contribution_id,
+      'financial_type_id' => $contribution_type_stock,
+      $custom_field_name => '50.00',
+    ]);
+
+    $result = thank_you_for_contribution($this->contribution_id);
+    $this->assertTrue($result);
+    $this->assertEquals(1, TestMailer::countMailings());
+    $sent = TestMailer::getMailing(0);
+    $this->assertEquals($this->message['email'], $sent['to_address']);
+    $this->assertEquals(
+      "{$this->message['first_name']} {$this->message['last_name']}",
+      $sent['to_name']
+    );
+    $expectedBounce = "ty.{$this->contact_id}.{$this->contribution_id}" .
+      '@donate.wikimedia.org';
+    $this->assertEquals($expectedBounce, $sent['reply_to']);
+    $this->assertRegExp('/\$ 50.00/', $sent['html']);
+
   }
 
 
