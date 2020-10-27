@@ -411,14 +411,19 @@ abstract class BaseAuditProcessor {
       $start_time = microtime(TRUE);
       $parsed = $this->parse_recon_file($file);
       $time = microtime(TRUE) - $start_time;
-      wmf_audit_echo(count($parsed) . " results found in $time seconds\n");
+      if ($parsed !== FALSE) {
+        $parse_count = count($parsed);
+      } else {
+        $parse_count = 0;
+      }
+      wmf_audit_echo($parse_count . " results found in $time seconds\n");
 
       //remove transactions we already know about
       $start_time = microtime(TRUE);
       $missing = $this->get_missing_transactions($parsed);
       $recon_file_stats[$file] = wmf_audit_count_missing($missing);
       $time = microtime(TRUE) - $start_time;
-      wmf_audit_echo(wmf_audit_count_missing($missing) . ' missing transactions (of a possible ' . count($parsed) . ") identified in $time seconds\n");
+      wmf_audit_echo(wmf_audit_count_missing($missing) . ' missing transactions (of a possible ' . $parse_count . ") identified in $time seconds\n");
 
       //If the file is empty, move it off.
       // Note that we are not archiving files that have missing transactions,
