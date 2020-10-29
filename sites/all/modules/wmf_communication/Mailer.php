@@ -1,6 +1,6 @@
 <?php namespace wmf_communication;
 
-use Exception;
+use Civi\Omnimail\MailFactory;
 use Html2Text\Html2Text;
 use PHPMailer;
 use WmfException;
@@ -29,26 +29,26 @@ interface IMailer {
 
 /**
  * Weird factory to get the default concrete Mailer.
+ *
+ * This code has been moved to the Omnimail extension as part of our shift to
+ * extensions that are CMS specific
+ *
+ * @deprecated
  */
 class Mailer {
     static public $defaultSystem = 'phpmailer';
 
     /**
-     * Get the default Mailer
+     * Get the default Mailer.
+     *
+     * @deprecated - call the MailFactory directly.
      *
      * @return IMailer instantiated default Mailer
      */
     static public function getDefault() {
-        switch ( self::$defaultSystem ) {
-        case 'phpmailer':
-            return new MailerPHPMailer();
-        case 'drupal':
-            return new MailerDrupal();
-        case 'test':
-            return new TestMailer();
-        default:
-            throw new Exception( "Unknown mailer requested: " . self::$defaultSystem );
-        }
+      $mailfactory = MailFactory::singleton();
+      $mailfactory->setActiveMailer(self::$defaultSystem);
+      return $mailfactory->getMailer();
     }
 }
 
