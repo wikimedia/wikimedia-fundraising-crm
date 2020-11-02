@@ -56,4 +56,9 @@
         <type>int unsigned</type>
         <comment>How many lines have been processed</comment>
     </field>
+    <field>
+        <name>created_date</name>
+        <type>timestamp</type>
+        <comment>When was the job created</comment>
+    </field>
 </table>

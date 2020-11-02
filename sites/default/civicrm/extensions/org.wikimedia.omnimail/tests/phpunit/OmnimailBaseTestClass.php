@@ -161,6 +161,9 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
         $settings[$dateField] = date('Y-m-d H:i:s', $settings[$dateField]);
       }
     }
+    // Unset this as this return array is validated against expected values
+    // & we don't want to check this field.
+    unset($settings['created_date']);
     return $settings;
   }
 
