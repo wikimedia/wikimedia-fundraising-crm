@@ -14,16 +14,14 @@ class SMTPMailer extends MailerBase implements IMailer {
   /**
    * @return string
    */
-  public function getSmtpHost(): string
-  {
+  public function getSmtpHost(): string {
     return $this->smtpHost;
   }
 
   /**
    * @param string $smtpHost
    */
-  public function setSmtpHost(string $smtpHost): void
-  {
+  public function setSmtpHost(string $smtpHost): void {
     $this->smtpHost = $smtpHost;
   }
 
@@ -40,7 +38,7 @@ class SMTPMailer extends MailerBase implements IMailer {
    * @throws \WmfException
    * @throws \phpmailerException
    */
-  public function send($email, $headers = array()) {
+  public function send($email, $headers = []) {
     $mailer = new \PHPMailer(TRUE);
     $mailer->IsSMTP();
     $mailer->Host = $this->smtpHost;
@@ -63,7 +61,7 @@ class SMTPMailer extends MailerBase implements IMailer {
 
     $mailer->Subject = $email['subject'];
     # n.b. - must set AltBody after MsgHTML(), or the text will be overwritten.
-    $locale = empty($email['locale']) ? null : $email['locale'];
+    $locale = empty($email['locale']) ? NULL : $email['locale'];
     $mailer->MsgHTML($this->wrapHtmlSnippet($email['html'], $locale));
     $this->normalizeContent($email);
     $mailer->AltBody = $email['plaintext'];
@@ -73,7 +71,7 @@ class SMTPMailer extends MailerBase implements IMailer {
     $mailer->SMTPOptions = [
       // Our cert doesn't match the internal hostname
       'ssl' => [
-        'verify_peer_name' => false,
+        'verify_peer_name' => FALSE,
       ],
     ];
     // Seconds - default is 300.
