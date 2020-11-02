@@ -2,8 +2,6 @@
 
 namespace Civi\Omnimail;
 
-use wmf_communication\MailerBase;
-
 class SMTPMailer extends MailerBase implements IMailer {
 
   /**

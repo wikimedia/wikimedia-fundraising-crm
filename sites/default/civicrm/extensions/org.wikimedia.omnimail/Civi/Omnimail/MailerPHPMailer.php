@@ -3,7 +3,6 @@
 namespace Civi\Omnimail;
 
 use PHPMailer;
-use wmf_communication\MailerBase;
 
 /**
  * Use the PHPMailer engine
