@@ -2,7 +2,6 @@
 
 namespace Civi\Omnimail;
 
-use wmf_communication\MailerPHPMailer;
 use wmf_communication\TestMailer;
 
 /**
