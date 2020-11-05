@@ -51,6 +51,7 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
    * Clean up after test runs.
    */
   public function tearDown() {
+    parent::tearDown();
     $this->doCleanUp();
   }
 
