@@ -3347,7 +3347,14 @@ function wmf_civicrm_civicrm_buildForm($formName, &$form) {
         ];
 
         if ($no_thank_you_reason_field_name) {
-          $form->setDefaults([$no_thank_you_reason_field_name => 'Manually entered']);
+          if (CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'financial_type_id', $form->_subType ?? NULL) === 'Stock') {
+            $form->setDefaults([$no_thank_you_reason_field_name => '']);
+          }
+          else {
+            $form->setDefaults(
+              [$no_thank_you_reason_field_name => 'Manually entered']
+            );
+          }
           CRM_Core_Resources::singleton()->addScript(wmf_civicrm_get_no_thankyou_js($no_thank_you_reason_field_name, $no_thank_you_toggle_form_elements));
         }
       }
@@ -3426,29 +3433,31 @@ function wmf_civicrm_get_no_thankyou_js(string $no_thank_you_reason_field_name, 
   }
   $element_selectors = substr($element_selectors,0,-1);
   $js =  "
-    cj('.crm-submit-buttons').append('<div class=\'wmf-email-text\'>No thank-you email will be sent unless you clear the no thank-you reason field</div>');
+    if (!cj('.wmf-email-text').length) {
+      cj('.crm-submit-buttons').append('<div class=\'wmf-email-text\'>No thank-you email will be sent unless you clear the no thank-you reason field</div>');
+    }
     cj('#{$no_thank_you_reason_field_name}').change(function() {
       if (cj('#{$no_thank_you_reason_field_name}').val().length) {
         cj('.wmf-email-text').text('No thank-you email will be sent');
       }
       else {
-        cj('.wmf-email-text').text('A thank-you email will be sent');
+       CRM.api4('Email', 'get', {
+          select: ['email'],
+          where: [['contact_id', '=', CRM.vars.coreForm.contact_id], ['is_primary', '=', 1]]
+        }).then(function(email) {
+          if (email.length === 0) {
+           cj('#{$no_thank_you_reason_field_name}').val('No available email').trigger('change');
+          }
+          else {
+            cj('.wmf-email-text').text('A thank-you email will be sent');
+          }
+        })
       }
     });
     cj('$element_selectors').change(function() {
       if (cj('option:selected',this).text() === 'Donor Advised Fund'
       || cj('option:selected',this).text() === 'Stock' ) {
-        CRM.api4('Email', 'get', {
-          select: ['email'],
-          where: [['contact_id', '=', CRM.vars.coreForm.contact_id], ['is_primary', '=', 1]]
-        }).then(function(email) {
-          if (email.length > 0) {
-            cj('#{$no_thank_you_reason_field_name}').val('').trigger('change');
-          }
-          else {
-           cj('#{$no_thank_you_reason_field_name}').val('No available email').trigger('change');
-          }
-        })
+        cj('#{$no_thank_you_reason_field_name}').val('').trigger('change');
       }
     })";
 
