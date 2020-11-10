@@ -3340,9 +3340,22 @@ function wmf_civicrm_civicrm_buildForm($formName, &$form) {
         $giftSourceField = wmf_civicrm_evil_get_custom_field_in_form(
           'Campaign', $form->_elementIndex
         );
+
+        $no_thank_you_toggle_form_elements = [
+          $giftSourceField,
+          'financial_type_id'
+        ];
+
         if ($no_thank_you_reason_field_name) {
-          $form->setDefaults([$no_thank_you_reason_field_name => 'Manually entered']);
-          CRM_Core_Resources::singleton()->addScript(wmf_civicrm_get_no_thankyou_js($no_thank_you_reason_field_name, $giftSourceField));
+          if (CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'financial_type_id', $form->_subType ?? NULL) === 'Stock') {
+            $form->setDefaults([$no_thank_you_reason_field_name => '']);
+          }
+          else {
+            $form->setDefaults(
+              [$no_thank_you_reason_field_name => 'Manually entered']
+            );
+          }
+          CRM_Core_Resources::singleton()->addScript(wmf_civicrm_get_no_thankyou_js($no_thank_you_reason_field_name, $no_thank_you_toggle_form_elements));
         }
       }
       break;
@@ -3383,7 +3396,8 @@ function wmf_civicrm_civicrm_buildForm($formName, &$form) {
  *  1) We send out thank you emails in our thank you job unless there is a value in the no-thank-you reason field.
  *  2) For online donations we almost always leave this blank (regular recurring being an exception).
  *  3) For manually entered emails we default to setting a value so thank-yous do NOT go out.
- *  4) For donor advised emails we want to default to sending when Engage enters these. Clearing out the value from no-thank-you reason addresses this.
+ *  4a) For donor advised emails we want to default to sending when Engage enters these. Clearing out the value from no-thank-you reason addresses this.
+ *  4b) For Stock gift emails we want to default to sending. Clearing out the value from no-thank-you reason addresses this.
  *  5) The thank you mailer sends to contacts who have a primary email (it does not respect on hold &
  *   if this is an issue we should raise a phab to consider).
  *  6) MG suggested we also should set no-thank-you-reason when there is no email. In fact an email couldn't go out, but I have respected
@@ -3391,10 +3405,12 @@ function wmf_civicrm_civicrm_buildForm($formName, &$form) {
  *   I think the thank you job doesn't delve too far back.
  *
  * In order to implement we have a php hook that sets the default for no-thank-you reason to 'Manually Entered' (suppressing the email).
- * The javascript injected from this function adds change events to 2 fields
+ * The javascript injected from this function adds change events to 3 fields
  *   1) The gift source field - if this is changed to Donor Advised Fund it will check if the contact has a primary email (see
  *      above note about on_hold) and if so it will clear out the no-thank-you-reason field (meaning a thank you will go out).
- *   2) The no-thank-you-reason field. Changes to this field will add text near the submit buttons indicating whether or not
+ *   2) The financial type field - if this is changed to Stock it will check if the contact has a primary email (see
+ *      above note about on_hold) and if so it will clear out the no-thank-you-reason field (meaning a thank you will go out).
+ *   3) The no-thank-you-reason field. Changes to this field will add text near the submit buttons indicating whether or not
  *      a mail would go out. I didn't want to get into mucking around on what to do if the gift source field was changed
  *      and changed again - so I opted to try to give a visual queue as to what to expect. I'm also mindful I consider this
  *      js method to be a bit hacky & non-robust so hopefully they would notice there NOT being a visual queue if it stops
@@ -3403,39 +3419,49 @@ function wmf_civicrm_civicrm_buildForm($formName, &$form) {
  *
  * Preferred solution? Use the afform functionality to create a cut down targetted form for Engage to do their data entry.
  *
- * Bug: T233374
+ * Bug: T233374/T259173
  *
  * @param string $no_thank_you_reason_field_name
- * @param string $giftSourceField
+ * @param string $no_thank_you_toggle_form_elements
  *
- * @return string
+ * @return string $js
  */
-function wmf_civicrm_get_no_thankyou_js(string $no_thank_you_reason_field_name, string $giftSourceField) {
-  return "
-    cj('.crm-submit-buttons').append('<div class=\'wmf-email-text\'>No thank-you email will be sent unless you clear the no thank-you reason field</div>');
+function wmf_civicrm_get_no_thankyou_js(string $no_thank_you_reason_field_name, array $no_thank_you_toggle_form_elements) {
+  $element_selectors = '';
+  foreach($no_thank_you_toggle_form_elements as $el) {
+    $element_selectors .= "#{$el},";
+  }
+  $element_selectors = substr($element_selectors,0,-1);
+  $js =  "
+    if (!cj('.wmf-email-text').length) {
+      cj('.crm-submit-buttons').append('<div class=\'wmf-email-text\'>No thank-you email will be sent unless you clear the no thank-you reason field</div>');
+    }
     cj('#{$no_thank_you_reason_field_name}').change(function() {
       if (cj('#{$no_thank_you_reason_field_name}').val().length) {
         cj('.wmf-email-text').text('No thank-you email will be sent');
       }
       else {
-        cj('.wmf-email-text').text('A thank-you email will be sent');
-      }
-    });
-    cj('#{$giftSourceField}').change(function() {
-      if (cj('#{$giftSourceField}').val() === 'Donor Advised Fund') {
-        CRM.api4('Email', 'get', {
+       CRM.api4('Email', 'get', {
           select: ['email'],
           where: [['contact_id', '=', CRM.vars.coreForm.contact_id], ['is_primary', '=', 1]]
         }).then(function(email) {
-          if (email.length > 0) {
-            cj('#{$no_thank_you_reason_field_name}').val('').trigger('change');
+          if (email.length === 0) {
+           cj('#{$no_thank_you_reason_field_name}').val('No available email').trigger('change');
           }
           else {
-           cj('#{$no_thank_you_reason_field_name}').val('No available email').trigger('change');
+            cj('.wmf-email-text').text('A thank-you email will be sent');
           }
         })
       }
+    });
+    cj('$element_selectors').change(function() {
+      if (cj('option:selected',this).text() === 'Donor Advised Fund'
+      || cj('option:selected',this).text() === 'Stock' ) {
+        cj('#{$no_thank_you_reason_field_name}').val('').trigger('change');
+      }
     })";
+
+  return $js;
 }
 
 /**
@@ -4471,4 +4497,12 @@ function wmf_civicrm_insert_failure_message_translation($language) {
     ])
     ->addWhere('workflow_name',  '=', 'recurring_failed_message')
     ->setLanguage($languageName)->execute();
+}
+
+/**
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_update_custom_fields() {
+  require_once 'update_custom_fields.php';
+  _wmf_civicrm_update_custom_fields();
 }

@@ -36,7 +36,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7028();
   wmf_civicrm_update_7029();
   wmf_civicrm_update_7030();
-  wmf_civicrm_update_7031();
   wmf_civicrm_update_7032();
   wmf_civicrm_update_7060();
   wmf_civicrm_update_7062();
@@ -845,46 +844,6 @@ function wmf_civicrm_update_7030() {
   }
 
   return implode("\n", $warnings);
-}
-
-/**
- * Add more custom fields that already exist on production
- */
-function wmf_civicrm_update_7031() {
-
-  $api = wmf_civicrm_bootstrap_civi();
-  $financialTypes = wmf_civicrm_create_financial_types(array('Stock'));
-  $stockContributionTypeId = array_search('Stock', $financialTypes);
-
-  $success = $api->CustomGroup->get(array(
-    'name' => 'Stock_Information',
-  ));
-  if (!$success || !$api->count) {
-    $success = $api->CustomGroup->Create(array(
-      'name' => 'Stock_Information',
-      'title' => 'Stock Information',
-      'extends' => 'Contribution',
-      'extends_entity_column_value' => array($stockContributionTypeId),
-      'is_active' => 1,
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
-  $custom_group = $api->values[0];
-
-  $success = $api->CustomField->Create(array(
-    'custom_group_id' => $custom_group->id,
-    'data_type' => 'String',
-    'html_type' => 'Text',
-    'is_active' => 1,
-    'is_searchable' => 1,
-    'label' => 'Description of Stock',
-    'name' => 'Description_of_Stock',
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
 }
 
 /**

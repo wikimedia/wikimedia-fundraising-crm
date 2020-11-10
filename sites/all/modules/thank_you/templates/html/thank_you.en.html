@@ -9,7 +9,11 @@ Dear donor,
 {% endif %}
 </p>
 
+{% if stock_value %}
+<p>Thank you for your one-time gift of {{ (currency ~ " " ~ stock_value) | l10n_currency(locale) }}. Your support of Wikipedia’s mission means everything right now.</p>
+{% else %}
 <p>Thank you for your {% if recurring %}monthly{% else %}one-time{% endif %} gift of {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Your support of Wikipedia’s mission means everything right now.</p>
+{% endif %}
 
 <p>This letter feels very personal this year. I’m writing to you from my home, which has also become my office. Perhaps you can relate. It seems like so much has been upended in one way or another over the past year—pandemic, school closures, economic strain, the list goes on. But I take comfort in knowing that Wikipedia’s purpose remains steady: to make knowledge available to you. We’re here no matter what life throws your way.</p>
 
