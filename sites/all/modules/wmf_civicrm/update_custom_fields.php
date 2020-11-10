@@ -270,15 +270,6 @@ function _wmf_civicrm_get_prospect_fields() {
       'note_rows' => 4,
       //"option_group_id":"45",
     ],
-    'Prior_WMF_Giving' => [
-      'name' => 'Prior_WMF_Giving',
-      'label' => 'Prior WMF Giving',
-      'data_type' => 'Boolean',
-      'html_type' => 'Radio',
-      'text_length' => 255,
-      'note_columns' => 60,
-      'note_rows' => 4,
-    ],
     'Biography' => [
       'name' => 'Biography',
       'label' => 'Biography',
