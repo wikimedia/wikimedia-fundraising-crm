@@ -1,14 +1,26 @@
 <?php
 
+use Civi\Api4\Contact;
+
 /**
  * @group Import
  * @group Offline2Civicrm
  */
 class StripeTest extends BaseChecksFileTest {
 
-  function setUp() {
+  /**
+   * @var array
+   */
+  protected $ids = [];
+
+  public function setUp() {
     parent::setUp();
     $this->gateway = 'stripe';
+  }
+
+  public function tearDown() {
+    parent::tearDown();
+    Contact::delete(FALSE)->addWhere('last_name', 'IN', ['Darwin', 'Currie'])->execute();
   }
 
   /**
@@ -39,18 +51,12 @@ class StripeTest extends BaseChecksFileTest {
     $this->assertEquals('Darwin', $contact['last_name']);
     $this->assertEquals('Stripe import', $contact['contact_source']);
 
-    $contribution2 = wmf_civicrm_get_contributions_from_gateway_id($this->gateway, 'ch_1Bl1231231231231231231123');
-    $contribution2 = $contribution2[0];
-    $this->assertEquals(1000, $contribution2['original_amount']);
-    $this->assertEquals('GBP', $contribution2['original_currency']);
-    $this->assertEquals('USD', $contribution2['currency']);
-    $this->assertEquals(1500, $contribution2['total_amount']);
-    $this->assertEquals('GBP 1000', $contribution2['source']);
-
-    $this->callAPISuccess('Contribution', 'delete', array('id' => $contribution[0]['id']));
-    $this->callAPISuccess('Contribution', 'delete', array('id' => $contribution[0]['id'] + 1));
-    $this->callAPISuccess('Contact', 'delete', array('id' => $contact['id']));
-    $this->callAPISuccess('Contact', 'delete', array('id' => $contact['id'] + 1));
+    $this->ids['contribution'][2] = wmf_civicrm_get_contributions_from_gateway_id($this->gateway, 'ch_1Bl1231231231231231231123')[0];
+    $this->assertEquals(1000, $this->ids['contribution'][2]['original_amount']);
+    $this->assertEquals('GBP', $this->ids['contribution'][2]['original_currency']);
+    $this->assertEquals('USD', $this->ids['contribution'][2]['currency']);
+    $this->assertEquals(1500, $this->ids['contribution'][2]['total_amount']);
+    $this->assertEquals('GBP 1000', $this->ids['contribution'][2]['source']);
   }
 
 }

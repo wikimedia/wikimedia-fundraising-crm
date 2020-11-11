@@ -3,9 +3,9 @@
 class StripeFile extends ChecksFile {
   protected function getRequiredColumns() {
     return array(
-      'Created (UTC)',
-      'Card Name',
-      'Converted Amount',
+      'created (UTC)',
+      'card name',
+      'converted_amount',
       'id',
     );
   }
@@ -31,19 +31,19 @@ class StripeFile extends ChecksFile {
       'utm_source' => 'utm_source',
       'utm_campaign' => 'utm_campaign',
       'utm_medium' => 'utm_medium',
-      'Card Address Line1' => 'street_address',
-      'Card Address Line2' => 'supplemental_address_1',
-      'Card Address City' => 'city',
-      'Converted Amount' => 'gross',
-      'Amount' => 'original_gross',
-      'Created (UTC)' => 'date',
-      'Customer Email' => 'email',
-      'Converted Currency' => 'currency',
-      'Currency' => 'original_currency',
-      'Customer Description' => 'full_name',
-      'Card Address State' => 'state_province',
-      'Card Address Zip' => 'postal_code',
-      'Card Address Country' => 'country',
+      'card_address_line1' => 'street_address',
+      'card_address_line2' => 'supplemental_address_1',
+      'card_address_city' => 'city',
+      'converted_amount' => 'gross',
+      'amount' => 'original_gross',
+      'created (UTC)' => 'date',
+      'customer_email' => 'email',
+      'converted_currency' => 'currency',
+      'currency' => 'original_currency',
+      'customer_description' => 'full_name',
+      'card_address_state' => 'state_province',
+      'card_address_zip' => 'postal_code',
+      'card_issue_country' => 'country',
 
       //id,
       //Description,
@@ -109,7 +109,7 @@ class StripeFile extends ChecksFile {
    * @throws \WmfException
    */
   protected function parseRow($data) {
-    if (!empty($data['Converted Amount Refunded'])) {
+    if (!empty($data['converted_amount_refunded'])) {
       throw new WmfException(WmfException::INVALID_MESSAGE, 'Refunds not currently handled. Please log a Phab if required');
     }
     return parent::parseRow($data);
