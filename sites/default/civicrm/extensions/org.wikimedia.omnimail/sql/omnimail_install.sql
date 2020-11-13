@@ -24,5 +24,6 @@ CREATE TABLE civicrm_omnimail_job_progress (
  `progress_end_timestamp` timestamp NULL,
  `retrieval_parameters` VARCHAR(255) NULL,
  `offset` INT(10) unsigned,
+ `created_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB CHARSET=utf8 COLLATE=utf8_unicode_ci;

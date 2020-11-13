@@ -7,9 +7,9 @@
  * extension.
  */
 class CRM_Omnimail_ExtensionUtil {
-  const SHORT_NAME = "omnimail";
-  const LONG_NAME = "org.wikimedia.omnimail";
-  const CLASS_PREFIX = "CRM_Omnimail";
+  const SHORT_NAME = 'omnimail';
+  const LONG_NAME = 'org.wikimedia.omnimail';
+  const CLASS_PREFIX = 'CRM_Omnimail';
 
   /**
    * Translate a string using the extension's domain.

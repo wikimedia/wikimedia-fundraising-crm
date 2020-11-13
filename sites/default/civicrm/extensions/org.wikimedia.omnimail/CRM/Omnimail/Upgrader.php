@@ -138,6 +138,15 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
   }
 
   /**
+   * Add created date to civicrm_omnimail_job_progress table.
+   */
+  public function upgrade_1004(): bool {
+    CRM_Core_DAO::executeQuery('ALTER TABLE civicrm_omnimail_job_progress
+ADD COLUMN created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+    return TRUE;
+  }
+
+  /**
    * Example: Run an external SQL script.
    *
    * @return TRUE on success
