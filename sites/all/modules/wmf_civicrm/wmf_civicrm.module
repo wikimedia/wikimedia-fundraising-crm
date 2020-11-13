@@ -69,7 +69,7 @@ function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
   ];
   $existingValues = civicrm_api3('OptionValue', 'get', [
     'option_group_id' => $params['option_group_id'],
-    'name' => $params['name'],
+    'value' => $params['value'],
     'sequential' => 1,
   ]);
   $createRequired = FALSE;
