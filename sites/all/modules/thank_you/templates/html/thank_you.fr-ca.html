@@ -1,0 +1,63 @@
+{% if first_name and last_name %}
+<p>Bonjour {{ first_name }} !
+</p>{% else %}<p>
+Cher donateur, chère donatrice,</p>
+{%endif%}
+
+{% if recurring %}
+
+<p>J'ai la joie d'être celle à qui revient le privilège de vous remercier pour votre don mensuel de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, de la part de tous ceux qui participent au savoir libre en tant que contributeurs ou lecteurs.
+</p>
+
+<p>Votre don permet à Wikipédia de demeurer indépendante et votre soutien mensuel nous aide à voir plus loin. Chaque mois, un don de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} sera prélevé sur votre compte par la Wikimedia Foundation, et ce jusqu’à nouvel avis de votre part. <b>En janvier, nous vous enverrons une fiche récapitulative de vos dons pour l’année qui vient de s’achever.</b> Et si pour une quelconque raison, vous souhaitez annuler votre don, suivez ces <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instructions.</a></p>
+
+{% else %}
+<p>J'ai la joie d'être celle à qui revient le privilège de vous remercier pour votre don de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, de la part de tous ceux qui participent au savoir libre en tant que contributeurs ou lecteurs.
+</p>
+{% endif %}
+
+{% if "RecurringRestarted" in contribution_tags %}
+<p>Nous avons récemment résolu un petit problème technique qui a mis en suspens certains dons mensuels récurrents. Nous avons rétabli votre don récurrent et il sera traité de manière normale à l’avenir. Nous ne vous ferons pas payer les mois qui ont été manqués. Merci de votre patience et de votre soutien et n’hésitez pas à envoyer un e-mail à donate@wikimedia.org si vous avez des questions.</p>
+{%endif%}
+
+{% if "UnrecordedCharge" in contribution_tags %}
+<p>Nous avons récemment résolu un problème technique à cause duquel un certain nombre de donateurs n’ont pas reçu de confirmation de leur don. Par le biais de cet e-mail, nous vous remercions de votre don du {{ receive_date }}. Nous apprécions sincèrement votre patience et votre soutien et n’hésitez pas à envoyer un e-mail à donate@wikimedia.org si vous avez des questions.</p>
+{%endif%}
+
+<p>C'est votre don qui nous permet de remplir notre mission et d'offrir du savoir à toutes et tous.</p>
+
+<p>Après des années à travailler pour la Wikimedia Foundation, j'ai fini par réaliser qu'il existe une infinité de manières de vivre, de lire et d'aimer Wikipédia. Sa beauté, c'est justement que chacun se l'approprie comme il veut. La prochaine fois que vous utiliserez Wikipédia, j'espère que vous aussi vous ressentirez combien elle vous appartient. Parce que sans vous et sans le soutien des millions de personnes qui sont sur Wikipédia chaque jour, nous n'existerions tout simplement pas.
+</p>
+
+<p>Merci d'avoir fait une place à Wikipédia dans votre vie.
+</p>
+
+<p>Avec une gratitude immense,
+</p>
+
+<p>
+Katherine Maher<br/>
+Directrice exécutive, Wikimedia Foundation
+</p>
+
+<br>
+
+<p>Les dons jumelés sont un excellent moyen de doubler votre don à la Fondation Wikimedia. De nombreuses sociétés soutiennent les efforts philanthropiques de leurs employés en offrant un <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">programme de dons jumelés</a>.
+</p>
+
+<p>Pour vos archives&nbsp;: Votre don numéro {{ transaction_id }}, du {{ receive_date }} équivalait à {{ amount }} {{ currency }}.
+</p>
+
+<p>Cette lettre a valeur de reçu. Aucun service et aucun bien ne vous ont été échangés contre votre contribution. Notre adresse postale est&nbsp;: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, États-Unis.
+</p>
+
+<p>La Wikimedia Foundation est une organisation internationale à but non lucratif qui soutient des associations locales et indépendantes à travers le monde. Notre statut d'exonération varie selon la législation de chaque pays. Si vous avez des questions au sujet des exonérations ou réductions fiscales, nous vous invitons à contacter donate@wikimedia.org.
+</p>
+
+<p>Numéro d’exemption fiscale aux États-Unis&nbsp;: 20-0049703
+</p>
+
+<p>Si vous ne désirez plus recevoir d'emails de la Wikimedia Foundation, vous pouvez vous <a href="{{ unsubscribe_link | raw }}">désabonner facilement ici</a>. Vous continuerez cependant à recevoir des reçus pour tous les dons que vous effectuerez à l'avenir.
+</p>
+
+<!-- TI_BEGIN{"version":1,"name":"thank_you.fr.html","revision":20200220}TI_END -->
