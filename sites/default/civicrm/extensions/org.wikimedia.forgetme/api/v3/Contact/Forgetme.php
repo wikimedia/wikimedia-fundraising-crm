@@ -53,10 +53,13 @@ function civicrm_api3_contact_forgetme($params) {
     }
     $forgetParams[$fieldName] = $nullValue;
   }
+
   foreach ($contactIDsToForget as $contactID) {
     $forgetParams['id'] = $contactID;
     civicrm_api3('Contact', 'create', $forgetParams);
   }
+
+  wipeEmailFromSortOrDisplayName($contactIDsToForget);
 
   foreach (_contact_forgetme_get_processable_entities() as $entityToDelete) {
     $deleteParams = ['contact_id' => ['IN' => $contactIDsToForget]];
@@ -90,6 +93,37 @@ function civicrm_api3_contact_forgetme($params) {
     'source_contact_id' => ($loggedInUser ? : $params['id']),
   ]);
   return civicrm_api3_create_success($result, $params);
+}
+
+/**
+ * Wipe out any places where the contacts have an email in display name or sort name.
+ *
+ * This retrieves the contacts and checks for the presence of '@' in their display name or sort
+ * name. If present it assumes that the name is set to one of the contact's emails & updates it to
+ * forgotten. This is pretty blunt but I wanted to avoid
+ *
+ * 1) A wildcard LIKE search that might bypass the index
+ * 2) Any weirdness where the name got skipped because it had some extra character
+ * 3) A whole lot of php handling to fish out edge cases.
+ * 4) Using the api as it actually ignores any attempt to specify sort_name or display_name
+ *
+ * It's also worth noting that if these contacts DO have first name / last name (not sure how
+ * they would since the display name should not be the email then) then those are still retained
+ * for financial records requirements.
+ *
+ * @param array $contactIDsToForget
+ * @throws CiviCRM_API3_Exception
+ */
+function wipeEmailFromSortOrDisplayName(array $contactIDsToForget): void {
+  $existingContacts = civicrm_api3('Contact', 'get', ['id' => ['IN' => $contactIDsToForget], 'return' => ['sort_name', 'display_name']])['values'];
+  foreach ($existingContacts as $existingContact) {
+    if (strpos($existingContact['sort_name'], '@') !== FALSE
+      || strpos($existingContact['display_name'], '@') !== FALSE) {
+      CRM_Core_DAO::executeQuery("
+        UPDATE civicrm_contact SET sort_name = 'Forgotten', display_name = 'Forgotten'
+        WHERE id = " . (int) $existingContact['id']);
+    }
+  }
 }
 
 function storeEmailsDeleted( $emails ) {

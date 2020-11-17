@@ -51,6 +51,29 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
   }
 
   /**
+   * Test that the email is forgetten out of the sort_name & display_name, if present.
+   *
+   * When contacts do not have other name details their
+   *
+   * @throws API_Exception
+   * @throws CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function testForgetEmailDisplayName() {
+    $contact = $this->callAPISuccess('Contact', 'create', [
+      'contact_type' => 'Individual',
+      'email' => 'garlic@example.com',
+    ]);
+    $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $contact['id'], 'return' => ['sort_name', 'display_name']]);
+    $this->assertEquals('garlic@example.com', $contact['sort_name']);
+    $this->assertEquals('garlic@example.com', $contact['display_name']);
+    $this->callAPISuccess('Contact', 'forgetme', array('id' => $contact['id']));
+    $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $contact['id'], 'return' => ['sort_name', 'display_name']]);
+    $this->assertEquals('Forgotten', $contact['sort_name']);
+    $this->assertEquals('Forgotten', $contact['display_name']);
+  }
+
+  /**
    * Test our activity deletion.
    *
    * In merge instances a child activity might be deleted by a parent being deleted
