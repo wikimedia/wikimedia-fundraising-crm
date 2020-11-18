@@ -31,6 +31,8 @@ function civicrm_api3_omnirecipient_process_forgetme($params) {
           'mailing_provider' => $forget['mailing_provider'],
           'job' => $forget['job'],
           'job_identifier' => $forget['job_identifier'],
+          // Carry over the original created date.
+          'created_date' => $forget['created_date'],
         ]);
       }
     }
