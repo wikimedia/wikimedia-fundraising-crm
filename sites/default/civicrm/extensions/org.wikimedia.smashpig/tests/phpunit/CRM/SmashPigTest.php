@@ -15,6 +15,7 @@ use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingProviderConfiguration;
+use Civi\Api4\Activity;
 
 /**
  * Tests for SmashPig payment processor extension
@@ -787,6 +788,84 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       'Cancelled',
       CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
+  }
+
+  /**
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   * @throws \CRM_Core_Exception
+   */
+  public function testFailEmailNotSentIfOtherActiveRecurringExists() {
+    Civi::settings()->set('smashpig_recurring_send_failure_email', 1);
+
+    // add contact
+    $contact = $this->createContact();
+
+    // add old recurring that's about to be charged
+    $token1 = $this->createToken((int) $contact['id']);
+    $contributionRecur1 = $this->createContributionRecur($token1,[
+      'start_date' => gmdate('Y-m-d H:i:s', strtotime('-6 month')),
+      'create_date' => gmdate('Y-m-d H:i:s', strtotime('-6 month')),
+      // set this to 1 month in the past so it doesn't get run
+      'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
+    ]);
+    $contribution1 = $this->createContribution($contributionRecur1);
+
+    // add second (newer) recurring that's already been charged
+    $token2 = $this->createToken((int) $contact['id']);
+    $contributionRecur2 = $this->createContributionRecur($token1,[
+      'start_date' => gmdate('Y-m-d H:i:s', strtotime('-14 days')),
+      'create_date' => gmdate('Y-m-d H:i:s', strtotime('-14 days')),
+      'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('+14 days')),
+    ]);
+    $contribution2 = $this->createContribution($contributionRecur2);
+
+
+    // set up our fail DO NOT RETRY response for when our old recurring
+    // is charged. We could see this when a card is stopped due to
+    // fraud or has expired
+    $response = (new CreatePaymentResponse())->addErrors(
+      new PaymentError(
+        ErrorCode::DECLINED_DO_NOT_RETRY,
+        'Better not try me again!',
+        LogLevel::ERROR
+      )
+    );
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->willReturn(
+        $response
+      );
+
+    // run the recurring processor job
+    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+      TRUE, 1, 3, 1, 1
+    );
+    $processor->run();
+
+    // confirm the charge failed and was cancelled
+    $checkContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', [
+      'id' => $contributionRecur1['id'],
+    ]);
+    $this->assertEquals('(auto) un-retryable card decline reason code', $checkContributionRecur['cancel_reason']);
+    $this->assertEquals(
+      'Cancelled',
+      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $checkContributionRecur['contribution_status_id'])
+    );
+
+    // confirm no email was sent by checking the activity log
+    // Note: typically an email WOULD be sent but as we have
+    // another active recurring donation we suppress the email and confirm it here
+    $activity = Activity::get()->setCheckPermissions(FALSE)
+      ->addWhere('activity_type_id:name', '=', 'Email')
+      ->addWhere('subject', 'LIKE', 'Recur fail message : %')
+      ->addWhere('source_record_id', '=',  $contributionRecur1['id'])
+      ->addOrderBy('activity_date_time', 'DESC')
+      ->execute()->first();
+
+    $this->assertNull($activity);
+
   }
 
   /**
