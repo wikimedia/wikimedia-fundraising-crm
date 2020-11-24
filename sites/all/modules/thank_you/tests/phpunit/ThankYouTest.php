@@ -242,12 +242,14 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testSendStockThankYou() {
     variable_set('thank_you_add_civimail_records', 'false');
 
-    $custom_field_name = wmf_civicrm_get_custom_field_name('Stock Value');
+    $stock_value = wmf_civicrm_get_custom_field_name('Stock Value');
+    $description_of_stock = wmf_civicrm_get_custom_field_name('Description_of_Stock');
     $contribution_type_stock = wmf_civicrm_get_civi_id('contribution_type_id', 'Stock');
     $this->callAPISuccess('Contribution', 'create', [
       'id' => $this->contribution_id,
       'financial_type_id' => $contribution_type_stock,
-      $custom_field_name => '50.00',
+      $stock_value => '50.00',
+      $description_of_stock => 'Test Stock Description',
     ]);
 
     $result = thank_you_for_contribution($this->contribution_id);
@@ -263,6 +265,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
       '@donate.wikimedia.org';
     $this->assertEquals($expectedBounce, $sent['reply_to']);
     $this->assertRegExp('/\$ 50.00/', $sent['html']);
+    $this->assertRegExp('/\Test Stock Description/', $sent['html']);
 
   }
 

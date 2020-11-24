@@ -10,7 +10,7 @@ Dear donor,
 </p>
 
 {% if stock_value %}
-<p>Thank you for your one-time gift of {{ (currency ~ " " ~ stock_value) | l10n_currency(locale) }}. Your support of Wikipedia’s mission means everything right now.</p>
+<p>Thank you for your one-time gift of {{ description_of_stock }} at {{ (currency ~ " " ~ stock_value) | l10n_currency(locale) }}. Your support of Wikipedia’s mission means everything right now.</p>
 {% else %}
 <p>Thank you for your {% if recurring %}monthly{% else %}one-time{% endif %} gift of {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Your support of Wikipedia’s mission means everything right now.</p>
 {% endif %}
