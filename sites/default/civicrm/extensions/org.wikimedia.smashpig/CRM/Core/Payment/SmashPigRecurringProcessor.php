@@ -474,12 +474,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $result = civicrm_api3('ContributionRecur', 'get', [
       'id' => ['!=' => $recurringID],
       'contact_id' => $contactID,
-      'payment_processor_id' => [
-        'IN' => array_keys(
-          $this->smashPigProcessors
-
-        ),
-      ],
       'contribution_status_id' => [
         'IN' => [
           'Pending',
