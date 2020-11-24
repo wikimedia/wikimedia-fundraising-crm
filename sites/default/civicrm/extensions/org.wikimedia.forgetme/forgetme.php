@@ -130,6 +130,20 @@ function forgetme_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 }
 
 /**
+ * Implements hook_alterLogTables().
+ *
+ * @param array $logTableSpec
+ */
+function forgetme_civicrm_alterLogTables(&$logTableSpec) {
+  $staticDataTables = ['civicrm_deleted_email'];
+  foreach ($staticDataTables as $staticDataTable) {
+    if (isset($logTableSpec[$staticDataTable])) {
+      unset($logTableSpec[$staticDataTable]);
+    }
+  }
+}
+
+/**
  * Implements hook_civicrm_entityTypes().
  *
  * Declare entity types provided by this module.

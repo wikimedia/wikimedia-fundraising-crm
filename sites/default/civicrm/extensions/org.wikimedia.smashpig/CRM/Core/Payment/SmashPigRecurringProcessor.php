@@ -265,9 +265,19 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       // leaving cancelled for something where a user or staff member made a choice.
       $params['contribution_status_id'] = 'Cancelled';
       $params['cancel_date'] = UtcDate::getUtcDatabaseString();
-      $this->sendFailureEmail($recurringPayment['id'], $recurringPayment['contact_id']);
     }
     civicrm_api3('ContributionRecur', 'create', $params);
+
+    $hasOtherActiveRecurring = $this->hasOtherActiveRecurringContribution(
+      $recurringPayment['contact_id'],
+      $recurringPayment['id']
+    );
+
+    if (!$hasOtherActiveRecurring) {
+      // we only send a recurring failure email if the contact has no
+      // other active recurring donations. see T260910
+      $this->sendFailureEmail($recurringPayment['id'], $recurringPayment['contact_id']);
+    }
   }
 
   /**
@@ -449,6 +459,33 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         throw $exception;
       }
     }
+  }
+
+  /**
+   * Check if the donor has another active recurring contribution set up.
+   *
+   * @param int $contactID
+   * @param int $recurringID ID of recurring contribution record
+   *
+   * @return bool
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected function hasOtherActiveRecurringContribution(int $contactID, int $recurringID) {
+    $result = civicrm_api3('ContributionRecur', 'get', [
+      'id' => ['!=' => $recurringID],
+      'contact_id' => $contactID,
+      'contribution_status_id' => [
+        'IN' => [
+          'Pending',
+          'Overdue',
+          'In Progress',
+          'Failing' // hmm this isn't very active.
+        ],
+      ],
+      'payment_token_id' => ['IS NOT NULL' => TRUE],
+    ]);
+
+    return ($result['count'] ?? 0) > 0 ;
   }
 
   /**
