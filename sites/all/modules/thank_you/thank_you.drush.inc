@@ -11,6 +11,11 @@ function thank_you_drush_command() {
       'Sends thank you emails for donations',
     'examples' => ['drush thank-you' => '# Send thank you emails'],
     'aliases' => ['ty'],
+    'options' => [
+      'batch' => 'Batch size',
+      'days' => 'Number of days to parse',
+      'time_limit' => 'Time limit for job',
+    ],
   ];
 
   $items['thank-you-send-test'] = [
@@ -38,7 +43,11 @@ function thank_you_drush_help($section) {
  * All configuration happens in the module.
  */
 function drush_thank_you_send() {
-  module_invoke('thank_you', 'batch_process');
+  module_invoke('thank_you', 'batch_process',
+    drush_get_option('batch'),
+    drush_get_option('days'),
+    drush_get_option('time_limit')
+  );
   $errors = drush_get_error_log();
   if (!empty($errors)) {
     echo "\n***ERRORS***";
