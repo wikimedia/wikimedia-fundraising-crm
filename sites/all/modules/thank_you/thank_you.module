@@ -771,9 +771,18 @@ function thank_you_settings_form() {
 }
 
 /**
+ * Main thank you batch processing function.
+ *
+ * @param int|null $batch
+ *   Number of contributions to process
+ * @param int|null $days
+ *   Number of days to go back in selecting contributions
+ * @param int|null $timeLimit
+ *   Time in seconds after which to end the job.
+ *
  * @throws \CiviCRM_API3_Exception
  */
-function thank_you_batch_process() {
+function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL) {
   civicrm_initialize();
   // If available, use the time the drush script started as the start time
   // This way we're less likely to run past the start of the next run.
@@ -784,9 +793,9 @@ function thank_you_batch_process() {
     $startTime = time();
   }
   // the following variables should be set in the module settings, not here
-  $timeLimit = variable_get('thank_you_batch_time', 90);
-  $days = variable_get('thank_you_days', FALSE);
-  $batch = variable_get('thank_you_batch', FALSE);
+  $timeLimit = $timeLimit ?? variable_get('thank_you_batch_time', 90);
+  $days = $days ?? variable_get('thank_you_days', FALSE);
+  $batch = $batch ?? variable_get('thank_you_batch', FALSE);
   $enabled = variable_get('thank_you_enabled', 'true');
 
   if ($enabled === 'false') {
