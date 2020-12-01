@@ -2174,8 +2174,6 @@ function wmf_civicrm_normalize_msg($msg) {
   // set the correct amount fields/data and do exchange rate conversions.
   $msg = wmf_civicrm_normalize_contribution_amounts($msg);
 
-  watchdog('wmf_civicrm', 'Contribution (normalized):<pre>' . check_plain(print_r($msg, TRUE)) . '</pre>', NULL, WATCHDOG_INFO);
-
   return $msg;
 }
 
