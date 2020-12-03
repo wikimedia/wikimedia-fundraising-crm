@@ -23,6 +23,7 @@ function queue_consume_drush_command() {
     ],
     'options' => [
       'batch' => 'Number of contributions to process. If set to zero, it will be treated as unlimited',
+      'time_limit' => 'Time limit in seconds for job',
     ],
     'aliases' => ['qc'],
   ];
@@ -87,12 +88,9 @@ function drush_queue_consume_validate() {
 function drush_queue_consume() {
   // Set the number of contributions to batch
   $batch = drush_get_option('batch');
-  $options = [];
-  if (!empty($batch)) {
-    $options['batch'] = $batch;
-  }
+  $time_limit = drush_get_option('time_limit');
 
-  module_invoke('queue2civicrm', 'batch_process', $options);
+  module_invoke('queue2civicrm', 'batch_process', $batch, $time_limit);
   $errors = drush_get_error_log();
   if (!empty($errors)) {
     echo "\n***ERRORS***";
