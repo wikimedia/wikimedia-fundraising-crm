@@ -10,6 +10,8 @@ require_once(DRUPAL_ROOT . "/sites/all/modules/wmf_common/tests/includes/BaseWmf
 require_once(DRUPAL_ROOT . "/sites/all/modules/wmf_audit/tests/includes/BaseAuditTestCase.php");
 require_once(DRUPAL_ROOT . "/sites/all/modules/offline2civicrm/tests/includes/BaseChecksFileTest.php");
 require_once(DRUPAL_ROOT . "/sites/all/modules/wmf_communication/tests/phpunit/CiviMailTestBase.php");
+require_once(DRUPAL_ROOT . "/../vendor/mrmarkfrench/silverpop-php-connector/test/tests/BaseTestClass.php");
+require_once(DRUPAL_ROOT . "/../vendor/mrmarkfrench/silverpop-php-connector/test/tests/SilverpopBaseTestClass.php");
 
 // Argh.  Crib from _drush_bootstrap_drupal_site_validate
 $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
