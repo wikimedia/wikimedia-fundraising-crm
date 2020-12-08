@@ -299,7 +299,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    */
   protected function importSubscriptionSignup($msg) {
     // ensure there is not already a record of this account - if so, mark the message as succesfuly processed
-    if ($recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
+    if ($recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
       throw new WmfException(WmfException::DUPLICATE_CONTRIBUTION, 'Subscription account already exists');
     }
     $ctRecord = wmf_civicrm_get_contribution_tracking($msg);
