@@ -332,7 +332,7 @@ I am thrilled that this email to you is one of the first things on my to-do list
 </p>
 
 <p>
-Your continuing support shows us that our work matters, and is worth supporting. Thank you.
+Your donations show us that our work matters, and is worth supporting. Thank you.
 </p>
 
 <p>
@@ -429,6 +429,13 @@ Donation 27: 800 USD 2018-12-22
 If for whatever reason you wish to cancel your monthly donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en">easy cancellation instructions</a>.
 </p>
 
+<p>With immense gratitude,</p>
+<p>
+  Katherine<br><br>
+  Katherine Maher, Executive Director<br>
+  Wikimedia Foundation
+</p>
+
 <p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
 </p>
 ',
@@ -465,7 +472,7 @@ I am thrilled that this email to you is one of the first things on my to-do list
 </p>
 
 <p>
-Your continuing support shows us that our work matters, and is worth supporting. Thank you.
+Your donations show us that our work matters, and is worth supporting. Thank you.
 </p>
 
 <p>
@@ -494,6 +501,13 @@ Donation 4: 50 CAD 2018-10-20
 
 <p>
 If for whatever reason you wish to cancel your monthly donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en">easy cancellation instructions</a>.
+</p>
+
+<p>With immense gratitude,</p>
+<p>
+  Katherine<br><br>
+  Katherine Maher, Executive Director<br>
+  Wikimedia Foundation
 </p>
 
 <p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
