@@ -4367,11 +4367,11 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.6.4",
+            "version": "v0.6.5",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "0a4e8070235e5fc594975f3b306222273b77b05f"
+                "reference": "9e79bad324201b3d58d6e54315139dae5021efaa"
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
@@ -4445,7 +4445,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2020-10-14T18:11:03+00:00"
+            "time": "2020-12-04T16:38:05+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -4608,20 +4608,6 @@
             "keywords": [
                 "constructor",
                 "instantiate"
-            ],
-            "funding": [
-                {
-                    "url": "https://www.doctrine-project.org/sponsorship.html",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://www.patreon.com/phpdoctrine",
-                    "type": "patreon"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/doctrine%2Finstantiator",
-                    "type": "tidelift"
-                }
             ],
             "time": "2020-05-29T17:27:14+00:00"
         },
@@ -6180,6 +6166,5 @@
     "platform-dev": [],
     "platform-overrides": {
         "php": "7.3.19"
-    },
-    "plugin-api-version": "1.1.0"
+    }
 }
