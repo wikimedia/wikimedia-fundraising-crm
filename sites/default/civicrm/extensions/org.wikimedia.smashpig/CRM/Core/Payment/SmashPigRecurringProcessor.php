@@ -268,15 +268,17 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     }
     civicrm_api3('ContributionRecur', 'create', $params);
 
-    $hasOtherActiveRecurring = $this->hasOtherActiveRecurringContribution(
-      $recurringPayment['contact_id'],
-      $recurringPayment['id']
-    );
+    if ($cancelRecurringDonation) {
+      $hasOtherActiveRecurring = $this->hasOtherActiveRecurringContribution(
+        $recurringPayment['contact_id'],
+        $recurringPayment['id']
+      );
 
-    if (!$hasOtherActiveRecurring) {
-      // we only send a recurring failure email if the contact has no
-      // other active recurring donations. see T260910
-      $this->sendFailureEmail($recurringPayment['id'], $recurringPayment['contact_id']);
+      if (!$hasOtherActiveRecurring) {
+        // we only send a recurring failure email if the contact has no
+        // other active recurring donations. see T260910
+        $this->sendFailureEmail($recurringPayment['id'], $recurringPayment['contact_id']);
+      }
     }
   }
 
