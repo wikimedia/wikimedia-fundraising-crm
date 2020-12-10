@@ -228,6 +228,7 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
         'frequency_unit' => 'month',
         'frequency_interval' => 1,
         'installments' => 0,
+        'failure_count' => 0,
         'start_date' => gmdate('Y-m-d H:i:s', strtotime('-1 month')),
         'create_date' => gmdate('Y-m-d H:i:s', strtotime('-1 month')),
         'payment_token_id' => $token['id'],
@@ -303,7 +304,9 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
       ->addWhere('source_record_id', '=', $contributionRecurID)
       ->addOrderBy('activity_date_time', 'DESC')
       ->execute()->first();
-    $this->deleteThings['Activity'][] = $activity['id'];
+    if($activity) {
+      $this->deleteThings['Activity'][] = $activity['id'];
+    }
     return $activity;
   }
 
