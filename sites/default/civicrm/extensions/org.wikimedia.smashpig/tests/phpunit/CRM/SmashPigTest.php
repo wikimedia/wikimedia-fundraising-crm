@@ -790,13 +790,196 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     );
   }
 
+  public function testFailureEmailNotSentOnFirstFailedPayment() {
+    Civi::settings()->set('smashpig_recurring_send_failure_email', 1);
+
+    // add contact
+    $contact = $this->createContact();
+
+    // add recurring charge that's about to fail for the first time
+    $token = $this->createToken((int) $contact['id']);
+    $contributionRecur = $this->createContributionRecur($token,[
+      'failure_count' => 0
+    ]);
+    $this->createContribution($contributionRecur);
+
+    // set up our fail response
+    $response = (new CreatePaymentResponse())->addErrors(
+      new PaymentError(
+        ErrorCode::DECLINED,
+        "That's your first declined payment!",
+        LogLevel::ERROR
+      )
+    );
+    $this->hostedCheckoutProvider->expects($this->any())
+      ->method('createPayment')
+      ->willReturn(
+        $response
+      );
+
+    // run the recurring processor job
+    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+      TRUE, 1, 3, 1, 1
+    );
+    $processor->run();
+
+    $contributionRecurRecord = civicrm_api3('ContributionRecur', 'getsingle', [
+      'id' => $contributionRecur['id'],
+    ]);
+
+    // check the recurring record is now set as failing
+    $this->assertEquals(
+      'Failing',
+      CRM_Core_PseudoConstant::getName(
+        'CRM_Contribute_BAO_ContributionRecur',
+        'contribution_status_id',
+        $contributionRecurRecord['contribution_status_id']
+      )
+    );
+
+    // check the failure count was increased
+    $this->assertEquals('1', $contributionRecurRecord['failure_count']);
+
+    // confirm no email was sent by checking the activity log
+    $activity = $this->getLatestFailureMailActivity((int) $contributionRecurRecord['id']);
+    $this->assertNull($activity);
+  }
+
+  public function testFailureEmailNotSentOnSecondFailedPayment() {
+    Civi::settings()->set('smashpig_recurring_send_failure_email', 1);
+
+    // add contact
+    $contact = $this->createContact();
+
+    // add recurring charge that's about to fail for the second time
+    $token = $this->createToken((int) $contact['id']);
+    $contributionRecur = $this->createContributionRecur($token,[
+      'failure_count' => 1
+    ]);
+    $this->createContribution($contributionRecur);
+
+    // set up our fail response
+    $response = (new CreatePaymentResponse())->addErrors(
+      new PaymentError(
+        ErrorCode::DECLINED,
+        "That's your second declined payment!",
+        LogLevel::ERROR
+      )
+    );
+    $this->hostedCheckoutProvider->expects($this->any())
+      ->method('createPayment')
+      ->willReturn(
+        $response
+      );
+
+    // run the recurring processor job
+    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+      TRUE, 1, 3, 1, 1
+    );
+    $processor->run();
+
+    $contributionRecurRecord = civicrm_api3('ContributionRecur', 'getsingle', [
+      'id' => $contributionRecur['id'],
+    ]);
+
+    // check the recurring record is now set as failing
+    $this->assertEquals(
+      'Failing',
+      CRM_Core_PseudoConstant::getName(
+        'CRM_Contribute_BAO_ContributionRecur',
+        'contribution_status_id',
+        $contributionRecurRecord['contribution_status_id']
+      )
+    );
+
+    // check the failure count was increased
+    $this->assertEquals('2', $contributionRecurRecord['failure_count']);
+
+    // confirm no email was sent by checking the activity log
+    $activity = $this->getLatestFailureMailActivity((int) $contributionRecurRecord['id']);
+    $this->assertNull($activity);
+  }
+
+  /**
+   * Recurring failure emails should be sent after three consecutive
+   * failed payment attempts.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function testFailureEmailSentOnThirdFailedPayment() {
+    Civi::settings()->set('smashpig_recurring_send_failure_email', 1);
+
+    // let's overwrite the failure email template to make it easier to
+    // compare the email body contents when checking for the sent email later.
+    $this->setupFailureTemplate();
+
+    // add contact
+    $contact = $this->createContact();
+
+    // add recurring charge that's about to fail for the third time
+    $token = $this->createToken((int) $contact['id']);
+    $contributionRecur = $this->createContributionRecur($token,[
+      'failure_count' => 2
+    ]);
+    $this->createContribution($contributionRecur);
+
+    // set up our fail response
+    $response = (new CreatePaymentResponse())->addErrors(
+      new PaymentError(
+        ErrorCode::DECLINED_DO_NOT_RETRY,
+        "That's your third declined payment!",
+        LogLevel::ERROR
+      )
+    );
+    $this->hostedCheckoutProvider->expects($this->any())
+      ->method('createPayment')
+      ->willReturn(
+        $response
+      );
+
+    // run the recurring processor job
+    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+      TRUE, 1, 3, 1, 1
+    );
+    $processor->run();
+
+    $contributionRecurRecord = civicrm_api3('ContributionRecur', 'getsingle', [
+      'id' => $contributionRecur['id'],
+    ]);
+
+    // check the recurring record is now set as Cancelled
+    $this->assertEquals(
+      'Cancelled',
+      CRM_Core_PseudoConstant::getName(
+        'CRM_Contribute_BAO_ContributionRecur',
+        'contribution_status_id',
+        $contributionRecurRecord['contribution_status_id']
+      )
+    );
+
+    // check the failure count was increased to three
+    $this->assertEquals('3', $contributionRecurRecord['failure_count']);
+
+    // confirm email was SENT by checking the activity log
+    $activity = $this->getLatestFailureMailActivity((int) $contributionRecurRecord['id']);
+    $month = date('F');
+    $expectedMessage = "Dear Harry,
+      We cancelled your recur of USD 12.34
+      and we are sending you this at harry@hendersons.net
+      this month of $month
+      $12.34";
+    $this->assertEquals($expectedMessage, $activity['details']);
+  }
+
   /**
    *
    * @throws \CiviCRM_API3_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
    * @throws \CRM_Core_Exception
    */
-  public function testFailEmailNotSentIfOtherActiveRecurringExists() {
+  public function testFailureEmailNotSentIfOtherActiveRecurringExists() {
     Civi::settings()->set('smashpig_recurring_send_failure_email', 1);
 
     // add contact
