@@ -40,7 +40,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7060();
   wmf_civicrm_update_7062();
   wmf_civicrm_update_7063();
-  wmf_civicrm_update_7064();
   wmf_civicrm_update_7080();
   wmf_civicrm_update_7090();
   wmf_civicrm_update_7100();
@@ -926,19 +925,6 @@ function wmf_civicrm_update_7063() {
   civicrm_api3('Navigation', 'reset', array(
     'for' => "report",
   ));
-}
-
-/**
- * Add appeal data that has been missed.
- *
- * Note there was a change in early Nov that stopped these from coming in.
- *
- * This update goes back 'a bit further' but is a somewhat arbitrary date.
- *
- * T121284
- */
-function wmf_civicrm_update_7064() {
-  wmf_civicrm_fill_missing_appeal_data('2015-10-01');
 }
 
 /**
