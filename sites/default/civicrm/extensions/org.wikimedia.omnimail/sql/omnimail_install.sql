@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS `civicrm_mailing_provider_data` (
    KEY `email` (`email`),
    KEY `event_type` (`event_type`),
    KEY `recipient_action_datetime` (`recipient_action_datetime`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB;
 
 CREATE TABLE civicrm_omnimail_job_progress (
  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -26,4 +26,4 @@ CREATE TABLE civicrm_omnimail_job_progress (
  `offset` INT(10) unsigned,
  `created_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
    PRIMARY KEY (`id`)
-) ENGINE=InnoDB CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB;
