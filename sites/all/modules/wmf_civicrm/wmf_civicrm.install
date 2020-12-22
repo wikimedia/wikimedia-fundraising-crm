@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\OptionValue;
+
 require_once(__DIR__ . "/bootstrap.inc");
 require_once 'update_custom_fields.php';
 
@@ -5554,4 +5556,38 @@ function wmf_civicrm_update_8090() {
     WHERE civicrm_contribution_recur.next_sched_contribution_date = '2020-11-03'
     AND civicrm_contribution.receive_date > '2020-10-10'
   ");
+}
+
+/**
+ * Add civicrm_managed records for our wmf reports.
+ *
+ * We are converting them to being loaded through a mgd file.
+ * However, since they already exist we need to add the mgd row on the prod
+ * db - not required for dev dbs as the mgd will work when they don't already exist.
+ *
+ * This does not need to be transitioned to drupal code.
+ *
+ * @throws \API_Exception
+ */
+function wmf_civicrm_update_8095() {
+  civicrm_initialize();
+  OptionValue::delete(FALSE)->setWhere([
+    ['option_group_id:name', '=', 'report_template'],
+    ['name', '=', 'CRM_Report_Form_Contribute_Trends'],
+  ])->execute();
+
+  $reportsToKeep = OptionValue::get(FALSE)->setWhere([
+    ['option_group_id:name', '=', 'report_template'],
+    ['name', 'IN', ['CRM_Report_Form_Contribute_WmfLybunt', 'CRM_Report_Form_Contribute_GatewayReconciliation']],
+   ])->setSelect(['id', 'name'])->execute();
+  $nameMap = [
+    'CRM_Report_Form_Contribute_GatewayReconciliation' => 'WMF gateway reconciliation report - used by Pats Pena',
+    'CRM_Report_Form_Contribute_WmfLybunt' => 'WMF LYBUNT report (possibly dead)',
+  ];
+  foreach ($reportsToKeep as $report) {
+    CRM_Core_DAO::executeQuery("
+      INSERT INTO civicrm_managed (module, name, entity_type, entity_id)
+      VALUES('wmf-civicrm', '{$nameMap[$report['name']]}', 'ReportTemplate', {$report['id']})
+   ");
+  }
 }
