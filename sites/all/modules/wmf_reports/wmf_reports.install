@@ -3,7 +3,6 @@
 function wmf_reports_install() {
   wmf_reports_update_7000();
   wmf_reports_update_7001();
-  wmf_reports_update_7002();
   wmf_reports_update_7003();
   wmf_reports_update_7004();
 }
@@ -171,26 +170,6 @@ function wmf_reports_update_7001() {
   }
 
   wmf_report_compact_mapping_fields($mapping->id);
-}
-
-/**
- * Install custom report templates
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_reports_update_7002() {
-  civicrm_initialize();
-  $params = [
-    'label' => 'Contribution Trends',
-    'name' => 'CRM_Report_Form_Contribute_Trends',
-    'value' => 'contribute/trends',
-    'description' => 'Contribution Trends',
-    'component_id' => CRM_Core_Component::getComponentID('CiviContribute'),
-    'is_active' => TRUE,
-    'option_group_id' => 'report_template',
-  ];
-  civicrm_api3('OptionValue', 'create', $params);
-  return [];
 }
 
 function wmf_report_drop_mapping_fields($criteria) {

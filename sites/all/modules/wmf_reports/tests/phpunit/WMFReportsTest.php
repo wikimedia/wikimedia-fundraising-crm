@@ -56,7 +56,6 @@ class WMFReportsTest extends BaseWmfDrupalPhpUnitTestCase {
     return array(
       array('contribute/wmf_lybunt'),
       array('contribute/reconciliation'),
-      array('contribute/trends'),
       array('contribute/recur'),
       array('contribute/detail'),
     );
