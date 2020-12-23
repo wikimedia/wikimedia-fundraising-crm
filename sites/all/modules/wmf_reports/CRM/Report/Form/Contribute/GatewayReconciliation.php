@@ -99,7 +99,6 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
         ),
       ),
       'wmf_contribution_extra' => array(
-        'bao' => 'CRM_BAO_WmfContributionExtra',
         'fields' => array(
           'deposit_date' => array(
             'title' => ts('Deposit Date (UTC)'),
