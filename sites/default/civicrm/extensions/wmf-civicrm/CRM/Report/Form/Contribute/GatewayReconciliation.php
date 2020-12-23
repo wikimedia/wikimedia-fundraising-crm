@@ -6,7 +6,7 @@
 class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
 
   function __construct() {
-    $gateway_options = array(
+    $gateway_options = [
       '' => '--any--',
       'ADYEN' => 'Adyen',
       'AMAZON' => 'Amazon',
@@ -23,25 +23,25 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
       'PAYPAL_EC' => 'PayPal Express Checkout',
       'SQUARE' => 'Square',
       'TRILOGY' => 'Trilogy',
-    );
+    ];
 
-    $this->_columns = array(
-      'civicrm_contribution' => array(
+    $this->_columns = [
+      'civicrm_contribution' => [
         'dao' => 'CRM_Contribute_DAO_Contribution',
-        'fields' => array(
-          'receive_date' => array(
+        'fields' => [
+          'receive_date' => [
             'title' => ts('Initiated Date (UTC)'),
             'required' => TRUE,
             'no_display' => TRUE,
-          ),
-        ),
-        'filters' => array(
-          'receive_date' => array(
+          ],
+        ],
+        'filters' => [
+          'receive_date' => [
             'title' => ts('Initiated Date (UTC)'),
             'operatorType' => CRM_Report_Form::OP_DATETIME,
             'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
 
-          ),
+          ],
           /*
           'is_negative' => array(
               'title' => ts( 'Credit (+) or Debit (-)' )
@@ -52,145 +52,145 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
               ),
           ),
           */
-        ),
-        'group_bys' => array(),
-      ),
-      'civicrm_financial_trxn' => array(
+        ],
+        'group_bys' => [],
+      ],
+      'civicrm_financial_trxn' => [
         'dao' => 'CRM_Financial_DAO_FinancialTrxn',
-        'fields' => array(
-          'total_amount' => array(
+        'fields' => [
+          'total_amount' => [
             'title' => ts('Total Amount (USD)'),
             'required' => TRUE,
             'type' => CRM_Utils_Type::T_MONEY,
-            'statistics' => array(
+            'statistics' => [
               'sum' => ts('Total Amount (USD)'),
               'count' => ts('Number of Contributions'),
-            ),
-          ),
-          'is_negative' => array(
+            ],
+          ],
+          'is_negative' => [
             'title' => ts('Credit (+) or Debit (-)'),
             'required' => TRUE,
             'dbAlias' => "IF(financial_trxn_civireport.total_amount < 0, '-', '+' )",
-          ),
-          'financial_trxn_payment_instrument_id' => array(
+          ],
+          'financial_trxn_payment_instrument_id' => [
             'name' => 'payment_instrument_id',
             'title' => ts('Payment Method'),
             'default' => TRUE,
-          ),
-        ),
-        'filters' => array(
-          'financial_trxn_payment_instrument_id' => array(
+          ],
+        ],
+        'filters' => [
+          'financial_trxn_payment_instrument_id' => [
             'name' => 'payment_instrument_id',
             'title' => ts('Payment Method'),
             'type' => CRM_Utils_Type::T_INT,
             'operatorType' => CRM_Report_Form::OP_MULTISELECT,
             'options' => $this->getOptions('FinancialTrxn', 'payment_instrument_id'),
-          ),
-        ),
-        'group_bys' => array(
-          'payment_instrument_id' => array(
+          ],
+        ],
+        'group_bys' => [
+          'payment_instrument_id' => [
             'name' => 'payment_instrument_id',
             'title' => ts('Payment Method'),
-          ),
-          'is_negative' => array(
+          ],
+          'is_negative' => [
             'title' => ts('Credit (+) or Debit (-)'),
             'default' => FALSE,
-          ),
-        ),
-      ),
-      'wmf_contribution_extra' => array(
-        'fields' => array(
-          'deposit_date' => array(
+          ],
+        ],
+      ],
+      'wmf_contribution_extra' => [
+        'fields' => [
+          'deposit_date' => [
             'title' => ts('Deposit Date (UTC)'),
             'default' => FALSE,
             'no_display' => TRUE,
-          ),
-          'settlement_date' => array(
+          ],
+          'settlement_date' => [
             'title' => ts('Settlement Date (UTC)'),
             'default' => FALSE,
             'no_display' => TRUE,
-          ),
-          'original_amount' => array(
+          ],
+          'original_amount' => [
             'title' => ts('Original Amount'),
             'type' => CRM_Utils_Type::T_MONEY,
-            'statistics' => array(
+            'statistics' => [
               'sum' => ts('Total Original Amount'),
-            ),
-          ),
-          'original_currency' => array(
+            ],
+          ],
+          'original_currency' => [
             'title' => ts('Original Currency'),
             'required' => TRUE,
-          ),
-          'gateway' => array(
+          ],
+          'gateway' => [
             'title' => ts('Gateway'),
             'required' => TRUE,
-          ),
-          'gateway_account' => array(
+          ],
+          'gateway_account' => [
             'title' => ts('Account'),
             'required' => TRUE,
-          ),
-        ),
-        'filters' => array(
-          'deposit_date' => array(
+          ],
+        ],
+        'filters' => [
+          'deposit_date' => [
             'title' => ts('Deposit Date (UTC)'),
             'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
             'operatorType' => CRM_Report_Form::OP_DATETIME,
-          ),
-          'settlement_date' => array(
+          ],
+          'settlement_date' => [
             'title' => ts('Settlement Date (UTC)'),
             'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
             'operatorType' => CRM_Report_Form::OP_DATETIME,
-          ),
-          'gateway' => array(
+          ],
+          'gateway' => [
             'title' => ts('Gateway'),
             'type' => CRM_Utils_Type::T_STRING,
             'operatorType' => CRM_Report_Form::OP_SELECT,
             'options' => $gateway_options,
-          ),
-          'original_currency' => array(
+          ],
+          'original_currency' => [
             'title' => ts('Original Currency'),
             'type' => CRM_Utils_Type::T_STRING,
             'operatorType' => CRM_Report_Form::OP_STRING,
-          ),
-        ),
-        'group_bys' => array(
-          'original_currency' => array(
+          ],
+        ],
+        'group_bys' => [
+          'original_currency' => [
             'title' => ts('Original Currency'),
             'default' => TRUE,
-          ),
-          'gateway' => array(
+          ],
+          'gateway' => [
             'title' => ts('Gateway'),
             'default' => TRUE,
-          ),
-          'gateway_account' => array(
+          ],
+          'gateway_account' => [
             'title' => ts('Account'),
             'default' => FALSE,
-          ),
-        ),
-      ),
-      'civicrm_country' => array(
+          ],
+        ],
+      ],
+      'civicrm_country' => [
         'dao' => 'CRM_Core_DAO_Country',
-        'fields' => array(
-          'iso_code' => array(
+        'fields' => [
+          'iso_code' => [
             'title' => ts('Country'),
             'default' => FALSE,
-          ),
-        ),
-        'filters' => array(
-          'iso_code' => array(
+          ],
+        ],
+        'filters' => [
+          'iso_code' => [
             'title' => ts('Country'),
             'type' => CRM_Utils_Type::T_STRING,
             'operatorType' => CRM_Report_Form::OP_STRING,
-          ),
-        ),
-        'group_bys' => array(
-          'iso_code' => array(
+          ],
+        ],
+        'group_bys' => [
+          'iso_code' => [
             'title' => ts('Country'),
             'default' => FALSE,
-          ),
-        ),
-      ),
-    );
+          ],
+        ],
+      ],
+    ];
 
     parent::__construct();
   }
@@ -205,7 +205,7 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
    * @throws CiviCRM_API3_Exception
    */
   function getOptions($entity, $field) {
-    $options = civicrm_api3($entity, 'getoptions', array('field' => $field));
+    $options = civicrm_api3($entity, 'getoptions', ['field' => $field]);
     return $options['values'];
   }
 
@@ -243,10 +243,10 @@ EOS;
       $sum_amount += $row['civicrm_financial_trxn_total_amount_sum'];
       $sum_count += $row['civicrm_financial_trxn_total_amount_count'];
     }
-    $grand_total_row = array(
+    $grand_total_row = [
       'civicrm_financial_trxn_total_amount_sum' => $sum_amount,
       'civicrm_financial_trxn_total_amount_count' => $sum_count,
-    );
+    ];
     $this->assign('grandStat', $grand_total_row);
   }
 
@@ -265,10 +265,10 @@ EOS;
 
   function storeWhereHavingClauseArray() {
     parent::storeWhereHavingClauseArray();
-    $depositFinancialAccountID = civicrm_api3('FinancialAccount', 'getvalue', array(
+    $depositFinancialAccountID = civicrm_api3('FinancialAccount', 'getvalue', [
       'return' => 'id',
       'name' => 'Deposit Bank Account',
-    ));
+    ]);
     $this->_whereClauses[] = "{$this->_aliases['civicrm_financial_trxn']}.to_financial_account_id = {$depositFinancialAccountID}";
 
   }
