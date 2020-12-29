@@ -23,7 +23,6 @@ function wmf_civicrm_install() {
   _wmf_civicrm_escalate_permissions();
   _wmf_civicrm_update_custom_fields();
   wmf_civicrm_update_7000();
-  wmf_civicrm_update_7002();
   wmf_civicrm_update_7003();
   wmf_civicrm_update_7004();
   wmf_civicrm_update_7005();
@@ -170,37 +169,6 @@ function wmf_civicrm_update_7000() {
   require_once 'update_payment_instruments.php';
   wmf_install_add_missing_payment_instruments();
   wmf_civicrm_create_financial_types($financial_types);
-}
-
-/**
- * Add non-authoritatize USD conversion estimate
- */
-function wmf_civicrm_update_7002() {
-  $api = wmf_civicrm_bootstrap_civi();
-  $success = $api->CustomGroup->get(array(
-    'name' => 'contribution_extra',
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-  $values = $api->values();
-  $custom_group = array_pop($values);
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group->id,
-    'name' => 'total_usd',
-    'column_name' => 'total_usd',
-    'label' => ts('Total in USD (approx)'),
-    'data_type' => 'Money',
-    'html_type' => 'Text',
-    'is_active' => 1,
-    'is_searchable' => 1,
-    'is_search_range' => 1,
-    'is_view' => 1,
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
 }
 
 function wmf_civicrm_update_7003() {
