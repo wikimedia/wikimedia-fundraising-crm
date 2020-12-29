@@ -768,6 +768,16 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields() {
       'is_search_range' => 1,
       'is_view' => 1,
     ],
+    'gateway_account' => [
+      'name' => 'gateway_account',
+      'column_name' => 'gateway_account',
+      'label' => ts('Gateway Account Name'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 1,
+    ],
   ];
 }
 
