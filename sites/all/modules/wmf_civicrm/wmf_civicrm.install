@@ -3171,15 +3171,6 @@ function wmf_civicrm_update_7761() {
 }
 
 /**
- * Drop a redundant table. All the data in this table now lives in
- * civicrm_geocoder_zip_dataset
- */
-function wmf_civicrm_update_7765() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS `wmf_zip_geo`');
-}
-
-/**
  * Un-cancel PayPal subscriptions from a bogus audit file
  *
  * Bug: T206343
