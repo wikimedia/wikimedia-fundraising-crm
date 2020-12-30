@@ -3450,21 +3450,6 @@ function wmf_civicrm_update_7920() {
 }
 
 /**
- * Add setting to move communication preferences to the extension.
- *
- * Bug: T235450
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_7925() {
-  civicrm_initialize();
-  civicrm_api3('Setting', 'create', [
-    'deduper_resolver_bool_prefer_yes' => ['on_hold', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'is_opt_out'],
-  ]);
-}
-
-
-/**
  * T235212 fix financial trxn record for contributions missing
  * to_financial_account_id, and create account associations for payment
  * methods missing them.
