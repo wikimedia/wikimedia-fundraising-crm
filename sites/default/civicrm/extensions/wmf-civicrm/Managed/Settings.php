@@ -6,5 +6,13 @@
 // is used to set the default value - which will apply unless something else has been
 // actively defined.
 return [
+  // This prevents contacts being assigned English as a default
+  // when the language is unknown.
   'contact_default_language' => 'undefined',
+  // This is one we should consider removing. It was added as part of
+  // T137496 to make the money format in the receipts generated from CiviCRM
+  // look per MG preference. However, we don't really use that receipt now
+  // as our thank yous are available as a button now and the concept of
+  // moneyformat is up for deprecation in core as part of a switch to brick money.
+  'moneyformat' => '%c%a',
 ];
