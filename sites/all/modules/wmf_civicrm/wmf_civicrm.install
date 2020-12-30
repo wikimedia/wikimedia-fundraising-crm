@@ -29,9 +29,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7008();
   wmf_civicrm_update_7016();
   wmf_civicrm_update_7028();
-  wmf_civicrm_update_7030();
   wmf_civicrm_update_7032();
-  wmf_civicrm_update_7060();
   wmf_civicrm_update_7062();
   wmf_civicrm_update_7063();
   wmf_civicrm_update_7100();
@@ -236,62 +234,6 @@ function wmf_civicrm_update_7028() {
 }
 
 /**
- * Add some custom fields that already exist on production
- */
-function wmf_civicrm_update_7030() {
-  $warnings = array();
-
-  $api = wmf_civicrm_bootstrap_civi();
-  $success = $api->CustomGroup->get(array(
-    'name' => 'Organization_Contact',
-  ));
-  if (!$success || !$api->count) {
-    $success = $api->CustomGroup->create(array(
-      'name' => 'Organization_Contact',
-      'title' => 'Organization Contact',
-      'extends' => 'Organization',
-      'is_active' => 1,
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
-  $custom_group_id = $api->id;
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group_id,
-    'name' => 'Name',
-    'label' => ts('Name'),
-    'data_type' => 'String',
-    'html_type' => 'Text',
-    'is_active' => 1,
-    'is_required' => 0,
-    'is_searchable' => 1,
-    'is_view' => 0,
-  ));
-  if (!$success) {
-    $warnings[] = $api->errorMsg();
-  }
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group_id,
-    'name' => 'Title',
-    'label' => ts('Title'),
-    'data_type' => 'String',
-    'html_type' => 'Text',
-    'is_active' => 1,
-    'is_required' => 0,
-    'is_searchable' => 0,
-    'is_view' => 0,
-  ));
-  if (!$success) {
-    $warnings[] = $api->errorMsg();
-  }
-
-  return implode("\n", $warnings);
-}
-
-/**
  * Link Restrictions, Gift Source, Appeal options to custom fields.
  */
 function wmf_civicrm_update_7032() {
@@ -324,21 +266,6 @@ function wmf_civicrm_update_7032() {
     'Event',
     'Mobile Giving',
     'Corp Matching Gift',
-  ));
-}
-
-/**
- * Add option value 'tag_used_for' for civicrm_contribution.
- *
- * This might exist as it had to be added to update 7016 so check first.d
- *
- * Note I have skipped to 7060 leaving a numerical gap for upgrades that happen
- * in master before this is merged.
- */
-function wmf_civicrm_update_7060() {
-  wmf_civicrm_bootstrap_civi();
-  wmf_civicrm_create_option_values_detailed('tag_used_for', array(
-    'Contributions' => array('value' => 'civicrm_contribution'),
   ));
 }
 
