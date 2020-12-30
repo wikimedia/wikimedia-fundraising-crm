@@ -61,7 +61,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7726();
   wmf_civicrm_update_7890();
   wmf_civicrm_update_7935();
-  wmf_civicrm_update_7940();
   wmf_civicrm_update_8065();
 }
 
@@ -4125,23 +4124,6 @@ function wmf_civicrm_update_7935() {
   civicrm_api3('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source', wmf_civicrm_get_custom_field_name('opt_in')]]);
   civicrm_api3('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor']]);
   civicrm_api3('Setting', 'create', ['deduper_resolver_preferred_contact_last_resort' => 'most_recently_created_contact']);
-}
-
-/**
- * Add some indexes that are missing.
- *
- * These are on relatively small tables so haven't lept out but I hit a query
- * I couldn't due due to the missing index on civicrm_mailing_stats.mailing_id
- * and figured while I'm at it I should add to civicrm_group. The table is small so
- * I only noticed the lack of index when the server was on go-slow. Both tables are small
- * enough  this should be near-instant.
- *
- * Bug: T236955
- */
-function wmf_civicrm_update_7940() {
-  civicrm_initialize();
-  $tables = ['civicrm_mailing_stats' => ['mailing_id'], 'civicrm_group' => ['cache_date', 'refresh_date']];
-  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
 
 /**
