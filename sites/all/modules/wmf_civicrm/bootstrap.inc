@@ -118,32 +118,3 @@ function wmf_civicrm_create_option_values_detailed($group_name, $values)
     }
 
 }
-
-/**
- * Ensure that a location type exists for every item in the array.
- *
- * @param array $financial_types
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_create_location_types($location_types, $update_existing = FALSE)
-{
-    $existingTypes = civicrm_api3('Address', 'getoptions', array(
-      'field' => 'location_type_id',
-    ));
-    if (!$update_existing) {
-        $location_types = array_diff($location_types, $existingTypes['values']);
-    }
-    foreach ($location_types as $name => $display_name)
-    {
-        $params = array(
-            'name' => $name,
-            'display_name' => $display_name,
-            'is_active' => 1,
-        );
-        if ($update_existing) {
-            $params['id'] = array_search($display_name,  $existingTypes['values']);
-        }
-        civicrm_api3('LocationType', 'create', $params);
-    }
-}
