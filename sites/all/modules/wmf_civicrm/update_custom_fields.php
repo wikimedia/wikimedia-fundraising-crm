@@ -808,16 +808,6 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields() {
       'is_searchable' => 1,
       'is_view' => 1,
     ],
-    'gateway_status' => [
-      'name' => 'gateway_status',
-      'column_name' => 'gateway_status',
-      'label' => ts('Gateway Status (normalized)'),
-      'data_type' => 'String',
-      'html_type' => 'Text',
-      'is_active' => 1,
-      'is_searchable' => 1,
-      'is_view' => 1,
-    ],
     'gateway_date' => [
       'name' => 'gateway_date',
       'column_name' => 'gateway_date',
