@@ -30,7 +30,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7016();
   wmf_civicrm_update_7028();
   wmf_civicrm_update_7032();
-  wmf_civicrm_update_7062();
   wmf_civicrm_update_7063();
   wmf_civicrm_update_7120();
   wmf_civicrm_update_7170();
@@ -262,23 +261,6 @@ function wmf_civicrm_update_7032() {
     'Event',
     'Mobile Giving',
     'Corp Matching Gift',
-  ));
-}
-
-/**
- * Set default language for contacts to 'undefined'.
- *
- * This means a new contact created will have an empty language rather than a
- * guessed one.
- *
- * CRM-14232
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_7062() {
-  civicrm_initialize();
-  civicrm_api3('Setting', 'create', array(
-    'contact_default_language' => "undefined",
   ));
 }
 
