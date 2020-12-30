@@ -906,19 +906,6 @@ function wmf_civicrm_update_7240() {
 }
 
 /**
- * Remove placeholder email addresses.
- *
- * In the past nobody@wikimedia.org was used as a placeholder email. This is no
- * longer required and causes performance load & UI confusion on deduping.
- *
- * Bug: T143062
- */
-function wmf_civicrm_update_7245() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery("DELETE FROM civicrm_email WHERE email = 'nobody@wikimedia.org'");
-}
-
-/**
  * Fix contacts who have no primary - this has arisen from the dedupes.
  *
  * I'll probably run this again once I've fixed dedupe to stop creating them
