@@ -28,8 +28,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7007();
   wmf_civicrm_update_7008();
   wmf_civicrm_update_7016();
-  wmf_civicrm_update_7017();
-  wmf_civicrm_update_7021();
   wmf_civicrm_update_7028();
   wmf_civicrm_update_7029();
   wmf_civicrm_update_7030();
@@ -218,76 +216,9 @@ function wmf_civicrm_update_7008() {
  * Create recurring restarted contribution tag
  */
 function wmf_civicrm_update_7016() {
-  $ret = array();
-  $api = wmf_civicrm_bootstrap_civi();
   wmf_civicrm_create_option_values_detailed('tag_used_for', array(
     'Contributions' => array('value' => 'civicrm_contribution'),
   ));
-
-  $success = $api->Tag->get(array(
-    'name' => 'RecurringRestarted',
-    'used_for' => 'civicrm_contribution',
-  ));
-  if (!count($api->values)) {
-    $success = $api->Tag->create(array(
-      'name' => 'RecurringRestarted',
-      'description' => 'For the first contribution of a restarted recurring subscription.',
-      'is_selectable' => FALSE,
-      'is_reserved' => TRUE,
-      'used_for' => 'civicrm_contribution',
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
-}
-
-/**
- * Create truncated address tag
- */
-function wmf_civicrm_update_7017() {
-  $ret = array();
-  $api = wmf_civicrm_bootstrap_civi();
-  $success = $api->Tag->get(array(
-    'name' => 'AddressTruncated',
-    'used_for' => 'civicrm_contact',
-  ));
-  if (!count($api->values)) {
-    $success = $api->Tag->create(array(
-      'name' => 'AddressTruncated',
-      'description' => 'Tag applied to a contact when the address was truncated on import.',
-      'is_selectable' => TRUE,
-      'is_reserved' => TRUE,
-      'used_for' => 'civicrm_contact',
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
-}
-
-/**
- * Create UnrecordedCharge contribution tag
- */
-function wmf_civicrm_update_7021() {
-  $ret = array();
-  $api = wmf_civicrm_bootstrap_civi();
-  $success = $api->Tag->get(array(
-    'name' => 'UnrecordedCharge',
-    'used_for' => 'civicrm_contribution',
-  ));
-  if (!count($api->values)) {
-    $success = $api->Tag->create(array(
-      'name' => 'UnrecordedCharge',
-      'description' => 'For donations which have already been charged, but were not recorded in Civi at the time.',
-      'is_selectable' => FALSE,
-      'is_reserved' => TRUE,
-      'used_for' => 'civicrm_contribution',
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
 }
 
 /**
