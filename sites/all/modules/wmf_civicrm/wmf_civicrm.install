@@ -41,7 +41,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7170();
   wmf_civicrm_update_7180();
   wmf_civicrm_update_7190();
-  wmf_civicrm_update_7200();
   wmf_civicrm_update_7210();
   wmf_civicrm_update_7230();
   wmf_civicrm_update_7235();
@@ -770,23 +769,6 @@ function wmf_civicrm_update_7190() {
   civicrm_initialize();
   CRM_Core_BAO_SchemaHandler::createIndexes(array(
     'civicrm_contribution' => array(array('total_amount', 'receive_date')),
-  ));
-}
-
-/**
- * Add contact deleted by merge activity.
- *
- * CRM-18106 / T119246.
- */
-function wmf_civicrm_update_7200() {
-  civicrm_initialize();
-  CRM_Core_BAO_OptionValue::ensureOptionValueExists(array(
-    'option_group_id' => 'activity_type',
-    'name' => 'Contact Deleted by Merge',
-    'label' => ts('Contact Deleted by Merge'),
-    'description' => ts('Contact was merged into another contact'),
-    'is_active' => TRUE,
-    'filter' => 1,
   ));
 }
 
