@@ -2419,25 +2419,6 @@ function wmf_civicrm_update_7702() {
  * Enable SmashPig and create processor records.
  */
 function wmf_civicrm_update_7705() {
-  civicrm_api3('Setting', 'create', [
-    'smashpig_recurring_use_queue' => '1',
-  ]);
-
-  $migrate = [
-    'recurring_globalcollect_failure_retry_rate' => 'smashpig_recurring_retry_delay_days',
-    'recurring_globalcollect_failures_before_cancellation' => 'smashpig_recurring_max_failures',
-    'recurring_globalcollect_run_missed_days' => 'smashpig_recurring_catch_up_days',
-    'recurring_globalcollect_batch_max' => 'smashpig_recurring_batch_size',
-  ];
-  foreach($migrate as $drupalSetting => $civiSetting) {
-    $value = variable_get($drupalSetting);
-    if ($value) {
-      civicrm_api3('Setting', 'create', [
-        $civiSetting => $value,
-      ]);
-    }
-  }
-
   $processors = [
     'adyen',
     'amazon',

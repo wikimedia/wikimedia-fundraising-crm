@@ -32,6 +32,9 @@ $settings = [
   'deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor'],
   'deduper_resolver_preferred_contact_last_resort' => 'most_recently_created_contact',
   'deduper_resolver_field_prefer_preferred_contact' => ['contact_source'],
+
+  // Enable smash pig queue.
+  'smashpig_recurring_use_queue' => '1',
 ];
 
 // It's possible this is first run before the field is created so we check for the field before trying to add it.
