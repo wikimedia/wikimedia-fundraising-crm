@@ -4610,37 +4610,6 @@ function wmf_civicrm_update_8015() {
 }
 
 /**
- * Update contribution recur statuses.
- *
- * Use the new statuses we negotiated in Barcelona so that we
- * are no longer misusing the old ones (& nno longer need civi hacks to support that).
- *
- * Note this is likely to also address Michael's issues about not being able to cancel
- * 'Failed' because they will be 'Failing' instead - which is not caught.
- *
- * Bug: T244326
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_8020() {
-  civicrm_initialize();
-  $statuses = array_flip(civicrm_api3('ContributionRecur', 'getoptions', [
-    'field' => "contribution_recur_contribution_status_id",
-  ])['values']);
-
-  CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm_contribution_recur
-    SET contribution_status_id = {$statuses['Processing']}
-    WHERE contribution_status_id = {$statuses['In Progress']}"
-  );
-  CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm_contribution_recur
-    SET contribution_status_id = {$statuses['Failing']}
-    WHERE contribution_status_id = {$statuses['Failed']}"
-  );
-}
-
-/**
  * Get rid of old review tags.
  *
  * See https://phabricator.wikimedia.org/T245577#5895651 for analysis
@@ -4686,23 +4655,6 @@ function wmf_civicrm_update_8025() {
   if ($otherTagsExists !== NULL) {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_tag WHERE name IN ("' . implode('","', $tagsToDelete) . '")');
   }
-}
-
-/**
- * Remove defunct contribution recur statuses
- *
- * Bug: T245326
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_8030() {
-  civicrm_initialize();
-  civicrm_api3('OptionValue', 'get', [
-    'sequential' => 1,
-    'option_group_id' => "contribution_recur_status",
-    'name' => ['IN' => ["Settled", "Paid", "Refunded", "Partially paid", "Chargeback", "Pending refund"]],
-    'api.OptionValue.delete' => [],
-  ]);
 }
 
 /**
