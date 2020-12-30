@@ -990,6 +990,16 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields() {
       'date_format' => 'M d, yy',
       'time_format' => 2,
     ],
+    'Postmark_Date' => [
+      'name' => 'Postmark_Date',
+      'column_name' => 'postmark_date',
+      'label' => ts('Postmark Date'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_active' => 1,
+      'is_searchable' => 0,
+      'is_view' => 0,
+    ],
   ];
 }
 
