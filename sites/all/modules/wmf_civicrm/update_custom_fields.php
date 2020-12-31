@@ -214,6 +214,12 @@ function _wmf_civicrm_get_gift_data_fields() {
       'is_active' => 1,
       'is_required' => 1,
       'is_searchable' => 1,
+      'option_values' => [
+        'Unrestricted - General' => 'Unrestricted - General',
+        'Restricted - Foundation' => 'Restricted - Foundation',
+        'Restricted - Program' => 'Restricted - Program',
+        'Restricted - Fiscal Sponsorship' => 'Restricted - Fiscal Sponsorship',
+      ],
     ],
     'Campaign' => [
       'name' => 'Campaign',
@@ -225,6 +231,20 @@ function _wmf_civicrm_get_gift_data_fields() {
       'is_active' => 1,
       'is_required' => 1,
       'is_searchable' => 1,
+      'option_values' => [
+        'Community Gift' => 'Community Gift',
+        'Benefactor Gift' => 'Benefactor Gift',
+        'Foundation Gift' => 'Foundation Gift',
+        'Matching Gift' => 'Matching Gift',
+        'Donor Advised Fund' => 'Donor Advised Fund',
+        'Corporate Gift' => 'Corporate Gift',
+        'Legacy Gift' => 'Legacy Gift',
+        'Chapter Gift' => 'Chapter Gift',
+        'Major Gift' => 'Major Gift',
+        'Combined Federal Campaign' => 'Combined Federal Campaign',
+        'Payroll Deduction' => 'Payroll Deduction',
+        'Endowment Gift' => 'Endowment Gift',
+      ]
     ],
     'Appeal' => [
       'name' => 'Appeal',
@@ -236,6 +256,14 @@ function _wmf_civicrm_get_gift_data_fields() {
       'is_active' => 1,
       'is_required' => 1,
       'is_searchable' => 1,
+      'option_values' => [
+        'White Mail' => 'White Mail',
+        'Spontaneous Donation' => 'Spontaneous Donation',
+        'Facebook' => 'Facebook',
+        'Event' => 'Event',
+        'Mobile Giving' => 'Mobile Giving',
+        'Corp Matching Gift' => 'Corp Matching Gift',
+      ],
     ],
   ];
 }
