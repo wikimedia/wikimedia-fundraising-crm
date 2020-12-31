@@ -40,7 +40,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7120();
   // Financial account fix up - might need resolution before financial types.
   wmf_civicrm_update_7170();
-  wmf_civicrm_update_7190();
   wmf_civicrm_update_7210();
   wmf_civicrm_update_7230();
   wmf_civicrm_update_7280();
@@ -476,22 +475,6 @@ function wmf_civicrm_update_7170() {
    )
    WHERE name in ('Refund', 'Chargeback')
   ");
-}
-
-/**
- * T128221 add index to civicrm_contribution.total_amount.
- *
- * Note that I made this a combined index with receive_date because the ticket
- * included both criteria and they seemed likely to be used in conjunction to
- * me in other cases.
- *
- * I ran the offending search on staging afterwards and it was fast.
- */
-function wmf_civicrm_update_7190() {
-  civicrm_initialize();
-  CRM_Core_BAO_SchemaHandler::createIndexes(array(
-    'civicrm_contribution' => array(array('total_amount', 'receive_date')),
-  ));
 }
 
 /**
