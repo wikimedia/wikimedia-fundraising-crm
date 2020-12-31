@@ -23,10 +23,7 @@ function wmf_civicrm_install() {
   _wmf_civicrm_escalate_permissions();
   _wmf_civicrm_update_custom_fields();
   wmf_civicrm_update_7000();
-  wmf_civicrm_update_7003();
   wmf_civicrm_update_7006();
-  wmf_civicrm_update_7007();
-  wmf_civicrm_update_7008();
   wmf_civicrm_update_7016();
   wmf_civicrm_update_7028();
   wmf_civicrm_update_7032();
@@ -36,7 +33,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7190();
   wmf_civicrm_update_7210();
   wmf_civicrm_update_7230();
-  wmf_civicrm_update_7235();
   wmf_civicrm_update_7280();
   wmf_civicrm_update_7455();
   wmf_civicrm_update_7525();
@@ -142,18 +138,17 @@ function wmf_civicrm_update_7000() {
   $financial_types = array(
     'Cash',
     'Benevity',
+    'Merkle',
+    'Refund',
+    'Chargeback',
+    'Arizona Lockbox',
+    'Engage',
+    'Endowment Gift',
   );
   wmf_civicrm_bootstrap_civi();
   require_once 'update_payment_instruments.php';
   wmf_install_add_missing_payment_instruments();
   wmf_civicrm_create_financial_types($financial_types);
-}
-
-function wmf_civicrm_update_7003() {
-  wmf_civicrm_bootstrap_civi();
-  wmf_civicrm_create_financial_types(array(
-    'Merkle',
-  ));
 }
 
 /**
@@ -167,27 +162,6 @@ function wmf_civicrm_update_7006() {
 }
 
 /**
- * New contribution types to distinguish refunds from chargebacks.
- */
-function wmf_civicrm_update_7007() {
-
-  wmf_civicrm_create_financial_types(array(
-    'Refund',
-    'Chargeback',
-  ));
-}
-
-/**
- * Add new check processor!
- */
-function wmf_civicrm_update_7008() {
-  wmf_civicrm_bootstrap_civi();
-  wmf_civicrm_create_financial_types(array(
-    'Arizona Lockbox',
-  ));
-}
-
-/**
  * Create recurring restarted contribution tag
  */
 function wmf_civicrm_update_7016() {
@@ -197,8 +171,6 @@ function wmf_civicrm_update_7016() {
 }
 
 /**
- * Add "Engage" contribution type
- *
  * Note that we create the "Engage Direct Mail" role programatically, but it
  * won't have usable permissions.
  */
@@ -208,11 +180,6 @@ function wmf_civicrm_update_7028() {
     $role->name = 'Engage Direct Mail';
     user_role_save($role);
   }
-
-  wmf_civicrm_bootstrap_civi();
-  wmf_civicrm_create_financial_types(array(
-    'Engage',
-  ));
 }
 
 /**
@@ -581,18 +548,6 @@ function wmf_civicrm_update_7230() {
     'name' => 'Endowment Gift',
     'value' => 'Endowment Gift',
     'option_group_id' => 'campaign_20080709183311',
-  ));
-}
-
-/**
- * Add Endowment gift to financial type.
- *
- * T139629
- */
-function wmf_civicrm_update_7235() {
-  civicrm_initialize();
-  wmf_civicrm_create_financial_types(array(
-    'Endowment Gift',
   ));
 }
 
@@ -1288,16 +1243,6 @@ function wmf_civicrm_get_log_conn_bulk_update() {
     '5823950b11501',
   );
 
-}
-
-/**
- * Add benevity as a financial type for benevity imports.
- *
- * Bug: T115044
- */
-function wmf_civicrm_update_7500() {
-  civicrm_initialize();
-  wmf_civicrm_create_financial_types(array('Benevity'));
 }
 
 /**
