@@ -20,14 +20,25 @@ require_once 'update_custom_fields.php';
  */
 function wmf_civicrm_install() {
   civicrm_initialize();
+  // the escalate is only required for tests/
   _wmf_civicrm_escalate_permissions();
   _wmf_civicrm_update_custom_fields();
+  // create financial types & payment instruments
   wmf_civicrm_update_7000();
+  // This will fail unless it runs after the
+  // endowment financial type is created in order due to a check in the trigger routine.
+  // once that is moved to the extension we can hopefully move this to the start.
+  wmf_civicrm_reconcile_extensions();
+  // Create contribution statuses.
   wmf_civicrm_update_7006();
+  // add engage role - latter could be in buildkit.
   wmf_civicrm_update_7028();
   wmf_civicrm_update_7032();
+  // Reset navigation on install.
   wmf_civicrm_update_7063();
+  // Financial account fix up - might need resolution before financial types.
   wmf_civicrm_update_7120();
+  // Financial account fix up - might need resolution before financial types.
   wmf_civicrm_update_7170();
   wmf_civicrm_update_7190();
   wmf_civicrm_update_7210();
@@ -1691,32 +1702,9 @@ function wmf_civicrm_update_7570() {
   CRM_Core_DAO::executeQuery($queryStart . "'civicrm_address', 'state_province_id', 5 )");
 }
 
-/**
- * Enable dedupe tools.
- *
- * This extension is intended to be where our custom dedupe code gets
- * transferred to.
- *
- * Bug: T177999
- */
-function wmf_civicrm_update_7575() {
-  wmf_civicrm_reconcile_extensions();
-}
-
 function wmf_civicrm_reconcile_extensions() {
   require_once 'update_extensions.php';
   wmf_install_add_missing_extensions();
-}
-
-/**
- * Enable extended report.
- *
- * This extension gives us the Address History tab.
- *
- * Bug: T142549
- */
-function wmf_civicrm_update_7580() {
-  wmf_civicrm_reconcile_extensions();
 }
 
 /**
@@ -1777,15 +1765,6 @@ function wmf_civicrm_update_7600() {
 }
 
 /**
- * Add contact type editor extension.
- *
- * Bug: TT156193
- */
-function wmf_civicrm_update_7605() {
-  wmf_civicrm_reconcile_extensions();
-}
-
-/**
  * Add civitoken extension.
  *
  * We want the formatted address blocks from here.
@@ -1795,7 +1774,6 @@ function wmf_civicrm_update_7605() {
  * Bug: T184647
  */
 function wmf_civicrm_update_7610() {
-  wmf_civicrm_reconcile_extensions();
   civicrm_api3('Setting', 'create', array('civitoken_enabled_tokens' => array(
     'address.address_block',
     'address.address_text',
@@ -2086,15 +2064,6 @@ function wmf_civicrm_update_7635() {
 }
 
 /**
- * Enable fraud report.
- *
- * Bug: T187262
- */
-function wmf_civicrm_update_7660() {
-  wmf_civicrm_reconcile_extensions();
-}
-
-/**
  * Update first recurring payments to non-refunded
  */
  function wmf_civicrm_update_7678() {
@@ -2373,15 +2342,6 @@ function wmf_civicrm_update_7686() {
 }
 
 /**
- * Enable forgetme.
- *
- * Bug: 195261
- */
-function wmf_civicrm_update_7690() {
-  wmf_civicrm_reconcile_extensions();
-}
-
-/**
  * Restore data lost in 'same moment merges'.
  *
  * For a period in May 2018 from 1 to 14 May there were 2 merge dedupe jobs that were
@@ -2629,13 +2589,6 @@ function wmf_civicrm_update_7730() {
     SET ccr.next_sched_contribution_date = CONCAT('2018-07-', ccr.cycle_day)
     WHERE ccr.cycle_day > 19;
   ");
-}
-
-/**
- * Enable contact layout editor.
- */
-function wmf_civicrm_update_7740() {
-  wmf_civicrm_reconcile_extensions();
 }
 
 /**
@@ -2975,13 +2928,6 @@ function wmf_civicrm_update_7815() {
 }
 
 /**
- * Enable Kam toolbar, civitutorial.
- */
-function wmf_civicrm_update_7820() {
-  wmf_civicrm_reconcile_extensions();
-}
-
-/**
  * Redo merges on contacts who have data not transferred across.
  *
  * (these are basically the result of merge jobs colliding & half-merging).
@@ -3066,7 +3012,6 @@ SELECT
  * Bug: T115536
  */
 function wmf_civicrm_update_7840() {
-  wmf_civicrm_reconcile_extensions();
   CRM_Core_DAO::executeQuery('
     UPDATE civicrm_contact
     SET sort_name = RIGHT(sort_name, LENGTH(sort_name) -4)
@@ -4169,14 +4114,6 @@ function wmf_civicrm_update_8050() {
     CRM_Core_DAO::executeQuery($query);
     drush_print( "Converted field {$field['table']}.{$field['name']} to TIMESTAMP\n" );
   }
-}
-
-/**
- * Enable Matching Gifts extension.
- * Enable cividatatranslate.
- */
-function wmf_civicrm_update_8060() {
-  wmf_civicrm_reconcile_extensions();
 }
 
 /**
