@@ -757,6 +757,17 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields() {
       'is_searchable' => 1,
       'is_view' => 0,
     ],
+    'total_usd' => [
+      'name' => 'total_usd',
+      'column_name' => 'total_usd',
+      'label' => ts('Total in USD (approx)'),
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+    ],
   ];
 }
 
