@@ -7,6 +7,7 @@ use CRM_Core_PseudoConstant;
 use wmf_communication\Mailer;
 use wmf_communication\Templating;
 use wmf_communication\Translation;
+use Civi\Omnimail\MailFactory;
 
 class EoySummary {
 
@@ -143,7 +144,7 @@ class EoySummary {
   }
 
   public function send_letters() {
-    $mailer = Mailer::getDefault();
+    $mailer = MailFactory::singleton();
 
     $sql = <<<EOS
 SELECT *
@@ -163,8 +164,10 @@ EOS;
       $email = $this->render_letter($row, $hasActiveRecurring);
 
       try {
-        $success = $mailer->send($email);
-      } catch (\phpmailerException $e) {
+        $success = $mailer->send($email, []);
+      }
+      // Should be just phpMailer exception but weird normalizeConten throws wmfException
+      catch (\Exception $e) {
         // Invalid email address or something
         watchdog('wmf_eoy_receipt', $e->getMessage(), [], WATCHDOG_INFO);
         $success = FALSE;
