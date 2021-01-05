@@ -9,6 +9,14 @@ use PHPMailer;
  */
 class MailerPHPMailer extends MailerBase implements IMailer {
 
+  /**
+   * @param array $email
+   * @param array $headers
+   *
+   * @return bool
+   * @throws \WmfException
+   * @throws \phpmailerException
+   */
   function send($email, $headers = []) {
     $mailer = new PHPMailer(TRUE);
 
