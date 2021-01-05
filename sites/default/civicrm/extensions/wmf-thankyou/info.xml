@@ -24,4 +24,7 @@
   <civix>
     <namespace>CRM/WmfThankyou</namespace>
   </civix>
+  <classloader>
+    <psr4 prefix="Civi\" path="Civi" />
+  </classloader>
 </extension>
