@@ -182,29 +182,6 @@ function wmf_civicrm_update_7006() {
     'Settled',
     'Paid',
   ));
-
-  $api = wmf_civicrm_bootstrap_civi();
-
-  $success = $api->CustomGroup->get(array(
-    'name' => 'contribution_extra',
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-  $custom_group = $api->values[0];
-  $success = $api->CustomField->get(array(
-    'custom_group_id' => $custom_group->id,
-    'name' => 'gateway_status',
-  ));
-  if ($success && $api->values) {
-    $field = $api->values[0];
-    $success = $api->CustomField->delete(array(
-      'id' => $field->id,
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
 }
 
 /**
