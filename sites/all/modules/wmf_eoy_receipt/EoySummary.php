@@ -159,12 +159,6 @@ EOS;
     $failed = 0;
 
     foreach ($result as $row) {
-      if ('ja' === Translation::normalize_language_code($row->preferred_language)) {
-        db_update('wmf_eoy_receipt_donor')->fields([
-          'status' => 'deferred_ja',
-        ])->condition('email', $row->email)->execute();
-        continue;
-      }
       $contactIds = $this->getContactIdsForEmail($row->email);
       $hasActiveRecurring = $this->doContactsHaveActiveRecurring($contactIds);
       $email = $this->render_letter($row, $hasActiveRecurring);
