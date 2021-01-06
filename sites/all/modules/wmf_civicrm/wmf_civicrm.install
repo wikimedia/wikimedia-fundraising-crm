@@ -37,7 +37,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7060();
   wmf_civicrm_update_7062();
   wmf_civicrm_update_7063();
-  wmf_civicrm_update_7080();
   wmf_civicrm_update_7090();
   wmf_civicrm_update_7100();
   wmf_civicrm_update_7110();
@@ -182,29 +181,6 @@ function wmf_civicrm_update_7006() {
     'Settled',
     'Paid',
   ));
-
-  $api = wmf_civicrm_bootstrap_civi();
-
-  $success = $api->CustomGroup->get(array(
-    'name' => 'contribution_extra',
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-  $custom_group = $api->values[0];
-  $success = $api->CustomField->get(array(
-    'custom_group_id' => $custom_group->id,
-    'name' => 'gateway_status',
-  ));
-  if ($success && $api->values) {
-    $field = $api->values[0];
-    $success = $api->CustomField->delete(array(
-      'id' => $field->id,
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
 }
 
 /**
@@ -621,30 +597,6 @@ function wmf_civicrm_update_7075() {
     'id' => $options['values'][0]['id'],
     'is_reserved' => TRUE,
   ));
-}
-
-/**
- * Add indexes that are missing from CiviCRM 4.6.
- *
- * These indexes have been added to 4.7 using the same php function.
- *
- * This function checks the index does not already exist before adding it.
- * This ensures that we will not hit a problem on upgrade as a result of adding
- * them now.
- *
- * Note this could be a slow update.
- *
- * https://github.com/civicrm/civicrm-core/pull/7672
- * https://github.com/civicrm/civicrm-core/pull/7678
- * https://github.com/civicrm/civicrm-core/pull/7673
- */
-function wmf_civicrm_update_7080() {
-  civicrm_initialize();
-  $tables = array('civicrm_contribution' => array('creditnote_id'));
-  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
-
-  $tables = array('civicrm_financial_trxn' => array('trxn_id'));
-  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
 
 /**
@@ -2671,24 +2623,6 @@ function wmf_civicrm_update_7635() {
      'B1718_1122_en6C_mob_p2_sm_dsn_cnt',
      'B1718_1122_en6C_mob_p2_sm_dsn_expday')"
   );
-}
-
-/**
- * Remove 'Language' custom group (if exists).
- *
- * The core install has a custom group 'language'. Only 75 records have data
- * & there is another place to store this. I sent out an email & get generalised support
- * on this change.
- *
- * (note I tested this api function on staging & checked there was one less group / table
- * afterwards).
- */
-function wmf_civicrm_update_7640() {
-  civicrm_initialize();
-  civicrm_api3('CustomGroup', 'get', [
-    'name' => 'Language',
-    'api.CustomGroup.delete',
-  ]);
 }
 
 /**
