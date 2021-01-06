@@ -81,3 +81,35 @@ MODIFY name VARCHAR(255) COLLATE utf8_unicode_ci
 EOS;
   db_query($sql);
 }
+
+/**
+ * Update existing (unsent) mails with the name in bad characters.
+ *
+ * Note I tested this on staging by truncating the table, re-populating it from
+ * live & checking a specific email updated.
+ *
+ * Bug:T271185
+ */
+function wmf_eoy_receipt_update_7005() {
+  db_query("UPDATE
+  wmf_eoy_receipt_donor donor INNER JOIN (
+select DISTINCT name, status, eoy.preferred_language, eoy.email, names.first_name
+FROM wmf_eoy_receipt_donor eoy
+  LEFT JOIN (SELECT first_name, e.email
+             FROM wmf_eoy_receipt_donor dd LEFT
+             JOIN civicrm.civicrm_email e ON e.email = dd.email
+             LEFT JOIN civicrm.civicrm_contact c ON c.id = e.contact_id
+            AND first_name = name
+) as mails ON mails.email = eoy.email AND first_name = name
+  LEFT JOIN (
+    SELECT first_name, e.email
+             FROM wmf_eoy_receipt_donor dd LEFT
+             JOIN civicrm.civicrm_email e ON e.email = dd.email
+             LEFT JOIN civicrm.civicrm_contact c ON c.id = e.contact_id
+
+) as names ON names.email = eoy.email
+WHERE mails.first_name IS NULL
+  AND status = 'queued'  or status = 'deferred_ja')
+    as utffail ON utffail.email = donor.email
+SET donor.name = utffail.first_name");
+}
