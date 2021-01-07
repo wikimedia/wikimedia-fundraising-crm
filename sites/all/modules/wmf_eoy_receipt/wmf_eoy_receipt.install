@@ -113,3 +113,14 @@ WHERE mails.first_name IS NULL
     as utffail ON utffail.email = donor.email
 SET donor.name = utffail.first_name");
 }
+
+/**
+ * Update deferred Japanese emails to queued status so they can go out.
+ *
+ * Bug:T271189
+ */
+function wmf_eoy_receipt_update_7006() {
+  db_query("UPDATE
+  wmf_eoy_receipt_donor SET status = 'queued' WHERE status = 'deferred_ja'
+  ");
+}
