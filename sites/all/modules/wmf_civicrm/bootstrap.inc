@@ -147,15 +147,3 @@ function wmf_civicrm_create_location_types($location_types, $update_existing = F
         civicrm_api3('LocationType', 'create', $params);
     }
 }
-
-/**
- * @deprecated
- */
-function wmf_civicrm_add_location_type($params)
-{
-    $locationType = new CRM_Core_DAO_LocationType();
-    $locationType->copyValues($params);
-    $locationType->save();
-
-    return $locationType;
-}
