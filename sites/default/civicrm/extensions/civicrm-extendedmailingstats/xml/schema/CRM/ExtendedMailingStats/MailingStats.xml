@@ -255,4 +255,8 @@
     <name>index_finish</name>
     <fieldName>finish</fieldName>
   </index>
+  <index>
+    <name>mailing_id</name>
+    <fieldName>mailing_id</fieldName>
+  </index>
 </table>

@@ -28,23 +28,13 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7007();
   wmf_civicrm_update_7008();
   wmf_civicrm_update_7016();
-  wmf_civicrm_update_7017();
-  wmf_civicrm_update_7021();
   wmf_civicrm_update_7028();
-  wmf_civicrm_update_7029();
-  wmf_civicrm_update_7030();
   wmf_civicrm_update_7032();
-  wmf_civicrm_update_7060();
   wmf_civicrm_update_7062();
   wmf_civicrm_update_7063();
-  wmf_civicrm_update_7090();
-  wmf_civicrm_update_7100();
-  wmf_civicrm_update_7110();
   wmf_civicrm_update_7120();
   wmf_civicrm_update_7170();
-  wmf_civicrm_update_7180();
   wmf_civicrm_update_7190();
-  wmf_civicrm_update_7200();
   wmf_civicrm_update_7210();
   wmf_civicrm_update_7230();
   wmf_civicrm_update_7235();
@@ -63,8 +53,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7726();
   wmf_civicrm_update_7890();
   wmf_civicrm_update_7935();
-  wmf_civicrm_update_7940();
-  wmf_civicrm_update_8055();
   wmf_civicrm_update_8065();
 }
 
@@ -218,76 +206,9 @@ function wmf_civicrm_update_7008() {
  * Create recurring restarted contribution tag
  */
 function wmf_civicrm_update_7016() {
-  $ret = array();
-  $api = wmf_civicrm_bootstrap_civi();
   wmf_civicrm_create_option_values_detailed('tag_used_for', array(
     'Contributions' => array('value' => 'civicrm_contribution'),
   ));
-
-  $success = $api->Tag->get(array(
-    'name' => 'RecurringRestarted',
-    'used_for' => 'civicrm_contribution',
-  ));
-  if (!count($api->values)) {
-    $success = $api->Tag->create(array(
-      'name' => 'RecurringRestarted',
-      'description' => 'For the first contribution of a restarted recurring subscription.',
-      'is_selectable' => FALSE,
-      'is_reserved' => TRUE,
-      'used_for' => 'civicrm_contribution',
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
-}
-
-/**
- * Create truncated address tag
- */
-function wmf_civicrm_update_7017() {
-  $ret = array();
-  $api = wmf_civicrm_bootstrap_civi();
-  $success = $api->Tag->get(array(
-    'name' => 'AddressTruncated',
-    'used_for' => 'civicrm_contact',
-  ));
-  if (!count($api->values)) {
-    $success = $api->Tag->create(array(
-      'name' => 'AddressTruncated',
-      'description' => 'Tag applied to a contact when the address was truncated on import.',
-      'is_selectable' => TRUE,
-      'is_reserved' => TRUE,
-      'used_for' => 'civicrm_contact',
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
-}
-
-/**
- * Create UnrecordedCharge contribution tag
- */
-function wmf_civicrm_update_7021() {
-  $ret = array();
-  $api = wmf_civicrm_bootstrap_civi();
-  $success = $api->Tag->get(array(
-    'name' => 'UnrecordedCharge',
-    'used_for' => 'civicrm_contribution',
-  ));
-  if (!count($api->values)) {
-    $success = $api->Tag->create(array(
-      'name' => 'UnrecordedCharge',
-      'description' => 'For donations which have already been charged, but were not recorded in Civi at the time.',
-      'is_selectable' => FALSE,
-      'is_reserved' => TRUE,
-      'used_for' => 'civicrm_contribution',
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
 }
 
 /**
@@ -307,83 +228,6 @@ function wmf_civicrm_update_7028() {
   wmf_civicrm_create_financial_types(array(
     'Engage',
   ));
-}
-
-/**
- * Rename "Old and add "Old 2015" Location Type values
- *
- * We are also adding existing values programmatically if they don't already
- * exist.
- */
-function wmf_civicrm_update_7029() {
-  $api = wmf_civicrm_bootstrap_civi();
-  $location_types = array(
-    'Home' => 'Home',
-    'Work' => 'Work',
-    'Main' => 'Main',
-    'Other' => 'Other',
-    'Mailing' => 'Mailing',
-    'Billing' => 'Billing',
-    'Old' => 'Old 2014',
-    'Old_2015' => 'Old 2015',
-  );
-  wmf_civicrm_create_location_types($location_types, TRUE);
-}
-
-/**
- * Add some custom fields that already exist on production
- */
-function wmf_civicrm_update_7030() {
-  $warnings = array();
-
-  $api = wmf_civicrm_bootstrap_civi();
-  $success = $api->CustomGroup->get(array(
-    'name' => 'Organization_Contact',
-  ));
-  if (!$success || !$api->count) {
-    $success = $api->CustomGroup->create(array(
-      'name' => 'Organization_Contact',
-      'title' => 'Organization Contact',
-      'extends' => 'Organization',
-      'is_active' => 1,
-    ));
-    if (!$success) {
-      throw new DrupalUpdateException($api->errorMsg());
-    }
-  }
-  $custom_group_id = $api->id;
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group_id,
-    'name' => 'Name',
-    'label' => ts('Name'),
-    'data_type' => 'String',
-    'html_type' => 'Text',
-    'is_active' => 1,
-    'is_required' => 0,
-    'is_searchable' => 1,
-    'is_view' => 0,
-  ));
-  if (!$success) {
-    $warnings[] = $api->errorMsg();
-  }
-
-  $success = $api->CustomField->create(array(
-    'custom_group_id' => $custom_group_id,
-    'name' => 'Title',
-    'label' => ts('Title'),
-    'data_type' => 'String',
-    'html_type' => 'Text',
-    'is_active' => 1,
-    'is_required' => 0,
-    'is_searchable' => 0,
-    'is_view' => 0,
-  ));
-  if (!$success) {
-    $warnings[] = $api->errorMsg();
-  }
-
-  return implode("\n", $warnings);
 }
 
 /**
@@ -419,21 +263,6 @@ function wmf_civicrm_update_7032() {
     'Event',
     'Mobile Giving',
     'Corp Matching Gift',
-  ));
-}
-
-/**
- * Add option value 'tag_used_for' for civicrm_contribution.
- *
- * This might exist as it had to be added to update 7016 so check first.d
- *
- * Note I have skipped to 7060 leaving a numerical gap for upgrades that happen
- * in master before this is merged.
- */
-function wmf_civicrm_update_7060() {
-  wmf_civicrm_bootstrap_civi();
-  wmf_civicrm_create_option_values_detailed('tag_used_for', array(
-    'Contributions' => array('value' => 'civicrm_contribution'),
   ));
 }
 
@@ -541,119 +370,6 @@ WHERE ceft.entity_table = 'civicrm_contribution' AND cft.payment_instrument_id I
 function wmf_civicrm_update_7070() {
   require_once('update_7070.php');
   _wmf_civicrm_update_7070_fill_refund_transaction_data();
-}
-
-/**
- * Remove any duplication of the 'Refunded' Contribution status.
- *
- * This status was added to WMF & then added to core - resulting in
- * 2 on WMF. The retained one should be set to reserved.
- *
- * NB I didn't add this to the install as I don't think it should be relevant
- * there.
- *
- * T116317
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_7075() {
-  civicrm_initialize();
-  if ((civicrm_api3('OptionValue', 'getcount', array(
-      'name' => 'Refunded',
-      'option_group_id' => 'contribution_status',
-    ))) == 1) {
-    // Nothing to do here, move along.
-    return;
-  }
-  $options = civicrm_api3('OptionValue', 'get', array(
-    'name' => 'Refunded',
-    'option_group_id' =>
-      'contribution_status',
-    'sequential' => 1,
-    'options' => array('sort' => 'id ASC'),
-  ));
-
-  if ($options['count'] != 2) {
-    throw new Exception(ts('This is an unexpected state - we are only expecting to handle the situation where there is one wmf added & one core added. Please wave a wand'));
-  }
-
-  $expectedRedundantType = $options['values'][1];
-  $refundValueToKeep = $options['values'][0]['value'];
-
-  if (civicrm_api3('Contribution', 'getcount', array('contribution_status_id' => $expectedRedundantType['value']))) {
-    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_financial_trxn WHERE status_id = %1", array(
-      1 => array(
-        $expectedRedundantType['value'],
-        'Integer',
-      ),
-    ));
-    CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution SET contribution_status_id = %1 WHERE contribution_status_id = %2", array(
-      1 => array($refundValueToKeep, 'Integer'),
-      2 => array($expectedRedundantType['value'], 'Integer'),
-    ));
-  }
-  civicrm_api3('OptionValue', 'delete', array('id' => $expectedRedundantType['id']));
-  civicrm_api3('OptionValue', 'create', array(
-    'id' => $options['values'][0]['id'],
-    'is_reserved' => TRUE,
-  ));
-}
-
-/**
- * T122947 add index to civicrm_financial item.
- *
- * The existing one does not start with entity_id so the queries that omit
- * entity_table dont' use it. It is also logically the wrong way around as the
- * one with more variation should lead.
- *
- * The upstream patch (CRM-17775) removes indexes as well. I have not ported
- * that part back at this stage as I'm viewing it as tidy up rather than a
- * performance fix and leaving 4.7.2 upgrade to catch it.
- */
-function wmf_civicrm_update_7090() {
-  civicrm_initialize();
-  CRM_Core_BAO_SchemaHandler::createIndexes(array(
-    'civicrm_financial_item' => array(array('entity_id', 'entity_table')),
-  ));
-}
-
-/**
- * T124979 add Chargeback refund status and chargeback & contra account
- * relationships.
- *
- * This is the same code in 4.7.2 to add these options and is written to be
- * upgrade safe.
- */
-function wmf_civicrm_update_7100() {
-  civicrm_initialize();
-  // First we enable and edit the record for Credit contra - this exists but is disabled for most sites.
-  // Using the ensure function (below) will not enabled a disabled option (by design).
-  CRM_Core_DAO::executeQuery("UPDATE civicrm_option_value v
-     INNER JOIN civicrm_option_group g on v.option_group_id=g.id and g.name='account_relationship'
-     SET v.is_active=1, v.label='Credit/Contra Revenue Account is', v.name='Credit/Contra Revenue Account is', v.description='Credit/Contra Revenue Account is'
-     WHERE v.name = 'Credit/Contra Account is';");
-  CRM_Core_BAO_OptionValue::ensureOptionValueExists(array(
-    'option_group_id' => 'account_relationship',
-    'name' => 'Chargeback Account is',
-    'label' => ts('Chargeback Account is'),
-    'is_active' => TRUE,
-    'component_id' => 'CiviContribute',
-  ));
-  CRM_Core_BAO_OptionValue::ensureOptionValueExists(array(
-    'option_group_id' => 'contribution_status',
-    'name' => 'Chargeback',
-    'label' => ts('Chargeback'),
-    'is_active' => TRUE,
-    'component_id' => 'CiviContribute',
-  ));
-}
-
-/**
- * 123418 / CRM-17999 add index to civicrm_contribution.source field.
- */
-function wmf_civicrm_update_7110() {
-  civicrm_initialize();
-  CRM_Core_BAO_SchemaHandler::createIndexes(array('civicrm_contribution' => array('source')));
 }
 
 /**
@@ -828,26 +544,6 @@ function wmf_civicrm_update_7170() {
 }
 
 /**
- * Fix e-Notice due to some Option Values not having the 'name' field filled in.
- *
- * This is just an e-notice visible in the jenkins log. It appears to do no harm
- * other than having caused me to investigate it when checking the logs.
- *
- * T127029.
- */
-function wmf_civicrm_update_7180() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery("
-    UPDATE civicrm_option_group g
-    LEFT JOIN civicrm_option_value v ON v.option_group_id = g.id
-    INNER JOIN civicrm_custom_field cf ON cf.option_group_id = g.id
-    SET v.name = REPLACE(v.value, ' ', '_')
-    WHERE
-     v.name IS NULL
-  ");
-}
-
-/**
  * T128221 add index to civicrm_contribution.total_amount.
  *
  * Note that I made this a combined index with receive_date because the ticket
@@ -860,23 +556,6 @@ function wmf_civicrm_update_7190() {
   civicrm_initialize();
   CRM_Core_BAO_SchemaHandler::createIndexes(array(
     'civicrm_contribution' => array(array('total_amount', 'receive_date')),
-  ));
-}
-
-/**
- * Add contact deleted by merge activity.
- *
- * CRM-18106 / T119246.
- */
-function wmf_civicrm_update_7200() {
-  civicrm_initialize();
-  CRM_Core_BAO_OptionValue::ensureOptionValueExists(array(
-    'option_group_id' => 'activity_type',
-    'name' => 'Contact Deleted by Merge',
-    'label' => ts('Contact Deleted by Merge'),
-    'description' => ts('Contact was merged into another contact'),
-    'is_active' => TRUE,
-    'filter' => 1,
   ));
 }
 
@@ -1011,19 +690,6 @@ function wmf_civicrm_update_7240() {
       GROUP BY contribution_recur_id having c = 1 AND rdate < '2016-09-01')
     as d )
     ");
-}
-
-/**
- * Remove placeholder email addresses.
- *
- * In the past nobody@wikimedia.org was used as a placeholder email. This is no
- * longer required and causes performance load & UI confusion on deduping.
- *
- * Bug: T143062
- */
-function wmf_civicrm_update_7245() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery("DELETE FROM civicrm_email WHERE email = 'nobody@wikimedia.org'");
 }
 
 /**
@@ -2023,19 +1689,6 @@ function wmf_civicrm_update_7540() {
     }
   }
 
-}
-
-/**
- * Clean up CiviCRM groups.
- *
- * T174407.
- */
-function wmf_civicrm_update_7545() {
-  // This has now run on live & may not run on people's locals so
-  // hack it down now.
-  return;
-  require_once('update_7545.php');
-  _wmf_civicrm_cleanup_groups();
 }
 
 /**
@@ -3348,15 +3001,6 @@ function wmf_civicrm_update_7761() {
 }
 
 /**
- * Drop a redundant table. All the data in this table now lives in
- * civicrm_geocoder_zip_dataset
- */
-function wmf_civicrm_update_7765() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS `wmf_zip_geo`');
-}
-
-/**
  * Un-cancel PayPal subscriptions from a bogus audit file
  *
  * Bug: T206343
@@ -4198,23 +3842,6 @@ function wmf_civicrm_update_7935() {
 }
 
 /**
- * Add some indexes that are missing.
- *
- * These are on relatively small tables so haven't lept out but I hit a query
- * I couldn't due due to the missing index on civicrm_mailing_stats.mailing_id
- * and figured while I'm at it I should add to civicrm_group. The table is small so
- * I only noticed the lack of index when the server was on go-slow. Both tables are small
- * enough  this should be near-instant.
- *
- * Bug: T236955
- */
-function wmf_civicrm_update_7940() {
-  civicrm_initialize();
-  $tables = ['civicrm_mailing_stats' => ['mailing_id'], 'civicrm_group' => ['cache_date', 'refresh_date']];
-  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
-}
-
-/**
  * Fix cycle day for monthly conversions
  *
  * Monthly convert was inappropriately setting cycle day to 1.  Set it to the same day of the month
@@ -4610,37 +4237,6 @@ function wmf_civicrm_update_8015() {
 }
 
 /**
- * Update contribution recur statuses.
- *
- * Use the new statuses we negotiated in Barcelona so that we
- * are no longer misusing the old ones (& nno longer need civi hacks to support that).
- *
- * Note this is likely to also address Michael's issues about not being able to cancel
- * 'Failed' because they will be 'Failing' instead - which is not caught.
- *
- * Bug: T244326
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_8020() {
-  civicrm_initialize();
-  $statuses = array_flip(civicrm_api3('ContributionRecur', 'getoptions', [
-    'field' => "contribution_recur_contribution_status_id",
-  ])['values']);
-
-  CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm_contribution_recur
-    SET contribution_status_id = {$statuses['Processing']}
-    WHERE contribution_status_id = {$statuses['In Progress']}"
-  );
-  CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm_contribution_recur
-    SET contribution_status_id = {$statuses['Failing']}
-    WHERE contribution_status_id = {$statuses['Failed']}"
-  );
-}
-
-/**
  * Get rid of old review tags.
  *
  * See https://phabricator.wikimedia.org/T245577#5895651 for analysis
@@ -4686,23 +4282,6 @@ function wmf_civicrm_update_8025() {
   if ($otherTagsExists !== NULL) {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_tag WHERE name IN ("' . implode('","', $tagsToDelete) . '")');
   }
-}
-
-/**
- * Remove defunct contribution recur statuses
- *
- * Bug: T245326
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_8030() {
-  civicrm_initialize();
-  civicrm_api3('OptionValue', 'get', [
-    'sequential' => 1,
-    'option_group_id' => "contribution_recur_status",
-    'name' => ['IN' => ["Settled", "Paid", "Refunded", "Partially paid", "Chargeback", "Pending refund"]],
-    'api.OptionValue.delete' => [],
-  ]);
 }
 
 /**
@@ -4846,33 +4425,6 @@ function wmf_civicrm_update_8050() {
     CRM_Core_DAO::executeQuery($query);
     drush_print( "Converted field {$field['table']}.{$field['name']} to TIMESTAMP\n" );
   }
-}
-
-/**
- * Update is_deceased to be required and =0.
- *
- * This is a core update. It's kinda slow so better to run at our convenience during the outage.
- *
- * In addition I identified 3 indexes that seemed clear cut to drop. Note doing them as separate drop statements
- * will avoid dev environment issues - but it might slow down the running.
- */
-function wmf_civicrm_update_8055() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery('UPDATE civicrm_contact SET is_deceased = 0 WHERE is_deceased IS NULL');
-  CRM_Core_DAO::executeQuery('
-     ALTER TABLE civicrm_contact
-     MODIFY COLUMN is_deceased TINYINT NOT NULL DEFAULT 0'
-  );
-  // This index is not described in the schema do would not exist on new installs (probably by omission
-  // since it was added in an upgrade script, but it's also an index that is not really helpful
-  // and each index takes hundreds of MB on the disk on these large tables (even absent any data to
-  // index)
-  CRM_Core_BAO_SchemaHandler::dropIndexIfExists('civicrm_contact', 'index_image_url');
-  // These indexes are created when dedupe rules use 'length' as a match criteria. However, we tell people
-  // never to do that as the queries bypass all indexes due to them using LENGTH() in the query.
-  // These are relics of a bygone dedupe effort.
-  CRM_Core_BAO_SchemaHandler::dropIndexIfExists('civicrm_contact', 'dedupe_index_last_name_7');
-  CRM_Core_BAO_SchemaHandler::dropIndexIfExists('civicrm_contact', 'dedupe_index_household_name_5');
 }
 
 /**

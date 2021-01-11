@@ -1905,16 +1905,16 @@
         },
         {
             "name": "mrmarkfrench/silverpop-php-connector",
-            "version": "1.4.0",
+            "version": "1.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
-                "reference": "2e298409d77f5bbfd9cbecdef3f319cf5c7414d8"
+                "reference": "1da27c43004e7607e7657e3cc7f9234578cade5a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/2e298409d77f5bbfd9cbecdef3f319cf5c7414d8",
-                "reference": "2e298409d77f5bbfd9cbecdef3f319cf5c7414d8",
+                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/1da27c43004e7607e7657e3cc7f9234578cade5a",
+                "reference": "1da27c43004e7607e7657e3cc7f9234578cade5a",
                 "shasum": ""
             },
             "require": {
@@ -1947,7 +1947,7 @@
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2020-12-08T03:40:40+00:00"
+            "time": "2021-01-05T15:41:44+00:00"
         },
         {
             "name": "neitanod/forceutf8",

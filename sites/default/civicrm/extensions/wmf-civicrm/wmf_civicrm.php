@@ -86,7 +86,32 @@ function wmf_civicrm_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_managed
  */
 function wmf_civicrm_civicrm_managed(&$entities) {
-  _wmf_civicrm_civix_civicrm_managed($entities);
+  // In order to transition existing types to managed types we
+  // have a bit of a routine to insert managed rows if
+  // they already exist. Hopefully this is temporary and can
+  // go once the module installs are transitioned.
+  $tempEntities = [];
+  _wmf_civicrm_civix_civicrm_managed($tempEntities);
+  foreach ($tempEntities as $tempEntity) {
+    $existing = civicrm_api3($tempEntity['entity'], 'get', ['name' => $tempEntity['params']['name'], 'sequential' => 1]);
+    if ($existing['count'] === 1 && !CRM_Core_DAO::singleValueQuery("
+      SELECT count(*) FROM civicrm_managed
+      WHERE entity_type = '{$tempEntity['entity']}'
+      AND module = 'wmf-civicrm'
+      AND name = '{$tempEntity['name']}'
+    ")) {
+      if (!isset($tempEntity['cleanup'])) {
+        $tempEntity['cleanup'] = '';
+      }
+      CRM_Core_DAO::executeQuery("
+        INSERT INTO civicrm_managed (module, name, entity_type, entity_id, cleanup)
+        VALUES('wmf-civicrm', '{$tempEntity['name']}', '{$tempEntity['entity']}', {$existing['id']}, '{$tempEntity['cleanup']}')
+      ");
+    }
+    $entities[] = $tempEntity;
+  }
+  // Once the above is obsolete remove & uncomment this line.
+  // _wmf_civicrm_civix_civicrm_managed($entities);
 }
 
 /**

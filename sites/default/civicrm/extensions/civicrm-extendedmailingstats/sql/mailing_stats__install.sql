@@ -1,7 +1,7 @@
 CREATE TABLE `civicrm_mailing_stats` (
   `id` INT(10) unsigned NOT NULL AUTO_INCREMENT,
   `mailing_id` INT(10) UNSIGNED NOT NULL,
-  `mailing_name` VARCHAR(128) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
+  `mailing_name` VARCHAR(128) NULL DEFAULT NULL,
   `is_completed` TINYINT(4) NULL DEFAULT NULL,
   `created_date` TIMESTAMP NULL DEFAULT NULL,
   `start` TIMESTAMP NULL DEFAULT NULL,
@@ -25,19 +25,18 @@ CREATE TABLE `civicrm_mailing_stats` (
   `contribution_total` FLOAT UNSIGNED NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   INDEX `start` (`start`),
-  INDEX `finish` (`start`)
+  INDEX `finish` (`finish`),
+  INDEX `mailing_id` (mailing_id)
 )
-COLLATE='utf8_unicode_ci'
 ENGINE=InnoDB
 ;
 
 CREATE TABLE `civicrm_mailing_stats_performance` (
   `id` INT(10) unsigned NOT NULL AUTO_INCREMENT,
   `time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `doing` VARCHAR(64) NOT NULL COLLATE 'utf8_unicode_ci',
+  `doing` VARCHAR(64) NOT NULL,
   PRIMARY KEY (`id`)
 )
-COLLATE='utf8_unicode_ci'
 ENGINE=InnoDB
 ;
 
