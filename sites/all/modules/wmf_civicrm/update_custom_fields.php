@@ -97,6 +97,15 @@ function _wmf_civicrm_update_custom_fields() {
       ],
       'fields' => _wmf_civicrm_get_stock_fields(),
     ],
+    'Organization_Contact' => [
+      'group' => [
+        'name' => 'Organization_Contact',
+        'title' => 'Organization Contact',
+        'extends' => 'Organization',
+        'is_active' => 1,
+      ],
+      'fields' => _wmf_civicrm_get_organization_contact_fields(),
+    ],
   ];
   foreach ($customGroupSpecs as $groupName => $customGroupSpec) {
     $customGroup = civicrm_api3('CustomGroup', 'get', ['name' => $groupName]);
@@ -1096,5 +1105,35 @@ function _wmf_civicrm_get_stock_fields() {
       'is_searchable' => 1,
       'is_view' => 0,
     ]
+  ];
+}
+
+/**
+ * Get fields for organization_contact info
+ *
+ * @return array[]
+ */
+function _wmf_civicrm_get_organization_contact_fields(): array {
+  return [
+    'Name' => [
+      'name' => 'Name',
+      'label' => ts('Org contact Name'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_required' => 0,
+      'is_searchable' => 1,
+      'is_view' => 0,
+    ],
+    'Title' => [
+      'name' => 'Title',
+      'label' => ts('Org contact Title'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_required' => 0,
+      'is_searchable' => 0,
+      'is_view' => 0,
+    ],
   ];
 }
