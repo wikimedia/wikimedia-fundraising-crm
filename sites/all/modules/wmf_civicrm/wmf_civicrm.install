@@ -1827,19 +1827,6 @@ function wmf_civicrm_update_7540() {
 }
 
 /**
- * Clean up CiviCRM groups.
- *
- * T174407.
- */
-function wmf_civicrm_update_7545() {
-  // This has now run on live & may not run on people's locals so
-  // hack it down now.
-  return;
-  require_once('update_7545.php');
-  _wmf_civicrm_cleanup_groups();
-}
-
-/**
  * Add country-only addresses omitted because of T178316
  *
  * Contributions imported between 2017-10-12 19:47 and
