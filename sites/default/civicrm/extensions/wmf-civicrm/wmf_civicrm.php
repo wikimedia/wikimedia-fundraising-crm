@@ -151,6 +151,22 @@ function wmf_civicrm_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 }
 
 /**
+ * Implements hook_civicrm_alterSettingsMetaData(().
+ *
+ * This hook sets the default for each setting to our preferred value.
+ * It can still be overridden by specifically setting the setting.
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterSettingsMetaData/
+ */
+function wmf_civicrm_civicrm_alterSettingsMetaData(&$settingsMetaData, $domainID, $profile) {
+  $configuredSettingsFile = __DIR__ . '/Managed/Settings.php';
+  $configuredSettings = include $configuredSettingsFile;
+  foreach ($configuredSettings as $name => $value) {
+    $settingsMetaData[$name]['default'] = $value;
+  }
+}
+
+/**
  * Implements hook_civicrm_entityTypes().
  *
  * Declare entity types provided by this module.
