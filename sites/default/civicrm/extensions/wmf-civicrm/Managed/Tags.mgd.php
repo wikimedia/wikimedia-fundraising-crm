@@ -1,4 +1,7 @@
 <?php
+
+// Note that reserved tags cannot be edited by (most) users.
+
   return [
     'RecurringRestarted' => [
       // Tag used by recurring global collect module
@@ -25,6 +28,20 @@
         'is_selectable' => FALSE,
         'is_reserved' => TRUE,
         'used_for' => 'civicrm_contribution',
+      ],
+    ],
+    'DuplicateInvoiceId' => [
+      // Used in modifyDuplicateInvoice function in wmf queue consumer.
+      'name' => 'DuplicateInvoiceId',
+      'entity' => 'Tag',
+      'cleanup' => 'never',
+      'params' => [
+        'version' => 3,
+        'name' => 'DuplicateInvoiceId',
+        'used_for' => 'civicrm_contribution',
+        'description' => 'Used for contributions where the original assigned invoice id was a duplicate with another already in the database',
+        'is_reserved' => 1,
+        'selectable' => 0,
       ],
     ],
     'AddressTruncated' => [
