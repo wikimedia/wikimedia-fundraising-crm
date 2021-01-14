@@ -30,6 +30,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    */
   public function setUp() {
     parent::setUp();
+    set_time_limit ( 60 );
 
     // Initialize SmashPig with a fake context object
     $config = TestingGlobalConfiguration::create();
