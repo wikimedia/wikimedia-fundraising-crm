@@ -33,6 +33,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7006();
   // add engage role - latter could be in buildkit.
   wmf_civicrm_update_7028();
+  wmf_civicrm_update_7032();
   // Reset navigation on install.
   wmf_civicrm_update_7063();
   // Financial account fix up - might need resolution before financial types.
@@ -41,6 +42,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7170();
   wmf_civicrm_update_7190();
   wmf_civicrm_update_7210();
+  wmf_civicrm_update_7230();
   wmf_civicrm_update_7280();
   wmf_civicrm_update_7455();
   wmf_civicrm_update_7525();
@@ -70,6 +72,72 @@ function _wmf_civicrm_escalate_permissions() {
   civicrm_initialize();
   CRM_Core_Config::singleton()->userPermissionTemp = new CRM_Core_Permission_Temp();
   CRM_Core_Config::singleton()->userPermissionTemp->grant('administer CiviCRM');
+}
+
+/**
+ * Helper creates a new option group and links an
+ * existing custom field in the Gift_Data custom group.
+ *
+ * TODO this is not a handy generalization, just a way
+ * to have a little less copypasta in this file.  I also
+ * suspect there's a better place for it to live.
+ */
+function _link_gift_data_field_to_new_group($field_name, $group_name, $values) {
+  $api = wmf_civicrm_bootstrap_civi();
+
+  $params = [
+    'custom_group_id' => 'Gift_Data',
+    'name' => $field_name,
+    'return' => 'id',
+  ];
+  $custom_field_id = civicrm_api3('CustomField', 'getvalue', $params);
+
+  // Make the options.
+  $success = $api->OptionGroup->get(array(
+    'name' => $group_name,
+  ));
+  if (!$success || !count($api->values)) {
+    $success = $api->OptionGroup->create(array(
+      'is_active' => 1,
+      'is_reserved' => 1,
+      'name' => $group_name,
+      'title' => $field_name,
+    ));
+    if (!$success) {
+      throw new DrupalUpdateException($api->errorMsg());
+    }
+  }
+  $option_group_id = $api->values[0]->id;
+
+  foreach ($values as $value) {
+    $success = $api->OptionValue->get(array(
+      'group_id' => $option_group_id,
+      'value' => $value,
+    ));
+    if (!$success || !count($api->values)) {
+      $success = $api->OptionValue->create(array(
+        'option_group_id' => $option_group_id,
+        'label' => ts($value),
+        'value' => $value,
+      ));
+      if (!$success) {
+        throw new DrupalUpdateException($api->errorMsg());
+      }
+    }
+  }
+
+  try {
+    $params = [
+      'id' => $custom_field_id,
+      'option_group_id' => $option_group_id,
+      'debug' => 1,
+    ];
+    civicrm_api3('CustomField', 'create', $params);
+  }
+  catch (CiviCRM_API3_Exception $e) {
+    throw new DrupalUpdateException($e->getMessage() .  "\n" . print_r($params, TRUE) . "\n" . $e->getTraceAsString() . "\n" . print_r($e->getExtraParams(), TRUE));
+  }
+
 }
 
 /**
@@ -112,6 +180,42 @@ function wmf_civicrm_update_7028() {
     $role->name = 'Engage Direct Mail';
     user_role_save($role);
   }
+}
+
+/**
+ * Link Restrictions, Gift Source, Appeal options to custom fields.
+ */
+function wmf_civicrm_update_7032() {
+
+  _link_gift_data_field_to_new_group('Fund', 'fund_20080709173248', [
+    'Unrestricted - General',
+    'Restricted - Foundation',
+    'Restricted - Program',
+    'Restricted - Fiscal Sponsorship',
+  ]);
+
+  _link_gift_data_field_to_new_group('Campaign', 'campaign_20080709183311', array(
+    'Community Gift',
+    'Benefactor Gift',
+    'Foundation Gift',
+    'Matching Gift',
+    'Donor Advised Fund',
+    'Corporate Gift',
+    'Legacy Gift',
+    'Chapter Gift',
+    'Major Gift',
+    'Combined Federal Campaign',
+    'Payroll Deduction',
+  ));
+
+  _link_gift_data_field_to_new_group('Appeal', 'appeal_20080709183729', array(
+    'White Mail',
+    'Spontaneous Donation',
+    'Facebook',
+    'Event',
+    'Mobile Giving',
+    'Corp Matching Gift',
+  ));
 }
 
 /**
@@ -431,6 +535,20 @@ function wmf_civicrm_update_7225() {
   CRM_Core_DAO::executeQuery(
     "UPDATE civicrm_contact SET do_not_trade = 0"
   );
+}
+
+/**
+ * Add Endowment gifts to gift source.
+ *
+ * T139629
+ */
+function wmf_civicrm_update_7230() {
+  civicrm_initialize();
+  CRM_Core_BAO_OptionValue::ensureOptionValueExists(array(
+    'name' => 'Endowment Gift',
+    'value' => 'Endowment Gift',
+    'option_group_id' => 'campaign_20080709183311',
+  ));
 }
 
 /**
