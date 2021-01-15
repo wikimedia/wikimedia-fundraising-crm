@@ -20,37 +20,37 @@ require_once 'update_custom_fields.php';
  */
 function wmf_civicrm_install() {
   civicrm_initialize();
+  // the escalate is only required for tests/
   _wmf_civicrm_escalate_permissions();
   _wmf_civicrm_update_custom_fields();
+  // create financial types & payment instruments
   wmf_civicrm_update_7000();
-  wmf_civicrm_update_7003();
+  // This will fail unless it runs after the
+  // endowment financial type is created in order due to a check in the trigger routine.
+  // once that is moved to the extension we can hopefully move this to the start.
+  wmf_civicrm_reconcile_extensions();
+  // Create contribution statuses.
   wmf_civicrm_update_7006();
-  wmf_civicrm_update_7007();
-  wmf_civicrm_update_7008();
-  wmf_civicrm_update_7016();
+  // add engage role - latter could be in buildkit.
   wmf_civicrm_update_7028();
   wmf_civicrm_update_7032();
-  wmf_civicrm_update_7062();
+  // Reset navigation on install.
   wmf_civicrm_update_7063();
+  // Financial account fix up - might need resolution before financial types.
   wmf_civicrm_update_7120();
+  // Financial account fix up - might need resolution before financial types.
   wmf_civicrm_update_7170();
   wmf_civicrm_update_7190();
   wmf_civicrm_update_7210();
   wmf_civicrm_update_7230();
-  wmf_civicrm_update_7235();
   wmf_civicrm_update_7280();
-  wmf_civicrm_update_7290();
   wmf_civicrm_update_7455();
-  wmf_civicrm_update_7460();
-  wmf_civicrm_update_7524();
   wmf_civicrm_update_7525();
-  wmf_civicrm_update_7526();
   wmf_civicrm_update_7570();
   wmf_civicrm_update_7585();
   wmf_civicrm_update_7610();
   wmf_civicrm_update_7615();
   wmf_civicrm_update_7705();
-  wmf_civicrm_update_7726();
   wmf_civicrm_update_7890();
   wmf_civicrm_update_7935();
   wmf_civicrm_update_8065();
@@ -147,18 +147,17 @@ function wmf_civicrm_update_7000() {
   $financial_types = array(
     'Cash',
     'Benevity',
+    'Merkle',
+    'Refund',
+    'Chargeback',
+    'Arizona Lockbox',
+    'Engage',
+    'Endowment Gift',
   );
   wmf_civicrm_bootstrap_civi();
   require_once 'update_payment_instruments.php';
   wmf_install_add_missing_payment_instruments();
   wmf_civicrm_create_financial_types($financial_types);
-}
-
-function wmf_civicrm_update_7003() {
-  wmf_civicrm_bootstrap_civi();
-  wmf_civicrm_create_financial_types(array(
-    'Merkle',
-  ));
 }
 
 /**
@@ -172,48 +171,6 @@ function wmf_civicrm_update_7006() {
 }
 
 /**
- * New contribution types to distinguish refunds from chargebacks. Create old
- * "Review" tag.
- */
-function wmf_civicrm_update_7007() {
-  $api = wmf_civicrm_bootstrap_civi();
-
-  wmf_civicrm_create_financial_types(array(
-    'Refund',
-    'Chargeback',
-  ));
-
-  $success = $api->Tag->create(array(
-    'name' => 'Review',
-    'description' => 'Review',
-  ));
-  if (!$success) {
-    throw new DrupalUpdateException($api->errorMsg());
-  }
-}
-
-/**
- * Add new check processor!
- */
-function wmf_civicrm_update_7008() {
-  wmf_civicrm_bootstrap_civi();
-  wmf_civicrm_create_financial_types(array(
-    'Arizona Lockbox',
-  ));
-}
-
-/**
- * Create recurring restarted contribution tag
- */
-function wmf_civicrm_update_7016() {
-  wmf_civicrm_create_option_values_detailed('tag_used_for', array(
-    'Contributions' => array('value' => 'civicrm_contribution'),
-  ));
-}
-
-/**
- * Add "Engage" contribution type
- *
  * Note that we create the "Engage Direct Mail" role programatically, but it
  * won't have usable permissions.
  */
@@ -223,11 +180,6 @@ function wmf_civicrm_update_7028() {
     $role->name = 'Engage Direct Mail';
     user_role_save($role);
   }
-
-  wmf_civicrm_bootstrap_civi();
-  wmf_civicrm_create_financial_types(array(
-    'Engage',
-  ));
 }
 
 /**
@@ -263,23 +215,6 @@ function wmf_civicrm_update_7032() {
     'Event',
     'Mobile Giving',
     'Corp Matching Gift',
-  ));
-}
-
-/**
- * Set default language for contacts to 'undefined'.
- *
- * This means a new contact created will have an empty language rather than a
- * guessed one.
- *
- * CRM-14232
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_7062() {
-  civicrm_initialize();
-  civicrm_api3('Setting', 'create', array(
-    'contact_default_language' => "undefined",
   ));
 }
 
@@ -591,14 +526,6 @@ function wmf_civicrm_update_7210() {
 }
 
 /**
- * Create additional prospecting custom fields.
- */
-function wmf_civicrm_update_7220() {
-  require_once 'update_custom_fields.php';
-  _wmf_civicrm_update_custom_fields();
-}
-
-/**
  * Set do not trade field to 0 for all contacts.
  *
  * We do not use this field.
@@ -621,18 +548,6 @@ function wmf_civicrm_update_7230() {
     'name' => 'Endowment Gift',
     'value' => 'Endowment Gift',
     'option_group_id' => 'campaign_20080709183311',
-  ));
-}
-
-/**
- * Add Endowment gift to financial type.
- *
- * T139629
- */
-function wmf_civicrm_update_7235() {
-  civicrm_initialize();
-  wmf_civicrm_create_financial_types(array(
-    'Endowment Gift',
   ));
 }
 
@@ -862,33 +777,6 @@ function wmf_civicrm_update_7285() {
 }
 
 /**
- * Update the currency display setting to not have a space between currency &
- * amount.
- *
- * (based on feedback from Leanne on receipt).
- *
- * BUG: T137496
- */
-function wmf_civicrm_update_7290() {
-  civicrm_initialize();
-  civicrm_api3('Setting', 'create', array('moneyformat' => '%c%a'));
-}
-
-/**
- * Update custom fields to match fields defined on live.
- *
- * Note that these are generally created on live by non-tech staff
- * (e.g major gifts) and we add them in the script to keep our dev
- * environments in sync.
- *
- * Bug: T147965
- */
-function wmf_civicrm_update_7300() {
-  require_once 'update_custom_fields.php';
-  _wmf_civicrm_update_custom_fields();
-}
-
-/**
  * Remove invalid address na@na.com.
  *
  * I put this before update 7305 in case it leaves any contacts without a
@@ -1042,24 +930,6 @@ function wmf_civicrm_update_7335() {
 }
 
 /**
- * Remove review tag.
- *
- * Bug: T118904
- */
-function wmf_civicrm_update_7440() {
-  civicrm_initialize();
-  $tagID = civicrm_api3('Tag', 'getvalue', array(
-    'name' => 'Review',
-    'return' => 'id',
-  ));
-  CRM_Core_DAO::executeQuery("
-    DELETE FROM civicrm_entity_tag
-    WHERE tag_id = $tagID
-    AND entity_table = 'civicrm_contact'
-  ");
-}
-
-/**
  * Re-run fixed geocoding updates
  *
  * Bug: T155677
@@ -1082,22 +952,6 @@ function wmf_civicrm_update_7450() {
 function wmf_civicrm_update_7455() {
   civicrm_initialize();
   $tables = array('civicrm_contact' => array('nick_name'));
-  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
-}
-
-/**
- * Add index to activity_date_time column.
- *
- * Without this index activities are basically unsearchable as we need to limit
- * them to a time frame to make it manageable.
- *
- * Some performance discussion here.
- *
- * https://issues.civicrm.org/jira/browse/CRM-19821
- */
-function wmf_civicrm_update_7460() {
-  civicrm_initialize();
-  $tables = array('civicrm_activity' => array('activity_date_time'));
   CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
 
@@ -1392,16 +1246,6 @@ function wmf_civicrm_get_log_conn_bulk_update() {
 }
 
 /**
- * Add benevity as a financial type for benevity imports.
- *
- * Bug: T115044
- */
-function wmf_civicrm_update_7500() {
-  civicrm_initialize();
-  wmf_civicrm_create_financial_types(array('Benevity'));
-}
-
-/**
  * Rerun 7845 & 7490 with a slightly bigger catchment.
  *
  * This means that addresses with updates that only affect bulk updates on
@@ -1585,21 +1429,6 @@ function wmf_civicrm_update_7523() {
 }
 
 /**
- * Add duplicate contribution tag
- */
-function wmf_civicrm_update_7524() {
-  civicrm_initialize();
-  $tag = array(
-    'name' => 'DuplicateInvoiceId',
-    'used_for' => 'civicrm_contribution',
-    'description' => 'Used for contributions where the original assigned invoice id was a duplicate with another already in the database',
-    'is_reserved' => 1, //WIP: What does this mean?
-    'selectable' => 0,
-  );
-  civicrm_api3('Tag', 'Create', $tag);
-}
-
-/**
  * Enable CiviCampaign.
  */
 function wmf_civicrm_update_7525() {
@@ -1613,17 +1442,6 @@ function wmf_civicrm_update_7525() {
   }
   $components[] = 'CiviCampaign';
   civicrm_api3('Setting', 'create', array('enable_components' => $components));
-}
-
-/**
- * Add index to name field on civicrm_campaign.
- *
- * Bug: T168499
- */
-function wmf_civicrm_update_7526() {
-  civicrm_initialize();
-  $tables = array('civicrm_campaign' => array('name'));
-  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
 
 /**
@@ -1884,32 +1702,9 @@ function wmf_civicrm_update_7570() {
   CRM_Core_DAO::executeQuery($queryStart . "'civicrm_address', 'state_province_id', 5 )");
 }
 
-/**
- * Enable dedupe tools.
- *
- * This extension is intended to be where our custom dedupe code gets
- * transferred to.
- *
- * Bug: T177999
- */
-function wmf_civicrm_update_7575() {
-  wmf_civicrm_reconcile_extensions();
-}
-
 function wmf_civicrm_reconcile_extensions() {
   require_once 'update_extensions.php';
   wmf_install_add_missing_extensions();
-}
-
-/**
- * Enable extended report.
- *
- * This extension gives us the Address History tab.
- *
- * Bug: T142549
- */
-function wmf_civicrm_update_7580() {
-  wmf_civicrm_reconcile_extensions();
 }
 
 /**
@@ -1970,15 +1765,6 @@ function wmf_civicrm_update_7600() {
 }
 
 /**
- * Add contact type editor extension.
- *
- * Bug: TT156193
- */
-function wmf_civicrm_update_7605() {
-  wmf_civicrm_reconcile_extensions();
-}
-
-/**
  * Add civitoken extension.
  *
  * We want the formatted address blocks from here.
@@ -1988,7 +1774,6 @@ function wmf_civicrm_update_7605() {
  * Bug: T184647
  */
 function wmf_civicrm_update_7610() {
-  wmf_civicrm_reconcile_extensions();
   civicrm_api3('Setting', 'create', array('civitoken_enabled_tokens' => array(
     'address.address_block',
     'address.address_text',
@@ -2279,15 +2064,6 @@ function wmf_civicrm_update_7635() {
 }
 
 /**
- * Enable fraud report.
- *
- * Bug: T187262
- */
-function wmf_civicrm_update_7660() {
-  wmf_civicrm_reconcile_extensions();
-}
-
-/**
  * Update first recurring payments to non-refunded
  */
  function wmf_civicrm_update_7678() {
@@ -2566,23 +2342,6 @@ function wmf_civicrm_update_7686() {
 }
 
 /**
- * Enable forgetme.
- *
- * Bug: 195261
- */
-function wmf_civicrm_update_7690() {
-  wmf_civicrm_reconcile_extensions();
-}
-
-/**
- * Create additional partner custom fields.
- */
-function wmf_civicrm_update_7700() {
-  require_once 'update_custom_fields.php';
-  _wmf_civicrm_update_custom_fields();
-}
-
-/**
  * Restore data lost in 'same moment merges'.
  *
  * For a period in May 2018 from 1 to 14 May there were 2 merge dedupe jobs that were
@@ -2763,39 +2522,6 @@ function wmf_civicrm_update_7725() {
   ");
 }
 
-
-/**
- * Create another RecurringRestarted tag, this one for the
- * civicrm_contribution_recur table. It will indicate that
- * the subscription has been cured of some malady, and that
- * the next contribution record created from it should get
- * the RecurringRestarted tag so the donor is thanked
- * correctly. The recurring processor should then remove
- * this tag from the civicrm_contribution_recur table.
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_7726() {
-  civicrm_initialize();
-  wmf_civicrm_create_option_values_detailed('tag_used_for', array(
-    'Recurring contributions' => array('value' => 'civicrm_contribution_recur'),
-  ));
-
-  $result = civicrm_api3('Tag', 'get', array(
-    'name' => 'RecurringRestartedUncharged',
-    'used_for' => 'civicrm_contribution_recur',
-  ));
-  if (empty($result['values'])) {
-    civicrm_api3('Tag', 'create', array(
-      'name' => 'RecurringRestartedUncharged',
-      'description' => 'A subscription that has been restarted but not yet charged.',
-      'is_selectable' => FALSE,
-      'is_reserved' => TRUE,
-      'used_for' => 'civicrm_contribution_recur',
-    ));
-  }
-}
-
 /**
  * Fix processor_id for the rest of the misrecorded subscriptions.
  * Also un-cancel them and add a RecurringRestartedUncharged tag
@@ -2863,13 +2589,6 @@ function wmf_civicrm_update_7730() {
     SET ccr.next_sched_contribution_date = CONCAT('2018-07-', ccr.cycle_day)
     WHERE ccr.cycle_day > 19;
   ");
-}
-
-/**
- * Enable contact layout editor.
- */
-function wmf_civicrm_update_7740() {
-  wmf_civicrm_reconcile_extensions();
 }
 
 /**
@@ -3209,13 +2928,6 @@ function wmf_civicrm_update_7815() {
 }
 
 /**
- * Enable Kam toolbar, civitutorial.
- */
-function wmf_civicrm_update_7820() {
-  wmf_civicrm_reconcile_extensions();
-}
-
-/**
  * Redo merges on contacts who have data not transferred across.
  *
  * (these are basically the result of merge jobs colliding & half-merging).
@@ -3300,7 +3012,6 @@ SELECT
  * Bug: T115536
  */
 function wmf_civicrm_update_7840() {
-  wmf_civicrm_reconcile_extensions();
   CRM_Core_DAO::executeQuery('
     UPDATE civicrm_contact
     SET sort_name = RIGHT(sort_name, LENGTH(sort_name) -4)
@@ -3452,14 +3163,6 @@ function wmf_civicrm_update_7870() {
 }
 
 /**
- * Add opt-in tracking fields.
- */
-function wmf_civicrm_update_7875() {
-  require_once 'update_custom_fields.php';
-  _wmf_civicrm_update_custom_fields();
-}
-
-/**
  * Remove old calculated fields.
  *
  * Bug: T170972
@@ -3483,20 +3186,6 @@ function wmf_civicrm_update_7885() {
     CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor ' . implode(',',  $alters));
   }
   civicrm_api3('System', 'flush', ['triggers' => 0, 'session' => 0]);
-}
-
-/**
- * Add new calculated fields.
- *
- * Bug: T170972
- * Bug: T222958
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_7886() {
-  require_once 'update_custom_fields.php';
-  _wmf_civicrm_update_custom_fields();
-
 }
 
 /**
@@ -3759,21 +3448,6 @@ function wmf_civicrm_update_7920() {
   $tables = ['civicrm_contact' => ['created_date', 'modified_date']];
   CRM_Core_BAO_SchemaHandler::createIndexes($tables);
 }
-
-/**
- * Add setting to move communication preferences to the extension.
- *
- * Bug: T235450
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_7925() {
-  civicrm_initialize();
-  civicrm_api3('Setting', 'create', [
-    'deduper_resolver_bool_prefer_yes' => ['on_hold', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'is_opt_out'],
-  ]);
-}
-
 
 /**
  * T235212 fix financial trxn record for contributions missing
@@ -4425,14 +4099,6 @@ function wmf_civicrm_update_8050() {
     CRM_Core_DAO::executeQuery($query);
     drush_print( "Converted field {$field['table']}.{$field['name']} to TIMESTAMP\n" );
   }
-}
-
-/**
- * Enable Matching Gifts extension.
- * Enable cividatatranslate.
- */
-function wmf_civicrm_update_8060() {
-  wmf_civicrm_reconcile_extensions();
 }
 
 /**
