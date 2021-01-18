@@ -4100,14 +4100,9 @@ function wmf_civicrm_ensure_payment_processor_exists($typeName, $name = NULL) {
   $typeRecord = civicrm_api3(
     'PaymentProcessorType', 'getSingle', ['name' => $typeName]
   );
-  require_once('update_7070.php');
-  $financialAccountId = _wmf_civicrm_update_7070_helper_get_default_financial_account_id();
   $params = [];
   $params['payment_processor_type_id'] = $typeRecord['id'];
   $params['name'] = $name;
-  $params['domain_id'] = CRM_Core_Config::domainID();
-  $params['is_active'] = TRUE;
-  $params['financial_account_id'] = $financialAccountId;
   civicrm_api3('PaymentProcessor', 'create', $params);
   civicrm_api3('PaymentProcessor', 'create', array_merge($params, ['is_test' => TRUE]));
 }
