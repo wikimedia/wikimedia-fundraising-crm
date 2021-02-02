@@ -4269,3 +4269,19 @@ function wmf_civicrm_update_8095() {
    ");
   }
 }
+
+/**
+ * Ensure row format is dynamic on civicrm_action_schedule.
+ *
+ * This prevents an error when we upgrade to 5.34.
+ *
+ * I proposed a fix upstream but it looks like
+ * it will scope-creep into craziness so just fixing for us
+ * https://github.com/civicrm/civicrm-core/pull/19458
+ *
+ * Note this will be sorted generally when we do the emjoi db updates.
+ */
+function wmf_civicrm_update_8100() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('ALTER TABLE `civicrm_action_schedule` ROW_FORMAT=DYNAMIC');
+}
