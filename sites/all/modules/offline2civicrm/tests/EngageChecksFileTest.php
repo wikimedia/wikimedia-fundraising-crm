@@ -8,13 +8,13 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
   protected $sourceFileUri = '';
 
-  function setUp() {
+  public function setUp() {
     parent::setUp();
     $this->ensureAnonymousContactExists();
     require_once __DIR__ . '/includes/EngageChecksFileProbe.php';
   }
 
-  function testParseRow_Individual() {
+  public function testParseRow_Individual(): void {
     $data = [
       'Batch' => '1234',
       'Contribution Type' => 'Engage',
@@ -79,7 +79,10 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $this->assertEquals($expected_normal, $output);
   }
 
-  function testParseRow_Organization() {
+  /**
+   * Test for parse row function.
+   */
+  public function testParseRow_Organization(): void {
     $data = [
       'Batch' => '1235',
       'Contribution Type' => 'Engage',
@@ -139,8 +142,12 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $this->assertEquals($expected_normal, $output);
   }
 
-  public function testImporterFormatsPostal() {
-    civicrm_initialize();
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
+   */
+  public function testImporterFormatsPostal(): void {
     $fileUri = $this->setupFile('engage_postal.csv');
 
     $importer = new EngageChecksFile($fileUri);
@@ -154,14 +161,19 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   }
 
   /**
-   * Test that import matches existing contact (Minnie) on single match (email present).
+   * Test that import matches existing contact (Minnie) on single match (email
+   * present).
    *
    * The address is different and should result in an UPDATE on email match.
    *
-   * Also check the anonymous contribution is matched to the existing anonymous user.
+   * Also check the anonymous contribution is matched to the existing anonymous
+   * user.
    *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedIndividualSingleContactExistsEmailMatch() {
+  public function testImportSucceedIndividualSingleContactExistsEmailMatch(): void {
     $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
@@ -194,7 +206,8 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   }
 
   /**
-   * Test that import matches existing contact (Daisy) on single match on address.
+   * Test that import matches existing contact (Daisy) on single match on
+   * address.
    *
    * We are looking for a match based on ALL of the following
    * - first_name
@@ -204,8 +217,12 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * - postal_code
    *
    * In this test there is only 1 & we choose that.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedIndividualSingleContactExistsAddressMatch() {
+  public function testImportSucceedIndividualSingleContactExistsAddressMatch(): void {
 
     $daisy = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Daisy',
@@ -227,8 +244,12 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
   /**
    * Test that import doesn't match existing deleted contact with same info
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedIndividualSingleContactExistsDeleted() {
+  public function testImportSucceedIndividualSingleContactExistsDeleted(): void {
 
     $daisy = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Daisy',
@@ -265,9 +286,11 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   }
 
   /**
-   * Test that import matches existing contact (Daisy) on multiple match on address.
+   * Test that import matches existing contact (Daisy) on multiple match on
+   * address.
    *
-   *  We have 4 Daisys. We should choose the one with the most recent contribution
+   *  We have 4 Daisys. We should choose the one with the most recent
+   * contribution
    *
    * We are looking for a match based on ALL of the following
    * - first_name
@@ -277,8 +300,12 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * - postal_code
    *
    * We choose the most recent.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedIndividualMultipleContactExistsAddressMatchOnBestDaisy() {
+  public function testImportSucceedIndividualMultipleContactExistsAddressMatchOnBestDaisy(): void {
     $daisy = [];
     for ($i = 0; $i < 4; $i++) {
       $daisy[$i] = $this->callAPISuccess('Contact', 'create', [
@@ -313,11 +340,13 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   }
 
   /**
-   * Test that import matches existing contact (Daisy) on multiple match on address.
+   * Test that import matches existing contact (Daisy) on multiple match on
+   * address.
    *
    * In this case the address matches a non primary address.
    *
-   *  We have 4 Daisys. We should choose the one with the most recent contribution
+   *  We have 4 Daisys. We should choose the one with the most recent
+   * contribution
    *
    * We are looking for a match based on ALL of the following
    * - first_name
@@ -327,8 +356,12 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * - postal_code
    *
    * We choose the most recent.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedIndividualMultipleContactExistsNonPrimaryAddressMatchOnBestDaisy() {
+  public function testImportSucceedIndividualMultipleContactExistsNonPrimaryAddressMatchOnBestDaisy(): void {
     $daisy = [];
     for ($i = 0; $i < 4; $i++) {
       $daisy[$i] = $this->callAPISuccess('Contact', 'create', [
@@ -370,7 +403,8 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   }
 
   /**
-   * Test that import matches existing contact (Villains Ltd) on multiple match on address.
+   * Test that import matches existing contact (Villains Ltd) on multiple match
+   * on address.
    *
    * We are looking for a match based on ALL of the following
    * - organization_name
@@ -379,8 +413,12 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * - postal_code
    *
    * We choose the most recent donor
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedOrganizationMultipleContactExistsAddressMatchOnBestVillain() {
+  public function testImportSucceedOrganizationMultipleContactExistsAddressMatchOnBestVillain(): void {
     $this->sourceFileUri = __DIR__ . "/data/engage_org_import.csv";
 
     $villains = [];
@@ -416,13 +454,19 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   }
 
   /**
-   * Test that import matches existing contact (Minnie) on multiple match (email present).
+   * Test that import matches existing contact (Minnie) on multiple match
+   * (email present).
    *
-   * We have 4 Minnies. We should choose the one with the most recent contribution
+   * We have 4 Minnies. We should choose the one with the most recent
+   * contribution
    *
    * We should blank out any portion of the address we do not have.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  public function testImportSucceedIndividualMultipeContactExistsEmailMatchOnBestMinnie() {
+  public function testImportSucceedIndividualMultipleContactExistsEmailMatchOnBestMinnie(): void {
     $minnies = $this->createContactSet([
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
@@ -451,11 +495,16 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   }
 
   /**
-   * Test that import matches existing contact (Good Guys Inc.) on single match (email present).
+   * Test that import matches existing contact (Good Guys Inc.) on single match
+   * (email present).
    *
    * The address is different and should result in an UPDATE on email match.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedOrganizationSingleContactExistsEmailMatch() {
+  public function testImportSucceedOrganizationSingleContactExistsEmailMatch(): void {
     $goodie = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Good Guys Inc.',
       'contact_type' => 'Organization',
@@ -476,9 +525,14 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   }
 
   /**
-   * Test that import matches existing contact (Good Guys Inc.) in a multiple match (email not primary).
+   * Test that import matches existing contact (Good Guys Inc.) in a multiple
+   * match (email not primary).
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  function testImportSucceedOrganizationMultipleContactsExistsEmailMatchNonPrimary() {
+  public function testImportSucceedOrganizationMultipleContactsExistsEmailMatchNonPrimary(): void {
     $goodies = $this->createContactSet([
       'organization_name' => 'Good Guys Inc.',
       'contact_type' => 'Organization',
@@ -529,11 +583,11 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * An error streak is 10 or more invalid rows in a row.
    *
-   * @throws \WmfException
+   * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
+   * @throws \WmfException
    */
-  public function testImporterErrorStreak() {
-    civicrm_initialize();
+  public function testImporterErrorStreak(): void {
     $fileUri = $this->setupFile('engage_multiple_errors.csv');
 
     $importer = new EngageChecksFile($fileUri);
@@ -551,7 +605,6 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @throws \WmfException
    */
   public function testImporterCreatesOutputFiles(): void {
-    civicrm_initialize();
     $this->sourceFileUri = __DIR__ . '/../tests/data/engage_reduced.csv';
     $fileUri = $this->setupFile('engage_reduced.csv');
 
@@ -571,28 +624,28 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       , $messages);
 
     $errorsURI = str_replace('.csv', '_errors.' . $user->uid . '.csv', $fileUri);
-    $this->assertTrue(file_exists($errorsURI));
+    $this->assertFileExists($errorsURI);
     $errors = file($errorsURI);
 
     // Header row
     $this->assertEquals('Error,Banner,Campaign,Medium,Batch,"Contribution Type","Total Amount",Source,"Postmark Date","Received Date","Payment Instrument","Check Number",Restrictions,"Gift Source","Direct Mail Appeal","Organization Name","Street Address",City,Country,"Postal Code",Email,State,"Thank You Letter Date","AC Flag",Notes,"Do Not Email","Do Not Phone","Do Not Mail","Do Not SMS","Is Opt Out"', trim($errors[0]));
     unset($errors[0]);
 
-    $this->assertEquals(3, count($errors));
+    $this->assertCount(3, $errors);
     $this->assertEquals('"\'Unrstricted - General\' is not a valid option for field ' . wmf_civicrm_get_custom_field_name('Fund') . '",B15_0601_enlvroskLVROSK_dsk_lg_nag_sd.no-LP.cc,C15_mlWW_mob_lw_FR,sitenotice,10563,Engage,24,"USD 24.00",5/9/2015,5/9/2015,Cash,1,"Unrstricted - General","Corporate Gift","Carl TEST Perry",Roombo,"53 International Circle",Nowe,Poland,,cperry0@salon.com,,12/21/2014,,,,,,,
 ', $errors[1]);
 
     $skippedURI = str_replace('.csv', '_skipped.' . $user->uid . '.csv', $fileUri);
-    $this->assertTrue(file_exists($skippedURI));
+    $this->assertFileExists($skippedURI);
     $skipped = file($skippedURI);
     // 1 + 1 header row
-    $this->assertEquals(2, count($skipped));
+    $this->assertCount(2, $skipped);
 
     $allURI = str_replace('.csv', '_all_missed.' . $user->uid . '.csv', $fileUri);
-    $this->assertTrue(file_exists($allURI));
+    $this->assertFileExists($allURI);
     $all = file($allURI);
     // 1 header row, 1 skipped, 3 errors.
-    $this->assertEquals(5, count($all));
+    $this->assertCount(5, $all);
 
   }
 
@@ -601,8 +654,11 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * If you run this several times locally it will fail on duplicate
    * transactions if we don't clean them up first.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \WmfException
    */
-  public function purgePreviousData() {
+  public function purgePreviousData(): void {
     $disneyFolk = $this->callAPISuccess('Contact', 'get', [
       'last_name' => ['IN' => ['Mouse', 'Duck', 'Dog', 'Anonymous']],
     ]);
@@ -631,13 +687,15 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       ]);
     }
 
-    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_contact WHERE organization_name = "Jaloo"');
+    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_contact WHERE organization_name = 'Jaloo'");
   }
 
   /**
    * Get the gateway IDS from the source file.
+   *
+   * @throws \WmfException
    */
-  public function getGatewayIDs() {
+  public function getGatewayIDs(): array {
     $gatewayIDs = [];
     $data = $this->getParsedData();
     foreach ($data as $record) {
@@ -650,8 +708,9 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * Get parsed data from the source file.
    *
    * @return array
+   * @throws \WmfException
    */
-  public function getParsedData() {
+  public function getParsedData(): array {
     $file = fopen($this->sourceFileUri, 'r');
     $result = [];
     $importer = new EngageChecksFileProbe();
@@ -675,8 +734,10 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @param string $inputFileName
    *
    * @return string
+   * @throws \CRM_Core_Exception
+   * @throws \WmfException
    */
-  public function setupFile($inputFileName) {
+  public function setupFile(string $inputFileName): string {
     $this->sourceFileUri = __DIR__ . '/../tests/data/' . $inputFileName;
     $this->purgePreviousData();
 
@@ -689,6 +750,9 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
   /**
    * Clean up after test.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \WmfException
    */
   public function tearDown() {
     $this->purgePreviousData();
@@ -701,8 +765,10 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @param array $additionalFields
    *
    * @return array
+   * @throws \WmfException
+   * @throws \League\Csv\Exception
    */
-  protected function importCheckFile($additionalFields = []) {
+  protected function importCheckFile($additionalFields = []): array {
     $fileName = $this->sourceFileUri ?: __DIR__ . "/data/engage_duplicate_testing.csv";
     $importer = new EngageChecksFile($fileName, $additionalFields);
     $importer->import();
@@ -716,8 +782,10 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @return array
    *   array of created contacts.
+   * @throws \CRM_Core_Exception
    */
-  protected function createContactSet($contactParams) {
+  protected function createContactSet(array $contactParams): array {
+    $contacts = [];
     for ($i = 0; $i < 4; $i++) {
       $contacts[$i] = $this->callAPISuccess('Contact', 'create', $contactParams);
       // The second is the most recent.
