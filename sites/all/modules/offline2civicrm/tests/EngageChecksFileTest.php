@@ -454,6 +454,28 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   }
 
   /**
+   * Basic import of individual contact.
+   */
+  /**
+   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   * @throws \WmfException
+   */
+  public function testImportIndividual(): void {
+    $fileUri = $this->setupFile('engage_individual.csv');
+    $importer = new EngageChecksFile($fileUri);
+    $importer->import();
+    $contact = \Civi\Api4\Contact::get()
+      ->setCheckPermissions(FALSE)
+      ->addWhere('first_name', '=', 'Rambo')
+      ->addWhere('last_name', '=', 'Mouse')
+      ->addSelect('Partner.Partner')->execute()->first();
+
+    $this->assertEquals('Walt', $contact['Partner.Partner']);
+  }
+
+  /**
    * Test that import matches existing contact (Minnie) on multiple match
    * (email present).
    *
@@ -680,9 +702,15 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     }
 
     if ($this->sourceFileUri) {
+      try {
+        $ids = $this->getGatewayIDs();
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $ids = [0];
+      }
       $this->callAPISuccess('Contribution', 'get', [
         'api.Contribution.delete' => 1,
-        wmf_civicrm_get_custom_field_name('gateway_txn_id') => ['IN' => $this->getGatewayIDs()],
+        wmf_civicrm_get_custom_field_name('gateway_txn_id') => ['IN' => $ids],
         'api.contact.delete' => ['skip_undelete' => 1],
       ]);
     }
@@ -738,8 +766,9 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @throws \WmfException
    */
   public function setupFile(string $inputFileName): string {
-    $this->sourceFileUri = __DIR__ . '/../tests/data/' . $inputFileName;
     $this->purgePreviousData();
+    $this->sourceFileUri = __DIR__ . '/../tests/data/' . $inputFileName;
+    $this->ensureAnonymousContactExists();
 
     // copy the file to a temp dir so copies are made in the temp dir.
     // This is where it would be in an import.
