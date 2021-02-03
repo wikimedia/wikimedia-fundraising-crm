@@ -553,6 +553,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
    * @throws \WmfException
+   * @throws \API_Exception
    */
   public function testImportSucceedOrganizationMultipleContactsExistsEmailMatchNonPrimary(): void {
     $goodies = $this->createContactSet([
@@ -598,6 +599,19 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $this->assertEquals(1, $goodyMail[0]['is_primary']);
     $this->assertEquals('goodish@example.com', $goodyMail[1]['email']);
     $this->assertEquals(0, $goodyMail[1]['is_primary']);
+
+    // Also check custom fields
+    $contact = Civi\Api4\Contact::get(FALSE)
+      ->addWhere('organization_name', '=', 'Villains Ltd')
+      ->setSelect(['Organization_Contact.Phone', 'Organization_Contact.Email', 'Organization_Contact.Name', 'Organization_Contact.Title'])
+      ->execute()->first();
+    $this->assertEquals([
+      'Organization_Contact.Phone' => 991,
+      'Organization_Contact.Email' => 'wiseone@example.com',
+      'Organization_Contact.Title' => 'The wise',
+      'Organization_Contact.Name' => 'Bob',
+      'id' => $contact['id'],
+    ], $contact);
   }
 
   /**
