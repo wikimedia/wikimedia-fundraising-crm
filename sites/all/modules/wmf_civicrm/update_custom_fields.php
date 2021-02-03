@@ -1135,5 +1135,25 @@ function _wmf_civicrm_get_organization_contact_fields(): array {
       'is_searchable' => 0,
       'is_view' => 0,
     ],
+    'Email' => [
+      'name' => 'Email',
+      'label' => ts('Org contact Email'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_required' => 0,
+      'is_searchable' => 1,
+      'is_view' => 0,
+    ],
+    'Phone' => [
+      'name' => 'Phone',
+      'label' => ts('Org contact Phone'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_required' => 0,
+      'is_searchable' => 0,
+      'is_view' => 0,
+    ],
   ];
 }
