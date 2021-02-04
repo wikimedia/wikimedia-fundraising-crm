@@ -444,6 +444,15 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    */
   protected function makePayment($paymentParams, $failures = 0) {
     try {
+      // Per https://github.com/civicrm/civicrm-core/pull/15639
+      // contribution_id is a required id but it's required in order to
+      // force people to create the contribution first. Ahem, we don't do that.
+      // Adding a dummy contribution_id allows us to get past the check (I
+      // even said that in the PR comments) until we become well behaved enough
+      // to create the contribution first.
+      // The value is not validated or used but I made it large enough that if it ever
+      // were to be validated in core it would fail tests like a dying canary.
+      $paymentParams['contribution_id'] = 8888888888888888888888;
       $payment = civicrm_api3('PaymentProcessor', 'pay', $paymentParams);
       $payment = reset($payment['values']);
       return $payment;
