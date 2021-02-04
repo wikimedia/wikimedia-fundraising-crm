@@ -40,16 +40,25 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7120();
   // Financial account fix up - might need resolution before financial types.
   wmf_civicrm_update_7170();
+  // Update merge activity to filter=1 (likely already in core & can just go).
   wmf_civicrm_update_7210();
   wmf_civicrm_update_7230();
+  // Update message template.
   wmf_civicrm_update_7280();
+  // Add index on contact.nick_name (not upstreamed - maybe not appropriate)
   wmf_civicrm_update_7455();
+  // enable civi campaign (not sure if setting default will work - try).
   wmf_civicrm_update_7525();
+  // Dedupe rules
   wmf_civicrm_update_7570();
+  // ReportInstance create - moved to mgd.
   wmf_civicrm_update_7585();
+  // Enable our selected geocoders.
   wmf_civicrm_update_7615();
   wmf_civicrm_update_7705();
+  // Add activity.location index, not in core.
   wmf_civicrm_update_7890();
+  // Message templates.
   wmf_civicrm_update_8065();
 }
 
