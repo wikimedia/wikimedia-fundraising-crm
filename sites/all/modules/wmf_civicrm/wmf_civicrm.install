@@ -55,7 +55,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7585();
   // Enable our selected geocoders.
   wmf_civicrm_update_7615();
-  wmf_civicrm_update_7705();
   // Add activity.location index, not in core.
   wmf_civicrm_update_7890();
   // Message templates.
@@ -2413,24 +2412,6 @@ function wmf_civicrm_update_7702() {
     WHERE cov.filter IS NULL
     AND cog.name = 'activity_status'
   ");
-}
-
-/**
- * Enable SmashPig and create processor records.
- */
-function wmf_civicrm_update_7705() {
-  $processors = [
-    'adyen',
-    'amazon',
-    'dlocal',
-    'globalcollect',
-    'ingenico',
-    'paypal',
-    'paypal_ec'
-  ];
-  foreach ($processors as $processor) {
-    wmf_civicrm_ensure_payment_processor_exists("smashpig_$processor", $processor);
-  }
 }
 
 /**

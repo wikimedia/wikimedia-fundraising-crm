@@ -4087,27 +4087,6 @@ function wmf_civicrm_civicrm_searchTasks($objectType, &$tasks) {
   }
 }
 
-function wmf_civicrm_ensure_payment_processor_exists($typeName, $name = NULL) {
-  if ($name === NULL) {
-    $name = $typeName;
-  }
-  $existing = civicrm_api3(
-    'PaymentProcessor', 'get', ['name' => $name]
-  );
-  if ($existing['values']) {
-    return;
-  }
-  $typeRecord = civicrm_api3(
-    'PaymentProcessorType', 'getSingle', ['name' => $typeName]
-  );
-  $params = [];
-  $params['payment_processor_type_id'] = $typeRecord['id'];
-  $params['name'] = $name;
-  civicrm_api3('PaymentProcessor', 'create', $params);
-  civicrm_api3('PaymentProcessor', 'create', array_merge($params, ['is_test' => TRUE]));
-}
-
-
 /**
  * Get entity tag names.
  *
