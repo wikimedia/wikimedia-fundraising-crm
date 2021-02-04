@@ -5,7 +5,9 @@
 //https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterSettingsMetaData/
 // is used to set the default value - which will apply unless something else has been
 // actively defined.
-return [
+use Civi\Api4\CustomField;
+
+$settings = [
   // This prevents contacts being assigned English as a default
   // when the language is unknown.
   'contact_default_language' => 'undefined',
@@ -25,4 +27,17 @@ return [
     'date.today_format_full',
     'date.today_format_raw',
   ],
+
+  // Configure deduper per our preferences
+  'deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor'],
+  'deduper_resolver_preferred_contact_last_resort' => 'most_recently_created_contact',
+  'deduper_resolver_field_prefer_preferred_contact' => ['contact_source'],
 ];
+
+// It's possible this is first run before the field is created so we check for the field before trying to add it.
+// on live this has actually been set & is not relying on a default so this is really relevant for dev installs.
+$optInField = CustomField::get(FALSE)->addWhere('name', '=', 'opt_in')->setSelect(['id'])->execute()->first();
+if (!empty($optInField)) {
+  $settings['deduper_resolver_field_prefer_preferred_contact'][] = 'custom_' . $optInField['id'];
+}
+return $settings;
