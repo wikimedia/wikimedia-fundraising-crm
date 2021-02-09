@@ -4241,3 +4241,25 @@ function wmf_civicrm_update_8100() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery('ALTER TABLE `civicrm_action_schedule` ROW_FORMAT=DYNAMIC');
 }
+
+/**
+ * Alter the default value for civicrm_contribution_recur.contribution_status_id to Pending.
+ *
+ * On an ongoing basis we have been creating recurring contributions with
+ * a status of completed, which means we need a UI hack to prevent usability
+ * issues for Donor services.
+ *
+ * This has been a sin of omission - we have not been specifying contribution_status_id
+ * and the default is Completed not pending.
+ *
+ * I have raised https://github.com/civicrm/civicrm-core/pull/19512 to
+ * discuss upstream but I think we should proceed with this
+ * in the meantime, and hopefully remove the hack when we deploy (I'll
+ * re-evaluate that once this is out & we have stopped digging).
+ *
+ * Bug T272061
+ */
+function wmf_civicrm_update_8105() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('ALTER TABLE civicrm_contribution_recur MODIFY COLUMN contribution_status_id int(10) unsigned DEFAULT 2');
+}
