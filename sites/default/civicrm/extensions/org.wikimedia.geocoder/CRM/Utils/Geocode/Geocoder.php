@@ -91,7 +91,6 @@ class CRM_Utils_Geocode_Geocoder {
       if (!self::isUsable($geocoder)) {
         continue;
       }
-      $classString = '\\Geocoder\\Provider\\' . $geocoder['class'];
       try {
         self::fillMissingAddressData($values, $geocoder);
         self::padPostalCodeIfRequired($values);
@@ -107,19 +106,8 @@ class CRM_Utils_Geocode_Geocoder {
         if (empty($geocodableAddress)) {
           continue;
         }
-        $argument = self::getProviderArgument($geocoder);
 
-        // At least for mapquest, in addition to the api_key, add a flag to no longer use the open version
-        if (($geocoder['name'] == "mapquest") && (isset($geocoder['api_key']))) {
-           $provider = new $classString(self::$client, $argument, TRUE);
-        }
-        else {
-         // oh dear tragically you need to know the construct argument for every one - arg
-         // for now adding what is needed for Nominatim since that is tested
-         // and I don't think it will actually HURT any others.
-         //https://github.com/geocoder-php/Geocoder/pull/994
-         $provider = new $classString(self::$client, $argument, CRM_Utils_Array::value('User-Agent', $_SERVER, 'CiviCRM'), CRM_Utils_Array::value('Referrer', $_SERVER, ''));
-        }
+        $provider = self::getProviderClass($geocoder);
 
         $geocoderObj = new \Geocoder\StatefulGeocoder($provider, $locale);
         $result = $geocoderObj->geocodeQuery(GeocodeQuery::create($geocodableAddress));
@@ -239,11 +227,12 @@ class CRM_Utils_Geocode_Geocoder {
    *
    * @param array $inputValues
    * @param array $geocoder
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   public static function fillMissingAddressData(&$inputValues, $geocoder) {
-
     foreach (['county', 'state_province', 'country'] as $locationField) {
-      if (empty($addressValues[$locationField]) && !empty($addressValues[$locationField . '_id'])) {
+      if (empty($inputValues[$locationField]) && !empty($inputValues[$locationField . '_id'])) {
         $inputValues[$locationField] = CRM_Core_PseudoConstant::getLabel(
           'CRM_Core_BAO_Address',
           $locationField . '_id',
@@ -300,9 +289,6 @@ class CRM_Utils_Geocode_Geocoder {
   public static function getAddressFields() {
     return [
       'street_address' => E::ts('Street Address'),
-      'supplemental_address_1' => E::ts('Supplemental Address 1'),
-      'supplemental_address_2' => E::ts('Supplemental Address 2'),
-      'supplemental_address_3' => E::ts('Supplemental Address 4'),
       'city' => E::ts('City'),
       'postal_code' => ts('Postal code'),
       'county_id' => E::ts('County'),
@@ -338,8 +324,30 @@ class CRM_Utils_Geocode_Geocoder {
     // filter out unrelated keys
 
     $addressValues = array_intersect_key($addressValues, array_fill_keys($addressFields, 1));
-    $geocodableAddress = implode(',', array_filter($addressValues));
+    // Convert the state id to name
+    if (!empty($addressValues['state_province_id'])) {
+      $addressValues['state_province_id'] = self::getStateName($addressValues['state_province_id']);
+    }
+    $geocodableAddress = implode(',', array_filter($addressValues, function($k) {
+      return (!empty($k) && $k !== 'null');
+    }));
     return $geocodableAddress;
+  }
+
+  /**
+   * Convert the state id to name
+   * @param int|string $state the id
+   *
+   * @return string the state name
+   */
+  protected static function getStateName($state) {
+    if (!is_numeric($state)) {
+      return $state;
+    }
+    $result = civicrm_api3('StateProvince', 'getsingle', [
+      'id' => $state,
+    ]);
+    return $result['name'];
   }
 
   /**
@@ -424,9 +432,7 @@ class CRM_Utils_Geocode_Geocoder {
       $split = explode('.', $argument);
       return $geocoder[$split[1]];
     }
-    else {
-      return $argument;
-    }
+    return $argument;
   }
 
   /**
@@ -444,6 +450,15 @@ class CRM_Utils_Geocode_Geocoder {
           return FALSE;
         }
       }
+    }
+    if (!empty($metadata['required_api_key_subkeys'])) {
+      $key = json_decode($geocoder['api_key'], TRUE);
+      foreach ($metadata['required_api_key_subkeys'] as $subkey) {
+        if (empty($key[$subkey])) {
+          return FALSE;
+        }
+      }
+
     }
     return TRUE;
   }
@@ -498,6 +513,57 @@ class CRM_Utils_Geocode_Geocoder {
    */
   public static function resetGeoCoders() {
     self::$geoCoders = NULL;
+  }
+
+  /**
+   * Load the provider class.
+   *
+   * @param array $geocoder
+   *
+   * @return \Geocoder\Provider\Provider
+   */
+  protected static function getProviderClass($geocoder) {
+    $classString = '\\Geocoder\\Provider\\' . $geocoder['class'];
+    $arguments = (array) self::getProviderArgument($geocoder);
+    $parameters = [];
+    foreach ($arguments as $index => $argument) {
+       if (strpos($index, 'pass_through') === 0) {
+        $parameters[] = $argument;
+        continue;
+      }
+      $parts = explode('.', $argument);
+      if ($parts[0] === 'geocoder') {
+        $parameters[] = $geocoder[$parts[1]];
+      }
+      elseif ($parts[0] === 'server') {
+        $serverParts = explode(':', $parts[1]);
+        $default = $serverParts[1] ?? '';
+        $parameters[] = $_SERVER[$serverParts[0]] ?? $default;
+      }
+      if ($parts[0] === 'api_key') {
+        $keyFields = json_decode($geocoder['api_key'], TRUE);
+        $parameters[] = $keyFields[$parts[1]];
+      }
+    }
+    switch (count($parameters)) {
+      case 0:
+        return new $classString(self::$client);
+
+      case 1:
+        return new $classString(self::$client, $parameters[0]);
+
+      case 2:
+        return new $classString(self::$client, $parameters[0], $parameters[1]);
+
+      case 3:
+        return new $classString(self::$client, $parameters[0], $parameters[1], $parameters[2]);
+
+      case 4:
+        return new $classString(self::$client, $parameters[0], $parameters[1], $parameters[2], $parameters[3]);
+
+      case 5:
+        return new $classString(self::$client, $parameters[0], $parameters[1], $parameters[2], $parameters[3], $parameters[4]);
+    }
   }
 
 }

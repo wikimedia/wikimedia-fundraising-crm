@@ -25,7 +25,9 @@ use GuzzleHttp\Psr7\Response;
  *
  * @group headless
  */
-class GeocoderTest extends BaseTestClass implements HeadlessInterface, HookInterface, TransactionalInterface {
+class GeocoderTest extends BaseTestClass {
+
+  use \Civi\Test\Api3TestTrait;
 
   protected $ids = [];
 
@@ -41,15 +43,17 @@ class GeocoderTest extends BaseTestClass implements HeadlessInterface, HookInter
       ->apply();
   }
 
+  /**
+   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
+   */
   public function setUp() {
     parent::setUp();
-    civicrm_initialize();
-    if (!isset($GLOBALS['_PEAR_default_error_mode'])) {
-      // This is simply to protect against e-notices if globals have been reset by phpunit.
-      $GLOBALS['_PEAR_default_error_mode'] = NULL;
-      $GLOBALS['_PEAR_default_error_options'] = NULL;
+    if (function_exists('civicrm_initialize')) {
+      // Required in wmf test runner but breaks civi runner.
+      civicrm_initialize();
     }
-
+    $this->setHttpClientToEmptyMock();
     $geocoders = civicrm_api3('Geocoder', 'get', [])['values'];
     foreach ($geocoders as $geocoder) {
       $this->geocoders[$geocoder['name']] = $geocoder;
@@ -116,9 +120,10 @@ class GeocoderTest extends BaseTestClass implements HeadlessInterface, HookInter
    * Test when open street maps fail we fall back on the next one (USZipGeoCoder).
    *
    * Note the lat long are slightly different between the 2 providers & we get timezone.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testOpenStreetMapsFailsFallsbackToUSLookup() {
-    $this->setHttpClientToEmptyMock();
+  public function testOpenStreetMapsFailsFallsBackToUSLookup() {
     $address = $this->callAPISuccess('Address', 'create', [
       'postal_code' => 90210,
       'location_type_id' => 'Home',
@@ -145,6 +150,8 @@ class GeocoderTest extends BaseTestClass implements HeadlessInterface, HookInter
    *
    * This only applies to NZ & US at the moment but as we get validation for
    * more countries we can extend.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testShortPostalCode() {
     $this->setHttpClientToEmptyMock();
@@ -160,6 +167,8 @@ class GeocoderTest extends BaseTestClass implements HeadlessInterface, HookInter
 
   /**
    * Test geoname table option.
+   *
+   * @throws \Exception
    */
   public function testGeoName(){
     $this->setHttpClientToEmptyMock();
@@ -191,6 +200,8 @@ class GeocoderTest extends BaseTestClass implements HeadlessInterface, HookInter
    *
    * @param array $coders
    *   Array of coders that should be enabled.
+   *
+   * @throws \CRM_Core_Exception
    */
   protected function configureGeoCoders($coders) {
      foreach ($this->geocoders as $geoCoder) {
@@ -213,7 +224,7 @@ class GeocoderTest extends BaseTestClass implements HeadlessInterface, HookInter
   }
 
   /**
-   * @param $responses
+   * @param array $responses
    */
   protected function getClient($responses) {
     $mock = new MockHandler($responses);
