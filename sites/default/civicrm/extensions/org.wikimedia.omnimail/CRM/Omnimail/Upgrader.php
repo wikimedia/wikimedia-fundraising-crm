@@ -76,7 +76,7 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
        `retrieval_parameters` VARCHAR(255) NULL,
        `offset` INT(10) unsigned,
          PRIMARY KEY (`id`)
-      ) ENGINE=InnoDB CHARSET=utf8 COLLATE=utf8_unicode_ci');
+      ) ENGINE=InnoDB');
 
     foreach (array('omnimail_omnigroupmembers_load', 'omnimail_omnirecipient_load') as $job) {
       $settings = civicrm_api3('Setting', 'get', array('return' => $job));
