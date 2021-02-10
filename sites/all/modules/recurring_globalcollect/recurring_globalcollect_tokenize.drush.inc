@@ -183,6 +183,15 @@ function _recurring_globalcollect_tokenize($oldRecurring) {
         'token' => $payment_token_result['token'],
         'ip_address' => NULL,
         'installment' => 'recurring',
+        // Per https://github.com/civicrm/civicrm-core/pull/15639
+        // contribution_id is a required id but it's required in order to
+        // force people to create the contribution first. Ahem, we don't do that.
+        // Adding a dummy contribution_id allows us to get past the check (I
+        // even said that in the PR comments) until we become well behaved enough
+        // to create the contribution first.
+        // The value is not validated or used but I made it large enough that if it ever
+        // were to be validated in core it would fail tests like a dying canary.
+        'contribution_id' => 9999999999999999,
       ];
 
       $payment = civicrm_api3('PaymentProcessor', 'pay', $paymentParams);
