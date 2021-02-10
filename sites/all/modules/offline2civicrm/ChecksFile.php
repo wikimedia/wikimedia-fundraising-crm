@@ -575,6 +575,7 @@ abstract class ChecksFile {
       'Organization Name' => 'organization_name',
       'Original Amount' => 'gross',
       'Original Currency' => 'currency',
+      'Partner' => 'Partner.Partner',
       'Payment Instrument' => 'payment_method',
       'Payment Gateway' => 'gateway',
       'Postal Code' => 'postal_code',

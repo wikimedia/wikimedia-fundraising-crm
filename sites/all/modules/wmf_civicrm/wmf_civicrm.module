@@ -1360,6 +1360,10 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     'org_contact_name' => 'Name',
     'org_contact_title' => 'Title',
     'employer' => 'Employer_Name',
+    // Partner is the custom field's name, Partner is also the custom group's name
+    // since other custom fields have names similar to core fields (Partner.Email)
+    // this api-similar namespacing convention seems like a good choice.
+    'Partner.Partner' => 'Partner',
   ];
   foreach ($custom_field_mangle as $msgField => $customField) {
     if (isset($msg[$msgField])) {
