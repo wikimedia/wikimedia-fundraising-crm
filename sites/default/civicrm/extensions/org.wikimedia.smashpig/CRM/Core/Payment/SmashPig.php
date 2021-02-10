@@ -6,6 +6,7 @@ use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 use SmashPig\PaymentProviders\CreatePaymentResponse;
 use SmashPig\PaymentProviders\ApprovePaymentResponse;
+use SmashPig\PaymentProviders\PaymentProviderResponse;
 
 require_once "CRM/SmashPig/ContextWrapper.php";
 
@@ -181,11 +182,11 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    * errors from the SmashPig payment call.
    *
    * @param string $errorMessage
-   * @param CreatePaymentResponse $processorResponse
+   * @param PaymentProviderResponse $processorResponse
    *
    * @throws \Civi\Payment\Exception\PaymentProcessorException
    */
-  protected function throwException( $errorMessage, CreatePaymentResponse $processorResponse ) {
+  protected function throwException( $errorMessage, PaymentProviderResponse $processorResponse ) {
     if (!$processorResponse->hasErrors()) {
       $errorCode = ErrorCode::UNKNOWN;
     }
