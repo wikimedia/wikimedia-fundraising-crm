@@ -58,6 +58,6 @@ CREATE TABLE `civicrm_strings` (
   `is_active` tinyint(4) DEFAULT NULL COMMENT 'Is this string active?',
   `is_default` tinyint(4) DEFAULT NULL COMMENT 'Is this the default string for the given locale?',
  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
+) ENGINE=InnoDB
 
 
