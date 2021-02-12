@@ -12,7 +12,7 @@ class CRM_Wmffraud_Form_Fredge extends CRM_Core_Form {
   public function buildQuickForm() {
 
     $this->add('File', 'file', ts('OrderId CSV File'),
-      'size=30 maxlength=255', TRUE);
+      ['size' => 30, 'maxlength' => 255], TRUE);
 
     $this->addButtons([
       [
