@@ -6,8 +6,6 @@ BASEDIR=$(dirname "$0")
 
 echo "Populating databases with the prefix '${CIVICRM_SCHEMA_PREFIX}'"
 
-export PRECREATED_DSN_PATTERN="mysql://${CIVICRM_MYSQL_USERNAME}:${CIVICRM_MYSQL_PASSWORD}@${CIVICRM_MYSQL_CLIENT}:/${CIVICRM_SCHEMA_PREFIX}{{db_seq}}"
-
 if [ "${WORKSPACE}" != "" ]; then
   AMPHOME="${WORKSPACE}/.amp-${BUILD_NUMBER}"
 else
