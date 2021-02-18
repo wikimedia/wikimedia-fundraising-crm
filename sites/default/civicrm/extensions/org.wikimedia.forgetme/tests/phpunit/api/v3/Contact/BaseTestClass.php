@@ -55,6 +55,7 @@ class api_v3_Contact_BaseTestClass extends \PHPUnit\Framework\TestCase implement
           else {
             civicrm_api3($entity, 'delete', [
               'id' => $entityID,
+              'skip_undelete' => TRUE,
             ]);
           }
         }
