@@ -21,6 +21,18 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
 
   protected $epochtime;
 
+  /**
+   * ID of the database anonymous contact.
+   *
+   * This contact can be regarded as site metadata
+   * so does not need to be removed afterwards.
+   *
+   * It is used during imports.
+   *
+   * @var int
+   */
+  protected $anonymousContactID;
+
   function setUp() {
     parent::setUp();
     civicrm_initialize();
@@ -87,6 +99,10 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
       'mickey@mouse.com',
       'Mickey Mouse',
       'foo@example.com',
+      // This anonymous is created in the wmf_civicrm module,
+      // not to be confused with import-specific anonymous
+      // who might be understood as site metadata.
+      'Anonymous',
       // Ducks are mice too.
       'Daisy Duck',
     ];
@@ -114,6 +130,7 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
     }
     $contacts = $this->callAPISuccess('Contact', 'get', $anonymousParams);
     $this->assertEquals(1, $contacts['count']);
+    $this->anonymousContactID = $contacts['id'];
   }
 
 }

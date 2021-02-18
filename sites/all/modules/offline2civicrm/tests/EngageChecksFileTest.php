@@ -9,8 +9,8 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   protected $sourceFileUri = '';
 
   public function setUp() {
-    parent::setUp();
     $this->ensureAnonymousContactExists();
+    parent::setUp();
     require_once __DIR__ . '/includes/EngageChecksFileProbe.php';
   }
 
@@ -697,21 +697,23 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   public function purgePreviousData(): void {
     $disneyFolk = $this->callAPISuccess('Contact', 'get', [
       'last_name' => ['IN' => ['Mouse', 'Duck', 'Dog', 'Anonymous']],
-    ]);
+    ])['values'];
     $herosAndVillains = $this->callAPISuccess('Contact', 'get', [
       'organization_name' => ['IN' => ['Evil Corp', 'Good Guys Inc.', 'Villains Ltd']],
     ]);
-    $fantasyFolk = array_merge(array_keys($disneyFolk['values']), array_keys($herosAndVillains['values']));
+    $fantasyFolk = array_merge(array_keys($disneyFolk), array_keys($herosAndVillains['values']));
     if (!empty($fantasyFolk)) {
       $this->callAPISuccess('Contribution', 'get', [
         'api.Contribution.delete' => 1,
         'contact_id' => ['IN' => $fantasyFolk],
       ]);
       foreach ($fantasyFolk as $id) {
-        $this->callAPISuccess('Contact', 'delete', [
-          'skip_undelete' => TRUE,
-          'id' => $id,
-        ]);
+        if ($id !== $this->anonymousContactID) {
+          $this->callAPISuccess('Contact', 'delete', [
+            'skip_undelete' => TRUE,
+            'id' => $id,
+          ]);
+        }
       }
     }
 
