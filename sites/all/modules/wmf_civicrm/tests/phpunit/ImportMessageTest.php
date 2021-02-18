@@ -1,5 +1,8 @@
 <?php
 
+use Civi\Api4\Contact;
+use Civi\Api4\ContributionRecur;
+
 define('ImportMessageTest_campaign', 'test mail code here + ' . mt_rand());
 
 /**
@@ -86,6 +89,25 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \WmfException
    */
   public function testMessageInsert($msg, $expected) {
+    if (!empty($msg['contribution_recur_id'])) {
+      // Create this here - the fixtures way was not reliable
+      $msg['contact_id'] = Contact::create(FALSE)->setValues(['first_name' => 'Mickey', 'last_name' => 'Mouse'])->execute()->first()['id'];
+      $msg['contribution_recur_id'] = ContributionRecur::create(FALSE)->setValues([
+        'contact_id' => $msg['contact_id'],
+        'amount' => '2.34',
+        'currency' => 'USD',
+        'frequency_unit' => 'month',
+        'frequency_interval' => 1,
+        'installments' => 0,
+        'start_date' => $msg['date'],
+        'create_date' => $msg['date'],
+        'cancel_date' => null,
+        'processor_id' => 1,
+        'cycle_day' => 1,
+        'trxn_id' => "RECURRING TEST_GATEWAY test",
+
+      ])->execute()->first()['id'];
+    }
     $contribution = wmf_civicrm_contribution_message_import($msg);
     $this->consumeCtQueue();
     $this->contribution_id = $contribution['id'];
@@ -155,8 +177,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \WmfException
    */
   public function messageProvider(): array {
-    // Make static so it isn't destroyed until class cleanup.
-    self::$fixtures = CiviFixtures::create();
 
     $contribution_type_cash = (string) wmf_civicrm_get_civi_id('contribution_type_id', 'Cash');
     $payment_instrument_cc = (string) wmf_civicrm_get_civi_id('payment_instrument_id', 'Credit Card');
@@ -438,15 +458,15 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       // Subscription payment
       [
         [
-          'contact_id' => self::$fixtures->contact_id,
-          'contribution_recur_id' => self::$fixtures->contribution_recur_id,
+          'contact_id' => TRUE,
+          'contribution_recur_id' => TRUE,
           'currency' => 'USD',
           'date' => '2014-01-01 00:00:00',
           'effort_id' => 2,
           'email' => 'nobody@wikimedia.org',
           'gateway' => 'test_gateway',
           'gateway_txn_id' => $gateway_txn_id,
-          'gross' => self::$fixtures->recur_amount,
+          'gross' => 2.34,
           'payment_method' => 'cc',
         ],
         [
@@ -457,9 +477,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'cancel_date' => '',
             'cancel_reason' => '',
             'check_number' => '',
-            'contact_id' => (string) self::$fixtures->contact_id,
+            'contact_id' => TRUE,
             'contribution_page_id' => '',
-            'contribution_recur_id' => (string) self::$fixtures->contribution_recur_id,
+            'contribution_recur_id' => TRUE,
             'contribution_status_id' => '1',
             'contribution_type_id' => $contribution_type_cash,
             'currency' => 'USD',
@@ -467,14 +487,14 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'invoice_id' => '',
             'is_pay_later' => '',
             'is_test' => '',
-            'net_amount' => self::$fixtures->recur_amount,
+            'net_amount' => 2.34,
             'non_deductible_amount' => '',
             'payment_instrument_id' => $payment_instrument_cc,
             'receipt_date' => '',
             'receive_date' => '20140101000000',
-            'source' => 'USD ' . self::$fixtures->recur_amount,
+            'source' => 'USD ' . 2.34,
             'thankyou_date' => '',
-            'total_amount' => self::$fixtures->recur_amount,
+            'total_amount' => 2.34,
             'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
             'financial_type_id' => $contribution_type_cash,
             'creditnote_id' => '',
