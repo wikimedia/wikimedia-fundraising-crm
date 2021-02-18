@@ -1,15 +1,23 @@
 <?php
 
+use Civi\Api4\Contact;
+
 /**
  * @group Import
  * @group Offline2Civicrm
  */
 class ChecksFileTest extends BaseChecksFileTest {
 
-  function setUp() {
+  function setUp(): void {
     parent::setUp();
-
     require_once __DIR__ . "/includes/ChecksFileProbe.php";
+  }
+
+  public function tearDown(): void {
+    Contact::delete(FALSE)
+      ->addWhere('first_name', '=', 'Test_first_name')
+      ->execute();
+    parent::tearDown();
   }
 
   /**
@@ -17,11 +25,10 @@ class ChecksFileTest extends BaseChecksFileTest {
    */
   function testEmptyRow() {
     // A few kinds of empty.
-    $data = array(
+    $data = [
       'Orignal Currency' => '',
-      '' => '700',
       '' => '',
-    );
+    ];
 
     $importer = new ChecksFileProbe();
     $output = $importer->_parseRow($data);
@@ -35,7 +42,7 @@ class ChecksFileTest extends BaseChecksFileTest {
    */
   public function testImportCountry() {
     // A few kinds of empty.
-    $data = array(
+    $data = [
       'Check Number' => mt_rand(),
       'City' => 'blah city',
       'Country' => 'AR',
@@ -53,7 +60,7 @@ class ChecksFileTest extends BaseChecksFileTest {
       'State' => 'CA',
       'Street Address' => '123 Sunset Boulevard',
       'Transaction ID' => mt_rand(),
-    );
+    ];
 
     $importer = new ChecksFileProbe();
     $message = $importer->_parseRow($data);
@@ -61,7 +68,7 @@ class ChecksFileTest extends BaseChecksFileTest {
     $this->consumeCtQueue();
 
     $contribution = $this->callAPISuccessGetSingle(
-      'Contribution', array('trxn_id' => "GENERIC_IMPORT {$data['Transaction ID']}")
+      'Contribution', ['trxn_id' => "GENERIC_IMPORT {$data['Transaction ID']}"]
     );
     $ct = db_select('contribution_tracking', 'contribution_tracking')
       ->fields('contribution_tracking')
@@ -70,4 +77,5 @@ class ChecksFileTest extends BaseChecksFileTest {
       ->fetchAssoc();
     $this->assertEquals('AR', $ct['country']);
   }
+
 }

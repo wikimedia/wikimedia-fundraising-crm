@@ -51,8 +51,8 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
    * Clean up after test runs.
    */
   public function tearDown() {
-    parent::tearDown();
     $this->doCleanUp();
+    parent::tearDown();
   }
 
   /**
@@ -81,8 +81,10 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * Also get rid of the nest.
    */
-  protected function doMouseHunt() {
+  protected function doMouseHunt(): void {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_contact WHERE display_name = "Mickey Mouse"');
+    // Ducks are mice too.
+    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_contact WHERE display_name = 'Daisy Duck'");
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_prevnext_cache');
   }
 

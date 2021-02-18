@@ -72,7 +72,7 @@ class ForeignChecksFileTest extends BaseChecksFileTest {
   /**
    * Test that all imports fail if the organization does not pre-exist.
    */
-  function testImportForeignCheckes() {
+  function testImportForeignCheckes(): void {
     $importer = new ForeignChecksFile(__DIR__ . "/data/foreign_checks_trilogy.csv");
     $importer->import();
     $messages = $importer->getMessages();
