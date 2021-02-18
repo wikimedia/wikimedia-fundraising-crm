@@ -1,15 +1,22 @@
 <?php
 
+use Civi\Api4\Contact;
+
 /**
  * @group Import
  * @group Offline2Civicrm
  */
 class CitibankFileTest extends BaseChecksFileTest {
 
-  function setUp() {
+  public function setUp():void {
     parent::setUp();
     $this->trxn_ids = array('S1234123445401', 'F123412349E701');
     $this->gateway = 'citibank';
+  }
+
+  public function tearDown(): void {
+    Contact::delete(FALSE)->addWhere('source', '=', 'citibank import')->execute();
+    parent::tearDown();
   }
 
   /**

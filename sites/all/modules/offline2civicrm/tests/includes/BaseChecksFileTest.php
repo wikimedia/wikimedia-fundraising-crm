@@ -58,14 +58,15 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Clean up transactions from previous test runs.
    */
-  function doCleanUp() {
-    $contributions = array();
+  public function doCleanUp(): void {
+    $contributions = [];
     if ($this->trxn_id) {
-      $contributions = wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $this->trxn_id);
+      // Any that are already removed will be FALSE and filtered out by array filter.
+      $contributions = array_filter((array) wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $this->trxn_id));
     }
     elseif (!empty($this->trxn_ids)) {
       foreach ($this->trxn_ids as $trxn_id) {
-        $contributions = array_merge($contributions, wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $trxn_id));
+        $contributions = array_merge($contributions, array_filter((array) wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $trxn_id)));
       }
     }
     if ($contributions) {
@@ -82,9 +83,18 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
    * Also get rid of the nest.
    */
   protected function doMouseHunt(): void {
-    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_contact WHERE display_name = "Mickey Mouse"');
-    // Ducks are mice too.
-    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_contact WHERE display_name = 'Daisy Duck'");
+    $traditionalMouseNames = [
+      'mickey@mouse.com',
+      'Mickey Mouse',
+      'foo@example.com',
+      // Ducks are mice too.
+      'Daisy Duck',
+    ];
+    CRM_Core_DAO::executeQuery(
+      'DELETE FROM civicrm_contact WHERE display_name IN ("'
+      . implode('","', $traditionalMouseNames)
+      . '")'
+    );
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_prevnext_cache');
   }
 
