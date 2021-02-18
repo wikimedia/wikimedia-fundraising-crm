@@ -39,11 +39,6 @@ class api_v3_Contact_BaseTestClass extends \PHPUnit\Framework\TestCase implement
     parent::setUp();
     civicrm_initialize();
     CRM_Forgetme_Hook::testSetup();
-    if (!isset($GLOBALS['_PEAR_default_error_mode'])) {
-      // This is simply to protect against e-notices if globals have been reset by phpunit.
-      $GLOBALS['_PEAR_default_error_mode'] = NULL;
-      $GLOBALS['_PEAR_default_error_options'] = NULL;
-    }
   }
 
   /**
