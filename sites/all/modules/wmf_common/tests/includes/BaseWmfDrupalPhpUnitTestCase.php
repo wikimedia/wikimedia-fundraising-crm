@@ -30,7 +30,9 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    */
   public function setUp() {
     parent::setUp();
-    set_time_limit ( 90 );
+    // Since we can't kill jobs on jenkins this prevents a loop from going
+    // on for too long....
+    set_time_limit(180);
 
     // Initialize SmashPig with a fake context object
     $config = TestingGlobalConfiguration::create();
