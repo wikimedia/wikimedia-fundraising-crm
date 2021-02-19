@@ -17,7 +17,7 @@ class CiviMailBulkTest extends CiviMailTestBase {
 	/**
 	 * @var ICiviMailBulkStore
 	 */
-	protected $bulkMailStore; 
+	protected $bulkMailStore;
 
 	public function setUp() {
 		parent::setUp();
@@ -35,13 +35,13 @@ class CiviMailBulkTest extends CiviMailTestBase {
 			$this->emails[] = $emailAddress;
 		}
 	}
-	
-	public function tearDown() {
+
+	public function tearDown(): void {
+    foreach ( $this->contacts as $contact ) {
+      $this->callAPISuccess('Email', 'delete', ['id' => $contact['emailID']]);
+      $this->callAPISuccess( 'Contact', 'delete', ['id' => $contact['contactID'], 'skip_undelete' => TRUE]);
+    }
 		parent::tearDown();
-		foreach ( $this->contacts as $contact ) {
-			civicrm_api3( 'Email', 'delete', array( 'id' => $contact['emailID'] ) );
-			civicrm_api3( 'Contact', 'delete', array( 'id' => $contact['contactID'] ) );
-		}
 	}
 
 	public function testAddSentBulk() {

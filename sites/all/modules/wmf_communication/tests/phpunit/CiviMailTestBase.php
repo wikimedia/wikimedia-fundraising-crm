@@ -55,7 +55,8 @@ class CiviMailTestBase extends BaseWmfDrupalPhpUnitTestCase {
 	}
 
 	public function tearDown() {
-		civicrm_api3( 'Email', 'delete', array( 'id' => $this->emailID ) );
-		civicrm_api3( 'Contact', 'delete', array( 'id' => $this->contactID ) );
+		$this->callAPISuccess( 'Email', 'delete', ['id' => $this->emailID]);
+    $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID, 'skip_undelete' => TRUE]);
+		parent::tearDown();
 	}
 }
