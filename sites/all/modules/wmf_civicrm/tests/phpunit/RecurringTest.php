@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\Contact;
+
 /**
  * @group Pipeline
  * @group WmfCivicrm
@@ -141,7 +143,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function testRecurringContributionWithPaymentToken() {
     $fixture = CiviFixtures::createContact();
-    $this->createPaymentProcessor($fixture);
+    $this->createPaymentProcessor();
 
     $msg = [
       'contact_id' => $fixture->contact_id,
@@ -197,7 +199,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function testSecondRecurringContributionWithPaymentToken() {
     $fixture = CiviFixtures::createContact();
-    $this->createPaymentProcessor($fixture);
+    $this->createPaymentProcessor();
     $token = 'TEST-RECURRING-TOKEN-' . mt_rand();
 
     $firstMessage = [
@@ -280,14 +282,13 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
    * @group nothankyou
    */
   public function testRecurringNoThankYou() {
-    // setup
-    $fixture = CiviFixtures::createContact();
-    CiviFixtures::createPaymentProcessor('test_gateway', $fixture);
+    $contactID = Contact::create(FALSE)->setValues(['first_name' => 'Mickey', 'last_name' => 'Mouse'])->execute()->first()['id'];
+    $this->createPaymentProcessor();
     $token = 'TEST-RECURRING-TOKEN-' . mt_rand();
 
     // create the recurring payment
     $firstMessage = [
-      'contact_id' => $fixture->contact_id,
+      'contact_id' => $contactID,
       'currency' => 'USD',
       'date' => time(),
       'gateway' => 'test_gateway',
@@ -338,10 +339,6 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($secondContributionExtra[0]['no_thank_you'],
       'recurring');
 
-    //clean up recurring contribution records using fixture tear down destruct process
-    $fixture->contribution_id = $firstContribution['id'];
-    $fixture->contribution_recur_id = $firstRecurringRecord->id;
-
     civicrm_api3('Contribution', 'delete', [
       'id' => $secondContribution['id'],
     ]);
@@ -353,12 +350,18 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * @param $fixture
+   * Ensure the test payment processor exists.
    */
-  protected function createPaymentProcessor($fixture) {
+  protected function createPaymentProcessor(): void {
     $existing = $this->callAPISuccess('PaymentProcessor', 'get', ['name' => 'test_gateway']);
     if (!$existing['count']) {
-      CiviFixtures::createPaymentProcessor('test_gateway', $fixture);
+      $this->ids['PaymentProcessor'][0] = $this->callAPISuccess('PaymentProcessor', 'create', [
+        'payment_processor_type_id' => 1,
+        'name' => 'test_gateway',
+        'domain_id' => CRM_Core_Config::domainID(),
+        'is_default' => 1,
+        'is_active' => 1,
+      ])['id'];
     }
   }
 }
