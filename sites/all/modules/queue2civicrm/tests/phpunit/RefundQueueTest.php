@@ -41,6 +41,7 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $donation_message->getGatewayTxnId()
     );
     $this->assertEquals(1, count($contributions));
+    $this->ids['Contact'][] = $contributions[0]['contact_id'];
 
     $this->consumer->processMessage($refund_message->getBody());
     $this->callAPISuccessGetSingle('Contribution', ['id' => $contributions[0]['id'], 'contribution_status_id' => 'Chargeback']);
@@ -91,6 +92,7 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $donation_message->getGateway(),
       $donation_message->getGatewayTxnId()
     );
+    $this->ids['Contact'][] = $contributions[0]['contact_id'];
     $this->assertCount(1, $contributions);
 
     $this->consumer->processMessage($refund_message->getBody());
@@ -151,6 +153,7 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $donation_message->getGateway(),
       $donation_message->getGatewayTxnId()
     );
+    $this->ids['Contact'][] = $contributions[0]['contact_id'];
     $this->assertEquals(1, count($contributions));
 
     $this->consumer->processMessage($refund_message->getBody());
@@ -197,6 +200,7 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $donation_message->getGateway(),
       $donation_message->getGatewayTxnId()
     );
+    $this->ids['Contact'][] = $contributions[0]['contact_id'];
     $this->assertEquals(1, count($contributions));
 
     $this->consumer->processMessage($refund_message->getBody());

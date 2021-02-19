@@ -7,8 +7,6 @@
 class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function testRelationship() {
-    $fixtures = CiviFixtures::create();
-
     $msg = [
       'currency' => 'USD',
       'date' => time(),
@@ -18,11 +16,11 @@ class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
       'gross' => '1.23',
       'payment_method' => 'cc',
 
-      'relationship_target_contact_id' => $fixtures->contact_id,
+      'relationship_target_contact_id' => $this->createIndividual(),
       'relationship_type' => 'Spouse of',
     ];
 
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = $this->messageImport($msg);
 
     $relationshipType = $this->callAPISuccessGetSingle('RelationshipType', [
       'name_a_b' => 'Spouse of',
@@ -52,15 +50,13 @@ class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
       'relationship_type' => 'Spouse of',
     ];
 
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->messageImport($msg);
   }
 
   /**
    * @expectedException WmfException
    */
   public function testBadRelationshipType() {
-    $fixtures = CiviFixtures::create();
-
     $msg = [
       'currency' => 'USD',
       'date' => time(),
@@ -69,12 +65,11 @@ class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
-
-      'relationship_target_contact_id' => $fixtures->contact_id,
+      'relationship_target_contact_id' => $this->createIndividual(),
       'relationship_type' => 'Total stranger to',
     ];
 
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->messageImport($msg);
   }
 
 }

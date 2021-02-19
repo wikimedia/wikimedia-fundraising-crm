@@ -127,7 +127,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
       'payment_method' => 'cc',
       'email' => 'nobody@wikimedia.org',
     ];
-    wmf_civicrm_contribution_message_import($msg);
+    $this->messageImport($msg);
     $transaction = WmfTransaction::from_unique_id('TEST_GATEWAY ' . $gateway_txn_id);
     $this->assertEquals(TRUE, $transaction->exists());
   }
@@ -137,12 +137,11 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
    */
   function testGetContributionMany() {
     $gateway_txn_id = mt_rand();
-    $contact = $this->callAPISuccess('Contact', 'create', [
-      'contact_type' => 'Individual',
+    $contactID = $this->createIndividual([
       'display_name' => 'test',
     ]);
     $params = [
-      'contact_id' => $contact['id'],
+      'contact_id' => $contactID,
       'contribution_type' => 'Cash',
       'total_amount' => 1,
       'version' => 3,

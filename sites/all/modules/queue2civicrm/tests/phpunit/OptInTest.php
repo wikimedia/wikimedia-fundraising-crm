@@ -37,7 +37,7 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $fixtures;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->contactId = $this->createIndividual();
     $this->email = 'testOptIn' . mt_rand(1000, 10000000) . '@example.net';
@@ -129,7 +129,7 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
 
     //check that the contact was created
     $newContactCheck = $this->callApiSuccessGetSingle('Contact', ['email' => $this->email]);
-    $this->contactId = $newContactCheck['id'];
+    $this->contactId = $this->ids['Contact']['Christine'] = $newContactCheck['id'];
     $custom = $this->getContact();
 
     //check that there is a new contact id

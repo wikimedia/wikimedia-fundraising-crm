@@ -120,6 +120,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->importMessage(new RecurringCancelMessage($values));
 
     $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
+    $this->ids['Contact'][] = $recur_record['contact_id'];
     $this->assertEquals('(auto) User Cancelled via Gateway', $recur_record['cancel_reason']);
     $this->assertEquals('2013-11-01 23:07:05', $recur_record['cancel_date']);
     $this->assertEquals('2013-11-01 23:07:05', $recur_record['end_date']);
@@ -132,12 +133,13 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Test function that expires recurrings.
    */
-  public function testExpireContributions() {
+  public function testExpireContributions(): void {
     $subscr_id = mt_rand();
     $values = $this->processRecurringSignup($subscr_id);
     $this->importMessage(new RecurringEOTMessage($values));
 
     $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
+    $this->ids['Contact'][] = $recur_record['contact_id'];
     $this->assertEquals('(auto) Expiration notification', $recur_record['cancel_reason']);
     $this->assertEquals(date('Y-m-d'), date('Y-m-d', strtotime($recur_record['end_date'])));
     $this->assertNotEmpty($recur_record['payment_processor_id']);

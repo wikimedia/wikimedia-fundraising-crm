@@ -282,7 +282,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
    * @group nothankyou
    */
   public function testRecurringNoThankYou() {
-    $contactID = Contact::create(FALSE)->setValues(['first_name' => 'Mickey', 'last_name' => 'Mouse'])->execute()->first()['id'];
+    $contactID = $this->createIndividual();
     $this->createPaymentProcessor();
     $token = 'TEST-RECURRING-TOKEN-' . mt_rand();
 
@@ -303,7 +303,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
 
     //import contribution message containing populated recurring and recurring_payment_token fields
     //this should result in a new contribution, recurring contribution and payment token record.
-    $firstContribution = wmf_civicrm_contribution_message_import($firstMessage);
+    $firstContribution = $this->messageImport($firstMessage);
 
     $firstContributionExtra =
       wmf_civicrm_get_contributions_from_contribution_id($firstContribution['id']);
@@ -328,8 +328,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring' => 1,
     ];
 
-    $secondContribution =
-      wmf_civicrm_contribution_message_import($secondMessage);
+    $secondContribution = $this->messageImport($secondMessage);
     $this->ids['Contact'][$secondContribution['contact_id']] = $secondContribution['contact_id'];
 
     $secondContributionExtra =
