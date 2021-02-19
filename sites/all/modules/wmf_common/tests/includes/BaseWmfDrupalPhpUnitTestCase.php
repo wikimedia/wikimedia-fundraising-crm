@@ -95,10 +95,24 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    * @return int
    * @throws \CRM_Core_Exception
    */
-  public function createTestContact($params) {
-    $id = $this->callAPISuccess('Contact', 'create', $params)['id'];
+  public function createTestContact($params): int {
+    $id = (int) $this->callAPISuccess('Contact', 'create', $params)['id'];
     $this->ids['Contact'][$id] = $id;
     return $id;
+  }
+
+  /**
+   * Create an contact of type Individual.
+   *
+   * @params array $params
+   * @return int
+   */
+  public function createIndividual($params = []): int {
+    return $this->createTestContact(array_merge([
+      'first_name' => 'Danger',
+      'last_name' => 'Mouse',
+      'contact_type' => 'Individual',
+    ], $params));
   }
 
   /**
