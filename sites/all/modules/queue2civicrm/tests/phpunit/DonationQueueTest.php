@@ -61,10 +61,10 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $expected = array(
       'contact_type' => 'Individual',
-      'sort_name' => 'laast, firrst',
-      'display_name' => 'firrst laast',
-      'first_name' => 'firrst',
-      'last_name' => 'laast',
+      'sort_name' => 'Mouse, Mickey',
+      'display_name' => 'Mickey Mouse',
+      'first_name' => 'Mickey',
+      'last_name' => 'Mouse',
       'currency' => 'USD',
       'total_amount' => '400.00',
       'fee_amount' => '0.00',
@@ -104,10 +104,10 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $expected = array(
       'contact_type' => 'Individual',
-      'sort_name' => 'laast, firrst',
-      'display_name' => 'firrst laast',
-      'first_name' => 'firrst',
-      'last_name' => 'laast',
+      'sort_name' => 'Mouse, Mickey',
+      'display_name' => 'Mickey Mouse',
+      'first_name' => 'Mickey',
+      'last_name' => 'Mouse',
       'currency' => 'USD',
       'total_amount' => '2857.02',
       'fee_amount' => '0.00',
@@ -150,10 +150,10 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $expected = array(
       'contact_type' => 'Individual',
-      'sort_name' => 'laast, firrst',
-      'display_name' => 'firrst laast',
-      'first_name' => 'firrst',
-      'last_name' => 'laast',
+      'sort_name' => 'Mouse, Mickey',
+      'display_name' => 'Mickey Mouse',
+      'first_name' => 'Mickey',
+      'last_name' => 'Mouse',
       'currency' => 'USD',
       'total_amount' => '2857.02',
       'fee_amount' => '0.00',
