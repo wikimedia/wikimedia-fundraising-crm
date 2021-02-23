@@ -287,7 +287,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'email' => 'nobody@wikimedia.org',
           'first_name' => 'First',
           'fee' => 0.03,
-          'language' => 'en_US',
+          'language' => 'en',
           'gateway' => 'test_gateway',
           'gateway_txn_id' => $gateway_txn_id,
           'gateway_status' => 'P',
@@ -777,6 +777,22 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         ],
       ],
     ];
+
+    $cases[] = // Language es-419
+      [
+        array_merge(
+          $this->getMinimalImportData($gateway_txn_id),
+          [
+            'language' => 'es-419',
+          ]
+        ),
+        [
+          'contact' => [
+            'preferred_language' => 'es_MX',
+          ],
+          'contribution' => $this->getBaseContribution($gateway_txn_id),
+        ],
+      ];
     return $cases;
   }
 

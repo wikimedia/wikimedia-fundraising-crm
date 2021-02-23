@@ -1297,7 +1297,7 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     if ($tracking and !empty($tracking['language'])) {
       if (strpos($tracking['language'], '-')) {
         // If we are already tracking variant, use that
-        list($language, $variant) = explode('-', $tracking['language']);
+        [$language, $variant] = explode('-', $tracking['language']);
         $contact['preferred_language'] = $language . '_' . strtoupper($variant);
       }
       else {
@@ -1313,9 +1313,14 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     }
   }
   else {
-    $contact['preferred_language'] = strtolower(substr($msg['language'], 0, 2));
-    if (!empty($msg['country'])) {
-      $contact['preferred_language'] .= '_' . strtoupper(substr($msg['country'], 0, 2));
+    // If the language is already an existing full locale, don't mangle it
+    if (strlen($msg['language']) > 2 && wmf_civicrm_check_language_exists($msg['language'])) {
+      $contact['preferred_language'] = $msg['language'];
+    } else {
+      $contact['preferred_language'] = strtolower(substr($msg['language'], 0, 2));
+      if (!empty($msg['country'])) {
+        $contact['preferred_language'] .= '_' . strtoupper(substr($msg['country'], 0, 2));
+      }
     }
   }
   if (!empty($contact['preferred_language'])) {
@@ -2182,6 +2187,12 @@ function wmf_civicrm_normalize_msg($msg) {
     $msg[$field] = array_unique($msg[$field]);
   }
 
+  // Front-end uses es-419 to represent Latin American Spanish but
+  // CiviCRM needs to store it as a 5 char string. We choose es_MX.
+  if (isset($msg['language']) && strtolower($msg['language']) == 'es-419') {
+    $msg['language'] = 'es_MX';
+  }
+
   // set the correct amount fields/data and do exchange rate conversions.
   $msg = wmf_civicrm_normalize_contribution_amounts($msg);
 
@@ -2428,7 +2439,7 @@ function wmf_civicrm_mark_refund(
     throw new WmfException(WmfException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: $contribution_id");
   }
   // Deal with any discrepancies in the refunded amount.
-  list($original_currency, $original_amount) = explode(" ", $contribution['contribution_source']);
+  [$original_currency, $original_amount] = explode(" ", $contribution['contribution_source']);
 
   if ($refund_currency !== NULL) {
     if ($refund_currency != $original_currency) {
@@ -3126,7 +3137,7 @@ function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_
   if (empty($source)) {
     return [];
   }
-  list($original_currency, $original_amount) = explode(" ", $source);
+  [$original_currency, $original_amount] = explode(" ", $source);
   if (is_numeric($original_amount) && wmf_civicrm_is_valid_currency($original_currency)) {
     return ['original_currency' => $original_currency, 'original_amount' => $original_amount];
   }
