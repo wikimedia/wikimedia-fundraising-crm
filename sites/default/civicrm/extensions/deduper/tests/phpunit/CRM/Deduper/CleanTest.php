@@ -66,19 +66,19 @@ class CleanTest extends DedupeBaseTestClass {
    */
   public function testCleanMissingPrimary($entity, $values, $secondaryValues) {
     $this->entity = $entity;
-    $ponyoID = (int) $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Ponyo'])['id'];
+    $this->ids['contact']['Ponyo'] = (int) $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Ponyo'])['id'];
     $values = array_merge([
       'email' => 'ponyo@example.com',
       'location_type_id' => $this->locationTypes['Home'],
-      'contact_id' => $ponyoID
+      'contact_id' => $this->ids['contact']['Ponyo'],
     ], $values);
 
     $this->createEntity($values);
     $this->createEntity(array_merge($values, $secondaryValues));
-    $this->updateIsPrimaryForContact($ponyoID , 0);
+    $this->updateIsPrimaryForContact($this->ids['contact']['Ponyo'] , 0);
 
-    $this->doClean($ponyoID );
-    $this->checkExactlyOnePrimary($ponyoID, 2);
+    $this->doClean($this->ids['contact']['Ponyo']);
+    $this->checkExactlyOnePrimary($this->ids['contact']['Ponyo'], 2);
   }
 
   /**
@@ -95,19 +95,19 @@ class CleanTest extends DedupeBaseTestClass {
    */
   public function testCleanExtraPrimary($entity, $values, $secondaryValues) {
     $this->entity = $entity;
-    $ponyoID = (int) $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Ponyo'])['id'];
+    $this->ids['contact']['Ponyo'] = (int) $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Ponyo'])['id'];
     $values = array_merge([
       'email' => 'ponyo@example.com',
       'location_type_id' => $this->locationTypes['Home'],
-      'contact_id' => $ponyoID
+      'contact_id' => $this->ids['contact']['Ponyo'],
     ], $values);
 
     $this->createEntity($values);
     $this->createEntity(array_merge($values, $secondaryValues));
-    $this->updateIsPrimaryForContact($ponyoID , 1);
+    $this->updateIsPrimaryForContact($this->ids['contact']['Ponyo'], 1);
 
-    $this->doClean($ponyoID );
-    $this->checkExactlyOnePrimary($ponyoID, 2);
+    $this->doClean($this->ids['contact']['Ponyo']);
+    $this->checkExactlyOnePrimary($this->ids['contact']['Ponyo'], 2);
   }
 
   /**
@@ -126,19 +126,19 @@ class CleanTest extends DedupeBaseTestClass {
    */
   public function testCleanDuplicateLocationSameValues($entity, $values) {
     $this->entity = $entity;
-    $ponyoID = (int) $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Ponyo'])['id'];
+    $this->ids['contact']['Ponyo'] = (int) $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Ponyo'])['id'];
     $values = array_merge([
       'location_type_id' => $this->locationTypes['Home'],
-      'contact_id' => $ponyoID
+      'contact_id' => $this->ids['contact']['Ponyo'],
     ], $values);
     $this->createEntity($values);
     $this->createEntity($values);
     $this->createEntity($values);
     // It's possible a core fix could prevent the 'bad data' we are trying to set up so validate that
     // our set up data is as bad as we hoped.
-    $this->checkEntities($ponyoID, [$values, $values, $values]);
-    $this->doClean($ponyoID);
-    $this->checkEntities($ponyoID, [$values]);
+    $this->checkEntities($this->ids['contact']['Ponyo'], [$values, $values, $values]);
+    $this->doClean($this->ids['contact']['Ponyo']);
+    $this->checkEntities($this->ids['contact']['Ponyo'], [$values]);
   }
 
   /**
@@ -158,12 +158,12 @@ class CleanTest extends DedupeBaseTestClass {
    */
   public function testCleanDuplicateLocationDifferentValues($entity, $values, $secondaryValues) {
     $this->entity = $entity;
-    $ponyoID = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Ponyo'])['id'];
+    $this->ids['contact']['Ponyo'] = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Ponyo'])['id'];
     Civi::settings()->set('deduper_location_priority_order', [$this->locationTypes['Work'], $this->locationTypes['Other'], $this->locationTypes['Home']]);
 
     $values = array_merge([
       'location_type_id' => $this->locationTypes['Home'],
-      'contact_id' => $ponyoID
+      'contact_id' => $this->ids['contact']['Ponyo'],
     ], $values);
 
     $this->createEntity($values);
@@ -171,13 +171,13 @@ class CleanTest extends DedupeBaseTestClass {
     $this->createEntity($values);
     $this->createEntity(array_merge($values, $secondaryValues));
 
-    $this->doClean($ponyoID);
+    $this->doClean($this->ids['contact']['Ponyo']);
 
-    $this->checkEntities($ponyoID, [
+    $this->checkEntities($this->ids['contact']['Ponyo'], [
       array_merge($values, ['is_primary' => TRUE], $secondaryValues),
       array_merge($values, ['location_type_id' => $this->locationTypes['Work']])
     ]);
-    $this->checkExactlyOnePrimary($ponyoID, 2);
+    $this->checkExactlyOnePrimary($this->ids['contact']['Ponyo'], 2);
   }
 
   /**
