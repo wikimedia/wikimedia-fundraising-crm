@@ -20,7 +20,7 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
 
     $doNotSolicitFieldId = $this->callAPISuccess('CustomField', 'getvalue', ['name' => 'do_not_solicit', 'is_active' => 1, 'return' => 'id']);
     $doNotSolicitFieldLabel = 'custom_' . $doNotSolicitFieldId;
-    $contact = $this->callAPISuccess('Contact', 'create', [
+    $this->ids['contact']['Buffy'] = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Buffy',
       'last_name' => 'Vampire Slayer',
       'contact_type' => 'Individual',
@@ -31,17 +31,17 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
         ['location_type_id' => 'Main', 'phone' => 911],
         ['location_type_id' => 'Home', 'phone' => '9887-99-99', 'is_billing' => 1],
       ],
-    ]);
+    ])['id'];
 
-    $result = $this->callAPISuccess('Contact', 'forgetme', array('id' => $contact['id']));
+    $result = $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->getContactID('Buffy')]);
 
-    $this->callAPISuccessGetCount('Phone', ['contact_id' => $contact['id']], 0);
-    $this->callAPISuccessGetCount('Email', ['contact_id' => $contact['id']], 0);
+    $this->callAPISuccessGetCount('Phone', ['contact_id' => $this->getContactID('Buffy')], 0);
+    $this->callAPISuccessGetCount('Email', ['contact_id' => $this->getContactID('Buffy')], 0);
 
-    $contact = civicrm_api3('Contact', 'getsingle', ['id' => $contact['id'], 'return' => ['gender_id', $doNotSolicitFieldLabel]]);
+    $contact = civicrm_api3('Contact', 'getsingle', ['id' => $this->getContactID('Buffy'), 'return' => ['gender_id', $doNotSolicitFieldLabel]]);
     $this->assertEmpty($contact['gender_id']);
     $this->assertEmpty($contact[$doNotSolicitFieldLabel]);
-    $loggingEntries = $this->callAPISuccess('Logging', 'showme', ['contact_id' => $contact['id']])['values'];
+    $loggingEntries = $this->callAPISuccess('Logging', 'showme', ['contact_id' => $this->getContactID('Buffy')])['values'];
     // At this stage we should have contact entries (we will selectively delete from contact rows)
     // and activity contact entries - these will be deleted by activity type.
     foreach ($loggingEntries as $loggingEntry) {
@@ -59,16 +59,16 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
    * @throws CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public function testForgetEmailDisplayName() {
-    $contact = $this->callAPISuccess('Contact', 'create', [
+  public function testForgetEmailDisplayName(): void {
+    $this->ids['contact']['garlic'] = $this->callAPISuccess('Contact', 'create', [
       'contact_type' => 'Individual',
       'email' => 'garlic@example.com',
-    ]);
-    $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $contact['id'], 'return' => ['sort_name', 'display_name']]);
+    ])['id'];
+    $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->getContactID('garlic'), 'return' => ['sort_name', 'display_name']]);
     $this->assertEquals('garlic@example.com', $contact['sort_name']);
     $this->assertEquals('garlic@example.com', $contact['display_name']);
-    $this->callAPISuccess('Contact', 'forgetme', array('id' => $contact['id']));
-    $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $contact['id'], 'return' => ['sort_name', 'display_name']]);
+    $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->getContactID('garlic')]);
+    $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->getContactID('garlic'), 'return' => ['sort_name', 'display_name']]);
     $this->assertEquals('Forgotten', $contact['sort_name']);
     $this->assertEquals('Forgotten', $contact['display_name']);
   }
@@ -164,6 +164,8 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
       'gender_id' => 'Female',
       'birth_date' => '2010-09-07'
     ]);
+    $this->ids['contact']['keep'] = $contactToKeep['id'];
+    $this->ids['contact']['delete'] = $contactToDelete['id'];
     return ['contact_to_delete' => $contactToDelete, 'contact_to_keep' => $contactToKeep];
   }
 
@@ -276,4 +278,14 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
       ['id' => $this->paymentProcessor['id']]);
   }
 
+  /**
+   * Get the relevant contact ID.
+   *
+   * @param string $key
+   *
+   * @return int
+   */
+  protected function getContactID(string $key): int {
+    return  $this->ids['contact'][$key];
+  }
 }
