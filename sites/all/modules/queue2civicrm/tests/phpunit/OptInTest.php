@@ -39,8 +39,7 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function setUp() {
     parent::setUp();
-    $this->fixtures = CiviFixtures::create();
-    $this->contactId = $this->fixtures->contact_id;
+    $this->contactId = $this->createIndividual();
     $this->email = 'testOptIn' . mt_rand(1000, 10000000) . '@example.net';
 
     $this->consumer = new OptInQueueConsumer(
@@ -56,11 +55,6 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
       'do_not_solicit', 'Communication'
     );
     $this->doNotSolicitCustomFieldName = "custom_{$id}";
-  }
-
-  public function tearDown() {
-    parent::tearDown();
-    $this->fixtures = null;
   }
 
   protected function getMessage() {
