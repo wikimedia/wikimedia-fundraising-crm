@@ -379,7 +379,7 @@ SELECT
         COALESCE(original_amount, total_amount),
         ' ',
         COALESCE(original_currency, currency)
-    ))
+    ) ORDER BY receive_date)
 FROM $emailTableName eoy_email
 JOIN civicrm_email email
 

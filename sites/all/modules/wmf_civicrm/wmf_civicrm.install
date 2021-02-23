@@ -4263,3 +4263,14 @@ function wmf_civicrm_update_8105() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery('ALTER TABLE civicrm_contribution_recur MODIFY COLUMN contribution_status_id int(10) unsigned DEFAULT 2');
 }
+
+/**
+ * Add combined index on entity_id and lifetime_usd_total on wmf_donor table.
+ *
+ * In testing this made a significant difference when filtering for donors with
+ * giving over x - which is a common usage.
+ */
+function wmf_civicrm_update_8110() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor ADD INDEX entity_total (entity_id, lifetime_usd_total)');
+}
