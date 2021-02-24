@@ -19,6 +19,10 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
   protected $startTimestamp;
 
   /**
+   * @var int
+   */
+  protected $maxContactID;
+  /**
    * Ids created for test purposes.
    *
    * @var array
@@ -55,6 +59,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     civicrm_initialize();
     Civi::settings()->set( 'logging_no_trigger_permission', FALSE);
     Civi::settings()->set( 'logging', TRUE);
+    $this->maxContactID = $this->getHighestContactID();
   }
 
   public function tearDown() {
@@ -86,6 +91,22 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     TestingDatabase::clearStatics();
     Context::set(NULL); // Nullify any SmashPig context for the next run
     parent::tearDown();
+    // Check we cleaned up properly. This check exists to ensure we don't add tests that
+    // leave test contacts behind as over time they cause problems in our dev dbs.
+    $this->assertEquals($this->maxContactID, $this->getHighestContactID(), 'Test data left behind');
+  }
+
+  /**
+   * Get the highest contact ID in the database.
+   *
+   * @return int
+   */
+  protected function getHighestContactID(): int {
+    return (int) $this->callAPISuccessGetValue('Contact', [
+      'return' => 'id',
+      'is_deleted' => '',
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
+    ]);
   }
 
   /**
