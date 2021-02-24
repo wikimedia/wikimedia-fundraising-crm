@@ -1,86 +1,86 @@
 <phpunit
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/3.7/phpunit.xsd"
-  bootstrap="sites/default/bootstrap-phpunit.php"
+  bootstrap="drupal/sites/default/bootstrap-phpunit.php"
   backupGlobals="false">
 
   <testsuites>
     <testsuite name="wmf-civicrm">
-      <directory>sites/default/civicrm/extensions/wmf-civicrm/tests/phpunit</directory>
+      <directory>drupal/sites/default/civicrm/extensions/wmf-civicrm/tests/phpunit</directory>
     </testsuite>
     <testsuite name="large_donation tests">
-      <directory>sites/all/modules/large_donation/tests</directory>
+      <directory>drupal/sites/all/modules/large_donation/tests</directory>
     </testsuite>
     <testsuite name="offline2civicrm tests">
-      <directory>sites/all/modules/offline2civicrm/tests</directory>
-      <exclude>sites/all/modules/offline2civicrm/tests/includes/BaseChecksFileTest.php</exclude>
+      <directory>drupal/sites/all/modules/offline2civicrm/tests</directory>
+      <exclude>drupal/sites/all/modules/offline2civicrm/tests/includes/BaseChecksFileTest.php</exclude>
     </testsuite>
     <testsuite name="exchange_rates tests">
-      <directory>sites/all/modules/exchange_rates/tests/phpunit</directory>
+      <directory>drupal/sites/all/modules/exchange_rates/tests/phpunit</directory>
     </testsuite>
     <testsuite name="metrics_reporting tests">
-      <directory>sites/all/modules/metrics_reporting/tests/phpunit</directory>
+      <directory>drupal/sites/all/modules/metrics_reporting/tests/phpunit</directory>
     </testsuite>
     <testsuite name="orphan_slayer tests">
-      <directory>sites/all/modules/orphan_slayer/tests/phpunit</directory>
+      <directory>drupal/sites/all/modules/orphan_slayer/tests/phpunit</directory>
     </testsuite>
     <testsuite name="queue2civicrm tests">
-      <directory>sites/all/modules/queue2civicrm/tests/phpunit</directory>
+      <directory>drupal/sites/all/modules/queue2civicrm/tests/phpunit</directory>
     </testsuite>
     <testsuite name="thank_you tests">
-      <directory>sites/all/modules/thank_you/tests/phpunit</directory>
+      <directory>drupal/sites/all/modules/thank_you/tests/phpunit</directory>
     </testsuite>
     <testsuite name="wmf_audit tests">
-      <directory>sites/all/modules/wmf_audit/tests</directory>
+      <directory>drupal/sites/all/modules/wmf_audit/tests</directory>
     </testsuite>
     <testsuite name="wmf_campaigns tests">
-      <directory>sites/all/modules/wmf_campaigns/tests</directory>
+      <directory>drupal/sites/all/modules/wmf_campaigns/tests</directory>
     </testsuite>
     <testsuite name="wmf_civicrm tests">
-      <directory>sites/all/modules/wmf_civicrm/tests/phpunit</directory>
+      <directory>drupal/sites/all/modules/wmf_civicrm/tests/phpunit</directory>
     </testsuite>
     <testsuite name="wmf_common tests">
-      <directory>sites/all/modules/wmf_common/tests/phpunit</directory>
+      <directory>drupal/sites/all/modules/wmf_common/tests/phpunit</directory>
     </testsuite>
     <testsuite name="wmf_communication tests">
-      <directory>sites/all/modules/wmf_communication/tests/phpunit</directory>
-      <exclude>sites/all/modules/wmf_communication/tests/phpunit/CiviMailTestBase.php</exclude>
+      <directory>drupal/sites/all/modules/wmf_communication/tests/phpunit</directory>
+      <exclude>drupal/sites/all/modules/wmf_communication/tests/phpunit/CiviMailTestBase.php</exclude>
     </testsuite>
     <testsuite name="wmf_eoy_receipt tests">
-      <directory>sites/all/modules/wmf_eoy_receipt/tests/phpunit</directory>
+      <directory>drupal/sites/all/modules/wmf_eoy_receipt/tests/phpunit</directory>
     </testsuite>
     <testsuite name="omnimail_tests">
-      <directory>sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit</directory>
+      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit</directory>
     </testsuite>
     <testsuite name="contacteditor_tests">
-      <directory>sites/default/civicrm/extensions/org.wikimedia.contacteditor/tests/phpunit</directory>
+      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.contacteditor/tests/phpunit</directory>
     </testsuite>
     <testsuite name="geocoder_tests">
-      <directory>sites/default/civicrm/extensions/org.wikimedia.geocoder/tests/phpunit</directory>
+      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.geocoder/tests/phpunit</directory>
     </testsuite>
     <testsuite name="forgetme_tests">
-      <directory>sites/default/civicrm/extensions/org.wikimedia.forgetme/tests/phpunit</directory>
+      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.forgetme/tests/phpunit</directory>
     </testsuite>
     <testsuite name="smashpig_tests">
-      <directory>sites/default/civicrm/extensions/org.wikimedia.smashpig/tests/phpunit</directory>
+      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.smashpig/tests/phpunit</directory>
     </testsuite>
     <testsuite name="dedupetools_tests">
-      <directory>sites/default/civicrm/extensions/deduper/tests/phpunit</directory>
+      <directory>drupal/sites/default/civicrm/extensions/deduper/tests/phpunit</directory>
     </testsuite>
     <testsuite name="datachecks_tests">
-      <directory>sites/default/civicrm/extensions/org.wikimedia.datachecks/tests/phpunit</directory>
+      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.datachecks/tests/phpunit</directory>
     </testsuite>
     <testsuite name="email_amender_tests">
-      <directory>sites/default/civicrm/extensions/Email-Amender/tests/phpunit</directory>
+      <directory>drupal/sites/default/civicrm/extensions/Email-Amender/tests/phpunit</directory>
     </testsuite>
     <testsuite name="thank_you_tests">
-      <directory>sites/default/civicrm/extensions/wmf-thankyou/tests/phpunit</directory>
+      <directory>drupal/sites/default/civicrm/extensions/wmf-thankyou/tests/phpunit</directory>
     </testsuite>
     <testsuite name="matchinggift_tests">
-      <directory>sites/default/civicrm/extensions/matching-gifts/tests/phpunit</directory>
+      <directory>drupal/sites/default/civicrm/extensions/matching-gifts/tests/phpunit</directory>
     </testsuite>
     <testsuite name="civi-data-strings">
-      <directory>sites/default/civicrm/extensions/civi-data-translate/tests/phpunit</directory>
+      <directory>drupal/sites/default/civicrm/extensions/civi-data-translate/tests/phpunit</directory>
     </testsuite>
   </testsuites>
 </phpunit>
