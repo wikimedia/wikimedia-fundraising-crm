@@ -7,8 +7,10 @@
 class SoftCreditTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function testSoftCredit() {
-    $fixtures = CiviFixtures::create();
-
+    $organizationID = $this->createTestContact([
+      'contact_type' => 'Organization',
+      'organization_name' => 'Big Pharma',
+    ]);
     $msg = [
       'currency' => 'USD',
       'date' => time(),
@@ -17,11 +19,10 @@ class SoftCreditTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
-
-      'soft_credit_to' => $fixtures->org_contact_name,
+      'soft_credit_to' => 'Big Pharma',
     ];
 
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = $this->messageImport($msg);
 
     $retrievedContribution = $this->callAPISuccessGetSingle('Contribution', [
       'id' => $contribution['id'],
@@ -30,7 +31,7 @@ class SoftCreditTest extends BaseWmfDrupalPhpUnitTestCase {
       ],
     ]);
 
-    $this->assertEquals($fixtures->org_contact_id, $retrievedContribution['soft_credit_to']);
+    $this->assertEquals($organizationID, $retrievedContribution['soft_credit_to']);
   }
 
   /**
@@ -46,11 +47,10 @@ class SoftCreditTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
-
       'soft_credit_to' => 'Not a thing',
     ];
 
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = $this->messageImport($msg);
   }
 
 }

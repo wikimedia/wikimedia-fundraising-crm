@@ -2,6 +2,7 @@
 
 use Civi\Api4\Contact;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\Contribution;
 
 define('ImportMessageTest_campaign', 'test mail code here + ' . mt_rand());
 
@@ -91,24 +92,10 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testMessageInsert($msg, $expected) {
     if (!empty($msg['contribution_recur_id'])) {
       // Create this here - the fixtures way was not reliable
-      $msg['contact_id'] = Contact::create(FALSE)->setValues(['first_name' => 'Mickey', 'last_name' => 'Mouse'])->execute()->first()['id'];
-      $msg['contribution_recur_id'] = ContributionRecur::create(FALSE)->setValues([
-        'contact_id' => $msg['contact_id'],
-        'amount' => '2.34',
-        'currency' => 'USD',
-        'frequency_unit' => 'month',
-        'frequency_interval' => 1,
-        'installments' => 0,
-        'start_date' => $msg['date'],
-        'create_date' => $msg['date'],
-        'cancel_date' => null,
-        'processor_id' => 1,
-        'cycle_day' => 1,
-        'trxn_id' => "RECURRING TEST_GATEWAY test",
-
-      ])->execute()->first()['id'];
+      $msg['contact_id'] = $this->createIndividual();
+      $msg['contribution_recur_id'] = $this->createRecurringContribution(['contact_id' => $msg['contact_id']]);
     }
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = $this->messageImport($msg);
     $this->consumeCtQueue();
     $this->contribution_id = $contribution['id'];
 
@@ -167,6 +154,47 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         ->fetchAssoc();
       $this->assertEquals($tracking['id'], $msg['contribution_tracking_id']);
     }
+  }
+
+  /**
+   * Create a recurring contribution with some helpful defaults.
+   *
+   * @param array $params
+   *
+   * @return int
+   */
+  protected function createRecurringContribution($params = []): int {
+    $this->ids['ContributionRecur']['import'] = ContributionRecur::create(FALSE)->setValues(array_merge([
+      'amount' => '2.34',
+      'currency' => 'USD',
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'installments' => 0,
+      'start_date' => '2018-06-20',
+      'create_date' => '2018-06-20',
+      'cancel_date' => null,
+      'processor_id' => 1,
+      'cycle_day' => 1,
+      'trxn_id' => "RECURRING TEST_GATEWAY test" . mt_rand(0, 1000),
+
+    ], $params))->execute()->first()['id'];
+    return $this->ids['ContributionRecur']['import'];
+  }
+
+  /**
+   * Create a contribution with some helpful defaults.
+   *
+   * @param array $params
+   *
+   * @return int
+   */
+  protected function createContribution($params = []) {
+    return Contribution::create(FALSE)->setValues(array_merge([
+      'total_amount' => '2.34',
+      'currency' => 'USD',
+      'receive_date' => '2018-06-20',
+      'financial_type_id' => 1,
+    ], $params))->execute()->first()['id'];
   }
 
   /**
@@ -758,9 +786,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CRM_Core_Exception
    * @throws \WmfException
    */
-  public function testImportContactGroups() {
-    $fixtures = CiviFixtures::create();
-
+  public function testImportContactGroups(): void {
+    $this->createGroup('in_group');
     $msg = [
       'currency' => 'USD',
       'date' => '2012-03-01 00:00:00',
@@ -768,12 +795,35 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
-      'contact_groups' => $fixtures->contact_group_name,
+      'contact_groups' => 'in_group',
     ];
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = $this->messageImport($msg);
 
     $group = $this->callAPISuccessGetSingle('GroupContact', ['contact_id' => $contribution['contact_id']]);
-    $this->assertEquals($fixtures->contact_group_id, $group['group_id']);
+    $this->assertEquals($this->ids['Group']['in_group'], $group['group_id']);
+  }
+
+  /**
+   * Create a group and add to cleanup tracking.
+   *
+   * @param string $name
+   *
+   * @return int
+   */
+  protected function createGroup(string $name): int {
+    $group = civicrm_api3('Group', 'get', ['title' => $name]);
+
+    if ($group['count'] === 1 ) {
+      $this->ids['Group'][$name] = (int) $group['id'];
+    }
+    else {
+      $group = civicrm_api3('Group', 'create', array(
+        'title' => $name,
+        'name' => $name,
+      ));
+      $this->ids['Group'][$name] = (int) $group['id'];
+    }
+    return $this->ids['Group'][$name];
   }
 
   /**
@@ -782,29 +832,29 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \WmfException
    */
   public function testKeepOnHold() {
-    self::$fixtures = CiviFixtures::create();
+    $contactID = $this->createIndividual();
     $this->callAPISuccess('Email', 'create', [
       'email' => 'Agatha@wikimedia.org',
       'on_hold' => 1,
       'location_type_id' => 1,
-      'contact_id' => self::$fixtures->contact_id,
+      'contact_id' => $contactID,
     ]);
 
     $msg = [
-      'contact_id' => self::$fixtures->contact_id,
-      'contribution_recur_id' => self::$fixtures->contribution_recur_id,
+      'contact_id' => $contactID,
+      'contribution_recur_id' => $this->createRecurringContribution(['contact_id' => $contactID]),
       'currency' => 'USD',
       'date' => '2014-01-01 00:00:00',
       'effort_id' => 2,
       'email' => 'Agatha@wikimedia.org',
       'gateway' => 'test_gateway',
       'gateway_txn_id' => mt_rand(),
-      'gross' => self::$fixtures->recur_amount,
+      'gross' => 2.34,
       'payment_method' => 'cc',
     ];
     $contribution = wmf_civicrm_contribution_message_import($msg);
     $emails = $this->callAPISuccess('Email', 'get', [
-      'contact_id' => self::$fixtures->contact_id,
+      'contact_id' => $contactID,
       'sequential' => 1,
     ]);
     $this->assertEquals(1, $emails['count']);
@@ -822,29 +872,29 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \WmfException
    */
   public function testRemoveOnHoldWhenUpdating() {
-    self::$fixtures = CiviFixtures::create();
+    $contactID = $this->createIndividual();
     $this->callAPISuccess('Email', 'create', [
       'email' => 'Agatha@wikimedia.org',
       'on_hold' => 1,
       'location_type_id' => 1,
-      'contact_id' => self::$fixtures->contact_id,
+      'contact_id' => $contactID,
     ]);
 
     $msg = [
-      'contact_id' => self::$fixtures->contact_id,
-      'contribution_recur_id' => self::$fixtures->contribution_recur_id,
+      'contact_id' => $contactID,
+      'contribution_recur_id' => $this->createRecurringContribution(['contact_id' => $contactID]),
       'currency' => 'USD',
       'date' => '2014-01-01 00:00:00',
       'effort_id' => 2,
       'email' => 'Pantha@wikimedia.org',
       'gateway' => 'test_gateway',
       'gateway_txn_id' => mt_rand(),
-      'gross' => self::$fixtures->recur_amount,
+      'gross' => 2.34,
       'payment_method' => 'cc',
     ];
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = $this->messageImport($msg);
     $emails = $this->callAPISuccess('Email', 'get', [
-      'contact_id' => self::$fixtures->contact_id,
+      'contact_id' => $contactID,
       'sequential' => 1,
     ]);
     $this->assertEquals(1, $emails['count']);
@@ -855,22 +905,23 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->callAPISuccess('Contribution', 'delete', ['id' => $contribution['id']]);
   }
 
-
   public function testDuplicateHandling() {
-    $fixtures = CiviFixtures::create();
     $error = NULL;
+    $invoiceID = mt_rand(0, 1000);
+    $this->createContribution(['contact_id' => $this->createIndividual(), 'invoice_id' => $invoiceID]);
     $msg = [
       'currency' => 'USD',
       'date' => '2012-03-01 00:00:00',
       'gateway' => 'test_gateway',
-      'order_id' => $fixtures->contribution_invoice_id,
+      'order_id' => $invoiceID,
       'gross' => '1.23',
       'payment_method' => 'cc',
       'gateway_txn_id' => 'CON_TEST_GATEWAY' . mt_rand(),
     ];
+
     $exceptioned = FALSE;
     try {
-      wmf_civicrm_contribution_message_import($msg);
+      $this->messageImport($msg);
     }
     catch (WmfException $ex) {
       $exceptioned = TRUE;
@@ -974,7 +1025,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gross' => '1.25',
       'payment_method' => 'cc',
     ];
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = $this->messageImport($msg);
     $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
     $address = $this->callAPISuccessGetSingle(
       'Address', [
@@ -1062,7 +1113,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gross' => '1.25',
       'payment_method' => 'cc',
     ];
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = $this->messageImport($msg);
     $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
     $address = $this->callAPISuccessGetSingle(
       'Address', [
@@ -1091,7 +1142,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring_payment_token' => mt_rand(),
       'user_ip' => '123.232.232'
     ];
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = $this->messageImport($msg);
 
   }
 

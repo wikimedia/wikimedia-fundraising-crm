@@ -30,8 +30,7 @@ class UnsubscribeTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function setUp() {
     parent::setUp();
-    $this->fixtures = CiviFixtures::create();
-    $this->contactId = $this->fixtures->contact_id;
+    $this->contactId = $this->createIndividual();
     $this->email = 'testUnsubscribe' . mt_rand(1000, 10000000) . '@example.net';
 
     $this->consumer = new UnsubscribeQueueConsumer(
@@ -64,7 +63,12 @@ class UnsubscribeTest extends BaseWmfDrupalPhpUnitTestCase {
       file_get_contents( __DIR__ . '/../data/unsubscribe.json' ),
       true
     );
-    $message['contribution-id'] = $this->fixtures->contribution_id;
+    $message['contribution-id'] = $this->callAPISuccess('Contribution', 'create', [
+      'contact_id' => $this->contactId,
+      'total_amount' => 2.34,
+      'create_date' => '2017-01-01',
+      'financial_type_id' => 1,
+    ])['id'];
     $message['email'] = $this->email;
     return $message;
   }
