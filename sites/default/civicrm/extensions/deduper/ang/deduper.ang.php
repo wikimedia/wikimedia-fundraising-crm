@@ -4,6 +4,7 @@
 // http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_angularModules
 
 return [
+  'bundles' => ['bootstrap3'],
   'js' =>
     [
       0 => 'ang/deduper.js',

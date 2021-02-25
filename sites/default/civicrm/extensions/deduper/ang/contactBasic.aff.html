@@ -2,7 +2,7 @@
     {{ts('No contact id provided')}}
   </div>
   <div ng-if="options.contact_id"
-      af-api3="['Contact','getsingle', {id: options.contact_id, return: 'first_name,last_name,email, middle_name, display_name, contact_type, nick_name'}]"
+      af-api3="['Contact','getsingle', {id: options.contact_id, return: 'first_name,last_name,email, middle_name, display_name, contact_type, nick_name, street_address, city'}]"
       af-api3-ctrl="contact">
     <form name="basicContact"
       onaftersave="crmApi4('Contact','update', {
@@ -11,9 +11,12 @@
           last_name: contact['result'].last_name,
           first_name: contact['result'].first_name,
           middle_name: contact['result'].middle_name,
-          nick_name: contact['result'].nick_name,
-          email: contact['result'].email
-        }
+          nick_name: contact['result'].nick_name
+        },
+        chain: {'email':['Email', 'update', {
+          'where':[['contact_id', '=', '$id'], ['is_primary', '=', true]],
+          'values' : {'email' : contact['result'].email}
+        }]}
      })"
      onhide="contact.refresh()"
      editable-form crm-ui-id-scope>
@@ -26,6 +29,8 @@
     <div><strong class="basic-contact-field">{{ ts('Last Name') }}</strong>: <span editable-text="contact['result'].last_name">{{contact['result'].last_name || ".."}}</span></div>
     <div><strong class="basic-contact-field">{{ ts('Nick Name') }}</strong>: <span editable-text="contact['result'].nick_name">{{contact['result'].nick_name || ".."}}</span></div>
     <div><strong class="basic-contact-field">{{ts('Email')}}</strong>: <span editable-text="contact['result'].email">{{contact['result'].email || ".."}}</span></div>
+    <div ng-show=contact['result'].street_address><strong class="basic-contact-field">{{ts('Street Address')}}</strong>: <span>{{contact['result'].street_address}}</span></div>
+    <div ng-show=contact['result'].city><strong class="basic-contact-field">{{ts('City')}}</strong>: <span>{{contact['result'].city}}</span></div>
     <div><strong class="basic-contact-field">{{ts('Contact ID')}}</strong>: <a target="_blank" ng-if="options.contact_url" href="{{options.contact_url}}{{contact['result'].contact_id}}">{{contact['result'].id}}</a></div>
 
     <p></p>
