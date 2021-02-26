@@ -18,6 +18,7 @@ function civicrm_api3_job_process_smashpig_recurring($params) {
     'max_failures',
     'catch_up_days',
     'batch_size',
+    'charge_descriptor'
   ];
   $settings = Civi::settings();
   foreach ($allowedParams as $paramName) {
@@ -31,7 +32,8 @@ function civicrm_api3_job_process_smashpig_recurring($params) {
     $params['retry_delay_days'],
     $params['max_failures'],
     $params['catch_up_days'],
-    $params['batch_size']
+    $params['batch_size'],
+    $params['charge_descriptor']
   );
   $result = $recurringProcessor->run();
   return civicrm_api3_create_success($result, $params);
@@ -48,4 +50,5 @@ function _civicrm_api3_job_process_smashpig_recurring_spec(&$params) {
   $params['max_failures']['title'] = ts('Number of failures at which we stop retrying');
   $params['catch_up_days']['title'] = ts('Number of days in the past to look for charges due');
   $params['batch_size']['title'] = ts('Batch size');
+  $params['charge_descriptor']['title'] = ts('Soft descriptor for recurring charge');
 }

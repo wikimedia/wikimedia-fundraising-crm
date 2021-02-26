@@ -742,7 +742,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         $response
       );
     $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1
+      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
     $queue = QueueWrapper::getQueue('donations');
@@ -819,7 +819,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
 
     // run the recurring processor job
     $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1
+      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
 
@@ -874,7 +874,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
 
     // run the recurring processor job
     $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1
+      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
 
@@ -941,7 +941,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
 
     // run the recurring processor job
     $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1
+      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
 
@@ -1023,7 +1023,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
 
     // run the recurring processor job
     $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1
+      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
 
@@ -1102,7 +1102,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         $response
       );
     $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1
+      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
     $queue = QueueWrapper::getQueue('donations');
@@ -1188,7 +1188,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         $this->approvePaymentResponse
       );
     $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1
+      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
     $queue = QueueWrapper::getQueue('donations');
@@ -1311,8 +1311,9 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   protected function getExpectedDescription(): string {
-    $domain = CRM_Core_BAO_Domain::getDomain();
-    return "Monthly donation to $domain->name";
+    return $settings = Civi::settings()->get(
+      'smashpig_recurring_charge_descriptor'
+    );
   }
 
   /**
@@ -1338,7 +1339,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         $response
       );
     $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1
+      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
     return $contributionRecur;

@@ -35,6 +35,7 @@ $settings = [
 
   // Enable smash pig queue.
   'smashpig_recurring_use_queue' => '1',
+  'smashpig_recurring_charge_descriptor' => 'Wikimedia 877 600 9454'
 ];
 
 // It's possible this is first run before the field is created so we check for the field before trying to add it.
