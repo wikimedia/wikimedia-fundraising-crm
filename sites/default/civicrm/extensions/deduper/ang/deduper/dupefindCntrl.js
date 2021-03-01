@@ -358,10 +358,8 @@
     }
 
     function removeMergedContact(id) {
-      _.each($scope.duplicatePairs, function(pair, index) {
-        if (typeof(pair) !== 'undefined' && (pair['dstID'] === id || pair['srcID'] === id)) {
-          $scope.duplicatePairs.splice(index, 1);
-        }
+      $scope.duplicatePairs = $.grep($scope.duplicatePairs, function (pair) {
+        return typeof(pair) !== 'undefined' && pair.dstID !== id && pair.srcID !== id;
       });
       updateFoundCount();
     }
