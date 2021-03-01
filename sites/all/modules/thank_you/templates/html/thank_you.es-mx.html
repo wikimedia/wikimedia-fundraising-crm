@@ -1,5 +1,5 @@
 {% if first_name and last_name %}
-<p>¡Hola, {{ first_name }}!
+<p>¡Hola {{ first_name }}!
 </p>{% else %}<p>
 Estimado/a donante:</p>
 {%endif%}
@@ -7,17 +7,17 @@ Estimado/a donante:</p>
 
 {% if recurring %}
 <p>
-Me alegra mucho poder agradecerte por tu donación mensual de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, en nombre de un mundo de personas que apoyan el conocimiento libre.
+Me siento muy afortunada de ser la persona que te agradezca por tu donación mensual de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, en nombre de un mundo de personas que buscan el conocimiento libre.
 </p>
 
 <p>
-Tu donación hace que Wikipedia siga siendo independiente, y tu apoyo mensual es fundamental para la planificación a largo plazo. Una vez al mes, Wikimedia Foundation debitará una donación de tu cuenta por {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} hasta que nos indiques que dejemos de hacerlo. <b>En enero de cada año, te enviaremos un resumen de tus contribuciones del año anterior.</b> Si, por algún motivo, quieres cancelar tu donación, sigue <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">estas instrucciones</a>.
+Tu donación hace que Wikipedia siga siendo independiente, y tu apoyo mensual es fundamental para la planificación a largo plazo. Una vez al mes, Wikimedia Foundation debitará una donación de tu cuenta por {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} hasta que nos indiques que dejemos de hacerlo. <b>*En enero de cada año, te enviaremos un resumen de tus contribuciones del año anterior.*</b> Si, por algún motivo, quieres cancelar tu donación, sigue <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">estas instrucciones</a>.
 </p>
 
 {% else %}
 
 <p>
-Me alegra mucho poder agradecerte por tu donación de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, en nombre de un mundo de personas que apoyan el conocimiento libre.
+Me siento muy afortunada de ser la persona que te agradezca por tu donación de  {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, en nombre de un mundo de personas que buscan el conocimiento libre.
 </p>
 {% endif %}
 
@@ -34,14 +34,14 @@ Mientras más hago este trabajo, más me doy cuenta de que no hay una experienci
 </p>
 
 <p>
-Cuando uses Wikipedia la próxima vez, espero que sientas que también te pertenece, porque no es nada sin ti y sin el apoyo de las millones de personas que nos leen todos los días.
+Cuando uses Wikipedia la próxima vez, espero que sientas aún más profundamente que te pertenece, porque no es nada sin ti y sin el amor y el apoyo de las millones de personas que nos leen todos los días.
 </p>
 
 <p>
-<b>Tu donación es una gran ayuda que nos empuja a seguir el camino que juntos recorremos. Gracias por darle un espacio a Wikipedia en tu vida.</b>
+<b>Tu donación nos da impulso y nos permite cumplir nuestro propósito. Gracias por darle un espacio a Wikipedia en tu vida.</b>
 </p>
 
-<p>Mis mejores deseos,</p>
+<p>Con inmensa gratitud,</p>
 <p>
 Katherine <br><br>
 Katherine Maher, Directora Ejecutiva<br>
@@ -61,7 +61,7 @@ Wikimedia Foundation
 
 {%endif%}
 
-<p>Si no deseas recibir ningún tipo de correo electrónico sobre recaudación de fondos de la Fundación Wikimedia en el futuro, puedes <a href="{{ unsubscribe_link | raw }}">darte de baja ahora</a>. Ten en cuenta que seguiremos enviándote recibos como este por futuras donaciones.
+<p>Si no quieres recibir ningún tipo de correo electrónico sobre recaudación de fondos de parte de Wikimedia Foundation en el futuro, puedes <a href="{{ unsubscribe_link | raw }}">cancelar tu suscripción</a> ahora. Ten en cuenta que te vamos a seguir enviando recibos por futuras donaciones.
 </p>
 
 <!-- TI_BEGIN{"version":1,"name":"thank_you.es-mx.html","revision":20200103}TI_END -->
