@@ -36,7 +36,7 @@ class CRM_Deduper_BAO_PreferredContact  {
    * @throws \CRM_Core_Exception
    */
   public function getPreferredContactID(): int {
-    $methods = Civi::settings()->get('deduper_resolver_preferred_contact_resolution');
+    $methods = (array) Civi::settings()->get('deduper_resolver_preferred_contact_resolution');
     $methods[] = Civi::settings()->get('deduper_resolver_preferred_contact_last_resort');
     foreach ($methods as $method) {
       $contactID = $this->resolvePreferredContactByMethod($method);

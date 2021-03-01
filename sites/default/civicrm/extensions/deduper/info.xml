@@ -15,13 +15,13 @@
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
   <releaseDate>2020-08-27</releaseDate>
-  <version>1.4</version>
+  <version>1.5</version>
   <develStage>stable</develStage>
   <requires>
     <ext>org.civicrm.afform</ext>
   </requires>
   <compatibility>
-    <ver>5.28</ver>
+    <ver>5.35</ver>
   </compatibility>
   <comments>Tools to help with deduping</comments>
   <civix>
