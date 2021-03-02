@@ -21,6 +21,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
   protected $batchSize;
 
+  protected $descriptor;
+
   protected $smashPigProcessors;
 
   const MAX_MERCHANT_REFERENCE_RETRIES = 3;
@@ -38,13 +40,15 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $retryDelayDays,
     $maxFailures,
     $catchUpDays,
-    $batchSize
+    $batchSize,
+    $descriptor
   ) {
     $this->useQueue = $useQueue;
     $this->retryDelayDays = $retryDelayDays;
     $this->maxFailures = $maxFailures;
     $this->catchUpDays = $catchUpDays;
     $this->batchSize = $batchSize;
+    $this->descriptor = $descriptor;
     $processorsApiResult = civicrm_api3('PaymentProcessor', 'get', ['class_name' => 'Payment_SmashPig']);
     $this->smashPigProcessors = $processorsApiResult['values'];
   }
@@ -350,30 +354,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   }
 
   /**
-   * Get a description for a recurring payment, maybe even localized (if you
-   * create a custom ts function to use the extra params).
-   *
-   * @param string $contactLang The language ISO code
-   *
-   * @return string
-   * @throws \CRM_Core_Exception
-   */
-  protected function getDescription($contactLang) {
-    $domain = CRM_Core_BAO_Domain::getDomain();
-    // FIXME: localize this for the donor!
-    $description = E::ts(
-      'Monthly donation to %1',
-      [
-        $domain->name,
-        // Extra parameters for use in custom translate functions
-        'key' => 'donate_interface-monthly-donation-description',
-        'language' => $contactLang,
-      ]
-    );
-    return $description;
-  }
-
-  /**
    * Get all the details needed to submit a recurring payment installment
    * via makePayment
    *
@@ -395,7 +375,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       $previousContribution['invoice_id'],
       $recurringPayment['failure_count']
     );
-    $description = $this->getDescription($donor['preferred_language']);
+    $description = $this->descriptor;
     $tokenData = civicrm_api3('PaymentToken', 'getsingle', [
       'id' => $recurringPayment['payment_token_id'],
       'return' => ['token', 'ip_address'],

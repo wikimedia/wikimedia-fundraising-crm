@@ -102,4 +102,21 @@ return [
     'description' => 'Once the job has run the set number of recurring contribution retries, send an email to the donor about cancellation.',
     'settings_pages' => ['smashpig' => ['weight' => 6]],
   ],
+  'smashpig_recurring_charge_descriptor' => [
+    'group name' => 'SmashPig Preferences',
+    'group' => 'smashpig',
+    'name' => 'smashpig_recurring_charge_descriptor',
+    'type' => 'Text',
+    'quick_form_type' => 'Element',
+    'html_type' => 'text',
+    'html_attributes' => array(
+      'size' => 40,
+    ),
+    'default' => 'Donation',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'title' => 'Monthly charge soft descriptor',
+    'description' => 'The first 22 or so characters of this string show up on credit card statements.',
+    'settings_pages' => ['smashpig' => ['weight' => 7]],
+  ]
 ];
