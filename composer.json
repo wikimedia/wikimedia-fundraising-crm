@@ -68,7 +68,7 @@
     "extra": {
       "merge-plugin": {
         "include": [
-          "sites/default/civicrm/extensions/*/composer.json"
+          "drupal/sites/default/civicrm/extensions/*/composer.json"
         ],
         "recurse": true,
         "replace": false,
