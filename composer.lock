@@ -2156,12 +2156,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/omnimail/omnimail.git",
-                "reference": "ad24ded13122eb00ae2e180c7e7a1fc4e22018a9"
+                "reference": "fd11eaca17dc57423649a591674a06d6310b9135"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/omnimail/omnimail/zipball/ad24ded13122eb00ae2e180c7e7a1fc4e22018a9",
-                "reference": "ad24ded13122eb00ae2e180c7e7a1fc4e22018a9",
+                "url": "https://api.github.com/repos/omnimail/omnimail/zipball/fd11eaca17dc57423649a591674a06d6310b9135",
+                "reference": "fd11eaca17dc57423649a591674a06d6310b9135",
                 "shasum": ""
             },
             "require": {
@@ -2171,12 +2171,13 @@
                 "psr/log": "^1.0"
             },
             "require-dev": {
-                "daniel-zahariev/php-aws-ses": "^0.9",
+                "daniel-zahariev/php-aws-ses": "^0.9.2",
                 "mailgun/mailgun-php": "^2.4",
                 "mailin-api/mailin-api-php": "^1.0",
                 "mailjet/mailjet-apiv3-php": "^1.2",
                 "mandrill/mandrill": "^1.0",
                 "php-http/guzzle6-adapter": "^1.1",
+                "phpmailer/phpmailer": "^6.1",
                 "phpunit/phpunit": "^5.7 || ^6.5",
                 "sendgrid/sendgrid": "^6.0",
                 "wildbit/postmark-php": "^2.5"
@@ -2188,6 +2189,7 @@
                 "mailjet/mailjet-apiv3-php": "Required if you use the Mailjet sending system",
                 "mandrill/mandrill": "Required if you use the Mandrill sending system",
                 "php-http/guzzle6-adapter": "Required if you use the Mailgun sending system",
+                "phpmailer/phpmailer": "Required if you use the SMTP sending method",
                 "sendgrid/sendgrid": "Required if you use the Sendgrid sending system",
                 "wildbit/postmark-php": "Required if you use the Postmark sending system"
             },
@@ -2220,7 +2222,7 @@
                 "sendgrid",
                 "sendinblue"
             ],
-            "time": "2018-08-02T03:41:17+00:00"
+            "time": "2020-08-18T17:45:17+00:00"
         },
         {
             "name": "paragonie/random_compat",
