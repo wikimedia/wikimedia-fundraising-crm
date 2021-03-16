@@ -4288,3 +4288,33 @@ function wmf_civicrm_update_8115() {
     ->addValue('value', 'es_MX')
     ->execute();
 }
+
+/**
+ * Update recurring contribution statuses to in progress.
+ *
+ * This fixes the status on recurring contributions where the status
+ * is incorrectly 'completed' (a status we don't really use since
+ * they are either in progress or cancelled).
+ *
+ * I've limited to updating ones with a contribution this year.
+ *
+ * Timing from staging
+ *
+ * Query OK, 189391 rows affected (1 min 25.869 sec)
+ *
+ * Bug: T277590
+ */
+function wmf_civicrm_update_8220() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution_recur
+    SET contribution_status_id = 5
+    WHERE id IN (
+      SELECT cr.id
+      FROM civicrm_contribution_recur cr
+      INNER JOIN civicrm_contribution c
+        ON c.contribution_recur_id = cr.id AND c.receive_date > '2021-01-01'
+      WHERE cr.contribution_status_id = 1
+      GROUP BY cr.id
+    )"
+  );
+}
