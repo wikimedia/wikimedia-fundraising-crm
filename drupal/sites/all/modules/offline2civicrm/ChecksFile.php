@@ -54,6 +54,41 @@ abstract class ChecksFile {
   protected $totalNumberRows = 0;
 
   /**
+   * Number of skipped at the batch level due to inability to acquire lock.
+   *
+   * @var int
+   */
+  protected $totalBatchSkippedRows = 0;
+
+  /**
+   * @return int
+   */
+  public function getTotalBatchSkippedRows(): int {
+    return $this->totalBatchSkippedRows;
+  }
+
+  /**
+   * @param int $totalBatchSkippedRows
+   */
+  public function setTotalBatchSkippedRows(int $totalBatchSkippedRows): void {
+    $this->totalBatchSkippedRows = $totalBatchSkippedRows;
+  }
+
+  /**
+   * @return int
+   */
+  public function getNumberSucceededRows(): int {
+    return $this->numberSucceededRows;
+  }
+
+  /**
+   * @param int $numberSucceededRows
+   */
+  public function setNumberSucceededRows(int $numberSucceededRows): void {
+    $this->numberSucceededRows = $numberSucceededRows;
+  }
+
+  /**
    * The row that most recently failed.
    *
    * If we abort we advise this in order to allow a restart.
@@ -96,6 +131,20 @@ abstract class ChecksFile {
   protected $messages = array();
 
   protected $file_uri = '';
+
+  /**
+   * @return string|null
+   */
+  public function getFileUri(): ?string {
+    return $this->file_uri;
+  }
+
+  /**
+   * @param string|null $file_uri
+   */
+  public function setFileUri(?string $file_uri): void {
+    $this->file_uri = $file_uri;
+  }
 
   protected $error_file_uri = '';
 
@@ -416,7 +465,7 @@ abstract class ChecksFile {
 
     if (isset($msg['contribution_source'])) {
       // Check that the message amounts match
-      list($currency, $source_amount) = explode(' ', $msg['contribution_source']);
+      [$currency, $source_amount] = explode(' ', $msg['contribution_source']);
 
       if (abs($source_amount - $msg['gross']) > .01) {
         $pretty_msg = json_encode($msg);
@@ -690,7 +739,7 @@ abstract class ChecksFile {
     // The file name is the middle part, minus 'temporary://' and .csv'.
     // We stick to this rigid assumption because if it changes we might want to re-evaluate the security aspects of
     // allowing people to download csv files from the temp directory based on role.
-    $this->messages[$type] = "$count $type $row logged to <a href='/import_output/" . substr($uri, 12, -4) . "'> file</a>.";
+    $this->messages[$type] = "$count $type $row " . ($uri ? "logged to <a href='/import_output/" . substr($uri, 12, -4) . "'> file</a>." : '');
   }
 
   /**
@@ -839,7 +888,6 @@ abstract class ChecksFile {
     foreach ($data as $key => &$value) {
       $value = trim($value);
     }
-
     try {
       if ($this->errorStreakCount >= $this->errorStreakThreshold) {
         throw new IgnoredRowException(WmfException::IMPORT_CONTRIB, 'Error limit reached');
