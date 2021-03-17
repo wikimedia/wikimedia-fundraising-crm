@@ -862,7 +862,7 @@
         },
         {
             "name": "geo6/geocoder-php-addok-provider",
-            "version": "dev-master",
+            "version": "v1.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/geo6/geocoder-php-addok-provider.git",
@@ -908,6 +908,10 @@
                 }
             ],
             "description": "Geocoder addok adapter",
+            "support": {
+                "issues": "https://github.com/geo6/geocoder-php-addok-provider/issues",
+                "source": "https://github.com/geo6/geocoder-php-addok-provider/tree/v1.3.0"
+            },
             "time": "2020-12-22T16:47:52+00:00"
         },
         {
@@ -1086,7 +1090,7 @@
         },
         {
             "name": "geocoder-php/here-provider",
-            "version": "dev-master",
+            "version": "0.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/geocoder-php/here-provider.git",
@@ -1138,6 +1142,9 @@
             ],
             "description": "Geocoder here adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
+            "support": {
+                "source": "https://github.com/geocoder-php/here-provider/tree/0.6.0"
+            },
             "time": "2020-12-21T16:41:18+00:00"
         },
         {
@@ -6417,9 +6424,6 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "wikimedia/civicrm-data-table-provider": 20,
-        "geo6/geocoder-php-addok-provider": 20,
-        "geocoder-php/here-provider": 20,
         "wikimedia/omnimail-silverpop": 20,
         "omnimail/omnimail": 20
     },
