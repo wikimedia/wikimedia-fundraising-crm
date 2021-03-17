@@ -236,6 +236,9 @@ function wmf_civicrm_civicrm_buildForm($formName, &$form) {
       break;
     case 'CRM_Contribute_Form_Contribution':
       // Only run this validation for users having the Engage role.
+      // @todo - move the user_has_role out of the extension. In order
+      // to ready this for drupal we can switch to using a permission
+      // for engage 'access engage ui options'.
       if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
         break;
       }
