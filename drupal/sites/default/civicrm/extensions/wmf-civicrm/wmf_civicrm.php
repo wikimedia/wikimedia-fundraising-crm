@@ -178,7 +178,7 @@ function wmf_civicrm_civicrm_entityTypes(&$entityTypes) {
 }
 
 /**
- * Implements hook_civicrm_thems().
+ * Implements hook_civicrm_themes().
  */
 function wmf_civicrm_civicrm_themes(&$themes) {
   _wmf_civicrm_civix_civicrm_themes($themes);
