@@ -1,8 +1,9 @@
 <?php
 
+use Civi\Test\CiviEnvBuilder;
 use Civi\Test\HeadlessInterface;
-use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
+use PHPUnit\Framework\TestCase;
 
 /**
  * FIXME - Add test description.
@@ -18,28 +19,31 @@ use Civi\Test\TransactionalInterface;
  *
  * @group headless
  */
-class CRM_RipTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, TransactionalInterface {
+class CRM_RipTest extends TestCase implements HeadlessInterface, TransactionalInterface {
 
-  public function setUpHeadless() {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
+  /**
+   * Setup used when HeadlessInterface is implemented.
+   *
+   * Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
+   *
+   * @see See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
+   *
+   * @return \Civi\Test\CiviEnvBuilder
+   *
+   * @throws \CRM_Extension_Exception_ParseException
+   */
+  public function setUpHeadless(): CiviEnvBuilder {
     return \Civi\Test::headless()
       ->installMe(__DIR__)
       ->apply();
   }
 
-  public function setUp() {
-    parent::setUp();
-  }
-
-  public function tearDown() {
-    parent::tearDown();
-  }
-
   /**
    * Test that setting is deceased sets is_opt_out.
+   *
+   * @throws \CiviCRM_API3_Exception
    */
-  public function testChanges() {
+  public function testChanges(): void {
     $ziggy = civicrm_api3('Contact', 'create', array('first_name' => 'David', 'last_name' => 'Bowie', 'contact_type' => 'Individual', 'is_deceased' => 1));
     $this->assertEquals(1, civicrm_api3('Contact', 'getvalue', array('id' => $ziggy['id'], 'return' => 'is_opt_out')));
   }
