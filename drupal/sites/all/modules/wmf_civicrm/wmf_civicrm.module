@@ -3342,66 +3342,6 @@ function wmf_civicrm_dao_to_list($dao) {
 }
 
 /**
- * Implements hook_civicrm_buildForm
- *
- * @param string $formName
- * @param CRM_Core_Form $form
- *
- * @throws \WmfException
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_civicrm_buildForm($formName, &$form) {
-  switch ($formName) {
-    case 'CRM_Custom_Form_CustomDataByType':
-      if ($form->_type === 'Contribution' && empty($form->_entityId)) {
-        // New hand-entered contributions get a default for no_thank_you
-        $no_thank_you_reason_field_name = _wmf_civicrm_get_form_custom_field_name('no_thank_you');
-        $giftSourceField = _wmf_civicrm_get_form_custom_field_name('Campaign');
-
-        $no_thank_you_toggle_form_elements = [
-          $giftSourceField,
-          'financial_type_id'
-        ];
-
-        if ($no_thank_you_reason_field_name && $form->elementExists($no_thank_you_reason_field_name)) {
-          if (CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'financial_type_id', $form->_subType ?? NULL) === 'Stock') {
-            $form->setDefaults([$no_thank_you_reason_field_name => '']);
-          }
-          else {
-            $form->setDefaults(
-              [$no_thank_you_reason_field_name => 'Manually entered']
-            );
-          }
-          CRM_Core_Resources::singleton()->addScript(wmf_civicrm_get_no_thankyou_js($no_thank_you_reason_field_name, $no_thank_you_toggle_form_elements));
-        }
-      }
-      break;
-    case 'CRM_Contribute_Form_Contribution':
-      // Only run this validation for users having the Engage role.
-      if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
-        break;
-      }
-
-      // Default to the Engage contribution type, if this is a new contribution.
-      if ($form->_action & CRM_Core_Action::ADD) {
-        $engage_contribution_type_id = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Engage');
-        $form->setDefaults([
-          'financial_type_id' => $engage_contribution_type_id,
-        ]);
-        $form->assign('customDataSubType', $engage_contribution_type_id);
-      }
-
-      // Make Batch Number required, if the field exists.
-      $batch_num_field_name = _wmf_civicrm_get_form_custom_field_name('import_batch_number');
-      if ($batch_num_field_name && $form->elementExists($batch_num_field_name)) {
-        $form->addRule($batch_num_field_name, t('Batch number is required'), 'required');
-      }
-      break;
-
-  }
-}
-
-/**
  * Get javascript to add to contribution page to reduce data-entry issues on thank yous.
  *
  * Our rules are
