@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ec1371c74333012cde1b7baa74ca3149",
+    "content-hash": "c5682fb293e2961689860e4b95d87fce",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -53,7 +53,7 @@
         },
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
-            "version": "dev-master",
+            "version": "2.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ejegg/login-and-pay-with-amazon-sdk-php",
@@ -3510,16 +3510,16 @@
         },
         {
             "name": "symfony/http-foundation",
-            "version": "v2.8.44",
+            "version": "v2.8.52",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/http-foundation.git",
-                "reference": "10f660d43087b2198c3789bebbd587d20ec6e956"
+                "reference": "3929d9fe8148d17819ad0178c748b8d339420709"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/http-foundation/zipball/10f660d43087b2198c3789bebbd587d20ec6e956",
-                "reference": "10f660d43087b2198c3789bebbd587d20ec6e956",
+                "url": "https://api.github.com/repos/symfony/http-foundation/zipball/3929d9fe8148d17819ad0178c748b8d339420709",
+                "reference": "3929d9fe8148d17819ad0178c748b8d339420709",
                 "shasum": ""
             },
             "require": {
@@ -3561,7 +3561,7 @@
             ],
             "description": "Symfony HttpFoundation Component",
             "homepage": "https://symfony.com",
-            "time": "2018-08-01T13:47:49+00:00"
+            "time": "2019-11-12T12:34:41+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",
@@ -4531,15 +4531,15 @@
         },
         {
             "name": "wikimedia/donation-interface",
-            "version": "v2.5.1",
+            "version": "v2.5.2",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "9bc0a1bb4e177497fcce0f02976bcf78ac2dd81a"
+                "reference": "0c8fd59a456967554e1dca78dbd300152bdbc8d3"
             },
             "require": {
                 "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
-                "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
+                "amzn/login-and-pay-with-amazon-sdk-php": "^2.5",
                 "ext-curl": "*",
                 "ext-json": "*",
                 "geoip2/geoip2": "^2.9",
@@ -4586,7 +4586,7 @@
                 "GPL-2.0-or-later"
             ],
             "description": "Wikimedia Foundation payment processing library",
-            "time": "2021-02-11T07:38:33+00:00"
+            "time": "2021-03-17T21:30:45+00:00"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
@@ -4638,14 +4638,14 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.6.7",
+            "version": "v0.6.9",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "96a049efc4f0d3e64b0563d6ffde77c6bff9b4a7"
+                "reference": "1fcd30ff0727695d4262788479bfd853b9eef831"
             },
             "require": {
-                "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
+                "amzn/login-and-pay-with-amazon-sdk-php": "^2.5",
                 "coderkungfu/php-queue": "^1.0",
                 "corneltek/getoptionkit": "^2.5",
                 "ext-curl": "*",
@@ -4657,14 +4657,14 @@
                 "psr/cache": "^1.0",
                 "psr/log": "^1.0",
                 "symfony/event-dispatcher": "^2.1",
-                "symfony/http-foundation": "^2.8.2",
+                "symfony/http-foundation": "^2.8.52",
                 "symfony/yaml": "^3"
             },
             "require-dev": {
                 "ext-sqlite3": "*",
-                "jakub-onderka/php-parallel-lint": "^0.9",
                 "mediawiki/mediawiki-codesniffer": "^31.0",
-                "phpunit/phpunit": "^6"
+                "php-parallel-lint/php-parallel-lint": "^1.2",
+                "phpunit/phpunit": "^9.5"
             },
             "type": "library",
             "autoload": {
@@ -4716,7 +4716,7 @@
                 "donations",
                 "payments"
             ],
-            "time": "2021-02-23T21:07:53+00:00"
+            "time": "2021-03-17T03:17:49+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -6417,7 +6417,6 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "amzn/login-and-pay-with-amazon-sdk-php": 20,
         "wikimedia/civicrm-data-table-provider": 20,
         "geo6/geocoder-php-addok-provider": 20,
         "geocoder-php/here-provider": 20,

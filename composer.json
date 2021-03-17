@@ -21,7 +21,7 @@
         "irc": "irc://irc.freenode.org/wikimedia-fundraising"
     },
     "require": {
-        "amzn/login-and-pay-with-amazon-sdk-php": "dev-master",
+        "amzn/login-and-pay-with-amazon-sdk-php": "^2.5",
         "coderkungfu/php-queue": "^1.0",
         "cogpowered/finediff": "0.*",
         "ext-intl": "*",
