@@ -8,7 +8,7 @@
     "require": {
         "wikimedia/omnimail-silverpop" : "dev-master",
         "phpseclib/phpseclib":  "~2.0",
-        "league/csv" : "^9",
+        "league/csv" : "9.3.*",
         "guzzlehttp/guzzle": "~6.0",
         "mrmarkfrench/silverpop-php-connector" : "*",
         "omnimail/omnimail" : "@dev",

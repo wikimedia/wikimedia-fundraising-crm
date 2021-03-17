@@ -31,7 +31,7 @@
         "phpseclib/phpseclib":  "~2.0",
         "predis/predis": "1.*",
         "twig/twig": "1.*",
-        "wikimedia/composer-merge-plugin": "^1.4",
+        "wikimedia/composer-merge-plugin": "^2",
         "jackgleeson/stats-collector": "^1.4",
         "google/apiclient": "^2.0",
         "ext-json": "*",
@@ -68,7 +68,7 @@
     "extra": {
       "merge-plugin": {
         "include": [
-          "sites/default/civicrm/extensions/*/composer.json"
+          "drupal/sites/default/civicrm/extensions/*/composer.json"
         ],
         "recurse": true,
         "replace": false,

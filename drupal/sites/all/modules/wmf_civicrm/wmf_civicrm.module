@@ -4027,7 +4027,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
 
     $requiredClauses = [1];
 
-    $matchingGiftDonors = civicrm_api3('Contact', 'get', ['nick_name' => ['IN' => ['Microsoft', 'Google']]])['values'];
+    $matchingGiftDonors = civicrm_api3('Contact', 'get', ['nick_name' => ['IN' => ['Microsoft', 'Google', 'Apple']]])['values'];
     $excludedContacts = array_keys($matchingGiftDonors);
     $anonymousContact = civicrm_api3('Contact', 'get', [
       'first_name' => 'Anonymous',
