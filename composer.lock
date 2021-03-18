@@ -1792,6 +1792,13 @@
                 "read",
                 "write"
             ],
+            "support": {
+                "docs": "https://csv.thephpleague.com",
+                "forum": "https://groups.google.com/forum/#!forum/thephpleague",
+                "issues": "https://github.com/thephpleague/csv/issues",
+                "rss": "https://github.com/thephpleague/csv/releases.atom",
+                "source": "https://github.com/thephpleague/csv"
+            },
             "time": "2019-07-30T14:39:11+00:00"
         },
         {
@@ -2163,16 +2170,16 @@
         },
         {
             "name": "omnimail/omnimail",
-            "version": "dev-master",
+            "version": "0.3.5.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/omnimail/omnimail.git",
-                "reference": "fd11eaca17dc57423649a591674a06d6310b9135"
+                "url": "https://github.com/gabrielbull/omnimail.git",
+                "reference": "96a129e651be24fc7cd7a34b2b7cfdb343333e11"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/omnimail/omnimail/zipball/fd11eaca17dc57423649a591674a06d6310b9135",
-                "reference": "fd11eaca17dc57423649a591674a06d6310b9135",
+                "url": "https://api.github.com/repos/gabrielbull/omnimail/zipball/96a129e651be24fc7cd7a34b2b7cfdb343333e11",
+                "reference": "96a129e651be24fc7cd7a34b2b7cfdb343333e11",
                 "shasum": ""
             },
             "require": {
@@ -2233,7 +2240,11 @@
                 "sendgrid",
                 "sendinblue"
             ],
-            "time": "2020-08-18T17:45:17+00:00"
+            "support": {
+                "issues": "https://github.com/gabrielbull/omnimail/issues",
+                "source": "https://github.com/gabrielbull/omnimail/tree/master"
+            },
+            "time": "2020-08-17T20:20:26+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -4597,16 +4608,16 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "dev-master",
+            "version": "1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "ff552bc1ce37c1a51a34e62dd9757d1296a9c5d9"
+                "reference": "421eceb7845cfafd1ea53042e5a7dfde016225a9"
             },
             "require": {
                 "league/csv": "^9.0",
                 "mrmarkfrench/silverpop-php-connector": "*",
-                "omnimail/omnimail": "dev-master",
+                "omnimail/omnimail": "^0.3",
                 "phpseclib/phpseclib": "~2.0"
             },
             "require-dev": {
@@ -4641,7 +4652,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2020-12-22T01:07:48+00:00"
+            "time": "2021-03-18T01:14:12+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -6423,10 +6434,7 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {
-        "wikimedia/omnimail-silverpop": 20,
-        "omnimail/omnimail": 20
-    },
+    "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

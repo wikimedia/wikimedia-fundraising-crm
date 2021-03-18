@@ -54,7 +54,7 @@ class OmnigroupmemberGetTest extends OmnimailBaseTestClass {
    *
    * @param string $job
    */
-  protected function setupSuccessfulDownloadClient($job = 'omnimail_omnigroupmembers_load') {
+  protected function setupSuccessfulDownloadClient($job = 'omnimail_omnigroupmembers_load'): Client {
     $responses = array(
       file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),

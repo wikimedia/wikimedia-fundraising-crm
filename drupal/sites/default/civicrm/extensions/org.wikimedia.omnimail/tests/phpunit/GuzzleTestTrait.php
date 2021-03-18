@@ -38,7 +38,7 @@ trait GuzzleTestTrait {
   /**
    * @return array
    */
-  public function getContainer() {
+  public function getContainer(): array {
     return $this->container;
   }
 
@@ -52,7 +52,7 @@ trait GuzzleTestTrait {
   /**
    * @return \GuzzleHttp\Client
    */
-  public function getGuzzleClient() {
+  public function getGuzzleClient(): Client {
     return $this->guzzleClient;
   }
 
@@ -85,7 +85,7 @@ trait GuzzleTestTrait {
   /**
    * @return \GuzzleHttp\Handler\MockHandler
    */
-  public function getMockHandler() {
+  public function getMockHandler(): MockHandler {
     return $this->mockHandler;
   }
 
@@ -141,7 +141,7 @@ trait GuzzleTestTrait {
    *
    * @return array
    */
-  protected function getRequestBodies() {
+  protected function getRequestBodies(): array {
     $requests = [];
     foreach ($this->getContainer() as $guzzle) {
       $requests[] = (string) $guzzle['request']->getBody();
@@ -154,7 +154,7 @@ trait GuzzleTestTrait {
    *
    * @return array
    */
-  protected function getRequestUrls() {
+  protected function getRequestUrls(): array {
     $requests = [];
     foreach ($this->getContainer() as $guzzle) {
       $requests[] = (string) $guzzle['request']->getUri();
@@ -167,7 +167,7 @@ trait GuzzleTestTrait {
    *
    * @return array
    */
-  protected function getResponseBodies() {
+  protected function getResponseBodies(): array {
     $responses = [];
     foreach ($this->getContainer() as $guzzle) {
       $responses[] = (string) $guzzle['response']->getBody();

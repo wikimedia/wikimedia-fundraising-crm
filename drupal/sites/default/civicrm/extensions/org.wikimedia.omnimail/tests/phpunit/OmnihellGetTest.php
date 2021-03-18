@@ -27,6 +27,8 @@ class OmnihellGetTest extends OmnimailBaseTestClass {
 
   /**
    * Example: Test that a version is returned.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testOmnihellGet() {
     $client = $this->setupSuccessfulBrowserClient();

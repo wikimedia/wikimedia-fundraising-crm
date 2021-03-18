@@ -15,11 +15,14 @@ class api_v4_CheckTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
   /**
    * Set up for headless tests.
    *
-   * Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
+   * Civi\Test has many helpers, like install(), uninstall(), sql(), and
+   * sqlFile().
    *
    * See: https://docs.civicrm.org/dev/en/latest/testing/phpunit/#civitest
+   *
+   * @throws \CRM_Extension_Exception_ParseException
    */
-  public function setUpHeadless() {
+  public function setUpHeadless(): \Civi\Test\CiviEnvBuilder {
     return \Civi\Test::headless()
       ->installMe(__DIR__)
       ->apply();
@@ -28,7 +31,7 @@ class api_v4_CheckTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
   /**
    * @throws \API_Exception
    */
-  public function tearDown() {
+  public function tearDown(): void {
     OmnimailJobProgress::delete(FALSE)->addWhere('job', '=', 'omnimail_privacy_erase')->execute();
     parent::tearDown();
   }
@@ -36,7 +39,7 @@ class api_v4_CheckTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
   /**
    * The setup() method is executed before the test is executed (optional).
    */
-  public function setUp() {
+  public function setUp(): void {
     $table = CRM_Core_DAO_AllCoreTables::getTableForEntityName('OmnimailJobProgress');
     $this->assertTrue($table && CRM_Core_DAO::checkTableExists($table), 'There was a problem with extension installation. Table for ' . 'OmnimailJobProgress' . ' not found.');
     parent::setUp();

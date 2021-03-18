@@ -1,12 +1,6 @@
 <?php
 
-use Civi\Test\EndToEndInterface;
-use Civi\Test\HookInterface;
-use Civi\Test\TransactionalInterface;
 use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7\Response;
 
 require_once __DIR__ . '/OmnimailBaseTestClass.php';
 
@@ -26,7 +20,7 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  */
 class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
 
-  public function tearDown() {
+  public function tearDown(): void {
     $this->cleanupGroup(NULL, 'Omnimailers');
     $this->cleanupGroup(NULL, 'Omnimailers2');
     $this->cleanupGroup(NULL, 'Omnimailers3');
@@ -35,8 +29,10 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
 
   /**
    * Example: the groupMember load fn works.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testOmnigroupmemberLoad() {
+  public function testOmnigroupmemberLoad(): void {
     $client = $this->setupSuccessfulDownloadClient();
     $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers', 'title' => 'Omni']);
 
@@ -64,8 +60,10 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
 
   /**
    * Example: Test that offset is respected.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testOmnigroupmemberLoadOffset() {
+  public function testOmnigroupmemberLoadOffset(): void {
     $client = $this->setupSuccessfulDownloadClient();
     $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers', 'title' => 'Omni']);
 
@@ -88,8 +86,10 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
 
   /**
    * Example: Test that offset is respected.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testOmnigroupmemberLoadUseOffsetSetting() {
+  public function testOmnigroupmemberLoadUseOffsetSetting(): void {
     $client = $this->setupSuccessfulDownloadClient();
     $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers', 'title' => 'Omni']);
 
@@ -138,8 +138,10 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
 
   /**
    * Test when download does not complete in time.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testOmnigroupmemberLoadIncomplete() {
+  public function testOmnigroupmemberLoadIncomplete(): void {
     $this->createSetting([
       'job' => 'omnimail_omnigroupmembers_load',
       'mailing_provider' => 'Silverpop',
@@ -181,8 +183,10 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
 
   /**
    * Test when download does not complete in time.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testOmnigroupmemberLoadIncompleteUseSuffix() {
+  public function testOmnigroupmemberLoadIncompleteUseSuffix(): void {
     $this->createSetting([
       'job' => 'omnimail_omnigroupmembers_load',
       'mailing_provider' => 'Silverpop',
@@ -224,9 +228,12 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
   }
 
   /**
-   * After completing an incomplete download the end date should be the progress end date.
+   * After completing an incomplete download the end date should be the
+   * progress end date.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testCompleteIncomplete() {
+  public function testCompleteIncomplete(): void {
     $client = $this->setupSuccessfulDownloadClient(FALSE);
     $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers3', 'title' => 'Omni3']);
     $this->createSetting([
@@ -267,7 +274,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    *
    * @return \GuzzleHttp\Client
    */
-  protected function setupSuccessfulDownloadClient($isUpdateSetting = TRUE) {
+  protected function setupSuccessfulDownloadClient($isUpdateSetting = TRUE): Client {
     $responses = [
       file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
@@ -301,8 +308,10 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    * @param $group
    *
    * @param null|string $name
+   *
+   * @throws \CRM_Core_Exception
    */
-  protected function cleanupGroup($group, $name = NULL) {
+  protected function cleanupGroup($group, $name = NULL): void {
     if ($name) {
       $group = $this->callAPISuccess('Group', 'get', ['name' => $name])['values'];
       if (empty($group)) {
@@ -322,13 +331,14 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    * @param $groupMembers
    *
    * @return array
+   * @throws \CRM_Core_Exception
    */
   protected function getGroupMemberDetails($groupMembers): array {
     $contactIDs = ['IN' => []];
     foreach ($groupMembers['values'] as $groupMember) {
       $contactIDs['IN'][] = $groupMember['contact_id'];
     }
-    $contacts = $this->callAPISuccess('Contact', 'get', [
+    return $this->callAPISuccess('Contact', 'get', [
       'contact_id' => $contactIDs,
       'sequential' => 1,
       'return' => [
@@ -340,7 +350,6 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
         'is_opt_out',
       ],
     ]);
-    return $contacts;
   }
 
 }
