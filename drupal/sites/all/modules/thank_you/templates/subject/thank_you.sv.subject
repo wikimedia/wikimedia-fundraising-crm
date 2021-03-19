@@ -1,1 +1,5 @@
-Med hjälp av din gåva kan vi fortsätta utforska tillsammans
+{% if first_name %}
+  {{ first_name }}, din gåva ger oss ännu ett skäl att fira.
+{% else %}
+  Din gåva ger oss ännu ett skäl att fira.
+{% endif %}
