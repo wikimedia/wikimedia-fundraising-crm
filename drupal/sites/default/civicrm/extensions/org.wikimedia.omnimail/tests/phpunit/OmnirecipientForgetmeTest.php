@@ -22,7 +22,7 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  */
 class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
 
-  public function tearDown() {
+  public function tearDown(): void {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_mailing_provider_data WHERE contact_id IN (' . implode(',', $this->contactIDs) . ')');
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_omnimail_job_progress WHERE job_identifier = \'["charlie@example.com"]\'');
     parent::tearDown();
@@ -80,7 +80,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
 
     // Check the request we sent out had the right email in it.
     $requests = $this->getRequestBodies();
-    $this->assertEquals($requests[1], "Email,charlie@example.com\n", print_r($requests, 1));
+    $this->assertEquals("Email,charlie@example.com\n", $requests[1], print_r($requests, 1));
     Civi::settings()->set('omnimail_credentials', $settings);
   }
 
@@ -105,7 +105,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
    * @return array
    *   Settings prior to change
    */
-  protected function setDatabaseID($databaseIDs = [50]) {
+  protected function setDatabaseID($databaseIDs = [50]): array {
     $settings = Civi::settings()->get('omnimail_credentials');
     // This won't actually work if settings is set in civicrm.settings.php but will be used by CI
     // which now will skip erase if it doesn't have any database_id

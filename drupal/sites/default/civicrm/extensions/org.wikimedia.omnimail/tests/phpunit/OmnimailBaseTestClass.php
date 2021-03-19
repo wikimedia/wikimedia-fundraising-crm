@@ -39,7 +39,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * @return \Civi\Test\CiviEnvBuilder
    * @throws \CRM_Extension_Exception_ParseException
    */
-  public function setUpHeadless() {
+  public function setUpHeadless(): \Civi\Test\CiviEnvBuilder {
     return \Civi\Test::headless()
       ->installMe(__DIR__)
       ->apply();
@@ -52,7 +52,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    */
   protected $contactIDs = [];
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
     Civi::service('settings_manager')->flush();
@@ -62,7 +62,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
   /**
    * @throws \CRM_Core_Exception
    */
-  public function tearDown() {
+  public function tearDown(): void {
     foreach ($this->contactIDs as $contactID) {
       $this->callAPISuccess('Contact', 'delete', ['id' => $contactID, 'skip_undelete' => 1]);
     }
@@ -79,7 +79,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    *
    * @return \GuzzleHttp\Client
    */
-  public function getMockRequest($body = [], $authenticateFirst = TRUE) {
+  public function getMockRequest($body = [], $authenticateFirst = TRUE): Client {
 
     $responses = [];
     if ($authenticateFirst) {
@@ -115,7 +115,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    *
    * @return \GuzzleHttp\Client
    */
-  protected function setupSuccessfulDownloadClient($job = 'omnimail_omnigroupmembers_load') {
+  protected function setupSuccessfulDownloadClient($job = 'omnimail_omnigroupmembers_load'): Client {
     $responses = [
       file_get_contents(__DIR__ . '/Responses/RawRecipientDataExportResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
@@ -153,7 +153,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    *
    * @return array
    */
-  public function getUtcDateFormattedJobSettings($params = ['mail_provider' => 'Silverpop']) {
+  public function getUtcDateFormattedJobSettings($params = ['mail_provider' => 'Silverpop']): array {
     $settings = $this->getJobSettings($params);
     $dateFields = ['last_timestamp', 'progress_end_timestamp'];
     foreach ($dateFields as $dateField) {

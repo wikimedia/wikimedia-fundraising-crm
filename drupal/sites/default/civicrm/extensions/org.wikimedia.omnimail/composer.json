@@ -6,12 +6,12 @@
     }
     ],
     "require": {
-        "wikimedia/omnimail-silverpop" : "dev-master",
+        "wikimedia/omnimail-silverpop" : "*",
         "phpseclib/phpseclib":  "~2.0",
         "league/csv" : "9.3.*",
         "guzzlehttp/guzzle": "~6.0",
         "mrmarkfrench/silverpop-php-connector" : "*",
-        "omnimail/omnimail" : "@dev",
+        "omnimail/omnimail" : "^0.3",
         "ext-dom": "*",
         "ext-libxml": "*"
     },

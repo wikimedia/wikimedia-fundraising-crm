@@ -25,7 +25,7 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  */
 class OmnirecipientProcessUnsubscribesTest extends OmnimailBaseTestClass {
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->makeScientists();
   }

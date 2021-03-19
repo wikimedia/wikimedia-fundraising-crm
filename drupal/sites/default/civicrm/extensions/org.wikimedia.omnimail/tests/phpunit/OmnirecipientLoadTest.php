@@ -1,13 +1,5 @@
 <?php
 
-use Civi\Test\EndToEndInterface;
-use Civi\Test\HookInterface;
-use Civi\Test\TransactionalInterface;
-use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7\Response;
-
 require_once __DIR__ . '/OmnimailBaseTestClass.php';
 
 /**
@@ -26,15 +18,17 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  */
 class OmnirecipientLoadTest extends OmnimailBaseTestClass {
 
-  public function tearDown() {
+  public function tearDown(): void {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_mailing_provider_data');
     parent::tearDown();
   }
 
   /**
    * Example: Test that a version is returned.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testOmnirecipientLoad() {
+  public function testOmnirecipientLoad(): void {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
 
     $this->callAPISuccess('Omnirecipient', 'load', ['mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'debug' => 1, 'client' => $client]);
@@ -86,8 +80,10 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
    *
    * It's hard to test that it does batch, but at least we can check it
    * succeeds.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testOmnirecipientLoadIncreasedBatchInsert() {
+  public function testOmnirecipientLoadIncreasedBatchInsert(): void {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
 
     $this->callAPISuccess('Omnirecipient', 'load', [
@@ -106,8 +102,10 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
    *
    * It's hard to test that it does batch, but at least we can check it
    * succeeds.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testOmnirecipientLoadIncreasedBatchInsertExceedsAvailable() {
+  public function testOmnirecipientLoadIncreasedBatchInsertExceedsAvailable(): void {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
 
     $this->callAPISuccess('Omnirecipient', 'load', [
@@ -123,8 +121,10 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
 
   /**
    * Example: Test that a version is returned.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testOmnirecipientLoadLimitAndOffset() {
+  public function testOmnirecipientLoadLimitAndOffset(): void {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
 
     $this->callAPISuccess('Omnirecipient', 'load', [
@@ -171,8 +171,10 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
 
   /**
    * Test when download does not complete in time.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testOmnirecipientLoadIncomplete() {
+  public function testOmnirecipientLoadIncomplete(): void {
     $this->createSetting([
       'job' => 'omnimail_omnirecipient_load',
       'mailing_provider' => 'Silverpop',
@@ -199,9 +201,12 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
   }
 
   /**
-   * After completing an incomplete download the end date should be the progress end date.
+   * After completing an incomplete download the end date should be the
+   * progress end date.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testCompleteIncomplete() {
+  public function testCompleteIncomplete(): void {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
     $now = time();
     $this->createSetting([
@@ -229,9 +234,10 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
    * Test the suffix works for multiple jobs..
    *
    * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  public function testCompleteIncompleteUseSuffix() {
+  public function testCompleteIncompleteUseSuffix(): void {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
     $this->createSetting([
       'job' => 'omnimail_omnirecipient_load',
@@ -268,7 +274,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
    * think it is taking our parameters.
    *
    */
-  public function testIncompleteRejectTimestamps() {
+  public function testIncompleteRejectTimestamps(): void {
     $this->createSetting([
       'job' => 'omnimail_omnirecipient_load',
       'mailing_provider' => 'Silverpop',
