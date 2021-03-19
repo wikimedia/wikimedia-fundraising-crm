@@ -3401,11 +3401,6 @@ function wmf_civicrm_civicrm_buildForm($formName, &$form) {
       }
       break;
 
-    case 'CRM_Contact_Form_Search_Advanced' :
-    case 'CRM_Contribute_Form_Search' :
-      $defaults['contribution_date_relative'] = 0;
-      $form->setDefaults($defaults);
-      break;
   }
 }
 
