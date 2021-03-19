@@ -256,6 +256,17 @@ function wmf_civicrm_civicrm_buildForm($formName, &$form) {
       }
       break;
 
+    case 'CRM_Contribute_Form_Search':
+    case 'CRM_Contact_Form_Search_Advanced':
+      // Remove the field 'Contributions OR Soft Credits?' from the contribution search
+      // and advanced search pages.
+      // This filter has to be removed as it attempts to create an insanely big
+      // temporary table that kills the server.
+      if ($form->elementExists('contribution_or_softcredits')) {
+        $form->removeElement('contribution_or_softcredits');
+      }
+      break;
+
   }
 }
 
