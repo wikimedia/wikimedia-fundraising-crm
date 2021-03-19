@@ -178,11 +178,101 @@ function wmf_civicrm_civicrm_entityTypes(&$entityTypes) {
 }
 
 /**
- * Implements hook_civicrm_thems().
+ * Implements hook_civicrm_themes().
  */
 function wmf_civicrm_civicrm_themes(&$themes) {
   _wmf_civicrm_civix_civicrm_themes($themes);
 }
+
+/**
+ * Get the name of the custom field as it would be shown on the form.
+ *
+ * This is basically 'custom_x_-1' for us. The -1 will always be 1
+ * except for multi-value custom groups which we don't really use.
+ *
+ * @param string $fieldName
+ *
+ * @return string
+ * @throws \CiviCRM_API3_Exception
+ */
+function _wmf_civicrm_get_form_custom_field_name(string $fieldName): string {
+  return 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID($fieldName) . '_-1';
+}
+
+/**
+ * Implements hook_civicrm_buildForm
+ *
+ * @param string $formName
+ * @param CRM_Core_Form $form
+ *
+ * @throws \WmfException
+ * @throws \CiviCRM_API3_Exception
+ */
+function wmf_civicrm_civicrm_buildForm($formName, &$form) {
+  switch ($formName) {
+    case 'CRM_Custom_Form_CustomDataByType':
+      if ($form->_type === 'Contribution' && empty($form->_entityId)) {
+        // New hand-entered contributions get a default for no_thank_you
+        $no_thank_you_reason_field_name = _wmf_civicrm_get_form_custom_field_name('no_thank_you');
+        $giftSourceField = _wmf_civicrm_get_form_custom_field_name('Campaign');
+
+        $no_thank_you_toggle_form_elements = [
+          $giftSourceField,
+          'financial_type_id'
+        ];
+
+        if ($no_thank_you_reason_field_name && $form->elementExists($no_thank_you_reason_field_name)) {
+          if (CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'financial_type_id', $form->_subType ?? NULL) === 'Stock') {
+            $form->setDefaults([$no_thank_you_reason_field_name => '']);
+          }
+          else {
+            $form->setDefaults(
+              [$no_thank_you_reason_field_name => 'Manually entered']
+            );
+          }
+          CRM_Core_Resources::singleton()->addScript(wmf_civicrm_get_no_thankyou_js($no_thank_you_reason_field_name, $no_thank_you_toggle_form_elements));
+        }
+      }
+      break;
+    case 'CRM_Contribute_Form_Contribution':
+      // Only run this validation for users having the Engage role.
+      // @todo - move the user_has_role out of the extension. In order
+      // to ready this for drupal we can switch to using a permission
+      // for engage 'access engage ui options'.
+      if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
+        break;
+      }
+
+      // Default to the Engage contribution type, if this is a new contribution.
+      if ($form->_action & CRM_Core_Action::ADD) {
+        $engage_contribution_type_id = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Engage');
+        $form->setDefaults([
+          'financial_type_id' => $engage_contribution_type_id,
+        ]);
+        $form->assign('customDataSubType', $engage_contribution_type_id);
+      }
+
+      // Make Batch Number required, if the field exists.
+      $batch_num_field_name = _wmf_civicrm_get_form_custom_field_name('import_batch_number');
+      if ($batch_num_field_name && $form->elementExists($batch_num_field_name)) {
+        $form->addRule($batch_num_field_name, t('Batch number is required'), 'required');
+      }
+      break;
+
+    case 'CRM_Contribute_Form_Search':
+    case 'CRM_Contact_Form_Search_Advanced':
+      // Remove the field 'Contributions OR Soft Credits?' from the contribution search
+      // and advanced search pages.
+      // This filter has to be removed as it attempts to create an insanely big
+      // temporary table that kills the server.
+      if ($form->elementExists('contribution_or_softcredits')) {
+        $form->removeElement('contribution_or_softcredits');
+      }
+      break;
+
+  }
+}
+
 
 // --- Functions below this ship commented out. Uncomment as required. ---
 

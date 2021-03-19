@@ -3342,74 +3342,6 @@ function wmf_civicrm_dao_to_list($dao) {
 }
 
 /**
- * Implements hook_civicrm_buildForm
- *
- * @param string $formName
- * @param CRM_Core_Form $form
- *
- * @throws \WmfException
- */
-function wmf_civicrm_civicrm_buildForm($formName, &$form) {
-  switch ($formName) {
-    case 'CRM_Custom_Form_CustomDataByType':
-      if ($form->_type === 'Contribution' && empty($form->_entityId)) {
-        // New hand-entered contributions get a default for no_thank_you
-        $no_thank_you_reason_field_name = wmf_civicrm_evil_get_custom_field_in_form(
-          'no_thank_you', $form->_elementIndex
-        );
-        $giftSourceField = wmf_civicrm_evil_get_custom_field_in_form(
-          'Campaign', $form->_elementIndex
-        );
-
-        $no_thank_you_toggle_form_elements = [
-          $giftSourceField,
-          'financial_type_id'
-        ];
-
-        if ($no_thank_you_reason_field_name) {
-          if (CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'financial_type_id', $form->_subType ?? NULL) === 'Stock') {
-            $form->setDefaults([$no_thank_you_reason_field_name => '']);
-          }
-          else {
-            $form->setDefaults(
-              [$no_thank_you_reason_field_name => 'Manually entered']
-            );
-          }
-          CRM_Core_Resources::singleton()->addScript(wmf_civicrm_get_no_thankyou_js($no_thank_you_reason_field_name, $no_thank_you_toggle_form_elements));
-        }
-      }
-      break;
-    case 'CRM_Contribute_Form_Contribution':
-      // Only run this validation for users having the Engage role.
-      if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
-        break;
-      }
-
-      // Default to the Engage contribution type, if this is a new contribution.
-      if ($form->_action & CRM_Core_Action::ADD) {
-        $engage_contribution_type_id = wmf_civicrm_get_civi_id('contribution_type_id', 'Engage');
-        $form->setDefaults([
-          'financial_type_id' => $engage_contribution_type_id,
-        ]);
-        $form->assign('customDataSubType', $engage_contribution_type_id);
-      }
-
-      // Make Batch Number required, if the field exists.
-      $batch_num_field_name = wmf_civicrm_evil_get_custom_field_in_form('import_batch_number', $form->_elementIndex);
-      if ($batch_num_field_name) {
-        $form->addRule($batch_num_field_name, t('Batch number is required'), 'required');
-      }
-      break;
-
-    case 'CRM_Contact_Form_Search_Advanced' :
-    case 'CRM_Contribute_Form_Search' :
-      $defaults['contribution_date_relative'] = 0;
-      $form->setDefaults($defaults);
-      break;
-  }
-}
-
-/**
  * Get javascript to add to contribution page to reduce data-entry issues on thank yous.
  *
  * Our rules are
@@ -3487,9 +3419,14 @@ function wmf_civicrm_get_no_thankyou_js(string $no_thank_you_reason_field_name, 
 /**
  * Additional validations for the contribution form
  *
+ * @param array $fields
+ * @param CRM_Core_Form $form
+ *
  * @return array of any errors in the form
+ * @throws \CiviCRM_API3_Exception
+ * @throws \WmfException
  */
-function wmf_civicrm_validate_contribution($fields, $form) {
+function wmf_civicrm_validate_contribution($fields, $form): array {
   $errors = [];
 
   // Only run on add or update
@@ -3520,14 +3457,14 @@ function wmf_civicrm_validate_contribution($fields, $form) {
   }
 
   if (wmf_civicrm_tomorrows_month() === '01') {
-    $postmark_field_name = wmf_civicrm_evil_get_custom_field_in_form('postmark_date', $fields);
+    $postmark_field_name = _wmf_civicrm_get_form_custom_field_name('postmark_date');
     // If the receive_date is in Dec or Jan, make sure we have a postmark date,
     // to be generous to donors' tax stuff.
     $date = strptime($fields['receive_date'], "%m/%d/%Y");
     // n.b.: 0-based date spoiler.
     if ($date['tm_mon'] == (12 - 1) || $date['tm_mon'] == (1 - 1)) {
       // And the postmark date is missing
-      if (!$fields[$postmark_field_name]) {
+      if ($form->elementExists($postmark_field_name) && !$fields[$postmark_field_name]) {
         $errors[$postmark_field_name] = t("You forgot the postmark date!");
       }
     }
@@ -3563,23 +3500,6 @@ function wmf_civicrm_user_has_role($role) {
   }
 
   return FALSE;
-}
-
-/**
- * @param string $name custom field name
- * @param array $fields k/v fields as they are passed to CiviCRM form hooks
- *
- * @return string evil mangled name, like "custom_21_123332"
- */
-function wmf_civicrm_evil_get_custom_field_in_form($name, $fields) {
-  $custom_field_stump = wmf_civicrm_get_custom_field_name($name) . '_';
-  foreach ($fields as $key => $value) {
-    if (0 === strpos($key, $custom_field_stump)) {
-      return $key;
-    }
-  }
-  watchdog('wmf_civicrm', 'Form is missing your precious custom field.', NULL, WATCHDOG_ERROR);
-  return NULL;
 }
 
 /**
