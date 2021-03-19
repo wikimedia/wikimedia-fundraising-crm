@@ -184,6 +184,21 @@ function wmf_civicrm_civicrm_themes(&$themes) {
   _wmf_civicrm_civix_civicrm_themes($themes);
 }
 
+/**
+ * Get the name of the custom field as it would be shown on the form.
+ *
+ * This is basically 'custom_x_-1' for us. The -1 will always be 1
+ * except for multi-value custom groups which we don't really use.
+ *
+ * @param string $fieldName
+ *
+ * @return string
+ * @throws \CiviCRM_API3_Exception
+ */
+function _wmf_civicrm_get_form_custom_field_name(string $fieldName): string {
+  return 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID($fieldName) . '_-1';
+}
+
 // --- Functions below this ship commented out. Uncomment as required. ---
 
 /**
