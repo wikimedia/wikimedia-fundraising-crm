@@ -23,7 +23,7 @@ function _load_headers( $row ){
     if ( array_key_exists( $upper, $used ) ) {
       $duplicates[] = $k;
     }
-    $header_keys[$k] = $i;
+    $header_keys[trim($k)] = $i;
     $used[$upper] = true;
   }
   if ( $duplicates ) {
