@@ -1,4 +1,7 @@
-{% if first_name and last_name %}
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Een ontvangstbewijs en mijn welgemeende dank.</span>
+<div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+
+{% if first_name %}
 <p>Beste {{ first_name }},
 </p>{% else %}<p>
 Beste donateur,</p>
@@ -7,40 +10,57 @@ Beste donateur,</p>
 
 {% if recurring %}
 
-<p>Ik voel me vereerd dat ik u, namens een wereld vol mensen die op zoek zijn naar gratis kennis, mag bedanken voor uw maandelijkse schenking van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+<p>
+Ik ben erg dankbaar dat ik degene ben die je mag bedanken voor je herhaalde donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} om Wikipedia te ondersteunen. Ik wil van deze gelegenheid gebruikmaken om je te bedanken voor je vrijgevigheid en je uitzonderlijke bereidheid om deel te nemen aan de totstandbrenging van een betere toekomst voor de wereld.
 </p>
 
-<p>Uw donatie houdt Wikipedia onafhankelijk en uw maandelijkse ondersteuning is essentieel voor de langetermijnplanning, zodat we kunnen zien wat Wikipedia de komende jaren kan bereiken. Eenmaal per maand, zal, tot wederopzegging, een donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} worden afgeschreven door de Wikimedia Foundation. <b>Wij sturen u elk jaar in januari een overzicht van uw bijdragen over het voorgaande jaar.</b> Als u om welke reden dan ook uw donatie wilt annuleren, volg dan deze <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">eenvoudige annuleringsinstructies</a>.</p>
+<p>
+Je maandelijkse bijdrage zal Wikipedia verder  brengen en ons helpen vooruit te plannen. Eenmaal per maand zal er een donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} afgeschreven worden door de Wikimedia Foundation. <b>Elk jaar in januari sturen we je een overzicht van je bijdragen van het afgelopen jaar</b>. Als je om welke reden dan ook je donatie wilt annuleren, volg dan deze <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">eenvoudige annulerings instructies</a>.
 
 {% else %}
 
-<p>Ik voel me vereerd dat ik u, namens een wereld vol mensen die op zoek zijn naar gratis kennis, mag bedanken voor uw schenking van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+<p>
+Ik ben erg dankbaar dat ik degene ben die je mag bedanken voor je eenmalige donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} ter ondersteuning van Wikipedia. Ik wil van deze gelegenheid gebruikmaken om je te bedanken voor je vrijgevigheid en je uitzonderlijke bereidheid om deel te nemen aan de totstandbrenging van een betere toekomst voor de wereld.
 </p>
 
 {% endif %}
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>Onlangs hebben we een kleine technische storing opgelost, die ervoor zorgde dat sommige maandelijkse donaties tijdelijk waren stopgezet. We hebben de betaling van jouw periodieke bijdrage hersteld, waardoor het betalingsproces weer normaal verloopt. We zullen de donaties die zijn overgeslagen niet alsnog innen. Hartelijk dank voor je geduld, en mail gerust naar donate@wikimedia.org als je nog vragen hebt.</p>
+<p>
+Onlangs hebben we een kleine technische storing opgelost, die ervoor zorgde dat sommige maandelijkse donaties tijdelijk waren stopgezet. We hebben de betaling van jouw periodieke bijdrage hersteld, waardoor het betalingsproces weer normaal verloopt. We zullen de donaties die zijn overgeslagen niet alsnog innen. Hartelijk dank voor je geduld, en mail gerust naar donate@wikimedia.org als je nog vragen hebt.
+</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
-<p>Onlangs hebben we een kleine technische storing opgelost die ervoor zorgde dat enkele donateurs geen bevestiging van hun donatie ontvingen. Zie deze e-mail als een bedankje voor je donatie van {{ receive_date }}.
-We waarderen je geduld en steun, en mail gerust naar donate@wikimedia.org als je nog vragen hebt.</p>
+<p>
+Onlangs hebben we een kleine technische storing opgelost die ervoor zorgde dat enkele donateurs geen bevestiging van hun donatie ontvingen. Zie deze e-mail als een bedankje voor je donatie van {{ receive_date }}.
+We waarderen je geduld en steun, en mail gerust naar donate@wikimedia.org als je nog vragen hebt.
+</p>
 {%endif%}
 
-<p><b>Uw donatie betekent veel voor ons en al die miljoenen mensen over de hele wereld die Wikipedia dagelijks raadplegen.
-</b></p>
-
-<p>Wikipedia is ook een beetje van u en samen zorgen we ervoor dat Wikipedia blijft bestaan en zich steeds verder kan ontwikkelen.
+<p>
+Twintig jaar geleden heb ik Wikipedia opgericht. Sindsdien is onze geliefde encyclopedie sterk gegroeid, in voor- en tegenspoed. Vandaag de dag dient het meer dan ooit zijn ware doel. Het helpt miljoenen mensen met studeren, ontdekken, verkennen en onderzoeken.
 </p>
 
-<p>Met een diep gevoel van dankbaarheid,
+<p>
+Elke dag geeft Wikipedia lezers, ongeacht hun omstandigheden, een nieuwe kans om de kennis te verwerven waar zij recht op hebben.
 </p>
 
-<p>Katherine<br/><br/>
-<br/><br/>
-Katherine Maher<br/>
-Uitvoerend directeur, Wikimedia Foundation
+<p>
+Jij bent degene die dit mogelijk maakt. Dankzij jouw steun kunnen er bewerkingen worden uitgevoerd en bereiken artikelen nieuwe lezers; het geeft onze non-profitorganisatie de middelen om trouw te blijven aan haar missie, ook nu Wikipedia een van de meest bezochte websites ter wereld is geworden.
+</p>
+
+<p>
+We krijgen waarschijnlijk niet de kans om samen kaarsjes uit te blazen, maar aangezien we het hele jaar <a href="https://wikimediafoundation.org/wikipedia20/">20 jaar Wikipedia</a> vieren, wil ik je toch even laten weten dat wij bij de Wikimedia Foundation jou in ons hart hebben gesloten. 
+</p>
+
+<p>
+Bedankt voor alles,
+</p>
+
+<p>
+Jimmy Wales<br>
+Wikipedia-oprichter
 </p>
 
 <p>Veel werkgevers zullen bijdragen van werknemers ruimhartig verdubbelen: controleer met uw werkgever om te zien of deze een <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">zakelijk donatieprogramma</a> heeft.
@@ -55,4 +75,4 @@ Uitvoerend directeur, Wikimedia Foundation
 <p>Als u in de toekomst geen fondsenwerving mail wilt ontvangen van de Wikimedia Foundation, kunt u zich <a href="{{ unsubscribe_link | raw }}">direct uitschrijven</a> Houd er rekening mee dat we u nog steeds ontvangstbewijzen, zoals deze, voor toekomstige donaties zullen sturen.
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.nl.html","revision":20200220}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.nl.html","revision":20210319}TI_END -->

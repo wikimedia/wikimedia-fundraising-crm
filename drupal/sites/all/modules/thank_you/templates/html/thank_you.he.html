@@ -1,4 +1,9 @@
-{% if first_name and last_name %}
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">קבלה ותודה מקרב לב.
+</span>
+<div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+
+
+{% if first_name %}
 <p>שלום {{ first_name }}!
 </p>{% else %}<p>
 תורם יקר, תורמת יקרה</p>
@@ -7,17 +12,17 @@
 
 {% if recurring %}
 <p>
-זה כבוד גדול בשבילי להודות לך על תרומתך החודשית בסך {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, בשמו של קהל גדול של אנשים המבקשים ידע חופשי.
+אני כל־כך אסיר תודה על כך שאני הוא שמביע את הערכתי על התרומה החוזרת שלך בסך {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} לתמיכה בוויקיפדיה. אני רוצה לנצל את ההזדמנות הזאת כדי לציין את הנדיבות שלך ואת נכונותך היוצאת מן הכלל להשתתף ביצירת עתיד טוב יותר לעולם.
 </p>
 
 <p>
-תרומתך מאפשרת לוויקיפדיה להישאר עצמאית, ותמיכתך החודשית חיונית לשם תכנון ארוך־טווח. היא עוזרת לנו לראות לאן הישגיה של ויקיפדיה יכולים להגיע בשנים הבאות. פעם בחודש, יחויב חשבונך על־ידי קרן ויקימדיה בתרומה בסך {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, עד שתגיע ממך בקשה להפסיק את החיובים. <b>אנחנו נשלח לך מדי חודש ינואר את סיכום התרומות שלך בשנה החולפת.</b> לביטול התרומה, מכל סיבה שהיא, יש לפעול על־פי <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">ההוראות הפשוטות האלה</a>.
+התרומה החודשית שלך תיקח את ויקיפדיה רחוק ותעזור לנו לתכנן קדימה. פעם בחודש, תרומה של {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} תיגבה על ידי קרן ויקימדיה. <b>בכל שנה, בחודש ינואר, נשלח לך סיכום של התרומות שלך בשנה הקודמת</b>. אם מסיבה כלשהי תרצה לבטל את התרומה שלך, מלא אחר <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">הנחיות הביטול הפשוטות</a> האלו.
 </p>
 
 {% else %}
 
 <p>
-זהו לי כבוד גדול להודות לך על תרומתך בסך {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, בשמו של קהל גדול של אנשים המבקשים ידע חופשי.
+אני כל־כך אסיר תודה על כך שאני הוא שמביע את הערכתי על התרומה החד־פעמית שלך בסך {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} לתמיכה בוויקיפדיה. אני רוצה לנצל את ההזדמנות הזאת כדי לציין את הנדיבות שלך ואת נכונותך היוצאת מן הכלל להשתתף ביצירת עתיד טוב יותר לעולם.
 </p>
 {% endif %}
 
@@ -30,22 +35,25 @@
 {%endif%}
 
 <p>
-ככל שיש לי יותר ניסיון בעבודה הזאת, אני מגלה שאין חוויה אחת שאופיינית לוויקיפדיה. סקרנות היא דבר מגוון ממש כמונו, והיא מתבטאת באופן קצת שונה בכל אחת ואחד מאיתנו.
+ייסדתי את ויקיפדיה לפני 20 שנה. מאז, האנציקלופדיה האהובה שלנו גדלה מאוד, בתקופות טובות ועם קשיים רבים, והיום, יותר מתמיד, היא משרתת את מטרתה האמיתית. היא מסייעת למיליוני אנשים ללמוד, לגלות, לחקור ולהתעמק.
 </p>
 
 <p>
-אני מקווה שבביקור הבא שלך בוויקיפדיה תהיה לך תחושה עמוקה יותר שהיא שייכת לך. בלי השתתפותך, ובלי האהבה והתמיכה של מיליוני אנשים שחוזרים אלינו מדי יום, לא היינו מתקיימים.
+בכל יום, ויקיפדיה מעניקה לקוראים הזדמנות חדשה לרכוש את הידע שמגיע להם, ללא קשר לנסיבות שלהם. 
 </p>
 
 <p>
-<b>תרומתך נותנת לנו כוח ומאפשרת לנו להגשים את מטרתנו. תודה שנתת לוויקיפדיה מקום בחייך.</b>
+אתה הופך את זה לאפשרי. התמיכה שלך מאפשרת עריכה, ונותנת לערכים הזדמנות להגיע לקוראים חדשים; היא מעניקה לארגון ללא מטרות רווח שלנו את האמצעים להישאר נאמן לייעודו, גם לאחר שוויקיפדיה הפכה לאחד מאתרי האינטרנט הנצפים ביותר בעולם.
 </p>
 
-<p>בהוקרה רבה,</p>
 <p>
-קתרין <br><br>
-קתרין מאהר, מנכ"לית<br>
-קרן ויקימדיה
+אולי לא תהיה לנו הזדמנות לכבות את הנרות באופן אישי יחדיו, אך בשעה שאנו חוגגים <a href="https://wikimediafoundation.org/wikipedia20/">20 שנים של ויקיפדיה</a> לאורך השנה, דע שאתה נמצא בלב של כולם כאן בקרן ויקימדיה. 
+</p>
+
+<p>תודה לך על הכול,</p>
+<p>
+ג'ימי ויילס<br>
+מייסד ויקיפדיה
 </p>
 
 <p>מעסיקים רבים מבטיחים לתרום כמה שהעובדים שלהם תורמים: אנא בדקו אם בחברה שלכם יש <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">תכנית התאמת תרומות</a>.
@@ -66,6 +74,6 @@
 </p>
 
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.he.html","revision":20200103}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.he.html","revision":20210317}TI_END -->
 
 

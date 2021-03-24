@@ -1,1 +1,5 @@
-Deine Spende. Dein Wissensdurst. Deine Wikipedia.
+{% if first_name %}
+{{ first_name }}, Ihre Spende ist ein Grund mehr zum Feiern.
+{% else %}
+Ihre Spende ist ein Grund mehr zum Feiern.
+{%endif%}

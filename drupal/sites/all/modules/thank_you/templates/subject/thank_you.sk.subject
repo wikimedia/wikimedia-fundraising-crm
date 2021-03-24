@@ -1,1 +1,5 @@
-Váš dar. Vaša zvedavosť. Vaša Wikipédia.
+{% if first_name %}
+{{ first_name }}, váš dar je ďalším dôvodom na oslavu.
+{% else %}
+Váš dar je ďalším dôvodom na oslavu.
+{%endif%}
