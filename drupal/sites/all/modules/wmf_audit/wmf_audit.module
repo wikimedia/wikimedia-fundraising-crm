@@ -1,6 +1,6 @@
 <?php
 
-define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
+define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/srv/audit/');
 
 /**
  * Implementation of hook_menu()
