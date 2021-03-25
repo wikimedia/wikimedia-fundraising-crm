@@ -6,7 +6,7 @@
  */
 class CoinBaseTest extends BaseChecksFileTest {
 
-  function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->setExchangeRates($this->epochtime, array('USD' => 1, 'BTC' => 3));
     $this->gateway = 'coinbase';

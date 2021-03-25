@@ -32,7 +32,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *
    * @throws \CRM_Core_Exception
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->callAPISuccess('Setting', 'create', [
       'deduper_resolver_bool_prefer_yes' => ['on_hold', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'is_opt_out'],

@@ -33,7 +33,7 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $anonymousContactID;
 
-  function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
     $this->epochtime = wmf_common_date_parse_string('2016-09-15');
@@ -62,7 +62,7 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Clean up after test runs.
    */
-  public function tearDown() {
+  public function tearDown(): void {
     $this->doCleanUp();
     parent::tearDown();
   }

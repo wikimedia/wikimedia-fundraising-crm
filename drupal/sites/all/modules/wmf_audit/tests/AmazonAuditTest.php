@@ -13,7 +13,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
 
   protected $contribution_id;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
 
     // Use the test configuration for SmashPig
@@ -66,7 +66,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
     $this->contribution_id = $contribution['id'];
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     $this->callAPISuccess('Contribution', 'delete', ['id' => $this->contribution_id]);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contact_id, 'skip_undelete' => TRUE]);
     parent::tearDown();

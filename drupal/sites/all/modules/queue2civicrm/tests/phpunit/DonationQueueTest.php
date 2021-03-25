@@ -27,7 +27,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $queueConsumer;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->pendingDb = PendingDatabase::get();
     $this->damagedDb = DamagedDatabase::get();

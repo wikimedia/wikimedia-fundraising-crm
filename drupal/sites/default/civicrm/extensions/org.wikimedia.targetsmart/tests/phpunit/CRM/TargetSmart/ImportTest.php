@@ -64,7 +64,7 @@ class CRM_TargetSmart_ImportTest extends \PHPUnit\Framework\TestCase implements 
    *
    * @throws \League\Csv\Exception
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
     $this->dataFolder = __DIR__ . '/../../data/';
@@ -76,7 +76,7 @@ class CRM_TargetSmart_ImportTest extends \PHPUnit\Framework\TestCase implements 
     $user->uid = 1;
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     parent::tearDown();
     $this->callAPISuccess('Contact', 'get', ['id' => ['>=' => $this->minContactId], 'api.contact.delete' => ['skip_undelete' => 1]]);
   }

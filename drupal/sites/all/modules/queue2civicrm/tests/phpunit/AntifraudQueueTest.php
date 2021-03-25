@@ -12,7 +12,7 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $consumer;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->consumer = new AntifraudQueueConsumer(
       'payments-antifraud'

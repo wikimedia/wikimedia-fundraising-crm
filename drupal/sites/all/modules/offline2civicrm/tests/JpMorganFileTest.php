@@ -8,7 +8,7 @@ class JpMorganFileTest extends BaseChecksFileTest {
 
   protected $strtime;
 
-  function setUp() {
+  public function setUp(): void {
     parent::setUp();
 
     require_once __DIR__ . "/includes/JpMorganFileProbe.php";

@@ -29,7 +29,7 @@ class api_v3_BaseTestClass extends \PHPUnit\Framework\TestCase implements Headle
   /**
    * The setup() method is executed before the test is executed (optional).
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
     CRM_Forgetme_Hook::testSetup();
@@ -41,10 +41,6 @@ class api_v3_BaseTestClass extends \PHPUnit\Framework\TestCase implements Headle
     return \Civi\Test::headless()
       ->installMe(__DIR__)
       ->apply();
-  }
-
-  public function tearDown() {
-    parent::tearDown();
   }
 
   /**

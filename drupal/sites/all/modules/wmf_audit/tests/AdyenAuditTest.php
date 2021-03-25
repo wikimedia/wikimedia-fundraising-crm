@@ -6,7 +6,7 @@
  */
 class AdyenAuditTest extends BaseAuditTestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
 
     $dirs = [

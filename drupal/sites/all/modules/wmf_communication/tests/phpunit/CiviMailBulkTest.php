@@ -19,7 +19,7 @@ class CiviMailBulkTest extends CiviMailTestBase {
 	 */
 	protected $bulkMailStore;
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->bulkMailStore = new CiviMailBulkStore();

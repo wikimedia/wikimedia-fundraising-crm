@@ -54,7 +54,7 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
     ]
   ];
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
     $this->provider = $this->getMockBuilder(CRM_MatchingGifts_SsbinfoProvider::class)
@@ -63,7 +63,7 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
     $this->synchronizer = new CRM_MatchingGifts_Synchronizer($this->provider);
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     $providerCompanyIdFieldId = CRM_Core_BAO_CustomField::getCustomFieldID(
       'matching_gifts_provider_id', 'matching_gift_policies', TRUE
     );

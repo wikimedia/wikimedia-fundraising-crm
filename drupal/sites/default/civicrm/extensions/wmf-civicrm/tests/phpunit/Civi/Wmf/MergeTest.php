@@ -4,6 +4,7 @@ namespace Civi\Wmf;
 
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
+use Civi\Test\CiviEnvBuilder;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
@@ -56,7 +57,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
    * @return \Civi\Test\CiviEnvBuilder
    * @throws \CRM_Extension_Exception_ParseException
    */
-  public function setUpHeadless() {
+  public function setUpHeadless(): CiviEnvBuilder {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
     // See: https://docs.civicrm.org/dev/en/latest/testing/phpunit/#civitest
     return \Civi\Test::headless()
@@ -67,7 +68,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
   /**
    * @throws \Exception
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
     $this->adminUserID = $this->imitateAdminUser();
@@ -93,7 +94,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
    *
    * @throws \CRM_Core_Exception
    */
-  public function tearDown() {
+  public function tearDown(): void {
     $this->callAPISuccess('Contribution', 'get', [
       'contact_id' => ['IN' => [$this->contactID, $this->contactID2]],
       'api.Contribution.delete' => 1,
@@ -114,11 +115,11 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
    * @param bool $isReverse
    *   Should we reverse the contact order for more test cover.
    *
-   * @dataProvider isReverse
    * @throws \CRM_Core_Exception
    * @throws \API_Exception
+   * @dataProvider isReverse
    */
-  public function testMergeHook($isReverse) {
+  public function testMergeHook(bool $isReverse): void {
     $this->giveADuckADonation($isReverse);
     $contact = $this->callAPISuccess('Contact', 'get', [
       'id' => $isReverse ? $this->contactID2 : $this->contactID,

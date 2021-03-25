@@ -59,7 +59,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     'fee_amount',
   ];
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     wmf_civicrm_ensure_option_value_exists(WMF_CAMPAIGNS_OPTION_GROUP_NAME, ImportMessageTest_campaign);
     wmf_civicrm_ensure_correct_geocoder_enabled();
@@ -67,7 +67,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals(1, $geoCoders['count']);
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     if ($this->contribution_id) {
       $this->callAPISuccess('Contribution', 'delete', ['id' => $this->contribution_id]);
     }

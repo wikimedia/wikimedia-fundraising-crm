@@ -28,7 +28,7 @@ class UnsubscribeTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $fixtures;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->contactId = $this->createIndividual();
     $this->email = 'testUnsubscribe' . mt_rand(1000, 10000000) . '@example.net';
@@ -53,7 +53,7 @@ class UnsubscribeTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals(1, $unsubscribed['is_opt_out']);
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     parent::tearDown();
     $this->fixtures = null;
   }

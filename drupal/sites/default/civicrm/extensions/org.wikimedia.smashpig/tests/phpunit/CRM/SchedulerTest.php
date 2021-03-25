@@ -30,7 +30,7 @@ class CRM_SchedulerTest extends \PHPUnit\Framework\TestCase implements HeadlessI
       ->apply();
   }
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     if (!isset($GLOBALS['_PEAR_default_error_mode'])) {
       // This is simply to protect against e-notices if globals have been reset by phpunit.

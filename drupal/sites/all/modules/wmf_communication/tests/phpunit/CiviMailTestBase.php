@@ -18,7 +18,7 @@ class CiviMailTestBase extends BaseWmfDrupalPhpUnitTestCase {
 	protected $contactID;
 	protected $emailID;
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 		civicrm_initialize();
 		$this->mailStore = new CiviMailStore();
@@ -54,7 +54,7 @@ class CiviMailTestBase extends BaseWmfDrupalPhpUnitTestCase {
 		}
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		$this->callAPISuccess( 'Email', 'delete', ['id' => $this->emailID]);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID, 'skip_undelete' => TRUE]);
 		parent::tearDown();

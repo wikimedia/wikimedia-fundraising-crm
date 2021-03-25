@@ -22,7 +22,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 
   protected $message;
 
-  public function setUp() {
+  public function setUp(): void {
     if (!defined('WMF_UNSUB_SALT')) {
       define('WMF_UNSUB_SALT', 'abc123');
     }
@@ -55,7 +55,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contribution_id = $contribution['id'];
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     $this->cleanUpContact($this->contact_id);
     variable_set('thank_you_add_civimail_records', $this->old_civimail);
     variable_get('thank_you_civimail_rate', $this->old_civimail_rate);

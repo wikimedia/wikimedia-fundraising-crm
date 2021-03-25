@@ -16,7 +16,7 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
   /**
    * Test Forget functionality.
    */
-  public function testForget() {
+  public function testForget(): void {
 
     $doNotSolicitFieldId = $this->callAPISuccess('CustomField', 'getvalue', ['name' => 'do_not_solicit', 'is_active' => 1, 'return' => 'id']);
     $doNotSolicitFieldLabel = 'custom_' . $doNotSolicitFieldId;

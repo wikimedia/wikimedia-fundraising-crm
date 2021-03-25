@@ -16,7 +16,7 @@ class AstroPayAuditTest extends BaseAuditTestCase {
 
   protected $contribution_id;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $dirs = [
       'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
@@ -72,7 +72,7 @@ class AstroPayAuditTest extends BaseAuditTestCase {
    *
    * @throws \CRM_Core_Exception
    */
-  public function tearDown() {
+  public function tearDown(): void {
     $this->callAPISuccess('Contribution', 'delete', ['id' => $this->contribution_id]);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contact_id, 'skip_undelete' => TRUE]);
     parent::tearDown();

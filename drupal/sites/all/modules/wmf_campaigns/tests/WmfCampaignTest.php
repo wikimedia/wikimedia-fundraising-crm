@@ -17,7 +17,7 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public $option_value_id;
 
-  function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
 
@@ -50,7 +50,7 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->option_value_id = $result['id'];
   }
 
-  function tearDown() {
+  public function tearDown(): void {
     civicrm_api3('OptionValue', 'delete', [
       'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
       'id' => $this->option_value_id,

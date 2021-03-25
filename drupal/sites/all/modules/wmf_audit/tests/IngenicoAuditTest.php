@@ -10,7 +10,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
 
   protected $contribution_ids = [];
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
 
     $dirs = [
@@ -113,7 +113,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
     $this->contact_ids[] = $contribution['contact_id'];
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     foreach ($this->contact_ids as $contact_id) {
       $this->cleanUpContact($contact_id);
     }

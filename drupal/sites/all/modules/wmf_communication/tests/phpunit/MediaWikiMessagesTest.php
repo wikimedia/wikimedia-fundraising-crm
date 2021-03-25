@@ -7,7 +7,7 @@ use \BaseWmfDrupalPhpUnitTestCase;
  * @group WmfCommunication
  */
 class MediaWikiMessagesTest extends BaseWmfDrupalPhpUnitTestCase {
-    function setUp() {
+    public function setUp(): void {
         parent::setUp();
 
         $this->msgs = MediaWikiMessages::getInstance();

@@ -9,7 +9,7 @@ class BitpayFileTest extends BaseChecksFileTest {
   protected $sourceFileUri = '';
   protected $importClass = 'BitpayFile';
 
-  function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->ensureAnonymousContactExists();
   }

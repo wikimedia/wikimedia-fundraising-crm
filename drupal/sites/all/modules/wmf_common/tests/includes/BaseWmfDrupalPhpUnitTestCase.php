@@ -4,6 +4,8 @@
 // include path is not yet fixed so otherwise the require_once in that file will fail.
 set_include_path(__DIR__ . '/../../../civicrm' . PATH_SEPARATOR . get_include_path());
 require_once __DIR__ . '/../../../civicrm/Civi/Test/Api3TestTrait.php';
+
+use Civi\Test\Api3TestTrait;
 use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
 use SmashPig\Core\Context;
 use SmashPig\Core\SequenceGenerators\Factory;
@@ -14,7 +16,7 @@ use Civi\Api4\Contact;
 
 class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
 
-  use \Civi\Test\Api3TestTrait;
+  use Api3TestTrait;
 
   protected $startTimestamp;
 
@@ -33,7 +35,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    * @throws \CiviCRM_API3_Exception
    * @throws \Exception
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     // Since we can't kill jobs on jenkins this prevents a loop from going
     // on for too long....
@@ -62,7 +64,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     $this->maxContactID = $this->getHighestContactID();
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     foreach ($this->ids as $entity => $entityIDs) {
       foreach ($entityIDs as $entityID) {
         try {
@@ -242,7 +244,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     }
   }
 
-  public function onNotSuccessfulTest(Throwable $t) {
+  public function onNotSuccessfulTest(Throwable $t): void {
     if (!defined('PRINT_WATCHDOG_ON_TEST_FAIL') || !PRINT_WATCHDOG_ON_TEST_FAIL) {
       throw $t;
     }

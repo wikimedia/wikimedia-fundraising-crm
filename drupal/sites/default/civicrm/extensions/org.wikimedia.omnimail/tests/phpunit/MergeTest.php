@@ -25,7 +25,7 @@ class MergeTest extends OmnimailBaseTestClass {
    *
    * @throws \CRM_Core_Exception
    */
-  public function testMerge() {
+  public function testMerge(): void {
     $this->createAndMergeContactsWithMailingData();
     $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs[1]], 0);
     $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->contactIDs[0]], 1);
@@ -41,7 +41,7 @@ class MergeTest extends OmnimailBaseTestClass {
    *
    * @throws \CRM_Core_Exception
    */
-  public function testPermanentDeleteHook() {
+  public function testPermanentDeleteHook(): void {
     $this->createAndMergeContactsWithMailingData();
 
     // Re-add some mailing provider data to the merged contact.
@@ -63,7 +63,7 @@ class MergeTest extends OmnimailBaseTestClass {
   /**
    * @throws \CRM_Core_Exception
    */
-  protected function createAndMergeContactsWithMailingData() {
+  protected function createAndMergeContactsWithMailingData(): void {
     $params = ['contact_type' => 'Individual', 'first_name' => 'Ayra', 'last_name' => 'Stark', 'email' => 'faceless@example.com'];
     $this->contactIDs[] = $this->callAPISuccess('Contact', 'create', $params)['id'];
     $this->contactIDs[] = $this->callAPISuccess('Contact', 'create', $params)['id'];

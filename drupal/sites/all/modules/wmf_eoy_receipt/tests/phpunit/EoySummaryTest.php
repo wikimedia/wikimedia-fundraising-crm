@@ -14,14 +14,14 @@ class EoySummaryTest extends BaseWmfDrupalPhpUnitTestCase {
 
   protected $jobIds = [];
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     variable_set('wmf_eoy_from_address', 'bobita@example.org');
     variable_set('wmf_eoy_from_name', 'Bobita');
     TestMailer::setup();
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     if ($this->jobIds) {
       $idList = implode(',', $this->jobIds);
       db_query("DELETE from wmf_eoy_receipt_donor WHERE job_id in ($idList)")

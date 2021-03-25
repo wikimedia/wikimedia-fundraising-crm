@@ -21,7 +21,7 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
    */
   protected $donationStatsCollector;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->donationStatsCollector = $this->getTestDonationStatsCollectorInstance();
   }

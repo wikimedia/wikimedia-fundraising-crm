@@ -8,7 +8,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
   protected $sourceFileUri = '';
 
-  public function setUp() {
+  public function setUp(): void {
     $this->ensureAnonymousContactExists();
     parent::setUp();
     require_once __DIR__ . '/includes/EngageChecksFileProbe.php';
@@ -799,7 +799,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @throws \CRM_Core_Exception
    * @throws \WmfException
    */
-  public function tearDown() {
+  public function tearDown(): void {
     $this->purgePreviousData();
     parent::tearDown();
   }

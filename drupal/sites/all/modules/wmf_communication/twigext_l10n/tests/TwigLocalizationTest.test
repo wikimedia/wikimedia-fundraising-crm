@@ -1,7 +1,7 @@
 <?php
 
 class TwigLocalizationTest extends DrupalWebTestCase {
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		// Get twig

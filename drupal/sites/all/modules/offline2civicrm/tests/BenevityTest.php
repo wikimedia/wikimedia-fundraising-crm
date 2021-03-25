@@ -13,7 +13,7 @@ use Civi\Api4\Contribution;
  */
 class BenevityTest extends BaseChecksFileTest {
 
-  function setUp() {
+  public function setUp(): void {
     civicrm_initialize();
     $this->ensureAnonymousContactExists();
     parent::setUp();
@@ -34,7 +34,7 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \API_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public function tearDown() {
+  public function tearDown(): void {
     $benevityContributions = Contribution::get()->addWhere('trxn_id', 'LIKE', 'BENEVITY%')->setCheckPermissions(FALSE)->setSelect(['id'])->execute();
     foreach ($benevityContributions as $contribution) {
       $this->cleanupContribution($contribution['id']);

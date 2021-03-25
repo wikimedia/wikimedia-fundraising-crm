@@ -15,7 +15,7 @@ class DrushCleanupTest extends BaseWmfDrupalPhpUnitTestCase {
    * Since we are validating time values on a timestamp field run in GMT to
    * ensure consistency.
    */
-  public function setUp() {
+  public function setUp(): void {
     civicrm_initialize();
     $this->mysqlTimeZone = CRM_Core_DAO::singleValueQuery('SELECT @@TIME_ZONE');
     CRM_Core_DAO::singleValueQuery("SET TIME_ZONE='+00:00'");
@@ -40,7 +40,7 @@ VALUES
     $this->assertEquals('2016-08-08 08:51:42', $result['values'][1]['recipient_action_datetime']);
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     CRM_Core_DAO::singleValueQuery("SET TIME_ZONE='{$this->mysqlTimeZone}'");
     CRM_Core_DAO::executeQuery("
       DELETE FROM civicrm_mailing_provider_data WHERE recipient_action_datetime

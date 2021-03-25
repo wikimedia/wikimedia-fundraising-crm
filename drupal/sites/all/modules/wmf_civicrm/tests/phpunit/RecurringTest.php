@@ -17,7 +17,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
     ];
   }
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
   }

@@ -47,7 +47,7 @@ class CleanTest extends DedupeBaseTestClass {
   /**
    * @throws \API_Exception
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->locationTypes = array_flip(CRM_Deduper_BAO_MergeConflict::getLocationTypes());
   }

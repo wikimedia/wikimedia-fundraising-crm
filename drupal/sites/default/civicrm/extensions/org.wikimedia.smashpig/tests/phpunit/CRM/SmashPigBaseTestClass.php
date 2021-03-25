@@ -69,7 +69,7 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public function setUp() {
+  public function setUp(): void {
     civicrm_initialize();
     $existing = $this->callAPISuccess(
       'PaymentProcessor', 'get', ['name' => $this->processorName, 'is_test' => 0]
@@ -98,7 +98,7 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public function tearDown() {
+  public function tearDown(): void {
     if ($this->originalFailureMessageTemplate) {
       unset($this->originalFailureMessageTemplate['workflow_id']);
       MessageTemplate::update()->setValues($this->originalFailureMessageTemplate)->setCheckPermissions(FALSE)->execute();

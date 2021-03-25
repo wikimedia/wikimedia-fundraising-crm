@@ -32,7 +32,7 @@ class api_v3_Thankyou_SendTest extends \PHPUnit\Framework\TestCase implements He
   /**
    * The setup() method is executed before the test is executed (optional).
    */
-  public function setUp() {
+  public function setUp(): void {
     civicrm_initialize();
     if (!defined('WMF_UNSUB_SALT')) {
       define('WMF_UNSUB_SALT', 'aslkdhaslkdjasd');
@@ -46,7 +46,7 @@ class api_v3_Thankyou_SendTest extends \PHPUnit\Framework\TestCase implements He
    *
    * @throws \CRM_Core_Exception
    */
-  public function tearDown() {
+  public function tearDown(): void {
     $this->callAPISuccess('Contribution', 'get', ['contact_id' => $this->ids['Contact'][0], 'api.Contribution.delete' => 1]);
     $this->callAPISuccess('Contact', 'delete', ['skip_undelete' => 1, 'id' => $this->ids['Contact'][0]]);
     parent::tearDown();

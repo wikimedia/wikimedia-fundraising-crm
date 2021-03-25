@@ -15,20 +15,20 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $consumer;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->consumer = new ContributionTrackingQueueConsumer(
       'contribution-tracking'
     );
   }
 
-  public function testCanProcessContributionTrackingMessage() {
+  public function testCanProcessContributionTrackingMessage(): void {
     $message = $this->getMessage();
     $this->consumer->processMessage($message);
     $this->compareMessageWithDb($message);
   }
 
-  public function testTruncatesOverlongFields() {
+  public function testTruncatesOverlongFields(): void {
     $message = $this->getMessage();
     $message['utm_source'] = 'Blah_source-this-donor-came-in-from-a-search-' .
       'engine-and-they-were-looking-for-how-to-donate-to-wikipedia.' .
@@ -265,7 +265,7 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     return $statsWrittenAssocArray;
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     parent::tearDown();
     // reset the ContributionTrackingStatsCollector state after each test
     ContributionTrackingStatsCollector::tearDown(TRUE);

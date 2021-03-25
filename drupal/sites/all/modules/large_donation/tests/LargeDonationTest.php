@@ -13,7 +13,7 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
 
   protected $contact_id;
 
-  function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
 
@@ -51,7 +51,7 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
     drupal_static_reset('large_donation_get_notification_thresholds');
   }
 
-  function tearDown() {
+  public function tearDown(): void {
     db_delete('large_donation_notification')
       ->execute();
     parent::tearDown();

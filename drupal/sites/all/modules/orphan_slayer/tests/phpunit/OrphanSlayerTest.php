@@ -12,7 +12,7 @@ use SmashPig\Tests\TestingGlobalConfiguration;
 
 class OrphanSlayerTest extends PHPUnit\Framework\TestCase {
 
-    public function setUp() {
+    public function setUp(): void {
         parent::setUp();
 
         // Initialize SmashPig with a fake context object
@@ -34,7 +34,7 @@ class OrphanSlayerTest extends PHPUnit\Framework\TestCase {
 
     }
 
-    public function tearDown() {
+    public function tearDown(): void {
         Context::set( null ); // Nullify any SmashPig context for the next run
         parent::tearDown();
     }

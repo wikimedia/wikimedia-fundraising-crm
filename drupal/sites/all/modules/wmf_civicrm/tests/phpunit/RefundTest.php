@@ -44,7 +44,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $financialYearTotalFieldName;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
     TestMailer::setup();
@@ -85,7 +85,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     $this->cleanUpContact($this->contact_id);
 
     parent::tearDown();

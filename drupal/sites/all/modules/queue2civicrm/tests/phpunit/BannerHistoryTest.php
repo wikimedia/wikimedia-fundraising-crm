@@ -12,7 +12,7 @@ class BannerHistoryTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $consumer;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->consumer = new BannerHistoryQueueConsumer(
       'test'

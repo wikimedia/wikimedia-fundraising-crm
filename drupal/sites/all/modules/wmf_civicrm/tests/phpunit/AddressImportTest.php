@@ -13,7 +13,7 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $contactID;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
     $contact = $this->callAPISuccess('Contact', 'create', array(
@@ -22,7 +22,7 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->contactID = $contact['id'];
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     CRM_Core_DAO::executeQuery("DELETE FROM civicrm_contact WHERE last_name = 'Mouse'");
   }
 

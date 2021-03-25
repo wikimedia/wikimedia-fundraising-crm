@@ -2,7 +2,7 @@
 
 class ContributionConversionTest extends BaseChecksFileTest {
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
     // I'm slightly confused why this is required. phpunit is blowing away GLOBALS,
@@ -36,11 +36,7 @@ class ContributionConversionTest extends BaseChecksFileTest {
     ));
   }
 
-  public function tearDown() {
-    parent::tearDown();
-  }
-
-  public function testMakeRecurring() {
+  public function testMakeRecurring(): void {
     ContributionConversion::makeRecurring($this->transaction);
 
     $contributions = wmf_civicrm_get_contributions_from_gateway_id($this->transaction->gateway, $this->transaction->gateway_txn_id);

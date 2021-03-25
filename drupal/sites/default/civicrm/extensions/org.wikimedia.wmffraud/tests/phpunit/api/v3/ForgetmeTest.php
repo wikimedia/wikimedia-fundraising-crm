@@ -26,8 +26,10 @@ class api_v3_ForgetmeTest extends api_v3_BaseTestClass implements HeadlessInterf
    * Test forget me.
    *
    * Both entries for contact one should be deleted but not the contact 2 entry.
+   *
+   * @throws \CRM_Core_Exception
    */
-  public function testForgetMe() {
+  public function testForgetMe(): void {
     $contact = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Santa', 'last_name' => 'Claws']);
     $this->createContributionEntriesWithFredge(['contact_id' => $contact['id'], 'order_id' => 'your-order']);
     $this->createContributionEntriesWithFredge(['contact_id' => $contact['id'], 'order_id' => 'my-order']);

@@ -6,7 +6,7 @@
  */
 class PayPalChecksFileTest extends BaseChecksFileTest {
 
-  function setUp() {
+  public function setUp(): void {
     parent::setUp();
 
     require_once __DIR__ . "/includes/PayPalChecksFileProbe.php";

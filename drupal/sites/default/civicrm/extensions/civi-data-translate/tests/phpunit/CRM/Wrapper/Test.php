@@ -44,7 +44,7 @@ class CRM_Wrapper_Test extends \PHPUnit\Framework\TestCase implements HeadlessIn
   /**
    * Set up - ensure civicrm is initialized if calling tests outside cv context.
    */
-  public function setUp() {
+  public function setUp(): void {
     civicrm_initialize();
     parent::setUp();
   }

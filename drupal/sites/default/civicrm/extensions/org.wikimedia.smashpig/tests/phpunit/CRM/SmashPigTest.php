@@ -63,7 +63,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->createPaymentResponse = (new CreatePaymentResponse())
       ->setGatewayTxnId('000000850010000188130000200001')
@@ -112,7 +112,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
    * @throws \CiviCRM_API3_Exception
    * @throws \CRM_Core_Exception
    */
-  public function tearDown() {
+  public function tearDown(): void {
     foreach ($this->oldSettings as $setting => $value) {
       \Civi::settings()->set(
         $setting, $value

@@ -22,7 +22,7 @@ class CRM_MatchingGifts_SsbInfoProviderTest extends PHPUnit\Framework\TestCase
    */
   protected $requests;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
     $this->provider = new CRM_MatchingGifts_SsbinfoProvider([
