@@ -34,15 +34,7 @@ class CRM_Extendedreport_Form_Report_Event_ParticipantExtended extends CRM_Exten
   public function __construct() {
     $this->_autoIncludeIndexedFieldsAsOrderBys = 1;
     $this->_customGroupGroupBy = 1;
-
-    // Check if CiviCampaign is a) enabled and b) has active campaigns
-    $config = CRM_Core_Config::singleton();
-    $campaignEnabled = in_array("CiviCampaign", $config->enableComponents);
-    if ($campaignEnabled) {
-      $getCampaigns = CRM_Campaign_BAO_Campaign::getPermissionedCampaigns(NULL, NULL, TRUE, FALSE, TRUE);
-      $this->activeCampaigns = $getCampaigns['campaigns'];
-      asort($this->activeCampaigns);
-    }
+    $campaignEnabled = $this->isCampaignEnabled();
 
     $this->_columns = $this->getColumns('Contact')
       + $this->getColumns('Email')
@@ -95,6 +87,38 @@ class CRM_Extendedreport_Form_Report_Event_ParticipantExtended extends CRM_Exten
       ],
     ];
 
+    $this->_columns['civicrm_contact']['metadata']['age_at_event_start'] = [
+      'title' => ts('Age at Event Start'),
+      'is_fields' => TRUE,
+      'is_order_bys' => TRUE,
+      'is_filters' => TRUE,
+      'is_group_bys' => TRUE,
+      'is_join_filters' => FALSE,
+      'is_aggregate_columns' => FALSE,
+      'is_aggregate_rows' => FALSE,
+      'type' => CRM_Utils_Type::T_INT,
+      'table_key' => 'civicrm_contact',
+      'alias' => 'civicrm_contact_age_at_event_start',
+      'operatorType' => CRM_Report_Form::OP_INT,
+      'dbAlias' => 'TIMESTAMPDIFF(YEAR, civicrm_contact.birth_date, event.start_date)',
+    ];
+
+    $this->_columns['civicrm_contact']['metadata']['age_at_event_end'] = [
+      'title' => ts('Age at Event End'),
+      'is_fields' => TRUE,
+      'is_order_bys' => TRUE,
+      'is_filters' => TRUE,
+      'is_group_bys' => TRUE,
+      'is_join_filters' => FALSE,
+      'is_aggregate_columns' => FALSE,
+      'is_aggregate_rows' => FALSE,
+      'type' => CRM_Utils_Type::T_INT,
+      'table_key' => 'civicrm_contact',
+      'alias' => 'civicrm_contact_age_at_event_end',
+      'operatorType' => CRM_Report_Form::OP_INT,
+      'dbAlias' => 'TIMESTAMPDIFF(YEAR, civicrm_contact.birth_date, event.end_date)',
+    ];
+
     // If we have active campaigns add those elements to both the fields and filters
     if ($campaignEnabled && !empty($this->activeCampaigns)) {
       $this->_columns['civicrm_participant']['fields']['campaign_id'] = [
@@ -116,6 +140,34 @@ class CRM_Extendedreport_Form_Report_Event_ParticipantExtended extends CRM_Exten
   }
 
   /**
+   * Overriding for the sake of handling relationship type ID.
+   */
+  function postProcess() {
+    $this->beginPostProcess();
+    $this->relationType = NULL;
+    $originalRelationshipTypes = [];
+
+    $relationships = [];
+    if ((array) $this->_params['relationship_relationship_type_id_value'] ?? FALSE) {
+      $originalRelationshipTypes = $this->_params['relationship_relationship_type_id_value'];
+      foreach ($this->_params['relationship_relationship_type_id_value'] as $relString) {
+        $relType = explode('_', $relString);
+        $this->relationType[] = $relType[1] . '_' . $relType[2];
+        $relationships[] = intval($relType[0]);
+      }
+    }
+    $this->_params['relationship_relationship_type_id_value'] = $relationships;
+    $sql = $this->buildQuery();
+    $this->addToDeveloperTab($sql);
+    $rows = [];
+    $this->buildRows($sql, $rows);
+    $this->_params['relationship_type_id_value'] = $originalRelationshipTypes;
+    $this->formatDisplay($rows);
+    $this->doTemplateAssignment($rows);
+    $this->endPostProcess($rows);
+  }
+
+  /**
    * Declare from clauses used in the from clause for this report.
    *
    * @return array
@@ -125,13 +177,11 @@ class CRM_Extendedreport_Form_Report_Event_ParticipantExtended extends CRM_Exten
       'event_from_participant',
       'contact_from_participant',
       'note_from_participant',
-      'phone_from_contact',
+      'primary_phone_from_contact',
       'address_from_contact',
       'email_from_contact',
+      'related_contact_from_participant',
     ];
-    if ($this->isTableSelected('related_civicrm_contact')) {
-      $fromClauses[] = 'related_contact_from_participant';
-    }
     return $fromClauses;
   }
 
@@ -161,6 +211,8 @@ class CRM_Extendedreport_Form_Report_Event_ParticipantExtended extends CRM_Exten
    * Alter row display.
    *
    * @param array $rows
+   *
+   * @throws \CiviCRM_API3_Exception
    */
   public function alterDisplay(&$rows) {
     // custom code to alter rows
@@ -391,4 +443,5 @@ class CRM_Extendedreport_Form_Report_Event_ParticipantExtended extends CRM_Exten
     }
     parent::alterDisplay($rows);
   }
+
 }

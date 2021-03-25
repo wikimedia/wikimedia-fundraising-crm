@@ -22,21 +22,10 @@ use Civi\Test\TransactionalInterface;
  */
 class Pledge_DetailTest extends BaseTestClass implements HeadlessInterface, HookInterface {
 
-  protected $ids = [];
-
-  public function setUpHeadless() {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
-    return \Civi\Test::headless()
-      ->installMe(__DIR__)
-      ->apply();
-  }
-
-  public function setUp() {
-    parent::setUp();
-  }
-
-  public function tearDown() {
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function tearDown(): void {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_pledge');
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_group');
     parent::tearDown();
@@ -44,6 +33,8 @@ class Pledge_DetailTest extends BaseTestClass implements HeadlessInterface, Hook
 
   /**
    * Test the future income report with some data.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testPledgeDetailReport() {
     $this->setUpPledgeData();

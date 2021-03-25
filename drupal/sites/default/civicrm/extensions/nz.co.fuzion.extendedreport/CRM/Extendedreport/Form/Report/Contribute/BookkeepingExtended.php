@@ -26,10 +26,12 @@
  +--------------------------------------------------------------------+
 */
 
+use CRM_Extendedreport_ExtensionUtil as E;
+
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2014
+ * @copyright CiviCRM LLC https://civicrm.org/licensing
  */
 class CRM_Extendedreport_Form_Report_Contribute_BookkeepingExtended extends CRM_Extendedreport_Form_Report_ExtendedReport {
 
@@ -66,6 +68,10 @@ class CRM_Extendedreport_Form_Report_Contribute_BookkeepingExtended extends CRM_
           'contribution_status_id' => [1],
         ],
       ])
+      + $this->getColumns('ContributionRecur', ['group_by' => TRUE])
+      + $this->getColumns('Product', ['group_by' => TRUE])
+      + $this->getColumns('ContributionProduct', ['group_by' => TRUE])
+      + $this->getColumns('Note', ['prefix' => 'contribution_', 'prefix_label' => ' ' . E::ts('Contribution')])
       + $this->getColumns('FinancialTrxn', [
         'filters_defaults' => [
           'status_id' => ['IN' => [1]],
@@ -179,7 +185,7 @@ class CRM_Extendedreport_Form_Report_Contribute_BookkeepingExtended extends CRM_
               LEFT JOIN civicrm_financial_account {$this->_aliases['debit_civicrm_financial_account']}
                     ON {$this->_aliases['civicrm_financial_trxn']}.to_financial_account_id =
                     {$this->_aliases['debit_civicrm_financial_account']}.id
-                    
+
               LEFT JOIN civicrm_financial_account {$this->_aliases['credit_civicrm_financial_account']}
                     ON {$this->_aliases['civicrm_financial_trxn']}.from_financial_account_id = {$this->_aliases['credit_civicrm_financial_account']}.id";
     if ($this->isTableSelected('civicrm_membership_log')) {
@@ -196,6 +202,9 @@ class CRM_Extendedreport_Form_Report_Contribute_BookkeepingExtended extends CRM_
   function fromClauses() {
     return [
       'contact_from_contribution',
+      'contribution_recur_from_contribution',
+      'note_from_contribution',
+      'product_from_contribution',
       'financial_trxn_from_contribution',
       'lineItem_from_financialTrxn',
       'batch_from_financialTrxn',

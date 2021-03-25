@@ -25,22 +25,9 @@ class RelationshipExtendedTest extends BaseTestClass implements HeadlessInterfac
   protected $contacts = [];
 
   /**
-   * @return \Civi\Test\CiviEnvBuilder
-   */
-  public function setUpHeadless() {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
-    $env = \Civi\Test::headless()
-      ->installMe(__DIR__)
-      ->apply();
-    return $env;
-  }
-
-  /**
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $components = [];
     $dao = new CRM_Core_DAO_Component();
@@ -68,7 +55,10 @@ class RelationshipExtendedTest extends BaseTestClass implements HeadlessInterfac
 
   }
 
-  public function tearDown() {
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function tearDown(): void {
     parent::tearDown();
     $this->callAPISuccess('CustomField', 'delete', ['id' => $this->customFieldID]);
     $this->callAPISuccess('CustomGroup', 'delete', ['id' => $this->customGroupID]);
@@ -91,7 +81,7 @@ class RelationshipExtendedTest extends BaseTestClass implements HeadlessInterfac
       'fields' => [
         'relationship_type_label_a_b' => '1',
       ],
-      $customFieldPrefix . '_op' => "like",
+      $customFieldPrefix . '_op' => 'like',
       $customFieldPrefix . '_value' => '%g%',
     ];
     $rows = $this->getRows($params);

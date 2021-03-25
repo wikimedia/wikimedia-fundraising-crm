@@ -22,22 +22,12 @@ use Civi\Test\TransactionalInterface;
  */
 class ExtendedReportTest extends BaseTestClass implements HeadlessInterface, HookInterface {
 
-  protected $ids = [];
-
-  public function setUpHeadless() {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
-    return \Civi\Test::headless()
-      ->installMe(__DIR__)
-      ->apply();
-  }
-
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->enableAllComponents();
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_pledge');
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_group');
     parent::tearDown();
@@ -76,7 +66,9 @@ class ExtendedReportTest extends BaseTestClass implements HeadlessInterface, Hoo
   /**
    * @dataProvider getAllNonLoggingReports
    *
-   * @param int $reportID
+   * @param string $reportID
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testReportsRunAllFields($reportID) {
     $metadata = $this->callAPISuccess('ReportTemplate', 'getmetadata', ['report_id' => $reportID])['values'];
@@ -98,7 +90,7 @@ class ExtendedReportTest extends BaseTestClass implements HeadlessInterface, Hoo
    *
    * @throws \CRM_Core_Exception
    */
-  public function testExtendedFields($group_bys = []) {
+  public function testExtendedFields($group_bys = []): void {
     $contact = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'first', 'last_name' => 'last']);
     $this->ids['Contact'][] = $contact['id'];
     $this->callAPISuccess('Contribution', 'create', ['financial_type_id' => 'Donation', 'total_amount' => 10, 'contact_id' => $contact['id']]);
@@ -181,7 +173,7 @@ class ExtendedReportTest extends BaseTestClass implements HeadlessInterface, Hoo
       'extended_order_bys' => [
         [
           'title' => 'Nick Name',
-          'column' => "civicrm_contact_nick_name",
+          'column' => 'civicrm_contact_nick_name',
           'field_on_null' => [
             [
               'title' => 'First name',
@@ -191,7 +183,7 @@ class ExtendedReportTest extends BaseTestClass implements HeadlessInterface, Hoo
         ],
         [
           'title' => 'Last Name',
-          'column' => "civicrm_contact_last_name",
+          'column' => 'civicrm_contact_last_name',
           'order' => 'DESC',
         ],
       ],
@@ -372,7 +364,7 @@ class ExtendedReportTest extends BaseTestClass implements HeadlessInterface, Hoo
         'pledge_payment_scheduled_amount' => '1',
       ],
     ];
-    $pledgePayments = $this->callAPISuccess('PledgePayment', 'get', []);
+    $this->callAPISuccess('PledgePayment', 'get', []);
     $rows = $this->getRows($params);
     $this->assertCount(5, $rows);
     $this->assertEquals(14285.74, $rows[0]['civicrm_pledge_payment_pledge_payment_scheduled_amount_sum']);
