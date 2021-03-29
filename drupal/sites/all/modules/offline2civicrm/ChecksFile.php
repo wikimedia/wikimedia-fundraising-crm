@@ -128,7 +128,7 @@ abstract class ChecksFile {
   protected $errorStreakStart = 0;
 
 
-  protected $messages = array();
+  protected $messages = [];
 
   protected $file_uri = '';
 
@@ -225,7 +225,7 @@ abstract class ChecksFile {
    *
    * @throws \WmfException
    */
-  function __construct($file_uri = NULL, $additionalFields = array()) {
+  function __construct($file_uri = NULL, $additionalFields = []) {
     $this->file_uri = $file_uri;
     global $user;
     $suffix = $user->uid . '.csv';
@@ -389,7 +389,7 @@ abstract class ChecksFile {
    * @throws \WmfException
    */
   protected function parseRow($data) {
-    $msg = array();
+    $msg = [];
 
     foreach ($this->getFieldMapping() as $header => $normal) {
       if (!empty($data[$header])) {
@@ -412,7 +412,7 @@ abstract class ChecksFile {
   }
 
   protected function handleDuplicate($duplicate) {
-    watchdog('offline2civicrm', 'Contribution matches existing contribution (id: @id), skipping it.', array('@id' => $duplicate[0]['id']), WATCHDOG_INFO);
+    watchdog('offline2civicrm', 'Contribution matches existing contribution (id: @id), skipping it.', ['@id' => $duplicate[0]['id']], WATCHDOG_INFO);
     return TRUE; // true means this was a duplicate and i skipped it
   }
 
@@ -512,11 +512,11 @@ abstract class ChecksFile {
 
     // Expand soft credit short names.
     if (!empty($msg['soft_credit_to'])) {
-      $nickname_mapping = array(
+      $nickname_mapping = [
         'Fidelity' => 'Fidelity Charitable Gift Fund',
         'Vanguard' => 'Vanguard Charitable Endowment Program',
         'Schwab' => 'Schwab Charitable Fund',
-      );
+      ];
       if (array_key_exists($msg['soft_credit_to'], $nickname_mapping)) {
         $msg['soft_credit_to'] = $nickname_mapping[$msg['soft_credit_to']];
       }
@@ -533,22 +533,22 @@ abstract class ChecksFile {
     }
 
     // Allow yes or true as inputs for opt-out fields
-    $optOutFields = array(
+    $optOutFields = [
       'do_not_email',
       'do_not_mail',
       'do_not_phone',
       'do_not_sms',
       'do_not_solicit',
       'is_opt_out',
-    );
+    ];
 
-    $trueValues = array(
+    $trueValues = [
       'yes',
       'y',
       'true',
       't',
       '1',
-    );
+    ];
 
     foreach ($optOutFields as $field) {
       if (isset($msg[$field])) {
@@ -576,11 +576,11 @@ abstract class ChecksFile {
   }
 
   protected function getDefaultValues() {
-    return array(
+    return [
       'contact_source' => 'check',
       'contact_type' => 'Individual',
       'country' => 'US',
-    );
+    ];
   }
 
   /**
@@ -589,7 +589,7 @@ abstract class ChecksFile {
    * @return array of {spreadsheet column title} => {normalized field name}
    */
   protected function getFieldMapping() {
-    return array(
+    return [
       'Additional Address 1' => 'supplemental_address_1',
       'Additional Address 2' => 'supplemental_address_2',
       'Batch' => 'import_batch_number',
@@ -653,7 +653,7 @@ abstract class ChecksFile {
       'Total Amount' => 'gross',
       # deprecated, use Original Amount
       'Transaction ID' => 'gateway_txn_id',
-    );
+    ];
   }
 
   /**
@@ -662,11 +662,11 @@ abstract class ChecksFile {
    * @return array of field names
    */
   protected function getDatetimeFields() {
-    return array(
+    return [
       'date',
       'thankyou_date',
       'postmark_date',
-    );
+    ];
   }
 
   /**
@@ -685,11 +685,11 @@ abstract class ChecksFile {
    * @return array of normalized message field names
    */
   protected function getRequiredData() {
-    return array(
+    return [
       'currency',
       'date',
       'gross',
-    );
+    ];
   }
 
   /**
@@ -698,7 +698,7 @@ abstract class ChecksFile {
    * @throws WmfException if required columns are missing
    */
   protected function validateColumns() {
-    $failed = array();
+    $failed = [];
     foreach ($this->getRequiredColumns() as $name) {
       if (!array_key_exists($name, $this->headers)) {
         $failed[] = $name;
@@ -764,14 +764,14 @@ abstract class ChecksFile {
    * @throws \WmfException
    */
   protected function validateRequiredFields($msg) {
-    $failed = array();
+    $failed = [];
     foreach ($this->getRequiredData() as $key) {
       if (!array_key_exists($key, $msg) or empty($msg[$key])) {
         $failed[] = $key;
       }
     }
     if ($failed) {
-      throw new WmfException(WmfException::CIVI_REQ_FIELD, t("Missing required fields @keys during check import", array("@keys" => implode(", ", $failed))));
+      throw new WmfException(WmfException::CIVI_REQ_FIELD, t("Missing required fields @keys during check import", ["@keys" => implode(", ", $failed)]));
     }
   }
 
@@ -784,14 +784,14 @@ abstract class ChecksFile {
    * @throws \WmfException
    */
   protected function checkForExistingContributions($msg) {
-    return  wmf_civicrm_get_contributions_from_gateway_id($msg['gateway'], $msg['gateway_txn_id']);
+    return wmf_civicrm_get_contributions_from_gateway_id($msg['gateway'], $msg['gateway_txn_id']);
   }
 
   /**
    * Get any fields that can be set on import at an import wide level.
    */
   public function getImportFields() {
-    return array();
+    return [];
   }
 
   /**
@@ -854,20 +854,20 @@ abstract class ChecksFile {
     }
 
     // tha business.
-    $contribution = WmfDatabase::transactionalCall(array(
+    $contribution = WmfDatabase::transactionalCall([
       $this,
       'doImport',
-    ), array($msg));
+    ], [$msg]);
 
     if (empty($msg['contact_id'])) {
       $this->markRowNotMatched($data);
     }
 
     watchdog('offline2civicrm',
-      'Import checks: Contribution imported successfully (@id): !msg', array(
+      'Import checks: Contribution imported successfully (@id): !msg', [
         '@id' => $contribution['id'],
         '!msg' => print_r($msg, TRUE),
-      ), WATCHDOG_INFO
+      ], WATCHDOG_INFO
     );
     $this->numberSucceededRows++;
   }
@@ -962,18 +962,20 @@ abstract class ChecksFile {
    * @param array $row Original row data.
    * @param string $errorMessage
    * @param array $data Processed data.
-   * @todo we are outputting 'data' but perhaps 'row' is better as it is the input.
+   *
+   * @todo we are outputting 'data' but perhaps 'row' is better as it is the
+   *   input.
    */
   protected function markRowError($row, $errorMessage, $data) {
     $this->numberErrorRows++;
     $this->outputResultRow('error', array_merge(['error' => $errorMessage], $data));
     $this->outputResultRow('all_missed', array_merge(['Not Imported' => 'Error: ' . $errorMessage], $data));
 
-    ChecksImportLog::record(t("Error in line @rownum: (@exception) @row", array(
+    ChecksImportLog::record(t("Error in line @rownum: (@exception) @row", [
       '@rownum' => $this->row_index,
       '@row' => implode(', ', $row),
       '@exception' => $errorMessage,
-    )));
+    ]));
 
     if ($this->errorStreakStart + $this->errorStreakCount < $this->row_index) {
       // The last result must have been a success.  Restart streak counts.
@@ -1005,10 +1007,10 @@ abstract class ChecksFile {
       $this->messages['Result'] = ts("All rows were imported");
     }
     else {
-      $this->messages['Result'] = ts("%1 out of %2 rows were imported.", array(
+      $this->messages['Result'] = ts("%1 out of %2 rows were imported.", [
         '1' => $this->numberSucceededRows,
         2 => $this->totalNumberRows,
-      ));
+      ]);
 
       if ($this->numberDuplicateRows !== $notImported && $this->numberErrorRows !== $notImported && $this->numberIgnoredRows !== $notImported) {
         // If the number of rows not imported is the same as the number skipped, or the number of errors etc
@@ -1074,7 +1076,8 @@ abstract class ChecksFile {
   /**
    * Get the name of the related resource.
    *
-   * Of course it might have been easier not to mix camel & lc underscore - just saying.
+   * Of course it might have been easier not to mix camel & lc underscore -
+   * just saying.
    *
    * @param $string
    *
