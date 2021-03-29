@@ -38,17 +38,13 @@ class CoinbaseFile extends ChecksFile {
   }
 
   protected function mungeMessage(&$msg) {
+    parent::mungeMessage($msg);
     $msg['gateway'] = 'coinbase';
     $msg['contribution_type'] = 'cash';
     $msg['payment_instrument'] = 'Bitcoin';
     // It seems that payment_method is used for creating the contribution_tracking source
     // whereas payment_instrument is used for CiviCRM contributions payment_instrument_id field.
     $msg['payment_method'] = 'bitcoin';
-
-    [
-      $msg['first_name'],
-      $msg['last_name'],
-    ] = wmf_civicrm_janky_split_name($msg['full_name']);
 
     if (!empty($msg['gateway_refund_id'])) {
       $this->refundLastTransaction = TRUE;

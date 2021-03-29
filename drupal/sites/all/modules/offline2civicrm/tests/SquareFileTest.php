@@ -49,7 +49,7 @@ class SquareFileTest extends BaseChecksFileTest {
     $output = $importer->_parseRow($data);
 
     $this->stripSourceData($output);
-    $this->assertEquals($expected_normal, $output);
+    $this->assertEquals($expected_normal, array_filter($output));
   }
 
   function testParseRow_Refund() {
@@ -89,6 +89,6 @@ class SquareFileTest extends BaseChecksFileTest {
     $output = $importer->_parseRow($data);
 
     $this->stripSourceData($output);
-    $this->assertEquals($expected_normal, $output);
+    $this->assertEquals($expected_normal, array_filter($output));
   }
 }

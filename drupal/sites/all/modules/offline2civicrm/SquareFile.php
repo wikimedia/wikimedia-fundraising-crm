@@ -52,6 +52,7 @@ class SquareFile extends ChecksFile {
   }
 
   protected function mungeMessage(&$msg) {
+    parent::mungeMessage($msg);
     $msg['gateway'] = 'square';
     $msg['contribution_type'] = 'cash';
 
@@ -62,11 +63,6 @@ class SquareFile extends ChecksFile {
       $msg['net'] = ltrim($msg['net'], '$');
       $msg['net'] = preg_replace('/,/', '', $msg['net']);
     }
-
-    [
-      $msg['first_name'],
-      $msg['last_name'],
-    ] = wmf_civicrm_janky_split_name($msg['full_name']);
 
     if ($msg['gateway_status_raw'] === 'Refunded') {
       $msg['net'] = $msg['gross']; // in refunds net is set to zero for some reason

@@ -5,6 +5,7 @@ use League\Csv\Reader;
 use SmashPig\Core\Context;
 use League\Csv\Writer;
 use League\Csv\Statement;
+use Civi\Api4\Name;
 
 /**
  * CSV batch format for manually-keyed donation checks
@@ -430,9 +431,17 @@ abstract class ChecksFile {
    *
    * @param array $msg
    *
+   * @throws \API_Exception
    * @throws \WmfException
    */
   protected function mungeMessage(&$msg) {
+    if (!empty($msg['full_name'])) {
+      // Parse name parts into fields.
+      $msg = array_merge(array_filter((array) Name::parse(FALSE)
+        ->setNames([$msg['full_name']])
+        ->execute()->first()), $msg);
+    }
+
     if (isset($msg['raw_contribution_type'])) {
       $contype = $msg['raw_contribution_type'];
       switch ($contype) {
