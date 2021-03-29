@@ -22,6 +22,7 @@ files[] = BitpayFile.php
 files[] = BenevityFile.php
 files[] = CitibankFile.php
 files[] = CitibankIndividualsFile.php
+files[] = FidelityFile.php
 files[] = PayPalChecksFile.php
 files[] = RefundFile.php
 files[] = SquareFile.php

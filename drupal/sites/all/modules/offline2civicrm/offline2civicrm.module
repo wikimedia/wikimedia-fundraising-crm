@@ -135,6 +135,7 @@ function offline2civicrm_import_checks_form($form, &$form_state) {
       'citibank_individuals' => t('Citibank Individuals'),
       'engage' => t('Engage'),
       'coinbase' => t('Coinbase Merchant Orders'),
+      'fidelity' => t('Fidelity'),
       'foreign_checks' => t('Foreign Checks'),
       'generic_ind' => t('Generic Individuals'),
       'generic_org' => t('Generic Organizations'),
@@ -401,6 +402,9 @@ function offline2civicrm_get_importer_class($uploadFormat, $fileUri, $additional
 
     case 'bitpay':
       return new BitpayFile($fileUri, $additionalFields);
+
+    case 'fidelity':
+      return new FidelityFile($fileUri, $additionalFields);
 
     case 'paypal':
       return new PayPalChecksFile($fileUri, $additionalFields);

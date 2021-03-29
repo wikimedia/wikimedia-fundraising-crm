@@ -34,6 +34,7 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
   protected $anonymousContactID;
 
   public function setUp(): void {
+    $this->ensureAnonymousContactExists();
     parent::setUp();
     civicrm_initialize();
     $this->epochtime = wmf_common_date_parse_string('2016-09-15');
