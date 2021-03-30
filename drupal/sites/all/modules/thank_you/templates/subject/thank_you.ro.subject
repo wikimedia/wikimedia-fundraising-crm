@@ -1,1 +1,5 @@
-Donația dvs. Curiozitatea dvs. Wikipedia dvs.
+{% if first_name %}
+  {{ first_name }}, donația ta reprezintă încă un motiv pentru a sărbători.
+{% else %}
+  Donația ta reprezintă încă un motiv pentru a sărbători.
+{% endif %}

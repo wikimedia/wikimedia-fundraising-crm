@@ -1,4 +1,9 @@
-{% if first_name and last_name %}
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Ezúton küldöm a befizetésről szóló nyugtát és szívből jövő köszönetemet.</span>
+<div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+
+
+
+{% if first_name %}
 <p>Helló {{ first_name }}!
 </p>{% else %}<p>
 Tisztelt Támogató!</p>
@@ -7,17 +12,18 @@ Tisztelt Támogató!</p>
 
 {% if recurring %}
 <p>
-Szerencsésnek érzem magam, hogy köszönetet mondhatok a havi {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} adományért, mindazok nevében is, akik világszerte felhasználják a szabad tudást.
+Nagyon hálás vagyok, hogy én mondhatok köszönetet neked a Wikipédiát támogató rendszeres, {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összegű adományodért. Szeretném megragadni az alkalmat, hogy megköszönjem nagylelkűségedet és kivételes hajlandóságodat arra, hogy egy jobb jövőt teremtsünk a világ számára.
 </p>
 
 <p>
-Támogatásod segít fenntartani a Wikipédia függetlenségét, havi rendszeres támogatásod pedig rendkívül fontos a hosszú távú tervezés érdekében, hiszen így előre láthatjuk, mi mindent valósíthat meg a Wikipédia az elkövetkező években. Havonta egy alkalommal, a Wikimedia Foundation {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összeggel megterheli számládat mindaddig, amíg nem értesítesz bennünket lemondási szándékodról. <b>Minden év januárjában elküldjük az előző évben nyújtott támogatásaid összesítését.</b> Amennyiben a támogatás folyósítását bármilyen okból szeretnéd megszüntetni, kövesd az <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">egyszerű lemondást segítő útmutatónkat</a>.
+Havi hozzájárulásod sokat jelent a Wikipédia számára, és segít nekünk abban, hogy előre tervezhessünk. A Wikimédia Alapítvány havonta egyszer megterheli számládat egy {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összegű adománnyal, és <b>minden januárban elküldjük neked az előző évi hozzájárulásaidról szóló kimutatást</b>. Ha bármilyen okból úgy döntenél, hogy többé nem szeretnél adományozni, a lemondáshoz, kérjük, kövesd <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">ezeket az egyszerű utasításokat</a>.
+
 </p>
 
 {% else %}
 
 <p>
-Szerencsésnek érzem magam, hogy köszönetet mondhatok az {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} adományért, mindazok nevében is, akik világszerte felhasználják a szabad tudást.
+Nagyon hálás vagyok, hogy én mondhatok köszönetet neked a Wikipédiát támogató egyszeri, {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összegű adományodért. Szeretném megragadni az alkalmat, hogy megköszönjem nagylelkűségedet és kivételes hajlandóságodat arra, hogy egy jobb jövőt teremtsünk a világ számára.
 </p>
 {% endif %}
 
@@ -30,22 +36,25 @@ Szerencsésnek érzem magam, hogy köszönetet mondhatok az {{ (currency ~ " " ~
 {%endif%}
 
 <p>
-Minél tovább gondolkodom ezen, annál egyértelműbb számomra, hogy a Wikipédia nem pusztán egyetlen tapasztalatra épül. A kíváncsiság épp oly sokszínű, mint mi magunk, és mindannyiunk számára mást és mást jelent.
+20 évvel ezelőtt alapítottam a Wikipédiát. Azóta szeretett enciklopédiánk sokat fejlődött, remek időszakokat és nehézségeket is egyaránt megélt, és ma minden eddiginél hatékonyabban szolgálja valódi célját. Több millió embernek segít a tanulás, az új dolgok felfedezése és a kutatás terén.
 </p>
 
 <p>
-Reméljük, hogy amikor legközelebb ellátogatsz a Wikipédia oldalára, még inkább érezni fogod, hogy egy kicsit a tiéd is. Mert nélküled, és azon sok millió emberek szeretete és támogatása nélkül, akik minden nap visszatérnek hozzánk, nem tarthatnánk itt.
+A Wikipédia minden nap új lehetőséget ad az olvasóinak arra, hogy olyan tudásra tegyenek szert, amely jogosan lehet az övék – körülményeiktől függetlenül. 
 </p>
 
 <p>
-<b>Adományod erőt ad számunkra, és lehetővé teszi célunk megvalósítását. Köszönjük, hogy helyet adtál a Wikipédia számára az életedben!</b>
+Te vagy az, aki ezt lehetővé teszi. A támogatásod biztosítja a lehetőséget a szükséges szerkesztések létrejöttéhez, és ahhoz, hogy a cikkek új olvasókhoz is eljuthassanak; ez teszi lehetővé nonprofit szervezetünk számára, hogy hű maradhasson küldetéséhez, még akkor is, ha időközben a Wikipédia a világ egyik leglátogatottabb weboldalává vált.
 </p>
 
-<p>Hálás köszönettel:</p>
 <p>
-Katherine <br><br>
-Katherine Maher, ügyvezető igazgató<br>
-Wikimedia Foundation
+Lehet, hogy nem tudjuk veled együtt „elfújni a gyertyákat” a születésnapi tortán, azonban amikor idén a <a href="https://wikimediafoundation.org/wikipedia20/">Wikipédia 20 éves fennállását</a> ünnepeljük, minden munkatársunk hálával gondol rád a Wikimédia Alapítványnál. 
+</p>
+
+<p>Köszönök mindent!</p>
+<p>
+Jimmy Wales<br>
+A Wikipédia alapítója
 </p>
 
 <p>Számos munkaadó nagyvonalúan megduplázza az alkalmazottak adományait: kérjük, érdeklődd meg munkaadódnál, hogy van-e <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">vállalati adománymegduplázó programjuk</a>.
@@ -64,6 +73,6 @@ Wikimedia Foundation
 <p>Ha nem szeretnél a jövőben adománygyűjtéssel kapcsolatos e-maileket kapni a Wikimedia Foundationtől, <a href="{{ unsubscribe_link | raw }}">azonnal leiratkozhatsz</a>. Kérjük, vedd figyelembe, hogy ennek ellenére küldünk neked ehhez hasonló visszaigazolásokat a jövőbeli adományozásaid esetén.
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.he.html","revision":20200103}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.he.html","revision":20210318}TI_END -->
 
 

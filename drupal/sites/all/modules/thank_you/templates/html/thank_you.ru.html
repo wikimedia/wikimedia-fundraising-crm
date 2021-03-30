@@ -1,3 +1,6 @@
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Подтверждаем получение и приносим искреннюю благодарность.</span>
+<div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+
 {% if first_name and last_name %}
 <p>Здравствуйте, {{ first_name }}!
 </p>{% else %}<p>
@@ -6,20 +9,22 @@
 
 
 {% if recurring %}
-<p>
-Я безумно рада, что мне выпал шанс поблагодарить вас за ежемесячное пожертвование  в размере {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} от имени всех, кто хочет получать свободные знания.
-</p>
+<p>Примите мою сердечную благодарность за вашу периодическую поддержку Википедии в размере {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Пользуясь этой возможностью, я хочу выразить признательность за вашу щедрость и замечательное стремление принимать участие в создании лучшего будущего для нашего мира.</p>
 
-<p>
-Ваше пожертвование помогает Википедии быть независимой, а ваша ежемесячная поддержка имеет огромное значение для долгосрочного планирования, — она помогает нам заглянуть в будущее и увидеть, чего Википедия может достичь в ближайшие годы. Один раз в месяц пожертвование в размере {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} будет списываться фондом Wikimedia Foundation до тех пор, пока вы не попросите прекратить списывать средства. <b>Мы будем отправлять вам сводные данные о ваших пожертвованиях за предыдущий год в январе каждого года.</b> Если по какой-либо причине вы хотите отменить пожертвования, выполните эти <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">простые инструкции по отмене</a>.
-</p>
+<p>Ваши ежемесячные пожертвования помогают Википедии развиваться, а нам — планировать работу наперед. Раз в месяц пожертвование в размере {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} будет перечисляться на счёт фонда Wikimedia Foundation. <b>Каждый январь мы будем присылать вам краткий отчет о ваших пожертвованиях за прошлый год.</b> Если вы по какой-либо причине захотите отменить регулярные пожертвования, следуйте этим <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">простым инструкциям</a>.</p>
 
 {% else %}
 
-<p>
-Я безумно рада, что мне выпал шанс поблагодарить вас за пожертвование в размере {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} от имени всех, кто хочет получать свободные знания.
-</p>
+<p>Примите мою сердечную благодарность за ваше единовременное пожертвование в поддержку Википедии на сумму {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Пользуясь этой возможностью, я хочу выразить признательность за вашу щедрость и замечательное стремление принимать участие в создании лучшего будущего для нашего мира.</p>
 {% endif %}
+
+<p>20 лет назад мною была основана Википедия. . С тех пор наша любимая энциклопедия сильно разрослась. Она знала и трудности, и хорошие времена, и сегодня — больше чем когда-либо — она служит своей истиной цели.Она помогает миллионам людей изучать, находить и открывать новое.</p>
+
+<p>Каждый день Википедия дает новый шанс получить знания, по праву принадлежащие всем людям, независимо от того, в каких обстоятельствах они оказались.</p>
+
+<p>И это стало возможным благодаря вам. Ваша поддержка помогает редактировать статьи и расширять читательскую аудиторию; она позволяет нашему некоммерческому проекту не отступать от своей миссии даже теперь, когда Википедия стала одним из самых посещаемых сайтов в мире.</p>
+
+<p>Может быть мы и не можем вместе задуть свечи на праздничном торте, но знайте — в год, когда мы празднуем <a href="https://wikimediafoundation.org/{{ locale }}/wikipedia20/">20-летие Википедии</a>, вы близки сердцу каждого, кто работает в Wikimedia Foundation. </p>
 
 {% if "RecurringRestarted" in contribution_tags %}
 <p>Недавно мы решили небольшую техническую проблему, которая приостановила некоторые ежемесячные пожертвования. Мы восстановили ваши регулярные пожертвования — они будут перечисляться в обычном режиме. Мы не взимаем плату за пропущенные месяцы. Спасибо за ваше терпение и поддержку! Если у вас остались какие-либо вопросы, пожалуйста, направляйте их по адресу donate@wikimedia.org.</p>
@@ -29,24 +34,10 @@
 <p>Недавно мы решили техническую проблему, из-за которой небольшое количество дарителей не получили подтверждение своих пожертвований. Пожалуйста, примите это письмо как благодарность за ваше пожертвование от {{ receive_date }}. Мы искренне ценим ваше терпение и поддержку! Если у вас остались какие-либо вопросы, пожалуйста, направляйте их по адресу donate@wikimedia.org.</p>
 {%endif%}
 
+<p>Спасибо за все,</p>
 <p>
-Чем дольше я занимаюсь этой работой, тем больше я понимаю, что каждый видит Википедию по-разному. Любопытство так же разнообразно, как и мы, и взгляд каждого из нас на него немного отличается.
-</p>
-
-<p>
-Я надеюсь, что когда вы воспользуетесь Википедией  в следующий раз, вы еще сильнее почувствуете, что она принадлежит вам. Потому что без вас, без любви и поддержки миллионов людей, которые возвращаются к нам каждый день, мы были бы ничем.
-</p>
-
-<p>
-<b>Ваше пожертвование дает нам силы действовать дальше для достижения нашей цели. Благодарим вас за то, что выделили место для Википедии в вашей жизни.</b>
-</p>
-
-<p>С огромной благодарностью,
-</p>
-<p>
-Кэтрин <br><br>
-Кэтрин Маэр (Katherine Maher), Исполнительный Директор,<br>
-Wikimedia Foundation
+  Джимми Уэйлс<br>
+  Основатель Википедии
 </p>
 
 <p>Многие работодатели могут удваивать пожертвования: выясните у вашего работодателя, имеется ли такая <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">программа корпоративных пожертвований</a>.
@@ -65,4 +56,4 @@ Wikimedia Foundation
 <p>Если вы не хотите получать в будущем какие-либо электронные письма по сбору средств от Wikimedia Foundation, вы можете <a href="{{ unsubscribe_link | raw }}">немедленно отменить подписку</a>. Примите к сведению, что мы по-прежнему будем присылать вам такие квитанции для будущих пожертвований.
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.ro.html","revision":20200103}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.ro.html","revision":20210323}TI_END -->

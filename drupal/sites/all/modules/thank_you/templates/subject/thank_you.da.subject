@@ -1,1 +1,5 @@
-Din donation. Din nysgerrighed. Dit Wikipedia.
+{% if first_name %}
+{{ first_name }}, din donation giver os endnu en ting at fejre.
+{% else %}
+Din donation giver os endnu en ting at fejre.
+{%endif%}

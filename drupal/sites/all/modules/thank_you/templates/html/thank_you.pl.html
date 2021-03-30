@@ -1,22 +1,29 @@
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Potwierdzenie wpłaty i serdeczne podziękowania.</span>
+<div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+
 {% if first_name and last_name %}
 <p>Drogi/Droga {{ first_name }}!
 </p>{% else %}<p>
 Drogi Darczyńco,</p>
 {%endif%}
 
-
 {% if recurring %}
-<p>Cieszę się,  że mogę podziękować za prezent w kwocie {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} miesięcznie w imieniu ludzi poszukujących bezpłatnej wiedzy.
-</p>
+<p>Bardzo się cieszę, że mogę podziękować Ci za Twoją cykliczną darowiznę w kwocie {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} przekazaną w ramach wsparcia Wikipedii. Chcę skorzystać z tej okazji, aby wyrazić wdzięczność za Twoją hojność i wkład w budowanie lepszej przyszłości dla powszechnie dostępnej wiedzy.</p>
 
-<p>Dzięki Twoim datkom Wikipedia pozostaje niezależna, a Twoje comiesięczne wsparcie ma zasadnicze znaczenie dla planowania długoterminowego, i pomaga  nam dostrzec możliwości, jakie będą pojawiały się przed Wikipedią w kolejnych latach. Każdego miesiąca, Wikimedia Foundation będzie pobierała datek w wysokości {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, chyba że powiadomisz nas, abyśmy zaprzestali tych działań. <b>W styczniu każdego roku prześlemy Ci zestawienie wpłat za poprzedni rok.</b> Jeżeli z jakiegokolwiek powodu zechcesz anulować swoje datki, wykonaj działania zgodne z tymi <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">wskazówkami dotyczącymi łatwego anulowania zobowiązania</a>.
-</p>
+<p>Twoja comiesięczna wpłata ma ogromne znaczenie dla Wikipedii i pozwala nam planować nasze działania z wyprzedzeniem. Raz w miesiącu Wikimedia Foundation pobierze darowiznę w wysokości {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. <b>W styczniu każdego roku będziemy przesyłać Ci podsumowanie Twoich składek za poprzedni rok.</b> Jeśli z jakiegokolwiek powodu postanowisz zrezygnować z darowizny, postępuj zgodnie z poniższym <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">instrukcjami dotyczącymi jej anulowania</a>.</p>
 
 {% else %}
 
-<p>Cieszę się bardzo, że mogę podziękować za darowiznę w kwocie {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} w imieniu wspólnoty ludzi poszukujących bezpłatnej wiedzy.
-</p>
+<p>Bardzo się cieszę, że mogę podziękować Ci za Twoją jednorazową darowiznę w kwocie {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} przekazaną w ramach wsparcia Wikipedii. Chcę skorzystać z tej okazji, aby wyrazić wdzięczność za Twoją hojność i wkład w budowanie  lepszej przyszłości dla powszechnie dostępnej wiedzy.</p>
 {% endif %}
+
+<p>Założyłem Wikipedię 20 lat temu. Od tego czasu nasza ukochana encyklopedia znacznie się rozwinęła, aby, niezależnie od wszelkich zawirowań, spełniać zadanie, dla którego została stworzona: pomoc milionom ludzi w nauce, odkrywaniu, poznawaniu i badaniu świata.</p>
+
+<p>Każdego dnia Wikipedia umożliwia swoim czytelnikom dostęp do wiedzy, do której mają niezbywalne prawo bez względu na okoliczności.</p>
+
+<p>I to właśnie Ty sprawiasz, że jest to możliwe. Twoje wsparcie umożliwia edytowanie treści i docieranie z artykułami do nowych czytelników; dzięki temu nasza organizacja non-profit może pozostawać wierna swojej misji, nawet teraz, gdy Wikipedia stała się jedną z najczęściej odwiedzanych stron internetowych na świecie.</p>
+
+<p>Raczej nie będziemy mieli szansy na wspólne zdmuchnięcie świeczek, ale świętujemy <a href="https://wikimediafoundation.org/{{ locale }}/wikipedia20/">20-lecie Wikipedii</a> przez cały rok i wiedz, że wszyscy pracownicy Wikimedia Foundation myślą o Tobie z wdzięcznością. </p>
 
 {% if "RecurringRestarted" in contribution_tags %}
 <p>W ostatnim czasie rozwiązaliśmy niewielki problem techniczny, przez który realizacja pewnych comiesięcznych datków była wstrzymana. Przywróciliśmy Twoją miesięczną darowiznę i od teraz będzie ona przetwarzana tak, jak dotychczas. Nie pobierzemy od Ciebie opłaty za pominięte miesiące. Dziękujemy za Twoją cierpliwość i wsparcie, a w przypadku jakichkolwiek pytań zachęcamy do kontaktu pod adresem e-mail donate@wikimedia.org.</p>
@@ -26,25 +33,11 @@ Drogi Darczyńco,</p>
 <p>W ostatnim czasie rozwiązaliśmy problem techniczny, przez który niewielka liczba darczyńców nie otrzymywała potwierdzenia przekazania datku. Prosimy przyjąć niniejszą wiadomość e-mail jako podziękowanie za datek z dnia {{ receive_date }}. Dziękujemy za Twoją cierpliwość i wsparcie, a w przypadku jakichkolwiek pytań zachęcamy do kontaktu pod adresem e-mail donate@wikimedia.org.</p>
 {%endif%}
 
+<p>Dziękuję za wszystko,</p>
 <p>
-Im dłużej wykonuję tę pracę, tym bardziej zdaję sobie sprawę, że różni ludzie mają różne doświadczenia w korzystaniu z Wikipedii. Ciekawość niejedno ma imię, jak zresztą my sami, a zatem u każdego z nas wygląda ona nieco inaczej.
+  Jimmy Wales<br>
+  Założyciel Wikipedii
 </p>
-
-<p>
-Mam nadzieję, że kiedy następnym razem skorzystasz z Wikipedii, jeszcze bardziej poczujesz, że należy do Ciebie. Ponieważ bez Ciebie, jak też bez zaangażowania oraz wsparcia milionów ludzi, powracających do nas każdego dnia, nic byśmy nie zrobili.
-</p>
-
-<p>
-<b>Twoja darowizna daje nam impuls do działania i umożliwia realizację naszego celu. Dziękujemy za stworzenie miejsca na Wikipedię w Twoim życiu.</b>
-</p>
-
-<p>Z ogromną wdzięcznością,</p>
-<p>
-Katherine <br><br>
-Katherine Maher, Dyrektor Wykonawczy<br>
-Wikimedia Foundation
-</p>
-
 
 <p>Wielu pracodawców chętnie wynagrodzi Twoją darowiznę. Zapytaj swojego pracodawcę o stosowne firmowe zwroty <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">finansowe i programy</a>.
 </p>
@@ -65,4 +58,4 @@ Wikimedia Foundation
 
 
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.pl.html","revision":20200102}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.pl.html","revision":20210323}TI_END -->

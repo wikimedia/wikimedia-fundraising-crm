@@ -1,22 +1,26 @@
-{% if first_name and last_name %}
-<p>Kære {{ first_name }}!
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">En kvittering og en dybfølt tak.</span>
+<div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+
+{% if first_name %}
+<p>Kære {{ first_name }},
 </p>{% else %}<p>
-Kære donor</p>
+Kære donor,</p>
 {%endif%}
 
 
 {% if recurring %}
-<p>Det er mig en glæde at kunne takke dig for din månedlige gave på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} på vegne af en verden fuld af mennesker, der søger gratis viden.
+<p>
+Jeg er så taknemmelig for at være den, der takker dig for din tilbagevendende gave på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, du gav for at støtte Wikipedia. Jeg vil gerne benytte lejligheden til at fejre din generøsitet og din exceptionelle villighed til at deltage i at skabe en bedre fremtid for verden.
 </p>
 
 <p>
-Din donation holder Wikipedia uafhængig, og din månedlige støtte er afgørende for langtidsplanlægning og hjælper os med at se, hvad Wikipedia kan opnå i de kommende år. Én gang om måneden vil en donation på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} blive trukket af Wikimedia Foundation, indtil du beder os om at stoppe. <b>Vi vil sende dig en oversigt over dine bidrag det foregående år hver januar.</b> Hvis du ønsker at annullere din donation, bedes du følge disse enkle <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">instruktioner for annullering</a>.
+Dit månedlige bidrag vil bringe Wikipedia langt og hjælpe os med at planlægge fremad. En gang om måneden vil en donation på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} blive debiteret af Wikimedia Foundation. <b>Hver januar sender vi dig et sammendrag af dine bidrag for det foregående år</b>. Hvis du af den ene eller anden grund ønsker at annullere din månedlige donation, bedes du følge disse <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">enkle instruktioner for annullering</a>.
 </p>
 
 {% else %}
 
 <p>
-Det er mig en glæde at kunne takke dig for din gave på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} på vegne af en verden fuld af mennesker, der søger gratis viden.
+Jeg er så taknemmelig for at være den, der takker dig for den engangsgave på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, du gav for at støtte Wikipedia. Jeg vil gerne benytte lejligheden til at fejre din generøsitet og din exceptionelle villighed til at deltage i at skabe en bedre fremtid for verden.
 </p>
 {% endif %}
 
@@ -29,22 +33,25 @@ Det er mig en glæde at kunne takke dig for din gave på {{ (currency ~ " " ~ am
 {%endif%}
 
 <p>
-Jo længere, jeg arbejder med dette, jo mere forstår jeg, at der ikke er én enkelt oplevelse af Wikipedia. Nysgerrighed er lige så forskelligartet som vi alle er, og ser lidt anderledes ud for hver af os. 
+Jeg grundlagde Wikipedia for 20 år siden. Siden da er vores elskede encyklopædi vokset meget gennem gode tider og hårde tider, og i dag tjener den mere end nogensinde før sit egentlige formål. Den hjælper millioner af mennesker med at studere, opleve, udforske og undersøge.
 </p>
 
 <p>
-Når du bruger Wikipedia næste gang, håber jeg, at du i endnu højere grad føler, at det tilhører dig. For uden dig, og uden påskønnelse og støtte fra millioner af mennesker, som besøger os hver dag, ville vi ikke være noget.
+Hver dag giver Wikipedia læsere en ny chance for at tilegne sig den viden, der er retmæssigt deres, uanset hvilke omstændigheder de befinder sig i. 
 </p>
 
 <p>
-<b>Din donation giver os handlekraft og gør os i stand til at opfylde vores formål. Tak for, at du har gjort Wikipedia til en del af dit liv.</b>
+Du er med til at gøre det muligt. Din støtte gør det muligt at foretage ændringer, og at artikler når ud til nye læsere. Den giver vores non-profit organisation midler til at forblive tro mod sin mission, selv efter at Wikipedia er blevet et af de mest besøgte websteder i verden.
 </p>
 
-<p>Med dyb taknemmelighed</p>
 <p>
-Katherine <br><br>
-Katherine Maher, administrerende direktør<br>
-Wikimedia Foundation
+Det er ikke sikkert, at vi får chancen for at puste lysene på lagkagen ud sammen, men når vi fejrer <a href="https://wikimediafoundation.org/wikipedia20/">20 år med Wikipedia</a> i løbet af året, skal du vide at du er i vores tanker hos os alle her i Wikimedia Foundation. 
+</p>
+
+<p>Tak for alt.</p>
+<p>
+Jimmy Wales<br>
+Wikipedia-grundlægger
 </p>
 
 <p>Mange arbejdsgivere vil gladeligt donere det samme som deres ansatte: Spørg din arbejdsgiver for at høre, om de har et <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">ethvervsdonationsprogram</a>.
@@ -67,5 +74,5 @@ Wikimedia Foundation
 
 
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.da.html","revision":20200102}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.da.html","revision":20210319}TI_END -->
 

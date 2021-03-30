@@ -1,4 +1,9 @@
-{% if first_name and last_name %}
+
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Kvīts un sirsnīgs paldies.</span>
+<div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+
+
+{% if first_name %}
 <p>Sveicināti, {{ first_name }}!
 </p>{% else %}<p>
 Cienījamais ziedotāj!</p>
@@ -7,18 +12,19 @@ Cienījamais ziedotāj!</p>
 
 {% if recurring %}
 <p>
-Es priecājos būt tas, kurš pateicas par Jūsu ikmēneša dāvana {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} apmērā visu to vārdā, kas meklē iespēju iegūt zināšanas bez maksas.
+Esmu patiesi gandarīts izteikt tev pateicību par regulāro dāvanu {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} apmērā, kuru ziedoji Wikipedia atbalstam. Vēlos izmantot šo iespēju, lai godinātu tavu dāsnumu un īpašo vēlmi piedalīties labākas nākotnes veidošanā pasaulei.
 </p>
 
 <p>
-Jūsu ziedojums padara Vikipēdiju neatkarīgu, un Jūsu ikmēneša atbalsts ir būtisks ilgtermiņa plānošanai, palīdzot mums redzēt, ko Vikipēdija varētu sasniegt turpmākajos gados. Reizi mēnesī Wikimedia Foundation iekasēs ziedojumu {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} apmērā, līdz Jūs paziņosiet mums, ka vēlaties pārtraukt.<b> Katru gadu janvārī mēs nosūtīsim kopsavilkumu par iepriekšējo gadu.</b> Ja kāda iemesla dēļ vēlaties atcelt ziedojumu, skatiet šīs <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">vienkāršās atcelšanas instrukcijas</a>.
+Tava ikmēneša iemaksa sniegs lielu ieguldījumu Wikipedia un palīdzēs mums plānot darbību nākotnē. Reizi mēnesī Wikimedia Foundation saņems ziedojumu {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} apmērā. <b>Katru janvāri mēs nosūtīsim tev kopsavilkumu par iepriekšējā gadā veiktajām iemaksām</b>. Ja tu kāda iemesla dēļ vēlies pārtraukt ziedot, izpildi šos <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">vienkāršos pārtraukšanas norādījumus</a>.
 </p>
 
 {% else %}
 
 <p>
-Es priecājos būt tas, kurš pateicas par Jūsu dāvanu {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} apmērā visu to vārdā, kas meklē iespēju iegūt zināšanas bez maksas.
+Esmu patiesi gandarīts izteikt tev pateicību par vienreizējo dāvanu {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} apmērā, kuru ziedoji Wikipedia atbalstam. Vēlos izmantot šo iespēju, lai godinātu tavu dāsnumu un īpašo vēlmi piedalīties labākas nākotnes veidošanā pasaulei.
 </p>
+
 {% endif %}
 
 {% if "UnrecordedCharge" in contribution_tags %}
@@ -26,22 +32,23 @@ Es priecājos būt tas, kurš pateicas par Jūsu dāvanu {{ (currency ~ " " ~ am
 {%endif%}
 
 <p>
-Jo ilgāk es strādāju, jo vairāk es saprotu, ka Vikipēdijai nav vienas īpašas pieredzes. Ziņkārība ir tikpat daudzveidīga kā mēs visi, un katram no mums tā ir nedaudz savādāka.
+Es nodibināju Wikipedia pirms 20 gadiem. Kopš tā laika mūsu mīļotā enciklopēdija ir ievērojami paplašinājusies, pieredzot gan labus laikus, gan grūtības, un tagad tā kalpo savam patiesajam mērķim vairāk nekā jebkad iepriekš. Tā palīdz miljoniem cilvēku mācīties, uzzināt, pētīt un izzināt.
 </p>
 
 <p>
-Kad nākamreiz izmantosiet Vikipēdiju, es ceru, ka vēl dziļāk izjutīsiet sasaisti, ka tā ir piemērota tieši Jums. Jo bez Jums un bez miljonu cilvēku mīlestības un atbalsta, kas katru dienu atgriežas pie mums, mēs nebūtu nekas.
+Ik dienas Wikipedia sniedz lasītājiem jaunu iespēju iegūt zināšanas, uz kurām viņiem ir neapstrīdamas tiesības, neatkarīgi no viņu apstākļiem. 
 </p>
 
 <p>
-<b>Jūsu ziedojums dod impulsu un ļauj mums sasniegt savu mērķi. Paldies, ka savā dzīvē atvēlējāt vietu Vikipēdijai.</b>
+Tu esi tas/tā, kas sniedz šādu iespēju. Tavs atbalsts ļauj veikt labojumus un publicēt rakstus, kas sasniedz jaunus lasītājus, tas nodrošina mūsu bezpeļņas kustībai līdzekļus savas misijas saglabāšanai pat tagad, kad Wikipedia ir kļuvusi par vienu no pasaulē visvairāk apmeklētajām tīmekļa vietnēm.
 </p>
 
-<p>Ar milzīgu pateicību,</p>
-<p>
-Katherine <br><br>
-Katherine Maher, izpilddirektore<br>
-Wikimedia Foundation
+<p>Mums var nebūt iespēja klātienē kopīgi nopūst svinību tortes svecītes, taču, atzīmējot Wikipedia <a href="https://wikimediafoundation.org/wikipedia20/">20 gadu jubileju</a> visa šī gada garumā, zini, ka tu esi visu Wikimedia Foundation strādājošo sirdīs. </p>
+
+
+<p>Pateicībā par visu,</p>
+<p>Jimmy Wales<br>
+Vikipēdijas dibinātājs
 </p>
 
 <p>Daudzi darba devēja dāsni atbalsta darba ņēmēju ziedojumus: lūdzu, precizējiet pie sava darba devēja, vai uzņēmumā ir <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">korporatīvā atbilstīgu dāvinājumu programma</a>.
@@ -60,4 +67,4 @@ Wikimedia Foundation
 <p>Ja vairs nevēlaties saņemt Wikimedia Foundation e-pasta ziņojumus saistībā ar līdzekļu vākšanu, <a href="{{ unsubscribe_link | raw }}">jūs varat anulēt abonementu</a>. Lūdzu, ņemiet vērā, ka saistībā ar turpmākiem ziedojumiem, mēs nosūtīsim tādu pašu apstiprinājuma paziņojumu, kā šis.
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.lv.html","revision":20200101}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.lv.html","revision":20210318}TI_END -->

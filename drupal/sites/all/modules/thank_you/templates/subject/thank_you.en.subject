@@ -1,1 +1,5 @@
-Your donation keeps us all exploring
+{% if first_name %}
+   {{ first_name }}, your
+{% else %}
+  Your
+{% endif %} donation is one more reason to celebrate.

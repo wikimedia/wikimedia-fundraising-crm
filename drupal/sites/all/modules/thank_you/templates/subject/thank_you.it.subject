@@ -1,1 +1,5 @@
-La tua donazione ci permette di continuare a esplorare
+{% if first_name %}
+{{ first_name }}, la tua donazione è una ragione in più per festeggiare
+{% else %}
+La tua donazione è una ragione in più per festeggiare
+{%endif%}

@@ -1,1 +1,5 @@
-O seu donativo. A sua curiosidade. A sua Wikipédia.
+{% if first_name %}
+{{ first_name }}, o seu donativo é mais uma razão para celebrar.
+{% else %}
+O seu donativo é mais uma razão para celebrar.
+{%endif%}
