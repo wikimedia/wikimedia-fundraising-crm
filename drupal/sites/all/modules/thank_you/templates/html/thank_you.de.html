@@ -1,4 +1,7 @@
-{% if first_name and last_name %}
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Ihre Quittung und ein herzliches Dankeschön.</span>
+<div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+
+{% if first_name %}
 <p>Hallo {{ first_name }}!
 </p>{% else %}<p>
 Liebe/r Spender/in,</p>
@@ -7,17 +10,17 @@ Liebe/r Spender/in,</p>
 
 {% if recurring %}
 <p>
-Ich freue mich sehr, mich im Namen der unzähligen Menschen, die von freiem Wissen profitieren, bei dir für deine monatliche Spende über {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} bedanken zu dürfen.
+ich freue mich sehr, Ihnen für Ihre monatliche Spende in Höhe von {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} danken zu dürfen, mit der Sie Wikipedia unterstützen. Mit Ihrer Großzügigkeit beweisen Sie Ihre außergewöhnliche Bereitschaft an der Schaffung einer besseren Zukunft für unsere Welt mitzuwirken.
 </p>
 
 <p>
-Durch deine Spende bleibt Wikipedia unabhängig und deine monatliche Unterstützung ist wesentlich für unsere langfristige Planung. Sie hilft uns dabei, abzuschätzen, was Wikipedia in den nächsten Jahren erreichen kann. Einmal im Monat, wird eine Spende über {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} von der Wikimedia Foundation abgebucht, bis du uns eine Kündigung zukommen lässt. <b>Wir werden dir jeden Jänner eine Zusammenfassung deiner Spenden aus dem Vorjahr schicken.</b> Solltest du deine Spendenzahlungen aus irgendeinem Grund einstellen wollen, folge bitte diesen <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">einfachen Anweisungen zur Kündigung</a>.
+Ihr monatlicher Beitrag bringt Wikipedia voran und ermöglicht es uns, vorauszuplanen. Einmal im Monat bucht die Wikimedia Foundation eine Spende in Höhe von {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} ab. <b>Im Januar eines jeden Jahres werden wir Ihnen eine Zusammenfassung Ihrer Beiträge für das Vorjahr zusenden</b>. Wenn Sie Ihre Spende einstellen möchten, befolgen Sie bitte die <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">Stornierungsanweisungen</a>.
 </p>
 
 {% else %}
 
 <p>
-Ich freue mich sehr, dir im Namen der unzähligen Menschen, die von freiem Wissen profitieren, für deine Spende über {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} danken zu dürfen.
+ich freue mich sehr, Ihnen für Ihre einmalige Spende in Höhe von {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} danken zu dürfen, mit der Sie Wikipedia unterstützen. Mit Ihrer Großzügigkeit beweisen Sie Ihre außergewöhnliche Bereitschaft an der Schaffung einer besseren Zukunft für unsere Welt mitzuwirken.
 </p>
 {% endif %}
 
@@ -30,22 +33,25 @@ Ich freue mich sehr, dir im Namen der unzähligen Menschen, die von freiem Wisse
 {%endif%}
 
 <p>
-Je länger ich darüber nachdenke, desto klarer wird mir, dass jeder und jede Wikipedia anders erlebt. Wissensdurst und Wissbegier sind so vielfältig wie wir alle und zeigen sich bei jedem von uns auf individuelle Weise.
+Ich habe Wikipedia vor 20 Jahren gegründet. Seitdem ist unsere geschätzte Enzyklopädie in guten wie auch in schweren Zeiten stark gewachsen und dient heute mehr denn je ihrem wahren Zweck. Sie hilft Millionen von Menschen beim Studieren, Entdecken, Erforschen und Recherchieren.
 </p>
 
 <p>
-Ich hoffe, dass du dich der Wikipedia bei deinem nächsten Besuch noch verbundener fühlst. Denn ohne dich und die Treue und Unterstützung von Millionen von Menschen, die Wikipedia jeden Tag nutzen, wären wir heute nicht hier.
+Jeden Tag haben Menschen dank Wikipedia aufs Neue die Chance, das Wissen zu erwerben, das ihnen rechtmäßig zusteht, und zwar unabhängig von ihren jeweiligen Lebensumständen.
 </p>
 
 <p>
-<b>Deine Spende verleiht uns Schwung und ermöglicht es uns, unseren Zweck zu erfüllen. Vielen Dank, dass Wikipedia einen Platz in deinem Leben hat.</b>
+Und Sie machen das möglich. Ihre Unterstützung sorgt dafür, dass Artikel bearbeitet werden können und dass Einträge neue Leserinnen und Leser erreichen. Ihre Spende gibt unserer gemeinnützigen Organisation die Möglichkeit, unserer Mission treu zu bleiben, auch wenn Wikipedia inzwischen zu einer der meistbesuchten Websites weltweit geworden ist.
 </p>
 
-<p>Herzlichsten Dank</p>
 <p>
-Katherine <br><br>
-Katherine Maher, Geschäftsführerin<br>
-Wikimedia Foundation
+Wir feiern <a href="https://wikimediafoundation.org/de/wikipedia20/">20 Jahre Wikipedia</a>. Auch wenn wir nicht wirklich gemeinsam feiern und einander hochleben lassen können, sollten Sie wissen, dass jeder einzelne Mitarbeiter und jede einzelne Mitarbeiterin der Wikimedia Foundation Sie ins Herz geschlossen hat.
+</p>
+
+<p>Vielen Dank für alles!</p>
+<p>
+Jimmy Wales<br>
+Gründer von Wikipedia
 </p>
 
 <p>Viele Arbeitgeber leisten großzügige Zuzahlungen zu Spenden ihrer Arbeitnehmer: Bitte erkundigen Sie sich bei Ihrem Arbeitgeber, ob er über ein <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">unternehmensweites Beitragszuzahlungsprogramm verfügt</a>.
@@ -66,5 +72,5 @@ Wikimedia Foundation
 </p>
 
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.de.html","revision":20200101}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.de.html","revision":20210319}TI_END -->
 

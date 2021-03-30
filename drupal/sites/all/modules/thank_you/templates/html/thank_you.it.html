@@ -1,57 +1,67 @@
-<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">anche se solo dalle nostre case</span>
+
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Ecco la tua ricevuta, grazie di cuore.</span>
 <div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
-{% if first_name and last_name %}
+
+
+
+
+{% if first_name %}
 <p>Ciao {{ first_name }}!
 </p>{% else %}<p>
 Caro/a donatore/trice,</p>
 {%endif%}
 
 
-<p>
+
 {% if recurring %}
-Grazie per la tua donazione mensile di  {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Il tuo sostegno alla missione di Wikipedia significa tutto per noi in questo momento.
+<p>
+sono davvero felice di poter essere io a ringraziarti per la tua donazione ricorrente di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, a sostegno di Wikipedia. Voglio cogliere questa occasione per celebrare la tua generosità e la tua eccezionale disponibilità a partecipare alla creazione di un futuro migliore per il mondo. 
+</p>
+
+<p>
+La tua donazione mensile porterà Wikipedia lontano e ci aiuterà a pianificare il futuro. Una volta al mese, una donazione di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} verrà addebitata dalla Wikimedia Foundation. <b>Ogni anno, a gennaio, ti invieremo un resoconto delle tue donazioni dell’anno precedente</b>. Se per qualsiasi motivo desideri annullare la tua donazione, segui <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">queste semplici istruzioni</a>. 
+</p>
+
 {% else %}
-Grazie per la tua donazione singola di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. Il tuo sostegno alla missione di Wikipedia significa tutto per noi in questo momento.
-{% endif %}
-</p>
 
 <p>
-Questa lettera suona molto personale quest’anno. Ti sto scrivendo da casa mia, che è diventata anche il mio ufficio. Forse puoi capirmi. Tante cose sono state stravolte, in un modo o nell’altro, nell'ultimo anno: la pandemia, la chiusura delle scuole, le difficoltà economiche, e la lista potrebbe continuare. Mi conforta, peró, sapere che l’obiettivo di Wikipedia non è cambiato: mettere la conoscenza a tua disposizione. Siamo qui, a prescindere dalle situazioni della vita.
+sono davvero felice di poter essere io a ringraziarti per la tua donazione di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a sostegno di Wikipedia. Voglio cogliere questa occasione per celebrare la tua generosità e la tua eccezionale disponibilità. Stai contribuendo alla creazione di un futuro migliore per il mondo. 
 </p>
 
-<p>
-Lentamente, ma con costanza, siamo impegnati a favorire la crescita della conoscenza nel mondo, in qualunque condizioni esso si trovi. Siamo qui, ogni giorno, per fornire le risposte a qualsiasi tua domanda. Siamo qui perché tu possa continuare a fare le tue ricerche, anche se in questo periodo la tua esplorazione avviene per lo più da casa.
-</p>
-
-
-{% if recurring %}
-Il tuo sostegno mensile ha un ruolo essenziale nella continuitá di Wikipedia. Ci dà la possibilità di progettare gli anni a venire. Una volta al mese, una donazione di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} ti verrà addebitata da Wikimedia Foundation, fino a quando non ci chiederai di interrompere. <b>Ogni anno, a gennaio, ti invieremo un riepilogo delle tue donazioni dell’anno precedente.</b> Se per qualsiasi motivo desideri annullare la tua donazione, segui queste <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">facili istruzioni di cancellazione</a>.
 {% endif %}
-
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>Recentemente abbiamo risolto un piccolo problema tecnico che aveva messo in pausa alcune donazioni mensili ricorrenti. Abbiamo ripristinato la tua donazione ricorrente, che d’ora in poi verrà processata regolarmente. Non ti verranno addebitati i mesi che sono saltati. Ti ringraziamo per la tua pazienza e per il tuo supporto. Per favore, per qualsiasi dubbio non esitare a contattarci al seguente indirizzo e-mail donate@wikimedia.org.</p>
+<p>Siamo riusciti a risolvere recentemente dei piccoli problemi tecnici che avevano messo in pausa alcune donazioni mensili ricorrenti. Abbiamo ripristinato la tua donazione ricorrente che verrà processata regolarmente d’ora in avanti. Non ti verranno addebitati i mesi di sospensione. Ti ringraziamo per la tua pazienza e per il tuo supporto, e se hai delle domande non esitare a scriverci al seguente indirizzo e-mail  donate@wikimedia.org.</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
-<p>Recentemente abbiamo risolto un problema tecnico che ha impedito ad un piccolo numero di donatori di ricevere la conferma della propria donazione. Ti preghiamo di accettare questa e-mail come ringraziamento per la tua donazione del {{ receive_date }}. Apprezziamo molto la tua pazienza e il tuo supporto. Per qualsiasi dubbio non esitare a scriverci al seguente indirizzo e-mail donate@wikimedia.org.</p>
+<p>Siamo riusciti a risolvere recentemente dei problemi tecnici che hanno impedito ad un piccolo numero di donatori di ricevere la conferma della propria donazione. Ti preghiamo di accettare questa e-mail come ringraziamento della tua donazione del {{ receive_date }}. Ti ringraziamo tantissimo della tua pazienza e del tuo supporto e se hai delle domande non esitare a scriverci al seguente indirizzo e-mail:  donate@wikimedia.org.</p>
 {%endif%}
 
+
 <p>
-{% if first_name and last_name %}
-  {{ first_name }}, grazie per aver aiutato Wikipedia a continuare a crescere e a essere un punto di riferimento per il mondo. Sono grata e profondamente onorata di fare questo viaggio con te.
-{% else %}
-  Grazie per aver aiutato Wikipedia a continuare a crescere e a essere un punto di riferimento per il mondo. Sono grata e profondamente onorata di fare questo viaggio con te.
-{% endif %}
+Ho fondato Wikipedia venti anni fa. Da allora, la nostra amata enciclopedia è cresciuta, attraversando momenti felici e difficoltà, e oggi, più che mai, è al servizio del suo vero scopo. Aiuta milioni di persone a studiare, scoprire, esplorare, fare ricerche.   
 </p>
 
 <p>
-Katherine <br><br>
-Katherine Maher, Direttrice Esecutiva<br>
-Wikimedia Foundation
+Ogni giorno Wikipedia dà ai suoi utenti una  nuova opportunità di acquisire quella conoscenza che spetta loro di diritto, a prescindere da qualsiasi circostanza.  
 </p>
 
-<p>Molti datori di lavoro verseranno con generosità gli stessi contributi donati dai propri dipendenti: verifica con il tuo datore di lavoro che abbia un <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">programma aziendale di matching gift</a>.
+<p>
+Sei tu che lo rendi possibile. Il tuo sostegno fa sì che nuove voci vengano create e che gli articoli riescano a raggiungere sempre nuovi lettori e nuove lettrici. Nonostante Wikipedia sia diventata uno dei siti web più visitati al mondo, il tuo supporto dà alla nostra non-profit gli strumenti per rimanere fedele alla sua missione.
+</p>
+
+<p>
+Forse non avremo la possibilità di spegnere le candeline insieme, di persona, ma sappi che, nel festeggiare durante quest’anno i <a href="https://wikimediafoundation.org/wikipedia20/">20 anni di Wikipedia</a>, sarai nel cuore di tutti qui alla Wikimedia Foundation.
+</p>
+
+<p>Grazie di tutto,</p>
+<p>
+Jimmy Wales<br>
+Fondatore di Wikipedia
+</p>
+
+<p>Molti datori di lavoro verseranno con generosità gli stessi contributi dei propri dipendenti: verifica con il tuo datore di lavoro che questi abbiano un <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">programma aziendale di matching gift</a>.
 </p>
 
 {% if gift_source != "Donor Advised Fund" %}
@@ -67,5 +77,5 @@ Wikimedia Foundation
 <p>Se non desideri ricevere altre e-mail di raccolta fondi da Wikimedia Foundation, puoi <a href="{{ unsubscribe_link | raw }}">annullare subito la tua iscrizione</a>. Nota: continueremo a inviarti ricevute come questa per future donazioni.
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.it.html","revision":20201231}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.it.html","revision":20210317}TI_END -->
 

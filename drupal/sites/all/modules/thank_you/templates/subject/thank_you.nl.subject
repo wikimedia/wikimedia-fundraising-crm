@@ -1,1 +1,5 @@
-Uw donatie. Uw nieuwsgierigheid. Uw Wikipedia.
+{% if first_name %}
+{{ first_name }}, jouw donatie is een reden te meer voor een feestje.
+{% else %}
+Jouw donatie is een reden te meer voor een feestje.
+{%endif%}

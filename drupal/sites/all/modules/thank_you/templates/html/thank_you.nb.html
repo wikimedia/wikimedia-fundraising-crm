@@ -1,4 +1,7 @@
-{% if first_name and last_name %}
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">En kvittering og en hjertelig takk.</span>
+<div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+
+{% if first_name %}
 <p>Hei {{ first_name }},
 </p>{% else %}<p>
 Kjære giver,</p>
@@ -6,40 +9,56 @@ Kjære giver,</p>
 
 {% if recurring %}
 
-<p>JJeg er svært glad for gaven din på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} per måned, og jeg vil takke deg på vegne av alle som ønsker fri kunnskap.
+<p>
+Jeg er så takknemlig for å være den som takker deg for din gjentatte gave på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} du har gitt til støtte for Wikipedia. Jeg ønsker å benytte anledningen til å feire sjenerøsiteten din og din eksepsjonelle vilje til å delta i å skape en bedre fremtid for verden.
 </p>
 
-<p>Donasjonen din holder Wikipedia uavhengig, og din månedlige støtte er avgjørende for langsiktig planlegging og for å hjelpe oss med å se hva Wikipedia kan oppnå i årene fremover. Hver måned vil en donasjon pålydende {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} bli debitert til Wikimedia Foundation inntil du gir oss beskjed om å stoppe.<b>Vi sender deg et sammendrag hver januar over bidragene dine for det foregående året.</b> Hvis du av en eller annen grunn ønsker å kansellere donasjonen, følger du disse <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">enkle kanselleringsinstruksjonene</a>.</p>
+<p>
+Ditt månedlige bidrag vil ta Wikipedia langt og hjelpe oss med å planlegge fremover. En donasjon på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} vil bli debitert av Wikimedia Foundation én gang i måneden. <b>Hver januar vil vi sende deg et sammendrag av bidragene dine for det forrige året</b>. Hvis du av en eller annen grunn ønsker å avslutte bidraget ditt, følg disse <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">enkle kanselleringsinstruksene</a>.
+</p>
 
 {% else %}
 
-<p>JJeg er svært glad for gaven din på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} og jeg vil takke deg på vegne av alle som ønsker fri kunnskap.
+<p>
+Jeg er så takknemlig for å være den som takker deg for éngangsgaven på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} du har gitt til støtte for Wikipedia. Jeg ønsker å benytte anledningen til å feire sjenerøsiteten din og din eksepsjonelle vilje til å delta i å skape en bedre fremtid for verden.
 </p>
 
 {% endif %}
 
 {% if "RecurringRestarted" in contribution_tags %}
-<p>Nylig løste vi et mindre teknisk problem som midlertidig stanset noen månedlige bidrag. Vi har gjenopptatt ditt månedlige trekk og det vil bli behandlet som normalt i tiden som kommer. Vi vil ikke belaste deg for de foregående månedene. Takk for tålmodigheten og for støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.</p>
+<p>
+Nylig løste vi et mindre teknisk problem som midlertidig stanset noen månedlige bidrag. Vi har gjenopptatt ditt månedlige trekk og det vil bli behandlet som normalt i tiden som kommer. Vi vil ikke belaste deg for de foregående månedene. Takk for tålmodigheten og for støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.
+</p>
 {%endif%}
 
 {% if "UnrecordedCharge" in contribution_tags %}
-<p>Nylig løste vi et teknisk problem som gjorde at en rekke små givere ikke fikk bekreftelse på sine donasjoner. Du mottar denne e-posten som en takk for din donasjon {{ receive_date }}. Vi setter virkelig pris på tålmodigheten og støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.</p>
+<p>
+Nylig løste vi et teknisk problem som gjorde at en rekke små givere ikke fikk bekreftelse på sine donasjoner. Du mottar denne e-posten som en takk for din donasjon {{ receive_date }}. Vi setter virkelig pris på tålmodigheten og støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.
+</p>
 {%endif%}
 
-<p>Når du nå bruker Wikipedia, håper jeg du får en enda sterkere følelse av det også tilhører deg. For uten deg og uten støtte fra millioner av mennesker som kommer tilbake til oss hver dag, ville ikke det være mulig å drive Wikipedia.
+<p>
+Jeg grunnla Wikipedia for 20 år siden. Siden den gang har vår elskede encyklopedi vokst mye, gjennom gode tider og motgang, og i dag tjener den mer enn noen gang sitt sanne formål. Den hjelper millioner av mennesker med å studere, oppdage, utforske og undersøke.
 </p>
 
-<p>Donasjonen din gir oss vind i seilene og gjør det mulig for oss å nå vårt mål. Takk for at du setter av plass til Wikipedia i ditt liv.
+<p>
+Hver dag gir Wikipedia leserne en ny sjanse til å skaffe seg den kunnskapen som er så rettmessig deres, uansett hva deres omstendigheter måtte være. 
 </p>
 
+<p>
+Du er den som gjør dette mulig. Din støtte muliggjør at redigeringer og artikler når nye lesere. Det gir våre ideelle organisasjon muligheten til å holde seg tro mot formålet, samtidig som Wikipedia har blitt et av de mest besøkte nettstedene i verden.
+</p>
 
-<p>Hjertelig takk,</p>
+<p>
+Vi får kanskje ikke sjansen til å blåse ut lysene sammen, men når vi feirer <a href="https://wikimediafoundation.org/wikipedia20/">20 år med Wikipedia</a> gjennom året, vit at du er i hjertet til alle her hos Wikimedia Foundation.
+</p>
+
+<p>Tusen hjertelig takk,</p>
 
 
-<p>Katherine<br/><br/>
-<br/><br/>
-Katherine Maher,<br/>
-Administrerende direktør, Wikimedia Foundation
+<p>
+Jimmy Wales<br>
+Grunnlegger av Wikipedia
 </p>
 
 <p>Mange arbeidsgivere matcher gaver fra de ansatte, så sjekk gjerne med din bedrift om de har et <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">bedriftsprogram for å matche ansattes gaver</a>.
@@ -54,4 +73,4 @@ Administrerende direktør, Wikimedia Foundation
 <p>Ønsker du ikke å få e-poster om innsamlinger fra Wikimedia Foundation i fremtiden, <a href="{{ unsubscribe_link | raw }}">kan du melde deg av umiddelbart</a>. Merk at vi fremdeles vil sende deg kvitteringer, som denne, for fremtidige donasjoner.
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.nb.html","revision":20200220}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.nb.html","revision":20210319}TI_END -->
