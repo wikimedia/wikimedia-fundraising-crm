@@ -12,18 +12,6 @@ class BitpayFile extends ChecksFile {
     );
   }
 
-  /**
-   * Do any final transformation on a normalized and default-laden queue message.
-   *
-   * @param array $msg
-   *
-   * @throws \WmfException
-   */
-  protected function mungeMessage(&$msg) {
-    list($msg['first_name'], $msg['last_name']) = wmf_civicrm_janky_split_name(CRM_Utils_Array::value('full_name', $msg));
-    parent::mungeMessage($msg);
-  }
-
   protected function getFieldMapping() {
     return [
       'payout currency' => 'currency',

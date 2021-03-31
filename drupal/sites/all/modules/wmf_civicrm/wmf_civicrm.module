@@ -1282,6 +1282,12 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
   elseif (!empty($msg['employer_id'])) {
     $contact['employer_id'] = $msg['employer_id'];
   }
+  if (!empty($msg['prefix_id:label'])) {
+    // prefix_id:label is APIv4 format. name_prefix is our own fandango.
+    // We should start migrating to APIv4 format so supporting it
+    // is a first step.
+    $msg['name_prefix'] = $msg['prefix_id:label'];
+  }
   if (!empty($msg['name_prefix'])) {
     $contact['prefix_id'] = $msg['name_prefix'];
     wmf_civicrm_ensure_option_exists($msg['name_prefix'], 'prefix_id', 'individual_prefix');
@@ -3500,27 +3506,6 @@ function wmf_civicrm_user_has_role($role) {
   }
 
   return FALSE;
-}
-
-/**
- * Split a full name into first and last
- *
- * Splits at the first space, cos we currently want the first name for emails,
- * so we err on the side of not pulling in middle names.
- *
- * TODO: this is always a bad idea, there is no correct way to split names.
- * Rework any templates or code that assumes a binomial.
- *
- * @param string $full_name
- *
- * @return array [first_name, last_name]
- */
-function wmf_civicrm_janky_split_name($full_name) {
-  $names = preg_split('/\s+/', $full_name, 2);
-  if (count($names) == 1) {
-    $names[] = '';
-  }
-  return $names;
 }
 
 /**

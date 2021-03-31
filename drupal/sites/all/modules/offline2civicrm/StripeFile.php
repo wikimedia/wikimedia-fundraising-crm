@@ -18,7 +18,6 @@ class StripeFile extends ChecksFile {
    * @throws \WmfException
    */
   protected function mungeMessage(&$msg) {
-    list($msg['first_name'], $msg['last_name']) = wmf_civicrm_janky_split_name( $msg['full_name'] );
     $msg['currency'] = strtoupper($msg['currency']);
     $msg['original_currency'] = strtoupper($msg['original_currency']);
     parent::mungeMessage($msg);

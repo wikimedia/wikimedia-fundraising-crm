@@ -7,6 +7,12 @@ use Civi\Api4\Email;
 use Civi\Api4\Phone;
 use Civi\Api4\Address;
 
+
+// checking if the file exists allows compilation elsewhere if desired.
+if (file_exists( __DIR__ . '/vendor/autoload.php')) {
+  require_once __DIR__ . '/vendor/autoload.php';
+}
+
 /**
  * Implements hook_civicrm_config().
  *

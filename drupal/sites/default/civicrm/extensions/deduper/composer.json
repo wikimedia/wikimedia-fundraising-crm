@@ -1,0 +1,5 @@
+{
+    "require": {
+        "theiconic/name-parser": "^1.2"
+    }
+}

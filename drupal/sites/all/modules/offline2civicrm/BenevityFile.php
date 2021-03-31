@@ -254,48 +254,6 @@ class BenevityFile extends ChecksFile {
   }
 
   /**
-   * Get the id of the organization whose nick name (preferably) or name matches.
-   *
-   * If there are no possible matches this will fail. It will also fail if there
-   * are multiple possible matches of the same priority (ie. multiple nick names
-   * or multiple organization names.)
-   *
-   * @param string $organizationName
-   *
-   * @return array
-   *
-   * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
-   */
-  protected function getOrganizationID($organizationName) {
-    // Using the Civi Statics pattern for php caching makes it easier to reset in unit tests.
-    if (!isset(\Civi::$statics[__CLASS__]['organization'][$organizationName])) {
-      $contacts = civicrm_api3('Contact', 'get', ['nick_name' => $organizationName, 'contact_type' => 'Organization']);
-      if ($contacts['count'] == 0) {
-        $contacts = civicrm_api3('Contact', 'get', ['organization_name' => $organizationName, 'contact_type' => 'Organization']);
-      }
-      if ($contacts['count'] == 1) {
-        \Civi::$statics[__CLASS__]['organization'][$organizationName] = $contacts['id'];
-      }
-      else {
-        \Civi::$statics[__CLASS__]['organization'][$organizationName] = NULL;
-      }
-    }
-
-    if (\Civi::$statics[__CLASS__]['organization'][$organizationName]) {
-      return \Civi::$statics[__CLASS__]['organization'][$organizationName];
-    }
-    throw new WmfException(
-      WmfException::IMPORT_CONTRIB,
-      t("Did not find exactly one Organization with the details: @organizationName. You will need to ensure a single Organization record exists for the contact first",
-        [
-          '@organizationName' => $organizationName,
-        ]
-      )
-    );
-  }
-
-  /**
    * Get the ID of a matching individual.
    *
    * Refer to https://phabricator.wikimedia.org/T115044#3012232 for discussion of logic.
