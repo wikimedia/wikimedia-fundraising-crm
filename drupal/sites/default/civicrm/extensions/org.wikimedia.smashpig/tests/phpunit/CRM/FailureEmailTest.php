@@ -1,24 +1,6 @@
 <?php
 require_once(__DIR__ . '/SmashPigBaseTestClass.php');
 
-use Civi\Test\HeadlessInterface;
-use Civi\Test\TransactionalInterface;
-use Psr\Log\LogLevel;
-use SmashPig\Core\Context;
-use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\Core\PaymentError;
-use SmashPig\Core\UtcDate;
-use SmashPig\CrmLink\Messages\SourceFields;
-use SmashPig\PaymentData\ErrorCode;
-use SmashPig\PaymentData\FinalStatus;
-use SmashPig\PaymentProviders\ApprovePaymentResponse;
-use SmashPig\PaymentProviders\CreatePaymentResponse;
-use SmashPig\Tests\TestingContext;
-use SmashPig\Tests\TestingDatabase;
-use SmashPig\Tests\TestingGlobalConfiguration;
-use SmashPig\Tests\TestingProviderConfiguration;
-use Civi\Api4\MessageTemplate;
-use Civi\Api4\Activity;
 use Civi\Api4\FailureEmail;
 
 /**
