@@ -539,7 +539,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
    *
    * @throws \CRM_Core_Exception
    */
-  public function testBatchMergeConflictOnHold() {
+  public function testBatchMergeConflictOnHold(): void {
     $emailDuck1 = $this->callAPISuccess('Email', 'get', ['contact_id' => $this->contactID, 'return' => 'id']);
     $this->giveADuckADonation(FALSE);
     $this->callAPISuccess('Email', 'create', ['id' => $emailDuck1['id'], 'on_hold' => 1]);

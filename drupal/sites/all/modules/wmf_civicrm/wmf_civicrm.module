@@ -2563,15 +2563,6 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
       $refs['migration_info']['context'] = $type;
 
       if (isset($refs['fields_in_conflict'])) {
-        if (array_key_exists('move_' . wmf_civicrm_get_custom_field_name('do_not_solicit'), $refs['fields_in_conflict'])
-        ) {
-          $keyString = 'move_' . wmf_civicrm_get_custom_field_name('do_not_solicit');
-          // At least one contact has a 1 for do_not_solicit, YES wins.
-          $refs['migration_info'][$keyString] = 1;
-          $refs['migration_info']['rows'][$keyString]['other'] = ts('Yes');
-          unset($refs['fields_in_conflict'][$keyString]);
-        }
-
         // If type is 'form' then the user is responsible for selecting how to merge the
         // non-calculated fields but in batch mode we have selected assumptions
         // ie. take the latest address and give opt out choices priority over

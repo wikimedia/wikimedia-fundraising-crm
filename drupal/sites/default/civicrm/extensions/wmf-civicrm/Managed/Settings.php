@@ -45,4 +45,14 @@ $optInField = CustomField::get(FALSE)->addWhere('name', '=', 'opt_in')->setSelec
 if (!empty($optInField)) {
   $settings['deduper_resolver_field_prefer_preferred_contact'][] = 'custom_' . $optInField['id'];
 }
+// It's possible this is first run before the field is created so we check for the field before trying to add it.
+// on live this has actually been set & is not relying on a default so this is really relevant for dev installs.
+$doNotSolicitField = CustomField::get(FALSE)->addWhere('name', '=', 'do_not_solicit')->setSelect(['id'])->execute()->first();
+if (!empty($doNotSolicitField)) {
+  $settings['deduper_resolver_bool_prefer_yes'] =
+    ['on_hold', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'is_opt_out',
+   'custom_' . $doNotSolicitField['id']
+  ];
+}
+
 return $settings;
