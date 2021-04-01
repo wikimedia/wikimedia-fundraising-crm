@@ -3,12 +3,15 @@
 namespace Civi\Wmf;
 
 use Civi\Api4\Contact;
+use Civi\Api4\CustomField;
 use Civi\Api4\Email;
 use Civi\Test;
+use Civi\Test\Api3TestTrait;
 use Civi\Test\CiviEnvBuilder;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
+use PHPUnit\Framework\TestCase;
 
 /**
  * FIXME - Add test description.
@@ -24,9 +27,9 @@ use Civi\Test\TransactionalInterface;
  *
  * @group headless
  */
-class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+class MergeTest extends TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
 
-  use \Civi\Test\Api3TestTrait;
+  use Api3TestTrait;
 
   /**
    * Id of the contact created in the setup function.
@@ -85,11 +88,27 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
 
     \Civi::settings()->set('deduper_location_priority_order', $types);
     \Civi::settings()->set('deduper_resolver_email', 'preferred_contact_with_re-assign');
-    \Civi::settings()->set('deduper_resolver_field_prefer_preferred_contact', ['contact_source', wmf_civicrm_get_custom_field_name('opt_in')]);
+    \Civi::settings()->set('deduper_resolver_field_prefer_preferred_contact', ['contact_source', $this->getCustomFieldString('opt_in'), 'preferred_language']);
     \Civi::settings()->set('deduper_resolver_preferred_contact_resolution', ['most_recent_contributor']);
     \Civi::settings()->set('deduper_resolver_preferred_contact_last_resort', 'most_recently_created_contact');
     \Civi::settings()->set('deduper_resolver_custom_groups_to_skip', ['wmf_donor']);
 
+  }
+
+  /**
+   * Get the api v3 style string for the custom field.
+   *
+   * @param string $name e.g custom_3
+   *
+   * @return string
+   * @throws \API_Exception
+   */
+  public function getCustomFieldString(string $name): string {
+    return 'custom_'  . CustomField::get(FALSE)
+      ->setSelect(['id'])
+      ->addWhere('name', '=', $name)
+      ->execute()
+      ->first()['id'];
   }
 
   /**
@@ -622,7 +641,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  public function testBatchMergeConflictDifferentPreferredLanguage($language1, $language2) {
+  public function testBatchMergeConflictDifferentPreferredLanguage($language1, $language2): void {
     // Can't use api if we are trying to use invalid data.
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1]);
     $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2012-01-01', 'invoice_id' => 2, 'trxn_id' => 2]);
@@ -681,18 +700,9 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
    */
   public function getLanguageCombos(): array {
     return [
-      // Choose longer.
       [['languages' => ['en', 'en_US'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
-      [['languages' => ['en_US', 'en'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
-      // Choose valid.
       [['languages' => ['en_XX', 'en_US'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
-      [['languages' => ['en_US', 'en_XX'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
-      // Chose one with a 'real' label  (more valid).
-      [['languages' => ['en_US', 'en_NZ'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
       [['languages' => ['en_NZ', 'en_US'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
-      // Chose either - feels like the return on coding any decision making now is negligible.
-      // Could go for most recent donor but feels like no return on effort.
-      // we will usually get the most recent donor anyway by default - as it merges higher number to smaller.
       [['languages' => ['en_GB', 'en_US'], 'is_conflict' => FALSE, 'selected' => 'en_US']],
       [['languages' => ['en_US', 'en_GB'], 'is_conflict' => FALSE, 'selected' => 'en_GB']],
     ];
