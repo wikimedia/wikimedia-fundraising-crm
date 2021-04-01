@@ -17,7 +17,7 @@ return [
     'is_contact' => 0,
     'description' => E::ts('Yes/No fields where yes always wins'),
     'default' => ['on_hold', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'is_opt_out'],
-    'title' => E::ts('Fields to resolve as YES'),
+    'title' => E::ts('Fields to resolve preferring YES'),
     'help_text' => '',
     'html_type' => 'select',
     'html_attributes' => [
@@ -188,6 +188,26 @@ return [
     'settings_pages' => ['deduper' => ['weight' => 140]],
     'pseudoconstant' => [
       'callback' => 'CRM_Deduper_BAO_MergeConflict::getLocationResolvers',
+    ],
+  ],
+  'deduper_resolver_custom_groups_to_skip' => [
+    'name' => 'deduper_resolver_custom_groups_to_skip',
+    'type' => 'String',
+    'serialize' => CRM_Core_DAO::SERIALIZE_JSON,
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('Custom tables that should be completely ignored (generally calculated fields such as summary fields)'),
+    'default' => [],
+    'title' => E::ts('Custom tables to skip'),
+    'help_text' => '',
+    'html_type' => 'select',
+    'html_attributes' => [
+      'class' => 'crm-select2',
+      'multiple' => 1,
+    ],
+    'settings_pages' => ['deduper' => ['weight' => 150]],
+    'pseudoconstant' => [
+      'callback' => 'CRM_Deduper_BAO_MergeConflict::getCustomGroups',
     ],
   ],
 ];

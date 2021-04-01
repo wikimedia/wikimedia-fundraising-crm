@@ -4,6 +4,7 @@ namespace Civi\Wmf;
 
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
+use Civi\Test;
 use Civi\Test\CiviEnvBuilder;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
@@ -51,7 +52,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
   /**
    * @var int
    */
-  protected $intitalContactCount;
+  protected $initialContactCount;
 
   /**
    * @return \Civi\Test\CiviEnvBuilder
@@ -60,7 +61,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
   public function setUpHeadless(): CiviEnvBuilder {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
     // See: https://docs.civicrm.org/dev/en/latest/testing/phpunit/#civitest
-    return \Civi\Test::headless()
+    return Test::headless()
       ->installMe(__DIR__)
       ->apply();
   }
@@ -72,7 +73,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
     parent::setUp();
     civicrm_initialize();
     $this->adminUserID = $this->imitateAdminUser();
-    $this->intitalContactCount = $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']);
+    $this->initialContactCount = $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']);
 
     $this->contactID = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 0]);
     $this->contactID2 = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 1]);
@@ -87,6 +88,8 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
     \Civi::settings()->set('deduper_resolver_field_prefer_preferred_contact', ['contact_source', wmf_civicrm_get_custom_field_name('opt_in')]);
     \Civi::settings()->set('deduper_resolver_preferred_contact_resolution', ['most_recent_contributor']);
     \Civi::settings()->set('deduper_resolver_preferred_contact_last_resort', 'most_recently_created_contact');
+    \Civi::settings()->set('deduper_resolver_custom_groups_to_skip', ['wmf_donor']);
+
   }
 
   /**
@@ -104,7 +107,7 @@ class MergeTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID2, 'skip_undelete' => TRUE]);
     $this->doDuckHunt();
     parent::tearDown();
-    $this->assertEquals($this->intitalContactCount, $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']), 'contact cleanup incomplete');
+    $this->assertEquals($this->initialContactCount, $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']), 'contact cleanup incomplete');
   }
 
   /**
