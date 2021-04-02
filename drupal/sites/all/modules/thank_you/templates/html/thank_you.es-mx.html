@@ -10,17 +10,17 @@ Estimado/a donante:</p>
 
 {% if recurring %}
 <p>
-Me complace ser quien te agradece la donación recurrente de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} en apoyo a Wikipedia. Quiero aprovechar esta oportunidad para reconocer tu generosidad y excepcional voluntad de participar en la creación de un futuro mejor para el mundo.
+Me complace ser quien te agradece la donación mensual de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} en apoyo a Wikipedia. Quiero aprovechar esta oportunidad para reconocer tu generosidad y excepcional voluntad de participar en la creación de un futuro mejor para el mundo.
 </p>
 
 <p>
-Tu contribución mensual llevará a Wikipedia lejos y nos ayudará a planificar con anticipación. Una vez al mes, la Fundación Wikimedia debitará una donación de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} de tu cuenta. <b>Cada enero, te enviaremos un resumen de tus contribuciones correspondientes al año anterior</b>. Si por algún motivo deseas interrumpir tus donaciones, sigue estas <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">sencillas instrucciones de cancelación</a>.
+Tu contribución mensual llevará a Wikipedia lejos y nos ayudará a planificar con anticipación. Una vez al mes, la Wikimedia Foundation hará un cargo por donación de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a tu cuenta. <b>Cada enero, te enviaremos un resumen de tus contribuciones correspondientes al año anterior</b>. Si por algún motivo deseas interrumpir tus donaciones, sigue estas <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">sencillas instrucciones de cancelación</a>.
 </p>
 
 {% else %}
 
 <p>
-Me complace ser quien te agradece la donación de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} que hiciste en apoyo a Wikipedia. Quiero aprovechar esta oportunidad para reconocer tu generosidad y excepcional voluntad de participar en la creación de un futuro mejor para el mundo.
+Me complace ser quien te agradece la donación unica de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} que hiciste en apoyo a Wikipedia. Quiero aprovechar esta oportunidad para reconocer tu generosidad y excepcional voluntad de participar en la creación de un futuro mejor para el mundo.
 </p>
 {% endif %}
 
@@ -46,7 +46,7 @@ Esto es posible gracias a ti. Tu apoyo permite que se realicen ediciones, que lo
 
 <p>
 Quizás no tengamos la oportunidad de apagar juntos las velas, pero mientras celebramos el <a href= "https://wikimediafoundation.org/es/wikipedia20/">vigésimo aniversario de Wikipedia</a> a lo largo de todo el año, ten la certeza de que estarás en el corazón de todos los que formamos parte de la Wikimedia Foundation.
-</p>	
+</p>
 
 <p>Gracias por todo,</p>
 <p>
