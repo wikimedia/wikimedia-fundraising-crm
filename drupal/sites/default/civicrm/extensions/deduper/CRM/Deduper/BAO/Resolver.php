@@ -90,6 +90,18 @@ abstract class CRM_Deduper_BAO_Resolver {
   }
 
   /**
+   * Has the block been marked for relocation.
+   *
+   * @param string $locationEntity
+   * @param int $block
+   *
+   * @return false|mixed
+   */
+  public function isRelocated(string $locationEntity, int $block): bool {
+    return $this->mergeHandler->getMergeInstructionForBlock($locationEntity, $block)['is_relocated'] ?? FALSE;
+  }
+
+  /**
    * Does this block hold unique information to otherwise replicated in other blocks.
    *
    * @param string[address|phone|email] $locationEntity

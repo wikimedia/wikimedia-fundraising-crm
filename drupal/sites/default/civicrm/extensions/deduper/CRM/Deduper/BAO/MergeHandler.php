@@ -580,21 +580,40 @@ class CRM_Deduper_BAO_MergeHandler {
    * @param string $locationEntity
    * @param int $block
    * @param bool $isContactToKeep
-   *   Does the location belong to the contact to keep.
+   *   Does the location being rehomed belong to the contact to keep.
    * @param bool|null $isPrimary
    *   If not null the primary will be forced to this.
    */
-  public function relocateLocation($locationEntity, $block, $isContactToKeep = FALSE, $isPrimary = NULL) {
+  public function relocateLocation(string $locationEntity, int $block, $isContactToKeep = FALSE, $isPrimary = NULL): void {
     $locationTypeID =  $this->getNextAvailableLocationType($locationEntity);
-    $nextBlock = $this->getNextAvailableLocationBlock($locationEntity);
-    $blockToKeep = $this->getLocationBlock($locationEntity, $block, TRUE);
-    $blockToKeep['location_type_id'] = $locationTypeID;
-    if ($isPrimary !== NULL) {
-      $blockToKeep['is_primary'] = $isPrimary;
+    if ($isContactToKeep) {
+      // The CiviCRM form has no way to do this - we are kind of tricking it into thinking it is dealing with another
+      // address on the contact to be changed.
+      $nextBlock = $this->getNextAvailableLocationBlock($locationEntity);
+      // We add this block from the 'to keep contact' to the 'to remove contact' so it
+      // will 'copied across' and updated with our new location_type_id & is_primary.
+      $blockToKeep = $this->getLocationBlock($locationEntity, $block, TRUE);
+      $blockToKeep['location_type_id'] = $locationTypeID;
+      $this->dedupeData['migration_info']['other_details']['location_blocks'][$locationEntity][$nextBlock] = $blockToKeep;
+      $this->dedupeData['migration_info']['move_location_' . $locationEntity . '_' . $nextBlock] = TRUE;
+      $this->dedupeData['migration_info']['location_blocks'][$locationEntity][$nextBlock] = [
+        'locTypeId' => $locationTypeID,
+        'operation' => 1,
+        'set_other_primary' => FALSE,
+        'is_relocated' => TRUE,
+      ];
+      // We later check this to see whether we should overwrite it in setLocationAddressFromOtherContactToOverwriteMainContact.
+      $this->dedupeData['migration_info']['location_blocks'][$locationEntity][$block]['is_relocated'] = TRUE;
     }
-    $this->dedupeData['migration_info'][($isContactToKeep ? 'main_details' : 'other_details')]['location_blocks'][$locationEntity][$nextBlock] = $blockToKeep;
-    $this->dedupeData['migration_info']['move_location_' . $locationEntity . '_' . $nextBlock] = TRUE;
-    $this->dedupeData['migration_info']['location_blocks'][$locationEntity][$nextBlock] = ['locTypeId' => $locationTypeID, 'operation' => 1];
+    else {
+      // This version is simple - we are just mimicing the forms instructions.
+      $this->dedupeData['migration_info']['location_blocks'][$locationEntity][$block] = [
+        'operation' => 1,
+        'set_other_primary' => $isPrimary,
+        'is_relocated' => TRUE,
+        'locTypeId' => $locationTypeID,
+      ];
+    }
   }
 
   /**
@@ -649,7 +668,7 @@ class CRM_Deduper_BAO_MergeHandler {
    */
   public function isBlockUnique($locationEntity, array $entityToConsiderRehoming, $blockNumber): bool {
     foreach ($this->getAllLocationBlocks($locationEntity) as $existingEntity) {
-      if ($existingEntity !== $blockNumber && $this->isBlockEquivalent($locationEntity, $existingEntity, $entityToConsiderRehoming)) {
+      if ($existingEntity['block'] !== $blockNumber && $this->isBlockEquivalent($locationEntity, $existingEntity, $entityToConsiderRehoming)) {
         return FALSE;
       }
     }
@@ -699,6 +718,33 @@ class CRM_Deduper_BAO_MergeHandler {
   public function getLocationBlock($location, $block, $isForContactToBeKept):array {
     $contactString = $isForContactToBeKept ? 'main_details' : 'other_details';
     return $this->dedupeData['migration_info'][$contactString]['location_blocks'][$location][$block] ?? [];
+  }
+
+  /**
+   * Get merge instructions.
+   *
+   * If we had a form the values on the form would dictate this but we
+   * mimic those in this class to achieve the desired result.
+   *
+   * @param string $locationEntity
+   * @param int $block
+   *
+   * @return mixed
+   */
+  public function getMergeInstructionForBlock($locationEntity, $block) {
+    return $this->dedupeData['migration_info']['location_blocks'][$locationEntity][$block];
+  }
+
+  /**
+   * Has the block been marked for relocation.
+   *
+   * @param string $locationEntity
+   * @param int $block
+   *
+   * @return false|mixed
+   */
+  public function isRelocated(string $locationEntity, int $block) {
+    return $this->getMergeInstructionForBlock($locationEntity, $block)['is_relocated'] ?? FALSE;
   }
 
   /**
@@ -920,7 +966,7 @@ class CRM_Deduper_BAO_MergeHandler {
    * @param string $location
    * @param string $block
    */
-  protected function resolveConflictsOnLocationBlock($location, $block) {
+  protected function resolveConflictsOnLocationBlock($location, $block): void {
     $mainContactValuesToKeep = [];
     $otherContactValuesToKeep = [];
     foreach ($this->locationConflictResolutions[$location][$block] as $fieldName => $value) {
@@ -931,19 +977,21 @@ class CRM_Deduper_BAO_MergeHandler {
         $mainContactValuesToKeep[$fieldName] = $value;
       }
     }
-    if (!empty($otherContactValuesToKeep)) {
-      // We want to keep at least one value from the other contact so set it to override.
-      $this->setLocationAddressFromOtherContactToOverwriteMainContact($location, $block);
-    }
-    else {
-      if (!empty($mainContactValuesToKeep)) {
-        // Do not copy the value over from the other contact.
-        unset($this->dedupeData['migration_info']['move_location_' . $location . '_' . $block]);
+    if (!$this->isRelocated($location, $block)) {
+      if (!empty($otherContactValuesToKeep)) {
+        // We want to keep at least one value from the other contact so set it to override.
+        $this->setLocationAddressFromOtherContactToOverwriteMainContact($location, $block);
       }
-      // This whole locationBlocksToDelete idea is actually not being pursued. Leaving for now but
-      // I think it only 'sends a message' to tell wmf_civicrm.module not to handle so it can go once
-      // we fully remove from there.
-      $this->locationBlocksToDelete[$location][$block] = $this->getLocationBlockValue($location, $block, FALSE, 'id');
+      else {
+        if (!empty($mainContactValuesToKeep)) {
+          // Do not copy the value over from the other contact.
+          unset($this->dedupeData['migration_info']['move_location_' . $location . '_' . $block]);
+        }
+        // This whole locationBlocksToDelete idea is actually not being pursued. Leaving for now but
+        // I think it only 'sends a message' to tell wmf_civicrm.module not to handle so it can go once
+        // we fully remove from there.
+        $this->locationBlocksToDelete[$location][$block] = $this->getLocationBlockValue($location, $block, FALSE, 'id');
+      }
     }
     unset($this->dedupeData['fields_in_conflict']['move_location_' . $location . '_' . $block]);
   }

@@ -603,6 +603,31 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test resolving email where we resolve by preferred contact.
+   *
+   * Use most recent donor resolver.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into.
+   *
+   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testResolvePreferredContactEmail(bool $isReverse): void {
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor']]);
+    $this->createDuplicateDonors([[], ['email' => 'notbob@example.com']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $emails = Email::get(FALSE)->setSelect(['email', 'is_primary', 'location_type_id:name'])->addWhere('contact_id', '=', $mergedContact['contact_id'])->addOrderBy('is_primary', 'DESC')->execute();
+    $this->assertCount(2, $emails);
+    $this->assertEquals('bob@example.com', $emails[0]['email']);
+    $this->assertEquals('notbob@example.com', $emails[1]['email']);
+
+  }
+
+  /**
    * Test that we don't treat the addition of a postal suffix only as a conflict.
    *
    * Bug T177807
@@ -653,7 +678,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *
    * @throws \CRM_Core_Exception
    */
-  public function testBatchMergeResolvableConflictCountryVsFullAddress($isReverse) {
+  public function testBatchMergeResolvableConflictCountryVsFullAddress($isReverse): void {
     $this->createDuplicateDonors();
     $contactIDWithCountryOnlyAddress = ($isReverse ? $this->ids['contact'][1] : $this->ids['contact'][0]);
     $contactIDWithFullAddress = ($isReverse ? $this->ids['contact'][0] : $this->ids['contact'][1]);

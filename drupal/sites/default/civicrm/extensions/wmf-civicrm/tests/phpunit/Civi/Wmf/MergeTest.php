@@ -441,7 +441,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
    *
    * @throws \CRM_Core_Exception
    */
-  public function testBatchMergesAddressesHook($dataSet) {
+  public function testBatchMergesAddressesHook(array $dataSet): void {
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1]);
     $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2012-01-01', 'invoice_id' => 2, 'trxn_id' => 2]);
     if ($dataSet['is_major_gifts']) {
@@ -487,7 +487,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
    *
    * @throws \CRM_Core_Exception
    */
-  public function testBatchMergesAddressesHookLowerIDMoreRecentDonor($dataSet) {
+  public function testBatchMergesAddressesHookLowerIDMoreRecentDonor(array $dataSet): void {
     // here the lower contact ID has the higher receive_date as opposed to the previous test.
     $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1]);
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2012-01-01', 'invoice_id' => 2, 'trxn_id' => 2]);
@@ -1442,8 +1442,11 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
               'is_primary' => 1,
             ], $locationParams2),
           ],
-          'expected_hook' => array_merge($additionalExpected, [
-            array_merge([
+          'expected_hook' => array_merge($additionalExpected,
+            [array_merge([
+              'is_primary' => 0,
+            ], $locationParams1)],
+            [array_merge([
               'location_type_id' => 'Home',
               'is_primary' => 1,
             ], $locationParams2),
@@ -1472,12 +1475,17 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
               'is_primary' => 1,
             ], $locationParams2),
           ],
-          'expected_hook' => array_merge($additionalExpected, [
-            array_merge([
-              'location_type_id' => 'Home',
-              'is_primary' => 1,
-            ], $locationParams2),
-          ]),
+          'expected_hook' => array_merge($additionalExpected,
+            [array_merge([
+              'location_type_id' => 'Main',
+              'is_primary' => 0,
+            ], $locationParams1)],
+            [
+              array_merge([
+                'location_type_id' => 'Home',
+                'is_primary' => 1,
+              ], $locationParams2),
+            ]),
         ],
       ],
       'conflicting_home_address_one_more_major_gifts' => [
@@ -1507,6 +1515,10 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
             ], $locationParams2),
           ],
           'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
+              'location_type_id' => 'Main',
+              'is_primary' => 0,
+            ], $locationParams1),
             array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
@@ -1549,6 +1561,10 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
             ], $locationParams2),
           ],
           'expected_hook' => array_merge($additionalExpected, [
+            array_merge([
+              'location_type_id' => 'Main',
+              'is_primary' => 0,
+            ], $locationParams1),
             array_merge([
               'location_type_id' => 'Mailing',
               'is_primary' => 1,
