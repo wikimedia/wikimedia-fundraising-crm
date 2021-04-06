@@ -1881,4 +1881,111 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
     $this->assertEquals(1, $primaryCount);
   }
 
+  /**
+   * Check that locations in the test have appropriate numbers of primaries.
+   */
+  protected function assertPostConditions(): void {
+    $this->assertLocationValidity();
+  }
+
+  /**
+   * Validate that all location entities have exactly one primary.
+   *
+   * This query takes about 2 minutes on a DB with 10s of millions of contacts.
+   */
+  public function assertLocationValidity(): void {
+    $this->assertEquals(0, \CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM
+  (SELECT a1.contact_id
+  FROM civicrm_address a1
+    LEFT JOIN civicrm_address a2 ON a1.id <> a2.id AND a2.is_primary = 1
+    AND a1.contact_id = a2.contact_id
+  WHERE
+    a1.is_primary = 1
+    AND a2.id IS NOT NULL
+    AND a1.contact_id IS NOT NULL
+  UNION
+  SELECT a1.contact_id
+  FROM civicrm_address a1
+         LEFT JOIN civicrm_address a2 ON a1.id <> a2.id AND a2.is_primary = 1
+    AND a1.contact_id = a2.contact_id
+  WHERE a1.is_primary = 0
+    AND a2.id IS NULL
+    AND a1.contact_id IS NOT NULL
+  UNION
+  SELECT a1.contact_id
+  FROM civicrm_email a1
+         LEFT JOIN civicrm_email a2 ON a1.id <> a2.id AND a2.is_primary = 1
+    AND a1.contact_id = a2.contact_id
+  WHERE
+      a1.is_primary = 1
+    AND a2.id IS NOT NULL
+    AND a1.contact_id IS NOT NULL
+  UNION
+  SELECT a1.contact_id
+  FROM civicrm_email a1
+         LEFT JOIN civicrm_email a2 ON a1.id <> a2.id AND a2.is_primary = 1
+    AND a1.contact_id = a2.contact_id
+  WHERE a1.is_primary = 0
+    AND a2.id IS NULL
+    AND a1.contact_id IS NOT NULL
+  UNION
+  SELECT a1.contact_id
+  FROM civicrm_phone a1
+         LEFT JOIN civicrm_phone a2 ON a1.id <> a2.id AND a2.is_primary = 1
+    AND a1.contact_id = a2.contact_id
+  WHERE
+      a1.is_primary = 1
+    AND a2.id IS NOT NULL
+    AND a1.contact_id IS NOT NULL
+  UNION
+  SELECT a1.contact_id
+  FROM civicrm_phone a1
+         LEFT JOIN civicrm_phone a2 ON a1.id <> a2.id AND a2.is_primary = 1
+    AND a1.contact_id = a2.contact_id
+  WHERE a1.is_primary = 0
+    AND a2.id IS NULL
+    AND a1.contact_id IS NOT NULL
+  UNION
+  SELECT a1.contact_id
+  FROM civicrm_im a1
+         LEFT JOIN civicrm_im a2 ON a1.id <> a2.id AND a2.is_primary = 1
+    AND a1.contact_id = a2.contact_id
+  WHERE
+      a1.is_primary = 1
+    AND a2.id IS NOT NULL
+    AND a1.contact_id IS NOT NULL
+  UNION
+  SELECT a1.contact_id
+  FROM civicrm_im a1
+         LEFT JOIN civicrm_im a2 ON a1.id <> a2.id AND a2.is_primary = 1
+    AND a1.contact_id = a2.contact_id
+  WHERE a1.is_primary = 0
+    AND a2.id IS NULL
+    AND a1.contact_id IS NOT NULL
+  UNION
+  SELECT a1.contact_id
+  FROM civicrm_openid a1
+         LEFT JOIN civicrm_openid a2 ON a1.id <> a2.id AND a2.is_primary = 1
+    AND a1.contact_id = a2.contact_id
+  WHERE (a1.is_primary = 1 AND a2.id IS NOT NULL)
+  UNION
+  SELECT a1.contact_id
+  FROM civicrm_openid a1
+         LEFT JOIN civicrm_openid a2 ON a1.id <> a2.id AND a2.is_primary = 1
+    AND a1.contact_id = a2.contact_id
+  WHERE
+      a1.is_primary = 1
+    AND a2.id IS NOT NULL
+    AND a1.contact_id IS NOT NULL
+  UNION
+  SELECT a1.contact_id
+  FROM civicrm_openid a1
+         LEFT JOIN civicrm_openid a2 ON a1.id <> a2.id AND a2.is_primary = 1
+    AND a1.contact_id = a2.contact_id
+  WHERE a1.is_primary = 0
+    AND a2.id IS NULL
+    AND a1.contact_id IS NOT NULL) AS primary_descrepancies
+      '));
+
+  }
 }
