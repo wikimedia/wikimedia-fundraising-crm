@@ -525,7 +525,7 @@ EOS;
         'IN' => $contactIds
       ],
       'contribution_status_id' => [
-        'IN' => ['Completed', 'Pending']
+        'IN' => ['Completed', 'Pending', 'In Progress']
       ],
     ]);
     return $recurringCount > 0;

@@ -256,8 +256,11 @@ EOS;
   /**
    * Test that we create activity records for each contact with a
    * shared email.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Exception
    */
-  public function testCreateActivityRecords() {
+  public function testCreateActivityRecords(): void {
     $contactIds = $this->setUpContactsSharingEmail();
     $summaryObject = new EoySummary(['year' => 2018]);
     $this->jobIds[] = $summaryObject->calculate_year_totals();
