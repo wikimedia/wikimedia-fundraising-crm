@@ -1,6 +1,8 @@
-<div id="crm-relblock-content" class="crm-inline-edit"  {literal}data-edit-params='{"cid": {/literal}{$contactId}{literal}, "class_name": "CRM_Relationshipblock_Form_Inline_RelationshipBlock"}'{/literal}>
+<div id="crm-relblock-content" {if $permission EQ 'edit'}class="crm-inline-edit crm-clear" {literal}data-edit-params='{"cid": {/literal}{$contactId}{literal}, "class_name": "CRM_Relationshipblock_Form_Inline_RelationshipBlock"}'{/literal}{/if}>
   <div class="crm-clear crm-inline-block-content" title="{ts escape='html'}Edit relationships{/ts}">
-    <div class="crm-edit-help"><span class="crm-i fa-pencil"></span>{ts}Edit{/ts}</div>
+    {if $permission EQ 'edit'}
+      <div class="crm-edit-help"><span class="crm-i fa-pencil"></span>{ts}Edit{/ts}</div>
+    {/if}
     {if $existingRelationships}
       {foreach from=$existingRelationships item=existingRelationship}
         <div class="crm-summary-row">
