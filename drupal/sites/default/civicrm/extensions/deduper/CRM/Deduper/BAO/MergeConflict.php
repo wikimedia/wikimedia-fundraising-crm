@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\CustomField;
+use Civi\Api4\Email;
 use CRM_Deduper_ExtensionUtil as E;
 
 class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
@@ -105,7 +107,7 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
   /**
    * @return array
    */
-  public static function getLocationResolvers() {
+  public static function getLocationResolvers(): array {
     return [
       'none' => E::ts('Do not resolve'),
       'preferred_contact' => E::ts('If emails/phones/addresses are in conflict for a given location choose the one from the preferred contact'),
@@ -121,13 +123,34 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
    * @throws \API_Exception
    */
   public static function getLocationTypes() : array {
-    return \Civi\Api4\Email::getFields()
+    return Email::getFields()
       ->setCheckPermissions(FALSE)
       ->setIncludeCustom(FALSE)
       ->setLoadOptions(TRUE)
       ->addSelect('options')
       ->addWhere('name', '=', 'location_type_id')
       ->execute()->first()['options'];
+  }
+
+  /**
+   * Get available location types.
+   *
+   * @return array
+   *
+   * @throws \API_Exception
+   */
+  public static function getCustomGroups() : array {
+    $groups = CustomField::getFields()
+      ->setCheckPermissions(FALSE)
+      ->setLoadOptions(['name', 'label'])
+      ->addSelect('options')
+      ->addWhere('name', '=', 'custom_group_id')
+      ->execute()->first()['options'];
+    $return = [];
+    foreach ($groups as $group) {
+      $return[$group['name']] = $group['label'];
+    }
+    return $return;
   }
 
 }

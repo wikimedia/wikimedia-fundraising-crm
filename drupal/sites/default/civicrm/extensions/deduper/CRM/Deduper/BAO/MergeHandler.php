@@ -439,6 +439,9 @@ class CRM_Deduper_BAO_MergeHandler {
     // There is a fundamental difference in that his resolvers run BEFORE a merge not in the hook
     // so they do updates prior to a merge attempt. Ours are running as a merge hook and alter
     // already-determined conflicts.
+    $resolver = new CRM_Deduper_BAO_Resolver_SkippedFieldsResolver($this);
+    $resolver->resolveConflicts();
+
     $resolver = new CRM_Deduper_BAO_Resolver_BooleanYesResolver($this);
     $resolver->resolveConflicts();
 
@@ -884,6 +887,20 @@ class CRM_Deduper_BAO_MergeHandler {
    */
   public function setDoNotMoveBlock($locationEntity, $block) {
     unset($this->dedupeData['migration_info']['move_location_' . $locationEntity . '_' . $block]);
+  }
+
+  /**
+   * Set a field to be left unmoved when the contact pair is deduped.
+   *
+   * @param string $fieldName
+   */
+  public function setDoNotMoveField(string $fieldName): void {
+    if (array_key_exists('move_' . $fieldName, $this->dedupeData['fields_in_conflict'])) {
+      unset($this->dedupeData['fields_in_conflict']['move_' . $fieldName]);
+    }
+    if (array_key_exists('move_' . $fieldName, $this->dedupeData['migration_info'])) {
+      unset($this->dedupeData['migration_info']['move_' . $fieldName]);
+    }
   }
 
   /**
