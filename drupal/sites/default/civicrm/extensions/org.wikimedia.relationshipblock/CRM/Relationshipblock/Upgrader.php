@@ -49,7 +49,61 @@ class CRM_Relationshipblock_Upgrader extends CRM_Relationshipblock_Upgrader_Base
         'html_type' => 'Radio',
         'required' => 1,
       ]);
+      $customField = civicrm_api3('CustomField', 'create', [
+        'custom_group_id' => $customGroups['id'],
+        'name' => 'relationship_block_exclude_expired',
+        'label' => E::ts('Exclude expired relationships'),
+        'data_type' => 'Boolean',
+        'default_value' => 1,
+        'html_type' => 'Radio',
+        'required' => 1,
+      ]);
+      $customField = civicrm_api3('CustomField', 'create', [
+        'custom_group_id' => $customGroups['id'],
+        'name' => 'relationship_block_exclude_pending',
+        'label' => E::ts('Exclude pending relationships'),
+        'data_type' => 'Boolean',
+        'default_value' => 0,
+        'html_type' => 'Radio',
+        'required' => 1,
+      ]);
     }
+  }
+
+  /**
+   * Add custom fields for configuring whether to exclude expired and pending
+   * relationships.
+   *
+   * @return TRUE on success
+   * @throws Exception
+   */
+  public function upgrade_0140() {
+    $this->ctx->log->info('Applying update 0140');
+
+    $customGroups = civicrm_api3('CustomGroup', 'getsingle', [
+      'extends' => 'RelationshipType',
+      'name' => 'relationship_block',
+    ]);
+    $customField = civicrm_api3('CustomField', 'create', [
+      'custom_group_id' => $customGroups['id'],
+      'name' => 'relationship_block_exclude_expired',
+      'label' => E::ts('Exclude expired relationships'),
+      'data_type' => 'Boolean',
+      'default_value' => 1,
+      'html_type' => 'Radio',
+      'required' => 1,
+    ]);
+    $customField = civicrm_api3('CustomField', 'create', [
+      'custom_group_id' => $customGroups['id'],
+      'name' => 'relationship_block_exclude_pending',
+      'label' => E::ts('Exclude pending relationships'),
+      'data_type' => 'Boolean',
+      'default_value' => 0,
+      'html_type' => 'Radio',
+      'required' => 1,
+    ]);
+
+    return TRUE;
   }
 
   /**

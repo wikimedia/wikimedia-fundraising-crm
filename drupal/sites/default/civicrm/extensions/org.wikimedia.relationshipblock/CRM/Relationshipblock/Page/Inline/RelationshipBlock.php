@@ -10,6 +10,12 @@ class CRM_Relationshipblock_Page_Inline_RelationshipBlock extends CRM_Core_Page 
       return;
     }
     self::addKeyRelationshipsBlock($this, $contactId);
+
+    // check logged in user permission
+    if (!isset($page->_permission)) {
+      CRM_Contact_Page_View::checkUserPermission($this, $contactId);
+    }
+
     parent::run();
   }
 

@@ -115,6 +115,10 @@
           profilesReady.promise.then(function () {
             editProfile(block.profile_id);
           });
+        }
+        // Cannot use angular pages in a popup
+        else if(_.includes(block.edit, '#')) {
+          window.open(CRM.url(block.edit), '_blank');
         } else {
           CRM.loadForm(CRM.url(block.edit))
             .on('crmFormSuccess', function () {
@@ -305,6 +309,14 @@
         $scope.deletedLayout = null;
         loadLayout(newLayout);
         $scope.layouts.unshift(newLayout);
+        $scope.selectLayout(newLayout);
+      };
+
+      $scope.copyLayout = function(index) {
+        var newLayout = angular.copy($scope.layouts[index]);
+        delete newLayout.id;
+        newLayout.label += ' (copy)';
+        $scope.layouts.splice(index, 0, newLayout);
         $scope.selectLayout(newLayout);
       };
 
