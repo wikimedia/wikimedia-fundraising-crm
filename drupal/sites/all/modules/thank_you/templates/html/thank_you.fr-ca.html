@@ -10,11 +10,11 @@ Cher donateur, chère donatrice,</p>
 {% if recurring %}
 
 <p>
-Je suis heureux d'être celui à qui revient le privilège de vous remercier pour la contribution mensuelle de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} que vous faites en faveur à Wikipédia. Je veux profiter de cette occasion pour célébrer votre générosité, mais aussi l'admirable élan qui vous a poussé à participer à la création d'un meilleur futur pour le savoir libre.
+Je suis heureux d'être celui à qui revient le privilège de vous remercier pour la contribution mensuelle de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} que vous faites en faveur de Wikipédia. Je veux profiter de cette occasion pour célébrer votre générosité, mais aussi l'admirable élan qui vous a poussé à participer à la création d'un meilleur futur pour le savoir libre.
 </p>
 
 <p>
-Votre contribution mensuelle va permettre à Wikipédia d'aller plus loin et nous aidera à planifier l'avenir. Chaque mois, un don de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} sera prélevé sur votre compte par la Wikimedia Foundation, et ce jusqu’à nouvel avis de votre part. <b>En janvier, nous vous enverrons une fiche récapitulative de vos contributions pour l’année précédente</b>. Et si pour quelque raison que ce soit, vous souhaitez annuler votre contribution, veuillez suivre ces <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instructions</a>. 
+Votre contribution mensuelle va permettre à Wikipédia d'aller plus loin et nous aidera à planifier l'avenir. Chaque mois, un don de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} sera prélevé sur votre compte par la Wikimedia Foundation, et ce jusqu’à nouvel avis de votre part. <b>En janvier, nous vous enverrons une fiche récapitulative de vos contributions pour l’année précédente</b>. Et si pour quelque raison que ce soit, vous souhaitez annuler votre contribution, veuillez suivre ces <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instructions</a>.
 </p>
 
 {% else %}
@@ -64,7 +64,7 @@ Fondateur de Wikipédia
 
 <br>
 
-<p>Les dons jumelés sont un excellent moyen de doubler votre don à la Fondation Wikimedia. De nombreuses sociétés soutiennent les efforts philanthropiques de leurs employés en offrant un <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">programme de dons jumelés</a>.
+<p>Les dons jumelés sont un excellent moyen de doubler votre don à la Fondation Wikimedia. De nombreuses sociétés soutiennent les efforts philanthropiques de leurs employés en offrant un <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts/fr">programme de dons jumelés</a>.
 </p>
 
 <p>Pour vos archives&nbsp;: Votre don numéro {{ transaction_id }}, du {{ receive_date }} équivalait à {{ amount }} {{ currency }}.

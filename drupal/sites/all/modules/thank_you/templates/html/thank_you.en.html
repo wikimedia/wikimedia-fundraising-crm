@@ -12,7 +12,7 @@ Dear donor,
 {% if stock_value %}
 <p>I'm so grateful to be the one who thanks you for the one-time gift of {{ description_of_stock }} at {{ (currency ~ " " ~ stock_value) | l10n_currency(locale) }} you made in support of Wikipedia. I want to take this opportunity to celebrate your generosity and your exceptional willingness to take part in creating a better future for the world.</p>
 {% else %}
-<p>I'm so grateful to be the one who thanks you for {% if recurring %} your recurring {% else %}the one-time{% endif %} gift of {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} you made in support of Wikipedia. I want to take this opportunity to celebrate your generosity and your exceptional willingness to take part in creating a better future for the world.</p>
+<p>I'm so grateful to be the one who thanks you for {% if recurring %} your recurring {% else %}the one-time{% endif %} gift of {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} in support of Wikipedia. I want to take this opportunity to celebrate your generosity and your exceptional willingness to take part in creating a better future for the world.</p>
 {% endif %}
 
 {% if recurring %}
