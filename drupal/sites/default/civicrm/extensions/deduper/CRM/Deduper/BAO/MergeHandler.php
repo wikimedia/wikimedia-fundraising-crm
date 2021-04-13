@@ -540,9 +540,9 @@ class CRM_Deduper_BAO_MergeHandler {
    */
   public function setResolvedLocationValue($fieldName, $entity, $block, $value) {
     $key = $entity . 'Conflicts';
-    unset($this->$key[$fieldName]);
+    unset($this->$key[$block][$fieldName]);
     $this->locationConflictResolutions[$entity][$block][$fieldName] = $value;
-    if (empty($this->$key[$block])) {
+    if (empty($this->$key[$block]) || array_keys($this->$key[$block]) === ['display']) {
       $this->resolveConflictsOnLocationBlock($entity, $block);
     }
   }

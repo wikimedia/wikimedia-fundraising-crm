@@ -33,6 +33,9 @@ $settings = [
   'deduper_resolver_preferred_contact_last_resort' => 'most_recently_created_contact',
   'deduper_resolver_field_prefer_preferred_contact' => ['contact_source', 'preferred_language'],
   'deduper_resolver_custom_groups_to_skip' => ['wmf_donor'],
+  'deduper_resolver_email' => 'preferred_contact_with_re-assign',
+  'deduper_resolver_phone' => 'preferred_contact',
+  'deduper_resolver_address' => 'preferred_contact',
 
   // Enable smash pig queue.
   'smashpig_recurring_use_queue' => '1',

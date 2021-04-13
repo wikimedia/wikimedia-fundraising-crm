@@ -85,7 +85,7 @@ class CRM_Deduper_BAO_Resolver_PreferredContactLocationResolver extends CRM_Dedu
           $this->relocateLocation($entity, $block, FALSE, FALSE);
         }
         foreach (array_keys($blockConflicts) as $fieldName) {
-          // Keep the value from the contact to delete as that is preferred contact.
+          // Keep the value from the contact to keep as that is preferred contact.
           $this->setResolvedLocationValue($fieldName, $entity, $block, $entitiesContactToKeep[$block][$fieldName]);
           if ($block === $primaryEmailBlock) {
             $this->setResolvedLocationValue('is_primary', $entity, $block, 1);
