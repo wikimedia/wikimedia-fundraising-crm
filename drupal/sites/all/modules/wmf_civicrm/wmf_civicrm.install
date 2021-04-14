@@ -426,34 +426,6 @@ function wmf_civicrm_update_7280() {
 }
 
 /**
- * Fix contacts who have no primary address- this has arisen from the dedupes.
- *
- * I did this on emails before and but I just checked and there are around 7000
- * addresses
- *
- * Bug: T143062
- */
-function wmf_civicrm_update_7315() {
-  civicrm_initialize();
-  $entity = 'address';
-  CRM_Core_DAO::executeQuery("
-    CREATE TEMPORARY TABLE civicrm_{$entity}_updates
-     SELECT id FROM
-      (
-        SELECT contact_id, sum(is_primary) as c, e.id
-        FROM civicrm_{$entity} e
-        INNER JOIN civicrm_contact c ON c.id = contact_id AND is_deleted = 0
-        GROUP BY contact_id HAVING c = 0
-      ) as i
-  ");
-
-  CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_{$entity}_updates ADD INDEX index_id(id)");
-  CRM_Core_DAO::executeQuery("UPDATE civicrm_{$entity} e INNER JOIN civicrm_{$entity}_updates u ON e.id = u.id
-    SET e.is_primary = 1
-  ");
-}
-
-/**
  * Update existing US addresses with latitude, longitude, and time zone
  */
 function wmf_civicrm_update_7320() {
@@ -495,69 +467,6 @@ function wmf_civicrm_update_7320() {
       WHERE a.id BETWEEN $startId AND $endId
     ");
   }
-}
-
-/**
- * Backfill gift so that donations of $1000+ have a gift source.
- *
- * These fields have defaults which will have been used if the table is
- * touched at all during the update. As this stage I think we are just filling
- * missing data.
- *
- * T138361
- */
-function wmf_civicrm_update_7325() {
-  civicrm_initialize();
-  $customGroup = civicrm_api3('CustomGroup', 'getsingle', array(
-    'name' => 'Gift_Data',
-    'return' => 'table_name',
-  ));
-  $customField = civicrm_api3('CustomField', 'getsingle', array(
-    'name' => 'Campaign',
-    'return' => 'column_name',
-  ));
-
-  CRM_Core_DAO::executeQuery("INSERT INTO {$customGroup['table_name']} (entity_id, {$customField['column_name']})
-    SELECT c.id as entity_id, 'Benefactor Gift' as {$customField['column_name']}
-    FROM civicrm_contribution c
-    LEFT JOIN {$customGroup['table_name']} v ON v.entity_id = c.id
-    WHERE c.total_amount >= 1000 AND v.id IS NULL
-  ");
-
-}
-
-/**
- * Fix rounding of lat/long caused by DOUBLE wierdness.
- *
- * T150305
- */
-function wmf_civicrm_update_7330() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery("
-    UPDATE civicrm_address
-    SET geo_code_1 = ROUND(geo_code_1, 6),
-    geo_code_2 = ROUND(geo_code_2, 6)
-    WHERE geo_code_1 IS NOT NULL;
-  ");
-}
-
-/**
- * Text updates to the Thank you letter.
- *
- * Bug T151814
- */
-function wmf_civicrm_update_7335() {
-  require_once 'update_receipt.php';
-  _wmf_civicrm_update_offline_receipt();
-}
-
-/**
- * Re-run fixed geocoding updates
- *
- * Bug: T155677
- */
-function wmf_civicrm_update_7450() {
-  wmf_civicrm_update_7320();
 }
 
 /**
