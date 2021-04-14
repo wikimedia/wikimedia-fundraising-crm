@@ -26,15 +26,19 @@ class CRM_Deduper_BAO_Resolver_SkippedFieldsResolver extends CRM_Deduper_BAO_Res
   /**
    * Get fields that should not be touched in the merge context.
    *
-   * @return \Civi\Api4\Generic\Result
+   * @return array
    *
    * @throws \API_Exception
    */
-  public function getFieldsToBypass(): Result {
-    return CustomField::get(FALSE)
+  public function getFieldsToBypass(): array {
+    $groupsToSkip = (array) Civi::settings()->get('deduper_resolver_custom_groups_to_skip');
+    if (empty($groupsToSkip)) {
+      return [];
+    }
+    return (array)CustomField::get(FALSE)
       ->setSelect(['id'])
       ->addWhere(
-      'custom_group_id:name', 'IN',  (array) Civi::settings()->get('deduper_resolver_custom_groups_to_skip')
+      'custom_group_id:name', 'IN',  $groupsToSkip
       )->execute();
   }
 
