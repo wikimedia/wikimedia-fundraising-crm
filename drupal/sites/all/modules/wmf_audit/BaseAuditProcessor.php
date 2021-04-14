@@ -568,6 +568,10 @@ abstract class BaseAuditProcessor {
    */
   protected function get_all_recon_files() {
     $files_directory = $this->get_recon_dir();
+    $fileFromCommandLine = $this->get_runtime_options('file');
+    if ($fileFromCommandLine) {
+      return [$files_directory . DIRECTORY_SEPARATOR . $fileFromCommandLine];
+    }
     //foreach file in the directory, if it matches our pattern, add it to the array.
     $files_by_sort_key = [];
     if ($handle = opendir($files_directory)) {
