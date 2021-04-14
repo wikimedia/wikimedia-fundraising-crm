@@ -806,18 +806,6 @@ function wmf_civicrm_update_7615() {
 }
 
 /**
- * Remove geocoder rows from Managed table.
- *
- * These are now managed on install and we don't want Civi to try to reconcile them.
- *
- * Bug: T190119
- */
-function wmf_civicrm_update_7630() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery("DELETE FROM civicrm_managed WHERE module = 'org.wikimedia.geocoder'");
-}
-
-/**
  * Update status on canceled unintended recurs round 2
  *
  * Bug: T190854
