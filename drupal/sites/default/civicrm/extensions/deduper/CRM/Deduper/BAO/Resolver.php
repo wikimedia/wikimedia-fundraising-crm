@@ -69,13 +69,12 @@ abstract class CRM_Deduper_BAO_Resolver {
   /**
    * Set the given value as the value to resolve the conflict with.
    *
-   * @param string $entity
    * @param string $fieldName
    * @param string[email|address|phone|website|im] $location
-   * @param string $block
+   * @param int $block
    * @param mixed $value
    */
-  protected function setResolvedLocationValue($fieldName, $location, $block, $value) {
+  protected function setResolvedLocationValue(string $fieldName, string $location, int $block, string $value) {
     $this->mergeHandler->setResolvedLocationValue($fieldName, $location, $block, $value);
   }
 
@@ -110,7 +109,7 @@ abstract class CRM_Deduper_BAO_Resolver {
    *
    * @return bool
    */
-  protected function isBlockUnique($locationEntity, array $entityToConsiderRehoming, $blockNumber): bool {
+  protected function isBlockUnique(string $locationEntity, array $entityToConsiderRehoming, int $blockNumber): bool {
     return $this->mergeHandler->isBlockUnique($locationEntity, $entityToConsiderRehoming, $blockNumber);
   }
 
@@ -119,10 +118,10 @@ abstract class CRM_Deduper_BAO_Resolver {
    *
    * @param string $fieldName
    * @param string $location
-   * @param string $block
+   * @param int $block
    * @param mixed $value
    */
-  protected function setResolvedAddressValue($fieldName, $location, $block, $value) {
+  protected function setResolvedAddressValue($fieldName, $location, int $block, $value) {
     $this->mergeHandler->setResolvedAddressValue($fieldName, $location, $block, $value);
   }
 
@@ -147,7 +146,7 @@ abstract class CRM_Deduper_BAO_Resolver {
    *
    * @return array
    */
-  protected function getEmailConflicts($emailBlockNumber):array {
+  protected function getEmailConflicts(int $emailBlockNumber):array {
     return $this->mergeHandler->getEmailConflicts($emailBlockNumber);
   }
 
@@ -206,7 +205,7 @@ abstract class CRM_Deduper_BAO_Resolver {
    * @param string[address|phone|email] $locationEntity
    * @param int $block
    */
-  public function setDoNotMoveBlock($locationEntity, $block) {
+  public function setDoNotMoveBlock(string $locationEntity, int $block) {
     $this->mergeHandler->setDoNotMoveBlock($locationEntity, $block);
   }
 
