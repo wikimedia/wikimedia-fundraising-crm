@@ -70,19 +70,25 @@ class CRM_Deduper_BAO_MergeHandler {
   }
 
   /**
+   * List of email fields in conflict, indexed by block number.
+   *
    * @var array
    */
-  protected $emailConflicts;
+  protected $emailConflicts = [];
 
   /**
- * @var array
- */
-  protected $addressConflicts;
-
-  /**
+   * List of address fields in conflict, indexed by block number.
+   *
    * @var array
    */
-  protected $phoneConflicts;
+  protected $addressConflicts = [];
+
+  /**
+   * List of phone fields in conflict, indexed by block number.
+   *
+   * @var array
+   */
+  protected $phoneConflicts = [];
 
   /**
    * Location blocks that should be deleted on merge.
@@ -231,7 +237,7 @@ class CRM_Deduper_BAO_MergeHandler {
    *
    * @return array
    */
-  public function getIndividualNameFieldValues($isForContactToBeKept):array {
+  public function getIndividualNameFieldValues(bool $isForContactToBeKept):array {
     $return = [];
     foreach ($this->getIndividualNameFields() as $fieldName) {
       $return[$fieldName] = trim($this->getValueForField($fieldName, $isForContactToBeKept));
@@ -246,7 +252,7 @@ class CRM_Deduper_BAO_MergeHandler {
    *
    * @return array
    */
-  public function getAddresses($isForContactToBeKept):array {
+  public function getAddresses(bool $isForContactToBeKept):array {
     if ($isForContactToBeKept) {
       return $this->dedupeData['migration_info']['main_details']['location_blocks']['address'];
     }
@@ -277,7 +283,7 @@ class CRM_Deduper_BAO_MergeHandler {
    *
    * @return array
    */
-  public function getAddressBlock($isForContactToBeKept, $blockNumber):array {
+  public function getAddressBlock(bool $isForContactToBeKept, int $blockNumber):array {
     return $this->getAddresses($isForContactToBeKept)[$blockNumber];
   }
 
@@ -289,7 +295,7 @@ class CRM_Deduper_BAO_MergeHandler {
    *
    * @return array
    */
-  public function getNameFieldValues($isForContactToBeKept):array {
+  public function getNameFieldValues(bool $isForContactToBeKept):array {
     $return = [];
     foreach ($this->getNameFields() as $fieldName) {
       $return[$fieldName] = trim($this->getValueForField($fieldName, $isForContactToBeKept));
@@ -306,7 +312,7 @@ class CRM_Deduper_BAO_MergeHandler {
    *
    * @return mixed
    */
-  public function getValueForField($fieldName, $isForContactToBeKept) {
+  public function getValueForField(string $fieldName, bool $isForContactToBeKept) {
     if (strpos($fieldName, 'custom_') !== 0) {
       $contactDetail = $isForContactToBeKept ? $this->dedupeData['migration_info']['main_details'] : $this->dedupeData['migration_info']['other_details'];
       return $contactDetail[$fieldName];
@@ -534,11 +540,11 @@ class CRM_Deduper_BAO_MergeHandler {
    * Resolve conflict on field using the specified value.
    *
    * @param string $fieldName
-   * @param string[ $entity
-   * @param string $block
+   * @param string $entity
+   * @param int $block
    * @param string $value
    */
-  public function setResolvedLocationValue($fieldName, $entity, $block, $value) {
+  public function setResolvedLocationValue(string $fieldName, string $entity, int $block, string $value) {
     $key = $entity . 'Conflicts';
     unset($this->$key[$block][$fieldName]);
     $this->locationConflictResolutions[$entity][$block][$fieldName] = $value;
@@ -552,10 +558,10 @@ class CRM_Deduper_BAO_MergeHandler {
    *
    * @param string $fieldName
    * @param string $location
-   * @param string $block
+   * @param int $block
    * @param string $value
    */
-  public function setResolvedAddressValue($fieldName, $location, $block, $value) {
+  public function setResolvedAddressValue(string $fieldName, string $location, int $block, string $value) {
     $this->locationConflictResolutions[$location][$block][$fieldName] = $value;
     $mainBlock = &$this->dedupeData['migration_info']['main_details']['location_blocks']['address'][$block];
     $otherBlock = &$this->dedupeData['migration_info']['other_details']['location_blocks']['address'][$block];
@@ -666,7 +672,7 @@ class CRM_Deduper_BAO_MergeHandler {
    *
    * @return bool
    */
-  public function isBlockUnique($locationEntity, array $entityToConsiderRehoming, $blockNumber): bool {
+  public function isBlockUnique(string $locationEntity, array $entityToConsiderRehoming, int $blockNumber): bool {
     foreach ($this->getAllLocationBlocks($locationEntity) as $existingEntity) {
       if ($existingEntity['block'] !== $blockNumber && $this->isBlockEquivalent($locationEntity, $existingEntity, $entityToConsiderRehoming)) {
         return FALSE;
@@ -710,12 +716,12 @@ class CRM_Deduper_BAO_MergeHandler {
    * Get the specified block.
    *
    * @param string $location
-   * @param string $block
-   * @param int $isForContactToBeKept
+   * @param int $block
+   * @param bool $isForContactToBeKept
    *
    * @return array
    */
-  public function getLocationBlock($location, $block, $isForContactToBeKept):array {
+  public function getLocationBlock(string $location, int $block, bool $isForContactToBeKept):array {
     $contactString = $isForContactToBeKept ? 'main_details' : 'other_details';
     return $this->dedupeData['migration_info'][$contactString]['location_blocks'][$location][$block] ?? [];
   }
@@ -731,7 +737,7 @@ class CRM_Deduper_BAO_MergeHandler {
    *
    * @return mixed
    */
-  public function getMergeInstructionForBlock($locationEntity, $block) {
+  public function getMergeInstructionForBlock(string $locationEntity, int $block) {
     return $this->dedupeData['migration_info']['location_blocks'][$locationEntity][$block];
   }
 
@@ -751,13 +757,13 @@ class CRM_Deduper_BAO_MergeHandler {
    * Get the specified value from the specified block.
    *
    * @param string $location
-   * @param string $block
-   * @param int $isForContactToBeKept
+   * @param int $block
+   * @param bool $isForContactToBeKept
    * @param string $field
    *
    * @return mixed
    */
-  public function getLocationBlockValue($location, $block, $isForContactToBeKept, $field) {
+  public function getLocationBlockValue(string $location, int $block, bool $isForContactToBeKept, string $field) {
     return $this->getLocationBlock($location, $block, $isForContactToBeKept)[$field] ?? NULL;
   }
 
@@ -931,7 +937,7 @@ class CRM_Deduper_BAO_MergeHandler {
    * @param string[address|phone|email] $locationEntity
    * @param int $block
    */
-  public function setDoNotMoveBlock($locationEntity, $block) {
+  public function setDoNotMoveBlock(string $locationEntity, int $block) {
     unset($this->dedupeData['migration_info']['move_location_' . $locationEntity . '_' . $block]);
   }
 
@@ -964,9 +970,9 @@ class CRM_Deduper_BAO_MergeHandler {
    * Handle location block conflict resolution.
    *
    * @param string $location
-   * @param string $block
+   * @param int $block
    */
-  protected function resolveConflictsOnLocationBlock($location, $block): void {
+  protected function resolveConflictsOnLocationBlock(string $location, int $block): void {
     $mainContactValuesToKeep = [];
     $otherContactValuesToKeep = [];
     foreach ($this->locationConflictResolutions[$location][$block] as $fieldName => $value) {
