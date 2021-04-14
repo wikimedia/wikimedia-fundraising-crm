@@ -192,7 +192,7 @@ return [
   ],
   'deduper_resolver_custom_groups_to_skip' => [
     'name' => 'deduper_resolver_custom_groups_to_skip',
-    'type' => 'String',
+    'type' => 'Array',
     'serialize' => CRM_Core_DAO::SERIALIZE_JSON,
     'is_domain' => 1,
     'is_contact' => 0,

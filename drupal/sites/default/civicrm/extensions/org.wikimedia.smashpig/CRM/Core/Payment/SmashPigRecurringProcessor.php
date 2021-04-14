@@ -3,11 +3,7 @@
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ErrorCode;
-use CRM_SmashPig_ExtensionUtil as E;
-use Civi\Api4\Activity;
-use Civi\Api4\Message;
 use Civi\Api4\FailureEmail;
-use Civi\Api4\Email;
 
 class CRM_Core_Payment_SmashPigRecurringProcessor {
 
