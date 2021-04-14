@@ -687,14 +687,6 @@ function wmf_civicrm_batch_update_data($tableName, $whereClause, $setClause, $ba
 }
 
 /**
- * Add correct currency symbols
- */
-function wmf_civicrm_update_7523() {
-  require_once('update_7523.php');
-  _wmf_civicrm_update_7523_insert_currency_symbols();
-}
-
-/**
  * Enable CiviCampaign.
  */
 function wmf_civicrm_update_7525() {
