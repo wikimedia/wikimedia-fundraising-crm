@@ -239,81 +239,6 @@ function wmf_civicrm_update_7063() {
 }
 
 /**
- * Ensure all payments have a payment instrument id.
- *
- * Per
- * http://wiki.civicrm.org/confluence/display/CRMDOC/Fixing+Transactions+Missing+a+Payment+Instrument+-+4.4.3+Upgrades
- * there is a payment instrument id set for all contributions.
- *
- * The code there basically just figures out a default & sets the empty ones to
- * that.
- *
- * If we look at the first million contributions just setting the it to
- * 'Gateway' seems a reasonable choice of default.
- *
- * SELECT  payment_instrument_id, count(*) FROM (SELECT * FROM
- * civicrm_contribution LIMIT 1000000) as t GROUP BY payment_instrument_id;
- * +-----------------------+----------+
- * | payment_instrument_id | count(*) |
- * +-----------------------+----------+
- * |                  NULL |       33 |
- * |                     1 |        3 |
- * |                     3 |       30 |
- * |                     4 |    14162 |
- * |                     5 |      119 |
- * |                     6 |   982954 |
- * |                     7 |     1451 |
- * |                     8 |     1246 |
- * |                    44 |        1 |
- * |                   186 |        1 |
- */
-function wmf_civicrm_update_7065() {
-  civicrm_initialize();
-  // Ensure that 'Gateway' option exists. Will be a no-op if it's already there.
-  wmf_civicrm_create_option_values('payment_instrument', array('Gateway'));
-  $paymentInstruments = civicrm_api3('Contribution', 'getoptions', array('field' => 'payment_instrument_id'));
-  $defaultPaymentInstrument = array_search('Gateway', $paymentInstruments['values']);
-  CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm_contribution SET payment_instrument_id = $defaultPaymentInstrument WHERE payment_instrument_id IS NULL"
-  );
-  CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm_financial_trxn cft
-LEFT JOIN civicrm_entity_financial_trxn ceft ON ceft.financial_trxn_id = cft.id
-LEFT JOIN civicrm_contribution cc  ON ceft.entity_id = cc.id
-SET cft.payment_instrument_id = IFNULL(cc.payment_instrument_id, $defaultPaymentInstrument)
-WHERE ceft.entity_table = 'civicrm_contribution' AND cft.payment_instrument_id IS NULL;"
-  );
-}
-
-/**
- * Update upgraded 4.2 refund transactions to have negative refund records.
- *
- * In the 4.3 upgrade transaction records were done for statuses Completed
- * Pending and Cancelled. The status Refunded was not a core status until 4.3
- * so transactions were NOT added in the upgrade to refunded status
- * transactions.
- *
- * The original upgrade code is in the function
- * CRM_Upgrade_Incremental_php_FourThree::createFinancialRecords
- *
- * I tried re-editing it for use here but the sql was just too slow and we
- * don't
- * want another long-outage. It's probably slower for this section than on the
- * main upgrade as the financial_trxn table has been populated in the meantime.
- * The main upgrade sql included adding and dropping columns on tables whereas
- * here I have used LAST_INSERT_ID() to get the inserted row ids.
- *
- * OTOH we only need to deal with ~16k records to php parsing is a reasonable
- * option
- * (it might take a little while but it won't lock the tables so I don't think
- * the site would need to come down to run it).
- */
-function wmf_civicrm_update_7070() {
-  require_once('update_7070.php');
-  _wmf_civicrm_update_7070_fill_refund_transaction_data();
-}
-
-/**
  * T124979 add a Financial Account to each Financial Type for Chargeback &
  * Refund.
  */
@@ -335,129 +260,6 @@ function wmf_civicrm_update_7120() {
       'financial_account_id' => 'Refund',
     ));
   }
-}
-
-/**
- * T122946 fix financial trxn record for upgraded contributions missing
- * to_financial_account_id.
- *
- * These came about in the upgrade (this update does not need to run on
- * install) and affect the same contributions as update 7065.
- *
- * My queries suggest they all have financial_type = 'Cash' so I explicitly
- * limited to that.
- */
-function wmf_civicrm_update_7130() {
-  civicrm_initialize();
-  $depositFinancialAccountID = civicrm_api3('FinancialAccount', 'getvalue', array(
-    'return' => 'id',
-    'name' => 'Deposit Bank Account',
-  ));
-
-  $cashFinancialTypeID = civicrm_api3('FinancialType', 'getvalue', array(
-    'return' => 'id',
-    'name' => 'Cash',
-  ));
-  CRM_Core_DAO::executeQuery(
-    "UPDATE
-     civicrm_contribution con
-     LEFT JOIN civicrm_entity_financial_trxn eft ON (eft.entity_id = con.id AND eft.entity_table = 'civicrm_contribution')
-     INNER JOIN civicrm_financial_trxn ft ON ft.id = eft.financial_trxn_id
-
-     SET ft.to_financial_account_id = %1
-
-     WHERE ft.to_financial_account_id IS NULL AND con.financial_type_id = %2",
-    array(
-      1 => array($depositFinancialAccountID, 'Integer'),
-      2 => array($cashFinancialTypeID, 'Integer'),
-    )
-  );
-}
-
-/**
- * Fix financial item records with null financial_account.
- *
- * Incredibly we have only 4 of these in our database & Elliott picked up this
- * problem through spot checks!.
- *
- * Reference contact is civicrm/contact/view?reset=1&cid=11346599 - before this
- * update one of the contact's transactions does not display financial details
- * when expanded in the UI.
- *
- *  [civicrm]> SELECT count(*) FROM civicrm_financial_item WHERE
- * financial_account_id IS NULL;
- * +----------+
- * | count(*) |
- * +----------+
- * |        4 |
- * +----------+
- *
- * These relate to line items with no financial_type_id of which we have 74.
- *
- * SELECT count(*) FROM civicrm_line_item li LEFT JOIN civicrm_contribution c
- * ON c.id = li.contribution_id WHERE li.financial_type_id IS NULL;
- * +----------+
- * | count(*) |
- * +----------+
- * |       74 |
- * +----------+
- *
- * Of those 74 rows 70 are orphans - ie line items with no contributions. It
- * appears the contributions were deleted at some point in the past.
- *
- * This relates to T122946 & is a follow up fix.
- */
-function wmf_civicrm_update_7150() {
-  civicrm_initialize();
-  $cashFinancialTypeID = civicrm_api3('FinancialType', 'getvalue', array(
-    'return' => 'id',
-    'name' => 'Cash',
-  ));
-
-  $cashFinancialAccountID = civicrm_api3('FinancialAccount', 'getvalue', array(
-    'return' => 'id',
-    'name' => 'Cash',
-  ));
-  // Deletes 70 orphan entries - a bit slow but I couldn't bring myself to take out the join & just filter
-  // on contribution_id IS NOT NULL as it felt less safe. Takes 1-2 minutes
-  CRM_Core_DAO::executeQuery("
-    DELETE li
-    FROM civicrm_line_item li
-    LEFT JOIN civicrm_contribution c ON li.entity_id = c.id
-    AND li.entity_table = 'civicrm_contribution'
-    WHERE c.id IS NULL
-  ");
-  // Updates 4 records.
-  CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution SET financial_type_id = $cashFinancialTypeID WHERE financial_type_id IS NULL");
-  // Updates 4 records.
-  CRM_Core_DAO::executeQuery("UPDATE civicrm_line_item SET financial_type_id = $cashFinancialTypeID WHERE financial_type_id IS NULL");
-  // Updates 4 records.
-  CRM_Core_DAO::executeQuery("UPDATE civicrm_financial_item SET financial_account_id = $cashFinancialAccountID WHERE financial_account_id IS NULL");
-
-}
-
-/**
- * Further refund financial data fix.
- *
- * This is an extra record that was missing in 7070. It was obvious until the
- * patch for CRM-17951 was merged:
- *
- * CRM-17951 (merged into 4.7) modify transaction view to show the financial
- * account of the transaction
- */
-function wmf_civicrm_update_7160() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery("
-    INSERT INTO civicrm_entity_financial_trxn
-    (entity_table, entity_id, financial_trxn_id, amount)
-    SELECT  'civicrm_financial_item' as entity_table, fi.id as entity_id, cont_ft.financial_trxn_id  as financial_trxn_id, fi.amount
-    FROM civicrm_financial_item fi
-    LEFT JOIN civicrm_entity_financial_trxn ft  ON ft.entity_id = fi.id AND ft.entity_table = 'civicrm_financial_item'
-    LEFT JOIN civicrm_line_item li ON li.id = fi.entity_id AND fi.entity_table = 'civicrm_line_item'
-    LEFT JOIN civicrm_contribution c ON c.id = li.contribution_id
-    LEFT JOIN civicrm_entity_financial_trxn cont_ft ON cont_ft.entity_id = c.id AND cont_ft.entity_table = 'civicrm_contribution'
-    WHERE ft.id IS NULL AND fi.created_date > '2016-02-01'
-  ");
 }
 
 /**
@@ -485,22 +287,6 @@ function wmf_civicrm_update_7170() {
 }
 
 /**
- * Enable setting to specify logging is handled offline.
- *
- * CRM-18212 / T127133.
- */
-function wmf_civicrm_update_7205() {
-  civicrm_initialize();
-  civicrm_api3('System', 'flush', array(
-    'triggers' => 0,
-    'session' => 0,
-  ));
-  civicrm_api3('Setting', 'create', array(
-    'logging_no_trigger_permission' => 1,
-  ));
-}
-
-/**
  * Oops this activity type was added without filter = 1 being set.
  *
  * CRM-18327 / T119246.
@@ -516,18 +302,6 @@ function wmf_civicrm_update_7210() {
 }
 
 /**
- * Set do not trade field to 0 for all contacts.
- *
- * We do not use this field.
- */
-function wmf_civicrm_update_7225() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm_contact SET do_not_trade = 0"
-  );
-}
-
-/**
  * Add Endowment gifts to gift source.
  *
  * T139629
@@ -539,62 +313,6 @@ function wmf_civicrm_update_7230() {
     'value' => 'Endowment Gift',
     'option_group_id' => 'campaign_20080709183311',
   ));
-}
-
-/**
- * Fix next_sched_contribution_date on records affected by Aug recur bug.
- *
- * There appear to be only 8 that still need fixing before re-enabling the job.
- *
- * These 8 failed to re-process on their second attempt so were not reset.
- *
- * The others all re-processed within the affected time period and their dates
- * were pushed out
- *
- * SQL to view these 8.
- *
- * SELECT count(*) as c, contribution_recur_id, cr.contact_id,
- * group_concat(receive_date) as rdate, next_sched_contribution_date,
- * c.contribution_status_id, cr.contribution_status_id FROM
- * civicrm_contribution c LEFT JOIN civicrm_contribution_recur cr ON cr.id =
- * c.contribution_recur_id WHERE receive_date > '2016-08-31' AND
- * contribution_recur_id IS NOT NULL AND c.trxn_id LIKE 'RECURRING
- * GLOBALCOLLECT%' AND next_sched_contribution_date < '2016-09-30' GROUP BY
- * contribution_recur_id having c = 1 AND rdate < '2016-09-01';
- *
- * To view the others:
- *
- * SELECT count(*) as c, contribution_recur_id, c.contact_id,
- * group_concat(receive_date) as dates, next_sched_contribution_date,
- * GROUP_CONCAT(c.trxn_id) FROM civicrm_contribution c Left JOIN
- * civicrm_contribution_recur cr ON cr.id = c.contribution_recur_id WHERE
- * receive_date > '2016-08-30' AND contribution_recur_id IS NOT NULL AND
- * c.trxn_id LIKE 'RECURRING GLOBALCOLLECT%' GROUP BY contribution_recur_id
- * having c > 1;
- *
- * T144489
- */
-function wmf_civicrm_update_7240() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery("
-    UPDATE civicrm_contribution_recur
-    SET
-      failure_retry_date = NULL,
-      failure_count = 0,
-      next_sched_contribution_date = '2010-10-01',
-      contribution_status_id = 5
-
-   WHERE id IN
-    (SELECT  contribution_recur_id FROM (
-      SELECT count(*) as c, contribution_recur_id, cr.contact_id, group_concat(receive_date) as rdate,
-      next_sched_contribution_date, c.contribution_status_id
-      FROM civicrm_contribution c
-      LEFT JOIN civicrm_contribution_recur cr ON cr.id = c.contribution_recur_id
-      WHERE receive_date > '2016-08-31' AND contribution_recur_id IS NOT NULL AND c.trxn_id LIKE 'RECURRING GLOBALCOLLECT%'
-       AND next_sched_contribution_date < '2016-09-30'
-      GROUP BY contribution_recur_id having c = 1 AND rdate < '2016-09-01')
-    as d )
-    ");
 }
 
 /**
@@ -625,16 +343,6 @@ function wmf_civicrm_update_7250() {
   CRM_Core_DAO::executeQuery("UPDATE civicrm_email e INNER JOIN civicrm_email_updates u ON e.id = u.id
     SET e.is_primary = 1
   ");
-}
-
-/**
- * T128221 add index to civicrm_contribution.total_amount.
- *
- * Bug: T96410
- */
-function wmf_civicrm_update_7255() {
-  civicrm_initialize();
-  CRM_Core_BAO_SchemaHandler::createIndexes(array('civicrm_contact' => array('preferred_language')));
 }
 
 /**
@@ -1321,79 +1029,7 @@ function wmf_civicrm_batch_update_data($tableName, $whereClause, $setClause, $ba
       ");
     CRM_Core_DAO::executeQuery("DROP TEMPORARY TABLE {$tableName}_to_update");
   }
-}
-
-/**
- * Backfill contribution_tracking associations for recurring donations
- *
- * Bug: T163443
- */
-function wmf_civicrm_update_7520() {
-  civicrm_initialize();
-  $affected = CRM_Core_DAO::executeQuery("
-    SELECT cont.id, ext.gateway_txn_id
-    FROM civicrm_contribution cont
-    INNER JOIN wmf_contribution_extra ext on ext.entity_id = cont.id
-    LEFT JOIN drupal.contribution_tracking ct
-    ON ct.contribution_id = cont.id
-    WHERE cont.trxn_id LIKE 'RECURRING PAYPAL%'
-    AND cont.receive_date > '2017-04-09'
-    AND ct.id IS NULL
-  ");
-  $found = [];
-  $logDir = wmf_audit_get_log_archive_dir();
-  $lines = array();
-  // These lines will have the gateway_trxn_id and the ct_id
-  $files = implode(' ', glob("$logDir/fundraising-drupal-201704*"));
-  $cmd = "/bin/zgrep subscr_payment $files";
-  exec($cmd, $lines);
-  foreach ($lines as $line) {
-    $parsed = wmf_civicrm_parse_watchdog_array($line);
-    if (
-      !empty($parsed['gateway_txn_id']) &&
-      !empty($parsed['contribution_tracking_id'])
-    ) {
-      // Normalized lines
-      $found[$parsed['gateway_txn_id']] = $parsed['contribution_tracking_id'];
-    }
-    else {
-      if (!empty($parsed['txn_id'])) {
-        // Raw PayPal IPNs
-        if (
-          !empty($parsed['transaction_subject']) &&
-          is_numeric($parsed['transaction_subject'])
-        ) {
-          $found[$parsed['txn_id']] = $parsed['transaction_subject'];
-        }
-        else {
-          if (
-            !empty($parsed['custom']) &&
-            is_numeric($parsed['custom'])
-          ) {
-            $found[$parsed['txn_id']] = $parsed['custom'];
-          }
-        }
-      }
-    }
-  }
-  $fixed = 0;
-  $missing = 0;
-  while ($affected->fetch()) {
-    $gatewayTxnId = $affected->gateway_txn_id;
-    if (empty($found[$gatewayTxnId])) {
-      $missing++;
-    }
-    else {
-      wmf_civicrm_message_update_contribution_tracking(
-        array('contribution_tracking_id' => $found[$gatewayTxnId]),
-        array('id' => $affected->id)
-      );
-      $fixed++;
-    }
-  }
-}
-
-/**
+}/**
  * Normalize old phone numbers
  **/
 function wmf_civicrm_update_7522() {

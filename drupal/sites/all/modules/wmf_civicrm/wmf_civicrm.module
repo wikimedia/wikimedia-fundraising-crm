@@ -2546,56 +2546,6 @@ function wmf_civicrm_mark_refund(
 }
 
 /**
- * Get the value for language that is stored in the db.
- *
- * In CiviCRM 5.17 an improvement means that the display renders the
- * UI string - eg. 'English (United States)' on the merge screen instead of 'en_US'.
- *
- * However, as we have previously griped about, the values passed out to the hook
- * are stupidly tied to the form - resulting in the change flowing through.
- *
- * This handling copes with either the db value or the form value - although the db value might
- * be irrelevant after we do our next update (OTOH it's just an early return so 'cheap').
- *
- * @param string $value
- *
- * @return string
- */
-function wmf_civicrm_get_language_db_value($value): string {
-  if (!$value) {
-    return '';
-  }
-  $languages = wmf_civicrm_get_valid_languages();
-  if (isset($languages[$value])) {
-    return $value;
-  }
-  if (in_array($value, $languages)) {
-    return array_search($value, $languages);
-  }
-  return $value;
-}
-
-/**
- * Get the field ids of the wmf fields that are determined by calculation.
- *
- * Differences in these fields should not block a merge activity as they
- * are simply recalculated.
- *
- * @return array
- *   The custom fields that are calculated in the format
- *   - custom_1
- *   - custom_2
- */
-function wmf_civicrm_get_calculated_fields() {
-  $fieldNames = wmf_get_calculated_field_names();
-  $customFields = [];
-  foreach ($fieldNames as $fieldName) {
-    $customFields[] = wmf_civicrm_get_custom_field_name($fieldName);
-  }
-  return $customFields;
-}
-
-/**
  * Get the names of the calculated fields.
  *
  * @return array
@@ -3318,21 +3268,6 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
     case 'form' :
       watchdog("civicrm_merge_debug", "Deduping contacts $mainId and $otherId");
   }
-}
-
-/**
- * Given a line from a drupal watchdog log with an array, reconstruct
- * the keys and values from the mangled print_r variant
- * e.g. [gateway] =&gt; paypal#012    [source_name] =&gt; SmashPig#012
- */
-function wmf_civicrm_parse_watchdog_array($logLine) {
-  $logLine = str_replace('=&gt;', '=>', $logLine);
-  $output = [];
-  preg_match_all('/\[([^\]]+)\] => (.*?)#012/', $logLine, $matches);
-  foreach ($matches[1] as $index => $key) {
-    $output[$key] = $matches[2][$index];
-  }
-  return $output;
 }
 
 /**

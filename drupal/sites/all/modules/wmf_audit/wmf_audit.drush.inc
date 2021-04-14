@@ -29,6 +29,7 @@ function wmf_audit_drush_command() {
       'charlimit' => 'Will cause echoing to line break after the given number of characters',
       'verbose' => 'Verbose output',
       'recon_complete_count' => 'Number past which we should consider a recon file to be "complete", and move it out of the working dir.',
+      'file' => 'Optional, name of a file to parse (must be in the incoming directory, should not include full path)'
     ],
   ];
 
@@ -60,6 +61,7 @@ function drush_wmf_audit_parse_audit() {
     'run_all' => 'Running all recon files! This might take a while...',
     'verbose' => 'Outputting verbose.',
     'recon_complete_count' => 'Number past which we should consider a recon file to be "complete", and move it out of the working dir.',
+    'file' => 'File argument given, only processing specified file.'
   ];
 
   $options = [];
@@ -68,9 +70,10 @@ function drush_wmf_audit_parse_audit() {
   $options['test'] = variable_get('wmf_audit_test_mode') || variable_get("{$gateway}_audit_test_mode");
   //now override with the command line settings
   foreach ($simple_opts as $key => $message) {
-    if (drush_get_option($key)) {
+    $value = drush_get_option($key);
+    if ($value) {
       echo "$message\n";
-      $options[$key] = TRUE;
+      $options[$key] = $value;
     }
   }
 
