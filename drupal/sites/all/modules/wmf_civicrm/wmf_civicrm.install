@@ -316,36 +316,6 @@ function wmf_civicrm_update_7230() {
 }
 
 /**
- * Fix contacts who have no primary - this has arisen from the dedupes.
- *
- * I'll probably run this again once I've fixed dedupe to stop creating them
- * but this fixes the ~10000 contacts who currently don't have an address
- * marked as primary.
- *
- * Staging : (9 min 16.83 sec)
- *
- * Bug: T143062
- */
-function wmf_civicrm_update_7250() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery("
-    CREATE TEMPORARY TABLE civicrm_email_updates
-     SELECT id FROM
-      (
-        SELECT contact_id, sum(is_primary) as c, e.id
-        FROM civicrm_email e
-        INNER JOIN civicrm_contact c ON c.id = contact_id AND is_deleted = 0
-        GROUP BY contact_id HAVING c = 0
-      ) as i
-  ");
-
-  CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_email_updates ADD INDEX index_id(id)");
-  CRM_Core_DAO::executeQuery("UPDATE civicrm_email e INNER JOIN civicrm_email_updates u ON e.id = u.id
-    SET e.is_primary = 1
-  ");
-}
-
-/**
  * Update the preferred_language field in civicrm_contact based on tracking
  * data.
  *
@@ -453,52 +423,6 @@ function wmf_civicrm_update_7275() {
 function wmf_civicrm_update_7280() {
   require_once 'update_receipt.php';
   _wmf_civicrm_update_offline_receipt();
-}
-
-/**
- * Re-update the message template to fix:
- *
- *  - missing currency symbol on the second reference to the amount
- *  - not using original currency/ amount where available.
- *
- * As noted in the commit message I have reservations about the approach
- * (using smarty in the template) now that I realise the template
- * only knows the label, not the machine name of the custom fields.
- *
- * This gives an immediate win but I don't think it's over.
- *
- * BUG: T137496
- */
-function wmf_civicrm_update_7285() {
-  require_once 'update_receipt.php';
-  _wmf_civicrm_update_offline_receipt();
-}
-
-/**
- * Remove invalid address na@na.com.
- *
- * I put this before update 7305 in case it leaves any contacts without a
- * primary.
- *
- * Only a small number of emails involved.
- *
- * Bug: T149248
- */
-function wmf_civicrm_update_7303() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery('DELETE FROM civicrm_email WHERE email = "na@na.com"');
-}
-
-/**
- * Rerun fix for no primary address.
- *
- * I fixed a second cause for this (a rarer one) - make sure
- * all contacts have a primary address.
- *
- * Bug: T145873
- */
-function wmf_civicrm_update_7305() {
-  wmf_civicrm_update_7250();
 }
 
 /**
