@@ -1,6 +1,5 @@
 <?php
 
-use Civi\Api4\Activity;
 use Civi\Api4\Email;
 use CRM_SmashPig_ExtensionUtil as E;
 use Civi\Api4\Message;

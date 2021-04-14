@@ -219,7 +219,6 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * @throws \CRM_Core_Exception
    */
   protected function createContributionRecur(array $token, array $overrides = []):array {
-    gmdate('Y-m-d H:i:s', strtotime('-12 hours'));
     $processor_id = mt_rand(10000, 100000000);
     $params = $overrides + [
         'contact_id' => $token['contact_id'],
