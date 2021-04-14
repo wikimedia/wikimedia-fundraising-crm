@@ -645,40 +645,6 @@ function wmf_civicrm_get_log_conn_bulk_update() {
 }
 
 /**
- * Set street address/ postal_code to NULL where placeholder info has been used.
- *
- * Note that all addresses in the DB with N0NE PROVIDED or 0 postal_code have a
- * country_id so this is really precautionary, but we would want to delete the
- * address if it were blank, rather than update it.
- *
- * Bug: T158268
- */
-function wmf_civicrm_update_7510() {
-  wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'street_address', array('N0NE PROVIDED'));
-  wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'postal_code', array('0'));
-}
-
-/**
- * Remove bad data from an address field in a batched manner.
- *
- * @param string $tableName
- * @param string $fieldName
- *   Field name to update
- * @param array $fieldValues
- *   Values to strip out.
- */
-function wmf_civicrm_remove_bad_data_from_field($tableName, $fieldName, $fieldValues) {
-
-  civicrm_initialize();
-
-  foreach ($fieldValues as $fieldValue) {
-    $whereClause = "WHERE $fieldName = '{$fieldValue}'";
-    $setClause = "SET a.{$fieldName} = NULL";
-    wmf_civicrm_batch_update_data($tableName, $whereClause, $setClause);
-  }
-}
-
-/**
  * Update civicrm data in batches.
  *
  * @param string $tableName
@@ -718,21 +684,6 @@ function wmf_civicrm_batch_update_data($tableName, $whereClause, $setClause, $ba
       ");
     CRM_Core_DAO::executeQuery("DROP TEMPORARY TABLE {$tableName}_to_update");
   }
-}/**
- * Normalize old phone numbers
- **/
-function wmf_civicrm_update_7522() {
-  civicrm_initialize();
-  $maxId = CRM_CORE_DAO::singleValueQuery("SELECT max(id) FROM civicrm_phone");
-  $batch = 100000;
-  for ($startId = 0; $startId < $maxId; $startId += $batch) {
-    $endId = $startId + $batch;
-    CRM_Core_DAO::executeQuery("
-      UPDATE civicrm_phone
-      SET phone_numeric = civicrm_strip_non_numeric(phone)
-      WHERE id BETWEEN $startId AND $endId
-    ");
-  }
 }
 
 /**
@@ -757,71 +708,6 @@ function wmf_civicrm_update_7525() {
   }
   $components[] = 'CiviCampaign';
   civicrm_api3('Setting', 'create', array('enable_components' => $components));
-}
-
-/**
- * Remove void data from city field & tidy name field data.
- */
-function wmf_civicrm_update_7540() {
-  wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'city', array(
-    'city',
-    '0',
-    'City/Town',
-    'NoCity',
-  ));
-  wmf_civicrm_remove_bad_data_from_field('civicrm_address', 'postal_code', array('0'));
-  $replacements = array(
-    array(
-      // Non breaking space. If we don't sort out these odd spaces
-      // first the replace spaces line doesn't work on them & we get an endless loop.
-      // Although the LIKE BINARY down further probably now mitigates.
-      'find' => "C2A0",
-      'replace_with' => ' ',
-      'fields' => array('first_name', 'last_name'),
-      'is_binary' => TRUE,
-      'like_clause' => "BINARY CONCAT('%', unhex('C2A0'), '%')",
-    ),
-    array(
-      // IDEOGRAPHIC SPACE
-      // http://www.fileformat.info/info/unicode/char/3000/index.htm
-      'find' => "E38080",
-      'replace_with' => ' ',
-      'fields' => array('first_name', 'last_name'),
-      'is_binary' => TRUE,
-      'like_clause' => "BINARY CONCAT('%', unhex('E38080'), '%')",
-    ),
-    array(
-      'find' => '  ',
-      'replace_with' => ' ',
-      'fields' => array('first_name', 'last_name'),
-    ),
-    array(
-      'find' => '&amp;',
-      'replace_with' => '&',
-      'fields' => array('first_name', 'last_name'),
-    ),
-    array(
-      'find' => '&Amp;',
-      'replace_with' => '&',
-      'fields' => array('first_name', 'last_name'),
-    ),
-  );
-  foreach ($replacements as $replacement) {
-    $likeClause = "'%{$replacement['find']}%'";
-    $findString = "'{$replacement['find']}'";
-    if (!empty($replacement['is_binary'])) {
-      $likeClause = $replacement['like_clause'];
-      $findString = "UNHEX('{$replacement['find']}')";
-    }
-    foreach ($replacement['fields'] as $field) {
-      wmf_civicrm_batch_update_data(
-        'civicrm_contact',
-        "WHERE $field LIKE BINARY $likeClause",
-        "SET a.{$field} = REPLACE({$field}, {$findString}, '{$replacement['replace_with']}')"
-      );
-    }
-  }
-
 }
 
 /**
