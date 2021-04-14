@@ -611,25 +611,6 @@ function wmf_civicrm_update_7490() {
 }
 
 /**
- *
- * Remove blank addresses relating to bulk updates from tracking table.
- *
- * There is a small number of addresses (only 130) which were only updated
- * as part of the geocoding updates, some more are affected by primary address
- * fixes
- *
- * . Remove these to be less confusing.
- *
- * Bug: T159396
- */
-function wmf_civicrm_update_7495() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery("
-    DELETE FROM blank_addresses WHERE log_conn_id IN (
-    '" . implode("','", wmf_civicrm_get_log_conn_bulk_update()) . "')");
-}
-
-/**
  * Get the log connection ids for known bulk updates to we can
  * remove them from the update records we are considering.
  *
@@ -661,18 +642,6 @@ function wmf_civicrm_get_log_conn_bulk_update() {
     '5823950b11501',
   );
 
-}
-
-/**
- * Rerun 7845 & 7490 with a slightly bigger catchment.
- *
- * This means that addresses with updates that only affect bulk updates on
- * things like geocode & is_primary will also be treated as 'non-updated' &
- * removed from the db if blank.
- */
-function wmf_civicrm_update_7505() {
-  wmf_civicrm_update_7485();
-  wmf_civicrm_update_7490();
 }
 
 /**
