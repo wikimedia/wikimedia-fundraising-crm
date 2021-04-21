@@ -2546,16 +2546,6 @@ function wmf_civicrm_mark_refund(
 }
 
 /**
- * Get the names of the calculated fields.
- *
- * @return array
- */
-function wmf_get_calculated_field_names() {
-  $fields = _wmf_civicrm_get_wmf_donor_fields();
-  return array_keys($fields);
-}
-
-/**
  * Implementation of hook_civicrm_pre
  *
  * @param string $op
@@ -2771,6 +2761,13 @@ function wmf_civicrm_getLastDonationParams(&$contribution) {
       if (round($contactLastDonation['amount_usd'], 2) !== round($contribution->total_amount, 2)) {
         $params[wmf_civicrm_get_custom_field_name('last_donation_usd')] = $contribution->total_amount;
       }
+    }
+    if (!empty($params)) {
+      watchdog(
+        'wmf_civicrm',
+        "Contribution post hook is changing values for contribution {$contribution->id} " .
+        'from ' . print_r($contactLastDonation, TRUE) . ' to ' . print_r($params, TRUE)
+      );
     }
     return $params;
   }
