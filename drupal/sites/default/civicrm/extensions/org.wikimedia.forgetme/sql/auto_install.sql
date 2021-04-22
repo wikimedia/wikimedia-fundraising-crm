@@ -49,6 +49,7 @@ SET FOREIGN_KEY_CHECKS=1;
 CREATE TABLE `civicrm_deleted_email` (
 
 
-     `id` int unsigned NOT NULL  COMMENT 'Unique Email Strings ID'
+  `id` int unsigned NOT NULL  COMMENT 'Unique Email Strings ID',
+  PRIMARY KEY (`id`)
 )    ;
 
