@@ -1267,3 +1267,15 @@ function wmf_civicrm_update_8220() {
     )"
   );
 }
+
+/**
+ * Add index on civicrm_deleted_emails.
+ *
+ * Slow query spotted despite the table having only 206 rows.
+ *
+ * Bug: T280894
+ */
+function wmf_civicrm_update_8225() {
+  civicrm_initialize();
+  CRM_Core_DAO::executeQuery('ALTER TABLE civicrm_deleted_email ADD PRIMARY KEY (id)');
+}
