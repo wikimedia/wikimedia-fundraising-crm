@@ -1875,7 +1875,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
    * @throws \API_Exception
    */
   protected function assertContactValues($contactID, $expected) {
-    $contact = Contact::get()->setSelect(
+    $contact = Contact::get(FALSE)->setSelect(
       array_keys($expected)
     )->addWhere('id', '=', $contactID)->execute()->first();
 
