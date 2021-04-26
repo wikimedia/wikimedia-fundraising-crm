@@ -3279,6 +3279,48 @@
             "time": "2018-08-01T13:06:54+00:00"
         },
         {
+            "name": "sgoettsch/monolog-rotating-file-handler",
+            "version": "2.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sgoettsch/monolog-rotating-file-handler.git",
+                "reference": "913e1de21981b252854e319549b5e1c450f5f22f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sgoettsch/monolog-rotating-file-handler/zipball/913e1de21981b252854e319549b5e1c450f5f22f",
+                "reference": "913e1de21981b252854e319549b5e1c450f5f22f",
+                "shasum": ""
+            },
+            "require": {
+                "monolog/monolog": "^2.0.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "sgoettsch\\monologRotatingFileHandler\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sebastian Goettsch"
+                }
+            ],
+            "description": "Rotating File Handler for Monolog library",
+            "keywords": [
+                "monolog"
+            ],
+            "support": {
+                "issues": "https://github.com/sgoettsch/monolog-rotating-file-handler/issues",
+                "source": "https://github.com/sgoettsch/monolog-rotating-file-handler/tree/2.0.1"
+            },
+            "time": "2021-01-17T23:16:05+00:00"
+        },
+        {
             "name": "symfony/console",
             "version": "v3.4.39",
             "source": {

@@ -61,5 +61,6 @@ function wmf_install_get_installed_extensions() {
     'civi-data-translate',
     'wmf-civicrm',
     'rpow',
+    'monolog',
   ];
 }
