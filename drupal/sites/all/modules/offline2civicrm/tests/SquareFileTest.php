@@ -43,6 +43,7 @@ class SquareFileTest extends BaseChecksFileTest {
       'net' => '35.00',
       'phone' => '3333333333',
       'postal_code' => '94103',
+      'addressee_custom' => 'Max Normal'
     );
 
     $importer = new SquareFileProbe();
@@ -83,6 +84,7 @@ class SquareFileTest extends BaseChecksFileTest {
       'net' => '35.00',
       'phone' => '3333333333',
       'postal_code' => '94103',
+      'addressee_custom' => 'Max Normal'
     );
 
     $importer = new SquareFileProbe();

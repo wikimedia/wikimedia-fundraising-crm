@@ -33,7 +33,8 @@ class FidelityFileTest extends BaseChecksFileTest {
     $messages = $importer->import();
     $this->assertEquals('All rows were imported', $messages['Result']);
     $contributions = Contribution::get(FALSE)->addWhere('trxn_id', 'LIKE', 'Fidelity%')
-      ->setSelect(['contact.first_name', 'contact.last_name', 'Partner.Partner', 'total_amount', 'contact.prefix_id:label', 'contact.organization_name'])
+      ->setSelect(['contact.first_name', 'contact.last_name', 'Partner.Partner', 'total_amount',
+        'contact.prefix_id:label', 'contact.organization_name', 'contact.addressee_display', 'contact.addressee_custom'])
       ->addOrderBy('id')
       ->execute();
     $contribution = $contributions[0];
@@ -50,6 +51,8 @@ class FidelityFileTest extends BaseChecksFileTest {
     $this->assertEquals('John', $contribution['contact.first_name']);
     $this->assertEquals('Good', $contribution['contact.last_name']);
     $this->assertEquals('Sally Wilde', $contribution['Partner.Partner']);
+    $this->assertEquals('John Good and Sally Wilde', $contribution['contact.addressee_display']);
+    $this->assertEquals('John Good and Sally Wilde', $contribution['contact.addressee_custom']);
 
     $contribution = $contributions[3];
     $this->assertEquals('Great Family Foundation', $contribution['contact.organization_name']);
