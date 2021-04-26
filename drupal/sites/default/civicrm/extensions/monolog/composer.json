@@ -1,0 +1,6 @@
+{
+    "require": {
+        "monolog/monolog": "2.*",
+        "sgoettsch/monolog-rotating-file-handler" : "*"
+    }
+}

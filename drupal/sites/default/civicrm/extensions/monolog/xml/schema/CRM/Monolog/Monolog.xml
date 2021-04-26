@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Monolog</base>
+  <class>Monolog</class>
+  <name>civicrm_monolog</name>
+  <comment>Monolog log configuration</comment>
+  <log>false</log>
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique Monolog ID</comment>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+  <field>
+    <name>name</name>
+    <type>varchar</type>
+    <length>16</length>
+    <title>Unique name</title>
+    <html>
+      <type>Text</type>
+      <size>16</size>
+    </html>
+  </field>
+  <index>
+    <name>UI_name</name>
+    <unique>true</unique>
+    <fieldName>name</fieldName>
+    <add>1.0</add>
+  </index>
+  <field>
+    <name>channel</name>
+    <type>varchar</type>
+    <length>16</length>
+    <title>Log service channel</title>
+    <html>
+      <type>Text</type>
+      <size>16</size>
+    </html>
+  </field>
+  <field>
+    <name>description</name>
+    <type>varchar</type>
+    <length>255</length>
+    <html>
+      <type>TextArea</type>
+    </html>
+    <title>Description</title>
+  </field>
+  <field>
+    <name>type</name>
+    <type>varchar</type>
+    <length>16</length>
+    <title>Type of log service</title>
+    <pseudoconstant>
+      <callback>CRM_Monolog_BAO_Monolog::getTypes</callback>
+    </pseudoconstant>
+    <add>1.0</add>
+    <html>
+      <type>Select</type>
+    </html>
+  </field>
+  <field>
+    <name>minimum_severity</name>
+    <title>Minimum Severity</title>
+    <description>Minimum severity to apply this to severity levels</description>
+    <type>varchar</type>
+    <length>16</length>
+    <html>
+      <type>Select</type>
+    </html>
+    <pseudoconstant>
+      <callback>CRM_Monolog_BAO_Monolog::getSeverities</callback>
+    </pseudoconstant>
+  </field>
+  <field>
+    <name>weight</name>
+    <title>Weight</title>
+    <description>Lower weight handlers are applied first</description>
+    <type>int</type>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+  <field>
+    <name>is_active</name>
+    <title>Is the handler active</title>
+    <description>Lower weight handlers are applied first</description>
+    <type>boolean</type>
+    <html>
+      <type>CheckBox</type>
+    </html>
+  </field>
+  <field>
+    <name>is_final</name>
+    <title>Is this the final handler to apply</title>
+    <description>If this is the final handler then lower weight handlers will not be applied</description>
+    <type>boolean</type>
+    <html>
+      <type>CheckBox</type>
+    </html>
+  </field>
+  <field>
+    <name>is_default</name>
+    <title>Is default log service</title>
+    <description>Does this service override CiviCRM's default logging</description>
+    <type>boolean</type>
+    <html>
+      <type>CheckBox</type>
+    </html>
+  </field>
+  <field>
+    <name>configuration_options</name>
+    <title>Configuration options</title>
+    <serialize>JSON</serialize>
+    <type>text</type>
+    <html>
+      <type>TextArea</type>
+    </html>
+  </field>
+</table>
