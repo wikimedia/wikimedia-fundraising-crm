@@ -11,16 +11,16 @@ Beste donateur,</p>
 {% if recurring %}
 
 <p>
-Ik ben erg dankbaar dat ik degene ben die je mag bedanken voor je herhaalde donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} om Wikipedia te ondersteunen. Ik wil van deze gelegenheid gebruikmaken om je te bedanken voor je vrijgevigheid en je uitzonderlijke bereidheid om deel te nemen aan de totstandbrenging van een betere toekomst voor de wereld.
+Ik ben erg dankbaar dat ik degene ben die jou mag bedanken voor jouw herhaalde donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} om Wikipedia te ondersteunen. Dank voor jouw vrijgevigheid en de bereidheid om deel te nemen aan de totstandbrenging van een betere toekomst voor de wereld.
 </p>
 
 <p>
-Je maandelijkse bijdrage zal Wikipedia verder  brengen en ons helpen vooruit te plannen. Eenmaal per maand zal er een donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} afgeschreven worden door de Wikimedia Foundation. <b>Elk jaar in januari sturen we je een overzicht van je bijdragen van het afgelopen jaar</b>. Als je om welke reden dan ook je donatie wilt annuleren, volg dan deze <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">eenvoudige annulerings instructies</a>.
+Jouw maandelijkse bijdrage zal Wikipedia verder  brengen en ons helpen vooruit te plannen. Eenmaal per maand zal er een donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} afgeschreven worden door de Wikimedia Foundation. <b>Elk jaar in januari sturen we jou een overzicht van jouw bijdragen van het afgelopen jaar</b>. Als je om welke reden dan ook je donatie wilt annuleren, volg dan deze <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">eenvoudige annulerings instructies</a>.
 
 {% else %}
 
 <p>
-Ik ben erg dankbaar dat ik degene ben die je mag bedanken voor je eenmalige donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} ter ondersteuning van Wikipedia. Ik wil van deze gelegenheid gebruikmaken om je te bedanken voor je vrijgevigheid en je uitzonderlijke bereidheid om deel te nemen aan de totstandbrenging van een betere toekomst voor de wereld.
+Ik wil je graag bedanken voor je eenmalige donatie van {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} ter ondersteuning van Wikipedia. Dankjewel voor jouw vrijgevigheid en jouw uitzonderlijke bereidheid om deel te nemen aan de totstandkoming van een betere toekomst voor de wereld.
 </p>
 
 {% endif %}
@@ -63,16 +63,16 @@ Jimmy Wales<br>
 Wikipedia-oprichter
 </p>
 
-<p>Veel werkgevers zullen bijdragen van werknemers ruimhartig verdubbelen: controleer met uw werkgever om te zien of deze een <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">zakelijk donatieprogramma</a> heeft.
+<p>Veel werkgevers zullen bijdragen van werknemers ruimhartig verdubbelen: controleer met jouw werkgever om te zien of deze een <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts/nl">zakelijk donatieprogramma</a> heeft.
 </p>
 
-<p>Voor uw eigen administratie: op {{ receive_date }} heb je {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} gedoneerd. Je donatienummer: {{ transaction_id }}.
+<p>Voor jouw eigen administratie: op {{ receive_date }} heb je {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} gedoneerd. Je donatienummer: {{ transaction_id }}.
 </p>
 
-<p>Deze brief kan dienen als bewijs van uw donatie. Er werden geen gehele of gedeeltelijke goederen of diensten geboden voor deze bijdrage. Ons postadres is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Nummer voor vrijstelling van belasting in de Verenigde Staten: 20-0049703.
+<p>Deze brief kan dienen als bewijs van jouw donatie. Er werden geen gehele of gedeeltelijke goederen of diensten geboden voor deze bijdrage. Ons postadres is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Nummer voor vrijstelling van belasting in de Verenigde Staten: 20-0049703.
 </p>
 
-<p>Als u in de toekomst geen fondsenwerving mail wilt ontvangen van de Wikimedia Foundation, kunt u zich <a href="{{ unsubscribe_link | raw }}">direct uitschrijven</a> Houd er rekening mee dat we u nog steeds ontvangstbewijzen, zoals deze, voor toekomstige donaties zullen sturen.
+<p>Als je in de toekomst geen fondsenwerving mail wilt ontvangen van de Wikimedia Foundation, kun je je <a href="{{ unsubscribe_link | raw }}">direct uitschrijven</a> Houd er rekening mee dat we je nog steeds ontvangstbewijzen, zoals deze, voor toekomstige donaties zullen sturen.
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.nl.html","revision":20210319}TI_END -->
+<!-- TI_BEGIN{"version":1,"name":"thank_you.nl.html","revision":20210428}TI_END -->
