@@ -93,6 +93,12 @@ function wmf_civicrm_civicrm_managed(&$entities) {
   $tempEntities = [];
   _wmf_civicrm_civix_civicrm_managed($tempEntities);
   foreach ($tempEntities as $tempEntity) {
+    if ($tempEntity['entity'] === 'Monolog') {
+      // We are not transitioning monologs & this will fail due to there not being
+      // a v3 api.
+      $entities[] = $tempEntity;
+      continue;
+    }
     $existing = civicrm_api3($tempEntity['entity'], 'get', ['name' => $tempEntity['params']['name'], 'sequential' => 1]);
     if ($existing['count'] === 1 && !CRM_Core_DAO::singleValueQuery("
       SELECT count(*) FROM civicrm_managed
@@ -273,6 +279,26 @@ function wmf_civicrm_civicrm_buildForm($formName, &$form) {
   }
 }
 
+
+/**
+ * Log the dedupe to our log.
+ *
+ * @param string $type
+ * @param array $refs
+ * @param int $mainId
+ * @param int $otherId
+ * @param array $tables
+ */
+function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
+  if (in_array($type, ['form', 'batch'])) {
+    Civi::log('wmf')->debug(
+      'Deduping contacts {contactKeptID} and {contactDeletedID}. Mode = {mode}', [
+        'contactKeptID' => $mainId,
+        'contactDeletedID' => $otherId,
+        'mode' => $type,
+      ]);
+  }
+}
 
 // --- Functions below this ship commented out. Uncomment as required. ---
 
