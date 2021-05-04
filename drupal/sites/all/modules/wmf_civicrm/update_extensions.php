@@ -38,6 +38,7 @@ function wmf_install_get_installed_extensions() {
     'org.wikimedia.contacteditor',
     'org.civicrm.afform',
     'deduper',
+    'org.civicrm.search',
     'org.wikimedia.geocoder',
     'nz.co.fuzion.civitoken',
     'nz.co.fuzion.extendedreport',
@@ -60,5 +61,6 @@ function wmf_install_get_installed_extensions() {
     'civi-data-translate',
     'wmf-civicrm',
     'rpow',
+    'monolog',
   ];
 }

@@ -3249,25 +3249,6 @@ function wmf_civicrm_civicrm_permission_check($permission, &$granted) {
 }
 
 /**
- * This last remnant of the merge hook logs merges to syslog.
- *
- * @todo find a civi-way.
- *
- * @param $type
- * @param $refs
- * @param $mainId
- * @param $otherId
- * @param $tables
- */
-function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
-  switch ($type) {
-    case 'batch' :
-    case 'form' :
-      watchdog("civicrm_merge_debug", "Deduping contacts $mainId and $otherId");
-  }
-}
-
-/**
  * Flush statically cached option values.
  */
 function wmf_civicrm_flush_cached_options() {

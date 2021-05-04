@@ -1,0 +1,26 @@
+<af-form ctrl="afform">
+  <af-entity url-autofill="1" type="Monolog" name="Monolog1" label="Monolog config" actions="{create: true, update: true}" security="RBAC" />
+  <fieldset af-fieldset="Monolog1">
+    <af-field name="id" />
+    <af-field name="name" />
+    <af-field name="channel" />
+    <af-field name="type" />
+    <af-field name="minimum_severity" />
+    <af-field name="description" />
+    <af-field name="is_default" />
+    <af-field name="is_active" />
+    <af-field name="is_final" />
+    <p>Note that configuration options needs to be json and depending on the file type the available fields will vary</p>
+    <af-field name="configuration_options" />
+  </fieldset>
+  <button class="af-button btn-primary" crm-icon="fa-check" ng-click="afform.submit()">Submit</button>
+
+</af-form>
+<br>
+<hr>
+<h3>Saved monolog configuration</h3>
+<p>Note that it is necessary to refresh to display a newly saved row</p>
+<div af-fieldset="">
+  <crm-search-display-table search-name="Monolog configuration" display-name="Monologs"></crm-search-display-table>
+</div>
+

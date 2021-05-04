@@ -2,7 +2,8 @@
 
 namespace Civi\Omnimail;
 
-use PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\PHPMailer;
 
 /**
  * Use the PHPMailer engine
@@ -15,7 +16,7 @@ class MailerPHPMailer extends MailerBase implements IMailer {
    *
    * @return bool
    * @throws \WmfException
-   * @throws \phpmailerException
+   * @throws Exception
    */
   function send($email, $headers = []) {
     $mailer = new PHPMailer(TRUE);
@@ -23,8 +24,8 @@ class MailerPHPMailer extends MailerBase implements IMailer {
     $mailer->set('CharSet', 'utf-8');
     $mailer->Encoding = 'quoted-printable';
 
-    $mailer->AddReplyTo($email['from_address'], $email['from_name']);
-    $mailer->SetFrom($email['from_address'], $email['from_name']);
+    $mailer->addReplyTo($email['from_address'], $email['from_name']);
+    $mailer->setFrom($email['from_address'], $email['from_name']);
     if (!empty($email['reply_to'])) {
       $mailer->set('Sender', $email['reply_to']);
     }
@@ -39,25 +40,25 @@ class MailerPHPMailer extends MailerBase implements IMailer {
         $email['to'] = $this->splitAddresses($email['to']);
       }
       foreach ($email['to'] as $to) {
-        $mailer->AddAddress($to);
+        $mailer->addAddress($to);
       }
     }
     else {
-      $mailer->AddAddress($email['to_address'], $email['to_name']);
+      $mailer->addAddress($email['to_address'], $email['to_name']);
     }
 
     foreach ($headers as $header => $value) {
-      $mailer->AddCustomHeader("$header: $value");
+      $mailer->addCustomHeader("$header: $value");
     }
 
     $mailer->Subject = $email['subject'];
     # n.b. - must set AltBody after MsgHTML(), or the text will be overwritten.
     $locale = empty($email['locale']) ? NULL : $email['locale'];
-    $mailer->MsgHTML($this->wrapHtmlSnippet($email['html'], $locale));
+    $mailer->msgHTML($this->wrapHtmlSnippet($email['html'], $locale));
     $this->normalizeContent($email);
     $mailer->AltBody = $email['plaintext'];
 
-    return $mailer->Send();
+    return $mailer->send();
   }
 
 }

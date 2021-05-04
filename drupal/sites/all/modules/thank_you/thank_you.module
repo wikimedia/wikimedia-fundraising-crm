@@ -6,7 +6,6 @@ use wmf_communication\CiviMailStore;
 use wmf_communication\CiviMailingInsertException;
 use wmf_communication\CiviMailingMissingException;
 use wmf_communication\CiviQueueInsertException;
-use wmf_communication\Mailer;
 use wmf_communication\Templating;
 
 // TODO:
@@ -555,7 +554,7 @@ function thank_you_send_mail($params) {
     }
 
     return $email_success;
-  } catch (phpmailerException $e) {
+  } catch (PHPMailer\PHPMailer\Exception $e) {
     //TODO: don't assume phpmailer
     //TODO: something with the CiviMail queue record to indicate it failed;
     $debug = array_merge($email, ["html" => '', "plaintext" => '']);

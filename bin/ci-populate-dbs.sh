@@ -36,9 +36,10 @@ fi
 "$CIVICRM_BUILDKIT"/bin/civi-download-tools
 
 "$CIVICRM_BUILDKIT"/bin/amp config:set \
-	--db_type=mysql_precreated \
 	--httpd_type=none \
 	--perm_type=none
+
+"$CIVICRM_BUILDKIT"/bin/amp config:set --mysql_dsn=mysql://root@127.0.0.1:3306
 
 rm -rf "$CIVICRM_BUILDKIT"/build/wmff
 mkdir -p "$CIVICRM_BUILDKIT"/build

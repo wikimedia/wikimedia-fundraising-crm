@@ -1,5 +1,5 @@
 {% if first_name %}
-{{ first_name }}, jouw donatie is een reden te meer voor een feestje.
+{{ first_name }}, jouw donatie is reden voor een feestje.
 {% else %}
-Jouw donatie is een reden te meer voor een feestje.
+Jouw donatie is reden voor een feestje.
 {%endif%}

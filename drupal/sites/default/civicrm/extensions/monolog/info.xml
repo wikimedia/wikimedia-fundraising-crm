@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<extension key="monolog" type="module">
+  <file>monolog</file>
+  <name>monolog</name>
+  <description>Use monolog for calls to Civi::log().</description>
+  <license>MIT</license>
+  <maintainer>
+    <author>DaveD</author>
+    <email>info@civicrm.org</email>
+  </maintainer>
+  <urls>
+    <url desc="Main Extension Page">https://lab.civicrm.org/extensions/monolog</url>
+    <url desc="Documentation">https://lab.civicrm.org/extensions/monolog</url>
+    <url desc="Support">https://lab.civicrm.org/extensions/monolog</url>
+    <url desc="Licensing">http://opensource.org/licenses/MIT</url>
+  </urls>
+  <releaseDate>2021-04-09</releaseDate>
+  <version>1.0</version>
+  <develStage>beta</develStage>
+  <compatibility>
+    <ver>5.38</ver>
+  </compatibility>
+  <comments>Implementation of monolog logging library to support nuanced logging</comments>
+  <classloader>
+    <psr4 prefix="Civi\" path="Civi"/>
+  </classloader>
+  <civix>
+    <namespace>CRM/Monolog</namespace>
+  </civix>
+</extension>

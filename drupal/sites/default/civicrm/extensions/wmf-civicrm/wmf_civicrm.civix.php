@@ -7,9 +7,9 @@
  * extension.
  */
 class CRM_Wmf_ExtensionUtil {
-  const SHORT_NAME = "wmf_civicrm";
-  const LONG_NAME = "wmf-civicrm";
-  const CLASS_PREFIX = "CRM_Wmf";
+  const SHORT_NAME = 'wmf_civicrm';
+  const LONG_NAME = 'wmf-civicrm';
+  const CLASS_PREFIX = 'CRM_Wmf';
 
   /**
    * Translate a string using the extension's domain.
