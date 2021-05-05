@@ -83,8 +83,9 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
      * === End of Legacy Donations Counter implementation ===
      */
 
-
-		// Delete any pending db entries with matching gateway and order_id
-		PendingDatabase::get()->deleteMessage( $message );
+    if ( !empty( $message['order_id'] ) ) {
+      // Delete any pending db entries with matching gateway and order_id
+      PendingDatabase::get()->deleteMessage($message);
+    }
 	}
 }
