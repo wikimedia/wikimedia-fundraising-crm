@@ -23,6 +23,7 @@ redis
 rest_server
 services
 services_oauth
+syslog
 thank_you
 wmf_audit
 wmf_campaigns
