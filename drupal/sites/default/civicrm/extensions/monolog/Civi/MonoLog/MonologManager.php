@@ -9,6 +9,7 @@ use Monolog\Handler\RotatingFileHandler;
 use Monolog\Formatter\LineFormatter;
 use Psr\Log\LoggerInterface;
 use Monolog\Handler\FirePHPHandler;
+use Monolog\Processor\PsrLogMessageProcessor;
 
 class MonologManager {
 
@@ -59,6 +60,8 @@ class MonologManager {
       }
       foreach ($monologs as $monolog) {
         $this->channels[$channel] = $this->getLogger($channel);
+        $psrProcessor = new PsrLogMessageProcessor();
+        $this->channels[$channel]->pushProcessor($psrProcessor);
         if ($monolog['type'] === 'syslog') {
           $this->addSyslogLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final']);
         }
