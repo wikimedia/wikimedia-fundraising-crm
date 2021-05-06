@@ -327,3 +327,11 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
 //  ));
 //  _wmf_civicrm_civix_navigationMenu($menu);
 //}
+
+function wmf_civicrm_civicrm_alterAPIPermissions($entity, $action, &$params, &$permissions) {
+  // Allow any user that has 'view all contacts' to make the
+  // civiproxy getpreferences API call.
+  $permissions['civiproxy'] = [
+    'getpreferences' => ['view all contacts'],
+  ];
+}
