@@ -12,14 +12,14 @@ function _civicrm_api3_preferencesqueue_consume_spec(&$spec) {
   $spec['time_limit'] = [
     'name' => 'time_limit',
     'title' => 'Job time limit (in seconds)',
-    'api.required' => TRUE,
     'type' => CRM_Utils_Type::T_INT,
+    'api.default' => '90' // 90 seconds
   ];
   $spec['max_batch_size'] = [
     'name' => 'max_batch_size',
     'title' => 'Maximum number of items to process',
-    'api.required' => TRUE,
     'type' => CRM_Utils_Type::T_INT,
+    'api.default' => '0' // no limit
   ];
 }
 
