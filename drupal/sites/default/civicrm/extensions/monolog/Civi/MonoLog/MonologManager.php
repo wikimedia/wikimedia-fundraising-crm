@@ -46,37 +46,37 @@ class MonologManager {
    *   This should correlate to a service "log.{NAME}".
    *
    * @return \Psr\Log\LoggerInterface
-   * @throws \API_Exception
-   * @throws \Exception
    */
   public function getLog($channel = 'default'): LoggerInterface {
-    if (!$this->enabled) {
-      return $this->getBuiltInLogger($channel);
-    }
-    if (!isset($this->channels[$channel])) {
-      $monologs = $this->getMonologsByChannel($channel);
-      if (empty($monologs)) {
-        return $this->getBuiltInLogger($channel);
-      }
-      foreach ($monologs as $monolog) {
+    try {
+      if (!isset($this->channels[$channel])) {
+        $monologs = $this->getMonologsByChannel($channel);
+        if (empty($monologs)) {
+          return $this->getBuiltInLogger($channel);
+        }
         $this->channels[$channel] = $this->getLogger($channel);
         $psrProcessor = new PsrLogMessageProcessor();
         $this->channels[$channel]->pushProcessor($psrProcessor);
-        if ($monolog['type'] === 'syslog') {
-          $this->addSyslogLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final']);
-        }
-        if ($monolog['type'] === 'firephp') {
-          $this->addFirePhpLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final']);
-        }
-        if ($monolog['type'] === 'daily_log') {
-          $this->addDailyFileLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final'], $monolog['configuration_options']);
-        }
-        if ($monolog['type'] === 'log_file') {
-          $this->addFileLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final'], $monolog['configuration_options']);
+        foreach ($monologs as $monolog) {
+          if ($monolog['type'] === 'syslog') {
+            $this->addSyslogLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final']);
+          }
+          if ($monolog['type'] === 'firephp') {
+            $this->addFirePhpLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final']);
+          }
+          if ($monolog['type'] === 'daily_log') {
+            $this->addDailyFileLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final'], $monolog['configuration_options']);
+          }
+          if ($monolog['type'] === 'log_file') {
+            $this->addFileLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final'], $monolog['configuration_options']);
+          }
         }
       }
+      return $this->channels[$channel];
     }
-    return $this->channels[$channel];
+    catch (\Exception $e) {
+      return $this->getBuiltInLogger($channel);
+    }
   }
 
   /**
