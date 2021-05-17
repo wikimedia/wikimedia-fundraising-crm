@@ -1244,6 +1244,10 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
     'contact_type' => $msg['contact_type'],
     'contact_source' => $msg['contact_source'],
     'debug' => TRUE,
+    'addressee_custom' => $msg['addressee_custom'] ?? NULL,
+    'addressee_display' => $msg['addressee_custom'] ?? NULL,
+    'addressee_id' => empty($msg['addressee_custom']) ? NULL : 'Customized',
+
     // We speed up our imports by passing in this param.
     // going forwards there is scope to a) improve the processing
     // upstream rather than skip & b) not skip for Major Gifts contacts.

@@ -435,11 +435,13 @@ abstract class ChecksFile {
    * @throws \WmfException
    */
   protected function mungeMessage(&$msg) {
-    if (!empty($msg['full_name'])) {
-      // Parse name parts into fields.
+    if (!empty($msg['full_name']) && (empty($msg['first_name']) || empty($msg['last_name']))) {
+      // Parse name parts into fields if we have the full name and the name parts are
+      // not otherwise specified.
       $msg = array_merge(array_filter((array) Name::parse(FALSE)
         ->setNames([$msg['full_name']])
         ->execute()->first()), $msg);
+      $msg['addressee_custom'] = $msg['full_name'];
     }
 
     if (isset($msg['raw_contribution_type'])) {
