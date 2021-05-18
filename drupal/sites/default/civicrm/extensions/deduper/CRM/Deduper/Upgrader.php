@@ -77,8 +77,7 @@ CREATE TABLE IF NOT EXISTS `civicrm_contact_name_pair` (
   KEY `name_b` (`name_b`),
   KEY `is_name_b_nickname` (`is_name_b_nickname`),
   KEY `is_name_b_inferior` (`is_name_b_inferior`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
+) ENGINE=InnoDB
 ");
 
     $this->prePopulateNameMatchTable();
