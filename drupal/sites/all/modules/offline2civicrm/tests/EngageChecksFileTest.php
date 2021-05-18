@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\Contact;
+
 /**
  * @group Import
  * @group Offline2Civicrm
@@ -451,6 +453,16 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'contact_id' => $villains[1]['id'],
       'trxn_id' => 'ENGAGE B525137FE24A217918BE1B3AFF5AA25B',
     ]);
+    $villain = Contact::get(FALSE)->addWhere('id', '=', $villains[1]['id'])->setSelect([
+      'Organization_Contact.Name',
+      'Organization_Contact.Email',
+      'Organization_Contact.Phone',
+      'Organization_Contact.Title',
+    ])->execute()->first();
+    $this->assertEquals('Bob', $villain['Organization_Contact.Name']);
+    $this->assertEquals('wiseone@example.com', $villain['Organization_Contact.Email']);
+    $this->assertEquals('991', $villain['Organization_Contact.Phone']);
+    $this->assertEquals('The wise', $villain['Organization_Contact.Title']);
   }
 
   /**
@@ -466,7 +478,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $fileUri = $this->setupFile('engage_individual.csv');
     $importer = new EngageChecksFile($fileUri);
     $importer->import();
-    $contact = \Civi\Api4\Contact::get()
+    $contact = Contact::get()
       ->setCheckPermissions(FALSE)
       ->addWhere('first_name', '=', 'Rambo')
       ->addWhere('last_name', '=', 'Mouse')
