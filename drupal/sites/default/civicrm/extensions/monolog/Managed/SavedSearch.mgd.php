@@ -66,10 +66,10 @@ return [
               'settings' => [
                 'limit' => 50,
                 'pager' => TRUE,
-                'action' => TRUE,
                 'columns' => [
                   [
                     'key' => 'id',
+                    'label' => NULL,
                     'dataType' => 'Integer',
                     'type' => 'field',
                   ],
@@ -102,6 +102,9 @@ return [
                     'editable' => [
                       'entity' => 'Monolog',
                       'options' => FALSE,
+                      'serialize' => FALSE,
+                      'fk_entity' => NULL,
+                      'id' => 'id',
                       'name' => 'description',
                       'value' => 'description',
                     ],
@@ -114,6 +117,9 @@ return [
                     'editable' => [
                       'entity' => 'Monolog',
                       'options' => TRUE,
+                      'serialize' => FALSE,
+                      'fk_entity' => NULL,
+                      'id' => 'id',
                       'name' => 'type',
                       'value' => 'type',
                     ],
@@ -126,8 +132,11 @@ return [
                     'editable' => [
                       'entity' => 'Monolog',
                       'options' => TRUE,
-                      'name' => 'type',
-                      'value' => 'type',
+                      'serialize' => FALSE,
+                      'fk_entity' => NULL,
+                      'id' => 'id',
+                      'name' => 'minimum_severity',
+                      'value' => 'minimum_severity',
                     ],
                   ],
                   [
@@ -138,6 +147,9 @@ return [
                     'editable' => [
                       'entity' => 'Monolog',
                       'options' => FALSE,
+                      'serialize' => FALSE,
+                      'fk_entity' => NULL,
+                      'id' => 'id',
                       'name' => 'weight',
                       'value' => 'weight',
                     ],
@@ -150,6 +162,9 @@ return [
                     'editable' => [
                       'entity' => 'Monolog',
                       'options' => FALSE,
+                      'serialize' => FALSE,
+                      'fk_entity' => NULL,
+                      'id' => 'id',
                       'name' => 'is_active',
                       'value' => 'is_active',
                     ],
@@ -162,6 +177,9 @@ return [
                     'editable' => [
                       'entity' => 'Monolog',
                       'options' => FALSE,
+                      'serialize' => FALSE,
+                      'fk_entity' => NULL,
+                      'id' => 'id',
                       'name' => 'is_final',
                       'value' => 'is_final',
                     ],
@@ -182,6 +200,7 @@ return [
                     ]
                  ],
                 ],
+                'actions' => TRUE,
               ],
             ],
           ],
