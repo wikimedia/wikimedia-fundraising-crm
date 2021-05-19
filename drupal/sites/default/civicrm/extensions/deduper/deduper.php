@@ -115,10 +115,6 @@ function deduper_civicrm_caseTypes(&$caseTypes) {
 /**
  * Implements hook_civicrm_angularModules().
  *
- * Generate a list of Angular modules.
- *
- * Note: This hook only runs in CiviCRM 4.5+. It may
- * use features only available in v4.6+.
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_angularModules
  */
@@ -133,7 +129,20 @@ function deduper_civicrm_angularModules(&$angularModules) {
     'ext' => 'deduper',
     'js' => ['bower_components/angularUtils-pagination/dirPagination.js'],
   ];
+}
 
+/**
+ * Implements hook_civicrm_searchKitTasks().
+ *
+ * @param array[] $tasks
+ */
+function deduper_civicrm_searchKitTasks(&$tasks) {
+  $tasks['Contact']['flip'] = [
+    'module' => 'dedupeSearchTasks',
+    'title' => E::ts('Flip first/last name'),
+    'icon' => 'fa-random',
+    'uiDialog' => ['templateUrl' => '~/dedupeSearchTasks/dedupeSearchTaskFlip.html'],
+  ];
 }
 
 /**
@@ -449,6 +458,7 @@ function deduper_civicrm_container($container) {
  */
 function deduper_civicrm_entityTypes(&$entityTypes) {
   _deduper_civix_civicrm_entityTypes($entityTypes);
+  $entityTypes['CRM_Deduper_DAO_ContactNamePairFamily']['links_callback'][] = ['CRM_Deduper_BAO_ContactNamePairFamily', 'alterLinks'];
 }
 
 /**

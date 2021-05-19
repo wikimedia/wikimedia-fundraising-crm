@@ -455,6 +455,11 @@ function _deduper_civix_civicrm_entityTypes(&$entityTypes) {
       'class' => 'CRM_Deduper_DAO_ContactNamePair',
       'table' => 'civicrm_contact_name_pair',
     ],
+    'CRM_Deduper_DAO_ContactNamePairFamily' => [
+      'name' => 'ContactNamePairFamily',
+      'class' => 'CRM_Deduper_DAO_ContactNamePairFamily',
+      'table' => 'civicrm_contact_name_pair_family',
+    ],
     'CRM_Deduper_DAO_MergeConflict' => [
       'name' => 'MergeConflict',
       'class' => 'CRM_Deduper_DAO_MergeConflict',

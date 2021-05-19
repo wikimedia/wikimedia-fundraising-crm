@@ -1,0 +1,21 @@
+<div id="bootstrap-theme">
+  <form ng-controller="dedupeSearchTaskFlip as $ctrl">
+    <p><strong>{{:: ts('Flip the first/last names of %1 %2?', {1: model.ids.length, 2: $ctrl.entityTitle}) }}</strong></p>
+    <hr />
+    <div ng-if="$ctrl.run" class="crm-search-task-progress">
+      <h5>{{:: ts('Updating %1 %2...', {1: model.ids.length, 2: $ctrl.entityTitle}) }}</h5>
+      <crm-search-batch-runner entity="model.entity" action="Get" params="$ctrl.run" ids="model.ids" success="$ctrl.onSuccess()" error="$ctrl.onError()" ></crm-search-batch-runner>
+    </div>
+    <hr />
+    <div class="buttons text-right">
+      <button type="button" ng-click="$ctrl.cancel()" class="btn btn-danger" ng-hide="$ctrl.run">
+        <i class="crm-i fa-times"></i>
+        {{:: ts('Cancel') }}
+      </button>
+      <button ng-click="$ctrl.flip()" class="btn btn-primary" ng-disabled="$ctrl.run">
+        <i class="crm-i fa-{{ $ctrl.run ? 'spin fa-spinner' : 'random' }}"></i>
+        {{:: ts('Flip %1', {1: $ctrl.entityTitle}) }}
+      </button>
+    </div>
+  </form>
+</div>
