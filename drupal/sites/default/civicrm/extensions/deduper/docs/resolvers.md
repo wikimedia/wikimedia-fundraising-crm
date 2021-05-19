@@ -25,7 +25,7 @@ the setting you choose under >> Administer >> Customize Data and Screens >> Dedu
 it will prefer nick names over non-nicknames or vice versa or use your default preference
 (e.g most recent donor).
 
-![Deduper Screen](../docs/images/lukeNamePair.gif?raw=true "Saving a name pair")
+![Deduper Screen](images/lukeNamePair.gif?raw=true "Saving a name pair")
 
 ## Still in WMF custom code - to be ported
 

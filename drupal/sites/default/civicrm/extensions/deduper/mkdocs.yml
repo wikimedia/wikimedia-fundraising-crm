@@ -10,6 +10,8 @@ theme:
 
 nav:
 - Home: index.md
+- Resolvers: resolvers.md
+- Testing: testing.md
 
 markdown_extensions:
   - attr_list
