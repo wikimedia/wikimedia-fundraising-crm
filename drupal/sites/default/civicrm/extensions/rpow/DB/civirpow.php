@@ -53,7 +53,9 @@ class DB_civirpow extends DB_mysqli {
 
     $chosenDsn = $dsns[0];
     // If you want to inspect the connection+reconnection process, this is a handy place for a breakpoint. Note $state and $chosenDsn.
-    return parent::connect(DB::parseDSN($chosenDsn), $persistent);
+    $parsedDSN = DB::parseDSN($chosenDsn);
+    $this->setOption('ssl', $parsedDSN['ssl'] ?? 0);
+    return parent::connect($parsedDSN, $persistent);
   }
 
   public function simpleQuery($query) {
