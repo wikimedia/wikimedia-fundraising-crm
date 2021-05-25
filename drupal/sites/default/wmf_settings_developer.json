@@ -1,3 +1,7 @@
 {
-  "logging_no_trigger_permission" : 0
+  "logging_no_trigger_permission" : 0,
+  "debugging" : 1,
+  "backtrace" : 1,
+  "environment" : "Development"
+
 }
