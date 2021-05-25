@@ -10,7 +10,7 @@
   </maintainer>
   <urls>
     <url desc="Main Extension Page">https://github.com/eileenmcnaughton/deduper</url>
-    <url desc="Documentation">https://github.com/eileenmcnaughton/deduper/blob/master/Readme.md</url>
+    <url desc="Documentation">https://docs.civicrm.org/deduper/en/latest/</url>
     <url desc="Support">https://github.com/eileenmcnaughton/deduper/issues</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>

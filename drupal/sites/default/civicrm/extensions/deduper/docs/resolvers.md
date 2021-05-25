@@ -1,6 +1,6 @@
 # Resolving conflicts with the deduper
 
-The  deduper extension provides various  conflict resolutions. The  following resolutions occur by default
+The deduper extension provides various  conflict resolutions. The  following resolutions occur by default
 
 ## Misplaced names
 
@@ -27,7 +27,27 @@ it will prefer nick names over non-nicknames or vice versa or use your default p
 
 ![Deduper Screen](images/lukeNamePair.gif?raw=true "Saving a name pair")
 
-## Still in WMF custom code - to be ported
+- merge resolvers - adds merge resolvers so some conflicts can be resolved in safe mode.
+  Current resolvers are
+- the Yes resolver which allows to choose yes-no fields to resolve as 'YES'  - useful
+  for things like is_opt_out.
+  ![Resolvers](images/Settings.png?raw=true "Deduper screen")
+- The Uninformative characters resolver. This strips a range of white space and punctuation characters out
+  when comparing names. Currently the list is hard coded but I'm open to making it configurable. It also has a shorter
+  list of characters that it will strip only if that resolves the conflict. For example a '.' is stripped in the
+  uninformative characters resolver as that will mean later the initial resolver has a better chance of working.
+  By contract the "'" preferred in.
+- The diacritics resolver - chooses José over Jose
+- The Misplaced Name resolver. This addresses the situation where it can determine the full name is in the first
+  or last name field.
+- The Initials resolver. This addresses the situation where it can determine the Initial is in the first or
+  last name field.
+- The silly names resolver. The ensures that a number in a name field or a known 'silly' name
+  does not block a merge (currently 'first', 'last' & 'blah').
+- The preferred contact field resolver. This allows you set fields as being 'use whatever my preferred contact uses'.
+  Preferred contact is determined by a setting - current options are most recently created, least recently created,
+  most recently modified, least recently modified, most recent donor, most prolific donor.
 
-- diacritic resolver
-- casing resolver.
+- The equivalent address resolver. Resolves (some) cases where the addresses are the same
+  but one has more detail (eg. one is just the country & the other is a full address in that country)
+
