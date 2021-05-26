@@ -166,7 +166,7 @@ function _wmf_civicrm_update_custom_fields() {
  *
  * @return array
  */
-function _wmf_civicrm_get_benefactor_fields() {
+function _wmf_civicrm_get_benefactor_fields(): array {
   return [
     'Listed_as_Anonymous' => [
       'name' => 'Listed_as_Anonymous',
@@ -194,8 +194,49 @@ function _wmf_civicrm_get_benefactor_fields() {
       'note_columns' => 60,
       'note_rows' => 4,
     ],
+    'Benefactor_order_as' => [
+      'name' => 'Benefactor_order_as',
+      'label' => 'Benefactor order as',
+      'data_type' =>  'String',
+      'html_type' => 'Text',
+      'is_searchable' => 1,
+      'text_length' => 255,
+      'note_columns' => 60,
+      'note_rows' => 4,
+    ],
+    'Endowment_Site_Listed_as' => [
+      'name' => 'Endowment_Site_Listed_as',
+      'label' => 'Endowment Site Listed as',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_searchable' => 1,
+      'text_length' => 255,
+      'note_columns' => 60,
+      'note_rows' => 4,
+    ],
+    'WLS_Listed_as' => [
+      'name' => 'WLS_Listed_as',
+      'label' =>  'WLS Listed as',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_searchable' => 1,
+      'text_length' => 255,
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'help_pre' => "How donor has chosen to be listed publicly anywhere there is a Legacy listing.",
+      'help_post' => "How donor has chosen to be listed publicly anywhere there is a Legacy listing.",
+    ],
+    'Benefactor_Page_Last_Updated' => [
+      'name' => 'Benefactor_Page_Last_Updated',
+      'label' => 'Benefactor Page Last Updated',
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'text_length' => 255,
+      'date_format' => 'mm/dd/yy',
+    ],
   ];
 }
+
 
 /**
  * Get fields for gift data custom group.
