@@ -106,6 +106,70 @@ CREATE TABLE IF NOT EXISTS `civicrm_contact_name_pair` (
   }
 
   /**
+   * Load Japanese names.
+   *
+   * Note we are just putting these in their own table for now.
+   * Next we will decide how to use in deduper next round.
+   * In particular we are likely to move to the name_pair table
+   * with an is_family_name column but perhaps we should
+   * wait until handling for that exists before doing so.
+   *
+   * @return TRUE on success
+   * @throws Exception
+   */
+  public function upgrade_4300() {
+    $this->ctx->log->info('Applying update 4300');
+    CRM_Core_DAO::executeQuery("
+CREATE TABLE IF NOT EXISTS `civicrm_contact_name_pair_family` (
+  `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Unique ID',
+  `name_a` varchar(64) NOT NULL DEFAULT '',
+  `name_b` varchar(64) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  KEY `name_a` (`name_a`),
+  KEY `name_b` (`name_b`)
+)  ENGINE=InnoDB;
+
+");
+
+    $this->prePopulateFamilyNameMatchTable();
+    return TRUE;
+  }
+
+  /**
+   * Pre-populate name match table with Japanese comparisons.
+   *
+   * @throws \League\Csv\Exception
+   */
+  public function prePopulateFamilyNameMatchTable(): void {
+    $reader = Reader::createFromPath(__DIR__ . '/Upgrader/japanese-family-names.csv', 'r');
+    $reader->setHeaderOffset(0);
+    foreach ($reader as $row) {
+      CRM_Core_DAO::executeQuery(
+        'INSERT INTO civicrm_contact_name_pair_family
+        (name_a, name_b)
+         VALUES (%1, %2)
+      ', [
+        1 => [$row['name'], 'String'],
+        2 => [$row['most_common_form'], 'String'],
+      ]);
+      $otherNames = explode('、', $row['alternates']);
+      foreach ($otherNames as $name) {
+        if (!empty($name)) {
+          CRM_Core_DAO::executeQuery(
+            'INSERT INTO civicrm_contact_name_pair_family
+             (name_a, name_b)
+            VALUES (%1, %2)
+          ', [
+            1 => [$row['name'], 'String'],
+            2 => [$name, 'String'],
+          ]);
+        }
+      }
+    }
+
+  }
+
+  /**
    * Example: Run an external SQL script.
    *
    * @return TRUE on success

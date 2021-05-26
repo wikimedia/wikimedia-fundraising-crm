@@ -18,6 +18,7 @@
 SET FOREIGN_KEY_CHECKS=0;
 
 DROP TABLE IF EXISTS `civicrm_mergeconflict`;
+DROP TABLE IF EXISTS `civicrm_contact_name_pair_family`;
 DROP TABLE IF EXISTS `civicrm_contact_name_pair`;
 
 SET FOREIGN_KEY_CHECKS=1;
@@ -45,6 +46,23 @@ CREATE TABLE `civicrm_contact_name_pair` (
   INDEX `name_b`(name_b),
   INDEX `is_name_b_nickname`(is_name_b_nickname),
   INDEX `is_name_b_inferior`(is_name_b_inferior)
+)
+ENGINE=InnoDB;
+
+-- /*******************************************************
+-- *
+-- * civicrm_contact_name_pair_family
+-- *
+-- * Pairs of family names which are equivalent
+-- *
+-- *******************************************************/
+CREATE TABLE `civicrm_contact_name_pair_family` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique ContactNamePair ID',
+  `name_a` varchar(64) COMMENT 'Family name (generally the anglicised options)',
+  `name_b` varchar(64) COMMENT 'Alternate name',
+  PRIMARY KEY (`id`),
+  INDEX `name_a`(name_a),
+  INDEX `name_b`(name_b)
 )
 ENGINE=InnoDB;
 

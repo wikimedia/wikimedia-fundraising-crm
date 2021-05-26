@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Deduper</base>
+  <class>ContactNamePairFamily</class>
+  <name>civicrm_contact_name_pair_family</name>
+  <comment>Pairs of family names which are equivalent</comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique ContactNamePair ID</comment>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>name_a</name>
+    <title>Name A</title>
+    <type>varchar</type>
+    <length>64</length>
+    <html>
+      <type>Text</type>
+      <size>30</size>
+    </html>
+    <comment>Family name (generally the anglicised options)</comment>
+  </field>
+
+  <field>
+    <name>name_b</name>
+    <title>Name B</title>
+    <type>varchar</type>
+    <length>64</length>
+    <html>
+      <type>Text</type>
+      <size>30</size>
+    </html>
+    <comment>Alternate name</comment>
+  </field>
+  <index>
+    <name>name_a</name>
+    <fieldName>name_a</fieldName>
+  </index>
+  <index>
+    <name>name_b</name>
+    <fieldName>name_b</fieldName>
+  </index>
+</table>

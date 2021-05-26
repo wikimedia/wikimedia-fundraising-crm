@@ -1,6 +1,6 @@
 # Use mkdocs to generate a manual for this extension. For more information about
 # mkdocs, see https://docs.civicrm.org/dev/en/latest/documentation/#mkdocs
-site_name: deduper
+site_name: Deduper
 edit_uri: https://lab.civicrm.org/extensions/deduper/-/edit/master/docs/
 repo_url: https://lab.civicrm.org/extensions/deduper
 theme:
@@ -11,7 +11,7 @@ theme:
 nav:
 - Home: index.md
 - Resolvers: resolvers.md
-- Testing: testing.md
+- Data Cleanup: data-management.md
 
 markdown_extensions:
   - attr_list
