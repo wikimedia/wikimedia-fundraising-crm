@@ -1,0 +1,31 @@
+{
+  "join":
+  [
+    ["ContactNamePairFamily AS contact_name_pair_family","INNER",null,
+      ["first_name","=","contact_name_pair_family.name_b"]
+    ]
+  ],
+  "where":
+  [
+    ["preferred_language","=","ja_JP"]
+  ],
+  "chain":
+  {
+    "flip":
+    ["Contact","update",
+      {
+        "where":
+        [
+          ["id","=","$id"]
+        ],
+        "values":
+        {
+          "first_name":"$last_name","last_name":"$first_name"
+        }
+      }
+    ]
+  },
+  "checkPermissions": false,
+  "version":4,
+  "limit":50
+}
