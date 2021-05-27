@@ -26,6 +26,33 @@
   </classloader>
   <requires>
     <ext>deduper</ext>
+    <ext>org.wikimedia.omnimail</ext>
+    <ext>au.org.greens.extendedmailingstats</ext>
+    <ext>org.wikimedia.contacteditor</ext>
+    <ext>org.civicrm.afform</ext>
+    <ext>deduper</ext>
+    <ext>org.wikimedia.geocoder</ext>
+    <ext>nz.co.fuzion.civitoken</ext>
+    <ext>nz.co.fuzion.extendedreport</ext>
+    <ext>org.wikimedia.smashpig</ext>
+    <ext>org.wikimedia.wmffraud</ext>
+    <ext>org.wikimedia.rip</ext>
+    <ext>org.wikimedia.unsubscribeemail</ext>
+    <ext>org.wikimedia.datachecks</ext>
+    <ext>org.wikimedia.forgetme</ext>
+    <ext>org.wikimedia.relationshipblock</ext>
+    <ext>org.civicrm.shoreditch</ext>
+    <ext>org.civicrm.angularprofiles</ext>
+    <ext>org.civicrm.contactlayout</ext>
+    <ext>org.wikimedia.thethe</ext>
+    <ext>uk.org.futurefirst.networks.emailamender</ext>
+    <ext>wmf-thankyou</ext>
+    <ext>ckeditor5</ext>
+    <ext>uk.squiffle.assignee</ext>
+    <ext>matching-gifts</ext>
+    <ext>civi-data-translate</ext>
+    <ext>rpow</ext>
+    <ext>monolog</ext>
   </requires>
   <civix>
     <namespace>CRM/Wmf</namespace>
