@@ -1,6 +1,7 @@
 <?php
 namespace Civi\MonoLog;
 
+use Civi\Api4\Entity;
 use Civi\Core\LogManager;
 use sgoettsch\monologRotatingFileHandler\Handler\monologRotatingFileHandler;
 use Monolog\Logger;
@@ -24,6 +25,21 @@ class MonologManager {
   private $channels = [];
 
   protected $enabled = TRUE;
+
+  /**
+   * Check if the monolog subsystem is enabled.
+   *
+   * This check helps us avoid errors when there is an attempt
+   * to log something (eg. an e-notice or deprecation warning) before
+   * the whole system is instantiated.
+   *
+   * @return bool
+   * @throws \API_Exception
+   */
+  protected function isAvailable() {
+    return $this->enabled &&
+      count(Entity::get(FALSE)->addWhere('name', '=', 'Monolog')->execute());
+  }
 
   /**
    * Mark manager as disabled.
@@ -92,11 +108,16 @@ class MonologManager {
   }
 
   /**
+   * Get the monolog providers to attach to the channel.
    *
    * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getMonologsByChannel($channel): array {
     $return = [];
+    if (!$this->isAvailable()) {
+      throw new \CRM_Core_Exception('monolog not installed yet');
+    }
     foreach ($this->getMonologEntities() as $monolog) {
       if ($monolog['channel'] === $channel) {
         $return[] = $monolog;
