@@ -33,7 +33,8 @@ function wmf_install_add_missing_extensions() {
  */
 function wmf_install_get_installed_extensions() {
   return [
-    'org.civicrm.search',
+    // all our other extensions are dependencies here
+    // so wmf-civicrm is one ring to rule them all.
     'wmf-civicrm',
   ];
 }
