@@ -2,6 +2,7 @@
 
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
+use Civi\Api4\CustomGroup;
 use CRM_WmfCivicrm_ExtensionUtil as E;
 // phpcs:enable
 
@@ -402,26 +403,33 @@ function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
  * the change is an update, a delete or an update which alters a relevant field
  * (contribution_status_id, receive_date, total_amount, contact_id, currency).
  *
- * All fields in the dataset are recalculated (the performance gain on a 'normal'
- * contact of being more selective was too little to show in testing. On our anonymous contact
- * it was perhaps 100 ms but we don't have many contact with thousands of donations.)
+ * All fields in the dataset are recalculated (the performance gain on a
+ * 'normal' contact of being more selective was too little to show in testing.
+ * On our anonymous contact it was perhaps 100 ms but we don't have many
+ * contact with thousands of donations.)
  *
- * The wmf_contribution_extra record is saved after the contribution is inserted
+ * The wmf_contribution_extra record is saved after the contribution is
+ * inserted
  * so we need to potentially update the fields from that record at that points,
  * with a separate trigger.
  **
  *
  * @throws \CRM_Core_Exception
  * @throws \CiviCRM_API3_Exception
+ * @throws \API_Exception
  */
 function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
+
   if (!$tableName || $tableName === 'civicrm_contribution') {
     $fields = $aggregateFieldStrings = [];
-
-    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
-    if (!$endowmentFinancialType) {
-      throw new CRM_Core_Exception('No endowment gift type');
+    if (!_wmf_civicrm_is_db_ready_for_triggers()) {
+      // Setting info to [] will empty out any existing triggers.
+      // We are expecting this to run through fully later so it is a minor
+      // optimisation to do less now.
+      $info = [];
+      return;
     }
+    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
     for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
       $nextYear = $year + 1;
       $fields[] = "total_{$year}_{$nextYear}";
@@ -618,5 +626,29 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       'sql' => $deleteSql,
     ];
   }
+
+}
+
+/**
+ * Is our database ready for triggers to be created.
+ *
+ * If we are still building our environment and the donor custom fields
+ * and endowment financial type are not yet present we should skip
+ * adding our triggers until later.
+ *
+ * If this were to be the case on production I think we would have
+ * bigger issues than triggers so this should be a dev-only concern.
+ *
+ * @return false
+ *
+ * @throws \API_Exception
+ */
+function _wmf_civicrm_is_db_ready_for_triggers(): bool {
+  $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
+  if (!$endowmentFinancialType) {
+    return FALSE;
+  }
+  $wmfDonorQuery = CustomGroup::get(FALSE)->addWhere('name', '=', 'wmf_donor')->execute();
+  return (bool) count($wmfDonorQuery);
 
 }
