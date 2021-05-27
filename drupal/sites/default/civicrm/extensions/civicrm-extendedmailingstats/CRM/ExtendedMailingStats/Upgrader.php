@@ -44,7 +44,6 @@ class CRM_ExtendedMailingStats_Upgrader extends CRM_ExtendedMailingStats_Upgrade
    */
   public function upgrade_4700() {
     $this->ctx->log->info('Applying update 4700');
-    $this->executeSqlFile('sql/mailing_stats__install.sql');
     CRM_Core_DAO::executeQuery('INSERT INTO civicrm_mailing_stats (mailing_id, mailing_name, is_completed, created_date, start, finish
 , recipients, delivered, send_rate, bounced, opened_total, unsubscribed, forwarded, clicked_total, clicked_unique,
 trackable_urls, clicked_contribution_page, contribution_count, contribution_total
