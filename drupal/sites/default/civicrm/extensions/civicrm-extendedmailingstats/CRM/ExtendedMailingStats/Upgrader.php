@@ -10,7 +10,7 @@ class CRM_ExtendedMailingStats_Upgrader extends CRM_ExtendedMailingStats_Upgrade
 
   /**
    * Example: Run an external SQL script when the module is installed
-   *
+   */
   public function install() {
     $this->executeSqlFile('sql/myinstall.sql');
   }
@@ -35,34 +35,6 @@ class CRM_ExtendedMailingStats_Upgrader extends CRM_ExtendedMailingStats_Upgrade
   public function disable() {
     CRM_Core_DAO::executeQuery('UPDATE foo SET is_active = 0 WHERE bar = "whiz"');
   }
-
-  /**
-   * Example: Run a couple simple queries
-   *
-   * @return TRUE on success
-   * @throws Exception
-   */
-  public function upgrade_4700() {
-    $this->ctx->log->info('Applying update 4700');
-    CRM_Core_DAO::executeQuery('INSERT INTO civicrm_mailing_stats (mailing_id, mailing_name, is_completed, created_date, start, finish
-, recipients, delivered, send_rate, bounced, opened_total, unsubscribed, forwarded, clicked_total, clicked_unique,
-trackable_urls, clicked_contribution_page, contribution_count, contribution_total
-)
-
-SELECT  a.mailing_id, a.mailing_name, a.is_completed, a.created_date, a.start, a.finish, a.recipients,
-a.delivered, a.send_rate,
-a.bounced,
-a.opened, a.unsubscribed, a.forwarded, a.clicked_total, a.`clicked_unique`,
-a.trackable_urls,
-a.`clicked_contribution_page`,
-a.contributions_48hrs_count,
-a.contributions_48hrs_total
-
- FROM agc_report_mailing_stats a
-');
-    return TRUE;
-  }
-
 
   /**
    * Example: Run an external SQL script
