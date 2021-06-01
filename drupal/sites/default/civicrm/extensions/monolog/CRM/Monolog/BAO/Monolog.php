@@ -40,6 +40,7 @@ class CRM_Monolog_BAO_Monolog extends CRM_Monolog_DAO_Monolog {
       'syslog' => 'Syslog',
       'phpmailer' => E::ts('Email'),
       'firephp' => 'FirePhp',
+      'std_out' => E::ts('Command line (where in use)'),
     ];
   }
 

@@ -4,6 +4,30 @@ use CRM_Monolog_ExtensionUtil as E;
 
 return [
   [
+    'name' => 'cli_std_out_logger',
+    'entity' => 'Monolog',
+    'cleanup' => 'never',
+    'update' => 'never',
+    'params' => [
+      'debug' => TRUE,
+      'version' => 4,
+      'checkPermissions' => FALSE,
+      'values' => [
+        'name' => 'cli_std_out_logger',
+        'type' => 'std_out',
+        'channel' => 'default',
+        'is_default' => TRUE,
+        'is_active' => TRUE,
+        'is_final' => TRUE,
+        'weight' => 1,
+        // Note this minimum severity can be escalated with command line switches.
+        'minimum_severity' => 'warning',
+        'description' => E::ts('Output to terminal for command line scripts.') . "\n" .
+          E::ts('Command line options can increase (-v --verbose, -d, --debug) or decrease (-q, --quiet) the verbosity')
+      ],
+    ],
+  ],
+  [
     'name' => 'default_logger',
     'entity' => 'Monolog',
     'cleanup' => 'never',
@@ -19,7 +43,7 @@ return [
         'is_default' => TRUE,
         'is_active' => TRUE,
         'is_final' => FALSE,
-        'weight' => 1,
+        'weight' => 2,
         'minimum_severity' => 'debug',
         'description' => E::ts('Default log to file. File is rotated at 250MB and only 10 files are kept'),
         'configuration_options' => [
@@ -46,7 +70,7 @@ return [
         'is_default' => FALSE,
         'is_active' => FALSE,
         'is_final' => FALSE,
-        'weight' => 2,
+        'weight' => 3,
         'minimum_severity' => 'debug',
         'configuration_options' => [
           'max_files' => 30,
@@ -71,7 +95,7 @@ return [
         'is_default' => FALSE,
         'is_active' => TRUE,
         'is_final' => FALSE,
-        'weight' => 2,
+        'weight' => 4,
         'minimum_severity' => 'debug',
       ],
     ],
@@ -92,7 +116,7 @@ return [
         'type' => 'syslog',
         'is_default' => FALSE,
         'is_active' => TRUE,
-        'weight' => 4,
+        'weight' => 5,
         'minimum_severity' => 'error',
         'is_final' => FALSE,
       ],

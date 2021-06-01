@@ -8,6 +8,7 @@ use Monolog\Logger;
 use Monolog\Handler\SyslogHandler;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Formatter\LineFormatter;
+use Monolog\Handler\StreamHandler;
 use Psr\Log\LoggerInterface;
 use Monolog\Handler\FirePHPHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
@@ -90,6 +91,9 @@ class MonologManager {
           if ($monolog['type'] === 'log_file') {
             $this->addFileLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final'], $monolog['configuration_options']);
           }
+          if ($monolog['type'] === 'std_out') {
+            $this->addStdOutLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final']);
+          }
         }
       }
       return $this->channels[$channel];
@@ -106,7 +110,7 @@ class MonologManager {
    */
   protected function getMonologEntities(): array {
     if (!is_array($this->monologEntities)) {
-      $this->monologEntities = (array) \Civi\Api4\Monolog::get(FALSE)->addWhere('is_active', '=', TRUE)->addOrderBy('weight')->execute();
+      $this->monologEntities = (array) \Civi\Api4\Monolog::get(FALSE)->addWhere('is_active', '=', TRUE)->addOrderBy('weight', 'DESC')->execute();
     }
     return $this->monologEntities;
   }
@@ -227,6 +231,41 @@ class MonologManager {
       \Civi::$statics['CRM_Core_Error'][$cacheKey] = $fileName;
     }
     return \Civi::$statics['CRM_Core_Error'][$cacheKey];
+  }
+
+  /**
+   * Add FirePhp Logger.
+   *
+   * See https://firephp.org/
+   *
+   * @param string $channel
+   * @param \Monolog\Logger $logger
+   * @param string $minimumLevel
+   * @param bool $isFinal
+   *
+   * @noinspection PhpUnusedParameterInspection
+   */
+  protected function addStdOutLogger(string $channel, Logger $logger, string $minimumLevel, bool $isFinal): void {
+    if (PHP_SAPI === 'cli') {
+      global $argv;
+      // The wordpress handler has this rather nice idea of respecting command
+      // line efforts to increase or decrease logging levels.
+      $modifiers = [
+        // Drush parameters https://groups.drupal.org/drush/commands
+        '-v' =>  'info',
+        '--verbose' => 'info',
+        '--debug' => 'debug',
+        '-d' => 'debug',
+        '-q' => 'error',
+        '--quiet' => 'error',
+      ];
+      foreach ($argv as $argument) {
+        if (isset($modifiers[$argument])) {
+          $minimumLevel = $modifiers[$argument];
+        }
+      }
+      $logger->pushHandler(new StreamHandler('php://stdout', $minimumLevel, !$isFinal));
+    }
   }
 
   /**
