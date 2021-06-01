@@ -66,6 +66,10 @@ class MonologManager {
   public function getLog($channel = 'default'): LoggerInterface {
     try {
       if (!isset($this->channels[$channel])) {
+        // Temporarily set the channel to the built in logger
+        // to avoid a loop if logging is called while
+        // retrieving the monologs.
+        $this->channels[$channel] = $this->getBuiltInLogger($channel);
         $monologs = $this->getMonologsByChannel($channel);
         if (empty($monologs)) {
           return $this->getBuiltInLogger($channel);
