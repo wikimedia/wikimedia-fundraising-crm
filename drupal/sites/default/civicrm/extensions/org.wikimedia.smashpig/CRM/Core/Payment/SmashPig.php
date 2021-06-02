@@ -46,11 +46,21 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    *
    * @param array $params requires at least token, amount, currency, invoice_id,
    *  is_recur, and description
+   * @param string $component
+   *   Unused parameter, could be used to construct a url to an event page (although it 
+   *   could be intuited by the params anyway).
    *
    * @return array with processor_id set to the processor's payment ID
    * @throws \Civi\Payment\Exception\PaymentProcessorException
+   * @throws \CRM_Core_Exception
    */
-  public function doDirectPayment(&$params) {
+  public function doPayment(&$params, $component = 'contribute'): array {
+    $completedStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+    if ((int) $this->getAmount($params) === 0) {
+      $result['payment_status_id'] = $completedStatusID;
+      $result['payment_status'] = 'Completed';
+      return $result;
+    }
     $this->setContext();
     $isRecur = CRM_Utils_Array::value('is_recur', $params) && $params['is_recur'];
     if (!$isRecur) {
@@ -85,12 +95,11 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       $gatewayTxnId = $approvePaymentResponse->getGatewayTxnId();
     }
 
-    $allContributionStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
-    $status = array_search('Completed', $allContributionStatus);
     return [
       'processor_id' => $gatewayTxnId,
       'invoice_id' => $params['invoice_id'],
-      'payment_status_id' => $status,
+      'payment_status_id' => $completedStatusID,
+      'payment_status' => 'Completed',
     ];
   }
 
