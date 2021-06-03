@@ -51,7 +51,22 @@ class NameParseTest extends TestCase implements HeadlessInterface, HookInterface
    */
  public function getNameVariants(): array {
    return [
-     ['name' => 'Mr. Paul Fudge']
+     [
+       'name' => 'Mr. Paul Fudge',
+       'expected' => [
+         'prefix_id:label' => 'Mr.',
+         'first_name' => 'Paul',
+         'last_name' => 'Fudge',
+       ],
+     ],
+     [
+       'name' => 'Mr. Andrew and Mrs Sally Smith',
+       'expected' => [
+         'first_name' => 'Andrew',
+         'last_name' => 'Smith',
+         'Partner.Partner' => 'Mrs Sally Smith',
+       ],
+     ],
    ];
  }
 
@@ -61,14 +76,16 @@ class NameParseTest extends TestCase implements HeadlessInterface, HookInterface
    * @dataProvider getNameVariants
    *
    * @param string $name
+   * @param array $expected
    *
    * @throws \API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
    */
- public function testNameParsing(string $name): void {
+ public function testNameParsing(string $name, array $expected): void {
     $result = Name::parse()->setNames([$name])->execute()->first();
-    $this->assertEquals('Mr.', $result['prefix_id:label']);
-    $this->assertEquals('Paul', $result['first_name']);
-    $this->assertEquals('Fudge', $result['last_name']);
+    foreach ($expected as $key => $value) {
+      $this->assertEquals($value, $result[$key]);
+    }
  }
 
 }
