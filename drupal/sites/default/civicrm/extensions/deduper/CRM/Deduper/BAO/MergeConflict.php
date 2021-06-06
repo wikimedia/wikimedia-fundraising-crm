@@ -123,11 +123,8 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
    * @throws \API_Exception
    */
   public static function getLocationTypes() : array {
-    return Email::getFields()
-      ->setCheckPermissions(FALSE)
-      ->setIncludeCustom(FALSE)
+    return Email::getFields(FALSE)
       ->setLoadOptions(TRUE)
-      ->addSelect('options')
       ->addWhere('name', '=', 'location_type_id')
       ->execute()->first()['options'];
   }
