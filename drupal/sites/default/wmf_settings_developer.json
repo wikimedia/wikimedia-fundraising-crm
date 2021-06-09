@@ -1,6 +1,6 @@
 {
   "logging_no_trigger_permission" : 0,
-  "debugging" : 1,
+  "debug_enabled" : 1,
   "backtrace" : 1,
   "environment" : "Development"
 

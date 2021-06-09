@@ -60,6 +60,8 @@ CREATE TABLE `civicrm_contact_name_pair_family` (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique ContactNamePair ID',
   `name_a` varchar(64) COMMENT 'Family name (generally the anglicised options)',
   `name_b` varchar(64) COMMENT 'Alternate name',
+  `is_most_common_form` tinyint DEFAULT 0 COMMENT 'Is this the most common way to write this name?',
+  `is_active` tinyint DEFAULT 1 COMMENT 'Is this variant active?',
   PRIMARY KEY (`id`),
   INDEX `name_a`(name_a),
   INDEX `name_b`(name_b)
@@ -78,10 +80,10 @@ CREATE TABLE `civicrm_mergeconflict` (
   `contact_1` int unsigned COMMENT 'FK to Contact',
   `contact_2` int unsigned COMMENT 'FK to Contact',
   `group_id` int unsigned COMMENT 'FK to Group',
-  `conflicted_field` varchar(0),
-  `value_1` varchar(0),
-  `value_2` varchar(0),
-  `analysis` varchar(0),
+  `conflicted_field` varchar(255),
+  `value_1` varchar(255),
+  `value_2` varchar(255),
+  `analysis` varchar(255),
   PRIMARY KEY (`id`)
 )
 ENGINE=InnoDB;

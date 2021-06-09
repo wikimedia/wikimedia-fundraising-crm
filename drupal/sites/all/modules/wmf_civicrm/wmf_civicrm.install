@@ -36,10 +36,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7032();
   // Reset navigation on install.
   wmf_civicrm_update_7063();
-  // Financial account fix up - might need resolution before financial types.
-  wmf_civicrm_update_7120();
-  // Financial account fix up - might need resolution before financial types.
-  wmf_civicrm_update_7170();
+
   // Update merge activity to filter=1 (likely already in core & can just go).
   wmf_civicrm_update_7210();
   wmf_civicrm_update_7230();
@@ -150,20 +147,9 @@ function _link_gift_data_field_to_new_group($field_name, $group_name, $values) {
  * Add contribution types and payment instruments
  */
 function wmf_civicrm_update_7000() {
-  $financial_types = array(
-    'Cash',
-    'Benevity',
-    'Merkle',
-    'Refund',
-    'Chargeback',
-    'Arizona Lockbox',
-    'Engage',
-    'Endowment Gift',
-  );
   wmf_civicrm_bootstrap_civi();
   require_once 'update_payment_instruments.php';
   wmf_install_add_missing_payment_instruments();
-  wmf_civicrm_create_financial_types($financial_types);
 }
 
 /**
@@ -236,54 +222,6 @@ function wmf_civicrm_update_7063() {
   civicrm_api3('Navigation', 'reset', array(
     'for' => "report",
   ));
-}
-
-/**
- * T124979 add a Financial Account to each Financial Type for Chargeback &
- * Refund.
- */
-function wmf_civicrm_update_7120() {
-  civicrm_initialize();
-  $financialTypes = civicrm_api3('FinancialType', 'get', array());
-
-  foreach (array_keys($financialTypes['values']) as $financialTypeID) {
-    civicrm_api3('EntityFinancialAccount', 'create', array(
-      'entity_id' => $financialTypeID,
-      'entity_table' => 'civicrm_financial_type',
-      'account_relationship' => 'Chargeback Account is',
-      'financial_account_id' => 'Chargeback',
-    ));
-    civicrm_api3('EntityFinancialAccount', 'create', array(
-      'entity_id' => $financialTypeID,
-      'entity_table' => 'civicrm_financial_type',
-      'account_relationship' => 'Credit/Contra Revenue Account is',
-      'financial_account_id' => 'Refund',
-    ));
-  }
-}
-
-/**
- * Further refund financial data fix.
- *
- * This is a change Elliott made on live to reflect these accounts as Expenses
- * not Income.
- *
- * Added here to ensure dev sites have the same info.
- */
-function wmf_civicrm_update_7170() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery("
-   UPDATE civicrm_financial_account
-   SET account_type_code = 'EXP',
-   financial_account_type_id = (
-     SELECT v.value
-     FROM civicrm_option_value v
-     INNER JOIN civicrm_option_group g
-       ON g.id = v.option_group_id AND g.name = 'financial_account_type'
-       AND v.name = 'Expenses'
-   )
-   WHERE name in ('Refund', 'Chargeback')
-  ");
 }
 
 /**

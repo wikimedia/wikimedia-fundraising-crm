@@ -44,8 +44,14 @@ class Parse extends AbstractAction {
       $result[$name] = $this->parseName($doubleSplitNames[0]);
       if (!empty($doubleSplitNames[1])) {
         $result[$name]['Partner.Partner'] = $doubleSplitNames[1];
-        if (empty($result[$name]['last_name'])) {
-          $result[$name]['last_name'] = $this->parseName($doubleSplitNames[1])['last_name'];
+        if (empty($result[$name]['first_name']) && !empty($result[$name]['last_name'])) {
+          // In the case of a single name it will have been put into the last_name
+          // field but it's more likely to be a first name - eg. Andrew and Sally Smith.
+          $sharedLastName = $this->parseName($doubleSplitNames[1])['last_name'];
+          if ($sharedLastName) {
+            $result[$name]['first_name'] = $result[$name]['last_name'];
+            $result[$name]['last_name'] = $sharedLastName;
+          }
         }
       }
     }

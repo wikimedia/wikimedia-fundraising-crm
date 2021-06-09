@@ -41,21 +41,25 @@
   <field>
     <name>conflicted_field</name>
     <type>varchar</type>
+    <length>255</length>
     <add>1.0</add>
   </field>
   <field>
     <name>value_1</name>
     <type>varchar</type>
+    <length>255</length>
     <add>1.0</add>
   </field>
   <field>
     <name>value_2</name>
     <type>varchar</type>
+    <length>255</length>
     <add>1.0</add>
   </field>
   <field>
     <name>analysis</name>
     <type>varchar</type>
+    <length>255</length>
     <add>1.0</add>
   </field>
 </table>
