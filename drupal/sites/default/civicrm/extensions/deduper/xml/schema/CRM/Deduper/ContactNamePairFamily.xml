@@ -41,6 +41,26 @@
     </html>
     <comment>Alternate name</comment>
   </field>
+  <field>
+    <name>is_most_common_form</name>
+    <title>Most common form?</title>
+    <type>boolean</type>
+    <default>0</default>
+    <html>
+      <type>CheckBox</type>
+    </html>
+    <comment>Is this the most common way to write this name?</comment>
+  </field>
+  <field>
+    <name>is_active</name>
+    <title>Is active?</title>
+    <type>boolean</type>
+    <default>1</default>
+    <html>
+      <type>CheckBox</type>
+    </html>
+    <comment>Is this variant active?</comment>
+  </field>
   <index>
     <name>name_a</name>
     <fieldName>name_a</fieldName>
