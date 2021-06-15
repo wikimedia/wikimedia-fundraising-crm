@@ -16,8 +16,8 @@ class QuickForm {
       case 'CRM_Custom_Form_CustomDataByType':
         if ($form->_type === 'Contribution' && empty($form->_entityId)) {
           // New hand-entered contributions get a default for no_thank_you
-          $no_thank_you_reason_field_name = _wmf_civicrm_get_form_custom_field_name('no_thank_you');
-          $giftSourceField = _wmf_civicrm_get_form_custom_field_name('Campaign');
+          $no_thank_you_reason_field_name = self::getFormCustomFieldName('no_thank_you');
+          $giftSourceField = self::getFormCustomFieldName('Campaign');
 
           $no_thank_you_toggle_form_elements = [
             $giftSourceField,
@@ -153,10 +153,26 @@ class QuickForm {
     }
 
     // Make Batch Number required, if the field exists.
-    $batch_num_field_name = _wmf_civicrm_get_form_custom_field_name('import_batch_number');
+    $batch_num_field_name = self::getFormCustomFieldName('import_batch_number');
     if ($batch_num_field_name && $form->elementExists($batch_num_field_name)) {
       $form->addRule($batch_num_field_name, t('Batch number is required'), 'required');
     }
+  }
+
+  /**
+   * Get the name of the custom field as it would be shown on the form.
+   *
+   * This is basically 'custom_x_-1' for us. The -1 will always be 1
+   * except for multi-value custom groups which we don't really use.
+   *
+   * @param string $fieldName
+   *
+   * @return string
+   * @throws \CiviCRM_API3_Exception
+   */
+  public static function getFormCustomFieldName(string $fieldName): string {
+    // @todo - make this protected once further consolidation is done.
+    return 'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID($fieldName) . '_-1';
   }
 
 }

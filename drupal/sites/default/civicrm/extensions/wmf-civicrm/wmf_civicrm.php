@@ -193,21 +193,6 @@ function wmf_civicrm_civicrm_themes(&$themes) {
 }
 
 /**
- * Get the name of the custom field as it would be shown on the form.
- *
- * This is basically 'custom_x_-1' for us. The -1 will always be 1
- * except for multi-value custom groups which we don't really use.
- *
- * @param string $fieldName
- *
- * @return string
- * @throws \CiviCRM_API3_Exception
- */
-function _wmf_civicrm_get_form_custom_field_name(string $fieldName): string {
-  return 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID($fieldName) . '_-1';
-}
-
-/**
  * Implements hook_civicrm_buildForm
  *
  * @param string $formName
@@ -661,7 +646,7 @@ function wmf_civicrm_validate_contribution($fields, $form): array {
   }
 
   if (wmf_civicrm_tomorrows_month() === '01') {
-    $postmark_field_name = _wmf_civicrm_get_form_custom_field_name('postmark_date');
+    $postmark_field_name = QuickForm::getFormCustomFieldName('postmark_date');
     // If the receive_date is in Dec or Jan, make sure we have a postmark date,
     // to be generous to donors' tax stuff.
     $date = strptime($fields['receive_date'], "%m/%d/%Y");
