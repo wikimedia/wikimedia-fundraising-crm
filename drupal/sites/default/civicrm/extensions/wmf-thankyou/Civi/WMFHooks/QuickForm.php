@@ -33,7 +33,7 @@ class QuickForm {
                 [$no_thank_you_reason_field_name => 'Manually entered']
               );
             }
-            \CRM_Core_Resources::singleton()->addScript(self::wmf_civicrm_get_no_thankyou_js($no_thank_you_reason_field_name, $no_thank_you_toggle_form_elements));
+            \CRM_Core_Resources::singleton()->addScript(self::getNoThanksYouJS($no_thank_you_reason_field_name, $no_thank_you_toggle_form_elements));
           }
         }
         break;
@@ -92,7 +92,7 @@ class QuickForm {
    *
    * @return string $js
    */
-  public static function wmf_civicrm_get_no_thankyou_js(string $no_thank_you_reason_field_name, array $no_thank_you_toggle_form_elements) {
+  protected static function getNoThanksYouJS(string $no_thank_you_reason_field_name, array $no_thank_you_toggle_form_elements): string {
     $element_selectors = '';
     foreach($no_thank_you_toggle_form_elements as $el) {
       $element_selectors .= "#{$el},";
