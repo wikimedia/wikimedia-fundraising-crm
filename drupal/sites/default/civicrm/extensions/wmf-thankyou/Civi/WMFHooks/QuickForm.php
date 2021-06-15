@@ -38,28 +38,7 @@ class QuickForm {
         }
         break;
       case 'CRM_Contribute_Form_Contribution':
-        // Only run this validation for users having the Engage role.
-        // @todo - move the user_has_role out of the extension. In order
-        // to ready this for drupal we can switch to using a permission
-        // for engage 'access engage ui options'.
-        if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
-          break;
-        }
-
-        // Default to the Engage contribution type, if this is a new contribution.
-        if ($form->_action & \CRM_Core_Action::ADD) {
-          $engage_contribution_type_id = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Engage');
-          $form->setDefaults([
-            'financial_type_id' => $engage_contribution_type_id,
-          ]);
-          $form->assign('customDataSubType', $engage_contribution_type_id);
-        }
-
-        // Make Batch Number required, if the field exists.
-        $batch_num_field_name = _wmf_civicrm_get_form_custom_field_name('import_batch_number');
-        if ($batch_num_field_name && $form->elementExists($batch_num_field_name)) {
-          $form->addRule($batch_num_field_name, t('Batch number is required'), 'required');
-        }
+        self::buildFormContributionForm($form);
         break;
 
       case 'CRM_Contribute_Form_Search':
@@ -149,6 +128,35 @@ class QuickForm {
       })";
 
     return $js;
+  }
+
+  /**
+   * @param \CRM_Core_Form $form
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected static function buildFormContributionForm(\CRM_Core_Form $form): void {
+    // Only run this validation for users having the Engage role.
+    // @todo - move the user_has_role out of the extension. In order
+    // to ready this for drupal we can switch to using a permission
+    // for engage 'access engage ui options'.
+    if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
+      return;
+    }
+    // Default to the Engage contribution type, if this is a new contribution.
+    if ($form->_action & \CRM_Core_Action::ADD) {
+      $engage_contribution_type_id = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Engage');
+      $form->setDefaults([
+        'financial_type_id' => $engage_contribution_type_id,
+      ]);
+      $form->assign('customDataSubType', $engage_contribution_type_id);
+    }
+
+    // Make Batch Number required, if the field exists.
+    $batch_num_field_name = _wmf_civicrm_get_form_custom_field_name('import_batch_number');
+    if ($batch_num_field_name && $form->elementExists($batch_num_field_name)) {
+      $form->addRule($batch_num_field_name, t('Batch number is required'), 'required');
+    }
   }
 
 }
