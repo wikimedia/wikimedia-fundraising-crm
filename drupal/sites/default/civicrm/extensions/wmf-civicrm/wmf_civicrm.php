@@ -652,3 +652,88 @@ function _wmf_civicrm_is_db_ready_for_triggers(): bool {
   return (bool) count($wmfDonorQuery);
 
 }
+
+
+/**
+ * Implements hook_civicrm_validateForm().
+ *
+ * @param string $formName
+ * @param array $fields
+ * @param array $files
+ * @param CRM_Core_Form $form
+ * @param array $errors
+ */
+function wmf_civicrm_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  if ($formName === 'CRM_Contact_Form_DedupeFind') {
+    if (!$fields['limit']) {
+      $errors['limit'] = ts('Save the database. Use a limit');
+    }
+    $ruleGroupID = $form->rgid;
+    if ($fields['limit'] > 1 && 'fishing_net' === civicrm_api3('RuleGroup', 'getvalue', ['id' => $ruleGroupID, 'return' => 'name'])) {
+      $errors['limit'] = ts('The fishing net rule should only be applied to a single contact');
+    }
+  }
+  if ($formName == 'CRM_Contribute_Form_Contribution') {
+    $engageErrors = wmf_civicrm_validate_contribution($fields, $form);
+    if (!empty($engageErrors)) {
+      $errors = array_merge($errors, $engageErrors);
+    }
+  }
+}
+
+/**
+ * Additional validations for the contribution form
+ *
+ * @param array $fields
+ * @param CRM_Core_Form $form
+ *
+ * @return array of any errors in the form
+ * @throws \CiviCRM_API3_Exception
+ * @throws \WmfException
+ */
+function wmf_civicrm_validate_contribution($fields, $form): array {
+  $errors = [];
+
+  // Only run on add or update
+  if (!($form->_action & (CRM_Core_Action::UPDATE | CRM_Core_Action::ADD))) {
+    return $errors;
+  }
+  // Source has to be of the form USD 15.25 so as not to gum up the works,
+  // and the currency code on the front should be something we understand
+  $source = $fields['source'];
+  if (preg_match('/^([a-z]{3}) [0-9]+(\.[0-9]+)?$/i', $source, $matches)) {
+    $currency = strtoupper($matches[1]);
+    if (!wmf_civicrm_is_valid_currency($currency)) {
+      $errors['source'] = t('Please set a supported currency code');
+    }
+  }
+  else {
+    $errors['source'] = t('Source must be in the format USD 15.25');
+  }
+
+  // Only run the following validation for users having the Engage role.
+  if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
+    return $errors;
+  }
+
+  $engage_contribution_type_id = wmf_civicrm_get_civi_id('financial_type_id', 'Engage');
+  if ($fields['financial_type_id'] !== $engage_contribution_type_id) {
+    $errors['financial_type_id'] = t("Must use the \"Engage\" contribution type.");
+  }
+
+  if (wmf_civicrm_tomorrows_month() === '01') {
+    $postmark_field_name = _wmf_civicrm_get_form_custom_field_name('postmark_date');
+    // If the receive_date is in Dec or Jan, make sure we have a postmark date,
+    // to be generous to donors' tax stuff.
+    $date = strptime($fields['receive_date'], "%m/%d/%Y");
+    // n.b.: 0-based date spoiler.
+    if ($date['tm_mon'] == (12 - 1) || $date['tm_mon'] == (1 - 1)) {
+      // And the postmark date is missing
+      if ($form->elementExists($postmark_field_name) && !$fields[$postmark_field_name]) {
+        $errors[$postmark_field_name] = t("You forgot the postmark date!");
+      }
+    }
+  }
+
+  return $errors;
+}
