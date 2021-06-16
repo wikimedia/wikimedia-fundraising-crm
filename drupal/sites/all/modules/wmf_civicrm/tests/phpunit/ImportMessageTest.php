@@ -3,6 +3,7 @@
 use Civi\Api4\Contact;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Contribution;
+use Civi\WMFException\WMFException;
 
 define('ImportMessageTest_campaign', 'test mail code here + ' . mt_rand());
 
@@ -87,7 +88,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testMessageInsert($msg, $expected) {
     if (!empty($msg['contribution_recur_id'])) {
@@ -202,7 +203,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function messageProvider(): array {
 
@@ -800,7 +801,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test importing to a group.
    *
    * @throws \CRM_Core_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportContactGroups(): void {
     $this->createGroup('in_group');
@@ -845,7 +846,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Test that existing on hold setting is retained.
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testKeepOnHold() {
     $contactID = $this->createIndividual();
@@ -885,7 +886,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Test that existing on hold setting is removed if the email changes.
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testRemoveOnHoldWhenUpdating() {
     $contactID = $this->createIndividual();
@@ -939,11 +940,11 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     try {
       $this->messageImport($msg);
     }
-    catch (WmfException $ex) {
+    catch (WMFException $ex) {
       $exceptioned = TRUE;
       $this->assertTrue($ex->isRequeue());
       $this->assertEquals('DUPLICATE_INVOICE', $ex->getErrorName());
-      $this->assertEquals(WmfException::DUPLICATE_INVOICE, $ex->getCode());
+      $this->assertEquals(WMFException::DUPLICATE_INVOICE, $ex->getCode());
     }
     $this->assertTrue($exceptioned);
   }
@@ -952,7 +953,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * When we get a contact ID and matching hash and email, update instead of
    * creating new contact.
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
   public function testImportWithContactIdAndHash() {
@@ -1003,7 +1004,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * If we get a contact ID and a bad hash, leave the existing contact alone
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
   public function testImportWithContactIdAndBadHash() {
@@ -1055,7 +1056,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * If we get a contact ID and a bad email, leave the existing contact alone
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
   public function testImportWithContactExisting() {
@@ -1091,7 +1092,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * If we get a contact ID and a bad email, leave the existing contact alone
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
   public function testImportWithContactIdAndBadEmail() {
@@ -1239,7 +1240,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param string $gateway_txn_id
    *
    * @return array
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function getBaseContribution($gateway_txn_id): array {
     $contribution_type_cash = wmf_civicrm_get_civi_id('contribution_type_id', 'Cash');

@@ -1,6 +1,7 @@
 <?php
 
 use wmf_communication\TestMailer;
+use Civi\WMFException\WMFException;
 
 /**
  * @group Pipeline
@@ -206,7 +207,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @throws \CiviCRM_API3_Exception
    * @throws \ExchangeRatesException
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testMakeLesserRefund() {
     $lesser_amount = round($this->original_amount - 0.25, 2);
@@ -265,11 +266,10 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Make a refund in the wrong currency
-   *
-   * @expectedException WmfException
+   * Make a refund in the wrong currency.
    */
-  public function testMakeWrongCurrencyRefund() {
+  public function testMakeWrongCurrencyRefund(): void {
+    $this->expectException(WMFException::class);
     $wrong_currency = 'GBP';
     $this->assertNotEquals($this->original_currency, $wrong_currency);
     wmf_civicrm_mark_refund(

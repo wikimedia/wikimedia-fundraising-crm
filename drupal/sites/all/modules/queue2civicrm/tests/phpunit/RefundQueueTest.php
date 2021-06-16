@@ -1,6 +1,7 @@
 <?php
 
 use queue2civicrm\refund\RefundQueueConsumer;
+use Civi\WMFException\WMFException;
 
 /**
  * @group Queue2Civicrm
@@ -47,11 +48,9 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->callAPISuccessGetSingle('Contribution', ['id' => $contributions[0]['id'], 'contribution_status_id' => 'Chargeback']);
   }
 
-  /**
-   * @expectedException WmfException
-   * @expectedExceptionCode WmfException::MISSING_PREDECESSOR
-   */
-  public function testRefundNoPredecessor() {
+  public function testRefundNoPredecessor(): void {
+    $this->expectException(WMFException::class);
+    $this->expectExceptionCode(WMFException::MISSING_PREDECESSOR);
     $refund_message = new RefundMessage();
 
     $this->consumer->processMessage($refund_message->getBody());
@@ -65,7 +64,7 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * if the exchange rate does not exist - which is not what we are testing
    * for.
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
   public function testRefundMismatched() {

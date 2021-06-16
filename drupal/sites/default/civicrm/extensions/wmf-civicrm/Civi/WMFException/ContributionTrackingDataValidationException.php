@@ -2,9 +2,7 @@
 
 namespace Civi\WMFException;
 
-use \WmfException;
-
-class ContributionTrackingDataValidationException extends WmfException {
+class ContributionTrackingDataValidationException extends WMFException {
 
   public function __construct($message) {
     parent::__construct(parent::CONTRIBUTION_TRACKING, $message);

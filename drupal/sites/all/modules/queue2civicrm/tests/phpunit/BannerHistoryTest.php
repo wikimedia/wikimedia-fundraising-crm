@@ -1,6 +1,7 @@
 <?php
 
 use queue2civicrm\banner_history\BannerHistoryQueueConsumer;
+use Civi\WMFException\WMFException;
 
 /**
  * @group Queue2Civicrm
@@ -20,9 +21,9 @@ class BannerHistoryTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
-  public function testValidMessage() {
+  public function testValidMessage(): void {
     $msg = [
       'banner_history_id' => substr(
         md5(mt_rand() . time()), 0, 16
@@ -34,10 +35,8 @@ class BannerHistoryTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals(1, 1);
   }
 
-  /**
-   * @expectedException WmfException
-   */
-  public function testBadContributionId() {
+  public function testBadContributionId(): void {
+    $this->expectException(WMFException::class);
     $msg = [
       'banner_history_id' => substr(
         md5(mt_rand() . time()), 0, 16
@@ -47,10 +46,8 @@ class BannerHistoryTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->consumer->processMessage($msg);
   }
 
-  /**
-   * @expectedException WmfException
-   */
-  public function testBadHistoryId() {
+  public function testBadHistoryId(): void {
+    $this->expectException(WMFException::class);
     $msg = [
       'banner_history_id' => '\';GRANT ALL ON drupal.* TO \'leet\'@\'haxx0r\'',
       'contribution_tracking_id' => strval(mt_rand()),

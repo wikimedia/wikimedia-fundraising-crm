@@ -38,7 +38,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * Process an ordinary (one-time) donation message
    *
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testDonation() {
     $message = new TransactionMessage(
@@ -134,7 +134,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * If 'invoice_id' is in the message, don't stuff that field with order_id
    *
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testDonationInvoiceId() {
     $message = new TransactionMessage(
@@ -185,7 +185,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * Process an ordinary (one-time) donation message with an UTF campaign.
    *
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testDonationWithUTFCampaignOption() {
     $message = new TransactionMessage(array('utm_campaign' => 'EmailCampaign1'));
@@ -218,7 +218,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * already existing.
    *
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testDonationWithInvalidUTFCampaignOption() {
     civicrm_initialize();
@@ -253,7 +253,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * previously disabled.
    *
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testDonationWithDisabledUTFCampaignOption() {
     civicrm_initialize();
@@ -288,7 +288,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * a different label.
    *
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testDonationWithDifferentLabelUTFCampaignOption() {
     civicrm_initialize();
@@ -372,7 +372,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param array $pendingMessage
    *
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testDonationSparseMessages($message, $pendingMessage) {
     $pendingMessage['order_id'] = $message->get('order_id');

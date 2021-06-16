@@ -13,6 +13,7 @@ use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use Civi\Api4\Contact;
+use Civi\WMFException\WMFException;
 
 class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
 
@@ -329,7 +330,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
       $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
       return $contribution;
     }
-    catch (WmfException $e) {
+    catch (WMFException $e) {
       $created = (array) Contact::get(FALSE)->setWhere([
         ['display_name', '=', rtrim($msg['first_name'] . ' ' . $msg['last_name'])],
       ])->setSelect(['id'])->execute()->indexBy('id');

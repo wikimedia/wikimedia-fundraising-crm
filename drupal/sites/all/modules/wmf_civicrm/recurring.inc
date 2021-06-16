@@ -1,4 +1,5 @@
 <?php
+use Civi\WMFException\WMFException;
 
 /**
  * Insert the recurring contribution record
@@ -13,7 +14,7 @@
  * @param array $contribution The contribution record
  *
  * @return boolean  Returns true on success
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  *
  */
 function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subscr_id, $contribution_record = NULL) {
@@ -27,7 +28,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       'Payment is not marked as recurring, with the contact_id [!contact_id]',
       ["!contact_id" => $contact_id]
     );
-    throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $error_message);
+    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
   }
 
   // Allowed frequency_units
@@ -41,7 +42,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
         "!contact_id" => $contact_id,
       ]
     );
-    throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $error_message);
+    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
   }
 
   // Frequency interval is only allowed to be 1. FIXME
@@ -50,7 +51,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       '`frequency_interval` is only allowed to be set to 1, with the contact_id [!contact_id]',
       ["!contact_id" => $contact_id]
     );
-    throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $error_message);
+    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
   }
 
   // installments is only allowed to be 0.
@@ -59,7 +60,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       '`installments` must be set to 0, with the contact_id [!contact_id]',
       ["!contact_id" => $contact_id]
     );
-    throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $error_message);
+    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
   }
 
   if (!empty($msg['subscr_id'])) {
@@ -76,7 +77,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
         '`trxn_id` must be set and not empty, with the contact_id [!contact_id]',
         ["!contact_id" => $contact_id]
       );
-      throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $error_message);
+      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
     }
 
     $gateway_subscr_id = $contribution_record['trxn_id'];
@@ -136,7 +137,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
   try {
     $result = civicrm_api3('ContributionRecur', 'Create', $insert_params);
   } catch (CiviCRM_API3_Exception $e) {
-    throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $e->getMessage());
+    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
   }
 
   $contribution_recur_id = $result ['id'];
@@ -161,13 +162,13 @@ function wmf_civicrm_update_contribution_for_recurring($contribution_id, $contri
   // contribution_id must be set and not null or zero
   if (empty($contribution_id)) {
     $error_message = t('`contribution_id` must be set and not empty.');
-    throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $error_message);
+    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
   }
 
   // contribution_recur_id must be set and not null or zero
   if (empty($contribution_recur_id)) {
     $error_message = t('`contribution_recur_id` must be set and not empty.');
-    throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $error_message);
+    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
   }
   try {
     $result = civicrm_api3('Contribution', 'create', [
@@ -183,7 +184,7 @@ function wmf_civicrm_update_contribution_for_recurring($contribution_id, $contri
         '!msg' => $e->getMessage(),
       ]
     );
-    throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $error_message);
+    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
   }
   watchdog('wmf_civicrm', 'Successfully linked the contribution  [!contribution_id] to the recurring contribution [!contribution_recur_id]', [
     '!contribution_id' => $contribution_id,
@@ -447,7 +448,7 @@ function wmf_civicrm_cal_days_in_month($month) {
  *
  * @return array $contribution
  *
- * @throws WmfException if no matching subscription exists.
+ * @throws Civi\WMFException\WMFException if no matching subscription exists.
  */
 function wmf_civicrm_get_initial_recurring_contribution($contribution_recur_id) {
   $sql = "
@@ -462,7 +463,7 @@ LIMIT 1";
 
   $out = wmf_civicrm_dao_to_list($res);
   if (!$out) {
-    throw new WmfException(WmfException::MISSING_PREDECESSOR, 'No such recurring contribution, id=' . $contribution_recur_id);
+    throw new WMFException(WMFException::MISSING_PREDECESSOR, 'No such recurring contribution, id=' . $contribution_recur_id);
   }
   return array_pop($out);
 }
@@ -614,7 +615,7 @@ function wmf_civicrm_get_recurring_payment_token($gateway, $token) {
  * @param string $ip Donor's IP address
  *
  * @return array $payment_token_record
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  */
 function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token, $ip) {
   $processorId = wmf_civicrm_get_payment_processor_id($gateway);
@@ -627,7 +628,7 @@ function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token, $
       'ip_address' => $ip,
     ]);
   } catch (CiviCRM_API3_Exception $e) {
-    throw new WmfException(WmfException::IMPORT_SUBSCRIPTION, $e->getMessage());
+    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
   }
 
   //return newly created record
@@ -641,8 +642,8 @@ function wmf_civicrm_get_payment_processor_id($processorName) {
       'is_test' => 0,
     ]);
   } catch (CiviCRM_API3_Exception $e) {
-    throw new WmfException(
-      WmfException::MISSING_PREDECESSOR,
+    throw new WMFException(
+      WMFException::MISSING_PREDECESSOR,
       "No such Payment Processor exists, name='$processorName', " . $e->getMessage()
     );
   }

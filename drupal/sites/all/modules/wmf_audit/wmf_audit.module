@@ -231,7 +231,7 @@ function wmf_audit_log_error($watchdog_message, $drush_code) {
 /**
  * Returns an array of errors that should not cause the script to blow up, but
  * which will probably still cause messages to get thrown out.
- * TODO: Use WmfException instead.
+ * TODO: Use WMFException instead.
  *
  * @return boolean true if the error code is fatal, otherwise false.
  */

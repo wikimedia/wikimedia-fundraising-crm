@@ -1,5 +1,6 @@
 <?php
 
+use Civi\WMFException\WMFException;
 use Civi\WMFException\NonUniqueTransaction;
 
 /**
@@ -73,44 +74,34 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
       "parsed message has correct trxn_id");
   }
 
-  /**
-   * @expectedException WmfException
-   * @expectedExceptionCode WmfException::INVALID_MESSAGE
-   */
   function testInvalidEmptyId() {
-    $transaction = WmfTransaction::from_unique_id("");
+    $this->expectException(WMFException::class);
+    $this->expectExceptionCode(WMFException::INVALID_MESSAGE);
+    WmfTransaction::from_unique_id("");
   }
 
-  /**
-   * @expectedException WmfException
-   * @expectedExceptionCode WmfException::INVALID_MESSAGE
-   */
   function testInvalidAlmostEmptyId() {
-    $transaction = WmfTransaction::from_unique_id('RFD RECURRING');
+    $this->expectExceptionCode(WMFException::INVALID_MESSAGE);
+    $this->expectException(WMFException::class);
+    WmfTransaction::from_unique_id('RFD RECURRING');
   }
 
-  /**
-   * @expectedException WmfException
-   * @expectedExceptionCode WmfException::INVALID_MESSAGE
-   */
-  function testInvalidWhitespaceId() {
-    $transaction = WmfTransaction::from_unique_id('RFD RECURRING ');
+  public function testInvalidWhitespaceId(): void {
+    $this->expectException(WMFException::class);
+    $this->expectExceptionCode(WMFException::INVALID_MESSAGE);
+    WmfTransaction::from_unique_id('RFD RECURRING ');
   }
 
-  /**
-   * @expectedException WmfException
-   * @expectedExceptionCode WmfException::INVALID_MESSAGE
-   */
-  function testInvalidExtraPartsId() {
-    $transaction = WmfTransaction::from_unique_id('TEST_GATEWAY 123 1234 EXTRA_PART');
+  public function testInvalidExtraPartsId(): void {
+    $this->expectExceptionCode(WMFException::INVALID_MESSAGE);
+    $this->expectException(WMFException::class);
+    WmfTransaction::from_unique_id('TEST_GATEWAY 123 1234 EXTRA_PART');
   }
 
-  /**
-   * @expectedException WmfException
-   * @expectedExceptionCode WmfException::INVALID_MESSAGE
-   */
-  function testInvalidTimestampId() {
-    $transaction = WmfTransaction::from_unique_id('TEST_GATEWAY 123 BAD_TIMESTAMP');
+  public function testInvalidTimestampId(): void {
+    $this->expectException(WMFException::class);
+    $this->expectExceptionCode(WMFException::INVALID_MESSAGE);
+    WmfTransaction::from_unique_id('TEST_GATEWAY 123 BAD_TIMESTAMP');
   }
 
   function testExistsNone() {

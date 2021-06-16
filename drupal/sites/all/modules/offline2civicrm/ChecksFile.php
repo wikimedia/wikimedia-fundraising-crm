@@ -6,6 +6,7 @@ use SmashPig\Core\Context;
 use League\Csv\Writer;
 use League\Csv\Statement;
 use Civi\Api4\Name;
+use Civi\WMFException\WMFException;
 use Civi\WMFException\EmptyRowException;
 use Civi\WMFException\IgnoredRowException;
 
@@ -226,7 +227,7 @@ abstract class ChecksFile {
    * @param string $file_uri path to the file
    * @param array $additionalFields
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   function __construct($file_uri = NULL, $additionalFields = []) {
     $this->file_uri = $file_uri;
@@ -261,12 +262,12 @@ abstract class ChecksFile {
         $this->createOutputFile($this->ignored_file_uri, 'Ignored');
         $this->createOutputFile($this->error_file_uri, 'Error');
       }
-      catch (WmfException $e) {
-        // Validate columns throws a WmfException - we just want to re-throw that one unchanged.
+      catch (WMFException $e) {
+        // Validate columns throws a WMFException - we just want to re-throw that one unchanged.
         throw $e;
       }
       catch (Exception $e) {
-        throw new WmfException(WmfException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
+        throw new WMFException(WMFException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
       }
     }
   }
@@ -388,8 +389,8 @@ abstract class ChecksFile {
    *
    * @return array queue message format
    *
-   * @throws Civi\WMFException\EmptyRowException
-   * @throws \WmfException
+   * @throws \Civi\WMFException\EmptyRowException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function parseRow($data) {
     $msg = [];
@@ -434,7 +435,7 @@ abstract class ChecksFile {
    * @param array $msg
    *
    * @throws \API_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function mungeMessage(&$msg) {
     if (!empty($msg['full_name']) && (empty($msg['first_name']) || empty($msg['last_name']))) {
@@ -470,7 +471,7 @@ abstract class ChecksFile {
       if (!empty($msg['org_contact_name'])
         || !empty($msg['org_contact_title'])
       ) {
-        throw new WmfException(WmfException::INVALID_MESSAGE, "Don't give a Name or Title unless this is an Organization contact.");
+        throw new WMFException(WMFException::INVALID_MESSAGE, "Don't give a Name or Title unless this is an Organization contact.");
       }
     }
 
@@ -483,7 +484,7 @@ abstract class ChecksFile {
       if (abs($source_amount - $msg['gross']) > .01) {
         $pretty_msg = json_encode($msg);
         watchdog('offline2civicrm', "Amount mismatch in row: " . $pretty_msg, NULL, WATCHDOG_ERROR);
-        throw new WmfException(WmfException::INVALID_MESSAGE, "Amount mismatch during checks import");
+        throw new WMFException(WMFException::INVALID_MESSAGE, "Amount mismatch during checks import");
       }
 
       $msg['currency'] = $currency;
@@ -708,7 +709,7 @@ abstract class ChecksFile {
   /**
    * Ensure the file contains all the data we need.
    *
-   * @throws WmfException if required columns are missing
+   * @throws Civi\WMFException\WMFException if required columns are missing
    */
   protected function validateColumns() {
     $failed = [];
@@ -718,7 +719,7 @@ abstract class ChecksFile {
       }
     }
     if ($failed) {
-      throw new WmfException(WmfException::INVALID_FILE_FORMAT, "This file is missing column headers: " . implode(", ", $failed));
+      throw new WMFException(WMFException::INVALID_FILE_FORMAT, "This file is missing column headers: " . implode(", ", $failed));
     }
   }
 
@@ -761,7 +762,7 @@ abstract class ChecksFile {
    * @param array $msg
    *
    * @return array
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function doImport($msg) {
     $contribution = wmf_civicrm_contribution_message_import($msg);
@@ -774,7 +775,7 @@ abstract class ChecksFile {
    *
    * @param array $msg
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function validateRequiredFields($msg) {
     $failed = [];
@@ -784,7 +785,7 @@ abstract class ChecksFile {
       }
     }
     if ($failed) {
-      throw new WmfException(WmfException::CIVI_REQ_FIELD, t("Missing required fields @keys during check import", ["@keys" => implode(", ", $failed)]));
+      throw new WMFException(WMFException::CIVI_REQ_FIELD, t("Missing required fields @keys during check import", ["@keys" => implode(", ", $failed)]));
     }
   }
 
@@ -794,7 +795,7 @@ abstract class ChecksFile {
    * @param $msg
    *
    * @return array|bool
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function checkForExistingContributions($msg) {
     return wmf_civicrm_get_contributions_from_gateway_id($msg['gateway'], $msg['gateway_txn_id']);
@@ -849,8 +850,11 @@ abstract class ChecksFile {
 
   /**
    * @param $data
+   *
+   * @throws \Civi\WMFException\EmptyRowException
+   * @throws \Civi\WMFException\WMFException
    */
-  protected function importRow($data) {
+  protected function importRow($data): void {
     $msg = $this->parseRow($data);
     $existing = $this->checkForExistingContributions($msg);
 
@@ -903,7 +907,7 @@ abstract class ChecksFile {
     }
     try {
       if ($this->errorStreakCount >= $this->errorStreakThreshold) {
-        throw new IgnoredRowException(WmfException::IMPORT_CONTRIB, 'Error limit reached');
+        throw new IgnoredRowException(WMFException::IMPORT_CONTRIB, 'Error limit reached');
       }
       $this->importRow($data);
     }
@@ -914,7 +918,7 @@ abstract class ChecksFile {
       $this->markRowIgnored($data, $ex->getUserErrorMessage());
       return;
     }
-    catch (WmfException $ex) {
+    catch (WMFException $ex) {
       $this->markRowError($row, $ex->getUserErrorMessage(), $data);
     }
     return;
@@ -1119,7 +1123,7 @@ abstract class ChecksFile {
    * @return array
    *
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function getOrganizationID($organizationName) {
     // Using the Civi Statics pattern for php caching makes it easier to reset in unit tests.
@@ -1139,8 +1143,8 @@ abstract class ChecksFile {
     if (\Civi::$statics[__CLASS__]['organization'][$organizationName]) {
       return \Civi::$statics[__CLASS__]['organization'][$organizationName];
     }
-    throw new WmfException(
-      WmfException::IMPORT_CONTRIB,
+    throw new WMFException(
+      WMFException::IMPORT_CONTRIB,
       t("Did not find exactly one Organization with the details: @organizationName. You will need to ensure a single Organization record exists for the contact first",
         [
           '@organizationName' => $organizationName,

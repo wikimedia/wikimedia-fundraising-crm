@@ -2,6 +2,7 @@
 
 use queue2civicrm\recurring\RecurringQueueConsumer;
 use wmf_communication\TestMailer;
+use Civi\WMFException\WMFException;
 
 /**
  * @group Queue2Civicrm
@@ -222,11 +223,9 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('5109 Lockwood Rd', $addresses['values'][0]['street_address']);
   }
 
-  /**
-   * @expectedException WmfException
-   * @expectedExceptionCode WmfException::MISSING_PREDECESSOR
-   */
-  public function testMissingPredecessor() {
+  public function testMissingPredecessor(): void {
+    $this->expectExceptionCode(WMFException::MISSING_PREDECESSOR);
+    $this->expectException(WMFException::class);
     $message = new RecurringPaymentMessage(
       [
         'subscr_id' => mt_rand(),
@@ -330,11 +329,9 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($new_subscr_id, $recur_records[0]['processor_id']);
   }
 
-  /**
-   * @expectedException WmfException
-   * @expectedExceptionCode WmfException::INVALID_RECURRING
-   */
-  public function testNoSubscrId() {
+  public function testNoSubscrId(): void {
+    $this->expectExceptionCode(WMFException::INVALID_RECURRING);
+    $this->expectException(WMFException::class);
     $message = new RecurringPaymentMessage(
       [
         'subscr_id' => NULL,

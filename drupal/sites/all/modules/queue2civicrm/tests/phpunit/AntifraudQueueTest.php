@@ -23,7 +23,7 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Test the message is not rejected.
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testValidMessage() {
     $message = json_decode(
@@ -65,7 +65,7 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * The first message for a ct_id / order_id pair needs to be complete
    *
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testIncompleteMessage(): void {
     $this->expectException(FredgeDataValidationException::class);

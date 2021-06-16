@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFException\WMFException;
+
 class StripeFile extends ChecksFile {
   protected function getRequiredColumns() {
     return array(
@@ -15,7 +17,8 @@ class StripeFile extends ChecksFile {
    *
    * @param array $msg
    *
-   * @throws \WmfException
+   * @throws \API_Exception
+   * @throws \Civi\WMFException\WMFException
    */
   protected function mungeMessage(&$msg) {
     $msg['currency'] = strtoupper($msg['currency']);
@@ -105,11 +108,11 @@ class StripeFile extends ChecksFile {
    * @return array queue message format
    *
    * @throws Civi\WMFException\EmptyRowException
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function parseRow($data) {
     if (!empty($data['converted_amount_refunded'])) {
-      throw new WmfException(WmfException::INVALID_MESSAGE, 'Refunds not currently handled. Please log a Phab if required');
+      throw new WMFException(WMFException::INVALID_MESSAGE, 'Refunds not currently handled. Please log a Phab if required');
     }
     return parent::parseRow($data);
   }

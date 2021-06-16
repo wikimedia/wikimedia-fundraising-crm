@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFException\WMFException;
+
 /**
  * @group Pipeline
  * @group WmfCivicrm
@@ -34,11 +36,9 @@ class SoftCreditTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($organizationID, $retrievedContribution['soft_credit_to']);
   }
 
-  /**
-   * @expectedException WmfException
-   * @expectedExceptionMessage Bad soft credit target
-   */
-  public function testBadSoftCreditTarget() {
+  public function testBadSoftCreditTarget(): void {
+    $this->expectException(WMFException::class);
+    $this->expectExceptionMessage("Bad soft credit target");
     $msg = [
       'currency' => 'USD',
       'date' => time(),
@@ -49,8 +49,7 @@ class SoftCreditTest extends BaseWmfDrupalPhpUnitTestCase {
       'payment_method' => 'cc',
       'soft_credit_to' => 'Not a thing',
     ];
-
-    $contribution = $this->messageImport($msg);
+    $this->messageImport($msg);
   }
 
 }

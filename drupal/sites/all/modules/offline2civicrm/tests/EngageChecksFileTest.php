@@ -147,7 +147,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   /**
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImporterFormatsPostal(): void {
     $fileUri = $this->setupFile('engage_postal.csv');
@@ -173,7 +173,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualSingleContactExistsEmailMatch(): void {
     $minnie = $this->callAPISuccess('Contact', 'create', [
@@ -222,7 +222,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualSingleContactExistsAddressMatch(): void {
 
@@ -249,7 +249,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualSingleContactExistsDeleted(): void {
 
@@ -305,7 +305,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualMultipleContactExistsAddressMatchOnBestDaisy(): void {
     $daisy = [];
@@ -361,7 +361,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualMultipleContactExistsNonPrimaryAddressMatchOnBestDaisy(): void {
     $daisy = [];
@@ -418,7 +418,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedOrganizationMultipleContactExistsAddressMatchOnBestVillain(): void {
     $this->sourceFileUri = __DIR__ . "/data/engage_org_import.csv";
@@ -472,7 +472,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @throws \API_Exception
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportIndividual(): void {
     $fileUri = $this->setupFile('engage_individual.csv');
@@ -498,7 +498,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualMultipleContactExistsEmailMatchOnBestMinnie(): void {
     $minnies = $this->createContactSet([
@@ -536,7 +536,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedOrganizationSingleContactExistsEmailMatch(): void {
     $goodie = $this->callAPISuccess('Contact', 'create', [
@@ -564,7 +564,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \API_Exception
    */
   public function testImportSucceedOrganizationMultipleContactsExistsEmailMatchNonPrimary(): void {
@@ -633,7 +633,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImporterErrorStreak(): void {
     $fileUri = $this->setupFile('engage_multiple_errors.csv');
@@ -650,7 +650,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImporterCreatesOutputFiles(): void {
     $this->sourceFileUri = __DIR__ . '/../tests/data/engage_reduced.csv';
@@ -704,7 +704,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * transactions if we don't clean them up first.
    *
    * @throws \CRM_Core_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function purgePreviousData(): void {
     $disneyFolk = $this->callAPISuccess('Contact', 'get', [
@@ -749,7 +749,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   /**
    * Get the gateway IDS from the source file.
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function getGatewayIDs(): array {
     $gatewayIDs = [];
@@ -764,7 +764,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * Get parsed data from the source file.
    *
    * @return array
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function getParsedData(): array {
     $file = fopen($this->sourceFileUri, 'r');
@@ -791,7 +791,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @return string
    * @throws \CRM_Core_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function setupFile(string $inputFileName): string {
     $this->purgePreviousData();
@@ -809,7 +809,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * Clean up after test.
    *
    * @throws \CRM_Core_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function tearDown(): void {
     $this->purgePreviousData();
@@ -822,7 +822,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @param array $additionalFields
    *
    * @return array
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \League\Csv\Exception
    */
   protected function importCheckFile($additionalFields = []): array {

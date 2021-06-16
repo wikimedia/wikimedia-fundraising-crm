@@ -6,6 +6,5 @@ configure = admin/config/wmf_common
 files[] = CsvBatchFile.php
 files[] = TransactionalWmfQueueConsumer.php
 files[] = WmfDatabase.php
-files[] = WmfException.php
 files[] = WmfQueueConsumer.php
 files[] = tests/include/BaseWmfDrupalPhpUnitTestCase.php

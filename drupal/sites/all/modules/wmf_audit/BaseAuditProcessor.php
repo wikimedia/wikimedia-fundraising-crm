@@ -1,6 +1,7 @@
 <?php
 
 use SmashPig\Core\DataStores\QueueWrapper;
+use Civi\WMFException\WMFException;
 
 abstract class BaseAuditProcessor {
 
@@ -738,8 +739,8 @@ abstract class BaseAuditProcessor {
               try {
                 $order_id = $this->get_order_id($transaction);
                 if (!$order_id) {
-                  throw new WmfException(
-                    WmfException::MISSING_MANDATORY_DATA,
+                  throw new WMFException(
+                    WMFException::MISSING_MANDATORY_DATA,
                     'Could not get an order id for the following transaction ' . print_r($transaction, TRUE)
                   );
                 }
@@ -759,8 +760,8 @@ abstract class BaseAuditProcessor {
                 $contribution_tracking_data = wmf_audit_get_contribution_tracking_data($all_data);
 
                 if (!$contribution_tracking_data) {
-                  throw new WmfException(
-                    WmfException::MISSING_MANDATORY_DATA,
+                  throw new WMFException(
+                    WMFException::MISSING_MANDATORY_DATA,
                     'No contribution tracking data retrieved for transaction ' . print_r($all_data, TRUE)
                   );
                 }
@@ -776,8 +777,8 @@ abstract class BaseAuditProcessor {
                   if (!empty($all_data['recurring'])) {
                     // Limit the bandaid to ONLY deal with first installments
                     if (!empty($all_data['installment']) && $all_data['installment'] > 1) {
-                      throw new WmfException(
-                        WmfException::INVALID_RECURRING,
+                      throw new WMFException(
+                        WMFException::INVALID_RECURRING,
                         "Audit parser found recurring order $order_id with installment {$all_data['installment']}"
                       );
                     }
@@ -788,8 +789,8 @@ abstract class BaseAuditProcessor {
 
                     $message = 'Payment method mismatch between utm tracking data(' . $contribution_tracking_data['utm_payment_method'];
                     $message .= ') and normalized log and recon data(' . $method . '). Investigation required.';
-                    throw new WmfException(
-                      WmfException::DATA_INCONSISTENT,
+                    throw new WMFException(
+                      WMFException::DATA_INCONSISTENT,
                       $message
                     );
                   }
@@ -805,7 +806,7 @@ abstract class BaseAuditProcessor {
                 $this->send_queue_message($all_data, 'main');
                 unset($tryme[$audit_date][$id]);
                 wmf_audit_echo('!');
-              } catch (WmfException $ex) {
+              } catch (WMFException $ex) {
                 // End of the transaction search/destroy loop. If we're here and have
                 // an error, we found something and the re-fusion didn't work.
                 // Handle consistently, and definitely don't try looking in other
@@ -886,8 +887,8 @@ abstract class BaseAuditProcessor {
       $count !== count($uncompressed_filenames) ||
       $count !== count($distilled_filenames)
     ) {
-      throw new WmfException(
-        WmfException::UNKNOWN,
+      throw new WMFException(
+        WMFException::UNKNOWN,
         'Bad programmer! Get_X_log_file_names return inconsistent counts'
       );
     }
@@ -1229,8 +1230,8 @@ abstract class BaseAuditProcessor {
         }
       }
       // We have log data, but nothing matches. This is too weird.
-      throw new WmfException(
-        WmfException::DATA_INCONSISTENT,
+      throw new WMFException(
+        WMFException::DATA_INCONSISTENT,
         'Inconsistent data. Skipping the following: ' . print_r($audit_data, TRUE) . "\n" . print_r($raw_data, TRUE)
       );
     }
@@ -1240,15 +1241,15 @@ abstract class BaseAuditProcessor {
   protected function parse_json_log_line($line) {
     $matches = [];
     if (!preg_match('/[^{]*([{].*)/', $line, $matches)) {
-      throw new WmfException(
-        WmfException::MISSING_MANDATORY_DATA,
+      throw new WMFException(
+        WMFException::MISSING_MANDATORY_DATA,
         "JSON data not found in $line"
       );
     }
     $log_data = json_decode($matches[1], TRUE);
     if (!$log_data) {
-      throw new WmfException(
-        WmfException::MISSING_MANDATORY_DATA,
+      throw new WMFException(
+        WMFException::MISSING_MANDATORY_DATA,
         "Could not parse JSON data in $line"
       );
     }

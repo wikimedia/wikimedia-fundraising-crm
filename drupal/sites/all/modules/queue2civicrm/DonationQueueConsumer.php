@@ -4,7 +4,7 @@ use SmashPig\Core\DataStores\PendingDatabase;
 use Queue2civicrmTrxnCounter;
 use SmashPig\Core\UtcDate;
 use wmf_common\TransactionalWmfQueueConsumer;
-use WmfException;
+use \Civi\WMFException\WMFException;
 use DonationStatsCollector;
 
 class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
@@ -14,7 +14,7 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 	 * logging and merging any extra info from the pending db.
 	 *
 	 * @param array $message
-	 * @throws WmfException
+	 * @throws \Civi\WMFException\WMFException
 	 */
 	public function processMessage( $message ) {
 
@@ -55,7 +55,7 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
 				$errorMessage = "Message {$message['gateway']}-{$message['gateway_txn_id']} " .
 					"indicates a pending DB entry with order ID {$message['order_id']}, " .
 					"but none was found.  Requeueing.";
-				throw new WmfException( WmfException::MISSING_PREDECESSOR, $errorMessage );
+				throw new WMFException( WMFException::MISSING_PREDECESSOR, $errorMessage );
 			}
 		}
 

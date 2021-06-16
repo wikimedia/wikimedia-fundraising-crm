@@ -2,7 +2,7 @@
 
 use \Civi\WMFException\FredgeDataValidationException;
 use wmf_common\WmfQueueConsumer;
-use WmfException;
+use \Civi\WMFException\WMFException;
 
 class AntifraudQueueConsumer extends WmfQueueConsumer {
 
@@ -11,7 +11,7 @@ class AntifraudQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $message
    *
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   function processMessage($message) {
     $id = "{$message['gateway']}-{$message['order_id']}";

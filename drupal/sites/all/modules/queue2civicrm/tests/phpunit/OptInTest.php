@@ -1,6 +1,7 @@
 <?php
 
 use queue2civicrm\opt_in\OptInQueueConsumer;
+use Civi\WMFException\WMFException;
 
 /**
  * @group Queue2Civicrm
@@ -152,10 +153,8 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('', $contact[$this->optInCustomFieldName]);
   }
 
-  /**
-   * @expectedException WmfException
-   */
   public function testMalformedMessage() {
+    $this->expectException(WMFException::class);
     $msg = [
       'hither' => 'thither',
     ];

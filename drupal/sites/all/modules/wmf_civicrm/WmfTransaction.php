@@ -1,6 +1,7 @@
 <?php
 // namespace wmf_common;
 
+use Civi\WMFException\WMFException;
 use Civi\WMFException\NonUniqueTransaction;
 use Civi\WMFException\NoTransactionExists;
 
@@ -39,10 +40,10 @@ class WmfTransaction {
         }
 
         if ( !$this->gateway ) {
-            throw new WmfException( WmfException::INVALID_MESSAGE, 'Missing gateway.' );
+            throw new WMFException( WMFException::INVALID_MESSAGE, 'Missing gateway.' );
         }
         if ( !$this->gateway_txn_id ) {
-            throw new WmfException( WmfException::INVALID_MESSAGE, 'Missing gateway_txn_id.' );
+            throw new WMFException( WMFException::INVALID_MESSAGE, 'Missing gateway_txn_id.' );
         }
         $parts[] = $this->gateway;
         $parts[] = $this->gateway_txn_id;
@@ -82,12 +83,12 @@ class WmfTransaction {
 
         switch ( count( $parts ) ) {
         case 0:
-            throw new WmfException( WmfException::INVALID_MESSAGE, "Unique ID is missing terms." );
+            throw new WMFException( WMFException::INVALID_MESSAGE, "Unique ID is missing terms." );
         case 3:
             // TODO: deprecate timestamp
             $transaction->timestamp = array_pop( $parts );
             if ( !is_numeric( $transaction->timestamp ) ) {
-                throw new WmfException( WmfException::INVALID_MESSAGE, "Malformed unique id (timestamp does not appear to be numeric)" );
+                throw new WMFException( WMFException::INVALID_MESSAGE, "Malformed unique id (timestamp does not appear to be numeric)" );
             }
             // pass
         case 2:
@@ -98,11 +99,11 @@ class WmfTransaction {
             // using to maintain an actually-unique per-gateway natural key.
             $transaction->gateway_txn_id = array_shift( $parts );
             if ( empty( $transaction->gateway_txn_id ) ) {
-                throw new WmfException( WmfException::INVALID_MESSAGE, "Empty gateway transaction id" );
+                throw new WMFException( WMFException::INVALID_MESSAGE, "Empty gateway transaction id" );
             }
             break;
         default:
-            throw new WmfException( WmfException::INVALID_MESSAGE, "Malformed unique id (too many terms)" );
+            throw new WMFException( WMFException::INVALID_MESSAGE, "Malformed unique id (too many terms)" );
         }
 
         // TODO: debate whether to renormalize here
@@ -115,7 +116,7 @@ class WmfTransaction {
         try {
             $this->getContribution();
             return true;
-        } catch ( WmfException $ex ) {
+        } catch ( WMFException $ex ) {
             return false;
         }
     }

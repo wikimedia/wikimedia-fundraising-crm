@@ -26,7 +26,7 @@ class FidelityFileTest extends BaseChecksFileTest {
    * @throws \API_Exception
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImport(): void {
     $importer = new FidelityFile(__DIR__ . "/data/fidelity.csv");

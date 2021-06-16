@@ -36,7 +36,7 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * Use a high number to ensure the default 25 limit does not hurt us.
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
     public function testGetCiviID() {
       civicrm_initialize();
@@ -49,7 +49,7 @@ class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * Use a high number to ensure the default 25 limit does not hurt us.
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testGetInvalidCiviID() {
     civicrm_initialize();

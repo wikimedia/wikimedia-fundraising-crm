@@ -613,7 +613,7 @@ function wmf_civicrm_civicrm_validateForm($formName, &$fields, &$files, &$form, 
  *
  * @return array of any errors in the form
  * @throws \CiviCRM_API3_Exception
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  */
 function wmf_civicrm_validate_contribution($fields, $form): array {
   $errors = [];

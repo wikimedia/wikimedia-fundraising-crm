@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFException\WMFException;
+
 class BenevityFile extends ChecksFile {
 
   /**
@@ -46,7 +48,7 @@ class BenevityFile extends ChecksFile {
    * @param array $msg
    *   The normalized import parameters.
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function mungeMessage(&$msg) {
     $msg['gateway'] = 'benevity';
@@ -94,7 +96,7 @@ class BenevityFile extends ChecksFile {
       }
     }
     catch (CiviCRM_API3_Exception $e) {
-      throw new WmfException(WmfException::INVALID_MESSAGE, $e->getMessage());
+      throw new WMFException(WMFException::INVALID_MESSAGE, $e->getMessage());
     }
     $msg['date'] = $this->additionalFields['date']['year'] . '-' . $this->additionalFields['date']['month'] . '-' . $this->additionalFields['date']['day'];
 
@@ -129,7 +131,7 @@ class BenevityFile extends ChecksFile {
    *
    * @param array $msg
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function validateRequiredFields($msg) {
     $failed = [];
@@ -143,7 +145,7 @@ class BenevityFile extends ChecksFile {
       }
     }
     if (count($failed) === 3) {
-      throw new WmfException(WmfException::CIVI_REQ_FIELD, t("Missing required fields @keys during check import", ["@keys" => implode(", ", $failed)]));
+      throw new WMFException(WMFException::CIVI_REQ_FIELD, t("Missing required fields @keys during check import", ["@keys" => implode(", ", $failed)]));
     }
   }
 
@@ -206,7 +208,7 @@ class BenevityFile extends ChecksFile {
    * @return array
    *
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function doImport($msg) {
     $contribution = [];
@@ -263,7 +265,7 @@ class BenevityFile extends ChecksFile {
    * @return int|NULL
    *   Contact ID to use, if no integer is returned a new contact will be created
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function getIndividualID(&$msg) {
     if (empty($msg['email'])
@@ -275,8 +277,8 @@ class BenevityFile extends ChecksFile {
         return $this->getAnonymousContactID();
       }
       catch (CiviCRM_API3_Exception $e) {
-        throw new WmfException(
-          WmfException::IMPORT_CONTRIB,
+        throw new WMFException(
+          WMFException::IMPORT_CONTRIB,
           t("The donation is anonymous but the anonymous contact is ambiguous. Ensure exactly one contact is in CiviCRM with the email fakeemail@wikimedia.org' and first name and last name being Anonymous "
           )
         );
@@ -323,7 +325,7 @@ class BenevityFile extends ChecksFile {
       return FALSE;
     }
     catch (CiviCRM_API3_Exception $e) {
-      throw new WmfException(WmfException::IMPORT_CONTRIB, $e->getMessage());
+      throw new WMFException(WMFException::IMPORT_CONTRIB, $e->getMessage());
     }
   }
 
@@ -336,7 +338,7 @@ class BenevityFile extends ChecksFile {
    * @return bool
    *
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function isContactEmployedByOrganization($organization_name, $contact) {
     if ($contact['current_employer'] == $this->getOrganizationResolvedName($organization_name)) {
@@ -390,7 +392,7 @@ class BenevityFile extends ChecksFile {
    * @return mixed
    *
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function getNameMatchedEmployedIndividualID($msg) {
     $matches = [];
@@ -432,7 +434,7 @@ class BenevityFile extends ChecksFile {
    *
    * @return array|bool
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function checkForExistingContributions($msg) {
     $donorTransactionNeedsProcessing = (!empty($msg['gross']) && $msg['gross'] !== "0.00");
@@ -452,7 +454,7 @@ class BenevityFile extends ChecksFile {
       // and should throw an exception.
       $duplicates = ($main ? 1 : 0) + ($matched ? 1 : 0);
       if ($duplicates === 1) {
-        throw new WmfException(WmfException::INVALID_MESSAGE, 'Row has already been partially imported. Try searching for, and potentially deleting, a contribution with a Transaction ID of ' . (!$matched ? $msg['gateway_txn_id'] : $msg['gateway_txn_id'] . '_matched'));
+        throw new WMFException(WMFException::INVALID_MESSAGE, 'Row has already been partially imported. Try searching for, and potentially deleting, a contribution with a Transaction ID of ' . (!$matched ? $msg['gateway_txn_id'] : $msg['gateway_txn_id'] . '_matched'));
       }
     }
     return $main ? $main : $matched;

@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFException\WMFException;
+
 /**
  * @group Import
  * @group Offline2Civicrm
@@ -77,11 +79,12 @@ class JpMorganFileTest extends BaseChecksFileTest {
   }
 
   /**
-   * @expectedException WmfException
-   * @expectedExceptionCode WmfException::INVALID_FILE_FORMAT
-   * @expectedExceptionMessage Duplicate column headers: CURRENCY, reference
+   * @throws \League\Csv\Exception
    */
-  function testImportDuplicateHeaders() {
+  public function testImportDuplicateHeaders(): void {
+    $this->expectExceptionMessage("Duplicate column headers: CURRENCY, reference");
+    $this->expectExceptionCode(WMFException::INVALID_FILE_FORMAT);
+    $this->expectException(WMFException::class);
     //FIXME
     $_GET['q'] = '';
     //FIXME

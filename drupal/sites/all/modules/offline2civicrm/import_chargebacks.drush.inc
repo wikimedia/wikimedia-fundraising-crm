@@ -7,6 +7,8 @@
  * @author Peter Gehres <pgehres@wikimedia.org>
  */
 
+use Civi\WMFException\WMFException;
+
 /**
  * Implementation of hook_drush_command()
  */
@@ -64,7 +66,7 @@ function _offline2civicrm_import_chargebacks_chargeback_trxn($contribution_id){
   try {
     wmf_civicrm_mark_refund( $contribution_id, 'chargeback', true );
     watchdog('offline2civicrm', "Updated contribution $contribution_id", NULL, WATCHDOG_INFO);
-  } catch ( WmfException $e ) {
+  } catch ( WMFException $e ) {
 	watchdog('offline2civicrm', "Cannot charge back contribution $contribution_id: {$e->getMessage()})", array(), WATCHDOG_ERROR);
   }
 }

@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFException\WMFException;
+
 /**
  * @group Pipeline
  * @group WmfCivicrm
@@ -33,10 +35,8 @@ class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($relationshipType['id'], $relationship['relationship_type_id']);
   }
 
-  /**
-   * @expectedException WmfException
-   */
-  public function testBadRelationshipTarget() {
+  public function testBadRelationshipTarget(): void {
+    $this->expectException(WMFException::class);
     $msg = [
       'currency' => 'USD',
       'date' => time(),
@@ -53,10 +53,8 @@ class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->messageImport($msg);
   }
 
-  /**
-   * @expectedException WmfException
-   */
-  public function testBadRelationshipType() {
+  public function testBadRelationshipType(): void {
+    $this->expectException(WMFException::class);
     $msg = [
       'currency' => 'USD',
       'date' => time(),

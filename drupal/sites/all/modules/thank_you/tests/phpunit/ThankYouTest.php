@@ -98,7 +98,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testSendThankYou() {
     variable_set('thank_you_add_civimail_records', 'false');
@@ -126,7 +126,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testSendThankYouAddCiviMailActivity() {
     variable_set('thank_you_add_civimail_records', 'true');
@@ -151,7 +151,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testSendEndowmentThankYou() {
     variable_set('thank_you_add_civimail_records', 'false');
@@ -188,7 +188,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that DAF (Donor Advised Fund) thank you mails do not have tax information
    *
    * @throws \CRM_Core_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testSendDAFThankYou() {
     variable_set('thank_you_add_civimail_records', 'false');
@@ -223,7 +223,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that Stock gift thank you mails use the stock value amount
    *
    * @throws \CRM_Core_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testSendStockThankYou() {
     variable_set('thank_you_add_civimail_records', 'false');

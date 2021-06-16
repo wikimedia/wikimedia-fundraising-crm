@@ -2,7 +2,7 @@
 
 use wmf_common\TransactionalWmfQueueConsumer;
 use CRM_Core_DAO;
-use WmfException;
+use \Civi\WMFException\WMFException;
 
 
 class UnsubscribeQueueConsumer extends TransactionalWmfQueueConsumer {
@@ -28,7 +28,7 @@ class UnsubscribeQueueConsumer extends TransactionalWmfQueueConsumer {
     // Sanity checking :)
     if (empty($message['email']) or empty($message['contribution-id'])) {
       $error = "Required field not present! Dropping message on floor. Message: " . json_encode($message);
-      throw new WmfException(WmfException::UNSUBSCRIBE, $error);
+      throw new WMFException(WMFException::UNSUBSCRIBE, $error);
     }
 
     $emails = [strtolower($message['email'])];
@@ -124,7 +124,7 @@ EOS;
       return $result->N;
     }
     catch(\Exception $ex) {
-      throw new WmfException(WmfException::UNSUBSCRIBE, $ex->getMessage());
+      throw new WMFException(WMFException::UNSUBSCRIBE, $ex->getMessage());
     }
   }
 

@@ -1,7 +1,7 @@
 <?php namespace queue2civicrm\banner_history;
 
 use wmf_common\WmfQueueConsumer;
-use WmfException;
+use Civi\WMFException\WMFException;
 
 class BannerHistoryQueueConsumer extends WmfQueueConsumer {
 
@@ -9,12 +9,12 @@ class BannerHistoryQueueConsumer extends WmfQueueConsumer {
 	 * Validate and store messages from the banner history queue
 	 *
 	 * @param array $message
-	 * @throws WmfException
+	 * @throws \Civi\WMFException\WMFException
 	 */
 	function processMessage( $message ) {
 		if ( empty( $message ) ) {
-			throw new WmfException(
-				WmfException::BANNER_HISTORY,
+			throw new WMFException(
+				WMFException::BANNER_HISTORY,
 				'Empty banner history message.'
 			);
 		}
@@ -23,8 +23,8 @@ class BannerHistoryQueueConsumer extends WmfQueueConsumer {
 			empty( $message['banner_history_id'] ) ||
 			empty( $message['contribution_tracking_id'] )
 		) {
-			throw new WmfException(
-				WmfException::BANNER_HISTORY,
+			throw new WMFException(
+				WMFException::BANNER_HISTORY,
 				'Missing banner history or contribution tracking ID.'
 			);
 		}
@@ -36,8 +36,8 @@ class BannerHistoryQueueConsumer extends WmfQueueConsumer {
 			!is_numeric( $contributionTrackingId ) ||
 			!preg_match( '/^[0-9a-f]{10,20}$/', $bannerHistoryId )
 		) {
-			throw new WmfException(
-				WmfException::BANNER_HISTORY,
+			throw new WMFException(
+				WMFException::BANNER_HISTORY,
 				'Invalid data in banner history message.'
 			);
 		}

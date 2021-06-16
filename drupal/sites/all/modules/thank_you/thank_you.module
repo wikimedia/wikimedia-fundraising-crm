@@ -7,6 +7,7 @@ use wmf_communication\CiviMailingInsertException;
 use wmf_communication\CiviMailingMissingException;
 use wmf_communication\CiviQueueInsertException;
 use wmf_communication\Templating;
+use Civi\WMFException\WMFException;
 
 // TODO:
 // * use more exceptions in place of watchdog/return false
@@ -260,7 +261,7 @@ function thank_you_get_languages() {
  *
  * @param $params
  *
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  */
 function thank_you_send_test($params) {
   watchdog('thank_you', "Starting thank_you test send to {$params['recipient_address']} in {$params['locale']}", [], WATCHDOG_INFO);
@@ -284,7 +285,7 @@ function thank_you_send_test($params) {
  *
  * @return bool
  * @throws \CiviCRM_API3_Exception
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  */
 function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
   civicrm_initialize();
@@ -344,7 +345,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
   if (!$found) {
     // the API result is bad
     $msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r($mailingData, TRUE) . '</pre>';
-    throw new WmfException(WmfException::GET_CONTRIBUTION, $msg);
+    throw new WMFException(WMFException::GET_CONTRIBUTION, $msg);
   }
   $mailingData = $mailingData->toArray();
 
@@ -385,7 +386,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
   try {
     $transaction = WmfTransaction::from_unique_id($mailingData['trxn_id']);
     $is_recurring = $transaction->is_recurring;
-  } catch (WmfException $ex) {
+  } catch (WMFException $ex) {
     watchdog('thank_you', $ex->getMessage(), NULL, WATCHDOG_NOTICE);
   }
 
@@ -442,7 +443,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
   }
   else {
     $msg = "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'];
-    throw new WmfException(WmfException::BAD_EMAIL, $msg);
+    throw new WMFException(WMFException::BAD_EMAIL, $msg);
   }
 }
 
@@ -482,7 +483,7 @@ function thank_you_update_ty_date($contribution) {
  * @param array $params
  *
  * @return bool
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  * @throws \Exception
  */
 function thank_you_send_mail($params) {
@@ -510,13 +511,13 @@ function thank_you_send_mail($params) {
     $as_list = implode(', ', $missing);
     watchdog('thank_you', "Missing stuff from the TY params: {$as_list} " . check_plain(print_r($params, TRUE)), [], WATCHDOG_ERROR);
     $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
-    throw new WmfException(WmfException::MISSING_MANDATORY_DATA, $msg);
+    throw new WMFException(WMFException::MISSING_MANDATORY_DATA, $msg);
   }
 
   [$html, $subject] = thank_you_render($params);
   if (!$html || !$subject) {
     $msg = "HTML rendering of template failed in {$params['locale']}.";
-    throw new WmfException(WmfException::UNKNOWN, $msg, ['thank_you_params' => $params]);
+    throw new WMFException(WMFException::UNKNOWN, $msg, ['thank_you_params' => $params]);
   }
 
   $civi_queue_record = NULL;
@@ -567,7 +568,7 @@ function thank_you_send_mail($params) {
       $msg = "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n"
         . __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n"
         . $e->getTraceAsString();
-      throw new WmfException(WmfException::EMAIL_SYSTEM_FAILURE, $msg, $debug);
+      throw new WMFException(WMFException::EMAIL_SYSTEM_FAILURE, $msg, $debug);
     }
 
     return FALSE;
@@ -581,7 +582,7 @@ function thank_you_send_mail($params) {
     $msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
       . "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
 
-    throw new WmfException(WmfException::EMAIL_SYSTEM_FAILURE, $msg, $debug);
+    throw new WMFException(WMFException::EMAIL_SYSTEM_FAILURE, $msg, $debug);
   }
 }
 
@@ -860,7 +861,7 @@ EOT;
     try {
       thank_you_for_contribution($contribution->id);
       $consecutiveFailures = 0;
-    } catch (WmfException $ex) {
+    } catch (WMFException $ex) {
       $errName = $ex->getErrorName();
       $noThankYou = "failed: $errName";
 
@@ -885,7 +886,7 @@ EOT;
           // Make an exception for failmail with the updated message,
           // but avoid doubling the type prefix.
           $logMessage = substr($logMessage, strlen($errName) + 1);
-          $mailException = new WmfException($ex->getCode(), $logMessage);
+          $mailException = new WMFException($ex->getCode(), $logMessage);
 
           // Failmail also logs a WATCHDOG_ERROR
           wmf_common_failmail('thank_you', '', $mailException);

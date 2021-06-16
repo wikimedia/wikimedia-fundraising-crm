@@ -1,7 +1,7 @@
 <?php namespace queue2civicrm\recurring;
 
 use wmf_common\TransactionalWmfQueueConsumer;
-use WmfException;
+use \Civi\WMFException\WMFException;
 
 class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
@@ -10,7 +10,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    *
    * @param array $message
    *
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function processMessage($message) {
     // store the original message for logging later
@@ -49,7 +49,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     if (isset($message['txn_type']) && in_array($message['txn_type'], $txn_subscr_payment)) {
       if (wmf_civicrm_get_contributions_from_gateway_id($message['gateway'], $message['gateway_txn_id'])) {
         watchdog('recurring', "Duplicate contribution: {$message['gateway']}-{$message['gateway_txn_id']}.");
-        throw new WmfException(WmfException::DUPLICATE_CONTRIBUTION, "Contribution already exists. Ignoring message.");
+        throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution already exists. Ignoring message.");
       }
       $this->importSubscriptionPayment($message);
     }
@@ -57,7 +57,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       $this->importSubscriptionAccount($message);
     }
     else {
-      throw new WmfException(WmfException::INVALID_RECURRING, 'Msg not recognized as a recurring payment related message.');
+      throw new WMFException(WMFException::INVALID_RECURRING, 'Msg not recognized as a recurring payment related message.');
     }
 
     // update the log
@@ -78,7 +78,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    * @param array $msg
    *
    * @return array
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function normalizeMessage($msg) {
 
@@ -93,7 +93,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
     if (isset($msg['frequency_unit'])) {
       if (!in_array($msg['frequency_unit'], ['day', 'week', 'month', 'year'])) {
-        throw new WmfException(WmfException::INVALID_RECURRING, "Bad frequency unit: {$msg['frequency_unit']}");
+        throw new WMFException(WMFException::INVALID_RECURRING, "Bad frequency unit: {$msg['frequency_unit']}");
       }
     }
 
@@ -109,7 +109,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    *
    * @param array $msg
    *
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionPayment($msg) {
     /**
@@ -121,7 +121,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
      * otherwise, process the payment.
      */
     if (!isset($msg['subscr_id'])) {
-      throw new WmfException(WmfException::INVALID_RECURRING, 'Msg missing the subscr_id; cannot process.');
+      throw new WMFException(WMFException::INVALID_RECURRING, 'Msg missing the subscr_id; cannot process.');
     }
     // check for parent record in civicrm_contribution_recur and fetch its id
     $recur_record = wmf_civicrm_get_recur_record($msg['subscr_id']);
@@ -190,8 +190,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         $recur_record = wmf_civicrm_get_recur_record($msg['subscr_id']);
         if (!$recur_record) {
           watchdog('recurring', 'Fallback contribution_recur record creation failed.');
-          throw new WmfException(
-            WmfException::IMPORT_SUBSCRIPTION,
+          throw new WMFException(
+            WMFException::IMPORT_SUBSCRIPTION,
             "Could not create the initial recurring record for subscr_id {$msg['subscr_id']}"
           );
         }
@@ -199,7 +199,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     }
     if (!$recur_record) {
       watchdog('recurring', 'Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');
-      throw new WmfException(WmfException::MISSING_PREDECESSOR, "Missing the initial recurring record for subscr_id {$msg['subscr_id']}");
+      throw new WMFException(WMFException::MISSING_PREDECESSOR, "Missing the initial recurring record for subscr_id {$msg['subscr_id']}");
     }
 
     $msg['contact_id'] = $recur_record->contact_id;
@@ -261,7 +261,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    *
    * @param array $msg
    *
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionAccount($msg) {
     switch ($msg['txn_type']) {
@@ -286,7 +286,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         break;
 
       default:
-        throw new WmfException(WmfException::INVALID_RECURRING, 'Invalid subscription message type');
+        throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid subscription message type');
     }
   }
 
@@ -295,12 +295,12 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    *
    * @param array $msg
    *
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionSignup($msg) {
     // ensure there is not already a record of this account - if so, mark the message as succesfuly processed
     if ($recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
-      throw new WmfException(WmfException::DUPLICATE_CONTRIBUTION, 'Subscription account already exists');
+      throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, 'Subscription account already exists');
     }
     $ctRecord = wmf_civicrm_get_contribution_tracking($msg);
     if (empty($ctRecord['contribution_id'])) {
@@ -343,7 +343,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       if (isset($msg['recurring_payment_token'])) {
         // Check that the original contribution has processed first
         if(empty($ctRecord['contribution_id'])) {
-         throw new WmfException(WmfException::MISSING_PREDECESSOR, 'Recurring queue processed before donations queue');
+         throw new WMFException(WMFException::MISSING_PREDECESSOR, 'Recurring queue processed before donations queue');
         }
 
         // Create a token
@@ -425,7 +425,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       }
     }
     catch (\CiviCRM_API3_Exception $e) {
-      throw new WmfException(WmfException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());
+      throw new WMFException(WMFException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());
     }
     watchdog('recurring', 'Succesfully inserted subscription signup for subscriber id: %subscr_id ', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
   }
@@ -435,7 +435,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    *
    * @param array $msg
    *
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionCancel($msg) {
     // ensure we have a record of the subscription
@@ -443,7 +443,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
       // Revert this patch when that's resolved
       return;
-      // throw new WmfException(WmfException::INVALID_RECURRING, 'Subscription account does not exist');
+      // throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist');
     }
 
     $cancelStatus = civicrm_api3('ContributionRecur', 'cancel', [
@@ -453,7 +453,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       'cancel_reason' => '(auto) User Cancelled via Gateway',
     ]);
     if ($cancelStatus['is_error']) {
-      throw new WmfException(WmfException::INVALID_RECURRING, 'There was a problem cancelling the subscription for subscriber id: ' . print_r($msg['subscr_id'], TRUE));
+      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem cancelling the subscription for subscriber id: ' . print_r($msg['subscr_id'], TRUE));
     }
 
     if ($msg['cancel_date']) {
@@ -466,7 +466,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         'version' => 3,
       ];
       if (!$api->ContributionRecur->Create($update_params)) {
-        throw new WmfException(WmfException::INVALID_RECURRING, 'There was a problem updating the subscription for cancelation for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ": " . $api->errorMsg());
+        throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for cancelation for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ": " . $api->errorMsg());
       }
     }
     watchdog('recurring', 'Succesfuly cancelled subscription for subscriber id %subscr_id', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
@@ -484,7 +484,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    *
    * @param array $msg
    *
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionExpired($msg) {
     // ensure we have a record of the subscription
@@ -492,7 +492,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
       // Revert this patch when that's resolved
       return;
-      // throw new WmfException(WmfException::INVALID_RECURRING, 'Subscription account does not exist');
+      // throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist');
     }
 
     try {
@@ -507,7 +507,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       ]);
     }
     catch (\CiviCRM_API3_Exception $e) {
-      throw new WmfException(WmfException::INVALID_RECURRING, 'There was a problem updating the subscription for EOT for subscription id: %subscr_id' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
+      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for EOT for subscription id: %subscr_id' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
     }
     watchdog('recurring', 'Succesfuly ended subscription for subscriber id: %subscr_id ', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
   }
@@ -520,12 +520,12 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    *
    * @param array $msg
    *
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionModification($msg) {
     // ensure we have a record of the subscription
     if (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
-      throw new WmfException(WmfException::INVALID_RECURRING, 'Subscription account does not exist for subscription id: ' . print_r($msg['subscr_id'], TRUE));
+      throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist for subscription id: ' . print_r($msg['subscr_id'], TRUE));
     }
 
     $api = civicrm_api_classapi();
@@ -542,7 +542,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       'version' => 3,
     ];
     if (!$api->ContributionRecur->Create($update_params)) {
-      throw new WmfException(WmfException::INVALID_RECURRING, 'There was a problem updating the subscription record for subscription id ' . print_r($msg['subscr_id'], TRUE) . ": " . $api->errorMsg());
+      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription record for subscription id ' . print_r($msg['subscr_id'], TRUE) . ": " . $api->errorMsg());
     }
 
     // update the contact
@@ -556,7 +556,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    *
    * @param array $msg
    *
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionPaymentFailed($msg) {
     // ensure we have a record of the subscription
@@ -564,7 +564,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
       // Revert this patch when that's resolved
       return;
-      // throw new WmfException(WmfException::INVALID_RECURRING, 'Subscription account does not exist for subscription id: ' . print_r($msg['subscr_id'], TRUE));
+      // throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist for subscription id: ' . print_r($msg['subscr_id'], TRUE));
     }
 
     $api = civicrm_api_classapi();
@@ -576,7 +576,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       'version' => 3,
     ];
     if (!$api->ContributionRecur->Create($update_params)) {
-      throw new WmfException(WmfException::INVALID_RECURRING, 'There was a problem updating the subscription for failed payment for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ": " . $api->errorMsg());
+      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for failed payment for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ": " . $api->errorMsg());
     }
     else {
       watchdog('recurring', 'Successfully canceled subscription for failed payment for subscriber id: %subscr_id ', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);

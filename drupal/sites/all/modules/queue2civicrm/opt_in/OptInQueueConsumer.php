@@ -1,8 +1,7 @@
 <?php namespace queue2civicrm\opt_in;
 
 use wmf_common\WmfQueueConsumer;
-use WmfException;
-
+use \Civi\WMFException\WMFException;
 
 class OptInQueueConsumer extends WmfQueueConsumer {
 
@@ -23,7 +22,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $message
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CiviCRM_API3_Exception
    */
   function processMessage($message) {
@@ -31,7 +30,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
     // Sanity checking :)
     if (empty($message['email'])) {
       $error = "Required field not present! Dropping message on floor. Message: " . json_encode($message);
-      throw new WmfException(WmfException::UNSUBSCRIBE, $error);
+      throw new WMFException(WMFException::UNSUBSCRIBE, $error);
     }
 
     if ( isset( $message['contact_id'] ) && isset($message['contact_hash'] ) ) {

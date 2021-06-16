@@ -55,7 +55,7 @@ class BenevityTest extends BaseChecksFileTest {
    * Test that all imports fail if the organization has multiple matches.
    *
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
   public function testImportFailOrganizationContactAmbiguous() {
@@ -75,7 +75,7 @@ class BenevityTest extends BaseChecksFileTest {
    * Test that all imports fail if the organization does not pre-exist.
    *
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportFailNoOrganizationContactExists() {
     $messages = $this->importBenevityFile();
@@ -86,7 +86,7 @@ class BenevityTest extends BaseChecksFileTest {
    * Test that import passes for the contact if a single match is found.
    *
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
   public function testImportSucceedOrganizationSingleContactExists() {
@@ -104,7 +104,7 @@ class BenevityTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualSingleContactExists() {
     $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array(
@@ -140,7 +140,7 @@ class BenevityTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualNoExistingMatch() {
     $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array(
@@ -174,7 +174,7 @@ class BenevityTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualNoExistingMatchOnlyMatchingGift() {
     $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array(
@@ -214,7 +214,7 @@ class BenevityTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualSofCreditMatchMatchingGiftNoDonorGift() {
     $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array(
@@ -325,7 +325,7 @@ class BenevityTest extends BaseChecksFileTest {
    * contact.
    *
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
   public function testImportSucceedIndividualTooManyChoicesCantDecideSpamTheDB() {
@@ -454,8 +454,9 @@ class BenevityTest extends BaseChecksFileTest {
    * should get used as it will have an employee relationship.
    *
    * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
    */
-  public function testImportSucceedIndividualCreateIfAmbiguousPreviousSoftCredit() {
+  public function testImportSucceedIndividualCreateIfAmbiguousPreviousSoftCredit(): void {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
@@ -604,7 +605,7 @@ class BenevityTest extends BaseChecksFileTest {
    * connection.
    *
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualOneMatchNoEmailEmployerMatch() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
@@ -677,7 +678,7 @@ class BenevityTest extends BaseChecksFileTest {
    * If there is no employer connection a new contact should be created.
    *
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualOneMatchNoEmailNoEmployerMatch() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
@@ -717,7 +718,8 @@ class BenevityTest extends BaseChecksFileTest {
    * contribution have also been rolled back.
    *
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
+   * @throws \CRM_Core_Exception
    */
   public function testImportDuplicateFullRollback() {
     $organization = $this->callAPISuccess('Contact', 'create', array(
@@ -749,7 +751,7 @@ class BenevityTest extends BaseChecksFileTest {
    * We check this by making sure none are reported as errors.
    *
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testDuplicateDetection() {
     $this->createAllOrgs();
@@ -770,11 +772,11 @@ class BenevityTest extends BaseChecksFileTest {
    * This should throw an error rather be treated as a valid duplicate.
    *
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
   public function testDuplicateDetectionInvalidState() {
-    list ($mouseOrg) =$this->createAllOrgs();
+    [$mouseOrg] =$this->createAllOrgs();
 
     $existing = $this->callAPISuccess('Contribution', 'create', array(
       'trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED',
@@ -827,7 +829,7 @@ class BenevityTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedOrganizationDisambiguatedBySingleNickName() {
     $this->callAPISuccess('Contact', 'create', array(
@@ -868,10 +870,10 @@ class BenevityTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedAll() {
-    list($mouseOrg) = $this->createAllOrgs();
+    [$mouseOrg] = $this->createAllOrgs();
 
     $this->callAPISuccess('Contact', 'create', array(
       'first_name' => 'Minnie',
@@ -959,7 +961,7 @@ class BenevityTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedCurrencyTransformExists(): void {
     [$mouseOrg, $minnie] = $this->spawnMice();
@@ -982,7 +984,7 @@ class BenevityTest extends BaseChecksFileTest {
    *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedCurrencyWithOriginalCurrencyFee(): void {
     $this->setExchangeRates(strtotime('2019-09-12'), ['USD' => 1, 'JPY' => 100]);
@@ -1029,7 +1031,7 @@ class BenevityTest extends BaseChecksFileTest {
    *
    * @return array
    * @throws \League\Csv\Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function importBenevityFile($additionalFields = ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]], $csv = 'benevity'): array {
     $importer = new BenevityFile(__DIR__ . '/data/' . $csv . '.csv', $additionalFields);

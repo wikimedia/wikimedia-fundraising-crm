@@ -36,7 +36,7 @@ class ChecksFileTest extends BaseChecksFileTest {
   /**
    * Populate contribution_tracking.country
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
   public function testImportCountry() {
