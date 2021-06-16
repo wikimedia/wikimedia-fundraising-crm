@@ -104,7 +104,7 @@ class StripeFile extends ChecksFile {
    *
    * @return array queue message format
    *
-   * @throws \EmptyRowException
+   * @throws Civi\WMFException\EmptyRowException
    * @throws \WmfException
    */
   protected function parseRow($data) {

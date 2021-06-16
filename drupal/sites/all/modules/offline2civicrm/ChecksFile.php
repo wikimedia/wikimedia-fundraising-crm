@@ -6,6 +6,8 @@ use SmashPig\Core\Context;
 use League\Csv\Writer;
 use League\Csv\Statement;
 use Civi\Api4\Name;
+use Civi\WMFException\EmptyRowException;
+use Civi\WMFException\IgnoredRowException;
 
 /**
  * CSV batch format for manually-keyed donation checks
@@ -386,7 +388,7 @@ abstract class ChecksFile {
    *
    * @return array queue message format
    *
-   * @throws \EmptyRowException
+   * @throws Civi\WMFException\EmptyRowException
    * @throws \WmfException
    */
   protected function parseRow($data) {
