@@ -196,5 +196,6 @@ function relationshipblock_civicrm_contactSummaryBlocks(&$blocks) {
     'tpl_file' => 'CRM/Relationshipblock/Page/Inline/RelationshipBlock.tpl',
     'sample' => [E::ts('Relationship %1', [1 => 1]), E::ts('Relationship %1', [1 => 2]), E::ts('Relationship %1', [1 => 3])],
     'edit' => 'civicrm/admin/reltype?reset=1',
+    'system_default' => [0, 1],
   ];
 }

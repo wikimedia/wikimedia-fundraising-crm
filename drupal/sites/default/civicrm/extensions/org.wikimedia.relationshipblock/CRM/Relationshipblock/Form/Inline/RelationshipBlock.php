@@ -46,7 +46,7 @@ class CRM_Relationshipblock_Form_Inline_RelationshipBlock extends CRM_Contact_Fo
     $allExistingRelationships = CRM_Relationshipblock_Utils_RelationshipBlock::getExistingRelationships($this->_contactId);
     foreach ($relationshipTypes as $key => $relType) {
       $submittedValues = !empty($values[$key]) ? explode(',', $values[$key]) : [];
-      $existingRelationships = CRM_Utils_Array::value($key, $allExistingRelationships);
+      $existingRelationships = $allExistingRelationships[$key] ?? NULL;
       // End old relationships
       if ($existingRelationships) {
         foreach ($existingRelationships['contacts'] as $existingRelationship) {
