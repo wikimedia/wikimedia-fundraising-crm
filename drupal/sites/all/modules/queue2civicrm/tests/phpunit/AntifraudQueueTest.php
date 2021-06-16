@@ -1,6 +1,7 @@
 <?php
 
 use queue2civicrm\fredge\AntifraudQueueConsumer;
+use Civi\WMFException\FredgeDataValidationException;
 
 /**
  * @group Queue2Civicrm
@@ -63,10 +64,11 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * The first message for a ct_id / order_id pair needs to be complete
    *
-   * @expectedException FredgeDataValidationException
+   *
    * @throws \WmfException
    */
-  public function testIncompleteMessage() {
+  public function testIncompleteMessage(): void {
+    $this->expectException(FredgeDataValidationException::class);
     $message = json_decode(
       file_get_contents(__DIR__ . '/../data/payments-antifraud.json'),
       TRUE

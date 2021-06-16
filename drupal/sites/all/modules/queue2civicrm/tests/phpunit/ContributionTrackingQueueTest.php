@@ -3,6 +3,7 @@
 use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
 use queue2civicrm\contribution_tracking\ContributionTrackingStatsCollector;
 use SmashPig\Core\SequenceGenerators\Factory;
+use Civi\WMFException\ContributionTrackingDataValidationException;
 
 /**
  * @group Queue2Civicrm
@@ -57,7 +58,7 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * $messages should ALWAYS contain the field 'id'
    */
-  public function testExceptionThrowOnInvalidContributionTrackingMessage() {
+  public function testExceptionThrowOnInvalidContributionTrackingMessage(): void {
     $message = $this->getMessage();
     unset($message['id']);
     $this->expectException(ContributionTrackingDataValidationException::class);

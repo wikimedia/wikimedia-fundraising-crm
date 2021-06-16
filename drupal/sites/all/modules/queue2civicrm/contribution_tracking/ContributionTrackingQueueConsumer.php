@@ -2,9 +2,8 @@
 
 namespace queue2civicrm\contribution_tracking;
 
-use ContributionTrackingDataValidationException;
+use \Civi\WMFException\ContributionTrackingDataValidationException;
 use wmf_common\WmfQueueConsumer;
-use WmfException;
 
 class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
 
@@ -13,9 +12,9 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $message contribution-tracking queue message
    *
-   * @throws \ContributionTrackingDataValidationException
+   * @throws \Civi\WMFException\ContributionTrackingDataValidationException
    */
-  function processMessage($message) {
+  public function processMessage($message) {
     if (empty($message['id'])) {
       $error = "missing essential contribution tracking ID. Dropping message on floor." . json_encode($message);
       throw new ContributionTrackingDataValidationException($error);

@@ -1,6 +1,7 @@
 <?php
 
 use queue2civicrm\fredge\PaymentsInitQueueConsumer;
+use Civi\WMFException\FredgeDataValidationException;
 
 /**
  * @group Queue2Civicrm
@@ -28,10 +29,9 @@ class PaymentsInitQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * The first message for a ct_id / order_id pair needs to be complete
-   *
-   * @expectedException FredgeDataValidationException
    */
-  public function testIncompleteMessage() {
+  public function testIncompleteMessage(): void {
+    $this->expectException(FredgeDataValidationException::class);
     $message = $this->getMessage();
     unset($message['payment_method']);
     $this->consumer->processMessage($message);
@@ -41,7 +41,7 @@ class PaymentsInitQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * After one complete message has been inserted, a second message
    * with the same ct_id / order_id can update only selected fields
    */
-  public function testUpdatedMessage() {
+  public function testUpdatedMessage(): void {
     $message1 = $this->getMessage();
     $message2 = $this->getMessage();
     $message2['contribution_tracking_id'] = $message1['contribution_tracking_id'];

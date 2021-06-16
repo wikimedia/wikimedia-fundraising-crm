@@ -1,6 +1,7 @@
 <?php
 use queue2civicrm\fredge\AntifraudQueueConsumer;
 use queue2civicrm\fredge\PaymentsInitQueueConsumer;
+use Civi\WMFException\FredgeDataValidationException;
 
 /**
  * Implements hook_menu
@@ -166,11 +167,13 @@ function fredge_paymentsinit_batch_process() {
 /**
  * Check a message against a table schema, and complain if it doesn't fit. Also
  * format date fields and discard fields with no matching column.
+ *
  * @param array $msg the array-converted message body
  * @param string $table the table you're trying to put $msg into
  * @param string $log_identifier Some small string for the log that will help id
  * the message if something goes amiss and we have to log about it.
  * @param bool $require_all if true, throw an exception on missing fields
+ *
  * @return array an array of the relevant fields, with dates in the right format
  * @throws FredgeDataValidationException
  */
@@ -204,7 +207,7 @@ function fredge_prep_data( $msg, $table, $log_identifier, $require_all = true ) 
     if (!array_key_exists($field, $msg)) {
       if ($require_all) {
         $error = "$log_identifier: Expected field $field bound for table $table not present! Dropping message on floor.";
-        throw new FredgeDataValidationException( $error );
+        throw new FredgeDataValidationException($error);
         //so... add fields to DI first when you do schema changes.
       }
     } else {
@@ -214,7 +217,7 @@ function fredge_prep_data( $msg, $table, $log_identifier, $require_all = true ) 
         && $definition['length'] < strlen( $msg[$field] )
       ) {
         $error = "$log_identifier: Data in field $field is too long! Dropping message on floor.";
-        throw new FredgeDataValidationException( $error );
+        throw new FredgeDataValidationException($error);
       }
 
       // Convert timestamps to native SQL format datetime.
@@ -232,10 +235,3 @@ function fredge_prep_data( $msg, $table, $log_identifier, $require_all = true ) 
   return $data;
 }
 
-class FredgeDataValidationException extends WmfException {
-    public function __construct( $message ) {
-        // FIXME: other exception types are descriptive of the error,
-        // not just its source module.  Make like the others.
-        parent::__construct( parent::FREDGE, $message );
-    }
-}
