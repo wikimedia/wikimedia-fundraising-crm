@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFException\EmptyRowException;
+
 class BitpayFile extends ChecksFile {
   protected function getRequiredColumns() {
     return array(
@@ -53,7 +55,7 @@ class BitpayFile extends ChecksFile {
    *
    * @return array queue message format
    *
-   * @throws \EmptyRowException
+   * @throws Civi\WMFException\EmptyRowException
    * @throws \WmfException
    */
   protected function parseRow($data) {

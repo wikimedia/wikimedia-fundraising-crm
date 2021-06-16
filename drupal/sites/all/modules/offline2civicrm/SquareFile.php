@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFException\IgnoredRowException;
+
 class SquareFile extends ChecksFile {
 
   protected $refundLastTransaction = FALSE;

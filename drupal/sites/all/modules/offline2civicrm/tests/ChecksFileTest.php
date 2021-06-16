@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\Contact;
+use Civi\WMFException\EmptyRowException;
 
 /**
  * @group Import
@@ -20,18 +21,16 @@ class ChecksFileTest extends BaseChecksFileTest {
     parent::tearDown();
   }
 
-  /**
-   * @expectedException EmptyRowException
-   */
-  function testEmptyRow() {
+  public function testEmptyRow(): void {
+    $this->expectException(EmptyRowException::class);
     // A few kinds of empty.
     $data = [
-      'Orignal Currency' => '',
+      'Original Currency' => '',
       '' => '',
     ];
 
     $importer = new ChecksFileProbe();
-    $output = $importer->_parseRow($data);
+    $importer->_parseRow($data);
   }
 
   /**
