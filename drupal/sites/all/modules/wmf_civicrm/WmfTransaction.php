@@ -1,12 +1,15 @@
 <?php
 // namespace wmf_common;
 
+use Civi\WMFException\NonUniqueTransaction;
+use Civi\WMFException\NoTransactionExists;
+
 /**
  * Contain assumptions about our transactions.
  *
  * Data is lazy-loaded, so an object of this type is efficient to use as a
  * temporary helper variable.
- * 
+ *
  * For example,
  *   $trxn_id = WmfTransaction::from_message( $msg )->get_unique_id();
  *
@@ -129,17 +132,5 @@ class WmfTransaction {
         } else {
             return array_shift( $contributions );
         }
-    }
-}
-
-class NoTransactionExists extends WmfException {
-    function __construct( WmfTransaction $transaction ) {
-        parent::__construct( "GET_CONTRIBUTION", "No such transaction: {$transaction->get_unique_id()}" );
-    }
-}
-
-class NonUniqueTransaction extends WmfException {
-    function __construct( WmfTransaction $transaction ) {
-        parent::__construct( "GET_CONTRIBUTION", "Transaction does not resolve to a single contribution: {$transaction->get_unique_id()}" );
     }
 }

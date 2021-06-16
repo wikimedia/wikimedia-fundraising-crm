@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFException\NonUniqueTransaction;
+
 /**
  * @group WmfCommon
  */
@@ -132,10 +134,8 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals(TRUE, $transaction->exists());
   }
 
-  /**
-   * @expectedException NonUniqueTransaction
-   */
   function testGetContributionMany() {
+    $this->expectException(NonUniqueTransaction::class);
     $gateway_txn_id = mt_rand();
     $contactID = $this->createIndividual([
       'display_name' => 'test',
