@@ -7,6 +7,8 @@
  * @author Peter Gehres <pgehres@wikimedia.org>
  */
 
+use Civi\WMFException\WMFException;
+
 /**
  * Implementation of hook_drush_command()
  */
@@ -14,7 +16,7 @@ function import_checks_drush_command() {
   $items = array();
 
   $items['import-checks'] = array(
-    'description' => 
+    'description' =>
       'Import checks processed offline into CiviCRM from a CSV',
     'examples' => array( 'drush import-checks filename.csv' ),
 //    'aliases' => array( 'ic' ),
@@ -53,7 +55,7 @@ function drush_import_checks() {
 		$importer = new $type( $filename );
 		$importer->import();
 	}
-	catch ( WmfException $ex ) {
+	catch ( WMFException $ex ) {
 		watchdog( 'offline2civicrm', 'Import checks: error during import ' + $ex->getMessage(), NULL, WATCHDOG_ERROR );
 		if ( $ex->isRejectMessage() && !$ex->isNoEmail() ) {
 			watchdog( 'offline2civicrm', 'Suppressing failmail.', NULL, WATCHDOG_WARNING );

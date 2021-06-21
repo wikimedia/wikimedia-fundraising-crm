@@ -108,7 +108,7 @@ function drush_queue_consume() {
 /**
  * @param $path string Full path to a JSON file containing messages to import
  *
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  * @throws \Exception
  */
 function drush_queue_consume_donations_process_messagefile($path) {

@@ -15,7 +15,7 @@ class MailerPHPMailer extends MailerBase implements IMailer {
    * @param array $headers
    *
    * @return bool
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws Exception
    */
   function send($email, $headers = []) {

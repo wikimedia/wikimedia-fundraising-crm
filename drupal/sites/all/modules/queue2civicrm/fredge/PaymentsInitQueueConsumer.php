@@ -3,7 +3,7 @@
 use SmashPig\Core\DataStores\PaymentsInitialDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 use wmf_common\WmfQueueConsumer;
-use WmfException;
+use \Civi\WMFException\WMFException;
 
 class PaymentsInitQueueConsumer extends WmfQueueConsumer {
 
@@ -12,7 +12,7 @@ class PaymentsInitQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $message
    *
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   function processMessage($message) {
     $logId = "{$message['gateway']}-{$message['order_id']}";

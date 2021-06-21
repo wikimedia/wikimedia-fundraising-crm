@@ -1,5 +1,6 @@
 <?php
 
+use Civi\WMFException\WMFException;
 use wmf_common\WmfQueueConsumer;
 
 class CRM_Queue_PreferencesQueueConsumer extends WmfQueueConsumer {
@@ -9,7 +10,7 @@ class CRM_Queue_PreferencesQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $message
    *
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   function processMessage($message) {
 
@@ -23,9 +24,9 @@ class CRM_Queue_PreferencesQueueConsumer extends WmfQueueConsumer {
       }
     }
     catch (CiviCRM_API3_Exception $e) {
-      // TODO Temporarily just throwing a WmfException; See T279962.
-      throw new WmfException(
-        WmfException::INVALID_MESSAGE,
+      // TODO Temporarily just throwing a WMFException; See T279962.
+      throw new WMFException(
+        WMFException::INVALID_MESSAGE,
         'Invalid data in e-mail preferences message.'
       );
     }

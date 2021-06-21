@@ -1,5 +1,8 @@
 <?php
 
+use Civi\WMFException\WMFException;
+use Civi\WMFException\IgnoredRowException;
+
 class SquareFile extends ChecksFile {
 
   protected $refundLastTransaction = FALSE;
@@ -45,7 +48,7 @@ class SquareFile extends ChecksFile {
     // the others as of now are pending, canceled, and deposited.
 
     if (!in_array($data['Status'], ['Completed', 'Refunded'])) {
-      throw new IgnoredRowException(WmfException::INVALID_MESSAGE, t('Status of @status not valid for Square import', ['@status' => $data['Status']]));
+      throw new IgnoredRowException(WMFException::INVALID_MESSAGE, t('Status of @status not valid for Square import', ['@status' => $data['Status']]));
     }
 
     return parent::parseRow($data);
@@ -98,9 +101,9 @@ class SquareFile extends ChecksFile {
           TRUE
         );
       }
-      catch (WmfException $ex) {
+      catch (WMFException $ex) {
         // TODO DuplicateRowException?
-        if ($ex->getCode() === WmfException::DUPLICATE_CONTRIBUTION) {
+        if ($ex->getCode() === WMFException::DUPLICATE_CONTRIBUTION) {
           $this->refundLastTransaction = FALSE;
           return TRUE; // duplicate refund
         }

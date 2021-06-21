@@ -2,6 +2,7 @@
 
 namespace Civi\Omnimail;
 
+use Civi\WMFException\WMFException;
 use Html2Text\Html2Text;
 
 /**
@@ -82,7 +83,7 @@ abstract class MailerBase {
 
     if ($email['plaintext'] === FALSE) {
       watchdog('thank_you', "Text rendering of template failed in {$email['locale']}.", [], WATCHDOG_ERROR);
-      throw new \WmfException(\WmfException::UNKNOWN, "Could not render plaintext");
+      throw new WMFException(WMFException::UNKNOWN, "Could not render plaintext");
     }
   }
 

@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\Contact;
+use Civi\WMFException\WMFException;
 
 class FidelityFile extends ChecksFile {
 
@@ -94,7 +95,7 @@ class FidelityFile extends ChecksFile {
    * @param array $msg
    *   The normalized import parameters.
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \API_Exception
    * @throws \CiviCRM_API3_Exception
    */
@@ -112,7 +113,7 @@ class FidelityFile extends ChecksFile {
       try {
         $msg['id'] = $this->getOrganizationID($msg['organization_name']);
       }
-      catch (WmfException $e) {
+      catch (WMFException $e) {
         $msg['contact_type'] = 'Organization';
       }
     }

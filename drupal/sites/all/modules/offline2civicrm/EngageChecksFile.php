@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFException\WMFException;
+
 class EngageChecksFile extends ChecksFile {
 
   function getRequiredColumns() {
@@ -49,7 +51,7 @@ class EngageChecksFile extends ChecksFile {
    *
    * @param array $msg
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CiviCRM_API3_Exception
    */
   protected function mungeMessage(&$msg) {
@@ -71,7 +73,7 @@ class EngageChecksFile extends ChecksFile {
    * @return int|NULL
    *   Contact ID to use, if no integer is returned a new contact will be created
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws \CiviCRM_API3_Exception
    */
   protected function getContactID($msg) {
@@ -85,8 +87,8 @@ class EngageChecksFile extends ChecksFile {
         return $this->getAnonymousContactID();
       }
       catch (CiviCRM_API3_Exception $e) {
-        throw new WmfException(
-          WmfException::IMPORT_CONTRIB,
+        throw new WMFException(
+          WMFException::IMPORT_CONTRIB,
           t("The donation is anonymous but the anonymous contact is ambiguous. Ensure exactly one contact is in CiviCRM with the email fakeemail@wikimedia.org' and first name and last name being Anonymous "
           )
         );

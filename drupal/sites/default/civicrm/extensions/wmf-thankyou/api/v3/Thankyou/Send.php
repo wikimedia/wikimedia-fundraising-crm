@@ -26,7 +26,7 @@ function _civicrm_api3_thankyou_send_spec(&$spec) {
  *   API result descriptor
  *
  * @throws \CiviCRM_API3_Exception
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  * @throws \API_Exception
  *
  * @see civicrm_api3_create_success

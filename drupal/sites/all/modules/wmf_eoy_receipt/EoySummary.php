@@ -166,7 +166,7 @@ EOS;
       try {
         $success = $mailer->send($email, []);
       }
-      // Should be just phpMailer exception but weird normalizeConten throws wmfException
+      // Should be just phpMailer exception but weird normalizeConten throws WMFException
       catch (\Exception $e) {
         // Invalid email address or something
         watchdog('wmf_eoy_receipt', $e->getMessage(), [], WATCHDOG_INFO);

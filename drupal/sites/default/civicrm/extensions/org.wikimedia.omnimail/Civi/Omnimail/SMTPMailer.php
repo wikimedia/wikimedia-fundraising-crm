@@ -38,7 +38,7 @@ class SMTPMailer extends MailerBase implements IMailer {
    *
    * @return bool
    *
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    * @throws Exception
    */
   public function send($email, $headers = []) {

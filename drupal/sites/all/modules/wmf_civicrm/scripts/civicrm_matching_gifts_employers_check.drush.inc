@@ -1,5 +1,6 @@
 <?php
 
+use Civi\WMFException\WMFException;
 use SmashPig\Core\UtcDate;
 use wmf_communication\Mailer;
 
@@ -39,7 +40,7 @@ function civicrm_matching_gifts_employers_check_drush_help($section) {
  * @param int $syncBatchSize
  *
  * @throws \CiviCRM_API3_Exception
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  */
 function drush_civicrm_matching_gifts_employers_check($syncBatchSize = 0) {
   civicrm_initialize();
@@ -91,7 +92,7 @@ function drush_civicrm_matching_gifts_employers_check($syncBatchSize = 0) {
  *
  * @return array $syncResult
  * @throws \CiviCRM_API3_Exception
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  * @see sites/default/civicrm/extensions/matching-gifts/api/v3/MatchingGiftPolicies/Sync.php
  */
 function sync_matching_gifts_employer_data($syncBatchSize) {
@@ -106,8 +107,8 @@ function sync_matching_gifts_employer_data($syncBatchSize) {
   $syncResult = civicrm_api3('MatchingGiftPolicies', 'Sync', $syncParams);
 
   if ($syncResult['is_error']) {
-    throw new WmfException(
-      WmfException::MISSING_MANDATORY_DATA,
+    throw new WMFException(
+      WMFException::MISSING_MANDATORY_DATA,
       'There was a problem syncing matching gift employers: ' . $syncResult['error_message']
     );
   }
@@ -136,7 +137,7 @@ function sync_matching_gifts_employer_data($syncBatchSize) {
  * @param string $exportFilePath file path to write export to
  *
  * @throws \CiviCRM_API3_Exception
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  */
 function generate_new_export($exportFilePath) {
   $exportParams = [
@@ -145,8 +146,8 @@ function generate_new_export($exportFilePath) {
 
   $exportResult = civicrm_api3('MatchingGiftPolicies', 'Export', $exportParams);
   if ($exportResult['is_error']) {
-    throw new WmfException(
-      WmfException::MISSING_MANDATORY_DATA,
+    throw new WMFException(
+      WMFException::MISSING_MANDATORY_DATA,
       'There was a problem exporting matching gift employers data: ' . $exportResult['error_message']
     );
   }
@@ -166,7 +167,7 @@ function generate_new_export($exportFilePath) {
  * @param string $currentEmployerFilePath
  *
  * @return bool
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  */
 function new_export_contains_updates(
   $newEmployerFilePath,
@@ -201,8 +202,8 @@ function new_export_contains_updates(
     }
     else {
       // the new employer data file doesn't exist
-      throw new WmfException(
-        WmfException::MISSING_MANDATORY_DATA,
+      throw new WMFException(
+        WMFException::MISSING_MANDATORY_DATA,
         'New employer data file not found ' . $newEmployerFilePath
       );
     }
@@ -215,8 +216,8 @@ function new_export_contains_updates(
     }
     else {
       // we can't find the new or current employer data file!
-      throw new WmfException(
-        WmfException::MISSING_MANDATORY_DATA,
+      throw new WMFException(
+        WMFException::MISSING_MANDATORY_DATA,
         'No employer data files found! ' . $newEmployerFilePath . " - " . $currentEmployerFilePath
       );
     }
@@ -255,7 +256,7 @@ function update_matching_gifts_employer_data(
  *
  * @param string $currentEmployerFilePath
  *
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  */
 function send_matching_gifts_update_email($currentEmployerFilePath) {
   $toAddress = variable_get(
@@ -281,8 +282,8 @@ function send_matching_gifts_update_email($currentEmployerFilePath) {
     );
   } catch (Exception $e) {
     // something bad happened :(
-    throw new WmfException(
-      WmfException::BAD_EMAIL,
+    throw new WMFException(
+      WMFException::BAD_EMAIL,
       'Error when attempting to send matching gifts update email:  ' . $e->getMessage(
       )
     );

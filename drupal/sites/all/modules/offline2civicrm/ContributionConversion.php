@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFException\AlreadyRecurring;
+
 class ContributionConversion {
     static function makeRecurring( WmfTransaction $transaction, $cancel = false ) {
         $contribution = WmfTransaction::from_unique_id( "{$transaction->gateway} {$transaction->gateway_txn_id}" )->getContribution();
@@ -25,8 +27,3 @@ class ContributionConversion {
     }
 }
 
-class AlreadyRecurring extends WmfException {
-    function __construct( WmfTransaction $transaction ) {
-        parent::__construct( "DUPLICATE_CONTRIBUTION", "Already a recurring contribution: {$transaction->get_unique_id()}" );
-    }
-}

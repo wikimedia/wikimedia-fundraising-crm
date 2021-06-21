@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFException\WMFException;
+
 class WmfImportFile extends ChecksFile {
 
   /** Make sure the file schema is not damaged. */
@@ -54,8 +56,8 @@ class WmfImportFile extends ChecksFile {
       !array_key_exists('Raw Payment Instrument', $this->headers) &&
       !array_key_exists('Payment Instrument', $this->headers)
     ) {
-      throw new WmfException(
-        WmfException::INVALID_FILE_FORMAT,
+      throw new WMFException(
+        WMFException::INVALID_FILE_FORMAT,
         'File must contain either \'Payment Instrument\' or \'Raw Payment Instrument\''
       );
     }

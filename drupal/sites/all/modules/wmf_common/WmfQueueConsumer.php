@@ -4,10 +4,10 @@ use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
 use Exception;
 use SmashPig\Core\UtcDate;
 use SmashPig\CrmLink\Messages\DateFields;
-use WmfException;
+use \Civi\WMFException\WMFException;
 
 /**
- * Queue consumer that knows what to do with WmfExceptions
+ * Queue consumer that knows what to do with WMFExceptions
  */
 abstract class WmfQueueConsumer extends BaseQueueConsumer {
 
@@ -25,7 +25,7 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
         $logId = 'Odd message type';
       }
     }
-    if ($ex instanceof WmfException) {
+    if ($ex instanceof WMFException) {
       watchdog(
         'wmf_common',
         'Failure while processing message: ' . $ex->getMessage(),
@@ -33,7 +33,7 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
         WATCHDOG_ERROR
       );
 
-      $this->handleWmfException($message, $ex, $logId);
+      $this->handleWMFException($message, $ex, $logId);
     }
     else {
       $error = 'UNHANDLED ERROR. Halting dequeue loop. Exception: ' .
@@ -48,13 +48,14 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 
   /**
    * @param array $message
-   * @param WmfException $ex
+   * @param WMFException $ex
    * @param string $logId
    *
-   * @throws WmfException when we want to halt the dequeue loop
+   * @throws \Civi\WMFException\WMFException when we want to halt the dequeue loop
+   * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  protected function handleWmfException(
-    $message, WmfException $ex, $logId
+  protected function handleWMFException(
+    $message, WMFException $ex, $logId
   ) {
     $mailableDetails = '';
     $reject = FALSE;
@@ -67,7 +68,7 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
       // TODO: add a requeueMessage hook that allows modifying
       // the message or the decision to requeue it. Or maybe a
       // more generic (WMF)Exception handling hook?
-      if ($ex->getCode() === WmfException::DUPLICATE_INVOICE) {
+      if ($ex->getCode() === WMFException::DUPLICATE_INVOICE) {
         // Crappy special-case handling that we can't handle at
         // lower levels.
         $message = $this->modifyDuplicateInvoice($message);

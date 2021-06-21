@@ -1,5 +1,8 @@
 <?php
 
+use Civi\WMFException\WMFException;
+use Civi\WMFException\EmptyRowException;
+
 class BitpayFile extends ChecksFile {
   protected function getRequiredColumns() {
     return array(
@@ -53,12 +56,12 @@ class BitpayFile extends ChecksFile {
    *
    * @return array queue message format
    *
-   * @throws \EmptyRowException
-   * @throws \WmfException
+   * @throws \Civi\WMFException\EmptyRowException
+   * @throws \Civi\WMFException\WMFException
    */
   protected function parseRow($data) {
     if ($data['tx type'] === 'Invoice Refund') {
-      throw new WmfException(WmfException::INVALID_MESSAGE, 'Refunds not currently handled. Please log a Phab if required');
+      throw new WMFException(WMFException::INVALID_MESSAGE, 'Refunds not currently handled. Please log a Phab if required');
     }
     $validTypes = [
       'donation',

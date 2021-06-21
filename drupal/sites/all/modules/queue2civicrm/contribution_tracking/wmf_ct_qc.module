@@ -3,7 +3,6 @@
 use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
 use queue2civicrm\contribution_tracking\ContributionTrackingStatsCollector;
 
-
 /**
  * Implements hook_menu
  */
@@ -84,10 +83,3 @@ function ct_batch_process() {
   }
 }
 
-
-class ContributionTrackingDataValidationException extends WmfException {
-
-  public function __construct($message) {
-    parent::__construct(parent::CONTRIBUTION_TRACKING, $message);
-  }
-}

@@ -3,6 +3,7 @@
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
 use Civi\Api4\CustomGroup;
+use Civi\WMFHooks\QuickForm;
 use CRM_WmfCivicrm_ExtensionUtil as E;
 // phpcs:enable
 
@@ -192,94 +193,17 @@ function wmf_civicrm_civicrm_themes(&$themes) {
 }
 
 /**
- * Get the name of the custom field as it would be shown on the form.
- *
- * This is basically 'custom_x_-1' for us. The -1 will always be 1
- * except for multi-value custom groups which we don't really use.
- *
- * @param string $fieldName
- *
- * @return string
- * @throws \CiviCRM_API3_Exception
- */
-function _wmf_civicrm_get_form_custom_field_name(string $fieldName): string {
-  return 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID($fieldName) . '_-1';
-}
-
-/**
  * Implements hook_civicrm_buildForm
  *
  * @param string $formName
  * @param CRM_Core_Form $form
  *
- * @throws \WmfException
  * @throws \CiviCRM_API3_Exception
+ * @noinspection PhpUnused
  */
-function wmf_civicrm_civicrm_buildForm($formName, &$form) {
-  switch ($formName) {
-    case 'CRM_Custom_Form_CustomDataByType':
-      if ($form->_type === 'Contribution' && empty($form->_entityId)) {
-        // New hand-entered contributions get a default for no_thank_you
-        $no_thank_you_reason_field_name = _wmf_civicrm_get_form_custom_field_name('no_thank_you');
-        $giftSourceField = _wmf_civicrm_get_form_custom_field_name('Campaign');
-
-        $no_thank_you_toggle_form_elements = [
-          $giftSourceField,
-          'financial_type_id'
-        ];
-
-        if ($no_thank_you_reason_field_name && $form->elementExists($no_thank_you_reason_field_name)) {
-          if (CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'financial_type_id', $form->_subType ?? NULL) === 'Stock') {
-            $form->setDefaults([$no_thank_you_reason_field_name => '']);
-          }
-          else {
-            $form->setDefaults(
-              [$no_thank_you_reason_field_name => 'Manually entered']
-            );
-          }
-          CRM_Core_Resources::singleton()->addScript(wmf_civicrm_get_no_thankyou_js($no_thank_you_reason_field_name, $no_thank_you_toggle_form_elements));
-        }
-      }
-      break;
-    case 'CRM_Contribute_Form_Contribution':
-      // Only run this validation for users having the Engage role.
-      // @todo - move the user_has_role out of the extension. In order
-      // to ready this for drupal we can switch to using a permission
-      // for engage 'access engage ui options'.
-      if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
-        break;
-      }
-
-      // Default to the Engage contribution type, if this is a new contribution.
-      if ($form->_action & CRM_Core_Action::ADD) {
-        $engage_contribution_type_id = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Engage');
-        $form->setDefaults([
-          'financial_type_id' => $engage_contribution_type_id,
-        ]);
-        $form->assign('customDataSubType', $engage_contribution_type_id);
-      }
-
-      // Make Batch Number required, if the field exists.
-      $batch_num_field_name = _wmf_civicrm_get_form_custom_field_name('import_batch_number');
-      if ($batch_num_field_name && $form->elementExists($batch_num_field_name)) {
-        $form->addRule($batch_num_field_name, t('Batch number is required'), 'required');
-      }
-      break;
-
-    case 'CRM_Contribute_Form_Search':
-    case 'CRM_Contact_Form_Search_Advanced':
-      // Remove the field 'Contributions OR Soft Credits?' from the contribution search
-      // and advanced search pages.
-      // This filter has to be removed as it attempts to create an insanely big
-      // temporary table that kills the server.
-      if ($form->elementExists('contribution_or_softcredits')) {
-        $form->removeElement('contribution_or_softcredits');
-      }
-      break;
-
-  }
+function wmf_civicrm_civicrm_buildForm(string $formName, $form) {
+ QuickForm::buildForm($formName, $form);
 }
-
 
 /**
  * Log the dedupe to our log.
@@ -651,4 +575,89 @@ function _wmf_civicrm_is_db_ready_for_triggers(): bool {
   $wmfDonorQuery = CustomGroup::get(FALSE)->addWhere('name', '=', 'wmf_donor')->execute();
   return (bool) count($wmfDonorQuery);
 
+}
+
+
+/**
+ * Implements hook_civicrm_validateForm().
+ *
+ * @param string $formName
+ * @param array $fields
+ * @param array $files
+ * @param CRM_Core_Form $form
+ * @param array $errors
+ */
+function wmf_civicrm_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  if ($formName === 'CRM_Contact_Form_DedupeFind') {
+    if (!$fields['limit']) {
+      $errors['limit'] = ts('Save the database. Use a limit');
+    }
+    $ruleGroupID = $form->rgid;
+    if ($fields['limit'] > 1 && 'fishing_net' === civicrm_api3('RuleGroup', 'getvalue', ['id' => $ruleGroupID, 'return' => 'name'])) {
+      $errors['limit'] = ts('The fishing net rule should only be applied to a single contact');
+    }
+  }
+  if ($formName == 'CRM_Contribute_Form_Contribution') {
+    $engageErrors = wmf_civicrm_validate_contribution($fields, $form);
+    if (!empty($engageErrors)) {
+      $errors = array_merge($errors, $engageErrors);
+    }
+  }
+}
+
+/**
+ * Additional validations for the contribution form
+ *
+ * @param array $fields
+ * @param CRM_Core_Form $form
+ *
+ * @return array of any errors in the form
+ * @throws \CiviCRM_API3_Exception
+ * @throws \Civi\WMFException\WMFException
+ */
+function wmf_civicrm_validate_contribution($fields, $form): array {
+  $errors = [];
+
+  // Only run on add or update
+  if (!($form->_action & (CRM_Core_Action::UPDATE | CRM_Core_Action::ADD))) {
+    return $errors;
+  }
+  // Source has to be of the form USD 15.25 so as not to gum up the works,
+  // and the currency code on the front should be something we understand
+  $source = $fields['source'];
+  if (preg_match('/^([a-z]{3}) [0-9]+(\.[0-9]+)?$/i', $source, $matches)) {
+    $currency = strtoupper($matches[1]);
+    if (!wmf_civicrm_is_valid_currency($currency)) {
+      $errors['source'] = t('Please set a supported currency code');
+    }
+  }
+  else {
+    $errors['source'] = t('Source must be in the format USD 15.25');
+  }
+
+  // Only run the following validation for users having the Engage role.
+  if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
+    return $errors;
+  }
+
+  $engage_contribution_type_id = wmf_civicrm_get_civi_id('financial_type_id', 'Engage');
+  if ($fields['financial_type_id'] !== $engage_contribution_type_id) {
+    $errors['financial_type_id'] = t("Must use the \"Engage\" contribution type.");
+  }
+
+  if (wmf_civicrm_tomorrows_month() === '01') {
+    $postmark_field_name = QuickForm::getFormCustomFieldName('postmark_date');
+    // If the receive_date is in Dec or Jan, make sure we have a postmark date,
+    // to be generous to donors' tax stuff.
+    $date = strptime($fields['receive_date'], "%m/%d/%Y");
+    // n.b.: 0-based date spoiler.
+    if ($date['tm_mon'] == (12 - 1) || $date['tm_mon'] == (1 - 1)) {
+      // And the postmark date is missing
+      if ($form->elementExists($postmark_field_name) && !$fields[$postmark_field_name]) {
+        $errors[$postmark_field_name] = t("You forgot the postmark date!");
+      }
+    }
+  }
+
+  return $errors;
 }

@@ -1,8 +1,8 @@
 <?php namespace queue2civicrm\fredge;
 
-use FredgeDataValidationException;
+use \Civi\WMFException\FredgeDataValidationException;
 use wmf_common\WmfQueueConsumer;
-use WmfException;
+use \Civi\WMFException\WMFException;
 
 class AntifraudQueueConsumer extends WmfQueueConsumer {
 
@@ -11,7 +11,7 @@ class AntifraudQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $message
    *
-   * @throws WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   function processMessage($message) {
     $id = "{$message['gateway']}-{$message['order_id']}";
@@ -62,7 +62,7 @@ class AntifraudQueueConsumer extends WmfQueueConsumer {
    * @param string $logIdentifier Some small string for the log that will help
    *   id the message if something goes amiss and we have to log about it.
    *
-   * @throws FredgeDataValidationException
+   * @throws FredgeDataValidationException|\InvalidMergeQueryException
    */
   protected function insertAntifraudData($msg, $logIdentifier) {
 

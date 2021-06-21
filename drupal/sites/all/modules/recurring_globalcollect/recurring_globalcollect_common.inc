@@ -4,6 +4,7 @@
  */
 
 use Civi\Api4\ContributionRecur;
+use Civi\WMFException\WMFException;
 
 /**
  * Select one payment by the primary key.
@@ -174,7 +175,7 @@ EOS;
  * @param array $errors
  *
  * @return int Returns the number of affected rows.
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  */
 function _recurring_globalcollect_update_record_failure($id, $errors) {
 
@@ -274,7 +275,7 @@ function recurring_globalcollect_should_force_cancel( $errors ) {
  *
  * @return integer  Returns the number of affected rows.
  *
- * @throws \WmfException
+ * @throws \Civi\WMFException\WMFException
  */
 function _recurring_globalcollect_update_record_to_processing($id) {
 
@@ -284,7 +285,7 @@ function _recurring_globalcollect_update_record_to_processing($id) {
   $contributionStatus = CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $record['contribution_status_id']);
 
   if (!in_array($contributionStatus, ['Completed', 'In Progress', 'Failing', 'Failed']) ) {
-    throw new WmfException( WmfException::INVALID_RECURRING, t( 'The subscription is supposed to be in progress or failing before it can be processed. However for legacy reasons we keep processing Completed & Failed too' ), array('contribution_recur' => $record) );
+    throw new WMFException( WMFException::INVALID_RECURRING, t( 'The subscription is supposed to be in progress or failing before it can be processed. However for legacy reasons we keep processing Completed & Failed too' ), array('contribution_recur' => $record) );
   }
 
   $dbs = wmf_civicrm_get_dbs();
@@ -301,7 +302,7 @@ function _recurring_globalcollect_update_record_to_processing($id) {
   $dbs->pop();
 
   if ( !$affected_rows ) {
-    throw new WmfException( WmfException::INVALID_RECURRING, t( 'The subscription was not marked as in processing.' ), array('contribution_recur' => $record) );
+    throw new WMFException( WMFException::INVALID_RECURRING, t( 'The subscription was not marked as in processing.' ), array('contribution_recur' => $record) );
   }
 
   return $affected_rows;
@@ -370,25 +371,25 @@ function _recurring_globalcollect_validate_record_for_update($record) {
   // Make sure $cycle_day is not empty
   if (empty($cycle_day)) {
     $message = 'cycle_day cannot be empty';
-    throw new WmfException( WmfException::INVALID_RECURRING, $message, array('contribution_recur' => $record) );
+    throw new WMFException( WMFException::INVALID_RECURRING, $message, array('contribution_recur' => $record) );
   }
 
   // Make sure $frequency_interval is not empty
   if (empty($frequency_interval)) {
     $message = 'frequency_interval cannot be empty';
-    throw new WmfException( WmfException::INVALID_RECURRING, $message, array('contribution_recur' => $record) );
+    throw new WMFException( WMFException::INVALID_RECURRING, $message, array('contribution_recur' => $record) );
   }
 
   // Make sure a valid interval is assigned
   if (!in_array($frequency_unit, $allowed_intervals)) {
     $message = 'Invalid frequency_unit [' . $frequency_unit . '] for recurring_globalcollect. Allowed intervals: [ ' . implode(', ', $allowed_intervals) . ' ]';
-    throw new WmfException( WmfException::INVALID_RECURRING, $message, array('contribution_recur' => $record) );
+    throw new WMFException( WMFException::INVALID_RECURRING, $message, array('contribution_recur' => $record) );
   }
 
   // Make sure $next_sched_contribution is assigned
   if (empty($next_sched_contribution)) {
     $message = 'next_sched_contribution_date cannot be empty';
-    throw new WmfException( WmfException::INVALID_RECURRING, $message, array('contribution_recur' => $record));
+    throw new WMFException( WMFException::INVALID_RECURRING, $message, array('contribution_recur' => $record));
   }
 }
 
