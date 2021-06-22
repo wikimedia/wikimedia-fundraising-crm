@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  *  - With TransactionalInterface, any data changes made by setUp() or test****() functions will
  *    rollback automatically -- as long as you don't manipulate schema or truncate tables.
  *    If this test needs to manipulate schema or truncate tables, then either:
- *       a. Do all that using setupHeadless() and phpunit.Civi\Test.
+ *       a. Do all that using setupHeadless() and Civi\Test.
  *       b. Disable TransactionalInterface, and handle all setup/teardown yourself.
  *
  * @group headless
@@ -30,7 +30,7 @@ class NameParseTest extends TestCase implements HeadlessInterface, HookInterface
   /**
    * Setup used when HeadlessInterface is implemented.
    *
-   * phpunit.Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
+   * Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
    *
    * @see See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
    *
