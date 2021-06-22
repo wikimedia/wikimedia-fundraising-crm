@@ -3,6 +3,7 @@
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
 use Civi\Api4\CustomGroup;
+use Civi\WMFHooks\Permissions;
 use Civi\WMFHooks\QuickForm;
 use CRM_WmfCivicrm_ExtensionUtil as E;
 // phpcs:enable
@@ -660,4 +661,13 @@ function wmf_civicrm_validate_contribution($fields, $form): array {
   }
 
   return $errors;
+}
+
+/**
+ * https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_permission/
+ *
+ * @param array $permissions
+ */
+function wmf_civicrm_civicrm_permission(array &$permissions) {
+  Permissions::permissions($permissions);
 }

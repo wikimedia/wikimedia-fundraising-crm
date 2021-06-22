@@ -139,7 +139,10 @@ class QuickForm {
     // Only run this validation for users having the Engage role.
     // @todo - move the user_has_role out of the extension. In order
     // to ready this for drupal we can switch to using a permission
-    // for engage 'access engage ui options'.
+    // for engage 'engage role'.
+    // Once the addition of this permission is deployed we need to
+    // add it to the engage user role and then we can replace this with
+    // \CRM_Core_Permission::check('engage_role')
     if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
       return;
     }
