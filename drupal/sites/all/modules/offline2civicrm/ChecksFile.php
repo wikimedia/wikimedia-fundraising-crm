@@ -624,6 +624,7 @@ abstract class ChecksFile {
       'Do Not Solicit' => 'do_not_solicit',
       'Email' => 'email',
       'External Batch Number' => 'import_batch_number',
+      'Fee Amount' => 'fee',
       'First Name' => 'first_name',
       'Gift Source' => 'gift_source',
       'Groups' => 'contact_groups',
