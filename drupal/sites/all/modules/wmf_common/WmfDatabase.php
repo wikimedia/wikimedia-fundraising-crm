@@ -20,7 +20,7 @@ class WmfDatabase {
    * @throws \Exception
    */
   static function transactionalCall($callback, $params) {
-    watchdog('wmf_common', "Beginning DB transaction", NULL, WATCHDOG_INFO);
+    Civi::log('wmf')->info('Beginning DB transaction');
     $drupal_transaction = db_transaction('wmf_default', ['target' => 'default']);
     $crm_transaction = db_transaction('wmf_civicrm', ['target' => 'civicrm']);
     $native_civi_transaction = new CRM_Core_Transaction();
