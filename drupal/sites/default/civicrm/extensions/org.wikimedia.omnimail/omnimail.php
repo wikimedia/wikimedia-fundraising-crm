@@ -101,7 +101,7 @@ function omnimail_civicrm_entityTypes(&$entityTypes) {
   $entityTypes['CRM_Omnimail_DAO_MailingProviderData'] = array(
     'name' => 'MailingProviderData',
     'class' => 'CRM_Omnimail_DAO_MailingProviderData',
-    'table' => 'civicrm_maiing_provider_data',
+    'table' => 'civicrm_mailing_provider_data',
   );
   $entityTypes['CRM_Omnimail_DAO_OmnimailJobProgress'] = array (
     'name' => 'OmnimailJobProgress',

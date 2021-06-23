@@ -34,4 +34,28 @@ return [
       ],
     ],
   ],
+  [
+    'name' => 'wmf_cli',
+    'entity' => 'Monolog',
+    'cleanup' => 'never',
+    'update' => 'never',
+    'params' => [
+      'debug' => TRUE,
+      'version' => 4,
+      'checkPermissions' => FALSE,
+      'values' => [
+        'name' => 'wmf_cli',
+        'type' => 'std_out',
+        'channel' => 'wmf',
+        'is_default' => FALSE,
+        'is_active' => TRUE,
+        'is_final' => FALSE,
+        'weight' => 1,
+        // Note this minimum severity can be escalated with command line switches.
+        'minimum_severity' => 'warning',
+        'description' => ('Output to terminal for command line scripts.') . "\n" .
+          ('Command line options can increase (-v --verbose, -d, --debug) or decrease (-q, --quiet) the verbosity')
+      ],
+    ],
+  ],
 ];

@@ -95,7 +95,7 @@ class CRM_Omnimail_DAO_MailingProviderData extends CRM_Core_DAO {
    *   Whether to return the plural version of the title.
    */
   public static function getEntityTitle($plural = FALSE) {
-    return $plural ? E::ts('Mailing Provider Datas') : E::ts('Mailing Provider Data');
+    return $plural ? E::ts('Mailing Provider Data') : E::ts('Mailing Provider Data');
   }
 
   /**

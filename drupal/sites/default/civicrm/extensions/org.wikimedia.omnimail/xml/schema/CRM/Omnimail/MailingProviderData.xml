@@ -3,6 +3,8 @@
 <table>
     <base>CRM/Omnimail</base>
     <class>MailingProviderData</class>
+    <title>Mailing Provider Data</title>
+    <titlePlural>Mailing Provider Data</titlePlural>
     <name>civicrm_mailing_provider_data</name>
     <comment>Data from the mailing provider</comment>
     <log>false</log>
