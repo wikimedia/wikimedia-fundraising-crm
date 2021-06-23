@@ -482,8 +482,12 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       ->setCheckPermissions(FALSE)
       ->addWhere('first_name', '=', 'Rambo')
       ->addWhere('last_name', '=', 'Mouse')
-      ->addSelect('Partner.Partner')->execute()->first();
+      ->addJoin('Contribution AS contribution')
+      ->addSelect('Partner.Partner', 'contribution.total_amount', 'contribution.fee_amount', 'contribution.net_amount')->execute()->first();
 
+    $this->assertEquals(0.5, $contact['contribution.fee_amount']);
+    $this->assertEquals(23.5, $contact['contribution.net_amount']);
+    $this->assertEquals(24.0, $contact['contribution.total_amount']);
     $this->assertEquals('Walt', $contact['Partner.Partner']);
   }
 
