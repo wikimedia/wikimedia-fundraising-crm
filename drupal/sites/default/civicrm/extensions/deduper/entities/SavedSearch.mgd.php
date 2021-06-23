@@ -6,7 +6,7 @@
 
 // Install search display if searchkit is installed.
 if (!civicrm_api3('Extension', 'getcount', [
-  'full_name' => 'org.civicrm.search',
+  'full_name' => 'org.civicrm.search_kit',
   'status' => 'installed',
 ])) {
   return [];

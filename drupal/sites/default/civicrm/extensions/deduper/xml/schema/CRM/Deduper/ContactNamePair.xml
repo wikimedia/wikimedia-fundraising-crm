@@ -5,6 +5,7 @@
   <class>ContactNamePair</class>
   <name>civicrm_contact_name_pair</name>
   <comment>Pairs of names which are equivalent</comment>
+  <icon>fa-random</icon>
   <log>true</log>
 
   <field>

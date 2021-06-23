@@ -143,23 +143,10 @@ class QuickForm {
     // Once the addition of this permission is deployed we need to
     // add it to the engage user role and then we can replace this with
     // \CRM_Core_Permission::check('engage_role')
-    if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
-      return;
-    }
-    // Default to the Engage contribution type, if this is a new contribution.
-    if ($form->_action & \CRM_Core_Action::ADD) {
-      $engage_contribution_type_id = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Engage');
-      $form->setDefaults([
-        'financial_type_id' => $engage_contribution_type_id,
-      ]);
-      $form->assign('customDataSubType', $engage_contribution_type_id);
+    if (wmf_civicrm_user_has_role('Engage Direct Mail')) {
+      self::addEngageUIFeatures($form);
     }
 
-    // Make Batch Number required, if the field exists.
-    $batch_num_field_name = self::getFormCustomFieldName('import_batch_number');
-    if ($batch_num_field_name && $form->elementExists($batch_num_field_name)) {
-      $form->addRule($batch_num_field_name, t('Batch number is required'), 'required');
-    }
   }
 
   /**
@@ -176,6 +163,28 @@ class QuickForm {
   public static function getFormCustomFieldName(string $fieldName): string {
     // @todo - make this protected once further consolidation is done.
     return 'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID($fieldName) . '_-1';
+  }
+
+  /**
+   * @param \CRM_Core_Form $form
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected static function addEngageUIFeatures(\CRM_Core_Form $form): void {
+    // Default to the Engage contribution type, if this is a new contribution.
+    if ($form->_action & \CRM_Core_Action::ADD) {
+      $engage_contribution_type_id = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Engage');
+      $form->setDefaults([
+        'financial_type_id' => $engage_contribution_type_id,
+      ]);
+      $form->assign('customDataSubType', $engage_contribution_type_id);
+    }
+
+    // Make Batch Number required, if the field exists.
+    $batch_num_field_name = self::getFormCustomFieldName('import_batch_number');
+    if ($batch_num_field_name && $form->elementExists($batch_num_field_name)) {
+      $form->addRule($batch_num_field_name, t('Batch number is required'), 'required');
+    }
   }
 
 }
