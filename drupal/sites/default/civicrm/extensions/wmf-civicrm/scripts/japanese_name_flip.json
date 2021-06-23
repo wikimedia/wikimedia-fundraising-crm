@@ -1,8 +1,19 @@
 {
   "join":
   [
-    ["ContactNamePairFamily AS contact_name_pair_family","INNER",null,
+    [
+      "ContactNamePairFamily AS contact_name_pair_family",
+      "INNER",
       ["first_name","=","contact_name_pair_family.name_b"]
+    ],
+    [
+      "ContactNamePairFamily AS Contact_ContactNamePairFamily_name_b_02",
+      "EXCLUDE",
+      [
+        "Contact_ContactNamePairFamily_name_b_02.name_b",
+        "=",
+        "last_name"
+      ]
     ]
   ],
   "where":
