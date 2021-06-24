@@ -56,6 +56,13 @@ class QuickForm {
   }
 
   /**
+   *
+   */
+  protected static function getSourceJS() {
+    return file_get_contents(__DIR__ . '/js/' . 'validateSource.js');
+  }
+
+  /**
    * Get javascript to add to contribution page to reduce data-entry issues on thank yous.
    *
    * Our rules are
@@ -136,6 +143,8 @@ class QuickForm {
    * @throws \CiviCRM_API3_Exception
    */
   protected static function buildFormContributionForm(\CRM_Core_Form $form): void {
+    \CRM_Core_Resources::singleton()->addScript(self::getSourceJS());
+
     // Only run this validation for users having the Engage role.
     // @todo - move the user_has_role out of the extension. In order
     // to ready this for drupal we can switch to using a permission
