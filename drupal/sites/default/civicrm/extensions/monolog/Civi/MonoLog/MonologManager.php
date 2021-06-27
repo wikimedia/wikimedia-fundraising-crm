@@ -252,12 +252,15 @@ class MonologManager {
       // line efforts to increase or decrease logging levels.
       $modifiers = [
         // Drush parameters https://groups.drupal.org/drush/commands
-        '-v' =>  'info',
-        '--verbose' => 'info',
+        '-v' =>  'notice',
+        '--verbose' => 'notice',
         '--debug' => 'debug',
         '-d' => 'debug',
         '-q' => 'error',
         '--quiet' => 'error',
+        // https://symfony.com/doc/current/logging/monolog_console.html
+        '-vv' => 'info',
+        '-vvv' => 'debug',
       ];
       foreach ($argv as $argument) {
         if (isset($modifiers[$argument])) {
