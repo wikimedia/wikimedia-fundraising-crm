@@ -267,7 +267,10 @@ class MonologManager {
           $minimumLevel = $modifiers[$argument];
         }
       }
-      $logger->pushHandler(new StreamHandler('php://stdout', $minimumLevel, !$isFinal));
+      $formatter = new LineFormatter("%channel%.%level_name%: %message% %extra%", NULL, TRUE, TRUE);
+      $handler = new StreamHandler('php://stdout', $minimumLevel, !$isFinal);
+      $handler->setFormatter($formatter);
+      $logger->pushHandler($handler);
     }
   }
 
