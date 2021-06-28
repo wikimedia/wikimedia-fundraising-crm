@@ -513,15 +513,15 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       $requiredClauses[] = '(NEW.contact_id NOT IN (' . implode(',', $excludedContacts) . '))';
     }
 
-    $insertSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' THEN ' . $sql . ' END IF; ';
-    $updateSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN ' . $sql . ' END IF; ';
+    $insertSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' THEN' . $sql . ' END IF; ';
+    $updateSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN' . $sql . ' END IF; ';
     $requiredClausesForOldClause = str_replace('NEW.', 'OLD.', implode(' AND ', $requiredClauses));
     $oldSql = str_replace('NEW.', 'OLD.', $sql);
     $updateOldSQL = ' IF ' . $requiredClausesForOldClause
-      . ' AND (NEW.contact_id <> OLD.contact_id) THEN '
+      . ' AND (NEW.contact_id <> OLD.contact_id) THEN'
       . $oldSql . ' END IF; ';
 
-    $deleteSql = ' IF ' . $requiredClausesForOldClause . ' THEN ' . $oldSql . ' END IF; ';
+    $deleteSql = ' IF ' . $requiredClausesForOldClause . ' THEN' . $oldSql . ' END IF; ';
 
 
     // We want to fire this trigger on insert, update and delete.
