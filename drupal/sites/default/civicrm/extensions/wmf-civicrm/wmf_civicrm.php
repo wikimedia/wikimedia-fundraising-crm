@@ -626,7 +626,7 @@ function wmf_civicrm_validate_contribution($fields, $form): array {
   // Source has to be of the form USD 15.25 so as not to gum up the works,
   // and the currency code on the front should be something we understand
   $source = $fields['source'];
-  if (preg_match('/^([a-z]{3}) [0-9]+(\.[0-9]+)?$/i', $source, $matches)) {
+  if (preg_match('/^([a-z]{3}) -?[0-9]+(\.[0-9]+)?$/i', $source, $matches)) {
     $currency = strtoupper($matches[1]);
     if (!wmf_civicrm_is_valid_currency($currency)) {
       $errors['source'] = t('Please set a supported currency code');
