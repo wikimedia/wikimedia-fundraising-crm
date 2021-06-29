@@ -252,19 +252,25 @@ class MonologManager {
       // line efforts to increase or decrease logging levels.
       $modifiers = [
         // Drush parameters https://groups.drupal.org/drush/commands
-        '-v' =>  'info',
-        '--verbose' => 'info',
+        '-v' =>  'notice',
+        '--verbose' => 'notice',
         '--debug' => 'debug',
         '-d' => 'debug',
         '-q' => 'error',
         '--quiet' => 'error',
+        // https://symfony.com/doc/current/logging/monolog_console.html
+        '-vv' => 'info',
+        '-vvv' => 'debug',
       ];
       foreach ($argv as $argument) {
         if (isset($modifiers[$argument])) {
           $minimumLevel = $modifiers[$argument];
         }
       }
-      $logger->pushHandler(new StreamHandler('php://stdout', $minimumLevel, !$isFinal));
+      $formatter = new LineFormatter("%channel%.%level_name%: %message% %extra%", NULL, TRUE, TRUE);
+      $handler = new StreamHandler('php://stdout', $minimumLevel, !$isFinal);
+      $handler->setFormatter($formatter);
+      $logger->pushHandler($handler);
     }
   }
 
