@@ -194,6 +194,9 @@ class CRM_Targetsmart_ImportWrapper {
         Civi::log()->debug('skipped ' . $index . ' for contact ' . $values['Contact ID'] . ' value is ' . $value);
         $values[$index] = '';
       }
+      if ($value === 'NA') {
+        $values[$index] = '';
+      }
     }
 
     $values = array_values($values);
