@@ -2187,21 +2187,6 @@ function wmf_civicrm_normalize_msg($msg) {
   // TODO: push non-generic cases into database
   if (!empty($msg['utm_campaign'])) {
     switch ($msg['utm_campaign']) {
-      case 'NY2013':
-        $msg['direct_mail_appeal'] = "New York Event 2013";
-        break;
-      case 'NYCShaku2013':
-        $msg['direct_mail_appeal'] = "Shaku - NYC Event 2013";
-        break;
-      case 'SF2013':
-        $msg['direct_mail_appeal'] = "San Francisco Event 2013";
-        break;
-      case 'Mossman':
-        $msg['direct_mail_appeal'] = "Sheila Mossman";
-        break;
-      case 'Mediander':
-        $msg['direct_mail_appeal'] = "Mediander";
-        break;
       default:
         $directMailOptions = wmf_civicrm_get_options('Contribution', wmf_civicrm_get_custom_field_name('Appeal'));
         if (!array_key_exists($msg['utm_campaign'], $directMailOptions)) {
