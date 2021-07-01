@@ -15,10 +15,10 @@ use CRM_Rpow_ExtensionUtil as E;
  */
 function rpow_init($config = []) {
   $defaultCookieSigningKey = md5(json_encode([
-    $_SERVER['HTTP_HOST'],
+    $_SERVER['HTTP_HOST'] ?? NULL,
     $config['masters'],
     $config['slaves'],
-    $_SERVER['HTTP_HOST'],
+    $_SERVER['HTTP_HOST'] ?? NULL,
   ]));
   $defaults = [
     'onReconnect' => [
