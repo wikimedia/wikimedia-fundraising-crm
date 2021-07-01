@@ -286,7 +286,7 @@ function _wmf_civicrm_get_gift_data_fields() {
  *
  * @return array
  */
-function _wmf_civicrm_get_prospect_fields() {
+function _wmf_civicrm_get_prospect_fields(): array {
   return [
     'Origin' => [
       'name' => 'Origin',
@@ -754,6 +754,25 @@ function _wmf_civicrm_get_prospect_fields() {
         15 => 'Religious',
       ],
     ],
+    'IRA and 401K Decile' => [
+      'label' => 'IRA and 401K Decile',
+      'name' => 'IRA_and_401K_Decile',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_searchable' => 1,
+      'option_values' => [
+        '1' => '1',
+        '2' => '2',
+        '3' => '3',
+        '4' => '4',
+        '5' => '5',
+        '6' => '6',
+        '7' => '7',
+        '8' => '8',
+        '9' => '9',
+        '10' => '10',
+      ],
+    ]
   ];
 }
 
