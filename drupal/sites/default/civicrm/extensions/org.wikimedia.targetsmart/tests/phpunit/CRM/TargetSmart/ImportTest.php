@@ -114,7 +114,7 @@ class CRM_TargetSmart_ImportTest extends \PHPUnit\Framework\TestCase implements 
     $this->assertEquals('21212', $updatedContact['postal_code']);
     $this->assertEquals('1234', $updatedContact['postal_code_suffix']);
 
-    $oldAddress = $this->callAPISuccessGetSingle('Address', ['contact_id' => $updatedContact['id'], 'location_type_id' => 'Old_2019', 'is_primary' => 0]);
+    $oldAddress = $this->callAPISuccessGetSingle('Address', ['contact_id' => $updatedContact['id'], 'location_type_id' => 'Old_2021', 'is_primary' => 0]);
     $this->assertEquals('52 Medium House', $oldAddress ['street_address']);
     $this->assertEquals('on the right', $oldAddress ['supplemental_address_1']);
     $this->assertEquals('', $oldAddress ['supplemental_address_2'] ?? '');
@@ -124,7 +124,7 @@ class CRM_TargetSmart_ImportTest extends \PHPUnit\Framework\TestCase implements 
     $this->assertEquals('', $oldAddress ['postal_code_suffix'] ?? '');
     $this->assertEquals(1228, $oldAddress ['country_id']);
 
-    $this->callAPISuccessGetCount('GroupContact', ['contact_id' => $updatedContact['id'], 'group_id' => 'TargetSmart2019'], 1);
+    $this->callAPISuccessGetCount('GroupContact', ['contact_id' => $updatedContact['id'], 'group_id' => 'TargetSmart2021'], 1);
   }
 
   /**
