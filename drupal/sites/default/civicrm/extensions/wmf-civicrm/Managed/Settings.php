@@ -6,6 +6,7 @@
 // is used to set the default value - which will apply unless something else has been
 // actively defined.
 use Civi\Api4\CustomField;
+use Civi\Api4\OptionValue;
 
 $settings = [
   // This prevents contacts being assigned English as a default
@@ -27,6 +28,31 @@ $settings = [
     'date.today_format_full',
     'date.today_format_raw',
   ],
+
+  // Per live, exclude supplemental_address_3, add postal_code_suffix
+  'address_options' => CRM_Core_DAO::VALUE_SEPARATOR .
+    implode(
+      CRM_Core_DAO::VALUE_SEPARATOR,
+      array_keys(
+        (array) OptionValue::get(FALSE)
+          ->addWhere('option_group_id.name', '=', 'address_options')
+          ->addWhere('name', 'IN', [
+            'street_address',
+            'supplemental_address_1',
+            'supplemental_address_2',
+            'postal_code',
+            'postal_code_suffix',
+            'city',
+            'country',
+            'state_province',
+            'geo_code_1',
+            'geo_code_2',
+          ])
+          ->setSelect(['value'])
+          ->execute()
+          ->indexBy('value')
+      )
+    ) . CRM_Core_DAO::VALUE_SEPARATOR,
 
   // Configure deduper per our preferences
   'deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor'],
