@@ -2,7 +2,7 @@
 
 define('WMF_DATEFORMAT', 'Ymd');
 define('WMF_MIN_ROLLUP_YEAR', 2006);
-define('WMF_MAX_ROLLUP_YEAR', 2020);
+define('WMF_MAX_ROLLUP_YEAR', 2021);
 
 /**
  * Converts various kinds of dates to our favorite string format.
