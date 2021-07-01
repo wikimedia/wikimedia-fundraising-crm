@@ -62,7 +62,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function setUp(): void {
     parent::setUp();
-    wmf_civicrm_ensure_option_value_exists(WMF_CAMPAIGNS_OPTION_GROUP_NAME, ImportMessageTest_campaign);
+    wmf_civicrm_ensure_option_value_exists(wmf_civicrm_get_direct_mail_field_option_id(), ImportMessageTest_campaign);
     wmf_civicrm_ensure_correct_geocoder_enabled();
     $geoCoders = civicrm_api3('Geocoder', 'get', ['is_active' => 1]);
     $this->assertEquals(1, $geoCoders['count']);

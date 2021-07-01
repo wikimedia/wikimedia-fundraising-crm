@@ -43,7 +43,7 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
       ->execute();
 
     $result = civicrm_api3('OptionValue', 'create', [
-      'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+      'option_group_id' => wmf_civicrm_get_direct_mail_field_option_id(),
       'label' => $this->campaign_key,
       'value' => $this->campaign_key,
     ]);
@@ -52,7 +52,7 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function tearDown(): void {
     civicrm_api3('OptionValue', 'delete', [
-      'option_group_id' => WMF_CAMPAIGNS_OPTION_GROUP_NAME,
+      'option_group_id' => wmf_civicrm_get_direct_mail_field_option_id(),
       'id' => $this->option_value_id,
     ]);
     db_delete('wmf_campaigns_campaign')

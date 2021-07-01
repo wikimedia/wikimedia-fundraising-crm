@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\Contact;
+use Civi\Api4\CustomField;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
@@ -2186,15 +2187,13 @@ function wmf_civicrm_normalize_msg($msg) {
   // Check for special flags
   // TODO: push non-generic cases into database
   if (!empty($msg['utm_campaign'])) {
-    switch ($msg['utm_campaign']) {
-      default:
-        $directMailOptions = wmf_civicrm_get_options('Contribution', wmf_civicrm_get_custom_field_name('Appeal'));
-        if (!array_key_exists($msg['utm_campaign'], $directMailOptions)) {
-          wmf_civicrm_ensure_option_value_exists(wmf_civicrm_get_direct_mail_field_option_name(), $msg['utm_campaign']);
-        }
-        $msg['direct_mail_appeal'] = $msg['utm_campaign'];
-        break;
+    $directMailOptions = wmf_civicrm_get_options('Contribution', wmf_civicrm_get_custom_field_name('Appeal'));
+    if (!array_key_exists($msg['utm_campaign'], $directMailOptions)) {
+      // @todo - I am hoping to replace with an api call but need more clarity as this doesn't work yet.
+      // Contribution::getFields(FALSE)->setLoadOptions(TRUE)->->addWhere('field_name', '=', 'Gift_Data:Campaign')
+      wmf_civicrm_ensure_option_value_exists(wmf_civicrm_get_direct_mail_field_option_id(), $msg['utm_campaign']);
     }
+    $msg['direct_mail_appeal'] = $msg['utm_campaign'];
   }
 
   if (wmf_civicrm_is_endowment_gift($msg)) {
@@ -2262,18 +2261,26 @@ function wmf_civicrm_removeKnownBadStringsFromAddressFields(&$msg) {
 /**
  * Get the name value for the option group for direct mail.
  *
- * The option group for the direct mail field has been given a distinctive
- * title but the name (which is the unique one) is distinctly historical.
+ * Note that this function should become obsolete - I wanted to use
+ * the code below in the calling function instead but it didn't work and
+ * I want to check with Coleman first.
  *
- * This name is included (as per below) in the install script so this function
- * exists mostly to document it as such a wierd name is guaranteed to get
- * people worried about avoiding hard-coding. The more appealing title 'Appeal'
- * cannot be guaranteed to be unique.
+ * Contribution::getFields(FALSE)
+ * ->setLoadOptions(TRUE)
+ * ->addWhere('field_name', '=', 'Gift_Data:Campaign')
+ * ->execute();
+ *}
  *
  * @throws \CiviCRM_API3_Exception
  */
-function wmf_civicrm_get_direct_mail_field_option_name() {
-  return 'appeal_20080709183729';
+function wmf_civicrm_get_direct_mail_field_option_id() {
+  if (!isset(\Civi::$statics['wmf-civicrm']['appeal_field_id'])) {
+    \Civi::$statics['wmf-civicrm']['appeal_field_id'] = CustomField::get(FALSE)
+      ->addWhere('name', '=', 'Appeal')
+      ->setSelect(['option_group_id'])
+      ->execute()->first()['option_group_id'];
+  }
+  return \Civi::$statics['wmf-civicrm']['appeal_field_id'];
 }
 
 /**
