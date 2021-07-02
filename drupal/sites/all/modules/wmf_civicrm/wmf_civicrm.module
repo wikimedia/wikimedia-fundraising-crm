@@ -164,6 +164,9 @@ function wmf_civicrm_get_custom_field_map($field_names, $group_name = NULL) {
   foreach ($field_names as $name) {
     if (empty($custom_fields[$name])) {
       $id = CRM_Core_BAO_CustomField::getCustomFieldID($name, $group_name);
+      if (!$id) {
+        throw new CRM_Core_Exception('id is missing: ' . $name . ' ' . $group_name);
+      }
       $custom_fields[$name] = "custom_{$id}";
     }
   }
@@ -523,8 +526,6 @@ function _wmf_civicrm_message_contribution_insert($msg) {
    * NOTE: the custom field for "Gift_Information" indicates that check number is stored here.  It is not.
    */
   $custom_field_defaults = [
-    // Contribution_comments field does not appear to exist & is quietly ignored I believe.
-    'Contribution_Comments' => '',
     'gateway_account' => '',
   ];
   if ($contribution['total_amount'] >= 1000) {
@@ -533,7 +534,6 @@ function _wmf_civicrm_message_contribution_insert($msg) {
 
   // Legacy field names which do not match the message field names
   $custom_name_mangle = [
-    'comment' => 'Contribution_Comments',
     'direct_mail_appeal' => 'Appeal',
     'gift_source' => 'Campaign',
     'postmark_date' => 'Postmark_Date',
@@ -2187,21 +2187,6 @@ function wmf_civicrm_normalize_msg($msg) {
   // TODO: push non-generic cases into database
   if (!empty($msg['utm_campaign'])) {
     switch ($msg['utm_campaign']) {
-      case 'NY2013':
-        $msg['direct_mail_appeal'] = "New York Event 2013";
-        break;
-      case 'NYCShaku2013':
-        $msg['direct_mail_appeal'] = "Shaku - NYC Event 2013";
-        break;
-      case 'SF2013':
-        $msg['direct_mail_appeal'] = "San Francisco Event 2013";
-        break;
-      case 'Mossman':
-        $msg['direct_mail_appeal'] = "Sheila Mossman";
-        break;
-      case 'Mediander':
-        $msg['direct_mail_appeal'] = "Mediander";
-        break;
       default:
         $directMailOptions = wmf_civicrm_get_options('Contribution', wmf_civicrm_get_custom_field_name('Appeal'));
         if (!array_key_exists($msg['utm_campaign'], $directMailOptions)) {

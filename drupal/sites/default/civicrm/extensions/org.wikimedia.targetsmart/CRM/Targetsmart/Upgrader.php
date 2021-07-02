@@ -14,7 +14,7 @@ class CRM_Targetsmart_Upgrader extends CRM_Targetsmart_Upgrader_Base {
   // upgrade tasks. They are executed in order (like Drupal's hook_update_N).
 
   /**
-   * Create 2019_targetsmart_bulkimport.
+   * Create 2021_targetsmart_bulkimport.
    *
    * For simplicity just delete it if it already exists & recreate.
    *
@@ -24,20 +24,20 @@ class CRM_Targetsmart_Upgrader extends CRM_Targetsmart_Upgrader_Base {
 
     /* @var Civi\Api4\Generic\Result $location */
     $location = LocationType::get()
-      ->addWhere('name', '=', 'Old_2019')
+      ->addWhere('name', '=', 'Old_2021')
       ->execute();
     if (!$location->count()) {
       $location = LocationType::create()
-        ->addValue('name','Old_2019')
-        ->addValue('display_name', 'Old 2019')
-        ->addValue('description', 'Address on file in 2019 before TargetSmart update  ')
+        ->addValue('name','Old_2021')
+        ->addValue('display_name', 'Old 2021')
+        ->addValue('description', 'Address on file in 2021 before TargetSmart update  ')
         ->execute();
     }
     $locationTypeID = $location->first()['id'];
 
     // Delete pre-existing mappings.
     Mapping::delete()
-      ->addWhere('name', '=', '2019_targetsmart_bulkimport')->execute();
+      ->addWhere('name', '=', '2021-targetsmart')->execute();
 
     $mappingFields = [
       /*[
@@ -69,43 +69,43 @@ class CRM_Targetsmart_Upgrader extends CRM_Targetsmart_Upgrader_Base {
         // street_address
         'name' => 'Street Address',
         'column_number' => 5,
-        'location_type_id' => 'Old 2019',
+        'location_type_id' => 'Old 2021',
       ],
       [
         // supplemental_address_1
         'name' => 'Supplemental Address 1',
         'column_number' => 6,
-        'location_type_id' => 'Old 2019',
+        'location_type_id' => 'Old 2021',
       ],
       [
         // supplemental_address_1
         'name' => 'Supplemental Address 2',
         'column_number' => 7,
-        'location_type_id' => 'Old 2019',
+        'location_type_id' => 'Old 2021',
       ],
       [
         // city
         'name' => 'City',
         'column_number' => 8,
-        'location_type_id' => 'Old 2019',
+        'location_type_id' => 'Old 2021',
       ],
       [
         // state_province
         'name' => 'State',
         'column_number' => 9,
-        'location_type_id' => 'Old 2019',
+        'location_type_id' => 'Old 2021',
       ],
       [
         // postal code
         'name' => 'Postal Code',
         'column_number' => 10,
-        'location_type_id' => 'Old 2019',
+        'location_type_id' => 'Old 2021',
       ],
       [
         // country
         'name' => 'Country',
         'column_number' => 11,
-        'location_type_id' => 'Old 2019',
+        'location_type_id' => 'Old 2021',
       ],
       [
         // voterbase_id
@@ -244,7 +244,7 @@ class CRM_Targetsmart_Upgrader extends CRM_Targetsmart_Upgrader_Base {
       ],
     ];
     $mapping = Mapping::create()
-      ->addValue('name', '2019_targetsmart_bulkimport')
+      ->addValue('name', '2021-targetsmart')
       ->addValue('mapping_type_id', CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Mapping', 'mapping_type_id', 'Import Contact'))
       ->execute();
 
@@ -260,8 +260,8 @@ class CRM_Targetsmart_Upgrader extends CRM_Targetsmart_Upgrader_Base {
       $mappingFieldAPI->execute();
     }
     $group = Group::create()
-      ->addValue('name', 'TargetSmart2019')
-      ->addValue('title', 'TargetSmart2019')
+      ->addValue('name', 'TargetSmart2021')
+      ->addValue('title', 'TargetSmart2021')
       ->execute();
 
     CRM_Core_BAO_OptionValue::ensureOptionValueExists(['option_group_id' => 'Gender', 'label' => 'Unknown', 'name' => 'Unknown']);
