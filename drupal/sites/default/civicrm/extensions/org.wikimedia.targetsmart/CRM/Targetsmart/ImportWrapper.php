@@ -128,7 +128,9 @@ class CRM_Targetsmart_ImportWrapper {
   public function importRow($values) {
     // Really? A session var? 1 = Ymd - which is us.
     CRM_Core_Session::singleton()->set('dateTypes', 1);
-    $contactID = $values['Contact ID'];
+    // This is coming from the targetsmart column name & seems to vary over time...
+    // ref https://collab.wikimedia.org/wiki/Target-smart
+    $contactID = $values['Contact ID'] ?? $values['contact_id'];
 
     $importObj = $this->getImporter('Individual');
 
