@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Address;
 use Civi\Api4\Contact;
 
 /**
@@ -160,6 +161,35 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     ]);
     $this->assertEquals('07065', $contact['values'][0]['postal_code']);
     $this->assertEquals(5, strlen($contact['values'][0]['postal_code']));
+  }
+
+  /**
+   * Test that an address is made on address where email is empty.
+   *
+   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   * @throws \League\Csv\Exception
+   */
+  public function testImportAddressMatch(): void {
+    $contact = Contact::create(FALSE)->setValues([
+      'contact_type' => 'Individual',
+      'first_name' => 'Very',
+      'last_name' => 'Unique'
+    ])->addChain('address', Address::create(FALSE)->setValues([
+      'street_address' => '22 Maple Lane',
+      'city' => 'Houston',
+      'postal_code' => '07654',
+      'location_type_id' => 1,
+      'contact_id' => '$id',
+    ]))->execute()->first();
+
+    $fileUri = $this->setupFile('engage_address_match.csv');
+    $importer = new EngageChecksFile($fileUri);
+    $importer->import();
+    // Check the contribution was added to our existing contact.
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $contact['id']]);
+    $this->assertEquals(1, $contributions['count']);
   }
 
   /**

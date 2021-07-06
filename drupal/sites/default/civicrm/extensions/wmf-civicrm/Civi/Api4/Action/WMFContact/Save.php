@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4\Action\WMFContact;
 
+use Civi\Api4\Address;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\WMFException\WMFException;
@@ -546,7 +547,10 @@ class Save extends AbstractAction {
    * @throws \API_Exception
    */
   protected function getExistingContactID(array $msg): ?int {
-    if (!empty($msg['first_name'] && !empty($msg['last_name']) && !empty($msg['email']))) {
+    if (empty($msg['first_name']) || empty($msg['last_name'])) {
+      return NULL;
+    }
+    if (!empty($msg['email'])) {
       // Check for existing....
       $matches = Email::get(FALSE)
         ->addWhere('contact.first_name', '=', $msg['first_name'])
@@ -563,6 +567,32 @@ class Save extends AbstractAction {
       }
       return NULL;
     }
+    // If we have sufficient address data we will look up from the database.
+    // original discussion at https://phabricator.wikimedia.org/T283104#7171271
+    // We didn't talk about min_length for the other fields so I just went super
+    // conservative & picked 2
+    $addressCheckFields = ['street_address' => 5, 'city' => 2, 'postal_code' => 2];
+    foreach ($addressCheckFields as $field => $minLength) {
+      if (strlen($msg[$field] ?? '') < $minLength) {
+        return NULL;
+      }
+    }
+    $matches = Address::get(FALSE)
+      ->addWhere('city', '=',  $msg['city'])
+      ->addWhere('postal_code', '=', $msg['postal_code'])
+      ->addWhere('street_address', '=', $msg['street_address'])
+      ->addWhere('contact.first_name', '=', $msg['first_name'])
+      ->addWhere('contact.last_name', '=', $msg['last_name'])
+      ->addWhere('contact.is_deleted', '=', 0)
+      ->addWhere('contact.is_deceased', '=', 0)
+      ->addWhere('is_primary', '=', TRUE)
+      ->setSelect(['contact_id'])
+      ->setLimit(2)
+      ->execute();
+    if (count($matches) === 1) {
+      return $matches->first()['contact_id'];
+    }
+
     return NULL;
   }
 
