@@ -546,23 +546,22 @@ class Save extends AbstractAction {
    * @throws \API_Exception
    */
   protected function getExistingContactID(array $msg): ?int {
-    if (variable_get('match_on_import')) {
-      if (!empty($msg['first_name'] && !empty($msg['last_name']) && !empty($msg['email']))) {
-        // Check for existing....
-        $matches = Email::get(FALSE)
-          ->addWhere('contact.first_name', '=', $msg['first_name'])
-          ->addWhere('contact.last_name', '=', $msg['last_name'])
-          ->addWhere('contact.is_deleted', '=', 0)
-          ->addWhere('contact.is_deceased', '=', 0)
-          ->addWhere('email', '=', $msg['email'])
-          ->addWhere('is_primary', '=', TRUE)
-          ->setSelect(['contact_id'])
-          ->setLimit(2)
-          ->execute();
-        if (count($matches) === 1) {
-          return $matches->first()['contact_id'];
-        }
+    if (!empty($msg['first_name'] && !empty($msg['last_name']) && !empty($msg['email']))) {
+      // Check for existing....
+      $matches = Email::get(FALSE)
+        ->addWhere('contact.first_name', '=', $msg['first_name'])
+        ->addWhere('contact.last_name', '=', $msg['last_name'])
+        ->addWhere('contact.is_deleted', '=', 0)
+        ->addWhere('contact.is_deceased', '=', 0)
+        ->addWhere('email', '=', $msg['email'])
+        ->addWhere('is_primary', '=', TRUE)
+        ->setSelect(['contact_id'])
+        ->setLimit(2)
+        ->execute();
+      if (count($matches) === 1) {
+        return $matches->first()['contact_id'];
       }
+      return NULL;
     }
     return NULL;
   }

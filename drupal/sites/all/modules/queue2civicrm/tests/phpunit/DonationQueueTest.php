@@ -121,7 +121,6 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $campaignField => 'Benefactor Gift',
     );
     $this->assertArraySubset($expected, $contribution2);
-    $this->assertNotEquals($contribution['contact_id'], $contribution2['contact_id']);
     $tracking = db_select('contribution_tracking', 'contribution_tracking')
       ->fields('contribution_tracking')
       ->condition('contribution_id', $contribution['id'])

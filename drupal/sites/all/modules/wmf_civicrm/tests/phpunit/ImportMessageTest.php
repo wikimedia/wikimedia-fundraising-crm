@@ -1060,7 +1060,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testImportWithContactExisting() {
-    variable_set('match_on_import', TRUE);
     $existingContact = $this->callAPISuccess('Contact', 'Create', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
@@ -1086,7 +1085,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     ];
     $contribution = wmf_civicrm_contribution_message_import($msg);
     $this->assertEquals($existingContact['id'], $contribution['contact_id']);
-    variable_set('match_on_import', FALSE);
   }
 
   /**
