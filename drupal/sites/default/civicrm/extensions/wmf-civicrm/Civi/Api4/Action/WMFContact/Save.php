@@ -260,7 +260,7 @@ class Save extends AbstractAction {
         $ex->getExtraParams()
       );
     }
-    $contact_id = $contact_result['id'];
+    $contact_id = (int) $contact_result['id'];
 
     // Add phone number
     if (isset($msg['phone'])) {
@@ -307,30 +307,7 @@ class Save extends AbstractAction {
         );
       }
     }
-
-    // Do we have any tags we need to add to this contact?
-    if (!empty($msg['contact_tags'])) {
-      $supported_tags = array_flip(\CRM_Core_BAO_Tag::getTags('civicrm_contact'));
-      $stacked_ex = [];
-      foreach (array_unique($msg['contact_tags']) as $tag) {
-        try {
-          $tag_result = civicrm_api3("EntityTag", "Create", [
-            'entity_table' => 'civicrm_contact',
-            'entity_id' => $contact_id,
-            'tag_id' => $supported_tags[$tag],
-          ]);
-        }
-        catch (\CiviCRM_API3_Exception $ex) {
-          $stacked_ex[] = "Failed to add tag {$tag} to contact ID {$contact_id}. Error: " . $ex->getMessage();
-        }
-      }
-      if (!empty($stacked_ex)) {
-        throw new WMFException(
-          WMFException::IMPORT_CONTACT,
-          implode("\n", $stacked_ex)
-        );
-      }
-    }
+    $this->addTagsToContact($msg['contact_tags'] ?? [], $contact_id);
 
     // Create a relationship to an existing contact?
     if (!empty($msg['relationship_target_contact_id'])) {
@@ -363,6 +340,45 @@ class Save extends AbstractAction {
     }
     $result[] = $contact_result;
 
+  }
+
+  /**
+   * Add tags to the contact.
+   *
+   * Note that this code may be never used - I logged
+   * https://phabricator.wikimedia.org/T286225 to query whether the only
+   * place that seems like it might pass in contact_tags is actually ever used.
+   *
+   * @param array $tags
+   * @param int $contact_id
+   *
+   * @return void
+   * @throws \Civi\WMFException\WMFException
+   */
+  protected function addTagsToContact(array $tags, int $contact_id): void {
+    // Do we have any tags we need to add to this contact?
+    if (!empty($tags)) {
+      $supported_tags = array_flip(\CRM_Core_BAO_Tag::getTags('civicrm_contact'));
+      $stacked_ex = [];
+      foreach (array_unique($tags) as $tag) {
+        try {
+          civicrm_api3('EntityTag', 'Create', [
+            'entity_table' => 'civicrm_contact',
+            'entity_id' => $contact_id,
+            'tag_id' => $supported_tags[$tag],
+          ]);
+        }
+        catch (\CiviCRM_API3_Exception $ex) {
+          $stacked_ex[] = "Failed to add tag {$tag} to contact ID {$contact_id}. Error: " . $ex->getMessage();
+        }
+      }
+      if (!empty($stacked_ex)) {
+        throw new WMFException(
+          WMFException::IMPORT_CONTACT,
+          implode("\n", $stacked_ex)
+        );
+      }
+    }
   }
 
 }
