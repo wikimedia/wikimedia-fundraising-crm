@@ -128,54 +128,8 @@ class Save extends AbstractAction {
       $contact['suffix_id'] = $msg['name_suffix'];
       wmf_civicrm_ensure_option_exists($msg['name_suffix'], 'suffix_id', 'individual_suffix');
     }
-    if (empty($msg['language'])) {
-      // TODO: use LanguageTag to prevent truncation of >2 char lang codes
-      // guess from contribution_tracking data
-      $tracking = wmf_civicrm_get_contribution_tracking($msg);
-      if ($tracking and !empty($tracking['language'])) {
-        if (strpos($tracking['language'], '-')) {
-          // If we are already tracking variant, use that
-          [$language, $variant] = explode('-', $tracking['language']);
-          $contact['preferred_language'] = $language . '_' . strtoupper($variant);
-        }
-        else {
-          $contact['preferred_language'] = $tracking['language'];
-          if (!empty($tracking['country'])) {
-            $contact['preferred_language'] .= '_' . $tracking['country'];
-          }
-        }
-      }
-      else {
-        // FIXME: wish we had the contact_id here :(
-        watchdog('wmf_civicrm', 'Failed to guess donor\'s preferred language, falling back to some hideous default', NULL, WATCHDOG_INFO);
-      }
-    }
-    else {
-      // If the language is already an existing full locale, don't mangle it
-      if (strlen($msg['language']) > 2 && wmf_civicrm_check_language_exists($msg['language'])) {
-        $contact['preferred_language'] = $msg['language'];
-      } else {
-        $contact['preferred_language'] = strtolower(substr($msg['language'], 0, 2));
-        if (!empty($msg['country'])) {
-          $contact['preferred_language'] .= '_' . strtoupper(substr($msg['country'], 0, 2));
-        }
-      }
-    }
-    if (!empty($contact['preferred_language'])) {
-      if (!wmf_civicrm_check_language_exists($contact['preferred_language'])) {
-        $parts = explode('_', $contact['preferred_language']);
-        if (wmf_civicrm_check_language_exists($parts[0])) {
-          // in other words en_NO will be converted to en
-          // rather than Norwegian English.
-          $contact['preferred_language'] = $parts[0];
-        }
-        else {
-          // otherwise let's create it rather than fail.
-          // seems like the easiest way not to lose visibility, data or the plot.
-          wmf_civicrm_ensure_language_exists($contact['preferred_language']);
-        }
-      }
-    }
+
+    $contact['preferred_language'] = $this->getPreferredLanguage($msg['language'] ?? '', $msg['contribution_tracking_id'] ?? NULL, $msg['country'] ?? '');;
 
     // Copy some fields, if they exist
     $direct_fields = [
@@ -379,6 +333,79 @@ class Save extends AbstractAction {
         );
       }
     }
+  }
+
+  /**
+   * Get the preferred language.
+   *
+   * This is a bit of a nasty historical effort to come up with a civi-like
+   * language string. It often creates nasty variants like 'es_NO' - Norwegian
+   * Spanish - for spanish speakers who filled in the form while in Norway.
+   *
+   * We hateses it my precious.
+   *
+   * Bug https://phabricator.wikimedia.org/T279389 is open to clean this up.
+   *
+   * @param string $incomingLanguage language from external source
+   * @param int|null $contributionTrackingID contribution tracking id - could this be unset?
+   * @param string $country
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected function getPreferredLanguage(string $incomingLanguage, ?int $contributionTrackingID, string $country): string {
+    $preferredLanguage = '';
+    if (!$incomingLanguage) {
+      // TODO: use LanguageTag to prevent truncation of >2 char lang codes
+      // guess from contribution_tracking data
+      if ($contributionTrackingID) {
+        $tracking = wmf_civicrm_get_contribution_tracking(['contribution_tracking_id' => $contributionTrackingID]);
+        if ($tracking and !empty($tracking['language'])) {
+          if (strpos($tracking['language'], '-')) {
+            // If we are already tracking variant, use that
+            [$language, $variant] = explode('-', $tracking['language']);
+            $preferredLanguage = $language . '_' . strtoupper($variant);
+          }
+          else {
+            $preferredLanguage = $tracking['language'];
+            if (!empty($tracking['country'])) {
+              $preferredLanguage .= '_' . $tracking['country'];
+            }
+          }
+        }
+      }
+      if (!$preferredLanguage) {
+        // FIXME: wish we had the contact_id here :(
+        watchdog('wmf_civicrm', 'Failed to guess donor\'s preferred language, falling back to some hideous default', NULL, WATCHDOG_INFO);
+      }
+    }
+    else {
+      // If the language is already an existing full locale, don't mangle it
+      if (strlen($incomingLanguage) > 2 && wmf_civicrm_check_language_exists($incomingLanguage)) {
+        $preferredLanguage = $incomingLanguage;
+      }
+      else {
+        $preferredLanguage = strtolower(substr($incomingLanguage, 0, 2));
+        if ($country) {
+          $preferredLanguage .= '_' . strtoupper(substr($country, 0, 2));
+        }
+      }
+    }
+    if ($preferredLanguage) {
+      if (!wmf_civicrm_check_language_exists($preferredLanguage)) {
+        $parts = explode('_', $preferredLanguage);
+        if (wmf_civicrm_check_language_exists($parts[0])) {
+          // in other words en_NO will be converted to en
+          // rather than Norwegian English.
+          $preferredLanguage = $parts[0];
+        }
+        else {
+          // otherwise let's create it rather than fail.
+          // seems like the easiest way not to lose visibility, data or the plot.
+          wmf_civicrm_ensure_language_exists($preferredLanguage);
+        }
+      }
+    }
+    return $preferredLanguage;
   }
 
 }
