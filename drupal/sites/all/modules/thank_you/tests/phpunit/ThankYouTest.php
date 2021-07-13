@@ -181,7 +181,7 @@ class ThankYouTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertRegExp('/Wikimedia Endowment/', $sent['html']);
 
     // 2021 email has name in the subject, switching to check for the content
-	$this->assertRegExp('/donation is one more reason to celebrate./', $sent['subject']);
+	$this->assertRegExp('/gift allows us to look far ahead.$/', $sent['subject']);
   }
 
   /**
