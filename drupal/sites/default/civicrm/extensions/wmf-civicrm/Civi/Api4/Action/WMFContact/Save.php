@@ -70,6 +70,15 @@ class Save extends AbstractAction {
     $isCreate = !$this->getContactID();
     $contact_id = $this->getContactID();
     $msg = $this->getMessage();
+    if (!$contact_id) {
+      $contact_id = $this->getExistingContactID($msg);
+      if ($contact_id) {
+        $msg['contact_id'] = $contact_id;
+        $this->handleUpdate($msg);
+        $result[] = ['id' => $contact_id];
+        return;
+      }
+    }
     // Set defaults for optional fields in the message
     if (!array_key_exists('contact_type', $msg)) {
       $msg['contact_type'] = "Individual";
@@ -521,6 +530,41 @@ class Save extends AbstractAction {
       wmf_civicrm_message_email_update($msg, $msg['contact_id']);
       $this->stopTimer('message_email_update');
     }
+  }
+
+
+  /**
+   * Look for existing exact-match contact in the database.
+   *
+   * Note if there is more than one possible match we treat it as
+   * 'no match'.
+   *
+   * @param array $msg
+   *
+   * @return int|null
+   *
+   * @throws \API_Exception
+   */
+  protected function getExistingContactID(array $msg): ?int {
+    if (variable_get('match_on_import')) {
+      if (!empty($msg['first_name'] && !empty($msg['last_name']) && !empty($msg['email']))) {
+        // Check for existing....
+        $matches = Email::get(FALSE)
+          ->addWhere('contact.first_name', '=', $msg['first_name'])
+          ->addWhere('contact.last_name', '=', $msg['last_name'])
+          ->addWhere('contact.is_deleted', '=', 0)
+          ->addWhere('contact.is_deceased', '=', 0)
+          ->addWhere('email', '=', $msg['email'])
+          ->addWhere('is_primary', '=', TRUE)
+          ->setSelect(['contact_id'])
+          ->setLimit(2)
+          ->execute();
+        if (count($matches) === 1) {
+          return $matches->first()['contact_id'];
+        }
+      }
+    }
+    return NULL;
   }
 
 }
