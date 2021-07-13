@@ -176,13 +176,8 @@ class Save extends AbstractAction {
     }
     // Attempt to insert the contact
     try {
-      $contact_result = civicrm_api3('Contact', "Create", $contact);
-      if ($contact_id == NULL) {
-        watchdog('wmf_civicrm', 'Successfully created contact: %id', ['%id' => $contact_result['id']], WATCHDOG_DEBUG);
-      }
-      else {
-        watchdog('wmf_civicrm', 'Successfully updated contact: %id', ['%id' => $contact_result['id']], WATCHDOG_DEBUG);
-      }
+      $contact_result = civicrm_api3('Contact', 'Create', $contact);
+      watchdog('wmf_civicrm', 'Successfully ' . ($contact_id ? 'updated' : 'created ') . ' contact: %id', ['%id' => $contact_result['id']], WATCHDOG_DEBUG);
 
       if (WmfDatabase::isNativeTxnRolledBack()) {
         throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact");
