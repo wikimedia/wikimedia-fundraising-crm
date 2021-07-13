@@ -4,7 +4,9 @@ namespace Civi\Api4\Action\WMFContact;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\WMFException\WMFException;
+use Civi\Api4\Email;
 use WmfDatabase;
+use Civi\Api4\Contact;
 use wmf_civicrm\ImportStatsCollector;
 
 /**
@@ -438,6 +440,86 @@ class Save extends AbstractAction {
     }
     catch (\CiviCRM_API3_Exception $ex) {
       throw new WMFException(WMFException::IMPORT_CONTACT, $ex->getMessage());
+    }
+  }
+
+  /**
+   * Handle a contact update - this is moved here but not yet integrated.
+   *
+   * This is an interim step... getting it onto the same class.
+   *
+   * @param array $msg
+   *
+   * @throws \API_Exception
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function handleUpdate(array $msg): void {
+    // @todo Do not solicit appears like these fields but is a custom field. Not handled yet as not in the import
+    // this was written (& tested) in conjunction with (Engage).
+    $updateFields = [
+      'do_not_email',
+      'do_not_mail',
+      'do_not_trade',
+      'do_not_phone',
+      'is_opt_out',
+      'do_not_sms'
+    ];
+    $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
+    if (($msg['contact_type'] ?? NULL) === 'Organization') {
+      // Find which of these keys we have update values for.
+      $customFieldsToUpdate = array_filter(array_intersect_key($msg, array_fill_keys([
+        'Organization_Contact.Name',
+        'Organization_Contact.Email',
+        'Organization_Contact.Phone',
+        'Organization_Contact.Title',
+      ], TRUE)));
+      if (!empty($customFieldsToUpdate)) {
+        if ($msg['gross'] >= 25000) {
+          // See https://phabricator.wikimedia.org/T278892#70402440)
+          // 25k plus gifts we keep both names for manual review.
+          $existingCustomFields = Contact::get(FALSE)
+            ->addWhere('id', '=', $msg['contact_id'])
+            ->setSelect(array_keys($customFieldsToUpdate))
+            ->execute()
+            ->first();
+          foreach ($customFieldsToUpdate as $fieldName => $value) {
+            if (stripos($existingCustomFields[$fieldName], $value) === FALSE) {
+              $updateParams[$fieldName] = empty($existingCustomFields[$fieldName]) ? $value : $existingCustomFields[$fieldName] . '|' . $value;
+            }
+          }
+        }
+        else {
+          $updateParams = array_merge($updateParams, $customFieldsToUpdate);
+        }
+      }
+    }
+
+    if (isset($msg['employer_id'])) {
+      $updateParams['employer_id'] = $msg['employer_id'];
+    }
+    if (!empty($updateParams)) {
+      Contact::update(FALSE)
+        ->addWhere('id', '=', $msg['contact_id'])
+        ->setValues($updateParams)
+        ->execute();
+    }
+
+    // We have set the bar for invoking a location update fairly high here - ie state,
+    // city or postal_code is not enough, as historically this update has not occurred at
+    // all & introducing it this conservatively feels like a safe strategy.
+    if (!empty($msg['street_address'])) {
+      $this->startTimer('message_location_update');
+      wmf_civicrm_message_location_update($msg, ['id' => $msg['contact_id']]);
+      $this->stopTimer('message_location_update');
+    }
+    elseif (!empty($msg['email'])) {
+      // location_update updates email, if set and address, if set.
+      // However, not quite ready to start dealing with the situation
+      // where less of the address is incoming than already exists
+      // hence only call this part if street_address is empty.
+      $this->startTimer('message_email_update');
+      wmf_civicrm_message_email_update($msg, $msg['contact_id']);
+      $this->stopTimer('message_email_update');
     }
   }
 
