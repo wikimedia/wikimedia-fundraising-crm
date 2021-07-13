@@ -5,6 +5,7 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\WMFException\WMFException;
 use WmfDatabase;
+use wmf_civicrm\ImportStatsCollector;
 
 /**
  * Class Create.
@@ -37,6 +38,21 @@ class Save extends AbstractAction {
    * @var int
    */
   protected $contactID;
+
+  /**
+   * @var \Statistics\Collector\AbstractCollector
+   */
+  protected $timer;
+
+  protected function getTimer(): \Statistics\Collector\AbstractCollector {
+    if (!$this->timer) {
+      $this->timer = ImportStatsCollector::getInstance();
+      if (!$this->timer->getUniqueStatToken()) {
+        $this->timer->init();
+      }
+    }
+    return $this->timer;
+  }
 
   /**
    * @inheritDoc
@@ -261,6 +277,25 @@ class Save extends AbstractAction {
     }
     $result[] = $contact_result;
 
+  }
+
+
+  /**
+   * Start the timer on a process.
+   *
+   * @param string $description
+   */
+  protected function startTimer($description) {
+    $this->getTimer()->startImportTimer($description);
+  }
+
+  /**
+   * Start the timer on a process.
+   *
+   * @param string $description
+   */
+  protected function stopTimer($description) {
+    $this->getTimer()->endImportTimer($description);
   }
 
   /**
