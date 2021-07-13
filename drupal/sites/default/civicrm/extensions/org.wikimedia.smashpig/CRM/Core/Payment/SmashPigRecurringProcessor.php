@@ -50,14 +50,17 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   }
 
   /**
-   * Charge a batch of recurring contributions
+   * Charge a batch of recurring contributions (or just one, if
+   * contributionRecurId is specified)
+   *
+   * @param ?int $contributionRecurId
    *
    * @return array
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  public function run() {
-    $recurringPayments = $this->getPaymentsToCharge();
+  public function run($contributionRecurId = NULL) {
+    $recurringPayments = $this->getPaymentsToCharge($contributionRecurId);
     $result = [
       'success' => ['ids' => []],
       'failed' => ['ids' => []],
@@ -68,12 +71,13 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
         // Catch for double recurring payments in one month (23 days of one another)
         $days = date_diff(
-            new DateTime($recurringPayment['next_sched_contribution_date']),
-            new DateTime($previousContribution['receive_date'])
+          new DateTime($recurringPayment['next_sched_contribution_date']),
+          new DateTime($previousContribution['receive_date'])
         )->days;
 
-        if ($days < 24) {
-            throw new UnexpectedValueException('Two recurring charges within 23 days. recurring_id: '.$recurringPayment['id']);
+        // Ignore check when a specific contribution recur id is given
+        if ($days < 24 && !$contributionRecurId) {
+          throw new UnexpectedValueException('Two recurring charges within 23 days. recurring_id: '.$recurringPayment['id']);
         }
 
         $result[$recurringPayment['id']]['previous_contribution'] = $previousContribution;
@@ -117,38 +121,49 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
   /**
    * Get all the recurring payments that are due to be charged, in an
-   * eligible status, and handled by SmashPig processor types.
+   * eligible status, and handled by SmashPig processor types. Or if
+   * a $contributionRecurId is passed, just fetch details for that
+   * specific recurring contribution.
+   *
+   * @param ?int $contributionRecurId
    *
    * @return array
    * @throws \CiviCRM_API3_Exception
    */
-  protected function getPaymentsToCharge() {
-    $earliest = "-$this->catchUpDays days";
-    $recurringPayments = civicrm_api3('ContributionRecur', 'get', [
-      'next_sched_contribution_date' => [
-        'BETWEEN' => [
-          UtcDate::getUtcDatabaseString($earliest),
-          UtcDate::getUtcDatabaseString(),
+  protected function getPaymentsToCharge($contributionRecurId = NULL) {
+    if ($contributionRecurId) {
+      $params = [
+        'id' => $contributionRecurId
+      ];
+    } else {
+      $earliest = "-$this->catchUpDays days";
+      $params = [
+        'next_sched_contribution_date' => [
+          'BETWEEN' => [
+            UtcDate::getUtcDatabaseString($earliest),
+            UtcDate::getUtcDatabaseString(),
+          ],
         ],
-      ],
-      'payment_processor_id' => ['IN' => array_keys($this->smashPigProcessors)],
-      'contribution_status_id' => [
-        'IN' => [
-          'Pending',
-          'Overdue',
-          'In Progress',
-          'Failing',
-          // @todo - remove Completed once our In Progress payments
-          // all have an IN Progress status. Ditto Failed vs Failing.
-          'Completed',
-          'Failed',
+        'payment_processor_id' => ['IN' => array_keys($this->smashPigProcessors)],
+        'contribution_status_id' => [
+          'IN' => [
+            'Pending',
+            'Overdue',
+            'In Progress',
+            'Failing',
+            // @todo - remove Completed once our In Progress payments
+            // all have an IN Progress status. Ditto Failed vs Failing.
+            'Completed',
+            'Failed',
+          ],
         ],
-      ],
-      // FIXME: we need this token not null clause because we've been
-      // misusing the payment_processor_id for years :(
-      'payment_token_id' => ['IS NOT NULL' => TRUE],
-      'options' => ['limit' => $this->batchSize],
-    ]);
+        // FIXME: we need this token not null clause because we've been
+        // misusing the payment_processor_id for years :(
+        'payment_token_id' => ['IS NOT NULL' => TRUE],
+        'options' => ['limit' => $this->batchSize],
+      ];
+    }
+    $recurringPayments = civicrm_api3('ContributionRecur', 'get', $params);
     return $recurringPayments['values'];
   }
 
