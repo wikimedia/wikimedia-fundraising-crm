@@ -5,6 +5,7 @@ require_once 'wmf_civicrm.civix.php';
 use Civi\Api4\CustomGroup;
 use Civi\WMFHooks\Permissions;
 use Civi\WMFHooks\QuickForm;
+use Civi\WMFHooks\Data;
 use CRM_WmfCivicrm_ExtensionUtil as E;
 // phpcs:enable
 
@@ -673,4 +674,18 @@ function wmf_civicrm_validate_contribution($fields, $form): array {
  */
 function wmf_civicrm_civicrm_permission(array &$permissions) {
   Permissions::permissions($permissions);
+}
+
+/**
+ * Implements hook civicrm_customPre().
+ *
+ * https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_customPre/
+ *
+ * @param string $op
+ * @param int $groupID
+ * @param int $entityID
+ * @param array $params
+ */
+function wmf_civicrm_civicrm_customPre(string $op, int $groupID, int $entityID, array &$params): void {
+  Data::customPre($op, $groupID, $entityID, $params);
 }

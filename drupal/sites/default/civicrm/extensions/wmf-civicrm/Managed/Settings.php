@@ -70,7 +70,12 @@ $settings = [
 ];
 
 $fieldsUsedInSettings = CustomField::get(FALSE)
-  ->addWhere('name', 'IN', ['opt_in', 'do_not_solicit'])
+  ->addWhere('name', 'IN', [
+    'opt_in',
+    'do_not_solicit',
+    'Benefactor_Page_Last_Updated',
+    'Listed_on_Benefactor_Page_as',
+  ])
   ->setSelect(['id', 'name'])
   ->execute()->indexBy('name');
 // It's possible this is first run before the field is created so we check for the field before trying to add it.
@@ -84,6 +89,12 @@ if (!empty($fieldsUsedInSettings['do_not_solicit'])) {
   $settings['deduper_resolver_bool_prefer_yes'] =
     ['on_hold', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'is_opt_out',
    'custom_' . $fieldsUsedInSettings['do_not_solicit']['id']
+  ];
+}
+
+if (!empty($fieldsUsedInSettings['Benefactor_Page_Last_Updated']) && !empty($fieldsUsedInSettings['Listed_on_Benefactor_Page_as'])) {
+  $settings['custom_field_tracking'] = [
+    $fieldsUsedInSettings['Listed_on_Benefactor_Page_as']['id'] => $fieldsUsedInSettings['Benefactor_Page_Last_Updated']['id'],
   ];
 }
 
