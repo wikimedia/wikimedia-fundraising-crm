@@ -254,24 +254,7 @@ class Save extends AbstractAction {
 
     // Create a relationship to an existing contact?
     if (!empty($msg['relationship_target_contact_id'])) {
-      $relationship_type = civicrm_api3("RelationshipType", "Get", [
-        'name_a_b' => $msg['relationship_type'],
-      ]);
-      if (!$relationship_type['count']) {
-        throw new WMFException(WMFException::IMPORT_CONTACT, "Bad relationship type: {$msg['relationship_type']}");
-      }
-
-      try {
-        civicrm_api3("Relationship", "Create", [
-          'contact_id_a' => $contact_id,
-          'contact_id_b' => $msg['relationship_target_contact_id'],
-          'relationship_type_id' => $relationship_type['id'],
-          'is_active' => 1,
-        ]);
-      }
-      catch (\CiviCRM_API3_Exception $ex) {
-        throw new WMFException(WMFException::IMPORT_CONTACT, $ex->getMessage());
-      }
+      $this->createRelationship($msg['relationship_target_contact_id'], $msg['relationship_type'], $contact_id);
     }
     if ($isCreate) {
       // Insert the location records if this is being called as a create.
@@ -395,6 +378,37 @@ class Save extends AbstractAction {
       }
     }
     return $preferredLanguage;
+  }
+
+  /**
+   * Create a relationship to another specified contact.
+   *
+   * @param int $relatedContactID
+   * @param string $relationshipType
+   * @param int $contact_id
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \Civi\WMFException\WMFException
+   */
+  protected function createRelationship(int $relatedContactID, string $relationshipType, int $contact_id): void {
+    $relationship_type = civicrm_api3("RelationshipType", "Get", [
+      'name_a_b' => $relationshipType,
+    ]);
+    if (!$relationship_type['count']) {
+      throw new WMFException(WMFException::IMPORT_CONTACT, "Bad relationship type: {$relationshipType}");
+    }
+
+    try {
+      civicrm_api3("Relationship", "Create", [
+        'contact_id_a' => $contact_id,
+        'contact_id_b' => $relatedContactID,
+        'relationship_type_id' => $relationship_type['id'],
+        'is_active' => 1,
+      ]);
+    }
+    catch (\CiviCRM_API3_Exception $ex) {
+      throw new WMFException(WMFException::IMPORT_CONTACT, $ex->getMessage());
+    }
   }
 
 }
