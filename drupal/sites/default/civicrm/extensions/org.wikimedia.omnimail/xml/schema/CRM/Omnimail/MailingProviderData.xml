@@ -10,9 +10,9 @@
     <log>false</log>
     <primaryKey>
         <name>contact_timestamp_type</name>
-        <field>contact_identifier</field>
-        <field>recipient_action_datetime</field>
-        <field>event_type</field>
+        <fieldName>contact_identifier</fieldName>
+        <fieldName>recipient_action_datetime</fieldName>
+        <fieldName>event_type</fieldName>
     </primaryKey>
 
     <field>

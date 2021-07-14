@@ -193,7 +193,7 @@ class CRM_Targetsmart_ImportWrapper {
       // above).
       $validUTF8 = mb_check_encoding($value, 'UTF-8');
       if (!$validUTF8) {
-        Civi::log()->debug('skipped ' . $index . ' for contact ' . $values['Contact ID'] . ' value is ' . $value);
+        Civi::log()->debug('skipped ' . $index . ' for contact ' . ($values['Contact ID'] ?? $values['contact_id']). ' value is ' . $value);
         $values[$index] = '';
       }
       if ($value === 'NA') {

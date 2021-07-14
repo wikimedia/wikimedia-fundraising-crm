@@ -216,7 +216,7 @@ class Render extends AbstractAction {
   protected function getStringsToParse(): array {
     $textFields = [
       'msg_html' => ['string' => $this->getMessageHtml(), 'format' => 'text/html', 'key' => 'msg_html'],
-      'msg_subject' => ['string' => $this->getMessageSubject(), 'format' => 'text/plain', 'key' => 'msg_subject'],
+      'msg_subject' => ['string' => trim($this->getMessageSubject()), 'format' => 'text/plain', 'key' => 'msg_subject'],
       'msg_text' => ['string' => $this->getMessageText(), 'format' => 'text/plain', 'key' => 'msg_text'],
     ];
     /*

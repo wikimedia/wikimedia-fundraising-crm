@@ -1,8 +1,11 @@
 <?php
 
+use Civi\Api4\CustomField;
+
 /**
  * Create WMF specific custom fields.
  *
+ * @throws \API_Exception
  * @throws \CiviCRM_API3_Exception
  */
 function _wmf_civicrm_update_custom_fields() {
@@ -138,8 +141,8 @@ function _wmf_civicrm_update_custom_fields() {
             // get option group updates. See https://issues.civicrm.org/jira/browse/CRM-16659 for
             // original sin.
             $field['option_type'] = 1;
-            // When we next upgrade bulkCreate is renamed to bulkSave & handles updates too.
-            // but in the meantime special-handle them.
+            // The reasons for not using the apiv4 save function lower down are now resolved
+            // from a technical pov so switching over here is now a @todo
             // Also this shouldn't really ever affect prod fields - or not at the moment.
             civicrm_api3('CustomField', 'create', $field);
           }
@@ -149,13 +152,35 @@ function _wmf_civicrm_update_custom_fields() {
       else {
         $weight++;
         $customGroupSpec['fields'][$index]['weight'] = $weight;
+        // Hopefully this is only required temporarily
+        // see https://github.com/civicrm/civicrm-core/pull/20743
+        // it will be ignored if 'option_values' is empty.
+        $customGroupSpec['fields'][$index]['option_type'] = (int) !empty($field['option_values']);
+        foreach ($field['option_values'] ?? [] as $key => $value) {
+          // Translate simple key/value pairs into full-blown option values
+          // Copied from v3 api code since we are using v4 in some places.
+          // but BAO still needs this.
+          if (!is_array($value)) {
+            $value = [
+              'label' => $value,
+              'value' => $key,
+              'is_active' => 1,
+              'weight' => $weight,
+            ];
+            $key = $weight++;
+          }
+          $customGroupSpec['fields'][$index]['option_label'][$key] = $value['label'];
+          $customGroupSpec['fields'][$index]['option_value'][$key] = $value['value'];
+          $customGroupSpec['fields'][$index]['option_status'][$key] = $value['is_active'];
+          $customGroupSpec['fields'][$index]['option_weight'][$key] = $value['weight'];
+        }
       }
     }
     if ($customGroupSpec['fields']) {
-      // We created the bulkCreate function in core to help us & ported it. But, in the final
-      // version merged to core it was renamed to bulkSave & adapted to support update as well.
-      // Next upgrade of Civi we'll need to adjust here & a few lines above we can save some lines.
-      CRM_Core_BAO_CustomField::bulkSave($customGroupSpec['fields'], ['custom_group_id' => $customGroup['id']]);
+      CustomField::save(FALSE)
+        ->setRecords($customGroupSpec['fields'])
+        ->setDefaults(['custom_group_id' => $customGroup['id']])
+        ->execute();
     }
   }
   civicrm_api3('System', 'flush', ['triggers' => 0, 'session' => 0]);
@@ -255,6 +280,12 @@ function _wmf_civicrm_get_gift_data_fields() {
       'is_active' => 1,
       'is_required' => 1,
       'is_searchable' => 1,
+      'option_values' => [
+        'Unrestricted - General' => 'Unrestricted - General',
+        'Restricted - Foundation' => 'Restricted - Foundation',
+        'Restricted - Program' => 'Restricted - Program',
+        'Restricted - Fiscal Sponsorship' => 'Restricted - Fiscal Sponsorship',
+      ],
     ],
     'Campaign' => [
       'name' => 'Campaign',
@@ -266,6 +297,20 @@ function _wmf_civicrm_get_gift_data_fields() {
       'is_active' => 1,
       'is_required' => 1,
       'is_searchable' => 1,
+      'option_values' => [
+        'Community Gift' => 'Community Gift',
+        'Benefactor Gift' => 'Benefactor Gift',
+        'Foundation Gift' => 'Foundation Gift',
+        'Matching Gift' => 'Matching Gift',
+        'Donor Advised Fund' => 'Donor Advised Fund',
+        'Corporate Gift' => 'Corporate Gift',
+        'Legacy Gift' => 'Legacy Gift',
+        'Chapter Gift' => 'Chapter Gift',
+        'Major Gift' => 'Major Gift',
+        'Combined Federal Campaign' => 'Combined Federal Campaign',
+        'Payroll Deduction' => 'Payroll Deduction',
+        'Endowment Gift'=> 'Endowment Gift',
+      ],
     ],
     'Appeal' => [
       'name' => 'Appeal',
@@ -277,6 +322,14 @@ function _wmf_civicrm_get_gift_data_fields() {
       'is_active' => 1,
       'is_required' => 1,
       'is_searchable' => 1,
+      'option_values' => [
+        'White Mail' => 'White Mail',
+        'Spontaneous Donation' => 'Spontaneous Donation',
+        'Facebook' => 'Facebook',
+        'Event' => 'Event',
+        'Mobile Giving' => 'Mobile Giving',
+        'Corp Matching Gift' => 'Corp Matching Gift',
+      ],
     ],
   ];
 }

@@ -148,6 +148,7 @@ function omnimail_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 }
 
 /**
+ * Add mailing event tab to contact summary screen
  * @param string $tabsetName
  * @param array $tabs
  * @param array $context
@@ -155,27 +156,19 @@ function omnimail_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 function omnimail_civicrm_tabset($tabsetName, &$tabs, $context) {
   if ($tabsetName == 'civicrm/contact/view') {
     $contactID = $context['contact_id'];
-      $url = CRM_Utils_System::url('civicrm/contact/mailings/view', "reset=1&snippet=json&force=1&cid=$contactID");
-      //add a new Volunteer tab along with url
-      $tab['mailing_data'] = array(
-        'title' => ts('Mailing Events'),
-        'id' => 'omnimail',
-        'icon' => 'crm-i fa-envelope-open-o',
-        'url' => $url,
-        'valid' => 1,
-        'active' => 1,
-        'current' => FALSE,
-        'class' => 'livePage',
-        'count' => civicrm_api3('MailingProviderData', 'getcount', array('contact_id' => $contactID))
-      );
-    //Insert this tab into position 4
-    $tabs = array_merge(
-      array_slice($tabs, 0, 4),
-      $tab,
-      array_slice($tabs, 4)
-    );
+    $url = CRM_Utils_System::url('civicrm/contact/mailings/view', "reset=1&snippet=json&force=1&cid=$contactID");
+    $tabs[] = [
+      'title' => ts('Mailing Events'),
+      'id' => 'omnimail',
+      'icon' => 'crm-i fa-envelope-open-o',
+      'url' => $url,
+      'weight' => 51, // Somewhere near the activities tab
+      'class' => 'livePage',
+      'count' => civicrm_api3('MailingProviderData', 'getcount', ['contact_id' => $contactID])
+    ];
   }
 }
+
 /**
  * Keep mailing provider data out of log tables.
  *
