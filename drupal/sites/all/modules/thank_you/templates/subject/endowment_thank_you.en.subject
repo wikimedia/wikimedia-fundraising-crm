@@ -2,4 +2,4 @@
     {{ first_name }}, your
 {% else %}
     Your
-{% endif %} donation is one more reason to celebrate.
+{% endif %} gift allows us to look far ahead.
