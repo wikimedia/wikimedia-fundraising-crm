@@ -67,7 +67,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     ];
     foreach ($recurringPayments as $recurringPayment) {
       try {
-        $previousContribution = $this->getPreviousContribution($recurringPayment);
+        $previousContribution = self::getPreviousContribution($recurringPayment);
 
         // Catch for double recurring payments in one month (23 days of one another)
         $days = date_diff(
@@ -332,7 +332,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @return array
    * @throws \CiviCRM_API3_Exception
    */
-  protected function getPreviousContribution($recurringPayment) {
+  public static function getPreviousContribution($recurringPayment) {
 
     try {
       // first try to match on contribution_recur_id
