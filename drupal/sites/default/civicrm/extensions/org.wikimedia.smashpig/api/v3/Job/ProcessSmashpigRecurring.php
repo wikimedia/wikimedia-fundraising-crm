@@ -35,7 +35,9 @@ function civicrm_api3_job_process_smashpig_recurring($params) {
     $params['batch_size'],
     $params['charge_descriptor']
   );
-  $result = $recurringProcessor->run();
+  $result = $recurringProcessor->run(
+    $params['contribution_recur_id'] ?? NULL
+  );
   return civicrm_api3_create_success($result, $params);
 }
 
@@ -51,4 +53,9 @@ function _civicrm_api3_job_process_smashpig_recurring_spec(&$params) {
   $params['catch_up_days']['title'] = ts('Number of days in the past to look for charges due');
   $params['batch_size']['title'] = ts('Batch size');
   $params['charge_descriptor']['title'] = ts('Soft descriptor for recurring charge');
+  $params['contribution_recur_id'] = [
+    'title' => 'Contribution Recur ID (for testing)',
+    'description' => ts('When specified, only charge this one recur record'),
+    'type' => CRM_Utils_Type::T_INT
+  ];
 }

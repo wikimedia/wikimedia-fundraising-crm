@@ -118,6 +118,13 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
     ];
   }
 
+  // using invoice_id to hold the processor_contact_id for adyen
+  if (!empty($msg['processor_contact_id'])) {
+    $extra_recurring_params = [
+      'invoice_id' => $msg['processor_contact_id'],
+    ];
+  }
+
   $insert_params = [
       'contact_id' => $contact_id,
       'amount' => $msg['original_gross'],
