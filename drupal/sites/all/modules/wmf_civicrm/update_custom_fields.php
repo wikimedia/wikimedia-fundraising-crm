@@ -86,17 +86,3 @@ function _wmf_civicrm_update_custom_fields() {
   }
   civicrm_api3('System', 'flush', ['triggers' => 0, 'session' => 0]);
 }
-
-/**
- * Get the legacy wmf donor fields we want to remove.
- *
- * @return array
- */
-function _wmf_civicrm_get_wmf_donor_fields_to_remove() {
-  $fields = [];
-  for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
-    $fields["is_{$year}_donor"] = "is_{$year}_donor";
-  }
-  $fields['do_not_solicit_old'] = 'do_not_solicit_old';
-  return $fields;
-}
