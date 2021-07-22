@@ -802,6 +802,10 @@ function user_access($string, $account = NULL) {
     $account = $user;
   }
 
+  if (!is_object($account)) {
+    return FALSE;
+  }
+
   // User #1 has all privileges:
   if ($account->uid == 1) {
     return TRUE;
@@ -1573,7 +1577,7 @@ function user_is_anonymous() {
  *   TRUE if the user is logged in, FALSE if the user is anonymous.
  */
 function user_is_logged_in() {
-  return (bool) $GLOBALS['user']->uid;
+  return $GLOBALS['user'] && (bool) $GLOBALS['user']->uid;
 }
 
 /**
