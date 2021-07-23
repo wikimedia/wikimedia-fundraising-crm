@@ -47,7 +47,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    * @param array $params requires at least token, amount, currency, invoice_id,
    *  is_recur, and description
    * @param string $component
-   *   Unused parameter, could be used to construct a url to an event page (although it 
+   *   Unused parameter, could be used to construct a url to an event page (although it
    *   could be intuited by the params anyway).
    *
    * @return array with processor_id set to the processor's payment ID
@@ -67,7 +67,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       throw new RuntimeException('Can only handle recurring payments');
     }
 
-    $paymentMethod = $this->getPaymentMethod($params);
+    $paymentMethod = self::getPaymentMethod($params);
 
     $provider = PaymentProviderFactory::getProviderForMethod($paymentMethod);
 
@@ -167,6 +167,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       'description' => 'description',
       'is_recur' => 'recurring',
       'ip_address' => 'user_ip',
+      'recurring_invoice_id' => 'processor_contact_id'
     ];
     foreach ($convert as $civiName => $smashPigName) {
       if (array_key_exists($civiName, $params)) {
@@ -228,7 +229,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    *
    * @return string
    */
-  protected function getPaymentMethod(array $params) {
+  public static function getPaymentMethod(array $params) {
     switch ($params['payment_instrument']) {
       case 'iDeal':
         return 'rtbt';
