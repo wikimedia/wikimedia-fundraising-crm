@@ -9,6 +9,7 @@ use Civi\Api4\CustomField;
 use Civi\Api4\OptionValue;
 
 $settings = [
+  'civi-data-mailing-template-path' => 'sites/all/modules/wmf_civicrm/templates',
   // This prevents contacts being assigned English as a default
   // when the language is unknown.
   'contact_default_language' => 'undefined',
