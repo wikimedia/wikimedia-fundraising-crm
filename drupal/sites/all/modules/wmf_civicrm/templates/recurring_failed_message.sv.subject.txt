@@ -1,1 +1,1 @@
-Hej från Wikimedia Foundation: Angående din donation
+Hej {contact.first_name}, bli månadsgivare till Wikipedia igen

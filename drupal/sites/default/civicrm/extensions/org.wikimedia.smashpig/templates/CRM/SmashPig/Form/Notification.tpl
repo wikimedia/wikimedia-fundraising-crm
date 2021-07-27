@@ -52,14 +52,14 @@
         <td class="label">{ts}Subject{/ts}</td><td class="view-value">{$qanotification.msg_subject}</td>
       </tr>
     {/if}
-    {if $qanotification.msg_text}
-      <tr>
-        <td class="label">{ts}Text{/ts}</td><td class="view-value">{$qanotification.msg_text|nl2br}</td>
-      </tr>
-    {/if}
     {if $qanotification.msg_html}
       <tr>
         <td class="label">{ts}Html message{/ts}</td><td class="view-value">{$qanotification.msg_html}</td>
+      </tr>
+    {/if}
+    {if $qanotification.msg_text}
+      <tr>
+        <td class="label">{ts}Text{/ts}</td><td class="view-value">{$qanotification.msg_text|nl2br}</td>
       </tr>
     {/if}
     {if $qanotification.language}
