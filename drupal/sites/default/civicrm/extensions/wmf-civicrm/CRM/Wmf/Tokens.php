@@ -37,6 +37,10 @@ class CRM_Wmf_Tokens {
           . substr($language, 0, 2)
           . '?rdfrom=%2F%2Ffoundation.wikimedia.org%2Fw%2Findex.php%3Ftitle%3DWays_to_Give%2Fen%26redirect%3Dno#Monthly_gift&utm_medium=civi-mail&utm_campaign=FailedRecur&utm_source=FY2021_FailedRecur';
 
+      case 'new_recur_brief' :
+        return 'https://donate.wikimedia.org/wiki/Ways_to_Give/'
+          . substr($language, 0, 2) . '#monthly';
+
       case 'unsubscribe' :
         return build_unsub_link(-1, $email, substr($language, 0, 2));
 
@@ -52,7 +56,9 @@ class CRM_Wmf_Tokens {
   public static function onListTokens(TokenRegisterEvent $e): void {
     $e->entity('wmf_url')
       ->register('unsubscribe', ts('Unsubscribe url'))
-      ->register('new_recur', ts('New recurring url'));
+      ->register('new_recur', ts('New recurring url'))
+      ->register('new_recur_brief', ts('New recurring url with less creepy stuff'))
+    ;
   }
 
 }

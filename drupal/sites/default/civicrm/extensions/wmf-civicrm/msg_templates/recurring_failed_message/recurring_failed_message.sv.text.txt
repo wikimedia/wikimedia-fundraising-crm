@@ -6,7 +6,7 @@ Under {now.MMMM} månad kunde vi inte behandla ditt månatliga bidrag på {contr
 
 Tack för att du medverkat till den fortsatta spridningen av kostnadsfri kunskap på nätet. Ditt stöd är viktigt för att Wikipedia ska finnas kvar som en oberoende, reklamfri och dynamisk informationskälla.
 
-Om du vill fortsätta stödja Wikipedia på månadsbasis, ägna då en stund åt att ange ett återkommande bidragsbelopp här - https://donate.wikimedia.org/wiki/Ways_to_Give/sv#monthly.
+Om du vill fortsätta stödja Wikipedia på månadsbasis, ägna då en stund åt att ange ett återkommande bidragsbelopp här - {wmf_url.new_recur_brief}.
 
 Om du redan är en aktiv månadsgivare eller har valt att bidra med ett engångsbelopp, kan du ignorera det här meddelandet.
 
