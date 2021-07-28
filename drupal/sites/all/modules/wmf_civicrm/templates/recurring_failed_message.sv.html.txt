@@ -1,19 +1,26 @@
-<p>Hej {contact.first_name}</p>
+<p>Hej {contact.first_name}!</p>
 
-<p>Tack för att du stödjer Wikimedia Foundation och den fria kunskapen.</p>
+<p>Det här är ett automatgenererat mejl från Wikimedia Foundations team för givarkommunikation.</p>
 
-<p>Vi har noterat att den senaste behandlingen av din månadsdonation tyvärr misslyckades. Till följd av detta har din återkommande donation avbrutits, och vi kan inte ta emot fler betalningar. Jag ber om ursäkt för denna olägenhet.</p>
-<p>Om du vill fortsätta att stödja Wikimedia Foundation kan du skapa en ny återkommande donation <a href="https://donate.wikimedia.org/wiki/Ways_to_Give/sv#monthly?utm_medium=civi-mail&utm_campaign=FailedRecur&utm_source=FY2021_FailedRecur">här</a></p>
-<p>Du är välkommen att kontakta oss om du har andra frågor eller kommentarer.</p>
+<p>Under {now.MMMM}  månad kunde vi inte behandla ditt månatliga bidrag på {contributionRecur.amount__format_money} till Wikipedia.</p>
 
-<p>Bästa hälsningar,<br>
-https://donate.wikimedia.org/wiki/Ways_to_Give/sv#monthly</p>
+<p>Tack för att du medverkat till den fortsatta spridningen av kostnadsfri kunskap på nätet. Ditt stöd är viktigt för att Wikipedia ska finnas kvar som en oberoende, reklamfri och dynamisk informationskälla.</p>
 
-<p>Du får detta e-postmeddelande till {contact.email} i egenskap av en högt värderad bidragsgivare till Wikimedia Foundation. Om du inte vill få mejl från Wikimedia Foundation i framtiden kan du <a href='https://www.pages04.net/wikimedia/WMFUnsubscribe/Unsubscribe'>avsluta prenumerationen nu</a>. Om du redan skänkt en gåva nyligen kan det vara så att vi har en annan e-postadress registrerad på dig. Berätta vilken! Vi avprenumererar gärna eventuella gamla e-postadresser.</p>
+<p>Om du vill fortsätta stödja Wikipedia på månadsbasis, ägna då en stund åt att ange ett <a href="{wmf_url.new_recur}">återkommande bidragsbelop</a> här.</p>
+
+<p>Om du redan är en aktiv månadsgivare eller har valt att bidra med ett engångsbelopp, kan du ignorera det här meddelandet.</p>
+
+<p>Wikipedia finns till tack vare bidrag från läsare som du. Tack än en gång för ditt stöd till den fria spridningen av kunskap över världen.</p>
+
+<p>Vänliga hälsningar,<br>
+
+<p>Denise Andrews<br>
+Givarkommunikation, Wikimedia</p>
+
+<p>Du får det här mejlet till {contact.email} eftersom du är en uppskattad bidragsgivare till Wikimedia Foundation. Vill du inte få mer mejl från Wikimedia Foundation i framtiden, <a href="{wmf_url.unsubscribe}">kan du avsluta prenumerationen nu</a>. Om du nyligen har lämnat ett bidrag kanske vi har flera mejladresser till dig. Meddela oss i så fall, så tar vi bort den eller de mejladresser som inte är aktuella.<p>
 
 <p>Wikimedia Foundation, Inc.<br>
-  P.O. Box 98204<br>
-  Washington, DC 20090-8204<br>
-  United States of America</p>
-
+P.O. Box 98204<br>
+Washington, DC 20090-8204<br>
+USA</p>
 <p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>
