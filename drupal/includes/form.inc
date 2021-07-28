@@ -791,7 +791,7 @@ function drupal_retrieve_form($form_id, &$form_state) {
 
   // We first check to see if there's a function named after the $form_id.
   // If there is, we simply pass the arguments on to it to get the form.
-  if (!is_callable($form_id)) {
+  if (!function_exists($form_id)) {
     // In cases where many form_ids need to share a central constructor function,
     // such as the node editing form, modules can implement hook_forms(). It
     // maps one or more form_ids to the correct constructor functions.
@@ -3923,6 +3923,11 @@ function theme_button($variables) {
   $element = $variables['element'];
   $element['#attributes']['type'] = 'submit';
   element_set_attributes($element, array('id', 'name', 'value'));
+
+  // Remove name attribute, if empty, for W3C compliance.
+  if (isset($element['#attributes']['name']) && $element['#attributes']['name'] === '') {
+    unset($element['#attributes']['name']);
+  }
 
   $element['#attributes']['class'][] = 'form-' . $element['#button_type'];
   if (!empty($element['#attributes']['disabled'])) {
