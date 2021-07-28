@@ -678,13 +678,6 @@ function thank_you_settings_form() {
     '#default_value' => variable_get('thank_you_enabled', 'true'),
   ];
 
-  $form['thank_you_unsubscribe_url'] = [
-    '#type' => 'textfield',
-    '#title' => t('Base URL for the unsubscribe page'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('thank_you_unsubscribe_url', ''),
-  ];
-
   $form['thank_you_from_name'] = [
     '#type' => 'textfield',
     '#title' => t('From name (default)'),
@@ -979,7 +972,7 @@ function build_unsub_link($contributionId, $emailAddr, $language) {
     'uselang' => $language,
   ];
 
-  return variable_get('thank_you_unsubscribe_url', '') . '?' . http_build_query($unsub_params, '', '&');
+  return Civi::settings()->get('wmf_unsubscribe_url') . '?' . http_build_query($unsub_params, '', '&');
 }
 
 function thank_you_batch_test() {
