@@ -1,21 +1,24 @@
-<p>Bună ziua {contact.first_name},</p>
+<p>Bună {contact.first_name},</p>
 
-<p>Vă mulțumim pentru sprijinul manifestat față de Wikimedia Foundation și accesul gratuit la cunoaștere.</p>
+<p>Acesta este un e-mail generat în mod automat din partea echipei de asistență pentru donatorii Wikimedia Foundation.</p>
 
-<p>Am observat că cea mai recentă procesare a donației dvs. lunare a eșuat. Ca rezultat, donația dvs. recurentă a fost anulată și nu vor mai exista taxări viitoare. Ne cerem scuze pentru eventuala neplăcere creată.</p>
+<p>În {now.MMMM}, nu am putut procesa donația dvs. lunară de %amount% pentru Wikipedia.</p>
 
-<p>Dacă doriți să sprijini în continuare fundația, puteți iniția o nouă donație recurentă [<a href="https://donate.wikimedia.org/wiki/Ways_to_Give/ro#monthly">aici</a>].</p>
+<p>Vă mulțumim pentru contribuția dvs. generoasă pentru menținerea accesului online gratuit la cunoștințe. Susținerea dvs. ajută Wikipedia să rămână independentă, fără reclame și dinamică.</p>
 
-<p>În cazul în care aveți întrebări sau comentarii suplimentare, vă rugăm să ne contactați.</p>
+<p>Dacă doriți să reînnoiți lunar sprijinul oferit Wikipedia, vă rugăm să dedicați câteva minute <a href="{wmf_url.new_recur}">pentru a începe o nouă donație recurentă aici.</a></p>
+<p>În schimb, dacă deja ați reînnoit donația dvs. recurentă sau dacă ați optat să acordați o donație unică, vă rugăm să ignorați acest mesaj.</p>
+<p>Wikipedia există datorită contribuțiilor de la cititori ca dvs. Vă mulțumim încă o dată pentru sprijinul acordat în furnizarea de cunoștințe gratuite întregii lumi.</p>
 
-<p>Cu stimă,<br>
-Echipa de servicii pentru donatori la Wikimedia Foundation</p>
+<p>Cu stimă,</p>
+<p>Denise Andrews<br>
+Echipa de asistență pentru donatorii Wikimedia</p>
 
-<p>Acest e-mail este trimis la adresa {contact.email} deoarece ești un donator prețuit al Wikimedia Foundation. Dacă nu vrei să mai primești niciun e-mail din partea Wikimedia Foundation, te poți <a href='https://www.pages04.net/wikimedia/WMFUnsubscribe/Unsubscribe'>dezabona acum</a>. Dacă ai donat deja recent, este posibil să avem înregistrată o altă adresă de e-mail pentru tine. Te rugăm să ne-o comunici! Vom elimina imediat orice adresă de e-mail care nu mai este de actualitate.</p>
+<p>Primiți acest e-mail la {contact.email} în calitate de donator valoros al Fundației Wikimedia. Dacă nu doriți să primiți pe viitor niciun email de la Wikimedia Foundation, <a href="{wmf_url.unsubscribe}">vă puteți dezabona acum</a>. Dacă ați donat deja recent, este posibil să avem o adresă de e-mail alternativă a dvs. la dosar. Vă rugăm să ne-o comunicați! Vom dezabona orice adrese de e-mail vechi.</p>
 
 <p>Wikimedia Foundation, Inc.<br>
   P.O. Box 98204<br>
   Washington, DC 20090-8204<br>
-  United States of America</p>
+  USA</p>
 
 <p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>
