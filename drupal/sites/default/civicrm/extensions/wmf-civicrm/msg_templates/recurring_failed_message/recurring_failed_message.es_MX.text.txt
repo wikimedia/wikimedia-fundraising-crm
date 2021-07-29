@@ -1,0 +1,28 @@
+Hola {contact.first_name},
+
+Este es un correo electrónico del equipo de Relaciones con los Donantes de Wikimedia Foundation generado automáticamente.
+
+En {now.MMMM} no pudimos procesar su donación mensual de {contributionRecur.amount__format_money} a Wikipedia.
+
+Gracias por contribuir tan generosamente a mantener el conocimiento libre en línea. Su aportación ayuda a Wikipedia a mantenerse independiente, sin avisos y pujante.
+
+Si desea renovar su apoyo a Wikipedia de forma mensual, tómese un minuto para comenzar una nueva donación recurrente aquí - {wmf_url.new_recur_brief}.
+
+Si ya ha renovado su donación recurrente u optado por donar por única vez, no tenga en cuenta este mensaje.
+
+Wikipedia existe gracias a las contribuciones de lectores como usted. Gracias nuevamente por su apoyo para brindar conocimientos gratuitamente al mundo.
+Atentamente,
+
+Denise Andrews,
+Relaciones con los Donantes de Wikimedia
+
+
+Usted recibe este correo electrónico en {contact.email} porque es un valioso o una valiosa donante de la Wikimedia Foundation. Si no desea recibir ningún correo electrónico de la Wikimedia Foundation en el futuro, cancele ahora - {wmf_url.unsubscribe} - su suscripción. Si ya ha donado recientemente, es posible que tengamos otra dirección de correo electrónico suya. Si es así, infórmenos de ello. Estaremos encantados de cancelar la suscripción asociada a cualquier dirección de correo electrónico antigua.
+
+Wikimedia Foundation, Inc.
+P.O. Box 98204
+Washington, DC 20090-8204
+Estados Unidos de América
+
+
+Ref CiviRec{contact.preferred_language} {contributionRecur.id}
