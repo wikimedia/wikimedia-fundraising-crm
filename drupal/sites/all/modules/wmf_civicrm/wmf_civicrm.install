@@ -25,10 +25,6 @@ function wmf_civicrm_install() {
   _wmf_civicrm_update_custom_fields();
   // create financial types & payment instruments
   wmf_civicrm_update_7000();
-  // This will fail unless it runs after the
-  // endowment financial type is created in order due to a check in the trigger routine.
-  // once that is moved to the extension we can hopefully move this to the start.
-  wmf_civicrm_reconcile_extensions();
   // Create contribution statuses.
   wmf_civicrm_update_7006();
   // add engage role - latter could be in buildkit.
@@ -335,11 +331,6 @@ function wmf_civicrm_update_7570() {
   CRM_Core_DAO::executeQuery($queryStart . "'civicrm_address', 'street_address', 30 )");
   CRM_Core_DAO::executeQuery($queryStart . "'civicrm_address', 'city', 10 )");
   CRM_Core_DAO::executeQuery($queryStart . "'civicrm_address', 'state_province_id', 5 )");
-}
-
-function wmf_civicrm_reconcile_extensions() {
-  require_once 'update_extensions.php';
-  wmf_install_add_missing_extensions();
 }
 
 /**
