@@ -1,0 +1,28 @@
+<p>Bonjour {contact.first_name},</p>
+
+<p>Ce courriel a été généré automatiquement par l’équipe Relations Donateurs de la Wikimedia Foundation.</p>
+
+<p>En {now.MMMM}, nous n’avons pas été en mesure de traiter votre don mensuel de {contributionRecur.amount__format_money} à Wikipédia.</p>
+
+<p>Nous vous remercions de contribuer si généreusement à l’essor de la connaissance libre en ligne. Votre soutien permet à Wikipédia de rester indépendante, dynamique et exempte de toute publicité.</p>
+
+<p>Si vous souhaitez renouveler votre soutien de manière régulière, veuillez prendre une minute pour <a href="{wmf_url.new_recur}">renouveler votre don mensuel</a>.</p>
+
+<p>Si vous avez déjà renouvelé votre don mensuel ou si vous avez choisi de faire un don unique, merci de ne pas tenir compte de ce message.</p>
+
+<p>Wikipédia existe grâce aux contributions de lecteurs et lectrices comme vous. Merci encore pour votre soutien à la diffusion gratuite de la connaissance dans le monde.</p>
+
+<p>Cordialement,</p>
+
+<p>Denise Andrews,
+L’équipe Relations Donateurs de la Wikimedia Foundation</p>
+
+
+<p>Vous recevez ce courriel à l’adresse {contact.email}, car vous faites partie des donateurs privilégiés de la Wikimedia Foundation. <a href="{wmf_url.unsubscribe}">Désinscrivez-vous maintenant</a> - si vous ne souhaitez plus recevoir de courriels de notre part. Si vous avez déjà fait un don récemment, il se peut qu’un autre courriel figure dans nos dossiers. Si c’est le cas, veuillez nous le faire savoir ! Nous nous ferons un plaisir de désinscrire vos anciennes adresses courriel de nos listes d’envoi.</p>
+
+<p>Wikimedia Foundation, Inc.<br>
+P.O. Box 98204<br>
+Washington, DC 20090-8204<br>
+USA</p>
+
+<p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>
