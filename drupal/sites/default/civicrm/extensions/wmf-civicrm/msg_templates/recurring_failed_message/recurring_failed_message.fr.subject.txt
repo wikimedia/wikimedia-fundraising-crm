@@ -1,1 +1,1 @@
-Un message de la Wikimedia Foundation : Votre don récurrent
+{contact.first_name}, renouvelez votre don mensuel à Wikipédia
