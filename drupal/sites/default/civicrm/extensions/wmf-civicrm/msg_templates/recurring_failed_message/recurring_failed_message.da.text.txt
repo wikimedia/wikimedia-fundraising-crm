@@ -1,0 +1,29 @@
+Hej {contact.first_name},
+
+Dette er en automatisk genereret e-mail fra Wikimedia Foundation Donor Relations-teamet.
+
+I {now:MMMM}, vi kunne ikke behandle din månedlige donation på {contributionRecur.amount__format_money} til Wikipedia.
+
+Tak, fordi du så generøst bidrager til at holde den gratis viden kan blomstre på nettet. Din støtte hjælper Wikipedia med at forblive uafhængig, annoncefri og dynamisk.
+
+Hvis du gerne vil forny din støtte til Wikipedia månedligt, bedes du bruge et øjeblik på at starte en ny gentagende donation her - {wmf_url.new_recur_brief}.
+
+Hvis du allerede har fornyet din gentagende donation eller valgt at donere en enkelt gang i stedet, bedes du se bort fra denne meddelelse.
+
+Wikipedia eksisterer takket være bidrag fra læsere som dig. Endnu engang tak for din støtte til at give verden gratis viden.
+
+Med venlig hilsen,
+
+Denise Andrews,
+Wikimedia Donor Relations
+
+
+Du modtager denne e-mail på {contact.email} som en værdsat donor til Wikimedia Foundation. Hvis du ikke ønsker at modtage e-mails fra Wikimedia Foundation, skal du afmelde framelde dig nu - {wmf_url.unsubscribe}. Hvis du allerede har doneret for nylig, har vi muligvis en alternativ e-mailadresse registreret på dig. Fortæl os det! Vi vil med glæde afmelde alle gamle e-mailadresser.
+
+Wikimedia Foundation, Inc.
+P.O. Box 98204
+Washington, DC 20090-8204
+USA
+
+
+Ref CiviRec{contact.preferred_language} {contributionRecur.id}
