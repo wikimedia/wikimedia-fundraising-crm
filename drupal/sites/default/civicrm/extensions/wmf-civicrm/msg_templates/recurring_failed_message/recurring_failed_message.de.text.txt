@@ -1,0 +1,28 @@
+Hallo, {contact.first_name},
+
+Dies ist eine automatisch erstellte E-Mail des Teams der Wikimedia Foundation Donor Relations.
+
+Im {now.MMMM} konnten wir Ihre monatliche Spende von {contributionRecur.amount__format_money} an Wikipedia nicht abwickeln.
+
+Vielen Dank, dass Sie mit Ihrer großzügigen Spende dazu beitragen, Wissen weiterhin kostenlos online zugänglich zu machen. Dank Ihrer Unterstützung kann Wikipedia unabhängig, werbefrei und aktiv bleiben.
+
+Wenn Sie Ihre monatliche Unterstützung für Wikipedia erneuern möchten, können Sie hier eine neue monatliche Spende einrichten - {wmf_url.new_recur}.
+
+Wenn Sie Ihre monatliche Spende bereits erneuert oder sich für eine einmalige Spende entschieden haben, ignorieren Sie diese Nachricht bitte.
+
+Wikipedia existiert nur dank Beiträgen von Menschen wie Ihnen – unserer treuen Leserschaft. Wir danken Ihnen nochmals, dass Sie die weltweit kostenlose Bereitstellung von Wissen unterstützen.
+
+Mit freundlichen Grüßen
+
+Denise Andrews,
+Wikimedia Donor Relations
+
+
+Sie erhalten diese E-Mail an {contact.email} aufgrund Ihrer Spenden an Wikimedia Foundation, die wir sehr zu schätzen wissen. Wenn Sie in Zukunft keine E-Mails von der Wikimedia Foundation erhalten möchten, können Sie sich vom Erhalt der E-Mails jetzt abmelden {wmf_url.new_recur_brief}. Wenn Sie in der jüngsten Vergangenheit bereits gespendet haben, kann es sein, dass wir von Ihnen eine ältere E-Mail-Adresse gespeichert haben. Teilen Sie uns das bitte mit! Wir bestellen die Benachrichtigungen gerne auch für  alte E-Mail-Adressen für Sie ab.
+
+Wikimedia Foundation, Inc.
+P.O. Box 98204
+Washington, DC 20090-8204
+Vereinigte Staaten von Amerika
+
+Ref CiviRec{contact.preferred_language} {contributionRecur.id}
