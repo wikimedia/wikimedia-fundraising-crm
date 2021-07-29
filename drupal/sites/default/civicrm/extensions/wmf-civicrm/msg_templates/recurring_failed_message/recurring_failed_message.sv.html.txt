@@ -1,0 +1,26 @@
+<p>Hej {contact.first_name}!</p>
+
+<p>Det här är ett automatgenererat mejl från Wikimedia Foundations team för givarkommunikation.</p>
+
+<p>Under {now.MMMM} månad kunde vi inte behandla ditt månatliga bidrag på {contributionRecur.amount__format_money} till Wikipedia.</p>
+
+<p>Tack för att du medverkat till den fortsatta spridningen av kostnadsfri kunskap på nätet. Ditt stöd är viktigt för att Wikipedia ska finnas kvar som en oberoende, reklamfri och dynamisk informationskälla.</p>
+
+<p>Om du vill fortsätta stödja Wikipedia på månadsbasis, ägna då en stund åt att ange ett <a href="{wmf_url.new_recur}">återkommande bidragsbelop</a> här.</p>
+
+<p>Om du redan är en aktiv månadsgivare eller har valt att bidra med ett engångsbelopp, kan du ignorera det här meddelandet.</p>
+
+<p>Wikipedia finns till tack vare bidrag från läsare som du. Tack än en gång för ditt stöd till den fria spridningen av kunskap över världen.</p>
+
+<p>Vänliga hälsningar,<br>
+
+<p>Denise Andrews<br>
+Givarkommunikation, Wikimedia</p>
+
+<p>Du får det här mejlet till {contact.email} eftersom du är en uppskattad bidragsgivare till Wikimedia Foundation. Vill du inte få mer mejl från Wikimedia Foundation i framtiden, <a href="{wmf_url.unsubscribe}">kan du avsluta prenumerationen nu</a>. Om du nyligen har lämnat ett bidrag kanske vi har flera mejladresser till dig. Meddela oss i så fall, så tar vi bort den eller de mejladresser som inte är aktuella.<p>
+
+<p>Wikimedia Foundation, Inc.<br>
+P.O. Box 98204<br>
+Washington, DC 20090-8204<br>
+USA</p>
+<p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>

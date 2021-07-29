@@ -1,0 +1,24 @@
+Bună {contact.first_name},
+
+Acesta este un e-mail generat în mod automat din partea echipei de asistență pentru donatorii Wikimedia Foundation.
+
+În {now.MMMM}, nu am putut procesa donația dvs. lunară de %amount% pentru Wikipedia.
+
+Vă mulțumim pentru contribuția dvs. generoasă pentru menținerea accesului online gratuit la cunoștințe. Susținerea dvs. ajută Wikipedia să rămână independentă, fără reclame și dinamică.
+
+Dacă doriți să reînnoiți lunar sprijinul oferit Wikipedia, vă rugăm să dedicați câteva minute pentru a începe o nouă donație recurentă aici - {wmf_url.new_recur_brief}.
+În schimb, dacă deja ați reînnoit donația dvs. recurentă sau dacă ați optat să acordați o donație unică, vă rugăm să ignorați acest mesaj.
+Wikipedia există datorită contribuțiilor de la cititori ca dvs. Vă mulțumim încă o dată pentru sprijinul acordat în furnizarea de cunoștințe gratuite întregii lumi.
+
+Cu stimă,
+Denise Andrews
+Echipa de asistență pentru donatorii Wikimedia
+
+Primiți acest e-mail la {contact.email} în calitate de donator valoros al Fundației Wikimedia. Dacă nu doriți să primiți pe viitor niciun email de la Wikimedia Foundation, vă puteți dezabona acum - {wmf_url.unsubscribe}. Dacă ați donat deja recent, este posibil să avem o adresă de e-mail alternativă a dvs. la dosar. Vă rugăm să ne-o comunicați! Vom dezabona orice adrese de e-mail vechi.
+
+Wikimedia Foundation, Inc.
+P.O. Box 98204
+Washington, DC 20090-8204
+USA
+
+Ref CiviRec{contact.preferred_language} {contributionRecur.id}

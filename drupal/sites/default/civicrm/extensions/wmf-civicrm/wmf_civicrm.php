@@ -15,6 +15,9 @@ use CRM_WmfCivicrm_ExtensionUtil as E;
  */
 function wmf_civicrm_civicrm_config(&$config) {
   _wmf_civicrm_civix_civicrm_config($config);
+  $dispatcher = Civi::dispatcher();
+  $dispatcher->addListener('civi.token.list', ['CRM_Wmf_Tokens', 'onListTokens']);
+  $dispatcher->addListener('civi.token.eval', ['CRM_Wmf_Tokens', 'onEvalTokens']);
 }
 
 /**

@@ -1,0 +1,1 @@
+Hej {contact.first_name}, bli månadsgivare till Wikipedia igen

@@ -18,10 +18,6 @@ return [
     'title' => E::ts('Path for disk-stored templates'),
     'help_text' => '',
     'html_type' => 'text',
-    'html_attributes' => [
-      'class' => 'crm-select2',
-      'multiple' => 1,
-    ],
     'settings_pages' => ['cividatatranslate' => ['weight' => 20]],
   ],
 ];
