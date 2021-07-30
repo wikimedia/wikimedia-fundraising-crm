@@ -1,21 +1,27 @@
-Hei {contact.first_name},
+Hei, {contact.first_name}
 
-Mange takk for at du støtter Wikimedia Foundation og fri kunnskap.
+Dette er en automatisk generert e-post fra Wikimedia Foundation Donor Relations-teamet
 
-Vi har oppdaget at det skjedde en feil under behandlingen av den siste månedlige donasjonen din. Resultatet er at den faste donasjonen din er avbrutt, og du vil ikke lengre bli belastet. Jeg beklager bryderiet.
+I {now.MMMM} kunne vi ikke behandle din månedlige donasjon på {contributionRecur.amount__format_money} til Wikipedia.
 
-Hvis du vil fortsette å støtte Wikimedia Foundation, kan du opprette en ny fast donasjon [her].
+Takk for at du så sjenerøst bidrar til å la gratis kunnskap blomstre på nett. Din støtte hjelper Wikipedia å forbli uavhengig, annonsefri og levende.
 
-Hvis du har flere spørsmål eller kommentarer, er det bare å ta kontakt med oss.
+Hvis du ønsker å fornye din støtte for Wikipedia på en månedlig basis, ta et minutt til å starte en ny regelmessig donasjon her - {wmf_url.new_recur_brief}.
 
-Med vennlig hilsen,
-Wikimedia Foundation Giverservice-teamet
+Hvis du allerede har fornyet din regelmessige donasjon, eller valgt å i stedet donere én gang, se bort fra denne meldingen.
 
-Du får denne e-posten på {contact.email} som en verdifull donor for Wikimedia Foundation. Hvis du ikke ønsker å få e-post fra Wikimedia Foundation i fremtiden, kan du melde deg av umiddelbart. Hvis du allerede har donert nylig, kan vi ha en alternativ e-postadresse for deg. Gi oss beskjed! Vi vil gjerne melde av alle gamle e-postadresser.
+Wikipedia eksisterer takket være bidrag fra lesere som deg. Takk igjen for din støtte til å gi kunnskap gratis til verden.
+
+Vennlig hilsen,
+
+Denise Andrews
+Wikimedia Donor Relations
+
+Du får denne e-posten på {contact.email} som en verdsatt donor hos Wikimedia Foundation. Hvis du ikke ønsker å få e-post fra Wikimedia Foundation i fremtiden, kan du melde deg av umiddelbart {wmf_url.unsubscribe}. Hvis du nylig har donert, kan vi allerede ha en alternativ e-postadresse for deg. Gi oss beskjed! Vi melder gjerne av alle gamle e-postadresser for deg.
 
 Wikimedia Foundation, Inc.
 P.O. Box 98204
 Washington, DC 20090-8204
-United States of America
+USA
 
 Ref CiviRec{contact.preferred_language} {contributionRecur.id}
