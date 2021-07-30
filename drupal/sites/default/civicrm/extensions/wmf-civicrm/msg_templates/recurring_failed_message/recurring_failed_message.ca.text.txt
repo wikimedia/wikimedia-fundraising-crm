@@ -1,0 +1,27 @@
+Hola {contact.first_name},
+
+Aquest és un correu electrònic generat automàticament per l’equip de Relacions amb els Donants de Wikimedia Foundation.
+
+El passat mes de {now:MMMM} no vam poder processar la teva donació mensual de {contributionRecur.amount__format_money} a la Viquipèdia.
+
+Gràcies per contribuir tan generosament a mantenir el coneixement lliure en línia. El teu suport ajuda a la Viquipèdia a seguir sent independent, vibrant  i a no dependre d’anuncis.
+
+Si vols renovar el teu suport mensual a la Viquipèdia, dedica un minut per començar una nova donació periòdica aquí - {wmf_url.new_recur_brief}.
+
+Si ja has renovat la teva donació periòdica, o has optat per una donació única, ignora aquest missatge.
+
+La Viquipèdia existeix gràcies a les contribucions de lectors com tu. Gràcies de nou pel teu suport a l’hora de proporcionar lliurement coneixements al món.
+
+Atentament,
+
+Denise Andrews
+Relacions amb els Donants de Wikimedia
+
+Has rebut aquest correu electrònic a {contact.email} com a donant valuós de Wikimedia Foundation. Si no vols rebre correus electrònics de Wikimedia Foundation en el futur, dona’t de baixa ara mateix - {wmf_url.unsubscribe}. Si ja has fet un donatiu fa poc, pot ser que tinguem una adreça de correu electrònic alternativa als nostres arxius. ¡Avisa’ns! Estarem encantats de donar de baixa les adreces de correu electrònic antigues.
+
+Wikimedia Foundation, Inc.
+P.O. Box 98204
+Washington, DC 20090-82004
+Estats Units d’Am‌èrica
+
+Ref CiviRec{contact.preferred_language} {contributionRecur.id}

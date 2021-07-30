@@ -1,0 +1,29 @@
+Dobrý deň, {contact.first_name}!
+
+Toto je automaticky generovaný e-mail od tímu Wikimedia Foundation Donor Relations.
+
+V mesiaci {now.MMMM} sa nám nepodarilo spracovať tvoj mesačný príspevok Wikipédii vo výške {contributionRecur.amount__format_money}.
+
+Ďakujeme, že si štedro prispel/-a k udržaniu bezplatných vedomostí online. Vďaka tvojej podpore je Wikipédia nezávislá, bez reklám a živá.
+
+Ak by si chcel/-a mesačne obnovovať svoju podporu pre Wikipédiu, venuj chvíľku času a spusti nový opakovaný príspevok tu - {wmf_url.new_recur_brief}.
+
+Ak si už svoj opakovaný príspevok obnovil/-a alebo si sa rozhodol/-a namiesto toho prispieť jednorazovo, túto správu si nevšímaj.
+
+Wikipédia existuje vďaka príspevkom od ľudí, ako si ty. Ešte raz ti ďakujeme za podporu pri slobodnom poskytovaní vedomostí svetu.
+S pozdravom
+
+Denise Andrews
+Wikimedia Donor Relations
+
+Tento e-mail na adresu {contact.email} dostávaš ako vážený prispievateľ nadácie Wikimedia Foundation. Ak nechceš dostávať žiadne e-maily od nadácie Wikimedia Foundation, ich odber môžeš okamžite zrušiť - {wmf_url.unsubscribe}. Ak si nám už príspevok poskytol/-a, možno ti píšeme na alternatívnu e-mailovú adresu. Daj nám vedieť! Radi ťa z akejkoľvek starej e-mailovej adresy odhlásime.
+
+
+
+Wikimedia Foundation, Inc.
+P.O. Box 98204
+Washington, DC 20090-8204
+Spojené štáty americké
+
+
+Ref CiviRec{contact.preferred_language} {contributionRecur.id}

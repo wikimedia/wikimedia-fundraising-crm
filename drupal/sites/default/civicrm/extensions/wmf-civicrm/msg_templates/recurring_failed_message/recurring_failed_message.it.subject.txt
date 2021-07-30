@@ -1,1 +1,1 @@
-Buongiorno da Wikimedia Foundation: la Sua donazione ricorrente
+{contact.first_name}, rinnova la tua donazione mensile a Wikipedia

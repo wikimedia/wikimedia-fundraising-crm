@@ -1,0 +1,1 @@
+{contact.first_name}, újítsa meg a Wikipedia számára nyújtott havi adományát

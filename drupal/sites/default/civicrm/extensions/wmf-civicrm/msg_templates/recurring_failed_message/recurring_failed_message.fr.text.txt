@@ -1,23 +1,28 @@
 Bonjour {contact.first_name},
 
-Merci de votre soutien pour la Wikimedia Foundation et le savoir gratuit.
+Cet email a été généré automatiquement par l’équipe Relations Donateurs de la Wikimedia Foundation.
 
-Nous avons remarqué que le traitement le plus récent de votre don mensuel avait échoué. Par conséquent, votre don récurrent a été annulé et aucun montant ne sera désormais prélevé de votre compte. Veuillez nous excuser pour ce désagrément.
+En {now.MMMM}, nous n’avons pas pu traiter votre don mensuel de {contributionRecur.amount__format_money} à Wikipédia.
 
-Si vous souhaitez continuer à soutenir la fondation, vous pouvez à nouveau configurer un don récurrent ici.
+Nous vous remercions de contribuer si généreusement à l’essor de la connaissance libre en ligne. Votre soutien permet à Wikipédia de rester indépendante, dynamique et sans publicité.
 
-N’hésitez pas à nous contacter en cas de questions ou de commentaires.
+Si vous souhaitez continuer à nous soutenir de manière régulière, veuillez prendre une minute pour renouveler votre don mensuel - {wmf_url.new_recur_brief}.
 
-https://donate.wikimedia.org
+Si vous avez déjà renouvelé votre don mensuel ou si vous êtes passé au don unique, veuillez ne pas tenir compte de ce message.
+
+Wikipédia existe grâce aux contributions de lecteurs et lectrices comme vous. Merci encore de contribuer à diffuser librement la connaissance à travers le monde.
 
 Cordialement,
-l'Équipe Service aux Donateurs de la Wikimedia Foundation
+
+Denise Andrews,
+L’équipe Relations Donateurs de la Wikimedia Foundation
 
 
-Depuis votre don à la fondation Wikimédia, votre adresse {contact.email} fait partie de notre liste. Si vous ne désirez plus recevoir d’emails de notre part, vous pouvez vous, désabonner maintenant. Si vous avez fait un don récemment, nous avons peut-être une autre adresse email enregistrée pour vous : signalez-le et nous supprimerons toute adresse non valide.
+Vous recevez cet email à l’adresse {contact.email}, car vous faites partie des donateurs de la Wikimedia Foundation. Désinscrivez-vous maintenant - {wmf_url.unsubscribe} - si vous ne souhaitez plus recevoir d’emails de notre part. Si vous avez déjà fait un don récemment, il se peut qu’une autre adresse email figure dans nos dossiers. Si c’est le cas, faites-le-nous savoir ! Nous serons heureux de supprimer vos anciennes adresses email de nos listes d’envoi.
+
 Wikimedia Foundation, Inc.
 P.O. Box 98204
 Washington, DC 20090-8204
-United States of America
+États-Unis d’Amérique
 
 Ref CiviRec{contact.preferred_language} {contributionRecur.id}

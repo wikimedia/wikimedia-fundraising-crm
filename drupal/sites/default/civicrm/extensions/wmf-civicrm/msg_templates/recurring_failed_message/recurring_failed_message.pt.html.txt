@@ -1,21 +1,29 @@
 <p>Olá {contact.first_name},</p>
 
-<p>Obrigado por apoiar a Wikimedia Foundation e o livre conhecimento.</p>
+<p>Este é um e-mail criado automaticamente, pela equipa de Relações com Doadores da Wikimedia Foundation.</p>
 
-<p>Observamos que o último processamento de sua doação mensal falhou. Consequentemente, sua doação recorrente foi cancelada, e você não verá futuras cobranças. Lamento pelo inconveniente.</p>
+<p>Em {now.MMMM}, não conseguimos processar o seu donativo mensal de {contributionRecur.amount__format_money} à Wikipédia.</p>
 
-<p>Caso deseje continuar apoiando a Wikimedia Foundation, você pode criar uma nova doação recorrente [<a href="https://donate.wikimedia.org/wiki/Ways_to_Give/pt#monthly">aqui</a>].</p>
+<p>Agradecemos a sua generosa contribuição para manter o conhecimento gratuito a crescer online. O seu apoio ajuda a Wikipédia a permanecer independente, livre de publicidade e vibrante.</p>
 
-<p>Caso tenha outras dúvidas ou comentários, não hesite em entrar em contato conosco.</p>
+<p>Se gostaria de renovar o seu apoio mensal à Wikipédia, pode <a href="{wmf_url.new_recur}">iniciar um novo donativo recorrente aqui</a>.</p>
 
-<p>Atenciosamente,<br>
-Equipe de atendimento ao doador da Fundação Wikimedia</p>
+<p>Se já renovou o seu donativo recorrente ou optou, em vez disso, por um donativo pontual, queira, por favor, ignorar esta mensagem.</p>
 
-<p>Você está recebendo este e-mail no {contact.email} por ser um valioso doador da Wikimedia Foundation. Se você não deseja receber mais emails da Wikimedia Foundation, <a href='https://www.pages04.net/wikimedia/WMFUnsubscribe/Unsubscribe'>cancele sua inscrição aqui</a>. Se você doou recentemente, podemos ter um endereço de e-mail alternativo registrado para você. Por favor, nos avise! Teremos o prazer de cancelar qualquer inscrição de e-mail antigos.</p>
+<p>A Wikipédia existe graças às contribuições dos seus utilizadores. Reiteramos os nossos agradecimentos pelo vosso apoio em facultar gratuitamente o conhecimento ao mundo.</p>
+
+<p>Atenciosamente,</p>
+
+<p>Denise Andrews<br>
+Relações com Doadores da Wikimedia</p>
+
+<p>Está a receber este e-mail em {contact.email} na qualidade de doador estimado da Wikimedia Foundation. Se pretende deixar de receber e-mails da Wikimedia Foundation, <a href="{wmf_url.unsubscribe}">cancele imediatamente a sua subscrição</a>. Caso tenha doado recentemente, é possível que tenhamos um endereço de e-mail alternativo em arquivo. Diga-nos! Teremos todo o gosto em cancelar subscrições com quaisquer endereços de e-mail antigos.</p>
+
+
 
 <p>Wikimedia Foundation, Inc.<br>
-  P.O. Box 98204<br>
-  Washington, DC 20090-8204<br>
-  United States of America</p>
+P.O. Box 98204<br>
+Washington, DC 20090-8204<br>
+Estados Unidos da América</p>
 
 <p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>
