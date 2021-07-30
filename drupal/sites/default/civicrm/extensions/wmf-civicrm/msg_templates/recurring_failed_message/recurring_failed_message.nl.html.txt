@@ -1,21 +1,27 @@
 <p>Hallo {contact.first_name},</p>
 
-<p>Bedankt voor uw steun aan de Wikimedia Foundation en aan vrije kennis.</p>
+<p>Dit is een automatisch gegenereerde e-mail van het team van Wikimedia Foundation Donor Relations.</p>
 
-<p>We hebben opgemerkt dat de meest recente verwerking van uw maandelijkse donatie mislukt is. Uw maandelijkse donatie is daarom geannuleerd, en er zullen verder geen betalingen uitgevoerd worden. Mijn excuses voor het eventuele ongemak.</p>
+<p>In {now.MMMM}, konden we je maandelijkse donatie van {contributionRecur.amount__format_money} aan Wikipedia niet verwerken.</p>
 
-<p>Mocht u de Foundation willen blijven ondersteunen, dan moet u [<a href="https://donate.wikimedia.org/wiki/Ways_to_Give/nl#monthly">hier</a>]  een nieuwe maandelijkse donatie creëren.</p>
+<p>Hartelijk dank voor je gulle bijdrage zodat gratis kennis online kan blijven bestaan. Je steun zorgt ervoor dat Wikipedia onafhankelijk, reclamevrij en energiek kan blijven.</p>
 
-<p>Neem gerust contact met ons op als u nog vragen of opmerkingen heeft.</p>
+<p>Als je je steun aan Wikipedia op maandbasis  basis wilt vernieuwen, neem dan even de tijd om <a href="{wmf_url.new_recur}">hier een nieuwe periodieke donatie te beginnen</a>.</p>
 
-<p>Met vriendelijke groeten,<br>
-Het Wikimedia Foundation Donateursservice Team</p>
+<p>Als je je periodieke donatie al verlengd hebt, of ervoor gekozen hebt om in plaats daarvan eenmalig te doneren, dan kun je dit bericht negeren.</p>
 
-<p>U ontvangt deze e-mail aan {contact.email} omdat u ons heeft gevraagd u te herinneren aan Wikipedia. Als u in de toekomst geen mail meer wilt ontvangen van de Wikimedia Foundation, kunt u zich <a href='https://www.pages04.net/wikimedia/WMFUnsubscribe/Unsubscribe'>direct uitschrijven</a>. Als u recentelijk heeft gedoneerd, hebben wij wellicht een ander emailadres van u. Als u dat aan ons doorgeeft, schrijven wij u graag uit voor uw oude emailadres(sen).</p>
+<p>Wikipedia bestaat dankzij bijdragen van lezers zoals jij. Nogmaals hartelijk dank voor je steun om gratis kennis aan de wereld aan te bieden.</p>
+
+<p>Met vriendelijke groeten,</p>
+
+<p>Denise Andrews<br>
+Wikimedia Donor Relations</p>
+
+<p>Je ontvangt deze e-mail op {contact.email} als gewaardeerde donateur van de Wikimedia Foundation. Als je in de toekomst geen e-mails wilt ontvangen van de Wikimedia Foundation, <a href="{wmf_url.unsubscribe}">schrijf je dan direct uit</a>. Als je recent al hebt gedoneerd, hebben we mogelijk een alternatief e-mailadres van je. Laat het ons weten! We schrijven dan graag eventuele oude e-mailadressen uit.</p>
 
 <p>Wikimedia Foundation, Inc.<br>
 P.O. Box 98204<br>
 Washington, DC 20090-8204<br>
-United States of America</p>
+Verenigde Staten</p>
 
 <p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>
