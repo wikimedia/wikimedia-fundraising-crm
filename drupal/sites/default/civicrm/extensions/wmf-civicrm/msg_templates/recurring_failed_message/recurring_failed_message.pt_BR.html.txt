@@ -1,0 +1,27 @@
+<p>Olá {contact.first_name},</p>
+
+<p>Este é um e-mail gerado automaticamente pela equipe de Relações com Doadores da Wikimedia Foundation.</p>
+
+<p>Em {now.MMMM}, não pudemos processar sua doação mensal de {contributionRecur.amount__format_money} para a Wikipédia.</p>
+
+<p>Obrigado por contribuir tão generosamente para manter o conhecimento gratuito prosperando no ambiente online. Seu apoio ajuda a Wikipédia a manter-se independente, livre de anúncios e vibrante.</p>
+
+<p>Caso seja a sua vontade renovar seu apoio mensal para a Wikipédia, reserve um minuto para iniciar uma <a href="{wmf_url.new_recur}">nova doação recorrente aqui</a>.</p>
+
+<p>Se você já renovou sua doação recorrente ou optou por fazer uma doação única, desconsidere esta mensagem.</p>
+
+<p>A Wikipédia existe graças às contribuições de leitores como você. Obrigado novamente pelo seu apoio à livre circulação do conhecimento no mundo.</p>
+
+<p>Atenciosamente,</p>
+
+<p>Denise Andrews<br>
+Relações com Doadores da Wikimedia</p>
+
+<p>Você recebeu esta mensagem em {contact.email} por valorizarmos suas doações à Fundação Wikimedia. Se você não deseja receber futuros e-mails da Fundação Wikimedia, <a href="{wmf_url.unsubscribe}">cancele sua inscrição agora</a>. Caso tenha feito uma doação recente, podemos ter um endereço de e-mail alternativo para você. Por favor, nos avise! Teremos o maior prazer em cancelar a inscrição de qualquer outro endereço.</p>
+
+<p>Wikimedia Foundation, Inc.<br>
+P.O. Box 98204<br>
+Washington, DC 20090-8204<br>
+Estados Unidos da América</p>
+
+<p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>
