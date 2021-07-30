@@ -1,0 +1,28 @@
+<p>Hej {contact.first_name},</p>
+
+<p>Dette er en automatisk genereret e-mail fra Wikimedia Foundation Donor Relations-teamet.</p>
+
+<p>I {now:MMMM}, vi kunne ikke behandle din månedlige donation på {contributionRecur.amount__format_money} til Wikipedia.</p>
+
+<p>Tak, fordi du så generøst bidrager til at holde den gratis viden kan blomstre på nettet. Din støtte hjælper Wikipedia med at forblive uafhængig, annoncefri og dynamisk.</p>
+
+<p>Hvis du gerne vil forny din støtte til Wikipedia månedligt, bedes du bruge et øjeblik på at <a href="{wmf_url.new_recur}">starte en ny gentagende donation her</a>.</p>
+
+<p>Hvis du allerede har fornyet din gentagende donation eller valgt at donere en enkelt gang i stedet, bedes du se bort fra denne meddelelse.</p>
+
+<p>Wikipedia eksisterer takket være bidrag fra læsere som dig. Endnu engang tak for din støtte til at give verden gratis viden.</p>
+
+<p>Med venlig hilsen,</p>
+
+<p>Denise Andrews,<br>
+Wikimedia Donor Relations</p>
+
+
+<p>Du modtager denne e-mail på {contact.email} som en værdsat donor til Wikimedia Foundation. Hvis du ikke ønsker at modtage e-mails fra Wikimedia Foundation, <a href="{wmf_url.unsubscribe}">skal du afmelde framelde dig nu. Hvis du allerede har doneret for nylig, har vi muligvis en alternativ e-mailadresse registreret på dig. Fortæl os det! Vi vil med glæde afmelde alle gamle e-mailadresser.</p>
+
+<p>Wikimedia Foundation, Inc.<br>
+P.O. Box 98204<br>
+Washington, DC 20090-8204<br>
+USA</p>
+
+<p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>
