@@ -1,0 +1,25 @@
+Szia {contact.first_name}!
+
+Ez egy, a Wikimedia Foundation Donor Relations csapata által küldött automatikus üzenet.
+{now.MMMM} hónap során nem tudtuk feldolgozni a Wikipédia számára adott, {contributionRecur.amount__format_money} összegű adományod.
+
+Köszönjük, hogy nagylelkűen hozzájárulsz az online ismeretek szabad áramlásának a fenntartásához. Támogatásod segítségével maradhat továbbra is független, hirdetésmentes és lendületes a Wikipedia oldal.
+
+Ha szeretnéd megújítani a Wikipedia számára havonta nyújtott adományod összegét, kérjük, itt indíts el egy újabb rendszeres adományt - {wmf_url.new_recur_brief}.
+
+Ha már megújítottad rendszeres adományod vagy egyszeri adományozási összegre váltottál, kérünk, hagyd figyelmen kívül ezt az üzenetet.
+
+A Wikipédia a hozzád hasonló olvasók hozzájárulásának köszönhetően létezik. Ismételten köszönjük, hogy támogatod a tudás szabad áramlását.
+Üdvözlettel:
+
+Denise Andrews
+Wikimedia Donor Relations
+Ezt az e-mailt a {contact.email} címen kapod meg, mint a Wikimedia Foundation nagyra becsült adományozója. Ha nem szeretnél a jövőben e-maileket kapni a Wikimedia Foundationtől, iratkozz le most - {wmf_url.unsubscribe}. Ha nemrég már adományoztál, lehet, hogy van egy hozzád rendelt alternatív e-mail cím is. Kérünk, oszd meg velünk! Örömmel megszüntetünk bármely régi e-mail címet.
+
+
+Wikimedia Foundation, Inc.
+P.O. Box 98204
+Washington, DC 20090-8204
+Amerikai Egyesült Államok
+
+Ref CiviRec{contact.preferred_language} {contributionRecur.id}
