@@ -1,1 +1,1 @@
-Saudações da Wikimedia Foundation: Sua doação recorrente
+{contact.first_name}, renove o seu donativo mensal à Wikipédia
