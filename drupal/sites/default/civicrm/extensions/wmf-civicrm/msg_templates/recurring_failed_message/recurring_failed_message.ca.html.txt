@@ -1,0 +1,25 @@
+<p>Hola {contact.first_name},</p>
+
+<p>Aquest és un correu electrònic generat automàticament per l’equip de Relacions amb els Donants de Wikimedia Foundation.</p>
+<p>El passat mes de {now:MMMM} no vam poder processar la teva donació mensual de {contributionRecur.amount__format_money} a la Viquipèdia.</p>
+
+<p>Gràcies per contribuir tan generosament a mantenir el coneixement lliure en línia. El teu suport ajuda a la Viquipèdia a seguir sent independent, vibrant  i a no dependre d’anuncis.</p>
+
+<p>Si vols renovar el teu suport mensual a la Viquipèdia, dedica un minut per <a href="{wmf_url.new_recur}">començar una nova donació periòdica aquí</a>.</p>
+
+<p>Si ja has renovat la teva donació periòdica, o has optat per una donació única, ignora aquest missatge.</p>
+
+<p>La Viquipèdia existeix gràcies a les contribucions de lectors com tu. Gràcies de nou pel teu suport a l’hora de proporcionar lliurement coneixements al món.</p>
+
+<p>Atentament,<br>
+
+Denise Andrews<br>
+Relacions amb els Donants de Wikimedia</p>
+
+<p>Has rebut aquest correu electrònic a {contact.email} com a donant valuós de Wikimedia Foundation. Si no vols rebre correus electrònics de Wikimedia Foundation en el futur, <a href="{wmf_url.unsubscribe}">dona’t de baixa ara mateix</a>. Si ja has fet un donatiu fa poc, pot ser que tinguem una adreça de correu electrònic alternativa als nostres arxius. ¡Avisa’ns! Estarem encantats de donar de baixa les adreces de correu electrònic antigues.</p>
+Wikimedia Foundation, Inc.</br>
+P.O. Box 98204</br>
+Washington, DC 20090-82004</br>
+Estats Units d’Am‌èrica</br>
+
+<p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>
