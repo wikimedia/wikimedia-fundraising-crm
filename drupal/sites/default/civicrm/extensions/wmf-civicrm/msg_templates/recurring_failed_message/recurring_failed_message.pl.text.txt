@@ -1,21 +1,27 @@
-Sz.P. {contact.first_name},
+Witamy {contact.first_name},
 
-Dziękuję za wspieranie Wikimedia Foundation oraz świata bezpłatnej wiedzy.
+To jest automatycznie wygenerowana wiadomość e-mail od zespołu Wikimedia Foundation ds. relacji z darczyńcami.
 
-Zauważyliśmy, że ostatnia płatność Państwa miesięcznej darowizny nie powiodła się. Państwa cykliczne darowizny zostały anulowane. Przepraszam za niedogodności.
+W {now.MMMM} nie byliśmy w stanie przetworzyć Twojej miesięcznej darowizny dla Wikipedii w wysokości {contributionRecur.amount__format_money}.
 
-Jeżeli chcą Państwo nadal wspierać naszą Fundację, proszę o utworzenie nowej cyklicznej darowizny <a href="https://donate.wikimedia.org/wiki/Ways_to_Give/pl#Monthly">[tutaj]</a>.
+Dziękujemy za tak hojny wkład w podtrzymywanie rozwoju bezpłatnej wiedzy w Internecie. Dzięki Twojemu wsparciu Wikipedia może pozostawać niezależna, dynamiczna, a także nie wyświetlać reklam.
 
-W razie pytań lub uwag proszę o kontakt.
+Jeśli chcesz wznowić swoje comiesięczne wsparcie dla Wikipedii, poświęć chwilę i rozpocznij tutaj nową cykliczną wpłatę - {wmf_url.new_recur_brief}.
+
+Jeśli Twoja cykliczna wpłata została już wznowiona albo tym razem dokonujesz tylko wpłaty jednorazowej, zignoruj tę wiadomość.
+
+Wikipedia istnieje dzięki datkom od czytelników takich jak Ty. Jeszcze raz dziękujemy za wsparcie bezpłatnego udostępniania wiedzy.
 
 Z wyrazami szacunku,
-Ekipa Obsługi Donatorów od Wikimedia Foundation
 
-Otrzymujesz tę wiadomość na adres {contact.email} jako doceniany darczyńca Wikimedia Foundation. Jeśli nie chcesz już otrzymywać wiadomości e-mail od Wikimedia Foundation, możesz teraz się wypisać. Jeśli niedawno otrzymaliśmy od Ciebie darowiznę, możemy mieć w bazie Twój alternatywny adres e-mail. Daj nam znać! Z przyjemnością wypiszemy z bazy wszystkie stare adresy e-mail.
+Denise Andrews
+Wikimedia ds. relacji z darczyńcami
+
+Otrzymujesz tą wiadomość na adres {contact.email} jako doceniany darczyńca Wikimedia Foundation. Jeśli nie chcesz już otrzymywać wiadomości e-mail od Wikimedia Foundation, możesz w każdej chwili anulować tę subskrypcję - {wmf_url.unsubscribe}. Jeśli niedawno otrzymaliśmy od Ciebie darowiznę, w naszej bazie może znajdować się Twój alternatywny adres e-mail. Daj nam znać! Z przyjemnością usuniemy z bazy danych wszystkie stare adresy e-mail.
 
 Wikimedia Foundation, Inc.
 P.O. Box 98204
 Washington, DC 20090-8204
-United States of America
+Stany Zjednoczone Ameryki
 
 Ref CiviRec{contact.preferred_language} {contributionRecur.id}
