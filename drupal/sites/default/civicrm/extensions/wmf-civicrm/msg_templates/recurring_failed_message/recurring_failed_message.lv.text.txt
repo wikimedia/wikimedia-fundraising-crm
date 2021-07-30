@@ -1,0 +1,29 @@
+Sveiki, {contact.first_name}!
+
+Šis ir automātiski ģenerēts e-pasta ziņojums no Wikimedia Foundation ziedojumu vākšanas komandas.
+
+{now.MMMM} mēs nevarējām apstrādāt Tavu ikmēneša ziedojumu {contributionRecur.amount__format_money} Vikipēdijai.
+
+Paldies, ka dāsni dalījies ar savām zināšanām, lai veicinātu bezmaksas zināšanu uzturēšanu tiešsaistē! Tavs atbalsts palīdz Vikipēdijai saglabāt neatkarību, būt brīvai no reklāmām un dinamiskai.
+
+Ja vēlies katru mēnesi atjaunot atbalstu Vikipēdijai, lūdzu, atvēli mirkli laika, lai šeit sāktu jaunu periodisko ziedojumu - {wmf_url.new_recur_brief}.
+
+Ja esi jau atjaunojis savu periodisko ziedojumu vai esi izvēlējies ziedot vienu reizi, lūdzu, ignorē šo ziņojumu.
+
+Vikipēdija pastāv, pateicoties tādu lasītāju kā Tu ieguldījumiem. Vēlreiz paldies par Tavu atbalstu,                sniedzot bezmaksas zināšanas visai pasaulei!
+
+
+Ar cieņu,
+
+Denise Andrews
+Wikimedia ziedojumu vākšanas nodaļa
+
+Tu saņem šo e-pasta ziņojumu uz adresi {contact.email} kā augsti vērtēts Wikimedia Foundation ziedotājs. Ja vairs nevēlies saņemt Wikimedia Foundation e-pasta ziņojumus, atsaki abonēšanu - {wmf_url.unsubscribe}. Ja jau esi ziedojis nesen, var būt, ka tas notika no citas e-pasta adreses, kas ir mūsu datubāzē. Lūdzu, paziņo mums par to! Mēs ar prieku dzēsīsim novecojušas e-pasta adreses.
+
+Wikimedia Foundation, Inc.
+P.O. Box 98204
+Washington, DC 20090-8204
+Amerikas Savienotās Valstis
+
+
+Ref CiviRec{contact.preferred_language} {contributionRecur.id}
