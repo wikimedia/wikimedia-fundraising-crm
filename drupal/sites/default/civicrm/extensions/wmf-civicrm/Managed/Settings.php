@@ -75,6 +75,10 @@ $fieldsUsedInSettings = CustomField::get(FALSE)
     'do_not_solicit',
     'Benefactor_Page_Last_Updated',
     'Listed_on_Benefactor_Page_as',
+    'Endowment_Listing_Last_Updated',
+    'Endowment_Site_Listed_as',
+    'WLS_Listing_Last_Updated',
+    'WLS_Listed_as',
   ])
   ->setSelect(['id', 'name'])
   ->execute()->indexBy('name');
@@ -92,10 +96,18 @@ if (!empty($fieldsUsedInSettings['do_not_solicit'])) {
   ];
 }
 
-if (!empty($fieldsUsedInSettings['Benefactor_Page_Last_Updated']) && !empty($fieldsUsedInSettings['Listed_on_Benefactor_Page_as'])) {
-  $settings['custom_field_tracking'] = [
-    $fieldsUsedInSettings['Listed_on_Benefactor_Page_as']['id'] => $fieldsUsedInSettings['Benefactor_Page_Last_Updated']['id'],
-  ];
+$fieldPairs = [
+  'Benefactor_Page_Last_Updated' => 'Listed_on_Benefactor_Page_as',
+  'WLS_Listing_Last_Updated' => 'WLS_Listed_as',
+  'Endowment_Listing_Last_Updated' => 'Endowment_Site_Listed_as',
+];
+foreach ($fieldPairs as $updateField => $triggerField) {
+  if (!empty($fieldsUsedInSettings[$updateField])
+    && !empty($fieldsUsedInSettings[$triggerField])) {
+    $settings['custom_field_tracking'] = [
+      $fieldsUsedInSettings[$triggerField]['id'] => $fieldsUsedInSettings[$updateField]['id'],
+    ];
+  }
 }
 
 return $settings;
