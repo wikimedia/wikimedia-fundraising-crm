@@ -98,8 +98,8 @@ if (!empty($fieldsUsedInSettings['do_not_solicit'])) {
 
 $fieldPairs = [
   'Benefactor_Page_Last_Updated' => 'Listed_on_Benefactor_Page_as',
-  'WLS_Listing_Last_Updated' => 'WLS_Listed_as',
-  'Endowment_Listing_Last_Updated' => 'Endowment_Site_Listed_as',
+  'wls_listing_last_updated' => 'WLS_Listed_as',
+  'endowment_listing_last_updated' => 'Endowment_Site_Listed_as',
 ];
 foreach ($fieldPairs as $updateField => $triggerField) {
   if (!empty($fieldsUsedInSettings[$updateField])
