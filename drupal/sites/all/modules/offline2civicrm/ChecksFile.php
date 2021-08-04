@@ -633,6 +633,7 @@ abstract class ChecksFile {
       'Letter Code' => 'letter_code',
       'Medium' => 'utm_medium',
       'Middle Name' => 'middle_name',
+      'Money Order Number' => 'gateway_txn_id',
       // @todo deprecate this in favour of the more descriptive Organization Contact Name
       // If we need to use name to match a vendor do that in the specific import, not
       // generically.

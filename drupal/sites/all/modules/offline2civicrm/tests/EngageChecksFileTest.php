@@ -513,11 +513,12 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       ->addWhere('first_name', '=', 'Rambo')
       ->addWhere('last_name', '=', 'Mouse')
       ->addJoin('Contribution AS contribution')
-      ->addSelect('Partner.Partner', 'contribution.total_amount', 'contribution.fee_amount', 'contribution.net_amount')->execute()->first();
+      ->addSelect('Partner.Partner', 'contribution.total_amount', 'contribution.fee_amount', 'contribution.net_amount', 'contribution.trxn_id')->execute()->first();
 
     $this->assertEquals(0.5, $contact['contribution.fee_amount']);
     $this->assertEquals(23.5, $contact['contribution.net_amount']);
     $this->assertEquals(24.0, $contact['contribution.total_amount']);
+    $this->assertEquals('ENGAGE 123', $contact['contribution.trxn_id']);
     $this->assertEquals('Walt', $contact['Partner.Partner']);
   }
 
