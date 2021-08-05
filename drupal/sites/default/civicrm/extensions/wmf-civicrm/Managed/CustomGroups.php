@@ -1173,5 +1173,23 @@ function _wmf_civicrm_get_benefactor_fields(): array {
       'text_length' => 255,
       'date_format' => 'mm/dd/yy',
     ],
+    'WLS_Listing_Last_Updated' => [
+      'name' => 'wls_listing_last_updated',
+      'column_name' => 'wls_listing_last_updated',
+      'label' => 'WLS Listing Last Updated',
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'text_length' => 255,
+      'date_format' => 'mm/dd/yy',
+    ],
+    'Endowment_Listing_Last_Updated' => [
+      'name' => 'endowment_listing_last_updated',
+      'column_name' => 'endowment_listing_last_updated',
+      'label' => 'Endowment Listing Last Updated',
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'text_length' => 255,
+      'date_format' => 'mm/dd/yy',
+    ],
   ];
 }

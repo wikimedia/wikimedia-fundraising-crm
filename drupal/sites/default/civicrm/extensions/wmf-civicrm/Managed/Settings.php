@@ -70,7 +70,16 @@ $settings = [
 ];
 
 $fieldsUsedInSettings = CustomField::get(FALSE)
-  ->addWhere('name', 'IN', ['opt_in', 'do_not_solicit'])
+  ->addWhere('name', 'IN', [
+    'opt_in',
+    'do_not_solicit',
+    'Benefactor_Page_Last_Updated',
+    'Listed_on_Benefactor_Page_as',
+    'Endowment_Listing_Last_Updated',
+    'Endowment_Site_Listed_as',
+    'WLS_Listing_Last_Updated',
+    'WLS_Listed_as',
+  ])
   ->setSelect(['id', 'name'])
   ->execute()->indexBy('name');
 // It's possible this is first run before the field is created so we check for the field before trying to add it.
@@ -85,6 +94,20 @@ if (!empty($fieldsUsedInSettings['do_not_solicit'])) {
     ['on_hold', 'do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade', 'is_opt_out',
    'custom_' . $fieldsUsedInSettings['do_not_solicit']['id']
   ];
+}
+
+$fieldPairs = [
+  'Benefactor_Page_Last_Updated' => 'Listed_on_Benefactor_Page_as',
+  'wls_listing_last_updated' => 'WLS_Listed_as',
+  'endowment_listing_last_updated' => 'Endowment_Site_Listed_as',
+];
+foreach ($fieldPairs as $updateField => $triggerField) {
+  if (!empty($fieldsUsedInSettings[$updateField])
+    && !empty($fieldsUsedInSettings[$triggerField])) {
+    $settings['custom_field_tracking'] = [
+      $fieldsUsedInSettings[$triggerField]['id'] => $fieldsUsedInSettings[$updateField]['id'],
+    ];
+  }
 }
 
 return $settings;
