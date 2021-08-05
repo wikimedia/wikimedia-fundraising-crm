@@ -44,7 +44,7 @@ class Data {
      if (!empty($fieldValuesToTrack)) {
        $existingValues = in_array($op, ['create', 'delete']) ? [] : self::getExistingValuesForFields($fieldValuesToTrack, $entityID, $groupName);
        foreach ($fieldValuesToTrack as $key => $value) {
-         if (($existingValues[$key] ?? NULL) !== $value) {
+         if (($existingValues[$key] ?? '') !== $value) {
            foreach ($params as &$param) {
              if ((int) $param['custom_field_id'] === $trackingFields[$key]) {
                $param['value'] = date('YmdHis');
