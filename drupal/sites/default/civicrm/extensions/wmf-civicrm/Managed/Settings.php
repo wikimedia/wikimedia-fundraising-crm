@@ -104,9 +104,7 @@ $fieldPairs = [
 foreach ($fieldPairs as $updateField => $triggerField) {
   if (!empty($fieldsUsedInSettings[$updateField])
     && !empty($fieldsUsedInSettings[$triggerField])) {
-    $settings['custom_field_tracking'] = [
-      $fieldsUsedInSettings[$triggerField]['id'] => $fieldsUsedInSettings[$updateField]['id'],
-    ];
+    $settings['custom_field_tracking'][$fieldsUsedInSettings[$triggerField]['id']] = $fieldsUsedInSettings[$updateField]['id'];
   }
 }
 
