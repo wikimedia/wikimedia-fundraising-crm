@@ -4,6 +4,9 @@
 // ie no mgd in the file prefix
 // as we want to use the bulkSave action for efficiency.
 // however we are keeping the declaration similar as it is conceptually similar.
+use Civi\WMFHooks\CalculatedData;
+
+$calculatedData = new CalculatedData();
 return [
   'wmf_donor' => [
     'group' => [
@@ -14,7 +17,7 @@ return [
       'is_active' => 1,
       'style' => 'inline',
     ],
-    'fields' => _wmf_civicrm_get_wmf_donor_fields(),
+    'fields' => $calculatedData->getWMFDonorFields(),
   ],
   'contribution_extra' => [
     'group' => [
