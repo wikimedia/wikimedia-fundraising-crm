@@ -8,6 +8,8 @@ use Civi\Api4\CustomGroup;
 
 class CalculatedData {
 
+  protected const WMF_MIN_ROLLUP_YEAR = 2006;
+  protected const WMF_MAX_ROLLUP_YEAR = 2021;
   /**
    * @var string
    */
@@ -66,7 +68,7 @@ class CalculatedData {
     if (!$tableName || $tableName === 'civicrm_contribution') {
       $fields = $aggregateFieldStrings = [];
       $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
-      for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
+      for ($year = self::WMF_MIN_ROLLUP_YEAR; $year <= self::WMF_MAX_ROLLUP_YEAR; $year++) {
         $nextYear = $year + 1;
         $fields[] = "total_{$year}_{$nextYear}";
         $aggregateFieldStrings[] = "MAX(total_{$year}_{$nextYear}) as total_{$year}_{$nextYear}";
@@ -496,7 +498,7 @@ class CalculatedData {
       ],
     ];
 
-    for ($year = WMF_MIN_ROLLUP_YEAR; $year <= WMF_MAX_ROLLUP_YEAR; $year++) {
+    for ($year = self::WMF_MIN_ROLLUP_YEAR; $year <= self::WMF_MAX_ROLLUP_YEAR; $year++) {
       $nextYear = $year + 1;
       $weight = $year > 2018 ? ($year - 2000) : (2019 - $year);
       $fields["total_{$year}_{$nextYear}"] = [
