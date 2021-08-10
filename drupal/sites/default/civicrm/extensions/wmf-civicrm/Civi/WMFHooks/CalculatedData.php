@@ -3,13 +3,60 @@
 
 namespace Civi\WMFHooks;
 
-use CRM_Wmf_ExtensionUtil as E;
 use Civi\Api4\CustomGroup;
+use CRM_Core_PseudoConstant;
 
 class CalculatedData {
 
   protected const WMF_MIN_ROLLUP_YEAR = 2006;
   protected const WMF_MAX_ROLLUP_YEAR = 2021;
+
+  /**
+   * Is this class is being called in trigger context.
+   *
+   * The normal context is 'trigger' which will generate sql triggers.
+   * However, sometimes we want to do an sql_update to backfill
+   * missing wmf_donor data - in which case we want to get
+   * the same sql but to refer to the existing contact id rather
+   * than the NEW or OLD contact ids - which are key words that
+   * are only meaningful in the context of triggers.
+   */
+  protected $triggerContext = TRUE;
+
+  /**
+   * Where clause to restrict contacts/ contributions to include.
+   *
+   * This clause is used when doing an update out of trigger context
+   * to restrict the contacts being updated.
+   *
+   * @var string
+   */
+  protected $whereClause;
+
+  /**
+   * @return mixed
+   */
+  public function getWhereClause() {
+    return $this->whereClause;
+  }
+
+  /**
+   * @param mixed $whereClause
+   *
+   * @return CalculatedData
+   */
+  public function setWhereClause($whereClause): CalculatedData {
+    $this->whereClause = $whereClause;
+    return $this;
+  }
+
+  /**
+   * @return string
+   */
+  public function isTriggerContext(): string {
+    return $this->triggerContext;
+  }
+
   /**
    * @var string
    */
@@ -146,7 +193,7 @@ class CalculatedData {
    * @throws \API_Exception
    */
   protected function isDBReadyForTriggers(): bool {
-    $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
+    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
     if (!$endowmentFinancialType) {
       return FALSE;
     }
@@ -162,7 +209,7 @@ class CalculatedData {
    *
    * @return array
    */
-  public function getWMFDonorFields() {
+  public function getWMFDonorFields(): array {
     $fields = [
       'last_donation_date' => [
         'name' => 'last_donation_date',
@@ -439,7 +486,7 @@ class CalculatedData {
    */
   protected function getUpdateWMFDonorSql(): string {
     $fields = $aggregateFieldStrings = [];
-    $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
+    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
     for ($year = self::WMF_MIN_ROLLUP_YEAR; $year <= self::WMF_MAX_ROLLUP_YEAR; $year++) {
       $nextYear = $year + 1;
       $fields[] = "total_{$year}_{$nextYear}";
@@ -475,7 +522,7 @@ class CalculatedData {
       }
     }
 
-    $sql = '
+    return '
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
       first_donation_usd, date_of_largest_donation,
@@ -487,7 +534,7 @@ class CalculatedData {
     )
 
     SELECT
-      NEW.contact_id as entity_id,
+      ' . ($this->isTriggerContext() ? ' NEW.contact_id as entity_id ' : ' totals.contact_id as entity_id ') . ',
        # to honour FULL_GROUP_BY mysql mode we need an aggregate command for each
       # field - even though we know we just want `the value from the subquery`
       # MAX is a safe wrapper for that
@@ -512,6 +559,7 @@ class CalculatedData {
 
     FROM (
       SELECT
+      " . (!$this->isTriggerContext() ? ' c.contact_id,': '') ."
         MAX(IF(financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS largest_donation,
         MAX(IF(financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation,
         SUM(COALESCE(total_amount, 0)) AS lifetime_including_endowment,
@@ -526,13 +574,14 @@ class CalculatedData {
      " . implode(',', $fieldSelects) . "
       FROM civicrm_contribution c
       USE INDEX(FK_civicrm_contribution_contact_id)
-      WHERE contact_id = NEW.contact_id
+      WHERE " . ($this->isTriggerContext() ? ' contact_id = NEW.contact_id ' : $this->getWhereClause()) . "
         AND contribution_status_id = 1
         AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
+      " . (!$this->isTriggerContext() ? ' GROUP BY contact_id ': '') ."
     ) as totals
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
-    ON latest.contact_id = NEW.contact_id
+    ON latest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id ' : ' totals.contact_id ') . "
     AND latest.receive_date = totals.last_donation_date
     AND latest.contribution_status_id = 1
     AND latest.total_amount > 0
@@ -542,19 +591,19 @@ class CalculatedData {
 
   LEFT JOIN civicrm_contribution earliest
     USE INDEX(FK_civicrm_contribution_contact_id)
-    ON earliest.contact_id = NEW.contact_id
+    ON earliest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id ' : ' totals.contact_id ') . "
     AND earliest.receive_date = totals.first_donation_date
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
     AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
   LEFT JOIN civicrm_contribution largest
     USE INDEX(FK_civicrm_contribution_contact_id)
-    ON largest.contact_id = NEW.contact_id
+    ON largest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id ' : ' totals.contact_id ') . "
     AND largest.total_amount = totals.largest_donation
     AND largest.contribution_status_id = 1
     AND largest.total_amount > 0
     AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
-  GROUP BY NEW.contact_id
+  GROUP BY " . ($this->isTriggerContext() ? ' NEW.contact_id ' : ' totals.contact_id ') . "
 
   ON DUPLICATE KEY UPDATE
     last_donation_currency = VALUES(last_donation_currency),
@@ -574,7 +623,22 @@ class CalculatedData {
     endowment_first_donation_date = VALUES(endowment_first_donation_date),
     endowment_number_donations = VALUES(endowment_number_donations),
     " . implode(',', $updates) . ";";
-    return $sql;
+  }
+
+  /**
+   * Run a back fill on WMF donor data.
+   *
+   * This will recalculate and update WMF donor data where the where clause is
+   * met.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function updateWMFDonorData(): void {
+    $this->triggerContext = FALSE;
+    if (!$this->getWhereClause()) {
+      throw new \CRM_Core_Exception('This update requires a WHERE clause');
+    }
+    \CRM_Core_DAO::executeQuery($this->getUpdateWMFDonorSql());
   }
 
 }
