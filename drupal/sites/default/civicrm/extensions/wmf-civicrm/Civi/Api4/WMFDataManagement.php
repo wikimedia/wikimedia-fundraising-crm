@@ -2,6 +2,7 @@
 namespace Civi\Api4;
 
 use Civi\Api4\Action\WMFDataManagement\ArchiveThankYou;
+use Civi\Api4\Action\WMFDataManagement\UpdateWMFDonor;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 /**
@@ -22,10 +23,23 @@ class WMFDataManagement extends Generic\AbstractEntity {
    *
    * @return \Civi\Api4\Action\WMFDataManagement\ArchiveThankYou
    *
-   * @throws \API_Exception
    */
   public static function archiveThankYou(bool $checkPermissions = TRUE): ArchiveThankYou {
     return (new ArchiveThankYou(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Archive thank you emails.
+   *
+   * This removes the details field from old thank you emails.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\WMFDataManagement\UpdateWMFDonor
+   */
+  public static function updateWMFDonor(bool $checkPermissions = TRUE): UpdateWMFDonor {
+    return (new UpdateWMFDonor(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
