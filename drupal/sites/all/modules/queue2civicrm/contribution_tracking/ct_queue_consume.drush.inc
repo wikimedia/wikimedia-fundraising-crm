@@ -34,6 +34,8 @@ function ct_queue_consume_drush_help($section) {
  * Calls queue2civicrm/contribution_tracking/wmf_ct_qc.module:ct_batch_process()
  */
 function drush_ct_queue_consume() {
+  // We need the Civi autoloader at least in order to use the civi exceptions
+  civicrm_initialize();
   watchdog('contribution_tracking', 'Executing: drush_ct_queue_consume');
   module_invoke('ct', 'batch_process');
   $errors = drush_get_error_log();
