@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4\Action\WMFContact;
 
+use Civi\Api4\Address;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\WMFException\WMFException;
@@ -70,6 +71,15 @@ class Save extends AbstractAction {
     $isCreate = !$this->getContactID();
     $contact_id = $this->getContactID();
     $msg = $this->getMessage();
+    if (!$contact_id) {
+      $contact_id = $this->getExistingContactID($msg);
+      if ($contact_id) {
+        $msg['contact_id'] = $contact_id;
+        $this->handleUpdate($msg);
+        $result[] = ['id' => $contact_id];
+        return;
+      }
+    }
     // Set defaults for optional fields in the message
     if (!array_key_exists('contact_type', $msg)) {
       $msg['contact_type'] = "Individual";
@@ -521,6 +531,69 @@ class Save extends AbstractAction {
       wmf_civicrm_message_email_update($msg, $msg['contact_id']);
       $this->stopTimer('message_email_update');
     }
+  }
+
+
+  /**
+   * Look for existing exact-match contact in the database.
+   *
+   * Note if there is more than one possible match we treat it as
+   * 'no match'.
+   *
+   * @param array $msg
+   *
+   * @return int|null
+   *
+   * @throws \API_Exception
+   */
+  protected function getExistingContactID(array $msg): ?int {
+    if (empty($msg['first_name']) || empty($msg['last_name'])) {
+      return NULL;
+    }
+    if (!empty($msg['email'])) {
+      // Check for existing....
+      $matches = Email::get(FALSE)
+        ->addWhere('contact.first_name', '=', $msg['first_name'])
+        ->addWhere('contact.last_name', '=', $msg['last_name'])
+        ->addWhere('contact.is_deleted', '=', 0)
+        ->addWhere('contact.is_deceased', '=', 0)
+        ->addWhere('email', '=', $msg['email'])
+        ->addWhere('is_primary', '=', TRUE)
+        ->setSelect(['contact_id'])
+        ->setLimit(2)
+        ->execute();
+      if (count($matches) === 1) {
+        return $matches->first()['contact_id'];
+      }
+      return NULL;
+    }
+    // If we have sufficient address data we will look up from the database.
+    // original discussion at https://phabricator.wikimedia.org/T283104#7171271
+    // We didn't talk about min_length for the other fields so I just went super
+    // conservative & picked 2
+    $addressCheckFields = ['street_address' => 5, 'city' => 2, 'postal_code' => 2];
+    foreach ($addressCheckFields as $field => $minLength) {
+      if (strlen($msg[$field] ?? '') < $minLength) {
+        return NULL;
+      }
+    }
+    $matches = Address::get(FALSE)
+      ->addWhere('city', '=',  $msg['city'])
+      ->addWhere('postal_code', '=', $msg['postal_code'])
+      ->addWhere('street_address', '=', $msg['street_address'])
+      ->addWhere('contact.first_name', '=', $msg['first_name'])
+      ->addWhere('contact.last_name', '=', $msg['last_name'])
+      ->addWhere('contact.is_deleted', '=', 0)
+      ->addWhere('contact.is_deceased', '=', 0)
+      ->addWhere('is_primary', '=', TRUE)
+      ->setSelect(['contact_id'])
+      ->setLimit(2)
+      ->execute();
+    if (count($matches) === 1) {
+      return $matches->first()['contact_id'];
+    }
+
+    return NULL;
   }
 
 }

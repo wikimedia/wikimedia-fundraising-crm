@@ -1,13 +1,11 @@
 <?php
 
-use Civi\Api4\Contact;
 use Civi\Api4\CustomField;
 use Civi\Api4\WMFContact;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 use wmf_civicrm\ImportStatsCollector;
-use Civi\Api4\Email;
 use Civi\WMFException\WMFException;
 
 require_once 'recurring.inc';
@@ -252,24 +250,6 @@ function wmf_civicrm_contribution_message_import(&$msg) {
     wmf_civicrm_set_null_id_on_hash_mismatch($msg, TRUE);
   }
 
-  if (variable_get('match_on_import')) {
-    if (!$msg['contact_id'] && !empty($msg['first_name'] && !empty($msg['last_name']) && !empty($msg['email']))) {
-      // Check for existing....
-      $matches = Email::get(FALSE)
-        ->addWhere('contact.first_name', '=', $msg['first_name'])
-        ->addWhere('contact.last_name', '=', $msg['last_name'])
-        ->addWhere('contact.is_deleted', '=', 0)
-        ->addWhere('contact.is_deceased', '=', 0)
-        ->addWhere('email', '=', $msg['email'])
-        ->addWhere('is_primary', '=', TRUE)
-        ->setSelect(['contact_id'])
-        ->setLimit(2)
-        ->execute();
-      if (count($matches) === 1) {
-        $msg['contact_id'] = $matches->first()['contact_id'];
-      }
-    }
-  }
   if (!$msg['contact_id']) {
     $timer->startImportTimer("create_contact");
     wmf_civicrm_message_create_contact($msg);
