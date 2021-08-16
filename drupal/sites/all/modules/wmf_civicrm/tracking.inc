@@ -32,8 +32,7 @@ function wmf_civicrm_insert_contribution_tracking($values) {
  * @param array $contribution
  */
 function wmf_civicrm_message_update_contribution_tracking($msg, $contribution) {
-
-  if (array_key_exists('contribution_tracking_id', $msg)) {
+  if (!empty($msg['contribution_tracking_id'])) {
     QueueWrapper::push('contribution-tracking', [
       'id' => $msg['contribution_tracking_id'],
       'contribution_id' => $contribution['id'],
