@@ -146,7 +146,11 @@ class Save extends AbstractAction {
       wmf_civicrm_ensure_option_exists($msg['name_suffix'], 'suffix_id', 'individual_suffix');
     }
 
-    $contact['preferred_language'] = $this->getPreferredLanguage($msg['language'] ?? '', $msg['contribution_tracking_id'] ?? NULL, $msg['country'] ?? '');;
+    $cdId = NULL;
+    if (isset($msg['contribution_tracking_id']) && is_numeric($msg['contribution_tracking_id'])) {
+      $cdId = (int) $msg['contribution_tracking_id'];
+    }
+    $contact['preferred_language'] = $this->getPreferredLanguage($msg['language'] ?? '', $cdId, $msg['country'] ?? '');;
 
     // Copy some fields, if they exist
     $direct_fields = [
