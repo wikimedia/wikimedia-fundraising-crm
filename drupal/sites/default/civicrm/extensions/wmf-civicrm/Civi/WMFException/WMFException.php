@@ -3,6 +3,7 @@
 namespace Civi\WMFException;
 use Exception;
 use ReflectionClass;
+use Twig\Error\RuntimeError;
 
 class WMFException extends Exception {
 
@@ -149,6 +150,9 @@ class WMFException extends Exception {
     ],
     self::BAD_EMAIL => [
       'no-email' => TRUE,
+    ],
+    self::CONTRIBUTION_TRACKING => [
+      'fatal' => TRUE,
     ],
     self::DATABASE_CONTENTION => [
       'requeue' => TRUE,
