@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/admin/setting/wmf-civicrm</path>
+    <title>WMF specific configuration</title>
+    <page_callback>CRM_Admin_Form_Generic</page_callback>
+    <desc>Configure wmf settings.</desc>
+    <access_arguments>administer CiviCRM System</access_arguments>
+    <weight>10</weight>
+    <adminGroup>Customize Data and Screens</adminGroup>
+  </item>
+</menu>

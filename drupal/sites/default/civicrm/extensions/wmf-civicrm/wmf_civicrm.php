@@ -246,17 +246,19 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu
  */
-//function wmf_civicrm_civicrm_navigationMenu(&$menu) {
-//  _wmf_civicrm_civix_insert_navigation_menu($menu, 'Mailings', array(
-//    'label' => E::ts('New subliminal message'),
-//    'name' => 'mailing_subliminal_message',
-//    'url' => 'civicrm/mailing/subliminal',
-//    'permission' => 'access CiviMail',
-//    'operator' => 'OR',
-//    'separator' => 0,
-//  ));
-//  _wmf_civicrm_civix_navigationMenu($menu);
-//}
+function wmf_civicrm_civicrm_navigationMenu(&$menu) {
+  _wmf_civicrm_civix_insert_navigation_menu(
+    $menu,
+    'Administer/Customize Data and Screens', [
+    'label' => 'WMF configuration',
+    'name' => 'wmf_configuration',
+    'url' => 'civicrm/admin/setting/wmf-civicrm',
+    'permission' => 'administer CiviCRM',
+    'operator' => 'OR',
+    'separator' => 0,
+  ]);
+  _wmf_civicrm_civix_navigationMenu($menu);
+}
 
 function wmf_civicrm_civicrm_alterAPIPermissions($entity, $action, &$params, &$permissions) {
   // Allow any user that has 'view all contacts' to make the
