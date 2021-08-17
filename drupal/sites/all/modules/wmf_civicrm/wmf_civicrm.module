@@ -969,7 +969,7 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
   }
 
   //I was going to check to make sure the target gateway was a real thing, but: Hello, overhead. No.
-  return $payment_instrument;
+  return $payment_instrument ?? $msg['payment_method'];
 }
 
 /**
