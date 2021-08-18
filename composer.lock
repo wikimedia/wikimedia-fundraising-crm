@@ -1697,16 +1697,16 @@
         },
         {
             "name": "jackgleeson/stats-collector",
-            "version": "v1.4.10",
+            "version": "v1.4.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jackgleeson/stats-collector.git",
-                "reference": "4ee7d1bab178b3e8b2d2f28509c046eb2a0cdbe5"
+                "reference": "5d6e1a8b58bea5c06e63841a7187cb961272a9f2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jackgleeson/stats-collector/zipball/4ee7d1bab178b3e8b2d2f28509c046eb2a0cdbe5",
-                "reference": "4ee7d1bab178b3e8b2d2f28509c046eb2a0cdbe5",
+                "url": "https://api.github.com/repos/jackgleeson/stats-collector/zipball/5d6e1a8b58bea5c06e63841a7187cb961272a9f2",
+                "reference": "5d6e1a8b58bea5c06e63841a7187cb961272a9f2",
                 "shasum": ""
             },
             "require": {
@@ -1714,7 +1714,8 @@
             },
             "require-dev": {
                 "php-coveralls/php-coveralls": "^2.0",
-                "phpunit/phpunit": "^6.4"
+                "phpunit/phpunit": "^6.4",
+                "vimeo/psalm": "^3.2"
             },
             "type": "library",
             "autoload": {
