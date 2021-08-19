@@ -4,6 +4,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Contribution;
 use Civi\WMFException\WMFException;
+use wmf_civicrm\ImportStatsCollector;
 
 define('ImportMessageTest_campaign', 'test mail code here + ' . mt_rand());
 
@@ -75,6 +76,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     if ($this->contact_id) {
       $this->cleanUpContact($this->contact_id);
     }
+    ImportStatsCollector::tearDown(TRUE);
     parent::tearDown();
   }
 
@@ -1198,6 +1200,111 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     );
 
     $this->assertEquals("94121", $address['postal_code']);
+  }
+
+  /**
+   * @dataProvider messageProvider
+   *
+   * @param array $msg
+   * @param array $expected
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   * @throws \WmfException
+   */
+  public function testMessageImportStatsCreatedOnImport($msg, $expected) {
+    if (!empty($msg['contribution_recur_id'])) {
+      $msg['contact_id'] = $this->createIndividual();
+      $msg['contribution_recur_id'] = $this->createRecurringContribution(['contact_id' => $msg['contact_id']]);
+    }
+
+    $importStatsCollector = ImportStatsCollector::getInstance();
+    $emptyStats = $importStatsCollector->getAllStats();
+    $this->assertEmpty($emptyStats);
+
+    $contribution = $this->messageImport($msg);
+    $this->consumeCtQueue();
+
+    $importStatsCollector = ImportStatsCollector::getInstance();
+    $notEmptyStats = $importStatsCollector->getAllStats();
+    $this->assertNotEmpty($notEmptyStats);
+  }
+
+  /**
+   * @dataProvider messageProvider
+   *
+   * @param array $msg
+   * @param array $expected
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   * @throws \WmfException
+   */
+  public function testMessageImportStatsProcessingRatesGenerated(
+    $msg,
+    $expected
+  ) {
+    if (!empty($msg['contribution_recur_id'])) {
+      $msg['contact_id'] = $this->createIndividual();
+      $msg['contribution_recur_id'] = $this->createRecurringContribution(['contact_id' => $msg['contact_id']]);
+    }
+
+    $importStatsCollector = ImportStatsCollector::getInstance();
+    $emptyStats = $importStatsCollector->getAllStats();
+    $this->assertEmpty($emptyStats);
+
+    $contribution = $this->messageImport($msg);
+    $this->consumeCtQueue();
+
+    // Ignore contact_id if we have no expectation.
+    if (empty($expected['contribution']['contact_id'])) {
+      $this->fieldsToIgnore[] = 'contact_id';
+    }
+
+    //check we have running times for a insertContribution after each import
+    $contribution_insert_stats = $importStatsCollector->get("*timer.message_contribution_insert*");
+
+    $this->assertArrayHasKey('start', $contribution_insert_stats);
+    $this->assertArrayHasKey('end', $contribution_insert_stats);
+    $this->assertArrayHasKey('diff', $contribution_insert_stats);
+  }
+
+  /**
+   * Test that no errors are thrown when an ImportStatsCollector
+   * timer is started twice for the same stat.
+   *
+   * Previously this would fail and convert the 'start' stat into an
+   * array but now we protect against this by disregrding any existing
+   * start timestamps for timers that are started again.
+   *
+   * @see https://phabricator.wikimedia.org/T289175
+   */
+  public function testMessageImportStatsResetStartTimer() {
+    $importStatsCollector = ImportStatsCollector::getInstance();
+    $emptyStats = $importStatsCollector->getAllStats();
+    $this->assertEmpty($emptyStats);
+
+    // call start timer the first time
+    $importStatsCollector->startImportTimer("important_import_process");
+    // call start timer the second time on the same stat
+    $importStatsCollector->startImportTimer("important_import_process");
+    $importStatsCollector->endImportTimer("important_import_process");
+
+    // check we have processing times for our timer stat
+    $contribution_insert_stats = $importStatsCollector->get("*timer.important_import_process*");
+    // there should be two stats, the orphaned partial first timer stat and the second complete timer stat
+    $this->assertCount(2, $contribution_insert_stats);
+
+    $orphaned_first_timer = $contribution_insert_stats[0];
+    $second_timer = $contribution_insert_stats[1];
+
+    $this->assertArrayHasKey('start', $orphaned_first_timer);
+    $this->assertArrayNotHasKey('end', $orphaned_first_timer);
+    $this->assertArrayNotHasKey('diff', $orphaned_first_timer);
+
+    $this->assertArrayHasKey('start', $second_timer);
+    $this->assertArrayHasKey('end', $second_timer);
+    $this->assertArrayHasKey('diff', $second_timer);
   }
 
 
