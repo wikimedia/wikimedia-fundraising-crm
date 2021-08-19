@@ -1,6 +1,5 @@
 <?php namespace queue2civicrm\recurring;
 
-use wmf_civicrm\ImportStatsCollector;
 use wmf_common\TransactionalWmfQueueConsumer;
 use \Civi\WMFException\WMFException;
 
@@ -14,7 +13,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   public function processMessage($message) {
-    ImportStatsCollector::getInstance()->init();
     // store the original message for logging later
     $msg_orig = $message;
 

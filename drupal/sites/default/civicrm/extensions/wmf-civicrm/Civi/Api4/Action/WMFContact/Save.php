@@ -42,19 +42,8 @@ class Save extends AbstractAction {
    */
   protected $contactID;
 
-  /**
-   * @var \Statistics\Collector\AbstractCollector
-   */
-  protected $timer;
-
   protected function getTimer(): \Statistics\Collector\AbstractCollector {
-    if (!$this->timer) {
-      $this->timer = ImportStatsCollector::getInstance();
-      if (!$this->timer->getUniqueStatToken()) {
-        $this->timer->init();
-      }
-    }
-    return $this->timer;
+    return ImportStatsCollector::getInstance();
   }
 
   /**

@@ -36,8 +36,8 @@ class ImportStatsCollector extends AbstractCollector {
   protected $defaultNamespace = "civicrm_import";
 
   /**
-   * We append a unique token to timer stat names to group per-donation stats
-   * and also keep stat names unique (needed for timers calculations to work).
+   * We append a unique token to timer stat names to keep stat names unique
+   * (needed for timers calculations to work).
    *
    * Typically the order_id would be unique enough but in unittests we do a
    * lot of repeat donations using the same order_id so it was easier to use
@@ -46,53 +46,49 @@ class ImportStatsCollector extends AbstractCollector {
    *
    * @var string
    */
-  protected $uniqueStatToken;
-
-  public function init() {
-    $this->setUniqueStatToken(uniqid('', true));
-  }
+  protected $uniqueNamespaces = [];
 
   /**
+   * @param string $description
    * @return string
    */
-  public function getUniqueStatToken(): ?string {
-    return $this->uniqueStatToken;
-  }
-
-  /**
-   * @param string $uniqueStatToken
-   */
-  public function setUniqueStatToken(string $uniqueStatToken): void {
-    $this->uniqueStatToken = $uniqueStatToken;
-  }
-
-  /**
-   * reset the uniqueStatToken
-   */
-  public function deinit(): void {
-    $this->uniqueStatToken = NULL;
-  }
-
-  /**
-   * @param $namespace
-   */
-  public function startImportTimer($namespace): void {
-    if ($this->uniqueStatToken !== NULL) {
-      $namespace = $namespace . "_" . $this->uniqueStatToken;
+  public function getUniqueNamespace(string $description): string {
+    if (!isset($this->uniqueNamespaces[$description])) {
+      $this->uniqueNamespaces[$description] = $description .
+        '_' . str_replace('.', '', uniqid('', TRUE));
     }
+    return $this->uniqueNamespaces[$description];
+  }
+
+  /**
+   * @param string $description
+   */
+  public function clearUniqueNamespace(string $description): void {
+    unset($this->uniqueNamespaces[$description]);
+  }
+
+  /**
+   * @param $description
+   */
+  public function startImportTimer($description): void {
+    if (isset($this->uniqueNamespaces[$description])) {
+      // We're starting a timer that never got ended properly.
+      // Just reset it and leave the old start value dangling.
+      $this->clearUniqueNamespace($description);
+    }
+    $namespace = $this->getUniqueNamespace($description);
     parent::startTimer($namespace);
   }
 
   /**
-   * @param $namespace
+   * @param $description
    *
    * @throws \Statistics\Exception\StatisticsCollectorException
    */
-  public function endImportTimer($namespace): void {
-    if ($this->uniqueStatToken !== NULL) {
-      $namespace = $namespace . "_" . $this->uniqueStatToken;
-    }
+  public function endImportTimer($description): void {
+    $namespace = $this->getUniqueNamespace($description);
     parent::endTimer($namespace);
+    $this->clearUniqueNamespace($description);
   }
 
 
