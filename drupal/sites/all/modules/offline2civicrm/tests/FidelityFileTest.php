@@ -33,33 +33,33 @@ class FidelityFileTest extends BaseChecksFileTest {
     $messages = $importer->import();
     $this->assertEquals('All rows were imported', $messages['Result']);
     $contributions = Contribution::get(FALSE)->addWhere('trxn_id', 'LIKE', 'Fidelity%')
-      ->setSelect(['contact.first_name', 'contact.last_name', 'Partner.Partner', 'total_amount',
-        'contact.prefix_id:label', 'contact.organization_name', 'contact.addressee_display', 'contact.addressee_custom'])
+      ->setSelect(['contact_id.first_name', 'contact_id.last_name', 'Partner.Partner', 'total_amount',
+        'contact_id.prefix_id:label', 'contact_id.organization_name', 'contact_id.addressee_display', 'contact_id.addressee_custom'])
       ->addOrderBy('id')
       ->execute();
     $contribution = $contributions[0];
     $this->assertEquals('50', $contribution['total_amount']);
-    $this->assertEquals('Anonymous', $contribution['contact.first_name']);
-    $this->assertEquals('Anonymous', $contribution['contact.last_name']);
+    $this->assertEquals('Anonymous', $contribution['contact_id.first_name']);
+    $this->assertEquals('Anonymous', $contribution['contact_id.last_name']);
 
     $contribution = $contributions[1];
-    $this->assertEquals('Patrick', $contribution['contact.first_name']);
-    $this->assertEquals('Jones', $contribution['contact.last_name']);
-    $this->assertEquals('Mr.', $contribution['contact.prefix_id:label']);
+    $this->assertEquals('Patrick', $contribution['contact_id.first_name']);
+    $this->assertEquals('Jones', $contribution['contact_id.last_name']);
+    $this->assertEquals('Mr.', $contribution['contact_id.prefix_id:label']);
 
     $contribution = $contributions[2];
-    $this->assertEquals('John', $contribution['contact.first_name']);
-    $this->assertEquals('Good', $contribution['contact.last_name']);
+    $this->assertEquals('John', $contribution['contact_id.first_name']);
+    $this->assertEquals('Good', $contribution['contact_id.last_name']);
     $this->assertEquals('Sally Wilde', $contribution['Partner.Partner']);
-    $this->assertEquals('John Good and Sally Wilde', $contribution['contact.addressee_display']);
-    $this->assertEquals('John Good and Sally Wilde', $contribution['contact.addressee_custom']);
+    $this->assertEquals('John Good and Sally Wilde', $contribution['contact_id.addressee_display']);
+    $this->assertEquals('John Good and Sally Wilde', $contribution['contact_id.addressee_custom']);
 
     $contribution = $contributions[3];
-    $this->assertEquals('Great Family Foundation', $contribution['contact.organization_name']);
+    $this->assertEquals('Great Family Foundation', $contribution['contact_id.organization_name']);
 
     $contribution = $contributions[4];
-    $this->assertEquals('Jim', $contribution['contact.first_name']);
-    $this->assertEquals('White', $contribution['contact.last_name']);
+    $this->assertEquals('Jim', $contribution['contact_id.first_name']);
+    $this->assertEquals('White', $contribution['contact_id.last_name']);
 
   }
 
