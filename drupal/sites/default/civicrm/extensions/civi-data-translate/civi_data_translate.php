@@ -165,7 +165,6 @@ function civi_data_translate_civicrm_apiWrappers(&$wrappers, $apiRequest) {
     || $apiRequest['entity'] === 'Entity'
     || !$apiRequest instanceof AbstractAction
     || !in_array($apiRequest['action'], ['get', 'create', 'update', 'save'])
-    || version_compare(CRM_Utils_System::version(), '5.40.alpha1', '>')
   ) {
     return;
   }
@@ -178,6 +177,9 @@ function civi_data_translate_civicrm_apiWrappers(&$wrappers, $apiRequest) {
   }
   catch (\API_Exception $e) {
     // I think that language would always be a property based on the generic action, but in case...
+    return;
+  }
+  catch (CRM_Core_Exception $e) {
     return;
   }
 
