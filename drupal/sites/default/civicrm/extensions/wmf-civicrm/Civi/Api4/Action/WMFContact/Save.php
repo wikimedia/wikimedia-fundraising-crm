@@ -6,6 +6,7 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\WMFException\WMFException;
 use Civi\Api4\Email;
+use CRM_Core_BAO_CustomField;
 use WmfDatabase;
 use Civi\Api4\Contact;
 use wmf_civicrm\ImportStatsCollector;
@@ -496,9 +497,17 @@ class Save extends AbstractAction {
         }
       }
     }
-
-    if (isset($msg['employer_id'])) {
-      $updateParams['employer_id'] = $msg['employer_id'];
+    else {
+      // Individual-only custom fields
+      $additionalFieldMap = [
+        'employer_id' => 'employer_id', // Civi core pointer to an org contact
+        'employer' => 'Communication.Employer_Name' // WMF-only custom field
+      ];
+      foreach($additionalFieldMap as $messageField => $civiField) {
+        if (!empty($msg[$messageField])) {
+          $updateParams[$civiField] = $msg[$messageField];
+        }
+      }
     }
     if (!empty($updateParams)) {
       Contact::update(FALSE)

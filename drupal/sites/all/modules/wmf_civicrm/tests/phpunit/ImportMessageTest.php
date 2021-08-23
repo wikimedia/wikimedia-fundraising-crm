@@ -1,6 +1,5 @@
 <?php
 
-use Civi\Api4\Contact;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Contribution;
 use Civi\WMFException\WMFException;
@@ -978,6 +977,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'street_address' => '777 Trompe L\'Oeil Boulevard',
       'location_type_id' => 1,
     ]);
+    $expectedEmployer = "Subotnik's Apple Orchard";
     $msg = [
       'contact_id' => $existingContact['id'],
       'contact_hash' => $existingContact['hash'],
@@ -991,6 +991,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.25',
       'payment_method' => 'cc',
+      'employer' => $expectedEmployer,
     ];
     $contribution = wmf_civicrm_contribution_message_import($msg);
     $this->assertEquals($existingContact['id'], $contribution['contact_id']);
@@ -1001,6 +1002,14 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       ]
     );
     $this->assertEquals($msg['street_address'], $address['street_address']);
+    $employerField = 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID('Employer Name');
+    $contact = $this->callAPISuccessGetSingle(
+      'Contact', [
+        'id' => $existingContact['id'],
+        'return' => $employerField,
+      ]
+    );
+    $this->assertEquals($expectedEmployer, $contact[$employerField]);
   }
 
   /**
@@ -1210,7 +1219,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testMessageImportStatsCreatedOnImport($msg, $expected) {
     if (!empty($msg['contribution_recur_id'])) {
@@ -1238,7 +1247,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
-   * @throws \WmfException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testMessageImportStatsProcessingRatesGenerated(
     $msg,
