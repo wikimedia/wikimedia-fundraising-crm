@@ -1231,8 +1231,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $emptyStats = $importStatsCollector->getAllStats();
     $this->assertEmpty($emptyStats);
 
-    $contribution = $this->messageImport($msg);
-    $this->consumeCtQueue();
+    $this->messageImport($msg);
 
     $importStatsCollector = ImportStatsCollector::getInstance();
     $notEmptyStats = $importStatsCollector->getAllStats();
@@ -1262,8 +1261,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $emptyStats = $importStatsCollector->getAllStats();
     $this->assertEmpty($emptyStats);
 
-    $contribution = $this->messageImport($msg);
-    $this->consumeCtQueue();
+    $this->messageImport($msg);
 
     // Ignore contact_id if we have no expectation.
     if (empty($expected['contribution']['contact_id'])) {
