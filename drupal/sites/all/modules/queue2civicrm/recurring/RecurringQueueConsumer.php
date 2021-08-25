@@ -1,6 +1,5 @@
 <?php namespace queue2civicrm\recurring;
 
-use wmf_civicrm\ImportStatsCollector;
 use wmf_common\TransactionalWmfQueueConsumer;
 use \Civi\WMFException\WMFException;
 
