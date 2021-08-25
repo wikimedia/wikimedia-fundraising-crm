@@ -13,7 +13,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   public function processMessage($message) {
-    ImportStatsCollector::getInstance()->init();
     // store the original message for logging later
     $msg_orig = $message;
 
