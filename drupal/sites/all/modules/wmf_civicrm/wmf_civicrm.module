@@ -193,7 +193,6 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
  */
 function wmf_civicrm_contribution_message_import(&$msg) {
   $timer = ImportStatsCollector::getInstance();
-  $timer->init();
 
   if (empty($msg['recurring'])) {
     $overallTimerName = "wmf_civicrm_contribution_message_import";
@@ -352,7 +351,6 @@ function wmf_civicrm_contribution_message_import(&$msg) {
   }
 
   $timer->endImportTimer($overallTimerName);
-  $timer->deinit();
   return $contribution;
 }
 

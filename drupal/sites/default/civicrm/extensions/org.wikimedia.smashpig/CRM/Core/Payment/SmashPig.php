@@ -56,7 +56,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    */
   public function doPayment(&$params, $component = 'contribute'): array {
     $completedStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
-    if ((int) $this->getAmount($params) === 0) {
+    if ((float) $this->getAmount($params) === 0.0) {
       $result['payment_status_id'] = $completedStatusID;
       $result['payment_status'] = 'Completed';
       return $result;

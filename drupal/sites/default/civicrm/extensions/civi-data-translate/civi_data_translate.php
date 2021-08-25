@@ -179,6 +179,9 @@ function civi_data_translate_civicrm_apiWrappers(&$wrappers, $apiRequest) {
     // I think that language would always be a property based on the generic action, but in case...
     return;
   }
+  catch (CRM_Core_Exception $e) {
+    return;
+  }
 
   if (in_array($apiRequest['action'], ['create', 'update', 'save'], TRUE)) {
     $fieldsToTranslate = civi_data_translate_civicrm_fields_to_save_strings_for($apiRequest);

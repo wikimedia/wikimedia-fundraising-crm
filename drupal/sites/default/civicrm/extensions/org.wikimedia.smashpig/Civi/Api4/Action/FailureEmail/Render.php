@@ -63,7 +63,7 @@ class Render extends AbstractAction {
       ->addWhere('contact_id', '=', $this->getContactID())
       ->addWhere('on_hold', '=', 0)
       ->addWhere('email', '<>', '')
-      ->setSelect(['contact.preferred_language', 'email', 'contact.display_name'])
+      ->setSelect(['contact_id.preferred_language', 'email', 'contact_id.display_name'])
       ->addOrderBy('is_primary', 'DESC')
       ->execute()->first();
 
@@ -72,9 +72,9 @@ class Render extends AbstractAction {
     }
 
     $supportedLanguages = $this->getSupportedLanguages();
-    if (!empty($email['contact.preferred_language'])
-      && strpos($email['contact.preferred_language'], 'en') !== 0
-      && !in_array($email['contact.preferred_language'], $supportedLanguages, TRUE)
+    if (!empty($email['contact_id.preferred_language'])
+      && strpos($email['contact_id.preferred_language'], 'en') !== 0
+      && !in_array($email['contact_id.preferred_language'], $supportedLanguages, TRUE)
     ) {
       // Temporary early return for non translated languages while we test them.
       // The goal is to create a template for a bunch of languages - the
@@ -88,14 +88,14 @@ class Render extends AbstractAction {
       ->setCheckPermissions(FALSE)
       ->setEntity('ContributionRecur')
       ->setEntityIDs([$this->getContributionRecurID()])
-      ->setLanguage($email['contact.preferred_language'])
+      ->setLanguage($email['contact_id.preferred_language'])
       ->setWorkflowName('recurring_failed_message')
       ->execute();
 
     foreach ($message as $index => $value) {
       $value['email'] = $email['email'];
-      $value['display_name'] = $email['contact.display_name'];
-      $value['language'] = $email['contact.preferred_language'];
+      $value['display_name'] = $email['contact_id.display_name'];
+      $value['language'] = $email['contact_id.preferred_language'];
       $result[$index] = $value;
     }
 

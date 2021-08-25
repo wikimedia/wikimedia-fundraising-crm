@@ -1,4 +1,4 @@
-Package: uk.squiffle.assignee
+Package: assignee
 Copyright (C) 2016, Aidan Saunders <aidan.saunders@squiffle.uk>
 Licensed under the GNU Affero Public License 3.0 (below).
 

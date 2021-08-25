@@ -1,6 +1,5 @@
 <?php namespace queue2civicrm\opt_in;
 
-use wmf_civicrm\ImportStatsCollector;
 use wmf_common\WmfQueueConsumer;
 use \Civi\WMFException\WMFException;
 
@@ -27,7 +26,6 @@ class OptInQueueConsumer extends WmfQueueConsumer {
    * @throws \CiviCRM_API3_Exception
    */
   function processMessage($message) {
-    ImportStatsCollector::getInstance()->init();
     // Sanity checking :)
     if (empty($message['email'])) {
       $error = "Required field not present! Dropping message on floor. Message: " . json_encode($message);

@@ -6,6 +6,7 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\WMFException\WMFException;
 use Civi\Api4\Email;
+use CRM_Core_BAO_CustomField;
 use WmfDatabase;
 use Civi\Api4\Contact;
 use wmf_civicrm\ImportStatsCollector;
@@ -42,19 +43,8 @@ class Save extends AbstractAction {
    */
   protected $contactID;
 
-  /**
-   * @var \Statistics\Collector\AbstractCollector
-   */
-  protected $timer;
-
   protected function getTimer(): \Statistics\Collector\AbstractCollector {
-    if (!$this->timer) {
-      $this->timer = ImportStatsCollector::getInstance();
-      if (!$this->timer->getUniqueStatToken()) {
-        $this->timer->init();
-      }
-    }
-    return $this->timer;
+    return ImportStatsCollector::getInstance();
   }
 
   /**
@@ -507,9 +497,17 @@ class Save extends AbstractAction {
         }
       }
     }
-
-    if (isset($msg['employer_id'])) {
-      $updateParams['employer_id'] = $msg['employer_id'];
+    else {
+      // Individual-only custom fields
+      $additionalFieldMap = [
+        'employer_id' => 'employer_id', // Civi core pointer to an org contact
+        'employer' => 'Communication.Employer_Name' // WMF-only custom field
+      ];
+      foreach($additionalFieldMap as $messageField => $civiField) {
+        if (!empty($msg[$messageField])) {
+          $updateParams[$civiField] = $msg[$messageField];
+        }
+      }
     }
     if (!empty($updateParams)) {
       Contact::update(FALSE)
@@ -557,10 +555,10 @@ class Save extends AbstractAction {
     if (!empty($msg['email'])) {
       // Check for existing....
       $matches = Email::get(FALSE)
-        ->addWhere('contact.first_name', '=', $msg['first_name'])
-        ->addWhere('contact.last_name', '=', $msg['last_name'])
-        ->addWhere('contact.is_deleted', '=', 0)
-        ->addWhere('contact.is_deceased', '=', 0)
+        ->addWhere('contact_id.first_name', '=', $msg['first_name'])
+        ->addWhere('contact_id.last_name', '=', $msg['last_name'])
+        ->addWhere('contact_id.is_deleted', '=', 0)
+        ->addWhere('contact_id.is_deceased', '=', 0)
         ->addWhere('email', '=', $msg['email'])
         ->addWhere('is_primary', '=', TRUE)
         ->setSelect(['contact_id'])
@@ -585,10 +583,10 @@ class Save extends AbstractAction {
       ->addWhere('city', '=',  $msg['city'])
       ->addWhere('postal_code', '=', $msg['postal_code'])
       ->addWhere('street_address', '=', $msg['street_address'])
-      ->addWhere('contact.first_name', '=', $msg['first_name'])
-      ->addWhere('contact.last_name', '=', $msg['last_name'])
-      ->addWhere('contact.is_deleted', '=', 0)
-      ->addWhere('contact.is_deceased', '=', 0)
+      ->addWhere('contact_id.first_name', '=', $msg['first_name'])
+      ->addWhere('contact_id.last_name', '=', $msg['last_name'])
+      ->addWhere('contact_id.is_deleted', '=', 0)
+      ->addWhere('contact_id.is_deceased', '=', 0)
       ->addWhere('is_primary', '=', TRUE)
       ->setSelect(['contact_id'])
       ->setLimit(2)
