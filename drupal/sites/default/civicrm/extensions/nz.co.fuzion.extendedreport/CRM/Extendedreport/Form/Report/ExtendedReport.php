@@ -1,5 +1,7 @@
 <?php
 
+use Civi\API\Exception\UnauthorizedException;
+use Civi\Api4\Contact;
 use CRM_Extendedreport_ExtensionUtil as E;
 
 /**
@@ -1520,7 +1522,7 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
         if (!empty($field['frequency'])) {
           $this->_defaults['group_bys_freq'][$fieldName] = 'MONTH';
         }
-        $this->_defaults['group_bys'][$fieldName] = $field['default'];
+        $this->_defaults['group_bys'][$fieldName] = TRUE;
       }
     }
 
@@ -1716,54 +1718,6 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
 
     $fieldMap = array_merge(CRM_Utils_Array::value('fields', $this->_params, []), $fieldMap);
     $this->_columnHeaders = array_merge(array_intersect_key(array_flip($fieldMap), $this->_columnHeaders), $this->_columnHeaders);
-
-    // Change column header.
-    if (isset($this->_params['aggregate_column_headers']) && ($this->_params['aggregate_column_headers'] === 'contribution_total_amount_year' || $this->_params['aggregate_column_headers'] === 'contribution_total_amount_month')) {
-      $columnType = explode('_', $this->_params['aggregate_column_headers']);
-      $columnType = end($columnType);
-      $result = self::buildContributionTotalAmountBybreakdown('HEADER', $columnType, $this->_params['aggregate_column_headers'], $this->_params);
-
-      $header = array_keys($result);
-
-      // Get the row field data for adding conditions.
-      $rowFields = $this->getAggregateFieldSpec('row');
-      foreach ($header as $key => $value) {
-        if ($value == $rowFields[0]['alias']) {
-          $amountYearLabel[$value]['title'] = $title;
-        }
-        if ($value !== 'total_amount_total' && strpos($value, 'total_amount_') !== FALSE) {
-          $title = preg_replace('/\D/', '', $value);
-          if ($columnType === 'month') {
-            if (strlen($title) > 2) {
-              $year = substr($title, -4);
-              if (!empty($year)) {
-                $month = str_replace($year, '', $title);
-                $title = date("M", mktime(0, 0, 0, (int) $month, 10)) . ' ' . $year;
-                $headerWeight[$year][$value] = $title;
-              }
-            }
-            else {
-              $title = date("M", mktime(0, 0, 0, (int) $title, 10));
-            }
-          }
-          $amountYearLabel[$value]['title'] = $title;
-        }
-      }
-      $amountYearLabel['total_amount_total']['title'] = E::ts('Total');
-      if (!empty($headerWeight)) {
-        $amountYearLabel = [];
-        $amountYearLabel[$rowFields[0]['alias']]['title'] = $this->_columnHeaders[$rowFields[0]['alias']]['title'];
-        ksort($headerWeight);
-        foreach ($headerWeight as $headerWeightkey => $headerWeightvalue) {
-          foreach ($headerWeightvalue as $headerKey => $headerTitle) {
-            $amountYearLabel[$headerKey]['title'] = $headerTitle;
-          }
-        }
-        $amountYearLabel['total_amount_total']['title'] = E::ts('Total');
-      }
-
-      $this->_columnHeaders = $amountYearLabel;
-    }
   }
 
   /**
@@ -1782,45 +1736,7 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
       $this->addToDeveloperTab($sql);
       $this->buildRows($sql, $rows);
       $this->addAggregatePercentRow($rows);
-
-      // Check aggregate column header.
-      if (isset($this->_params['aggregate_column_headers']) && ($this->_params['aggregate_column_headers'] === 'contribution_total_amount_year' || $this->_params['aggregate_column_headers'] === 'contribution_total_amount_month') && !empty($rows)) {
-        $columnType = explode('_', $this->_params['aggregate_column_headers']);
-        $columnType = end($columnType);
-
-        // Get the row field data for adding conditions.
-        $rowFields = $this->getAggregateFieldSpec('row');
-        foreach ($rows as $rowsKey => $rowsData) {
-          $rowFieldId = $rowsData[$rowFields[0]['alias']];
-          $rows[$rowsKey] = self::buildContributionTotalAmountBybreakdown($rowFieldId, $columnType, $this->_params['aggregate_column_headers'], $this->_params);
-        }
-        array_pop($rows);
-        $endNew = [];
-        foreach ($rows as $key => $value) {
-          foreach ($value as $columnName => $amount) {
-            if ($columnName != $rowFields[0]['alias']) {
-              $rows[$key][$columnName] = CRM_Utils_Money::format(number_format($amount, 2), "USD");
-              $endNew[$columnName] += $amount;
-            }
-          }
-        }
-        if (!empty($rows) && !empty($endNew)) {
-          foreach ($endNew as $newKey => $newValue) {
-            $new[$newKey] = CRM_Utils_Money::format(number_format($newValue, 2), "USD");
-          }
-
-          array_push($rows, $new);
-
-          // Add total.
-          $this->_statFields = array_keys($new);
-        }
-        // format result set.
-        $this->formatDisplay($rows, FALSE);
-      }
-      else {
-        // format result set.
-        $this->formatDisplay($rows);
-      }
+      $this->formatDisplay($rows);
 
       // assign variables to templates
       $this->doTemplateAssignment($rows);
@@ -1869,7 +1785,7 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
    * @throws \CiviCRM_API3_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  function buildContributionTotalAmountBybreakdown($rowFieldId, $columnType, $header) {
+  public function buildContributionTotalAmountBybreakdown($rowFieldId, $columnType, $header): array {
     if ($header === 'contribution_total_amount_year' || $header === 'contribution_total_amount_month') {
       $where = '';
       $clause = '';
@@ -1887,9 +1803,6 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
       }
       elseif (!empty($rowFieldId) && is_string($rowFieldId) && $rowFieldId !== 'HEADER') {
         $where = "Where " . $rowFields[0]['dbAlias'] . " LIKE '%" . $rowFieldId . "%'";
-      }
-      elseif (empty($rowFieldId) && $rowFieldId !== 'HEADER') {
-        $where = "Where " . $rowFields[0]['dbAlias'] . " IS NULL";
       }
 
       // Custom fields join.
@@ -1939,7 +1852,7 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
       $result = [];
       $result['total_amount_total'] = 0;
       while ($dao->fetch()) {
-        $result[$rowFields[0]['alias']] = $rowFieldId;
+        $result[$this->getAggregateRowFieldAlias()] = $rowFieldId;
         $result['total_amount_total'] += $dao->amount;
 
         if (!empty($dao->month_year) && $columnType === 'month') {
@@ -2559,7 +2472,14 @@ LEFT JOIN civicrm_contact {$prop['alias']} ON {$prop['alias']}.id = {$this->_ali
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  public function formatDisplay(&$rows, $pager = TRUE) {
+  public function formatDisplay(&$rows, $pager = TRUE): void {
+    // Check aggregate column header.
+    if (isset($this->_params['aggregate_column_headers']) && ($this->_params['aggregate_column_headers'] === 'contribution_total_amount_year' || $this->_params['aggregate_column_headers'] === 'contribution_total_amount_month') && !empty($rows)) {
+      $this->wrangleColumnHeadersForContributionPivotWithReceiveDateAggregate();
+      $this->formatTotalAmountAggregateRows($rows);
+      // format result set.
+      $pager = FALSE;
+    }
     // set pager based on if any limit was applied in the query.
     if ($pager) {
       $this->setPager();
@@ -3272,8 +3192,10 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
           }
           $columns[$tableName][$type][$fieldAlias] = $spec;
           if (isset($defaults[$type . '_defaults']) && isset($defaults[$type . '_defaults'][$spec['name']])) {
-            $columns[$tableName]['metadata'][$fieldAlias]['default'] = $defaults[$type . '_defaults'][$spec['name']];
-            if ($type === 'group_bys') {
+            if ($type === 'filters' || $type === 'join_filters') {
+              $columns[$tableName]['metadata'][$fieldAlias]['default'] = $defaults[$type . '_defaults'][$spec['name']];
+            }
+            elseif ($type === 'group_bys') {
               $columns[$tableName]['metadata'][$fieldAlias]['is_group_bys_default'] = $defaults[$type . '_defaults'][$spec['name']];
             }
           }
@@ -4596,6 +4518,7 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
       'group_by' => FALSE,
       'order_by' => TRUE,
       'filters' => TRUE,
+      'join_filters' => TRUE,
       'fields_defaults' => ['display_name', 'id'],
       'filters_defaults' => [],
       'group_bys_defaults' => [],
@@ -4614,6 +4537,16 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
         'is_order_bys' => TRUE,
         'type' => CRM_Utils_Type::T_STRING,
         'operatorType' => CRM_Report_Form::OP_STRING,
+      ],
+      'on_hold' => [
+        'title' => ts($options['prefix_label'] . 'On Hold'),
+        'name' => 'on_hold',
+        'is_fields' => TRUE,
+        'is_filters' => TRUE,
+        'is_group_bys' => TRUE,
+        'is_order_bys' => TRUE,
+        'type' => CRM_Utils_Type::T_BOOLEAN,
+        'operatorType' => CRM_Report_Form::OP_SELECT,
       ],
     ];
     return $this->buildColumns($fields, $options['prefix'] . 'civicrm_email', 'CRM_Core_DAO_Email', NULL, $defaults, $options);
@@ -6705,6 +6638,34 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
       $row[$fieldname . '_link'] = CRM_Utils_System::url("civicrm/contact/view", 'reset=1&cid=' . $value, $this->_absoluteUrl);
     }
     return $value;
+  }
+
+  /**
+   * Alter Employer ID value for display.
+   *
+   * @param int|null $value
+   * @param array $row
+   * @param string $fieldname
+   *
+   * @return string|null
+   * @throws \API_Exception
+   */
+  public function alterEmployerID($value, &$row, $fieldname): ?string {
+    if ($value) {
+      try {
+        $row[$fieldname] = Contact::get()
+          ->addWhere('id', '=', $value)
+          ->addSelect('display_name')->execute()->first()['display_name'];
+        $row[$fieldname . '_link'] = CRM_Utils_System::url('civicrm/contact/view', 'reset=1&cid=' . $value, $this->_absoluteUrl);
+        $row[$fieldname . '_hover'] = E::ts('View Contact Summary for Employer.');
+        return $row[$fieldname];
+      }
+      catch (UnauthorizedException $e ) {
+        // Let's just not show anything if they have no permission to view the employer.
+        return NULL;
+      }
+    }
+    return NULL;
   }
 
   /**
@@ -8958,6 +8919,110 @@ WHERE cg.extends IN ('" . $extendsString . "') AND
       asort($this->activeCampaigns);
     }
     return $campaignEnabled;
+  }
+
+  /**
+   * Format rows when aggregating by total amount.
+   *
+   * @param array $rows
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected function formatTotalAmountAggregateRows(array &$rows): void {
+    $columnType = explode('_', $this->_params['aggregate_column_headers']);
+    $columnType = end($columnType);
+
+    // Get the row field data for adding conditions.
+    foreach ($rows as $rowsKey => $rowsData) {
+      $rowFieldId = $rowsData[$this->getAggregateRowFieldAlias()] ?? '';
+      $rows[$rowsKey] = $this->buildContributionTotalAmountBybreakdown($rowFieldId, $columnType, $this->_params['aggregate_column_headers'], $this->_params);
+    }
+
+    $row = [];
+    foreach ($rows as $key => $row) {
+      foreach ($row as $columnName => $amount) {
+        if ($columnName !== $this->getAggregateRowFieldAlias()) {
+          $rows[$key][$columnName] = CRM_Utils_Money::format($amount);
+        }
+      }
+    }
+    // If there is a rollup it will be the last one - so that one will have 'all' the
+    // columns.
+    $this->_statFields = array_keys($row);
+  }
+
+  /**
+   * Get the alias for the aggregate row field.
+   *
+   * @return string
+   */
+  protected function getAggregateRowFieldAlias(): string {
+    $rowFields = $this->getAggregateFieldSpec('row')[0] ?? [];
+    return $rowFields['alias'] ?? '';
+  }
+
+  /**
+   * Get the title for the aggregate row field.
+   *
+   * @return string
+   */
+  protected function getAggregateRowFieldTitle(): string {
+    $rowFields = $this->getAggregateFieldSpec('row')[0] ?? [];
+    return $rowFields['title'] ?? '';
+  }
+
+  /**
+   * @param $title
+   * @return array
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected function wrangleColumnHeadersForContributionPivotWithReceiveDateAggregate() {
+    // Change column header.
+    if (isset($this->_params['aggregate_column_headers']) && ($this->_params['aggregate_column_headers'] === 'contribution_total_amount_year' || $this->_params['aggregate_column_headers'] === 'contribution_total_amount_month')) {
+      $columnType = explode('_', $this->_params['aggregate_column_headers']);
+      $columnType = end($columnType);
+      $result = $this->buildContributionTotalAmountBybreakdown('HEADER', $columnType, $this->_params['aggregate_column_headers'], $this->_params);
+
+      $header = array_keys($result);
+
+      foreach ($header as $value) {
+        if ($value === $this->getAggregateRowFieldAlias()) {
+          $amountYearLabel[$value]['title'] = $this->getAggregateRowFieldTitle();
+        }
+        if ($value !== 'total_amount_total' && strpos($value, 'total_amount_') !== FALSE) {
+          $title = preg_replace('/\D/', '', $value);
+          if ($columnType === 'month') {
+            if (strlen($title) > 2) {
+              $year = substr($title, -4);
+              if (!empty($year)) {
+                $month = str_replace($year, '', $title);
+                $title = date("M", mktime(0, 0, 0, (int) $month, 10)) . ' ' . $year;
+                $headerWeight[$year][$value] = $title;
+              }
+            }
+            else {
+              $title = date("M", mktime(0, 0, 0, (int) $title, 10));
+            }
+          }
+          $amountYearLabel[$value]['title'] = $title;
+        }
+      }
+      $amountYearLabel['total_amount_total']['title'] = E::ts('Total');
+      if (!empty($headerWeight)) {
+        $amountYearLabel = [];
+        $amountYearLabel[$this->getAggregateRowFieldAlias()]['title'] = $this->_columnHeaders[$this->getAggregateRowFieldAlias()]['title'];
+        ksort($headerWeight);
+        foreach ($headerWeight as $headerWeightvalue) {
+          foreach ($headerWeightvalue as $headerKey => $headerTitle) {
+            $amountYearLabel[$headerKey]['title'] = $headerTitle;
+          }
+        }
+        $amountYearLabel['total_amount_total']['title'] = E::ts('Total');
+      }
+
+      $this->_columnHeaders = $amountYearLabel;
+    }
   }
 
 }
