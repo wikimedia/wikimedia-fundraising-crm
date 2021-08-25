@@ -135,6 +135,9 @@ function assignee_civicrm_preProcess($formName, &$form) {
     if ($assignee_group) {
       $form->_fields['assignee_contact_id']['attributes']['api']['params']['group'] = $assignee_group;
       $form->_fields['followup_assignee_contact_id']['attributes']['api']['params']['group'] = $assignee_group;
+      // Remove error that allows users to accidentally (or even on purpose) bypass
+      // the restriction https://lab.civicrm.org/extensions/assignee/-/issues/2
+      $form->assign('disable_swap_button', TRUE);
     }
   }
 }
