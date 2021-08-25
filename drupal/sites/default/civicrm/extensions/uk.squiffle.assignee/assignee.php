@@ -5,7 +5,7 @@ require_once 'assignee.civix.php';
 /**
  * Implements hook_civicrm_config().
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_config
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_config
  */
 function assignee_civicrm_config(&$config) {
   _assignee_civix_civicrm_config($config);
@@ -16,7 +16,7 @@ function assignee_civicrm_config(&$config) {
  *
  * @param array $files
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_xmlMenu
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_xmlMenu
  */
 function assignee_civicrm_xmlMenu(&$files) {
   _assignee_civix_civicrm_xmlMenu($files);
@@ -25,7 +25,7 @@ function assignee_civicrm_xmlMenu(&$files) {
 /**
  * Implements hook_civicrm_install().
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_install
  */
 function assignee_civicrm_install() {
   _assignee_civix_civicrm_install();
@@ -34,7 +34,7 @@ function assignee_civicrm_install() {
 /**
  * Implements hook_civicrm_uninstall().
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_uninstall
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_uninstall
  */
 function assignee_civicrm_uninstall() {
   _assignee_civix_civicrm_uninstall();
@@ -43,7 +43,7 @@ function assignee_civicrm_uninstall() {
 /**
  * Implements hook_civicrm_enable().
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_enable
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_enable
  */
 function assignee_civicrm_enable() {
   _assignee_civix_civicrm_enable();
@@ -52,7 +52,7 @@ function assignee_civicrm_enable() {
 /**
  * Implements hook_civicrm_disable().
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_disable
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_disable
  */
 function assignee_civicrm_disable() {
   _assignee_civix_civicrm_disable();
@@ -68,7 +68,7 @@ function assignee_civicrm_disable() {
  *   Based on op. for 'check', returns array(boolean) (TRUE if upgrades are pending)
  *                for 'enqueue', returns void
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_upgrade
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_upgrade
  */
 function assignee_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
   return _assignee_civix_civicrm_upgrade($op, $queue);
@@ -80,7 +80,7 @@ function assignee_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  * Generate a list of entities to create/deactivate/delete when this module
  * is installed, disabled, uninstalled.
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_managed
  */
 function assignee_civicrm_managed(&$entities) {
   _assignee_civix_civicrm_managed($entities);
@@ -95,7 +95,7 @@ function assignee_civicrm_managed(&$entities) {
  *
  * Note: This hook only runs in CiviCRM 4.4+.
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_caseTypes
  */
 function assignee_civicrm_caseTypes(&$caseTypes) {
   _assignee_civix_civicrm_caseTypes($caseTypes);
@@ -109,7 +109,7 @@ function assignee_civicrm_caseTypes(&$caseTypes) {
  * Note: This hook only runs in CiviCRM 4.5+. It may
  * use features only available in v4.6+.
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_caseTypes
  */
 function assignee_civicrm_angularModules(&$angularModules) {
 _assignee_civix_civicrm_angularModules($angularModules);
@@ -118,7 +118,7 @@ _assignee_civix_civicrm_angularModules($angularModules);
 /**
  * Implements hook_civicrm_alterSettingsFolders().
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterSettingsFolders
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterSettingsFolders
  */
 function assignee_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
   _assignee_civix_civicrm_alterSettingsFolders($metaDataFolders);
@@ -127,7 +127,7 @@ function assignee_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 /**
  * Implements hook_civicrm_preProcess().
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_preProcess
  */
 function assignee_civicrm_preProcess($formName, &$form) {
   if (is_a($form, 'CRM_Activity_Form_Activity')) {
@@ -142,27 +142,27 @@ function assignee_civicrm_preProcess($formName, &$form) {
 /**
  * Implements hook_civicrm_buildForm().
  * 
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_buildForm
  */
 function assignee_civicrm_buildForm($formName, &$form) {
     if (is_a($form, 'CRM_Activity_Form_Activity') AND Civi::settings()->get('assignee_as_source')) {
-      $form->setDefaults(array('assignee_contact_id' => $form->_defaultValues['source_contact_id']));
+      $form->setDefaults(['assignee_contact_id' => $form->_defaultValues['source_contact_id']]);
     }
 }
 
 /**
  * Implements hook_civicrm_navigationMenu().
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu
  */
 function assignee_civicrm_navigationMenu(&$menu) {
-  _assignee_civix_insert_navigation_menu($menu, "Administer/System Settings", array(
-    'label' => ts('Activity Assignee Settings', array('domain' => 'uk.squiffle.assignee')),
+  _assignee_civix_insert_navigation_menu($menu, "Administer/System Settings", [
+    'label' => ts('Activity Assignee Settings', ['domain' => 'assignee']),
     'name' => 'the_page',
     'url' => 'civicrm/assigneesettings',
     'permission' => 'administer CiviCRM',
     'operator' => 'OR',
     'separator' => 0,
-  ));
+  ]);
   _assignee_civix_navigationMenu($menu);
 } 
