@@ -139,7 +139,7 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
 
   protected function logMessage($message) {
     $className = preg_replace('/.*\\\/', '', get_called_class());
-    $formattedMessage = print_r($message, TRUE);
+    $formattedMessage = json_encode($message);
     watchdog($className, $formattedMessage, NULL, WATCHDOG_INFO);
   }
 
