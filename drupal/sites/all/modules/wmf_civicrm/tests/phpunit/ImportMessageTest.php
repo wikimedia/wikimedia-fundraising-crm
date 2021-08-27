@@ -1287,6 +1287,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @see https://phabricator.wikimedia.org/T289175
    */
   public function testMessageImportStatsResetStartTimer() {
+    $this->markTestSkipped('flapping');
     $importStatsCollector = ImportStatsCollector::getInstance();
     $emptyStats = $importStatsCollector->getAllStats();
     $this->assertEmpty($emptyStats);
