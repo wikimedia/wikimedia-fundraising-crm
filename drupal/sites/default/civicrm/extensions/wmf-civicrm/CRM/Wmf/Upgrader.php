@@ -57,17 +57,31 @@ class CRM_Wmf_Upgrader extends CRM_Wmf_Upgrader_Base {
   // }
 
   /**
-   * Example: Run a couple simple queries.
+   * Run sql to remove end dates from ongoing recurring contributions.
+   *
+   * This appears to be a historical housekeeping issue. Some ongoing
+   * contributions have end dates that appear to have been added a while ago.
+   *
+   * Bug: T283798
    *
    * @return TRUE on success
    * @throws Exception
    */
-  // public function upgrade_4200() {
-  //   $this->ctx->log->info('Applying update 4200');
-  //   CRM_Core_DAO::executeQuery('UPDATE foo SET bar = "whiz"');
-  //   CRM_Core_DAO::executeQuery('DELETE FROM bang WHERE willy = wonka(2)');
-  //   return TRUE;
-  // }
+  public function upgrade_4200(): bool {
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution_recur
+SET end_date = NULL WHERE id IN
+(
+  SELECT cr.id
+  FROM civicrm_contribution_recur cr
+  INNER JOIN civicrm_contribution c ON c.contribution_recur_id = cr.id
+    AND cr.end_date IS NOT NULL
+    AND cr.contribution_status_id NOT IN (3, 4)
+    AND cr.cancel_reason IS NULL 
+  GROUP BY cr.id
+  HAVING max(receive_date) > '2021-05-01'
+);");
+    return TRUE;
+  }
 
 
   /**
