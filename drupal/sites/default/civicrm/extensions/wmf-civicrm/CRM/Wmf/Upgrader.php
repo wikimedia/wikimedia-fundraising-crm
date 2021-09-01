@@ -76,14 +76,41 @@ SET end_date = NULL WHERE id IN
   INNER JOIN civicrm_contribution c ON c.contribution_recur_id = cr.id
     AND cr.end_date IS NOT NULL
     AND cr.contribution_status_id NOT IN (3, 4)
-    AND cr.cancel_reason IS NULL 
+    AND cr.cancel_reason IS NULL
   GROUP BY cr.id
   HAVING max(receive_date) > '2021-05-01'
 );");
     return TRUE;
   }
 
-
+  /**
+   * Run sql to add end dates to old recurring contributions.
+   *
+   * This just adds them to those that are a couple of years
+   * in an attempt to deal with the more legacy data.
+   *
+   * Bug: T283798
+   *
+   * @return TRUE on success
+   * @throws Exception
+   */
+  public function upgrade_4201(): bool {
+    // tested on staging Query OK, 4040 rows affected (24.646 sec)
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_contribution_recur cr
+      INNER JOIN (
+        SELECT cr.id, MAX(receive_date) mx
+        FROM civicrm_contribution_recur cr
+          LEFT JOIN civicrm_contribution c ON c.contribution_recur_id = cr.id
+        WHERE end_date IS NULL
+        AND cr.cancel_date IS NULL AND cr.contribution_status_id NOT IN(3,4)
+        GROUP BY cr.id HAVING mx < '2019-06-01'
+      ) as a
+        ON a.id = cr.id
+      SET cr.end_date = a.mx
+    ");
+    return TRUE;
+  }
   /**
    * Example: Run an external SQL script.
    *
