@@ -151,6 +151,29 @@ SET end_date = NULL WHERE id IN
     // I found 328 of these - all created before our fix to have
     // a default of 'Pending' in Feb 2021.
     CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution_recur SET contribution_status_id = 5  WHERE next_sched_contribution_date > '2021-09-01' AND contribution_status_id = 1");
+
+    // And set end dates for past 'completed' recurring contributions.
+    // 4084 rows in set (0.267 sec)
+    // Note I'm setting the goal of all completed contributions
+    // having an end_date to get us to some sort of data integrity.
+    // This doesn't quite get us there - but gets the number down
+    // for a bit more analysis
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_contribution_recur cr
+      INNER JOIN (
+        SELECT cr.id, cr.contact_id, start_date, MAX(receive_date) mx
+        FROM civicrm_contribution_recur cr
+          LEFT JOIN civicrm_contribution c ON c.contribution_recur_id = cr.id
+        WHERE end_date IS NULL
+        AND cr.cancel_date IS NULL
+        AND cr.contribution_status_id = 1
+        AND next_sched_contribution_date < '2021-05-01'
+        GROUP BY cr.id HAVING mx < '2021-05-01'
+      ) as a
+        ON a.id = cr.id
+      SET cr.end_date = a.mx
+    ");
+
     return TRUE;
   }
   /**
