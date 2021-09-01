@@ -111,6 +111,42 @@ SET end_date = NULL WHERE id IN
     ");
     return TRUE;
   }
+
+  /**
+   * Run sql to remove end dates from ongoing recurring contributions.
+   *
+   * This appears to be a historical housekeeping issue. Some ongoing
+   * contributions have end dates that appear to have been added a while ago.
+   *
+   * Note that the above query did this but required cancel_reason to be null.
+   * There are 8796 rows where cancel reason is one of the 2 in the new query.
+   * All of these have cancel_dates in 2018 and in fact the inclusion of both
+   * cr.end_date < '2019-01-01' AND
+   * cr.cancel_reason IN ('(auto) backfilled automated cancel', '(auto) backfilled automated Expiration notification')
+   *
+   * is for clarity - either can be removed without altering the result set.
+   *
+   * Bug: T283798
+   *
+   * @return TRUE on success
+   * @throws Exception
+   */
+  public function upgrade_4203(): bool {
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution_recur
+SET end_date = NULL WHERE id IN
+(
+  SELECT cr.id
+  FROM civicrm_contribution_recur cr
+  INNER JOIN civicrm_contribution c ON c.contribution_recur_id = cr.id
+    AND cr.end_date IS NOT NULL
+    AND cr.end_date < '2019-01-01'
+    AND cr.contribution_status_id NOT IN (3, 4)
+    AND cr.cancel_reason IN ('(auto) backfilled automated cancel', '(auto) backfilled automated Expiration notification')
+  GROUP BY cr.id
+  HAVING max(receive_date) > '2021-05-01'
+);");
+    return TRUE;
+  }
   /**
    * Example: Run an external SQL script.
    *
