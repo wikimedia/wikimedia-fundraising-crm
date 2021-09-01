@@ -145,6 +145,12 @@ SET end_date = NULL WHERE id IN
   GROUP BY cr.id
   HAVING max(receive_date) > '2021-05-01'
 );");
+
+    // Also set contribution_status_id to IN PROGRESS for contributions
+    // with future planned payments and a status of 'Completed'
+    // I found 328 of these - all created before our fix to have
+    // a default of 'Pending' in Feb 2021.
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution_recur SET contribution_status_id = 5  WHERE next_sched_contribution_date > '2021-09-01' AND contribution_status_id = 1");
     return TRUE;
   }
   /**
