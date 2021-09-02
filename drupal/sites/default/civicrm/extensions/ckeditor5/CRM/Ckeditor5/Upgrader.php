@@ -15,14 +15,14 @@ class CRM_Ckeditor5_Upgrader extends CRM_Ckeditor5_Upgrader_Base {
   public function install() {
     CRM_Core_BAO_OptionValue::ensureOptionValueExists([
         'option_group_id' => 'wysiwyg_editor',
-        'label' => 'CKEditor5 with uploaded images (recommended)',
-        'name' => 'CKEditor5-elfinder',
+        'label' => 'CKEditor5 with embedded images',
+        'name' => 'CKEditor5-base64',
       ]
     );
     CRM_Core_BAO_OptionValue::ensureOptionValueExists([
         'option_group_id' => 'wysiwyg_editor',
-        'label' => 'CKEditor5 with embedded images',
-        'name' => 'CKEditor5-base64',
+        'label' => 'CKEditor5 with uploaded images (experimental)',
+        'name' => 'CKEditor5-elfinder',
       ]
     );
     return TRUE;
