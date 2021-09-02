@@ -176,6 +176,44 @@ SET end_date = NULL WHERE id IN
 
     return TRUE;
   }
+
+  /**
+  * Run sql to update the contribution_status of duplicated Adyen records to cancelled (3)
+  *
+  * Bug: T290177
+  *
+  * @return TRUE on success
+  * @throws Exception
+  */
+  public function upgrade_4205(): bool {
+    // 144 expected updates
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_contribution c_payments
+      SET
+          c_payments.contribution_status_id = 3
+      WHERE
+          id IN (SELECT
+                  c_payments.id
+              FROM
+                  civicrm_contribution c_payments
+                      INNER JOIN
+                  wmf_contribution_extra x_payments ON x_payments.entity_id = c_payments.id
+                      AND x_payments.source_type = 'payments'
+                      AND x_payments.gateway = 'adyen'
+                      INNER JOIN
+                  civicrm_contribution c_ipn ON c_payments.contact_id = c_ipn.contact_id
+                      AND c_payments.total_amount = c_ipn.total_amount
+                      AND c_ipn.receive_date > '2021-08-31'
+                      INNER JOIN
+                  wmf_contribution_extra x_ipn ON x_ipn.entity_id = c_ipn.id
+                      AND x_ipn.source_type = 'listener'
+              WHERE
+                  c_payments.receive_date > '2021-08-31'
+              GROUP BY c_payments.id
+              ORDER BY c_payments.id DESC)");
+    return TRUE;
+  }
+
   /**
    * Example: Run an external SQL script.
    *

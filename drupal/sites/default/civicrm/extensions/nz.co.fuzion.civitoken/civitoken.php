@@ -119,8 +119,10 @@ function civitoken_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 }
 
 /**
-* implementation of CiviCRM hook
-*/
+ * implementation of CiviCRM hook
+ *
+ * @throws \CiviCRM_API3_Exception
+ */
 function civitoken_civicrm_tokens(&$tokens) {
   $civiTokens = \Civi::cache()->get('civitoken_enabled_tokens');
   if (!is_array($civiTokens)) {
@@ -128,7 +130,7 @@ function civitoken_civicrm_tokens(&$tokens) {
     civitoken_civicrm_tokens_all($civiTokens);
     $setting = civicrm_api3('Setting', 'get', [
       'return' => 'civitoken_enabled_tokens',
-      'sequential' => 1
+      'sequential' => 1,
     ])['values'][0];
 
     if (empty($setting) || empty($setting['civitoken_enabled_tokens'])) {
@@ -159,12 +161,12 @@ function civitoken_civicrm_tokens(&$tokens) {
  */
 function civitoken_civicrm_tokens_all(&$tokens) {
   $tokenFunctions = civitoken_initialize();
-  $civitokens = array();
+  $civitokens = [];
   foreach ($tokenFunctions as $token) {
     $fn = $token . '_civitoken_declare';
     $tokens[$token] = array_merge($civitokens, $fn($token));
   }
-  $tokens['civitokens']= $civitokens;
+  $tokens['civitokens'] = $civitokens;
 }
 
 /**
@@ -174,8 +176,8 @@ function civitoken_civicrm_tokens_all(&$tokens) {
  * ['address.address_block' => 'Address Block', 'date.today' => 'Today\'s date']].
  */
 function civitoken_get_flattened_list_all() {
-  $tokens = array();
-  $flattenedTokens = array();
+  $tokens = [];
+  $flattenedTokens = [];
   civitoken_civicrm_tokens_all($tokens);
   foreach ($tokens as $category) {
     foreach ($category as $token => $title) {
@@ -194,53 +196,58 @@ function civitoken_get_flattened_list_all() {
  * @param array $tokens
  * @param null $context
  */
-function civitoken_civicrm_tokenValues(&$values, $contactIDs, $job = null, $tokens = array(), $context = null) {
+function civitoken_civicrm_tokenValues(&$values, $contactIDs, $job = NULL, $tokens = [], $context = NULL) {
   $tokenFunctions = civitoken_initialize();
   // @todo figure out full conditions for returning here.
-  if (empty($tokens) || array_keys($tokens) == array('contact')) {
+  if (empty($tokens) || (array_keys($tokens) === ['contact'])) {
     return;
   }
 
   foreach ($tokenFunctions as $token) {
-    if (in_array($token, array_keys($tokens))) {
+    if (array_key_exists($token, $tokens)) {
       $fn = $token . '_civitoken_get';
       foreach ($contactIDs as $contactID) {
-        $value =& $values[$contactID];
-        $fn($contactID, $value, $context);
+        if (!isset($values[$contactID])) {
+          $values[$contactID] = [];
+        }
+        $fn($contactID, $values[$contactID], $context, $job, $tokens[$token]);
       }
     }
   }
 }
+
 /**
-* Gather functions from tokens in tokens folder
-*/
+ * Gather functions from tokens in tokens folder
+ */
 function civitoken_initialize() {
-  static $civitoken_init = null;
-  static $tokens = array();
-  if ($civitoken_init){
-    return $tokens;
+  if (isset(Civi::$statics['civitoken']['tokens'])) {
+    return Civi::$statics['civitoken']['tokens'];
   }
-  static $tokenFiles = null;
+  $tokens = [];
   $config = CRM_Core_Config::singleton();
-  if(!is_array($tokenFiles)){
-    $directories = array( __DIR__  . '/tokens');
-    if (!empty($config->customPHPPathDir)) {
-      if (file_exists($config->customPHPPathDir . '/tokens')) {
-        $directories[] = $config->customPHPPathDir . '/tokens';
-      }
-    }
-    foreach ($directories as $directory) {
-      $tokenFiles = _civitoken_civix_find_files($directory, '*.inc');
-      foreach ($tokenFiles as $file) {
-        require_once $file;
-        $re = "/.*\\/([a-z]*).inc/";
-        preg_match($re, $file, $matches);
-        $tokens[] = $matches[1];
-      }
+  $directories = [__DIR__ . '/tokens'];
+  if (!empty($config->customPHPPathDir)) {
+    if (file_exists($config->customPHPPathDir . '/tokens')) {
+      $directories[] = $config->customPHPPathDir . '/tokens';
     }
   }
-  $civitoken_init = 1;
-  return $tokens;
+  // lookup extension directories
+  foreach (explode(':', get_include_path()) as $path) {
+    if (FALSE !== strpos($path, $config->extensionsDir) && file_exists($path . '/tokens')) {
+      $directories[] = $path;
+    }
+  }
+  foreach ($directories as $directory) {
+    $tokenFiles = _civitoken_civix_find_files($directory, '*.inc');
+    foreach ($tokenFiles as $file) {
+      require_once $file;
+      $re = "/.*\\/([a-z]*).inc/";
+      preg_match($re, $file, $matches);
+      $tokens[] = $matches[1];
+    }
+  }
+  Civi::$statics['civitoken']['tokens'] = $tokens;
+  return Civi::$statics['civitoken']['tokens'];
 }
 
 /**
@@ -250,13 +257,13 @@ function civitoken_initialize() {
  */
 function civitoken_civicrm_navigationMenu(&$menu) {
 
-  _civitoken_civix_insert_navigation_menu($menu, 'Administer/Communications', array(
-    'label' => ts('Enabled Tokens', array('domain' => 'nz.co.fuzion.civitoken')),
+  _civitoken_civix_insert_navigation_menu($menu, 'Administer/Communications', [
+    'label' => ts('Enabled Tokens', ['domain' => 'nz.co.fuzion.civitoken']),
     'name' => 'enabled_civitokens',
     'url' => 'civicrm/a/#/civitoken/settings',
     'permission' => 'administer CiviCRM',
     'operator' => 'OR',
     'separator' => 0,
-  ));
+  ]);
   _civitoken_civix_navigationMenu($menu);
 }

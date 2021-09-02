@@ -7,3 +7,23 @@
 .ck.ck-editor {
   max-width: 95%;
 }
+
+/* Place elfinder above CiviCRM popup */
+.ui-front.dialogelfinder {
+  z-index: 9000;
+}
+
+.image.image-style-align-center {
+  margin: 0 auto;
+}
+
+.image.image-style-align-left {
+  float: left;
+  margin-right: 1em;
+}
+
+.image.image-style-align-right,
+.image.image-style-side {
+  float: right;
+  margin-left: 1em;
+}

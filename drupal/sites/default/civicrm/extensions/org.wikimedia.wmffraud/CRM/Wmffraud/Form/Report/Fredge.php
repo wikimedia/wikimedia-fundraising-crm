@@ -19,128 +19,6 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
     'IPBlacklist' => 'IPBlacklist',
   ];
 
-  function __construct() {
-    parent::__construct();
-
-    $this->fredge = substr($this->drupal, 0,
-      3) === 'dev' ? 'dev_fredge' : 'fredge';
-
-    $this->_columns = [];
-    $this->_columns['payments_fraud'] = [
-      'alias' => 'payments_fraud',
-      'fields' => [
-        'user_ip' => [
-          'name' => 'user_ip',
-          'title' => E::ts('IP Address'),
-          'dbAlias' => "INET_NTOA(payments_fraud_civireport.user_ip)",
-          'default' => TRUE,
-        ],
-        'validation_action' => [
-          'title' => E::ts('Payment Action'),
-        ],
-        'fredge_date' => [
-          'title' => E::ts('Payment attempt date'),
-          'name' => 'date',
-          'default' => TRUE,
-        ],
-        'gateway' => [
-          'title' => E::ts('Payment gateway'),
-          'name' => 'gateway',
-        ],
-        'order_id' => [
-          'title' => E::ts('Order ID'),
-          'default' => TRUE,
-          'name' => 'order_id',
-        ],
-        'risk_score' => [
-          'title' => E::ts('Risk Score'),
-          'default' => TRUE,
-          'name' => 'risk_score',
-        ],
-        'server' => [
-          'title' => E::ts('Server'),
-          'name' => 'server',
-        ],
-      ],
-      'filters' => [
-        'user_ip' => [
-          'name' => 'user_ip',
-          'title' => E::ts('IP Address'),
-          'type' => CRM_Utils_Type::T_STRING,
-        ],
-        'order_id' => [
-          'title' => E::ts('Order ID'),
-          'name' => 'order_id',
-          'type' => CRM_Utils_Type::T_STRING,
-        ],
-        'validation_action' => [
-          'title' => E::ts('Action'),
-          'type' => CRM_Utils_Type::T_STRING,
-        ],
-        'fredge_date' => [
-          'title' => E::ts('Payment attempt date'),
-          'name' => 'date',
-          'type' => CRM_Utils_Type::T_DATE,
-        ],
-      ],
-      'order_bys' => [
-        'fredge_date' => [
-          'title' => E::ts('Payment attempt date'),
-          'name' => 'date',
-          'type' => CRM_Utils_Type::T_DATE,
-          'default_order' => 'DESC',
-        ],
-        'user_ip' => [
-          'name' => 'user_ip',
-          'title' => E::ts('IP Address'),
-          'type' => CRM_Utils_Type::T_STRING,
-        ],
-        'validation_action' => [
-          'title' => E::ts('Action'),
-          'type' => CRM_Utils_Type::T_STRING,
-        ],
-      ],
-    ];
-
-    $this->_columns['contribution_tracking'] = [
-      'alias' => 'ct',
-      'fields' => [
-        'country' => [
-          'title' => E::ts('Country'),
-          'default' => TRUE,
-          'type' => CRM_Utils_Type::T_STRING,
-        ],
-        'form_amount' => [
-          'title' => E::ts('Form amount'),
-          'default' => TRUE,
-          'type' => CRM_Utils_Type::T_STRING,
-        ]
-      ]
-    ];
-
-    foreach (self::FRAUD_FILTERS as $columnName => $value) {
-      $this->_columns["payments_fraud_breakdown_" . $columnName] = [
-        'alias' => "payments_fraud_breakdown_{$columnName}",
-        'name' => "payments_fraud_breakdown",
-        'fields' => [
-          $columnName => [
-            'name' => "risk_score",
-            'title' => ts($columnName),
-            'default' => TRUE,
-            'type' => CRM_Utils_Type::T_STRING,
-          ],
-        ],
-        'filters' => [
-          $columnName => [
-            'name' => "risk_score",
-            'title' => ts($columnName),
-            'type' => CRM_Utils_Type::T_STRING,
-          ],
-        ],
-      ];
-    }
-  }
-
   public function setDefaultValues($freeze = TRUE) {
     $defaults = parent::setDefaultValues(TRUE);
     $this->convertOrderArrayToString($defaults);
@@ -149,9 +27,30 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
 
   function from() {
     $this->_from = "
-      FROM {$this->fredge}.payments_fraud {$this->_aliases['payments_fraud']}
-      LEFT JOIN {$this->drupal}.contribution_tracking {$this->_aliases['contribution_tracking']}
+      FROM {$this->fredge}.payments_fraud {$this->_aliases['payments_fraud']}";
+    if ($this->isTableSelected('contribution_tracking')
+      || $this->isTableSelected('civicrm_contribution')
+      || $this->isTableSelected('civicrm_email')
+      || $this->isTableSelected('civicrm_contact')
+    ) {
+      $this->_from .= "
+        LEFT JOIN {$this->drupal}.contribution_tracking {$this->_aliases['contribution_tracking']}
         ON {$this->_aliases['contribution_tracking']}.id = {$this->_aliases['payments_fraud']}.contribution_tracking_id ";
+    }
+    if ($this->isTableSelected('civicrm_contribution')
+      || $this->isTableSelected('civicrm_email')
+      || $this->isTableSelected('civicrm_contact')
+    ) {
+      $this->_from .= "
+        LEFT JOIN civicrm_contribution {$this->_aliases['civicrm_contribution']}
+        ON {$this->_aliases['civicrm_contribution']}.id = {$this->_aliases['contribution_tracking']}.contribution_id
+      ";
+    }
+    if ($this->isTableSelected('civicrm_email')
+      || $this->isTableSelected('civicrm_contact')
+    ) {
+      $this->addJoinToContactAndEmail();
+    }
 
     foreach (self::FRAUD_FILTERS as $columnName => $value) {
       $tblAlias = "payments_fraud_breakdown_" . $columnName;
@@ -159,6 +58,26 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
         ON {$this->fredge}.{$this->_aliases['payments_fraud']}.id = {$this->fredge}.{$this->_aliases[$tblAlias]}.payments_fraud_id
         AND {$this->fredge}.{$this->_aliases[$tblAlias]}.filter_name = '$value' ";
     }
+  }
+
+  /**
+   * Sorting function to bring the breakdown tables to the top.
+   *
+   * @param string $a
+   * @param string $b
+   *
+   * @return int
+   */
+  public function tableSort($a, $b) {
+    $weLikeA = strpos($a, 'payments_fraud_breakdown_') === 0;
+    $weLikeB = strpos($b, 'payments_fraud_breakdown_') === 0;
+    if ($weLikeA && !$weLikeB) {
+      return -1;
+    }
+    if ($weLikeB && !$weLikeA) {
+      return 1;
+    }
+    return 0;
   }
 
   /**
@@ -178,4 +97,82 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
       $defaults['order_id_value'] = implode(',', $defaults['order_id_value']);
     }
   }
+
+  /**
+   * Set the metadata to describe the report.
+   *
+   * @return void
+   */
+  protected function setReportColumns(): void {
+    parent::setReportColumns();
+    // Filter the tables set in the parent down to those for this report.
+    $this->_columns = array_intersect_key($this->_columns, array_fill_keys([
+      'payments_fraud',
+      'contribution_tracking',
+      'civicrm_contribution',
+      'civicrm_contact',
+      'civicrm_email'
+    ], TRUE));
+
+    // Add report-appropriate defaults.
+    $this->overrideDefaults([
+      'payments_fraud' => [
+        'fields' => [
+          'fredge_date' => TRUE,
+          'gateway' => TRUE,
+          'order_id' => TRUE,
+          'risk_score' => TRUE
+        ],
+        'order_bys' => ['fredge_date' => 'DESC'],
+      ],
+      'contribution_tracking' => [
+        'fields' => [
+          'form_amount' => TRUE,
+          'country' => TRUE
+        ]
+      ],
+    ]);
+
+    // Don't inherit required/ default fields from parent for tables which may have
+    // no data (if the contribution failed)
+    $this->doNotRequireFieldsFrom([
+      'civicrm_contribution',
+      'civicrm_contact',
+      'civicrm_email'
+    ]);
+    $this->_columns['civicrm_contribution']['grouping'] = 'on_success';
+    $this->_columns['civicrm_email']['grouping'] = 'on_success';
+    $this->_columns['civicrm_contact']['grouping'] = 'on_success';
+    $this->_columns['civicrm_contribution']['group_title'] = 'Additional information for payments that reached CiviCRM';
+
+    $this->_columns['contribution_tracking']['group_title'] = 'Contribution Tracking';
+
+    foreach (self::FRAUD_FILTERS as $columnName => $value) {
+      $this->_columns["payments_fraud_breakdown_" . $columnName] = [
+        'grouping' => 'payment_attempt',
+        'group_title' => 'Fraud score Fields',
+        'alias' => "payments_fraud_breakdown_{$columnName}",
+        'name' => "payments_fraud_breakdown",
+        'title' => $columnName,
+        'fields' => [
+          $columnName => [
+            'name' => "risk_score",
+            'title' => ts($columnName),
+            'default' => TRUE,
+            'type' => CRM_Utils_Type::T_STRING,
+          ],
+        ],
+        'filters' => [
+          $columnName => [
+            'name' => "risk_score",
+            'title' => ts($columnName),
+            'type' => CRM_Utils_Type::T_STRING,
+          ],
+        ],
+      ];
+    }
+    // Sort all the payment fraud breakdown stuff to the start to influence UI order.
+    uksort($this->_columns, [$this, 'tableSort']);
+  }
+
 }
