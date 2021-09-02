@@ -28,7 +28,7 @@
       // elfinder folder hash of the destination folder to be uploaded in this CKeditor 5
       const uploadTargetHash = 'l1_Lw';
       // elFinder connector URL
-      const connectorUrl = CRM.url('civicrm/image/access', null, 'back');
+      const connectorUrl = CRM.config.ELFinderConnnector;
       const ckf = editor.commands.get('ckfinder'),
         fileRepo = editor.plugins.get('FileRepository'),
         ntf = editor.plugins.get('Notification'),
@@ -279,7 +279,7 @@
               'horizontalLine'
             ]
           },
-          language: (typeof CRM.config.locale == 'string' ? CRM.config.locale.substr(0,2) : 'en'),
+          language: 'en',
           image: {
             toolbar: [
               'imageTextAlternative',
@@ -307,80 +307,7 @@
      */
     function initializeWithELFinder() {
       $(item).addClass('crm-wysiwyg-enabled');
-      ClassicEditor.create($(item)[0], {
-          toolbar: {
-            // With this it wraps rather than offering a drop down for more.
-            // I'm on the fence about which is better but this is consistent with
-            // ckeditor4. If we added configurability we could expose this.
-            // https://ckeditor.com/docs/ckeditor5/latest/api/module_core_editor_editorconfig-EditorConfig.html#member-toolbar
-            shouldNotGroupWhenFull: true,
-            items: [
-              'heading',
-              '|',
-              'bold',
-              'underline',
-              'italic',
-              'strikethrough',
-              'superscript',
-              'subscript',
-              '|',
-              'bulletedList',
-              'numberedList',
-              '|',
-              'removeFormat',
-              'fontFamily',
-              'fontColor',
-              'fontBackgroundColor',
-              'fontSize',
-              '|',
-              'indent',
-              'outdent',
-              'alignment',
-              '|',
-              'link',
-              'imageUpload',
-              'ckfinder',
-              'blockQuote',
-              'insertTable',
-              'horizontalLine',
-              'specialCharacters',
-              'mediaEmbed',
-              'undo',
-              'redo'
-            ]
-          },
-          language: (typeof CRM.config.locale == 'string' ? CRM.config.locale.substr(0,2) : 'en'),
-          image: {
-            toolbar: [
-              'imageResize',
-              '|',
-              'imageTextAlternative',
-              'imageStyle:full',
-              'imageStyle:side',
-              'imageStyle:alignLeft',
-              'imageStyle:alignCenter',
-              'imageStyle:alignRight',
-            ],
-            styles: [
-              'full',
-              'side',
-              'alignLeft',
-              'alignCenter',
-              'alignRight',
-            ],
-          },
-          table: {
-            contentToolbar: [
-              'tableColumn',
-              'tableRow',
-              'mergeTableCells',
-              'tableCellProperties',
-              'tableProperties'
-            ]
-          },
-          licenseKey: '',
-
-        }).then(onReadyElFinder);
+      ClassicEditor.create($(item)[0]).then(onReadyElFinder);
     }
 
     if ($(item).hasClass('crm-wysiwyg-enabled')) {
@@ -392,12 +319,7 @@
         initialize();
       } else {
         if (CRM.config.ELFinderLocation) {
-          if (CRM.config.CKEditor5Language) {
-            CRM.loadScript(CRM.config.CKEditor5Language).done(CRM.loadScript(CRM.config.CKEditor5Location).done(CRM.loadScript(CRM.config.ELFinderLocation).done(initialize)));
-          }
-          else {
-            CRM.loadScript(CRM.config.CKEditor5Location).done(CRM.loadScript(CRM.config.ELFinderLocation).done(initialize));
-          }
+          CRM.loadScript(CRM.config.CKEditor5Location).done(CRM.loadScript(CRM.config.ELFinderLocation).done(initialize));
         }
         else {
           CRM.loadScript(CRM.config.CKEditor5Location).done(initialize);
@@ -445,10 +367,7 @@
   CRM.wysiwyg.insert = function(item, text) {
     var editor = getInstance(item);
     if (editor) {
-      editor.model.change(writer => {
-        const insertPosition = editor.model.document.selection.getFirstPosition();
-        writer.insertText(text, insertPosition);
-      });
+      editor.insertText(text);
     } else {
       CRM.wysiwyg._insertIntoTextarea(item, text);
     }
