@@ -304,6 +304,7 @@ function wmf_civicrm_contribution_message_import(&$msg) {
 
     $soft_credit_contact = civicrm_api3('Contact', 'Get', [
       'organization_name' => $msg['soft_credit_to'],
+      'contact_type' => 'Organization',
       'sequential' => 1,
       'return' => 'id',
     ]);
