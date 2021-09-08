@@ -215,18 +215,72 @@ SET end_date = NULL WHERE id IN
   }
 
   /**
-   * Example: Run an external SQL script.
+   * Fix up the last 'completed' oddities for 'Completed' recurring contributions.
+   *
+   * After previous fix ups we still have 1971 'completed' contributions with
+   * no end date or cancel date. I have determined that 10 of these are in progress
+   * and the rest should have an end date. The 3 queries in this update should clear
+   * them all out & we should hopefully be done with this data snaffu.
+   * Bug: T283798
    *
    * @return TRUE on success
-   * @throws Exception
    */
-  // public function upgrade_4201() {
-  //   $this->ctx->log->info('Applying update 4201');
-  //   // this path is relative to the extension base dir
-  //   $this->executeSqlFile('sql/upgrade_4201.sql');
-  //   return TRUE;
-  // }
+  public function upgrade_4206(): bool {
+    // Step 1 - set status to 'in progress' where the contributions are genuinely ongoing
+    // there are 10 of these (only!).
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_contribution_recur SET contribution_status_id = 5
+      WHERE id IN (
+        SELECT cr.id
+        FROM civicrm_contribution_recur cr
+          LEFT JOIN civicrm_contribution c ON c.contribution_recur_id = cr.id
+        WHERE end_date IS NULL
+           AND cr.cancel_date IS NULL
+           AND cr.contribution_status_id = 1
+           AND next_sched_contribution_date > NOW()
+        GROUP BY cr.id HAVING max(receive_date) > '2021-08-01'
+        )
+    ");
 
+    // Step 2 - set end_date to max(receive_date) where contributions have been
+    // received but have stopped (76)
+    // This is the same query as in 4203 but considering the ones
+    // with no payments since the start of August as being completed.
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_contribution_recur cr
+      INNER JOIN (
+        SELECT cr.id, cr.contact_id, start_date, MAX(receive_date) mx
+        FROM civicrm_contribution_recur cr
+          LEFT JOIN civicrm_contribution c ON c.contribution_recur_id = cr.id
+        WHERE end_date IS NULL
+        AND cr.cancel_date IS NULL
+        AND cr.contribution_status_id = 1
+        AND next_sched_contribution_date < NOW()
+        GROUP BY cr.id HAVING mx < '2021-08-01'
+      ) as a
+        ON a.id = cr.id
+      SET cr.end_date = a.mx
+    ");
+
+    // Step 3 - update those with no contributions. Note that none of these started
+    // after 28 Jan
+    // 1885 rows.
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_contribution_recur SET end_date = start_date WHERE id IN (
+        SELECT cr.id
+        FROM civicrm_contribution_recur cr
+          LEFT JOIN civicrm_contribution c ON c.contribution_recur_id = cr.id
+        WHERE end_date IS NULL
+          AND cr.cancel_date IS NULL
+          AND cr.contribution_status_id = 1
+          -- The start date filter is for clarity only
+          -- no additional rows are filtered as a result
+          AND cr.start_date < '2021-02-01'
+          AND c.id IS NULL
+     )
+    ");
+    return TRUE;
+  }
 
   /**
    * Example: Run a slow upgrade process by breaking it up into smaller chunk.
