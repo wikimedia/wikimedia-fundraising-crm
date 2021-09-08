@@ -49,9 +49,6 @@
     <testsuite name="wmf_eoy_receipt tests">
       <directory>drupal/sites/all/modules/wmf_eoy_receipt/tests/phpunit</directory>
     </testsuite>
-    <testsuite name="omnimail_tests">
-      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit</directory>
-    </testsuite>
     <testsuite name="contacteditor_tests">
       <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.contacteditor/tests/phpunit</directory>
     </testsuite>
@@ -81,6 +78,9 @@
     </testsuite>
     <testsuite name="civi-data-strings">
       <directory>drupal/sites/default/civicrm/extensions/civi-data-translate/tests/phpunit</directory>
+    </testsuite>
+    <testsuite name="omnimail_tests">
+      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit</directory>
     </testsuite>
   </testsuites>
 </phpunit>
