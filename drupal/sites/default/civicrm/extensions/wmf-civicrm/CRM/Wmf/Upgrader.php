@@ -283,6 +283,63 @@ SET end_date = NULL WHERE id IN
   }
 
   /**
+   * Drop indexes on wmf_donor fields identified as not required to be searchable.
+   *
+   * Bug: T288721
+   *
+   * @return TRUE on success
+   */
+  public function upgrade_4207(): bool {
+    $indexesToDrop = [
+      'total_2006_2007',
+      'total_2007_2008',
+      'total_2008_2009',
+      'total_2009_2010',
+      'total_2010_2011',
+      'total_2011_2012',
+      'total_2012_2013',
+      'total_2013_2014',
+      'total_2014_2015',
+      'total_2006',
+      'total_2007',
+      'total_2008',
+      'total_2009',
+      'total_2010',
+      'total_2011',
+      'total_2012',
+      'total_2013',
+      'total_2014',
+      'change_2017_2018',
+      'change_2018_2019',
+      'change_2019_2020',
+      'change_2020_2021',
+      'change_2021_2022',
+    ];
+    foreach ($indexesToDrop as $oldIndex) {
+      // I see the first format for some keys on live, the second on dev.
+      $indexesToDrop[] = 'index_' . $oldIndex;
+      $indexesToDrop[] = 'INDEX_' . $oldIndex;
+    }
+    $sql = [];
+    $existing = CRM_Core_DAO::executeQuery("SHOW INDEX FROM wmf_donor");
+    $toDrop = [];
+    while ($existing->fetch()) {
+      if (in_array($existing->Key_name, $indexesToDrop, TRUE)) {
+        $toDrop[] = $existing->Key_name;
+      }
+    }
+
+    foreach ($toDrop as $index) {
+      if (CRM_Core_BAO_SchemaHandler::checkIfIndexExists('wmf_donor', $index)){
+        $sql[] = ' DROP INDEX ' . $index;
+      }
+    }
+    CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor' . implode(' , ', $sql));
+
+    return TRUE;
+  }
+
+  /**
    * Example: Run a slow upgrade process by breaking it up into smaller chunk.
    *
    * @return TRUE on success
