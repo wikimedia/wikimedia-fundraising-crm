@@ -27,8 +27,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7000();
   // Create contribution statuses.
   wmf_civicrm_update_7006();
-  // add engage role - latter could be in buildkit.
-  wmf_civicrm_update_7028();
+
   // Reset navigation on install.
   wmf_civicrm_update_7063();
 
@@ -87,18 +86,6 @@ function wmf_civicrm_update_7006() {
     'Settled',
     'Paid',
   ));
-}
-
-/**
- * Note that we create the "Engage Direct Mail" role programatically, but it
- * won't have usable permissions.
- */
-function wmf_civicrm_update_7028() {
-  if (FALSE === user_role_load_by_name('Engage Direct Mail')) {
-    $role = new stdClass();
-    $role->name = 'Engage Direct Mail';
-    user_role_save($role);
-  }
 }
 
 /**
