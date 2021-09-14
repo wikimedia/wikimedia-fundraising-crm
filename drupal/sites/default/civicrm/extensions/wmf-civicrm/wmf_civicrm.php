@@ -266,6 +266,12 @@ function wmf_civicrm_civicrm_alterAPIPermissions($entity, $action, &$params, &$p
   $permissions['civiproxy'] = [
     'getpreferences' => ['view all contacts'],
   ];
+  // These can be removed if these are merged https://github.com/civicrm/civicrm-core/pulls?q=is%3Apr+author%3Aeileenmcnaughton+2752
+  // Bug T279686
+  $permissions['financial_type']['get'] = $permissions['contribution']['get'];
+  $permissions['financial_trxn']['get'] = $permissions['contribution']['get'];
+  $permissions['entity_financial_account']['get'] = $permissions['contribution']['get'];
+  $permissions['financial_account']['get'] = $permissions['contribution']['get'];
 }
 
 /**
