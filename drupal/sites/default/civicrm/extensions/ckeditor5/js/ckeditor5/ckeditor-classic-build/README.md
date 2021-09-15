@@ -1,4 +1,4 @@
-CKEditor 5 classic editor build v17.0.0
+CKEditor 5 classic editor build v27.1.0
 =======================================
 
 In order to start using CKEditor 5 Builds, configure or customize them, please visit http://docs.ckeditor.com/ckeditor5/latest/builds/index.html
