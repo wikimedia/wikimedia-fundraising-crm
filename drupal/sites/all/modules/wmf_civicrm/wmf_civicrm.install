@@ -48,8 +48,7 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7615();
   // Add activity.location index, not in core.
   wmf_civicrm_update_7890();
-  // Message templates.
-  wmf_civicrm_update_8065();
+
   wmf_civicrm_update_8115();
 }
 
@@ -618,46 +617,6 @@ function wmf_civicrm_update_8035() {
 }
 
 /**
- * Add message Template for recurring failures
- *
- * @throws \API_Exception
- *
- * Bug: T230064
- */
-function wmf_civicrm_update_8065() {
-  civicrm_initialize();
-  $subject = file_get_contents(__DIR__ . '/templates/recurring_failed_message.subject.txt');
-  $msgText = file_get_contents(__DIR__ . '/templates/recurring_failed_message.text.txt');
-  $htmlText = file_get_contents(__DIR__ . '/templates/recurring_failed_message.html.txt');
-
-  \Civi\Api4\MessageTemplate::create()->setCheckPermissions(FALSE)->setValues([
-    'msg_text' => $msgText,
-    'msg_html' => $htmlText,
-    'msg_subject' => $subject,
-    'workflow_name' => 'recurring_failed_message',
-  ])->execute();
-
-}
-
-/**
- * Edit message Template for recurring failures
- * Adds link to acoustic unsubscribe page
- *
- * @throws \API_Exception
- *
- * Bug: T256162
- */
-function wmf_civicrm_update_8068() {
-  civicrm_initialize();
-  $htmlText = file_get_contents(__DIR__ . '/templates/recurring_failed_message.html.txt');
-
-  \Civi\Api4\MessageTemplate::update()->setCheckPermissions(FALSE)->addWhere('workflow_name', '=', 'recurring_failed_message')->setValues([
-    'msg_html' => $htmlText,
-  ])->execute();
-
-}
-
-/**
  * Add index to civicrm_country.iso_code.
  *
  * To hone the silverpop queries we really want to join on this so we need an index.
@@ -668,47 +627,6 @@ function wmf_civicrm_update_8070() {
   civicrm_initialize();
   $tables = ['civicrm_country' => ['iso_code']];
   CRM_Core_BAO_SchemaHandler::createIndexes($tables);
-}
-
-/*
- * Edit message Template for recurring failures
- * Updates Ways to Give link with utm medium
- *
- * @throws \API_Exception
- *
- * Bug: T256184
- */
-function wmf_civicrm_update_8080() {
-  civicrm_initialize();
-  $htmlText = file_get_contents(__DIR__ . '/templates/recurring_failed_message.html.txt');
-
-  \Civi\Api4\MessageTemplate::update()->setCheckPermissions(FALSE)->addWhere('workflow_name', '=', 'recurring_failed_message')->setValues([
-    'msg_html' => $htmlText,
-  ])->execute();
-}
-
-/**
- * Add new translated message Templates for recurring failures
- * Japanese, Swedish, and French to start
- *
- * @throws \API_Exception
- *
- * Bug: T256184
- */
-function wmf_civicrm_update_8081() {
-  civicrm_initialize();
-  // When I inserted Japanese on staging it failed as the charset was latin....
-  CRM_Core_DAO::executeQuery('ALTER TABLE civicrm_strings CONVERT TO CHARACTER SET utf8');
-  // Also utf8mb4_unicode_ci supports more characters... We have to be careful as you can't join
-  // utf8mb4_unicode_ci columns onto utf8_unicode_ci fields without an index bypass
-  // but the strings column can reasonably be expected to never be used in a join.
-  CRM_Core_DAO::executeQuery("
-    ALTER TABLE civicrm_strings MODIFY `string` longtext NOT NULL COMMENT 'Translated string', COLLATE utf8mb4_unicode_ci;
-  ");
-  $languages = ['ja', 'fr', 'sv'];
-  foreach ($languages as $language) {
-    wmf_civicrm_insert_failure_message_translation($language);
-  }
 }
 
 /*
