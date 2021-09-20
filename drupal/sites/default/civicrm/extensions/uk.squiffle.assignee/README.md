@@ -27,6 +27,8 @@ This option allows the current user to be set as the default assignee.  The defa
 
 These settings only affect activities created through the GUI.  Other ways of creating activities (e.g. API, activity imports etc) are not changed.
 
+When this extension is enabled, the button to swap assignees and target contacts is removed (requires CiviCRM 5.41+).  This avoids situations where assignees are added complying with the limitations but are then swapped with the target contacts.
+
 ## Limitations
 
 One group is used to limit all assigness for all activity types.  PR's welcome to allow different groups per activity type.

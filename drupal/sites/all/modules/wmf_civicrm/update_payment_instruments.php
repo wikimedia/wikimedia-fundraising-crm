@@ -43,6 +43,7 @@ function wmf_install_get_payment_instruments() {
     // ActBlue
     'Alipay',
     'Amazon',
+    'Apple Pay',
     'Bitcoin',
     'Bank Transfer',
     'Boleto',
