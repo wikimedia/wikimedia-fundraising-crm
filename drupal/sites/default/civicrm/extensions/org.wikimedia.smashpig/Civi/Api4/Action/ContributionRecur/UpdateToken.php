@@ -23,6 +23,8 @@ use SmashPig\PaymentProviders\PaymentProviderFactory;
  * @method int getContributionRecurId() Get recurring ID.
  * @method $this setProcessorName(string $processorName) Set processor name.
  * @method string getProcessorName() Get processor name.
+ * @method $this setRecurInfo(array $recurInfo) Directly set recurring data.
+ * @method string getRecurInfo() Get relevant recurring data.
  */
 class UpdateToken extends AbstractAction {
 
@@ -36,33 +38,42 @@ class UpdateToken extends AbstractAction {
    */
   protected $processorName;
 
+  /**
+   * For batch use, you can directly set the array we would otherwise look up
+   * by the recurring contribution ID
+   * @var array|NULL
+   */
+  protected $recurInfo = NULL;
+
   public function _run(Result $result) {
-    $recurInfo = ContributionRecur::get(FALSE)
-      ->addWhere('id', '=', $this->contributionRecurId)
-      ->setSelect([
-        'invoice_id',
-        'is_test',
-        'payment_token_id',
-        'payment_token_id.token',
-        'payment_processor_id.name'
-      ])
-      ->execute()
-      ->first();
+    if ($this->recurInfo === NULL) {
+      $this->recurInfo = ContributionRecur::get(FALSE)
+        ->addWhere('id', '=', $this->contributionRecurId)
+        ->setSelect([
+          'invoice_id',
+          'is_test',
+          'payment_token_id',
+          'payment_token_id.token',
+          'payment_processor_id.name'
+        ])
+        ->execute()
+        ->first();
+    }
     // Sanity checks
-    if ($recurInfo['payment_processor_id.name'] !== $this->processorName) {
+    if ($this->recurInfo['payment_processor_id.name'] !== $this->processorName) {
       throw new \RuntimeException(
         "ContributionRecur with ID {$this->contributionRecurId} has " .
-        "processor name {$recurInfo['payment_processor_id.name']} instead of " .
+        "processor name {$this->recurInfo['payment_processor_id.name']} instead of " .
         "expected {$this->processorName}."
       );
     }
-    if ($recurInfo['invoice_id'] !== NULL) {
+    if ($this->recurInfo['invoice_id'] !== NULL) {
       throw new \RuntimeException(
         "ContributionRecur with ID {$this->contributionRecurId} has " .
-        "invoice_id {$recurInfo['invoice_id']} instead of expected null."
+        "invoice_id {$this->recurInfo['invoice_id']} instead of expected null."
       );
     }
-    $processorContactId = $recurInfo['payment_token_id.token'];
+    $processorContactId = $this->recurInfo['payment_token_id.token'];
     if (!$processorContactId) {
       throw new \RuntimeException(
         "ContributionRecur with ID {$this->contributionRecurId} has " .
@@ -76,7 +87,7 @@ class UpdateToken extends AbstractAction {
     // recurring contribution, since we don't seem to be actually populating
     // the contribution_recur.payment_instrument_id column
     $previousContribution = CRM_Core_Payment_SmashPigRecurringProcessor::getPreviousContribution(
-      $recurInfo
+      $this->recurInfo
     );
     $paymentMethod = CRM_Core_Payment_SmashPig::getPaymentMethod(
       $previousContribution
@@ -96,13 +107,13 @@ class UpdateToken extends AbstractAction {
       ->setValues(['invoice_id' => $processorContactId])
       ->execute();
     PaymentToken::update(FALSE)
-      ->addWhere('id', '=', $recurInfo['payment_token_id'])
+      ->addWhere('id', '=', $this->recurInfo['payment_token_id'])
       ->setValues(['token' => $savedDetails->getToken()])
       ->execute();
     $result[] = [
       'contribution_recur_id' => $this->contributionRecurId,
       'invoice_id' => $processorContactId,
-      'payment_token_id' => $recurInfo['payment_token_id'],
+      'payment_token_id' => $this->recurInfo['payment_token_id'],
       'token' => $savedDetails->getToken()
     ];
   }
