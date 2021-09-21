@@ -64,7 +64,7 @@ class Consume extends AbstractAction {
         ->setMessage($message)
         ->execute();
       \Civi::Log('wmf')->info(
-        "Pending transaction {$message['contribution_tracking_id']} was " .
+        "Pending transaction {$message['order_id']} was " .
         'resolved and the result is ' . json_encode($resolveResult->first())
       );
       $pendingDb->deleteMessage($message);
