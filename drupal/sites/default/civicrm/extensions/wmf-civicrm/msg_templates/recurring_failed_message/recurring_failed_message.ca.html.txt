@@ -1,7 +1,7 @@
 <p>Hola {contact.first_name},</p>
 
 <p>Aquest és un correu electrònic generat automàticament per l’equip de Relacions amb els Donants de Wikimedia Foundation.</p>
-<p>El passat mes de {now:MMMM} no vam poder processar la teva donació mensual de {contributionRecur.amount__format_money} a la Viquipèdia.</p>
+<p>El passat {now:MMMM} no vam poder processar la teva donació mensual de {contributionRecur.amount__format_money} a la Viquipèdia.</p>
 
 <p>Gràcies per contribuir tan generosament a mantenir el coneixement lliure en línia. El teu suport ajuda a la Viquipèdia a seguir sent independent, vibrant  i a no dependre d’anuncis.</p>
 
