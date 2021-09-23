@@ -6,7 +6,7 @@ El passat mes de {now:MMMM} no vam poder processar la teva donació mensual de {
 
 Gràcies per contribuir tan generosament a mantenir el coneixement lliure en línia. El teu suport ajuda a la Viquipèdia a seguir sent independent, vibrant  i a no dependre d’anuncis.
 
-Si vols renovar el teu suport mensual a la Viquipèdia, dedica un minut per començar una nova donació periòdica aquí - {wmf_url.new_recur_brief}.
+Si vols renovar el teu suport mensual a la Viquipèdia, dedica un minut per començar una nova donació periòdica aquí - {wmf_url.new_recur_brief}#Donación_mensual.
 
 Si ja has renovat la teva donació periòdica, o has optat per una donació única, ignora aquest missatge.
 
