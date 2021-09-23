@@ -53,6 +53,7 @@
     <ext>civi-data-translate</ext>
     <ext>rpow</ext>
     <ext>monolog</ext>
+    <ext>net.ourpowerbase.exportpermission</ext>
   </requires>
   <civix>
     <namespace>CRM/Wmf</namespace>

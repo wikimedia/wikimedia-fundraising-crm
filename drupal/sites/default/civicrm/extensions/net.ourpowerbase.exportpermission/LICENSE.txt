@@ -1,5 +1,5 @@
 Package: net.ourpowerbase.exportpermission
-Copyright (C) 2017, Jamie McClelland <jm@mayfirst.org>
+Copyright (C) 2021, Jamie McClelland <jm@mayfirst.org>
 Licensed under the GNU Affero Public License 3.0 (below).
 
 -------------------------------------------------------------------------------

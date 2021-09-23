@@ -1,29 +1,15 @@
 <?php
 
 define('EXPORT_PERMISSION_NAME', 'access export menu');
+define('PDF_PERMISSION_NAME', 'access pdf menu');
+define('PRINT_PERMISSION_NAME', 'access print menu');
+define('LABEL_PERMISSION_NAME', 'access mailing labels menu');
 
 require_once 'exportpermission.civix.php';
-
-function exportpermission_civicrm_permission(&$permissions) {
-  $prefix = ts('CiviCRM Export Permissions') . ': ';
-  $permissions[EXPORT_PERMISSION_NAME] = array(
-    $prefix . ts('access export menu'),
-    ts('Access export drop down menu item from actions menu after search'),
-  );
-}
-
-function exportpermission_civicrm_searchTasks($objectName, &$tasks) {
-  if (CRM_Core_Permission::check(EXPORT_PERMISSION_NAME)) {
-    // If they have the proper permission, return without doing anything.
-    return;
-  }
-  unset($tasks[CRM_Core_Task::TASK_EXPORT]);
-}
+use CRM_Exportpermission_ExtensionUtil as E;
 
 /**
  * Implements hook_civicrm_config().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_config
  */
 function exportpermission_civicrm_config(&$config) {
   _exportpermission_civix_civicrm_config($config);
@@ -31,8 +17,6 @@ function exportpermission_civicrm_config(&$config) {
 
 /**
  * Implements hook_civicrm_xmlMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_xmlMenu
  */
 function exportpermission_civicrm_xmlMenu(&$files) {
   _exportpermission_civix_civicrm_xmlMenu($files);
@@ -40,8 +24,6 @@ function exportpermission_civicrm_xmlMenu(&$files) {
 
 /**
  * Implements hook_civicrm_install().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
  */
 function exportpermission_civicrm_install() {
   _exportpermission_civix_civicrm_install();
@@ -49,8 +31,6 @@ function exportpermission_civicrm_install() {
 
 /**
  * Implements hook_civicrm_postInstall().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postInstall
  */
 function exportpermission_civicrm_postInstall() {
   _exportpermission_civix_civicrm_postInstall();
@@ -58,8 +38,6 @@ function exportpermission_civicrm_postInstall() {
 
 /**
  * Implements hook_civicrm_uninstall().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_uninstall
  */
 function exportpermission_civicrm_uninstall() {
   _exportpermission_civix_civicrm_uninstall();
@@ -67,8 +45,6 @@ function exportpermission_civicrm_uninstall() {
 
 /**
  * Implements hook_civicrm_enable().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_enable
  */
 function exportpermission_civicrm_enable() {
   _exportpermission_civix_civicrm_enable();
@@ -76,8 +52,6 @@ function exportpermission_civicrm_enable() {
 
 /**
  * Implements hook_civicrm_disable().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_disable
  */
 function exportpermission_civicrm_disable() {
   _exportpermission_civix_civicrm_disable();
@@ -85,8 +59,6 @@ function exportpermission_civicrm_disable() {
 
 /**
  * Implements hook_civicrm_upgrade().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_upgrade
  */
 function exportpermission_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
   return _exportpermission_civix_civicrm_upgrade($op, $queue);
@@ -97,35 +69,15 @@ function exportpermission_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  *
  * Generate a list of entities to create/deactivate/delete when this module
  * is installed, disabled, uninstalled.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
  */
 function exportpermission_civicrm_managed(&$entities) {
   _exportpermission_civix_civicrm_managed($entities);
 }
 
 /**
- * Implements hook_civicrm_caseTypes().
- *
- * Generate a list of case-types.
- *
- * Note: This hook only runs in CiviCRM 4.4+.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
- */
-function exportpermission_civicrm_caseTypes(&$caseTypes) {
-  _exportpermission_civix_civicrm_caseTypes($caseTypes);
-}
-
-/**
  * Implements hook_civicrm_angularModules().
  *
  * Generate a list of Angular modules.
- *
- * Note: This hook only runs in CiviCRM 4.5+. It may
- * use features only available in v4.6+.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_angularModules
  */
 function exportpermission_civicrm_angularModules(&$angularModules) {
   _exportpermission_civix_civicrm_angularModules($angularModules);
@@ -133,37 +85,107 @@ function exportpermission_civicrm_angularModules(&$angularModules) {
 
 /**
  * Implements hook_civicrm_alterSettingsFolders().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterSettingsFolders
  */
 function exportpermission_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
   _exportpermission_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
-// --- Functions below this ship commented out. Uncomment as required. ---
+/**
+ * Implements hook_civicrm_permission().
+ *
+ * @see CRM_Utils_Hook::permission()
+ * @param array $permissions
+ */
+function exportpermission_civicrm_permission(&$permissions) {
+  $permissions[EXPORT_PERMISSION_NAME] = [
+    E::ts('CiviCRM Export Permissions') . ': ' . E::ts('access export menu'),
+    E::ts('Access "Export as CSV" drop down menu item from actions menu on after search/report'),
+  ];
+  $permissions[PRINT_PERMISSION_NAME] = [
+    E::ts('CiviCRM Export Permissions') . ': ' . E::ts('access print menu'),
+    E::ts('Access "Print" drop down menu item from actions menu on search/report'),
+  ];
+  $permissions[PDF_PERMISSION_NAME] = [
+    E::ts('CiviCRM Export Permissions') . ': ' . E::ts('access print pdf menu'),
+    E::ts('Access "Print/Merge document (PDF Letter)" drop down menu item from actions menu on search/report'),
+  ];
+  $permissions[LABEL_PERMISSION_NAME] = [
+    E::ts('CiviCRM Export Permissions') . ': ' . E::ts('access mailing labels menu'),
+    E::ts('Access "Print Mailing Labels" drop down menu item from actions menu on search/report'),
+  ];
+}
 
 /**
- * Implements hook_civicrm_preProcess().
+ * Implements hook_civicrm_searchTasks();
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
- *
-function exportpermission_civicrm_preProcess($formName, &$form) {
-
-} // */
+ * @param string $objectName
+ * @param array $tasks
+ */
+function exportpermission_civicrm_searchTasks($objectName, &$tasks) {
+  if (!CRM_Core_Permission::check(EXPORT_PERMISSION_NAME)) {
+    unset($tasks[CRM_Core_Task::TASK_EXPORT]);
+  }
+  if (!CRM_Core_Permission::check(PDF_PERMISSION_NAME)) {
+    unset($tasks[CRM_Core_Task::PDF_LETTER]);
+  }
+  if (!CRM_Core_Permission::check(PRINT_PERMISSION_NAME)) {
+    unset($tasks[CRM_Core_Task::TASK_PRINT]);
+  }
+  if (!CRM_Core_Permission::check(LABEL_PERMISSION_NAME)) {
+    unset($tasks[CRM_Core_Task::LABEL_CONTACTS]);
+  }
+}
 
 /**
- * Implements hook_civicrm_navigationMenu().
+ * Implementation of hook_civicrm_alterReportVar()
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
+ * @param string $varType
+ * @param array $var
+ * @param CRM_Report_Form $reportForm
  *
-function exportpermission_civicrm_navigationMenu(&$menu) {
-  _exportpermission_civix_insert_navigation_menu($menu, NULL, array(
-    'label' => ts('The Page', array('domain' => 'net.ourpowerbase.exportpermission')),
-    'name' => 'the_page',
-    'url' => 'civicrm/the-page',
-    'permission' => 'access CiviReport,access CiviContribute',
-    'operator' => 'OR',
-    'separator' => 0,
-  ));
-  _exportpermission_civix_navigationMenu($menu);
-} // */
+ */
+function exportpermission_civicrm_alterReportVar($varType, &$var, $reportForm) {
+  switch ($varType) {
+    case 'actions':
+      if (!CRM_Core_Permission::check(EXPORT_PERMISSION_NAME)) {
+        unset($var['report_instance.csv']);
+      }
+      if (!CRM_Core_Permission::check(PDF_PERMISSION_NAME)) {
+        unset($var['report_instance.pdf']);
+      }
+      if (!CRM_Core_Permission::check(PRINT_PERMISSION_NAME)) {
+        unset($var['report_instance.print']);
+      }
+      break;
+  }
+}
+
+/**
+ * Implements hook_civicrm_buildForm().
+ *
+ * @param string $formName
+ * @param CRM_Core_Form $form
+ */
+function exportpermission_civicrm_buildForm($formName, &$form) {
+  $bounce = FALSE;
+  // Check for permissions and return permission denied if user tries to access
+  //   forms directly and don't have permission.
+  // Note: This relies on matching form names and may not include all forms.
+  if (strstr($formName, 'Export_Form') && !CRM_Core_Permission::check(EXPORT_PERMISSION_NAME)) {
+    $bounce = TRUE;
+  }
+  elseif (strstr($formName, 'Task_Print') && !CRM_Core_Permission::check(PRINT_PERMISSION_NAME)) {
+    $bounce = TRUE;
+  }
+  elseif (strstr($formName, 'Task_PDF') && !CRM_Core_Permission::check(PDF_PERMISSION_NAME)) {
+    $bounce = TRUE;
+  }
+  elseif (strstr($formName, 'Task_Label') && !CRM_Core_Permission::check(LABEL_PERMISSION_NAME)) {
+    $bounce = TRUE;
+  }
+
+  if ($bounce) {
+    CRM_Core_Error::statusBounce(E::ts('You do not have permission to access this page.'));
+  }
+}
+

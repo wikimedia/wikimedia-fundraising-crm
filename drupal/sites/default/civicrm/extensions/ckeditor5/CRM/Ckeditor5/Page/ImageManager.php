@@ -10,7 +10,7 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
    * @throws \Exception
    */
   public function run() {
-    if (!CRM_Core_Permission::check('access uploaded Files')) {
+    if (!CRM_Core_Permission::check('access uploaded files')) {
       throw new CRM_Core_Exception('Permission denied');
     }
 
@@ -30,7 +30,7 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
     // define('ELFINDER_JPEGTRAN_PATH', '/PATH/TO/jpegtran');
     // define('ELFINDER_FFMPEG_PATH',   '/PATH/TO/ffmpeg');
 
-    define('ELFINDER_CONNECTOR_URL', CRM_Utils_System::url('civicrm/image/access'));
+    define('ELFINDER_CONNECTOR_URL', CRM_Utils_System::url('civicrm/image/access', NULL, TRUE, NULL, FALSE, FALSE, TRUE));
     // see elFinder::getConnectorUrl()
 
     // define('ELFINDER_DEBUG_ERRORLEVEL', -1); // Error reporting level of debug mode
@@ -149,7 +149,7 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
         : NULL;                                 // else elFinder decide it itself
     }
 
-    $requiredDirectories = ['persist/editorimages', 'persist/editorimages/trash', 'persist/editorimages/trash.tmp'];
+    $requiredDirectories = ['persist/contribute/images/.trash', 'persist/contribute/images/.trash/.tmb'];
     foreach ($requiredDirectories as $directory) {
       $directory = Civi::paths()->getPath('[civicrm.files]/' . $directory);
       if (!is_dir($directory) && !mkdir($directory)) {
@@ -166,9 +166,9 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
         [
           'driver' => 'LocalFileSystem',           // driver for accessing file system (REQUIRED)
           // path to files (REQUIRED)
-          'path' => Civi::paths()->getPath('[civicrm.files]/persist'),
+          'path' => Civi::paths()->getPath('[civicrm.files]/persist/contribute/images'),
           // URL to files (REQUIRED)
-          'URL' => Civi::paths()->getUrl('[civicrm.files]/persist'),
+          'URL' => Civi::paths()->getUrl('[civicrm.files]/persist/contribute/images'),
           'trashHash' => 't1_Lw',                     // elFinder's hash of trash folder
           'winHashFix' => DIRECTORY_SEPARATOR !== '/', // to make hash same to Linux one on windows too
           'uploadDeny' => ['all'],                // All Mimetypes not allowed to upload
@@ -180,8 +180,8 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
         [
           'id' => '1',
           'driver' => 'Trash',
-          'path' => Civi::paths()->getPath('[civicrm.files]/persist/editorimages/trash/') .'/.trash/',
-          'tmbURL' => Civi::paths()->getUrl('[civicrm.files]/persist/editorimages/trash/.tmb/'),
+          'path' => Civi::paths()->getPath('[civicrm.files]/persist/contribute/images/.trash/'),
+          'tmbURL' => Civi::paths()->getUrl('[civicrm.files]/persist/contribute/images/.trash/.tmb/'),
           'winHashFix' => DIRECTORY_SEPARATOR !== '/', // to make hash same to Linux one on windows too
           'uploadDeny' => ['all'],                // Recomend the same settings as the original volume that uses the trash
           'uploadAllow' => ['image/x-ms-bmp', 'image/gif', 'image/jpeg', 'image/png', 'image/x-icon', 'text/plain'], // Same as above

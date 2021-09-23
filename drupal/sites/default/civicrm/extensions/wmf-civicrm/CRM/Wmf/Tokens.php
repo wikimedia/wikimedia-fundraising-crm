@@ -35,7 +35,7 @@ class CRM_Wmf_Tokens {
       case 'new_recur' :
         return 'https://donate.wikimedia.org/wiki/Ways_to_Give/'
           . substr($language, 0, 2)
-          . '?rdfrom=%2F%2Ffoundation.wikimedia.org%2Fw%2Findex.php%3Ftitle%3DWays_to_Give%2Fen%26redirect%3Dno#Monthly_gift&utm_medium=civi-mail&utm_campaign=FailedRecur&utm_source=FY2021_FailedRecur';
+          . '?rdfrom=%2F%2Ffoundation.wikimedia.org%2Fw%2Findex.php%3Ftitle%3DWays_to_Give%2Fen%26redirect%3Dno&utm_medium=civi-mail&utm_campaign=FailedRecur&utm_source=FY2021_FailedRecur';
 
       case 'new_recur_brief' :
         return 'https://donate.wikimedia.org/wiki/Ways_to_Give/'

@@ -14,13 +14,13 @@
     <url desc="Support">https://lab.civicrm.org/extensions/ckeditor5</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2020-02-27</releaseDate>
-  <version>1.0</version>
+  <releaseDate>2021-09-15</releaseDate>
+  <version>1.5</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.0</ver>
+    <ver>5.42</ver>
   </compatibility>
-  <comments>This presents CKEditor 5 as an option for the wysiwyg editor. The current implementation embeds images into rich text, which is good for sites behind firewalls</comments>
+  <comments>This presents CKEditor 5 as an option for the wysiwyg editor.</comments>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
   </classloader>
