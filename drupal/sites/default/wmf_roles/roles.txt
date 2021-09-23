@@ -1,0 +1,9 @@
+administrator
+authenticated user
+CiviCRM Admin
+fr-tech
+Engage Direct Mail
+Donor Services
+Donor Services Management
+Engage Management
+civiproxy
