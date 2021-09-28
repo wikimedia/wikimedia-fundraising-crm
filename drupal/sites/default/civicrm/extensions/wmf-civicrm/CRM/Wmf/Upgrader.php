@@ -353,6 +353,31 @@ SET end_date = NULL WHERE id IN
   }
 
   /**
+   * Fill new wmf_donor fields.
+   *
+   * Bug: T288721
+   *
+   * @return TRUE on success
+   */
+  public function upgrade_4209(): bool {
+    CRM_Core_DAO::executeQuery("UPDATE wmf_donor
+SET
+    all_funds_total_2018_2019 = endowment_total_2018_2019 + total_2018_2019,
+    all_funds_total_2019_2020 = endowment_total_2019_2020 + total_2019_2020,
+    all_funds_total_2020_2021 = endowment_total_2020_2021 + total_2020_2021,
+    all_funds_total_2021_2022 = endowment_total_2021_2022 + total_2021_2022,
+    endowment_change_2020_2021 = endowment_total_2021 - endowment_total_2020,
+    all_funds_change_2018_2019 = endowment_total_2019 + total_2019 - endowment_total_2018 - total_2018,
+    all_funds_change_2019_2020 = endowment_total_2020 + total_2020 - endowment_total_2019 - total_2019,
+    all_funds_change_2020_2021 = endowment_total_2021 + total_2021 - endowment_total_2020 - total_2020,
+    all_funds_largest_donation = endowment_largest_donation + wmf_donor.largest_donation,
+    all_funds_last_donation_date = IF(endowment_last_donation_date IS NOT NULL AND endowment_last_donation_date > last_donation_date, endowment_last_donation_date, last_donation_date),
+    all_funds_first_donation_date = IF(endowment_first_donation_date IS NOT NULL AND endowment_first_donation_date < first_donation_date, endowment_first_donation_date, first_donation_date),
+    all_funds_number_donations = number_donations + wmf_donor.endowment_number_donations
+");
+    return TRUE;
+  }
+  /**
    * Example: Run a slow upgrade process by breaking it up into smaller chunk.
    *
    * @return TRUE on success
