@@ -313,30 +313,43 @@ SET end_date = NULL WHERE id IN
       'change_2018_2019',
       'change_2019_2020',
       'change_2020_2021',
-      'change_2021_2022',
+      'change_2021_2022'
     ];
-    foreach ($indexesToDrop as $oldIndex) {
-      // I see the first format for some keys on live, the second on dev.
-      $indexesToDrop[] = 'index_' . $oldIndex;
-      $indexesToDrop[] = 'INDEX_' . $oldIndex;
-    }
-    $sql = [];
-    $existing = CRM_Core_DAO::executeQuery("SHOW INDEX FROM wmf_donor");
-    $toDrop = [];
-    while ($existing->fetch()) {
-      if (in_array($existing->Key_name, $indexesToDrop, TRUE)) {
-        $toDrop[] = $existing->Key_name;
-      }
-    }
 
-    foreach ($toDrop as $index) {
-      if (CRM_Core_BAO_SchemaHandler::checkIfIndexExists('wmf_donor', $index)){
-        $sql[] = ' DROP INDEX ' . $index;
-      }
-    }
-    CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor' . implode(' , ', $sql));
+    $this->dropIndexes($indexesToDrop, 'wmf_donor');
 
     return TRUE;
+  }
+
+  /**
+   * Drop indexes on wmf_donor fields identified as not required to be searchable.
+   *
+   * Bug: T288721
+   *
+   * @return TRUE on success
+   */
+  public function upgrade_4208(): bool {
+    $this->dropIndexes(['total_2015', 'total_2014_2015'], 'wmf_donor');
+    return TRUE;
+  }
+
+  /**
+   * Drop indexes.
+   *
+   * @param array $oldIndexes
+   * @param string $table
+   */
+  protected function dropIndexes(array $oldIndexes, string $table): void {
+    $sql = 'ALTER TABLE ' . $table;
+    foreach ($oldIndexes as $index) {
+      if (CRM_Core_BAO_SchemaHandler::checkIfIndexExists($table, $index)) {
+        $sql .= ' DROP INDEX ' . $index;
+      }
+      if (CRM_Core_BAO_SchemaHandler::checkIfIndexExists($table, 'index_' . $index)) {
+        $sql .= ' DROP INDEX index_' . $index;
+      }
+    }
+    CRM_Core_DAO::executeQuery($sql);
   }
 
   /**

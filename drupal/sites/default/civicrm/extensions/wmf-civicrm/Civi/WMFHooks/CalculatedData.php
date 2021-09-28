@@ -9,7 +9,7 @@ use CRM_Core_PseudoConstant;
 class CalculatedData {
 
   protected const WMF_MIN_ROLLUP_YEAR = 2006;
-  protected const WMF_MAX_ROLLUP_YEAR = 2021;
+  protected const WMF_MAX_ROLLUP_YEAR = 2023;
 
   /**
    * Is this class is being called in trigger context.
@@ -237,6 +237,19 @@ class CalculatedData {
         'date_format' => 'M d, yy',
         'time_format' => 2,
       ],
+      'all_funds_last_donation_date' => [
+        'name' => 'all_funds_last_donation_date',
+        'column_name' => 'all_funds_last_donation_date',
+        'label' => ts('All Funds Last donation date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+      ],
       'first_donation_date' => [
         'name' => 'first_donation_date',
         'column_name' => 'first_donation_date',
@@ -254,6 +267,19 @@ class CalculatedData {
         'name' => 'endowment_first_donation_date',
         'column_name' => 'endowment_first_donation_date',
         'label' => ts('Endowment First donation date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+      ],
+      'all_funds_first_donation_date' => [
+        'name' => 'all_funds_first_donation_date',
+        'column_name' => 'all_funds_first_donation_date',
+        'label' => ts('All Funds First donation date'),
         'data_type' => 'Date',
         'html_type' => 'Select Date',
         'is_active' => 1,
@@ -371,6 +397,18 @@ class CalculatedData {
         'is_view' => 1,
         'default_value' => 0,
       ],
+      'all_funds_number_donations' => [
+        'name' => 'all_funds_number_donations',
+        'column_name' => 'all_funds_number_donations',
+        'label' => ts('All Funds Number of Donations'),
+        'data_type' => 'Int',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'default_value' => 0,
+      ],
       'largest_donation' => [
         'name' => 'largest_donation',
         'column_name' => 'largest_donation',
@@ -387,6 +425,18 @@ class CalculatedData {
         'name' => 'endowment_largest_donation',
         'column_name' => 'endowment_largest_donation',
         'label' => ts('Endowment Largest Donation'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'default_value' => 0,
+      ],
+      'all_funds_largest_donation' => [
+        'name' => 'all_funds_largest_donation',
+        'column_name' => 'all_funds_largest_donation',
+        'label' => ts('All Funds Largest Donation'),
         'data_type' => 'Money',
         'html_type' => 'Text',
         'is_active' => 1,
@@ -422,7 +472,7 @@ class CalculatedData {
         'default_value' => 0,
         'is_active' => 1,
         'is_required' => 0,
-        'is_searchable' => 1,
+        'is_searchable' => ($year > 2015),
         'is_view' => 1,
         'weight' => $weight,
         'is_search_range' => 1,
@@ -436,7 +486,7 @@ class CalculatedData {
         'default_value' => 0,
         'is_active' => 1,
         'is_required' => 0,
-        'is_searchable' => 1,
+        'is_searchable' => ($year > 2015),
         'is_view' => 1,
         'weight' => $weight,
         'is_search_range' => 1,
@@ -451,6 +501,10 @@ class CalculatedData {
             $fields["total_{$year}_{$nextYear}"],
             ['name' => "endowment_total_{$year}_{$nextYear}", 'column_name' => "endowment_total_{$year}_{$nextYear}", 'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total")]
           );
+          $fields["all_funds_total_{$year}_{$nextYear}"] = array_merge(
+            $fields["total_{$year}_{$nextYear}"],
+            ['name' => "all_funds_total_{$year}_{$nextYear}", 'column_name' => "all_funds_total_{$year}_{$nextYear}", 'label' => 'All Funds ' . ts("FY {$year}-{$nextYear} total")]
+          );
         }
         $fields["change_{$year}_{$nextYear}"] = [
           'name' => "change_{$year}_{$nextYear}",
@@ -461,11 +515,43 @@ class CalculatedData {
           'default_value' => 0,
           'is_active' => 1,
           'is_required' => 0,
-          'is_searchable' => 1,
+          'is_searchable' => 0,
           'is_view' => 1,
           'weight' => $weight,
           'is_search_range' => 1,
         ];
+        if ($year > 2019) {
+          $fields["endowment_change_{$year}_{$nextYear}"] = [
+            'name' => "endowment_change_{$year}_{$nextYear}",
+            'column_name' => "endowment_change_{$year}_{$nextYear}",
+            'label' => ts("Endowment Change {$year}-{$nextYear} total"),
+            'data_type' => 'Float',
+            'html_type' => 'Text',
+            'default_value' => 0,
+            'is_active' => 1,
+            'is_required' => 0,
+            'is_searchable' => 0,
+            'is_view' => 1,
+            'weight' => $weight,
+            'is_search_range' => 1,
+          ];
+        }
+        if ($year > 2017) {
+          $fields["all_funds_change_{$year}_{$nextYear}"] = [
+            'name' => "all_funds_change_{$year}_{$nextYear}",
+            'column_name' => "all_funds_change_{$year}_{$nextYear}",
+            'label' => ts("All Funds Change {$year}-{$nextYear} total"),
+            'data_type' => 'Float',
+            'html_type' => 'Text',
+            'default_value' => 0,
+            'is_active' => 1,
+            'is_required' => 0,
+            'is_searchable' => 1,
+            'is_view' => 1,
+            'weight' => $weight,
+            'is_search_range' => 1,
+          ];
+        }
       }
     }
 
