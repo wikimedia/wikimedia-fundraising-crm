@@ -25,11 +25,14 @@ export PHP_OPTIONS
 
 #FIXME: --web-root="$WORKSPACE/src/crm"
 
-CIVICRM_BUILDKIT="${WORKSPACE}/src/wikimedia/fundraising/civicrm-buildkit"
-if [ -d /src/wikimedia/fundraising/crm/civicrm-buildkit ]; then
+if [!-d /src/wikimedia/fundraising/crm/civicrm-buildkit ]; then
   # For CI Docker container
-  CIVICRM_BUILDKIT=/src/wikimedia/fundraising/crm/civicrm-buildkit
+  cd /src/wikimedia/fundraising/crm
+  git clone https://github.com/civicrm/civicrm-buildkit.git
 fi
+
+  # For CI Docker container
+CIVICRM_BUILDKIT=/src/wikimedia/fundraising/crm/civicrm-buildkit
 
 "$CIVICRM_BUILDKIT"/bin/civi-download-tools
 
