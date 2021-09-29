@@ -377,6 +377,18 @@ SET
 ");
     return TRUE;
   }
+
+  /**
+   * Remove legacy field while triggers are off.
+   *
+   * Bug: T288721
+   *
+   * @return TRUE on success
+   */
+  public function upgrade_4210(): bool {
+    CRM_Core_BAO_SchemaHandler::dropColumn('civicrm_event_carts', 'coupon_code');
+    return TRUE;
+  }
   /**
    * Example: Run a slow upgrade process by breaking it up into smaller chunk.
    *
