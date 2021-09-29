@@ -164,7 +164,7 @@ function _wmf_civicrm_get_gift_data_fields() {
       'label' => ts('Direct Mail Appeal'),
       'data_type' => 'String',
       'html_type' => 'Select',
-      'default_value' => 'spontaneousdonation',
+      'default_value' => 'Spontaneous Donation',
       'is_active' => 1,
       'is_required' => 1,
       'is_searchable' => 1,
