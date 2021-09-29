@@ -389,6 +389,42 @@ SET
     CRM_Core_BAO_SchemaHandler::dropColumn('civicrm_event_carts', 'coupon_code');
     return TRUE;
   }
+
+  /**
+   * Remove legacy field while triggers are off.
+   *
+   * Bug: T288721
+   *
+   * @return TRUE on success
+   */
+  public function upgrade_4212(): bool {
+    CRM_Core_DAO::executeQuery(
+      'ALTER TABLE wmf_donor
+
+  MODIFY COLUMN `change_2017_2018` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `change_2018_2019` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `change_2019_2020` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `change_2020_2021` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `change_2021_2022` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `all_funds_change_2018_2019` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `all_funds_change_2019_2020` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `endowment_change_2020_2021` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `all_funds_change_2020_2021` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `all_funds_total_2021_2022` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `endowment_change_2021_2022` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `all_funds_change_2021_2022` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `change_2022_2023` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `endowment_change_2022_2023` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `all_funds_change_2022_2023` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `change_2023_2024` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `endowment_change_2023_2024` decimal(20,2) DEFAULT 0.00,
+  MODIFY COLUMN `all_funds_change_2023_2024` decimal(20,2) DEFAULT 0.00
+
+      '
+    );
+    return TRUE;
+  }
+
   /**
    * Example: Run a slow upgrade process by breaking it up into smaller chunk.
    *
