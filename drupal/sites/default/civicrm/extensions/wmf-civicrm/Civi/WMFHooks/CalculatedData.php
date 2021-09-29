@@ -596,6 +596,30 @@ class CalculatedData {
           $aggregateFieldStrings[] = "MAX(endowment_total_{$year}) as endowment_total_{$year}";
           $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}";
           $updates[] = "endowment_total_{$year} = VALUES(endowment_total_{$year})";
+
+          $fields[] = "all_funds_total_{$year}_{$nextYear}";
+          $aggregateFieldStrings[] = "MAX(all_funds_total_{$year}_{$nextYear}) as all_funds_total_{$year}_{$nextYear}";
+          $fieldSelects[] = "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as all_funds_total_{$year}_{$nextYear}";
+          $updates[] = "all_funds_total_{$year}_{$nextYear} = VALUES(all_funds_total_{$year}_{$nextYear})";
+
+          $fields[] = "all_funds_change_{$year}_{$nextYear}";
+          $aggregateFieldStrings[] = "MAX(change_{$year}_{$nextYear}) as change_{$year}_{$nextYear}";
+          $fieldSelects[] = "
+          SUM(COALESCE(IF(receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
+           as all_funds_change_{$year}_{$nextYear}";
+          $updates[] = "all_funds_change_{$year}_{$nextYear} = VALUES(all_funds_change_{$year}_{$nextYear})";
+
+          if ($year >= 2020) {
+            $fields[] = "endowment_change_{$year}_{$nextYear}";
+            $aggregateFieldStrings[] = "MAX(endowment_change_{$year}_{$nextYear}) as endowment_change_{$year}_{$nextYear}";
+            $fieldSelects[] = "
+          SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
+           as endowment_change_{$year}_{$nextYear}";
+            $updates[] = "endowment_change_{$year}_{$nextYear} = VALUES(endowment_change_{$year}_{$nextYear})";
+
+          }
         }
 
         $fields[] = "change_{$year}_{$nextYear}";
@@ -612,11 +636,15 @@ class CalculatedData {
     INSERT INTO wmf_donor (
       entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
       first_donation_usd, date_of_largest_donation,
-      largest_donation, endowment_largest_donation, lifetime_including_endowment,
+      largest_donation, endowment_largest_donation, all_funds_largest_donation,
+      lifetime_including_endowment,
       lifetime_usd_total, endowment_lifetime_usd_total,
-      last_donation_date, endowment_last_donation_date, first_donation_date,
-      endowment_first_donation_date, number_donations,
-      endowment_number_donations, ' . implode(', ', $fields) . '
+      last_donation_date, endowment_last_donation_date, all_funds_last_donation_date,
+      first_donation_date,
+      endowment_first_donation_date,
+      all_funds_first_donation_date, number_donations,
+      endowment_number_donations, all_funds_number_donations,
+      ' . implode(', ', $fields) . '
     )
 
     SELECT
@@ -632,15 +660,19 @@ class CalculatedData {
       MAX(largest.receive_date) as date_of_largest_donation,
       MAX(largest_donation) as largest_donation,
       MAX(endowment_largest_donation) as endowment_largest_donation,
+      MAX(all_funds_largest_donation) as all_funds_largest_donation,
       MAX(lifetime_including_endowment) as lifetime_including_endowment,
       MAX(lifetime_usd_total) as lifetime_usd_total,
       MAX(endowment_lifetime_usd_total) as endowment_lifetime_usd_total,
       MAX(last_donation_date) as last_donation_date,
       MAX(endowment_last_donation_date) as endowment_last_donation_date,
+      MAX(all_funds_last_donation_date) as all_funds_last_donation_date,
       MIN(first_donation_date) as first_donation_date,
       MIN(endowment_first_donation_date) as endowment_first_donation_date,
+      MIN(all_funds_first_donation_date) as all_funds_first_donation_date,
       MAX(number_donations) as number_donations,
       MAX(endowment_number_donations) as endowment_number_donations,
+      MAX(all_funds_number_donations) as all_funds_number_donations,
       ' . implode(',', $aggregateFieldStrings) . "
 
     FROM (
@@ -648,15 +680,19 @@ class CalculatedData {
       " . (!$this->isTriggerContext() ? ' c.contact_id,': '') ."
         MAX(IF(financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS largest_donation,
         MAX(IF(financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation,
+        MAX(COALESCE(total_amount, 0)) AS all_funds_largest_donation,
         SUM(COALESCE(total_amount, 0)) AS lifetime_including_endowment,
         SUM(IF(financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS lifetime_usd_total,
         SUM(IF(financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_lifetime_usd_total,
         MAX(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS last_donation_date,
         MAX(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_last_donation_date,
+        MAX(IF(total_amount > 0, receive_date, NULL)) AS all_funds_last_donation_date,
         MIN(IF(financial_type_id <> $endowmentFinancialType AND total_amount, receive_date, NULL)) AS first_donation_date,
         MIN(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_first_donation_date,
+        MIN(IF(total_amount > 0, receive_date, NULL)) AS all_funds_first_donation_date,
         COUNT(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS number_donations,
         COUNT(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_number_donations,
+        COUNT(IF(total_amount > 0, receive_date, NULL)) AS all_funds_number_donations,
      " . implode(',', $fieldSelects) . "
       FROM civicrm_contribution c
       USE INDEX(FK_civicrm_contribution_contact_id)
@@ -703,11 +739,15 @@ class CalculatedData {
     first_donation_date = VALUES(first_donation_date),
     number_donations = VALUES(number_donations),
     endowment_largest_donation = VALUES(endowment_largest_donation),
+    all_funds_largest_donation = VALUES(all_funds_largest_donation),
     lifetime_including_endowment = VALUES(lifetime_including_endowment),
     endowment_lifetime_usd_total = VALUES(endowment_lifetime_usd_total),
     endowment_last_donation_date = VALUES(endowment_last_donation_date),
+    all_funds_last_donation_date = VALUES(all_funds_last_donation_date),
     endowment_first_donation_date = VALUES(endowment_first_donation_date),
+    all_funds_first_donation_date = VALUES(all_funds_first_donation_date),
     endowment_number_donations = VALUES(endowment_number_donations),
+    all_funds_number_donations = VALUES(all_funds_number_donations),
     " . implode(',', $updates) . ";";
   }
 
