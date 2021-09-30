@@ -31,6 +31,8 @@ class BatchUpdateToken extends AbstractAction {
       ->addWhere('payment_processor_id.name', '=', $this->processorName)
       ->addWhere('invoice_id', 'IS NULL')
       ->addWhere('payment_token_id.token', 'IS NOT EMPTY')
+      // Limit to In Progress status
+      ->addWhere('contribution_status_id', '=', 5)
       ->setSelect([
         'id',
         'invoice_id',
