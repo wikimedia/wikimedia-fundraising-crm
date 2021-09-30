@@ -391,7 +391,7 @@ SET
   }
 
   /**
-   * Remove legacy field while triggers are off.
+   * Fix column field type.
    *
    * Bug: T288721
    *
@@ -425,6 +425,39 @@ SET
     return TRUE;
   }
 
+  /**
+   * Fix column field type in custom field table.
+   *
+   * Bug: T288721
+   *
+   * @return TRUE on success
+   */
+  public function upgrade_4215(): bool {
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_custom_field SET data_type = 'Money'
+      WHERE data_type = 'Float' AND name IN (
+      'change_2017_2018',
+      'change_2018_2019',
+      'change_2019_2020',
+      'change_2020_2021',
+      'change_2021_2022',
+      'all_funds_change_2018_2019',
+      'all_funds_change_2019_2020',
+      'endowment_change_2020_2021',
+      'all_funds_change_2020_2021',
+      'all_funds_total_2021_2022',
+      'endowment_change_2021_2022',
+      'all_funds_change_2021_2022',
+      'change_2022_2023',
+      'endowment_change_2022_2023',
+      'all_funds_change_2022_2023',
+      'change_2023_2024',
+      'endowment_change_2023_2024',
+      'all_funds_change_2023_2024'
+      )
+    ");
+    return TRUE;
+  }
   /**
    * Example: Run a slow upgrade process by breaking it up into smaller chunk.
    *
