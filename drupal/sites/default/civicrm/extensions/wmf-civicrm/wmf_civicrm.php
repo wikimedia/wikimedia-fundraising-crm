@@ -100,7 +100,7 @@ function wmf_civicrm_civicrm_managed(&$entities) {
   $tempEntities = [];
   _wmf_civicrm_civix_civicrm_managed($tempEntities);
   foreach ($tempEntities as $tempEntity) {
-    if ($tempEntity['entity'] === 'Monolog' || $tempEntity['entity'] === 'MessageTemplate') {
+    if ($tempEntity['entity'] === 'Monolog' || $tempEntity['entity'] === 'MessageTemplate' || $tempEntity['entity'] === 'Translation') {
       // We are not transitioning monologs or Message Templates & this will fail due to there not being
       // a v3 api.
       $entities[] = $tempEntity;
