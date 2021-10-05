@@ -1,2 +1,3 @@
 role 'CiviCRM Admin'
 add access export menu
+add translate CiviCRM
