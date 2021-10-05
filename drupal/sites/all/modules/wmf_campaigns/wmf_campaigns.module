@@ -52,45 +52,27 @@ function wmf_campaigns_permission() {
  */
 function wmf_campaigns_index_form() {
   $form = [];
+  civicrm_initialize();
+  $options = \Civi\Api4\CustomField::get(FALSE)
+    ->addWhere('name', '=', 'Appeal')
+    ->setSelect(['id', 'option_group_id', 'option_value.value', 'option_value.label', 'option_value.is_active'])
+    ->addJoin('OptionValue AS option_value', 'LEFT', ['option_value.option_group_id', '=', 'option_group_id'])
+    ->setLimit(1000)
+    ->execute();
 
-  $api = civicrm_api_classapi();
-  $success = $api->OptionGroup->get([
-    'name' => wmf_civicrm_get_direct_mail_field_option_id(),
-  ]);
-  if (!$success || count($api->values) !== 1) {
-    drupal_set_message("Tough luck, cannot fetch campaigns: " . $api->errorMsg(), 'error');
-    return;
-  }
-  $group = $api->values[0];
-  $success = $api->CustomField->get([
-    'option_group_id' => $group->id,
-  ]);
-  if (!$success || count($api->values) === 0) {
-    drupal_set_message("Tough luck, cannot fetch campaigns: " . $api->errorMsg(), 'error');
-    return;
-  }
-  $field = $api->values[0];
   $link = CRM_Utils_System::url(
     'civicrm/admin/custom/group/field/option',
-    "reset=1&action=browse&gid={$group->id}&fid={$field->id}",
+    'reset=1&action=browse&gid=' . $options->first()['option_group_id'] . '&fid=' . $options->first()['id'],
     TRUE
   );
-  $success = $api->OptionValue->get([
-    'option_group_id' => wmf_civicrm_get_direct_mail_field_option_id(),
-    'rowCount' => 1000,
-  ]);
-  if (!$success) {
-    drupal_set_message("Tough luck, cannot fetch campaigns: " . $api->errorMsg(), 'error');
-    return;
-  }
 
   $rows = [];
-  foreach ($api->values as $value) {
-    $notificationAddress = WmfCampaign::getNotificationAddressesFromKey($value->value);
+  foreach ($options as $option) {
+    $notificationAddress = WmfCampaign::getNotificationAddressesFromKey($option['option_value.value']);
     $rows[] = [
-      l($value->label, "admin/config/wmf_campaigns/edit/{$value->value}"),
-      $value->value,
-      $value->is_active ? t('Yes') : t('No'),
+      l($option['option_value.label'], "admin/config/wmf_campaigns/edit/" . $option['option_value.value']),
+      $option['option_value.value'],
+      $option['option_value.is_active'] ? t('Yes') : t('No'),
       $notificationAddress ? t('Yes') : t('No'),
     ];
   }
