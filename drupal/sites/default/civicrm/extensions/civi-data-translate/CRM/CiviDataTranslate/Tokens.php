@@ -38,17 +38,6 @@ class CRM_CiviDataTranslate_Tokens {
           $row->tokens($tokenEntity, $token, $string);
         }
       }
-      if (isset($tokens['now'])) {
-        // e.g {now.MMMM} - this formats now in a localised way using format http://userguide.icu-project.org/formatparse/datetime
-        // @todo consider if that is the right sort of format to use - elsewhere in Civi we use strtotime
-        // formats. Also note that ideally we would add these to the front-end user's experience & give them
-        // labels so it would matter less.
-        $dateFormatter = new \IntlDateFormatter($row->context['language'], NULL, NULL);
-        foreach ($tokens['now'] as $token) {
-          $dateFormatter->setPattern($token);
-          $row->tokens('now', $token, $dateFormatter->format(new \DateTime()));
-        }
-      }
     }
   }
 
