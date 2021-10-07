@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS `civicrm_mailing_provider_data` (
    `mailing_identifier` varchar(255) DEFAULT NULL,
    `email` varchar(255) DEFAULT NULL,
    `event_type` varchar(255) NOT NULL DEFAULT '',
-  `recipient_action_datetime` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `recipient_action_datetime` timestamp NOT NULL,
    `contact_id` varchar(255) DEFAULT NULL,
    `is_civicrm_updated`  TINYINT(4) DEFAULT '0',
  PRIMARY KEY (`contact_identifier`,`recipient_action_datetime`,`event_type`),
