@@ -458,6 +458,43 @@ SET
     ");
     return TRUE;
   }
+
+  /**
+   * Run sql to reset the accidentally cancelled ideal recurrings during the token update when switching from Adyen to
+   * Adyen Checkout
+   *
+   * Bug: T277120
+   *
+   * @return TRUE on success
+   * @throws Exception
+   */
+  public function upgrade_4217(): bool {
+    // 61 records
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_contribution_recur
+      SET
+          cancel_date = NULL,
+          failure_count = 2,
+          cancel_reason = NULL,
+          contribution_status_id = 5,
+          next_sched_contribution_date = '2021-10-08 00:00:00'
+      WHERE
+          id IN (SELECT
+                  civicrm_contribution_recur.id
+              FROM
+                  civicrm_contribution_recur
+                      INNER JOIN
+                  civicrm_contact ON civicrm_contribution_recur.contact_id = civicrm_contact.id
+              WHERE civicrm_contribution_recur.cycle_day = 2
+                  AND civicrm_contribution_recur.payment_processor_id = 1
+                  AND civicrm_contribution_recur.invoice_id IS NOT NULL
+                  AND civicrm_contribution_recur.cancel_date > '2021-10-04 00:00'
+                  AND civicrm_contribution_recur.cancel_date < '2021-10-04 23:59'
+                  AND civicrm_contribution_recur.currency = 'EUR'
+                  AND civicrm_contact.preferred_language = 'nl_NL')");
+    return TRUE;
+  }
+
   /**
    * Example: Run a slow upgrade process by breaking it up into smaller chunk.
    *
