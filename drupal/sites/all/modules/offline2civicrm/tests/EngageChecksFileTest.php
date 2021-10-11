@@ -2,6 +2,8 @@
 
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
+use Civi\Api4\Relationship;
 
 /**
  * @group Import
@@ -514,12 +516,30 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       ->addWhere('last_name', '=', 'Mouse')
       ->addJoin('Contribution AS contribution')
       ->addSelect('Partner.Partner', 'contribution.total_amount', 'contribution.fee_amount', 'contribution.net_amount', 'contribution.trxn_id')->execute()->first();
+    $relationships = Relationship::get(FALSE)->addWhere('contact_id_b', '=', $contact['id'])->addSelect('contact_id_a.display_name')->execute();
+    $this->assertCount(1, $relationships);
+    $this->assertEquals('Good Guys Inc.', $relationships->first()['contact_id_a.display_name']);
 
     $this->assertEquals(0.5, $contact['contribution.fee_amount']);
     $this->assertEquals(23.5, $contact['contribution.net_amount']);
     $this->assertEquals(24.0, $contact['contribution.total_amount']);
     $this->assertEquals('ENGAGE 123', $contact['contribution.trxn_id']);
     $this->assertEquals('Walt', $contact['Partner.Partner']);
+
+    // Delete the contribution & Import again, checking no duplicate contact or relationship are created.
+    Contribution::delete(FALSE)->addWhere('contact_id', '=', $contact['id'])->execute();
+    $importer->import();
+    $import2Contact = Contact::get(FALSE)->addWhere('first_name', '=', 'Rambo')
+      ->addWhere('last_name', '=', 'Mouse')->execute();
+    $this->assertCount(1, $import2Contact);
+    $this->assertEquals($import2Contact->first()['id'], $contact['id']);
+
+    $relationships = Relationship::get(FALSE)->addWhere('contact_id_b', '=', $contact['id'])->addSelect('contact_id_a.display_name')->execute();
+    $this->assertCount(1, $relationships);
+    $this->assertEquals('Good Guys Inc.', $relationships->first()['contact_id_a.display_name']);
+
+    $importedOrganization = Contact::get(FALSE)->addWhere('organization_name', '=', 'Good Guys Inc.')->execute();
+    $this->assertCount(1, $importedOrganization);
   }
 
   /**

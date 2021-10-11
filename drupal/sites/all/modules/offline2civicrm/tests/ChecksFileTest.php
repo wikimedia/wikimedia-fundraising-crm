@@ -14,6 +14,9 @@ class ChecksFileTest extends BaseChecksFileTest {
     require_once __DIR__ . "/includes/ChecksFileProbe.php";
   }
 
+  /**
+   * @throws \API_Exception
+   */
   public function tearDown(): void {
     Contact::delete(FALSE)
       ->addWhere('first_name', '=', 'Test_first_name')

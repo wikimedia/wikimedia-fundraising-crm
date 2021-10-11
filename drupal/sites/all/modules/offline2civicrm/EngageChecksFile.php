@@ -4,6 +4,13 @@ use Civi\WMFException\WMFException;
 
 class EngageChecksFile extends ChecksFile {
 
+  /**
+   * The import type descriptor.
+   *
+   * @var string
+   */
+  protected $gateway = 'engage';
+
   function getRequiredColumns() {
     return [
       'Batch',
@@ -56,7 +63,6 @@ class EngageChecksFile extends ChecksFile {
    */
   protected function mungeMessage(&$msg) {
     parent::mungeMessage($msg);
-    $msg['gateway'] = 'engage';
     $msg['contact_id'] = $this->getContactID($msg);
     if ($msg['contact_type'] === 'Individual' && $msg['contact_id'] == $this->getAnonymousContactID()) {
       $this->unsetAddressFields($msg);
