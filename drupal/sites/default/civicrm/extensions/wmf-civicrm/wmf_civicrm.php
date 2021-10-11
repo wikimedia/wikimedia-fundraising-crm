@@ -106,7 +106,13 @@ function wmf_civicrm_civicrm_managed(&$entities) {
       $entities[] = $tempEntity;
       continue;
     }
-    $existing = civicrm_api3($tempEntity['entity'], 'get', ['name' => $tempEntity['params']['name'], 'sequential' => 1]);
+    if ($tempEntity['entity'] === 'RelationshipType') {
+      $lookupParams = ['name_a_b' => $tempEntity['params']['name_a_b'], 'sequential' => 1];
+    }
+    else {
+      $lookupParams = ['name' => $tempEntity['params']['name'], 'sequential' => 1];
+    }
+    $existing = civicrm_api3($tempEntity['entity'], 'get', $lookupParams);
     if ($existing['count'] === 1 && !CRM_Core_DAO::singleValueQuery("
       SELECT count(*) FROM civicrm_managed
       WHERE entity_type = '{$tempEntity['entity']}'
