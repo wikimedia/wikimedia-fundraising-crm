@@ -1,5 +1,8 @@
 <?php
 
+use Civi\Api4\Contact;
+use Civi\Api4\Relationship;
+use Civi\Api4\RelationshipType;
 use SmashPig\CrmLink\Messages\SourceFields;
 use League\Csv\Reader;
 use SmashPig\Core\Context;
@@ -44,6 +47,13 @@ abstract class ChecksFile {
   protected $numberIgnoredRows = 0;
 
   /**
+   * The import type descriptor.
+   *
+   * @var string
+   */
+  protected $gateway;
+
+  /**
    * Number of contacts created.
    *
    * @var int
@@ -63,6 +73,11 @@ abstract class ChecksFile {
    * @var int
    */
   protected $totalBatchSkippedRows = 0;
+
+  /**
+   * @var array
+   */
+  protected $relationshipTypes = [];
 
   /**
    * @return int
@@ -447,6 +462,9 @@ abstract class ChecksFile {
       $msg['addressee_custom'] = $msg['full_name'];
     }
 
+    if (empty($msg['gateway'])) {
+      $msg['gateway'] = $this->gateway;
+    }
     if (isset($msg['raw_contribution_type'])) {
       $contype = $msg['raw_contribution_type'];
       switch ($contype) {
@@ -669,6 +687,8 @@ abstract class ChecksFile {
       'Total Amount' => 'gross',
       # deprecated, use Original Amount
       'Transaction ID' => 'gateway_txn_id',
+      // This name is super wonky but it is what it is in the db.
+      'Owns the Donor Advised Fund' => 'relationship.Holds a Donor Advised Fund of',
     ];
   }
 
@@ -765,10 +785,19 @@ abstract class ChecksFile {
    *
    * @return array
    * @throws \Civi\WMFException\WMFException
+   * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
    */
   public function doImport($msg) {
     $contribution = wmf_civicrm_contribution_message_import($msg);
     $this->mungeContribution($contribution);
+    foreach ($msg as $key => $value) {
+      if (strpos($key, 'relationship.') === 0) {
+        $relationshipNameAB = substr($key, 13);
+        $this->createRelatedOrganization($relationshipNameAB, $value, $contribution['contact_id']);
+      }
+    }
+
     return $contribution;
   }
 
@@ -1121,13 +1150,15 @@ abstract class ChecksFile {
    * or multiple organization names.)
    *
    * @param string $organizationName
+   * @param bool $isCreateIfNotExists
    *
-   * @return array
+   * @return int
    *
+   * @throws \API_Exception
    * @throws \CiviCRM_API3_Exception
    * @throws \Civi\WMFException\WMFException
    */
-  protected function getOrganizationID($organizationName) {
+  protected function getOrganizationID(string $organizationName, bool $isCreateIfNotExists = FALSE): int {
     // Using the Civi Statics pattern for php caching makes it easier to reset in unit tests.
     if (!isset(\Civi::$statics[__CLASS__]['organization'][$organizationName])) {
       $contacts = civicrm_api3('Contact', 'get', ['nick_name' => $organizationName, 'contact_type' => 'Organization']);
@@ -1140,8 +1171,13 @@ abstract class ChecksFile {
       else {
         \Civi::$statics[__CLASS__]['organization'][$organizationName] = NULL;
       }
+      if ($isCreateIfNotExists) {
+        \Civi::$statics[__CLASS__]['organization'][$organizationName] = Contact::create(FALSE)->setValues([
+          'organization_name' => $organizationName,
+          'source' => $this->gateway . ' created via import',
+        ])->execute()->first()['id'];
+      }
     }
-
     if (\Civi::$statics[__CLASS__]['organization'][$organizationName]) {
       return \Civi::$statics[__CLASS__]['organization'][$organizationName];
     }
@@ -1153,6 +1189,42 @@ abstract class ChecksFile {
         ]
       )
     );
+  }
+
+  /**
+   * Create a relationship with a related organization, potentially creating the organization.
+   *
+   * @param string $relationshipNameAB
+   * @param string $organizationName
+   * @param int $contact_id
+   *
+   * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
+   * @throws \Civi\WMFException\WMFException
+   */
+  protected function createRelatedOrganization(string $relationshipNameAB, string $organizationName, int $contact_id): void {
+    if (!isset($this->relationshipTypes[$relationshipNameAB])) {
+      $this->relationshipTypes[$relationshipNameAB] = RelationshipType::get(FALSE)
+        ->addWhere('name_a_b', '=', $relationshipNameAB)
+        ->addSelect('id')->execute()->first()['id'];
+    }
+
+    $relatedContactID = $this->getOrganizationID($organizationName, TRUE);
+
+    if (!count(Relationship::get(FALSE)
+      ->addWhere('contact_id_b', '=', $contact_id)
+      ->addWhere('contact_id_a', '=', $relatedContactID)
+      ->addWhere('relationship_type_id', '=', $this->relationshipTypes[$relationshipNameAB])
+      ->addSelect('id')->execute())) {
+      // Relationship type is is a required field so if not found this would
+      // throw an error and the line import would be rolled back. There would be
+      // an error line in the csv presented to the user.
+      Relationship::create(FALSE)->setValues([
+        'contact_id_b' => $contact_id,
+        'contact_id_a' => $relatedContactID,
+        'relationship_type_id' => $this->relationshipTypes[$relationshipNameAB],
+      ])->execute();
+    }
   }
 
 }

@@ -10,6 +10,13 @@ class BenevityFile extends ChecksFile {
   protected $conversionRate;
 
   /**
+   * The import type descriptor.
+   *
+   * @var string
+   */
+  protected $gateway = 'benevity';
+
+  /**
    * @return array
    */
   protected function getRequiredColumns() {
@@ -51,8 +58,6 @@ class BenevityFile extends ChecksFile {
    * @throws \Civi\WMFException\WMFException
    */
   protected function mungeMessage(&$msg) {
-    $msg['gateway'] = 'benevity';
-
     $moneyFields = ['original_gross', 'fee', 'merchant_fee_amount', 'original_matching_amount'];
     foreach ($moneyFields as $moneyField) {
       $msg[$moneyField] = isset($msg[$moneyField]) ? (str_replace(',', '', $msg[$moneyField])) : 0;
