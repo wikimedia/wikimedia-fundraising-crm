@@ -554,6 +554,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
    * @throws \Civi\WMFException\WMFException
+   * @throws \API_Exception
    */
   public function testImportSucceedIndividualMultipleContactExistsEmailMatchOnBestMinnie(): void {
     $minnies = $this->createContactSet([
@@ -581,6 +582,11 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $address = $this->callAPISuccessGetSingle('Address', ['contact_id' => $minnies[1]['id']]);
     $this->assertEquals('35 Squeaky Way', $address['street_address']);
     $this->assertTrue(empty($address['city']));
+    $this->assertEquals('Tonto', Contact::get(FALSE)
+      ->addWhere('id', '=', $minnies[1]['id'])
+      ->addSelect('Partner.Partner')
+      ->execute()->first()['Partner.Partner']
+    );
   }
 
   /**
