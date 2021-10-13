@@ -55,7 +55,8 @@
         "php-parallel-lint/php-parallel-lint": "^1.2"
     },
     "replace": {
-        "symfony/polyfill-php54": "*"
+        "symfony/polyfill-php54": "*",
+        "symfony/polyfill-php55": "*"
     },
     "scripts": {
       "test": [
