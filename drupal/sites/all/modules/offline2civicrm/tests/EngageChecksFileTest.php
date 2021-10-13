@@ -252,28 +252,32 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * In this test there is only 1 & we choose that.
    *
-   * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
    * @throws \Civi\WMFException\WMFException
+   * @throws \API_Exception
    */
   public function testImportSucceedIndividualSingleContactExistsAddressMatch(): void {
 
-    $daisy = $this->callAPISuccess('Contact', 'create', [
+    $daisy = Contact::create(FALSE)->setValues([
       'first_name' => 'Daisy',
       'last_name' => 'Duck',
       'contact_type' => 'Individual',
-      'api.address.create' => [
-        'city' => 'Duckville',
-        'postal_code' => '10210',
-        'street_address' => '1 15th Avenue.',
-        'location_type_id' => 'Home',
-      ],
-    ]);
+      'Partner.Partner' => 'Bob',
+    ])->addChain('address', Address::create(FALSE)->setValues([
+      'city' => 'Duckville',
+      'postal_code' => '10210',
+      'street_address' => '1 15th Avenue.',
+      'location_type_id' => 'Home',
+      'contact_id' => '$id',
+    ]))->execute()->first();
 
     $this->importCheckFile();
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $daisy['id']]);
-    $this->assertEquals(1, $contributions['count']);
+    $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $daisy['id']]);
+    $this->assertEquals('Bob', Contact::get(FALSE)
+      ->addSelect('Partner.Partner')
+      ->addWhere('id', '=', $daisy['id'])->execute()->first()['Partner.Partner']
+    );
   }
 
   /**
