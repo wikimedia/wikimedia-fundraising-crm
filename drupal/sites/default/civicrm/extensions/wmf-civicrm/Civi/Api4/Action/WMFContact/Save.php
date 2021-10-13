@@ -458,15 +458,17 @@ class Save extends AbstractAction {
    * @throws \Civi\WMFException\WMFException
    */
   public function handleUpdate(array $msg): void {
-    // @todo Do not solicit appears like these fields but is a custom field. Not handled yet as not in the import
-    // this was written (& tested) in conjunction with (Engage).
+    // This winds up being a list of permitted fields to update. The approach of
+    // filtering out some fields here probably persists more because we
+    // have not been brave enough to change historical code than an underlying reason.
     $updateFields = [
       'do_not_email',
       'do_not_mail',
       'do_not_trade',
       'do_not_phone',
       'is_opt_out',
-      'do_not_sms'
+      'do_not_sms',
+      'Partner.Partner',
     ];
     $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
     if (($msg['contact_type'] ?? NULL) === 'Organization') {

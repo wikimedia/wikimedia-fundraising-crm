@@ -1170,12 +1170,12 @@ abstract class ChecksFile {
       }
       else {
         \Civi::$statics[__CLASS__]['organization'][$organizationName] = NULL;
-      }
-      if ($isCreateIfNotExists) {
-        \Civi::$statics[__CLASS__]['organization'][$organizationName] = Contact::create(FALSE)->setValues([
-          'organization_name' => $organizationName,
-          'source' => $this->gateway . ' created via import',
-        ])->execute()->first()['id'];
+        if ($isCreateIfNotExists) {
+          \Civi::$statics[__CLASS__]['organization'][$organizationName] = Contact::create(FALSE)->setValues([
+            'organization_name' => $organizationName,
+            'source' => $this->gateway . ' created via import',
+          ])->execute()->first()['id'];
+        }
       }
     }
     if (\Civi::$statics[__CLASS__]['organization'][$organizationName]) {

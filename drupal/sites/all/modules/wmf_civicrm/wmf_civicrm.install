@@ -25,9 +25,6 @@ function wmf_civicrm_install() {
   _wmf_civicrm_update_custom_fields();
   // create financial types & payment instruments
   wmf_civicrm_update_7000();
-  // Create contribution statuses.
-  wmf_civicrm_update_7006();
-
   // Reset navigation on install.
   wmf_civicrm_update_7063();
 
@@ -75,16 +72,6 @@ function wmf_civicrm_update_7000() {
   wmf_civicrm_bootstrap_civi();
   require_once 'update_payment_instruments.php';
   wmf_install_add_missing_payment_instruments();
-}
-
-/**
- * Additional, gateway-related contribution statuses
- */
-function wmf_civicrm_update_7006() {
-  wmf_civicrm_create_option_values('contribution_status', array(
-    'Settled',
-    'Paid',
-  ));
 }
 
 /**

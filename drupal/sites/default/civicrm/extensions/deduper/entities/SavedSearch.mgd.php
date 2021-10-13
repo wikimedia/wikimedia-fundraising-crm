@@ -1,10 +1,11 @@
 <?php
-// This file declares a managed database record of type "ReportTemplate".
-// The record will be automatically inserted, updated, or deleted from the
-// database as appropriate. For more details, see "hook_civicrm_managed" at:
-// http://wiki.civicrm.org/confluence/display/CRMDOC42/Hook+Reference
+// SavedSearch + SearchDisplay managed entities.
+// Note this works around current limitations of hook_civicrm_managed
+// By setting 'update' and 'cleanup' to "never", passing 'version' => 4,
+// and using chaining to set the foreign key correctly.
+// See https://lab.civicrm.org/dev/report/-/issues/69
 
-// Install search display if searchkit is installed.
+// Early return if search_kit is not installed.
 if (!civicrm_api3('Extension', 'getcount', [
   'full_name' => 'org.civicrm.search_kit',
   'status' => 'installed',
